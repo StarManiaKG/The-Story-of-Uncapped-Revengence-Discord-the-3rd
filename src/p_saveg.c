@@ -1043,7 +1043,7 @@ static void P_NetArchiveWorld(void)
 //
 // P_NetUnArchiveWorld
 //
-static void P_NetUnArchiveWorld(void)
+static void P_NetUnArchiveWorld(boolean preserveLevel)
 {
 	UINT16 i;
 	line_t *li;
@@ -4066,9 +4066,10 @@ static void P_NetArchiveMisc(void)
 		WRITEUINT8(save_p, 0x2e);
 }
 
-static inline boolean P_NetUnArchiveMisc(void)
+static inline boolean P_NetUnArchiveMisc(boolean preserveLevel)
 {
 	INT32 i;
+	INT16 oldMap = gamemap;
 
 	if (READUINT32(save_p) != ARCHIVEBLOCK_MISC)
 		I_Error("Bad $$$.sav at archive block Misc");
@@ -4099,7 +4100,7 @@ static inline boolean P_NetUnArchiveMisc(void)
 
 	tokenlist = READUINT32(save_p);
 
-	if (!P_SetupLevel(true))
+	if ((!preserveLevel || (gamemap != oldMap)) && !P_SetupLevel(true))
 		return false;
 
 	// get the time
@@ -4258,15 +4259,15 @@ boolean P_LoadGame(INT16 mapoverride)
 	return true;
 }
 
-boolean P_LoadNetGame(void)
+boolean P_LoadNetGame(boolean preserveLevel)
 {
 	CV_LoadNetVars(&save_p);
-	if (!P_NetUnArchiveMisc())
+	if (!P_NetUnArchiveMisc(preserveLevel))
 		return false;
 	P_NetUnArchivePlayers();
 	if (gamestate == GS_LEVEL)
 	{
-		P_NetUnArchiveWorld();
+		P_NetUnArchiveWorld(preserveLevel);
 #ifdef POLYOBJECTS
 		P_UnArchivePolyObjects();
 #endif
