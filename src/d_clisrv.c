@@ -128,6 +128,12 @@ SINT8 servernode = 0; // the number of the server node
 /// \todo WORK!
 boolean acceptnewnode = true;
 
+// Horrid LXShadow stuff
+ticcmd_t localTicBuffer[BACKUPTICS][MAXPLAYERS];
+UINT8 localStateBuffer[BACKUPTICS][1024 * 768];
+boolean rewindingWow = false;
+int rewindingTarget = 0;
+
 // engine
 
 // Must be a power of two
@@ -1626,7 +1632,7 @@ static void CL_LoadReceivedSavegame(void)
 	automapactive = false;
 
 	// load a base level
-	if (P_LoadNetGame())
+	if (P_LoadNetGame(false))
 	{
 		const INT32 actnum = mapheaderinfo[gamemap-1]->actnum;
 		CONS_Printf(M_GetText("Map is now \"%s"), G_BuildMapName(gamemap));
@@ -4691,6 +4697,9 @@ static void SV_Maketic(void)
 	maketic++;
 }
 
+int stepAheadTics = 5;
+int simulatedTics = 5;
+
 void TryRunTics(tic_t realtics)
 {
 	// the machine has lagged but it is not so bad
@@ -4749,6 +4758,36 @@ void TryRunTics(tic_t realtics)
 				D_StartTitle();
 		}
 		else
+		{
+			if (gamestate == GS_LEVEL)
+			{
+				// record game state for rewinding
+				for (int i = 0; i < 32; i++)
+				{
+					localTicBuffer[gametic % BACKUPTICS][i] = netcmds[gametic % BACKUPTICS][i];
+				}
+				save_p = localStateBuffer[gametic % BACKUPTICS];
+				P_SaveNetGame();
+			}
+
+			angle_t oldAngle = localangle;
+			INT32 oldAiming = localaiming;
+			if (rewindingWow) {
+				// do a rewind
+				save_p = localStateBuffer[(gametic - rewindingTarget + BACKUPTICS) % BACKUPTICS];
+				P_LoadNetGame(true);
+
+				for (int i = 0; i < MAXPLAYERS; i++) {
+					for (int j = 0; j < rewindingTarget; j++) {
+						netcmds[(gametic - rewindingTarget + j + BACKUPTICS) % BACKUPTICS][i] = localTicBuffer[(gametic - rewindingTarget + j + BACKUPTICS) % BACKUPTICS][i];
+					}
+				}
+
+				// execute the tics up to that point todo
+				gametic -= rewindingTarget;
+			}
+
+
 			// run the count * tics
 			while (neededtic > gametic)
 			{
@@ -4759,6 +4798,15 @@ void TryRunTics(tic_t realtics)
 				gametic++;
 				consistancy[gametic%BACKUPTICS] = Consistancy();
 			}
+
+			if (rewindingWow) {
+				// restore camera stuff because that's local anyways~
+				localangle = oldAngle;
+				localaiming = oldAiming;
+
+				rewindingWow = false;
+			}
+		}
 	}
 }
 

@@ -553,6 +553,8 @@ static void D_Display(void)
 
 tic_t rendergametic;
 
+void FlushAwfulDelayBuffers();
+
 void D_SRB2Loop(void)
 {
 	tic_t oldentertics = 0, entertic = 0, realtics = 0, rendertimeout = INFTICS;
