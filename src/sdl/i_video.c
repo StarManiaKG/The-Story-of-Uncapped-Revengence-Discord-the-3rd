@@ -1077,9 +1077,13 @@ void I_StartupMouse(void)
 //
 // I_OsPolling
 //
+void FlushAwfulDelayBuffers();
+
 void I_OsPolling(void)
 {
 	SDL_Keymod mod;
+
+	FlushAwfulDelayBuffers();
 
 	if (consolevent)
 		I_GetConsoleEvents();
