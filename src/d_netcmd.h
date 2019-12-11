@@ -109,6 +109,10 @@ extern consvar_t cv_maxping;
 extern consvar_t cv_pingtimeout;
 extern consvar_t cv_showping;
 
+extern consvar_t cv_simulate;
+extern consvar_t cv_simulatetics;
+extern consvar_t cv_netdelay;
+extern consvar_t cv_netjitter;
 
 extern consvar_t cv_skipmapcheck;
 
