@@ -1387,6 +1387,7 @@ typedef enum
 #ifdef ROTSPRITE
 	MD2_ROLLANGLE    = 1<<13,
 #endif
+	MD2_PMOM         = 1<<14
 } mobj_diff2_t;
 
 typedef enum
@@ -1574,6 +1575,8 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		diff |= MD_DSCALE;
 	if (mobj->scalespeed != FRACUNIT/12)
 		diff2 |= MD2_SCALESPEED;
+	if (mobj->pmomz != 0)
+		diff2 |= MD2_PMOM;
 
 	if (mobj == redflag)
 		diff |= MD_REDFLAG;
@@ -1778,6 +1781,8 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	if (diff2 & MD2_ROLLANGLE)
 		WRITEANGLE(save_p, mobj->rollangle);
 #endif
+	if (diff2 & MD2_PMOM)
+		WRITEFIXED(save_p, mobj->pmomz);
 
 	WRITEUINT32(save_p, mobj->mobjnum);
 }
@@ -2860,6 +2865,8 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 	else
 		mobj->rollangle = 0;
 #endif
+	if (diff2 & MD2_PMOM)
+		mobj->pmomz = READFIXED(save_p);
 
 	if (diff & MD_REDFLAG)
 	{
