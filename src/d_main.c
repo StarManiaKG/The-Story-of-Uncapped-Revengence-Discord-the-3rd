@@ -131,6 +131,8 @@ boolean usehome = true;
 const char *pandf = "%s" PATHSEP "%s";
 static char addonsdir[MAX_WADPATH];
 
+extern char netDebugText[10000];
+
 //
 // EVENT HANDLING
 //
@@ -543,6 +545,27 @@ static void D_Display(void)
 			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-10, V_YELLOWMAP, s);
 		}
 
+		if (netDebugText[0] != 0)
+		{
+			const char* str = netDebugText;
+			int y = 0;
+
+			while (str != NULL)
+			{
+				char temp[1024];
+				const char* nextStr = strstr(str + 1, "\n");
+				int len = nextStr ? nextStr - str : strlen(str);
+
+				strncpy(temp, str, len);
+				temp[len] = 0;
+
+				V_DrawRightAlignedSmallString(BASEVIDWIDTH, y, V_YELLOWMAP, temp);
+
+				y += 5;
+				str = nextStr;
+			}
+		}
+
 		I_FinishUpdate(); // page flip or blit buffer
 	}
 }
@@ -552,8 +575,6 @@ static void D_Display(void)
 // =========================================================================
 
 tic_t rendergametic;
-
-void SOCK_FlushDelayBuffers();
 
 void D_SRB2Loop(void)
 {

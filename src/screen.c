@@ -408,7 +408,7 @@ void SCR_DisplayTicRate(void)
 	INT32 ticcntcolor = 0;
 	const INT32 h = vid.height-(8*vid.dupy);
 
-	for (i = lasttic + 1; i < TICRATE+lasttic && i < ontic; ++i)
+	for (i = lasttic + 1; i < TICRATE + lasttic && i < ontic; ++i)
 		fpsgraph[i % TICRATE] = false;
 
 	fpsgraph[ontic % TICRATE] = true;
