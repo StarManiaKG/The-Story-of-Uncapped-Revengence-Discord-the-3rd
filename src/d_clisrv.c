@@ -4781,20 +4781,29 @@ void TryRunTics(tic_t realtics)
 	tic_t numNewTics = neededtic - gametic;
 	static int controlDelay = -1;
 
+	// preserve camera changes
+	angle_t oldAngle = localangle;
+	INT32 oldAiming = localaiming;
+
 	if (recordingStates && rewindingWow && rewindingTarget > 0)
 	{
 		save_p = gameStateBuffer[(gametic - rewindingTarget) % BACKUPTICS];
 		P_LoadNetGame(true);
+
+		for (int i = 0; i < rewindingTarget; i++) {
+			netcmds[gametic%BACKUPTICS][consoleplayer] = gameTicBuffer[gametic - rewindingTarget + i % BACKUPTICS][consoleplayer];
+			G_Ticker(true);
+		}
+
+		localaiming = oldAiming;
+		localangle = oldAngle;
+
 		rewindingWow = false;
 	}
 
 	// record the actual local controls for this frame
 	liveTic = I_GetTime();
 	simulatedTicBuffer[liveTic % BACKUPTICS] = localcmds;
-
-	// preserve camera changes
-	angle_t oldAngle = localangle;
-	INT32 oldAiming = localaiming;
 
 	// Run the real game as received from the server
 	if (neededtic > gametic && !resynch_local_inprogress)
@@ -4812,7 +4821,10 @@ void TryRunTics(tic_t realtics)
 			if (canSimulate) {
 				if (gameStateBufferIsValid[gametic % BACKUPTICS]) {
 					save_p = gameStateBuffer[gametic % BACKUPTICS];
+
+					gametic--;
 					P_LoadNetGame(true);
+					gametic++;
 				}
 			}
 
@@ -4877,7 +4889,7 @@ void TryRunTics(tic_t realtics)
 		// this must be done after smoothedTic is set
 		RefreshNetDetections();
 		
-		numToSimulate = estimatedRTT;//cv_simulatetics.value;
+		numToSimulate = min(estimatedRTT, cv_simulatetics.value);//cv_simulatetics.value;
 
 		// simulate the rest o da future
 		for (int i = 0; i < numToSimulate; i++) {
@@ -4901,7 +4913,8 @@ void TryRunTics(tic_t realtics)
 		localangle = oldAngle;
 		localaiming = oldAiming;
 	}
-	else
+	
+	if (!recordingStates)
 	{
 		// clear gamestate buffer if we're no longer able to simulate, or things will break.
 		for (int i = 0; i < BACKUPTICS; i++) {
