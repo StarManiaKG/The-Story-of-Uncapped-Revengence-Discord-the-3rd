@@ -11993,6 +11993,7 @@ You should think about modifying the deathmatch starts to take full advantage of
 			skyboxcenterpnts[mthing->extrainfo] = mobj;
 		else
 			skyboxviewpnts[mthing->extrainfo] = mobj;
+		mobj->extravalue2 = (mthing->extrainfo & 0xFFFF) | ((mthing->options & MTF_OBJECTSPECIAL) != 0); // needed for reloading map objs
 		break;
 	case MT_EGGSTATUE:
 		if (mthing->options & MTF_EXTRA)

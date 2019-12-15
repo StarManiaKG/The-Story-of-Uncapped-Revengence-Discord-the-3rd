@@ -3504,26 +3504,13 @@ static inline void LoadWhatThinker(actionf_p1 thinker)
 }
 */
 
-//
-// P_NetUnArchiveThinkers
-//
-static void P_NetUnArchiveThinkers(void)
-{
-	thinker_t *currentthinker;
-	thinker_t *next;
-	UINT8 tclass;
-	UINT8 restoreNum = false;
-	UINT32 i;
-	UINT32 numloaded = 0;
+// debug lists for the confused programmer
+thinker_t* debugThinkerLists[NUM_THINKERLISTS][4096];
+mobj_t* debugMobjLists[NUM_THINKERLISTS][4096];
+int numDebugThinkers[NUM_THINKERLISTS];
 
-	if (READUINT32(save_p) != ARCHIVEBLOCK_THINKERS)
-		I_Error("Bad $$$.sav at archive block Thinkers");
-
-	// remove all the current thinkers
-	thinker_t* debugThinkerLists[NUM_THINKERLISTS][1024];
-	mobj_t* debugMobjLists[NUM_THINKERLISTS][1024];
-	int numDebugThinkers[NUM_THINKERLISTS];
-
+static void CollectDebugObjectList(void) {
+	int i;
 	for (i = 0; i < NUM_THINKERLISTS; i++) {
 		int count = 0;
 		thinker_t* test;
@@ -3536,9 +3523,46 @@ static void P_NetUnArchiveThinkers(void)
 		}
 		numDebugThinkers[i] = count;
 	}
+}
 
+//
+// P_NetUnArchiveThinkers
+//
+static void P_NetUnArchiveThinkers(void)
+{
+	thinker_t *currentthinker;
+	thinker_t *next;
+	mobj_t* currentmobj;
+	UINT8 tclass;
+	UINT8 restoreNum = false;
+	UINT32 i;
+	UINT32 numloaded = 0;
+	int skyviewid = -1;
+	int skycenterid = -1;
+
+	if (READUINT32(save_p) != ARCHIVEBLOCK_THINKERS)
+		I_Error("Bad $$$.sav at archive block Thinkers");
+	
+	// preserve sky box index
+	for (i = 0; i < 16; i++)
+	{
+		if (skyboxmo[0] && skyboxmo[0] == skyboxviewpnts[i])
+			skyviewid = i; // save id just in case
+		if (skyboxmo[1] && skyboxmo[1] == skyboxcenterpnts[i])
+			skycenterid = i; // save id just in case
+	}
+
+	// providing debug lists for frustrated programmer
+	CollectDebugObjectList();
+
+	// remove all the current thinkers
 	for (i = 0; i < NUM_THINKERLISTS; i++)
 	{
+		/*if (i == THINK_PRECIP)
+		{
+			continue; // ignore precipitation
+		}*/
+
 		currentthinker = thlist[i].next;
 		for (currentthinker = thlist[i].next; currentthinker != &thlist[i]; currentthinker = next)
 		{
@@ -3548,7 +3572,10 @@ static void P_NetUnArchiveThinkers(void)
 
 			if (currentthinker->function.acp1 == (actionf_p1)P_MobjThinker)
 				P_RemoveSavegameMobj((mobj_t *)currentthinker); // item isn't saved, don't remove it
+			else if (currentthinker->function.acp1 == (actionf_p1)P_NullPrecipThinker)
+				P_RemovePrecipMobj((precipmobj_t*)currentthinker);
 			else {
+				// remove it manually, bye!
 				currentthinker->prev->next = currentthinker->next;
 				currentthinker->next->prev = currentthinker->prev;
 				Z_Free(currentthinker);
@@ -3558,8 +3585,6 @@ static void P_NetUnArchiveThinkers(void)
 
 	// we don't want the removed mobjs to come back
 	iquetail = iquehead = 0;
-
-	//P_InitThinkers(); caused a memory leak with delayed-removed mobjs
 
 	// clear sector thinker pointers so they don't point to non-existant thinkers for all of eternity
 	for (i = 0; i < numsectors; i++)
@@ -3768,6 +3793,8 @@ static void P_NetUnArchiveThinkers(void)
 		CONS_Debug(DBG_NETPLAY, "%u thinkers loaded in list %d\n", numloaded, i);
 	}
 
+	CollectDebugObjectList();
+
 	if (restoreNum)
 	{
 		executor_t *delay = NULL;
@@ -3783,6 +3810,33 @@ static void P_NetUnArchiveThinkers(void)
 			delay->caller = P_FindNewPosition(mobjnum);
 		}
 	}
+	
+	// restore skyboxes, if applicable
+	for (i = 0; i < sizeof(skyboxmo) / sizeof(skyboxmo[0]); i++)
+		skyboxmo[i] = NULL;
+	for (i = 0; i < sizeof(skyboxcenterpnts) / sizeof(skyboxcenterpnts[0]); i++)
+	{
+		skyboxcenterpnts[i] = NULL;
+		skyboxviewpnts[i] = NULL;
+	}
+
+	for (currentmobj = (mobj_t*)thlist[THINK_MOBJ].next; currentmobj != (mobj_t*)&thlist[THINK_MOBJ]; currentmobj = (mobj_t*)currentmobj->thinker.next)
+	{
+		if (currentmobj->type == MT_SKYBOX)
+		{
+			if ((currentmobj->extravalue2 >> 16) == 1)
+			{
+				skyboxcenterpnts[currentmobj->extravalue2 & 0xFFFF] = currentmobj;
+			}
+			else
+			{
+				skyboxviewpnts[currentmobj->extravalue2 & 0xFFFF] = currentmobj;
+			}
+		}
+	}
+
+	skyboxmo[0] = skyboxviewpnts[(skyviewid >= 0) ? skyviewid : 0];
+	skyboxmo[1] = skyboxcenterpnts[(skycenterid >= 0) ? skycenterid : 0];
 }
 
 ///////////////////////////////////////////////////////////////////////////////
