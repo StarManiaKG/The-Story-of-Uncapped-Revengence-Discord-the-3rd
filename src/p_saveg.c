@@ -47,6 +47,8 @@ UINT8 *save_p;
 #define ARCHIVEBLOCK_THINKERS 0x7F37037C
 #define ARCHIVEBLOCK_SPECIALS 0x7F228378
 
+boolean memleak = false;
+
 // Note: This cannot be bigger
 // than an UINT16
 typedef enum
@@ -781,6 +783,7 @@ static void P_NetArchiveWorld(void)
 	UINT8 *put;
 
 	// reload the map just to see difference
+	UINT8* wadData = NULL;
 	mapsector_t *ms;
 	mapsidedef_t *msd;
 	maplinedef_t *mld;
@@ -795,22 +798,21 @@ static void P_NetArchiveWorld(void)
 
 	if (W_IsLumpWad(lastloadedmaplumpnum)) // welp it's a map wad in a pk3
 	{ // HACK: Open wad file rather quickly so we can get the data from the relevant lumps
-		UINT8 *wadData = W_CacheLumpNum(lastloadedmaplumpnum, PU_STATIC);
+		wadData = W_CacheLumpNum(lastloadedmaplumpnum, PU_STATIC);
 		filelump_t *fileinfo = (filelump_t *)(wadData + ((wadinfo_t *)wadData)->infotableofs);
 #define retrieve_mapdata(d, f)\
-		d = Z_Malloc((f)->size, PU_CACHE, NULL); \
-		M_Memcpy(d, wadData + (f)->filepos, (f)->size)
+		d = (void*)(wadData + (f)->filepos);
+
 		retrieve_mapdata(ms, fileinfo + ML_SECTORS);
 		retrieve_mapdata(mld, fileinfo + ML_LINEDEFS);
 		retrieve_mapdata(msd, fileinfo + ML_SIDEDEFS);
 #undef retrieve_mapdata
-		Z_Free(wadData); // we're done with this now
 	}
 	else // phew it's just a WAD
 	{
-			ms = W_CacheLumpNum(lastloadedmaplumpnum+ML_SECTORS, PU_CACHE);
-			mld = W_CacheLumpNum(lastloadedmaplumpnum+ML_LINEDEFS, PU_CACHE);
-			msd = W_CacheLumpNum(lastloadedmaplumpnum+ML_SIDEDEFS, PU_CACHE);
+		ms = W_CacheLumpNum(lastloadedmaplumpnum+ML_SECTORS, PU_CACHE);
+		mld = W_CacheLumpNum(lastloadedmaplumpnum+ML_LINEDEFS, PU_CACHE);
+		msd = W_CacheLumpNum(lastloadedmaplumpnum+ML_SIDEDEFS, PU_CACHE);
 	}
 
 	for (i = 0; i < numsectors; i++, ss++, ms++)
@@ -1036,6 +1038,12 @@ static void P_NetArchiveWorld(void)
 	}
 	WRITEUINT16(put, 0xffff);
 	R_ClearTextureNumCache(false);
+
+	if (wadData)
+	{
+		// memory leak fix
+		Z_Free(wadData);
+	}
 
 	save_p = put;
 }
@@ -3406,6 +3414,23 @@ static void P_NetUnArchiveThinkers(void)
 		I_Error("Bad $$$.sav at archive block Thinkers");
 
 	// remove all the current thinkers
+	/*thinker_t* debugThinkerLists[NUM_THINKERLISTS][1024];
+	mobj_t* debugMobjLists[NUM_THINKERLISTS][1024];
+	int numDebugThinkers[NUM_THINKERLISTS];
+
+	for (i = 0; i < NUM_THINKERLISTS; i++) {
+		int count = 0;
+		thinker_t* test;
+		thinker_t* testNext;
+		for (test = thlist[i].next; test != &thlist[i]; test = testNext) {
+			testNext = test->next;
+			debugThinkerLists[i][count] = test;
+			debugMobjLists[i][count] = (mobj_t*)test;
+			count++;
+		}
+		numDebugThinkers[i] = count;
+	}*/
+
 	for (i = 0; i < NUM_THINKERLISTS; i++)
 	{
 		currentthinker = thlist[i].next;
@@ -3413,16 +3438,22 @@ static void P_NetUnArchiveThinkers(void)
 		{
 			next = currentthinker->next;
 
+			currentthinker->references = 0;
+
 			if (currentthinker->function.acp1 == (actionf_p1)P_MobjThinker)
 				P_RemoveSavegameMobj((mobj_t *)currentthinker); // item isn't saved, don't remove it
-			else
+			else {
+				currentthinker->prev->next = currentthinker->next;
+				currentthinker->next->prev = currentthinker->prev;
 				Z_Free(currentthinker);
+			}
 		}
 	}
 
 	// we don't want the removed mobjs to come back
 	iquetail = iquehead = 0;
-	P_InitThinkers();
+
+	//P_InitThinkers(); caused a memory leak with delayed-removed mobjs
 
 	// clear sector thinker pointers so they don't point to non-existant thinkers for all of eternity
 	for (i = 0; i < numsectors; i++)
@@ -3444,185 +3475,185 @@ static void P_NetUnArchiveThinkers(void)
 
 			switch (tclass)
 			{
-				case tc_mobj:
-					th = LoadMobjThinker((actionf_p1)P_MobjThinker);
-					break;
+			case tc_mobj:
+				th = LoadMobjThinker((actionf_p1)P_MobjThinker);
+				break;
 
-				case tc_ceiling:
-					th = LoadCeilingThinker((actionf_p1)T_MoveCeiling);
-					break;
+			case tc_ceiling:
+				th = LoadCeilingThinker((actionf_p1)T_MoveCeiling);
+				break;
 
-				case tc_crushceiling:
-					th = LoadCeilingThinker((actionf_p1)T_CrushCeiling);
-					break;
+			case tc_crushceiling:
+				th = LoadCeilingThinker((actionf_p1)T_CrushCeiling);
+				break;
 
-				case tc_floor:
-					th = LoadFloormoveThinker((actionf_p1)T_MoveFloor);
-					break;
+			case tc_floor:
+				th = LoadFloormoveThinker((actionf_p1)T_MoveFloor);
+				break;
 
-				case tc_flash:
-					th = LoadLightflashThinker((actionf_p1)T_LightningFlash);
-					break;
+			case tc_flash:
+				th = LoadLightflashThinker((actionf_p1)T_LightningFlash);
+				break;
 
-				case tc_strobe:
-					th = LoadStrobeThinker((actionf_p1)T_StrobeFlash);
-					break;
+			case tc_strobe:
+				th = LoadStrobeThinker((actionf_p1)T_StrobeFlash);
+				break;
 
-				case tc_glow:
-					th = LoadGlowThinker((actionf_p1)T_Glow);
-					break;
+			case tc_glow:
+				th = LoadGlowThinker((actionf_p1)T_Glow);
+				break;
 
-				case tc_fireflicker:
-					th = LoadFireflickerThinker((actionf_p1)T_FireFlicker);
-					break;
+			case tc_fireflicker:
+				th = LoadFireflickerThinker((actionf_p1)T_FireFlicker);
+				break;
 
-				case tc_elevator:
-					th = LoadElevatorThinker((actionf_p1)T_MoveElevator, 3);
-					break;
+			case tc_elevator:
+				th = LoadElevatorThinker((actionf_p1)T_MoveElevator, 3);
+				break;
 
-				case tc_continuousfalling:
-					th = LoadSpecialLevelThinker((actionf_p1)T_ContinuousFalling, 3);
-					break;
+			case tc_continuousfalling:
+				th = LoadSpecialLevelThinker((actionf_p1)T_ContinuousFalling, 3);
+				break;
 
-				case tc_thwomp:
-					th = LoadSpecialLevelThinker((actionf_p1)T_ThwompSector, 3);
-					break;
+			case tc_thwomp:
+				th = LoadSpecialLevelThinker((actionf_p1)T_ThwompSector, 3);
+				break;
 
-				case tc_noenemies:
-					th = LoadSpecialLevelThinker((actionf_p1)T_NoEnemiesSector, 0);
-					break;
+			case tc_noenemies:
+				th = LoadSpecialLevelThinker((actionf_p1)T_NoEnemiesSector, 0);
+				break;
 
-				case tc_eachtime:
-					th = LoadSpecialLevelThinker((actionf_p1)T_EachTimeThinker, 0);
-					break;
+			case tc_eachtime:
+				th = LoadSpecialLevelThinker((actionf_p1)T_EachTimeThinker, 0);
+				break;
 
-				case tc_raisesector:
-					th = LoadSpecialLevelThinker((actionf_p1)T_RaiseSector, 0);
-					break;
+			case tc_raisesector:
+				th = LoadSpecialLevelThinker((actionf_p1)T_RaiseSector, 0);
+				break;
 
 				/// \todo rewrite all the code that uses an elevator_t but isn't an elevator
 				/// \note working on it!
-				case tc_camerascanner:
-					th = LoadElevatorThinker((actionf_p1)T_CameraScanner, 0);
-					break;
+			case tc_camerascanner:
+				th = LoadElevatorThinker((actionf_p1)T_CameraScanner, 0);
+				break;
 
-				case tc_bouncecheese:
-					th = LoadSpecialLevelThinker((actionf_p1)T_BounceCheese, 2);
-					break;
+			case tc_bouncecheese:
+				th = LoadSpecialLevelThinker((actionf_p1)T_BounceCheese, 2);
+				break;
 
-				case tc_startcrumble:
-					th = LoadElevatorThinker((actionf_p1)T_StartCrumble, 1);
-					break;
+			case tc_startcrumble:
+				th = LoadElevatorThinker((actionf_p1)T_StartCrumble, 1);
+				break;
 
-				case tc_marioblock:
-					th = LoadSpecialLevelThinker((actionf_p1)T_MarioBlock, 3);
-					break;
+			case tc_marioblock:
+				th = LoadSpecialLevelThinker((actionf_p1)T_MarioBlock, 3);
+				break;
 
-				case tc_marioblockchecker:
-					th = LoadSpecialLevelThinker((actionf_p1)T_MarioBlockChecker, 0);
-					break;
+			case tc_marioblockchecker:
+				th = LoadSpecialLevelThinker((actionf_p1)T_MarioBlockChecker, 0);
+				break;
 
-				case tc_spikesector:
-					th = LoadSpecialLevelThinker((actionf_p1)T_SpikeSector, 0);
-					break;
+			case tc_spikesector:
+				th = LoadSpecialLevelThinker((actionf_p1)T_SpikeSector, 0);
+				break;
 
-				case tc_floatsector:
-					th = LoadSpecialLevelThinker((actionf_p1)T_FloatSector, 0);
-					break;
+			case tc_floatsector:
+				th = LoadSpecialLevelThinker((actionf_p1)T_FloatSector, 0);
+				break;
 
-				case tc_bridgethinker:
-					th = LoadSpecialLevelThinker((actionf_p1)T_BridgeThinker, 3);
-					break;
+			case tc_bridgethinker:
+				th = LoadSpecialLevelThinker((actionf_p1)T_BridgeThinker, 3);
+				break;
 
-				case tc_laserflash:
-					th = LoadLaserThinker((actionf_p1)T_LaserFlash);
-					break;
+			case tc_laserflash:
+				th = LoadLaserThinker((actionf_p1)T_LaserFlash);
+				break;
 
-				case tc_lightfade:
-					th = LoadLightlevelThinker((actionf_p1)T_LightFade);
-					break;
+			case tc_lightfade:
+				th = LoadLightlevelThinker((actionf_p1)T_LightFade);
+				break;
 
-				case tc_executor:
-					th = LoadExecutorThinker((actionf_p1)T_ExecutorDelay);
-					restoreNum = true;
-					break;
+			case tc_executor:
+				th = LoadExecutorThinker((actionf_p1)T_ExecutorDelay);
+				restoreNum = true;
+				break;
 
-				case tc_disappear:
-					th = LoadDisappearThinker((actionf_p1)T_Disappear);
-					break;
+			case tc_disappear:
+				th = LoadDisappearThinker((actionf_p1)T_Disappear);
+				break;
 
-				case tc_fade:
-					th = LoadFadeThinker((actionf_p1)T_Fade);
-					break;
+			case tc_fade:
+				th = LoadFadeThinker((actionf_p1)T_Fade);
+				break;
 
-				case tc_fadecolormap:
-					th = LoadFadeColormapThinker((actionf_p1)T_FadeColormap);
-					break;
+			case tc_fadecolormap:
+				th = LoadFadeColormapThinker((actionf_p1)T_FadeColormap);
+				break;
 
-				case tc_planedisplace:
-					th = LoadPlaneDisplaceThinker((actionf_p1)T_PlaneDisplace);
-					break;
+			case tc_planedisplace:
+				th = LoadPlaneDisplaceThinker((actionf_p1)T_PlaneDisplace);
+				break;
 #ifdef POLYOBJECTS
-				case tc_polyrotate:
-					th = LoadPolyrotatetThinker((actionf_p1)T_PolyObjRotate);
-					break;
+			case tc_polyrotate:
+				th = LoadPolyrotatetThinker((actionf_p1)T_PolyObjRotate);
+				break;
 
-				case tc_polymove:
-					th = LoadPolymoveThinker((actionf_p1)T_PolyObjMove);
-					break;
+			case tc_polymove:
+				th = LoadPolymoveThinker((actionf_p1)T_PolyObjMove);
+				break;
 
-				case tc_polywaypoint:
-					th = LoadPolywaypointThinker((actionf_p1)T_PolyObjWaypoint);
-					break;
+			case tc_polywaypoint:
+				th = LoadPolywaypointThinker((actionf_p1)T_PolyObjWaypoint);
+				break;
 
-				case tc_polyslidedoor:
-					th = LoadPolyslidedoorThinker((actionf_p1)T_PolyDoorSlide);
-					break;
+			case tc_polyslidedoor:
+				th = LoadPolyslidedoorThinker((actionf_p1)T_PolyDoorSlide);
+				break;
 
-				case tc_polyswingdoor:
-					th = LoadPolyswingdoorThinker((actionf_p1)T_PolyDoorSwing);
-					break;
+			case tc_polyswingdoor:
+				th = LoadPolyswingdoorThinker((actionf_p1)T_PolyDoorSwing);
+				break;
 
-				case tc_polyflag:
-					th = LoadPolymoveThinker((actionf_p1)T_PolyObjFlag);
-					break;
+			case tc_polyflag:
+				th = LoadPolymoveThinker((actionf_p1)T_PolyObjFlag);
+				break;
 
-				case tc_polydisplace:
-					th = LoadPolydisplaceThinker((actionf_p1)T_PolyObjDisplace);
-					break;
+			case tc_polydisplace:
+				th = LoadPolydisplaceThinker((actionf_p1)T_PolyObjDisplace);
+				break;
 
-				case tc_polyrotdisplace:
-					th = LoadPolyrotdisplaceThinker((actionf_p1)T_PolyObjRotDisplace);
-					break;
+			case tc_polyrotdisplace:
+				th = LoadPolyrotdisplaceThinker((actionf_p1)T_PolyObjRotDisplace);
+				break;
 
-				case tc_polyfade:
-					th = LoadPolyfadeThinker((actionf_p1)T_PolyObjFade);
-					break;
+			case tc_polyfade:
+				th = LoadPolyfadeThinker((actionf_p1)T_PolyObjFade);
+				break;
 #endif
 #ifdef ESLOPE
-				case tc_dynslopeline:
-					th = LoadDynamicSlopeThinker((actionf_p1)T_DynamicSlopeLine);
-					break;
+			case tc_dynslopeline:
+				th = LoadDynamicSlopeThinker((actionf_p1)T_DynamicSlopeLine);
+				break;
 
-				case tc_dynslopevert:
-					th = LoadDynamicSlopeThinker((actionf_p1)T_DynamicSlopeVert);
-					break;
+			case tc_dynslopevert:
+				th = LoadDynamicSlopeThinker((actionf_p1)T_DynamicSlopeVert);
+				break;
 #endif // ESLOPE
 
-				case tc_scroll:
-					th = LoadScrollThinker((actionf_p1)T_Scroll);
-					break;
+			case tc_scroll:
+				th = LoadScrollThinker((actionf_p1)T_Scroll);
+				break;
 
-				case tc_friction:
-					th = LoadFrictionThinker((actionf_p1)T_Friction);
-					break;
+			case tc_friction:
+				th = LoadFrictionThinker((actionf_p1)T_Friction);
+				break;
 
-				case tc_pusher:
-					th = LoadPusherThinker((actionf_p1)T_Pusher);
-					break;
+			case tc_pusher:
+				th = LoadPusherThinker((actionf_p1)T_Pusher);
+				break;
 
-				default:
-					I_Error("P_UnarchiveSpecials: Unknown tclass %d in savegame", tclass);
+			default:
+				I_Error("P_UnarchiveSpecials: Unknown tclass %d in savegame", tclass);
 			}
 			if (th)
 				P_AddThinker(i, th);
@@ -3636,7 +3667,7 @@ static void P_NetUnArchiveThinkers(void)
 		executor_t *delay = NULL;
 		UINT32 mobjnum;
 		for (currentthinker = thlist[THINK_MAIN].next; currentthinker != &thlist[THINK_MAIN];
-		currentthinker = currentthinker->next)
+			currentthinker = currentthinker->next)
 		{
 			if (currentthinker->function.acp1 != (actionf_p1)T_ExecutorDelay)
 				continue;
@@ -4264,6 +4295,7 @@ boolean P_LoadNetGame(boolean preserveLevel)
 	CV_LoadNetVars(&save_p);
 	if (!P_NetUnArchiveMisc(preserveLevel))
 		return false;
+
 	P_NetUnArchivePlayers();
 	if (gamestate == GS_LEVEL)
 	{
