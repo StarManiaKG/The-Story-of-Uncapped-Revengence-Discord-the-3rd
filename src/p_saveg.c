@@ -4387,6 +4387,16 @@ static inline boolean P_UnArchiveLuabanksAndConsistency(void)
 	return true;
 }
 
+
+extern UINT64 saveTime;
+extern int numSaves;
+extern UINT64 loadTime;
+extern int numLoads;
+extern boolean newSaveTic;
+extern boolean newLoadTic;
+
+UINT64 I_GetTimeUs(void);
+
 void P_SaveGame(void)
 {
 	P_ArchiveMisc();
@@ -4433,6 +4443,23 @@ void P_SaveNetGame(void)
 #endif
 
 	P_ArchiveLuabanksAndConsistency();
+}
+
+void P_SaveGameState(savestate_t* savestate)
+{
+	if (newSaveTic)
+	{
+		saveTime = 0;
+		numSaves = 0;
+	}
+
+	UINT64 time = I_GetTimeUs();
+
+	save_p = savestate->buffer;
+	P_SaveNetGame();
+
+	saveTime += I_GetTimeUs() - time;
+	numSaves++;
 }
 
 boolean P_LoadGame(INT16 mapoverride)
@@ -4487,4 +4514,23 @@ boolean P_LoadNetGame(boolean preserveLevel)
 	// This is done in P_NetUnArchiveSpecials now.
 
 	return P_UnArchiveLuabanksAndConsistency();
+}
+
+boolean P_LoadGameState(const savestate_t* savestate)
+{
+	if (newLoadTic)
+	{
+		loadTime = 0;
+		numLoads = 0;
+	}
+
+	UINT64 time = I_GetTimeUs();
+
+	save_p = ((unsigned char*)savestate->buffer);
+	P_LoadNetGame(true);
+
+	loadTime += I_GetTimeUs() - time;
+	numLoads++;
+
+	return true;
 }
