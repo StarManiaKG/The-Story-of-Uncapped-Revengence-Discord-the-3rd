@@ -48,6 +48,8 @@ actioncache_t actioncachehead;
 
 static mobj_t *overlaycap = NULL;
 
+UINT32 globalmobjnum = 0; // this should never overflow, but 4 billion would be an impressive number to reach. \todo ensure this never happens
+
 void P_InitCachedActions(void)
 {
 	actioncachehead.prev = actioncachehead.next = &actioncachehead;
@@ -10319,6 +10321,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	mobj->thinker.function.acp1 = (actionf_p1)P_MobjThinker;
 	mobj->type = type;
 	mobj->info = info;
+	mobj->localmobjnum = globalmobjnum++;
 
 	mobj->x = x;
 	mobj->y = y;
