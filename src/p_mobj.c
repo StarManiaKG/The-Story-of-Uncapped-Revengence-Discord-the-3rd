@@ -9950,8 +9950,6 @@ for (i = ((mobj->flags2 & MF2_STRONGBOX) ? strongboxamt : weakboxamt); i; --i) s
 
 							blueflag = flagmo;
 						}
-
-						CONS_Printf("Flag respawning at %d,%d,%d type %d\n", mobj->spawnpoint->x, mobj->spawnpoint->y, mobj->spawnpoint->z, mobj->spawnpoint->type);
 					}
 					P_RemoveMobj(mobj);
 					return;
