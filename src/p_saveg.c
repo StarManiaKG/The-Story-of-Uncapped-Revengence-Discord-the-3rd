@@ -3592,6 +3592,10 @@ static void P_NetUnArchiveThinkers(void)
 		sectors[i].floordata = sectors[i].ceilingdata = sectors[i].lightingdata = sectors[i].fadecolormapdata = NULL;
 	}
 
+	// clear flags (necessary for level-preserving loads)
+	redflag = NULL;
+	blueflag = NULL;
+
 	// read in saved thinkers
 	for (i = 0; i < NUM_THINKERLISTS; i++)
 	{

@@ -4809,14 +4809,33 @@ void TryRunTics(tic_t realtics)
 		return;
 
 	// record the actual local controls
-	boolean canSimulate = (gamestate == GS_LEVEL) && leveltime >= 10 && gametic >= BACKUPTICS && (cv_simulate.value && !server);
-	boolean recordingStates = (gamestate == GS_LEVEL) && leveltime >= 10 && gametic >= BACKUPTICS;
+	static boolean didSimulate = false;
+	boolean canSimulate = (gamestate == GS_LEVEL) && leveltime >= BACKUPTICS && gametic >= BACKUPTICS && (cv_simulate.value && !server);
+	boolean recordingStates = (gamestate == GS_LEVEL) && leveltime >= BACKUPTICS && gametic >= BACKUPTICS;
 	boolean preserveSoundDisabled = sound_disabled;
 	int numNewTics = neededtic - gametic;
 
 	// preserve camera changes while we play with simulations/rewinds
 	angle_t preservedAngle = localangle;
 	INT32 preservedAiming = localaiming;
+
+	if (didSimulate && !canSimulate)
+	{
+		// we've stopped simulating for a while, so restore the original state before continuing
+		if (gameStateBufferIsValid[gametic % BACKUPTICS]) {
+			sound_disabled = true;
+
+			save_p = gameStateBuffer[gametic % BACKUPTICS];
+			P_LoadNetGame(true);
+
+			sound_disabled = preserveSoundDisabled;
+		}
+
+		// clear previous states
+		for (int i = 0; i < BACKUPTICS; i++) {
+			gameStateBufferIsValid[i] = false;
+		}
+	}
 
 	if (recordingStates)
 	{
@@ -4975,6 +4994,8 @@ void TryRunTics(tic_t realtics)
 		smoothedTic = gametic;
 	}
 
+	didSimulate = simTic != gametic || smoothedTic != gametic;
+
 	// we're gonna need more debugs...
 	MakeNetDebugString();
 }
@@ -5036,12 +5057,26 @@ static void PerformDebugRewinds() {
 /*		sector_t initial = *((elevator_t*)thlist[1].next)->sector;
 		mobj_t initialPlayer = *players[consoleplayer].mo;*/
 
+		int xyz = 0;
+		mapthing_t spawnpoint;
+		if (redflag) {
+			xyz = redflag->spawnpoint->x + redflag->spawnpoint->y + redflag->spawnpoint->z;
+			spawnpoint = *(redflag->spawnpoint);
+		}
+
 		for (int i = 0; i < cv_debugsimulaterewind.value; i++) {
 			G_Ticker(true);
 		}
 
 		save_p = gameStateBuffer[gametic % BACKUPTICS];
 		P_LoadNetGame(true);
+
+		if (redflag) {
+			if (redflag->spawnpoint->x + redflag->spawnpoint->y + redflag->spawnpoint->z != xyz && xyz != 0)
+			{
+				CONS_Printf("Flag consistency error!\n");
+			}
+		}
 
 		/*sector_t current = *((elevator_t*)thlist[1].next)->sector;
 		mobj_t currentPlayer = *players[consoleplayer].mo;*/
