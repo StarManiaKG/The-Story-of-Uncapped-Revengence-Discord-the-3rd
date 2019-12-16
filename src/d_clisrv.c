@@ -4991,13 +4991,8 @@ void TryRunTics(tic_t realtics)
 		con_muted = false;
 	}
 	
-	if (!recordingStates)
+	if (!canSimulate)
 	{
-		// clear gamestate buffer if we're no longer able to simulate, or things will break.
-		for (int i = 0; i < BACKUPTICS; i++) {
-			gameStateBufferIsValid[i] = false;
-		}
-
 		simTic = gametic;
 		smoothedTic = gametic;
 	}
@@ -5048,7 +5043,7 @@ void DetermineNetConditions()
 }
 
 static void PerformDebugRewinds() {
-	if (rewindingWow && rewindingTarget > 0)
+	if (rewindingWow && rewindingTarget > 0 && gameStateBufferIsValid[(gametic - rewindingTarget) % BACKUPTICS])
 	{
 		P_LoadGameState(&gameStateBuffer[(gametic - rewindingTarget) % BACKUPTICS]);
 		
@@ -5058,6 +5053,8 @@ static void PerformDebugRewinds() {
 		}
 
 		rewindingWow = false;
+
+		CONS_Printf("Rewinding\n");
 	}
 
 	if (gameStateBufferIsValid[gametic % BACKUPTICS] && cv_debugsimulaterewind.value > 0 && players[consoleplayer].mo) {
@@ -5091,6 +5088,9 @@ static void PerformDebugRewinds() {
 	}
 }
 
+extern UINT32 saveTimes[12];
+extern UINT32 loadTimes[12];
+
 void MakeNetDebugString()
 {
 	netDebugText[0] = 0;
@@ -5120,8 +5120,13 @@ void MakeNetDebugString()
 	sprintf(&netDebugText[strlen(netDebugText)], "\nEstPing: %d", estimatedRTT);
 	sprintf(&netDebugText[strlen(netDebugText)], "\nSim-T: %d", simTic - gametic);
 	sprintf(&netDebugText[strlen(netDebugText)], "\nLive: %d", liveTic);
-	sprintf(&netDebugText[strlen(netDebugText)], "\nSaveT/LoadT: %llu/%llu", saveTime, loadTime);
 	sprintf(&netDebugText[strlen(netDebugText)], "\nSaveN/LoadN: %i/%i", numSaves, numLoads);
+
+	for (int i = 1; i < 11; i++)
+	{
+		sprintf(&netDebugText[strlen(netDebugText)], "\n[%i] %i/%i", i, saveTimes[i] - saveTimes[i - 1], loadTimes[i] - loadTimes[i - 1]);
+
+	}
 }
 
 // startTic and endTics are tics going back in time from the current liveTic
