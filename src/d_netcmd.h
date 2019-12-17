@@ -75,6 +75,7 @@ extern consvar_t cv_teamscramble;
 extern consvar_t cv_scrambleonchange;
 
 extern consvar_t cv_netstat;
+extern consvar_t cv_netsimstat;
 #ifdef WALLSPLATS
 extern consvar_t cv_splats;
 #endif
@@ -115,8 +116,8 @@ extern consvar_t cv_netdelay;
 extern consvar_t cv_netjitter;
 extern consvar_t cv_netsmoothing;
 extern consvar_t cv_netspikes;
+extern consvar_t cv_netsteadyplayers;
 extern consvar_t cv_debugsimulaterewind;
-
 extern consvar_t cv_skipmapcheck;
 
 extern consvar_t cv_sleep;
