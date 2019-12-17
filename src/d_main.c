@@ -545,7 +545,7 @@ static void D_Display(void)
 			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-10, V_YELLOWMAP, s);
 		}
 
-		if (netDebugText[0] != 0)
+		if (cv_netsimstat.value && netDebugText[0] != 0)
 		{
 			const char* str = netDebugText;
 			int y = 0;

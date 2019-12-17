@@ -121,6 +121,8 @@ INT32 displayplayer; // view being displayed
 INT32 secondarydisplayplayer; // for splitscreen
 
 tic_t gametic;
+tic_t simtic; // simulated tic
+tic_t smoothedTic;
 tic_t levelstarttic; // gametic at level start
 UINT32 ssspheres; // old special stage
 INT16 lastmap; // last level you were at (returning from special stages)
