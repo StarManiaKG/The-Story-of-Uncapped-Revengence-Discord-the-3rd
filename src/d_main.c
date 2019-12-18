@@ -687,10 +687,6 @@ void D_SRB2Loop(void)
 			if (takescreenshot) // Only take screenshots after drawing.
 				M_DoScreenShot();
 		}
-		else
-		{
-			CONS_Printf("Skip draw\n");
-		}
 
 		// consoleplayer -> displayplayer (hear sounds from viewpoint)
 		S_UpdateSounds(); // move positional sounds
