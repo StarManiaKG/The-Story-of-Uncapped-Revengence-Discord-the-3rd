@@ -5140,7 +5140,7 @@ static void RunSimulations()
 	}
 
 	// simulate the rest o da future
-	int numToSimulate = targetSimTic - simtic;
+	int numToSimulate = targetSimTic - (int)simtic;
 	for (int i = 0; i < numToSimulate; i++)
 	{
 		// control other players (just use their previous control for now)
@@ -5189,7 +5189,7 @@ static void RunSimulations()
 		}
 	}
 
-	if (simtic != targetSimTic)
+	if ((int)simtic < targetSimTic)
 	{
 		rendergametic = gametic;
 		simtic = targetSimTic;
