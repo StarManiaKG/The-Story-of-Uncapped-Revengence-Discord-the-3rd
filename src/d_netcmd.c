@@ -106,6 +106,7 @@ static void Command_Savestate(void);
 static void Command_Loadstate(void);
 static void Command_Rewind(void);
 static void Command_Saveloadtest(void);
+static void Command_Autotimefudge(void);
 
 #ifdef NETGAME_DEVMODE
 static void Fishcake_OnChange(void);
@@ -535,6 +536,7 @@ void D_RegisterServerCommands(void)
 	COM_AddCommand("loadstate", Command_Loadstate);
 	COM_AddCommand("rewind", Command_Rewind);
 	COM_AddCommand("saveloadtest", Command_Saveloadtest);
+	COM_AddCommand("autotimefudge", Command_Autotimefudge);
 
 	CV_RegisterVar(&cv_simulate);
 	CV_RegisterVar(&cv_simulatetics);
@@ -719,6 +721,16 @@ static void Command_Saveloadtest(void)
 	MemShow();
 
 	memleak = false;
+}
+
+extern boolean autotimefudge;
+static void Command_Autotimefudge(void)
+{
+	if (!autotimefudge)
+	{
+		CONS_Printf("Searching for the best time fudge...\n");
+		autotimefudge = true;
+	}
 }
 
 // =========================================================================
