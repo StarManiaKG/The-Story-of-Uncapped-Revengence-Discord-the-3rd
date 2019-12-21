@@ -12051,16 +12051,6 @@ void P_PlayerThink(player_t *player)
 
 	player->pflags &= ~PF_SLIDING;
 
-	// If player is changing direction quickly in a net simulation, create a ghost trail
-	if (issimulation && player != &players[consoleplayer])
-	{
-		int index = 0;
-		steadyplayer_t* steadyplayer = &steadyplayers[player - players];
-
-		if (max(abs(steadyplayer->finalx - player->mo->x), max(abs(steadyplayer->finaly - player->mo->y), abs(steadyplayer->finalz - player->mo->z))) > 90 << FRACBITS)
-			P_SpawnGhostMobj(player->mo);
-	}
-
 #define dashmode player->dashmode
 	// Dash mode - thanks be to VelocitOni
 	if ((player->charflags & SF_DASHMODE) && !player->gotflag && !player->powers[pw_carry] && !player->exiting && !(maptol & TOL_NIGHTS) && !metalrecording) // woo, dashmode! no nights tho.
