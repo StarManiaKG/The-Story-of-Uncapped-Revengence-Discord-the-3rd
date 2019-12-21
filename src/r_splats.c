@@ -38,7 +38,7 @@ struct rastery_s
 	fixed_t tx1, ty1;
 	fixed_t tx2, ty2; // start/end points in texture at this line
 };
-static struct rastery_s rastertab[MAXVIDHEIGHT];
+static struct rastery_s *rastertab = NULL;
 
 static void prepare_rastertab(void);
 #endif
@@ -57,6 +57,9 @@ void R_ClearLevelSplats(void)
 	memset(floorsplats, 0, sizeof (floorsplats));
 
 	// setup to draw floorsplats
+	if (rastertab)
+		Z_Free(rastertab);
+	rastertab = Z_Malloc(sizeof(struct rastery_s) * viewheight, PU_STATIC, NULL);
 	prastertab = rastertab;
 	prepare_rastertab();
 #endif

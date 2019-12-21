@@ -3999,13 +3999,13 @@ static gr_vissprite_t gr_overflowsprite;
 
 static gr_vissprite_t *HWR_GetVisSprite(UINT32 num)
 {
-		UINT32 chunk = num >> VISSPRITECHUNKBITS;
+	UINT32 chunk = num >> VISSPRITECHUNKBITS;
 
-		// Allocate chunk if necessary
-		if (!gr_visspritechunks[chunk])
-			Z_Malloc(sizeof(gr_vissprite_t) * VISSPRITESPERCHUNK, PU_LEVEL, &gr_visspritechunks[chunk]);
+	// Allocate chunk if necessary
+	if (!gr_visspritechunks[chunk])
+		Z_Malloc(sizeof(gr_vissprite_t) * VISSPRITESPERCHUNK, PU_LEVEL, &gr_visspritechunks[chunk]);
 
-		return gr_visspritechunks[chunk] + (num & VISSPRITEINDEXMASK);
+	return gr_visspritechunks[chunk] + (num & VISSPRITEINDEXMASK);
 }
 
 static gr_vissprite_t *HWR_NewVisSprite(void)

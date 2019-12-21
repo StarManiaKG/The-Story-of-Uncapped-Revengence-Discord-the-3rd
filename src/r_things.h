@@ -36,8 +36,8 @@
 
 // Constant arrays used for psprite clipping
 //  and initializing clipping.
-extern INT16 negonearray[MAXVIDWIDTH];
-extern INT16 screenheightarray[MAXVIDWIDTH];
+extern INT16 *negonearray;
+extern INT16 *screenheightarray;
 
 // vars for R_DrawMaskedColumn
 extern INT16 *mfloorclip;
@@ -206,7 +206,7 @@ typedef struct vissprite_s
 
 	spritecut_e cut;
 
-	INT16 clipbot[MAXVIDWIDTH], cliptop[MAXVIDWIDTH];
+	INT16 *clipbot, *cliptop;
 
 	INT32 dispoffset; // copy of info->dispoffset, affects ordering but not drawing
 } vissprite_t;

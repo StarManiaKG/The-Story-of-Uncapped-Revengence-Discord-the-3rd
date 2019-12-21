@@ -84,7 +84,7 @@ INT32 viewangletox[FINEANGLES/2];
 // The xtoviewangleangle[] table maps a screen pixel
 // to the lowest viewangle that maps back to x ranges
 // from clipangle to -clipangle.
-angle_t xtoviewangle[MAXVIDWIDTH+1];
+angle_t *xtoviewangle;
 
 lighttable_t *scalelight[LIGHTLEVELS][MAXLIGHTSCALE];
 lighttable_t *scalelightfixed[MAXLIGHTSCALE];
@@ -475,6 +475,9 @@ static void R_InitTextureMapping(void)
 	// Scan viewangletox[] to generate xtoviewangle[]:
 	//  xtoviewangle will give the smallest view angle
 	//  that maps to x.
+	if (xtoviewangle)
+		Z_Free(xtoviewangle);
+	xtoviewangle = Z_Calloc(sizeof(angle_t) * (viewwidth+1), PU_STATIC, NULL);
 	for (x = 0; x <= viewwidth;x++)
 	{
 		i = 0;
@@ -596,7 +599,16 @@ void R_ExecuteSetViewSize(void)
 		HWR_InitTextureMapping();
 #endif
 
+	if (negonearray)
+		Z_Free(negonearray);
+	negonearray = Z_Calloc(sizeof(INT16) * viewwidth, PU_STATIC, NULL);
+	for (i = 0; i < viewwidth; i++)
+		negonearray[i] = -1;
+
 	// thing clipping
+	if (screenheightarray)
+		Z_Free(screenheightarray);
+	screenheightarray = Z_Calloc(sizeof(INT16) * viewwidth, PU_STATIC, NULL);
 	for (i = 0; i < viewwidth; i++)
 		screenheightarray[i] = (INT16)viewheight;
 
@@ -607,6 +619,9 @@ void R_ExecuteSetViewSize(void)
 	if (rendermode == render_soft)
 	{
 		// this is only used for planes rendering in software mode
+		if (yslopetab)
+			Z_Free(yslopetab);
+		yslopetab = Z_Calloc(sizeof(fixed_t) * (viewheight*16), PU_STATIC, NULL);
 		j = viewheight*16;
 		for (i = 0; i < j; i++)
 		{
@@ -635,6 +650,51 @@ void R_ExecuteSetViewSize(void)
 			scalelight[i][j] = colormaps + level*256;
 		}
 	}
+
+	if (floorclip)
+		Z_Free(floorclip);
+	if (ceilingclip)
+		Z_Free(ceilingclip);
+	if (frontscale)
+		Z_Free(frontscale);
+	floorclip = Z_Calloc(sizeof(INT16) * viewwidth, PU_STATIC, NULL);
+	ceilingclip = Z_Calloc(sizeof(INT16) * viewwidth, PU_STATIC, NULL);
+	frontscale = Z_Calloc(sizeof(fixed_t) * viewwidth, PU_STATIC, NULL);
+
+	if (spanstart)
+		Z_Free(spanstart);
+	if (cachedheight)
+		Z_Free(cachedheight);
+	if (cacheddistance)
+		Z_Free(cacheddistance);
+	if (cachedxstep)
+		Z_Free(cachedxstep);
+	if (cachedystep)
+		Z_Free(cachedystep);
+	spanstart = Z_Calloc(sizeof(INT32) * viewheight, PU_STATIC, NULL);
+	cachedheight = Z_Calloc(sizeof(fixed_t) * viewheight, PU_STATIC, NULL);
+	cacheddistance = Z_Calloc(sizeof(fixed_t) * viewheight, PU_STATIC, NULL);
+	cachedxstep = Z_Calloc(sizeof(fixed_t) * viewheight, PU_STATIC, NULL);
+	cachedystep = Z_Calloc(sizeof(fixed_t) * viewheight, PU_STATIC, NULL);
+
+#ifdef ESLOPE
+	if (tiltlighting)
+		Z_Free(tiltlighting);
+	tiltlighting = Z_Calloc(sizeof(INT32) * viewwidth, PU_STATIC, NULL);
+
+	if (ds_su)
+		Z_Free(ds_su);
+	if (ds_sv)
+		Z_Free(ds_sv);
+	if (ds_sz)
+		Z_Free(ds_sz);
+
+	ds_su = Z_Calloc(sizeof(floatv3_t) * viewheight, PU_STATIC, NULL);
+	ds_sv = Z_Calloc(sizeof(floatv3_t) * viewheight, PU_STATIC, NULL);
+	ds_sz = Z_Calloc(sizeof(floatv3_t) * viewheight, PU_STATIC, NULL);
+#endif
+
+	R_CleanupVisplanes();
 
 	// continue to do the software setviewsize as long as we use the reference software view
 #ifdef HWRENDER

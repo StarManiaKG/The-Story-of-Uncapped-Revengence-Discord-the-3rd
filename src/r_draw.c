@@ -40,20 +40,20 @@ INT32 viewwidth, scaledviewwidth, viewheight, viewwindowx, viewwindowy;
 
 /**	\brief pointer to the start of each line of the screen,
 */
-UINT8 *ylookup[MAXVIDHEIGHT*4];
+UINT8 **ylookup = NULL;
 
 /**	\brief pointer to the start of each line of the screen, for view1 (splitscreen)
 */
-UINT8 *ylookup1[MAXVIDHEIGHT*4];
+UINT8 **ylookup1 = NULL;
 
 /**	\brief pointer to the start of each line of the screen, for view2 (splitscreen)
 */
-UINT8 *ylookup2[MAXVIDHEIGHT*4];
+UINT8 **ylookup2 = NULL;
 
 /**	\brief  x byte offset for columns inside the viewwindow,
 	so the first column starts at (SCRWIDTH - VIEWWIDTH)/2
 */
-INT32 columnofs[MAXVIDWIDTH*4];
+INT32 *columnofs = NULL;
 
 UINT8 *topleft;
 
@@ -107,7 +107,7 @@ UINT8 *ds_transmap; // one of the translucency tables
 
 #ifdef ESLOPE
 pslope_t *ds_slope; // Current slope being used
-floatv3_t ds_su[MAXVIDHEIGHT], ds_sv[MAXVIDHEIGHT], ds_sz[MAXVIDHEIGHT]; // Vectors for... stuff?
+floatv3_t *ds_su = NULL, *ds_sv = NULL, *ds_sz = NULL; // Vectors for... stuff?
 floatv3_t *ds_sup, *ds_svp, *ds_szp;
 float focallengthf, zeroheight;
 #endif
@@ -764,10 +764,12 @@ void R_InitViewBuffer(INT32 width, INT32 height)
 {
 	INT32 i, bytesperpixel = vid.bpp;
 
+#if 0
 	if (width > MAXVIDWIDTH)
 		width = MAXVIDWIDTH;
 	if (height > MAXVIDHEIGHT)
 		height = MAXVIDHEIGHT;
+#endif
 	if (bytesperpixel < 1 || bytesperpixel > 4)
 		I_Error("R_InitViewBuffer: wrong bytesperpixel value %d\n", bytesperpixel);
 
@@ -775,6 +777,9 @@ void R_InitViewBuffer(INT32 width, INT32 height)
 	viewwindowx = (vid.width - width) >> 1;
 
 	// Column offset for those columns of the view window, but relative to the entire screen
+	if (columnofs)
+		Z_Free(columnofs);
+	columnofs = Z_Calloc(sizeof(INT32) * (width*4), PU_STATIC, NULL);
 	for (i = 0; i < width; i++)
 		columnofs[i] = (viewwindowx + i) * bytesperpixel;
 
@@ -785,6 +790,15 @@ void R_InitViewBuffer(INT32 width, INT32 height)
 		viewwindowy = (vid.height - height) >> 1;
 
 	// Precalculate all row offsets.
+	if (ylookup)
+		Z_Free(ylookup);
+	if (ylookup1)
+		Z_Free(ylookup1);
+	if (ylookup2)
+		Z_Free(ylookup2);
+	ylookup = Z_Calloc(sizeof(UINT8) * (height*4), PU_STATIC, NULL);
+	ylookup1 = Z_Calloc(sizeof(UINT8) * (height*4), PU_STATIC, NULL);
+	ylookup2 = Z_Calloc(sizeof(UINT8) * (height*4), PU_STATIC, NULL);
 	for (i = 0; i < height; i++)
 	{
 		ylookup[i] = ylookup1[i] = screens[0] + (i+viewwindowy)*vid.width*bytesperpixel;
