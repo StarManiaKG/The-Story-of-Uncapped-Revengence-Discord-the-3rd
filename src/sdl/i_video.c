@@ -1478,8 +1478,8 @@ INT32 VID_SetResolution(INT32 width, INT32 height)
 	vid.recalc = 1;
 	vid.bpp = 1;
 
-	vid.width = width;
-	vid.height = height;
+	vid.width = max(width, 1);
+	vid.height = max(height, 1);
 	vid.modenum = VID_GetModeForSize(width, height);
 
 	SDLSetMode(vid.width, vid.height, USE_FULLSCREEN, (setresneeded[2] == 2));
