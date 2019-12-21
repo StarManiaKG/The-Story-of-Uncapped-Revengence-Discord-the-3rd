@@ -32,6 +32,8 @@ extern INT32 checkcoord[12][4];
 extern drawseg_t *curdrawsegs;
 extern drawseg_t *drawsegs;
 extern drawseg_t *ds_p;
+extern drawseg_t *ds_prev_p;
+extern drawseg_t *ds_p_hitlast;
 extern INT32 doorclosed;
 
 // BSP?

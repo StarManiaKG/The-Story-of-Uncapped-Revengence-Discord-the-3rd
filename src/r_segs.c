@@ -1742,16 +1742,58 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 	{
 		size_t curpos = curdrawsegs - drawsegs;
 		size_t pos = ds_p - drawsegs;
+		size_t prevpos = ds_prev_p - drawsegs;
 		size_t newmax = maxdrawsegs ? maxdrawsegs*2 : 128;
+
 		if (firstseg)
 			firstseg = (drawseg_t *)(firstseg - drawsegs);
+
+		// Reallocate/allocate the drawsegs array
 		drawsegs = Z_Realloc(drawsegs, newmax*sizeof (*drawsegs), PU_STATIC, NULL);
 		ds_p = drawsegs + pos;
+		ds_prev_p = drawsegs + prevpos;
+
+		// Initialize/fix pointers
+		if (pos == 0)
+		{
+			ds_p->frontscale = NULL;
+#ifdef ESLOPE
+			ds_p->maskedtextureheight = NULL;
+#endif
+			ds_p->prev = NULL;
+		}
+		else if (prevpos > 0)
+		{
+			drawseg_t *fixprev;
+			ds_p->prev = ds_prev_p;
+			// Also fix the previous drawsegs of the previous drawsegs because yes
+			fixprev = ds_prev_p;
+			for (;;)
+			{
+				fixprev->prev = fixprev-1;
+				if ((fixprev->prev - drawsegs) < 0)
+				{
+					fixprev->prev = NULL;
+					break;
+				}
+				fixprev = fixprev->prev;
+			}
+		}
+		else
+			ds_p->prev = NULL;
+
 		maxdrawsegs = newmax;
 		curdrawsegs = drawsegs + curpos;
 		if (firstseg)
 			firstseg = drawsegs + (size_t)firstseg;
+
+		ds_p_hitlast = NULL;
 	}
+
+	ds_p->frontscale = Z_Calloc(sizeof(fixed_t) * viewwidth, PU_STATIC, NULL);
+#ifdef ESLOPE
+	ds_p->maskedtextureheight = Z_Calloc(sizeof(fixed_t) * viewwidth, PU_STATIC, NULL);
+#endif
 
 	sidedef = curline->sidedef;
 	linedef = curline->linedef;
@@ -3220,5 +3262,12 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 		ds_p->silhouette |= SIL_BOTTOM;
 		ds_p->bsilheight = (sidedef->midtexture > 0 && sidedef->midtexture < numtextures) ? INT32_MAX: INT32_MIN;
 	}
+
+	// Linked list. Set the next drawseg.
+	ds_prev_p = ds_p;
 	ds_p++;
+	if (ds_p < drawsegs+maxdrawsegs)
+		ds_p->prev = ds_prev_p;
+	else
+		ds_p_hitlast = ds_p;
 }

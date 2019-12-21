@@ -14,7 +14,7 @@
 #ifndef __R_PLANE__
 #define __R_PLANE__
 
-#include "screen.h" // needs MAXVIDWIDTH/MAXVIDHEIGHT
+#include "screen.h"
 #include "r_data.h"
 #include "p_polyobj.h"
 
@@ -39,11 +39,6 @@ typedef struct visplane_s
 	// colormaps per sector
 	extracolormap_t *extra_colormap;
 
-	// leave pads for [minx-1]/[maxx+1]
-	UINT16 padtopstart, top[MAXVIDWIDTH], padtopend;
-	UINT16 padbottomstart, bottom[MAXVIDWIDTH], padbottomend;
-	INT32 high, low; // R_PlaneBounds should set these.
-
 	fixed_t xoffs, yoffs; // Scrolling flats.
 
 	struct ffloor_s *ffloor;
@@ -53,6 +48,12 @@ typedef struct visplane_s
 #ifdef ESLOPE
 	pslope_t *slope;
 #endif
+
+	INT32 high, low; // R_PlaneBounds should set these.
+
+	UINT16 *bottom;
+	UINT16 pad1; // leave pads for [minx-1]/[maxx+1]
+	UINT16 top[3];
 } visplane_t;
 
 extern visplane_t *visplanes[MAXVISPLANES];
@@ -63,12 +64,13 @@ extern visplane_t *ceilingplane;
 extern INT16 *lastopening, *openings;
 extern size_t maxopenings;
 
-extern INT16 floorclip[MAXVIDWIDTH], ceilingclip[MAXVIDWIDTH];
-extern fixed_t frontscale[MAXVIDWIDTH], yslopetab[MAXVIDHEIGHT*16];
-extern fixed_t cachedheight[MAXVIDHEIGHT];
-extern fixed_t cacheddistance[MAXVIDHEIGHT];
-extern fixed_t cachedxstep[MAXVIDHEIGHT];
-extern fixed_t cachedystep[MAXVIDHEIGHT];
+extern INT16 *floorclip, *ceilingclip;
+extern fixed_t *frontscale, *yslopetab;
+extern INT32 *spanstart;
+extern fixed_t *cachedheight;
+extern fixed_t *cacheddistance;
+extern fixed_t *cachedxstep;
+extern fixed_t *cachedystep;
 extern fixed_t basexscale, baseyscale;
 
 extern fixed_t *yslope;
@@ -76,7 +78,8 @@ extern lighttable_t **planezlight;
 
 void R_InitPlanes(void);
 void R_ClearPlanes(void);
-void R_ClearFFloorClips (void);
+void R_CleanupVisplanes(void);
+void R_ClearFFloorClips(void);
 
 void R_MapPlane(INT32 y, INT32 x1, INT32 x2);
 void R_MakeSpans(INT32 x, INT32 t1, INT32 b1, INT32 t2, INT32 b2);
@@ -107,8 +110,8 @@ typedef struct planemgr_s
 	fixed_t b_pos; // B for Back sector
 	fixed_t f_frac, f_step;
 	fixed_t b_frac, b_step;
-	INT16 f_clip[MAXVIDWIDTH];
-	INT16 c_clip[MAXVIDWIDTH];
+	INT16 *f_clip;
+	INT16 *c_clip;
 
 #ifdef ESLOPE
 	// For slope rendering; the height at the other end

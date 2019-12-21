@@ -22,7 +22,7 @@
 // SECTORS do store MObjs anyway.
 #include "p_mobj.h"
 
-#include "screen.h" // MAXVIDWIDTH, MAXVIDHEIGHT
+#include "screen.h"
 
 #ifdef HWRENDER
 #include "m_aatree.h"
@@ -647,6 +647,7 @@ typedef post_t column_t;
 //
 typedef struct drawseg_s
 {
+	struct drawseg_s *prev;
 	seg_t *curline;
 	INT32 x1;
 	INT32 x2;
@@ -670,12 +671,12 @@ typedef struct drawseg_s
 	struct ffloor_s *thicksides[MAXFFLOORS];
 	INT16 *thicksidecol;
 	INT32 numthicksides;
-	fixed_t frontscale[MAXVIDWIDTH];
+	fixed_t *frontscale;
 
 	UINT8 portalpass; // if > 0 and <= portalrender, do not affect sprite clipping
 
 #ifdef ESLOPE
-	fixed_t maskedtextureheight[MAXVIDWIDTH]; // For handling sloped midtextures
+	fixed_t *maskedtextureheight; // For handling sloped midtextures
 
 	vertex_t leftpos, rightpos; // Used for rendering FOF walls with slopes
 #endif

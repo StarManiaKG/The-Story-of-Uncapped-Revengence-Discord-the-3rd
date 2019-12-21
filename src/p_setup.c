@@ -2846,6 +2846,7 @@ boolean P_SetupLevel(boolean skipprecip)
 
 	// Clear pointers that would be left dangling by the purge
 	R_FlushTranslationColormapCache();
+	R_ClearSprites();
 
 	Z_FreeTags(PU_LEVEL, PU_PURGELEVEL - 1);
 

@@ -19,10 +19,10 @@
 // -------------------------------
 // COMMON STUFF FOR 8bpp AND 16bpp
 // -------------------------------
-extern UINT8 *ylookup[MAXVIDHEIGHT*4];
-extern UINT8 *ylookup1[MAXVIDHEIGHT*4];
-extern UINT8 *ylookup2[MAXVIDHEIGHT*4];
-extern INT32 columnofs[MAXVIDWIDTH*4];
+extern UINT8 **ylookup;
+extern UINT8 **ylookup1;
+extern UINT8 **ylookup2;
+extern INT32 *columnofs;
 extern UINT8 *topleft;
 
 // -------------------------
@@ -68,7 +68,7 @@ typedef struct {
 } floatv3_t;
 
 extern pslope_t *ds_slope; // Current slope being used
-extern floatv3_t ds_su[MAXVIDHEIGHT], ds_sv[MAXVIDHEIGHT], ds_sz[MAXVIDHEIGHT]; // Vectors for... stuff?
+extern floatv3_t *ds_su, *ds_sv, *ds_sz; // Vectors for... stuff?
 extern floatv3_t *ds_sup, *ds_svp, *ds_szp;
 extern float focallengthf, zeroheight;
 #endif
@@ -160,7 +160,7 @@ void R_DrawTiltedTranslucentWaterSpan_8(void);
 #endif
 void R_DrawTiltedSplat_8(void);
 void R_CalcTiltedLighting(fixed_t start, fixed_t end);
-extern INT32 tiltlighting[MAXVIDWIDTH];
+extern INT32 *tiltlighting;
 #endif
 #ifndef NOWATER
 void R_DrawTranslucentWaterSpan_8(void);

@@ -70,8 +70,8 @@ typedef struct
 static lighttable_t **spritelights;
 
 // constant arrays used for psprite clipping and initializing clipping
-INT16 negonearray[MAXVIDWIDTH];
-INT16 screenheightarray[MAXVIDWIDTH];
+INT16 *negonearray = NULL;
+INT16 *screenheightarray = NULL;
 
 spriteinfo_t spriteinfo[NUMSPRITES];
 
@@ -504,9 +504,6 @@ void R_InitSprites(void)
 	float fa;
 #endif
 
-	for (i = 0; i < MAXVIDWIDTH; i++)
-		negonearray[i] = -1;
-
 #ifdef ROTSPRITE
 	for (angle = 0; angle < ROTANGLES; angle++)
 	{
@@ -558,11 +555,29 @@ void R_InitSprites(void)
 }
 
 //
+// VISSPRITES
+//
+static vissprite_t *R_GetVisSprite(UINT32 num);
+
+//
 // R_ClearSprites
 // Called at frame start.
 //
 void R_ClearSprites(void)
 {
+	INT32 i;
+	for (i = 0; i < visspritecount; i++)
+	{
+		vissprite_t *vis = R_GetVisSprite(i);
+		if (!vis)
+			continue;
+		if (vis->clipbot)
+			Z_Free(vis->clipbot);
+		if (vis->cliptop)
+			Z_Free(vis->cliptop);
+		vis->clipbot = NULL;
+		vis->cliptop = NULL;
+	}
 	visspritecount = clippedvissprites = 0;
 }
 
@@ -573,13 +588,13 @@ static vissprite_t overflowsprite;
 
 static vissprite_t *R_GetVisSprite(UINT32 num)
 {
-		UINT32 chunk = num >> VISSPRITECHUNKBITS;
+	UINT32 chunk = num >> VISSPRITECHUNKBITS;
 
-		// Allocate chunk if necessary
-		if (!visspritechunks[chunk])
-			Z_Malloc(sizeof(vissprite_t) * VISSPRITESPERCHUNK, PU_LEVEL, &visspritechunks[chunk]);
+	// Allocate chunk if necessary
+	if (!visspritechunks[chunk])
+		Z_Malloc(sizeof(vissprite_t) * VISSPRITESPERCHUNK, PU_LEVEL, &visspritechunks[chunk]);
 
-		return visspritechunks[chunk] + (num & VISSPRITEINDEXMASK);
+	return visspritechunks[chunk] + (num & VISSPRITEINDEXMASK);
 }
 
 static vissprite_t *R_NewVisSprite(void)
@@ -1025,6 +1040,10 @@ static void R_SplitSprite(vissprite_t *sprite)
 		// Found a split! Make a new sprite, copy the old sprite to it, and
 		// adjust the heights.
 		newsprite = M_Memcpy(R_NewVisSprite(), sprite, sizeof (vissprite_t));
+		newsprite->clipbot = Z_Calloc(sizeof(INT16) * vid.width, PU_STATIC, NULL);
+		newsprite->cliptop = Z_Calloc(sizeof(INT16) * vid.width, PU_STATIC, NULL);
+		M_Memcpy(newsprite->clipbot, sprite->clipbot, sizeof(INT16) * vid.width);
+		M_Memcpy(newsprite->cliptop, sprite->cliptop, sizeof(INT16) * vid.width);
 
 		newsprite->cut |= (sprite->cut & SC_FLAGMASK);
 
@@ -1508,6 +1527,8 @@ static void R_ProjectSprite(mobj_t *thing)
 
 	// store information in a vissprite
 	vis = R_NewVisSprite();
+	vis->clipbot = Z_Calloc(sizeof(INT16) * vid.width, PU_STATIC, NULL);
+	vis->cliptop = Z_Calloc(sizeof(INT16) * vid.width, PU_STATIC, NULL);
 	vis->heightsec = heightsec; //SoM: 3/17/2000
 	vis->mobjflags = thing->flags;
 	vis->scale = yscale; //<<detailshift;
@@ -1726,6 +1747,8 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 
 	// store information in a vissprite
 	vis = R_NewVisSprite();
+	vis->clipbot = Z_Malloc(sizeof(INT16) * vid.width, PU_STATIC, NULL);
+	vis->cliptop = Z_Malloc(sizeof(INT16) * vid.width, PU_STATIC, NULL);
 	vis->scale = vis->sortscale = yscale; //<<detailshift;
 	vis->dispoffset = 0; // Monster Iestyn: 23/11/15
 	vis->gx = thing->x;
@@ -2194,7 +2217,7 @@ static void R_CreateDrawNodes(maskcount_t* mask, drawnode_t* head, boolean temps
 				if (x1 < r2->plane->minx) x1 = r2->plane->minx;
 				if (x2 > r2->plane->maxx) x2 = r2->plane->maxx;
 
-				if (r2->seg) // if no seg set, assume the whole thing is in front or something stupid
+				if (r2->seg && r2->seg->frontscale) // if no seg set, assume the whole thing is in front or something stupid
 				{
 					for (i = x1; i <= x2; i++)
 					{

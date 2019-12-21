@@ -73,14 +73,14 @@ INT16 *openings, *lastopening; /// \todo free leak
 //  floorclip starts out SCREENHEIGHT
 //  ceilingclip starts out -1
 //
-INT16 floorclip[MAXVIDWIDTH], ceilingclip[MAXVIDWIDTH];
-fixed_t frontscale[MAXVIDWIDTH];
+INT16 *floorclip = NULL, *ceilingclip = NULL;
+fixed_t *frontscale = NULL;
 
 //
 // spanstart holds the start of a plane span
 // initialized to 0 at start
 //
-static INT32 spanstart[MAXVIDHEIGHT];
+INT32 *spanstart = NULL;
 
 //
 // texture mapping
@@ -95,15 +95,15 @@ static fixed_t planeheight;
 //                (this is to calculate yslopes only when really needed)
 //                (when mouselookin', yslope is moving into yslopetab)
 //                Check R_SetupFrame, R_SetViewSize for more...
-fixed_t yslopetab[MAXVIDHEIGHT*16];
+fixed_t *yslopetab = NULL;
 fixed_t *yslope;
 
 fixed_t basexscale, baseyscale;
 
-fixed_t cachedheight[MAXVIDHEIGHT];
-fixed_t cacheddistance[MAXVIDHEIGHT];
-fixed_t cachedxstep[MAXVIDHEIGHT];
-fixed_t cachedystep[MAXVIDHEIGHT];
+fixed_t *cachedheight = NULL;
+fixed_t *cacheddistance = NULL;
+fixed_t *cachedxstep = NULL;
+fixed_t *cachedystep = NULL;
 
 static fixed_t xoffs, yoffs;
 
@@ -113,7 +113,37 @@ static fixed_t xoffs, yoffs;
 //
 void R_InitPlanes(void)
 {
-	// FIXME: unused
+	INT32 i;
+	for (i = 0; i < MAXFFLOORS; i++)
+	{
+		ffloor[i].f_clip = NULL;
+		ffloor[i].c_clip = NULL;
+	}
+}
+
+//
+// R_InitPlanes
+// Only after view size change.
+//
+void R_CleanupVisplanes(void)
+{
+	INT32 i;
+
+	freetail = NULL;
+	freehead = &freetail;
+
+	for (i = 0; i < MAXVISPLANES; i++)
+		visplanes[i] = NULL;
+
+	for (i = 0; i < MAXFFLOORS; i++)
+	{
+		if (ffloor[i].f_clip)
+			Z_Free(ffloor[i].f_clip);
+		if (ffloor[i].c_clip)
+			Z_Free(ffloor[i].c_clip);
+		ffloor[i].f_clip = Z_Calloc(sizeof(INT16) * viewwidth, PU_STATIC, NULL);
+		ffloor[i].c_clip = Z_Calloc(sizeof(INT16) * viewwidth, PU_STATIC, NULL);
+	}
 }
 
 //
@@ -308,7 +338,7 @@ void R_ClearPlanes(void)
 	lastopening = openings;
 
 	// texture calculation
-	memset(cachedheight, 0, sizeof (cachedheight));
+	memset(cachedheight, 0, sizeof(fixed_t) * viewheight);
 
 	// left to right mapping
 	angle = (viewangle-ANGLE_90)>>ANGLETOFINESHIFT;
@@ -323,8 +353,10 @@ static visplane_t *new_visplane(unsigned hash)
 	visplane_t *check = freetail;
 	if (!check)
 	{
-		check = calloc(2, sizeof (*check));
+		//check = calloc(2, sizeof (*check));
+		check = calloc(2, sizeof(*check) + sizeof(*check->top) * (viewwidth * 2 + sizeof(*check->bottom) * 4));
 		if (check == NULL) I_Error("%s: Out of memory", "new_visplane"); // FIXME: ugly
+		check->bottom = &check->top[viewwidth + sizeof(*check->bottom)];
 	}
 	else
 	{
@@ -448,8 +480,8 @@ visplane_t *R_FindPlane(fixed_t height, INT32 picnum, INT32 lightlevel,
 	check->slope = slope;
 #endif
 
-	memset(check->top, 0xff, sizeof (check->top));
-	memset(check->bottom, 0x00, sizeof (check->bottom));
+	memset(check->top, 0xff, sizeof (*check->top) * viewwidth);
+	memset(check->bottom, 0x00, sizeof (*check->bottom) * viewwidth);
 
 	return check;
 }
@@ -522,8 +554,8 @@ visplane_t *R_CheckPlane(visplane_t *pl, INT32 start, INT32 stop)
 		pl = new_pl;
 		pl->minx = start;
 		pl->maxx = stop;
-		memset(pl->top, 0xff, sizeof pl->top);
-		memset(pl->bottom, 0x00, sizeof pl->bottom);
+		memset(pl->top, 0xff, sizeof(*pl->top) * viewwidth);
+		memset(pl->bottom, 0x00, sizeof(*pl->bottom) * viewwidth);
 	}
 	return pl;
 }
@@ -1101,7 +1133,7 @@ void R_DrawSinglePlane(visplane_t *pl)
 #endif
 	if (viewangle != pl->viewangle+pl->plangle)
 	{
-		memset(cachedheight, 0, sizeof (cachedheight));
+		memset(cachedheight, 0, sizeof(fixed_t) * viewheight);
 		angle = (pl->viewangle+pl->plangle-ANGLE_90)>>ANGLETOFINESHIFT;
 		basexscale = FixedDiv(FINECOSINE(angle),centerxfrac);
 		baseyscale = -FixedDiv(FINESINE(angle),centerxfrac);

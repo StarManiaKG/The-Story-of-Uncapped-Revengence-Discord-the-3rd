@@ -34,6 +34,8 @@ sector_t *backsector;
 drawseg_t *curdrawsegs = NULL; /**< This is used to handle multiple lists for masked drawsegs. */
 drawseg_t *drawsegs = NULL;
 drawseg_t *ds_p = NULL;
+drawseg_t *ds_prev_p = NULL;
+drawseg_t *ds_p_hitlast = NULL;
 
 // indicates doors closed wrt automap bugfix:
 INT32 doorclosed;
@@ -43,11 +45,28 @@ INT32 doorclosed;
 //
 void R_ClearDrawSegs(void)
 {
+	for (; ds_p; ds_p = ds_p->prev)
+	{
+		if (ds_p_hitlast)
+		{
+			ds_p_hitlast = NULL;
+			continue;
+		}
+		if (ds_p->frontscale)
+			Z_Free(ds_p->frontscale);
+		ds_p->frontscale = NULL;
+#ifdef ESLOPE
+		if (ds_p->maskedtextureheight)
+			Z_Free(ds_p->maskedtextureheight);
+		ds_p->maskedtextureheight = NULL;
+#endif
+	}
 	ds_p = drawsegs;
+	ds_p_hitlast = NULL;
 }
 
 // Fix from boom.
-#define MAXSEGS (MAXVIDWIDTH/2+1)
+#define MAXSEGS 961 //(MAXVIDWIDTH/2+1)
 
 // newend is one past the last valid seg
 static cliprange_t *newend;

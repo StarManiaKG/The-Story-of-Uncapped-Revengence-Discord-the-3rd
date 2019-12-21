@@ -144,7 +144,7 @@ static void SetupDrawRoutines(void)
 	spanfuncs_npo2[SPANDRAWFUNC_TILTEDSPLAT] = R_DrawTiltedSplat_NPO2_8;
 #endif
 
-#ifdef RUSEASM
+#if 0
 	if (R_ASM)
 	{
 		if (R_MMX)
