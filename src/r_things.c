@@ -565,7 +565,7 @@ static vissprite_t *R_GetVisSprite(UINT32 num);
 //
 void R_ClearSprites(void)
 {
-	INT32 i;
+	UINT32 i;
 	for (i = 0; i < visspritecount; i++)
 	{
 		vissprite_t *vis = R_GetVisSprite(i);
