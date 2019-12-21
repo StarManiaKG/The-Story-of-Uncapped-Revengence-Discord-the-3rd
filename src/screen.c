@@ -259,6 +259,10 @@ void SCR_Startup(void)
 
 	vid.dupx = vid.width / BASEVIDWIDTH;
 	vid.dupy = vid.height / BASEVIDHEIGHT;
+	if (!vid.dupx)
+		vid.dupx = 1;
+	if (!vid.dupy)
+		vid.dupy = 1;
 	vid.dupx = vid.dupy = (vid.dupx < vid.dupy ? vid.dupx : vid.dupy);
 	vid.fdupx = FixedDiv(vid.width*FRACUNIT, BASEVIDWIDTH*FRACUNIT);
 	vid.fdupy = FixedDiv(vid.height*FRACUNIT, BASEVIDHEIGHT*FRACUNIT);
@@ -305,6 +309,10 @@ void SCR_Recalc(void)
 	// calculated once and for all, used by routines in v_video.c
 	vid.dupx = vid.width / BASEVIDWIDTH;
 	vid.dupy = vid.height / BASEVIDHEIGHT;
+	if (!vid.dupx)
+		vid.dupx = 1;
+	if (!vid.dupy)
+		vid.dupy = 1;
 	vid.dupx = vid.dupy = (vid.dupx < vid.dupy ? vid.dupx : vid.dupy);
 	vid.fdupx = FixedDiv(vid.width*FRACUNIT, BASEVIDWIDTH*FRACUNIT);
 	vid.fdupy = FixedDiv(vid.height*FRACUNIT, BASEVIDHEIGHT*FRACUNIT);
