@@ -4198,7 +4198,7 @@ firenormal:
 	{
 		if (mo->flags & MF_MISSILE && mo->flags2 & MF2_RAILRING)
 		{
-			if (cv_netslingdelay.value && issimulation && (tic_t)cv_netsteadyplayers.value > simtic - gametic && mo->target == players[consoleplayer].mo)
+			if (cv_netslingdelay.value && issimulation && (tic_t)cv_netsteadyplayers.value >= targetsimtic - simtic && mo->target == players[consoleplayer].mo)
 				// don't fire it yet
 				return;
 
