@@ -4994,7 +4994,6 @@ void TryRunTics(tic_t realtics)
 	// record the actual local controls
 	boolean recordingStates = (gamestate == GS_LEVEL) && leveltime >= 1 && gametic >= BACKUPTICS;
 	boolean canSimulate = (gamestate == GS_LEVEL) && leveltime >= BACKUPTICS && gametic >= BACKUPTICS && (cv_simulate.value && !server) && !resynch_local_inprogress;
-	boolean preserveSoundDisabled = sound_disabled;
 
 	if (simtic > gametic && !canSimulate)
 	{
@@ -5008,9 +5007,6 @@ void TryRunTics(tic_t realtics)
 		CONS_Printf("Clearing savestates due to !canSim\n");
 		InvalidateSavestates();
 	}
-
-	if (canSimulate)
-		sound_disabled = true;
 
 	PerformDebugRewinds();
 
@@ -5038,9 +5034,7 @@ void TryRunTics(tic_t realtics)
 				P_LoadGameState(&gameStateBuffer[gametic % BACKUPTICS]);
 
 				if (Consistancy() != consistancy[gametic%BACKUPTICS])
-				{
 					CONS_Printf("oops, consistency error, even I got that one!\n");
-				}
 			}
 			else if (simtic != gametic && !gameStateBufferIsValid[gametic % BACKUPTICS])
 				CONS_Printf("Problem: game state buffer inaccessible but a simulation happened!!\n");
@@ -5049,6 +5043,8 @@ void TryRunTics(tic_t realtics)
 			while (neededtic > gametic)
 			{
 				DEBFILE(va("============ Running tic %d (local %d)\n", gametic, localgametic));
+
+				targetsimtic = gametic + 1;
 
 				G_Ticker((gametic % NEWTICRATERATIO) == 0);
 				ExtraDataTicker();
@@ -5091,10 +5087,7 @@ void TryRunTics(tic_t realtics)
 
 	// Simulate the game locally
 	if (canSimulate)
-	{
 		RunSimulations();
-		sound_disabled = preserveSoundDisabled;
-	}
 
 	// we're gonna need more debugs...
 	MakeNetDebugString();
@@ -5108,7 +5101,6 @@ static void RunSimulations()
 	if (!gameStateBufferIsValid[gametic % BACKUPTICS])
 		return; // do not simulate if we cannot guarantee a recovery
 
-	boolean preserveSoundDisabled = sound_disabled;
 	static int lastsimtic = 0;
 
 	int tastyFudge = 0;
@@ -5156,7 +5148,6 @@ static void RunSimulations()
 
 	// simulate the rest o da future
 	issimulation = true;
-	sound_disabled = true;
 	con_muted = true;
 
 	simStartTime = I_GetTimeUs();
@@ -5176,8 +5167,6 @@ static void RunSimulations()
 		else
 			netcmds[gametic % BACKUPTICS][consoleplayer] = localTicBuffer[(liveTic - estimatedRTT + i + 1 + BACKUPTICS) % BACKUPTICS];
 
-		sound_disabled = (i != numToSimulate - 1);
-
 		G_Ticker(true); // tic a bunch of times lol see what happens lolol
 		simtic++;
 
@@ -5195,7 +5184,6 @@ static void RunSimulations()
 	}
 
 	issimulation = false;
-	sound_disabled = preserveSoundDisabled;
 	con_muted = false;
 
 	// Finalise steadyplayers
