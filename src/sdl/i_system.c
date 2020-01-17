@@ -2173,9 +2173,14 @@ tic_t I_GetTime (void)
 	// fudge the timer for better netgame sync
 	if (cv_timefudge.value != lastTimeFudge)
 	{
-		basetime = (basetime / (1000 / TICRATE) * (1000 / TICRATE)) - 1000 * cv_timefudge.value / 100 / TICRATE;
-		basetime -= 1000 / TICRATE;
+		Uint64 frame = basetime * NEWTICRATE / 1000;
 
+		if (cv_timefudge.value > lastTimeFudge)
+		{
+			frame--; // do not allow the same tic to play twice
+		}
+
+		basetime = (Uint64)(frame * 1000 / NEWTICRATE + 1000 * cv_timefudge.value / NEWTICRATE / 100);
 		lastTimeFudge = cv_timefudge.value;
 	}
 
