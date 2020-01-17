@@ -2029,6 +2029,7 @@ static HMODULE winmm = NULL;
 static DWORD starttickcount = 0; // hack for win2k time bug
 static p_timeGetTime pfntimeGetTime = NULL;
 static LARGE_INTEGER basetime = { {0, 0} };
+static LARGE_INTEGER frequency; // use this if High Resolution timer is found
 
 // ---------
 // I_GetTime
@@ -2041,9 +2042,6 @@ static LARGE_INTEGER basetime = { {0, 0} };
 tic_t I_GetTime(void)
 {
 	tic_t newtics = 0;
-
-	// use this if High Resolution timer is found
-	static LARGE_INTEGER frequency;
 
 	if (!starttickcount) // high precision timer
 	{
@@ -2059,32 +2057,47 @@ tic_t I_GetTime(void)
 
 		if (frequency.LowPart && QueryPerformanceCounter(&currtime))
 		{
-			newtics = (INT32)((currtime.QuadPart - basetime.QuadPart) * NEWTICRATE
-				/ frequency.QuadPart);
+			newtics = (INT32)((currtime.QuadPart - basetime.QuadPart) * NEWTICRATE / frequency.QuadPart);
 		}
 		else if (pfntimeGetTime)
 		{
 			currtime.LowPart = pfntimeGetTime();
 			if (!basetime.LowPart)
 				basetime.LowPart = currtime.LowPart;
-			newtics = ((currtime.LowPart - basetime.LowPart)/(1000/NEWTICRATE));
+			newtics = (UINT32)((UINT64)(currtime.LowPart - basetime.LowPart)*NEWTICRATE/1000);
 		}
 	}
 	else
-		newtics = (GetTickCount() - starttickcount)/(1000/NEWTICRATE);
+		newtics = (UINT32)((UINT64)(GetTickCount() - starttickcount)*NEWTICRATE/1000);
+	// ADVICE TO OFFICIAL SRB2 DEV TEAM: in the official branch, some of the above lines of code divide by (1000/NEWTICRATE) when it could multiply by 1000 first and preserve precision.
+	// I recommend changing this because the QueryPerformanceCounter version in fact already does that, making an inconsistent result between timer types.
+	// If the server and client are using different timer types, this will cause jutter.
+	// It also messes with SRB2netplus's timer fudge, meaning that for a truly accurate timerfudge it needs to know which timer the server is using...
 
-	// fudge the timer to sync better with online games
+	// Fudge the timer to sync better with online games. Uses multiply-first approach (more accurate)
 	if (cv_timefudge.value != lastTimeFudge)
 	{
 		if (frequency.QuadPart)
 		{
-			basetime.QuadPart = (basetime.QuadPart / (frequency.QuadPart / TICRATE) * (frequency.QuadPart / TICRATE)) - frequency.QuadPart * cv_timefudge.value / 100 / TICRATE;
-			basetime.QuadPart -= frequency.QuadPart / TICRATE; // never go back in time if timefudge reduces
+			unsigned long long frame = basetime.QuadPart * NEWTICRATE / frequency.QuadPart;
+
+			if (cv_timefudge.value > lastTimeFudge)
+			{
+				frame--; // do not allow the same tic to play twice
+			}
+
+			basetime.QuadPart = frame * frequency.QuadPart / NEWTICRATE + frequency.QuadPart * cv_timefudge.value / TICRATE / 100;
 		}
 		if (starttickcount)
 		{
-			starttickcount = (starttickcount / (1000 / TICRATE) * (1000 / TICRATE)) - 1000 * cv_timefudge.value / 100 / TICRATE;
-			starttickcount -= 1000 / TICRATE;
+			unsigned long long frame = starttickcount * NEWTICRATE / 1000;
+
+			if (cv_timefudge.value > lastTimeFudge)
+			{
+				frame--; // do not allow the same tic to play twice
+			}
+
+			starttickcount = (DWORD)(frame * 1000 / NEWTICRATE + 1000 * cv_timefudge.value / TICRATE / 100);
 		}
 
 		lastTimeFudge = cv_timefudge.value;
@@ -2104,9 +2117,6 @@ UINT64 I_GetTimeUs(void)
 	if (!starttickcount) // high precision timer
 	{
 		LARGE_INTEGER currtime; // use only LowPart if high resolution counter is not available
-
-		// use this if High Resolution timer is found
-		static LARGE_INTEGER frequency;
 
 		if (!basetime.LowPart)
 		{
