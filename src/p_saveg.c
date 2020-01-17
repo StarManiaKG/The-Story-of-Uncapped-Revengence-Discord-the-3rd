@@ -4953,6 +4953,26 @@ static inline boolean P_NetUnArchiveMisc(boolean preserveLevel)
 	return true;
 }
 
+static inline void P_LocalArchiveCameras()
+{
+	WRITEMEM(save_p, &camera, sizeof(camera));
+	WRITEMEM(save_p, &camera2, sizeof(camera2));
+}
+
+static inline void P_LocalUnArchiveCameras()
+{
+	boolean chase1 = camera.chase;
+	boolean chase2 = camera2.chase;
+
+	// this makes things easy!
+	READMEM(save_p, &camera, sizeof(camera));
+	READMEM(save_p, &camera2, sizeof(camera2));
+
+	// chase is changed outside of tics, so preserve this
+	camera.chase = chase1;
+	camera2.chase = chase2;
+}
+
 static inline void P_ArchiveLuabanksAndConsistency(void)
 {
 	UINT8 i, banksinuse = NUM_LUABANKS;
@@ -5159,6 +5179,8 @@ void P_SaveGameState(savestate_t* savestate)
 #endif
 	P_LocalArchiveThinkers();
 	P_NetArchiveSpecials();
+	P_LocalArchiveCameras();
+
 #ifdef HAVE_BLUA
 	LUA_Archive();
 #endif
@@ -5190,6 +5212,7 @@ boolean P_LoadGameState(const savestate_t* savestate)
 #endif
 	P_LocalUnArchiveThinkers();
 	P_NetUnArchiveSpecials();
+	P_LocalUnArchiveCameras();
 
 #ifdef HAVE_BLUA
 	LUA_UnArchive();
