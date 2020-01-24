@@ -8618,6 +8618,7 @@ void P_MobjThinker(mobj_t *mobj)
 				if (mobj->state-states == S_CRUSHCLAW_STAY && mobj->target)
 				{
 					mobj_t *chain = mobj->target->target;
+
 					SINT8 sign = ((mobj->tics & 1) ? mobj->tics : -(SINT8)(mobj->tics));
 					while (chain)
 					{
