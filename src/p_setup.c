@@ -2635,6 +2635,11 @@ static boolean CanSaveLevel(INT32 mapnum)
   */
 boolean P_SetupLevel(boolean skipprecip)
 {
+	if (issimulation)
+	{
+		return true;
+	}
+
 	// use gamemap to get map number.
 	// 99% of the things already did, so.
 	// Map header should always be in place at this point

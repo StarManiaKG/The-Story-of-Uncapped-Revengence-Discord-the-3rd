@@ -4925,6 +4925,8 @@ UINT64 saveStateBenchmark = 0;
 UINT64 loadStateBenchmark = 0;
 int netUpdateFudge; // our last net update fudge
 
+tic_t lastSavestateClearedTic;
+
 #define MAXOFFSETHISTORY 35
 int ticTimeOffsetHistory[MAXOFFSETHISTORY];
 
@@ -4987,8 +4989,10 @@ void TryRunTics(tic_t realtics)
 		return;
 
 	// record the actual local controls
-	boolean recordingStates = (gamestate == GS_LEVEL) && leveltime >= 1 && gametic >= BACKUPTICS;
-	boolean canSimulate = (gamestate == GS_LEVEL) && leveltime >= BACKUPTICS && gametic >= BACKUPTICS && (cv_simulate.value && !server) && !resynch_local_inprogress;
+	boolean canSimulate = (gamestate == GS_LEVEL)
+				&& leveltime >= TICRATE && gametic >= TICRATE && (cv_simulate.value && !server)
+				&& !resynch_local_inprogress && gametic >= lastSavestateClearedTic + TICRATE;
+	boolean recordingStates = canSimulate;
 
 	if (simtic > gametic && !canSimulate)
 	{
@@ -5332,6 +5336,8 @@ void InvalidateSavestates()
 
 	for (int i = 0; i < MAXSIMULATIONS; i++)
 		gameStateBufferIsValid[i] = false;
+
+	lastSavestateClearedTic = gametic;
 }
 
 int rttBuffer[70];
