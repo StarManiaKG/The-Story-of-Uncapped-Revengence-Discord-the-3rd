@@ -1587,7 +1587,7 @@ static const specialdef_t specialDefs[] =
 	WITHSECTOR(T_ThwompSector, levelspecthink_t, ST_FLOORDATA | ST_CEILDATA),         // tc_thwomp
 	NOSECTOR(T_CameraScanner, elevator_t),              // tc_camerascanner
 	WITHSECTOR(T_MoveElevator, elevator_t, ST_CEILDATA | ST_FLOORDATA),              // tc_elevator
-	WITHSECTOR(T_MoveElevator, levelspecthink_t, ST_CEILDATA | ST_FLOORDATA),   // tc_contunousfalling
+	WITHSECTOR(T_ContinuousFalling, levelspecthink_t, ST_CEILDATA | ST_FLOORDATA),   // tc_contunousfalling
 	WITHSECTOR(T_BounceCheese, levelspecthink_t, ST_CEILDATA),         // tc_bouncecheese
 	WITHSECTOR(T_StartCrumble, elevator_t, ST_FLOORDATA),               // tc_startcrumble
 	WITHSECTOR(T_MarioBlock, levelspecthink_t, ST_FLOORDATA | ST_CEILDATA),           // tc_marioblock
@@ -5258,6 +5258,7 @@ void P_SaveGameState(savestate_t* savestate)
 
 	save_p = savestate->buffer;
 
+	WRITEINT16(save_p, gamemap);
 	WRITEUINT32(save_p, globalmobjnum);
 
 	CV_SaveNetVars(&save_p);
@@ -5314,10 +5315,18 @@ boolean P_LoadGameState(const savestate_t* savestate)
 	UINT64 time = I_GetTimeUs();
 	angle_t preserveAngle = localangle;
 	INT32 preserveAiming = localaiming;
+	INT16 savedGameMap;
 	
 	save_p = ((unsigned char*)savestate->buffer);
 
+	savedGameMap = READINT16(save_p);
 	globalmobjnum = READUINT32(save_p);
+
+	if (savedGameMap != gamemap)
+	{
+		// savestates do not work cross-level
+		return false;
+	}
 
 	CV_LoadNetVars(&save_p, true);
 
