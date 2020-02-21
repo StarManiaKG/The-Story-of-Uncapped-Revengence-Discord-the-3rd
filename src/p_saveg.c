@@ -1472,7 +1472,7 @@ typedef enum
 	MD2_COLORIZED    = 1<<12,
 	MD2_ROLLANGLE    = 1<<13,
 	MD2_SHADOWSCALE  = 1<<14,
-	MD2_PMOM         = 1<<14
+	MD2_PMOM         = 1<<15
 } mobj_diff2_t;
 
 typedef enum
