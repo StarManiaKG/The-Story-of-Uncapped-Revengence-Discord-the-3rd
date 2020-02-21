@@ -31,6 +31,7 @@
 #include "r_sky.h"
 #include "p_polyobj.h"
 #include "lua_script.h"
+#include "p_setup.h"
 #ifdef ESLOPE
 #include "p_slopes.h"
 #endif
@@ -828,7 +829,7 @@ static void ResetSectors(void)
 	const mapsector_t *ms;
 	const mapsidedef_t *msd;
 	const maplinedef_t *mld;
-	sector_t *ss;
+	sector_t *ss, *spawnss;
 	line_t* li;
 	side_t* si;
 
@@ -854,7 +855,7 @@ static void ResetSectors(void)
 	// reset every sector
 	// commented out lines are eh lines
 	// we really should do them properly, but they take effort and only have a visual effect
-	for (ss = sectors; ss < &sectors[numsectors]; ss++, ms++) {
+	for (ss = sectors, spawnss = spawnsectors; ss < &sectors[numsectors]; ss++, ms++, spawnss++) {
 		ss->floorheight = ms->floorheight<<FRACBITS;
 		ss->ceilingheight = ms->ceilingheight<<FRACBITS;
 
@@ -863,15 +864,15 @@ static void ResetSectors(void)
 		ss->lightlevel = ms->lightlevel;
 		ss->special = ms->special;
 
-		ss->floor_xoffs = ss->spawn_flr_xoffs;
-		ss->floor_yoffs = ss->spawn_flr_yoffs;
-		ss->ceiling_xoffs = ss->spawn_ceil_xoffs;
-		ss->ceiling_yoffs = ss->spawn_ceil_yoffs;
-		ss->floorpic_angle = ss->spawn_flrpic_angle;
-		ss->ceilingpic_angle = ss->spawn_ceilpic_angle;
+		ss->floor_xoffs = spawnss->floor_xoffs;
+		ss->floor_yoffs = spawnss->floor_yoffs;
+		ss->ceiling_xoffs = spawnss->ceiling_xoffs;
+		ss->ceiling_yoffs = spawnss->ceiling_yoffs;
+		ss->floorpic_angle = spawnss->floorpic_angle;
+		ss->ceilingpic_angle = spawnss->ceilingpic_angle;
 		ss->tag = ms->tag; // DON'T use P_ChangeSectorTag
-		ss->firsttag = ss->spawn_firsttag;
-		ss->nexttag = ss->spawn_nexttag;
+		ss->firsttag = spawnss->firsttag;
+		ss->nexttag = spawnss->nexttag;
 		//ss->extra_colormap = GetNetColormapFromList(READUINT32(get));
 
 		ffloor_t* floor = ss->ffloors;
@@ -992,11 +993,6 @@ static void P_NetArchiveWorld(void)
 	const side_t *spawnsi;
 	UINT8 *put;
 
-	// reload the map just to see difference
-	UINT8* wadData = NULL;
-	mapsector_t *ms;
-	mapsidedef_t *msd;
-	maplinedef_t *mld;
 	const sector_t *ss = sectors;
 	const sector_t *spawnss = spawnsectors;
 	UINT8 diff, diff2, diff3;
@@ -1007,7 +1003,7 @@ static void P_NetArchiveWorld(void)
 	WRITEUINT32(save_p, ARCHIVEBLOCK_WORLD);
 	put = save_p;
 
-
+	for (i = 0; i < numsectors; i++, ss++, spawnss++)
 	{
 		diff = diff2 = diff3 = 0;
 		if (ss->floorheight != spawnss->floorheight)
@@ -1226,12 +1222,6 @@ static void P_NetArchiveWorld(void)
 	}
 	WRITEUINT16(put, 0xffff);
 	R_ClearTextureNumCache(false);
-
-	if (wadData)
-	{
-		// memory leak fix
-		Z_Free(wadData);
-	}
 
 	save_p = put;
 }
@@ -3703,8 +3693,6 @@ typedef struct
 #define HASHLOC(x, y, z) (((x>>4)-(y>>8)+(z>>12)-(x>>16)+(y>>20)-(z>>24)+(x>>28)-(y>>24)+(z>>20)-(x>>16)+(y>>8)-(z>>4)) & 0x7FFF)
 #define MAXNUMMOBJSBYLOC 15
 
-
-
 //
 // P_LocalArchiveThinkers
 // Archives the world's thinkers locally. Used for within-level savestates
@@ -3715,7 +3703,6 @@ static void P_LocalArchiveThinkers(void)
 	size_t s;
 	const thinker_t* thinker;
 	mobj_t* savedMobj;
-	executor_t* savedExecutor;
 	UINT8* original = save_p;
 	WRITEUINT32(save_p, ARCHIVEBLOCK_THINKERS);
 
@@ -3751,8 +3738,15 @@ static void P_LocalArchiveThinkers(void)
 
 			if (j == tc_executor)
 			{
+				executor_t* savedExecutor;
 				savedExecutor = &((executor_t*)save_p)[-1];
 				RELINK(savedExecutor->caller);
+			}
+
+			if (j == tc_polywaypoint)
+			{
+				polywaypoint_t* savedWaypoint = &((polywaypoint_t*)save_p)[-1];
+				RELINK(savedWaypoint->target);
 			}
 		}
 
@@ -3779,7 +3773,6 @@ static void P_LocalArchiveThinkers(void)
 				RELINK(savedMobj->target);
 				RELINK(savedMobj->hnext);
 				RELINK(savedMobj->hprev);
-
 			}
 			thing = thing->snext;
 		}
@@ -3794,7 +3787,7 @@ static void P_LocalUnArchiveThinkers()
 	thinker_t *thinker;
 	mobj_t* mobj;
 	UINT8 tclass;
-	UINT8 restoreExecutors = false;
+	UINT8 restoreAdditionalStuff = false;
 	INT32 i, j, list;
 	int skyviewid = 0;
 	int skycenterid = 0;
@@ -3978,7 +3971,7 @@ static void P_LocalUnArchiveThinkers()
 			}
 
 			// preserve vital positioning stuff (cleanup...)
-			mobj_t preservedMobj;
+			static mobj_t preservedMobj;
 			if (tclass == tc_mobj)
 				preservedMobj = *(mobj_t*)newthinker;
 
@@ -4029,7 +4022,8 @@ static void P_LocalUnArchiveThinkers()
 					break; // i dream of a programming language where breaking is the default and fallthrough is the optional (and so much more rarely used) specifier
 				}
 				case tc_executor:
-					restoreExecutors = true;
+				case tc_polywaypoint:
+					restoreAdditionalStuff = true;
 					break;
 			}
 
@@ -4126,9 +4120,10 @@ static void P_LocalUnArchiveThinkers()
 	}
 
 	// restore execution stuff I guess lol
-	if (restoreExecutors)
+	if (restoreAdditionalStuff)
 	{
 		executor_t *delay = NULL;
+		polywaypoint_t* polywp = NULL;
 		UINT32 mobjnum;
 		for (thinker = thlist[THINK_MAIN].next; thinker != &thlist[THINK_MAIN]; thinker = thinker->next)
 		{
@@ -4138,6 +4133,15 @@ static void P_LocalUnArchiveThinkers()
 			if (!(mobjnum = (UINT32)(size_t)delay->caller))
 				continue;
 			delay->caller = mobjByNum[mobjnum];
+		}
+		for (thinker = thlist[THINK_POLYOBJ].next; thinker != &thlist[THINK_POLYOBJ]; thinker = thinker->next)
+		{
+			if (thinker->function.acp1 != (actionf_p1)T_PolyObjWaypoint)
+				continue;
+			polywp = (void*)thinker;
+			if (!(mobjnum = (UINT32)(size_t)polywp->target))
+				continue;
+			polywp->target = mobjByNum[mobjnum];
 		}
 	}
 
@@ -4995,7 +4999,7 @@ static inline boolean P_NetUnArchiveMisc(boolean preserveLevel)
 
 	tokenlist = READUINT32(save_p);
 
-	if ((!preserveLevel || (gamemap != oldMap)) && !P_SetupLevel(true))
+	if ((!preserveLevel || (gamemap != oldMap)) && !P_LoadLevel(true))
 		return false;
 
 	// get the time
