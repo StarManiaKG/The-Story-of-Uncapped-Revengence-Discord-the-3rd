@@ -260,6 +260,7 @@ static void P_NetArchivePlayers(void)
 		WRITEINT32(save_p, players[i].onconveyor);
 
 		WRITEUINT32(save_p, players[i].jointime);
+		WRITEUINT32(save_p, players[i].quittime);
 
 		WRITEUINT16(save_p, flags);
 
@@ -451,6 +452,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].onconveyor = READINT32(save_p);
 
 		players[i].jointime = READUINT32(save_p);
+		players[i].quittime = READUINT32(save_p);
 
 		flags = READUINT16(save_p);
 
@@ -985,7 +987,9 @@ static void P_NetArchiveWorld(void)
 	size_t i;
 	INT32 statsec = 0, statline = 0;
 	const line_t *li = lines;
+	const line_t *spawnli = spawnlines;
 	const side_t *si;
+	const side_t *spawnsi;
 	UINT8 *put;
 
 	// reload the map just to see difference
@@ -994,6 +998,7 @@ static void P_NetArchiveWorld(void)
 	mapsidedef_t *msd;
 	maplinedef_t *mld;
 	const sector_t *ss = sectors;
+	const sector_t *spawnss = spawnsectors;
 	UINT8 diff, diff2, diff3;
 
 	// initialize colormap vars because paranoia
@@ -1002,64 +1007,45 @@ static void P_NetArchiveWorld(void)
 	WRITEUINT32(save_p, ARCHIVEBLOCK_WORLD);
 	put = save_p;
 
-	if (W_IsLumpWad(lastloadedmaplumpnum)) // welp it's a map wad in a pk3
-	{ // HACK: Open wad file rather quickly so we can get the data from the relevant lumps
-		wadData = W_CacheLumpNum(lastloadedmaplumpnum, PU_STATIC);
-		filelump_t *fileinfo = (filelump_t *)(wadData + ((wadinfo_t *)wadData)->infotableofs);
-#define retrieve_mapdata(d, f)\
-		d = (void*)(wadData + (f)->filepos);
 
-		retrieve_mapdata(ms, fileinfo + ML_SECTORS);
-		retrieve_mapdata(mld, fileinfo + ML_LINEDEFS);
-		retrieve_mapdata(msd, fileinfo + ML_SIDEDEFS);
-#undef retrieve_mapdata
-	}
-	else // phew it's just a WAD
-	{
-		ms = W_CacheLumpNum(lastloadedmaplumpnum+ML_SECTORS, PU_CACHE);
-		mld = W_CacheLumpNum(lastloadedmaplumpnum+ML_LINEDEFS, PU_CACHE);
-		msd = W_CacheLumpNum(lastloadedmaplumpnum+ML_SIDEDEFS, PU_CACHE);
-	}
-
-	for (i = 0; i < numsectors; i++, ss++, ms++)
 	{
 		diff = diff2 = diff3 = 0;
-		if (ss->floorheight != SHORT(ms->floorheight)<<FRACBITS)
+		if (ss->floorheight != spawnss->floorheight)
 			diff |= SD_FLOORHT;
-		if (ss->ceilingheight != SHORT(ms->ceilingheight)<<FRACBITS)
+		if (ss->ceilingheight != spawnss->ceilingheight)
 			diff |= SD_CEILHT;
 		//
 		// flats
 		//
-		if (ss->floorpic != P_CheckLevelFlat(ms->floorpic))
+		if (ss->floorpic != spawnss->floorpic)
 			diff |= SD_FLOORPIC;
-		if (ss->ceilingpic != P_CheckLevelFlat(ms->ceilingpic))
+		if (ss->ceilingpic != spawnss->ceilingpic)
 			diff |= SD_CEILPIC;
 
-		if (ss->lightlevel != SHORT(ms->lightlevel))
+		if (ss->lightlevel != spawnss->lightlevel)
 			diff |= SD_LIGHT;
-		if (ss->special != SHORT(ms->special))
+		if (ss->special != spawnss->special)
 			diff |= SD_SPECIAL;
 
-		if (ss->floor_xoffs != ss->spawn_flr_xoffs)
+		if (ss->floor_xoffs != spawnss->floor_xoffs)
 			diff2 |= SD_FXOFFS;
-		if (ss->floor_yoffs != ss->spawn_flr_yoffs)
+		if (ss->floor_yoffs != spawnss->floor_yoffs)
 			diff2 |= SD_FYOFFS;
-		if (ss->ceiling_xoffs != ss->spawn_ceil_xoffs)
+		if (ss->ceiling_xoffs != spawnss->ceiling_xoffs)
 			diff2 |= SD_CXOFFS;
-		if (ss->ceiling_yoffs != ss->spawn_ceil_yoffs)
+		if (ss->ceiling_yoffs != spawnss->ceiling_yoffs)
 			diff2 |= SD_CYOFFS;
-		if (ss->floorpic_angle != ss->spawn_flrpic_angle)
+		if (ss->floorpic_angle != spawnss->floorpic_angle)
 			diff2 |= SD_FLOORANG;
-		if (ss->ceilingpic_angle != ss->spawn_flrpic_angle)
+		if (ss->ceilingpic_angle != spawnss->ceilingpic_angle)
 			diff2 |= SD_CEILANG;
 
-		if (ss->tag != SHORT(ms->tag))
+		if (ss->tag != spawnss->tag)
 			diff2 |= SD_TAG;
-		if (ss->nexttag != ss->spawn_nexttag || ss->firsttag != ss->spawn_firsttag)
+		if (ss->nexttag != spawnss->nexttag || ss->firsttag != spawnss->firsttag)
 			diff3 |= SD_TAGLIST;
 
-		if (ss->extra_colormap != ss->spawn_extra_colormap)
+		if (ss->extra_colormap != spawnss->extra_colormap)
 			diff3 |= SD_COLORMAP;
 
 		// Check if any of the sector's FOFs differ from how they spawned
@@ -1163,45 +1149,41 @@ static void P_NetArchiveWorld(void)
 	WRITEUINT16(put, 0xffff);
 
 	// do lines
-	for (i = 0; i < numlines; i++, mld++, li++)
+	for (i = 0; i < numlines; i++, spawnli++, li++)
 	{
 		diff = diff2 = diff3 = 0;
 
-		if (li->special != SHORT(mld->special))
+		if (li->special != spawnli->special)
 			diff |= LD_SPECIAL;
 
-		if (SHORT(mld->special) == 321 || SHORT(mld->special) == 322) // only reason li->callcount would be non-zero is if either of these are involved
+		if (spawnli->special == 321 || spawnli->special == 322) // only reason li->callcount would be non-zero is if either of these are involved
 			diff |= LD_CLLCOUNT;
 
 		if (li->sidenum[0] != 0xffff)
 		{
 			si = &sides[li->sidenum[0]];
-			if (si->textureoffset != SHORT(msd[li->sidenum[0]].textureoffset)<<FRACBITS)
+			spawnsi = &spawnsides[li->sidenum[0]];
+			if (si->textureoffset != spawnsi->textureoffset)
 				diff |= LD_S1TEXOFF;
 			//SoM: 4/1/2000: Some textures are colormaps. Don't worry about invalid textures.
-			if (R_CheckTextureNumForName(msd[li->sidenum[0]].toptexture) != -1
-				&& si->toptexture != R_TextureNumForName(msd[li->sidenum[0]].toptexture))
+			if (si->toptexture != spawnsi->toptexture)
 				diff |= LD_S1TOPTEX;
-			if (R_CheckTextureNumForName(msd[li->sidenum[0]].bottomtexture) != -1
-				&& si->bottomtexture != R_TextureNumForName(msd[li->sidenum[0]].bottomtexture))
+			if (si->bottomtexture != spawnsi->bottomtexture)
 				diff |= LD_S1BOTTEX;
-			if (R_CheckTextureNumForName(msd[li->sidenum[0]].midtexture) != -1
-				&& si->midtexture != R_TextureNumForName(msd[li->sidenum[0]].midtexture))
+			if (si->midtexture != spawnsi->midtexture)
 				diff |= LD_S1MIDTEX;
 		}
 		if (li->sidenum[1] != 0xffff)
 		{
 			si = &sides[li->sidenum[1]];
-			if (si->textureoffset != SHORT(msd[li->sidenum[1]].textureoffset)<<FRACBITS)
+			spawnsi = &spawnsides[li->sidenum[1]];
+			if (si->textureoffset != spawnsi->textureoffset)
 				diff2 |= LD_S2TEXOFF;
-			if (R_CheckTextureNumForName(msd[li->sidenum[1]].toptexture) != -1
-				&& si->toptexture != R_TextureNumForName(msd[li->sidenum[1]].toptexture))
+			if (si->toptexture != spawnsi->toptexture)
 				diff2 |= LD_S2TOPTEX;
-			if (R_CheckTextureNumForName(msd[li->sidenum[1]].bottomtexture) != -1
-				&& si->bottomtexture != R_TextureNumForName(msd[li->sidenum[1]].bottomtexture))
+			if (si->bottomtexture != spawnsi->bottomtexture)
 				diff2 |= LD_S2BOTTEX;
-			if (R_CheckTextureNumForName(msd[li->sidenum[1]].midtexture) != -1
-				&& si->midtexture != R_TextureNumForName(msd[li->sidenum[1]].midtexture))
+			if (si->midtexture != spawnsi->midtexture)
 				diff2 |= LD_S2MIDTEX;
 			if (diff2)
 				diff |= LD_DIFF2;
@@ -1498,9 +1480,8 @@ typedef enum
 	MD2_SLOPE        = 1<<11,
 #endif
 	MD2_COLORIZED    = 1<<12,
-#ifdef ROTSPRITE
 	MD2_ROLLANGLE    = 1<<13,
-#endif
+	MD2_SHADOWSCALE  = 1<<14,
 	MD2_PMOM         = 1<<14
 } mobj_diff2_t;
 
@@ -1794,10 +1775,10 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 #endif
 	if (mobj->colorized)
 		diff2 |= MD2_COLORIZED;
-#ifdef ROTSPRITE
 	if (mobj->rollangle)
 		diff2 |= MD2_ROLLANGLE;
-#endif
+	if (mobj->shadowscale)
+		diff2 |= MD2_SHADOWSCALE;
 	if (diff2 != 0)
 		diff |= MD_MORE;
 
@@ -1962,10 +1943,10 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 #endif
 	if (diff2 & MD2_COLORIZED)
 		WRITEUINT8(save_p, mobj->colorized);
-#ifdef ROTSPRITE
 	if (diff2 & MD2_ROLLANGLE)
 		WRITEANGLE(save_p, mobj->rollangle);
-#endif
+	if (diff2 & MD2_SHADOWSCALE)
+		WRITEFIXED(save_p, mobj->shadowscale);
 	if (diff2 & MD2_PMOM)
 		WRITEFIXED(save_p, mobj->pmomz);
 
@@ -2383,6 +2364,7 @@ static void SavePolywaypointThinker(const thinker_t *th, UINT8 type)
 	WRITEFIXED(save_p, ht->diffx);
 	WRITEFIXED(save_p, ht->diffy);
 	WRITEFIXED(save_p, ht->diffz);
+	WRITEUINT32(save_p, SaveMobjnum(ht->target));
 }
 
 //
@@ -2861,7 +2843,7 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 
 		if (mapthings[spawnpointnum].type == 1705 || mapthings[spawnpointnum].type == 1713) // NiGHTS Hoop special case
 		{
-			P_SpawnHoopsAndRings(&mapthings[spawnpointnum], false);
+			P_SpawnHoop(&mapthings[spawnpointnum]);
 			return NULL;
 		}
 
@@ -3045,12 +3027,10 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 #endif
 	if (diff2 & MD2_COLORIZED)
 		mobj->colorized = READUINT8(save_p);
-#ifdef ROTSPRITE
 	if (diff2 & MD2_ROLLANGLE)
 		mobj->rollangle = READANGLE(save_p);
-	else
-		mobj->rollangle = 0;
-#endif
+	if (diff2 & MD2_SHADOWSCALE)
+		mobj->shadowscale = READFIXED(save_p);
 	if (diff2 & MD2_PMOM)
 		mobj->pmomz = READFIXED(save_p);
 
@@ -3579,6 +3559,7 @@ static inline thinker_t* LoadPolywaypointThinker(actionf_p1 thinker)
 	ht->diffx = READFIXED(save_p);
 	ht->diffy = READFIXED(save_p);
 	ht->diffz = READFIXED(save_p);
+	ht->target = LoadMobj(READUINT32(save_p));
 	return &ht->thinker;
 }
 
@@ -4418,9 +4399,10 @@ static void P_NetUnArchiveThinkers(boolean preserveLevel)
 				th = LoadPolymoveThinker((actionf_p1)T_PolyObjMove);
 				break;
 
-			case tc_polywaypoint:
-				th = LoadPolywaypointThinker((actionf_p1)T_PolyObjWaypoint);
-				break;
+				case tc_polywaypoint:
+					th = LoadPolywaypointThinker((actionf_p1)T_PolyObjWaypoint);
+					restoreNum = true;
+					break;
 
 			case tc_polyslidedoor:
 				th = LoadPolyslidedoorThinker((actionf_p1)T_PolyDoorSlide);
@@ -4481,9 +4463,9 @@ static void P_NetUnArchiveThinkers(boolean preserveLevel)
 	if (restoreNum)
 	{
 		executor_t *delay = NULL;
+		polywaypoint_t *polywp = NULL;
 		UINT32 mobjnum;
-		for (currentthinker = thlist[THINK_MAIN].next; currentthinker != &thlist[THINK_MAIN];
-			currentthinker = currentthinker->next)
+		for (currentthinker = thlist[THINK_MAIN].next; currentthinker != &thlist[THINK_MAIN]; currentthinker = currentthinker->next)
 		{
 			if (currentthinker->function.acp1 != (actionf_p1)T_ExecutorDelay)
 				continue;
@@ -4491,6 +4473,15 @@ static void P_NetUnArchiveThinkers(boolean preserveLevel)
 			if (!(mobjnum = (UINT32)(size_t)delay->caller))
 				continue;
 			delay->caller = P_FindNewPosition(mobjnum);
+		}
+		for (currentthinker = thlist[THINK_POLYOBJ].next; currentthinker != &thlist[THINK_POLYOBJ]; currentthinker = currentthinker->next)
+		{
+			if (currentthinker->function.acp1 != (actionf_p1)T_PolyObjWaypoint)
+				continue;
+			polywp = (void *)currentthinker;
+			if (!(mobjnum = (UINT32)(size_t)polywp->target))
+				continue;
+			polywp->target = P_FindNewPosition(mobjnum);
 		}
 	}
 	
