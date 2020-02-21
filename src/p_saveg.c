@@ -4091,11 +4091,13 @@ static void P_LocalUnArchiveThinkers()
 	for (i = 0; i < NUM_THINKERLISTS; i++)
 	{
 		thinker_t* next;
+		int ind = 0;
 
 		for (thinker = thlist[i].next; thinker != &thlist[i]; thinker = next)
 		{
 			next = thinker->next;
 
+			ind++;
 			thinker->references = 0;
 
 			if (thinker->function.acp1 == (actionf_p1)P_MobjThinker)
@@ -4579,7 +4581,7 @@ static inline void P_UnArchivePolyObj(polyobj_t *po)
 		return;
 
 	// rotate and translate polyobject
-	Polyobj_MoveOnLoad(po, angle + (po->origangle - po->angle), x + (po->origx - po->spawnSpot.x), y + (po->origy - po->spawnSpot.y));
+	Polyobj_MoveOnLoad(po, angle, x, y);
 }
 
 static inline void P_ArchivePolyObjects(void)
