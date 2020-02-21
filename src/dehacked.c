@@ -1137,7 +1137,7 @@ tolinfo_t TYPEOFLEVEL[NUMMAXTOL] = {
 };
 
 // copypasted from readPlayer :sleep:
-static const char *const GAMETYPERULE_LIST[];
+static const char *const GAMETYPERULE_LIST[33];
 static void readgametype(MYFILE *f, char *gtname)
 {
 	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);

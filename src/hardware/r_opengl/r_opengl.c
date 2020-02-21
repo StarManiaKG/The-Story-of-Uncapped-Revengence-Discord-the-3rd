@@ -2255,7 +2255,7 @@ EXPORT void HWRAPI(SetTransform) (FTransform *stransform)
 
 	if (special_splitscreen)
 	{
-		used_fov = atan(tan(used_fov*M_PI/360)*0.8)*360/M_PI;
+		used_fov = (float)(atan(tan(used_fov*M_PI/360)*0.8))*360/M_PI;
 		GLPerspective(used_fov, 2*ASPECT_RATIO);
 	}
 	else
