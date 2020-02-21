@@ -522,6 +522,11 @@ INT32 I_GetKey(void);
 #define M_PIl 3.1415926535897932384626433832795029L
 #endif
 
+// VS2019 fix?
+#ifndef M_PI
+#define M_PI 3.14159265f
+#endif
+
 // Floating point comparison epsilons from float.h
 #ifndef FLT_EPSILON
 #define FLT_EPSILON 1.1920928955078125e-7f
