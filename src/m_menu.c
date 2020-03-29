@@ -316,6 +316,7 @@ static void M_AssignJoystick(INT32 choice);
 static void M_ChangeControl(INT32 choice);
 
 // Video & Sound
+static void M_VideoOptions(INT32 choice);
 menu_t OP_VideoOptionsDef, OP_VideoModeDef, OP_ColorOptionsDef;
 #ifdef HWRENDER
 static void M_OpenGLOptionsMenu(void);
@@ -1038,7 +1039,7 @@ static menuitem_t OP_MainMenu[] =
 	{IT_SUBMENU | IT_STRING, NULL, "Player 2 Controls...", &OP_P2ControlsDef,   20},
 	{IT_CVAR    | IT_STRING, NULL, "Controls per key",     &cv_controlperkey,   30},
 
-	{IT_SUBMENU | IT_STRING, NULL, "Video Options...",     &OP_VideoOptionsDef, 50},
+	{IT_CALL    | IT_STRING, NULL, "Video Options...",     M_VideoOptions,      50},
 	{IT_SUBMENU | IT_STRING, NULL, "Sound Options...",     &OP_SoundOptionsDef, 60},
 
 	{IT_CALL    | IT_STRING, NULL, "Server Options...",    M_ServerOptions,     80},
@@ -1287,6 +1288,16 @@ static menuitem_t OP_Camera2ExtendedOptionsMenu[] =
 
 	{IT_HEADER,            NULL, "Display Options", NULL, 120},
 	{IT_STRING  | IT_CVAR, NULL, "Crosshair", &cv_crosshair2, 126},
+};
+
+enum
+{
+	op_video_resolution = 1,
+#if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
+	op_video_fullscreen,
+#endif
+	op_video_vsync,
+	op_video_renderer,
 };
 
 static menuitem_t OP_VideoOptionsMenu[] =
@@ -2087,6 +2098,20 @@ menu_t OP_PlaystyleDef = {
 	0, 0, 0, NULL
 };
 
+static void M_VideoOptions(INT32 choice)
+{
+	(void)choice;
+#ifdef HWRENDER
+	if (hwrenderloaded == -1)
+	{
+		OP_VideoOptionsMenu[op_video_renderer].status = (IT_TRANSTEXT | IT_PAIR);
+		OP_VideoOptionsMenu[op_video_renderer].patch = "Renderer";
+		OP_VideoOptionsMenu[op_video_renderer].text = "Software";
+	}
+
+#endif
+	M_SetupNextMenu(&OP_VideoOptionsDef);
+}
 
 menu_t OP_VideoOptionsDef =
 {
@@ -2183,7 +2208,7 @@ menu_t OP_DataOptionsDef = DEFAULTMENUSTYLE(
 menu_t OP_ScreenshotOptionsDef =
 {
 	MN_OP_MAIN + (MN_OP_DATA << 6) + (MN_OP_SCREENSHOTS << 12),
-	"M_DATA",
+	"M_SCREEN",
 	sizeof (OP_ScreenshotOptionsMenu)/sizeof (menuitem_t),
 	&OP_DataOptionsDef,
 	OP_ScreenshotOptionsMenu,
@@ -3157,6 +3182,9 @@ boolean M_Responder(event_t *ev)
 	if (gamestate == GS_TITLESCREEN && finalecount < TICRATE)
 		return false;
 
+	if (CON_Ready())
+		return false;
+
 	if (noFurtherInput)
 	{
 		// Ignore input after enter/escape/other buttons
@@ -3516,6 +3544,7 @@ boolean M_Responder(event_t *ev)
 			return false;
 
 		default:
+			CON_Responder(ev);
 			break;
 	}
 
@@ -5058,6 +5087,17 @@ static boolean M_SetNextMapOnPlatter(void)
 }
 #endif
 
+static boolean M_GametypeHasLevels(INT32 gt)
+{
+	INT32 mapnum;
+
+	for (mapnum = 0; mapnum < NUMMAPS; mapnum++)
+		if (M_CanShowLevelOnPlatter(mapnum, gt))
+			return true;
+
+	return false;
+}
+
 static INT32 M_CountRowsToShowOnPlatter(INT32 gt)
 {
 	INT32 mapnum = 0, prevmapnum = 0, col = 0, rows = 0;
@@ -5375,7 +5415,10 @@ static void M_HandleLevelPlatter(INT32 choice)
 		case KEY_RIGHTARROW:
 			if (levellistmode == LLM_CREATESERVER && !lsrow)
 			{
-				CV_AddValue(&cv_newgametype, 1);
+				INT32 startinggametype = cv_newgametype.value;
+				do
+					CV_AddValue(&cv_newgametype, 1);
+				while (cv_newgametype.value != startinggametype && !M_GametypeHasLevels(cv_newgametype.value));
 				S_StartSound(NULL,sfx_menu1);
 				lscol = 0;
 
@@ -5404,7 +5447,10 @@ static void M_HandleLevelPlatter(INT32 choice)
 		case KEY_LEFTARROW:
 			if (levellistmode == LLM_CREATESERVER && !lsrow)
 			{
-				CV_AddValue(&cv_newgametype, -1);
+				INT32 startinggametype = cv_newgametype.value;
+				do
+					CV_AddValue(&cv_newgametype, -1);
+				while (cv_newgametype.value != startinggametype && !M_GametypeHasLevels(cv_newgametype.value));
 				S_StartSound(NULL,sfx_menu1);
 				lscol = 0;
 
@@ -5724,6 +5770,8 @@ static void M_DrawNightsAttackSuperSonic(void)
 	const UINT8 *colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_YELLOW, GTC_CACHE);
 	INT32 timer = (ntsatkdrawtimer/4) % 2;
 	angle_t fa = (FixedAngle(((ntsatkdrawtimer * 4) % 360)<<FRACBITS)>>ANGLETOFINESHIFT) & FINEMASK;
+	ntssupersonic[0] = W_CachePatchName("NTSSONC1", PU_PATCH);
+	ntssupersonic[1] = W_CachePatchName("NTSSONC2", PU_PATCH);
 	V_DrawFixedPatch(235<<FRACBITS, (120<<FRACBITS) - (8*FINESINE(fa)), FRACUNIT, 0, ntssupersonic[timer], colormap);
 }
 
@@ -9971,9 +10019,6 @@ static void M_NightsAttack(INT32 choice)
 	// This is really just to make sure Sonic is the played character, just in case
 	M_PatchSkinNameTable();
 
-	ntssupersonic[0] = W_CachePatchName("NTSSONC1", PU_PATCH);
-	ntssupersonic[1] = W_CachePatchName("NTSSONC2", PU_PATCH);
-
 	G_SetGamestate(GS_TIMEATTACK); // do this before M_SetupNextMenu so that menu meta state knows that we're switching
 	titlemapinaction = TITLEMAP_OFF; // Nope don't give us HOMs please
 	M_SetupNextMenu(&SP_NightsAttackDef);
@@ -10093,13 +10138,13 @@ static void M_ReplayTimeAttack(INT32 choice)
 static void M_EraseGuest(INT32 choice)
 {
 	const char *rguest = va("%s"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s-guest.lmp", srb2home, timeattackfolder, G_BuildMapName(cv_nextmap.value));
-	(void)choice;
-	if (FIL_FileExists(rguest))
-		remove(rguest);
-	if (currentMenu == &SP_NightsGuestReplayDef)
-		M_SetupNextMenu(&SP_NightsAttackDef);
-	else
-		M_SetupNextMenu(&SP_TimeAttackDef);
+
+	if (choice == 'y' || choice == KEY_ENTER)
+	{
+		if (FIL_FileExists(rguest))
+			remove(rguest);
+	}
+	M_SetupNextMenu(currentMenu->prevMenu->prevMenu);
 	Nextmap_OnChange();
 	M_StartMessage(M_GetText("Guest replay data erased.\n"),NULL,MM_NOTHING);
 }
@@ -12149,7 +12194,6 @@ static void M_VideoModeMenu(INT32 choice)
 
 static void M_DrawMainVideoMenu(void)
 {
-
 	M_DrawGenericScrollMenu();
 	if (itemOn < 8) // where it starts to go offscreen; change this number if you change the layout of the video menu
 	{
