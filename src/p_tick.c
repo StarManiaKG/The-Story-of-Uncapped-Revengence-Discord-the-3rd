@@ -269,9 +269,7 @@ void P_RemoveThinkerDelayed(thinker_t *thinker)
 //
 void P_RemoveThinker(thinker_t *thinker)
 {
-#ifdef HAVE_BLUA
 	LUA_InvalidateUserdata(thinker);
-#endif
 	thinker->function.acp1 = (actionf_p1)P_RemoveThinkerDelayed;
 }
 
@@ -646,9 +644,7 @@ void P_Ticker(boolean run)
 		if (demoplayback)
 			G_ReadDemoTiccmd(&players[consoleplayer].cmd, 0);
 
-		#ifdef HAVE_BLUA
 		LUAh_PreThinkFrame();
-		#endif
 
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
@@ -674,9 +670,7 @@ void P_Ticker(boolean run)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
 
-#ifdef HAVE_BLUA
 		LUAh_ThinkFrame();
-#endif
 	}
 
 	// Run shield positioning
@@ -748,9 +742,7 @@ void P_Ticker(boolean run)
 		if (modeattacking)
 			G_GhostTicker();
 
-#ifdef HAVE_BLUA
 		LUAh_PostThinkFrame();
-#endif
 	}
 
 	P_MapEnd();
@@ -770,9 +762,8 @@ void P_PreTicker(INT32 frames)
 	{
 		P_MapStart();
 
-#ifdef HAVE_BLUA
 		LUAh_PreThinkFrame();
-#endif
+
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 			{
@@ -796,9 +787,7 @@ void P_PreTicker(INT32 frames)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
 
-#ifdef HAVE_BLUA
 		LUAh_ThinkFrame();
-#endif
 
 		// Run shield positioning
 		P_RunShields();
@@ -807,9 +796,7 @@ void P_PreTicker(INT32 frames)
 		P_UpdateSpecials();
 		P_RespawnSpecials();
 
-#ifdef HAVE_BLUA
 		LUAh_PostThinkFrame();
-#endif
 
 		P_MapEnd();
 	}

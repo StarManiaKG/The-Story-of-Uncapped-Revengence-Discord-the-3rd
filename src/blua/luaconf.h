@@ -12,10 +12,10 @@
 #include <stddef.h>
 
 #ifdef _MSC_VER
-#define INT32 __int32
+typedef __int32 INT32; // LXShadow: hacked this due to dumb conflicts with Windows headers
 #else
 #include <stdint.h>
-#define INT32 int32_t
+typedef int32_t INT32;
 #endif
 
 
