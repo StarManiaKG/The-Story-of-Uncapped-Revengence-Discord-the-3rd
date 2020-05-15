@@ -1485,6 +1485,7 @@ static void SOCK_ClearBans(void)
 boolean I_InitTcpNetwork(void)
 {
 	char serverhostname[255];
+	const char *urlparam = NULL;
 	boolean ret = false;
 	// initilize the OS's TCP/IP stack
 	if (!I_InitTcpDriver())
@@ -1538,10 +1539,12 @@ boolean I_InitTcpNetwork(void)
 
 		ret = true;
 	}
-	else if (M_CheckParm("-connect"))
+	else if ((urlparam = M_GetUrlProtocolArg()) != NULL || M_CheckParm("-connect"))
 	{
-		if (M_IsNextParm())
-			strcpy(serverhostname, M_GetNextParm());
+		if (urlparam != NULL)
+			strlcpy(serverhostname, urlparam, sizeof(serverhostname));
+		else if (M_IsNextParm())
+			strlcpy(serverhostname, M_GetNextParm(), sizeof(serverhostname));
 		else
 			serverhostname[0] = 0; // assuming server in the LAN, use broadcast to detect it
 

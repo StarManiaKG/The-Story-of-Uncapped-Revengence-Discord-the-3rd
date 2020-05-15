@@ -31,17 +31,17 @@
 #include <stdint.h>
 #endif
 
-#define UINT8 unsigned __int8
-#define SINT8 signed __int8
+typedef unsigned __int8 UINT8;
+typedef signed __int8 SINT8;
 
-#define UINT16 unsigned __int16
-#define INT16 __int16
+typedef unsigned __int16 UINT16;
+typedef __int16 INT16;
 
-#define INT32 __int32
-#define UINT32 unsigned __int32
+typedef __int32 INT32;
+typedef unsigned __int32 UINT32;
 
-#define INT64  __int64
-#define UINT64 unsigned __int64
+typedef __int64 INT64;
+typedef unsigned __int64 UINT64;
 
 typedef long ssize_t;
 
