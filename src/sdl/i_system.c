@@ -2048,9 +2048,6 @@ ticcmd_t *I_BaseTiccmd2(void)
 	return &emptycmd2;
 }
 
-static int lastTimeFudge = -1;
-extern consvar_t cv_timefudge;
-
 #if defined (_WIN32)
 static HMODULE winmm = NULL;
 static DWORD starttickcount = 0; // hack for win2k time bug
@@ -2101,35 +2098,6 @@ tic_t I_GetTime(void)
 	// If the server and client are using different timer types, this will cause jutter.
 	// It also messes with SRB2netplus's timer fudge, meaning that for a truly accurate timerfudge it needs to know which timer the server is using...
 
-	// Fudge the timer to sync better with online games. Uses multiply-first approach (more accurate)
-	if (cv_timefudge.value != lastTimeFudge)
-	{
-		if (frequency.QuadPart)
-		{
-			unsigned long long frame = basetime.QuadPart * NEWTICRATE / frequency.QuadPart;
-
-			if (cv_timefudge.value > lastTimeFudge)
-			{
-				frame--; // do not allow the same tic to play twice
-			}
-
-			basetime.QuadPart = frame * frequency.QuadPart / NEWTICRATE + frequency.QuadPart * cv_timefudge.value / TICRATE / 100;
-		}
-		if (starttickcount)
-		{
-			unsigned long long frame = starttickcount * NEWTICRATE / 1000;
-
-			if (cv_timefudge.value > lastTimeFudge)
-			{
-				frame--; // do not allow the same tic to play twice
-			}
-
-			starttickcount = (DWORD)(frame * 1000 / NEWTICRATE + 1000 * cv_timefudge.value / TICRATE / 100);
-		}
-
-		lastTimeFudge = cv_timefudge.value;
-	}
-
 	return newtics;
 }
 
@@ -2169,6 +2137,50 @@ UINT64 I_GetTimeUs(void)
 		timeUs = (GetTickCount() - starttickcount) * 1000;
 
 	return timeUs;
+}
+
+// Adjusts the timer to the given tic time. The timer is set as though this tic has just started plus a fudge between 0 and 100.
+// A fudge of 99 means that although the assigned tic is valid, we are very very close to the next tic
+void I_SetTime(tic_t tic, int fudge, boolean useAbsoluteFudge)
+{
+	DWORD oldTickCount = starttickcount;
+	LARGE_INTEGER oldBaseTime = basetime;
+
+	tic = max(tic, I_GetTime());
+
+	if (starttickcount)
+	{
+		starttickcount = GetTickCount() - (DWORD)((UINT64)tic * 1000 / NEWTICRATE + 1000 * fudge / TICRATE / 100);
+
+		if (useAbsoluteFudge)
+		{
+			starttickcount = starttickcount * NEWTICRATE / 1000 * 1000 * NEWTICRATE + 1000 * fudge / NEWTICRATE / 100;
+		}
+	}
+
+	if (frequency.QuadPart)
+	{
+		LARGE_INTEGER currtime; // use only LowPart if high resolution counter is not available
+
+		if (QueryPerformanceCounter(&currtime))
+		{
+			basetime.QuadPart = currtime.QuadPart - (tic * frequency.QuadPart / NEWTICRATE + frequency.QuadPart * fudge / TICRATE / 100);
+			
+			if (useAbsoluteFudge)
+			{
+				basetime.QuadPart = basetime.QuadPart * NEWTICRATE / frequency.QuadPart * frequency.QuadPart / NEWTICRATE + frequency.QuadPart * fudge / NEWTICRATE / 100;
+			}
+		}
+	}
+	else if (pfntimeGetTime)
+	{
+		basetime.QuadPart = pfntimeGetTime() - (tic * 1000 / NEWTICRATE + 1000 * fudge / TICRATE / 100);
+
+		if (useAbsoluteFudge)
+		{
+			basetime.QuadPart = basetime.QuadPart * NEWTICRATE / 1000 * 1000 / NEWTICRATE + 1000 * fudge / NEWTICRATE / 100;
+		}
+	}
 }
 
 static void I_ShutdownTimer(void)

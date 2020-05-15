@@ -102,6 +102,8 @@ static void Color2_OnChange(void);
 static void DummyConsvar_OnChange(void);
 static void SoundTest_OnChange(void);
 
+static void TimeFudge_OnChange(void);
+
 static void Command_Savestate(void);
 static void Command_Loadstate(void);
 static void Command_Rewind(void);
@@ -412,11 +414,14 @@ consvar_t cv_netsmoothing = { "netsmoothing", "Off", 0, CV_OnOff, NULL, 0, NULL,
 
 consvar_t cv_netspikes = { "netspikes", "Off", 0, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL };
 
+static CV_PossibleValue_t netvariabletime_cons_t[] = { {-1, "MIN"}, {100, "MAX"}, {0, NULL} };
+consvar_t cv_netvariabletime = { "netvariabletime", "-1", 0, netvariabletime_cons_t, NULL, -1, NULL, NULL, 0, 0, NULL };
+
 static CV_PossibleValue_t debugsimulaterewind_cons_t[] = { {0, "MIN"}, {BACKUPTICS - 1, "MAX"}, {0, NULL} };
 consvar_t cv_debugsimulaterewind = { "debugsimulaterewind", "0", 0, debugsimulaterewind_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
 
 static CV_PossibleValue_t timefudge_cons_t[] = { {0, "MIN"}, {100, "MAX"}, {0, NULL} };
-consvar_t cv_timefudge = { "timefudge", "0", 0, timefudge_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL };
+consvar_t cv_timefudge = { "timefudge", "0", CV_CALL, timefudge_cons_t, TimeFudge_OnChange, 0, NULL, NULL, 0, 0, NULL };
 
 char timedemo_name[256];
 boolean timedemo_csv;
@@ -565,6 +570,7 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_timefudge);
 	CV_RegisterVar(&cv_nettrails);
 	CV_RegisterVar(&cv_netslingdelay);
+	CV_RegisterVar(&cv_netvariabletime);
 
 	// for master server connection
 	AddMServCommands();
@@ -4211,6 +4217,11 @@ static void SoundTest_OnChange(void)
 
 	S_StopSounds();
 	S_StartSound(NULL, cv_soundtest.value);
+}
+
+static void TimeFudge_OnChange(void)
+{
+	I_SetTime(I_GetTime(), cv_timefudge.value, true);
 }
 
 static void AutoBalance_OnChange(void)
