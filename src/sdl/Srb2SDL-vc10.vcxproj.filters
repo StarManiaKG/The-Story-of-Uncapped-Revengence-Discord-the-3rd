@@ -471,6 +471,12 @@
     <ClInclude Include="..\r_portal.h">
       <Filter>R_Rend</Filter>
     </ClInclude>
+    <ClInclude Include="..\g_demo.h">
+      <Filter>G_Game</Filter>
+    </ClInclude>
+    <ClInclude Include="..\r_skins.h">
+      <Filter>R_Rend</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\tmap.nas">
@@ -930,6 +936,15 @@
     </ClCompile>
     <ClCompile Include="..\r_portal.c">
       <Filter>R_Rend</Filter>
+    </ClCompile>
+    <ClCompile Include="..\g_demo.c">
+      <Filter>G_Game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\r_skins.c">
+      <Filter>R_Rend</Filter>
+    </ClCompile>
+    <ClCompile Include="..\blua\liolib.c">
+      <Filter>BLUA</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
