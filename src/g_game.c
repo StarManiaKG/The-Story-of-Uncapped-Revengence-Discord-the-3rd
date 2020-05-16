@@ -3530,7 +3530,7 @@ boolean G_PlatformGametype(void)
 //
 boolean G_TagGametype(void)
 {
-	return (gametyperules & GTR_TAG);
+	return !!(gametyperules & GTR_TAG); // oh my god. !! for MSVC fix. (booleans apparently not big enough to return 0x2000...)
 }
 
 //
