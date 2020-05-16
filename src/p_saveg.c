@@ -1473,8 +1473,7 @@ typedef enum
 	MD2_SLOPE        = 1<<11,
 	MD2_COLORIZED    = 1<<12,
 	MD2_ROLLANGLE    = 1<<13,
-	MD2_SHADOWSCALE  = 1<<14,
-	MD2_PMOM         = 1<<15
+	MD2_SHADOWSCALE  = 1<<14
 } mobj_diff2_t;
 
 typedef enum
@@ -1576,7 +1575,6 @@ static const specialdef_t specialDefs[] =
 	NOSECTOR(T_PlaneDisplace, planedisplace_t),        // tc_planedisplace
 	NOSECTOR(T_DynamicSlopeLine, dynplanethink_t),      // tc_dynslopeline
 	NOSECTOR(T_DynamicSlopeVert, dynplanethink_t),      // tc_dynslopevert
-#ifdef POLYOBJECTS
 	NOSECTOR(T_PolyObjRotate, polyrotate_t),            // tc_polyrotate
 	NOSECTOR(T_PolyObjMove, polymove_t),                // tc_polymove
 	NOSECTOR(T_PolyObjWaypoint, polywaypoint_t),        // tc_polywaypoint
@@ -1586,7 +1584,6 @@ static const specialdef_t specialDefs[] =
 	NOSECTOR(T_PolyObjDisplace, polydisplace_t),        // tc_polydisplace
 	NOSECTOR(T_PolyObjRotDisplace, polyrotdisplace_t),  // tc_polyrotdisplace
 	NOSECTOR(T_PolyObjFade, polyfade_t),                // tc_polyfade
-#endif
 };
 #undef A
 
@@ -1716,8 +1713,6 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		diff |= MD_DSCALE;
 	if (mobj->scalespeed != FRACUNIT/12)
 		diff2 |= MD2_SCALESPEED;
-	if (mobj->pmomz != 0)
-		diff2 |= MD2_PMOM;
 
 	if (mobj == redflag)
 		diff |= MD_REDFLAG;
@@ -1890,8 +1885,6 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		WRITEANGLE(save_p, mobj->rollangle);
 	if (diff2 & MD2_SHADOWSCALE)
 		WRITEFIXED(save_p, mobj->shadowscale);
-	if (diff2 & MD2_PMOM)
-		WRITEFIXED(save_p, mobj->pmomz);
 
 	WRITEUINT32(save_p, mobj->mobjnum);
 }
@@ -2905,8 +2898,6 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 		mobj->rollangle = READANGLE(save_p);
 	if (diff2 & MD2_SHADOWSCALE)
 		mobj->shadowscale = READFIXED(save_p);
-	if (diff2 & MD2_PMOM)
-		mobj->pmomz = READFIXED(save_p);
 
 	if (diff & MD_REDFLAG)
 	{
@@ -5052,28 +5043,19 @@ boolean P_LoadGame(INT16 mapoverride)
 boolean P_LoadNetGame(boolean preserveLevel)
 {
 	CV_LoadNetVars(&save_p, false);
-	loadTimes[0] = I_GetTimeUs();
 	if (!P_NetUnArchiveMisc(preserveLevel))
 		return false;
 
-	loadTimes[1] = I_GetTimeUs();
 	P_NetUnArchivePlayers();
-	loadTimes[2] = I_GetTimeUs();
 	if (gamestate == GS_LEVEL)
 	{
 		P_NetUnArchiveWorld();
-		loadTimes[3] = I_GetTimeUs();
 		P_UnArchivePolyObjects();
 		P_NetUnArchiveThinkers(preserveLevel);
-		loadTimes[5] = I_GetTimeUs();
 		P_NetUnArchiveSpecials();
-		loadTimes[6] = I_GetTimeUs();
 		P_NetUnArchiveColormaps();
-		loadTimes[7] = I_GetTimeUs();
 		P_RelinkPointers();
-		loadTimes[8] = I_GetTimeUs();
 		P_FinishMobjs();
-		loadTimes[9] = I_GetTimeUs();
 	}
 	LUA_UnArchive();
 
@@ -5100,8 +5082,12 @@ void P_SaveGameState(savestate_t* savestate)
 	thinker_t* th;
 	size_t s = 0;
 	int mobjnum = 1;
-
 	UINT64 time = I_GetTimeUs();
+
+	if (savestate->buffer == NULL)
+	{
+		savestate->buffer = Z_Malloc(10 * 1024 * 1024, PU_STATIC, NULL);
+	}
 
 	save_p = savestate->buffer;
 
@@ -5121,6 +5107,7 @@ void P_SaveGameState(savestate_t* savestate)
 			continue;
 		mobj->mobjnum = mobjnum++;
 	}
+
 	// including nothinkers...
 	for (s = 0; s < numsectors; s++)
 	{
@@ -5139,9 +5126,7 @@ void P_SaveGameState(savestate_t* savestate)
 	P_NetArchiveMisc();
 	P_LocalArchivePlayers();
 	P_LocalArchiveWorld();
-#ifdef POLYOBJECTS
 	P_LocalArchivePolyObjects();
-#endif
 	P_LocalArchiveThinkers();
 	P_NetArchiveSpecials();
 	P_LocalArchiveCameras();
@@ -5160,8 +5145,6 @@ void P_SaveGameState(savestate_t* savestate)
 boolean P_LoadGameState(const savestate_t* savestate)
 {
 	UINT64 time = I_GetTimeUs();
-	angle_t preserveAngle = localangle;
-	INT32 preserveAiming = localaiming;
 	INT16 savedGameMap;
 	
 	save_p = ((unsigned char*)savestate->buffer);
@@ -5180,9 +5163,7 @@ boolean P_LoadGameState(const savestate_t* savestate)
 	P_NetUnArchiveMisc(true);
 	P_LocalUnArchivePlayers();
 	P_LocalUnArchiveWorld();
-#ifdef POLYOBJECTS
 	P_LocalUnArchivePolyObjects();
-#endif
 	P_LocalUnArchiveThinkers();
 	P_NetUnArchiveSpecials();
 	P_LocalUnArchiveCameras();
