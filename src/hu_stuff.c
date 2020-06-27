@@ -2187,15 +2187,18 @@ void HU_Drawer(void)
 		return;
 
 	// draw the crosshair, not when viewing demos nor with chasecam
-	if (!automapactive && cv_crosshair.value && !demoplayback &&
-		(!camera.chase || ticcmd_ztargetfocus[0])
-	&& !players[displayplayer].spectator)
-		HU_DrawCrosshair();
+	if (!automapactive && !demoplayback && !titlecard.prelevel)
+	{
+		if (cv_crosshair.value &&
+			(!camera.chase || ticcmd_ztargetfocus[0])
+		&& !players[displayplayer].spectator)
+			HU_DrawCrosshair();
 
-	if (!automapactive && cv_crosshair2.value && !demoplayback &&
-		(!camera2.chase || ticcmd_ztargetfocus[1])
-	&& !players[secondarydisplayplayer].spectator)
-		HU_DrawCrosshair2();
+		if (cv_crosshair2.value &&
+			(!camera2.chase || ticcmd_ztargetfocus[1])
+		&& !players[secondarydisplayplayer].spectator)
+			HU_DrawCrosshair2();
+	}
 
 	// draw desynch text
 	if (hu_resynching)
