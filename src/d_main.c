@@ -410,18 +410,17 @@ static void D_Display(void)
 		if (gamestate == GS_LEVEL || (gamestate == GS_TITLESCREEN && titlemapinaction && curbghide && (!hidetitlemap)))
 		{
 			// draw the view directly
-
-			if (!automapactive && !dedicated && cv_renderview.value)
+			if (!automapactive && !dedicated && (!titlecard.prelevel) && cv_renderview.value)
 			{
 				if (players[displayplayer].mo || players[displayplayer].playerstate == PST_DEAD)
 				{
 					topleft = screens[0] + viewwindowy*vid.width + viewwindowx;
 					objectsdrawn = 0;
-	#ifdef HWRENDER
+#ifdef HWRENDER
 					if (rendermode != render_soft)
 						HWR_RenderPlayerView(0, &players[displayplayer]);
 					else
-	#endif
+#endif
 					if (rendermode != render_none)
 						R_RenderPlayerView(&players[displayplayer]);
 				}
@@ -429,11 +428,11 @@ static void D_Display(void)
 				// render the second screen
 				if (splitscreen && players[secondarydisplayplayer].mo)
 				{
-	#ifdef HWRENDER
+#ifdef HWRENDER
 					if (rendermode != render_soft)
 						HWR_RenderPlayerView(1, &players[secondarydisplayplayer]);
 					else
-	#endif
+#endif
 					if (rendermode != render_none)
 					{
 						viewwindowy = vid.height / 2;
