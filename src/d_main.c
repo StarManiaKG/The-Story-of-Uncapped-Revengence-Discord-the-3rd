@@ -532,7 +532,12 @@ static void D_Display(void)
 
 			if (WipeStageTitle && st_overlay)
 			{
-				ST_preLevelTitleCardDrawer();
+				// Draw the title card, and update the screen
+				ST_drawWipeTitleCard();
+				I_OsPolling();
+				I_UpdateNoBlit();
+
+				// Then, capture the "start" frame of the next wipe
 				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
 				F_WipeStartScreen();
 			}
