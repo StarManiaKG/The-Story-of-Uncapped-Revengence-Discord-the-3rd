@@ -1294,19 +1294,7 @@ luahook:
 }
 
 //
-// Drawer for G_PreLevelTitleCard.
-//
-void ST_preLevelTitleCardDrawer(void)
-{
-	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
-	ST_drawWipeTitleCard();
-	I_OsPolling();
-	I_UpdateNoBlit();
-}
-
-//
 // Draw the title card while on a wipe.
-// Also used in G_PreLevelTitleCard.
 //
 void ST_drawWipeTitleCard(void)
 {
