@@ -1874,6 +1874,7 @@ void G_StartTitleCard(void)
 	}
 
 	WipeStageTitle = (!titlemapinaction);
+	wipetypepost = INT16_MAX;
 }
 
 //
