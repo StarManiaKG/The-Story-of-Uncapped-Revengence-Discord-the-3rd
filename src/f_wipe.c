@@ -193,7 +193,7 @@ void F_WipeStageTitle(void)
 	&& (wipestyle == WIPESTYLE_COLORMAP)
 	&& G_IsTitleCardAvailable())
 	{
-		ST_runTitleCard();
+		G_RunTitleCard();
 		ST_drawWipeTitleCard();
 	}
 }
@@ -501,7 +501,7 @@ void F_DecideWipeStyle(void)
 /** Attempt to run a colormap fade,
     provided all the conditionals were properly met.
     Returns true if so.
-    I demand you call F_RunWipe after this function.
+    Call F_RunWipe after this function.
   */
 boolean F_TryColormapFade(UINT8 wipecolor)
 {

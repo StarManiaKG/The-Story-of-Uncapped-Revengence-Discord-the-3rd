@@ -518,50 +518,51 @@ static void D_Display(void)
 	//
 	// wipe update
 	//
-	if (wipe && wipetypepost != INT16_MAX)
+	if (!titlecard.prelevel)
 	{
-		// note: moved up here because NetUpdate does input changes
-		// and input during wipe tends to mess things up
-		wipedefindex += WIPEFINALSHIFT;
-
-		if (wipetypepost < 0 || !F_WipeExists(wipetypepost))
-			wipetypepost = wipedefs[wipedefindex];
-
-		if (rendermode != render_none)
+		if (wipe && wipetypepost != INT16_MAX)
 		{
-			F_WipeEndScreen();
+			// note: moved up here because NetUpdate does input changes
+			// and input during wipe tends to mess things up
+			wipedefindex += WIPEFINALSHIFT;
 
-			// Funny.
-			if (WipeStageTitle && st_overlay)
+			if (wipetypepost < 0 || !F_WipeExists(wipetypepost))
+				wipetypepost = wipedefs[wipedefindex];
+
+			if (rendermode != render_none)
 			{
-				lt_ticker--;
-				lt_lasttic = lt_ticker;
-				ST_preLevelTitleCardDrawer();
-				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
-				F_WipeStartScreen();
+				F_WipeEndScreen();
+
+				// Funny.
+				if (WipeStageTitle && st_overlay)
+				{
+					ST_preLevelTitleCardDrawer();
+					V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
+					F_WipeStartScreen();
+				}
+
+				// Check for Mega Genesis fade
+				if (F_ShouldColormapFade())
+				{
+					wipestyleflags |= WSF_FADEIN;
+					wipestyleflags &= ~WSF_FADEOUT;
+				}
+
+				F_RunWipe(wipetypepost, gamestate != GS_TIMEATTACK && gamestate != GS_TITLESCREEN);
 			}
 
-			// Check for Mega Genesis fade
-			if (F_ShouldColormapFade())
+			// reset counters so timedemo doesn't count the wipe duration
+			if (timingdemo)
 			{
-				wipestyleflags |= WSF_FADEIN;
-				wipestyleflags &= ~WSF_FADEOUT;
+				framecount = 0;
+				demostarttime = I_GetTime();
 			}
 
-			F_RunWipe(wipetypepost, gamestate != GS_TIMEATTACK && gamestate != GS_TITLESCREEN);
+			wipetypepost = -1;
 		}
-
-		// reset counters so timedemo doesn't count the wipe duration
-		if (timingdemo)
-		{
-			framecount = 0;
-			demostarttime = I_GetTime();
-		}
-
-		wipetypepost = -1;
+		else
+			wipetypepost = -1;
 	}
-	else
-		wipetypepost = -1;
 
 	NetUpdate(); // send out any new accumulation
 
