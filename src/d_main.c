@@ -530,7 +530,6 @@ static void D_Display(void)
 		{
 			F_WipeEndScreen();
 
-			// Funny.
 			if (WipeStageTitle && st_overlay)
 			{
 				ST_preLevelTitleCardDrawer();

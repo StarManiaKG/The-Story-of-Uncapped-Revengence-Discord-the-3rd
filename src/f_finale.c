@@ -4529,7 +4529,7 @@ void F_TextPromptDrawer(void)
 	// Data
 	patch_t *patch;
 
-	if (!promptactive)
+	if (!promptactive || titlecard.prelevel)
 		return;
 
 	iconlump = W_CheckNumForName(textprompts[cutnum]->page[scenenum].iconname);
