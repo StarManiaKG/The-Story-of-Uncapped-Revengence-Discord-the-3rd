@@ -3640,17 +3640,15 @@ boolean P_LoadLevel(boolean fromnetsave)
 	if (rendermode == render_none)
 		return true;
 
-	// Title card!
-	G_StartTitleCard();
+	titlecard.running = false;
+	titlecard.prelevel = false;
 
-	// Can the title card actually run, though?
-	if (!WipeStageTitle)
-		return true;
+	// Can the title card run?
 	if (ranspecialwipe == 2)
 		return true;
 
 	// If so...
-	G_PreLevelTitleCard();
+	G_StartTitleCard();
 
 	return true;
 }
