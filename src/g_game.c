@@ -118,6 +118,8 @@ UINT32 ssspheres; // old special stage
 INT16 lastmap; // last level you were at (returning from special stages)
 tic_t timeinmap; // Ticker for time spent in level (used for levelcard display)
 
+titlecard_t titlecard;
+
 INT16 spstage_start;
 INT16 sstage_start, sstage_end, smpstage_start, smpstage_end;
 
@@ -1851,45 +1853,114 @@ void G_StartTitleCard(void)
 		return;
 	}
 
-	// clear the hud
 	CON_ClearHUD();
-
-	// prepare status bar
-	ST_startTitleCard();
+	G_LoadTitleCardPatches();
 
 	// start the title card
+	titlecard.running = true;
+	titlecard.prelevel = true;
+
+	titlecard.ticker = 0;
+	titlecard.exitticker = 0;
+	titlecard.endtime = 2*TICRATE + 10;
+
+	titlecard.scroll = BASEVIDWIDTH * FRACUNIT;
+	titlecard.momentum = 0;
+
+	if (titlecard.patches[1])
+	{
+		patch_t *patch = (patch_t *)titlecard.patches[1];
+		titlecard.zigzag = -(SHORT(patch->width) * FRACUNIT);
+	}
+
 	WipeStageTitle = (!titlemapinaction);
 }
 
 //
-// Run the title card before fading in to the level.
+// Load the graphics for the title card.
 //
-void G_PreLevelTitleCard(void)
+void G_LoadTitleCardPatches(void)
 {
-#ifndef NOWIPE
-	tic_t starttime = I_GetTime();
-	tic_t endtime = starttime + (PRELEVELTIME*NEWTICRATERATIO);
-	tic_t nowtime = starttime;
-	tic_t lasttime = starttime;
-	while (nowtime < endtime)
+#define SETPATCH(default, warning, custom, idx) \
+{ \
+	lumpnum_t patlumpnum = LUMPERROR; \
+	if (mapheaderinfo[gamemap-1]->custom[0] != '\0') \
+	{ \
+		patlumpnum = W_CheckNumForName(mapheaderinfo[gamemap-1]->custom); \
+		if (patlumpnum != LUMPERROR) \
+			titlecard.patches[idx] = (patch_t *)W_CachePatchNum(patlumpnum, PU_HUDGFX); \
+	} \
+	if (patlumpnum == LUMPERROR) \
+	{ \
+		if (!(mapheaderinfo[gamemap-1]->levelflags & LF_WARNINGTITLE)) \
+			titlecard.patches[idx] = (patch_t *)W_CachePatchName(default, PU_HUDGFX); \
+		else \
+			titlecard.patches[idx] = (patch_t *)W_CachePatchName(warning, PU_HUDGFX); \
+	} \
+}
+
+	SETPATCH("LTACTBLU", "LTACTRED", ltactdiamond, 0)
+	SETPATCH("LTZIGZAG", "LTZIGRED", ltzzpatch, 1)
+	SETPATCH("LTZZTEXT", "LTZZWARN", ltzztext, 2)
+
+#undef SETPATCH
+}
+
+//
+// Run the title card.
+//
+void G_RunTitleCard(void)
+{
+	if (!G_IsTitleCardAvailable())
+		return;
+
+	if (titlecard.ticker >= (titlecard.endtime + TICRATE))
 	{
-		// draw loop
-		while (!((nowtime = I_GetTime()) - lasttime))
-			I_Sleep();
-		lasttime = nowtime;
-
-		ST_runTitleCard();
-		ST_preLevelTitleCardDrawer();
-		I_FinishUpdate(); // page flip or blit buffer
-
-		if (moviemode)
-			M_SaveFrame();
-		if (takescreenshot) // Only take screenshots after drawing.
-			M_DoScreenShot();
+		titlecard.running = false;
+		return;
 	}
-	if (!cv_showhud.value)
-		wipestyleflags = WSF_CROSSFADE;
-#endif
+	else if (titlecard.ticker >= PRELEVELTIME && titlecard.prelevel)
+	{
+        wipegamestate = -1;
+		titlecard.prelevel = false;
+		if (!cv_showhud.value)
+			wipestyleflags = WSF_CROSSFADE;
+	}
+
+	if (!(paused || P_AutoPause()))
+	{
+		// scroll to screen (level title)
+		if (!titlecard.exitticker)
+		{
+			if (abs(titlecard.scroll) > FRACUNIT)
+				titlecard.scroll -= (titlecard.scroll>>2);
+			else
+				titlecard.scroll = 0;
+		}
+		// scroll away from screen (level title)
+		else
+		{
+			titlecard.momentum -= FRACUNIT*6;
+			titlecard.scroll += titlecard.momentum;
+		}
+
+		// scroll to screen (zigzag)
+		if (!titlecard.exitticker)
+		{
+			if (abs(titlecard.zigzag) > FRACUNIT)
+				titlecard.zigzag -= (titlecard.zigzag>>2);
+			else
+				titlecard.zigzag = 0;
+		}
+		// scroll away from screen (zigzag)
+		else
+			titlecard.zigzag += titlecard.momentum;
+
+		// tick
+		titlecard.ticker++;
+		if (titlecard.ticker >= titlecard.endtime)
+			titlecard.exitticker++;
+	}
 }
 
 static boolean titlecardforreload = false;
@@ -2165,7 +2236,7 @@ void G_Ticker(boolean run)
 
 	P_MapStart();
 	// do player reborns if needed
-	if (gamestate == GS_LEVEL)
+	if (gamestate == GS_LEVEL && (!titlecard.prelevel))
 	{
 		// Or, alternatively, retry.
 		if (!(netgame || multiplayer) && G_GetRetryFlag())
@@ -2218,6 +2289,12 @@ void G_Ticker(boolean run)
 	switch (gamestate)
 	{
 		case GS_LEVEL:
+			if (titlecard.running)
+			{
+				G_RunTitleCard();
+				if (titlecard.prelevel)
+					break;
+			}
 			if (titledemo)
 				F_TitleDemoTicker();
 			P_Ticker(run); // tic the game

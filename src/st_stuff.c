@@ -188,11 +188,9 @@ static boolean st_stopped = true;
 
 void ST_Ticker(boolean run)
 {
+	(void)run;
 	if (st_stopped)
 		return;
-
-	if (run)
-		ST_runTitleCard();
 }
 
 // 0 is default, any others are special palettes.
@@ -1195,61 +1193,6 @@ static void ST_drawInput(void)
 		V_DrawThinString(x, y, hudinfo[HUD_LIVES].f|((leveltime & 4) ? V_YELLOWMAP : V_REDMAP), "BAD DEMO!!");
 }
 
-static patch_t *lt_patches[3];
-static INT32 lt_scroll = 0;
-static INT32 lt_mom = 0;
-static INT32 lt_zigzag = 0;
-
-tic_t lt_ticker = 0, lt_lasttic = 0;
-tic_t lt_exitticker = 0, lt_endtime = 0;
-
-//
-// Load the graphics for the title card.
-// Don't let LJ see this
-//
-static void ST_cacheLevelTitle(void)
-{
-#define SETPATCH(default, warning, custom, idx) \
-{ \
-	lumpnum_t patlumpnum = LUMPERROR; \
-	if (mapheaderinfo[gamemap-1]->custom[0] != '\0') \
-	{ \
-		patlumpnum = W_CheckNumForName(mapheaderinfo[gamemap-1]->custom); \
-		if (patlumpnum != LUMPERROR) \
-			lt_patches[idx] = (patch_t *)W_CachePatchNum(patlumpnum, PU_HUDGFX); \
-	} \
-	if (patlumpnum == LUMPERROR) \
-	{ \
-		if (!(mapheaderinfo[gamemap-1]->levelflags & LF_WARNINGTITLE)) \
-			lt_patches[idx] = (patch_t *)W_CachePatchName(default, PU_HUDGFX); \
-		else \
-			lt_patches[idx] = (patch_t *)W_CachePatchName(warning, PU_HUDGFX); \
-	} \
-}
-
-	SETPATCH("LTACTBLU", "LTACTRED", ltactdiamond, 0)
-	SETPATCH("LTZIGZAG", "LTZIGRED", ltzzpatch, 1)
-	SETPATCH("LTZZTEXT", "LTZZWARN", ltzztext, 2)
-
-#undef SETPATCH
-}
-
-//
-// Start the title card.
-//
-void ST_startTitleCard(void)
-{
-	// cache every HUD patch used
-	ST_cacheLevelTitle();
-
-	// initialize HUD variables
-	lt_ticker = lt_exitticker = lt_lasttic = 0;
-	lt_endtime = 2*TICRATE + (10*NEWTICRATERATIO);
-	lt_scroll = BASEVIDWIDTH * FRACUNIT;
-	lt_zigzag = -((lt_patches[1])->width * FRACUNIT);
-	lt_mom = 0;
-}
-
 //
 // What happens before drawing the title card.
 // Which is just setting the HUD translucency.
@@ -1259,63 +1202,13 @@ void ST_preDrawTitleCard(void)
 	if (!G_IsTitleCardAvailable())
 		return;
 
-	if (lt_ticker >= (lt_endtime + TICRATE))
+	if (titlecard.ticker >= (titlecard.endtime + TICRATE))
 		return;
 
-	if (!lt_exitticker)
+	if (!titlecard.exitticker)
 		st_translucency = 0;
 	else
-		st_translucency = max(0, min((INT32)lt_exitticker-4, cv_translucenthud.value));
-}
-
-//
-// Run the title card.
-// Called from ST_Ticker.
-//
-void ST_runTitleCard(void)
-{
-	boolean run = !(paused || P_AutoPause());
-
-	if (!G_IsTitleCardAvailable())
-		return;
-
-	if (lt_ticker >= (lt_endtime + TICRATE))
-		return;
-
-	if (run || (lt_ticker < PRELEVELTIME))
-	{
-		// tick
-		lt_ticker++;
-		if (lt_ticker >= lt_endtime)
-			lt_exitticker++;
-
-		// scroll to screen (level title)
-		if (!lt_exitticker)
-		{
-			if (abs(lt_scroll) > FRACUNIT)
-				lt_scroll -= (lt_scroll>>2);
-			else
-				lt_scroll = 0;
-		}
-		// scroll away from screen (level title)
-		else
-		{
-			lt_mom -= FRACUNIT*6;
-			lt_scroll += lt_mom;
-		}
-
-		// scroll to screen (zigzag)
-		if (!lt_exitticker)
-		{
-			if (abs(lt_zigzag) > FRACUNIT)
-				lt_zigzag -= (lt_zigzag>>2);
-			else
-				lt_zigzag = 0;
-		}
-		// scroll away from screen (zigzag)
-		else
-			lt_zigzag += lt_mom;
-	}
+		st_translucency = max(0, min((INT32)titlecard.exitticker-4, cv_translucenthud.value));
 }
 
 //
@@ -1328,11 +1221,17 @@ void ST_drawTitleCard(void)
 	INT32 actnum = mapheaderinfo[gamemap-1]->actnum;
 	INT32 lvlttlxpos, ttlnumxpos, zonexpos;
 	INT32 subttlxpos = BASEVIDWIDTH/2;
-	INT32 ttlscroll = FixedInt(lt_scroll);
+	INT32 ttlscroll = FixedInt(titlecard.scroll);
 	INT32 zzticker;
 	patch_t *actpat, *zigzag, *zztext;
 	UINT8 colornum;
 	const UINT8 *colormap;
+
+	if (!G_IsTitleCardAvailable())
+		return;
+
+	if (!titlecard.running)
+		return;
 
 	if (players[consoleplayer].skincolor)
 		colornum = players[consoleplayer].skincolor;
@@ -1341,22 +1240,21 @@ void ST_drawTitleCard(void)
 
 	colormap = R_GetTranslationColormap(TC_DEFAULT, colornum, GTC_CACHE);
 
-	if (!G_IsTitleCardAvailable())
-		return;
+	if (titlecard.prelevel)
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
+
+	if (needpatchrecache)
+		G_LoadTitleCardPatches();
 
 	if (!LUA_HudEnabled(hud_stagetitle))
 		goto luahook;
 
-	if (lt_ticker >= (lt_endtime + TICRATE))
+	if (titlecard.ticker >= (titlecard.endtime + TICRATE))
 		goto luahook;
 
-	if ((lt_ticker-lt_lasttic) > 1)
-		lt_ticker = lt_lasttic+1;
-
-	ST_cacheLevelTitle();
-	actpat = lt_patches[0];
-	zigzag = lt_patches[1];
-	zztext = lt_patches[2];
+	actpat = titlecard.patches[0];
+	zigzag = titlecard.patches[1];
+	zztext = titlecard.patches[2];
 
 	lvlttlxpos = ((BASEVIDWIDTH/2) - (V_LevelNameWidth(lvlttl)/2));
 
@@ -1372,11 +1270,11 @@ void ST_drawTitleCard(void)
 
 	if (!splitscreen || (splitscreen && stplyr == &players[displayplayer]))
 	{
-		zzticker = lt_ticker;
-		V_DrawMappedPatch(FixedInt(lt_zigzag), (-zzticker) % zigzag->height, V_SNAPTOTOP|V_SNAPTOLEFT, zigzag, colormap);
-		V_DrawMappedPatch(FixedInt(lt_zigzag), (zigzag->height-zzticker) % zigzag->height, V_SNAPTOTOP|V_SNAPTOLEFT, zigzag, colormap);
-		V_DrawMappedPatch(FixedInt(lt_zigzag), (-zigzag->height+zzticker) % zztext->height, V_SNAPTOTOP|V_SNAPTOLEFT, zztext, colormap);
-		V_DrawMappedPatch(FixedInt(lt_zigzag), (zzticker) % zztext->height, V_SNAPTOTOP|V_SNAPTOLEFT, zztext, colormap);
+		zzticker = titlecard.ticker;
+		V_DrawMappedPatch(FixedInt(titlecard.zigzag), (-zzticker) % zigzag->height, V_SNAPTOTOP|V_SNAPTOLEFT, zigzag, colormap);
+		V_DrawMappedPatch(FixedInt(titlecard.zigzag), (zigzag->height-zzticker) % zigzag->height, V_SNAPTOTOP|V_SNAPTOLEFT, zigzag, colormap);
+		V_DrawMappedPatch(FixedInt(titlecard.zigzag), (-zigzag->height+zzticker) % zztext->height, V_SNAPTOTOP|V_SNAPTOLEFT, zztext, colormap);
+		V_DrawMappedPatch(FixedInt(titlecard.zigzag), (zzticker) % zztext->height, V_SNAPTOTOP|V_SNAPTOLEFT, zztext, colormap);
 	}
 
 	if (actnum)
@@ -1390,8 +1288,6 @@ void ST_drawTitleCard(void)
 	if (!(mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE))
 		V_DrawLevelTitle(zonexpos + ttlscroll, 104, V_PERPLAYER, M_GetText("Zone"));
 	V_DrawCenteredString(subttlxpos - ttlscroll, 135, V_PERPLAYER|V_ALLOWLOWERCASE, subttl);
-
-	lt_lasttic = lt_ticker;
 
 luahook:
 	LUAh_TitleCardHUD(stplyr);
@@ -2596,7 +2492,7 @@ static void ST_overlayDrawer(void)
 	// Check for a valid level title
 	// If the HUD is enabled
 	// And, if Lua is running, if the HUD library has the stage title enabled
-	if (G_IsTitleCardAvailable() && *mapheaderinfo[gamemap-1]->lvlttl != '\0' && !(hu_showscores && (netgame || multiplayer)))
+	if (G_IsTitleCardAvailable() && !(hu_showscores && (netgame || multiplayer)))
 	{
 		stagetitle = true;
 		ST_preDrawTitleCard();
@@ -2817,14 +2713,18 @@ void ST_Drawer(void)
 
 	if (st_overlay)
 	{
+		void (*drawfunc)(void) = ST_overlayDrawer;
+		if (titlecard.prelevel)
+			drawfunc = ST_drawTitleCard;
+
 		// No deadview!
 		stplyr = &players[displayplayer];
-		ST_overlayDrawer();
+		drawfunc();
 
 		if (splitscreen)
 		{
 			stplyr = &players[secondarydisplayplayer];
-			ST_overlayDrawer();
+			drawfunc();
 		}
 	}
 }

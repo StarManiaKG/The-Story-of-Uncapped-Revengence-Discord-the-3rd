@@ -156,9 +156,27 @@ void G_SpawnPlayer(INT32 playernum);
 void G_DeferedInitNew(boolean pultmode, const char *mapname, INT32 pickedchar,
 	boolean SSSG, boolean FLS);
 void G_DoLoadLevel(boolean resetplayer);
+
+// Title card
 void G_StartTitleCard(void);
-void G_PreLevelTitleCard(void);
+void G_RunTitleCard(void);
+void G_LoadTitleCardPatches(void);
 boolean G_IsTitleCardAvailable(void);
+
+typedef struct
+{
+	boolean running, prelevel;
+
+	tic_t ticker;
+	tic_t exitticker, endtime;
+
+	fixed_t zigzag, scroll, momentum;
+	void *patches[3];
+} titlecard_t;
+
+extern titlecard_t titlecard;
+
+#define PRELEVELTIME 24 // frames in tics
 
 // Can be called by the startup code or M_Responder, calls P_SetupLevel.
 void G_LoadGame(UINT32 slot, INT16 mapoverride);
