@@ -2647,6 +2647,8 @@ static void ST_overlayDrawer(void)
 
 void ST_Drawer(void)
 {
+	void (*drawfunc)(void) = ST_overlayDrawer;
+
 	if (needpatchrecache)
 		R_ReloadHUDGraphics();
 
@@ -2711,20 +2713,18 @@ void ST_Drawer(void)
 
 	st_translucency = cv_translucenthud.value;
 
-	if (st_overlay)
+	if (titlecard.prelevel)
+		drawfunc = ST_drawTitleCard;
+	else if (!st_overlay)
+		return;
+
+	// No deadview!
+	stplyr = &players[displayplayer];
+	drawfunc();
+
+	if (splitscreen)
 	{
-		void (*drawfunc)(void) = ST_overlayDrawer;
-		if (titlecard.prelevel)
-			drawfunc = ST_drawTitleCard;
-
-		// No deadview!
-		stplyr = &players[displayplayer];
+		stplyr = &players[secondarydisplayplayer];
 		drawfunc();
-
-		if (splitscreen)
-		{
-			stplyr = &players[secondarydisplayplayer];
-			drawfunc();
-		}
 	}
 }

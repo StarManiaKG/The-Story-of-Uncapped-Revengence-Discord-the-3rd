@@ -518,51 +518,48 @@ static void D_Display(void)
 	//
 	// wipe update
 	//
-	if (!titlecard.prelevel)
+	if (wipe && wipetypepost != INT16_MAX)
 	{
-		if (wipe && wipetypepost != INT16_MAX)
+		// note: moved up here because NetUpdate does input changes
+		// and input during wipe tends to mess things up
+		wipedefindex += WIPEFINALSHIFT;
+
+		if (wipetypepost < 0 || !F_WipeExists(wipetypepost))
+			wipetypepost = wipedefs[wipedefindex];
+
+		if (rendermode != render_none)
 		{
-			// note: moved up here because NetUpdate does input changes
-			// and input during wipe tends to mess things up
-			wipedefindex += WIPEFINALSHIFT;
+			F_WipeEndScreen();
 
-			if (wipetypepost < 0 || !F_WipeExists(wipetypepost))
-				wipetypepost = wipedefs[wipedefindex];
-
-			if (rendermode != render_none)
+			// Funny.
+			if (WipeStageTitle && st_overlay)
 			{
-				F_WipeEndScreen();
-
-				// Funny.
-				if (WipeStageTitle && st_overlay)
-				{
-					ST_preLevelTitleCardDrawer();
-					V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
-					F_WipeStartScreen();
-				}
-
-				// Check for Mega Genesis fade
-				if (F_ShouldColormapFade())
-				{
-					wipestyleflags |= WSF_FADEIN;
-					wipestyleflags &= ~WSF_FADEOUT;
-				}
-
-				F_RunWipe(wipetypepost, gamestate != GS_TIMEATTACK && gamestate != GS_TITLESCREEN);
+				ST_preLevelTitleCardDrawer();
+				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
+				F_WipeStartScreen();
 			}
 
-			// reset counters so timedemo doesn't count the wipe duration
-			if (timingdemo)
+			// Check for Mega Genesis fade
+			if (F_ShouldColormapFade())
 			{
-				framecount = 0;
-				demostarttime = I_GetTime();
+				wipestyleflags |= WSF_FADEIN;
+				wipestyleflags &= ~WSF_FADEOUT;
 			}
 
-			wipetypepost = -1;
+			F_RunWipe(wipetypepost, gamestate != GS_TIMEATTACK && gamestate != GS_TITLESCREEN);
 		}
-		else
-			wipetypepost = -1;
+
+		// reset counters so timedemo doesn't count the wipe duration
+		if (timingdemo)
+		{
+			framecount = 0;
+			demostarttime = I_GetTime();
+		}
+
+		wipetypepost = -1;
 	}
+	else
+		wipetypepost = -1;
 
 	NetUpdate(); // send out any new accumulation
 
