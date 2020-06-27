@@ -175,10 +175,6 @@ void F_DecideWipeStyle(void);
 
 extern INT32 lastwipetic;
 
-// Don't know where else to place this constant
-// But this file seems appropriate
-#define PRELEVELTIME 24 // frames in tics
-
 void F_WipeStartScreen(void);
 void F_WipeEndScreen(void);
 void F_RunWipe(UINT8 wipetype, boolean drawMenu);

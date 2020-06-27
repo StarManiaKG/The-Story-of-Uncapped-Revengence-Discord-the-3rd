@@ -1425,15 +1425,15 @@ void LUAh_TitleCardHUD(player_t *stplayr)
 	lua_remove(gL, -3); // pop HUD
 
 	LUA_PushUserdata(gL, stplayr, META_PLAYER);
-	lua_pushinteger(gL, lt_ticker);
-	lua_pushinteger(gL, (lt_endtime + TICRATE));
+	lua_pushinteger(gL, titlecard.ticker);
+	lua_pushinteger(gL, (titlecard.endtime + TICRATE));
 	lua_pushnil(gL);
 
 	while (lua_next(gL, -6) != 0) {
 		lua_pushvalue(gL, -6); // graphics library (HUD[1])
 		lua_pushvalue(gL, -6); // stplayr
-		lua_pushvalue(gL, -6); // lt_ticker
-		lua_pushvalue(gL, -6); // lt_endtime
+		lua_pushvalue(gL, -6); // titlecard.ticker
+		lua_pushvalue(gL, -6); // titlecard.endtime
 		LUA_Call(gL, 4);
 	}
 
