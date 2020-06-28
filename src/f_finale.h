@@ -134,14 +134,20 @@ void F_InitMenuPresValues(void);
 void F_MenuPresTicker(boolean run);
 
 //
-// WIPE
+// WIPES
 //
+
+#define DEFAULTWIPE -1
+#define IGNOREWIPE INT16_MAX
+
 // HACK for menu fading while titlemapinaction; skips the level check
 #define FORCEWIPE -3
 #define FORCEWIPEOFF -2
 
 extern boolean WipeInAction;
-extern boolean WipeStageTitle;
+extern boolean WipeRunPre;
+extern boolean WipeRunPost;
+extern boolean WipeDrawMenu;
 
 typedef enum
 {
@@ -152,14 +158,15 @@ extern wipestyle_t wipestyle;
 
 typedef enum
 {
-	WSF_FADEOUT   = 1,
-	WSF_FADEIN    = 1<<1,
-	WSF_TOWHITE   = 1<<2,
-	WSF_CROSSFADE = 1<<3,
+	WSF_FADEOUT      = 1,
+	WSF_FADEIN       = 1<<1,
+	WSF_TOWHITE      = 1<<2,
+	WSF_CROSSFADE    = 1<<3,
+	WSF_LEVELLOADING = 1<<4,
+	WSF_SPECIALSTAGE = 1<<5
 } wipestyleflags_t;
 extern wipestyleflags_t wipestyleflags;
 
-// Even my function names are borderline
 boolean F_ShouldColormapFade(void);
 boolean F_TryColormapFade(UINT8 wipecolor);
 #ifndef NOWIPE
@@ -173,12 +180,20 @@ void F_DecideWipeStyle(void);
 #define FADEGREENFACTOR 15
 #define FADEBLUEFACTOR  10
 
-extern INT32 lastwipetic;
+extern UINT8 wipetype;
+extern UINT8 wipeframe;
 
 void F_WipeStartScreen(void);
 void F_WipeEndScreen(void);
-void F_RunWipe(UINT8 wipetype, boolean drawMenu);
-void F_WipeStageTitle(void);
+
+void F_StartWipe(UINT8 type, boolean drawMenu);
+void F_RunWipe(void);
+void F_DisplayWipe(void);
+void F_StopWipe(void);
+
+void F_StartWipePre(void);
+void F_StartWipePost(void);
+
 #define F_WipeColorFill(c) V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, c)
 tic_t F_GetWipeLength(UINT8 wipetype);
 boolean F_WipeExists(UINT8 wipetype);

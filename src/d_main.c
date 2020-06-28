@@ -208,16 +208,13 @@ void D_ProcessEvents(void)
 // wipegamestate can be set to -1 to force a wipe on the next draw
 // added comment : there is a wipe eatch change of the gamestate
 gamestate_t wipegamestate = GS_LEVEL;
-// -1: Default; 0-n: Wipe index; INT16_MAX: do not wipe
-INT16 wipetypepre = -1;
-INT16 wipetypepost = -1;
+INT16 wipetypepre = DEFAULTWIPE;
+INT16 wipetypepost = DEFAULTWIPE;
 
 static void D_Display(void)
 {
 	INT32 setrenderstillneeded = 0;
 	boolean forcerefresh = false;
-	static boolean wipe = false;
-	INT32 wipedefindex = 0;
 
 	if (dedicated)
 		return;
@@ -246,7 +243,7 @@ static void D_Display(void)
 		M_StopMovie();
 
 	// check for change of renderer or screen size (video mode)
-	if ((setrenderneeded || setmodeneeded) && !wipe)
+	if (setrenderneeded || setmodeneeded)
 	{
 		if (setrenderneeded)
 		{
@@ -254,6 +251,8 @@ static void D_Display(void)
 			setrenderstillneeded = setrenderneeded;
 		}
 		SCR_SetMode(); // change video mode
+		if (WipeInAction)
+			F_StopWipe();
 	}
 
 	if (vid.recalc || setrenderstillneeded)
@@ -284,52 +283,19 @@ static void D_Display(void)
 	I_UpdateNoBlit();
 
 	// save the current screen if about to wipe
-	wipe = (gamestate != wipegamestate);
-	if (wipe && wipetypepre != INT16_MAX)
-	{
-		// set for all later
-		wipedefindex = gamestate; // wipe_xxx_toblack
-		if (gamestate == GS_INTERMISSION)
-		{
-			if (intertype == int_spec) // Special Stage
-				wipedefindex = wipe_specinter_toblack;
-			else if (intertype != int_coop) // Multiplayer
-				wipedefindex = wipe_multinter_toblack;
-		}
-
-		if (wipetypepre < 0 || !F_WipeExists(wipetypepre))
-			wipetypepre = wipedefs[wipedefindex];
-
-		if (rendermode != render_none)
-		{
-			// Fade to black first
-			if ((wipegamestate == (gamestate_t)FORCEWIPE ||
-			        (wipegamestate != (gamestate_t)FORCEWIPEOFF
-						&& !(gamestate == GS_LEVEL || (gamestate == GS_TITLESCREEN && titlemapinaction)))
-					) // fades to black on its own timing, always
-			 && wipetypepre != UINT8_MAX)
-			{
-				F_WipeStartScreen();
-				// Check for Mega Genesis fade
-				wipestyleflags = WSF_FADEOUT;
-				if (wipegamestate == (gamestate_t)FORCEWIPE)
-					F_WipeColorFill(31);
-				else if (F_TryColormapFade(31))
-					wipetypepost = -1; // Don't run the fade below this one
-				F_WipeEndScreen();
-				F_RunWipe(wipetypepre, gamestate != GS_TIMEATTACK && gamestate != GS_TITLESCREEN);
-			}
-
-			F_WipeStartScreen();
-		}
-
-		wipetypepre = -1;
-	}
+	if ((gamestate != wipegamestate) && wipetypepre != IGNOREWIPE)
+		F_StartWipePre();
 	else
-		wipetypepre = -1;
+		wipetypepre = DEFAULTWIPE;
 
 	// do buffered drawing
-	switch (gamestate)
+	if (WipeInAction)
+	{
+		F_DisplayWipe();
+		if (titlecard.running && titlecard.wipe && st_overlay)
+			ST_drawTitleCardOutsideOverlay();
+	}
+	else switch (gamestate)
 	{
 		case GS_TITLESCREEN:
 			if (!titlemapinaction || !curbghide) {
@@ -356,7 +322,7 @@ static void D_Display(void)
 		case GS_INTRO:
 			F_IntroDrawer();
 			if (wipegamestate == (gamestate_t)-1)
-				wipe = true;
+				WipeRunPost = true;
 			break;
 
 		case GS_ENDING:
@@ -401,10 +367,8 @@ static void D_Display(void)
 	// STUPID race condition...
 	if (wipegamestate == GS_INTRO && gamestate == GS_TITLESCREEN)
 		wipegamestate = FORCEWIPEOFF;
-	else
+	else if (!WipeInAction)
 	{
-		wipegamestate = gamestate;
-
 		// clean up border stuff
 		// see if the border needs to be initially drawn
 		if (gamestate == GS_LEVEL || (gamestate == GS_TITLESCREEN && titlemapinaction && curbghide && (!hidetitlemap)))
@@ -509,60 +473,26 @@ static void D_Display(void)
 	// vid size change is now finished if it was on...
 	vid.recalc = 0;
 
-	M_Drawer(); // menu is drawn even on top of everything
+	if (!WipeDrawMenu)
+		M_Drawer(); // menu is drawn even on top of everything
 	// focus lost moved to M_Drawer
-
-	CON_Drawer();
 
 	//
 	// wipe update
 	//
-	if (wipe && wipetypepost != INT16_MAX)
+	if (WipeRunPost && (!WipeInAction) && wipetypepost != IGNOREWIPE)
 	{
 		// note: moved up here because NetUpdate does input changes
 		// and input during wipe tends to mess things up
-		wipedefindex += WIPEFINALSHIFT;
-
-		if (wipetypepost < 0 || !F_WipeExists(wipetypepost))
-			wipetypepost = wipedefs[wipedefindex];
-
-		if (rendermode != render_none)
-		{
-			F_WipeEndScreen();
-
-			if (WipeStageTitle && st_overlay)
-			{
-				// Draw the title card, and update the screen
-				ST_drawWipeTitleCard();
-				I_OsPolling();
-				I_UpdateNoBlit();
-
-				// Then, capture the "start" frame of the next wipe
-				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
-				F_WipeStartScreen();
-			}
-
-			// Check for Mega Genesis fade
-			if (F_ShouldColormapFade())
-			{
-				wipestyleflags |= WSF_FADEIN;
-				wipestyleflags &= ~WSF_FADEOUT;
-			}
-
-			F_RunWipe(wipetypepost, gamestate != GS_TIMEATTACK && gamestate != GS_TITLESCREEN);
-		}
-
-		// reset counters so timedemo doesn't count the wipe duration
-		if (timingdemo)
-		{
-			framecount = 0;
-			demostarttime = I_GetTime();
-		}
-
-		wipetypepost = -1;
+		F_StartWipePost();
+		F_DisplayWipe();
+		if (titlecard.running && titlecard.wipe && st_overlay)
+			ST_drawTitleCardOutsideOverlay();
 	}
 	else
-		wipetypepost = -1;
+		wipetypepost = DEFAULTWIPE;
+
+	CON_Drawer();
 
 	NetUpdate(); // send out any new accumulation
 
@@ -576,27 +506,24 @@ static void D_Display(void)
 	//
 	// normal update
 	//
-	if (!wipe)
+	if (cv_netstat.value)
 	{
-		if (cv_netstat.value)
-		{
-			char s[50];
-			Net_GetNetStat();
+		char s[50];
+		Net_GetNetStat();
 
-			s[sizeof s - 1] = '\0';
+		s[sizeof s - 1] = '\0';
 
-			snprintf(s, sizeof s - 1, "get %d b/s", getbps);
-			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-40, V_YELLOWMAP, s);
-			snprintf(s, sizeof s - 1, "send %d b/s", sendbps);
-			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-30, V_YELLOWMAP, s);
-			snprintf(s, sizeof s - 1, "GameMiss %.2f%%", gamelostpercent);
-			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-20, V_YELLOWMAP, s);
-			snprintf(s, sizeof s - 1, "SysMiss %.2f%%", lostpercent);
-			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-10, V_YELLOWMAP, s);
-		}
-
-		I_FinishUpdate(); // page flip or blit buffer
+		snprintf(s, sizeof s - 1, "get %d b/s", getbps);
+		V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-40, V_YELLOWMAP, s);
+		snprintf(s, sizeof s - 1, "send %d b/s", sendbps);
+		V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-30, V_YELLOWMAP, s);
+		snprintf(s, sizeof s - 1, "GameMiss %.2f%%", gamelostpercent);
+		V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-20, V_YELLOWMAP, s);
+		snprintf(s, sizeof s - 1, "SysMiss %.2f%%", lostpercent);
+		V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-10, V_YELLOWMAP, s);
 	}
+
+	I_FinishUpdate(); // page flip or blit buffer
 
 	needpatchflush = false;
 	needpatchrecache = false;
@@ -645,6 +572,7 @@ void D_SRB2Loop(void)
 
 	// make sure to do a d_display to init mode _before_ load a level
 	SCR_SetMode(); // change video mode
+	SCR_SetDrawFuncs();
 	SCR_Recalc();
 
 	// Check and print which version is executed.
@@ -670,12 +598,6 @@ void D_SRB2Loop(void)
 
 	for (;;)
 	{
-		if (lastwipetic)
-		{
-			oldentertics = lastwipetic;
-			lastwipetic = 0;
-		}
-
 		// get real tics
 		entertic = I_GetTime();
 		realtics = entertic - oldentertics;

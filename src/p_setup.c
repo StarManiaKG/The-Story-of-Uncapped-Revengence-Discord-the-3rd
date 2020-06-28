@@ -3186,10 +3186,6 @@ static boolean CanSaveLevel(INT32 mapnum)
 
 static void P_RunSpecialStageWipe(void)
 {
-	tic_t starttime = I_GetTime();
-	tic_t endtime = starttime + (3*TICRATE)/2;
-	tic_t nowtime;
-
 	S_StartSound(NULL, sfx_s3kaf);
 
 	// Fade music! Time it to S3KAF: 0.25 seconds is snappy.
@@ -3199,7 +3195,7 @@ static void P_RunSpecialStageWipe(void)
 		S_FadeOutStopMusic(MUSICRATE/4); //FixedMul(FixedDiv(F_GetWipeLength(wipedefs[wipe_speclevel_towhite])*NEWTICRATERATIO, NEWTICRATE), MUSICRATE)
 
 	F_WipeStartScreen();
-	wipestyleflags |= (WSF_FADEOUT|WSF_TOWHITE);
+	wipestyleflags |= WSF_TOWHITE|WSF_SPECIALSTAGE;
 
 #ifdef HWRENDER
 	// uh..........
@@ -3208,31 +3204,12 @@ static void P_RunSpecialStageWipe(void)
 #endif
 
 	F_WipeEndScreen();
-	F_RunWipe(wipedefs[wipe_speclevel_towhite], false);
-
-	I_OsPolling();
-	I_FinishUpdate(); // page flip or blit buffer
-	if (moviemode)
-		M_SaveFrame();
-
-	nowtime = lastwipetic;
-
-	// Hold on white for extra effect.
-	while (nowtime < endtime)
-	{
-		// wait loop
-		while (!((nowtime = I_GetTime()) - lastwipetic))
-			I_Sleep();
-		lastwipetic = nowtime;
-		if (moviemode) // make sure we save frames for the white hold too
-			M_SaveFrame();
-	}
+	F_StartWipe(wipedefs[wipe_speclevel_towhite], false);
 }
 
 static void P_RunLevelWipe(void)
 {
 	F_WipeStartScreen();
-	wipestyleflags |= WSF_FADEOUT;
 
 #ifdef HWRENDER
 	// uh..........
@@ -3241,13 +3218,15 @@ static void P_RunLevelWipe(void)
 #endif
 
 	F_WipeEndScreen();
+
 	// for titlemap: run a specific wipe if specified
 	// needed for exiting time attack
-	if (wipetypepre != INT16_MAX)
-		F_RunWipe(
-		(wipetypepre >= 0 && F_WipeExists(wipetypepre)) ? wipetypepre : wipedefs[wipe_level_toblack],
-			false);
-	wipetypepre = -1;
+	if (wipetypepre != IGNOREWIPE)
+		F_StartWipe(
+			(wipetypepre != DEFAULTWIPE && F_WipeExists(wipetypepre)) ? wipetypepre : wipedefs[wipe_level_toblack],
+				false);
+
+	wipetypepre = DEFAULTWIPE;
 }
 
 static void P_InitPlayers(void)
@@ -3428,8 +3407,11 @@ boolean P_LoadLevel(boolean fromnetsave)
 	players[consoleplayer].viewz = 1;
 
 	// Cancel all d_main.c fadeouts (keep fade in though).
+	WipeRunPost = false;
 	wipegamestate = FORCEWIPEOFF;
-	wipestyleflags = 0;
+	wipestyleflags = WSF_FADEOUT;
+	if (!titlemapinaction)
+		wipestyleflags |= WSF_LEVELLOADING;
 
 	// Special stage fade to white
 	// This is handled BEFORE sounds are stopped.
@@ -3487,10 +3469,9 @@ boolean P_LoadLevel(boolean fromnetsave)
 			I_UpdateNoVsync();
 		}
 
-		// As oddly named as this is, this handles music only.
-		// We should be fine starting it here.
-		// Don't do this during titlemap, because the menu code handles music by itself.
+#ifdef NOWIPE
 		S_Start();
+#endif
 	}
 
 	levelfadecol = (ranspecialwipe) ? 0 : 31;
@@ -3642,12 +3623,12 @@ boolean P_LoadLevel(boolean fromnetsave)
 
 	titlecard.running = false;
 	titlecard.prelevel = false;
+	titlecard.wipe = 0;
 
-	// Can the title card run?
 	if (ranspecialwipe == 2)
 		return true;
 
-	// If so...
+	// Start the title card.
 	G_StartTitleCard();
 
 	return true;

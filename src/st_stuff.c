@@ -1294,9 +1294,9 @@ luahook:
 }
 
 //
-// Draw the title card while on a wipe.
+// Draws title cards for every player.
 //
-void ST_drawWipeTitleCard(void)
+void ST_drawTitleCardOutsideOverlay(void)
 {
 	stplyr = &players[consoleplayer];
 	ST_preDrawTitleCard();
@@ -2621,7 +2621,7 @@ static void ST_overlayDrawer(void)
 		LUAh_GameHUD(stplyr);
 
 	// draw level title Tails
-	if (stagetitle && (!WipeInAction) && (!WipeStageTitle))
+	if (stagetitle && (!WipeInAction) && (!titlecard.wipe))
 		ST_drawTitleCard();
 
 	if (!hu_showscores && (netgame || multiplayer) && LUA_HudEnabled(hud_textspectator))
