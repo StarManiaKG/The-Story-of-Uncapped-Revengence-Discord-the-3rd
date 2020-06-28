@@ -166,6 +166,7 @@ boolean G_IsTitleCardAvailable(void);
 typedef struct
 {
 	boolean running, prelevel;
+	UINT8 wipe;
 
 	tic_t ticker;
 	tic_t exitticker, endtime;

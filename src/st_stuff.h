@@ -50,7 +50,7 @@ void ST_doPaletteStuff(void);
 // title card
 void ST_drawTitleCard(void);
 void ST_preDrawTitleCard(void);
-void ST_drawWipeTitleCard(void);
+void ST_drawTitleCardOutsideOverlay(void);
 
 // return if player a is in the same team as player b
 boolean ST_SameTeam(player_t *a, player_t *b);

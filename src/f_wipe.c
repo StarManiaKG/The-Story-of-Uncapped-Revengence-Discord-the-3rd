@@ -16,6 +16,7 @@
 #include "i_video.h"
 #include "v_video.h"
 
+#include "r_main.h" // framecount
 #include "r_state.h" // fadecolormap
 #include "r_draw.h" // transtable
 #include "p_pspr.h" // tr_transxxx
@@ -29,6 +30,7 @@
 #include "console.h"
 #include "d_main.h"
 #include "g_game.h"
+#include "y_inter.h" // intertype
 #include "m_misc.h" // movie mode
 
 #include "doomstat.h"
@@ -90,11 +92,17 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 //--------------------------------------------------------------------------
 
 boolean WipeInAction = false;
-boolean WipeStageTitle = false;
-INT32 lastwipetic = 0;
+boolean WipeRunPre = false;
+boolean WipeRunPost = false;
+boolean WipeDrawMenu = false;
+
+UINT8 wipetype = 0;
+UINT8 wipeframe = 0;
 
 wipestyle_t wipestyle = WIPESTYLE_NORMAL;
 wipestyleflags_t wipestyleflags = WSF_CROSSFADE;
+
+static INT32 wipedefindex = 0;
 
 #ifndef NOWIPE
 static UINT8 *wipe_scr_start; //screen 3
@@ -182,20 +190,6 @@ static fademask_t *F_GetFadeMask(UINT8 masknum, UINT8 scrnnum) {
 	}
 
 	return NULL;
-}
-
-/** Draw the stage title.
-  */
-void F_WipeStageTitle(void)
-{
-	// draw level title
-	if ((WipeStageTitle && st_overlay)
-	&& (wipestyle == WIPESTYLE_COLORMAP)
-	&& G_IsTitleCardAvailable())
-	{
-		G_RunTitleCard();
-		ST_drawWipeTitleCard();
-	}
 }
 
 /**	Wipe ticker
@@ -456,7 +450,6 @@ void F_WipeEndScreen(void)
 #endif
 	wipe_scr_end = screens[4];
 	I_ReadScreen(wipe_scr_end);
-	V_DrawBlock(0, 0, 0, vid.width, vid.height, wipe_scr_start);
 #endif
 }
 
@@ -499,9 +492,9 @@ void F_DecideWipeStyle(void)
 #endif
 
 /** Attempt to run a colormap fade,
-    provided all the conditionals were properly met.
+    provided all the conditions were properly met.
     Returns true if so.
-    Call F_RunWipe after this function.
+    Call F_StartWipe after this function.
   */
 boolean F_TryColormapFade(UINT8 wipecolor)
 {
@@ -525,108 +518,255 @@ boolean F_TryColormapFade(UINT8 wipecolor)
 /** After setting up the screens you want to wipe,
   * calling this will do a 'typical' wipe.
   */
-void F_RunWipe(UINT8 wipetype, boolean drawMenu)
+void F_StartWipe(UINT8 type, boolean drawMenu)
 {
 #ifdef NOWIPE
-	(void)wipetype;
+	(void)type;
 	(void)drawMenu;
 #else
-	tic_t nowtime;
-	UINT8 wipeframe = 0;
-	fademask_t *fmask;
-
 	if (!paldiv)
 		paldiv = FixedDiv(257<<FRACBITS, 11<<FRACBITS);
 
 	// Init the wipe
 	F_DecideWipeStyle();
+
 	WipeInAction = true;
-	wipe_scr = screens[0];
+	WipeDrawMenu = (!drawMenu);
 
-	// lastwipetic should either be 0 or the tic we last wiped
-	// on for fade-to-black
-	for (;;)
+	wipetype = type;
+	wipeframe = 0;
+#endif
+}
+
+/** Runs the current wipe.
+  */
+void F_RunWipe(void)
+{
+#ifndef NOWIPE
+	fademask_t *fmask = F_GetFadeMask(wipetype, wipeframe);
+	if (!fmask)
 	{
-		// get fademask first so we can tell if it exists or not
-		fmask = F_GetFadeMask(wipetype, wipeframe++);
-		if (!fmask)
-			break;
-
-		// wait loop
-		while (!((nowtime = I_GetTime()) - lastwipetic))
-			I_Sleep();
-		lastwipetic = nowtime;
-
-		// Wipe styles
-		if (wipestyle == WIPESTYLE_COLORMAP)
-		{
-#ifdef HWRENDER
-			if (rendermode == render_opengl)
-			{
-				// send in the wipe type and wipe frame because we need to cache the graphic
-				HWR_DoTintedWipe(wipetype, wipeframe-1);
-			}
-			else
-#endif
-			{
-				UINT8 *colormap = fadecolormap;
-				if (wipestyleflags & WSF_TOWHITE)
-					colormap += (FADECOLORMAPROWS * 256);
-				F_DoColormapWipe(fmask, colormap);
-			}
-
-			// Draw the title card above the wipe
-			F_WipeStageTitle();
-		}
-		else
-		{
-#ifdef HWRENDER
-			if (rendermode == render_opengl)
-			{
-				// send in the wipe type and wipe frame because we need to cache the graphic
-				HWR_DoWipe(wipetype, wipeframe-1);
-			}
-			else
-#endif
-				F_DoWipe(fmask);
-		}
-
-		I_OsPolling();
-		I_UpdateNoBlit();
-
-		if (drawMenu)
-			M_Drawer(); // menu is drawn even on top of wipes
-
-		I_FinishUpdate(); // page flip or blit buffer
-
-		if (moviemode)
-			M_SaveFrame();
+		F_StopWipe();
+		return;
 	}
 
-	WipeInAction = false;
-	WipeStageTitle = false;
+	wipeframe++;
+#else
+	F_StopWipe();
 #endif
+}
+
+/** Stops running the current wipe.
+  */
+void F_StopWipe(void)
+{
+	WipeInAction = false;
+	WipeDrawMenu = false;
+
+	if (titlecard.wipe)
+		titlecard.wipe = 0;
+
+	if (wipestyleflags & WSF_SPECIALSTAGE)
+	{
+		tic_t starttime = I_GetTime(), lasttime = starttime;
+		tic_t endtime = starttime + (3*TICRATE)/2;
+		tic_t nowtime;
+
+		// Hold on white for extra effect.
+		while (nowtime < endtime)
+		{
+			while (!((nowtime = I_GetTime()) - lasttime))
+				I_Sleep();
+			lasttime = nowtime;
+
+			I_OsPolling();
+			if (moviemode) // make sure we save frames for the white hold too
+				M_SaveFrame();
+		}
+
+		wipestyleflags &= ~WSF_SPECIALSTAGE;
+	}
+
+	if (wipestyleflags & WSF_LEVELLOADING)
+	{
+		// As oddly named as this is, this handles music only.
+		// We should be fine starting it here.
+		// Don't do this during titlemap, because the menu code handles music by itself.
+		S_Start();
+		wipestyleflags &= ~WSF_LEVELLOADING;
+	}
+}
+
+#ifndef NOWIPE
+/** Renders the current wipe into wipe_scr.
+  */
+static void F_RenderWipe(fademask_t *fmask)
+{
+	// Wipe styles
+	if (wipestyle == WIPESTYLE_COLORMAP)
+	{
+#ifdef HWRENDER
+		if (rendermode == render_opengl)
+		{
+			// send in the wipe type and wipe frame because we need to cache the graphic
+			HWR_DoTintedWipe(wipetype, wipeframe-1);
+		}
+		else
+#endif
+		{
+			UINT8 *colormap = fadecolormap;
+			if (wipestyleflags & WSF_TOWHITE)
+				colormap += (FADECOLORMAPROWS * 256);
+			F_DoColormapWipe(fmask, colormap);
+		}
+	}
+	else
+	{
+#ifdef HWRENDER
+		if (rendermode == render_opengl)
+		{
+			// send in the wipe type and wipe frame because we need to cache the graphic
+			HWR_DoWipe(wipetype, wipeframe-1);
+		}
+		else
+#endif
+			F_DoWipe(fmask);
+	}
+}
+#endif
+
+/** Displays the current wipe.
+  */
+void F_DisplayWipe(void)
+{
+#ifndef NOWIPE
+	fademask_t *fmask;
+	wipe_scr = screens[0];
+
+	// get fademask first so we can tell if it exists or not
+	fmask = F_GetFadeMask(wipetype, wipeframe);
+	if (!fmask)
+	{
+		// Save screen for post-wipe
+		if (WipeRunPre)
+		{
+			fmask = F_GetFadeMask(wipetype, wipeframe-1);
+			WipeRunPre = false; // Disable post-wipe flag
+			if (!fmask)
+				return;
+			else
+			{
+				F_RenderWipe(fmask);
+				F_WipeStartScreen();
+			}
+		}
+		return;
+	}
+
+	F_RenderWipe(fmask);
+#endif
+}
+
+/** Starts the "pre" type of a wipe.
+  */
+void F_StartWipePre(void)
+{
+	// set for all later
+	wipedefindex = gamestate; // wipe_xxx_toblack
+	if (gamestate == GS_INTERMISSION)
+	{
+		if (intertype == int_spec) // Special Stage
+			wipedefindex = wipe_specinter_toblack;
+		else if (intertype != int_coop) // Multiplayer
+			wipedefindex = wipe_multinter_toblack;
+	}
+
+	if (wipetypepre < 0 || !F_WipeExists(wipetypepre))
+		wipetypepre = wipedefs[wipedefindex];
+
+	if (rendermode != render_none)
+	{
+		WipeRunPre = true;
+		// Fade to black first
+		if ((wipegamestate == (gamestate_t)FORCEWIPE ||
+				(wipegamestate != (gamestate_t)FORCEWIPEOFF
+					&& !(gamestate == GS_LEVEL || (gamestate == GS_TITLESCREEN && titlemapinaction)))
+				) // fades to black on its own timing, always
+		 && wipetypepre != UINT8_MAX)
+		{
+			F_WipeStartScreen();
+
+			// Check for Mega Genesis fade
+			wipestyleflags = WSF_FADEOUT;
+			if (wipegamestate == (gamestate_t)FORCEWIPE)
+				F_WipeColorFill(31);
+			else if (F_TryColormapFade(31))
+				wipetypepost = DEFAULTWIPE; // Don't run the fade below this one
+
+			F_WipeEndScreen();
+
+			F_StartWipe(wipetypepre, gamestate != GS_TIMEATTACK && gamestate != GS_TITLESCREEN);
+			WipeRunPost = true;
+		}
+	}
+
+	wipetypepre = DEFAULTWIPE;
+	wipegamestate = gamestate;
+}
+
+/** Starts the "post" type of a wipe.
+  */
+void F_StartWipePost(void)
+{
+	wipedefindex += WIPEFINALSHIFT;
+
+	if (wipetypepost == DEFAULTWIPE || !F_WipeExists(wipetypepost))
+		wipetypepost = wipedefs[wipedefindex];
+
+	if (rendermode != render_none)
+	{
+		F_WipeEndScreen();
+
+		// Check for Mega Genesis fade
+		if (F_ShouldColormapFade())
+		{
+			wipestyleflags |= WSF_FADEIN;
+			wipestyleflags &= ~(WSF_FADEOUT|WSF_LEVELLOADING|WSF_SPECIALSTAGE);
+		}
+
+		F_StartWipe(wipetypepost, gamestate != GS_TIMEATTACK && gamestate != GS_TITLESCREEN);
+	}
+
+	// reset counters so timedemo doesn't count the wipe duration
+	if (timingdemo)
+	{
+		framecount = 0;
+		demostarttime = I_GetTime();
+	}
+
+	wipetypepost = DEFAULTWIPE;
+	WipeRunPost = false;
 }
 
 /** Returns tic length of wipe
   * One lump equals one tic
   */
-tic_t F_GetWipeLength(UINT8 wipetype)
+tic_t F_GetWipeLength(UINT8 type)
 {
 #ifdef NOWIPE
-	(void)wipetype;
+	(void)type;
 	return 0;
 #else
 	static char lumpname[10] = "FADEmmss";
 	lumpnum_t lumpnum;
 	UINT8 wipeframe;
 
-	if (wipetype > 99)
+	if (type > 99)
 		return 0;
 
 	for (wipeframe = 0; wipeframe < 100; wipeframe++)
 	{
-		sprintf(&lumpname[4], "%.2hu%.2hu", (UINT16)wipetype, (UINT16)wipeframe);
+		sprintf(&lumpname[4], "%.2hu%.2hu", (UINT16)type, (UINT16)wipeframe);
 
 		lumpnum = W_CheckNumForName(lumpname);
 		if (lumpnum == LUMPERROR)
@@ -638,19 +778,19 @@ tic_t F_GetWipeLength(UINT8 wipetype)
 
 /** Does the specified wipe exist?
   */
-boolean F_WipeExists(UINT8 wipetype)
+boolean F_WipeExists(UINT8 type)
 {
 #ifdef NOWIPE
-	(void)wipetype;
+	(void)type;
 	return false;
 #else
 	static char lumpname[10] = "FADEmm00";
 	lumpnum_t lumpnum;
 
-	if (wipetype > 99)
+	if (type > 99)
 		return false;
 
-	sprintf(&lumpname[4], "%.2hu00", (UINT16)wipetype);
+	sprintf(&lumpname[4], "%.2hu00", (UINT16)type);
 
 	lumpnum = W_CheckNumForName(lumpname);
 	return !(lumpnum == LUMPERROR);
