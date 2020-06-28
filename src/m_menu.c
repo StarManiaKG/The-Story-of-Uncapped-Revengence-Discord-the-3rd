@@ -2981,19 +2981,19 @@ static void M_HandleMenuPresState(menu_t *newMenu)
 	)
 	{
 		if (gamestate == GS_TIMEATTACK)
-			wipetypepre = ((exitwipe && enterlevel <= exitlevel) || anceslevel < 0) ? exitwipe : -1; // force default
+			wipetypepre = ((exitwipe && enterlevel <= exitlevel) || anceslevel < 0) ? exitwipe : DEFAULTWIPE; // force default
 		else
 			// HACK: INT16_MAX signals to not wipe
 			// because 0 is a valid index and -1 means default
-			wipetypepre = ((exitwipe && enterlevel <= exitlevel) || anceslevel < 0) ? exitwipe : INT16_MAX;
-		wipetypepost = ((enterwipe && enterlevel >= exitlevel) || anceslevel < 0) ? enterwipe : INT16_MAX;
+			wipetypepre = ((exitwipe && enterlevel <= exitlevel) || anceslevel < 0) ? exitwipe : IGNOREWIPE;
+		wipetypepost = ((enterwipe && enterlevel >= exitlevel) || anceslevel < 0) ? enterwipe : IGNOREWIPE;
 		wipegamestate = FORCEWIPE;
 
 		// If just one of the above is a force not-wipe,
 		// mirror the other wipe.
-		if (wipetypepre != INT16_MAX && wipetypepost == INT16_MAX)
+		if (wipetypepre != IGNOREWIPE && wipetypepost == IGNOREWIPE)
 			wipetypepost = wipetypepre;
-		else if (wipetypepost != INT16_MAX && wipetypepre == INT16_MAX)
+		else if (wipetypepost != IGNOREWIPE && wipetypepre == IGNOREWIPE)
 			wipetypepre = wipetypepost;
 
 		// D_Display runs the next step of processing
