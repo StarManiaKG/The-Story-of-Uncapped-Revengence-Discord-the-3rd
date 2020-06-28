@@ -1851,7 +1851,7 @@ void G_StartTitleCard(void)
 	// Oh well.
 	if (!G_IsTitleCardAvailable())
 	{
-		WipeStageTitle = false;
+		WipeRunPost = true; // Start the post wipe.
 		return;
 	}
 
@@ -1875,8 +1875,7 @@ void G_StartTitleCard(void)
 		titlecard.zigzag = -(SHORT(patch->width) * FRACUNIT);
 	}
 
-	WipeStageTitle = (!titlemapinaction);
-	wipetypepost = INT16_MAX;
+	wipetypepost = IGNOREWIPE;
 }
 
 //
@@ -1917,6 +1916,9 @@ void G_RunTitleCard(void)
 	if (!G_IsTitleCardAvailable())
 		return;
 
+	if (titlecard.wipe)
+		titlecard.wipe++;
+
 	if (titlecard.ticker >= (titlecard.endtime + TICRATE))
 	{
 		titlecard.running = false;
@@ -1924,10 +1926,15 @@ void G_RunTitleCard(void)
 	}
 	else if (titlecard.ticker >= PRELEVELTIME && titlecard.prelevel)
 	{
+		// Force a wipe
         wipegamestate = -1;
-		titlecard.prelevel = false;
-		if (!cv_showhud.value)
+        WipeRunPost = true;
+        if (!cv_showhud.value)
 			wipestyleflags = WSF_CROSSFADE;
+
+		// Disable prelevel flag
+		titlecard.prelevel = false;
+		titlecard.wipe = 1;
 	}
 
 	if (!(paused || P_AutoPause()))
@@ -2236,6 +2243,17 @@ void G_Ticker(boolean run)
 {
 	UINT32 i;
 	INT32 buf;
+
+	if (WipeInAction)
+	{
+		if (run)
+		{
+			F_RunWipe();
+			if (titlecard.running && (wipestyleflags & WSF_FADEIN))
+				G_RunTitleCard();
+		}
+		return;
+	}
 
 	P_MapStart();
 	// do player reborns if needed

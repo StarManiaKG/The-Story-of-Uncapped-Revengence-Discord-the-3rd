@@ -919,7 +919,7 @@ void F_IntroDrawer(void)
 				F_WipeStartScreen();
 				F_TryColormapFade(31);
 				F_WipeEndScreen();
-				F_RunWipe(99,true);
+				F_StartWipe(99,true);
 			}
 
 			S_ChangeMusicInternal("_intro", false);
@@ -932,7 +932,7 @@ void F_IntroDrawer(void)
 				F_WipeStartScreen();
 				F_TryColormapFade(0);
 				F_WipeEndScreen();
-				F_RunWipe(99,true);
+				F_StartWipe(99,true);
 			}
 		}
 		else if (intro_scenenum == 16)
@@ -943,7 +943,7 @@ void F_IntroDrawer(void)
 				F_WipeStartScreen();
 				F_TryColormapFade(31);
 				F_WipeEndScreen();
-				F_RunWipe(99,true);
+				F_StartWipe(99,true);
 			}
 
 			// Stay on black for a bit. =)
@@ -995,7 +995,7 @@ void F_IntroDrawer(void)
 			V_DrawString(8, 128, V_ALLOWLOWERCASE, cutscene_disptext);
 
 			F_WipeEndScreen();
-			F_RunWipe(99,true);
+			F_StartWipe(99,true);
 		}
 		else if (intro_scenenum == 7 && intro_curtime == 6*TICRATE) // Force a wipe here
 		{
@@ -1008,7 +1008,7 @@ void F_IntroDrawer(void)
 			V_DrawString(8, 128, V_ALLOWLOWERCASE, cutscene_disptext);
 
 			F_WipeEndScreen();
-			F_RunWipe(99,true);
+			F_StartWipe(99,true);
 		}
 		/*else if (intro_scenenum == 12 && intro_curtime == 7*TICRATE)
 		{
@@ -1021,7 +1021,7 @@ void F_IntroDrawer(void)
 			V_DrawString(8, 128, V_ALLOWLOWERCASE, cutscene_disptext);
 
 			F_WipeEndScreen();
-			F_RunWipe(99,true);
+			F_StartWipe(99,true);
 		}*/
 		if (intro_scenenum == 15 && intro_curtime == 7*TICRATE)
 		{
@@ -1034,7 +1034,7 @@ void F_IntroDrawer(void)
 			V_DrawString(224, 8, V_ALLOWLOWERCASE, cutscene_disptext);
 
 			F_WipeEndScreen();
-			F_RunWipe(99,true);
+			F_StartWipe(99,true);
 		}
 	}
 
@@ -1836,7 +1836,7 @@ static void F_CacheGoodEnding(void)
 void F_StartEnding(void)
 {
 	G_SetGamestate(GS_ENDING);
-	wipetypepost = INT16_MAX;
+	wipetypepost = IGNOREWIPE;
 
 	// Just in case they're open ... somehow
 	M_ClearMenus(true);
@@ -1864,7 +1864,7 @@ void F_EndingTicker(void)
 	if (++finalecount > STOPPINGPOINT)
 	{
 		F_StartCredits();
-		wipetypepre = INT16_MAX;
+		wipetypepre = IGNOREWIPE;
 		return;
 	}
 
@@ -4040,7 +4040,7 @@ void F_CutsceneDrawer(void)
 			V_DrawFill(0,0,BASEVIDWIDTH,BASEVIDHEIGHT,cutscenes[cutnum]->scene[scenenum].fadecolor);
 
 			F_WipeEndScreen();
-			F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeinid, true);
+			F_StartWipe(cutscenes[cutnum]->scene[scenenum].fadeinid, true);
 
 			F_WipeStartScreen();
 		}
@@ -4060,7 +4060,7 @@ void F_CutsceneDrawer(void)
 	if (dofadenow && rendermode != render_none)
 	{
 		F_WipeEndScreen();
-		F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeoutid, true);
+		F_StartWipe(cutscenes[cutnum]->scene[scenenum].fadeoutid, true);
 	}
 
 	V_DrawString(textxpos, textypos, V_ALLOWLOWERCASE, cutscene_disptext);
