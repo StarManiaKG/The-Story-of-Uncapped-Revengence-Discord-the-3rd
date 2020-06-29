@@ -1785,9 +1785,7 @@ void G_StartLevel(boolean resetplayer)
 	if (gamestate == GS_INTERMISSION)
 		Y_EndIntermission();
 
-	// This is needed. Don't touch.
-	maptol = mapheaderinfo[gamemap-1]->typeoflevel;
-	gametyperules = gametypedefaultrules[gametype];
+	G_InitLevelGametype();
 	ranspecialwipe = SPECIALWIPE_NONE;
 
 	if (mapheaderinfo[gamemap-1]->runsoc[0] != '#')
@@ -1820,6 +1818,15 @@ void G_StartLevel(boolean resetplayer)
 
 		G_DoLoadLevel();
 	}
+}
+
+//
+// G_InitLevelGametype
+//
+void G_InitLevelGametype(void)
+{
+	maptol = mapheaderinfo[gamemap-1]->typeoflevel;
+	gametyperules = gametypedefaultrules[gametype];
 }
 
 //

@@ -161,6 +161,7 @@ void G_DeferedInitNew(boolean pultmode, const char *mapname, INT32 pickedchar,
 	boolean SSSG, boolean FLS);
 void G_StartLevel(boolean resetplayer);
 void G_StartLevelWipe(void);
+void G_InitLevelGametype(void);
 void G_DoLoadLevel(void);
 
 // Title card

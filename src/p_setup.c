@@ -3346,10 +3346,8 @@ boolean P_LoadLevel(boolean fromnetsave)
 	sector_t *ss;
 	levelloading = true;
 
-#if 0
-	CON_Drawer(); // let the user know what we are going to do
-	I_FinishUpdate(); // page flip or blit buffer
-#endif
+	if (fromnetsave)
+		G_InitLevelGametype();
 
 	// Reset the palette
 	if (rendermode != render_none)
@@ -3587,10 +3585,6 @@ boolean P_LoadLevel(boolean fromnetsave)
 		wipegamestate = -1;
 		wipestyleflags = (WSF_TOWHITE|WSF_FADEIN);
 		WipeRunPost = true;
-
-		// Stop the title card
-		titlecard.running = false;
-		titlecard.prelevel = false;
 
 		// Reset the HUD translucency!
 		st_translucency = cv_translucenthud.value;
