@@ -2085,9 +2085,9 @@ void G_RunTitleCard(void)
 	else if (titlecard.ticker >= PRELEVELTIME && titlecard.prelevel)
 	{
 		// Force a wipe
-        wipegamestate = -1;
-        WipeRunPost = true;
-        if (!cv_showhud.value)
+		wipegamestate = -1;
+		WipeRunPost = true;
+		if (!cv_showhud.value)
 			wipestyleflags = WSF_CROSSFADE;
 
 		// Disable prelevel flag
