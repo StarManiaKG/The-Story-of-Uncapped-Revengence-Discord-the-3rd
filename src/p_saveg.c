@@ -15,6 +15,7 @@
 #include "byteptr.h"
 #include "d_main.h"
 #include "doomstat.h"
+#include "f_finale.h"
 #include "g_game.h"
 #include "m_random.h"
 #include "m_misc.h"
@@ -3942,8 +3943,19 @@ static inline boolean P_NetUnArchiveMisc(void)
 
 	tokenlist = READUINT32(save_p);
 
+	levelstarting = false;
+
 	if (!P_LoadLevel(true))
 		return false;
+
+	G_StartLevelWipe();
+	wipestyleflags &= ~(WSF_SPECIALSTAGE|WSF_LEVELLOADING);
+	F_StopWipe();
+
+	WipeRunPost = false;
+	wipetypepre = wipetypepost = IGNOREWIPE;
+
+	titlecard.prelevel = false;
 
 	// get the time
 	leveltime = READUINT32(save_p);

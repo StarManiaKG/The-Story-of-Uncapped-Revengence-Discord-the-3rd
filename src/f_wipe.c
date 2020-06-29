@@ -113,7 +113,7 @@ static fixed_t paldiv = 0;
   * \return	fademask_t for lump
   */
 static fademask_t *F_GetFadeMask(UINT8 masknum, UINT8 scrnnum) {
-	static char lumpname[10] = "FADEmmss";
+	static char lumpname[11] = "FADEmmss";
 	static fademask_t fm = {NULL,0,0,0,0,0};
 	lumpnum_t lumpnum;
 	UINT8 *lump, *mask;
@@ -755,7 +755,7 @@ tic_t F_GetWipeLength(UINT8 type)
 	(void)type;
 	return 0;
 #else
-	static char lumpname[10] = "FADEmmss";
+	static char lumpname[11] = "FADEmmss";
 	lumpnum_t lumpnum;
 	UINT8 wipeframe;
 
@@ -764,7 +764,7 @@ tic_t F_GetWipeLength(UINT8 type)
 
 	for (wipeframe = 0; wipeframe < 100; wipeframe++)
 	{
-		sprintf(&lumpname[4], "%.2hu%.2hu", (UINT16)type, (UINT16)wipeframe);
+		sprintf(&lumpname[4], "%.2hu%.2hu", (UINT8)type, (UINT8)wipeframe);
 
 		lumpnum = W_CheckNumForName(lumpname);
 		if (lumpnum == LUMPERROR)
@@ -782,7 +782,7 @@ boolean F_WipeExists(UINT8 type)
 	(void)type;
 	return false;
 #else
-	static char lumpname[10] = "FADEmm00";
+	static char lumpname[11] = "FADEmm00";
 	lumpnum_t lumpnum;
 
 	if (type > 99)
