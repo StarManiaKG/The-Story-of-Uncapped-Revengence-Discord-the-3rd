@@ -3563,15 +3563,13 @@ boolean M_Responder(event_t *ev)
 //
 void M_Drawer(void)
 {
-	boolean wipe = WipeInAction;
-
 	if (currentMenu == &MessageDef)
 		menuactive = true;
 
 	if (menuactive)
 	{
 		// now that's more readable with a faded background (yeah like Quake...)
-		if (!wipe && (curfadevalue || (gamestate != GS_TITLESCREEN && gamestate != GS_TIMEATTACK)))
+		if (curfadevalue || (gamestate != GS_TITLESCREEN && gamestate != GS_TIMEATTACK))
 			V_DrawFadeScreen(0xFF00, (gamestate != GS_TITLESCREEN && gamestate != GS_TIMEATTACK) ? 16 : curfadevalue);
 
 		if (currentMenu->drawroutine)

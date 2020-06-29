@@ -976,6 +976,7 @@ void F_IntroDrawer(void)
 
 		F_WipeStartScreen();
 		wipegamestate = -1;
+		wipestyle = WIPESTYLE_NORMAL;
 		wipestyleflags = WSF_CROSSFADE;
 		animtimer = stoptimer = 0;
 	}
@@ -2518,8 +2519,6 @@ void F_StartTitleScreen(void)
 
 	if (titlemap)
 	{
-		mapthing_t *startpos;
-
 		gamestate_t prevwipegamestate = wipegamestate;
 		titlemapinaction = TITLEMAP_LOADING;
 		titlemapcameraref = NULL;
@@ -2531,41 +2530,9 @@ void F_StartTitleScreen(void)
 		maptol = mapheaderinfo[gamemap-1]->typeoflevel;
 		globalweather = mapheaderinfo[gamemap-1]->weather;
 
-		G_DoLoadLevel(true);
+		G_StartLevel(true);
 		if (!titlemap)
 			return;
-
-		players[displayplayer].playerstate = PST_DEAD; // Don't spawn the player in dummy (I'm still a filthy cheater)
-
-		// Set Default Position
-		if (playerstarts[0])
-			startpos = playerstarts[0];
-		else if (deathmatchstarts[0])
-			startpos = deathmatchstarts[0];
-		else
-			startpos = NULL;
-
-		if (startpos)
-		{
-			camera.x = startpos->x << FRACBITS;
-			camera.y = startpos->y << FRACBITS;
-			camera.subsector = R_PointInSubsector(camera.x, camera.y);
-			camera.z = camera.subsector->sector->floorheight + (startpos->z << FRACBITS);
-			camera.angle = (startpos->angle % 360)*ANG1;
-			camera.aiming = 0;
-		}
-		else
-		{
-			camera.x = camera.y = camera.z = camera.angle = camera.aiming = 0;
-			camera.subsector = NULL; // toast is filthy too
-		}
-
-		camera.chase = true;
-		camera.height = 0;
-
-		// Run enter linedef exec for MN_MAIN, since this is where we start
-		if (menupres[MN_MAIN].entertag)
-			P_LinedefExecute(menupres[MN_MAIN].entertag, players[displayplayer].mo, NULL);
 
 		wipegamestate = prevwipegamestate;
 	}
