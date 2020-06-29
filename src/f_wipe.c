@@ -41,10 +41,6 @@
 #include "hardware/hw_main.h"
 #endif
 
-#if NUMSCREENS < 5
-#define NOWIPE // do not enable wipe image post processing for ARM, SH and MIPS CPUs
-#endif
-
 typedef struct fademask_s {
 	UINT8* mask;
 	UINT16 width, height;
@@ -99,8 +95,9 @@ boolean WipeDrawMenu = false;
 UINT8 wipetype = 0;
 UINT8 wipeframe = 0;
 
-wipestyle_t wipestyle = WIPESTYLE_NORMAL;
+wipestyle_t wipestyle = WIPESTYLE_UNDEFINED;
 wipestyleflags_t wipestyleflags = WSF_CROSSFADE;
+specialwipe_t ranspecialwipe = SPECIALWIPE_NONE;
 
 static INT32 wipedefindex = 0;
 
@@ -479,7 +476,6 @@ boolean F_ShouldColormapFade(void)
 
 /** Decides what wipe style to use.
   */
-#ifndef NOWIPE
 void F_DecideWipeStyle(void)
 {
 	// Set default wipe style
@@ -489,7 +485,6 @@ void F_DecideWipeStyle(void)
 	if (F_ShouldColormapFade())
 		wipestyle = WIPESTYLE_COLORMAP;
 }
-#endif
 
 /** Attempt to run a colormap fade,
     provided all the conditions were properly met.
@@ -528,7 +523,8 @@ void F_StartWipe(UINT8 type, boolean drawMenu)
 		paldiv = FixedDiv(257<<FRACBITS, 11<<FRACBITS);
 
 	// Init the wipe
-	F_DecideWipeStyle();
+	if (wipestyle == WIPESTYLE_UNDEFINED)
+		F_DecideWipeStyle();
 
 	WipeInAction = true;
 	WipeDrawMenu = (!drawMenu);
@@ -568,6 +564,7 @@ void F_StopWipe(void)
 
 	if (wipestyleflags & WSF_SPECIALSTAGE)
 	{
+#ifndef NOWIPE
 		tic_t starttime = I_GetTime(), lasttime = starttime;
 		tic_t endtime = starttime + (3*TICRATE)/2;
 		tic_t nowtime;
@@ -583,18 +580,17 @@ void F_StopWipe(void)
 			if (moviemode) // make sure we save frames for the white hold too
 				M_SaveFrame();
 		}
-
+#endif
 		wipestyleflags &= ~WSF_SPECIALSTAGE;
 	}
 
 	if (wipestyleflags & WSF_LEVELLOADING)
 	{
-		// As oddly named as this is, this handles music only.
-		// We should be fine starting it here.
-		// Don't do this during titlemap, because the menu code handles music by itself.
-		S_Start();
+		G_DoLoadLevel();
 		wipestyleflags &= ~WSF_LEVELLOADING;
 	}
+
+	wipestyle = WIPESTYLE_UNDEFINED;
 }
 
 #ifndef NOWIPE
@@ -602,35 +598,37 @@ void F_StopWipe(void)
   */
 static void F_RenderWipe(fademask_t *fmask)
 {
-	// Wipe styles
-	if (wipestyle == WIPESTYLE_COLORMAP)
+	switch (wipestyle)
 	{
+		case WIPESTYLE_COLORMAP:
 #ifdef HWRENDER
-		if (rendermode == render_opengl)
-		{
-			// send in the wipe type and wipe frame because we need to cache the graphic
-			HWR_DoTintedWipe(wipetype, wipeframe-1);
-		}
-		else
+			if (rendermode == render_opengl)
+			{
+				// send in the wipe type and wipe frame because we need to cache the graphic
+				HWR_DoTintedWipe(wipetype, wipeframe-1);
+			}
+			else
 #endif
-		{
-			UINT8 *colormap = fadecolormap;
-			if (wipestyleflags & WSF_TOWHITE)
-				colormap += (FADECOLORMAPROWS * 256);
-			F_DoColormapWipe(fmask, colormap);
-		}
-	}
-	else
-	{
+			{
+				UINT8 *colormap = fadecolormap;
+				if (wipestyleflags & WSF_TOWHITE)
+					colormap += (FADECOLORMAPROWS * 256);
+				F_DoColormapWipe(fmask, colormap);
+			}
+			break;
+		case WIPESTYLE_NORMAL:
 #ifdef HWRENDER
-		if (rendermode == render_opengl)
-		{
-			// send in the wipe type and wipe frame because we need to cache the graphic
-			HWR_DoWipe(wipetype, wipeframe-1);
-		}
-		else
+			if (rendermode == render_opengl)
+			{
+				// send in the wipe type and wipe frame because we need to cache the graphic
+				HWR_DoWipe(wipetype, wipeframe-1);
+			}
+			else
 #endif
-			F_DoWipe(fmask);
+				F_DoWipe(fmask);
+			break;
+		default:
+			break;
 	}
 }
 #endif

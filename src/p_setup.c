@@ -2871,7 +2871,7 @@ void P_RespawnThings(void)
 	skyboxmo[1] = skyboxcenterpnts[(centerid >= 0) ? centerid : 0];
 }
 
-static void P_RunLevelScript(const char *scriptname)
+void P_RunLevelScript(const char *scriptname)
 {
 	if (!(mapheaderinfo[gamemap-1]->levelflags & LF_SCRIPTISFILE))
 	{
@@ -3184,7 +3184,7 @@ static boolean CanSaveLevel(INT32 mapnum)
 	return (mapheaderinfo[mapnum-1]->levelflags & LF_SAVEGAME || gamecomplete || !lastmaploaded);
 }
 
-static void P_RunSpecialStageWipe(void)
+void P_RunSpecialStageWipe(void)
 {
 	S_StartSound(NULL, sfx_s3kaf);
 
@@ -3207,7 +3207,7 @@ static void P_RunSpecialStageWipe(void)
 	F_StartWipe(wipedefs[wipe_speclevel_towhite], false);
 }
 
-static void P_RunLevelWipe(void)
+void P_RunLevelWipe(void)
 {
 	F_WipeStartScreen();
 
@@ -3342,16 +3342,14 @@ boolean P_LoadLevel(boolean fromnetsave)
 	// use gamemap to get map number.
 	// 99% of the things already did, so.
 	// Map header should always be in place at this point
-	INT32 i, ranspecialwipe = 0;
+	INT32 i;
 	sector_t *ss;
 	levelloading = true;
 
-	// This is needed. Don't touch.
-	maptol = mapheaderinfo[gamemap-1]->typeoflevel;
-	gametyperules = gametypedefaultrules[gametype];
-
+#if 0
 	CON_Drawer(); // let the user know what we are going to do
 	I_FinishUpdate(); // page flip or blit buffer
+#endif
 
 	// Reset the palette
 	if (rendermode != render_none)
@@ -3368,12 +3366,6 @@ boolean P_LoadLevel(boolean fromnetsave)
 
 	// Clear CECHO messages
 	HU_ClearCEcho();
-
-	if (mapheaderinfo[gamemap-1]->runsoc[0] != '#')
-		P_RunSOC(mapheaderinfo[gamemap-1]->runsoc);
-
-	if (cv_runscripts.value && mapheaderinfo[gamemap-1]->scriptname[0] != '#')
-		P_RunLevelScript(mapheaderinfo[gamemap-1]->scriptname);
 
 	P_InitLevelSettings();
 
@@ -3406,50 +3398,13 @@ boolean P_LoadLevel(boolean fromnetsave)
 	// will be set by player think.
 	players[consoleplayer].viewz = 1;
 
-	// Cancel all d_main.c fadeouts (keep fade in though).
-	WipeRunPost = false;
-	wipegamestate = FORCEWIPEOFF;
-	wipestyleflags = WSF_FADEOUT;
-	if (!titlemapinaction)
-		wipestyleflags |= WSF_LEVELLOADING;
-
-	// Special stage fade to white
-	// This is handled BEFORE sounds are stopped.
-	if (modeattacking && !demoplayback && (pausedelay == INT32_MIN))
-		ranspecialwipe = 2;
-	else if (rendermode != render_none && G_IsSpecialStage(gamemap))
-	{
-		P_RunSpecialStageWipe();
-		ranspecialwipe = 1;
-	}
-
-	if (G_GetModeAttackRetryFlag())
-	{
-		if (modeattacking)
-			wipestyleflags |= (WSF_FADEOUT|WSF_TOWHITE);
-		G_ClearModeAttackRetryFlag();
-	}
-
 	// Make sure all sounds are stopped before Z_FreeTags.
 	S_StopSounds();
 	S_ClearSfx();
 
-	// Fade out music here. Deduct 2 tics so the fade volume actually reaches 0.
-	// But don't halt the music! S_Start will take care of that. This dodges a MIDI crash bug.
-	if (!titlemapinaction && (RESETMUSIC ||
-		strnicmp(S_MusicName(),
-			(mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname, 7)))
-		S_FadeMusic(0, FixedMul(
-			FixedDiv((F_GetWipeLength(wipedefs[wipe_level_toblack])-2)*NEWTICRATERATIO, NEWTICRATE), MUSICRATE));
-
-	// Let's fade to black here
-	// But only if we didn't do the special stage wipe
-	if (rendermode != render_none && !ranspecialwipe)
-		P_RunLevelWipe();
-
 	if (!titlemapinaction)
 	{
-		if (ranspecialwipe == 2)
+		if (ranspecialwipe == SPECIALWIPE_RETRY)
 		{
 			pausedelay = -3; // preticker plus one
 			S_StartSound(NULL, sfx_s3k73);
@@ -3469,9 +3424,10 @@ boolean P_LoadLevel(boolean fromnetsave)
 			I_UpdateNoVsync();
 		}
 
-#ifdef NOWIPE
+		// As oddly named as this is, this handles music only.
+		// We should be fine starting it here.
+		// Don't do this during titlemap, because the menu code handles music by itself.
 		S_Start();
-#endif
 	}
 
 	levelfadecol = (ranspecialwipe) ? 0 : 31;
@@ -3625,12 +3581,27 @@ boolean P_LoadLevel(boolean fromnetsave)
 	titlecard.prelevel = false;
 	titlecard.wipe = 0;
 
-	if (ranspecialwipe == 2)
-		return true;
+	if (ranspecialwipe == SPECIALWIPE_RETRY)
+	{
+		// Force a wipe
+		wipegamestate = -1;
+		wipestyleflags = (WSF_TOWHITE|WSF_FADEIN);
+		WipeRunPost = true;
 
-	// Start the title card.
-	G_StartTitleCard();
+		// Stop the title card
+		titlecard.running = false;
+		titlecard.prelevel = false;
 
+		// Reset the HUD translucency!
+		st_translucency = cv_translucenthud.value;
+	}
+	else
+	{
+		// Start the title card.
+		G_StartTitleCard();
+	}
+
+	ranspecialwipe = SPECIALWIPE_NONE;
 	return true;
 }
 
