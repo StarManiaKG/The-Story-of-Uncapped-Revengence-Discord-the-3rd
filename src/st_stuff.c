@@ -1199,7 +1199,7 @@ static void ST_drawInput(void)
 //
 void ST_preDrawTitleCard(void)
 {
-	if (!G_IsTitleCardAvailable())
+	if (!G_IsTitleCardAvailable() || !titlecard.running)
 		return;
 
 	if (titlecard.ticker >= (titlecard.endtime + TICRATE))

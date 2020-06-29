@@ -114,6 +114,9 @@ INT32 secondarydisplayplayer; // for splitscreen
 
 tic_t gametic;
 tic_t levelstarttic; // gametic at level start
+boolean levelstarting; // starting the level
+boolean levelresetplayer; // reset players at level load
+
 UINT32 ssspheres; // old special stage
 INT16 lastmap; // last level you were at (returning from special stages)
 tic_t timeinmap; // Ticker for time spent in level (used for levelcard display)
@@ -1137,10 +1140,10 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		!player->climbing && player->powers[pw_carry] != CR_MINECART;
 
 	// why build a ticcmd if we're paused?
-	// Or, if the pre-level title card is running.
+	// Or, if the level is starting.
 	// Or, for that matter, if we're being reborn.
 	// ...OR if we're blindfolded. No looking into the floor.
-	if (paused || P_AutoPause() || titlecard.prelevel
+	if (paused || P_AutoPause() || (levelstarting || WipeInAction) || titlecard.prelevel
 	|| (gamestate == GS_LEVEL && (player->playerstate == PST_REBORN || ((gametyperules & GTR_TAG)
 	&& (leveltime < hidetime * TICRATE) && (player->pflags & PF_TAGIT)))))
 	{//@TODO splitscreen player
@@ -1762,17 +1765,19 @@ static void AutoBrake2_OnChange(void)
 }
 
 //
-// G_DoLoadLevel
+// G_StartLevel
 //
-void G_DoLoadLevel(boolean resetplayer)
+void G_StartLevel(boolean resetplayer)
 {
 	INT32 i;
+	levelstarting = true;
 
 	// Make sure objectplace is OFF when you first start the level!
 	OP_ResetObjectplace();
 	demosynced = true;
 
 	levelstarttic = gametic; // for time calculation
+	levelresetplayer = resetplayer;
 
 	if (wipegamestate == GS_LEVEL)
 		wipegamestate = -1; // force a wipe
@@ -1780,6 +1785,48 @@ void G_DoLoadLevel(boolean resetplayer)
 	if (gamestate == GS_INTERMISSION)
 		Y_EndIntermission();
 
+	// This is needed. Don't touch.
+	maptol = mapheaderinfo[gamemap-1]->typeoflevel;
+	gametyperules = gametypedefaultrules[gametype];
+	ranspecialwipe = SPECIALWIPE_NONE;
+
+	if (mapheaderinfo[gamemap-1]->runsoc[0] != '#')
+		P_RunSOC(mapheaderinfo[gamemap-1]->runsoc);
+
+	if (cv_runscripts.value && mapheaderinfo[gamemap-1]->scriptname[0] != '#')
+		P_RunLevelScript(mapheaderinfo[gamemap-1]->scriptname);
+
+	// clear cmd building stuff
+	memset(gamekeydown, 0, sizeof (gamekeydown));
+	for (i = 0;i < JOYAXISSET; i++)
+	{
+		joyxmove[i] = joyymove[i] = 0;
+		joy2xmove[i] = joy2ymove[i] = 0;
+	}
+	mousex = mousey = 0;
+	mouse2x = mouse2y = 0;
+
+#ifndef NOWIPE
+	if (!G_GetModeAttackRetryFlag() && rendermode != render_none)
+		G_StartLevelWipe();
+	else
+#endif
+	{
+		if (G_GetModeAttackRetryFlag())
+		{
+			ranspecialwipe = SPECIALWIPE_RETRY;
+			G_ClearModeAttackRetryFlag();
+		}
+
+		G_DoLoadLevel();
+	}
+}
+
+//
+// G_DoLoadLevel
+//
+void G_DoLoadLevel(void)
+{
 	// cleanup
 	if (titlemapinaction == TITLEMAP_LOADING)
 	{
@@ -1795,14 +1842,22 @@ void G_DoLoadLevel(boolean resetplayer)
 	else
 		titlemapinaction = TITLEMAP_OFF;
 
-	G_SetGamestate(GS_LEVEL);
 	I_UpdateMouseGrab();
 
-	for (i = 0; i < MAXPLAYERS; i++)
+	if (!titlemapinaction)
 	{
-		if (resetplayer || (playeringame[i] && players[i].playerstate == PST_DEAD))
-			players[i].playerstate = PST_REBORN;
+		INT32 i;
+
+		G_SetGamestate(GS_LEVEL);
+
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (levelresetplayer || (playeringame[i] && players[i].playerstate == PST_DEAD))
+				players[i].playerstate = PST_REBORN;
+		}
 	}
+
+	levelstarting = false;
 
 	// Setup the level.
 	if (!P_LoadLevel(false)) // this never returns false?
@@ -1810,6 +1865,19 @@ void G_DoLoadLevel(boolean resetplayer)
 		// fail so reset game stuff
 		Command_ExitGame_f();
 		return;
+	}
+
+	if (netgame)
+	{
+		char *title = G_BuildMapTitle(gamemap);
+
+		CONS_Printf(M_GetText("Map is now \"%s"), G_BuildMapName(gamemap));
+		if (title)
+		{
+			CONS_Printf(": %s", title);
+			Z_Free(title);
+		}
+		CONS_Printf("\"\n");
 	}
 
 	P_FindEmerald();
@@ -1823,23 +1891,105 @@ void G_DoLoadLevel(boolean resetplayer)
 	Z_CheckHeap(-2);
 #endif
 
-	if (camera.chase)
-		P_ResetCamera(&players[displayplayer], &camera);
-	if (camera2.chase && splitscreen)
-		P_ResetCamera(&players[secondarydisplayplayer], &camera2);
-
-	// clear cmd building stuff
-	memset(gamekeydown, 0, sizeof (gamekeydown));
-	for (i = 0;i < JOYAXISSET; i++)
+	if (!titlemapinaction)
 	{
-		joyxmove[i] = joyymove[i] = 0;
-		joy2xmove[i] = joy2ymove[i] = 0;
+		if (camera.chase)
+			P_ResetCamera(&players[displayplayer], &camera);
+		if (camera2.chase && splitscreen)
+			P_ResetCamera(&players[secondarydisplayplayer], &camera2);
 	}
-	mousex = mousey = 0;
-	mouse2x = mouse2y = 0;
+	else
+	{
+		mapthing_t *startpos;
+
+		players[displayplayer].playerstate = PST_DEAD; // Don't spawn the player in dummy (I'm still a filthy cheater)
+
+		// Set Default Position
+		if (playerstarts[0])
+			startpos = playerstarts[0];
+		else if (deathmatchstarts[0])
+			startpos = deathmatchstarts[0];
+		else
+			startpos = NULL;
+
+		if (startpos)
+		{
+			camera.x = startpos->x << FRACBITS;
+			camera.y = startpos->y << FRACBITS;
+			camera.subsector = R_PointInSubsector(camera.x, camera.y);
+			camera.z = camera.subsector->sector->floorheight + (startpos->z << FRACBITS);
+			camera.angle = (startpos->angle % 360)*ANG1;
+			camera.aiming = 0;
+		}
+		else
+		{
+			camera.x = camera.y = camera.z = camera.angle = camera.aiming = 0;
+			camera.subsector = NULL; // toast is filthy too
+		}
+
+		camera.chase = true;
+		camera.height = 0;
+
+		// Run enter linedef exec for MN_MAIN, since this is where we start
+		if (menupres[MN_MAIN].entertag)
+			P_LinedefExecute(menupres[MN_MAIN].entertag, players[displayplayer].mo, NULL);
+	}
+
+	if (demoplayerinfo)
+	{
+		G_FinishLoadingDemo();
+		Z_Free(demoplayerinfo);
+	}
+	demoplayerinfo = NULL;
 
 	// clear hud messages remains (usually from game startup)
 	CON_ClearHUD();
+
+	if (demoplayback && !timingdemo)
+		precache = true;
+	if (timingdemo)
+		G_DoneLevelLoad();
+
+	if (metalrecording)
+		G_BeginMetal();
+	if (demorecording) // Okay, level loaded, character spawned and skinned,
+		G_BeginRecording(); // I AM NOW READY TO RECORD.
+	demo_start = true;
+}
+
+//
+// Run the level's wipe.
+//
+void G_StartLevelWipe(void)
+{
+	// Cancel all d_main.c fades
+	WipeRunPost = false;
+	wipegamestate = FORCEWIPEOFF;
+	wipestyle = WIPESTYLE_COLORMAP;
+	wipestyleflags = (WSF_FADEOUT|WSF_LEVELLOADING);
+
+	// Special stage fade to white
+	// This is handled BEFORE sounds are stopped.
+	if (rendermode != render_none && G_IsSpecialStage(gamemap))
+	{
+		P_RunSpecialStageWipe();
+		ranspecialwipe = SPECIALWIPE_SSTAGE;
+	}
+
+	// Let's fade to black here
+	// But only if we didn't do the special stage wipe
+	if (rendermode != render_none && (ranspecialwipe == SPECIALWIPE_NONE))
+	{
+		P_RunLevelWipe();
+
+		// Fade out music here. Deduct 2 tics so the fade volume actually reaches 0.
+		// But don't halt the music! S_Start will take care of that. This dodges a MIDI crash bug.
+		if (!titlemapinaction && (RESETMUSIC ||
+			strnicmp(S_MusicName(),
+				(mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname, 7)))
+			S_FadeMusic(0, FixedMul(
+				FixedDiv((F_GetWipeLength(wipedefs[wipe_level_toblack])-2)*NEWTICRATERATIO, NEWTICRATE), MUSICRATE));
+	}
 }
 
 //
@@ -1851,6 +2001,7 @@ void G_StartTitleCard(void)
 	// Oh well.
 	if (!G_IsTitleCardAvailable())
 	{
+		st_translucency = cv_translucenthud.value; // Reset the HUD translucency!
 		WipeRunPost = true; // Start the post wipe.
 		return;
 	}
@@ -2255,6 +2406,9 @@ void G_Ticker(boolean run)
 		return;
 	}
 
+	if (levelstarting)
+		return;
+
 	P_MapStart();
 	// do player reborns if needed
 	if (gamestate == GS_LEVEL && (!titlecard.prelevel))
@@ -2299,7 +2453,6 @@ void G_Ticker(boolean run)
 
 	buf = gametic % BACKUPTICS;
 
-	// read/write demo and check turbo cheat
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (playeringame[i])
@@ -3088,7 +3241,7 @@ void G_DoReborn(INT32 playernum)
 		{
 			LUAh_MapChange(gamemap);
 			titlecardforreload = true;
-			G_DoLoadLevel(true);
+			G_StartLevel(true);
 			titlecardforreload = false;
 			if (metalrecording)
 				G_BeginMetal();
@@ -4697,24 +4850,12 @@ void G_InitNew(UINT8 pultmode, const char *mapname, boolean resetplayer, boolean
 	ultimatemode = pultmode;
 	automapactive = false;
 	imcontinuing = false;
+	titlemapinaction = TITLEMAP_OFF;
 
 	if ((gametyperules & GTR_CUTSCENES) && !skipprecutscene && mapheaderinfo[gamemap-1]->precutscenenum && !modeattacking) // Start a custom cutscene.
 		F_StartCustomCutscene(mapheaderinfo[gamemap-1]->precutscenenum-1, true, resetplayer);
 	else
-		G_DoLoadLevel(resetplayer);
-
-	if (netgame)
-	{
-		char *title = G_BuildMapTitle(gamemap);
-
-		CONS_Printf(M_GetText("Map is now \"%s"), G_BuildMapName(gamemap));
-		if (title)
-		{
-			CONS_Printf(": %s", title);
-			Z_Free(title);
-		}
-		CONS_Printf("\"\n");
-	}
+		G_StartLevel(resetplayer);
 }
 
 
