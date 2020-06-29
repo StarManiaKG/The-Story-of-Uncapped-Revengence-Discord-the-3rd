@@ -292,7 +292,7 @@ static void D_Display(void)
 	if (WipeInAction)
 	{
 		F_DisplayWipe();
-		if (titlecard.running && titlecard.wipe && st_overlay)
+		if ((gamestate == GS_LEVEL) && (!levelstarting) && titlecard.running && titlecard.wipe && st_overlay)
 			ST_drawTitleCardOutsideOverlay();
 	}
 	else switch (gamestate)

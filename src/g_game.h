@@ -35,6 +35,10 @@ extern boolean playeringame[MAXPLAYERS];
 // gametic at level start
 extern tic_t levelstarttic;
 
+extern boolean levelstarting; // starting the level
+extern boolean leveldemoload; // starting a demo
+extern boolean levelresetplayer; // reset players at level load
+
 // for modding?
 extern INT16 prevmap, nextmap;
 extern INT32 gameovertics;
@@ -155,7 +159,9 @@ void G_SpawnPlayer(INT32 playernum);
 // A normal game starts at map 1, but a warp test can start elsewhere
 void G_DeferedInitNew(boolean pultmode, const char *mapname, INT32 pickedchar,
 	boolean SSSG, boolean FLS);
-void G_DoLoadLevel(boolean resetplayer);
+void G_StartLevel(boolean resetplayer);
+void G_StartLevelWipe(void);
+void G_DoLoadLevel(void);
 
 // Title card
 void G_StartTitleCard(void);

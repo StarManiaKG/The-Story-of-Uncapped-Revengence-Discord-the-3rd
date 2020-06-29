@@ -18,6 +18,7 @@
 #include "doomtype.h"
 #include "d_event.h"
 #include "p_mobj.h"
+#include "screen.h"
 
 //
 // FINALE
@@ -137,6 +138,10 @@ void F_MenuPresTicker(boolean run);
 // WIPES
 //
 
+#if NUMSCREENS < 5
+#define NOWIPE // do not enable wipe image post processing for ARM, SH and MIPS CPUs
+#endif
+
 #define DEFAULTWIPE -1
 #define IGNOREWIPE INT16_MAX
 
@@ -151,6 +156,7 @@ extern boolean WipeDrawMenu;
 
 typedef enum
 {
+	WIPESTYLE_UNDEFINED,
 	WIPESTYLE_NORMAL,
 	WIPESTYLE_COLORMAP
 } wipestyle_t;
@@ -167,11 +173,17 @@ typedef enum
 } wipestyleflags_t;
 extern wipestyleflags_t wipestyleflags;
 
+typedef enum
+{
+	SPECIALWIPE_NONE,
+	SPECIALWIPE_SSTAGE,
+	SPECIALWIPE_RETRY,
+} specialwipe_t;
+extern specialwipe_t ranspecialwipe;
+
 boolean F_ShouldColormapFade(void);
 boolean F_TryColormapFade(UINT8 wipecolor);
-#ifndef NOWIPE
 void F_DecideWipeStyle(void);
-#endif
 
 #define FADECOLORMAPDIV 8
 #define FADECOLORMAPROWS (256/FADECOLORMAPDIV)
