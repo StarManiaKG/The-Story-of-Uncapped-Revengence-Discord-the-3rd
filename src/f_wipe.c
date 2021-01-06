@@ -283,7 +283,7 @@ static void F_DoWipe(fademask_t *fademask)
 			else
 			{
 				// pointer to transtable that this mask would use
-				transtbl = transtables + ((9 - *mask)<<FF_TRANSSHIFT);
+				transtbl = R_GetTranslucencyTable((9 - *mask) + 1);
 
 				// DRAWING LOOP
 				while (draw_linestogo--)
@@ -527,7 +527,7 @@ void F_StartWipe(UINT8 type, boolean drawMenu)
 		F_DecideWipeStyle();
 
 	WipeInAction = true;
-	WipeDrawMenu = (!drawMenu);
+	WipeDrawMenu = drawMenu;
 
 	wipetype = type;
 	wipeframe = 0;
@@ -757,20 +757,20 @@ tic_t F_GetWipeLength(UINT8 type)
 #else
 	static char lumpname[11] = "FADEmmss";
 	lumpnum_t lumpnum;
-	UINT8 wipeframe;
+	UINT8 frame;
 
 	if (type > 99)
 		return 0;
 
-	for (wipeframe = 0; wipeframe < 100; wipeframe++)
+	for (frame = 0; frame < 100; frame++)
 	{
-		sprintf(&lumpname[4], "%.2hu%.2hu", (UINT8)type, (UINT8)wipeframe);
+		sprintf(&lumpname[4], "%.2hu%.2hu", (UINT8)type, (UINT8)frame);
 
 		lumpnum = W_CheckNumForName(lumpname);
 		if (lumpnum == LUMPERROR)
-			return --wipeframe;
+			return --frame;
 	}
-	return --wipeframe;
+	return --frame;
 #endif
 }
 

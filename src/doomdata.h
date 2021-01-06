@@ -23,6 +23,9 @@
 // Some global defines, that configure the game.
 #include "doomdef.h"
 
+#include "taglist.h"
+#include "m_fixed.h" // See the mapthing_t scale.
+
 //
 // Map level types.
 // The following data structures define the persistent format
@@ -193,24 +196,27 @@ typedef struct
 #pragma pack()
 #endif
 
+#define NUMMAPTHINGARGS 6
+#define NUMMAPTHINGSTRINGARGS 2
+
 // Thing definition, position, orientation and type,
 // plus visibility flags and attributes.
 typedef struct
 {
 	INT16 x, y;
-	INT16 angle;
+	INT16 angle, pitch, roll;
 	UINT16 type;
 	UINT16 options;
 	INT16 z;
 	UINT8 extrainfo;
+	taglist_t tags;
+	fixed_t scale;
+	INT32 args[NUMMAPTHINGARGS];
+	char *stringargs[NUMMAPTHINGSTRINGARGS];
 	struct mobj_s *mobj;
 } mapthing_t;
 
 #define ZSHIFT 4
-
-extern const UINT8 Color_Index[MAXTRANSLATIONS-1][16];
-extern const char *Color_Names[MAXSKINCOLORS + NUMSUPERCOLORS];
-extern const UINT8 Color_Opposite[MAXSKINCOLORS - 1][2];
 
 #define NUMMAPS 1035
 
