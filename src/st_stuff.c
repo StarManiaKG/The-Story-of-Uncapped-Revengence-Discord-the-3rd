@@ -201,9 +201,7 @@ void ST_doPaletteStuff(void)
 {
 	INT32 palette;
 
-	if (paused || P_AutoPause())
-		palette = 0;
-	else if (stplyr && stplyr->flashcount)
+	if (stplyr && stplyr->flashcount)
 		palette = stplyr->flashpal;
 	else
 		palette = 0;
@@ -212,8 +210,6 @@ void ST_doPaletteStuff(void)
 	if (rendermode == render_opengl)
 		palette = 0; // No flashpals here in OpenGL
 #endif
-
-	palette = min(max(palette, 0), 13);
 
 	if (palette != st_palette)
 	{
@@ -230,7 +226,7 @@ void ST_doPaletteStuff(void)
 
 void ST_UnloadGraphics(void)
 {
-	Z_FreeTag(PU_HUDGFX);
+	Patch_FreeTag(PU_HUDGFX);
 }
 
 void ST_LoadGraphics(void)
@@ -238,8 +234,8 @@ void ST_LoadGraphics(void)
 	int i;
 
 	// SRB2 border patch
-	st_borderpatchnum = W_GetNumForName("GFZFLR01");
-	scr_borderpatch = W_CacheLumpNum(st_borderpatchnum, PU_HUDGFX);
+	// st_borderpatchnum = W_GetNumForName("GFZFLR01");
+	// scr_borderpatch = W_CacheLumpNum(st_borderpatchnum, PU_HUDGFX);
 
 	// the original Doom uses 'STF' as base name for all face graphics
 	// Graue 04-08-2004: face/name graphics are now indexed by skins
@@ -454,9 +450,9 @@ boolean st_overlay;
 //
 // Supports different colors! woo!
 static void ST_DrawNightsOverlayNum(fixed_t x /* right border */, fixed_t y, fixed_t s, INT32 a,
-	UINT32 num, patch_t **numpat, skincolors_t colornum)
+	UINT32 num, patch_t **numpat, skincolornum_t colornum)
 {
-	fixed_t w = SHORT(numpat[0]->width)*s;
+	fixed_t w = numpat[0]->width * s;
 	const UINT8 *colormap;
 
 	// I want my V_SNAPTOx flags. :< -Red
@@ -674,7 +670,7 @@ static void ST_drawRaceNum(INT32 time)
 		if (!(P_AutoPause() || paused) && !bounce)
 				S_StartSound(0, ((racenum == racego) ? sfx_s3kad : sfx_s3ka7));
 	}
-	V_DrawScaledPatch(((BASEVIDWIDTH - SHORT(racenum->width))/2), height, V_PERPLAYER, racenum);
+	V_DrawScaledPatch(((BASEVIDWIDTH - racenum->width)/2), height, V_PERPLAYER, racenum);
 }
 
 static void ST_drawTime(void)
@@ -761,7 +757,7 @@ static void ST_drawTime(void)
 		ST_DrawPatchFromHud(HUD_TIMECOLON, sbocolon, V_HUDTRANS); // Colon
 		ST_DrawPadNumFromHud(HUD_SECONDS, seconds, 2, V_HUDTRANS); // Seconds
 
-		if (cv_timetic.value == 1 || cv_timetic.value == 2 || modeattacking) // there's not enough room for tics in splitscreen, don't even bother trying!
+		if (cv_timetic.value == 1 || cv_timetic.value == 2 || modeattacking || marathonmode)
 		{
 			ST_DrawPatchFromHud(HUD_TIMETICCOLON, sboperiod, V_HUDTRANS); // Period
 			ST_DrawPadNumFromHud(HUD_TICS, tictrn, 2, V_HUDTRANS); // Tics
@@ -819,7 +815,7 @@ static void ST_drawLivesArea(void)
 		// skincolor face/super
 		UINT8 *colormap = R_GetTranslationColormap(stplyr->skin, stplyr->mo->color, GTC_CACHE);
 		patch_t *face = faceprefix[stplyr->skin];
-		if (stplyr->powers[pw_super])
+		if (stplyr->powers[pw_super] && !(stplyr->charflags & SF_NOSUPERSPRITES))
 			face = superprefix[stplyr->skin];
 		V_DrawSmallMappedPatch(hudinfo[HUD_LIVES].x, hudinfo[HUD_LIVES].y,
 			hudinfo[HUD_LIVES].f|V_PERPLAYER|V_HUDTRANS, face, colormap);
@@ -990,7 +986,7 @@ static void ST_drawLivesArea(void)
 
 static void ST_drawInput(void)
 {
-	const INT32 accent = V_SNAPTOLEFT|V_SNAPTOBOTTOM|(stplyr->skincolor ? Color_Index[stplyr->skincolor-1][4] : 0);
+	const INT32 accent = V_SNAPTOLEFT|V_SNAPTOBOTTOM|(stplyr->skincolor ? skincolors[stplyr->skincolor].ramp[4] : 0);
 	INT32 col;
 	UINT8 offs;
 
@@ -1124,7 +1120,7 @@ static void ST_drawInput(void)
 	V_DrawCharacter(x+16+1+(xoffs), y+1+(yoffs)-offs, hudinfo[HUD_LIVES].f|symb, false)
 
 	drawbutt( 4,-3, BT_JUMP, 'J');
-	drawbutt(15,-3, BT_USE,  'S');
+	drawbutt(15,-3, BT_SPIN, 'S');
 
 	V_DrawFill(x+16+4, y+8, 21, 10, hudinfo[HUD_LIVES].f|20); // sundial backing
 	if (stplyr->mo)
@@ -1218,7 +1214,7 @@ void ST_drawTitleCard(void)
 {
 	char *lvlttl = mapheaderinfo[gamemap-1]->lvlttl;
 	char *subttl = mapheaderinfo[gamemap-1]->subttl;
-	INT32 actnum = mapheaderinfo[gamemap-1]->actnum;
+	UINT8 actnum = mapheaderinfo[gamemap-1]->actnum;
 	INT32 lvlttlxpos, ttlnumxpos, zonexpos;
 	INT32 subttlxpos = BASEVIDWIDTH/2;
 	INT32 ttlscroll = FixedInt(titlecard.scroll);
@@ -1243,14 +1239,11 @@ void ST_drawTitleCard(void)
 	if (titlecard.prelevel)
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
 
-	if (needpatchrecache)
-		G_LoadTitleCardPatches();
-
-	if (!LUA_HudEnabled(hud_stagetitle))
-		goto luahook;
-
-	if (titlecard.ticker >= (titlecard.endtime + TICRATE))
-		goto luahook;
+	if (!LUA_HudEnabled(hud_stagetitle) || titlecard.ticker >= (titlecard.endtime + TICRATE))
+	{
+		LUAh_TitleCardHUD(stplyr);
+		return;
+	}
 
 	actpat = titlecard.patches[0];
 	zigzag = titlecard.patches[1];
@@ -1280,7 +1273,12 @@ void ST_drawTitleCard(void)
 	if (actnum)
 	{
 		if (!splitscreen)
-			V_DrawMappedPatch(ttlnumxpos + ttlscroll, 104 - ttlscroll, 0, actpat, colormap);
+		{
+			if (actnum > 9) // slightly offset the act diamond for two-digit act numbers
+				V_DrawMappedPatch(ttlnumxpos + (V_LevelActNumWidth(actnum)/4) + ttlscroll, 104 - ttlscroll, 0, actpat, colormap);
+			else
+				V_DrawMappedPatch(ttlnumxpos + ttlscroll, 104 - ttlscroll, 0, actpat, colormap);
+		}
 		V_DrawLevelActNum(ttlnumxpos + ttlscroll, 104, V_PERPLAYER, actnum);
 	}
 
@@ -1289,7 +1287,6 @@ void ST_drawTitleCard(void)
 		V_DrawLevelTitle(zonexpos + ttlscroll, 104, V_PERPLAYER, M_GetText("Zone"));
 	V_DrawCenteredString(subttlxpos - ttlscroll, 135, V_PERPLAYER|V_ALLOWLOWERCASE, subttl);
 
-luahook:
 	LUAh_TitleCardHUD(stplyr);
 }
 
@@ -1329,7 +1326,7 @@ static void ST_drawPowerupHUD(void)
 // ---------
 
 	// Let's have a power-like icon to represent finishing the level!
-	if (stplyr->pflags & PF_FINISHED && cv_exitmove.value)
+	if (stplyr->pflags & PF_FINISHED && cv_exitmove.value && multiplayer)
 	{
 		finishoffs[q] = ICONSEP;
 		V_DrawSmallScaledPatch(offs, hudinfo[HUD_POWERUPS].y, V_PERPLAYER|hudinfo[HUD_POWERUPS].f|V_HUDTRANS, fnshico);
@@ -1504,8 +1501,8 @@ static void ST_drawFirstPersonHUD(void)
 	p = W_CachePatchNum(sprframe->lumppat[0], PU_CACHE);
 
 	// Display the countdown drown numbers!
-	if (p && !F_GetPromptHideHud(60 - SHORT(p->topoffset)))
-		V_DrawScaledPatch((BASEVIDWIDTH/2) - (SHORT(p->width)/2) + SHORT(p->leftoffset), 60 - SHORT(p->topoffset),
+	if (p && !F_GetPromptHideHud(60 - p->topoffset))
+		V_DrawScaledPatch((BASEVIDWIDTH/2) - (p->width / 2) + SHORT(p->leftoffset), 60 - SHORT(p->topoffset),
 			V_PERPLAYER|V_PERPLAYER|V_TRANSLUCENT, p);
 }
 
@@ -1579,14 +1576,14 @@ static void ST_drawNightsRecords(void)
 
 // 2.0-1: [21:42] <+Rob> Beige - Lavender - Steel Blue - Peach - Orange - Purple - Silver - Yellow - Pink - Red - Blue - Green - Cyan - Gold
 /*#define NUMLINKCOLORS 14
-static skincolors_t linkColor[NUMLINKCOLORS] =
+static skincolornum_t linkColor[NUMLINKCOLORS] =
 {SKINCOLOR_BEIGE,  SKINCOLOR_LAVENDER, SKINCOLOR_AZURE, SKINCOLOR_PEACH, SKINCOLOR_ORANGE,
  SKINCOLOR_MAGENTA, SKINCOLOR_SILVER, SKINCOLOR_SUPERGOLD4, SKINCOLOR_PINK,  SKINCOLOR_RED,
  SKINCOLOR_BLUE, SKINCOLOR_GREEN, SKINCOLOR_CYAN, SKINCOLOR_GOLD};*/
 
 // 2.2 indev list: (unix time 1470866042) <Rob> Emerald, Aqua, Cyan, Blue, Pastel, Purple, Magenta, Rosy, Red, Orange, Gold, Yellow, Peridot
 /*#define NUMLINKCOLORS 13
-static skincolors_t linkColor[NUMLINKCOLORS] =
+static skincolornum_t linkColor[NUMLINKCOLORS] =
 {SKINCOLOR_EMERALD, SKINCOLOR_AQUA, SKINCOLOR_CYAN, SKINCOLOR_BLUE, SKINCOLOR_PASTEL,
  SKINCOLOR_PURPLE, SKINCOLOR_MAGENTA, SKINCOLOR_ROSY, SKINCOLOR_RED,  SKINCOLOR_ORANGE,
  SKINCOLOR_GOLD, SKINCOLOR_YELLOW, SKINCOLOR_PERIDOT};*/
@@ -1595,7 +1592,7 @@ static skincolors_t linkColor[NUMLINKCOLORS] =
 // [20:00:25] <baldobo> Also Icy for the link freeze text color
 // [20:04:03] <baldobo> I would start it on lime
 /*#define NUMLINKCOLORS 18
-static skincolors_t linkColor[NUMLINKCOLORS] =
+static skincolornum_t linkColor[NUMLINKCOLORS] =
 {SKINCOLOR_LIME, SKINCOLOR_EMERALD, SKINCOLOR_AQUA, SKINCOLOR_CYAN, SKINCOLOR_SKY,
  SKINCOLOR_SAPPHIRE, SKINCOLOR_PASTEL, SKINCOLOR_PURPLE, SKINCOLOR_BUBBLEGUM, SKINCOLOR_MAGENTA,
  SKINCOLOR_ROSY, SKINCOLOR_RUBY, SKINCOLOR_RED, SKINCOLOR_FLAME, SKINCOLOR_SUNSET,
@@ -1603,7 +1600,7 @@ static skincolors_t linkColor[NUMLINKCOLORS] =
 
 // 2.2+ list for real this time: https://wiki.srb2.org/wiki/User:Rob/Sandbox (check history around 31/10/17, spoopy)
 #define NUMLINKCOLORS 12
-static skincolors_t linkColor[2][NUMLINKCOLORS] = {
+static skincolornum_t linkColor[2][NUMLINKCOLORS] = {
 {SKINCOLOR_EMERALD, SKINCOLOR_AQUA, SKINCOLOR_SKY, SKINCOLOR_BLUE, SKINCOLOR_PURPLE, SKINCOLOR_MAGENTA,
  SKINCOLOR_ROSY, SKINCOLOR_RED, SKINCOLOR_ORANGE, SKINCOLOR_GOLD, SKINCOLOR_YELLOW, SKINCOLOR_PERIDOT},
 {SKINCOLOR_SEAFOAM, SKINCOLOR_CYAN, SKINCOLOR_WAVE, SKINCOLOR_SAPPHIRE, SKINCOLOR_VAPOR, SKINCOLOR_BUBBLEGUM,
@@ -1614,7 +1611,7 @@ static void ST_drawNiGHTSLink(void)
 	static INT32 prevsel[2] = {0, 0}, prevtime[2] = {0, 0};
 	const UINT8 q = ((splitscreen && stplyr == &players[secondarydisplayplayer]) ? 1 : 0);
 	INT32 sel = ((stplyr->linkcount-1) / 5) % NUMLINKCOLORS, aflag = V_PERPLAYER, mag = ((stplyr->linkcount-1 >= 300) ? 1 : 0);
-	skincolors_t colornum;
+	skincolornum_t colornum;
 	fixed_t x, y, scale;
 
 	if (sel != prevsel[q])
@@ -1959,21 +1956,21 @@ static void ST_drawNiGHTSHUD(void)
 			if (stplyr->powers[pw_nights_superloop])
 			{
 				pwr = stplyr->powers[pw_nights_superloop];
-				V_DrawSmallScaledPatch(110, 44, 0, W_CachePatchName("NPRUA0",PU_CACHE));
+				V_DrawSmallScaledPatch(110, 44, 0, W_CachePatchName("NPRUA0",PU_SPRITE));
 				V_DrawThinString(106, 52, V_MONOSPACE, va("%2d.%02d", pwr/TICRATE, G_TicsToCentiseconds(pwr)));
 			}
 
 			if (stplyr->powers[pw_nights_helper])
 			{
 				pwr = stplyr->powers[pw_nights_helper];
-				V_DrawSmallScaledPatch(150, 44, 0, W_CachePatchName("NPRUC0",PU_CACHE));
+				V_DrawSmallScaledPatch(150, 44, 0, W_CachePatchName("NPRUC0",PU_SPRITE));
 				V_DrawThinString(146, 52, V_MONOSPACE, va("%2d.%02d", pwr/TICRATE, G_TicsToCentiseconds(pwr)));
 			}
 
 			if (stplyr->powers[pw_nights_linkfreeze])
 			{
 				pwr = stplyr->powers[pw_nights_linkfreeze];
-				V_DrawSmallScaledPatch(190, 44, 0, W_CachePatchName("NPRUE0",PU_CACHE));
+				V_DrawSmallScaledPatch(190, 44, 0, W_CachePatchName("NPRUE0",PU_SPRITE));
 				V_DrawThinString(186, 52, V_MONOSPACE, va("%2d.%02d", pwr/TICRATE, G_TicsToCentiseconds(pwr)));
 			}
 		}
@@ -2074,7 +2071,7 @@ static void ST_drawMatchHUD(void)
 		{
 			sprintf(penaltystr, "-%d", stplyr->ammoremoval);
 			V_DrawString(offset + 8 + stplyr->ammoremovalweapon * 20, y,
-					V_REDMAP, penaltystr);
+				V_REDMAP|V_SNAPTOBOTTOM, penaltystr);
 		}
 
 	}
@@ -2094,7 +2091,7 @@ static void ST_drawTextHUD(void)
 	if (F_GetPromptHideHud(y))
 		return;
 
-	if (stplyr->spectator && (gametype != GT_COOP || stplyr->playerstate == PST_LIVE))
+	if (stplyr->spectator && (!G_CoopGametype() || stplyr->playerstate == PST_LIVE))
 		textHUDdraw(M_GetText("\x86""Spectator mode:"))
 
 	if (circuitmap)
@@ -2105,7 +2102,7 @@ static void ST_drawTextHUD(void)
 			textHUDdraw(va("Lap:""\x82 %u/%d", stplyr->laps+1, cv_numlaps.value))
 	}
 
-	if (gametype != GT_COOP && (stplyr->exiting || (G_GametypeUsesLives() && stplyr->lives <= 0 && countdown != 1)))
+	if (!G_CoopGametype() && (stplyr->exiting || (G_GametypeUsesLives() && stplyr->lives <= 0 && countdown != 1)))
 	{
 		if (!splitscreen && !donef12)
 		{
@@ -2122,7 +2119,7 @@ static void ST_drawTextHUD(void)
 		else
 			textHUDdraw(M_GetText("\x82""JUMP:""\x80 Respawn"))
 	}
-	else if (stplyr->spectator && (gametype != GT_COOP || stplyr->playerstate == PST_LIVE))
+	else if (stplyr->spectator && (!G_CoopGametype() || stplyr->playerstate == PST_LIVE))
 	{
 		if (!splitscreen && !donef12)
 		{
@@ -2169,7 +2166,7 @@ static void ST_drawTextHUD(void)
 			textHUDdraw(M_GetText("\x82""FIRE:""\x80 Enter game"))
 	}
 
-	if (gametype == GT_COOP && (!stplyr->spectator || (!(maptol & TOL_NIGHTS) && G_IsSpecialStage(gamemap))) && (stplyr->exiting || (stplyr->pflags & PF_FINISHED)))
+	if (G_CoopGametype() && (!stplyr->spectator || (!(maptol & TOL_NIGHTS) && G_IsSpecialStage(gamemap))) && (stplyr->exiting || (stplyr->pflags & PF_FINISHED)))
 	{
 		UINT8 numneeded = (G_IsSpecialStage(gamemap) ? 4 : cv_playersforexit.value);
 		if (numneeded)
@@ -2218,20 +2215,19 @@ static void ST_drawTextHUD(void)
 					textHUDdraw(M_GetText("\x82""You are blindfolded!"))
 				textHUDdraw(M_GetText("Waiting for players to hide..."))
 			}
-			else if (gametype == GT_HIDEANDSEEK)
+			else if (gametyperules & GTR_HIDEFROZEN)
 				textHUDdraw(M_GetText("Hide before time runs out!"))
 			else
 				textHUDdraw(M_GetText("Flee before you are hunted!"))
 		}
-		else if (gametype == GT_HIDEANDSEEK && !(stplyr->pflags & PF_TAGIT))
+		else if ((gametyperules & GTR_HIDEFROZEN) && !(stplyr->pflags & PF_TAGIT))
 		{
 			if (!splitscreen && !donef12)
 			{
 				textHUDdraw(M_GetText("\x82""VIEWPOINT:""\x80 Switch view"))
 				donef12 = true;
 			}
-			if (gametyperules & GTR_HIDEFROZEN)
-				textHUDdraw(M_GetText("You cannot move while hiding."))
+			textHUDdraw(M_GetText("You cannot move while hiding."))
 		}
 	}
 
@@ -2259,7 +2255,7 @@ static void ST_drawTeamHUD(void)
 		p = bmatcico;
 
 	if (LUA_HudEnabled(hud_teamscores))
-		V_DrawSmallScaledPatch(BASEVIDWIDTH/2 - SEP - SHORT(p->width)/4, 4, V_HUDTRANS|V_PERPLAYER|V_SNAPTOTOP, p);
+		V_DrawSmallScaledPatch(BASEVIDWIDTH/2 - SEP - (p->width / 4), 4, V_HUDTRANS|V_PERPLAYER|V_SNAPTOTOP, p);
 
 	if (gametyperules & GTR_TEAMFLAGS)
 		p = rflagico;
@@ -2267,7 +2263,7 @@ static void ST_drawTeamHUD(void)
 		p = rmatcico;
 
 	if (LUA_HudEnabled(hud_teamscores))
-		V_DrawSmallScaledPatch(BASEVIDWIDTH/2 + SEP - SHORT(p->width)/4, 4, V_HUDTRANS|V_PERPLAYER|V_SNAPTOTOP, p);
+		V_DrawSmallScaledPatch(BASEVIDWIDTH/2 + SEP - (p->width / 4), 4, V_HUDTRANS|V_PERPLAYER|V_SNAPTOTOP, p);
 
 	if (!(gametyperules & GTR_TEAMFLAGS))
 		goto num;
@@ -2280,11 +2276,11 @@ static void ST_drawTeamHUD(void)
 		{
 			// Blue flag isn't at base
 			if (players[i].gotflag & GF_BLUEFLAG && LUA_HudEnabled(hud_teamscores))
-				V_DrawScaledPatch(BASEVIDWIDTH/2 - SEP - SHORT(nonicon->width)/2, 0, V_HUDTRANS|V_PERPLAYER|V_SNAPTOTOP, nonicon);
+				V_DrawScaledPatch(BASEVIDWIDTH/2 - SEP - (nonicon->width / 2), 0, V_HUDTRANS|V_PERPLAYER|V_SNAPTOTOP, nonicon);
 
 			// Red flag isn't at base
 			if (players[i].gotflag & GF_REDFLAG && LUA_HudEnabled(hud_teamscores))
-				V_DrawScaledPatch(BASEVIDWIDTH/2 + SEP - SHORT(nonicon2->width)/2, 0, V_HUDTRANS|V_PERPLAYER|V_SNAPTOTOP, nonicon2);
+				V_DrawScaledPatch(BASEVIDWIDTH/2 + SEP - (nonicon2->width / 2), 0, V_HUDTRANS|V_PERPLAYER|V_SNAPTOTOP, nonicon2);
 
 			whichflag |= players[i].gotflag;
 
@@ -2507,11 +2503,11 @@ static void ST_overlayDrawer(void)
 	}
 
 	// GAME OVER hud
-	if ((gametype == GT_COOP)
+	if (G_GametypeUsesCoopLives()
 		&& (netgame || multiplayer)
 		&& (cv_cooplives.value == 0))
 	;
-	else if ((G_GametypeUsesLives() || gametype == GT_RACE) && stplyr->lives <= 0 && !(hu_showscores && (netgame || multiplayer)))
+	else if ((G_GametypeUsesLives() || ((gametyperules & (GTR_RACE|GTR_LIVES)) == GTR_RACE)) && stplyr->lives <= 0 && !(hu_showscores && (netgame || multiplayer)))
 	{
 		INT32 i = MAXPLAYERS;
 		INT32 deadtimer = stplyr->spectator ? TICRATE : (stplyr->deadtimer-(TICRATE<<1));
@@ -2557,7 +2553,7 @@ static void ST_overlayDrawer(void)
 			else
 			{
 				tic_t num = time;
-				INT32 sz = SHORT(tallnum[0]->width)/2, width = 0;
+				INT32 sz = tallnum[0]->width / 2, width = 0;
 				do
 				{
 					width += sz;
@@ -2637,10 +2633,6 @@ void ST_Drawer(void)
 {
 	void (*drawfunc)(void) = ST_overlayDrawer;
 
-	if (needpatchrecache)
-		R_ReloadHUDGraphics();
-
-#ifdef SEENAMES
 	if (cv_seenames.value && cv_allowseenames.value && displayplayer == consoleplayer && seenplayer && seenplayer->mo)
 	{
 		INT32 c = 0;
@@ -2664,7 +2656,6 @@ void ST_Drawer(void)
 
 		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2 + 15, V_HUDTRANSHALF|c, player_names[seenplayer-players]);
 	}
-#endif
 
 	// Doom's status bar only updated if necessary.
 	// However, ours updates every frame regardless, so the "refresh" param was removed

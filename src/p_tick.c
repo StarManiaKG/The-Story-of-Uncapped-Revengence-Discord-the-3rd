@@ -21,6 +21,8 @@
 #include "m_random.h"
 #include "lua_script.h"
 #include "lua_hook.h"
+#include "m_perfstats.h"
+#include "i_system.h" // I_GetPreciseTime
 
 // Object place
 #include "m_cheat.h"
@@ -321,6 +323,7 @@ static inline void P_RunThinkers(void)
 	size_t i;
 	for (i = 0; i < NUM_THINKERLISTS; i++)
 	{
+		ps_thlist_times[i] = I_GetPreciseTime();
 		for (currentthinker = thlist[i].next; currentthinker != &thlist[i]; currentthinker = currentthinker->next)
 		{
 #ifdef PARANOIA
@@ -328,6 +331,7 @@ static inline void P_RunThinkers(void)
 #endif
 			currentthinker->function.acp1(currentthinker);
 		}
+		ps_thlist_times[i] = I_GetPreciseTime() - ps_thlist_times[i];
 	}
 
 }
@@ -639,13 +643,26 @@ void P_Ticker(boolean run)
 		if (demorecording)
 			G_WriteDemoTiccmd(&players[consoleplayer].cmd, 0);
 		if (demoplayback)
-			G_ReadDemoTiccmd(&players[consoleplayer].cmd, 0);
+		{
+			player_t* p = &players[consoleplayer];
+			G_ReadDemoTiccmd(&p->cmd, 0);
+			if (!cv_freedemocamera.value)
+			{
+				P_ForceLocalAngle(p, p->cmd.angleturn << 16);
+				localaiming = p->aiming;
+			}
+		}
+
+		ps_lua_mobjhooks = 0;
+		ps_checkposition_calls = 0;
 
 		LUAh_PreThinkFrame();
 
+		ps_playerthink_time = I_GetPreciseTime();
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerThink(&players[i]);
+		ps_playerthink_time = I_GetPreciseTime() - ps_playerthink_time;
 	}
 
 	// Keep track of how long they've been playing!
@@ -660,14 +677,18 @@ void P_Ticker(boolean run)
 
 	if (run)
 	{
+		ps_thinkertime = I_GetPreciseTime();
 		P_RunThinkers();
+		ps_thinkertime = I_GetPreciseTime() - ps_thinkertime;
 
 		// Run any "after all the other thinkers" stuff
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
 
+		ps_lua_thinkframe_time = I_GetPreciseTime();
 		LUAh_ThinkFrame();
+		ps_lua_thinkframe_time = I_GetPreciseTime() - ps_lua_thinkframe_time;
 	}
 
 	// Run shield positioning
@@ -692,7 +713,7 @@ void P_Ticker(boolean run)
 
 	if (run)
 	{
-		if (countdowntimer && G_PlatformGametype() && (gametype == GT_COOP || leveltime >= 4*TICRATE) && !stoppedclock && --countdowntimer <= 0)
+		if (countdowntimer && G_PlatformGametype() && ((gametyperules & GTR_CAMPAIGN) || leveltime >= 4*TICRATE) && !stoppedclock && --countdowntimer <= 0)
 		{
 			countdowntimer = 0;
 			countdowntimeup = true;
@@ -755,6 +776,9 @@ void P_PreTicker(INT32 frames)
 
 	postimgtype = postimgtype2 = postimg_none;
 
+	if (marathonmode & MA_INGAME)
+		marathonmode |= MA_INIT;
+
 	for (framecnt = 0; framecnt < frames; ++framecnt)
 	{
 		P_MapStart();
@@ -770,7 +794,9 @@ void P_PreTicker(INT32 frames)
 				memcpy(&temptic, &players[i].cmd, sizeof(ticcmd_t));
 				memset(&players[i].cmd, 0, sizeof(ticcmd_t));
 				// correct angle on spawn...
-				players[i].cmd.angleturn = temptic.angleturn;
+				players[i].angleturn += temptic.angleturn - players[i].oldrelangleturn;
+				players[i].oldrelangleturn = temptic.angleturn;
+				players[i].cmd.angleturn = players[i].angleturn;
 
 				P_PlayerThink(&players[i]);
 
@@ -797,4 +823,7 @@ void P_PreTicker(INT32 frames)
 
 		P_MapEnd();
 	}
+
+	if (marathonmode & MA_INGAME)
+		marathonmode &= ~MA_INIT;
 }
