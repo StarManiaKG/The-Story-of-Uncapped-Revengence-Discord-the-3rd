@@ -277,6 +277,9 @@ void Got_LuaFile(UINT8 **cp, INT32 playernum)
 	if (!luafiletransfers)
 		I_Error("No Lua file transfer\n");
 
+	lua_settop(gL, 0); // Just in case...
+	lua_pushcfunction(gL, LUA_GetErrorMessage);
+
 	// Retrieve the callback and push it on the stack
 	lua_pushfstring(gL, FMT_FILECALLBACKID, luafiletransfers->id);
 	lua_gettable(gL, LUA_REGISTRYINDEX);
@@ -284,8 +287,16 @@ void Got_LuaFile(UINT8 **cp, INT32 playernum)
 	// Push the first argument (file handle or nil) on the stack
 	if (success)
 	{
+		char mode[4];
+
+		// Ensure we are opening in binary mode
+		// (if it's a text file, newlines have been converted already)
+		strcpy(mode, luafiletransfers->mode);
+		if (!strchr(mode, 'b'))
+			strcat(mode, "b");
+
 		pf = newfile(gL); // Create and push the file handle
-		*pf = fopen(luafiletransfers->realfilename, luafiletransfers->mode); // Open the file
+		*pf = fopen(luafiletransfers->realfilename, mode); // Open the file
 		if (!*pf)
 			I_Error("Can't open file \"%s\"\n", luafiletransfers->realfilename); // The file SHOULD exist
 	}
@@ -296,7 +307,8 @@ void Got_LuaFile(UINT8 **cp, INT32 playernum)
 	lua_pushstring(gL, luafiletransfers->filename);
 
 	// Call the callback
-	LUA_Call(gL, 2);
+	LUA_Call(gL, 2, 0, 1);
+	lua_settop(gL, 0);
 
 	if (success)
 	{
@@ -313,17 +325,14 @@ void Got_LuaFile(UINT8 **cp, INT32 playernum)
 
 	RemoveLuaFileTransfer();
 
-	if (server && luafiletransfers)
+	if (waitingforluafilecommand)
 	{
-		if (FIL_FileOK(luafiletransfers->realfilename))
-			SV_PrepareSendLuaFileToNextNode();
-		else
-		{
-			// Send a net command with 0 as its first byte to indicate the file couldn't be opened
-			success = 0;
-			SendNetXCmd(XD_LUAFILE, &success, 1);
-		}
+		waitingforluafilecommand = false;
+		CL_PrepareDownloadLuaFile();
 	}
+
+	if (server && luafiletransfers)
+		SV_PrepareSendLuaFile();
 }
 
 
