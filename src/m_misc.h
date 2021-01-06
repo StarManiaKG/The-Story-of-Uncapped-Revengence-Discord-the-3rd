@@ -33,7 +33,7 @@ extern consvar_t cv_screenshot_option, cv_screenshot_folder, cv_screenshot_color
 extern consvar_t cv_moviemode, cv_movie_folder, cv_movie_option;
 extern consvar_t cv_zlib_memory, cv_zlib_level, cv_zlib_strategy, cv_zlib_window_bits;
 extern consvar_t cv_zlib_memorya, cv_zlib_levela, cv_zlib_strategya, cv_zlib_window_bitsa;
-extern consvar_t cv_apng_delay;
+extern consvar_t cv_apng_delay, cv_apng_downscale;
 
 void M_StartMovie(void);
 void M_SaveFrame(void);
@@ -47,6 +47,8 @@ INT32 M_MapNumber(char first, char second);
 boolean FIL_WriteFile(char const *name, const void *source, size_t length);
 size_t FIL_ReadFileTag(char const *name, UINT8 **buffer, INT32 tag);
 #define FIL_ReadFile(n, b) FIL_ReadFileTag(n, b, PU_STATIC)
+
+boolean FIL_ConvertTextFileToBinary(const char *textfilename, const char *binfilename);
 
 boolean FIL_FileExists(const char *name);
 boolean FIL_WriteFileOK(char const *name);

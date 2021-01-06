@@ -207,8 +207,8 @@ void F_StartWipePre(void);
 void F_StartWipePost(void);
 
 #define F_WipeColorFill(c) V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, c)
-tic_t F_GetWipeLength(UINT8 wipetype);
-boolean F_WipeExists(UINT8 wipetype);
+tic_t F_GetWipeLength(UINT8 type);
+boolean F_WipeExists(UINT8 type);
 
 enum
 {
