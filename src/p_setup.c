@@ -4040,11 +4040,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			V_DrawSmallString(1, 195, V_ALLOWLOWERCASE|V_TRANSLUCENT|V_SNAPTOLEFT|V_SNAPTOBOTTOM, tx);
 			I_UpdateNoVsync();
 		}
-
-		// As oddly named as this is, this handles music only.
-		// We should be fine starting it here.
-		// Don't do this during titlemap, because the menu code handles music by itself.
-		S_Start();
 	}
 
 	levelfadecol = (ranspecialwipe) ? 0 : 31;
@@ -4176,6 +4171,14 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	levelloading = false;
 
+	if (!(reloadinggamestate || titlemapinaction))
+	{
+		// As oddly named as this is, this handles music only.
+		// We should be fine starting it here.
+		// Don't do this during titlemap, because the menu code handles music by itself.
+		S_Start();
+	}
+
 	P_RunCachedActions();
 
 	// Took me 3 hours to figure out why my progression kept on getting overwritten with the titlemap...
@@ -4225,7 +4228,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	else
 	{
 		// Start the title card.
-		G_StartTitleCard();
+		TitleCard_Start();
 	}
 
 	ranspecialwipe = SPECIALWIPE_NONE;

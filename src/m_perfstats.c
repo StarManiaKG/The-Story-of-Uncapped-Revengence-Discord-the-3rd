@@ -188,6 +188,7 @@ static void M_DrawRenderStats(void)
 
 	perfstatrow_t uiswaptime_row[] = {
 		{"ui     ", "UI render:     ", &ps_uitime},
+		{"wipe   ", "Wipes:         ", &ps_wipetime},
 		{"finupdt", "I_FinishUpdate:", &ps_swaptime},
 		{0}
 	};
