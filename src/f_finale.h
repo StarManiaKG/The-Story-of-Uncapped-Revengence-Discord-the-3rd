@@ -79,6 +79,23 @@ extern INT32 finalecount;
 extern INT32 titlescrollxspeed;
 extern INT32 titlescrollyspeed;
 
+extern INT32 intro_scenenum;
+
+enum
+{
+	INTRO_STJR      = 0,
+
+	INTRO_FIRST     = 1,
+	INTRO_ASTEROID  = 4,
+	INTRO_RADAR     = 5,
+	INTRO_GRASS1    = 6,
+	INTRO_GRASS2    = 7,
+	INTRO_SKYRUNNER = 10,
+	INTRO_SONICDO1  = 14,
+	INTRO_SONICDO2  = 15,
+	INTRO_LAST      = 16
+};
+
 typedef enum
 {
 	TTMODE_NONE = 0,
@@ -100,7 +117,6 @@ extern INT16 ttloop;
 extern UINT16 tttics;
 extern boolean ttavailable[6];
 
-
 typedef enum
 {
 	TITLEMAP_OFF = 0,
@@ -109,7 +125,6 @@ typedef enum
 } titlemap_enum;
 
 // Current menu parameters
-
 extern mobj_t *titlemapcameraref;
 extern char curbgname[9];
 extern SINT8 curfadevalue;
@@ -122,6 +137,7 @@ extern boolean hidetitlemap;
 extern boolean curhidepics;
 extern ttmode_enum curttmode;
 extern UINT8 curttscale;
+
 // ttmode user vars
 extern char curttname[9];
 extern INT16 curttx;
@@ -169,7 +185,11 @@ typedef enum
 	WSF_TOWHITE      = 1<<2,
 	WSF_CROSSFADE    = 1<<3,
 	WSF_LEVELLOADING = 1<<4,
-	WSF_SPECIALSTAGE = 1<<5
+	WSF_SPECIALSTAGE = 1<<5,
+	WSF_INTROSTART   = 1<<6,
+	WSF_INTROEND     = 1<<7,
+
+	WSF_ACTION       = (WSF_LEVELLOADING|WSF_SPECIALSTAGE|WSF_INTROSTART|WSF_INTROEND)
 } wipestyleflags_t;
 extern wipestyleflags_t wipestyleflags;
 
@@ -181,9 +201,26 @@ typedef enum
 } specialwipe_t;
 extern specialwipe_t ranspecialwipe;
 
-boolean F_ShouldColormapFade(void);
-boolean F_TryColormapFade(UINT8 wipecolor);
-void F_DecideWipeStyle(void);
+extern UINT8 wipetype;
+extern UINT8 wipeframe;
+
+void F_WipeSetStyle(void);
+void F_WipeStartScreen(void);
+void F_WipeEndScreen(void);
+void F_WipeEndScreenRestore(void);
+
+void F_StartWipe(UINT8 type, boolean drawMenu);
+void F_RunWipe(void);
+void F_DisplayWipe(void);
+void F_StopWipe(void);
+
+void F_WipeStartPre(void);
+void F_WipeStartPost(void);
+
+void F_WipeDoCrossfade(void);
+boolean F_WipeDoTinted(void);
+
+#define F_WipeColorFill(c) V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, c)
 
 #define FADECOLORMAPDIV 8
 #define FADECOLORMAPROWS (256/FADECOLORMAPDIV)
@@ -192,23 +229,9 @@ void F_DecideWipeStyle(void);
 #define FADEGREENFACTOR 15
 #define FADEBLUEFACTOR  10
 
-extern UINT8 wipetype;
-extern UINT8 wipeframe;
-
-void F_WipeStartScreen(void);
-void F_WipeEndScreen(void);
-
-void F_StartWipe(UINT8 type, boolean drawMenu);
-void F_RunWipe(void);
-void F_DisplayWipe(void);
-void F_StopWipe(void);
-
-void F_StartWipePre(void);
-void F_StartWipePost(void);
-
-#define F_WipeColorFill(c) V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, c)
 tic_t F_GetWipeLength(UINT8 type);
 boolean F_WipeExists(UINT8 type);
+boolean F_WipeCanTint(void);
 
 enum
 {

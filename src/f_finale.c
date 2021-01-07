@@ -309,9 +309,9 @@ static void F_NewCutscene(const char *basetext)
 // =============
 #define NUMINTROSCENES 17
 INT32 intro_scenenum = 0;
-INT32 intro_curtime = 0;
+static INT32 intro_curtime = 0;
 
-const char *introtext[NUMINTROSCENES];
+static const char *introtext[NUMINTROSCENES];
 
 static tic_t introscenetime[NUMINTROSCENES] =
 {
@@ -624,6 +624,7 @@ static void F_IntroDrawScene(void)
 		if (intro_curtime > 1 && intro_curtime < (INT32)introscenetime[intro_scenenum])
 		{
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+
 			if (intro_curtime < TICRATE-5) // Make the text shine!
 				sprintf(stjrintro, "STJRI%03u", intro_curtime-1);
 			else if (intro_curtime >= TICRATE-6 && intro_curtime < 2*TICRATE-20) // Pause on black screen for just a second
@@ -636,12 +637,15 @@ static void F_IntroDrawScene(void)
 				S_ChangeMusicInternal("_stjr", false);
 
 				background = W_CachePatchName(stjrintro, PU_PATCH_LOWPRIORITY);
+
 				wipestyleflags = WSF_FADEIN;
 				F_WipeStartScreen();
-				F_TryColormapFade(31);
+				F_WipeDoTinted();
 				V_DrawSmallScaledPatch(bgxoffs, 84, 0, background);
-				F_WipeEndScreen();
+				F_WipeEndScreenRestore();
+
 				F_StartWipe(0,true);
+				timetonext--;
 			}
 
 			if (!WipeInAction) // Draw the patch if not in a wipe
@@ -792,7 +796,7 @@ static void F_IntroDrawScene(void)
 
 	W_UnlockCachedPatch(background);
 
-	if (intro_scenenum == 4) // The asteroid SPINS!
+	if (intro_scenenum == INTRO_ASTEROID) // The asteroid SPINS!
 	{
 		if (intro_curtime > 1)
 		{
@@ -832,7 +836,7 @@ static void F_IntroDrawScene(void)
 				V_DrawFixedPatch(x, y, scale, trans<<V_ALPHASHIFT, rockpat, R_GetTranslationColormap(TC_BLINK, SKINCOLOR_AQUA, GTC_CACHE));
 		}
 	}
-	else if (intro_scenenum == 1 && intro_curtime < 5*TICRATE)
+	else if (intro_scenenum == INTRO_FIRST && intro_curtime < 5*TICRATE)
 	{
 		INT32 trans = intro_curtime + 10 - (5*TICRATE);
 		if (trans < 0)
@@ -846,86 +850,88 @@ static void F_IntroDrawScene(void)
 	V_DrawString(cx, cy, V_ALLOWLOWERCASE, cutscene_disptext);
 }
 
+static void F_IntroMidSceneWipe(void)
+{
+	INT32 x = 8;
+	INT32 y = 128;
+	patch_t *patch;
+
+	if (intro_scenenum == INTRO_RADAR && intro_curtime == 5*TICRATE)
+		patch = W_CachePatchName("RADAR", PU_PATCH_LOWPRIORITY);
+	else if (intro_scenenum == INTRO_GRASS2 && intro_curtime == 6*TICRATE)
+		patch = W_CachePatchName("SGRASS2", PU_PATCH_LOWPRIORITY);
+	else if (intro_scenenum == INTRO_SONICDO2 && intro_curtime == 7*TICRATE)
+	{
+		patch = W_CachePatchName("SONICDO2", PU_PATCH_LOWPRIORITY);
+		x = 224;
+		y = 8;
+	}
+	else
+		return;
+
+	F_WipeStartScreen();
+	V_DrawSmallScaledPatch(0, 0, 0, patch);
+	W_UnlockCachedPatch(patch);
+	V_DrawString(x, y, V_ALLOWLOWERCASE, cutscene_disptext);
+	F_WipeEndScreenRestore();
+
+	wipestyle = WIPESTYLE_NORMAL;
+	F_StartWipe(99, true);
+	timetonext--;
+}
+
+#define F_IntroSceneCrossfades(scene) ((scene) != INTRO_STJR && (scene) != INTRO_SKYRUNNER && (scene) != INTRO_LAST)
+
+static void F_IntroSpecialWipe(INT32 scene)
+{
+	wipestyleflags = WSF_FADEOUT;
+
+	switch (scene)
+	{
+		case INTRO_STJR:
+			wipestyleflags |= WSF_INTROSTART;
+			break;
+		case INTRO_SKYRUNNER:
+			wipestyleflags |= WSF_TOWHITE;
+			break;
+		case INTRO_LAST:
+			wipestyleflags |= WSF_INTROEND;
+			break;
+	}
+
+	F_WipeStartScreen();
+	F_WipeDoTinted();
+	F_WipeEndScreenRestore();
+
+	F_StartWipe(99, true);
+	WipeRunPost = true;
+}
+
 //
 // F_IntroDrawer
 //
 void F_IntroDrawer(void)
 {
-	if (timetonext <= 0)
+	boolean next = (timetonext <= 0);
+	INT32 lastscene = intro_scenenum;
+
+	if (next)
 	{
-		if (intro_scenenum == 0)
+		if (rendermode == render_none && intro_scenenum == INTRO_LAST)
 		{
-			if (rendermode != render_none)
-			{
-				wipestyleflags = WSF_FADEOUT;
-				F_WipeStartScreen();
-				F_TryColormapFade(31);
-				F_WipeEndScreen();
-				F_StartWipe(99,true);
-			}
-
-			S_ChangeMusicInternal("_intro", false);
-		}
-		else if (intro_scenenum == 10)
-		{
-			if (rendermode != render_none)
-			{
-				wipestyleflags = (WSF_FADEOUT|WSF_TOWHITE);
-				F_WipeStartScreen();
-				F_TryColormapFade(0);
-				F_WipeEndScreen();
-				F_StartWipe(99,true);
-			}
-		}
-		else if (intro_scenenum == 16)
-		{
-			if (rendermode != render_none)
-			{
-				wipestyleflags = WSF_FADEOUT;
-				F_WipeStartScreen();
-				F_TryColormapFade(31);
-				F_WipeEndScreen();
-				F_StartWipe(99,true);
-			}
-
-			// Stay on black for a bit. =)
-			{
-				tic_t nowtime, quittime, lasttime;
-				nowtime = lasttime = I_GetTime();
-				quittime = nowtime + NEWTICRATE*2; // Shortened the quit time, used to be 2 seconds
-				while (quittime > nowtime)
-				{
-					while (!((nowtime = I_GetTime()) - lasttime))
-						I_Sleep();
-					lasttime = nowtime;
-
-					I_OsPolling();
-					I_UpdateNoBlit();
-#ifdef HAVE_THREADS
-					I_lock_mutex(&m_menu_mutex);
-#endif
-					M_Drawer(); // menu is drawn even on top of wipes
-#ifdef HAVE_THREADS
-					I_unlock_mutex(m_menu_mutex);
-#endif
-					I_FinishUpdate(); // Update the screen with the image Tails 06-19-2001
-
-					if (moviemode) // make sure we save frames for the white hold too
-						M_SaveFrame();
-				}
-			}
-
 			D_StartTitle();
 			wipegamestate = GS_INTRO;
 			return;
 		}
+
+		if (F_IntroSceneCrossfades(intro_scenenum))
+		{
+			F_WipeDoCrossfade();
+			next = false;
+		}
+
 		F_NewCutscene(introtext[++intro_scenenum]);
 		timetonext = introscenetime[intro_scenenum];
-
-		F_WipeStartScreen();
-		wipegamestate = -1;
-		wipestyle = WIPESTYLE_NORMAL;
-		wipestyleflags = WSF_CROSSFADE;
 		animtimer = stoptimer = 0;
 	}
 
@@ -933,61 +939,15 @@ void F_IntroDrawer(void)
 
 	if (rendermode != render_none)
 	{
-		if (intro_scenenum == 5 && intro_curtime == 5*TICRATE)
+		if (next)
 		{
-			patch_t *radar = W_CachePatchName("RADAR", PU_PATCH_LOWPRIORITY);
-
-			F_WipeStartScreen();
-			F_WipeColorFill(31);
-			V_DrawSmallScaledPatch(0, 0, 0, radar);
-			W_UnlockCachedPatch(radar);
-			V_DrawString(8, 128, V_ALLOWLOWERCASE, cutscene_disptext);
-
-			F_WipeEndScreen();
-			F_StartWipe(99,true);
+			F_IntroSpecialWipe(lastscene);
+			return;
 		}
-		else if (intro_scenenum == 7 && intro_curtime == 6*TICRATE) // Force a wipe here
-		{
-			patch_t *grass = W_CachePatchName("SGRASS2", PU_PATCH_LOWPRIORITY);
 
-			F_WipeStartScreen();
-			F_WipeColorFill(31);
-			V_DrawSmallScaledPatch(0, 0, 0, grass);
-			W_UnlockCachedPatch(grass);
-			V_DrawString(8, 128, V_ALLOWLOWERCASE, cutscene_disptext);
-
-			F_WipeEndScreen();
-			F_StartWipe(99,true);
-		}
-		/*else if (intro_scenenum == 11 && intro_curtime == 7*TICRATE)
-		{
-			patch_t *confront = W_CachePatchName("CONFRONT", PU_PATCH_LOWPRIORITY);
-
-			F_WipeStartScreen();
-			F_WipeColorFill(31);
-			V_DrawSmallScaledPatch(0, 0, 0, confront);
-			W_UnlockCachedPatch(confront);
-			V_DrawString(8, 128, V_ALLOWLOWERCASE, cutscene_disptext);
-
-			F_WipeEndScreen();
-			F_StartWipe(99,true);
-		}*/
-		if (intro_scenenum == 15 && intro_curtime == 7*TICRATE)
-		{
-			patch_t *sdo = W_CachePatchName("SONICDO2", PU_PATCH_LOWPRIORITY);
-
-			F_WipeStartScreen();
-			F_WipeColorFill(31);
-			V_DrawSmallScaledPatch(0, 0, 0, sdo);
-			W_UnlockCachedPatch(sdo);
-			V_DrawString(224, 8, V_ALLOWLOWERCASE, cutscene_disptext);
-
-			F_WipeEndScreen();
-			F_StartWipe(99,true);
-		}
+		F_IntroMidSceneWipe();
+		F_IntroDrawScene();
 	}
-
-	F_IntroDrawScene();
 }
 
 //
@@ -3946,7 +3906,7 @@ void F_CutsceneDrawer(void)
 		{
 			V_DrawFill(0,0,BASEVIDWIDTH,BASEVIDHEIGHT,cutscenes[cutnum]->scene[scenenum].fadecolor);
 
-			F_WipeEndScreen();
+			F_WipeEndScreenRestore();
 			F_StartWipe(cutscenes[cutnum]->scene[scenenum].fadeinid, true);
 
 			F_WipeStartScreen();
@@ -3966,7 +3926,7 @@ void F_CutsceneDrawer(void)
 
 	if (dofadenow && rendermode != render_none)
 	{
-		F_WipeEndScreen();
+		F_WipeEndScreenRestore();
 		F_StartWipe(cutscenes[cutnum]->scene[scenenum].fadeoutid, true);
 	}
 

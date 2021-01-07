@@ -3212,6 +3212,9 @@ boolean M_Responder(event_t *ev)
 	if (gamestate == GS_TITLESCREEN && finalecount < TICRATE)
 		return false;
 
+	if (gamestate == GS_TIMEATTACK && WipeInAction)
+		return false;
+
 	if (CON_Ready())
 		return false;
 
@@ -3674,7 +3677,7 @@ void M_StartControlPanel(void)
 	}
 	else if (!(netgame || multiplayer)) // Single Player
 	{
-		if (gamestate != GS_LEVEL || ultimatemode) // intermission, so gray out stuff.
+		if (gamestate != GS_LEVEL || ultimatemode || G_GetRetryFlag(RETRY_CUR)) // intermission, so gray out stuff.
 		{
 			SPauseMenu[spause_pandora].status = (M_SecretUnlocked(SECRET_PANDORA)) ? (IT_GRAYEDOUT) : (IT_DISABLED);
 			SPauseMenu[spause_retry].status = IT_GRAYEDOUT;
@@ -3763,7 +3766,7 @@ void M_StartControlPanel(void)
 
 void M_EndModeAttackRun(void)
 {
-	G_ClearModeAttackRetryFlag();
+	G_ClearRetryRA();
 	M_ModeAttackEndGame(0);
 }
 
@@ -6907,7 +6910,7 @@ static void M_RetryResponse(INT32 ch)
 		return;
 
 	M_ClearMenus(true);
-	G_SetRetryFlag();
+	G_SetRetrySP();
 }
 
 static void M_Retry(INT32 choice)
@@ -10362,7 +10365,7 @@ static void M_SetGuestReplay(INT32 choice)
 void M_ModeAttackRetry(INT32 choice)
 {
 	(void)choice;
-	// todo -- maybe seperate this out and G_SetRetryFlag() here instead? is just calling this from the menu 100% safe?
+	// todo -- maybe seperate this out and G_SetRetrySP() here instead? is just calling this from the menu 100% safe?
 	G_CheckDemoStatus(); // Cancel recording
 	if (modeattacking == ATTACKING_RECORD)
 		M_ChooseTimeAttack(0);
