@@ -4852,7 +4852,7 @@ void TryRunTics(tic_t realtics)
 
 				ps_tictime = I_GetPreciseTime();
 
-				G_Ticker((gametic % NEWTICRATERATIO) == 0);
+				G_Ticker((gametic % NEWTICRATERATIO) == 0, (neededtic - gametic));
 				ExtraDataTicker();
 				gametic++;
 				consistancy[gametic%BACKUPTICS] = Consistancy();

@@ -103,6 +103,7 @@ extracolormap_t *extra_colormaps = NULL;
 precise_t ps_prevframetime = 0;
 precise_t ps_rendercalltime = 0;
 precise_t ps_uitime = 0;
+precise_t ps_wipetime = 0;
 precise_t ps_swaptime = 0;
 
 precise_t ps_bsptime = 0;

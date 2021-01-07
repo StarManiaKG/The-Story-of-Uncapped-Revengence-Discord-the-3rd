@@ -1193,9 +1193,9 @@ static void ST_drawInput(void)
 // What happens before drawing the title card.
 // Which is just setting the HUD translucency.
 //
-void ST_preDrawTitleCard(void)
+void TitleCard_PreDraw(void)
 {
-	if (!G_IsTitleCardAvailable() || !titlecard.running)
+	if (!TitleCard_Available() || !titlecard.running)
 		return;
 
 	if (titlecard.ticker >= (titlecard.endtime + TICRATE))
@@ -1210,7 +1210,7 @@ void ST_preDrawTitleCard(void)
 //
 // Draw the title card itself.
 //
-void ST_drawTitleCard(void)
+void TitleCard_Draw(void)
 {
 	char *lvlttl = mapheaderinfo[gamemap-1]->lvlttl;
 	char *subttl = mapheaderinfo[gamemap-1]->subttl;
@@ -1223,7 +1223,7 @@ void ST_drawTitleCard(void)
 	UINT8 colornum;
 	const UINT8 *colormap;
 
-	if (!G_IsTitleCardAvailable())
+	if (!TitleCard_Available())
 		return;
 
 	if (!titlecard.running)
@@ -1293,16 +1293,20 @@ void ST_drawTitleCard(void)
 //
 // Draws title cards for every player.
 //
-void ST_drawTitleCardOutsideOverlay(void)
+void TitleCard_DrawOverWipe(void)
 {
+	if (!(titlecard.running && titlecard.wipe && st_overlay))
+		return;
+
 	stplyr = &players[consoleplayer];
-	ST_preDrawTitleCard();
-	ST_drawTitleCard();
+	TitleCard_PreDraw();
+	TitleCard_Draw();
+
 	if (splitscreen)
 	{
 		stplyr = &players[secondarydisplayplayer];
-		ST_preDrawTitleCard();
-		ST_drawTitleCard();
+		TitleCard_PreDraw();
+		TitleCard_Draw();
 	}
 }
 
@@ -2470,16 +2474,16 @@ static void ST_doItemFinderIconsAndSound(void)
 //
 static void ST_overlayDrawer(void)
 {
-	// Decide whether to draw the stage title or not
+	// Decides whether to draw the stage title or not.
 	boolean stagetitle = false;
 
 	// Check for a valid level title
 	// If the HUD is enabled
 	// And, if Lua is running, if the HUD library has the stage title enabled
-	if (G_IsTitleCardAvailable() && !(hu_showscores && (netgame || multiplayer)))
+	if (TitleCard_Available() && !(hu_showscores && (netgame || multiplayer)))
 	{
 		stagetitle = true;
-		ST_preDrawTitleCard();
+		TitleCard_PreDraw();
 	}
 
 	// hu_showscores = auto hide score/time/rings when tab rankings are shown
@@ -2618,7 +2622,7 @@ static void ST_overlayDrawer(void)
 
 	// draw level title Tails
 	if (stagetitle && (!WipeInAction) && (!titlecard.wipe))
-		ST_drawTitleCard();
+		TitleCard_Draw();
 
 	if (!hu_showscores && (netgame || multiplayer) && LUA_HudEnabled(hud_textspectator))
 		ST_drawTextHUD();
@@ -2693,7 +2697,7 @@ void ST_Drawer(void)
 	st_translucency = cv_translucenthud.value;
 
 	if (titlecard.prelevel)
-		drawfunc = ST_drawTitleCard;
+		drawfunc = TitleCard_Draw;
 	else if (!st_overlay)
 		return;
 

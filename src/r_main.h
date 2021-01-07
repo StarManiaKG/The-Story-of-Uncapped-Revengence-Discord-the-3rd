@@ -81,6 +81,7 @@ boolean R_DoCulling(line_t *cullheight, line_t *viewcullheight, fixed_t vz, fixe
 extern precise_t ps_prevframetime;// time when previous frame was rendered
 extern precise_t ps_rendercalltime;
 extern precise_t ps_uitime;
+extern precise_t ps_wipetime;
 extern precise_t ps_swaptime;
 
 extern precise_t ps_bsptime;

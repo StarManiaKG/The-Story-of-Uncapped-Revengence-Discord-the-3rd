@@ -4162,7 +4162,7 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 		return false;
 
 	G_StartLevelWipe();
-	wipestyleflags &= ~(WSF_SPECIALSTAGE|WSF_LEVELLOADING);
+	wipestyleflags &= ~WSF_ACTION;
 	F_StopWipe();
 
 	WipeRunPost = false;

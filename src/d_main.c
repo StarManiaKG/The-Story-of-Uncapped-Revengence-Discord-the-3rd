@@ -222,8 +222,7 @@ void D_ProcessEvents(void)
 }
 
 //
-// D_Display
-// draw current display, possibly wiping it from the previous
+// RENDERING
 //
 
 // wipegamestate can be set to -1 to force a wipe on the next draw
@@ -232,72 +231,13 @@ gamestate_t wipegamestate = GS_LEVEL;
 INT16 wipetypepre = DEFAULTWIPE;
 INT16 wipetypepost = DEFAULTWIPE;
 
-static void D_Display(void)
+//
+// Draws game states that don't need to render a level.
+//
+
+static void D_BufferedDrawing(void)
 {
-	boolean forcerefresh = false;
-
-	if (dedicated)
-		return;
-
-	if (nodrawers)
-		return; // for comparative timing/profiling
-
-	// Lactozilla: Switching renderers works by checking
-	// if the game has to do it right when the frame
-	// needs to render. If so, five things will happen:
-	// 1. Interface functions will be called so
-	//    that switching to OpenGL creates a
-	//    GL context, and switching to Software
-	//    allocates screen buffers.
-	// 2. Software will set drawer functions,
-	//    and OpenGL will load textures and
-	//    create plane polygons, if necessary.
-	// 3. Functions related to switching video
-	//    modes (resolution) are called.
-	// 4. The frame is ready to be drawn!
-
-	// Check for change of renderer or screen size (video mode)
-	if (setrenderneeded || setmodeneeded)
-	{
-		SCR_SetMode(); // change video mode
-		if (WipeInAction)
-			F_StopWipe();
-	}
-
-	// Recalc the screen
-	if (vid.recalc)
-		SCR_Recalc(); // NOTE! setsizeneeded is set by SCR_Recalc()
-
-	// View morph
-	if (rendermode == render_soft && !splitscreen)
-		R_CheckViewMorph();
-
-	// Change the view size if needed
-	// Set by changing video mode or renderer
-	if (setsizeneeded)
-	{
-		R_ExecuteSetViewSize();
-		forcerefresh = true; // force background redraw
-	}
-
-	// draw buffered stuff to screen
-	// Used only by linux GGI version
-	I_UpdateNoBlit();
-
-	// save the current screen if about to wipe
-	if ((gamestate != wipegamestate) && wipetypepre != IGNOREWIPE)
-		F_StartWipePre();
-	else
-		wipetypepre = DEFAULTWIPE;
-
-	// do buffered drawing
-	if (WipeInAction)
-	{
-		F_DisplayWipe();
-		if ((gamestate == GS_LEVEL) && (!levelstarting) && titlecard.running && titlecard.wipe && st_overlay)
-			ST_drawTitleCardOutsideOverlay();
-	}
-	else switch (gamestate)
+	switch (gamestate)
 	{
 		case GS_TITLESCREEN:
 			if (!titlemapinaction || !curbghide) {
@@ -365,96 +305,181 @@ static void D_Display(void)
 		case GS_NULL:
 			break;
 	}
+}
+
+//
+// Renders one or two level viewpoints.
+//
+
+static void D_Render(void)
+{
+	if (!(gamestate == GS_LEVEL || (gamestate == GS_TITLESCREEN && titlemapinaction && curbghide && (!hidetitlemap))))
+	{
+		ps_uitime = I_GetPreciseTime();
+		return;
+	}
+
+	// draw the view directly
+	if (!automapactive && !dedicated && (!titlecard.prelevel) && cv_renderview.value)
+	{
+		ps_rendercalltime = I_GetPreciseTime();
+		if (players[displayplayer].mo || players[displayplayer].playerstate == PST_DEAD)
+		{
+			topleft = screens[0] + viewwindowy*vid.width + viewwindowx;
+			objectsdrawn = 0;
+#ifdef HWRENDER
+			if (rendermode != render_soft)
+				HWR_RenderPlayerView(0, &players[displayplayer]);
+			else
+#endif
+			if (rendermode != render_none)
+				R_RenderPlayerView(&players[displayplayer]);
+		}
+
+		// render the second screen
+		if (splitscreen && players[secondarydisplayplayer].mo)
+		{
+#ifdef HWRENDER
+			if (rendermode != render_soft)
+				HWR_RenderPlayerView(1, &players[secondarydisplayplayer]);
+			else
+#endif
+			if (rendermode != render_none)
+			{
+				viewwindowy = vid.height / 2;
+				M_Memcpy(ylookup, ylookup2, viewheight*sizeof (ylookup[0]));
+
+				topleft = screens[0] + viewwindowy*vid.width + viewwindowx;
+
+				R_RenderPlayerView(&players[secondarydisplayplayer]);
+
+				viewwindowy = 0;
+				M_Memcpy(ylookup, ylookup1, viewheight*sizeof (ylookup[0]));
+			}
+		}
+
+		// Image postprocessing effect
+		if (rendermode == render_soft)
+		{
+			if (!splitscreen)
+				R_ApplyViewMorph();
+
+			if (postimgtype)
+				V_DoPostProcessor(0, postimgtype, postimgparam);
+			if (postimgtype2)
+				V_DoPostProcessor(1, postimgtype2, postimgparam2);
+		}
+		ps_rendercalltime = I_GetPreciseTime() - ps_rendercalltime;
+	}
+
+	if (lastdraw)
+	{
+		if (rendermode == render_soft)
+		{
+			VID_BlitLinearScreen(screens[0], screens[1], vid.width*vid.bpp, vid.height, vid.width*vid.bpp, vid.rowbytes);
+			Y_ConsiderScreenBuffer();
+			usebuffer = true;
+		}
+		lastdraw = false;
+	}
+
+	ps_uitime = I_GetPreciseTime();
+
+	if (gamestate == GS_LEVEL)
+	{
+		ST_Drawer();
+		F_TextPromptDrawer();
+		HU_Drawer();
+	}
+	else
+		F_TitleScreenDrawer();
+}
+
+//
+// Draws the entire screen frame.
+//
+
+static void D_Display(void)
+{
+	boolean forcerefresh = false;
+
+	if (dedicated)
+		return;
+
+	if (nodrawers)
+		return; // for comparative timing/profiling
+
+	// Lactozilla: Switching renderers works by checking
+	// if the game has to do it right when the frame
+	// needs to render. If so, five things will happen:
+	// 1. Interface functions will be called so
+	//    that switching to OpenGL creates a
+	//    GL context, and switching to Software
+	//    allocates screen buffers.
+	// 2. Software will set drawer functions,
+	//    and OpenGL will load textures and
+	//    create plane polygons, if necessary.
+	// 3. Functions related to switching video
+	//    modes (resolution) are called.
+	// 4. The frame is ready to be drawn!
+
+	// Check for change of renderer or screen size (video mode)
+	if (setrenderneeded || setmodeneeded)
+	{
+		SCR_SetMode(); // change video mode
+		if (WipeInAction)
+			F_StopWipe();
+	}
+
+	// Recalc the screen
+	if (vid.recalc)
+		SCR_Recalc(); // NOTE! setsizeneeded is set by SCR_Recalc()
+
+	// View morph
+	if (rendermode == render_soft && !splitscreen)
+		R_CheckViewMorph();
+
+	// Change the view size if needed
+	// Set by changing video mode or renderer
+	if (setsizeneeded)
+	{
+		R_ExecuteSetViewSize();
+		forcerefresh = true; // force background redraw
+	}
+
+	// draw buffered stuff to screen
+	// Used only by linux GGI version
+	I_UpdateNoBlit();
+
+	// save the current screen if about to wipe
+	if ((gamestate != wipegamestate) && wipetypepre != IGNOREWIPE)
+		F_WipeStartPre();
+	else
+		wipetypepre = DEFAULTWIPE;
+
+	// do buffered drawing
+	if (WipeInAction)
+	{
+		ps_wipetime = I_GetPreciseTime();
+		F_DisplayWipe();
+		ps_wipetime = I_GetPreciseTime() - ps_wipetime;
+
+		if (gamestate == GS_LEVEL && !levelstarting)
+			TitleCard_DrawOverWipe();
+	}
+	else
+	{
+		D_BufferedDrawing();
+		ps_wipetime = 0;
+	}
 
 	// STUPID race condition...
 	if (wipegamestate == GS_INTRO && gamestate == GS_TITLESCREEN)
 		wipegamestate = FORCEWIPEOFF;
 	else if (!WipeInAction)
-	{
-		// clean up border stuff
-		// see if the border needs to be initially drawn
-		if (gamestate == GS_LEVEL || (gamestate == GS_TITLESCREEN && titlemapinaction && curbghide && (!hidetitlemap)))
-		{
-			// draw the view directly
-			if (!automapactive && !dedicated && (!titlecard.prelevel) && cv_renderview.value)
-			{
-				ps_rendercalltime = I_GetPreciseTime();
-				if (players[displayplayer].mo || players[displayplayer].playerstate == PST_DEAD)
-				{
-					topleft = screens[0] + viewwindowy*vid.width + viewwindowx;
-					objectsdrawn = 0;
-#ifdef HWRENDER
-					if (rendermode != render_soft)
-						HWR_RenderPlayerView(0, &players[displayplayer]);
-					else
-#endif
-					if (rendermode != render_none)
-						R_RenderPlayerView(&players[displayplayer]);
-				}
-
-				// render the second screen
-				if (splitscreen && players[secondarydisplayplayer].mo)
-				{
-#ifdef HWRENDER
-					if (rendermode != render_soft)
-						HWR_RenderPlayerView(1, &players[secondarydisplayplayer]);
-					else
-#endif
-					if (rendermode != render_none)
-					{
-						viewwindowy = vid.height / 2;
-						M_Memcpy(ylookup, ylookup2, viewheight*sizeof (ylookup[0]));
-
-						topleft = screens[0] + viewwindowy*vid.width + viewwindowx;
-
-						R_RenderPlayerView(&players[secondarydisplayplayer]);
-
-						viewwindowy = 0;
-						M_Memcpy(ylookup, ylookup1, viewheight*sizeof (ylookup[0]));
-					}
-				}
-
-				// Image postprocessing effect
-				if (rendermode == render_soft)
-				{
-					if (!splitscreen)
-						R_ApplyViewMorph();
-
-					if (postimgtype)
-						V_DoPostProcessor(0, postimgtype, postimgparam);
-					if (postimgtype2)
-						V_DoPostProcessor(1, postimgtype2, postimgparam2);
-				}
-				ps_rendercalltime = I_GetPreciseTime() - ps_rendercalltime;
-			}
-
-			if (lastdraw)
-			{
-				if (rendermode == render_soft)
-				{
-					VID_BlitLinearScreen(screens[0], screens[1], vid.width*vid.bpp, vid.height, vid.width*vid.bpp, vid.rowbytes);
-					Y_ConsiderScreenBuffer();
-					usebuffer = true;
-				}
-				lastdraw = false;
-			}
-
-			ps_uitime = I_GetPreciseTime();
-
-			if (gamestate == GS_LEVEL)
-			{
-				ST_Drawer();
-				F_TextPromptDrawer();
-				HU_Drawer();
-			}
-			else
-				F_TitleScreenDrawer();
-		}
-		else
-		{
-			ps_uitime = I_GetPreciseTime();
-		}
-	}
+		D_Render();
+	else
+		ps_uitime = I_GetPreciseTime();
 
 	// change gamma if needed
 	// (GS_LEVEL handles this already due to level-specific palettes)
@@ -483,7 +508,7 @@ static void D_Display(void)
 	// vid size change is now finished if it was on...
 	vid.recalc = 0;
 
-	if (!WipeInAction || (WipeInAction && WipeDrawMenu))
+	if (!WipeInAction || (WipeInAction && (WipeDrawMenu || G_GetRetryFlag(RETRY_CUR))))
 	{
 #ifdef HAVE_THREADS
 		I_lock_mutex(&m_menu_mutex);
@@ -500,12 +525,11 @@ static void D_Display(void)
 	//
 	if (WipeRunPost && (!WipeInAction) && wipetypepost != IGNOREWIPE)
 	{
-		// note: moved up here because NetUpdate does input changes
-		// and input during wipe tends to mess things up
-		F_StartWipePost();
+		F_WipeStartPost();
 		F_DisplayWipe();
-		if (titlecard.running && titlecard.wipe && st_overlay)
-			ST_drawTitleCardOutsideOverlay();
+
+		if (titlecard.running)
+			TitleCard_DrawOverWipe();
 	}
 	else
 		wipetypepost = DEFAULTWIPE;
@@ -562,7 +586,6 @@ tic_t rendergametic;
 void D_SRB2Loop(void)
 {
 	tic_t oldentertics = 0, entertic = 0, realtics = 0, rendertimeout = INFTICS;
-	static lumpnum_t gstartuplumpnum;
 
 	if (dedicated)
 		server = true;
@@ -607,7 +630,7 @@ void D_SRB2Loop(void)
 	/* Smells like a hack... Don't fade Sonic's ass into the title screen. */
 	if (gamestate != GS_TITLESCREEN)
 	{
-		gstartuplumpnum = W_CheckNumForName("STARTUP");
+		lumpnum_t gstartuplumpnum = W_CheckNumForName("STARTUP");
 		if (gstartuplumpnum == LUMPERROR)
 			gstartuplumpnum = W_GetNumForName("MISSING");
 		V_DrawScaledPatch(0, 0, 0, W_CachePatchNum(gstartuplumpnum, PU_PATCH));
@@ -669,6 +692,7 @@ void D_SRB2Loop(void)
 				if (camera.chase)
 					P_MoveChaseCamera(&players[displayplayer], &camera, false);
 			}
+
 			D_Display();
 
 			if (moviemode)
