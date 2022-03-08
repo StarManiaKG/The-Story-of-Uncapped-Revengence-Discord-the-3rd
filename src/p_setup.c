@@ -4059,7 +4059,7 @@ void P_RunLevelWipe(void)
 	if (wipetypepre != IGNOREWIPE)
 		F_StartWipe(
 			(wipetypepre != DEFAULTWIPE && F_WipeExists(wipetypepre)) ? wipetypepre : wipedefs[wipe_level_toblack],
-				false);
+				true);
 
 	wipetypepre = DEFAULTWIPE;
 }
