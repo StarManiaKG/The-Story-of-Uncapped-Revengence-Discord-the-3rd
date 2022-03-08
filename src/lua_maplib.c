@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 2012-2016 by John "JTE" Muniz.
-// Copyright (C) 2012-2020 by Sonic Team Junior.
+// Copyright (C) 2012-2022 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -196,6 +196,7 @@ enum ffloor_e {
 	ffloor_next,
 	ffloor_prev,
 	ffloor_alpha,
+	ffloor_blend,
 };
 
 static const char *const ffloor_opt[] = {
@@ -214,6 +215,7 @@ static const char *const ffloor_opt[] = {
 	"next",
 	"prev",
 	"alpha",
+	"blend",
 	NULL};
 
 #ifdef HAVE_LUA_SEGS
@@ -583,7 +585,7 @@ static int sector_get(lua_State *L)
 		lua_pushinteger(L, sector->special);
 		return 1;
 	case sector_tag:
-		lua_pushinteger(L, Tag_FGet(&sector->tags));
+		lua_pushinteger(L, (UINT16)Tag_FGet(&sector->tags));
 		return 1;
 	case sector_taglist:
 		LUA_PushUserdata(L, &sector->tags, META_SECTORTAGLIST);
@@ -828,6 +830,17 @@ static int line_get(lua_State *L)
 		lua_pushinteger(L, line->special);
 		return 1;
 	case line_tag:
+		// HELLO
+		// THIS IS LJ SONIC
+		// HOW IS YOUR DAY?
+		// BY THE WAY WHEN 2.3 OR 3.0 OR 4.0 OR SRB3 OR SRB4 OR WHATEVER IS OUT
+		// YOU SHOULD REMEMBER TO CHANGE THIS SO IT ALWAYS RETURNS A UNSIGNED VALUE
+		// HAVE A NICE DAY
+		//
+		//
+		//
+		//
+		// you are ugly
 		lua_pushinteger(L, Tag_FGet(&line->tags));
 		return 1;
 	case line_taglist:
@@ -1796,6 +1809,9 @@ static int ffloor_get(lua_State *L)
 	case ffloor_alpha:
 		lua_pushinteger(L, ffloor->alpha);
 		return 1;
+	case ffloor_blend:
+		lua_pushinteger(L, ffloor->blend);
+		return 1;
 	}
 	return 0;
 }
@@ -1873,6 +1889,9 @@ static int ffloor_set(lua_State *L)
 	}
 	case ffloor_alpha:
 		ffloor->alpha = (INT32)luaL_checkinteger(L, 3);
+		break;
+	case ffloor_blend:
+		ffloor->blend = (INT32)luaL_checkinteger(L, 3);
 		break;
 	}
 	return 0;
