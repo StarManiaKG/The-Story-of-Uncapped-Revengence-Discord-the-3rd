@@ -3,7 +3,7 @@
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 2013-2016 by Matthew "Kaito Sinclaire" Walsh.
-// Copyright (C) 1999-2020 by Sonic Team Junior.
+// Copyright (C) 1999-2022 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -582,6 +582,7 @@ void F_RunWipe(void)
   */
 void F_StopWipe(void)
 {
+	// TODO maybe just add callbacks instead
 	boolean runtitle = (wipestyleflags & WSF_INTROEND);
 
 	WipeInAction = false;
@@ -595,9 +596,10 @@ void F_StopWipe(void)
 #ifndef NOWIPE
 		tic_t starttime = I_GetTime(), lasttime = starttime;
 		tic_t endtime = starttime + (3*TICRATE)/2;
-		tic_t nowtime;
+		tic_t nowtime = starttime;
 
 		// Hold on white for extra effect.
+		// TODO don't do this lol
 		while (nowtime < endtime)
 		{
 			while (!((nowtime = I_GetTime()) - lasttime))
@@ -624,6 +626,7 @@ void F_StopWipe(void)
 	{
 #ifndef NOWIPE
 		// Stay on black for a bit. =)
+		// TODO this neither
 		tic_t nowtime, quittime, lasttime;
 		nowtime = lasttime = I_GetTime();
 		quittime = nowtime + NEWTICRATE*2; // Shortened the quit time, used to be 2 seconds
