@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2020 by Sonic Team Junior.
+// Copyright (C) 1999-2022 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -65,12 +65,29 @@ typedef enum
 static inline void P_ArchivePlayer(void)
 {
 	const player_t *player = &players[consoleplayer];
-	INT16 skininfo = player->skin + (botskin<<5);
 	SINT8 pllives = player->lives;
 	if (pllives < startinglivesbalance[numgameovers]) // Bump up to 3 lives if the player
 		pllives = startinglivesbalance[numgameovers]; // has less than that.
 
-	WRITEUINT16(save_p, skininfo);
+#ifdef NEWSKINSAVES
+	// Write a specific value into the old skininfo location.
+	// If we read something other than this, it's an older save file that used skin numbers.
+	WRITEUINT16(save_p, NEWSKINSAVES);
+#endif
+
+	// Write skin names, so that loading skins in different orders
+	// doesn't change who the save file is for!
+	WRITESTRINGN(save_p, skins[player->skin].name, SKINNAMESIZE);
+
+	if (botskin != 0)
+	{
+		WRITESTRINGN(save_p, skins[botskin-1].name, SKINNAMESIZE);
+	}
+	else
+	{
+		WRITESTRINGN(save_p, "\0", SKINNAMESIZE);
+	}
+
 	WRITEUINT8(save_p, numgameovers);
 	WRITESINT8(save_p, pllives);
 	WRITEUINT32(save_p, player->score);
@@ -79,9 +96,27 @@ static inline void P_ArchivePlayer(void)
 
 static inline void P_UnArchivePlayer(void)
 {
-	INT16 skininfo = READUINT16(save_p);
-	savedata.skin = skininfo & ((1<<5) - 1);
-	savedata.botskin = skininfo >> 5;
+#ifdef NEWSKINSAVES
+	INT16 backwardsCompat = READUINT16(save_p);
+
+	if (backwardsCompat != NEWSKINSAVES)
+	{
+		// This is an older save file, which used direct skin numbers.
+		savedata.skin = backwardsCompat & ((1<<5) - 1);
+		savedata.botskin = backwardsCompat >> 5;
+	}
+	else
+#endif
+	{
+		char ourSkinName[SKINNAMESIZE+1];
+		char botSkinName[SKINNAMESIZE+1];
+
+		READSTRINGN(save_p, ourSkinName, SKINNAMESIZE);
+		savedata.skin = R_SkinAvailable(ourSkinName);
+
+		READSTRINGN(save_p, botSkinName, SKINNAMESIZE);
+		savedata.botskin = R_SkinAvailable(botSkinName) + 1;
+	}
 
 	savedata.numgameovers = READUINT8(save_p);
 	savedata.lives = READSINT8(save_p);
@@ -158,6 +193,19 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].homing);
 		WRITEUINT32(save_p, players[i].dashmode);
 		WRITEUINT32(save_p, players[i].skidtime);
+
+		//////////
+		// Bots //
+		//////////
+		WRITEUINT8(save_p, players[i].bot);
+		WRITEUINT8(save_p, players[i].botmem.lastForward);
+		WRITEUINT8(save_p, players[i].botmem.lastBlocked);
+		WRITEUINT8(save_p, players[i].botmem.catchup_tics);
+		WRITEUINT8(save_p, players[i].botmem.thinkstate);
+		WRITEUINT8(save_p, players[i].removing);
+		
+		WRITEUINT8(save_p, players[i].blocked);
+		WRITEUINT16(save_p, players[i].lastbuttons);
 
 		////////////////////////////
 		// Conveyor Belt Movement //
@@ -373,6 +421,20 @@ static void P_NetUnArchivePlayers(void)
 		players[i].dashmode = READUINT32(save_p); // counter for dashmode ability
 		players[i].skidtime = READUINT32(save_p); // Skid timer
 
+		//////////
+		// Bots //
+		//////////
+		players[i].bot = READUINT8(save_p);
+		
+		players[i].botmem.lastForward = READUINT8(save_p);
+		players[i].botmem.lastBlocked = READUINT8(save_p);
+		players[i].botmem.catchup_tics = READUINT8(save_p);
+		players[i].botmem.thinkstate = READUINT8(save_p);
+		players[i].removing = READUINT8(save_p);
+
+		players[i].blocked = READUINT8(save_p);
+		players[i].lastbuttons = READUINT16(save_p);
+		
 		////////////////////////////
 		// Conveyor Belt Movement //
 		////////////////////////////
@@ -1542,7 +1604,7 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 	diff2 = 0;
 
 	// not the default but the most probable
-	if (mobj->momx != 0 || mobj->momy != 0 || mobj->momz != 0)
+	if (mobj->momx != 0 || mobj->momy != 0 || mobj->momz != 0 || mobj->pmomz !=0)
 		diff |= MD_MOM;
 	if (mobj->radius != mobj->info->radius)
 		diff |= MD_RADIUS;
@@ -1717,6 +1779,7 @@ static void SaveMobjThinker(const thinker_t *th, const UINT8 type)
 		WRITEFIXED(save_p, mobj->momx);
 		WRITEFIXED(save_p, mobj->momy);
 		WRITEFIXED(save_p, mobj->momz);
+		WRITEFIXED(save_p, mobj->pmomz);
 	}
 	if (diff & MD_RADIUS)
 		WRITEFIXED(save_p, mobj->radius);
@@ -2693,10 +2756,7 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 		}
 		mobj->type = i;
 	}
-
 	mobj->info = &mobjinfo[mobj->type];
-	P_SetMobjSpawnDefaults(mobj);
-
 	if (diff & MD_POS)
 	{
 		mobj->x = READFIXED(save_p);
@@ -2718,25 +2778,40 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 		mobj->momx = READFIXED(save_p);
 		mobj->momy = READFIXED(save_p);
 		mobj->momz = READFIXED(save_p);
+		mobj->pmomz = READFIXED(save_p);
 	} // otherwise they're zero, and the memset took care of it
 
 	if (diff & MD_RADIUS)
 		mobj->radius = READFIXED(save_p);
+	else
+		mobj->radius = mobj->info->radius;
 	if (diff & MD_HEIGHT)
 		mobj->height = READFIXED(save_p);
+	else
+		mobj->height = mobj->info->height;
 	if (diff & MD_FLAGS)
 		mobj->flags = READUINT32(save_p);
+	else
+		mobj->flags = mobj->info->flags;
 	if (diff & MD_FLAGS2)
 		mobj->flags2 = READUINT32(save_p);
 	if (diff & MD_HEALTH)
 		mobj->health = READINT32(save_p);
+	else
+		mobj->health = mobj->info->spawnhealth;
 	if (diff & MD_RTIME)
 		mobj->reactiontime = READINT32(save_p);
+	else
+		mobj->reactiontime = mobj->info->reactiontime;
 
 	if (diff & MD_STATE)
 		mobj->state = &states[READUINT16(save_p)];
+	else
+		mobj->state = &states[mobj->info->spawnstate];
 	if (diff & MD_TICS)
 		mobj->tics = READINT32(save_p);
+	else
+		mobj->tics = mobj->state->tics;
 	if (diff & MD_SPRITE) {
 		mobj->sprite = READUINT16(save_p);
 		if (mobj->sprite == SPR_PLAY)
@@ -2751,6 +2826,11 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 	{
 		mobj->frame = READUINT32(save_p);
 		mobj->anim_duration = READUINT16(save_p);
+	}
+	else
+	{
+		mobj->frame = mobj->state->frame;
+		mobj->anim_duration = (UINT16)mobj->state->var2;
 	}
 	if (diff & MD_EFLAGS)
 		mobj->eflags = READUINT16(save_p);
@@ -2768,14 +2848,20 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 		mobj->threshold = READINT32(save_p);
 	if (diff & MD_LASTLOOK)
 		mobj->lastlook = READINT32(save_p);
+	else
+		mobj->lastlook = -1;
 	if (diff & MD_TARGET)
 		mobj->target = (mobj_t *)(size_t)READUINT32(save_p);
 	if (diff & MD_TRACER)
 		mobj->tracer = (mobj_t *)(size_t)READUINT32(save_p);
 	if (diff & MD_FRICTION)
 		mobj->friction = READFIXED(save_p);
+	else
+		mobj->friction = ORIG_FRICTION;
 	if (diff & MD_MOVEFACTOR)
 		mobj->movefactor = READFIXED(save_p);
+	else
+		mobj->movefactor = FRACUNIT;
 	if (diff & MD_FUSE)
 		mobj->fuse = READINT32(save_p);
 	if (diff & MD_WATERTOP)
@@ -2784,10 +2870,16 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 		mobj->waterbottom = READFIXED(save_p);
 	if (diff & MD_SCALE)
 		mobj->scale = READFIXED(save_p);
+	else
+		mobj->scale = FRACUNIT;
 	if (diff & MD_DSCALE)
 		mobj->destscale = READFIXED(save_p);
+	else
+		mobj->destscale = mobj->scale;
 	if (diff2 & MD2_SCALESPEED)
 		mobj->scalespeed = READFIXED(save_p);
+	else
+		mobj->scalespeed = FRACUNIT/12;
 	if (diff2 & MD2_CUSVAL)
 		mobj->cusval = READINT32(save_p);
 	if (diff2 & MD2_CVMEM)
@@ -2818,10 +2910,16 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 		mobj->renderflags = READUINT32(save_p);
 	if (diff2 & MD2_BLENDMODE)
 		mobj->blendmode = READINT32(save_p);
+	else
+		mobj->blendmode = AST_TRANSLUCENT;
 	if (diff2 & MD2_SPRITEXSCALE)
 		mobj->spritexscale = READFIXED(save_p);
+	else
+		mobj->spritexscale = FRACUNIT;
 	if (diff2 & MD2_SPRITEYSCALE)
 		mobj->spriteyscale = READFIXED(save_p);
+	else
+		mobj->spriteyscale = FRACUNIT;
 	if (diff2 & MD2_SPRITEXOFFSET)
 		mobj->spritexoffset = READFIXED(save_p);
 	if (diff2 & MD2_SPRITEYOFFSET)
@@ -4159,7 +4257,10 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 	levelstarting = false;
 
 	if (!P_LoadLevel(true, reloading))
+	{
+		CONS_Alert(CONS_ERROR, M_GetText("Can't load the level!\n"));
 		return false;
+	}
 
 	G_StartLevelWipe();
 	wipestyleflags &= ~WSF_ACTION;
@@ -4246,19 +4347,26 @@ static inline boolean P_UnArchiveLuabanksAndConsistency(void)
 {
 	switch (READUINT8(save_p))
 	{
-		case 0xb7:
+		case 0xb7: // luabanks marker
 			{
 				UINT8 i, banksinuse = READUINT8(save_p);
 				if (banksinuse > NUM_LUABANKS)
+				{
+					CONS_Alert(CONS_ERROR, M_GetText("Corrupt Luabanks! (Too many banks in use)\n"));
 					return false;
+				}
 				for (i = 0; i < banksinuse; i++)
 					luabanks[i] = READINT32(save_p);
-				if (READUINT8(save_p) != 0x1d)
+				if (READUINT8(save_p) != 0x1d) // consistency marker
+				{
+					CONS_Alert(CONS_ERROR, M_GetText("Corrupt Luabanks! (Failed consistency check)\n"));
 					return false;
+				}
 			}
-		case 0x1d:
+		case 0x1d: // consistency marker
 			break;
-		default:
+		default: // anything else is nonsense
+			CONS_Alert(CONS_ERROR, M_GetText("Failed consistency check (???)\n"));
 			return false;
 	}
 
