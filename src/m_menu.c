@@ -831,7 +831,7 @@ static menuitem_t SP_TimeAttackMenu[] =
 	{IT_DISABLED,              NULL, "Guest Option...", &SP_GuestReplayDef, 100},
 	{IT_DISABLED,              NULL, "Replay...",       &SP_ReplayDef,      110},
 	{IT_DISABLED,              NULL, "Ghosts...",       &SP_GhostDef,       120},
-	{IT_WHITESTRING|IT_CALL|IT_CALL_NOTMODIFIED,   NULL, "Start",         M_ChooseTimeAttack,   130},
+	{IT_WHITESTRING|IT_CALL,   NULL, "Start",           M_ChooseTimeAttack, 130},
 };
 
 enum
@@ -930,7 +930,7 @@ static menuitem_t SP_NightsAttackMenu[] =
 	{IT_DISABLED,              NULL, "Guest Option...",  &SP_NightsGuestReplayDef,    100},
 	{IT_DISABLED,              NULL, "Replay...",        &SP_NightsReplayDef,         110},
 	{IT_DISABLED,              NULL, "Ghosts...",        &SP_NightsGhostDef,          120},
-	{IT_WHITESTRING|IT_CALL|IT_CALL_NOTMODIFIED, NULL, "Start", M_ChooseNightsAttack, 130},
+	{IT_WHITESTRING|IT_CALL,   NULL, "Start",            M_ChooseNightsAttack,        130},
 };
 
 enum
@@ -999,7 +999,7 @@ static menuitem_t MP_MainMenu[] =
 {
 	{IT_HEADER, NULL, "Join a game", NULL, 0},
 	{IT_STRING|IT_CALL,       NULL, "Server browser...",     M_ConnectMenuModChecks,          12},
-	{IT_STRING|IT_KEYHANDLER, NULL, "Specify IPv4 address:", M_HandleConnectIP,      22},
+	{IT_STRING|IT_KEYHANDLER, NULL, "Specify server address:", M_HandleConnectIP,    22},
 	{IT_HEADER, NULL, "Host a game", NULL, 54},
 	{IT_STRING|IT_CALL,       NULL, "Internet/LAN...",       M_StartServerMenu,      66},
 	{IT_STRING|IT_CALL,       NULL, "Splitscreen...",        M_StartSplitServerMenu, 76},
@@ -10091,7 +10091,8 @@ void M_DrawTimeAttackMenu(void)
 						'\x1D' | V_YELLOWMAP, false);
 			}
 			// Draw press ESC to exit string on main record attack menu
-			V_DrawString(104-72, 180, V_TRANSLUCENT, M_GetText("Press ESC to exit"));
+			if (modifiedgame && !savemoddata)
+				V_DrawThinString(104-72, 192, 0, "\x85WARNING: \x80The game is modified. Replays will not be recorded.");
 		}
 
 		em = M_GetLevelEmblems(cv_nextmap.value);
@@ -10351,7 +10352,8 @@ void M_DrawNightsAttackMenu(void)
 						'\x1D' | V_YELLOWMAP, false);
 			}
 			// Draw press ESC to exit string on main record attack menu
-			V_DrawString(104-72, 180, V_TRANSLUCENT, M_GetText("Press ESC to exit"));
+			if (modifiedgame && !savemoddata)
+				V_DrawThinString(104-72, 192, 0, "\x85WARNING: \x80The game is modified. Replays will not be recorded.");
 		}
 
 		// Super Sonic
@@ -10470,6 +10472,12 @@ static void M_ChooseNightsAttack(INT32 choice)
 	M_ClearMenus(true);
 	modeattacking = ATTACKING_NIGHTS;
 
+	if (modifiedgame && !savemoddata) // don't record demos for modified games yet
+	{
+		G_DeferedInitNew(false, G_BuildMapName(cv_nextmap.value), (UINT8)(cv_chooseskin.value-1), false, false);
+		return;
+	}
+
 	I_mkdir(va("%s"PATHSEP"replay", srb2home), 0755);
 	I_mkdir(va("%s"PATHSEP"replay"PATHSEP"%s", srb2home, timeattackfolder), 0755);
 
@@ -10498,6 +10506,12 @@ static void M_ChooseTimeAttack(INT32 choice)
 	memset(&luabanks, 0, sizeof(luabanks));
 	M_ClearMenus(true);
 	modeattacking = ATTACKING_RECORD;
+
+	if (modifiedgame && !savemoddata)
+	{
+		G_DeferedInitNew(false, G_BuildMapName(cv_nextmap.value), (UINT8)(cv_chooseskin.value-1), false, false);
+		return;
+	}
 
 	I_mkdir(va("%s"PATHSEP"replay", srb2home), 0755);
 	I_mkdir(va("%s"PATHSEP"replay"PATHSEP"%s", srb2home, timeattackfolder), 0755);
@@ -11770,7 +11784,35 @@ static void M_StartServerMenu(INT32 choice)
 // CONNECT VIA IP
 // ==============
 
-static char setupm_ip[28];
+static char setupm_ip[sizeof "[ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff]:65535"];
+
+static void M_DrawConnectIP(void)
+{
+	INT32 x = currentMenu->x;
+	INT32 y = currentMenu->y + 22;
+
+	INT32 opt = V_ALLOWLOWERCASE;
+	INT32 width;
+
+	V_DrawFill(x+5, y+4+5, /*16*8 + 6,*/ BASEVIDWIDTH - 2*(x+5), 8+6, 159);
+
+	// draw name string
+	if (strlen(setupm_ip) > 30)/* w stands for wide boi */
+	{
+		V_DrawThinString(x+8,y+12, opt, setupm_ip);
+		width = V_ThinStringWidth(setupm_ip, opt);
+	}
+	else
+	{
+		V_DrawString(x+8,y+12, opt, setupm_ip);
+		width = V_StringWidth(setupm_ip, opt);
+	}
+
+	// draw text cursor for name
+	if (itemOn == 2 //0
+	    && skullAnimCounter < 4)   //blink cursor
+		V_DrawCharacter(x+8+width,y+12,'_',false);
+}
 
 // Draw the funky Connect IP menu. Tails 11-19-2002
 // So much work for such a little thing!
@@ -11791,17 +11833,7 @@ static void M_DrawMPMainMenu(void)
 	V_DrawRightAlignedString(BASEVIDWIDTH-x, y+116,
 		((itemOn == 8) ? V_YELLOWMAP : 0), "(splitscreen)");
 
-	y += 22;
-
-	V_DrawFill(x+5, y+4+5, /*16*8 + 6,*/ BASEVIDWIDTH - 2*(x+5), 8+6, 159);
-
-	// draw name string
-	V_DrawString(x+8,y+12, V_ALLOWLOWERCASE, setupm_ip);
-
-	// draw text cursor for name
-	if (itemOn == 2 //0
-	    && skullAnimCounter < 4)   //blink cursor
-		V_DrawCharacter(x+8+V_StringWidth(setupm_ip, V_ALLOWLOWERCASE),y+12,'_',false);
+	M_DrawConnectIP();
 }
 
 // Tails 11-19-2002
@@ -11884,7 +11916,7 @@ static void M_HandleConnectIP(INT32 choice)
 						const char *paste = I_ClipboardPaste();
 
 						if (paste != NULL) {
-							strncat(setupm_ip, paste, 28-1 - l); // Concat the ip field with clipboard
+							strncat(setupm_ip, paste, (sizeof setupm_ip)-1 - l); // Concat the ip field with clipboard
 							if (strlen(paste) != 0) // Don't play sound if nothing was pasted
 								S_StartSound(NULL,sfx_menu1); // Tails
 						}
@@ -11918,7 +11950,7 @@ static void M_HandleConnectIP(INT32 choice)
 							const char *paste = I_ClipboardPaste();
 
 							if (paste != NULL) {
-								strncat(setupm_ip, paste, 28-1 - l); // Concat the ip field with clipboard
+								strncat(setupm_ip, paste, (sizeof setupm_ip)-1 - l); // Concat the ip field with clipboard
 								if (strlen(paste) != 0) // Don't play sound if nothing was pasted
 									S_StartSound(NULL,sfx_menu1); // Tails
 							}
@@ -11935,11 +11967,15 @@ static void M_HandleConnectIP(INT32 choice)
 				}
 			}
 
-			if (l >= 28-1)
+			if (l >= (sizeof setupm_ip)-1)
 				break;
 
 			// Rudimentary number and period enforcing - also allows letters so hostnames can be used instead
-			if ((choice >= '-' && choice <= ':') || (choice >= 'A' && choice <= 'Z') || (choice >= 'a' && choice <= 'z'))
+			// and square brackets for RFC 2732 IPv6 addresses
+			if ((choice >= '-' && choice <= ':') ||
+					(choice == '[' || choice == ']') ||
+					(choice >= 'A' && choice <= 'Z') ||
+					(choice >= 'a' && choice <= 'z'))
 			{
 				S_StartSound(NULL,sfx_menu1); // Tails
 				setupm_ip[l] = (char)choice;

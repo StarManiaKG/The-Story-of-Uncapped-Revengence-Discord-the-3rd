@@ -120,23 +120,23 @@ static void Sk_SetDefaultValue(skin_t *skin)
 	skin->prefoppositecolor = 0; // use tables
 
 	skin->normalspeed = 36<<FRACBITS;
-	skin->runspeed = 28<<FRACBITS;
-	skin->thrustfactor = 5;
-	skin->accelstart = 96;
-	skin->acceleration = 40;
+	skin->runspeed = 34<<FRACBITS;
+	skin->thrustfactor = 3;
+	skin->accelstart = 230;
+	skin->acceleration = 50;
 
 	skin->ability = CA_NONE;
 	skin->ability2 = CA2_SPINDASH;
 	skin->jumpfactor = FRACUNIT;
-	skin->actionspd = 30<<FRACBITS;
-	skin->mindash = 15<<FRACBITS;
+	skin->actionspd = 40<<FRACBITS;
+	skin->mindash = 25<<FRACBITS;
 	skin->maxdash = 70<<FRACBITS;
 
 	skin->radius = mobjinfo[MT_PLAYER].radius;
 	skin->height = mobjinfo[MT_PLAYER].height;
 	skin->spinheight = FixedMul(skin->height, 2*FRACUNIT/3);
 
-	skin->shieldscale = FRACUNIT;
+	skin->shieldscale = FRACUNIT*21/20;
 	skin->camerascale = FRACUNIT;
 
 	skin->thokitem = -1;
@@ -329,13 +329,13 @@ static void SetSkin(player_t *player, INT32 skinnum)
 
 	player->actionspd = skin->actionspd;
 	player->mindash = skin->mindash;
-	player->maxdash = skin->maxdash;
+	player->maxdash = skin->maxdash-(5<<FRACBITS);
 
 	player->normalspeed = skin->normalspeed;
 	player->runspeed = skin->runspeed;
-	player->thrustfactor = skin->thrustfactor;
-	player->accelstart = skin->accelstart;
-	player->acceleration = skin->acceleration;
+	player->thrustfactor = 3;
+	player->accelstart = 230;
+	player->acceleration = 50;
 
 	player->jumpfactor = skin->jumpfactor;
 
