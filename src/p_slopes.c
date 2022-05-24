@@ -835,18 +835,22 @@ void P_SlopeLaunch(mobj_t *mo)
 		&& (mo->standingslope->normal.x != 0
 		||  mo->standingslope->normal.y != 0))
 	{
-		// Double the pre-rotation Z, then halve the post-rotation Z. This reduces the
-		// vertical launch given from slopes while increasing the horizontal launch
-		// given. Good for SRB2's gravity and horizontal speeds.
+		// Increase the pre-rotation Z, then decrease the post-rotation Z only if jumping
 		vector3_t slopemom;
 		slopemom.x = mo->momx;
 		slopemom.y = mo->momy;
-		slopemom.z = mo->momz*2;
+		if (mo->player && (mo->player->pflags & PF_JUMPED))
+			slopemom.z = mo->momz*4/3;
+		else
+			slopemom.z = mo->momz;
 		P_QuantizeMomentumToSlope(&slopemom, mo->standingslope);
 
 		mo->momx = slopemom.x;
 		mo->momy = slopemom.y;
-		mo->momz = slopemom.z/2;
+		if (mo->player && (mo->player->pflags & PF_JUMPED))
+			mo->momz = slopemom.z*2/3;
+		else
+			mo->momz = slopemom.z;
 
 	    if (mo->player)
 		    mo->player->powers[pw_justlaunched] = 1;
@@ -878,7 +882,7 @@ fixed_t P_GetWallTransferMomZ(mobj_t *mo, pslope_t *slope)
 
 	slopemom.x = mo->momx;
 	slopemom.y = mo->momy;
-	slopemom.z = 3*(mo->momz/2);
+	slopemom.z = 6*(mo->momz/5);
 
 	axis.x = -slope->d.y;
 	axis.y = slope->d.x;
@@ -886,7 +890,7 @@ fixed_t P_GetWallTransferMomZ(mobj_t *mo, pslope_t *slope)
 
 	FV3_Rotate(&slopemom, &axis, ang >> ANGLETOFINESHIFT);
 
-	return 2*(slopemom.z/3);
+	return 5*(slopemom.z/6);
 }
 
 // Function to help handle landing on slopes
@@ -933,33 +937,23 @@ void P_ButteredSlope(mobj_t *mo)
 	if (mo->flags & (MF_NOCLIPHEIGHT|MF_NOGRAVITY))
 		return; // don't slide down slopes if you can't touch them or you're not affected by gravity
 
-	if (mo->player) {
-		if (abs(mo->standingslope->zdelta) < FRACUNIT/4 && !(mo->player->pflags & PF_SPINNING))
-			return; // Don't slide on non-steep slopes unless spinning
+	if (mo->player)
+	{
+		if (mo->player->pflags & PF_STARTDASH)
+			return; //Park on slope if charging spindash
 
 		if (abs(mo->standingslope->zdelta) < FRACUNIT/2 && !(mo->player->rmomx || mo->player->rmomy))
 			return; // Allow the player to stand still on slopes below a certain steepness
 	}
 
-	thrust = FINESINE(mo->standingslope->zangle>>ANGLETOFINESHIFT) * 3 / 2 * (mo->eflags & MFE_VERTICALFLIP ? 1 : -1);
+	thrust = FINESINE(mo->standingslope->zangle>>ANGLETOFINESHIFT) * 5/2 * (mo->eflags & MFE_VERTICALFLIP ? 1 : -1);
 
-	if (mo->player && (mo->player->pflags & PF_SPINNING)) {
-		fixed_t mult = 0;
-		if (mo->momx || mo->momy) {
-			angle_t angle = R_PointToAngle2(0, 0, mo->momx, mo->momy) - mo->standingslope->xydirection;
-
-			if (P_MobjFlip(mo) * mo->standingslope->zdelta < 0)
-				angle ^= ANGLE_180;
-
-			mult = FINECOSINE(angle >> ANGLETOFINESHIFT);
-		}
-
-		thrust = FixedMul(thrust, FRACUNIT*2/3 + mult/8);
+	if (mo->player && (mo->player->pflags & PF_SPINNING))
+	{
+		fixed_t spinadd = 0;
+		spinadd = FINESINE(mo->standingslope->zangle>>ANGLETOFINESHIFT) * 3/2 * (mo->eflags & MFE_VERTICALFLIP ? 1 : -1);
+		thrust += spinadd;
 	}
-
-	if (mo->momx || mo->momy) // Slightly increase thrust based on the object's speed
-		thrust = FixedMul(thrust, FRACUNIT+P_AproxDistance(mo->momx, mo->momy)/16);
-	// This makes it harder to zigzag up steep slopes, as well as allows greater top speed when rolling down
 
 	// Let's get the gravity strength for the object...
 	thrust = FixedMul(thrust, abs(P_GetMobjGravity(mo)));
