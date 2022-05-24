@@ -191,7 +191,6 @@ static void P_NetArchivePlayers(void)
 		WRITEINT32(save_p, players[i].deadtimer);
 		WRITEUINT32(save_p, players[i].exiting);
 		WRITEUINT8(save_p, players[i].homing);
-		WRITEFIXED(save_p, players[i].shieldactive);
 		WRITEUINT32(save_p, players[i].dashmode);
 		WRITEUINT32(save_p, players[i].skidtime);
 
@@ -419,7 +418,6 @@ static void P_NetUnArchivePlayers(void)
 		players[i].deadtimer = READINT32(save_p); // End game if game over lasts too long
 		players[i].exiting = READUINT32(save_p); // Exitlevel timer
 		players[i].homing = READUINT8(save_p); // Are you homing?
-		players[i].shieldactive = READFIXED(save_p); // for holding shield related values
 		players[i].dashmode = READUINT32(save_p); // counter for dashmode ability
 		players[i].skidtime = READUINT32(save_p); // Skid timer
 

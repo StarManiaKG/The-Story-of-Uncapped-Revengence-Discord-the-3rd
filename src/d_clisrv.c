@@ -1266,9 +1266,9 @@ static boolean CL_SendJoin(void)
 
 static INT32 FindRejoinerNum(SINT8 node)
 {
-	char addressbuffer[64];
+	char strippednodeaddress[64];
 	const char *nodeaddress;
-	const char *strippednodeaddress;
+	char *port;
 	INT32 i;
 
 	// Make sure there is no dead dress before proceeding to the stripping
@@ -1279,8 +1279,10 @@ static INT32 FindRejoinerNum(SINT8 node)
 		return -1;
 
 	// Strip the address of its port
-	strcpy(addressbuffer, nodeaddress);
-	strippednodeaddress = I_NetSplitAddress(addressbuffer, NULL);
+	strcpy(strippednodeaddress, nodeaddress);
+	port = strchr(strippednodeaddress, ':');
+	if (port)
+		*port = '\0';
 
 	// Check if any player matches the stripped address
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -3737,13 +3739,14 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 		if (server && I_GetNodeAddress)
 		{
-			char addressbuffer[64];
 			const char *address = I_GetNodeAddress(node);
+			char *port = NULL;
 			if (address) // MI: fix msvcrt.dll!_mbscat crash?
 			{
-				strcpy(addressbuffer, address);
-				strcpy(playeraddress[newplayernum],
-						I_NetSplitAddress(addressbuffer, NULL));
+				strcpy(playeraddress[newplayernum], address);
+				port = strchr(playeraddress[newplayernum], ':');
+				if (port)
+					*port = '\0';
 			}
 		}
 	}
