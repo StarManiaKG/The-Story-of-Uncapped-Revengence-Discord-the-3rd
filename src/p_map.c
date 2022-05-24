@@ -161,8 +161,6 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	boolean final = false;
 	UINT8 strong = 0;
 
-	vertispeed = vertispeed*19/16; //gravity adjustment
-
 	// Object was already sprung this tic
 	if (object->eflags & MFE_SPRUNG)
 		return false;
@@ -496,8 +494,6 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 	fixed_t zdist; // distance between bottoms
 	fixed_t speed = spring->info->mass; // conveniently, both fans and gas jets use this for the vertical thrust
 	SINT8 flipval = P_MobjFlip(spring); // virtually everything here centers around the thruster's gravity, not the object's!
-
-	speed = speed*19/16; //gravity adjustment
 
 	if (p && object->state == &states[object->info->painstate]) // can't use fans and gas jets when player is in pain!
 		return;
@@ -1173,7 +1169,7 @@ static boolean PIT_CheckThing(mobj_t *thing)
 	}
 
 	// When solid spikes move, assume they just popped up and teleport things on top of them to hurt.
-	if (tmthing->type == MT_SPIKE && (thing->flags & MF_SOLID) && (tmthing->flags & MF_SOLID))
+	if (tmthing->type == MT_SPIKE && tmthing->flags & MF_SOLID)
 	{
 		if (thing->z > tmthing->z + tmthing->height)
 			return true; // overhead
