@@ -5156,6 +5156,9 @@ struct int_const_s const INT_CONST[] = {
 	{"DASHMODE_THRESHOLD",DASHMODE_THRESHOLD},
 	{"DASHMODE_MAX",DASHMODE_MAX},
 
+	// rphys global
+	{"rphys", rphys},
+
 	// Character abilities!
 	// Primary
 	{"CA_NONE",CA_NONE}, // now slot 0!

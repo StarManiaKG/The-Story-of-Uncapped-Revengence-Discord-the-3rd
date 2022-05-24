@@ -378,7 +378,7 @@ boolean P_SetPlayerMobjState(mobj_t *mobj, statenum_t state)
 					}
 					else if ((player->panim == PA_RUN) || (player->panim == PA_DASH))
 					{
-						if (speed > 52<<FRACBITS)
+						if (speed > 252*(FRACUNIT/5))
 							mobj->tics = 1;
 						else
 							mobj->tics = 2;
@@ -1488,7 +1488,11 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 	{
 		if ((mo->player->pflags & PF_GLIDING)
 		|| (mo->player->charability == CA_FLY && mo->player->panim == PA_ABILITY))
-			gravityadd = gravityadd/3; // less gravity while flying/gliding
+			gravityadd = gravityadd/2; // less gravity while flying/gliding
+
+		if (mo->player->panim != PA_SPRING && mo->player->panim != PA_FALL && (P_MobjFlip(mo)*mo->momz > FixedMul(20<<FRACBITS, mo->scale)))
+			gravityadd = gravityadd*4/3; // increase gravity to counter slope rocketing
+
 		if (mo->player->climbing || (mo->player->powers[pw_carry] == CR_NIGHTSMODE))
 			gravityadd = 0;
 
@@ -1641,20 +1645,17 @@ static void P_XYFriction(mobj_t *mo, fixed_t oldx, fixed_t oldy)
 	player = mo->player;
 	if (player) // valid only if player avatar
 	{
-		// spinning friction
-		if (player->pflags & PF_SPINNING && (player->rmomx || player->rmomy) && !(player->pflags & PF_STARTDASH))
-		{
-			if (twodlevel || player->mo->flags2 & MF2_TWOD) // Otherwise handled in P_3DMovement
-			{
-				const fixed_t ns = FixedDiv(549*ORIG_FRICTION,500*FRACUNIT);
-				mo->momx = FixedMul(mo->momx, ns);
-				mo->momy = FixedMul(mo->momy, ns);
-			}
-		}
-		else if (abs(player->rmomx) < FixedMul(STOPSPEED, mo->scale)
-		    && abs(player->rmomy) < FixedMul(STOPSPEED, mo->scale)
-		    && (!(player->cmd.forwardmove && !(twodlevel || mo->flags2 & MF2_TWOD)) && !player->cmd.sidemove && !(player->pflags & PF_SPINNING))
-			&& !(player->mo->standingslope && (!(player->mo->standingslope->flags & SL_NOPHYSICS)) && (abs(player->mo->standingslope->zdelta) >= FRACUNIT/2)))
+		if (((player->pflags & PF_GLIDING) && !player->skidtime) || ((player->pflags & PF_SPINNING) && P_IsObjectOnGround(mo)))
+			return;
+
+		if (twodlevel || (mo->flags2 & MF2_TWOD))
+			mo->friction = FRACUNIT;
+		
+		if (abs(player->rmomx) < FixedMul(STOPSPEED, mo->scale)
+		&& abs(player->rmomy) < FixedMul(STOPSPEED, mo->scale)
+		&& (!(player->cmd.forwardmove && !(twodlevel || mo->flags2 & MF2_TWOD)) && !player->cmd.sidemove && !(player->pflags & PF_SPINNING))
+		&& !(player->mo->standingslope && (!(player->mo->standingslope->flags & SL_NOPHYSICS)) && (abs(player->mo->standingslope->zdelta) >= FRACUNIT/2))
+		&& P_IsObjectOnGround(mo))
 		{
 			// if in a walking frame, stop moving
 			if (player->panim == PA_WALK)
@@ -1662,7 +1663,7 @@ static void P_XYFriction(mobj_t *mo, fixed_t oldx, fixed_t oldy)
 			mo->momx = player->cmomx;
 			mo->momy = player->cmomy;
 		}
-		else if (!(mo->eflags & MFE_SPRUNG))
+		else if (!(mo->eflags & MFE_SPRUNG) && !(P_PlayerInPain(player)) && (P_IsObjectOnGround(mo) || player->cmd.forwardmove || player->cmd.sidemove))
 		{
 			if (oldx == mo->x && oldy == mo->y) // didn't go anywhere
 			{
@@ -1674,8 +1675,6 @@ static void P_XYFriction(mobj_t *mo, fixed_t oldx, fixed_t oldy)
 				mo->momx = FixedMul(mo->momx, mo->friction);
 				mo->momy = FixedMul(mo->momy, mo->friction);
 			}
-
-			mo->friction = ORIG_FRICTION;
 		}
 	}
 	else
@@ -1966,11 +1965,7 @@ void P_XYMovement(mobj_t *mo)
 					mo->momz = transfermomz;
 					mo->standingslope = NULL;
 					if (player)
-					{
 						player->powers[pw_justlaunched] = 2;
-						if (player->pflags & PF_SPINNING)
-							player->pflags |= PF_THOKKED;
-					}
 				}
 			}
 		}
@@ -2105,7 +2100,7 @@ void P_XYMovement(mobj_t *mo)
 		return;
 
 	if (((!(mo->eflags & MFE_VERTICALFLIP) && mo->z > mo->floorz) || (mo->eflags & MFE_VERTICALFLIP && mo->z+mo->height < mo->ceilingz))
-		&& !(player && player->pflags & PF_SLIDING))
+		&& !(player))
 		return; // no friction when airborne
 
 	P_XYFriction(mo, oldx, oldy);
@@ -3230,7 +3225,7 @@ boolean P_CanRunOnWater(player_t *player, ffloor_t *rover)
 	boolean doifit = flip ? (surfaceheight - player->mo->floorz >= player->mo->height) : (player->mo->ceilingz - surfaceheight >= player->mo->height);
 
 	if (!player->powers[pw_carry] && !player->homing
-		&& ((player->powers[pw_super] || player->charflags & SF_RUNONWATER || player->dashmode >= DASHMODE_THRESHOLD) && doifit)
+		&& ((player->powers[pw_super] || player->charflags & SF_RUNONWATER || player->speed > FixedMul(252*(FRACUNIT/5), player->mo->scale)) && doifit)
 		&& (rover->flags & FF_SWIMMABLE) && !(player->pflags & PF_SPINNING) && player->speed > FixedMul(player->runspeed, player->mo->scale)
 		&& !(player->pflags & PF_SLIDING)
 		&& abs(playerbottom - surfaceheight) < FixedMul(30*FRACUNIT, player->mo->scale))
@@ -7673,23 +7668,47 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		}
 		break;
 	case MT_FORCE_ORB:
-		if (!(mobj->flags2 & MF2_SHIELD))
-			return;
-		if (/*
-		&& mobj->target -- the following is implicit by P_AddShield
-		&& mobj->target->player
-		&& (mobj->target->player->powers[pw_shield] & SH_FORCE)
-		&& */ (mobj->target->player->pflags & PF_SHIELDABILITY))
 		{
-			mobj_t *whoosh = P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_GHOST); // done here so the offset is correct
-			P_SetMobjState(whoosh, mobj->info->raisestate);
-			whoosh->destscale = whoosh->scale << 1;
-			whoosh->scalespeed = FixedMul(whoosh->scalespeed, whoosh->scale);
-			whoosh->height = 38*whoosh->scale;
-			whoosh->fuse = 10;
-			whoosh->flags |= MF_NOCLIPHEIGHT;
-			whoosh->momz = mobj->target->momz; // Stay reasonably centered for a few frames
-			mobj->target->player->pflags &= ~PF_SHIELDABILITY; // prevent eternal whoosh
+			static UINT8 forcetime = TICRATE*3;
+
+			if (!(mobj->flags2 & MF2_SHIELD))
+				return;
+			if (mobj->target->player->pflags & PF_SHIELDABILITY)
+			{
+				if (forcetime && mobj->target->player->shieldactive)
+				{
+					if (forcetime == TICRATE*3 || !(leveltime%6)) // pulse while stalled
+					{
+						mobj_t *whoosh = P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_GHOST); // done here so the offset is correct
+						P_SetMobjState(whoosh, mobj->info->raisestate);
+						whoosh->destscale = whoosh->scale << 1;
+						whoosh->scalespeed = FixedMul(whoosh->scalespeed, whoosh->scale);
+						whoosh->height = 38*whoosh->scale;
+						whoosh->fuse = 10;
+						whoosh->flags |= MF_NOCLIPHEIGHT;
+						whoosh->momz = mobj->target->momz; // Stay reasonably centered for a few frames
+                    				if (forcetime < TICRATE)
+                    				{
+                        				whoosh->color = SKINCOLOR_RUBY; // turn whoosh red at 1 second remaining
+                        				whoosh->colorized = true;
+                    				}
+                    				else if (forcetime < TICRATE*2)
+                    				{
+                        				whoosh->color = SKINCOLOR_MAGENTA; // turn whoosh magenta at 2 seconds remaining
+                        				whoosh->colorized = true;
+                    				}
+					}
+					forcetime--;
+				}
+				else
+				{
+					mobj->target->player->pflags &= ~PF_SHIELDABILITY; // prevent eternal whoosh
+				}
+			}
+			else if (forcetime < TICRATE*3)
+			{
+				forcetime = TICRATE*3; // enforce stall time limit of three seconds
+			}
 		}
 		/* FALLTHRU */
 	case MT_FLAMEAURA_ORB:
@@ -11579,6 +11598,7 @@ void P_SpawnPlayer(INT32 playernum)
 		p->dashmode = 0;
 		p->normalspeed = skins[p->skin].normalspeed;
 		p->jumpfactor = skins[p->skin].jumpfactor;
+		p->runspeed = skins[p->skin].runspeed;
 	}
 
 	// Clear lastlinehit and lastsidehit
