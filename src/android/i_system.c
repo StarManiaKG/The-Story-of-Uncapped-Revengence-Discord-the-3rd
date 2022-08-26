@@ -82,17 +82,19 @@ INT64 current_time_in_ps() {
   return (t.tv_sec * (INT64)1000000) + t.tv_usec;
 }
 
-void I_Sleep(UINT32 ms){}
-
-precise_t I_GetPreciseTime(void)
+tic_t I_GetTime(void)
 {
-	return 0;
+  INT64 since_start = current_time_in_ps() - start_time;
+  return (since_start*TICRATE)/1000000;
 }
 
-UINT64 I_GetPrecisePrecision(void) 
+fixed_t I_GetTimeFrac(void)
 {
-	return 1000000;
+  //stub
+  return 0;
 }
+
+void I_Sleep(void){}
 
 void I_GetEvent(void){}
 

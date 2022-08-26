@@ -17,7 +17,6 @@
 #include "i_system.h"
 #include "z_zone.h"
 #include "p_local.h"
-#include "r_fps.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -120,12 +119,6 @@ perfstatrow_t commoncounter_rows[] = {
 	{"sprites", "Sprites:     ", &ps_numsprites, 0},
 	{"drwnode", "Drawnodes:   ", &ps_numdrawnodes, 0},
 	{"plyobjs", "Polyobjects: ", &ps_numpolyobjects, 0},
-	{0}
-};
-
-perfstatrow_t interpolation_rows[] = {
-	{"intpfrc", "Interp frac: ", &ps_interp_frac, PS_TIME},
-	{"intplag", "Interp lag:  ", &ps_interp_lag, PS_TIME},
 	{0}
 };
 
@@ -268,7 +261,7 @@ static INT32 PS_GetMetricAverage(ps_metric_t *metric, boolean time_metric)
 	for (i = 0; i < cv_ps_samplesize.value; i++)
 	{
 		if (time_metric)
-			sum += (*((precise_t*)history_read_pos)) / (I_GetPrecisePrecision() / 1000000);
+			sum += I_PreciseToMicros(*((precise_t*)history_read_pos));
 		else
 			sum += *((INT32*)history_read_pos);
 		history_read_pos += value_size;
@@ -288,7 +281,7 @@ static INT32 PS_GetMetricMinOrMax(ps_metric_t *metric, boolean time_metric, bool
 	{
 		INT32 value;
 		if (time_metric)
-			value = (*((precise_t*)history_read_pos)) / (I_GetPrecisePrecision() / 1000000);
+			value = I_PreciseToMicros(*((precise_t*)history_read_pos));
 		else
 			value = *((INT32*)history_read_pos);
 
@@ -316,7 +309,7 @@ static INT32 PS_GetMetricSD(ps_metric_t *metric, boolean time_metric)
 	{
 		INT64 value;
 		if (time_metric)
-			value = (*((precise_t*)history_read_pos)) / (I_GetPrecisePrecision() / 1000000);
+			value = I_PreciseToMicros(*((precise_t*)history_read_pos));
 		else
 			value = *((INT32*)history_read_pos);
 
@@ -346,7 +339,7 @@ static INT32 PS_GetMetricScreenValue(ps_metric_t *metric, boolean time_metric)
 	else
 	{
 		if (time_metric)
-			return (metric->value.p) / (I_GetPrecisePrecision() / 1000000);
+			return I_PreciseToMicros(metric->value.p);
 		else
 			return metric->value.i;
 	}
@@ -479,9 +472,6 @@ static void PS_UpdateFrameStats(void)
 		PS_UpdateRowHistories(rendertime_rows, true);
 		if (PS_IsLevelActive())
 			PS_UpdateRowHistories(commoncounter_rows, true);
-
-		if (R_UsingFrameInterpolation())
-			PS_UpdateRowHistories(interpolation_rows, true);
 
 #ifdef HWRENDER
 		if (rendermode == render_opengl && cv_glbatching.value)
@@ -644,7 +634,7 @@ static void PS_DrawRenderStats(void)
 {
 	const boolean hires = PS_HighResolution();
 	const int half_row = hires ? 5 : 4;
-	int x, y, cy = 10;
+	int x, y;
 
 	PS_DrawDescriptorHeader();
 
@@ -655,7 +645,7 @@ static void PS_DrawRenderStats(void)
 	if (PS_IsLevelActive())
 	{
 		x = hires ? 115 : 90;
-		cy = PS_DrawPerfRows(x, 10, V_BLUEMAP, commoncounter_rows) + half_row;
+		PS_DrawPerfRows(x, 10, V_BLUEMAP, commoncounter_rows);
 
 #ifdef HWRENDER
 		if (rendermode == render_opengl && cv_glbatching.value)
@@ -668,12 +658,6 @@ static void PS_DrawRenderStats(void)
 			PS_DrawPerfRows(x, y, V_PURPLEMAP, batchcalls_rows);
 		}
 #endif
-	}
-
-	if (R_UsingFrameInterpolation())
-	{
-		x = hires ? 115 : 90;
-		PS_DrawPerfRows(x, cy, V_ROSYMAP, interpolation_rows);
 	}
 }
 

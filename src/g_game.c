@@ -19,7 +19,6 @@
 #include "f_finale.h"
 #include "p_setup.h"
 #include "p_saveg.h"
-#include "i_time.h"
 #include "i_system.h"
 #include "am_map.h"
 #include "m_random.h"
@@ -1909,10 +1908,7 @@ void G_PreLevelTitleCard(void)
 	{
 		// draw loop
 		while (!((nowtime = I_GetTime()) - lasttime))
-		{
-			I_Sleep(cv_sleep.value);
-			I_UpdateTime(cv_timescale.value);
-		}
+			I_Sleep();
 		lasttime = nowtime;
 
 		ST_runTitleCard();
@@ -2371,6 +2367,11 @@ void G_Ticker(boolean run)
 			F_TextPromptTicker();
 			AM_Ticker();
 			HU_Ticker();
+			if (run)
+			{
+				R_UpdateViewInterpolation();
+			}
+			
 
 			break;
 
@@ -2425,8 +2426,14 @@ void G_Ticker(boolean run)
 
 		case GS_TITLESCREEN:
 			if (titlemapinaction)
+			{
 				P_Ticker(run);
+				if (run)
+				{
+					R_UpdateViewInterpolation();
+				}
 				// then intentionally fall through
+			}
 			/* FALLTHRU */
 		case GS_WAITINGPLAYERS:
 			F_MenuPresTicker(run);

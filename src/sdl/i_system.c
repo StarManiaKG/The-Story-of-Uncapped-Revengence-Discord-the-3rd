@@ -170,7 +170,6 @@ static char returnWadPath[256];
 
 #include "../doomdef.h"
 #include "../m_misc.h"
-#include "../i_time.h"
 #include "../i_video.h"
 #include "../i_sound.h"
 #include "../i_system.h"
@@ -2144,15 +2143,54 @@ ticcmd_t *I_BaseTiccmd2(void)
 
 static Uint64 timer_frequency;
 
+static double tic_frequency;
+static Uint64 tic_epoch;
+static double elapsed_tics;
+
+static void UpdateElapsedTics(void)
+{
+	const Uint64 now = SDL_GetPerformanceCounter();
+
+	elapsed_tics += (now - tic_epoch) / tic_frequency;
+	tic_epoch = now; // moving epoch
+}
+
+tic_t I_GetTime(void)
+{
+	UpdateElapsedTics();
+	return (tic_t) floor(elapsed_tics);
+}
+
+float I_GetTimeFrac(void)
+{
+	UpdateElapsedTics();
+	return elapsed_tics;
+}
+
+//
+// I_GetPreciseTime
+// returns time in precise_t
+//
 precise_t I_GetPreciseTime(void)
 {
 	return SDL_GetPerformanceCounter();
 }
 
-UINT64 I_GetPrecisePrecision(void)
+int I_PreciseToMicros(precise_t d)
 {
-	return SDL_GetPerformanceFrequency();
+	// d is going to be converted into a double. So remove the highest bits
+	// to avoid loss of precision in the lower bits, for the (probably rare) case
+	// that the higher bits are actually used.
+	d &= ((precise_t)1 << 53) - 1; // The mantissa of a double can handle 53 bits at most.
+	// The resulting double from the calculation is converted first to UINT64 to avoid overflow,
+	// which is undefined behaviour when converting floating point values to integers.
+	return (int)(UINT64)(d / (timer_frequency / 1000000.0));
 }
+
+//
+// I_GetFrameTime
+// returns time in 1/fpscap second tics
+//
 
 static UINT32 frame_rate;
 
@@ -2208,14 +2246,73 @@ double I_GetFrameTime(void)
 void I_StartupTimer(void)
 {
 	timer_frequency = SDL_GetPerformanceFrequency();
+	tic_epoch       = SDL_GetPerformanceCounter();
 
-	I_InitFrameTime(0, R_GetFramerateCap());
+	tic_frequency   = timer_frequency / (double)NEWTICRATE;
+	elapsed_tics    = 0.0;
+
+	I_InitFrameTime(tic_epoch, R_GetFramerateCap());
 	elapsed_frames  = 0.0;
 }
 
-void I_Sleep(UINT32 ms)
+//
+// I_Sleep
+// Sleeps by the value of cv_sleep
+//
+void I_Sleep(void)
 {
-	SDL_Delay(ms);
+	if (cv_sleep.value > 0)
+		SDL_Delay(cv_sleep.value);
+}
+
+//
+// I_FrameCapSleep
+// Sleeps for a variable amount of time, depending on how much time the frame took.
+//
+boolean I_FrameCapSleep(const double t)
+{
+	// SDL_Delay(1) gives me a range of around 1.95ms to 2.05ms.
+	// Has a bit extra to be totally safe.
+	const double delayGranularity = 2.1;
+	double frameMS = 0.0;
+
+	double curTime = 0.0;
+	double destTime = 0.0;
+	double sleepTime = 0.0;
+
+	if (frame_rate == 0)
+	{
+		// We don't want to cap.
+		return false;
+	}
+
+	curTime = I_GetFrameTime();
+	destTime = floor(t) + 1.0;
+
+	if (curTime >= destTime)
+	{
+		// We're already behind schedule.
+		return false;
+	}
+
+	frameMS = frame_rate * 0.001; // 1ms as frame time
+	sleepTime = destTime - (delayGranularity * frameMS);
+
+	while (curTime < destTime)
+	{
+		if (curTime < sleepTime && cv_sleep.value <= 0)
+		{
+			// Wait 1ms at a time (on default settings)
+			// until we're close enough.
+			SDL_Delay(cv_sleep.value);
+		}
+
+		// This part will spin-lock the rest.
+		curTime = I_GetFrameTime();
+	}
+
+	// We took our nap.
+	return true;
 }
 
 #ifdef NEWSIGNALHANDLER
