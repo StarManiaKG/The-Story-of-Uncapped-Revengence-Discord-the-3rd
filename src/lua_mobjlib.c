@@ -767,7 +767,6 @@ static int mobj_set(lua_State *L)
 			scale = FRACUNIT/100;
 		mo->destscale = scale;
 		P_SetScale(mo, scale);
-		mo->old_scale = scale;
 		break;
 	}
 	case mobj_destscale:

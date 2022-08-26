@@ -35,7 +35,6 @@
 #include <mmsystem.h>
 
 #include "../m_misc.h"
-#include "../i_time.h"
 #include "../i_video.h"
 #include "../i_sound.h"
 #include "../i_system.h"
@@ -263,25 +262,15 @@ tic_t I_GetTime(void)
 	return newtics;
 }
 
-precise_t I_GetPreciseTime(void)
+fixed_t I_GetTimeFrac(void)
 {
-	LARGE_INTEGER time;
-	BOOL res = QueryPerformanceCounter(&time);
-	if (!res) I_Error("QueryPerformanceCounter error"); // if this happens, you've gone back to the 90s
-	return (precise_t) time.QuadPart;
+	return 0;
 }
 
-UINT64 I_GetPrecisePrecision(void)
+void I_Sleep(void)
 {
-	LARGE_INTEGER time;
-	BOOL res = QueryPerformanceFrequency(&time);
-	if (!res) I_Error("QueryPerformanceFrequency error"); // if this happens, you've gone back to the 90s
-	return (precise_t) time.QuadPart;
-}
-
-void I_Sleep(UINT32 ms)
-{
-	Sleep(ms);
+	if (cv_sleep.value != -1)
+		Sleep(cv_sleep.value);
 }
 
 // should move to i_video

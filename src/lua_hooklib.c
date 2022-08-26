@@ -641,7 +641,7 @@ int LUA_HookKey(event_t *event, int hook_type)
 	return hook.status;
 }
 
-void LUA_HookHUD(int hook_type, huddrawlist_h list)
+void LUA_HookHUD(int hook_type)
 {
 	const hook_t * map = &hudHookIds[hook_type];
 	Hook_State hook;
@@ -650,15 +650,12 @@ void LUA_HookHUD(int hook_type, huddrawlist_h list)
 		start_hook_stack();
 		begin_hook_values(&hook);
 
-		LUA_SetHudHook(hook_type, list);
+		LUA_SetHudHook(hook_type);
 
 		hud_running = true; // local hook
 		init_hook_call(&hook, 0, res_none);
 		call_mapped(&hook, map);
 		hud_running = false;
-
-		lua_pushnil(gL);
-		lua_setfield(gL, LUA_REGISTRYINDEX, "HUD_DRAW_LIST");
 	}
 }
 

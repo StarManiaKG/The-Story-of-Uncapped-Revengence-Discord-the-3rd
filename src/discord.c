@@ -56,7 +56,7 @@ static void DRPC_GetCustomCharList(void *ptr);
 static const char *customCharList[218];
 static INT32 extraCharCount = 0;
 #endif
-static boolean customCharSupported = false;
+static boolean customCharSupported = true;
 
 /*--------------------------------------------------
 	static char *DRPC_XORIPString(const char *input)
@@ -364,7 +364,6 @@ static void DRPC_GetCustomCharList(void* ptr)
 		if (cc != CURLE_OK)
 		{
 			curl_easy_cleanup(curl);
-			CONS_Printf("Discord: Could not connect to custom character server list.\n");
 			return;
 		}
 
@@ -535,8 +534,8 @@ void DRPC_UpdatePresence(void)
 			}
 		}
 
-		// unfortunally this only works when you are the server 
-		/*switch (ms_RoomId)
+		// unfortunally this only works when you are the server /////lol
+		switch (ms_RoomId)
 		{
 			case -1: discordPresence.state = "Private"; break; // Private server
 			case 33: discordPresence.state = "Standard"; break;
@@ -544,7 +543,7 @@ void DRPC_UpdatePresence(void)
 			case 38: discordPresence.state = "Custom Gametypes"; break;
 			case 31: discordPresence.state = "OLDC"; break;
 			default: discordPresence.state = "Unknown Room"; break; // HOW
-		}*/
+		}
 
 		discordPresence.state = "Multiplayer";
 
@@ -563,7 +562,7 @@ void DRPC_UpdatePresence(void)
 		if (Playing())
 		{
 			UINT8 emeraldCount = 0;
-			discordPresence.state = "Singleplayer";
+			discordPresence.state = "Single Player";
 			
 			snprintf(detailstr, 20, "%d/%d emblems",
 				M_CountEmblems(), (numemblems + numextraemblems));
@@ -591,16 +590,16 @@ void DRPC_UpdatePresence(void)
 
 		}
 		else if (demoplayback && !titledemo)
-			discordPresence.state = "Watching a replay";
+			discordPresence.state = "Watching Replays";
 		else
-			discordPresence.state = "Menu";
+			discordPresence.state = "In the Menu";
 	}
 
 	// Gametype info
 	if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) && Playing())
 	{
 		if (modeattacking)
-			discordPresence.details = "Time Attack";
+			discordPresence.details = "Time Attacking";
 		else if (netgame)
 		{
 			snprintf(detailstr, 48, "%s",

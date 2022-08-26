@@ -15,7 +15,6 @@
 #include <unistd.h> //for unlink
 #endif
 
-#include "i_time.h"
 #include "i_net.h"
 #include "i_system.h"
 #include "i_video.h"
@@ -118,9 +117,6 @@ static INT16 consistancy[BACKUPTICS];
 
 static UINT8 player_joining = false;
 UINT8 hu_redownloadinggamestate = 0;
-
-// true when a player is connecting or disconnecting so that the gameplay has stopped in its tracks
-boolean hu_stopped = false;
 
 UINT8 adminpassmd5[16];
 boolean adminpasswordset = false;
@@ -2450,10 +2446,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 #endif
 	}
 	else
-	{
-		I_Sleep(cv_sleep.value);
-		I_UpdateTime(cv_timescale.value);
-	}
+		I_Sleep();
 
 	return true;
 }
@@ -3832,10 +3825,10 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 	if (!rejoined)
 		LUA_HookInt(newplayernum, HOOK(PlayerJoin));
+		//LUAh_PlayerJoin(newplayernum);
 #ifdef HAVE_DISCORDRPC
     	DRPC_UpdatePresence();
 #endif
-
 }
 
 static boolean SV_AddWaitingPlayers(const char *name, const char *name2)
@@ -5311,16 +5304,8 @@ boolean TryRunTics(tic_t realtics)
 
 	ticking = neededtic > gametic;
 
-	if (ticking)
-	{
-		if (realtics)
-			hu_stopped = false;
-	}
-
 	if (player_joining)
 	{
-		if (realtics)
-			hu_stopped = true;
 		return false;
 	}
 
@@ -5359,11 +5344,6 @@ boolean TryRunTics(tic_t realtics)
 				if (client && gamestate == GS_LEVEL && leveltime > 3 && neededtic <= gametic + cv_netticbuffer.value)
 					break;
 			}
-	}
-	else
-	{
-		if (realtics)
-			hu_stopped = true;
 	}
 
 	return ticking;

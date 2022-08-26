@@ -22,7 +22,6 @@
 #include "r_state.h"
 #include "z_zone.h"
 #include "console.h" // con_startup_loadprogress
-#include "m_perfstats.h" // ps_metric_t
 #ifdef HWRENDER
 #include "hardware/hw_main.h" // for cv_glshearing
 #endif
@@ -41,18 +40,8 @@ static CV_PossibleValue_t fpscap_cons_t[] = {
 };
 consvar_t cv_fpscap = CVAR_INIT ("fpscap", "Match refresh rate", CV_SAVE, fpscap_cons_t, NULL);
 
-ps_metric_t ps_interp_frac = {0};
-ps_metric_t ps_interp_lag = {0};
-
 UINT32 R_GetFramerateCap(void)
 {
-	if (rendermode == render_none)
-	{
-		// If we're not rendering (dedicated server),
-		// we shouldn't be using any interpolation.
-		return TICRATE;
-	}
-
 	if (cv_fpscap.value == 0)
 	{
 		// 0: Match refresh rate
@@ -70,7 +59,7 @@ UINT32 R_GetFramerateCap(void)
 
 boolean R_UsingFrameInterpolation(void)
 {
-	return (R_GetFramerateCap() != TICRATE || cv_timescale.value < FRACUNIT);
+	return (R_GetFramerateCap() != TICRATE); // maybe use ">" instead?
 }
 
 static viewvars_t p1view_old;
@@ -83,7 +72,7 @@ static viewvars_t sky2view_old;
 static viewvars_t sky2view_new;
 
 static viewvars_t *oldview = &p1view_old;
-static int oldview_invalid[MAXSPLITSCREENPLAYERS] = {0, 0};
+static boolean oldview_valid = false;
 viewvars_t *newview = &p1view_new;
 
 
@@ -160,23 +149,12 @@ void R_InterpolateView(fixed_t frac)
 {
 	viewvars_t* prevview = oldview;
 	boolean skybox = 0;
-	UINT8 i;
-
 	if (FIXED_TO_FLOAT(frac) < 0)
 		frac = 0;
 	if (frac > FRACUNIT)
 		frac = FRACUNIT;
 
-	if (viewcontext == VIEWCONTEXT_SKY1 || viewcontext == VIEWCONTEXT_PLAYER1)
-	{
-		i = 0;
-	}
-	else
-	{
-		i = 1;
-	}
-
-	if (oldview_invalid[i] != 0)
+	if (oldview_valid == false)
 	{
 		// interpolate from newview to newview
 		prevview = newview;
@@ -212,24 +190,12 @@ void R_UpdateViewInterpolation(void)
 	p2view_old = p2view_new;
 	sky1view_old = sky1view_new;
 	sky2view_old = sky2view_new;
-	if (oldview_invalid[0] > 0) oldview_invalid[0]--;
-	if (oldview_invalid[1] > 0) oldview_invalid[1]--;
+	oldview_valid = true;
 }
 
-void R_ResetViewInterpolation(UINT8 p)
+void R_ResetViewInterpolation(void)
 {
-	if (p == 0)
-	{
-		UINT8 i;
-		for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-		{
-			oldview_invalid[i]++;
-		}
-	}
-	else
-	{
-		oldview_invalid[p - 1]++;
-	}
+	oldview_valid = false;
 }
 
 void R_SetViewContext(enum viewcontext_e _viewcontext)
@@ -286,70 +252,27 @@ angle_t R_InterpolateAngle(angle_t from, angle_t to)
 
 void R_InterpolateMobjState(mobj_t *mobj, fixed_t frac, interpmobjstate_t *out)
 {
-	if (frac == FRACUNIT)
-	{
-		out->x = mobj->x;
-		out->y = mobj->y;
-		out->z = mobj->z;
-		out->scale = mobj->scale;
-		out->subsector = mobj->subsector;
-		out->angle = mobj->player ? mobj->player->drawangle : mobj->angle;
-		out->spritexscale = mobj->spritexscale;
-		out->spriteyscale = mobj->spriteyscale;
-		out->spritexoffset = mobj->spritexoffset;
-		out->spriteyoffset = mobj->spriteyoffset;
-		return;
-	}
-
 	out->x = R_LerpFixed(mobj->old_x, mobj->x, frac);
 	out->y = R_LerpFixed(mobj->old_y, mobj->y, frac);
 	out->z = R_LerpFixed(mobj->old_z, mobj->z, frac);
-	out->scale = mobj->resetinterp ? mobj->scale : R_LerpFixed(mobj->old_scale, mobj->scale, frac);
-	out->spritexscale = mobj->resetinterp ? mobj->spritexscale : R_LerpFixed(mobj->old_spritexscale, mobj->spritexscale, frac);
-	out->spriteyscale = mobj->resetinterp ? mobj->spriteyscale : R_LerpFixed(mobj->old_spriteyscale, mobj->spriteyscale, frac);
-
-	// Sprite offsets are not interpolated until we have a way to interpolate them explicitly in Lua.
-	// It seems existing mods visually break more often than not if it is interpolated.
-	out->spritexoffset = mobj->spritexoffset;
-	out->spriteyoffset = mobj->spriteyoffset;
 
 	out->subsector = R_PointInSubsector(out->x, out->y);
 
 	if (mobj->player)
 	{
-		out->angle = mobj->resetinterp ? mobj->player->drawangle : R_LerpAngle(mobj->player->old_drawangle, mobj->player->drawangle, frac);
+		out->angle = R_LerpAngle(mobj->player->old_drawangle, mobj->player->drawangle, frac);
 	}
 	else
 	{
-		out->angle = mobj->resetinterp ? mobj->angle : R_LerpAngle(mobj->old_angle, mobj->angle, frac);
+		out->angle = R_LerpAngle(mobj->old_angle, mobj->angle, frac);
 	}
 }
 
 void R_InterpolatePrecipMobjState(precipmobj_t *mobj, fixed_t frac, interpmobjstate_t *out)
 {
-	if (frac == FRACUNIT)
-	{
-		out->x = mobj->x;
-		out->y = mobj->y;
-		out->z = mobj->z;
-		out->scale = FRACUNIT;
-		out->subsector = mobj->subsector;
-		out->angle = mobj->angle;
-		out->spritexscale = mobj->spritexscale;
-		out->spriteyscale = mobj->spriteyscale;
-		out->spritexoffset = mobj->spritexoffset;
-		out->spriteyoffset = mobj->spriteyoffset;
-		return;
-	}
-
 	out->x = R_LerpFixed(mobj->old_x, mobj->x, frac);
 	out->y = R_LerpFixed(mobj->old_y, mobj->y, frac);
 	out->z = R_LerpFixed(mobj->old_z, mobj->z, frac);
-	out->scale = FRACUNIT;
-	out->spritexscale = R_LerpFixed(mobj->old_spritexscale, mobj->spritexscale, frac);
-	out->spriteyscale = R_LerpFixed(mobj->old_spriteyscale, mobj->spriteyscale, frac);
-	out->spritexoffset = R_LerpFixed(mobj->old_spritexoffset, mobj->spritexoffset, frac);
-	out->spriteyoffset = R_LerpFixed(mobj->old_spriteyoffset, mobj->spriteyoffset, frac);
 
 	out->subsector = R_PointInSubsector(out->x, out->y);
 
@@ -716,7 +639,6 @@ void R_AddMobjInterpolator(mobj_t *mobj)
 	interpolated_mobjs_len += 1;
 
 	R_ResetMobjInterpolationState(mobj);
-	mobj->resetinterp = true;
 }
 
 void R_RemoveMobjInterpolator(mobj_t *mobj)
@@ -771,26 +693,18 @@ void R_ResetMobjInterpolationState(mobj_t *mobj)
 	mobj->old_angle2 = mobj->old_angle;
 	mobj->old_pitch2 = mobj->old_pitch;
 	mobj->old_roll2 = mobj->old_roll;
-	mobj->old_scale2 = mobj->old_scale;
 	mobj->old_x = mobj->x;
 	mobj->old_y = mobj->y;
 	mobj->old_z = mobj->z;
 	mobj->old_angle = mobj->angle;
 	mobj->old_pitch = mobj->pitch;
 	mobj->old_roll = mobj->roll;
-	mobj->old_scale = mobj->scale;
-	mobj->old_spritexscale = mobj->spritexscale;
-	mobj->old_spriteyscale = mobj->spriteyscale;
-	mobj->old_spritexoffset = mobj->spritexoffset;
-	mobj->old_spriteyoffset = mobj->spriteyoffset;
 
 	if (mobj->player)
 	{
 		mobj->player->old_drawangle2 = mobj->player->old_drawangle;
 		mobj->player->old_drawangle = mobj->player->drawangle;
 	}
-
-	mobj->resetinterp = false;
 }
 
 //
@@ -810,8 +724,4 @@ void R_ResetPrecipitationMobjInterpolationState(precipmobj_t *mobj)
 	mobj->old_y = mobj->y;
 	mobj->old_z = mobj->z;
 	mobj->old_angle = mobj->angle;
-	mobj->old_spritexscale = mobj->spritexscale;
-	mobj->old_spriteyscale = mobj->spriteyscale;
-	mobj->old_spritexoffset = mobj->spritexoffset;
-	mobj->old_spriteyoffset = mobj->spriteyoffset;
 }

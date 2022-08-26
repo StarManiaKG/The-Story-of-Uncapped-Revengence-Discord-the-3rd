@@ -43,10 +43,7 @@
 #endif
 
 #include "lua_hud.h"
-#include "lua_hudlib_drawlist.h"
 #include "lua_hook.h"
-
-#include "r_fps.h"
 
 UINT16 objectsdrawn = 0;
 
@@ -168,9 +165,6 @@ hudinfo_t hudinfo[NUMHUDITEMS] =
 
 	{ 288, 176, V_SNAPTORIGHT|V_SNAPTOBOTTOM}, // HUD_POWERUPS
 };
-
-static huddrawlist_h luahuddrawlist_game;
-static huddrawlist_h luahuddrawlist_titlecard;
 
 //
 // STATUS BAR CODE
@@ -436,9 +430,6 @@ void ST_Init(void)
 		return;
 
 	ST_LoadGraphics();
-
-	luahuddrawlist_game = LUA_HUD_CreateDrawList();
-	luahuddrawlist_titlecard = LUA_HUD_CreateDrawList();
 }
 
 // change the status bar too, when pressing F12 while viewing a demo.
@@ -1421,12 +1412,7 @@ void ST_drawTitleCard(void)
 	lt_lasttic = lt_ticker;
 
 luahook:
-	if (renderisnewtic)
-	{
-		LUA_HUD_ClearDrawList(luahuddrawlist_titlecard);
-		LUA_HUDHOOK(titlecard, luahuddrawlist_titlecard);
-	}
-	LUA_HUD_DrawList(luahuddrawlist_titlecard);
+	LUA_HUDHOOK(titlecard);
 }
 
 //
@@ -2550,7 +2536,7 @@ static void ST_doHuntIconsAndSound(void)
 			interval = newinterval;
 	}
 
-	if (!(P_AutoPause() || paused) && interval > 0 && leveltime && leveltime % interval == 0 && renderisnewtic)
+	if (!(P_AutoPause() || paused) && interval > 0 && leveltime && leveltime % interval == 0)
 		S_StartSound(NULL, sfx_emfind);
 }
 
@@ -2612,7 +2598,7 @@ static void ST_doItemFinderIconsAndSound(void)
 
 	}
 
-	if (!(P_AutoPause() || paused) && interval > 0 && leveltime && leveltime % interval == 0 && renderisnewtic)
+	if (!(P_AutoPause() || paused) && interval > 0 && leveltime && leveltime % interval == 0)
 		S_StartSound(NULL, sfx_emfind);
 }
 
@@ -2766,14 +2752,7 @@ static void ST_overlayDrawer(void)
 		ST_drawPowerupHUD(); // same as it ever was...
 
 	if (!(netgame || multiplayer) || !hu_showscores)
-	{
-		if (renderisnewtic)
-		{
-			LUA_HUD_ClearDrawList(luahuddrawlist_game);
-			LUA_HUDHOOK(game, luahuddrawlist_game);
-		}
-		LUA_HUD_DrawList(luahuddrawlist_game);
-	}
+		LUA_HUDHOOK(game);
 
 	// draw level title Tails
 	if (stagetitle && (!WipeInAction) && (!WipeStageTitle))
