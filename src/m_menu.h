@@ -391,9 +391,9 @@ typedef struct
 // level select platter
 typedef struct
 {
-	char header[22+5]; // mapheader_t lvlttl max length + " ZONE"
+	char header[22+5]; // mapheader_t lvltttl max length + " ZONE"
 	INT32 maplist[3];
-	char mapnames[3][22]; // lvlttl max length
+	char mapnames[3][17+1];
 	boolean mapavailable[4]; // mapavailable[3] == wide or not
 } levelselectrow_t;
 

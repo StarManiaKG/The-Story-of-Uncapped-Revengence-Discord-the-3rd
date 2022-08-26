@@ -20,7 +20,6 @@
 #include "hu_stuff.h"
 #include "r_local.h"
 #include "s_sound.h"
-#include "i_time.h"
 #include "i_video.h"
 #include "v_video.h"
 #include "w_wad.h"
@@ -227,8 +226,6 @@ static tic_t cutscene_lasttextwrite = 0;
 
 // STJR Intro
 char stjrintro[9] = "STJRI000";
-
-static huddrawlist_h luahuddrawlist_title;
 
 //
 // This alters the text string cutscene_disptext.
@@ -915,10 +912,7 @@ void F_IntroTicker(void)
 				while (quittime > nowtime)
 				{
 					while (!((nowtime = I_GetTime()) - lasttime))
-					{
-						I_Sleep(cv_sleep.value);
-						I_UpdateTime(cv_timescale.value);
-					}
+						I_Sleep();
 					lasttime = nowtime;
 
 					I_OsPolling();
@@ -2284,9 +2278,6 @@ void F_InitMenuPresValues(void)
 	M_SetMenuCurBackground((gamestate == GS_TIMEATTACK) ? "RECATTBG" : "TITLESKY");
 	M_SetMenuCurFadeValue(16);
 	M_SetMenuCurTitlePics();
-
-	LUA_HUD_DestroyDrawList(luahuddrawlist_title);
-	luahuddrawlist_title = LUA_HUD_CreateDrawList();
 }
 
 //
@@ -3406,21 +3397,7 @@ void F_TitleScreenDrawer(void)
 	}
 
 luahook:
-	// The title drawer is sometimes called without first being started
-	// In order to avoid use-before-initialization crashes, let's check and
-	// create the drawlist if it doesn't exist.
-	if (!LUA_HUD_IsDrawListValid(luahuddrawlist_title))
-	{
-		LUA_HUD_DestroyDrawList(luahuddrawlist_title);
-		luahuddrawlist_title = LUA_HUD_CreateDrawList();
-	}
-
-	if (renderisnewtic)
-	{
-		LUA_HUD_ClearDrawList(luahuddrawlist_title);
-		LUA_HUDHOOK(title, luahuddrawlist_title);
-	}
-	LUA_HUD_DrawList(luahuddrawlist_title);
+	LUA_HUDHOOK(title);
 }
 
 // separate animation timer for backgrounds, since we also count
@@ -3857,27 +3834,11 @@ boolean F_ContinueResponder(event_t *event)
 static INT32 scenenum, cutnum;
 static INT32 picxpos, picypos, picnum, pictime, picmode, numpics, pictoloop;
 static INT32 textxpos, textypos;
-static boolean cutsceneover = false;
+static boolean dofadenow = false, cutsceneover = false;
 static boolean runningprecutscene = false, precutresetplayer = false;
 
 static void F_AdvanceToNextScene(void)
 {
-	if (rendermode != render_none)
-	{
-		F_WipeStartScreen();
-
-		// Fade to any palette color you want.
-		if (cutscenes[cutnum]->scene[scenenum].fadecolor)
-		{
-			V_DrawFill(0,0,BASEVIDWIDTH,BASEVIDHEIGHT,cutscenes[cutnum]->scene[scenenum].fadecolor);
-
-			F_WipeEndScreen();
-			F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeinid, true);
-
-			F_WipeStartScreen();
-		}
-	}
-
 	// Don't increment until after endcutscene check
 	// (possible overflow / bad patch names from the one tic drawn before the fade)
 	if (scenenum+1 >= cutscenes[cutnum]->numscenes)
@@ -3885,7 +3846,6 @@ static void F_AdvanceToNextScene(void)
 		F_EndCutScene();
 		return;
 	}
-
 	++scenenum;
 
 	timetonext = 0;
@@ -3901,6 +3861,7 @@ static void F_AdvanceToNextScene(void)
 			cutscenes[cutnum]->scene[scenenum].musswitchposition, 0, 0);
 
 	// Fade to the next
+	dofadenow = true;
 	F_NewCutscene(cutscenes[cutnum]->scene[scenenum].text);
 
 	picnum = 0;
@@ -3910,14 +3871,6 @@ static void F_AdvanceToNextScene(void)
 	textypos = cutscenes[cutnum]->scene[scenenum].textypos;
 
 	animtimer = pictime = cutscenes[cutnum]->scene[scenenum].picduration[picnum];
-
-	if (rendermode != render_none)
-	{
-		F_CutsceneDrawer();
-
-		F_WipeEndScreen();
-		F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeoutid, true);
-	}
 }
 
 // See also G_AfterIntermission, the only other place which handles intra-map/ending transitions
@@ -3992,6 +3945,21 @@ void F_StartCustomCutscene(INT32 cutscenenum, boolean precutscene, boolean reset
 //
 void F_CutsceneDrawer(void)
 {
+	if (dofadenow && rendermode != render_none)
+	{
+		F_WipeStartScreen();
+
+		// Fade to any palette color you want.
+		if (cutscenes[cutnum]->scene[scenenum].fadecolor)
+		{
+			V_DrawFill(0,0,BASEVIDWIDTH,BASEVIDHEIGHT,cutscenes[cutnum]->scene[scenenum].fadecolor);
+
+			F_WipeEndScreen();
+			F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeinid, true);
+
+			F_WipeStartScreen();
+		}
+	}
 	V_DrawFill(0,0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 
 	if (cutscenes[cutnum]->scene[scenenum].picname[picnum][0] != '\0')
@@ -4002,6 +3970,12 @@ void F_CutsceneDrawer(void)
 		else
 			V_DrawScaledPatch(picxpos,picypos, 0,
 				W_CachePatchName(cutscenes[cutnum]->scene[scenenum].picname[picnum], PU_PATCH_LOWPRIORITY));
+	}
+
+	if (dofadenow && rendermode != render_none)
+	{
+		F_WipeEndScreen();
+		F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeoutid, true);
 	}
 
 	V_DrawString(textxpos, textypos, V_ALLOWLOWERCASE, cutscene_disptext);
@@ -4019,6 +3993,8 @@ void F_CutsceneTicker(void)
 	// advance animation
 	finalecount++;
 	cutscene_boostspeed = 0;
+
+	dofadenow = false;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
