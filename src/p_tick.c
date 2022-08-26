@@ -618,10 +618,8 @@ void P_Ticker(boolean run)
 		if (OP_FreezeObjectplace())
 		{
 			P_MapStart();
-			R_UpdateMobjInterpolators();
 			OP_ObjectplaceMovement(&players[0]);
 			P_MoveChaseCamera(&players[0], &camera, false);
-			R_UpdateViewInterpolation();
 			P_MapEnd();
 			S_SetStackAdjustmentStart();
 			return;
@@ -772,7 +770,6 @@ void P_Ticker(boolean run)
 	if (run)
 	{
 		R_UpdateLevelInterpolators();
-		R_UpdateViewInterpolation();
 	}
 
 	P_MapEnd();
@@ -794,8 +791,6 @@ void P_PreTicker(INT32 frames)
 	for (framecnt = 0; framecnt < frames; ++framecnt)
 	{
 		P_MapStart();
-
-		R_UpdateMobjInterpolators();
 
 		LUA_HOOK(PreThinkFrame);
 
@@ -834,10 +829,6 @@ void P_PreTicker(INT32 frames)
 		P_RespawnSpecials();
 
 		LUA_HOOK(PostThinkFrame);
-
-		R_UpdateLevelInterpolators();
-		R_UpdateViewInterpolation();
-		R_ResetViewInterpolation(0);
 
 		P_MapEnd();
 	}
