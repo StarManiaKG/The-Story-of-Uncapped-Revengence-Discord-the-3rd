@@ -35,7 +35,7 @@
 #endif
 
 // Feel free to provide your own, if you care enough to create another Discord app for this :P
-#define DISCORD_APPID "970061120796774410"
+#define DISCORD_APPID "1013126566236135516"
 
 // length of IP strings
 #define IP_SIZE 21
@@ -537,19 +537,19 @@ void DRPC_UpdatePresence(void)
 		// unfortunally this only works when you are the server /////lol
 		switch (ms_RoomId)
 		{
-			case -1: discordPresence.state = "Private"; break; // Private server
+			case -1: discordPresence.state = "Private Server"; break; // Private server
 			case 33: discordPresence.state = "Standard"; break;
 			case 28: discordPresence.state = "Casual"; break;
 			case 38: discordPresence.state = "Custom Gametypes"; break;
 			case 31: discordPresence.state = "OLDC"; break;
-			default: discordPresence.state = "Unknown Room"; break; // HOW
+			default: discordPresence.state = "Private Server"; break; // HOW
 		}
 
 		discordPresence.state = "Multiplayer";
 
 		discordPresence.partyId = server_context; // Thanks, whoever gave us Mumble support, for implementing the EXACT thing Discord wanted for this field!
 		discordPresence.partySize = D_NumPlayers(); // Players in server
-		discordPresence.partyMax = discordInfo.maxPlayers; // Max players
+		discordPresence.partyMax = cv_maxplayers.value; // Max players
 	}
 	else
 	{
@@ -605,7 +605,7 @@ void DRPC_UpdatePresence(void)
 			snprintf(detailstr, 48, "%s",
 				gametype_cons_t[gametype].strvalue
 			);
-			discordPresence.details = detailstr;
+			//discordPresence.details = detailstr;
 		}
 	}
 
@@ -639,8 +639,8 @@ void DRPC_UpdatePresence(void)
 		else
 		{
 			// Map name on tool tip
-			snprintf(mapname, 48, "Map: %s", G_BuildMapTitle(gamemap));
-			discordPresence.largeImageText = mapname;
+			snprintf(mapname, 48, "%s", G_BuildMapTitle(gamemap));
+			discordPresence.details = mapname;
 		}
 
 		if (gamestate == GS_LEVEL && Playing())
@@ -667,7 +667,20 @@ void DRPC_UpdatePresence(void)
 	if (cv_discordshowchar.value && Playing() && playeringame[consoleplayer] && !players[consoleplayer].spectator)
 	{
 		// Supported skin names
-		static const char *supportedSkins[] = {
+        static const char *customSkins[] = {
+            // custom chars
+            //Mario & Luigi
+            "sgimario",
+            "mario",
+            "luigi",
+            "admario",
+            "adluigi",
+            "pjmario",
+            "pjluigi",
+            NULL
+        };
+       
+        static const char *supportedSkins[] = {
 			// base game
 			"sonic",
 			"tails",
@@ -675,6 +688,7 @@ void DRPC_UpdatePresence(void)
 			"metalsonic",
 			"fang",
 			"amy",
+            customSkins,
 			NULL
 		};
 
