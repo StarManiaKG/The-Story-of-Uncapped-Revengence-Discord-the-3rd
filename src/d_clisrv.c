@@ -1722,10 +1722,18 @@ static void SendAskInfo(INT32 node)
 	// now allowed traffic from the host to us in, so once the MS relays
 	// our address to the host, it'll be able to speak to us.
 	HSendPacket(node, false, 0, sizeof (askinfo_pak));
+
+	if (node != 0 && node != BROADCASTADDR &&
+			cv_rendezvousserver.string[0])
+	{
+		I_NetRequestHolePunch();
+	}
 }
 
 serverelem_t serverlist[MAXSERVERLIST];
 UINT32 serverlistcount = 0;
+
+
 
 #define FORCECLOSE 0x8000
 
@@ -5430,6 +5438,21 @@ static inline void PingUpdate(void)
 
 	pingmeasurecount = 1; //Reset count
 }
+static void RenewHolePunch(void)
+{
+	if (cv_rendezvousserver.string[0])
+	{
+		static time_t past;
+
+		const time_t now = time(NULL);
+
+		if ((now - past) > 20)
+		{
+			I_NetRegisterHolePunch();
+			past = now;
+		}
+	}
+}
 
 void NetUpdate(void)
 {
@@ -5481,6 +5504,11 @@ void NetUpdate(void)
 #ifdef MASTERSERVER
 	MasterClient_Ticker(); // Acking the Master Server
 #endif
+
+	if (netgame && serverrunning)
+	{
+		RenewHolePunch();
+	}
 
 	if (client)
 	{
