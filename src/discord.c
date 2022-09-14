@@ -537,12 +537,12 @@ void DRPC_UpdatePresence(void)
 		// unfortunally this only works when you are the server /////lol
 		switch (ms_RoomId)
 		{
-			case -1: discordPresence.state = "Private Server"; break; // Private server
+			case -1: discordPresence.state = "Private"; break; // Private server
 			case 33: discordPresence.state = "Standard"; break;
 			case 28: discordPresence.state = "Casual"; break;
 			case 38: discordPresence.state = "Custom Gametypes"; break;
 			case 31: discordPresence.state = "OLDC"; break;
-			default: discordPresence.state = "Private Server"; break; // HOW
+			default: discordPresence.state = "Unknown Room"; break; // HOW
 		}
 
 		discordPresence.state = "Multiplayer";
@@ -666,21 +666,9 @@ void DRPC_UpdatePresence(void)
 	// Character info
 	if (cv_discordshowchar.value && Playing() && playeringame[consoleplayer] && !players[consoleplayer].spectator)
 	{
-		// Supported skin names
-        static const char *customSkins[] = {
-            // custom chars
-            //Mario & Luigi
-            "sgimario",
-            "mario",
-            "luigi",
-            "admario",
-            "adluigi",
-            "pjmario",
-            "pjluigi",
-            NULL
-        };
-       
-        static const char *supportedSkins[] = {
+
+        // Supported skin names
+		static const char *supportedSkins[] = {
 			// base game
 			"sonic",
 			"tails",
@@ -688,7 +676,22 @@ void DRPC_UpdatePresence(void)
 			"metalsonic",
 			"fang",
 			"amy",
-            customSkins,
+			//custom characters
+			"adventuresonic",
+			"shadow",
+			"skip",
+			"jana",
+			"surge",
+			"cacee",
+			"milne",
+			"maiamy",
+			"mario",
+			"luigi",
+			"blaze",
+			"marine",
+			"tailsdoll",
+			"metalknuckles",
+			"smiles",
 			NULL
 		};
 
