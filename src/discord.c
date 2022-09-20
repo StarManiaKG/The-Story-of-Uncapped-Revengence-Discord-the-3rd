@@ -40,10 +40,12 @@
 // length of IP strings
 #define IP_SIZE 21
 
+static CV_PossibleValue_t discordstatustype_cons_t[] = {{0, "All"}, {1, "Characters"}, {2, "Continues"}, {3, "Emeralds"}, {4, "Emblems"}, {5, "Levels"}, {6, "None"}, {0, NULL}};
 consvar_t cv_discordrp = CVAR_INIT ("discordrp", "On", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
-consvar_t cv_discordstreamer = CVAR_INIT ("discordstreamer", "Off", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_discordstreamer = CVAR_INIT ("discordstreamer", "Off", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
 consvar_t cv_discordasks = CVAR_INIT ("discordasks", "Yes", CV_SAVE|CV_CALL, CV_YesNo, DRPC_UpdatePresence);
-consvar_t cv_discordshowchar = CVAR_INIT ("discordshowchar", "Yes", CV_SAVE|CV_CALL, CV_YesNo, DRPC_UpdatePresence);
+consvar_t cv_discordshowonstatus = CVAR_INIT ("discordshowonstatus", "all", CV_SAVE|CV_CALL, discordstatustype_cons_t, DRPC_UpdatePresence);
+consvar_t cv_discordstatusmemes = CVAR_INIT ("discordstatusmemes", "Yes", CV_SAVE|CV_CALL, CV_YesNo, DRPC_UpdatePresence);
 struct discordInfo_s discordInfo;
 
 discordRequest_t *discordRequestList = NULL;
@@ -494,11 +496,6 @@ void DRPC_UpdatePresence(void)
 	DiscordRichPresence discordPresence;
 	memset(&discordPresence, 0, sizeof(discordPresence));
 
-	if (dedicated)
-	{
-		return;
-	}
-
 	if (!cv_discordrp.value)
 	{
 		// User doesn't want to show their game information, so update with empty presence.
@@ -520,6 +517,10 @@ void DRPC_UpdatePresence(void)
 #endif // DEVELOP
 
 	// Server info
+	if (dedicated)
+	{
+		return;
+	}
 	if (netgame)
 	{
 		if (DRPC_InvitesAreAllowed() == true)
@@ -544,8 +545,14 @@ void DRPC_UpdatePresence(void)
 			case 31: discordPresence.state = "OLDC"; break;
 			default: discordPresence.state = "Unknown Room"; break; // HOW
 		}
-
-		discordPresence.state = "Multiplayer";
+		if (server)
+		{
+			discordPresence.state = "Hosting a Netgame";
+		}
+		else
+		{
+			discordPresence.state = "In a Netgame";
+		}
 
 		discordPresence.partyId = server_context; // Thanks, whoever gave us Mumble support, for implementing the EXACT thing Discord wanted for this field!
 		discordPresence.partySize = D_NumPlayers(); // Players in server
@@ -562,37 +569,42 @@ void DRPC_UpdatePresence(void)
 		if (Playing())
 		{
 			UINT8 emeraldCount = 0;
-			discordPresence.state = "Single Player";
+			discordPresence.state = "SinglePlayer";
 			
-			snprintf(detailstr, 20, "%d/%d emblems",
-				M_CountEmblems(), (numemblems + numextraemblems));
-
-			if (emeralds != 0)
+			if (cv_discordshowonstatus.value == 0 || cv_discordshowonstatus.value == 4)
 			{
-				for (INT32 i = 0; i < 7; i++) // thanks Monster Iestyn for this math
-					if (emeralds & (1<<i))
-						emeraldCount += 1;
-
-				if (emeraldCount > 1 && emeraldCount < 7 && emeraldCount != 3)
-					strlcat(detailstr, va(", %d emeralds", emeraldCount), 64);
-				else if (emeraldCount == 1)
-					strlcat(detailstr, ", 1 emerald", 64);
-				else if (emeraldCount == 3)
-					// Trivia: the subtitles in Shadow the Hedgehog emphasized "fourth",
-					// even though Jason Griffith emphasized "damn" in this sentence
-					strlcat(detailstr, ", 3 emeralds (where's that damn FOURTH?)", 64);
-				else
-					strlcat(detailstr, ", all 7 emeralds!", 64);
+				snprintf(detailstr, 20, "%d/%d Emblems",
+					M_CountEmblems(), (numemblems + numextraemblems));
 			}
-			else
-				strlcat(detailstr, ", no emeralds", 64);
-			discordPresence.details = detailstr;
 
+			if (cv_discordshowonstatus.value == 0 || cv_discordshowonstatus.value == 3)
+			{
+				if (emeralds != 0)
+				{
+					for (INT32 i = 0; i < 7; i++) // thanks Monster Iestyn for this math
+						if (emeralds & (1<<i))
+							emeraldCount += 1;
+
+					if (emeraldCount < 7 && emeraldCount != 3 && emeraldCount != 4)
+						strlcat(detailstr, va(", %d Emeralds", emeraldCount), 64);
+					else if (emeraldCount == 3)
+						// Trivia: the subtitles in Shadow the Hedgehog emphasized "fourth",
+						// even though Jason Griffith emphasized "damn" in this sentence
+						strlcat(detailstr, ", %d Emeralds; Where's That DAMN FOURTH?)", 64);
+					else if (emeraldCount == 4)
+						strlcat(detailstr, ", %d Emeralds; Found that DAMN FOURTH?)", 64);
+					else
+						strlcat(detailstr, ", All 7 Emeralds Obtained!", 64);
+				}
+				else
+					strlcat(detailstr, ", No Emeralds?", 64);
+				discordPresence.details = detailstr;
+			}
 		}
 		else if (demoplayback && !titledemo)
 			discordPresence.state = "Watching Replays";
 		else
-			discordPresence.state = "In the Menu";
+			discordPresence.state = "Main Menu";
 	}
 
 	// Gametype info
@@ -608,63 +620,50 @@ void DRPC_UpdatePresence(void)
 			//discordPresence.details = detailstr;
 		}
 	}
-
-	if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) // Map info
-		&& !(demoplayback && titledemo))
+	if (cv_discordshowonstatus.value == 0 || cv_discordshowonstatus.value == 5)
 	{
-		if ((gamemap >= 1 && gamemap <= 73) // Supported Co-op maps
-		|| (gamemap >= 280 && gamemap <= 288) // Supported CTF maps
-		|| (gamemap >= 532 && gamemap <= 543)) // Supported Match maps
+		if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) // Map info
+			&& !(demoplayback && titledemo))
 		{
-			snprintf(mapimg, 8, "%s", G_BuildMapName(gamemap));
-			strlwr(mapimg);
-			discordPresence.largeImageKey = mapimg; // Map image
-		}
-		/*else if (mapheaderinfo[gamemap-1]->menuflags & LF2_HIDEINMENU)
-		{
-			// Hell map, use the method that got you here :P
-			discordPresence.largeImageKey = "miscdice";
-		}*/
-		else
-		{
-			// This is probably a custom map!
-			discordPresence.largeImageKey = "mapcustom";
-		}
-
-		if (mapheaderinfo[gamemap-1]->menuflags & LF2_HIDEINMENU)
-		{
-			// Hell map, hide the name
-			discordPresence.largeImageText = "Map: ???";
-		}
-		else
-		{
-			// Map name on tool tip
-			snprintf(mapname, 48, "%s", G_BuildMapTitle(gamemap));
-			discordPresence.details = mapname;
-		}
-
-		if (gamestate == GS_LEVEL && Playing())
-		{
-			const time_t currentTime = time(NULL);
-			const time_t mapTimeStart = currentTime - (leveltime / TICRATE);
-
-			discordPresence.startTimestamp = mapTimeStart;
-
-			if (timelimitintics > 0)
+			if ((gamemap >= 1 && gamemap <= 73) // Supported Co-op maps
+			|| (gamemap >= 280 && gamemap <= 288) // Supported CTF maps
+			|| (gamemap >= 532 && gamemap <= 543)) // Supported Match maps
 			{
-				const time_t mapTimeEnd = mapTimeStart + ((timelimitintics + 1) / TICRATE);
-				discordPresence.endTimestamp = mapTimeEnd;
+				snprintf(mapimg, 8, "%s", G_BuildMapName(gamemap));
+				strlwr(mapimg);
+				discordPresence.largeImageKey = mapimg; // Map image
+			}
+			else
+			{
+				discordPresence.largeImageKey = "mapcustom";
+				discordPresence.largeImageText = "Playing a Custom Map";
+				discordPresence.details = mapname;
+				snprintf(mapname, 48, "%s", G_BuildMapTitle(gamemap));
+			}
+
+			if (gamestate == GS_LEVEL && Playing())
+			{
+				const time_t currentTime = time(NULL);
+				const time_t mapTimeStart = currentTime - (leveltime / TICRATE);
+
+				discordPresence.startTimestamp = mapTimeStart;
+
+				if (timelimitintics > 0)
+				{
+					const time_t mapTimeEnd = mapTimeStart + ((timelimitintics + 1) / TICRATE);
+					discordPresence.endTimestamp = mapTimeEnd;
+				}
 			}
 		}
-	}
-	else
-	{
-		discordPresence.largeImageKey = "misctitle";
-		discordPresence.largeImageText = "Title Screen";
+		else
+		{
+			discordPresence.largeImageKey = "misctitle";
+			discordPresence.largeImageText = "Title Screen";
+		}
 	}
 
 	// Character info
-	if (cv_discordshowchar.value && Playing() && playeringame[consoleplayer] && !players[consoleplayer].spectator)
+	if ((cv_discordshowonstatus.value == 0 || cv_discordshowonstatus.value == 1) && Playing() && playeringame[consoleplayer] && !players[consoleplayer].spectator)
 	{
 
         // Supported skin names
@@ -696,22 +695,21 @@ void DRPC_UpdatePresence(void)
 		};
 
 		boolean customChar = true;
-		boolean sonicAndTails = false;
+		boolean playerAndBot = false;
 		UINT8 checkSkin = 0;
 
 		if (!netgame)
 		{
-			if (players[1].bot && !strcmp(skins[players[consoleplayer].skin].name, "sonic"))
+			if (players[1].bot) //&& !strcmp(skins[players[consoleplayer].skin].name, "sonic"))
 			{
 					snprintf(charimg, 21, "charsonictails");
-					snprintf(charname, 28, "Characters: Sonic & Tails");
+					snprintf(charname, 28, "Playing As: %s & Tails", skins[players[consoleplayer].skin].realname);
 					discordPresence.smallImageKey = charimg;
-					sonicAndTails = true;
+					playerAndBot = true;
 					customChar = false;
 			}
 		}
-
-		if (!sonicAndTails)
+		if (!playerAndBot)
 		{
 			// Character image
 			while (supportedSkins[checkSkin] != NULL)
@@ -727,8 +725,7 @@ void DRPC_UpdatePresence(void)
 				checkSkin++;
 			}
 		}
-
-		if (customChar == true)
+		if (customChar)
 		{
 			INT32 i;
 			boolean notfound = true;
@@ -750,11 +747,11 @@ void DRPC_UpdatePresence(void)
 				discordPresence.smallImageKey = "charcustom";
 		}
 
-		snprintf(charname, 28, "Character: %s", skins[players[consoleplayer].skin].realname);
+		snprintf(charname, 28, "Playing As: %s", skins[players[consoleplayer].skin].realname);
 		discordPresence.smallImageText = charname; // Character name
 	}
 
-	if (joinSecretSet == false)
+	if (!joinSecretSet)
 	{
 		// Not able to join? Flush the request list, if it exists.
 		DRPC_EmptyRequests();
