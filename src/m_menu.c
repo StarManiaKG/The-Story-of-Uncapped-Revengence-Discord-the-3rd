@@ -1714,6 +1714,7 @@ static menuitem_t OP_ServerOptionsMenu[] =
 	{IT_STRING | IT_CVAR,    NULL, "Attempts to resynchronise",        &cv_resynchattempts,    271},
 
 	{IT_STRING | IT_CVAR,    NULL, "Show IP Address of Joiners",       &cv_showjoinaddress,    276},
+	{IT_STRING | IT_CVAR,    NULL, "Notify Host of Connecters",        &cv_noticedownload,     281},
 #endif
 };
 

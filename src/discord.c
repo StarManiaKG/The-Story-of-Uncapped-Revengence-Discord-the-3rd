@@ -1,4 +1,4 @@
-// SONIC ROBO BLAST 2 KART
+// SONIC ROBO BLAST 2 //WITH DISCORD RPC BROUGHT TO YOU BY THE KART KREW
 //-----------------------------------------------------------------------------
 // Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
 // Copyright (C) 2018-2020 by Kart Krew.
@@ -40,7 +40,7 @@
 // length of IP strings
 #define IP_SIZE 21
 
-static CV_PossibleValue_t discordstatustype_cons_t[] = {{0, "All"}, {1, "Characters"}, {2, "Continues"}, {3, "Emeralds"}, {4, "Emblems"}, {5, "Levels"}, {6, "None"}, {0, NULL}};
+static CV_PossibleValue_t discordstatustype_cons_t[] = {{0, "All"}, {1, "Characters"}, {2, "Continues"}, {3, "Emeralds"}, {4, "Emblems"}, {5, "Levels"}, {6, "Gametype"}, {7, "None"}, {0, NULL}};
 consvar_t cv_discordrp = CVAR_INIT ("discordrp", "On", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
 consvar_t cv_discordstreamer = CVAR_INIT ("discordstreamer", "Off", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
 consvar_t cv_discordasks = CVAR_INIT ("discordasks", "Yes", CV_SAVE|CV_CALL, CV_YesNo, DRPC_UpdatePresence);
@@ -491,6 +491,8 @@ void DRPC_UpdatePresence(void)
 	char charimg[4+SKINNAMESIZE+1];
 	char charname[11+SKINNAMESIZE+1];
 
+	char botname[11+SKINNAMESIZE+1];
+
 	boolean joinSecretSet = false;
 
 	DiscordRichPresence discordPresence;
@@ -509,7 +511,7 @@ void DRPC_UpdatePresence(void)
 	// This way, we can use the invite feature in-dev, but not have snoopers seeing any potential secrets! :P
 	discordPresence.largeImageKey = "miscdevelop";
 	discordPresence.largeImageText = "No peeking!";
-	discordPresence.state = "Testing the game";
+	discordPresence.state = "Work (is) In Progress!";
 
 	DRPC_EmptyRequests();
 	Discord_UpdatePresence(&discordPresence);
@@ -553,6 +555,29 @@ void DRPC_UpdatePresence(void)
 		{
 			discordPresence.state = "In a Netgame";
 		}
+		if (cv_discordshowonstatus.value == 0 || cv_discordshowonstatus.value == 6)
+		{
+			//mapheaderinfo[newmapnum-1]->typeoflevel & G_TOLFlag(newgametype)
+			if (gametype == GT_COOP)
+				discordPresence.details = "Co-Op";
+			else if (gametype == GT_COMPETITION)
+				discordPresence.details = "Competiton";
+			else if (gametype == GT_RACE)
+				discordPresence.details = "Race";
+			else if (gametype == GT_MATCH)
+				discordPresence.details = "Match";
+			else if (gametype == GT_TEAMMATCH)
+				//discordPresence.details = "Gametype: Team (Death) Match";
+				discordPresence.details = "Team Match";
+			else if (gametype == GT_HIDEANDSEEK)
+				discordPresence.details = "Hide and Seek";
+			else if (gametype == GT_HIDEANDSEEK)
+				discordPresence.details = "Tag";
+			else if (gametype == GT_CTF)
+				discordPresence.details = "Capture the Flag";
+			else
+				discordPresence.details = "Custom Gamemode";
+		}
 
 		discordPresence.partyId = server_context; // Thanks, whoever gave us Mumble support, for implementing the EXACT thing Discord wanted for this field!
 		discordPresence.partySize = D_NumPlayers(); // Players in server
@@ -569,7 +594,17 @@ void DRPC_UpdatePresence(void)
 		if (Playing())
 		{
 			UINT8 emeraldCount = 0;
-			discordPresence.state = "SinglePlayer";
+			if (cv_discordshowonstatus.value == 0 || cv_discordshowonstatus.value == 6)
+			{
+				if (!splitscreen)
+				{
+					discordPresence.state = "Single Player";
+				}
+				else
+				{
+					discordPresence.state = "Splitscreen";
+				}
+			}
 			
 			if (cv_discordshowonstatus.value == 0 || cv_discordshowonstatus.value == 4)
 			{
@@ -698,16 +733,22 @@ void DRPC_UpdatePresence(void)
 		boolean playerAndBot = false;
 		UINT8 checkSkin = 0;
 
-		if (!netgame)
+		if (!netgame && botingame)
 		{
-			if (players[1].bot) //&& !strcmp(skins[players[consoleplayer].skin].name, "sonic"))
+			if ((strcmp(skins[players[consoleplayer].skin].name, "sonic")) && (strcmp(skins[players[displayplayer].bot].name, "tails")))
 			{
-					snprintf(charimg, 21, "charsonictails");
-					snprintf(charname, 28, "Playing As: %s & Tails", skins[players[consoleplayer].skin].realname);
-					discordPresence.smallImageKey = charimg;
-					playerAndBot = true;
-					customChar = false;
+				snprintf(charimg, 21, "charsonictails");
+				snprintf(charname, 28, "Playing As: %s, With Tails", skins[players[consoleplayer].skin].realname);
 			}
+			else
+			{
+				snprintf(charname, 28, "Playing As: %s, ", skins[players[consoleplayer].skin].realname);
+				snprintf(botname, 28, "With %s", skins[players[displayplayer].skin].realname);
+			}
+			
+			discordPresence.smallImageKey = charimg;
+			playerAndBot = true;
+			customChar = false;
 		}
 		if (!playerAndBot)
 		{
