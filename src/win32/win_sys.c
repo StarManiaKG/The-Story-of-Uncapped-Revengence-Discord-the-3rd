@@ -488,7 +488,7 @@ static void signal_handler(int num)
 			sigmsg = "floating point exception";
 			break;
 		case SIGSEGV:
-			sigmsg = "segment violation";
+			sigmsg = "segment violation"; //sev
 			break;
 		case SIGTERM:
 			sigmsg = "software termination signal from kill";
@@ -661,6 +661,10 @@ void I_Error(const char *error, ...)
 	D_QuitNetGame();
 	CL_AbortDownloadResume();
 	M_FreePlayerSetupColors();
+	
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 
 	// shutdown everything that was started
 	I_ShutdownSystem();
@@ -759,6 +763,10 @@ void I_Quit(void)
 	CL_AbortDownloadResume();
 
 	M_FreePlayerSetupColors();
+
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 
 	// shutdown everything that was started
 	I_ShutdownSystem();
