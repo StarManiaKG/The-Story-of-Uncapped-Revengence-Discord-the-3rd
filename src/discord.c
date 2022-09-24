@@ -52,12 +52,14 @@ discordRequest_t *discordRequestList = NULL;
 
 static char self_ip[IP_SIZE+1];
 
+/*
 #ifdef HAVE_CURL 
 #define DISCORD_CHARLIST_URL "http://srb2.mooo.com/SRB2RPC/customcharlist"
 static void DRPC_GetCustomCharList(void *ptr);
 static const char *customCharList[218];
 static INT32 extraCharCount = 0;
 #endif
+*/
 static boolean customCharSupported = true;
 
 /*--------------------------------------------------
@@ -342,6 +344,7 @@ static size_t WriteToArray(void *contents, size_t size, size_t nmemb, void *user
 	return realsize;
 }
 
+/*
 static void DRPC_GetCustomCharList(void* ptr)
 {
 	CURL *curl;
@@ -384,6 +387,7 @@ static void DRPC_GetCustomCharList(void* ptr)
 	customCharSupported = true;
 }
 #endif
+*/
 
 /*--------------------------------------------------
 	void DRPC_Init(void)
@@ -394,9 +398,11 @@ void DRPC_Init(void)
 {
 	DiscordEventHandlers handlers;
 
+/*
 #ifdef HAVE_CURL 
 	I_spawn_thread("get-custom-char-list", &DRPC_GetCustomCharList, NULL);
 #endif
+*/
 
 	memset(&handlers, 0, sizeof(handlers));
 	handlers.ready = DRPC_HandleReady;
@@ -559,24 +565,28 @@ void DRPC_UpdatePresence(void)
 		{
 			//mapheaderinfo[newmapnum-1]->typeoflevel & G_TOLFlag(newgametype)
 			if (gametype == GT_COOP)
-				discordPresence.details = "Co-Op";
+				discordPresence.details = "Playing Co-op";
 			else if (gametype == GT_COMPETITION)
-				discordPresence.details = "Competiton";
+				discordPresence.details = "Playing Competiton";
 			else if (gametype == GT_RACE)
-				discordPresence.details = "Race";
+				discordPresence.details = "Playing Race";
 			else if (gametype == GT_MATCH)
-				discordPresence.details = "Match";
+				discordPresence.details = "Playing Match";
 			else if (gametype == GT_TEAMMATCH)
-				//discordPresence.details = "Gametype: Team (Death) Match";
-				discordPresence.details = "Team Match";
+			{
+				if (cv_discordstatusmemes.value == 1)
+					discordPresence.details = "Playing a Team Fortress 2 Match";
+				else
+					discordPresence.details = "Playing Team Match";
+			}
 			else if (gametype == GT_HIDEANDSEEK)
-				discordPresence.details = "Hide and Seek";
-			else if (gametype == GT_HIDEANDSEEK)
-				discordPresence.details = "Tag";
+				discordPresence.details = "Playing Hide and Seek";
+			else if (gametype == GT_TAG)
+				discordPresence.details = "Playing Tag";
 			else if (gametype == GT_CTF)
-				discordPresence.details = "Capture the Flag";
+				discordPresence.details = "Playing Capture the Flag";
 			else
-				discordPresence.details = "Custom Gamemode";
+				discordPresence.details = "Playing a Custom Gamemode";
 		}
 
 		discordPresence.partyId = server_context; // Thanks, whoever gave us Mumble support, for implementing the EXACT thing Discord wanted for this field!
@@ -602,7 +612,7 @@ void DRPC_UpdatePresence(void)
 				}
 				else
 				{
-					discordPresence.state = "Splitscreen";
+					discordPresence.state = "Split Screen";
 				}
 			}
 			
@@ -619,20 +629,25 @@ void DRPC_UpdatePresence(void)
 					for (INT32 i = 0; i < 7; i++) // thanks Monster Iestyn for this math
 						if (emeralds & (1<<i))
 							emeraldCount += 1;
-
-					if (emeraldCount < 7 && emeraldCount != 3 && emeraldCount != 4)
+					if (cv_discordstatusmemes.value != 1)
 						strlcat(detailstr, va(", %d Emeralds", emeraldCount), 64);
-					else if (emeraldCount == 3)
-						// Trivia: the subtitles in Shadow the Hedgehog emphasized "fourth",
-						// even though Jason Griffith emphasized "damn" in this sentence
-						strlcat(detailstr, ", %d Emeralds; Where's That DAMN FOURTH?)", 64);
-					else if (emeraldCount == 4)
-						strlcat(detailstr, ", %d Emeralds; Found that DAMN FOURTH?)", 64);
 					else
+					{
+						if (emeraldCount < 7 && emeraldCount != 3 && emeraldCount != 4)
+							strlcat(detailstr, va(", %d Emeralds", emeraldCount), 64);
+						else if (emeraldCount == 3)
+							// Trivia: the subtitles in Shadow the Hedgehog emphasized "fourth",
+							// even though Jason Griffith emphasized "damn" in this sentence
+							strlcat(detailstr, ", %d Emeralds; Where's That DAMN FOURTH?)", 64);
+						else if (emeraldCount == 4)
+							strlcat(detailstr, ", %d Emeralds; Found that DAMN FOURTH)", 64);
+					}
+
+					if (emeralds == 7)
 						strlcat(detailstr, ", All 7 Emeralds Obtained!", 64);
 				}
 				else
-					strlcat(detailstr, ", No Emeralds?", 64);
+					strlcat(detailstr, ", No Emeralds", 64);
 				discordPresence.details = detailstr;
 			}
 		}
@@ -657,7 +672,12 @@ void DRPC_UpdatePresence(void)
 	}
 	if (cv_discordshowonstatus.value == 0 || cv_discordshowonstatus.value == 5)
 	{
-		if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) // Map info
+		if (gamestate == GS_INTRO)
+		{
+			discordPresence.largeImageKey = "misctitle";
+			discordPresence.largeImageText = "Watching the Intro";
+		}
+		else if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) // Map info
 			&& !(demoplayback && titledemo))
 		{
 			if ((gamemap >= 1 && gamemap <= 73) // Supported Co-op maps
@@ -690,10 +710,15 @@ void DRPC_UpdatePresence(void)
 				}
 			}
 		}
-		else
+		else if (gamestate == GS_LEVEL)
 		{
 			discordPresence.largeImageKey = "misctitle";
 			discordPresence.largeImageText = "Title Screen";
+		}
+		else if (gamestate == GS_EVALUATION)
+		{
+			discordPresence.largeImageKey = "misctitle";
+			discordPresence.largeImageText = "Evaluating Results";
 		}
 	}
 
@@ -747,6 +772,7 @@ void DRPC_UpdatePresence(void)
 			}
 			
 			discordPresence.smallImageKey = charimg;
+			discordPresence.smallImageText = charname, botname; // Character name, Bot name
 			playerAndBot = true;
 			customChar = false;
 		}

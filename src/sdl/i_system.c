@@ -2450,6 +2450,9 @@ void I_Quit(void)
 	D_QuitNetGame();
 	CL_AbortDownloadResume();
 	M_FreePlayerSetupColors();
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 	I_ShutdownMusic();
 	I_ShutdownSound();
 	// use this for 1.28 19990220 by Kin
