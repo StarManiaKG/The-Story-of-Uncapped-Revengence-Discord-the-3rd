@@ -56,10 +56,10 @@ static char self_ip[IP_SIZE+1];
 #ifdef HAVE_CURL 
 #define DISCORD_CHARLIST_URL "http://srb2.mooo.com/SRB2RPC/customcharlist"
 static void DRPC_GetCustomCharList(void *ptr);
-static const char *customCharList[218];
-static INT32 extraCharCount = 0;
 #endif
 */
+static INT32 extraCharCount = 0; //belongs in above
+static const char *customCharList[218]; //same as above
 static boolean customCharSupported = true;
 
 /*--------------------------------------------------
