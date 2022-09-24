@@ -3648,6 +3648,8 @@ void D_QuitNetGame(void)
 	if (!netgame || !netbuffer)
 		return;
 
+	
+
 	DEBFILE("===========================================================================\n"
 	        "                  Quitting Game, closing connection\n"
 	        "===========================================================================\n");
@@ -3833,7 +3835,6 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 	if (!rejoined)
 		LUA_HookInt(newplayernum, HOOK(PlayerJoin));
-		//LUAh_PlayerJoin(newplayernum);
 #ifdef HAVE_DISCORDRPC
     	DRPC_UpdatePresence();
 #endif
