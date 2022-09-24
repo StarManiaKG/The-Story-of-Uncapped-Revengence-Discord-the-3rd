@@ -386,8 +386,8 @@ static void DRPC_GetCustomCharList(void* ptr)
 	free(data.memory);
 	customCharSupported = true;
 }
-#endif
 */
+#endif
 
 /*--------------------------------------------------
 	void DRPC_Init(void)
