@@ -691,9 +691,18 @@ void DRPC_UpdatePresence(void)
 			else
 			{
 				discordPresence.largeImageKey = "mapcustom";
-				discordPresence.largeImageText = "Playing a Custom Map";
-				discordPresence.details = mapname;
+			}
+			
+			if (mapheaderinfo[gamemap - 1]->menuflags & LF2_HIDEINMENU)
+			{
+				// Hell map, hide the name
+				discordPresence.largeImageText = "Map: ???";
+			}
+			else
+			{
+				// Map name on tool tip
 				snprintf(mapname, 48, "%s", G_BuildMapTitle(gamemap));
+				discordPresence.largeImageText = mapname;
 			}
 
 			if (gamestate == GS_LEVEL && Playing())
@@ -751,6 +760,7 @@ void DRPC_UpdatePresence(void)
 			"tailsdoll",
 			"metalknuckles",
 			"smiles",
+			"whisper",
 			NULL
 		};
 
