@@ -4062,6 +4062,9 @@ static void P_RunSpecialStageWipe(void)
 		lastwipetic = nowtime;
 		if (moviemode) // make sure we save frames for the white hold too
 			M_SaveFrame();
+		
+		//stay alive please
+		NetKeepAlive();
 	}
 }
 
