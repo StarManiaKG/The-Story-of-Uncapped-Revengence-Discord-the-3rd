@@ -531,7 +531,7 @@ void DRPC_UpdatePresence(void)
 				}
 				else
 				{
-					if (!wusmemes.value)
+					if (!cv_discordstatusmemes.value)
 						strlcat(detailstr, ", No Emeralds", 64);
 					else
 						strlcat(detailstr, ", NO EMERALDS?", 64);
