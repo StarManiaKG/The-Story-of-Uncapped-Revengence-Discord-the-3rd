@@ -1714,7 +1714,7 @@ static void CL_ReloadReceivedSavegame(void)
 #ifndef NONET
 static void SendAskInfo(INT32 node)
 {
-	const tic_t asktime;
+	tic_t asktime;
 
 	if (node != 0 && node != BROADCASTADDR &&
 			cv_rendezvousserver.string[0])
