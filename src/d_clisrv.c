@@ -1714,8 +1714,7 @@ static void CL_ReloadReceivedSavegame(void)
 #ifndef NONET
 static void SendAskInfo(INT32 node)
 {
-	const tic_t asktime = I_GetTime();
-	//tic_t asktime;
+	const tic_t asktime;
 
 	if (node != 0 && node != BROADCASTADDR &&
 			cv_rendezvousserver.string[0])
@@ -1736,8 +1735,6 @@ static void SendAskInfo(INT32 node)
 
 serverelem_t serverlist[MAXSERVERLIST];
 UINT32 serverlistcount = 0;
-
-
 
 #define FORCECLOSE 0x8000
 
