@@ -209,7 +209,7 @@ menu_t MessageDef;
 
 #ifdef HAVE_DISCORDRPC
 menu_t MISC_DiscordRequestsDef;
-static void M_CustomDiscordStatus(void)
+static void M_CustomDiscordStatus(void);
 static void M_HandleDiscordRequests(INT32 choice);
 static void M_DrawDiscordRequests(void);
 #endif
@@ -13707,6 +13707,7 @@ static void M_QuitSRB2(INT32 choice)
 #ifdef HAVE_DISCORDRPC
 DiscordRichPresence discordPresence;
 memset(&discordPresence, 0, sizeof(discordPresence));
+
 static const tic_t confirmLength = 3*TICRATE/4;
 static tic_t confirmDelay = 0;
 static boolean confirmAccept = false;
