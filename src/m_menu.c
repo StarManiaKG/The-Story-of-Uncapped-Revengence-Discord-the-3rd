@@ -13720,8 +13720,6 @@ static void M_CustomDiscordStatus(void)
 		stringname = cv_discordstatusstring.string;
 		discordPresence.details = stringname;
 	}
-
-	return;
 }
 
 static void M_HandleDiscordRequests(INT32 choice)

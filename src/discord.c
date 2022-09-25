@@ -757,8 +757,8 @@ void DRPC_UpdatePresence(void)
 				snprintf(botname, 28, ", With %s", skins[players[secondarydisplayplayer].skin].realname);
 			}
 			
+			strncat(charname, botname, 80);
 			discordPresence.smallImageKey = charimg; // Character image
-			strncat(charname, botname, 80)
 			discordPresence.smallImageText = charname; // Character name, Bot name
 		}
 		else if (!botingame)
