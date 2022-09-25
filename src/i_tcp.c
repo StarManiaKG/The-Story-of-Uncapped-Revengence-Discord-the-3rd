@@ -1289,7 +1289,7 @@ static void rendezvous(int size)
 
 	mysockaddr_t rzv;
 
-	if (SOCK_GetAddr(&rzv.ip4, host, (port ? port : "5029"), false)) //7777
+	if (SOCK_GetAddr(&rzv.ip4, host, (port ? port : "7777"), false))
 	{
 		holepunchpacket->magic = hole_punch_magic;
 		sendto(mysockets[0], doomcom->data, size, 0, &rzv.any, sizeof rzv.ip4);
