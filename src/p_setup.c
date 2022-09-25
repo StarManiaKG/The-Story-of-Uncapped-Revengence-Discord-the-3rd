@@ -4026,8 +4026,6 @@ static void P_RunSpecialStageWipe(void)
 	tic_t endtime = starttime + (3*TICRATE)/2;
 	tic_t nowtime;
 
-	INT32 node;
-
 	S_StartSound(NULL, sfx_s3kaf);
 
 	// Fade music! Time it to S3KAF: 0.25 seconds is snappy.
