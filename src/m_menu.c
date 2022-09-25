@@ -1653,8 +1653,8 @@ static menuitem_t OP_DiscordOptionsMenu[] =
 
 	{IT_STRING | IT_CVAR,		NULL, "Allow Ask To Join",		&cv_discordasks,		 60},
 	{IT_STRING | IT_CVAR,		NULL, "Allow Invites",			&cv_discordinvites,		 70},
-	{IT_STRING | IT_CVAR,		NULL, "What to Show on Status",		&cv_discordshowonstatus,		 80},
-	{IT_STRING | IT_CVAR | IT_CV_STRING,		
+	{IT_STRING | IT_CVAR,		NULL, "Show on Status",			&cv_discordshowonstatus, 80},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,	
 								NULL, "Custom Status",				M_CustomDiscordStatus,		 90},
 	{IT_STRING | IT_CVAR,		NULL, "Show Memes on Status",		&cv_discordstatusmemes,		100},
 };
@@ -1717,7 +1717,7 @@ static menuitem_t OP_ServerOptionsMenu[] =
 	{IT_STRING | IT_CVAR,    NULL, "Attempts to resynchronise",        &cv_resynchattempts,    271},
 
 	{IT_STRING | IT_CVAR,    NULL, "Show IP Address of Joiners",       &cv_showjoinaddress,    276},
-	{IT_STRING | IT_CVAR,    NULL, "Notify Host of Connecters",        &cv_noticedownload,     281},
+	{IT_STRING | IT_CVAR,    NULL, "Show Connecting Players",          &cv_noticedownload,     281},
 #endif
 };
 
@@ -13704,23 +13704,25 @@ static void M_QuitSRB2(INT32 choice)
 	(void)choice;
 	M_StartMessage(quitmsg[M_RandomKey(NUM_QUITMESSAGES)], M_QuitResponse, MM_YESNO);
 }
-#ifdef HAVE_DISCORDRPC
 
+#ifdef HAVE_DISCORDRPC
 static const tic_t confirmLength = 3*TICRATE/4;
 static tic_t confirmDelay = 0;
 static boolean confirmAccept = false;
 
 static void M_CustomDiscordStatus(void)
 {
-	DRPC_Init();
-	
+	DiscordRichPresence discordPresence;
+	memset(&discordPresence, 0, sizeof(discordPresence));
+
+	if (!cv_customdiscordstatus.string)
+		cv_customdiscordstatus.string = "I'm Playing Sonic Robo Blast 2!";
+
 	if (cv_discordshowonstatus.value == 7)
 	{
-		if (!cv_discordstatusstring.string)
-			cv_discordstatusstring.string = "I'm Playing Sonic Robo Blast 2!";
-
-		if (cv_discordstatusstring.string)
-			discordPresence.details = cv_discordstatusstring.string;
+		if (cv_customdiscordstatus.string)
+			discordPresence.details = cv_customdiscordstatus.string;
+			break;
 	}
 }
 
