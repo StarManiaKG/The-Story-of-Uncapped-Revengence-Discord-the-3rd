@@ -625,9 +625,11 @@ void DRPC_UpdatePresence(void)
 		else if (demoplayback && !titledemo)
 			discordPresence.state = "Watching Replays";
 		else
+		{
 			discordPresence.largeImageKey = "misctitle";
 			discordPresence.largeImageText = "Title Screen";
 			discordPresence.state = "Main Menu";
+		}
 	}
 
 	// Gametype info
@@ -720,7 +722,7 @@ void DRPC_UpdatePresence(void)
 		};
 
         // Supported Skin Pictures
-		static const char *supportedCustomSkins[] = {
+		static const char *customSkins[] = {
 			"adventuresonic",
 			"shadow",
 			"skip",
@@ -740,11 +742,6 @@ void DRPC_UpdatePresence(void)
 			NULL
 		};
 
-		boolean customChar = false;
-		boolean playerAndBot = false;
-
-		
-
 		if (!netgame && botingame)
 		{
 			if ((strcmp(skins[players[consoleplayer].skin].name, "sonic")) && (strcmp(skins[players[secondarydisplayplayer].skin].name, "tails")))
@@ -759,48 +756,22 @@ void DRPC_UpdatePresence(void)
 				snprintf(botname, 28, "With %s", skins[players[secondarydisplayplayer].skin].realname);
 			}
 			
-			discordPresence.smallImageKey = charimg;
+			discordPresence.smallImageKey = charimg; // Character image
 			discordPresence.smallImageText = charname, botname; // Character name, Bot name
-			playerAndBot = true;
 		}
 		else if (!botingame)
 		{
-			// Character image
-			if (strcmp(skins[players[consoleplayer].skin].name, baseSkins[skins[players[consoleplayer].skin].name]))
+			snprintf(charname, 28, "Playing As: %s", skins[players[consoleplayer].skin].realname);
+			discordPresence.smallImageText = charname; // Character name
+
+			// Character images
+			if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[skins[players[consoleplayer].skin].name])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[skins[players[consoleplayer].skin].name])))
 			{
-				if (!strcmp(skins[players[consoleplayer].skin].name, supportedCustomSkins[checkSkin]))
-				{
-					snprintf(charimg, 21, "char%s", supportedCustomSkins[checkSkin]);
-					discordPresence.smallImageKey = charimg;
-					customChar = false;
-					break;
-				}
-				
-				snprintf(charname, 28, "Playing As: %s", skins[players[consoleplayer].skin].realname);
-				discordPresence.smallImageText = charname; // Character name
-
-				checkSkin++;
+				snprintf(charimg, 21, "char%s", customSkins[skins[players[consoleplayer].skin].name]);
+				discordPresence.smallImageKey = charimg;
 			}
-		}
-		if (customChar)
-		{
-			INT32 i;
-			boolean notfound = true;
-
-			// Custom Character image
-			if (customCharSupported)
-				for (i = 0; i < extraCharCount; i++)
-				{
-					if (!strcmp(skins[players[consoleplayer].skin].name, customCharList[i]))
-					{
-						snprintf(charimg, 21, "char%s", customCharList[i]);
-						discordPresence.smallImageKey = charimg;
-						notfound = false;
-						break;
-					}
-				}
-
-			if (notfound) // Use the custom character icon!
+			// Unsupported Character images
+			else
 				discordPresence.smallImageKey = "charcustom";
 		}
 	}
