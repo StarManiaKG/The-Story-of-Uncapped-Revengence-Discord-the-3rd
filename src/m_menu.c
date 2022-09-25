@@ -1655,7 +1655,7 @@ static menuitem_t OP_DiscordOptionsMenu[] =
 	{IT_STRING | IT_CVAR,		NULL, "Show on Status",			&cv_discordshowonstatus, 80},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,	
 								NULL, "Custom Status",				&cv_customdiscordstatus,	90},
-	{IT_STRING | IT_CVAR,		NULL, "Show Memes on Status",		&cv_discordstatusmemes,		100},
+	{IT_STRING | IT_CVAR,		NULL, "Show Memes on Status",		&cv_discordstatusmemes,		110},
 };
 #endif
 static menuitem_t OP_ServerOptionsMenu[] =
@@ -1710,6 +1710,7 @@ static menuitem_t OP_ServerOptionsMenu[] =
 #ifndef NONET
 	{IT_HEADER, NULL, "Advanced", NULL, 230},
 	{IT_STRING | IT_CVAR | IT_CV_STRING, NULL, "Master server",        &cv_masterserver,       236},
+
 	{IT_STRING | IT_CVAR | IT_CV_STRING, NULL, "Holepunch server",     &cv_rendezvousserver,   251},
 
 	{IT_STRING | IT_CVAR,    NULL, "Join delay",                       &cv_joindelay,          266},
