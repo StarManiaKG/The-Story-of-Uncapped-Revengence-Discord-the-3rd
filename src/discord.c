@@ -530,9 +530,8 @@ void DRPC_UpdatePresence(void)
 
 	// Server info
 	if (dedicated)
-	{
-		return;
-	}
+		discordPresence.details = "Hosting a Dedicated Server";
+		
 	if (netgame)
 	{
 		if (DRPC_InvitesAreAllowed() == true)
