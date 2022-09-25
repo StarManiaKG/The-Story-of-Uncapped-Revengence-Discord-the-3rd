@@ -5465,11 +5465,13 @@ static void HandleNodeTimeouts(void)
 }
 
 // Keep the network alive while not advancing tics!
-void NetKeepAlive(INT32 node)
+void NetKeepAlive(void)
 {
+
 	static tic_t gametime = 0;
 	tic_t nowtime;
 	INT32 realtics;
+	INT32 node;
 
 	nowtime = I_GetTime();
 	realtics = nowtime - gametime;
