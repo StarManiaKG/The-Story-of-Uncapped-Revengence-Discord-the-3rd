@@ -2726,7 +2726,8 @@ static void Command_connect(void)
 
 	if (Playing() || titledemo)
 	{
-		CONS_Printf(M_GetText("You cannot connect while in a game. End this game first.\n"));
+		//CONS_Printf(M_GetText("You cannot connect while in a game. End this game first.\n"));
+		Command_ExitGame_f();
 		return;
 	}
 
