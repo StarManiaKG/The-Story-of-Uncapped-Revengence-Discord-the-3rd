@@ -611,7 +611,7 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu)
 		if (moviemode)
 			M_SaveFrame();
 		
-		NetKeepAlive(); //no timeouts here
+		NetUpdate(); //no timeouts here
 	}
 
 	WipeInAction = false;

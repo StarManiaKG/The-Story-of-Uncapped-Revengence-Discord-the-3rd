@@ -4064,7 +4064,7 @@ static void P_RunSpecialStageWipe(void)
 			M_SaveFrame();
 		
 		//stay alive please
-		NetKeepAlive();
+		NetUpdate();
 	}
 }
 
