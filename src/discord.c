@@ -752,12 +752,12 @@ void DRPC_UpdatePresence(void)
 			else
 			{
 				snprintf(charimg, 21, "char%s", skins[players[consoleplayer].skin].name);
-				snprintf(charname, 28, "Playing As: %s, ", skins[players[consoleplayer].skin].realname);
-				snprintf(botname, 28, "With %s", skins[players[secondarydisplayplayer].skin].realname);
+				snprintf(charname, 28, "Playing As: %s", skins[players[consoleplayer].skin].realname);
+				snprintf(botname, 28, ", With %s", skins[players[secondarydisplayplayer].skin].realname);
 			}
 			
 			discordPresence.smallImageKey = charimg; // Character image
-			discordPresence.smallImageText = charname, botname; // Character name, Bot name
+			discordPresence.smallImageText = charname + botname; // Character name, Bot name
 		}
 		else if (!botingame)
 		{
