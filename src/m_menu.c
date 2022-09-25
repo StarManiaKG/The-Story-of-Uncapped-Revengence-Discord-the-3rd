@@ -209,6 +209,7 @@ menu_t MessageDef;
 
 #ifdef HAVE_DISCORDRPC
 menu_t MISC_DiscordRequestsDef;
+static void M_CustomDiscordStatus(void)
 static void M_HandleDiscordRequests(INT32 choice);
 static void M_DrawDiscordRequests(void);
 #endif
@@ -1653,7 +1654,8 @@ static menuitem_t OP_DiscordOptionsMenu[] =
 	{IT_STRING | IT_CVAR,		NULL, "Allow Ask To Join",		&cv_discordasks,		 60},
 	{IT_STRING | IT_CVAR,		NULL, "Allow Invites",			&cv_discordinvites,		 70},
 	{IT_STRING | IT_CVAR,		NULL, "What to Show on Status",		&cv_discordshowonstatus,		 80},
-	{IT_STRING | IT_CVAR,		NULL, "Show Memes on Status",		&cv_discordstatusmemes,		 	 90},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,		NULL, "Custom Status",		M_CustomDiscordStatus,		 90},
+	{IT_STRING | IT_CVAR,		NULL, "Show Memes on Status",		&cv_discordstatusmemes,		 	 100},
 };
 #endif
 static menuitem_t OP_ServerOptionsMenu[] =
@@ -13702,9 +13704,22 @@ static void M_QuitSRB2(INT32 choice)
 	M_StartMessage(quitmsg[M_RandomKey(NUM_QUITMESSAGES)], M_QuitResponse, MM_YESNO);
 }
 #ifdef HAVE_DISCORDRPC
+DiscordRichPresence discordPresence;
+memset(&discordPresence, 0, sizeof(discordPresence));
+
+const char *stringname = "I'm Playing Sonic Robo Blast 2!";
 static const tic_t confirmLength = 3*TICRATE/4;
 static tic_t confirmDelay = 0;
 static boolean confirmAccept = false;
+
+static void M_CustomDiscordStatus(void)
+{
+	if (cv_discordshowonstatus.value == 7 && *cv_addons_folder.string != '\0')
+	{
+		stringname = cv_discordshowonstatus.string;
+		discordPresence.details = stringname;
+	}
+}
 
 static void M_HandleDiscordRequests(INT32 choice)
 {
