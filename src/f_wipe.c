@@ -526,7 +526,7 @@ boolean F_TryColormapFade(UINT8 wipecolor)
 /** After setting up the screens you want to wipe,
   * calling this will do a 'typical' wipe.
   */
-void F_RunWipe(UINT8 wipetype, boolean drawMenu)
+void F_RunWipe(UINT8 wipetype, INT32 node, boolean drawMenu)
 {
 #ifdef NOWIPE
 	(void)wipetype;
@@ -534,6 +534,7 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu)
 #else
 	tic_t nowtime;
 	UINT8 wipeframe = 0;
+	INT32 node;
 	fademask_t *fmask;
 
 	if (!paldiv)
@@ -611,7 +612,7 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu)
 		if (moviemode)
 			M_SaveFrame();
 		
-		NetKeepAlive(); //no timeouts here
+		NetKeepAlive(node); //no timeouts here
 	}
 
 	WipeInAction = false;
