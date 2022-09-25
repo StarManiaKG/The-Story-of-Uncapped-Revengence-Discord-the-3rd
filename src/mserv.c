@@ -543,7 +543,7 @@ Update_parameters (void)
 }
 
 static void 
-Server_OnChange (void)
+MasterServer_OnChange (void)
 {
 #ifdef MASTERSERVER
 	UnregisterServer();
