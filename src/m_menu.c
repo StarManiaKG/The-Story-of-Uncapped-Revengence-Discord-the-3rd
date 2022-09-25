@@ -209,7 +209,6 @@ menu_t MessageDef;
 
 #ifdef HAVE_DISCORDRPC
 menu_t MISC_DiscordRequestsDef;
-static void M_CustomDiscordStatus(void);
 static void M_HandleDiscordRequests(INT32 choice);
 static void M_DrawDiscordRequests(void);
 #endif
@@ -13709,21 +13708,6 @@ static void M_QuitSRB2(INT32 choice)
 static const tic_t confirmLength = 3*TICRATE/4;
 static tic_t confirmDelay = 0;
 static boolean confirmAccept = false;
-
-static void M_CustomDiscordStatus(void)
-{
-	DiscordRichPresence discordPresence;
-	memset(&discordPresence, 0, sizeof(discordPresence));
-
-	if (!cv_customdiscordstatus.string)
-		cv_customdiscordstatus.string = "I'm Playing Sonic Robo Blast 2!";
-
-	if (cv_discordshowonstatus.value == 7)
-	{
-		if (cv_customdiscordstatus.string)
-			discordPresence.details = cv_customdiscordstatus.string;
-	}
-}
 
 static void M_HandleDiscordRequests(INT32 choice)
 {
