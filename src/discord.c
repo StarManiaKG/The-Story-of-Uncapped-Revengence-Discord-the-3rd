@@ -758,7 +758,8 @@ void DRPC_UpdatePresence(void)
 			}
 			
 			discordPresence.smallImageKey = charimg; // Character image
-			discordPresence.smallImageText = charname + botname; // Character name, Bot name
+			strncat(charname, botname, 80)
+			discordPresence.smallImageText = charname; // Character name, Bot name
 		}
 		else if (!botingame)
 		{
