@@ -420,6 +420,7 @@ void SendKick(UINT8 playernum, UINT8 msg);
 
 // Create any new ticcmds and broadcast to other players.
 void NetUpdate(void);
+void NetKeepAlive(void);
 
 void SV_StartSinglePlayerServer(void);
 boolean SV_SpawnServer(void);
