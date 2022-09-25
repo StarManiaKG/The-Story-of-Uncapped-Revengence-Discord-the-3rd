@@ -765,9 +765,9 @@ void DRPC_UpdatePresence(void)
 			discordPresence.smallImageText = charname; // Character name
 
 			// Character images
-			if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[skins[players[consoleplayer].skin].name])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[skins[players[consoleplayer].skin].name])))
+			if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[0])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[0])))
 			{
-				snprintf(charimg, 21, "char%s", customSkins[skins[players[consoleplayer].skin].name]);
+				snprintf(charimg, 21, "char%s", skins[players[consoleplayer].skin].name);
 				discordPresence.smallImageKey = charimg;
 			}
 			// Unsupported Character images
