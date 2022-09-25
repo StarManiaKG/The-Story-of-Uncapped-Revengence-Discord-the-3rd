@@ -5483,10 +5483,7 @@ void NetKeepAlive(void)
 	//UpdatePingTable();
 	PingUpdate();
 
-// Sryder: What is FILESTAMP???
-FILESTAMP
 	GetPackets();
-FILESTAMP
 
 #ifdef MASTERSERVER
 	MasterClient_Ticker();
