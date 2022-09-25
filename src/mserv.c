@@ -566,7 +566,6 @@ Server_OnChange (void)
 	}
 
 	Set_api(cv_masterserver.string);
-	//Set_api(cv_rendezvousserver.string);
 
 	if (Online())
 		RegisterServer();
