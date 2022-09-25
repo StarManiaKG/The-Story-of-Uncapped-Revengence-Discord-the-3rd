@@ -13722,7 +13722,6 @@ static void M_CustomDiscordStatus(void)
 	{
 		if (cv_customdiscordstatus.string)
 			discordPresence.details = cv_customdiscordstatus.string;
-			break;
 	}
 }
 
