@@ -5431,10 +5431,11 @@ static inline void PingUpdate(void)
 	// send the server's maxping as last element of our ping table. This is useful to let us know when we're about to get kicked.
 	netbuffer->u.pingtable[MAXPLAYERS] = cv_maxping.value;
 
-	//send out our ping packets
-	for (i = 0; i < MAXNETNODES; i++)
-		if (nodeingame[i])
-			HSendPacket(i, true, 0, sizeof(INT32) * (MAXPLAYERS+1));
+	//send out our ping packets ///It also handles timeouts to prevent definitive freezes from happenning ////that word lol
+	if (server)
+		for (i = 0; i < MAXNETNODES; i++)
+			if (nodeingame[i])
+				HSendPacket(i, true, 0, sizeof(INT32) * (MAXPLAYERS+1));
 
 	pingmeasurecount = 1; //Reset count
 }
@@ -5452,16 +5453,6 @@ static void RenewHolePunch(void)
 			past = now;
 		}
 	}
-}
-
-// Handle timeouts to prevent definitive freezes from happenning
-static void HandleNodeTimeouts(void)
-{
-	INT32 i;
-	if (server)
-		for (i = 1; i < MAXNETNODES; i++)
-			if (nodeingame[i] && freezetimeout[i] < I_GetTime())
-				Net_ConnectionTimeout(i);
 }
 
 // Keep the network alive while not advancing tics!
