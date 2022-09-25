@@ -5454,10 +5454,8 @@ static void RenewHolePunch(void)
 	}
 }
 
-//static tic_t gametime = 0;
-
 // Handle timeouts to prevent definitive freezes from happenning
-static void HandleNodeTimeouts(void)
+static void HandleNodeTimeouts(INT32 node, void)
 {
 	INT32 i;
 	if (server)
@@ -5505,7 +5503,7 @@ FILESTAMP
 	}
 	else
 	{
-		SV_SendServerConfig();
+		SV_SendServerConfig(node);
 	}
 
 	// No else because no tics are being run and we can't resynch during this
