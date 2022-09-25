@@ -5455,7 +5455,7 @@ static void RenewHolePunch(void)
 }
 
 // Handle timeouts to prevent definitive freezes from happenning
-static void HandleNodeTimeouts(INT32 node, void)
+static void HandleNodeTimeouts(void)
 {
 	INT32 i;
 	if (server)
@@ -5465,7 +5465,7 @@ static void HandleNodeTimeouts(INT32 node, void)
 }
 
 // Keep the network alive while not advancing tics!
-void NetKeepAlive(void)
+void NetKeepAlive(INT32 node)
 {
 	static tic_t gametime = 0;
 	tic_t nowtime;
