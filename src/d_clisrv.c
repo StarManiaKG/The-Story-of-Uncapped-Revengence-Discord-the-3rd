@@ -5432,10 +5432,9 @@ static inline void PingUpdate(void)
 	netbuffer->u.pingtable[MAXPLAYERS] = cv_maxping.value;
 
 	//send out our ping packets /// Handle timeouts to prevent definitive freezes from happenning ////I dislike both this and that word
-	if (server)
-		for (i = 0; i < MAXNETNODES; i++)
-			if (nodeingame[i])
-				HSendPacket(i, true, 0, sizeof(INT32) * (MAXPLAYERS+1));
+	for (i = 0; i < MAXNETNODES; i++)
+		if (nodeingame[i])
+			HSendPacket(i, true, 0, sizeof(INT32) * (MAXPLAYERS+1));
 
 	pingmeasurecount = 1; //Reset count
 }
