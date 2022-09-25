@@ -5431,10 +5431,11 @@ static inline void PingUpdate(void)
 	// send the server's maxping as last element of our ping table. This is useful to let us know when we're about to get kicked.
 	netbuffer->u.pingtable[MAXPLAYERS] = cv_maxping.value;
 
-	//send out our ping packets
-	for (i = 0; i < MAXNETNODES; i++)
-		if (nodeingame[i])
-			HSendPacket(i, true, 0, sizeof(INT32) * (MAXPLAYERS+1));
+	//send out our ping packets /// Handle timeouts to prevent definitive freezes from happenning ////I dislike both this and that word
+	if (server)
+		for (i = 0; i < MAXNETNODES; i++)
+			if (nodeingame[i])
+				HSendPacket(i, true, 0, sizeof(INT32) * (MAXPLAYERS+1));
 
 	pingmeasurecount = 1; //Reset count
 }
@@ -5452,64 +5453,6 @@ static void RenewHolePunch(void)
 			past = now;
 		}
 	}
-}
-
-// Handle timeouts to prevent definitive freezes from happenning
-static void HandleNodeTimeouts(void)
-{
-	INT32 i;
-	if (server)
-		for (i = 1; i < MAXNETNODES; i++)
-			if (nodeingame[i] && freezetimeout[i] < I_GetTime())
-				Net_ConnectionTimeout(i);
-}
-
-// Keep the network alive while not advancing tics!
-void NetKeepAlive(void)
-{
-
-	static tic_t gametime = 0;
-	tic_t nowtime;
-	INT32 realtics;
-	INT32 node;
-
-	nowtime = I_GetTime();
-	realtics = nowtime - gametime;
-
-	// return if there's no time passed since the last call
-	if (realtics <= 0) // nothing new to update
-		return;
-
-	//UpdatePingTable();
-	PingUpdate();
-
-	GetPackets();
-
-#ifdef MASTERSERVER
-	MasterClient_Ticker();
-#endif
-
-	if (serverrunning)
-	{
-		RenewHolePunch();
-	}
-
-	if (client)
-	{
-		// send keep alive
-		CL_SendClientCmd();
-		// No need to check for resynch because we aren't running any tics
-	}
-	else
-	{
-		SV_SendServerConfig(node);
-	}
-
-	// No else because no tics are being run and we can't resynch during this
-
-	Net_AckTicker();
-	HandleNodeTimeouts();
-	FileSendTicker();
 }
 
 void NetUpdate(void)
