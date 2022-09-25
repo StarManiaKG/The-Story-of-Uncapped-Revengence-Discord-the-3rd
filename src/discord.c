@@ -43,7 +43,7 @@ consvar_t cv_discordrp = CVAR_INIT ("discordrp", "On", CV_SAVE|CV_CALL, CV_OnOff
 consvar_t cv_discordstreamer = CVAR_INIT ("discordstreamer", "Off", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
 consvar_t cv_discordasks = CVAR_INIT ("discordasks", "Yes", CV_SAVE|CV_CALL, CV_YesNo, DRPC_UpdatePresence);
 consvar_t cv_discordshowonstatus = CVAR_INIT ("discordshowonstatus", "all", CV_SAVE|CV_CALL, discordstatustype_cons_t, DRPC_UpdatePresence);
-consvar_t cv_discordstatusstring = CVAR_INIT ("discordstatusstring", "", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
+consvar_t cv_customdiscordstatus = CVAR_INIT ("customdiscordstatus", "", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
 consvar_t cv_discordstatusmemes = CVAR_INIT ("discordstatusmemes", "Yes", CV_SAVE|CV_CALL, CV_YesNo, DRPC_UpdatePresence);
 struct discordInfo_s discordInfo;
 
