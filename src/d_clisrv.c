@@ -2725,11 +2725,8 @@ static void Command_connect(void)
 	}
 
 	if (Playing() || titledemo)
-	{
 		//CONS_Printf(M_GetText("You cannot connect while in a game. End this game first.\n"));
 		Command_ExitGame_f();
-		return;
-	}
 
 	// modified game check: no longer handled
 	// we don't request a restart unless the filelist differs
