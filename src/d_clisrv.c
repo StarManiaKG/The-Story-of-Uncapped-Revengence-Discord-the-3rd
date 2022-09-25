@@ -5500,19 +5500,19 @@ FILESTAMP
 	if (client)
 	{
 		// send keep alive
-		CL_SendClientKeepAlive();
+		CL_SendClientCmd();
 		// No need to check for resynch because we aren't running any tics
 	}
 	else
 	{
-		SV_SendServerKeepAlive();
+		SV_SendServerConfig();
 	}
 
 	// No else because no tics are being run and we can't resynch during this
 
 	Net_AckTicker();
 	HandleNodeTimeouts();
-	SV_FileSendTicker();
+	FileSendTicker();
 }
 
 void NetUpdate(void)
