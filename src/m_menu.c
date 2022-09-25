@@ -13715,7 +13715,7 @@ static boolean confirmAccept = false;
 
 static void M_CustomDiscordStatus(void)
 {
-	if (cv_discordshowonstatus.value == 7 && *cv_discordstatusstring.string != "")
+	if (cv_discordshowonstatus.value == 7 && cv_discordstatusstring.string)
 	{
 		stringname = cv_discordstatusstring.string;
 		discordPresence.details = stringname;
