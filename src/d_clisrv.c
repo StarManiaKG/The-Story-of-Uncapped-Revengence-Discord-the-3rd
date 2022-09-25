@@ -1719,7 +1719,7 @@ static void SendAskInfo(INT32 node)
 	if (node != 0 && node != BROADCASTADDR &&
 			cv_rendezvousserver.string[0])
 	{
-		I_NetRequestHolePunch();
+		I_NetRequestHolePunch(node);
 	}
 
 	asktime = I_GetTime();
@@ -5454,6 +5454,8 @@ static void RenewHolePunch(void)
 	}
 }
 
+//static tic_t gametime = 0;
+
 // Handle timeouts to prevent definitive freezes from happenning
 static void HandleNodeTimeouts(void)
 {
@@ -5467,6 +5469,7 @@ static void HandleNodeTimeouts(void)
 // Keep the network alive while not advancing tics!
 void NetKeepAlive(void)
 {
+	static tic_t gametime = 0;
 	tic_t nowtime;
 	INT32 realtics;
 
@@ -5477,7 +5480,8 @@ void NetKeepAlive(void)
 	if (realtics <= 0) // nothing new to update
 		return;
 
-	UpdatePingTable();
+	//UpdatePingTable();
+	PingUpdate();
 
 // Sryder: What is FILESTAMP???
 FILESTAMP
