@@ -1654,8 +1654,9 @@ static menuitem_t OP_DiscordOptionsMenu[] =
 	{IT_STRING | IT_CVAR,		NULL, "Allow Ask To Join",		&cv_discordasks,		 60},
 	{IT_STRING | IT_CVAR,		NULL, "Allow Invites",			&cv_discordinvites,		 70},
 	{IT_STRING | IT_CVAR,		NULL, "What to Show on Status",		&cv_discordshowonstatus,		 80},
-	{IT_STRING | IT_CVAR | IT_CV_STRING,		NULL, "Custom Status",		M_CustomDiscordStatus,		 90},
-	{IT_STRING | IT_CVAR,		NULL, "Show Memes on Status",		&cv_discordstatusmemes,		 	 100},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,		
+								NULL, "Custom Status",				M_CustomDiscordStatus,		 90},
+	{IT_STRING | IT_CVAR,		NULL, "Show Memes on Status",		&cv_discordstatusmemes,		100},
 };
 #endif
 static menuitem_t OP_ServerOptionsMenu[] =
@@ -13714,9 +13715,9 @@ static boolean confirmAccept = false;
 
 static void M_CustomDiscordStatus(void)
 {
-	if (cv_discordshowonstatus.value == 7 && *cv_addons_folder.string != '\0')
+	if (cv_discordshowonstatus.value == 7 && *cv_discordstatusstring.string != "")
 	{
-		stringname = cv_discordshowonstatus.string;
+		stringname = cv_discordstatusstring.string;
 		discordPresence.details = stringname;
 	}
 }
