@@ -13705,8 +13705,6 @@ static void M_QuitSRB2(INT32 choice)
 	M_StartMessage(quitmsg[M_RandomKey(NUM_QUITMESSAGES)], M_QuitResponse, MM_YESNO);
 }
 #ifdef HAVE_DISCORDRPC
-DiscordRichPresence discordPresence;
-memset(&discordPresence, 0, sizeof(discordPresence));
 
 static const tic_t confirmLength = 3*TICRATE/4;
 static tic_t confirmDelay = 0;
@@ -13714,6 +13712,9 @@ static boolean confirmAccept = false;
 
 static void M_CustomDiscordStatus(void)
 {
+	DiscordRichPresence discordPresence;
+	memset(&discordPresence, 0, sizeof(discordPresence));
+	
 	if (cv_discordshowonstatus.value == 7)
 	{
 		if (!cv_discordstatusstring.string)
