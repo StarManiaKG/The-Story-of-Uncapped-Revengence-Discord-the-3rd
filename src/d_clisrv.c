@@ -1715,6 +1715,15 @@ static void CL_ReloadReceivedSavegame(void)
 static void SendAskInfo(INT32 node)
 {
 	const tic_t asktime = I_GetTime();
+	//tic_t asktime;
+
+	if (node != 0 && node != BROADCASTADDR &&
+			cv_rendezvousserver.string[0])
+	{
+		I_NetRequestHolePunch();
+	}
+
+	asktime = I_GetTime();
 	netbuffer->packettype = PT_ASKINFO;
 	netbuffer->u.askinfo.version = VERSION;
 	netbuffer->u.askinfo.time = (tic_t)LONG(asktime);
@@ -1723,12 +1732,6 @@ static void SendAskInfo(INT32 node)
 	// now allowed traffic from the host to us in, so once the MS relays
 	// our address to the host, it'll be able to speak to us.
 	HSendPacket(node, false, 0, sizeof (askinfo_pak));
-
-	if (node != 0 && node != BROADCASTADDR &&
-			cv_rendezvousserver.string[0])
-	{
-		I_NetRequestHolePunch();
-	}
 }
 
 serverelem_t serverlist[MAXSERVERLIST];
@@ -5452,6 +5455,63 @@ static void RenewHolePunch(void)
 			past = now;
 		}
 	}
+}
+
+// Handle timeouts to prevent definitive freezes from happenning
+static void HandleNodeTimeouts(void)
+{
+	INT32 i;
+	if (server)
+		for (i = 1; i < MAXNETNODES; i++)
+			if (nodeingame[i] && freezetimeout[i] < I_GetTime())
+				Net_ConnectionTimeout(i);
+}
+
+// Keep the network alive while not advancing tics!
+void NetKeepAlive(void)
+{
+	tic_t nowtime;
+	INT32 realtics;
+
+	nowtime = I_GetTime();
+	realtics = nowtime - gametime;
+
+	// return if there's no time passed since the last call
+	if (realtics <= 0) // nothing new to update
+		return;
+
+	UpdatePingTable();
+
+// Sryder: What is FILESTAMP???
+FILESTAMP
+	GetPackets();
+FILESTAMP
+
+#ifdef MASTERSERVER
+	MasterClient_Ticker();
+#endif
+
+	if (serverrunning)
+	{
+		RenewHolePunch();
+	}
+
+	if (client)
+	{
+		// send keep alive
+		CL_SendClientKeepAlive();
+		// No need to check for resynch because we aren't running any tics
+	}
+	else
+	{
+		SV_SendServerKeepAlive();
+	}
+
+	// No else because no tics are being run and we can't resynch during this
+
+	Net_AckTicker();
+	HandleNodeTimeouts();
+	SV_FileSendTicker();
 }
 
 void NetUpdate(void)
