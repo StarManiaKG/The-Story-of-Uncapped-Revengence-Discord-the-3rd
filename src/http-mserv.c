@@ -54,6 +54,8 @@ consvar_t cv_masterserver_token = CVAR_INIT
 		NULL
 );
 
+#define HMS_QUERY_VERSION "?v=2.2"
+
 #ifdef MASTERSERVER
 
 static int hms_started;
