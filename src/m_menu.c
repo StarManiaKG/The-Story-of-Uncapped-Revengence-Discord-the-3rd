@@ -13707,7 +13707,6 @@ static void M_QuitSRB2(INT32 choice)
 #ifdef HAVE_DISCORDRPC
 DiscordRichPresence discordPresence;
 memset(&discordPresence, 0, sizeof(discordPresence));
-
 static const tic_t confirmLength = 3*TICRATE/4;
 static tic_t confirmDelay = 0;
 static boolean confirmAccept = false;
@@ -13717,7 +13716,7 @@ static void M_CustomDiscordStatus(void)
 	if (cv_discordshowonstatus.value == 7)
 	{
 		if (!cv_discordstatusstring.string)
-			cv_discordstatusstring.string = "I'm Playing Sonic Robo Blast 2!"
+			cv_discordstatusstring.string = "I'm Playing Sonic Robo Blast 2!";
 
 		if (cv_discordstatusstring.string)
 			discordPresence.details = cv_discordstatusstring.string;
