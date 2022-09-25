@@ -12,6 +12,8 @@
 
 #ifdef HAVE_DISCORDRPC
 
+#include <time.h>
+
 #include "i_system.h"
 #include "d_clisrv.h"
 #include "d_netcmd.h"
@@ -29,10 +31,6 @@
 
 #include "discord.h"
 #include "doomdef.h"
-
-#ifdef HAVE_CURL
-#include <curl/curl.h>
-#endif
 
 // Feel free to provide your own, if you care enough to create another Discord app for this :P
 #define DISCORD_APPID "1013126566236135516"
@@ -52,18 +50,6 @@ struct discordInfo_s discordInfo;
 discordRequest_t *discordRequestList = NULL;
 
 static char self_ip[IP_SIZE+1];
-
-/*
-#ifdef HAVE_CURL 
-#define DISCORD_CHARLIST_URL "http://srb2.mooo.com/SRB2RPC/customcharlist"
-static void DRPC_GetCustomCharList(void *ptr);
-#endif
-*/
-/*
-static INT32 extraCharCount = 0; //belongs in above
-static const char *customCharList[218]; //same as above
-static boolean customCharSupported = true;
-*/
 
 /*--------------------------------------------------
 	static char *DRPC_XORIPString(const char *input)
@@ -323,75 +309,6 @@ void DRPC_RemoveRequest(discordRequest_t *removeRequest)
 	Z_Free(removeRequest);
 }
 
-#ifdef HAVE_CURL 
-typedef struct {
-	char *memory;
-	size_t size;
-} curldata_t;
-
-static size_t WriteToArray(void *contents, size_t size, size_t nmemb, void *userdata)
-{
-	size_t realsize = size * nmemb;
-	curldata_t *mem = (curldata_t*)userdata;
-
-	char *ptr = realloc(mem->memory, mem->size + realsize + 1);
-
-	if (!ptr)
-		I_Error("Out of memory!\n");
- 
-	mem->memory = ptr;
-	memcpy(&(mem->memory[mem->size]), contents, realsize);
-	mem->size += realsize;
-	mem->memory[mem->size] = 0;
- 
-	return realsize;
-}
-
-/*
-static void DRPC_GetCustomCharList(void* ptr)
-{
-	CURL *curl;
-  	CURLcode cc;
-	curldata_t data;
-	char *stoken;
-
-	(void)ptr;
-	
-	data.memory = malloc(1);
-	data.size = 0;
-
-	// Download the list of latest supported custom characters
-	curl = curl_easy_init();
-	if (curl)
-	{
-		curl_easy_setopt(curl, CURLOPT_URL, DISCORD_CHARLIST_URL);
-		curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3L);
-		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteToArray);
-		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &data);
-		cc = curl_easy_perform(curl);
-		if (cc != CURLE_OK)
-		{
-			curl_easy_cleanup(curl);
-			return;
-		}
-
-		curl_easy_cleanup(curl);
-  	}
-
-	stoken = strtok(data.memory, "\n");
-	while (stoken)
-	{
-		customCharList[extraCharCount] = strdup(stoken);
-		stoken = strtok(NULL, "\n");
-		extraCharCount++;
-	}
-
-	free(data.memory);
-	customCharSupported = true;
-}
-*/
-#endif
-
 /*--------------------------------------------------
 	void DRPC_Init(void)
 
@@ -400,12 +317,6 @@ static void DRPC_GetCustomCharList(void* ptr)
 void DRPC_Init(void)
 {
 	DiscordEventHandlers handlers;
-
-/*
-#ifdef HAVE_CURL 
-	I_spawn_thread("get-custom-char-list", &DRPC_GetCustomCharList, NULL);
-#endif
-*/
 
 	memset(&handlers, 0, sizeof(handlers));
 	handlers.ready = DRPC_HandleReady;
@@ -434,6 +345,7 @@ static void DRPC_GotServerIP(UINT32 address)
 {
 	const unsigned char * p = (const unsigned char *)&address;
 	sprintf(self_ip, "%u.%u.%u.%u:%u", p[0], p[1], p[2], p[3], current_port);
+	DRPC_UpdatePresence();
 }
 
 /*--------------------------------------------------
@@ -454,7 +366,8 @@ static const char *DRPC_GetServerIP(void)
 		{
 			// We're not the server, so we could successfully get the IP!
 			// No need to do anything else :)
-			return address;
+			sprintf(self_ip, "%s:%u", address, current_port);
+			return self_ip;
 		}
 	}
 
@@ -541,9 +454,14 @@ void DRPC_UpdatePresence(void)
 			// Grab the host's IP for joining.
 			if ((join = DRPC_GetServerIP()) != NULL)
 			{
-				discordPresence.joinSecret = DRPC_XORIPString(join);
+				char *xorjoin = DRPC_XORIPString(join);
+				discordPresence.joinSecret = xorjoin;
+				free(xorjoin);
+
 				joinSecretSet = true;
 			}
+			else
+				return;
 		}
 
 		// unfortunally this only works when you are the server /////lol
