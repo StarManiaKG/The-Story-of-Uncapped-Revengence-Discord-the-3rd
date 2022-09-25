@@ -136,7 +136,7 @@ extern char logfilename[1024];
 #define VERSIONSTRING "v"SRB2VERSION" "BETAVERSION
 #define VERSIONSTRING_RC SRB2VERSION " " BETAVERSION "\0"
 #else
-#define VERSIONSTRING "TSOURDt3RD"
+#define VERSIONSTRING "TSOURDt3RD (by StarManiaKG#4884)" //please don't remove this i'm begging you
 #define VERSIONSTRING_RC SRB2VERSION "\0"
 #endif
 // Hey! If you change this, add 1 to the MODVERSION below!
