@@ -531,7 +531,7 @@ void DRPC_UpdatePresence(void)
 				}
 				else
 				{
-					if (!cv_discordstatusmemes.value)
+					if (!wusmemes.value)
 						strlcat(detailstr, ", No Emeralds", 64);
 					else
 						strlcat(detailstr, ", NO EMERALDS?", 64);
@@ -583,7 +583,7 @@ void DRPC_UpdatePresence(void)
 			|| (gamemap >= 280 && gamemap <= 288) // Supported CTF maps
 			|| (gamemap >= 532 && gamemap <= 543)) // Supported Match maps
 			{
-				snprintf(mapimg, 8, "On %s", G_BuildMapName(gamemap));
+				snprintf(mapimg, 8, "%s", G_BuildMapName(gamemap));
 				strlwr(mapimg);
 				discordPresence.largeImageKey = mapimg; // Map image
 			}
