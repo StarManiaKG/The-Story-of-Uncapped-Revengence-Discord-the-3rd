@@ -392,7 +392,7 @@ extern skincolor_t skincolors[MAXSKINCOLORS];
 // State updates, number of tics / second.
 // NOTE: used to setup the timer rate, see I_StartupTimer().
 #define TICRATE 35
-#define NEWTICRATERATIO 1 // try 4 for 140 fps :)
+#define NEWTICRATERATIO 4 // try 4 for 140 fps :) ////try 1 for regular fps :) :)
 #define NEWTICRATE (TICRATE*NEWTICRATERATIO)
 
 #define MUSICRATE 1000 // sound timing is calculated by milliseconds
@@ -400,6 +400,10 @@ extern skincolor_t skincolors[MAXSKINCOLORS];
 #define RING_DIST 512*FRACUNIT // how close you need to be to a ring to attract it
 
 #define PUSHACCEL (2*FRACUNIT) // Acceleration for MF2_SLIDEPUSH items.
+
+#ifndef FILESTAMP
+#define FILESTAMP
+#endif
 
 // Special linedef executor tag numbers!
 enum {
