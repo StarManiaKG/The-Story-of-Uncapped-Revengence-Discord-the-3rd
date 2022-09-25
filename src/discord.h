@@ -21,6 +21,7 @@ extern consvar_t cv_discordrp;
 extern consvar_t cv_discordstreamer;
 extern consvar_t cv_discordasks;
 extern consvar_t cv_discordshowonstatus;
+extern consvar_t cv_discordstatusstring;
 extern consvar_t cv_discordstatusmemes;
 
 extern struct discordInfo_s {
@@ -33,13 +34,11 @@ typedef struct discordRequest_s {
 	char *username; // Discord user name.
 	char *discriminator; // Discord discriminator (The little hashtag thing after the username). Separated for a "hide discriminators" cvar.
 	char *userID; // The ID of the Discord user, gets used with Discord_Respond()
-	char *avatar; // VERY WIP
-
 	// HAHAHA, no.
 	// *Maybe* if it was only PNG I would boot up curl just to get AND convert this to Doom GFX,
 	// but it can *also* be a JEPG, WebP, or GIF :)
 	// Hey, wanna add ImageMagick as a dependency? :dying:
-	//patch_t *avatar; 
+	char *avatar; // VERY WIP
 
 	struct discordRequest_s *next; // Next request in the list.
 	struct discordRequest_s *prev; // Previous request in the list. Not used normally, but just in case something funky happens, this should repair the list.
