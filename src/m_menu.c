@@ -13712,9 +13712,7 @@ static boolean confirmAccept = false;
 
 static void M_CustomDiscordStatus(void)
 {
-	DiscordRichPresence discordPresence;
 	DRPC_Init();
-	memset(&discordPresence, 0, sizeof(discordPresence));
 	
 	if (cv_discordshowonstatus.value == 7)
 	{
