@@ -5465,53 +5465,6 @@ static void HandleNodeTimeouts(void)
 }
 
 // Keep the network alive while not advancing tics!
-void NetKeepAlive(void)
-{
-
-	static tic_t gametime = 0;
-	tic_t nowtime;
-	INT32 realtics;
-	INT32 node;
-
-	nowtime = I_GetTime();
-	realtics = nowtime - gametime;
-
-	// return if there's no time passed since the last call
-	if (realtics <= 0) // nothing new to update
-		return;
-
-	//UpdatePingTable();
-	PingUpdate();
-
-	GetPackets();
-
-#ifdef MASTERSERVER
-	MasterClient_Ticker();
-#endif
-
-	if (serverrunning)
-	{
-		RenewHolePunch();
-	}
-
-	if (client)
-	{
-		// send keep alive
-		CL_SendClientCmd();
-		// No need to check for resynch because we aren't running any tics
-	}
-	else
-	{
-		SV_SendServerConfig(node);
-	}
-
-	// No else because no tics are being run and we can't resynch during this
-
-	Net_AckTicker();
-	HandleNodeTimeouts();
-	FileSendTicker();
-}
-
 void NetUpdate(void)
 {
 	static tic_t gametime = 0;
