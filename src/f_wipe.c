@@ -534,7 +534,6 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu)
 #else
 	tic_t nowtime;
 	UINT8 wipeframe = 0;
-	INT32 node;
 	fademask_t *fmask;
 
 	if (!paldiv)
