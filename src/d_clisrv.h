@@ -419,8 +419,7 @@ void SendNetXCmd2(netxcmd_t id, const void *param, size_t nparam); // splitsreen
 void SendKick(UINT8 playernum, UINT8 msg);
 
 // Create any new ticcmds and broadcast to other players.
-void NetUpdate(void);
-void NetKeepAlive(void);
+void NetUpdate(void); //srb2 version of net keep alive from kart
 
 void SV_StartSinglePlayerServer(void);
 boolean SV_SpawnServer(void);
