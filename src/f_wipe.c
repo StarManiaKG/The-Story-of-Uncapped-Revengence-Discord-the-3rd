@@ -526,7 +526,7 @@ boolean F_TryColormapFade(UINT8 wipecolor)
 /** After setting up the screens you want to wipe,
   * calling this will do a 'typical' wipe.
   */
-void F_RunWipe(UINT8 wipetype, INT32 node, boolean drawMenu)
+void F_RunWipe(UINT8 wipetype, boolean drawMenu)
 {
 #ifdef NOWIPE
 	(void)wipetype;
