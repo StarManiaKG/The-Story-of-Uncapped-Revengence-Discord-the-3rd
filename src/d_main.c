@@ -1749,10 +1749,7 @@ void D_SRB2Main(void)
 	}
 
 #ifdef HAVE_DISCORDRPC
-	if (! dedicated)
-	{
-		DRPC_Init();
-	}
+	DRPC_Init();
 #endif
 }
 
