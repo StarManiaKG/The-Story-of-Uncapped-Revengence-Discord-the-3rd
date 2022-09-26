@@ -232,10 +232,19 @@ void I_RemoveExitFunc(void (*func)());
 
 /**	\brief Setup signal handler, plus stuff for trapping errors and cleanly exit.
 */
+
 INT32 I_StartupSystem(void);
 
 /**	\brief Shutdown systems
 */
+
+#ifdef HAVE_DISCORDRPC
+void I_DiscordShutdown(void);
+
+/**	\brief	Shutsdown Discord Rich Presence
+*/
+
+#endif
 void I_ShutdownSystem(void);
 
 /**	\brief	The I_GetDiskFreeSpace function
