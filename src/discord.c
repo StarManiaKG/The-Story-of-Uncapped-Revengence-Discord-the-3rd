@@ -720,8 +720,8 @@ void DRPC_UpdatePresence(void)
 			discordPresence.smallImageKey = charimg; // Character image
 
 			// Player names
-			snprintf(playername, 21, "%s & ", cv_playername.string);
-			snprintf(secondplayername, 21, "%s", cv_playername2.string);
+			snprintf(playername, 21, "%s ", cv_playername.string);
+			snprintf(secondplayername, 21, "& %s", cv_playername2.string);
 
 			//Combine Player Names
 			strncat(combiring, strncat(playername, secondplayername, 21), 21); //Combine Ring (multiplayer edition)
