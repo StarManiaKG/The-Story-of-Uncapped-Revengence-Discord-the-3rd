@@ -581,7 +581,7 @@ void DRPC_UpdatePresence(void)
 					}
 					else
 					{
-						if (gametype == GT_COOP) && (!netgame)
+						if ((gametype == GT_COOP) && (!netgame))
 							discordPresence.state = "Playing Single-Player";
 					}
 				}
