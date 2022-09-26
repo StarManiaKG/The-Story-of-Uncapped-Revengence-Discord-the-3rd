@@ -682,22 +682,27 @@ void DRPC_UpdatePresence(void)
 
 		if (!netgame && !splitscreen)
 		{
-			player_t *player;
-
 			// Character images
 			////No Bots?
 			if (!playeringame[1] && !playeringame[2]) 
 				snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
 			////Multiple Bots?
 			else if (playeringame[1] && playeringame[2])
-				snprintf(secondcharname, 28, " & Multiple Bots");
+			{
+				if (players[1].bot && players[2].bot)
+					snprintf(secondcharname, 28, " & Multiple Bots");
+			}
 			////One Regular Bot?
-			else if (playeringame[1].bot && !playeringame[2].bot)
-				if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(skins[players[1].skin].name, "tails"))))
-				{
-					snprintf(charimg, 14, "charsonictails");
-					snprintf(secondcharname, 28, " & %s", skins[players[1].skin].realname);
+			else if (playeringame[1] && !playeringame[2])
+			{
+				if (players[1].bot)
+					if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (players[1].mo->skin == "tails")))//(strcmp(skins[players[1].skin].name, "tails"))))
+					{
+						snprintf(charimg, 14, "charsonictails");
+						snprintf(secondcharname, 28, " & %s", skins[players[1].skin].realname);
+					}
 				}
+			}
 			
 			// Character names
 			snprintf(charname, 28, "Playing As: %s", skins[players[consoleplayer].skin].realname);
