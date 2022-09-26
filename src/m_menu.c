@@ -1645,10 +1645,10 @@ enum
 static menuitem_t OP_DiscordOptionsMenu[] =
 {
 	{IT_HEADER,					NULL, "Discord Rich Presence",	NULL,					 0},
-	{IT_STRING | IT_CVAR,		NULL, "Rich Presence",			&cv_discordrp,			 10},
+	{IT_STRING | IT_CVAR,		NULL, "Rich Presence",			&cv_discordrp,			 12},
+	{IT_STRING | IT_CVAR,		NULL, "Streamer Mode",			&cv_discordstreamer,	 22},
 
-	{IT_HEADER,					NULL, "Rich Presence Settings",	NULL,					 30},
-	{IT_STRING | IT_CVAR,		NULL, "Streamer Mode",			&cv_discordstreamer,	 40},
+	{IT_HEADER,					NULL, "Rich Presence Settings",	NULL,					 32},
 
 	{IT_STRING | IT_CVAR,		NULL, "Allow Ask To Join",		&cv_discordasks,		 60},
 	{IT_STRING | IT_CVAR,		NULL, "Allow Invites",			&cv_discordinvites,		 70},
@@ -1710,16 +1710,19 @@ static menuitem_t OP_ServerOptionsMenu[] =
 	{IT_STRING | IT_CVAR,    NULL, "Scramble on Map Change",           &cv_scrambleonchange,   221},
 
 #ifndef NONET
-	{IT_HEADER, NULL, "Advanced Server Settings", NULL, 230},
-	{IT_STRING | IT_CVAR | IT_CV_STRING, NULL, "Master server",        &cv_masterserver,       236},
+	{IT_HEADER, 						 NULL, "Master Server", 	   NULL, 				   230},
+	{IT_STRING | IT_CVAR | IT_CV_STRING, NULL, "",					   &cv_masterserver,       236},
 
-	{IT_STRING | IT_CVAR | IT_CV_STRING, NULL, "Holepunch server",     &cv_rendezvousserver,   252},
+	{IT_HEADER, 						 NULL, "Master Server", 	   NULL, 				   252},
+	{IT_STRING | IT_CVAR | IT_CV_STRING, NULL, "Holepunch server",     &cv_rendezvousserver,   258},
 
-	{IT_STRING | IT_CVAR,    NULL, "Join delay",                       &cv_joindelay,          272},
-	{IT_STRING | IT_CVAR,    NULL, "Attempts to resynchronise",        &cv_resynchattempts,    278},
+	{IT_HEADER, 			 NULL, "Advanced Settings", 	   		   NULL, 				   272},
 
-	{IT_STRING | IT_CVAR,    NULL, "Show IP Address of Joiners",       &cv_showjoinaddress,    284},
-	{IT_STRING | IT_CVAR,    NULL, "Show Connecting Players",          &cv_noticedownload,     290},
+	{IT_STRING | IT_CVAR,    NULL, "Join delay",                       &cv_joindelay,          278},
+	{IT_STRING | IT_CVAR,    NULL, "Attempts to resynchronise",        &cv_resynchattempts,    284},
+
+	{IT_STRING | IT_CVAR,    NULL, "Show IP Address of Joiners",       &cv_showjoinaddress,    290},
+	{IT_STRING | IT_CVAR,    NULL, "Show Connecting Players",          &cv_noticedownload,     296},
 #endif
 };
 
