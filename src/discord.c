@@ -687,7 +687,7 @@ void DRPC_UpdatePresence(void)
 			discordPresence.smallImageKey = charimg; // Character image
 			discordPresence.smallImageText = combiring; // Character name, Bot name
 		}
-		else if ((!playeringame[secondarydisplayplayer) || (netgame))
+		else if ((!playeringame[secondarydisplayplayer]) || (netgame))
 		{
 			snprintf(charname, 28, "Playing As: %s", skins[players[consoleplayer].skin].realname);
 			discordPresence.smallImageText = charname; // Character name
