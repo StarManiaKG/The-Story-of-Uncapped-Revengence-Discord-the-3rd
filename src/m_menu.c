@@ -1645,19 +1645,18 @@ enum
 static menuitem_t OP_DiscordOptionsMenu[] =
 {
 	{IT_HEADER,					NULL, "Discord Rich Presence",	NULL,					 0},
-	{IT_STRING | IT_CVAR,		NULL, "Rich Presence",			&cv_discordrp,			 12},
-	{IT_STRING | IT_CVAR,		NULL, "Streamer Mode",			&cv_discordstreamer,	 22},
+	{IT_STRING | IT_CVAR,		NULL, "Rich Presence",			&cv_discordrp,			 6},
+	{IT_STRING | IT_CVAR,		NULL, "Streamer Mode",			&cv_discordstreamer,	 12},
 
-	{IT_HEADER,					NULL, "Rich Presence Settings",	NULL,					 32},
+	{IT_HEADER,					NULL, "Rich Presence Settings",	NULL,					 22},
+	{IT_STRING | IT_CVAR,		NULL, "Allow Ask To Join",		&cv_discordasks,		 28},
+	{IT_STRING | IT_CVAR,		NULL, "Allow Invites",			&cv_discordinvites,		 34},
+	{IT_STRING | IT_CVAR,		NULL, "Show Memes on Status",	&cv_discordstatusmemes,	 40},
+	{IT_STRING | IT_CVAR,		NULL, "Show on Status",			&cv_discordshowonstatus, 46},
 
-	{IT_STRING | IT_CVAR,		NULL, "Allow Ask To Join",		&cv_discordasks,		 60},
-	{IT_STRING | IT_CVAR,		NULL, "Allow Invites",			&cv_discordinvites,		 70},
-	{IT_STRING | IT_CVAR,		NULL, "Show Memes on Status",	&cv_discordstatusmemes,	 80},
-	{IT_STRING | IT_CVAR,		NULL, "Show on Status",			&cv_discordshowonstatus, 90},
-
-	{IT_HEADER,					NULL, "Custom Status Settings",	NULL,					 110},
+	{IT_HEADER,					NULL, "Custom Status Settings",	NULL,					 56},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,	
-								NULL, "Custom Status",			&cv_customdiscordstatus, 120},
+								NULL, "Custom Status",			&cv_customdiscordstatus, 62},
 };
 #endif
 static menuitem_t OP_ServerOptionsMenu[] =
@@ -1706,13 +1705,13 @@ static menuitem_t OP_ServerOptionsMenu[] =
 	{IT_STRING | IT_CVAR,    NULL, "Hiding time",                      &cv_hidetime,           201},
 
 	{IT_HEADER, NULL, "Teams", NULL, 210},
-	{IT_STRING | IT_CVAR,    NULL, "Autobalance sizes",                &cv_autobalance,        216},
+	{IT_STRING | IT_CVAR,	 NULL, "Autobalance sizes",                &cv_autobalance,        216},
 	{IT_STRING | IT_CVAR,    NULL, "Scramble on Map Change",           &cv_scrambleonchange,   221},
 
 #ifndef NONET
 	{IT_HEADER, NULL, "Server Locations", NULL, 230},
-	{IT_STRING | IT_CVAR | IT_CV_STRING, NULL, "Master Server",		   &cv_masterserver,       236},
-	{IT_STRING | IT_CVAR | IT_CV_STRING, NULL, "Holepunch server",     &cv_holepunchserver,    258},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,	 NULL, "Master Server",	   &cv_masterserver,       236},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,	 NULL, "Holepunch server", &cv_holepunchserver,    258},
 
 	{IT_HEADER, NULL, "Advanced Settings", NULL, 272},
 	{IT_STRING | IT_CVAR,    NULL, "Join delay",                       &cv_joindelay,          278},
