@@ -682,11 +682,10 @@ void DRPC_UpdatePresence(void)
 
 		if ((!netgame && !splitscreen) && (botingame))
 		{
-			UINT32 i;
-			player_t *player;
+			INT32 player;
 			INT32 skin;
-
 			skin = players[player].skin;
+			
 			// Character images
 			if (players[1].bot)
 			{
