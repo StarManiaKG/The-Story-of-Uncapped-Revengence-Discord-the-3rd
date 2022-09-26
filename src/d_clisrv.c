@@ -1717,7 +1717,7 @@ static void SendAskInfo(INT32 node)
 	tic_t asktime;
 
 	if (node != 0 && node != BROADCASTADDR &&
-			cv_rendezvousserver.string[0])
+			cv_holepunchserver.string[0])
 	{
 		I_NetRequestHolePunch(node);
 	}
@@ -5440,7 +5440,7 @@ static inline void PingUpdate(void)
 }
 static void RenewHolePunch(void)
 {
-	if (cv_rendezvousserver.string[0])
+	if (cv_holepunchserver.string[0])
 	{
 		static time_t past;
 

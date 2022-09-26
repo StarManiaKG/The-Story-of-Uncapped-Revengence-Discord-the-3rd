@@ -665,8 +665,7 @@ void DRPC_UpdatePresence(void)
 		if (!netgame && botingame)
 		{
 
-			//if ((strcmp(skins[players[consoleplayer].skin].name, "sonic")) && (strcmp(skins[players[secondarydisplayplayer].skin].name, "tails")))
-			if ((players[consoleplayer].skin, "sonic") && (players[secondarydisplayplayer].skin, "tails"))
+			if strcmp(skins[players[consoleplayer].skin].name, "sonic") && strcmp(skins[players[secondarydisplayplayer].skin].name, "tails")
 				snprintf(charimg, 21, "charsonictails");
 			else
 				snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);

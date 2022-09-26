@@ -554,7 +554,7 @@ is_external_address (UINT32 p)
 static boolean hole_punch(ssize_t c)
 {
 	/* See ../doc/Holepunch-Protocol.txt */
-	if (cv_rendezvousserver.string[0] &&
+	if (cv_holepunchserver.string[0] &&
 			c == 10 && holepunchpacket->magic == hole_punch_magic &&
 			is_external_address(ntohl(holepunchpacket->addr)))
 	{
@@ -1285,7 +1285,7 @@ static SINT8 SOCK_NetMakeNodewPort(const char *address, const char *port)
 /* See ../doc/Holepunch-Protocol.txt */
 static void rendezvous(int size)
 {
-	char *addrs = strdup(cv_rendezvousserver.string);
+	char *addrs = strdup(cv_holepunchserver.string);
 
 	char *host = strtok(addrs, ":");
 	char *port = strtok(NULL,  ":");
@@ -1304,7 +1304,7 @@ static void rendezvous(int size)
 		else
 		{
 			CONS_Alert(CONS_ERROR, "Failed to contact rendezvous server (%s).\n",
-					cv_rendezvousserver.string);
+					cv_holepunchserver.string);
 		}
 	}
 	
