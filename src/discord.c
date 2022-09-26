@@ -682,10 +682,10 @@ void DRPC_UpdatePresence(void)
 
 		if ((!netgame && !splitscreen) && (botingame))
 		{
-			static char *bot = players[1].bot;
+			char botSkinName[SKINNAMESIZE+1]
 		
 			// Character images
-			if (strcmp(skins[players[consoleplayer].skin].name, "sonic") && (botSkinName.string == "tails"))
+			if (strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strmcp(skins[players[1].skin].name, "tails"))
 				snprintf(charimg, 28, "charsonictails");
 			else
 				snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
