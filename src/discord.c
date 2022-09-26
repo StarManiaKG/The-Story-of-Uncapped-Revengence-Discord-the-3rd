@@ -680,14 +680,14 @@ void DRPC_UpdatePresence(void)
 			NULL
 		};
 
-		if ((!netgame && !splitscreen) && (botingame))
+		if (!netgame && !splitscreen)
 		{
-			player_t *p;
-
 			// Character images
-			if (players[1].bot)
+			if (!players[1].bot && !players[2].bot)
+				snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
+			else if (players[1].bot && !players[2].bot)
 			{
-				if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (p->skin == "tails")))
+				if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp((players[1].skin).name), "tails")))
 				{
 					snprintf(charimg, 28, "charsonictails");
 					snprintf(secondcharname, 28, "& %s", skins[players[1].skin].realname);
@@ -695,8 +695,6 @@ void DRPC_UpdatePresence(void)
 			}
 			else if (players[1].bot && players[2].bot)
 				snprintf(secondcharname, 28, "& Multiple Bots");
-			else if (!players[1].bot && !players[2].bot)
-				snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
 			
 			// Character names
 			snprintf(charname, 28, "Playing As: %s ", skins[players[consoleplayer].skin].realname);
