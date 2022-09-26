@@ -2452,7 +2452,7 @@ void I_Quit(void)
 	M_FreePlayerSetupColors();
 
 #ifdef HAVE_DISCORDRPC
-	I_DiscordShutdown();
+	Discord_Shutdown();
 #endif
 	I_ShutdownMusic();
 	I_ShutdownSound();
