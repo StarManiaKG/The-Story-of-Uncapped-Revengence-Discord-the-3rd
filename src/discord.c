@@ -416,6 +416,8 @@ void DRPC_UpdatePresence(void)
 
 	char botname[11+SKINNAMESIZE+1];
 
+	char combiring[80];
+
 	boolean joinSecretSet = false;
 
 	DiscordRichPresence discordPresence;
@@ -665,16 +667,16 @@ void DRPC_UpdatePresence(void)
 			if ((strcmp(skins[players[consoleplayer].skin].name, "sonic")) && (strcmp(skins[players[secondarydisplayplayer].skin].name, "tails")))
 			{
 				snprintf(charimg, 21, "charsonictails");
-				snprintf(charname, 28, "Playing As: %s, With Tails", skins[players[consoleplayer].skin].realname);
+				snprintf(charname, 28, "Playing As: %s With Tails", skins[players[consoleplayer].skin].realname);
 			}
 			else
 			{
 				snprintf(charimg, 21, "char%s", skins[players[consoleplayer].skin].name);
-				snprintf(charname, 28, "Playing As: %s", skins[players[consoleplayer].skin].realname);
-				snprintf(botname, 28, ", With %s", skins[players[secondarydisplayplayer].skin].realname);
+				snprintf(charname, 28, "Playing As: %s ", skins[players[consoleplayer].skin].realname);
+				snprintf(botname, 28, "With %s", skins[players[secondarydisplayplayer].skin].realname);
 			}
 			
-			strncat(charname, botname, 80);
+			strncat(combiring, strncat(charname, botname, 28), 80);
 			discordPresence.smallImageKey = charimg; // Character image
 			discordPresence.smallImageText = charname; // Character name, Bot name
 		}
