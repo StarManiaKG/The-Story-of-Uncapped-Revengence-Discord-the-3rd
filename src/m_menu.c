@@ -11733,8 +11733,8 @@ static void M_ServerOptions(INT32 choice)
 		OP_ServerOptionsMenu[ 4].status = IT_GRAYEDOUT; // Allow players to join
 		OP_ServerOptionsMenu[37].status = IT_GRAYEDOUT; // Master server
 		OP_ServerOptionsMenu[38].status = IT_GRAYEDOUT; // Holepunch server
-		OP_ServerOptionsMenu[39].status = IT_GRAYEDOUT; // Minimum delay between joins
-		OP_ServerOptionsMenu[40].status = IT_GRAYEDOUT; // Attempts to resynchronise
+		//OP_ServerOptionsMenu[39].status = IT_GRAYEDOUT; // Minimum delay between joins
+		//OP_ServerOptionsMenu[40].status = IT_GRAYEDOUT; // Attempts to resynchronise
 	}
 	else
 	{
@@ -11744,8 +11744,8 @@ static void M_ServerOptions(INT32 choice)
 		OP_ServerOptionsMenu[ 4].status = IT_STRING | IT_CVAR;
 		OP_ServerOptionsMenu[37].status = IT_STRING | IT_CVAR | IT_CV_STRING;
 		OP_ServerOptionsMenu[38].status = IT_STRING | IT_CVAR | IT_CV_STRING;
-		OP_ServerOptionsMenu[39].status = IT_STRING | IT_CVAR;
-		OP_ServerOptionsMenu[40].status = IT_STRING | IT_CVAR;
+		//OP_ServerOptionsMenu[39].status = IT_STRING | IT_CVAR;
+		//OP_ServerOptionsMenu[40].status = IT_STRING | IT_CVAR;
 	}
 #endif
 
