@@ -706,7 +706,7 @@ void DRPC_UpdatePresence(void)
 			discordPresence.smallImageKey = charimg; // Character image
 			discordPresence.smallImageText = charname; // Character name, Bot name
 		}
-		else if ((!playeringame[1] && !playeringame[2]) && (!splitscreen)) || (netgame)
+		else if ((!playeringame[1] && !playeringame[2] && !splitscreen) || (netgame))
 		{
 			// Character images
 			if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[0])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[0])))
