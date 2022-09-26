@@ -568,17 +568,15 @@ void DRPC_UpdatePresence(void)
 	{
 		if (modeattacking)
 			discordPresence.details = "Time Attacking";
-		else if (netgame)
+		else
 		{
 			if (cv_discordshowonstatus.value == 0 || cv_discordshowonstatus.value == 6)
 			{
 				if (!splitscreen)
 				{
-					snprintf(statestr, 48, "Playing %s", gametype_cons_t[gametype].strvalue);
+					snprintf(statestr, 65, "Playing %s", gametype_cons_t[gametype].strvalue);
 					discordPresence.state = statestr;
 				}
-				else
-					discordPresence.state = "In Split-Screen Mode";
 			}
 		}
 	}
@@ -673,7 +671,7 @@ void DRPC_UpdatePresence(void)
 			NULL
 		};
 
-		if ((!netgame && !splitscreen) && (playeringame[secondarydisplayplayer]))
+		if ((!netgame && !splitscreen) && (botingame))
 		{
 			if (strcmp(skins[players[consoleplayer].skin].name, "sonic") && strcmp(skins[players[secondarydisplayplayer].skin].name, "tails"))
 				snprintf(charimg, 28, "charsonictails");
@@ -683,27 +681,24 @@ void DRPC_UpdatePresence(void)
 			snprintf(charname, 28, "Playing As: %s ", skins[players[consoleplayer].skin].realname);
 			snprintf(secondcharname, 28, "& %s", skins[players[secondarydisplayplayer].skin].realname);
 			
-			strncat(combiring, strncat(charname, secondcharname, 28), 80);
+			strncat(combiring, strncat(charname, secondcharname, 28), 80); //Combine Character Name and Bot Name
 			discordPresence.smallImageKey = charimg; // Character image
 			discordPresence.smallImageText = combiring; // Character name, Bot name
 		}
-		else if ((!playeringame[secondarydisplayplayer]) || (netgame))
+		else if ((!botingame) || (netgame))
 		{
-			snprintf(charname, 28, "Playing As: %s", skins[players[consoleplayer].skin].realname);
-			discordPresence.smallImageText = charname; // Character name
-
 			// Character images
 			if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[0])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[0])))
 			{
-				snprintf(charimg, 21, "char%s", skins[players[consoleplayer].skin].name);
+				snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
 				discordPresence.smallImageKey = charimg;
 			}
 			// Unsupported Character images
 			else
-			{
-				snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
 				discordPresence.smallImageKey = "charcustom";
-			}
+
+			snprintf(charname, 28, "Playing As: %s", skins[players[consoleplayer].skin].realname);
+			discordPresence.smallImageText = charname; // Character name
 		}
 		else if (splitscreen && playeringame[secondarydisplayplayer])
 		{
@@ -711,7 +706,7 @@ void DRPC_UpdatePresence(void)
 			snprintf(playername, 28, "%s & ", cv_playername.string);
 			snprintf(secondplayername, 28, "%s Are In Split-Screen Mode!", cv_playername2.string);
 
-			strncat(combiring, strncat(playername, secondplayername, 21), 80); 
+			strncat(combiring, strncat(playername, secondplayername, 28), 80); //Combine Character Name and Bot Name
 			discordPresence.smallImageKey = charimg; // Character image
 			discordPresence.smallImageText = combiring; // Character name, Bot name
 		}
