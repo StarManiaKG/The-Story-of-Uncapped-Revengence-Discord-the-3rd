@@ -691,7 +691,7 @@ void DRPC_UpdatePresence(void)
 				snprintf(secondcharname, 28, " & Multiple Bots");
 			////One Regular Bot?
 			else if (playeringame[1] && !playeringame[2])
-				if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(skins[players[1].skin].name, "tails"))))
+				if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(skins[players[player].skin].name, "tails"))))
 				{
 					snprintf(charimg, 14, "charsonictails");
 					snprintf(secondcharname, 28, " & %s", skins[players[1].skin].realname);
