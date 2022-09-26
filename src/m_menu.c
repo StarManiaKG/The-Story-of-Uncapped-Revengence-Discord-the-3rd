@@ -1655,9 +1655,9 @@ static menuitem_t OP_DiscordOptionsMenu[] =
 	{IT_STRING | IT_CVAR,		NULL, "Show Memes on Status",	&cv_discordstatusmemes,	 80},
 	{IT_STRING | IT_CVAR,		NULL, "Show on Status",			&cv_discordshowonstatus, 90},
 
-	{IT_HEADER,					NULL, "Custom Status Settings",	NULL,					 120},
+	{IT_HEADER,					NULL, "Custom Status Settings",	NULL,					 110},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,	
-								NULL, "Custom Status",			&cv_customdiscordstatus, 130},
+								NULL, "Custom Status",			&cv_customdiscordstatus, 120},
 };
 #endif
 static menuitem_t OP_ServerOptionsMenu[] =
@@ -1710,18 +1710,16 @@ static menuitem_t OP_ServerOptionsMenu[] =
 	{IT_STRING | IT_CVAR,    NULL, "Scramble on Map Change",           &cv_scrambleonchange,   221},
 
 #ifndef NONET
-	{IT_HEADER, NULL, "Master Server Settings", NULL, 230},
+	{IT_HEADER, NULL, "Advanced Server Settings", NULL, 230},
 	{IT_STRING | IT_CVAR | IT_CV_STRING, NULL, "Master server",        &cv_masterserver,       236},
 
-	{IT_HEADER, NULL, "Holepunch Server Settings", NULL, 252},
-	{IT_STRING | IT_CVAR | IT_CV_STRING, NULL, "Holepunch server",     &cv_rendezvousserver,   258},
+	{IT_STRING | IT_CVAR | IT_CV_STRING, NULL, "Holepunch server",     &cv_rendezvousserver,   252},
 
-	{IT_HEADER, NULL, "Advanced", NULL, 272},
-	{IT_STRING | IT_CVAR,    NULL, "Join delay",                       &cv_joindelay,          278},
-	{IT_STRING | IT_CVAR,    NULL, "Attempts to resynchronise",        &cv_resynchattempts,    284},
+	{IT_STRING | IT_CVAR,    NULL, "Join delay",                       &cv_joindelay,          272},
+	{IT_STRING | IT_CVAR,    NULL, "Attempts to resynchronise",        &cv_resynchattempts,    278},
 
-	{IT_STRING | IT_CVAR,    NULL, "Show IP Address of Joiners",       &cv_showjoinaddress,    290},
-	{IT_STRING | IT_CVAR,    NULL, "Show Connecting Players",          &cv_noticedownload,     296},
+	{IT_STRING | IT_CVAR,    NULL, "Show IP Address of Joiners",       &cv_showjoinaddress,    284},
+	{IT_STRING | IT_CVAR,    NULL, "Show Connecting Players",          &cv_noticedownload,     290},
 #endif
 };
 
