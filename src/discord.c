@@ -708,8 +708,8 @@ void DRPC_UpdatePresence(void)
 		else if (splitscreen && playeringame[secondarydisplayplayer])
 		{
 			snprintf(charimg, 28, "charsonictails");
-			snprintf(playername, 28, "%s ", cv_playername.string);
-			snprintf(secondplayername, 28, "& %s Are Playing Split-Screen!", cv_playername2.string);
+			snprintf(playername, 28, "%s & ", cv_playername.string);
+			snprintf(secondplayername, 28, "%s Are In Split-Screen Mode!", cv_playername2.string);
 
 			strncat(combiring, strncat(playername, secondplayername, 21), 80); 
 			discordPresence.smallImageKey = charimg; // Character image
