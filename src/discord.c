@@ -681,6 +681,7 @@ void DRPC_UpdatePresence(void)
 		};
 
 		if ((!netgame && !splitscreen) && (botingame))
+		{
 			// Character images
 			CONS_Printf(M_GetText(secondarydisplayplayer));
 			if (players[secondarydisplayplayer].mo->skin, "sonic") 
