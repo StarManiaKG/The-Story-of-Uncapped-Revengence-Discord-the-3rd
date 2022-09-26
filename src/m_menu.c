@@ -351,8 +351,7 @@ menu_t OP_DataOptionsDef, OP_ScreenshotOptionsDef, OP_EraseDataDef;
 menu_t OP_ServerOptionsDef;
 #ifdef HAVE_DISCORDRPC
 menu_t OP_DiscordOptionsDef;
-menu_t OP_CustomStatusMenu;
-//menu_t OP_CustomDiscordStatusDef;
+menu_t OP_CustomDiscordStatusDef;
 #endif
 menu_t OP_MonitorToggleDef;
 static void M_ScreenshotOptions(INT32 choice);
@@ -1660,7 +1659,7 @@ static menuitem_t OP_DiscordOptionsMenu[] =
 static menuitem_t OP_CustomStatusMenu[] =
 {
 	{IT_HEADER,								NULL, "Custom Discord Status",	NULL,					 0},
-	{IT_STRING | IT_CVAR | IT_CV_STRING,	NULL, "Custom Status",			&cv_customdiscordstatus, 90},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,	NULL, "Custom Status",			&cv_customdiscordstatus, 10},
 };
 #endif
 
@@ -2346,7 +2345,7 @@ menu_t OP_EraseDataDef = DEFAULTMENUSTYLE(
 	"M_DATA", OP_EraseDataMenu, &OP_DataOptionsDef, 60, 30);
 #ifdef HAVE_DISCORDRPC
 menu_t OP_DiscordOptionsDef = DEFAULTMENUSTYLE(MTREE3(MN_OP_MAIN, MN_OP_DATA, MN_DISCORD_OPT), NULL, OP_DiscordOptionsMenu, &OP_DataOptionsDef, 30, 30);
-//menu_t OP_CustomDiscordStatusDef = DEFAULTMENUSTYLE(MTREE3(MN_OP_MAIN, MN_OP_DATA, MN_DISCORD_OPT), NULL, OP_CustomStatusMenu, &OP_DataOptionsDef, 30, 30);
+menu_t OP_CustomDiscordStatusDef = DEFAULTMENUSTYLE(MTREE3(MN_OP_MAIN, MN_OP_DATA, MN_DISCORD_OPT), NULL, OP_CustomStatusMenu, &OP_DataOptionsDef, 30, 30);
 #endif
 
 // ==========================================================================
