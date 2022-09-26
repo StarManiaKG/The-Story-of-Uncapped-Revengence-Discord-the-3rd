@@ -238,6 +238,12 @@ INT32 I_StartupSystem(void);
 /**	\brief Shutdown systems
 */
 
+#ifdef HAVE_DISCORDRPC
+void DRPC_ShutDown(void);
+/**	\brief Shutdown All Discord Rich Presence Things
+*/
+#endif
+
 void I_ShutdownSystem(void);
 
 /**	\brief	The I_GetDiskFreeSpace function

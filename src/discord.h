@@ -86,7 +86,6 @@ void DRPC_UpdatePresence(void);
 --------------------------------------------------*/
 void DRPC_ShutDown(void);
 
-
 #endif // HAVE_DISCORDRPC
 
 #endif // __DISCORD__
