@@ -737,7 +737,6 @@ void DRPC_UpdatePresence(void)
 --------------------------------------------------*/
 void DRPC_ShutDown(void)
 {
-	DiscordEventHandlers handlers;
 	DiscordRichPresence discordPresence;
 	memset(&discordPresence, 0, sizeof(discordPresence));
 
