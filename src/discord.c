@@ -675,7 +675,6 @@ void DRPC_UpdatePresence(void)
 
 		if !(netgame && splitscreen) && (playeringame[secondarydisplayplayer])
 		{
-
 			if (strcmp(skins[players[consoleplayer].skin].name, "sonic") && strcmp(skins[players[secondarydisplayplayer].skin].name, "tails"))
 				snprintf(charimg, 28, "charsonictails");
 			else
