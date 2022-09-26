@@ -682,6 +682,8 @@ void DRPC_UpdatePresence(void)
 
 		if (!netgame && !splitscreen)
 		{
+			player_t *player;
+			
 			// Character images
 			////No Bots?
 			if (!playeringame[1] && !playeringame[2]) 
