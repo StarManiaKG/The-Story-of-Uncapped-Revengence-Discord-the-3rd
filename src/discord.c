@@ -680,11 +680,11 @@ void DRPC_UpdatePresence(void)
 			NULL
 		};
 
-		if !(netgame && splitscreen)
+		if (!netgame && !splitscreen)
 		{
 			// Character images
 			////No Bots?
-			if !(playeringame[1] && playeringame[2]) 
+			if (!playeringame[1] && !playeringame[2]) 
 				snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
 			////Multiple Bots?
 			else if (playeringame[1] && playeringame[2])
@@ -693,7 +693,7 @@ void DRPC_UpdatePresence(void)
 			else if (playeringame[1] && !playeringame[2])
 				if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(skins[players[1].skin].name, "tails"))))
 				{
-					snprintf(charimg, 28, "charsonictails");
+					snprintf(charimg, 14, "charsonictails");
 					snprintf(secondcharname, 28, " & %s", skins[players[1].skin].realname);
 				}
 			
@@ -702,7 +702,7 @@ void DRPC_UpdatePresence(void)
 			//Combine Character Name and Bot Name
 			strncat(combiring, strncat(charname, secondcharname, 28), 80); //Combine Ring
 			discordPresence.smallImageKey = charimg; // Character image
-			discordPresence.smallImageText = charname; // Character name, Bot name
+			discordPresence.smallImageText = combiring; // Character name, Bot name
 		}
 		else if ((!playeringame[1] && !playeringame[2] && !splitscreen) || (netgame))
 		{
