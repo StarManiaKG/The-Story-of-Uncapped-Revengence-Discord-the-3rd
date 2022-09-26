@@ -2347,11 +2347,12 @@ menu_t OP_EraseDataDef = DEFAULTMENUSTYLE(
 #ifdef HAVE_DISCORDRPC
 menu_t OP_DiscordOptionsDef = DEFAULTMENUSTYLE(
 	MTREE3(MN_OP_MAIN, MN_OP_DATA, MN_DISCORD_OPT), 
-	"M_DISCORD", OP_DiscordOptionsMenu, &OP_DataOptionsDef, 30, 30);
+	NULL, OP_DiscordOptionsMenu, &OP_DataOptionsDef, 30, 30); //M_DISCORD
 
 menu_t OP_CustomStatusDef = DEFAULTMENUSTYLE(
 	MTREE4(MN_OP_MAIN, MN_OP_DATA, MN_DISCORD_OPT, MN_DISCORD_CS), 
-	"M_DISCORDCUSTOMSTATUS", OP_CustomStatusMenu, &OP_DiscordOptionsDef, 30, 30);
+	(NULL, OP_CustomStatusMenu, &OP_DiscordOptionsDef, 30, 30),
+	("M_DISCORDCUSTOMSTATUS", OP_CustomStatusMenu, &OP_DiscordOptionsDef, 30, 30)); //M_DISCORDCUSTOMSTATUS
 #endif
 
 // ==========================================================================
