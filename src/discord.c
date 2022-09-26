@@ -720,11 +720,11 @@ void DRPC_UpdatePresence(void)
 			discordPresence.smallImageKey = charimg; // Character image
 
 			// Player names
-			snprintf(playername, 21, "%s & ", cv_playername.string);
-			snprintf(secondplayername, 21, "%s Are In Splitscreen Mode", cv_playername2.string);
+			snprintf(playername, 28, "%s & ", cv_playername.string);
+			snprintf(secondplayername, 28, "%s Are In Splitscreen Mode", cv_playername2.string);
 
 			//Combine Player Names
-			strncat(combiring, strncat(playername, secondplayername, 21), 80); //Combine Ring (multiplayer edition)
+			strncat(combiring, strncat(playername, secondplayername, 28), 80); //Combine Ring (multiplayer edition)
 			discordPresence.smallImageText = combiring; // Player names
 		}
 	}
