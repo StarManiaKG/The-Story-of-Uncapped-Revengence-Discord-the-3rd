@@ -1661,6 +1661,7 @@ static menuitem_t OP_CustomStatusMenu[] =
 	{IT_STRING | IT_CVAR | IT_CV_STRING,	NULL, "Custom Status",			&cv_customdiscordstatus, 90},
 };
 #endif
+
 static menuitem_t OP_ServerOptionsMenu[] =
 {
 	{IT_HEADER, NULL, "General", NULL, 0},
