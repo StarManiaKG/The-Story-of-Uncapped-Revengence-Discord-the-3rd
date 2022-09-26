@@ -1653,7 +1653,7 @@ static menuitem_t OP_DiscordOptionsMenu[] =
 	{IT_STRING | IT_CVAR,		NULL, "Allow Invites",			&cv_discordinvites,		 50},
 	{IT_STRING | IT_CVAR,		NULL, "Show Memes on Status",	&cv_discordstatusmemes,	 60},
 	{IT_STRING | IT_CVAR,		NULL, "Show on Status",			&cv_discordshowonstatus, 70},
-	{IT_STRING | IT_CVAR,		NULL, "Custom Status Settings",	&OP_CustomStatusMenu,	 80},
+	{IT_STRING | IT_SUBMENU,	NULL, "Custom Status Settings",	&OP_CustomStatusMenu,	 80},
 };
 
 static menuitem_t OP_CustomStatusMenu[] =
