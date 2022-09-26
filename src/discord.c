@@ -727,7 +727,7 @@ void DRPC_UpdatePresence(void)
 			strncat(combiring, strncat(playername, secondplayername, 21), 80); //Combine Ring (multiplayer edition)
 
 			//Combine Everything
-			snprintf(combisring, 80, "%s Are In Split-Screen Mode!", combiring)
+			snprintf(combisring, 80, "%s Are In Split-Screen Mode!", combiring);
 			discordPresence.smallImageText = combisring; // Player names
 		}
 	}
