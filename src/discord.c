@@ -700,14 +700,16 @@ void DRPC_UpdatePresence(void)
 			}
 			// Unsupported Character images
 			else
+			{
 				snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
 				discordPresence.smallImageKey = "charcustom";
+			}
 		}
 		else if (splitscreen && playeringame[secondarydisplayplayer])
 		{
 			snprintf(charimg, 28, "charsonictails");
-			snprintf(playername, 21, "%s ", players[consoleplayer].name);
-			snprintf(secondplayername, 21, "& %s Are Playing Splitscreen Mode!", players[secondarydisplayplayer].name);
+			snprintf(playername, 21, "%s ", cv_playername.string);
+			snprintf(secondplayername, 21, "& %s Are Playing Splitscreen Mode!", cv_playername2.string);
 
 			strncat(combiring, strncat(playername, secondplayername, 21), 80); 
 			discordPresence.smallImageKey = charimg; // Character image
