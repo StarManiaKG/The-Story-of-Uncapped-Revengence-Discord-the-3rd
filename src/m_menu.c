@@ -83,7 +83,6 @@
 #endif
 
 #ifdef HAVE_DISCORDRPC
-//#include "discord_rpc.h"
 #include "discord.h"
 #endif
 
@@ -1570,7 +1569,7 @@ static menuitem_t OP_DataOptionsMenu[] =
 
 	{IT_STRING | IT_SUBMENU, NULL, "\x85" "Erase Data...",	&OP_EraseDataDef,		 60},
 #else
-	{IT_STRING | IT_SUBMENU, NULL, "\x85" "Erase Data...",	&OP_EraseDataDef,		 50},
+	{IT_STRING | IT_SUBMENU, NULL, "\x85" "Erase Data...",	&OP_EraseDataDef,		 40},
 #endif
 };
 
@@ -1709,16 +1708,15 @@ static menuitem_t OP_ServerOptionsMenu[] =
 	{IT_STRING | IT_CVAR,    NULL, "Scramble on Map Change",           &cv_scrambleonchange,   221},
 
 #ifndef NONET
-	{IT_HEADER, NULL, "Server Locations", NULL, 230},
+	{IT_HEADER, NULL, "Advanced Settings", NULL, 230},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,	NULL, "Master Server",	   &cv_masterserver,       236},
-	{IT_STRING | IT_CVAR | IT_CV_STRING,	NULL, "Holepunch server", &cv_holepunchserver,     258},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,	NULL, "Holepunch Server",  &cv_holepunchserver,    258},
 
-	{IT_HEADER, NULL, "Advanced Settings", NULL, 272},
-	{IT_STRING | IT_CVAR,    NULL, "Join delay",                       &cv_joindelay,          278},
-	{IT_STRING | IT_CVAR,    NULL, "Attempts to resynchronise",        &cv_resynchattempts,    284},
+	{IT_STRING | IT_CVAR,    NULL, "Join delay",                       &cv_joindelay,          272},
+	{IT_STRING | IT_CVAR,    NULL, "Attempts to resynchronise",        &cv_resynchattempts,    278},
 
-	{IT_STRING | IT_CVAR,    NULL, "Show IP Address of Joiners",       &cv_showjoinaddress,    290},
-	{IT_STRING | IT_CVAR,    NULL, "Show Connecting Players",          &cv_noticedownload,     296},
+	{IT_STRING | IT_CVAR,    NULL, "Show IP Address of Joiners",       &cv_showjoinaddress,    284},
+	{IT_STRING | IT_CVAR,    NULL, "Show Connecting Players",          &cv_noticedownload,     290},
 #endif
 };
 
@@ -11732,11 +11730,11 @@ static void M_ServerOptions(INT32 choice)
 		OP_ServerOptionsMenu[ 3].status = IT_GRAYEDOUT; // Allow add-on downloading
 		OP_ServerOptionsMenu[ 4].status = IT_GRAYEDOUT; // Allow players to join
 		OP_ServerOptionsMenu[37].status = IT_GRAYEDOUT; // Master server
-		OP_ServerOptionsMenu[38].status = IT_GRAYEDOUT; // Hole Punch server
-		OP_ServerOptionsMenu[40].status = IT_GRAYEDOUT; // Minimum delay between joins
-		OP_ServerOptionsMenu[41].status = IT_GRAYEDOUT; // Attempts to resynchronise
-		OP_ServerOptionsMenu[43].status = IT_GRAYEDOUT; // Notify of Joiners
-		OP_ServerOptionsMenu[44].status = IT_GRAYEDOUT; // Attempts to resynchronise
+		OP_ServerOptionsMenu[38].status = IT_GRAYEDOUT; // Holepunch server
+		OP_ServerOptionsMenu[39].status = IT_GRAYEDOUT; // Minimum delay between joins
+		OP_ServerOptionsMenu[40].status = IT_GRAYEDOUT; // Attempts to resynchronise
+		OP_ServerOptionsMenu[41].status = IT_GRAYEDOUT; // Show IP Address of Joiners
+		OP_ServerOptionsMenu[42].status = IT_GRAYEDOUT; // Show Connecting Players
 	}
 	else
 	{
@@ -11746,10 +11744,10 @@ static void M_ServerOptions(INT32 choice)
 		OP_ServerOptionsMenu[ 4].status = IT_STRING | IT_CVAR;
 		OP_ServerOptionsMenu[37].status = IT_STRING | IT_CVAR | IT_CV_STRING;
 		OP_ServerOptionsMenu[38].status = IT_STRING | IT_CVAR | IT_CV_STRING;
+		OP_ServerOptionsMenu[39].status = IT_STRING | IT_CVAR;
 		OP_ServerOptionsMenu[40].status = IT_STRING | IT_CVAR;
 		OP_ServerOptionsMenu[41].status = IT_STRING | IT_CVAR;
-		OP_ServerOptionsMenu[43].status = IT_STRING | IT_CVAR;
-		OP_ServerOptionsMenu[44].status = IT_STRING | IT_CVAR;
+		OP_ServerOptionsMenu[42].status = IT_STRING | IT_CVAR;
 	}
 #endif
 
