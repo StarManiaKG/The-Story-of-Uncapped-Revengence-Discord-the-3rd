@@ -535,19 +535,19 @@ void DRPC_UpdatePresence(void)
 				}
 				else
 				{
-					if (cv_discordshowonstatus.value == 3)
+					if (!cv_discordshowonstatus.value)
 					{
 						if (!cv_discordstatusmemes.value)
 							strlcat(detailstr, ", No Emeralds", 64);
 						else
 							strlcat(detailstr, ", NO EMERALDS?", 64);
 					}
-					else if (!cv_discordshowonstatus.value)
+					else if (cv_discordshowonstatus.value == 3)
 					{
 						if (!cv_discordstatusmemes.value)
-							strlcat(detailstr, ", No Emeralds", 64);
+							strlcat(detailstr, "No Emeralds", 64);
 						else
-							strlcat(detailstr, ", NO EMERALDS?", 64);
+							strlcat(detailstr, "NO EMERALDS?", 64);
 					}
 				}
 				
@@ -683,7 +683,7 @@ void DRPC_UpdatePresence(void)
 		if ((!netgame && !splitscreen) && (botingame))
 		{		
 			// Character images
-			if (strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(skins[players[1].skin].name, "tails")))
+			if (strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(skins[players[1].bot].skin->name, "tails")))
 				snprintf(charimg, 28, "charsonictails");
 			else
 				snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
