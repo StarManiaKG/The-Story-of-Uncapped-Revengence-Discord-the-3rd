@@ -574,13 +574,16 @@ void DRPC_UpdatePresence(void)
 			{
 				if (!splitscreen) 
 				{
-					if (gametype == GT_COOP) && (!netgame)
+					if (netgame)
 					{
 						snprintf(statestr, 65, "Playing %s", gametype_cons_t[gametype].strvalue);
 						discordPresence.state = statestr;
 					}
 					else
-						discordPresence.state = "Playing Single-Player";
+					{
+						if (gametype == GT_COOP) && (!netgame)
+							discordPresence.state = "Playing Single-Player";
+					}
 				}
 			}
 		}
