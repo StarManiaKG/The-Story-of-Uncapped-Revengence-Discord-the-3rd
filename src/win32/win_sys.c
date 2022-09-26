@@ -663,7 +663,7 @@ void I_Error(const char *error, ...)
 	M_FreePlayerSetupColors();
 	
 #ifdef HAVE_DISCORDRPC
-	Discord_Shutdown();
+	I_DiscordShutdown();
 #endif
 
 	// shutdown everything that was started
@@ -765,7 +765,7 @@ void I_Quit(void)
 	M_FreePlayerSetupColors();
 
 #ifdef HAVE_DISCORDRPC
-	Discord_Shutdown();
+	I_DiscordShutdown();
 #endif
 
 	// shutdown everything that was started
