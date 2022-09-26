@@ -351,7 +351,7 @@ menu_t OP_DataOptionsDef, OP_ScreenshotOptionsDef, OP_EraseDataDef;
 menu_t OP_ServerOptionsDef;
 #ifdef HAVE_DISCORDRPC
 menu_t OP_DiscordOptionsDef;
-menu_t OP_CustomDiscordStatusDef;
+menu_t OP_CustomStatusDef;
 #endif
 menu_t OP_MonitorToggleDef;
 static void M_ScreenshotOptions(INT32 choice);
