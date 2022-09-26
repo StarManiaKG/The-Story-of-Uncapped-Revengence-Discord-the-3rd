@@ -77,6 +77,16 @@ void DRPC_Init(void);
 void DRPC_UpdatePresence(void);
 
 
+/*--------------------------------------------------
+	void DRPC_ShutDown(void)
+
+		Clears Everything Related to Discord
+		Rich Presence. Only Runs On Game Close
+		or Game Crash.
+--------------------------------------------------*/
+void DRPC_ShutDown(void);
+
+
 #endif // HAVE_DISCORDRPC
 
 #endif // __DISCORD__
