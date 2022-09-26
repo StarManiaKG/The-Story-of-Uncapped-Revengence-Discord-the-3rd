@@ -2451,7 +2451,7 @@ void I_Quit(void)
 	CL_AbortDownloadResume();
 	M_FreePlayerSetupColors();
 #ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
+	Discord_Shutdown();
 #endif
 	I_ShutdownMusic();
 	I_ShutdownSound();

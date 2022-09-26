@@ -1652,10 +1652,12 @@ static menuitem_t OP_DiscordOptionsMenu[] =
 
 	{IT_STRING | IT_CVAR,		NULL, "Allow Ask To Join",		&cv_discordasks,		 60},
 	{IT_STRING | IT_CVAR,		NULL, "Allow Invites",			&cv_discordinvites,		 70},
-	{IT_STRING | IT_CVAR,		NULL, "Show on Status",			&cv_discordshowonstatus, 80},
+	{IT_STRING | IT_CVAR,		NULL, "Show Memes on Status",	&cv_discordstatusmemes,	 80},
+	{IT_STRING | IT_CVAR,		NULL, "Show on Status",			&cv_discordshowonstatus, 90},
+
+	{IT_HEADER,					NULL, "Custom Status Settings",	NULL,					 120},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,	
-								NULL, "Custom Status",				&cv_customdiscordstatus,	90},
-	{IT_STRING | IT_CVAR,		NULL, "Show Memes on Status",		&cv_discordstatusmemes,		120},
+								NULL, "Custom Status",			&cv_customdiscordstatus, 130},
 };
 #endif
 static menuitem_t OP_ServerOptionsMenu[] =
@@ -1711,15 +1713,15 @@ static menuitem_t OP_ServerOptionsMenu[] =
 	{IT_HEADER, NULL, "Master Server", NULL, 230},
 	{IT_STRING | IT_CVAR | IT_CV_STRING, NULL, "Master server",        &cv_masterserver,       236},
 
-	{IT_HEADER, NULL, "Holepunch Server", NULL, 246},
-	{IT_STRING | IT_CVAR | IT_CV_STRING, NULL, "Holepunch server",     &cv_rendezvousserver,   252},
+	{IT_HEADER, NULL, "Holepunch Server", NULL, 252},
+	{IT_STRING | IT_CVAR | IT_CV_STRING, NULL, "Holepunch server",     &cv_rendezvousserver,   258},
 
-	{IT_HEADER, NULL, "Advanced", NULL, 266},
-	{IT_STRING | IT_CVAR,    NULL, "Join delay",                       &cv_joindelay,          272},
-	{IT_STRING | IT_CVAR,    NULL, "Attempts to resynchronise",        &cv_resynchattempts,    278},
+	{IT_HEADER, NULL, "Advanced", NULL, 272},
+	{IT_STRING | IT_CVAR,    NULL, "Join delay",                       &cv_joindelay,          278},
+	{IT_STRING | IT_CVAR,    NULL, "Attempts to resynchronise",        &cv_resynchattempts,    284},
 
-	{IT_STRING | IT_CVAR,    NULL, "Show IP Address of Joiners",       &cv_showjoinaddress,    264},
-	{IT_STRING | IT_CVAR,    NULL, "Show Connecting Players",          &cv_noticedownload,     270},
+	{IT_STRING | IT_CVAR,    NULL, "Show IP Address of Joiners",       &cv_showjoinaddress,    290},
+	{IT_STRING | IT_CVAR,    NULL, "Show Connecting Players",          &cv_noticedownload,     296},
 #endif
 };
 
