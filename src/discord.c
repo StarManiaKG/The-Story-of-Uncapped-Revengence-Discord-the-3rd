@@ -326,7 +326,7 @@ void DRPC_Init(void)
 	handlers.joinRequest = DRPC_HandleJoinRequest;
 
 	Discord_Initialize(DISCORD_APPID, &handlers, 1, NULL);
-	I_AddExitFunc(I_DiscordShutdown);
+	I_AddExitFunc(Discord_Shutdown);
 	DRPC_UpdatePresence();
 }
 

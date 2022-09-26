@@ -121,7 +121,7 @@ INT32 I_StartupSystem(void)
 }
 
 #ifdef HAVE_DISCORDRPC
-void I_DiscordShutdown(void){}
+void Discord_Shutdown(void){}
 #endif
 
 void I_ShutdownSystem(void){}
