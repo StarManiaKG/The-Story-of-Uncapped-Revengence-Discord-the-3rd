@@ -683,8 +683,7 @@ void DRPC_UpdatePresence(void)
 		if ((!netgame && !splitscreen) && (botingame))
 		{
 			// Character images
-			CONS_Printf(M_GetText(secondarydisplayplayer));
-			if (players[secondarydisplayplayer].skin->name, "sonic") 
+			if (strcmp(skins[players[consoleplayer].skin].name, "sonic") 
 				&& strcmp(skins[players[secondarydisplayplayer].skin].name, "tails"))
 				snprintf(charimg, 28, "charsonictails");
 			else
