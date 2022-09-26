@@ -574,7 +574,7 @@ void DRPC_UpdatePresence(void)
 			{
 				if (!splitscreen) 
 				{
-					if (gametype != GT_SINGLEPLAYER)
+					if (gametype == GT_COOP) && (!netgame)
 					{
 						snprintf(statestr, 65, "Playing %s", gametype_cons_t[gametype].strvalue);
 						discordPresence.state = statestr;
@@ -679,7 +679,8 @@ void DRPC_UpdatePresence(void)
 		if ((!netgame && !splitscreen) && (playeringame[secondarydisplayplayer]))
 		{
 			// Character images
-			if (strcmp(skins[players[consoleplayer].skin].name, "sonic") && strcmp(skins[players[secondarydisplayplayer].skin].name, "tails"))
+			if (strcmp(skins[players[consoleplayer].skin].name, "sonic") 
+				&& strcmp(skins[players[secondarydisplayplayer].skin].name, "tails"))
 				snprintf(charimg, 28, "charsonictails");
 			else
 				snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
@@ -688,7 +689,8 @@ void DRPC_UpdatePresence(void)
 			snprintf(charname, 28, "Playing As: %s ", skins[players[consoleplayer].skin].realname);
 			snprintf(secondcharname, 28, "& %s", skins[players[secondarydisplayplayer].skin].realname);
 			
-			strncat(combiring, strncat(charname, secondcharname, 28), 80); //Combine Character Name and Bot Name
+			//Combine Character Name and Bot Name
+			strncat(combiring, strncat(charname, secondcharname, 28), 80); //Combine Ring
 			discordPresence.smallImageKey = charimg; // Character image
 			discordPresence.smallImageText = combiring; // Character name, Bot name
 		}
@@ -716,7 +718,8 @@ void DRPC_UpdatePresence(void)
 			snprintf(playername, 21, "%s & ", cv_playername.string);
 			snprintf(secondplayername, 21, "%s Are In Split-Screen Mode!", cv_playername2.string);
 
-			strncat(combiring, strncat(playername, secondplayername, 21), 80); //Combine Player Names
+			//Combine Player Names
+			strncat(combiring, strncat(playername, secondplayername, 21), 80); //Combine Ring (multiplayer edition)
 			discordPresence.smallImageKey = charimg; // Character image
 			discordPresence.smallImageText = combiring; // Player names
 		}
