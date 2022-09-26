@@ -697,10 +697,10 @@ void DRPC_UpdatePresence(void)
 			{
 				if (players[1].bot)
 				{
-					if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (players[1].mo->skin == "tails")))
+					if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (players[1].mo->skin == 2)))
 					{
 						snprintf(charimg, 14, "charsonictails");
-						snprintf(secondcharname, 28, " & %s", skins[players[mo].skin].realname);
+						snprintf(secondcharname, 28, " & %s", skins[players[1].skin].realname);
 					}
 				}
 			}
