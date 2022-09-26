@@ -683,22 +683,18 @@ void DRPC_UpdatePresence(void)
 		if ((!netgame && !splitscreen) && (botingame))
 		{		
 			// Character images
-			if (strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(skins[players[1].bot].skin->name, "tails")))
+			if (strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(skins[players[2].skin].name, "tails")))
 				snprintf(charimg, 28, "charsonictails");
 			else
 				snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
 			
 			// Character names
-			if (!players[2].bot)
-			{
-				snprintf(charname, 28, "Playing As: %s ", skins[players[consoleplayer].skin].realname);
+			snprintf(charname, 28, "Playing As: %s ", skins[players[consoleplayer].skin].realname);
+
+			if (!players[3].bot)
 				snprintf(secondcharname, 28, "& %s", skins[players[secondarydisplayplayer].skin].realname);
-			}
 			else
-			{
-				snprintf(charname, 28, "Playing As: %s ", skins[players[consoleplayer].skin].realname);
 				snprintf(secondcharname, 28, "& Multiple Bots");
-			}
 			
 			//Combine Character Name and Bot Name
 			strncat(combiring, strncat(charname, secondcharname, 28), 80); //Combine Ring
