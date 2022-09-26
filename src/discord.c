@@ -413,10 +413,12 @@ void DRPC_UpdatePresence(void)
 
 	char charimg[4+SKINNAMESIZE+1];
 	char charname[11+SKINNAMESIZE+1];
-
-	char botname[11+SKINNAMESIZE+1];
+	char secondcharname[11+SKINNAMESIZE+1];
 
 	char combiring[80];
+
+	char playername[MAXPLAYERNAME+1];
+	char secondplayername[MAXPLAYERNAME+1];
 
 	boolean joinSecretSet = false;
 
@@ -503,8 +505,7 @@ void DRPC_UpdatePresence(void)
 			
 			if (cv_discordshowonstatus.value == 0 || cv_discordshowonstatus.value == 4)
 			{
-				snprintf(detailstr, 20, "%d/%d Emblems",
-					M_CountEmblems(), (numemblems + numextraemblems));
+				snprintf(detailstr, 20, "%d/%d Emblems", M_CountEmblems(), (numemblems + numextraemblems));
 			}
 
 			if (cv_discordshowonstatus.value == 0 || cv_discordshowonstatus.value == 3)
@@ -533,10 +534,20 @@ void DRPC_UpdatePresence(void)
 				}
 				else
 				{
-					if (!cv_discordstatusmemes.value)
-						strlcat(detailstr, ", No Emeralds", 64);
-					else
-						strlcat(detailstr, ", NO EMERALDS?", 64);
+					if (cv_discordshowonstatus.value == 3)
+					{
+						if (!cv_discordstatusmemes.value)
+							strlcat(detailstr, ", No Emeralds", 64);
+						else
+							strlcat(detailstr, ", NO EMERALDS?", 64);
+					}
+					else if (!cv_discordshowonstatus.value)
+					{
+						if (!cv_discordstatusmemes.value)
+							strlcat(detailstr, ", No Emeralds", 64);
+						else
+							strlcat(detailstr, ", NO EMERALDS?", 64);
+					}
 				}
 				
 				discordPresence.details = detailstr;
@@ -589,10 +600,15 @@ void DRPC_UpdatePresence(void)
 				strlwr(mapimg);
 				discordPresence.largeImageKey = mapimg; // Map image
 			}
-			else
+			else if (gamemap == 99) || (gamestate == GS_TITLESCREEN)
+				discordPresence.largeImageKey = "misctitle";
+			else if (gamestate == GS_EVALUATION)
 			{
-				discordPresence.largeImageKey = "mapcustom";
+				discordPresence.largeImageKey = "misctitle";
+				discordPresence.largeImageText = "Evaluating Results";
 			}
+			else
+				discordPresence.largeImageKey = "mapcustom";
 			
 			if (mapheaderinfo[gamemap - 1]->menuflags & LF2_HIDEINMENU)
 			{
@@ -619,11 +635,6 @@ void DRPC_UpdatePresence(void)
 					discordPresence.endTimestamp = mapTimeEnd;
 				}
 			}
-		}
-		else if (gamestate == GS_EVALUATION)
-		{
-			discordPresence.largeImageKey = "misctitle";
-			discordPresence.largeImageText = "Evaluating Results";
 		}
 	}
 
@@ -662,22 +673,22 @@ void DRPC_UpdatePresence(void)
 			NULL
 		};
 
-		if (!netgame && botingame)
+		if !(netgame && splitscreen) && (playeringame[secondarydisplayplayer])
 		{
 
 			if (strcmp(skins[players[consoleplayer].skin].name, "sonic") && strcmp(skins[players[secondarydisplayplayer].skin].name, "tails"))
-				snprintf(charimg, 21, "charsonictails");
+				snprintf(charimg, 28, "charsonictails");
 			else
 				snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
 			
 			snprintf(charname, 28, "Playing As: %s ", skins[players[consoleplayer].skin].realname);
-			snprintf(botname, 28, "& %s", skins[players[secondarydisplayplayer].skin].realname);
+			snprintf(secondcharname, 28, "& %s", skins[players[secondarydisplayplayer].skin].realname);
 			
-			strncat(combiring, strncat(charname, botname, 28), 80);
+			strncat(combiring, strncat(charname, secondcharname, 28), 80);
 			discordPresence.smallImageKey = charimg; // Character image
-			discordPresence.smallImageText = charname; // Character name, Bot name
+			discordPresence.smallImageText = combiring; // Character name, Bot name
 		}
-		else if (!botingame)
+		else if (!playeringame[secondarydisplayplayer) || (netgame)
 		{
 			snprintf(charname, 28, "Playing As: %s", skins[players[consoleplayer].skin].realname);
 			discordPresence.smallImageText = charname; // Character name
@@ -690,10 +701,22 @@ void DRPC_UpdatePresence(void)
 			}
 			// Unsupported Character images
 			else
+				snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
 				discordPresence.smallImageKey = "charcustom";
+		}
+		else if (splitscreen && playeringame[secondarydisplayplayer])
+		{
+			snprintf(charimg, 28, "charsonictails");
+			snprintf(playername, 21, "%s ", players[consoleplayer].name);
+			snprintf(secondplayername, 21, "& %s Are Playing Splitscreen Mode!", players[secondarydisplayplayer].name);
+
+			strncat(combiring, strncat(playername, secondplayername, 21), 80); 
+			discordPresence.smallImageKey = charimg; // Character image
+			discordPresence.smallImageText = combiring; // Character name, Bot name
 		}
 	}
 	
+	//Custom Status Info
 	if (cv_discordshowonstatus.value == 7)
 	{
 		if (cv_customdiscordstatus.string)
