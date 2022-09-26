@@ -689,7 +689,7 @@ void DRPC_UpdatePresence(void)
 				snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
 			
 			// Character names
-			if (!player[2].bot)
+			if (!players[2].bot)
 			{
 				snprintf(charname, 28, "Playing As: %s ", skins[players[consoleplayer].skin].realname);
 				snprintf(secondcharname, 28, "& %s", skins[players[secondarydisplayplayer].skin].realname);
