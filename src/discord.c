@@ -415,11 +415,11 @@ void DRPC_UpdatePresence(void)
 	char charname[11+SKINNAMESIZE+1];
 	char secondcharname[11+SKINNAMESIZE+1];
 
-	char playername[MAXPLAYERNAME+1];
-	char secondplayername[MAXPLAYERNAME+1];
+	//char discordavatarimg[25+50+15+10];
+	char playername[11+MAXPLAYERNAME+1];
+	char secondplayername[11+MAXPLAYERNAME+1];
 
-	char combiring[80];
-	char combisring[80];
+	char combiring[28+28+24];
 
 	boolean joinSecretSet = false;
 
@@ -720,15 +720,12 @@ void DRPC_UpdatePresence(void)
 			discordPresence.smallImageKey = charimg; // Character image
 
 			// Player names
-			snprintf(playername, 21, "%s ", cv_playername.string);
-			snprintf(secondplayername, 21, "& %s", cv_playername2.string);
+			snprintf(playername, 21, "%s & ", cv_playername.string);
+			snprintf(secondplayername, 21, "%s Are In Splitscreen Mode", cv_playername2.string);
 
 			//Combine Player Names
-			strncat(combiring, strncat(playername, secondplayername, 21), 21); //Combine Ring (multiplayer edition)
-
-			//Combine Everything
-			snprintf(combisring, 80, "%s Are In Split-Screen!", combiring);
-			discordPresence.smallImageText = combisring; // Player names
+			strncat(combiring, strncat(playername, secondplayername, 21), 80); //Combine Ring (multiplayer edition)
+			discordPresence.smallImageText = combiring; // Player names
 		}
 	}
 	
