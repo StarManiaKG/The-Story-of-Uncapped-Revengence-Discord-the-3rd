@@ -684,7 +684,7 @@ void DRPC_UpdatePresence(void)
 		{
 			// Character images
 			CONS_Printf(M_GetText(secondarydisplayplayer));
-			if (players[secondarydisplayplayer].mo->skin, "sonic") 
+			if (players[secondarydisplayplayer].skin->name, "sonic") 
 				&& strcmp(skins[players[secondarydisplayplayer].skin].name, "tails"))
 				snprintf(charimg, 28, "charsonictails");
 			else
