@@ -415,10 +415,11 @@ void DRPC_UpdatePresence(void)
 	char charname[11+SKINNAMESIZE+1];
 	char secondcharname[11+SKINNAMESIZE+1];
 
-	char combiring[80];
-
 	char playername[MAXPLAYERNAME+1];
 	char secondplayername[MAXPLAYERNAME+1];
+
+	char combiring[80];
+	char combisring[80];
 
 	boolean joinSecretSet = false;
 
@@ -716,15 +717,18 @@ void DRPC_UpdatePresence(void)
 		{
 			// Character images
 			snprintf(charimg, 28, "charsonictails");
+			discordPresence.smallImageKey = charimg; // Character image
 
 			// Player names
 			snprintf(playername, 21, "%s & ", cv_playername.string);
-			snprintf(secondplayername, 21, "%s Are In Split-Screen Mode!", cv_playername2.string);
+			snprintf(secondplayername, 21, "%s", cv_playername2.string);
 
 			//Combine Player Names
 			strncat(combiring, strncat(playername, secondplayername, 21), 80); //Combine Ring (multiplayer edition)
-			discordPresence.smallImageKey = charimg; // Character image
-			discordPresence.smallImageText = combiring; // Player names
+
+			//Combine Everything
+			snprintf(combisring, 80, "%s Are In Split-Screen Mode!", combiring)
+			discordPresence.smallImageText = combisring; // Player names
 		}
 	}
 	
