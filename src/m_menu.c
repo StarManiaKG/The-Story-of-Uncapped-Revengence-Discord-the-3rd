@@ -1710,10 +1710,10 @@ static menuitem_t OP_ServerOptionsMenu[] =
 	{IT_STRING | IT_CVAR,    NULL, "Scramble on Map Change",           &cv_scrambleonchange,   221},
 
 #ifndef NONET
-	{IT_HEADER, NULL, "Master Server", NULL, 230},
+	{IT_HEADER, NULL, "Master Server Settings", NULL, 230},
 	{IT_STRING | IT_CVAR | IT_CV_STRING, NULL, "Master server",        &cv_masterserver,       236},
 
-	{IT_HEADER, NULL, "Holepunch Server", NULL, 252},
+	{IT_HEADER, NULL, "Holepunch Server Settings", NULL, 252},
 	{IT_STRING | IT_CVAR | IT_CV_STRING, NULL, "Holepunch server",     &cv_rendezvousserver,   258},
 
 	{IT_HEADER, NULL, "Advanced", NULL, 272},
