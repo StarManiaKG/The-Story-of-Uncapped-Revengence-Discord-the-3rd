@@ -668,7 +668,7 @@ void DRPC_UpdatePresence(void)
 			if ((strcmp(skins[players[consoleplayer].skin].name, "sonic")) && (strcmp(skins[players[secondarydisplayplayer].skin].name, "tails")))
 				snprintf(charimg, 21, "charsonictails");
 			else
-				snprintf(charimg, 21, "char%s", skins[players[consoleplayer].skin].name);
+				snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
 			
 			snprintf(charname, 28, "Playing As: %s ", skins[players[consoleplayer].skin].realname);
 			snprintf(botname, 28, "& %s", skins[players[secondarydisplayplayer].skin].realname);
