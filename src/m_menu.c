@@ -1645,18 +1645,18 @@ enum
 static menuitem_t OP_DiscordOptionsMenu[] =
 {
 	{IT_HEADER,					NULL, "Discord Rich Presence",	NULL,					 0},
-	{IT_STRING | IT_CVAR,		NULL, "Rich Presence",			&cv_discordrp,			 6},
-	{IT_STRING | IT_CVAR,		NULL, "Streamer Mode",			&cv_discordstreamer,	 12},
+	{IT_STRING | IT_CVAR,		NULL, "Rich Presence",			&cv_discordrp,			 10},
+	{IT_STRING | IT_CVAR,		NULL, "Streamer Mode",			&cv_discordstreamer,	 20},
 
-	{IT_HEADER,					NULL, "Rich Presence Settings",	NULL,					 22},
-	{IT_STRING | IT_CVAR,		NULL, "Allow Ask To Join",		&cv_discordasks,		 28},
-	{IT_STRING | IT_CVAR,		NULL, "Allow Invites",			&cv_discordinvites,		 34},
-	{IT_STRING | IT_CVAR,		NULL, "Show Memes on Status",	&cv_discordstatusmemes,	 40},
-	{IT_STRING | IT_CVAR,		NULL, "Show on Status",			&cv_discordshowonstatus, 46},
+	{IT_HEADER,					NULL, "Rich Presence Settings",	NULL,					 30},
+	{IT_STRING | IT_CVAR,		NULL, "Allow Ask To Join",		&cv_discordasks,		 40},
+	{IT_STRING | IT_CVAR,		NULL, "Allow Invites",			&cv_discordinvites,		 50},
+	{IT_STRING | IT_CVAR,		NULL, "Show Memes on Status",	&cv_discordstatusmemes,	 60},
+	{IT_STRING | IT_CVAR,		NULL, "Show on Status",			&cv_discordshowonstatus, 70},
 
-	{IT_HEADER,					NULL, "Custom Status Settings",	NULL,					 56},
+	{IT_HEADER,					NULL, "Custom Status Settings",	NULL,					 80},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,	
-								NULL, "Custom Status",			&cv_customdiscordstatus, 62},
+								NULL, "Custom Status",			&cv_customdiscordstatus, 90},
 };
 #endif
 static menuitem_t OP_ServerOptionsMenu[] =
@@ -1710,8 +1710,8 @@ static menuitem_t OP_ServerOptionsMenu[] =
 
 #ifndef NONET
 	{IT_HEADER, NULL, "Server Locations", NULL, 230},
-	{IT_STRING | IT_CVAR | IT_CV_STRING,	 NULL, "Master Server",	   &cv_masterserver,       236},
-	{IT_STRING | IT_CVAR | IT_CV_STRING,	 NULL, "Holepunch server", &cv_holepunchserver,    258},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,	NULL, "Master Server",	   &cv_masterserver,       236},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,	NULL, "Holepunch server", &cv_holepunchserver,     258},
 
 	{IT_HEADER, NULL, "Advanced Settings", NULL, 272},
 	{IT_STRING | IT_CVAR,    NULL, "Join delay",                       &cv_joindelay,          278},
@@ -11731,9 +11731,12 @@ static void M_ServerOptions(INT32 choice)
 		OP_ServerOptionsMenu[ 2].status = IT_GRAYEDOUT; // Max players
 		OP_ServerOptionsMenu[ 3].status = IT_GRAYEDOUT; // Allow add-on downloading
 		OP_ServerOptionsMenu[ 4].status = IT_GRAYEDOUT; // Allow players to join
-		OP_ServerOptionsMenu[36].status = IT_GRAYEDOUT; // Master server
-		OP_ServerOptionsMenu[37].status = IT_GRAYEDOUT; // Minimum delay between joins
-		OP_ServerOptionsMenu[38].status = IT_GRAYEDOUT; // Attempts to resynchronise
+		OP_ServerOptionsMenu[37].status = IT_GRAYEDOUT; // Master server
+		OP_ServerOptionsMenu[38].status = IT_GRAYEDOUT; // Hole Punch server
+		OP_ServerOptionsMenu[40].status = IT_GRAYEDOUT; // Minimum delay between joins
+		OP_ServerOptionsMenu[41].status = IT_GRAYEDOUT; // Attempts to resynchronise
+		OP_ServerOptionsMenu[43].status = IT_GRAYEDOUT; // Notify of Joiners
+		OP_ServerOptionsMenu[44].status = IT_GRAYEDOUT; // Attempts to resynchronise
 	}
 	else
 	{
@@ -11741,9 +11744,12 @@ static void M_ServerOptions(INT32 choice)
 		OP_ServerOptionsMenu[ 2].status = IT_STRING | IT_CVAR;
 		OP_ServerOptionsMenu[ 3].status = IT_STRING | IT_CVAR;
 		OP_ServerOptionsMenu[ 4].status = IT_STRING | IT_CVAR;
-		OP_ServerOptionsMenu[36].status = IT_STRING | IT_CVAR | IT_CV_STRING;
-		OP_ServerOptionsMenu[37].status = IT_STRING | IT_CVAR;
-		OP_ServerOptionsMenu[38].status = IT_STRING | IT_CVAR;
+		OP_ServerOptionsMenu[37].status = IT_STRING | IT_CVAR | IT_CV_STRING;
+		OP_ServerOptionsMenu[38].status = IT_STRING | IT_CVAR | IT_CV_STRING;
+		OP_ServerOptionsMenu[40].status = IT_STRING | IT_CVAR;
+		OP_ServerOptionsMenu[41].status = IT_STRING | IT_CVAR;
+		OP_ServerOptionsMenu[43].status = IT_STRING | IT_CVAR;
+		OP_ServerOptionsMenu[44].status = IT_STRING | IT_CVAR;
 	}
 #endif
 
