@@ -1709,10 +1709,12 @@ static menuitem_t OP_ServerOptionsMenu[] =
 
 #ifndef NONET
 	{IT_HEADER, NULL, "Advanced Settings", NULL, 230},
-	{IT_STRING | IT_CVAR | IT_CV_STRING,	NULL, "Master Server",	   &cv_masterserver,       236},
-	{IT_STRING | IT_CVAR | IT_CV_STRING,	NULL, "Holepunch Server",  &cv_holepunchserver,    250},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,	
+							 NULL, "Master Server",	   				   &cv_masterserver,       236},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,	
+							 NULL, "Holepunch Server",  			   &cv_holepunchserver,    250},
 
-	{IT_STRING | IT_CVAR,    NULL, "Join delay",                       &cv_joindelay,          264},
+	{IT_STRING | IT_CVAR,    NULL, "Join delay",                       &cv_joindelay,          264}, //39
 	{IT_STRING | IT_CVAR,    NULL, "Attempts to resynchronise",        &cv_resynchattempts,    269},
 
 	{IT_STRING | IT_CVAR,    NULL, "Show IP Address of Joiners",       &cv_showjoinaddress,    274},
