@@ -2450,8 +2450,9 @@ void I_Quit(void)
 	D_QuitNetGame();
 	CL_AbortDownloadResume();
 	M_FreePlayerSetupColors();
+
 #ifdef HAVE_DISCORDRPC
-	Discord_Shutdown();
+	I_DiscordShutdown();
 #endif
 	I_ShutdownMusic();
 	I_ShutdownSound();
