@@ -2350,7 +2350,7 @@ menu_t OP_DiscordOptionsDef = DEFAULTMENUSTYLE(
 	"M_DISCORD", OP_DiscordOptionsMenu, &OP_DataOptionsDef, 30, 30);
 
 menu_t OP_CustomDiscordStatusDef = DEFAULTMENUSTYLE(
-	MTREE4(MN_OP_MAIN, MN_OP_DATA, MN_DISCORD_CS), 
+	MTREE4(MN_OP_MAIN, MN_OP_DATA, MN_OP_SOUND, MN_DISCORD_CS), 
 	"M_DISCORDCUSTOMSTATUS", OP_CustomStatusMenu, &OP_DiscordOptionsDef, 60, 30);
 #endif
 
