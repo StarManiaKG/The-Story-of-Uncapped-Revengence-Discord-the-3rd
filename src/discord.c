@@ -419,7 +419,7 @@ void DRPC_UpdatePresence(void)
 	char playername[11+MAXPLAYERNAME+1];
 	char secondplayername[11+MAXPLAYERNAME+1];
 
-	char combiring[28+28+24];
+	char combiring[28+28+24+15+5];
 
 	boolean joinSecretSet = false;
 
@@ -680,10 +680,10 @@ void DRPC_UpdatePresence(void)
 			NULL
 		};
 
-		if ((!netgame && !splitscreen) && (playeringame[secondarydisplayplayer]))
-		{
+		if ((!netgame && !splitscreen) && (botingame))
 			// Character images
-			if (strcmp(skins[players[consoleplayer].skin].name, "sonic") 
+			CONS_Printf(playeringame[consoleplayer], secondarydisplayplayer)
+			if (players[secondarydisplayplayer].mo->skin, "sonic") 
 				&& strcmp(skins[players[secondarydisplayplayer].skin].name, "tails"))
 				snprintf(charimg, 28, "charsonictails");
 			else
@@ -724,7 +724,7 @@ void DRPC_UpdatePresence(void)
 			snprintf(secondplayername, 28, "%s Are In Splitscreen Mode", cv_playername2.string);
 
 			//Combine Player Names
-			strncat(combiring, strncat(playername, secondplayername, 28), 80); //Combine Ring (multiplayer edition)
+			strncat(combiring, strncat(playername, secondplayername, 28), 100); //Combine Ring (multiplayer edition)
 			discordPresence.smallImageText = combiring; // Player names
 		}
 	}
