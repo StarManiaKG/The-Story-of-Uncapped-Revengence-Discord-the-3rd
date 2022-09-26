@@ -665,7 +665,8 @@ void DRPC_UpdatePresence(void)
 		if (!netgame && botingame)
 		{
 
-			if ((strcmp(skins[players[consoleplayer].skin].name, "sonic")) && (strcmp(skins[players[secondarydisplayplayer].skin].name, "tails")))
+			//if ((strcmp(skins[players[consoleplayer].skin].name, "sonic")) && (strcmp(skins[players[secondarydisplayplayer].skin].name, "tails")))
+			if ((players[consoleplayer].skin, "sonic") && (players[secondarydisplayplayer].skin, "tails"))
 				snprintf(charimg, 21, "charsonictails");
 			else
 				snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
@@ -707,6 +708,20 @@ void DRPC_UpdatePresence(void)
 	}
 
 	Discord_UpdatePresence(&discordPresence);
+}
+
+/*--------------------------------------------------
+	void DRPC_ShutDown(void)
+
+		Clears Everything Related to Discord
+		Rich Presence. Only Runs On Game Close
+		or Game Crash.
+--------------------------------------------------*/
+void DRPC_ShutDown(void)
+{
+	DRPC_UpdatePresence();
+	Discord_Shutdown();
+	Discord_ClearPresence();
 }
 
 #endif // HAVE_DISCORDRPC
