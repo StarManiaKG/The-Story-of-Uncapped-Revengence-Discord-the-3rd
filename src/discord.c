@@ -688,26 +688,25 @@ void DRPC_UpdatePresence(void)
 				snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
 			////Multiple Bots?
 			else if (playeringame[1] && playeringame[2])
-				snprintf(secondcharname, 28, "& Multiple Bots");
+				snprintf(secondcharname, 28, " & Multiple Bots");
 			////One Regular Bot?
 			else if (playeringame[1] && !playeringame[2])
 			{
 				if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(skins[players[1].skin].name, "tails"))))
 				{
 					snprintf(charimg, 28, "charsonictails");
-					snprintf(secondcharname, 28, "& %s", skins[players[1].skin].realname);
+					snprintf(secondcharname, 28, " & %s", skins[players[1].skin].realname);
 				}
 			}
 			
 			// Character names
-			snprintf(charname, 28, "Playing As: %s ", skins[players[consoleplayer].skin].realname);
-			
+			snprintf(charname, 28, "Playing As: %s", skins[players[consoleplayer].skin].realname);
 			//Combine Character Name and Bot Name
 			strncat(combiring, strncat(charname, secondcharname, 28), 80); //Combine Ring
 			discordPresence.smallImageKey = charimg; // Character image
-			discordPresence.smallImageText = combiring; // Character name, Bot name
+			discordPresence.smallImageText = charname; // Character name, Bot name
 		}
-		else if ((!playeringame[secondarydisplayplayer]) || (netgame))
+		else if ((!playeringame[1] && !playeringame[2]) && (!splitscreen) || (netgame))
 		{
 			// Character images
 			if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[0])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[0])))
