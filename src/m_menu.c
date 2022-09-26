@@ -1652,10 +1652,13 @@ static menuitem_t OP_DiscordOptionsMenu[] =
 	{IT_STRING | IT_CVAR,		NULL, "Allow Invites",			&cv_discordinvites,		 50},
 	{IT_STRING | IT_CVAR,		NULL, "Show Memes on Status",	&cv_discordstatusmemes,	 60},
 	{IT_STRING | IT_CVAR,		NULL, "Show on Status",			&cv_discordshowonstatus, 70},
+	{IT_STRING | IT_CVAR,		NULL, "Custom Status Settings",	&OP_CustomStatusMenu,	 80},
+};
 
-	{IT_HEADER,					NULL, "Custom Status Settings",	NULL,					 80},
-	{IT_STRING | IT_CVAR | IT_CV_STRING,	
-								NULL, "Custom Status",			&cv_customdiscordstatus, 90},
+static menuitem_t OP_CustomStatusMenu[] =
+{
+	{IT_HEADER,								NULL, "Custom Discord Status",	NULL,					 0},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,	NULL, "Custom Status",			&cv_customdiscordstatus, 90},
 };
 #endif
 static menuitem_t OP_ServerOptionsMenu[] =
@@ -1714,7 +1717,7 @@ static menuitem_t OP_ServerOptionsMenu[] =
 	{IT_STRING | IT_CVAR | IT_CV_STRING,	
 							 NULL, "Holepunch Server",  			   &cv_holepunchserver,    250},
 
-	{IT_STRING | IT_CVAR,    NULL, "Join delay",                       &cv_joindelay,          264}, //39
+	{IT_STRING | IT_CVAR,    NULL, "Join delay",                       &cv_joindelay,          264}, //[39]
 	{IT_STRING | IT_CVAR,    NULL, "Attempts to resynchronise",        &cv_resynchattempts,    269},
 
 	{IT_STRING | IT_CVAR,    NULL, "Show IP Address of Joiners",       &cv_showjoinaddress,    274},
