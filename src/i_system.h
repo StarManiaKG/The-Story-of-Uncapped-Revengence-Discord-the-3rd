@@ -239,7 +239,7 @@ INT32 I_StartupSystem(void);
 */
 
 #ifdef HAVE_DISCORDRPC
-void I_DiscordShutdown(void);
+void Discord_Shutdown(void);
 
 /**	\brief	Shutsdown Discord Rich Presence
 */
