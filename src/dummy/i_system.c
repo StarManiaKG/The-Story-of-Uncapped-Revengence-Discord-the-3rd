@@ -120,10 +120,6 @@ INT32 I_StartupSystem(void)
 	return -1;
 }
 
-#ifdef HAVE_DISCORDRPC
-void Discord_Shutdown(void){}
-#endif
-
 void I_ShutdownSystem(void){}
 
 void I_GetDiskFreeSpace(INT64* freespace)
