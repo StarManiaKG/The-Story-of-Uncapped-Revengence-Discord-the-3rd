@@ -326,7 +326,7 @@ void DRPC_Init(void)
 	handlers.joinRequest = DRPC_HandleJoinRequest;
 
 	Discord_Initialize(DISCORD_APPID, &handlers, 1, NULL);
-	I_AddExitFunc(Discord_Shutdown);
+	I_AddExitFunc(DRPC_ShutDown);
 	DRPC_UpdatePresence();
 }
 
@@ -384,7 +384,7 @@ static const char *DRPC_GetServerIP(void)
 }
 
 /*--------------------------------------------------
-	void DRPC_EmptyRequests(void)
+	static void DRPC_EmptyRequests(void)
 
 		Empties the request list. Any existing requests
 		will get an ignore reply.
@@ -703,10 +703,10 @@ void DRPC_UpdatePresence(void)
 		else if (splitscreen && playeringame[secondarydisplayplayer])
 		{
 			snprintf(charimg, 28, "charsonictails");
-			snprintf(playername, 28, "%s & ", cv_playername.string);
-			snprintf(secondplayername, 28, "%s Are In Split-Screen Mode!", cv_playername2.string);
+			snprintf(playername, 21, "%s & ", cv_playername.string);
+			snprintf(secondplayername, 21, "%s Are In Split-Screen Mode!", cv_playername2.string);
 
-			strncat(combiring, strncat(playername, secondplayername, 28), 80); //Combine Character Name and Bot Name
+			strncat(combiring, strncat(playername, secondplayername, 21), 80); //Combine Character Name and Bot Name
 			discordPresence.smallImageKey = charimg; // Character image
 			discordPresence.smallImageText = combiring; // Character name, Bot name
 		}
@@ -737,6 +737,10 @@ void DRPC_UpdatePresence(void)
 --------------------------------------------------*/
 void DRPC_ShutDown(void)
 {
+	DiscordEventHandlers handlers;
+	DiscordRichPresence discordPresence;
+	memset(&discordPresence, 0, sizeof(discordPresence));
+
 	DRPC_UpdatePresence();
 	Discord_Shutdown();
 	Discord_ClearPresence();
