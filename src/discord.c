@@ -693,7 +693,7 @@ void DRPC_UpdatePresence(void)
 					snprintf(secondcharname, 28, " & Multiple Bots");
 			}
 			////One Regular Bot?
-			else if (playeringame[1] && !playeringame[2])
+			else if (playeringame[1])
 			{
 				if (players[1].bot)
 				{
