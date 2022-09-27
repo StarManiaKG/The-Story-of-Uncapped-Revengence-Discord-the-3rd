@@ -770,10 +770,10 @@ void DRPC_UpdatePresence(void)
 			else if (!netgame && players[1].bot)
 			{
 				////Only One Regular Bot?
-				if (!playeringame[2])
+				if (!players[2].bot)
 				{
 					// Character images
-					if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(skins[players[1].skin].name, "tails"))))
+					if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(skins[players[bot].skin].name, "tails"))))
 						snprintf(charimg, 15, "charsonictails");
 					
 					snprintf(charname, 28, "Playing As: %s & %s", skins[players[consoleplayer].skin].name, skins[players[1].skin].realname);
