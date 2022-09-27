@@ -144,7 +144,7 @@ typedef enum
 #define MTREE2(a,b) (a | (b<<MENUBITS))
 #define MTREE3(a,b,c) MTREE2(a, MTREE2(b,c))
 #define MTREE4(a,b,c,d) MTREE2(a, MTREE3(b,c,d))
-#define MTREE5(a,b,c,d,e) MTREE4(a,b,c,d) MTREE2(a, MTREE3(b,c,d))
+#define MTREE5(a,b,c,d,e) MTREE2(a, MTREE4(b,c,d,e))
 
 typedef struct
 {
