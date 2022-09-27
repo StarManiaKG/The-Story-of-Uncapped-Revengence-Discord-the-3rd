@@ -725,7 +725,7 @@ void DRPC_UpdatePresence(void)
 				NULL
 			};
 
-			const char skins = skins[players[consoleplayer].skin].name;
+			const char morbius = skins[players[consoleplayer].skin].name;
 
 			if (!splitscreen)
 			{
@@ -734,7 +734,7 @@ void DRPC_UpdatePresence(void)
 				{
 					//// Character images
 					// Supported
-					if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[skins])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[skins])))
+					if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[morbius])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[morbius])))
 						snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
 					// Unsupported
 					else
