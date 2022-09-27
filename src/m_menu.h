@@ -473,6 +473,9 @@ void Addons_option_Onchange(void);
 // Moviemode menu updating
 void Moviemode_option_Onchange(void);
 
+// Discord menu updating
+void Discordcustomstatus_option_Onchange(void);
+
 // Player Setup menu colors linked list
 typedef struct menucolor_s {
 	struct menucolor_s *next;
