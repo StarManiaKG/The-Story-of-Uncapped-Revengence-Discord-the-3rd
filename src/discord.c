@@ -399,103 +399,6 @@ static void DRPC_EmptyRequests(void)
 }
 
 /*--------------------------------------------------
-	void DPRC_FindTheComputerRoom(void)
-
-		just a little thing that helps me
-				find emeralds :)
---------------------------------------------------*/
-void DPRC_FindTheComputerRoom(void)
-{
-	//Tiny Emerald Counter
-	UINT8 emeraldCount = 0;
-
-	for (INT32 i = 0; i < 7; i++) // thanks Monster Iestyn for this math
-		if (emeralds & (1<<i))
-			emeraldCount += 1;
-	
-	//// Emeralds ////
-	if (cv_discordshowonstatus.value == 0 || cv_discordshowonstatus.value == 3)
-	{
-		//i think you know what the joke here is
-		if (cv_discordstatusmemes.value == 0)
-		{
-			//there's a special stage token right at the BEGINNING OF GFZ1 HOW DO YOU NOT HAVE A EMERALD YET
-			if (!emeralds)
-			{
-				if (cv_discordshowonstatus.value == 0)
-					strlcat(detailstr, ", No Emeralds", 64);
-				else if (cv_discordshowonstatus.value == 3)
-					strlcat(detailstr, "No Emeralds", 64);
-			}
-			//Mystic Power Gang
-			else
-			{
-				if (cv_discordshowonstatus.value == 0)
-				{
-					if (emeraldCount != 7)
-						strlcat(detailstr, va(", %d Emeralds", emeraldCount), 64);
-					else
-						strlcat(detailstr, ", All 7 Emeralds Obtained!", 64);
-				}
-				else if (cv_discordshowonstatus.value == 3)
-				{
-					if (emeraldCount != 7)
-						strlcat(detailstr, va("%d Emeralds", emeraldCount), 64);
-					else
-						strlcat(detailstr, "All 7 Emeralds Obtained!", 64);
-				}
-			}
-		}
-		//Honestly relatable lol
-		else
-		{
-			if (cv_discordshowonstatus.value == 0)
-			{
-				//Man, Special Stage Got Hands
-				if (!emeralds)
-					strlcat(detailstr, ", NO EMERALDS?", 64);
-				//Mystic Power Gang
-				else
-				{
-					if (emeraldCount < 7 && emeraldCount != 3 && emeraldCount != 4)
-						strlcat(detailstr, va(", %d Emeralds", emeraldCount), 64);
-					else if (emeraldCount == 3)
-						// Fun Fact: the subtitles in Shadow the Hedgehog emphasized "fourth",
-						// even though Jason Griffith emphasized "damn" in this sentence
-						strlcat(detailstr, ", %d Emeralds; Where's That DAMN FOURTH?)", 64);
-					else if (emeraldCount == 4)
-						strlcat(detailstr, ", %d Emeralds; Found that DAMN FOURTH)", 64);
-					else if (emeralds == 7)
-						strlcat(detailstr, ", All 7 Emeralds Obtained!", 64);
-				}
-			}
-			else if (cv_discordshowonstatus.value == 3)
-			{
-				//Man, Special Stage Got Hands
-				if (!emeralds)
-					strlcat(detailstr, "NO EMERALDS?", 64);
-				//Mystic Power Gang
-				else
-				{
-					if (emeraldCount < 7 && emeraldCount != 3 && emeraldCount != 4)
-						strlcat(detailstr, va("%d Emeralds", emeraldCount), 64);
-					else if (emeraldCount == 3)
-						// Fun Fact: the subtitles in Shadow the Hedgehog emphasized "fourth",
-						// even though Jason Griffith emphasized "damn" in this sentence
-						strlcat(detailstr, "%d Emeralds; Where's That DAMN FOURTH?)", 64);
-					else if (emeraldCount == 4)
-						strlcat(detailstr, "%d Emeralds; Found that DAMN FOURTH)", 64);
-					else if (emeralds == 7)
-						strlcat(detailstr, "All 7 Emeralds Obtained!", 64);
-				}
-			}
-		}
-
-		discordPresence.details = detailstr;
-	}
-}
-
-/*--------------------------------------------------
 	void DRPC_UpdatePresence(void)
 
 		See header file for description.
@@ -596,13 +499,97 @@ void DRPC_UpdatePresence(void)
 		// Offline info
 		if (Playing())
 		{
-			//Emblems
+			//// Emblems ////
 			if (cv_discordshowonstatus.value == 0 || cv_discordshowonstatus.value == 4)
 				snprintf(detailstr, 20, "%d/%d Emblems", M_CountEmblems(), (numemblems + numextraemblems));
 			
-			//Emeralds
-			DPRC_FindTheComputerRoom();
+			//Tiny Emerald Counter
+			UINT8 emeraldCount = 0;
 
+			for (INT32 i = 0; i < 7; i++) // thanks Monster Iestyn for this math
+				if (emeralds & (1<<i))
+					emeraldCount += 1;
+			
+			//// Emeralds ////
+			if (cv_discordshowonstatus.value == 0 || cv_discordshowonstatus.value == 3)
+			{
+				//i think you know what the joke here is
+				if (cv_discordstatusmemes.value == 0)
+				{
+					//there's a special stage token right at the BEGINNING OF GFZ1 HOW DO YOU NOT HAVE A EMERALD YET
+					if (!emeralds)
+					{
+						if (cv_discordshowonstatus.value == 0)
+							strlcat(detailstr, ", No Emeralds", 64);
+						else if (cv_discordshowonstatus.value == 3)
+							strlcat(detailstr, "No Emeralds", 64);
+					}
+					//Mystic Power Gang
+					else
+					{
+						if (cv_discordshowonstatus.value == 0)
+						{
+							if (emeraldCount != 7)
+								strlcat(detailstr, va(", %d Emeralds", emeraldCount), 64);
+							else
+								strlcat(detailstr, ", All 7 Emeralds Obtained!", 64);
+						}
+						else if (cv_discordshowonstatus.value == 3)
+						{
+							if (emeraldCount != 7)
+								strlcat(detailstr, va("%d Emeralds", emeraldCount), 64);
+							else
+								strlcat(detailstr, "All 7 Emeralds Obtained!", 64);
+						}
+					}
+				}
+				//Honestly relatable lol
+				else
+				{
+					if (cv_discordshowonstatus.value == 0)
+					{
+						//Man, Special Stage Got Hands
+						if (!emeralds)
+							strlcat(detailstr, ", NO EMERALDS?", 64);
+						//Mystic Power Gang
+						else
+						{
+							if (emeraldCount < 7 && emeraldCount != 3 && emeraldCount != 4)
+								strlcat(detailstr, va(", %d Emeralds", emeraldCount), 64);
+							else if (emeraldCount == 3)
+								// Fun Fact: the subtitles in Shadow the Hedgehog emphasized "fourth",
+								// even though Jason Griffith emphasized "damn" in this sentence
+								strlcat(detailstr, ", %d Emeralds; Where's That DAMN FOURTH?)", 64);
+							else if (emeraldCount == 4)
+								strlcat(detailstr, ", %d Emeralds; Found that DAMN FOURTH)", 64);
+							else if (emeralds == 7)
+								strlcat(detailstr, ", All 7 Emeralds Obtained!", 64);
+						}
+					}
+					else if (cv_discordshowonstatus.value == 3)
+					{
+						//Man, Special Stage Got Hands
+						if (!emeralds)
+							strlcat(detailstr, "NO EMERALDS?", 64);
+						//Mystic Power Gang
+						else
+						{
+							if (emeraldCount < 7 && emeraldCount != 3 && emeraldCount != 4)
+								strlcat(detailstr, va("%d Emeralds", emeraldCount), 64);
+							else if (emeraldCount == 3)
+								// Fun Fact: the subtitles in Shadow the Hedgehog emphasized "fourth",
+								// even though Jason Griffith emphasized "damn" in this sentence
+								strlcat(detailstr, "%d Emeralds; Where's That DAMN FOURTH?)", 64);
+							else if (emeraldCount == 4)
+								strlcat(detailstr, "%d Emeralds; Found that DAMN FOURTH)", 64);
+							else if (emeralds == 7)
+								strlcat(detailstr, "All 7 Emeralds Obtained!", 64);
+						}
+					}
+				}
+
+				discordPresence.details = detailstr;
+			}
 		}
 		else if (demoplayback && !titledemo)
 			discordPresence.state = "Watching Replays";
