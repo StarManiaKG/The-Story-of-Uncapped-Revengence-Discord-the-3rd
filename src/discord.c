@@ -593,7 +593,7 @@ void DRPC_UpdatePresence(void)
 			if (cv_discordshowonstatus.value == 0 || cv_discordshowonstatus.value == 2)
 			{
 				if (cv_discordshowonstatus.value == 0)
-					snprintf(detailstr, 6, ", %d Continues", players[consoleplayer]->continues);
+					snprintf(detailstr, 6, ", %d Continues", players[consoleplayer].continues);
 				else if (cv_discordshowonstatus.value == 2)
 					snprintf(detailstr, 6, "%d Continues", continues);
 			}
