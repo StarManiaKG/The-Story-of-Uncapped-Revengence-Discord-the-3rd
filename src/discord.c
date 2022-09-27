@@ -594,20 +594,23 @@ void DRPC_UpdatePresence(void)
 			discordPresence.state = "Watching Replays";
 		else
 		{
-			discordPresence.largeImageKey = "misctitle";
-			discordPresence.largeImageText = "Title Screen";
-			discordPresence.state = "Main Menu";
+			if (cv_discordshowonstatus.value == 0)
+			{
+				discordPresence.largeImageKey = "misctitle";
+				discordPresence.largeImageText = "Title Screen";
+				discordPresence.state = "Main Menu";
+			}
 		}
 	}
 
 	// Gametype info
-	if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) && Playing())
+	if (cv_discordshowonstatus.value == 0 || cv_discordshowonstatus.value == 6)
 	{
-		if (modeattacking)
-			discordPresence.details = "Time Attacking";
-		else
+		if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) && Playing())
 		{
-			if (cv_discordshowonstatus.value == 0 || cv_discordshowonstatus.value == 6)
+			if (modeattacking)
+				discordPresence.details = "Time Attacking";
+			else
 			{
 				if (!splitscreen) 
 				{
@@ -627,6 +630,7 @@ void DRPC_UpdatePresence(void)
 			}
 		}
 	}
+
 	if (cv_discordshowonstatus.value == 0 || cv_discordshowonstatus.value == 5)
 	{
 		if (gamestate == GS_INTRO)
@@ -729,15 +733,15 @@ void DRPC_UpdatePresence(void)
 					snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
 				else
 					// Unsupported
-					snprintf(charimg, 28, "charcustom");
+					snprintf(charimg, 10, "charcustom");
 				
 				//// Player names
 				if (!players[consoleplayer].spectator)
 					// Character
 					snprintf(playername, 28, "Playing As: %s", skins[players[consoleplayer].skin].realname);
+				// Viewpoint
 				else
 				{
-					// Viewpoint
 					if (playeringame[displayplayer])
 						snprintf(playername, 28, "%s is Spectating %s", player_names[consoleplayer], player_names[displayplayer]); // Combine Player Names Together
 					else
