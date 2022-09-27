@@ -135,7 +135,7 @@ typedef enum
 	// MN_HELP,
 
 	MN_SPECIAL,
-	MN_DISCORD_RQ,
+	MN_DISCORD_RQ, //discord requests, for future notice
 	MN_DISCORD_OPT,
 	MN_DISCORDCS_OUTPUT,
 	NUMMENUTYPES,
