@@ -646,7 +646,7 @@ void DRPC_UpdatePresence(void)
 	}
 
 	// Character info
-	if ((cv_discordshowonstatus.value == 0 || cv_discordshowonstatus.value == 1) && Playing() && playeringame[consoleplayer] && !players[consoleplayer].spectator)
+	if ((cv_discordshowonstatus.value == 0 || cv_discordshowonstatus.value == 1) && Playing() && playeringame[consoleplayer])
 	{
 		// Supported Skin Pictures
 		static const char *baseSkins[] = {
@@ -718,8 +718,18 @@ void DRPC_UpdatePresence(void)
 			else
 				discordPresence.smallImageKey = "charcustom";
 
-			snprintf(charname, 28, "Playing As: %s", skins[players[consoleplayer].skin].realname);
-			discordPresence.smallImageText = charname; // Character name
+			if (!players[consoleplayer].spectator)
+			{
+				snprintf(charname, 28, "Playing As: %s", skins[players[consoleplayer].skin].realname);
+				discordPresence.smallImageText = charname; // Character name
+			}
+			else
+			{
+				snprintf(playername, 28, "%s is Spectating", cv_playername.string);
+				snprintf(secondplayername, 28, " %s", players[displayplayer].mo->name);
+				strncat(combiring, strncat(playername, secondplayername, 28), 100); //Combine Ring (multiplayer edition)
+				discordPresence.smallImageText = combiring; // Player names
+			}
 		}
 		else if (splitscreen && playeringame[secondarydisplayplayer])
 		{
