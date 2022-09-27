@@ -419,7 +419,7 @@ void DRPC_UpdatePresence(void)
 	char playername[11+MAXPLAYERNAME+1];
 	char secondplayername[11+MAXPLAYERNAME+1];
 
-	char combiring[28+28+24+15+5];
+	char combiring[28+28+24];
 
 	boolean joinSecretSet = false;
 
@@ -586,6 +586,8 @@ void DRPC_UpdatePresence(void)
 							discordPresence.state = "Playing Single-Player";
 					}
 				}
+				else
+					discordPresence.state = "Playing In Split-Screen Mode";
 			}
 		}
 	}
@@ -692,7 +694,9 @@ void DRPC_UpdatePresence(void)
 			////One Regular Bot?
 			else if (players[1].bot)
 			{
-				if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(skins[players[1].skin].name, "tails")))) //(strcmp(players[1].mo->skin.name, "tails"))))
+				CONS_Printf(M_GetText("sonic"));
+
+				if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(skins[players[1].skin].name, "tails"))))
 				{
 					snprintf(charimg, 15, "charsonictails");
 					snprintf(secondcharname, 28, " & %s", skins[players[1].skin].realname);
@@ -739,10 +743,10 @@ void DRPC_UpdatePresence(void)
 
 			// Player names
 			snprintf(playername, 28, "%s & ", cv_playername.string);
-			snprintf(secondplayername, 28, "%s Are In Splitscreen Mode", cv_playername2.string);
+			snprintf(secondplayername, 28, "%s", cv_playername2.string);
 
 			//Combine Player Names
-			strncat(combiring, strncat(playername, secondplayername, 28), 100); //Combine Ring (multiplayer edition)
+			strncat(combiring, strncat(playername, secondplayername, 28), 80); //Combine Ring (multiplayer edition)
 			discordPresence.smallImageText = combiring; // Player names
 		}
 	}
