@@ -417,7 +417,7 @@ void DRPC_UpdatePresence(void)
 	//char playerimg[25+50+15+10];
 	char playername[11+MAXPLAYERNAME+1];
 
-	char servertype[11++26+1];
+	char servertype[11+26+1];
 
 	boolean joinSecretSet = false;
 
@@ -488,9 +488,9 @@ void DRPC_UpdatePresence(void)
 				snprintf(servertype, 39, "Hosting a Dedicated %s Server", servertype);
 		}
 		else
-			snprintf(servertype, 39, "In a %s Server", servertype);;
+			snprintf(servertype, 39, "In a %s Server", servertype);
 
-		discordPresence.details = servertype
+		discordPresence.details = servertype;
 		discordPresence.partyId = server_context; // Thanks, whoever gave us Mumble support, for implementing the EXACT thing Discord wanted for this field!
 		discordPresence.partySize = D_NumPlayers(); // Players in server
 		discordPresence.partyMax = cv_maxplayers.value; // Max players
@@ -724,7 +724,7 @@ void DRPC_UpdatePresence(void)
 				NULL
 			};
 
-			const char *skins = skins[players[consoleplayer].skin].name;
+			const char skins = skins[players[consoleplayer].skin].name;
 
 			if (!splitscreen)
 			{
