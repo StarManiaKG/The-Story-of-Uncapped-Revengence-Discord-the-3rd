@@ -2573,6 +2573,9 @@ void I_Error(const char *error, ...)
 	I_ShutdownMusic();
 	I_ShutdownSound();
 	// use this for 1.28 19990220 by Kin
+#ifdef HAVE_DISCORDRPC
+	DRPC_ShutDown();
+#endif
 	I_ShutdownGraphics();
 	I_ShutdownInput();
 	I_ShutdownSystem();

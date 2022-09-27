@@ -565,9 +565,9 @@ void DRPC_UpdatePresence(void)
 						else if (emeraldCount == 3)
 							// Fun Fact: the subtitles in Shadow the Hedgehog emphasized "fourth",
 							// even though Jason Griffith emphasized "damn" in this sentence
-							strlcat(detailstr, ", %d Emeralds; Where's That DAMN FOURTH?)", 64);
+							strlcat(detailstr, ", %d Emeralds; Where's That DAMN FOURTH?", 64);
 						else if (emeraldCount == 4)
-							strlcat(detailstr, ", %d Emeralds; Found that DAMN FOURTH)", 64);
+							strlcat(detailstr, ", %d Emeralds; Found that DAMN FOURTH", 64);
 						else if (emeralds == 7)
 							strlcat(detailstr, ", All 7 Emeralds Obtained!", 64);
 					}
@@ -578,9 +578,9 @@ void DRPC_UpdatePresence(void)
 						else if (emeraldCount == 3)
 							// Fun Fact: the subtitles in Shadow the Hedgehog emphasized "fourth",
 							// even though Jason Griffith emphasized "damn" in this sentence
-							strlcat(detailstr, "%d Emeralds; Where's That DAMN FOURTH?)", 64);
+							strlcat(detailstr, "%d Emeralds; Where's That DAMN FOURTH?", 64);
 						else if (emeraldCount == 4)
-							strlcat(detailstr, "%d Emeralds; Found that DAMN FOURTH)", 64);
+							strlcat(detailstr, "%d Emeralds; Found that DAMN FOURTH", 64);
 						else if (emeralds == 7)
 							strlcat(detailstr, "All 7 Emeralds Obtained!", 64);
 					}
@@ -591,9 +591,19 @@ void DRPC_UpdatePresence(void)
 			if (cv_discordshowonstatus.value == 0 || cv_discordshowonstatus.value == 2)
 			{
 				if (cv_discordshowonstatus.value == 0)
-					snprintf(detailstr, 18, ", %d Continues", players[consoleplayer].continues);
+				{
+					if (saveSlotSelected == NOSAVESLOT)
+						snprintf(detailstr, 18, va(", %d Continues", players[consoleplayer].continues), 64);
+					else
+						snprintf(detailstr, 18, va(", Infinite Continues", players[consoleplayer].continues), 64);
+				}
 				else if (cv_discordshowonstatus.value == 2)
-					snprintf(detailstr, 18, "%d Continues", players[consoleplayer].continues);
+				{
+					if (saveSlotSelected == NOSAVESLOT)
+						snprintf(detailstr, 18, va("%d Continues", players[consoleplayer].continues), 64);
+					else
+						snprintf(detailstr, 18, va("Infinite Continues", players[consoleplayer].continues), 64);
+				}
 			}
 
 			discordPresence.details = detailstr;
@@ -773,7 +783,7 @@ void DRPC_UpdatePresence(void)
 				if (!players[2].bot)
 				{
 					// Character images
-					if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(skins[players[1].skin].name, "tails"))))
+					if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(((skin_t *)tails->skin)->name, "tails"))))
 						snprintf(charimg, 15, "charsonictails");
 					
 					snprintf(charname, 28, "Playing As: %s & %s", skins[players[consoleplayer].skin].name, skins[players[1].skin].realname);
