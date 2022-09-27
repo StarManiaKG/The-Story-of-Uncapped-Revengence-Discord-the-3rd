@@ -350,6 +350,7 @@ menu_t OP_SoundAdvancedDef;
 menu_t OP_DataOptionsDef, OP_ScreenshotOptionsDef, OP_EraseDataDef;
 menu_t OP_ServerOptionsDef;
 #ifdef HAVE_DISCORDRPC
+static void M_DiscordOptions(INT32 choice);
 menu_t OP_DiscordOptionsDef;
 menu_t OP_CustomStatusDef;
 menu_t OP_CustomStatusOutputDef;
@@ -1567,7 +1568,7 @@ static menuitem_t OP_DataOptionsMenu[] =
 	{IT_STRING | IT_CALL,    NULL, "Screenshot Options...", M_ScreenshotOptions, 20},
 
 #ifdef HAVE_DISCORDRPC
-	{IT_STRING | IT_SUBMENU, NULL, "Discord Options...",	&OP_DiscordOptionsDef,	 40},
+	{IT_STRING | IT_SUBMENU, NULL, "Discord Options...",	M_DiscordOptions,	 	 40},
 
 	{IT_STRING | IT_SUBMENU, NULL, "\x85" "Erase Data...",	&OP_EraseDataDef,		 60},
 #else
@@ -2596,11 +2597,14 @@ void Moviemode_option_Onchange(void)
 		(cv_movie_option.value == 3 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 }
 
+#ifdef HAVE_DISCORDRPC
 void Discordcustomstatus_option_Onchange(void)
 {
+	DRPC_UpdatePresence();
 	OP_DiscordOptionsMenu[OP_CustomStatusDef].status =
 		(cv_discordshowonstatus.value == 7 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 }
+#endif
 
 // ==========================================================================
 // END ORGANIZATION STUFF.
@@ -13743,6 +13747,13 @@ static const tic_t confirmLength = 3*TICRATE/4;
 static tic_t confirmDelay = 0;
 static boolean confirmAccept = false;
 
+static void M_DiscordOptions(INT32 choice)
+{
+	(void)choice;
+	Discordcustomstatus_option_Onchange();
+
+	M_SetupNextMenu(&OP_DiscordOptionsDef)
+}
 static void M_HandleDiscordRequests(INT32 choice)
 {
 	if (confirmDelay > 0)
