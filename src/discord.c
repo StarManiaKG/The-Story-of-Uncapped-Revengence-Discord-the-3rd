@@ -735,10 +735,7 @@ void DRPC_UpdatePresence(void)
 					if (!playeringame[2])
 					{
 						if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(skins[players[1].skin].name, "tails"))))
-						{
 							snprintf(charimg, 15, "charsonictails");
-							snprintf(secondcharname, 28, " & %s", skins[players[1].skin].realname);
-						}
 					}
 					////Multiple Bots?
 					else
@@ -748,34 +745,28 @@ void DRPC_UpdatePresence(void)
 					}
 
 					//Combine Character Name and Bot Name
+					snprintf(secondcharname, 28, "Playing As: %s & %s", skins[players[consoleplayer].skin].name, skins[players[1].skin].realname);
 					strncat(combiring, strncat(charname, secondcharname, 28), 80); //Combine Ring
 					discordPresence.smallImageText = combiring; // Character name, Bot name
 				}
 			}
 			else if ((!players[1].bot) || (netgame))
 			{
-				////No Bots?
-				if (!(players[1].bot && players[2].bot))
-					snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
+				// render character image
+				snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
+				discordPresence.smallImageKey = charimg; // Character image
+				// Character names
+				snprintf(charname, 28, "Playing As: %s", skins[players[consoleplayer].skin].realname);
 			}
-			
-			// Character names
-			snprintf(charname, 28, "Playing As: %s", skins[players[consoleplayer].skin].realname);
-			discordPresence.smallImageKey = charimg; // Character image
 		}
 		else
 		{
-			// Character images
+			// render character image
 			snprintf(charimg, 28, "charsonictails");
-			discordPresence.smallImageKey = charimg; // Character image
-
+			discordPresence.smallImageKey = charimg;
 			// Player names
-			snprintf(playername, 28, "%s & ", cv_playername.string);
-			snprintf(secondplayername, 28, "%s", cv_playername2.string);
-
-			//Combine Player Names
-			strncat(combiring, strncat(playername, secondplayername, 28), 80); //Combine Ring (splitscreen edition)
-			discordPresence.smallImageText = combiring; // Player names
+			snprintf(playername, 50, "%s & %s", cv_playername.string, cv_playername2.string);
+			discordPresence.smallImageText = playername;
 		}
 
 		if (netgame)
