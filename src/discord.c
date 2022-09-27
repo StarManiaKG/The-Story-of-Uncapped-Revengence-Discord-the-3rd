@@ -418,7 +418,7 @@ void DRPC_UpdatePresence(void)
 	char playername[11+MAXPLAYERNAME+1];
 
 	char servertype[15+10];
-	char servertag[11+26+1];
+	char servertag[11+26+15+8];
 
 	boolean joinSecretSet = false;
 
@@ -484,12 +484,12 @@ void DRPC_UpdatePresence(void)
 		if (server)
 		{
 			if (!dedicated)
-				snprintf(servertag, 39, "Hosting a %s Server", servertype);
+				snprintf(servertag, 60, "Hosting a %s Server", servertype);
 			else
-				snprintf(servertag, 39, "Hosting a Dedicated %s Server", servertype);
+				snprintf(servertag, 60, "Hosting a Dedicated %s Server", servertype);
 		}
 		else
-			snprintf(servertag, 39, "In a %s Server", servertype);
+			snprintf(servertag, 60, "In a %s Server", servertype);
 
 		discordPresence.details = servertag;
 		discordPresence.partyId = server_context; // Thanks, whoever gave us Mumble support, for implementing the EXACT thing Discord wanted for this field!
@@ -725,7 +725,7 @@ void DRPC_UpdatePresence(void)
 				NULL
 			};
 
-			const char morbius = skins[players[consoleplayer].skin].name;
+			const char *morbius = skins[players[consoleplayer].skin].name;
 
 			if (!splitscreen)
 			{
