@@ -1654,15 +1654,14 @@ static menuitem_t OP_DiscordOptionsMenu[] =
 	{IT_STRING | IT_CVAR,						NULL, "Allow Invites",			&cv_discordinvites,		 	 54},
 	{IT_STRING | IT_CVAR,						NULL, "Show Memes on Status",	&cv_discordstatusmemes,	 	 64},
 	{IT_STRING | IT_CVAR,						NULL, "Show on Status",			&cv_discordshowonstatus, 	 74},
-	{IT_STRING | IT_SUBMENU,					NULL, "Custom Status Settings",	&OP_CustomStatusDef,	 	 84},
 
-	{IT_HEADER,									NULL, "Custom Discord Status",	NULL,					 	 94},
-	{IT_STRING | IT_CVAR | IT_CV_STRING,		NULL, "Custom Status",			&cv_customdiscordstatus, 	 106},
+	{IT_HEADER,									NULL, "Custom Discord Status",	NULL,					 	 84},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,		NULL, "Custom Status",			&cv_customdiscordstatus, 	 96},
 
-	{IT_STRING | IT_SUBMENU,					NULL, "Output",					&OP_CustomStatusOutputDef,	 126},
+	{IT_STRING | IT_SUBMENU,					NULL, "Output",					&OP_CustomStatusOutputDef,	 116},
 };
 
-static menuitem_t OP_CustomStatusOutput[] =
+static menuitem_t OP_CustomStatusOutputMenu[] =
 {
 	{IT_HEADER,		NULL,	"Custom Status Output",		NULL,	0},
 };
@@ -2594,10 +2593,10 @@ void Discordcustomstatus_option_Onchange(void)
 {
 	DRPC_UpdatePresence();
 	
-	OP_DiscordOptionsMenu[8].status =
+	OP_DiscordOptionsMenu[7].status =
 		(cv_discordshowonstatus.value == 7 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 	
-	OP_DiscordOptionsMenu[9].status =
+	OP_DiscordOptionsMenu[8].status =
 		(cv_discordshowonstatus.value == 7 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 }
 #endif
