@@ -500,7 +500,7 @@ void DRPC_UpdatePresence(void)
 		memset(&discordInfo, 0, sizeof(discordInfo));
 
 		// Offline info
-		if (Playing())
+		if (gamestate == GS_LEVEL && Playing())
 		{
 			UINT8 emeraldCount = 0;
 			
@@ -511,13 +511,19 @@ void DRPC_UpdatePresence(void)
 
 			if (cv_discordshowonstatus.value == 0 || cv_discordshowonstatus.value == 3)
 			{
-				if (emeralds != 0)
+				if (emeralds)
 				{
 					for (INT32 i = 0; i < 7; i++) // thanks Monster Iestyn for this math
 						if (emeralds & (1<<i))
 							emeraldCount += 1;
+
+					//Why Do You Not Like Memes?		
 					if (cv_discordstatusmemes.value == 0)
-						strlcat(detailstr, va(", %d Emeralds", emeraldCount), 64);
+						if (emeraldCount < 7 && emeraldCount != 3 && emeraldCount != 4)
+							strlcat(detailstr, va(", %d Emeralds", emeraldCount), 64);
+						else if (emeralds == 7)
+							strlcat(detailstr, ", All 7 Emeralds Obtained!", 64);
+					//Honestly relatable lol
 					else
 					{
 						if (emeraldCount < 7 && emeraldCount != 3 && emeraldCount != 4)
@@ -528,10 +534,9 @@ void DRPC_UpdatePresence(void)
 							strlcat(detailstr, ", %d Emeralds; Where's That DAMN FOURTH?)", 64);
 						else if (emeraldCount == 4)
 							strlcat(detailstr, ", %d Emeralds; Found that DAMN FOURTH)", 64);
+						else if (emeralds == 7)
+							strlcat(detailstr, ", All 7 Emeralds Obtained!", 64);
 					}
-
-					if (emeralds == 7)
-						strlcat(detailstr, ", All 7 Emeralds Obtained!", 64);
 				}
 				else
 				{
@@ -685,7 +690,7 @@ void DRPC_UpdatePresence(void)
 		if (!splitscreen)
 		{
 			// Character images
-			if (players[1].bot)
+			if (playeringame[players[1].bot])
 			{
 				if (!netgame)
 				{
@@ -770,6 +775,13 @@ void DRPC_UpdatePresence(void)
 	{
 		if (cv_customdiscordstatus.string)
 			discordPresence.details = cv_customdiscordstatus.string;
+	}
+
+	//NO STATUS?
+	if (cv_discordshowonstatus.value == 8)
+	{
+		discordPresence.largeImageKey = "misctitle";
+		discordPresence.largeImageText = "Sonic Robo Blast 2";
 	}
 
 	if (!joinSecretSet)
