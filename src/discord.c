@@ -720,38 +720,60 @@ void DRPC_UpdatePresence(void)
 
 		if (!splitscreen)
 		{
-			//Bots
-			if (players[1].bot)
+			// No Bots
+			if (!players[1].bot || netgame)
 			{
-				if (!netgame)
+				//// Character images
+				if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[0])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[0])))
+					// Supported
+					snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
+				else
+					// Unsupported
+					snprintf(charimg, 28, "charcustom");
+				
+				//// Player names
+				if (!players[consoleplayer].spectator)
+					// Character
+					snprintf(playername, 28, "Playing As: %s", skins[players[consoleplayer].skin].realname);
+				else
 				{
-					////Only One Regular Bot?
-					if (!playeringame[2])
-					{
-						// Character images
-						if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(skins[players[1].skin].name, "tails"))))
-							snprintf(charimg, 15, "charsonictails");
-						
-						snprintf(charname, 28, "Playing As: %s & %s", skins[players[consoleplayer].skin].name, skins[players[1].skin].realname);
-					}
-					////Multiple Bots?
+					// Viewpoint
+					if (playeringame[displayplayer])
+						snprintf(playername, 28, "%s is Spectating %s", player_names[consoleplayer], player_names[displayplayer]); // Combine Player Names Together
 					else
 					{
-						snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
-						snprintf(charname, 50, "Playing As: %s & Multiple Bots", skins[players[consoleplayer].skin].name);
-					}
-
-					discordPresence.smallImageText = charimg; // Character image
-					discordPresence.smallImageText = charname; // Character name, Bot name
+						if (cv_discordstatusmemes.value == 0)
+							snprintf(playername, 28, "%s is Spectating", player_names[consoleplayer]); // you're no fun, you know
+						else
+							snprintf(playername, 28, "%s is Spectating Air", player_names[consoleplayer]); // why are you spectating air
+					}		
 				}
-			}
-			else if ((!players[1].bot) || (netgame))
-			{
-				// render character image
-				snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
+				
+				// render character variables
+				discordPresence.smallImageText = playername; // Player names
 				discordPresence.smallImageKey = charimg; // Character image
-				// Character names
-				snprintf(charname, 28, "Playing As: %s", skins[players[consoleplayer].skin].realname);
+			}
+			// Bots
+			else if (!netgame && players[1].bot)
+			{
+				////Only One Regular Bot?
+				if (!playeringame[2])
+				{
+					// Character images
+					if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(skins[players[1].skin].name, "tails"))))
+						snprintf(charimg, 15, "charsonictails");
+					
+					snprintf(charname, 28, "Playing As: %s & %s", skins[players[consoleplayer].skin].name, skins[players[1].skin].realname);
+				}
+				////Multiple Bots?
+				else
+				{
+					snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
+					snprintf(charname, 50, "Playing As: %s & Multiple Bots", skins[players[consoleplayer].skin].name);
+				}
+
+				discordPresence.smallImageText = charimg; // Character image
+				discordPresence.smallImageText = charname; // Character name, Bot name
 			}
 		}
 		else
@@ -762,28 +784,6 @@ void DRPC_UpdatePresence(void)
 			// Player names
 			snprintf(playername, 50, "%s & %s", player_names[consoleplayer], player_names[secondarydisplayplayer]);
 			discordPresence.smallImageText = playername;
-		}
-
-		if (netgame)
-		{
-			if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[0])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[0])))
-				// Character images
-				snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
-			else
-				// Unsupported Character images
-				snprintf(charimg, 28, "charcustom");
-
-			if (!players[consoleplayer].spectator)
-			{
-				snprintf(charname, 28, "Playing As: %s", skins[players[consoleplayer].skin].realname);
-				discordPresence.smallImageText = charname; // Character name
-			}
-			else
-				//Find Player Names and Combine Them Together
-				snprintf(playername, 28, "%s is Spectating %s", player_names[consoleplayer], player_names[displayplayer]);
-
-			discordPresence.smallImageText = playername; // Player names
-			discordPresence.smallImageKey = charimg; // Character image
 		}
 	}
 	
