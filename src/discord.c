@@ -417,7 +417,8 @@ void DRPC_UpdatePresence(void)
 	//char playerimg[25+50+15+10];
 	char playername[11+MAXPLAYERNAME+1];
 
-	char servertype[11+26+1];
+	char servertype[15+10];
+	char servertag[11+26+1];
 
 	boolean joinSecretSet = false;
 
@@ -472,25 +473,25 @@ void DRPC_UpdatePresence(void)
 	{
 		switch (ms_RoomId)
 		{
-			case -1: snprintf(servertype, 39, "Private"); break; // Private server
-			case 33: snprintf(servertype, 39, "Standard"); break;
-			case 28: snprintf(servertype, 39, "Casual"); break;
-			case 38: snprintf(servertype, 39, "Custom Gametypes"); break;
-			case 31: snprintf(servertype, 39, "OLDC"); break;
-			default: snprintf(servertype, 39, "Private"); break; // HOW
+			case -1: snprintf(servertype, 26, "Private"); break; // Private server
+			case 33: snprintf(servertype, 26, "Standard"); break;
+			case 28: snprintf(servertype, 26, "Casual"); break;
+			case 38: snprintf(servertype, 26, "Custom Gametypes"); break;
+			case 31: snprintf(servertype, 26, "OLDC"); break;
+			default: snprintf(servertype, 26, "Private"); break; // HOW
 		}
 
 		if (server)
 		{
 			if (!dedicated)
-				snprintf(servertype, 39, "Hosting a %s Server", servertype);
+				snprintf(servertag, 39, "Hosting a %s Server", servertype);
 			else
-				snprintf(servertype, 39, "Hosting a Dedicated %s Server", servertype);
+				snprintf(servertag, 39, "Hosting a Dedicated %s Server", servertype);
 		}
 		else
-			snprintf(servertype, 39, "In a %s Server", servertype);
+			snprintf(servertag, 39, "In a %s Server", servertype);
 
-		discordPresence.details = servertype;
+		discordPresence.details = servertag;
 		discordPresence.partyId = server_context; // Thanks, whoever gave us Mumble support, for implementing the EXACT thing Discord wanted for this field!
 		discordPresence.partySize = D_NumPlayers(); // Players in server
 		discordPresence.partyMax = cv_maxplayers.value; // Max players
