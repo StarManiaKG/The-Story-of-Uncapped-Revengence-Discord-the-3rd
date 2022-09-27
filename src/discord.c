@@ -184,7 +184,7 @@ static boolean DRPC_InvitesAreAllowed(void)
 		return false;
 	}
 
-	if (cv_discordasks.value == 0)
+	if (!cv_discordasks.value)
 	{
 		// Client has the CVar set to off, so never allow invites from this client.
 		return false;
@@ -471,8 +471,6 @@ void DRPC_UpdatePresence(void)
 		
 	if (netgame)
 	{
-		// unfortunally this only works when you are the server /////lol
-		/*
 		switch (ms_RoomId)
 		{
 			case -1: discordPresence.details = "Private"; break; // Private server
@@ -482,7 +480,6 @@ void DRPC_UpdatePresence(void)
 			case 31: discordPresence.details = "OLDC"; break;
 			default: discordPresence.details = "Unknown Room"; break; // HOW
 		}
-		*/
 		if (server)
 			discordPresence.details = "Hosting a Netgame";
 		else
@@ -510,12 +507,12 @@ void DRPC_UpdatePresence(void)
 					emeraldCount += 1;
 
 			//// Emblems ////
-			if (cv_discordshowonstatus.value == 0 || cv_discordshowonstatus.value == 4)
+			if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 4)
 				snprintf(detailstr, 20, "%d/%d Emblems", M_CountEmblems(), (numemblems + numextraemblems));
 			
 			//// Emeralds ////
 			//i think you know what the joke here is
-			if (cv_discordstatusmemes.value == 0)
+			if (!cv_discordstatusmemes.value)
 			{
 				//there's a special stage token right at the BEGINNING OF GFZ1 HOW DO YOU NOT HAVE A EMERALD YET
 				if (!emeralds)
@@ -528,7 +525,7 @@ void DRPC_UpdatePresence(void)
 				//Mystic Power Gang
 				else
 				{
-					if (cv_discordshowonstatus.value == 0)
+					if (!cv_discordshowonstatus.value)
 					{
 						if (emeraldCount != 7)
 							strlcat(detailstr, va(", %d Emeralds", emeraldCount), 64);
@@ -550,7 +547,7 @@ void DRPC_UpdatePresence(void)
 				//Man, Special Stage Got Hands
 				if (!emeralds)
 				{
-					if (cv_discordshowonstatus.value == 0)
+					if (!cv_discordshowonstatus.value)
 						strlcat(detailstr, ", NO EMERALDS?", 64);
 					else if (cv_discordshowonstatus.value == 3)
 						strlcat(detailstr, "NO EMERALDS?", 64);
@@ -558,7 +555,7 @@ void DRPC_UpdatePresence(void)
 				//Mystic Power Gang
 				else
 				{
-					if (cv_discordshowonstatus.value == 0)
+					if (!cv_discordshowonstatus.value)
 					{
 						if (emeraldCount < 7 && emeraldCount != 3 && emeraldCount != 4)
 							strlcat(detailstr, va(", %d Emeralds", emeraldCount), 64);
@@ -595,7 +592,7 @@ void DRPC_UpdatePresence(void)
 		{
 			discordPresence.largeImageKey = "misctitle";
 				
-			if (cv_discordshowonstatus.value == 0)
+			if (!cv_discordshowonstatus.value)
 			{
 				discordPresence.largeImageText = "Title Screen";
 				discordPresence.state = "Main Menu";
@@ -604,7 +601,7 @@ void DRPC_UpdatePresence(void)
 	}
 
 	//// Gametypes ////
-	if (cv_discordshowonstatus.value == 0 || cv_discordshowonstatus.value == 6)
+	if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 6)
 	{
 		if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) && Playing())
 		{
@@ -631,7 +628,7 @@ void DRPC_UpdatePresence(void)
 		}
 	}
 
-	if (cv_discordshowonstatus.value == 0 || cv_discordshowonstatus.value == 5)
+	if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 5)
 	{
 		if (gamestate == GS_INTRO)
 		{
@@ -688,7 +685,7 @@ void DRPC_UpdatePresence(void)
 	}
 
 	//// Characters ////
-	if ((cv_discordshowonstatus.value == 0 || cv_discordshowonstatus.value == 1) && Playing() && playeringame[consoleplayer])
+	if ((!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 1) && Playing() && playeringame[consoleplayer])
 	{
 		// Supported Skin Pictures
 		static const char *baseSkins[] = {
@@ -728,11 +725,11 @@ void DRPC_UpdatePresence(void)
 			if (!players[1].bot || netgame)
 			{
 				//// Character images
+				// Supported
 				if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[0])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[0])))
-					// Supported
 					snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
+				// Unsupported
 				else
-					// Unsupported
 					snprintf(charimg, 11, "charcustom");
 				
 				//// Player names
@@ -746,7 +743,7 @@ void DRPC_UpdatePresence(void)
 						snprintf(playername, 28, "%s is Spectating %s", player_names[consoleplayer], player_names[displayplayer]); // Combine Player Names Together
 					else
 					{
-						if (cv_discordstatusmemes.value == 0)
+						if (!cv_discordstatusmemes.value)
 							snprintf(playername, 28, "%s is Spectating", player_names[consoleplayer]); // you're no fun, you know
 						else
 							snprintf(playername, 28, "%s is Spectating Air", player_names[consoleplayer]); // why are you spectating air
@@ -758,7 +755,7 @@ void DRPC_UpdatePresence(void)
 				discordPresence.smallImageKey = charimg; // Character image
 			}
 			// Bots
-			else if (!netgame && players[1].bot)
+			else if (players[1].bot) //(!netgame && players[1].bot)
 			{
 				////Only One Regular Bot?
 				if (!players[2].bot)

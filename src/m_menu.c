@@ -352,6 +352,7 @@ menu_t OP_ServerOptionsDef;
 #ifdef HAVE_DISCORDRPC
 menu_t OP_DiscordOptionsDef;
 menu_t OP_CustomStatusDef;
+menu_t OP_CustomStatusOutputDef;
 #endif
 menu_t OP_MonitorToggleDef;
 static void M_ScreenshotOptions(INT32 choice);
@@ -1660,6 +1661,13 @@ static menuitem_t OP_CustomStatusMenu[] =
 {
 	{IT_HEADER,								NULL, "Custom Discord Status",	NULL,					 0},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,	NULL, "Custom Status",			&cv_customdiscordstatus, 10},
+
+	{IT_STRING | IT_SUBMENU,				NULL, "Output",					&OP_CustomStatusOutputDef,	 80},
+};
+
+static menuitem_t OP_CustomStatusOutput[] =
+{
+	{IT_HEADER,								NULL, "Custom Status Output",	NULL,					 0},
 };
 #endif
 
@@ -2352,6 +2360,10 @@ menu_t OP_DiscordOptionsDef = DEFAULTMENUSTYLE(
 menu_t OP_CustomStatusDef = DEFAULTMENUSTYLE(
 	MTREE4(MN_OP_MAIN, MN_OP_DATA, MN_DISCORD_OPT, MN_DISCORD_CS), 
 	NULL, OP_CustomStatusMenu, &OP_DiscordOptionsDef, 30, 30); //M_DISCORDCUSTOMSTATUS
+
+menu_t OP_CustomStatusOutputDef = DEFAULTMENUSTYLE(
+	MTREE5(MN_OP_MAIN, MN_OP_DATA, MN_DISCORD_OPT, MN_DISCORD_CS, MN_DISCORDCS_OUTPUT), 
+	"M_DISCORDCUSTOMSTATUSOUTPUT", OP_CustomStatusOutput, &OP_CustomStatusDef, 100, 85);
 #endif
 
 // ==========================================================================

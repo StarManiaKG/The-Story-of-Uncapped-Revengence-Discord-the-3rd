@@ -138,6 +138,7 @@ typedef enum
 	MN_DISCORD_RQ,
 	MN_DISCORD_OPT,
 	MN_DISCORD_CS,
+	MN_DISCORDCS_OUTPUT,
 	NUMMENUTYPES,
 } menutype_t; // up to 63; MN_SPECIAL = 53
 #define MTREE2(a,b) (a | (b<<MENUBITS))
