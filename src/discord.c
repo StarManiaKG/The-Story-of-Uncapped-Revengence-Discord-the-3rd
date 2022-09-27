@@ -732,7 +732,7 @@ void DRPC_UpdatePresence(void)
 				{
 					//// Character images
 					// Supported
-					if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[skin_t *])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[skin_t *])))
+					if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[(skin_t *)])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[(skin_t *)])))
 						snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
 					// Unsupported
 					else
