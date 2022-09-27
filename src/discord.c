@@ -738,7 +738,7 @@ void DRPC_UpdatePresence(void)
 					else
 					{
 						snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
-						snprintf(charname, 28, "Playing As: %s & Multiple Bots", skins[players[consoleplayer].skin].name);
+						snprintf(charname, 50, "Playing As: %s & Multiple Bots", skins[players[consoleplayer].skin].name);
 					}
 
 					discordPresence.smallImageText = charimg; // Character image
