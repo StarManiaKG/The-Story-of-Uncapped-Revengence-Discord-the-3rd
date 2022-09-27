@@ -447,10 +447,7 @@ void DRPC_UpdatePresence(void)
 #endif // DEVELOP
 
 	// Server info
-	if (dedicated)
-		discordPresence.details = "Hosting a Dedicated Server";
-		
-	if (netgame)
+	if (dedicated || netgame)
 	{
 		if (DRPC_InvitesAreAllowed() == true)
 		{
@@ -468,8 +465,15 @@ void DRPC_UpdatePresence(void)
 			else
 				return;
 		}
-
+	}
+	
+	if (dedicated && !Playing())
+		discordPresence.details = "Hosting a Dedicated Server";
+		
+	if (netgame)
+	{
 		// unfortunally this only works when you are the server /////lol
+		/*
 		switch (ms_RoomId)
 		{
 			case -1: discordPresence.details = "Private"; break; // Private server
@@ -479,14 +483,11 @@ void DRPC_UpdatePresence(void)
 			case 31: discordPresence.details = "OLDC"; break;
 			default: discordPresence.details = "Unknown Room"; break; // HOW
 		}
+		*/
 		if (server)
-		{
 			discordPresence.details = "Hosting a Netgame";
-		}
 		else
-		{
 			discordPresence.details = "In a Netgame";
-		}
 
 		discordPresence.partyId = server_context; // Thanks, whoever gave us Mumble support, for implementing the EXACT thing Discord wanted for this field!
 		discordPresence.partySize = D_NumPlayers(); // Players in server
@@ -502,6 +503,7 @@ void DRPC_UpdatePresence(void)
 		// Offline info
 		if (Playing())
 		{
+			//Tiny Emerald Counter
 			UINT8 emeraldCount = 0;
 
 			for (INT32 i = 0; i < 7; i++) // thanks Monster Iestyn for this math
@@ -510,11 +512,11 @@ void DRPC_UpdatePresence(void)
 					emeraldCount += 1;
 			}
 
+			//Emblems
 			if (cv_discordshowonstatus.value == 0 || cv_discordshowonstatus.value == 4)
-			{
 				snprintf(detailstr, 20, "%d/%d Emblems", M_CountEmblems(), (numemblems + numextraemblems));
-			}
 
+			//Emeralds
 			if (cv_discordshowonstatus.value == 0)
 			{
 				//i think you know what the joke here is
@@ -723,14 +725,14 @@ void DRPC_UpdatePresence(void)
 		if (!splitscreen)
 		{
 			// Character images
-			if (playeringame[players[1].bot])
+			if (players[1].bot)
 			{
 				if (!netgame)
 				{
 					CONS_Printf(M_GetText("sonic"));
 
 					////Only One Regular Bot?
-					if (!players[2].bot)
+					if (!playeringame[2])
 					{
 						if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(skins[players[1].skin].name, "tails"))))
 						{
@@ -740,8 +742,11 @@ void DRPC_UpdatePresence(void)
 					}
 					////Multiple Bots?
 					else
-						snprintf(secondcharname, 28, " & Multiple Bots");
-					
+					{
+						if (players[2].bot)
+							snprintf(secondcharname, 28, " & Multiple Bots");
+					}
+
 					//Combine Character Name and Bot Name
 					strncat(combiring, strncat(charname, secondcharname, 28), 80); //Combine Ring
 					discordPresence.smallImageText = combiring; // Character name, Bot name
@@ -750,7 +755,7 @@ void DRPC_UpdatePresence(void)
 			else if ((!players[1].bot) || (netgame))
 			{
 				////No Bots?
-				if (!players[1].bot && !players[2].bot)
+				if (!(players[1].bot && players[2].bot))
 					snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
 			}
 			
@@ -793,12 +798,13 @@ void DRPC_UpdatePresence(void)
 			else
 			{
 				//Find Player Names
-				snprintf(playername, 28, "%s is Spectating", cv_playername.string);
-				snprintf(secondplayername, 28, " %s", player_names[displayplayer]);
+				//snprintf(playername, 28, "%s is Spectating", cv_playername.string);
+				snprintf(playername, 28, "%s is Spectating %s", cv_playername.string, player_names[displayplayer]);
+				//snprintf(secondplayername, 28, " %s", player_names[displayplayer]);
 
 				//Combine Player Names Together
-				strncat(combiring, strncat(playername, secondplayername, 28), 80); //Combine Ring (multiplayer edition)
-				discordPresence.smallImageText = combiring; // Player names
+				//strncat(combiring, strncat(playername, secondplayername, 28), 80); //Combine Ring (multiplayer edition)
+				discordPresence.smallImageText = playername; // Player names
 			}
 		}
 	}
