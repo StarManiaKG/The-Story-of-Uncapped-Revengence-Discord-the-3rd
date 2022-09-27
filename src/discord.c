@@ -496,7 +496,9 @@ void DRPC_UpdatePresence(void)
 		// so that you don't ever end up using bad information from another server.
 		memset(&discordInfo, 0, sizeof(discordInfo));
 
-		// Offline info
+		//////////////////////////////////////
+		////   Rich Presence Status Info ////
+		//////////////////////////////////////
 		if (Playing())
 		{
 			//// Emblems ////
@@ -787,6 +789,7 @@ void DRPC_UpdatePresence(void)
 			// render character image
 			snprintf(charimg, 28, "charsonictails");
 			discordPresence.smallImageKey = charimg;
+			
 			// Player names
 			snprintf(playername, 50, "%s & %s", player_names[consoleplayer], player_names[secondarydisplayplayer]);
 			discordPresence.smallImageText = playername;
