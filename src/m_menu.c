@@ -2593,10 +2593,10 @@ void Discordcustomstatus_option_Onchange(void)
 {
 	DRPC_UpdatePresence();
 	
-	OP_DiscordOptionsMenu[7].status =
+	OP_DiscordOptionsMenu[8].status =
 		(cv_discordshowonstatus.value == 7 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 	
-	OP_DiscordOptionsMenu[8].status =
+	OP_DiscordOptionsMenu[9].status =
 		(cv_discordshowonstatus.value == 7 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 }
 #endif
