@@ -682,35 +682,60 @@ void DRPC_UpdatePresence(void)
 			NULL
 		};
 
-		if (!netgame && !splitscreen)
+		if (!splitscreen)
 		{
 			// Character images
-			////No Bots?
-			if (!players[1].bot && !players[2].bot)
-				snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
-			////Multiple Bots?
-			else if (players[1].bot && players[2].bot)
-				snprintf(secondcharname, 28, " & Multiple Bots");
-			////One Regular Bot?
-			else if (players[1].bot)
+			if (players[1].bot)
 			{
-				CONS_Printf(M_GetText("sonic"));
-
-				if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(skins[players[1].skin].name, "tails"))))
+				if (!netgame)
 				{
-					snprintf(charimg, 15, "charsonictails");
-					snprintf(secondcharname, 28, " & %s", skins[players[1].skin].realname);
+					CONS_Printf(M_GetText("sonic"));
+
+					////Only One Regular Bot?
+					if (!players[2].bot)
+					{
+						if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(skins[players[1].skin].name, "tails"))))
+						{
+							snprintf(charimg, 15, "charsonictails");
+							snprintf(secondcharname, 28, " & %s", skins[players[1].skin].realname);
+						}
+					}
+					////Multiple Bots?
+					else
+						snprintf(secondcharname, 28, " & Multiple Bots");
+					
+					//Combine Character Name and Bot Name
+					strncat(combiring, strncat(charname, secondcharname, 28), 80); //Combine Ring
+					discordPresence.smallImageText = combiring; // Character name, Bot name
 				}
+			}
+			else if ((!players[1].bot) || (netgame))
+			{
+				////No Bots?
+				if (!players[1].bot && !players[2].bot)
+					snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
 			}
 			
 			// Character names
 			snprintf(charname, 28, "Playing As: %s", skins[players[consoleplayer].skin].realname);
-			//Combine Character Name and Bot Name
-			strncat(combiring, strncat(charname, secondcharname, 28), 80); //Combine Ring
 			discordPresence.smallImageKey = charimg; // Character image
-			discordPresence.smallImageText = combiring; // Character name, Bot name
 		}
-		else if ((!players[1].bot && !players[2].bot && !splitscreen) || (netgame))
+		else
+		{
+			// Character images
+			snprintf(charimg, 28, "charsonictails");
+			discordPresence.smallImageKey = charimg; // Character image
+
+			// Player names
+			snprintf(playername, 28, "%s & ", cv_playername.string);
+			snprintf(secondplayername, 28, "%s", cv_playername2.string);
+
+			//Combine Player Names
+			strncat(combiring, strncat(playername, secondplayername, 28), 80); //Combine Ring (splitscreen edition)
+			discordPresence.smallImageText = combiring; // Player names
+		}
+
+		if (netgame)
 		{
 			// Character images
 			if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[0])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[0])))
@@ -729,25 +754,14 @@ void DRPC_UpdatePresence(void)
 			}
 			else
 			{
+				//Find Player Names
 				snprintf(playername, 28, "%s is Spectating", cv_playername.string);
 				snprintf(secondplayername, 28, " %s", player_names[displayplayer]);
-				strncat(combiring, strncat(playername, secondplayername, 28), 100); //Combine Ring (multiplayer edition)
+
+				//Combine Player Names Together
+				strncat(combiring, strncat(playername, secondplayername, 28), 80); //Combine Ring (multiplayer edition)
 				discordPresence.smallImageText = combiring; // Player names
 			}
-		}
-		else if (splitscreen && playeringame[secondarydisplayplayer])
-		{
-			// Character images
-			snprintf(charimg, 28, "charsonictails");
-			discordPresence.smallImageKey = charimg; // Character image
-
-			// Player names
-			snprintf(playername, 28, "%s & ", cv_playername.string);
-			snprintf(secondplayername, 28, "%s", cv_playername2.string);
-
-			//Combine Player Names
-			strncat(combiring, strncat(playername, secondplayername, 28), 80); //Combine Ring (multiplayer edition)
-			discordPresence.smallImageText = combiring; // Player names
 		}
 	}
 	
