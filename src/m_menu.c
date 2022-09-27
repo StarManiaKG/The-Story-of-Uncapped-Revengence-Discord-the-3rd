@@ -2601,7 +2601,7 @@ void Moviemode_option_Onchange(void)
 void Discordcustomstatus_option_Onchange(void)
 {
 	DRPC_UpdatePresence();
-	OP_DiscordOptionsMenu[OP_CustomStatusDef].status =
+	OP_DiscordOptionsMenu[&OP_CustomStatusDef].status =
 		(cv_discordshowonstatus.value == 7 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 }
 #endif
@@ -13752,7 +13752,7 @@ static void M_DiscordOptions(INT32 choice)
 	(void)choice;
 	Discordcustomstatus_option_Onchange();
 
-	M_SetupNextMenu(&OP_DiscordOptionsDef)
+	M_SetupNextMenu(&OP_DiscordOptionsDef);
 }
 static void M_HandleDiscordRequests(INT32 choice)
 {
