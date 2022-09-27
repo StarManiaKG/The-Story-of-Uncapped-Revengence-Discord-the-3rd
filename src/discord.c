@@ -684,15 +684,15 @@ void DRPC_UpdatePresence(void)
 		{
 			// Character images
 			////No Bots?
-			if (!playeringame[1] && !playeringame[2] && !players[1].bot && !players[2].bot)
+			if (!players[1].bot && !players[2].bot)
 				snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
 			////Multiple Bots?
-			else if ((playeringame[1] && playeringame[2]) && (players[1].bot && players[2].bot))
+			else if (players[1].bot && players[2].bot)
 				snprintf(secondcharname, 28, " & Multiple Bots");
 			////One Regular Bot?
-			else if (playeringame[1] && players[1].bot)
+			else if (players[1].bot)
 			{
-				if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(players[1].mo->skin, "tails"))))
+				if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(skins[players[1].mo->skin].name, "tails"))))
 				{
 					snprintf(charimg, 15, "charsonictails");
 					snprintf(secondcharname, 28, " & %s", skins[players[1].skin].realname);
@@ -706,7 +706,7 @@ void DRPC_UpdatePresence(void)
 			discordPresence.smallImageKey = charimg; // Character image
 			discordPresence.smallImageText = combiring; // Character name, Bot name
 		}
-		else if ((!playeringame[1] && !playeringame[2] && !players[1].bot && !players[2].bot && !splitscreen) || (netgame))
+		else if ((!players[1].bot && !players[2].bot && !splitscreen) || (netgame))
 		{
 			// Character images
 			if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[0])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[0])))
