@@ -733,7 +733,7 @@ void DRPC_UpdatePresence(void)
 					snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
 				else
 					// Unsupported
-					snprintf(charimg, 10, "charcustom");
+					snprintf(charimg, 11, "charcustom");
 				
 				//// Player names
 				if (!players[consoleplayer].spectator)
