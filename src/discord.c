@@ -519,10 +519,12 @@ void DRPC_UpdatePresence(void)
 
 					//Why Do You Not Like Memes?		
 					if (cv_discordstatusmemes.value == 0)
+					{
 						if (emeraldCount < 7 && emeraldCount != 3 && emeraldCount != 4)
 							strlcat(detailstr, va(", %d Emeralds", emeraldCount), 64);
 						else if (emeralds == 7)
 							strlcat(detailstr, ", All 7 Emeralds Obtained!", 64);
+					}
 					//Honestly relatable lol
 					else
 					{
