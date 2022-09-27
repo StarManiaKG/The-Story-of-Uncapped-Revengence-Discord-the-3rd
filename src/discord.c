@@ -726,7 +726,7 @@ void DRPC_UpdatePresence(void)
 			else
 			{
 				snprintf(playername, 28, "%s is Spectating", cv_playername.string);
-				snprintf(secondplayername, 28, " %s", players[displayplayer].name);
+				snprintf(secondplayername, 28, " %s", player_names[displayplayer]);
 				strncat(combiring, strncat(playername, secondplayername, 28), 100); //Combine Ring (multiplayer edition)
 				discordPresence.smallImageText = combiring; // Player names
 			}
