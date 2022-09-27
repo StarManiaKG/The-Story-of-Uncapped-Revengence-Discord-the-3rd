@@ -725,7 +725,7 @@ void DRPC_UpdatePresence(void)
 				NULL
 			};
 
-			const char *morbius = skins[players[consoleplayer].skin].name;
+			static const char morbius = skins[players[consoleplayer].skin].name;
 
 			if (!splitscreen)
 			{
