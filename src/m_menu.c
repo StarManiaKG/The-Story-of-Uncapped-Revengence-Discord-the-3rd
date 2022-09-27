@@ -1568,7 +1568,7 @@ static menuitem_t OP_DataOptionsMenu[] =
 	{IT_STRING | IT_CALL,    NULL, "Screenshot Options...", M_ScreenshotOptions, 20},
 
 #ifdef HAVE_DISCORDRPC
-	{IT_STRING | IT_SUBMENU, NULL, "Discord Options...",	M_DiscordOptions,	 	 40},
+	{IT_STRING | IT_CALL, 	 NULL, "Discord Options...",	M_DiscordOptions,	 	 40},
 
 	{IT_STRING | IT_SUBMENU, NULL, "\x85" "Erase Data...",	&OP_EraseDataDef,		 60},
 #else
