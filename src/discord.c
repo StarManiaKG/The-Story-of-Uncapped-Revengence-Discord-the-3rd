@@ -417,6 +417,8 @@ void DRPC_UpdatePresence(void)
 	//char playerimg[25+50+15+10];
 	char playername[11+MAXPLAYERNAME+1];
 
+	char servertype[11++26+1];
+
 	boolean joinSecretSet = false;
 
 	DiscordRichPresence discordPresence;
@@ -465,26 +467,30 @@ void DRPC_UpdatePresence(void)
 				return;
 		}
 	}
-	
-	if (dedicated && !Playing())
-		discordPresence.details = "Hosting a Dedicated Server";
 		
-	if (netgame)
+	if (netgame && serverrunning)
 	{
 		switch (ms_RoomId)
 		{
-			case -1: discordPresence.details = "Private"; break; // Private server
-			case 33: discordPresence.details = "Standard"; break;
-			case 28: discordPresence.details = "Casual"; break;
-			case 38: discordPresence.details = "Custom Gametypes"; break;
-			case 31: discordPresence.details = "OLDC"; break;
-			default: discordPresence.details = "Unknown Room"; break; // HOW
+			case -1: snprintf(servertype, 39, "Private"); break; // Private server
+			case 33: snprintf(servertype, 39, "Standard"); break;
+			case 28: snprintf(servertype, 39, "Casual"); break;
+			case 38: snprintf(servertype, 39, "Custom Gametypes"); break;
+			case 31: snprintf(servertype, 39, "OLDC"); break;
+			default: snprintf(servertype, 39, "Private"); break; // HOW
 		}
-		if (server)
-			discordPresence.details = "Hosting a Netgame";
-		else
-			discordPresence.details = "In a Netgame";
 
+		if (server)
+		{
+			if (!dedicated)
+				snprintf(servertype, 39, "Hosting a %s Server", servertype);
+			else
+				snprintf(servertype, 39, "Hosting a Dedicated %s Server", servertype);
+		}
+		else
+			snprintf(servertype, 39, "In a %s Server", servertype);;
+
+		discordPresence.details = servertype
 		discordPresence.partyId = server_context; // Thanks, whoever gave us Mumble support, for implementing the EXACT thing Discord wanted for this field!
 		discordPresence.partySize = D_NumPlayers(); // Players in server
 		discordPresence.partyMax = cv_maxplayers.value; // Max players
@@ -499,10 +505,9 @@ void DRPC_UpdatePresence(void)
 		if (Playing())
 		{
 			//Tiny Emerald Counter
-			INT32 i;
 			UINT8 emeraldCount = 0;
 
-			for (i = 0; i < 7; i++) // thanks Monster Iestyn for this math
+			for (INT32 i = 0; i < 7; i++) // thanks Monster Iestyn for this math
 				if (emeralds & (1<<i))
 					emeraldCount += 1;
 
@@ -560,8 +565,7 @@ void DRPC_UpdatePresence(void)
 						if (emeraldCount < 7 && emeraldCount != 3 && emeraldCount != 4)
 							strlcat(detailstr, va(", %d Emeralds", emeraldCount), 64);
 						else if (emeraldCount == 3)
-							// Fun Fact: the subtitles in Shadow the Hedgehog emphasized "fourth",
-							// even though Jason Griffith emphasized "damn" in this sentence
+							// Fun Fact: the subtitles in Shadow the Hedgehog emphasized "fourth", even though Jason Griffith emphasized "damn" in this sentence
 							strlcat(detailstr, ", %d Emeralds; Where's That DAMN FOURTH?", 64);
 						else if (emeraldCount == 4)
 							strlcat(detailstr, ", %d Emeralds; Found that DAMN FOURTH", 64);
@@ -573,8 +577,7 @@ void DRPC_UpdatePresence(void)
 						if (emeraldCount < 7 && emeraldCount != 3 && emeraldCount != 4)
 							strlcat(detailstr, va("%d Emeralds", emeraldCount), 64);
 						else if (emeraldCount == 3)
-							// Fun Fact: the subtitles in Shadow the Hedgehog emphasized "fourth",
-							// even though Jason Griffith emphasized "damn" in this sentence
+							// You Already Know the Fun Fact lol
 							strlcat(detailstr, "%d Emeralds; Where's That DAMN FOURTH?", 64);
 						else if (emeraldCount == 4)
 							strlcat(detailstr, "%d Emeralds; Found that DAMN FOURTH", 64);
@@ -685,107 +688,112 @@ void DRPC_UpdatePresence(void)
 	}
 
 	//// Characters ////
-	if ((!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 1) && Playing() && playeringame[consoleplayer])
+	if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 1)
 	{
-		// Supported Skin Pictures
-		static const char *baseSkins[] = {
-			"sonic",
-			"tails",
-			"knuckles",
-			"amy",
-			"fang",
-			"metalsonic",
-			NULL
-		};
-
-        // Supported Skin Pictures
-		static const char *customSkins[] = {
-			"adventuresonic",
-			"shadow",
-			"skip",
-			"jana",
-			"surge",
-			"cacee",
-			"milne",
-			"maiamy",
-			"mario",
-			"luigi",
-			"blaze",
-			"marine",
-			"tailsdoll",
-			"metalknuckles",
-			"smiles",
-			"whisper",
-			NULL
-		};
-
-		if (!splitscreen)
+		if (Playing() && playeringame[consoleplayer])
 		{
-			// No Bots
-			if (!players[1].bot || netgame)
+			// Supported Skin Pictures
+			static const char *baseSkins[] = {
+				"sonic",
+				"tails",
+				"knuckles",
+				"amy",
+				"fang",
+				"metalsonic",
+				NULL
+			};
+
+			// Supported Skin Pictures
+			static const char *customSkins[] = {
+				"adventuresonic",
+				"shadow",
+				"skip",
+				"jana",
+				"surge",
+				"cacee",
+				"milne",
+				"maiamy",
+				"mario",
+				"luigi",
+				"blaze",
+				"marine",
+				"tailsdoll",
+				"metalknuckles",
+				"smiles",
+				"whisper",
+				NULL
+			};
+
+			const char *skins = skins[players[consoleplayer].skin].name;
+
+			if (!splitscreen)
 			{
-				//// Character images
-				// Supported
-				if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[0])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[0])))
-					snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
-				// Unsupported
-				else
-					snprintf(charimg, 11, "charcustom");
-				
-				//// Player names
-				if (!players[consoleplayer].spectator)
-					// Character
-					snprintf(playername, 28, "Playing As: %s", skins[players[consoleplayer].skin].realname);
-				// Viewpoint
-				else
+				// No Bots
+				if ((!players[1].bot) || netgame)
 				{
-					if (playeringame[displayplayer])
-						snprintf(playername, 28, "%s is Spectating %s", player_names[consoleplayer], player_names[displayplayer]); // Combine Player Names Together
+					//// Character images
+					// Supported
+					if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[skins])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[skins])))
+						snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
+					// Unsupported
+					else
+						snprintf(charimg, 11, "charcustom");
+					
+					//// Player names
+					if (!players[consoleplayer].spectator)
+						// Character
+						snprintf(playername, 28, "Playing As: %s", skins[players[consoleplayer].skin].realname);
+					// Viewpoint
 					else
 					{
-						if (!cv_discordstatusmemes.value)
-							snprintf(playername, 28, "%s is Spectating", player_names[consoleplayer]); // you're no fun, you know
+						if (playeringame[displayplayer])
+							snprintf(playername, 28, "%s is Spectating %s", player_names[consoleplayer], player_names[displayplayer]); // Combine Player Names Together
 						else
-							snprintf(playername, 28, "%s is Spectating Air", player_names[consoleplayer]); // why are you spectating air
-					}		
-				}
-				
-				// render character variables
-				discordPresence.smallImageText = playername; // Player names
-				discordPresence.smallImageKey = charimg; // Character image
-			}
-			// Bots
-			else if (players[1].bot) //(!netgame && players[1].bot)
-			{
-				////Only One Regular Bot?
-				if (!players[2].bot)
-				{
-					// Character images
-					if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(((skin_t *)players[1].mo->skin)->name, "tails"))))
-						snprintf(charimg, 15, "charsonictails");
+						{
+							if (!cv_discordstatusmemes.value)
+								snprintf(playername, 28, "%s is Spectating", player_names[consoleplayer]); // you're no fun, you know
+							else
+								snprintf(playername, 28, "%s is Spectating Air", player_names[consoleplayer]); // why are you spectating air
+						}		
+					}
 					
-					snprintf(charname, 28, "Playing As: %s & %s", skins[players[consoleplayer].skin].name, skins[players[1].skin].realname);
+					// render character variables
+					discordPresence.smallImageText = playername; // Player names
+					discordPresence.smallImageKey = charimg; // Character image
 				}
-				////Multiple Bots?
-				else
+				// Bots
+				else if (players[1].bot)
 				{
-					snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
-					snprintf(charname, 50, "Playing As: %s & Multiple Bots", skins[players[consoleplayer].skin].name);
+					////Only One Regular Bot?
+					if (!players[2].bot)
+					{
+						// Character images
+						if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(((skin_t *)players[1].mo->skin)->name, "tails"))))
+							snprintf(charimg, 15, "charsonictails");
+						
+						snprintf(charname, 28, "Playing As: %s & %s", skins[players[consoleplayer].skin].name, skins[players[1].skin].realname);
+					}
+					////Multiple Bots?
+					else
+					{
+						snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
+						snprintf(charname, 50, "Playing As: %s & Multiple Bots", skins[players[consoleplayer].skin].name);
+					}
+
+					discordPresence.smallImageText = charimg; // Character image
+					discordPresence.smallImageText = charname; // Character name, Bot name
 				}
-
-				discordPresence.smallImageText = charimg; // Character image
-				discordPresence.smallImageText = charname; // Character name, Bot name
 			}
-		}
-		else
-		{
-			// render character image
-			snprintf(charimg, 28, "charsonictails");
-			discordPresence.smallImageKey = charimg;
+			else
+			{
+				// render character image
+				snprintf(charimg, 28, "charsonictails");
+				discordPresence.smallImageKey = charimg;
 
-			// Player names
-			snprintf(playername, 50, "%s & %s", player_names[consoleplayer], player_names[secondarydisplayplayer]);
-			discordPresence.smallImageText = playername;
+				// Player names
+				snprintf(playername, 50, "%s & %s", player_names[consoleplayer], player_names[secondarydisplayplayer]);
+				discordPresence.smallImageText = playername;
+			}
 		}
 	}
 	
