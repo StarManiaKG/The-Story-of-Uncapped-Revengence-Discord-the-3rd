@@ -692,10 +692,10 @@ void DRPC_UpdatePresence(void)
 			////One Regular Bot?
 			else if (players[1].bot)
 			{
-				INT32 player
+				INT32 player;
 				INT32 skin;
 				skin = players[player].skin;
-				
+
 				if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(skins[players[1].mo]->skin, "tails"))))
 				{
 					snprintf(charimg, 15, "charsonictails");
