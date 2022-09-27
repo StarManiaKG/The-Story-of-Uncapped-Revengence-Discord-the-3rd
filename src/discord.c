@@ -442,6 +442,9 @@ void DRPC_UpdatePresence(void)
 	return;
 #endif // DEVELOP
 
+	////////////////////////////////////////////
+	////   Main Rich Presence Status Info   ////
+	////////////////////////////////////////////
 	// Server info
 	if (dedicated || netgame)
 	{
@@ -496,9 +499,6 @@ void DRPC_UpdatePresence(void)
 		// so that you don't ever end up using bad information from another server.
 		memset(&discordInfo, 0, sizeof(discordInfo));
 
-		//////////////////////////////////////
-		////   Rich Presence Status Info ////
-		//////////////////////////////////////
 		if (Playing())
 		{
 			//Tiny Emerald Counter
@@ -585,8 +585,6 @@ void DRPC_UpdatePresence(void)
 							strlcat(detailstr, "All 7 Emeralds Obtained!", 64);
 					}
 				}
-
-				discordPresence.details = detailstr;
 			}
 
 			//// Continues ////
@@ -597,6 +595,8 @@ void DRPC_UpdatePresence(void)
 				else if (cv_discordshowonstatus.value == 2)
 					snprintf(detailstr, 18, "%d Continues", players[consoleplayer].continues);
 			}
+
+			discordPresence.details = detailstr;
 		}
 		else if (demoplayback && !titledemo)
 			discordPresence.state = "Watching Replays";
