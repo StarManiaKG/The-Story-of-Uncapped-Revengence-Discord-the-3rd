@@ -38,7 +38,7 @@
 // length of IP strings
 #define IP_SIZE 21
 
-static CV_PossibleValue_t discordstatustype_cons_t[] = {{0, "All"}, {1, "Characters"}, {2, "Continues"}, {3, "Emeralds"}, {4, "Emblems"}, {5, "Levels"}, {6, "Gametype"}, {7, "Custom"}, {8, "None"}, {0, NULL}};
+static CV_PossibleValue_t discordstatustype_cons_t[] = {{0, "All"}, {1, "Only Characters"}, {2, "Only Player Name"}, {3, "Only Emeralds"}, {4, "Only Emblems"}, {5, "Only Levels"}, {6, "Only Gametype"}, {7, "Custom"}, {8, "None"}, {0, NULL}};
 consvar_t cv_discordrp = CVAR_INIT ("discordrp", "On", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
 consvar_t cv_discordstreamer = CVAR_INIT ("discordstreamer", "Off", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
 consvar_t cv_discordasks = CVAR_INIT ("discordasks", "Yes", CV_SAVE|CV_CALL, CV_YesNo, DRPC_UpdatePresence);
@@ -587,25 +587,6 @@ void DRPC_UpdatePresence(void)
 				}
 			}
 
-			//// Continues ////
-			if (cv_discordshowonstatus.value == 0 || cv_discordshowonstatus.value == 2)
-			{
-				if (cv_discordshowonstatus.value == 0)
-				{
-					if (saveSlotSelected == NOSAVESLOT)
-						snprintf(detailstr, 18, va(", %d Continues", players[consoleplayer].continues), 64);
-					else
-						snprintf(detailstr, 18, va(", Infinite Continues", players[consoleplayer].continues), 64);
-				}
-				else if (cv_discordshowonstatus.value == 2)
-				{
-					if (saveSlotSelected == NOSAVESLOT)
-						snprintf(detailstr, 18, va("%d Continues", players[consoleplayer].continues), 64);
-					else
-						snprintf(detailstr, 18, va("Infinite Continues", players[consoleplayer].continues), 64);
-				}
-			}
-
 			discordPresence.details = detailstr;
 		}
 		else if (demoplayback && !titledemo)
@@ -783,7 +764,7 @@ void DRPC_UpdatePresence(void)
 				if (!players[2].bot)
 				{
 					// Character images
-					if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(((skin_t *)tails->skin)->name, "tails"))))
+					if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(((skin_t *)player[1].mo->skin)->name, "tails"))))
 						snprintf(charimg, 15, "charsonictails");
 					
 					snprintf(charname, 28, "Playing As: %s & %s", skins[players[consoleplayer].skin].name, skins[players[1].skin].realname);
