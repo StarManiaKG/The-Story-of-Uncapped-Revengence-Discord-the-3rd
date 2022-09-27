@@ -3245,6 +3245,10 @@ void G_DoReborn(INT32 playernum)
 		if (oldmo)
 			G_ChangePlayerReferences(oldmo, players[playernum].mo);
 	}
+
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 }
 
 void G_AddPlayer(INT32 playernum)
@@ -3292,6 +3296,9 @@ void G_AddPlayer(INT32 playernum)
 
 	if ((countplayers && !notexiting) || G_IsSpecialStage(gamemap))
 		P_DoPlayerExit(p);
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 }
 
 boolean G_EnoughPlayersFinished(void)
@@ -3350,6 +3357,10 @@ void G_ExitLevel(void)
 	{
 		F_StartGameEvaluation();
 	}
+
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 }
 
 // See also the enum GameType in doomstat.h
