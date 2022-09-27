@@ -1646,23 +1646,23 @@ enum
 static menuitem_t OP_DiscordOptionsMenu[] =
 {
 	{IT_HEADER,					NULL, "Discord Rich Presence",	NULL,					 0},
-	{IT_STRING | IT_CVAR,		NULL, "Rich Presence",			&cv_discordrp,			 10},
-	{IT_STRING | IT_CVAR,		NULL, "Streamer Mode",			&cv_discordstreamer,	 20},
+	{IT_STRING | IT_CVAR,		NULL, "Rich Presence",			&cv_discordrp,			 12},
+	{IT_STRING | IT_CVAR,		NULL, "Streamer Mode",			&cv_discordstreamer,	 22},
 
-	{IT_HEADER,					NULL, "Rich Presence Settings",	NULL,					 30},
-	{IT_STRING | IT_CVAR,		NULL, "Allow Ask To Join",		&cv_discordasks,		 40},
-	{IT_STRING | IT_CVAR,		NULL, "Allow Invites",			&cv_discordinvites,		 50},
-	{IT_STRING | IT_CVAR,		NULL, "Show Memes on Status",	&cv_discordstatusmemes,	 60},
-	{IT_STRING | IT_CVAR,		NULL, "Show on Status",			&cv_discordshowonstatus, 70},
-	{IT_STRING | IT_SUBMENU,	NULL, "Custom Status Settings",	&OP_CustomStatusDef,	 80},
+	{IT_HEADER,					NULL, "Rich Presence Settings",	NULL,					 32},
+	{IT_STRING | IT_CVAR,		NULL, "Allow Ask To Join",		&cv_discordasks,		 44},
+	{IT_STRING | IT_CVAR,		NULL, "Allow Invites",			&cv_discordinvites,		 54},
+	{IT_STRING | IT_CVAR,		NULL, "Show Memes on Status",	&cv_discordstatusmemes,	 64},
+	{IT_STRING | IT_CVAR,		NULL, "Show on Status",			&cv_discordshowonstatus, 74},
+	{IT_STRING | IT_SUBMENU,	NULL, "Custom Status Settings",	&OP_CustomStatusDef,	 84},
 };
 
 static menuitem_t OP_CustomStatusMenu[] =
 {
-	{IT_HEADER,								NULL, "Custom Discord Status",	NULL,					 0},
-	{IT_STRING | IT_CVAR | IT_CV_STRING,	NULL, "Custom Status",			&cv_customdiscordstatus, 10},
+	{IT_HEADER,								NULL, "Custom Discord Status",	NULL,					 	  0},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,	NULL, "Custom Status",			&cv_customdiscordstatus, 	 12},
 
-	{IT_STRING | IT_SUBMENU,				NULL, "Output",					&OP_CustomStatusOutputDef,	 80},
+	{IT_STRING | IT_SUBMENU,				NULL, "Output",					&OP_CustomStatusOutputDef,	 84},
 };
 
 static menuitem_t OP_CustomStatusOutput[] =
@@ -2363,7 +2363,7 @@ menu_t OP_CustomStatusDef = DEFAULTMENUSTYLE(
 
 menu_t OP_CustomStatusOutputDef = DEFAULTMENUSTYLE(
 	MTREE5(MN_OP_MAIN, MN_OP_DATA, MN_DISCORD_OPT, MN_DISCORD_CS, MN_DISCORDCS_OUTPUT), 
-	"M_DISCORDCUSTOMSTATUSOUTPUT", OP_CustomStatusOutput, &OP_CustomStatusDef, 100, 85);
+	"M_DISCORDCUSTOMSTATUSOUTPUT", OP_CustomStatusOutput, &OP_CustomStatusDef, 150, 93);
 #endif
 
 // ==========================================================================
@@ -2594,6 +2594,12 @@ void Moviemode_option_Onchange(void)
 {
 	OP_ScreenshotOptionsMenu[op_movie_folder].status =
 		(cv_movie_option.value == 3 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
+}
+
+void Discordcustomstatus_option_Onchange(void)
+{
+	OP_DiscordOptionsMenu[OP_CustomStatusDef].status =
+		(cv_discordshowonstatus.value == 7 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 }
 
 // ==========================================================================
