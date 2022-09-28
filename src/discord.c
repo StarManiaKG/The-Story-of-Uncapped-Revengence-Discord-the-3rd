@@ -739,7 +739,7 @@ void DRPC_UpdatePresence(void)
 
 				snprintf(deez, 28, "%s", skins[players[consoleplayer].skin].name); // Character
 
-				discordPresence.details = deez
+				discordPresence.details = deez;
 
 				//if (deez == &customSkins[character] || deez == &baseSkins[character])
 					//CONS_Printf(M_GetText(deez));
