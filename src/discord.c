@@ -732,18 +732,23 @@ void DRPC_UpdatePresence(void)
 					NULL
 				};
 
+				UINT8 customcharacters = 16;
+
 				//// No Bots ////
 				if (!players[1].bot || netgame)
 				{
 					// Character Images
-					for (INT32 i = 0; i < 16; i++) // thanks Monster Iestyn for this math
+					for (INT32 i = 0; i < customcharacters; i++)
+					{
 						if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[i])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[i])))
 						{
 							snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
 							break;
 						}
-						else if (i == 16)
+							
+						if (i == 16)
 							snprintf(charimg, 11, "charcustom"); // Unsupported
+					}
 					
 					// Player Names
 					if (!players[consoleplayer].spectator)
@@ -787,9 +792,7 @@ void DRPC_UpdatePresence(void)
 					else
 					{
 						// Character Images
-						UINT8 customcharacters = 16;
-
-						for (INT32 i = 0; i < customcharacters; i++) // thanks Monster Iestyn for this math
+						for (INT32 i = 0; i < customcharacters; i++)
 						{
 							if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[i])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[i])))
 							{
