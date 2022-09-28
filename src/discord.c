@@ -729,16 +729,16 @@ void DRPC_UpdatePresence(void)
 				NULL
 			};
 
+			int character = (strcmp(skins[players[consoleplayer].skin].name, skins[players[consoleplayer].skin].name));
+
 			//Why Would You Split My Screen
 			if (!splitscreen)
 			{
 				//// No Bots ////
 				if (!players[1].bot || netgame)
 				{
-					int character = (strcmp(skins[players[consoleplayer].skin].name, skins[players[consoleplayer].skin].name));
-
 					// Character Images
-					if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[character])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[character])))
+					if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[character])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[character])))	
 						snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
 					else
 						snprintf(charimg, 11, "charcustom"); // Unsupported
@@ -782,10 +782,14 @@ void DRPC_UpdatePresence(void)
 						snprintf(charname, 50, "Playing As: %s & %s", skins[players[consoleplayer].skin].realname, skins[players[secondarydisplayplayer].skin].realname);
 					}
 					// Multiple Bots?
-					else if (players[2].bot)
+					else
 					{
 						// Character Tags
-						snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
+						if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[character])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[character])))
+							snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
+						else
+							snprintf(charimg, 11, "charcustom");
+	
 						snprintf(charname, 75, "Playing As: %s, %s, & Multiple Bots", skins[players[consoleplayer].skin].realname, skins[players[secondarydisplayplayer].skin].realname);
 					}
 
