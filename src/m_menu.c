@@ -2622,7 +2622,7 @@ void Discordcustomstatus_option_Onchange(void)
 		(cv_discordrp.value == 1 ? IT_STRING|IT_SUBMENU : IT_DISABLED);
 
 	//Is Custom Status On?
-	if (cv.discordrp.value)
+	if (cv_discordrp.value)
 	{
 		OP_DiscordOptionsMenu[8].status =
 			(cv_discordshowonstatus.value == 7 ? IT_HEADER : IT_DISABLED);
