@@ -734,10 +734,7 @@ void DRPC_UpdatePresence(void)
 
 				//// No Bots ////
 				if (!players[1].bot || netgame)
-				{
-					// Character Images
-					snprintf(charimg, 11, "charcustom"); // Unsupported
-					
+				{	
 					INT32 i;
 					for (i = 0; i < 22; i++)
 						if (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]))
@@ -745,6 +742,9 @@ void DRPC_UpdatePresence(void)
 							snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
 							break;
 						}
+					
+					// Character Images
+					snprintf(charimg, 11, "charcustom"); // Unsupported
 					
 					// Player Names
 					if (!players[consoleplayer].spectator)
@@ -783,9 +783,6 @@ void DRPC_UpdatePresence(void)
 					// Multiple Bots?
 					else
 					{
-						// Character Images
-						snprintf(charimg, 11, "charcustom"); // Unsupported
-
 						INT32 i;
 						for (i = 0; i < 22; i++)
 							if (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]))
@@ -793,6 +790,9 @@ void DRPC_UpdatePresence(void)
 								snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
 								break;
 							}
+						
+						// Character Images
+						snprintf(charimg, 11, "charcustom"); // Unsupported
 	
 						snprintf(charname, 75, "Playing As: %s, %s, & Multiple Bots", skins[players[consoleplayer].skin].realname, skins[players[secondarydisplayplayer].skin].realname);
 					}
