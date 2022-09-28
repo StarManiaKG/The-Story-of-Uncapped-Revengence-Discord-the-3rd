@@ -10,7 +10,7 @@
 /// \file  discord.h
 /// \brief Discord Rich Presence handling
 
-#ifdef HAVE_DISCORDRPC
+#ifdef HAVE_DISCORDRPC // HAVE_DISCORDRPC
 
 #include <time.h>
 
@@ -32,7 +32,7 @@
 #include "discord.h"
 #include "doomdef.h"
 
-// Feel free to provide your own, if you care enough to create another Discord app for this :P
+// Please feel free to provide your own Discord app if you're making a new build :)
 #define DISCORD_APPID "1013126566236135516"
 
 // length of IP strings
@@ -511,7 +511,7 @@ void DRPC_UpdatePresence(void)
 		if (playeringame[consoleplayer] && gamestate == GS_LEVEL && Playing())
 		{
 			//Tiny Counters
-			INT32 i = 0;
+			INT32 i;
 			UINT8 emeraldCount = 0;
 
 			for (i = 0; i < 7; i++) // thanks Monster Iestyn for this math
@@ -738,10 +738,13 @@ void DRPC_UpdatePresence(void)
 					// Character Images
 					snprintf(charimg, 11, "charcustom"); // Unsupported
 					
-					INT32 i = 0;
+					INT32 i;
 					for (i = 0; i < 22; i++)
 						if (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]))
+						{
 							snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
+							break;
+						}
 					
 					// Player Names
 					if (!players[consoleplayer].spectator)
@@ -783,10 +786,13 @@ void DRPC_UpdatePresence(void)
 						// Character Images
 						snprintf(charimg, 11, "charcustom"); // Unsupported
 
-						INT32 i = 0;
+						INT32 i;
 						for (i = 0; i < 22; i++)
 							if (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]))
+							{
 								snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
+								break;
+							}
 	
 						snprintf(charname, 75, "Playing As: %s, %s, & Multiple Bots", skins[players[consoleplayer].skin].realname, skins[players[secondarydisplayplayer].skin].realname);
 					}
@@ -839,8 +845,8 @@ void DRPC_UpdatePresence(void)
 --------------------------------------------------*/
 void DRPC_ShutDown(void)
 {
-	DRPC_EmptyRequests();
 	DRPC_UpdatePresence();
+	DRPC_EmptyRequests();
 	Discord_Shutdown();
 	Discord_ClearPresence();
 }
