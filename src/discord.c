@@ -38,7 +38,7 @@
 // length of IP strings
 #define IP_SIZE 21
 
-static CV_PossibleValue_t discordstatustype_cons_t[] = {{0, "All"}, {1, "Only Characters"}, {2, "Only Player Name"}, {3, "Only Emeralds"}, {4, "Only Emblems"}, {5, "Only Levels"}, {6, "Only Gametype"}, {7, "Custom"}, {8, "None"}, {0, NULL}};
+static CV_PossibleValue_t discordstatustype_cons_t[] = {{0, "All"}, {1, "Only Characters"}, {2, "Only Player Name"}, {3, "Only Emeralds"}, {4, "Only Emblems"}, {5, "Only Levels"}, {6, "Only Gametype"}, {7, "Custom"}, {0, NULL}};
 consvar_t cv_discordrp = CVAR_INIT ("discordrp", "On", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
 consvar_t cv_discordstreamer = CVAR_INIT ("discordstreamer", "Off", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
 consvar_t cv_discordasks = CVAR_INIT ("discordasks", "Yes", CV_SAVE|CV_CALL, CV_YesNo, DRPC_UpdatePresence);
@@ -426,13 +426,14 @@ void DRPC_UpdatePresence(void)
 	DiscordRichPresence discordPresence;
 	memset(&discordPresence, 0, sizeof(discordPresence));
 
+	//// NO STATUS? ////
 	if (!cv_discordrp.value)
 	{
 		// User doesn't want to show their game information, so update with empty presence.
 		// This just shows that they're playing SRB2. (If that's too much, then they should disable game activity :V)
-		DRPC_EmptyRequests();
 		discordPresence.largeImageKey = "misctitle";
 		discordPresence.largeImageText = "Sonic Robo Blast 2";
+		DRPC_EmptyRequests();
 		Discord_UpdatePresence(&discordPresence);
 		return;
 	}
@@ -785,7 +786,7 @@ void DRPC_UpdatePresence(void)
 					{
 						// Character Tags
 						snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
-						snprintf(charname, 75, "Playing As: %s, %s, & Multiple Bots", skins[players[consoleplayer].skin].name, skins[players[secondarydisplayplayer].skin].realname);
+						snprintf(charname, 75, "Playing As: %s, %s, & Multiple Bots", skins[players[consoleplayer].skin].realname, skins[players[secondarydisplayplayer].skin].realname);
 					}
 
 					// render character variables
@@ -818,13 +819,6 @@ void DRPC_UpdatePresence(void)
 			discordPresence.largeImageKey = "charcustom";
 			discordPresence.largeImageText = "Custom Image";
 		}
-	}
-
-	//// NO STATUS? ////
-	if (cv_discordshowonstatus.value == 8)
-	{
-		discordPresence.largeImageKey = "misctitle";
-		discordPresence.largeImageText = "Sonic Robo Blast 2";
 	}
 
 	if (!joinSecretSet)
