@@ -732,27 +732,31 @@ void DRPC_UpdatePresence(void)
 					NULL
 				};
 
-				boolean CUSTOMCHAR = false;
+				//Vanilla, as you can see
+				int sonic = (strcmp(skins[players[consoleplayer].skin].name, "sonic"));
+				int tails = (strcmp(skins[players[secondarydisplayplayer].skin].name, "tails"));
+
+				//Extra Vanilla, with Chocolate Sprinkles
+				int vanillachocolate = (strcmp(skins[players[consoleplayer].skin].name, baseSkins[i]));
+				int customocdontsteal = (strcmp(skins[players[consoleplayer].skin].name, customSkins[i]));
 
 				//// No Bots ////
 				if (!players[1].bot || netgame)
 				{
 					// Character Images
-					for (INT32 i = 0; i < 15; i++)
+					for (INT32 i = 0; i < 16; i++)
 					{
-						int vanillachocolate = (strcmp(skins[players[consoleplayer].skin].name, baseSkins[i]));
-						int customocdontsteal = (strcmp(skins[players[consoleplayer].skin].name, customSkins[i]));
-
-						if ((vanillachocolate == 0) || (customocdontsteal == 0))
+						if (i < 16)
 						{
-							snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
-							CUSTOMCHAR = true;
-							break;
+							if ((vanillachocolate == 0) || (customocdontsteal == 0))
+							{
+								snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
+								break;
+							}
 						}
+						else
+							snprintf(charimg, 11, "charcustom"); // Unsupported
 					}
-
-					if (!CUSTOMCHAR)
-						snprintf(charimg, 11, "charcustom"); // Unsupported
 					
 					// Player Names
 					if (!players[consoleplayer].spectator)
@@ -781,11 +785,7 @@ void DRPC_UpdatePresence(void)
 					if (!players[2].bot)
 					{
 						// Character Tags
-						int sonic = (strcmp(skins[players[consoleplayer].skin].name, "sonic"));
-						int tails = (strcmp(skins[players[secondarydisplayplayer].skin].name, "tails"));
-
-						// Are They Sonic and Tails?
-						if ((sonic == 0) && (tails == 0))
+						if ((sonic == 0) && (tails == 0)) // Are They Sonic and Tails?
 							snprintf(charimg, 15, "charsonictails"); // Put that Image on Then!
 						else
 							snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
@@ -796,19 +796,17 @@ void DRPC_UpdatePresence(void)
 					else
 					{
 						// Character Images
-						for (INT32 i = 0; i < 15; i++)
+						for (INT32 i = 0; i < 16; i++)
 						{
-							int vanillachocolate = (strcmp(skins[players[consoleplayer].skin].name, baseSkins[i]));
-							int customocdontsteal = (strcmp(skins[players[consoleplayer].skin].name, customSkins[i]));
-
-							if ((vanillachocolate == 0) || (customocdontsteal == 0))
+							if (i < 16)
 							{
-								snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
-								CUSTOMCHAR = true;
-								break;
+								if ((vanillachocolate == 0) || (customocdontsteal == 0))
+								{
+									snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
+									break;
+								}
 							}
-							
-							if (!CUSTOMCHAR)
+							else
 								snprintf(charimg, 11, "charcustom"); // Unsupported
 						}
 	
