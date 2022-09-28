@@ -422,6 +422,8 @@ void DRPC_UpdatePresence(void)
 	char servertag[11+26+15+8];
 
 	INT32 i;
+	//Tiny Emeralds Counter
+	UINT8 emeraldCount = 0;
 
 	boolean joinSecretSet = false;
 
@@ -512,9 +514,6 @@ void DRPC_UpdatePresence(void)
 
 		if (playeringame[consoleplayer] && gamestate == GS_LEVEL && Playing())
 		{
-			//Tiny Emeralds Counter
-			UINT8 emeraldCount = 0;
-
 			for (i = 0; i < 7; i++) // thanks Monster Iestyn for this math
 				if (emeralds & (1<<i))
 					emeraldCount += 1;
@@ -743,25 +742,25 @@ void DRPC_UpdatePresence(void)
 
 						if (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]))
 						{
-							snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
+							snprintf(charimg, 32, "char%s", skins[players[consoleplayer].skin].name); // Supported
 							break;
 						}
 					}
 					
 					// Player Names
 					if (!players[consoleplayer].spectator)
-						snprintf(playername, 28, "Playing As: %s", skins[players[consoleplayer].skin].realname); // Character
+						snprintf(playername, 32, "Playing As: %s", skins[players[consoleplayer].skin].realname); // Character
 					else
 					{
 						// Viewpoint
 						if (playeringame[displayplayer])
-							snprintf(playername, 28, "%s is Spectating %s", player_names[consoleplayer], player_names[displayplayer]); // Combine Player Names Together
+							snprintf(playername, 32, "%s is Spectating %s", player_names[consoleplayer], player_names[displayplayer]); // Combine Player Names Together
 						else
 						{
 							if (!cv_discordstatusmemes.value)
-								snprintf(playername, 28, "%s is Spectating", player_names[consoleplayer]); // you're no fun, you know
+								snprintf(playername, 32, "%s is Spectating", player_names[consoleplayer]); // you're no fun, you know
 							else
-								snprintf(playername, 28, "%s is Spectating Air", player_names[consoleplayer]); // why are you spectating air
+								snprintf(playername, 32, "%s is Spectating Air", player_names[consoleplayer]); // why are you spectating air
 						}		
 					}
 					
@@ -778,7 +777,7 @@ void DRPC_UpdatePresence(void)
 						if ((sonic == 0) && (tails == 0)) // Are They Sonic and Tails?
 							snprintf(charimg, 15, "charsonictails"); // Put that Image on Then!
 						else
-							snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
+							snprintf(charimg, 32, "char%s", skins[players[consoleplayer].skin].name);
 
 						snprintf(charname, 50, "Playing As: %s & %s", skins[players[consoleplayer].skin].realname, skins[players[secondarydisplayplayer].skin].realname);
 					}
@@ -792,7 +791,7 @@ void DRPC_UpdatePresence(void)
 
 							if (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]))
 							{
-								snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
+								snprintf(charimg, 32, "char%s", skins[players[consoleplayer].skin].name); // Supported
 								break;
 							}
 						}
