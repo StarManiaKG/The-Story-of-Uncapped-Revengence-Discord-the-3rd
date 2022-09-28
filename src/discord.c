@@ -737,8 +737,10 @@ void DRPC_UpdatePresence(void)
 
 				int deez = (strcmp(skins, skins[players[consoleplayer].skin].name));
 
+				snprintf(deez, 28, "%s", skins[players[consoleplayer].skin].name); // Character
+
 				if (deez == &customSkins[character] || deez == &baseSkins[character])
-					CONS_Printf(M_GetText("sonic"));
+					CONS_Printf(M_GetText(deez));
 
 				//// No Bots ////
 				if (!players[1].bot || netgame)
