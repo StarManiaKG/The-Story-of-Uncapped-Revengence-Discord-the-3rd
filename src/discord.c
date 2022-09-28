@@ -742,7 +742,7 @@ void DRPC_UpdatePresence(void)
 				if (!players[1].bot || netgame)
 				{
 					// Character Images
-					if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[character])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[character])))
+					if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[skins])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[skins])))
 						snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
 					else
 						snprintf(charimg, 11, "charcustom"); // Unsupported
