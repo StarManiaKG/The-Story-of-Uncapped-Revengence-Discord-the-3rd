@@ -740,7 +740,7 @@ void DRPC_UpdatePresence(void)
 				if (!players[1].bot || netgame)
 				{
 					// Character Images
-					for (i = 0; i < 16; i++)
+					for (INT32 i = 0; i < 16; i++)
 					{
 						if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[i]) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[i]))));
 						{
@@ -789,7 +789,7 @@ void DRPC_UpdatePresence(void)
 					else
 					{
 						// Character Images
-						for (i = 0; i < 16; i++)
+						for (INT32 i = 0; i < 16; i++)
 						{
 							if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[i]) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[i]))));
 							{
