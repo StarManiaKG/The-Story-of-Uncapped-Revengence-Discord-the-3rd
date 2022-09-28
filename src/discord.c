@@ -805,6 +805,7 @@ void DRPC_UpdatePresence(void)
 							}
 							else
 								snprintf(charimg, 11, "charcustom"); // Unsupported
+
 						}
 	
 						snprintf(charname, 75, "Playing As: %s, %s, & Multiple Bots", skins[players[consoleplayer].skin].realname, skins[players[secondarydisplayplayer].skin].realname);
