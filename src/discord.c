@@ -733,9 +733,9 @@ void DRPC_UpdatePresence(void)
 				};
 
 				//Easier way to check for supported characters
-				static const char *character = (strcmp(skins[players[consoleplayer].skin].name, skins[players[consoleplayer].skin].name));
+				int character = (strcmp(skins[players[consoleplayer].skin].name, skins[players[consoleplayer].skin].name));
 
-				CONS_Printf(M_GetText(character));
+				CONS_Printf(M_GetText(strcmp(skins[players[consoleplayer].skin].name, skins[players[consoleplayer].skin].name));
 
 				//// No Bots ////
 				if (!players[1].bot || netgame)
