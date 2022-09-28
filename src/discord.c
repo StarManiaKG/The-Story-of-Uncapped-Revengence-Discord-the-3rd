@@ -431,8 +431,10 @@ void DRPC_UpdatePresence(void)
 		// User doesn't want to show their game information, so update with empty presence.
 		// This just shows that they're playing SRB2. (If that's too much, then they should disable game activity :V)
 		DRPC_EmptyRequests();
+		discordPresence.largeImageKey = "misctitle";
+		discordPresence.largeImageText = "Sonic Robo Blast 2";
 		Discord_UpdatePresence(&discordPresence);
-		//return;
+		return;
 	}
 
 #ifdef DEVELOP
@@ -819,7 +821,7 @@ void DRPC_UpdatePresence(void)
 	}
 
 	//// NO STATUS? ////
-	if (cv_discordshowonstatus.value == 8 || !cv_discordrp.value)
+	if (cv_discordshowonstatus.value == 8)
 	{
 		discordPresence.largeImageKey = "misctitle";
 		discordPresence.largeImageText = "Sonic Robo Blast 2";
