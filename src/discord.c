@@ -524,8 +524,7 @@ void DRPC_UpdatePresence(void)
 				snprintf(detailstr, 20, "%d/%d Emblems", M_CountEmblems(), (numemblems + numextraemblems));
 			
 			//// Emeralds ////
-			//i think you know what the joke here is
-			if (!cv_discordstatusmemes.value)
+			if (!cv_discordstatusmemes.value) //i think you know what the joke here is
 			{
 				//there's a special stage token right at the BEGINNING OF GFZ1 HOW DO YOU NOT HAVE A EMERALD YET
 				if (!emeralds)
