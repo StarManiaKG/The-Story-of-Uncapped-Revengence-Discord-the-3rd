@@ -17,6 +17,7 @@
 #ifdef USE_PATCH_DTA
 #define ASSET_HASH_PATCH_PK3  "${SRB2_ASSET_patch.pk3_HASH}"
 #endif
+#define ASSET_HASH_STAR_PK3   "${SRB2_ASSET_starmaniakg.pk3_HASH}"
 
 #define SRB2_COMP_REVISION    "${SRB2_COMP_REVISION}"
 #define SRB2_COMP_BRANCH      "${SRB2_COMP_BRANCH}"
@@ -43,6 +44,7 @@
 #ifdef USE_PATCH_DTA
 #define ASSET_HASH_PATCH_PK3  "7d467a883f7887b3c311798ee2f56b6a"
 #endif
+#define ASSET_HASH_STAR_PK3 "bb6dae2cc4a23c6afbc4ca3b14b07a48"
 
 #endif
 #endif
