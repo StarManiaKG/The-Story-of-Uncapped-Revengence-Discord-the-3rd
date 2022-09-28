@@ -39,7 +39,7 @@
 #define IP_SIZE 21
 
 static CV_PossibleValue_t discordstatustype_cons_t[] = {{0, "All"}, {1, "Only Characters"}, {2, "Only Player Name"}, {3, "Only Emeralds"}, {4, "Only Emblems"}, {5, "Only Levels"}, {6, "Only Gametype"}, {7, "Custom"}, {0, NULL}};
-consvar_t cv_discordrp = CVAR_INIT ("discordrp", "On", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
+consvar_t cv_discordrp = CVAR_INIT ("discordrp", "On", CV_SAVE|CV_CALL, CV_OnOff, Discordcustomstatus_option_Onchange);
 consvar_t cv_discordstreamer = CVAR_INIT ("discordstreamer", "Off", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
 consvar_t cv_discordasks = CVAR_INIT ("discordasks", "Yes", CV_SAVE|CV_CALL, CV_YesNo, DRPC_UpdatePresence);
 consvar_t cv_discordshowonstatus = CVAR_INIT ("discordshowonstatus", "all", CV_SAVE|CV_CALL, discordstatustype_cons_t, Discordcustomstatus_option_Onchange);
@@ -734,7 +734,7 @@ void DRPC_UpdatePresence(void)
 
 				//Easier way to check for supported characters
 				int character = (strcmp(skins[players[consoleplayer].skin].name, skins[players[consoleplayer].skin].name));
-				
+
 				//// No Bots ////
 				if (!players[1].bot || netgame)
 				{
