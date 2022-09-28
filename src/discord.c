@@ -739,7 +739,7 @@ void DRPC_UpdatePresence(void)
 					if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[character])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[character])))
 						snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
 					// Unsupported
-					else
+					else if (!(strcmp(skins[players[consoleplayer].skin].name, baseSkins[character])) && !(strcmp(skins[players[consoleplayer].skin].name, customSkins[character])))
 						snprintf(charimg, 11, "charcustom");
 					
 					//// Player Names ////
