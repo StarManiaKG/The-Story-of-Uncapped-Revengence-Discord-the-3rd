@@ -735,10 +735,10 @@ void DRPC_UpdatePresence(void)
 				//Easier way to check for supported characters
 				int character = (strcmp(skins[players[consoleplayer].skin].name, skins[players[consoleplayer].skin].name));
 
-				int bing = skins;
+				int deez = (strcmp(skins, skins[players[consoleplayer].skin].name));
 
-				//CONS_Printf(M_GetText(baseSkins[players[consoleplayer].mo->skin]));
-				CONS_Printf(M_GetText(bing));//[players[consoleplayer].skin]));
+				if (deez == customSkins[character] || deez == baseSkins[character])
+					CONS_Printf(M_GetText("sonic"));
 
 				//// No Bots ////
 				if (!players[1].bot || netgame)
