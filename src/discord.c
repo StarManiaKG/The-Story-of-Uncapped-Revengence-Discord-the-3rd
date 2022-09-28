@@ -732,16 +732,9 @@ void DRPC_UpdatePresence(void)
 					NULL
 				};
 
-				//Little Tiny Check
-				INT32 i = 0;
-
 				//Vanilla, as you can see
 				int sonic = (strcmp(skins[players[consoleplayer].skin].name, "sonic"));
 				int tails = (strcmp(skins[players[secondarydisplayplayer].skin].name, "tails"));
-
-				//Extra Vanilla, with Chocolate Sprinkles
-				int vanillachocolate = (strcmp(skins[players[consoleplayer].skin].name, baseSkins[i]));
-				int customocdontsteal = (strcmp(skins[players[consoleplayer].skin].name, customSkins[i]));
 
 				//// No Bots ////
 				if (!players[1].bot || netgame)
@@ -749,7 +742,7 @@ void DRPC_UpdatePresence(void)
 					// Character Images
 					for (i = 0; i < 16; i++)
 					{
-						if ((vanillachocolate == 0) || (customocdontsteal == 0))
+						if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[i]) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[i]))));
 						{
 							snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
 							break;
@@ -798,7 +791,7 @@ void DRPC_UpdatePresence(void)
 						// Character Images
 						for (i = 0; i < 16; i++)
 						{
-							if ((vanillachocolate == 0) || (customocdontsteal == 0))
+							if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[i]) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[i]))));
 							{
 								snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
 								break;
