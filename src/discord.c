@@ -737,7 +737,7 @@ void DRPC_UpdatePresence(void)
 
 				int deez = (strcmp(skins, skins[players[consoleplayer].skin].name));
 
-				if (deez == customSkins[character] || deez == baseSkins[character])
+				if (deez == &customSkins[character] || deez == &baseSkins[character])
 					CONS_Printf(M_GetText("sonic"));
 
 				//// No Bots ////
