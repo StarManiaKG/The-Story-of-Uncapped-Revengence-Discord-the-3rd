@@ -735,7 +735,7 @@ void DRPC_UpdatePresence(void)
 				//Easier way to check for supported characters
 				int character = (strcmp(skins[players[consoleplayer].skin].name, skins[players[consoleplayer].skin].name));
 
-				int bing = skins
+				int bing = skins;
 
 				//CONS_Printf(M_GetText(baseSkins[players[consoleplayer].mo->skin]));
 				CONS_Printf(M_GetText(skins));//[players[consoleplayer].skin]));
