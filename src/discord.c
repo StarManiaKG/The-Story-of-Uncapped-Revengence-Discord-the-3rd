@@ -734,8 +734,9 @@ void DRPC_UpdatePresence(void)
 
 				//Easier way to check for supported characters
 				int character = (strcmp(skins[players[consoleplayer].skin].name, skins[players[consoleplayer].skin].name));
-				int knuckles = (strcmp(skins[players[consoleplayer].skin].name, baseSkins[character]));
-				int ocdontsteal = (strcmp(skins[players[consoleplayer].skin].name, customSkins[character]));
+				
+				boolean knuckles = (strcmp(skins[players[consoleplayer].skin].name, baseSkins[character]));
+				boolean ocdontsteal = (strcmp(skins[players[consoleplayer].skin].name, customSkins[character]));
 
 
 				//// No Bots ////
@@ -744,7 +745,7 @@ void DRPC_UpdatePresence(void)
 					// Character Images
 					if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[character])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[character])))
 						snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
-					else if ((knuckles == 0) || (ocdontsteal == 0))
+					else if ((!knuckles) && (!ocdontsteal))
 						snprintf(charimg, 11, "charcustom"); // Unsupported
 					
 					// Player Names
