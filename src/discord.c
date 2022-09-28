@@ -732,8 +732,7 @@ void DRPC_UpdatePresence(void)
 				//// No Bots ////
 				if (!players[1].bot || netgame)
 				{
-					//int character = (strcmp(skins[players[consoleplayer].skin].name, skins[players[consoleplayer].skin].name));
-					const char *character = (strlen(players[consoleplayer].skin));
+					int character = (strcmp(skins[players[consoleplayer].skin].name, skins));//skins[players[consoleplayer].skin].name));
 
 					// Character Images
 					if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[character])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[character])))
