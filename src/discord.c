@@ -735,9 +735,11 @@ void DRPC_UpdatePresence(void)
 				//Easier way to check for supported characters
 				int character = (strcmp(skins[players[consoleplayer].skin].name, skins[players[consoleplayer].skin].name));
 
+				#include <stdlib.h>
+
 				//if (baseSkins[] == skins[players[consoleplayer].skin].name)
 					//CONS_Printf(M_GetText(skins[players[consoleplayer].skin].name));
-				sprintf(character, customSkins, 15);
+				itoa(character, customSkins, 15);
 				CONS_Printf(M_GetText(character));
 
 				//// No Bots ////
