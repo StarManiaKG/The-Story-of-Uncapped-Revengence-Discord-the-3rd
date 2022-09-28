@@ -739,7 +739,7 @@ void DRPC_UpdatePresence(void)
 				{	
 					for (i = 0; i < 22; i++)
 					{
-						CONS_Printf(M_GetText((strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]))))
+						CONS_Printf(M_GetText((strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]))));
 						// Character Images
 						snprintf(charimg, 11, "charcustom"); // Unsupported
 
