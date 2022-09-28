@@ -480,7 +480,7 @@ void DRPC_UpdatePresence(void)
 			case 28: snprintf(servertype, 26, "Casual"); break;
 			case 38: snprintf(servertype, 26, "Custom Gametypes"); break;
 			case 31: snprintf(servertype, 26, "OLDC"); break;
-			default: snprintf(servertype, 26, "Private"); break; // HOW
+			default: snprintf(servertype, 26, "Regular"); break; // HOW
 		}
 
 		if (server)
