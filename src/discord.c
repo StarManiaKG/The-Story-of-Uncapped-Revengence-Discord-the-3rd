@@ -414,7 +414,7 @@ void DRPC_UpdatePresence(void)
 	char charimg[4+SKINNAMESIZE+1];
 	char charname[11+SKINNAMESIZE+1];
 
-	//char playerimg[25+50+15+10]
+	//char playerimg[25+50+15+10];
 	char playername[11+MAXPLAYERNAME+1];
 
 	char servertype[15+10];
@@ -768,7 +768,10 @@ void DRPC_UpdatePresence(void)
 					{
 						// Character images
 						if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(((skin_t *)players[1].bot)->name, "tails"))))
+						{
+							CONS_Printf(M_GetText("sonic"));
 							snprintf(charimg, 15, "charsonictails");
+						}
 						
 						snprintf(charname, 28, "Playing As: %s & %s", skins[players[consoleplayer].skin].realname, skins[players[1].skin].realname);
 					}
