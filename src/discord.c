@@ -733,9 +733,9 @@ void DRPC_UpdatePresence(void)
 				};
 
 				//Easier way to check for supported characters
-				const char character = players[consoleplayer].skin
+				const char character = players[consoleplayer].skin;
 
-				CONS_Printf(M_GetText("sonic"))
+				CONS_Printf(M_GetText("sonic"));
 
 				//// No Bots ////
 				if (!players[1].bot || netgame)
