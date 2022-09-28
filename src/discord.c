@@ -741,15 +741,14 @@ void DRPC_UpdatePresence(void)
 				{
 					// Character Images
 					for (INT32 i = 0; i < 16; i++)
-					{
 						if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[i]) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[i]))))
 						{
 							snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
 							break;
 						}
 						else
+							CONS_Printf(M_GetText("sonic"))
 							snprintf(charimg, 11, "charcustom"); // Unsupported
-					}
 					
 					// Player Names
 					if (!players[consoleplayer].spectator)
@@ -790,7 +789,6 @@ void DRPC_UpdatePresence(void)
 					{
 						// Character Images
 						for (INT32 i = 0; i < 16; i++)
-						{
 							if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[i]) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[i]))))
 							{
 								snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
@@ -798,8 +796,6 @@ void DRPC_UpdatePresence(void)
 							}
 							else
 								snprintf(charimg, 11, "charcustom"); // Unsupported
-
-						}
 	
 						snprintf(charname, 75, "Playing As: %s, %s, & Multiple Bots", skins[players[consoleplayer].skin].realname, skins[players[secondarydisplayplayer].skin].realname);
 					}
