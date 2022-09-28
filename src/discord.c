@@ -732,9 +732,11 @@ void DRPC_UpdatePresence(void)
 				// No Bots
 				if (!players[1].bot || netgame)
 				{
+					int character = (strcmp(skins[players[consoleplayer].skin].name, skins[players[consoleplayer].skin].name));
+
 					//// Character Images ////
 					// Supported
-					if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[strlen(skins)])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[strlen(skins)])))
+					if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[character])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[character])))
 						snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
 					// Unsupported
 					else
@@ -769,23 +771,23 @@ void DRPC_UpdatePresence(void)
 					if (!players[2].bot)
 					{
 						// Character Tags
-						int st1 = (strcmp(skins[players[consoleplayer].skin].name, "sonic"));
-						int st2 = (strcmp(skins[players[secondarydisplayplayer].skin].name, "tails"));
+						int sonic = (strcmp(skins[players[consoleplayer].skin].name, "sonic"));
+						int tails = (strcmp(skins[players[secondarydisplayplayer].skin].name, "tails"));
 
 						// Are They Sonic and Tails?
-						if ((st1 == 0) && (st2 == 0))
+						if ((sonic == 0) && (tails == 0))
 							snprintf(charimg, 15, "charsonictails"); // Put that Image on Then!
 						else
 							snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
 
-						snprintf(charname, 28, "Playing As: %s & %s", skins[players[consoleplayer].skin].realname, skins[players[1].skin].realname);
+						snprintf(charname, 50, "Playing As: %s & %s", skins[players[consoleplayer].skin].realname, skins[players[secondarydisplayplayer].skin].realname);
 					}
 					//Multiple Bots?
 					else
 					{
 						// Character Tags
 						snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
-						snprintf(charname, 50, "Playing As: %s & Multiple Bots", skins[players[consoleplayer].skin].name);
+						snprintf(charname, 75, "Playing As: %s, %s, & Multiple Bots", skins[players[consoleplayer].skin].name, skins[players[secondarydisplayplayer].skin].realname);
 					}
 
 					// render character variables
