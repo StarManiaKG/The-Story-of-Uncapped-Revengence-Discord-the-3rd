@@ -570,7 +570,7 @@ void DRPC_UpdatePresence(void)
 							strlcat(detailstr, ", %d Emeralds; Where's That DAMN FOURTH?", 64);
 						else if (emeraldCount == 4)
 							strlcat(detailstr, ", %d Emeralds; Found that DAMN FOURTH", 64);
-						else if (emeralds == 7)
+						else if (emeraldCount == 7)
 							strlcat(detailstr, ", All 7 Emeralds Obtained!", 64);
 					}
 					else if (cv_discordshowonstatus.value == 3)
@@ -582,7 +582,7 @@ void DRPC_UpdatePresence(void)
 							strlcat(detailstr, "%d Emeralds; Where's That DAMN FOURTH?", 64);
 						else if (emeraldCount == 4)
 							strlcat(detailstr, "%d Emeralds; Found that DAMN FOURTH", 64);
-						else if (emeralds == 7)
+						else if (emeraldCount == 7)
 							strlcat(detailstr, "All 7 Emeralds Obtained!", 64);
 					}
 				}
@@ -757,8 +757,8 @@ void DRPC_UpdatePresence(void)
 					}
 					
 					// render character variables
-					discordPresence.smallImageText = playername; // Player names
 					discordPresence.smallImageKey = charimg; // Character image
+					discordPresence.smallImageText = playername; // Player names
 				}
 				// Bots
 				else if (players[1].bot)
@@ -779,7 +779,7 @@ void DRPC_UpdatePresence(void)
 						snprintf(charname, 50, "Playing As: %s & Multiple Bots", skins[players[consoleplayer].skin].name);
 					}
 
-					discordPresence.smallImageText = charimg; // Character image
+					discordPresence.smallImageKey = charimg; // Character image
 					discordPresence.smallImageText = charname; // Character name, Bot name
 				}
 			}
