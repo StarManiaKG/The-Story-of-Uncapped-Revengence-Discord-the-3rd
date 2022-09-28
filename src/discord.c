@@ -429,7 +429,7 @@ void DRPC_UpdatePresence(void)
 	if (!cv_discordrp.value)
 	{
 		// User doesn't want to show their game information, so update with empty presence.
-		// This just shows that they're playing SRB2Kart. (If that's too much, then they should disable game activity :V)
+		// This just shows that they're playing SRB2. (If that's too much, then they should disable game activity :V)
 		DRPC_EmptyRequests();
 		Discord_UpdatePresence(&discordPresence);
 		return;
@@ -439,7 +439,7 @@ void DRPC_UpdatePresence(void)
 	// This way, we can use the invite feature in-dev, but not have snoopers seeing any potential secrets! :P
 	discordPresence.largeImageKey = "miscdevelop";
 	discordPresence.largeImageText = "No peeking!";
-	discordPresence.state = "Work (is) In Progress!";
+	discordPresence.state = "Developing a Masterpiece!";
 
 	DRPC_EmptyRequests();
 	Discord_UpdatePresence(&discordPresence);
@@ -505,7 +505,7 @@ void DRPC_UpdatePresence(void)
 		// so that you don't ever end up using bad information from another server.
 		memset(&discordInfo, 0, sizeof(discordInfo));
 
-		if (playeringame[consoleplayer] && Playing())
+		if (playeringame[consoleplayer] && gamestate == GS_LEVEL && Playing())
 		{
 			//Tiny Emerald Counter
 			UINT8 emeraldCount = 0;
@@ -732,7 +732,7 @@ void DRPC_UpdatePresence(void)
 				//// No Bots ////
 				if (!players[1].bot || netgame)
 				{
-					int character = (strcmp(skins[players[consoleplayer].skin].name, skins));//skins[players[consoleplayer].skin].name));
+					int character = (strcmp(skins[players[consoleplayer].skin].name, skins[players[consoleplayer].skin].name));
 
 					// Character Images
 					if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[character])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[character])))
@@ -819,7 +819,7 @@ void DRPC_UpdatePresence(void)
 	}
 
 	//// NO STATUS? ////
-	if (cv_discordshowonstatus.value == 8)
+	if (cv_discordshowonstatus.value == 8 || !cv_discordrp.value)
 	{
 		discordPresence.largeImageKey = "misctitle";
 		discordPresence.largeImageText = "Sonic Robo Blast 2";
