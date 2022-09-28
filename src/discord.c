@@ -766,8 +766,9 @@ void DRPC_UpdatePresence(void)
 					////Only One Regular Bot?
 					if (!players[2].bot)
 					{
+						CONS_Printf(M_GetText("sonic"))
 						// Character images
-						if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(skins[players[1].skin].name, "tails")))) //(strcmp(((skin_t *)players[1].mo->skin)->name, "tails"))))
+						if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(((skin_t *)players[1].mo->skin)->name, 2))))
 							snprintf(charimg, 15, "charsonictails");
 						
 						snprintf(charname, 28, "Playing As: %s & %s", skins[players[consoleplayer].skin].name, skins[players[1].skin].realname);
@@ -800,7 +801,12 @@ void DRPC_UpdatePresence(void)
 	if (cv_discordshowonstatus.value == 7)
 	{
 		if (cv_customdiscordstatus.string)
+		{
+			snprintf(charimg, 11, "charcustom");
 			discordPresence.details = cv_customdiscordstatus.string;
+			discordPresence.largeImageKey = charimg;
+			discordPresence.largeImageText = "Custom Image";
+		}
 	}
 
 	//// NO STATUS? ////
