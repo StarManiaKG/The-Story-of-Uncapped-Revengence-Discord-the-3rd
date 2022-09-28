@@ -432,7 +432,7 @@ void DRPC_UpdatePresence(void)
 		// This just shows that they're playing SRB2. (If that's too much, then they should disable game activity :V)
 		DRPC_EmptyRequests();
 		Discord_UpdatePresence(&discordPresence);
-		return;
+		//return;
 	}
 
 #ifdef DEVELOP
