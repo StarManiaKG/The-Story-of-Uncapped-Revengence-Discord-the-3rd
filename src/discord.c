@@ -769,8 +769,15 @@ void DRPC_UpdatePresence(void)
 					if (!players[2].bot)
 					{
 						// Character Tags
-						//if ((strcmp(skins[players[consoleplayer].skin].name, "sonic")) && (strcmp(((skin_t *)players[1].bot)->name, "tails")))) ////Scrapped until we can get it to work
-						snprintf(charimg, 15, "charsonictails");
+						int st1 = (strcmp(skins[players[consoleplayer].skin].name, "sonic")
+						int st2 = (strcmp(skins[players[secondarydisplayplayer].skin].name, "tails")
+
+						// Are They Sonic and Tails?
+						if ((st1 == 0) && (st2 == 0))
+							snprintf(charimg, 15, "charsonictails"); // Put that Image on Then!
+						else
+							snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
+
 						snprintf(charname, 28, "Playing As: %s & %s", skins[players[consoleplayer].skin].realname, skins[players[1].skin].realname);
 					}
 					//Multiple Bots?
@@ -805,6 +812,7 @@ void DRPC_UpdatePresence(void)
 		if (cv_customdiscordstatus.string)
 		{
 			discordPresence.details = cv_customdiscordstatus.string;
+			// just a beta thing until we get a functioning custom picture thing to work
 			discordPresence.largeImageKey = "charcustom";
 			discordPresence.largeImageText = "Custom Image";
 		}
