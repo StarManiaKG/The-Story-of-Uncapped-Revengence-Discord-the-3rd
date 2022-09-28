@@ -747,7 +747,6 @@ void DRPC_UpdatePresence(void)
 							break;
 						}
 						else
-							CONS_Printf(M_GetText("sonic"));
 							snprintf(charimg, 11, "charcustom"); // Unsupported
 					
 					// Player Names
