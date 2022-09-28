@@ -733,11 +733,8 @@ void DRPC_UpdatePresence(void)
 				};
 
 				//Easier way to check for supported characters
-				int character = (strcmp(skins[players[consoleplayer].skin].name, skins[players[consoleplayer].skin].name));
-				
-				boolean knuckles = (strcmp(skins[players[consoleplayer].skin].name, baseSkins[character]));
-				boolean ocdontsteal = (strcmp(skins[players[consoleplayer].skin].name, customSkins[character]));
-
+				//int character = (strcmp(skins[players[consoleplayer].skin].name, skins[players[consoleplayer].skin].name));
+				int character = (strlen(skins[players[consoleplayer].skin].name));
 
 				//// No Bots ////
 				if (!players[1].bot || netgame)
@@ -745,7 +742,7 @@ void DRPC_UpdatePresence(void)
 					// Character Images
 					if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[character])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[character])))
 						snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
-					else if ((!knuckles) && (!ocdontsteal))
+					else
 						snprintf(charimg, 11, "charcustom"); // Unsupported
 					
 					// Player Names
@@ -790,7 +787,7 @@ void DRPC_UpdatePresence(void)
 					else
 					{
 						// Character Tags
-						if ((knuckles == 0) || (ocdontsteal == 0))
+						if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[character])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[character])))
 							snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
 						else
 							snprintf(charimg, 11, "charcustom");
@@ -846,9 +843,7 @@ void DRPC_UpdatePresence(void)
 --------------------------------------------------*/
 void DRPC_ShutDown(void)
 {
-	DiscordRichPresence discordPresence;
-	memset(&discordPresence, 0, sizeof(discordPresence));
-
+	DRPC_EmptyRequests();
 	DRPC_UpdatePresence();
 	Discord_Shutdown();
 	Discord_ClearPresence();
