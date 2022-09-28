@@ -728,7 +728,7 @@ void DRPC_UpdatePresence(void)
 			if (!splitscreen)
 			{
 				// No Bots
-				if ((!players[1].bot) || netgame)
+				if (!players[1].bot || netgame)
 				{
 					//// Character images
 					// Supported
@@ -768,8 +768,9 @@ void DRPC_UpdatePresence(void)
 					{
 						// Character images
 						if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(((skin_t *)players[1].bot)->name, "tails"))))
-							CONS_Printf(M_GetText("sonic"));
 							snprintf(charimg, 15, "charsonictails");
+						else
+							snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
 						
 						snprintf(charname, 28, "Playing As: %s & %s", skins[players[consoleplayer].skin].realname, skins[players[1].skin].realname);
 					}
