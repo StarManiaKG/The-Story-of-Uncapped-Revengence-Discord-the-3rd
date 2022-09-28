@@ -737,14 +737,11 @@ void DRPC_UpdatePresence(void)
 
 				int deez = (strcmp(skins, skins[players[consoleplayer].skin].name));
 
-				char amy[50]
+				char amy[50];
 				
 				snprintf(amy, 28, "%s", deez);
 
 				discordPresence.state = amy;
-
-				//if (deez == &customSkins[character] || deez == &baseSkins[character])
-					//CONS_Printf(M_GetText(deez));
 
 				//// No Bots ////
 				if (!players[1].bot || netgame)
