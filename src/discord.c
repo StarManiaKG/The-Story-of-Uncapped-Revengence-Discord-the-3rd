@@ -738,7 +738,7 @@ void DRPC_UpdatePresence(void)
 				int bing = skins;
 
 				//CONS_Printf(M_GetText(baseSkins[players[consoleplayer].mo->skin]));
-				CONS_Printf(M_GetText(skins));//[players[consoleplayer].skin]));
+				CONS_Printf(M_GetText(bing));//[players[consoleplayer].skin]));
 
 				//// No Bots ////
 				if (!players[1].bot || netgame)
