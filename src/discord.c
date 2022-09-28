@@ -732,13 +732,13 @@ void DRPC_UpdatePresence(void)
 					NULL
 				};
 
-				UINT8 customcharacters = 16;
+				boolean CUSTOMCHAR = false;
 
 				//// No Bots ////
 				if (!players[1].bot || netgame)
 				{
 					// Character Images
-					for (INT32 i = 0; i < customcharacters; i++)
+					for (INT32 i = 0; i < 15; i++)
 					{
 						int vanillachocolate = (strcmp(skins[players[consoleplayer].skin].name, baseSkins[i]));
 						int customocdontsteal = (strcmp(skins[players[consoleplayer].skin].name, customSkins[i]));
@@ -746,12 +746,13 @@ void DRPC_UpdatePresence(void)
 						if ((vanillachocolate == 0) || (customocdontsteal == 0))
 						{
 							snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
+							CUSTOMCHAR = true;
 							break;
 						}
-							
-						if (i == 16)
-							snprintf(charimg, 11, "charcustom"); // Unsupported
 					}
+
+					if (!CUSTOMCHAR)
+						snprintf(charimg, 11, "charcustom"); // Unsupported
 					
 					// Player Names
 					if (!players[consoleplayer].spectator)
@@ -795,7 +796,7 @@ void DRPC_UpdatePresence(void)
 					else
 					{
 						// Character Images
-						for (INT32 i = 0; i < customcharacters; i++)
+						for (INT32 i = 0; i < 15; i++)
 						{
 							int vanillachocolate = (strcmp(skins[players[consoleplayer].skin].name, baseSkins[i]));
 							int customocdontsteal = (strcmp(skins[players[consoleplayer].skin].name, customSkins[i]));
@@ -803,10 +804,11 @@ void DRPC_UpdatePresence(void)
 							if ((vanillachocolate == 0) || (customocdontsteal == 0))
 							{
 								snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
+								CUSTOMCHAR = true
 								break;
 							}
 							
-							if (i == 16)
+							if (!CUSTOMCHAR)
 								snprintf(charimg, 11, "charcustom"); // Unsupported
 						}
 	
