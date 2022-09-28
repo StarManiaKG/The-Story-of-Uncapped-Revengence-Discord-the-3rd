@@ -766,9 +766,9 @@ void DRPC_UpdatePresence(void)
 					////Only One Regular Bot?
 					if (!players[2].bot)
 					{
-						CONS_Printf(M_GetText("sonic"));
 						// Character images
 						if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(((skin_t *)players[1].bot)->name, "tails"))))
+							CONS_Printf(M_GetText("sonic"));
 							snprintf(charimg, 15, "charsonictails");
 						
 						snprintf(charname, 28, "Playing As: %s & %s", skins[players[consoleplayer].skin].name, skins[players[1].skin].realname);
