@@ -735,19 +735,13 @@ void DRPC_UpdatePresence(void)
 				//Easier way to check for supported characters
 				int character = (strcmp(skins[players[consoleplayer].skin].name, skins[players[consoleplayer].skin].name));
 
-				int deez = (strcmp(skins, skins[players[consoleplayer].skin].name));
-
-				char amy[50];
-				
-				snprintf(amy, 28, "%s", deez);
-
-				discordPresence.state = amy;
+				CONS_Printf(M_GetText(customSkins[0]))
 
 				//// No Bots ////
 				if (!players[1].bot || netgame)
 				{
 					// Character Images
-					if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[character])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[character])))
+					if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[0])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[0])))
 						snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
 					else
 						snprintf(charimg, 11, "charcustom"); // Unsupported
