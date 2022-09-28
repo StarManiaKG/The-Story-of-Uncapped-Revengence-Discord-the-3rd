@@ -740,7 +740,10 @@ void DRPC_UpdatePresence(void)
 					// Character Images
 					for (INT32 i = 0; i < customcharacters; i++)
 					{
-						if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[i])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[i])))
+						int vanillachocolate = (strcmp(skins[players[consoleplayer].skin].name, baseSkins[i]));
+						int customocdontsteal = (strcmp(skins[players[consoleplayer].skin].name, customSkins[i]));
+
+						if ((vanillachocolate == 0) || (customocdontsteal == 0))
 						{
 							snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
 							break;
@@ -794,7 +797,10 @@ void DRPC_UpdatePresence(void)
 						// Character Images
 						for (INT32 i = 0; i < customcharacters; i++)
 						{
-							if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[i])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[i])))
+							int vanillachocolate = (strcmp(skins[players[consoleplayer].skin].name, baseSkins[i]));
+							int customocdontsteal = (strcmp(skins[players[consoleplayer].skin].name, customSkins[i]));
+
+							if ((vanillachocolate == 0) || (customocdontsteal == 0))
 							{
 								snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
 								break;
