@@ -737,7 +737,7 @@ void DRPC_UpdatePresence(void)
 
 				//if (baseSkins[] == skins[players[consoleplayer].skin].name)
 					//CONS_Printf(M_GetText(skins[players[consoleplayer].skin].name));
-				itoa(character, customSkins, 15);
+				sprintf(character, customSkins, 15);
 				CONS_Printf(M_GetText(character));
 
 				//// No Bots ////
