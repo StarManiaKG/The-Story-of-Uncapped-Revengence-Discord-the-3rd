@@ -2591,24 +2591,6 @@ void Moviemode_option_Onchange(void)
 #ifdef HAVE_DISCORDRPC
 void Discordcustomstatus_option_Onchange(void)
 {
-	static menuitem_t OP_DiscordOptionsMenu[] =
-{
-	{IT_HEADER,									NULL, "Discord Rich Presence",	NULL,					 	  0},
-	{IT_STRING | IT_CVAR,						NULL, "Rich Presence",			&cv_discordrp,			 	 12},
-	{IT_STRING | IT_CVAR,						NULL, "Streamer Mode",			&cv_discordstreamer,	 	 22},
-
-	{IT_HEADER,									NULL, "Rich Presence Settings",	NULL,					 	 32},
-	{IT_STRING | IT_CVAR,						NULL, "Allow Ask To Join",		&cv_discordasks,		 	 44},
-	{IT_STRING | IT_CVAR,						NULL, "Allow Invites",			&cv_discordinvites,		 	 54},
-	{IT_STRING | IT_CVAR,						NULL, "Show Memes on Status",	&cv_discordstatusmemes,	 	 64},
-	{IT_STRING | IT_CVAR,						NULL, "Show on Status",			&cv_discordshowonstatus, 	 74},
-
-	{IT_HEADER,									NULL, "Custom Discord Status",	NULL,					 	 84},
-	{IT_STRING | IT_CVAR | IT_CV_STRING,		NULL, "Custom Status",			&cv_customdiscordstatus, 	 96},
-
-	{IT_STRING | IT_SUBMENU,					NULL, "Output",					&OP_CustomStatusOutputDef,	 136},
-};
-
 	//Is Rich Presence Even On?
 	OP_DiscordOptionsMenu[4].status =
 		(cv_discordrp.value == 1 ? IT_HEADER : IT_DISABLED);
@@ -2625,7 +2607,7 @@ void Discordcustomstatus_option_Onchange(void)
 	OP_DiscordOptionsMenu[8].status =
 		(cv_discordrp.value == 1 ? IT_HEADER : IT_DISABLED);
 	
-	OP_DiscordOptionsMenu[cv_customdiscordstatus].status =
+	OP_DiscordOptionsMenu[9].status =
 		(cv_discordrp.value == 1 ? IT_STRING|IT_CVAR|IT_CV_STRING : IT_DISABLED);
 
 	OP_DiscordOptionsMenu[10].status =
@@ -2637,7 +2619,7 @@ void Discordcustomstatus_option_Onchange(void)
 		OP_DiscordOptionsMenu[8].status =
 			(cv_discordshowonstatus.value == 7 ? IT_HEADER : IT_DISABLED);
 		
-		OP_DiscordOptionsMenu[cv_customdiscordstatus].status =
+		OP_DiscordOptionsMenu[9].status =
 			(cv_discordshowonstatus.value == 7 ? IT_STRING|IT_CVAR|IT_CV_STRING : IT_DISABLED);
 
 		OP_DiscordOptionsMenu[10].status =
