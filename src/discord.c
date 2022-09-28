@@ -736,7 +736,7 @@ void DRPC_UpdatePresence(void)
 				int character = (strcmp(skins[players[consoleplayer].skin].name, skins[players[consoleplayer].skin].name));
 
 				//CONS_Printf(M_GetText(baseSkins[players[consoleplayer].mo->skin]));
-				CONS_Printf(skins[character]);
+				CONS_Printf(M_GetText(skins));//[players[consoleplayer].skin]));
 
 				//// No Bots ////
 				if (!players[1].bot || netgame)
