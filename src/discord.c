@@ -742,9 +742,9 @@ void DRPC_UpdatePresence(void)
 				if (!players[1].bot || netgame)
 				{
 					// Character Images
-					if ((knuckles == 0) || (ocdontsteal == 0))
+					if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[character])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[character])))
 						snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
-					else
+					else if ((knuckles == 0) || (ocdontsteal == 0))
 						snprintf(charimg, 11, "charcustom"); // Unsupported
 					
 					// Player Names
