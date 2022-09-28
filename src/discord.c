@@ -697,43 +697,44 @@ void DRPC_UpdatePresence(void)
 	{
 		if (Playing() && playeringame[consoleplayer])
 		{
-			// Supported Skin Pictures
-			static const char *baseSkins[] = {
-				"sonic",
-				"tails",
-				"knuckles",
-				"amy",
-				"fang",
-				"metalsonic",
-				NULL
-			};
-
-			// Supported Skin Pictures
-			static const char *customSkins[] = {
-				"adventuresonic",
-				"shadow",
-				"skip",
-				"jana",
-				"surge",
-				"cacee",
-				"milne",
-				"maiamy",
-				"mario",
-				"luigi",
-				"blaze",
-				"marine",
-				"tailsdoll",
-				"metalknuckles",
-				"smiles",
-				"whisper",
-				NULL
-			};
-
-			int character = (strcmp(skins[players[consoleplayer].skin].name, skins[players[consoleplayer].skin].name));
-
 			//Why Would You Split My Screen
 			if (!splitscreen)
 			{
+				// Supported Skin Pictures
+				static const char *baseSkins[] = {
+					"sonic",
+					"tails",
+					"knuckles",
+					"amy",
+					"fang",
+					"metalsonic",
+					NULL
+				};
+
+				// Supported Skin Pictures
+				static const char *customSkins[] = {
+					"adventuresonic",
+					"shadow",
+					"skip",
+					"jana",
+					"surge",
+					"cacee",
+					"milne",
+					"maiamy",
+					"mario",
+					"luigi",
+					"blaze",
+					"marine",
+					"tailsdoll",
+					"metalknuckles",
+					"smiles",
+					"whisper",
+					NULL
+				};
+
+				//Easier way to check for supported characters
+				int character = (strcmp(skins[players[consoleplayer].skin].name, skins[players[consoleplayer].skin].name));
+				
 				//// No Bots ////
 				if (!players[1].bot || netgame)
 				{
