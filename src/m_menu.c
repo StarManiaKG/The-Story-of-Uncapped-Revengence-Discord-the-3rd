@@ -2592,8 +2592,11 @@ void Moviemode_option_Onchange(void)
 void Discordcustomstatus_option_Onchange(void)
 {
 	//Is Rich Presence Even On?
-	OP_DiscordOptionsMenu[4].status =
+	OP_DiscordOptionsMenu[3].status =
 		(cv_discordrp.value == 1 ? IT_HEADER : IT_DISABLED);
+	
+	OP_DiscordOptionsMenu[4].status =
+		(cv_discordrp.value == 1 ? IT_STRING|IT_CVAR : IT_DISABLED);
 	
 	OP_DiscordOptionsMenu[5].status =
 		(cv_discordrp.value == 1 ? IT_STRING|IT_CVAR : IT_DISABLED);
