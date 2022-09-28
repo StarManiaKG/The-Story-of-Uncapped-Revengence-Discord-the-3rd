@@ -732,19 +732,18 @@ void DRPC_UpdatePresence(void)
 					NULL
 				};
 
-				//Easier way to check for supported characters
-				int character = skins[players[consoleplayer].skin].name;
-
-				CONS_Printf(M_GetText(customSkins[character]));
-
 				//// No Bots ////
 				if (!players[1].bot || netgame)
 				{
 					// Character Images
-					if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[0])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[0])))
-						snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
-					else
-						snprintf(charimg, 11, "charcustom"); // Unsupported
+					for (INT32 i = 0; i < 16; i++) // thanks Monster Iestyn for this math
+						if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[i])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[i])))
+						{
+							snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
+							break;
+						}
+						else if (i == 16)
+							snprintf(charimg, 11, "charcustom"); // Unsupported
 					
 					// Player Names
 					if (!players[consoleplayer].spectator)
@@ -787,11 +786,15 @@ void DRPC_UpdatePresence(void)
 					// Multiple Bots?
 					else
 					{
-						// Character Tags
-						if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[0])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[0])))
-							snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
-						else
-							snprintf(charimg, 11, "charcustom");
+						// Character Images
+						for (INT32 i = 0; i < 16; i++) // thanks Monster Iestyn for this math
+							if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[i])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[i])))
+							{
+								snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
+								break;
+							}
+							else if (i == 16)
+								snprintf(charimg, 11, "charcustom"); // Unsupported
 	
 						snprintf(charname, 75, "Playing As: %s, %s, & Multiple Bots", skins[players[consoleplayer].skin].realname, skins[players[secondarydisplayplayer].skin].realname);
 					}
