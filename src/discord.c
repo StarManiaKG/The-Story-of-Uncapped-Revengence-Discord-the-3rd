@@ -768,7 +768,7 @@ void DRPC_UpdatePresence(void)
 					{
 						CONS_Printf(M_GetText("sonic"));
 						// Character images
-						if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(((skin_t *)players[1].bot->skin)->name, "tails"))))
+						if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(((skin_t *)players[1].bot)->name, "tails"))))
 							snprintf(charimg, 15, "charsonictails");
 						
 						snprintf(charname, 28, "Playing As: %s & %s", skins[players[consoleplayer].skin].name, skins[players[1].skin].realname);
@@ -780,6 +780,7 @@ void DRPC_UpdatePresence(void)
 						snprintf(charname, 50, "Playing As: %s & Multiple Bots", skins[players[consoleplayer].skin].name);
 					}
 
+					// render character variables
 					discordPresence.smallImageKey = charimg; // Character image
 					discordPresence.smallImageText = charname; // Character name, Bot name
 				}
