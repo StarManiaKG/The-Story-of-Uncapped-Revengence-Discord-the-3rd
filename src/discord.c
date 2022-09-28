@@ -733,9 +733,10 @@ void DRPC_UpdatePresence(void)
 				};
 
 				//Easier way to check for supported characters
+				int character = (strcmp(skins[players[consoleplayer].skin].name, skins[players[consoleplayer].skin].name));
 				int knuckles = (strcmp(skins[players[consoleplayer].skin].name, baseSkins[character]));
 				int ocdontsteal = (strcmp(skins[players[consoleplayer].skin].name, customSkins[character]));
-				int character = (strcmp(skins[players[consoleplayer].skin].name, skins[players[consoleplayer].skin].name));
+
 
 				//// No Bots ////
 				if (!players[1].bot || netgame)
