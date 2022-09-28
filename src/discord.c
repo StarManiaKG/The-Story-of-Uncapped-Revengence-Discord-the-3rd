@@ -421,6 +421,8 @@ void DRPC_UpdatePresence(void)
 	char servertype[15+10];
 	char servertag[11+26+15+8];
 
+	INT32 i;
+
 	boolean joinSecretSet = false;
 
 	DiscordRichPresence discordPresence;
@@ -735,10 +737,9 @@ void DRPC_UpdatePresence(void)
 				//// No Bots ////
 				if (!players[1].bot || netgame)
 				{	
-					INT32 i;
-
 					for (i = 0; i < 22; i++)
 					{
+						CONS_Printf(M_GetText((strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]))))
 						// Character Images
 						snprintf(charimg, 11, "charcustom"); // Unsupported
 
@@ -786,8 +787,6 @@ void DRPC_UpdatePresence(void)
 					// Multiple Bots?
 					else
 					{
-						INT32 i;
-
 						for (i = 0; i < 22; i++)
 						{
 							// Character Images
