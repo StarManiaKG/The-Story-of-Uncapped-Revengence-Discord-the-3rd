@@ -505,7 +505,7 @@ void DRPC_UpdatePresence(void)
 		// so that you don't ever end up using bad information from another server.
 		memset(&discordInfo, 0, sizeof(discordInfo));
 
-		if (gamestate == GS_LEVEL && Playing())
+		if (playeringame[consoleplayer] && Playing())
 		{
 			//Tiny Emerald Counter
 			UINT8 emeraldCount = 0;
