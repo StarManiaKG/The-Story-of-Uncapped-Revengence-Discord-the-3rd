@@ -22,7 +22,8 @@ set(SRB2_ASSET_INSTALL ON
 set(SRB2_ASSET_HASHED
 "srb2.pk3;\
 player.dta;\
-zones.pk3"
+zones.pk3;\
+starmaniakg.pk3"
 	CACHE STRING "Asset filenames to apply MD5 checks. No spaces between entries!"
 )
 

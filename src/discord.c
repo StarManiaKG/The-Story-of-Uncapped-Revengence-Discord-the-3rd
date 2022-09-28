@@ -326,6 +326,7 @@ void DRPC_Init(void)
 	handlers.joinRequest = DRPC_HandleJoinRequest;
 
 	Discord_Initialize(DISCORD_APPID, &handlers, 1, NULL);
+	I_AddExitFunc(Discord_Shutdown);
 	I_AddExitFunc(DRPC_ShutDown);
 	DRPC_UpdatePresence();
 }
@@ -448,6 +449,7 @@ void DRPC_UpdatePresence(void)
 	////////////////////////////////////////////
 	////   Main Rich Presence Status Info   ////
 	////////////////////////////////////////////
+
 	// Server info
 	if (dedicated || netgame)
 	{
@@ -469,7 +471,7 @@ void DRPC_UpdatePresence(void)
 		}
 	}
 		
-	if (netgame && serverrunning)
+	if (netgame)
 	{
 		switch (ms_RoomId)
 		{
@@ -503,7 +505,7 @@ void DRPC_UpdatePresence(void)
 		// so that you don't ever end up using bad information from another server.
 		memset(&discordInfo, 0, sizeof(discordInfo));
 
-		if (Playing())
+		if (gamestate == GS_LEVEL && Playing())
 		{
 			//Tiny Emerald Counter
 			UINT8 emeraldCount = 0;
@@ -654,6 +656,7 @@ void DRPC_UpdatePresence(void)
 			else if ((gamemap == 99) || (gamestate == GS_TITLESCREEN) || (gamestate == GS_EVALUATION))
 			{
 				discordPresence.largeImageKey = "misctitle";
+				
 				if (gamestate == GS_EVALUATION)
 					discordPresence.largeImageText = "Evaluating Results";
 			}
@@ -661,10 +664,8 @@ void DRPC_UpdatePresence(void)
 				discordPresence.largeImageKey = "mapcustom";
 			
 			if (mapheaderinfo[gamemap - 1]->menuflags & LF2_HIDEINMENU)
-			{
 				// Hell map, hide the name
 				discordPresence.largeImageText = "Map: ???";
-			}
 			else
 			{
 				// Map name on tool tip
@@ -725,26 +726,27 @@ void DRPC_UpdatePresence(void)
 				NULL
 			};
 
+			//Why Would You Split My Screen
 			if (!splitscreen)
 			{
 				// No Bots
 				if (!players[1].bot || netgame)
 				{
-					//// Character images
+					//// Character Images ////
 					// Supported
-					if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[strlen(skins[players[consoleplayer].skin].name)])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[strlen(skins[players[consoleplayer].skin].name)])))
+					if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[strlen(skins)])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[strlen(skins)])))
 						snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
 					// Unsupported
 					else
 						snprintf(charimg, 11, "charcustom");
 					
-					//// Player names
+					//// Player Names ////
 					if (!players[consoleplayer].spectator)
 						// Character
 						snprintf(playername, 28, "Playing As: %s", skins[players[consoleplayer].skin].realname);
-					// Viewpoint
 					else
 					{
+						// Viewpoint
 						if (playeringame[displayplayer])
 							snprintf(playername, 28, "%s is Spectating %s", player_names[consoleplayer], player_names[displayplayer]); // Combine Player Names Together
 						else
@@ -763,17 +765,18 @@ void DRPC_UpdatePresence(void)
 				// Bots
 				else if (players[1].bot)
 				{
-					////Only One Regular Bot?
+					//Only One Regular Bot?
 					if (!players[2].bot)
 					{
-						// Character images
+						// Character Tags
 						//if ((strcmp(skins[players[consoleplayer].skin].name, "sonic")) && (strcmp(((skin_t *)players[1].bot)->name, "tails")))) ////Scrapped until we can get it to work
 						snprintf(charimg, 15, "charsonictails");
 						snprintf(charname, 28, "Playing As: %s & %s", skins[players[consoleplayer].skin].realname, skins[players[1].skin].realname);
 					}
-					////Multiple Bots?
+					//Multiple Bots?
 					else
 					{
+						// Character Tags
 						snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
 						snprintf(charname, 50, "Playing As: %s & Multiple Bots", skins[players[consoleplayer].skin].name);
 					}
@@ -783,14 +786,14 @@ void DRPC_UpdatePresence(void)
 					discordPresence.smallImageText = charname; // Character name, Bot name
 				}
 			}
+			//I Split my Screen
 			else
 			{
-				// render character image
-				snprintf(charimg, 28, "charsonictails");
-				discordPresence.smallImageKey = charimg;
-
-				// Player names
+				// render player names
 				snprintf(playername, 50, "%s & %s", player_names[consoleplayer], player_names[secondarydisplayplayer]);
+
+				// Apply Character Image and Player Names
+				discordPresence.smallImageKey = "charsonictails";
 				discordPresence.smallImageText = playername;
 			}
 		}
@@ -801,9 +804,8 @@ void DRPC_UpdatePresence(void)
 	{
 		if (cv_customdiscordstatus.string)
 		{
-			snprintf(charimg, 11, "charcustom");
 			discordPresence.details = cv_customdiscordstatus.string;
-			discordPresence.largeImageKey = charimg;
+			discordPresence.largeImageKey = "charcustom";
 			discordPresence.largeImageText = "Custom Image";
 		}
 	}
@@ -816,10 +818,8 @@ void DRPC_UpdatePresence(void)
 	}
 
 	if (!joinSecretSet)
-	{
 		// Not able to join? Flush the request list, if it exists.
 		DRPC_EmptyRequests();
-	}
 
 	Discord_UpdatePresence(&discordPresence);
 }
