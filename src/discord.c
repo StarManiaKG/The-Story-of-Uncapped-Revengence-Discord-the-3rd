@@ -769,8 +769,8 @@ void DRPC_UpdatePresence(void)
 					if (!players[2].bot)
 					{
 						// Character Tags
-						int st1 = (strcmp(skins[players[consoleplayer].skin].name, "sonic");
-						int st2 = (strcmp(skins[players[secondarydisplayplayer].skin].name, "tails");
+						int st1 = (strcmp(skins[players[consoleplayer].skin].name, "sonic"));
+						int st2 = (strcmp(skins[players[secondarydisplayplayer].skin].name, "tails"));
 
 						// Are They Sonic and Tails?
 						if ((st1 == 0) && (st2 == 0))
