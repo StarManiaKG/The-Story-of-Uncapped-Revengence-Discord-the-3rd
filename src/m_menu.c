@@ -2591,8 +2591,6 @@ void Moviemode_option_Onchange(void)
 #ifdef HAVE_DISCORDRPC
 void Discordcustomstatus_option_Onchange(void)
 {
-	DRPC_UpdatePresence();
-
 	/*
 	{IT_HEADER,									NULL, "Rich Presence Settings",	NULL,					 	 32},
 	{IT_STRING | IT_CVAR,						NULL, "Allow Ask To Join",		&cv_discordasks,		 	 44},
@@ -2615,7 +2613,7 @@ void Discordcustomstatus_option_Onchange(void)
 		(cv_discordrp.value == 1 ? IT_STRING|IT_CVAR : IT_DISABLED);
 
 	OP_DiscordOptionsMenu[8].status =
-		(cv_discordrp.value == 1 ? IT_STRING|IT_CVAR : IT_DISABLED);
+		(cv_discordrp.value == 1 ? IT_HEADER : IT_DISABLED);
 	
 	OP_DiscordOptionsMenu[9].status =
 		(cv_discordrp.value == 1 ? IT_STRING|IT_CVAR|IT_CV_STRING : IT_DISABLED);
@@ -2624,14 +2622,21 @@ void Discordcustomstatus_option_Onchange(void)
 		(cv_discordrp.value == 1 ? IT_STRING|IT_SUBMENU : IT_DISABLED);
 
 	//Is Custom Status On?
-	OP_DiscordOptionsMenu[8].status =
-		(cv_discordshowonstatus.value == 7 ? IT_HEADER : IT_DISABLED);
-	
-	OP_DiscordOptionsMenu[9].status =
-		(cv_discordshowonstatus.value == 7 ? IT_STRING|IT_CVAR|IT_CV_STRING : IT_DISABLED);
+	if (cv.discordrp.value)
+	{
+		OP_DiscordOptionsMenu[8].status =
+			(cv_discordshowonstatus.value == 7 ? IT_HEADER : IT_DISABLED);
+		
+		/*
+		OP_DiscordOptionsMenu[9].status =
+			(cv_discordshowonstatus.value == 7 ? IT_STRING|IT_CVAR|IT_CV_STRING : IT_DISABLED);
 
-	OP_DiscordOptionsMenu[10].status =
-		(cv_discordshowonstatus.value == 7 ? IT_STRING|IT_SUBMENU : IT_DISABLED);
+		OP_DiscordOptionsMenu[10].status =
+			(cv_discordshowonstatus.value == 7 ? IT_STRING|IT_SUBMENU : IT_DISABLED);
+		*/
+	}
+
+	DRPC_UpdatePresence();
 }
 #endif
 
