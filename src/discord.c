@@ -729,23 +729,21 @@ void DRPC_UpdatePresence(void)
 			//Why Would You Split My Screen
 			if (!splitscreen)
 			{
-				// No Bots
+				//// No Bots ////
 				if (!players[1].bot || netgame)
 				{
-					int character = (strcmp(skins[players[consoleplayer].skin].name, skins[players[consoleplayer].skin].name));
+					//int character = (strcmp(skins[players[consoleplayer].skin].name, skins[players[consoleplayer].skin].name));
+					int character = (strlen(skins[players[consoleplayer].skin].name));
 
-					//// Character Images ////
-					// Supported
+					// Character Images
 					if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[character])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[character])))
-						snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
-					// Unsupported
-					else if (!(strcmp(skins[players[consoleplayer].skin].name, baseSkins[character])) && !(strcmp(skins[players[consoleplayer].skin].name, customSkins[character])))
-						snprintf(charimg, 11, "charcustom");
+						snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
+					else
+						snprintf(charimg, 11, "charcustom"); // Unsupported
 					
-					//// Player Names ////
+					// Player Names
 					if (!players[consoleplayer].spectator)
-						// Character
-						snprintf(playername, 28, "Playing As: %s", skins[players[consoleplayer].skin].realname);
+						snprintf(playername, 28, "Playing As: %s", skins[players[consoleplayer].skin].realname); // Character
 					else
 					{
 						// Viewpoint
@@ -761,13 +759,12 @@ void DRPC_UpdatePresence(void)
 					}
 					
 					// render character variables
-					discordPresence.smallImageKey = charimg; // Character image
 					discordPresence.smallImageText = playername; // Player names
 				}
-				// Bots
+				//// Bots ////
 				else if (players[1].bot)
 				{
-					//Only One Regular Bot?
+					// Only One Regular Bot?
 					if (!players[2].bot)
 					{
 						// Character Tags
@@ -782,7 +779,7 @@ void DRPC_UpdatePresence(void)
 
 						snprintf(charname, 50, "Playing As: %s & %s", skins[players[consoleplayer].skin].realname, skins[players[secondarydisplayplayer].skin].realname);
 					}
-					//Multiple Bots?
+					// Multiple Bots?
 					else
 					{
 						// Character Tags
@@ -791,20 +788,22 @@ void DRPC_UpdatePresence(void)
 					}
 
 					// render character variables
-					discordPresence.smallImageKey = charimg; // Character image
 					discordPresence.smallImageText = charname; // Character name, Bot name
 				}
 			}
 			//I Split my Screen
 			else
 			{
-				// render player names
+				// render player names and the character image
 				snprintf(playername, 50, "%s & %s", player_names[consoleplayer], player_names[secondarydisplayplayer]);
+				snprintf(charimg, 15, "charsonictails");
 
-				// Apply Character Image and Player Names
-				discordPresence.smallImageKey = "charsonictails";
+				// Apply Player Names
 				discordPresence.smallImageText = playername;
 			}
+			
+			// Apply Character Images
+			discordPresence.smallImageKey = charimg;
 		}
 	}
 	
