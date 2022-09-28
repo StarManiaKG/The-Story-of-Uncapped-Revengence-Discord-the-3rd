@@ -733,13 +733,15 @@ void DRPC_UpdatePresence(void)
 				};
 
 				//Easier way to check for supported characters
+				int knuckles = (strcmp(skins[players[consoleplayer].skin].name, baseSkins[character]));
+				int ocdontsteal = (strcmp(skins[players[consoleplayer].skin].name, customSkins[character]));
 				int character = (strcmp(skins[players[consoleplayer].skin].name, skins[players[consoleplayer].skin].name));
 
 				//// No Bots ////
 				if (!players[1].bot || netgame)
 				{
 					// Character Images
-					if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[character])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[character])))	
+					if ((knuckles == 0) || (ocdontsteal == 0))
 						snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
 					else
 						snprintf(charimg, 11, "charcustom"); // Unsupported
@@ -786,7 +788,7 @@ void DRPC_UpdatePresence(void)
 					else
 					{
 						// Character Tags
-						if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[character])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[character])))
+						if ((knuckles == 0) || (ocdontsteal == 0))
 							snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
 						else
 							snprintf(charimg, 11, "charcustom");
