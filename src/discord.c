@@ -742,7 +742,7 @@ void DRPC_UpdatePresence(void)
 					// Character Images
 					for (INT32 i = 0; i < 16; i++)
 					{
-						if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[i]) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[i]))));
+						if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[i]) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[i]))))
 						{
 							snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
 							break;
@@ -791,7 +791,7 @@ void DRPC_UpdatePresence(void)
 						// Character Images
 						for (INT32 i = 0; i < 16; i++)
 						{
-							if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[i]) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[i]))));
+							if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[i]) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[i]))))
 							{
 								snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
 								break;
