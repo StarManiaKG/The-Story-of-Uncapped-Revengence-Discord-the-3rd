@@ -732,6 +732,9 @@ void DRPC_UpdatePresence(void)
 					NULL
 				};
 
+				//Little Tiny Check
+				INT32 i = 0;
+				
 				//Vanilla, as you can see
 				int sonic = (strcmp(skins[players[consoleplayer].skin].name, "sonic"));
 				int tails = (strcmp(skins[players[secondarydisplayplayer].skin].name, "tails"));
@@ -744,7 +747,7 @@ void DRPC_UpdatePresence(void)
 				if (!players[1].bot || netgame)
 				{
 					// Character Images
-					for (INT32 i = 0; i < 16; i++)
+					for (i = 0; i < 16; i++)
 					{
 						if (i < 16)
 						{
@@ -796,7 +799,7 @@ void DRPC_UpdatePresence(void)
 					else
 					{
 						// Character Images
-						for (INT32 i = 0; i < 16; i++)
+						for (i = 0; i < 16; i++)
 						{
 							if (i < 16)
 							{
