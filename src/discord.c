@@ -702,18 +702,13 @@ void DRPC_UpdatePresence(void)
 			if (!splitscreen)
 			{
 				// Supported Skin Pictures
-				static const char *baseSkins[] = {
+				static const char *supportedSkins[] = {
 					"sonic",
 					"tails",
 					"knuckles",
 					"amy",
 					"fang",
 					"metalsonic",
-					NULL
-				};
-
-				// Supported Skin Pictures
-				static const char *customSkins[] = {
 					"adventuresonic",
 					"shadow",
 					"skip",
@@ -744,8 +739,8 @@ void DRPC_UpdatePresence(void)
 					snprintf(charimg, 11, "charcustom"); // Unsupported
 					
 					INT32 i = 0;
-					for (i = 0; i < 16; i++)
-						if (strcmp(skins[players[consoleplayer].skin].name, baseSkins[i]) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[i])))
+					for (i = 0; i < 22; i++)
+						if (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]))
 							snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
 					
 					// Player Names
@@ -789,8 +784,8 @@ void DRPC_UpdatePresence(void)
 						snprintf(charimg, 11, "charcustom"); // Unsupported
 
 						INT32 i = 0;
-						for (i = 0; i < 16; i++)
-							if (strcmp(skins[players[consoleplayer].skin].name, baseSkins[i]) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[i])))
+						for (i = 0; i < 22; i++)
+							if (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]))
 								snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
 	
 						snprintf(charname, 75, "Playing As: %s, %s, & Multiple Bots", skins[players[consoleplayer].skin].realname, skins[players[secondarydisplayplayer].skin].realname);
