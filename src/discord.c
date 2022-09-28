@@ -782,7 +782,7 @@ void DRPC_UpdatePresence(void)
 						snprintf(charname, 50, "Playing As: %s & %s", skins[players[consoleplayer].skin].realname, skins[players[secondarydisplayplayer].skin].realname);
 					}
 					// Multiple Bots?
-					else
+					else if (players[2].bot)
 					{
 						// Character Tags
 						snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
