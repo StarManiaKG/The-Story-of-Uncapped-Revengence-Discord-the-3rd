@@ -512,8 +512,7 @@ void DRPC_UpdatePresence(void)
 
 		if (playeringame[consoleplayer] && gamestate == GS_LEVEL && Playing())
 		{
-			//Tiny Counters
-			INT32 i;
+			//Tiny Emeralds Counter
 			UINT8 emeraldCount = 0;
 
 			for (i = 0; i < 7; i++) // thanks Monster Iestyn for this math
