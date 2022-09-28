@@ -787,14 +787,19 @@ void DRPC_UpdatePresence(void)
 					else
 					{
 						// Character Images
-						for (INT32 i = 0; i < 16; i++) // thanks Monster Iestyn for this math
+						UINT8 customcharacters = 16;
+
+						for (INT32 i = 0; i < customcharacters; i++) // thanks Monster Iestyn for this math
+						{
 							if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[i])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[i])))
 							{
 								snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
 								break;
 							}
-							else if (i == 16)
+							
+							if (i == 16)
 								snprintf(charimg, 11, "charcustom"); // Unsupported
+						}
 	
 						snprintf(charname, 75, "Playing As: %s, %s, & Multiple Bots", skins[players[consoleplayer].skin].realname, skins[players[secondarydisplayplayer].skin].realname);
 					}
