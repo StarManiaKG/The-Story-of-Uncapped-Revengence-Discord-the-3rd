@@ -510,10 +510,11 @@ void DRPC_UpdatePresence(void)
 
 		if (playeringame[consoleplayer] && gamestate == GS_LEVEL && Playing())
 		{
-			//Tiny Emerald Counter
+			//Tiny Counters
+			INT32 i = 0;
 			UINT8 emeraldCount = 0;
 
-			for (INT32 i = 0; i < 7; i++) // thanks Monster Iestyn for this math
+			for (i = 0; i < 7; i++) // thanks Monster Iestyn for this math
 				if (emeralds & (1<<i))
 					emeraldCount += 1;
 
@@ -740,7 +741,9 @@ void DRPC_UpdatePresence(void)
 				if (!players[1].bot || netgame)
 				{
 					// Character Images
-					for (INT32 i = 0; i < 16; i++)
+					INT32 i = 0;
+
+					for (i = 0; i < 16; i++)
 						if (strcmp(skins[players[consoleplayer].skin].name, baseSkins[i]) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[i])))
 						{
 							snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
@@ -787,8 +790,10 @@ void DRPC_UpdatePresence(void)
 					else
 					{
 						// Character Images
-						for (INT32 i = 0; i < 16; i++)
-							if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[i]) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[i]))))
+						INT32 i = 0;
+
+						for (i = 0; i < 16; i++)
+							if (strcmp(skins[players[consoleplayer].skin].name, baseSkins[i]) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[i])))
 							{
 								snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
 								break;
