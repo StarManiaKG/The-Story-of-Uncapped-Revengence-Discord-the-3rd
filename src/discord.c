@@ -741,7 +741,7 @@ void DRPC_UpdatePresence(void)
 				
 				snprintf(amy, 28, "%s", deez);
 
-				discordPresence.state = amyd;
+				discordPresence.state = amy;
 
 				//if (deez == &customSkins[character] || deez == &baseSkins[character])
 					//CONS_Printf(M_GetText(deez));
