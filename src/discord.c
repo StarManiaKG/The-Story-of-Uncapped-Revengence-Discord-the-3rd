@@ -399,6 +399,23 @@ static void DRPC_EmptyRequests(void)
 	}
 }
 
+/* itoa:  convert n to characters in s */
+ void itoa(int n, char s[])
+ {
+     int i, sign;
+
+     if ((sign = n) < 0)  /* record sign */
+         n = -n;          /* make n positive */
+     i = 0;
+     do {       /* generate digits in reverse order */
+         s[i++] = n % 10 + '0';   /* get next digit */
+     } while ((n /= 10) > 0);     /* delete it */
+     if (sign < 0)
+         s[i++] = '-';
+     s[i] = '\0';
+     reverse(s);
+}  
+
 /*--------------------------------------------------
 	void DRPC_UpdatePresence(void)
 
@@ -734,8 +751,6 @@ void DRPC_UpdatePresence(void)
 
 				//Easier way to check for supported characters
 				int character = (strcmp(skins[players[consoleplayer].skin].name, skins[players[consoleplayer].skin].name));
-
-				#include <stdlib.h>
 
 				//if (baseSkins[] == skins[players[consoleplayer].skin].name)
 					//CONS_Printf(M_GetText(skins[players[consoleplayer].skin].name));
