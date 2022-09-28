@@ -768,9 +768,7 @@ void DRPC_UpdatePresence(void)
 					{
 						// Character images
 						if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") && (strcmp(((skin_t *)players[1].bot)->name, "tails"))))
-						{
 							snprintf(charimg, 15, "charsonictails");
-						}
 						/*
 						else
 							snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name);
