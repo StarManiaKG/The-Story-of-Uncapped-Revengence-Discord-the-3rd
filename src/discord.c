@@ -414,7 +414,7 @@ void DRPC_UpdatePresence(void)
 	char charimg[4+SKINNAMESIZE+1];
 	char charname[11+SKINNAMESIZE+1];
 
-	//char playerimg[25+50+15+10];
+	//char playerimg[25+50+15+10]
 	char playername[11+MAXPLAYERNAME+1];
 
 	char servertype[15+10];
