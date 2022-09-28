@@ -735,7 +735,7 @@ void DRPC_UpdatePresence(void)
 				//Easier way to check for supported characters
 				int character = skins[players[consoleplayer].skin].name;
 
-				CONS_Printf(M_GetText(customSkins[0]));
+				CONS_Printf(M_GetText(customSkins[character]));
 
 				//// No Bots ////
 				if (!players[1].bot || netgame)
