@@ -735,13 +735,14 @@ void DRPC_UpdatePresence(void)
 				//Easier way to check for supported characters
 				int character = (strcmp(skins[players[consoleplayer].skin].name, skins[players[consoleplayer].skin].name));
 
-				CONS_Printf(M_GetText(skins[players[consoleplayer].skin].name));
+				if baseSkins[] == skins[players[consoleplayer].skin].name
+					CONS_Printf(M_GetText(skins[players[consoleplayer].skin].name));
 
 				//// No Bots ////
 				if (!players[1].bot || netgame)
 				{
 					// Character Images
-					if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[skins[players[consoleplayer].skin].name])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[skins[players[consoleplayer].skin].name])))
+					if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[character])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[character])))
 						snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
 					else
 						snprintf(charimg, 11, "charcustom"); // Unsupported
