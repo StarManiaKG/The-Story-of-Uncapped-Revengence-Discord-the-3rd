@@ -538,14 +538,14 @@ void DRPC_UpdatePresence(void)
 						if (emeraldCount != 7)
 							strlcat(detailstr, va(", %d Emeralds", emeraldCount), 64);
 						else
-							strlcat(detailstr, ", All 7 Emeralds Obtained!", 64);
+							strlcat(detailstr, ", All 7 Emeralds!", 64);
 					}
 					else if (cv_discordshowonstatus.value == 3)
 					{
 						if (emeraldCount != 7)
 							strlcat(detailstr, va("%d Emeralds", emeraldCount), 64);
 						else
-							strlcat(detailstr, "All 7 Emeralds Obtained!", 64);
+							strlcat(detailstr, "All 7 Emeralds!", 64);
 					}
 				}
 			}
@@ -573,7 +573,7 @@ void DRPC_UpdatePresence(void)
 						else if (emeraldCount == 4)
 							strlcat(detailstr, ", %d Emeralds; Found that DAMN FOURTH", 64);
 						else if (emeraldCount == 7)
-							strlcat(detailstr, ", All 7 Emeralds Obtained!", 64);
+							strlcat(detailstr, ", All 7 Emeralds!", 64);
 					}
 					else if (cv_discordshowonstatus.value == 3)
 					{
@@ -585,7 +585,7 @@ void DRPC_UpdatePresence(void)
 						else if (emeraldCount == 4)
 							strlcat(detailstr, "%d Emeralds; Found that DAMN FOURTH", 64);
 						else if (emeraldCount == 7)
-							strlcat(detailstr, "All 7 Emeralds Obtained!", 64);
+							strlcat(detailstr, "All 7 Emeralds!", 64);
 					}
 				}
 			}
