@@ -804,7 +804,7 @@ void DRPC_UpdatePresence(void)
 							if ((vanillachocolate == 0) || (customocdontsteal == 0))
 							{
 								snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
-								CUSTOMCHAR = true
+								CUSTOMCHAR = true;
 								break;
 							}
 							
