@@ -541,14 +541,14 @@ void DRPC_UpdatePresence(void)
 						if (emeraldCount != 7)
 							strlcat(detailstr, va(", %d Emeralds", emeraldCount), 64);
 						else
-							strlcat(detailstr, ", All 7 Emeralds!", 64);
+							strlcat(detailstr, ", All 7 Emeralds", 64);
 					}
 					else if (cv_discordshowonstatus.value == 3)
 					{
 						if (emeraldCount != 7)
 							strlcat(detailstr, va("%d Emeralds", emeraldCount), 64);
 						else
-							strlcat(detailstr, "All 7 Emeralds!", 64);
+							strlcat(detailstr, "All 7 Emeralds", 64);
 					}
 				}
 			}
@@ -572,11 +572,11 @@ void DRPC_UpdatePresence(void)
 							strlcat(detailstr, va(", %d Emeralds", emeraldCount), 64);
 						else if (emeraldCount == 3)
 							// Fun Fact: the subtitles in Shadow the Hedgehog emphasized "fourth", even though Jason Griffith emphasized "damn" in this sentence
-							strlcat(detailstr, ", %d Emeralds; Where's That DAMN FOURTH?", 64);
+							strlcat(detailstr, ", %d Emeralds; Where's That DAMN FOURTH", 64);
 						else if (emeraldCount == 4)
 							strlcat(detailstr, ", %d Emeralds; Found that DAMN FOURTH", 64);
 						else if (emeraldCount == 7)
-							strlcat(detailstr, ", All 7 Emeralds!", 64);
+							strlcat(detailstr, ", All 7 Emeralds", 64);
 					}
 					else if (cv_discordshowonstatus.value == 3)
 					{
@@ -584,11 +584,11 @@ void DRPC_UpdatePresence(void)
 							strlcat(detailstr, va("%d Emeralds", emeraldCount), 64);
 						else if (emeraldCount == 3)
 							// You Already Know the Fun Fact lol
-							strlcat(detailstr, "%d Emeralds; Where's That DAMN FOURTH?", 64);
+							strlcat(detailstr, "%d Emeralds; Where's That DAMN FOURTH", 64);
 						else if (emeraldCount == 4)
 							strlcat(detailstr, "%d Emeralds; Found that DAMN FOURTH", 64);
 						else if (emeraldCount == 7)
-							strlcat(detailstr, "All 7 Emeralds!", 64);
+							strlcat(detailstr, "All 7 Emeralds", 64);
 					}
 				}
 			}
@@ -742,6 +742,7 @@ void DRPC_UpdatePresence(void)
 					if ((strcmp(skins[players[consoleplayer].skin].name, baseSkins[character])) || (strcmp(skins[players[consoleplayer].skin].name, customSkins[character])))	
 						snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
 					else
+						CONS_Printf(M_GetText("sonic"));
 						snprintf(charimg, 11, "charcustom"); // Unsupported
 					
 					// Player Names
