@@ -734,7 +734,7 @@ void DRPC_UpdatePresence(void)
 
 				//Little Tiny Check
 				INT32 i = 0;
-				
+
 				//Vanilla, as you can see
 				int sonic = (strcmp(skins[players[consoleplayer].skin].name, "sonic"));
 				int tails = (strcmp(skins[players[secondarydisplayplayer].skin].name, "tails"));
@@ -749,13 +749,10 @@ void DRPC_UpdatePresence(void)
 					// Character Images
 					for (i = 0; i < 16; i++)
 					{
-						if (i < 16)
+						if ((vanillachocolate == 0) || (customocdontsteal == 0))
 						{
-							if ((vanillachocolate == 0) || (customocdontsteal == 0))
-							{
-								snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
-								break;
-							}
+							snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
+							break;
 						}
 						else
 							snprintf(charimg, 11, "charcustom"); // Unsupported
@@ -801,13 +798,10 @@ void DRPC_UpdatePresence(void)
 						// Character Images
 						for (i = 0; i < 16; i++)
 						{
-							if (i < 16)
+							if ((vanillachocolate == 0) || (customocdontsteal == 0))
 							{
-								if ((vanillachocolate == 0) || (customocdontsteal == 0))
-								{
-									snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
-									break;
-								}
+								snprintf(charimg, 28, "char%s", skins[players[consoleplayer].skin].name); // Supported
+								break;
 							}
 							else
 								snprintf(charimg, 11, "charcustom"); // Unsupported
