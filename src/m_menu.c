@@ -2626,14 +2626,14 @@ void Discordcustomstatus_option_Onchange(void)
 		OP_DiscordOptionsMenu[8].status =
 			(cv_discordshowonstatus.value == 7 ? IT_HEADER : IT_DISABLED);
 		
-		OP_DiscordOptionsMenu[9].status =
-			(cv_discordshowonstatus.value == 7 ? IT_STRING|IT_CVAR|IT_CV_STRING : IT_DISABLED);
+		//OP_DiscordOptionsMenu[9].status =
+			//(cv_discordshowonstatus.value == 7 ? IT_STRING|IT_CVAR|IT_CV_STRING : IT_DISABLED);
 
-		OP_DiscordOptionsMenu[10].status =
-			(cv_discordshowonstatus.value == 7 ? IT_STRING|IT_CVAR|IT_CV_STRING : IT_DISABLED);
+		//OP_DiscordOptionsMenu[10].status =
+			//(cv_discordshowonstatus.value == 7 ? IT_STRING|IT_CVAR|IT_CV_STRING : IT_DISABLED);
 
-		OP_DiscordOptionsMenu[11].status =
-			(cv_discordshowonstatus.value == 7 ? IT_STRING|IT_SUBMENU : IT_DISABLED);
+		//OP_DiscordOptionsMenu[11].status =
+			//(cv_discordshowonstatus.value == 7 ? IT_STRING|IT_SUBMENU : IT_DISABLED);
 	}
 
 	DRPC_UpdatePresence();
