@@ -1666,6 +1666,16 @@ static menuitem_t OP_CustomStatusOutputMenu[] =
 {
 	{IT_HEADER,		NULL,	"Custom Status Output",		NULL,	0},
 };
+
+enum
+{
+	op_discordasks = 4,
+	op_discordinvites = 5,
+	op_discordstatusmemes = 6,
+	op_discordshowonstatus = 7,
+	op_customdiscorddetails = 9,
+	op_customdiscordstate = 10,
+};
 #endif
 
 static menuitem_t OP_ServerOptionsMenu[] =
@@ -2596,49 +2606,45 @@ void Discordcustomstatus_option_Onchange(void)
 	OP_DiscordOptionsMenu[3].status =
 		(cv_discordrp.value == 1 ? IT_HEADER : IT_DISABLED);
 	
-	OP_DiscordOptionsMenu[4].status =
-		(cv_discordrp.value == 1 ? IT_STRING|IT_CVAR : IT_DISABLED);
+	OP_DiscordOptionsMenu[op_discordasks].status =
+		(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING : IT_DISABLED);
 	
-	OP_DiscordOptionsMenu[5].status =
-		(cv_discordrp.value == 1 ? IT_STRING|IT_CVAR : IT_DISABLED);
+	OP_DiscordOptionsMenu[op_discordinvites].status =
+		(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING : IT_DISABLED);
 	
-	OP_DiscordOptionsMenu[6].status =
-		(cv_discordrp.value == 1 ? IT_STRING|IT_CVAR : IT_DISABLED);
+	OP_DiscordOptionsMenu[op_discordstatusmemes].status =
+		(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING : IT_DISABLED);
 	
-	OP_DiscordOptionsMenu[7].status =
-		(cv_discordrp.value == 1 ? IT_STRING|IT_CVAR : IT_DISABLED);
+	OP_DiscordOptionsMenu[op_discordshowonstatus].status =
+		(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING : IT_DISABLED);
 
 	OP_DiscordOptionsMenu[8].status =
 		(cv_discordrp.value == 1 ? IT_HEADER : IT_DISABLED);
 
-	/*
-	OP_DiscordOptionsMenu[9].status =
-		(cv_discordrp.value == 1 ? IT_STRING|IT_CVAR|IT_CV_STRING : IT_DISABLED);
+	OP_DiscordOptionsMenu[op_customdiscorddetails].status =
+		(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 	
-	OP_DiscordOptionsMenu[10].status =
-		(cv_discordrp.value == 1 ? IT_STRING|IT_CVAR|IT_CV_STRING : IT_DISABLED);
+	OP_DiscordOptionsMenu[op_customdiscordstate].status =
+		(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 
 	OP_DiscordOptionsMenu[11].status =
 		(cv_discordrp.value == 1 ? IT_STRING|IT_SUBMENU : IT_DISABLED);
-	*/
 
-	/*
 	//Is Custom Status On?
 	if (cv_discordrp.value)
 	{
 		OP_DiscordOptionsMenu[8].status =
 			(cv_discordshowonstatus.value == 7 ? IT_HEADER : IT_DISABLED);
 		
-		OP_DiscordOptionsMenu[9].status =
-			(cv_discordshowonstatus.value == 7 ? IT_STRING|IT_CVAR|IT_CV_STRING : IT_DISABLED);
+		OP_DiscordOptionsMenu[op_customdiscorddetails].status =
+			(cv_discordshowonstatus.value == 7 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 
-		OP_DiscordOptionsMenu[10].status =
-			(cv_discordshowonstatus.value == 7 ? IT_STRING|IT_CVAR|IT_CV_STRING : IT_DISABLED);
+		OP_DiscordOptionsMenu[op_customdiscordstate].status =
+			(cv_discordshowonstatus.value == 7 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 
 		OP_DiscordOptionsMenu[11].status =
 			(cv_discordshowonstatus.value == 7 ? IT_STRING|IT_SUBMENU : IT_DISABLED);
 	}
-	*/
 
 	DRPC_UpdatePresence();
 }
