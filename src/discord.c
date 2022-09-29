@@ -606,7 +606,7 @@ void DRPC_UpdatePresence(void)
 				
 			if (!cv_discordshowonstatus.value)
 			{
-				if (gamemap == 99 || gamestate != GS_TITLESCREEN)
+				if (gamemap == 99 || gamestate == GS_TITLESCREEN)
 					discordPresence.largeImageText = "Title Screen";
 				
 				if (!menuactive)
