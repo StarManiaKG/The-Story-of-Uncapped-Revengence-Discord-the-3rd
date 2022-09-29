@@ -687,7 +687,7 @@ void DRPC_UpdatePresence(void)
 				if (gamemap != 99 && gamestate != GS_TITLESCREEN)
 					snprintf(mapname, 48, "On %s", G_BuildMapTitle(gamemap));
 				else
-					discordPresence.largeImageText = "Title Screen"; //fixes null map issue: electric boogalo
+					snprintf(mapname, 48, "Title Screen"); //fixes null map issue: electric boogalo
 
 				discordPresence.largeImageText = mapname;
 			}
