@@ -32,7 +32,7 @@
 #include "discord.h"
 #include "doomdef.h"
 
-// Please feel free to provide your own Discord app if you're making a new build :)
+// Please feel free to provide your own Discord app if you're making a new custom build :)
 #define DISCORD_APPID "1013126566236135516"
 
 // length of IP strings
@@ -43,7 +43,8 @@ consvar_t cv_discordrp = CVAR_INIT ("discordrp", "On", CV_SAVE|CV_CALL, CV_OnOff
 consvar_t cv_discordstreamer = CVAR_INIT ("discordstreamer", "Off", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
 consvar_t cv_discordasks = CVAR_INIT ("discordasks", "Yes", CV_SAVE|CV_CALL, CV_YesNo, DRPC_UpdatePresence);
 consvar_t cv_discordshowonstatus = CVAR_INIT ("discordshowonstatus", "all", CV_SAVE|CV_CALL, discordstatustype_cons_t, Discordcustomstatus_option_Onchange);
-consvar_t cv_customdiscordstatus = CVAR_INIT ("customdiscordstatus", "I'm Playing Sonic Robo Blast 2!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
+consvar_t cv_customdiscorddetails = CVAR_INIT ("customdiscordstatus", "I'm Feeling Good!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
+consvar_t cv_customdiscordstate = CVAR_INIT ("customdiscordstatus", "I'm Playing Sonic Robo Blast 2!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
 consvar_t cv_discordstatusmemes = CVAR_INIT ("discordstatusmemes", "Yes", CV_SAVE|CV_CALL, CV_YesNo, DRPC_UpdatePresence);
 struct discordInfo_s discordInfo;
 
@@ -457,7 +458,7 @@ void DRPC_UpdatePresence(void)
 	////   Main Rich Presence Status Info   ////
 	////////////////////////////////////////////
 
-	// Server info
+	//// Server Info ////
 	if (dedicated || netgame)
 	{
 		if (DRPC_InvitesAreAllowed() == true)
@@ -617,6 +618,8 @@ void DRPC_UpdatePresence(void)
 				discordPresence.largeImageText = "Title Screen";
 				discordPresence.state = "Main Menu";
 			}
+			else
+				discordPresence.largeImageText = "Sonic Robo Blast 2";
 		}
 	}
 
@@ -678,7 +681,7 @@ void DRPC_UpdatePresence(void)
 			}
 			else
 			{
-				if (gamestate != GS_TITLESCREEN) //tiny null fix
+				if (gamestate != GS_TITLESCREEN && !titlemapinaction) //tiny null fix
 					discordPresence.largeImageKey = "mapcustom";
 			}
 			
@@ -688,9 +691,9 @@ void DRPC_UpdatePresence(void)
 			else
 			{
 				// Map name on tool tip
-				if (gamemap != 99 && gamestate != GS_TITLESCREEN)
+				if (gamemap != 99 && gamestate != GS_TITLESCREEN && !titlemapinaction)
 					snprintf(mapname, 48, "On %s", G_BuildMapTitle(gamemap));
-				//fixes null map issue: electric boogalo
+				//fully fixes null map issue
 				else
 				{
 					snprintf(mapname, 48, "Title Screen");
@@ -738,7 +741,7 @@ void DRPC_UpdatePresence(void)
 	{
 		if (Playing() && playeringame[consoleplayer])
 		{
-			//Why Would You Split My Screen
+			// Why Would You Split My Screen
 			if (!splitscreen)
 			{
 				// Supported Skin Pictures
@@ -777,9 +780,9 @@ void DRPC_UpdatePresence(void)
 				{	
 					for (i = 0; i < 22; i++)
 					{
+						CONS_Printf(M_GetText(i));
 						// Character Images
 						snprintf(charimg, 11, "charcustom"); // Unsupported
-						discordPresence.smallImageKey = charimg; // Also Unsupported
 
 						if (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]))
 						{
@@ -804,9 +807,6 @@ void DRPC_UpdatePresence(void)
 								snprintf(playername, 32, "%s is Spectating Air", player_names[consoleplayer]); // why are you spectating air
 						}		
 					}
-					
-					// render character variables
-					discordPresence.smallImageText = playername; // Player names
 				}
 				//// Bots ////
 				else if (players[1].bot)
@@ -829,7 +829,6 @@ void DRPC_UpdatePresence(void)
 						{
 							// Character Images
 							snprintf(charimg, 11, "charcustom"); // Unsupported
-							discordPresence.smallImageKey = charimg; // Also Unsupported
 
 							if (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]))
 							{
@@ -840,9 +839,6 @@ void DRPC_UpdatePresence(void)
 	
 						snprintf(charname, 75, "Playing As: %s, %s, & Multiple Bots", skins[players[consoleplayer].skin].realname, skins[players[secondarydisplayplayer].skin].realname);
 					}
-
-					// render character variables
-					discordPresence.smallImageText = charname; // Character name, Bot name
 				}
 			}
 			//I Split my Screen
@@ -851,26 +847,25 @@ void DRPC_UpdatePresence(void)
 				// render player names and the character image
 				snprintf(playername, 50, "%s & %s", player_names[consoleplayer], player_names[secondarydisplayplayer]);
 				snprintf(charimg, 15, "charsonictails");
-
-				// Apply Player Names
-				discordPresence.smallImageText = playername;
 			}
+
+			if (playername)
+				charname = playername;
 			
-			// Apply Character Images
+			// Apply Character Images and Names
 			discordPresence.smallImageKey = charimg;
+			discordPresence.smallImageText = charname; // Character name, Bot name (if they exist)
 		}
 	}
 	
 	//// Custom Statuses ////
 	if (cv_discordshowonstatus.value == 7)
 	{
-		if (cv_customdiscordstatus.string)
-		{
-			discordPresence.details = cv_customdiscordstatus.string;
-			// just a beta thing until we get a functioning custom picture thing to work
-			discordPresence.largeImageKey = "charcustom";
-			discordPresence.largeImageText = "Custom Image";
-		}
+		discordPresence.details = cv_customdiscorddetails.string;
+		discordPresence.state = cv_customdiscordstate.string;
+		// just a beta thing until we get a functioning custom picture thing to work
+		discordPresence.largeImageKey = "charcustom";
+		discordPresence.largeImageText = "Custom Image";
 	}
 
 	if (!joinSecretSet)
