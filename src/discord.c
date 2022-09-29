@@ -684,7 +684,11 @@ void DRPC_UpdatePresence(void)
 			else
 			{
 				// Map name on tool tip
-				snprintf(mapname, 48, "On %s", G_BuildMapTitle(gamemap));
+				if (gamemap != 99 && gamestate != GS_TITLESCREEN)
+					snprintf(mapname, 48, "On %s", G_BuildMapTitle(gamemap));
+				else
+					snprintf(mapname, 14, "Title Screen");
+					
 				discordPresence.largeImageText = mapname;
 			}
 
