@@ -713,7 +713,7 @@ void DRPC_UpdatePresence(void)
 
 			if (ultimatemode)
 			{	
-				if (!cv_discordstatusmemes)
+				if (!cv_discordstatusmemes.value)
 					discordPresence.largeImageText = "Just Beat Ultimate Mode!";
 				else
 					discordPresence.details = "Look, It's my Greatest Achievement: An Ultimate Mode Complete Status";
