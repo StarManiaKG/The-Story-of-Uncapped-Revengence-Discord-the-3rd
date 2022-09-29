@@ -783,7 +783,7 @@ void DRPC_UpdatePresence(void)
 					for (i = 0; i < MAXCUSTOMCHARS; i++)
 					{
 						knuckles = (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]));
-						CONS_Printf(M_GetText(knuckles))
+						CONS_Printf(M_GetText(knuckles));
 
 						// Character Images
 						snprintf(charimg, 11, "charcustom"); // Unsupported
