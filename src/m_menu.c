@@ -1657,7 +1657,7 @@ static menuitem_t OP_DiscordOptionsMenu[] =
 
 	{IT_HEADER,									NULL, "Custom Discord Status",	NULL,					 	 84},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,		NULL, "Custom Header",			&cv_customdiscorddetails, 	 96},
-	{IT_STRING | IT_CVAR | IT_CV_STRING,		NULL, "Custom State",			&cv_customdiscordstate, 	 116},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,		NULL, "Custom State",			&cv_customdiscordstate, 	 126},
 
 	{IT_STRING | IT_SUBMENU,					NULL, "Output",					&OP_CustomStatusOutputDef,	 156},
 };
