@@ -519,7 +519,7 @@ void DRPC_UpdatePresence(void)
 					emeraldCount += 1;
 
 			//// Set Status Picture (Just in Case) ////
-			if (cv_discordshowonstatus.value == 2 || cv_discordshowonstatus.value == 3 || cv_discordshowonstatus.value == 4)
+			if (cv_discordshowonstatus.value == 2 || cv_discordshowonstatus.value == 3 || cv_discordshowonstatus.value == 4 || cv_discordshowonstatus.value == 6)
 			{
 				discordPresence.largeImageKey = "misctitle";
 				discordPresence.largeImageText = "Sonic Robo Blast 2";
@@ -600,8 +600,9 @@ void DRPC_UpdatePresence(void)
 				}
 			}
 
+			//// Score ////
 			if (cv_discordshowonstatus.value == 2)
-				strlcat(detailstr, va("Current Score: %d", players[consoleplayer].score), 64);
+				snprintf(detailstr, "Current Score: %d", players[consoleplayer].score);
 
 			discordPresence.details = detailstr;
 		}
