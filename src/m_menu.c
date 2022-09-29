@@ -1675,6 +1675,7 @@ enum
 	op_discordshowonstatus = 7,
 	op_customdiscorddetails = 9,
 	op_customdiscordstate = 10,
+	op_customstatusoutputdef = 11,
 };
 #endif
 
@@ -2627,7 +2628,7 @@ void Discordcustomstatus_option_Onchange(void)
 	OP_DiscordOptionsMenu[op_customdiscordstate].status =
 		(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 
-	OP_DiscordOptionsMenu[11].status =
+	OP_DiscordOptionsMenu[op_customstatusoutputdef].status =
 		(cv_discordrp.value == 1 ? IT_STRING|IT_SUBMENU : IT_DISABLED);
 
 	//Is Custom Status On?
@@ -2642,7 +2643,7 @@ void Discordcustomstatus_option_Onchange(void)
 		OP_DiscordOptionsMenu[op_customdiscordstate].status =
 			(cv_discordshowonstatus.value == 7 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 
-		OP_DiscordOptionsMenu[11].status =
+		OP_DiscordOptionsMenu[op_customstatusoutputdef].status =
 			(cv_discordshowonstatus.value == 7 ? IT_STRING|IT_SUBMENU : IT_DISABLED);
 	}
 
