@@ -804,8 +804,6 @@ void DRPC_UpdatePresence(void)
 								snprintf(charname, 32, "%s is Spectating Air", player_names[consoleplayer]); // why are you spectating air
 						}		
 					}
-
-					ASSIGNOC = true
 				}
 				//// Bots ////
 				else if (players[1].bot)
