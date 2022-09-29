@@ -765,9 +765,9 @@ void DRPC_UpdatePresence(void)
 				{	
 					for (i = 0; i < 22; i++)
 					{
-						CONS_Printf(M_GetText(i));
 						// Character Images
 						snprintf(charimg, 11, "charcustom"); // Unsupported
+						discordPresence.smallImageKey = charimg; // Also Unsupported
 
 						if (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]))
 						{
@@ -817,6 +817,7 @@ void DRPC_UpdatePresence(void)
 						{
 							// Character Images
 							snprintf(charimg, 11, "charcustom"); // Unsupported
+							discordPresence.smallImageKey = charimg; // Also Unsupported
 
 							if (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]))
 							{
