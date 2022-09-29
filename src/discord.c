@@ -594,7 +594,7 @@ void DRPC_UpdatePresence(void)
 			}
 
 			if (cv_discordshowonstatus.value == 2)
-				strlcat(detailstr, "Current Score: %d", players[consoleplayer].score);
+				strlcat(detailstr, va("Current Score: %d", players[consoleplayer].score), 64);
 
 			discordPresence.details = detailstr;
 		}
