@@ -780,7 +780,6 @@ void DRPC_UpdatePresence(void)
 				{	
 					for (i = 0; i < 22; i++)
 					{
-						CONS_Printf(M_GetText(i));
 						// Character Images
 						snprintf(charimg, 11, "charcustom"); // Unsupported
 
@@ -850,7 +849,7 @@ void DRPC_UpdatePresence(void)
 			}
 
 			if (playername)
-				charname = playername;
+				charname[playername];
 			
 			// Apply Character Images and Names
 			discordPresence.smallImageKey = charimg;
