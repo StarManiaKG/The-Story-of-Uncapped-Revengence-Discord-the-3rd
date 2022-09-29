@@ -607,11 +607,7 @@ void DRPC_UpdatePresence(void)
 			if (!cv_discordshowonstatus.value)
 			{
 				discordPresence.largeImageText = "Title Screen";
-				
-				if (!menuactive)
-					discordPresence.state = "Main Menu";
-				else
-					discordPresence.state = "Scrolling through the Main Menu";
+				discordPresence.state = "Main Menu";
 			}
 		}
 	}
