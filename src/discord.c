@@ -413,11 +413,9 @@ void DRPC_UpdatePresence(void)
 	char mapimg[8+1];
 	char mapname[5+21+21+2+1];
 
+	//char charavatar[25+50+15+10];
 	char charimg[4+SKINNAMESIZE+1];
 	char charname[11+SKINNAMESIZE+1];
-
-	//char playerimg[25+50+15+10];
-	char playername[11+MAXPLAYERNAME+1];
 
 	char servertype[15+10];
 	char servertag[11+26+15+8];
@@ -792,20 +790,22 @@ void DRPC_UpdatePresence(void)
 					
 					// Player Names
 					if (!players[consoleplayer].spectator)
-						snprintf(playername, 32, "Playing As: %s", skins[players[consoleplayer].skin].realname); // Character
+						snprintf(charname, 32, "Playing As: %s", skins[players[consoleplayer].skin].realname); // Character
 					else
 					{
 						// Viewpoint
 						if (playeringame[displayplayer])
-							snprintf(playername, 32, "%s is Spectating %s", player_names[consoleplayer], player_names[displayplayer]); // Combine Player Names Together
+							snprintf(charname, 32, "%s is Spectating %s", player_names[consoleplayer], player_names[displayplayer]); // Combine Player Names Together
 						else
 						{
 							if (!cv_discordstatusmemes.value)
-								snprintf(playername, 32, "%s is Spectating", player_names[consoleplayer]); // you're no fun, you know
+								snprintf(charname, 32, "%s is Spectating", player_names[consoleplayer]); // you're no fun, you know
 							else
-								snprintf(playername, 32, "%s is Spectating Air", player_names[consoleplayer]); // why are you spectating air
+								snprintf(charname, 32, "%s is Spectating Air", player_names[consoleplayer]); // why are you spectating air
 						}		
 					}
+
+					ASSIGNOC = true
 				}
 				//// Bots ////
 				else if (players[1].bot)
@@ -844,12 +844,9 @@ void DRPC_UpdatePresence(void)
 			else
 			{
 				// render player names and the character image
-				snprintf(playername, 50, "%s & %s", player_names[consoleplayer], player_names[secondarydisplayplayer]);
+				snprintf(charname, 50, "%s & %s", player_names[consoleplayer], player_names[secondarydisplayplayer]);
 				snprintf(charimg, 15, "charsonictails");
 			}
-
-			if (playername)
-				charname[playername];
 			
 			// Apply Character Images and Names
 			discordPresence.smallImageKey = charimg;
