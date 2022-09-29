@@ -606,8 +606,7 @@ void DRPC_UpdatePresence(void)
 				
 			if (!cv_discordshowonstatus.value)
 			{
-				if ((gamemap == 99 || titlemapinaction) && (gamestate == GS_TITLESCREEN ||gamestate == GS_LEVEL)) //don't ask me
-					discordPresence.largeImageText = "Title Screen";
+				discordPresence.largeImageText = "Title Screen";
 				
 				if (!menuactive)
 					discordPresence.state = "Main Menu";
@@ -673,9 +672,12 @@ void DRPC_UpdatePresence(void)
 				strlwr(mapimg);
 				discordPresence.largeImageKey = mapimg; // Map image
 			}
-			//Fixes the Null Map Issue When Loading Into the Title Screen
-			else if ((gamemap == 99) || (gamestate == GS_TITLESCREEN))
+			//Fixes Null Issues When Loading Into the Title Screen
+			else if ((gamemap == 99 || titlemapinaction) || (gamestate == GS_TITLESCREEN))
+			{
 				discordPresence.largeImageKey = "misctitle";
+				discordPresence.largeImageText = "Title Screen";
+			}
 			else
 				discordPresence.largeImageKey = "mapcustom";
 			
