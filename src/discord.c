@@ -773,12 +773,15 @@ void DRPC_UpdatePresence(void)
 				int sonic = (strcmp(skins[players[consoleplayer].skin].name, "sonic"));
 				int tails = (strcmp(skins[players[secondarydisplayplayer].skin].name, "tails"));
 
+				INT32 MAXCUSTOMCHARS = 22;
+
 				//// No Bots ////
 				if (!players[1].bot || netgame)
 				{	
-					for (i = 0; i < 22; i++)
+					for (i = 0; i < MAXCUSTOMCHARS; i++)
 					{
 						// Character Images
+						CONS_Printf(M_GetText(strlen(i)));
 						snprintf(charimg, 11, "charcustom"); // Unsupported
 
 						if (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]))
@@ -822,7 +825,7 @@ void DRPC_UpdatePresence(void)
 					// Multiple Bots?
 					else
 					{
-						for (i = 0; i < 22; i++)
+						for (i = 0; i < MAXCUSTOMCHARS; i++)
 						{
 							// Character Images
 							snprintf(charimg, 11, "charcustom"); // Unsupported
@@ -847,7 +850,7 @@ void DRPC_UpdatePresence(void)
 			}
 			
 			// Apply Character Images and Names
-			discordPresence.smallImageKey = charimg;
+			discordPresence.smallImageKey = charimg; // Character image
 			discordPresence.smallImageText = charname; // Character name, Bot name (if they exist)
 		}
 	}
