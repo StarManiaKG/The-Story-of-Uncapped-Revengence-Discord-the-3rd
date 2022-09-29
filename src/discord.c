@@ -672,11 +672,11 @@ void DRPC_UpdatePresence(void)
 				strlwr(mapimg);
 				discordPresence.largeImageKey = mapimg; // Map image
 			}
-			//Fixes Null Issues When Loading Into the Title Screen
-			else if ((gamestate == GS_TITLESCREEN))
-				discordPresence.largeImageKey = "misctitle";
 			else
-				discordPresence.largeImageKey = "mapcustom";
+			{
+				if (!gamestate == GS_TITLESCREEN) //tiny null fix
+					discordPresence.largeImageKey = "mapcustom";
+			}
 			
 			if (mapheaderinfo[gamemap - 1]->menuflags & LF2_HIDEINMENU)
 				// Hell map, hide the name
@@ -686,8 +686,12 @@ void DRPC_UpdatePresence(void)
 				// Map name on tool tip
 				if (gamemap != 99 && gamestate != GS_TITLESCREEN)
 					snprintf(mapname, 48, "On %s", G_BuildMapTitle(gamemap));
+				//fixes null map issue: electric boogalo
 				else
-					snprintf(mapname, 48, "Title Screen"); //fixes null map issue: electric boogalo
+				{
+					snprintf(mapname, 48, "Title Screen");
+					discordPresence.largeImageKey = "misctitle";
+				}
 
 				discordPresence.largeImageText = mapname;
 			}
