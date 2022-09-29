@@ -602,7 +602,7 @@ void DRPC_UpdatePresence(void)
 
 			//// Score ////
 			if (cv_discordshowonstatus.value == 2)
-				snprintf(detailstr, 25, "Current Score: %s", players[consoleplayer].score);
+				snprintf(detailstr, 25, "Current Score: %d", players[consoleplayer].score);
 
 			discordPresence.details = detailstr;
 		}
