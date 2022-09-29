@@ -518,6 +518,13 @@ void DRPC_UpdatePresence(void)
 				if (emeralds & (1<<i))
 					emeraldCount += 1;
 
+			//// Set Status Picture (Just in Case) ////
+			if (cv_discordshowonstatus.value == 2 || cv_discordshowonstatus.value == 3 || cv_discordshowonstatus.value == 4)
+			{
+				discordPresence.largeImageKey = "misctitle";
+				discordPresence.largeImageText = "Sonic Robo Blast 2";
+			}
+
 			//// Emblems ////
 			if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 4)
 				snprintf(detailstr, 20, "%d/%d Emblems", M_CountEmblems(), (numemblems + numextraemblems));
