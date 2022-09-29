@@ -773,6 +773,7 @@ void DRPC_UpdatePresence(void)
 				//Vanilla, as you can see
 				int sonic = (strcmp(skins[players[consoleplayer].skin].name, "sonic"));
 				int tails = (strcmp(skins[players[secondarydisplayplayer].skin].name, "tails"));
+				int knuckles;
 
 				INT32 MAXCUSTOMCHARS = 22;
 
@@ -781,10 +782,12 @@ void DRPC_UpdatePresence(void)
 				{	
 					for (i = 0; i < MAXCUSTOMCHARS; i++)
 					{
+						knuckles = (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]));
+
 						// Character Images
 						snprintf(charimg, 11, "charcustom"); // Unsupported
 
-						if (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]))
+						if (knuckles == 0)
 						{
 							snprintf(charimg, 32, "char%s", skins[players[consoleplayer].skin].name); // Supported
 							break;
@@ -827,10 +830,12 @@ void DRPC_UpdatePresence(void)
 					{
 						for (i = 0; i < MAXCUSTOMCHARS; i++)
 						{
+							knuckles = (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]));
+
 							// Character Images
 							snprintf(charimg, 11, "charcustom"); // Unsupported
 
-							if (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]))
+							if (knuckles == 0)
 							{
 								snprintf(charimg, 32, "char%s", skins[players[consoleplayer].skin].name); // Supported
 								break;
