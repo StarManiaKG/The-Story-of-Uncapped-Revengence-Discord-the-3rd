@@ -1656,9 +1656,10 @@ static menuitem_t OP_DiscordOptionsMenu[] =
 	{IT_STRING | IT_CVAR,						NULL, "Show on Status",			&cv_discordshowonstatus, 	 74},
 
 	{IT_HEADER,									NULL, "Custom Discord Status",	NULL,					 	 84},
-	{IT_STRING | IT_CVAR | IT_CV_STRING,		NULL, "Custom Status",			&cv_customdiscordstatus, 	 96},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,		NULL, "Custom Header",			&cv_customdiscorddetails, 	 96},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,		NULL, "Custom State",			&cv_customdiscordstate, 	 116},
 
-	{IT_STRING | IT_SUBMENU,					NULL, "Output",					&OP_CustomStatusOutputDef,	 136},
+	{IT_STRING | IT_SUBMENU,					NULL, "Output",					&OP_CustomStatusOutputDef,	 156},
 };
 
 static menuitem_t OP_CustomStatusOutputMenu[] =
@@ -2612,8 +2613,11 @@ void Discordcustomstatus_option_Onchange(void)
 	
 	OP_DiscordOptionsMenu[9].status =
 		(cv_discordrp.value == 1 ? IT_STRING|IT_CVAR|IT_CV_STRING : IT_DISABLED);
-
+	
 	OP_DiscordOptionsMenu[10].status =
+		(cv_discordrp.value == 1 ? IT_STRING|IT_CVAR|IT_CV_STRING : IT_DISABLED);
+
+	OP_DiscordOptionsMenu[11].status =
 		(cv_discordrp.value == 1 ? IT_STRING|IT_SUBMENU : IT_DISABLED);
 
 	//Is Custom Status On?
@@ -2626,6 +2630,9 @@ void Discordcustomstatus_option_Onchange(void)
 			(cv_discordshowonstatus.value == 7 ? IT_STRING|IT_CVAR|IT_CV_STRING : IT_DISABLED);
 
 		OP_DiscordOptionsMenu[10].status =
+		(cv_discordrp.value == 1 ? IT_STRING|IT_CVAR|IT_CV_STRING : IT_DISABLED);
+
+		OP_DiscordOptionsMenu[11].status =
 			(cv_discordshowonstatus.value == 7 ? IT_STRING|IT_SUBMENU : IT_DISABLED);
 	}
 
