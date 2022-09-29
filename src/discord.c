@@ -674,7 +674,7 @@ void DRPC_UpdatePresence(void)
 			}
 			else
 			{
-				if (!gamestate == GS_TITLESCREEN) //tiny null fix
+				if (gamestate != GS_TITLESCREEN) //tiny null fix
 					discordPresence.largeImageKey = "mapcustom";
 			}
 			
