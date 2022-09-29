@@ -421,7 +421,7 @@ void DRPC_UpdatePresence(void)
 	char servertag[11+26+15+8];
 
 	INT32 i;
-	
+
 	//Tiny Emeralds Counter
 	UINT8 emeraldCount = 0;
 
@@ -782,7 +782,6 @@ void DRPC_UpdatePresence(void)
 					for (i = 0; i < MAXCUSTOMCHARS; i++)
 					{
 						// Character Images
-						CONS_Printf(M_GetText(strlen(i)));
 						snprintf(charimg, 11, "charcustom"); // Unsupported
 
 						if (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]))
