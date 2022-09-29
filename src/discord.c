@@ -38,7 +38,7 @@
 // length of IP strings
 #define IP_SIZE 21
 
-static CV_PossibleValue_t discordstatustype_cons_t[] = {{0, "All"}, {1, "Only Characters"}, {2, "Only Player Name"}, {3, "Only Emeralds"}, {4, "Only Emblems"}, {5, "Only Levels"}, {6, "Only Gametype"}, {7, "Custom"}, {0, NULL}};
+static CV_PossibleValue_t discordstatustype_cons_t[] = {{0, "All"}, {1, "Only Characters"}, {2, "Only Score"}, {3, "Only Emeralds"}, {4, "Only Emblems"}, {5, "Only Levels"}, {6, "Only Gametype"}, {7, "Custom"}, {0, NULL}};
 consvar_t cv_discordrp = CVAR_INIT ("discordrp", "On", CV_SAVE|CV_CALL, CV_OnOff, Discordcustomstatus_option_Onchange);
 consvar_t cv_discordstreamer = CVAR_INIT ("discordstreamer", "Off", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
 consvar_t cv_discordasks = CVAR_INIT ("discordasks", "Yes", CV_SAVE|CV_CALL, CV_YesNo, DRPC_UpdatePresence);
@@ -593,6 +593,9 @@ void DRPC_UpdatePresence(void)
 				}
 			}
 
+			if (cv_discordshowonstatus.value == 2)
+				strlcat(detailstr, "Current Score: %d", players[consoleplayer].score);
+
 			discordPresence.details = detailstr;
 		}
 		else if (demoplayback && !titledemo)
@@ -604,7 +607,11 @@ void DRPC_UpdatePresence(void)
 			if (!cv_discordshowonstatus.value)
 			{
 				discordPresence.largeImageText = "Title Screen";
-				discordPresence.state = "Main Menu";
+				
+				if (!menuactive)
+					discordPresence.state = "Main Menu";
+				else
+					discordPresence.state = "Scrolling through the Main Menu";
 			}
 		}
 	}
@@ -612,10 +619,15 @@ void DRPC_UpdatePresence(void)
 	//// Gametypes ////
 	if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 6)
 	{
-		if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) && Playing())
+		if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) && Playing() && !paused)
 		{
 			if (modeattacking)
-				discordPresence.details = "Time Attacking";
+			{
+				if (!(maptol == TOL_NIGHTS && maptol == TOL_XMAS))
+					discordPresence.details = "Playing Time Attack";
+				else
+					discordPresence.details = "Playing NiGHTS Mode";
+			}
 			else
 			{
 				if (!splitscreen) 
@@ -629,12 +641,17 @@ void DRPC_UpdatePresence(void)
 					{
 						if ((gametype == GT_COOP) && (!netgame))
 							discordPresence.state = "Playing Single-Player";
+						
+						if (ultimatemode)
+							discordPresence.state = "Taking on Ultimate Mode";
 					}
 				}
 				else
 					discordPresence.state = "Playing Split-Screen";
 			}
 		}
+		else if (paused)
+			discordPresence.state = "This Player's Game is Currently Paused";
 	}
 
 	if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 5)
@@ -656,13 +673,8 @@ void DRPC_UpdatePresence(void)
 				discordPresence.largeImageKey = mapimg; // Map image
 			}
 			//Fixes the Null Map Issue When Loading Into the Title Screen
-			else if ((gamemap == 99) || (gamestate == GS_TITLESCREEN) || (gamestate == GS_EVALUATION))
-			{
+			else if ((gamemap == 99) || (gamestate == GS_TITLESCREEN))
 				discordPresence.largeImageKey = "misctitle";
-				
-				if (gamestate == GS_EVALUATION)
-					discordPresence.largeImageText = "Evaluating Results";
-			}
 			else
 				discordPresence.largeImageKey = "mapcustom";
 			
@@ -688,6 +700,23 @@ void DRPC_UpdatePresence(void)
 					const time_t mapTimeEnd = mapTimeStart + ((timelimitintics + 1) / TICRATE);
 					discordPresence.endTimestamp = mapTimeEnd;
 				}
+			}
+		}
+		else if ((gamestate == GS_EVALUATION || gamestate == GS_GAMEEND || gamestate == GS_CREDITS || gamestate == GS_ENDING|| gamestate == GS_CONTINUING)
+		{	
+			discordPresence.largeImageKey = "misctitle";
+				
+			if (gamestate == GS_EVALUATION && !ultimatemode)
+				discordPresence.largeImageText = "Evaluating Results";
+			else if (gamestate == GS_CONTINUING) 
+				discordPresence.largeImageText = "On the Continue Screen";
+
+			if (ultimatemode)
+			{	
+				if (!cv_discordstatusmemes)
+					discordPresence.largeImageText = "Just Beat Ultimate Mode!";
+				else
+					discordPresence.details = "Look, It's my Greatest Achievement: An Ultimate Mode Complete Status";
 			}
 		}
 	}
