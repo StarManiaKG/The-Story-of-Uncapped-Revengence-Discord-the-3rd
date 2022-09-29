@@ -702,7 +702,7 @@ void DRPC_UpdatePresence(void)
 				}
 			}
 		}
-		else if ((gamestate == GS_EVALUATION || gamestate == GS_GAMEEND || gamestate == GS_CREDITS || gamestate == GS_ENDING|| gamestate == GS_CONTINUING)
+		else if (gamestate == GS_EVALUATION || gamestate == GS_GAMEEND || gamestate == GS_CREDITS || gamestate == GS_ENDING|| gamestate == GS_CONTINUING)
 		{	
 			discordPresence.largeImageKey = "misctitle";
 				
