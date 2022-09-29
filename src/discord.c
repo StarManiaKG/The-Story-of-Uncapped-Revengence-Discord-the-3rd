@@ -421,6 +421,7 @@ void DRPC_UpdatePresence(void)
 	char servertag[11+26+15+8];
 
 	INT32 i;
+	
 	//Tiny Emeralds Counter
 	UINT8 emeraldCount = 0;
 
