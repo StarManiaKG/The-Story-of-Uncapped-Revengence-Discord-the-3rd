@@ -606,7 +606,8 @@ void DRPC_UpdatePresence(void)
 				
 			if (!cv_discordshowonstatus.value)
 			{
-				discordPresence.largeImageText = "Title Screen";
+				if (gamemap == 99 || gamestate != GS_TITLESCREEN)
+					discordPresence.largeImageText = "Title Screen";
 				
 				if (!menuactive)
 					discordPresence.state = "Main Menu";
@@ -686,9 +687,7 @@ void DRPC_UpdatePresence(void)
 				// Map name on tool tip
 				if (gamemap != 99 && gamestate != GS_TITLESCREEN)
 					snprintf(mapname, 48, "On %s", G_BuildMapTitle(gamemap));
-				else
-					snprintf(mapname, 14, "Title Screen");
-					
+
 				discordPresence.largeImageText = mapname;
 			}
 
