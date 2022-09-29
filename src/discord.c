@@ -673,7 +673,7 @@ void DRPC_UpdatePresence(void)
 				discordPresence.largeImageKey = mapimg; // Map image
 			}
 			//Fixes Null Issues When Loading Into the Title Screen
-			else if ((gamemap == 99 || titlemapinaction) || (gamestate == GS_TITLESCREEN))
+			else if ((gamemap == 99 || titlemapinaction || gamestate == GS_TITLESCREEN))
 			{
 				discordPresence.largeImageKey = "misctitle";
 				discordPresence.largeImageText = "Title Screen";
