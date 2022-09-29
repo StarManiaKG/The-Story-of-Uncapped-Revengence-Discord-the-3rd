@@ -1669,10 +1669,12 @@ static menuitem_t OP_CustomStatusOutputMenu[] =
 
 enum
 {
+	op_richpresenceheader = 3,
 	op_discordasks = 4,
 	op_discordinvites = 5,
 	op_discordstatusmemes = 6,
 	op_discordshowonstatus = 7,
+	op_customstatusheader = 3,
 	op_customdiscorddetails = 9,
 	op_customdiscordstate = 10,
 	op_customstatusoutputdef = 11,
@@ -1731,15 +1733,15 @@ static menuitem_t OP_ServerOptionsMenu[] =
 #ifndef NONET
 	{IT_HEADER, NULL, "Advanced Settings", NULL, 230},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,	
-							 NULL, "Master Server",	   				   &cv_masterserver,       236},
+							 NULL, "Master Server",	   				   &cv_masterserver,       236}, //36
 	{IT_STRING | IT_CVAR | IT_CV_STRING,	
-							 NULL, "Holepunch Server",  			   &cv_holepunchserver,    250},
+							 NULL, "Holepunch Server",  			   &cv_holepunchserver,    250}, //37
 
-	{IT_STRING | IT_CVAR,    NULL, "Join delay",                       &cv_joindelay,          264}, //[39]
-	{IT_STRING | IT_CVAR,    NULL, "Attempts to resynchronise",        &cv_resynchattempts,    269},
+	{IT_STRING | IT_CVAR,    NULL, "Join delay",                       &cv_joindelay,          264}, //38
+	{IT_STRING | IT_CVAR,    NULL, "Attempts to resynchronise",        &cv_resynchattempts,    269}, //39
 
-	{IT_STRING | IT_CVAR,    NULL, "Show IP Address of Joiners",       &cv_showjoinaddress,    274},
-	{IT_STRING | IT_CVAR,    NULL, "Show Connecting Players",          &cv_noticedownload,     279},
+	{IT_STRING | IT_CVAR,    NULL, "Show IP Address of Joiners",       &cv_showjoinaddress,    274}, //40
+	{IT_STRING | IT_CVAR,    NULL, "Show Connecting Players",          &cv_noticedownload,     279}, //41
 #endif
 };
 
@@ -2604,7 +2606,7 @@ void Moviemode_option_Onchange(void)
 void Discordcustomstatus_option_Onchange(void)
 {
 	//Is Rich Presence Even On?
-	OP_DiscordOptionsMenu[3].status =
+	OP_DiscordOptionsMenu[op_richpresenceheader].status =
 		(cv_discordrp.value == 1 ? IT_HEADER : IT_DISABLED);
 	
 	OP_DiscordOptionsMenu[op_discordasks].status =
@@ -2619,7 +2621,7 @@ void Discordcustomstatus_option_Onchange(void)
 	OP_DiscordOptionsMenu[op_discordshowonstatus].status =
 		(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING : IT_DISABLED);
 
-	OP_DiscordOptionsMenu[8].status =
+	OP_DiscordOptionsMenu[op_customstatusheader].status =
 		(cv_discordrp.value == 1 ? IT_HEADER : IT_DISABLED);
 
 	OP_DiscordOptionsMenu[op_customdiscorddetails].status =
@@ -2634,7 +2636,7 @@ void Discordcustomstatus_option_Onchange(void)
 	//Is Custom Status On?
 	if (cv_discordrp.value)
 	{
-		OP_DiscordOptionsMenu[8].status =
+		OP_DiscordOptionsMenu[op_customstatusheader].status =
 			(cv_discordshowonstatus.value == 7 ? IT_HEADER : IT_DISABLED);
 		
 		OP_DiscordOptionsMenu[op_customdiscorddetails].status =
@@ -11810,10 +11812,12 @@ static void M_ServerOptions(INT32 choice)
 		OP_ServerOptionsMenu[ 2].status = IT_GRAYEDOUT; // Max players
 		OP_ServerOptionsMenu[ 3].status = IT_GRAYEDOUT; // Allow add-on downloading
 		OP_ServerOptionsMenu[ 4].status = IT_GRAYEDOUT; // Allow players to join
-		OP_ServerOptionsMenu[37].status = IT_GRAYEDOUT; // Master server
-		//OP_ServerOptionsMenu[38].status = IT_GRAYEDOUT; // Holepunch server
-		OP_ServerOptionsMenu[39].status = IT_GRAYEDOUT; // Minimum delay between joins
-		OP_ServerOptionsMenu[40].status = IT_GRAYEDOUT; // Attempts to resynchronise
+		OP_ServerOptionsMenu[36].status = IT_GRAYEDOUT; // Master server
+		OP_ServerOptionsMenu[37].status = IT_GRAYEDOUT; // Holepunch server
+		OP_ServerOptionsMenu[38].status = IT_GRAYEDOUT; // Minimum delay between joins
+		OP_ServerOptionsMenu[39].status = IT_GRAYEDOUT; // Attempts to resynchronise
+		OP_ServerOptionsMenu[40].status = IT_GRAYEDOUT; // Display address of joining players
+		OP_ServerOptionsMenu[41].status = IT_GRAYEDOUT; //Log connecting player
 	}
 	else
 	{
@@ -11821,10 +11825,12 @@ static void M_ServerOptions(INT32 choice)
 		OP_ServerOptionsMenu[ 2].status = IT_STRING | IT_CVAR;
 		OP_ServerOptionsMenu[ 3].status = IT_STRING | IT_CVAR;
 		OP_ServerOptionsMenu[ 4].status = IT_STRING | IT_CVAR;
+		OP_ServerOptionsMenu[36].status = IT_STRING | IT_CVAR | IT_CV_STRING;
 		OP_ServerOptionsMenu[37].status = IT_STRING | IT_CVAR | IT_CV_STRING;
-		//OP_ServerOptionsMenu[38].status = IT_STRING | IT_CVAR | IT_CV_STRING;
+		OP_ServerOptionsMenu[38].status = IT_STRING | IT_CVAR;
 		OP_ServerOptionsMenu[39].status = IT_STRING | IT_CVAR;
 		OP_ServerOptionsMenu[40].status = IT_STRING | IT_CVAR;
+		OP_ServerOptionsMenu[41].status = IT_STRING | IT_CVAR;
 	}
 #endif
 
