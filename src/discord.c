@@ -770,11 +770,6 @@ void DRPC_UpdatePresence(void)
 					NULL
 				};
 
-				//Vanilla, as you can see
-				int sonic = (strcmp(skins[players[consoleplayer].skin].name, "sonic"));
-				int tails = (strcmp(skins[players[secondarydisplayplayer].skin].name, "tails"));
-				int knuckles;
-
 				INT32 MAXCUSTOMCHARS = 22;
 
 				//// No Bots ////
@@ -782,15 +777,19 @@ void DRPC_UpdatePresence(void)
 				{	
 					for (i = 0; i < MAXCUSTOMCHARS; i++)
 					{
-						knuckles = (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]));
+						
 
 						// Character Images
-						snprintf(charimg, 11, "charcustom"); // Unsupported
+						
 
-						if ((knuckles == 0))
+						if (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]) == 0)
 						{
 							snprintf(charimg, 32, "char%s", skins[players[consoleplayer].skin].name); // Supported
 							break;
+						}
+						else
+						{
+                            snprintf(charimg, 11, "charcustom"); // Unsupported
 						}
 					}
 					
@@ -818,7 +817,7 @@ void DRPC_UpdatePresence(void)
 					if (!players[2].bot)
 					{
 						// Character Tags
-						if ((sonic == 0) && (tails == 0)) // Are They Sonic and Tails?
+						if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") == 0) && (strcmp(skins[players[secondarydisplayplayer].skin].name, "tails") == 0)) // Are They Sonic and Tails?
 							snprintf(charimg, 15, "charsonictails"); // Put that Image on Then!
 						else
 							snprintf(charimg, 32, "char%s", skins[players[consoleplayer].skin].name);
@@ -830,15 +829,19 @@ void DRPC_UpdatePresence(void)
 					{
 						for (i = 0; i < MAXCUSTOMCHARS; i++)
 						{
-							knuckles = (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]));
+							
 
 							// Character Images
-							snprintf(charimg, 11, "charcustom"); // Unsupported
+							
 
-							if (knuckles == 0)
+							if (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]) == 0)
 							{
 								snprintf(charimg, 32, "char%s", skins[players[consoleplayer].skin].name); // Supported
 								break;
+							}
+							else
+							{
+								snprintf(charimg, 11, "charcustom"); // Unsupported
 							}
 						}
 	
