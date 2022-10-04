@@ -39,6 +39,7 @@
 #define IP_SIZE 21
 
 static CV_PossibleValue_t discordstatustype_cons_t[] = {{0, "All"}, {1, "Only Characters"}, {2, "Only Score"}, {3, "Only Emeralds"}, {4, "Only Emblems"}, {5, "Only Levels"}, {6, "Only Gametype"}, {7, "Custom"}, {0, NULL}};
+//static CV_PossibleValue_t customlargeimage_cons_t[] = {{0, "Sonic"}, {1, "Tails"}, {2, "Knuckles"}, {3, "Amy"}, {4, "Fang"}, {5, "Metalsonic"}, {0, NULL}};
 consvar_t cv_discordrp = CVAR_INIT ("discordrp", "On", CV_SAVE|CV_CALL, CV_OnOff, Discordcustomstatus_option_Onchange);
 consvar_t cv_discordstreamer = CVAR_INIT ("discordstreamer", "Off", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
 consvar_t cv_discordasks = CVAR_INIT ("discordasks", "Yes", CV_SAVE|CV_CALL, CV_YesNo, DRPC_UpdatePresence);
@@ -482,12 +483,11 @@ void DRPC_UpdatePresence(void)
 	{
 		switch (ms_RoomId)
 		{
-			case -1: snprintf(servertype, 26, "Private"); break; // Private server
 			case 33: snprintf(servertype, 26, "Standard"); break;
 			case 28: snprintf(servertype, 26, "Casual"); break;
 			case 38: snprintf(servertype, 26, "Custom Gametypes"); break;
 			case 31: snprintf(servertype, 26, "OLDC"); break;
-			default: snprintf(servertype, 26, "Regular"); break; // HOW
+			case -1: default: snprintf(servertype, 26, "Private"); break; // Private server
 		}
 
 		if (server)
@@ -546,14 +546,24 @@ void DRPC_UpdatePresence(void)
 					if (!cv_discordshowonstatus.value)
 					{
 						if (emeraldCount != 7)
-							strlcat(detailstr, va(", %d Emeralds", emeraldCount), 64);
+						{
+							if (emeraldCount > 1)
+								strlcat(detailstr, va(", %d Emeralds", emeraldCount), 64);
+							else
+								strlcat(detailstr, va(", %d Emerald", emeraldCount), 64);
+						}
 						else
 							strlcat(detailstr, ", All 7 Emeralds", 64);
 					}
 					else if (cv_discordshowonstatus.value == 3)
 					{
 						if (emeraldCount != 7)
-							strlcat(detailstr, va("%d Emeralds", emeraldCount), 64);
+						{
+							if (emeraldCount > 1)
+								strlcat(detailstr, va("%d Emeralds", emeraldCount), 64);
+							else
+								strlcat(detailstr, va("%d Emerald", emeraldCount), 64);
+						}
 						else
 							strlcat(detailstr, "All 7 Emeralds", 64);
 					}
@@ -576,7 +586,12 @@ void DRPC_UpdatePresence(void)
 					if (!cv_discordshowonstatus.value)
 					{
 						if (emeraldCount < 7 && emeraldCount != 3 && emeraldCount != 4)
-							strlcat(detailstr, va(", %d Emeralds", emeraldCount), 64);
+						{
+							if (emeraldCount > 1)
+								strlcat(detailstr, va(", %d Emeralds", emeraldCount), 64);
+							else
+								strlcat(detailstr, va(", %d Emerald", emeraldCount), 64);
+						}
 						else if (emeraldCount == 3)
 							// Fun Fact: the subtitles in Shadow the Hedgehog emphasized "fourth", even though Jason Griffith emphasized "damn" in this sentence
 							strlcat(detailstr, ", %d Emeralds; Where's That DAMN FOURTH", 64);
@@ -588,7 +603,12 @@ void DRPC_UpdatePresence(void)
 					else if (cv_discordshowonstatus.value == 3)
 					{
 						if (emeraldCount < 7 && emeraldCount != 3 && emeraldCount != 4)
-							strlcat(detailstr, va("%d Emeralds", emeraldCount), 64);
+						{
+							if (emeraldCount > 1)
+								strlcat(detailstr, va("%d Emeralds", emeraldCount), 64);
+							else
+								strlcat(detailstr, va("%d Emerald", emeraldCount), 64);
+						}
 						else if (emeraldCount == 3)
 							// You Already Know the Fun Fact lol
 							strlcat(detailstr, "%d Emeralds; Where's That DAMN FOURTH", 64);
@@ -647,8 +667,7 @@ void DRPC_UpdatePresence(void)
 					{
 						if ((gametype == GT_COOP) && (!netgame))
 							discordPresence.state = "Playing Single-Player";
-						
-						if (ultimatemode)
+						else if (ultimatemode)
 							discordPresence.state = "Taking on Ultimate Mode";
 					}
 				}
@@ -728,7 +747,7 @@ void DRPC_UpdatePresence(void)
 			if (ultimatemode)
 			{	
 				if (!cv_discordstatusmemes.value)
-					discordPresence.largeImageText = "Just Beat Ultimate Mode!";
+					discordPresence.details = "Just Beat Ultimate Mode!";
 				else
 					discordPresence.details = "Look, It's my Greatest Achievement: An Ultimate Mode Complete Status";
 			}
@@ -774,14 +793,10 @@ void DRPC_UpdatePresence(void)
 
 				//// No Bots ////
 				if (!players[1].bot || netgame)
-				{	
+				{
 					for (i = 0; i < MAXCUSTOMCHARS; i++)
 					{
-						
-
 						// Character Images
-						
-
 						if (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]) == 0)
 						{
 							snprintf(charimg, 32, "char%s", skins[players[consoleplayer].skin].name); // Supported
@@ -829,20 +844,14 @@ void DRPC_UpdatePresence(void)
 					{
 						for (i = 0; i < MAXCUSTOMCHARS; i++)
 						{
-							
-
 							// Character Images
-							
-
 							if (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]) == 0)
 							{
 								snprintf(charimg, 32, "char%s", skins[players[consoleplayer].skin].name); // Supported
 								break;
 							}
 							else
-							{
 								snprintf(charimg, 11, "charcustom"); // Unsupported
-							}
 						}
 	
 						snprintf(charname, 75, "Playing As: %s, %s, & Multiple Bots", skins[players[consoleplayer].skin].realname, skins[players[secondarydisplayplayer].skin].realname);

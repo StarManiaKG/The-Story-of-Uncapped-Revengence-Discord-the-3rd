@@ -1674,7 +1674,7 @@ enum
 	op_discordinvites = 5,
 	op_discordstatusmemes = 6,
 	op_discordshowonstatus = 7,
-	op_customstatusheader = 3,
+	op_customstatusheader = 8,
 	op_customdiscorddetails = 9,
 	op_customdiscordstate = 10,
 	op_customstatusoutputdef = 11,
@@ -6910,6 +6910,63 @@ static void M_AddonExec(INT32 ch)
 	COM_BufAddText(va("exec \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
 }
 
+// autoload a mod on game startup, like they're .kart files
+static void M_AddonAutoLoad(INT32 ch)
+{
+	// initalize these variables
+	const char *path;
+	char *filetowrite[MAX_WADPATH];
+	FILE *autoloadconfigfile;
+
+	if (ch != 'y' && ch != KEY_ENTER)
+	{
+		S_StartSound(NULL, sfx_lose);
+		return;
+	}
+	else
+	{
+		// first, find the file
+		path = va("%s"PATHSEP"%s", srb2home, AUTOLOADFILENAME);
+		autoloadconfigfile = fopen(path, "a");
+		// next, copy the name of the file
+		strcpy(filetowrite, va(menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
+		// then, execute the addon and store it in our autoload.cfg
+		switch (dirmenu[dir_on[menudepthleft]][DIR_TYPE])
+		{
+			case EXT_TXT:
+			case EXT_CFG:
+				COM_BufAddText(va("exec \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
+				fprintf(autoloadconfigfile, "exec %s\n", dirmenu[dir_on[menudepthleft]]+DIR_STRING);
+				S_StartSound(NULL, sfx_s3k50);
+				break;
+			case EXT_LUA:
+			case EXT_SOC:
+			case EXT_WAD:
+#ifdef USE_KART
+			case EXT_KART:
+#endif
+			case EXT_PK3:
+				if (!(refreshdirmenu & REFRESHDIR_MAX))
+				{
+					COM_BufAddText(va("addfile \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
+					fprintf(autoloadconfigfile, "addfile %s\n", dirmenu[dir_on[menudepthleft]]+DIR_STRING);
+					S_StartSound(NULL, sfx_s3k50);
+				}
+				else
+				{
+					M_StartMessage(va("%c%s\x80\nToo many addons are loaded! \nYou need to restart the game to autoload more mods. \nYou can still autoload console scripts though. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
+					S_StartSound(NULL, sfx_lose);
+				}
+				break;
+			default:
+				M_StartMessage(va("%c%s\x80\nYou can't autoload this. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
+				S_StartSound(NULL, sfx_lose);
+				break;
+		}
+		fclose(autoloadconfigfile);
+	}
+}
+
 #define len menusearch[0]
 static boolean M_ChangeStringAddons(INT32 choice)
 {
@@ -6950,6 +7007,7 @@ static boolean M_ChangeStringAddons(INT32 choice)
 
 static void M_HandleAddons(INT32 choice)
 {
+	boolean refresh = false; // refresh addons menu
 	boolean exitmenu = false; // exit to previous menu
 
 	if (M_ChangeStringAddons(choice))
@@ -6998,7 +7056,7 @@ static void M_HandleAddons(INT32 choice)
 			break;
 		case KEY_ENTER:
 			{
-				boolean refresh = true;
+				refresh = true;
 				if (!dirmenu[dir_on[menudepthleft]])
 					S_StartSound(NULL, sfx_lose);
 				else
@@ -7061,6 +7119,66 @@ static void M_HandleAddons(INT32 choice)
 #endif
 						case EXT_PK3:
 							COM_BufAddText(va("addfile \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
+							break;
+						default:
+							S_StartSound(NULL, sfx_lose);
+					}
+				}
+				if (refresh)
+					refreshdirmenu |= REFRESHDIR_NORMAL;
+			}
+			break;
+
+		//Adds Files Marked to Auto-Load
+		case KEY_LSHIFT:
+			{
+				refresh = true;
+
+				if (!dirmenu[dir_on[menudepthleft]])
+					S_StartSound(NULL, sfx_lose);
+				else
+				{
+					switch (dirmenu[dir_on[menudepthleft]][DIR_TYPE])
+					{
+						case EXT_FOLDER:
+							strcpy(&menupath[menupathindex[menudepthleft]],dirmenu[dir_on[menudepthleft]]+DIR_STRING);
+							M_StartMessage(va("%c%s\x80\nYou can't Autoload a Folder, Silly. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
+							S_StartSound(NULL, sfx_s224);
+							if ((menudepthleft) && (!preparefilemenu(false)))
+							{
+								S_StartSound(NULL, sfx_s224);
+								M_StartMessage(va("%c%s\x80\nThis folder is empty. \nYou can't autoload a folder anyways, silly. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
+								menupath[menupathindex[++menudepthleft]] = 0;
+							}
+							else if (menudepthleft)
+							{
+								M_StartMessage(va("%c%s\x80\nThis folder is too deep to navigate to! \nNot only can you not autoload a folder, \nbut who has folders this deep anyway? \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
+								S_StartSound(NULL, sfx_lose);
+								menupath[menupathindex[menudepthleft]] = 0;
+							}
+							break;
+						case EXT_UP:
+							S_StartSound(NULL, sfx_lose);
+							M_StartMessage(va("%c%s\x80\nNice try. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
+							menupath[menupathindex[++menudepthleft]] = 0;
+							if (!preparefilemenu(false))
+							{
+								UNEXIST;
+								return;
+							}
+							break;
+						case EXT_TXT:
+						case EXT_CFG:
+							M_StartMessage(va("%c%s\x80\nYou're trying to autoload a console script. \nIgnore my warning anyways? \n\n(Press 'Y' to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),M_AddonAutoLoad,MM_YESNO);
+							break;
+						case EXT_LUA:
+						case EXT_SOC:
+						case EXT_WAD:
+#ifdef USE_KART
+						case EXT_KART:
+#endif
+						case EXT_PK3:
+							M_StartMessage(va("%c%s\x80\nMark this Addon To Autoload on Startup? \nThis Addon Will Bypass Modified Game Checks. \n\n(Press 'Y' to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),M_AddonAutoLoad,MM_YESNO);
 							break;
 						default:
 							S_StartSound(NULL, sfx_lose);
