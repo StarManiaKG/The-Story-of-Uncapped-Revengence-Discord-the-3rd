@@ -137,6 +137,7 @@ char liveeventbackup[256];
 
 char srb2home[256] = ".";
 char srb2path[256] = ".";
+boolean autoloading = false;
 boolean usehome = true;
 const char *pandf = "%s" PATHSEP "%s";
 static char addonsdir[MAX_WADPATH];
@@ -830,6 +831,13 @@ void D_SRB2Loop(void)
 			}
 		}
 
+		if (autoloading)
+		{
+			savemoddata = false;
+			modifiedgame = false;
+			autoloading = false;
+		}
+
 		if (interp)
 		{
 			static float tictime = 0.0f;
@@ -919,12 +927,9 @@ void D_SRB2Loop(void)
 			M_SaveFrame();
 		if (takescreenshot)
 			M_DoScreenShot();
-
+		
 #ifdef HAVE_DISCORDRPC
-		if (! dedicated)
-		{
-			Discord_RunCallbacks();
-		}
+		Discord_RunCallbacks();
 #endif
 	}
 }
@@ -976,6 +981,10 @@ void D_StartTitle(void)
 	// (otherwise the game still thinks we're playing!)
 	SV_StopServer();
 	SV_ResetServer();
+
+#ifdef HAVE_DISCORDPRC
+	DRPC_UpdatePresence();
+#endif
 
 	for (i = 0; i < MAXPLAYERS; i++)
 		CL_ClearPlayer(i);
@@ -1071,6 +1080,30 @@ static void D_AddFolder(addfilelist_t *list, const char *file)
 	strcat(newfile, PATHSEP);
 
 	list->files[index] = newfile;
+}
+
+//
+// D_AutoLoadAddons
+//
+static void D_AutoLoadAddons(addfilelist_t *list, const char *file)
+{
+	char *newfile;
+	size_t index = 0;
+
+	REALLOC_FILE_LIST
+
+	//this is extremely dumb
+	for (index = 0; list->files[index]; index++)
+		;
+
+	newfile = malloc(strlen(file) + 1);
+	if (!newfile)
+		I_Error("D_AutoLoadAddons: No more free memory to Autoload %s", newfile);
+
+	autoloading = true;
+	strcpy(newfile, file);
+
+	COM_ImmedExecute(va("exec %s\n", newfile));
 }
 
 #undef REALLOC_FILE_LIST
@@ -1238,6 +1271,8 @@ void D_SRB2Main(void)
 
 	INT32 pstartmap = 1;
 	boolean autostart = false;
+
+	FILE *autoloadpath; //= va("%s"PATHSEP"%s", srb2home, AUTOLOADFILENAME); //autoload wad feature
 
 	/* break the version string into version numbers, for netplay */
 	D_ConvertVersionNumbers();
@@ -1430,9 +1465,18 @@ void D_SRB2Main(void)
 #endif
 
 	// load wad, including the main wad file
+	autoloadpath = fopen(va("%s"PATHSEP"%s",srb2home,AUTOLOADFILENAME), "r");
+
 	CONS_Printf("W_InitMultipleFiles(): Adding IWAD and main PWADs.\n");
 	W_InitMultipleFiles(&startupwadfiles);
 	D_CleanFile(&startupwadfiles);
+	if (autoloadpath)
+	{
+		mainwads++;
+		CONS_Printf("D_AutoLoadAddons(): Autoloading Addons.\n");
+		D_AutoLoadAddons(&startupwadfiles, va(pandf,srb2home,AUTOLOADFILENAME));
+		D_CleanFile(&startupwadfiles);
+	}
 
 #ifndef DEVELOP // md5s last updated 22/02/20 (ddmmyy)
 
@@ -1524,7 +1568,10 @@ void D_SRB2Main(void)
 		else
 		{
 			if (!M_CheckParm("-server"))
+			{
+				autoloading = false;
 				G_SetGameModified(true);
+			}
 			autostart = true;
 		}
 	}
@@ -1735,7 +1782,7 @@ void D_SRB2Main(void)
 				D_MapChange(pstartmap, gametype, ultimatemode, true, 0, false, false);
 			}
 		}
-	}
+	}	
 	else if (M_CheckParm("-skipintro"))
 	{
 		F_InitMenuPresValues();
@@ -1743,7 +1790,7 @@ void D_SRB2Main(void)
 	}
 	else
 		F_StartIntro(); // Tails 03-03-2002
-
+	
 	CON_ToggleOff();
 
 	if (dedicated && server)
@@ -1753,7 +1800,6 @@ void D_SRB2Main(void)
 		if (!P_LoadLevel(false, false))
 			I_Quit(); // fail so reset game stuff
 	}
-
 #ifdef HAVE_DISCORDRPC
 	DRPC_Init();
 #endif
