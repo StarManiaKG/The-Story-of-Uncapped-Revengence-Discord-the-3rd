@@ -85,8 +85,8 @@ if(${SRB2_CONFIG_HAVE_DISCORDRPC})
 		set(SRB2_HAVE_DISCORDRPC ON)
 		add_definitions(-DHAVE_DISCORDRPC)
 		add_definitions(-DUSE_STUN)
-		set(SRB2_DISCORDRPC_SOURCES discord.c stun.c)
-		set(SRB2_DISCORDRPC_HEADERS discord.h stun.h)
+		set(SRB2_DISCORDRPC_SOURCES discord.c stun.c) # discord_2.c
+		set(SRB2_DISCORDRPC_HEADERS discord.h stun.h) # discord_2.h
 		prepend_sources(SRB2_DISCORDRPC_SOURCES)
 		prepend_sources(SRB2_DISCORDRPC_HEADERS)
 		source_group("Discord Rich Presence" FILES ${SRB2_DISCORDRPC_SOURCES} ${SRB2_DISCORDRPC_HEADERS})
