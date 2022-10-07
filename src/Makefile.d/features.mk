@@ -63,7 +63,7 @@ libs+=-ldiscord-rpc
 CFLAGS+=-DHAVE_DISCORDRPC -DUSE_STUN
 opts+=-DHAVE_DISCORDRPC -DUSE_STUN
 OBJS+=$(OBJDIR)/discord.o $(OBJDIR)/stun.o
-sources+=discord.c stun.c
+sources+=discord.c stun.c # discord_2.c
 endif
 
 # (Valgrind is a memory debugger.)
