@@ -898,8 +898,8 @@ void DRPC_ShutDown(void)
 {
 	DRPC_UpdatePresence();
 	DRPC_EmptyRequests();
-	Discord_ClearPresence();
 	Discord_Shutdown();
+	Discord_ClearPresence();
 }
 
 #endif // HAVE_DISCORDRPC
