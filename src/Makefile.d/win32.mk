@@ -63,6 +63,17 @@ endif
 libs+=-ldiscord-rpc
 endif
 
+ifdef HAVE_DISCORDGAMESDK
+ifdef MINGW64
+opts+=-I../libs/discord-rpc/x86_64
+libs+=-L../libs/discord-rpc/x86_64
+else
+opts+=-I../libs/discord-rpc/x86
+libs+=-L../libs/discord-rpc/x86
+endif
+libs+=-ldiscord_game_sdk
+endif
+
 mingw:=$(i686)-w64-mingw32
 
 define _set =
