@@ -273,9 +273,11 @@ if(${SDL2_FOUND})
 			getwinlib(libgcc_s_sjlj-1 "libgcc_s_sjlj-1.dll")
 			getwinlib(libstdc++-6 "libstdc++-6.dll")
 		endif()
-
 		if(${SRB2_CONFIG_HAVE_DISCORDRPC})
 			getwinlib(discord-rpc "discord-rpc.dll")
+		endif()
+		if(${SRB2_CONFIG_HAVE_DISCORDGAMESDK})
+			getwinlib(discord_game_sdk "discord_game_sdk.dll")
 		endif()
 
 		install(PROGRAMS

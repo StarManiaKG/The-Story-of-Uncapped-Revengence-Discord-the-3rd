@@ -21,21 +21,13 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <assert.h>
-#include "discord_game_sdk.h"
+#include "discord/discord.h"
 #ifdef _WIN32
 #include <Windows.h>
 #else
 #include <unistd.h>
 #include <string.h>
 #endif
-
-extern consvar_t cv_discordrp;
-extern consvar_t cv_discordstreamer;
-extern consvar_t cv_discordasks;
-extern consvar_t cv_discordshowonstatus;
-extern consvar_t cv_customdiscorddetails;
-extern consvar_t cv_customdiscordstate;
-extern consvar_t cv_discordstatusmemes;
 
 typedef struct srb2gsdk_s {
     struct IDiscordCore* core;
