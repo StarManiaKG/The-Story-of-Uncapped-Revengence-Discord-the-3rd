@@ -14,6 +14,9 @@ f_wipe.c
 g_demo.c
 g_game.c
 g_input.c
+ts_main.c
+ts_draw.c
+ts_custom.c
 am_map.c
 command.c
 console.c

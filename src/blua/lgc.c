@@ -11,6 +11,7 @@
 
 #include "lua.h"
 
+#include "lauxlib.h"
 #include "ldebug.h"
 #include "ldo.h"
 #include "lfunc.h"

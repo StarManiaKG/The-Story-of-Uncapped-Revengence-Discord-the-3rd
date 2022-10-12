@@ -100,6 +100,7 @@ typedef struct model_s
 
 	char *mdlFilename;
 	boolean unloaded;
+	boolean hasVBOs;
 
 	char *framenames;
 	boolean interpolate[256];
