@@ -20,6 +20,7 @@
 #include "lobject.h"
 #include "lstate.h"
 #include "lstring.h"
+#include "lauxlib.h"
 #include "lvm.h"
 
 

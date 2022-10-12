@@ -225,6 +225,7 @@ model_t *LoadModel(const char *filename, int ztag)
 	for (i = 0; i < model->numMeshes; i++)
 		model->meshes[i].originaluvs = model->meshes[i].uvs;
 
+	model->hasVBOs = false;
 	model->max_s = 1.0;
 	model->max_t = 1.0;
 	model->vbo_max_s = 1.0;

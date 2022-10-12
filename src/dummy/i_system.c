@@ -16,7 +16,7 @@ tic_t I_GetTime(void)
 	return 0;
 }
 
-fixed_t I_GetTimeFrac(void)
+fixed_t I_GetTimeFrac(void) //int I_GetTimeMicros(void)
 {
 	return 0;
 }
@@ -67,6 +67,14 @@ void I_JoyScale2(void){}
 void I_InitJoystick(void){}
 
 void I_InitJoystick2(void){}
+
+void I_ChangeJoystick(void){}
+
+void I_ChangeJoystick2(void){}
+
+#ifdef TOUCHINPUTS
+void I_InitTouchScreen(void) {}
+#endif
 
 INT32 I_NumJoys(void)
 {
@@ -153,6 +161,36 @@ const char *I_LocateWad(void)
 	return NULL;
 }
 
+const char *I_InitialLocateWad(void)
+{
+	return NULL;
+}
+
+const char *I_AppStorageLocation(void)
+{
+	return NULL;
+}
+
+const char *I_SharedStorageLocation(void)
+{
+	return NULL;
+}
+
+const char *I_RemovableStorageLocation(void)
+{
+	return NULL;
+}
+
+INT32 I_StoragePermission(void)
+{
+	return 1;
+}
+
+INT32 I_SystemStoragePermission(void)
+{
+	return 1;
+}
+
 void I_GetJoystickEvents(void){}
 
 void I_GetJoystick2Events(void){}
@@ -183,6 +221,26 @@ INT32 I_ClipboardCopy(const char *data, size_t size)
 char *I_ClipboardPaste(void)
 {
 	return NULL;
+}
+
+INT32 I_OnTabletDevice(void)
+{
+	return 0;
+}
+
+INT32 I_OnTVDevice(void)
+{
+	return 0;
+}
+
+INT32 I_OnAndroidTV(void)
+{
+	return 0;
+}
+
+INT32 I_OnAppleTV(void)
+{
+	return 0;
 }
 
 void I_RegisterSysCommands(void) {}

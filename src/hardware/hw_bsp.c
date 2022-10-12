@@ -585,6 +585,8 @@ static void loading_status(void)
 	int x, y;
 
 	I_OsPolling();
+	if (I_AppOnBackground())
+		return;
 	CON_Drawer();
 	sprintf(s, "%d%%", (++ls_percent)<<1);
 	x = BASEVIDWIDTH/2;
@@ -833,9 +835,13 @@ static INT32 SolveTProblem(void)
 		return 0;
 
 	CONS_Debug(DBG_RENDER, "Solving T-joins. This may take a while. Please wait...\n");
+
 #ifdef HWR_LOADING_SCREEN
-	CON_Drawer(); //let the user know what we are doing
-	I_FinishUpdate(); // page flip or blit buffer
+	if (!I_AppOnBackground())
+	{
+		CON_Drawer(); //let the user know what we are doing
+		I_FinishUpdate(); // page flip or blit buffer
+	}
 #endif
 
 	numsplitpoly = 0;
@@ -959,10 +965,14 @@ void HWR_CreatePlanePolygons(INT32 bspnum)
 	fixed_t rootbbox[4];
 
 	CONS_Debug(DBG_RENDER, "Creating polygons, please wait...\n");
+
 #ifdef HWR_LOADING_SCREEN
-	ls_count = ls_percent = 0; // reset the loading status
-	CON_Drawer(); //let the user know what we are doing
-	I_FinishUpdate(); // page flip or blit buffer
+	if (!I_AppOnBackground())
+	{
+		ls_count = ls_percent = 0; // reset the loading status
+		CON_Drawer(); //let the user know what we are doing
+		I_FinishUpdate(); // page flip or blit buffer
+	}
 #endif
 
 	HWR_ClearPolys();

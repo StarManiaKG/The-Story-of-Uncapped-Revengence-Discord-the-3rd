@@ -27,7 +27,9 @@
 #pragma warning(disable : 4214 4244)
 #endif
 
+#ifndef HAVE_GLES2
 #include "SDL_opengl.h" //Alam_GBC: Simple, yes?
+#endif
 
 #ifdef _MSC_VER
 #pragma warning(default : 4214 4244)
@@ -69,6 +71,8 @@
 #ifdef DEBUG_TO_FILE
 extern FILE             *gllogstream;
 #endif
+
+#include "../r_glcommon/r_glcommon.h"
 
 // ==========================================================================
 //                                                                     PROTOS
