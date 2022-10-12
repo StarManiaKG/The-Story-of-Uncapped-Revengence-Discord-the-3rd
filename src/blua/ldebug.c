@@ -16,6 +16,7 @@
 #include "lua.h"
 
 #include "lapi.h"
+#include "lauxlib.h"
 #include "lcode.h"
 #include "ldebug.h"
 #include "ldo.h"

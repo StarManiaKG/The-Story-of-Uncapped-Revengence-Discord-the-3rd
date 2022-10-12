@@ -162,7 +162,11 @@ boolean LoadGL(void)
 	pwglDeleteContext = GetGLFunc("wglDeleteContext");
 	pwglMakeCurrent = GetGLFunc("wglMakeCurrent");
 #endif
+#if defined(__ANDROID__)
+	return GLBackend_LoadFunctions();
+#else
 	return SetupGLfunc();
+#endif
 }
 
 // -----------------+

@@ -71,8 +71,21 @@ PFNglGetString pglGetString;
 */
 INT32 oglflags = 0;
 void *GLUhandle = NULL;
-SDL_GLContext sdlglcontext = 0;
+//SDL_GLContext sdlglcontext = 0;
 
+#if defined(__ANDROID__)
+void *GLBackend_GetFunction(const char *proc)
+{
+	if (strncmp(proc, "glu", 3) == 0)
+	{
+		if (GLUhandle)
+			return hwSym(proc, GLUhandle);
+		else
+			return NULL;
+	}
+	return SDL_GL_GetProcAddress(proc);
+}
+#else
 void *GetGLFunc(const char *proc)
 {
 	if (strncmp(proc, "glu", 3) == 0)
@@ -84,6 +97,7 @@ void *GetGLFunc(const char *proc)
 	}
 	return SDL_GL_GetProcAddress(proc);
 }
+#endif
 
 boolean LoadGL(void)
 {
@@ -126,7 +140,11 @@ boolean LoadGL(void)
 	{
 		GLUhandle = hwOpen(GLULibname);
 		if (GLUhandle)
+#if defined(__ANDROID__)
+			return GLBackend_LoadFunctions();
+#else
 			return SetupGLfunc();
+#endif
 		else
 		{
 			CONS_Alert(CONS_ERROR, "Could not load GLU Library: %s\n", GLULibname);
@@ -140,7 +158,11 @@ boolean LoadGL(void)
 		CONS_Alert(CONS_ERROR, "If you know what is the GLU library's name, use -GLUlib\n");
 	}
 #endif
+#if defined(__ANDROID__)
+	return GLBackend_LoadFunctions();
+#else
 	return SetupGLfunc();
+#endif
 }
 
 /**	\brief	The OglSdlSurface function
@@ -213,26 +235,31 @@ boolean OglSdlSurface(INT32 w, INT32 h)
 */
 void OglSdlFinishUpdate(boolean waitvbl)
 {
-	static boolean oldwaitvbl = false;
 	int sdlw, sdlh;
+
+	static boolean oldwaitvbl = false;
 	if (oldwaitvbl != waitvbl)
-	{
 		SDL_GL_SetSwapInterval(waitvbl ? 1 : 0);
-	}
 
 	oldwaitvbl = waitvbl;
 
 	SDL_GetWindowSize(window, &sdlw, &sdlh);
+	MakeFinalScreenTexture();
 
-	HWR_MakeScreenFinalTexture();
-	HWR_DrawScreenFinalTexture(sdlw, sdlh);
+	GLFramebuffer_Disable();
+	RenderToFramebuffer = FramebufferEnabled;
+
+	DrawFinalScreenTexture(sdlw, sdlh);
+
+	if (RenderToFramebuffer)
+		GLFramebuffer_Enable();
+
 	SDL_GL_SwapWindow(window);
-
 	GClipRect(0, 0, realwidth, realheight, NZCLIP_PLANE);
 
 	// Sryder:	We need to draw the final screen texture again into the other buffer in the original position so that
 	//			effects that want to take the old screen can do so after this
-	HWR_DrawScreenFinalTexture(realwidth, realheight);
+	DrawFinalScreenTexture(realwidth, realheight);
 }
 
 EXPORT void HWRAPI(OglSdlSetPalette) (RGBA_t *palette)
