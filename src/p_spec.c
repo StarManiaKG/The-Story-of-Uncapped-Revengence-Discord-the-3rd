@@ -132,7 +132,7 @@ static size_t maxanims;
 // Animating line specials
 
 // Init animated textures
-// - now called at level loading P_SetupLevel()
+// - now called at level loading P_SetupLevel()/P_LoadLevel()
 
 static animdef_t *animdefs = NULL;
 

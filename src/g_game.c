@@ -54,6 +54,10 @@
 #include "discord.h"
 #endif
 
+#ifdef TOUCHINPUTS
+#include "ts_main.h"
+#endif
+
 gameaction_t gameaction;
 gamestate_t gamestate = GS_NULL;
 UINT8 ultimatemode = false;
@@ -311,11 +315,11 @@ consvar_t cv_chattime = CVAR_INIT ("chattime", "8", CV_SAVE, chattime_cons_t, NU
 
 // chatwidth
 static CV_PossibleValue_t chatwidth_cons_t[] = {{64, "MIN"}, {300, "MAX"}, {0, NULL}};
-consvar_t cv_chatwidth = CVAR_INIT ("chatwidth", "150", CV_SAVE, chatwidth_cons_t, NULL);
+consvar_t cv_chatwidth = CVAR_INIT ("chatwidth", "150", CV_SAVE|CV_SLIDER_SAFE, chatwidth_cons_t, NULL);
 
 // chatheight
 static CV_PossibleValue_t chatheight_cons_t[] = {{6, "MIN"}, {22, "MAX"}, {0, NULL}};
-consvar_t cv_chatheight= CVAR_INIT ("chatheight", "8", CV_SAVE, chatheight_cons_t, NULL);
+consvar_t cv_chatheight= CVAR_INIT ("chatheight", "8", CV_SAVE|CV_SLIDER_SAFE, chatheight_cons_t, NULL);
 
 // chat notifications (do you want to hear beeps? I'd understand if you didn't.)
 consvar_t cv_chatnotifications= CVAR_INIT ("chatnotifications", "On", CV_SAVE, CV_OnOff, NULL);
@@ -366,26 +370,31 @@ consvar_t cv_autobrake2 = CVAR_INIT ("autobrake2", "On", CV_SAVE|CV_CALL, CV_OnO
 
 // hi here's some new controls
 static CV_PossibleValue_t zerotoone_cons_t[] = {{0, "MIN"}, {FRACUNIT, "MAX"}, {0, NULL}};
+
+#define CAMCVARFLAGS (CV_FLOAT|CV_SAVE|CV_SLIDER_SAFE)
+
 consvar_t cv_cam_shiftfacing[2] = {
-	CVAR_INIT ("cam_shiftfacingchar", "0.375", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
-	CVAR_INIT ("cam2_shiftfacingchar", "0.375", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
+	CVAR_INIT ("cam_shiftfacingchar", "0.375", CAMCVARFLAGS, zerotoone_cons_t, NULL),
+	CVAR_INIT ("cam2_shiftfacingchar", "0.375", CAMCVARFLAGS, zerotoone_cons_t, NULL),
 };
 consvar_t cv_cam_turnfacing[2] = {
-	CVAR_INIT ("cam_turnfacingchar", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
-	CVAR_INIT ("cam2_turnfacingchar", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
+	CVAR_INIT ("cam_turnfacingchar", "0.25", CAMCVARFLAGS, zerotoone_cons_t, NULL),
+	CVAR_INIT ("cam2_turnfacingchar", "0.25", CAMCVARFLAGS, zerotoone_cons_t, NULL),
 };
 consvar_t cv_cam_turnfacingability[2] = {
-	CVAR_INIT ("cam_turnfacingability", "0.125", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
-	CVAR_INIT ("cam2_turnfacingability", "0.125", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
+	CVAR_INIT ("cam_turnfacingability", "0.125", CAMCVARFLAGS, zerotoone_cons_t, NULL),
+	CVAR_INIT ("cam2_turnfacingability", "0.125", CAMCVARFLAGS, zerotoone_cons_t, NULL),
 };
 consvar_t cv_cam_turnfacingspindash[2] = {
-	CVAR_INIT ("cam_turnfacingspindash", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
-	CVAR_INIT ("cam2_turnfacingspindash", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
+	CVAR_INIT ("cam_turnfacingspindash", "0.25", CAMCVARFLAGS, zerotoone_cons_t, NULL),
+	CVAR_INIT ("cam2_turnfacingspindash", "0.25", CAMCVARFLAGS, zerotoone_cons_t, NULL),
 };
 consvar_t cv_cam_turnfacinginput[2] = {
-	CVAR_INIT ("cam_turnfacinginput", "0.375", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
-	CVAR_INIT ("cam2_turnfacinginput", "0.375", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
+	CVAR_INIT ("cam_turnfacinginput", "0.375", CAMCVARFLAGS, zerotoone_cons_t, NULL),
+	CVAR_INIT ("cam2_turnfacinginput", "0.375", CAMCVARFLAGS, zerotoone_cons_t, NULL),
 };
+
+#undef CAMCVARFLAGS
 
 static CV_PossibleValue_t centertoggle_cons_t[] = {{0, "Hold"}, {1, "Toggle"}, {2, "Sticky Hold"}, {0, NULL}};
 consvar_t cv_cam_centertoggle[2] = {
@@ -982,8 +991,26 @@ INT32 Joy2Axis(joyaxis_e axissel)
 
 #define PlayerJoyAxis(p, ax) ((p) == 1 ? JoyAxis(ax) : Joy2Axis(ax))
 
+// Get the gamepad style from a player
+static INT32 G_GamepadStyleForPlayer(UINT8 splitnum)
+{
+	if (splitnum == 1)
+		return Joystick2.bGamepadStyle;
+	else
+		return Joystick.bGamepadStyle;
+}
+
 // Take a magnitude of two axes, and adjust it to take out the deadzone
 // Will return a value between 0 and JOYAXISRANGE
+// Get the deadzone value from a player
+static fixed_t G_DeadZoneForPlayer(UINT8 splitnum)
+{
+	if (splitnum == 1)
+		return cv_deadzone2.value;
+	else
+		return cv_deadzone.value;
+}
+
 static INT32 G_BasicDeadZoneCalculation(INT32 magnitude, fixed_t deadZone)
 {
 	const INT32 jdeadzone = (JOYAXISRANGE * deadZone) / FRACUNIT;
@@ -1005,7 +1032,7 @@ static INT32 G_BasicDeadZoneCalculation(INT32 magnitude, fixed_t deadZone)
 }
 
 // Get the actual sensible radial value for a joystick axis when accounting for a deadzone
-static void G_HandleAxisDeadZone(UINT8 splitnum, joystickvector2_t *joystickvector)
+static void G_HandleAxisDeadZone(UINT8 splitnum, joystickvector2_t *joystickvector, fixed_t deadZone)
 {
 	INT32 gamepadStyle = Joystick.bGamepadStyle;
 	fixed_t deadZone = cv_deadzone.value;
@@ -1046,6 +1073,17 @@ static void G_HandleAxisDeadZone(UINT8 splitnum, joystickvector2_t *joystickvect
 	}
 }
 
+// Get the actual sensible radial value for a joystick axis when accounting for a deadzone
+static void G_HandleAxisDeadZone(UINT8 splitnum, joystickvector2_t *joystickvector)
+{
+	INT32 gamepadStyle = G_GamepadStyleForPlayer(splitnum);
+	fixed_t deadZone = G_DeadZoneForPlayer(splitnum);
+
+	// When gamepadstyle is "true" the values are just -1, 0, or 1. This is done in the interface code.
+	if (!gamepadStyle)
+		G_HandleVectorDeadZone(joystickvector, deadZone);
+}
+
 //
 // G_BuildTiccmd
 // Builds a ticcmd from all of the available inputs
@@ -1061,16 +1099,42 @@ static fixed_t forwardmove[2] = {25<<FRACBITS>>16, 50<<FRACBITS>>16};
 static fixed_t sidemove[2] = {25<<FRACBITS>>16, 50<<FRACBITS>>16}; // faster!
 static fixed_t angleturn[3] = {640, 1280, 320}; // + slow turn
 
+static joystickvector2_t joystickmovevectors[2], joysticklookvectors[2];
+
+#ifdef TOUCHINPUTS
+joystickvector2_t touchmovevector;
+#endif
+
+#ifdef ACCELEROMETER
+joystickvector2_t accelmovevector;
+#endif
+
 INT16 ticcmd_oldangleturn[2];
 boolean ticcmd_centerviewdown[2]; // For simple controls, lock the camera behind the player
 mobj_t *ticcmd_ztargetfocus[2]; // Locking onto an object?
+
+static boolean G_CanBuildTiccmd(player_t *player)
+{
+	// why build a ticcmd if we're paused?
+	// Or, for that matter, if we're being reborn.
+	// ...OR if we're blindfolded. No looking into the floor.
+	if (paused || P_AutoPause() || (gamestate == GS_LEVEL && (player->playerstate == PST_REBORN || ((gametyperules & GTR_TAG)
+	&& (leveltime < hidetime * TICRATE) && (player->pflags & PF_TAGIT)))))
+		//@TODO splitscreen player
+		return false;
+	return true;
+}
+
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 {
+	INT32 tspeed, forward, side;
+	INT32 axis, strafeaxis, moveaxis, turnaxis, lookaxis;
+	INT32 i;
+
 	boolean forcestrafe = false;
 	boolean forcefullinput = false;
-	INT32 tspeed, forward, side, axis, strafeaxis, moveaxis, turnaxis, lookaxis, i;
 
-	joystickvector2_t movejoystickvector, lookjoystickvector;
+	joystickvector2_t *movejoystickvector, *lookjoystickvector;
 
 	const INT32 speed = 1;
 	// these ones used for multiple conditions
@@ -1134,12 +1198,8 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		((cv_cam_lockedinput[forplayer].value && !ticcmd_ztargetfocus[forplayer]) || (player->pflags & PF_STARTDASH)) &&
 		!player->climbing && player->powers[pw_carry] != CR_MINECART;
 
-	// why build a ticcmd if we're paused?
-	// Or, for that matter, if we're being reborn.
-	// ...OR if we're blindfolded. No looking into the floor.
-	if (paused || P_AutoPause() || (gamestate == GS_LEVEL && (player->playerstate == PST_REBORN || ((gametyperules & GTR_TAG)
-	&& (leveltime < hidetime * TICRATE) && (player->pflags & PF_TAGIT)))))
-	{//@TODO splitscreen player
+	if (!G_CanBuildTiccmd(player))
+	{
 		cmd->angleturn = ticcmd_oldangleturn[forplayer];
 		cmd->aiming = G_ClipAimingPitch(myaiming);
 		return;
@@ -1153,6 +1213,16 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	movefkey = PLAYERINPUTDOWN(ssplayer, GC_FORWARD);
 	movebkey = PLAYERINPUTDOWN(ssplayer, GC_BACKWARD);
 
+#ifdef TOUCHINPUTS
+	if (ssplayer == 1)
+	{
+		straferkey = (straferkey || PLAYERINPUTDOWN(ssplayer, GC_DPADUR) || PLAYERINPUTDOWN(ssplayer, GC_DPADDR));
+		strafelkey = (strafelkey || PLAYERINPUTDOWN(ssplayer, GC_DPADUL) || PLAYERINPUTDOWN(ssplayer, GC_DPADDL));
+		movefkey = (movefkey || PLAYERINPUTDOWN(ssplayer, GC_DPADUL) || PLAYERINPUTDOWN(ssplayer, GC_DPADUR));
+		movebkey = (movebkey || PLAYERINPUTDOWN(ssplayer, GC_DPADDL) || PLAYERINPUTDOWN(ssplayer, GC_DPADDR));
+	}
+#endif
+
 	if (strafeisturn)
 	{
 		turnright |= straferkey;
@@ -1165,6 +1235,9 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	analogjoystickmove = usejoystick && !Joystick.bGamepadStyle;
 	gamepadjoystickmove = usejoystick && Joystick.bGamepadStyle;
 
+	movejoystickvector = &joystickmovevectors[forplayer];
+	lookjoystickvector = &joysticklookvectors[forplayer];
+
 	thisjoyaiming = (chasecam && !player->spectator) ? chasefreelook : alwaysfreelook;
 
 	// Reset the vertical look if we're no longer joyaiming
@@ -1176,14 +1249,14 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	if (strafeisturn)
 		turnaxis += PlayerJoyAxis(ssplayer, JA_STRAFE);
 	lookaxis = PlayerJoyAxis(ssplayer, JA_LOOK);
-	lookjoystickvector.xaxis = turnaxis;
-	lookjoystickvector.yaxis = lookaxis;
-	G_HandleAxisDeadZone(forplayer, &lookjoystickvector);
+	lookjoystickvector->xaxis = turnaxis;
+	lookjoystickvector->yaxis = lookaxis;
+	G_HandleAxisDeadZone(forplayer, lookjoystickvector);
 
-	if (gamepadjoystickmove && lookjoystickvector.xaxis != 0)
+	if (gamepadjoystickmove && lookjoystickvector->xaxis != 0)
 	{
-		turnright = turnright || (lookjoystickvector.xaxis > 0);
-		turnleft = turnleft || (lookjoystickvector.xaxis < 0);
+		turnright = turnright || (lookjoystickvector->xaxis > 0);
+		turnleft = turnleft || (lookjoystickvector->xaxis < 0);
 	}
 	forward = side = 0;
 
@@ -1223,10 +1296,10 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		if (turnleft)
 			side -= sidemove[speed];
 
-		if (analogjoystickmove && lookjoystickvector.xaxis != 0)
+		if (analogjoystickmove && lookjoystickvector->xaxis != 0)
 		{
 			// JOYAXISRANGE is supposed to be 1023 (divide by 1024)
-			side += ((lookjoystickvector.xaxis * sidemove[1]) >> 10);
+			side += ((lookjoystickvector->xaxis * sidemove[1]) >> 10);
 		}
 	}
 	else if (controlstyle == CS_LMAOGALOG) // Analog
@@ -1244,10 +1317,10 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		else if (turnleft)
 			cmd->angleturn = (INT16)(cmd->angleturn + ((angleturn[tspeed] * turnmultiplier)>>FRACBITS));
 
-		if (analogjoystickmove && lookjoystickvector.xaxis != 0)
+		if (analogjoystickmove && lookjoystickvector->xaxis != 0)
 		{
 			// JOYAXISRANGE should be 1023 (divide by 1024)
-			cmd->angleturn = (INT16)(cmd->angleturn - ((((lookjoystickvector.xaxis * angleturn[1]) >> 10) * turnmultiplier)>>FRACBITS)); // ANALOG!
+			cmd->angleturn = (INT16)(cmd->angleturn - ((((lookjoystickvector->xaxis * angleturn[1]) >> 10) * turnmultiplier)>>FRACBITS)); // ANALOG!
 		}
 
 		if (turnright || turnleft || abs(cmd->angleturn) > angleturn[2])
@@ -1256,35 +1329,77 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	strafeaxis = strafeisturn ? 0 : PlayerJoyAxis(ssplayer, JA_STRAFE);
 	moveaxis = PlayerJoyAxis(ssplayer, JA_MOVE);
-	movejoystickvector.xaxis = strafeaxis;
-	movejoystickvector.yaxis = moveaxis;
-	G_HandleAxisDeadZone(forplayer, &movejoystickvector);
+	
+	movejoystickvector->xaxis = strafeaxis;
+	movejoystickvector->yaxis = moveaxis;
+	G_HandleAxisDeadZone(forplayer, movejoystickvector);
 
-	if (gamepadjoystickmove && movejoystickvector.xaxis != 0)
+	if (gamepadjoystickmove && movejoystickvector->xaxis != 0)
 	{
-		if (movejoystickvector.xaxis > 0)
+		if (movejoystickvector->xaxis > 0)
 			side += sidemove[speed];
-		else if (movejoystickvector.xaxis < 0)
+		else if (movejoystickvector->xaxis < 0)
 			side -= sidemove[speed];
 	}
-	else if (analogjoystickmove && movejoystickvector.xaxis != 0)
+	else if (analogjoystickmove && movejoystickvector->xaxis != 0)
 	{
 		// JOYAXISRANGE is supposed to be 1023 (divide by 1024)
-		side += ((movejoystickvector.xaxis * sidemove[1]) >> 10);
+		side += ((movejoystickvector->xaxis * sidemove[1]) >> 10);
 	}
 
+#ifdef TOUCHINPUTS
+	// Yikes!
+	if (touch_useinputs)
+	{
+		touchmovevector.xaxis = min(JOYAXISRANGE, max(-JOYAXISRANGE, (INT32)(touchxmove * JOYAXISRANGE)));
+		touchmovevector.yaxis = min(JOYAXISRANGE, max(-JOYAXISRANGE, (INT32)(touchymove * JOYAXISRANGE)));
+
+		G_HandleVectorDeadZone(&touchmovevector, cv_touchjoydeadzone.value);
+
+		if (ssplayer == 1 && touchmovevector.xaxis != 0)
+			side += ((touchmovevector.xaxis * sidemove[1]) >> 10);
+	}
+	else
+		touchmovevector.xaxis = touchmovevector.yaxis = 0;
+#endif
+
+#ifdef ACCELEROMETER
+	if (cv_useaccelerometer.value && (accelxmove || accelymove))
+	{
+		accelmovevector.xaxis = min(JOYAXISRANGE, max(-JOYAXISRANGE, accelxmove));
+		accelmovevector.yaxis = min(JOYAXISRANGE, max(-JOYAXISRANGE, accelymove));
+
+		G_HandleVectorDeadZone(&accelmovevector, cv_acceldeadzone.value);
+
+		if (ssplayer == 1 && accelmovevector.xaxis != 0)
+			side += ((accelmovevector.xaxis * sidemove[1]) >> 10);
+	}
+	else
+		accelmovevector.xaxis = accelmovevector.yaxis = 0;
+#endif
+
 	// forward with key or button
-	if (movefkey || (gamepadjoystickmove && movejoystickvector.yaxis < 0)
+	if (movefkey || (gamepadjoystickmove && movejoystickvector->yaxis < 0)
 		|| ((player->powers[pw_carry] == CR_NIGHTSMODE)
-			&& (PLAYERINPUTDOWN(ssplayer, GC_LOOKUP) || (gamepadjoystickmove && lookjoystickvector.yaxis > 0))))
+			&& (PLAYERINPUTDOWN(ssplayer, GC_LOOKUP) || (gamepadjoystickmove && lookjoystickvector->yaxis > 0))))
 		forward = forwardmove[speed];
-	if (movebkey || (gamepadjoystickmove && movejoystickvector.yaxis > 0)
+	if (movebkey || (gamepadjoystickmove && movejoystickvector->yaxis > 0)
 		|| ((player->powers[pw_carry] == CR_NIGHTSMODE)
-			&& (PLAYERINPUTDOWN(ssplayer, GC_LOOKDOWN) || (gamepadjoystickmove && lookjoystickvector.yaxis < 0))))
+			&& (PLAYERINPUTDOWN(ssplayer, GC_LOOKDOWN) || (gamepadjoystickmove && lookjoystickvector->yaxis < 0))))
 		forward -= forwardmove[speed];
 
-	if (analogjoystickmove && movejoystickvector.yaxis != 0)
-		forward -= ((movejoystickvector.yaxis * forwardmove[1]) >> 10); // ANALOG!
+	if (analogjoystickmove && movejoystickvector->yaxis != 0)
+		forward -= ((movejoystickvector->yaxis * forwardmove[1]) >> 10); // ANALOG!
+
+#ifdef TOUCHINPUTS
+	if (ssplayer == 1 && touchmovevector.yaxis != 0)
+		forward -= ((touchmovevector.yaxis * forwardmove[1]) >> 10);
+#endif
+
+#ifdef ACCELEROMETER
+	if (ssplayer == 1 && accelmovevector.yaxis != 0)
+		forward -= ((accelmovevector.yaxis * forwardmove[1]) >> 10);
+#endif
 
 	// some people strafe left & right with mouse buttons
 	// those people are weird
@@ -1448,7 +1563,6 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	else
 		resetdown[forplayer] = false;
 
-
 	// jump button
 	axis = PlayerJoyAxis(ssplayer, JA_JUMP);
 	if (PLAYERINPUTDOWN(ssplayer, GC_JUMP) || (usejoystick && axis > 0))
@@ -1472,8 +1586,8 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 			*myaiming += (mldy<<19)*player_invert*screen_invert;
 		}
 
-		if (analogjoystickmove && joyaiming[forplayer] && lookjoystickvector.yaxis != 0 && configlookaxis != 0)
-			*myaiming += (lookjoystickvector.yaxis<<16) * screen_invert;
+		if (analogjoystickmove && joyaiming[forplayer] && lookjoystickvector->yaxis != 0 && configlookaxis != 0)
+			*myaiming += (lookjoystickvector->yaxis<<16) * screen_invert;
 
 		// spring back if not using keyboard neither mouselookin'
 		if (!keyboard_look[forplayer] && configlookaxis == 0 && !joyaiming[forplayer] && !mouseaiming)
@@ -1481,12 +1595,12 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 		if (!(player->powers[pw_carry] == CR_NIGHTSMODE))
 		{
-			if (PLAYERINPUTDOWN(ssplayer, GC_LOOKUP) || (gamepadjoystickmove && lookjoystickvector.yaxis < 0))
+			if (PLAYERINPUTDOWN(ssplayer, GC_LOOKUP) || (gamepadjoystickmove && lookjoystickvector->yaxis < 0))
 			{
 				*myaiming += KB_LOOKSPEED * screen_invert;
 				keyboard_look[forplayer] = true;
 			}
-			else if (PLAYERINPUTDOWN(ssplayer, GC_LOOKDOWN) || (gamepadjoystickmove && lookjoystickvector.yaxis > 0))
+			else if (PLAYERINPUTDOWN(ssplayer, GC_LOOKDOWN) || (gamepadjoystickmove && lookjoystickvector->yaxis > 0))
 			{
 				*myaiming -= KB_LOOKSPEED * screen_invert;
 				keyboard_look[forplayer] = true;
@@ -1859,13 +1973,16 @@ void G_DoLoadLevel(boolean resetplayer)
 
 	// clear cmd building stuff
 	memset(gamekeydown, 0, sizeof (gamekeydown));
-	for (i = 0;i < JOYAXISSET; i++)
+
+	for (i = 0; i < JOYAXISSET; i++)
 	{
 		joyxmove[i] = joyymove[i] = 0;
 		joy2xmove[i] = joy2ymove[i] = 0;
 	}
 	G_SetMouseDeltas(0, 0, 1);
 	G_SetMouseDeltas(0, 0, 2);
+	
+	G_ResetInputs();
 
 	// clear hud messages remains (usually from game startup)
 	CON_ClearHUD();
@@ -1957,7 +2074,7 @@ boolean G_IsTitleCardAvailable(void)
 
 INT32 pausedelay = 0;
 boolean pausebreakkey = false;
-static INT32 camtoggledelay, camtoggledelay2 = 0;
+INT32 camtoggledelay, camtoggledelay2 = 0;
 
 //
 // G_Responder
@@ -1969,11 +2086,22 @@ boolean G_Responder(event_t *ev)
 	if (gameaction == ga_nothing && !singledemo &&
 		((demoplayback && !modeattacking && !titledemo) || gamestate == GS_TITLESCREEN))
 	{
-		if (ev->type == ev_keydown && ev->key != 301 && !(gamestate == GS_TITLESCREEN && finalecount < TICRATE))
+		INT32 key = ev->key;
+		boolean finger = (ev->type == ev_touchdown || ev->type == ev_touchup);
+
+		if (((ev->type == ev_keydown && key != 301 && !G_KeyIsAnyMouseWheel(key)) || finger) && !(gamestate == GS_TITLESCREEN && finalecount < TICRATE))
 		{
+#ifdef TOUCHINPUTS
+			if (finger)
+				inputmethod = INPUTMETHOD_TOUCH;
+			else
+#endif
+				G_DetectInputMethod(key);
+
 			M_StartControlPanel();
 			return true;
 		}
+
 		return false;
 	}
 	else if (demoplayback && titledemo)
@@ -2107,7 +2235,11 @@ boolean G_Responder(event_t *ev)
 
 			// tell who's the view
 			CONS_Printf(M_GetText("Viewpoint: %s\n"), player_names[displayplayer]);
+		}
 
+		if (G_DoViewpointSwitch())
+		{
+			G_DetectControlMethod(ev->key);
 			return true;
 		}
 	}
@@ -2148,24 +2280,38 @@ boolean G_Responder(event_t *ev)
 						return true;
 					}
 				}
+				if (G_HandlePauseKey(ev->key == KEY_PAUSE))
+				{
+					G_DetectControlMethod(ev->key);
+					return true;
+				}
 			}
 			if (ev->key == gamecontrol[GC_CAMTOGGLE][0]
 				|| ev->key == gamecontrol[GC_CAMTOGGLE][1])
 			{
+				/*
 				if (!camtoggledelay)
 				{
 					camtoggledelay = NEWTICRATE / 7;
 					CV_SetValue(&cv_chasecam, cv_chasecam.value ? 0 : 1);
 				}
+				*/
+
+				G_DetectControlMethod(ev->key);
+				G_ToggleChaseCam();
 			}
 			if (ev->key == gamecontrolbis[GC_CAMTOGGLE][0]
 				|| ev->key == gamecontrolbis[GC_CAMTOGGLE][1])
 			{
+				/*
 				if (!camtoggledelay2)
 				{
 					camtoggledelay2 = NEWTICRATE / 7;
 					CV_SetValue(&cv_chasecam2, cv_chasecam2.value ? 0 : 1);
 				}
+				*/
+				
+				G_ToggleChaseCam2();
 			}
 			return true;
 
@@ -2173,20 +2319,91 @@ boolean G_Responder(event_t *ev)
 			return false; // always let key up events filter down
 
 		case ev_mouse:
-			return true; // eat events
-
 		case ev_joystick:
-			return true; // eat events
-
 		case ev_joystick2:
+		case ev_accelerometer:
 			return true; // eat events
-
 
 		default:
 			break;
 	}
 
 	return false;
+}
+
+// Returns true if you can switch your viewpoint to this player.
+boolean G_CanViewpointSwitchToPlayer(player_t *player)
+{
+	player_t *myself = &players[consoleplayer];
+
+	if (player->spectator)
+		return false;
+
+	if (G_GametypeHasTeams())
+	{
+		if (myself->ctfteam && player->ctfteam != myself->ctfteam)
+			return false;
+	}
+	else if (gametyperules & GTR_HIDEFROZEN)
+	{
+		if (myself->pflags & PF_TAGIT)
+			return false;
+	}
+	// Other Tag-based gametypes?
+	else if (G_TagGametype())
+	{
+		if (!myself->spectator && (myself->pflags & PF_TAGIT) != (player->pflags & PF_TAGIT))
+			return false;
+	}
+	else if (G_GametypeHasSpectators() && G_RingSlingerGametype())
+	{
+		if (!myself->spectator)
+			return false;
+	}
+
+	return true;
+}
+
+// Returns true if you can switch your viewpoint at all.
+boolean G_CanViewpointSwitch(boolean luahook)
+{
+	// ViewpointSwitch Lua hook.
+	UINT8 canSwitchView = 0;
+	INT32 checkdisplayplayer = displayplayer;
+
+	if (splitscreen || !netgame)
+		return false;
+
+	if (D_NumPlayers() <= 1)
+		return false;
+
+	do
+	{
+		checkdisplayplayer++;
+		if (checkdisplayplayer == MAXPLAYERS)
+			checkdisplayplayer = 0;
+
+		if (!playeringame[checkdisplayplayer])
+			continue;
+
+		// Call ViewpointSwitch hooks here.
+		if (luahook)
+		{
+			canSwitchView = LUA_HookViewpointSwitch(&players[consoleplayer], &players[checkdisplayplayer], false);
+			if (canSwitchView == 1) // Set viewpoint to this player
+				break;
+			else if (canSwitchView == 2) // Skip this player
+				continue;
+		}
+
+		if (!G_CanViewpointSwitchToPlayer(&players[checkdisplayplayer]))
+			continue;
+
+		break;
+	} while (checkdisplayplayer != consoleplayer);
+
+	// had any change??
+	return (checkdisplayplayer != displayplayer);
 }
 
 //
@@ -3186,6 +3403,8 @@ void G_DoReborn(INT32 playernum)
 			}
 			G_SetMouseDeltas(0, 0, 1);
 			G_SetMouseDeltas(0, 0, 2);
+			
+			G_ResetInputs();
 
 			// clear hud messages remains (usually from game startup)
 			CON_ClearHUD();
@@ -3296,6 +3515,7 @@ void G_AddPlayer(INT32 playernum)
 
 	if ((countplayers && !notexiting) || G_IsSpecialStage(gamemap))
 		P_DoPlayerExit(p);
+		
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
 #endif
@@ -3906,8 +4126,15 @@ static void G_HandleSaveLevel(void)
 			if (marathonmode)
 			{
 				// don't keep a backup around when the run is done!
-				if (FIL_FileExists(liveeventbackup))
-					remove(liveeventbackup);
+#ifdef USE_SAVEGAME_PATHS
+				if (FIL_FileExists(liveeventbackup[0]))
+					remove(liveeventbackup[0]);
+				if (FIL_FileExists(liveeventbackup[1]))
+					remove(liveeventbackup[1]);
+#else
+				if (FIL_FileExists(curliveeventbackup))
+					remove(curliveeventbackup);
+#endif
 				cursaveslot = 0;
 			}
 			else if ((!modifiedgame || savemoddata) && !(netgame || multiplayer || ultimatemode || demorecording || metalrecording || modeattacking))
@@ -4259,6 +4486,8 @@ void G_LoadGameSettings(void)
 	S_InitRuntimeSounds();
 }
 
+static boolean gamedatainpath = false;
+
 // G_LoadGameData
 // Loads the main data file, which stores information such as emblems found, etc.
 void G_LoadGameData(void)
@@ -4282,11 +4511,12 @@ void G_LoadGameData(void)
 	M_ClearSecrets(); // emblems, unlocks, maps visited, etc
 	totalplaytime = 0; // total play time (separate from all)
 
-	if (M_CheckParm("-nodata"))
+	if (M_CheckParm("-nodata") || !I_StoragePermission())
 		return; // Don't load.
 
 	// Allow saving of gamedata beyond this point
 	gamedataloaded = true;
+	gamedatainpath = false;
 
 	if (M_CheckParm("-gamedata") && M_IsNextParm())
 	{
@@ -4297,8 +4527,16 @@ void G_LoadGameData(void)
 		return; // Don't load (essentially, reset).
 
 	length = FIL_ReadFile(va(pandf, srb2home, gamedatafilename), &savebuffer);
-	if (!length) // Aw, no game data. Their loss!
-		return;
+	
+	if (!FIL_ReadFile(va(pandf, srb2home, gamedatafilename), &savebuffer))
+	{
+#ifdef USE_GAMEDATA_PATHS
+		if (FIL_ReadFile(va(pandf, srb2path, gamedatafilename), &savebuffer))
+			gamedatainpath = true;
+		else
+#endif
+			return;
+	}
 
 	save_p = savebuffer;
 
@@ -4437,7 +4675,7 @@ void G_SaveGameData(void)
 
 	INT32 curmare;
 
-	if (!gamedataloaded)
+	if (!gamedataloaded || !I_StoragePermission())
 		return; // If never loaded (-nodata), don't save
 
 	save_p = savebuffer = (UINT8 *)malloc(GAMEDATASIZE);
@@ -4543,6 +4781,11 @@ void G_SaveGameData(void)
 
 	length = save_p - savebuffer;
 
+#ifdef USE_GAMEDATA_PATHS
+	if (gamedatainpath)
+		FIL_WriteFile(va(pandf, srb2path, gamedatafilename), savebuffer, length);
+	else
+#endif
 	FIL_WriteFile(va(pandf, srb2home, gamedatafilename), savebuffer, length);
 	free(savebuffer);
 	save_p = savebuffer = NULL;
@@ -4550,15 +4793,47 @@ void G_SaveGameData(void)
 
 #define VERSIONSIZE 16
 
+static void GetSaveGameName(char *savename, UINT32 slot)
+{
+	if (marathonmode)
+		strlcpy(savename, curliveeventbackup, SAVEGAMENAMELEN);
+	else
+		snprintf(savename, SAVEGAMENAMELEN, cursavegamename, slot);
+}
+
+size_t G_ReadSaveGameSlot(char *savename, UINT8 **buffer, UINT32 slot)
+{
+	size_t length = 0;
+
+	cursavegamename = savegamename[0];
+	curliveeventbackup = liveeventbackup[0];
+
+	GetSaveGameName(savename, slot);
+	length = FIL_ReadFile(savename, buffer);
+
+#ifdef USE_SAVEGAME_PATHS
+	if (!length)
+	{
+		cursavegamename = savegamename[1];
+		curliveeventbackup = liveeventbackup[1];
+
+		GetSaveGameName(savename, slot);
+		length = FIL_ReadFile(savename, buffer);
+	}
+#endif
+
+	return length;
+}
+
 //
-// G_InitFromSavegame
-// Can be called by the startup code or the menu task.
+// G_LoadGame
+// Can be called by the menu task.
 //
 void G_LoadGame(UINT32 slot, INT16 mapoverride)
 {
 	size_t length;
 	char vcheck[VERSIONSIZE];
-	char savename[255];
+	char savename[SAVEGAMENAMELEN];
 
 	// memset savedata to all 0, fixes calling perfectly valid saves corrupt because of bots
 	memset(&savedata, 0, sizeof(savedata));
@@ -4568,13 +4843,17 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 	startonmapnum = mapoverride;
 #endif
 
+	if (!I_StoragePermission())
+		return;
+		
 	if (marathonmode)
 		strcpy(savename, liveeventbackup);
 	else
 		sprintf(savename, savegamename, slot);
 
 	length = FIL_ReadFile(savename, &savebuffer);
-	if (!length)
+
+	if (!length || !G_ReadSaveGameSlot(savename, &savebuffer, slot)))
 	{
 		CONS_Printf(M_GetText("Couldn't read file %s\n"), savename);
 		return;
@@ -4592,7 +4871,7 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 		//Freeing done by the callback function of the above message
 #else
 		M_ClearMenus(true); // so ESC backs out to title
-		M_StartMessage(M_GetText("Save game from different version\n\nPress ESC\n"), NULL, MM_NOTHING);
+		M_ShowESCMessage("Save game from different version\n\n");
 		Command_ExitGame_f();
 		Z_Free(savebuffer);
 		save_p = savebuffer = NULL;
@@ -4614,7 +4893,7 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 	if (!P_LoadGame(mapoverride))
 	{
 		M_ClearMenus(true); // so ESC backs out to title
-		M_StartMessage(M_GetText("Savegame file corrupted\n\nPress ESC\n"), NULL, MM_NOTHING);
+		M_ShowESCMessage("Savegame file corrupted\n\n");
 		Command_ExitGame_f();
 		Z_Free(savebuffer);
 		save_p = savebuffer = NULL;
@@ -4653,13 +4932,16 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 void G_SaveGame(UINT32 slot, INT16 mapnum)
 {
 	boolean saved;
-	char savename[256] = "";
+	char savename[SAVEGAMENAMELEN];
 	const char *backup;
 
+	if (!I_StoragePermission())
+		return;
+
 	if (marathonmode)
-		strcpy(savename, liveeventbackup);
+		strlcpy(savename, curliveeventbackup, SAVEGAMENAMELEN);
 	else
-		sprintf(savename, savegamename, slot);
+		snprintf(savename, SAVEGAMENAMELEN, cursavegamename, slot);
 	backup = va("%s",savename);
 
 	gameaction = ga_nothing;
@@ -4699,7 +4981,7 @@ void G_SaveGame(UINT32 slot, INT16 mapnum)
 	if (cv_debug && saved)
 		CONS_Printf(M_GetText("Game saved.\n"));
 	else if (!saved)
-		CONS_Alert(CONS_ERROR, M_GetText("Error while writing to %s for save slot %u, base: %s\n"), backup, slot, (marathonmode ? liveeventbackup : savegamename));
+		CONS_Alert(CONS_ERROR, M_GetText("Error while writing to %s for save slot %u, base: %s\n"), backup, slot, (marathonmode ? curliveeventbackup : cursavegamename));
 }
 
 #define BADSAVE goto cleanup;
@@ -4709,13 +4991,16 @@ void G_SaveGameOver(UINT32 slot, boolean modifylives)
 	boolean saved = false;
 	size_t length;
 	char vcheck[VERSIONSIZE];
-	char savename[255];
+	char savename[SAVEGAMENAMELEN];
 	const char *backup;
 
+	if (!I_StoragePermission())
+		return;
+
 	if (marathonmode)
-		strcpy(savename, liveeventbackup);
+		strlcpy(savename, curliveeventbackup, SAVEGAMENAMELEN);
 	else
-		sprintf(savename, savegamename, slot);
+		snprintf(savename, SAVEGAMENAMELEN, cursavegamename, slot);
 	backup = va("%s",savename);
 
 	length = FIL_ReadFile(savename, &savebuffer);
@@ -4818,13 +5103,26 @@ cleanup:
 	if (cv_debug && saved)
 		CONS_Printf(M_GetText("Game saved.\n"));
 	else if (!saved)
-		CONS_Alert(CONS_ERROR, M_GetText("Error while writing to %s for save slot %u, base: %s\n"), backup, slot, (marathonmode ? liveeventbackup : savegamename));
+		CONS_Alert(CONS_ERROR, M_GetText("Error while writing to %s for save slot %u, base: %s\n"), backup, slot, (marathonmode ? curliveeventbackup : cursavegamename));
 	Z_Free(savebuffer);
 	save_p = savebuffer = NULL;
 
 }
 #undef CHECKPOS
 #undef BADSAVE
+
+char *G_LiveEventHasBackup(void)
+{
+	if (FIL_FileExists(liveeventbackup[0]))
+		return liveeventbackup[0];
+
+#ifdef USE_SAVEGAME_PATHS
+	if (FIL_FileExists(liveeventbackup[1]))
+		return liveeventbackup[1];
+#endif
+
+	return NULL;
+}
 
 //
 // G_DeferedInitNew

@@ -2338,6 +2338,14 @@ boolean P_CheckSolidLava(ffloor_t *rover)
 	return false;
 }
 
+static inline boolean P_CanZMove(mobj_t *mobj)
+{
+	return (!(mobj->eflags & MFE_ONGROUND) || mobj->momz
+	|| ((mobj->eflags & MFE_VERTICALFLIP) && mobj->z + mobj->height != mobj->ceilingz)
+	|| (!(mobj->eflags & MFE_VERTICALFLIP) && mobj->z != mobj->floorz)
+	|| P_IsObjectInGoop(mobj));
+}
+
 //
 // P_ZMovement
 // Returns false if the mobj was killed/exploded/removed, true otherwise.
@@ -10029,6 +10037,54 @@ static boolean P_FuseThink(mobj_t *mobj)
 	return !P_MobjWasRemoved(mobj);
 }
 
+#define reducedthinking (cv_thinkless.value && !(netgame || multiplayer) && !(demoplayback || modeattacking || marathonmode || metalrecording))
+
+static inline boolean P_MobjDistanceCheck(mobj_t *mobj)
+{
+	fixed_t tx, ty, cx, cy;
+	const fixed_t blocksize = 1024*FRACUNIT;
+	const fixed_t range = 4;
+	tx = mobj->x / blocksize;
+	ty = mobj->y / blocksize;
+	cx = viewx / blocksize;
+	cy = viewy / blocksize;
+
+	if (abs(tx-cx) > range || abs(ty-cy) > range)
+		return false;
+
+	return true;
+}
+
+static inline boolean P_CanMobjThink(mobj_t *mobj)
+{
+	if (!reducedthinking)
+		return true;
+
+	if (mobj->player)
+		return true;
+
+	if (!P_MobjDistanceCheck(mobj))
+	{
+		switch (mobj->type)
+		{
+			case MT_MACEPOINT:
+			case MT_CHAINMACEPOINT:
+			case MT_SPRINGBALLPOINT:
+			case MT_CHAINPOINT:
+			case MT_FIREBARPOINT:
+			case MT_CUSTOMMACEPOINT:
+			case MT_HIDDEN_SLING:
+				// Always update movedir to prevent desyncing (in the traditional sense, not the netplay sense).
+				mobj->movedir = (mobj->movedir + mobj->lastlook) & FINEMASK;
+				/* FALLTHRU */
+			default:
+				return false;
+		}
+	}
+
+	return true;
+}
+
 //
 // P_MobjThinker
 //
@@ -10038,6 +10094,9 @@ void P_MobjThinker(mobj_t *mobj)
 	I_Assert(!P_MobjWasRemoved(mobj));
 
 	if (mobj->flags & MF_NOTHINK)
+		return;
+
+	if (!P_CanMobjThink(mobj))
 		return;
 
 	if ((mobj->flags & MF_BOSS) && mobj->spawnpoint && (bossdisabled & (1<<mobj->spawnpoint->extrainfo)))
@@ -10159,10 +10218,7 @@ void P_MobjThinker(mobj_t *mobj)
 
 	// always do the gravity bit now, that's simpler
 	// BUT CheckPosition only if wasn't done before.
-	if (!(mobj->eflags & MFE_ONGROUND) || mobj->momz
-		|| ((mobj->eflags & MFE_VERTICALFLIP) && mobj->z + mobj->height != mobj->ceilingz)
-		|| (!(mobj->eflags & MFE_VERTICALFLIP) && mobj->z != mobj->floorz)
-		|| P_IsObjectInGoop(mobj))
+	if (P_CanZMove(mobj))
 	{
 		if (!P_ZMovement(mobj))
 			return; // mobj was removed
@@ -10388,10 +10444,7 @@ void P_SceneryThinker(mobj_t *mobj)
 
 	// always do the gravity bit now, that's simpler
 	// BUT CheckPosition only if wasn't done before.
-	if (!(mobj->eflags & MFE_ONGROUND) || mobj->momz
-		|| ((mobj->eflags & MFE_VERTICALFLIP) && mobj->z + mobj->height != mobj->ceilingz)
-		|| (!(mobj->eflags & MFE_VERTICALFLIP) && mobj->z != mobj->floorz)
-		|| P_IsObjectInGoop(mobj))
+	if (P_CanZMove(mobj))
 	{
 		if (!P_SceneryZMovement(mobj))
 			return; // mobj was removed

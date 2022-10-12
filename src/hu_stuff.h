@@ -17,6 +17,7 @@
 #include "d_event.h"
 #include "w_wad.h"
 #include "r_defs.h"
+#include "hu_font.h"
 
 //------------------------------------
 //           heads up font
@@ -31,6 +32,19 @@
 #define LT_FONTEND 'z' // the last font characters
 #define LT_FONTSIZE (LT_FONTEND - LT_FONTSTART + 1)
 
+// Menu font
+#define MENU_FONTSTART ' ' // the first font characters
+#define MENU_FONTEND '~' // the last font characters
+#define MENU_FONTSIZE (MENU_FONTEND - MENU_FONTSTART + 1)
+#define MENU_NUMFONTS 3
+
+// MENU_TYPEFACE_font_style_size
+enum
+{
+	MENU_TYPEFACE_BAHNSCRIFT_SEMIBOLD_22 = 0,
+};
+
+// Credits font
 #define CRED_FONTSTART '!' // the first font character
 #define CRED_FONTEND 'Z' // the last font character
 #define CRED_FONTSIZE (CRED_FONTEND - CRED_FONTSTART + 1)
@@ -73,6 +87,10 @@ typedef struct
 #define OLD_MUTE (OLDCHAT && cv_mute.value && !(server || IsPlayerAdmin(consoleplayer)))	// this is used to prevent oldchat from opening when muted.
 
 // some functions
+void HU_OpenChat(void);
+void HU_CloseChat(void);
+boolean HU_IsChatOpen(void);
+
 void HU_AddChatText(const char *text, boolean playsound);
 
 // set true when entering a chat message
@@ -95,6 +113,8 @@ extern patch_t *tagico;
 extern patch_t *tallminus;
 extern patch_t *tallinfin;
 extern patch_t *tokenicon;
+
+extern font_t *menu_fonts[MENU_NUMFONTS];
 
 // set true whenever the tab rankings are being shown for any reason
 extern boolean hu_showscores;
@@ -120,6 +140,10 @@ void HU_DrawDualTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scoreline
 void HU_DrawEmeralds(INT32 x, INT32 y, INT32 pemeralds);
 
 INT32 HU_CreateTeamScoresTbl(playersort_t *tab, UINT32 dmtotals[]);
+
+#ifdef TOUCHINPUTS
+void HU_DrawTapAnywhere(tic_t tics, INT32 flags);
+#endif
 
 // CECHO interface.
 void HU_ClearCEcho(void);

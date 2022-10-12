@@ -5,6 +5,7 @@
 passthru_opts+=\
 	NONET NO_IPV6 NOHW NOMD5 NOPOSTPROCESSING\
 	MOBJCONSISTANCY PACKETDROP ZDEBUG\
+	TOUCHINPUTS NATIVESCREENRES\
 	HAVE_MINIUPNPC\
 
 # build with debugging information
@@ -16,6 +17,7 @@ endif
 ifndef NOHW
 opts+=-DHWRENDER
 sources+=$(call List,hardware/Sourcefile)
+sources+=hardware/r_opengl/r_opengl.c
 endif
 
 ifndef NOASM

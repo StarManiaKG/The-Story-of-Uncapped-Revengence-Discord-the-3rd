@@ -4810,7 +4810,7 @@ boolean P_AddWadFile(const char *wadfilename)
 	UINT16 numlumps, wadnum;
 
 	// Init file.
-	if ((numlumps = W_InitFile(wadfilename, false, false)) == INT16_MAX)
+	if ((numlumps = W_InitFile(wadfilename, FILEHANDLE_STANDARD, false, false)) == INT16_MAX)
 	{
 		refreshdirmenu |= REFRESHDIR_NOTLOADED;
 		return false;

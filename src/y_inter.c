@@ -650,6 +650,7 @@ void Y_IntermissionDrawer(void)
 		}
 
 		// draw the emeralds
+		//if (intertic & 1)
 		if (LUA_HudEnabled(hud_intermissionemeralds))
 		{
 			boolean drawthistic = !(ALL7EMERALDS(emeralds) && (intertic & 1));
@@ -666,6 +667,10 @@ void Y_IntermissionDrawer(void)
 			}
 			else if (em < 7)
 			{
+				static UINT8 emeraldbounces = 0;
+				static INT32 emeraldmomy = 20;
+				static INT32 emeraldy = -40;
+
 				if (drawthistic)
 					for (i = 0; i < 7; ++i)
 					{
@@ -676,15 +681,45 @@ void Y_IntermissionDrawer(void)
 
 				emeraldx = 152 + (em-3)*28;
 
-				if (intertic > 1)
+				if (intertic <= 1)
 				{
-					if (stagefailed && data.spec.emeraldy < (vid.height/vid.dupy)+16)
+					emeraldbounces = 0;
+					emeraldmomy = 20;
+					emeraldy = -40;
+				}
+				else
+				{
+					if (!stagefailed)
 					{
-						emeraldx += intertic - 6;
+						if (emeraldbounces < 3)
+						{
+							emeraldy += (++emeraldmomy);
+							if (emeraldy > 74)
+							{
+								S_StartSound(NULL, sfx_tink); // tink
+								emeraldbounces++;
+								emeraldmomy = -(emeraldmomy/2);
+								emeraldy = 74;
+							}
+						}
 					}
-
+					else
+					{
+						if (emeraldy < (vid.height/vid.dupy)+16)
+						{
+							emeraldy += (++emeraldmomy);
+							emeraldx += intertic - 6;
+						}
+						if (emeraldbounces < 1 && emeraldy > 74)
+						{
+							S_StartSound(NULL, sfx_shldls); // nope
+							emeraldbounces++;
+							emeraldmomy = -(emeraldmomy/2);
+							emeraldy = 74;
+						}
+					}
 					if (drawthistic)
-						V_DrawScaledPatch(emeraldx, data.spec.emeraldy, 0, emeraldpics[0][em]);
+						V_DrawScaledPatch(emeraldx, emeraldy, 0, emeraldpics[0][em]);
 				}
 			}
 		}
