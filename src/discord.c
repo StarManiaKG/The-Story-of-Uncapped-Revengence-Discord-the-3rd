@@ -478,10 +478,7 @@ void DRPC_UpdatePresence(void)
 			else
 				return;
 		}
-	}
-		
-	if (netgame)
-	{
+
 		switch (ms_RoomId)
 		{
 			case 33: snprintf(servertype, 26, "Standard"); break;
@@ -627,7 +624,7 @@ void DRPC_UpdatePresence(void)
 			
 			//// Total SRB2 Playtime ////
 			if (cv_discordshowonstatus.value == 7)
-				snprintf(detailstr, 56, va("Has Collectively Played SRB2 For: %i hours, %i minutes, %i seconds", G_TicsToHours(totalplaytime), G_TicsToMinutes(totalplaytime), G_TicsToSeconds(totalplaytime)));
+				snprintf(detailstr, 56, "Total SRB2 Playtime: %d hours, %d minutes, %d seconds", G_TicsToHours(totalplaytime), G_TicsToMinutes(totalplaytime, false), G_TicsToSeconds(totalplaytime));
 
 			discordPresence.details = detailstr;
 		}

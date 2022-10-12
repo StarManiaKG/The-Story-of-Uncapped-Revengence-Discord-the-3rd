@@ -139,6 +139,7 @@ typedef enum
 	// MN_HELP,
 
 	MN_SPECIAL,
+
 	MN_DISCORD_RQ, //discord requests, for future notice
 	MN_DISCORD_OPT,
 	MN_DISCORDCS_OUTPUT,
@@ -157,6 +158,9 @@ typedef enum
 	MENUSTYLE_PLATTER,
 	MENUSTYLE_JOYSTICKS,
 	MENUSTYLE_SERVERLIST,
+#ifdef HAVE_DISCORDRPC
+	MENUSTYLE_DISCORDREQUESTS,
+#endif
 	MENUSTYLE_PLAYSTYLE,
 	MENUSTYLE_VIDEOMODES,
 	MENUSTYLE_ADDONS,
@@ -634,6 +638,7 @@ void M_RefreshPauseMenu(void);
 	NULL,NULL\
 }
 
+#if defined (__ANDROID__)
 #define MAPPLATTERMENUSTYLE(id, header, source)\
 {\
 	id,MENUSTYLE_PLATTER,\
@@ -642,10 +647,24 @@ void M_RefreshPauseMenu(void);
 	&MainDef,\
 	source,\
 	M_DrawLevelPlatterMenu,\
-	0,0,\
+	0, 0,\
 	0,\
 	NULL,M_LevelPlatterTicker\
 }
+#else
+#define MAPPLATTERMENUSTYLE(id, header, source)\
+{\
+	id,MENUSTYLE_PLATTER,\
+	header,\
+	sizeof (source)/sizeof (menuitem_t),\
+	&MainDef,\
+	source,\
+	M_DrawLevelPlatterMenu,\
+	0, 0,\
+	0,\
+	NULL,NULL\
+}
+#endif
 
 #define CONTROLMENUSTYLE(id, source, prev)\
 {\

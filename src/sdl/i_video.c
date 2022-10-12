@@ -281,6 +281,8 @@ static SDL_bool Impl_RenderContextCreate(void)
 	}
 
 #ifdef HWRENDER
+	SDL_GLContext sdlglcontext = 0;
+	
 	if (rendermode == render_opengl && vid.glstate != VID_GL_LIBRARY_ERROR)
 	{
 		if (!sdlglcontext)
@@ -331,6 +333,8 @@ void Impl_RenderContextReset(void)
 
 static void Impl_SetGLContext(void)
 {
+	SDL_GLContext sdlglcontext = 0;
+
 	SDL_GL_MakeCurrent(window, sdlglcontext);
 }
 
@@ -378,6 +382,7 @@ static SDL_bool SDLSetMode(INT32 width, INT32 height, SDL_bool fullscreen, SDL_b
 {
 	static SDL_bool wasfullscreen = SDL_FALSE;
 	int fullscreen_type = SDL_WINDOW_FULLSCREEN_DESKTOP;
+	int bpp = 16;
 
 	realwidth = vid.width;
 	realheight = vid.height;
@@ -433,7 +438,6 @@ static SDL_bool SDLSetMode(INT32 width, INT32 height, SDL_bool fullscreen, SDL_b
 	if (rendermode == render_soft)
 	{
 		int sw_texture_format = SDL_PIXELFORMAT_ABGR8888;
-		int bpp = 16;
 		
 		SDL_RenderClear(renderer);
 		SDL_RenderSetLogicalSize(renderer, width, height);
@@ -3156,6 +3160,7 @@ void I_ShutdownGraphics(void)
 #endif
 	if (sdlglcontext)
 	{
+		SDL_GLContext sdlglcontext = 0;
 		SDL_GL_DeleteContext(sdlglcontext);
 	}
 #endif

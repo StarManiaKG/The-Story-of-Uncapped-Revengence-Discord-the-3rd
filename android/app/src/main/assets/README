@@ -6,6 +6,7 @@ This folder contains the files that will be packaged with the built APK.
     * zones.pk3
     * player.dta
     * patch.pk3
+    * starmaniakg.pk3
 
   NOTE: If they are missing, the app will look for them inside the following
   path, under either internal storage or external storage:

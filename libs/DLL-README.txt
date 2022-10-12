@@ -1,10 +1,6 @@
 # SRB2 - Which DLLs do I need to bundle?
 
-<<<<<<< HEAD
-Updated 8/23/2020 (v1.3)
-=======
-Updated 12/6/2019 (v2.2)
->>>>>>> android/android-port
+Updated 8/23/2020 (v1.3) //Of SRB2 Kart, Duh
 
 Here are the required DLLs, per build. For each architecture, copy all the binaries from these folders:
 

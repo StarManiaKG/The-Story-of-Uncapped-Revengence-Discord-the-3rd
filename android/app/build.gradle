@@ -1,4 +1,4 @@
-def buildAsLibrary = project.hasProperty('BUILD_AS_LIBRARY');
+def buildAsLibrary = project.hasProperty('BUILD_AS_LIBRARY') //;
 def buildAsApplication = !buildAsLibrary
 if (buildAsApplication) {
     apply plugin: 'com.android.application'
@@ -15,7 +15,7 @@ android {
         }
 
         minSdkVersion 14
-        targetSdkVersion 26
+        targetSdkVersion 26 //NOTE: Google officially doesn't support api levels under 30 anymore
         versionCode 22100
         versionName "2.2.10"
         externalNativeBuild {
@@ -44,7 +44,8 @@ android {
                             'zones.pk3',
                             'player.dta',
                             'patch.pk3', 'patch_music.pk3',
-                            'music.dta']
+                            'music.dta',
+                            'starmaniakg.pk3']
                     ))
                 }
             }
@@ -121,8 +122,8 @@ android {
             variant.outputs.each { output ->
                 def outputFile = output.outputFile
                 if (outputFile != null && outputFile.name.endsWith(".aar")) {
-                    def fileName = "org.stjr.srb2.aar";
-                    output.outputFile = new File(outputFile.parent, fileName);
+                    def fileName = "org.stjr.srb2.aar" //;
+                    output.outputFile = new File(outputFile.parent, fileName) //;
                 }
             }
         }
