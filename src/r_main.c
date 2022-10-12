@@ -1116,6 +1116,7 @@ subsector_t *R_PointInSubsectorOrNull(fixed_t x, fixed_t y)
 // recalc necessary stuff for mouseaiming
 // slopes are already calculated for the full possible view (which is 4*viewheight).
 // 18/08/18: (No it's actually 16*viewheight, thanks Jimita for finding this out)
+/*
 static void R_SetupFreelook(player_t *player, boolean skybox)
 {
 #ifndef HWRENDER
@@ -1146,6 +1147,7 @@ static void R_SetupFreelook(player_t *player, boolean skybox)
 	if (rendermode == render_soft)
 		yslope = &yslopetab[viewheight*8 - centery];
 }
+*/
 
 void R_SetupFrame(player_t *player)
 {

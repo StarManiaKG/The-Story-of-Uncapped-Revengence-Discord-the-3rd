@@ -71,9 +71,8 @@ PFNglGetString pglGetString;
 */
 INT32 oglflags = 0;
 void *GLUhandle = NULL;
-//SDL_GLContext sdlglcontext = 0;
+SDL_GLContext sdlglcontext = 0;
 
-#if defined(__ANDROID__)
 void *GLBackend_GetFunction(const char *proc)
 {
 	if (strncmp(proc, "glu", 3) == 0)
@@ -85,7 +84,7 @@ void *GLBackend_GetFunction(const char *proc)
 	}
 	return SDL_GL_GetProcAddress(proc);
 }
-#else
+
 void *GetGLFunc(const char *proc)
 {
 	if (strncmp(proc, "glu", 3) == 0)
@@ -97,7 +96,6 @@ void *GetGLFunc(const char *proc)
 	}
 	return SDL_GL_GetProcAddress(proc);
 }
-#endif
 
 boolean LoadGL(void)
 {
@@ -143,7 +141,8 @@ boolean LoadGL(void)
 #if defined(__ANDROID__)
 			return GLBackend_LoadFunctions();
 #else
-			return SetupGLfunc();
+			return GLBackend_LoadFunctions();
+			//return GetGLFunc(GLULibname);
 #endif
 		else
 		{
@@ -161,7 +160,7 @@ boolean LoadGL(void)
 #if defined(__ANDROID__)
 	return GLBackend_LoadFunctions();
 #else
-	return SetupGLfunc();
+	//return GetGLFunc(GLULibname);
 #endif
 }
 
@@ -206,12 +205,12 @@ boolean OglSdlSurface(INT32 w, INT32 h)
 	}
 	first_init = true;
 
-	if (isExtAvailable("GL_EXT_texture_filter_anisotropic", gl_extensions))
+	if (S_PrefAvailable("GL_EXT_texture_filter_anisotropic", gl_extensions))
 		pglGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maximumAnisotropy);
 	else
 		maximumAnisotropy = 1;
 
-	SetupGLFunc4();
+	//GetGLFunc(gl_extensions);
 
 	glanisotropicmode_cons_t[1].value = maximumAnisotropy;
 
@@ -269,7 +268,7 @@ EXPORT void HWRAPI(OglSdlSetPalette) (RGBA_t *palette)
 	if (memcmp(&myPaletteData, palette, palsize))
 	{
 		memcpy(&myPaletteData, palette, palsize);
-		Flush();
+		//glFlush();
 	}
 }
 
