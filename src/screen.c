@@ -455,9 +455,11 @@ void SCR_ChangeFullscreen(void)
 	{
 		VID_PrepareModeList();
 
+#ifdef NATIVESCREENRES
 		if (cv_nativeres.value)
 			SCR_SetModeFromConfig();
 		else
+#endif
 		
 		// Lactozilla: This only works with the preset video modes.
 		setmodeneeded = VID_GetModeForSize(vid.width, vid.height) + 1;
@@ -569,8 +571,10 @@ static void SCR_NativeResAutoChanged(void)
 	else
 		SCR_ResetNativeResDivider();
 
+#ifdef NATIVESCREENRES
 	if (cv_nativeres.value)
 		SCR_SetModeFromConfig();
+#endif
 }
 
 #define RESDIVFACTOR (1.0f / 16.0f)
@@ -763,10 +767,6 @@ void SCR_DisplayLocalPing(void)
 	}
 }
 
-<<<<<<< HEAD
-
-=======
->>>>>>> android/android-port
 void SCR_ClosedCaptions(void)
 {
 	UINT8 i;
