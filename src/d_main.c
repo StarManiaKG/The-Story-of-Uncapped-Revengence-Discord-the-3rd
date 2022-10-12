@@ -1338,8 +1338,7 @@ static void IdentifyVersion(void)
 		free(srb2wad);
 #endif
 
-	// if you change the ordering of this or add/remove a file, be sure to update the md5
-	// checking in D_SRB2Main
+	// if you change the ordering of this or add/remove a file, be sure to update the md5 checking in D_SRB2Main
 
 	// Add the maps
 	D_AddFile(&startupwadfiles, FILEPATH("zones.pk3"), ASSET_HASH_ZONES_PK3);
@@ -1586,7 +1585,6 @@ void D_SRB2Main(void)
 	UnpackFile_ProgressClear();
 #endif
 
-/*
 #ifndef DEVELOP // md5s last updated 22/02/20 (ddmmyy)
 
 	// Check MD5s of autoloaded files
@@ -1608,7 +1606,6 @@ void D_SRB2Main(void)
 	// don't check music.dta because people like to modify it, and it doesn't matter if they do
 	// ...except it does if they slip maps in there, and that's what W_VerifyNMUSlumps is for.
 #endif //ifndef DEVELOP
-*/
 
 	cht_Init();
 
