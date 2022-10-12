@@ -616,7 +616,7 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu)
 
 		I_FinishUpdate(); // page flip or blit buffer
 
-//skipframe:
+skipframe:
 		if (moviemode)
 			M_SaveFrame();
 	}

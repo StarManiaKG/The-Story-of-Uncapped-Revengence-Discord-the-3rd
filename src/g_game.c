@@ -263,11 +263,13 @@ UINT32 timesBeaten;
 UINT32 timesBeatenWithEmeralds;
 UINT32 timesBeatenUltimate;
 
+/*
 typedef struct joystickvector2_s
 {
 	INT32 xaxis;
 	INT32 yaxis;
 } joystickvector2_t;
+*/
 
 boolean precache = true; // if true, load all graphics at start
 
@@ -369,7 +371,7 @@ consvar_t cv_autobrake = CVAR_INIT ("autobrake", "On", CV_SAVE|CV_CALL, CV_OnOff
 consvar_t cv_autobrake2 = CVAR_INIT ("autobrake2", "On", CV_SAVE|CV_CALL, CV_OnOff, AutoBrake2_OnChange);
 
 // hi here's some new controls
-static CV_PossibleValue_t zerotoone_cons_t[] = {{0, "MIN"}, {FRACUNIT, "MAX"}, {0, NULL}};
+CV_PossibleValue_t zerotoone_cons_t[] = {{0, "MIN"}, {FRACUNIT, "MAX"}, {0, NULL}};
 
 #define CAMCVARFLAGS (CV_FLOAT|CV_SAVE|CV_SLIDER_SAFE)
 
@@ -1031,46 +1033,33 @@ static INT32 G_BasicDeadZoneCalculation(INT32 magnitude, fixed_t deadZone)
 	return deadzoneAppliedValue;
 }
 
-// Get the actual sensible radial value for a joystick axis when accounting for a deadzone
-static void G_HandleAxisDeadZone(UINT8 splitnum, joystickvector2_t *joystickvector, fixed_t deadZone)
+//Calculate the Vector for the Joystick's Deadzone
+static void G_HandleVectorDeadZone(joystickvector2_t *joystickvector, fixed_t deadZone)
 {
-	INT32 gamepadStyle = Joystick.bGamepadStyle;
-	fixed_t deadZone = cv_deadzone.value;
+	// Get the total magnitude of the 2 axes
+	INT32 magnitude = (joystickvector->xaxis * joystickvector->xaxis) + (joystickvector->yaxis * joystickvector->yaxis);
+	INT32 normalisedXAxis;
+	INT32 normalisedYAxis;
+	INT32 normalisedMagnitude;
+	double dMagnitude = sqrt((double)magnitude);
+	magnitude = (INT32)dMagnitude;
 
-	if (splitnum == 1)
-	{
-		gamepadStyle = Joystick2.bGamepadStyle;
-		deadZone = cv_deadzone2.value;
-	}
+	// Get the normalised xy values from the magnitude
+	normalisedXAxis = (joystickvector->xaxis * magnitude) / JOYAXISRANGE;
+	normalisedYAxis = (joystickvector->yaxis * magnitude) / JOYAXISRANGE;
 
-	// When gamepadstyle is "true" the values are just -1, 0, or 1. This is done in the interface code.
-	if (!gamepadStyle)
-	{
-		// Get the total magnitude of the 2 axes
-		INT32 magnitude = (joystickvector->xaxis * joystickvector->xaxis) + (joystickvector->yaxis * joystickvector->yaxis);
-		INT32 normalisedXAxis;
-		INT32 normalisedYAxis;
-		INT32 normalisedMagnitude;
-		double dMagnitude = sqrt((double)magnitude);
-		magnitude = (INT32)dMagnitude;
+	// Apply the deadzone to the magnitude to give a correct value between 0 and JOYAXISRANGE
+	normalisedMagnitude = G_BasicDeadZoneCalculation(magnitude, deadZone);
 
-		// Get the normalised xy values from the magnitude
-		normalisedXAxis = (joystickvector->xaxis * magnitude) / JOYAXISRANGE;
-		normalisedYAxis = (joystickvector->yaxis * magnitude) / JOYAXISRANGE;
+	// Apply the deadzone to the xy axes
+	joystickvector->xaxis = (normalisedXAxis * normalisedMagnitude) / JOYAXISRANGE;
+	joystickvector->yaxis = (normalisedYAxis * normalisedMagnitude) / JOYAXISRANGE;
 
-		// Apply the deadzone to the magnitude to give a correct value between 0 and JOYAXISRANGE
-		normalisedMagnitude = G_BasicDeadZoneCalculation(magnitude, deadZone);
-
-		// Apply the deadzone to the xy axes
-		joystickvector->xaxis = (normalisedXAxis * normalisedMagnitude) / JOYAXISRANGE;
-		joystickvector->yaxis = (normalisedYAxis * normalisedMagnitude) / JOYAXISRANGE;
-
-		// Cap the values so they don't go above the correct maximum
-		joystickvector->xaxis = min(joystickvector->xaxis, JOYAXISRANGE);
-		joystickvector->xaxis = max(joystickvector->xaxis, -JOYAXISRANGE);
-		joystickvector->yaxis = min(joystickvector->yaxis, JOYAXISRANGE);
-		joystickvector->yaxis = max(joystickvector->yaxis, -JOYAXISRANGE);
-	}
+	// Cap the values so they don't go above the correct maximum
+	joystickvector->xaxis = min(joystickvector->xaxis, JOYAXISRANGE);
+	joystickvector->xaxis = max(joystickvector->xaxis, -JOYAXISRANGE);
+	joystickvector->yaxis = min(joystickvector->yaxis, JOYAXISRANGE);
+	joystickvector->yaxis = max(joystickvector->yaxis, -JOYAXISRANGE);
 }
 
 // Get the actual sensible radial value for a joystick axis when accounting for a deadzone
@@ -1078,6 +1067,12 @@ static void G_HandleAxisDeadZone(UINT8 splitnum, joystickvector2_t *joystickvect
 {
 	INT32 gamepadStyle = G_GamepadStyleForPlayer(splitnum);
 	fixed_t deadZone = G_DeadZoneForPlayer(splitnum);
+
+	if (splitnum == 1)
+	{
+		gamepadStyle = Joystick2.bGamepadStyle;
+		deadZone = cv_deadzone2.value;
+	}
 
 	// When gamepadstyle is "true" the values are just -1, 0, or 1. This is done in the interface code.
 	if (!gamepadStyle)
@@ -4519,16 +4514,14 @@ void G_LoadGameData(void)
 	gamedatainpath = false;
 
 	if (M_CheckParm("-gamedata") && M_IsNextParm())
-	{
 		strlcpy(gamedatafilename, M_GetNextParm(), sizeof gamedatafilename);
-	}
 
 	if (M_CheckParm("-resetdata"))
 		return; // Don't load (essentially, reset).
 
 	length = FIL_ReadFile(va(pandf, srb2home, gamedatafilename), &savebuffer);
 	
-	if (!FIL_ReadFile(va(pandf, srb2home, gamedatafilename), &savebuffer))
+	if (!length)
 	{
 #ifdef USE_GAMEDATA_PATHS
 		if (FIL_ReadFile(va(pandf, srb2path, gamedatafilename), &savebuffer))
@@ -4853,7 +4846,7 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 
 	length = FIL_ReadFile(savename, &savebuffer);
 
-	if (!length || !G_ReadSaveGameSlot(savename, &savebuffer, slot)))
+	if (!length || !G_ReadSaveGameSlot(savename, &savebuffer, slot))
 	{
 		CONS_Printf(M_GetText("Couldn't read file %s\n"), savename);
 		return;

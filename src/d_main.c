@@ -95,10 +95,12 @@
 
 #include "lua_script.h"
 
+/*
 #ifdef LOGMESSAGES
 FILE *logstream = NULL;
 char logfilename[1024];
 #endif
+*/
 
 // Version numbers for netplay :upside_down_face:
 int    VERSION;
@@ -151,8 +153,8 @@ INT32 debugload = 0;
 UINT16 numskincolors;
 menucolor_t *menucolorhead, *menucolortail;
 
-char savegamename[SAVEGAMENAMELEN]
-char liveeventbackup[SAVEGAMENAMELEN]
+char savegamename[2][SAVEGAMENAMELEN];
+char liveeventbackup[2][SAVEGAMENAMELEN];
 char *cursavegamename = savegamename[0];
 char *curliveeventbackup = liveeventbackup[0];
 
@@ -332,13 +334,8 @@ static boolean D_Display(void) //static void D_Display(void)
 	if (I_AppOnBackground() || dedicated)
 		return false;
 
-#if !defined(__ANDROID__)
 	if (nodrawers)
 		return false; // for comparative timing/profiling
-#else
-	if (nodrawers)
-		return; // for comparative timing/profiling
-#endif
 
 	// Lactozilla: Switching renderers works by checking
 	// if the game has to do it right when the frame
@@ -540,7 +537,7 @@ static boolean D_Display(void) //static void D_Display(void)
 				}
 
 				if (I_AppOnBackground())
-					return;
+					return false;
 
 				// render the second screen
 				if (splitscreen && players[secondarydisplayplayer].mo)
@@ -565,7 +562,7 @@ static boolean D_Display(void) //static void D_Display(void)
 				}
 
 				if (I_AppOnBackground())
-					return;
+					return false;
 
 				// Image postprocessing effect
 				if (rendermode == render_soft)
@@ -1143,14 +1140,14 @@ void D_StartTitle(void)
 	} \
 	else \
 	{ \
-		index = list->numfiles; \ //list->numfiles++; \
+		list->numfiles++; \
 		list->files = realloc(list->files, sizeof(list->files) * ((++list->numfiles) + 1)); \
-		//list->hashes = realloc(list->hashes, sizeof(list->hashes) * list->numfiles);
-		if (list->files == NULL) \ //if (list->files == NULL || list->hashes == NULL)
+		list->hashes = realloc(list->hashes, sizeof(list->hashes) * list->numfiles); \
+		if (list->files == NULL || list->hashes == NULL) \
 			I_Error("%s: No more free memory to add file %s", __FUNCTION__, file); \
 	}
 
-static void D_AddFile(addfilelist_t *list, const char *file) //static void D_AddFile(addfilelist_t *list, const char *file, const char *hash)
+static void D_AddFile(addfilelist_t *list, const char *file, const char *hash)
 {
 	char *newfile;
 	size_t index = 0;
@@ -1163,7 +1160,7 @@ static void D_AddFile(addfilelist_t *list, const char *file) //static void D_Add
 
 	strcpy(newfile, file);
 	list->files[index] = newfile;
-	//list->hashes[index] = hash;
+	list->hashes[index] = hash;
 }
 
 static void D_AddFolder(addfilelist_t *list, const char *file)
@@ -1219,10 +1216,10 @@ static inline void D_CleanFile(addfilelist_t *list)
 			free(list->files[pnumwadfiles]);
 
 		free(list->files);
-		//free(list->hashes);
+		free(list->hashes);
 
 		list->files = NULL;
-		//list->hashes = NULL;
+		list->hashes = NULL;
 	}
 
 	list->numfiles = 0;
@@ -1268,30 +1265,24 @@ static void ChangeDirForUrlHandler(void)
 // Identify the SRB2 version, and IWAD file to use.
 // ==========================================================================
 
-#if !defined(__ANDROID__)
-static void IdentifyVersion(void)
-{
-	char *srb2wad;
-	const char *srb2waddir = NULL;
-
-#else
-
 #define FILEPATH(fname) va(pandf,srb2waddir,fname)
 
 static void IdentifyVersion(void)
 {
+#if !defined(__ANDROID__)
+	char *srb2wad;
+#else
 	const char *basepk3 = "srb2.pk3";
+#endif
 	const char *srb2waddir = NULL;
 
 #if defined(__ANDROID__)
 	fhandletype_t handletype = FILEHANDLE_SDL;
 	D_SetupHome();
 #else
-	char *srb2wad;
 	fhandletype_t handletype = FILEHANDLE_STANDARD;
 #endif
 
-#endif //ANDROID
 #if defined (__unix__) || defined (UNIXCOMMON) || defined (HAVE_SDL)
 	// change to the directory where 'srb2.pk3' is found
 	srb2waddir = I_LocateWad();
@@ -1300,17 +1291,13 @@ static void IdentifyVersion(void)
 #if !defined(__ANDROID__)
 	// get the current directory (possible problem on NT with "." as current dir)
 	if (srb2waddir)
-	{
 		strlcpy(srb2path,srb2waddir,sizeof (srb2path));
-	}
 	else
 	{
 		if (getcwd(srb2path, 256) != NULL)
 			srb2waddir = srb2path;
 		else
-		{
 			srb2waddir = ".";
-		}
 	}
 #endif
 
@@ -1320,10 +1307,11 @@ static void IdentifyVersion(void)
 		srb2waddir = I_GetWadDir();
 #endif
 
-//#if defined(__ANDROID__)
+#if defined(__ANDROID__)
 	// Simplified
 	D_AddFile(&startupwadfiles, FILEPATH(basepk3), ASSET_HASH_SRB2_PK3);
-//#else
+#else
+	// Complex
 	// will be overwritten in case of -cdrom or unix/win home
 	snprintf(configfile, sizeof configfile, "%s" PATHSEP CONFIGFILENAME, srb2waddir);
 	configfile[sizeof configfile - 1] = '\0';
@@ -1333,8 +1321,8 @@ static void IdentifyVersion(void)
 	if (srb2wad == NULL)
 		I_Error("No more free memory to look in %s", srb2waddir);
 	else
-		sprintf(srb2wad, pandf, srb2waddir, "srb2.pk3");
-		//sprintf(srb2wad, pandf, srb2waddir, basepk3);
+		//sprintf(srb2wad, pandf, srb2waddir, srb2wad);
+		sprint(pandf, srb2waddir, srb2wad);
 
 	// will be overwritten in case of -cdrom or unix/win home
 	snprintf(configfile, sizeof configfile, "%s" PATHSEP CONFIGFILENAME, srb2waddir);
@@ -1342,13 +1330,13 @@ static void IdentifyVersion(void)
 
 	// Load the IWAD
 	if (srb2wad != NULL && FIL_ReadFileOK(srb2wad))
-		D_AddFile(&startupwadfiles, srb2wad);
+		D_AddFile(&startupwadfiles, FILEPATH(srb2wad), ASSET_HASH_SRB2_PK3);
 	else
-		I_Error("srb2.pk3 not found! Expected in %s, ss file: %s\n", srb2waddir, srb2wad);
-		//I_Error("%s not found! Expected in %s, ss file: %s\n", basepk3, srb2waddir, srb2wad);
+		I_Error("%s not found! Expected in %s, ss file: %s\n", srb2wad, srb2waddir, srb2wad);
 
 	if (srb2wad)
 		free(srb2wad);
+#endif
 
 	// if you change the ordering of this or add/remove a file, be sure to update the md5
 	// checking in D_SRB2Main
@@ -1376,7 +1364,7 @@ static void IdentifyVersion(void)
 	{
 #define MUSICTEST(str) \
 		{\
-			const char *musicpath = FILEPATH(str);
+			const char *musicpath = FILEPATH(str); \
 			int ms = W_VerifyNMUSlumps(musicpath, handletype, false); \
 			if (ms == 1) \
 				D_AddFile(&startupwadfiles, musicpath, NULL); \
@@ -1598,6 +1586,7 @@ void D_SRB2Main(void)
 	UnpackFile_ProgressClear();
 #endif
 
+/*
 #ifndef DEVELOP // md5s last updated 22/02/20 (ddmmyy)
 
 	// Check MD5s of autoloaded files
@@ -1607,12 +1596,19 @@ void D_SRB2Main(void)
 #ifdef USE_PATCH_DTA
 	W_VerifyFileMD5(3, ASSET_HASH_PATCH_PK3); // patch.pk3
 	W_VerifyFileMD5(4, ASSET_HASH_STAR_PK3); // starmaniakg.pk3
+#ifdef USE_ANDROID_PK3
+	W_VerifyFileMD5(5, ASSET_HASH_STAR_PK3); // android.pk3
+#endif
 #else
 	W_VerifyFileMD5(3, ASSET_HASH_STAR_PK3); // starmaniakg.pk3
+#ifdef USE_ANDROID_PK3
+	W_VerifyFileMD5(4, ASSET_HASH_ANDROID_PK3); // android.pk3
+#endif
 #endif
 	// don't check music.dta because people like to modify it, and it doesn't matter if they do
 	// ...except it does if they slip maps in there, and that's what W_VerifyNMUSlumps is for.
 #endif //ifndef DEVELOP
+*/
 
 	cht_Init();
 

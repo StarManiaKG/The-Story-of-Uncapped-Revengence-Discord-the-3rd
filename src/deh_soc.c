@@ -3851,8 +3851,12 @@ void readmaincfg(MYFILE *f)
 				strncpy(timeattackfolder, gamedatafilename, min(filenamelen, sizeof (timeattackfolder)));
 				timeattackfolder[min(filenamelen, sizeof (timeattackfolder) - 1)] = '\0';
 
-				strcpy(savegamename, timeattackfolder, sizeof(savegame));
-				strlcat(savegamename, "%u.ssg", sizeof(savegamename)); //strlcat(savegame, "%u.ssg", sizeof(savegame));
+				/*
+				strcpy(savegamename, va(timeattackfolder, sizeof(savegame)));
+				strlcat(savegamename, "%u.ssg", sizeof(savegame)); //strlcat(savegame, "%u.ssg", sizeof(savegame));
+				*/
+				strcpy(savegamename, timeattackfolder);
+				strlcat(savegamename, "%u.ssg", sizeof(savegamename));
 				// can't use sprintf since there is %u in savegamename
 				strcatbf(savegamename, srb2home, PATHSEP);
 

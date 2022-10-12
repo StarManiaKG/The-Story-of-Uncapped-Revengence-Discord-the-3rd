@@ -2042,7 +2042,7 @@ static boolean CL_FinishedFileList(void)
 	if (i == 4) // still checking ...
 		return true;
 	
-		char enterstring[72];
+	char enterstring[72];
 	char escstring[72];
 
 	const char *confirmstr;

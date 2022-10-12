@@ -60,8 +60,8 @@ float alpha_threshold = 0.0f;
 FTextureInfo *TexCacheTail = NULL;
 FTextureInfo *TexCacheHead = NULL;
 
-GLuint      tex_downloaded  = 0;
-GLfloat     fov             = 90.0f;
+GLuint      tex_downloaded = 0;
+GLfloat     fov            = 90.0f;
 FBITFIELD   CurrentPolyFlags;
 
 // Sryder:	NextTexAvail is broken for these because palette changes or changes to the texture filter or antialiasing
@@ -277,7 +277,7 @@ boolean GLBackend_LoadCommonFunctions(void)
 	GETOPENGLFUNC(AlphaFunc)
 	GETOPENGLFUNC(BlendFunc)
 	GETOPENGLFUNC(CullFace)
-	GETOPENGLFUNC(PolygonOffset)
+	GETOPENGLFUNC(PolygonOffset);
 	GETOPENGLFUNC(Enable)
 	GETOPENGLFUNC(Disable)
 	GETOPENGLFUNC(GetFloatv)
@@ -551,9 +551,7 @@ void SetBlendingStates(FBITFIELD PolyFlags)
 			}
 		}
 		if (PolyFlags & PF_NoTexture)
-		{
 			SetNoTexture();
-		}
 	}
 
 	CurrentPolyFlags = PolyFlags;
@@ -1475,9 +1473,9 @@ boolean GLExtension_LoadFunctions(void)
 
 		if (CheckFunctionList(list))
 		{
-			GETOPENGLFUNC(ActiveTexture)
+			GETOPENGLFUNC(ActiveTexture);
 #ifndef HAVE_GLES2
-			GETOPENGLFUNC(ClientActiveTexture)
+			GETOPENGLFUNC(ClientActiveTexture);
 #endif
 		}
 		else
@@ -1497,10 +1495,10 @@ boolean GLExtension_LoadFunctions(void)
 
 		if (CheckFunctionList(list))
 		{
-			GETOPENGLFUNC(GenBuffers)
-			GETOPENGLFUNC(BindBuffer)
-			GETOPENGLFUNC(BufferData)
-			GETOPENGLFUNC(DeleteBuffers)
+			GETOPENGLFUNC(GenBuffers);
+			GETOPENGLFUNC(BindBuffer);
+			GETOPENGLFUNC(BufferData);
+			GETOPENGLFUNC(DeleteBuffers);
 		}
 		else
 			EXTUNSUPPORTED(GLExtension_vertex_buffer_object);

@@ -178,14 +178,6 @@ void W_Shutdown(void)
   */
 #define MD5_FORMAT \
 	"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-static void PrintMD5String(const UINT8 *md5, char *buf)
-{
-	snprintf(buf, 2*MD5_LEN+1, MD5_FORMAT,
-		md5[0], md5[1], md5[2], md5[3],
-		md5[4], md5[5], md5[6], md5[7],
-		md5[8], md5[9], md5[10], md5[11],
-		md5[12], md5[13], md5[14], md5[15]);
-}
 
 // Convert an md5 string like "7d355827fa8f981482246d6c95f9bd48"
 // into a real md5.
@@ -2655,6 +2647,11 @@ void *W_CachePatchLongName(const char *name, INT32 tag)
 		return W_CachePatchNum(W_GetNumForLongName("MISSING"), tag);
 	return W_CachePatchNum(num, tag);
 }
+
+//===========================================================================
+//                                                         MD5 HASH FUNCTIONS
+//===========================================================================
+
 #ifndef NOMD5
 #define MD5_LEN 16
 
@@ -2665,8 +2662,7 @@ void *W_CachePatchLongName(const char *name, INT32 tag)
   * \param buf Where to print the textual form. Needs 2*MD5_LEN+1 (33) bytes.
   * \author Graue <graue@oceanbase.org>
   */
-#define MD5_FORMAT \
-	"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+  
 static void PrintMD5String(const UINT8 *md5, char *buf)
 {
 	snprintf(buf, 2*MD5_LEN+1, MD5_FORMAT,

@@ -176,7 +176,7 @@ boolean gl_powersoftwo = false;
 // Lighting
 // ==========================================================================
 
-static boolean HWR_UseShader(void)
+boolean HWR_UseShader(void)
 {
 	return (cv_glshaders.value && gl_shadersavailable);
 }
@@ -3155,7 +3155,6 @@ static void HWR_Subsector(size_t num)
 	if (gl_frontsector->ffloors)
 	{
 		/// \todo fix light, xoffs, yoffs, extracolormap ?
-		ffloor_t * rover;
 		for (rover = gl_frontsector->ffloors;
 			rover; rover = rover->next)
 		{
