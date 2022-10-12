@@ -63,8 +63,8 @@ static tic_t stoptimer;
 static boolean keypressed = false;
 
 // (no longer) De-Demo'd Title Screen
-static tic_t xscrolltimer;
-static tic_t yscrolltimer;
+//static tic_t xscrolltimer;
+//static tic_t yscrolltimer;
 static INT32 menuanimtimer; // Title screen: background animation timing
 mobj_t *titlemapcameraref = NULL;
 
@@ -1028,11 +1028,13 @@ void F_IntroTicker(void)
 			F_WipeColorFill(31);
 
 			if (intro_scenenum == 15 && intro_curtime == 7*TICRATE)
+			{
 				patch_t *sdo = W_CachePatchName("SONICDO2", PU_PATCH_LOWPRIORITY);
 
 				V_DrawSmallScaledPatch(0, 0, 0, sdo);
 				W_UnlockCachedPatch(sdo);
 				V_DrawString(224, 8, V_ALLOWLOWERCASE, cutscene_disptext);
+			}
 
 			F_IntroDrawer();
 			F_WipeEndScreen();
@@ -4179,7 +4181,7 @@ static void F_GetPageTextGeometry(UINT8 *pagelines, boolean *rightside, INT32 *b
 	*textr = *rightside ? BASEVIDWIDTH - (((*boxh * 4) + (*boxh/2)*4) + 4) : BASEVIDWIDTH-4;
 }
 
-static fixed_t F_GetPromptHideHudBound(void) //fixed_t F_GetPromptHideHudBound(void)
+fixed_t F_GetPromptHideHudBound(void) //static fixed_t F_GetPromptHideHudBound(void)
 {
 	UINT8 pagelines;
 	boolean rightside;

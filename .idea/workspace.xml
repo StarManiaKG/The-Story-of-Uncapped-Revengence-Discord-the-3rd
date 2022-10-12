@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AndroidLayouts">
+    <shared>
+      <config />
+    </shared>
+  </component>
   <component name="AutoImportSettings">
     <option name="autoReloadType" value="NONE" />
   </component>
@@ -348,14 +353,33 @@
       <change afterPath="$PROJECT_DIR$/src/ts_main.h" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/src/w_handle.c" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/src/w_handle.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/The-Story-Of-Uncapped-Revengence-Discord-the-3rd.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/The-Story-Of-Uncapped-Revengence-Discord-the-3rd.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.travis.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.travis.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/.classpath" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/.project" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/.settings/org.eclipse.jdt.core.prefs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/Android.mk" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/AndroidManifest.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/default.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/gen/org/srb2/R.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/res/drawable-hdpi/icon.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/res/drawable-ldpi/icon.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/res/drawable-mdpi/icon.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/res/layout/main.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/res/values/strings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/src/org/srb2/GameThread.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/src/org/srb2/SRB2Game.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/src/org/srb2/nativecode/Main.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/src/org/srb2/nativecode/SRB2.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/android/src/org/srb2/nativecode/Video.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/assets/README.txt" beforeDir="false" afterPath="$PROJECT_DIR$/assets/README.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/libs/DLL-README.txt" beforeDir="false" afterPath="$PROJECT_DIR$/libs/DLL-README.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/src/Makefile" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Makefile.d/features.mk" beforeDir="false" afterPath="$PROJECT_DIR$/src/Makefile.d/features.mk" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Sourcefile" beforeDir="false" afterPath="$PROJECT_DIR$/src/Sourcefile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/asm_defs.inc" beforeDir="false" afterPath="$PROJECT_DIR$/src/asm_defs.inc" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/blua/lauxlib.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/blua/lauxlib.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/blua/ldebug.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/blua/ldebug.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/blua/lgc.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/blua/lgc.c" afterDir="false" />
@@ -412,6 +436,7 @@
       <change beforePath="$PROJECT_DIR$/src/http-mserv.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/http-mserv.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/hu_stuff.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/hu_stuff.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/hu_stuff.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/hu_stuff.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/i_system.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/i_system.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/i_tcp.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/i_tcp.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/i_video.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/i_video.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/lua_baselib.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/lua_baselib.c" afterDir="false" />
@@ -451,12 +476,12 @@
       <change beforePath="$PROJECT_DIR$/src/sdl/mixer_sound.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/sdl/mixer_sound.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/sdl/ogl_sdl.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/sdl/ogl_sdl.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/sdl/sdlmain.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/sdl/sdlmain.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/sounds.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/sounds.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/sounds.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/sounds.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/st_stuff.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/st_stuff.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/st_stuff.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/st_stuff.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/stun.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/stun.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/v_video.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/v_video.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/v_video.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/v_video.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/vid_copy.s" beforeDir="false" afterPath="$PROJECT_DIR$/src/vid_copy.s" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/w_wad.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/w_wad.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/w_wad.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/w_wad.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/win32/win_dll.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/win32/win_dll.c" afterDir="false" />
@@ -468,6 +493,13 @@
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[]" />
+  <component name="GenerateSignedApkSettings">
+    <option name="KEY_STORE_PATH" value="$PROJECT_DIR$/../ImportantLinuxStuffs/AndroidStudioKeyStores/sonicrobotblaster2.jks" />
+    <option name="KEY_ALIAS" value="Sonic Robot Blaster 2" />
+    <option name="REMEMBER_PASSWORDS" value="true" />
+    <option name="BUILD_TARGET_KEY" value="apk" />
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -483,19 +515,90 @@
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
   <component name="ProjectId" id="2FukVJFE8xpLntUGayLdNbaflYY" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">
+    <property name="AndroidRunProguardForReleaseBuild" value="false" />
+    <property name="ApkExportedModule" value="The-Story-Of-Uncapped-Revengence-Discord-the-3rd" />
+    <property name="ExportedApkPath" value="$PROJECT_DIR$/The-Story-Of-Uncapped-Revengence-Discord-the-3rd.apk" />
+    <property name="ResourceManagerPrefKey.ResourceType" value="DRAWABLE" />
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="RunOnceActivity.cidr.known.project.marker" value="true" />
     <property name="cidr.known.project.marker" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../ImportantLinuxStuffs/AndroidStudioKeyStores/sonicrobotblaster2.jks" />
+    <property name="project.structure.last.edited" value="Problems" />
+    <property name="project.structure.proportion" value="0.15" />
+    <property name="project.structure.side.proportion" value="0.2" />
+    <property name="run.code.analysis.last.selected.profile" value="pProject Default" />
+    <property name="settings.editor.selected.configurable" value="reference.settings.ide.settings.spelling" />
   </component>
-  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="RunManager">
+    <configuration name="Sonic Robo Blast 2" type="AndroidRunConfigurationType" factoryName="Android App">
+      <module name="The-Story-Of-Uncapped-Revengence-Discord-the-3rd" />
+      <option name="DEPLOY" value="true" />
+      <option name="DEPLOY_APK_FROM_BUNDLE" value="false" />
+      <option name="DEPLOY_AS_INSTANT" value="false" />
+      <option name="ARTIFACT_NAME" value="" />
+      <option name="PM_INSTALL_OPTIONS" value="" />
+      <option name="ALL_USERS" value="false" />
+      <option name="ALWAYS_INSTALL_WITH_PM" value="false" />
+      <option name="CLEAR_APP_STORAGE" value="false" />
+      <option name="DYNAMIC_FEATURES_DISABLED_LIST" value="" />
+      <option name="ACTIVITY_EXTRA_FLAGS" value="" />
+      <option name="MODE" value="default_activity" />
+      <option name="CLEAR_LOGCAT" value="false" />
+      <option name="SHOW_LOGCAT_AUTOMATICALLY" value="false" />
+      <option name="INSPECTION_WITHOUT_ACTIVITY_RESTART" value="false" />
+      <option name="TARGET_SELECTION_MODE" value="SHOW_DIALOG" />
+      <option name="SELECTED_CLOUD_MATRIX_CONFIGURATION_ID" value="-1" />
+      <option name="SELECTED_CLOUD_MATRIX_PROJECT_ID" value="" />
+      <option name="DEBUGGER_TYPE" value="Auto" />
+      <Auto>
+        <option name="USE_JAVA_AWARE_DEBUGGER" value="false" />
+        <option name="SHOW_STATIC_VARS" value="true" />
+        <option name="WORKING_DIR" value="" />
+        <option name="TARGET_LOGGING_CHANNELS" value="lldb process:gdb-remote packets" />
+        <option name="SHOW_OPTIMIZED_WARNING" value="true" />
+      </Auto>
+      <Hybrid>
+        <option name="USE_JAVA_AWARE_DEBUGGER" value="false" />
+        <option name="SHOW_STATIC_VARS" value="true" />
+        <option name="WORKING_DIR" value="" />
+        <option name="TARGET_LOGGING_CHANNELS" value="lldb process:gdb-remote packets" />
+        <option name="SHOW_OPTIMIZED_WARNING" value="true" />
+      </Hybrid>
+      <Java />
+      <Native>
+        <option name="USE_JAVA_AWARE_DEBUGGER" value="false" />
+        <option name="SHOW_STATIC_VARS" value="true" />
+        <option name="WORKING_DIR" value="" />
+        <option name="TARGET_LOGGING_CHANNELS" value="lldb process:gdb-remote packets" />
+        <option name="SHOW_OPTIMIZED_WARNING" value="true" />
+      </Native>
+      <Profilers>
+        <option name="ADVANCED_PROFILING_ENABLED" value="false" />
+        <option name="STARTUP_PROFILING_ENABLED" value="false" />
+        <option name="STARTUP_CPU_PROFILING_ENABLED" value="false" />
+        <option name="STARTUP_CPU_PROFILING_CONFIGURATION_NAME" value="Java/Kotlin Method Sample (legacy)" />
+        <option name="STARTUP_NATIVE_MEMORY_PROFILING_ENABLED" value="false" />
+        <option name="NATIVE_MEMORY_SAMPLE_RATE_BYTES" value="2048" />
+        <option name="PROFILING_MODE" value="NOT_SET" />
+      </Profilers>
+      <option name="DEEP_LINK" value="" />
+      <option name="ACTIVITY_CLASS" value="" />
+      <option name="SEARCH_ACTIVITY_IN_GLOBAL_SCOPE" value="false" />
+      <option name="SKIP_ACTIVITY_VALIDATION" value="false" />
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="project-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
       <changelist id="14fb20f7-21d6-4534-8d35-85d7be3f6fb2" name="Changes" comment="" />
@@ -505,6 +608,13 @@
       <updated>1665349379789</updated>
     </task>
     <servers />
+  </component>
+  <component name="TerminalProjectNonSharedOptionsProvider">
+    <envs>
+      <env key="JAVA_HOME" value="$JAVA_HOME$" />
+      <env key="ANDROID_SDK_ROOT" value="$ANDROID_SDK_ROOT$" />
+      <env key="ANDROID_NDK_HOME" value="$ANDROID_NDK_HOME$" />
+    </envs>
   </component>
   <component name="Vcs.Log.Tabs.Properties">
     <option name="TAB_STATES">
@@ -516,5 +626,16 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/src/vid_copy.s</url>
+          <line>28</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

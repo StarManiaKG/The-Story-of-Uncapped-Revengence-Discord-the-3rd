@@ -203,7 +203,6 @@ static int l_strcmp (const TString *ls, const TString *rs) {
   const char *r = getstr(rs);
   size_t lr = rs->tsv.len;
   for (;;) {
-    int temp = strcoll(l, r);
 #ifdef LUA_NOLOCALE
     int temp = strcmp(l, r);
 #else

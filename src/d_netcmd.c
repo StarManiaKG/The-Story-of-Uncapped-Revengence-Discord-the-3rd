@@ -4954,10 +4954,7 @@ static void Color2_OnChange(void)
 /** Displays the result of the chat being muted or unmuted.
   * The server or remote admin should already know and be able to talk
   * regardless, so this is only displayed to clients.
-<<<<<<< HEAD
-=======
   * Updates touch control layouts.
->>>>>>> android/android-port
   *
   * \sa cv_mute
   * \author Graue <graue@oceanbase.org>

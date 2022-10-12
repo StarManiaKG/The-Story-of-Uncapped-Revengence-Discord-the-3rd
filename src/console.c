@@ -1807,7 +1807,7 @@ static void CON_DrawBackpic(void)
 {
 	patch_t *con_backpic;
 	lumpnum_t piclump;
-	int x, y, w, h;
+	int x, w, h;
 	//INT32 x, y = 0, w, h = 0;
 
 	// Get the lumpnum for CONSBACK, STARTUP (Only during game startup) or fallback into MISSING.
@@ -1825,7 +1825,7 @@ static void CON_DrawBackpic(void)
 	// Center the backpic, and draw a vertically cropped patch.
 	w = (con_backpic->width * vid.dupx);
 	x = (vid.width / 2) - (w / 2);
-#ifndef MOBILE_PLATFORM && TV_PLATFORM
+#if !defined (__ANDROID__)
 	h = con_curlines/vid.dupy;
 
 	// If the patch doesn't fill the entire screen,
@@ -1833,6 +1833,7 @@ static void CON_DrawBackpic(void)
 	if (x > 0)
 	{
 		column_t *column = (column_t *)((UINT8 *)(con_backpic->columns) + (con_backpic->columnofs[0]));
+
 		if (!column->topdelta)
 		{
 			UINT8 *source = (UINT8 *)(column) + 3;
@@ -1841,7 +1842,10 @@ static void CON_DrawBackpic(void)
 			V_DrawFill(0, 0, x, con_curlines, color);
 			// right side
 			V_DrawFill((x + w), 0, (vid.width - w), con_curlines, color);
+		}
+	}
 #else
+	int y;
 
 	if (con_startup)
 		y = (vid.height / 2) - ((con_backpic->height * vid.dupy) / 2);
@@ -1871,7 +1875,7 @@ static void CON_DrawBackpic(void)
 #endif
 
 	// Draw the patch.
-#ifndef MOBILE_PLATFORM && TV_PLATFORM	
+#if !defined (__ANDROID__)
 	V_DrawCroppedPatch(x << FRACBITS, 0, FRACUNIT, FRACUNIT, V_NOSCALESTART, con_backpic, NULL,
 			0, (BASEVIDHEIGHT - h) << FRACBITS, BASEVIDWIDTH << FRACBITS, h << FRACBITS);
 
@@ -1888,11 +1892,10 @@ static void CON_DrawBackpic(void)
 		V_DrawCroppedPatch(x << FRACBITS, 0, FRACUNIT, FRACUNIT, V_NOSCALESTART, con_backpic, NULL,
 			0, (BASEVIDHEIGHT - h) << FRACBITS, BASEVIDWIDTH << FRACBITS, h << FRACBITS);
 	}
-}
 #endif
+}
 
 // draw the console background, text, and prompt if enough place
-//
 static void CON_DrawConsole(void)
 {
 	UINT8 *p;

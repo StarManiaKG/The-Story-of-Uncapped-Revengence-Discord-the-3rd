@@ -221,8 +221,8 @@ static struct
 } heldkey;
 #endif
 
-static fixed_t charseltimer = 0;
-static fixed_t char_scroll = 0;
+//static fixed_t charseltimer = 0;
+//static fixed_t char_scroll = 0;
 #define charscrollamt 128*FRACUNIT
 
 //
@@ -272,6 +272,9 @@ TSNAVHANDLER(SaveSelect);
 TSNAVHANDLER(CharacterSelect);
 TSNAVHANDLER(PlayerSetup);
 TSNAVHANDLER(ServerList);
+#ifdef HAVE_DISCORDRPC
+TSNAVHANDLER_CALL(DiscordRequests);
+#endif
 TSNAVHANDLER(AddonsMenu);
 TSNAVHANDLER(SoundTest);
 TSNAVHANDLER(UnlockChecklist);
@@ -349,7 +352,11 @@ static void M_LevelPlatterTicker(void);
 #define lsbasex 19
 #define lsbasey 59+lsheadingheight
 
+#if defined (__ANDROID__)
 #define lsverticalscroll (lsoffs[0] - FixedInt(levselfx.slide[0]))
+#else
+#define lsverticalscroll (lsbasey + lsoffs[0] - getheadingoffset(lsrow))
+#endif
 
 // Sky Room
 static void M_CustomLevelSelect(INT32 choice);
@@ -364,7 +371,7 @@ static void M_Credits(INT32 choice);
 static void M_SoundTest(INT32 choice);
 static void M_PandorasBox(INT32 choice);
 static void M_EmblemHints(INT32 choice);
-static void M_UnlockChecklist(INT32 choice);
+//static void M_UnlockChecklist(INT32 choice);
 static void M_HandleEmblemHints(INT32 choice);
 UINT32 hintpage = 1;
 static void M_HandleChecklist(INT32 choice);
@@ -392,7 +399,7 @@ static void M_SetupChoosePlayer(INT32 choice);
 static UINT8 M_SetupChoosePlayerDirect(INT32 choice);
 static void M_ExitGameResponse(INT32 ch);
 static void M_QuitSRB2(INT32 choice);
-static void M_QuitResponse(INT32 ch);
+void M_QuitResponse(INT32 ch);
 #ifdef BREADCRUMB
 static void M_BreadcrumbExitGameResponse(INT32 ch);
 static void M_BreadcrumbQuitSRB2(INT32 choice);
@@ -589,6 +596,7 @@ menu_t OP_CustomStatusOutputDef;
 menu_t OP_MonitorToggleDef;
 static void M_ScreenshotOptions(INT32 choice);
 static void M_SetupScreenshotMenu(void);
+
 static void M_EraseData(INT32 choice);
 
 static void M_Addons(INT32 choice);
@@ -603,10 +611,6 @@ static void M_DrawLevelPlatterHeader(INT32 y, const char *header, boolean header
 // ==============
 // LOAD GAME MENU
 // ==============
-
-static INT32 saveSlotSelected = 1;
-static INT32 loadgamescroll = 0;
-static UINT8 loadgameoffset = 0;
 
 #define LOADGAME_SCROLLAMT       90
 #define LOADGAME_SLIDETHRESHOLD (0x80 << FRACBITS)
@@ -674,7 +678,7 @@ static void M_DrawNightsAttackMenu(void);
 static void M_DrawMarathon(void);
 static void M_DrawSetupChoosePlayerMenu(void);
 static void M_DrawControlsDefMenu(void);
-static void M_DrawCameraOptionsMenu(void);
+//static void M_DrawCameraOptionsMenu(void);
 static void M_DrawPlaystyleMenu(void);
 static void M_DrawControl(void);
 static void M_DrawMainVideoMenu(void);
@@ -2212,14 +2216,19 @@ menu_t MISC_ChangeLevelDef =
 	M_DrawLevelPlatterMenu,
 	0, 0,
 	0,
+#if defined (__ANDROID__)
 	NULL, M_LevelPlatterTicker
+#else
+	NULL, NULL
+#endif
 };
 
 menu_t MISC_HelpDef = IMAGEDEF(MISC_HelpMenu);
 
 #ifdef HAVE_DISCORDRPC
-menu_t MISC_DiscordRequestsDef = {
-    MN_DISCORD_RQ,
+menu_t MISC_DiscordRequestsDef =
+{
+    MN_DISCORD_RQ, MENUSTYLE_DISCORDREQUESTS,
 	NULL,
 	sizeof (MISC_DiscordRequestsMenu)/sizeof (menuitem_t),
 	&MPauseDef,
@@ -2227,7 +2236,7 @@ menu_t MISC_DiscordRequestsDef = {
 	M_DrawDiscordRequests,
 	0, 0,
 	0,
-	NULL
+	NULL, NULL
 };
 #endif
 
@@ -2758,6 +2767,7 @@ menu_t OP_ColorOptionsDef =
 	0,
 	NULL, NULL
 };
+
 menu_t OP_SoundOptionsDef = DEFAULTSCROLLMENUSTYLE(
 	MTREE2(MN_OP_MAIN, MN_OP_SOUND),
 	"M_SOUND", OP_SoundOptionsMenu, &OP_MainDef, 30, 30);
@@ -2815,7 +2825,7 @@ menu_t OP_ScreenshotOptionsDef =
 	M_DrawScreenshotMenu,
 	30, 30,
 	0,
-	NULL, M_ScreenshotMenuTicker
+	NULL, M_SetupScreenshotMenu
 };
 
 menu_t OP_AddonsOptionsDef = DEFAULTMENUSTYLE(
@@ -3972,6 +3982,10 @@ boolean M_TSNav_CanShowConsole(void)
 
 INT32 M_TSNav_DeleteButtonAction(void)
 {
+	static INT32 saveSlotSelected = 1;
+	//static INT32 loadgamescroll = 0;
+	//static UINT8 loadgameoffset = 0;
+
 	if (currentMenu == &SP_LoadDef)
 	{
 		if (saveSlotSelected == NOSAVESLOT)
@@ -4094,6 +4108,10 @@ static boolean M_TSNav_HandleMenu(touchfinger_t *finger, event_t *event)
 			return TSNAVHANDLER_CALL(SoundTest);
 		case MENUSTYLE_SERVERLIST:
 			return TSNAVHANDLER_CALL(ServerList);
+#ifdef HAVE_DISCORDRPC
+		case MENUSTYLE_DISCORDREQUESTS:
+			return TSNAVHANDLER_CALL(DiscordRequests);
+#endif
 		default:
 			break;
 	}
@@ -6801,59 +6819,7 @@ static void M_DrawGenericMenu(void)
 	}
 }
 
-const char *PlaystyleNames[4] = {"\x86Strafe\x80", "Manual", "Automatic", "Old Analog??"};
-const char *PlaystyleDesc[4] = {
-	// Strafe (or Legacy)
-	"A play style resembling\n"
-	"old-school SRB2 gameplay.\n"
-	"\n"
-	"This play style is identical\n"
-	"to Manual, except that the\n"
-	"player always looks in the\n"
-	"direction of the camera."
-	,
-
-	// Manual (formerly Standard)
-	"A play style made for full control,\n"
-	"using a keyboard and mouse.\n"
-	"\n"
-	"The camera rotates only when\n"
-	"you tell it to. The player\n"
-	"looks in the direction they're\n"
-	"moving, but acts in the direction\n"
-	"the camera is facing.\n"
-	"\n"
-	"Mastery of this play style will\n"
-	"open up the highest level of play!"
-	,
-
-	// Automatic (formerly Simple)
-	"The default play style, designed for\n"
-	"gamepads and hassle-free play.\n"
-	"\n"
-	"The camera rotates automatically\n"
-	"as you move, and the player faces\n"
-	"and acts in the direction\n"
-	"they're moving.\n"
-	"\n"
-	"Hold \x82" "Center View\x80 to lock the\n"
-	"camera behind the player, or target\n"
-	"enemies, bosses and monitors!\n"
-	,
-
-	// Old Analog
-	"I see.\n"
-	"\n"
-	"You really liked the old analog mode,\n"
-	"so when 2.2 came out, you opened up\n"
-	"your config file and brought it back.\n"
-	"\n"
-	"That's absolutely valid, but I implore\n"
-	"you to try the new Automatic play style\n"
-	"instead!"
-};
-
-static UINT8 playstyle_activeplayer = 0, playstyle_currentchoice = 0;
+//static UINT8 playstyle_activeplayer = 0, playstyle_currentchoice = 0;
 
 static void M_DrawControlsDefMenu(void)
 {
@@ -8015,7 +7981,7 @@ static void M_HandleLevelPlatter(INT32 choice)
 {
 	boolean exitmenu = false;  // exit to previous menu
 	INT32 selectval;
-	UINT8 iter;
+	//UINT8 iter;
 
 	switch (choice)
 	{
@@ -8110,9 +8076,9 @@ static void M_HandleLevelPlatter(INT32 choice)
 	}
 }
 
+#ifdef TOUCHINPUTS
 static void M_LevelPlatterTicker(void)
 {
-#ifdef TOUCHINPUTS
 	menutouchfx_t *fx = &levselfx;
 	INT32 lsfxthreshold, threshold, dy;
 	UINT8 row = lsrow;
@@ -8166,8 +8132,8 @@ static void M_LevelPlatterTicker(void)
 
 	if (!fx->finger.down)
 		fx->slide[0] = FixedMul(fx->slide[0], SLIDEFXSPEED>>1);
-#endif
 }
+#endif
 
 #ifdef TOUCHINPUTS
 static SINT8 TouchPlatterRow(INT32 fx, INT32 fy, UINT8 row, INT32 y)
@@ -8608,7 +8574,9 @@ static void M_DrawNightsAttackSuperSonic(void)
 static void M_DrawLevelPlatterMenu(void)
 {
 	UINT8 iter, sizeselect = (lswide(lsrow) ? 1 : 0);
-	INT32 y = lsbasey + lsverticalscroll - getheadingoffset(lsrow);
+	//INT32 y = lsbasey + lsverticalscroll - getheadingoffset(lsrow);
+	INT32 y = lsverticalscroll;
+
 	const INT32 cursorx = (sizeselect ? 0 : (lscol*lshseperation));
 
 	if (currentMenu->prevMenu == &SP_TimeAttackDef)
@@ -10256,6 +10224,7 @@ UINT8 skyRoomMenuTranslations[MAXUNLOCKABLES];
 
 static boolean checklist_cangodown; // uuuueeerggghhhh HACK
 
+/*
 static void M_UnlockChecklist(INT32 choice)
 {
 	(void)choice;
@@ -10264,6 +10233,7 @@ static void M_UnlockChecklist(INT32 choice)
 	M_SetHeldKeyHandler(M_HandleChecklist);
 #endif
 }
+*/
 
 static void M_ChecklistDown(void)
 {
@@ -12493,7 +12463,7 @@ static void M_ReadSaveFiles(void)
 //
 static void M_SaveGameDeleteResponse(INT32 ch)
 {
-	char name[256];
+	//char name[256];
 
 	if (ch != 'y' && ch != KEY_ENTER)
 		return;
@@ -13227,7 +13197,7 @@ static void M_SetupChoosePlayer(INT32 choice)
 static void M_HandleChoosePlayerMenu(INT32 choice)
 {
 	boolean exitmenu = false;  // exit to previous menu
-	INT32 selectval;
+	//INT32 selectval;
 
 	if (keydown > 1)
 		return;
@@ -13286,7 +13256,7 @@ static void M_DrawSetupChoosePlayerMenu(void)
 	skin_t *charskin;
 	INT32 skinnum = 0;
 	UINT16 col;
-	UINT8 *colormap = NULL;
+	UINT8 *colormap;
 	INT32 prev = -1, next = -1;
 
 	patch_t *charbg = W_CachePatchName("CHARBG", PU_PATCH);
@@ -13309,7 +13279,7 @@ static void M_DrawSetupChoosePlayerMenu(void)
 	charskin = &skins[skinnum];
 
 	// Make the translation colormap
-	UINT8 *colormap = R_GetTranslationColormap(TC_DEFAULT, charsel_color, GTC_CACHE);
+	colormap = R_GetTranslationColormap(TC_DEFAULT, charsel_color, GTC_CACHE);
 	UINT8 *ramp = skincolors[charsel_color].ramp;
 
 	// Background and borders
@@ -17178,7 +17148,7 @@ static void M_ScreenshotOptions(INT32 choice)
 	M_SetupNextMenu(&OP_ScreenshotOptionsDef);
 }
 
-static void M_ScreenshotMenuTicker(void)
+static void M_SetupScreenshotMenu(void)
 {
 	menuitem_t *item = &OP_ScreenshotOptionsMenu[op_screenshot_colorprofile];
 
@@ -18391,9 +18361,6 @@ static void M_DoQuit(void)
 	tic_t ptime;
 	INT32 mrand;
 
-	if (ch != 'y' && ch != KEY_ENTER)
-		return;
-
 	LUA_HookBool(true, HOOK(GameQuit));
 	
 	if (!(netgame || cv_debug))
@@ -18417,7 +18384,7 @@ static void M_DoQuit(void)
 	I_Quit();
 }
 
-static void M_QuitResponse(INT32 ch)
+void M_QuitResponse(INT32 ch)
 {
 	if (ch != 'y' && ch != KEY_ENTER)
 		return;
