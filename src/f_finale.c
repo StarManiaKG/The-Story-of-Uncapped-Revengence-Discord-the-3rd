@@ -29,6 +29,7 @@
 #include "m_menu.h"
 #include "dehacked.h"
 #include "g_input.h"
+#include "ts_main.h" // touchfingers
 #include "console.h"
 #include "m_random.h"
 #include "m_misc.h" // moviemode functionality
@@ -62,6 +63,8 @@ static tic_t stoptimer;
 static boolean keypressed = false;
 
 // (no longer) De-Demo'd Title Screen
+static tic_t xscrolltimer;
+static tic_t yscrolltimer;
 static INT32 menuanimtimer; // Title screen: background animation timing
 mobj_t *titlemapcameraref = NULL;
 
@@ -204,9 +207,10 @@ static INT32 sparklloop;
 // PROMPT STATE
 //
 boolean promptactive = false;
+boolean promptblockcontrols = false;
+
 static mobj_t *promptmo;
 static INT16 promptpostexectag;
-static boolean promptblockcontrols;
 static char *promptpagetext = NULL;
 static INT32 callpromptnum = INT32_MAX;
 static INT32 callpagenum = INT32_MAX;
@@ -623,22 +627,29 @@ void F_IntroDrawer(void)
 		if (intro_curtime > 1 && intro_curtime < (INT32)introscenetime[intro_scenenum])
 		{
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
-
 			if (intro_curtime < TICRATE-5) // Make the text shine!
-			{
 				sprintf(stjrintro, "STJRI%03u", intro_curtime-1);
-			}
 			else if (intro_curtime >= TICRATE-6 && intro_curtime < 2*TICRATE-20) // Pause on black screen for just a second
-			{
 				return;
-			}
 			else if (intro_curtime == 2*TICRATE-19)
 			{
 				// Fade in the text
 				// The text fade out is automatically handled when switching to a new intro scene
 				strncpy(stjrintro, "STJRI029", 9);
+#if defined (__ANDROID__)
 				background = W_CachePatchName(stjrintro, PU_PATCH_LOWPRIORITY);
 				V_DrawSmallScaledPatch(bgxoffs, 84, 0, background);
+#else
+				S_ChangeMusicInternal("_stjr", false);
+
+				background = W_CachePatchName(stjrintro, PU_PATCH_LOWPRIORITY);
+				wipestyleflags = WSF_FADEIN;
+				F_WipeStartScreen();
+				F_TryColormapFade(31);
+				V_DrawSmallScaledPatch(bgxoffs, 84, 0, background);
+				F_WipeEndScreen();
+				F_RunWipe(0,true);
+#endif
 			}
 
 			if (!WipeInAction) // Draw the patch if not in a wipe
@@ -831,11 +842,32 @@ void F_IntroDrawer(void)
 	}
 	else if (intro_scenenum == 1 && intro_curtime < 5*TICRATE)
 	{
-		INT32 trans = intro_curtime + 10 - (5*TICRATE);
+		INT32 input = inputmethod, trans;
+		const char *skiptext;
+
+		if (I_OnTVDevice())
+			input = INPUTMETHOD_TVREMOTE;
+		else if (I_OnMobileSystem())
+			input = INPUTMETHOD_TOUCH;
+
+		if (input == INPUTMETHOD_TOUCH)
+			skiptext = "\x82""Tap anywhere""\x86"" to skip...";
+		else if (input == INPUTMETHOD_JOYSTICK)
+			skiptext = va("\x86""Push ""\x82""%s""\x86"" to skip...", G_KeyNumToName(KEY_JOY1));
+		else if (input == INPUTMETHOD_TVREMOTE)
+			skiptext = "\x86""Push ""\x82""Center""\x86"" to skip...";
+		else
+			skiptext = "\x86""Press ""\x82""ENTER""\x86"" to skip...";
+
+		trans = intro_curtime + 10 - (5*TICRATE);
 		if (trans < 0)
 			trans = 0;
-		V_DrawRightAlignedString(BASEVIDWIDTH-4, BASEVIDHEIGHT-12, V_ALLOWLOWERCASE|(trans<<V_ALPHASHIFT), "\x86""Press ""\x82""ENTER""\x86"" to skip...");
+
+		V_DrawRightAlignedString(BASEVIDWIDTH-4, BASEVIDHEIGHT-12, V_ALLOWLOWERCASE|(trans<<V_ALPHASHIFT), skiptext);
 	}
+
+	if (animtimer)
+		animtimer--;
 
 	V_DrawString(cx, cy, V_ALLOWLOWERCASE, cutscene_disptext);
 }
@@ -916,18 +948,21 @@ void F_IntroTicker(void)
 					lasttime = nowtime;
 
 					I_OsPolling();
-					I_UpdateNoBlit();
-#ifdef HAVE_THREADS
-					I_lock_mutex(&m_menu_mutex);
-#endif
-					M_Drawer(); // menu is drawn even on top of wipes
-#ifdef HAVE_THREADS
-					I_unlock_mutex(m_menu_mutex);
-#endif
-					I_FinishUpdate(); // Update the screen with the image Tails 06-19-2001
 
-					if (moviemode) // make sure we save frames for the white hold too
-						M_SaveFrame();
+					if (!I_AppOnBackground())
+					{
+#ifdef HAVE_THREADS
+						I_lock_mutex(&m_menu_mutex);
+#endif
+						M_Drawer(); // menu is drawn even on top of wipes
+#ifdef HAVE_THREADS
+						I_unlock_mutex(m_menu_mutex);
+#endif
+						I_FinishUpdate(); // Update the screen with the image Tails 06-19-2001
+
+						if (moviemode) // make sure we save frames for the white hold too
+							M_SaveFrame();
+					}
 				}
 			}
 
@@ -935,12 +970,12 @@ void F_IntroTicker(void)
 			wipegamestate = GS_INTRO;
 			return;
 		}
-
 		F_NewCutscene(introtext[++intro_scenenum]);
 		timetonext = introscenetime[intro_scenenum];
 
 		F_WipeStartScreen();
 		wipegamestate = -1;
+		wipestyleflags = WSF_CROSSFADE;
 		animtimer = stoptimer = 0;
 	}
 
@@ -957,6 +992,29 @@ void F_IntroTicker(void)
 			F_TryColormapFade(31);
 
 			F_IntroDrawer();
+		}
+		if (intro_scenenum == 5 && intro_curtime == 5*TICRATE)
+		{
+			patch_t *radar = W_CachePatchName("RADAR", PU_PATCH_LOWPRIORITY);
+
+			F_WipeStartScreen();
+			F_WipeColorFill(31);
+			V_DrawSmallScaledPatch(0, 0, 0, radar);
+			W_UnlockCachedPatch(radar);
+			V_DrawString(8, 128, V_ALLOWLOWERCASE, cutscene_disptext);
+
+			F_WipeEndScreen();
+			F_RunWipe(99,true);
+		}
+		else if (intro_scenenum == 7 && intro_curtime == 6*TICRATE) // Force a wipe here
+		{
+			patch_t *grass = W_CachePatchName("SGRASS2", PU_PATCH_LOWPRIORITY);
+
+			F_WipeStartScreen();
+			F_WipeColorFill(31);
+			V_DrawSmallScaledPatch(0, 0, 0, grass);
+			W_UnlockCachedPatch(grass);
+			V_DrawString(8, 128, V_ALLOWLOWERCASE, cutscene_disptext);
 
 			F_WipeEndScreen();
 			F_RunWipe(99,true);
@@ -969,8 +1027,14 @@ void F_IntroTicker(void)
 			F_WipeStartScreen();
 			F_WipeColorFill(31);
 
-			F_IntroDrawer();
+			if (intro_scenenum == 15 && intro_curtime == 7*TICRATE)
+				patch_t *sdo = W_CachePatchName("SONICDO2", PU_PATCH_LOWPRIORITY);
 
+				V_DrawSmallScaledPatch(0, 0, 0, sdo);
+				W_UnlockCachedPatch(sdo);
+				V_DrawString(224, 8, V_ALLOWLOWERCASE, cutscene_disptext);
+
+			F_IntroDrawer();
 			F_WipeEndScreen();
 			F_RunWipe(99,true);
 		}
@@ -988,36 +1052,47 @@ boolean F_IntroResponder(event_t *event)
 	INT32 key = event->key;
 
 	// remap virtual keys (mouse & joystick buttons)
-	switch (key)
+	if (event->type == ev_keydown)
 	{
-		case KEY_MOUSE1:
-			key = KEY_ENTER;
-			break;
-		case KEY_MOUSE1 + 1:
-			key = KEY_BACKSPACE;
-			break;
-		case KEY_JOY1:
-		case KEY_JOY1 + 2:
-			key = KEY_ENTER;
-			break;
-		case KEY_JOY1 + 3:
-			key = 'n';
-			break;
-		case KEY_JOY1 + 1:
-			key = KEY_BACKSPACE;
-			break;
-		case KEY_HAT1:
-			key = KEY_UPARROW;
-			break;
-		case KEY_HAT1 + 1:
-			key = KEY_DOWNARROW;
-			break;
-		case KEY_HAT1 + 2:
-			key = KEY_LEFTARROW;
-			break;
-		case KEY_HAT1 + 3:
-			key = KEY_RIGHTARROW;
-			break;
+		switch (key)
+		{
+			case KEY_MOUSE1:
+				key = KEY_ENTER;
+				break;
+			case KEY_MOUSE1 + 1:
+				key = KEY_BACKSPACE;
+				break;
+			case KEY_JOY1:
+			case KEY_JOY1 + 2:
+			case KEY_REMOTECENTER:
+				key = KEY_ENTER;
+				break;
+			case KEY_JOY1 + 3:
+				key = 'n';
+				break;
+			case KEY_JOY1 + 1:
+			case KEY_REMOTEBACK:
+				key = KEY_BACKSPACE;
+				break;
+			case KEY_HAT1:
+			case KEY_REMOTEUP:
+				key = KEY_UPARROW;
+				break;
+			case KEY_HAT1 + 1:
+			case KEY_REMOTEDOWN:
+				key = KEY_DOWNARROW;
+				break;
+			case KEY_HAT1 + 2:
+			case KEY_REMOTELEFT:
+				key = KEY_LEFTARROW;
+				break;
+			case KEY_HAT1 + 3:
+			case KEY_REMOTERIGHT:
+				key = KEY_RIGHTARROW;
+				break;
+		}
+
+		G_DetectInputMethod(event->key);
 	}
 
 	if (event->type != ev_keydown && key != 301)
@@ -1089,6 +1164,10 @@ static const char *credits[] = {
 	"Ben \"Cue\" Woodford",
 	"Lachlan \"Lach\" Wright",
 	"Marco \"mazmazz\" Zafra",
+	"",
+	"\1 TSOURDT3RD Programming",
+	"StarManiaKG#4884", //Did mostly all the programming for this custom build
+	"Sapphire \"mariomario13531#1998\"", //Helped out a ton, couldn't have done most things without him
 	"",
 	"\1Art",
 	"Victor \"VAdaPEGA\" Ara\x1Fjo", // Araújo -- sorry for our limited font! D:
@@ -1190,6 +1269,10 @@ static const char *credits[] = {
 	"Samuel \"Prime 2.0\" Peters",
 	"Colin \"Sonict\" Pfaff",
 	"Bill \"Tets\" Reed",
+	"",
+	"\1TSOURDT3RD Testing",
+	"StarManiaKG#4884", //Quite literally did all the testing on this custom build
+	"Sapphire \"mariomario13531#1998\"", //Also Quite Literally Did all the Testing
 	"",
 	"\1Special Thanks",
 	"id Software",
@@ -1374,36 +1457,43 @@ boolean F_CreditResponder(event_t *event)
 	INT32 key = event->key;
 
 	// remap virtual keys (mouse & joystick buttons)
-	switch (key)
+	if (event->type == ev_keydown)
 	{
-		case KEY_MOUSE1:
-			key = KEY_ENTER;
-			break;
-		case KEY_MOUSE1 + 1:
-			key = KEY_BACKSPACE;
-			break;
-		case KEY_JOY1:
-		case KEY_JOY1 + 2:
-			key = KEY_ENTER;
-			break;
-		case KEY_JOY1 + 3:
-			key = 'n';
-			break;
-		case KEY_JOY1 + 1:
-			key = KEY_BACKSPACE;
-			break;
-		case KEY_HAT1:
-			key = KEY_UPARROW;
-			break;
-		case KEY_HAT1 + 1:
-			key = KEY_DOWNARROW;
-			break;
-		case KEY_HAT1 + 2:
-			key = KEY_LEFTARROW;
-			break;
-		case KEY_HAT1 + 3:
-			key = KEY_RIGHTARROW;
-			break;
+		switch (key)
+		{
+			case KEY_MOUSE1:
+				key = KEY_ENTER;
+				break;
+			case KEY_MOUSE1 + 1:
+				key = KEY_BACKSPACE;
+				break;
+			case KEY_JOY1:
+			case KEY_JOY1 + 2:
+			case KEY_REMOTECENTER:
+				key = KEY_ENTER;
+				break;
+			case KEY_JOY1 + 3:
+				key = 'n';
+				break;
+			case KEY_JOY1 + 1:
+			case KEY_REMOTEBACK:
+				key = KEY_BACKSPACE;
+				break;
+			case KEY_HAT1:
+				key = KEY_UPARROW;
+				break;
+			case KEY_HAT1 + 1:
+				key = KEY_DOWNARROW;
+				break;
+			case KEY_HAT1 + 2:
+				key = KEY_LEFTARROW;
+				break;
+			case KEY_HAT1 + 3:
+				key = KEY_RIGHTARROW;
+				break;
+		}
+
+		G_DetectControlMethod(event->key);
 	}
 
 	if (!(timesBeaten) && !(netgame || multiplayer) && !cv_debug)
@@ -3362,6 +3452,15 @@ void F_TitleScreenDrawer(void)
 				}
 			}
 
+#ifdef TOUCHINPUTS
+			if (touchscreenavailable && (gamestate == GS_TITLESCREEN) && !(menuactive || CON_Ready()))
+			{
+				INT32 time = finalecount - 45;
+				if (time >= 0)
+					HU_DrawTapAnywhere((tic_t)time, 0);
+			}
+#endif
+
 #undef CHARSTART
 #undef SONICSTART
 #undef SONICIDLE
@@ -3804,20 +3903,27 @@ boolean F_ContinueResponder(event_t *event)
 
 	if (timetonext >= 21*TICRATE/2)
 		return false;
-	if (event->type != ev_keydown)
+
+	if (!(event->type == ev_keydown || event->type == ev_touchdown))
 		return false;
 
 	// remap virtual keys (mouse & joystick buttons)
-	switch (key)
+	if (event->type == ev_keydown)
 	{
-		case KEY_ENTER:
-		case KEY_SPACE:
-		case KEY_MOUSE1:
-		case KEY_JOY1:
-		case KEY_JOY1 + 2:
-			break;
-		default:
-			return false;
+		switch (key)
+		{
+			case KEY_ENTER:
+			case KEY_SPACE:
+			case KEY_MOUSE1:
+			case KEY_JOY1:
+			case KEY_JOY1 + 2:
+			case KEY_REMOTECENTER:
+				break;
+			default:
+				return false;
+		}
+
+		G_DetectControlMethod(key);
 	}
 
 	keypressed = true;
@@ -4073,7 +4179,7 @@ static void F_GetPageTextGeometry(UINT8 *pagelines, boolean *rightside, INT32 *b
 	*textr = *rightside ? BASEVIDWIDTH - (((*boxh * 4) + (*boxh/2)*4) + 4) : BASEVIDWIDTH-4;
 }
 
-static fixed_t F_GetPromptHideHudBound(void)
+static fixed_t F_GetPromptHideHudBound(void) //fixed_t F_GetPromptHideHudBound(void)
 {
 	UINT8 pagelines;
 	boolean rightside;
@@ -4225,6 +4331,7 @@ void F_EndTextPrompt(boolean forceexec, boolean noexec)
 		if (promptmo && promptmo->player && promptblockcontrols)
 			promptmo->reactiontime = TICRATE/4; // prevent jumping right away // \todo account freeze realtime for this)
 		// \todo reset frozen realtime?
+		promptblockcontrols = false;
 	}
 
 	// \todo net safety, maybe loop all player thinkers?
@@ -4312,6 +4419,10 @@ void F_StartTextPrompt(INT32 promptnum, INT32 pagenum, mobj_t *mo, UINT16 postex
 				}
 			}
 		}
+
+#ifdef TOUCHINPUTS
+		G_ResetInputs();
+#endif
 	}
 	else
 		F_EndTextPrompt(true, false); // run the post-effects immediately

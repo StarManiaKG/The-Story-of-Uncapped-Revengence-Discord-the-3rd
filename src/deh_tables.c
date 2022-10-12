@@ -5423,6 +5423,7 @@ struct int_const_s const INT_CONST[] = {
 	{"CV_HIDDEN",CV_HIDEN},
 	{"CV_CHEAT",CV_CHEAT},
 	{"CV_NOLUA",CV_NOLUA},
+	{"CV_SLIDER_SAFE",CV_SLIDER_SAFE},
 
 	// v_video flags
 	{"V_NOSCALEPATCH",V_NOSCALEPATCH},

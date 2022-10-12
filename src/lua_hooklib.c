@@ -246,6 +246,7 @@ int LUA_HookLib(lua_State *L)
 }
 
 /* TODO: remove in next backwards incompatible release */
+//#if MODID == 18
 int lib_hudadd(lua_State *L);/* yeah compiler */
 int lib_hudadd(lua_State *L)
 {
