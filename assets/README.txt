@@ -24,9 +24,6 @@ CONTACT
 
 You may contact Sonic Team Junior via the following web sites:
 
-SRB2.ORG:
-https://www.srb2.org
-
 SRB2 Message Board:
 https://mb.srb2.org
 
