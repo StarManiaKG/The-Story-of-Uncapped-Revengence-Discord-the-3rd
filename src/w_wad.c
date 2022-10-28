@@ -1343,7 +1343,7 @@ static void W_ReadFileShaders(wadfile_t *wadfile)
 //
 UINT16 W_InitFile(const char *filename, fhandletype_t handletype, boolean mainfile, boolean startup)
 {
-	void *handle;
+    void *handle;
 	lumpinfo_t *lumpinfo = NULL;
 	wadfile_t *wadfile;
 	wadfilehandle_t *wadhandle;
@@ -1360,6 +1360,7 @@ UINT16 W_InitFile(const char *filename, fhandletype_t handletype, boolean mainfi
 
 	if (refreshdirname)
 		Z_Free(refreshdirname);
+
 	if (dirmenu)
 	{
 		refreshdirname = Z_StrDup(filename);
@@ -1368,7 +1369,7 @@ UINT16 W_InitFile(const char *filename, fhandletype_t handletype, boolean mainfi
 	else
 		refreshdirname = NULL;
 
-	//CONS_Debug(DBG_SETUP, "Loading %s\n", filename);
+	CONS_Debug(DBG_SETUP, "Loading %s\n", filename);
 
 	// Check if the game reached the limit of active wadfiles.
 	if (numwadfiles >= MAX_WADFILES)
@@ -1685,15 +1686,13 @@ void W_InitMultipleFiles(addfilelist_t *list, fhandletype_t handletype)
 	{
 		const char *fn = list->files[i];
 		char pathsep = fn[strlen(fn) - 1];
-		boolean mainfile = numwadfiles < mainwads;
-
-		//CONS_Debug(DBG_SETUP, "Loading %s\n", fn);
+		boolean mainfile = (numwadfiles < mainwads);
 
 		if (pathsep == '\\' || pathsep == '/')
 			W_InitFolder(fn, mainfile, true);
 		else
 		{
-			UINT16 status = W_InitFile(fn, handletype, mainfile, true);
+		    UINT16 status = W_InitFile(fn, handletype, mainfile, true);
 
 #ifndef DEVELOP
 			// Check MD5s of autoloaded files
