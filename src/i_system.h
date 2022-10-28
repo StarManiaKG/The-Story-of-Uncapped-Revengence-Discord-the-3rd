@@ -66,10 +66,6 @@ UINT32 I_GetFreeMem(UINT32 *total);
 */
 tic_t I_GetTime(void);
 
-/** \brief  Get the current time in game tics, including fractions.
-*/
-float I_GetTimeFrac(void);
-
 /**	\brief	Returns precise time value for performance measurement.
   */
 precise_t I_GetPreciseTime(void);
@@ -77,10 +73,6 @@ precise_t I_GetPreciseTime(void);
 /**	\brief	Converts a precise_t to microseconds and casts it to a 32 bit integer.
   */
 int I_PreciseToMicros(precise_t d);
-
-/** \brief  Get the current time in rendering tics, including fractions.
-*/
-double I_GetFrameTime(void);
 
 /**	\brief	Sleeps by the value of cv_sleep
 

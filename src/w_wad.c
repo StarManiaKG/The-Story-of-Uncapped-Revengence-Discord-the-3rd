@@ -1686,13 +1686,15 @@ void W_InitMultipleFiles(addfilelist_t *list, fhandletype_t handletype)
 	{
 		const char *fn = list->files[i];
 		char pathsep = fn[strlen(fn) - 1];
-		boolean mainfile = (numwadfiles < mainwads);
+		boolean mainfile = numwadfiles < mainwads;
 
+		//CONS_Debug(DBG_SETUP, "Loading %s\n", fn);
+		
 		if (pathsep == '\\' || pathsep == '/')
 			W_InitFolder(fn, mainfile, true);
 		else
 		{
-		    UINT16 status = W_InitFile(fn, handletype, mainfile, true);
+			UINT16 status = W_InitFile(fn, handletype, mainfile, true);
 
 #ifndef DEVELOP
 			// Check MD5s of autoloaded files

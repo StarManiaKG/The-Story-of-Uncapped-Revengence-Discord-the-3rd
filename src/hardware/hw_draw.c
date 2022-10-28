@@ -1609,19 +1609,19 @@ static inline boolean saveTGA(const char *file_name, void *buffer,
 
 UINT8 *HWR_GetScreenshot(void)
 {
-	UINT8 *buf = malloc(vid.width * vid.height * SCREENSHOT_BITS * sizeof (*buf));
+	UINT8 *buf = malloc(vid.width * vid.height * 3 * sizeof (*buf));
+
 	if (!buf)
 		return NULL;
-
-	// returns either 24bit 888 RGB or 32bit 8888 RGBA
-	HWD.pfnReadRect(0, 0, vid.width, vid.height, vid.width * SCREENSHOT_BITS, (void *)buf);
+	// returns 24bit 888 RGB
+	HWD.pfnReadRect(0, 0, vid.width, vid.height, vid.width * 3, (void *)buf);
 	return buf;
 }
 
 boolean HWR_Screenshot(const char *pathname)
 {
 	boolean ret;
-	UINT8 *buf = HWR_GetScreenshot();
+	UINT8 *buf = malloc(vid.width * vid.height * 3 * sizeof (*buf));
 
 	if (!buf)
 	{
@@ -1630,7 +1630,7 @@ boolean HWR_Screenshot(const char *pathname)
 	}
 
 	// returns 24bit 888 RGB
-	HWD.pfnReadRect(0, 0, vid.width, vid.height, vid.width * SCREENSHOT_BITS, (void *)buf);
+	HWD.pfnReadRect(0, 0, vid.width, vid.height, vid.width * 3, (void *)buf);
 
 #ifdef USE_PNG
 	ret = M_SavePNG(pathname, buf, vid.width, vid.height, NULL);

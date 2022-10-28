@@ -53,8 +53,6 @@ void HWR_DrawPic(INT32 x,INT32 y,lumpnum_t lumpnum);
 UINT8 *HWR_GetScreenshot(void);
 boolean HWR_Screenshot(const char *pathname);
 
-float HWR_GetFOV(player_t *player);
-
 void HWR_AddCommands(void);
 void HWR_AddSessionCommands(void);
 void transform(float *cx, float *cy, float *cz);
@@ -65,9 +63,10 @@ void HWR_EndScreenWipe(void);
 void HWR_DrawIntermissionBG(void);
 void HWR_DoWipe(UINT8 wipenum, UINT8 scrnnum);
 void HWR_DoTintedWipe(UINT8 wipenum, UINT8 scrnnum);
+void HWR_MakeScreenFinalTexture(void);
+void HWR_DrawScreenFinalTexture(int width, int height);
 
 // This stuff is put here so models can use them
-boolean HWR_UseShader(void);
 void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *colormap);
 UINT8 HWR_FogBlockAlpha(INT32 light, extracolormap_t *colormap); // Let's see if this can work
 
@@ -75,8 +74,6 @@ UINT8 HWR_GetTranstableAlpha(INT32 transtablenum);
 FBITFIELD HWR_GetBlendModeFlag(INT32 style);
 FBITFIELD HWR_SurfaceBlend(INT32 style, INT32 transtablenum, FSurfaceInfo *pSurf);
 FBITFIELD HWR_TranstableToAlpha(INT32 transtablenum, FSurfaceInfo *pSurf);
-
-void HWR_RecreateContext(void);
 
 boolean HWR_CompileShaders(void);
 
@@ -99,7 +96,6 @@ extern consvar_t cv_glshaders, cv_glallowshaders;
 extern consvar_t cv_glmodels;
 extern consvar_t cv_glmodelinterpolation;
 extern consvar_t cv_glmodellighting;
-extern consvar_t cv_glframebuffer, cv_glrenderbufferdepth;
 extern consvar_t cv_glfiltermode;
 extern consvar_t cv_glanisotropicmode;
 extern consvar_t cv_fovchange;
@@ -116,16 +112,10 @@ extern float gl_viewwidth, gl_viewheight, gl_baseviewwindowy;
 
 extern float gl_viewwindowx, gl_basewindowcentery;
 
-extern boolean gl_init;
-extern boolean gl_maploaded;
-extern boolean gl_maptexturesloaded;
-extern boolean gl_sessioncommandsadded;
-extern boolean gl_shadersavailable;
-extern boolean gl_powersoftwo;
-
 // BP: big hack for a test in lighting ref : 1249753487AB
 extern fixed_t *hwbbox;
 extern FTransform atransform;
+
 
 // Render stats
 extern ps_metric_t ps_hw_skyboxtime;

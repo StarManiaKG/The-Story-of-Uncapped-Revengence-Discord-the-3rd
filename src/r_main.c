@@ -1529,9 +1529,6 @@ void R_RenderPlayerView(player_t *player)
 	// check for new console commands.
 	NetUpdate();
 
-	if (I_AppOnBackground())
-		return;
-
 	// The head node is the last node output.
 	Mask_Pre(&masks[nummasks - 1]);
 	curdrawsegs = ds_p;

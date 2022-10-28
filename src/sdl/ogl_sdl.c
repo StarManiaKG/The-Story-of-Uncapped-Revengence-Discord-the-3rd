@@ -73,18 +73,6 @@ INT32 oglflags = 0;
 void *GLUhandle = NULL;
 SDL_GLContext sdlglcontext = 0;
 
-void *GLBackend_GetFunction(const char *proc)
-{
-	if (strncmp(proc, "glu", 3) == 0)
-	{
-		if (GLUhandle)
-			return hwSym(proc, GLUhandle);
-		else
-			return NULL;
-	}
-	return SDL_GL_GetProcAddress(proc);
-}
-
 void *GetGLFunc(const char *proc)
 {
 	if (strncmp(proc, "glu", 3) == 0)
@@ -138,12 +126,7 @@ boolean LoadGL(void)
 	{
 		GLUhandle = hwOpen(GLULibname);
 		if (GLUhandle)
-#if defined(__ANDROID__)
-			return GLBackend_LoadFunctions();
-#else
-			return GLBackend_LoadFunctions();
-			//return GetGLFunc(GLULibname);
-#endif
+			return SetupGLfunc();
 		else
 		{
 			CONS_Alert(CONS_ERROR, "Could not load GLU Library: %s\n", GLULibname);
@@ -157,11 +140,7 @@ boolean LoadGL(void)
 		CONS_Alert(CONS_ERROR, "If you know what is the GLU library's name, use -GLUlib\n");
 	}
 #endif
-#if defined(__ANDROID__)
-	return GLBackend_LoadFunctions();
-#else
-	//return GetGLFunc(GLULibname);
-#endif
+	return SetupGLfunc();
 }
 
 /**	\brief	The OglSdlSurface function
@@ -205,12 +184,12 @@ boolean OglSdlSurface(INT32 w, INT32 h)
 	}
 	first_init = true;
 
-	if (S_PrefAvailable("GL_EXT_texture_filter_anisotropic", gl_extensions))
+	if (isExtAvailable("GL_EXT_texture_filter_anisotropic", gl_extensions))
 		pglGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maximumAnisotropy);
 	else
 		maximumAnisotropy = 1;
 
-	//GetGLFunc(gl_extensions);
+	SetupGLFunc4();
 
 	glanisotropicmode_cons_t[1].value = maximumAnisotropy;
 
@@ -234,31 +213,26 @@ boolean OglSdlSurface(INT32 w, INT32 h)
 */
 void OglSdlFinishUpdate(boolean waitvbl)
 {
-	int sdlw, sdlh;
-
 	static boolean oldwaitvbl = false;
+	int sdlw, sdlh;
 	if (oldwaitvbl != waitvbl)
+	{
 		SDL_GL_SetSwapInterval(waitvbl ? 1 : 0);
+	}
 
 	oldwaitvbl = waitvbl;
 
 	SDL_GetWindowSize(window, &sdlw, &sdlh);
-	MakeFinalScreenTexture();
 
-	GLFramebuffer_Disable();
-	RenderToFramebuffer = FramebufferEnabled;
-
-	DrawFinalScreenTexture(sdlw, sdlh);
-
-	if (RenderToFramebuffer)
-		GLFramebuffer_Enable();
-
+	HWR_MakeScreenFinalTexture();
+	HWR_DrawScreenFinalTexture(sdlw, sdlh);
 	SDL_GL_SwapWindow(window);
+
 	GClipRect(0, 0, realwidth, realheight, NZCLIP_PLANE);
 
 	// Sryder:	We need to draw the final screen texture again into the other buffer in the original position so that
 	//			effects that want to take the old screen can do so after this
-	DrawFinalScreenTexture(realwidth, realheight);
+	HWR_DrawScreenFinalTexture(realwidth, realheight);
 }
 
 EXPORT void HWRAPI(OglSdlSetPalette) (RGBA_t *palette)
@@ -268,7 +242,7 @@ EXPORT void HWRAPI(OglSdlSetPalette) (RGBA_t *palette)
 	if (memcmp(&myPaletteData, palette, palsize))
 	{
 		memcpy(&myPaletteData, palette, palsize);
-		//glFlush();
+		Flush();
 	}
 }
 
