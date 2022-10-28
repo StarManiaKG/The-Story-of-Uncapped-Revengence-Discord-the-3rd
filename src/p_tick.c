@@ -780,14 +780,11 @@ void P_Ticker(boolean run)
 		// We need a better way to assign view state decoupled from game logic
 		#define BOOL unsigned char
 
-		for (i = 0; i <= splitscreen; i++)
-		{
-			player_t *player = &players[displayplayer];
-			BOOL skyVisible = skyVisible; //HOOK
-			if (skyVisible && skyboxmo[0] && cv_skybox.value)
-				R_SkyboxFrame(player);
-			R_SetupFrame(player);
-		}
+		player_t *player = &players[displayplayer];
+		BOOL skyVisible = skyVisible; //HOOK
+		if (skyVisible && skyboxmo[0] && cv_skybox.value)
+			R_SkyboxFrame(player);
+		R_SetupFrame(player);
 		
 		#undef BOOL
 	}

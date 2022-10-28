@@ -3945,6 +3945,7 @@ static int lib_gTicsToMilliseconds(lua_State *L)
 
 static int lib_getTimeMicros(lua_State *L)
 {
+	//lua_pushinteger(L, I_GetPreciseTime() / (I_GetPreciseTime() / 1000000));
 	lua_pushinteger(L, I_GetPreciseTime() / (I_GetPrecisePrecision() / 1000000));
 	return 1;
 }
