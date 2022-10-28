@@ -516,14 +516,6 @@ SOURCE=..\hu_stuff.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\hu_font.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\hu_font.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\st_stuff.c
 # End Source File
 # Begin Source File

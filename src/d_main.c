@@ -332,7 +332,7 @@ static boolean D_Display(void) //static void D_Display(void)
 	static boolean wipe = false;
 	INT32 wipedefindex = 0;
 
-	if (I_AppOnBackground() || dedicated)
+	if (dedicated)
 		return false;
 
 	if (nodrawers)
@@ -537,9 +537,6 @@ static boolean D_Display(void) //static void D_Display(void)
 						R_RenderPlayerView(&players[displayplayer]);
 				}
 
-				if (I_AppOnBackground())
-					return false;
-
 				// render the second screen
 				if (splitscreen && players[secondarydisplayplayer].mo)
 				{
@@ -561,9 +558,6 @@ static boolean D_Display(void) //static void D_Display(void)
 						M_Memcpy(ylookup, ylookup1, viewheight*sizeof (ylookup[0]));
 					}
 				}
-
-				if (I_AppOnBackground())
-					return false;
 
 				// Image postprocessing effect
 				if (rendermode == render_soft)
@@ -815,7 +809,7 @@ void D_SRB2Loop(void)
 	because I_FinishUpdate was called afterward
 	*/
 	/* Smells like a hack... Don't fade Sonic's ass into the title screen. */
-	if (!I_AppOnBackground() && gamestate != GS_TITLESCREEN)
+	if (gamestate != GS_TITLESCREEN)
 	{
 		gstartuplumpnum = W_CheckNumForName("STARTUP");
 		if (gstartuplumpnum == LUMPERROR)
@@ -975,13 +969,7 @@ void D_SRB2Loop(void)
 
 		LUA_Step();
 
-		// Fully completed frame made.
-		frameEnd = I_GetFrameTime();
-		if (!singletics && !dedicated)
-		{
-			I_FrameCapSleep(frameEnd);
-		}
-		else if (dedicated)
+		if (dedicated)
 		{
 			// Preserve the pre-interp sleeping behavior for dedicated mode
 			I_Sleep();
@@ -1141,8 +1129,9 @@ void D_StartTitle(void)
 	} \
 	else \
 	{ \
+		index = list->numfiles; \
 		list->numfiles++; \
-		list->files = realloc(list->files, sizeof(list->files) * ((++list->numfiles) + 1)); \
+		list->files = realloc(list->files, sizeof(list->files) * list->numfiles); \
 		list->hashes = realloc(list->hashes, sizeof(list->hashes) * list->numfiles); \
 		if (list->files == NULL || list->hashes == NULL) \
 			I_Error("%s: No more free memory to add file %s", __FUNCTION__, file); \
@@ -1181,6 +1170,8 @@ static void D_AddFolder(addfilelist_t *list, const char *file)
 	list->files[index] = newfile;
 }
 
+#undef REALLOC_FILE_LIST
+
 //
 // D_AutoLoadAddons
 //
@@ -1189,23 +1180,19 @@ static void D_AutoLoadAddons(addfilelist_t *list, const char *file)
 	char *newfile;
 	size_t index = 0;
 
-	REALLOC_FILE_LIST
-
 	//this is extremely dumb
 	for (index = 0; list->files[index]; index++)
 		;
 
 	newfile = malloc(strlen(file) + 1);
 	if (!newfile)
-		I_Error("D_AutoLoadAddons: No more free memory to Autoload %s", newfile);
+		I_Error("D_AutoLoadAddons: No more free memory to Autoload File %s", newfile);
 
 	strcpy(newfile, file);
 
     autoloading = true;
 	COM_ImmedExecute(va("exec %s\n", newfile));
 }
-
-#undef REALLOC_FILE_LIST
 
 static inline void D_CleanFile(addfilelist_t *list)
 {
@@ -1265,21 +1252,20 @@ static void ChangeDirForUrlHandler(void)
 // ==========================================================================
 // Identify the SRB2 version, and IWAD file to use.
 // ==========================================================================
-
-#define FILEPATH(fname) va(pandf,srb2waddir,fname)
+#define FILEPATH(fname) va(pandf,srb2waddir, fname)
 
 static void IdentifyVersion(void)
 {
+	const char *basepk3 = "srb2.pk3";
+	const char *srb2waddir = NULL;
+
 #if defined(__ANDROID__)
-    const char *basepk3 = "srb2.pk3";
 	loaduphandletype = FILEHANDLE_SDL;
 	D_SetupHome();
 #else
 	char *srb2wad;
 	loaduphandletype = FILEHANDLE_STANDARD;
 #endif
-
-	const char *srb2waddir = NULL;
 
 #if defined (__unix__) || defined (UNIXCOMMON) || defined (HAVE_SDL)
 	// change to the directory where 'srb2.pk3' is found
@@ -1319,7 +1305,7 @@ static void IdentifyVersion(void)
 	if (srb2wad == NULL)
 		I_Error("No more free memory to look in %s", srb2waddir);
 	else
-		sprintf(srb2wad, pandf, srb2waddir);
+		sprintf(srb2wad, pandf, srb2waddir, basepk3);
 
 	// will be overwritten in case of -cdrom or unix/win home
 	snprintf(configfile, sizeof configfile, "%s" PATHSEP CONFIGFILENAME, srb2waddir);
@@ -1329,7 +1315,7 @@ static void IdentifyVersion(void)
 	if (srb2wad != NULL && FIL_ReadFileOK(srb2wad))
 		D_AddFile(&startupwadfiles, srb2wad, ASSET_HASH_SRB2_PK3);
     else
-		I_Error("%s not found! Expected in %s, ss file: %s\n", srb2wad, srb2waddir, srb2wad);
+		I_Error("%s not found! Expected in %s, ss file: %s\n", basepk3, srb2waddir, srb2wad);
 
 	if (srb2wad)
 		free(srb2wad);
@@ -1565,16 +1551,15 @@ void D_SRB2Main(void)
 	autoloadfileexists = fopen(va("%s"PATHSEP"%s",srb2home,AUTOLOADFILENAME), "r");
 
     // load wad, including the main wad file
-	CONS_Printf("W_InitMultipleFiles(): Adding IWAD and main PWADs.\n");
+	CONS_Printf("W_InitMultipleFiles(): Adding IWAD and main PWADs.\n");\
 	W_InitMultipleFiles(&startupwadfiles, startuphandletype);
-	D_CleanFile(&startupwadfiles);
 	if (autoloadfileexists)
 	{
 		mainwads++;
 		CONS_Printf("D_AutoLoadAddons(): Autoloading Addons.\n");
 		D_AutoLoadAddons(&startupwadfiles, va(pandf,srb2home,AUTOLOADFILENAME));
-		D_CleanFile(&startupwadfiles);
 	}
+	D_CleanFile(&startupwadfiles);
 
 #ifdef UNPACK_FILES
 	UnpackFile_ProgressClear();

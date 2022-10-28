@@ -99,8 +99,6 @@ if(${SDL2_FOUND})
 			${ZLIB_LIBRARIES}
 			${OPENGL_LIBRARIES}
 			${CURL_LIBRARIES}
-			${DISCORDRPC_LIBRARIES}
-			${DISCORDGAMESDK_LIBRARIES}
 		)
 		set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME "${CPACK_PACKAGE_DESCRIPTION_SUMMARY}")
 	else()
@@ -114,8 +112,6 @@ if(${SDL2_FOUND})
 			${ZLIB_LIBRARIES}
 			${OPENGL_LIBRARIES}
 			${CURL_LIBRARIES}
-			${DISCORDRPC_LIBRARIES}
-			${DISCORDGAMESDK_LIBRARIES}
 		)
 
 		if(${CMAKE_SYSTEM} MATCHES Linux)
@@ -161,8 +157,6 @@ if(${SDL2_FOUND})
 		${ZLIB_INCLUDE_DIRS}
 		${OPENGL_INCLUDE_DIRS}
 		${CURL_INCLUDE_DIRS}
-		${DISCORDRPC_INCLUDE_DIRS}
-		${DISCORDGAMESDK_INCLUDE_DIRS}
 	)
 
 	if((${SRB2_HAVE_MIXER}) OR (${SRB2_HAVE_MIXERX}))
@@ -275,12 +269,6 @@ if(${SDL2_FOUND})
 			getwinlib(libfluidsynth-2 "libfluidsynth-2.dll")
 			getwinlib(libgcc_s_sjlj-1 "libgcc_s_sjlj-1.dll")
 			getwinlib(libstdc++-6 "libstdc++-6.dll")
-		endif()
-		if(${SRB2_CONFIG_HAVE_DISCORDRPC})
-			getwinlib(discord-rpc "discord-rpc.dll")
-		endif()
-		if(${SRB2_CONFIG_HAVE_DISCORDGAMESDK})
-			getwinlib(discord_game_sdk "discord_game_sdk.dll")
 		endif()
 
 		install(PROGRAMS
