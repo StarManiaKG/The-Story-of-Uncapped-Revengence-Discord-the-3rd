@@ -74,6 +74,10 @@ precise_t I_GetPreciseTime(void);
   */
 int I_PreciseToMicros(precise_t d); //UINT64 I_GetPrecisePrecision(void);
 
+/** \brief  Get the precision of precise_t, at a set amount.
+  */
+UINT64 I_GetPrecisePrecision(void);
+
 /** \brief  Get the current time in rendering tics, including fractions.
 */
 
