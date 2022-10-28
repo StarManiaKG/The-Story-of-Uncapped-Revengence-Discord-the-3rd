@@ -107,10 +107,6 @@ void VID_StartupOpenGL(void);
 */
 void VID_CheckGLLoaded(rendermode_t oldrender);
 
-/**	\brief Displays an error if OpenGL failed to load
-*/
-void VID_DisplayGLError(void);
-
 /**	\brief	The VID_GetModeName function
 
 	\param	modenum	video mode number
