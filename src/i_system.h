@@ -42,10 +42,6 @@ INT32 I_OnMobileSystem(void);
 */
 INT32 I_OnTabletDevice(void);
 
-/**	\brief	Returns 1 if the application is running on a TV device, 0 otherwise.
-*/
-INT32 I_OnTVDevice(void);
-
 /**	\brief	Returns 1 if the application is running on Android TV, 0 otherwise.
 */
 INT32 I_OnAndroidTV(void);
@@ -210,10 +206,6 @@ void I_InitJoystick2(void);
 */
 void I_ChangeJoystick(void);
 
-/**	\brief to change the second player's joystick
-*/
-void I_ChangeJoystick2(void);
-
 /**	\brief return the number of joystick on the system
 */
 INT32 I_NumJoys(void);
@@ -225,12 +217,6 @@ INT32 I_NumJoys(void);
 	\return	joystick name
 */
 const char *I_GetJoyName(INT32 joyindex);
-
-/**	\brief	The I_JoystickIsGamepad function
-	\param	joyindex	which joystick
-	\return	1 if the joystick is a gamepad
-*/
-INT32 I_JoystickIsGamepad(INT32 joyindex);
 
 /**	\brief	The I_JoystickIsTVRemote function
 	\param	joyindex	which joystick
@@ -442,16 +428,6 @@ INT32 I_CheckSystemPermission(const char *permission);
 		\return 1 if the permission was granted, 0 if not.
 */
 INT32 I_RequestSystemPermission(const char *permission);
-
-/**	\brief Checks if storage permission was granted.
-		\return 1 if it was, 0 if not.
-*/
-INT32 I_StoragePermission(void);
-
-/**	\brief Checks if the app has storage permission (different from granted.)
-		\return 1 if it was, 0 if not.
-*/
-INT32 I_SystemStoragePermission(void);
 
 char *I_GetEnv(const char *name);
 

@@ -291,9 +291,6 @@ boolean TS_SaveLayouts(void)
 	touchlayout_t *layout = touchlayouts;
 	INT32 i;
 
-	if (!I_StoragePermission())
-		return false;
-
 	f = fopen(va("%s"PATHSEP"%s", touchlayoutfolder, TOUCHLAYOUTSFILE), "w");
 	if (!f)
 		return false;
@@ -547,7 +544,7 @@ boolean TS_LoadSingleLayout(INT32 ilayout)
 	INT32 igc;
 	touchconfig_t *button = NULL;
 
-	if (layout->loaded || !I_StoragePermission())
+	if (layout->loaded)
 		return true;
 
 	strcpy(filename, layout->filename);
@@ -635,9 +632,8 @@ boolean TS_SaveSingleLayout(INT32 ilayout)
 
 	strcpy(filename, layout->filename);
 	FIL_ForceExtension(filename, ".cfg");
-
-	if (I_StoragePermission())
-		f = fopen(va("%s"PATHSEP"%s", touchlayoutfolder, filename), "w");
+	
+	f = fopen(va("%s"PATHSEP"%s", touchlayoutfolder, filename), "w");
 
 	if (!f)
 	{

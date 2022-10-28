@@ -850,11 +850,6 @@ void F_IntroDrawer(void)
 		INT32 input = inputmethod, trans;
 		const char *skiptext;
 
-		if (I_OnTVDevice())
-			input = INPUTMETHOD_TVREMOTE;
-		else if (I_OnMobileSystem())
-			input = INPUTMETHOD_TOUCH;
-
 		if (input == INPUTMETHOD_TOUCH)
 			skiptext = "\x82""Tap anywhere""\x86"" to skip...";
 		else if (input == INPUTMETHOD_JOYSTICK)

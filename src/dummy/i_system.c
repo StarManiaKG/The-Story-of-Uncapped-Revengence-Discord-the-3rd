@@ -68,8 +68,6 @@ void I_InitJoystick2(void){}
 
 void I_ChangeJoystick(void){}
 
-void I_ChangeJoystick2(void){}
-
 #ifdef TOUCHINPUTS
 void I_InitTouchScreen(void) {}
 #endif
@@ -179,16 +177,6 @@ const char *I_RemovableStorageLocation(void)
 	return NULL;
 }
 
-INT32 I_StoragePermission(void)
-{
-	return 1;
-}
-
-INT32 I_SystemStoragePermission(void)
-{
-	return 1;
-}
-
 void I_GetJoystickEvents(void){}
 
 void I_GetJoystick2Events(void){}
@@ -222,11 +210,6 @@ char *I_ClipboardPaste(void)
 }
 
 INT32 I_OnTabletDevice(void)
-{
-	return 0;
-}
-
-INT32 I_OnTVDevice(void)
 {
 	return 0;
 }
