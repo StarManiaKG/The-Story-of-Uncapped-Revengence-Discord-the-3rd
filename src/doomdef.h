@@ -142,8 +142,8 @@ extern char logfilename[1024];
 
 //#define DEVELOP // Disable this for release builds to remove excessive cheat commands and enable MD5 checking and stuff, all in one go. :3
 #ifdef DEVELOP
-#define VERSIONSTRING "THE STORY of UNCAPPED REVENGENCE DISCORD the 3RD"
-#define VERSIONSTRING_RC "THE STORY of UNCAPPED REVENGENCE DISCORD the 3RD" "\0"
+#define VERSIONSTRING "TSOURDt3RD Development Build"
+#define VERSIONSTRING_RC "TSOURDt3RD Development Build" "\0"
 // most interface strings are ignored in development mode. we use comprevision and compbranch instead. 
 //VERSIONSTRING_RC is for the resource-definition script used by windows builds
 #else
