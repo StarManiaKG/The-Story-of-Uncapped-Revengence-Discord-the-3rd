@@ -121,6 +121,7 @@ static addfilelist_t startuppwads;
 #endif
 
 static fhandletype_t startuphandletype = FILEHANDLE_STANDARD;
+fhandletype_t loaduphandletype = FILEHANDLE_STANDARD;
 
 //
 // DEMO LOOP
@@ -1198,9 +1199,9 @@ static void D_AutoLoadAddons(addfilelist_t *list, const char *file)
 	if (!newfile)
 		I_Error("D_AutoLoadAddons: No more free memory to Autoload %s", newfile);
 
-	autoloading = true;
 	strcpy(newfile, file);
 
+    autoloading = true;
 	COM_ImmedExecute(va("exec %s\n", newfile));
 }
 
@@ -1269,19 +1270,16 @@ static void ChangeDirForUrlHandler(void)
 
 static void IdentifyVersion(void)
 {
-#if !defined(__ANDROID__)
-	char *srb2wad;
-#else
-	const char *basepk3 = "srb2.pk3";
-#endif
-	const char *srb2waddir = NULL;
-
 #if defined(__ANDROID__)
-	fhandletype_t handletype = FILEHANDLE_SDL;
+    const char *basepk3 = "srb2.pk3";
+	loaduphandletype = FILEHANDLE_SDL;
 	D_SetupHome();
 #else
-	fhandletype_t handletype = FILEHANDLE_STANDARD;
+	char *srb2wad;
+	loaduphandletype = FILEHANDLE_STANDARD;
 #endif
+
+	const char *srb2waddir = NULL;
 
 #if defined (__unix__) || defined (UNIXCOMMON) || defined (HAVE_SDL)
 	// change to the directory where 'srb2.pk3' is found
@@ -1321,8 +1319,7 @@ static void IdentifyVersion(void)
 	if (srb2wad == NULL)
 		I_Error("No more free memory to look in %s", srb2waddir);
 	else
-		//sprintf(srb2wad, pandf, srb2waddir, srb2wad);
-		sprint(pandf, srb2waddir, srb2wad);
+		sprintf(srb2wad, pandf, srb2waddir);
 
 	// will be overwritten in case of -cdrom or unix/win home
 	snprintf(configfile, sizeof configfile, "%s" PATHSEP CONFIGFILENAME, srb2waddir);
@@ -1330,8 +1327,8 @@ static void IdentifyVersion(void)
 
 	// Load the IWAD
 	if (srb2wad != NULL && FIL_ReadFileOK(srb2wad))
-		D_AddFile(&startupwadfiles, FILEPATH(srb2wad), ASSET_HASH_SRB2_PK3);
-	else
+		D_AddFile(&startupwadfiles, srb2wad, ASSET_HASH_SRB2_PK3);
+    else
 		I_Error("%s not found! Expected in %s, ss file: %s\n", srb2wad, srb2waddir, srb2wad);
 
 	if (srb2wad)
@@ -1364,7 +1361,7 @@ static void IdentifyVersion(void)
 #define MUSICTEST(str) \
 		{\
 			const char *musicpath = FILEPATH(str); \
-			int ms = W_VerifyNMUSlumps(musicpath, handletype, false); \
+			int ms = W_VerifyNMUSlumps(musicpath, loaduphandletype, false); \
 			if (ms == 1) \
 				D_AddFile(&startupwadfiles, musicpath, NULL); \
 			else if (ms == 0) \
@@ -1404,7 +1401,7 @@ void D_SRB2Main(void)
 	INT32 pstartmap = 1;
 	boolean autostart = false;
 
-	FILE *autoloadpath; //autoload wad feature
+	FILE *autoloadfileexists; //autoload wad feature
 
 	/* break the version string into version numbers, for netplay */
 	D_ConvertVersionNumbers();
@@ -1544,11 +1541,10 @@ void D_SRB2Main(void)
 	// Have to be done here before files are loaded
 	M_InitCharacterTables();
 
-	mainwads = 3; // doesn't include music.dta
+	mainwads = 4; // doesn't include music.dta
 #ifdef USE_PATCH_DTA
 	mainwads++;
 #endif
-
 #ifdef USE_ANDROID_PK3
 	mainwads++;
 #endif
@@ -1561,19 +1557,18 @@ void D_SRB2Main(void)
 #else
 	W_UnpackMultipleFiles(&startupwadfiles, false);
 #endif
-
-	// The main files added at startup are handled by SDL_RWops
-	// and can be loaded from the inside the APK.
-	startuphandletype = FILEHANDLE_SDL;
+    // The main files added at startup are handled by SDL_RWops and can be loaded from the inside the APK.
+    startuphandletype = FILEHANDLE_SDL;
 #endif
 
-	// load wad, including the main wad file
-	autoloadpath = fopen(va("%s"PATHSEP"%s",srb2home,AUTOLOADFILENAME), "r");
+    //set our autoload file variable
+	autoloadfileexists = fopen(va("%s"PATHSEP"%s",srb2home,AUTOLOADFILENAME), "r");
 
+    // load wad, including the main wad file
 	CONS_Printf("W_InitMultipleFiles(): Adding IWAD and main PWADs.\n");
 	W_InitMultipleFiles(&startupwadfiles, startuphandletype);
 	D_CleanFile(&startupwadfiles);
-	if (autoloadpath)
+	if (autoloadfileexists)
 	{
 		mainwads++;
 		CONS_Printf("D_AutoLoadAddons(): Autoloading Addons.\n");
@@ -1584,28 +1579,6 @@ void D_SRB2Main(void)
 #ifdef UNPACK_FILES
 	UnpackFile_ProgressClear();
 #endif
-
-#ifndef DEVELOP // md5s last updated 22/02/20 (ddmmyy)
-
-	// Check MD5s of autoloaded files
-	W_VerifyFileMD5(0, ASSET_HASH_SRB2_PK3); // srb2.pk3
-	W_VerifyFileMD5(1, ASSET_HASH_ZONES_PK3); // zones.pk3
-	W_VerifyFileMD5(2, ASSET_HASH_PLAYER_DTA); // player.dta
-#ifdef USE_PATCH_DTA
-	W_VerifyFileMD5(3, ASSET_HASH_PATCH_PK3); // patch.pk3
-	W_VerifyFileMD5(4, ASSET_HASH_STAR_PK3); // starmaniakg.pk3
-#ifdef USE_ANDROID_PK3
-	W_VerifyFileMD5(5, ASSET_HASH_STAR_PK3); // android.pk3
-#endif
-#else
-	W_VerifyFileMD5(3, ASSET_HASH_STAR_PK3); // starmaniakg.pk3
-#ifdef USE_ANDROID_PK3
-	W_VerifyFileMD5(4, ASSET_HASH_ANDROID_PK3); // android.pk3
-#endif
-#endif
-	// don't check music.dta because people like to modify it, and it doesn't matter if they do
-	// ...except it does if they slip maps in there, and that's what W_VerifyNMUSlumps is for.
-#endif //ifndef DEVELOP
 
 	cht_Init();
 
