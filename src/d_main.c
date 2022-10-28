@@ -364,7 +364,7 @@ static boolean D_Display(void) //static void D_Display(void)
 #ifdef HWRENDER
 	// Display the last renderer switching error, if there was any
 	if (renderswitcherror == render_opengl)
-		VID_DisplayGLError();
+		I_Error("There was a Opengl Error. Maybe Check your Drivers?");
 #endif
 
 	// Clear the last renderer switching error
@@ -758,8 +758,6 @@ void D_SRB2Loop(void)
 #if defined(__ANDROID__)
 	boolean firstframe = false;
 #endif
-	boolean interp = false;
-	boolean doDisplay = false;
 
 	if (dedicated)
 		server = true;
@@ -864,11 +862,13 @@ void D_SRB2Loop(void)
 		interp = R_UsingFrameInterpolation() && !dedicated;
 		doDisplay = false;
 		ticked = false;
+		/*
 		if (!realtics && !singletics)
 		{
 			I_Sleep();
 			continue;
 		}
+		*/
 
 #ifdef HW3SOUND
 		HW3S_BeginFrameUpdate();
@@ -992,11 +992,13 @@ void D_SRB2Loop(void)
 		deltasecs = (double)((INT64)(finishprecise - enterprecise)) / I_GetPrecisePrecision();
 		deltatics = deltasecs * NEWTICRATE;
 		
+		/*
 		if (dedicated)
 		{
 			// Preserve the pre-interp sleeping behavior for dedicated mode
 			I_Sleep();
 		}
+		*/
 
 		// I_FinishUpdate is now here instead of D_Display,
 		// because it synchronizes it more closely with the frame counter.
