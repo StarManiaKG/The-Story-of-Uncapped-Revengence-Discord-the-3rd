@@ -23,6 +23,7 @@
 #include "lua_hook.h"
 #include "m_perfstats.h"
 #include "i_system.h" // I_GetPreciseTime
+#include "r_main.h"
 #include "r_fps.h"
 
 // Object place
@@ -618,8 +619,10 @@ void P_Ticker(boolean run)
 		if (OP_FreezeObjectplace())
 		{
 			P_MapStart();
+			R_UpdateMobjInterpolators();
 			OP_ObjectplaceMovement(&players[0]);
 			P_MoveChaseCamera(&players[0], &camera, false);
+			R_UpdateViewInterpolation();
 			P_MapEnd();
 			S_SetStackAdjustmentStart();
 			return;
@@ -770,6 +773,21 @@ void P_Ticker(boolean run)
 	if (run)
 	{
 		R_UpdateLevelInterpolators();
+		R_UpdateViewInterpolation();
+
+		// Hack: ensure newview is assigned every tic.
+		// Ensures view interpolation is T-1 to T in poor network conditions
+		// We need a better way to assign view state decoupled from game logic
+		for (i = 0; i <= splitscreen; i++)
+		{
+			player_t *player = &players[displayplayers[i]];
+			BOOL skyVisible = skyVisiblePerPlayer[i];
+			if (skyVisible && skyboxmo[0] && cv_skybox.value)
+			{
+				R_SkyboxFrame(player);
+			}
+			R_SetupFrame(player, (skyboxmo[0] && cv_skybox.value));
+		}
 	}
 
 	P_MapEnd();
@@ -791,6 +809,8 @@ void P_PreTicker(INT32 frames)
 	for (framecnt = 0; framecnt < frames; ++framecnt)
 	{
 		P_MapStart();
+
+		R_UpdateMobjInterpolators();
 
 		LUA_HOOK(PreThinkFrame);
 
@@ -829,6 +849,10 @@ void P_PreTicker(INT32 frames)
 		P_RespawnSpecials();
 
 		LUA_HOOK(PostThinkFrame);
+
+		R_UpdateLevelInterpolators();
+		R_UpdateViewInterpolation();
+		R_ResetViewInterpolation(0);
 
 		P_MapEnd();
 	}
