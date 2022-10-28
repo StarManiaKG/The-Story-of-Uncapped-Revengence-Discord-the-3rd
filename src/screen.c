@@ -677,28 +677,6 @@ static precise_t fps_enter = 0;
 
 void SCR_CalculateFPS(void)
 {
-	/*
-	static boolean init = false;
-
-	static precise_t startTime = 0;
-	precise_t endTime = 0;
-
-	static precise_t updateTime = 0;
-	int updateElapsed = 0;
-	int i;
-
-	endTime = I_GetPreciseTime();
-
-	if (init == false)
-	{
-		startTime = updateTime = endTime;
-		init = true;
-		return;
-	}
-
-	updateElapsed = I_PreciseToMicros(endTime - updateTime);
-	*/
-
 	precise_t fps_finish = 0;
 
 	double frameElapsed = 0.0;
@@ -710,6 +688,7 @@ void SCR_CalculateFPS(void)
 	}
 
 	fps_finish = I_GetPreciseTime();
+	//frameElapsed = (double)((INT64)(fps_finish - fps_enter)) / I_GetPreciseTime();
 	frameElapsed = (double)((INT64)(fps_finish - fps_enter)) / I_GetPrecisePrecision();
 	fps_enter = fps_finish;
 

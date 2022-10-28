@@ -364,7 +364,7 @@ static boolean D_Display(void) //static void D_Display(void)
 #ifdef HWRENDER
 	// Display the last renderer switching error, if there was any
 	if (renderswitcherror == render_opengl)
-		I_Error("There was a Opengl Error. Maybe Check your Drivers?");
+		I_Error(M_GetText("There was a Opengl Error. Maybe Check your Drivers?"));
 #endif
 
 	// Clear the last renderer switching error
@@ -749,12 +749,10 @@ void D_SRB2Loop(void)
 	double deltasecs = 0.0;
 	static lumpnum_t gstartuplumpnum;
 
-	boolean ticked = false;
 	boolean interp = false;
 	boolean doDisplay = false;
 	boolean screenUpdate = false;
 
-	double frameEnd = 0.0;
 #if defined(__ANDROID__)
 	boolean firstframe = false;
 #endif
@@ -830,6 +828,7 @@ void D_SRB2Loop(void)
 
 		{
 			// Casting the return value of a function is bad practice (apparently)
+			//double budget = round((1.0 / R_GetFramerateCap()) * I_GetPreciseTime());
 			double budget = round((1.0 / R_GetFramerateCap()) * I_GetPrecisePrecision());
 			capbudget = (precise_t) budget;
 		}
@@ -861,7 +860,6 @@ void D_SRB2Loop(void)
 
 		interp = R_UsingFrameInterpolation() && !dedicated;
 		doDisplay = false;
-		ticked = false;
 		/*
 		if (!realtics && !singletics)
 		{
@@ -989,6 +987,7 @@ void D_SRB2Loop(void)
 		}
 		// Capture the time once more to get the real delta time.
 		finishprecise = I_GetPreciseTime();
+		//deltasecs = (double)((INT64)(finishprecise - enterprecise)) / I_GetPreciseTime();
 		deltasecs = (double)((INT64)(finishprecise - enterprecise)) / I_GetPrecisePrecision();
 		deltatics = deltasecs * NEWTICRATE;
 		

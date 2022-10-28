@@ -9486,7 +9486,7 @@ static void M_AddonAutoLoad(INT32 ch)
 		path = va("%s"PATHSEP"%s", srb2home, AUTOLOADFILENAME);
 		autoloadconfigfile = fopen(path, "a");
 		// next, copy the name of the file
-		strcpy(filetowrite, va(menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
+		strcpy(&filetowrite, va(menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
 		// then, execute the addon and store it in our autoload.cfg
 		switch (dirmenu[dir_on[menudepthleft]][DIR_TYPE])
 		{

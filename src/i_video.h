@@ -93,7 +93,7 @@ void VID_GetNativeResolution(INT32 *width, INT32 *height);
 /**	\brief Checks the render state
 	\return	1 if the renderer changed, 0 if it did not
 */
-//INT32 VID_CheckRenderer(void);
+boolean VID_CheckRenderer(void);
 
 /**	\brief Blits a region of the current framebuffer surface into the texture (does not present it.)
 */
