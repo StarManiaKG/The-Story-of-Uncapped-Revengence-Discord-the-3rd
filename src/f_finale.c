@@ -949,20 +949,17 @@ void F_IntroTicker(void)
 
 					I_OsPolling();
 
-					if (!I_AppOnBackground())
-					{
 #ifdef HAVE_THREADS
-						I_lock_mutex(&m_menu_mutex);
+					I_lock_mutex(&m_menu_mutex);
 #endif
-						M_Drawer(); // menu is drawn even on top of wipes
+					M_Drawer(); // menu is drawn even on top of wipes
 #ifdef HAVE_THREADS
-						I_unlock_mutex(m_menu_mutex);
+					I_unlock_mutex(m_menu_mutex);
 #endif
-						I_FinishUpdate(); // Update the screen with the image Tails 06-19-2001
+					I_FinishUpdate(); // Update the screen with the image Tails 06-19-2001
 
-						if (moviemode) // make sure we save frames for the white hold too
-							M_SaveFrame();
-					}
+					if (moviemode) // make sure we save frames for the white hold too
+						M_SaveFrame();
 				}
 			}
 
