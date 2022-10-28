@@ -17,7 +17,6 @@
 /// \file
 /// \brief Main program, simply calls D_SRB2Main and D_SRB2Loop, the high level loop.
 
-#if !defined(__ANDROID__)
 #include "../doomdef.h"
 #include "../m_argv.h"
 #include "../d_main.h"
@@ -192,20 +191,6 @@ static void InitLogging(void)
 #endif
 
 
-#ifdef _WIN32
-static void
-ChDirToExe (void)
-{
-	CHAR path[MAX_PATH];
-	if (GetModuleFileNameA(NULL, path, MAX_PATH) > 0)
-	{
-		strrchr(path, '\\')[0] = '\0';
-		SetCurrentDirectoryA(path);
-	}
-}
-#endif
-
-
 /**	\brief	The main function
 
 	\param	argc	number of arg
@@ -232,10 +217,6 @@ int main(int argc, char **argv)
 #else
 	I_StartupTTF(FONTPOINTSIZE, SDL_INIT_VIDEO, SDL_SWSURFACE);
 #endif
-#endif
-
-#ifdef _WIN32
-	ChDirToExe();
 #endif
 
 #ifdef LOGMESSAGES
@@ -284,5 +265,4 @@ int main(int argc, char **argv)
 	// return to OS
 	return 0;
 }
-#endif
 #endif
