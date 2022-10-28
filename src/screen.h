@@ -218,6 +218,7 @@ extern float scr_resdiv;
 
 // wait for page flipping to end or not
 extern consvar_t cv_vidwait;
+extern consvar_t cv_timescale;
 
 // Initialize the screen
 void SCR_Startup(void);

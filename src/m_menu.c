@@ -33,6 +33,7 @@
 // Data.
 #include "sounds.h"
 #include "s_sound.h"
+#include "i_time.h"
 #include "i_system.h"
 #include "i_threads.h"
 
@@ -207,6 +208,10 @@ static fixed_t ntsatkdrawtimer = 0;
 static tic_t recatkdrawtimer = 0;
 static tic_t ntsatkdrawtimer = 0;
 #endif
+
+static fixed_t charseltimer = 0;
+static fixed_t char_scroll = 0;
+#define charscrollamt 128*FRACUNIT
 
 static tic_t keydown = 0;
 
@@ -7081,7 +7086,7 @@ static void M_DrawPauseMenu(void)
 						emblemslot = 2;
 						break;
 					case ET_NGRADE:
-						snprintf(targettext, 9, "%u", P_GetScoreForGrade(gamemap, 0, emblem->var));
+						snprintf(targettext, 9, "%u", P_GetScoreForGradeOverall(gamemap, emblem->var));
 						snprintf(currenttext, 9, "%u", G_GetBestNightsScore(gamemap, 0));
 
 						targettext[8] = 0;
@@ -7757,11 +7762,13 @@ static boolean M_PrepareLevelPlatter(INT32 gt, boolean nextmappick)
 
 					if (actnum)
 						sprintf(mapname, "%s %d", mapheaderinfo[headingIterate]->lvlttl, actnum);
+					else if (V_ThinStringWidth(mapheaderinfo[headingIterate]->lvlttl, 0) <= 80)
+						strlcpy(mapname, mapheaderinfo[headingIterate]->lvlttl, 22);
 					else
-						strcpy(mapname, mapheaderinfo[headingIterate]->lvlttl);
-
-					if (strlen(mapname) >= 17)
-						strcpy(mapname+17-3, "...");
+					{
+						strlcpy(mapname, mapheaderinfo[headingIterate]->lvlttl, 15);
+						strcat(mapname, "...");
+					}
 
 					strcpy(levelselect.rows[row].mapnames[col], (const char *)mapname);
 				}
@@ -7942,6 +7949,7 @@ static boolean LevelPlatter_PrevRow(void)
 	}
 
 	S_StartSound(NULL,sfx_s3kb7);
+	lsoffs[0] = lsvseperation(lsrow) * FRACUNIT;
 
 	ifselectvalnextmap(lscol) else ifselectvalnextmap(0)
 
@@ -7999,7 +8007,7 @@ static void M_HandleLevelPlatter(INT32 choice)
 				lsclosingbrace
 				else if (!lsverticalscroll) // prevent sound spam
 				{
-					lsoffs[0] = -8;
+					lsoffs[0] = -8 * FRACUNIT;
 					S_StartSound(NULL,sfx_s3kb2);
 				}
 				break;
@@ -8012,14 +8020,14 @@ static void M_HandleLevelPlatter(INT32 choice)
 			{
 				lscol++;
 
-				lsoffs[1] = (lswide(lsrow) ? 8 : -lshseperation);
+				lsoffs[1] = (lswide(lsrow) ? 8 : -lshseperation) * FRACUNIT;
 				S_StartSound(NULL,sfx_s3kb7);
 
 				ifselectvalnextmap(lscol) else ifselectvalnextmap(0)
 			}
 			else if (!lsoffs[1]) // prevent sound spam
 			{
-				lsoffs[1] = 8;
+				lsoffs[1] = 8 * FRACUNIT;
 				S_StartSound(NULL,sfx_s3kb7);
 			}
 			break;
@@ -8031,14 +8039,14 @@ static void M_HandleLevelPlatter(INT32 choice)
 			{
 				lscol--;
 
-				lsoffs[1] = (lswide(lsrow) ? -8 : lshseperation);
+				lsoffs[1] = (lswide(lsrow) ? -8 : lshseperation) * FRACUNIT;
 				S_StartSound(NULL,sfx_s3kb7);
 
 				ifselectvalnextmap(lscol) else ifselectvalnextmap(0)
 			}
 			else if (!lsoffs[1]) // prevent sound spam
 			{
-				lsoffs[1] = -8;
+				lsoffs[1] = -8 * FRACUNIT;
 				S_StartSound(NULL,sfx_s3kb7);
 			}
 			break;
@@ -8344,7 +8352,7 @@ static void M_DrawLevelPlatterMap(UINT8 row, UINT8 col, INT32 x, INT32 y, boolea
 		? 159 : 63));
 
 	if (strlen(levelselect.rows[row].mapnames[col]) > 6) // "AERIAL GARDEN" vs "ACT 18" - "THE ACT" intentionally compressed
-		V_DrawThinString(x, y+50, (highlight ? V_YELLOWMAP : 0), levelselect.rows[row].mapnames[col]);
+		V_DrawThinString(x, y+50+1, (highlight ? V_YELLOWMAP : 0), levelselect.rows[row].mapnames[col]);
 	else
 		V_DrawString(x, y+50, (highlight ? V_YELLOWMAP : 0), levelselect.rows[row].mapnames[col]);
 }
@@ -8402,7 +8410,7 @@ static void M_DrawRecordAttackForeground(void)
 
 	for (i = -12; i < (BASEVIDHEIGHT/height) + 12; i++)
 	{
-		INT32 y = ((i*height) - (height - ((recatkdrawtimer*2)%height)));
+		INT32 y = ((i*height) - (height - ((FixedInt(recatkdrawtimer*2))%height)));
 		// don't draw above the screen
 		{
 			INT32 sy = FixedMul(y, dupz<<FRACBITS) >> FRACBITS;
@@ -8419,17 +8427,18 @@ static void M_DrawRecordAttackForeground(void)
 	}
 
 	// draw clock
-	fa = (FixedAngle(((recatkdrawtimer * 4) % 360)<<FRACBITS)>>ANGLETOFINESHIFT) & FINEMASK;
+	fa = (FixedAngle(((FixedInt(recatkdrawtimer * 4)) % 360)<<FRACBITS)>>ANGLETOFINESHIFT) & FINEMASK;
 	V_DrawSciencePatch(160<<FRACBITS, (80<<FRACBITS) + (4*FINESINE(fa)), 0, clock, FRACUNIT);
 
 	// Increment timer.
-	recatkdrawtimer++;
+	recatkdrawtimer += renderdeltatics;
+	if (recatkdrawtimer < 0) recatkdrawtimer = 0;
 }
 
 // NiGHTS Attack background.
 static void M_DrawMountains(const char *patch, UINT8 topcolor, UINT8 bottomcolor, INT32 offset)
 {
-	static INT32 bgscrollx;
+	static fixed_t bgscrollx;
 	INT32 dupz = (vid.dupx < vid.dupy ? vid.dupx : vid.dupy);
 	patch_t *background = W_CachePatchName(patch, PU_PATCH);
 	INT16 w = background->width;
@@ -8454,7 +8463,7 @@ static void M_DrawMountains(const char *patch, UINT8 topcolor, UINT8 bottomcolor
 			break;
 	}
 
-	bgscrollx += (FRACUNIT/2);
+	bgscrollx += FixedMul(FRACUNIT/2, renderdeltatics);
 	if (bgscrollx > w<<FRACBITS)
 		bgscrollx &= 0xFFFF;
 }
@@ -8555,6 +8564,10 @@ static void M_DrawNightsAttackBackground(
 			V_DrawScaledPatch(x, y, V_SNAPTOBOTTOM|V_SNAPTOLEFT, frontbottomfg);
 		}
 	}
+
+	// Increment timer.
+	ntsatkdrawtimer += renderdeltatics;
+	if (ntsatkdrawtimer < 0) ntsatkdrawtimer = 0;
 }
 
 // NiGHTS Attack floating Super Sonic.
@@ -8569,8 +8582,10 @@ static void M_DrawNightsAttackSuperSonic(void)
 
 static void M_DrawLevelPlatterMenu(void)
 {
-	UINT8 iter, sizeselect = (lswide(lsrow) ? 1 : 0);
+	//UINT8 iter, sizeselect = (lswide(lsrow) ? 1 : 0);
 	//INT32 y = lsbasey + lsverticalscroll - getheadingoffset(lsrow);
+	UINT8 iter = lsrow, sizeselect = (lswide(lsrow) ? 1 : 0);
+	//INT32 y = lsbasey + FixedInt(lsoffs[0]) - getheadingoffset(lsrow);
 	INT32 y = lsverticalscroll;
 
 	const INT32 cursorx = (sizeselect ? 0 : (lscol*lshseperation));
@@ -8661,13 +8676,26 @@ static void M_DrawLevelPlatterMenu(void)
 	*/
 
 	// handle movement of cursor box
-	if (lsoffs[0] > 1 || lsoffs[0] < -1)
-		lsoffs[0] = 2*lsoffs[0]/3;
+	fixed_t cursormovefrac = FixedDiv(2, 3);
+	if (lsoffs[0] > FRACUNIT || lsoffs[0] < -FRACUNIT)
+	{
+		fixed_t offs = lsoffs[0];
+		fixed_t newoffs = FixedMul(offs, cursormovefrac);
+		fixed_t deltaoffs = newoffs - offs;
+		newoffs = offs + FixedMul(deltaoffs, renderdeltatics);
+		lsoffs[0] = newoffs;
+	}
 	else
 		lsoffs[0] = 0;
 
-	if (lsoffs[1] > 1 || lsoffs[1] < -1)
-		lsoffs[1] = 2*lsoffs[1]/3;
+	if (lsoffs[1] > FRACUNIT || lsoffs[1] < -FRACUNIT)
+	{
+		fixed_t offs = lsoffs[1];
+		fixed_t newoffs = FixedMul(offs, cursormovefrac);
+		fixed_t deltaoffs = newoffs - offs;
+		newoffs = offs + FixedMul(deltaoffs, renderdeltatics);
+		lsoffs[1] = newoffs;
+	}
 	else
 		lsoffs[1] = 0;
 
@@ -12150,14 +12178,23 @@ skiplife:
 static void M_DrawLoad(void)
 {
 	M_DrawMenuTitle();
+	fixed_t scrollfrac = FixedDiv(2, 3);
 
-	if (loadgamescroll > 1 || loadgamescroll < -1)
-		loadgamescroll = 2*loadgamescroll/3;
+	if (loadgamescroll > FRACUNIT || loadgamescroll < -FRACUNIT)
+	{
+		fixed_t newscroll = FixedMul(loadgamescroll, scrollfrac);
+		fixed_t deltascroll = FixedMul(newscroll - loadgamescroll, renderdeltatics);
+		loadgamescroll += deltascroll;
+	}
 	else
 		loadgamescroll = 0;
 
-	if (loadgameoffset > 1)
-		loadgameoffset = 2*loadgameoffset/3;
+	if (loadgameoffset > FRACUNIT)
+	{
+		fixed_t newoffs = FixedMul(loadgameoffset, scrollfrac);
+		fixed_t deltaoffs = FixedMul(newoffs - loadgameoffset, renderdeltatics);
+		loadgameoffset += deltaoffs;
+	}
 	else
 		loadgameoffset = 0;
 
@@ -12248,12 +12285,12 @@ static void M_ReadSavegameInfo(UINT32 slot)
 
 	if(!mapheaderinfo[(fake-1) & 8191])
 		savegameinfo[slot].levelname[0] = '\0';
+	else if (V_ThinStringWidth(mapheaderinfo[(fake-1) & 8191]->lvlttl, 0) <= 78)
+		strlcpy(savegameinfo[slot].levelname, mapheaderinfo[(fake-1) & 8191]->lvlttl, 22);
 	else
 	{
-		strlcpy(savegameinfo[slot].levelname, mapheaderinfo[(fake-1) & 8191]->lvlttl, 17+1);
-
-		if (strlen(mapheaderinfo[(fake-1) & 8191]->lvlttl) >= 17)
-			strcpy(savegameinfo[slot].levelname+17-3, "...");
+		strlcpy(savegameinfo[slot].levelname, mapheaderinfo[(fake-1) & 8191]->lvlttl, 15);
+		strcat(savegameinfo[slot].levelname, "...");
 	}
 
 	savegameinfo[slot].gamemap = fake;
@@ -12501,7 +12538,7 @@ static void M_SaveSelectConfirm(void)
 	{
 		M_ResetSaveSelectFX();
 		S_StartSound(NULL, sfx_skid);
-		M_StartYNQuestion("Are you sure you want to play\n\x85ultimate mode\x80? It isn't remotely fair,\nand you don't even get an emblem for it.",M_SaveGameUltimateResponse);
+		M_StartYNQuestion("Are you sure you want to play\n\x85ultimate mode\x80? It isn't remotely fair,\nand you don't even get an emblem for it.\n Unless you want to flex on your Discord friends, don't play this mode.",M_SaveGameUltimateResponse);
 	}
 	else if (saveSlotSelected != NOSAVESLOT && savegameinfo[saveSlotSelected-1].lives == -42 && !(!modifiedgame || savemoddata))
 	{
@@ -12638,7 +12675,7 @@ static void M_HandleLoadSave(INT32 choice)
 				}
 				else
 					S_StartSound(NULL, sfx_lose);
-				loadgameoffset = 14;
+				loadgameoffset = 14 * FRACUNIT;
 			}
 			break;
 	}
@@ -12780,7 +12817,7 @@ static void M_LoadGame(INT32 choice)
 //
 void M_ForceSaveSlotSelected(INT32 sslot)
 {
-	loadgameoffset = 14;
+	loadgameoffset = 14 * FRACUNIT;
 
 	// Already there? Whatever, then!
 	if (sslot == saveSlotSelected)
@@ -13268,6 +13305,11 @@ static void M_DrawSetupChoosePlayerMenu(void)
 
 	hidetitlemap = true;
 
+	if (abs(char_scroll) > FRACUNIT/4)
+		char_scroll -= FixedMul((char_scroll>>2), renderdeltatics);
+	else // close enough.
+		char_scroll = 0; // just be exact now.
+
 	M_GetCharacterSelectPrevNext(char_on, &prev, &next);
 
 	// Find skin number from description[]
@@ -13277,6 +13319,10 @@ static void M_DrawSetupChoosePlayerMenu(void)
 	// Make the translation colormap
 	colormap = R_GetTranslationColormap(TC_DEFAULT, charsel_color, GTC_CACHE);
 	UINT8 *ramp = skincolors[charsel_color].ramp;
+
+	// Don't render the title map
+	hidetitlemap = true;
+	charseltimer += renderdeltatics;
 
 	// Background and borders
 	V_DrawFill(0, 0, bgwidth, vid.height, V_SNAPTOTOP|ramp[5]);
@@ -14790,13 +14836,16 @@ void M_DrawMarathon(void)
 	x = (((BASEVIDWIDTH-82)/2)+11)<<FRACBITS;
 	y = (((BASEVIDHEIGHT-82)/2)+12-10)<<FRACBITS;
 
-	cnt = (36*(recatkdrawtimer<<FRACBITS))/TICRATE;
+	cnt = (36 * recatkdrawtimer) / TICRATE;
 	fa = (FixedAngle(cnt)>>ANGLETOFINESHIFT) & FINEMASK;
 	y -= (10*FINECOSINE(fa));
 
-	recatkdrawtimer++;
+	if (renderisnewtic)
+	{
+		recatkdrawtimer += FRACUNIT;
+	}
 
-	soffset = cnt = (recatkdrawtimer%50);
+	soffset = cnt = ((recatkdrawtimer >> FRACBITS) % 50);
 	if (!useBlackRock)
 	{
 		if (cnt > 8)
@@ -14835,7 +14884,7 @@ void M_DrawMarathon(void)
 	}
 
 	w = charsel_scroll + (((8-cnt)*(8-cnt))<<(FRACBITS-5));
-	if (soffset == 50-1)
+	if (soffset == 50-1 && renderisnewtic)
 		w += FRACUNIT/2;
 
 	{
@@ -16070,7 +16119,7 @@ static void M_HandleConnectIP(INT32 choice)
 // ========================
 // Tails 03-02-2002
 
-static UINT8      multi_tics;
+static fixed_t    multi_tics;
 static UINT8      multi_frame;
 static UINT8      multi_spr2;
 
@@ -16139,10 +16188,11 @@ static void M_DrawSetupMultiPlayerMenu(void)
 	y += 11;
 
 	// anim the player in the box
-	if (--multi_tics <= 0)
+	multi_tics -= renderdeltatics;
+	while (multi_tics <= 0)
 	{
 		multi_frame++;
-		multi_tics = 4;
+		multi_tics += 4*FRACUNIT;
 	}
 
 #define charw 74
@@ -18373,7 +18423,8 @@ static void M_DoQuit(void)
 		{
 			V_DrawScaledPatch(0, 0, 0, W_CachePatchName("GAMEQUIT", PU_PATCH)); // Demo 3 Quit Screen Tails 06-16-2001
 			I_FinishUpdate(); // Update the screen with the image Tails 06-19-2001
-			I_Sleep();
+			I_Sleep(cv_sleep.value);
+			I_UpdateTime(cv_timescale.value);
 		}
 	}
 	
