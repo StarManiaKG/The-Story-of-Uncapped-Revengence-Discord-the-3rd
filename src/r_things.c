@@ -1285,10 +1285,7 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	fixed_t groundz;
 	pslope_t *groundslope;
 	boolean isflipped = thing->eflags & MFE_VERTICALFLIP;
-	interpmobjstate_t interp = {0};
-
-	// for frame interpolation
-	interpmobjstate_t interp = {0};
+	interpmobjstate_t interp = {0}; // for frame interpolation
 
 	if (abs(groundz-viewz)/tz > 4)
 		return; // Prevent stretchy shadows and possible crashes

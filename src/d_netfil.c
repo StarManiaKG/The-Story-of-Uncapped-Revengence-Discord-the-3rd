@@ -296,9 +296,7 @@ boolean CL_CheckDownloadable(void)
 
 	if (!dlstatus)
 	{
-		if (!I_SystemStoragePermission()) // No storage permission
-			dlstatus = 4;
-		else if (M_CheckParm("-nodownload")) // Downloading locally disabled
+		if (M_CheckParm("-nodownload")) // Downloading locally disabled
 			dlstatus = 3;
 		else
 			return true;

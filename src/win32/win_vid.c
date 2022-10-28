@@ -957,8 +957,6 @@ INT32 VID_CheckRenderer(void)
 	return 0;
 }
 
-void VID_DisplayGLError(void) {}
-
 void VID_CheckGLLoaded(rendermode_t oldrender)
 {
 	(void)oldrender;

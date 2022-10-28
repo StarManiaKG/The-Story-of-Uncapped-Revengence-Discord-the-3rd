@@ -1226,9 +1226,7 @@ boolean HU_Responder(event_t *ev)
 			else
 				c_input++;
 		}
-		else if (!I_KeyboardOnScreen()
-			&& ((c >= HU_FONTSTART && c <= HU_FONTEND && hu_font[c-HU_FONTSTART])
-			|| c == ' ')) // Allow spaces, of course
+		else if ((c >= HU_FONTSTART && c <= HU_FONTEND && hu_font[c-HU_FONTSTART]) || c == ' ') // Allow spaces, of course
 		{
 			if (CHAT_MUTE || strlen(w_chat) >= HU_MAXMSGLEN)
 				return true;
@@ -1647,7 +1645,7 @@ static void HU_DrawChat(void)
 	const char *talk = ntalk;
 	const char *mute = "Chat has been muted.";
 
-	if (mobilechat || I_KeyboardOnScreen())
+	if (mobilechat)
 		y -= charheight;
 	else
 		y -= (typelines*charheight);

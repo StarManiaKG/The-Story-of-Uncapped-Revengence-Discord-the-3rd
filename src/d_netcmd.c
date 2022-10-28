@@ -252,8 +252,8 @@ INT32 cv_debug;
 consvar_t cv_usemouse = CVAR_INIT ("use_mouse", "On", CV_SAVE|CV_CALL,usemouse_cons_t, I_StartupMouse);
 consvar_t cv_usemouse2 = CVAR_INIT ("use_mouse2", "Off", CV_SAVE|CV_CALL,usemouse_cons_t, I_StartupMouse2);
 
-consvar_t cv_usejoystick = CVAR_INIT ("use_gamepad", "1", CV_SAVE|CV_CALL|CV_NOINIT, usejoystick_cons_t, I_ChangeJoystick);
-consvar_t cv_usejoystick2 = CVAR_INIT ("use_gamepad2", "2", CV_SAVE|CV_CALL|CV_NOINIT, usejoystick_cons_t, I_ChangeJoystick2);
+consvar_t cv_usejoystick = CVAR_INIT ("use_gamepad", "1", CV_SAVE|CV_CALL|CV_NOINIT, usejoystick_cons_t, I_InitJoystick);
+consvar_t cv_usejoystick2 = CVAR_INIT ("use_gamepad2", "2", CV_SAVE|CV_CALL|CV_NOINIT, usejoystick_cons_t, I_InitJoystick2);
 
 #ifdef ACCELEROMETER
 consvar_t cv_useaccelerometer = CVAR_INIT ("use_accelerometer", "Off", CV_SAVE|CV_CALL, CV_OnOff, G_ResetAccelerometer);
