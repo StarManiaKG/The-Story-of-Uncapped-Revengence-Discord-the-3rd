@@ -2282,11 +2282,11 @@ static void P_WriteTextmap(void)
 	fprintf(f, "namespace = \"srb2\";\n");
 	for (i = 0; i < nummapthings; i++)
 	{
-		fprintf(f, "thing // %d\n", i);
+		fprintf(f, "thing // %ld\n", i);
 		fprintf(f, "{\n");
 		firsttag = Tag_FGet(&wmapthings[i].tags);
 		if (firsttag != 0)
-			fprintf(f, "id = %d;\n", firsttag);
+			fprintf(f, "id = %ld;\n", firsttag);
 		if (wmapthings[i].tags.count > 1)
 		{
 			fprintf(f, "moreids = \"");
@@ -2315,17 +2315,17 @@ static void P_WriteTextmap(void)
 			fprintf(f, "flip = true;\n");
 		for (j = 0; j < NUMMAPTHINGARGS; j++)
 			if (wmapthings[i].args[j] != 0)
-				fprintf(f, "arg%d = %d;\n", j, wmapthings[i].args[j]);
+				fprintf(f, "arg%ld = %d;\n", j, wmapthings[i].args[j]);
 		for (j = 0; j < NUMMAPTHINGSTRINGARGS; j++)
 			if (mapthings[i].stringargs[j])
-				fprintf(f, "stringarg%d = \"%s\";\n", j, mapthings[i].stringargs[j]);
+				fprintf(f, "stringarg%ld = \"%s\";\n", j, mapthings[i].stringargs[j]);
 		fprintf(f, "}\n");
 		fprintf(f, "\n");
 	}
 
 	for (i = 0; i < numvertexes; i++)
 	{
-		fprintf(f, "vertex // %d\n", i);
+		fprintf(f, "vertex // %ld\n", i);
 		fprintf(f, "{\n");
 		fprintf(f, "x = %f;\n", FIXED_TO_FLOAT(wvertexes[i].x));
 		fprintf(f, "y = %f;\n", FIXED_TO_FLOAT(wvertexes[i].y));
@@ -2339,10 +2339,10 @@ static void P_WriteTextmap(void)
 
 	for (i = 0; i < numlines; i++)
 	{
-		fprintf(f, "linedef // %d\n", i);
+		fprintf(f, "linedef // %ld\n", i);
 		fprintf(f, "{\n");
-		fprintf(f, "v1 = %d;\n", wlines[i].v1 - vertexes);
-		fprintf(f, "v2 = %d;\n", wlines[i].v2 - vertexes);
+		fprintf(f, "v1 = %ld;\n", wlines[i].v1 - vertexes);
+		fprintf(f, "v2 = %ld;\n", wlines[i].v2 - vertexes);
 		fprintf(f, "sidefront = %d;\n", wlines[i].sidenum[0]);
 		if (wlines[i].sidenum[1] != 0xffff)
 			fprintf(f, "sideback = %d;\n", wlines[i].sidenum[1]);
@@ -2364,10 +2364,10 @@ static void P_WriteTextmap(void)
 			fprintf(f, "special = %d;\n", wlines[i].special);
 		for (j = 0; j < NUMLINEARGS; j++)
 			if (wlines[i].args[j] != 0)
-				fprintf(f, "arg%d = %d;\n", j, wlines[i].args[j]);
+				fprintf(f, "arg%ld = %d;\n", j, wlines[i].args[j]);
 		for (j = 0; j < NUMLINESTRINGARGS; j++)
 			if (lines[i].stringargs[j])
-				fprintf(f, "stringarg%d = \"%s\";\n", j, lines[i].stringargs[j]);
+				fprintf(f, "stringarg%ld = \"%s\";\n", j, lines[i].stringargs[j]);
 		if (wlines[i].alpha != FRACUNIT)
 			fprintf(f, "alpha = %f;\n", FIXED_TO_FLOAT(wlines[i].alpha));
 		if (wlines[i].blendmode != AST_COPY)
@@ -2434,9 +2434,9 @@ static void P_WriteTextmap(void)
 
 	for (i = 0; i < numsides; i++)
 	{
-		fprintf(f, "sidedef // %d\n", i);
+		fprintf(f, "sidedef // %ld\n", i);
 		fprintf(f, "{\n");
-		fprintf(f, "sector = %d;\n", wsides[i].sector - sectors);
+		fprintf(f, "sector = %ld;\n", wsides[i].sector - sectors);
 		if (wsides[i].textureoffset != 0)
 			fprintf(f, "offsetx = %d;\n", wsides[i].textureoffset >> FRACBITS);
 		if (wsides[i].rowoffset != 0)
@@ -2455,7 +2455,7 @@ static void P_WriteTextmap(void)
 
 	for (i = 0; i < numsectors; i++)
 	{
-		fprintf(f, "sector // %d\n", i);
+		fprintf(f, "sector // %ld\n", i);
 		fprintf(f, "{\n");
 		fprintf(f, "heightfloor = %d;\n", wsectors[i].floorheight >> FRACBITS);
 		fprintf(f, "heightceiling = %d;\n", wsectors[i].ceilingheight >> FRACBITS);
@@ -3265,7 +3265,7 @@ static boolean P_LoadExtendedSubsectorsAndSegs(UINT8 **data, nodetype_t nodetype
 
 				linenum = (nodetype == NT_XGL3) ? READUINT32((*data)) : READUINT16((*data));
 				if (linenum != 0xFFFF && linenum >= numlines)
-					I_Error("P_LoadExtendedSubsectorsAndSegs: Seg %s in subsector %d has invalid linedef %d!\n", sizeu1(k), i, linenum);
+					I_Error("P_LoadExtendedSubsectorsAndSegs: Seg %s in subsector %ld has invalid linedef %d!\n", sizeu1(k), i, linenum);
 				segs[k].glseg = (linenum == 0xFFFF);
 				segs[k].linedef = (linenum == 0xFFFF) ? NULL : &lines[linenum];
 				segs[k].side = READUINT8((*data));
@@ -3274,7 +3274,7 @@ static boolean P_LoadExtendedSubsectorsAndSegs(UINT8 **data, nodetype_t nodetype
 			{
 				subsectors[i].firstline++;
 				if (subsectors[i].firstline == k)
-					I_Error("P_LoadExtendedSubsectorsAndSegs: Subsector %d does not have any valid segs!", i);
+					I_Error("P_LoadExtendedSubsectorsAndSegs: Subsector %ld does not have any valid segs!", i);
 			}
 			break;
 
@@ -6320,7 +6320,7 @@ static void P_ConvertBinaryThingTypes(void)
 
 			if (j == -1)
 			{
-				CONS_Debug(DBG_GAMELOGIC, "Particle generator (mapthing #%d) needs to be tagged to a #15 parameter line (trying to find tag %d).\n", i, mapthings[i].angle);
+				CONS_Debug(DBG_GAMELOGIC, "Particle generator (mapthing #%ld) needs to be tagged to a #15 parameter line (trying to find tag %d).\n", i, mapthings[i].angle);
 				break;
 			}
 			mapthings[i].args[0] = mapthings[i].z;
@@ -7654,7 +7654,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	if (rendermode != render_none)
 	{
-		R_ResetViewInterpolation();
+		R_ResetViewInterpolation(0);
 	}
 
 	// Took me 3 hours to figure out why my progression kept on getting overwritten with the titlemap...

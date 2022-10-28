@@ -4510,7 +4510,7 @@ void G_LoadGameData(void)
 	M_ClearSecrets(); // emblems, unlocks, maps visited, etc
 	totalplaytime = 0; // total play time (separate from all)
 
-	if (M_CheckParm("-nodata") || !I_StoragePermission())
+	if (M_CheckParm("-nodata"))
 		return; // Don't load.
 
 	// Allow saving of gamedata beyond this point
@@ -4672,7 +4672,7 @@ void G_SaveGameData(void)
 
 	INT32 curmare;
 
-	if (!gamedataloaded || !I_StoragePermission())
+	if (!gamedataloaded)
 		return; // If never loaded (-nodata), don't save
 
 	save_p = savebuffer = (UINT8 *)malloc(GAMEDATASIZE);
@@ -4839,9 +4839,6 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 	//Oh christ.  The force load response needs access to mapoverride too...
 	startonmapnum = mapoverride;
 #endif
-
-	if (!I_StoragePermission())
-		return;
 		
 	if (marathonmode)
 		strcpy(savename, liveeventbackup);
@@ -4932,9 +4929,6 @@ void G_SaveGame(UINT32 slot, INT16 mapnum)
 	char savename[SAVEGAMENAMELEN];
 	const char *backup;
 
-	if (!I_StoragePermission())
-		return;
-
 	if (marathonmode)
 		strlcpy(savename, curliveeventbackup, SAVEGAMENAMELEN);
 	else
@@ -4990,9 +4984,6 @@ void G_SaveGameOver(UINT32 slot, boolean modifylives)
 	char vcheck[VERSIONSIZE];
 	char savename[SAVEGAMENAMELEN];
 	const char *backup;
-
-	if (!I_StoragePermission())
-		return;
 
 	if (marathonmode)
 		strlcpy(savename, curliveeventbackup, SAVEGAMENAMELEN);

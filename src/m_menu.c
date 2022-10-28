@@ -6062,8 +6062,7 @@ void M_ClearMenus(boolean callexitmenufunc)
 		return; // we can't quit this menu (also used to set parameter from the menu)
 
 	// Save the config file. I'm sick of crashing the game later and losing all my changes!
-	if (I_StoragePermission())
-		COM_BufAddText(va("saveconfig \"%s\" -silent\n", configfile));
+	COM_BufAddText(va("saveconfig \"%s\" -silent\n", configfile));
 
 	if (currentMenu == &MessageDef) // Oh sod off!
 		currentMenu = &MainDef; // Not like it matters
@@ -12224,7 +12223,7 @@ static void M_LoadSelect(INT32 choice)
 		return;
 	}
 
-	if (!FIL_ReadFileOK(savegamepaths[saveSlotSelected-1]) || !I_StoragePermission())
+	if (!FIL_ReadFileOK(savegamepaths[saveSlotSelected-1]))
 	{
 		// This slot is empty, so start a new game here.
 		M_NewGame();
@@ -12435,24 +12434,15 @@ static void M_ReadSaveFiles(void)
 #endif
 	loadgameoffset = 14;
 
-	if (I_StoragePermission())
+	for (; (i < MAXSAVEGAMES); i++)
 	{
-		for (; (i < MAXSAVEGAMES); i++)
+		if (!M_OpenSaveFileSlot(i))
 		{
-			if (!M_OpenSaveFileSlot(i))
-			{
-				nofile[i-1] = true;
-				continue;
-			}
-
-			nofile[i-1] = false;
-			lastseen = i;
-		}
-	}
-	else
-	{
-		for (; (i < MAXSAVEGAMES); i++)
 			nofile[i-1] = true;
+			continue;
+		}
+		nofile[i-1] = false;
+		lastseen = i;
 	}
 
 	if (savegameinfo)
@@ -17271,12 +17261,6 @@ void M_SetupJoystickMenu(INT32 choice)
 
 	for (i = 1; i <= MAX_JOYSTICKS; i++)
 	{
-		// TV remotes are usually connected as joysticks.
-		// That's fine, but the player is not supposed to be able to select it.
-		// Accelerometers can also be connected as joysticks. The player does not have to select them.
-		if (!I_JoystickIsGamepad(j))
-			continue;
-
 		if (i <= n && (I_GetJoyName(i)) != NULL)
 			strncpy(joystickInfo[j].name, I_GetJoyName(i), 28);
 		else
