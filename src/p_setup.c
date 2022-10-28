@@ -2286,7 +2286,7 @@ static void P_WriteTextmap(void)
 		fprintf(f, "{\n");
 		firsttag = Tag_FGet(&wmapthings[i].tags);
 		if (firsttag != 0)
-			fprintf(f, "id = %ld;\n", firsttag);
+			fprintf(f, "id = %d;\n", firsttag);
 		if (wmapthings[i].tags.count > 1)
 		{
 			fprintf(f, "moreids = \"");

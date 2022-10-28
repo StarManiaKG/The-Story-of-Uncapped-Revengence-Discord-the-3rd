@@ -268,6 +268,7 @@ static INT32 PS_GetMetricAverage(ps_metric_t *metric, boolean time_metric)
 	for (i = 0; i < cv_ps_samplesize.value; i++)
 	{
 		if (time_metric)
+			//sum += (*((precise_t*)history_read_pos)) / (I_GetPreciseTime() / 1000000);
 			sum += (*((precise_t*)history_read_pos)) / (I_GetPrecisePrecision() / 1000000);
 		else
 			sum += *((INT32*)history_read_pos);
@@ -288,6 +289,7 @@ static INT32 PS_GetMetricMinOrMax(ps_metric_t *metric, boolean time_metric, bool
 	{
 		INT32 value;
 		if (time_metric)
+			//value = (*((precise_t*)history_read_pos)) / (I_GetPreciseTime() / 1000000);
 			value = (*((precise_t*)history_read_pos)) / (I_GetPrecisePrecision() / 1000000);
 		else
 			value = *((INT32*)history_read_pos);
@@ -316,6 +318,7 @@ static INT32 PS_GetMetricSD(ps_metric_t *metric, boolean time_metric)
 	{
 		INT64 value;
 		if (time_metric)
+			//value = (*((precise_t*)history_read_pos)) / (I_GetPreciseTime() / 1000000);
 			value = (*((precise_t*)history_read_pos)) / (I_GetPrecisePrecision() / 1000000);
 		else
 			value = *((INT32*)history_read_pos);
@@ -346,6 +349,7 @@ static INT32 PS_GetMetricScreenValue(ps_metric_t *metric, boolean time_metric)
 	else
 	{
 		if (time_metric)
+			//return (metric->value.p) / (I_GetPreciseTime() / 1000000);
 			return (metric->value.p) / (I_GetPrecisePrecision() / 1000000);
 		else
 			return metric->value.i;
