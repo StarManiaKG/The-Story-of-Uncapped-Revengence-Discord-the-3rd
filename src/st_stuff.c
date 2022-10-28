@@ -48,10 +48,11 @@
 #endif
 
 #include "lua_hud.h"
+#include "lua_hudlib_drawlist.h"
 #include "lua_hook.h"
+#include "r_fps.h"
 
 INT16 demoinputdrawn = 0;
-
 UINT16 objectsdrawn = 0;
 
 //
@@ -173,6 +174,9 @@ hudinfo_t hudinfo[NUMHUDITEMS] =
 
 	{ 288, 176, V_SNAPTORIGHT|V_SNAPTOBOTTOM}, // HUD_POWERUPS
 };
+
+static huddrawlist_h luahuddrawlist_game;
+static huddrawlist_h luahuddrawlist_titlecard;
 
 //
 // STATUS BAR CODE
@@ -461,6 +465,9 @@ void ST_Init(void)
 		return;
 
 	ST_LoadGraphics();
+
+	luahuddrawlist_game = LUA_HUD_CreateDrawList();
+	luahuddrawlist_titlecard = LUA_HUD_CreateDrawList();
 }
 
 // change the status bar too, when pressing F12 while viewing a demo.
@@ -1480,7 +1487,12 @@ void ST_drawTitleCard(void)
 	lt_lasttic = lt_ticker;
 
 luahook:
-	LUA_HUDHOOK(titlecard);
+	if (renderisnewtic)
+	{
+		LUA_HUD_ClearDrawList(luahuddrawlist_titlecard);
+		LUA_HUDHOOK(titlecard, luahuddrawlist_titlecard);
+	}
+	LUA_HUD_DrawList(luahuddrawlist_titlecard);
 }
 
 //
@@ -2604,7 +2616,7 @@ static void ST_doHuntIconsAndSound(void)
 			interval = newinterval;
 	}
 
-	if (!(P_AutoPause() || paused) && interval > 0 && leveltime && leveltime % interval == 0)
+	if (!(P_AutoPause() || paused) && interval > 0 && leveltime && leveltime % interval == 0 && renderisnewtic)
 		S_StartSound(NULL, sfx_emfind);
 }
 
@@ -2666,7 +2678,7 @@ static void ST_doItemFinderIconsAndSound(void)
 
 	}
 
-	if (!(P_AutoPause() || paused) && interval > 0 && leveltime && leveltime % interval == 0)
+	if (!(P_AutoPause() || paused) && interval > 0 && leveltime && leveltime % interval == 0 && renderisnewtic)
 		S_StartSound(NULL, sfx_emfind);
 }
 
@@ -2830,7 +2842,12 @@ static void ST_overlayDrawer(void)
 		ST_drawPowerupHUD(); // same as it ever was...
 
 	if (!(netgame || multiplayer) || !hu_showscores)
-		LUA_HUDHOOK(game);
+	{
+		if (renderisnewtic)
+		{
+			LUA_HUDHOOK(game, luahuddrawlist_game);
+		}
+	}
 
 	// draw level title Tails
 	if (stagetitle && (!WipeInAction) && (!WipeStageTitle))
@@ -2955,6 +2972,10 @@ void ST_Drawer(void)
 
 	if (st_overlay)
 	{
+		if (renderisnewtic)
+		{
+			LUA_HUD_ClearDrawList(luahuddrawlist_game);
+		}
 		// No deadview!
 		stplyr = &players[displayplayer];
 		ST_overlayDrawer();
@@ -2964,5 +2985,7 @@ void ST_Drawer(void)
 			stplyr = &players[secondarydisplayplayer];
 			ST_overlayDrawer();
 		}
+
+		LUA_HUD_DrawList(luahuddrawlist_game);
 	}
 }
