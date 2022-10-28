@@ -8792,6 +8792,8 @@ static void P_NiGHTSDroneThink(mobj_t *mobj)
 				dronemanoffset = 0;
 				goaloffset = dronemangoaldiff/2 + dronemanoffset;
 			}
+
+			sparkleoffset = goaloffset - FixedMul(15*FRACUNIT, mobj->scale);
 			
 			P_MoveOrigin(goalpost, mobj->x, mobj->y, mobj->z + goaloffset);
 			P_MoveOrigin(sparkle, mobj->x, mobj->y, mobj->z + sparkleoffset);
@@ -8801,8 +8803,6 @@ static void P_NiGHTSDroneThink(mobj_t *mobj)
 				goalpost->movefactor = mobj->z;
 				goalpost->friction = mobj->height;
 			}
-
-			sparkleoffset = goaloffset - FixedMul(15*FRACUNIT, mobj->scale);
 		}
 		else
 		{
