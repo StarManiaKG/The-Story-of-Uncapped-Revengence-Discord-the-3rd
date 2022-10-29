@@ -3640,19 +3640,19 @@ static void M_HandleMenuPresState(menu_t *newMenu)
 	)
 	{
 		if (gamestate == GS_TIMEATTACK)
-			wipetypepre = ((exitwipe && enterlevel <= exitlevel) || anceslevel < 0) ? exitwipe : -1; // force default
+			wipetypepre = ((exitwipe && enterlevel <= exitlevel) || anceslevel < 0) ? exitwipe : DEFAULTWIPE; // force default
 		else
 			// HACK: INT16_MAX signals to not wipe
 			// because 0 is a valid index and -1 means default
-			wipetypepre = ((exitwipe && enterlevel <= exitlevel) || anceslevel < 0) ? exitwipe : INT16_MAX;
-		wipetypepost = ((enterwipe && enterlevel >= exitlevel) || anceslevel < 0) ? enterwipe : INT16_MAX;
+			wipetypepre = ((exitwipe && enterlevel <= exitlevel) || anceslevel < 0) ? exitwipe : IGNOREWIPE;
+		wipetypepost = ((enterwipe && enterlevel >= exitlevel) || anceslevel < 0) ? enterwipe : IGNOREWIPE;
 		wipegamestate = FORCEWIPE;
 
 		// If just one of the above is a force not-wipe,
 		// mirror the other wipe.
-		if (wipetypepre != INT16_MAX && wipetypepost == INT16_MAX)
+		if (wipetypepre != IGNOREWIPE && wipetypepost == IGNOREWIPE)
 			wipetypepost = wipetypepre;
-		else if (wipetypepost != INT16_MAX && wipetypepre == INT16_MAX)
+		else if (wipetypepost != IGNOREWIPE && wipetypepre == IGNOREWIPE)
 			wipetypepre = wipetypepost;
 
 		// D_Display runs the next step of processing
@@ -3966,7 +3966,10 @@ boolean M_TSNav_CanShowConfirm(void)
 	|| currentMenu == &MP_PlayerSetupDef))
 		return false;
 
-	if (currentMenu == &SR_UnlockChecklistDef || currentMenu == &SP_LevelStatsDef)
+	if (gamestate == GS_TIMEATTACK && WipeInAction)
+		return false;
+
+	if (CON_Ready())
 		return false;
 
 	return tsnav_showconfirm;
@@ -5789,8 +5792,6 @@ boolean M_Responder(event_t *ev)
 //
 void M_Drawer(void)
 {
-	boolean wipe = WipeInAction;
-
 	if (currentMenu == &MessageDef)
 		menuactive = true;
 
@@ -5802,7 +5803,7 @@ void M_Drawer(void)
 #endif
 
 		// now that's more readable with a faded background (yeah like Quake...)
-		if (!wipe && (curfadevalue || (gamestate != GS_TITLESCREEN && gamestate != GS_TIMEATTACK)))
+		if (curfadevalue || (gamestate != GS_TITLESCREEN && gamestate != GS_TIMEATTACK))
 			V_DrawFadeScreen(0xFF00, (gamestate != GS_TITLESCREEN && gamestate != GS_TIMEATTACK) ? 16 : curfadevalue);
 
 		if (currentMenu->drawroutine)
@@ -5931,7 +5932,7 @@ void M_StartControlPanel(void)
 	}
 	else if (!(netgame || multiplayer)) // Single Player
 	{
-		if (gamestate != GS_LEVEL || ultimatemode) // intermission, so gray out stuff.
+		if (gamestate != GS_LEVEL || ultimatemode || G_GetRetryFlag(RETRY_CUR)) // Can't retry if you're already retrying... chief.
 		{
 			SPauseMenu[spause_pandora].status = (M_SecretUnlocked(SECRET_PANDORA)) ? (IT_GRAYEDOUT) : (IT_DISABLED);
 			SPauseMenu[spause_retry].status = IT_GRAYEDOUT;
@@ -6050,6 +6051,12 @@ void M_StartControlPanel(void)
 #endif
 }
 
+void M_EndModeAttackRun(void)
+{
+	G_ClearRetryRA();
+	M_ModeAttackEndGame(0);
+}
+
 //
 // M_ClearMenus
 //
@@ -6082,12 +6089,6 @@ void M_ClearMenus(boolean callexitmenufunc)
 #ifdef TOUCHINPUTS
 	M_SetHeldKeyHandler(NULL);
 #endif
-}
-
-void M_EndModeAttackRun(void)
-{
-	G_ClearModeAttackRetryFlag();
-	M_ModeAttackEndGame(0);
 }
 
 //
@@ -10133,7 +10134,7 @@ static void M_RetryResponse(INT32 ch)
 		return;
 
 	M_ClearMenus(true);
-	G_SetRetryFlag();
+	G_SetRetrySP();
 }
 
 static void M_Retry(INT32 choice)
@@ -13248,7 +13249,11 @@ static void M_HandleChoosePlayerMenu(INT32 choice)
 			break;
 
 		case KEY_ENTER:
-			M_CharacterSelectConfirm();
+			S_StartSound(NULL, sfx_menu1);
+			char_scroll = 0; // finish scrolling the menu
+			// Is this a hack?
+			charseltimer = 0;
+			M_ChoosePlayer(char_on);
 			break;
 
 		case KEY_ESCAPE:
@@ -14597,7 +14602,7 @@ static void M_SetGuestReplay(INT32 choice)
 void M_ModeAttackRetry(INT32 choice)
 {
 	(void)choice;
-	// todo -- maybe seperate this out and G_SetRetryFlag() here instead? is just calling this from the menu 100% safe?
+	// todo -- maybe seperate this out and G_SetRetrySP() here instead? is just calling this from the menu 100% safe?
 	G_CheckDemoStatus(); // Cancel recording
 	if (modeattacking == ATTACKING_RECORD)
 		M_ChooseTimeAttack(0);
