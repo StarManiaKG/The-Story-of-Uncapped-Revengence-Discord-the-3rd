@@ -772,30 +772,32 @@ void P_Ticker(boolean run)
 
 	if (run)
 	{
-		player_t *player1;
-
 		R_UpdateLevelInterpolators();
 		R_UpdateViewInterpolation();
 
 		// Hack: ensure newview is assigned every tic.
 		// Ensures view interpolation is T-1 to T in poor network conditions
 		// We need a better way to assign view state decoupled from game logic
-		player1 = &players[displayplayer];
-		if (player1->mo && skyboxmo[0] && cv_skybox.value)
+		if (!dedicated)
 		{
-			R_SkyboxFrame(player1);
-		}
-		R_SetupFrame(player1);
-
-		if (splitscreen)
-		{
-			player_t *player2 = &players[secondarydisplayplayer];
-			if (player2->mo && skyboxmo[0] && cv_skybox.value)
+			player_t *player1 = &players[displayplayer];
+			if (player1->mo && skyboxmo[0] && cv_skybox.value)
 			{
-				R_SkyboxFrame(player2);
+				R_SkyboxFrame(player1);
 			}
-			R_SetupFrame(player2);
+			R_SetupFrame(player1);
+
+			if (splitscreen)
+			{
+				player_t *player2 = &players[secondarydisplayplayer];
+				if (player2->mo && skyboxmo[0] && cv_skybox.value)
+				{
+					R_SkyboxFrame(player2);
+				}
+				R_SetupFrame(player2);
+			}
 		}
+		
 	}
 
 	P_MapEnd();
