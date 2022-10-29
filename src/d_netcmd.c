@@ -4679,7 +4679,7 @@ void Command_Retry_f(void)
 	else
 	{
 		M_ClearMenus(true);
-		G_SetRetryFlag();
+		G_SetRetrySP();
 	}
 }
 
