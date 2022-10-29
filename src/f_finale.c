@@ -315,9 +315,9 @@ static void F_NewCutscene(const char *basetext)
 // =============
 #define NUMINTROSCENES 17
 INT32 intro_scenenum = 0;
-INT32 intro_curtime = 0;
+static INT32 intro_curtime = 0;
 
-const char *introtext[NUMINTROSCENES];
+static const char *introtext[NUMINTROSCENES];
 
 static tic_t introscenetime[NUMINTROSCENES] =
 {
@@ -651,10 +651,16 @@ void F_IntroDrawer(void)
 				S_ChangeMusicInternal("_stjr", false);
 
 				background = W_CachePatchName(stjrintro, PU_PATCH_LOWPRIORITY);
-				V_DrawSmallScaledPatch(bgxoffs, 84, 0, background);
-				F_WipeEndScreen();
-				F_RunWipe(0,true);
 #endif
+
+				wipestyleflags = WSF_FADEIN;
+				F_WipeStartScreen();
+				F_WipeDoTinted();
+				V_DrawSmallScaledPatch(bgxoffs, 84, 0, background);
+				F_WipeEndScreenRestore(); // Literal hellspawn
+
+				F_StartWipe(0,true);
+				timetonext--;
 			}
 
 			if (!WipeInAction) // Draw the patch if not in a wipe
@@ -805,7 +811,7 @@ void F_IntroDrawer(void)
 
 	W_UnlockCachedPatch(background);
 
-	if (intro_scenenum == 4) // The asteroid SPINS!
+	if (intro_scenenum == INTRO_ASTEROID) // The asteroid SPINS!
 	{
 		if (intro_curtime > 1)
 		{
@@ -845,7 +851,7 @@ void F_IntroDrawer(void)
 				V_DrawFixedPatch(x, y, scale, trans<<V_ALPHASHIFT, rockpat, R_GetTranslationColormap(TC_BLINK, SKINCOLOR_AQUA, GTC_CACHE));
 		}
 	}
-	else if (intro_scenenum == 1 && intro_curtime < 5*TICRATE)
+	else if (intro_scenenum == INTRO_FIRST && intro_curtime < 5*TICRATE)
 	{
 		INT32 input = inputmethod, trans;
 		const char *skiptext;
@@ -869,6 +875,63 @@ void F_IntroDrawer(void)
 	V_DrawString(cx, cy, V_ALLOWLOWERCASE, cutscene_disptext);
 }
 
+static void F_IntroMidSceneWipe(void)
+{
+	INT32 x = 8;
+	INT32 y = 128;
+	patch_t *patch;
+
+	if (intro_scenenum == INTRO_RADAR && intro_curtime == 5*TICRATE)
+		patch = W_CachePatchName("RADAR", PU_PATCH_LOWPRIORITY);
+	else if (intro_scenenum == INTRO_GRASS2 && intro_curtime == 6*TICRATE)
+		patch = W_CachePatchName("SGRASS2", PU_PATCH_LOWPRIORITY);
+	else if (intro_scenenum == INTRO_SONICDO2 && intro_curtime == 7*TICRATE)
+	{
+		patch = W_CachePatchName("SONICDO2", PU_PATCH_LOWPRIORITY);
+		x = 224;
+		y = 8;
+	}
+	else
+		return;
+
+	F_WipeStartScreen();
+	V_DrawSmallScaledPatch(0, 0, 0, patch);
+	W_UnlockCachedPatch(patch);
+	V_DrawString(x, y, V_ALLOWLOWERCASE, cutscene_disptext);
+	F_WipeEndScreenRestore();
+
+	wipestyle = WIPESTYLE_NORMAL;
+	F_StartWipe(99, true);
+	timetonext--;
+}
+
+#define F_IntroSceneCrossfades(scene) ((scene) != INTRO_STJR && (scene) != INTRO_SKYRUNNER && (scene) != INTRO_LAST)
+
+static void F_IntroSpecialWipe(INT32 scene)
+{
+	wipestyleflags = WSF_FADEOUT;
+
+	switch (scene)
+	{
+		case INTRO_STJR:
+			wipestyleflags |= WSF_INTROSTART;
+			break;
+		case INTRO_SKYRUNNER:
+			wipestyleflags |= WSF_TOWHITE;
+			break;
+		case INTRO_LAST:
+			wipestyleflags |= WSF_INTROEND;
+			break;
+	}
+
+	F_WipeStartScreen();
+	F_WipeDoTinted();
+	F_WipeEndScreenRestore();
+
+	F_StartWipe(99, true);
+	WipeRunPost = true;
+}
+
 //
 // F_IntroTicker
 //
@@ -884,150 +947,6 @@ void F_IntroTicker(void)
 	// check for skipping
 	if (keypressed)
 		keypressed = false;
-
-	wipestyleflags = WSF_CROSSFADE;
-
-	if (timetonext <= 0)
-	{
-		if (intro_scenenum == 0)
-		{
-			if (rendermode != render_none)
-			{
-				wipestyleflags = WSF_FADEOUT;
-				F_WipeStartScreen();
-				F_TryColormapFade(31);
-
-				F_IntroDrawer();
-
-				F_WipeEndScreen();
-				F_RunWipe(99,true);
-			}
-
-			S_ChangeMusicInternal("_intro", false);
-		}
-		else if (intro_scenenum == 10)
-		{
-			if (rendermode != render_none)
-			{
-				wipestyleflags = (WSF_FADEOUT|WSF_TOWHITE);
-				F_WipeStartScreen();
-				F_TryColormapFade(0);
-
-				F_IntroDrawer();
-
-				F_WipeEndScreen();
-				F_RunWipe(99,true);
-			}
-		}
-		else if (intro_scenenum == 16)
-		{
-			if (rendermode != render_none)
-			{
-				wipestyleflags = WSF_FADEOUT;
-				F_WipeStartScreen();
-				F_TryColormapFade(31);
-
-				F_IntroDrawer();
-
-				F_WipeEndScreen();
-				F_RunWipe(99,true);
-			}
-
-			// Stay on black for a bit. =)
-			{
-				tic_t nowtime, quittime, lasttime;
-				nowtime = lasttime = I_GetTime();
-				quittime = nowtime + NEWTICRATE*2; // Shortened the quit time, used to be 2 seconds
-				while (quittime > nowtime)
-				{
-					while (!((nowtime = I_GetTime()) - lasttime))
-					{
-						I_Sleep(cv_sleep.value);
-						I_UpdateTime(cv_timescale.value);
-					}
-					lasttime = nowtime;
-
-					I_OsPolling();
-
-#ifdef HAVE_THREADS
-					I_lock_mutex(&m_menu_mutex);
-#endif
-					M_Drawer(); // menu is drawn even on top of wipes
-#ifdef HAVE_THREADS
-					I_unlock_mutex(m_menu_mutex);
-#endif
-					I_FinishUpdate(); // Update the screen with the image Tails 06-19-2001
-
-					if (moviemode) // make sure we save frames for the white hold too
-						M_SaveFrame();
-				}
-			}
-
-			D_StartTitle();
-			wipegamestate = GS_INTRO;
-			return;
-		}
-
-		F_NewCutscene(introtext[++intro_scenenum]);
-		timetonext = introscenetime[intro_scenenum];
-
-		F_WipeStartScreen();
-		wipegamestate = -1;
-		animtimer = stoptimer = 0;
-	}
-
-	intro_curtime = introscenetime[intro_scenenum] - timetonext;
-
-	if (rendermode != render_none)
-	{
-		if (intro_scenenum == 0 && intro_curtime == 2*TICRATE-19)
-		{
-			S_ChangeMusicInternal("_stjr", false);
-
-			wipestyleflags = WSF_FADEIN;
-			F_WipeStartScreen();
-			F_TryColormapFade(31);
-
-			F_IntroDrawer();
-		}
-		if (intro_scenenum == 5 && intro_curtime == 5*TICRATE)
-		{
-			S_ChangeMusicInternal("_stjr", false);
-
-			wipestyleflags = WSF_FADEIN;
-			F_WipeStartScreen();
-			F_TryColormapFade(31);
-
-			F_IntroDrawer();
-
-			F_WipeEndScreen();
-			F_RunWipe(99,true);
-		}
-		else if ((intro_scenenum == 5 && intro_curtime == 5*TICRATE)
-			|| (intro_scenenum == 7 && intro_curtime == 6*TICRATE)
-			//|| (intro_scenenum == 11 && intro_curtime == 7*TICRATE)
-			|| (intro_scenenum == 15 && intro_curtime == 7*TICRATE))
-		{
-			F_WipeStartScreen();
-			F_WipeColorFill(31);
-
-			if (intro_scenenum == 15 && intro_curtime == 7*TICRATE)
-			{
-				patch_t *sdo = W_CachePatchName("SONICDO2", PU_PATCH_LOWPRIORITY);
-
-				V_DrawSmallScaledPatch(0, 0, 0, sdo);
-				W_UnlockCachedPatch(sdo);
-				V_DrawString(224, 8, V_ALLOWLOWERCASE, cutscene_disptext);
-			}
-
-			F_IntroDrawer();
-			F_WipeEndScreen();
-			F_RunWipe(99,true);
-		}
-	}
-
-	if (animtimer)
-		animtimer--;
 }
 
 //
@@ -1843,7 +1762,7 @@ static void F_CacheGoodEnding(void)
 void F_StartEnding(void)
 {
 	G_SetGamestate(GS_ENDING);
-	wipetypepost = INT16_MAX;
+	wipetypepost = IGNOREWIPE;
 
 	// Just in case they're open ... somehow
 	M_ClearMenus(true);
@@ -1867,7 +1786,7 @@ void F_EndingTicker(void)
 	if (++finalecount > STOPPINGPOINT)
 	{
 		F_StartCredits();
-		wipetypepre = INT16_MAX;
+		wipetypepre = IGNOREWIPE;
 		return;
 	}
 
@@ -2519,8 +2438,6 @@ void F_StartTitleScreen(void)
 
 	if (titlemap)
 	{
-		mapthing_t *startpos;
-
 		gamestate_t prevwipegamestate = wipegamestate;
 		titlemapinaction = TITLEMAP_LOADING;
 		titlemapcameraref = NULL;
@@ -2532,41 +2449,9 @@ void F_StartTitleScreen(void)
 		maptol = mapheaderinfo[gamemap-1]->typeoflevel;
 		globalweather = mapheaderinfo[gamemap-1]->weather;
 
-		G_DoLoadLevel(true);
+		G_StartLevel(true);
 		if (!titlemap)
 			return;
-
-		players[displayplayer].playerstate = PST_DEAD; // Don't spawn the player in dummy (I'm still a filthy cheater)
-
-		// Set Default Position
-		if (playerstarts[0])
-			startpos = playerstarts[0];
-		else if (deathmatchstarts[0])
-			startpos = deathmatchstarts[0];
-		else
-			startpos = NULL;
-
-		if (startpos)
-		{
-			camera.x = startpos->x << FRACBITS;
-			camera.y = startpos->y << FRACBITS;
-			camera.subsector = R_PointInSubsector(camera.x, camera.y);
-			camera.z = camera.subsector->sector->floorheight + (startpos->z << FRACBITS);
-			camera.angle = (startpos->angle % 360)*ANG1;
-			camera.aiming = 0;
-		}
-		else
-		{
-			camera.x = camera.y = camera.z = camera.angle = camera.aiming = 0;
-			camera.subsector = NULL; // toast is filthy too
-		}
-
-		camera.chase = true;
-		camera.height = 0;
-
-		// Run enter linedef exec for MN_MAIN, since this is where we start
-		if (menupres[MN_MAIN].entertag)
-			P_LinedefExecute(menupres[MN_MAIN].entertag, players[displayplayer].mo, NULL);
 
 		wipegamestate = prevwipegamestate;
 	}
@@ -3943,27 +3828,11 @@ boolean F_ContinueResponder(event_t *event)
 static INT32 scenenum, cutnum;
 static INT32 picxpos, picypos, picnum, pictime, picmode, numpics, pictoloop;
 static INT32 textxpos, textypos;
-static boolean cutsceneover = false;
+static boolean dofadenow = false, cutsceneover = false;
 static boolean runningprecutscene = false, precutresetplayer = false;
 
 static void F_AdvanceToNextScene(void)
 {
-	if (rendermode != render_none)
-	{
-		F_WipeStartScreen();
-
-		// Fade to any palette color you want.
-		if (cutscenes[cutnum]->scene[scenenum].fadecolor)
-		{
-			V_DrawFill(0,0,BASEVIDWIDTH,BASEVIDHEIGHT,cutscenes[cutnum]->scene[scenenum].fadecolor);
-
-			F_WipeEndScreen();
-			F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeinid, true);
-
-			F_WipeStartScreen();
-		}
-	}
-
 	// Don't increment until after endcutscene check
 	// (possible overflow / bad patch names from the one tic drawn before the fade)
 	if (scenenum+1 >= cutscenes[cutnum]->numscenes)
@@ -3987,6 +3856,7 @@ static void F_AdvanceToNextScene(void)
 			cutscenes[cutnum]->scene[scenenum].musswitchposition, 0, 0);
 
 	// Fade to the next
+	dofadenow = true;
 	F_NewCutscene(cutscenes[cutnum]->scene[scenenum].text);
 
 	picnum = 0;
@@ -3996,14 +3866,6 @@ static void F_AdvanceToNextScene(void)
 	textypos = cutscenes[cutnum]->scene[scenenum].textypos;
 
 	animtimer = pictime = cutscenes[cutnum]->scene[scenenum].picduration[picnum];
-
-	if (rendermode != render_none)
-	{
-		F_CutsceneDrawer();
-
-		F_WipeEndScreen();
-		F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeoutid, true);
-	}
 }
 
 // See also G_AfterIntermission, the only other place which handles intra-map/ending transitions
@@ -4078,6 +3940,21 @@ void F_StartCustomCutscene(INT32 cutscenenum, boolean precutscene, boolean reset
 //
 void F_CutsceneDrawer(void)
 {
+	if (dofadenow && rendermode != render_none)
+	{
+		F_WipeStartScreen();
+
+		// Fade to any palette color you want.
+		if (cutscenes[cutnum]->scene[scenenum].fadecolor)
+		{
+			V_DrawFill(0,0,BASEVIDWIDTH,BASEVIDHEIGHT,cutscenes[cutnum]->scene[scenenum].fadecolor);
+
+			F_WipeEndScreenRestore();
+			F_StartWipe(cutscenes[cutnum]->scene[scenenum].fadeinid, true);
+
+			F_WipeStartScreen();
+		}
+	}
 	V_DrawFill(0,0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 
 	if (cutscenes[cutnum]->scene[scenenum].picname[picnum][0] != '\0')
@@ -4088,6 +3965,12 @@ void F_CutsceneDrawer(void)
 		else
 			V_DrawScaledPatch(picxpos,picypos, 0,
 				W_CachePatchName(cutscenes[cutnum]->scene[scenenum].picname[picnum], PU_PATCH_LOWPRIORITY));
+	}
+
+	if (dofadenow && rendermode != render_none)
+	{
+		F_WipeEndScreenRestore();
+		F_StartWipe(cutscenes[cutnum]->scene[scenenum].fadeoutid, true);
 	}
 
 	V_DrawString(textxpos, textypos, V_ALLOWLOWERCASE, cutscene_disptext);
@@ -4105,6 +3988,8 @@ void F_CutsceneTicker(void)
 	// advance animation
 	finalecount++;
 	cutscene_boostspeed = 0;
+
+	dofadenow = false;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -4559,7 +4444,7 @@ void F_TextPromptDrawer(void)
 	// Data
 	patch_t *patch;
 
-	if (!promptactive)
+	if (!promptactive || titlecard.prelevel)
 		return;
 
 	iconlump = W_CheckNumForName(textprompts[cutnum]->page[scenenum].iconname);
