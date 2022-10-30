@@ -38,8 +38,9 @@
 // length of IP strings
 #define IP_SIZE 21
 
-static CV_PossibleValue_t discordstatustype_cons_t[] = {{0, "All"}, {1, "Only Characters"}, {2, "Only Score"}, {3, "Only Emeralds"}, {4, "Only Emblems"}, {5, "Only Levels"}, {6, "Only Gametype"}, {7, "Custom"}, {0, NULL}};
+static CV_PossibleValue_t discordstatustype_cons_t[] = {{0, "All"}, {1, "Only Characters"}, {2, "Only Score"}, {3, "Only Emeralds"}, {4, "Only Emblems"}, {5, "Only Levels"}, {6, "Only Gametype"}, {7, "Only Total Playtime"}, {8, "Custom"}, {0, NULL}};
 //static CV_PossibleValue_t customlargeimage_cons_t[] = {{0, "Sonic"}, {1, "Tails"}, {2, "Knuckles"}, {3, "Amy"}, {4, "Fang"}, {5, "Metalsonic"}, {0, NULL}};
+
 consvar_t cv_discordrp = CVAR_INIT ("discordrp", "On", CV_SAVE|CV_CALL, CV_OnOff, Discordcustomstatus_option_Onchange);
 consvar_t cv_discordstreamer = CVAR_INIT ("discordstreamer", "Off", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
 consvar_t cv_discordasks = CVAR_INIT ("discordasks", "Yes", CV_SAVE|CV_CALL, CV_YesNo, DRPC_UpdatePresence);
@@ -477,10 +478,7 @@ void DRPC_UpdatePresence(void)
 			else
 				return;
 		}
-	}
-		
-	if (netgame)
-	{
+
 		switch (ms_RoomId)
 		{
 			case 33: snprintf(servertype, 26, "Standard"); break;
@@ -623,6 +621,10 @@ void DRPC_UpdatePresence(void)
 			//// Score ////
 			if (cv_discordshowonstatus.value == 2)
 				snprintf(detailstr, 25, "Current Score: %d", players[consoleplayer].score);
+			
+			//// Total SRB2 Playtime ////
+			if (cv_discordshowonstatus.value == 7)
+				snprintf(detailstr, 56, "Total SRB2 Playtime: %d hours, %d minutes, %d seconds", G_TicsToHours(totalplaytime), G_TicsToMinutes(totalplaytime, false), G_TicsToSeconds(totalplaytime));
 
 			discordPresence.details = detailstr;
 		}
@@ -871,7 +873,7 @@ void DRPC_UpdatePresence(void)
 	}
 	
 	//// Custom Statuses ////
-	if (cv_discordshowonstatus.value == 7)
+	if (cv_discordshowonstatus.value == 8)
 	{
 		discordPresence.details = cv_customdiscorddetails.string;
 		discordPresence.state = cv_customdiscordstate.string;

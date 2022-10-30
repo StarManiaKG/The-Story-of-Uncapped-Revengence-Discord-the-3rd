@@ -14,6 +14,8 @@
 #ifndef __W_WAD__
 #define __W_WAD__
 
+#include "w_handle.h"
+
 #ifdef HWRENDER
 #include "hardware/hw_data.h"
 #endif
@@ -67,6 +69,7 @@ typedef struct
 	unsigned long position; // filelump_t filepos
 	unsigned long disksize; // filelump_t size
 	char name[9];           // filelump_t name[] e.g. "LongEntr"
+	UINT32 hash;
 	char *longname;         //                   e.g. "LongEntryName"
 	char *fullname;         //                   e.g. "Folder/Subfolder/LongEntryName.extension"
 	char *diskpath;         // path to the file  e.g. "/usr/games/srb2/Addon/Folder/Subfolder/LongEntryName.extension"
@@ -129,7 +132,7 @@ typedef struct wadfile_s
 	lumpcache_t *patchcache;
 	UINT16 numlumps; // this wad's number of resources
 	UINT16 foldercount; // folder count
-	FILE *handle;
+	void *handle;
 	UINT32 filesize; // for network
 	UINT8 md5sum[16];
 
@@ -144,28 +147,70 @@ extern wadfile_t **wadfiles;
 
 typedef struct
 {
-	char **files;
 	size_t numfiles;
+	char **files;
+	const char **hashes;
 } addfilelist_t;
 
 // =========================================================================
 
 void W_Shutdown(void);
 
-// Opens a WAD file. Returns the FILE * handle for the file, or NULL if not found or could not be opened
-FILE *W_OpenWadFile(const char **filename, boolean useerrors);
+// Opens a WAD file. Returns the file handle for the file, or NULL if not found or could not be opened
+void *W_OpenWadFile(const char **filename, fhandletype_t type, boolean useerrors);
+
 // Load and add a wadfile to the active wad files, returns numbers of lumps, INT16_MAX on error
-UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup);
+UINT16 W_InitFile(const char *filename, fhandletype_t handletype, boolean mainfile, boolean startup);
+
 // Adds a folder as a file
 UINT16 W_InitFolder(const char *path, boolean mainfile, boolean startup);
 
 // W_InitMultipleFiles exits if a file was not found, but not if all is okay.
-void W_InitMultipleFiles(addfilelist_t *list);
+void W_InitMultipleFiles(addfilelist_t *list, fhandletype_t handletype);
 
 #define W_FileHasFolders(wadfile) ((wadfile)->type == RET_PK3 || (wadfile)->type == RET_FOLDER)
 
+// Prints an error in the console if something goes wrong while adding a file.
+// If it's an exit-worthy error, W_InitFileError will display such error message.
+void W_FileLoadError(const char *fmt, ...);
+
 INT32 W_IsPathToFolderValid(const char *path);
 char *W_GetFullFolderPath(const char *path);
+
+// File unpacking
+#ifdef UNPACK_FILES
+
+// Unpacks a file into user storage.
+boolean W_UnpackFile(const char *filename, void *handle);
+
+// Checks if a file can be unpacked.
+boolean W_CanUnpackFile(const char *filename, const char *hash, size_t *filesize);
+
+// Unpack the main files needed at startup.
+void W_UnpackMultipleFiles(addfilelist_t *list, boolean checkhash);
+void W_UnpackBaseFiles(void);
+
+#define UNPACK_BUFFER_SIZE 4096
+
+// Reports unpacking progress
+typedef struct unpack_progress_s
+{
+	int status;
+	int totalfiles;
+	boolean report;
+} unpack_progress_t;
+extern unpack_progress_t unpack_progress;
+
+void UnpackFile_ProgressClear(void);
+void UnpackFile_ProgressSetReportFlag(boolean flag);
+void UnpackFile_ProgressSetTotalFiles(int files);
+void UnpackFile_ProgressReport(int progress);
+
+#ifdef UNPACK_FILES_DEBUG
+void Command_Unpacktest_f(void);
+#endif
+
+#endif
 
 const char *W_CheckNameForNumPwad(UINT16 wad, UINT16 lump);
 const char *W_CheckNameForNum(lumpnum_t lumpnum);
@@ -228,6 +273,6 @@ void W_UnlockCachedPatch(void *patch);
 
 void W_VerifyFileMD5(UINT16 wadfilenum, const char *matchmd5);
 
-int W_VerifyNMUSlumps(const char *filename, boolean exit_on_error);
+int W_VerifyNMUSlumps(const char *filename, fhandletype_t type, boolean exit_on_error);
 
 #endif // __W_WAD__

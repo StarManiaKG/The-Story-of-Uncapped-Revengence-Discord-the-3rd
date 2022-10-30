@@ -512,7 +512,7 @@ static void GIF_rgbconvert(UINT8 *linear, UINT8 *scr)
 {
 	UINT8 r, g, b;
 	size_t src = 0, dest = 0;
-	size_t size = (vid.width * vid.height * 3);
+	size_t size = (vid.width * vid.height * SCREENSHOT_BITS);
 
 	InitColorLUT(&gif_colorlookup, (gif_localcolortable) ? gif_framepalette : gif_headerpalette, true);
 
@@ -522,7 +522,7 @@ static void GIF_rgbconvert(UINT8 *linear, UINT8 *scr)
 		g = (UINT8)linear[src + 1];
 		b = (UINT8)linear[src + 2];
 		scr[dest] = GetColorLUTDirect(&gif_colorlookup, r, g, b);
-		src += (3 * scrbuf_downscaleamt);
+		src += (SCREENSHOT_BITS * scrbuf_downscaleamt);
 		dest += scrbuf_downscaleamt;
 	}
 }
@@ -608,7 +608,8 @@ static void GIF_framewrite(void)
 		{
 			// golden's attempt at creating a "dynamic delay"
 			UINT16 mingifdelay = 10; // minimum gif delay in milliseconds (keep at 10 because gifs can't get more precise).
-			gif_delayus += I_PreciseToMicros(I_GetPreciseTime() - gif_prevframetime); // increase delay by how much time was spent between last measurement
+			//gif_delayus += (I_GetPreciseTime() - gif_prevframetime) / (I_GetPreciseTime() / 1000000); // increase delay by how much time was spent between last measurement
+			gif_delayus += (I_GetPreciseTime() - gif_prevframetime) / (I_GetPrecisePrecision() / 1000000); // increase delay by how much time was spent between last measurement
 
 			if (gif_delayus/1000 >= mingifdelay) // delay is big enough to be able to effect gif frame delay?
 			{
@@ -621,7 +622,8 @@ static void GIF_framewrite(void)
 		{
 			float delayf = ceil(100.0f/NEWTICRATE);
 
-			delay = (UINT16)I_PreciseToMicros((I_GetPreciseTime() - gif_prevframetime))/10/1000;
+			//delay = (UINT16)((I_GetPreciseTime() - gif_prevframetime)) / (I_GetPreciseTime() / 1000000) /10/1000;
+			delay = (UINT16)((I_GetPreciseTime() - gif_prevframetime)) / (I_GetPrecisePrecision() / 1000000) /10/1000;
 
 			if (delay < (UINT16)(delayf))
 				delay = (UINT16)(delayf);
