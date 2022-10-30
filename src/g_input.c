@@ -15,9 +15,27 @@
 #include "doomstat.h"
 #include "g_input.h"
 #include "keys.h"
-#include "hu_stuff.h" // need HUFONT start & end
 #include "d_net.h"
 #include "console.h"
+#include "m_menu.h"
+#include "m_misc.h"
+#include "p_tick.h"
+#include "g_game.h"
+#include "hu_stuff.h" // need HUFONT start & end
+#include "st_stuff.h"
+#include "d_player.h"
+#include "r_main.h"
+#include "z_zone.h"
+#include "i_system.h"
+#include "lua_hook.h"
+
+#ifdef TOUCHINPUTS
+#include "ts_main.h"
+#include "ts_custom.h"
+#endif
+
+INT32 inputmethod = INPUTMETHOD_NONE;
+INT32 controlmethod = INPUTMETHOD_NONE;
 
 #define MAXMOUSESENSITIVITY 100 // sensitivity steps
 
@@ -39,6 +57,18 @@ INT32 joyxmove[JOYAXISSET], joyymove[JOYAXISSET], joy2xmove[JOYAXISSET], joy2ymo
 
 // current state of the keys: true if pushed
 UINT8 gamekeydown[NUMINPUTS];
+
+// accelerometer
+#ifdef ACCELEROMETER
+INT32 accelxmove, accelymove, acceltilt;
+#endif
+
+// current state of the keys: true if pushed
+UINT8 gamekeydown[NUMINPUTS];
+
+// Is there a touch screen in the device?
+// (This variable exists even without TOUCHINPUTS)
+boolean touchscreenavailable = false;
 
 // two key codes (or virtual key) per game control
 INT32 gamecontrol[NUM_GAMECONTROLS][2];
@@ -100,12 +130,45 @@ static dclick_t joy2dclicks[JOYBUTTONS + JOYHATS*4];
 // protos
 static UINT8 G_CheckDoubleClick(UINT8 state, dclick_t *dt);
 
+boolean G_InGameInput(void)
+{
+	return (!(menuactive || CON_Ready() || chat_on));
+}
+
+// Detects the input method from a key, which might be virtual.
+INT32 G_InputMethodFromKey(INT32 key)
+{
+	if (G_KeyIsMouse(key))
+		return INPUTMETHOD_MOUSE;
+	else if (G_KeyIsJoystick(key))
+		return INPUTMETHOD_JOYSTICK;
+	else if (G_KeyIsTVRemote(key))
+		return INPUTMETHOD_TVREMOTE;
+	else
+		return INPUTMETHOD_KEYBOARD;
+}
+
+void G_DetectInputMethod(INT32 key)
+{
+	if (key > KEY_NULL)
+	{
+		if (!G_KeyIsAnyMouseWheel(key)) // Mouse wheel doesn't do anything in menus
+			inputmethod = G_InputMethodFromKey(key);
+	}
+}
+
+void G_DetectControlMethod(INT32 key)
+{
+	if (key > KEY_NULL)
+		controlmethod = G_InputMethodFromKey(key);
+}
+
 //
 // Remaps the inputs to game controls.
 //
 // A game control can be triggered by one or more keys/buttons.
 //
-// Each key/mousebutton/joybutton triggers ONLY ONE game control.
+// Each key/mousebutton/joybutton/finger triggers ONLY ONE game control.
 //
 void G_MapEventsToControls(event_t *ev)
 {
@@ -116,7 +179,11 @@ void G_MapEventsToControls(event_t *ev)
 	{
 		case ev_keydown:
 			if (ev->key < NUMINPUTS)
+			{
 				gamekeydown[ev->key] = 1;
+				if (G_KeyAssignedToControl(ev->key)) // Unnecessary?
+					controlmethod = G_InputMethodFromKey(ev->key);
+			}
 #ifdef PARANOIA
 			else
 			{
@@ -137,6 +204,14 @@ void G_MapEventsToControls(event_t *ev)
 #endif
 			break;
 
+#ifdef TOUCHINPUTS
+		case ev_touchdown:
+		case ev_touchmotion:
+		case ev_touchup:
+			TS_HandleFingerEvent(ev);
+			break;
+#endif
+
 		case ev_mouse: // buttons are virtual keys
 			mouse.rdx = ev->x;
 			mouse.rdy = ev->y;
@@ -144,7 +219,7 @@ void G_MapEventsToControls(event_t *ev)
 
 		case ev_joystick: // buttons are virtual keys
 			i = ev->key;
-			if (i >= JOYAXISSET || menuactive || CON_Ready() || chat_on)
+			if (i >= JOYAXISSET || !G_InGameInput() || menuactive || CON_Ready() || chat_on)
 				break;
 			if (ev->x != INT32_MAX) joyxmove[i] = ev->x;
 			if (ev->y != INT32_MAX) joyymove[i] = ev->y;
@@ -152,14 +227,23 @@ void G_MapEventsToControls(event_t *ev)
 
 		case ev_joystick2: // buttons are virtual keys
 			i = ev->key;
-			if (i >= JOYAXISSET || menuactive || CON_Ready() || chat_on)
+			if (i >= JOYAXISSET || !G_InGameInput() || menuactive || CON_Ready() || chat_on)
 				break;
 			if (ev->x != INT32_MAX) joy2xmove[i] = ev->x;
 			if (ev->y != INT32_MAX) joy2ymove[i] = ev->y;
 			break;
 
+		case ev_accelerometer:
+#ifdef ACCELEROMETER
+			if (!G_InGameInput())
+				break;
+			if (ev->x != INT32_MAX) accelxmove = acceltilt = ev->x;
+			if (ev->y != INT32_MAX) accelymove = ev->y;
+#endif
+			break;
+
 		case ev_mouse2: // buttons are virtual keys
-			if (menuactive || CON_Ready() || chat_on)
+			if (menuactive || !G_InGameInput() || CON_Ready() || chat_on)
 				break;
 			mouse2.rdx = ev->x;
 			mouse2.rdy = ev->y;
@@ -195,6 +279,20 @@ void G_MapEventsToControls(event_t *ev)
 	}
 }
 
+// returns true if a key is assigned to a game control
+boolean G_KeyAssignedToControl(INT32 key)
+{
+	INT32 i = GC_NULL;
+
+	for (; i < NUM_GAMECONTROLS; i++)
+	{
+		if (gamecontrol[i][0] == key || gamecontrol[i][1] == key)
+			return true;
+	}
+
+	return false;
+}
+
 //
 // General double-click detection routine for any kind of input.
 //
@@ -221,6 +319,112 @@ static UINT8 G_CheckDoubleClick(UINT8 state, dclick_t *dt)
 			dt->clicks = 0;
 			dt->state = 0;
 		}
+	}
+	return false;
+}
+
+boolean G_HandlePauseKey(boolean ispausebreak)
+{
+	if (G_CanRetryModeAttack())
+	{
+		pausebreakkey = ispausebreak;
+		if (menuactive || pausedelay < 0 || leveltime < 2)
+			return true;
+
+		if (pausedelay < 1+(NEWTICRATE/2))
+			pausedelay = 1+(NEWTICRATE/2);
+		else if (++pausedelay > 1+(NEWTICRATE/2)+(NEWTICRATE/3))
+		{
+			G_SetModeAttackRetryFlag();
+			return true;
+		}
+		pausedelay++; // counteract subsequent subtraction this frame
+	}
+	else
+	{
+		INT32 oldpausedelay = pausedelay;
+		pausedelay = (NEWTICRATE/7);
+		if (!oldpausedelay)
+		{
+			// command will handle all the checks for us
+			COM_ImmedExecute("pause");
+			return true;
+		}
+	}
+
+	return false;
+}
+
+boolean G_CanRetryModeAttack(void)
+{
+	return (modeattacking && !demoplayback && (gamestate == GS_LEVEL));
+}
+
+// Handles the viewpoint switch key being pressed.
+boolean G_DoViewpointSwitch(void)
+{
+	// ViewpointSwitch Lua hook.
+	UINT8 canSwitchView = 0;
+
+	if (splitscreen || !netgame)
+		displayplayer = consoleplayer;
+	else
+	{
+		do
+		{
+			displayplayer++;
+			if (displayplayer == MAXPLAYERS)
+				displayplayer = 0;
+
+			if (!playeringame[displayplayer])
+				continue;
+
+			// Call ViewpointSwitch hooks here.
+			canSwitchView = LUA_HookViewpointSwitch(&players[consoleplayer], &players[displayplayer], false);
+			if (canSwitchView == 1) // Set viewpoint to this player
+				break;
+			else if (canSwitchView == 2) // Skip this player
+				continue;
+
+			if (!G_CanViewpointSwitchToPlayer(&players[displayplayer]))
+				continue;
+
+			break;
+		} while (displayplayer != consoleplayer);
+
+		// change statusbar also if playing back demo
+		if (singledemo)
+			ST_changeDemoView();
+
+		// tell who's the view
+		CONS_Printf(M_GetText("Viewpoint: %s\n"), player_names[displayplayer]);
+
+		return true;
+	}
+
+	return false;
+}
+
+// Handles the camera toggle key being pressed.
+boolean G_ToggleChaseCam(void)
+{
+	if (!camtoggledelay)
+	{
+		camtoggledelay = NEWTICRATE / 7;
+		CV_SetValue(&cv_chasecam, cv_chasecam.value ? 0 : 1);
+		return true;
+	}
+	return false;
+}
+
+// Handles the camera toggle key being pressed by the second player.
+boolean G_ToggleChaseCam2(void)
+{
+	if (!camtoggledelay2)
+	{
+		camtoggledelay2 = NEWTICRATE / 7;
+		CV_SetValue(&cv_chasecam2, cv_chasecam2.value ? 0 : 1);
+		return true;
 	}
 	return false;
 }
@@ -550,10 +754,15 @@ static keyname_t keynames[] =
 	{KEY_DBL2HAT1+13, "dblsec_hatdown4"},
 	{KEY_DBL2HAT1+14, "dblsec_hatleft4"},
 	{KEY_DBL2HAT1+15, "dblsec_hatright4"},
-
+	{KEY_REMOTEUP, "remote up"},
+	{KEY_REMOTEDOWN, "remote down"},
+	{KEY_REMOTELEFT, "remote left"},
+	{KEY_REMOTERIGHT, "remote right"},
+	{KEY_REMOTECENTER, "remote center"},
+	{KEY_REMOTEBACK, "remote back"}
 };
 
-static const char *gamecontrolname[NUM_GAMECONTROLS] =
+const char *gamecontrolname[NUM_GAMECONTROLS] =
 {
 	"nothing", // a key/button mapped to GC_NULL has no effect
 	"forward",
@@ -562,6 +771,13 @@ static const char *gamecontrolname[NUM_GAMECONTROLS] =
 	"straferight",
 	"turnleft",
 	"turnright",
+#ifdef TOUCHINPUTS
+	"touchjoystick",
+	"dpadul",
+	"dpadur",
+	"dpaddl",
+	"dpaddr",
+#endif
 	"weaponnext",
 	"weaponprev",
 	"weapon1",
@@ -753,6 +969,15 @@ void G_DefineDefaultControls(void)
 		gamecontroldefault[i][GC_TOSSFLAG   ][1] = KEY_HAT1+2; // D-Pad Left
 		gamecontroldefault[i][GC_SCORES     ][1] = KEY_HAT1+3; // D-Pad Right
 
+#ifdef TV_PLATFORM
+		// Basic TV remote controls
+		gamecontroldefault[i][GC_FORWARD    ][1] = KEY_REMOTEUP;
+		gamecontroldefault[i][GC_BACKWARD   ][1] = KEY_REMOTEDOWN;
+		gamecontroldefault[i][GC_STRAFELEFT ][1] = KEY_REMOTELEFT;
+		gamecontroldefault[i][GC_STRAFERIGHT][1] = KEY_REMOTERIGHT;
+		gamecontroldefault[i][GC_JUMP       ][1] = KEY_REMOTECENTER;
+#endif
+
 		// Second player controls only have joypad defaults
 		gamecontrolbisdefault[i][GC_JUMP       ][1] = KEY_2JOY1+0; // A
 		gamecontrolbisdefault[i][GC_SPIN       ][1] = KEY_2JOY1+2; // X
@@ -769,6 +994,62 @@ void G_DefineDefaultControls(void)
 		gamecontrolbisdefault[i][GC_TOSSFLAG   ][1] = KEY_2HAT1+2; // D-Pad Left
 		//gamecontrolbisdefault[i][GC_SCORES     ][1] = KEY_2HAT1+3; // D-Pad Right
 	}
+
+#ifdef TOUCHINPUTS
+	TS_RegisterVariables();
+#endif
+}
+
+// clear cmd building stuff
+void G_ResetInputs(void)
+{
+	memset(gamekeydown, 0x00, sizeof(gamekeydown));
+
+	G_ResetJoysticks();
+	G_ResetAccelerometer();
+	G_ResetMice();
+
+#ifdef TOUCHINPUTS
+	TS_ClearFingers();
+	TS_NavigationFingersUp();
+#endif
+}
+
+// clear joystick axes
+void G_ResetJoysticks(void)
+{
+	INT32 i;
+
+	for (i = 0; i < JOYAXISSET; i++)
+	{
+		joyxmove[i] = joyymove[i] = 0;
+		joy2xmove[i] = joy2ymove[i] = 0;
+	}
+}
+
+// clear accelerometer position
+void G_ResetAccelerometer(void)
+{
+#ifdef ACCELEROMETER
+	accelxmove = accelymove = 0;
+#endif
+}
+
+// clear mice positions
+void G_ResetMice(void)
+{
+	G_SetMouseDeltas(0, 0, 1);
+	G_SetMouseDeltas(0, 0, 2);
+}
+
+// Returns true if the accelerometer can be used
+boolean G_CanUseAccelerometer(void)
+{
+#ifdef ACCELEROMETER
+	return (cv_useaccelerometer.value && (!(menuactive || paused || con_destlines || chat_on || gamestate != GS_LEVEL)));
+#else
+	return false;
+#endif
 }
 
 INT32 G_GetControlScheme(INT32 (*fromcontrols)[2], const INT32 *gclist, INT32 gclen)

@@ -31,6 +31,16 @@ extern boolean singledemo;
 extern boolean demo_start;
 extern boolean demosynced;
 
+typedef struct
+{
+	UINT8 charability,charability2,thrustfactor,accelstart,acceleration;
+	pflags_t pflags;
+	UINT32 followitem;
+	fixed_t camerascale,shieldscale,actionspd,mindash,maxdash,normalspeed,runspeed,jumpfactor,height,spinheight;
+	INT32 color;
+} demoplayer_t;
+extern demoplayer_t *demoplayerinfo;
+
 extern mobj_t *metalplayback;
 
 // Only called by startup code.
@@ -73,6 +83,7 @@ void G_LoadMetal(UINT8 **buffer);
 
 void G_DeferedPlayDemo(const char *demo);
 void G_DoPlayDemo(char *defdemoname);
+void G_FinishLoadingDemo(void);
 void G_TimeDemo(const char *name);
 void G_AddGhost(char *defdemoname);
 void G_FreeGhosts(void);

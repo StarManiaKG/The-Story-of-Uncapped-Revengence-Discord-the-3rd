@@ -1,6 +1,6 @@
 # SRB2 - Which DLLs do I need to bundle?
 
-Updated 8/23/2020 (v1.3)
+Updated 8/23/2020 (v1.3) //Of SRB2 Kart, Duh
 
 Here are the required DLLs, per build. For each architecture, copy all the binaries from these folders:
 
@@ -26,7 +26,6 @@ and don't forget to build r_opengl.dll for srb2dd.
 * libs\libopenmpt\x86\bin\mingw\libopenmpt.dll
 
 ## srb2win, 64-bit
-
 * libs\dll-binaries\x86_64\exchndl.dll
 * libs\dll-binaries\x86_64\libgme.dll
 ## rpc

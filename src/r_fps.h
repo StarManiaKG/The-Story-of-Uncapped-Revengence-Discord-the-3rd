@@ -18,8 +18,12 @@
 #include "m_fixed.h"
 #include "p_local.h"
 #include "r_state.h"
+#include "m_perfstats.h" // ps_metric_t
 
 extern consvar_t cv_fpscap;
+
+extern ps_metric_t ps_interp_frac;
+extern ps_metric_t ps_interp_lag;
 
 UINT32 R_GetFramerateCap(void);
 boolean R_UsingFrameInterpolation(void);
@@ -55,6 +59,11 @@ typedef struct {
 	fixed_t z;
 	subsector_t *subsector;
 	angle_t angle;
+	fixed_t scale;
+	fixed_t spritexscale;
+	fixed_t spriteyscale;
+	fixed_t spritexoffset;
+	fixed_t spriteyoffset;
 } interpmobjstate_t;
 
 // Level interpolators
@@ -109,7 +118,7 @@ void R_InterpolateView(fixed_t frac);
 // Buffer the current new views into the old views. Call once after each real tic.
 void R_UpdateViewInterpolation(void);
 // Reset the view states (e.g. after level load) so R_InterpolateView doesn't interpolate invalid data
-void R_ResetViewInterpolation(void);
+void R_ResetViewInterpolation(UINT8 p);
 // Set the current view context (the viewvars pointed to by newview)
 void R_SetViewContext(enum viewcontext_e _viewcontext);
 
