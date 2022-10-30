@@ -10,11 +10,6 @@
 /// \file  lua_hud.h
 /// \brief HUD enable/disable flags for Lua scripting
 
-#ifndef __LUA_HUD_H__
-#define __LUA_HUD_H__
-
-#include "lua_hudlib_drawlist.h"
-
 enum hud {
 	hud_stagetitle = 0,
 	hud_textspectator,
@@ -52,6 +47,4 @@ extern boolean hud_running;
 
 boolean LUA_HudEnabled(enum hud option);
 
-void LUA_SetHudHook(int hook, huddrawlist_h list);
-
-#endif // __LUA_HUD_H__
+void LUA_SetHudHook(int hook);

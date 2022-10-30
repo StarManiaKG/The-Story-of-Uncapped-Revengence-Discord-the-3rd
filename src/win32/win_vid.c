@@ -952,19 +952,14 @@ INT32 VID_SetMode(INT32 modenum)
 	return 1;
 }
 
-INT32 VID_CheckRenderer(void)
+boolean VID_CheckRenderer(void)
 {
-	return 0;
+	return false;
 }
 
 void VID_CheckGLLoaded(rendermode_t oldrender)
 {
 	(void)oldrender;
-}
-
-void I_ReportProgress(int progress)
-{
-	(void)progress;
 }
 
 // ========================================================================

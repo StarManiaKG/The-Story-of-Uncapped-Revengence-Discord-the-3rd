@@ -122,7 +122,7 @@ static void ReconfigureViaConstants (pslope_t *slope, const fixed_t a, const fix
 }
 
 /// Recalculate dynamic slopes.
-void T_DynamicSlopeLine (dynlineplanethink_t* th)
+void T_DynamicSlopeLine (dynplanethink_t* th)
 {
 	pslope_t* slope = th->slope;
 	line_t* srcline = th->sourceline;
@@ -162,59 +162,50 @@ void T_DynamicSlopeLine (dynlineplanethink_t* th)
 }
 
 /// Mapthing-defined
-void T_DynamicSlopeVert (dynvertexplanethink_t* th)
+void T_DynamicSlopeVert (dynplanethink_t* th)
 {
-	size_t i;
+	pslope_t* slope = th->slope;
 
-	for (i = 0; i < 3; i++)
-	{
-		if (th->relative & (1 << i))
-			th->vex[i].z = th->origvecheights[i] + (th->secs[i]->floorheight - th->origsecheights[i]);
+	size_t i;
+	INT32 l;
+
+	for (i = 0; i < 3; i++) {
+		l = Tag_FindLineSpecial(799, th->tags[i]);
+		if (l != -1) {
+			th->vex[i].z = lines[l].frontsector->floorheight;
+		}
 		else
-			th->vex[i].z = th->secs[i]->floorheight;
+			th->vex[i].z = 0;
 	}
 
-	ReconfigureViaVertexes(th->slope, th->vex[0], th->vex[1], th->vex[2]);
+	ReconfigureViaVertexes(slope, th->vex[0], th->vex[1], th->vex[2]);
 }
 
-static inline void P_AddDynLineSlopeThinker (pslope_t* slope, dynplanetype_t type, line_t* sourceline, fixed_t extent)
+static inline void P_AddDynSlopeThinker (pslope_t* slope, dynplanetype_t type, line_t* sourceline, fixed_t extent, const INT16 tags[3], const vector3_t vx[3])
 {
-	dynlineplanethink_t* th = Z_Calloc(sizeof (*th), PU_LEVSPEC, NULL);
-	th->thinker.function.acp1 = (actionf_p1)T_DynamicSlopeLine;
+	dynplanethink_t* th = Z_Calloc(sizeof (*th), PU_LEVSPEC, NULL);
+	switch (type)
+	{
+	case DP_VERTEX:
+		th->thinker.function.acp1 = (actionf_p1)T_DynamicSlopeVert;
+		memcpy(th->tags, tags, sizeof(th->tags));
+		memcpy(th->vex, vx, sizeof(th->vex));
+		break;
+	default:
+		th->thinker.function.acp1 = (actionf_p1)T_DynamicSlopeLine;
+		th->sourceline = sourceline;
+		th->extent = extent;
+	}
+
 	th->slope = slope;
 	th->type = type;
-	th->sourceline = sourceline;
-	th->extent = extent;
+
 	P_AddThinker(THINK_DYNSLOPE, &th->thinker);
 
 	// interpolation
 	R_CreateInterpolator_DynSlope(&th->thinker, slope);
 }
 
-static inline void P_AddDynVertexSlopeThinker (pslope_t* slope, const INT16 tags[3], const vector3_t vx[3])
-{
-	dynvertexplanethink_t* th = Z_Calloc(sizeof (*th), PU_LEVSPEC, NULL);
-	size_t i;
-	INT32 l;
-	th->thinker.function.acp1 = (actionf_p1)T_DynamicSlopeVert;
-	th->slope = slope;
-
-	for (i = 0; i < 3; i++) {
-		l = Tag_FindLineSpecial(799, tags[i]);
-		if (l == -1)
-		{
-			Z_Free(th);
-			return;
-		}
-		th->secs[i] = lines[l].frontsector;
-		th->vex[i] = vx[i];
-		th->origsecheights[i] = lines[l].frontsector->floorheight;
-		th->origvecheights[i] = vx[i].z;
-		if (lines[l].args[0])
-			th->relative |= 1<<i;
-	}
-	P_AddThinker(THINK_DYNSLOPE, &th->thinker);
-}
 
 /// Create a new slope and add it to the slope list.
 static inline pslope_t* Slope_Add (const UINT8 flags)
@@ -279,27 +270,6 @@ static fixed_t GetExtent(sector_t *sector, line_t *line)
 	}
 
 	return fardist;
-}
-
-static boolean P_CopySlope(pslope_t** toslope, pslope_t* fromslope)
-{
-	if (*toslope || !fromslope)
-		return true;
-
-	*toslope = fromslope;
-	return true;
-}
-
-static void P_UpdateHasSlope(sector_t *sec)
-{
-	size_t i;
-
-	sec->hasslope = true;
-
-	// if this is an FOF control sector, make sure any target sectors also are marked as having slopes
-	if (sec->numattached)
-		for (i = 0; i < sec->numattached; i++)
-			sectors[sec->attached[i]].hasslope = true;
 }
 
 /// Creates one or more slopes based on the given line type and front/back sectors.
@@ -392,7 +362,7 @@ static void line_SpawnViaLine(const int linenum, const boolean spawnthinker)
 			P_CalculateSlopeNormal(fslope);
 
 			if (spawnthinker && (flags & SL_DYNAMIC))
-				P_AddDynLineSlopeThinker(fslope, DP_FRONTFLOOR, line, extent);
+				P_AddDynSlopeThinker(fslope, DP_FRONTFLOOR, line, extent, NULL, NULL);
 		}
 		if(frontceil)
 		{
@@ -409,7 +379,7 @@ static void line_SpawnViaLine(const int linenum, const boolean spawnthinker)
 			P_CalculateSlopeNormal(cslope);
 
 			if (spawnthinker && (flags & SL_DYNAMIC))
-				P_AddDynLineSlopeThinker(cslope, DP_FRONTCEIL, line, extent);
+				P_AddDynSlopeThinker(cslope, DP_FRONTCEIL, line, extent, NULL, NULL);
 		}
 	}
 	if(backfloor || backceil)
@@ -449,7 +419,7 @@ static void line_SpawnViaLine(const int linenum, const boolean spawnthinker)
 			P_CalculateSlopeNormal(fslope);
 
 			if (spawnthinker && (flags & SL_DYNAMIC))
-				P_AddDynLineSlopeThinker(fslope, DP_BACKFLOOR, line, extent);
+				P_AddDynSlopeThinker(fslope, DP_BACKFLOOR, line, extent, NULL, NULL);
 		}
 		if(backceil)
 		{
@@ -466,25 +436,8 @@ static void line_SpawnViaLine(const int linenum, const boolean spawnthinker)
 			P_CalculateSlopeNormal(cslope);
 
 			if (spawnthinker && (flags & SL_DYNAMIC))
-				P_AddDynLineSlopeThinker(cslope, DP_BACKCEIL, line, extent);
+				P_AddDynSlopeThinker(cslope, DP_BACKCEIL, line, extent, NULL, NULL);
 		}
-	}
-
-	if (line->args[2] & TMSL_COPY)
-	{
-		if (frontfloor)
-			P_CopySlope(&line->backsector->f_slope, line->frontsector->f_slope);
-		if (backfloor)
-			P_CopySlope(&line->frontsector->f_slope, line->backsector->f_slope);
-		if (frontceil)
-			P_CopySlope(&line->backsector->c_slope, line->frontsector->c_slope);
-		if (backceil)
-			P_CopySlope(&line->frontsector->c_slope, line->backsector->c_slope);
-
-		if (backfloor || backceil)
-			P_UpdateHasSlope(line->frontsector);
-		if (frontfloor || frontceil)
-			P_UpdateHasSlope(line->backsector);
 	}
 }
 
@@ -520,14 +473,14 @@ static pslope_t *MakeViaMapthings(INT16 tag1, INT16 tag2, INT16 tag3, UINT8 flag
 		vx[i].x = mt->x << FRACBITS;
 		vx[i].y = mt->y << FRACBITS;
 		vx[i].z = mt->z << FRACBITS;
-		if (!mt->args[0])
+		if (!mt->extrainfo)
 			vx[i].z += R_PointInSubsector(vx[i].x, vx[i].y)->sector->floorheight;
 	}
 
 	ReconfigureViaVertexes(ret, vx[0], vx[1], vx[2]);
 
 	if (spawnthinker && (flags & SL_DYNAMIC))
-		P_AddDynVertexSlopeThinker(ret, tags, vx);
+		P_AddDynSlopeThinker(ret, DP_VERTEX, NULL, 0, tags, vx);
 
 	return ret;
 }
@@ -642,6 +595,27 @@ static boolean P_SetSlopeFromTag(sector_t *sec, INT32 tag, boolean ceiling)
 	return false;
 }
 
+static boolean P_CopySlope(pslope_t **toslope, pslope_t *fromslope)
+{
+	if (*toslope || !fromslope)
+		return true;
+
+	*toslope = fromslope;
+	return true;
+}
+
+static void P_UpdateHasSlope(sector_t *sec)
+{
+	size_t i;
+
+	sec->hasslope = true;
+
+	// if this is an FOF control sector, make sure any target sectors also are marked as having slopes
+	if (sec->numattached)
+		for (i = 0; i < sec->numattached; i++)
+			sectors[sec->attached[i]].hasslope = true;
+}
+
 //
 // P_CopySectorSlope
 //
@@ -731,6 +705,9 @@ void P_SpawnSlopes(const boolean fromsave) {
 	for (i = 0; i < numlines; i++)
 		switch (lines[i].special)
 		{
+			case 700:
+				if (lines[i].flags & ML_TFERLINE) P_CopySectorSlope(&lines[i]);
+				break;
 			case 720:
 				P_CopySectorSlope(&lines[i]);
 			default:

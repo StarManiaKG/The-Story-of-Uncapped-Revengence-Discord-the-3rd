@@ -44,11 +44,6 @@ void D_PostEvent(const event_t *ev);
 void D_ProcessEvents(void);
 
 const char *D_Home(void);
-void D_SetupHome(void);
-
-void D_DefaultSaveGameName(const char *name);
-void D_DefaultLiveEventName(const char *name);
-void D_MakeSaveGamePaths(const char *home);
 
 //
 // BASE LEVEL

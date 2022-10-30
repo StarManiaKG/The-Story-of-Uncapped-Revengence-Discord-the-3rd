@@ -15,7 +15,6 @@
 #include <unistd.h> //for unlink
 #endif
 
-#include "i_time.h"
 #include "i_net.h"
 #include "i_system.h"
 #include "i_video.h"
@@ -48,11 +47,6 @@
 #include "md5.h"
 #include "m_perfstats.h"
 #include "s_sound.h" // sfx_syfail
-
-#ifdef TOUCHINPUTS
-#include "ts_main.h"
-#include "ts_draw.h"
-#endif
 
 #ifndef NONET
 // cl loading screen
@@ -123,9 +117,6 @@ static INT16 consistancy[BACKUPTICS];
 
 static UINT8 player_joining = false;
 UINT8 hu_redownloadinggamestate = 0;
-
-// true when a player is connecting or disconnecting so that the gameplay has stopped in its tracks
-boolean hu_stopped = false;
 
 UINT8 adminpassmd5[16];
 boolean adminpasswordset = false;
@@ -564,12 +555,6 @@ static UINT16 cl_lastcheckedfilecount = 0;	// used for full file list
 #define SNAKE_BOTTOM_Y (BASEVIDHEIGHT - 48)
 #define SNAKE_TOP_Y (SNAKE_BOTTOM_Y - SNAKE_MAP_HEIGHT - SNAKE_BORDER_SIZE * 2 + 1)
 
-#define SNAKE_INPUT_UP (gamekeydown[KEY_UPARROW] || gamekeydown[KEY_REMOTEUP])
-#define SNAKE_INPUT_DOWN (gamekeydown[KEY_DOWNARROW] || gamekeydown[KEY_REMOTEDOWN])
-#define SNAKE_INPUT_LEFT (gamekeydown[KEY_LEFTARROW] || gamekeydown[KEY_REMOTELEFT])
-#define SNAKE_INPUT_RIGHT (gamekeydown[KEY_RIGHTARROW] || gamekeydown[KEY_REMOTERIGHT])
-#define SNAKE_INPUT_ENTER (gamekeydown[KEY_ENTER] || gamekeydown[KEY_REMOTECENTER])
-
 enum snake_bonustype_s {
 	SNAKE_BONUS_NONE = 0,
 	SNAKE_BONUS_SLOW,
@@ -657,15 +642,6 @@ static void Snake_Initialise(void)
 	snake->bonustype = SNAKE_BONUS_NONE;
 }
 
-static void Snake_Remove(void)
-{
-	if (snake)
-	{
-		free(snake);
-		snake = NULL;
-	}
-}
-
 static UINT8 Snake_GetOppositeDir(UINT8 dir)
 {
 	if (dir == 1 || dir == 3)
@@ -704,14 +680,14 @@ static void Snake_Handle(void)
 	UINT16 i;
 
 	// Handle retry
-	if (snake->gameover && (PLAYER1INPUTDOWN(GC_JUMP) || gamekeydown[KEY_ENTER] || SNAKE_INPUT_ENTER))
+	if (snake->gameover && (PLAYER1INPUTDOWN(GC_JUMP) || gamekeydown[KEY_ENTER]))
 	{
 		Snake_Initialise();
 		snake->pausepressed = true; // Avoid accidental pause on respawn
 	}
 
 	// Handle pause
-	if (PLAYER1INPUTDOWN(GC_PAUSE) || gamekeydown[KEY_ENTER] || SNAKE_INPUT_ENTER)
+	if (PLAYER1INPUTDOWN(GC_PAUSE) || gamekeydown[KEY_ENTER])
 	{
 		if (!snake->pausepressed)
 			snake->paused = !snake->paused;
@@ -731,22 +707,22 @@ static void Snake_Handle(void)
 	oldy = snake->snakey[1];
 
 	// Update direction
-	if (gamekeydown[KEY_LEFTARROW] || SNAKE_INPUT_LEFT)
+	if (gamekeydown[KEY_LEFTARROW])
 	{
 		if (snake->snakelength < 2 || x <= oldx)
 			snake->snakedir[0] = 1;
 	}
-	else if (gamekeydown[KEY_RIGHTARROW] || SNAKE_INPUT_RIGHT)
+	else if (gamekeydown[KEY_RIGHTARROW])
 	{
 		if (snake->snakelength < 2 || x >= oldx)
 			snake->snakedir[0] = 2;
 	}
-	else if (gamekeydown[KEY_UPARROW] || SNAKE_INPUT_UP)
+	else if (gamekeydown[KEY_UPARROW])
 	{
 		if (snake->snakelength < 2 || y <= oldy)
 			snake->snakedir[0] = 3;
 	}
-	else if (gamekeydown[KEY_DOWNARROW] || SNAKE_INPUT_DOWN)
+	else if (gamekeydown[KEY_DOWNARROW])
 	{
 		if (snake->snakelength < 2 || y >= oldy)
 			snake->snakedir[0] = 4;
@@ -1063,11 +1039,11 @@ static void Snake_Draw(void)
 		);
 }
 
-static void CL_DrawConnectionStatusBox(const char *abortstring)
+static void CL_DrawConnectionStatusBox(void)
 {
 	M_DrawTextBox(BASEVIDWIDTH/2-128-8, BASEVIDHEIGHT-16-8, 32, 1);
 	if (cl_mode != CL_CONFIRMCONNECT)
-		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-16, V_YELLOWMAP, abortstring);
+		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-16, V_YELLOWMAP, "Press ESC to abort");
 }
 
 //
@@ -1075,25 +1051,12 @@ static void CL_DrawConnectionStatusBox(const char *abortstring)
 //
 // Keep the local client informed of our status.
 //
-static void CL_DrawConnectionStatus(void)
+static inline void CL_DrawConnectionStatus(void)
 {
-	const char *abortstring = NULL;
 	INT32 ccstime = I_GetTime();
 
 	// Draw background fade
 	V_DrawFadeScreen(0xFF00, 16); // force default
-
-#ifdef TOUCHINPUTS
-	if (inputmethod == INPUTMETHOD_TOUCH)
-		abortstring = "Tap Back to abort";
-	else
-#endif
-	if (inputmethod == INPUTMETHOD_JOYSTICK)
-		abortstring = va("Push %s to abort", G_KeyNumToName(KEY_JOY1+1));
-	else if (inputmethod == INPUTMETHOD_TVREMOTE)
-		abortstring = "Push Back to abort";
-	else
-		abortstring = "Press ESC to abort";
 
 	if (cl_mode != CL_DOWNLOADFILES && cl_mode != CL_LOADFILES)
 	{
@@ -1102,7 +1065,7 @@ static void CL_DrawConnectionStatus(void)
 		const char *cltext;
 
 		// Draw the bottom box.
-		CL_DrawConnectionStatusBox(abortstring);
+		CL_DrawConnectionStatusBox();
 
 		if (cl_mode == CL_SEARCHING)
 			palstart = 32; // Red
@@ -1173,7 +1136,7 @@ static void CL_DrawConnectionStatus(void)
 			INT32 loadcompletednum = 0;
 			INT32 i;
 
-			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-16, V_YELLOWMAP, abortstring);
+			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-16, V_YELLOWMAP, "Press ESC to abort");
 
 			//ima just count files here
 			if (fileneeded)
@@ -1203,7 +1166,7 @@ static void CL_DrawConnectionStatus(void)
 				Snake_Draw();
 
 			// Draw the bottom box.
-			CL_DrawConnectionStatusBox(abortstring);
+			CL_DrawConnectionStatusBox();
 
 			if (fileneeded)
 			{
@@ -1248,15 +1211,11 @@ static void CL_DrawConnectionStatus(void)
 			if (snake)
 				Snake_Draw();
 
-			CL_DrawConnectionStatusBox(abortstring);
+			CL_DrawConnectionStatusBox();
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-24, V_YELLOWMAP,
 				M_GetText("Waiting to download files..."));
 		}
 	}
-
-#ifdef TOUCHINPUTS
-	TS_DrawNavigation();
-#endif
 }
 #endif
 
@@ -1980,57 +1939,31 @@ void CL_UpdateServerList(boolean internetsearch, INT32 room)
 
 #endif // ifndef NONET
 
-static INT32 CL_ServerConnectionEventHandler(event_t *ev);
-
 static void M_ConfirmConnect(event_t *ev)
 {
 #ifndef NONET
-	INT32 result = CL_ServerConnectionEventHandler(ev);
-
-	if (result == 0 && ev->type == ev_keydown)
+	if (ev->type == ev_keydown)
 	{
-		if (ev->key == ' ' || ev->key == 'y')
-			result = 1;
-		else if (ev->key == 'n')
-			result = -1;
-	}
-
-	switch (result)
-	{
-		case 1:
+		if (ev->key == ' ' || ev->key == 'y' || ev->key == KEY_ENTER)
+		{
 			if (totalfilesrequestednum > 0)
 			{
-				memset(gamekeydown, 0, NUMKEYS);
-
 				if (CL_SendFileRequest())
 				{
 					cl_mode = CL_DOWNLOADFILES;
-					if (inputmethod != INPUTMETHOD_TOUCH)
-						Snake_Initialise();
+					Snake_Initialise();
 				}
 			}
 			else
 				cl_mode = CL_LOADFILES;
-			break;
-		case -1:
+
+			M_ClearMenus(true);
+		}
+		else if (ev->key == 'n' || ev->key == KEY_ESCAPE)
+		{
 			cl_mode = CL_ABORTED;
-			break;
-		default:
-			break;
-	}
-
-	if (result != 0)
-	{
-		cl_mode = CL_ABORTED;
-		M_ClearMenus(true);
-
-#ifdef TOUCHINPUTS
-		M_TSNav_SetBackVisible(true);
-		TS_DefineNavigationButtons();
-		TS_HideNavigationButtons();
-
-		touchnavigation[TOUCHNAV_BACK].defined = true;
-#endif
+			M_ClearMenus(true);
+		}
 	}
 #else
 	(void)ev;
@@ -2044,49 +1977,20 @@ static boolean CL_FinishedFileList(void)
 	//CONS_Printf(M_GetText("Checking files...\n"));
 	i = CL_CheckFiles();
 	if (i == 4) // still checking ...
+	{
 		return true;
-	
-	char enterstring[72];
-	char escstring[72];
-
-	const char *confirmstr;
-	const char *escapestr;
-
-	if (inputmethod == INPUTMETHOD_TOUCH)
-	{
-		confirmstr = "Tap Confirm";
-		escapestr = "tap Back";
 	}
-	else if (inputmethod == INPUTMETHOD_JOYSTICK)
-	{
-		confirmstr = va("Push %s", G_KeyNumToName(KEY_JOY1));
-		escapestr = G_KeyNumToName(KEY_JOY1+1);
-	}
-	else if (inputmethod == INPUTMETHOD_TVREMOTE)
-	{
-		confirmstr = "Push Center";
-		escapestr = "Back";
-	}
-	else
-	{
-		confirmstr = "Press ENTER";
-		escapestr = "ESC";
-	}
-
-	strlcpy(enterstring, confirmstr, sizeof enterstring);
-	strlcpy(escstring, escapestr, sizeof escstring);
-
-	if (i == 3) // too many files
+	else if (i == 3) // too many files
 	{
 		D_QuitNetGame();
 		CL_Reset();
 		D_StartTitle();
-		M_StartMessage(va(M_GetText(
+		M_StartMessage(M_GetText(
 			"You have too many WAD files loaded\n"
 			"to add ones the server is using.\n"
 			"Please restart SRB2 before connecting.\n\n"
-			"%s"
-		), M_GetUserActionString(PRESS_ESC_MESSAGE)), NULL, MM_NOTHING);
+			"Press ESC\n"
+		), NULL, MM_NOTHING);
 		return false;
 	}
 	else if (i == 2) // cannot join for some reason
@@ -2094,27 +1998,27 @@ static boolean CL_FinishedFileList(void)
 		D_QuitNetGame();
 		CL_Reset();
 		D_StartTitle();
-		M_StartMessage(va(M_GetText(
+		M_StartMessage(M_GetText(
 			"You have the wrong addons loaded.\n\n"
 			"To play on this server, restart\n"
 			"the game and don't load any addons.\n"
 			"SRB2 will automatically add\n"
 			"everything you need when you join.\n\n"
-			"%s"
-		), M_GetUserActionString(PRESS_ESC_MESSAGE)), NULL, MM_NOTHING);
+			"Press ESC\n"
+		), NULL, MM_NOTHING);
 		return false;
 	}
 	else if (i == 1)
 	{
 		if (serverisfull)
 		{
-			M_StartMessage(va(M_GetText(
+			M_StartMessage(M_GetText(
 				"This server is full!\n"
 				"\n"
 				"You may load server addons (if any), and wait for a slot.\n"
 				"\n"
-				"%s to continue\nor %s to cancel.\n\n"
-			), enterstring, escstring), M_ConfirmConnect, MM_EVENTHANDLER);
+				"Press ENTER to continue\nor ESC to cancel.\n\n"
+			), M_ConfirmConnect, MM_EVENTHANDLER);
 			cl_mode = CL_CONFIRMCONNECT;
 			curfadevalue = 0;
 		}
@@ -2130,15 +2034,15 @@ static boolean CL_FinishedFileList(void)
 			D_QuitNetGame();
 			CL_Reset();
 			D_StartTitle();
-			M_StartMessage(va(M_GetText(
+			M_StartMessage(M_GetText(
 				"An error occured when trying to\n"
 				"download missing addons.\n"
 				"(This is almost always a problem\n"
 				"with the server, not your game.)\n\n"
 				"See the console or log file\n"
 				"for additional details.\n\n"
-				"%s"
-			), M_GetUserActionString(PRESS_ESC_MESSAGE)), NULL, MM_NOTHING);
+				"Press ESC\n"
+			), NULL, MM_NOTHING);
 			return false;
 		}
 
@@ -2171,14 +2075,14 @@ static boolean CL_FinishedFileList(void)
 				"\n"
 				"You may download, load server addons,\nand wait for a slot.\n"
 				"\n"
-				"%s to continue\nor %s to cancel.\n"
-			), downloadsize, enterstring, escstring), M_ConfirmConnect, MM_EVENTHANDLER);
+				"Press ENTER to continue\nor ESC to cancel.\n"
+			), downloadsize), M_ConfirmConnect, MM_EVENTHANDLER);
 		else
 			M_StartMessage(va(M_GetText(
 				"Download of %s additional content\nis required to join.\n"
 				"\n"
-				"%s to continue\nor %s to cancel.\n"
-			), downloadsize, enterstring, escstring), M_ConfirmConnect, MM_EVENTHANDLER);
+				"Press ENTER to continue\nor ESC to cancel.\n"
+			), downloadsize), M_ConfirmConnect, MM_EVENTHANDLER);
 
 		Z_Free(downloadsize);
 		cl_mode = CL_CONFIRMCONNECT;
@@ -2190,13 +2094,13 @@ static boolean CL_FinishedFileList(void)
 #ifndef NONET
 static const char * InvalidServerReason (serverinfo_pak *info)
 {
-#define EOT M_GetUserActionString(PRESS_ESC_MESSAGE)
+#define EOT "\nPress ESC\n"
 
 	/* magic number for new packet format */
 	if (info->_255 != 255)
 	{
-		return va(
-			"Outdated server (version unknown).\n\n%s", EOT);
+		return
+			"Outdated server (version unknown).\n" EOT;
 	}
 
 	if (strncmp(info->application, SRB2APPLICATION, sizeof
@@ -2204,9 +2108,9 @@ static const char * InvalidServerReason (serverinfo_pak *info)
 	{
 		return va(
 				"%s cannot connect\n"
-				"to %s servers.\n\n%s",
+				"to %s servers.\n" EOT,
 				SRB2APPLICATION,
-				info->application, EOT);
+				info->application);
 	}
 
 	if (
@@ -2216,34 +2120,34 @@ static const char * InvalidServerReason (serverinfo_pak *info)
 	){
 		return va(
 				"Incompatible %s versions.\n"
-				"(server version %d.%d.%d)\n\n%s",
+				"(server version %d.%d.%d)\n" EOT,
 				SRB2APPLICATION,
 				info->version / 100,
 				info->version % 100,
-				info->subversion, EOT);
+				info->subversion);
 	}
 
 	switch (info->refusereason)
 	{
 		case REFUSE_BANNED:
-			return va(
+			return
 				"You have been banned\n"
-				"from the server.\n\n%s", EOT);
+				"from the server.\n" EOT;
 		case REFUSE_JOINS_DISABLED:
-			return va(
+			return
 				"The server is not accepting\n"
-				"joins for the moment.\n\n%s", EOT);
+				"joins for the moment.\n" EOT;
 		case REFUSE_SLOTS_FULL:
 			return va(
-					"Maximum players reached: %d\n\n%s",
-					info->maxplayer, EOT);
+					"Maximum players reached: %d\n" EOT,
+					info->maxplayer);
 		default:
 			if (info->refusereason)
 			{
-				return va(
+				return
 					"You can't join.\n"
 					"I don't know why,\n"
-					"but you can't join.\n\n%s", EOT);
+					"but you can't join.\n" EOT;
 			}
 	}
 
@@ -2342,83 +2246,6 @@ static boolean CL_ServerConnectionSearchTicker(tic_t *asksent)
 	return true;
 }
 
-static INT32 CL_ServerConnectionEventHandler(event_t *ev)
-{
-	INT32 result = 0;
-
-#ifdef TOUCHINPUTS
-	if (G_EventIsTouch(ev->type))
-		inputmethod = INPUTMETHOD_TOUCH;
-	else
-#endif
-	{
-		G_DetectInputMethod(ev->key);
-		G_MapEventsToControls(ev);
-	}
-
-	if (ev->type == ev_keydown)
-	{
-		if (ev->key == KEY_ENTER || ev->key == KEY_JOY1 || ev->key == KEY_REMOTECENTER)
-			result = 1;
-		else if (ev->key == KEY_ESCAPE || ev->key == KEY_JOY1+1 || ev->key == KEY_REMOTEBACK)
-			result = -1;
-	}
-#ifdef TOUCHINPUTS
-	else if (touchscreenavailable)
-	{
-		touchfinger_t *finger = &touchfingers[ev->key];
-		INT32 selection = -1;
-
-		if (ev->type == ev_touchdown)
-		{
-			finger->u.keyinput = TS_MapFingerEventToKey(ev, &selection);
-			finger->selection = selection;
-			if (selection >= 0)
-				touchnavigation[selection].down = 1;
-		}
-		else if (ev->type == ev_touchup)
-		{
-			selection = finger->selection;
-
-			if (selection >= 0)
-			{
-				touchnavbutton_t *btn = &touchnavigation[selection];
-
-				if (TS_FingerTouchesNavigationButton(ev->x, ev->y, btn))
-				{
-					if (finger->u.keyinput == KEY_ENTER)
-						result = 1;
-					else if (finger->u.keyinput == KEY_ESCAPE)
-						result = -1;
-
-					finger->selection = -1;
-				}
-
-				btn->down = 0;
-			}
-
-			finger->u.keyinput = KEY_NULL;
-		}
-	}
-#endif
-
-	return result;
-}
-
-static boolean CL_ServerConnectionResponder(void)
-{
-	boolean exit = false;
-
-	for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
-	{
-		event_t *ev = &events[eventtail];
-		if (CL_ServerConnectionEventHandler(ev) < 0)
-			exit = true;
-	}
-
-	return exit;
-}
-
 /** Called by CL_ConnectToServer
   *
   * \param tmpsave The name of the gamestate file???
@@ -2431,7 +2258,6 @@ static boolean CL_ServerConnectionResponder(void)
   */
 static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic_t *asksent)
 {
-	boolean exit = false;
 	boolean waitmore;
 	INT32 i;
 
@@ -2480,7 +2306,6 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 				free(snake);
 				snake = NULL;
 			}
-			Snake_Remove();
 #endif
 
 			cl_mode = CL_LOADFILES;
@@ -2502,12 +2327,12 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 				D_QuitNetGame();
 				CL_Reset();
 				D_StartTitle();
-				M_StartMessage(va(M_GetText(
+				M_StartMessage(M_GetText(
 					"5 minute wait time exceeded.\n"
 					"You may retry connection.\n"
 					"\n"
-					"%s"
-				), M_GetUserActionString(PRESS_ESC_MESSAGE)), NULL, MM_NOTHING);
+					"Press ESC\n"
+				), NULL, MM_NOTHING);
 				return false;
 			}
 #ifndef NONET
@@ -2560,55 +2385,36 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 	{
 		I_OsPolling();
 
-#ifdef TOUCHINPUTS
-		TS_UpdateNavigation(1);
-#endif
-
 		if (cl_mode == CL_CONFIRMCONNECT)
 			D_ProcessEvents(); //needed for menu system to receive inputs
 		else
 		{
-			exit = CL_ServerConnectionResponder();
-
 			for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
 				G_MapEventsToControls(&events[eventtail]);
 		}
 
-		if (exit || gamekeydown[KEY_ESCAPE] || gamekeydown[KEY_JOY1+1] || cl_mode == CL_ABORTED)
+		if (gamekeydown[KEY_ESCAPE] || gamekeydown[KEY_JOY1+1] || cl_mode == CL_ABORTED)
 		{
+			CONS_Printf(M_GetText("Network game synchronization aborted.\n"));
+			M_StartMessage(M_GetText("Network game synchronization aborted.\n\nPress ESC\n"), NULL, MM_NOTHING);
+
 #ifndef NONET
 			if (snake)
 			{
 				free(snake);
 				snake = NULL;
 			}
-			
-			Snake_Remove();
 #endif
-
-			memset(gamekeydown, 0, NUMKEYS);
 
 			D_QuitNetGame();
 			CL_Reset();
 			D_StartTitle();
-
-			CONS_Printf(M_GetText("Network game synchronization aborted.\n"));
-			M_ShowESCMessage("Network game synchronization aborted.\n\n");
-
+			memset(gamekeydown, 0, NUMKEYS);
 			return false;
 		}
 #ifndef NONET
-		else if (cl_mode == CL_DOWNLOADFILES)
-		{
-			if (snake)
-				Snake_Handle();
-			else if (PLAYER1INPUTDOWN(GC_JUMP) || SNAKE_INPUT_ENTER
-			|| SNAKE_INPUT_UP || SNAKE_INPUT_DOWN || SNAKE_INPUT_LEFT || SNAKE_INPUT_RIGHT)
-			{
-				memset(gamekeydown, 0, NUMKEYS);
-				Snake_Initialise();
-			}
-		}
+		else if (cl_mode == CL_DOWNLOADFILES && snake)
+			Snake_Handle();
 #endif
 
 		if (client && (cl_mode == CL_DOWNLOADFILES || cl_mode == CL_DOWNLOADSAVEGAME))
@@ -2625,15 +2431,9 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 		{
 			if (!snake)
 			{
-				if (!snake || (snake && cl_mode != CL_DOWNLOADFILES && cl_mode != CL_DOWNLOADSAVEGAME))
-				{
-					F_MenuPresTicker(true); // title sky
-					F_TitleScreenTicker(true);
-					F_TitleScreenDrawer();
-				}
-				CL_DrawConnectionStatus();
-				if (moviemode)
-					M_SaveFrame();
+				F_MenuPresTicker(true); // title sky
+				F_TitleScreenTicker(true);
+				F_TitleScreenDrawer();
 			}
 			CL_DrawConnectionStatus();
 #ifdef HAVE_THREADS
@@ -2655,26 +2455,9 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 #endif
 	}
 	else
-	{
-		I_Sleep(cv_sleep.value);
-		I_UpdateTime(cv_timescale.value);
-	}
+		I_Sleep();
 
 	return true;
-}
-
-static void CL_QuitConnectionScreen(void)
-{
-#ifdef TOUCHINPUTS
-	if (M_TSNav_OnMessage())
-		M_TSNav_HideAll();
-	else
-		M_TSNav_ShowDefaultScheme();
-
-	TS_ClearFingers();
-	TS_ClearNavigation();
-	TS_PositionNavigation();
-#endif
 }
 
 /** Use adaptive send using net_bandwidth and stat.sendbytes
@@ -2740,21 +2523,6 @@ static void CL_ConnectToServer(void)
 	SL_ClearServerList(servernode);
 #endif
 
-#ifdef TOUCHINPUTS
-	// Close the on-screen keyboard, if it's still open
-	if (I_KeyboardOnScreen())
-		I_CloseScreenKeyboard();
-
-	M_TSNav_SetBackVisible(true);
-	TS_DefineNavigationButtons();
-	TS_HideNavigationButtons();
-
-	touchnavigation[TOUCHNAV_BACK].defined = true;
-#endif
-
-	CON_ToggleOff();
-	menuactive = false;
-
 	do
 	{
 		// If the connection was aborted for some reason, leave
@@ -2763,10 +2531,7 @@ static void CL_ConnectToServer(void)
 #else
 		if (!CL_ServerConnectionTicker((char*)NULL, &oldtic, (tic_t *)NULL))
 #endif
-		{
-			CL_QuitConnectionScreen();
 			return;
-		}
 
 		if (server)
 		{
@@ -2779,8 +2544,6 @@ static void CL_ConnectToServer(void)
 	while (!(cl_mode == CL_CONNECTED && (client || (server && nodewaited <= pnumnodes))));
 
 	DEBFILE(va("Synchronisation Finished\n"));
-
-	CL_QuitConnectionScreen();
 
 	displayplayer = consoleplayer;
 }
@@ -3652,17 +3415,17 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 		CL_Reset();
 		D_StartTitle();
 		if (msg == KICK_MSG_CON_FAIL)
-			M_ShowESCMessage("Server closed connection\n(synch failure)\n");
+			M_StartMessage(M_GetText("Server closed connection\n(synch failure)\nPress ESC\n"), NULL, MM_NOTHING);
 		else if (msg == KICK_MSG_PING_HIGH)
-			M_ShowESCMessage("Server closed connection\n(Broke ping limit)\n");
+			M_StartMessage(M_GetText("Server closed connection\n(Broke ping limit)\nPress ESC\n"), NULL, MM_NOTHING);
 		else if (msg == KICK_MSG_BANNED)
-			M_ShowESCMessage("You have been banned by the server\n\n");
+			M_StartMessage(M_GetText("You have been banned by the server\n\nPress ESC\n"), NULL, MM_NOTHING);
 		else if (msg == KICK_MSG_CUSTOM_KICK)
-			M_StartMessage(va(M_GetText("You have been kicked\n(%s)\n%s"), reason, M_GetUserActionString(PRESS_ESC_MESSAGE)), NULL, MM_NOTHING);
+			M_StartMessage(va(M_GetText("You have been kicked\n(%s)\nPress ESC\n"), reason), NULL, MM_NOTHING);
 		else if (msg == KICK_MSG_CUSTOM_BAN)
-			M_StartMessage(va(M_GetText("You have been banned\n(%s)\n%s"), reason, M_GetUserActionString(PRESS_ESC_MESSAGE)), NULL, MM_NOTHING);
+			M_StartMessage(va(M_GetText("You have been banned\n(%s)\nPress ESC\n"), reason), NULL, MM_NOTHING);
 		else
-			M_ShowESCMessage("You have been kicked by the server\n\n");
+			M_StartMessage(M_GetText("You have been kicked by the server\n\nPress ESC\n"), NULL, MM_NOTHING);
 	}
 	else if (keepbody)
 	{
@@ -3883,6 +3646,8 @@ void D_QuitNetGame(void)
 
 	if (!netgame || !netbuffer)
 		return;
+
+	
 
 	DEBFILE("===========================================================================\n"
 	        "                  Quitting Game, closing connection\n"
@@ -4408,7 +4173,7 @@ static void HandleShutdown(SINT8 node)
 	D_QuitNetGame();
 	CL_Reset();
 	D_StartTitle();
-	M_ShowESCMessage("Server has shutdown\n\n");
+	M_StartMessage(M_GetText("Server has shutdown\n\nPress Esc\n"), NULL, MM_NOTHING);
 }
 
 /** Called when a PT_NODETIMEOUT packet is received
@@ -4423,7 +4188,7 @@ static void HandleTimeout(SINT8 node)
 	D_QuitNetGame();
 	CL_Reset();
 	D_StartTitle();
-	M_ShowESCMessage("Server Timeout\n\n");
+	M_StartMessage(M_GetText("Server Timeout\n\nPress Esc\n"), NULL, MM_NOTHING);
 }
 
 #ifndef NONET
@@ -5451,16 +5216,10 @@ static void Local_Maketic(INT32 realtics)
 	                   // game responder calls HU_Responder, AM_Responder,
 	                   // and G_MapEventsToControls
 	if (!dedicated) rendergametic = gametic;
-
-	// translate inputs (keyboard/mouse/joystick/remote) into game controls
+	// translate inputs (keyboard/mouse/joystick) into game controls
 	G_BuildTiccmd(&localcmds, realtics, 1);
 	if (splitscreen || botingame)
 		G_BuildTiccmd(&localcmds2, realtics, 2);
-
-#ifdef TOUCHINPUTS
-	TS_UpdateFingers(realtics);
-	TS_UpdateNavigation(realtics);
-#endif
 
 	localcmds.angleturn |= TICCMD_RECEIVED;
 	localcmds2.angleturn |= TICCMD_RECEIVED;
@@ -5553,16 +5312,8 @@ boolean TryRunTics(tic_t realtics)
 
 	ticking = neededtic > gametic;
 
-	if (ticking)
-	{
-		if (realtics)
-			hu_stopped = false;
-	}
-
 	if (player_joining)
 	{
-		if (realtics)
-			hu_stopped = true;
 		return false;
 	}
 
@@ -5586,7 +5337,7 @@ boolean TryRunTics(tic_t realtics)
 				if (update_stats)
 					PS_START_TIMING(ps_tictime);
 
-				G_Ticker((gametic % NEWTICRATERATIO) == 0, (neededtic - gametic));
+				G_Ticker((gametic % NEWTICRATERATIO) == 0);
 				ExtraDataTicker();
 				gametic++;
 				consistancy[gametic%BACKUPTICS] = Consistancy();
@@ -5601,11 +5352,6 @@ boolean TryRunTics(tic_t realtics)
 				if (client && gamestate == GS_LEVEL && leveltime > 3 && neededtic <= gametic + cv_netticbuffer.value)
 					break;
 			}
-	}
-	else
-	{
-		if (realtics)
-			hu_stopped = true;
 	}
 
 	return ticking;
@@ -5692,7 +5438,6 @@ static inline void PingUpdate(void)
 
 	pingmeasurecount = 1; //Reset count
 }
-
 static void RenewHolePunch(void)
 {
 	if (cv_holepunchserver.string[0])
@@ -5761,7 +5506,9 @@ void NetUpdate(void)
 #endif
 
 	if (netgame && serverrunning)
+	{
 		RenewHolePunch();
+	}
 
 	if (client)
 	{

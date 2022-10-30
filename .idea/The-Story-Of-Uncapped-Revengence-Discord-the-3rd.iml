@@ -1,12 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="JAVA_MODULE" version="4">
   <component name="FacetManager">
-    <facet type="native-android-gradle" name="Native-Android-Gradle">
-      <configuration>
-        <option name="SELECTED_ABI" />
-        <option name="SELECTED_VARIANT" />
-      </configuration>
-    </facet>
     <facet type="android" name="Android">
       <configuration />
     </facet>
@@ -14,7 +8,7 @@
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
     <content url="file://$MODULE_DIR$" />
-    <orderEntry type="jdk" jdkName="Android API 26, extension level 1 Platform" jdkType="Android SDK" />
+    <orderEntry type="jdk" jdkName="Android API 33, extension level 3 Platform" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>
