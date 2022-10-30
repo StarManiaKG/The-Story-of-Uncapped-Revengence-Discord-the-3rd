@@ -4,18 +4,7 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="14fb20f7-21d6-4534-8d35-85d7be3f6fb2" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/discord_2.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake/Modules/FindDiscordRPC.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake/Modules/FindDiscordRPC.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Makefile.d/features.mk" beforeDir="false" afterPath="$PROJECT_DIR$/src/Makefile.d/features.mk" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Makefile.d/win32.mk" beforeDir="false" afterPath="$PROJECT_DIR$/src/Makefile.d/win32.mk" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/discord.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/discord.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/discord_2.c" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/discord_2.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/discord_2.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/discord_game_sdk.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/sdl/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/sdl/CMakeLists.txt" afterDir="false" />
-    </list>
+    <list default="true" id="14fb20f7-21d6-4534-8d35-85d7be3f6fb2" name="Changes" comment="off yourself" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -23,6 +12,7 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RESET_MODE" value="HARD" />
   </component>
   <component name="GitSEFilterConfiguration">
     <file-type-list>
@@ -56,6 +46,14 @@
       <option name="presentableId" value="Default" />
       <updated>1665349379789</updated>
     </task>
+    <task id="LOCAL-00001" summary="off yourself">
+      <created>1667169364711</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1667169364711</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -68,5 +66,9 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="off yourself" />
+    <option name="LAST_COMMIT_MESSAGE" value="off yourself" />
   </component>
 </project>
