@@ -2752,7 +2752,12 @@ static void ST_overlayDrawer(void)
 		ST_drawPowerupHUD(); // same as it ever was...
 
 	if (!(netgame || multiplayer) || !hu_showscores)
+	{
+		//if (renderisnewtic)
+		//{
 		LUA_HUDHOOK(game);
+		//}
+	}
 
 	// draw level title Tails
 	if (stagetitle && (!WipeInAction) && (!WipeStageTitle))
@@ -2846,6 +2851,11 @@ void ST_Drawer(void)
 
 	if (st_overlay)
 	{
+		//if (renderisnewtic)
+		//{
+		//LUA_HUD_ClearDrawList(luahuddrawlist_game);
+		//}
+
 		// No deadview!
 		stplyr = &players[displayplayer];
 		ST_overlayDrawer();
@@ -2855,5 +2865,7 @@ void ST_Drawer(void)
 			stplyr = &players[secondarydisplayplayer];
 			ST_overlayDrawer();
 		}
+
+		//LUA_HUD_DrawList(luahuddrawlist_game);
 	}
 }
