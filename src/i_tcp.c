@@ -182,7 +182,7 @@
 	static mysockaddr_t banned[MAXBANS];
 	static UINT8 bannedmask[MAXBANS];
 	/* See ../doc/Holepunch-Protocol.txt */
-	static const INT32 hole_punch_magic = MSBF_LONG (0x52eb11);
+	static const INT32 hole_punch_magic = LONG (0x52eb11);
 #endif
 
 static size_t numbans = 0;
@@ -589,7 +589,7 @@ static boolean SOCK_Get(void)
 		fromlen = (socklen_t)sizeof(fromaddress);
 		c = recvfrom(mysockets[n], (char *)&doomcom->data, MAXPACKETLENGTH, 0,
 			(void *)&fromaddress, &fromlen);
-		if (c > 0)
+		if (c > 0 && c != ERRSOCKET)
 		{
 #ifdef USE_STUN
 			if (STUN_got_response(doomcom->data, c))

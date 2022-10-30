@@ -34,6 +34,22 @@ extern UINT8 graphics_started;
 */
 extern UINT8 keyboard_started;
 
+/**	\brief	Returns 1 if the game is running on a mobile operating system, 0 otherwise.
+*/
+INT32 I_OnMobileSystem(void);
+
+/**	\brief	Returns 1 if the game is running on a tablet, 0 otherwise.
+*/
+INT32 I_OnTabletDevice(void);
+
+/**	\brief	Returns 1 if the application is running on Android TV, 0 otherwise.
+*/
+INT32 I_OnAndroidTV(void);
+
+/**	\brief	Returns 1 if the application is running on tvOS, 0 otherwise.
+*/
+INT32 I_OnAppleTV(void);
+
 /**	\brief	The I_GetFreeMem function
 
 	\param	total	total memory in the system
@@ -46,27 +62,39 @@ UINT32 I_GetFreeMem(UINT32 *total);
 */
 tic_t I_GetTime(void);
 
-/** \brief  Get the current time in game tics, including fractions.
-*/
-float I_GetTimeFrac(void);
-
-/**	\brief	Returns precise time value for performance measurement.
+/**	\brief	Returns precise time value for performance measurement.The precise
+            time should be a monotonically increasing counter, and will wrap.
+			precise_t is internally represented as an unsigned integer and
+			integer arithmetic may be used directly between values of precise_t.
   */
 precise_t I_GetPreciseTime(void);
 
-/**	\brief	Converts a precise_t to microseconds and casts it to a 32 bit integer.
+/** \brief  Get the precision of precise_t in units per second. Invocations of
+            this function for the program's duration MUST return the same value.
   */
-int I_PreciseToMicros(precise_t d);
+int I_PreciseToMicros(precise_t d); //UINT64 I_GetPrecisePrecision(void);
+
+/** \brief  Get the precision of precise_t, at a set amount.
+  */
+UINT64 I_GetPrecisePrecision(void);
 
 /** \brief  Get the current time in rendering tics, including fractions.
 */
-double I_GetFrameTime(void);
 
-/**	\brief	Sleeps by the value of cv_sleep
-
+/** \brief  Gets the exact time of the frame (or something)
+	
 	\return	void
 */
-void I_Sleep(void);
+double I_GetFrameTime(void);
+
+/**	\brief	Sleeps for the given duration in milliseconds. Depending on the
+            operating system's scheduler, the calling thread may give up its
+			time slice for a longer duration. The implementation should give a
+			best effort to sleep for the given duration, without spin-locking.
+			Calling code should check the current precise time after sleeping
+			and not assume the thread has slept for the expected duration.
+*/
+void I_Sleep(UINT32 ms);
 
 /**	\brief	Sleeps for a variable amount of time, depending on how much time the last frame took.
 
@@ -178,6 +206,10 @@ void I_InitJoystick(void);
 */
 void I_InitJoystick2(void);
 
+/**	\brief to change the first player's joystick
+*/
+void I_ChangeJoystick(void);
+
 /**	\brief return the number of joystick on the system
 */
 INT32 I_NumJoys(void);
@@ -189,6 +221,42 @@ INT32 I_NumJoys(void);
 	\return	joystick name
 */
 const char *I_GetJoyName(INT32 joyindex);
+
+/**	\brief	The I_JoystickIsTVRemote function
+	\param	joyindex	which joystick
+	\return	1 if the joystick is a TV remote
+*/
+INT32 I_JoystickIsTVRemote(INT32 joyindex);
+
+/**	\brief	The I_JoystickIsAccelerometer function
+	\param	joyindex	which joystick
+	\return	1 if the joystick is an accelerometer
+*/
+INT32 I_JoystickIsAccelerometer(INT32 joyindex);
+
+/**	\brief to startup the touch screen
+*/
+void I_InitTouchScreen(void);
+
+/**	\brief the touch screen was made available (exists)
+*/
+void I_TouchScreenAvailable(void);
+
+/**	\brief show the on-screen keyboard
+*/
+void I_ShowVirtualKeyboard(char *buffer, size_t length);
+
+/**	\brief set a callback for text input events
+*/
+void I_SetVirtualKeyboardCallback(void (*callback)(char *, size_t));
+
+/**	\brief returns the status of the on-screen keyboard
+*/
+boolean I_KeyboardOnScreen(void);
+
+/**	\brief close the on-screen keyboard
+*/
+void I_CloseScreenKeyboard(void);
 
 #ifndef NOMUMBLE
 #include "p_mobj.h" // mobj_t
@@ -245,6 +313,14 @@ void DRPC_ShutDown(void);
 #endif
 
 void I_ShutdownSystem(void);
+
+/**	\brief Setup signal handler, plus stuff for trapping errors and cleanly exit.
+*/
+void I_SetupSignalHandler(void);
+
+/**	\brief Starts logging.
+*/
+void I_InitLogging(void);
 
 /**	\brief	The I_GetDiskFreeSpace function
 
@@ -306,6 +382,31 @@ const CPUInfoFlags *I_CPUInfo(void);
 */
 const char *I_LocateWad(void);
 
+/**	\brief The path to the main WAD from the first time I_LocateWad was called
+		\return initial path to main WAD
+*/
+const char *I_InitialLocateWad(void);
+
+/**	\brief Attempts to return the initial path, and returns the current path if that fails.
+		\return guessed path to main WAD
+*/
+const char *I_SystemLocateWad(void);
+
+/**	\brief Location of the application's storage.
+		\return path to app-specific files
+*/
+const char *I_AppStorageLocation(void);
+
+/**	\brief Location that is considered the home.
+		\return path to shareable media files
+*/
+const char *I_SharedStorageLocation(void);
+
+/**	\brief Location that is removable storage.
+		\return path to removable storage
+*/
+const char *I_RemovableStorageLocation(void);
+
 /**	\brief First Joystick's events
 */
 void I_GetJoystickEvents(void);
@@ -321,6 +422,16 @@ void I_GetMouseEvents(void);
 /**	\brief Checks if the mouse needs to be grabbed
 */
 void I_UpdateMouseGrab(void);
+
+/**	\brief Checks if the app has been granted a specific permission.
+		\return 1 if the permission was granted, 0 if not.
+*/
+INT32 I_CheckSystemPermission(const char *permission);
+
+/**	\brief Asks the system for a specific permission.
+		\return 1 if the permission was granted, 0 if not.
+*/
+INT32 I_RequestSystemPermission(const char *permission);
 
 char *I_GetEnv(const char *name);
 
