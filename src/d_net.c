@@ -18,7 +18,6 @@
 
 #include "doomdef.h"
 #include "g_game.h"
-#include "i_time.h"
 #include "i_net.h"
 #include "i_system.h"
 #include "m_argv.h"
@@ -619,10 +618,7 @@ void Net_WaitAllAckReceived(UINT32 timeout)
 	while (timeout > I_GetTime() && !Net_AllAcksReceived())
 	{
 		while (tictac == I_GetTime())
-		{
-			I_Sleep(cv_sleep.value);
-			I_UpdateTime(cv_timescale.value);
-		}
+			I_Sleep();
 		tictac = I_GetTime();
 		HGetPacket();
 		Net_AckTicker();

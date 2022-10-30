@@ -21,7 +21,6 @@
 #include "i_threads.h"
 #include "mserv.h"
 #include "m_menu.h"
-#include "ts_main.h" // touchscreenavailable
 #include "z_zone.h"
 
 #ifdef HAVE_DISCORDRPC
@@ -58,7 +57,7 @@ static void Command_Listserv_f(void);
 
 static void Update_parameters (void);
 
-static void MasterServer_OnChange(void);
+static void MasterServer_OnChange (void);
 
 static CV_PossibleValue_t masterserver_update_rate_cons_t[] = {
 	{2,  "MIN"},
@@ -117,17 +116,7 @@ static void WarnGUI (void)
 #ifdef HAVE_THREADS
 	I_lock_mutex(&m_menu_mutex);
 #endif
-
-#ifdef TOUCHINPUTS
-	if (inputmethod == INPUTMETHOD_TOUCH)
-	{
-		M_StartMessage(M_GetText("There was a problem connecting to\nthe Master Server\n\nCheck the console for details,\nor tap anywhere.\n"), NULL, MM_NOTHING);
-		M_TSNav_SetConsoleVisible(true);
-	}
-	else
-#endif
-		M_StartMessage(M_GetText("There was a problem connecting to\nthe Master Server\n\nCheck the console for details.\n"), NULL, MM_NOTHING);
-
+	M_StartMessage(M_GetText("There was a problem connecting to\nthe Master Server\n\nCheck the console for details.\n"), NULL, MM_NOTHING);
 #ifdef HAVE_THREADS
 	I_unlock_mutex(m_menu_mutex);
 #endif
@@ -553,7 +542,8 @@ Update_parameters (void)
 #endif/*MASTERSERVER*/
 }
 
-static void MasterServer_OnChange(void)
+static void 
+MasterServer_OnChange (void)
 {
 #ifdef MASTERSERVER
 	UnregisterServer();
