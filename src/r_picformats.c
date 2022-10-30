@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 2005-2009 by Andrey "entryway" Budko.
-// Copyright (C) 2018-2022 by Jaime "Lactozilla" Passos.
+// Copyright (C) 2018-2022 by Jaime "Lactozilla" Passos. //Also goes by Jaime Ita Passos.
 // Copyright (C) 2019-2022 by Sonic Team Junior.
 //
 // This program is free software distributed under the
@@ -834,12 +834,15 @@ boolean Picture_IsLumpPNG(const UINT8 *d, size_t s)
 /*#if PNG_LIBPNG_VER_DLLNUM < 14
 typedef PNG_CONST png_byte *png_const_bytep;
 #endif*/
+
+/*
 typedef struct
 {
 	const UINT8 *buffer;
 	UINT32 size;
 	UINT32 position;
 } png_io_t;
+*/
 
 static void PNG_IOReader(png_structp png_ptr, png_bytep data, png_size_t length)
 {

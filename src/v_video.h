@@ -173,6 +173,8 @@ void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue);
 void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, INT32 scrn, patch_t *patch, const UINT8 *colormap);
 void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, INT32 scrn, patch_t *patch, const UINT8 *colormap, fixed_t sx, fixed_t sy, fixed_t w, fixed_t h);
 
+void V_GetPatchScreenRegion(fixed_t *x, fixed_t *y, fixed_t *w, fixed_t *h, fixed_t pscale, fixed_t vscale, INT32 scrn, patch_t *patch);
+
 void V_DrawContinueIcon(INT32 x, INT32 y, INT32 flags, INT32 skinnum, UINT16 skincolor);
 
 // Draw a linear block of pixels into the view buffer.
@@ -248,6 +250,12 @@ void V_DrawSmallThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char
 void V_DrawCenteredSmallThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
 void V_DrawRightAlignedSmallThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
 
+// Draws a scaled string.
+void V_DrawScaledString(fixed_t x, fixed_t y, fixed_t scale, INT32 option, const char *string);
+
+// Draws a scaled thin string.
+void V_DrawScaledThinString(fixed_t x, fixed_t y, fixed_t scale, INT32 option, const char *string);
+
 // Draw tall nums, used for menu, HUD, intermission
 void V_DrawTallNum(INT32 x, INT32 y, INT32 flags, INT32 num);
 void V_DrawPaddedTallNum(INT32 x, INT32 y, INT32 flags, INT32 num, INT32 digits);
@@ -265,6 +273,10 @@ INT32 V_CreditStringWidth(const char *string);
 void V_DrawNameTag(INT32 x, INT32 y, INT32 option, fixed_t scale, UINT8 *basecolormap, UINT8 *outlinecolormap, const char *string);
 INT32 V_CountNameTagLines(const char *string);
 INT32 V_NameTagWidth(const char *string);
+
+// Draw a string using one of the menu fonts
+void V_DrawMenuString(fixed_t x, fixed_t y, INT32 option, INT32 type, fixed_t scale, const char *string);
+void V_MenuStringSize(const char *string, INT32 option, INT32 type, fixed_t scale, INT32 *strwidth, INT32 *strheight);
 
 // Find string width from hu_font chars
 INT32 V_StringWidth(const char *string, INT32 option);

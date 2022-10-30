@@ -19,6 +19,7 @@
 #include "f_finale.h"
 #include "p_setup.h"
 #include "p_saveg.h"
+#include "i_time.h"
 #include "i_system.h"
 #include "am_map.h"
 #include "m_random.h"
@@ -54,6 +55,10 @@
 #include "discord.h"
 #endif
 
+#ifdef TOUCHINPUTS
+#include "ts_main.h"
+#endif
+
 gameaction_t gameaction;
 gamestate_t gamestate = GS_NULL;
 UINT8 ultimatemode = false;
@@ -76,6 +81,9 @@ static void G_DoCompleted(void);
 static void G_DoStartContinue(void);
 static void G_DoContinued(void);
 static void G_DoWorldDone(void);
+
+static void G_CheckPlayerReborn(void);
+static inline void G_TickerEnd(void);
 
 char   mapmusname[7]; // Music name
 UINT16 mapmusflags; // Track and reset bit
@@ -123,9 +131,14 @@ INT32 secondarydisplayplayer; // for splitscreen
 
 tic_t gametic;
 tic_t levelstarttic; // gametic at level start
+boolean levelstarting; // starting the level
+boolean levelresetplayer; // reset players at level load
+
 UINT32 ssspheres; // old special stage
 INT16 lastmap; // last level you were at (returning from special stages)
 tic_t timeinmap; // Ticker for time spent in level (used for levelcard display)
+
+titlecard_t titlecard;
 
 INT16 spstage_start, spmarathon_start;
 INT16 sstage_start, sstage_end, smpstage_start, smpstage_end;
@@ -172,8 +185,7 @@ struct quake quake;
 mapheader_t* mapheaderinfo[NUMMAPS] = {NULL};
 
 static boolean exitgame = false;
-static boolean retrying = false;
-static boolean retryingmodeattack = false;
+static boolean retrying[RETRY_MAX];
 
 boolean stagefailed = false; // Used for GEMS BONUS? Also to see if you beat the stage.
 
@@ -259,11 +271,13 @@ UINT32 timesBeaten;
 UINT32 timesBeatenWithEmeralds;
 UINT32 timesBeatenUltimate;
 
+/*
 typedef struct joystickvector2_s
 {
 	INT32 xaxis;
 	INT32 yaxis;
 } joystickvector2_t;
+*/
 
 boolean precache = true; // if true, load all graphics at start
 
@@ -311,11 +325,11 @@ consvar_t cv_chattime = CVAR_INIT ("chattime", "8", CV_SAVE, chattime_cons_t, NU
 
 // chatwidth
 static CV_PossibleValue_t chatwidth_cons_t[] = {{64, "MIN"}, {300, "MAX"}, {0, NULL}};
-consvar_t cv_chatwidth = CVAR_INIT ("chatwidth", "150", CV_SAVE, chatwidth_cons_t, NULL);
+consvar_t cv_chatwidth = CVAR_INIT ("chatwidth", "150", CV_SAVE|CV_SLIDER_SAFE, chatwidth_cons_t, NULL);
 
 // chatheight
 static CV_PossibleValue_t chatheight_cons_t[] = {{6, "MIN"}, {22, "MAX"}, {0, NULL}};
-consvar_t cv_chatheight= CVAR_INIT ("chatheight", "8", CV_SAVE, chatheight_cons_t, NULL);
+consvar_t cv_chatheight= CVAR_INIT ("chatheight", "8", CV_SAVE|CV_SLIDER_SAFE, chatheight_cons_t, NULL);
 
 // chat notifications (do you want to hear beeps? I'd understand if you didn't.)
 consvar_t cv_chatnotifications= CVAR_INIT ("chatnotifications", "On", CV_SAVE, CV_OnOff, NULL);
@@ -365,27 +379,32 @@ consvar_t cv_autobrake = CVAR_INIT ("autobrake", "On", CV_SAVE|CV_CALL, CV_OnOff
 consvar_t cv_autobrake2 = CVAR_INIT ("autobrake2", "On", CV_SAVE|CV_CALL, CV_OnOff, AutoBrake2_OnChange);
 
 // hi here's some new controls
-static CV_PossibleValue_t zerotoone_cons_t[] = {{0, "MIN"}, {FRACUNIT, "MAX"}, {0, NULL}};
+CV_PossibleValue_t zerotoone_cons_t[] = {{0, "MIN"}, {FRACUNIT, "MAX"}, {0, NULL}};
+
+#define CAMCVARFLAGS (CV_FLOAT|CV_SAVE|CV_SLIDER_SAFE)
+
 consvar_t cv_cam_shiftfacing[2] = {
-	CVAR_INIT ("cam_shiftfacingchar", "0.375", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
-	CVAR_INIT ("cam2_shiftfacingchar", "0.375", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
+	CVAR_INIT ("cam_shiftfacingchar", "0.375", CAMCVARFLAGS, zerotoone_cons_t, NULL),
+	CVAR_INIT ("cam2_shiftfacingchar", "0.375", CAMCVARFLAGS, zerotoone_cons_t, NULL),
 };
 consvar_t cv_cam_turnfacing[2] = {
-	CVAR_INIT ("cam_turnfacingchar", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
-	CVAR_INIT ("cam2_turnfacingchar", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
+	CVAR_INIT ("cam_turnfacingchar", "0.25", CAMCVARFLAGS, zerotoone_cons_t, NULL),
+	CVAR_INIT ("cam2_turnfacingchar", "0.25", CAMCVARFLAGS, zerotoone_cons_t, NULL),
 };
 consvar_t cv_cam_turnfacingability[2] = {
-	CVAR_INIT ("cam_turnfacingability", "0.125", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
-	CVAR_INIT ("cam2_turnfacingability", "0.125", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
+	CVAR_INIT ("cam_turnfacingability", "0.125", CAMCVARFLAGS, zerotoone_cons_t, NULL),
+	CVAR_INIT ("cam2_turnfacingability", "0.125", CAMCVARFLAGS, zerotoone_cons_t, NULL),
 };
 consvar_t cv_cam_turnfacingspindash[2] = {
-	CVAR_INIT ("cam_turnfacingspindash", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
-	CVAR_INIT ("cam2_turnfacingspindash", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
+	CVAR_INIT ("cam_turnfacingspindash", "0.25", CAMCVARFLAGS, zerotoone_cons_t, NULL),
+	CVAR_INIT ("cam2_turnfacingspindash", "0.25", CAMCVARFLAGS, zerotoone_cons_t, NULL),
 };
 consvar_t cv_cam_turnfacinginput[2] = {
-	CVAR_INIT ("cam_turnfacinginput", "0.375", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
-	CVAR_INIT ("cam2_turnfacinginput", "0.375", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
+	CVAR_INIT ("cam_turnfacinginput", "0.375", CAMCVARFLAGS, zerotoone_cons_t, NULL),
+	CVAR_INIT ("cam2_turnfacinginput", "0.375", CAMCVARFLAGS, zerotoone_cons_t, NULL),
 };
+
+#undef CAMCVARFLAGS
 
 static CV_PossibleValue_t centertoggle_cons_t[] = {{0, "Hold"}, {1, "Toggle"}, {2, "Sticky Hold"}, {0, NULL}};
 consvar_t cv_cam_centertoggle[2] = {
@@ -982,8 +1001,26 @@ INT32 Joy2Axis(joyaxis_e axissel)
 
 #define PlayerJoyAxis(p, ax) ((p) == 1 ? JoyAxis(ax) : Joy2Axis(ax))
 
+// Get the gamepad style from a player
+static INT32 G_GamepadStyleForPlayer(UINT8 splitnum)
+{
+	if (splitnum == 1)
+		return Joystick2.bGamepadStyle;
+	else
+		return Joystick.bGamepadStyle;
+}
+
 // Take a magnitude of two axes, and adjust it to take out the deadzone
 // Will return a value between 0 and JOYAXISRANGE
+// Get the deadzone value from a player
+static fixed_t G_DeadZoneForPlayer(UINT8 splitnum)
+{
+	if (splitnum == 1)
+		return cv_deadzone2.value;
+	else
+		return cv_deadzone.value;
+}
+
 static INT32 G_BasicDeadZoneCalculation(INT32 magnitude, fixed_t deadZone)
 {
 	const INT32 jdeadzone = (JOYAXISRANGE * deadZone) / FRACUNIT;
@@ -1004,11 +1041,40 @@ static INT32 G_BasicDeadZoneCalculation(INT32 magnitude, fixed_t deadZone)
 	return deadzoneAppliedValue;
 }
 
+//Calculate the Vector for the Joystick's Deadzone
+static void G_HandleVectorDeadZone(joystickvector2_t *joystickvector, fixed_t deadZone)
+{
+	// Get the total magnitude of the 2 axes
+	INT32 magnitude = (joystickvector->xaxis * joystickvector->xaxis) + (joystickvector->yaxis * joystickvector->yaxis);
+	INT32 normalisedXAxis;
+	INT32 normalisedYAxis;
+	INT32 normalisedMagnitude;
+	double dMagnitude = sqrt((double)magnitude);
+	magnitude = (INT32)dMagnitude;
+
+	// Get the normalised xy values from the magnitude
+	normalisedXAxis = (joystickvector->xaxis * magnitude) / JOYAXISRANGE;
+	normalisedYAxis = (joystickvector->yaxis * magnitude) / JOYAXISRANGE;
+
+	// Apply the deadzone to the magnitude to give a correct value between 0 and JOYAXISRANGE
+	normalisedMagnitude = G_BasicDeadZoneCalculation(magnitude, deadZone);
+
+	// Apply the deadzone to the xy axes
+	joystickvector->xaxis = (normalisedXAxis * normalisedMagnitude) / JOYAXISRANGE;
+	joystickvector->yaxis = (normalisedYAxis * normalisedMagnitude) / JOYAXISRANGE;
+
+	// Cap the values so they don't go above the correct maximum
+	joystickvector->xaxis = min(joystickvector->xaxis, JOYAXISRANGE);
+	joystickvector->xaxis = max(joystickvector->xaxis, -JOYAXISRANGE);
+	joystickvector->yaxis = min(joystickvector->yaxis, JOYAXISRANGE);
+	joystickvector->yaxis = max(joystickvector->yaxis, -JOYAXISRANGE);
+}
+
 // Get the actual sensible radial value for a joystick axis when accounting for a deadzone
 static void G_HandleAxisDeadZone(UINT8 splitnum, joystickvector2_t *joystickvector)
 {
-	INT32 gamepadStyle = Joystick.bGamepadStyle;
-	fixed_t deadZone = cv_deadzone.value;
+	INT32 gamepadStyle = G_GamepadStyleForPlayer(splitnum);
+	fixed_t deadZone = G_DeadZoneForPlayer(splitnum);
 
 	if (splitnum == 1)
 	{
@@ -1018,32 +1084,7 @@ static void G_HandleAxisDeadZone(UINT8 splitnum, joystickvector2_t *joystickvect
 
 	// When gamepadstyle is "true" the values are just -1, 0, or 1. This is done in the interface code.
 	if (!gamepadStyle)
-	{
-		// Get the total magnitude of the 2 axes
-		INT32 magnitude = (joystickvector->xaxis * joystickvector->xaxis) + (joystickvector->yaxis * joystickvector->yaxis);
-		INT32 normalisedXAxis;
-		INT32 normalisedYAxis;
-		INT32 normalisedMagnitude;
-		double dMagnitude = sqrt((double)magnitude);
-		magnitude = (INT32)dMagnitude;
-
-		// Get the normalised xy values from the magnitude
-		normalisedXAxis = (joystickvector->xaxis * magnitude) / JOYAXISRANGE;
-		normalisedYAxis = (joystickvector->yaxis * magnitude) / JOYAXISRANGE;
-
-		// Apply the deadzone to the magnitude to give a correct value between 0 and JOYAXISRANGE
-		normalisedMagnitude = G_BasicDeadZoneCalculation(magnitude, deadZone);
-
-		// Apply the deadzone to the xy axes
-		joystickvector->xaxis = (normalisedXAxis * normalisedMagnitude) / JOYAXISRANGE;
-		joystickvector->yaxis = (normalisedYAxis * normalisedMagnitude) / JOYAXISRANGE;
-
-		// Cap the values so they don't go above the correct maximum
-		joystickvector->xaxis = min(joystickvector->xaxis, JOYAXISRANGE);
-		joystickvector->xaxis = max(joystickvector->xaxis, -JOYAXISRANGE);
-		joystickvector->yaxis = min(joystickvector->yaxis, JOYAXISRANGE);
-		joystickvector->yaxis = max(joystickvector->yaxis, -JOYAXISRANGE);
-	}
+		G_HandleVectorDeadZone(joystickvector, deadZone);
 }
 
 //
@@ -1061,16 +1102,43 @@ static fixed_t forwardmove[2] = {25<<FRACBITS>>16, 50<<FRACBITS>>16};
 static fixed_t sidemove[2] = {25<<FRACBITS>>16, 50<<FRACBITS>>16}; // faster!
 static fixed_t angleturn[3] = {640, 1280, 320}; // + slow turn
 
+static joystickvector2_t joystickmovevectors[2], joysticklookvectors[2];
+
+#ifdef TOUCHINPUTS
+joystickvector2_t touchmovevector;
+#endif
+
+#ifdef ACCELEROMETER
+joystickvector2_t accelmovevector;
+#endif
+
 INT16 ticcmd_oldangleturn[2];
 boolean ticcmd_centerviewdown[2]; // For simple controls, lock the camera behind the player
 mobj_t *ticcmd_ztargetfocus[2]; // Locking onto an object?
+
+static boolean G_CanBuildTiccmd(player_t *player)
+{
+	// why build a ticcmd if we're paused?
+	// Or, for that matter, if we're being reborn.
+	// ...OR if we're blindfolded. No looking into the floor.
+	if (paused || P_AutoPause() || (levelstarting || WipeInAction) || titlecard.prelevel
+	|| (gamestate == GS_LEVEL && (player->playerstate == PST_REBORN || ((gametyperules & GTR_TAG)
+	&& (leveltime < hidetime * TICRATE) && (player->pflags & PF_TAGIT)))))
+		//@TODO splitscreen player
+		return false;
+	return true;
+}
+
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 {
+	INT32 tspeed, forward, side;
+	INT32 axis, strafeaxis, moveaxis, turnaxis, lookaxis;
+	INT32 i;
+
 	boolean forcestrafe = false;
 	boolean forcefullinput = false;
-	INT32 tspeed, forward, side, axis, strafeaxis, moveaxis, turnaxis, lookaxis, i;
 
-	joystickvector2_t movejoystickvector, lookjoystickvector;
+	joystickvector2_t *movejoystickvector, *lookjoystickvector;
 
 	const INT32 speed = 1;
 	// these ones used for multiple conditions
@@ -1134,12 +1202,8 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		((cv_cam_lockedinput[forplayer].value && !ticcmd_ztargetfocus[forplayer]) || (player->pflags & PF_STARTDASH)) &&
 		!player->climbing && player->powers[pw_carry] != CR_MINECART;
 
-	// why build a ticcmd if we're paused?
-	// Or, for that matter, if we're being reborn.
-	// ...OR if we're blindfolded. No looking into the floor.
-	if (paused || P_AutoPause() || (gamestate == GS_LEVEL && (player->playerstate == PST_REBORN || ((gametyperules & GTR_TAG)
-	&& (leveltime < hidetime * TICRATE) && (player->pflags & PF_TAGIT)))))
-	{//@TODO splitscreen player
+	if (!G_CanBuildTiccmd(player))
+	{
 		cmd->angleturn = ticcmd_oldangleturn[forplayer];
 		cmd->aiming = G_ClipAimingPitch(myaiming);
 		return;
@@ -1153,6 +1217,16 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	movefkey = PLAYERINPUTDOWN(ssplayer, GC_FORWARD);
 	movebkey = PLAYERINPUTDOWN(ssplayer, GC_BACKWARD);
 
+#ifdef TOUCHINPUTS
+	if (ssplayer == 1)
+	{
+		straferkey = (straferkey || PLAYERINPUTDOWN(ssplayer, GC_DPADUR) || PLAYERINPUTDOWN(ssplayer, GC_DPADDR));
+		strafelkey = (strafelkey || PLAYERINPUTDOWN(ssplayer, GC_DPADUL) || PLAYERINPUTDOWN(ssplayer, GC_DPADDL));
+		movefkey = (movefkey || PLAYERINPUTDOWN(ssplayer, GC_DPADUL) || PLAYERINPUTDOWN(ssplayer, GC_DPADUR));
+		movebkey = (movebkey || PLAYERINPUTDOWN(ssplayer, GC_DPADDL) || PLAYERINPUTDOWN(ssplayer, GC_DPADDR));
+	}
+#endif
+
 	if (strafeisturn)
 	{
 		turnright |= straferkey;
@@ -1165,6 +1239,9 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	analogjoystickmove = usejoystick && !Joystick.bGamepadStyle;
 	gamepadjoystickmove = usejoystick && Joystick.bGamepadStyle;
 
+	movejoystickvector = &joystickmovevectors[forplayer];
+	lookjoystickvector = &joysticklookvectors[forplayer];
+
 	thisjoyaiming = (chasecam && !player->spectator) ? chasefreelook : alwaysfreelook;
 
 	// Reset the vertical look if we're no longer joyaiming
@@ -1176,14 +1253,14 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	if (strafeisturn)
 		turnaxis += PlayerJoyAxis(ssplayer, JA_STRAFE);
 	lookaxis = PlayerJoyAxis(ssplayer, JA_LOOK);
-	lookjoystickvector.xaxis = turnaxis;
-	lookjoystickvector.yaxis = lookaxis;
-	G_HandleAxisDeadZone(forplayer, &lookjoystickvector);
+	lookjoystickvector->xaxis = turnaxis;
+	lookjoystickvector->yaxis = lookaxis;
+	G_HandleAxisDeadZone(forplayer, lookjoystickvector);
 
-	if (gamepadjoystickmove && lookjoystickvector.xaxis != 0)
+	if (gamepadjoystickmove && lookjoystickvector->xaxis != 0)
 	{
-		turnright = turnright || (lookjoystickvector.xaxis > 0);
-		turnleft = turnleft || (lookjoystickvector.xaxis < 0);
+		turnright = turnright || (lookjoystickvector->xaxis > 0);
+		turnleft = turnleft || (lookjoystickvector->xaxis < 0);
 	}
 	forward = side = 0;
 
@@ -1223,10 +1300,10 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		if (turnleft)
 			side -= sidemove[speed];
 
-		if (analogjoystickmove && lookjoystickvector.xaxis != 0)
+		if (analogjoystickmove && lookjoystickvector->xaxis != 0)
 		{
 			// JOYAXISRANGE is supposed to be 1023 (divide by 1024)
-			side += ((lookjoystickvector.xaxis * sidemove[1]) >> 10);
+			side += ((lookjoystickvector->xaxis * sidemove[1]) >> 10);
 		}
 	}
 	else if (controlstyle == CS_LMAOGALOG) // Analog
@@ -1244,10 +1321,10 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		else if (turnleft)
 			cmd->angleturn = (INT16)(cmd->angleturn + ((angleturn[tspeed] * turnmultiplier)>>FRACBITS));
 
-		if (analogjoystickmove && lookjoystickvector.xaxis != 0)
+		if (analogjoystickmove && lookjoystickvector->xaxis != 0)
 		{
 			// JOYAXISRANGE should be 1023 (divide by 1024)
-			cmd->angleturn = (INT16)(cmd->angleturn - ((((lookjoystickvector.xaxis * angleturn[1]) >> 10) * turnmultiplier)>>FRACBITS)); // ANALOG!
+			cmd->angleturn = (INT16)(cmd->angleturn - ((((lookjoystickvector->xaxis * angleturn[1]) >> 10) * turnmultiplier)>>FRACBITS)); // ANALOG!
 		}
 
 		if (turnright || turnleft || abs(cmd->angleturn) > angleturn[2])
@@ -1256,35 +1333,77 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	strafeaxis = strafeisturn ? 0 : PlayerJoyAxis(ssplayer, JA_STRAFE);
 	moveaxis = PlayerJoyAxis(ssplayer, JA_MOVE);
-	movejoystickvector.xaxis = strafeaxis;
-	movejoystickvector.yaxis = moveaxis;
-	G_HandleAxisDeadZone(forplayer, &movejoystickvector);
+	
+	movejoystickvector->xaxis = strafeaxis;
+	movejoystickvector->yaxis = moveaxis;
+	G_HandleAxisDeadZone(forplayer, movejoystickvector);
 
-	if (gamepadjoystickmove && movejoystickvector.xaxis != 0)
+	if (gamepadjoystickmove && movejoystickvector->xaxis != 0)
 	{
-		if (movejoystickvector.xaxis > 0)
+		if (movejoystickvector->xaxis > 0)
 			side += sidemove[speed];
-		else if (movejoystickvector.xaxis < 0)
+		else if (movejoystickvector->xaxis < 0)
 			side -= sidemove[speed];
 	}
-	else if (analogjoystickmove && movejoystickvector.xaxis != 0)
+	else if (analogjoystickmove && movejoystickvector->xaxis != 0)
 	{
 		// JOYAXISRANGE is supposed to be 1023 (divide by 1024)
-		side += ((movejoystickvector.xaxis * sidemove[1]) >> 10);
+		side += ((movejoystickvector->xaxis * sidemove[1]) >> 10);
 	}
 
+#ifdef TOUCHINPUTS
+	// Yikes!
+	if (touch_useinputs)
+	{
+		touchmovevector.xaxis = min(JOYAXISRANGE, max(-JOYAXISRANGE, (INT32)(touchxmove * JOYAXISRANGE)));
+		touchmovevector.yaxis = min(JOYAXISRANGE, max(-JOYAXISRANGE, (INT32)(touchymove * JOYAXISRANGE)));
+
+		G_HandleVectorDeadZone(&touchmovevector, cv_touchjoydeadzone.value);
+
+		if (ssplayer == 1 && touchmovevector.xaxis != 0)
+			side += ((touchmovevector.xaxis * sidemove[1]) >> 10);
+	}
+	else
+		touchmovevector.xaxis = touchmovevector.yaxis = 0;
+#endif
+
+#ifdef ACCELEROMETER
+	if (cv_useaccelerometer.value && (accelxmove || accelymove))
+	{
+		accelmovevector.xaxis = min(JOYAXISRANGE, max(-JOYAXISRANGE, accelxmove));
+		accelmovevector.yaxis = min(JOYAXISRANGE, max(-JOYAXISRANGE, accelymove));
+
+		G_HandleVectorDeadZone(&accelmovevector, cv_acceldeadzone.value);
+
+		if (ssplayer == 1 && accelmovevector.xaxis != 0)
+			side += ((accelmovevector.xaxis * sidemove[1]) >> 10);
+	}
+	else
+		accelmovevector.xaxis = accelmovevector.yaxis = 0;
+#endif
+
 	// forward with key or button
-	if (movefkey || (gamepadjoystickmove && movejoystickvector.yaxis < 0)
+	if (movefkey || (gamepadjoystickmove && movejoystickvector->yaxis < 0)
 		|| ((player->powers[pw_carry] == CR_NIGHTSMODE)
-			&& (PLAYERINPUTDOWN(ssplayer, GC_LOOKUP) || (gamepadjoystickmove && lookjoystickvector.yaxis > 0))))
+			&& (PLAYERINPUTDOWN(ssplayer, GC_LOOKUP) || (gamepadjoystickmove && lookjoystickvector->yaxis > 0))))
 		forward = forwardmove[speed];
-	if (movebkey || (gamepadjoystickmove && movejoystickvector.yaxis > 0)
+	if (movebkey || (gamepadjoystickmove && movejoystickvector->yaxis > 0)
 		|| ((player->powers[pw_carry] == CR_NIGHTSMODE)
-			&& (PLAYERINPUTDOWN(ssplayer, GC_LOOKDOWN) || (gamepadjoystickmove && lookjoystickvector.yaxis < 0))))
+			&& (PLAYERINPUTDOWN(ssplayer, GC_LOOKDOWN) || (gamepadjoystickmove && lookjoystickvector->yaxis < 0))))
 		forward -= forwardmove[speed];
 
-	if (analogjoystickmove && movejoystickvector.yaxis != 0)
-		forward -= ((movejoystickvector.yaxis * forwardmove[1]) >> 10); // ANALOG!
+	if (analogjoystickmove && movejoystickvector->yaxis != 0)
+		forward -= ((movejoystickvector->yaxis * forwardmove[1]) >> 10); // ANALOG!
+
+#ifdef TOUCHINPUTS
+	if (ssplayer == 1 && touchmovevector.yaxis != 0)
+		forward -= ((touchmovevector.yaxis * forwardmove[1]) >> 10);
+#endif
+
+#ifdef ACCELEROMETER
+	if (ssplayer == 1 && accelmovevector.yaxis != 0)
+		forward -= ((accelmovevector.yaxis * forwardmove[1]) >> 10);
+#endif
 
 	// some people strafe left & right with mouse buttons
 	// those people are weird
@@ -1448,7 +1567,6 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	else
 		resetdown[forplayer] = false;
 
-
 	// jump button
 	axis = PlayerJoyAxis(ssplayer, JA_JUMP);
 	if (PLAYERINPUTDOWN(ssplayer, GC_JUMP) || (usejoystick && axis > 0))
@@ -1472,8 +1590,8 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 			*myaiming += (mldy<<19)*player_invert*screen_invert;
 		}
 
-		if (analogjoystickmove && joyaiming[forplayer] && lookjoystickvector.yaxis != 0 && configlookaxis != 0)
-			*myaiming += (lookjoystickvector.yaxis<<16) * screen_invert;
+		if (analogjoystickmove && joyaiming[forplayer] && lookjoystickvector->yaxis != 0 && configlookaxis != 0)
+			*myaiming += (lookjoystickvector->yaxis<<16) * screen_invert;
 
 		// spring back if not using keyboard neither mouselookin'
 		if (!keyboard_look[forplayer] && configlookaxis == 0 && !joyaiming[forplayer] && !mouseaiming)
@@ -1481,12 +1599,12 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 		if (!(player->powers[pw_carry] == CR_NIGHTSMODE))
 		{
-			if (PLAYERINPUTDOWN(ssplayer, GC_LOOKUP) || (gamepadjoystickmove && lookjoystickvector.yaxis < 0))
+			if (PLAYERINPUTDOWN(ssplayer, GC_LOOKUP) || (gamepadjoystickmove && lookjoystickvector->yaxis < 0))
 			{
 				*myaiming += KB_LOOKSPEED * screen_invert;
 				keyboard_look[forplayer] = true;
 			}
-			else if (PLAYERINPUTDOWN(ssplayer, GC_LOOKDOWN) || (gamepadjoystickmove && lookjoystickvector.yaxis > 0))
+			else if (PLAYERINPUTDOWN(ssplayer, GC_LOOKDOWN) || (gamepadjoystickmove && lookjoystickvector->yaxis > 0))
 			{
 				*myaiming -= KB_LOOKSPEED * screen_invert;
 				keyboard_look[forplayer] = true;
@@ -1791,23 +1909,76 @@ static void AutoBrake2_OnChange(void)
 }
 
 //
-// G_DoLoadLevel
+// G_StartLevel
 //
-void G_DoLoadLevel(boolean resetplayer)
+void G_StartLevel(boolean resetplayer)
 {
 	INT32 i;
+	levelstarting = true;
 
 	// Make sure objectplace is OFF when you first start the level!
 	OP_ResetObjectplace();
 	demosynced = true;
 
 	levelstarttic = gametic; // for time calculation
+	levelresetplayer = resetplayer;
 
 	if (wipegamestate == GS_LEVEL)
 		wipegamestate = -1; // force a wipe
 
 	if (gamestate == GS_INTERMISSION)
 		Y_EndIntermission();
+
+	G_InitLevelGametype();
+	ranspecialwipe = SPECIALWIPE_NONE;
+
+	if (mapheaderinfo[gamemap-1]->runsoc[0] != '#')
+		P_RunSOC(mapheaderinfo[gamemap-1]->runsoc);
+
+	if (cv_runscripts.value && mapheaderinfo[gamemap-1]->scriptname[0] != '#')
+		P_RunLevelScript(mapheaderinfo[gamemap-1]->scriptname);
+
+	// clear cmd building stuff
+	memset(gamekeydown, 0, sizeof (gamekeydown));
+	for (i = 0;i < JOYAXISSET; i++)
+	{
+		joyxmove[i] = joyymove[i] = 0;
+		joy2xmove[i] = joy2ymove[i] = 0;
+	}
+	G_SetMouseDeltas(0, 0, 1);
+	G_SetMouseDeltas(0, 0, 2);
+
+#ifndef NOWIPE
+	if (!G_GetRetryRA() && rendermode != render_none)
+		G_StartLevelWipe();
+	else
+#endif
+	{
+		if (G_GetRetryRA())
+		{
+			ranspecialwipe = SPECIALWIPE_RETRY;
+			G_ClearRetryRA();
+		}
+
+		G_DoLoadLevel();
+	}
+}
+
+//
+// G_InitLevelGametype
+//
+void G_InitLevelGametype(void)
+{
+	maptol = mapheaderinfo[gamemap-1]->typeoflevel;
+	gametyperules = gametypedefaultrules[gametype];
+}
+
+//
+// G_DoLoadLevel
+//
+void G_DoLoadLevel(void)
+{
+	G_ClearAllRetryFlags();
 
 	// cleanup
 	if (titlemapinaction == TITLEMAP_LOADING)
@@ -1824,14 +1995,22 @@ void G_DoLoadLevel(boolean resetplayer)
 	else
 		titlemapinaction = TITLEMAP_OFF;
 
-	G_SetGamestate(GS_LEVEL);
 	I_UpdateMouseGrab();
 
-	for (i = 0; i < MAXPLAYERS; i++)
+	if (!titlemapinaction)
 	{
-		if (resetplayer || (playeringame[i] && players[i].playerstate == PST_DEAD))
-			players[i].playerstate = PST_REBORN;
+		INT32 i;
+
+		G_SetGamestate(GS_LEVEL);
+
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (levelresetplayer || (playeringame[i] && players[i].playerstate == PST_DEAD))
+				players[i].playerstate = PST_REBORN;
+		}
 	}
+
+	levelstarting = false;
 
 	// Setup the level.
 	if (!P_LoadLevel(false, false)) // this never returns false?
@@ -1839,6 +2018,19 @@ void G_DoLoadLevel(boolean resetplayer)
 		// fail so reset game stuff
 		Command_ExitGame_f();
 		return;
+	}
+
+	if (netgame)
+	{
+		char *title = G_BuildMapTitle(gamemap);
+
+		CONS_Printf(M_GetText("Map is now \"%s"), G_BuildMapName(gamemap));
+		if (title)
+		{
+			CONS_Printf(": %s", title);
+			Z_Free(title);
+		}
+		CONS_Printf("\"\n");
 	}
 
 	P_FindEmerald();
@@ -1852,77 +2044,245 @@ void G_DoLoadLevel(boolean resetplayer)
 	Z_CheckHeap(-2);
 #endif
 
-	if (camera.chase)
-		P_ResetCamera(&players[displayplayer], &camera);
-	if (camera2.chase && splitscreen)
-		P_ResetCamera(&players[secondarydisplayplayer], &camera2);
-
-	// clear cmd building stuff
-	memset(gamekeydown, 0, sizeof (gamekeydown));
-	for (i = 0;i < JOYAXISSET; i++)
+	if (!titlemapinaction)
 	{
-		joyxmove[i] = joyymove[i] = 0;
-		joy2xmove[i] = joy2ymove[i] = 0;
+		if (camera.chase)
+			P_ResetCamera(&players[displayplayer], &camera);
+		if (camera2.chase && splitscreen)
+			P_ResetCamera(&players[secondarydisplayplayer], &camera2);
 	}
+	else
+	{
+		mapthing_t *startpos;
+
+		players[displayplayer].playerstate = PST_DEAD; // Don't spawn the player in dummy (I'm still a filthy cheater)
+
+		// Set Default Position
+		if (playerstarts[0])
+			startpos = playerstarts[0];
+		else if (deathmatchstarts[0])
+			startpos = deathmatchstarts[0];
+		else
+			startpos = NULL;
+
+		if (startpos)
+		{
+			camera.x = startpos->x << FRACBITS;
+			camera.y = startpos->y << FRACBITS;
+			camera.subsector = R_PointInSubsector(camera.x, camera.y);
+			camera.z = camera.subsector->sector->floorheight + (startpos->z << FRACBITS);
+			camera.angle = (startpos->angle % 360)*ANG1;
+			camera.aiming = 0;
+		}
+		else
+		{
+			camera.x = camera.y = camera.z = camera.angle = camera.aiming = 0;
+			camera.subsector = NULL; // toast is filthy too
+		}
+
+		camera.chase = true;
+		camera.height = 0;
+
+		// Run enter linedef exec for MN_MAIN, since this is where we start
+		if (menupres[MN_MAIN].entertag)
+			P_LinedefExecute(menupres[MN_MAIN].entertag, players[displayplayer].mo, NULL);
+	}
+
+	if (demoplayerinfo)
+	{
+		G_FinishLoadingDemo();
+		Z_Free(demoplayerinfo);
+	}
+	demoplayerinfo = NULL;
+
 	G_SetMouseDeltas(0, 0, 1);
 	G_SetMouseDeltas(0, 0, 2);
+	
+	G_ResetInputs();
 
 	// clear hud messages remains (usually from game startup)
 	CON_ClearHUD();
+
+	if (demoplayback && !timingdemo)
+		precache = true;
+	if (timingdemo)
+		G_DoneLevelLoad();
+
+	if (metalrecording)
+		G_BeginMetal();
+	if (demorecording) // Okay, level loaded, character spawned and skinned,
+		G_BeginRecording(); // I AM NOW READY TO RECORD.
+	demo_start = true;
+}
+
+//
+// Run the level's wipe.
+//
+void G_StartLevelWipe(void)
+{
+	// Cancel all d_main.c fades
+	WipeRunPost = false;
+	wipegamestate = FORCEWIPEOFF;
+	wipestyle = WIPESTYLE_COLORMAP;
+	wipestyleflags = (WSF_FADEOUT|WSF_LEVELLOADING);
+
+	// Special stage fade to white
+	// This is handled BEFORE sounds are stopped.
+	if (rendermode != render_none && G_IsSpecialStage(gamemap))
+	{
+		// TODO call this after rendering the frame (because of F_WipeStartScreen calls)
+		P_RunSpecialStageWipe();
+		ranspecialwipe = SPECIALWIPE_SSTAGE;
+	}
+
+	// Let's fade to black here
+	// But only if we didn't do the special stage wipe
+	if (rendermode != render_none && ranspecialwipe == SPECIALWIPE_NONE)
+	{
+		// TODO same thing as the last one
+		P_RunLevelWipe();
+
+		// Fade out music here. Deduct 2 tics so the fade volume actually reaches 0.
+		// But don't halt the music! S_Start will take care of that. This dodges a MIDI crash bug.
+		if (!titlemapinaction && (RESETMUSIC ||
+			strnicmp(S_MusicName(),
+				(mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname, 7)))
+			S_FadeMusic(0, FixedMul(
+				FixedDiv((F_GetWipeLength(wipedefs[wipe_level_toblack])-2)*NEWTICRATERATIO, NEWTICRATE), MUSICRATE));
+	}
 }
 
 //
 // Start the title card.
 //
-void G_StartTitleCard(void)
+void TitleCard_Start(void)
 {
-	// The title card has been disabled for this map.
-	// Oh well.
-	if (!G_IsTitleCardAvailable())
+	// The title card has been disabled for this map
+	if (!TitleCard_Available())
 	{
-		WipeStageTitle = false;
+		st_translucency = cv_translucenthud.value; // Reset the HUD translucency!
+		WipeRunPost = true; // Start the post wipe.
 		return;
 	}
 
-	// clear the hud
 	CON_ClearHUD();
+	TitleCard_LoadGraphics();
 
-	// prepare status bar
-	ST_startTitleCard();
+	// Actually start it
+	titlecard.running = true;
+	titlecard.prelevel = true;
 
-	// start the title card
-	WipeStageTitle = (!titlemapinaction);
+	titlecard.ticker = 0;
+	titlecard.exitticker = 0;
+	titlecard.endtime = 2*TICRATE + 10;
+
+	titlecard.scroll = BASEVIDWIDTH * FRACUNIT;
+	titlecard.momentum = 0;
+
+	if (titlecard.patches[1])
+	{
+		patch_t *patch = (patch_t *)titlecard.patches[1];
+		titlecard.zigzag = -(SHORT(patch->width) * FRACUNIT);
+	}
+
+	wipetypepost = IGNOREWIPE;
 }
 
 //
-// Run the title card before fading in to the level.
+// Load the graphics for the title card.
 //
-void G_PreLevelTitleCard(void)
+void TitleCard_LoadGraphics(void)
 {
-#ifndef NOWIPE
-	tic_t starttime = I_GetTime();
-	tic_t endtime = starttime + (PRELEVELTIME*NEWTICRATERATIO);
-	tic_t nowtime = starttime;
-	tic_t lasttime = starttime;
-	while (nowtime < endtime)
+#define SETPATCH(def, warning, custom, idx) \
+{ \
+	lumpnum_t patlumpnum = LUMPERROR; \
+	if (mapheaderinfo[gamemap-1]->custom[0] != '\0') \
+	{ \
+		patlumpnum = W_CheckNumForName(mapheaderinfo[gamemap-1]->custom); \
+		if (patlumpnum != LUMPERROR) \
+			titlecard.patches[idx] = (patch_t *)W_CachePatchNum(patlumpnum, PU_HUDGFX); \
+	} \
+	if (patlumpnum == LUMPERROR) \
+	{ \
+		if (!(mapheaderinfo[gamemap-1]->levelflags & LF_WARNINGTITLE)) \
+			titlecard.patches[idx] = (patch_t *)W_CachePatchName(def, PU_HUDGFX); \
+		else \
+			titlecard.patches[idx] = (patch_t *)W_CachePatchName(warning, PU_HUDGFX); \
+	} \
+}
+
+	SETPATCH("LTACTBLU", "LTACTRED", ltactdiamond, 0)
+	SETPATCH("LTZIGZAG", "LTZIGRED", ltzzpatch, 1)
+	SETPATCH("LTZZTEXT", "LTZZWARN", ltzztext, 2)
+
+#undef SETPATCH
+}
+
+//
+// Run the title card.
+//
+void TitleCard_Run(void)
+{
+	if (!TitleCard_Available())
+		return;
+
+	if (titlecard.wipe)
+		titlecard.wipe++;
+
+	if (titlecard.ticker >= (titlecard.endtime + TICRATE))
 	{
-		// draw loop
-		while (!((nowtime = I_GetTime()) - lasttime))
-			I_Sleep();
-		lasttime = nowtime;
-
-		ST_runTitleCard();
-		ST_preLevelTitleCardDrawer();
-		I_FinishUpdate(); // page flip or blit buffer
-
-		if (moviemode)
-			M_SaveFrame();
-		if (takescreenshot) // Only take screenshots after drawing.
-			M_DoScreenShot();
+		titlecard.running = false;
+		return;
 	}
-	if (!cv_showhud.value)
-		wipestyleflags = WSF_CROSSFADE;
-#endif
+	else if (titlecard.ticker >= PRELEVELTIME && titlecard.prelevel)
+	{
+		// Force a wipe
+		wipegamestate = -1;
+		WipeRunPost = true;
+
+		// TODO should be done after rendering
+		if (!cv_showhud.value)
+			F_WipeDoCrossfade();
+
+		// Disable prelevel flag
+		titlecard.prelevel = false;
+		titlecard.wipe = 1;
+	}
+
+	if (!(paused || P_AutoPause()))
+	{
+		// scroll to screen (level title)
+		if (!titlecard.exitticker)
+		{
+			if (abs(titlecard.scroll) > FRACUNIT)
+				titlecard.scroll -= (titlecard.scroll>>2);
+			else
+				titlecard.scroll = 0;
+		}
+		// scroll away from screen (level title)
+		else
+		{
+			titlecard.momentum -= FRACUNIT*6;
+			titlecard.scroll += titlecard.momentum;
+		}
+
+		// scroll to screen (zigzag)
+		if (!titlecard.exitticker)
+		{
+			if (abs(titlecard.zigzag) > FRACUNIT)
+				titlecard.zigzag -= (titlecard.zigzag>>2);
+			else
+				titlecard.zigzag = 0;
+		}
+		// scroll away from screen (zigzag)
+		else
+			titlecard.zigzag += titlecard.momentum;
+
+		// tick
+		titlecard.ticker++;
+		if (titlecard.ticker >= titlecard.endtime)
+			titlecard.exitticker++;
+	}
 }
 
 static boolean titlecardforreload = false;
@@ -1930,7 +2290,7 @@ static boolean titlecardforreload = false;
 //
 // Returns true if the current level has a title card.
 //
-boolean G_IsTitleCardAvailable(void)
+boolean TitleCard_Available(void)
 {
 	// The current level header explicitly disabled the title card.
 	UINT16 titleflag = LF_NOTITLECARDFIRST;
@@ -1939,6 +2299,8 @@ boolean G_IsTitleCardAvailable(void)
 		titleflag = LF_NOTITLECARDRECORDATTACK;
 	else if (titlecardforreload)
 		titleflag = LF_NOTITLECARDRESPAWN;
+
+	titlecardforreload = false;
 
 	if (mapheaderinfo[gamemap-1]->levelflags & titleflag)
 		return false;
@@ -1957,7 +2319,7 @@ boolean G_IsTitleCardAvailable(void)
 
 INT32 pausedelay = 0;
 boolean pausebreakkey = false;
-static INT32 camtoggledelay, camtoggledelay2 = 0;
+INT32 camtoggledelay, camtoggledelay2 = 0;
 
 //
 // G_Responder
@@ -1969,11 +2331,22 @@ boolean G_Responder(event_t *ev)
 	if (gameaction == ga_nothing && !singledemo &&
 		((demoplayback && !modeattacking && !titledemo) || gamestate == GS_TITLESCREEN))
 	{
-		if (ev->type == ev_keydown && ev->key != 301 && !(gamestate == GS_TITLESCREEN && finalecount < TICRATE))
+		INT32 key = ev->key;
+		boolean finger = (ev->type == ev_touchdown || ev->type == ev_touchup);
+
+		if (((ev->type == ev_keydown && key != 301 && !G_KeyIsAnyMouseWheel(key)) || finger) && !(gamestate == GS_TITLESCREEN && finalecount < TICRATE))
 		{
+#ifdef TOUCHINPUTS
+			if (finger)
+				inputmethod = INPUTMETHOD_TOUCH;
+			else
+#endif
+				G_DetectInputMethod(key);
+
 			M_StartControlPanel();
 			return true;
 		}
+
 		return false;
 	}
 	else if (demoplayback && titledemo)
@@ -2107,7 +2480,11 @@ boolean G_Responder(event_t *ev)
 
 			// tell who's the view
 			CONS_Printf(M_GetText("Viewpoint: %s\n"), player_names[displayplayer]);
+		}
 
+		if (G_DoViewpointSwitch())
+		{
+			G_DetectControlMethod(ev->key);
 			return true;
 		}
 	}
@@ -2132,7 +2509,7 @@ boolean G_Responder(event_t *ev)
 						pausedelay = 1+(NEWTICRATE/2);
 					else if (++pausedelay > 1+(NEWTICRATE/2)+(NEWTICRATE/3))
 					{
-						G_SetModeAttackRetryFlag();
+						G_SetRetryRA();
 						return true;
 					}
 					pausedelay++; // counteract subsequent subtraction this frame
@@ -2148,24 +2525,38 @@ boolean G_Responder(event_t *ev)
 						return true;
 					}
 				}
+				if (G_HandlePauseKey(ev->key == KEY_PAUSE))
+				{
+					G_DetectControlMethod(ev->key);
+					return true;
+				}
 			}
 			if (ev->key == gamecontrol[GC_CAMTOGGLE][0]
 				|| ev->key == gamecontrol[GC_CAMTOGGLE][1])
 			{
+				/*
 				if (!camtoggledelay)
 				{
 					camtoggledelay = NEWTICRATE / 7;
 					CV_SetValue(&cv_chasecam, cv_chasecam.value ? 0 : 1);
 				}
+				*/
+
+				G_DetectControlMethod(ev->key);
+				G_ToggleChaseCam();
 			}
 			if (ev->key == gamecontrolbis[GC_CAMTOGGLE][0]
 				|| ev->key == gamecontrolbis[GC_CAMTOGGLE][1])
 			{
+				/*
 				if (!camtoggledelay2)
 				{
 					camtoggledelay2 = NEWTICRATE / 7;
 					CV_SetValue(&cv_chasecam2, cv_chasecam2.value ? 0 : 1);
 				}
+				*/
+				
+				G_ToggleChaseCam2();
 			}
 			return true;
 
@@ -2173,20 +2564,91 @@ boolean G_Responder(event_t *ev)
 			return false; // always let key up events filter down
 
 		case ev_mouse:
-			return true; // eat events
-
 		case ev_joystick:
-			return true; // eat events
-
 		case ev_joystick2:
+		case ev_accelerometer:
 			return true; // eat events
-
 
 		default:
 			break;
 	}
 
 	return false;
+}
+
+// Returns true if you can switch your viewpoint to this player.
+boolean G_CanViewpointSwitchToPlayer(player_t *player)
+{
+	player_t *myself = &players[consoleplayer];
+
+	if (player->spectator)
+		return false;
+
+	if (G_GametypeHasTeams())
+	{
+		if (myself->ctfteam && player->ctfteam != myself->ctfteam)
+			return false;
+	}
+	else if (gametyperules & GTR_HIDEFROZEN)
+	{
+		if (myself->pflags & PF_TAGIT)
+			return false;
+	}
+	// Other Tag-based gametypes?
+	else if (G_TagGametype())
+	{
+		if (!myself->spectator && (myself->pflags & PF_TAGIT) != (player->pflags & PF_TAGIT))
+			return false;
+	}
+	else if (G_GametypeHasSpectators() && G_RingSlingerGametype())
+	{
+		if (!myself->spectator)
+			return false;
+	}
+
+	return true;
+}
+
+// Returns true if you can switch your viewpoint at all.
+boolean G_CanViewpointSwitch(boolean luahook)
+{
+	// ViewpointSwitch Lua hook.
+	UINT8 canSwitchView = 0;
+	INT32 checkdisplayplayer = displayplayer;
+
+	if (splitscreen || !netgame)
+		return false;
+
+	if (D_NumPlayers() <= 1)
+		return false;
+
+	do
+	{
+		checkdisplayplayer++;
+		if (checkdisplayplayer == MAXPLAYERS)
+			checkdisplayplayer = 0;
+
+		if (!playeringame[checkdisplayplayer])
+			continue;
+
+		// Call ViewpointSwitch hooks here.
+		if (luahook)
+		{
+			canSwitchView = LUA_HookViewpointSwitch(&players[consoleplayer], &players[checkdisplayplayer], false);
+			if (canSwitchView == 1) // Set viewpoint to this player
+				break;
+			else if (canSwitchView == 2) // Skip this player
+				continue;
+		}
+
+		if (!G_CanViewpointSwitchToPlayer(&players[checkdisplayplayer]))
+			continue;
+
+		break;
+	} while (checkdisplayplayer != consoleplayer);
+
+	// had any change??
+	return (checkdisplayplayer != displayplayer);
 }
 
 //
@@ -2211,11 +2673,29 @@ boolean G_LuaResponder(event_t *ev)
 	return cancelled;
 }
 
+// see also SCR_DisplayMarathonInfo
+static void G_MarathonTicker(void)
+{
+	if (gamestate != GS_LEVEL)
+		return;
+	if ((marathonmode & (MA_INIT|MA_INGAME)) != MA_INGAME)
+		return;
+
+	// IGT doesn't increase during loads, unless the game's paused
+	if (!(paused || P_AutoPause()))
+	{
+		if (titlecard.prelevel || WipeInAction)
+			return;
+	}
+
+	marathontime++;
+}
+
 //
 // G_Ticker
 // Make ticcmd_ts for the players.
 //
-void G_Ticker(boolean run)
+void G_Ticker(boolean run, tic_t tics)
 {
 	UINT32 i;
 	INT32 buf;
@@ -2237,71 +2717,49 @@ void G_Ticker(boolean run)
 		}
 	}
 
-	// see also SCR_DisplayMarathonInfo
-	if ((marathonmode & (MA_INIT|MA_INGAME)) == MA_INGAME && gamestate == GS_LEVEL)
-		marathontime++;
-
-	P_MapStart();
-	// do player reborns if needed
-	if (gamestate == GS_LEVEL)
+	// Run the current wipe
+	if (WipeInAction)
 	{
-		// Or, alternatively, retry.
-		if (!(netgame || multiplayer) && G_GetRetryFlag())
+		if (run)
 		{
-			G_ClearRetryFlag();
+			boolean loading = (wipestyleflags & WSF_LEVELLOADING);
 
-			if (modeattacking)
+			switch (gamestate)
 			{
-				pausedelay = INT32_MIN;
-				M_ModeAttackRetry(0);
+				case GS_LEVEL:
+					if ((loading && G_GetRetryFlag(RETRY_PAUSED)) || !(paused || P_AutoPause()))
+						F_RunWipe();
+					break;
+				default:
+					F_RunWipe();
+					break;
 			}
-			else
-			{
-				// Costs a life to retry ... unless the player in question is dead already, or you haven't even touched the first starpost in marathon run.
-				if (marathonmode && gamemap == spmarathon_start && !players[consoleplayer].starposttime)
-				{
-					player_t *p = &players[consoleplayer];
-					marathonmode |= MA_INIT;
-					marathontime = 0;
 
-					numgameovers = tokenlist = token = 0;
-					countdown = countdown2 = exitfadestarted = 0;
+			// Run the title card
+			if (titlecard.running && (wipestyleflags & WSF_FADEIN))
+				TitleCard_Run();
 
-					p->playerstate = PST_REBORN;
-					p->starpostx = p->starposty = p->starpostz = 0;
+			// Run Marathon Mode in-game timer
+			G_MarathonTicker();
 
-					p->lives = startinglivesbalance[0];
-					p->continues = 1;
+			// do player reborns if needed
+			if (!loading)
+				G_CheckPlayerReborn();
 
-					p->score = 0;
-
-					// The latter two should clear by themselves, but just in case
-					p->pflags &= ~(PF_TAGIT|PF_GAMETYPEOVER|PF_FULLSTASIS);
-
-					// Clear cheatcodes too, just in case.
-					p->pflags &= ~(PF_GODMODE|PF_NOCLIP|PF_INVIS);
-
-					p->xtralife = 0;
-
-					// Reset unlockable triggers
-					unlocktriggers = 0;
-
-					emeralds = 0;
-
-					memset(&luabanks, 0, sizeof(luabanks));
-				}
-				else if (G_GametypeUsesLives() && players[consoleplayer].playerstate == PST_LIVE && players[consoleplayer].lives != INFLIVES)
-					players[consoleplayer].lives -= 1;
-
-				G_DoReborn(consoleplayer);
-			}
+			G_TickerEnd();
 		}
-
-		for (i = 0; i < MAXPLAYERS; i++)
-			if (playeringame[i] && players[i].playerstate == PST_REBORN)
-				G_DoReborn(i);
+		return;
 	}
-	P_MapEnd();
+
+	// Oh my God I hope this doesn't implode anything
+	if (levelstarting || G_GetExitGameFlag())
+		return;
+
+	// Run Marathon Mode in-game timer
+	G_MarathonTicker();
+
+	// do player reborns if needed
+	G_CheckPlayerReborn();
 
 	// do things to change the game state
 	while (gameaction != ga_nothing)
@@ -2360,6 +2818,16 @@ void G_Ticker(boolean run)
 	switch (gamestate)
 	{
 		case GS_LEVEL:
+			if (titlecard.running)
+			{
+				if (run && tics <= 1)
+					TitleCard_Run();
+				if (titlecard.prelevel)
+				{
+					G_CheckPlayerReborn();
+					break;
+				}
+			}
 			if (titledemo)
 				F_TitleDemoTicker();
 			P_Ticker(run); // tic the game
@@ -2446,26 +2914,100 @@ void G_Ticker(boolean run)
 	}
 
 	if (run)
+		G_TickerEnd();
+}
+
+static inline void G_TickerEnd(void)
+{
+	if (pausedelay && pausedelay != INT32_MIN)
 	{
-		if (pausedelay && pausedelay != INT32_MIN)
-		{
-			if (pausedelay > 0)
-				pausedelay--;
-			else
-				pausedelay++;
-		}
-
-		if (camtoggledelay)
-			camtoggledelay--;
-
-		if (camtoggledelay2)
-			camtoggledelay2--;
-
-		if (gametic % NAMECHANGERATE == 0)
-		{
-			memset(player_name_changes, 0, sizeof player_name_changes);
-		}
+		if (pausedelay > 0)
+			pausedelay--;
+		else
+			pausedelay++;
 	}
+
+	if (camtoggledelay)
+		camtoggledelay--;
+
+	if (camtoggledelay2)
+		camtoggledelay2--;
+
+	if (gametic % NAMECHANGERATE == 0)
+	{
+		memset(player_name_changes, 0, sizeof player_name_changes);
+	}
+}
+
+static void G_CheckPlayerReborn(void)
+{
+	UINT32 i;
+
+	P_MapStart();
+
+	if (gamestate == GS_LEVEL)
+	{
+		// Or, alternatively, retry.
+		if (!(netgame || multiplayer) && G_GetRetrySP())
+		{
+			G_ClearRetrySP();
+
+			if (WipeInAction)
+				F_StopWipe();
+
+			if (modeattacking)
+			{
+				pausedelay = INT32_MIN;
+				M_ModeAttackRetry(0);
+			}
+			else
+			{
+				// Costs a life to retry ... unless the player in question is dead already, or you haven't even touched the first starpost in marathon run.
+				if (marathonmode && gamemap == spmarathon_start && !players[consoleplayer].starposttime)
+				{
+					player_t *p = &players[consoleplayer];
+					marathonmode |= MA_INIT;
+					marathontime = 0;
+
+					numgameovers = tokenlist = token = 0;
+					countdown = countdown2 = exitfadestarted = 0;
+
+					p->playerstate = PST_REBORN;
+					p->starpostx = p->starposty = p->starpostz = 0;
+
+					p->lives = startinglivesbalance[0];
+					p->continues = 1;
+
+					p->score = 0;
+
+					// The latter two should clear by themselves, but just in case
+					p->pflags &= ~(PF_TAGIT|PF_GAMETYPEOVER|PF_FULLSTASIS);
+
+					// Clear cheatcodes too, just in case.
+					p->pflags &= ~(PF_GODMODE|PF_NOCLIP|PF_INVIS);
+
+					p->xtralife = 0;
+
+					// Reset unlockable triggers
+					unlocktriggers = 0;
+
+					emeralds = 0;
+
+					memset(&luabanks, 0, sizeof(luabanks));
+				}
+				else if (G_GametypeUsesLives() && players[consoleplayer].playerstate == PST_LIVE && players[consoleplayer].lives != INFLIVES)
+					players[consoleplayer].lives -= 1;
+
+				G_DoReborn(consoleplayer);
+			}
+		}
+
+		for (i = 0; i < MAXPLAYERS; i++)
+			if (playeringame[i] && players[i].playerstate == PST_REBORN)
+				G_DoReborn(i);
+	}
+
+	P_MapEnd();
 }
 
 //
@@ -3169,8 +3711,8 @@ void G_DoReborn(INT32 playernum)
 			}
 
 			// Do a wipe
-			wipegamestate = -1;
-			wipestyleflags = WSF_CROSSFADE;
+			// TODO should be done after rendering
+			F_WipeDoCrossfade();
 
 			if (camera.chase)
 				P_ResetCamera(&players[displayplayer], &camera);
@@ -3186,6 +3728,8 @@ void G_DoReborn(INT32 playernum)
 			}
 			G_SetMouseDeltas(0, 0, 1);
 			G_SetMouseDeltas(0, 0, 2);
+			
+			G_ResetInputs();
 
 			// clear hud messages remains (usually from game startup)
 			CON_ClearHUD();
@@ -3215,8 +3759,7 @@ void G_DoReborn(INT32 playernum)
 		{
 			LUA_HookInt(gamemap, HOOK(MapChange));
 			titlecardforreload = true;
-			G_DoLoadLevel(true);
-			titlecardforreload = false;
+			G_StartLevel(true);
 			if (metalrecording)
 				G_BeginMetal();
 			return;
@@ -3296,6 +3839,7 @@ void G_AddPlayer(INT32 playernum)
 
 	if ((countplayers && !notexiting) || G_IsSpecialStage(gamemap))
 		P_DoPlayerExit(p);
+		
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
 #endif
@@ -3906,8 +4450,15 @@ static void G_HandleSaveLevel(void)
 			if (marathonmode)
 			{
 				// don't keep a backup around when the run is done!
-				if (FIL_FileExists(liveeventbackup))
-					remove(liveeventbackup);
+#ifdef USE_SAVEGAME_PATHS
+				if (FIL_FileExists(liveeventbackup[0]))
+					remove(liveeventbackup[0]);
+				if (FIL_FileExists(liveeventbackup[1]))
+					remove(liveeventbackup[1]);
+#else
+				if (FIL_FileExists(curliveeventbackup))
+					remove(curliveeventbackup);
+#endif
 				cursaveslot = 0;
 			}
 			else if ((!modifiedgame || savemoddata) && !(netgame || multiplayer || ultimatemode || demorecording || metalrecording || modeattacking))
@@ -4259,6 +4810,8 @@ void G_LoadGameSettings(void)
 	S_InitRuntimeSounds();
 }
 
+static boolean gamedatainpath = false;
+
 // G_LoadGameData
 // Loads the main data file, which stores information such as emblems found, etc.
 void G_LoadGameData(void)
@@ -4287,18 +4840,25 @@ void G_LoadGameData(void)
 
 	// Allow saving of gamedata beyond this point
 	gamedataloaded = true;
+	gamedatainpath = false;
 
 	if (M_CheckParm("-gamedata") && M_IsNextParm())
-	{
 		strlcpy(gamedatafilename, M_GetNextParm(), sizeof gamedatafilename);
-	}
 
 	if (M_CheckParm("-resetdata"))
 		return; // Don't load (essentially, reset).
 
 	length = FIL_ReadFile(va(pandf, srb2home, gamedatafilename), &savebuffer);
-	if (!length) // Aw, no game data. Their loss!
-		return;
+	
+	if (!length)
+	{
+#ifdef USE_GAMEDATA_PATHS
+		if (FIL_ReadFile(va(pandf, srb2path, gamedatafilename), &savebuffer))
+			gamedatainpath = true;
+		else
+#endif
+			return;
+	}
 
 	save_p = savebuffer;
 
@@ -4543,6 +5103,11 @@ void G_SaveGameData(void)
 
 	length = save_p - savebuffer;
 
+#ifdef USE_GAMEDATA_PATHS
+	if (gamedatainpath)
+		FIL_WriteFile(va(pandf, srb2path, gamedatafilename), savebuffer, length);
+	else
+#endif
 	FIL_WriteFile(va(pandf, srb2home, gamedatafilename), savebuffer, length);
 	free(savebuffer);
 	save_p = savebuffer = NULL;
@@ -4550,15 +5115,47 @@ void G_SaveGameData(void)
 
 #define VERSIONSIZE 16
 
+static void GetSaveGameName(char *savename, UINT32 slot)
+{
+	if (marathonmode)
+		strlcpy(savename, curliveeventbackup, SAVEGAMENAMELEN);
+	else
+		snprintf(savename, SAVEGAMENAMELEN, cursavegamename, slot);
+}
+
+size_t G_ReadSaveGameSlot(char *savename, UINT8 **buffer, UINT32 slot)
+{
+	size_t length = 0;
+
+	cursavegamename = savegamename[0];
+	curliveeventbackup = liveeventbackup[0];
+
+	GetSaveGameName(savename, slot);
+	length = FIL_ReadFile(savename, buffer);
+
+#ifdef USE_SAVEGAME_PATHS
+	if (!length)
+	{
+		cursavegamename = savegamename[1];
+		curliveeventbackup = liveeventbackup[1];
+
+		GetSaveGameName(savename, slot);
+		length = FIL_ReadFile(savename, buffer);
+	}
+#endif
+
+	return length;
+}
+
 //
-// G_InitFromSavegame
-// Can be called by the startup code or the menu task.
+// G_LoadGame
+// Can be called by the menu task.
 //
 void G_LoadGame(UINT32 slot, INT16 mapoverride)
 {
 	size_t length;
 	char vcheck[VERSIONSIZE];
-	char savename[255];
+	char savename[SAVEGAMENAMELEN];
 
 	// memset savedata to all 0, fixes calling perfectly valid saves corrupt because of bots
 	memset(&savedata, 0, sizeof(savedata));
@@ -4567,14 +5164,15 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 	//Oh christ.  The force load response needs access to mapoverride too...
 	startonmapnum = mapoverride;
 #endif
-
+		
 	if (marathonmode)
 		strcpy(savename, liveeventbackup);
 	else
 		sprintf(savename, savegamename, slot);
 
 	length = FIL_ReadFile(savename, &savebuffer);
-	if (!length)
+
+	if (!length || !G_ReadSaveGameSlot(savename, &savebuffer, slot))
 	{
 		CONS_Printf(M_GetText("Couldn't read file %s\n"), savename);
 		return;
@@ -4592,7 +5190,7 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 		//Freeing done by the callback function of the above message
 #else
 		M_ClearMenus(true); // so ESC backs out to title
-		M_StartMessage(M_GetText("Save game from different version\n\nPress ESC\n"), NULL, MM_NOTHING);
+		M_ShowESCMessage("Save game from different version\n\n");
 		Command_ExitGame_f();
 		Z_Free(savebuffer);
 		save_p = savebuffer = NULL;
@@ -4614,7 +5212,7 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 	if (!P_LoadGame(mapoverride))
 	{
 		M_ClearMenus(true); // so ESC backs out to title
-		M_StartMessage(M_GetText("Savegame file corrupted\n\nPress ESC\n"), NULL, MM_NOTHING);
+		M_ShowESCMessage("Savegame file corrupted\n\n");
 		Command_ExitGame_f();
 		Z_Free(savebuffer);
 		save_p = savebuffer = NULL;
@@ -4653,13 +5251,13 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 void G_SaveGame(UINT32 slot, INT16 mapnum)
 {
 	boolean saved;
-	char savename[256] = "";
+	char savename[SAVEGAMENAMELEN];
 	const char *backup;
 
 	if (marathonmode)
-		strcpy(savename, liveeventbackup);
+		strlcpy(savename, curliveeventbackup, SAVEGAMENAMELEN);
 	else
-		sprintf(savename, savegamename, slot);
+		snprintf(savename, SAVEGAMENAMELEN, cursavegamename, slot);
 	backup = va("%s",savename);
 
 	gameaction = ga_nothing;
@@ -4699,7 +5297,7 @@ void G_SaveGame(UINT32 slot, INT16 mapnum)
 	if (cv_debug && saved)
 		CONS_Printf(M_GetText("Game saved.\n"));
 	else if (!saved)
-		CONS_Alert(CONS_ERROR, M_GetText("Error while writing to %s for save slot %u, base: %s\n"), backup, slot, (marathonmode ? liveeventbackup : savegamename));
+		CONS_Alert(CONS_ERROR, M_GetText("Error while writing to %s for save slot %u, base: %s\n"), backup, slot, (marathonmode ? curliveeventbackup : cursavegamename));
 }
 
 #define BADSAVE goto cleanup;
@@ -4709,13 +5307,13 @@ void G_SaveGameOver(UINT32 slot, boolean modifylives)
 	boolean saved = false;
 	size_t length;
 	char vcheck[VERSIONSIZE];
-	char savename[255];
+	char savename[SAVEGAMENAMELEN];
 	const char *backup;
 
 	if (marathonmode)
-		strcpy(savename, liveeventbackup);
+		strlcpy(savename, curliveeventbackup, SAVEGAMENAMELEN);
 	else
-		sprintf(savename, savegamename, slot);
+		snprintf(savename, SAVEGAMENAMELEN, cursavegamename, slot);
 	backup = va("%s",savename);
 
 	length = FIL_ReadFile(savename, &savebuffer);
@@ -4818,13 +5416,26 @@ cleanup:
 	if (cv_debug && saved)
 		CONS_Printf(M_GetText("Game saved.\n"));
 	else if (!saved)
-		CONS_Alert(CONS_ERROR, M_GetText("Error while writing to %s for save slot %u, base: %s\n"), backup, slot, (marathonmode ? liveeventbackup : savegamename));
+		CONS_Alert(CONS_ERROR, M_GetText("Error while writing to %s for save slot %u, base: %s\n"), backup, slot, (marathonmode ? curliveeventbackup : cursavegamename));
 	Z_Free(savebuffer);
 	save_p = savebuffer = NULL;
 
 }
 #undef CHECKPOS
 #undef BADSAVE
+
+char *G_LiveEventHasBackup(void)
+{
+	if (FIL_FileExists(liveeventbackup[0]))
+		return liveeventbackup[0];
+
+#ifdef USE_SAVEGAME_PATHS
+	if (FIL_FileExists(liveeventbackup[1]))
+		return liveeventbackup[1];
+#endif
+
+	return NULL;
+}
 
 //
 // G_DeferedInitNew
@@ -4955,24 +5566,12 @@ void G_InitNew(UINT8 pultmode, const char *mapname, boolean resetplayer, boolean
 	ultimatemode = pultmode;
 	automapactive = false;
 	imcontinuing = false;
+	titlemapinaction = TITLEMAP_OFF;
 
 	if ((gametyperules & GTR_CUTSCENES) && !skipprecutscene && mapheaderinfo[gamemap-1]->precutscenenum && !modeattacking && !(marathonmode & MA_NOCUTSCENES)) // Start a custom cutscene.
 		F_StartCustomCutscene(mapheaderinfo[gamemap-1]->precutscenenum-1, true, resetplayer);
 	else
-		G_DoLoadLevel(resetplayer);
-
-	if (netgame)
-	{
-		char *title = G_BuildMapTitle(gamemap);
-
-		CONS_Printf(M_GetText("Map is now \"%s"), G_BuildMapName(gamemap));
-		if (title)
-		{
-			CONS_Printf(": %s", title);
-			Z_Free(title);
-		}
-		CONS_Printf("\"\n");
-	}
+		G_StartLevel(resetplayer);
 }
 
 
@@ -5283,37 +5882,85 @@ boolean G_GetExitGameFlag(void)
 	return exitgame;
 }
 
-// Same deal with retrying.
-void G_SetRetryFlag(void)
-{
-	retrying = true;
+//
+// Retrying flags
+//
+
+#define CheckRetryFlag(type) \
+{ \
+	if (type < 0 || type >= RETRY_MAX) \
+		I_Error("G_SetRetryFlag: out of bounds retry flag type (%d)", type); \
 }
 
-void G_ClearRetryFlag(void)
+void G_SetRetryFlag(INT32 type)
 {
-	retrying = false;
+	CheckRetryFlag(type);
+	retrying[type] = true;
 }
 
-boolean G_GetRetryFlag(void)
+void G_ClearRetryFlag(INT32 type)
 {
-	return retrying;
+	CheckRetryFlag(type);
+	retrying[type] = false;
 }
 
-void G_SetModeAttackRetryFlag(void)
+boolean G_GetRetryFlag(INT32 type)
 {
-	retryingmodeattack = true;
-	G_SetRetryFlag();
+	CheckRetryFlag(type);
+	return retrying[type];
 }
 
-void G_ClearModeAttackRetryFlag(void)
+void G_SetModeAttackRetryFlag(INT32 type)
 {
-	retryingmodeattack = false;
+	retrying[type] = true;
+	G_SetRetryFlag(type);
 }
 
-boolean G_GetModeAttackRetryFlag(void)
+void G_ClearAllRetryFlags(void)
 {
-	return retryingmodeattack;
+	INT32 i = RETRY_MAX;
+	while (--i >= 0)
+		G_ClearRetryFlag(i);
 }
+
+// Sets RETRY_CUR, may set RETRY_PAUSED.
+void G_SetRetrySP(void)
+{
+	G_SetRetryFlag(RETRY_SP);
+	G_SetRetryFlag(RETRY_CUR);
+
+	if (paused)
+		G_SetRetryFlag(RETRY_PAUSED);
+}
+
+void G_ClearRetrySP(void)
+{
+	G_ClearRetryFlag(RETRY_SP);
+}
+
+boolean G_GetRetrySP(void)
+{
+	return G_GetRetryFlag(RETRY_SP);
+}
+
+// Sets RETRY_RA and calls G_SetRetryFlag.
+void G_SetRetryRA(void)
+{
+	G_SetRetryFlag(RETRY_RA);
+	G_SetRetrySP();
+}
+
+void G_ClearRetryRA(void)
+{
+	G_ClearRetryFlag(RETRY_RA);
+}
+
+boolean G_GetRetryRA(void)
+{
+	return G_GetRetryFlag(RETRY_RA);
+}
+
+#undef CheckRetryFlag
 
 // Time utility functions
 INT32 G_TicsToHours(tic_t tics)

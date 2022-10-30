@@ -24,7 +24,7 @@
 timestate_t g_time;
 
 static CV_PossibleValue_t timescale_cons_t[] = {{FRACUNIT/20, "MIN"}, {20*FRACUNIT, "MAX"}, {0, NULL}};
-consvar_t cv_timescale = {"timescale", "1.0", CV_NETVAR|CV_CHEAT|CV_FLOAT, timescale_cons_t, NULL, FRACUNIT, NULL, NULL, 0, 0, NULL};
+consvar_t cv_timescale = CVAR_INIT ("timescale", "1.0", CV_NETVAR|CV_CHEAT|CV_FLOAT, timescale_cons_t, NULL);
 
 static precise_t enterprecise, oldenterprecise;
 static fixed_t entertic, oldentertics;
@@ -67,6 +67,7 @@ void I_UpdateTime(fixed_t timescale)
 	ticratescaled = (double)TICRATE * FIXED_TO_FLOAT(timescale);
 
 	enterprecise = I_GetPreciseTime();
+	//elapsedseconds = (double)(enterprecise - oldenterprecise) / I_GetPreciseTime();
 	elapsedseconds = (double)(enterprecise - oldenterprecise) / I_GetPrecisePrecision();
 	tictimer += elapsedseconds;
 	while (tictimer > 1.0/ticratescaled)
@@ -89,6 +90,7 @@ void I_UpdateTime(fixed_t timescale)
 
 void I_SleepDuration(precise_t duration)
 {
+	//UINT64 precision = I_GetPreciseTime();
 	UINT64 precision = I_GetPrecisePrecision();
 	INT32 sleepvalue = cv_sleep.value;
 	UINT64 delaygranularity;
