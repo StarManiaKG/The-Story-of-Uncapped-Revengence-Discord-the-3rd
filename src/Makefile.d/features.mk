@@ -5,7 +5,6 @@
 passthru_opts+=\
 	NONET NO_IPV6 NOHW NOMD5 NOPOSTPROCESSING\
 	MOBJCONSISTANCY PACKETDROP ZDEBUG\
-	TOUCHINPUTS NATIVESCREENRES\
 	HAVE_MINIUPNPC\
 
 # build with debugging information
@@ -17,7 +16,6 @@ endif
 ifndef NOHW
 opts+=-DHWRENDER
 sources+=$(call List,hardware/Sourcefile)
-sources+=hardware/r_opengl/r_opengl.c
 endif
 
 ifndef NOASM
@@ -41,7 +39,7 @@ $(eval $(call Configure,PNG,$(PNG_CONFIG) \
 	$(if $(PNG_STATIC),--static),,--ldflags))
 endif
 ifdef LINUX
-opts+=-D_LARGEFILE64_SOURCE
+opts+=-D_LARGFILE64_SOURCE
 endif
 opts+=-DHAVE_PNG
 sources+=apng.c

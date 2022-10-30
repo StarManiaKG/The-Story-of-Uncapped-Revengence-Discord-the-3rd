@@ -18,7 +18,6 @@
 #include "doomtype.h"
 #include "d_event.h"
 #include "p_mobj.h"
-#include "screen.h"
 
 //
 // FINALE
@@ -63,7 +62,6 @@ void F_TextPromptDrawer(void);
 void F_EndTextPrompt(boolean forceexec, boolean noexec);
 boolean F_GetPromptHideHudAll(void);
 boolean F_GetPromptHideHud(fixed_t y);
-fixed_t F_GetPromptHideHudBound(void);
 
 void F_StartGameEnd(void);
 void F_StartIntro(void);
@@ -79,23 +77,6 @@ void F_ContinueDrawer(void);
 extern INT32 finalecount;
 extern INT32 titlescrollxspeed;
 extern INT32 titlescrollyspeed;
-
-extern INT32 intro_scenenum;
-
-enum
-{
-	INTRO_STJR      = 0,
-
-	INTRO_FIRST     = 1,
-	INTRO_ASTEROID  = 4,
-	INTRO_RADAR     = 5,
-	INTRO_GRASS1    = 6,
-	INTRO_GRASS2    = 7,
-	INTRO_SKYRUNNER = 10,
-	INTRO_SONICDO1  = 14,
-	INTRO_SONICDO2  = 15,
-	INTRO_LAST      = 16
-};
 
 typedef enum
 {
@@ -118,6 +99,7 @@ extern INT16 ttloop;
 extern UINT16 tttics;
 extern boolean ttavailable[6];
 
+
 typedef enum
 {
 	TITLEMAP_OFF = 0,
@@ -126,6 +108,7 @@ typedef enum
 } titlemap_enum;
 
 // Current menu parameters
+
 extern mobj_t *titlemapcameraref;
 extern char curbgname[9];
 extern SINT8 curfadevalue;
@@ -138,7 +121,6 @@ extern boolean hidetitlemap;
 extern boolean curhidepics;
 extern ttmode_enum curttmode;
 extern UINT8 curttscale;
-
 // ttmode user vars
 extern char curttname[9];
 extern INT16 curttx;
@@ -152,28 +134,17 @@ void F_InitMenuPresValues(void);
 void F_MenuPresTicker(boolean run);
 
 //
-// WIPES
+// WIPE
 //
-
-#if NUMSCREENS < 5
-#define NOWIPE // do not enable wipe image post processing for ARM, SH and MIPS CPUs
-#endif
-
-#define DEFAULTWIPE -1
-#define IGNOREWIPE INT16_MAX
-
 // HACK for menu fading while titlemapinaction; skips the level check
 #define FORCEWIPE -3
 #define FORCEWIPEOFF -2
 
 extern boolean WipeInAction;
-extern boolean WipeRunPre;
-extern boolean WipeRunPost;
-extern boolean WipeDrawMenu;
+extern boolean WipeStageTitle;
 
 typedef enum
 {
-	WIPESTYLE_UNDEFINED,
 	WIPESTYLE_NORMAL,
 	WIPESTYLE_COLORMAP
 } wipestyle_t;
@@ -181,47 +152,19 @@ extern wipestyle_t wipestyle;
 
 typedef enum
 {
-	WSF_FADEOUT      = 1,
-	WSF_FADEIN       = 1<<1,
-	WSF_TOWHITE      = 1<<2,
-	WSF_CROSSFADE    = 1<<3,
-	WSF_LEVELLOADING = 1<<4,
-	WSF_SPECIALSTAGE = 1<<5,
-	WSF_INTROSTART   = 1<<6,
-	WSF_INTROEND     = 1<<7,
-
-	WSF_ACTION       = (WSF_LEVELLOADING|WSF_SPECIALSTAGE|WSF_INTROSTART|WSF_INTROEND)
+	WSF_FADEOUT   = 1,
+	WSF_FADEIN    = 1<<1,
+	WSF_TOWHITE   = 1<<2,
+	WSF_CROSSFADE = 1<<3,
 } wipestyleflags_t;
 extern wipestyleflags_t wipestyleflags;
 
-typedef enum
-{
-	SPECIALWIPE_NONE,
-	SPECIALWIPE_SSTAGE,
-	SPECIALWIPE_RETRY,
-} specialwipe_t;
-extern specialwipe_t ranspecialwipe;
-
-extern UINT8 wipetype;
-extern UINT8 wipeframe;
-
-void F_WipeSetStyle(void);
-void F_WipeStartScreen(void);
-void F_WipeEndScreen(void);
-void F_WipeEndScreenRestore(void);
-
-void F_StartWipe(UINT8 type, boolean drawMenu);
-void F_RunWipe(void);
-void F_DisplayWipe(void);
-void F_StopWipe(void);
-
-void F_WipeStartPre(void);
-void F_WipeStartPost(void);
-
-void F_WipeDoCrossfade(void);
-boolean F_WipeDoTinted(void);
-
-#define F_WipeColorFill(c) V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, c)
+// Even my function names are borderline
+boolean F_ShouldColormapFade(void);
+boolean F_TryColormapFade(UINT8 wipecolor);
+#ifndef NOWIPE
+void F_DecideWipeStyle(void);
+#endif
 
 #define FADECOLORMAPDIV 8
 #define FADECOLORMAPROWS (256/FADECOLORMAPDIV)
@@ -230,9 +173,19 @@ boolean F_WipeDoTinted(void);
 #define FADEGREENFACTOR 15
 #define FADEBLUEFACTOR  10
 
-tic_t F_GetWipeLength(UINT8 type);
-boolean F_WipeExists(UINT8 type);
-boolean F_WipeCanTint(void);
+extern INT32 lastwipetic;
+
+// Don't know where else to place this constant
+// But this file seems appropriate
+#define PRELEVELTIME 24 // frames in tics
+
+void F_WipeStartScreen(void);
+void F_WipeEndScreen(void);
+void F_RunWipe(UINT8 wipetype, boolean drawMenu);
+void F_WipeStageTitle(void);
+#define F_WipeColorFill(c) V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, c)
+tic_t F_GetWipeLength(UINT8 wipetype);
+boolean F_WipeExists(UINT8 wipetype);
 
 enum
 {

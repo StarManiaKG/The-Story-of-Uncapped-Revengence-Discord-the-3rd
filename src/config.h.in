@@ -18,9 +18,6 @@
 #define ASSET_HASH_PATCH_PK3  "${SRB2_ASSET_patch.pk3_HASH}"
 #endif
 #define ASSET_HASH_STAR_PK3   "${SRB2_ASSET_starmaniakg.pk3_HASH}"
-#ifdef USE_ANDROID_PK3
-#define ASSET_HASH_ANDROID_PK3 "${SRB2_ASSET_android.pk3_HASH}"
-#endif
 
 #define SRB2_COMP_REVISION    "${SRB2_COMP_REVISION}"
 #define SRB2_COMP_BRANCH      "${SRB2_COMP_BRANCH}"
@@ -48,9 +45,6 @@
 #define ASSET_HASH_PATCH_PK3  "7d467a883f7887b3c311798ee2f56b6a"
 #endif
 #define ASSET_HASH_STAR_PK3 "e6c523023c38883a9c57d4dfa557bef0"
-#ifdef USE_ANDROID_PK3
-#define ASSET_HASH_ANDROID_PK3 "8bed6baf19c3f039ff6258397e813048"
-#endif
 
 #endif
 #endif

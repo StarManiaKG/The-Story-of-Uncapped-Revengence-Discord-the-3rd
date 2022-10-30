@@ -38,9 +38,7 @@ extern size_t validcount, linecount, loopcount, framecount;
 // The fraction of a tic being drawn (for interpolation between two tics)
 extern fixed_t rendertimefrac;
 // Evaluated delta tics for this frame (how many tics since the last frame)
-extern fixed_t renderdeltatics;
-// The current render is a new logical tic
-extern boolean renderisnewtic;
+extern fixed_t renderdeltatics;;
 
 //
 // Lighting LUT.
@@ -126,8 +124,6 @@ void R_Init(void);
 
 void R_CheckViewMorph(void);
 void R_ApplyViewMorph(void);
-
-angle_t R_GetLocalViewRollAngle(player_t *player);
 
 // just sets setsizeneeded true
 extern boolean setsizeneeded;

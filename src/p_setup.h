@@ -93,29 +93,21 @@ INT32 P_CheckLevelFlat(const char *flatname);
 extern size_t nummapthings;
 extern mapthing_t *mapthings;
 
+void P_SetupLevelSky(INT32 skynum, boolean global);
 #ifdef SCANTHINGS
 void P_ScanThings(INT16 mapnum, INT16 wadnum, INT16 lumpnum);
 #endif
 void P_RespawnThings(void);
-
 boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate);
-void P_SetupLevelSky(INT32 skynum, boolean global);
-
 #ifdef HWRENDER
 void HWR_LoadLevel(void);
 #endif
-
-void P_RunLevelWipe(void);
-void P_RunSpecialStageWipe(void);
-
-void P_RunLevelScript(const char *scriptname);
-
 boolean P_AddWadFile(const char *wadfilename);
 boolean P_AddFolder(const char *folderpath);
 boolean P_RunSOC(const char *socfilename);
 void P_LoadSoundsRange(UINT16 wadnum, UINT16 first, UINT16 num);
 void P_LoadMusicsRange(UINT16 wadnum, UINT16 first, UINT16 num);
-//void P_WriteThings(void);
+void P_WriteThings(void);
 size_t P_PrecacheLevelFlats(void);
 void P_AllocMapHeader(INT16 i);
 
@@ -130,6 +122,5 @@ void P_AddGradesForMare(INT16 i, UINT8 mare, char *gtext);
 UINT8 P_GetGrade(UINT32 pscore, INT16 map, UINT8 mare);
 UINT8 P_HasGrades(INT16 map, UINT8 mare);
 UINT32 P_GetScoreForGrade(INT16 map, UINT8 mare, UINT8 grade);
-UINT32 P_GetScoreForGradeOverall(INT16 map, UINT8 grade);
 
 #endif

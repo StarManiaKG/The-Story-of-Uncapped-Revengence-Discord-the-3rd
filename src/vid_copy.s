@@ -26,9 +26,10 @@
 //         width is given as BYTES
 
 #ifdef __i386__
+
 .globl C(VID_BlitLinearScreen_ASM)
 C(VID_BlitLinearScreen_ASM):
-    pushl   %ebp               // preserve caller's stack frame
+    pushl   %ebp                // preserve caller's stack frame
     pushl   %edi
     pushl   %esi                // preserve register variables
     pushl   %ebx

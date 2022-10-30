@@ -78,7 +78,6 @@ mobj_t *r_viewmobj;
 
 fixed_t rendertimefrac;
 fixed_t renderdeltatics;
-boolean renderisnewtic;
 
 //
 // precalculated math tables
@@ -160,7 +159,7 @@ consvar_t cv_skybox = CVAR_INIT ("skybox", "On", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_ffloorclip = CVAR_INIT ("ffloorclip", "On", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_allowmlook = CVAR_INIT ("allowmlook", "Yes", CV_NETVAR, CV_YesNo, NULL);
 consvar_t cv_showhud = CVAR_INIT ("showhud", "Yes", CV_CALL,  CV_YesNo, R_SetViewSize);
-consvar_t cv_translucenthud = CVAR_INIT ("translucenthud", "10", CV_SAVE|CV_SLIDER_SAFE, translucenthud_cons_t, NULL);
+consvar_t cv_translucenthud = CVAR_INIT ("translucenthud", "10", CV_SAVE, translucenthud_cons_t, NULL);
 
 consvar_t cv_translucency = CVAR_INIT ("translucency", "On", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_drawdist = CVAR_INIT ("drawdist", "Infinite", CV_SAVE, drawdist_cons_t, NULL);
@@ -450,7 +449,7 @@ fixed_t R_ScaleFromGlobalAngle(angle_t visangle)
 // R_DoCulling
 // Checks viewz and top/bottom heights of an item against culling planes
 // Returns true if the item is to be culled, i.e it shouldn't be drawn!
-// if args[1] is set, the camera view is required to be in the same area for culling to occur
+// if ML_NOCLIMB is set, the camera view is required to be in the same area for culling to occur
 boolean R_DoCulling(line_t *cullheight, line_t *viewcullheight, fixed_t vz, fixed_t bottomh, fixed_t toph)
 {
 	fixed_t cullplane;
@@ -459,7 +458,7 @@ boolean R_DoCulling(line_t *cullheight, line_t *viewcullheight, fixed_t vz, fixe
 		return false;
 
 	cullplane = cullheight->frontsector->floorheight;
-	if (cullheight->args[1]) // Group culling
+	if (cullheight->flags & ML_NOCLIMB) // Group culling
 	{
 		if (!viewcullheight)
 			return false;
@@ -625,21 +624,6 @@ static struct {
 	false
 };
 
-angle_t R_GetLocalViewRollAngle(player_t *player)
-{
-	angle_t ang = player->viewrollangle;
-
-#if defined(ACCELEROMETER) && defined(ACCELEROMETER_TILT_VIEW)
-	if (cv_useaccelerometer.value && gamestate == GS_LEVEL && player == &players[consoleplayer] && !splitscreen)
-	{
-		fixed_t accelangle = FixedDiv(acceltilt * FRACUNIT, 4096<<FRACBITS);
-		ang += FixedAngle(FixedMul(accelangle, 90<<FRACBITS));
-	}
-#endif
-
-	return ang;
-}
-
 void R_CheckViewMorph(void)
 {
 	float zoomfactor, rollcos, rollsin;
@@ -651,7 +635,7 @@ void R_CheckViewMorph(void)
 	float fisheyemap[MAXVIDWIDTH/2 + 1];
 #endif
 
-	angle_t rollangle = R_GetLocalViewRollAngle(&players[displayplayer]);
+	angle_t rollangle = players[displayplayer].viewrollangle;
 #ifdef WOUGHMP_WOUGHMP
 	fixed_t fisheye = cv_cam2_turnmultiplier.value; // temporary test value
 #endif
@@ -956,15 +940,6 @@ void R_ExecuteSetViewSize(void)
 	if (splitscreen == 1) // Splitscreen FOV should be adjusted to maintain expected vertical view
 		fovtan = 17*fovtan/10;
 
-#ifdef NATIVESCREENRES
-	if (cv_nativeres.value && cv_nativeresfov.value)
-	{
-		fixed_t resmul = FixedDiv(vid.width * FRACUNIT, vid.height * FRACUNIT);
-		if (resmul > FRACUNIT)
-			fovtan = FixedMul(fovtan, (7*resmul/10));
-	}
-#endif
-
 	projection = projectiony = FixedDiv(centerxfrac, fovtan);
 
 	R_InitViewBuffer(scaledviewwidth, viewheight);
@@ -1113,43 +1088,6 @@ subsector_t *R_PointInSubsectorOrNull(fixed_t x, fixed_t y)
 //
 // R_SetupFrame
 //
-
-// recalc necessary stuff for mouseaiming
-// slopes are already calculated for the full possible view (which is 4*viewheight).
-// 18/08/18: (No it's actually 16*viewheight, thanks Jimita for finding this out)
-/*
-static void R_SetupFreelook(player_t *player, boolean skybox)
-{
-#ifndef HWRENDER
-	(void)player;
-	(void)skybox;
-#endif
-
-	// clip it in the case we are looking a hardware 90 degrees full aiming
-	// (lmps, network and use F12...)
-	if (rendermode == render_soft
-#ifdef HWRENDER
-		|| (rendermode == render_opengl
-			&& (cv_glshearing.value == 1
-			|| (cv_glshearing.value == 2 && R_IsViewpointThirdPerson(player, skybox))))
-#endif
-		)
-	{
-		G_SoftwareClipAimingPitch((INT32 *)&aimingangle);
-	}
-
-	centeryfrac = (viewheight/2)<<FRACBITS;
-
-	if (rendermode == render_soft)
-		centeryfrac += FixedMul(AIMINGTODY(aimingangle), FixedDiv(viewwidth<<FRACBITS, BASEVIDWIDTH<<FRACBITS));
-
-	centery = FixedInt(FixedRound(centeryfrac));
-
-	if (rendermode == render_soft)
-		yslope = &yslopetab[viewheight*8 - centery];
-}
-*/
-
 void R_SetupFrame(player_t *player)
 {
 	camera_t *thiscam;
@@ -1407,31 +1345,12 @@ void R_SkyboxFrame(player_t *player)
 
 boolean R_ViewpointHasChasecam(player_t *player)
 {
-	camera_t *thiscam;
 	boolean chasecam = false;
 
 	if (splitscreen && player == &players[secondarydisplayplayer] && player != &players[consoleplayer])
-	{
-		thiscam = &camera2;
 		chasecam = (cv_chasecam2.value != 0);
-		R_SetViewContext(VIEWCONTEXT_PLAYER2);
-		if (thiscam->reset)
-		{
-			R_ResetViewInterpolation(2);
-			thiscam->reset = false;
-		}
-	}
 	else
-	{
-		thiscam = &camera;
 		chasecam = (cv_chasecam.value != 0);
-		R_SetViewContext(VIEWCONTEXT_PLAYER1);
-		if (thiscam->reset)
-		{
-			R_ResetViewInterpolation(1);
-			thiscam->reset = false;
-		}
-	}
 
 	if (player->climbing || (player->powers[pw_carry] == CR_NIGHTSMODE) || player->playerstate == PST_DEAD || gamestate == GS_TITLESCREEN || tutorialmode)
 		chasecam = true; // force chasecam on
@@ -1550,6 +1469,7 @@ void R_RenderPlayerView(player_t *player)
 	NetUpdate();
 
 	// The head node is the last node output.
+
 	Mask_Pre(&masks[nummasks - 1]);
 	curdrawsegs = ds_p;
 //profile stuff ---------------------------------------------------------
@@ -1574,6 +1494,7 @@ void R_RenderPlayerView(player_t *player)
 	PS_START_TIMING(ps_sw_spritecliptime);
 	R_ClipSprites(drawsegs, NULL);
 	PS_STOP_TIMING(ps_sw_spritecliptime);
+
 
 	// Add skybox portals caused by sky visplanes.
 	if (cv_skybox.value && skyboxmo[0])
@@ -1652,15 +1573,10 @@ void R_RegisterEngineStuff(void)
 	if (dedicated)
 		return;
 
-#ifdef MOBILE_PLATFORM // Override CVARs
-	// Change the default draw distance
-	cv_drawdist.defaultvalue = "4096";
-#endif	
-	
+	CV_RegisterVar(&cv_translucency);
 	CV_RegisterVar(&cv_drawdist);
 	CV_RegisterVar(&cv_drawdist_nights);
 	CV_RegisterVar(&cv_drawdist_precip);
-	CV_RegisterVar(&cv_translucency);
 	CV_RegisterVar(&cv_fov);
 
 	CV_RegisterVar(&cv_chasecam);

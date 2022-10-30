@@ -41,9 +41,9 @@ INT32 VID_SetMode(INT32 modenum)
 	return 0;
 }
 
-boolean VID_CheckRenderer(void) //INT32 VID_CheckRenderer(void)
+boolean VID_CheckRenderer(void)
 {
-	return false; //0
+	return false;
 }
 
 void VID_CheckGLLoaded(rendermode_t oldrender)
@@ -61,8 +61,6 @@ void I_UpdateNoBlit(void){}
 
 void I_FinishUpdate(void){}
 
-void I_OnLoopFinishUpdate(void){}
-
 void I_UpdateNoVsync(void) {}
 
 void I_WaitVBL(INT32 count)
@@ -78,9 +76,4 @@ void I_ReadScreen(UINT8 *scr)
 void I_BeginRead(void){}
 
 void I_EndRead(void){}
-
-void I_ReportProgress(int progress)
-{
-	(void)progress;
-}
 
