@@ -32,7 +32,6 @@
 #include "r_picformats.h"
 #include "r_things.h" // R_Char2Frame
 #include "r_sky.h"
-#include "s_sound.h"
 #include "fastcmp.h"
 #include "lua_script.h" // Reluctantly included for LUA_EvalMath
 #include "d_clisrv.h"
@@ -3834,7 +3833,6 @@ void readmaincfg(MYFILE *f)
 			else if (fastcmp(word, "GAMEDATA"))
 			{
 				size_t filenamelen;
-				char savegame[SAVEGAMENAMELEN];
 
 				// Check the data filename so that mods
 				// can't write arbitrary files.
@@ -3851,10 +3849,6 @@ void readmaincfg(MYFILE *f)
 				strncpy(timeattackfolder, gamedatafilename, min(filenamelen, sizeof (timeattackfolder)));
 				timeattackfolder[min(filenamelen, sizeof (timeattackfolder) - 1)] = '\0';
 
-				/*
-				strcpy(savegamename, va(timeattackfolder, sizeof(savegame)));
-				strlcat(savegamename, "%u.ssg", sizeof(savegame)); //strlcat(savegame, "%u.ssg", sizeof(savegame));
-				*/
 				strcpy(savegamename, timeattackfolder);
 				strlcat(savegamename, "%u.ssg", sizeof(savegamename));
 				// can't use sprintf since there is %u in savegamename
@@ -3862,11 +3856,6 @@ void readmaincfg(MYFILE *f)
 
 				strcpy(liveeventbackup, va("live%s.bkp", timeattackfolder));
 				strcatbf(liveeventbackup, srb2home, PATHSEP);
-				D_DefaultSaveGameName(savegame);
-				
-				D_DefaultLiveEventName(va("live%s.bkp", timeattackfolder)); // intentionally not ending with .ssg
-
-				D_MakeSaveGamePaths(srb2home);
 
 				gamedataadded = true;
 				titlechanged = true;
