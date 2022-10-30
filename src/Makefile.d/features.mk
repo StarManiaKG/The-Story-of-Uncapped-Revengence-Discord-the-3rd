@@ -68,10 +68,10 @@ endif
 
 ifdef HAVE_DISCORDGAMESDK
 libs+=-ldiscord_game_sdk
-CFLAGS+=-DHAVE_DISCORDGAMESDK -DUSE_STUN
-opts+=-DHAVE_DISCORDGAMESDK -DUSE_STUN
-OBJS+=$(OBJDIR)/discord_2.o $(OBJDIR)/stun.o
-sources+=discord_2.cpp stun.c
+CFLAGS+=-DHAVE_DISCORDGAMESDK
+opts+=-DHAVE_DISCORDGAMESDK
+OBJS+=$(OBJDIR)/discord_2.o
+sources+=discord_2.cpp
 endif
 
 # (Valgrind is a memory debugger.)
