@@ -762,7 +762,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 //				return;
 			{
 				UINT8 flagteam = (special->type == MT_REDFLAG) ? 1 : 2;
-				sectorspecialflags_t specialflag = (special->type == MT_REDFLAG) ? SSF_REDTEAMBASE : SSF_BLUETEAMBASE;
 				const char *flagtext;
 				char flagcolor;
 				char plname[MAXPLAYERNAME+4];
@@ -792,7 +791,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 						special->fuse = 1;
 						special->flags2 |= MF2_JUSTATTACKED;
 
-						if (!P_PlayerTouchingSectorSpecialFlag(player, specialflag))
+						if (!P_PlayerTouchingSectorSpecial(player, 4, 2 + flagteam))
 						{
 							CONS_Printf(M_GetText("%s returned the %c%s%c to base.\n"), plname, flagcolor, flagtext, 0x80);
 
@@ -1381,14 +1380,19 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			return;
 		case MT_AXE:
 			{
+				line_t junk;
 				thinker_t  *th;
 				mobj_t *mo2;
 
 				if (player->bot && player->bot != BOT_MPAI)
 					return;
 
-				if (special->spawnpoint)
-					EV_DoElevator(special->spawnpoint->args[0], NULL, bridgeFall);
+				// Initialize my junk
+				junk.tags.tags = NULL;
+				junk.tags.count = 0;
+
+				Tag_FSet(&junk.tags, LE_AXE);
+				EV_DoElevator(&junk, bridgeFall, false);
 
 				// scan the remaining thinkers to find koopa
 				for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
@@ -1437,7 +1441,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 // Misc touchables //
 // *************** //
 		case MT_STARPOST:
-			P_TouchStarPost(special, player, special->spawnpoint && special->spawnpoint->args[1]);
+			P_TouchStarPost(special, player, special->spawnpoint && (special->spawnpoint->options & MTF_OBJECTSPECIAL));
 			return;
 
 		case MT_FAKEMOBILE:
@@ -2771,7 +2775,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 		case MT_BLASTEXECUTOR:
 			if (target->spawnpoint)
-				P_LinedefExecute(target->spawnpoint->args[0], (source ? source : inflictor), target->subsector->sector);
+				P_LinedefExecute(target->spawnpoint->angle, (source ? source : inflictor), target->subsector->sector);
 			break;
 
 		case MT_SPINBOBERT:
