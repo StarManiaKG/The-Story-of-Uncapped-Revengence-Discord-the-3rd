@@ -22,11 +22,15 @@ typedef enum
 {
 	ev_keydown,
 	ev_keyup,
+	ev_touchmotion,
+	ev_touchdown,
+	ev_touchup,
 	ev_console,
 	ev_mouse,
 	ev_joystick,
 	ev_mouse2,
 	ev_joystick2,
+	ev_accelerometer,
 } evtype_t;
 
 // Event structure.
@@ -38,6 +42,18 @@ typedef struct
 	INT32 y; // mouse/joystick y move
 	boolean repeated; // key repeat
 } event_t;
+
+// Touch event structure (event processing doesn't need to know about it.)
+#ifdef TOUCHINPUTS
+typedef struct
+{
+	INT32 x, y;
+	INT32 dx, dy;
+	float fx, fy;
+	float fdx, fdy;
+	float pressure;
+} touchevent_t;
+#endif
 
 //
 // GLOBAL VARIABLES

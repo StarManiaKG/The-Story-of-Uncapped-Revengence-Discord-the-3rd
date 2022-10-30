@@ -18,6 +18,7 @@
 #include "d_event.h"
 #include "d_player.h"
 #include "r_defs.h"
+#include "g_input.h"
 
 //
 // STATUS BAR
@@ -52,16 +53,10 @@ void ST_ReloadSkinFaceGraphics(void);
 
 void ST_doPaletteStuff(void);
 
-// title card
-void ST_startTitleCard(void);
-void ST_runTitleCard(void);
-void ST_drawTitleCard(void);
-void ST_preDrawTitleCard(void);
-void ST_preLevelTitleCardDrawer(void);
-void ST_drawWipeTitleCard(void);
-
-extern tic_t lt_ticker, lt_lasttic;
-extern tic_t lt_exitticker, lt_endtime;
+// Title card
+void TitleCard_Draw(void);
+void TitleCard_PreDraw(void);
+void TitleCard_DrawOverWipe(void);
 
 // return if player a is in the same team as player b
 boolean ST_SameTeam(player_t *a, player_t *b);
@@ -97,6 +92,7 @@ typedef struct
 typedef enum
 {
 	HUD_LIVES,
+	HUD_LIVESALT,
 
 	HUD_RINGS,
 	HUD_RINGSNUM,
@@ -124,8 +120,17 @@ typedef enum
 
 	NUMHUDITEMS
 } hudnum_t;
-
 extern hudinfo_t hudinfo[NUMHUDITEMS];
+
+#define ST_WEAPONS_X ((BASEVIDWIDTH / 2) - (NUM_WEAPONS * 10) - 6)
+#define ST_WEAPONS_Y 176 // HUD_LIVES
+#define ST_WEAPONS_W 20
+#define ST_WEAPONS_H 20
+
+hudinfo_t *ST_GetLivesHUDInfo(void);
+boolean ST_AltLivesHUDEnabled(void);
+
+extern INT16 demoinputdrawn;
 
 extern UINT16 objectsdrawn;
 

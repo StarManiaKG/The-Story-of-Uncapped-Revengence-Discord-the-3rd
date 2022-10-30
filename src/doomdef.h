@@ -23,15 +23,16 @@
 #define SOUND_MIXER   2
 #define SOUND_FMOD    3
 
+//Let's Play Some Sounds
 #ifndef SOUND
 #ifdef HAVE_SDL
 
 // Use Mixer interface?
 #ifdef HAVE_MIXER
-    #define SOUND SOUND_MIXER
-    #ifdef HW3SOUND
-    #undef HW3SOUND
-    #endif
+#define SOUND SOUND_MIXER
+#ifdef HW3SOUND
+#undef HW3SOUND
+#endif
 #endif
 
 // Use generic SDL interface.
@@ -39,21 +40,22 @@
 #define SOUND SOUND_SDL
 #endif
 
-#else // No SDL.
+// No SDL.
+#else
 
 // Use FMOD?
 #ifdef HAVE_FMOD
-    #define SOUND SOUND_FMOD
-    #ifdef HW3SOUND
-    #undef HW3SOUND
-    #endif
+#define SOUND SOUND_FMOD
+#ifdef HW3SOUND
+#undef HW3SOUND
+#endif
 #else
-    // No more interfaces. :(
-    #define SOUND SOUND_DUMMY
+// No more interfaces. :(
+#define SOUND SOUND_DUMMY
 #endif
 
-#endif
-#endif
+#endif // SDL
+#endif // SOUND
 
 #ifdef _WINDOWS
 #define NONET
@@ -94,8 +96,8 @@
 #ifdef GETTEXT
 #include <libintl.h>
 #endif
-#include <locale.h> // locale should not be dependent on GETTEXT -- 11/01/20 Monster Iestyn
 
+#include <locale.h> // locale should not be dependent on GETTEXT -- 11/01/20 Monster Iestyn
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <ctype.h>
@@ -124,13 +126,26 @@ extern char logfilename[1024];
 /* A mod name to further distinguish versions. */
 #define SRB2APPLICATION "SRB2"
 
+#if defined(LOGMESSAGES) && (defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)) && !defined(__ANDROID__)
+#define LOGSYMLINK
+#endif
+
+// Defines that the game is being compiled for a mobile OS
+#if defined(__ANDROID__) || defined(__IPHONEOS__) || defined(__TVOS__)
+#define MOBILE_PLATFORM
+#endif
+
+// TV support
+#if defined(__ANDROID__) || defined(__TVOS__)
+#define TV_PLATFORM
+#endif
+
 //#define DEVELOP // Disable this for release builds to remove excessive cheat commands and enable MD5 checking and stuff, all in one go. :3
 #ifdef DEVELOP
-#define VERSIONSTRING "THE STORY of UNCAPPED REVENGENCE DISCORD the 3RD"
-#define VERSIONSTRING_RC "THE STORY of UNCAPPED REVENGENCE DISCORD the 3RD" "\0"
-// most interface strings are ignored in development mode.
-// we use comprevision and compbranch instead.
-// VERSIONSTRING_RC is for the resource-definition script used by windows builds
+#define VERSIONSTRING "TSOURDt3RD Development Build"
+#define VERSIONSTRING_RC "TSOURDt3RD Development Build" "\0"
+// most interface strings are ignored in development mode. we use comprevision and compbranch instead. 
+//VERSIONSTRING_RC is for the resource-definition script used by windows builds
 #else
 #ifdef BETAVERSION
 #define VERSIONSTRING "v"SRB2VERSION" "BETAVERSION
@@ -151,6 +166,21 @@ extern char logfilename[1024];
 // Does this version require an added patch file?
 // Comment or uncomment this as necessary.
 // #define USE_PATCH_DTA
+
+// Load Android assets
+#if defined(__ANDROID__)
+#define UNPACK_FILES
+#define USE_ANDROID_PK3
+#endif
+
+#ifdef USE_ANDROID_PK3
+#define ANDROID_PK3_FILENAME "android.pk3"
+#endif
+
+// Virtual keyboard
+#if defined(MOBILE_PLATFORM) && defined(TOUCHINPUTS)
+#define VIRTUAL_KEYBOARD
+#endif
 
 // Enforce a limit of loaded WAD files.
 //#define ENFORCE_WAD_LIMIT
@@ -183,7 +213,7 @@ extern char logfilename[1024];
 "the Master Server until you update to\n"\
 "the newest version of the game.\n"\
 "\n"\
-"(Press a key)\n"
+"(Press Anything)\n"
 
 // The string used in the I_Error alert upon trying to host through command line parameters.
 // Generally less filled with newlines, since Windows gives you lots more room to work with.
@@ -401,7 +431,7 @@ extern skincolor_t skincolors[MAXSKINCOLORS];
 
 #define PUSHACCEL (2*FRACUNIT) // Acceleration for MF2_SLIDEPUSH items.
 
-// Special linedef executor tag numbers!
+// Special linedef executor tag numbers! Binary map format only (UDMF has other ways of doing these things).
 enum {
 	LE_PINCHPHASE      =    -2, // A boss entered pinch phase (and, in most cases, is preparing their pinch phase attack!)
 	LE_ALLBOSSESDEAD   =    -3, // All bosses in the map are dead (Egg capsule raise)
@@ -423,6 +453,10 @@ enum {
 #define DEFAULTDIR ".srb2"
 #else
 #define DEFAULTDIR "srb2"
+#endif
+
+#if defined(__ANDROID__)
+#define SHAREDSTORAGEFOLDER "Sonic Robo Blast 2"
 #endif
 
 #include "g_state.h"
@@ -467,29 +501,59 @@ void CONS_Debug(INT32 debugflags, const char *fmt, ...) FUNCDEBUG;
 
 // Things that used to be in dstrings.h
 #define SAVEGAMENAME "srb2sav"
-extern char savegamename[256];
-extern char liveeventbackup[256];
+#define SAVEGAMENAMELEN 256
+
+extern char savegamename[2][SAVEGAMENAMELEN];
+extern char liveeventbackup[2][SAVEGAMENAMELEN]; //same thing essentially goes here
+extern char *cursavegamename;
+extern char *curliveeventbackup;
+
+#if defined(__ANDROID__)
+#define USE_GAMEDATA_PATHS
+#define USE_SAVEGAME_PATHS
+#endif
 
 // m_misc.h
 #ifdef GETTEXT
 #define M_GetText(String) gettext(String)
 #else
-// If no translations are to be used, make a stub
-// M_GetText function that just returns the string.
+//If no translations are to be used, make a stub M_GetText function that just returns the string.
 #define M_GetText(x) (x)
 #endif
 void M_StartupLocale(void);
-extern void *(*M_Memcpy)(void* dest, const void* src, size_t n) FUNCNONNULL;
+
 char *va(const char *format, ...) FUNCPRINTF;
+
+#if defined(__ANDROID__)
+#include <ndk_strings.h>
+#define M_sprintf Android_sprintf
+#define M_snprintf Android_snprintf
+#define M_vsnprintf Android_vsnprintf
+#else
+#define M_sprintf sprintf
+#define M_snprintf snprintf
+#define M_vsnprintf vsnprintf
+#endif
+
 char *M_GetToken(const char *inputString);
 void M_UnGetToken(void);
-UINT32 M_GetTokenPos(void);
-void M_SetTokenPos(UINT32 newPos);
+void M_TokenizerOpen(const char *inputString);
+void M_TokenizerClose(void);
+const char *M_TokenizerRead(UINT32 i);
+UINT32 M_TokenizerGetEndPos(void);
+void M_TokenizerSetEndPos(UINT32 newPos);
 char *sizeu1(size_t num);
 char *sizeu2(size_t num);
 char *sizeu3(size_t num);
 char *sizeu4(size_t num);
 char *sizeu5(size_t num);
+
+char *M_GetToken(const char *inputString);
+void M_UnGetToken(void);
+UINT32 M_GetTokenPos(void);
+void M_SetTokenPos(UINT32 newPos);
+
+extern void *(*M_Memcpy)(void* dest, const void* src, size_t n) FUNCNONNULL;
 
 // d_main.c
 extern int    VERSION;
@@ -530,9 +594,26 @@ extern boolean capslock;
 // i_system.c, replace getchar() once the keyboard has been appropriated
 INT32 I_GetKey(void);
 
+/* http://www.cse.yorku.ca/~oz/hash.html */
+static inline
+UINT32 quickncasehash (const char *p, size_t n)
+{
+	size_t i = 0;
+	UINT32 x = 5381;
+
+	while (i < n && p[i])
+	{
+		x = (x * 33) ^ tolower(p[i]);
+		i++;
+	}
+
+	return x;
+}
+
 #ifndef min // Double-Check with WATTCP-32's cdefs.h
 #define min(x, y) (((x) < (y)) ? (x) : (y))
 #endif
+
 #ifndef max // Double-Check with WATTCP-32's cdefs.h
 #define max(x, y) (((x) > (y)) ? (x) : (y))
 #endif
@@ -563,9 +644,9 @@ INT32 I_GetKey(void);
 // The character that separates pathnames. Forward slash on
 // most systems, but reverse solidus (\) on Windows.
 #if defined (_WIN32)
-	#define PATHSEP "\\"
+#define PATHSEP "\\"
 #else
-	#define PATHSEP "/"
+#define PATHSEP "/"
 #endif
 
 #define PUNCTUATION "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
@@ -598,6 +679,15 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 ///	Shuffle's incomplete OpenGL sorting code.
 #define SHUFFLE // This has nothing to do with sorting, why was it disabled?
 
+/// Splash screen
+#ifdef MOBILE_PLATFORM
+#define SPLASH_SCREEN
+#endif
+
+/// Breadcrumb navigation
+/// https://developer.android.com/training/tv/start/controllers#back-button
+#define BREADCRUMB
+
 ///	Allow the use of the SOC RESETINFO command.
 ///	\note	Builds that are tight on memory should disable this.
 ///	    	This stops the game from storing backups of the states, sprites, and mobjinfo tables.
@@ -621,6 +711,10 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 /// OpenGL shaders
 #define GL_SHADERS
 
+#if defined(HAVE_GLES2) && !defined(GL_SHADERS)
+#define GL_SHADERS
+#endif
+
 /// Handle touching sector specials in P_PlayerAfterThink instead of P_PlayerThink.
 /// \note   Required for proper collision with moving sloped surfaces that have sector specials on them.
 #define SECTORSPECIALSAFTERTHINK
@@ -641,7 +735,7 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 /// Maintain compatibility with older 2.2 demos
 #define OLD22DEMOCOMPAT
 
-#if defined (HAVE_CURL) && ! defined (NONET)
+#if defined (HAVE_CURL) && !defined (NONET)
 #define MASTERSERVER
 #else
 #undef UPDATE_ALERT
