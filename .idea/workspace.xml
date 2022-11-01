@@ -11,11 +11,11 @@
   <component name="ChangeListManager">
     <list default="true" id="14fb20f7-21d6-4534-8d35-85d7be3f6fb2" name="Changes" comment="lol">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmake/Modules/FindDiscordRPC.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/cmake/Modules/FindDiscordRPC.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Makefile.d/features.mk" beforeDir="false" afterPath="$PROJECT_DIR$/src/Makefile.d/features.mk" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/d_main.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/d_main.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/d_netcmd.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/d_netcmd.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/discord.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/discord.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/sdl/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/sdl/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/discord.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/discord.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/m_menu.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/m_menu.c" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -42,13 +42,14 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;AndroidSdkUpdater&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "last_opened_file_path": "/home/star/.srb2/projects",
+    "settings.editor.selected.configurable": "discord-application"
   }
-}</component>
+}]]></component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
@@ -93,7 +94,14 @@
       <option name="project" value="LOCAL" />
       <updated>1667112122876</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="lol">
+      <created>1667169699737</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1667169699737</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
