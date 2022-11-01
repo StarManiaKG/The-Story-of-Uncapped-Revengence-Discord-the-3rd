@@ -937,9 +937,18 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_discordstreamer);
 	CV_RegisterVar(&cv_discordasks);
 	CV_RegisterVar(&cv_discordshowonstatus);
+	CV_RegisterVar(&cv_discordstatusmemes);
 	CV_RegisterVar(&cv_customdiscorddetails);
 	CV_RegisterVar(&cv_customdiscordstate);
-	CV_RegisterVar(&cv_discordstatusmemes);
+	// Custom Images //
+	CV_RegisterVar(&cv_customdiscordlargeimagetype);
+    CV_RegisterVar(&cv_customdiscordsmallimagetype);
+	CV_RegisterVar(&cv_customdiscordlargecharacterimage);
+	CV_RegisterVar(&cv_customdiscordsmallcharacterimage);
+    CV_RegisterVar(&cv_customdiscordlargemapimage);
+    CV_RegisterVar(&cv_customdiscordsmallmapimage);
+    CV_RegisterVar(&cv_customdiscordlargemiscimage);
+    CV_RegisterVar(&cv_customdiscordsmallmiscimage);
 #endif
 }
 
