@@ -1631,6 +1631,11 @@ void D_SRB2Main(void)
 	CONS_Printf("ST_Init(): Init status bar.\n");
 	ST_Init();
 
+#ifdef HAVE_DISCORDRPC
+    CONS_Printf("DRPC_Init(): Initalizing Discord Rich Presence.\n");
+    DRPC_Init();
+#endif
+
 	if (M_CheckParm("-room"))
 	{
 		if (!M_IsNextParm())
@@ -1800,9 +1805,6 @@ void D_SRB2Main(void)
 		if (!P_LoadLevel(false, false))
 			I_Quit(); // fail so reset game stuff
 	}
-#ifdef HAVE_DISCORDRPC
-	DRPC_Init();
-#endif
 }
 
 const char *D_Home(void)
