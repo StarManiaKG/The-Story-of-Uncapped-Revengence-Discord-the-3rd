@@ -21,9 +21,17 @@ extern consvar_t cv_discordrp;
 extern consvar_t cv_discordstreamer;
 extern consvar_t cv_discordasks;
 extern consvar_t cv_discordshowonstatus;
+extern consvar_t cv_discordstatusmemes;
 extern consvar_t cv_customdiscorddetails;
 extern consvar_t cv_customdiscordstate;
-extern consvar_t cv_discordstatusmemes;
+extern consvar_t cv_customdiscordlargeimagetype;
+extern consvar_t cv_customdiscordsmallimagetype;
+extern consvar_t cv_customdiscordlargecharacterimage;
+extern consvar_t cv_customdiscordsmallcharacterimage;
+extern consvar_t cv_customdiscordlargemapimage;
+extern consvar_t cv_customdiscordsmallmapimage;
+extern consvar_t cv_customdiscordlargemiscimage;
+extern consvar_t cv_customdiscordsmallmiscimage;
 
 extern struct discordInfo_s {
 	UINT8 maxPlayers;
