@@ -10,33 +10,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="14fb20f7-21d6-4534-8d35-85d7be3f6fb2" name="Changes" comment="lol">
-      <change afterPath="$PROJECT_DIR$/src/hardware/hw_shaders.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/f_wipe.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/f_wipe.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hardware/Sourcefile" beforeDir="false" afterPath="$PROJECT_DIR$/src/hardware/Sourcefile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hardware/hw_batching.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/hardware/hw_batching.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hardware/hw_cache.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/hardware/hw_cache.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hardware/hw_defs.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/hardware/hw_defs.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hardware/hw_draw.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/hardware/hw_draw.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hardware/hw_drv.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/hardware/hw_drv.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hardware/hw_glob.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/hardware/hw_glob.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hardware/hw_main.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/hardware/hw_main.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hardware/hw_main.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/hardware/hw_main.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hardware/hw_md2.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/hardware/hw_md2.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hardware/r_opengl/r_opengl.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/hardware/r_opengl/r_opengl.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hardware/r_opengl/r_opengl.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/hardware/r_opengl/r_opengl.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/m_anigif.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/m_anigif.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/d_netcmd.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/d_netcmd.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/discord.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/discord.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/discord.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/discord.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/m_menu.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/m_menu.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/m_misc.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/m_misc.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/r_data.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/r_data.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/r_defs.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/r_defs.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/sdl/Srb2SDL-vc10.vcxproj" beforeDir="false" afterPath="$PROJECT_DIR$/src/sdl/Srb2SDL-vc10.vcxproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/sdl/Srb2SDL-vc10.vcxproj.filters" beforeDir="false" afterPath="$PROJECT_DIR$/src/sdl/Srb2SDL-vc10.vcxproj.filters" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/sdl/hwsym_sdl.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/sdl/hwsym_sdl.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/sdl/i_video.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/sdl/i_video.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/sdl/ogl_sdl.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/sdl/ogl_sdl.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/st_stuff.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/st_stuff.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/w_wad.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/w_wad.c" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -63,14 +41,14 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "last_opened_file_path": "/home/star/.srb2/projects",
-    "settings.editor.selected.configurable": "discord-application"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/star/.srb2/projects&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;discord-application&quot;
   }
-}]]></component>
+}</component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">

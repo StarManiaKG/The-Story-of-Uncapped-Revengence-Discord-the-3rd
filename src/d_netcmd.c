@@ -949,6 +949,8 @@ void D_RegisterClientCommands(void)
     CV_RegisterVar(&cv_customdiscordsmallmapimage);
     CV_RegisterVar(&cv_customdiscordlargemiscimage);
     CV_RegisterVar(&cv_customdiscordsmallmiscimage);
+    CV_RegisterVar(&cv_customdiscordlargeimagetext);
+    CV_RegisterVar(&cv_customdiscordsmallimagetext);
 #endif
 }
 
