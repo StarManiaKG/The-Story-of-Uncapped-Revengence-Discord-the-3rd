@@ -32,6 +32,8 @@ extern consvar_t cv_customdiscordlargemapimage;
 extern consvar_t cv_customdiscordsmallmapimage;
 extern consvar_t cv_customdiscordlargemiscimage;
 extern consvar_t cv_customdiscordsmallmiscimage;
+extern consvar_t cv_customdiscordlargeimagetext;
+extern consvar_t cv_customdiscordsmallimagetext;
 
 extern struct discordInfo_s {
 	UINT8 maxPlayers;
