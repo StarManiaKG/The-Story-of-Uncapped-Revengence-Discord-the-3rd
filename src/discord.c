@@ -73,6 +73,9 @@ consvar_t cv_customdiscordsmallmapimage = CVAR_INIT ("customdiscordsmallmapimage
     // Miscellanious //
 consvar_t cv_customdiscordlargemiscimage = CVAR_INIT ("customdiscordlargemiscimage", "Default", CV_SAVE|CV_CALL, custommiscimage_cons_t, Discordcustomstatus_option_Onchange);
 consvar_t cv_customdiscordsmallmiscimage = CVAR_INIT ("customdiscordsmallmiscimage", "Default", CV_SAVE|CV_CALL, custommiscimage_cons_t, Discordcustomstatus_option_Onchange);
+    // Captions //
+consvar_t cv_customdiscordlargeimagetext = CVAR_INIT ("customdiscordlargeimagetext", "This is my Favorite Character", CV_SAVE|CV_CALL, NULL, Discordcustomstatus_option_Onchange);
+consvar_t cv_customdiscordsmallimagetext = CVAR_INIT ("customdiscordsmallimagetext", "This is my Favorite Character Too!", CV_SAVE|CV_CALL, NULL, Discordcustomstatus_option_Onchange);
 struct discordInfo_s discordInfo;
 
 discordRequest_t *discordRequestList = NULL;
@@ -919,7 +922,7 @@ void DRPC_UpdatePresence(void)
 
             int nospaces = 0; //this helps us remove spaces from our string, if we have any
             for (i = 0; customlargeimagestring[i] != '\0'; i++) { //string writing, now capiable of removing spaces and forcing lowercases on letters, in limited small image edition
-                if (customlargeimagestring[i] != ' ') // do we not have any spaces?
+                if ((customlargeimagestring[i] != ' ') && (customlargeimagestring[i] != '&')) // do we not have any spaces?
                 {
                     //continue with our normal behavior then!
                     customlargeimagestring[i] = tolower(customlargeimagestring[i]);
@@ -935,7 +938,7 @@ void DRPC_UpdatePresence(void)
                 discordPresence.largeImageKey = (cv_customdiscordlargemapimage.value > 0 ? customlargeimagestring : "map01");
             else
                 discordPresence.largeImageKey = (cv_customdiscordlargemiscimage.value > 0 ? customlargeimagestring : "misctitle");
-            discordPresence.largeImageText = "Custom Image";
+            discordPresence.largeImageText = cv_customdiscordlargeimagetext.string;
         }
 
         // Small Images
@@ -950,7 +953,7 @@ void DRPC_UpdatePresence(void)
 
             int nospaces = 0; //this helps us remove spaces from our string, if we have any
             for (i = 0; customsmallimagestring[i] != '\0'; i++) { //string writing, now capiable of removing spaces and forcing lowercases on letters, in limited small image edition
-                if (customsmallimagestring[i] != ' ') // do we not have any spaces?
+                if ((customsmallimagestring[i] != ' ') && (customsmallimagestring[i] != '&')) // do we not have any spaces?
                 {
                     //continue with our normal behavior then!
                     customsmallimagestring[i] = tolower(customsmallimagestring[i]);
@@ -966,7 +969,7 @@ void DRPC_UpdatePresence(void)
                 discordPresence.smallImageKey = (cv_customdiscordsmallmapimage.value > 0 ? customsmallimagestring : "map01");
             else
                 discordPresence.smallImageKey = (cv_customdiscordsmallmiscimage.value > 0 ? customsmallimagestring : "misctitle");
-            discordPresence.smallImageText = "Custom Image";
+            discordPresence.smallImageText = cv_customdiscordsmallimagetext.string;
         }
 	}
 
