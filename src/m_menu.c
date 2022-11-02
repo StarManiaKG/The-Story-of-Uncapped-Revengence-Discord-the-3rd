@@ -1673,9 +1673,11 @@ static menuitem_t OP_DiscordOptionsMenu[] =
     {IT_STRING | IT_CVAR,		                NULL, "Large Image",			&cv_customdiscordlargemiscimage,      94},
     {IT_STRING | IT_CVAR,		                NULL, "Small Image",			&cv_customdiscordsmallmiscimage,      99},
 
+    {IT_STRING | IT_CVAR | IT_CV_STRING,		NULL, "Large Image Text",		&cv_customdiscordlargeimagetext,      114},
+    {IT_STRING | IT_CVAR | IT_CV_STRING,		NULL, "Small Image Text",		&cv_customdiscordsmallimagetext,      128},
+
     // Let's Output Our Stuff
-	{IT_STRING | IT_SUBMENU,					NULL, "Output",					&OP_CustomStatusOutputDef,	          115
-	},
+	{IT_STRING | IT_SUBMENU,					NULL, "Output",					&OP_CustomStatusOutputDef,	          155},
 };
 
 static menuitem_t OP_CustomStatusOutputMenu[] =
@@ -1706,8 +1708,11 @@ enum
     op_customdiscordlargemiscimage = 17,
     op_customdiscordsmallmiscimage = 18,
 
+    op_customdiscordlargeimagetext = 19,
+    op_customdiscordsmallimagetext = 20,
+
     //Let's Output Things
-	op_customstatusoutputdef = 19,
+	op_customstatusoutputdef = 21,
 };
 #endif
 
@@ -2685,6 +2690,12 @@ void Discordcustomstatus_option_Onchange(void)
     OP_DiscordOptionsMenu[op_customdiscordsmallmiscimage].status =
             (cv_discordrp.value == 1 ? IT_CVAR|IT_STRING : IT_DISABLED);
 
+    OP_DiscordOptionsMenu[op_customdiscordlargeimagetext].status =
+    		(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
+
+    OP_DiscordOptionsMenu[op_customdiscordsmallimagetext].status =
+            (cv_discordrp.value == 1 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
+
     // Output Status //
 	OP_DiscordOptionsMenu[op_customstatusoutputdef].status =
 		(cv_discordrp.value == 1 ? IT_STRING|IT_SUBMENU : IT_DISABLED);
@@ -2726,6 +2737,12 @@ void Discordcustomstatus_option_Onchange(void)
         OP_DiscordOptionsMenu[op_customdiscordsmallmiscimage].status =
             (cv_discordshowonstatus.value == 8 ? IT_CVAR|IT_STRING : IT_DISABLED);
 
+        OP_DiscordOptionsMenu[op_customdiscordlargeimagetext].status =
+            (cv_discordshowonstatus.value == 8 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
+
+        OP_DiscordOptionsMenu[op_customdiscordsmallimagetext].status =
+            (cv_discordshowonstatus.value == 8 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
+
         // Output Status //
 		OP_DiscordOptionsMenu[op_customstatusoutputdef].status =
 			(cv_discordshowonstatus.value == 8 ? IT_STRING|IT_SUBMENU : IT_DISABLED);
@@ -2746,6 +2763,9 @@ void Discordcustomstatus_option_Onchange(void)
                 OP_DiscordOptionsMenu[op_customdiscordlargemiscimage].status =
                     (cv_customdiscordlargeimagetype.value == 2 ? IT_CVAR|IT_STRING : IT_DISABLED);
 
+                OP_DiscordOptionsMenu[op_customdiscordlargeimagetext].status =
+                    (cv_customdiscordlargeimagetype.value != 3 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
+
                 // Small Images //
                 OP_DiscordOptionsMenu[op_customdiscordsmallcharacterimage].status =
                     (!cv_customdiscordsmallimagetype.value ? IT_CVAR|IT_STRING : IT_DISABLED);
@@ -2755,6 +2775,9 @@ void Discordcustomstatus_option_Onchange(void)
 
                 OP_DiscordOptionsMenu[op_customdiscordsmallmiscimage].status =
                     (cv_customdiscordsmallimagetype.value == 2 ? IT_CVAR|IT_STRING : IT_DISABLED);
+
+                OP_DiscordOptionsMenu[op_customdiscordsmallimagetext].status =
+                    (cv_customdiscordsmallimagetype.value != 3 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
             }
         }
     }
