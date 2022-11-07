@@ -35,7 +35,7 @@
 #include "i_system.h"
 #include "i_threads.h"
 
-// Addfile
+// Addfile (and autoloading lol)
 #include "filesrch.h"
 
 #include "v_video.h"
@@ -7044,6 +7044,20 @@ static void M_AddonExec(INT32 ch)
 }
 
 // autoload a mod on game startup, like they're .kart files
+#define REALLOC_FILE_LIST \
+	if (list->files == NULL) \
+	{ \
+		list->files = calloc(sizeof(list->files), 2); \
+		list->numfiles = 1; \
+	} \
+	else \
+	{ \
+		index = list->numfiles; \
+		list->files = realloc(list->files, sizeof(list->files) * ((++list->numfiles) + 1)); \
+		if (list->files == NULL) \
+			I_Error("%s: No more free memory to add file %s", __FUNCTION__, file); \
+	}
+
 static void M_AddonAutoLoad(INT32 ch)
 {
 	// initalize these variables
@@ -7051,7 +7065,7 @@ static void M_AddonAutoLoad(INT32 ch)
 	char filetowrite[MAX_WADPATH];
 	FILE *autoloadconfigfile;
 
-	if (ch != 'y' && ch != KEY_ENTER)
+	if (ch != 'y' && ch != KEY_ENTER && ch != KEY_LSHIFT)
 	{
 		S_StartSound(NULL, sfx_lose);
 		return;
@@ -7061,11 +7075,39 @@ static void M_AddonAutoLoad(INT32 ch)
 		// first, find the file
 		path = va("%s"PATHSEP"%s", srb2home, AUTOLOADFILENAME);
 		autoloadconfigfile = fopen(path, "a");
+
 		// next, copy the name of the file
 		strcpy(filetowrite, va(menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
+
 		// then, execute the addon and store it in our autoload.cfg
 		switch (dirmenu[dir_on[menudepthleft]][DIR_TYPE])
 		{
+		    case EXT_FOLDER:
+		        if (!(refreshdirmenu & REFRESHDIR_MAX))
+                {
+                    /*
+                    DIR *d;
+                    struct dirent *dir;
+                    d = opendir(".");
+                    if (d)
+                    {
+                        while ((dir = readdir(d)) != NULL)
+                        {
+                            printf("%s\n", dir->d_name);
+                        }
+                        closedir(d);
+                    }
+                    */
+                    COM_BufAddText(va("addfolder \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
+                    fprintf(autoloadconfigfile, "addfolder %s\n", dirmenu[dir_on[menudepthleft]]+DIR_STRING);
+                    S_StartSound(NULL, sfx_s3k51);
+                }
+                else
+                {
+                    M_StartMessage(va("%c%s\x80\nToo many addons are loaded! \nYou need to restart the game to autoload more mods. \nYou can still autoload console scripts though. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
+                    S_StartSound(NULL, sfx_lose);
+                }
+                break;
 			case EXT_TXT:
 			case EXT_CFG:
 				COM_BufAddText(va("exec \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
@@ -7099,6 +7141,7 @@ static void M_AddonAutoLoad(INT32 ch)
 		fclose(autoloadconfigfile);
 	}
 }
+#undef REALLOC_FILE_LIST
 
 #define len menusearch[0]
 static boolean M_ChangeStringAddons(INT32 choice)
@@ -7274,20 +7317,23 @@ static void M_HandleAddons(INT32 choice)
 					switch (dirmenu[dir_on[menudepthleft]][DIR_TYPE])
 					{
 						case EXT_FOLDER:
-							strcpy(&menupath[menupathindex[menudepthleft]],dirmenu[dir_on[menudepthleft]]+DIR_STRING);
-							M_StartMessage(va("%c%s\x80\nYou can't Autoload a Folder, Silly. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
-							S_StartSound(NULL, sfx_s224);
 							if ((menudepthleft) && (!preparefilemenu(false)))
 							{
 								S_StartSound(NULL, sfx_s224);
-								M_StartMessage(va("%c%s\x80\nThis folder is empty. \nYou can't autoload a folder anyways, silly. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
+								M_StartMessage(va("%c%s\x80\nThis folder is empty. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
 								menupath[menupathindex[++menudepthleft]] = 0;
 							}
-							else if (menudepthleft)
+							else if (!menudepthleft)
 							{
-								M_StartMessage(va("%c%s\x80\nThis folder is too deep to navigate to! \nNot only can you not autoload a folder, \nbut who has folders this deep anyway? \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
+								M_StartMessage(va("%c%s\x80\nThis folder is too deep to navigate to! \nWho in their right mind has folders this deep anyway? \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
 								S_StartSound(NULL, sfx_lose);
 								menupath[menupathindex[menudepthleft]] = 0;
+							}
+							else if ((menudepthleft) && (preparefilemenu(false)))
+							{
+							    //strcpy(&menupath[menupathindex[menudepthleft]],dirmenu[dir_on[menudepthleft]]+DIR_STRING);
+                                //M_StartMessage(va("%c%s\x80\nYou can't Autoload a Folder, Silly. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
+							    M_StartMessage(va("%c%s\x80\nDo you want to Autoload all addons in this folder? \nEvery addon found in this folder will bypass modified game checks. \n\n(Press 'Y' to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),M_AddonAutoLoad,MM_YESNO);
 							}
 							break;
 						case EXT_UP:
