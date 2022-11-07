@@ -38,19 +38,139 @@
 // length of IP strings
 #define IP_SIZE 21
 
-static CV_PossibleValue_t discordstatustype_cons_t[] = {{0, "All"}, {1, "Only Characters"}, {2, "Only Score"}, {3, "Only Emeralds"}, {4, "Only Emblems"}, {5, "Only Levels"}, {6, "Only Gametype"}, {7, "Only Playtime"}, {8, "Custom"}, {0, NULL}};
+static CV_PossibleValue_t discordstatustype_cons_t[] = {
+    {0, "All"},
+    {1, "Only Characters"},
+    {2, "Only Score"},
+    {3, "Only Emeralds"},
+    {4, "Only Emblems"},
+    {5, "Only Levels"},
+    {6, "Only Gametype"},
+    {7, "Only Playtime"},
+    {8, "Custom"},
+    {0, NULL}};
+
 // Custom Discord Status Image Type //
 static CV_PossibleValue_t customlargeimagetype_cons_t[] = {{0, "Characters"}, {1, "Maps"}, {2, "Miscellaneous"}, {3, "None"}, {0, NULL}};
 static CV_PossibleValue_t customsmallimagetype_cons_t[] = {{0, "Characters"}, {1, "Maps"}, {2, "Miscellaneous"}, {3, "None"}, {0, NULL}};
-// Characters //
-static CV_PossibleValue_t customcharacterimage_cons_t[] = {{0, "Default"}, {1, "Sonic"}, {2, "Tails"}, {3, "Knuckles"}, {4, "Amy"}, {5, "Fang"}, {6, "Metal Sonic"}, {7, "Sonic & Tails"}, {8, "Adventure Sonic"}, {9, "Shadow"}, {10, "Skip"}, {11, "Jana"}, {12, "Surge"}, {13, "Cacee"}, {14, "Milne"}, {15, "Maiamy"}, {16, "Mario"}, {17, "Luigi"}, {18, "Blaze"}, {19, "Marine"}, {20, "Tails Doll"}, {21, "Metal Knuckles"}, {22, "Smiles"}, {23, "Whisper"}, {24, "Hexhog"}, {0, NULL}};
-// Maps //
-static CV_PossibleValue_t custommapimage_cons_t[] = {{0, "01"}, {1, "02"}, {2, "03"}, {3, "04"}, {4, "05"}, {5, "06"}, {6, "07"}, {7, "08"}, {8, "09"}, {9, "10"}, {10, "11"}, {11, "12"}, {12, "13"}, {13, "14"}, {14, "15"}, {15, "16"}, {16, "22"}, {17, "23"}, {18, "25"}, {19, "26"}, {20, "27"}, {21, "30"}, {22, "31"}, {23, "32"}, {24, "33"}, {25, "40"}, {26, "41"}, {27, "42"}, {28, "50"}, {29, "51"}, {30, "52"}, {31, "53"}, {32, "54"}, {33, "55"}, {34, "56"}, {35, "57"}, {36, "60"}, {37, "61"}, {38, "62"}, {39, "63"}, {40, "64"}, {41, "65"}, {42, "66"}, {43, "70"}, {44, "71"}, {45, "72"}, {46, "73"}, {47, "Custom"}, {48, "f0"}, {49, "f1"}, {50, "f2"}, {51, "f3"}, {52, "f4"}, {53, "f5"}, {54, "f6"}, {55, "f7"}, {56, "f8"}, {57, "m0"}, {58, "m1"}, {59, "m2"}, {60, "m3"}, {61, "m4"}, {62, "m5"}, {63, "m6"}, {64, "m7"}, {65, "m8"}, {66, "m9"}, {67, "ma"}, {68, "mb"}, {69, "z0"}, {0, NULL}};
+static CV_PossibleValue_t customcharacterimage_cons_t[] = { // Characters //
+    // Vanilla Chars
+    {0, "Default"}, //does ghost sonic count as a vanilla char? maybe.
+    {1, "Sonic"},
+    {2, "Tails"},
+    {3, "Knuckles"},
+    {4, "Amy"},
+    {5, "Fang"},
+    {6, "Metal Sonic"},
+    {7, "Sonic & Tails"}, //Bots, am i right?
+    //Custom Chars
+    {8, "Adventure Sonic"},
+    {9, "Shadow"},
+    {10, "Skip"},
+    {11, "Jana"},
+    {12, "Surge"},
+    {13, "Cacee"},
+    {14, "Milne"},
+    {15, "Maiamy"},
+    {16, "Mario"},
+    {17, "Luigi"},
+    {18, "Blaze"},
+    {19, "Marine"},
+    {20, "Tails Doll"},
+    {21, "Metal Knuckles"},
+    {22, "Smiles"},
+    {23, "Whisper"},
+    {24, "Hexhog"},
+    {0, NULL}};
+
+static CV_PossibleValue_t custommapimage_cons_t[] = { // Maps //
+    // Singleplayer/Co-op Maps
+    {0, "01"},
+    {1, "02"},
+    {2, "03"},
+    {3, "04"},
+    {4, "05"},
+    {5, "06"},
+    {6, "07"},
+    {7, "08"},
+    {8, "09"},
+    {9, "10"},
+    {10, "11"},
+    {11, "12"},
+    {12, "13"},
+    {13, "14"},
+    {14, "15"},
+    {15, "16"},
+    {16, "22"},
+    {17, "23"},
+    {18, "25"},
+    {19, "26"},
+    {20, "27"},
+    // Extra Maps
+    {21, "30"},
+    {22, "31"},
+    {23, "32"},
+    {24, "33"},
+    // Advanced Maps
+    {25, "40"},
+    {26, "41"},
+    {27, "42"},
+    // Singleplayer Special Stages
+    {28, "50"},
+    {29, "51"},
+    {30, "52"},
+    {31, "53"},
+    {32, "54"},
+    {33, "55"},
+    {34, "56"},
+    {35, "57"},
+    // Co-op Special Stages
+    {36, "60"},
+    {37, "61"},
+    {38, "62"},
+    {39, "63"},
+    {40, "64"},
+    {41, "65"},
+    {42, "66"},
+    // Other Things I Probably Forgot Because I'm Smart lol
+    {43, "70"},
+    {44, "71"},
+    {45, "72"},
+    {46, "73"},
+    // Match/Team Match/H&S/Tag Maps
+    {47, "f0"},
+    {48, "f1"},
+    {49, "f2"},
+    {50, "f3"},
+    {51, "f4"},
+    {52, "f5"},
+    {53, "f6"},
+    {54, "f7"},
+    {55, "f8"},
+    // CTF Maps
+    {56, "m0"},
+    {57, "m1"},
+    {58, "m2"},
+    {59, "m3"},
+    {60, "m4"},
+    {61, "m5"},
+    {62, "m6"},
+    {63, "m7"},
+    {64, "m8"},
+    {65, "m9"},
+    {66, "ma"},
+    {67, "mb"},
+    // Tutorial Map
+    {68, "z0"},
+    // Custom Map
+    {69, "Custom"},
+    {0, NULL}};
+
 // Miscellanious //
 static CV_PossibleValue_t custommiscimage_cons_t[] = {{0, "Default"}, {0, NULL}};
 
                                                 ////////////////////////////
-                                                // Initial Discord Things //
+                                                //    Discord Commands    //
                                                 ////////////////////////////
 consvar_t cv_discordrp = CVAR_INIT ("discordrp", "On", CV_SAVE|CV_CALL, CV_OnOff, Discordcustomstatus_option_Onchange);
 consvar_t cv_discordstreamer = CVAR_INIT ("discordstreamer", "Off", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
@@ -652,7 +772,7 @@ void DRPC_UpdatePresence(void)
 			
 			//// SRB2 Playtime ////
 			if (cv_discordshowonstatus.value == 7)
-				snprintf(detailstr, 56, "Total SRB2 Playtime: %d hours, %d minutes, %d seconds", G_TicsToHours(totalplaytime), G_TicsToMinutes(totalplaytime, false), G_TicsToSeconds(totalplaytime));
+				snprintf(detailstr, 60, "Total SRB2 Playtime: %d hours, %d minutes, %d seconds", G_TicsToHours(totalplaytime), G_TicsToMinutes(totalplaytime, false), G_TicsToSeconds(totalplaytime));
 
 			discordPresence.details = detailstr;
 		}

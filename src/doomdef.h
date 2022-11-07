@@ -544,6 +544,11 @@ INT32 I_GetKey(void);
 #define M_PIl 3.1415926535897932384626433832795029L
 #endif
 
+// VS2019 fix?
+#ifndef M_PI
+#define M_PI 3.14159265f
+#endif
+
 // Floating point comparison epsilons from float.h
 #ifndef FLT_EPSILON
 #define FLT_EPSILON 1.1920928955078125e-7f
@@ -578,10 +583,10 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 // Compile them at your own risk!
 
 ///	Allows the use of devmode in multiplayer. AKA "fishcake"
-//#define NETGAME_DEVMODE
+#define NETGAME_DEVMODE
 
 ///	Allows gravity changes in netgames, no questions asked.
-//#define NETGAME_GRAVITY
+#define NETGAME_GRAVITY
 
 ///	Dumps the contents of a network save game upon consistency failure for debugging.
 //#define DUMPCONSISTENCY
@@ -593,7 +598,7 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 ///	Allow loading of savegames between different versions of the game.
 ///	\note	XMOD port.
 ///	    	Most modifications should probably enable this.
-//#define SAVEGAME_OTHERVERSIONS
+#define SAVEGAME_OTHERVERSIONS
 
 ///	Shuffle's incomplete OpenGL sorting code.
 #define SHUFFLE // This has nothing to do with sorting, why was it disabled?
