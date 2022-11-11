@@ -1,5 +1,7 @@
-# Sonic Robo Blast 2
-[![latest release](https://badgen.net/github/release/STJr/SRB2/stable)](https://github.com/STJr/SRB2/releases/latest)
+# TSOURDt3RD: An Sonic Robo Blast 2 Original
+**Latest Stable Release:** [![latest release](https://badgen.net/github/release/starmaniakg/the-story-of-uncapped-revengence-discord-the-3rd/stable)](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/releases/latest)
+
+**Latest Unstable Release:** [![latest release](https://badgen.net/github/release/starmaniakg/the-story-of-uncapped-revengence-discord-the-3rd)](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/releases/latest)
 
 [![Build status](https://ci.appveyor.com/api/projects/status/399d4hcw9yy7hg2y?svg=true)](https://ci.appveyor.com/project/STJr/srb2)
 [![Build status](https://travis-ci.org/STJr/SRB2.svg?branch=master)](https://travis-ci.org/STJr/SRB2)
@@ -7,7 +9,7 @@
 
 [Sonic Robo Blast 2](https://srb2.org/) is a 3D Sonic the Hedgehog fangame based on a modified version of [Doom Legacy](http://doomlegacy.sourceforge.net/).
 
-## New Features (found in this custom SRB2 build, helps it stand out)
+## New Features
   - Discord's Game SDK (WIP, NEED TO CONVERT TO C)
   - Custom Discord Settings
   - Palette Rendering
@@ -17,7 +19,7 @@
   - Autoloading Addons and Folders, Which Allows Mods to Bypass Modified Game Checks (after game restart, of course)
   - ...And More Annoyances!
   
-## WIP New Features, Found on Latest Unstable Build
+## WIP Features (Found on Latest Unstable Build)
   - Netplus
   - Autoloading Folder Support
   - Discord's Game SDK
