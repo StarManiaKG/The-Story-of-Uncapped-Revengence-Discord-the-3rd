@@ -7,21 +7,21 @@
 
 [Sonic Robo Blast 2](https://srb2.org/) is a 3D Sonic the Hedgehog fangame based on a modified version of [Doom Legacy](http://doomlegacy.sourceforge.net/).
 
-## New Features
-  New features found in this custom SRB2 build that makes it stand out from the others include:
-    - Discord's Game SDK (WIP, NEED TO CONVERT TO C)
-    - Custom Discord Settings
-    - Palette Rendering
-    - Better Custom Character Support
-    - Holepunching (WIP, NEEDS RELAY SERVER)
-    - More Server Options/Settings
-    - Autoloading Addons and Folders, Which Allows Mods to Bypass Modified Game Checks (after game restart, of course)
-    - ...And More Annoyances, probably
-    
-    ## WIP Features, Found on Latest Unstable Build
-      - Netplus
-      - Autoloading Folder Support
-      - Discord's Game SDK
+## New Features (found in this custom SRB2 build, helps it stand out)
+  - Discord's Game SDK (WIP, NEED TO CONVERT TO C)
+  - Custom Discord Settings
+  - Palette Rendering
+  - Better Custom Character Support
+  - Holepunching (WIP, NEEDS RELAY SERVER)
+  - More Server Options/Settings
+  - Autoloading Addons and Folders, Which Allows Mods to Bypass Modified Game Checks (after game restart, of course)
+  - ...And More Annoyances!
+  
+## WIP New Features, Found on Latest Unstable Build
+  - Netplus
+  - Autoloading Folder Support
+  - Discord's Game SDK
+  - ...And Maybe Even More!
       
 ## Dependencies
 - NASM (x86 builds only)
