@@ -665,7 +665,7 @@ void DRPC_UpdatePresence(void)
 		discordPresence.partySize = D_NumPlayers(); // Players in server
 		discordPresence.partyMax = cv_maxplayers.value; // Max players
 	}
-	else
+	else if (dedicated || netgame || !netgame)
 	{
 		// Reset discord info if you're not in a place that uses it!
 		// Important for if you join a server that compiled without HAVE_DISCORDRPC,
