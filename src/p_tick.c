@@ -24,9 +24,9 @@
 #include "m_perfstats.h"
 #include "i_system.h" // I_GetPreciseTime
 #include "r_fps.h"
-
-// Object place
-#include "m_cheat.h"
+#include "i_video.h" // rendermode
+#include "m_cheat.h" // Object place
+//#include "r_main.h" // cv_skybox, currently broken though
 
 tic_t leveltime;
 
@@ -770,6 +770,39 @@ void P_Ticker(boolean run)
 	if (run)
 	{
 		R_UpdateLevelInterpolators();
+		/*
+		R_UpdateViewInterpolation();
+
+		// Hack: ensure newview is assigned every tic.
+		// Ensures view interpolation is T-1 to T in poor network conditions
+		// We need a better way to assign view state decoupled from game logic
+		if (rendermode != render_none)
+		{
+			player_t *player1 = &players[displayplayer];
+			if (player1->mo && skyboxmo[0] && cv_skybox.value)
+			{
+				R_SkyboxFrame(player1);
+			}
+			if (player1->mo)
+			{
+				R_SetupFrame(player1);
+			}
+
+			if (splitscreen)
+			{
+				player_t *player2 = &players[secondarydisplayplayer];
+				if (player2->mo && skyboxmo[0] && cv_skybox.value)
+				{
+					R_SkyboxFrame(player2);
+				}
+				if (player2->mo)
+				{
+					R_SetupFrame(player2);
+				}
+			}
+		}
+		*/
+		
 	}
 
 	P_MapEnd();

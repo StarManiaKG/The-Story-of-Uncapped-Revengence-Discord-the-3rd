@@ -54,6 +54,10 @@
 #include "hardware/hw_main.h"
 #endif
 
+#ifdef HAVE_DISCORDRPC
+#include "discord.h" //DRPC_UpdatePresence
+#endif
+
 #if 0
 static void P_NukeAllPlayers(player_t *player);
 #endif
@@ -10491,6 +10495,9 @@ boolean P_SpectatorJoinGame(player_t *player)
 			// The viewpoint was forcibly changed.
 			LUA_HookViewpointSwitch(player, &players[consoleplayer], true);
 			displayplayer = consoleplayer;
+#ifdef HAVE_DISCORDRPC
+			DRPC_UpdatePresence(); //just in case, you never know :)
+#endif
 		}
 
 		if (changeto == 1)
