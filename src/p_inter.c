@@ -29,6 +29,10 @@
 #include "v_video.h" // video flags for CEchos
 #include "f_finale.h"
 
+#ifdef HAVE_DISCORDRPC
+#include "discord.h" // Mainly DRPC_UpdatePresence()
+#endif
+
 // CTF player names
 #define CTFTEAMCODE(pl) pl->ctfteam ? (pl->ctfteam == 1 ? "\x85" : "\x84") : ""
 #define CTFTEAMENDCODE(pl) pl->ctfteam ? "\x80" : ""
@@ -2559,6 +2563,10 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		{
 			if (!(target->player->pflags & PF_FINISHED))
 				target->player->lives -= 1; // Lose a life Tails 03-11-2000
+
+#ifdef HAVE_DISCORDRPC
+    		DRPC_UpdatePresence();
+#endif
 
 			if (target->player->lives <= 0) // Tails 03-14-2000
 			{

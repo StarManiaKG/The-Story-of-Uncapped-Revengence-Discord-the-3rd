@@ -1777,6 +1777,7 @@ static menuitem_t OP_ServerOptionsMenu[] =
 
 	{IT_STRING | IT_CVAR,    NULL, "Show IP Address of Joiners",       &cv_showjoinaddress,    274}, //40
 	{IT_STRING | IT_CVAR,    NULL, "Show Connecting Players",          &cv_noticedownload,     279}, //41
+	{IT_STRING | IT_CVAR,    NULL, "Max Files (In MB) To Send",        &cv_maxsend,     	   284}, //42
 #endif
 };
 
@@ -6850,14 +6851,14 @@ static boolean M_AddonsRefresh(void)
 		{
 			S_StartSound(NULL, sfx_lose);
 			if (refreshdirmenu & REFRESHDIR_MAX)
-				message = va("%c%s\x80\nMaximum number of add-ons reached.\nA file could not be loaded.\nIf you wish to play with this add-on, restart the game to clear existing ones.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname);
+				message = va("%c%s\x80\nMaximum number of add-ons reached.\nThis file could not be loaded.\nIf you wish to play with this add-on, restart the game to clear existing ones.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname);
 			else
-				message = va("%c%s\x80\nA file was not loaded.\nCheck the console log for more information.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname);
+				message = va("%c%s\x80\nThis file was not loaded.\nCheck the console log for more information.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname);
 		}
 		else if (refreshdirmenu & (REFRESHDIR_WARNING|REFRESHDIR_ERROR))
 		{
 			S_StartSound(NULL, sfx_skid);
-			message = va("%c%s\x80\nA file was loaded with %s.\nCheck the console log for more information.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname, ((refreshdirmenu & REFRESHDIR_ERROR) ? "errors" : "warnings"));
+			message = va("%c%s\x80\nThis file was loaded with %s.\nCheck the console log for more information.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname, ((refreshdirmenu & REFRESHDIR_ERROR) ? "errors" : "warnings"));
 		}
 
 		if (message)
@@ -7085,19 +7086,6 @@ static void M_AddonAutoLoad(INT32 ch)
 		    case EXT_FOLDER:
 		        if (!(refreshdirmenu & REFRESHDIR_MAX))
                 {
-                    /*
-                    DIR *d;
-                    struct dirent *dir;
-                    d = opendir(".");
-                    if (d)
-                    {
-                        while ((dir = readdir(d)) != NULL)
-                        {
-                            printf("%s\n", dir->d_name);
-                        }
-                        closedir(d);
-                    }
-                    */
                     COM_BufAddText(va("addfolder \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
                     fprintf(autoloadconfigfile, "addfolder %s\n", dirmenu[dir_on[menudepthleft]]+DIR_STRING);
                     S_StartSound(NULL, sfx_s3k51);
@@ -7330,11 +7318,7 @@ static void M_HandleAddons(INT32 choice)
 								menupath[menupathindex[menudepthleft]] = 0;
 							}
 							else if ((menudepthleft) && (preparefilemenu(false)))
-							{
-							    //strcpy(&menupath[menupathindex[menudepthleft]],dirmenu[dir_on[menudepthleft]]+DIR_STRING);
-                                //M_StartMessage(va("%c%s\x80\nYou can't Autoload a Folder, Silly. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
 							    M_StartMessage(va("%c%s\x80\nDo you want to Autoload all addons in this folder? \nEvery addon found in this folder will bypass modified game checks. \n\n(Press 'Y' to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),M_AddonAutoLoad,MM_YESNO);
-							}
 							break;
 						case EXT_UP:
 							S_StartSound(NULL, sfx_lose);
@@ -7348,7 +7332,13 @@ static void M_HandleAddons(INT32 choice)
 							break;
 						case EXT_TXT:
 						case EXT_CFG:
-							M_StartMessage(va("%c%s\x80\nYou're trying to autoload a console script. \nIgnore my warning anyways? \n\n(Press 'Y' to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),M_AddonAutoLoad,MM_YESNO);
+							if (dirmenu[dir_on[menudepthleft]]+DIR_STRING != "autoload")
+								M_StartMessage(va("%c%s\x80\nYou're trying to autoload a console script. \nIgnore my warning anyways? \n\n(Press 'Y' to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),M_AddonAutoLoad,MM_YESNO);
+							else
+							{
+								M_StartMessage(va("%c%s\x80\nYou can't autoload the autoload configuration file, silly! \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
+								S_StartSound(NULL, sfx_lose);
+							}
 							break;
 						case EXT_LUA:
 						case EXT_SOC:
@@ -8172,7 +8162,7 @@ static void M_HandleEmblemHints(INT32 choice)
 
 static musicdef_t *curplaying = NULL;
 static INT32 st_sel = 0, st_cc = 0;
-static tic_t st_time = 0;
+static fixed_t st_time = 0;
 static patch_t* st_radio[9];
 static patch_t* st_launchpad[4];
 
@@ -8236,16 +8226,17 @@ static void M_DrawSoundTest(void)
 		{
 			if (cv_soundtest.value)
 			{
-				frame[1] = (2-st_time);
+				frame[1] = (2 - (st_time >> FRACBITS));
 				frame[2] = ((cv_soundtest.value - 1) % 9);
 				frame[3] += (((cv_soundtest.value - 1) / 9) % (FIRSTSUPERCOLOR - frame[3]));
-				if (st_time < 2)
-					st_time++;
+				if (st_time < (2 << FRACBITS))
+					st_time += renderdeltatics;
 			}
 		}
 		else
 		{
-			if (curplaying->stoppingtics && st_time >= curplaying->stoppingtics)
+			fixed_t stoppingtics = (fixed_t)(curplaying->stoppingtics) << FRACBITS;
+			if (stoppingtics && st_time >= stoppingtics)
 			{
 				curplaying = NULL;
 				st_time = 0;
@@ -8256,11 +8247,11 @@ static void M_DrawSoundTest(void)
 				angle_t ang;
 				//bpm = FixedDiv((60*TICRATE)<<FRACBITS, bpm); -- bake this in on load
 
-				work = st_time<<FRACBITS;
+				work = st_time;
 				work %= bpm;
 
-				if (st_time >= (FRACUNIT>>1)) // prevent overflow jump - takes about 15 minutes of loop on the same song to reach
-					st_time = (work>>FRACBITS);
+				if (st_time >= (FRACUNIT << (FRACBITS - 2))) // prevent overflow jump - takes about 15 minutes of loop on the same song to reach
+					st_time = work;
 
 				work = FixedDiv(work*180, bpm);
 				frame[0] = 8-(work/(20<<FRACBITS));
@@ -8271,7 +8262,7 @@ static void M_DrawSoundTest(void)
 				hscale -= bounce/16;
 				vscale += bounce/16;
 
-				st_time++;
+				st_time += renderdeltatics;
 			}
 		}
 	}
@@ -8311,7 +8302,7 @@ static void M_DrawSoundTest(void)
 
 	V_DrawFill(y, 20, vid.width/vid.dupx, 24, 159);
 	{
-		static fixed_t st_scroll = -1;
+		static fixed_t st_scroll = -FRACUNIT;
 		const char* titl;
 		x = 16;
 		V_DrawString(x, 10, 0, "NOW PLAYING:");
@@ -8327,10 +8318,12 @@ static void M_DrawSoundTest(void)
 
 		i = V_LevelNameWidth(titl);
 
-		if (++st_scroll >= i)
-			st_scroll %= i;
+		st_scroll += renderdeltatics;
 
-		x -= st_scroll;
+		while (st_scroll >= (i << FRACBITS))
+			st_scroll -= i << FRACBITS;
+
+		x -= st_scroll >> FRACBITS;
 
 		while (x < BASEVIDWIDTH-y)
 			x += i;
@@ -11562,7 +11555,7 @@ static INT32 menuRoomIndex = 0;
 
 static void M_DrawRoomMenu(void)
 {
-	static int frame = -12;
+	static fixed_t frame = -(12 << FRACBITS);
 	int dot_frame;
 	char text[4];
 
@@ -11573,7 +11566,7 @@ static void M_DrawRoomMenu(void)
 
 	if (m_waiting_mode)
 	{
-		dot_frame = frame / 4;
+		dot_frame = (int)(frame >> FRACBITS) / 4;
 		dots = dot_frame + 3;
 
 		strcpy(text, "   ");
@@ -11586,8 +11579,9 @@ static void M_DrawRoomMenu(void)
 			strncpy(&text[dot_frame], "...", min(dots, 3 - dot_frame));
 		}
 
-		if (++frame == 12)
-			frame = -12;
+		frame += renderdeltatics;
+		while (frame >= (12 << FRACBITS))
+			frame -= 12 << FRACBITS;
 
 		currentMenu->menuitems[0].text = text;
 	}
@@ -12114,7 +12108,8 @@ static void M_ServerOptions(INT32 choice)
 		OP_ServerOptionsMenu[38].status = IT_GRAYEDOUT; // Minimum delay between joins
 		OP_ServerOptionsMenu[39].status = IT_GRAYEDOUT; // Attempts to resynchronise
 		OP_ServerOptionsMenu[40].status = IT_GRAYEDOUT; // Display address of joining players
-		OP_ServerOptionsMenu[41].status = IT_GRAYEDOUT; //Log connecting player
+		OP_ServerOptionsMenu[41].status = IT_GRAYEDOUT; // Log connecting player
+		OP_ServerOptionsMenu[42].status = IT_GRAYEDOUT; // Max Amount of Files (In MB) you can Send to Clients
 	}
 	else
 	{
@@ -12128,6 +12123,7 @@ static void M_ServerOptions(INT32 choice)
 		OP_ServerOptionsMenu[39].status = IT_STRING | IT_CVAR;
 		OP_ServerOptionsMenu[40].status = IT_STRING | IT_CVAR;
 		OP_ServerOptionsMenu[41].status = IT_STRING | IT_CVAR;
+		OP_ServerOptionsMenu[42].status = IT_STRING | IT_CVAR;
 	}
 #endif
 
