@@ -28,6 +28,7 @@
 #include "byteptr.h"
 #include "stun.h"
 #include "i_tcp.h" // current_port
+#include "d_player.h" // INFLIVES
 
 #include "discord.h"
 #include "doomdef.h"
@@ -178,24 +179,24 @@ consvar_t cv_discordasks = CVAR_INIT ("discordasks", "Yes", CV_SAVE|CV_CALL, CV_
 consvar_t cv_discordstatusmemes = CVAR_INIT ("discordstatusmemes", "Yes", CV_SAVE|CV_CALL, CV_YesNo, DRPC_UpdatePresence);
 consvar_t cv_discordshowonstatus = CVAR_INIT ("discordshowonstatus", "All", CV_SAVE|CV_CALL, discordstatustype_cons_t, Discordcustomstatus_option_Onchange);
 //// Custom Discord Status Things ////
-consvar_t cv_customdiscorddetails = CVAR_INIT ("customdiscorddetails", "I'm Feeling Good!", CV_SAVE|CV_CALL, NULL, Discordcustomstatus_option_Onchange);
-consvar_t cv_customdiscordstate = CVAR_INIT ("customdiscordstate", "I'm Playing Sonic Robo Blast 2!", CV_SAVE|CV_CALL, NULL, Discordcustomstatus_option_Onchange);
+consvar_t cv_customdiscorddetails = CVAR_INIT ("customdiscorddetails", "I'm Feeling Good!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
+consvar_t cv_customdiscordstate = CVAR_INIT ("customdiscordstate", "I'm Playing Sonic Robo Blast 2!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
 // Custom Discord Status Image Type
 consvar_t cv_customdiscordlargeimagetype = CVAR_INIT ("customdiscordlargeimagetype", "Characters", CV_SAVE|CV_CALL, customlargeimagetype_cons_t, Discordcustomstatus_option_Onchange);
 consvar_t cv_customdiscordsmallimagetype = CVAR_INIT ("customdiscordsmallimagetype", "Maps", CV_SAVE|CV_CALL, customsmallimagetype_cons_t, Discordcustomstatus_option_Onchange);
 // Custom Discord Status Images
     // Characters //
-consvar_t cv_customdiscordlargecharacterimage = CVAR_INIT ("customdiscordlargecharacterimage", "Sonic", CV_SAVE|CV_CALL, customcharacterimage_cons_t, Discordcustomstatus_option_Onchange);
-consvar_t cv_customdiscordsmallcharacterimage = CVAR_INIT ("customdiscordsmallimage", "Tails", CV_SAVE|CV_CALL, customcharacterimage_cons_t, Discordcustomstatus_option_Onchange);
+consvar_t cv_customdiscordlargecharacterimage = CVAR_INIT ("customdiscordlargecharacterimage", "Sonic", CV_SAVE|CV_CALL, customcharacterimage_cons_t, DRPC_UpdatePresence);
+consvar_t cv_customdiscordsmallcharacterimage = CVAR_INIT ("customdiscordsmallimage", "Tails", CV_SAVE|CV_CALL, customcharacterimage_cons_t, DRPC_UpdatePresence);
     // Maps //
-consvar_t cv_customdiscordlargemapimage = CVAR_INIT ("customdiscordlargemapimage", "01", CV_SAVE|CV_CALL, custommapimage_cons_t, Discordcustomstatus_option_Onchange);
-consvar_t cv_customdiscordsmallmapimage = CVAR_INIT ("customdiscordsmallmapimage", "02", CV_SAVE|CV_CALL, custommapimage_cons_t, Discordcustomstatus_option_Onchange);
+consvar_t cv_customdiscordlargemapimage = CVAR_INIT ("customdiscordlargemapimage", "01", CV_SAVE|CV_CALL, custommapimage_cons_t, DRPC_UpdatePresence);
+consvar_t cv_customdiscordsmallmapimage = CVAR_INIT ("customdiscordsmallmapimage", "02", CV_SAVE|CV_CALL, custommapimage_cons_t, DRPC_UpdatePresence);
     // Miscellanious //
-consvar_t cv_customdiscordlargemiscimage = CVAR_INIT ("customdiscordlargemiscimage", "Default", CV_SAVE|CV_CALL, custommiscimage_cons_t, Discordcustomstatus_option_Onchange);
-consvar_t cv_customdiscordsmallmiscimage = CVAR_INIT ("customdiscordsmallmiscimage", "Default", CV_SAVE|CV_CALL, custommiscimage_cons_t, Discordcustomstatus_option_Onchange);
+consvar_t cv_customdiscordlargemiscimage = CVAR_INIT ("customdiscordlargemiscimage", "Default", CV_SAVE|CV_CALL, custommiscimage_cons_t, DRPC_UpdatePresence);
+consvar_t cv_customdiscordsmallmiscimage = CVAR_INIT ("customdiscordsmallmiscimage", "Default", CV_SAVE|CV_CALL, custommiscimage_cons_t, DRPC_UpdatePresence);
     // Captions //
-consvar_t cv_customdiscordlargeimagetext = CVAR_INIT ("customdiscordlargeimagetext", "This is my Favorite Character", CV_SAVE|CV_CALL, NULL, Discordcustomstatus_option_Onchange);
-consvar_t cv_customdiscordsmallimagetext = CVAR_INIT ("customdiscordsmallimagetext", "This is my Favorite Character Too!", CV_SAVE|CV_CALL, NULL, Discordcustomstatus_option_Onchange);
+consvar_t cv_customdiscordlargeimagetext = CVAR_INIT ("customdiscordlargeimagetext", "This is my Favorite Character!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
+consvar_t cv_customdiscordsmallimagetext = CVAR_INIT ("customdiscordsmallimagetext", "This is also my Favorite Character!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
 struct discordInfo_s discordInfo;
 
 discordRequest_t *discordRequestList = NULL;
@@ -474,7 +475,6 @@ void DRPC_Init(void)
 
 	Discord_Initialize(DISCORD_APPID, &handlers, 1, NULL);
 	I_AddExitFunc(Discord_Shutdown);
-	I_AddExitFunc(DRPC_ShutDown);
 	DRPC_UpdatePresence();
 }
 
@@ -565,6 +565,18 @@ void DRPC_UpdatePresence(void)
 	char servertype[15+10];
 	char servertag[11+26+15+8];
 
+	//nerd emoji moment
+	char allEmeralds[1+2+2] = "";
+	char emeraldComma[1+2] = "";
+	char emeraldGrammar[1+1+1] = "";
+	char emeraldMeme[2+5+12+7] = "";
+
+	char lifetype[9+10+2+7] = "";
+	char lifeplural[9+10+2+7] = "";
+
+	char spectatortype[9+10] = "";
+	char spectatorgrammar[2+3] = "";
+
 	INT32 i;
 
 	//Tiny Emeralds Counter
@@ -582,6 +594,8 @@ void DRPC_UpdatePresence(void)
 		// This just shows that they're playing SRB2. (If that's too much, then they should disable game activity :V)
 		discordPresence.largeImageKey = "misctitle";
 		discordPresence.largeImageText = "Sonic Robo Blast 2";
+		if (paused) //look, if you wanna be a whiny baby about it, just let me know
+			discordPresence.details = "Currently Paused";
 		DRPC_EmptyRequests();
 		Discord_UpdatePresence(&discordPresence);
 		return;
@@ -658,112 +672,54 @@ void DRPC_UpdatePresence(void)
 		// so that you don't ever end up using bad information from another server.
 		memset(&discordInfo, 0, sizeof(discordInfo));
 
-		if (playeringame[consoleplayer] && gamestate == GS_LEVEL && Playing())
+		//// Set Status Picture (Just in Case) ////
+		if (cv_discordshowonstatus.value != 0 && cv_discordshowonstatus.value != 8)
 		{
-			for (i = 0; i < 7; i++) // thanks Monster Iestyn for this math
-				if (emeralds & (1<<i))
-					emeraldCount += 1;
-
-			//// Set Status Picture (Just in Case) ////
-			if (cv_discordshowonstatus.value == 2 || cv_discordshowonstatus.value == 3 || cv_discordshowonstatus.value == 4 || cv_discordshowonstatus.value == 6)
+			if (((cv_discordshowonstatus.value == 1 || cv_discordshowonstatus.value == 5) && !Playing()) || (cv_discordshowonstatus.value != 1 && cv_discordshowonstatus.value != 5))
 			{
 				discordPresence.largeImageKey = "misctitle";
 				discordPresence.largeImageText = "Sonic Robo Blast 2";
 			}
+		}
 
+		if (playeringame[consoleplayer])
+		{
 			//// Emblems ////
 			if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 4)
 				snprintf(detailstr, 20, "%d/%d Emblems", M_CountEmblems(), (numemblems + numextraemblems));
 			
 			//// Emeralds ////
-			if (!cv_discordstatusmemes.value) //i think you know what the joke here is
+			if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 3)
 			{
-				//there's a special stage token right at the BEGINNING OF GFZ1 HOW DO YOU NOT HAVE A EMERALD YET
-				if (!emeralds)
+				for (i = 0; i < 7; i++) // thanks Monster Iestyn for this math
+					if (emeralds & (1<<i))
+						emeraldCount += 1;
+				
+				if (emeraldCount == 7)
+					snprintf(allEmeralds, 5, "All ");
+
+				if (emeraldCount > 1 || emeraldCount == 0) //Mystic Power Gang
 				{
-					if (cv_discordshowonstatus.value == 0)
-						strlcat(detailstr, ", No Emeralds", 64);
-					else if (cv_discordshowonstatus.value == 3)
-						strlcat(detailstr, "No Emeralds", 64);
-				}
-				//Mystic Power Gang
-				else
-				{
-					if (!cv_discordshowonstatus.value)
+					snprintf(emeraldGrammar, 2, "s"); //i think you know what the joke here is
+					if (cv_discordstatusmemes.value) //Honestly relatable lol
 					{
-						if (emeraldCount != 7)
-						{
-							if (emeraldCount > 1)
-								strlcat(detailstr, va(", %d Emeralds", emeraldCount), 64);
-							else
-								strlcat(detailstr, va(", %d Emerald", emeraldCount), 64);
-						}
-						else
-							strlcat(detailstr, ", All 7 Emeralds", 64);
-					}
-					else if (cv_discordshowonstatus.value == 3)
-					{
-						if (emeraldCount != 7)
-						{
-							if (emeraldCount > 1)
-								strlcat(detailstr, va("%d Emeralds", emeraldCount), 64);
-							else
-								strlcat(detailstr, va("%d Emerald", emeraldCount), 64);
-						}
-						else
-							strlcat(detailstr, "All 7 Emeralds", 64);
-					}
-				}
-			}
-			//Honestly relatable lol
-			else
-			{
-				//Man, Special Stage Got Hands
-				if (!emeralds)
-				{
-					if (!cv_discordshowonstatus.value)
-						strlcat(detailstr, ", NO EMERALDS?", 64);
-					else if (cv_discordshowonstatus.value == 3)
-						strlcat(detailstr, "NO EMERALDS?", 64);
-				}
-				//Mystic Power Gang
-				else
-				{
-					if (!cv_discordshowonstatus.value)
-					{
-						if (emeraldCount < 7 && emeraldCount != 3 && emeraldCount != 4)
-						{
-							if (emeraldCount > 1)
-								strlcat(detailstr, va(", %d Emeralds", emeraldCount), 64);
-							else
-								strlcat(detailstr, va(", %d Emerald", emeraldCount), 64);
-						}
-						else if (emeraldCount == 3)
-							// Fun Fact: the subtitles in Shadow the Hedgehog emphasized "fourth", even though Jason Griffith emphasized "damn" in this sentence
-							strlcat(detailstr, ", %d Emeralds; Where's That DAMN FOURTH", 64);
+						if (emeraldCount == 3 || emeraldCount == 4)
+							snprintf(emeraldGrammar, 3, "s;");
+						else if (!emeralds) //Man, Special Stage Got Hands
+							snprintf(emeraldGrammar, 3, "s?"); //there's a special stage token right at the BEGINNING OF GFZ1 HOW DO YOU NOT HAVE A EMERALD YET
+						
+						// Fun Fact: the subtitles in Shadow the Hedgehog emphasized "fourth", even though Jason Griffith emphasized "damn" in this sentence
+						if (emeraldCount == 3)
+							snprintf(emeraldMeme, 26, " Where's That DAMN FOURTH");
 						else if (emeraldCount == 4)
-							strlcat(detailstr, ", %d Emeralds; Found that DAMN FOURTH", 64);
-						else if (emeraldCount == 7)
-							strlcat(detailstr, ", All 7 Emeralds", 64);
-					}
-					else if (cv_discordshowonstatus.value == 3)
-					{
-						if (emeraldCount < 7 && emeraldCount != 3 && emeraldCount != 4)
-						{
-							if (emeraldCount > 1)
-								strlcat(detailstr, va("%d Emeralds", emeraldCount), 64);
-							else
-								strlcat(detailstr, va("%d Emerald", emeraldCount), 64);
-						}
-						else if (emeraldCount == 3)
-							// You Already Know the Fun Fact lol
-							strlcat(detailstr, "%d Emeralds; Where's That DAMN FOURTH", 64);
-						else if (emeraldCount == 4)
-							strlcat(detailstr, "%d Emeralds; Found that DAMN FOURTH", 64);
-						else if (emeraldCount == 7)
-							strlcat(detailstr, "All 7 Emeralds", 64);
+							snprintf(emeraldMeme, 25, " Found That DAMN FOURTH");
 					}
 				}
+
+				if (!cv_discordshowonstatus.value)
+					snprintf(emeraldComma, 3, ", ");
+
+				strlcat(detailstr, va("%s%s%d Emerald%s%s", emeraldComma, allEmeralds, emeraldCount, emeraldGrammar, emeraldMeme), 64);
 			}
 
 			//// Score ////
@@ -772,65 +728,135 @@ void DRPC_UpdatePresence(void)
 			
 			//// SRB2 Playtime ////
 			if (cv_discordshowonstatus.value == 7)
-				snprintf(detailstr, 60, "Total SRB2 Playtime: %d hours, %d minutes, %d seconds", G_TicsToHours(totalplaytime), G_TicsToMinutes(totalplaytime, false), G_TicsToSeconds(totalplaytime));
+				snprintf(detailstr, 60, "Total Playtime: %d hours, %d minutes, %d seconds", G_TicsToHours(totalplaytime), G_TicsToMinutes(totalplaytime, false), G_TicsToSeconds(totalplaytime));
 
+			//// Apply our Status, And We're Done :) ////
 			discordPresence.details = detailstr;
 		}
-		else if (demoplayback && !titledemo)
-			discordPresence.state = "Watching Replays";
+		
+		if (demoplayback && !titledemo)
+		{
+			snprintf(statestr, 25, "Watching Replays");
+			discordPresence.state = statestr;
+		}
 		else
 		{
-			discordPresence.largeImageKey = "misctitle";
-				
-			if (!cv_discordshowonstatus.value)
+			if (!Playing())
 			{
-				discordPresence.largeImageText = "Title Screen";
-				discordPresence.state = "Main Menu";
+				discordPresence.largeImageKey = "misctitle";
+				if (!cv_discordshowonstatus.value)
+				{
+					discordPresence.largeImageText = "Title Screen";
+					snprintf(statestr, 18, "Main Menu");
+					discordPresence.state = statestr;
+				}
+				else
+					discordPresence.largeImageText = "Sonic Robo Blast 2";
 			}
-			else
-				discordPresence.largeImageText = "Sonic Robo Blast 2";
 		}
 	}
 
 	//// Gametypes ////
 	if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 6)
 	{
-		if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) && Playing() && !paused)
+		// You Already Know The Deal.
+		memset(&discordInfo, 0, sizeof(discordInfo));
+
+		if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) && Playing())
 		{
 			if (modeattacking)
 			{
-				if (!(maptol == TOL_NIGHTS && maptol == TOL_XMAS))
-					discordPresence.details = "Playing Time Attack";
+				if ((maptol != TOL_NIGHTS && maptol != TOL_XMAS))
+					snprintf(statestr, 65, "Playing Time Attack");
 				else
-					discordPresence.details = "Playing NiGHTS Mode";
+					snprintf(statestr, 65, "Playing NiGHTS Mode");
 			}
 			else
-			{
+			{	
 				if (!splitscreen) 
 				{
-					if (netgame)
+					if ((gametype == GT_COOP) && (!netgame))
 					{
+						if (!ultimatemode)
+							snprintf(statestr, 65, "Playing Single-Player");
+						else
+							snprintf(statestr, 65, "Taking on Ultimate Mode");
+					}
+					else
 						snprintf(statestr, 65, "Playing %s", gametype_cons_t[gametype].strvalue);
-						discordPresence.state = statestr;
+				}
+				else
+					snprintf(statestr, 65, "Playing Split-Screen");
+				
+				if (players[consoleplayer].lives && !players[consoleplayer].spectator && gametyperules & GTR_LIVES && !ultimatemode)
+				{
+					if (players[consoleplayer].lives == 1)
+						snprintf(lifeplural, 9, ", %d Life", players[consoleplayer].lives);
+					else if (players[consoleplayer].lives > 1)
+						snprintf(lifeplural, 12, ", %d Lives", players[consoleplayer].lives);
+					
+					if (players[consoleplayer].lives >= 1)
+						snprintf(lifetype, 7, " Left");
+					else if (players[consoleplayer].lives == INFLIVES)
+						snprintf(lifeplural, 22, "Has Infinite Lives");
+				}
+				else if (!players[consoleplayer].spectator && !players[consoleplayer].lives)
+					snprintf(lifeplural, 15, ", Game Over...");
+				else if (playeringame[consoleplayer])
+				{
+					if (!players[consoleplayer].spectator)
+					{
+						if ((displayplayer != consoleplayer) || (cv_discordstatusmemes.value && (displayplayer != consoleplayer)))
+							snprintf(spectatorgrammar, 4, "ing");
+						else
+							snprintf(spectatorgrammar, 3, "er");
+						
+						snprintf(spectatortype, 21, ", View%s", spectatorgrammar);
 					}
 					else
 					{
-						if ((gametype == GT_COOP) && (!netgame))
-							discordPresence.state = "Playing Single-Player";
-						else if (ultimatemode)
-							discordPresence.state = "Taking on Ultimate Mode";
+						if ((displayplayer != consoleplayer) || (cv_discordstatusmemes.value && (displayplayer == consoleplayer)))
+							snprintf(spectatorgrammar, 4, "ing");
+						else
+							snprintf(spectatorgrammar, 3, "or");
+						
+						snprintf(spectatortype, 21, "Spectat%s", spectatorgrammar);
+					}
+
+					if (!players[consoleplayer].spectator || players[consoleplayer].spectator)
+					{
+						if (players[consoleplayer].spectator)
+							snprintf(lifeplural, 12, ", Dead & ");
+
+						if (displayplayer != consoleplayer)
+							snprintf(lifetype, 30, "%s %s", spectatortype, player_names[displayplayer]);
+						else if ((displayplayer == consoleplayer) && players[consoleplayer].spectator)
+						{
+							if (!cv_discordstatusmemes.value)
+								snprintf(lifetype, 27, "In %s Mode", spectatortype);
+							else
+								snprintf(lifetype, 23, "%s Air", spectatortype);
+						}
 					}
 				}
-				else
-					discordPresence.state = "Playing Split-Screen";
+				strlcat(statestr, va("%s%s", lifeplural, lifetype), 65);
 			}
+			discordPresence.state = statestr;
 		}
-		else if (paused)
-			discordPresence.state = "This Player's Game is Currently Paused";
+	}
+	
+	// You Should Be Able To Set Whether You're Paused Or Not, In My Opinion, No Matter What.
+	if (paused)
+	{
+		strlcat(statestr, ", Currently Paused", 17);
+		discordPresence.state = statestr;
 	}
 
 	if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 5)
 	{
+		// You've Got It Down-Pact Already.
+		memset(&discordInfo, 0, sizeof(discordInfo));
+
 		if (gamestate == GS_INTRO)
 		{
 			discordPresence.largeImageKey = "misctitle";
@@ -871,7 +897,7 @@ void DRPC_UpdatePresence(void)
 				discordPresence.largeImageText = mapname;
 			}
 
-			if (gamestate == GS_LEVEL && Playing())
+			if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) && Playing())
 			{
 				const time_t currentTime = time(NULL);
 				const time_t mapTimeStart = currentTime - (leveltime / TICRATE);
@@ -907,6 +933,9 @@ void DRPC_UpdatePresence(void)
 	//// Characters ////
 	if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 1)
 	{
+		//just in case
+		memset(&discordInfo, 0, sizeof(discordInfo));
+
 		if (Playing() && playeringame[consoleplayer])
 		{
 			// Why Would You Split My Screen
@@ -960,19 +989,6 @@ void DRPC_UpdatePresence(void)
 					// Player Names
 					if (!players[consoleplayer].spectator)
 						snprintf(charname, 32, "Playing As: %s", skins[players[consoleplayer].skin].realname); // Character
-					else
-					{
-						// Viewpoint
-						if (playeringame[displayplayer])
-							snprintf(charname, 32, "%s is Spectating %s", player_names[consoleplayer], player_names[displayplayer]); // Combine Player Names Together
-						else
-						{
-						    char funnystring[5] = "\0"; // you're no fun, you know
-							if (cv_discordstatusmemes.value)
-								 snprintf(funnystring, 5, " Air"); // why are you spectating air
-							snprintf(charname, 32, "%s is Spectating%s", player_names[consoleplayer], funnystring);
-						}		
-					}
 				}
 				//// Bots ////
 				else if (players[1].bot)
@@ -1024,8 +1040,11 @@ void DRPC_UpdatePresence(void)
 	//// Custom Statuses ////
 	if (cv_discordshowonstatus.value == 8)
     {
-	    char customlargeimagestring[36];
-        char customsmallimagestring[36];
+		//still just in case lol
+		memset(&discordInfo, 0, sizeof(discordInfo));
+
+	    char customlargeimagestring[32];
+        char customsmallimagestring[32];
 
 		discordPresence.details = cv_customdiscorddetails.string;
 		discordPresence.state = cv_customdiscordstate.string;
@@ -1037,7 +1056,7 @@ void DRPC_UpdatePresence(void)
                 snprintf(customlargeimagestring, 36, "char%s", cv_customdiscordlargecharacterimage.string);
             else if (cv_customdiscordlargeimagetype.value == 1)
                 snprintf(customlargeimagestring, 36, "map%s", cv_customdiscordlargemapimage.string);
-            else
+            else if (cv_customdiscordlargeimagetype.value == 2)
                 snprintf(customlargeimagestring, 36, "misc%s", cv_customdiscordlargemiscimage.string);
 
             int nospaces = 0; //this helps us remove spaces from our string, if we have any
@@ -1065,11 +1084,11 @@ void DRPC_UpdatePresence(void)
 		if ((!cv_customdiscordsmallimagetype.value) || (cv_customdiscordsmallimagetype.value == 1) || (cv_customdiscordsmallimagetype.value == 2))
 		{
             if (!cv_customdiscordsmallimagetype.value)
-                snprintf(customsmallimagestring, 36, "char%s", cv_customdiscordsmallcharacterimage.string);
+                snprintf(customsmallimagestring, 32, "char%s", cv_customdiscordsmallcharacterimage.string);
             else if (cv_customdiscordsmallimagetype.value == 1)
-                snprintf(customsmallimagestring, 36, "map%s", cv_customdiscordsmallmapimage.string);
-            else
-                snprintf(customsmallimagestring, 36, "misc%s", cv_customdiscordsmallmiscimage.string);
+                snprintf(customsmallimagestring, 32, "map%s", cv_customdiscordsmallmapimage.string);
+            else if (cv_customdiscordsmallimagetype.value == 2)
+                snprintf(customsmallimagestring, 32, "misc%s", cv_customdiscordsmallmiscimage.string);
 
             int nospaces = 0; //this helps us remove spaces from our string, if we have any
             for (i = 0; customsmallimagestring[i] != '\0'; i++) { //string writing, now capiable of removing spaces and forcing lowercases on letters, in limited small image edition
@@ -1094,8 +1113,7 @@ void DRPC_UpdatePresence(void)
 	}
 
 	if (!joinSecretSet)
-		// Not able to join? Flush the request list, if it exists.
-		DRPC_EmptyRequests();
+		DRPC_EmptyRequests(); // Not able to join? Flush the request list, if it exists.
 
 	Discord_UpdatePresence(&discordPresence);
 }
@@ -1109,7 +1127,6 @@ void DRPC_UpdatePresence(void)
 --------------------------------------------------*/
 void DRPC_ShutDown(void)
 {
-	DRPC_UpdatePresence();
 	DRPC_EmptyRequests();
 	Discord_ClearPresence();
 	Discord_Shutdown();

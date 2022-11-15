@@ -1242,6 +1242,10 @@ static void ForceAllSkins(INT32 forcedskin)
 				CV_StealthSet(&cv_skin2, skins[forcedskin].name);
 		}
 	}
+
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 }
 
 static INT32 snacpending = 0, snac2pending = 0, chmappending = 0;
@@ -2262,6 +2266,9 @@ static void Got_Pause(UINT8 **cp, INT32 playernum)
 			S_ResumeAudio();
 	}
 
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 	I_UpdateMouseGrab();
 }
 
@@ -2924,6 +2931,9 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 		if (displayplayer != consoleplayer) // You're already viewing yourself. No big deal.
 			LUA_HookViewpointSwitch(&players[consoleplayer], &players[consoleplayer], true);
 		displayplayer = consoleplayer;
+#ifdef HAVE_DISCORDRPC
+		DRPC_UpdatePresence();
+#endif
 	}
 
 	if (G_GametypeHasTeams())
@@ -4821,6 +4831,10 @@ static void Skin_OnChange(void)
 		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));
 		CV_StealthSet(&cv_skin, skins[players[consoleplayer].skin].name);
 	}
+
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 }
 
 /** Sends a skin change for the secondary splitscreen player, unless that
@@ -4840,6 +4854,10 @@ static void Skin2_OnChange(void)
 		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));
 		CV_StealthSet(&cv_skin2, skins[players[secondarydisplayplayer].skin].name);
 	}
+
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 }
 
 /** Sends a color change for the console player, unless that player is moving.
