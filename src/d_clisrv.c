@@ -2916,6 +2916,10 @@ void CL_RemovePlayer(INT32 playernum, kickreason_t reason)
 		P_CheckSurvivors();
 	else if (gametyperules & GTR_RACE)
 		P_CheckRacers();
+	
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 }
 
 void CL_Reset(void)
