@@ -2107,6 +2107,9 @@ boolean G_Responder(event_t *ev)
 
 			// tell who's the view
 			CONS_Printf(M_GetText("Viewpoint: %s\n"), player_names[displayplayer]);
+#ifdef HAVE_DISCORDRPC
+			DRPC_UpdatePresence();
+#endif
 
 			return true;
 		}
@@ -2820,6 +2823,13 @@ void G_MovePlayerToSpawnOrStarpost(INT32 playernum)
 		P_MovePlayerToStarpost(playernum);
 	else
 		P_MovePlayerToSpawn(playernum, G_FindMapStart(playernum));
+	
+	R_ResetMobjInterpolationState(players[playernum].mo);
+	
+	if (playernum == consoleplayer)
+		P_ResetCamera(&players[playernum], &camera);
+	else if (playernum == secondarydisplayplayer)
+		P_ResetCamera(&players[playernum], &camera2);
 }
 
 mapthing_t *G_FindCTFStart(INT32 playernum)
@@ -3296,6 +3306,7 @@ void G_AddPlayer(INT32 playernum)
 
 	if ((countplayers && !notexiting) || G_IsSpecialStage(gamemap))
 		P_DoPlayerExit(p);
+
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
 #endif
@@ -4182,6 +4193,10 @@ static void G_DoContinued(void)
 	player_t *pl = &players[consoleplayer];
 	I_Assert(!netgame && !multiplayer);
 	I_Assert(pl->continues > 0);
+
+#ifdef HAVE_DISCORDRPC
+    DRPC_UpdatePresence();
+#endif
 
 	if (pl->continues)
 		pl->continues--;

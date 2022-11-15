@@ -126,8 +126,8 @@ extern char logfilename[1024];
 
 //#define DEVELOP // Disable this for release builds to remove excessive cheat commands and enable MD5 checking and stuff, all in one go. :3
 #ifdef DEVELOP
-#define VERSIONSTRING "THE STORY of UNCAPPED REVENGENCE DISCORD the 3RD"
-#define VERSIONSTRING_RC "THE STORY of UNCAPPED REVENGENCE DISCORD the 3RD" "\0"
+#define VERSIONSTRING "TSOURDt3RD (by StarManiaKG#4884) - Dev Mode Edition"
+#define VERSIONSTRING_RC "TSOURDt3RD (by StarManiaKG#4884) - Dev Mode Edition" "\0"
 // most interface strings are ignored in development mode.
 // we use comprevision and compbranch instead.
 // VERSIONSTRING_RC is for the resource-definition script used by windows builds
@@ -598,7 +598,7 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 ///	Allow loading of savegames between different versions of the game.
 ///	\note	XMOD port.
 ///	    	Most modifications should probably enable this.
-#define SAVEGAME_OTHERVERSIONS
+//#define SAVEGAME_OTHERVERSIONS
 
 ///	Shuffle's incomplete OpenGL sorting code.
 #define SHUFFLE // This has nothing to do with sorting, why was it disabled?
