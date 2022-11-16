@@ -28,7 +28,6 @@
 #include "byteptr.h"
 #include "stun.h"
 #include "i_tcp.h" // current_port
-#include "d_player.h" // INFLIVES
 
 #include "discord.h"
 #include "doomdef.h"
@@ -46,7 +45,7 @@ static CV_PossibleValue_t discordstatustype_cons_t[] = {
     {3, "Only Emeralds"},
     {4, "Only Emblems"},
     {5, "Only Levels"},
-    {6, "Only Gametype"},
+    {6, "Only Statuses"},
     {7, "Only Playtime"},
     {8, "Custom"},
     {0, NULL}};
@@ -566,16 +565,25 @@ void DRPC_UpdatePresence(void)
 	char servertag[11+26+15+8];
 
 	//nerd emoji moment
+	char detailGrammar[2+2] = "";
+	
+	char stateGrammar[2+2] = "";
+	char stateType[10+9+5] = "";
+
 	char allEmeralds[1+2+2] = "";
 	char emeraldComma[1+2] = "";
 	char emeraldGrammar[1+1+1] = "";
 	char emeraldMeme[2+5+12+7] = "";
 
-	char lifetype[9+10+2+7] = "";
-	char lifeplural[9+10+2+7] = "";
+	char lifeType[9+10+2+7] = "";
+	char lifeGrammar[9+10+2+7] = "";
 
-	char spectatortype[9+10] = "";
-	char spectatorgrammar[2+3] = "";
+	char spectatorType[9+10] = "";
+	char spectatorGrammar[2+3] = "";
+
+	//custom things
+	char customLImageString[32];
+    char customSImageString[32];
 
 	INT32 i;
 
@@ -592,10 +600,17 @@ void DRPC_UpdatePresence(void)
 	{
 		// User doesn't want to show their game information, so update with empty presence.
 		// This just shows that they're playing SRB2. (If that's too much, then they should disable game activity :V)
+		// Now it also shows a few predetermined states, thanks to Star :)
 		discordPresence.largeImageKey = "misctitle";
 		discordPresence.largeImageText = "Sonic Robo Blast 2";
-		if (paused) //look, if you wanna be a whiny baby about it, just let me know
-			discordPresence.details = "Currently Paused";
+
+		if (paused) // You Should Be Able To Set Whether You're Paused Or Not, In My Opinion, No Matter What.
+			discordPresence.state = "Currently Paused";
+		else if (menuactive) // Scrolling Through the Menus? Set it as Your Status Then.
+			discordPresence.state = "Scrolling Through Menus";
+		else
+			discordPresence.state = "In-Game; Actively Playing";
+
 		DRPC_EmptyRequests();
 		Discord_UpdatePresence(&discordPresence);
 		return;
@@ -606,6 +621,7 @@ void DRPC_UpdatePresence(void)
 	discordPresence.largeImageKey = "miscdevelop";
 	discordPresence.largeImageText = "No peeking!";
 	discordPresence.state = "Developing a Masterpiece!";
+	discordPresence.details = "Keep your Eyes Peeled!";
 
 	DRPC_EmptyRequests();
 	Discord_UpdatePresence(&discordPresence);
@@ -616,14 +632,14 @@ void DRPC_UpdatePresence(void)
 	////   Main Rich Presence Status Info   ////
 	////////////////////////////////////////////
 
-	//// Server Info ////
-	if (dedicated || netgame)
-	{
-	    // Reset discord info if you're not in a place that uses it!
-        // Important for if you join a server that compiled without HAVE_DISCORDRPC,
-        // so that you don't ever end up using bad information from another server.
-        memset(&discordInfo, 0, sizeof(discordInfo));
+	// Reset discord info if you're not in a place that uses it!
+    // Important for if you join a server that compiled without HAVE_DISCORDRPC,
+	// so that you don't ever end up using bad information from another server.
+    memset(&discordInfo, 0, sizeof(discordInfo));
 
+	//// Server Info ////
+	if (dedicated || netgame || multiplayer)
+	{
 		if (DRPC_InvitesAreAllowed() == true)
 		{
 			const char *join;
@@ -665,13 +681,8 @@ void DRPC_UpdatePresence(void)
 		discordPresence.partySize = D_NumPlayers(); // Players in server
 		discordPresence.partyMax = cv_maxplayers.value; // Max players
 	}
-	else if (dedicated || netgame || !netgame)
+	else if ((dedicated || netgame || multiplayer) || !multiplayer)
 	{
-		// Reset discord info if you're not in a place that uses it!
-		// Important for if you join a server that compiled without HAVE_DISCORDRPC,
-		// so that you don't ever end up using bad information from another server.
-		memset(&discordInfo, 0, sizeof(discordInfo));
-
 		//// Set Status Picture (Just in Case) ////
 		if (cv_discordshowonstatus.value != 0 && cv_discordshowonstatus.value != 8)
 		{
@@ -730,6 +741,16 @@ void DRPC_UpdatePresence(void)
 			if (cv_discordshowonstatus.value == 7)
 				snprintf(detailstr, 60, "Total Playtime: %d hours, %d minutes, %d seconds", G_TicsToHours(totalplaytime), G_TicsToMinutes(totalplaytime, false), G_TicsToSeconds(totalplaytime));
 
+			//// Tiny Detail Things; Complete Games, etc. ////
+			if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value != 8)
+			{
+				if (!(cv_discordshowonstatus.value == 1 || cv_discordshowonstatus.value == 5 || cv_discordshowonstatus.value == 6))
+					snprintf(detailGrammar, 3, ", ");
+
+				if (gamecomplete) //You've beat the game? You Get A Special Status Then!
+					strlcat(detailstr, va("%sHas Beaten the Game!", detailGrammar), 64);
+			}
+
 			//// Apply our Status, And We're Done :) ////
 			discordPresence.details = detailstr;
 		}
@@ -745,118 +766,126 @@ void DRPC_UpdatePresence(void)
 			{
 				discordPresence.largeImageKey = "misctitle";
 				if (!cv_discordshowonstatus.value)
-				{
 					discordPresence.largeImageText = "Title Screen";
-					snprintf(statestr, 18, "Main Menu");
-					discordPresence.state = statestr;
-				}
 				else
 					discordPresence.largeImageText = "Sonic Robo Blast 2";
+				
+				snprintf(statestr, 18, "Main Menu");
+				discordPresence.state = statestr;
 			}
 		}
 	}
 
-	//// Gametypes ////
+	//// Statuses ////
 	if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 6)
 	{
-		// You Already Know The Deal.
-		memset(&discordInfo, 0, sizeof(discordInfo));
-
-		if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) && Playing())
+		if (((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) && Playing()) || (paused || menuactive))
 		{
-			if (modeattacking)
+			if (Playing())
 			{
-				if ((maptol != TOL_NIGHTS && maptol != TOL_XMAS))
-					snprintf(statestr, 65, "Playing Time Attack");
-				else
-					snprintf(statestr, 65, "Playing NiGHTS Mode");
-			}
-			else
-			{	
-				if (!splitscreen) 
+				if (modeattacking)
 				{
-					if ((gametype == GT_COOP) && (!netgame))
-					{
-						if (!ultimatemode)
-							snprintf(statestr, 65, "Playing Single-Player");
-						else
-							snprintf(statestr, 65, "Taking on Ultimate Mode");
-					}
+					if ((maptol != TOL_NIGHTS && maptol != TOL_XMAS))
+						snprintf(statestr, 65, "Playing Time Attack");
 					else
-						snprintf(statestr, 65, "Playing %s", gametype_cons_t[gametype].strvalue);
+						snprintf(statestr, 65, "Playing NiGHTS Mode");
 				}
 				else
-					snprintf(statestr, 65, "Playing Split-Screen");
-				
-				if (players[consoleplayer].lives && !players[consoleplayer].spectator && gametyperules & GTR_LIVES && !ultimatemode)
-				{
-					if (players[consoleplayer].lives == 1)
-						snprintf(lifeplural, 9, ", %d Life", players[consoleplayer].lives);
-					else if (players[consoleplayer].lives > 1)
-						snprintf(lifeplural, 12, ", %d Lives", players[consoleplayer].lives);
-					
-					if (players[consoleplayer].lives >= 1)
-						snprintf(lifetype, 7, " Left");
-					else if (players[consoleplayer].lives == INFLIVES)
-						snprintf(lifeplural, 22, "Has Infinite Lives");
-				}
-				else if (!players[consoleplayer].spectator && !players[consoleplayer].lives)
-					snprintf(lifeplural, 15, ", Game Over...");
-				else if (playeringame[consoleplayer])
-				{
-					if (!players[consoleplayer].spectator)
+				{	
+					if (!splitscreen) 
 					{
-						if ((displayplayer != consoleplayer) || (cv_discordstatusmemes.value && (displayplayer != consoleplayer)))
-							snprintf(spectatorgrammar, 4, "ing");
-						else
-							snprintf(spectatorgrammar, 3, "er");
-						
-						snprintf(spectatortype, 21, ", View%s", spectatorgrammar);
-					}
-					else
-					{
-						if ((displayplayer != consoleplayer) || (cv_discordstatusmemes.value && (displayplayer == consoleplayer)))
-							snprintf(spectatorgrammar, 4, "ing");
-						else
-							snprintf(spectatorgrammar, 3, "or");
-						
-						snprintf(spectatortype, 21, "Spectat%s", spectatorgrammar);
-					}
-
-					if (!players[consoleplayer].spectator || players[consoleplayer].spectator)
-					{
-						if (players[consoleplayer].spectator)
-							snprintf(lifeplural, 12, ", Dead & ");
-
-						if (displayplayer != consoleplayer)
-							snprintf(lifetype, 30, "%s %s", spectatortype, player_names[displayplayer]);
-						else if ((displayplayer == consoleplayer) && players[consoleplayer].spectator)
+						if ((gametype == GT_COOP) && (!netgame))
 						{
-							if (!cv_discordstatusmemes.value)
-								snprintf(lifetype, 27, "In %s Mode", spectatortype);
+							if (!ultimatemode)
+								snprintf(statestr, 65, "Playing Single-Player");
 							else
-								snprintf(lifetype, 23, "%s Air", spectatortype);
+								snprintf(statestr, 65, "Taking on Ultimate Mode");
+						}
+						else
+							snprintf(statestr, 65, "Playing %s", gametype_cons_t[gametype].strvalue);
+					}
+					else
+						snprintf(statestr, 65, "Playing Split-Screen");
+					
+					if (!players[consoleplayer].spectator && gametyperules & GTR_LIVES && !ultimatemode)
+					{
+						if ((players[consoleplayer].lives == INFLIVES) || (!cv_cooplives.value && (netgame || multiplayer)))
+							snprintf(lifeGrammar, 22, ", Has Infinite Lives");
+						else
+						{
+							if (players[consoleplayer].lives == 1)
+								snprintf(lifeGrammar, 9, ", %d Life", players[consoleplayer].lives);
+							else if (players[consoleplayer].lives > 1)
+								snprintf(lifeGrammar, 12, ", %d Lives", players[consoleplayer].lives);
+							
+							if (players[consoleplayer].lives >= 1)
+								snprintf(lifeType, 7, " Left");
 						}
 					}
+					else if (!players[consoleplayer].spectator && !players[consoleplayer].lives)
+						snprintf(lifeGrammar, 15, ", Game Over...");
+					else if (playeringame[consoleplayer])
+					{
+						if (!players[consoleplayer].spectator)
+						{
+							if ((displayplayer != consoleplayer) || (cv_discordstatusmemes.value && (displayplayer != consoleplayer)))
+								snprintf(spectatorGrammar, 4, "ing");
+							else
+								snprintf(spectatorGrammar, 3, "er");
+							
+							snprintf(spectatorType, 21, ", View%s", spectatorGrammar);
+						}
+						else
+						{
+							if ((displayplayer != consoleplayer) || (cv_discordstatusmemes.value && (displayplayer == consoleplayer)))
+								snprintf(spectatorGrammar, 4, "ing");
+							else
+								snprintf(spectatorGrammar, 3, "or");
+							
+							snprintf(spectatorType, 21, "Spectat%s", spectatorGrammar);
+						}
+
+						if (!players[consoleplayer].spectator || players[consoleplayer].spectator)
+						{
+							if (players[consoleplayer].spectator)
+								snprintf(lifeGrammar, 12, ", Dead & ");
+
+							if (displayplayer != consoleplayer)
+								snprintf(lifeType, 30, "%s %s", spectatorType, player_names[displayplayer]);
+							else if ((displayplayer == consoleplayer) && players[consoleplayer].spectator)
+							{
+								if (!cv_discordstatusmemes.value)
+									snprintf(lifeType, 27, "In %s Mode", spectatorType);
+								else
+									snprintf(lifeType, 23, "%s Air", spectatorType);
+							}
+						}
+					}
+					strlcat(statestr, va("%s%s", lifeGrammar, lifeType), 65);
 				}
-				strlcat(statestr, va("%s%s", lifeplural, lifetype), 65);
 			}
+			
+			if (!Playing() || paused || menuactive)
+			{
+				snprintf(stateGrammar, 3, ", ");
+
+				//// Tiny State Things; Pausing, Active Menues, etc. ////
+				if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value != 8)
+				{
+					if (paused) // You Should Be Able To Set Whether You're Paused Or Not, In My Opinion, No Matter What.
+						snprintf(stateType, 20, "%sCurrently Paused", stateGrammar);
+					else if (menuactive) // Scrolling Through the Menus? Set it as Your Status Then.
+						snprintf(stateType, 27, "%sScrolling Through Menus", stateGrammar);
+				}
+				strlcat(statestr, va("%s", stateType), 65);
+			}
+
 			discordPresence.state = statestr;
 		}
-	}
-	
-	// You Should Be Able To Set Whether You're Paused Or Not, In My Opinion, No Matter What.
-	if (paused)
-	{
-		strlcat(statestr, ", Currently Paused", 17);
-		discordPresence.state = statestr;
 	}
 
 	if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 5)
 	{
-		// You've Got It Down-Pact Already.
-		memset(&discordInfo, 0, sizeof(discordInfo));
-
 		if (gamestate == GS_INTRO)
 		{
 			discordPresence.largeImageKey = "misctitle";
@@ -866,8 +895,8 @@ void DRPC_UpdatePresence(void)
 			&& !(demoplayback && titledemo))
 		{
 			if ((gamemap >= 1 && gamemap <= 73) // Supported Co-op maps
-			|| (gamemap >= 280 && gamemap <= 288) // Supported CTF maps
-			|| (gamemap >= 532 && gamemap <= 543)) // Supported Match maps
+			|| (gamemap >= 532 && gamemap <= 543) // Supported Match maps
+			|| (gamemap >= 280 && gamemap <= 288)) // Supported CTF maps
 			{
 				snprintf(mapimg, 8, "%s", G_BuildMapName(gamemap));
 				strlwr(mapimg);
@@ -897,7 +926,7 @@ void DRPC_UpdatePresence(void)
 				discordPresence.largeImageText = mapname;
 			}
 
-			if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) && Playing())
+			if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) && (Playing() || paused))
 			{
 				const time_t currentTime = time(NULL);
 				const time_t mapTimeStart = currentTime - (leveltime / TICRATE);
@@ -913,12 +942,16 @@ void DRPC_UpdatePresence(void)
 		}
 		else if (gamestate == GS_EVALUATION || gamestate == GS_GAMEEND || gamestate == GS_CREDITS || gamestate == GS_ENDING|| gamestate == GS_CONTINUING)
 		{	
+			// Heh.
+			memset(&discordInfo, 0, sizeof(discordInfo));
+
 			discordPresence.largeImageKey = "misctitle";
+			discordPresence.largeImageText = "Sonic Robo Blast 2";
 				
 			if (gamestate == GS_EVALUATION && !ultimatemode)
-				discordPresence.largeImageText = "Evaluating Results";
+				discordPresence.details = "Evaluating Results";
 			else if (gamestate == GS_CONTINUING) 
-				discordPresence.largeImageText = "On the Continue Screen";
+				discordPresence.details = "On the Continue Screen";
 
 			if (ultimatemode)
 			{	
@@ -933,59 +966,64 @@ void DRPC_UpdatePresence(void)
 	//// Characters ////
 	if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 1)
 	{
-		//just in case
-		memset(&discordInfo, 0, sizeof(discordInfo));
+		// Supported Skin Pictures
+		static const char *supportedSkins[] = {
+			"sonic",
+			"tails",
+			"knuckles",
+			"amy",
+			"fang",
+			"metalsonic",
+			"adventuresonic",
+			"shadow",
+			"skip",
+			"jana",
+			"surge",
+			"cacee",
+			"milne",
+			"maiamy",
+			"mario",
+			"luigi",
+			"blaze",
+			"marine",
+			"tailsdoll",
+			"metalknuckles",
+			"smiles",
+			"whisper",
+			"hexhog",
+			NULL
+		};
+
+		INT32 MAXCUSTOMCHARS = 23;
+
+		// Let's set this at the top!
+		for (i = 0; i < MAXCUSTOMCHARS; i++)
+		{
+			// Character Images/Tags
+			snprintf(charimg, 11, "charcustom"); // Unsupported
+			if (players[1].bot || !players[1].bot || netgame)
+			{
+				if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") == 0) && (strcmp(skins[players[secondarydisplayplayer].skin].name, "tails") == 0)) // Let's make sure they sonic and tails, just in case
+				{
+					snprintf(charimg, 15, "charsonictails"); // Put that Image on Then!
+					break;
+				}
+				else if (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]) == 0)
+				{
+					snprintf(charimg, 32, "char%s", skins[players[consoleplayer].skin].name); // Supported
+					break;
+				}
+			}
+		}
 
 		if (Playing() && playeringame[consoleplayer])
 		{
 			// Why Would You Split My Screen
 			if (!splitscreen)
 			{
-				// Supported Skin Pictures
-				static const char *supportedSkins[] = {
-					"sonic",
-					"tails",
-					"knuckles",
-					"amy",
-					"fang",
-					"metalsonic",
-					"adventuresonic",
-					"shadow",
-					"skip",
-					"jana",
-					"surge",
-					"cacee",
-					"milne",
-					"maiamy",
-					"mario",
-					"luigi",
-					"blaze",
-					"marine",
-					"tailsdoll",
-					"metalknuckles",
-					"smiles",
-					"whisper",
-					"hexhog",
-					NULL
-				};
-
-				INT32 MAXCUSTOMCHARS = 23;
-
 				//// No Bots ////
 				if (!players[1].bot || netgame)
 				{
-					for (i = 0; i < MAXCUSTOMCHARS; i++)
-					{
-						// Character Images
-						snprintf(charimg, 11, "charcustom"); // Unsupported
-
-						if (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]) == 0)
-						{
-							snprintf(charimg, 32, "char%s", skins[players[consoleplayer].skin].name); // Supported
-							break;
-						}    
-					}
-					
 					// Player Names
 					if (!players[consoleplayer].spectator)
 						snprintf(charname, 32, "Playing As: %s", skins[players[consoleplayer].skin].realname); // Character
@@ -993,31 +1031,9 @@ void DRPC_UpdatePresence(void)
 				//// Bots ////
 				else if (players[1].bot)
 				{
-					// Let's set this at the top!
-					for (i = 0; i < MAXCUSTOMCHARS; i++)
-					{
-						// Character Images
-						snprintf(charimg, 11, "charcustom"); // Unsupported
-
-						if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") == 1) && (strcmp(skins[players[secondarydisplayplayer].skin].name, "tails") == 1)) // Let's make sure they aren't sonic and tails, just in case
-						{
-							if (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]) == 0)
-							{
-								snprintf(charimg, 32, "char%s", skins[players[consoleplayer].skin].name); // Supported
-								break;
-							}
-						}
-					}
-
 					// Only One Regular Bot?
 					if (!players[2].bot)
-					{
-						// Character Tags
-						if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") == 0) && (strcmp(skins[players[secondarydisplayplayer].skin].name, "tails") == 0)) // Are They Sonic and Tails?
-							snprintf(charimg, 15, "charsonictails"); // Put that Image on Then!
-
 						snprintf(charname, 50, "Playing As: %s & %s", skins[players[consoleplayer].skin].realname, skins[players[secondarydisplayplayer].skin].realname);
-					}
 					// Multiple Bots?
 					else
 						snprintf(charname, 75, "Playing As: %s, %s, & Multiple Bots", skins[players[consoleplayer].skin].realname, skins[players[secondarydisplayplayer].skin].realname);
@@ -1040,80 +1056,80 @@ void DRPC_UpdatePresence(void)
 	//// Custom Statuses ////
 	if (cv_discordshowonstatus.value == 8)
     {
-		//still just in case lol
+		//Finally, I'm done with this thing
 		memset(&discordInfo, 0, sizeof(discordInfo));
-
-	    char customlargeimagestring[32];
-        char customsmallimagestring[32];
 
 		discordPresence.details = cv_customdiscorddetails.string;
 		discordPresence.state = cv_customdiscordstate.string;
 
-        // Large Images
-		if ((!cv_customdiscordlargeimagetype.value) || (cv_customdiscordlargeimagetype.value == 1) || (cv_customdiscordlargeimagetype.value == 2))
+		// Large Images
+		if (cv_customdiscordlargeimagetype.value != 3)
 		{
-            if (!cv_customdiscordlargeimagetype.value)
-                snprintf(customlargeimagestring, 36, "char%s", cv_customdiscordlargecharacterimage.string);
-            else if (cv_customdiscordlargeimagetype.value == 1)
-                snprintf(customlargeimagestring, 36, "map%s", cv_customdiscordlargemapimage.string);
-            else if (cv_customdiscordlargeimagetype.value == 2)
-                snprintf(customlargeimagestring, 36, "misc%s", cv_customdiscordlargemiscimage.string);
+			if (!cv_customdiscordlargeimagetype.value)
+				snprintf(customLImageString, 36, "char%s", cv_customdiscordlargecharacterimage.string);
+			else if (cv_customdiscordlargeimagetype.value == 1)
+				snprintf(customLImageString, 36, "map%s", cv_customdiscordlargemapimage.string);
+			else
+				snprintf(customLImageString, 36, "misc%s", cv_customdiscordlargemiscimage.string);
 
-            int nospaces = 0; //this helps us remove spaces from our string, if we have any
-            for (i = 0; customlargeimagestring[i] != '\0'; i++) { //string writing, now capiable of removing spaces and forcing lowercases on letters, in limited small image edition
-                if ((customlargeimagestring[i] != ' ') && (customlargeimagestring[i] != '&')) // do we not have any spaces?
-                {
-                    //continue with our normal behavior then!
-                    customlargeimagestring[i] = tolower(customlargeimagestring[i]);
-                    customlargeimagestring[nospaces] = customlargeimagestring[i];
-                    nospaces++;
-                }
-            }
-            customlargeimagestring[nospaces] = '\0';
+			int nospaces = 0; //this helps us remove spaces from our string, if we have any
+			for (i = 0; customLImageString[i] != '\0'; i++) { //string writing, now capiable of removing spaces and forcing lowercases on letters, in limited small image edition
+				if ((customLImageString[i] != ' ') && (customLImageString[i] != '&')) // do we not have any spaces?
+				{
+					//continue with our normal behavior then!
+					customLImageString[i] = tolower(customLImageString[i]);
+					customLImageString[nospaces] = customLImageString[i];
+					nospaces++;
+				}
+			}
+			customLImageString[nospaces] = '\0';
 
-            if (!cv_customdiscordlargeimagetype.value)
-                discordPresence.largeImageKey = (cv_customdiscordlargecharacterimage.value > 0 ? customlargeimagestring : "charcustom");
-            else if (cv_customdiscordlargeimagetype.value == 1)
-                discordPresence.largeImageKey = (cv_customdiscordlargemapimage.value > 0 ? customlargeimagestring : "map01");
-            else
-                discordPresence.largeImageKey = (cv_customdiscordlargemiscimage.value > 0 ? customlargeimagestring : "misctitle");
-            discordPresence.largeImageText = cv_customdiscordlargeimagetext.string;
-        }
+			if (!cv_customdiscordlargeimagetype.value)
+				discordPresence.largeImageKey = (cv_customdiscordlargecharacterimage.value > 0 ? customLImageString : "charcustom");
+			else if (cv_customdiscordlargeimagetype.value == 1)
+				discordPresence.largeImageKey = (cv_customdiscordlargemapimage.value > 0 ? customLImageString : "map01");
+			else
+				discordPresence.largeImageKey = (cv_customdiscordlargemiscimage.value > 0 ? customLImageString : "misctitle");
+			discordPresence.largeImageText = cv_customdiscordlargeimagetext.string;
+		}
 
-        // Small Images
-		if ((!cv_customdiscordsmallimagetype.value) || (cv_customdiscordsmallimagetype.value == 1) || (cv_customdiscordsmallimagetype.value == 2))
+		// Small Images
+		if (cv_customdiscordsmallimagetype.value != 3)
 		{
-            if (!cv_customdiscordsmallimagetype.value)
-                snprintf(customsmallimagestring, 32, "char%s", cv_customdiscordsmallcharacterimage.string);
-            else if (cv_customdiscordsmallimagetype.value == 1)
-                snprintf(customsmallimagestring, 32, "map%s", cv_customdiscordsmallmapimage.string);
-            else if (cv_customdiscordsmallimagetype.value == 2)
-                snprintf(customsmallimagestring, 32, "misc%s", cv_customdiscordsmallmiscimage.string);
+			if (!cv_customdiscordsmallimagetype.value)
+				snprintf(customSImageString, 32, "char%s", cv_customdiscordsmallcharacterimage.string);
+			else if (cv_customdiscordsmallimagetype.value == 1)
+				snprintf(customSImageString, 32, "map%s", cv_customdiscordsmallmapimage.string);
+			else
+				snprintf(customSImageString, 32, "misc%s", cv_customdiscordsmallmiscimage.string);
 
-            int nospaces = 0; //this helps us remove spaces from our string, if we have any
-            for (i = 0; customsmallimagestring[i] != '\0'; i++) { //string writing, now capiable of removing spaces and forcing lowercases on letters, in limited small image edition
-                if ((customsmallimagestring[i] != ' ') && (customsmallimagestring[i] != '&')) // do we not have any spaces?
-                {
-                    //continue with our normal behavior then!
-                    customsmallimagestring[i] = tolower(customsmallimagestring[i]);
-                    customsmallimagestring[nospaces] = customsmallimagestring[i];
-                    nospaces++;
-                }
-            }
-            customsmallimagestring[nospaces] = '\0';
+			int nospaces = 0; //this helps us remove spaces from our string, if we have any
+			for (i = 0; customSImageString[i] != '\0'; i++) { //string writing, now capiable of removing spaces and forcing lowercases on letters, in limited small image edition
+				if ((customSImageString[i] != ' ') && (customSImageString[i] != '&')) // do we not have any spaces?
+				{
+					//continue with our normal behavior then!
+					customSImageString[i] = tolower(customSImageString[i]);
+					customSImageString[nospaces] = customSImageString[i];
+					nospaces++;
+				}
+			}
+			customSImageString[nospaces] = '\0';
 
-            if (!cv_customdiscordsmallimagetype.value)
-                discordPresence.smallImageKey = (cv_customdiscordsmallcharacterimage.value > 0 ? customsmallimagestring : "charcustom");
-            else if (cv_customdiscordsmallimagetype.value == 1)
-                discordPresence.smallImageKey = (cv_customdiscordsmallmapimage.value > 0 ? customsmallimagestring : "map01");
-            else
-                discordPresence.smallImageKey = (cv_customdiscordsmallmiscimage.value > 0 ? customsmallimagestring : "misctitle");
-            discordPresence.smallImageText = cv_customdiscordsmallimagetext.string;
-        }
+			if (!cv_customdiscordsmallimagetype.value)
+				discordPresence.smallImageKey = (cv_customdiscordsmallcharacterimage.value > 0 ? customSImageString : "charcustom");
+			else if (cv_customdiscordsmallimagetype.value == 1)
+				discordPresence.smallImageKey = (cv_customdiscordsmallmapimage.value > 0 ? customSImageString : "map01");
+			else
+				discordPresence.smallImageKey = (cv_customdiscordsmallmiscimage.value > 0 ? customSImageString : "misctitle");
+			discordPresence.smallImageText = cv_customdiscordsmallimagetext.string;
+		}
 	}
 
 	if (!joinSecretSet)
 		DRPC_EmptyRequests(); // Not able to join? Flush the request list, if it exists.
+
+	// Reset at the end just to be sicko mode :)
+	memset(&discordInfo, 0, sizeof(discordInfo));
 
 	Discord_UpdatePresence(&discordPresence);
 }
