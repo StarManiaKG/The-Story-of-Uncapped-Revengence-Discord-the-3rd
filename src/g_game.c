@@ -765,6 +765,9 @@ void G_SetGameModified(boolean silent)
 		M_EndModeAttackRun();
 	else if (marathonmode)
 		Command_ExitGame_f();
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 }
 
 /** Builds an original game map name from a map number.

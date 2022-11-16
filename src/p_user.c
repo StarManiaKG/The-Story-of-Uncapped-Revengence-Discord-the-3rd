@@ -10495,15 +10495,15 @@ boolean P_SpectatorJoinGame(player_t *player)
 			// The viewpoint was forcibly changed.
 			LUA_HookViewpointSwitch(player, &players[consoleplayer], true);
 			displayplayer = consoleplayer;
-#ifdef HAVE_DISCORDRPC
-			DRPC_UpdatePresence(); //just in case, you never know :)
-#endif
 		}
 
 		if (changeto == 1)
 			CONS_Printf(M_GetText("%s switched to the %c%s%c.\n"), player_names[player-players], '\x85', M_GetText("Red team"), '\x80');
 		else if (changeto == 2)
 			CONS_Printf(M_GetText("%s switched to the %c%s%c.\n"), player_names[player-players], '\x84', M_GetText("Blue team"), '\x80');
+#ifdef HAVE_DISCORDRPC
+		DRPC_UpdatePresence(); //just in case, you never know :)
+#endif
 
 		return true; // no more player->mo, cannot continue.
 	}
@@ -10555,6 +10555,9 @@ boolean P_SpectatorJoinGame(player_t *player)
 				CONS_Printf(M_GetText("You must wait until next round to enter the game.\n"));
 			player->powers[pw_flashing] += 2*TICRATE; //to prevent message spam.
 		}
+#ifdef HAVE_DISCORDRPC
+		DRPC_UpdatePresence(); //just in case, you never know :)
+#endif
 	}
 	return false;
 }
