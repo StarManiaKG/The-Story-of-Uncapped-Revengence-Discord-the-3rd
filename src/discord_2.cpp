@@ -1,4 +1,4 @@
-#ifdef HAVE_DISCORDRPC
+#ifdef HAVE_DISCORDGAMESDK
 
 #include <time.h>
 #include <stdint.h>
@@ -31,4 +31,4 @@
 
 // Please feel free to provide your own Discord app if you're making a new custom build :)
 
-#endif //HAVE_DISCORDRPC
+#endif //HAVE_DISCORDGAMESDK

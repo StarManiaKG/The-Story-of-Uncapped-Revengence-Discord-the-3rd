@@ -16,7 +16,7 @@
 #ifndef __DISCORD__
 #define __DISCORD__
 
-#ifdef HAVE_DISCORDRPC
+#ifdef HAVE_DISCORDGAMESDK
 
 #include <stdint.h>
 #include <stdio.h>
@@ -42,5 +42,6 @@ typedef struct srb2gsdk_s {
 
 extern srb2gsdk_t *discordRequestList;
 
-#endif // HAVE_DISCORDRPC
+#endif // HAVE_DISCORDGAMESDK
+
 #endif // __DISCORD__
