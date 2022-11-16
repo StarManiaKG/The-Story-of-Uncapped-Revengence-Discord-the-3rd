@@ -48,6 +48,7 @@
 #include "m_anigif.h"
 #include "md5.h"
 #include "m_perfstats.h"
+#include "doomstat.h" //useContinues
 
 #ifdef NETGAME_DEVMODE
 #define CV_RESTRICT CV_NETVAR
@@ -113,6 +114,9 @@ static void SoundTest_OnChange(void);
 #ifdef NETGAME_DEVMODE
 static void Fishcake_OnChange(void);
 #endif
+
+//Star Things gotta go fast
+static void STAR_ContinuesOnChange(void);
 
 static void Command_Playdemo_f(void);
 static void Command_Timedemo_f(void);
@@ -389,6 +393,9 @@ static CV_PossibleValue_t ps_descriptor_cons_t[] = {
 consvar_t cv_ps_descriptor = CVAR_INIT ("ps_descriptor", "Average", 0, ps_descriptor_cons_t, NULL);
 
 consvar_t cv_freedemocamera = CVAR_INIT("freedemocamera", "Off", CV_SAVE, CV_OnOff, NULL);
+
+// Star Commands lol
+consvar_t cv_usecontinues = CVAR_INIT ("usecontinues", "Yes", CV_SAVE|CV_CALL, CV_YesNo, STAR_ContinuesOnChange);
 
 char timedemo_name[256];
 boolean timedemo_csv;
@@ -952,6 +959,9 @@ void D_RegisterClientCommands(void)
     CV_RegisterVar(&cv_customdiscordlargeimagetext);
     CV_RegisterVar(&cv_customdiscordsmallimagetext);
 #endif
+
+	// Custom Funny Star Things :)
+	CV_RegisterVar(&cv_usecontinues);
 }
 
 /** Checks if a name (as received from another player) is okay.
@@ -1242,7 +1252,6 @@ static void ForceAllSkins(INT32 forcedskin)
 				CV_StealthSet(&cv_skin2, skins[forcedskin].name);
 		}
 	}
-
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
 #endif
@@ -4083,6 +4092,9 @@ static void CoopLives_OnChange(void)
 			CONS_Printf(M_GetText("Lives are now shared between players.\n"));
 			break;
 	}
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 
 	if (cv_coopstarposts.value == 2)
 		return;
@@ -4161,7 +4173,6 @@ static void TimeLimit_OnChange(void)
 	}
 	else if (netgame || multiplayer)
 		CONS_Printf(M_GetText("Time limit disabled\n"));
-
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
 #endif
@@ -4303,6 +4314,9 @@ void D_GameTypeChanged(INT32 lastgametype)
 			teamscramble = 0;
 		}
 	}
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 }
 
 static void Ringslinger_OnChange(void)
@@ -4641,6 +4655,9 @@ void Command_Retry_f(void)
 		M_ClearMenus(true);
 		G_SetRetryFlag();
 	}
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 }
 
 #ifdef NETGAME_DEVMODE
@@ -4831,7 +4848,6 @@ static void Skin_OnChange(void)
 		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));
 		CV_StealthSet(&cv_skin, skins[players[consoleplayer].skin].name);
 	}
-
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
 #endif
@@ -4854,7 +4870,6 @@ static void Skin2_OnChange(void)
 		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));
 		CV_StealthSet(&cv_skin2, skins[players[secondarydisplayplayer].skin].name);
 	}
-
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
 #endif
@@ -5024,9 +5039,33 @@ void Got_DiscordInfo(UINT8 **p, INT32 playernum)
 	discordInfo.maxPlayers = READUINT8(*p);
 	discordInfo.joinsAllowed = (boolean)true;
 	discordInfo.everyoneCanInvite = (boolean)true;
-
 	DRPC_UpdatePresence();
 #else
 	(*p) += 3;
 #endif
+}
+
+//Star Commands: Electric Boogalo LETS GOOOOOOO
+static void STAR_ContinuesOnChange(void)
+{
+	if (!Playing())
+	{
+		if (!(netgame || multiplayer))
+		{
+			if (cv_usecontinues.value)
+			{
+				useContinues = 1;
+				CONS_Printf(M_GetText("Continues have been turned on.\n"));
+			}
+			else
+			{
+				useContinues = 0;
+				CONS_Printf(M_GetText("Continues have been turned off.\n"));
+			}
+		}
+		else
+			CONS_Printf(M_GetText("This only works in Singleplayer.\n"));
+	}
+	else
+		CONS_Printf(M_GetText("You can't set this while in a game!\n"));
 }

@@ -121,6 +121,9 @@ extern boolean timedemo_quit;
 
 extern consvar_t cv_freedemocamera;
 
+// Custom Star Things
+extern consvar_t cv_usecontinues;
+
 typedef enum
 {
 	XD_NAMEANDCOLOR = 1,
