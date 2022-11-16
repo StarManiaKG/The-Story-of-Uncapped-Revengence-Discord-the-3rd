@@ -110,6 +110,8 @@ typedef enum
 	MN_OP_SCREENSHOTS,
 	MN_OP_ERASEDATA,
 
+	MN_OP_TSOURDT3RD,
+
 	// Extras
 	MN_SR_MAIN,
 	MN_SR_PANDORA,

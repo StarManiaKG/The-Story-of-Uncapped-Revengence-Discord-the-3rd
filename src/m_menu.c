@@ -346,6 +346,9 @@ menu_t OP_OpenGLLightingDef;
 menu_t OP_SoundOptionsDef;
 menu_t OP_SoundAdvancedDef;
 
+//star things yay or something idk
+menu_t OP_Tsourdt3rdOptionsDef;
+
 //Misc
 menu_t OP_DataOptionsDef, OP_ScreenshotOptionsDef, OP_EraseDataDef;
 menu_t OP_ServerOptionsDef;
@@ -362,6 +365,9 @@ static void M_EraseData(INT32 choice);
 static void M_Addons(INT32 choice);
 static void M_AddonsOptions(INT32 choice);
 static patch_t *addonsp[NUM_EXT+5];
+
+//star stuff weee
+static void M_Tsourdt3rdOptions(INT32 choice);
 
 #define addonmenusize 9 // number of items actually displayed in the addons menu view, formerly (2*numaddonsshown + 1)
 #define numaddonsshown 4 // number of items to each side of the currently selected item, unless at top/bottom ends of directory
@@ -1107,6 +1113,13 @@ static menuitem_t OP_MainMenu[] =
 	{IT_CALL    | IT_STRING, NULL, "Server Options...",    M_ServerOptions,     80},
 
 	{IT_SUBMENU | IT_STRING, NULL, "Data Options...",      &OP_DataOptionsDef, 100},
+
+#ifdef HAVE_DISCORDRPC
+	{IT_CALL    | IT_STRING, NULL, "Discord Options...",   M_DiscordOptions,	120},
+	{IT_CALL    | IT_STRING, NULL, "TSOURDT3RD Options...",M_Tsourdt3rdOptions, 130},
+#else
+	{IT_CALL    | IT_STRING, NULL, "TSOURDT3RD Options...",M_Tsourdt3rdOptions, 120},
+#endif
 };
 
 static menuitem_t OP_P1ControlsMenu[] =
@@ -1566,14 +1579,7 @@ static menuitem_t OP_DataOptionsMenu[] =
 {
 	{IT_STRING | IT_CALL,    NULL, "Add-on Options...",     M_AddonsOptions,     10},
 	{IT_STRING | IT_CALL,    NULL, "Screenshot Options...", M_ScreenshotOptions, 20},
-
-#ifdef HAVE_DISCORDRPC
-	{IT_STRING | IT_CALL, 	 NULL, "Discord Options...",	M_DiscordOptions,	 	 40},
-
-	{IT_STRING | IT_SUBMENU, NULL, "\x85" "Erase Data...",	&OP_EraseDataDef,		 60},
-#else
-	{IT_STRING | IT_SUBMENU, NULL, "\x85" "Erase Data...",	&OP_EraseDataDef,		 40},
-#endif
+	{IT_STRING | IT_SUBMENU, NULL, "\x85" "Erase Data...",	&OP_EraseDataDef,	 40},
 };
 
 static menuitem_t OP_ScreenshotOptionsMenu[] =
@@ -1797,6 +1803,18 @@ static menuitem_t OP_MonitorToggleMenu[] =
 	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Armageddon Shield", &cv_bombshield,   120},
 	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "1 Up",              &cv_1up,          130},
 	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Eggman Box",        &cv_eggmanbox,    140},
+};
+
+// STAR OPTIONS LETS GOOOOOOOOOOOOO
+static menuitem_t OP_Tsourdt3rdOptionsMenu[] =
+{
+	{IT_HEADER, 			NULL, 	"Savedata Options", NULL, 				0},
+	{IT_STRING | IT_CVAR,	NULL,	"Use Continues",	&cv_usecontinues, 	7},
+};
+
+enum
+{
+	op_usecontinues = 1
 };
 
 // ==========================================================================
@@ -2377,6 +2395,21 @@ menu_t OP_DataOptionsDef = DEFAULTMENUSTYLE(
 	MTREE2(MN_OP_MAIN, MN_OP_DATA),
 	"M_DATA", OP_DataOptionsMenu, &OP_MainDef, 60, 30);
 
+//star stuff lol
+menu_t OP_Tsourdt3rdOptionsDef = DEFAULTSCROLLMENUSTYLE(
+	MTREE2(MN_OP_MAIN, MN_OP_TSOURDT3RD),
+	NULL, OP_Tsourdt3rdOptionsMenu, &OP_MainDef, 30, 30); //M_TSOURDT3RD
+
+#ifdef HAVE_DISCORDRPC
+menu_t OP_DiscordOptionsDef = DEFAULTSCROLLMENUSTYLE(
+	MTREE2(MN_OP_MAIN, MN_DISCORD_OPT), 
+	"M_DISCORD", OP_DiscordOptionsMenu, &OP_MainDef, 30, 30);
+
+menu_t OP_CustomStatusOutputDef = DEFAULTMENUSTYLE(
+	MTREE3(MN_OP_MAIN, MN_DISCORD_OPT, MN_DISCORDCS_OUTPUT), 
+	"M_DISCORDCUSTOMSTATUSOUTPUT", OP_CustomStatusOutputMenu, &OP_DiscordOptionsDef, 30, 30);
+#endif
+
 menu_t OP_ScreenshotOptionsDef =
 {
 	MTREE3(MN_OP_MAIN, MN_OP_DATA, MN_OP_SCREENSHOTS),
@@ -2397,16 +2430,6 @@ menu_t OP_AddonsOptionsDef = DEFAULTMENUSTYLE(
 menu_t OP_EraseDataDef = DEFAULTMENUSTYLE(
 	MTREE3(MN_OP_MAIN, MN_OP_DATA, MN_OP_ERASEDATA),
 	"M_DATA", OP_EraseDataMenu, &OP_DataOptionsDef, 60, 30);
-
-#ifdef HAVE_DISCORDRPC
-menu_t OP_DiscordOptionsDef = DEFAULTSCROLLMENUSTYLE(
-	MTREE3(MN_OP_MAIN, MN_OP_DATA, MN_DISCORD_OPT), 
-	"M_DISCORD", OP_DiscordOptionsMenu, &OP_DataOptionsDef, 30, 30);
-
-menu_t OP_CustomStatusOutputDef = DEFAULTMENUSTYLE(
-	MTREE4(MN_OP_MAIN, MN_OP_DATA, MN_DISCORD_OPT, MN_DISCORDCS_OUTPUT), 
-	"M_DISCORDCUSTOMSTATUSOUTPUT", OP_CustomStatusOutputMenu, &OP_DiscordOptionsDef, 150, 93);
-#endif
 
 // ==========================================================================
 // CVAR ONCHANGE EVENTS GO HERE
@@ -2641,6 +2664,10 @@ void Moviemode_option_Onchange(void)
 #ifdef HAVE_DISCORDRPC
 void Discordcustomstatus_option_Onchange(void)
 {
+	//....would you believe me if i said still just in case...?
+	DiscordRichPresence discordPresence;
+	memset(&discordPresence, 0, sizeof(discordPresence));
+
 	//Is Rich Presence Even On?
 	OP_DiscordOptionsMenu[op_richpresenceheader].status =
 		(cv_discordrp.value == 1 ? IT_HEADER : IT_DISABLED);
@@ -2782,7 +2809,6 @@ void Discordcustomstatus_option_Onchange(void)
             }
         }
     }
-
 	DRPC_UpdatePresence();
 }
 #endif
@@ -3927,6 +3953,9 @@ void M_Drawer(void)
 		else
 			V_DrawCenteredString(BASEVIDWIDTH/2, (BASEVIDHEIGHT/2) - (4), V_YELLOWMAP, "Focus Lost");
 	}
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 }
 
 //
@@ -4064,6 +4093,7 @@ void M_StartControlPanel(void)
 
 			M_RefreshPauseMenu();
 		}
+		DRPC_UpdatePresence();
 #endif
 
 		currentMenu = &MPauseDef;
@@ -7495,11 +7525,7 @@ static void M_Options(INT32 choice)
 	OP_MainMenu[5].status = (Playing() && !(server || IsPlayerAdmin(consoleplayer))) ? (IT_GRAYEDOUT) : (IT_STRING|IT_CALL);
 
 	// if the player is playing _at all_, disable the erase data options
-#ifdef HAVE_DISCORDRPC
-	OP_DataOptionsMenu[3].status = (Playing()) ? (IT_GRAYEDOUT) : (IT_STRING|IT_SUBMENU);
-#else
 	OP_DataOptionsMenu[2].status = (Playing()) ? (IT_GRAYEDOUT) : (IT_STRING|IT_SUBMENU);
-#endif
 
 	OP_MainDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&OP_MainDef);
@@ -8921,6 +8947,7 @@ static void M_DrawLoadGameData(void)
 			{
 				V_DrawSmallScaledPatch(x+2, y+64, 0, savselp[5]);
 			}
+#define PERFECTSAVE
 #ifdef PERFECTSAVE // disabled on request
 			else if ((savegameinfo[savetodraw].skinnum == 1)
 			&& (savegameinfo[savetodraw].lives == 99)
@@ -9118,6 +9145,7 @@ skiplife:
 			else
 				V_DrawString(tempx, y, 0, va("%d", savegameinfo[savetodraw].lives));
 
+			//NOTE: REMEMBER THIS FOR LATER STAR
 			if (!useContinues)
 			{
 				INT32 workingscorenum = savegameinfo[savetodraw].continuescore;
@@ -14250,3 +14278,14 @@ static void M_DrawDiscordRequests(void)
 	}
 }
 #endif
+
+//Star Stuff WEEEE
+static void M_Tsourdt3rdOptions(INT32 choice)
+{
+	(void)choice;
+
+	OP_Tsourdt3rdOptionsMenu[op_usecontinues].status =
+		((!(Playing() && playeringame[consoleplayer])) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+
+	M_SetupNextMenu(&OP_Tsourdt3rdOptionsDef);
+}
