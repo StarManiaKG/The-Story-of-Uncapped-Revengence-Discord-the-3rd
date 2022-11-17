@@ -22,6 +22,8 @@ extern consvar_t cv_discordstreamer;
 extern consvar_t cv_discordasks;
 extern consvar_t cv_discordshowonstatus;
 extern consvar_t cv_discordstatusmemes;
+extern consvar_t cv_discordcharacterimagetype;
+// Custom Things
 extern consvar_t cv_customdiscorddetails;
 extern consvar_t cv_customdiscordstate;
 extern consvar_t cv_customdiscordlargeimagetype;

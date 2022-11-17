@@ -1652,38 +1652,41 @@ enum
 #ifdef HAVE_DISCORDRPC
 static menuitem_t OP_DiscordOptionsMenu[] =
 {
-	{IT_HEADER,									NULL, "Discord Rich Presence",	NULL,					 	  0},
-	{IT_STRING | IT_CVAR,						NULL, "Rich Presence",			&cv_discordrp,			 	  7},
-	{IT_STRING | IT_CVAR,						NULL, "Streamer Mode",			&cv_discordstreamer,	 	 12},
+	{IT_HEADER,							NULL, 	"Discord Rich Presence",		NULL,					 	  	        0},
+	{IT_STRING | IT_CVAR,				NULL, 		"Rich Presence",			&cv_discordrp,			 	  		    7},
+	{IT_STRING | IT_CVAR,				NULL, 		"Streamer Mode",			&cv_discordstreamer,	 	 		   12},
 
-	{IT_HEADER,									NULL, "Rich Presence Settings",	NULL,					 	 17},
-	{IT_STRING | IT_CVAR,						NULL, "Allow Ask To Join",		&cv_discordasks,		 	 24},
-	{IT_STRING | IT_CVAR,						NULL, "Allow Invites",			&cv_discordinvites,		 	 29},
-	{IT_STRING | IT_CVAR,						NULL, "Show Memes on Status",	&cv_discordstatusmemes,	 	 34},
-	{IT_STRING | IT_CVAR,						NULL, "Show on Status",			&cv_discordshowonstatus, 	 39},
+	{IT_HEADER,							NULL,	"Main Rich Presence Settings",	NULL,					 	 		   17},
+	{IT_STRING | IT_CVAR,				NULL, 		"Ask To Join",				&cv_discordasks,		 	 		   24},
+	{IT_STRING | IT_CVAR,				NULL, 		"Allow Invites",			&cv_discordinvites,		 	 		   29},
+	{IT_STRING | IT_CVAR,				NULL, 		"Memes on Status",			&cv_discordstatusmemes,	 	 		   34},
+	{IT_STRING | IT_CVAR,				NULL, 		"Show on Status",			&cv_discordshowonstatus, 	 	       39},
+	
+	{IT_HEADER,							NULL,	"Misc. Rich Presence Settings",	NULL,					 	 		   44},
+	{IT_STRING | IT_CVAR,				NULL, 		"Skin Image Type",			&cv_discordcharacterimagetype,		   51},
 
-	{IT_HEADER,									NULL, "Custom Discord Status",	NULL,					 	 44},
-	{IT_STRING | IT_CVAR | IT_CV_STRING,		NULL, "Header",			        &cv_customdiscorddetails, 	 51},
-	{IT_STRING | IT_CVAR | IT_CV_STRING,		NULL, "State",			        &cv_customdiscordstate, 	 65},
+	// Custom Things, as you can see //
+	{IT_HEADER,							NULL, "Custom Discord Status",			NULL,					 	 		   56},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 		"Header",			        &cv_customdiscorddetails, 	 		   63},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 		"State",			        &cv_customdiscordstate, 			   80},
 
-	// Custom Images //
-	{IT_STRING | IT_CVAR,		                NULL, "Large Image Type",		&cv_customdiscordlargeimagetype,      79},
-    {IT_STRING | IT_CVAR,		                NULL, "Small Image Type",		&cv_customdiscordsmallimagetype,      84},
+	{IT_STRING | IT_CVAR,		        NULL, 	"Large Image Type",				&cv_customdiscordlargeimagetype,       97},
+    {IT_STRING | IT_CVAR,		        NULL, 	"Small Image Type",				&cv_customdiscordsmallimagetype,      102},
 
-	{IT_STRING | IT_CVAR,		                NULL, "Large Image",			&cv_customdiscordlargecharacterimage, 94},
-	{IT_STRING | IT_CVAR,		                NULL, "Small Image",			&cv_customdiscordsmallcharacterimage, 99},
+	{IT_STRING | IT_CVAR,		        NULL, 	"Large Image",					&cv_customdiscordlargecharacterimage, 117},
+	{IT_STRING | IT_CVAR,		        NULL, 	"Small Image",					&cv_customdiscordsmallcharacterimage, 122},
 
-	{IT_STRING | IT_CVAR,		                NULL, "Large Image",			&cv_customdiscordlargemapimage,       94},
-    {IT_STRING | IT_CVAR,		                NULL, "Small Image",			&cv_customdiscordsmallmapimage,       99},
+	{IT_STRING | IT_CVAR,		        NULL, 	"Large Image",					&cv_customdiscordlargemapimage,       117},
+    {IT_STRING | IT_CVAR,		        NULL, 	"Small Image",					&cv_customdiscordsmallmapimage,       122},
 
-    {IT_STRING | IT_CVAR,		                NULL, "Large Image",			&cv_customdiscordlargemiscimage,      94},
-    {IT_STRING | IT_CVAR,		                NULL, "Small Image",			&cv_customdiscordsmallmiscimage,      99},
+    {IT_STRING | IT_CVAR,		        NULL, 	"Large Image",					&cv_customdiscordlargemiscimage,      117},
+    {IT_STRING | IT_CVAR,		        NULL, 	"Small Image",					&cv_customdiscordsmallmiscimage,      122},
 
-    {IT_STRING | IT_CVAR | IT_CV_STRING,		NULL, "Large Image Text",		&cv_customdiscordlargeimagetext,      114},
-    {IT_STRING | IT_CVAR | IT_CV_STRING,		NULL, "Small Image Text",		&cv_customdiscordsmallimagetext,      128},
+    {IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 	"Large Image Text",				&cv_customdiscordlargeimagetext,      127},
+    {IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 	"Small Image Text",				&cv_customdiscordsmallimagetext,      147},
 
     // Let's Output Our Stuff
-	{IT_STRING | IT_SUBMENU,					NULL, "Output",					&OP_CustomStatusOutputDef,	          155},
+	{IT_STRING | IT_SUBMENU,			NULL, 		"Output",					&OP_CustomStatusOutputDef,	          185},
 };
 
 static menuitem_t OP_CustomStatusOutputMenu[] =
@@ -1698,27 +1701,29 @@ enum
 	op_discordinvites = 5,
 	op_discordstatusmemes = 6,
 	op_discordshowonstatus = 7,
-	op_customstatusheader = 8,
-	op_customdiscorddetails = 9,
-	op_customdiscordstate = 10,
+	op_discordmiscoptionsheader = 8,
+	op_discordcharacterimagetype = 9,
+	op_customstatusheader = 10,
+	op_customdiscorddetails = 11,
+	op_customdiscordstate = 12,
 	// Custom Images //
-	op_customdiscordlargeimagetype = 11,
-	op_customdiscordsmallimagetype = 12,
+	op_customdiscordlargeimagetype = 13,
+	op_customdiscordsmallimagetype = 14,
 
-	op_customdiscordlargecharacterimage = 13,
-	op_customdiscordsmallcharacterimage = 14,
+	op_customdiscordlargecharacterimage = 15,
+	op_customdiscordsmallcharacterimage = 16,
 
-	op_customdiscordlargemapimage = 15,
-    op_customdiscordsmallmapimage = 16,
+	op_customdiscordlargemapimage = 17,
+    op_customdiscordsmallmapimage = 18,
 
-    op_customdiscordlargemiscimage = 17,
-    op_customdiscordsmallmiscimage = 18,
+    op_customdiscordlargemiscimage = 19,
+    op_customdiscordsmallmiscimage = 20,
 
-    op_customdiscordlargeimagetext = 19,
-    op_customdiscordsmallimagetext = 20,
+    op_customdiscordlargeimagetext = 21,
+    op_customdiscordsmallimagetext = 22,
 
     //Let's Output Things
-	op_customstatusoutputdef = 21,
+	op_customstatusoutputdef = 23,
 };
 #endif
 
@@ -2682,6 +2687,12 @@ void Discordcustomstatus_option_Onchange(void)
 		(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING : IT_DISABLED);
 	
 	OP_DiscordOptionsMenu[op_discordshowonstatus].status =
+		(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING : IT_DISABLED);
+
+	OP_DiscordOptionsMenu[op_discordmiscoptionsheader].status =
+		(cv_discordrp.value == 1 ? IT_HEADER : IT_DISABLED);
+	
+	OP_DiscordOptionsMenu[op_discordcharacterimagetype].status =
 		(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING : IT_DISABLED);
 
 	OP_DiscordOptionsMenu[op_customstatusheader].status =
