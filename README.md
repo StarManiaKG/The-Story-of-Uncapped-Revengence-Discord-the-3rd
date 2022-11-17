@@ -11,19 +11,20 @@
 
 ## New Features
   - Discord's Game SDK (WIP, NEED TO CONVERT TO C)
-  - Custom Discord Settings
+  - Custom Discord Settings, Commands, and Options
+  - Custom Build Options
   - Palette Rendering
   - Better Custom Character Support
-  - Holepunching (WIP, NEEDS RELAY SERVER)
   - More Server Options/Settings
   - Autoloading Addons and Folders, Which Allows Mods to Bypass Modified Game Checks (after game restart, of course)
   - ...And More Annoyances!
   
 ## WIP Features (Found on Latest Unstable Build)
+  - Holepunching (needs relay server)
   - Netplus
   - Autoloading Folder Support
   - Discord's Game SDK
-  - ...And Maybe Even More!
+  - ...And Even More Annoyances!
       
 ## Dependencies
 - NASM (x86 builds only)
