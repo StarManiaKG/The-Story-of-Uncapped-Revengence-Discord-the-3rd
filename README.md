@@ -10,20 +10,20 @@
 [Sonic Robo Blast 2](https://srb2.org/) is a 3D Sonic the Hedgehog fangame based on a modified version of [Doom Legacy](http://doomlegacy.sourceforge.net/).
 
 ## New Features
-  - Discord's Game SDK (WIP, NEED TO CONVERT TO C)
   - Custom Discord Settings, Commands, and Options
   - Custom Build Options
   - Palette Rendering
   - Better Custom Character Support
   - More Server Options/Settings
-  - Autoloading Addons and Folders, Which Allows Mods to Bypass Modified Game Checks (after game restart, of course)
+  - Autoloading Addons, Which Allows Mods to Bypass Modified Game Checks (after game restart, of course)
   - ...And More Annoyances!
   
 ## WIP Features (Found on Latest Unstable Build)
   - Holepunching (needs relay server)
   - Netplus
   - Autoloading Folder Support
-  - Discord's Game SDK
+  - Discord's Game SDK (need to convert it to C)
+  - A Jukebox
   - ...And Even More Annoyances!
       
 ## Dependencies
@@ -38,7 +38,10 @@
 
 See [SRB2 Wiki/Source code compiling](http://wiki.srb2.org/wiki/Source_code_compiling)
 
-Alternatively, you can check out the releases page! These include appimages and .exe files, both for Linux and Windows users, respectively. Wine also exists, so if you're into that, .exe files work for you too I guess.
+**ALTERNATIVES**
+- You can check out the releases page! These include appimages and .exe files, both for Linux and Windows users, respectively. Wine also exists, so if you're into that, .exe files work for you too I guess.
+- You can also Cross-Compile Between Different Operating Systems too!
+- You could also ask a friend to do it for you too, friends are the best after all.
 
 ## Disclaimer
 Sonic Team Junior is in no way affiliated with SEGA or Sonic Team. We do not claim ownership of any of SEGA's intellectual property used in SRB2.
