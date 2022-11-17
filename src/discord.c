@@ -38,7 +38,7 @@
 // length of IP strings
 #define IP_SIZE 21
 
-static CV_PossibleValue_t discordstatustype_cons_t[] = {
+static CV_PossibleValue_t statustype_cons_t[] = {
     {0, "All"},
     {1, "Only Characters"},
     {2, "Only Score"},
@@ -48,6 +48,11 @@ static CV_PossibleValue_t discordstatustype_cons_t[] = {
     {6, "Only Statuses"},
     {7, "Only Playtime"},
     {8, "Custom"},
+    {0, NULL}};
+
+static CV_PossibleValue_t characterimagetype_cons_t[] = {
+    {0, "CSS Sprite"},
+    {1, "Continue Sprite"},
     {0, NULL}};
 
 // Custom Discord Status Image Type //
@@ -166,17 +171,42 @@ static CV_PossibleValue_t custommapimage_cons_t[] = { // Maps //
     {69, "Custom"},
     {0, NULL}};
 
-// Miscellanious //
-static CV_PossibleValue_t custommiscimage_cons_t[] = {{0, "Default"}, {0, NULL}};
+static CV_PossibleValue_t custommiscimage_cons_t[] = { // Miscellanious //
+	{0, "Default"},
+	// Intro Stuff
+	{1, "Intro 1"},
+	{2, "Intro 2"},
+	{3, "Intro 3"},
+	{4, "Intro 4"},
+	{5, "Intro 5"},
+	{6, "Intro 6"},
+	{7, "Intro 7"},
+	{8, "Intro 8"},
+	// Alternate Images
+	{9, "Alt. Sonic Image 1"},
+	{10, "Alt. Sonic Image 2"},
+	{11, "Alt. Sonic Image 3"},
+	{12, "Alt. Sonic Image 4"},
+	{13, "Alt. Tails Image 1"},
+	{14, "Alt. Tails Image 2"},
+	{15, "Alt. Knuckles Image 1"},
+	{16, "Alt. Knuckles Image 2"},
+	{17, "Alt. Amy Image 1"},
+	{18, "Alt. Fang Image 1"},
+	{19, "Alt. Metal Sonic Image 1"},
+	{20, "Alt. Metal Sonic Image 2"},
+	{21, "Alt. Eggman Image 1"},
+	{0, NULL}};
 
                                                 ////////////////////////////
                                                 //    Discord Commands    //
                                                 ////////////////////////////
 consvar_t cv_discordrp = CVAR_INIT ("discordrp", "On", CV_SAVE|CV_CALL, CV_OnOff, Discordcustomstatus_option_Onchange);
 consvar_t cv_discordstreamer = CVAR_INIT ("discordstreamer", "Off", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
-consvar_t cv_discordasks = CVAR_INIT ("discordasks", "Yes", CV_SAVE|CV_CALL, CV_YesNo, DRPC_UpdatePresence);
-consvar_t cv_discordstatusmemes = CVAR_INIT ("discordstatusmemes", "Yes", CV_SAVE|CV_CALL, CV_YesNo, DRPC_UpdatePresence);
-consvar_t cv_discordshowonstatus = CVAR_INIT ("discordshowonstatus", "All", CV_SAVE|CV_CALL, discordstatustype_cons_t, Discordcustomstatus_option_Onchange);
+consvar_t cv_discordasks = CVAR_INIT ("discordasks", "Yes", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
+consvar_t cv_discordstatusmemes = CVAR_INIT ("discordstatusmemes", "Yes", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
+consvar_t cv_discordshowonstatus = CVAR_INIT ("discordshowonstatus", "All", CV_SAVE|CV_CALL, statustype_cons_t, Discordcustomstatus_option_Onchange);
+consvar_t cv_discordcharacterimagetype = CVAR_INIT ("discordcharacterimagetype", "CSS Sprite", CV_SAVE|CV_CALL, characterimagetype_cons_t, DRPC_UpdatePresence);
 //// Custom Discord Status Things ////
 consvar_t cv_customdiscorddetails = CVAR_INIT ("customdiscorddetails", "I'm Feeling Good!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
 consvar_t cv_customdiscordstate = CVAR_INIT ("customdiscordstate", "I'm Playing Sonic Robo Blast 2!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
@@ -192,7 +222,7 @@ consvar_t cv_customdiscordlargemapimage = CVAR_INIT ("customdiscordlargemapimage
 consvar_t cv_customdiscordsmallmapimage = CVAR_INIT ("customdiscordsmallmapimage", "02", CV_SAVE|CV_CALL, custommapimage_cons_t, DRPC_UpdatePresence);
     // Miscellanious //
 consvar_t cv_customdiscordlargemiscimage = CVAR_INIT ("customdiscordlargemiscimage", "Default", CV_SAVE|CV_CALL, custommiscimage_cons_t, DRPC_UpdatePresence);
-consvar_t cv_customdiscordsmallmiscimage = CVAR_INIT ("customdiscordsmallmiscimage", "Default", CV_SAVE|CV_CALL, custommiscimage_cons_t, DRPC_UpdatePresence);
+consvar_t cv_customdiscordsmallmiscimage = CVAR_INIT ("customdiscordsmallmiscimage", "Intro 1", CV_SAVE|CV_CALL, custommiscimage_cons_t, DRPC_UpdatePresence);
     // Captions //
 consvar_t cv_customdiscordlargeimagetext = CVAR_INIT ("customdiscordlargeimagetext", "This is my Favorite Character!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
 consvar_t cv_customdiscordsmallimagetext = CVAR_INIT ("customdiscordsmallimagetext", "This is also my Favorite Character!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
@@ -565,27 +595,27 @@ void DRPC_UpdatePresence(void)
 	char servertag[11+26+15+8];
 
 	//nerd emoji moment
-	char detailGrammar[2+2] = "";
+	char detailGrammar[2+2];
 	
-	char stateGrammar[2+2] = "";
-	char stateType[10+9+5] = "";
+	char stateGrammar[2+2];
+	char stateType[10+9+5];
 
-	char allEmeralds[1+2+2] = "";
-	char emeraldComma[1+2] = "";
-	char emeraldGrammar[1+1+1] = "";
-	char emeraldMeme[2+5+12+7] = "";
+	char allEmeralds[1+2+2];
+	char emeraldComma[1+2];
+	char emeraldGrammar[2+1];
+	char emeraldMeme[2+5+12+7];
 
-	char lifeType[9+10+2+7] = "";
-	char lifeGrammar[9+10+2+7] = "";
+	char lifeType[9+10+2+7];
+	char lifeGrammar[9+10+2+3+4];
 
-	char spectatorType[9+10] = "";
-	char spectatorGrammar[2+3] = "";
+	char spectatorType[9+10];
+	char spectatorGrammar[2+3];
+
+	char charImageType[2+2+1];
 
 	//custom things
 	char customLImageString[32];
     char customSImageString[32];
-
-	INT32 i;
 
 	//Tiny Emeralds Counter
 	UINT8 emeraldCount = 0;
@@ -603,14 +633,13 @@ void DRPC_UpdatePresence(void)
 		// Now it also shows a few predetermined states, thanks to Star :)
 		discordPresence.largeImageKey = "misctitle";
 		discordPresence.largeImageText = "Sonic Robo Blast 2";
-
+		discordPresence.details = "In Game";
 		if (paused) // You Should Be Able To Set Whether You're Paused Or Not, In My Opinion, No Matter What.
 			discordPresence.state = "Currently Paused";
 		else if (menuactive) // Scrolling Through the Menus? Set it as Your Status Then.
 			discordPresence.state = "Scrolling Through Menus";
-		else
-			discordPresence.state = "In-Game; Actively Playing";
-
+		else // Not Doing Any Of The Above? You're Technically Playing the Game Then.
+			discordPresence.state = "Actively Playing";
 		DRPC_EmptyRequests();
 		Discord_UpdatePresence(&discordPresence);
 		return;
@@ -702,7 +731,7 @@ void DRPC_UpdatePresence(void)
 			//// Emeralds ////
 			if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 3)
 			{
-				for (i = 0; i < 7; i++) // thanks Monster Iestyn for this math
+				for (INT32 i = 0; i < 7; i++) // thanks Monster Iestyn for this math
 					if (emeralds & (1<<i))
 						emeraldCount += 1;
 				
@@ -884,6 +913,7 @@ void DRPC_UpdatePresence(void)
 		}
 	}
 
+	//// Maps ////
 	if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 5)
 	{
 		if (gamestate == GS_INTRO)
@@ -964,6 +994,10 @@ void DRPC_UpdatePresence(void)
 	}
 
 	//// Characters ////
+	if (!cv_discordcharacterimagetype.value)
+		snprintf(charImageType, 5, "char");
+	else
+		snprintf(charImageType, 5, "cont");
 	if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 1)
 	{
 		// Supported Skin Pictures
@@ -994,29 +1028,27 @@ void DRPC_UpdatePresence(void)
 			NULL
 		};
 
-		INT32 MAXCUSTOMCHARS = 23;
-
 		// Let's set this at the top!
-		for (i = 0; i < MAXCUSTOMCHARS; i++)
+		for (INT32 i = 0; i < 23; i++) //23 is the current amount of custom characters that are supported lol
 		{
 			// Character Images/Tags
-			snprintf(charimg, 11, "charcustom"); // Unsupported
+			snprintf(charimg, 11, "%scustom", charImageType); // Unsupported
 			if (players[1].bot || !players[1].bot || netgame)
 			{
 				if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") == 0) && (strcmp(skins[players[secondarydisplayplayer].skin].name, "tails") == 0)) // Let's make sure they sonic and tails, just in case
 				{
-					snprintf(charimg, 15, "charsonictails"); // Put that Image on Then!
+					snprintf(charimg, 15, "%ssonictails", charImageType); // Put that Image on Then!
 					break;
 				}
 				else if (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]) == 0)
 				{
-					snprintf(charimg, 32, "char%s", skins[players[consoleplayer].skin].name); // Supported
+					snprintf(charimg, 36, "%s%s", charImageType, skins[players[consoleplayer].skin].name); // Supported
 					break;
 				}
 			}
 		}
 
-		if (Playing() && playeringame[consoleplayer])
+		if (playeringame[consoleplayer])
 		{
 			// Why Would You Split My Screen
 			if (!splitscreen)
@@ -1044,7 +1076,7 @@ void DRPC_UpdatePresence(void)
 			{
 				// render player names and the character image
 				snprintf(charname, 50, "%s & %s", player_names[consoleplayer], player_names[secondarydisplayplayer]);
-				snprintf(charimg, 15, "charsonictails");
+				snprintf(charimg, 15, "%ssonictails", charImageType);
 			}
 			
 			// Apply Character Images and Names
@@ -1066,15 +1098,15 @@ void DRPC_UpdatePresence(void)
 		if (cv_customdiscordlargeimagetype.value != 3)
 		{
 			if (!cv_customdiscordlargeimagetype.value)
-				snprintf(customLImageString, 36, "char%s", cv_customdiscordlargecharacterimage.string);
+				snprintf(customLImageString, 36, "%s%s", charImageType, cv_customdiscordlargecharacterimage.string);
 			else if (cv_customdiscordlargeimagetype.value == 1)
 				snprintf(customLImageString, 36, "map%s", cv_customdiscordlargemapimage.string);
 			else
 				snprintf(customLImageString, 36, "misc%s", cv_customdiscordlargemiscimage.string);
 
 			int nospaces = 0; //this helps us remove spaces from our string, if we have any
-			for (i = 0; customLImageString[i] != '\0'; i++) { //string writing, now capiable of removing spaces and forcing lowercases on letters, in limited small image edition
-				if ((customLImageString[i] != ' ') && (customLImageString[i] != '&')) // do we not have any spaces?
+			for (INT32 i = 0; customLImageString[i] != '\0'; i++) { //string writing, now capiable of removing spaces and forcing lowercases on letters, in limited small image edition
+				if ((customLImageString[i] != ' ') && (customLImageString[i] != '&') && (customLImageString[i] != '.')) // do we not have any spaces?
 				{
 					//continue with our normal behavior then!
 					customLImageString[i] = tolower(customLImageString[i]);
@@ -1085,7 +1117,7 @@ void DRPC_UpdatePresence(void)
 			customLImageString[nospaces] = '\0';
 
 			if (!cv_customdiscordlargeimagetype.value)
-				discordPresence.largeImageKey = (cv_customdiscordlargecharacterimage.value > 0 ? customLImageString : "charcustom");
+				discordPresence.largeImageKey = (cv_customdiscordlargecharacterimage.value > 0 ? customLImageString : va("%scustom", charImageType));
 			else if (cv_customdiscordlargeimagetype.value == 1)
 				discordPresence.largeImageKey = (cv_customdiscordlargemapimage.value > 0 ? customLImageString : "map01");
 			else
@@ -1097,15 +1129,15 @@ void DRPC_UpdatePresence(void)
 		if (cv_customdiscordsmallimagetype.value != 3)
 		{
 			if (!cv_customdiscordsmallimagetype.value)
-				snprintf(customSImageString, 32, "char%s", cv_customdiscordsmallcharacterimage.string);
+				snprintf(customSImageString, 32, "%s%s", charImageType, cv_customdiscordsmallcharacterimage.string);
 			else if (cv_customdiscordsmallimagetype.value == 1)
 				snprintf(customSImageString, 32, "map%s", cv_customdiscordsmallmapimage.string);
 			else
 				snprintf(customSImageString, 32, "misc%s", cv_customdiscordsmallmiscimage.string);
 
 			int nospaces = 0; //this helps us remove spaces from our string, if we have any
-			for (i = 0; customSImageString[i] != '\0'; i++) { //string writing, now capiable of removing spaces and forcing lowercases on letters, in limited small image edition
-				if ((customSImageString[i] != ' ') && (customSImageString[i] != '&')) // do we not have any spaces?
+			for (INT32 i = 0; customSImageString[i] != '\0'; i++) { //string writing, now capiable of removing spaces and forcing lowercases on letters, in limited small image edition
+				if ((customSImageString[i] != ' ') && (customSImageString[i] != '&') && (customSImageString[i] != '.')) // do we not have any spaces?
 				{
 					//continue with our normal behavior then!
 					customSImageString[i] = tolower(customSImageString[i]);
@@ -1116,7 +1148,7 @@ void DRPC_UpdatePresence(void)
 			customSImageString[nospaces] = '\0';
 
 			if (!cv_customdiscordsmallimagetype.value)
-				discordPresence.smallImageKey = (cv_customdiscordsmallcharacterimage.value > 0 ? customSImageString : "charcustom");
+				discordPresence.smallImageKey = (cv_customdiscordsmallcharacterimage.value > 0 ? customSImageString : va("%scustom", charImageType));
 			else if (cv_customdiscordsmallimagetype.value == 1)
 				discordPresence.smallImageKey = (cv_customdiscordsmallmapimage.value > 0 ? customSImageString : "map01");
 			else
@@ -1127,9 +1159,6 @@ void DRPC_UpdatePresence(void)
 
 	if (!joinSecretSet)
 		DRPC_EmptyRequests(); // Not able to join? Flush the request list, if it exists.
-
-	// Reset at the end just to be sicko mode :)
-	memset(&discordInfo, 0, sizeof(discordInfo));
 
 	Discord_UpdatePresence(&discordPresence);
 }
