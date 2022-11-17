@@ -13,6 +13,7 @@
   - Custom Discord Settings, Commands, and Options
   - Custom Build Options
   - Palette Rendering
+  - Dynamic Resolutions
   - Better Custom Character Support
   - More Server Options/Settings
   - Autoloading Addons, Which Allows Mods to Bypass Modified Game Checks (after game restart, of course)
