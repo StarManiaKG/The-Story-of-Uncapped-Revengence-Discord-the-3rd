@@ -652,4 +652,6 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 #undef UPDATE_ALERT
 #endif
 
+#define PERFECTSAVE // Decorates a save file if you have a perfect srb2 save file loaded
+
 #endif // __DOOMDEF__
