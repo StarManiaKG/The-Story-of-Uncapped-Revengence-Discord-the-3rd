@@ -5442,6 +5442,7 @@ static inline void PingUpdate(void)
 
 	pingmeasurecount = 1; //Reset count
 }
+
 static void RenewHolePunch(void)
 {
 	if (cv_holepunchserver.string[0])

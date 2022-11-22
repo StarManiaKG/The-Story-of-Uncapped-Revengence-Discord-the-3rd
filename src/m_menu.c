@@ -1814,7 +1814,7 @@ static menuitem_t OP_MonitorToggleMenu[] =
 static menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 {
 	{IT_HEADER, 			NULL, 	"Savedata Options", NULL, 				0},
-	{IT_STRING | IT_CVAR,	NULL,	"Use Continues",	&cv_usecontinues, 	7},
+	{IT_STRING | IT_CVAR,	NULL,	"Continues",		&cv_usecontinues, 	7},
 };
 
 enum
@@ -2794,29 +2794,29 @@ void Discordcustomstatus_option_Onchange(void)
             {
                 // Large Images //
                 OP_DiscordOptionsMenu[op_customdiscordlargecharacterimage].status =
-                    (!cv_customdiscordlargeimagetype.value ? IT_CVAR|IT_STRING : IT_DISABLED);
+                    ((!cv_customdiscordlargeimagetype.value || cv_customdiscordlargeimagetype.value == 1) ? IT_CVAR|IT_STRING : IT_DISABLED);
 
                 OP_DiscordOptionsMenu[op_customdiscordlargemapimage].status =
-                    (cv_customdiscordlargeimagetype.value == 1 ? IT_CVAR|IT_STRING : IT_DISABLED);
-
-                OP_DiscordOptionsMenu[op_customdiscordlargemiscimage].status =
                     (cv_customdiscordlargeimagetype.value == 2 ? IT_CVAR|IT_STRING : IT_DISABLED);
 
+                OP_DiscordOptionsMenu[op_customdiscordlargemiscimage].status =
+                    (cv_customdiscordlargeimagetype.value == 3 ? IT_CVAR|IT_STRING : IT_DISABLED);
+
                 OP_DiscordOptionsMenu[op_customdiscordlargeimagetext].status =
-                    (cv_customdiscordlargeimagetype.value != 3 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
+                    (cv_customdiscordlargeimagetype.value != 4 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 
                 // Small Images //
                 OP_DiscordOptionsMenu[op_customdiscordsmallcharacterimage].status =
-                    (!cv_customdiscordsmallimagetype.value ? IT_CVAR|IT_STRING : IT_DISABLED);
+                    ((!cv_customdiscordsmallimagetype.value || cv_customdiscordsmallimagetype.value == 1) ? IT_CVAR|IT_STRING : IT_DISABLED);
 
                 OP_DiscordOptionsMenu[op_customdiscordsmallmapimage].status =
-                    (cv_customdiscordsmallimagetype.value == 1 ? IT_CVAR|IT_STRING : IT_DISABLED);
-
-                OP_DiscordOptionsMenu[op_customdiscordsmallmiscimage].status =
                     (cv_customdiscordsmallimagetype.value == 2 ? IT_CVAR|IT_STRING : IT_DISABLED);
 
+                OP_DiscordOptionsMenu[op_customdiscordsmallmiscimage].status =
+                    (cv_customdiscordsmallimagetype.value == 3 ? IT_CVAR|IT_STRING : IT_DISABLED);
+
                 OP_DiscordOptionsMenu[op_customdiscordsmallimagetext].status =
-                    (cv_customdiscordsmallimagetype.value != 3 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
+                    (cv_customdiscordsmallimagetype.value != 4 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
             }
         }
     }
@@ -8958,7 +8958,6 @@ static void M_DrawLoadGameData(void)
 			{
 				V_DrawSmallScaledPatch(x+2, y+64, 0, savselp[5]);
 			}
-#define PERFECTSAVE
 #ifdef PERFECTSAVE // disabled on request
 			else if ((savegameinfo[savetodraw].skinnum == 1)
 			&& (savegameinfo[savetodraw].lives == 99)
@@ -9625,7 +9624,7 @@ static void M_LoadGame(INT32 choice)
 
 	if (tutorialmap && cv_tutorialprompt.value)
 	{
-		M_StartMessage("Do you want to \x82play a brief Tutorial\x80?\n\nWe highly recommend this because \nthe controls are slightly different \nfrom other games.\n\nPress the\x82 Y\x80 key or the\x83 A button\x80 to go\nPress the\x82 N\x80 key or the\x83 Y button\x80 to skip\n",
+		M_StartMessage("Do you want to \x82play a brief Tutorial\x80?\n\nWe highly recommend this because \nthe controls are slightly different \nfrom other games, and vastly different from \nother Sonic games.\n\nPress the\x82 Y\x80 key or the\x83 A button\x80 to go\nPress the\x82 N\x80 key or the\x83 Y button\x80 to skip\n",
 			M_FirstTimeResponse, MM_YESNO);
 		return;
 	}
