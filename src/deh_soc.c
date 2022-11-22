@@ -47,6 +47,7 @@
 #include "deh_lua.h" // included due to some LUA_SetLuaAction hack smh
 #include "deh_tables.h"
 
+
 // Loops through every constant and operation in word and performs its calculations, returning the final value.
 fixed_t get_number(const char *word)
 {
