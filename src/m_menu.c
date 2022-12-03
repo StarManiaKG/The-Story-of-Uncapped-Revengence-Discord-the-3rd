@@ -1673,12 +1673,13 @@ static menuitem_t OP_DiscordOptionsMenu[] =
 	{IT_STRING | IT_CVAR,		        NULL, 	"Large Image Type",				&cv_customdiscordlargeimagetype,       97},
     {IT_STRING | IT_CVAR,		        NULL, 	"Small Image Type",				&cv_customdiscordsmallimagetype,      102},
 
+	// chars
 	{IT_STRING | IT_CVAR,		        NULL, 	"Large Image",					&cv_customdiscordlargecharacterimage, 117},
 	{IT_STRING | IT_CVAR,		        NULL, 	"Small Image",					&cv_customdiscordsmallcharacterimage, 122},
-
+	// maps
 	{IT_STRING | IT_CVAR,		        NULL, 	"Large Image",					&cv_customdiscordlargemapimage,       117},
     {IT_STRING | IT_CVAR,		        NULL, 	"Small Image",					&cv_customdiscordsmallmapimage,       122},
-
+	// misc
     {IT_STRING | IT_CVAR,		        NULL, 	"Large Image",					&cv_customdiscordlargemiscimage,      117},
     {IT_STRING | IT_CVAR,		        NULL, 	"Small Image",					&cv_customdiscordsmallmiscimage,      122},
 
@@ -1780,15 +1781,11 @@ static menuitem_t OP_ServerOptionsMenu[] =
 	{IT_HEADER, NULL, "Advanced Settings", NULL, 230},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,	
 							 NULL, "Master Server",	   				   &cv_masterserver,       236}, //36
-	{IT_STRING | IT_CVAR | IT_CV_STRING,	
-							 NULL, "Holepunch Server",  			   &cv_holepunchserver,    250}, //37
 
-	{IT_STRING | IT_CVAR,    NULL, "Join delay",                       &cv_joindelay,          264}, //38
-	{IT_STRING | IT_CVAR,    NULL, "Attempts to resynchronise",        &cv_resynchattempts,    269}, //39
+	{IT_STRING | IT_CVAR,    NULL, "Join delay",                       &cv_joindelay,          250}, //37
+	{IT_STRING | IT_CVAR,    NULL, "Attempts to resynchronise",        &cv_resynchattempts,    255}, //38
 
-	{IT_STRING | IT_CVAR,    NULL, "Show IP Address of Joiners",       &cv_showjoinaddress,    274}, //40
-	{IT_STRING | IT_CVAR,    NULL, "Show Connecting Players",          &cv_noticedownload,     279}, //41
-	{IT_STRING | IT_CVAR,    NULL, "Max Files (In MB) To Send",        &cv_maxsend,     	   284}, //42
+	{IT_STRING | IT_CVAR,    NULL, "Show IP Address of Joiners",       &cv_showjoinaddress,    260}, //39
 #endif
 };
 
@@ -1813,13 +1810,22 @@ static menuitem_t OP_MonitorToggleMenu[] =
 // STAR OPTIONS LETS GOOOOOOOOOOOOO
 static menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 {
-	{IT_HEADER, 			NULL, 	"Savedata Options", NULL, 				0},
-	{IT_STRING | IT_CVAR,	NULL,	"Continues",		&cv_usecontinues, 	7},
+	{IT_HEADER, 			NULL, 	"Savedata Options", 	NULL, 					  	  0},
+	{IT_STRING | IT_CVAR,	NULL,	"Continues",			&cv_usecontinues,		  	  7},
+
+	{IT_HEADER, 			NULL, 	"Extra Server Options", NULL,					 	 14},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,	
+							 NULL, "Holepunch Server",  		&cv_holepunchserver,	 20}, //37
+	{IT_STRING | IT_CVAR,    NULL, "Show Connecting Players",   &cv_noticedownload,      34}, //41
+	{IT_STRING | IT_CVAR,    NULL, "Max Files (In MB) To Send", &cv_maxsend,     	     39}, //42
 };
 
 enum
 {
-	op_usecontinues = 1
+	op_usecontinues = 1,
+	op_holepunchserver = 3,
+	op_noticedownload = 4,
+	op_maxsend = 5,
 };
 
 // ==========================================================================
@@ -2667,8 +2673,28 @@ void Moviemode_option_Onchange(void)
 }
 
 #ifdef HAVE_DISCORDRPC
-void Discordcustomstatus_option_Onchange(void)
+// define these up here earlier because i'm lazy and plus we need these to be global lol
+char customSImageString[2+10+17+3];
+char customLImageString[3+17+10+2];
+void Discord_option_Onchange(void)
 {
+	//custom status things
+	static const char *customStringType[] = {
+		"char",
+		"cont",
+		"map",
+		"misc",
+		NULL
+	};
+	static const char *charsWithSpaces[] = {
+		"6",
+		"7",
+		"8",
+		"20",
+		"21",
+		NULL
+	};
+
 	//....would you believe me if i said still just in case...?
 	DiscordRichPresence discordPresence;
 	memset(&discordPresence, 0, sizeof(discordPresence));
@@ -2817,10 +2843,81 @@ void Discordcustomstatus_option_Onchange(void)
 
                 OP_DiscordOptionsMenu[op_customdiscordsmallimagetext].status =
                     (cv_customdiscordsmallimagetype.value != 4 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
-            }
+			}
+
+			// Large and Small Images
+			if (cv_customdiscordlargeimagetype.value != 4 || cv_customdiscordsmallimagetype.value != 4)
+			{
+				snprintf(customSImageString, 36, "%s", customStringType[cv_customdiscordsmallimagetype.value]);
+				snprintf(customLImageString, 36, "%s", customStringType[cv_customdiscordlargeimagetype.value]);
+
+				if (cv_customdiscordsmallimagetype.value < 2)
+					strlcat(customSImageString, va("%s", cv_customdiscordsmallcharacterimage.string), 64);
+				else if (cv_customdiscordsmallimagetype.value == 2)
+					strlcat(customSImageString, va("%s", cv_customdiscordsmallmapimage.string), 64);
+				else
+					strlcat(customSImageString, va("%s", cv_customdiscordsmallmiscimage.string), 64);
+
+				if (cv_customdiscordlargeimagetype.value < 2)
+					strlcat(customLImageString, va("%s", cv_customdiscordlargecharacterimage.string), 64);
+				else if (cv_customdiscordlargeimagetype.value == 2)
+					strlcat(customLImageString, va("%s", cv_customdiscordlargemapimage.string), 64);
+				else
+					strlcat(customLImageString, va("%s", cv_customdiscordlargemiscimage.string), 64);
+				
+				int nospaces = 0;
+				if (cv_customdiscordsmallimagetype.value != 4 && ((cv_customdiscordsmallimagetype.value < 2 && charsWithSpaces[cv_customdiscordsmallcharacterimage.value]) || (cv_customdiscordsmallimagetype.value > 1)))
+				{
+					nospaces = 0; //this helps us remove spaces from our string, if we have any
+					for (INT32 i = 0; customSImageString[i] != '\0'; i++) { //string writing, now capiable of removing spaces, in limited small image edition
+						if ((customSImageString[i] != ' ') && (customSImageString[i] != '&') && (customSImageString[i] != '.')) // do we not have any spaces?
+						{
+							//continue with our normal behavior then!
+							customSImageString[nospaces] = customSImageString[i];
+							nospaces++;
+						}
+					}
+					customSImageString[nospaces] = '\0';
+				}
+				strlwr(customSImageString);
+				
+				if (cv_customdiscordlargeimagetype.value != 4 && ((cv_customdiscordlargeimagetype.value < 2 && charsWithSpaces[cv_customdiscordlargecharacterimage.value]) || (cv_customdiscordlargeimagetype.value > 1)))
+				{
+					nospaces = 0; //this helps us remove spaces from our string, if we have any
+					for (INT32 i = 0; customLImageString[i] != '\0'; i++) { //string writing, now capiable of removing spaces
+						if (customLImageString[i] != ' ' && customLImageString[i] != '&' && customLImageString[i] != '.') // do we not have any of these characters?
+						{
+							//continue with our normal behavior then!
+							customLImageString[nospaces] = customLImageString[i];
+							nospaces++;
+						}
+					}
+					customLImageString[nospaces] = '\0';
+				}
+				strlwr(customLImageString);
+			}
+			discordPresence.details = cv_customdiscorddetails.string;
+			discordPresence.state = cv_customdiscordstate.string;
+
+			if (cv_customdiscordsmallimagetype.value < 2)
+				discordPresence.smallImageKey = (cv_customdiscordsmallcharacterimage.value > 0 ? customSImageString : va("%scustom", customStringType[cv_customdiscordsmallimagetype.value]));
+			else if (cv_customdiscordsmallimagetype.value == 2)
+				discordPresence.smallImageKey = (cv_customdiscordsmallmapimage.value > 0 ? customSImageString : "map01");
+			else
+				discordPresence.smallImageKey = (cv_customdiscordsmallmiscimage.value > 0 ? customSImageString : "misctitle");
+
+			if (cv_customdiscordlargeimagetype.value < 2)
+				discordPresence.largeImageKey = (cv_customdiscordlargecharacterimage.value > 0 ? customLImageString : va("%scustom", customStringType[cv_customdiscordlargeimagetype.value]));
+			else if (cv_customdiscordlargeimagetype.value == 2)
+				discordPresence.largeImageKey = (cv_customdiscordlargemapimage.value > 0 ? customLImageString : "map01");
+			else
+				discordPresence.largeImageKey = (cv_customdiscordlargemiscimage.value > 0 ? customLImageString : "misctitle");
+
+			discordPresence.smallImageText = cv_customdiscordsmallimagetext.string;
+			discordPresence.largeImageText = cv_customdiscordlargeimagetext.string;
         }
     }
-	DRPC_UpdatePresence();
+	Discord_UpdatePresence(&discordPresence);
 }
 #endif
 
@@ -7163,7 +7260,7 @@ static void M_AddonAutoLoad(INT32 ch)
 				}
 				break;
 			default:
-				M_StartMessage(va("%c%s\x80\nYou can't autoload this. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
+				M_StartMessage(va("%c%s\x80\nYou can't autoload this file. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
 				S_StartSound(NULL, sfx_lose);
 				break;
 		}
@@ -7373,7 +7470,7 @@ static void M_HandleAddons(INT32 choice)
 							break;
 						case EXT_TXT:
 						case EXT_CFG:
-							if (dirmenu[dir_on[menudepthleft]]+DIR_STRING != "autoload")
+							if (strcmp(dirmenu[dir_on[menudepthleft]]+DIR_STRING, AUTOLOADFILENAME) == 1)
 								M_StartMessage(va("%c%s\x80\nYou're trying to autoload a console script. \nIgnore my warning anyways? \n\n(Press 'Y' to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),M_AddonAutoLoad,MM_YESNO);
 							else
 							{
@@ -12142,12 +12239,9 @@ static void M_ServerOptions(INT32 choice)
 		OP_ServerOptionsMenu[ 3].status = IT_GRAYEDOUT; // Allow add-on downloading
 		OP_ServerOptionsMenu[ 4].status = IT_GRAYEDOUT; // Allow players to join
 		OP_ServerOptionsMenu[36].status = IT_GRAYEDOUT; // Master server
-		OP_ServerOptionsMenu[37].status = IT_GRAYEDOUT; // Holepunch server
-		OP_ServerOptionsMenu[38].status = IT_GRAYEDOUT; // Minimum delay between joins
-		OP_ServerOptionsMenu[39].status = IT_GRAYEDOUT; // Attempts to resynchronise
-		OP_ServerOptionsMenu[40].status = IT_GRAYEDOUT; // Display address of joining players
-		OP_ServerOptionsMenu[41].status = IT_GRAYEDOUT; // Log connecting player
-		OP_ServerOptionsMenu[42].status = IT_GRAYEDOUT; // Max Amount of Files (In MB) you can Send to Clients
+		OP_ServerOptionsMenu[37].status = IT_GRAYEDOUT; // Minimum delay between joins
+		OP_ServerOptionsMenu[38].status = IT_GRAYEDOUT; // Attempts to resynchronise
+		OP_ServerOptionsMenu[39].status = IT_GRAYEDOUT; // Display address of joining players
 	}
 	else
 	{
@@ -12156,12 +12250,9 @@ static void M_ServerOptions(INT32 choice)
 		OP_ServerOptionsMenu[ 3].status = IT_STRING | IT_CVAR;
 		OP_ServerOptionsMenu[ 4].status = IT_STRING | IT_CVAR;
 		OP_ServerOptionsMenu[36].status = IT_STRING | IT_CVAR | IT_CV_STRING;
-		OP_ServerOptionsMenu[37].status = IT_STRING | IT_CVAR | IT_CV_STRING;
+		OP_ServerOptionsMenu[37].status = IT_STRING | IT_CVAR;
 		OP_ServerOptionsMenu[38].status = IT_STRING | IT_CVAR;
 		OP_ServerOptionsMenu[39].status = IT_STRING | IT_CVAR;
-		OP_ServerOptionsMenu[40].status = IT_STRING | IT_CVAR;
-		OP_ServerOptionsMenu[41].status = IT_STRING | IT_CVAR;
-		OP_ServerOptionsMenu[42].status = IT_STRING | IT_CVAR;
 	}
 #endif
 
@@ -14132,7 +14223,7 @@ static boolean confirmAccept = false;
 static void M_DiscordOptions(INT32 choice)
 {
 	(void)choice;
-	Discordcustomstatus_option_Onchange();
+	Discord_option_Onchange();
 
 	M_SetupNextMenu(&OP_DiscordOptionsDef);
 }
@@ -14296,6 +14387,19 @@ static void M_Tsourdt3rdOptions(INT32 choice)
 
 	OP_Tsourdt3rdOptionsMenu[op_usecontinues].status =
 		((!(Playing() && playeringame[consoleplayer])) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+	
+	if ((splitscreen && !netgame) || currentMenu == &MP_SplitServerDef)
+	{
+		OP_ServerOptionsMenu[op_holepunchserver].status = IT_GRAYEDOUT; // Holepunch server
+		OP_ServerOptionsMenu[op_noticedownload].status = IT_GRAYEDOUT; // Log connecting player
+		OP_ServerOptionsMenu[op_maxsend].status = IT_GRAYEDOUT; // Max Amount of Files (In MB) you can Send to Clients
+	}
+	else
+	{
+		OP_ServerOptionsMenu[op_holepunchserver].status = IT_STRING | IT_CVAR | IT_CV_STRING;
+		OP_ServerOptionsMenu[op_noticedownload].status = IT_STRING | IT_CVAR;
+		OP_ServerOptionsMenu[op_maxsend].status = IT_STRING | IT_CVAR;
+	}
 
 	M_SetupNextMenu(&OP_Tsourdt3rdOptionsDef);
 }

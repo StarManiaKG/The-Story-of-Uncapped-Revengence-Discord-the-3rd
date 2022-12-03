@@ -5051,16 +5051,11 @@ void Got_DiscordInfo(UINT8 **p, INT32 playernum)
 //Star Commands: Electric Boogalo LETS GOOOOOOO
 static void STAR_UseContinues_OnChange(void)
 {
-	if (!Playing())
-	{
-		if (!(netgame || multiplayer))
-		{
-			useContinues = cv_usecontinues.value;
-			CONS_Printf(M_GetText("Continues have been turned %s.\n"), cv_usecontinues.string);
-		}
-		else
-			CONS_Printf(M_GetText("This only works in Singleplayer.\n"));
-	}
+	if (Playing())
+		return;
+
+	if (!(netgame || multiplayer))
+		useContinues = cv_usecontinues.value;
 	else
-		CONS_Printf(M_GetText("You can't set this while in a game!\n"));
+		CONS_Printf(M_GetText("This only works in Singleplayer.\n"));
 }
