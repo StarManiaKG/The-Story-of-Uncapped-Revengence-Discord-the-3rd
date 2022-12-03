@@ -20,7 +20,7 @@
 #include "i_net.h"
 #include "g_game.h"
 #include "p_tick.h"
-#include "m_menu.h" // gametype_cons_t
+#include "m_menu.h" // gametype_cons_t and discord custom string pointers
 #include "r_things.h" // skins
 #include "mserv.h" // ms_RoomId
 #include "m_cond.h" // queries about emblems
@@ -54,7 +54,7 @@ static CV_PossibleValue_t characterimagetype_cons_t[] = {{0, "CS Portrait"}, {1,
 
 // Custom Discord Status Image Type //
 static CV_PossibleValue_t customimagetype_cons_t[] = {
-	{0, "Characters"},
+	{0, "CS Portraits"},
 	{1, "Continue Sprites"},
 	{2, "Maps"},
 	{3, "Miscellaneous"},
@@ -91,7 +91,8 @@ static CV_PossibleValue_t customcharacterimage_cons_t[] = { // Characters //
     {0, NULL}};
 static CV_PossibleValue_t custommapimage_cons_t[] = { // Maps //
     // Singleplayer/Co-op Maps
-    {1, "Default"},
+    {0, "Default"},
+	{1, "2"},
     {16, "22"},
     {18, "25"},
     // Extra Maps
@@ -106,7 +107,6 @@ static CV_PossibleValue_t custommapimage_cons_t[] = { // Maps //
     {43, "70"},
     // Match/Team Match/H&S/Tag Maps
     {47, "f0"},
-	/*
     {48, "f1"},
     {49, "f2"},
     {50, "f3"},
@@ -115,10 +115,8 @@ static CV_PossibleValue_t custommapimage_cons_t[] = { // Maps //
     {53, "f6"},
     {54, "f7"},
     {55, "f8"},
-	*/
     // CTF Maps
     {56, "m0"},
-	/*
     {57, "m1"},
     {58, "m2"},
     {59, "m3"},
@@ -128,9 +126,8 @@ static CV_PossibleValue_t custommapimage_cons_t[] = { // Maps //
     {63, "m7"},
     {64, "m8"},
     {65, "m9"},
-	*/
     {66, "ma"},
-    //{67, "mb"},
+    {67, "mb"},
     // Tutorial Map
     {68, "z0"},
     // Custom Map
@@ -166,25 +163,25 @@ static CV_PossibleValue_t custommiscimage_cons_t[] = { // Miscellanious //
                                                 ////////////////////////////
                                                 //    Discord Commands    //
                                                 ////////////////////////////
-consvar_t cv_discordrp = CVAR_INIT ("discordrp", "On", CV_SAVE|CV_CALL, CV_OnOff, Discordcustomstatus_option_Onchange);
+consvar_t cv_discordrp = CVAR_INIT ("discordrp", "On", CV_SAVE|CV_CALL, CV_OnOff, Discord_option_Onchange);
 consvar_t cv_discordstreamer = CVAR_INIT ("discordstreamer", "Off", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
 consvar_t cv_discordasks = CVAR_INIT ("discordasks", "Yes", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
 consvar_t cv_discordstatusmemes = CVAR_INIT ("discordstatusmemes", "Yes", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
-consvar_t cv_discordshowonstatus = CVAR_INIT ("discordshowonstatus", "All", CV_SAVE|CV_CALL, statustype_cons_t, Discordcustomstatus_option_Onchange);
+consvar_t cv_discordshowonstatus = CVAR_INIT ("discordshowonstatus", "All", CV_SAVE|CV_CALL, statustype_cons_t, Discord_option_Onchange);
 consvar_t cv_discordcharacterimagetype = CVAR_INIT ("discordcharacterimagetype", "CS Portrait", CV_SAVE|CV_CALL, characterimagetype_cons_t, DRPC_UpdatePresence);
 //// Custom Discord Status Things ////
 consvar_t cv_customdiscorddetails = CVAR_INIT ("customdiscorddetails", "I'm Feeling Good!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
 consvar_t cv_customdiscordstate = CVAR_INIT ("customdiscordstate", "I'm Playing Sonic Robo Blast 2!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
 // Custom Discord Status Image Type
-consvar_t cv_customdiscordlargeimagetype = CVAR_INIT ("customdiscordlargeimagetype", "Characters", CV_SAVE|CV_CALL, customimagetype_cons_t, Discordcustomstatus_option_Onchange);
-consvar_t cv_customdiscordsmallimagetype = CVAR_INIT ("customdiscordsmallimagetype", "Continue Sprites", CV_SAVE|CV_CALL, customimagetype_cons_t, Discordcustomstatus_option_Onchange);
+consvar_t cv_customdiscordlargeimagetype = CVAR_INIT ("customdiscordlargeimagetype", "CS Portraits", CV_SAVE|CV_CALL, customimagetype_cons_t, Discord_option_Onchange);
+consvar_t cv_customdiscordsmallimagetype = CVAR_INIT ("customdiscordsmallimagetype", "Continue Sprites", CV_SAVE|CV_CALL, customimagetype_cons_t, Discord_option_Onchange);
 // Custom Discord Status Images
     // Characters //
 consvar_t cv_customdiscordlargecharacterimage = CVAR_INIT ("customdiscordlargecharacterimage", "Sonic", CV_SAVE|CV_CALL, customcharacterimage_cons_t, DRPC_UpdatePresence);
 consvar_t cv_customdiscordsmallcharacterimage = CVAR_INIT ("customdiscordsmallimage", "Tails", CV_SAVE|CV_CALL, customcharacterimage_cons_t, DRPC_UpdatePresence);
     // Maps //
 consvar_t cv_customdiscordlargemapimage = CVAR_INIT ("customdiscordlargemapimage", "Default", CV_SAVE|CV_CALL, custommapimage_cons_t, DRPC_UpdatePresence);
-consvar_t cv_customdiscordsmallmapimage = CVAR_INIT ("customdiscordsmallmapimage", "1", CV_SAVE|CV_CALL, custommapimage_cons_t, DRPC_UpdatePresence);
+consvar_t cv_customdiscordsmallmapimage = CVAR_INIT ("customdiscordsmallmapimage", "2", CV_SAVE|CV_CALL, custommapimage_cons_t, DRPC_UpdatePresence);
     // Miscellanious //
 consvar_t cv_customdiscordlargemiscimage = CVAR_INIT ("customdiscordlargemiscimage", "Default", CV_SAVE|CV_CALL, custommiscimage_cons_t, DRPC_UpdatePresence);
 consvar_t cv_customdiscordsmallmiscimage = CVAR_INIT ("customdiscordsmallmiscimage", "Intro 1", CV_SAVE|CV_CALL, custommiscimage_cons_t, DRPC_UpdatePresence);
@@ -608,16 +605,12 @@ void DRPC_UpdatePresence(void)
 
 	char charImageType[2+2+1] = "";
 
-	//custom things
-	char customSImageString[2+10+17+3];
-    char customLImageString[3+17+10+2];
-
-	static const char *charsWithSpaces[] = {
-		"6",
-		"7",
-		"8",
-		"20",
-		"21",
+	// custom discord things from menu.c that i had to redeclare here because i do not know much about c
+	static const char *customStringType[] = {
+		"char",
+		"cont",
+		"map",
+		"misc",
 		NULL
 	};
 
@@ -982,7 +975,7 @@ void DRPC_UpdatePresence(void)
 
 				discordPresence.startTimestamp = mapTimeStart;
 
-				if (timelimitintics > 0)
+				if (timelimitintics > 0 && gametyperules == GTR_TIMELIMIT)
 				{
 					const time_t mapTimeEnd = mapTimeStart + ((timelimitintics + 1) / TICRATE);
 					discordPresence.endTimestamp = mapTimeEnd;
@@ -1081,85 +1074,26 @@ void DRPC_UpdatePresence(void)
     {
 		// Heheheha
 		memset(&discordInfo, 0, sizeof(discordInfo));
-
+		
 		discordPresence.details = cv_customdiscorddetails.string;
 		discordPresence.state = cv_customdiscordstate.string;
 
-		// Large Images
-		if (cv_customdiscordlargeimagetype.value != 4)
-		{
-			if (!cv_customdiscordlargeimagetype.value)
-				snprintf(customLImageString, 36, "char%s", cv_customdiscordlargecharacterimage.string);
-			else if (cv_customdiscordlargeimagetype.value == 1)
-				snprintf(customLImageString, 36, "cont%s", cv_customdiscordlargecharacterimage.string);
-			else if (cv_customdiscordlargeimagetype.value == 2)
-				snprintf(customLImageString, 36, "map%s", cv_customdiscordlargemapimage.string);
-			else
-				snprintf(customLImageString, 36, "misc%s", cv_customdiscordlargemiscimage.string);
-			
-			if (((!cv_customdiscordlargeimagetype.value || cv_customdiscordlargeimagetype.value == 1) && charsWithSpaces[cv_customdiscordlargecharacterimage.value]) || (cv_customdiscordlargeimagetype.value > 1))
-			{
-				int nospaces = 0; //this helps us remove spaces from our string, if we have any
-				for (INT32 i = 0; customLImageString[i] != '\0'; i++) { //string writing, now capiable of removing spaces
-					if (customLImageString[i] != ' ' && customLImageString[i] != '&' && customLImageString[i] != '.') // do we not have any of these characters?
-					{
-						//continue with our normal behavior then!
-						customLImageString[nospaces] = customLImageString[i];
-						nospaces++;
-					}
-				}
-				customLImageString[nospaces] = '\0';
-			}
-			strlwr(customLImageString);
+		if (cv_customdiscordsmallimagetype.value < 2)
+			discordPresence.smallImageKey = (cv_customdiscordsmallcharacterimage.value > 0 ? customSImageString : va("%scustom", customStringType[cv_customdiscordsmallimagetype.value]));
+		else if (cv_customdiscordsmallimagetype.value == 2)
+			discordPresence.smallImageKey = (cv_customdiscordsmallmapimage.value > 0 ? customSImageString : "map01");
+		else
+			discordPresence.smallImageKey = (cv_customdiscordsmallmiscimage.value > 0 ? customSImageString : "misctitle");
 
-			if (!cv_customdiscordlargeimagetype.value)
-				discordPresence.largeImageKey = (cv_customdiscordlargecharacterimage.value > 0 ? customLImageString : "charcustom");
-			else if (cv_customdiscordlargeimagetype.value == 1)
-				discordPresence.largeImageKey = (cv_customdiscordlargecharacterimage.value > 0 ? customLImageString : "contcustom");
-			else if (cv_customdiscordlargeimagetype.value == 2)
-				discordPresence.largeImageKey = (cv_customdiscordlargemapimage.value > 0 ? customLImageString : "map01");
-			else
-				discordPresence.largeImageKey = (cv_customdiscordlargemiscimage.value > 0 ? customLImageString : "misctitle");
-			discordPresence.largeImageText = cv_customdiscordlargeimagetext.string;
-		}
+		if (cv_customdiscordlargeimagetype.value < 2)
+			discordPresence.largeImageKey = (cv_customdiscordlargecharacterimage.value > 0 ? customLImageString : va("%scustom", customStringType[cv_customdiscordlargeimagetype.value]));
+		else if (cv_customdiscordlargeimagetype.value == 2)
+			discordPresence.largeImageKey = (cv_customdiscordlargemapimage.value > 0 ? customLImageString : "map01");
+		else
+			discordPresence.largeImageKey = (cv_customdiscordlargemiscimage.value > 0 ? customLImageString : "misctitle");
 
-		// Small Images
-		if (cv_customdiscordsmallimagetype.value != 4)
-		{
-			if (!cv_customdiscordsmallimagetype.value)
-				snprintf(customSImageString, 32, "char%s", cv_customdiscordsmallcharacterimage.string);
-			else if (cv_customdiscordsmallimagetype.value == 1)
-				snprintf(customSImageString, 32, "cont%s", cv_customdiscordsmallcharacterimage.string);
-			else if (cv_customdiscordsmallimagetype.value == 2)
-				snprintf(customSImageString, 32, "map%s", cv_customdiscordsmallmapimage.string);
-			else
-				snprintf(customSImageString, 32, "misc%s", cv_customdiscordsmallmiscimage.string);
-
-			if (((!cv_customdiscordsmallimagetype.value || cv_customdiscordsmallimagetype.value == 1) && charsWithSpaces[cv_customdiscordsmallcharacterimage.value]) || (cv_customdiscordsmallimagetype.value > 1))
-			{
-				int nospaces = 0; //this helps us remove spaces from our string, if we have any
-				for (INT32 i = 0; customSImageString[i] != '\0'; i++) { //string writing, now capiable of removing spaces, in limited small image edition
-					if ((customSImageString[i] != ' ') && (customSImageString[i] != '&') && (customSImageString[i] != '.')) // do we not have any spaces?
-					{
-						//continue with our normal behavior then!
-						customSImageString[nospaces] = customSImageString[i];
-						nospaces++;
-					}
-				}
-				customSImageString[nospaces] = '\0';
-			}
-			strlwr(customSImageString);
-
-			if (!cv_customdiscordsmallimagetype.value)
-				discordPresence.smallImageKey = (cv_customdiscordsmallcharacterimage.value > 0 ? customSImageString : "charcustom");
-			else if (cv_customdiscordsmallimagetype.value == 1)
-				discordPresence.smallImageKey = (cv_customdiscordsmallcharacterimage.value > 0 ? customSImageString : "contcustom");
-			else if (cv_customdiscordsmallimagetype.value == 2)
-				discordPresence.smallImageKey = (cv_customdiscordsmallmapimage.value > 0 ? customSImageString : "map01");
-			else
-				discordPresence.smallImageKey = (cv_customdiscordsmallmiscimage.value > 0 ? customSImageString : "misctitle");
-			discordPresence.smallImageText = cv_customdiscordsmallimagetext.string;
-		}
+		discordPresence.smallImageText = cv_customdiscordsmallimagetext.string;
+		discordPresence.largeImageText = cv_customdiscordlargeimagetext.string;
 	}
 
 	if (!joinSecretSet)
