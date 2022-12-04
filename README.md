@@ -17,14 +17,14 @@
   - Better Custom Character Support
   - More Server Options/Settings
   - Autoloading Addons, Which Allows Mods to Bypass Modified Game Checks (after game restart, of course)
+  - A Jukebox	  
   - ...And More Annoyances!
   
 ## WIP Features (Found on Latest Unstable Build)
   - Holepunching (needs relay server)
-  - Netplus
-  - Autoloading Folder Support
+  - Netplus (really on a limb here)
+  - Autoloading Folder Support (yeah so funny story)
   - Discord's Game SDK (need to convert it to C)
-  - A Jukebox
   - ...And Even More Annoyances!
       
 ## Dependencies
