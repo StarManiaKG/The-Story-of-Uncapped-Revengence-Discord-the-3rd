@@ -1451,14 +1451,14 @@ static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
 				}
 
 
-			if ((v != INT32_MIN && v < var->PossibleValue[MINVAL].value) || !stricmp(valstr, "MIN"))
+			if ((v != INT32_MIN && v < var->PossibleValue[MINVAL].value) || (!stricmp(valstr, "MIN")))
 			{
 				v = var->PossibleValue[MINVAL].value;
 				valstr = var->PossibleValue[MINVAL].strvalue;
 				override = true;
 				overrideval = v;
 			}
-			else if ((v != INT32_MIN && v > var->PossibleValue[MAXVAL].value) || !stricmp(valstr, "MAX"))
+			else if ((v != INT32_MIN && v > var->PossibleValue[MAXVAL].value) || (!stricmp(valstr, "MAX")))
 			{
 				v = var->PossibleValue[MAXVAL].value;
 				valstr = var->PossibleValue[MAXVAL].strvalue;
