@@ -89,50 +89,7 @@ static CV_PossibleValue_t customcharacterimage_cons_t[] = { // Characters //
     {23, "Whisper"},
     {24, "Hexhog"},
     {0, NULL}};
-static CV_PossibleValue_t custommapimage_cons_t[] = { // Maps //
-    // Singleplayer/Co-op Maps
-    {0, "Default"},
-	{1, "2"},
-    {16, "22"},
-    {18, "25"},
-    // Extra Maps
-    {21, "30"},
-    // Advanced Maps
-    {25, "40"},
-    // Singleplayer Special Stages
-    {28, "50"},
-    // Co-op Special Stages
-    {36, "60"},
-    // Other Things I Probably Forgot Because I'm Smart lol
-    {43, "70"},
-    // Match/Team Match/H&S/Tag Maps
-    {47, "f0"},
-    {48, "f1"},
-    {49, "f2"},
-    {50, "f3"},
-    {51, "f4"},
-    {52, "f5"},
-    {53, "f6"},
-    {54, "f7"},
-    {55, "f8"},
-    // CTF Maps
-    {56, "m0"},
-    {57, "m1"},
-    {58, "m2"},
-    {59, "m3"},
-    {60, "m4"},
-    {61, "m5"},
-    {62, "m6"},
-    {63, "m7"},
-    {64, "m8"},
-    {65, "m9"},
-    {66, "ma"},
-    {67, "mb"},
-    // Tutorial Map
-    {68, "z0"},
-    // Custom Map
-    {69, "Custom"},
-    {0, NULL}};
+static CV_PossibleValue_t custommapimage_cons_t[] = {{0, "MIN"}, {69, "MAX"}, {0, NULL}};
 static CV_PossibleValue_t custommiscimage_cons_t[] = { // Miscellanious //
 	{0, "Default"},
 	// Intro Stuff
@@ -170,24 +127,24 @@ consvar_t cv_discordstatusmemes = CVAR_INIT ("discordstatusmemes", "Yes", CV_SAV
 consvar_t cv_discordshowonstatus = CVAR_INIT ("discordshowonstatus", "All", CV_SAVE|CV_CALL, statustype_cons_t, Discord_option_Onchange);
 consvar_t cv_discordcharacterimagetype = CVAR_INIT ("discordcharacterimagetype", "CS Portrait", CV_SAVE|CV_CALL, characterimagetype_cons_t, DRPC_UpdatePresence);
 //// Custom Discord Status Things ////
-consvar_t cv_customdiscorddetails = CVAR_INIT ("customdiscorddetails", "I'm Feeling Good!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
-consvar_t cv_customdiscordstate = CVAR_INIT ("customdiscordstate", "I'm Playing Sonic Robo Blast 2!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
+consvar_t cv_customdiscorddetails = CVAR_INIT ("customdiscorddetails", "I'm Feeling Good!", CV_SAVE|CV_CALL, NULL, Discord_option_Onchange);
+consvar_t cv_customdiscordstate = CVAR_INIT ("customdiscordstate", "I'm Playing Sonic Robo Blast 2!", CV_SAVE|CV_CALL, NULL, Discord_option_Onchange);
 // Custom Discord Status Image Type
 consvar_t cv_customdiscordlargeimagetype = CVAR_INIT ("customdiscordlargeimagetype", "CS Portraits", CV_SAVE|CV_CALL, customimagetype_cons_t, Discord_option_Onchange);
 consvar_t cv_customdiscordsmallimagetype = CVAR_INIT ("customdiscordsmallimagetype", "Continue Sprites", CV_SAVE|CV_CALL, customimagetype_cons_t, Discord_option_Onchange);
 // Custom Discord Status Images
     // Characters //
-consvar_t cv_customdiscordlargecharacterimage = CVAR_INIT ("customdiscordlargecharacterimage", "Sonic", CV_SAVE|CV_CALL, customcharacterimage_cons_t, DRPC_UpdatePresence);
-consvar_t cv_customdiscordsmallcharacterimage = CVAR_INIT ("customdiscordsmallimage", "Tails", CV_SAVE|CV_CALL, customcharacterimage_cons_t, DRPC_UpdatePresence);
+consvar_t cv_customdiscordlargecharacterimage = CVAR_INIT ("customdiscordlargecharacterimage", "Sonic", CV_SAVE|CV_CALL, customcharacterimage_cons_t, Discord_option_Onchange);
+consvar_t cv_customdiscordsmallcharacterimage = CVAR_INIT ("customdiscordsmallimage", "Tails", CV_SAVE|CV_CALL, customcharacterimage_cons_t, Discord_option_Onchange);
     // Maps //
-consvar_t cv_customdiscordlargemapimage = CVAR_INIT ("customdiscordlargemapimage", "Default", CV_SAVE|CV_CALL, custommapimage_cons_t, DRPC_UpdatePresence);
-consvar_t cv_customdiscordsmallmapimage = CVAR_INIT ("customdiscordsmallmapimage", "2", CV_SAVE|CV_CALL, custommapimage_cons_t, DRPC_UpdatePresence);
+consvar_t cv_customdiscordlargemapimage = CVAR_INIT ("customdiscordlargemapimage", "MIN", CV_SAVE|CV_CALL, custommapimage_cons_t, Discord_option_Onchange);
+consvar_t cv_customdiscordsmallmapimage = CVAR_INIT ("customdiscordsmallmapimage", "MAX", CV_SAVE|CV_CALL, custommapimage_cons_t, Discord_option_Onchange);
     // Miscellanious //
-consvar_t cv_customdiscordlargemiscimage = CVAR_INIT ("customdiscordlargemiscimage", "Default", CV_SAVE|CV_CALL, custommiscimage_cons_t, DRPC_UpdatePresence);
-consvar_t cv_customdiscordsmallmiscimage = CVAR_INIT ("customdiscordsmallmiscimage", "Intro 1", CV_SAVE|CV_CALL, custommiscimage_cons_t, DRPC_UpdatePresence);
+consvar_t cv_customdiscordlargemiscimage = CVAR_INIT ("customdiscordlargemiscimage", "Default", CV_SAVE|CV_CALL, custommiscimage_cons_t, Discord_option_Onchange);
+consvar_t cv_customdiscordsmallmiscimage = CVAR_INIT ("customdiscordsmallmiscimage", "Intro 1", CV_SAVE|CV_CALL, custommiscimage_cons_t, Discord_option_Onchange);
     // Captions //
-consvar_t cv_customdiscordlargeimagetext = CVAR_INIT ("customdiscordlargeimagetext", "My Favorite Character!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
-consvar_t cv_customdiscordsmallimagetext = CVAR_INIT ("customdiscordsmallimagetext", "My Other Favorite Character!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
+consvar_t cv_customdiscordlargeimagetext = CVAR_INIT ("customdiscordlargeimagetext", "My Favorite Character!", CV_SAVE|CV_CALL, NULL, Discord_option_Onchange);
+consvar_t cv_customdiscordsmallimagetext = CVAR_INIT ("customdiscordsmallimagetext", "My Other Favorite Character!", CV_SAVE|CV_CALL, NULL, Discord_option_Onchange);
 struct discordInfo_s discordInfo;
 
 discordRequest_t *discordRequestList = NULL;
@@ -466,6 +423,7 @@ void DRPC_Init(void)
 
 	Discord_Initialize(DISCORD_APPID, &handlers, 1, NULL);
 	I_AddExitFunc(Discord_Shutdown);
+	I_AddExitFunc(DRPC_ShutDown);
 	DRPC_UpdatePresence();
 }
 
@@ -663,7 +621,7 @@ void DRPC_UpdatePresence(void)
     memset(&discordInfo, 0, sizeof(discordInfo));
 
 	//// Server Info ////
-	if (dedicated || netgame || multiplayer)
+	if ((dedicated || netgame || multiplayer) && cv_discordshowonstatus.value != 8)
 	{
 		if (DRPC_InvitesAreAllowed() == true)
 		{
@@ -705,10 +663,10 @@ void DRPC_UpdatePresence(void)
 		discordPresence.partySize = D_NumPlayers(); // Players in server
 		discordPresence.partyMax = cv_maxplayers.value; // Max players
 	}
-	else if ((dedicated || netgame || multiplayer) || !multiplayer)
+	else if (((dedicated || netgame || multiplayer) || !multiplayer) && cv_discordshowonstatus.value != 8)
 	{
 		//// Set Status Picture (Just in Case) ////
-		if (cv_discordshowonstatus.value != 0 && cv_discordshowonstatus.value != 8)
+		if (cv_discordshowonstatus.value != 0)
 		{
 			if (((cv_discordshowonstatus.value == 1 || cv_discordshowonstatus.value == 5) && !Playing()) || (cv_discordshowonstatus.value != 1 && cv_discordshowonstatus.value != 5))
 			{
@@ -984,9 +942,6 @@ void DRPC_UpdatePresence(void)
 		}
 		else if (gamestate == GS_EVALUATION || gamestate == GS_GAMEEND || gamestate == GS_CREDITS || gamestate == GS_ENDING|| gamestate == GS_CONTINUING)
 		{	
-			// Heh.
-			memset(&discordInfo, 0, sizeof(discordInfo));
-
 			discordPresence.largeImageKey = "misctitle";
 			discordPresence.largeImageText = "Sonic Robo Blast 2";
 				
@@ -1069,12 +1024,9 @@ void DRPC_UpdatePresence(void)
 		}
 	}
 	
-	//// Custom Statuses ////
+	//// NOTE: Main Custom Status Functions can be Found in menu.c! This is just backported from there.
 	if (cv_discordshowonstatus.value == 8)
-    {
-		// Heheheha
-		memset(&discordInfo, 0, sizeof(discordInfo));
-		
+	{
 		discordPresence.details = cv_customdiscorddetails.string;
 		discordPresence.state = cv_customdiscordstate.string;
 

@@ -348,6 +348,7 @@ menu_t OP_SoundAdvancedDef;
 
 //star things yay or something idk
 menu_t OP_Tsourdt3rdOptionsDef;
+menu_t OP_Tsourdt3rdJukeboxDef;
 
 //Misc
 menu_t OP_DataOptionsDef, OP_ScreenshotOptionsDef, OP_EraseDataDef;
@@ -368,6 +369,10 @@ static patch_t *addonsp[NUM_EXT+5];
 
 //star stuff weee
 static void M_Tsourdt3rdOptions(INT32 choice);
+
+static void M_Tsourdt3rdJukebox(INT32 choice);
+static void M_DrawTsourdt3rdJukebox(void);
+static void M_HandleTsourdt3rdJukebox(INT32 choice);
 
 #define addonmenusize 9 // number of items actually displayed in the addons menu view, formerly (2*numaddonsshown + 1)
 #define numaddonsshown 4 // number of items to each side of the currently selected item, unless at top/bottom ends of directory
@@ -1810,14 +1815,21 @@ static menuitem_t OP_MonitorToggleMenu[] =
 // STAR OPTIONS LETS GOOOOOOOOOOOOO
 static menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 {
-	{IT_HEADER, 			NULL, 	"Savedata Options", 	NULL, 					  	  0},
-	{IT_STRING | IT_CVAR,	NULL,	"Continues",			&cv_usecontinues,		  	  7},
+	{IT_HEADER, 			NULL, 	"Savedata Options", 		NULL, 					  	0},
+	{IT_STRING | IT_CVAR,	NULL,	"Continues",				&cv_usecontinues,		  	7},
 
-	{IT_HEADER, 			NULL, 	"Extra Server Options", NULL,					 	 14},
+	{IT_HEADER, 			NULL, 	"Extra Server Options", 	NULL,					   14},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,	
-							 NULL, "Holepunch Server",  		&cv_holepunchserver,	 20}, //37
-	{IT_STRING | IT_CVAR,    NULL, "Show Connecting Players",   &cv_noticedownload,      34}, //41
-	{IT_STRING | IT_CVAR,    NULL, "Max Files (In MB) To Send", &cv_maxsend,     	     39}, //42
+							 NULL, "Holepunch Server",  		&cv_holepunchserver,	   20},
+	{IT_STRING | IT_CVAR,    NULL, "Show Connecting Players",   &cv_noticedownload,        34},
+	{IT_STRING | IT_CVAR,    NULL, "Max Files (In MB) To Send", &cv_maxsend,     	       39},
+
+	{IT_HEADER, 			 NULL, 	"Miscellanious Options",    NULL,					   44},
+	{IT_STRING | IT_CALL, 	 NULL, 	"Jukebox",					M_Tsourdt3rdJukebox,   	   50},
+};
+static menuitem_t OP_Tsourdt3rdJukeboxMenu[] =
+{
+	{IT_KEYHANDLER | IT_STRING, 	 NULL, "", M_HandleTsourdt3rdJukebox, 0},
 };
 
 enum
@@ -1826,6 +1838,7 @@ enum
 	op_holepunchserver = 3,
 	op_noticedownload = 4,
 	op_maxsend = 5,
+	op_jukebox = 7,
 };
 
 // ==========================================================================
@@ -2411,6 +2424,19 @@ menu_t OP_Tsourdt3rdOptionsDef = DEFAULTSCROLLMENUSTYLE(
 	MTREE2(MN_OP_MAIN, MN_OP_TSOURDT3RD),
 	NULL, OP_Tsourdt3rdOptionsMenu, &OP_MainDef, 30, 30); //M_TSOURDT3RD
 
+menu_t OP_Tsourdt3rdJukeboxDef =
+{
+	MTREE3(MN_OP_MAIN, MN_OP_TSOURDT3RD, MN_OP_TSOURDT3RD_JUKEBOX),
+	NULL,
+	sizeof (OP_Tsourdt3rdJukeboxMenu)/sizeof (menuitem_t),
+	&OP_Tsourdt3rdOptionsDef,
+	OP_Tsourdt3rdJukeboxMenu,
+	M_DrawTsourdt3rdJukebox,
+	60, 150,
+	0,
+	NULL
+};
+
 #ifdef HAVE_DISCORDRPC
 menu_t OP_DiscordOptionsDef = DEFAULTSCROLLMENUSTYLE(
 	MTREE2(MN_OP_MAIN, MN_DISCORD_OPT), 
@@ -2694,6 +2720,7 @@ void Discord_option_Onchange(void)
 		"21",
 		NULL
 	};
+	//char xtraCustomString[5+10+12+8];
 
 	//....would you believe me if i said still just in case...?
 	DiscordRichPresence discordPresence;
@@ -7212,7 +7239,7 @@ static void M_AddonAutoLoad(INT32 ch)
 	else
 	{
 		// first, find the file
-		path = va("%s"PATHSEP"%s", srb2home, AUTOLOADFILENAME);
+		path = va("%s"PATHSEP"%s", srb2home, AUTOLOADCONFIGNAME);
 		autoloadconfigfile = fopen(path, "a");
 
 		// next, copy the name of the file
@@ -7470,7 +7497,7 @@ static void M_HandleAddons(INT32 choice)
 							break;
 						case EXT_TXT:
 						case EXT_CFG:
-							if (strcmp(dirmenu[dir_on[menudepthleft]]+DIR_STRING, AUTOLOADFILENAME) == 1)
+							if (strcmp(dirmenu[dir_on[menudepthleft]]+DIR_STRING, AUTOLOADCONFIGNAME) != 0)
 								M_StartMessage(va("%c%s\x80\nYou're trying to autoload a console script. \nIgnore my warning anyways? \n\n(Press 'Y' to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),M_AddonAutoLoad,MM_YESNO);
 							else
 							{
@@ -8673,8 +8700,8 @@ static void M_HandleSoundTest(INT32 choice)
 	{
 		Z_Free(soundtestdefs);
 		soundtestdefs = NULL;
-
-		cv_closedcaptioning.value = st_cc; // undo hack
+		
+		cv_closedcaptioning.value = st_cc; // undo hac
 
 		if (currentMenu->prevMenu)
 			M_SetupNextMenu(currentMenu->prevMenu);
@@ -14390,16 +14417,405 @@ static void M_Tsourdt3rdOptions(INT32 choice)
 	
 	if ((splitscreen && !netgame) || currentMenu == &MP_SplitServerDef)
 	{
-		OP_ServerOptionsMenu[op_holepunchserver].status = IT_GRAYEDOUT; // Holepunch server
-		OP_ServerOptionsMenu[op_noticedownload].status = IT_GRAYEDOUT; // Log connecting player
-		OP_ServerOptionsMenu[op_maxsend].status = IT_GRAYEDOUT; // Max Amount of Files (In MB) you can Send to Clients
+		OP_Tsourdt3rdOptionsMenu[op_holepunchserver].status = IT_GRAYEDOUT; // Holepunch server
+		OP_Tsourdt3rdOptionsMenu[op_noticedownload].status = IT_GRAYEDOUT; // Log connecting player
+		OP_Tsourdt3rdOptionsMenu[op_maxsend].status = IT_GRAYEDOUT; // Max Amount of Files (In MB) you can Send to Clients
 	}
 	else
 	{
-		OP_ServerOptionsMenu[op_holepunchserver].status = IT_STRING | IT_CVAR | IT_CV_STRING;
-		OP_ServerOptionsMenu[op_noticedownload].status = IT_STRING | IT_CVAR;
-		OP_ServerOptionsMenu[op_maxsend].status = IT_STRING | IT_CVAR;
+		OP_Tsourdt3rdOptionsMenu[op_holepunchserver].status = IT_STRING | IT_CVAR | IT_CV_STRING;
+		OP_Tsourdt3rdOptionsMenu[op_noticedownload].status = IT_STRING | IT_CVAR;
+		OP_Tsourdt3rdOptionsMenu[op_maxsend].status = IT_STRING | IT_CVAR;
 	}
 
+	for (INT32 i = 0; i < MAXUNLOCKABLES; i++)
+	{
+		OP_Tsourdt3rdOptionsMenu[op_jukebox].status = IT_GRAYEDOUT;
+		OP_Tsourdt3rdOptionsMenu[op_jukebox].itemaction = NULL;
+		
+		if (unlockables[i].unlocked && unlockables[i].type == SECRET_SOUNDTEST)
+		{
+			OP_Tsourdt3rdOptionsMenu[op_jukebox].status = IT_STRING|IT_CALL;
+			OP_Tsourdt3rdOptionsMenu[op_jukebox].itemaction = M_Tsourdt3rdJukebox;
+			break;
+		}
+	}
 	M_SetupNextMenu(&OP_Tsourdt3rdOptionsDef);
+}
+
+static void M_Tsourdt3rdJukebox(INT32 choice)
+{
+	INT32 ul = skyRoomMenuTranslations[choice-1];
+
+	soundtestpage = (UINT8)(unlockables[ul].variable);
+	if (!soundtestpage)
+		soundtestpage = 1;
+
+	if (!S_PrepareSoundTest())
+	{
+		M_StartMessage(M_GetText("No accessible tracks found in the jukebox.\n"),NULL,MM_NOTHING);
+		return;
+	}
+
+	M_CacheSoundTest();
+
+	curplaying = NULL;
+	st_time = 0;
+
+	st_sel = 0;
+
+	st_cc = cv_closedcaptioning.value; // hack;
+	cv_closedcaptioning.value = 1; // hack
+
+	M_SetupNextMenu(&OP_Tsourdt3rdJukeboxDef);
+}
+
+static void M_DrawTsourdt3rdJukebox(void)
+{
+	INT32 x, y, i;
+	fixed_t hscale = FRACUNIT/2, vscale = FRACUNIT/2, bounce = 0;
+	UINT8 frame[4] = {0, 0, -1, SKINCOLOR_RUBY};
+
+	// let's handle the ticker first. ideally we'd tick this somewhere else, BUT...
+	if (curplaying)
+	{
+		if (curplaying == &soundtestsfx)
+		{
+			if (cv_soundtest.value)
+			{
+				frame[1] = (2 - (st_time >> FRACBITS));
+				frame[2] = ((cv_soundtest.value - 1) % 9);
+				frame[3] += (((cv_soundtest.value - 1) / 9) % (FIRSTSUPERCOLOR - frame[3]));
+				if (st_time < (2 << FRACBITS))
+					st_time += renderdeltatics;
+			}
+		}
+		else
+		{
+			fixed_t stoppingtics = (fixed_t)(curplaying->stoppingtics) << FRACBITS;
+			if (stoppingtics && st_time >= stoppingtics)
+			{
+				curplaying = NULL;
+				st_time = 0;
+			}
+			else
+			{
+				fixed_t work, bpm = curplaying->bpm;
+				angle_t ang;
+				//bpm = FixedDiv((60*TICRATE)<<FRACBITS, bpm); -- bake this in on load
+
+				work = st_time;
+				work %= bpm;
+
+				if (st_time >= (FRACUNIT << (FRACBITS - 2))) // prevent overflow jump - takes about 15 minutes of loop on the same song to reach
+					st_time = work;
+
+				work = FixedDiv(work*180, bpm);
+				frame[0] = 8-(work/(20<<FRACBITS));
+				if (frame[0] > 8) // VERY small likelihood for the above calculation to wrap, but it turns out it IS possible lmao
+					frame[0] = 0;
+				ang = (FixedAngle(work)>>ANGLETOFINESHIFT) & FINEMASK;
+				bounce = (FINESINE(ang) - FRACUNIT/2);
+				hscale -= bounce/16;
+				vscale += bounce/16;
+
+				st_time += renderdeltatics;
+			}
+		}
+	}
+
+	x = 90<<FRACBITS;
+	y = (BASEVIDHEIGHT-32)<<FRACBITS;
+
+	V_DrawStretchyFixedPatch(x, y,
+		hscale, vscale,
+		0, st_radio[frame[0]], NULL);
+
+	V_DrawFixedPatch(x, y, FRACUNIT/2, 0, st_launchpad[0], NULL);
+
+	for (i = 0; i < 9; i++)
+	{
+		if (i == frame[2])
+		{
+			UINT8 *colmap = R_GetTranslationColormap(TC_RAINBOW, frame[3], GTC_CACHE);
+			V_DrawFixedPatch(x, y + (frame[1]<<FRACBITS), FRACUNIT/2, 0, st_launchpad[frame[1]+1], colmap);
+		}
+		else
+			V_DrawFixedPatch(x, y, FRACUNIT/2, 0, st_launchpad[1], NULL);
+
+		if ((i % 3) == 2)
+		{
+			x -= ((2*28) + 25)<<(FRACBITS-1);
+			y -= ((2*7) - 11)<<(FRACBITS-1);
+		}
+		else
+		{
+			x += 28<<(FRACBITS-1);
+			y += 7<<(FRACBITS-1);
+		}
+	}
+
+	y = (BASEVIDWIDTH-(vid.width/vid.dupx))/2;
+
+	V_DrawFill(y, 20, vid.width/vid.dupx, 24, 159);
+	{
+		static fixed_t st_scroll = -FRACUNIT;
+		const char* titl;
+		x = 16;
+		V_DrawString(x, 10, 0, "NOW PLAYING:");
+		if (curplaying)
+		{
+			if (curplaying->alttitle[0])
+				titl = va("%s - %s - ", curplaying->title, curplaying->alttitle);
+			else
+				titl = va("%s - ", curplaying->title);
+		}
+		else
+			titl = "None - ";
+
+		i = V_LevelNameWidth(titl);
+
+		st_scroll += renderdeltatics;
+
+		while (st_scroll >= (i << FRACBITS))
+			st_scroll -= i << FRACBITS;
+
+		x -= st_scroll >> FRACBITS;
+
+		while (x < BASEVIDWIDTH-y)
+			x += i;
+		while (x > y)
+		{
+			x -= i;
+			V_DrawLevelTitle(x, 22, 0, titl);
+		}
+
+		if (curplaying)
+			V_DrawRightAlignedThinString(BASEVIDWIDTH-16, 46, V_ALLOWLOWERCASE, curplaying->authors);
+	}
+
+	V_DrawFill(165, 60, 140, 112, 159);
+
+	{
+		INT32 t, b, q, m = 112;
+
+		if (numsoundtestdefs <= 7)
+		{
+			t = 0;
+			b = numsoundtestdefs - 1;
+			i = 0;
+		}
+		else
+		{
+			q = m;
+			m = (5*m)/numsoundtestdefs;
+			if (st_sel < 3)
+			{
+				t = 0;
+				b = 6;
+				i = 0;
+			}
+			else if (st_sel >= numsoundtestdefs-4)
+			{
+				t = numsoundtestdefs - 7;
+				b = numsoundtestdefs - 1;
+				i = q-m;
+			}
+			else
+			{
+				t = st_sel - 3;
+				b = st_sel + 3;
+				i = (t * (q-m))/(numsoundtestdefs - 7);
+			}
+		}
+
+		V_DrawFill(165+140-1, 60 + i, 1, m, 0);
+
+		if (t != 0)
+			V_DrawString(165+140+4, 60+4 - (skullAnimCounter/5), V_YELLOWMAP, "\x1A");
+
+		if (b != numsoundtestdefs - 1)
+			V_DrawString(165+140+4, 60+112-12 + (skullAnimCounter/5), V_YELLOWMAP, "\x1B");
+
+		x = 169;
+		y = 64;
+
+		while (t <= b)
+		{
+			if (t == st_sel)
+				V_DrawFill(165, y-4, 140-1, 16, 155);
+			if (!soundtestdefs[t]->allowed)
+			{
+				V_DrawString(x, y, (t == st_sel ? V_YELLOWMAP : 0)|V_ALLOWLOWERCASE, "???");
+			}
+			else if (soundtestdefs[t] == &soundtestsfx)
+			{
+				const char *sfxstr = va("SFX %s", cv_soundtest.string);
+				V_DrawString(x, y, (t == st_sel ? V_YELLOWMAP : 0), sfxstr);
+				if (t == st_sel)
+				{
+					V_DrawCharacter(x - 10 - (skullAnimCounter/5), y,
+						'\x1C' | V_YELLOWMAP, false);
+					V_DrawCharacter(x + 2 + V_StringWidth(sfxstr, 0) + (skullAnimCounter/5), y,
+						'\x1D' | V_YELLOWMAP, false);
+				}
+
+				if (curplaying == soundtestdefs[t])
+				{
+					sfxstr = (cv_soundtest.value) ? S_sfx[cv_soundtest.value].name : "N/A";
+					i = V_StringWidth(sfxstr, 0);
+					V_DrawFill(165+140-9-i, y-4, i+8, 16, 150);
+					V_DrawRightAlignedString(165+140-5, y, V_YELLOWMAP, sfxstr);
+				}
+			}
+			else
+			{
+				V_DrawString(x, y, (t == st_sel ? V_YELLOWMAP : 0)|V_ALLOWLOWERCASE, soundtestdefs[t]->title);
+				if (curplaying == soundtestdefs[t])
+				{
+					V_DrawFill(165+140-9, y-4, 8, 16, 150);
+					//V_DrawCharacter(165+140-8, y, '\x19' | V_YELLOWMAP, false);
+					V_DrawFixedPatch((165+140-9)<<FRACBITS, (y<<FRACBITS)-(bounce*4), FRACUNIT, 0, hu_font['\x19'-HU_FONTSTART], V_GetStringColormap(V_YELLOWMAP));
+				}
+			}
+			t++;
+			y += 16;
+		}
+	}
+}
+
+boolean jukeboxMusicPlaying = false;
+static char jukeboxMusic[64];
+static void M_HandleTsourdt3rdJukebox(INT32 choice)
+{
+	boolean exitmenu = false; // exit to previous menu
+
+	switch (choice)
+	{
+		case KEY_DOWNARROW:
+			if (st_sel++ >= numsoundtestdefs-1)
+				st_sel = 0;
+			{
+				cv_closedcaptioning.value = st_cc; // hack
+				S_StartSound(NULL, sfx_menu1);
+				cv_closedcaptioning.value = 1; // hack
+			}
+			break;
+		case KEY_UPARROW:
+			if (!st_sel--)
+				st_sel = numsoundtestdefs-1;
+			{
+				cv_closedcaptioning.value = st_cc; // hack
+				S_StartSound(NULL, sfx_menu1);
+				cv_closedcaptioning.value = 1; // hack
+			}
+			break;
+		case KEY_PGDN:
+			if (st_sel < numsoundtestdefs-1)
+			{
+				st_sel += 3;
+				if (st_sel >= numsoundtestdefs-1)
+					st_sel = numsoundtestdefs-1;
+				cv_closedcaptioning.value = st_cc; // hack
+				S_StartSound(NULL, sfx_menu1);
+				cv_closedcaptioning.value = 1; // hack
+			}
+			break;
+		case KEY_PGUP:
+			if (st_sel)
+			{
+				st_sel -= 3;
+				if (st_sel < 0)
+					st_sel = 0;
+				cv_closedcaptioning.value = st_cc; // hack
+				S_StartSound(NULL, sfx_menu1);
+				cv_closedcaptioning.value = 1; // hack
+			}
+			break;
+		case KEY_BACKSPACE:
+			if (curplaying)
+			{
+				S_StopSounds();
+				S_StopMusic();
+				curplaying = NULL;
+				st_time = 0;
+				cv_closedcaptioning.value = st_cc; // hack
+				S_StartSound(NULL, sfx_skid);
+				cv_closedcaptioning.value = 1; // hack
+			}
+			break;
+		case KEY_ESCAPE:
+			exitmenu = true;
+			break;
+
+		case KEY_RIGHTARROW:
+			if (soundtestdefs[st_sel] == &soundtestsfx && soundtestdefs[st_sel]->allowed)
+			{
+				S_StopSounds();
+				S_StopMusic();
+				curplaying = soundtestdefs[st_sel];
+				st_time = 0;
+				CV_AddValue(&cv_soundtest, 1);
+			}
+			break;
+		case KEY_LEFTARROW:
+			if (soundtestdefs[st_sel] == &soundtestsfx && soundtestdefs[st_sel]->allowed)
+			{
+				S_StopSounds();
+				S_StopMusic();
+				curplaying = soundtestdefs[st_sel];
+				st_time = 0;
+				CV_AddValue(&cv_soundtest, -1);
+			}
+			break;
+		case KEY_ENTER:
+			st_time = 0;
+			if (soundtestdefs[st_sel]->allowed)
+			{
+				if (!jukeboxMusicPlaying)
+				{
+					curplaying = soundtestdefs[st_sel];
+					if (curplaying == &soundtestsfx)
+					{
+						if (cv_soundtest.value)
+							S_StartSound(NULL, cv_soundtest.value);
+					}
+					else
+					{
+						S_ChangeMusicInternal(curplaying->name, !curplaying->stoppingtics);
+						jukeboxMusicPlaying = true;
+						snprintf(jukeboxMusic, 64, "%s", curplaying->name);
+						CONS_Printf(M_GetText("Loaded %s into the Jukebox"), jukeboxMusic);
+					}
+				}
+				else
+				{
+					jukeboxMusicPlaying = false;
+					snprintf(jukeboxMusic, 2, " ");
+				}
+			}
+			else
+			{
+				curplaying = NULL;
+				S_StartSound(NULL, sfx_lose);
+			}
+			break;
+
+		default:
+			break;
+	}
+	if (exitmenu)
+	{
+		if (!jukeboxMusicPlaying)
+		{
+			Z_Free(soundtestdefs);
+			soundtestdefs = NULL;
+			cv_closedcaptioning.value = st_cc; // undo hack
+		}
+
+		if (currentMenu->prevMenu)
+			M_SetupNextMenu(currentMenu->prevMenu);
+		else
+			M_ClearMenus(true);
+	}
 }
