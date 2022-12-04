@@ -111,6 +111,7 @@ typedef enum
 	MN_OP_ERASEDATA,
 
 	MN_OP_TSOURDT3RD,
+	MN_OP_TSOURDT3RD_JUKEBOX,
 
 	// Extras
 	MN_SR_MAIN,
@@ -503,6 +504,10 @@ void M_RefreshPauseMenu(void);
 extern char customSImageString[2+10+17+3]; //Pointer for the name of the custom small image the player is using
 extern char customLImageString[3+17+10+2]; //Pointer for the name of the custom large image the player is using
 #endif
+
+//star stuff weeeeee
+extern boolean jukeboxMusicPlaying;
+
 // These defines make it a little easier to make menus
 #define DEFAULTMENUSTYLE(id, header, source, prev, x, y)\
 {\

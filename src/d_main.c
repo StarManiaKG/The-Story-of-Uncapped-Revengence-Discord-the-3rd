@@ -1463,7 +1463,7 @@ void D_SRB2Main(void)
 #endif
 
 	// load wad, including the main wad file
-	autoloadpath = fopen(va("%s"PATHSEP"%s",srb2home,AUTOLOADFILENAME), "r");
+	autoloadpath = fopen(va("%s"PATHSEP"%s",srb2home,AUTOLOADCONFIGNAME), "r");
 
 	CONS_Printf("W_InitMultipleFiles(): Adding IWAD and main PWADs.\n");
 	W_InitMultipleFiles(&startupwadfiles);
@@ -1472,7 +1472,7 @@ void D_SRB2Main(void)
 	{
 		mainwads++;
 		CONS_Printf("D_AutoLoadAddons(): Autoloading Addons.\n");
-		D_AutoLoadAddons(&startupwadfiles, va(pandf,srb2home,AUTOLOADFILENAME));
+		D_AutoLoadAddons(&startupwadfiles, va(pandf,srb2home,AUTOLOADCONFIGNAME));
 		D_CleanFile(&startupwadfiles);
 	}
 
@@ -1494,11 +1494,6 @@ void D_SRB2Main(void)
 
 	cht_Init();
 
-#ifdef HAVE_DISCORDRPC
-    CONS_Printf("DRPC_Init(): Initalizing Discord Rich Presence.\n");
-    DRPC_Init();
-#endif
-
 	//---------------------------------------------------- READY SCREEN
 	// we need to check for dedicated before initialization of some subsystems
 
@@ -1519,6 +1514,11 @@ void D_SRB2Main(void)
 	HU_Init();
 
 	CON_Init();
+
+#ifdef HAVE_DISCORDRPC
+    CONS_Printf("DRPC_Init(): Initalizing Discord Rich Presence.\n");
+    DRPC_Init();
+#endif
 
 	D_RegisterServerCommands();
 	D_RegisterClientCommands(); // be sure that this is called before D_CheckNetGame
