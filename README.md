@@ -43,5 +43,5 @@ See [SRB2 Wiki/Source code compiling](http://wiki.srb2.org/wiki/Source_code_comp
 - You could also ask a friend to do it for you too, friends are the best after all.
 
 ## Disclaimer
-Sonic Team Junior is in no way affiliated with SEGA or Sonic Team. We do not claim ownership of any of SEGA's intellectual property used in SRB2.
-Plus, Despite the title making this seem like the title of a movie, I regret to inform you that this is not, sadly, a movie, but instead, an autobiography, on how I am a constant and passionate nuisance to my soceity.
+- Sonic Team Junior is in no way affiliated with SEGA or Sonic Team. We do not claim ownership of any of SEGA's intellectual property used in SRB2.
+- Plus, Despite the title making this seem like the title of a movie, I regret to inform you that this is not, sadly, a movie, but instead, an autobiography, on how I am a constant and passionate nuisance to my soceity.
