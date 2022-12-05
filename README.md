@@ -7,7 +7,7 @@
 [![Build status](https://travis-ci.org/STJr/SRB2.svg?branch=master)](https://travis-ci.org/STJr/SRB2)
 [![CircleCI](https://circleci.com/gh/STJr/SRB2/tree/master.svg?style=svg)](https://circleci.com/gh/STJr/SRB2/tree/master)
 
-[Sonic Robo Blast 2](https://srb2.org/) is a 3D Sonic the Hedgehog fangame based on a modified version of [Doom Legacy](http://doomlegacy.sourceforge.net/), And [This Custom Build](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd) is based upon those.
+[Sonic Robo Blast 2](https://srb2.org/) is a 3D Sonic the Hedgehog fangame based on a modified version of [Doom Legacy](http://doomlegacy.sourceforge.net/), and [This Custom Build](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd) is based upon those.
 
 ## New Features
   - Custom Discord Settings, Commands, and Options, with Custom Character Support
