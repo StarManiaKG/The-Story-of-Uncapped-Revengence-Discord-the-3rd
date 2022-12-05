@@ -38,7 +38,7 @@
 See [SRB2 Wiki/Source code compiling](http://wiki.srb2.org/wiki/Source_code_compiling)
 
 **ALTERNATIVES**
-- You can check out the releases page! These include appimages and .exe files, both for Linux and Windows users, respectively. Wine also exists, so if you're into that, .exe files work for you too I guess.
+- You can check out the releases page! These include console scripts and .exe files, both for Linux and Windows users, respectively. AppImage will also come soon, but Wine also exists, so if you're into that type of thing, .exe files will work for you too I guess.
 - You can also Cross-Compile Between Different Operating Systems too!
 - You could also ask a friend to do it for you too, friends are the best after all.
 
