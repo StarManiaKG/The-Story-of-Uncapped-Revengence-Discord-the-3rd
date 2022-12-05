@@ -13,7 +13,6 @@
   - Custom Discord Settings, Commands, and Options
   - Custom Build Options
   - Palette Rendering
-  - Dynamic Resolutions
   - Better Custom Character Support
   - More Server Options/Settings
   - Autoloading Addons, Which Allows Mods to Bypass Modified Game Checks (after game restart, of course)
@@ -25,6 +24,7 @@
   - Netplus (really on a limb here)
   - Autoloading Folder Support (yeah so funny story)
   - Discord's Game SDK (need to convert it to C)
+  - Dynamic Resolutions (an annoyance to port from srb2 2.2.6 to 2.2.11)
   - ...And Even More Annoyances!
       
 ## Dependencies
