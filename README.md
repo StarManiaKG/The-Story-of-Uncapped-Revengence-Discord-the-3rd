@@ -11,9 +11,8 @@
 
 ## New Features
   - Custom Discord Settings, Commands, and Options, with Custom Character Support
-  - Custom Build Options
+  - Custom Build Options, Featuring More Savedata, Server, and Extra Options
   - Palette Rendering
-  - More Server Options/Settings
   - Autoloading Addons, Which Allows Mods to Bypass Modified Game Checks (after game restart, of course)
   - A Jukebox	  
   - ...And More Annoyances!
