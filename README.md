@@ -7,13 +7,13 @@
 [![Build status](https://travis-ci.org/STJr/SRB2.svg?branch=master)](https://travis-ci.org/STJr/SRB2)
 [![CircleCI](https://circleci.com/gh/STJr/SRB2/tree/master.svg?style=svg)](https://circleci.com/gh/STJr/SRB2/tree/master)
 
-[Sonic Robo Blast 2](https://srb2.org/) is a 3D Sonic the Hedgehog fangame based on a modified version of [Doom Legacy](http://doomlegacy.sourceforge.net/), And [This Custom Build](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd) is based upon these.
+[Sonic Robo Blast 2](https://srb2.org/) is a 3D Sonic the Hedgehog fangame based on a modified version of [Doom Legacy](http://doomlegacy.sourceforge.net/), And [This Custom Build](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd) is based upon those.
 
 ## New Features
   - Custom Discord Settings, Commands, and Options, with Custom Character Support
   - Custom Build Options, Featuring More Savedata, Server, and Extra Options
   - Palette Rendering
-  - Autoloading Addons, Which Allows Mods to Bypass Modified Game Checks (after game restart, of course)
+  - Autoloading Addons, Which Allows Mods to Bypass Modified Game Checks (after game restart, of course) By Pressing Shift Over Mods in the Addons Menu
   - A Jukebox	  
   - ...And More Annoyances!
   
@@ -23,6 +23,8 @@
   - Autoloading Folder Support (yeah so funny story)
   - Discord's Game SDK (need to convert it to C)
   - Dynamic Resolutions (an annoyance to port from srb2 2.2.6 to 2.2.11)
+  - Software Models (an annoyance to port just like Dynamic Resolutions)
+  - Android Support (i can't tell you how hard this will be)
   - ...And Even More Annoyances!
       
 ## Dependencies
