@@ -34,7 +34,7 @@
 - libupnp (Linux/OS X only)
 - libgme (Linux/OS X only)
 - libopenmpt (Linux/OS X only)
-- libdiscord (If you're compiling with Discord Support. On Windows, SRB2 comes with the files, On Mac/Linux, you can compile it [here](https://github.com/discord/discord-rpc))
+- libdiscord-rpc (If you're compiling with Discord Support. On Windows, SRB2 comes with the files, On Mac/Linux, you can compile it [here](https://github.com/discord/discord-rpc))
 
 ## Compiling
 
