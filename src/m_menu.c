@@ -3411,7 +3411,8 @@ static void M_HandleMenuPresState(menu_t *newMenu)
 	}
 
 	// Change the music
-	M_ChangeMenuMusic("_title", false);
+	if (!jukeboxMusicPlaying)
+		M_ChangeMenuMusic("_title", false);
 
 	// Run the linedef execs
 	if (titlemapinaction)
@@ -11242,7 +11243,8 @@ static void M_ModeAttackEndGame(INT32 choice)
 	itemOn = currentMenu->lastOn;
 	G_SetGamestate(GS_TIMEATTACK);
 	modeattacking = ATTACKING_NONE;
-	M_ChangeMenuMusic("_title", true);
+	if (!jukeboxMusicPlaying)
+		M_ChangeMenuMusic("_title", true);
 	Nextmap_OnChange();
 }
 
@@ -14785,7 +14787,7 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 						S_ChangeMusicInternal(curplaying->name, !curplaying->stoppingtics);
 						jukeboxMusicPlaying = true;
 						snprintf(jukeboxMusic, 64, "%s", curplaying->name);
-						CONS_Printf(M_GetText("Loaded %s into the Jukebox"), jukeboxMusic);
+						CONS_Printf(M_GetText("Loaded %s into the Jukebox.\n"), curplaying->title);
 					}
 				}
 				else
