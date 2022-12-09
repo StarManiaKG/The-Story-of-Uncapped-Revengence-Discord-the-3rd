@@ -30,6 +30,7 @@
 #include "m_misc.h" // for tunes command
 #include "m_cond.h" // for conditionsets
 #include "lua_hook.h" // MusicChange hook
+#include "m_menu.h" // Jukeboxes
 
 #ifdef HW3SOUND
 // 3D Sound Interface
@@ -2252,6 +2253,9 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 	boolean midipref = cv_musicpref.value;
 
 	if (S_MusicDisabled())
+		return;
+	
+	if (jukeboxMusicPlaying)
 		return;
 
 	strncpy(newmusic, mmusic, 7);
