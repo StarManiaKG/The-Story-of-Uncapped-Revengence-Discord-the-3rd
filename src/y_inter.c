@@ -1244,8 +1244,7 @@ void Y_Ticker(void)
 	else if (intertype == int_race || intertype == int_comp) // race
 	{
 		if (!intertic) // first time only
-			S_ChangeMusicInternal("_inter", true); // loop it
-
+			S_ChangeMusicInternal("_inter", true); // loop it!
 		// Don't bother recalcing for race. It doesn't make as much sense.
 	}
 }
