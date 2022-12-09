@@ -14793,7 +14793,7 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 				else
 				{
 					jukeboxMusicPlaying = false;
-					snprintf(jukeboxMusic, 2, " ");
+					snprintf(jukeboxMusic, 0, '\0');
 				}
 			}
 			else
