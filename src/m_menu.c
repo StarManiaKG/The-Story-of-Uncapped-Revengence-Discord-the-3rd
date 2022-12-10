@@ -14481,7 +14481,7 @@ static void M_DrawTsourdt3rdJukebox(void)
 	UINT8 frame[4] = {0, 0, -1, SKINCOLOR_RUBY};
 
 	// let's handle the ticker first. ideally we'd tick this somewhere else, BUT...
-	if (curplaying)
+	if (jukeboxMusicPlaying)
 	{
 		if (curplaying == &soundtestsfx)
 		{
@@ -14499,7 +14499,7 @@ static void M_DrawTsourdt3rdJukebox(void)
 			fixed_t stoppingtics = (fixed_t)(curplaying->stoppingtics) << FRACBITS;
 			if (stoppingtics && st_time >= stoppingtics)
 			{
-				curplaying = NULL;
+				M_ResetJukebox();
 				st_time = 0;
 			}
 			else
@@ -14567,13 +14567,9 @@ static void M_DrawTsourdt3rdJukebox(void)
 		const char* titl;
 		x = 16;
 		V_DrawString(x, 10, 0, "NOW PLAYING:");
-		if (curplaying)
-		{
-			if (curplaying->alttitle[0])
-				titl = va("%s - %s - ", curplaying->title, curplaying->alttitle);
-			else
-				titl = va("%s - ", curplaying->title);
-		}
+
+		if (jukeboxMusicPlaying)
+			titl = va("%s - %s - ", jukeboxMusic);
 		else
 			titl = "None - ";
 
@@ -14594,7 +14590,7 @@ static void M_DrawTsourdt3rdJukebox(void)
 			V_DrawLevelTitle(x, 22, 0, titl);
 		}
 
-		if (curplaying)
+		if (jukeboxMusicPlaying)
 			V_DrawRightAlignedThinString(BASEVIDWIDTH-16, 46, V_ALLOWLOWERCASE, curplaying->authors);
 	}
 
@@ -14678,7 +14674,7 @@ static void M_DrawTsourdt3rdJukebox(void)
 				if (curplaying == soundtestdefs[t])
 				{
 					V_DrawFill(165+140-9, y-4, 8, 16, 150);
-					//V_DrawCharacter(165+140-8, y, '\x19' | V_YELLOWMAP, false);
+					V_DrawCharacter(165+140-8, y, '\x19' | V_YELLOWMAP, false);
 					V_DrawFixedPatch((165+140-9)<<FRACBITS, (y<<FRACBITS)-(bounce*4), FRACUNIT, 0, hu_font['\x19'-HU_FONTSTART], V_GetStringColormap(V_YELLOWMAP));
 				}
 			}
@@ -14737,18 +14733,16 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 			}
 			break;
 		case KEY_BACKSPACE:
-			if (curplaying)
-			{
-				S_StopSounds();
-				S_StopMusic();
-				curplaying = NULL;
-				st_time = 0;
-				cv_closedcaptioning.value = st_cc; // hack
-				S_StartSound(NULL, sfx_skid);
-				cv_closedcaptioning.value = 1; // hack
+			S_StopSounds();
+			S_StopMusic();
+			curplaying = NULL;
+			st_time = 0;
+			cv_closedcaptioning.value = st_cc; // hack
+			S_StartSound(NULL, sfx_skid);
+			cv_closedcaptioning.value = 1; // hack
 
+			if (jukeboxMusicPlaying)
 				M_ResetJukebox();
-			}
 			break;
 		case KEY_ESCAPE:
 			exitmenu = true;
