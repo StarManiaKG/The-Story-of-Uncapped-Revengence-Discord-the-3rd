@@ -14412,6 +14412,10 @@ static void M_DrawDiscordRequests(void)
 #endif
 
 //Star Stuff WEEEE
+boolean jukeboxMusicPlaying = false;
+char jukeboxMusicName[32+20+12];
+char jukeboxMusicTrack[7];
+
 static void M_Tsourdt3rdOptions(INT32 choice)
 {
 	(void)choice;
@@ -14569,7 +14573,12 @@ static void M_DrawTsourdt3rdJukebox(void)
 		V_DrawString(x, 10, 0, "NOW PLAYING:");
 
 		if (jukeboxMusicPlaying)
-			titl = va("%s - ", jukeboxMusicName);
+		{
+			if (curplaying->alttitle[0])
+				titl = va("%s - %s - ", jukeboxMusicName, curplaying->alttitle);
+			else
+				titl = va("%s - ", jukeboxMusicName);
+		}
 		else
 			titl = "None - ";
 
@@ -14684,9 +14693,6 @@ static void M_DrawTsourdt3rdJukebox(void)
 	}
 }
 
-boolean jukeboxMusicPlaying = false;
-char jukeboxMusicName[32+20+12];
-char jukeboxMusicTrack[7];
 static void M_HandleTsourdt3rdJukebox(INT32 choice)
 {
 	boolean exitmenu = false; // exit to previous menu
@@ -14734,16 +14740,20 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 			}
 			break;
 		case KEY_BACKSPACE:
-			S_StopSounds();
-			S_StopMusic();
-			curplaying = NULL;
-			st_time = 0;
-			cv_closedcaptioning.value = st_cc; // hack
-			S_StartSound(NULL, sfx_skid);
-			cv_closedcaptioning.value = 1; // hack
-
 			if (jukeboxMusicPlaying)
+			{
+				S_StopSounds();
+				S_StopMusic();
+				curplaying = NULL;
+				st_time = 0;
+				cv_closedcaptioning.value = st_cc; // hack
+				S_StartSound(NULL, sfx_skid);
+				cv_closedcaptioning.value = 1; // hack
+
 				M_ResetJukebox();
+			}
+			else
+				S_StartSound(NULL, sfx_lose);
 			break;
 		case KEY_ESCAPE:
 			exitmenu = true;
