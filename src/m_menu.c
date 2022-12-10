@@ -14569,7 +14569,7 @@ static void M_DrawTsourdt3rdJukebox(void)
 		V_DrawString(x, 10, 0, "NOW PLAYING:");
 
 		if (jukeboxMusicPlaying)
-			titl = va("%s - %s - ", jukeboxMusic);
+			titl = va("%s - ", jukeboxMusic);
 		else
 			titl = "None - ";
 
