@@ -349,7 +349,7 @@ menu_t OP_SoundAdvancedDef;
 //star things yay or something idk
 menu_t OP_Tsourdt3rdOptionsDef;
 menu_t OP_Tsourdt3rdJukeboxDef;
-static void M_ResetJukebox(void);
+void M_ResetJukebox(void);
 
 //Misc
 menu_t OP_DataOptionsDef, OP_ScreenshotOptionsDef, OP_EraseDataDef;
@@ -14689,7 +14689,7 @@ static void M_DrawTsourdt3rdJukebox(void)
 }
 
 boolean jukeboxMusicPlaying = false;
-static char jukeboxMusic[64];
+char jukeboxMusic[32+20+12];
 static void M_HandleTsourdt3rdJukebox(INT32 choice)
 {
 	boolean exitmenu = false; // exit to previous menu
@@ -14792,7 +14792,7 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 					S_ChangeMusicInternal(curplaying->name, !curplaying->stoppingtics);
 					jukeboxMusicPlaying = true;
 					snprintf(jukeboxMusic, 64, "%s", curplaying->name);
-					CONS_Printf(M_GetText('Loaded track "%s" into the Jukebox.\n'), curplaying->title);
+					CONS_Printf(M_GetText("Loaded track %s into the Jukebox.\n"), curplaying->title);
 				}
 			}
 			else
@@ -14820,7 +14820,7 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 			M_ClearMenus(true);
 	}
 }
-static void M_ResetJukebox(void)
+void M_ResetJukebox(void)
 {
 	jukeboxMusicPlaying = false;
 	for (INT32 i = 0; jukeboxMusic[i] != '\0'; i++) { jukeboxMusic[i] = '\0'; }
