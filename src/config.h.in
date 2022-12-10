@@ -45,7 +45,7 @@
 #ifdef USE_PATCH_DTA
 #define ASSET_HASH_PATCH_PK3  "7d467a883f7887b3c311798ee2f56b6a"
 #endif
-#define ASSET_HASH_STAR_PK3 "e6c523023c38883a9c57d4dfa557bef0"
+#define ASSET_HASH_STAR_PK3 "958c1dddda99c4020ed02e3bd3035cab"
 
 #endif
 #endif
