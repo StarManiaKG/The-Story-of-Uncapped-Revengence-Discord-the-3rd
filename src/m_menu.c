@@ -349,6 +349,7 @@ menu_t OP_SoundAdvancedDef;
 //star things yay or something idk
 menu_t OP_Tsourdt3rdOptionsDef;
 menu_t OP_Tsourdt3rdJukeboxDef;
+static void M_ResetJukebox(void);
 
 //Misc
 menu_t OP_DataOptionsDef, OP_ScreenshotOptionsDef, OP_EraseDataDef;
@@ -3238,6 +3239,9 @@ void M_ChangeMenuMusic(const char *defaultmusname, boolean defaultmuslooping)
 {
 	menupresmusic_t defaultmusic;
 
+	if (jukeboxMusicPlaying)
+		return; //no
+
 	if (!defaultmusname)
 		defaultmusname = "";
 
@@ -3411,8 +3415,7 @@ static void M_HandleMenuPresState(menu_t *newMenu)
 	}
 
 	// Change the music
-	if (!jukeboxMusicPlaying)
-		M_ChangeMenuMusic("_title", false);
+	M_ChangeMenuMusic("_title", false);
 
 	// Run the linedef execs
 	if (titlemapinaction)
@@ -11243,8 +11246,7 @@ static void M_ModeAttackEndGame(INT32 choice)
 	itemOn = currentMenu->lastOn;
 	G_SetGamestate(GS_TIMEATTACK);
 	modeattacking = ATTACKING_NONE;
-	if (!jukeboxMusicPlaying)
-		M_ChangeMenuMusic("_title", true);
+	M_ChangeMenuMusic("_title", true);
 	Nextmap_OnChange();
 }
 
@@ -14744,6 +14746,8 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 				cv_closedcaptioning.value = st_cc; // hack
 				S_StartSound(NULL, sfx_skid);
 				cv_closedcaptioning.value = 1; // hack
+
+				M_ResetJukebox();
 			}
 			break;
 		case KEY_ESCAPE:
@@ -14774,31 +14778,27 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 			st_time = 0;
 			if (soundtestdefs[st_sel]->allowed)
 			{
-				if (!jukeboxMusicPlaying)
+				if (jukeboxMusicPlaying)
+					break;
+				
+				curplaying = soundtestdefs[st_sel];
+				if (curplaying == &soundtestsfx)
 				{
-					curplaying = soundtestdefs[st_sel];
-					if (curplaying == &soundtestsfx)
-					{
-						if (cv_soundtest.value)
-							S_StartSound(NULL, cv_soundtest.value);
-					}
-					else
-					{
-						S_ChangeMusicInternal(curplaying->name, !curplaying->stoppingtics);
-						jukeboxMusicPlaying = true;
-						snprintf(jukeboxMusic, 64, "%s", curplaying->name);
-						CONS_Printf(M_GetText("Loaded %s into the Jukebox.\n"), curplaying->title);
-					}
+					if (cv_soundtest.value)
+						S_StartSound(NULL, cv_soundtest.value);
 				}
 				else
 				{
-					jukeboxMusicPlaying = false;
-					snprintf(jukeboxMusic, 0, '\0');
+					S_ChangeMusicInternal(curplaying->name, !curplaying->stoppingtics);
+					jukeboxMusicPlaying = true;
+					snprintf(jukeboxMusic, 64, "%s", curplaying->name);
+					CONS_Printf(M_GetText('Loaded track "%s" into the Jukebox.\n'), curplaying->title);
 				}
 			}
 			else
 			{
 				curplaying = NULL;
+				M_ResetJukebox();
 				S_StartSound(NULL, sfx_lose);
 			}
 			break;
@@ -14814,10 +14814,14 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 			soundtestdefs = NULL;
 			cv_closedcaptioning.value = st_cc; // undo hack
 		}
-
 		if (currentMenu->prevMenu)
 			M_SetupNextMenu(currentMenu->prevMenu);
 		else
 			M_ClearMenus(true);
 	}
+}
+static void M_ResetJukebox(void)
+{
+	jukeboxMusicPlaying = false;
+	for (INT32 i = 0; jukeboxMusic[i] != '\0'; i++) { jukeboxMusic[i] = '\0'; }
 }

@@ -2341,6 +2341,8 @@ void S_StopMusic(void)
 				closedcaptions[0].t = CAPTIONFADETICS;
 		}
 	}
+	if (jukeboxMusicPlaying)
+		M_ResetJukebox();
 }
 
 //
@@ -2434,6 +2436,9 @@ boolean S_FadeOutStopMusic(UINT32 ms)
 //
 void S_StartEx(boolean reset)
 {
+	if (jukeboxMusicPlaying)
+		return; //torture is my favorite form of punishment how did you know
+	
 	if (mapmusflags & MUSIC_RELOADRESET)
 	{
 		strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname, 7);
@@ -2525,11 +2530,13 @@ static void Command_RestartAudio_f(void)
 	I_InitMusic();
 
 // These must be called or no sound and music until manually set.
-
+// star note: since this is a command i will grant you the ability to restart jukebox audio and stop it from playing here
 	I_SetSfxVolume(cv_soundvolume.value);
 	S_SetMusicVolume(cv_digmusicvolume.value, cv_midimusicvolume.value);
 	if (Playing()) // Gotta make sure the player is in a level
 		P_RestoreMusic(&players[consoleplayer]);
+	if (jukeboxMusicPlaying)
+		M_ResetJukebox();
 }
 
 void GameSounds_OnChange(void)
