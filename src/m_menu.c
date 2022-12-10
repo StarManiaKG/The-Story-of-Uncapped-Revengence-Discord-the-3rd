@@ -14467,7 +14467,6 @@ static void M_Tsourdt3rdJukebox(INT32 choice)
 
 	M_CacheSoundTest();
 
-	curplaying = NULL;
 	st_time = 0;
 
 	st_sel = 0;
