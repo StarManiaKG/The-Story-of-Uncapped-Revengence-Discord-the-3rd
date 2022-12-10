@@ -14784,12 +14784,12 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 				}
 				else
 				{
-					jukeboxMusicPlaying = true;
 					snprintf(jukeboxMusicName, 64, "%s", curplaying->title);
 					snprintf(jukeboxMusicTrack, 7, "%s", curplaying->name);
 
-					S_ChangeMusicInternal(curplaying->name, !curplaying->stoppingtics);
+					S_ChangeMusicInternal(jukeboxMusicTrack, !curplaying->stoppingtics);
 					CONS_Printf(M_GetText("Loaded track %s into the Jukebox.\n"), jukeboxMusicName);
+					jukeboxMusicPlaying = true;
 				}
 			}
 			else
