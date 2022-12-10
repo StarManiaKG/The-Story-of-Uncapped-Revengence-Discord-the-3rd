@@ -14569,7 +14569,7 @@ static void M_DrawTsourdt3rdJukebox(void)
 		V_DrawString(x, 10, 0, "NOW PLAYING:");
 
 		if (jukeboxMusicPlaying)
-			titl = va("%s - ", jukeboxMusic);
+			titl = va("%s - ", jukeboxMusicName);
 		else
 			titl = "None - ";
 
@@ -14685,7 +14685,8 @@ static void M_DrawTsourdt3rdJukebox(void)
 }
 
 boolean jukeboxMusicPlaying = false;
-char jukeboxMusic[32+20+12];
+char jukeboxMusicName[32+20+12];
+char jukeboxMusicTrack[7];
 static void M_HandleTsourdt3rdJukebox(INT32 choice)
 {
 	boolean exitmenu = false; // exit to previous menu
@@ -14783,10 +14784,12 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 				}
 				else
 				{
-					S_ChangeMusicInternal(curplaying->name, !curplaying->stoppingtics);
 					jukeboxMusicPlaying = true;
-					snprintf(jukeboxMusic, 64, "%s", curplaying->name);
-					CONS_Printf(M_GetText("Loaded track %s into the Jukebox.\n"), curplaying->title);
+					snprintf(jukeboxMusicName, 64, "%s", curplaying->title);
+					snprintf(jukeboxMusicTrack, 7, "%s", curplaying->name);
+
+					S_ChangeMusicInternal(curplaying->name, !curplaying->stoppingtics);
+					CONS_Printf(M_GetText("Loaded track %s into the Jukebox.\n"), jukeboxMusicName);
 				}
 			}
 			else
@@ -14817,5 +14820,6 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 void M_ResetJukebox(void)
 {
 	jukeboxMusicPlaying = false;
-	for (INT32 i = 0; jukeboxMusic[i] != '\0'; i++) { jukeboxMusic[i] = '\0'; }
+	for (INT32 i = 0; jukeboxMusicName[i] != '\0'; i++) { jukeboxMusicName[i] = '\0'; }
+	for (INT32 i = 0; jukeboxMusicTrack[i] != '\0'; i++) { jukeboxMusicTrack[i] = '\0'; }
 }
