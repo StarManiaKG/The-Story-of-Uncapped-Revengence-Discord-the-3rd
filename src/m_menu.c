@@ -4181,7 +4181,7 @@ void M_StartControlPanel(void)
 	else // multiplayer
 	{
 		MPauseMenu[mpause_switchmap].status = IT_DISABLED;
-		MPauseMenu[mpause_addons].status = IT_DISABLED;
+		//MPauseMenu[mpause_addons].status = IT_DISABLED; //now you can add mods whenever you want to your heart's desire
 		MPauseMenu[mpause_scramble].status = IT_DISABLED;
 		MPauseMenu[mpause_psetupsplit].status = IT_DISABLED;
 		MPauseMenu[mpause_psetupsplit2].status = IT_DISABLED;
@@ -14748,8 +14748,6 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 				cv_closedcaptioning.value = st_cc; // hack
 				S_StartSound(NULL, sfx_skid);
 				cv_closedcaptioning.value = 1; // hack
-
-				M_ResetJukebox();
 			}
 			else
 				S_StartSound(NULL, sfx_lose);
@@ -14779,32 +14777,45 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 			}
 			break;
 		case KEY_ENTER:
+			S_StopSounds();
+			S_StopMusic();
 			st_time = 0;
+			
 			if (soundtestdefs[st_sel]->allowed)
 			{
-				if (jukeboxMusicPlaying)
-					break;
-				
-				curplaying = soundtestdefs[st_sel];
-				if (curplaying == &soundtestsfx)
+				if (!jukeboxMusicPlaying)
 				{
-					if (cv_soundtest.value)
-						S_StartSound(NULL, cv_soundtest.value);
+					curplaying = soundtestdefs[st_sel];
+					if (curplaying == &soundtestsfx)
+					{
+						if (cv_soundtest.value)
+							S_StartSound(NULL, cv_soundtest.value);
+					}
+					else
+					{
+						snprintf(jukeboxMusicName, 64, "%s", curplaying->title);
+						snprintf(jukeboxMusicTrack, 7, "%s", curplaying->name);
+
+						S_ChangeMusicInternal(jukeboxMusicTrack, !curplaying->stoppingtics);
+						CONS_Printf(M_GetText("Loaded track %s into the Jukebox.\n"), jukeboxMusicName);
+						jukeboxMusicPlaying = true;
+					}
 				}
 				else
 				{
-					snprintf(jukeboxMusicName, 64, "%s", curplaying->title);
-					snprintf(jukeboxMusicTrack, 7, "%s", curplaying->name);
+					curplaying = NULL;
+					M_ResetJukebox();
 
-					S_ChangeMusicInternal(jukeboxMusicTrack, !curplaying->stoppingtics);
-					CONS_Printf(M_GetText("Loaded track %s into the Jukebox.\n"), jukeboxMusicName);
-					jukeboxMusicPlaying = true;
+					S_StopMusic();
+					S_StartSound(NULL, sfx_menu1);
 				}
 			}
 			else
 			{
 				curplaying = NULL;
 				M_ResetJukebox();
+
+				S_StopMusic();
 				S_StartSound(NULL, sfx_lose);
 			}
 			break;
@@ -14818,8 +14829,9 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 		{
 			Z_Free(soundtestdefs);
 			soundtestdefs = NULL;
-			cv_closedcaptioning.value = st_cc; // undo hack
 		}
+
+		cv_closedcaptioning.value = st_cc; // undo hack
 		if (currentMenu->prevMenu)
 			M_SetupNextMenu(currentMenu->prevMenu);
 		else

@@ -1503,7 +1503,7 @@ void P_PlayLivesJingle(player_t *player)
 
 	if (mariomode)
 		S_StartSound(NULL, sfx_marioa);
-	else if (use1upSound || cv_1upsound.value)
+	else if (use1upSound || cv_1upsound.value || jukeboxMusicPlaying)
 		S_StartSound(NULL, sfx_oneup);
 	else
 	{
@@ -1537,8 +1537,8 @@ void P_PlayJingle(player_t *player, jingletype_t jingletype)
 //
 void P_PlayJingleMusic(player_t *player, const char *musname, UINT16 musflags, boolean looping, UINT16 status)
 {
-	// If gamestate != GS_LEVEL, always play the jingle (1-up intermission)
-	if (gamestate == GS_LEVEL && player && !P_IsLocalPlayer(player))// || (jukeboxMusicPlaying))
+	// If gamestate != GS_LEVEL, always play the jingle (1-up intermission), or if jukebox music is playing, do the same as well
+	if ((gamestate == GS_LEVEL && player && !P_IsLocalPlayer(player)) || (jukeboxMusicPlaying))
 		return;
 
 	S_RetainMusic(musname, musflags, looping, 0, status);
