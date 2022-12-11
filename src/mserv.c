@@ -66,7 +66,7 @@ static CV_PossibleValue_t masterserver_update_rate_cons_t[] = {
 };
 
 consvar_t cv_masterserver = CVAR_INIT ("masterserver", "https://mb.srb2.org/MS/0", CV_SAVE|CV_CALL, NULL, MasterServer_OnChange);
-consvar_t cv_holepunchserver = CVAR_INIT ("holepunchserver", "https://jameds.org/SRB2/MS/0", CV_SAVE, NULL, NULL);
+consvar_t cv_holepunchserver = CVAR_INIT ("holepunchserver", "jart-dev.jameds.org", CV_SAVE, NULL, NULL);
 consvar_t cv_servername = CVAR_INIT ("servername", "SRB2 server", CV_SAVE|CV_NETVAR|CV_CALL|CV_NOINIT, NULL, Update_parameters);
 
 consvar_t cv_masterserver_update_rate = CVAR_INIT ("masterserver_update_rate", "15", CV_SAVE|CV_CALL|CV_NOINIT, masterserver_update_rate_cons_t, Update_parameters);
