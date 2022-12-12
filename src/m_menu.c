@@ -371,6 +371,10 @@ static patch_t *addonsp[NUM_EXT+5];
 //star stuff weee
 static void M_Tsourdt3rdOptions(INT32 choice);
 
+
+boolean jukeboxMusicPlaying = false;
+char jukeboxMusicName[32+20+12];
+char jukeboxMusicTrack[7];
 static void M_Tsourdt3rdJukebox(INT32 choice);
 static void M_DrawTsourdt3rdJukebox(void);
 static void M_HandleTsourdt3rdJukebox(INT32 choice);
@@ -628,22 +632,25 @@ typedef enum
 // ---------------------
 static menuitem_t SPauseMenu[] =
 {
+	{IT_STRING | IT_CALL,    NULL, "Mid-Game Add-ons...",  M_Addons,               8},
+
 	// Pandora's Box will be shifted up if both options are available
-	{IT_CALL | IT_STRING,    NULL, "Pandora's Box...",     M_PandorasBox,         16},
-	{IT_CALL | IT_STRING,    NULL, "Emblem Hints...",      M_EmblemHints,         24},
-	{IT_CALL | IT_STRING,    NULL, "Level Select...",      M_LoadGameLevelSelect, 32},
+	{IT_CALL | IT_STRING,    NULL, "Pandora's Box...",     M_PandorasBox,         24},
+	{IT_CALL | IT_STRING,    NULL, "Emblem Hints...",      M_EmblemHints,         32},
+	{IT_CALL | IT_STRING,    NULL, "Level Select...",      M_LoadGameLevelSelect, 40},
 
-	{IT_CALL | IT_STRING,    NULL, "Continue",             M_SelectableClearMenus,48},
-	{IT_CALL | IT_STRING,    NULL, "Retry",                M_Retry,               56},
-	{IT_CALL | IT_STRING,    NULL, "Options",              M_Options,             64},
+	{IT_CALL | IT_STRING,    NULL, "Continue",             M_SelectableClearMenus,56},
+	{IT_CALL | IT_STRING,    NULL, "Retry",                M_Retry,               64},
+	{IT_CALL | IT_STRING,    NULL, "Options",              M_Options,             72},
 
-	{IT_CALL | IT_STRING,    NULL, "Return to Title",      M_EndGame,             80},
-	{IT_CALL | IT_STRING,    NULL, "Quit Game",            M_QuitSRB2,            88},
+	{IT_CALL | IT_STRING,    NULL, "Return to Title",      M_EndGame,             88},
+	{IT_CALL | IT_STRING,    NULL, "Quit Game",            M_QuitSRB2,            96},
 };
 
 typedef enum
 {
-	spause_pandora = 0,
+	spause_addons = 0,
+	spause_pandora,
 	spause_hints,
 	spause_levelselect,
 
@@ -712,8 +719,6 @@ static menuitem_t MISC_HelpMenu[] =
 // Pause Menu Pandora's Box Options
 static menuitem_t SR_PandorasBox[] =
 {
-	{IT_STRING | IT_CALL, NULL, "Mid-game add-ons...", M_Addons,             0},
-
 	{IT_STRING | IT_CVAR, NULL, "Rings",               &cv_dummyrings,      20},
 	{IT_STRING | IT_CVAR, NULL, "Lives",               &cv_dummylives,      30},
 	{IT_STRING | IT_CVAR, NULL, "Continues",           &cv_dummycontinues,  40},
@@ -1704,33 +1709,33 @@ static menuitem_t OP_CustomStatusOutputMenu[] =
 enum
 {
 	op_richpresenceheader = 3,
-	op_discordasks = 4,
-	op_discordinvites = 5,
-	op_discordstatusmemes = 6,
-	op_discordshowonstatus = 7,
-	op_discordmiscoptionsheader = 8,
-	op_discordcharacterimagetype = 9,
-	op_customstatusheader = 10,
-	op_customdiscorddetails = 11,
-	op_customdiscordstate = 12,
+	op_discordasks,
+	op_discordinvites,
+	op_discordstatusmemes,
+	op_discordshowonstatus,
+	op_discordmiscoptionsheader,
+	op_discordcharacterimagetype,
+	op_customstatusheader,
+	op_customdiscorddetails,
+	op_customdiscordstate,
 	// Custom Images //
-	op_customdiscordlargeimagetype = 13,
-	op_customdiscordsmallimagetype = 14,
+	op_customdiscordlargeimagetype,
+	op_customdiscordsmallimagetype,
 
-	op_customdiscordlargecharacterimage = 15,
-	op_customdiscordsmallcharacterimage = 16,
+	op_customdiscordlargecharacterimage,
+	op_customdiscordsmallcharacterimage,
 
-	op_customdiscordlargemapimage = 17,
-    op_customdiscordsmallmapimage = 18,
+	op_customdiscordlargemapimage,
+    op_customdiscordsmallmapimage,
 
-    op_customdiscordlargemiscimage = 19,
-    op_customdiscordsmallmiscimage = 20,
+    op_customdiscordlargemiscimage,
+    op_customdiscordsmallmiscimage,
 
-    op_customdiscordlargeimagetext = 21,
-    op_customdiscordsmallimagetext = 22,
+    op_customdiscordlargeimagetext,
+    op_customdiscordsmallimagetext,
 
     //Let's Output Things
-	op_customstatusoutputdef = 23,
+	op_customstatusoutputdef,
 };
 #endif
 
@@ -1823,10 +1828,11 @@ static menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 	{IT_STRING | IT_CVAR | IT_CV_STRING,	
 							 NULL, "Holepunch Server",  		&cv_holepunchserver,	   20},
 	{IT_STRING | IT_CVAR,    NULL, "Show Connecting Players",   &cv_noticedownload,        34},
-	{IT_STRING | IT_CVAR,    NULL, "Max Files (In MB) To Send", &cv_maxsend,     	       39},
+	{IT_STRING | IT_CVAR,    NULL, "Max File Transfer (In kB)", &cv_maxsend,     	       39},
+	{IT_STRING | IT_CVAR,    NULL, "Max File Transfer Speed", 	&cv_downloadspeed,     	   44},
 
-	{IT_HEADER, 			 NULL, 	"Miscellanious Options",    NULL,					   44},
-	{IT_STRING | IT_CALL, 	 NULL, 	"Jukebox",					M_Tsourdt3rdJukebox,   	   50},
+	{IT_HEADER, 			 NULL, 	"Miscellanious Options",    NULL,					   49},
+	{IT_STRING | IT_CALL, 	 NULL, 	"Jukebox",					M_Tsourdt3rdJukebox,   	   55},
 };
 static menuitem_t OP_Tsourdt3rdJukeboxMenu[] =
 {
@@ -1836,10 +1842,13 @@ static menuitem_t OP_Tsourdt3rdJukeboxMenu[] =
 enum
 {
 	op_usecontinues = 1,
+
 	op_holepunchserver = 3,
-	op_noticedownload = 4,
-	op_maxsend = 5,
-	op_jukebox = 7,
+	op_noticedownload,
+	op_maxsend,
+	op_downloadspeed,
+
+	op_jukebox = 8,
 };
 
 // ==========================================================================
@@ -3557,7 +3566,12 @@ static void M_ChangeCvar(INT32 choice)
 			CV_SetValue(cv,FIXED_TO_FLOAT(cv->value)+(choice));
 	}
 	else
+	{
+		if (cv == &cv_maxsend)
+			choice *= 512;
+
 		CV_AddValue(cv,choice);
+	}
 }
 
 static boolean M_ChangeStringCvar(INT32 choice)
@@ -4181,7 +4195,7 @@ void M_StartControlPanel(void)
 	else // multiplayer
 	{
 		MPauseMenu[mpause_switchmap].status = IT_DISABLED;
-		//MPauseMenu[mpause_addons].status = IT_DISABLED; //now you can add mods whenever you want to your heart's desire
+		MPauseMenu[mpause_addons].status = IT_DISABLED;
 		MPauseMenu[mpause_scramble].status = IT_DISABLED;
 		MPauseMenu[mpause_psetupsplit].status = IT_DISABLED;
 		MPauseMenu[mpause_psetupsplit2].status = IT_DISABLED;
@@ -7561,8 +7575,8 @@ static void M_PandorasBox(INT32 choice)
 		CV_StealthSetValue(&cv_dummylives, max(players[consoleplayer].lives, 1));
 	CV_StealthSetValue(&cv_dummycontinues, players[consoleplayer].continues);
 	SR_PandorasBox[3].status = (continuesInSession) ? (IT_STRING | IT_CVAR) : (IT_GRAYEDOUT);
-	SR_PandorasBox[6].status = (players[consoleplayer].charflags & SF_SUPER) ? (IT_GRAYEDOUT) : (IT_STRING | IT_CALL);
-	SR_PandorasBox[7].status = (emeralds == ((EMERALD7)*2)-1) ? (IT_GRAYEDOUT) : (IT_STRING | IT_CALL);
+	SR_PandorasBox[5].status = (players[consoleplayer].charflags & SF_SUPER) ? (IT_GRAYEDOUT) : (IT_STRING | IT_CALL);
+	SR_PandorasBox[6].status = (emeralds == ((EMERALD7)*2)-1) ? (IT_GRAYEDOUT) : (IT_STRING | IT_CALL);
 	M_SetupNextMenu(&SR_PandoraDef);
 }
 
@@ -7730,7 +7744,7 @@ static void M_AllowSuper(INT32 choice)
 
 	players[consoleplayer].charflags |= SF_SUPER;
 	M_StartMessage(M_GetText("You are now capable of turning super.\nRemember to get all the emeralds!\n"),NULL,MM_NOTHING);
-	SR_PandorasBox[6].status = IT_GRAYEDOUT;
+	SR_PandorasBox[5].status = IT_GRAYEDOUT;
 
 	G_SetGameModified(multiplayer);
 }
@@ -7741,7 +7755,7 @@ static void M_GetAllEmeralds(INT32 choice)
 
 	emeralds = ((EMERALD7)*2)-1;
 	M_StartMessage(M_GetText("You now have all 7 emeralds.\nUse them wisely.\nWith great power comes great ring drain.\n"),NULL,MM_NOTHING);
-	SR_PandorasBox[7].status = IT_GRAYEDOUT;
+	SR_PandorasBox[6].status = IT_GRAYEDOUT;
 
 	G_SetGameModified(multiplayer);
 }
@@ -8480,7 +8494,7 @@ static void M_DrawSoundTest(void)
 		}
 		else
 			titl = "None - ";
-
+		
 		i = V_LevelNameWidth(titl);
 
 		st_scroll += renderdeltatics;
@@ -14412,10 +14426,6 @@ static void M_DrawDiscordRequests(void)
 #endif
 
 //Star Stuff WEEEE
-boolean jukeboxMusicPlaying = false;
-char jukeboxMusicName[32+20+12];
-char jukeboxMusicTrack[7];
-
 static void M_Tsourdt3rdOptions(INT32 choice)
 {
 	(void)choice;
@@ -14427,13 +14437,16 @@ static void M_Tsourdt3rdOptions(INT32 choice)
 	{
 		OP_Tsourdt3rdOptionsMenu[op_holepunchserver].status = IT_GRAYEDOUT; // Holepunch server
 		OP_Tsourdt3rdOptionsMenu[op_noticedownload].status = IT_GRAYEDOUT; // Log connecting player
-		OP_Tsourdt3rdOptionsMenu[op_maxsend].status = IT_GRAYEDOUT; // Max Amount of Files (In MB) you can Send to Clients
+		OP_Tsourdt3rdOptionsMenu[op_maxsend].status = IT_GRAYEDOUT; // Max Amount of Files (In KB) you can Send to Clients
+		OP_Tsourdt3rdOptionsMenu[op_downloadspeed].status = IT_GRAYEDOUT; // Max Amount of the File Transfer Speed; Controls how fast you can send files to clients
 	}
 	else
 	{
 		OP_Tsourdt3rdOptionsMenu[op_holepunchserver].status = IT_STRING | IT_CVAR | IT_CV_STRING;
 		OP_Tsourdt3rdOptionsMenu[op_noticedownload].status = IT_STRING | IT_CVAR;
 		OP_Tsourdt3rdOptionsMenu[op_maxsend].status = IT_STRING | IT_CVAR;
+		OP_Tsourdt3rdOptionsMenu[op_downloadspeed].status = IT_STRING | IT_CVAR;
+
 	}
 
 	for (INT32 i = 0; i < MAXUNLOCKABLES; i++)
@@ -14739,18 +14752,14 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 			}
 			break;
 		case KEY_BACKSPACE:
-			if (jukeboxMusicPlaying)
-			{
-				S_StopSounds();
-				S_StopMusic();
-				curplaying = NULL;
-				st_time = 0;
-				cv_closedcaptioning.value = st_cc; // hack
-				S_StartSound(NULL, sfx_skid);
-				cv_closedcaptioning.value = 1; // hack
-			}
-			else
-				S_StartSound(NULL, sfx_lose);
+			S_StopSounds();
+			S_StopMusic();
+			st_time = 0;
+
+			S_StartSound(NULL, sfx_skid);
+			curplaying = NULL;
+			cv_closedcaptioning.value = st_cc; // hack
+			cv_closedcaptioning.value = 1; // hack
 			break;
 		case KEY_ESCAPE:
 			exitmenu = true;
@@ -14797,14 +14806,13 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 						snprintf(jukeboxMusicTrack, 7, "%s", curplaying->name);
 
 						S_ChangeMusicInternal(jukeboxMusicTrack, !curplaying->stoppingtics);
-						CONS_Printf(M_GetText("Loaded track %s into the Jukebox.\n"), jukeboxMusicName);
+						CONS_Printf(M_GetText("Loaded track \x82%s\x80 into the Jukebox.\n"), jukeboxMusicName);
 						jukeboxMusicPlaying = true;
 					}
 				}
 				else
 				{
 					curplaying = NULL;
-					M_ResetJukebox();
 
 					S_StopMusic();
 					S_StartSound(NULL, sfx_menu1);
@@ -14813,7 +14821,6 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 			else
 			{
 				curplaying = NULL;
-				M_ResetJukebox();
 
 				S_StopMusic();
 				S_StartSound(NULL, sfx_lose);
@@ -14829,6 +14836,9 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 		{
 			Z_Free(soundtestdefs);
 			soundtestdefs = NULL;
+
+			if (playeringame[consoleplayer])
+				S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
 		}
 
 		cv_closedcaptioning.value = st_cc; // undo hack
@@ -14841,6 +14851,7 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 void M_ResetJukebox(void)
 {
 	jukeboxMusicPlaying = false;
-	for (INT32 i = 0; jukeboxMusicName[i] != '\0'; i++) { jukeboxMusicName[i] = '\0'; }
-	for (INT32 i = 0; jukeboxMusicTrack[i] != '\0'; i++) { jukeboxMusicTrack[i] = '\0'; }
+
+	for (INT32 i = 0; jukeboxMusicName[i] != '\0'; i++) jukeboxMusicName[i] = '\0';
+	for (INT32 i = 0; jukeboxMusicTrack[i] != '\0'; i++) jukeboxMusicTrack[i] = '\0';
 }
