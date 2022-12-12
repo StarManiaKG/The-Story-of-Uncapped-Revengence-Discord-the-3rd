@@ -2315,12 +2315,12 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 }
 
 void S_StopMusic(void)
-{
-	if (jukeboxMusicPlaying)
-		M_ResetJukebox();
-		
+{	
 	if (!I_SongPlaying())
 		return;
+	
+	if (jukeboxMusicPlaying)
+		M_ResetJukebox();
 
 	if (I_SongPaused())
 		I_ResumeSong();

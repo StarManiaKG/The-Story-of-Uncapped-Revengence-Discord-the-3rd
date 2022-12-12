@@ -953,7 +953,9 @@ void D_StartTitle(void)
 {
 	INT32 i;
 
-	S_StopMusic();
+	// Just so this meanie doesn't reset me having fun with my music >:(
+	if (!jukeboxMusicPlaying)
+		S_StopMusic();
 
 	if (netgame)
 	{
