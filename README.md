@@ -16,9 +16,12 @@
   - Autoloading Addons, Which Allows Mods to Bypass Modified Game Checks (after game restart, of course) By Pressing Shift Over Mods in the Addons Menu
   - A Jukebox	  
   - ...And More Annoyances!
-  
+
+## Features That Work With Enough Effort
+  - Holepunching; Requires Vanilla-SRB2 Based Relay Server, Kart Krew's Won't Work
+  - ...And A Few More Annoyances!
+
 ## WIP Features (Found on Latest Unstable Build)
-  - Holepunching (needs relay server)
   - Netplus (really on a limb here)
   - Autoloading Folder Support (yeah so funny story)
   - Discord's Game SDK (need to convert it to C)
