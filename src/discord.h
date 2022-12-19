@@ -39,8 +39,8 @@ extern consvar_t cv_customdiscordsmallimagetext;
 
 extern struct discordInfo_s {
 	UINT8 maxPlayers;
-	boolean joinsAllowed;
-	boolean everyoneCanInvite;
+	UINT8 joinsAllowed;
+	UINT8 whoCanInvite;
 } discordInfo;
 
 typedef struct discordRequest_s {
