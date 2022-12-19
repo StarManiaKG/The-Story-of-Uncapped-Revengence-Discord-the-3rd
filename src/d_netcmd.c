@@ -5023,25 +5023,20 @@ static void BaseNumLaps_OnChange(void)
 
 void Got_DiscordInfo(UINT8 **p, INT32 playernum)
 {
-	if (playernum != serverplayer /*&& !IsPlayerAdmin(playernum)*/)
+	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
 	{
 		// protect against hacked/buggy client
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal Discord info command received from %s\n"), player_names[playernum]);
 		if (server)
-		{
 			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
-		}
 		return;
 	}
 
 	// Don't do anything with the information if we don't have Discord RP support
 #ifdef HAVE_DISCORDRPC
-	/*discordInfo.maxPlayers = READUINT8(*p);
-	discordInfo.joinsAllowed = (boolean)READUINT8(*p);
-	discordInfo.everyoneCanInvite = (boolean)READUINT8(*p);*/
 	discordInfo.maxPlayers = READUINT8(*p);
-	discordInfo.joinsAllowed = (boolean)true;
-	discordInfo.everyoneCanInvite = (boolean)true;
+	discordInfo.joinsAllowed = READUINT8(*p);
+	discordInfo.whoCanInvite = READUINT8(*p);
 	DRPC_UpdatePresence();
 #else
 	(*p) += 3;
