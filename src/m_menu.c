@@ -35,7 +35,7 @@
 #include "i_system.h"
 #include "i_threads.h"
 
-// Addfile (and autoloading lol)
+// Addfile (and now autoloading lol)
 #include "filesrch.h"
 
 #include "v_video.h"
@@ -1106,6 +1106,7 @@ static menuitem_t MP_PlayerSetupMenu[] =
 	{IT_KEYHANDLER, NULL, "", M_HandleSetupMultiPlayer, 0}, // skin
 	{IT_KEYHANDLER, NULL, "", M_HandleSetupMultiPlayer, 0}, // colour
 	{IT_KEYHANDLER, NULL, "", M_HandleSetupMultiPlayer, 0}, // default
+	{IT_KEYHANDLER, NULL, "", M_HandleSetupMultiPlayer, 0}, // reset
 };
 
 // ------------------------------------
@@ -1669,7 +1670,7 @@ static menuitem_t OP_DiscordOptionsMenu[] =
 
 	{IT_HEADER,							NULL,	"Main Rich Presence Settings",	NULL,					 	 		   17},
 	{IT_STRING | IT_CVAR,				NULL, 		"Ask To Join",				&cv_discordasks,		 	 		   24},
-	{IT_STRING | IT_CVAR,				NULL, 		"Allow Invites",			&cv_discordinvites,		 	 		   29},
+	{IT_STRING | IT_CVAR,				NULL,  "Discord Invite Permission",		&cv_discordinvites,		 	 		   29},
 	{IT_STRING | IT_CVAR,				NULL, 		"Memes on Status",			&cv_discordstatusmemes,	 	 		   34},
 	{IT_STRING | IT_CVAR,				NULL, 		"Show on Status",			&cv_discordshowonstatus, 	 	       39},
 	
@@ -1829,7 +1830,7 @@ static menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 							 NULL, "Holepunch Server",  		&cv_holepunchserver,	   20},
 	{IT_STRING | IT_CVAR,    NULL, "Show Connecting Players",   &cv_noticedownload,        34},
 	{IT_STRING | IT_CVAR,    NULL, "Max File Transfer (In kB)", &cv_maxsend,     	       39},
-	{IT_STRING | IT_CVAR,    NULL, "Max File Transfer Speed", 	&cv_downloadspeed,     	   44},
+	{IT_STRING | IT_CVAR,    NULL, "File Transfer Packet Rate", &cv_downloadspeed,     	   44},
 
 	{IT_HEADER, 			 NULL, 	"Miscellanious Options",    NULL,					   49},
 	{IT_STRING | IT_CALL, 	 NULL, 	"Jukebox",					M_Tsourdt3rdJukebox,   	   55},
@@ -2802,9 +2803,14 @@ void Discord_option_Onchange(void)
 	OP_DiscordOptionsMenu[op_customstatusoutputdef].status =
 		(cv_discordrp.value == 1 ? IT_STRING|IT_SUBMENU : IT_DISABLED);
 
-	//Is Custom Status On?
+	//Is Our Rich Presence On?
 	if (cv_discordrp.value)
-	{
+	{	
+		// Misc. Settings //
+		OP_DiscordOptionsMenu[op_discordinvites].status =
+			(cv_discordasks.value == 1 ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+		
+		// Custom Statuses //
 		OP_DiscordOptionsMenu[op_customstatusheader].status =
 			(cv_discordshowonstatus.value == 8 ? IT_HEADER : IT_DISABLED);
 		
@@ -3569,6 +3575,8 @@ static void M_ChangeCvar(INT32 choice)
 	{
 		if (cv == &cv_maxsend)
 			choice *= 512;
+		else if (cv == &cv_downloadspeed)
+			choice *=15;
 
 		CV_AddValue(cv,choice);
 	}
@@ -6865,6 +6873,7 @@ static void M_AddonsOptions(INT32 choice)
 
 #define LOCATIONSTRING1 "Visit \x83SRB2.ORG/ADDONS\x80 to get & make addons!"
 //#define LOCATIONSTRING2 "Visit \x88SRB2.ORG/ADDONS\x80 to get & make addons!"
+#define AUTOLOADSTRING1 "Press \x83Left-Shift\x80 to mark Autoloaded Mods!"
 
 static void M_LoadAddonsPatches(void)
 {
@@ -7073,10 +7082,10 @@ static void M_DrawAddons(void)
 	}
 
 	if (Playing())
-		V_DrawCenteredString(BASEVIDWIDTH/2, 5, warningflags, "Adding files mid-game may cause problems.");
-	else
-		V_DrawCenteredString(BASEVIDWIDTH/2, 5, 0, LOCATIONSTRING1);
-			// (recommendedflags == V_SKYMAP ? LOCATIONSTRING2 : LOCATIONSTRING1)
+		V_DrawCenteredString(BASEVIDWIDTH/2, -5, warningflags, "Adding files mid-game may cause problems.");
+	V_DrawCenteredString(BASEVIDWIDTH/2, 5, 0, LOCATIONSTRING1);
+		// (recommendedflags == V_SKYMAP ? LOCATIONSTRING2 : LOCATIONSTRING1)
+	V_DrawCenteredString(BASEVIDWIDTH/2, 200, 0, AUTOLOADSTRING1);
 
 #ifdef ENFORCE_WAD_LIMIT
 	if (numwadfiles <= mainwads+1)
@@ -7227,7 +7236,7 @@ static void M_AddonExec(INT32 ch)
 	COM_BufAddText(va("exec \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
 }
 
-// autoload a mod on game startup, like they're .kart files
+// autoload a mod on game startup, like the files on startup
 #define REALLOC_FILE_LIST \
 	if (list->files == NULL) \
 	{ \
@@ -11261,6 +11270,8 @@ static void M_ModeAttackEndGame(INT32 choice)
 	G_SetGamestate(GS_TIMEATTACK);
 	modeattacking = ATTACKING_NONE;
 	M_ChangeMenuMusic("_title", true);
+	if (jukeboxMusicPlaying && paused) // keep playing my music please
+		S_ResumeAudio();
 	Nextmap_OnChange();
 }
 
@@ -12721,8 +12732,18 @@ colordraw:
 			: V_TRANSLUCENT)
 		| ((itemOn == 3) ? V_YELLOWMAP : 0),
 		"Save as default");
+	
+	V_DrawString(x, y+10,
+		((R_SkinAvailable(setupm_cvdefaultskin->string) != setupm_fakeskin
+		|| setupm_cvdefaultcolor->value != setupm_fakecolor->color)
+			? 0
+			: V_TRANSLUCENT)
+		| ((itemOn == 4) ? V_YELLOWMAP : 0),
+		"Reset to defaults");
 	if (itemOn == 3)
 		cursory = y;
+	else if (itemOn == 4)
+		cursory = y += 10;
 
 	V_DrawScaledPatch(x - 17, cursory, 0,
 		W_CachePatchName("M_CURSOR", PU_PATCH));
@@ -12777,11 +12798,23 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 				// you know what? always putting these in the buffer won't hurt anything.
 				COM_BufAddText (va("%s \"%s\"\n",setupm_cvdefaultskin->name,skins[setupm_fakeskin].name));
 				COM_BufAddText (va("%s %d\n",setupm_cvdefaultcolor->name,setupm_fakecolor->color));
-				break;
 			}
+			else if (itemOn == 4
+			&& (R_SkinAvailable(setupm_cvdefaultskin->string) != setupm_fakeskin
+			|| setupm_cvdefaultcolor->value != setupm_fakecolor->color))
+			{
+				S_StartSound(NULL,(((gametyperules & GTR_TEAMS && !players[consoleplayer].spectator) || !R_SkinUsable(-1, setupm_cvdefaultskin->value) || !CanChangeSkin(consoleplayer)) ? sfx_skid : sfx_strpst));
+				
+				setupm_fakeskin = ((R_SkinUsable(-1, setupm_cvdefaultskin->value) || CanChangeSkin(consoleplayer)) ? setupm_cvdefaultskin->value : setupm_fakeskin);
+				setupm_fakecolor->color = (gametyperules & GTR_TEAMS ? (!players[consoleplayer].spectator ? (players[consoleplayer].ctfteam == 1 ? skincolor_redteam : skincolor_blueteam): setupm_cvdefaultcolor->value) : setupm_cvdefaultcolor->value);
+				
+				if ((gametyperules & GTR_TEAMS && !players[consoleplayer].spectator) || !R_SkinUsable(-1, setupm_cvdefaultskin->value) || !CanChangeSkin(consoleplayer))
+					CONS_Printf(M_GetText("Some player settings cannot be reset at the moment.\n"));
+			}
+			break;
 			/* FALLTHRU */
 		case KEY_RIGHTARROW:
-			if (itemOn == 1)       //player skin
+			if (itemOn == 1) //player skin
 			{
 				S_StartSound(NULL,sfx_menu1); // Tails
 				prev_setupm_fakeskin = setupm_fakeskin;
@@ -14438,7 +14471,7 @@ static void M_Tsourdt3rdOptions(INT32 choice)
 		OP_Tsourdt3rdOptionsMenu[op_holepunchserver].status = IT_GRAYEDOUT; // Holepunch server
 		OP_Tsourdt3rdOptionsMenu[op_noticedownload].status = IT_GRAYEDOUT; // Log connecting player
 		OP_Tsourdt3rdOptionsMenu[op_maxsend].status = IT_GRAYEDOUT; // Max Amount of Files (In KB) you can Send to Clients
-		OP_Tsourdt3rdOptionsMenu[op_downloadspeed].status = IT_GRAYEDOUT; // Max Amount of the File Transfer Speed; Controls how fast you can send files to clients
+		OP_Tsourdt3rdOptionsMenu[op_downloadspeed].status = IT_GRAYEDOUT; // Max Amount of the File Transfer Packet Rate; Controls how fast you can send files to clients
 	}
 	else
 	{
@@ -14454,7 +14487,7 @@ static void M_Tsourdt3rdOptions(INT32 choice)
 		OP_Tsourdt3rdOptionsMenu[op_jukebox].status = IT_GRAYEDOUT;
 		OP_Tsourdt3rdOptionsMenu[op_jukebox].itemaction = NULL;
 		
-		if (unlockables[i].unlocked && unlockables[i].type == SECRET_SOUNDTEST)
+		if ((unlockables[i].unlocked && unlockables[i].type == SECRET_SOUNDTEST) || (modifiedgame && !savemoddata)) // for fairness sake
 		{
 			OP_Tsourdt3rdOptionsMenu[op_jukebox].status = IT_STRING|IT_CALL;
 			OP_Tsourdt3rdOptionsMenu[op_jukebox].itemaction = M_Tsourdt3rdJukebox;

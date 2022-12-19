@@ -2536,7 +2536,7 @@ static void Command_RestartAudio_f(void)
 	S_SetMusicVolume(cv_digmusicvolume.value, cv_midimusicvolume.value);
 	if (Playing()) // Gotta make sure the player is in a level
 		P_RestoreMusic(&players[consoleplayer]);
-	if (jukeboxMusicPlaying)
+	if (jukeboxMusicPlaying) //Fine, I'll let you do it here...
 		M_ResetJukebox();
 }
 
