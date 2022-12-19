@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # TSOURDt3RD: An Sonic Robo Blast 2 Original
 **Latest Stable Release:** [![latest release](https://badgen.net/github/release/starmaniakg/the-story-of-uncapped-revengence-discord-the-3rd/stable)](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/releases/latest)
 
@@ -9,9 +10,7 @@
 
 [Sonic Robo Blast 2](https://srb2.org/) is a 3D Sonic the Hedgehog fangame based on a modified version of [Doom Legacy](http://doomlegacy.sourceforge.net/), and [This Custom Build](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd) is based upon those.
 
-## Features
-**NEW FEATURES**
-  - Eidolon's Uncapped Revengeance, Now Properly In SRB2, Is Included, And Was Featured In This Build Early Enough For Me To Call It A "New Feature"
+## New Features
   - Custom Discord Settings, Commands, and Options, with Custom Character Support
   - Custom Build Options, Featuring More Savedata, Server, and Extra Options
   - Palette Rendering
@@ -19,11 +18,11 @@
   - A Jukebox	  
   - ...And More Annoyances!
 
-**FEATURES THAT WORK WITH ENOUGH EFFORT**
+## Features That Work With Enough Effort
   - Holepunching; Requires Vanilla-SRB2 Based Relay Server, Kart Krew's Won't Work
   - ...And A Few More Annoyances!
 
-**WIP FEATURES (FOUND ON LATEST UNSTABLE BUILD)**
+## WIP Features (Found on Latest Unstable Build)
   - Netplus (really on a limb here)
   - Autoloading Folder Support (it's a funny story)
   - Discord's Game SDK (need to convert it to C)
@@ -53,3 +52,7 @@ See [SRB2 Wiki/Source code compiling](http://wiki.srb2.org/wiki/Source_code_comp
 ## Disclaimer
 - Sonic Team Junior is in no way affiliated with SEGA or Sonic Team. We do not claim ownership of any of SEGA's intellectual property used in SRB2.
 - Despite the title of this file making this seem like the title of a movie, I regret to inform you that this is not, sadly, a movie, but instead, an autobiography, on how I am a constant and passionate nusiance on my soceity.
+=======
+# a
+
+>>>>>>> c4aaa36ad1e381a473a7f125102559f1cc34e9d9

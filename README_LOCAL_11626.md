@@ -9,9 +9,7 @@
 
 [Sonic Robo Blast 2](https://srb2.org/) is a 3D Sonic the Hedgehog fangame based on a modified version of [Doom Legacy](http://doomlegacy.sourceforge.net/), and [This Custom Build](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd) is based upon those.
 
-## Features
-**NEW FEATURES**
-  - Eidolon's Uncapped Revengeance, Now Properly In SRB2, Is Included, And Was Featured In This Build Early Enough For Me To Call It A "New Feature"
+## New Features
   - Custom Discord Settings, Commands, and Options, with Custom Character Support
   - Custom Build Options, Featuring More Savedata, Server, and Extra Options
   - Palette Rendering
@@ -19,11 +17,11 @@
   - A Jukebox	  
   - ...And More Annoyances!
 
-**FEATURES THAT WORK WITH ENOUGH EFFORT**
+## Features That Work With Enough Effort
   - Holepunching; Requires Vanilla-SRB2 Based Relay Server, Kart Krew's Won't Work
   - ...And A Few More Annoyances!
 
-**WIP FEATURES (FOUND ON LATEST UNSTABLE BUILD)**
+## WIP Features (Found on Latest Unstable Build)
   - Netplus (really on a limb here)
   - Autoloading Folder Support (it's a funny story)
   - Discord's Game SDK (need to convert it to C)
