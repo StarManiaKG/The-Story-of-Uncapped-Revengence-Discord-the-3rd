@@ -832,8 +832,8 @@ void D_SRB2Loop(void)
 
 		if (autoloading)
 		{
-			savemoddata = false;
-			modifiedgame = false;
+			if (!savemoddata)
+				modifiedgame = false;
 			autoloading = false;
 		}
 
@@ -956,6 +956,8 @@ void D_StartTitle(void)
 	// Just so this meanie doesn't reset me having fun with my music >:(
 	if (!jukeboxMusicPlaying)
 		S_StopMusic();
+	else if (jukeboxMusicPlaying && paused)
+		S_ResumeAudio(); // keep playing my music please
 
 	if (netgame)
 	{
@@ -1517,11 +1519,6 @@ void D_SRB2Main(void)
 
 	CON_Init();
 
-#ifdef HAVE_DISCORDRPC
-    CONS_Printf("DRPC_Init(): Initalizing Discord Rich Presence.\n");
-    DRPC_Init();
-#endif
-
 	D_RegisterServerCommands();
 	D_RegisterClientCommands(); // be sure that this is called before D_CheckNetGame
 	R_RegisterEngineStuff();
@@ -1547,6 +1544,12 @@ void D_SRB2Main(void)
 	M_FirstLoadConfig(); // WARNING : this do a "COM_BufExecute()"
 
 	G_LoadGameData();
+
+	// initalize discord
+#ifdef HAVE_DISCORDRPC
+    CONS_Printf("DRPC_Init(): Initalizing Discord Rich Presence.\n");
+    DRPC_Init();
+#endif
 
 #if defined (__unix__) || defined (UNIXCOMMON) || defined (HAVE_SDL)
 	VID_PrepareModeList(); // Regenerate Modelist according to cv_fullscreen

@@ -3474,8 +3474,8 @@ consvar_t cv_resynchattempts = CVAR_INIT ("resynchattempts", "10", CV_SAVE|CV_NE
 consvar_t cv_blamecfail = CVAR_INIT ("blamecfail", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL);
 
 // Here for dedicated servers
-static CV_PossibleValue_t discordinvites_cons_t[] = {{0, "Admins Only"}, {1, "Everyone"}, {0, NULL}};
-consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Everyone", CV_SAVE|CV_CALL, discordinvites_cons_t, Joinable_OnChange);
+static CV_PossibleValue_t discordinvites_cons_t[] = {{0, "Admins"}, {1, "Everyone"}, {2, "Nobody"}, {0, NULL}};
+consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Admins", CV_SAVE|CV_CALL, discordinvites_cons_t, Joinable_OnChange);
 
 
 // max file size to send to a player (in kilobytes)
@@ -3484,7 +3484,7 @@ consvar_t cv_maxsend = CVAR_INIT ("maxsend", "4096", CV_SAVE|CV_NETVAR, maxsend_
 consvar_t cv_noticedownload = CVAR_INIT ("noticedownload", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL);
 
 // Speed of file downloading (in packets per tic)
-static CV_PossibleValue_t downloadspeed_cons_t[] = {{1, "MIN"}, {300, "MAX"}, {0, NULL}};
+static CV_PossibleValue_t downloadspeed_cons_t[] = {{0, "MIN"}, {300, "MAX"}, {0, NULL}};
 consvar_t cv_downloadspeed = CVAR_INIT ("downloadspeed", "16", CV_SAVE|CV_NETVAR, downloadspeed_cons_t, NULL);
 
 static void Got_AddPlayer(UINT8 **p, INT32 playernum);
@@ -3502,9 +3502,10 @@ static void Joinable_OnChange(void)
 
 	WRITEUINT8(p, maxplayer);
 	WRITEUINT8(p, cv_allownewplayer.value);
+#ifdef HAVE_DISCORDRPC
 	WRITEUINT8(p, cv_discordinvites.value);
-
 	SendNetXCmd(XD_DISCORD, &buf, 3);
+#endif
 }
 
 // called one time at init
@@ -4392,10 +4393,8 @@ static void HandlePacketFromAwayNode(SINT8 node)
 
 #ifdef HAVE_DISCORDRPC
 			discordInfo.maxPlayers = netbuffer->u.serverinfo.maxplayer;
-			/*discordInfo.joinsAllowed = netbuffer->u.servercfg.allownewplayer;
-			discordInfo.everyoneCanInvite = netbuffer->u.servercfg.discordinvites;*/
-			discordInfo.joinsAllowed = true;
-			discordInfo.everyoneCanInvite = true;
+			discordInfo.joinsAllowed = netbuffer->u.servercfg.allownewplayer;
+			discordInfo.whoCanInvite = netbuffer->u.servercfg.discordinvites;
 #endif
 
 			nodeingame[(UINT8)servernode] = true;

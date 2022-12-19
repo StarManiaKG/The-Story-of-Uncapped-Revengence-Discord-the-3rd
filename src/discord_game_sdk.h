@@ -29,19 +29,20 @@
 #include <string.h>
 #endif
 
-typedef struct srb2gsdk_s {
+typedef struct discord_gamesdk_s {
+    struct DiscordCreateParams params;
     struct IDiscordCore* core;
     struct IDiscordUserManager* users;
     struct IDiscordAchievementManager* achievements;
     struct IDiscordActivityManager* activities;
-    struct IDiscordRelationshipManager* relationships;
     struct IDiscordApplicationManager* application;
+    struct IDiscordCoreEvents events;
+    struct IDiscordRelationshipManager* relationships;
     struct IDiscordLobbyManager* lobbies;
     DiscordUserId user_id;
-} srb2gsdk_t;
+} discord_gamesdk_t;
 
-extern srb2gsdk_t *discordRequestList;
+extern discord_gamesdk_t
 
 #endif // HAVE_DISCORDGAMESDK
-
 #endif // __DISCORD__
