@@ -1,17 +1,5 @@
 #ifdef HAVE_DISCORDGAMESDK
 
-#include <time.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <assert.h>
-#include "discord/discord.h"
-#ifdef _WIN32
-#include <Windows.h>
-#else
-#include <unistd.h>
-#include <string.h>
-#endif
-
 #include "i_system.h"
 #include "d_clisrv.h"
 #include "d_netcmd.h"
@@ -26,9 +14,13 @@
 #include "byteptr.h"
 #include "stun.h"
 #include "i_tcp.h" // current_port
-#include "discord_2.h" // discord
+#include "discord_game_sdk.h" // discord
 #include "doomdef.h" // large list of defs, mainly
 
 // Please feel free to provide your own Discord app if you're making a new custom build :)
+#define DISCORD_APPID "1013126566236135516"
+
+// length of IP strings
+#define IP_SIZE 21
 
 #endif //HAVE_DISCORDGAMESDK
