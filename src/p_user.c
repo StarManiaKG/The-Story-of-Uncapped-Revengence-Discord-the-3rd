@@ -44,6 +44,8 @@
 #include "m_cheat.h"
 // Thok camera snap (ctrl-f "chalupa")
 #include "g_input.h"
+// Jukebox Things
+#include "m_menu.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -1501,7 +1503,7 @@ void P_PlayLivesJingle(player_t *player)
 
 	if (mariomode)
 		S_StartSound(NULL, sfx_marioa);
-	else if (use1upSound || cv_1upsound.value)
+	else if (use1upSound || cv_1upsound.value || jukeboxMusicPlaying)
 		S_StartSound(NULL, sfx_oneup);
 	else
 	{
@@ -1535,8 +1537,8 @@ void P_PlayJingle(player_t *player, jingletype_t jingletype)
 //
 void P_PlayJingleMusic(player_t *player, const char *musname, UINT16 musflags, boolean looping, UINT16 status)
 {
-	// If gamestate != GS_LEVEL, always play the jingle (1-up intermission)
-	if (gamestate == GS_LEVEL && player && !P_IsLocalPlayer(player))
+	// If gamestate != GS_LEVEL, always play the jingle (1-up intermission), or if jukebox music is playing, do the same as well
+	if ((gamestate == GS_LEVEL && player && !P_IsLocalPlayer(player)) || (jukeboxMusicPlaying))
 		return;
 
 	S_RetainMusic(musname, musflags, looping, 0, status);
@@ -10501,6 +10503,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 			CONS_Printf(M_GetText("%s switched to the %c%s%c.\n"), player_names[player-players], '\x85', M_GetText("Red team"), '\x80');
 		else if (changeto == 2)
 			CONS_Printf(M_GetText("%s switched to the %c%s%c.\n"), player_names[player-players], '\x84', M_GetText("Blue team"), '\x80');
+
 #ifdef HAVE_DISCORDRPC
 		DRPC_UpdatePresence(); //just in case, you never know :)
 #endif
@@ -10547,6 +10550,11 @@ boolean P_SpectatorJoinGame(player_t *player)
 
 			if (!G_CoopGametype())
 				CONS_Printf(M_GetText("%s entered the game.\n"), player_names[player-players]);
+
+#ifdef HAVE_DISCORDRPC
+		DRPC_UpdatePresence(); //just in case, you never know :)
+#endif
+
 			return true; // no more player->mo, cannot continue.
 		}
 		else

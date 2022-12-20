@@ -832,8 +832,8 @@ void D_SRB2Loop(void)
 
 		if (autoloading)
 		{
-			savemoddata = false;
-			modifiedgame = false;
+			if (!savemoddata)
+				modifiedgame = false;
 			autoloading = false;
 		}
 
@@ -953,7 +953,11 @@ void D_StartTitle(void)
 {
 	INT32 i;
 
-	S_StopMusic();
+	// Just so this meanie doesn't reset me having fun with my music >:(
+	if (!jukeboxMusicPlaying)
+		S_StopMusic();
+	else if (jukeboxMusicPlaying && paused)
+		S_ResumeAudio(); // keep playing my music please
 
 	if (netgame)
 	{
@@ -1270,7 +1274,7 @@ void D_SRB2Main(void)
 	INT32 pstartmap = 1;
 	boolean autostart = false;
 
-	FILE *autoloadpath; //= va("%s"PATHSEP"%s", srb2home, AUTOLOADFILENAME); //autoload wad feature
+	FILE *autoloadpath; //autoload wad feature
 
 	/* break the version string into version numbers, for netplay */
 	D_ConvertVersionNumbers();
@@ -1457,13 +1461,13 @@ void D_SRB2Main(void)
 	// Have to be done here before files are loaded
 	M_InitCharacterTables();
 
-	mainwads = 3; // doesn't include music.dta
+	mainwads = 4; // doesn't include music.dta
 #ifdef USE_PATCH_DTA
 	mainwads++;
 #endif
 
 	// load wad, including the main wad file
-	autoloadpath = fopen(va("%s"PATHSEP"%s",srb2home,AUTOLOADFILENAME), "r");
+	autoloadpath = fopen(va("%s"PATHSEP"%s",srb2home,AUTOLOADCONFIGNAME), "r");
 
 	CONS_Printf("W_InitMultipleFiles(): Adding IWAD and main PWADs.\n");
 	W_InitMultipleFiles(&startupwadfiles);
@@ -1472,7 +1476,7 @@ void D_SRB2Main(void)
 	{
 		mainwads++;
 		CONS_Printf("D_AutoLoadAddons(): Autoloading Addons.\n");
-		D_AutoLoadAddons(&startupwadfiles, va(pandf,srb2home,AUTOLOADFILENAME));
+		D_AutoLoadAddons(&startupwadfiles, va(pandf,srb2home,AUTOLOADCONFIGNAME));
 		D_CleanFile(&startupwadfiles);
 	}
 
@@ -1540,6 +1544,12 @@ void D_SRB2Main(void)
 	M_FirstLoadConfig(); // WARNING : this do a "COM_BufExecute()"
 
 	G_LoadGameData();
+
+	// initalize discord
+#ifdef HAVE_DISCORDRPC
+    CONS_Printf("DRPC_Init(): Initalizing Discord Rich Presence.\n");
+    DRPC_Init();
+#endif
 
 #if defined (__unix__) || defined (UNIXCOMMON) || defined (HAVE_SDL)
 	VID_PrepareModeList(); // Regenerate Modelist according to cv_fullscreen
@@ -1628,11 +1638,6 @@ void D_SRB2Main(void)
 
 	CONS_Printf("ST_Init(): Init status bar.\n");
 	ST_Init();
-
-#ifdef HAVE_DISCORDRPC
-    CONS_Printf("DRPC_Init(): Initalizing Discord Rich Presence.\n");
-    DRPC_Init();
-#endif
 
 	if (M_CheckParm("-room"))
 	{

@@ -28,6 +28,7 @@
 #include "m_misc.h"
 #include "v_video.h" // video flags for CEchos
 #include "f_finale.h"
+#include "m_menu.h" // jukebox thingies
 
 #ifdef HAVE_DISCORDRPC
 #include "discord.h" // Mainly DRPC_UpdatePresence()
@@ -271,7 +272,8 @@ void P_DoMatchSuper(player_t *player)
 	player->powers[pw_sneakers] = emeraldspawndelay;
 	if (P_IsLocalPlayer(player) && !player->powers[pw_super])
 	{
-		S_StopMusic();
+		if (!jukeboxMusicPlaying)
+			S_StopMusic();
 		if (mariomode)
 			G_GhostAddColor(GHC_INVINCIBLE);
 		strlcpy(S_sfx[sfx_None].caption, "Invincibility", 14);
@@ -294,7 +296,8 @@ void P_DoMatchSuper(player_t *player)
 				player->powers[pw_sneakers] = player->powers[pw_invulnerability];
 				if (P_IsLocalPlayer(player) && !player->powers[pw_super])
 				{
-					S_StopMusic();
+					if (!jukeboxMusicPlaying)
+						S_StopMusic();
 					if (mariomode)
 						G_GhostAddColor(GHC_INVINCIBLE);
 					strlcpy(S_sfx[sfx_None].caption, "Invincibility", 14);

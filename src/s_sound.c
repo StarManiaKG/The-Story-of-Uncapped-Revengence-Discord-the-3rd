@@ -30,6 +30,7 @@
 #include "m_misc.h" // for tunes command
 #include "m_cond.h" // for conditionsets
 #include "lua_hook.h" // MusicChange hook
+#include "m_menu.h" // Jukeboxes
 
 #ifdef HW3SOUND
 // 3D Sound Interface
@@ -2253,6 +2254,9 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 
 	if (S_MusicDisabled())
 		return;
+	
+	if (jukeboxMusicPlaying)
+		return;
 
 	strncpy(newmusic, mmusic, 7);
 	if (LUA_HookMusicChange(music_name, &hook_param))
@@ -2311,9 +2315,12 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 }
 
 void S_StopMusic(void)
-{
+{	
 	if (!I_SongPlaying())
 		return;
+	
+	if (jukeboxMusicPlaying)
+		M_ResetJukebox();
 
 	if (I_SongPaused())
 		I_ResumeSong();
@@ -2430,6 +2437,9 @@ boolean S_FadeOutStopMusic(UINT32 ms)
 //
 void S_StartEx(boolean reset)
 {
+	if (jukeboxMusicPlaying)
+		return; //torture is my favorite form of punishment how did you know
+	
 	if (mapmusflags & MUSIC_RELOADRESET)
 	{
 		strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname, 7);
@@ -2521,11 +2531,13 @@ static void Command_RestartAudio_f(void)
 	I_InitMusic();
 
 // These must be called or no sound and music until manually set.
-
+// star note: since this is a command i will grant you the ability to restart jukebox audio and stop it from playing here
 	I_SetSfxVolume(cv_soundvolume.value);
 	S_SetMusicVolume(cv_digmusicvolume.value, cv_midimusicvolume.value);
 	if (Playing()) // Gotta make sure the player is in a level
 		P_RestoreMusic(&players[consoleplayer]);
+	if (jukeboxMusicPlaying) //Fine, I'll let you do it here...
+		M_ResetJukebox();
 }
 
 void GameSounds_OnChange(void)

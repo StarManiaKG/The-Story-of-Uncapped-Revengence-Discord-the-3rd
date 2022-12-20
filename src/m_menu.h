@@ -111,6 +111,7 @@ typedef enum
 	MN_OP_ERASEDATA,
 
 	MN_OP_TSOURDT3RD,
+	MN_OP_TSOURDT3RD_JUKEBOX,
 
 	// Extras
 	MN_SR_MAIN,
@@ -137,9 +138,11 @@ typedef enum
 	// MN_HELP,
 
 	MN_SPECIAL,
+#ifdef HAVE_DISCORDRPC
 	MN_DISCORD_RQ, //discord requests, for future notice
 	MN_DISCORD_OPT,
 	MN_DISCORDCS_OUTPUT,
+#endif
 	NUMMENUTYPES,
 } menutype_t; // up to 63; MN_SPECIAL = 53
 #define MTREE2(a,b) (a | (b<<MENUBITS))
@@ -475,7 +478,9 @@ void Addons_option_Onchange(void);
 void Moviemode_option_Onchange(void);
 
 // Discord menu updating
-void Discordcustomstatus_option_Onchange(void);
+#ifdef HAVE_DISCORDRPC
+void Discord_option_Onchange(void);
+#endif
 
 // Player Setup menu colors linked list
 typedef struct menucolor_s {
@@ -494,6 +499,17 @@ UINT16 M_GetColorAfter(UINT16 color);
 void M_InitPlayerSetupColors(void);
 void M_FreePlayerSetupColors(void);
 void M_RefreshPauseMenu(void);
+
+#ifdef HAVE_DISCORDRPC
+extern char customSImageString[2+10+17+3]; //Pointer for the name of the custom small image the player is using
+extern char customLImageString[3+17+10+2]; //Pointer for the name of the custom large image the player is using
+#endif
+
+//star stuff weeeeee
+extern boolean jukeboxMusicPlaying;
+extern char jukeboxMusicName[32+20+12];
+extern char jukeboxMusicTrack[7];
+void M_ResetJukebox(void);
 
 // These defines make it a little easier to make menus
 #define DEFAULTMENUSTYLE(id, header, source, prev, x, y)\

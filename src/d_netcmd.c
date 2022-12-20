@@ -116,7 +116,7 @@ static void Fishcake_OnChange(void);
 #endif
 
 //Star Things gotta go fast
-static void STAR_ContinuesOnChange(void);
+static void STAR_UseContinues_OnChange(void);
 
 static void Command_Playdemo_f(void);
 static void Command_Timedemo_f(void);
@@ -395,7 +395,7 @@ consvar_t cv_ps_descriptor = CVAR_INIT ("ps_descriptor", "Average", 0, ps_descri
 consvar_t cv_freedemocamera = CVAR_INIT("freedemocamera", "Off", CV_SAVE, CV_OnOff, NULL);
 
 // Star Commands lol
-consvar_t cv_usecontinues = CVAR_INIT ("usecontinues", "Yes", CV_SAVE|CV_CALL, CV_YesNo, STAR_ContinuesOnChange);
+consvar_t cv_usecontinues = CVAR_INIT ("usecontinues", "Yes", CV_SAVE|CV_CALL, CV_OnOff, STAR_UseContinues_OnChange);
 
 char timedemo_name[256];
 boolean timedemo_csv;
@@ -3869,7 +3869,7 @@ static void Command_Version_f(void)
 #elif defined(UNIXCOMMON)
 	CONS_Printf("Unix (Common) ");
 #else
-	CONS_Printf("Other OS ");
+	CONS_Printf("Unknown OS ");
 #endif
 
 	// Bitness
@@ -4842,7 +4842,7 @@ static void Skin_OnChange(void)
 		return;
 	}
 
-	if (CanChangeSkin(consoleplayer) && !P_PlayerMoving(consoleplayer))
+	if (CanChangeSkin(consoleplayer)) //!P_PlayerMoving(consoleplayer) && 
 		SendNameAndColor();
 	else
 	{
@@ -4864,7 +4864,7 @@ static void Skin2_OnChange(void)
 	if (!Playing() || !splitscreen)
 		return; // do whatever you want
 
-	if (CanChangeSkin(secondarydisplayplayer) && !P_PlayerMoving(secondarydisplayplayer))
+	if (CanChangeSkin(secondarydisplayplayer)) //!P_PlayerMoving(consoleplayer) && 
 		SendNameAndColor2();
 	else
 	{
@@ -4894,13 +4894,14 @@ static void Color_OnChange(void)
 			return;
 		}
 
-		if (!P_PlayerMoving(consoleplayer) && skincolors[players[consoleplayer].skincolor].accessible == true)
+		if (skincolors[players[consoleplayer].skincolor].accessible == true) //!P_PlayerMoving(consoleplayer) && 
 		{
 			// Color change menu scrolling fix is no longer necessary
 			SendNameAndColor();
 		}
 		else
 		{
+			CONS_Alert(CONS_NOTICE, M_GetText("That is an inaccessible skincolor.\n"));
 			CV_StealthSetValue(&cv_playercolor,
 				players[consoleplayer].skincolor);
 		}
@@ -4922,13 +4923,14 @@ static void Color2_OnChange(void)
 	}
 	else
 	{
-		if (!P_PlayerMoving(secondarydisplayplayer) && skincolors[players[secondarydisplayplayer].skincolor].accessible == true)
+		if (skincolors[players[secondarydisplayplayer].skincolor].accessible == true) //!P_PlayerMoving(consoleplayer) && 
 		{
 			// Color change menu scrolling fix is no longer necessary
 			SendNameAndColor2();
 		}
 		else
 		{
+			CONS_Alert(CONS_NOTICE, M_GetText("That is an inaccessible skincolor.\n"));
 			CV_StealthSetValue(&cv_playercolor2,
 				players[secondarydisplayplayer].skincolor);
 		}
@@ -5021,25 +5023,20 @@ static void BaseNumLaps_OnChange(void)
 
 void Got_DiscordInfo(UINT8 **p, INT32 playernum)
 {
-	if (playernum != serverplayer /*&& !IsPlayerAdmin(playernum)*/)
+	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
 	{
 		// protect against hacked/buggy client
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal Discord info command received from %s\n"), player_names[playernum]);
 		if (server)
-		{
 			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
-		}
 		return;
 	}
 
 	// Don't do anything with the information if we don't have Discord RP support
 #ifdef HAVE_DISCORDRPC
-	/*discordInfo.maxPlayers = READUINT8(*p);
-	discordInfo.joinsAllowed = (boolean)READUINT8(*p);
-	discordInfo.everyoneCanInvite = (boolean)READUINT8(*p);*/
 	discordInfo.maxPlayers = READUINT8(*p);
-	discordInfo.joinsAllowed = (boolean)true;
-	discordInfo.everyoneCanInvite = (boolean)true;
+	discordInfo.joinsAllowed = READUINT8(*p);
+	discordInfo.whoCanInvite = READUINT8(*p);
 	DRPC_UpdatePresence();
 #else
 	(*p) += 3;
@@ -5047,26 +5044,13 @@ void Got_DiscordInfo(UINT8 **p, INT32 playernum)
 }
 
 //Star Commands: Electric Boogalo LETS GOOOOOOO
-static void STAR_ContinuesOnChange(void)
+static void STAR_UseContinues_OnChange(void)
 {
-	if (!Playing())
-	{
-		if (!(netgame || multiplayer))
-		{
-			if (cv_usecontinues.value)
-			{
-				useContinues = 1;
-				CONS_Printf(M_GetText("Continues have been turned on.\n"));
-			}
-			else
-			{
-				useContinues = 0;
-				CONS_Printf(M_GetText("Continues have been turned off.\n"));
-			}
-		}
-		else
-			CONS_Printf(M_GetText("This only works in Singleplayer.\n"));
-	}
+	if (Playing())
+		return;
+
+	if (!(netgame || multiplayer))
+		useContinues = cv_usecontinues.value;
 	else
-		CONS_Printf(M_GetText("You can't set this while in a game!\n"));
+		CONS_Printf(M_GetText("This only works in Singleplayer.\n"));
 }
