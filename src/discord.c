@@ -766,7 +766,7 @@ void DRPC_UpdatePresence(void)
 						snprintf(gameType, 14, "Split-Screen");
 				}
 				if (modifiedgame)
-					strlcat(gameType, " With Mods", 12);
+					strlcat(gameType, " With Mods", 24);
 				
 				// Lives //
 				if ((!players[consoleplayer].spectator && players[consoleplayer].lives) && gametyperules & GTR_LIVES && !ultimatemode)
