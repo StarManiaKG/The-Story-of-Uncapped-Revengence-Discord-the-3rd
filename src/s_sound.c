@@ -2415,6 +2415,9 @@ void S_StopFadingMusic(void)
 
 boolean S_FadeMusicFromVolume(UINT8 target_volume, INT16 source_volume, UINT32 ms)
 {
+	if (jukeboxMusicPlaying)
+		return;
+		
 	if (source_volume < 0)
 		return I_FadeSong(target_volume, ms, NULL);
 	else
@@ -2423,6 +2426,9 @@ boolean S_FadeMusicFromVolume(UINT8 target_volume, INT16 source_volume, UINT32 m
 
 boolean S_FadeOutStopMusic(UINT32 ms)
 {
+	if (jukeboxMusicPlaying)
+		return;
+
 	return I_FadeSong(0, ms, &S_StopMusic);
 }
 
