@@ -14793,6 +14793,9 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 			curplaying = NULL;
 			cv_closedcaptioning.value = st_cc; // hack
 			cv_closedcaptioning.value = 1; // hack
+
+			if (Playing())
+				S_ChangeMusicEx(mapheaderinfo[gamemap-1]->musname, mapmusflags, true, mapmusposition, 0, 0);
 			break;
 		case KEY_ESCAPE:
 			exitmenu = true;
@@ -14869,9 +14872,6 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 		{
 			Z_Free(soundtestdefs);
 			soundtestdefs = NULL;
-
-			if (playeringame[consoleplayer])
-				S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
 		}
 
 		cv_closedcaptioning.value = st_cc; // undo hack
