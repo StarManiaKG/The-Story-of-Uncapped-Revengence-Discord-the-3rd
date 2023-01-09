@@ -27,12 +27,8 @@ set(SRB2_CONFIG_HAVE_CURL ON CACHE BOOL
 	"Enable curl support.")
 set(SRB2_CONFIG_HAVE_THREADS ON CACHE BOOL
 	"Enable multithreading support.")
-if(${CMAKE_SYSTEM} MATCHES Windows)
-	set(SRB2_CONFIG_HAVE_MIXERX ON CACHE BOOL
-		"Enable SDL Mixer X support.")
-else()
-	set(SRB2_CONFIG_HAVE_MIXERX OFF)
-endif()
+set(SRB2_CONFIG_HAVE_MIXERX ON CACHE BOOL
+	"Enable advanced sound options With SDL Mixer X support.")
 set(SRB2_CONFIG_HWRENDER ON CACHE BOOL
 	"Enable hardware rendering through OpenGL.")
 set(SRB2_CONFIG_USEASM OFF CACHE BOOL
