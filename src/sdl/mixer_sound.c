@@ -50,7 +50,8 @@
 #endif
 
 #ifdef HAVE_MIXERX
-#include "SDL_mixer_ext.h"
+//#include "SDL_mixer_ext.h"
+#include <SDL2/SDL_mixer_ext.h>
 #else
 #include "SDL_mixer.h"
 #endif
