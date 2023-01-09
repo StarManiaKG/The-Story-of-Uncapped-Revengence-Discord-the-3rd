@@ -42,7 +42,8 @@
 - libopenmpt (Linux/OS X only)
 
 **OPTIONAL DEPENDENCIES**
-- libdiscord-rpc (Needed for Discord RPC Support. On Windows, SRB2 comes with the files; On Mac/Linux, you can compile it [here](https://github.com/discord/discord-rpc))
+- libdiscord-rpc (Needed for Discord RPC Support; On Windows, SRB2 comes with the files, On Mac/Linux, you can find/compile them [here](https://github.com/discord/discord-rpc))
+- libSDL2_mixer_ext (Needed for Advanced Sound and MIDI options; On Windows, SRB2 comes with the files, On Mac/Linux, you can find/compile them [here](https://github.com/WohlSoft/SDL-Mixer-X))
 
 ## Compiling
 
