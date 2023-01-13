@@ -356,6 +356,8 @@ menu_t OP_DataOptionsDef, OP_ScreenshotOptionsDef, OP_EraseDataDef;
 menu_t OP_ServerOptionsDef;
 #ifdef HAVE_DISCORDRPC
 static void M_DiscordOptions(INT32 choice);
+static void M_DrawDiscordMenu(void);
+
 menu_t OP_DiscordOptionsDef;
 menu_t OP_CustomStatusOutputDef;
 #endif
@@ -370,7 +372,6 @@ static patch_t *addonsp[NUM_EXT+5];
 
 //star stuff weee
 static void M_Tsourdt3rdOptions(INT32 choice);
-
 
 boolean jukeboxMusicPlaying = false;
 char jukeboxMusicName[32+20+12];
@@ -2449,9 +2450,18 @@ menu_t OP_Tsourdt3rdJukeboxDef =
 };
 
 #ifdef HAVE_DISCORDRPC
-menu_t OP_DiscordOptionsDef = DEFAULTSCROLLMENUSTYLE(
+menu_t OP_DiscordOptionsDef =
+{
 	MTREE2(MN_OP_MAIN, MN_DISCORD_OPT), 
-	"M_DISCORD", OP_DiscordOptionsMenu, &OP_MainDef, 30, 30);
+	"M_DISCORD",
+	sizeof (OP_DiscordOptionsMenu)/sizeof (menuitem_t),
+	&OP_MainDef,
+	OP_DiscordOptionsMenu,
+	M_DrawDiscordMenu,
+	30, 30,
+	0,
+	NULL
+};
 
 menu_t OP_CustomStatusOutputDef = DEFAULTMENUSTYLE(
 	MTREE3(MN_OP_MAIN, MN_DISCORD_OPT, MN_DISCORDCS_OUTPUT), 
@@ -14305,6 +14315,13 @@ static void M_DiscordOptions(INT32 choice)
 
 	M_SetupNextMenu(&OP_DiscordOptionsDef);
 }
+static void M_DrawDiscordMenu(void)
+{
+	M_DrawGenericScrollMenu();
+
+	V_DrawCenteredString(BASEVIDWIDTH/2, 200, ((strcmp(discordUserName, "None") == 1) ? V_GREENMAP : V_REDMAP), ((strcmp(discordUserName, "None") == 1) ? va("Connected to: %s", discordUserName) : "Not Connected"));
+}
+
 static void M_HandleDiscordRequests(INT32 choice)
 {
 	if (confirmDelay > 0)
