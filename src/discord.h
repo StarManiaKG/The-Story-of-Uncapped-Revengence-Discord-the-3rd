@@ -37,6 +37,8 @@ extern consvar_t cv_customdiscordsmallmiscimage;
 extern consvar_t cv_customdiscordlargeimagetext;
 extern consvar_t cv_customdiscordsmallimagetext;
 
+extern char discordUserName[64];
+
 extern struct discordInfo_s {
 	UINT8 maxPlayers;
 	UINT8 joinsAllowed;
