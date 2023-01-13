@@ -147,6 +147,7 @@ consvar_t cv_customdiscordsmallmiscimage = CVAR_INIT ("customdiscordsmallmiscima
     // Captions //
 consvar_t cv_customdiscordlargeimagetext = CVAR_INIT ("customdiscordlargeimagetext", "My Favorite Character!", CV_SAVE|CV_CALL, NULL, Discord_option_Onchange);
 consvar_t cv_customdiscordsmallimagetext = CVAR_INIT ("customdiscordsmallimagetext", "My Other Favorite Character!", CV_SAVE|CV_CALL, NULL, Discord_option_Onchange);
+
 struct discordInfo_s discordInfo;
 
 discordRequest_t *discordRequestList = NULL;
@@ -196,8 +197,11 @@ static char *DRPC_XORIPString(const char *input)
 	Return:-
 		None
 --------------------------------------------------*/
+char discordUserName[64] = "None";
 static void DRPC_HandleReady(const DiscordUser *user)
 {
+	snprintf(discordUserName, 64, "%s", user->username);
+
 	if (cv_discordstreamer.value)
 		CONS_Printf("Discord: connected to %s\n", user->username);
 	else
@@ -218,6 +222,8 @@ static void DRPC_HandleReady(const DiscordUser *user)
 --------------------------------------------------*/
 static void DRPC_HandleDisconnect(int err, const char *msg)
 {
+	snprintf(discordUserName, 5, "None");
+
 	CONS_Printf("Discord: disconnected (%d: %s)\n", err, msg);
 }
 
@@ -604,6 +610,7 @@ void DRPC_UpdatePresence(void)
 	discordPresence.largeImageText = "No peeking!";
 	discordPresence.details = "Developing a Masterpiece!";
 	discordPresence.state = "Keep your Eyes Peeled!";
+	
 	DRPC_EmptyRequests();
 	Discord_RunCallbacks();
 	Discord_UpdatePresence(&discordPresence);
@@ -620,7 +627,7 @@ void DRPC_UpdatePresence(void)
     memset(&discordInfo, 0, sizeof(discordInfo));
 
 	//// Server Info ////
-	if (dedicated || netgame || multiplayer)
+	if (dedicated || netgame)
 	{
 		if (DRPC_InvitesAreAllowed())
 		{
@@ -643,6 +650,7 @@ void DRPC_UpdatePresence(void)
 			case 28: snprintf(servertype, 26, "Casual"); break;
 			case 38: snprintf(servertype, 26, "Custom Gametype"); break;
 			case 31: snprintf(servertype, 26, "OLDC"); break;
+			
 			case -1: default: snprintf(servertype, 26, "Private"); break; // Private server
 		}
 
@@ -656,7 +664,7 @@ void DRPC_UpdatePresence(void)
 		discordPresence.partyMax = cv_maxplayers.value; // Max players
 		discordPresence.instance = 1;
 	}
-	else if (dedicated || netgame || multiplayer || !multiplayer)
+	else if (dedicated || netgame || splitscreen || !multiplayer)
 	{
 		//// Set Status Picture (Just in Case) ////
 		if (((cv_discordshowonstatus.value == 1 || cv_discordshowonstatus.value == 5) && !Playing()) || (cv_discordshowonstatus.value != 1 && cv_discordshowonstatus.value != 5))
@@ -747,7 +755,7 @@ void DRPC_UpdatePresence(void)
 	{
 		if (((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) && Playing()) || (paused || menuactive || jukeboxMusicPlaying))
 		{
-			if (Playing())
+			if (Playing() && playeringame[consoleplayer])
 			{
 				// Modes //
 				snprintf(gametypeGrammar, 20, (!ultimatemode ? "Playing " : "Taking on "));
@@ -780,27 +788,24 @@ void DRPC_UpdatePresence(void)
 					snprintf(lifeGrammar, 15, ", Game Over...");
 				
 				// Spectators
-				if (playeringame[consoleplayer])
+				if (!players[consoleplayer].spectator)
 				{
-					if (!players[consoleplayer].spectator)
-					{
-						snprintf(spectatorGrammar, 4, (((displayplayer != consoleplayer) || (cv_discordstatusmemes.value && (displayplayer != consoleplayer))) ? "ing" : "er"));
-						snprintf(spectatorType, 21, "View%s", spectatorGrammar);
-					}
-					else
-					{
-						snprintf(lifeGrammar, 12, ", Dead & ");
-						snprintf(spectatorGrammar, 4, (((displayplayer != consoleplayer) || (cv_discordstatusmemes.value && (displayplayer == consoleplayer))) ? "ing" : "or"));
-						snprintf(spectatorType, 21, "Spectat%s", spectatorGrammar);
-					}
-
-					if (displayplayer != consoleplayer)
-						snprintf(lifeType, 30, "%s %s", spectatorType, player_names[displayplayer]);
-					else
-					{
-						if (players[consoleplayer].spectator)
-							snprintf(lifeType, 27, (!cv_discordstatusmemes.value ? "In %s Mode" : "%s Air"), spectatorType);
-					}
+					snprintf(spectatorGrammar, 4, (((displayplayer != consoleplayer) || (cv_discordstatusmemes.value && (displayplayer != consoleplayer))) ? "ing" : "er"));
+					snprintf(spectatorType, 21, "View%s", spectatorGrammar);
+				}
+				else
+				{
+					snprintf(lifeGrammar, 12, ", Dead & ");
+					snprintf(spectatorGrammar, 4, (((displayplayer != consoleplayer) || (cv_discordstatusmemes.value && (displayplayer == consoleplayer))) ? "ing" : "or"));
+					snprintf(spectatorType, 21, "Spectat%s", spectatorGrammar);
+				}
+				
+				if (displayplayer != consoleplayer)
+					snprintf(lifeType, 30, "%s %s", spectatorType, player_names[displayplayer]);
+				else
+				{
+					if (players[consoleplayer].spectator)
+						snprintf(lifeType, 27, (!cv_discordstatusmemes.value ? "In %s Mode" : "%s Air"), spectatorType);
 				}
 				snprintf(statestr, 105, "%s%s%s%s", gametypeGrammar, gameType, lifeGrammar, lifeType);
 			}
@@ -840,6 +845,7 @@ void DRPC_UpdatePresence(void)
 			{
 				snprintf(mapimg, 8, "%s", G_BuildMapName(gamemap));
 				strlwr(mapimg);
+				
 				discordPresence.largeImageKey = mapimg; // Map image
 			}
 			else
@@ -863,8 +869,9 @@ void DRPC_UpdatePresence(void)
 				}
 
 				discordPresence.largeImageText = mapname;
-				if (cv_discordshowonstatus.value) // Display the Map's Name on our Status, Since That's What We Set
-					discordPresence.state = (!cv_discordshowonstatus.value ? mapname : ((gamemap != 99 && gamestate != GS_TITLESCREEN && !titlemapinaction) ? va("On Map: %s", mapname) : mapname));
+				
+				// Display the Map's Name on our Status, Since That's What We Set
+				discordPresence.state = (!cv_discordshowonstatus.value ? mapname : ((gamemap != 99 && gamestate != GS_TITLESCREEN && !titlemapinaction) ? va("On Map: %s", mapname) : mapname));
 			}
 
 			if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) && (Playing() || paused))
@@ -919,7 +926,7 @@ void DRPC_UpdatePresence(void)
 			}
 		}
 
-		if (playeringame[consoleplayer])
+		if (playeringame[consoleplayer] && Playing())
 		{
 			// Why Would You Split My Screen
 			if (!splitscreen)
