@@ -11,7 +11,7 @@
 
 ## Features
 **NEW FEATURES**
-  - Eidolon's Uncapped Revengeance, Now Properly In SRB2, Is Included, And Was Featured In This Build Early Enough For Me To Call It A "New Feature"
+  - Eidolon's Uncapped Revengence, Now Properly In SRB2, Is Included, And Was Featured In This Build Early Enough For Me To Call It A "New Feature"
   - Custom Discord Settings, Commands, and Options, with Custom Character Support
   - Custom Build Options, Featuring More Savedata, Server, and Extra Options
   - Palette Rendering
