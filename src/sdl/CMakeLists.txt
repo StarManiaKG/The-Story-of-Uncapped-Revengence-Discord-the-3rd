@@ -162,7 +162,6 @@ if(${SDL2_FOUND})
 		${OPENGL_INCLUDE_DIRS}
 		${CURL_INCLUDE_DIRS}
 		${DISCORDRPC_INCLUDE_DIRS}
-		${DISCORDGAMESDK_INCLUDE_DIRS}
 	)
 
 	if((${SRB2_HAVE_MIXER}) OR (${SRB2_HAVE_MIXERX}))
@@ -280,7 +279,7 @@ if(${SDL2_FOUND})
 			getwinlib(discord-rpc "discord-rpc.dll")
 		endif()
 		if(${SRB2_CONFIG_HAVE_DISCORDGAMESDK})
-			getwinlib(discord_game_sdk "discord_game_sdk.dll")
+			getwinlib(discord_gamesdk "discord_game_sdk.dll")
 		endif()
 
 		install(PROGRAMS
