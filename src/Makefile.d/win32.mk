@@ -65,13 +65,11 @@ endif
 
 ifdef HAVE_DISCORDGAMESDK
 ifdef MINGW64
-opts+=-I../libs/discord-rpc/x86_64
-libs+=-L../libs/discord-rpc/x86_64
+libs+=-L../libs/discord-game-sdk/x86_64
 else
-opts+=-I../libs/discord-rpc/x86
-libs+=-L../libs/discord-rpc/x86
+libs+=-L../libs/discord-game-sdk/x86
 endif
-libs+=-ldiscord_game_sdk
+libs+=-ldiscord_gamesdk
 endif
 
 mingw:=$(i686)-w64-mingw32
