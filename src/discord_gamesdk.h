@@ -10,7 +10,7 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  discord.h
+/// \file  discord_gamesdk.h
 /// \brief Discord Game SDK handling
 
 #ifndef __DISCORD__
@@ -21,7 +21,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <assert.h>
-#include "discord/discord.h"
+#include "discord-gamesdk/discord_game_sdk.h"
 #ifdef _WIN32
 #include <Windows.h>
 #else
@@ -29,20 +29,18 @@
 #include <string.h>
 #endif
 
-typedef struct discord_gamesdk_s {
-    struct DiscordCreateParams params;
+extern struct discordGameSDK_s {
     struct IDiscordCore* core;
     struct IDiscordUserManager* users;
     struct IDiscordAchievementManager* achievements;
     struct IDiscordActivityManager* activities;
-    struct IDiscordApplicationManager* application;
-    struct IDiscordCoreEvents events;
     struct IDiscordRelationshipManager* relationships;
+    struct IDiscordApplicationManager* application;
     struct IDiscordLobbyManager* lobbies;
+    
     DiscordUserId user_id;
-} discord_gamesdk_t;
-
-extern discord_gamesdk_t
+} discordGameSDK_t;
+#define DISCORD_REQUIRE(x) assert(x == DiscordResult_Ok)
 
 #endif // HAVE_DISCORDGAMESDK
 #endif // __DISCORD__

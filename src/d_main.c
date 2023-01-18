@@ -328,9 +328,19 @@ static boolean D_Display(void)
 	//    modes (resolution) are called.
 	// 4. The frame is ready to be drawn!
 
-	// Check for change of renderer or screen size (video mode)
-	if ((setrenderneeded || setmodeneeded) && !wipe)
-		SCR_SetMode(); // change video mode
+	// check for change of screen size
+	if (!wipe)
+	{
+		if (setresneeded[2])
+			SCR_SetResolution();
+		else if (setrenderneeded || setmodeneeded)
+		{
+			if (setrenderneeded)
+				CONS_Debug(DBG_RENDER, "setrenderneeded set (%d)\n", setrenderneeded);
+
+			SCR_SetMode(); // change video mode
+		}
+	}
 
 	// Recalc the screen
 	if (vid.recalc)
@@ -726,7 +736,7 @@ void D_SRB2Loop(void)
 	con_startup = false;
 
 	// make sure to do a d_display to init mode _before_ load a level
-	SCR_SetMode(); // change video mode
+	SCR_SetResolution(); // change video resolution
 	SCR_Recalc();
 
 	chosenrendermode = render_none;
