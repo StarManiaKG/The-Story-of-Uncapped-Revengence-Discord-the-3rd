@@ -1385,7 +1385,10 @@ void ST_drawTitleCard(void)
 
 	if (!splitscreen || (splitscreen && stplyr == &players[displayplayer]))
 	{
+		INT16 zzheight = SHORT(zigzag->height);
+		INT16 ztheight = SHORT(zztext->height);
 		zzticker = lt_ticker;
+		
 		V_DrawMappedPatch(FixedInt(lt_zigzag), (-zzticker) % zigzag->height, V_SNAPTOTOP|V_SNAPTOLEFT, zigzag, colormap);
 		V_DrawMappedPatch(FixedInt(lt_zigzag), (zigzag->height-zzticker) % zigzag->height, V_SNAPTOTOP|V_SNAPTOLEFT, zigzag, colormap);
 		V_DrawMappedPatch(FixedInt(lt_zigzag), (-zztext->height+zzticker) % zztext->height, V_SNAPTOTOP|V_SNAPTOLEFT, zztext, colormap);
