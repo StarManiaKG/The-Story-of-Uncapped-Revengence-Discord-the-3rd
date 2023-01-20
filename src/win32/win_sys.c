@@ -608,6 +608,10 @@ void I_Error(const char *error, ...)
 	va_list argptr;
 	char txt[8192];
 
+#ifdef HAVE_DISCORDRPC
+	DRPC_ShutDown();
+#endif
+
 	// added 11-2-98 recursive error detecting
 	if (shutdowning)
 	{
@@ -661,10 +665,7 @@ void I_Error(const char *error, ...)
 	D_QuitNetGame();
 	CL_AbortDownloadResume();
 	M_FreePlayerSetupColors();
-	
-#ifdef HAVE_DISCORDRPC
-	DRPC_ShutDown();
-#endif
+
 
 	// shutdown everything that was started
 	I_ShutdownSystem();
@@ -743,6 +744,11 @@ void I_Quit(void)
 {
 	HANDLE co = GetStdHandle(STD_OUTPUT_HANDLE);
 	DWORD mode;
+
+#ifdef HAVE_DISCORDRPC
+	DRPC_ShutDown();
+#endif
+
 	// when recording a demo, should exit using 'q',
 	// but sometimes we forget and use Alt+F4, so save here too.
 	if (demorecording)
@@ -763,10 +769,6 @@ void I_Quit(void)
 	CL_AbortDownloadResume();
 
 	M_FreePlayerSetupColors();
-
-#ifdef HAVE_DISCORDRPC
-	DRPC_ShutDown();
-#endif
 
 	// shutdown everything that was started
 	I_ShutdownSystem();

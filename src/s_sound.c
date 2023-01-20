@@ -2580,7 +2580,7 @@ void GameDigiMusic_OnChange(void)
 
 		if (Playing())
 			P_RestoreMusic(&players[consoleplayer]);
-		else if ((!cv_musicpref.value || midi_disabled) && S_DigExists("_clear"))
+		else if ((!cv_musicpref.value || midi_disabled) && S_DigExists("_clear") && titlemapinaction && menuactive) // hack, prevent's errors from screaming at us
 			S_ChangeMusicInternal("_clear", false);
 	}
 	else
@@ -2593,7 +2593,7 @@ void GameDigiMusic_OnChange(void)
 			{
 				if (Playing())
 					P_RestoreMusic(&players[consoleplayer]);
-				else
+				else if (titlemapinaction && menuactive) // hack, prevent's errors from screaming at us
 					S_ChangeMusicInternal("_clear", false);
 			}
 		}
@@ -2615,7 +2615,7 @@ void GameMIDIMusic_OnChange(void)
 
 		if (Playing())
 			P_RestoreMusic(&players[consoleplayer]);
-		else if ((cv_musicpref.value || digital_disabled) && S_MIDIExists("_clear"))
+		else if ((cv_musicpref.value || digital_disabled) && S_MIDIExists("_clear") && titlemapinaction && menuactive) // hack, prevent's errors from screaming at us
 			S_ChangeMusicInternal("_clear", false);
 	}
 	else
@@ -2628,7 +2628,7 @@ void GameMIDIMusic_OnChange(void)
 			{
 				if (Playing())
 					P_RestoreMusic(&players[consoleplayer]);
-				else
+				else if (titlemapinaction && menuactive) // hack, prevent's errors from screaming at us
 					S_ChangeMusicInternal("_clear", false);
 			}
 		}
@@ -2643,7 +2643,7 @@ void MusicPref_OnChange(void)
 
 	if (Playing())
 		P_RestoreMusic(&players[consoleplayer]);
-	else if (S_PrefAvailable(cv_musicpref.value, "_clear"))
+	else if (S_PrefAvailable(cv_musicpref.value, "_clear") && titlemapinaction && menuactive) // hack, prevent's errors from screaming at us
 		S_ChangeMusicInternal("_clear", false);
 }
 
