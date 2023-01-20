@@ -2430,6 +2430,10 @@ void I_Quit(void)
 {
 	static SDL_bool quiting = SDL_FALSE;
 
+#ifdef HAVE_DISCORDRPC
+	DRPC_ShutDown();
+#endif
+
 	/* prevent recursive I_Quit() */
 	if (quiting) goto death;
 	SDLforceUngrabMouse();
@@ -2451,9 +2455,6 @@ void I_Quit(void)
 	CL_AbortDownloadResume();
 	M_FreePlayerSetupColors();
 
-#ifdef HAVE_DISCORDRPC
-	DRPC_ShutDown();
-#endif
 	I_ShutdownMusic();
 	I_ShutdownSound();
 	// use this for 1.28 19990220 by Kin
@@ -2503,6 +2504,10 @@ void I_Error(const char *error, ...)
 {
 	va_list argptr;
 	char buffer[8192];
+
+#ifdef HAVE_DISCORDRPC
+	DRPC_ShutDown();
+#endif
 
 	// recursive error detecting
 	if (shutdowning)
@@ -2573,9 +2578,6 @@ void I_Error(const char *error, ...)
 	I_ShutdownMusic();
 	I_ShutdownSound();
 	// use this for 1.28 19990220 by Kin
-#ifdef HAVE_DISCORDRPC
-	DRPC_ShutDown();
-#endif
 	I_ShutdownGraphics();
 	I_ShutdownInput();
 	I_ShutdownSystem();
