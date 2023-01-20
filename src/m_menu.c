@@ -2741,7 +2741,8 @@ void Discord_option_Onchange(void)
 		"21",
 		NULL
 	};
-	//char xtraCustomString[5+10+12+8];
+	
+	int nospaces;
 
 	//....would you believe me if i said still just in case...?
 	DiscordRichPresence discordPresence;
@@ -2918,7 +2919,7 @@ void Discord_option_Onchange(void)
 				else
 					strlcat(customLImageString, va("%s", cv_customdiscordlargemiscimage.string), 64);
 				
-				int nospaces = 0;
+				// Remove Spaces //
 				if (cv_customdiscordsmallimagetype.value != 4 && ((cv_customdiscordsmallimagetype.value < 2 && charsWithSpaces[cv_customdiscordsmallcharacterimage.value]) || (cv_customdiscordsmallimagetype.value > 1)))
 				{
 					nospaces = 0; //this helps us remove spaces from our string, if we have any
@@ -2948,6 +2949,45 @@ void Discord_option_Onchange(void)
 					customLImageString[nospaces] = '\0';
 				}
 				strlwr(customLImageString);
+
+				// Replace Strings in Words //
+				/*
+				char string, newW, oldW;
+				char* result;  
+				int i, cnt = 0;  
+				int newWlen = strlen(newW);  
+				int oldWlen = strlen(oldW);  
+
+				// Counting the number of times old word  
+				// occur in the string  
+				for (i = 0; string[i] != '\0'; i++) {  
+					if (strstr(&s[i], oldW) == &string[i]) {  
+						cnt++;  
+
+						// Jumping to index after the old word.  
+						i += oldWlen - 1;  
+					}  
+				}  
+
+				// Making new string of enough length  
+				result = (char*)malloc(i + cnt * (newWlen - oldWlen) + 1);  
+
+				i = 0;  
+				while (*string) {  
+					// compare the substring with the result  
+					if (strstr(string, oldW) == string) {  
+						strcpy(&result[i], newW);  
+						i += newWlen;  
+						s += oldWlen;  
+					}  
+					else
+						result[i++] = *string++;  
+				}  
+
+				result[i] = '\0';  
+				string = result;
+				CONS_Printf("%s", string);
+				*/
 			}
 			discordPresence.details = cv_customdiscorddetails.string;
 			discordPresence.state = cv_customdiscordstate.string;
