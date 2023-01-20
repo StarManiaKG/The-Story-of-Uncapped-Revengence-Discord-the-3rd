@@ -67,11 +67,10 @@ sources+=discord.c stun.c
 endif
 
 ifdef HAVE_DISCORDGAMESDK
-libs+=-ldiscord_game_sdk
+libs+=-ldiscord_gamesdk
 CFLAGS+=-DHAVE_DISCORDGAMESDK
-opts+=-DHAVE_DISCORDGAMESDK
-OBJS+=$(OBJDIR)/discord_2.o
-sources+=discord_2.cpp
+OBJS+=$(OBJDIR)/discord_gamesdk.o
+sources+=discord_gamesdk.c
 endif
 
 # (Valgrind is a memory debugger.)

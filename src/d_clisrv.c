@@ -3976,6 +3976,10 @@ void SV_StopServer(void)
 	maketic = gametic+1;
 	neededtic = maketic;
 	serverrunning = false;
+
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 }
 
 // called at singleplayer start and stopdemo

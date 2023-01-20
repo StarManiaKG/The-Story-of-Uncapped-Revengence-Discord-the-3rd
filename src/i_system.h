@@ -235,15 +235,14 @@ void I_RemoveExitFunc(void (*func)());
 
 INT32 I_StartupSystem(void);
 
-/**	\brief Shutdown systems
-*/
-
 #ifdef HAVE_DISCORDRPC
-void DRPC_ShutDown(void);
-/**	\brief Shutdown All Discord Rich Presence Things
+/**	\brief Shutdown Discord Rich Presence Processes
 */
+void DRPC_ShutDown(void);
 #endif
 
+/**	\brief Shutdown systems
+*/
 void I_ShutdownSystem(void);
 
 /**	\brief	The I_GetDiskFreeSpace function
