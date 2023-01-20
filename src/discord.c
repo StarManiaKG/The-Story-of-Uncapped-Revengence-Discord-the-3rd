@@ -422,6 +422,7 @@ void DRPC_Init(void)
 	
 	I_AddExitFunc(Discord_Shutdown);
 	I_AddExitFunc(DRPC_ShutDown);
+	
 	DRPC_UpdatePresence();
 }
 
@@ -501,8 +502,8 @@ static void DRPC_EmptyRequests(void)
 --------------------------------------------------*/
 void DRPC_UpdatePresence(void)
 {
-	char detailstr[64+26+15] = "";
-	char statestr[64+26+15] = "";
+	char detailstr[64+26+15+23] = "";
+	char statestr[64+26+15+25] = "";
 
 	char mapimg[8+1] = "";
 	char mapname[5+21+21+2+1] = "";
@@ -673,11 +674,11 @@ void DRPC_UpdatePresence(void)
 			discordPresence.largeImageText = "Sonic Robo Blast 2";
 		}
 
-		if (playeringame[consoleplayer] && !demoplayback)
+		if ((Playing() && playeringame[consoleplayer]) && !demoplayback)
 		{
 			//// Emblems ////
 			if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 4)
-				snprintf(detailstr, 105, "%d/%d Emblems", M_CountEmblems(), (numemblems + numextraemblems));
+				snprintf(detailstr, 128, "%d/%d Emblems", M_CountEmblems(), (numemblems + numextraemblems));
 			
 			//// Emeralds ////
 			if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 3)
@@ -695,27 +696,24 @@ void DRPC_UpdatePresence(void)
 
 				if (cv_discordstatusmemes.value) //Honestly relatable lol
 				{
-					if (emeraldCount == 3 || emeraldCount == 4) //Funny meme lol
-						snprintf(emeraldGrammar, 3, "s;");
-					else if (!emeralds) //there's a special stage token right at the BEGINNING OF GFZ1 HOW DO YOU NOT HAVE A EMERALD YET
-						snprintf(emeraldGrammar, 3, "s?");
-						
+					// Puncuation
+					if (!emeraldCount || emeraldCount == 3 || emeraldCount == 4)
+						snprintf(emeraldGrammar, 3, (emeraldCount == 3 || emeraldCount == 4) ? "s;" : "s?");
+					
 					// Fun Fact: the subtitles in Shadow the Hedgehog emphasized "fourth", even though Jason Griffith emphasized "damn" in this sentence
-					if (emeraldCount == 3)
-						snprintf(emeraldMeme, 27, " Where's That DAMN FOURTH?");
-					else if (emeraldCount == 4)
-						snprintf(emeraldMeme, 27, " Found That DAMN FOURTH!");
+					if (emeraldCount == 3 || emeraldCount == 4)
+						snprintf(emeraldMeme, 27, ((emeraldCount == 3) ? " Where's That DAMN FOURTH?" : " Found That DAMN FOURTH!"));
 				}
-				strlcat(detailstr, va("%s%s%d Emerald%s%s", emeraldComma, allEmeralds, emeraldCount, emeraldGrammar, emeraldMeme), 105);
+				strlcat(detailstr, va("%s%s%d Emerald%s%s", emeraldComma, allEmeralds, emeraldCount, emeraldGrammar, emeraldMeme), 128);
 			}
 
 			//// Score ////
 			if (cv_discordshowonstatus.value == 2)
-				snprintf(detailstr, 105, "Current Score: %d", players[consoleplayer].score);
+				snprintf(detailstr, 128, "Current Score: %d", players[consoleplayer].score);
 			
 			//// SRB2 Playtime ////
 			if (cv_discordshowonstatus.value == 7)
-				snprintf(detailstr, 105, "Total Playtime: %d hours, %d minutes, %d seconds", G_TicsToHours(totalplaytime), G_TicsToMinutes(totalplaytime, false), G_TicsToSeconds(totalplaytime));
+				snprintf(detailstr, 128, "Total Playtime: %d hours, %d minutes, %d seconds", G_TicsToHours(totalplaytime), G_TicsToMinutes(totalplaytime, false), G_TicsToSeconds(totalplaytime));
 
 			//// Tiny Detail Things; Complete Games, etc. ////
 			if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value != 8)
@@ -724,7 +722,7 @@ void DRPC_UpdatePresence(void)
 					snprintf(detailGrammar, 3, ", ");
 
 				if (gamecomplete) //You've beat the game? You Get A Special Status Then!
-					strlcat(detailstr, va("%sHas Beaten the Game" , detailGrammar), 105);
+					strlcat(detailstr, va("%sHas Beaten the Game" , detailGrammar), 128);
 			}
 
 			//// Apply our Status, And We're Done :) ////
@@ -762,19 +760,14 @@ void DRPC_UpdatePresence(void)
 				if (modeattacking)
 					snprintf(gameType, 12, ((maptol != TOL_NIGHTS && maptol != TOL_XMAS) ? "Time Attack" : "NiGHTS Mode"));
 				else
+					snprintf(gameType, 24, (!splitscreen ? ((gametype == GT_COOP && !netgame) ? (!ultimatemode ? "Single-Player" : "Ultimate Mode") : "%s") : "Split-Screen"), (netgame ? gametype_cons_t[gametype].strvalue : NULL));
+				
+				// Mods //
+				if (modifiedgame && numwadfiles > (mainwads + 1))
 				{
-					if (!splitscreen)
-					{
-						if ((gametype == GT_COOP) && (!netgame))
-							snprintf(gameType, 15, (!ultimatemode ? "Single-Player" : "Ultimate Mode"));
-						else
-							snprintf(gameType, 24, "%s", gametype_cons_t[gametype].strvalue);
-					}
-					else
-						snprintf(gameType, 14, "Split-Screen");
+					strlcat(gameType, va(" With %d ", (numwadfiles - (mainwads + 1))), 105);
+					strlcat(gameType, ((numwadfiles - (mainwads + 1) != 1) ? "Mods" : "Mod"), 105);
 				}
-				if (modifiedgame)
-					strlcat(gameType, " With Mods", 24);
 				
 				// Lives //
 				if ((!players[consoleplayer].spectator && players[consoleplayer].lives) && gametyperules & GTR_LIVES && !ultimatemode)
@@ -807,7 +800,7 @@ void DRPC_UpdatePresence(void)
 					if (players[consoleplayer].spectator)
 						snprintf(lifeType, 27, (!cv_discordstatusmemes.value ? "In %s Mode" : "%s Air"), spectatorType);
 				}
-				snprintf(statestr, 105, "%s%s%s%s", gametypeGrammar, gameType, lifeGrammar, lifeType);
+				snprintf(statestr, 130, "%s%s%s%s", gametypeGrammar, gameType, lifeGrammar, lifeType);
 			}
 			
 			//// Tiny State Things; Pausing, Active Menues, etc. ////
@@ -822,7 +815,7 @@ void DRPC_UpdatePresence(void)
 				if (jukeboxMusicPlaying) // Playing Jukebox Music? Copy and Display It On Your Status Then
 					strlcat(stateType, va("%sPlaying %s in the Jukebox", stateGrammar, jukeboxMusicName), 95);
 				
-				strlcat(statestr, va("%s", stateType), 105);
+				strlcat(statestr, va("%s", stateType), 130);
 			}
 			discordPresence.state = statestr;
 		}
@@ -831,13 +824,13 @@ void DRPC_UpdatePresence(void)
 	//// Maps ////
 	if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 5)
 	{
-		if (gamestate == GS_INTRO)
+		if (gamestate == GS_INTRO) // Intro info
 		{
 			discordPresence.largeImageKey = "miscintro1";
 			discordPresence.largeImageText = "Intro";
 			discordPresence.state = "Watching the Intro";
 		}
-		else if (gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) // Map info
+		else if (gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || (gamestate == GS_TITLESCREEN || !titlemapinaction)) // Map info
 		{
 			if ((gamemap >= 1 && gamemap <= 73) // Supported Co-op maps
 			|| (gamemap >= 532 && gamemap <= 543) // Supported Match maps
@@ -849,32 +842,28 @@ void DRPC_UpdatePresence(void)
 				discordPresence.largeImageKey = mapimg; // Map image
 			}
 			else
-			{
-				if (gamestate != GS_TITLESCREEN && !titlemapinaction) //tiny null fix
-					discordPresence.largeImageKey = "mapcustom";
-			}
+				discordPresence.largeImageKey = "mapcustom";
 			
-			if (mapheaderinfo[gamemap - 1]->menuflags & LF2_HIDEINMENU)
+			if (mapheaderinfo[gamemap-1]->menuflags & LF2_HIDEINMENU)
 				discordPresence.largeImageText = "Map: ???"; // Hell map, hide the name
 			else
 			{
-				// Map name on tool tip
-				if (gamemap != 99 && gamestate != GS_TITLESCREEN && !titlemapinaction)
-					snprintf(mapname, 48, "%s", G_BuildMapTitle(gamemap));
-				//fully fixes null map issue
-				else
-				{
-					snprintf(mapname, 13, "Title Screen");
-					discordPresence.largeImageKey = "misctitle";
-				}
+				// Find The Map Name
+				snprintf(mapname, 48, ((gamemap != 99 && gamestate != GS_TITLESCREEN && !titlemapinaction) ? "%s" : "Title Screen"), ((gamemap != 99 && gamestate != GS_TITLESCREEN && !titlemapinaction) ? G_BuildMapTitle(gamemap) : 0));
 
+				// List the Map Name
 				discordPresence.largeImageText = mapname;
 				
 				// Display the Map's Name on our Status, Since That's What We Set
-				discordPresence.state = (!cv_discordshowonstatus.value ? mapname : ((gamemap != 99 && gamestate != GS_TITLESCREEN && !titlemapinaction) ? va("On Map: %s", mapname) : mapname));
+				if (cv_discordshowonstatus.value == 5)
+					discordPresence.state = mapname;
+
+				// Display The Title Screen Images, If We're on That
+				if (gamemap == 99 || gamestate == GS_TITLESCREEN || titlemapinaction)
+					discordPresence.largeImageKey = "misctitle";
 			}
 
-			if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) && (Playing() || paused))
+			if (Playing() || paused)
 			{
 				const time_t currentTime = time(NULL);
 				const time_t mapTimeStart = currentTime - (leveltime / TICRATE);
@@ -888,18 +877,23 @@ void DRPC_UpdatePresence(void)
 				}
 			}
 		}
-		else if (gamestate == GS_EVALUATION || gamestate == GS_GAMEEND || gamestate == GS_CREDITS || gamestate == GS_ENDING|| gamestate == GS_CONTINUING)
-		{	
+		
+		if (gamestate == GS_EVALUATION || gamestate == GS_GAMEEND || gamestate == GS_CREDITS || gamestate == GS_ENDING || gamestate == GS_CONTINUING) // Status Info
+		{
 			discordPresence.largeImageKey = "misctitle";
 			discordPresence.largeImageText = "Sonic Robo Blast 2";
-				
-			if (gamestate == GS_EVALUATION && !ultimatemode)
-				discordPresence.details = "Evaluating Results";
-			else if (gamestate == GS_CONTINUING) 
-				discordPresence.details = "On the Continue Screen";
-
-			if (ultimatemode)
-				discordPresence.details = (!cv_discordstatusmemes.value ? "Just Beat Ultimate Mode!" : "Look, It's my Greatest Achievement: An Ultimate Mode Complete Discord RPC Status");
+			
+			snprintf(statestr, 130, (!ultimatemode ?
+										// No Ultimate Mode
+										(gamestate == GS_EVALUATION ? "Evaluating Results" :
+										(gamestate == GS_CONTINUING ? "On the Continue Screen" :
+										(gamestate == GS_CREDITS ? "Viewing the Credits" :
+										(gamestate == GS_ENDING ? "Watching the Ending" :
+										(gamestate == GS_GAMEEND ? (!cv_discordstatusmemes.value ? "Returning to the Main Menu..." : "Did You Get All Those Chaos Emeralds?") : "???"))))) :
+										
+										// Ultimate Mode
+										(!cv_discordstatusmemes.value ? "Just Beat Ultimate Mode!" : "Look, It's my Greatest Achievement: A Discord RPC Status Saying I Beat Ultimate Mode!")));
+			discordPresence.state = statestr;
 		}
 	}
 
@@ -1001,7 +995,16 @@ void DRPC_UpdatePresence(void)
 --------------------------------------------------*/
 void DRPC_ShutDown(void)
 {
-	DRPC_EmptyRequests();
+	// Assign a Custom Status Because We Can
+	DiscordRichPresence discordPresence;
+	memset(&discordPresence, 0, sizeof(discordPresence));
+
+	discordPresence.details = "Currently Closing...";
+	discordPresence.state = "Clearing SRB2 Discord Rich Presence...";
+	
+	DRPC_EmptyRequests(); // Empty Requests
+
+	// Close Everything Down
 	Discord_ClearPresence();
 	Discord_Shutdown();
 }
