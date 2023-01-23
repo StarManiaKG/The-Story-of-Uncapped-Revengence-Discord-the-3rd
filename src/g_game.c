@@ -4257,6 +4257,10 @@ void G_EndGame(void)
 
 	// 1100 or competitive multiplayer, so go back to title screen.
 	D_StartTitle();
+
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 }
 
 //
