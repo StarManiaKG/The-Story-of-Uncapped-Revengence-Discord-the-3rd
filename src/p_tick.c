@@ -29,6 +29,7 @@
 //#include "r_main.h" // cv_skybox, currently broken though
 
 tic_t leveltime;
+tic_t emeraldtime;
 
 //
 // THINKERS
@@ -763,6 +764,17 @@ void P_Ticker(boolean run)
 			G_ConsGhostTic();
 		if (modeattacking)
 			G_GhostTicker();
+
+		if (gametyperules & GTR_POWERSTONES && all7matchemeralds)
+		{
+			emeraldtime++;	
+
+			if (emeraldtime == (TICRATE*20))
+			{
+				all7matchemeralds = false;
+				emeraldtime = 0;
+			}
+		}
 
 		LUA_HOOK(PostThinkFrame);
 	}

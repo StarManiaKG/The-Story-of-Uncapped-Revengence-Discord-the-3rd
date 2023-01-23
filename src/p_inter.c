@@ -247,6 +247,7 @@ void P_DoNightsScore(player_t *player)
 //
 // Checks if you have all 7 pw_emeralds, then turns you "super". =P
 //
+boolean all7matchemeralds;
 void P_DoMatchSuper(player_t *player)
 {
 	UINT16 match_emeralds = player->powers[pw_emeralds];
@@ -266,6 +267,7 @@ void P_DoMatchSuper(player_t *player)
 		return;
 
 	// Got 'em all? Turn "super"!
+	all7matchemeralds = true;
 	emeraldspawndelay = invulntics + 1;
 	player->powers[pw_emeralds] = 0;
 	player->powers[pw_invulnerability] = emeraldspawndelay;
@@ -291,6 +293,7 @@ void P_DoMatchSuper(player_t *player)
 			if (playeringame[i] && players[i].ctfteam == player->ctfteam
 			&& players[i].powers[pw_emeralds] != 0)
 			{
+				all7matchemeralds = true;
 				players[i].powers[pw_emeralds] = 0;
 				player->powers[pw_invulnerability] = invulntics + 1;
 				player->powers[pw_sneakers] = player->powers[pw_invulnerability];

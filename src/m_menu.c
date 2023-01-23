@@ -1671,36 +1671,37 @@ static menuitem_t OP_DiscordOptionsMenu[] =
 
 	{IT_HEADER,							NULL,	"Main Rich Presence Settings",	NULL,					 	 		   17},
 	{IT_STRING | IT_CVAR,				NULL, 		"Ask To Join",				&cv_discordasks,		 	 		   24},
-	{IT_STRING | IT_CVAR,				NULL,  "Discord Invite Permission",		&cv_discordinvites,		 	 		   29},
-	{IT_STRING | IT_CVAR,				NULL, 		"Memes on Status",			&cv_discordstatusmemes,	 	 		   34},
+	{IT_STRING | IT_CVAR,				NULL,  "Ask to Join Permissions",		&cv_discordinvites,		 	 		   29},
+
 	{IT_STRING | IT_CVAR,				NULL, 		"Show on Status",			&cv_discordshowonstatus, 	 	       39},
 	
 	{IT_HEADER,							NULL,	"Misc. Rich Presence Settings",	NULL,					 	 		   44},
-	{IT_STRING | IT_CVAR,				NULL, 		"Skin Image Type",			&cv_discordcharacterimagetype,		   51},
+	{IT_STRING | IT_CVAR,				NULL, 		"Memes on Status",			&cv_discordstatusmemes,	 	 		   51},
+	{IT_STRING | IT_CVAR,				NULL, 		"Skin Image Type",			&cv_discordcharacterimagetype,		   56},
 
-	// Custom Things, as you can see //
-	{IT_HEADER,							NULL, "Custom Discord Status",			NULL,					 	 		   56},
-	{IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 		"Header",			        &cv_customdiscorddetails, 	 		   63},
-	{IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 		"State",			        &cv_customdiscordstate, 			   80},
+	// Custom Things
+	{IT_HEADER,							NULL, "Custom Discord Status",			NULL,					 	 		   61},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 		"Header",			        &cv_customdiscorddetails, 	 		   68},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 		"State",			        &cv_customdiscordstate, 			   88},
 
-	{IT_STRING | IT_CVAR,		        NULL, 	"Large Image Type",				&cv_customdiscordlargeimagetype,       97},
-    {IT_STRING | IT_CVAR,		        NULL, 	"Small Image Type",				&cv_customdiscordsmallimagetype,      102},
+	{IT_STRING | IT_CVAR,		        NULL, 	"Large Image Type",				&cv_customdiscordlargeimagetype,      108},
+    {IT_STRING | IT_CVAR,		        NULL, 	"Small Image Type",				&cv_customdiscordsmallimagetype,      113},
 
 	// chars
-	{IT_STRING | IT_CVAR,		        NULL, 	"Large Image",					&cv_customdiscordlargecharacterimage, 117},
-	{IT_STRING | IT_CVAR,		        NULL, 	"Small Image",					&cv_customdiscordsmallcharacterimage, 122},
+	{IT_STRING | IT_CVAR,		        NULL, 	"Large Image",					&cv_customdiscordlargecharacterimage, 118},
+	{IT_STRING | IT_CVAR,		        NULL, 	"Small Image",					&cv_customdiscordsmallcharacterimage, 123},
 	// maps
-	{IT_STRING | IT_CVAR,		        NULL, 	"Large Image",					&cv_customdiscordlargemapimage,       117},
-    {IT_STRING | IT_CVAR,		        NULL, 	"Small Image",					&cv_customdiscordsmallmapimage,       122},
+	{IT_STRING | IT_CVAR,		        NULL, 	"Large Image",					&cv_customdiscordlargemapimage,       118},
+    {IT_STRING | IT_CVAR,		        NULL, 	"Small Image",					&cv_customdiscordsmallmapimage,       123},
 	// misc
-    {IT_STRING | IT_CVAR,		        NULL, 	"Large Image",					&cv_customdiscordlargemiscimage,      117},
-    {IT_STRING | IT_CVAR,		        NULL, 	"Small Image",					&cv_customdiscordsmallmiscimage,      122},
+    {IT_STRING | IT_CVAR,		        NULL, 	"Large Image",					&cv_customdiscordlargemiscimage,      118},
+    {IT_STRING | IT_CVAR,		        NULL, 	"Small Image",					&cv_customdiscordsmallmiscimage,      123},
 
-    {IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 	"Large Image Text",				&cv_customdiscordlargeimagetext,      127},
-    {IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 	"Small Image Text",				&cv_customdiscordsmallimagetext,      147},
+    {IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 	"Large Image Text",				&cv_customdiscordlargeimagetext,      128},
+    {IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 	"Small Image Text",				&cv_customdiscordsmallimagetext,      148},
 
     // Let's Output Our Stuff
-	{IT_STRING | IT_SUBMENU,			NULL, 		"Output",					&OP_CustomStatusOutputDef,	          185},
+	{IT_STRING | IT_SUBMENU,			NULL, 		"Output",					&OP_CustomStatusOutputDef,	          183},
 };
 
 static menuitem_t OP_CustomStatusOutputMenu[] =
@@ -1711,15 +1712,19 @@ static menuitem_t OP_CustomStatusOutputMenu[] =
 enum
 {
 	op_richpresenceheader = 3,
+
 	op_discordasks,
 	op_discordinvites,
-	op_discordstatusmemes,
 	op_discordshowonstatus,
+
 	op_discordmiscoptionsheader,
+	op_discordstatusmemes,	
 	op_discordcharacterimagetype,
+
 	op_customstatusheader,
 	op_customdiscorddetails,
 	op_customdiscordstate,
+
 	// Custom Images //
 	op_customdiscordlargeimagetype,
 	op_customdiscordsmallimagetype,
@@ -2744,11 +2749,12 @@ void Discord_option_Onchange(void)
 	
 	int nospaces;
 
-	//....would you believe me if i said still just in case...?
+	// Discord :)
 	DiscordRichPresence discordPresence;
 	memset(&discordPresence, 0, sizeof(discordPresence));
 
-	//Is Rich Presence Even On?
+	// Is Rich Presence Even On? //
+	// Main
 	OP_DiscordOptionsMenu[op_richpresenceheader].status =
 		(cv_discordrp.value == 1 ? IT_HEADER : IT_DISABLED);
 	
@@ -2758,15 +2764,17 @@ void Discord_option_Onchange(void)
 	OP_DiscordOptionsMenu[op_discordinvites].status =
 		(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING : IT_DISABLED);
 	
+	// Misc.
+	OP_DiscordOptionsMenu[op_discordmiscoptionsheader].status =
+		(cv_discordrp.value == 1 ? IT_HEADER : IT_DISABLED);
+
 	OP_DiscordOptionsMenu[op_discordstatusmemes].status =
 		(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING : IT_DISABLED);
 	
 	OP_DiscordOptionsMenu[op_discordshowonstatus].status =
 		(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING : IT_DISABLED);
 
-	OP_DiscordOptionsMenu[op_discordmiscoptionsheader].status =
-		(cv_discordrp.value == 1 ? IT_HEADER : IT_DISABLED);
-	
+	// Custom Status
 	OP_DiscordOptionsMenu[op_discordcharacterimagetype].status =
 		(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING : IT_DISABLED);
 
@@ -2779,7 +2787,7 @@ void Discord_option_Onchange(void)
 	OP_DiscordOptionsMenu[op_customdiscordstate].status =
 		(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 
-    // Custom Images //
+    // Custom Images
 	OP_DiscordOptionsMenu[op_customdiscordlargeimagetype].status =
     		(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING : IT_DISABLED);
 
@@ -2810,18 +2818,18 @@ void Discord_option_Onchange(void)
     OP_DiscordOptionsMenu[op_customdiscordsmallimagetext].status =
             (cv_discordrp.value == 1 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 
-    // Output Status //
+    // Output Status
 	OP_DiscordOptionsMenu[op_customstatusoutputdef].status =
 		(cv_discordrp.value == 1 ? IT_STRING|IT_SUBMENU : IT_DISABLED);
 
-	//Is Our Rich Presence On?
+	// Is Our Rich Presence On? //
 	if (cv_discordrp.value)
 	{	
-		// Misc. Settings //
+		// Misc. Settings
 		OP_DiscordOptionsMenu[op_discordinvites].status =
 			(cv_discordasks.value == 1 ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
 		
-		// Custom Statuses //
+		// Custom Statuses
 		OP_DiscordOptionsMenu[op_customstatusheader].status =
 			(cv_discordshowonstatus.value == 8 ? IT_HEADER : IT_DISABLED);
 		
@@ -2831,7 +2839,7 @@ void Discord_option_Onchange(void)
 		OP_DiscordOptionsMenu[op_customdiscordstate].status =
 			(cv_discordshowonstatus.value == 8 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 
-        // Custom Images //
+        // Custom Images
 		OP_DiscordOptionsMenu[op_customdiscordlargeimagetype].status =
             (cv_discordshowonstatus.value == 8 ? IT_CVAR|IT_STRING : IT_DISABLED);
 
@@ -2862,17 +2870,17 @@ void Discord_option_Onchange(void)
         OP_DiscordOptionsMenu[op_customdiscordsmallimagetext].status =
             (cv_discordshowonstatus.value == 8 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 
-        // Output Status //
+        // Output Status
 		OP_DiscordOptionsMenu[op_customstatusoutputdef].status =
 			(cv_discordshowonstatus.value == 8 ? IT_STRING|IT_SUBMENU : IT_DISABLED);
 
-        //Do we have the Custom Discord Status Option on?
+        // Do We Want Custom Discord Statuses? //
         if (cv_discordshowonstatus.value == 8)
         {
-            //What Image Type Do We Have?
+            // What Image Type Do We Have?
             if ((!cv_customdiscordlargeimagetype.value || cv_customdiscordlargeimagetype.value) && (!cv_customdiscordsmallimagetype.value || cv_customdiscordsmallimagetype.value))
             {
-                // Large Images //
+                // Large Images
                 OP_DiscordOptionsMenu[op_customdiscordlargecharacterimage].status =
                     ((!cv_customdiscordlargeimagetype.value || cv_customdiscordlargeimagetype.value == 1) ? IT_CVAR|IT_STRING : IT_DISABLED);
 
@@ -2885,7 +2893,7 @@ void Discord_option_Onchange(void)
                 OP_DiscordOptionsMenu[op_customdiscordlargeimagetext].status =
                     (cv_customdiscordlargeimagetype.value != 4 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 
-                // Small Images //
+                // Small Images
                 OP_DiscordOptionsMenu[op_customdiscordsmallcharacterimage].status =
                     ((!cv_customdiscordsmallimagetype.value || cv_customdiscordsmallimagetype.value == 1) ? IT_CVAR|IT_STRING : IT_DISABLED);
 
@@ -2919,7 +2927,7 @@ void Discord_option_Onchange(void)
 				else
 					strlcat(customLImageString, va("%s", cv_customdiscordlargemiscimage.string), 64);
 				
-				// Remove Spaces //
+				// Remove Spaces
 				if (cv_customdiscordsmallimagetype.value != 4 && ((cv_customdiscordsmallimagetype.value < 2 && charsWithSpaces[cv_customdiscordsmallcharacterimage.value]) || (cv_customdiscordsmallimagetype.value > 1)))
 				{
 					nospaces = 0; //this helps us remove spaces from our string, if we have any
@@ -2950,7 +2958,7 @@ void Discord_option_Onchange(void)
 				}
 				strlwr(customLImageString);
 
-				// Replace Strings in Words //
+				// Replace Strings in Words
 				/*
 				char string, newW, oldW;
 				char* result;  
@@ -12222,7 +12230,6 @@ static void M_ChooseRoom(INT32 choice)
 //===========================================================================
 // Start Server Menu
 //===========================================================================
-
 static void M_StartServer(INT32 choice)
 {
 	boolean StartSplitScreenGame = (currentMenu == &MP_SplitServerDef);
@@ -12257,6 +12264,9 @@ static void M_StartServer(INT32 choice)
 		}
 		D_MapChange(cv_nextmap.value, cv_newgametype.value, false, 1, 1, false, false);
 	}
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 
 	M_ClearMenus(true);
 }
