@@ -511,6 +511,7 @@ void P_ResetStarposts(void);
 boolean P_CanPickupItem(player_t *player, boolean weapon);
 void P_DoNightsScore(player_t *player);
 void P_DoMatchSuper(player_t *player);
+extern boolean all7matchemeralds;
 
 //
 // P_SPEC

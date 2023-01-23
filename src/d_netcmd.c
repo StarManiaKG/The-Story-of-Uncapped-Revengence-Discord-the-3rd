@@ -4158,7 +4158,7 @@ static void TimeLimit_OnChange(void)
 		CV_SetValue(&cv_timelimit, 0);
 		return;
 	}
-
+		
 	if (cv_timelimit.value != 0)
 	{
 		CONS_Printf(M_GetText("Levels will end after %d minute%s.\n"),cv_timelimit.value,cv_timelimit.value == 1 ? "" : "s"); // Graue 11-17-2003
@@ -4174,6 +4174,7 @@ static void TimeLimit_OnChange(void)
 	}
 	else if (netgame || multiplayer)
 		CONS_Printf(M_GetText("Time limit disabled\n"));
+		
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
 #endif
@@ -4800,6 +4801,9 @@ static void ForceSkin_OnChange(void)
 		CONS_Printf("The server is restricting all players to skin \"%s\".\n",skins[cv_forceskin.value].name);
 		ForceAllSkins(cv_forceskin.value);
 	}
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 }
 
 //Allows the player's name to be changed if cv_mute is off.

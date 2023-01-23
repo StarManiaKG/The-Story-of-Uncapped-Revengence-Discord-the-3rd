@@ -1101,6 +1101,10 @@ static inline void CL_DrawConnectionStatus(void)
 
 					V_DrawRightAlignedString(BASEVIDWIDTH/2+128, BASEVIDHEIGHT-16, V_20TRANS|V_MONOSPACE,
 						va("%3.1fK/s ", ((double)getbps)/1024));
+
+#ifdef HAVE_DISCORDRPC
+					DRPC_UpdatePresence();
+#endif
 				}
 				else
 					cltext = M_GetText("Waiting to download game state...");
@@ -3474,7 +3478,7 @@ consvar_t cv_resynchattempts = CVAR_INIT ("resynchattempts", "10", CV_SAVE|CV_NE
 consvar_t cv_blamecfail = CVAR_INIT ("blamecfail", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL);
 
 // Here for dedicated servers
-static CV_PossibleValue_t discordinvites_cons_t[] = {{0, "Admins"}, {1, "Everyone"}, {2, "Nobody"}, {0, NULL}};
+static CV_PossibleValue_t discordinvites_cons_t[] = {{0, "Admins"}, {1, "Everyone"}, {2, "Only Server"}, {0, NULL}};
 consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Admins", CV_SAVE|CV_CALL, discordinvites_cons_t, Joinable_OnChange);
 
 
