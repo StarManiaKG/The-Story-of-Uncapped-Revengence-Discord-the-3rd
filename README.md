@@ -11,7 +11,7 @@
 
 ## Features
 **NEW FEATURES**
-  - Eidolon's Uncapped Revengence, Now Properly In SRB2, Is Included, And Was Featured In This Build Early Enough For Me To Call It A "New Feature"
+  - Uncapped, Technically Now In Vanilla SRB2, Is Included, And Was Featured In This Build Early Enough For Me To Call It A "New Feature"
   - Custom Discord Settings, Commands, and Options, with Custom Character Support
   - Custom Build Options, Featuring More Savedata, Server, and Extra Options
   - Palette Rendering
@@ -23,7 +23,7 @@
   - Holepunching; Requires Vanilla-SRB2 Based Relay Server, Kart Krew's Won't Work
   - ...And A Few More Annoyances!
 
-**WIP FEATURES (FOUND ON LATEST UNSTABLE BUILD)**
+**WIP FEATURES (PROBABLY FOUND ON LATEST UNSTABLE BUILD)**
   - Netplus (really on a limb here)
   - Autoloading Folder Support (it's a funny story)
   - Discord's Game SDK (need to convert it to C)
@@ -42,8 +42,8 @@
 - libopenmpt (Linux/OS X only)
 
 **OPTIONAL DEPENDENCIES**
-- libdiscord-rpc (Needed for Discord RPC Support; On Windows, SRB2 comes with the files, On Mac/Linux, you can find/compile them [here](https://github.com/discord/discord-rpc))
-- libSDL2_mixer_ext (Needed for Advanced Sound and MIDI options; On Windows, SRB2 comes with the files, On Mac/Linux, you can find/compile them [here](https://github.com/WohlSoft/SDL-Mixer-X))
+- libdiscord-rpc (Discord RPC Support; On Windows, SRB2 comes with the files, On Mac/Linux, you can find/compile them [here](https://github.com/discord/discord-rpc))
+- libSDL2_mixer_ext (Advanced Sound/MIDI Options; On Windows, SRB2 comes with the files, On Mac/Linux, you can find/compile them [here](https://github.com/WohlSoft/SDL-Mixer-X))
 
 ## Compiling
 
