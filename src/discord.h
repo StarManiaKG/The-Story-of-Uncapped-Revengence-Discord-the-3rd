@@ -1,4 +1,4 @@
-// SONIC ROBO BLAST 2 KART
+// SONIC ROBO BLAST 2 -- WITH DISCORD RPC BROUGHT TO YOU BY THE KART KREW (And Star lol)
 //-----------------------------------------------------------------------------
 // Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
 // Copyright (C) 2018-2020 by Kart Krew.
@@ -102,5 +102,4 @@ void DRPC_UpdatePresence(void);
 void DRPC_ShutDown(void);
 
 #endif // HAVE_DISCORDRPC
-
 #endif // __DISCORD__

@@ -1,4 +1,4 @@
-// SONIC ROBO BLAST 2 //WITH DISCORD RPC BROUGHT TO YOU BY THE KART KREW (And Star lol)
+// SONIC ROBO BLAST 2 -- WITH DISCORD RPC BROUGHT TO YOU BY THE KART KREW (And Star lol)
 //-----------------------------------------------------------------------------
 // Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
 // Copyright (C) 2018-2020 by Kart Krew.
@@ -73,7 +73,8 @@ static CV_PossibleValue_t customcharacterimage_cons_t[] = { // Characters //
     {5, "Fang"},
     {6, "Metal Sonic"},
     {7, "Sonic & Tails"}, //Bots, am i right?
-    //Custom Chars
+    
+	//Custom Chars
     {8, "Adventure Sonic"},
     {9, "Shadow"},
     {10, "Skip"},
