@@ -54,6 +54,10 @@
 #include "discord.h"
 #endif
 
+#ifdef HAVE_DISCORDGAMESDK
+#include "discord_gamesdk.h"
+#endif
+
 gameaction_t gameaction;
 gamestate_t gamestate = GS_NULL;
 UINT8 ultimatemode = false;

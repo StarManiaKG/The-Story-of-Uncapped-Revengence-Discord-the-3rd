@@ -16,17 +16,17 @@
   - Custom Build Options, Featuring More Savedata, Server, and Extra Options
   - Palette Rendering
   - Autoloading Addons
-  - A Jukebox	  
+  - A Jukebox
   - ...And More Annoyances!
 
 **FEATURES THAT WORK WITH ENOUGH EFFORT**
-  - Holepunching; Requires Vanilla-SRB2 Based Relay Server, Kart Krew's Won't Work
+  - Holepunching; Requires Vanilla-SRB2 Based Relay Server, Kart Krew's Most Likely Won't Work
   - ...And A Few More Annoyances!
 
 **WIP FEATURES (PROBABLY FOUND ON LATEST UNSTABLE BUILD)**
   - Netplus (really on a limb here)
   - Autoloading Folder Support (it's a funny story)
-  - Discord's Game SDK (need to convert it to C)
+  - Discord's Game SDK (it compiles fine, nothing's just there yet :P)
   - Dynamic Resolutions (an annoyance to port from srb2 2.2.6 to 2.2.11)
   - Software Models (an annoyance to port just like Dynamic Resolutions)
   - Android Support (i can't tell you how hard this will be)
@@ -43,10 +43,11 @@
 
 **OPTIONAL DEPENDENCIES**
 - libdiscord-rpc (Discord RPC Support; On Windows, SRB2 comes with the files, On Mac/Linux, you can find/compile them [here](https://github.com/discord/discord-rpc))
+- libdiscord_game_sdk (Discord Game SDK Support; On Windows, SRB2 comes with the files, On Mac/Linux, you can find them [here](https://dl-game-sdk.discordapp.net/3.2.1/discord_game_sdk.zip)) and place them in the right directories
 - libSDL2_mixer_ext (Advanced Sound/MIDI Options; On Windows, SRB2 comes with the files, On Mac/Linux, you can find/compile them [here](https://github.com/WohlSoft/SDL-Mixer-X))
 
 ## Assets
-See the assets/ folder for the TSOURDT3RD pk3, for even more annoyances and probably funny things!
+Visit the assets folder to get the TSOURDT3RD assets, for more annoyances and funny things!
 
 ## Compiling
 See [SRB2 Wiki/Source code compiling](http://wiki.srb2.org/wiki/Source_code_compiling)
@@ -54,8 +55,8 @@ See [SRB2 Wiki/Source code compiling](http://wiki.srb2.org/wiki/Source_code_comp
 **ALTERNATIVES**
 - You can check out the releases page! These include console scripts and .exe files, both for Linux and Windows users, respectively. AppImage support will also come soon, but Wine also exists, so if you're into that type of thing, .exe files will work for you too I guess.
 - You can also Cross-Compile Between Different Operating Systems too!
-- You could also ask a friend to do it for you too, friends are the best after all.
+- You could ask a friend to do it for you too, since friends are the best after all.
 
 ## Disclaimer
 - Sonic Team Junior is in no way affiliated with SEGA or Sonic Team. We do not claim ownership of any of SEGA's intellectual property used in SRB2.
-- Despite the title of this file making this seem like the title of a movie, I regret to inform you that this is not, sadly, a movie, but instead, an autobiography, on how I am a constant and passionate nusiance on my soceity.
+- Despite the title of this file making this seem like the title of a movie, I regret to inform you that this is not, sadly, a movie, but instead, an autobiography, on how I am a constant and passionate nusiance on my society.
