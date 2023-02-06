@@ -1,10 +1,7 @@
+// SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
-// ORIGINAL DISCORD RPC PORT BY THE KART KREW
-// Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
-// Copyright (C) 2018-2020 by Kart Krew.
-//
-// DISCORD GAME SDK PORT BY STARMANIAKG(#4884)
-// Copyright (C) 2022 by StarMania "Not Telling You My Real Name" KG.
+// DISCORD GAME SDK BY STARMANIAKG(#4884)
+// Copyright (C) 2022-2023 by StarManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -13,15 +10,16 @@
 /// \file  discord_gamesdk.h
 /// \brief Discord Game SDK handling
 
-#ifndef __DISCORD__
-#define __DISCORD__
+#ifndef _DISCORDGAMESDK__
+#define _DISCORDGAMESDK__
 
 #ifdef HAVE_DISCORDGAMESDK
 
 #include <stdint.h>
 #include <stdio.h>
 #include <assert.h>
-#include "discord-gamesdk/discord_game_sdk.h"
+#include "discord_game_sdk.h"
+
 #ifdef _WIN32
 #include <Windows.h>
 #else
@@ -40,7 +38,27 @@ extern struct discordGameSDK_s {
     
     DiscordUserId user_id;
 } discordGameSDK_t;
+
 #define DISCORD_REQUIRE(x) assert(x == DiscordResult_Ok)
 
+/*--------------------------------------------------
+	void DRPC_Init(int argc, char** argv)
+
+		Initalizes Discord's Game SDK by linking the Application ID
+		and setting the callback functions.
+--------------------------------------------------*/
+
+void DRPC_Init(int argc, char** argv);
+
+/*--------------------------------------------------
+	void DRPC_UpdatePresence(void);
+
+		Updates what is displayed by Game SDK on the user's profile.
+		Should be called whenever something that is displayed is
+		changed in-game.
+--------------------------------------------------*/
+
+void DRPC_UpdatePresence(void);
+
 #endif // HAVE_DISCORDGAMESDK
-#endif // __DISCORD__
+#endif // _DISCORDGAMESDK__
