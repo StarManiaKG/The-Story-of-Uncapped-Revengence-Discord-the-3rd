@@ -67,8 +67,8 @@ sources+=discord.c stun.c
 endif
 
 ifdef HAVE_DISCORDGAMESDK
-libs+=-ldiscord_gamesdk
 CFLAGS+=-DHAVE_DISCORDGAMESDK
+opts+=-DHAVE_DISCORDGAMESDK
 OBJS+=$(OBJDIR)/discord_gamesdk.o
 sources+=discord_gamesdk.c
 endif

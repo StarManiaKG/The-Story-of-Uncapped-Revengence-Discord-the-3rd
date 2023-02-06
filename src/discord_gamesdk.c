@@ -1,4 +1,16 @@
-#ifdef HAVE_DISCORDGAMESDK
+// SONIC ROBO BLAST 2
+//-----------------------------------------------------------------------------
+// DISCORD GAME SDK BY STARMANIAKG(#4884)
+// Copyright (C) 2022-2023 by StarManiaKG.
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+/// \file  discord_gamesdk.h
+/// \brief Discord Game SDK handling
+
+#ifdef HAVE_DISCORDGAMESDK // HAVE_DISCORDGAMESDK
 
 #include "i_system.h"
 #include "d_clisrv.h"
@@ -23,8 +35,13 @@
 // length of IP strings
 #define IP_SIZE 21
 
+/*--------------------------------------------------
+	void DRPC_Init(void)
+
+		See header file for description.
+--------------------------------------------------*/
 /*
-int main(int argc, char** argv)
+void DRPC_Init(int argc, char** argv)
 {
     struct Application app;
     memset(&app, 0, sizeof(app));
@@ -80,5 +97,18 @@ int main(int argc, char** argv)
     return 0;
 }
 */
+
+/*--------------------------------------------------
+	void DRPC_UpdatePresence(void)
+
+		See header file for description.
+--------------------------------------------------*/
+void DRPC_UpdatePresence(void)
+{	
+	char sonic[64] = "sonic";
+
+	//DRPC_Init(1, sonic);
+	CONS_Printf("%s", sonic);
+}
 
 #endif //HAVE_DISCORDGAMESDK
