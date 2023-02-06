@@ -23,14 +23,17 @@
   - Holepunching; Requires Vanilla-SRB2 Based Relay Server, Kart Krew's Most Likely Won't Work
   - ...And A Few More Annoyances!
 
-**WIP FEATURES (PROBABLY FOUND ON LATEST UNSTABLE BUILD)**
+**WIP FEATURES (FOUND ON LATEST UNSTABLE BUILD)**
+  - Discord's Game SDK (it compiles fine, nothing's just there yet :P)
+  - ...And Even More Annoyances, Most Likely!
+
+**FUTURE FEATURES (WITH ENOUGH TIME IN THE OVEN)**
   - Netplus (really on a limb here)
   - Autoloading Folder Support (it's a funny story)
-  - Discord's Game SDK (it compiles fine, nothing's just there yet :P)
   - Dynamic Resolutions (an annoyance to port from srb2 2.2.6 to 2.2.11)
   - Software Models (an annoyance to port just like Dynamic Resolutions)
   - Android Support (i can't tell you how hard this will be)
-  - ...And Even More Annoyances!
+  - ...And A Boatload of More Annoyances!
       
 ## Dependencies
 **NECESSARY DEPENDENCIES**
