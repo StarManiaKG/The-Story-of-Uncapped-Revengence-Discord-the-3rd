@@ -1228,9 +1228,6 @@ static void IdentifyVersion(void)
 	D_AddFile(&startupwadfiles, va(pandf,srb2waddir, "patch.pk3"));
 #endif
 
-	//Add Star's Patches and Graphics lol
-	D_AddFile(&startupwadfiles, va(pandf,srb2waddir, "starmaniakg.pk3"));
-
 #if !defined (HAVE_SDL) || defined (HAVE_MIXER)
 	{
 #define MUSICTEST(str) \
@@ -1247,6 +1244,9 @@ static void IdentifyVersion(void)
 		//MUSICTEST("patch_music.pk3")
 	}
 #endif
+
+	//Add Star's Patches and Graphics lol
+	D_AddFile(&startupwadfiles, va(pandf,srb2waddir, "tsourdt3rd.pk3"));
 }
 
 static void
@@ -1461,7 +1461,7 @@ void D_SRB2Main(void)
 	// Have to be done here before files are loaded
 	M_InitCharacterTables();
 
-	mainwads = 4; // doesn't include music.dta
+	mainwads = 3; // doesn't include music.dta and tsourdt3rd.pk3
 #ifdef USE_PATCH_DTA
 	mainwads++;
 #endif
@@ -1488,9 +1488,6 @@ void D_SRB2Main(void)
 	W_VerifyFileMD5(2, ASSET_HASH_PLAYER_DTA); // player.dta
 #ifdef USE_PATCH_DTA
 	W_VerifyFileMD5(3, ASSET_HASH_PATCH_PK3); // patch.pk3
-	W_VerifyFileMD5(4, ASSET_HASH_STAR_PK3); // starmaniakg.pk3
-#else
-	W_VerifyFileMD5(3, ASSET_HASH_STAR_PK3); // starmaniakg.pk3
 #endif
 	// don't check music.dta because people like to modify it, and it doesn't matter if they do
 	// ...except it does if they slip maps in there, and that's what W_VerifyNMUSlumps is for.
