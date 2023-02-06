@@ -9,7 +9,7 @@ FUNCTION(PREPEND var prefix)
    SET(${var} "${listVar}" PARENT_SCOPE)
 ENDFUNCTION(PREPEND)
 
-set(SRB2_ASSET_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/installer"
+set(SRB2_ASSET_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/TSOURDt3rd-Assets"
 	CACHE STRING "Path to directory that contains all asset files for the installer.")
 
 set(SRB2_ASSET_INSTALL ON
@@ -22,8 +22,7 @@ set(SRB2_ASSET_INSTALL ON
 set(SRB2_ASSET_HASHED
 "srb2.pk3;\
 player.dta;\
-zones.pk3;\
-starmaniakg.pk3"
+zones.pk3"
 	CACHE STRING "Asset filenames to apply MD5 checks. No spaces between entries!"
 )
 
