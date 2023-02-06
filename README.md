@@ -45,8 +45,10 @@
 - libdiscord-rpc (Discord RPC Support; On Windows, SRB2 comes with the files, On Mac/Linux, you can find/compile them [here](https://github.com/discord/discord-rpc))
 - libSDL2_mixer_ext (Advanced Sound/MIDI Options; On Windows, SRB2 comes with the files, On Mac/Linux, you can find/compile them [here](https://github.com/WohlSoft/SDL-Mixer-X))
 
-## Compiling
+## Assets
+See the assets/ folder for the TSOURDT3RD pk3, for even more annoyances and probably funny things!
 
+## Compiling
 See [SRB2 Wiki/Source code compiling](http://wiki.srb2.org/wiki/Source_code_compiling)
 
 **ALTERNATIVES**
