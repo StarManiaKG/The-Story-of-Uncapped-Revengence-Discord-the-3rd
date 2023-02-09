@@ -49,10 +49,12 @@ typedef struct discordRequest_s {
 	char *username; // Discord user name.
 	char *discriminator; // Discord discriminator (The little hashtag thing after the username). Separated for a "hide discriminators" cvar.
 	char *userID; // The ID of the Discord user, gets used with Discord_Respond()
+	
 	// HAHAHA, no.
 	// *Maybe* if it was only PNG I would boot up curl just to get AND convert this to Doom GFX,
 	// but it can *also* be a JEPG, WebP, or GIF :)
 	// Hey, wanna add ImageMagick as a dependency? :dying:
+	//patch *avatar
 	char *avatar; // VERY WIP
 
 	struct discordRequest_s *next; // Next request in the list.
