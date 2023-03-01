@@ -19,11 +19,9 @@
 
 extern boolean advancedemo;
 
-// make sure not to write back the config until it's been correctly loaded
 extern tic_t rendergametic;
 
 extern char srb2home[256]; //Alam: My Home
-extern boolean autoloading; //Star: Are you Autoloading, Son?
 extern boolean usehome; //Alam: which path?
 extern const char *pandf; //Alam: how to path?
 extern char srb2path[256]; //Alam: SRB2's Home
@@ -44,6 +42,11 @@ void D_PostEvent(const event_t *ev);
 void D_ProcessEvents(void);
 
 const char *D_Home(void);
+void D_SetupHome(void);
+
+void D_DefaultSaveGameName(const char *name);
+void D_DefaultLiveEventName(const char *name);
+void D_MakeSaveGamePaths(const char *home);
 
 //
 // BASE LEVEL

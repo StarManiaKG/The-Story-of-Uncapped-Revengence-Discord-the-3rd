@@ -41,16 +41,6 @@
 #include "hardware/hw_main.h"
 #endif
 
-//profile stuff ---------------------------------------------------------
-//#define TIMING
-#ifdef TIMING
-#include "p5prof.h"
-INT64 mycount;
-INT64 mytotal = 0;
-//unsigned long  nombre = 100000;
-#endif
-//profile stuff ---------------------------------------------------------
-
 // Fineangles in the SCREENWIDTH wide window.
 #define FIELDOFVIEW 2048
 
@@ -78,6 +68,7 @@ mobj_t *r_viewmobj;
 
 fixed_t rendertimefrac;
 fixed_t renderdeltatics;
+boolean renderisnewtic;
 
 //
 // precalculated math tables
@@ -159,7 +150,7 @@ consvar_t cv_skybox = CVAR_INIT ("skybox", "On", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_ffloorclip = CVAR_INIT ("ffloorclip", "On", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_allowmlook = CVAR_INIT ("allowmlook", "Yes", CV_NETVAR, CV_YesNo, NULL);
 consvar_t cv_showhud = CVAR_INIT ("showhud", "Yes", CV_CALL,  CV_YesNo, R_SetViewSize);
-consvar_t cv_translucenthud = CVAR_INIT ("translucenthud", "10", CV_SAVE, translucenthud_cons_t, NULL);
+consvar_t cv_translucenthud = CVAR_INIT ("translucenthud", "10", CV_SAVE|CV_SLIDER_SAFE, translucenthud_cons_t, NULL);
 
 consvar_t cv_translucency = CVAR_INIT ("translucency", "On", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_drawdist = CVAR_INIT ("drawdist", "Infinite", CV_SAVE, drawdist_cons_t, NULL);
@@ -265,13 +256,13 @@ INT32 R_PointOnSide(fixed_t x, fixed_t y, node_t *node)
 	if (!node->dy)
 		return y <= node->y ? node->dx < 0 : node->dx > 0;
 
-	x -= node->x;
-	y -= node->y;
+	fixed_t dx = (x >> 1) - (node->x >> 1);
+	fixed_t dy = (y >> 1) - (node->y >> 1);
 
 	// Try to quickly decide by looking at sign bits.
-	if ((node->dy ^ node->dx ^ x ^ y) < 0)
-		return (node->dy ^ x) < 0;  // (left is negative)
-	return FixedMul(y, node->dx>>FRACBITS) >= FixedMul(node->dy>>FRACBITS, x);
+	if ((node->dy ^ node->dx ^ dx ^ dy) < 0)
+		return (node->dy ^ dx) < 0;  // (left is negative)
+	return FixedMul(dy, node->dx>>FRACBITS) >= FixedMul(node->dy>>FRACBITS, dx);
 }
 
 // killough 5/2/98: reformatted
@@ -288,13 +279,13 @@ INT32 R_PointOnSegSide(fixed_t x, fixed_t y, seg_t *line)
 	if (!ldy)
 		return y <= ly ? ldx < 0 : ldx > 0;
 
-	x -= lx;
-	y -= ly;
+	fixed_t dx = (x >> 1) - (lx >> 1);
+	fixed_t dy = (y >> 1) - (ly >> 1);
 
 	// Try to quickly decide by looking at sign bits.
-	if ((ldy ^ ldx ^ x ^ y) < 0)
-		return (ldy ^ x) < 0;          // (left is negative)
-	return FixedMul(y, ldx>>FRACBITS) >= FixedMul(ldy>>FRACBITS, x);
+	if ((ldy ^ ldx ^ dx ^ dy) < 0)
+		return (ldy ^ dx) < 0;          // (left is negative)
+	return FixedMul(dy, ldx>>FRACBITS) >= FixedMul(ldy>>FRACBITS, dx);
 }
 
 //
@@ -449,7 +440,7 @@ fixed_t R_ScaleFromGlobalAngle(angle_t visangle)
 // R_DoCulling
 // Checks viewz and top/bottom heights of an item against culling planes
 // Returns true if the item is to be culled, i.e it shouldn't be drawn!
-// if ML_NOCLIMB is set, the camera view is required to be in the same area for culling to occur
+// if args[1] is set, the camera view is required to be in the same area for culling to occur
 boolean R_DoCulling(line_t *cullheight, line_t *viewcullheight, fixed_t vz, fixed_t bottomh, fixed_t toph)
 {
 	fixed_t cullplane;
@@ -458,7 +449,7 @@ boolean R_DoCulling(line_t *cullheight, line_t *viewcullheight, fixed_t vz, fixe
 		return false;
 
 	cullplane = cullheight->frontsector->floorheight;
-	if (cullheight->flags & ML_NOCLIMB) // Group culling
+	if (cullheight->args[1]) // Group culling
 	{
 		if (!viewcullheight)
 			return false;
@@ -619,10 +610,25 @@ static struct {
 	0,
 
 	0,
-	{}, {},
+	{0}, {0},
 
 	false
 };
+
+angle_t R_GetLocalViewRollAngle(player_t *player)
+{
+	angle_t ang = player->viewrollangle;
+
+#if defined(ACCELEROMETER) && defined(ACCELEROMETER_TILT_VIEW)
+	if (cv_useaccelerometer.value && gamestate == GS_LEVEL && player == &players[consoleplayer] && !splitscreen)
+	{
+		fixed_t accelangle = FixedDiv(acceltilt * FRACUNIT, 4096<<FRACBITS);
+		ang += FixedAngle(FixedMul(accelangle, 90<<FRACBITS));
+	}
+#endif
+
+	return ang;
+}
 
 void R_CheckViewMorph(void)
 {
@@ -635,7 +641,7 @@ void R_CheckViewMorph(void)
 	float fisheyemap[MAXVIDWIDTH/2 + 1];
 #endif
 
-	angle_t rollangle = players[displayplayer].viewrollangle;
+	angle_t rollangle = R_GetLocalViewRollAngle(&players[displayplayer]);
 #ifdef WOUGHMP_WOUGHMP
 	fixed_t fisheye = cv_cam2_turnmultiplier.value; // temporary test value
 #endif
@@ -939,6 +945,15 @@ void R_ExecuteSetViewSize(void)
 	fovtan = FixedMul(FINETANGENT(fov >> ANGLETOFINESHIFT), viewmorph.zoomneeded);
 	if (splitscreen == 1) // Splitscreen FOV should be adjusted to maintain expected vertical view
 		fovtan = 17*fovtan/10;
+
+#ifdef NATIVESCREENRES
+	if (cv_nativeres.value && cv_nativeresfov.value)
+	{
+		fixed_t resmul = FixedDiv(vid.width * FRACUNIT, vid.height * FRACUNIT);
+		if (resmul > FRACUNIT)
+			fovtan = FixedMul(fovtan, (7*resmul/10));
+	}
+#endif
 
 	projection = projectiony = FixedDiv(centerxfrac, fovtan);
 
@@ -1345,12 +1360,31 @@ void R_SkyboxFrame(player_t *player)
 
 boolean R_ViewpointHasChasecam(player_t *player)
 {
+	camera_t *thiscam;
 	boolean chasecam = false;
 
 	if (splitscreen && player == &players[secondarydisplayplayer] && player != &players[consoleplayer])
+	{
+		thiscam = &camera2;
 		chasecam = (cv_chasecam2.value != 0);
+		R_SetViewContext(VIEWCONTEXT_PLAYER2);
+		if (thiscam->reset)
+		{
+			R_ResetViewInterpolation(2);
+			thiscam->reset = false;
+		}
+	}
 	else
+	{
+		thiscam = &camera;
 		chasecam = (cv_chasecam.value != 0);
+		R_SetViewContext(VIEWCONTEXT_PLAYER1);
+		if (thiscam->reset)
+		{
+			R_ResetViewInterpolation(1);
+			thiscam->reset = false;
+		}
+	}
 
 	if (player->climbing || (player->powers[pw_carry] == CR_NIGHTSMODE) || player->playerstate == PST_DEAD || gamestate == GS_TITLESCREEN || tutorialmode)
 		chasecam = true; // force chasecam on
@@ -1465,36 +1499,26 @@ void R_RenderPlayerView(player_t *player)
 	R_ClearSprites();
 	Portal_InitList();
 
-	// check for new console commands.
+	// Check for new console commands.
 	NetUpdate();
 
-	// The head node is the last node output.
+	if (I_AppOnBackground())
+		return;
 
+	// The head node is the last node output.
 	Mask_Pre(&masks[nummasks - 1]);
 	curdrawsegs = ds_p;
-//profile stuff ---------------------------------------------------------
-#ifdef TIMING
-	mytotal = 0;
-	ProfZeroTimer();
-#endif
 	ps_numbspcalls.value.i = ps_numpolyobjects.value.i = ps_numdrawnodes.value.i = 0;
 	PS_START_TIMING(ps_bsptime);
 	R_RenderBSPNode((INT32)numnodes - 1);
 	PS_STOP_TIMING(ps_bsptime);
 	ps_numsprites.value.i = visspritecount;
-#ifdef TIMING
-	RDMSR(0x10, &mycount);
-	mytotal += mycount; // 64bit add
 
-	CONS_Debug(DBG_RENDER, "RenderBSPNode: 0x%d %d\n", *((INT32 *)&mytotal + 1), (INT32)mytotal);
-#endif
-//profile stuff ---------------------------------------------------------
 	Mask_Post(&masks[nummasks - 1]);
 
 	PS_START_TIMING(ps_sw_spritecliptime);
 	R_ClipSprites(drawsegs, NULL);
 	PS_STOP_TIMING(ps_sw_spritecliptime);
-
 
 	// Add skybox portals caused by sky visplanes.
 	if (cv_skybox.value && skyboxmo[0])
@@ -1573,10 +1597,16 @@ void R_RegisterEngineStuff(void)
 	if (dedicated)
 		return;
 
-	CV_RegisterVar(&cv_translucency);
+#ifdef MOBILE_PLATFORM // Override CVARs
+	// Change the default draw distance
+	cv_drawdist.defaultvalue = "4096";
+#endif
+
 	CV_RegisterVar(&cv_drawdist);
 	CV_RegisterVar(&cv_drawdist_nights);
 	CV_RegisterVar(&cv_drawdist_precip);
+
+	CV_RegisterVar(&cv_translucency);
 	CV_RegisterVar(&cv_fov);
 
 	CV_RegisterVar(&cv_chasecam);

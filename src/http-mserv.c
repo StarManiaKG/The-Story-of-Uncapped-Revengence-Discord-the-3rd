@@ -27,6 +27,12 @@ Documentation available here.
 #include "i_tcp.h"/* for current_port */
 #include "i_threads.h"
 
+#if defined(__ANDROID__)
+#include "d_main.h" // srb2path
+#include "i_system.h" // I_mkdir
+#include "z_zone.h"
+#endif
+
 /* reasonable default I guess?? */
 #define DEFAULT_BUFFER_SIZE (4096)
 
@@ -54,8 +60,6 @@ consvar_t cv_masterserver_token = CVAR_INIT
 		NULL
 );
 
-#define HMS_QUERY_VERSION "?v=2.2"
-
 #ifdef MASTERSERVER
 
 static int hms_started;
@@ -66,6 +70,8 @@ static I_mutex hms_api_mutex;
 #endif
 
 static char *hms_server_token;
+
+static char hms_useragent[512];
 
 struct HMS_buffer
 {
@@ -81,6 +87,22 @@ Contact_error (void)
 	CONS_Alert(CONS_ERROR,
 			"There was a problem contacting the master server...\n"
 	);
+}
+
+static void
+get_user_agent(char *buf, size_t len)
+{
+	if (snprintf(buf, len, "%s/%s (%s; %s; %i; %i) SRB2BASE/%i", SRB2APPLICATION, VERSIONSTRING, compbranch, comprevision,  MODID, MODVERSION, CODEBASE) < 0)
+		I_Error("http-mserv: get_user_agent failed");
+}
+
+static void
+init_user_agent_once(void)
+{
+	if (hms_useragent[0] != '\0')
+		return;
+	
+	get_user_agent(hms_useragent, 512);
 }
 
 static size_t
@@ -107,6 +129,69 @@ HMS_on_read (char *s, size_t _1, size_t n, void *userdata)
 
 	return n;
 }
+
+#if defined(__ANDROID__)
+static char *hms_ca_bundle;
+static char *hms_cert_path;
+
+static void
+HMS_get_cert (void)
+{
+	const char *dir = "hms";
+	const char *pem = "cert";
+
+	if (! hms_ca_bundle)
+		hms_ca_bundle = Z_StrDup(va("%s"PATHSEP"%s", dir, pem));
+	if (! hms_cert_path)
+		hms_cert_path = Z_StrDup(va("%s"PATHSEP"%s", srb2path, hms_ca_bundle));
+
+	I_mkdir(va("%s"PATHSEP"%s", srb2path, dir), 0755);
+}
+
+static void *
+HMS_open_ca_bundle (void)
+{
+	return File_Open(hms_ca_bundle, "rb", FILEHANDLE_SDL);
+}
+
+static void
+HMS_set_cert (CURL *curl)
+{
+	void *handle = NULL;
+	void *ca = NULL;
+
+	HMS_get_cert();
+
+	if ((handle = File_Open(hms_cert_path, "rb", FILEHANDLE_SDL)) == NULL)
+		ca = HMS_open_ca_bundle();
+	else
+	{
+		size_t size;
+
+		File_Seek(handle, 0, SEEK_END);
+		size = File_Tell(handle);
+
+		if (! size)
+			ca = HMS_open_ca_bundle();
+
+		File_Close(handle);
+	}
+
+	if (ca)
+	{
+		CONS_Printf("HMS: unpacking CA bundle '%s'... ", hms_ca_bundle);
+
+		if (W_UnpackFile(hms_cert_path, ca))
+			CONS_Printf("succeeded\n");
+		else
+			CONS_Printf("failed\n");
+
+		File_Close(ca);
+	}
+
+	curl_easy_setopt(curl, CURLOPT_CAINFO, hms_cert_path);
+}
+#endif
 
 static struct HMS_buffer *
 HMS_connect (const char *format, ...)
@@ -158,6 +243,8 @@ HMS_connect (const char *format, ...)
 	I_lock_mutex(&hms_api_mutex);
 #endif
 
+	init_user_agent_once();
+
 	seek = strlen(hms_api) + 1;/* + '/' */
 
 	va_start (ap, format);
@@ -203,6 +290,12 @@ HMS_connect (const char *format, ...)
 	curl_easy_setopt(curl, CURLOPT_TIMEOUT, cv_masterserver_timeout.value);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, HMS_on_read);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, buffer);
+
+#if defined(__ANDROID__)
+	HMS_set_cert(curl);
+#endif
+
+	curl_easy_setopt(curl, CURLOPT_USERAGENT, hms_useragent);
 
 	curl_free(quack_token);
 	free(url);

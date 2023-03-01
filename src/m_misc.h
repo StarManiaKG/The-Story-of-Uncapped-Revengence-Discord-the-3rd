@@ -39,9 +39,15 @@ void M_StartMovie(void);
 void M_SaveFrame(void);
 void M_StopMovie(void);
 
+#ifdef HAVE_GLES
+#define SCREENSHOT_USE_RGBA
+#define SCREENSHOT_BITS 4
+#else
+#define SCREENSHOT_BITS 3
+#endif
+
 // the file where game vars and settings are saved
 #define CONFIGFILENAME "config.cfg"
-#define AUTOLOADCONFIGNAME "autoload.cfg"
 
 INT32 M_MapNumber(char first, char second);
 
@@ -80,17 +86,6 @@ void M_SaveConfig(const char *filename);
 INT32 axtoi(const char *hexStg);
 
 const char *GetRevisionString(void);
-
-// Vector/matrix math
-typedef fixed_t TVector[4];
-typedef fixed_t TMatrix[4][4];
-
-TVector *VectorMatrixMultiply(TVector v, TMatrix m);
-TMatrix *RotateXMatrix(angle_t rad);
-#if 0
-TMatrix *RotateYMatrix(angle_t rad);
-#endif
-TMatrix *RotateZMatrix(angle_t rad);
 
 // s1 = s2+s3+s1 (1024 lenghtmax)
 void strcatbf(char *s1, const char *s2, const char *s3);

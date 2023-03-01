@@ -69,14 +69,14 @@ void HWR_SetCurrentTexture(GLMipmap_t *texture)
     }
     else
     {
-        HWD.pfnSetTexture(texture);
+        GPU->SetTexture(texture);
     }
 }
 
 // If batching is enabled, this function collects the polygon data and the chosen texture
 // for later use in HWR_RenderBatches. Otherwise the rendering backend is used to
 // render the polygon immediately.
-void HWR_ProcessPolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPts, FBITFIELD PolyFlags, int shader_target, boolean horizonSpecial)
+void HWR_ProcessPolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPts, FBITFIELD PolyFlags, int shader, boolean horizonSpecial)
 {
     if (currently_batching)
 	{
@@ -114,7 +114,7 @@ void HWR_ProcessPolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPt
 		polygonArray[polygonArraySize].numVerts = iNumPts;
 		polygonArray[polygonArraySize].polyFlags = PolyFlags;
 		polygonArray[polygonArraySize].texture = current_texture;
-		polygonArray[polygonArraySize].shader = (shader_target != -1) ? HWR_GetShaderFromTarget(shader_target) : shader_target;
+		polygonArray[polygonArraySize].shader = shader;
 		polygonArray[polygonArraySize].horizonSpecial = horizonSpecial;
 		polygonArraySize++;
 
@@ -122,11 +122,7 @@ void HWR_ProcessPolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPt
 		unsortedVertexArraySize += iNumPts;
 	}
 	else
-	{
-        if (shader_target != -1)
-            HWD.pfnSetShader(HWR_GetShaderFromTarget(shader_target));
-        HWD.pfnDrawPolygon(pSurf, pOutVerts, iNumPts, PolyFlags);
-    }
+        GPU->DrawPolygonShader(pSurf, pOutVerts, iNumPts, PolyFlags, shader);
 }
 
 static int comparePolygons(const void *p1, const void *p2)
@@ -285,16 +281,16 @@ void HWR_RenderBatches(void)
 	// and a color array could replace the color calls.
 
 	// set state for first batch
-
 	if (cv_glshaders.value && gl_shadersavailable)
 	{
-		HWD.pfnSetShader(currentShader);
+		GPU->SetBlend(currentPolyFlags);
+		GPU->SetShader(currentShader);
 	}
 
 	if (currentPolyFlags & PF_NoTexture)
 		currentTexture = NULL;
     else
-	    HWD.pfnSetTexture(currentTexture);
+	    GPU->SetTexture(currentTexture);
 
 	while (1)// note: remember handling notexture polyflag as having texture number 0 (also in comparePolygons)
 	{
@@ -409,7 +405,7 @@ void HWR_RenderBatches(void)
 		if (changeState || stopFlag)
 		{
 			// execute draw call
-            HWD.pfnDrawIndexedTriangles(&currentSurfaceInfo, finalVertexArray, finalIndexWritePos, currentPolyFlags, finalVertexIndexArray);
+			GPU->DrawIndexedTriangles(&currentSurfaceInfo, finalVertexArray, finalIndexWritePos, currentPolyFlags, finalVertexIndexArray);
 			// update stats
 			ps_hw_numcalls.value.i++;
 			ps_hw_numverts.value.i += finalIndexWritePos;
@@ -425,7 +421,7 @@ void HWR_RenderBatches(void)
 		// change state according to change bools and next vars, update current vars and reset bools
 		if (changeShader)
 		{
-			HWD.pfnSetShader(nextShader);
+			GPU->SetShader(nextShader);
 			currentShader = nextShader;
 			changeShader = false;
 
@@ -434,7 +430,7 @@ void HWR_RenderBatches(void)
 		if (changeTexture)
 		{
 			// texture should be already ready for use from calls to SetTexture during batch collection
-		    HWD.pfnSetTexture(nextTexture);
+			GPU->SetTexture(nextTexture);
 			currentTexture = nextTexture;
 			changeTexture = false;
 

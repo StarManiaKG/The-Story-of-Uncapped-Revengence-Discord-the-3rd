@@ -203,7 +203,11 @@ static int l_strcmp (const TString *ls, const TString *rs) {
   const char *r = getstr(rs);
   size_t lr = rs->tsv.len;
   for (;;) {
+#ifdef LUA_NOLOCALE
+    int temp = strcmp(l, r);
+#else
     int temp = strcoll(l, r);
+#endif
     if (temp != 0) return temp;
     else {  /* strings are equal up to a `\0' */
       size_t len = strlen(l);  /* index of first `\0' in both strings */
@@ -308,6 +312,33 @@ void luaV_concat (lua_State *L, int total, int last) {
     total -= n-1;  /* got `n' strings to create 1 new */
     last -= n-1;
   } while (total > 1);  /* repeat until only 1 result left */
+}
+
+
+static void objlen (lua_State *L, StkId ra, TValue *rb) {
+  const TValue *tm;
+  switch (ttype(rb)) {
+    case LUA_TTABLE: {
+      Table *h = hvalue(rb);
+      tm = fasttm(L, h->metatable, TM_LEN);
+      if (tm) break;  /* metamethod? break switch to call it */
+      setnvalue(ra, cast_num(luaH_getn(h)));  /* else primitive len */
+      return;
+    }
+    case LUA_TSTRING: {
+      tm = fasttm(L, G(L)->mt[LUA_TSTRING], TM_LEN);
+      if (tm) break;  /* metamethod? break switch to call it */
+      setnvalue(ra, cast_num(tsvalue(rb)->len));
+      return;
+    }
+    default: {  /* try metamethod */
+      tm = luaT_gettmbyobj(L, rb, TM_LEN);
+      if (ttisnil(tm))  /* no metamethod? */
+        luaG_typeerror(L, rb, "get length of");
+      break;
+    }
+  }
+  callTMres(L, ra, tm, rb, luaO_nilobject);
 }
 
 
@@ -568,23 +599,7 @@ void luaV_execute (lua_State *L, int nexeccalls) {
         continue;
       }
       case OP_LEN: {
-        TValue *rb = RB(i);
-        switch (ttype(rb)) {
-          case LUA_TTABLE: {
-            setnvalue(ra, cast_num(luaH_getn(hvalue(rb))));
-            break;
-          }
-          case LUA_TSTRING: {
-            setnvalue(ra, cast_num(tsvalue(rb)->len));
-            break;
-          }
-          default: {  /* try metamethod */
-            Protect(
-              if (!call_binTM(L, rb, luaO_nilobject, ra, TM_LEN))
-                luaG_typeerror(L, rb, "get length of");
-            )
-          }
-        }
+        Protect(objlen(L, ra, RB(i)));
         continue;
       }
       case OP_CONCAT: {

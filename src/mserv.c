@@ -21,11 +21,8 @@
 #include "i_threads.h"
 #include "mserv.h"
 #include "m_menu.h"
+#include "ts_main.h" // touchscreenavailable
 #include "z_zone.h"
-
-#ifdef HAVE_DISCORDRPC
-#include "discord.h"
-#endif
 
 #ifdef MASTERSERVER
 
@@ -57,7 +54,7 @@ static void Command_Listserv_f(void);
 
 static void Update_parameters (void);
 
-static void MasterServer_OnChange (void);
+static void MasterServer_OnChange(void);
 
 static CV_PossibleValue_t masterserver_update_rate_cons_t[] = {
 	{2,  "MIN"},
@@ -66,7 +63,6 @@ static CV_PossibleValue_t masterserver_update_rate_cons_t[] = {
 };
 
 consvar_t cv_masterserver = CVAR_INIT ("masterserver", "https://mb.srb2.org/MS/0", CV_SAVE|CV_CALL, NULL, MasterServer_OnChange);
-consvar_t cv_holepunchserver = CVAR_INIT ("holepunchserver", "jart-dev.jameds.org", CV_SAVE, NULL, NULL);
 consvar_t cv_servername = CVAR_INIT ("servername", "SRB2 server", CV_SAVE|CV_NETVAR|CV_CALL|CV_NOINIT, NULL, Update_parameters);
 
 consvar_t cv_masterserver_update_rate = CVAR_INIT ("masterserver_update_rate", "15", CV_SAVE|CV_CALL|CV_NOINIT, masterserver_update_rate_cons_t, Update_parameters);
@@ -89,14 +85,13 @@ msg_rooms_t room_list[NUM_LIST_ROOMS+1]; // +1 for easy test
 
 /** Adds variables and commands relating to the master server.
   *
-  * \sa cv_masterserver, cv_holepunchserver, cv_servername,
+  * \sa cv_masterserver, cv_servername,
   *     Command_Listserv_f
   */
 void AddMServCommands(void)
 {
 #ifndef NONET
 	CV_RegisterVar(&cv_masterserver);
-	CV_RegisterVar(&cv_holepunchserver);
 	CV_RegisterVar(&cv_masterserver_update_rate);
 	CV_RegisterVar(&cv_masterserver_timeout);
 	CV_RegisterVar(&cv_masterserver_debug);
@@ -116,7 +111,17 @@ static void WarnGUI (void)
 #ifdef HAVE_THREADS
 	I_lock_mutex(&m_menu_mutex);
 #endif
-	M_StartMessage(M_GetText("There was a problem connecting to\nthe Master Server\n\nCheck the console for details.\n"), NULL, MM_NOTHING);
+
+#ifdef TOUCHINPUTS
+	if (inputmethod == INPUTMETHOD_TOUCH)
+	{
+		M_StartMessage(M_GetText("There was a problem connecting to\nthe Master Server\n\nCheck the console for details,\nor tap anywhere.\n"), NULL, MM_NOTHING);
+		M_TSNav_SetConsoleVisible(true);
+	}
+	else
+#endif
+		M_StartMessage(M_GetText("There was a problem connecting to\nthe Master Server\n\nCheck the console for details.\n"), NULL, MM_NOTHING);
+
 #ifdef HAVE_THREADS
 	I_unlock_mutex(m_menu_mutex);
 #endif
@@ -273,10 +278,6 @@ Finish_update (void)
 
 	if (! done)
 		Finish_update();
-#ifdef HAVE_DISCORDRPC
-	else
-		DRPC_UpdatePresence();
-#endif
 }
 
 static void
@@ -314,10 +315,6 @@ Finish_unlist (void)
 			MSId++;
 	}
 	Unlock_state();
-
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
 }
 
 #ifdef HAVE_THREADS
@@ -542,8 +539,7 @@ Update_parameters (void)
 #endif/*MASTERSERVER*/
 }
 
-static void 
-MasterServer_OnChange (void)
+static void MasterServer_OnChange(void)
 {
 #ifdef MASTERSERVER
 	UnregisterServer();

@@ -20,6 +20,7 @@
 #include "hu_stuff.h"
 #include "r_local.h"
 #include "s_sound.h"
+#include "i_time.h"
 #include "i_video.h"
 #include "v_video.h"
 #include "w_wad.h"
@@ -29,6 +30,7 @@
 #include "m_menu.h"
 #include "dehacked.h"
 #include "g_input.h"
+#include "ts_main.h" // touchfingers
 #include "console.h"
 #include "m_random.h"
 #include "m_misc.h" // moviemode functionality
@@ -204,9 +206,10 @@ static INT32 sparklloop;
 // PROMPT STATE
 //
 boolean promptactive = false;
+boolean promptblockcontrols = false;
+
 static mobj_t *promptmo;
 static INT16 promptpostexectag;
-static boolean promptblockcontrols;
 static char *promptpagetext = NULL;
 static INT32 callpromptnum = INT32_MAX;
 static INT32 callpagenum = INT32_MAX;
@@ -226,6 +229,8 @@ static tic_t cutscene_lasttextwrite = 0;
 
 // STJR Intro
 char stjrintro[9] = "STJRI000";
+
+static huddrawlist_h luahuddrawlist_title;
 
 //
 // This alters the text string cutscene_disptext.
@@ -338,8 +343,7 @@ void F_StartCustomCutscene(INT32 cutscenenum, boolean precutscene, boolean reset
 
 void F_StartIntro(void)
 {
-	if (!jukeboxMusicPlaying)
-		S_StopMusic();
+	S_StopMusic();
 	S_StopSounds();
 
 	if (introtoplay)
@@ -832,10 +836,28 @@ void F_IntroDrawer(void)
 	}
 	else if (intro_scenenum == 1 && intro_curtime < 5*TICRATE)
 	{
-		INT32 trans = intro_curtime + 10 - (5*TICRATE);
+		INT32 input = inputmethod, trans;
+		const char *skiptext;
+
+		if (I_OnTVDevice())
+			input = INPUTMETHOD_TVREMOTE;
+		else if (I_OnMobileSystem())
+			input = INPUTMETHOD_TOUCH;
+
+		if (input == INPUTMETHOD_TOUCH)
+			skiptext = "\x82""Tap anywhere""\x86"" to skip...";
+		else if (input == INPUTMETHOD_JOYSTICK)
+			skiptext = va("\x86""Push ""\x82""%s""\x86"" to skip...", G_KeyNumToName(KEY_JOY1));
+		else if (input == INPUTMETHOD_TVREMOTE)
+			skiptext = "\x86""Push ""\x82""Center""\x86"" to skip...";
+		else
+			skiptext = "\x86""Press ""\x82""ENTER""\x86"" to skip...";
+
+		trans = intro_curtime + 10 - (5*TICRATE);
 		if (trans < 0)
 			trans = 0;
-		V_DrawRightAlignedString(BASEVIDWIDTH-4, BASEVIDHEIGHT-12, V_ALLOWLOWERCASE|(trans<<V_ALPHASHIFT), "\x86""Press ""\x82""ENTER""\x86"" to skip...");
+
+		V_DrawRightAlignedString(BASEVIDWIDTH-4, BASEVIDHEIGHT-12, V_ALLOWLOWERCASE|(trans<<V_ALPHASHIFT), skiptext);
 	}
 
 	V_DrawString(cx, cy, V_ALLOWLOWERCASE, cutscene_disptext);
@@ -913,22 +935,28 @@ void F_IntroTicker(void)
 				while (quittime > nowtime)
 				{
 					while (!((nowtime = I_GetTime()) - lasttime))
-						I_Sleep();
+					{
+						I_Sleep(cv_sleep.value);
+						I_UpdateTime(cv_timescale.value);
+					}
 					lasttime = nowtime;
 
 					I_OsPolling();
-					I_UpdateNoBlit();
-#ifdef HAVE_THREADS
-					I_lock_mutex(&m_menu_mutex);
-#endif
-					M_Drawer(); // menu is drawn even on top of wipes
-#ifdef HAVE_THREADS
-					I_unlock_mutex(m_menu_mutex);
-#endif
-					I_FinishUpdate(); // Update the screen with the image Tails 06-19-2001
 
-					if (moviemode) // make sure we save frames for the white hold too
-						M_SaveFrame();
+					if (!I_AppOnBackground())
+					{
+#ifdef HAVE_THREADS
+						I_lock_mutex(&m_menu_mutex);
+#endif
+						M_Drawer(); // menu is drawn even on top of wipes
+#ifdef HAVE_THREADS
+						I_unlock_mutex(m_menu_mutex);
+#endif
+						I_FinishUpdate(); // Update the screen with the image Tails 06-19-2001
+
+						if (moviemode) // make sure we save frames for the white hold too
+							M_SaveFrame();
+					}
 				}
 			}
 
@@ -988,43 +1016,56 @@ boolean F_IntroResponder(event_t *event)
 {
 	INT32 key = event->key;
 
-	// remap virtual keys (mouse & joystick buttons)
-	switch (key)
+	if (event->type == ev_keydown)
 	{
-		case KEY_MOUSE1:
-			key = KEY_ENTER;
-			break;
-		case KEY_MOUSE1 + 1:
-			key = KEY_BACKSPACE;
-			break;
-		case KEY_JOY1:
-		case KEY_JOY1 + 2:
-			key = KEY_ENTER;
-			break;
-		case KEY_JOY1 + 3:
-			key = 'n';
-			break;
-		case KEY_JOY1 + 1:
-			key = KEY_BACKSPACE;
-			break;
-		case KEY_HAT1:
-			key = KEY_UPARROW;
-			break;
-		case KEY_HAT1 + 1:
-			key = KEY_DOWNARROW;
-			break;
-		case KEY_HAT1 + 2:
-			key = KEY_LEFTARROW;
-			break;
-		case KEY_HAT1 + 3:
-			key = KEY_RIGHTARROW;
-			break;
+		// remap virtual keys (mouse & joystick buttons)
+		switch (key)
+		{
+			case KEY_MOUSE1:
+				key = KEY_ENTER;
+				break;
+			case KEY_MOUSE1 + 1:
+				key = KEY_BACKSPACE;
+				break;
+			case KEY_JOY1:
+			case KEY_JOY1 + 2:
+			case KEY_REMOTECENTER:
+				key = KEY_ENTER;
+				break;
+			case KEY_JOY1 + 3:
+				key = 'n';
+				break;
+			case KEY_JOY1 + 1:
+			case KEY_REMOTEBACK:
+				key = KEY_BACKSPACE;
+				break;
+			case KEY_HAT1:
+			case KEY_REMOTEUP:
+				key = KEY_UPARROW;
+				break;
+			case KEY_HAT1 + 1:
+			case KEY_REMOTEDOWN:
+				key = KEY_DOWNARROW;
+				break;
+			case KEY_HAT1 + 2:
+			case KEY_REMOTELEFT:
+				key = KEY_LEFTARROW;
+				break;
+			case KEY_HAT1 + 3:
+			case KEY_REMOTERIGHT:
+				key = KEY_RIGHTARROW;
+				break;
+		}
+
+		if (event->type != ev_keydown && key != 301)
+			return false;
+
+		if (key != 27 && key != KEY_ENTER && key != KEY_SPACE && key != KEY_BACKSPACE)
+			return false;
+
+		G_DetectInputMethod(event->key);
 	}
-
-	if (event->type != ev_keydown && key != 301)
-		return false;
-
-	if (key != 27 && key != KEY_ENTER && key != KEY_SPACE && key != KEY_BACKSPACE)
+	else if (event->type != ev_touchdown)
 		return false;
 
 	if (keypressed)
@@ -1047,6 +1088,7 @@ static const char *credits[] = {
 	"Johnny \"Sonikku\" Wallbank",
 	"",
 	"\1Programming",
+	"\"altaluna\"",
 	"Alam \"GBC\" Arias",
 	"Logan \"GBA\" Arias",
 	"Zolton \"Zippy_Zolton\" Auburn",
@@ -1084,7 +1126,6 @@ static const char *credits[] = {
 	"Jonas \"MascaraSnake\" Sauer",
 	"Wessel \"sphere\" Smit",
 	"\"SSNTails\"",
-	"\"Varren\"",
 	"\"VelocitOni\"", // Wrote the original dashmode script
 	"Ikaro \"Tatsuru\" Vinhas",
 	"Ben \"Cue\" Woodford",
@@ -1156,7 +1197,6 @@ static const char *credits[] = {
 	"Ben \"Mystic\" Geyer",
 	"Nathan \"Jazz\" Giroux",
 	"Vivian \"toaster\" Grannell",
-	"Dan \"Blitzzo\" Hagerstrand",
 	"James \"SeventhSentinel\" Hall",
 	"Kepa \"Nev3r\" Iceta",
 	"Thomas \"Shadow Hog\" Igoe",
@@ -1374,50 +1414,38 @@ boolean F_CreditResponder(event_t *event)
 {
 	INT32 key = event->key;
 
-	// remap virtual keys (mouse & joystick buttons)
-	switch (key)
-	{
-		case KEY_MOUSE1:
-			key = KEY_ENTER;
-			break;
-		case KEY_MOUSE1 + 1:
-			key = KEY_BACKSPACE;
-			break;
-		case KEY_JOY1:
-		case KEY_JOY1 + 2:
-			key = KEY_ENTER;
-			break;
-		case KEY_JOY1 + 3:
-			key = 'n';
-			break;
-		case KEY_JOY1 + 1:
-			key = KEY_BACKSPACE;
-			break;
-		case KEY_HAT1:
-			key = KEY_UPARROW;
-			break;
-		case KEY_HAT1 + 1:
-			key = KEY_DOWNARROW;
-			break;
-		case KEY_HAT1 + 2:
-			key = KEY_LEFTARROW;
-			break;
-		case KEY_HAT1 + 3:
-			key = KEY_RIGHTARROW;
-			break;
-	}
-
 	if (!(timesBeaten) && !(netgame || multiplayer) && !cv_debug)
 		return false;
 
-	if (event->type != ev_keydown)
-		return false;
+	// remap virtual keys (mouse & joystick buttons)
+	if (event->type == ev_keydown)
+	{
+		switch (key)
+		{
+			case KEY_MOUSE1:
+				key = KEY_ENTER;
+				break;
+			case KEY_MOUSE1 + 1:
+				key = KEY_BACKSPACE;
+				break;
+			case KEY_JOY1:
+			case KEY_JOY1 + 2:
+			case KEY_REMOTECENTER:
+				key = KEY_ENTER;
+				break;
+			case KEY_JOY1 + 1:
+			case KEY_REMOTEBACK:
+				key = KEY_BACKSPACE;
+				break;
+		}
 
-	if (key != KEY_ESCAPE && key != KEY_ENTER && key != KEY_SPACE && key != KEY_BACKSPACE)
-		return false;
+		if (key != KEY_ESCAPE && key != KEY_ENTER && key != KEY_SPACE && key != KEY_BACKSPACE)
+			return false;
 
-	if (keypressed)
-		return true;
+		G_DetectControlMethod(event->key);
+	}
+	else if (event->type != ev_touchdown)
+		return false;
 
 	keypressed = true;
 	return true;
@@ -2279,6 +2307,9 @@ void F_InitMenuPresValues(void)
 	M_SetMenuCurBackground((gamestate == GS_TIMEATTACK) ? "RECATTBG" : "TITLESKY");
 	M_SetMenuCurFadeValue(16);
 	M_SetMenuCurTitlePics();
+
+	LUA_HUD_DestroyDrawList(luahuddrawlist_title);
+	luahuddrawlist_title = LUA_HUD_CreateDrawList();
 }
 
 //
@@ -3363,6 +3394,15 @@ void F_TitleScreenDrawer(void)
 				}
 			}
 
+#ifdef TOUCHINPUTS
+			if (touchscreenavailable && (gamestate == GS_TITLESCREEN) && !(menuactive || CON_Ready()))
+			{
+				INT32 time = finalecount - 45;
+				if (time >= 0)
+					HU_DrawTapAnywhere((tic_t)time, 0);
+			}
+#endif
+
 #undef CHARSTART
 #undef SONICSTART
 #undef SONICIDLE
@@ -3398,7 +3438,21 @@ void F_TitleScreenDrawer(void)
 	}
 
 luahook:
-	LUA_HUDHOOK(title);
+	// The title drawer is sometimes called without first being started
+	// In order to avoid use-before-initialization crashes, let's check and
+	// create the drawlist if it doesn't exist.
+	if (!LUA_HUD_IsDrawListValid(luahuddrawlist_title))
+	{
+		LUA_HUD_DestroyDrawList(luahuddrawlist_title);
+		luahuddrawlist_title = LUA_HUD_CreateDrawList();
+	}
+
+	if (renderisnewtic)
+	{
+		LUA_HUD_ClearDrawList(luahuddrawlist_title);
+		LUA_HUDHOOK(title, luahuddrawlist_title);
+	}
+	LUA_HUD_DrawList(luahuddrawlist_title);
 }
 
 // separate animation timer for backgrounds, since we also count
@@ -3805,20 +3859,27 @@ boolean F_ContinueResponder(event_t *event)
 
 	if (timetonext >= 21*TICRATE/2)
 		return false;
-	if (event->type != ev_keydown)
+
+	if (!(event->type == ev_keydown || event->type == ev_touchdown))
 		return false;
 
 	// remap virtual keys (mouse & joystick buttons)
-	switch (key)
+	if (event->type == ev_keydown)
 	{
-		case KEY_ENTER:
-		case KEY_SPACE:
-		case KEY_MOUSE1:
-		case KEY_JOY1:
-		case KEY_JOY1 + 2:
-			break;
-		default:
-			return false;
+		switch (key)
+		{
+			case KEY_ENTER:
+			case KEY_SPACE:
+			case KEY_MOUSE1:
+			case KEY_JOY1:
+			case KEY_JOY1 + 2:
+			case KEY_REMOTECENTER:
+				break;
+			default:
+				return false;
+		}
+
+		G_DetectControlMethod(key);
 	}
 
 	keypressed = true;
@@ -3835,11 +3896,27 @@ boolean F_ContinueResponder(event_t *event)
 static INT32 scenenum, cutnum;
 static INT32 picxpos, picypos, picnum, pictime, picmode, numpics, pictoloop;
 static INT32 textxpos, textypos;
-static boolean dofadenow = false, cutsceneover = false;
+static boolean cutsceneover = false;
 static boolean runningprecutscene = false, precutresetplayer = false;
 
 static void F_AdvanceToNextScene(void)
 {
+	if (rendermode != render_none)
+	{
+		F_WipeStartScreen();
+
+		// Fade to any palette color you want.
+		if (cutscenes[cutnum]->scene[scenenum].fadecolor)
+		{
+			V_DrawFill(0,0,BASEVIDWIDTH,BASEVIDHEIGHT,cutscenes[cutnum]->scene[scenenum].fadecolor);
+
+			F_WipeEndScreen();
+			F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeinid, true);
+
+			F_WipeStartScreen();
+		}
+	}
+
 	// Don't increment until after endcutscene check
 	// (possible overflow / bad patch names from the one tic drawn before the fade)
 	if (scenenum+1 >= cutscenes[cutnum]->numscenes)
@@ -3847,6 +3924,7 @@ static void F_AdvanceToNextScene(void)
 		F_EndCutScene();
 		return;
 	}
+
 	++scenenum;
 
 	timetonext = 0;
@@ -3862,7 +3940,6 @@ static void F_AdvanceToNextScene(void)
 			cutscenes[cutnum]->scene[scenenum].musswitchposition, 0, 0);
 
 	// Fade to the next
-	dofadenow = true;
 	F_NewCutscene(cutscenes[cutnum]->scene[scenenum].text);
 
 	picnum = 0;
@@ -3872,6 +3949,14 @@ static void F_AdvanceToNextScene(void)
 	textypos = cutscenes[cutnum]->scene[scenenum].textypos;
 
 	animtimer = pictime = cutscenes[cutnum]->scene[scenenum].picduration[picnum];
+
+	if (rendermode != render_none)
+	{
+		F_CutsceneDrawer();
+
+		F_WipeEndScreen();
+		F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeoutid, true);
+	}
 }
 
 // See also G_AfterIntermission, the only other place which handles intra-map/ending transitions
@@ -3946,21 +4031,6 @@ void F_StartCustomCutscene(INT32 cutscenenum, boolean precutscene, boolean reset
 //
 void F_CutsceneDrawer(void)
 {
-	if (dofadenow && rendermode != render_none)
-	{
-		F_WipeStartScreen();
-
-		// Fade to any palette color you want.
-		if (cutscenes[cutnum]->scene[scenenum].fadecolor)
-		{
-			V_DrawFill(0,0,BASEVIDWIDTH,BASEVIDHEIGHT,cutscenes[cutnum]->scene[scenenum].fadecolor);
-
-			F_WipeEndScreen();
-			F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeinid, true);
-
-			F_WipeStartScreen();
-		}
-	}
 	V_DrawFill(0,0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 
 	if (cutscenes[cutnum]->scene[scenenum].picname[picnum][0] != '\0')
@@ -3971,12 +4041,6 @@ void F_CutsceneDrawer(void)
 		else
 			V_DrawScaledPatch(picxpos,picypos, 0,
 				W_CachePatchName(cutscenes[cutnum]->scene[scenenum].picname[picnum], PU_PATCH_LOWPRIORITY));
-	}
-
-	if (dofadenow && rendermode != render_none)
-	{
-		F_WipeEndScreen();
-		F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeoutid, true);
 	}
 
 	V_DrawString(textxpos, textypos, V_ALLOWLOWERCASE, cutscene_disptext);
@@ -3994,8 +4058,6 @@ void F_CutsceneTicker(void)
 	// advance animation
 	finalecount++;
 	cutscene_boostspeed = 0;
-
-	dofadenow = false;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -4074,7 +4136,7 @@ static void F_GetPageTextGeometry(UINT8 *pagelines, boolean *rightside, INT32 *b
 	*textr = *rightside ? BASEVIDWIDTH - (((*boxh * 4) + (*boxh/2)*4) + 4) : BASEVIDWIDTH-4;
 }
 
-static fixed_t F_GetPromptHideHudBound(void)
+fixed_t F_GetPromptHideHudBound(void)
 {
 	UINT8 pagelines;
 	boolean rightside;
@@ -4226,6 +4288,7 @@ void F_EndTextPrompt(boolean forceexec, boolean noexec)
 		if (promptmo && promptmo->player && promptblockcontrols)
 			promptmo->reactiontime = TICRATE/4; // prevent jumping right away // \todo account freeze realtime for this)
 		// \todo reset frozen realtime?
+		promptblockcontrols = false;
 	}
 
 	// \todo net safety, maybe loop all player thinkers?
@@ -4313,6 +4376,10 @@ void F_StartTextPrompt(INT32 promptnum, INT32 pagenum, mobj_t *mo, UINT16 postex
 				}
 			}
 		}
+
+#ifdef TOUCHINPUTS
+		G_ResetInputs();
+#endif
 	}
 	else
 		F_EndTextPrompt(true, false); // run the post-effects immediately

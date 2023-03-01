@@ -16,6 +16,7 @@
 
 #include "console.h"
 #include "command.h"
+#include "i_time.h"
 #include "i_system.h"
 #include "g_game.h"
 #include "hu_stuff.h"
@@ -48,16 +49,12 @@
 #include "m_anigif.h"
 #include "md5.h"
 #include "m_perfstats.h"
-#include "doomstat.h" //useContinues
+#include "hardware/u_list.h" // TODO: this should be a standard utility class
 
 #ifdef NETGAME_DEVMODE
 #define CV_RESTRICT CV_NETVAR
 #else
 #define CV_RESTRICT 0
-#endif
-
-#ifdef HAVE_DISCORDRPC
-#include "discord.h"
 #endif
 
 // ------
@@ -78,12 +75,12 @@ static void Got_RandomSeed(UINT8 **cp, INT32 playernum);
 static void Got_RunSOCcmd(UINT8 **cp, INT32 playernum);
 static void Got_Teamchange(UINT8 **cp, INT32 playernum);
 static void Got_Clearscores(UINT8 **cp, INT32 playernum);
-static void Got_DiscordInfo(UINT8 **cp, INT32 playernum);
 
 static void PointLimit_OnChange(void);
 static void TimeLimit_OnChange(void);
 static void NumLaps_OnChange(void);
 static void BaseNumLaps_OnChange(void);
+
 static void Mute_OnChange(void);
 
 static void Hidetime_OnChange(void);
@@ -114,9 +111,6 @@ static void SoundTest_OnChange(void);
 #ifdef NETGAME_DEVMODE
 static void Fishcake_OnChange(void);
 #endif
-
-//Star Things gotta go fast
-static void STAR_UseContinues_OnChange(void);
 
 static void Command_Playdemo_f(void);
 static void Command_Timedemo_f(void);
@@ -255,8 +249,20 @@ INT32 cv_debug;
 consvar_t cv_usemouse = CVAR_INIT ("use_mouse", "On", CV_SAVE|CV_CALL,usemouse_cons_t, I_StartupMouse);
 consvar_t cv_usemouse2 = CVAR_INIT ("use_mouse2", "Off", CV_SAVE|CV_CALL,usemouse_cons_t, I_StartupMouse2);
 
-consvar_t cv_usejoystick = CVAR_INIT ("use_gamepad", "1", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick);
-consvar_t cv_usejoystick2 = CVAR_INIT ("use_gamepad2", "2", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick2);
+consvar_t cv_usejoystick = CVAR_INIT ("use_gamepad", "1", CV_SAVE|CV_CALL|CV_NOINIT, usejoystick_cons_t, I_ChangeJoystick);
+consvar_t cv_usejoystick2 = CVAR_INIT ("use_gamepad2", "2", CV_SAVE|CV_CALL|CV_NOINIT, usejoystick_cons_t, I_ChangeJoystick2);
+
+#ifdef ACCELEROMETER
+consvar_t cv_useaccelerometer = CVAR_INIT ("use_accelerometer", "Off", CV_SAVE|CV_CALL, CV_OnOff, G_ResetAccelerometer);
+consvar_t cv_acceldeadzone = CVAR_INIT ("accelerometer_deadzone", "0.75", CV_FLOAT | CV_SAVE, zerotoone_cons_t, NULL);
+
+static CV_PossibleValue_t accelscale_cons_t[] = {{1, "MIN"}, {16, "MAX"}, {0, NULL}};
+consvar_t cv_accelscale = CVAR_INIT ("accelerometer_scale", "4", CV_SAVE, accelscale_cons_t, NULL);
+
+static CV_PossibleValue_t acceltilt_cons_t[] = {{FRACUNIT, "MIN"}, {ACCELEROMETER_MAX_TILT_OFFSET, "MAX"}, {0, NULL}};
+consvar_t cv_acceltilt = CVAR_INIT ("accelerometer_tilt", "45", CV_FLOAT | CV_SAVE, acceltilt_cons_t, NULL);
+#endif
+
 #if (defined (LJOYSTICK) || defined (HAVE_SDL))
 #ifdef LJOYSTICK
 consvar_t cv_joyport = CVAR_INIT ("padport", "/dev/js0", CV_SAVE, joyport_cons_t, NULL);
@@ -321,6 +327,9 @@ consvar_t cv_timetic = CVAR_INIT ("timerres", "Classic", CV_SAVE, timetic_cons_t
 static CV_PossibleValue_t powerupdisplay_cons_t[] = {{0, "Never"}, {1, "First-person only"}, {2, "Always"}, {0, NULL}};
 consvar_t cv_powerupdisplay = CVAR_INIT ("powerupdisplay", "First-person only", CV_SAVE, powerupdisplay_cons_t, NULL);
 
+static CV_PossibleValue_t liveshudpos_cons_t[] = {{0, "Bottom left"}, {1, "Top right"}, {2, "Automatic"}, {0, NULL}};
+consvar_t cv_liveshudpos = CVAR_INIT ("liveshudpos", "Automatic", CV_SAVE, liveshudpos_cons_t, NULL);
+
 static CV_PossibleValue_t pointlimit_cons_t[] = {{1, "MIN"}, {MAXSCORE, "MAX"}, {0, "None"}, {0, NULL}};
 consvar_t cv_pointlimit = CVAR_INIT ("pointlimit", "None", CV_SAVE|CV_NETVAR|CV_CALL|CV_NOINIT, pointlimit_cons_t, PointLimit_OnChange);
 static CV_PossibleValue_t timelimit_cons_t[] = {{1, "MIN"}, {30, "MAX"}, {0, "None"}, {0, NULL}};
@@ -380,6 +389,8 @@ consvar_t cv_runscripts = CVAR_INIT ("runscripts", "Yes", 0, CV_YesNo, NULL);
 consvar_t cv_pause = CVAR_INIT ("pausepermission", "Server", CV_SAVE|CV_NETVAR, pause_cons_t, NULL);
 consvar_t cv_mute = CVAR_INIT ("mute", "Off", CV_NETVAR|CV_CALL, CV_OnOff, Mute_OnChange);
 
+consvar_t cv_thinkless = CVAR_INIT("thinkless", "Off", CV_SAVE, CV_OnOff, NULL);
+
 consvar_t cv_sleep = CVAR_INIT ("cpusleep", "1", CV_SAVE, sleeping_cons_t, NULL);
 
 static CV_PossibleValue_t perfstats_cons_t[] = {
@@ -394,9 +405,6 @@ consvar_t cv_ps_descriptor = CVAR_INIT ("ps_descriptor", "Average", 0, ps_descri
 
 consvar_t cv_freedemocamera = CVAR_INIT("freedemocamera", "Off", CV_SAVE, CV_OnOff, NULL);
 
-// Star Commands lol
-consvar_t cv_usecontinues = CVAR_INIT ("usecontinues", "Yes", CV_SAVE|CV_CALL, CV_OnOff, STAR_UseContinues_OnChange);
-
 char timedemo_name[256];
 boolean timedemo_csv;
 char timedemo_csv_id[256];
@@ -408,7 +416,6 @@ INT16 gametypecount = (GT_CTF + 1);
 
 boolean splitscreen = false;
 boolean circuitmap = false;
-
 INT32 adminplayers[MAXPLAYERS];
 
 /// \warning Keep this up-to-date if you add/remove/rename net text commands
@@ -622,16 +629,14 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_pingtimeout);
 	CV_RegisterVar(&cv_showping);
 
+#ifdef MOBILE_PLATFORM
+	cv_thinkless.defaultvalue = "On";
+#endif
+	CV_RegisterVar(&cv_thinkless);
+
 	CV_RegisterVar(&cv_allowseenames);
 
 	CV_RegisterVar(&cv_dummyconsvar);
-
-#ifdef USE_STUN
-	CV_RegisterVar(&cv_stunserver);
-#endif
-
-	CV_RegisterVar(&cv_discordinvites);
-	RegisterNetXCmd(XD_DISCORD, Got_DiscordInfo);
 }
 
 // =========================================================================
@@ -735,6 +740,7 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_powerupdisplay);
 	CV_RegisterVar(&cv_itemfinder);
 	CV_RegisterVar(&cv_showinputjoy);
+	CV_RegisterVar(&cv_liveshudpos);
 
 	// time attack ghost options are also saved to config
 	CV_RegisterVar(&cv_ghost_bestscore);
@@ -840,12 +846,20 @@ void D_RegisterClientCommands(void)
 
 	CV_RegisterVar(&cv_usejoystick);
 	CV_RegisterVar(&cv_usejoystick2);
+
 #ifdef LJOYSTICK
 	CV_RegisterVar(&cv_joyport);
 	CV_RegisterVar(&cv_joyport2);
 #endif
 	CV_RegisterVar(&cv_joyscale);
 	CV_RegisterVar(&cv_joyscale2);
+
+#ifdef ACCELEROMETER
+	CV_RegisterVar(&cv_useaccelerometer);
+	CV_RegisterVar(&cv_accelscale);
+	CV_RegisterVar(&cv_acceltilt);
+	CV_RegisterVar(&cv_acceldeadzone);
+#endif
 
 	// Analog Control
 	CV_RegisterVar(&cv_analog[0]);
@@ -892,6 +906,16 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_scr_width);
 	CV_RegisterVar(&cv_scr_height);
 
+#ifdef NATIVESCREENRES
+	SCR_SetMaxNativeResDivider(SCR_GetMaxNativeResDivider(0, 0));
+
+	CV_RegisterVar(&cv_nativeres);
+	CV_RegisterVar(&cv_nativeresdiv);
+	CV_RegisterVar(&cv_nativeresauto);
+	CV_RegisterVar(&cv_nativeresfov);
+	CV_RegisterVar(&cv_nativerescompare);
+#endif
+
 	CV_RegisterVar(&cv_soundtest);
 
 	CV_RegisterVar(&cv_perfstats);
@@ -900,7 +924,7 @@ void D_RegisterClientCommands(void)
 
 	// ingame object placing
 	COM_AddCommand("objectplace", Command_ObjectPlace_f);
-	COM_AddCommand("writethings", Command_Writethings_f);
+	//COM_AddCommand("writethings", Command_Writethings_f);
 	CV_RegisterVar(&cv_speed);
 	CV_RegisterVar(&cv_opflags);
 	CV_RegisterVar(&cv_ophoopflags);
@@ -938,31 +962,9 @@ void D_RegisterClientCommands(void)
 #ifdef LUA_ALLOW_BYTECODE
 	COM_AddCommand("dumplua", Command_Dumplua_f);
 #endif
-
-#ifdef HAVE_DISCORDRPC
-	CV_RegisterVar(&cv_discordrp);
-	CV_RegisterVar(&cv_discordstreamer);
-	CV_RegisterVar(&cv_discordasks);
-	CV_RegisterVar(&cv_discordshowonstatus);
-	CV_RegisterVar(&cv_discordstatusmemes);
-	CV_RegisterVar(&cv_discordcharacterimagetype);
-	// Custom Things //
-	CV_RegisterVar(&cv_customdiscorddetails);
-	CV_RegisterVar(&cv_customdiscordstate);
-	CV_RegisterVar(&cv_customdiscordlargeimagetype);
-    CV_RegisterVar(&cv_customdiscordsmallimagetype);
-	CV_RegisterVar(&cv_customdiscordlargecharacterimage);
-	CV_RegisterVar(&cv_customdiscordsmallcharacterimage);
-    CV_RegisterVar(&cv_customdiscordlargemapimage);
-    CV_RegisterVar(&cv_customdiscordsmallmapimage);
-    CV_RegisterVar(&cv_customdiscordlargemiscimage);
-    CV_RegisterVar(&cv_customdiscordsmallmiscimage);
-    CV_RegisterVar(&cv_customdiscordlargeimagetext);
-    CV_RegisterVar(&cv_customdiscordsmallimagetext);
+#ifdef UNPACK_FILES_DEBUG
+	COM_AddCommand("unpacktest", Command_Unpacktest_f);
 #endif
-
-	// Custom Funny Star Things :)
-	CV_RegisterVar(&cv_usecontinues);
 }
 
 /** Checks if a name (as received from another player) is okay.
@@ -1253,9 +1255,6 @@ static void ForceAllSkins(INT32 forcedskin)
 				CV_StealthSet(&cv_skin2, skins[forcedskin].name);
 		}
 	}
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
 }
 
 static INT32 snacpending = 0, snac2pending = 0, chmappending = 0;
@@ -1604,11 +1603,6 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 	}
 	else
 		SetPlayerSkinByNum(playernum, skin);
-
-#ifdef HAVE_DISCORDRPC
-	if (playernum == consoleplayer)
-		DRPC_UpdatePresence();
-#endif
 }
 
 void SendWeaponPref(void)
@@ -2199,10 +2193,6 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	if (demorecording) // Okay, level loaded, character spawned and skinned,
 		G_BeginRecording(); // I AM NOW READY TO RECORD.
 	demo_start = true;
-
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
 }
 
 static void Command_Pause(void)
@@ -2276,9 +2266,6 @@ static void Got_Pause(UINT8 **cp, INT32 playernum)
 			S_ResumeAudio();
 	}
 
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
 	I_UpdateMouseGrab();
 }
 
@@ -2941,9 +2928,6 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 		if (displayplayer != consoleplayer) // You're already viewing yourself. No big deal.
 			LUA_HookViewpointSwitch(&players[consoleplayer], &players[consoleplayer], true);
 		displayplayer = consoleplayer;
-#ifdef HAVE_DISCORDRPC
-		DRPC_UpdatePresence();
-#endif
 	}
 
 	if (G_GametypeHasTeams())
@@ -3319,12 +3303,12 @@ static void Got_RunSOCcmd(UINT8 **cp, INT32 playernum)
 			if (ncs == FS_NOTFOUND)
 			{
 				CONS_Printf(M_GetText("The server tried to add %s,\nbut you don't have this file.\nYou need to find it in order\nto play on this server.\n"), filename);
-				M_StartMessage(va("The server added a file\n(%s)\nthat you do not have.\n\nPress ESC\n",filename), NULL, MM_NOTHING);
+				M_StartMessage(va("The server added a file\n(%s)\nthat you do not have.\n\n%s", filename, M_GetUserActionString(PRESS_ESC_MESSAGE)), NULL, MM_NOTHING);
 			}
 			else
 			{
 				CONS_Printf(M_GetText("Unknown error finding soc file (%s) the server added.\n"), filename);
-				M_StartMessage(va("Unknown error trying to load a file\nthat the server added\n(%s).\n\nPress ESC\n",filename), NULL, MM_NOTHING);
+				M_StartMessage(va("Unknown error trying to load a file\nthat the server added\n(%s).\n\n%s", filename, M_GetUserActionString(PRESS_ESC_MESSAGE)), NULL, MM_NOTHING);
 			}
 			return;
 		}
@@ -3332,6 +3316,69 @@ static void Got_RunSOCcmd(UINT8 **cp, INT32 playernum)
 
 	P_RunSOC(filename);
 	G_SetGameModified(true);
+}
+
+// C++ would make this SO much simpler!
+typedef struct addedfile_s
+{
+	struct addedfile_s *next;
+	struct addedfile_s *prev;
+	char *value;
+} addedfile_t;
+
+static boolean AddedFileContains(addedfile_t *list, const char *value)
+{
+	addedfile_t *node;
+	for (node = list; node; node = node->next)
+	{
+		if (!strcmp(value, node->value))
+			return true;
+	}
+
+	return false;
+}
+
+static void AddedFilesAdd(addedfile_t **list, const char *value)
+{
+	addedfile_t *item = Z_Calloc(sizeof(addedfile_t), PU_STATIC, NULL);
+	item->value = Z_StrDup(value);
+	ListAdd(item, (listitem_t**)list);
+}
+
+static void AddedFilesRemove(void *pItem, addedfile_t **itemHead)
+{
+	addedfile_t *item = (addedfile_t *)pItem;
+
+	if (item == *itemHead) // Start of list
+	{
+		*itemHead = item->next;
+
+		if (*itemHead)
+			(*itemHead)->prev = NULL;
+	}
+	else if (item->next == NULL) // end of list
+	{
+		item->prev->next = NULL;
+	}
+	else // Somewhere in between
+	{
+		item->prev->next = item->next;
+		item->next->prev = item->prev;
+	}
+
+	Z_Free(item->value);
+	Z_Free(item);
+}
+
+static void AddedFilesClearList(addedfile_t **itemHead)
+{
+	addedfile_t *item;
+	addedfile_t *next;
+	for (item = *itemHead; item; item = next)
+	{
+		next = item->next;
+		AddedFilesRemove(item, itemHead);
+	}
 }
 
 /** Adds a pwad at runtime.
@@ -3342,8 +3389,7 @@ static void Command_Addfile(void)
 	size_t argc = COM_Argc(); // amount of arguments total
 	size_t curarg; // current argument index
 
-	const char *addedfiles[argc]; // list of filenames already processed
-	size_t numfilesadded = 0; // the amount of filenames processed
+	addedfile_t *addedfiles = NULL; // list of filenames already processed
 
 	if (argc < 2)
 	{
@@ -3358,25 +3404,14 @@ static void Command_Addfile(void)
 		char buf[256];
 		char *buf_p = buf;
 		INT32 i;
-		size_t ii;
 		int musiconly; // W_VerifyNMUSlumps isn't boolean
 		boolean fileadded = false;
 
 		fn = COM_Argv(curarg);
 
 		// For the amount of filenames previously processed...
-		for (ii = 0; ii < numfilesadded; ii++)
-		{
-			// If this is one of them, don't try to add it.
-			if (!strcmp(fn, addedfiles[ii]))
-			{
-				fileadded = true;
-				break;
-			}
-		}
-
-		// If we've added this one, skip to the next one.
-		if (fileadded)
+		fileadded = AddedFileContains(addedfiles, fn);
+		if (fileadded) // If this is one of them, don't try to add it.
 		{
 			CONS_Alert(CONS_WARNING, M_GetText("Already processed %s, skipping\n"), fn);
 			continue;
@@ -3385,13 +3420,16 @@ static void Command_Addfile(void)
 		// Disallow non-printing characters and semicolons.
 		for (i = 0; fn[i] != '\0'; i++)
 			if (!isprint(fn[i]) || fn[i] == ';')
+			{
+				AddedFilesClearList(&addedfiles);
 				return;
+			}
 
-		musiconly = W_VerifyNMUSlumps(fn, false);
+		musiconly = W_VerifyNMUSlumps(fn, FILEHANDLE_STANDARD, false);
 
 		if (musiconly == -1)
 		{
-			addedfiles[numfilesadded++] = fn;
+			AddedFilesAdd(&addedfiles, fn);
 			continue;
 		}
 
@@ -3410,7 +3448,7 @@ static void Command_Addfile(void)
 		if (!(netgame || multiplayer) || musiconly)
 		{
 			P_AddWadFile(fn);
-			addedfiles[numfilesadded++] = fn;
+			AddedFilesAdd(&addedfiles, fn);
 			continue;
 		}
 
@@ -3425,6 +3463,7 @@ static void Command_Addfile(void)
 		if (numwadfiles >= MAX_WADFILES)
 		{
 			CONS_Alert(CONS_ERROR, M_GetText("Too many files loaded to add %s\n"), fn);
+			AddedFilesClearList(&addedfiles);
 			return;
 		}
 
@@ -3438,7 +3477,7 @@ static void Command_Addfile(void)
 #else
 			FILE *fhandle;
 
-			if ((fhandle = W_OpenWadFile(&fn, true)) != NULL)
+			if ((fhandle = W_OpenWadFile(&fn, FILEHANDLE_STANDARD, true)) != NULL)
 			{
 				tic_t t = I_GetTime();
 				CONS_Debug(DBG_SETUP, "Making MD5 for %s\n",fn);
@@ -3464,13 +3503,15 @@ static void Command_Addfile(void)
 			WRITEMEM(buf_p, md5sum, 16);
 		}
 
-		addedfiles[numfilesadded++] = fn;
+		AddedFilesAdd(&addedfiles, fn);
 
 		if (IsPlayerAdmin(consoleplayer) && (!server)) // Request to add file
 			SendNetXCmd(XD_REQADDFILE, buf, buf_p - buf);
 		else
 			SendNetXCmd(XD_ADDFILE, buf, buf_p - buf);
 	}
+
+	AddedFilesClearList(&addedfiles);
 }
 
 static void Command_Addfolder(void)
@@ -3478,8 +3519,7 @@ static void Command_Addfolder(void)
 	size_t argc = COM_Argc(); // amount of arguments total
 	size_t curarg; // current argument index
 
-	const char *addedfolders[argc]; // list of filenames already processed
-	size_t numfoldersadded = 0; // the amount of filenames processed
+	addedfile_t *addedfolders = NULL; // list of filenames already processed
 
 	if (argc < 2)
 	{
@@ -3495,24 +3535,13 @@ static void Command_Addfolder(void)
 		char buf[256];
 		char *buf_p = buf;
 		INT32 i, stat;
-		size_t ii;
 		boolean folderadded = false;
 
 		fn = COM_Argv(curarg);
 
 		// For the amount of filenames previously processed...
-		for (ii = 0; ii < numfoldersadded; ii++)
-		{
-			// If this is one of them, don't try to add it.
-			if (!strcmp(fn, addedfolders[ii]))
-			{
-				folderadded = true;
-				break;
-			}
-		}
-
-		// If we've added this one, skip to the next one.
-		if (folderadded)
+		folderadded = AddedFileContains(addedfolders, fn);
+		if (folderadded) // If we've added this one, skip to the next one.
 		{
 			CONS_Alert(CONS_WARNING, M_GetText("Already processed %s, skipping\n"), fn);
 			continue;
@@ -3521,13 +3550,16 @@ static void Command_Addfolder(void)
 		// Disallow non-printing characters and semicolons.
 		for (i = 0; fn[i] != '\0'; i++)
 			if (!isprint(fn[i]) || fn[i] == ';')
+			{
+				AddedFilesClearList(&addedfolders);
 				return;
+			}
 
 		// Add file on your client directly if you aren't in a netgame.
 		if (!(netgame || multiplayer))
 		{
 			P_AddFolder(fn);
-			addedfolders[numfoldersadded++] = fn;
+			AddedFilesAdd(&addedfolders, fn);
 			continue;
 		}
 
@@ -3549,6 +3581,7 @@ static void Command_Addfolder(void)
 		if (numwadfiles >= MAX_WADFILES)
 		{
 			CONS_Alert(CONS_ERROR, M_GetText("Too many files loaded to add %s\n"), fn);
+			AddedFilesClearList(&addedfolders);
 			return;
 		}
 
@@ -3594,7 +3627,7 @@ static void Command_Addfolder(void)
 
 		Z_Free(fullpath);
 
-		addedfolders[numfoldersadded++] = fn;
+		AddedFilesAdd(&addedfolders, fn);
 
 		WRITESTRINGN(buf_p,p,240);
 
@@ -3744,22 +3777,22 @@ static void Got_Addfilecmd(UINT8 **cp, INT32 playernum)
 		if (ncs == FS_FOUND)
 		{
 			CONS_Printf(M_GetText("The server tried to add %s,\nbut you have too many files added.\nRestart the game to clear loaded files\nand play on this server."), filename);
-			M_StartMessage(va("The server added a file \n(%s)\nbut you have too many files added.\nRestart the game to clear loaded files.\n\nPress ESC\n",filename), NULL, MM_NOTHING);
+			M_StartMessage(va("The server added a file \n(%s)\nbut you have too many files added.\nRestart the game to clear loaded files.\n\n%s", filename, M_GetUserActionString(PRESS_ESC_MESSAGE)), NULL, MM_NOTHING);
 		}
 		else if (ncs == FS_NOTFOUND)
 		{
 			CONS_Printf(M_GetText("The server tried to add %s,\nbut you don't have this file.\nYou need to find it in order\nto play on this server."), filename);
-			M_StartMessage(va("The server added a file \n(%s)\nthat you do not have.\n\nPress ESC\n",filename), NULL, MM_NOTHING);
+			M_StartMessage(va("The server added a file \n(%s)\nthat you do not have.\n\n%s", filename, M_GetUserActionString(PRESS_ESC_MESSAGE)), NULL, MM_NOTHING);
 		}
 		else if (ncs == FS_MD5SUMBAD)
 		{
 			CONS_Printf(M_GetText("Checksum mismatch while loading %s.\nMake sure you have the copy of\nthis file that the server has.\n"), filename);
-			M_StartMessage(va("Checksum mismatch while loading \n%s.\nThe server seems to have a\ndifferent version of this file.\n\nPress ESC\n",filename), NULL, MM_NOTHING);
+			M_StartMessage(va("Checksum mismatch while loading \n%s.\nThe server seems to have a\ndifferent version of this file.\n\n%s", filename, M_GetUserActionString(PRESS_ESC_MESSAGE)), NULL, MM_NOTHING);
 		}
 		else
 		{
 			CONS_Printf(M_GetText("Unknown error finding wad file (%s) the server added.\n"), filename);
-			M_StartMessage(va("Unknown error trying to load a file\nthat the server added \n(%s).\n\nPress ESC\n",filename), NULL, MM_NOTHING);
+			M_StartMessage(va("Unknown error trying to load a file\nthat the server added \n(%s).\n\n%s", filename, M_GetUserActionString(PRESS_ESC_MESSAGE)), NULL, MM_NOTHING);
 		}
 		return;
 	}
@@ -3791,18 +3824,18 @@ static void Got_Addfoldercmd(UINT8 **cp, INT32 playernum)
 		Command_ExitGame_f();
 		if (ncs == FS_FOUND)
 		{
-			CONS_Printf(M_GetText("The server tried to add %s,\nbut you have too many files added.\nRestart the game to clear loaded files\nand play on this server."), path);
-			M_StartMessage(va("The server added a folder \n(%s)\nbut you have too many files added.\nRestart the game to clear loaded files.\n\nPress ESC\n",path), NULL, MM_NOTHING);
+			CONS_Printf(M_GetText("The server tried to add %s,\nbut you have too many files added.\nRestart the game to clear loaded files\nand play on this server.\n"), path);
+			M_StartMessage(va("The server added a folder \n(%s)\nbut you have too many files added.\nRestart the game to clear loaded files.\n\n%s",path,M_GetUserActionString(PRESS_ESC_MESSAGE)), NULL, MM_NOTHING);
 		}
 		else if (ncs == FS_NOTFOUND)
 		{
-			CONS_Printf(M_GetText("The server tried to add %s,\nbut you don't have this file.\nYou need to find it in order\nto play on this server."), path);
-			M_StartMessage(va("The server added a folder \n(%s)\nthat you do not have.\n\nPress ESC\n",path), NULL, MM_NOTHING);
+			CONS_Printf(M_GetText("The server tried to add %s,\nbut you don't have this file.\nYou need to find it in order\nto play on this server.\n"), path);
+			M_StartMessage(va("The server added a folder \n(%s)\nthat you do not have.\n\n%s",path,M_GetUserActionString(PRESS_ESC_MESSAGE)), NULL, MM_NOTHING);
 		}
 		else
 		{
 			CONS_Printf(M_GetText("Unknown error finding folder (%s) the server added.\n"), path);
-			M_StartMessage(va("Unknown error trying to load a folder\nthat the server added \n(%s).\n\nPress ESC\n",path), NULL, MM_NOTHING);
+			M_StartMessage(va("Unknown error trying to load a folder\nthat the server added \n(%s).\n\n%s",path,M_GetUserActionString(PRESS_ESC_MESSAGE)), NULL, MM_NOTHING);
 		}
 		return;
 	}
@@ -3862,6 +3895,14 @@ static void Command_Version_f(void)
 	// Would be nice to use SDL_GetPlatform for this
 #if defined (_WIN32) || defined (_WIN64)
 	CONS_Printf("Windows ");
+#elif defined(__ANDROID__)
+	CONS_Printf("Android ");
+	if (I_OnAndroidTV())
+		CONS_Printf("TV ");
+#elif defined(__IPHONEOS__)
+	CONS_Printf("iOS ");
+#elif defined(__TVOS__)
+	CONS_Printf("tvOS ");
 #elif defined(__linux__)
 	CONS_Printf("Linux ");
 #elif defined(MACOSX)
@@ -3869,7 +3910,7 @@ static void Command_Version_f(void)
 #elif defined(UNIXCOMMON)
 	CONS_Printf("Unix (Common) ");
 #else
-	CONS_Printf("Unknown OS ");
+	CONS_Printf("Other OS ");
 #endif
 
 	// Bitness
@@ -3881,7 +3922,7 @@ static void Command_Version_f(void)
 		CONS_Printf("Bits Unknown ");
 
 	// No ASM?
-#ifdef NOASM
+#if defined(NOASM) && !defined(__ANDROID__)
 	CONS_Printf("\x85" "NOASM " "\x80");
 #endif
 
@@ -3937,6 +3978,7 @@ static void Command_Playintro_f(void)
 	if (dirmenu)
 		closefilemenu(true);
 
+	M_ClearMenus(false);
 	F_StartIntro();
 }
 
@@ -4093,9 +4135,6 @@ static void CoopLives_OnChange(void)
 			CONS_Printf(M_GetText("Lives are now shared between players.\n"));
 			break;
 	}
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
 
 	if (cv_coopstarposts.value == 2)
 		return;
@@ -4158,7 +4197,7 @@ static void TimeLimit_OnChange(void)
 		CV_SetValue(&cv_timelimit, 0);
 		return;
 	}
-		
+
 	if (cv_timelimit.value != 0)
 	{
 		CONS_Printf(M_GetText("Levels will end after %d minute%s.\n"),cv_timelimit.value,cv_timelimit.value == 1 ? "" : "s"); // Graue 11-17-2003
@@ -4174,10 +4213,6 @@ static void TimeLimit_OnChange(void)
 	}
 	else if (netgame || multiplayer)
 		CONS_Printf(M_GetText("Time limit disabled\n"));
-		
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
 }
 
 /** Adjusts certain settings to match a changed gametype.
@@ -4316,9 +4351,6 @@ void D_GameTypeChanged(INT32 lastgametype)
 			teamscramble = 0;
 		}
 	}
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
 }
 
 static void Ringslinger_OnChange(void)
@@ -4648,7 +4680,7 @@ void Command_Retry_f(void)
 		CONS_Printf(M_GetText("You must be in a level to use this.\n"));
 	else if (netgame || multiplayer)
 		CONS_Printf(M_GetText("This only works in single player.\n"));
-	else if (!&players[consoleplayer] || players[consoleplayer].lives <= 1)
+	else if (players[consoleplayer].lives <= 1)
 		CONS_Printf(M_GetText("You can't retry without any lives remaining!\n"));
 	else if (G_IsSpecialStage(gamemap))
 		CONS_Printf(M_GetText("You can't retry special stages!\n"));
@@ -4657,9 +4689,6 @@ void Command_Retry_f(void)
 		M_ClearMenus(true);
 		G_SetRetryFlag();
 	}
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
 }
 
 #ifdef NETGAME_DEVMODE
@@ -4801,9 +4830,6 @@ static void ForceSkin_OnChange(void)
 		CONS_Printf("The server is restricting all players to skin \"%s\".\n",skins[cv_forceskin.value].name);
 		ForceAllSkins(cv_forceskin.value);
 	}
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
 }
 
 //Allows the player's name to be changed if cv_mute is off.
@@ -4846,16 +4872,13 @@ static void Skin_OnChange(void)
 		return;
 	}
 
-	if (CanChangeSkin(consoleplayer)) //!P_PlayerMoving(consoleplayer) && 
+	if (CanChangeSkin(consoleplayer) && !P_PlayerMoving(consoleplayer))
 		SendNameAndColor();
 	else
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));
 		CV_StealthSet(&cv_skin, skins[players[consoleplayer].skin].name);
 	}
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
 }
 
 /** Sends a skin change for the secondary splitscreen player, unless that
@@ -4868,16 +4891,13 @@ static void Skin2_OnChange(void)
 	if (!Playing() || !splitscreen)
 		return; // do whatever you want
 
-	if (CanChangeSkin(secondarydisplayplayer)) //!P_PlayerMoving(consoleplayer) && 
+	if (CanChangeSkin(secondarydisplayplayer) && !P_PlayerMoving(secondarydisplayplayer))
 		SendNameAndColor2();
 	else
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));
 		CV_StealthSet(&cv_skin2, skins[players[secondarydisplayplayer].skin].name);
 	}
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
 }
 
 /** Sends a color change for the console player, unless that player is moving.
@@ -4898,14 +4918,13 @@ static void Color_OnChange(void)
 			return;
 		}
 
-		if (skincolors[players[consoleplayer].skincolor].accessible == true) //!P_PlayerMoving(consoleplayer) && 
+		if (!P_PlayerMoving(consoleplayer) && skincolors[players[consoleplayer].skincolor].accessible == true)
 		{
 			// Color change menu scrolling fix is no longer necessary
 			SendNameAndColor();
 		}
 		else
 		{
-			CONS_Alert(CONS_NOTICE, M_GetText("That is an inaccessible skincolor.\n"));
 			CV_StealthSetValue(&cv_playercolor,
 				players[consoleplayer].skincolor);
 		}
@@ -4927,14 +4946,13 @@ static void Color2_OnChange(void)
 	}
 	else
 	{
-		if (skincolors[players[secondarydisplayplayer].skincolor].accessible == true) //!P_PlayerMoving(consoleplayer) && 
+		if (!P_PlayerMoving(secondarydisplayplayer) && skincolors[players[secondarydisplayplayer].skincolor].accessible == true)
 		{
 			// Color change menu scrolling fix is no longer necessary
 			SendNameAndColor2();
 		}
 		else
 		{
-			CONS_Alert(CONS_NOTICE, M_GetText("That is an inaccessible skincolor.\n"));
 			CV_StealthSetValue(&cv_playercolor2,
 				players[secondarydisplayplayer].skincolor);
 		}
@@ -4945,6 +4963,7 @@ static void Color2_OnChange(void)
 /** Displays the result of the chat being muted or unmuted.
   * The server or remote admin should already know and be able to talk
   * regardless, so this is only displayed to clients.
+  * Updates touch control layouts.
   *
   * \sa cv_mute
   * \author Graue <graue@oceanbase.org>
@@ -5023,38 +5042,4 @@ static void BaseNumLaps_OnChange(void)
 		else
 			CONS_Printf(M_GetText("Number of laps will be changed to %d next round.\n"), cv_basenumlaps.value);
 	}
-}
-
-void Got_DiscordInfo(UINT8 **p, INT32 playernum)
-{
-	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
-	{
-		// protect against hacked/buggy client
-		CONS_Alert(CONS_WARNING, M_GetText("Illegal Discord info command received from %s\n"), player_names[playernum]);
-		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
-		return;
-	}
-
-	// Don't do anything with the information if we don't have Discord RP support
-#ifdef HAVE_DISCORDRPC
-	discordInfo.maxPlayers = READUINT8(*p);
-	discordInfo.joinsAllowed = READUINT8(*p);
-	discordInfo.whoCanInvite = READUINT8(*p);
-	DRPC_UpdatePresence();
-#else
-	(*p) += 3;
-#endif
-}
-
-//Star Commands: Electric Boogalo LETS GOOOOOOO
-static void STAR_UseContinues_OnChange(void)
-{
-	if (Playing())
-		return;
-
-	if (!(netgame || multiplayer))
-		useContinues = cv_usecontinues.value;
-	else
-		CONS_Printf(M_GetText("This only works in Singleplayer.\n"));
 }

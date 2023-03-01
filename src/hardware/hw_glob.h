@@ -74,6 +74,8 @@ typedef struct gl_vissprite_s
 	float spritexscale, spriteyscale;
 	float spritexoffset, spriteyoffset;
 
+	skincolornum_t color;
+
 	UINT32 renderflags;
 	UINT8 rotateflags;
 
@@ -81,6 +83,8 @@ typedef struct gl_vissprite_s
 	boolean precip; // Tails 08-25-2002
 	boolean rotated;
 	UINT8 translucency;       //alpha level 0-255
+
+	angle_t angle; // for splats
 
 	//Hurdler: 25/04/2000: now support colormap in hardware mode
 	UINT8 *colormap;
@@ -104,8 +108,6 @@ void HWR_FreeExtraSubsectors(void);
 // --------
 // hw_cache.c
 // --------
-RGBA_t *HWR_GetTexturePalette(void);
-
 void HWR_InitMapTextures(void);
 void HWR_LoadMapTextures(size_t pnumtextures);
 void HWR_FreeMapTextures(void);
@@ -130,10 +132,6 @@ void HWR_FreeColormapCache(void);
 void HWR_UnlockCachedPatch(GLPatch_t *gpatch);
 
 void HWR_SetPalette(RGBA_t *palette);
-void HWR_SetMapPalette(void);
-UINT32 HWR_CreateLightTable(UINT8 *lighttable);
-UINT32 HWR_GetLightTableID(extracolormap_t *colormap);
-void HWR_ClearLightTables(void);
 
 
 // --------
@@ -141,19 +139,5 @@ void HWR_ClearLightTables(void);
 // --------
 extern INT32 patchformat;
 extern INT32 textureformat;
-
-// --------
-// hw_shaders.c
-// --------
-boolean HWR_InitShaders(void);
-void HWR_CompileShaders(void);
-
-int HWR_GetShaderFromTarget(int shader_target);
-
-void HWR_LoadAllCustomShaders(void);
-void HWR_LoadCustomShadersFromFile(UINT16 wadnum, boolean PK3);
-const char *HWR_GetShaderName(INT32 shader);
-
-extern customshaderxlat_t shaderxlat[];
 
 #endif //_HW_GLOB_

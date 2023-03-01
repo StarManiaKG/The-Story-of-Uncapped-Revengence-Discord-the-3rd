@@ -245,7 +245,8 @@ typedef enum
 	CR_MINECART,
 	CR_ROLLOUT,
 	CR_PTERABYTE,
-	CR_DUSTDEVIL
+	CR_DUSTDEVIL,
+	CR_FAN
 } carrytype_t; // pw_carry
 
 // Player powers. (don't edit this comment)
@@ -344,7 +345,7 @@ typedef struct botmem_s
 {
 	boolean lastForward;
 	boolean lastBlocked;
-	boolean blocked;	
+	boolean blocked;
 	UINT8 catchup_tics;
 	UINT8 thinkstate;
 } botmem_t;
@@ -567,7 +568,7 @@ typedef struct player_s
 	UINT16 lastbuttons;
 	botmem_t botmem;
 	boolean blocked;
-	
+
 	tic_t jointime; // Timer when player joins game to change skin/color
 	tic_t quittime; // Time elapsed since user disconnected, zero if connected
 #ifdef HWRENDER

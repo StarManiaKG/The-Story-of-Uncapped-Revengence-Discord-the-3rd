@@ -121,13 +121,31 @@ extern FILE *logstream;
 extern char logfilename[1024];
 #endif
 
+#if defined(LOGMESSAGES) && (defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)) && !defined(__ANDROID__)
+#define LOGSYMLINK
+#endif
+
 /* A mod name to further distinguish versions. */
 #define SRB2APPLICATION "SRB2"
 
+// Defines that the game is being compiled for a mobile OS
+#if defined(__ANDROID__) || defined(__IPHONEOS__) || defined(__TVOS__)
+#define MOBILE_PLATFORM
+#endif
+
+// TV support
+#if defined(__ANDROID__) || defined(__TVOS__)
+#define TV_PLATFORM
+#endif
+
+#if defined(HAVE_GLES2) || !defined(HAVE_GLES)
+#define HAVE_GL_FRAMEBUFFER
+#endif
+
 //#define DEVELOP // Disable this for release builds to remove excessive cheat commands and enable MD5 checking and stuff, all in one go. :3
 #ifdef DEVELOP
-#define VERSIONSTRING "TSOURDt3RD (by StarManiaKG#4884) - Dev Mode Edition"
-#define VERSIONSTRING_RC "TSOURDt3RD (by StarManiaKG#4884) - Dev Mode Edition" "\0"
+#define VERSIONSTRING "Development EXE"
+#define VERSIONSTRING_RC "Development EXE" "\0"
 // most interface strings are ignored in development mode.
 // we use comprevision and compbranch instead.
 // VERSIONSTRING_RC is for the resource-definition script used by windows builds
@@ -136,7 +154,7 @@ extern char logfilename[1024];
 #define VERSIONSTRING "v"SRB2VERSION" "BETAVERSION
 #define VERSIONSTRING_RC SRB2VERSION " " BETAVERSION "\0"
 #else
-#define VERSIONSTRING "TSOURDt3RD (by StarManiaKG#4884)" //please don't remove this i'm begging you
+#define VERSIONSTRING "v"SRB2VERSION
 #define VERSIONSTRING_RC SRB2VERSION "\0"
 #endif
 // Hey! If you change this, add 1 to the MODVERSION below!
@@ -151,6 +169,21 @@ extern char logfilename[1024];
 // Does this version require an added patch file?
 // Comment or uncomment this as necessary.
 // #define USE_PATCH_DTA
+
+// Load Android assets
+#if defined(__ANDROID__)
+#define UNPACK_FILES
+#define USE_ANDROID_PK3
+#endif
+
+#ifdef USE_ANDROID_PK3
+#define ANDROID_PK3_FILENAME "android.pk3"
+#endif
+
+// Virtual keyboard
+#if defined(MOBILE_PLATFORM) && defined(TOUCHINPUTS)
+#define VIRTUAL_KEYBOARD
+#endif
 
 // Enforce a limit of loaded WAD files.
 //#define ENFORCE_WAD_LIMIT
@@ -182,8 +215,7 @@ extern char logfilename[1024];
 "You will not be able to connect to\n"\
 "the Master Server until you update to\n"\
 "the newest version of the game.\n"\
-"\n"\
-"(Press a key)\n"
+"\n%s"
 
 // The string used in the I_Error alert upon trying to host through command line parameters.
 // Generally less filled with newlines, since Windows gives you lots more room to work with.
@@ -401,7 +433,7 @@ extern skincolor_t skincolors[MAXSKINCOLORS];
 
 #define PUSHACCEL (2*FRACUNIT) // Acceleration for MF2_SLIDEPUSH items.
 
-// Special linedef executor tag numbers!
+// Special linedef executor tag numbers! Binary map format only (UDMF has other ways of doing these things).
 enum {
 	LE_PINCHPHASE      =    -2, // A boss entered pinch phase (and, in most cases, is preparing their pinch phase attack!)
 	LE_ALLBOSSESDEAD   =    -3, // All bosses in the map are dead (Egg capsule raise)
@@ -423,6 +455,10 @@ enum {
 #define DEFAULTDIR ".srb2"
 #else
 #define DEFAULTDIR "srb2"
+#endif
+
+#if defined(__ANDROID__)
+#define SHAREDSTORAGEFOLDER "Sonic Robo Blast 2"
 #endif
 
 #include "g_state.h"
@@ -467,8 +503,18 @@ void CONS_Debug(INT32 debugflags, const char *fmt, ...) FUNCDEBUG;
 
 // Things that used to be in dstrings.h
 #define SAVEGAMENAME "srb2sav"
-extern char savegamename[256];
-extern char liveeventbackup[256];
+#define SAVEGAMENAMELEN 256
+
+extern char savegamename[2][SAVEGAMENAMELEN];
+extern char liveeventbackup[2][SAVEGAMENAMELEN];
+
+extern char *cursavegamename;
+extern char *curliveeventbackup;
+
+#if defined(__ANDROID__)
+#define USE_GAMEDATA_PATHS
+#define USE_SAVEGAME_PATHS
+#endif
 
 // m_misc.h
 #ifdef GETTEXT
@@ -479,17 +525,39 @@ extern char liveeventbackup[256];
 #define M_GetText(x) (x)
 #endif
 void M_StartupLocale(void);
-extern void *(*M_Memcpy)(void* dest, const void* src, size_t n) FUNCNONNULL;
+
 char *va(const char *format, ...) FUNCPRINTF;
+
+#if defined(__ANDROID__)
+#include <ndk_strings.h>
+#define M_sprintf Android_sprintf
+#define M_snprintf Android_snprintf
+#define M_vsnprintf Android_vsnprintf
+#else
+#define M_sprintf sprintf
+#define M_snprintf snprintf
+#define M_vsnprintf vsnprintf
+#endif
+
 char *M_GetToken(const char *inputString);
 void M_UnGetToken(void);
-UINT32 M_GetTokenPos(void);
-void M_SetTokenPos(UINT32 newPos);
+void M_TokenizerOpen(const char *inputString);
+void M_TokenizerClose(void);
+const char *M_TokenizerRead(UINT32 i);
+UINT32 M_TokenizerGetEndPos(void);
+void M_TokenizerSetEndPos(UINT32 newPos);
 char *sizeu1(size_t num);
 char *sizeu2(size_t num);
 char *sizeu3(size_t num);
 char *sizeu4(size_t num);
 char *sizeu5(size_t num);
+
+char *M_GetToken(const char *inputString);
+void M_UnGetToken(void);
+UINT32 M_GetTokenPos(void);
+void M_SetTokenPos(UINT32 newPos);
+
+extern void *(*M_Memcpy)(void* dest, const void* src, size_t n) FUNCNONNULL;
 
 // d_main.c
 extern int    VERSION;
@@ -530,6 +598,22 @@ extern boolean capslock;
 // i_system.c, replace getchar() once the keyboard has been appropriated
 INT32 I_GetKey(void);
 
+/* http://www.cse.yorku.ca/~oz/hash.html */
+static inline
+UINT32 quickncasehash (const char *p, size_t n)
+{
+	size_t i = 0;
+	UINT32 x = 5381;
+
+	while (i < n && p[i])
+	{
+		x = (x * 33) ^ tolower(p[i]);
+		i++;
+	}
+
+	return x;
+}
+
 #ifndef min // Double-Check with WATTCP-32's cdefs.h
 #define min(x, y) (((x) < (y)) ? (x) : (y))
 #endif
@@ -542,11 +626,6 @@ INT32 I_GetKey(void);
 
 #ifndef M_PIl
 #define M_PIl 3.1415926535897932384626433832795029L
-#endif
-
-// VS2019 fix?
-#ifndef M_PI
-#define M_PI 3.14159265f
 #endif
 
 // Floating point comparison epsilons from float.h
@@ -583,10 +662,10 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 // Compile them at your own risk!
 
 ///	Allows the use of devmode in multiplayer. AKA "fishcake"
-#define NETGAME_DEVMODE
+//#define NETGAME_DEVMODE
 
 ///	Allows gravity changes in netgames, no questions asked.
-#define NETGAME_GRAVITY
+//#define NETGAME_GRAVITY
 
 ///	Dumps the contents of a network save game upon consistency failure for debugging.
 //#define DUMPCONSISTENCY
@@ -595,13 +674,14 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 ///	\note	XMOD port.
 //#define WEIGHTEDRECYCLER
 
-///	Allow loading of savegames between different versions of the game.
-///	\note	XMOD port.
-///	    	Most modifications should probably enable this.
-//#define SAVEGAME_OTHERVERSIONS
+/// Splash screen
+#ifdef MOBILE_PLATFORM
+#define SPLASH_SCREEN
+#endif
 
-///	Shuffle's incomplete OpenGL sorting code.
-#define SHUFFLE // This has nothing to do with sorting, why was it disabled?
+/// Breadcrumb navigation
+/// https://developer.android.com/training/tv/start/controllers#back-button
+#define BREADCRUMB
 
 ///	Allow the use of the SOC RESETINFO command.
 ///	\note	Builds that are tight on memory should disable this.
@@ -625,6 +705,10 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 
 /// OpenGL shaders
 #define GL_SHADERS
+
+#if defined(HAVE_GLES2) && !defined(GL_SHADERS)
+#define GL_SHADERS
+#endif
 
 /// Handle touching sector specials in P_PlayerAfterThink instead of P_PlayerThink.
 /// \note   Required for proper collision with moving sloped surfaces that have sector specials on them.
@@ -651,7 +735,5 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 #else
 #undef UPDATE_ALERT
 #endif
-
-#define PERFECTSAVE // Decorates a save file if you have a perfect srb2 save file loaded
 
 #endif // __DOOMDEF__

@@ -18,6 +18,7 @@
 
 #include "doomdef.h"
 #include "g_game.h"
+#include "i_time.h"
 #include "i_net.h"
 #include "i_system.h"
 #include "m_argv.h"
@@ -49,8 +50,6 @@ tic_t connectiontimeout = (10*TICRATE);
 doomcom_t *doomcom = NULL;
 /// \brief network packet data, points inside doomcom
 doomdata_t *netbuffer = NULL;
-/// \brief hole punching packet, also points inside doomcom
-holepunch_t *holepunchpacket = NULL;
 
 #ifdef DEBUGFILE
 FILE *debugfile = NULL; // put some net info in a file during the game
@@ -74,8 +73,6 @@ boolean (*I_NetCanGet)(void) = NULL;
 void (*I_NetCloseSocket)(void) = NULL;
 void (*I_NetFreeNodenum)(INT32 nodenum) = NULL;
 SINT8 (*I_NetMakeNodewPort)(const char *address, const char* port) = NULL;
-void (*I_NetRequestHolePunch)(INT32 node) = NULL;
-void (*I_NetRegisterHolePunch)(void) = NULL;
 boolean (*I_NetOpenSocket)(void) = NULL;
 boolean (*I_Ban) (INT32 node) = NULL;
 void (*I_ClearBans)(void) = NULL;
@@ -618,7 +615,10 @@ void Net_WaitAllAckReceived(UINT32 timeout)
 	while (timeout > I_GetTime() && !Net_AllAcksReceived())
 	{
 		while (tictac == I_GetTime())
-			I_Sleep();
+		{
+			I_Sleep(cv_sleep.value);
+			I_UpdateTime(cv_timescale.value);
+		}
 		tictac = I_GetTime();
 		HGetPacket();
 		Net_AckTicker();
@@ -1335,7 +1335,6 @@ boolean D_CheckNetGame(void)
 		I_Error("Too many nodes (%d), max:%d", doomcom->numnodes, MAXNETNODES);
 
 	netbuffer = (doomdata_t *)(void *)&doomcom->data;
-	holepunchpacket = (holepunch_t *)(void *)&doomcom->data;
 
 #ifdef DEBUGFILE
 	if (M_CheckParm("-debugfile"))

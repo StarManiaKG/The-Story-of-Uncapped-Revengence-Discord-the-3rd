@@ -18,6 +18,7 @@
 #include "d_event.h"
 #include "d_player.h"
 #include "r_defs.h"
+#include "g_input.h"
 
 //
 // STATUS BAR
@@ -25,11 +26,6 @@
 
 // Called by main loop.
 void ST_Ticker(boolean run);
-
-#ifdef HAVE_DISCORDRPC
-// Called when you have Discord asks
-void ST_AskToJoinEnvelope(void);
-#endif
 
 // Called by main loop.
 void ST_Drawer(void);
@@ -97,6 +93,7 @@ typedef struct
 typedef enum
 {
 	HUD_LIVES,
+	HUD_LIVESALT,
 
 	HUD_RINGS,
 	HUD_RINGSNUM,
@@ -124,8 +121,17 @@ typedef enum
 
 	NUMHUDITEMS
 } hudnum_t;
-
 extern hudinfo_t hudinfo[NUMHUDITEMS];
+
+#define ST_WEAPONS_X ((BASEVIDWIDTH / 2) - (NUM_WEAPONS * 10) - 6)
+#define ST_WEAPONS_Y 176 // HUD_LIVES
+#define ST_WEAPONS_W 20
+#define ST_WEAPONS_H 20
+
+hudinfo_t *ST_GetLivesHUDInfo(void);
+boolean ST_AltLivesHUDEnabled(void);
+
+extern INT16 demoinputdrawn;
 
 extern UINT16 objectsdrawn;
 

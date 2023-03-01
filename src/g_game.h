@@ -41,10 +41,13 @@ extern INT32 gameovertics;
 extern UINT8 ammoremovaltics;
 extern tic_t timeinmap; // Ticker for time spent in level (used for levelcard display)
 extern INT16 rw_maximums[NUM_WEAPONS];
+
+extern INT32 camtoggledelay, camtoggledelay2;
 extern INT32 pausedelay;
 extern boolean pausebreakkey;
 
 extern boolean promptactive;
+extern boolean promptblockcontrols;
 
 extern consvar_t cv_pauseifunfocused;
 
@@ -180,14 +183,16 @@ void G_StartTitleCard(void);
 void G_PreLevelTitleCard(void);
 boolean G_IsTitleCardAvailable(void);
 
-// Can be called by the startup code or M_Responder, calls P_SetupLevel.
+// Can be called by the startup code or M_Responder, calls P_LoadLevel.
 void G_LoadGame(UINT32 slot, INT16 mapoverride);
 
+void G_SaveGame(UINT32 slot, INT16 mapnum);
+void G_SaveGameOver(UINT32 slot, boolean modifylives);
 void G_SaveGameData(void);
 
-void G_SaveGame(UINT32 slot, INT16 mapnum);
+size_t G_ReadSaveGameSlot(char *savename, UINT8 **buffer, UINT32 slot);
 
-void G_SaveGameOver(UINT32 slot, boolean modifylives);
+char *G_LiveEventHasBackup(void);
 
 extern UINT32 gametypedefaultrules[NUMGAMETYPES];
 extern UINT32 gametypetol[NUMGAMETYPES];
@@ -224,6 +229,9 @@ void G_EndGame(void); // moved from y_inter.c/h and renamed
 void G_Ticker(boolean run);
 boolean G_Responder(event_t *ev);
 boolean G_LuaResponder(event_t *ev);
+
+boolean G_CanViewpointSwitch(boolean luahook);
+boolean G_CanViewpointSwitchToPlayer(player_t *player);
 
 void G_AddPlayer(INT32 playernum);
 

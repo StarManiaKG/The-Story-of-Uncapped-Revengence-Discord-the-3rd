@@ -660,7 +660,7 @@ static void COM_ExecuteString(char *ptext)
 	// check cvars
 	// Hurdler: added at Ebola's request ;)
 	// (don't flood the console in software mode with bad gl_xxx command)
-	if (!CV_Command() && con_destlines)
+	if (!CV_Command() && (con_destlines || dedicated))
 		CONS_Printf(M_GetText("Unknown command '%s'\n"), COM_Argv(0));
 }
 
@@ -1451,14 +1451,14 @@ static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
 				}
 
 
-			if ((v != INT32_MIN && v < var->PossibleValue[MINVAL].value) || (!stricmp(valstr, "MIN")))
+			if ((v != INT32_MIN && v < var->PossibleValue[MINVAL].value) || !stricmp(valstr, "MIN"))
 			{
 				v = var->PossibleValue[MINVAL].value;
 				valstr = var->PossibleValue[MINVAL].strvalue;
 				override = true;
 				overrideval = v;
 			}
-			else if ((v != INT32_MIN && v > var->PossibleValue[MAXVAL].value) || (!stricmp(valstr, "MAX")))
+			else if ((v != INT32_MIN && v > var->PossibleValue[MAXVAL].value) || !stricmp(valstr, "MAX"))
 			{
 				v = var->PossibleValue[MAXVAL].value;
 				valstr = var->PossibleValue[MAXVAL].strvalue;
@@ -1725,9 +1725,13 @@ void CV_SaveVars(UINT8 **p, boolean in_demo)
 		if ((cvar->flags & CV_NETVAR) && !CV_IsSetToDefault(cvar))
 		{
 			if (in_demo)
+			{
 				WRITESTRING(*p, cvar->name);
+			}
 			else
+			{
 				WRITEUINT16(*p, cvar->netid);
+			}
 			WRITESTRING(*p, cvar->string);
 			WRITEUINT8(*p, false);
 			++count;
@@ -2159,6 +2163,44 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 		CV_SetValue(var, newvalue);
 
 	var->changed = 1; // user has changed it now
+}
+
+// Returns the longest PossibleValue string for this CVar.
+// Returns NULL if the CVar has no PossibleValue.
+const char *CV_LongestPossibleValue(consvar_t *var)
+{
+	CV_PossibleValue_t *PossibleValue = var->PossibleValue;
+	INT32 i, num;
+	size_t last = 0;
+	const char *longest = NULL;
+
+	if (PossibleValue == NULL)
+		return NULL;
+
+	// Count how many PossibleValues there are.
+	for (num = 0; PossibleValue[num].strvalue; num++);
+
+	// It's a numeric range -- therefore, return the max value as a string.
+	if (num == 2 && !strcmp("MIN", PossibleValue[0].strvalue) && !strcmp("MAX", PossibleValue[1].strvalue))
+	{
+		static char dig[10]; // Amount of digits in the max value of CV_Unsigned/CV_Natural, plus one
+		M_snprintf(dig, sizeof dig, "%d", PossibleValue[1].value);
+		return dig;
+	}
+
+	// Otherwise, the PossibleValues are strings.
+	for (i = 0; i < num; i++)
+	{
+		const char *str = PossibleValue[i].strvalue;
+		size_t len = strlen(str);
+		if (len > last)
+		{
+			last = len;
+			longest = str;
+		}
+	}
+
+	return longest;
 }
 
 void CV_InitFilterVar(void)

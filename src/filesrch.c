@@ -712,9 +712,9 @@ lumpinfo_t *getdirectoryfiles(const char *path, UINT16 *nlmp, UINT16 *nfolders)
 	// Close any open directories and return if something went wrong.
 	if (failure)
 	{
+		for (; depthleft < maxdirdepth; closedir(dirhandle[depthleft++]));
 		free(dirpathindex);
 		free(dirhandle);
-		for (; depthleft < maxdirdepth; closedir(dirhandle[depthleft++]));
 		return NULL;
 	}
 
@@ -797,6 +797,7 @@ lumpinfo_t *getdirectoryfiles(const char *path, UINT16 *nlmp, UINT16 *nfolders)
 		// The complete name of the file, with its extension,
 		// excluding the path of the directory where it resides.
 		lump_p->fullname = Z_StrDup(fullname);
+		lump_p->hash = quickncasehash(lump_p->name, 8);
 
 		lump_p++;
 		i++;
@@ -839,6 +840,20 @@ static boolean filemenucmp(char *haystack, char *needle)
 		return (strstr(localhaystack, needle) != 0);
 	return (!strncmp(localhaystack, needle, menusearch[0]));
 }
+
+#if defined(__ANDROID__)
+static char *writedirmenu(char *text, UINT8 type)
+{
+	size_t len = strlen(text);
+	char *entry = Z_Malloc((len + 1 + DIR_STRING) * sizeof (char), PU_STATIC, NULL);
+
+	entry[DIR_TYPE] = type;
+	entry[DIR_LEN] = (UINT8)(len);
+	strlcpy(entry+DIR_STRING, text, len);
+
+	return entry;
+}
+#endif
 
 void closefilemenu(boolean validsize)
 {
@@ -944,7 +959,11 @@ void searchfilemenu(char *tempname)
 	if (!sizedirmenu) // no results...
 	{
 		if ((!(dirmenu = Z_Realloc(dirmenu, sizeof(char *), PU_STATIC, NULL)))
+#if defined(__ANDROID__)
+			|| !(dirmenu[0] = writedirmenu("No results...", EXT_NORESULTS)))
+#else
 			|| !(dirmenu[0] = Z_StrDup(va("%c\13No results...", EXT_NORESULTS))))
+#endif
 				I_Error("searchfilemenu(): could not create \"No results...\".");
 		sizedirmenu = 1;
 		dir_on[menudepthleft] = 0;
@@ -1120,6 +1139,11 @@ boolean preparefilemenu(boolean samedepth)
 						ext |= EXT_LOADED;
 					}
 				}
+				else if (ext == EXT_CFG)
+				{
+					if (!strncmp(dent->d_name, "layout", 6))
+						ext |= EXT_LOADED;
+				}
 				else if (ext == EXT_TXT)
 				{
 					if (!strncmp(dent->d_name, "log-", 4) || !strcmp(dent->d_name, "errorlog.txt"))
@@ -1161,7 +1185,11 @@ boolean preparefilemenu(boolean samedepth)
 	closedir(dirhandle);
 
 	if ((menudepthleft != menudepth-1) // now for UP... entry
+#if defined(__ANDROID__)
+		&& !(coredirmenu[0] = writedirmenu("UP...", EXT_UP)))
+#else
 		&& !(coredirmenu[0] = Z_StrDup(va("%c\5UP...", EXT_UP))))
+#endif
 			I_Error("preparefilemenu(): could not create \"UP...\".");
 
 	menupath[menupathindex[menudepthleft]] = 0;

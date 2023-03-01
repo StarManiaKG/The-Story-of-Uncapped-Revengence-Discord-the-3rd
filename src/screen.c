@@ -15,12 +15,14 @@
 #include "screen.h"
 #include "console.h"
 #include "am_map.h"
+#include "i_time.h"
 #include "i_system.h"
 #include "i_video.h"
 #include "r_local.h"
 #include "r_sky.h"
 #include "m_argv.h"
 #include "m_misc.h"
+#include "m_menu.h"
 #include "v_video.h"
 #include "st_stuff.h"
 #include "hu_stuff.h"
@@ -40,8 +42,13 @@
 #include "hardware/hw_model.h"
 #endif
 
+#ifdef TOUCHINPUTS
+#include "ts_main.h" // touchfingers, NUMTOUCHFINGERS
+#endif
+
 // SRB2Kart
 #include "r_fps.h" // R_GetFramerateCap
+
 
 #if defined (USEASM) && !defined (NORUSEASM)//&& (!defined (_MSC_VER) || (_MSC_VER <= 1200))
 #define RUSEASM //MSC.NET can't patch itself
@@ -63,6 +70,7 @@ void (*spanfuncs_npo2[SPANDRAWFUNC_MAX])(void);
 viddef_t vid;
 INT32 setmodeneeded; //video mode change needed if > 0 (the mode number to set + 1)
 UINT8 setrenderneeded = 0;
+UINT8 renderswitcherror = 0;
 
 static CV_PossibleValue_t scr_depth_cons_t[] = {{8, "8 bits"}, {16, "16 bits"}, {24, "24 bits"}, {32, "32 bits"}, {0, NULL}};
 
@@ -72,6 +80,28 @@ consvar_t cv_scr_height = CVAR_INIT ("scr_height", "800", CV_SAVE, CV_Unsigned, 
 consvar_t cv_scr_depth = CVAR_INIT ("scr_depth", "16 bits", CV_SAVE, scr_depth_cons_t, NULL);
 
 consvar_t cv_renderview = CVAR_INIT ("renderview", "On", 0, CV_OnOff, NULL);
+
+#ifdef NATIVESCREENRES
+static void SCR_ToggleNativeRes(void);
+static void SCR_NativeResDivChanged(void);
+static void SCR_NativeResAutoChanged(void);
+
+static CV_PossibleValue_t nativeresdiv_cons_t[] = {{FRACUNIT, "MIN"}, {20 * FRACUNIT, "MAX"}, {0, NULL}};
+static CV_PossibleValue_t nativerescompare_cons_t[] = {{0, "Width"}, {1, "Height"}, {0, NULL}};
+
+#define NATIVERESCVAR_FLAGS(name, default, possiblevalue, func, flags) CVAR_INIT (name, default, (CV_CALL | CV_SAVE | CV_NOINIT | flags), possiblevalue, func)
+#define NATIVERESCVAR_CALL(name, default, possiblevalue, func) NATIVERESCVAR_FLAGS(name, default, possiblevalue, func, 0)
+#define NATIVERESCVAR(name, default, possiblevalue) NATIVERESCVAR_CALL(name, default, possiblevalue, SCR_ToggleNativeRes)
+
+consvar_t cv_nativeres = NATIVERESCVAR("nativeres", "On", CV_OnOff);
+consvar_t cv_nativeresdiv = NATIVERESCVAR_FLAGS("nativeresdiv", "1", nativeresdiv_cons_t, SCR_NativeResDivChanged, CV_FLOAT);
+consvar_t cv_nativeresauto = NATIVERESCVAR_CALL("nativeresauto", "On", CV_OnOff, SCR_NativeResAutoChanged);
+consvar_t cv_nativeresfov = NATIVERESCVAR_CALL("nativeresfov", "On", CV_OnOff, R_SetViewSize);
+consvar_t cv_nativerescompare = NATIVERESCVAR("nativerescompare", "Height", nativerescompare_cons_t);
+
+#undef NATIVERESCVAR
+
+#endif
 
 CV_PossibleValue_t cv_renderer_t[] = {
 	{1, "Software"},
@@ -91,8 +121,14 @@ consvar_t cv_fullscreen = CVAR_INIT ("fullscreen", "Yes", CV_SAVE|CV_CALL, CV_Ye
 //                           SCREEN VARIABLES
 // =========================================================================
 
+static boolean scr_startupmodeset = false;
+
 INT32 scr_bpp; // current video mode bytes per pixel
 UINT8 *scr_borderpatch; // flat used to fill the reduced view borders set at ST_Init()
+
+#ifdef NATIVESCREENRES
+float scr_resdiv = 1.0f;
+#endif
 
 // =========================================================================
 
@@ -140,9 +176,16 @@ void SCR_SetDrawFuncs(void)
 		spanfuncs[SPANDRAWFUNC_TRANSSPRITE] = R_DrawTranslucentFloorSprite_8;
 		spanfuncs[SPANDRAWFUNC_TILTEDSPRITE] = R_DrawTiltedFloorSprite_8;
 		spanfuncs[SPANDRAWFUNC_TILTEDTRANSSPRITE] = R_DrawTiltedTranslucentFloorSprite_8;
-		spanfuncs[SPANDRAWFUNC_WATER] = R_DrawTranslucentWaterSpan_8;
-		spanfuncs[SPANDRAWFUNC_TILTEDWATER] = R_DrawTiltedTranslucentWaterSpan_8;
+		spanfuncs[SPANDRAWFUNC_WATER] = R_DrawWaterSpan_8;
+		spanfuncs[SPANDRAWFUNC_TILTEDWATER] = R_DrawTiltedWaterSpan_8;
+		spanfuncs[SPANDRAWFUNC_SOLID] = R_DrawSolidColorSpan_8;
+		spanfuncs[SPANDRAWFUNC_TRANSSOLID] = R_DrawTransSolidColorSpan_8;
+		spanfuncs[SPANDRAWFUNC_TILTEDSOLID] = R_DrawTiltedSolidColorSpan_8;
+		spanfuncs[SPANDRAWFUNC_TILTEDTRANSSOLID] = R_DrawTiltedTransSolidColorSpan_8;
+		spanfuncs[SPANDRAWFUNC_WATERSOLID] = R_DrawWaterSolidColorSpan_8;
+		spanfuncs[SPANDRAWFUNC_TILTEDWATERSOLID] = R_DrawTiltedWaterSolidColorSpan_8;
 		spanfuncs[SPANDRAWFUNC_FOG] = R_DrawFogSpan_8;
+		spanfuncs[SPANDRAWFUNC_TILTEDFOG] = R_DrawTiltedFogSpan_8;
 
 		// Lactozilla: Non-powers-of-two
 		spanfuncs_npo2[BASEDRAWFUNC] = R_DrawSpan_NPO2_8;
@@ -156,9 +199,8 @@ void SCR_SetDrawFuncs(void)
 		spanfuncs_npo2[SPANDRAWFUNC_TRANSSPRITE] = R_DrawTranslucentFloorSprite_NPO2_8;
 		spanfuncs_npo2[SPANDRAWFUNC_TILTEDSPRITE] = R_DrawTiltedFloorSprite_NPO2_8;
 		spanfuncs_npo2[SPANDRAWFUNC_TILTEDTRANSSPRITE] = R_DrawTiltedTranslucentFloorSprite_NPO2_8;
-		spanfuncs_npo2[SPANDRAWFUNC_WATER] = R_DrawTranslucentWaterSpan_NPO2_8;
-		spanfuncs_npo2[SPANDRAWFUNC_TILTEDWATER] = R_DrawTiltedTranslucentWaterSpan_NPO2_8;
-		spanfuncs_npo2[SPANDRAWFUNC_FOG] = NULL; // Not needed
+		spanfuncs_npo2[SPANDRAWFUNC_WATER] = R_DrawWaterSpan_NPO2_8;
+		spanfuncs_npo2[SPANDRAWFUNC_TILTEDWATER] = R_DrawTiltedWaterSpan_NPO2_8;
 
 #ifdef RUSEASM
 		if (R_ASM)
@@ -350,6 +392,8 @@ void SCR_CheckDefaultMode(void)
 {
 	INT32 scr_forcex, scr_forcey; // resolution asked from the cmd-line
 
+	scr_startupmodeset = true;
+
 	if (dedicated)
 		return;
 
@@ -362,6 +406,11 @@ void SCR_CheckDefaultMode(void)
 	if (M_CheckParm("-height") && M_IsNextParm())
 		scr_forcey = atoi(M_GetNextParm());
 
+#ifdef NATIVESCREENRES
+	if (cv_nativeres.value)
+		SCR_CheckNativeMode();
+#endif
+
 	if (scr_forcex && scr_forcey)
 	{
 		CONS_Printf(M_GetText("Using resolution: %d x %d\n"), scr_forcex, scr_forcey);
@@ -373,7 +422,7 @@ void SCR_CheckDefaultMode(void)
 		CONS_Printf(M_GetText("Default resolution: %d x %d (%d bits)\n"), cv_scr_width.value,
 			cv_scr_height.value, cv_scr_depth.value);
 		// see note above
-		setmodeneeded = VID_GetModeForSize(cv_scr_width.value, cv_scr_height.value) + 1;
+		SCR_SetModeFromConfig();
 	}
 
 	if (cv_renderer.value != (signed)rendermode)
@@ -394,7 +443,12 @@ void SCR_SetDefaultMode(void)
 	// remember the default screen size
 	CV_SetValue(&cv_scr_width, vid.width);
 	CV_SetValue(&cv_scr_height, vid.height);
-	CV_SetValue(&cv_scr_depth, vid.bpp*8);
+}
+
+// Set the mode number based on the resolution saved in the config
+void SCR_SetModeFromConfig(void)
+{
+	setmodeneeded = max(0, VID_GetModeForSize(cv_scr_width.value, cv_scr_height.value)) + 1;
 }
 
 // Change fullscreen on/off according to cv_fullscreen
@@ -409,6 +463,13 @@ void SCR_ChangeFullscreen(void)
 	if (graphics_started)
 	{
 		VID_PrepareModeList();
+
+#ifdef NATIVESCREENRES
+		if (cv_nativeres.value)
+			SCR_SetModeFromConfig();
+		else
+#endif
+		// Lactozilla: This only works with the preset video modes.
 		setmodeneeded = VID_GetModeForSize(vid.width, vid.height) + 1;
 	}
 	return;
@@ -429,13 +490,16 @@ void SCR_ChangeRenderer(void)
 		if (M_CheckParm("-nogl"))
 			CONS_Alert(CONS_ERROR, "OpenGL rendering was disabled!\n");
 		else
+		{
+			renderswitcherror = render_opengl;
 			CONS_Alert(CONS_ERROR, "OpenGL never loaded\n");
+		}
+
 		return;
 	}
 
 	if (rendermode == render_opengl && (vid.glstate == VID_GL_LIBRARY_LOADED)) // Clear these out before switching to software
 		HWR_ClearAllTextures();
-
 #endif
 
 	// Set the new render mode
@@ -451,57 +515,220 @@ boolean SCR_IsAspectCorrect(INT32 width, INT32 height)
 	 );
 }
 
+#ifdef NATIVESCREENRES
+void SCR_CheckNativeMode(void)
+{
+	INT32 w, h;
+
+	VID_GetNativeResolution(&w, &h);
+
+	if (w || h)
+		SCR_SetMaxNativeResDivider(SCR_GetMaxNativeResDivider(w, h));
+
+	if (cv_nativeresauto.value)
+		scr_resdiv = SCR_GetNativeResDivider(w, h);
+	else
+		scr_resdiv = FixedToFloat(cv_nativeresdiv.value);
+}
+
+void SCR_ResetNativeResDivider(void)
+{
+	float resdiv = atof(cv_nativeresdiv.defaultvalue);
+	char f[9];
+
+	scr_resdiv = resdiv;
+
+	snprintf(f, sizeof(f), "%.6f", resdiv);
+	CV_StealthSet(&cv_nativeresdiv, cv_nativeresdiv.defaultvalue);
+}
+
+static void SCR_ToggleNativeRes(void)
+{
+	INT32 mode = VID_GetModeForSize(cv_scr_width.value, cv_scr_height.value);
+	if (mode == -1)
+		mode = VID_GetModeForSize(BASEVIDWIDTH, BASEVIDHEIGHT);
+
+	setmodeneeded = mode + 1;
+	scr_resdiv = FixedToFloat(cv_nativeresdiv.value);
+}
+
+static void SCR_NativeResDivChanged(void)
+{
+	CV_StealthSetValue(&cv_nativeresauto, 0);
+	CV_StealthSetValue(&cv_nativeres, 1);
+	SCR_ToggleNativeRes();
+}
+
+static void SCR_NativeResAutoChanged(void)
+{
+	if (!scr_startupmodeset)
+		return;
+
+	if (cv_nativeresauto.value)
+	{
+		INT32 w = 0, h = 0;
+		char f[16];
+
+		// Set for next resolution change
+		VID_GetNativeResolution(&w, &h);
+		scr_resdiv = SCR_GetNativeResDivider(w, h);
+
+		// Stealth change current resolution divider variable
+		snprintf(f, sizeof(f), "%.6f", scr_resdiv);
+		CV_StealthSet(&cv_nativeresdiv, f);
+	}
+	else
+		SCR_ResetNativeResDivider();
+
+	if (cv_nativeres.value)
+		SCR_SetModeFromConfig();
+}
+
+#define RESDIVFACTOR (1.0f / 16.0f)
+
+static INT32 SCR_CalcDup(INT32 width, INT32 height)
+{
+	INT32 dupx = max(1, width / BASEVIDWIDTH);
+	INT32 dupy = max(1, height / BASEVIDHEIGHT);
+
+	if (!cv_nativerescompare.value)
+		return (dupx >= dupy ? dupx : dupy);
+	else
+		return (dupx < dupy ? dupx : dupy);
+}
+
+float SCR_GetNativeResDivider(INT32 width, INT32 height)
+{
+	if (cv_nativeresauto.value)
+	{
+		float w = (float)width;
+		float h = (float)height;
+		float wsize, hsize;
+		float div = 1.0f;
+
+		while (true)
+		{
+			INT32 iw, ih;
+			INT32 dup, corner;
+
+			wsize = (w / div);
+			hsize = (h / div);
+
+			iw = (INT32)wsize;
+			ih = (INT32)hsize;
+
+			dup = SCR_CalcDup(iw, ih);
+			corner = (iw - (BASEVIDWIDTH * dup)) / 2;
+
+			if (corner < iw / 5)
+				break;
+
+			if (wsize <= BASEVIDWIDTH || hsize <= BASEVIDHEIGHT)
+				break;
+
+			div += 0.25f;
+		}
+
+		return min(div, FixedToFloat(nativeresdiv_cons_t[1].value));
+	}
+
+	return FixedToFloat(cv_nativeresdiv.value);
+}
+
+float SCR_GetMaxNativeResDivider(INT32 nw, INT32 nh)
+{
+	float w, h;
+	float div = 1.0f;
+
+	if (!nw || !nh)
+		VID_GetNativeResolution(&nw, &nh);
+
+	w = (float)nw;
+	h = (float)nh;
+
+	while (true)
+	{
+		w = ((float)nw / div);
+		h = ((float)nh / div);
+		if (w <= (INT32)BASEVIDWIDTH || h <= (INT32)BASEVIDHEIGHT)
+			return div;
+		div += RESDIVFACTOR;
+	}
+
+	return div;
+}
+
+void SCR_SetMaxNativeResDivider(float max)
+{
+	nativeresdiv_cons_t[1].value = FloatToFixed(max);
+}
+#endif
+
 double averageFPS = 0.0f;
 
-#define FPS_SAMPLE_RATE (50000) // How often to update FPS samples, in microseconds
-#define NUM_FPS_SAMPLES 16 // Number of samples to store
+#define USE_FPS_SAMPLES
+
+#ifdef USE_FPS_SAMPLES
+#define FPS_SAMPLE_RATE (0.05) // How often to update FPS samples, in seconds
+#define NUM_FPS_SAMPLES (16) // Number of samples to store
 
 static double fps_samples[NUM_FPS_SAMPLES];
+static double updateElapsed = 0.0;
+#endif
+
+static boolean fps_init = false;
+static precise_t fps_enter = 0;
 
 void SCR_CalculateFPS(void)
 {
-	static boolean init = false;
+	precise_t fps_finish = 0;
 
-	static precise_t startTime = 0;
-	precise_t endTime = 0;
+	double frameElapsed = 0.0;
 
-	static precise_t updateTime = 0;
-	int updateElapsed = 0;
-	int i;
-
-	endTime = I_GetPreciseTime();
-
-	if (init == false)
+	if (fps_init == false)
 	{
-		startTime = updateTime = endTime;
-		init = true;
-		return;
+		fps_enter = I_GetPreciseTime();
+		fps_init = true;
 	}
 
-	updateElapsed = I_PreciseToMicros(endTime - updateTime);
+	fps_finish = I_GetPreciseTime();
+	frameElapsed = (double)((INT64)(fps_finish - fps_enter)) / I_GetPrecisePrecision();
+	fps_enter = fps_finish;
+
+#ifdef USE_FPS_SAMPLES
+	updateElapsed += frameElapsed;
 
 	if (updateElapsed >= FPS_SAMPLE_RATE)
 	{
 		static int sampleIndex = 0;
-		int frameElapsed = I_PreciseToMicros(endTime - startTime);
+		int i;
 
-		fps_samples[sampleIndex] = frameElapsed / 1000.0f;
+		fps_samples[sampleIndex] = frameElapsed;
 
 		sampleIndex++;
 		if (sampleIndex >= NUM_FPS_SAMPLES)
 			sampleIndex = 0;
 
-		averageFPS = 0.0f;
+		averageFPS = 0.0;
 		for (i = 0; i < NUM_FPS_SAMPLES; i++)
 		{
 			averageFPS += fps_samples[i];
 		}
-		averageFPS = 1000.0f / (averageFPS / NUM_FPS_SAMPLES);
 
-		updateTime = endTime;
+		if (averageFPS > 0.0)
+		{
+			averageFPS = 1.0 / (averageFPS / NUM_FPS_SAMPLES);
+		}
 	}
 
-	startTime = endTime;
+	while (updateElapsed >= FPS_SAMPLE_RATE)
+	{
+		updateElapsed -= FPS_SAMPLE_RATE;
+	}
+#else
+	// Direct, unsampled counter.
+	averageFPS = 1.0 / frameElapsed;
+#endif
 }
 
 void SCR_DisplayTicRate(void)
@@ -560,7 +787,6 @@ void SCR_DisplayLocalPing(void)
 	}
 }
 
-
 void SCR_ClosedCaptions(void)
 {
 	UINT8 i;
@@ -585,9 +811,10 @@ void SCR_ClosedCaptions(void)
 
 	for (i = 0; i < NUMCAPTIONS; i++)
 	{
-		INT32 flags, y;
+		INT32 flags, x, y, h = 10;
 		char dot;
 		boolean music;
+		const char *caption;
 
 		if (!closedcaptions[i].s)
 			continue;
@@ -598,10 +825,17 @@ void SCR_ClosedCaptions(void)
 			continue;
 
 		flags = V_SNAPTORIGHT|V_SNAPTOBOTTOM|V_ALLOWLOWERCASE;
-		y = basey-((i + 2)*10);
+		x = BASEVIDWIDTH - 20;
+		y = basey-((i + 2)*h);
 
 		if (closedcaptions[i].b)
-			y -= (closedcaptions[i].b--)*vid.dupy;
+		{
+			y -= closedcaptions[i].b * vid.dupy;
+			if (renderisnewtic)
+			{
+				closedcaptions[i].b--;
+			}
+		}
 
 		if (closedcaptions[i].t < CAPTIONFADETICS)
 			flags |= (((CAPTIONFADETICS-closedcaptions[i].t)/2)*V_10TRANS);
@@ -613,8 +847,8 @@ void SCR_ClosedCaptions(void)
 		else
 			dot = ' ';
 
-		V_DrawRightAlignedString(BASEVIDWIDTH - 20, y, flags,
-			va("%c [%s]", dot, (closedcaptions[i].s->caption[0] ? closedcaptions[i].s->caption : closedcaptions[i].s->name)));
+		caption = va("%c [%s]", dot, (closedcaptions[i].s->caption[0] ? closedcaptions[i].s->caption : closedcaptions[i].s->name));
+		V_DrawRightAlignedString(x, y, flags, caption);
 	}
 }
 

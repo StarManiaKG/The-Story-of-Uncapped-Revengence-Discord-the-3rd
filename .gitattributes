@@ -25,4 +25,3 @@
 #Appveyor
 /appveyor.yml -crlf -whitespace
 # Other
-*.psd filter=lfs diff=lfs merge=lfs -text

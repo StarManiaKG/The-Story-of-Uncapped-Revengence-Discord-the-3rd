@@ -30,7 +30,6 @@
 #include "m_misc.h" // for tunes command
 #include "m_cond.h" // for conditionsets
 #include "lua_hook.h" // MusicChange hook
-#include "m_menu.h" // Jukeboxes
 
 #ifdef HW3SOUND
 // 3D Sound Interface
@@ -75,9 +74,9 @@ consvar_t stereoreverse = CVAR_INIT ("stereoreverse", "Off", CV_SAVE, CV_OnOff, 
 static consvar_t precachesound = CVAR_INIT ("precachesound", "Off", CV_SAVE, CV_OnOff, NULL);
 
 // actual general (maximum) sound & music volume, saved into the config
-consvar_t cv_soundvolume = CVAR_INIT ("soundvolume", "16", CV_SAVE, soundvolume_cons_t, NULL);
-consvar_t cv_digmusicvolume = CVAR_INIT ("digmusicvolume", "16", CV_SAVE, soundvolume_cons_t, NULL);
-consvar_t cv_midimusicvolume = CVAR_INIT ("midimusicvolume", "16", CV_SAVE, soundvolume_cons_t, NULL);
+consvar_t cv_soundvolume = CVAR_INIT ("soundvolume", "16", CV_SAVE | CV_SLIDER_SAFE, soundvolume_cons_t, NULL);
+consvar_t cv_digmusicvolume = CVAR_INIT ("digmusicvolume", "16", CV_SAVE | CV_SLIDER_SAFE, soundvolume_cons_t, NULL);
+consvar_t cv_midimusicvolume = CVAR_INIT ("midimusicvolume", "16", CV_SAVE | CV_SLIDER_SAFE, soundvolume_cons_t, NULL);
 
 static void Captioning_OnChange(void)
 {
@@ -223,7 +222,7 @@ static INT32 S_getChannel(const void *origin, sfxinfo_t *sfxinfo)
 		}
 		else if (origin && channels[cnum].origin == origin
 			&& channels[cnum].sfxinfo->name != sfxinfo->name
-			&& channels[cnum].sfxinfo->pitch == SF_TOTALLYSINGLE && sfxinfo->pitch == SF_TOTALLYSINGLE)
+			&& channels[cnum].sfxinfo->pitch & SF_TOTALLYSINGLE && sfxinfo->pitch & SF_TOTALLYSINGLE)
 		{
 			S_StopChannel(cnum);
 			break;
@@ -2254,18 +2253,15 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 
 	if (S_MusicDisabled())
 		return;
-	
-	if (jukeboxMusicPlaying)
-		return;
 
 	strncpy(newmusic, mmusic, 7);
 	if (LUA_HookMusicChange(music_name, &hook_param))
 		return;
 	newmusic[6] = 0;
 
- 	// No Music (empty string)
+	// No Music (empty string)
 	if (newmusic[0] == 0)
- 	{
+	{
 		if (prefadems)
 			I_FadeSong(0, prefadems, &S_StopMusic);
 		else
@@ -2283,7 +2279,7 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 	}
 	else if (strnicmp(music_name, newmusic, 6) || (mflags & MUSIC_FORCERESET) ||
 		(midipref != currentmidi && S_PrefAvailable(midipref, newmusic)))
- 	{
+	{
 		CONS_Debug(DBG_DETAILED, "Now playing song %s\n", newmusic);
 
 		S_StopMusic();
@@ -2306,7 +2302,7 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 	{
 		I_SetSongPosition(position);
 		I_FadeSong(100, fadeinms, NULL);
- 	}
+}
 	else // reset volume to 100 with same music
 	{
 		I_StopFadingSong();
@@ -2315,12 +2311,9 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 }
 
 void S_StopMusic(void)
-{	
+{
 	if (!I_SongPlaying())
 		return;
-	
-	if (jukeboxMusicPlaying)
-		M_ResetJukebox();
 
 	if (I_SongPaused())
 		I_ResumeSong();
@@ -2415,9 +2408,6 @@ void S_StopFadingMusic(void)
 
 boolean S_FadeMusicFromVolume(UINT8 target_volume, INT16 source_volume, UINT32 ms)
 {
-	if (jukeboxMusicPlaying)
-		return false;
-		
 	if (source_volume < 0)
 		return I_FadeSong(target_volume, ms, NULL);
 	else
@@ -2426,9 +2416,6 @@ boolean S_FadeMusicFromVolume(UINT8 target_volume, INT16 source_volume, UINT32 m
 
 boolean S_FadeOutStopMusic(UINT32 ms)
 {
-	if (jukeboxMusicPlaying)
-		return false;
-
 	return I_FadeSong(0, ms, &S_StopMusic);
 }
 
@@ -2443,9 +2430,6 @@ boolean S_FadeOutStopMusic(UINT32 ms)
 //
 void S_StartEx(boolean reset)
 {
-	if (jukeboxMusicPlaying)
-		return; //torture is my favorite form of punishment how did you know
-	
 	if (mapmusflags & MUSIC_RELOADRESET)
 	{
 		strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname, 7);
@@ -2537,13 +2521,11 @@ static void Command_RestartAudio_f(void)
 	I_InitMusic();
 
 // These must be called or no sound and music until manually set.
-// star note: since this is a command i will grant you the ability to restart jukebox audio and stop it from playing here
+
 	I_SetSfxVolume(cv_soundvolume.value);
 	S_SetMusicVolume(cv_digmusicvolume.value, cv_midimusicvolume.value);
 	if (Playing()) // Gotta make sure the player is in a level
 		P_RestoreMusic(&players[consoleplayer]);
-	if (jukeboxMusicPlaying) //Fine, I'll let you do it here...
-		M_ResetJukebox();
 }
 
 void GameSounds_OnChange(void)
@@ -2580,7 +2562,7 @@ void GameDigiMusic_OnChange(void)
 
 		if (Playing())
 			P_RestoreMusic(&players[consoleplayer]);
-		else if ((!cv_musicpref.value || midi_disabled) && S_DigExists("_clear") && titlemapinaction && menuactive) // hack, prevent's errors from screaming at us
+		else if ((!cv_musicpref.value || midi_disabled) && S_DigExists("_clear"))
 			S_ChangeMusicInternal("_clear", false);
 	}
 	else
@@ -2593,7 +2575,7 @@ void GameDigiMusic_OnChange(void)
 			{
 				if (Playing())
 					P_RestoreMusic(&players[consoleplayer]);
-				else if (titlemapinaction && menuactive) // hack, prevent's errors from screaming at us
+				else
 					S_ChangeMusicInternal("_clear", false);
 			}
 		}
@@ -2615,7 +2597,7 @@ void GameMIDIMusic_OnChange(void)
 
 		if (Playing())
 			P_RestoreMusic(&players[consoleplayer]);
-		else if ((cv_musicpref.value || digital_disabled) && S_MIDIExists("_clear") && titlemapinaction && menuactive) // hack, prevent's errors from screaming at us
+		else if ((cv_musicpref.value || digital_disabled) && S_MIDIExists("_clear"))
 			S_ChangeMusicInternal("_clear", false);
 	}
 	else
@@ -2628,7 +2610,7 @@ void GameMIDIMusic_OnChange(void)
 			{
 				if (Playing())
 					P_RestoreMusic(&players[consoleplayer]);
-				else if (titlemapinaction && menuactive) // hack, prevent's errors from screaming at us
+				else
 					S_ChangeMusicInternal("_clear", false);
 			}
 		}
@@ -2643,7 +2625,7 @@ void MusicPref_OnChange(void)
 
 	if (Playing())
 		P_RestoreMusic(&players[consoleplayer]);
-	else if (S_PrefAvailable(cv_musicpref.value, "_clear") && titlemapinaction && menuactive) // hack, prevent's errors from screaming at us
+	else if (S_PrefAvailable(cv_musicpref.value, "_clear"))
 		S_ChangeMusicInternal("_clear", false);
 }
 

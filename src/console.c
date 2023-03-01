@@ -113,6 +113,10 @@ static void CON_DrawBackpic(void);
 static void CONS_hudlines_Change(void);
 static void CONS_backcolor_Change(void);
 
+#ifdef VIRTUAL_KEYBOARD
+static void CON_ScreenKeyboardInput(char *text, size_t length);
+#endif
+
 //======================================================================
 //                   CONSOLE VARS AND COMMANDS
 //======================================================================
@@ -451,6 +455,10 @@ void CON_Init(void)
 	con_destlines = vid.height;
 	con_curlines = vid.height;
 
+#ifdef TOUCHINPUTS
+	cons_height.defaultvalue = "40";
+#endif
+
 	Unlock_state();
 
 	if (!dedicated)
@@ -688,7 +696,7 @@ void CON_ClearHUD(void)
 }
 
 // Force console to move out immediately
-// note: con_ticker will set consoleready false
+// Now sets consoleready to false
 void CON_ToggleOff(void)
 {
 	Lock_state();
@@ -705,7 +713,14 @@ void CON_ToggleOff(void)
 	con_forcepic = 0;
 	con_clipviewtop = -1; // remove console clipping of view
 
+	consoleready = false;
+
 	I_UpdateMouseGrab();
+
+#ifdef VIRTUAL_KEYBOARD
+	if (I_KeyboardOnScreen())
+		I_CloseScreenKeyboard();
+#endif
 
 	Unlock_state();
 }
@@ -719,6 +734,16 @@ boolean CON_Ready(void)
 	}
 	Unlock_state();
 	return ready;
+}
+
+boolean CON_Allowed(void)
+{
+	return (!modeattacking && !metalrecording && !marathonmode && !chat_on);
+}
+
+void CON_Toggle(void)
+{
+	consoletoggle = true;
 }
 
 // Console ticker: handles console move in/out, cursor blinking
@@ -736,6 +761,12 @@ void CON_Ticker(void)
 	con_tick++;
 	con_tick &= 7;
 
+#ifdef VIRTUAL_KEYBOARD
+	// Close the console if the screen keyboard is not visible
+	if (con_destlines > 0 && !I_KeyboardOnScreen())
+		consoletoggle = true;
+#endif
+
 	// console key was pushed
 	if (consoletoggle)
 	{
@@ -747,9 +778,17 @@ void CON_Ticker(void)
 			con_destlines = 0;
 			CON_ClearHUD();
 			I_UpdateMouseGrab();
+#ifdef VIRTUAL_KEYBOARD
+			if (I_KeyboardOnScreen())
+				I_CloseScreenKeyboard();
+#endif
 		}
 		else
 			CON_ChangeHeight();
+
+#ifdef VIRTUAL_KEYBOARD
+		con_scrollup = 0;
+#endif
 	}
 
 	// console movement
@@ -770,7 +809,16 @@ void CON_Ticker(void)
 
 	// check if console ready for prompt
 	if (con_destlines >= minheight)
+	{
+#ifdef VIRTUAL_KEYBOARD
+		if (!(consoleready && I_KeyboardOnScreen())) // Show the virtual keyboard
+		{
+			I_ShowVirtualKeyboard(NULL, 0);
+			I_SetVirtualKeyboardCallback(CON_ScreenKeyboardInput);
+		}
+#endif
 		consoleready = true;
+	}
 	else
 		consoleready = false;
 
@@ -897,6 +945,14 @@ static void CON_InputDelChar(void)
 
 	Unlock_state();
 }
+
+#ifdef VIRTUAL_KEYBOARD
+static void CON_ScreenKeyboardInput(char *text, size_t length)
+{
+	(void)length;
+	CON_InputAddString(text);
+}
+#endif
 
 //
 // ----
@@ -1129,7 +1185,7 @@ boolean CON_Responder(event_t *ev)
 
 		// ...why shouldn't it eat the key? if it doesn't, it just means you
 		// can control Sonic from the console, which is silly
-		return true;//return false;
+		return true;
 	}
 
 	// command completion forward (tab) and backward (shift-tab)
@@ -1242,7 +1298,13 @@ boolean CON_Responder(event_t *ev)
 	if (key == KEY_ENTER)
 	{
 		if (!input_len)
+		{
+#ifdef VIRTUAL_KEYBOARD
+			if (I_KeyboardOnScreen())
+				CON_Toggle();
+#endif
 			return true;
+		}
 
 		// push the command
 		COM_BufAddText(inputlines[inputline]);
@@ -1290,6 +1352,12 @@ boolean CON_Responder(event_t *ev)
 			CON_InputSetString(inputlines[inputhist]);
 		return true;
 	}
+
+#ifdef VIRTUAL_KEYBOARD
+	// Inputs handled elsewhere
+	if (I_KeyboardOnScreen())
+		return true;
+#endif
 
 	// allow people to use keypad in console (good for typing IP addresses) - Calum
 	if (key >= KEY_KEYPAD7 && key <= KEY_KPADDEL)
@@ -1480,7 +1548,7 @@ void CONS_Printf(const char *fmt, ...)
 		txt = malloc(8192);
 
 	va_start(argptr, fmt);
-	vsprintf(txt, fmt, argptr);
+	M_vsnprintf(txt, 8192, fmt, argptr);
 	va_end(argptr);
 
 	// echo console prints to log file
@@ -1500,12 +1568,14 @@ void CONS_Printf(const char *fmt, ...)
 
 	Unlock_state();
 
+#if !defined(__ANDROID__)
 	// if not in display loop, force screen update
-	if (refresh)
+	if (refresh && !I_AppOnBackground())
 	{
 		CON_Drawer(); // here we display the console text
 		I_FinishUpdate(); // page flip or blit buffer
 	}
+#endif
 }
 
 void CONS_Alert(alerttype_t level, const char *fmt, ...)
@@ -1517,7 +1587,7 @@ void CONS_Alert(alerttype_t level, const char *fmt, ...)
 		txt = malloc(8192);
 
 	va_start(argptr, fmt);
-	vsprintf(txt, fmt, argptr);
+	M_vsnprintf(txt, 8192, fmt, argptr);
 	va_end(argptr);
 
 	switch (level)
@@ -1553,7 +1623,7 @@ void CONS_Debug(INT32 debugflags, const char *fmt, ...)
 		txt = malloc(8192);
 
 	va_start(argptr, fmt);
-	vsprintf(txt, fmt, argptr);
+	M_vsnprintf(txt, 8192, fmt, argptr);
 	va_end(argptr);
 
 	// Again I am lazy, oh well
@@ -1736,7 +1806,7 @@ static void CON_DrawBackpic(void)
 {
 	patch_t *con_backpic;
 	lumpnum_t piclump;
-	int x, w, h;
+	INT32 x, y = 0, w, h = 0;
 
 	// Get the lumpnum for CONSBACK, STARTUP (Only during game startup) or fallback into MISSING.
 	if (con_startup)
@@ -1753,30 +1823,44 @@ static void CON_DrawBackpic(void)
 	// Center the backpic, and draw a vertically cropped patch.
 	w = (con_backpic->width * vid.dupx);
 	x = (vid.width / 2) - (w / 2);
-	h = con_curlines/vid.dupy;
+
+	if (con_startup)
+		y = (vid.height / 2) - ((con_backpic->height * vid.dupy) / 2);
+	else
+		h = (con_curlines / vid.dupy);
 
 	// If the patch doesn't fill the entire screen,
 	// then fill the sides with a solid color.
-	if (x > 0)
+	if (x > 0 || con_startup)
 	{
 		column_t *column = (column_t *)((UINT8 *)(con_backpic->columns) + (con_backpic->columnofs[0]));
+
 		if (!column->topdelta)
 		{
 			UINT8 *source = (UINT8 *)(column) + 3;
-			INT32 color = (source[0] | V_NOSCALESTART);
-			// left side
-			V_DrawFill(0, 0, x, con_curlines, color);
-			// right side
-			V_DrawFill((x + w), 0, (vid.width - w), con_curlines, color);
+			INT32 color = source[0];
+
+			if (con_startup)
+				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, color);
+			else
+			{
+				V_DrawFill(0, 0, x, con_curlines, (color | V_NOSCALESTART)); // Left side
+				V_DrawFill((x + w), 0, (vid.width - w), con_curlines, (color | V_NOSCALESTART)); // Right side
+			}
 		}
 	}
 
 	// Draw the patch.
-	V_DrawCroppedPatch(x << FRACBITS, 0, FRACUNIT, FRACUNIT, V_NOSCALESTART, con_backpic, NULL,
+	if (con_startup)
+	{
+		V_DrawCroppedPatch(x << FRACBITS, y << FRACBITS, FRACUNIT, FRACUNIT, V_NOSCALESTART, con_backpic, NULL,
+			0, 0, BASEVIDWIDTH << FRACBITS, BASEVIDHEIGHT << FRACBITS);
+	}
+	else
+	{
+		V_DrawCroppedPatch(x << FRACBITS, 0, FRACUNIT, FRACUNIT, V_NOSCALESTART, con_backpic, NULL,
 			0, (BASEVIDHEIGHT - h) << FRACBITS, BASEVIDWIDTH << FRACBITS, h << FRACBITS);
-
-	// Unlock the cached patch.
-	W_UnlockCachedPatch(con_backpic);
+	}
 }
 
 // draw the console background, text, and prompt if enough place

@@ -388,6 +388,8 @@ static void md2_loadTexture(md2_t *model)
 	if (!grPatch->mipmap->downloaded && !grPatch->mipmap->data)
 	{
 		int w = 0, h = 0;
+		UINT32 size;
+		RGBA_t *image;
 
 #ifdef HAVE_PNG
 		grPatch->mipmap->format = PNG_Load(filename, &w, &h, grPatch);
@@ -408,22 +410,16 @@ static void md2_loadTexture(md2_t *model)
 		grPatch->mipmap->width = (UINT16)w;
 		grPatch->mipmap->height = (UINT16)h;
 
-		// for palette rendering, color cube is applied in post-processing instead of here
-		if (!HWR_ShouldUsePaletteRendering())
+		// Lactozilla: Apply colour cube
+		image = grPatch->mipmap->data;
+		size = w*h;
+		while (size--)
 		{
-			UINT32 size;
-			RGBA_t *image;
-			// Lactozilla: Apply colour cube
-			image = grPatch->mipmap->data;
-			size = w*h;
-			while (size--)
-			{
-				V_CubeApply(&image->s.red, &image->s.green, &image->s.blue);
-				image++;
-			}
+			V_CubeApply(&image->s.red, &image->s.green, &image->s.blue);
+			image++;
 		}
 	}
-	HWD.pfnSetTexture(grPatch->mipmap);
+	GPU->SetTexture(grPatch->mipmap);
 }
 
 // -----------------+
@@ -477,7 +473,7 @@ static void md2_loadBlendTexture(md2_t *model)
 		grPatch->mipmap->width = (UINT16)w;
 		grPatch->mipmap->height = (UINT16)h;
 	}
-	HWD.pfnSetTexture(grPatch->mipmap); // We do need to do this so that it can be cleared and knows to recreate it when necessary
+	GPU->SetTexture(grPatch->mipmap); // We do need to do this so that it can be cleared and knows to recreate it when necessary
 
 	Z_Free(filename);
 }
@@ -494,7 +490,6 @@ void HWR_InitModels(void)
 	float scale, offset;
 	size_t prefixlen;
 
-	CONS_Printf("HWR_InitModels()...\n");
 	for (s = 0; s < MAXSKINS; s++)
 	{
 		md2_playermodels[s].scale = -1.0f;
@@ -1086,7 +1081,7 @@ static void HWR_GetBlendedTexture(patch_t *patch, patch_t *blendpatch, INT32 ski
 	if (blendpatch == NULL || colormap == colormaps || colormap == NULL)
 	{
 		// Don't do any blending
-		HWD.pfnSetTexture(grPatch->mipmap);
+		GPU->SetTexture(grPatch->mipmap);
 		return;
 	}
 
@@ -1094,7 +1089,7 @@ static void HWR_GetBlendedTexture(patch_t *patch, patch_t *blendpatch, INT32 ski
 		&& (patch->width != blendpatch->width || patch->height != blendpatch->height))
 	{
 		// Blend image exists, but it's bad.
-		HWD.pfnSetTexture(grPatch->mipmap);
+		GPU->SetTexture(grPatch->mipmap);
 		return;
 	}
 
@@ -1111,10 +1106,10 @@ static void HWR_GetBlendedTexture(patch_t *patch, patch_t *blendpatch, INT32 ski
 				{
 					M_Memcpy(grMipmap->colormap->data, colormap, 256 * sizeof(UINT8));
 					HWR_CreateBlendedTexture(patch, blendpatch, grMipmap, skinnum, color);
-					HWD.pfnUpdateTexture(grMipmap);
+					GPU->UpdateTexture(grMipmap);
 				}
 				else
-					HWD.pfnSetTexture(grMipmap); // found the colormap, set it to the correct texture
+					GPU->SetTexture(grMipmap); // found the colormap, set it to the correct texture
 
 				Z_ChangeTag(grMipmap->data, PU_HWRMODELTEXTURE_UNLOCKED);
 				return;
@@ -1140,7 +1135,7 @@ static void HWR_GetBlendedTexture(patch_t *patch, patch_t *blendpatch, INT32 ski
 
 	HWR_CreateBlendedTexture(patch, blendpatch, newMipmap, skinnum, color);
 
-	HWD.pfnSetTexture(newMipmap);
+	GPU->SetTexture(newMipmap);
 	Z_ChangeTag(newMipmap->data, PU_HWRMODELTEXTURE_UNLOCKED);
 }
 
@@ -1284,6 +1279,7 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 	UINT8 spr2 = 0;
 	FTransform p;
 	FSurfaceInfo Surf;
+	FBITFIELD flags;
 
 	if (!cv_glmodels.value)
 		return false;
@@ -1311,7 +1307,11 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 
 			light = R_GetPlaneLight(sector, spr->mobj->z + spr->mobj->height, false); // Always use the light at the top instead of whatever I was doing before
 
-			if (!R_ThingIsFullBright(spr->mobj))
+			if (R_ThingIsFullDark(spr->mobj))
+				lightlevel = 0;
+			else if (R_ThingIsSemiBright(spr->mobj))
+				lightlevel = 128 + (*sector->lightlist[light].lightlevel>>1);
+			else if (!R_ThingIsFullBright(spr->mobj))
 				lightlevel = *sector->lightlist[light].lightlevel > 255 ? 255 : *sector->lightlist[light].lightlevel;
 
 			if (*sector->lightlist[light].extra_colormap)
@@ -1319,7 +1319,11 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		}
 		else
 		{
-			if (!R_ThingIsFullBright(spr->mobj))
+			if (R_ThingIsFullDark(spr->mobj))
+				lightlevel = 0;
+			else if (R_ThingIsSemiBright(spr->mobj))
+				lightlevel = 128 + (sector->lightlevel>>1);
+			else if (!R_ThingIsFullBright(spr->mobj))
 				lightlevel = sector->lightlevel > 255 ? 255 : sector->lightlevel;
 
 			if (sector->extra_colormap)
@@ -1361,12 +1365,18 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		//if (tics > durs)
 			//durs = tics;
 
+		INT32 blendmode;
+		if (spr->mobj->frame & FF_BLENDMASK)
+			blendmode = ((spr->mobj->frame & FF_BLENDMASK) >> FF_BLENDSHIFT) + 1;
+		else
+			blendmode = spr->mobj->blendmode;
+
 		if (spr->mobj->frame & FF_TRANSMASK)
-			Surf.PolyFlags = HWR_SurfaceBlend(spr->mobj->blendmode, (spr->mobj->frame & FF_TRANSMASK)>>FF_TRANSSHIFT, &Surf);
+			Surf.PolyFlags = HWR_SurfaceBlend(blendmode, (spr->mobj->frame & FF_TRANSMASK)>>FF_TRANSSHIFT, &Surf);
 		else
 		{
 			Surf.PolyColor.s.alpha = (spr->mobj->flags2 & MF2_SHADOW) ? 0x40 : 0xff;
-			Surf.PolyFlags = HWR_GetBlendModeFlag(spr->mobj->blendmode);
+			Surf.PolyFlags = HWR_GetBlendModeFlag(blendmode);
 		}
 
 		// don't forget to enable the depth test because we can't do this
@@ -1434,7 +1444,6 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 				// note down the max_s and max_t that end up in the VBO
 				md2->model->vbo_max_s = md2->model->max_s;
 				md2->model->vbo_max_t = md2->model->max_t;
-				HWD.pfnCreateModelVBOs(md2->model);
 			}
 			else
 			{
@@ -1444,9 +1453,13 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 			}
 		}
 
-		//HWD.pfnSetBlend(blend); // This seems to actually break translucency?
+		if (!md2->model->hasVBOs)
+		{
+			GPU->CreateModelVBOs(md2->model);
+			md2->model->hasVBOs = true;
+		}
+
 		finalscale = md2->scale;
-		//Hurdler: arf, I don't like that implementation at all... too much crappy
 
 		if (gpatch && hwrPatch && hwrPatch->mipmap->format) // else if meant that if a texture couldn't be loaded, it would just end up using something else's texture
 		{
@@ -1657,10 +1670,18 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		p.mirror = atransform.mirror; // from Kart
 #endif
 
-		if (HWR_UseShader())
-			HWD.pfnSetShader(HWR_GetShaderFromTarget(SHADER_MODEL));
-		HWD.pfnDrawModel(md2->model, frame, durs, tics, nextFrame, &p, finalscale, flip, hflip, &Surf);
+		flags = (Surf.PolyFlags | PF_Modulated);
+		if (Surf.PolyFlags & (PF_Additive|PF_Subtractive|PF_ReverseSubtract|PF_Multiplicative))
+			flags |= PF_Occlude;
+		else if (Surf.PolyColor.s.alpha == 0xFF)
+			flags |= (PF_Occlude | PF_Masked);
+
+		GPU->SetBlend(flags);
+		GPU->SetShader(SHADER_MODEL);
+		GPU->DrawModel(md2->model, frame, durs, tics, nextFrame, &p, finalscale, flip, hflip, &Surf);
 	}
+
+	GPU->SetShader(SHADER_DEFAULT);
 
 	return true;
 }

@@ -47,35 +47,37 @@ consvar_t cv_ticrate = CVAR_INIT ("showfps", "No", CV_SAVE, ticrate_cons_t, NULL
 
 static void CV_palette_OnChange(void);
 
+#define colorcvarflags (CV_SAVE | CV_CALL | CV_SLIDER_SAFE)
+
 static CV_PossibleValue_t gamma_cons_t[] = {{-15, "MIN"}, {5, "MAX"}, {0, NULL}};
-consvar_t cv_globalgamma = CVAR_INIT ("gamma", "0", CV_SAVE|CV_CALL, gamma_cons_t, CV_palette_OnChange);
+consvar_t cv_globalgamma = CVAR_INIT ("gamma", "0", colorcvarflags, gamma_cons_t, CV_palette_OnChange);
 
 static CV_PossibleValue_t saturation_cons_t[] = {{0, "MIN"}, {10, "MAX"}, {0, NULL}};
-consvar_t cv_globalsaturation = CVAR_INIT ("saturation", "10", CV_SAVE|CV_CALL, saturation_cons_t, CV_palette_OnChange);
+consvar_t cv_globalsaturation = CVAR_INIT ("saturation", "10", colorcvarflags, saturation_cons_t, CV_palette_OnChange);
 
 #define huecoloursteps 4
 
 static CV_PossibleValue_t hue_cons_t[] = {{0, "MIN"}, {(huecoloursteps*6)-1, "MAX"}, {0, NULL}};
-consvar_t cv_rhue = CVAR_INIT ("rhue",  "0", CV_SAVE|CV_CALL, hue_cons_t, CV_palette_OnChange);
-consvar_t cv_yhue = CVAR_INIT ("yhue",  "4", CV_SAVE|CV_CALL, hue_cons_t, CV_palette_OnChange);
-consvar_t cv_ghue = CVAR_INIT ("ghue",  "8", CV_SAVE|CV_CALL, hue_cons_t, CV_palette_OnChange);
-consvar_t cv_chue = CVAR_INIT ("chue", "12", CV_SAVE|CV_CALL, hue_cons_t, CV_palette_OnChange);
-consvar_t cv_bhue = CVAR_INIT ("bhue", "16", CV_SAVE|CV_CALL, hue_cons_t, CV_palette_OnChange);
-consvar_t cv_mhue = CVAR_INIT ("mhue", "20", CV_SAVE|CV_CALL, hue_cons_t, CV_palette_OnChange);
+consvar_t cv_rhue = CVAR_INIT ("rhue",  "0", colorcvarflags, hue_cons_t, CV_palette_OnChange);
+consvar_t cv_yhue = CVAR_INIT ("yhue",  "4", colorcvarflags, hue_cons_t, CV_palette_OnChange);
+consvar_t cv_ghue = CVAR_INIT ("ghue",  "8", colorcvarflags, hue_cons_t, CV_palette_OnChange);
+consvar_t cv_chue = CVAR_INIT ("chue", "12", colorcvarflags, hue_cons_t, CV_palette_OnChange);
+consvar_t cv_bhue = CVAR_INIT ("bhue", "16", colorcvarflags, hue_cons_t, CV_palette_OnChange);
+consvar_t cv_mhue = CVAR_INIT ("mhue", "20", colorcvarflags, hue_cons_t, CV_palette_OnChange);
 
-consvar_t cv_rgamma = CVAR_INIT ("rgamma", "0", CV_SAVE|CV_CALL, gamma_cons_t, CV_palette_OnChange);
-consvar_t cv_ygamma = CVAR_INIT ("ygamma", "0", CV_SAVE|CV_CALL, gamma_cons_t, CV_palette_OnChange);
-consvar_t cv_ggamma = CVAR_INIT ("ggamma", "0", CV_SAVE|CV_CALL, gamma_cons_t, CV_palette_OnChange);
-consvar_t cv_cgamma = CVAR_INIT ("cgamma", "0", CV_SAVE|CV_CALL, gamma_cons_t, CV_palette_OnChange);
-consvar_t cv_bgamma = CVAR_INIT ("bgamma", "0", CV_SAVE|CV_CALL, gamma_cons_t, CV_palette_OnChange);
-consvar_t cv_mgamma = CVAR_INIT ("mgamma", "0", CV_SAVE|CV_CALL, gamma_cons_t, CV_palette_OnChange);
+consvar_t cv_rgamma = CVAR_INIT ("rgamma", "0", colorcvarflags, gamma_cons_t, CV_palette_OnChange);
+consvar_t cv_ygamma = CVAR_INIT ("ygamma", "0", colorcvarflags, gamma_cons_t, CV_palette_OnChange);
+consvar_t cv_ggamma = CVAR_INIT ("ggamma", "0", colorcvarflags, gamma_cons_t, CV_palette_OnChange);
+consvar_t cv_cgamma = CVAR_INIT ("cgamma", "0", colorcvarflags, gamma_cons_t, CV_palette_OnChange);
+consvar_t cv_bgamma = CVAR_INIT ("bgamma", "0", colorcvarflags, gamma_cons_t, CV_palette_OnChange);
+consvar_t cv_mgamma = CVAR_INIT ("mgamma", "0", colorcvarflags, gamma_cons_t, CV_palette_OnChange);
 
-consvar_t cv_rsaturation = CVAR_INIT ("rsaturation", "10", CV_SAVE|CV_CALL, saturation_cons_t, CV_palette_OnChange);
-consvar_t cv_ysaturation = CVAR_INIT ("ysaturation", "10", CV_SAVE|CV_CALL, saturation_cons_t, CV_palette_OnChange);
-consvar_t cv_gsaturation = CVAR_INIT ("gsaturation", "10", CV_SAVE|CV_CALL, saturation_cons_t, CV_palette_OnChange);
-consvar_t cv_csaturation = CVAR_INIT ("csaturation", "10", CV_SAVE|CV_CALL, saturation_cons_t, CV_palette_OnChange);
-consvar_t cv_bsaturation = CVAR_INIT ("bsaturation", "10", CV_SAVE|CV_CALL, saturation_cons_t, CV_palette_OnChange);
-consvar_t cv_msaturation = CVAR_INIT ("msaturation", "10", CV_SAVE|CV_CALL, saturation_cons_t, CV_palette_OnChange);
+consvar_t cv_rsaturation = CVAR_INIT ("rsaturation", "10", colorcvarflags, saturation_cons_t, CV_palette_OnChange);
+consvar_t cv_ysaturation = CVAR_INIT ("ysaturation", "10", colorcvarflags, saturation_cons_t, CV_palette_OnChange);
+consvar_t cv_gsaturation = CVAR_INIT ("gsaturation", "10", colorcvarflags, saturation_cons_t, CV_palette_OnChange);
+consvar_t cv_csaturation = CVAR_INIT ("csaturation", "10", colorcvarflags, saturation_cons_t, CV_palette_OnChange);
+consvar_t cv_bsaturation = CVAR_INIT ("bsaturation", "10", colorcvarflags, saturation_cons_t, CV_palette_OnChange);
+consvar_t cv_msaturation = CVAR_INIT ("msaturation", "10", colorcvarflags, saturation_cons_t, CV_palette_OnChange);
 
 static CV_PossibleValue_t constextsize_cons_t[] = {
 	{V_NOSCALEPATCH, "Small"}, {V_SMALLSCALEPATCH, "Medium"}, {V_MEDSCALEPATCH, "Large"}, {0, "Huge"},
@@ -507,6 +509,28 @@ static inline UINT8 transmappedpdraw(const UINT8 *dest, const UINT8 *source, fix
 	return *(v_translevel + (((*(v_colormap + source[ofs>>FRACBITS]))<<8)&0xff00) + (*dest&0xff));
 }
 
+// So it turns out offsets aren't scaled in V_NOSCALESTART unless V_OFFSET is applied ...poo, that's terrible
+// For now let's just at least give V_OFFSET the ability to support V_FLIP
+// I'll probably make a better fix for 2.2 where I don't have to worry about breaking existing support for stuff
+// -- Monster Iestyn 29/10/18
+static void V_OffsetPatch(fixed_t *x, fixed_t *y, fixed_t pscale, fixed_t vscale, INT32 scrn, patch_t *patch)
+{
+	fixed_t offsetx = 0, offsety = 0;
+
+	// left offset
+	if (scrn & V_FLIP)
+		offsetx = FixedMul((patch->width - patch->leftoffset)<<FRACBITS, pscale) + 1;
+	else
+		offsetx = FixedMul(patch->leftoffset<<FRACBITS, pscale);
+
+	// top offset
+	offsety = FixedMul(patch->topoffset<<FRACBITS, vscale);
+
+	// Subtract the offsets from x/y positions
+	(*x) -= offsetx;
+	(*y) -= offsety;
+}
+
 // Draws a patch scaled to arbitrary size.
 void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, INT32 scrn, patch_t *patch, const UINT8 *colormap)
 {
@@ -592,22 +616,7 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 	colfrac = FixedDiv(FRACUNIT, fdup);
 	rowfrac = FixedDiv(FRACUNIT, vdup);
 
-	{
-		fixed_t offsetx = 0, offsety = 0;
-
-		// left offset
-		if (scrn & V_FLIP)
-			offsetx = FixedMul((patch->width - patch->leftoffset)<<FRACBITS, pscale) + 1;
-		else
-			offsetx = FixedMul(patch->leftoffset<<FRACBITS, pscale);
-
-		// top offset
-		offsety = FixedMul(patch->topoffset<<FRACBITS, vscale);
-
-		// Subtract the offsets from x/y positions
-		x -= offsetx;
-		y -= offsety;
-	}
+	V_OffsetPatch(&x, &y, pscale, vscale, scrn, patch);
 
 	if (splitscreen && (scrn & V_PERPLAYER))
 	{
@@ -618,7 +627,7 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 #ifdef QUADS
 		if (splitscreen > 1) // 3 or 4 players
 		{
-			fixed_t adjustx = ((scrn & V_NOSCALESTART) ? vid.height : BASEVIDHEIGHT)<<(FRACBITS-1));
+			fixed_t adjustx = ((scrn & V_NOSCALESTART) ? vid.height : BASEVIDHEIGHT)<<(FRACBITS-1);
 			fdup >>= 1;
 			colfrac <<= 1;
 			x >>= 1;
@@ -796,6 +805,158 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 			column = (const column_t *)((const UINT8 *)column + column->length + 4);
 		}
 	}
+}
+
+void V_GetPatchScreenRegion(fixed_t *x, fixed_t *y, fixed_t *w, fixed_t *h, fixed_t pscale, fixed_t vscale, INT32 scrn, patch_t *patch)
+{
+	fixed_t colfrac, rowfrac, fdup, vdup;
+	INT32 dupx, dupy;
+	UINT8 perplayershuffle = 0;
+
+	if (patch == NULL)
+		return;
+
+	dupx = vid.dupx;
+	dupy = vid.dupy;
+	if (scrn & V_SCALEPATCHMASK) switch ((scrn & V_SCALEPATCHMASK) >> V_SCALEPATCHSHIFT)
+	{
+		case 1: // V_NOSCALEPATCH
+			dupx = dupy = 1;
+			break;
+		case 2: // V_SMALLSCALEPATCH
+			dupx = vid.smalldupx;
+			dupy = vid.smalldupy;
+			break;
+		case 3: // V_MEDSCALEPATCH
+			dupx = vid.meddupx;
+			dupy = vid.meddupy;
+			break;
+		default:
+			break;
+	}
+
+	// only use one dup, to avoid stretching (har har)
+	dupx = dupy = (dupx < dupy ? dupx : dupy);
+	fdup = vdup = FixedMul(dupx<<FRACBITS, pscale);
+	if (vscale != pscale)
+		vdup = FixedMul(dupx<<FRACBITS, vscale);
+	colfrac = FixedDiv(FRACUNIT, fdup);
+	rowfrac = FixedDiv(FRACUNIT, vdup);
+
+	V_OffsetPatch(x, y, pscale, vscale, scrn, patch);
+
+	if (splitscreen && (scrn & V_PERPLAYER))
+	{
+		fixed_t adjusty = ((scrn & V_NOSCALESTART) ? vid.height : BASEVIDHEIGHT)<<(FRACBITS-1);
+		vdup >>= 1;
+		rowfrac <<= 1;
+		(*y) >>= 1;
+#ifdef QUADS
+		if (splitscreen > 1) // 3 or 4 players
+		{
+			fixed_t adjustx = ((scrn & V_NOSCALESTART) ? vid.height : BASEVIDHEIGHT)<<(FRACBITS-1);
+			fdup >>= 1;
+			colfrac <<= 1;
+			(*x) >>= 1;
+			if (stplyr == &players[displayplayer])
+			{
+				if (!(scrn & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
+					perplayershuffle |= 1;
+				if (!(scrn & (V_SNAPTOLEFT|V_SNAPTORIGHT)))
+					perplayershuffle |= 4;
+				scrn &= ~V_SNAPTOBOTTOM|V_SNAPTORIGHT;
+			}
+			else if (stplyr == &players[secondarydisplayplayer])
+			{
+				if (!(scrn & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
+					perplayershuffle |= 1;
+				if (!(scrn & (V_SNAPTOLEFT|V_SNAPTORIGHT)))
+					perplayershuffle |= 8;
+				(*x) += adjustx;
+				scrn &= ~V_SNAPTOBOTTOM|V_SNAPTOLEFT;
+			}
+			else if (stplyr == &players[thirddisplayplayer])
+			{
+				if (!(scrn & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
+					perplayershuffle |= 2;
+				if (!(scrn & (V_SNAPTOLEFT|V_SNAPTORIGHT)))
+					perplayershuffle |= 4;
+				(*y) += adjusty;
+				scrn &= ~V_SNAPTOTOP|V_SNAPTORIGHT;
+			}
+			else //if (stplyr == &players[fourthdisplayplayer])
+			{
+				if (!(scrn & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
+					perplayershuffle |= 2;
+				if (!(scrn & (V_SNAPTOLEFT|V_SNAPTORIGHT)))
+					perplayershuffle |= 8;
+				(*x) += adjustx;
+				(*y) += adjusty;
+				scrn &= ~V_SNAPTOTOP|V_SNAPTOLEFT;
+			}
+		}
+		else
+#endif
+		// 2 players
+		{
+			if (stplyr == &players[displayplayer])
+			{
+				if (!(scrn & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
+					perplayershuffle = 1;
+				scrn &= ~V_SNAPTOBOTTOM;
+			}
+			else //if (stplyr == &players[secondarydisplayplayer])
+			{
+				if (!(scrn & (V_SNAPTOTOP|V_SNAPTOBOTTOM)))
+					perplayershuffle = 2;
+				(*y) += adjusty;
+				scrn &= ~V_SNAPTOTOP;
+			}
+		}
+	}
+
+	if (!(scrn & V_NOSCALESTART))
+	{
+		(*x) = FixedMul((*x), dupx<<FRACBITS);
+		(*y) = FixedMul((*y), dupy<<FRACBITS);
+
+		// Center it if necessary
+		if (!(scrn & V_SCALEPATCHMASK))
+		{
+			if (vid.width != BASEVIDWIDTH * dupx)
+			{
+				// dupx adjustments pretend that screen width is BASEVIDWIDTH * dupx,
+				// so center this imaginary screen
+				INT32 ox = 0;
+				if (scrn & V_SNAPTORIGHT)
+					ox += (vid.width - (BASEVIDWIDTH * dupx));
+				else if (!(scrn & V_SNAPTOLEFT))
+					ox += (vid.width - (BASEVIDWIDTH * dupx)) / 2;
+				if (perplayershuffle & 4)
+					ox -= (vid.width - (BASEVIDWIDTH * dupx)) / 4;
+				else if (perplayershuffle & 8)
+					ox += (vid.width - (BASEVIDWIDTH * dupx)) / 4;
+				(*x) += (ox << FRACBITS);
+			}
+			if (vid.height != BASEVIDHEIGHT * dupy)
+			{
+				// same thing here
+				INT32 oy = 0;
+				if (scrn & V_SNAPTOBOTTOM)
+					oy += (vid.height - (BASEVIDHEIGHT * dupy));
+				else if (!(scrn & V_SNAPTOTOP))
+					oy += (vid.height - (BASEVIDHEIGHT * dupy)) / 2;
+				if (perplayershuffle & 1)
+					oy -= (vid.height - (BASEVIDHEIGHT * dupy)) / 4;
+				else if (perplayershuffle & 2)
+					oy += (vid.height - (BASEVIDHEIGHT * dupy)) / 4;
+				(*y) += (oy << FRACBITS);
+			}
+		}
+	}
+
+	(*w) = FixedDiv(patch->width << FRACBITS, colfrac);
+	(*h) = FixedDiv(patch->height << FRACBITS, rowfrac);
 }
 
 // Draws a patch cropped and scaled to arbitrary size.
@@ -1748,7 +1909,7 @@ void V_DrawFlatFill(INT32 x, INT32 y, INT32 w, INT32 h, lumpnum_t flatnum)
 	fixed_t dx, dy, xfrac, yfrac;
 	const UINT8 *src, *deststop;
 	UINT8 *flat, *dest;
-	size_t size, lflatsize, flatshift;
+	size_t lflatsize, flatshift;
 
 #ifdef HWRENDER
 	if (rendermode == render_opengl)
@@ -1758,39 +1919,8 @@ void V_DrawFlatFill(INT32 x, INT32 y, INT32 w, INT32 h, lumpnum_t flatnum)
 	}
 #endif
 
-	size = W_LumpLength(flatnum);
-
-	switch (size)
-	{
-		case 4194304: // 2048x2048 lump
-			lflatsize = 2048;
-			flatshift = 10;
-			break;
-		case 1048576: // 1024x1024 lump
-			lflatsize = 1024;
-			flatshift = 9;
-			break;
-		case 262144:// 512x512 lump
-			lflatsize = 512;
-			flatshift = 8;
-			break;
-		case 65536: // 256x256 lump
-			lflatsize = 256;
-			flatshift = 7;
-			break;
-		case 16384: // 128x128 lump
-			lflatsize = 128;
-			flatshift = 7;
-			break;
-		case 1024: // 32x32 lump
-			lflatsize = 32;
-			flatshift = 5;
-			break;
-		default: // 64x64 lump
-			lflatsize = 64;
-			flatshift = 6;
-			break;
-	}
+	lflatsize = R_GetFlatSize(W_LumpLength(flatnum));
+	flatshift = R_GetFlatBits(lflatsize);
 
 	flat = W_CacheLumpNum(flatnum, PU_CACHE);
 
@@ -2974,6 +3104,215 @@ void V_DrawRightAlignedSmallThinStringAtFixed(fixed_t x, fixed_t y, INT32 option
 	V_DrawSmallThinStringAtFixed(x, y, option, string);
 }
 
+// Draws a scaled string.
+void V_DrawScaledString(fixed_t x, fixed_t y, fixed_t scale, INT32 option, const char *string)
+{
+	fixed_t cx = x, cy = y;
+	INT32 w, c, dupx, dupy, scrwidth, center = 0, left = 0;
+	const char *ch = string;
+	INT32 charflags = 0;
+	const UINT8 *colormap = NULL;
+	INT32 spacewidth = 4, charwidth = 0;
+
+	INT32 lowercase = (option & V_ALLOWLOWERCASE);
+	option &= ~V_FLIP; // which is also shared with V_ALLOWLOWERCASE...
+
+	if (option & V_NOSCALESTART)
+	{
+		dupx = vid.dupx;
+		dupy = vid.dupy;
+		scrwidth = vid.width;
+	}
+	else
+	{
+		dupx = dupy = 1;
+		scrwidth = vid.width/vid.dupx;
+		left = (scrwidth - BASEVIDWIDTH)/2;
+		scrwidth -= left;
+	}
+
+	if (option & V_NOSCALEPATCH)
+		scrwidth *= vid.dupx;
+
+	charflags = (option & V_CHARCOLORMASK);
+
+	switch (option & V_SPACINGMASK)
+	{
+		case V_MONOSPACE:
+			spacewidth = 8;
+			/* FALLTHRU */
+		case V_OLDSPACING:
+			charwidth = 8;
+			break;
+		case V_6WIDTHSPACE:
+			spacewidth = 6;
+		default:
+			break;
+	}
+
+	for (;;ch++)
+	{
+		if (!*ch)
+			break;
+		if (*ch & 0x80) //color ignoring
+		{
+			// manually set flags override color codes
+			if (!(option & V_CHARCOLORMASK))
+				charflags = ((*ch & 0x7f) << V_CHARCOLORSHIFT) & V_CHARCOLORMASK;
+			continue;
+		}
+		if (*ch == '\n')
+		{
+			cx = x;
+
+			if (option & V_RETURN8)
+				cy += (8*dupy)*scale;
+			else
+				cy += (12*dupy)*scale;
+
+			continue;
+		}
+
+		c = *ch;
+		if (!lowercase)
+			c = toupper(c);
+		c -= HU_FONTSTART;
+
+		// character does not exist or is a space
+		if (c < 0 || c >= HU_FONTSIZE || !hu_font[c])
+		{
+			cx += (spacewidth * dupx)*scale;
+			continue;
+		}
+
+		if (charwidth)
+		{
+			w = charwidth * dupx;
+			center = w/2 - hu_font[c]->width*(dupx/2);
+		}
+		else
+			w = hu_font[c]->width * dupx;
+
+		if ((cx>>FRACBITS) > scrwidth)
+			continue;
+		if ((cx>>FRACBITS)+left + w < 0) //left boundary check
+		{
+			cx += w*scale;
+			continue;
+		}
+
+		colormap = V_GetStringColormap(charflags);
+		V_DrawFixedPatch(cx + (center*scale), cy, scale, option, hu_font[c], colormap);
+
+		cx += w*scale;
+	}
+}
+
+// Draws a scaled thin string.
+void V_DrawScaledThinString(fixed_t x, fixed_t y, fixed_t scale, INT32 option, const char *string)
+{
+	fixed_t cx = x, cy = y;
+	INT32 w, c, dupx, dupy, scrwidth, center = 0, left = 0;
+	const char *ch = string;
+	INT32 charflags = 0;
+	const UINT8 *colormap = NULL;
+	INT32 spacewidth = 2, charwidth = 0;
+
+	INT32 lowercase = (option & V_ALLOWLOWERCASE);
+	option &= ~V_FLIP; // which is also shared with V_ALLOWLOWERCASE...
+
+	if (option & V_NOSCALESTART)
+	{
+		dupx = vid.dupx;
+		dupy = vid.dupy;
+		scrwidth = vid.width;
+	}
+	else
+	{
+		dupx = dupy = 1;
+		scrwidth = vid.width/vid.dupx;
+		left = (scrwidth - BASEVIDWIDTH)/2;
+		scrwidth -= left;
+	}
+
+	if (option & V_NOSCALEPATCH)
+		scrwidth *= vid.dupx;
+
+	charflags = (option & V_CHARCOLORMASK);
+
+	switch (option & V_SPACINGMASK)
+	{
+		case V_MONOSPACE:
+			spacewidth = 8;
+			/* FALLTHRU */
+		case V_OLDSPACING:
+			charwidth = 8;
+			break;
+		case V_6WIDTHSPACE:
+			spacewidth = 6;
+		default:
+			break;
+	}
+
+	for (;;ch++)
+	{
+		if (!*ch)
+			break;
+		if (*ch & 0x80) //color parsing -x 2.16.09
+		{
+			// manually set flags override color codes
+			if (!(option & V_CHARCOLORMASK))
+				charflags = ((*ch & 0x7f) << V_CHARCOLORSHIFT) & V_CHARCOLORMASK;
+			continue;
+		}
+		if (*ch == '\n')
+		{
+			cx = x;
+
+			if (option & V_RETURN8)
+				cy += (8*dupy)*scale;
+			else
+				cy += (12*dupy)*scale;
+
+			continue;
+		}
+
+		c = *ch;
+		if (!lowercase || !tny_font[c-HU_FONTSTART])
+			c = toupper(c);
+		c -= HU_FONTSTART;
+
+		// character does not exist or is a space
+		if (c < 0 || c >= HU_FONTSIZE || !tny_font[c])
+		{
+			cx += (spacewidth * dupx)*scale;
+			continue;
+		}
+
+		if (charwidth)
+		{
+			w = charwidth * dupx;
+			center = w/2 - tny_font[c]->width*(dupx/2);
+		}
+		else
+			w = tny_font[c]->width * dupx;
+
+		if ((cx>>FRACBITS) > scrwidth)
+			break;
+		if ((cx>>FRACBITS)+left + w < 0) //left boundary check
+		{
+			cx += w*scale;
+			continue;
+		}
+
+		colormap = V_GetStringColormap(charflags);
+
+		V_DrawFixedPatch(cx + (center*scale), cy, scale, option, tny_font[c], colormap);
+
+		cx += w*scale;
+	}
+}
+
 // Draws a tallnum.  Replaces two functions in y_inter and st_stuff
 void V_DrawTallNum(INT32 x, INT32 y, INT32 flags, INT32 num)
 {
@@ -3606,7 +3945,8 @@ void V_DoPostProcessor(INT32 view, postimg_t type, INT32 param)
 		UINT8 *tmpscr = screens[4];
 		UINT8 *srcscr = screens[0];
 		INT32 y;
-		angle_t disStart = (leveltime * 128) & FINEMASK; // in 0 to FINEANGLE
+		// Set disStart to a range from 0 to FINEANGLE, incrementing by 128 per tic
+		angle_t disStart = (((leveltime-1)*128) + (rendertimefrac / (FRACUNIT/128))) & FINEMASK;
 		INT32 newpix;
 		INT32 sine;
 		//UINT8 *transme = R_GetTranslucencyTable(tr_trans50);
@@ -3729,8 +4069,11 @@ Unoptimized version
 			heatindex[view] %= height;
 		}
 
-		heatindex[view]++;
-		heatindex[view] %= vid.height;
+		if (renderisnewtic) // This isn't interpolated... but how do you interpolate a one-pixel shift?
+		{
+			heatindex[view]++;
+			heatindex[view] %= vid.height;
+		}
 
 		VID_BlitLinearScreen(tmpscr+vid.width*vid.bpp*yoffset, screens[0]+vid.width*vid.bpp*yoffset,
 				vid.width*vid.bpp, height, vid.width*vid.bpp, vid.width);
@@ -3817,21 +4160,35 @@ void V_Init(void)
 
 void V_Recalc(void)
 {
+	INT32 dup;
+	fixed_t fdup;
+
 	// scale 1,2,3 times in x and y the patches for the menus and overlays...
-	// calculated once and for all, used by routines in v_video.c and v_draw.c
-	vid.dupx = vid.width / BASEVIDWIDTH;
-	vid.dupy = vid.height / BASEVIDHEIGHT;
-	vid.dupx = vid.dupy = (vid.dupx < vid.dupy ? vid.dupx : vid.dupy);
+	// calculated once and for all, used by routines in v_video.c
+	vid.dupx = max(1, vid.width / BASEVIDWIDTH);
+	vid.dupy = max(1, vid.height / BASEVIDHEIGHT);
+
 	vid.fdupx = FixedDiv(vid.width*FRACUNIT, BASEVIDWIDTH*FRACUNIT);
 	vid.fdupy = FixedDiv(vid.height*FRACUNIT, BASEVIDHEIGHT*FRACUNIT);
 
-#ifdef HWRENDER
-	//if (rendermode != render_opengl && rendermode != render_none) // This was just placing it incorrectly at non aspect correct resolutions in opengl
-	// 13/11/18:
-	// The above is no longer necessary, since we want OpenGL to be just like software now
-	// -- Monster Iestyn
+	dup = (vid.dupx < vid.dupy ? vid.dupx : vid.dupy);
+	fdup = (vid.fdupx < vid.fdupy ? vid.fdupx : vid.fdupy);
+
+	// Set the correct sky scale (Software)
+	vid.sky.dup = dup;
+	vid.sky.fdup = fdup;
+
+#ifdef NATIVESCREENRES
+	if (cv_nativeres.value && !cv_nativerescompare.value)
+	{
+		dup = (vid.dupx >= vid.dupy ? vid.dupx : vid.dupy);
+		fdup = (vid.fdupx >= vid.fdupy ? vid.fdupx : vid.fdupy);
+	}
 #endif
-		vid.fdupx = vid.fdupy = (vid.fdupx < vid.fdupy ? vid.fdupx : vid.fdupy);
+
+	// Set a constant scale for both axes
+	vid.dupx = vid.dupy = dup;
+	vid.fdupx = vid.fdupy = fdup;
 
 	vid.meddupx = (UINT8)(vid.dupx >> 1) + 1;
 	vid.meddupy = (UINT8)(vid.dupy >> 1) + 1;

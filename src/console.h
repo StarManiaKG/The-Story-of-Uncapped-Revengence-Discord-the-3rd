@@ -66,4 +66,10 @@ void CON_ToggleOff(void);
 // Is console down?
 boolean CON_Ready(void);
 
+// Can the console be used?
+boolean CON_Allowed(void);
+
+// Toggle the console
+void CON_Toggle(void);
+
 void CON_LogMessage(const char *msg);

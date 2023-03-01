@@ -35,6 +35,7 @@
 #include "doomstat.h"
 #include "d_main.h"
 #include "g_game.h"
+#include "i_time.h"
 #include "i_net.h"
 #include "i_system.h"
 #include "m_argv.h"
@@ -116,7 +117,6 @@ boolean waitingforluafiletransfer = false;
 boolean waitingforluafilecommand = false;
 char luafiledir[256 + 16] = "luafiles";
 
-
 static UINT16 GetWadNumFromFileNeededId(UINT8 id)
 {
 	UINT16 wadnum;
@@ -161,6 +161,12 @@ UINT8 *PutFileNeeded(UINT16 firstfile)
 		}
 
 		nameonly(strcpy(wadfilename, wadfiles[i]->filename));
+
+#ifdef USE_ANDROID_PK3
+		// Don't put android.pk3 in the list
+		if (!strcmp(wadfilename, ANDROID_PK3_FILENAME))
+			continue;
+#endif
 
 		// Look below at the WRITE macros to understand what these numbers mean.
 		if (p + 1 + 4 + min(strlen(wadfilename) + 1, MAX_WADPATH) + 16 > p_start + MAXFILENEEDED)
@@ -274,7 +280,7 @@ void CL_PrepareDownloadSaveGame(const char *tmpsave)
   */
 boolean CL_CheckDownloadable(void)
 {
-	UINT8 i,dlstatus = 0;
+	UINT8 i, dlstatus = 0;
 
 	for (i = 0; i < fileneedednum; i++)
 		if (fileneeded[i].status != FS_FOUND && fileneeded[i].status != FS_OPEN)
@@ -288,12 +294,15 @@ boolean CL_CheckDownloadable(void)
 				dlstatus = 2;
 		}
 
-	// Downloading locally disabled
-	if (!dlstatus && M_CheckParm("-nodownload"))
-		dlstatus = 3;
-
 	if (!dlstatus)
-		return true;
+	{
+		if (!I_SystemStoragePermission()) // No storage permission
+			dlstatus = 4;
+		else if (M_CheckParm("-nodownload")) // Downloading locally disabled
+			dlstatus = 3;
+		else
+			return true;
+	}
 
 	// not downloadable, put reason in console
 	CONS_Alert(CONS_NOTICE, M_GetText("You need additional files to connect to this server:\n"));
@@ -327,6 +336,9 @@ boolean CL_CheckDownloadable(void)
 			break;
 		case 3:
 			CONS_Printf(M_GetText("All files downloadable, but you have chosen to disable downloading locally.\n"));
+			break;
+		case 4:
+			CONS_Printf(M_GetText("All files downloadable, but the game doesn't have storage access permission.\n"));
 			break;
 	}
 	return false;
@@ -458,7 +470,15 @@ INT32 CL_CheckFiles(void)
 		CONS_Debug(DBG_NETPLAY, "game is modified; only doing basic checks\n");
 		for (i = 0, j = mainwads; i < fileneedednum || j < numwadfiles;)
 		{
-			if (j < numwadfiles && !wadfiles[j]->important)
+			boolean important = (wadfiles[j]->important);
+
+#ifdef USE_ANDROID_PK3
+			nameonly(strcpy(wadfilename, wadfiles[j]->filename));
+			if (!strcmp(wadfilename, ANDROID_PK3_FILENAME))
+				important = false;
+#endif
+
+			if (j < numwadfiles && !important)
 			{
 				// Unimportant on our side.
 				++j;
@@ -495,6 +515,17 @@ INT32 CL_CheckFiles(void)
 			continue;
 
 		CONS_Debug(DBG_NETPLAY, "searching for '%s' ", fileneeded[i].filename);
+
+		nameonly(strcpy(wadfilename, fileneeded[i].filename));
+
+#ifdef USE_ANDROID_PK3
+		if (!strcmp(wadfilename, ANDROID_PK3_FILENAME))
+		{
+			CONS_Debug(DBG_NETPLAY, "Android resource, already loaded\n");
+			fileneeded[i].status = FS_OPEN;
+			continue;
+		}
+#endif
 
 		// Check in already loaded files
 		for (j = mainwads; wadfiles[j]; j++)
@@ -1300,7 +1331,9 @@ void PT_FileFragment(void)
 		&& strcmp(filename, "player.dta")
 		&& strcmp(filename, "patch.pk3")
 		&& strcmp(filename, "music.dta")
-		//&& strcmp(filename, "tsourdt3rd.pk3")
+#ifdef USE_ANDROID_PK3
+		&& strcmp(filename, ANDROID_PK3_FILENAME)
+#endif
 		))
 		I_Error("Tried to download \"%s\"", filename);
 

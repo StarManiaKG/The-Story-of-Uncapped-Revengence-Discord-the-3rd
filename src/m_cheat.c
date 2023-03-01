@@ -36,10 +36,6 @@
 #include "lua_script.h"
 #include "lua_hook.h"
 
-#ifdef HAVE_DISCORDRPC
-#include "discord.h" // DRPC_UpdatePresence
-#endif
-
 //
 // CHEAT SEQUENCE PACKAGE
 //
@@ -215,18 +211,23 @@ boolean cht_Responder(event_t *ev)
 		{
 			case KEY_JOY1:
 			case KEY_JOY1 + 2:
+			case KEY_REMOTECENTER:
 				ch = KEY_ENTER;
 				break;
 			case KEY_HAT1:
+			case KEY_REMOTEUP:
 				ch = KEY_UPARROW;
 				break;
 			case KEY_HAT1 + 1:
+			case KEY_REMOTEDOWN:
 				ch = KEY_DOWNARROW;
 				break;
 			case KEY_HAT1 + 2:
+			case KEY_REMOTELEFT:
 				ch = KEY_LEFTARROW;
 				break;
 			case KEY_HAT1 + 3:
+			case KEY_REMOTERIGHT:
 				ch = KEY_RIGHTARROW;
 				break;
 			default:
@@ -543,7 +544,7 @@ void Command_Teleport_f(void)
 
 			// Flagging a player's ambush will make them start on the ceiling
 			// Objectflip inverts
-			if (!!(mt->options & MTF_AMBUSH) ^ !!(mt->options & MTF_OBJECTFLIP))
+			if (!!(mt->args[0]) ^ !!(mt->options & MTF_OBJECTFLIP))
 				intz = ss->sector->ceilingheight - p->mo->height - offset;
 			else
 				intz = ss->sector->floorheight + offset;
@@ -934,9 +935,6 @@ void Command_Setlives_f(void)
 
 		G_SetGameModified(multiplayer);
 	}
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
 }
 
 void Command_Setcontinues_f(void)
@@ -1011,7 +1009,7 @@ static void OP_CycleThings(INT32 amt)
 		} while
 		(mobjinfo[op_currentthing].doomednum == -1
 			|| op_currentthing == MT_NIGHTSDRONE
-			|| mobjinfo[op_currentthing].flags & (MF_AMBIENT|MF_NOSECTOR)
+			|| mobjinfo[op_currentthing].flags & MF_NOSECTOR
 			|| (states[mobjinfo[op_currentthing].spawnstate].sprite == SPR_NULL
 			 && states[mobjinfo[op_currentthing].seestate].sprite == SPR_NULL)
 		);
@@ -1144,7 +1142,7 @@ void OP_ResetObjectplace(void)
 //
 // Main meat of objectplace: handling functions
 //
-void OP_NightsObjectplace(player_t *player)
+/*void OP_NightsObjectplace(player_t *player)
 {
 	ticcmd_t *cmd = &player->cmd;
 	mapthing_t *mt;
@@ -1290,14 +1288,14 @@ void OP_NightsObjectplace(player_t *player)
 		mt = OP_CreateNewMapThing(player, (UINT16)cv_mapthingnum.value, false);
 		mt->angle = angle;
 
-		if (mt->type >= 600 && mt->type <= 609) // Placement patterns
+		if (mt->type >= 600 && mt->type <= 611) // Placement patterns
 			P_SpawnItemPattern(mt, false);
-		else if (mt->type == 1705 || mt->type == 1713) // NiGHTS Hoops
+		else if (mt->type == 1713) // NiGHTS Hoops
 			P_SpawnHoop(mt);
 		else
 			P_SpawnMapThing(mt);
 	}
-}
+}*/
 
 //
 // OP_ObjectplaceMovement
@@ -1421,9 +1419,9 @@ void OP_ObjectplaceMovement(player_t *player)
 			return;
 
 		mt = OP_CreateNewMapThing(player, (UINT16)spawnthing, ceiling);
-		if (mt->type >= 600 && mt->type <= 609) // Placement patterns
+		if (mt->type >= 600 && mt->type <= 611) // Placement patterns
 			P_SpawnItemPattern(mt, false);
-		else if (mt->type == 1705 || mt->type == 1713) // NiGHTS Hoops
+		else if (mt->type == 1713) // NiGHTS Hoops
 			P_SpawnHoop(mt);
 		else
 			P_SpawnMapThing(mt);
@@ -1435,14 +1433,14 @@ void OP_ObjectplaceMovement(player_t *player)
 //
 // Objectplace related commands.
 //
-void Command_Writethings_f(void)
+/*void Command_Writethings_f(void)
 {
 	REQUIRE_INLEVEL;
 	REQUIRE_SINGLEPLAYER;
 	REQUIRE_OBJECTPLACE;
 
 	P_WriteThings();
-}
+}*/
 
 void Command_ObjectPlace_f(void)
 {

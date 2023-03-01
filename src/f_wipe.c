@@ -24,6 +24,7 @@
 #include "w_wad.h"
 #include "z_zone.h"
 
+#include "i_time.h"
 #include "i_system.h"
 #include "i_threads.h"
 #include "m_menu.h"
@@ -195,7 +196,8 @@ void F_WipeStageTitle(void)
 	&& G_IsTitleCardAvailable())
 	{
 		ST_runTitleCard();
-		ST_drawWipeTitleCard();
+		if (!I_AppOnBackground())
+			ST_drawWipeTitleCard();
 	}
 }
 
@@ -555,8 +557,18 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu)
 
 		// wait loop
 		while (!((nowtime = I_GetTime()) - lastwipetic))
-			I_Sleep();
+		{
+			I_Sleep(cv_sleep.value);
+			I_UpdateTime(cv_timescale.value);
+		}
 		lastwipetic = nowtime;
+
+		if (I_AppOnBackground())
+		{
+			if (wipestyle == WIPESTYLE_COLORMAP)
+				F_WipeStageTitle();
+			goto skipframe;
+		}
 
 		// Wipe styles
 		if (wipestyle == WIPESTYLE_COLORMAP)
@@ -565,7 +577,7 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu)
 			if (rendermode == render_opengl)
 			{
 				// send in the wipe type and wipe frame because we need to cache the graphic
-				HWR_DoWipe(wipetype, wipeframe-1);
+				HWR_DoTintedWipe(wipetype, wipeframe-1);
 			}
 			else
 #endif
@@ -593,9 +605,8 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu)
 		}
 
 		I_OsPolling();
-		I_UpdateNoBlit();
 
-		if (drawMenu)
+		if (drawMenu && !I_AppOnBackground())
 		{
 #ifdef HAVE_THREADS
 			I_lock_mutex(&m_menu_mutex);
@@ -608,9 +619,9 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu)
 
 		I_FinishUpdate(); // page flip or blit buffer
 
+skipframe:
 		if (moviemode)
 			M_SaveFrame();
-		
 	}
 
 	WipeInAction = false;
