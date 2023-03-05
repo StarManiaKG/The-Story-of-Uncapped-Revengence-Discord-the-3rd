@@ -1262,10 +1262,9 @@ void DRPC_UpdatePresence(void)
 		// Small Images
 		if (cv_customdiscordsmallimagetype.value != 5)
 		{
-			snprintf(customSImage, "%s%s", 50, customStringType[cv_customdiscordsmallimagetype.value],
+			snprintf(customSImage, 50, "%s%s", customStringType[cv_customdiscordsmallimagetype.value],
 				(cv_customdiscordsmallimagetype.value <= 2 ? supportedSkins[cv_customdiscordsmallcharacterimage.value] :
-				(cv_customdiscordsmallimagetype.value == 3 ? supportedMaps[cv_customdiscordsmallmapimage.value] :
-				(supportedMiscs[cv_customdiscordsmallmiscimage.value]))));
+				(cv_customdiscordsmallimagetype.value == 3 ? supportedMaps[cv_customdiscordsmallmapimage.value] : supportedMiscs[cv_customdiscordsmallmiscimage.value])));
 		
 			discordPresence.smallImageKey = customSImage;
 			discordPresence.smallImageText = cv_customdiscordsmallimagetext.string;

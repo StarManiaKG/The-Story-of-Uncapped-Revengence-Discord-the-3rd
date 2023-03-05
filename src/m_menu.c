@@ -14456,7 +14456,9 @@ static void M_DrawTsourdt3rdJukebox(void)
 			fixed_t stoppingtics = (fixed_t)(curplaying->stoppingtics) << FRACBITS;
 			if (stoppingtics && st_time >= stoppingtics)
 			{
-				//M_ResetJukebox();
+				curplaying = NULL;
+				M_ResetJukebox();
+				
 				st_time = 0;
 			}
 			else
