@@ -443,6 +443,9 @@ static void M_ResetCvars(void);
 static void Newgametype_OnChange(void);
 static void Dummymares_OnChange(void);
 
+// Other STAR functions lol
+static void STAR_JukeboxHUD_OnChange(void);
+
 // ==========================================================================
 // CONSOLE VARIABLES AND THEIR POSSIBLE VALUES GO HERE.
 // ==========================================================================
@@ -516,6 +519,9 @@ CV_PossibleValue_t loadless_cons_t[] = {{0, "Realtime"}, {1, "In-game"}, {0, NUL
 consvar_t cv_dummymarathon = CVAR_INIT ("dummymarathon", "Standard", CV_HIDEN, marathon_cons_t, NULL);
 consvar_t cv_dummycutscenes = CVAR_INIT ("dummycutscenes", "Off", CV_HIDEN, CV_OnOff, NULL);
 consvar_t cv_dummyloadless = CVAR_INIT ("dummyloadless", "In-game", CV_HIDEN, loadless_cons_t, NULL);
+
+// STAR Commands Yay
+consvar_t cv_jukeboxhud = CVAR_INIT ("jukeboxhud", "On", CV_SAVE|CV_CALL, CV_OnOff, STAR_JukeboxHUD_OnChange);
 
 // ==========================================================================
 // ORGANIZATION START.
@@ -1682,26 +1688,19 @@ static menuitem_t OP_DiscordOptionsMenu[] =
 	// Custom Things
 	{IT_HEADER,							NULL, "Custom Discord Status",			NULL,					 	 		   61},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 		"Header",			        &cv_customdiscorddetails, 	 		   68},
-	{IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 		"State",			        &cv_customdiscordstate, 			   88},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 		"State",			        &cv_customdiscordstate, 			   82},
 
-	{IT_STRING | IT_CVAR,		        NULL, 	"Large Image Type",				&cv_customdiscordlargeimagetype,      108},
-    {IT_STRING | IT_CVAR,		        NULL, 	"Small Image Type",				&cv_customdiscordsmallimagetype,      113},
+	{IT_STRING | IT_CVAR,		        NULL, 	"Large Image Type",				&cv_customdiscordlargeimagetype,      102},
+    {IT_STRING | IT_CVAR,		        NULL, 	"Small Image Type",				&cv_customdiscordsmallimagetype,      107},
 
-	// chars
-	{IT_STRING | IT_CVAR,		        NULL, 	"Large Image",					&cv_customdiscordlargecharacterimage, 118},
-	{IT_STRING | IT_CVAR,		        NULL, 	"Small Image",					&cv_customdiscordsmallcharacterimage, 123},
-	// maps
-	{IT_STRING | IT_CVAR,		        NULL, 	"Large Image",					&cv_customdiscordlargemapimage,       118},
-    {IT_STRING | IT_CVAR,		        NULL, 	"Small Image",					&cv_customdiscordsmallmapimage,       123},
-	// misc
-    {IT_STRING | IT_CVAR,		        NULL, 	"Large Image",					&cv_customdiscordlargemiscimage,      118},
-    {IT_STRING | IT_CVAR,		        NULL, 	"Small Image",					&cv_customdiscordsmallmiscimage,      123},
+	{IT_STRING | IT_CVAR,		        NULL, 	"Large Image",					NULL, 								  117}, // Handled in discord_options_onchange
+	{IT_STRING | IT_CVAR,		        NULL, 	"Small Image",					NULL, 								  122}, // Also handled in discord_options_onchange
 
-    {IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 	"Large Image Text",				&cv_customdiscordlargeimagetext,      128},
-    {IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 	"Small Image Text",				&cv_customdiscordsmallimagetext,      148},
+    {IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 	"Large Image Text",				&cv_customdiscordlargeimagetext,      132},
+    {IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 	"Small Image Text",				&cv_customdiscordsmallimagetext,      146},
 
     // Let's Output Our Stuff
-	{IT_STRING | IT_SUBMENU,			NULL, 		"Output",					&OP_CustomStatusOutputDef,	          183},
+	{IT_STRING | IT_SUBMENU,			NULL, 		"Output",					&OP_CustomStatusOutputDef,	          162},
 };
 
 static menuitem_t OP_CustomStatusOutputMenu[] =
@@ -1729,14 +1728,8 @@ enum
 	op_customdiscordlargeimagetype,
 	op_customdiscordsmallimagetype,
 
-	op_customdiscordlargecharacterimage,
-	op_customdiscordsmallcharacterimage,
-
-	op_customdiscordlargemapimage,
-    op_customdiscordsmallmapimage,
-
-    op_customdiscordlargemiscimage,
-    op_customdiscordsmallmiscimage,
+	op_customdiscordlargeimage,
+	op_customdiscordsmallimage,
 
     op_customdiscordlargeimagetext,
     op_customdiscordsmallimagetext,
@@ -1829,17 +1822,21 @@ static menuitem_t OP_MonitorToggleMenu[] =
 static menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 {
 	{IT_HEADER, 			NULL, 	"Savedata Options", 		NULL, 					  	0},
-	{IT_STRING | IT_CVAR,	NULL,	"Continues",				&cv_usecontinues,		  	7},
+	{IT_STRING | IT_CVAR,	NULL,	"Continues",				&cv_continues,		  		7},
 
 	{IT_HEADER, 			NULL, 	"Extra Server Options", 	NULL,					   14},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,	
-							 NULL, "Holepunch Server",  		&cv_holepunchserver,	   20},
-	{IT_STRING | IT_CVAR,    NULL, "Show Connecting Players",   &cv_noticedownload,        34},
-	{IT_STRING | IT_CVAR,    NULL, "Max File Transfer (In kB)", &cv_maxsend,     	       39},
-	{IT_STRING | IT_CVAR,    NULL, "File Transfer Packet Rate", &cv_downloadspeed,     	   44},
+							NULL,   "Holepunch Server",  		&cv_holepunchserver,	   20},
+	
+	{IT_STRING | IT_CVAR,   NULL,   "Show Connecting Players",  &cv_noticedownload,        34},
+	{IT_STRING | IT_CVAR,   NULL,   "Max File Transfer (kB)", 	&cv_maxsend,     	       39},
+	{IT_STRING | IT_CVAR,   NULL,   "File Transfer Packet Rate",&cv_downloadspeed,     	   44},
 
-	{IT_HEADER, 			 NULL, 	"Miscellanious Options",    NULL,					   49},
-	{IT_STRING | IT_CALL, 	 NULL, 	"Jukebox",					M_Tsourdt3rdJukebox,   	   55},
+	{IT_STRING | IT_CVAR,   NULL,   "Player Setup While Moving",&cv_movingplayersetup,	   54},
+
+	{IT_HEADER, 			NULL, 	"Miscellanious Extras",     NULL,					   59},
+	{IT_STRING | IT_CALL, 	NULL, 	"Jukebox",				    M_Tsourdt3rdJukebox,   	   65},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Jukebox HUD",				&cv_jukeboxhud,   	       70},
 };
 static menuitem_t OP_Tsourdt3rdJukeboxMenu[] =
 {
@@ -1855,7 +1852,10 @@ enum
 	op_maxsend,
 	op_downloadspeed,
 
-	op_jukebox = 8,
+	op_movingplayeroptionswitch,
+
+	op_jukebox = 9,
+	op_jukeboxhud,
 };
 
 // ==========================================================================
@@ -2725,111 +2725,83 @@ void Moviemode_option_Onchange(void)
 }
 
 #ifdef HAVE_DISCORDRPC
-// define these up here earlier because i'm lazy and plus we need these to be global lol
-char customSImageString[2+10+17+3];
-char customLImageString[3+17+10+2];
 void Discord_option_Onchange(void)
 {
-	//custom status things
-	static const char *customStringType[] = {
-		"char",
-		"cont",
-		"map",
-		"misc",
-		NULL
-	};
-	static const char *charsWithSpaces[] = {
-		"6",
-		"7",
-		"8",
-		"20",
-		"21",
-		NULL
-	};
-	
-	int nospaces;
-
 	// Discord :)
 	DiscordRichPresence discordPresence;
 	memset(&discordPresence, 0, sizeof(discordPresence));
 
-	// Is Rich Presence Even On? //
-	// Main
+	//// Is Rich Presence Even On? ////
+	// Main //
 	OP_DiscordOptionsMenu[op_richpresenceheader].status =
-		(cv_discordrp.value == 1 ? IT_HEADER : IT_DISABLED);
+		(cv_discordrp.value ? IT_HEADER : IT_DISABLED);
 	
 	OP_DiscordOptionsMenu[op_discordasks].status =
-		(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING : IT_DISABLED);
+		(cv_discordrp.value ? IT_CVAR|IT_STRING : IT_DISABLED);
 	
 	OP_DiscordOptionsMenu[op_discordinvites].status =
-		(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING : IT_DISABLED);
+		(cv_discordrp.value ? IT_CVAR|IT_STRING : IT_DISABLED);
 	
-	// Misc.
+	// Misc. //
 	OP_DiscordOptionsMenu[op_discordmiscoptionsheader].status =
-		(cv_discordrp.value == 1 ? IT_HEADER : IT_DISABLED);
+		(cv_discordrp.value ? IT_HEADER : IT_DISABLED);
 
 	OP_DiscordOptionsMenu[op_discordstatusmemes].status =
-		(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING : IT_DISABLED);
+		(cv_discordrp.value ? IT_CVAR|IT_STRING : IT_DISABLED);
 	
 	OP_DiscordOptionsMenu[op_discordshowonstatus].status =
-		(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING : IT_DISABLED);
+		(cv_discordrp.value ? IT_CVAR|IT_STRING : IT_DISABLED);
 
-	// Custom Status
+	// Custom Status //
 	OP_DiscordOptionsMenu[op_discordcharacterimagetype].status =
-		(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING : IT_DISABLED);
+		(cv_discordrp.value ? IT_CVAR|IT_STRING : IT_DISABLED);
 
 	OP_DiscordOptionsMenu[op_customstatusheader].status =
-		(cv_discordrp.value == 1 ? IT_HEADER : IT_DISABLED);
+		(cv_discordrp.value ? IT_HEADER : IT_DISABLED);
 
 	OP_DiscordOptionsMenu[op_customdiscorddetails].status =
-		(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
+		(cv_discordrp.value ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 	
 	OP_DiscordOptionsMenu[op_customdiscordstate].status =
-		(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
+		(cv_discordrp.value ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 
-    // Custom Images
+    // Custom Images //
 	OP_DiscordOptionsMenu[op_customdiscordlargeimagetype].status =
-    		(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING : IT_DISABLED);
+    		(cv_discordrp.value ? IT_CVAR|IT_STRING : IT_DISABLED);
 
     OP_DiscordOptionsMenu[op_customdiscordsmallimagetype].status =
-    		(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING : IT_DISABLED);
+    		(cv_discordrp.value ? IT_CVAR|IT_STRING : IT_DISABLED);
 
-    OP_DiscordOptionsMenu[op_customdiscordlargecharacterimage].status =
-        	(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING : IT_DISABLED);
+	// Custom Image Item Actions
+    OP_DiscordOptionsMenu[op_customdiscordlargeimage].status =
+        	(cv_discordrp.value ? IT_CVAR|IT_STRING : IT_DISABLED);
+	OP_DiscordOptionsMenu[op_customdiscordlargeimage].itemaction =
+            (cv_customdiscordlargeimagetype.value <= 2 ? &cv_customdiscordlargecharacterimage : (cv_customdiscordlargeimagetype.value == 3 ? &cv_customdiscordlargemapimage : &cv_customdiscordlargemiscimage));
 
-    OP_DiscordOptionsMenu[op_customdiscordsmallcharacterimage].status =
-        	(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING : IT_DISABLED);
-
-    OP_DiscordOptionsMenu[op_customdiscordlargemapimage].status =
-            (cv_discordrp.value == 1 ? IT_CVAR|IT_STRING : IT_DISABLED);
-
-    OP_DiscordOptionsMenu[op_customdiscordsmallmapimage].status =
-            (cv_discordrp.value == 1 ? IT_CVAR|IT_STRING : IT_DISABLED);
-
-    OP_DiscordOptionsMenu[op_customdiscordlargemiscimage].status =
-            (cv_discordrp.value == 1 ? IT_CVAR|IT_STRING : IT_DISABLED);
-
-    OP_DiscordOptionsMenu[op_customdiscordsmallmiscimage].status =
-            (cv_discordrp.value == 1 ? IT_CVAR|IT_STRING : IT_DISABLED);
+    OP_DiscordOptionsMenu[op_customdiscordsmallimage].status =
+        	(cv_discordrp.value ? IT_CVAR|IT_STRING : IT_DISABLED);
+	OP_DiscordOptionsMenu[op_customdiscordsmallimage].itemaction =
+            (cv_customdiscordsmallimagetype.value <= 2 ? &cv_customdiscordsmallcharacterimage : (cv_customdiscordsmallimagetype.value == 3 ? &cv_customdiscordsmallmapimage : &cv_customdiscordsmallmiscimage));
+	// End of Item Actions
 
     OP_DiscordOptionsMenu[op_customdiscordlargeimagetext].status =
-    		(cv_discordrp.value == 1 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
+    		(cv_discordrp.value ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 
     OP_DiscordOptionsMenu[op_customdiscordsmallimagetext].status =
-            (cv_discordrp.value == 1 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
+            (cv_discordrp.value ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 
-    // Output Status
-	OP_DiscordOptionsMenu[op_customstatusoutputdef].status =
-		(cv_discordrp.value == 1 ? IT_STRING|IT_SUBMENU : IT_DISABLED);
+    // Output Status //
+	OP_DiscordOptionsMenu[op_customstatusoutputdef].status = IT_DISABLED;
+		//(cv_discordrp.value ? IT_STRING|IT_SUBMENU : IT_DISABLED);
 
-	// Is Our Rich Presence On? //
+	//// Our Rich Presence is On! ////
 	if (cv_discordrp.value)
 	{	
-		// Misc. Settings
+		// Misc. Settings //
 		OP_DiscordOptionsMenu[op_discordinvites].status =
-			(cv_discordasks.value == 1 ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+			(cv_discordasks.value ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
 		
-		// Custom Statuses
+		// Custom Statuses //
 		OP_DiscordOptionsMenu[op_customstatusheader].status =
 			(cv_discordshowonstatus.value == 8 ? IT_HEADER : IT_DISABLED);
 		
@@ -2839,29 +2811,17 @@ void Discord_option_Onchange(void)
 		OP_DiscordOptionsMenu[op_customdiscordstate].status =
 			(cv_discordshowonstatus.value == 8 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 
-        // Custom Images
+        // Custom Images //
 		OP_DiscordOptionsMenu[op_customdiscordlargeimagetype].status =
             (cv_discordshowonstatus.value == 8 ? IT_CVAR|IT_STRING : IT_DISABLED);
 
         OP_DiscordOptionsMenu[op_customdiscordsmallimagetype].status =
             (cv_discordshowonstatus.value == 8 ? IT_CVAR|IT_STRING : IT_DISABLED);
 
-        OP_DiscordOptionsMenu[op_customdiscordlargecharacterimage].status =
+        OP_DiscordOptionsMenu[op_customdiscordlargeimage].status =
             (cv_discordshowonstatus.value == 8 ? IT_CVAR|IT_STRING : IT_DISABLED);
 
-        OP_DiscordOptionsMenu[op_customdiscordsmallcharacterimage].status =
-            (cv_discordshowonstatus.value == 8 ? IT_CVAR|IT_STRING : IT_DISABLED);
-
-        OP_DiscordOptionsMenu[op_customdiscordlargemapimage].status =
-            (cv_discordshowonstatus.value == 8 ? IT_CVAR|IT_STRING : IT_DISABLED);
-
-        OP_DiscordOptionsMenu[op_customdiscordsmallmapimage].status =
-            (cv_discordshowonstatus.value == 8 ? IT_CVAR|IT_STRING : IT_DISABLED);
-
-        OP_DiscordOptionsMenu[op_customdiscordlargemiscimage].status =
-            (cv_discordshowonstatus.value == 8 ? IT_CVAR|IT_STRING : IT_DISABLED);
-
-        OP_DiscordOptionsMenu[op_customdiscordsmallmiscimage].status =
+        OP_DiscordOptionsMenu[op_customdiscordsmallimage].status =
             (cv_discordshowonstatus.value == 8 ? IT_CVAR|IT_STRING : IT_DISABLED);
 
         OP_DiscordOptionsMenu[op_customdiscordlargeimagetext].status =
@@ -2870,157 +2830,43 @@ void Discord_option_Onchange(void)
         OP_DiscordOptionsMenu[op_customdiscordsmallimagetext].status =
             (cv_discordshowonstatus.value == 8 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 
-        // Output Status
-		OP_DiscordOptionsMenu[op_customstatusoutputdef].status =
-			(cv_discordshowonstatus.value == 8 ? IT_STRING|IT_SUBMENU : IT_DISABLED);
+        // Output Status //
+		//OP_DiscordOptionsMenu[op_customstatusoutputdef].status =
+			//(cv_discordshowonstatus.value == 8 ? IT_STRING|IT_SUBMENU : IT_DISABLED);
 
-        // Do We Want Custom Discord Statuses? //
+        //// Custom Discord Statuses ////
         if (cv_discordshowonstatus.value == 8)
         {
-            // What Image Type Do We Have?
-            if ((!cv_customdiscordlargeimagetype.value || cv_customdiscordlargeimagetype.value) && (!cv_customdiscordsmallimagetype.value || cv_customdiscordsmallimagetype.value))
-            {
-                // Large Images
-                OP_DiscordOptionsMenu[op_customdiscordlargecharacterimage].status =
-                    ((!cv_customdiscordlargeimagetype.value || cv_customdiscordlargeimagetype.value == 1) ? IT_CVAR|IT_STRING : IT_DISABLED);
+            // Display Different Options Based on Image Type Chosen //
+            // Large Images
+        	OP_DiscordOptionsMenu[op_customdiscordlargeimage].status =
+                (cv_customdiscordlargeimagetype.value != 5 ? IT_CVAR|IT_STRING : IT_DISABLED);
 
-                OP_DiscordOptionsMenu[op_customdiscordlargemapimage].status =
-                    (cv_customdiscordlargeimagetype.value == 2 ? IT_CVAR|IT_STRING : IT_DISABLED);
+            OP_DiscordOptionsMenu[op_customdiscordlargeimagetext].status =
+                (cv_customdiscordlargeimagetype.value != 5 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 
-                OP_DiscordOptionsMenu[op_customdiscordlargemiscimage].status =
-                    (cv_customdiscordlargeimagetype.value == 3 ? IT_CVAR|IT_STRING : IT_DISABLED);
+            // Small Images
+        	OP_DiscordOptionsMenu[op_customdiscordsmallimage].status =
+                (cv_customdiscordsmallimagetype.value != 5 ? IT_CVAR|IT_STRING : IT_DISABLED);
 
-                OP_DiscordOptionsMenu[op_customdiscordlargeimagetext].status =
-                    (cv_customdiscordlargeimagetype.value != 4 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
+            OP_DiscordOptionsMenu[op_customdiscordsmallimagetext].status =
+                (cv_customdiscordsmallimagetype.value != 5 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
+		}
 
-                // Small Images
-                OP_DiscordOptionsMenu[op_customdiscordsmallcharacterimage].status =
-                    ((!cv_customdiscordsmallimagetype.value || cv_customdiscordsmallimagetype.value == 1) ? IT_CVAR|IT_STRING : IT_DISABLED);
-
-                OP_DiscordOptionsMenu[op_customdiscordsmallmapimage].status =
-                    (cv_customdiscordsmallimagetype.value == 2 ? IT_CVAR|IT_STRING : IT_DISABLED);
-
-                OP_DiscordOptionsMenu[op_customdiscordsmallmiscimage].status =
-                    (cv_customdiscordsmallimagetype.value == 3 ? IT_CVAR|IT_STRING : IT_DISABLED);
-
-                OP_DiscordOptionsMenu[op_customdiscordsmallimagetext].status =
-                    (cv_customdiscordsmallimagetype.value != 4 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
-			}
-
-			// Large and Small Images
-			if (cv_customdiscordlargeimagetype.value != 4 || cv_customdiscordsmallimagetype.value != 4)
-			{
-				snprintf(customSImageString, 36, "%s", customStringType[cv_customdiscordsmallimagetype.value]);
-				snprintf(customLImageString, 36, "%s", customStringType[cv_customdiscordlargeimagetype.value]);
-
-				if (cv_customdiscordsmallimagetype.value < 2)
-					strlcat(customSImageString, va("%s", cv_customdiscordsmallcharacterimage.string), 64);
-				else if (cv_customdiscordsmallimagetype.value == 2)
-					strlcat(customSImageString, va("%s", cv_customdiscordsmallmapimage.string), 64);
-				else
-					strlcat(customSImageString, va("%s", cv_customdiscordsmallmiscimage.string), 64);
-
-				if (cv_customdiscordlargeimagetype.value < 2)
-					strlcat(customLImageString, va("%s", cv_customdiscordlargecharacterimage.string), 64);
-				else if (cv_customdiscordlargeimagetype.value == 2)
-					strlcat(customLImageString, va("%s", cv_customdiscordlargemapimage.string), 64);
-				else
-					strlcat(customLImageString, va("%s", cv_customdiscordlargemiscimage.string), 64);
-				
-				// Remove Spaces
-				if (cv_customdiscordsmallimagetype.value != 4 && ((cv_customdiscordsmallimagetype.value < 2 && charsWithSpaces[cv_customdiscordsmallcharacterimage.value]) || (cv_customdiscordsmallimagetype.value > 1)))
-				{
-					nospaces = 0; //this helps us remove spaces from our string, if we have any
-					for (INT32 i = 0; customSImageString[i] != '\0'; i++) { //string writing, now capiable of removing spaces, in limited small image edition
-						if ((customSImageString[i] != ' ') && (customSImageString[i] != '&') && (customSImageString[i] != '.')) // do we not have any spaces?
-						{
-							//continue with our normal behavior then!
-							customSImageString[nospaces] = customSImageString[i];
-							nospaces++;
-						}
-					}
-					customSImageString[nospaces] = '\0';
-				}
-				strlwr(customSImageString);
-				
-				if (cv_customdiscordlargeimagetype.value != 4 && ((cv_customdiscordlargeimagetype.value < 2 && charsWithSpaces[cv_customdiscordlargecharacterimage.value]) || (cv_customdiscordlargeimagetype.value > 1)))
-				{
-					nospaces = 0; //this helps us remove spaces from our string, if we have any
-					for (INT32 i = 0; customLImageString[i] != '\0'; i++) { //string writing, now capiable of removing spaces
-						if (customLImageString[i] != ' ' && customLImageString[i] != '&' && customLImageString[i] != '.') // do we not have any of these characters?
-						{
-							//continue with our normal behavior then!
-							customLImageString[nospaces] = customLImageString[i];
-							nospaces++;
-						}
-					}
-					customLImageString[nospaces] = '\0';
-				}
-				strlwr(customLImageString);
-
-				// Replace Strings in Words
-				/*
-				char string, newW, oldW;
-				char* result;  
-				int i, cnt = 0;  
-				int newWlen = strlen(newW);  
-				int oldWlen = strlen(oldW);  
-
-				// Counting the number of times old word  
-				// occur in the string  
-				for (i = 0; string[i] != '\0'; i++) {  
-					if (strstr(&s[i], oldW) == &string[i]) {  
-						cnt++;  
-
-						// Jumping to index after the old word.  
-						i += oldWlen - 1;  
-					}  
-				}  
-
-				// Making new string of enough length  
-				result = (char*)malloc(i + cnt * (newWlen - oldWlen) + 1);  
-
-				i = 0;  
-				while (*string) {  
-					// compare the substring with the result  
-					if (strstr(string, oldW) == string) {  
-						strcpy(&result[i], newW);  
-						i += newWlen;  
-						s += oldWlen;  
-					}  
-					else
-						result[i++] = *string++;  
-				}  
-
-				result[i] = '\0';  
-				string = result;
-				CONS_Printf("%s", string);
-				*/
-			}
-			discordPresence.details = cv_customdiscorddetails.string;
-			discordPresence.state = cv_customdiscordstate.string;
-
-			if (cv_customdiscordsmallimagetype.value < 2)
-				discordPresence.smallImageKey = (cv_customdiscordsmallcharacterimage.value > 0 ? customSImageString : va("%scustom", customStringType[cv_customdiscordsmallimagetype.value]));
-			else if (cv_customdiscordsmallimagetype.value == 2)
-				discordPresence.smallImageKey = (cv_customdiscordsmallmapimage.value > 0 ? customSImageString : "map01");
-			else
-				discordPresence.smallImageKey = (cv_customdiscordsmallmiscimage.value > 0 ? customSImageString : "misctitle");
-
-			if (cv_customdiscordlargeimagetype.value < 2)
-				discordPresence.largeImageKey = (cv_customdiscordlargecharacterimage.value > 0 ? customLImageString : va("%scustom", customStringType[cv_customdiscordlargeimagetype.value]));
-			else if (cv_customdiscordlargeimagetype.value == 2)
-				discordPresence.largeImageKey = (cv_customdiscordlargemapimage.value > 0 ? customLImageString : "map01");
-			else
-				discordPresence.largeImageKey = (cv_customdiscordlargemiscimage.value > 0 ? customLImageString : "misctitle");
-
-			discordPresence.smallImageText = cv_customdiscordsmallimagetext.string;
-			discordPresence.largeImageText = cv_customdiscordlargeimagetext.string;
-        }
+		//DRPC_UpdatePresence();
     }
-	Discord_UpdatePresence(&discordPresence);
 }
 #endif
+
+// Other STAR stuff yay
+static void STAR_JukeboxHUD_OnChange(void)
+{
+	if (cv_jukeboxhud.value)
+	{
+		if (jukeboxMusicPlaying)
+			initJukeboxHUD = true;
+	}
+}
 
 // ==========================================================================
 // END ORGANIZATION STUFF.
@@ -6931,7 +6777,7 @@ static void M_AddonsOptions(INT32 choice)
 
 #define LOCATIONSTRING1 "Visit \x83SRB2.ORG/ADDONS\x80 to get & make addons!"
 //#define LOCATIONSTRING2 "Visit \x88SRB2.ORG/ADDONS\x80 to get & make addons!"
-#define AUTOLOADSTRING1 "Press \x83Left-Shift\x80 to mark Autoloaded Mods!"
+#define AUTOLOADSTRING1 "Press \x83Right-Shift\x80 to mark Autoloaded Mods!"
 
 static void M_LoadAddonsPatches(void)
 {
@@ -7295,20 +7141,6 @@ static void M_AddonExec(INT32 ch)
 }
 
 // autoload a mod on game startup, like the files on startup
-#define REALLOC_FILE_LIST \
-	if (list->files == NULL) \
-	{ \
-		list->files = calloc(sizeof(list->files), 2); \
-		list->numfiles = 1; \
-	} \
-	else \
-	{ \
-		index = list->numfiles; \
-		list->files = realloc(list->files, sizeof(list->files) * ((++list->numfiles) + 1)); \
-		if (list->files == NULL) \
-			I_Error("%s: No more free memory to add file %s", __FUNCTION__, file); \
-	}
-
 static void M_AddonAutoLoad(INT32 ch)
 {
 	// initalize these variables
@@ -7316,70 +7148,75 @@ static void M_AddonAutoLoad(INT32 ch)
 	char filetowrite[MAX_WADPATH];
 	FILE *autoloadconfigfile;
 
-	if (ch != 'y' && ch != KEY_ENTER && ch != KEY_LSHIFT)
+	if (ch != 'y' && ch != KEY_ENTER && ch != KEY_RSHIFT)
 	{
 		S_StartSound(NULL, sfx_lose);
 		return;
 	}
-	else
+	
+	// first, find the file
+	path = va("%s"PATHSEP"%s", srb2home, AUTOLOADCONFIGNAME);
+	autoloadconfigfile = fopen(path, "a");
+	
+	// next, copy the name of the file
+	strcpy(filetowrite, va(menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
+
+	// then, execute the addon and store it in our autoload.cfg
+	switch (dirmenu[dir_on[menudepthleft]][DIR_TYPE])
 	{
-		// first, find the file
-		path = va("%s"PATHSEP"%s", srb2home, AUTOLOADCONFIGNAME);
-		autoloadconfigfile = fopen(path, "a");
-
-		// next, copy the name of the file
-		strcpy(filetowrite, va(menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
-
-		// then, execute the addon and store it in our autoload.cfg
-		switch (dirmenu[dir_on[menudepthleft]][DIR_TYPE])
-		{
-		    case EXT_FOLDER:
-		        if (!(refreshdirmenu & REFRESHDIR_MAX))
-                {
-                    COM_BufAddText(va("addfolder \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
-                    fprintf(autoloadconfigfile, "addfolder %s\n", dirmenu[dir_on[menudepthleft]]+DIR_STRING);
-                    S_StartSound(NULL, sfx_s3k51);
-                }
-                else
-                {
-                    M_StartMessage(va("%c%s\x80\nToo many addons are loaded! \nYou need to restart the game to autoload more mods. \nYou can still autoload console scripts though. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
-                    S_StartSound(NULL, sfx_lose);
-                }
-                break;
-			case EXT_TXT:
-			case EXT_CFG:
+	    case EXT_FOLDER:
+	        if (!(refreshdirmenu & REFRESHDIR_MAX))
+        	{
+                COM_BufAddText(va("addfolder \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
+                fprintf(autoloadconfigfile, "addfolder %s\n", dirmenu[dir_on[menudepthleft]]+DIR_STRING);
+                  
+			    S_StartSound(NULL, sfx_s3k51);
+            }
+            else
+            {
+                M_StartMessage(va("%c%s\x80\nToo many addons are loaded! \nYou need to restart the game to autoload more mods. \nYou can still autoload console scripts though. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
+                S_StartSound(NULL, sfx_lose);
+            }
+            break;
+		case EXT_TXT:
+		case EXT_CFG:
+			if (strcmp(dirmenu[dir_on[menudepthleft]]+DIR_STRING, CONFIGFILENAME) != 0 && strcmp(dirmenu[dir_on[menudepthleft]]+DIR_STRING, AUTOLOADCONFIGNAME) != 0)
+			{
 				COM_BufAddText(va("exec \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
 				fprintf(autoloadconfigfile, "exec %s\n", dirmenu[dir_on[menudepthleft]]+DIR_STRING);
+				
 				S_StartSound(NULL, sfx_s3k50);
-				break;
-			case EXT_LUA:
-			case EXT_SOC:
-			case EXT_WAD:
+			}
+			else
+				M_StartMessage(va("%c%s\x80\nYou can't autoload this builds' base console scripts!\n They're already autoloaded on startup! \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
+			break;
+		case EXT_LUA:
+		case EXT_SOC:
+		case EXT_WAD:
 #ifdef USE_KART
-			case EXT_KART:
+		case EXT_KART:
 #endif
-			case EXT_PK3:
-				if (!(refreshdirmenu & REFRESHDIR_MAX))
-				{
-					COM_BufAddText(va("addfile \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
-					fprintf(autoloadconfigfile, "addfile %s\n", dirmenu[dir_on[menudepthleft]]+DIR_STRING);
-					S_StartSound(NULL, sfx_s3k50);
-				}
-				else
-				{
-					M_StartMessage(va("%c%s\x80\nToo many addons are loaded! \nYou need to restart the game to autoload more mods. \nYou can still autoload console scripts though. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
-					S_StartSound(NULL, sfx_lose);
-				}
-				break;
-			default:
-				M_StartMessage(va("%c%s\x80\nYou can't autoload this file. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
+		case EXT_PK3:
+			if (!(refreshdirmenu & REFRESHDIR_MAX))
+			{
+				COM_BufAddText(va("addfile \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
+				fprintf(autoloadconfigfile, "addfile %s\n", dirmenu[dir_on[menudepthleft]]+DIR_STRING);
+				
+				S_StartSound(NULL, sfx_s3k50);
+			}
+			else
+			{
+				M_StartMessage(va("%c%s\x80\nToo many addons are loaded! \nYou need to restart the game to autoload more mods. \nYou can still autoload console scripts though. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
 				S_StartSound(NULL, sfx_lose);
-				break;
-		}
-		fclose(autoloadconfigfile);
+			}
+			break;
+		default:
+			M_StartMessage(va("%c%s\x80\nYou can't autoload this file. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
+			S_StartSound(NULL, sfx_lose);
+			break;
 	}
+	fclose(autoloadconfigfile);
 }
-#undef REALLOC_FILE_LIST
 
 #define len menusearch[0]
 static boolean M_ChangeStringAddons(INT32 choice)
@@ -7544,7 +7381,7 @@ static void M_HandleAddons(INT32 choice)
 			break;
 
 		//Adds Files Marked to Auto-Load
-		case KEY_LSHIFT:
+		case KEY_RSHIFT:
 			{
 				refresh = true;
 
@@ -14368,8 +14205,8 @@ static void M_DiscordOptions(INT32 choice)
 static void M_DrawDiscordMenu(void)
 {
 	M_DrawGenericScrollMenu();
-
-	V_DrawCenteredString(BASEVIDWIDTH/2, 200, ((strcmp(discordUserName, "None") == 1) ? V_GREENMAP : V_REDMAP), ((strcmp(discordUserName, "None") == 1) ? va("Connected to: %s", discordUserName) : "Not Connected"));
+	
+	V_DrawCenteredString(BASEVIDWIDTH/2, 200, ((strcmp(discordUserName, " ") == 1) ? V_GREENMAP : V_REDMAP), ((strcmp(discordUserName, " ") == 1) ? va("Connected to: %s", discordUserName) : "Not Connected"));
 }
 
 static void M_HandleDiscordRequests(INT32 choice)
@@ -14552,11 +14389,15 @@ static void M_Tsourdt3rdOptions(INT32 choice)
 	for (INT32 i = 0; i < MAXUNLOCKABLES; i++)
 	{
 		OP_Tsourdt3rdOptionsMenu[op_jukebox].status = IT_GRAYEDOUT;
+		OP_Tsourdt3rdOptionsMenu[op_jukeboxhud].status = IT_GRAYEDOUT;
+
 		OP_Tsourdt3rdOptionsMenu[op_jukebox].itemaction = NULL;
 		
 		if ((unlockables[i].unlocked && unlockables[i].type == SECRET_SOUNDTEST) || (modifiedgame && !savemoddata)) // for fairness sake
 		{
-			OP_Tsourdt3rdOptionsMenu[op_jukebox].status = IT_STRING|IT_CALL;
+			OP_Tsourdt3rdOptionsMenu[op_jukebox].status = IT_STRING | IT_CALL;
+			OP_Tsourdt3rdOptionsMenu[op_jukeboxhud].status = IT_STRING | IT_CVAR;
+
 			OP_Tsourdt3rdOptionsMenu[op_jukebox].itemaction = M_Tsourdt3rdJukebox;
 			break;
 		}
@@ -14615,7 +14456,7 @@ static void M_DrawTsourdt3rdJukebox(void)
 			fixed_t stoppingtics = (fixed_t)(curplaying->stoppingtics) << FRACBITS;
 			if (stoppingtics && st_time >= stoppingtics)
 			{
-				M_ResetJukebox();
+				//M_ResetJukebox();
 				st_time = 0;
 			}
 			else
@@ -14910,7 +14751,9 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 
 						S_ChangeMusicInternal(jukeboxMusicTrack, !curplaying->stoppingtics);
 						CONS_Printf(M_GetText("Loaded track \x82%s\x80 into the Jukebox.\n"), jukeboxMusicName);
+						
 						jukeboxMusicPlaying = true;
+						initJukeboxHUD = true;
 					}
 				}
 				else
@@ -14951,6 +14794,7 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 void M_ResetJukebox(void)
 {
 	jukeboxMusicPlaying = false;
+	initJukeboxHUD = false;
 
 	for (INT32 i = 0; jukeboxMusicName[i] != '\0'; i++) jukeboxMusicName[i] = '\0';
 	for (INT32 i = 0; jukeboxMusicTrack[i] != '\0'; i++) jukeboxMusicTrack[i] = '\0';

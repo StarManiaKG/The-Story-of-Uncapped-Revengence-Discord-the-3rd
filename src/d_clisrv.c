@@ -3463,7 +3463,7 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 static CV_PossibleValue_t netticbuffer_cons_t[] = {{0, "MIN"}, {3, "MAX"}, {0, NULL}};
 consvar_t cv_netticbuffer = CVAR_INIT ("netticbuffer", "1", CV_SAVE, netticbuffer_cons_t, NULL);
 
-static void Joinable_OnChange(void);
+void Joinable_OnChange(void);
 consvar_t cv_allownewplayer = CVAR_INIT ("allowjoin", "On", CV_SAVE|CV_NETVAR, CV_OnOff, Joinable_OnChange);
 consvar_t cv_joinnextround = CVAR_INIT ("joinnextround", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL); /// \todo not done
 static CV_PossibleValue_t maxplayers_cons_t[] = {{2, "MIN"}, {32, "MAX"}, {0, NULL}};
@@ -3477,11 +3477,6 @@ static CV_PossibleValue_t resynchattempts_cons_t[] = {{1, "MIN"}, {20, "MAX"}, {
 consvar_t cv_resynchattempts = CVAR_INIT ("resynchattempts", "10", CV_SAVE|CV_NETVAR, resynchattempts_cons_t, NULL);
 consvar_t cv_blamecfail = CVAR_INIT ("blamecfail", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL);
 
-// Here for dedicated servers
-static CV_PossibleValue_t discordinvites_cons_t[] = {{0, "Admins"}, {1, "Everyone"}, {2, "Only Server"}, {0, NULL}};
-consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Admins", CV_SAVE|CV_CALL, discordinvites_cons_t, Joinable_OnChange);
-
-
 // max file size to send to a player (in kilobytes)
 static CV_PossibleValue_t maxsend_cons_t[] = {{0, "MIN"}, {51200, "MAX"}, {0, NULL}};
 consvar_t cv_maxsend = CVAR_INIT ("maxsend", "4096", CV_SAVE|CV_NETVAR, maxsend_cons_t, NULL);
@@ -3493,7 +3488,7 @@ consvar_t cv_downloadspeed = CVAR_INIT ("downloadspeed", "16", CV_SAVE|CV_NETVAR
 
 static void Got_AddPlayer(UINT8 **p, INT32 playernum);
 
-static void Joinable_OnChange(void)
+void Joinable_OnChange(void)
 {
 	UINT8 buf[3];
 	UINT8 *p = buf;
@@ -3506,6 +3501,7 @@ static void Joinable_OnChange(void)
 
 	WRITEUINT8(p, maxplayer);
 	WRITEUINT8(p, cv_allownewplayer.value);
+
 #ifdef HAVE_DISCORDRPC
 	WRITEUINT8(p, cv_discordinvites.value);
 	SendNetXCmd(XD_DISCORD, &buf, 3);
@@ -4401,7 +4397,6 @@ static void HandlePacketFromAwayNode(SINT8 node)
 
 #ifdef HAVE_DISCORDRPC
 			discordInfo.maxPlayers = netbuffer->u.serverinfo.maxplayer;
-			discordInfo.joinsAllowed = netbuffer->u.servercfg.allownewplayer;
 			discordInfo.whoCanInvite = netbuffer->u.servercfg.discordinvites;
 #endif
 

@@ -27,8 +27,7 @@
 void ST_Ticker(boolean run);
 
 #ifdef HAVE_DISCORDRPC
-// Called when you have Discord asks
-void ST_AskToJoinEnvelope(void);
+void ST_AskToJoinEnvelope(void); // Called when you have Discord asks
 #endif
 
 // Called by main loop.
@@ -128,5 +127,9 @@ typedef enum
 extern hudinfo_t hudinfo[NUMHUDITEMS];
 
 extern UINT16 objectsdrawn;
+
+// STAR Stuff lol
+void ST_drawJukebox(void);
+extern boolean initJukeboxHUD;
 
 #endif

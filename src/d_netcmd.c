@@ -395,7 +395,8 @@ consvar_t cv_ps_descriptor = CVAR_INIT ("ps_descriptor", "Average", 0, ps_descri
 consvar_t cv_freedemocamera = CVAR_INIT("freedemocamera", "Off", CV_SAVE, CV_OnOff, NULL);
 
 // Star Commands lol
-consvar_t cv_usecontinues = CVAR_INIT ("usecontinues", "Yes", CV_SAVE|CV_CALL, CV_OnOff, STAR_UseContinues_OnChange);
+consvar_t cv_continues = CVAR_INIT ("continues", "On", CV_SAVE|CV_CALL, CV_OnOff, STAR_UseContinues_OnChange);
+consvar_t cv_movingplayersetup = CVAR_INIT ("movingplayersetup", "Off", CV_SAVE, CV_OnOff, NULL);
 
 char timedemo_name[256];
 boolean timedemo_csv;
@@ -630,8 +631,10 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_stunserver);
 #endif
 
+#ifdef HAVE_DISCORDRPC
 	CV_RegisterVar(&cv_discordinvites);
 	RegisterNetXCmd(XD_DISCORD, Got_DiscordInfo);
+#endif
 }
 
 // =========================================================================
@@ -962,7 +965,10 @@ void D_RegisterClientCommands(void)
 #endif
 
 	// Custom Funny Star Things :)
-	CV_RegisterVar(&cv_usecontinues);
+	CV_RegisterVar(&cv_continues);
+	CV_RegisterVar(&cv_movingplayersetup);
+
+	CV_RegisterVar(&cv_jukeboxhud);
 }
 
 /** Checks if a name (as received from another player) is okay.
@@ -4846,7 +4852,7 @@ static void Skin_OnChange(void)
 		return;
 	}
 
-	if (CanChangeSkin(consoleplayer)) //!P_PlayerMoving(consoleplayer) && 
+	if (CanChangeSkin(consoleplayer) && (cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(consoleplayer))))
 		SendNameAndColor();
 	else
 	{
@@ -4868,7 +4874,7 @@ static void Skin2_OnChange(void)
 	if (!Playing() || !splitscreen)
 		return; // do whatever you want
 
-	if (CanChangeSkin(secondarydisplayplayer)) //!P_PlayerMoving(consoleplayer) && 
+	if (CanChangeSkin(secondarydisplayplayer) && (cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(secondarydisplayplayer))))
 		SendNameAndColor2();
 	else
 	{
@@ -4898,11 +4904,8 @@ static void Color_OnChange(void)
 			return;
 		}
 
-		if (skincolors[players[consoleplayer].skincolor].accessible == true) //!P_PlayerMoving(consoleplayer) && 
-		{
-			// Color change menu scrolling fix is no longer necessary
-			SendNameAndColor();
-		}
+		if ((skincolors[players[consoleplayer].skincolor].accessible == true) && (cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(consoleplayer))))	
+			SendNameAndColor(); // Color change menu scrolling fix is no longer necessary
 		else
 		{
 			CONS_Alert(CONS_NOTICE, M_GetText("That is an inaccessible skincolor.\n"));
@@ -4927,11 +4930,8 @@ static void Color2_OnChange(void)
 	}
 	else
 	{
-		if (skincolors[players[secondarydisplayplayer].skincolor].accessible == true) //!P_PlayerMoving(consoleplayer) && 
-		{
-			// Color change menu scrolling fix is no longer necessary
-			SendNameAndColor2();
-		}
+		if ((skincolors[players[secondarydisplayplayer].skincolor].accessible == true) && (cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(secondarydisplayplayer))))
+			SendNameAndColor2(); // Color change menu scrolling fix is no longer necessary
 		else
 		{
 			CONS_Alert(CONS_NOTICE, M_GetText("That is an inaccessible skincolor.\n"));
@@ -5039,7 +5039,6 @@ void Got_DiscordInfo(UINT8 **p, INT32 playernum)
 	// Don't do anything with the information if we don't have Discord RP support
 #ifdef HAVE_DISCORDRPC
 	discordInfo.maxPlayers = READUINT8(*p);
-	discordInfo.joinsAllowed = READUINT8(*p);
 	discordInfo.whoCanInvite = READUINT8(*p);
 	DRPC_UpdatePresence();
 #else
@@ -5054,7 +5053,7 @@ static void STAR_UseContinues_OnChange(void)
 		return;
 
 	if (!(netgame || multiplayer))
-		useContinues = cv_usecontinues.value;
+		useContinues = cv_continues.value;
 	else
 		CONS_Printf(M_GetText("This only works in Singleplayer.\n"));
 }

@@ -122,7 +122,8 @@ extern boolean timedemo_quit;
 extern consvar_t cv_freedemocamera;
 
 // Custom Star Things
-extern consvar_t cv_usecontinues;
+extern consvar_t cv_continues;
+extern consvar_t cv_movingplayersetup;
 
 typedef enum
 {

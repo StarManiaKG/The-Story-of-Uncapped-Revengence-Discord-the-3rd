@@ -16,13 +16,15 @@ set(SRB2_ASSET_INSTALL ON
 	CACHE BOOL "Insert asset files into the install directory or package.")
 
 ####################
-# POST-V2.2 NOTE: Do not forget to add patch.pk3 to the end of this list!
+# POST-V2.2 NOTE: Do not forget to uncomment and add patch.pk3 to the end of this list!
 ####################
 
 set(SRB2_ASSET_HASHED
 "srb2.pk3;\
 player.dta;\
-zones.pk3"
+zones.pk3;\
+tsourdt3rd.pk3"
+#patch.pk3"
 	CACHE STRING "Asset filenames to apply MD5 checks. No spaces between entries!"
 )
 
