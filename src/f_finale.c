@@ -3397,6 +3397,9 @@ void F_TitleScreenDrawer(void)
 			break;
 	}
 
+	// STAR stuff lol
+	ST_drawJukebox(); // show us the music we're playing in the jukebox, if we are playing anything
+
 luahook:
 	LUA_HUDHOOK(title);
 }

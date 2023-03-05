@@ -500,12 +500,9 @@ void M_InitPlayerSetupColors(void);
 void M_FreePlayerSetupColors(void);
 void M_RefreshPauseMenu(void);
 
-#ifdef HAVE_DISCORDRPC
-extern char customSImageString[2+10+17+3]; //Pointer for the name of the custom small image the player is using
-extern char customLImageString[3+17+10+2]; //Pointer for the name of the custom large image the player is using
-#endif
-
 //star stuff weeeeee
+extern consvar_t cv_jukeboxhud;
+
 extern boolean jukeboxMusicPlaying;
 extern char jukeboxMusicName[32+20+12];
 extern char jukeboxMusicTrack[7];

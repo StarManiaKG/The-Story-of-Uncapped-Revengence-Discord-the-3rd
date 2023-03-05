@@ -19,10 +19,12 @@
 
 extern consvar_t cv_discordrp;
 extern consvar_t cv_discordstreamer;
+extern consvar_t cv_discordinvites;
 extern consvar_t cv_discordasks;
 extern consvar_t cv_discordshowonstatus;
 extern consvar_t cv_discordstatusmemes;
 extern consvar_t cv_discordcharacterimagetype;
+
 // Custom Things
 extern consvar_t cv_customdiscorddetails;
 extern consvar_t cv_customdiscordstate;
@@ -37,13 +39,14 @@ extern consvar_t cv_customdiscordsmallmiscimage;
 extern consvar_t cv_customdiscordlargeimagetext;
 extern consvar_t cv_customdiscordsmallimagetext;
 
-extern char discordUserName[64];
-
 extern struct discordInfo_s {
 	UINT8 maxPlayers;
-	UINT8 joinsAllowed;
 	UINT8 whoCanInvite;
 } discordInfo;
+
+typedef struct discordRPCUser_s {
+	char *name;
+} discordRPCUser_t;
 
 typedef struct discordRequest_s {
 	char *username; // Discord user name.
@@ -54,15 +57,18 @@ typedef struct discordRequest_s {
 	// *Maybe* if it was only PNG I would boot up curl just to get AND convert this to Doom GFX,
 	// but it can *also* be a JEPG, WebP, or GIF :)
 	// Hey, wanna add ImageMagick as a dependency? :dying:
+	// ...Essentially, VERY WIP
 	//patch *avatar
-	char *avatar; // VERY WIP
+	//char *avatar;
 
 	struct discordRequest_s *next; // Next request in the list.
 	struct discordRequest_s *prev; // Previous request in the list. Not used normally, but just in case something funky happens, this should repair the list.
 } discordRequest_t;
 
 extern discordRequest_t *discordRequestList;
+extern discordRPCUser_t *discordRPCUser;
 
+extern char discordUserName[64];
 
 /*--------------------------------------------------
 	void DRPC_RemoveRequest(void);

@@ -1228,6 +1228,10 @@ static void IdentifyVersion(void)
 	D_AddFile(&startupwadfiles, va(pandf,srb2waddir, "patch.pk3"));
 #endif
 
+	// Add this custom build's fun stuff
+	D_AddFile(&startupwadfiles, va(pandf,srb2waddir, "tsourdt3rd.pk3"));
+
+	// Add the music
 #if !defined (HAVE_SDL) || defined (HAVE_MIXER)
 	{
 #define MUSICTEST(str) \
@@ -1242,11 +1246,10 @@ static void IdentifyVersion(void)
 
 		MUSICTEST("music.dta")
 		//MUSICTEST("patch_music.pk3")
+
+		MUSICTEST("jukebox.pk3")
 	}
 #endif
-
-	//Add Star's Patches and Graphics lol
-	D_AddFile(&startupwadfiles, va(pandf,srb2waddir, "tsourdt3rd.pk3"));
 }
 
 static void
@@ -1461,37 +1464,42 @@ void D_SRB2Main(void)
 	// Have to be done here before files are loaded
 	M_InitCharacterTables();
 
-	mainwads = 3; // doesn't include music.dta and tsourdt3rd.pk3
+	mainwads = 3; // doesn't include music.dta and jukebox.pk3
 #ifdef USE_PATCH_DTA
 	mainwads++;
 #endif
 
 	// load wad, including the main wad file
-	autoloadpath = fopen(va("%s"PATHSEP"%s",srb2home,AUTOLOADCONFIGNAME), "r");
-
 	CONS_Printf("W_InitMultipleFiles(): Adding IWAD and main PWADs.\n");
 	W_InitMultipleFiles(&startupwadfiles);
 	D_CleanFile(&startupwadfiles);
-	if (autoloadpath)
-	{
-		mainwads++;
-		CONS_Printf("D_AutoLoadAddons(): Autoloading Addons.\n");
-		D_AutoLoadAddons(&startupwadfiles, va(pandf,srb2home,AUTOLOADCONFIGNAME));
-		D_CleanFile(&startupwadfiles);
-	}
 
-#ifndef DEVELOP // md5s last updated 22/02/20 (ddmmyy)
+#ifndef DEVELOP // md5s last updated 03/03/23 (star)
+	// Check MD5s of autoloaded files //
 
-	// Check MD5s of autoloaded files
+	// don't check music.dta because people like to modify it, and it doesn't matter if they do
+	// ...except it does if they slip maps in there, and that's what W_VerifyNMUSlumps is for.
+
 	W_VerifyFileMD5(0, ASSET_HASH_SRB2_PK3); // srb2.pk3
 	W_VerifyFileMD5(1, ASSET_HASH_ZONES_PK3); // zones.pk3
 	W_VerifyFileMD5(2, ASSET_HASH_PLAYER_DTA); // player.dta
 #ifdef USE_PATCH_DTA
 	W_VerifyFileMD5(3, ASSET_HASH_PATCH_PK3); // patch.pk3
+	W_VerifyFileMD5(4, ASSET_HASH_TSOURDT3RD_PK3); // tsourdt3rd.pk3
+#else
+	W_VerifyFileMD5(3, ASSET_HASH_TSOURDT3RD_PK3); // tsourdt3rd.pk3
 #endif
-	// don't check music.dta because people like to modify it, and it doesn't matter if they do
-	// ...except it does if they slip maps in there, and that's what W_VerifyNMUSlumps is for.
 #endif //ifndef DEVELOP
+
+	// autoload other wads
+	autoloadpath = fopen(va("%s"PATHSEP"%s",srb2home,AUTOLOADCONFIGNAME), "r");
+
+	if (autoloadpath)
+	{
+		CONS_Printf("D_AutoLoadAddons(): Autoloading Addons.\n");
+		D_AutoLoadAddons(&startupwadfiles, va(pandf,srb2home,AUTOLOADCONFIGNAME));
+		D_CleanFile(&startupwadfiles);
+	}
 
 	cht_Init();
 

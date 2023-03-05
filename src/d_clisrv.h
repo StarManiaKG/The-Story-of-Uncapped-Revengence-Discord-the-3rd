@@ -163,7 +163,7 @@ typedef struct
 
 	// Discord info (always defined for net compatibility)
 	UINT8 maxplayer;
-	boolean allownewplayer;
+	UINT8 allownewplayer;
 	boolean discordinvites;
 
 	UINT8 varlengthinputs[0]; // Playernames and netvars
@@ -406,8 +406,6 @@ extern consvar_t cv_netticbuffer, cv_allownewplayer, cv_joinnextround, cv_maxpla
 extern consvar_t cv_resynchattempts, cv_blamecfail;
 extern consvar_t cv_maxsend, cv_noticedownload, cv_downloadspeed;
 
-extern consvar_t cv_discordinvites;
-
 // Used in d_net, the only dependence
 tic_t ExpandTics(INT32 low, INT32 node);
 void D_ClientServerInit(void);
@@ -468,4 +466,8 @@ extern UINT8 hu_redownloadinggamestate;
 
 extern UINT8 adminpassmd5[16];
 extern boolean adminpasswordset;
+
+// Commands on Change
+void Joinable_OnChange(void);
+
 #endif

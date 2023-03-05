@@ -1300,7 +1300,9 @@ void PT_FileFragment(void)
 		&& strcmp(filename, "player.dta")
 		&& strcmp(filename, "patch.pk3")
 		&& strcmp(filename, "music.dta")
-		//&& strcmp(filename, "tsourdt3rd.pk3")
+		
+		&& strcmp(filename, "tsourdt3rd.pk3")
+		&& strcmp(filename, "jukebox.pk3")
 		))
 		I_Error("Tried to download \"%s\"", filename);
 
