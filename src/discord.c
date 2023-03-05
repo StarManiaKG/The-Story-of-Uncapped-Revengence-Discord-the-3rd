@@ -1273,13 +1273,11 @@ void DRPC_UpdatePresence(void)
 		// Large Images
 		if (cv_customdiscordlargeimagetype.value != 5)
 		{
-			if (cv_customdiscordlargeimagetype.value <= 2)
-				discordPresence.largeImageKey = va("%s%s", customStringType[cv_customdiscordlargeimagetype.value], (cv_customdiscordlargecharacterimage.value ? supportedSkins[cv_customdiscordlargecharacterimage.value] : "custom"));
-			else if (cv_customdiscordlargeimagetype.value == 3)
-				discordPresence.largeImageKey = va("%s%s", customStringType[cv_customdiscordlargeimagetype.value], (cv_customdiscordlargemapimage.value ? supportedMaps[cv_customdiscordlargemapimage.value] : "01"));
-			else
-				discordPresence.largeImageKey = va("%s%s", customStringType[cv_customdiscordlargeimagetype.value], (cv_customdiscordlargemiscimage.value ? supportedMiscs[cv_customdiscordlargemiscimage.value] : "title"));
-		
+			snprintf(customLImage, 50, "%s%s", customStringType[cv_customdiscordlargeimagetype.value],
+				(cv_customdiscordlargeimagetype.value <= 2 ? supportedSkins[cv_customdiscordlargecharacterimage.value] :
+				(cv_customdiscordlargeimagetype.value == 3 ? supportedMaps[cv_customdiscordlargemapimage.value] : supportedMiscs[cv_customdiscordlargemiscimage.value])));
+
+			discordPresence.largeImageKey = customLImage;
 			discordPresence.largeImageText = cv_customdiscordlargeimagetext.string;
 		}
 	}
