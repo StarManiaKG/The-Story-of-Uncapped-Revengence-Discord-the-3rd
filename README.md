@@ -73,9 +73,9 @@
   - libopenmpt (Linux/OS X only)
 
 **OPTIONAL DEPENDENCIES**
-  - Discord-RPC (Discord RPC Support; On Windows, SRB2 comes with the files, On Mac/Linux, you can find/compile them [here](https://github.com/discord/discord-rpc))
-  - libdiscord_game_sdk (Discord Game SDK Support; On Windows, SRB2 comes with the files, On Mac/Linux, you can find them [here](https://dl-game-sdk.discordapp.net/3.2.1/discord_game_sdk.zip) and place them in the right directories)
-  - SDL-MixerX (Advanced Sound/MIDI Options; On Windows, SRB2 comes with the files, On Mac/Linux, you can find/compile them [here](https://github.com/WohlSoft/SDL-Mixer-X))
+  - Discord-RPC (Discord RPC Support; Windows Included, Mac/Linux users can find/compile them [here](https://github.com/discord/discord-rpc))
+  - Discord Game SDK (Discord Game SDK Support; Windows Included, Mac/Linux users can find them [here](https://dl-game-sdk.discordapp.net/3.2.1/discord_game_sdk.zip) and place them in the right directories)
+  - SDL-Mixer-X (Advanced Sound/MIDI Support and Options; Windows Included, Mac/Linux users can find/compile them [here](https://github.com/WohlSoft/SDL-Mixer-X))
 
 ## Assets
 All of the following assets can be found in the "assets" folder of this repository, under a folder with the name "TSOURDT3RD-Assets".
