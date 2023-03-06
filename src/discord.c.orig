@@ -35,7 +35,10 @@
 #include "d_netfil.h" // nameonly
 #include "doomstat.h" // savemoddata
 #include "dehacked.h" // titlechanged
+<<<<<<< HEAD
 #include "v_video.h" // hud stuff, mainly
+=======
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 
 // Please feel free to provide your own Discord app if you're making a new custom build :)
 #define DISCORD_APPID "1013126566236135516"
@@ -43,12 +46,15 @@
 // length of IP strings
 #define IP_SIZE 21
 
+<<<<<<< HEAD
 static CV_PossibleValue_t discordinvites_cons_t[] = {
 	{0, "Admins"},
 	{1, "Everyone"},
 	{2, "Only Server"},
 	{0, NULL}};
 
+=======
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 static CV_PossibleValue_t statustype_cons_t[] = {
     {0, "All"},
     {1, "Only Characters"},
@@ -60,6 +66,7 @@ static CV_PossibleValue_t statustype_cons_t[] = {
     {7, "Only Playtime"},
     {8, "Custom"},
     {0, NULL}};
+<<<<<<< HEAD
 
 //// Custom Status and Images ////
 // Character Image Types //
@@ -82,6 +89,19 @@ static CV_PossibleValue_t customimagetype_cons_t[] = {
 
 // Characters //
 static CV_PossibleValue_t customcharacterimage_cons_t[] = {
+=======
+static CV_PossibleValue_t characterimagetype_cons_t[] = {{0, "CS Portrait"}, {1, "Continue Sprite"}, {0, NULL}}; //{2, "Life Icon Sprite"},
+
+// Custom Discord Status Image Type //
+static CV_PossibleValue_t customimagetype_cons_t[] = {
+	{0, "CS Portraits"},
+	{1, "Continue Sprites"},
+	{2, "Maps"},
+	{3, "Miscellaneous"},
+	{4, "None"},
+	{0, NULL}};
+static CV_PossibleValue_t customcharacterimage_cons_t[] = { // Characters //
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
     // Vanilla Chars
     {0, "Default"}, //does ghost sonic count as a vanilla char? maybe.
     {1, "Sonic"},
@@ -92,7 +112,11 @@ static CV_PossibleValue_t customcharacterimage_cons_t[] = {
     {6, "Metal Sonic"},
     {7, "Sonic & Tails"}, //Bots, am i right?
     
+<<<<<<< HEAD
 	// Custom Chars
+=======
+	//Custom Chars
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
     {8, "Adventure Sonic"},
     {9, "Shadow"},
     {10, "Skip"},
@@ -109,6 +133,7 @@ static CV_PossibleValue_t customcharacterimage_cons_t[] = {
     {21, "Metal Knuckles"},
     {22, "Smiles"},
     {23, "Whisper"},
+<<<<<<< HEAD
 
 	// My Chars/Mods
     {24, "Hexhog"},
@@ -221,6 +246,13 @@ static CV_PossibleValue_t custommapimage_cons_t[] = { // Maps //
 static CV_PossibleValue_t custommiscimage_cons_t[] = {
 	{0, "Default"},
 	
+=======
+    {24, "Hexhog"},
+    {0, NULL}};
+static CV_PossibleValue_t custommapimage_cons_t[] = {{0, "MIN"}, {69, "MAX"}, {0, NULL}};
+static CV_PossibleValue_t custommiscimage_cons_t[] = { // Miscellanious //
+	{0, "Default"},
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 	// Intro Stuff
 	{1, "Intro 1"},
 	{2, "Intro 2"},
@@ -230,7 +262,10 @@ static CV_PossibleValue_t custommiscimage_cons_t[] = {
 	{6, "Intro 6"},
 	{7, "Intro 7"},
 	{8, "Intro 8"},
+<<<<<<< HEAD
 	
+=======
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 	// Alternate Images
 	{9, "Alt. Sonic Image 1"},
 	{10, "Alt. Sonic Image 2"},
@@ -252,11 +287,15 @@ static CV_PossibleValue_t custommiscimage_cons_t[] = {
                                                 ////////////////////////////
 consvar_t cv_discordrp = CVAR_INIT ("discordrp", "On", CV_SAVE|CV_CALL, CV_OnOff, Discord_option_Onchange);
 consvar_t cv_discordstreamer = CVAR_INIT ("discordstreamer", "Off", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
+<<<<<<< HEAD
 consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Admins", CV_SAVE|CV_CALL, discordinvites_cons_t, Joinable_OnChange);
+=======
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 consvar_t cv_discordasks = CVAR_INIT ("discordasks", "Yes", CV_SAVE|CV_CALL, CV_OnOff, Discord_option_Onchange);
 consvar_t cv_discordstatusmemes = CVAR_INIT ("discordstatusmemes", "Yes", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
 consvar_t cv_discordshowonstatus = CVAR_INIT ("discordshowonstatus", "All", CV_SAVE|CV_CALL, statustype_cons_t, Discord_option_Onchange);
 consvar_t cv_discordcharacterimagetype = CVAR_INIT ("discordcharacterimagetype", "CS Portrait", CV_SAVE|CV_CALL, characterimagetype_cons_t, DRPC_UpdatePresence);
+<<<<<<< HEAD
 
 //// Custom Discord Status Things ////
 consvar_t cv_customdiscorddetails = CVAR_INIT ("customdiscorddetails", "I'm Feeling Good!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
@@ -284,6 +323,30 @@ consvar_t cv_customdiscordlargeimagetext = CVAR_INIT ("customdiscordlargeimagete
 consvar_t cv_customdiscordsmallimagetext = CVAR_INIT ("customdiscordsmallimagetext", "My Other Favorite Character!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
 
 struct discordInfo_s discordInfo;
+=======
+//// Custom Discord Status Things ////
+consvar_t cv_customdiscorddetails = CVAR_INIT ("customdiscorddetails", "I'm Feeling Good!", CV_SAVE|CV_CALL, NULL, Discord_option_Onchange);
+consvar_t cv_customdiscordstate = CVAR_INIT ("customdiscordstate", "I'm Playing Sonic Robo Blast 2!", CV_SAVE|CV_CALL, NULL, Discord_option_Onchange);
+// Custom Discord Status Image Type
+consvar_t cv_customdiscordlargeimagetype = CVAR_INIT ("customdiscordlargeimagetype", "CS Portraits", CV_SAVE|CV_CALL, customimagetype_cons_t, Discord_option_Onchange);
+consvar_t cv_customdiscordsmallimagetype = CVAR_INIT ("customdiscordsmallimagetype", "Continue Sprites", CV_SAVE|CV_CALL, customimagetype_cons_t, Discord_option_Onchange);
+// Custom Discord Status Images
+    // Characters //
+consvar_t cv_customdiscordlargecharacterimage = CVAR_INIT ("customdiscordlargecharacterimage", "Sonic", CV_SAVE|CV_CALL, customcharacterimage_cons_t, Discord_option_Onchange);
+consvar_t cv_customdiscordsmallcharacterimage = CVAR_INIT ("customdiscordsmallimage", "Tails", CV_SAVE|CV_CALL, customcharacterimage_cons_t, Discord_option_Onchange);
+    // Maps //
+consvar_t cv_customdiscordlargemapimage = CVAR_INIT ("customdiscordlargemapimage", "MIN", CV_SAVE|CV_CALL, custommapimage_cons_t, Discord_option_Onchange);
+consvar_t cv_customdiscordsmallmapimage = CVAR_INIT ("customdiscordsmallmapimage", "MAX", CV_SAVE|CV_CALL, custommapimage_cons_t, Discord_option_Onchange);
+    // Miscellanious //
+consvar_t cv_customdiscordlargemiscimage = CVAR_INIT ("customdiscordlargemiscimage", "Default", CV_SAVE|CV_CALL, custommiscimage_cons_t, Discord_option_Onchange);
+consvar_t cv_customdiscordsmallmiscimage = CVAR_INIT ("customdiscordsmallmiscimage", "Intro 1", CV_SAVE|CV_CALL, custommiscimage_cons_t, Discord_option_Onchange);
+    // Captions //
+consvar_t cv_customdiscordlargeimagetext = CVAR_INIT ("customdiscordlargeimagetext", "My Favorite Character!", CV_SAVE|CV_CALL, NULL, Discord_option_Onchange);
+consvar_t cv_customdiscordsmallimagetext = CVAR_INIT ("customdiscordsmallimagetext", "My Other Favorite Character!", CV_SAVE|CV_CALL, NULL, Discord_option_Onchange);
+
+struct discordInfo_s discordInfo;
+
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 discordRequest_t *discordRequestList = NULL;
 
 static char self_ip[IP_SIZE+1];
@@ -331,10 +394,18 @@ static char *DRPC_XORIPString(const char *input)
 	Return:-
 		None
 --------------------------------------------------*/
+<<<<<<< HEAD
 char discordUserName[64] = " ";
 static void DRPC_HandleReady(const DiscordUser *user)
 {
 	snprintf(discordUserName, 64, "%s", user->username);
+=======
+char discordUserName[64] = "None";
+static void DRPC_HandleReady(const DiscordUser *user)
+{
+	snprintf(discordUserName, 64, "%s", user->username);
+	
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 	(cv_discordstreamer.value ? CONS_Printf("Discord: connected to %s\n", user->username) : CONS_Printf("Discord: connected to %s#%s (%s)\n", user->username, user->discriminator, user->userId));
 }
 
@@ -352,7 +423,12 @@ static void DRPC_HandleReady(const DiscordUser *user)
 --------------------------------------------------*/
 static void DRPC_HandleDisconnect(int err, const char *msg)
 {
+<<<<<<< HEAD
 	snprintf(discordUserName, 2, " ");
+=======
+	snprintf(discordUserName, 5, "None");
+
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 	CONS_Printf("Discord: disconnected (%d: %s)\n", err, msg);
 }
 
@@ -388,13 +464,21 @@ static void DRPC_HandleError(int err, const char *msg)
 --------------------------------------------------*/
 static void DRPC_HandleJoin(const char *secret)
 {
+<<<<<<< HEAD
 	CONS_Printf("Connecting to %s via Discord\n", DRPC_XORIPString(secret));
+=======
+	COM_BufAddText(va("connect \"%s\"\n", DRPC_XORIPString(secret)));
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 
 	M_ClearMenus(true); //Don't have menus open during connection screen
 	if (demoplayback && titledemo)
 		G_CheckDemoStatus(); //Stop the title demo, so that the connect command doesn't error if a demo is playing
 
+<<<<<<< HEAD
 	COM_BufAddText(va("connect \"%s\"\n", DRPC_XORIPString(secret)));
+=======
+	CONS_Printf("Connecting to %s via Discord\n", DRPC_XORIPString(secret));
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 }
 
 /*--------------------------------------------------
@@ -420,11 +504,20 @@ static boolean DRPC_InvitesAreAllowed(void)
 	if (!Playing())
 		return false; // We're not playing, so we should not be getting invites.
 	
-	if (cv_allownewplayer.value) // Are We Allowing Players to join the Server? (discordInfo.joinsAllowed)
+<<<<<<< HEAD
+	if (cv_allownewplayer.value) // Are We Allowing Players ro join the Server?
 	{
 		if ((!discordInfo.whoCanInvite && (consoleplayer == serverplayer || IsPlayerAdmin(consoleplayer))) // Only admins are allowed!
 			|| discordInfo.whoCanInvite) // Everyone's allowed!
 			return true;
+=======
+	if (discordInfo.joinsAllowed || cv_allownewplayer.value) //hack, since discordInfo.joinsAllowed doesn't work
+	{
+		if (!discordInfo.whoCanInvite && (consoleplayer == serverplayer || IsPlayerAdmin(consoleplayer)))
+			return true; // Only admins are allowed!
+		else if (discordInfo.whoCanInvite)
+			return true; // Everyone's allowed!
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 	}
 
 	return false; // Did not pass any of the checks
@@ -448,9 +541,15 @@ static void DRPC_HandleJoinRequest(const DiscordUser *requestUser)
 	discordRequest_t *append = discordRequestList;
 	discordRequest_t *newRequest;
 
+<<<<<<< HEAD
 	// Something weird happened if this occurred...
 	if (!DRPC_InvitesAreAllowed())
 	{
+=======
+	if (!DRPC_InvitesAreAllowed())
+	{
+		// Something weird happened if this occurred...
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 		Discord_Respond(requestUser->userId, DISCORD_REPLY_IGNORE);
 		return;
 	}
@@ -505,19 +604,37 @@ static void DRPC_HandleJoinRequest(const DiscordUser *requestUser)
 void DRPC_RemoveRequest(discordRequest_t *removeRequest)
 {
 	if (removeRequest->prev != NULL)
+<<<<<<< HEAD
 		removeRequest->prev->next = removeRequest->next;
+=======
+	{
+		removeRequest->prev->next = removeRequest->next;
+	}
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 
 	if (removeRequest->next != NULL)
 	{
 		removeRequest->next->prev = removeRequest->prev;
 
 		if (removeRequest == discordRequestList)
+<<<<<<< HEAD
 			discordRequestList = removeRequest->next;
+=======
+		{
+			discordRequestList = removeRequest->next;
+		}
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 	}
 	else
 	{
 		if (removeRequest == discordRequestList)
+<<<<<<< HEAD
 			discordRequestList = NULL;
+=======
+		{
+			discordRequestList = NULL;
+		}
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 	}
 
 	Z_Free(removeRequest->username);
@@ -591,12 +708,23 @@ static const char *DRPC_GetServerIP(void)
 	}
 
 	if (self_ip[0])
+<<<<<<< HEAD
 		return self_ip;
+=======
+	{
+		return self_ip;
+	}
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 	else
 	{
 		// There happens to be a good way to get it after all! :D
 		STUN_bind(DRPC_GotServerIP);
-		return NULL; //return self_ip;
+<<<<<<< HEAD
+		return self_ip; //return NULL;
+=======
+		//return NULL;
+		return self_ip;
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 	}
 }
 
@@ -620,6 +748,7 @@ static void DRPC_EmptyRequests(void)
 
 		See header file for description.
 --------------------------------------------------*/
+<<<<<<< HEAD
 // Dependancies //
 boolean customStringTooLow;
 boolean alreadyWarned;
@@ -647,6 +776,8 @@ static void DRPC_StringError(void) // Prints a Message if
 }
 
 // Main //
+=======
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 void DRPC_UpdatePresence(void)
 {
 	char detailstr[64+26+15+23] = "";
@@ -662,6 +793,7 @@ void DRPC_UpdatePresence(void)
 
 	char servertype[15+10] = "";
 
+<<<<<<< HEAD
 	//nerd emoji moment
 	char detailGrammar[1+2] = "";
 	
@@ -690,15 +822,21 @@ void DRPC_UpdatePresence(void)
 	static const char *supportedSkins[] = {
 		// Vanilla Chars
 		"custom",
+=======
+	static const char *supportedSkins[] = { // Supported Skin Pictures
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 		"sonic",
 		"tails",
 		"knuckles",
 		"amy",
 		"fang",
 		"metalsonic",
+<<<<<<< HEAD
 		"sonictails",
 		
 		// Custom Chars
+=======
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 		"adventuresonic",
 		"shadow",
 		"skip",
@@ -715,6 +853,7 @@ void DRPC_UpdatePresence(void)
 		"metalknuckles",
 		"smiles",
 		"whisper",
+<<<<<<< HEAD
 
 		// My Chars/Mods
 		"hexhog",
@@ -865,11 +1004,44 @@ void DRPC_UpdatePresence(void)
 		"cont",
 		"life",
 
+=======
+		"hexhog",
+		NULL
+	};
+
+	//nerd emoji moment
+	char detailGrammar[1+2] = "";
+	
+	char stateGrammar[2+2] = "";
+	char stateType[10+9+5] = "";
+
+	char allEmeralds[1+2+2] = "";
+	char emeraldComma[1+2] = "";
+	char emeraldGrammar[1+1+1] = "";
+	char emeraldMeme[3+5+12+7] = "";
+
+	char lifeType[9+10+2+7] = "";
+	char lifeGrammar[9+10+2+3+4] = "";
+
+	char spectatorType[9+10] = "";
+	char spectatorGrammar[2+3] = "";
+
+	char gametypeGrammar[2+3+1+9] = "";
+	char gameType[2+3+8+9] = "";
+
+	char charImageType[2+2+1] = "";
+
+	// custom discord things from menu.c that i had to redeclare here because i do not know much about c
+	static const char *customStringType[] = {
+		"char",
+		"cont",
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 		"map",
 		"misc",
 		NULL
 	};
 
+<<<<<<< HEAD
 	/*static const char *customStringLink[] = {
 		// Statuses
 		"#s",
@@ -880,6 +1052,8 @@ void DRPC_UpdatePresence(void)
 		NULL
 	};*/
 
+=======
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 	// Counters
 	UINT8 emeraldCount = 0;
 	
@@ -927,6 +1101,7 @@ void DRPC_UpdatePresence(void)
 	////////////////////////////////////////////
 	////   Main Rich Presence Status Info   ////
 	////////////////////////////////////////////
+<<<<<<< HEAD
 	
 	// Emerald Math, Provided By Monster Iestyn and Uncapped Plus Fafabis //
 	for (i = 0; i < 7; i++) {
@@ -935,6 +1110,8 @@ void DRPC_UpdatePresence(void)
 	}
 
 	////// ALL GAME INFO //////
+=======
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 	if (dedicated || netgame || splitscreen || !multiplayer)
 	{
 		//// SERVER INFO ////
@@ -952,21 +1129,33 @@ void DRPC_UpdatePresence(void)
 				}
 			}
 
+<<<<<<< HEAD
 			switch (msServerType)
+=======
+			switch (ms_RoomId)
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 			{
 				case 33: snprintf(servertype, 26, "Standard"); break;
 				case 28: snprintf(servertype, 26, "Casual"); break;
 				case 38: snprintf(servertype, 26, "Custom Gametype"); break;
 				case 31: snprintf(servertype, 26, "OLDC"); break;
+<<<<<<< HEAD
 
 				// Fallbacks
 				case 0: snprintf(servertype, 26, "Public"); break;
 				default: snprintf(servertype, 26, "Private"); break;
+=======
+				
+				case -1: default: snprintf(servertype, 26, "Private"); break; // Private server
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 			}
 
 			if (cv_discordshowonstatus.value != 8)
 				snprintf(detailstr, 60, (server ? (!dedicated ? "Hosting a %s Server" : "Hosting a Dedicated %s Server") : "In a %s Server"), servertype);
+<<<<<<< HEAD
 			
+=======
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 			discordPresence.partyId = server_context; // Thanks, whoever gave us Mumble support, for implementing the EXACT thing Discord wanted for this field!
 			discordPresence.partySize = D_NumPlayers(); // Players in server
 			discordPresence.partyMax = cv_maxplayers.value; // Max players
@@ -1003,6 +1192,14 @@ void DRPC_UpdatePresence(void)
 			//// Emeralds ////
 			if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 3)
 			{
+<<<<<<< HEAD
+=======
+				// Emerald Math, Provided By Monster Iestyn and Uncapped Plus Fababis
+				for (i = 0; i < 7; i++)
+					if ((gametyperules & GTR_POWERSTONES && (players[consoleplayer].powers[pw_emeralds] & (1<<i))) || (emeralds & (1<<i)))
+						emeraldCount += 1;
+				
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 				// Grammar
 				if (!cv_discordshowonstatus.value && !splitscreen)
 					snprintf(emeraldComma, 3, ", ");
@@ -1031,7 +1228,11 @@ void DRPC_UpdatePresence(void)
 			
 			//// SRB2 Playtime ////
 			if (cv_discordshowonstatus.value == 7)
+<<<<<<< HEAD
 				strlcat(((Playing() && !netgame) ? detailstr : statestr), va("Total Playtime: %d Hours, %d Minutes, and %d Seconds", G_TicsToHours(totalplaytime), G_TicsToMinutes(totalplaytime, false), G_TicsToSeconds(totalplaytime)), 128);
+=======
+				strlcat(((Playing() && !netgame) ? detailstr : statestr), va("Total Playtime: %d Hours, %d Minutes, %d Seconds", G_TicsToHours(totalplaytime), G_TicsToMinutes(totalplaytime, false), G_TicsToSeconds(totalplaytime)), 128);
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 
 			//// Tiny Detail Things; Complete Games, etc. ////
 			if (!splitscreen && !netgame)
@@ -1125,8 +1326,13 @@ void DRPC_UpdatePresence(void)
 		else if (gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || (gamestate == GS_TITLESCREEN || !titlemapinaction)) // Map info
 		{
 			if ((gamemap >= 1 && gamemap <= 73) // Supported Co-op maps
+<<<<<<< HEAD
 			|| (gamemap >= 280 && gamemap <= 288) // Supported CTF maps
 			|| (gamemap >= 532 && gamemap <= 543)) // Supported Match maps
+=======
+			|| (gamemap >= 532 && gamemap <= 543) // Supported Match maps
+			|| (gamemap >= 280 && gamemap <= 288)) // Supported CTF maps
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 			{
 				snprintf(mapimg, 8, "%s", G_BuildMapName(gamemap));
 				strlwr(mapimg);
@@ -1155,7 +1361,11 @@ void DRPC_UpdatePresence(void)
 					discordPresence.largeImageKey = "misctitle";
 			}
 
+<<<<<<< HEAD
 			if (Playing() && (paused || menuactive))
+=======
+			if (Playing() || paused)
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 			{
 				const time_t currentTime = time(NULL);
 				const time_t mapTimeStart = currentTime - (leveltime / TICRATE);
@@ -1193,13 +1403,22 @@ void DRPC_UpdatePresence(void)
 	if ((!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 1) && (Playing() && playeringame[consoleplayer]))
 	{
 		// Character Images/Tags //
+<<<<<<< HEAD
 		snprintf(charImageType, 5, (!cv_discordcharacterimagetype.value ? "char" : (cv_discordcharacterimagetype.value == 1 ? "cont" : "life")));
+=======
+		snprintf(charImageType, 5, (!cv_discordcharacterimagetype.value ? "char" : "cont"));
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 		snprintf(charimg, 11, "%scustom", charImageType);
 		snprintf(charimgS, 11, ((cv_discordshowonstatus.value && ((playeringame[1] && players[1].bot) || splitscreen)) ? "%scustom" : ""), ((cv_discordshowonstatus.value && ((playeringame[1] && players[1].bot) || splitscreen)) ? charImageType : 0));
 		
 		// Supported Characters //
+<<<<<<< HEAD
 		// Main Characters
 		for (i = 0; i < 26; i++) // 26 Custom Characters Are Currently Supported :P
+=======
+		// Main Characters //
+		for (i = 0; i < 23; i++) // 23 Custom Characters Are Currently Supported :P
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 		{
 			// Sonic & Tails!
 			if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") == 0) && (strcmp(skins[players[1].skin].name, "tails") == 0))
@@ -1215,8 +1434,12 @@ void DRPC_UpdatePresence(void)
 				break; // Either Way, Break This Off :P
 			}
 		}
+<<<<<<< HEAD
 		
 		// Side Characters
+=======
+		// Side Characters //
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 		if (cv_discordshowonstatus.value && playeringame[1] && players[1].bot)
 		{
 			for (i = 0; i < 23; i++) // Electric Boogalo
@@ -1260,6 +1483,7 @@ void DRPC_UpdatePresence(void)
 	}
 	
 	//// Custom Statuses ////
+<<<<<<< HEAD
 	if (cv_discordshowonstatus.value == 8)
 	{
 		// Run Our Starting Things //
@@ -1296,6 +1520,34 @@ void DRPC_UpdatePresence(void)
 	if (!joinSecretSet)
 		DRPC_EmptyRequests(); // Flush the Request List, if it Exists and We Can't Join
 
+=======
+	//// NOTE: The Main Custom Status Functions can be Found in m_menu.c! The following is just backported from there.
+	if (cv_discordshowonstatus.value == 8)
+	{
+		discordPresence.details = cv_customdiscorddetails.string;
+		discordPresence.state = cv_customdiscordstate.string;
+
+		if (cv_customdiscordsmallimagetype.value < 2)
+			discordPresence.smallImageKey = (cv_customdiscordsmallcharacterimage.value > 0 ? customSImageString : va("%scustom", customStringType[cv_customdiscordsmallimagetype.value]));
+		else if (cv_customdiscordsmallimagetype.value == 2)
+			discordPresence.smallImageKey = (cv_customdiscordsmallmapimage.value > 0 ? customSImageString : "map01");
+		else
+			discordPresence.smallImageKey = (cv_customdiscordsmallmiscimage.value > 0 ? customSImageString : "misctitle");
+
+		if (cv_customdiscordlargeimagetype.value < 2)
+			discordPresence.largeImageKey = (cv_customdiscordlargecharacterimage.value > 0 ? customLImageString : va("%scustom", customStringType[cv_customdiscordlargeimagetype.value]));
+		else if (cv_customdiscordlargeimagetype.value == 2)
+			discordPresence.largeImageKey = (cv_customdiscordlargemapimage.value > 0 ? customLImageString : "map01");
+		else
+			discordPresence.largeImageKey = (cv_customdiscordlargemiscimage.value > 0 ? customLImageString : "misctitle");
+
+		discordPresence.smallImageText = cv_customdiscordsmallimagetext.string;
+		discordPresence.largeImageText = cv_customdiscordlargeimagetext.string;
+	}
+
+	if (!joinSecretSet)
+		DRPC_EmptyRequests(); // Flush the Request List, if it Exists, and We Can't Join
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 	Discord_RunCallbacks();
 	Discord_UpdatePresence(&discordPresence);
 }

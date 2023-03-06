@@ -27,7 +27,12 @@
 void ST_Ticker(boolean run);
 
 #ifdef HAVE_DISCORDRPC
-void ST_AskToJoinEnvelope(void); // Called when you have Both Discord RPC and Discord Asks Enabled
+<<<<<<< HEAD
+void ST_AskToJoinEnvelope(void); // Called when you have Discord asks
+=======
+// Called when you have Discord asks
+void ST_AskToJoinEnvelope(void);
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 #endif
 
 // Called by main loop.
@@ -128,8 +133,11 @@ extern hudinfo_t hudinfo[NUMHUDITEMS];
 
 extern UINT16 objectsdrawn;
 
+<<<<<<< HEAD
 // STAR Stuff lol
 void ST_drawJukebox(void);
 extern boolean initJukeboxHUD;
 
+=======
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 #endif
