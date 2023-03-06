@@ -50,7 +50,8 @@ static CV_PossibleValue_t discordinvites_cons_t[] = {
 	{0, NULL}};
 
 static CV_PossibleValue_t statustype_cons_t[] = {
-    {0, "All"},
+    {0, "Default"},
+
     {1, "Only Characters"},
     {2, "Only Score"},
     {3, "Only Emeralds"},
@@ -255,7 +256,7 @@ consvar_t cv_discordstreamer = CVAR_INIT ("discordstreamer", "Off", CV_SAVE|CV_C
 consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Admins", CV_SAVE|CV_CALL, discordinvites_cons_t, Joinable_OnChange);
 consvar_t cv_discordasks = CVAR_INIT ("discordasks", "Yes", CV_SAVE|CV_CALL, CV_OnOff, Discord_option_Onchange);
 consvar_t cv_discordstatusmemes = CVAR_INIT ("discordstatusmemes", "Yes", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
-consvar_t cv_discordshowonstatus = CVAR_INIT ("discordshowonstatus", "All", CV_SAVE|CV_CALL, statustype_cons_t, Discord_option_Onchange);
+consvar_t cv_discordshowonstatus = CVAR_INIT ("discordshowonstatus", "Default", CV_SAVE|CV_CALL, statustype_cons_t, Discord_option_Onchange);
 consvar_t cv_discordcharacterimagetype = CVAR_INIT ("discordcharacterimagetype", "CS Portrait", CV_SAVE|CV_CALL, characterimagetype_cons_t, DRPC_UpdatePresence);
 
 //// Custom Discord Status Things ////
@@ -1155,7 +1156,7 @@ void DRPC_UpdatePresence(void)
 					discordPresence.largeImageKey = "misctitle";
 			}
 
-			if (Playing() && (paused || menuactive))
+			if (Playing() || (Playing() && (paused || menuactive)))
 			{
 				const time_t currentTime = time(NULL);
 				const time_t mapTimeStart = currentTime - (leveltime / TICRATE);
