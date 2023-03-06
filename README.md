@@ -76,6 +76,8 @@
 ## Assets
 All of the following assets can be found in the "assets" folder of this repository, under a folder with the name "TSOURDT3RD-Assets".
 
+![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/assets.png?raw=true)
+
 **REQUIRED ASSETS**
   - srb2.pk3
   - player.dta
