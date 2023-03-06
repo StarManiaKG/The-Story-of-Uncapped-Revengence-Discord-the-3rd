@@ -14381,7 +14381,7 @@ static void M_Tsourdt3rdOptions(INT32 choice)
 	OP_Tsourdt3rdOptionsMenu[op_usecontinues].status =
 		((!(Playing() && playeringame[consoleplayer])) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
 	
-	if ((splitscreen && !netgame) || currentMenu == &MP_SplitServerDef)
+	if ((splitscreen || (netgame && !server)) || currentMenu == &MP_SplitServerDef)
 	{
 		OP_Tsourdt3rdOptionsMenu[op_holepunchserver].status = IT_GRAYEDOUT; // Holepunch server
 		OP_Tsourdt3rdOptionsMenu[op_noticedownload].status = IT_GRAYEDOUT; // Log connecting player

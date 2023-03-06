@@ -53,7 +53,7 @@
 
 **WIP FEATURES (MOST LIKELY CAN BE FOUND ON OTHER BRANCHES)**
   - Discord's Game SDK (it compiles fine, nothing's just there yet :P)
-  - Android Support (currently at the bare minimum :P)
+  - Android Support (currently at the extremely bare minimum :P)
   - ...And Even More Annoyances, Most Likely!
 
 **FUTURE FEATURES (WITH ENOUGH TIME IN THE OVEN)**
