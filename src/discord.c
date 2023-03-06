@@ -35,6 +35,7 @@
 #include "d_netfil.h" // nameonly
 #include "doomstat.h" // savemoddata
 #include "dehacked.h" // titlechanged
+#include "v_video.h" // hud stuff, mainly
 
 // Please feel free to provide your own Discord app if you're making a new custom build :)
 #define DISCORD_APPID "1013126566236135516"
@@ -619,6 +620,33 @@ static void DRPC_EmptyRequests(void)
 
 		See header file for description.
 --------------------------------------------------*/
+// Dependancies //
+boolean customStringTooLow;
+boolean alreadyWarned;
+
+static void DRPC_StringError(void) // Prints a Message if
+{
+	if (cv_discordrp.value && cv_discordshowonstatus.value == 8)
+	{
+		if (!discordMenuOpen && !Playing())
+			alreadyWarned = customStringTooLow = false;
+		else
+		{
+			if (!(alreadyWarned && customStringTooLow) && (strlen(cv_customdiscorddetails.string) <= 2 || strlen(cv_customdiscordstate.string) <= 2 || strlen(cv_customdiscordsmallimagetext.string) <= 2 || strlen(cv_customdiscordlargeimagetext.string) <= 2))
+				customStringTooLow = true;
+			
+			if (!alreadyWarned && customStringTooLow)
+			{
+                M_StartMessage(va("%c%s\x80\nSorry, Discord RPC requires Strings to be longer than two characters. \n\n(Press a key)\n", ('\x80' + (V_YELLOWMAP|V_CHARCOLORSHIFT)), "Discord RPC"),NULL,MM_NOTHING);
+				S_StartSound(NULL, sfx_skid);
+				
+				alreadyWarned = true;
+			}
+		}
+	}
+}
+
+// Main //
 void DRPC_UpdatePresence(void)
 {
 	char detailstr[64+26+15+23] = "";
@@ -654,10 +682,10 @@ void DRPC_UpdatePresence(void)
 	char gametypeGrammar[2+3+1+9] = "";
 	char gameType[2+3+8+9] = "";
 
-	char charImageType[2+2+1] = "";
-
 	char customSImage[32+18] = "";
 	char customLImage[35+7+8] = "";
+
+	char charImageType[2+2+1] = "";
 
 	static const char *supportedSkins[] = {
 		// Vanilla Chars
@@ -842,6 +870,16 @@ void DRPC_UpdatePresence(void)
 		NULL
 	};
 
+	/*static const char *customStringLink[] = {
+		// Statuses
+		"#s",
+		"#j",
+		"#t",
+		"#e",
+		"#m",
+		NULL
+	};*/
+
 	// Counters
 	UINT8 emeraldCount = 0;
 	
@@ -889,6 +927,14 @@ void DRPC_UpdatePresence(void)
 	////////////////////////////////////////////
 	////   Main Rich Presence Status Info   ////
 	////////////////////////////////////////////
+	
+	// Emerald Math, Provided By Monster Iestyn and Uncapped Plus Fafabis //
+	for (i = 0; i < 7; i++) {
+		if ((gametyperules & GTR_POWERSTONES && (players[consoleplayer].powers[pw_emeralds] & (1<<i))) || (emeralds & (1<<i)))
+			emeraldCount += 1;
+	}
+
+	////// ALL GAME INFO //////
 	if (dedicated || netgame || splitscreen || !multiplayer)
 	{
 		//// SERVER INFO ////
@@ -906,18 +952,21 @@ void DRPC_UpdatePresence(void)
 				}
 			}
 
-			switch (ms_RoomId)
+			switch (msServerType)
 			{
 				case 33: snprintf(servertype, 26, "Standard"); break;
 				case 28: snprintf(servertype, 26, "Casual"); break;
 				case 38: snprintf(servertype, 26, "Custom Gametype"); break;
 				case 31: snprintf(servertype, 26, "OLDC"); break;
-				
-				case -1: default: snprintf(servertype, 26, "Private"); break; // Private server
+
+				// Fallbacks
+				case 0: snprintf(servertype, 26, "Public"); break;
+				default: snprintf(servertype, 26, "Private"); break;
 			}
 
 			if (cv_discordshowonstatus.value != 8)
 				snprintf(detailstr, 60, (server ? (!dedicated ? "Hosting a %s Server" : "Hosting a Dedicated %s Server") : "In a %s Server"), servertype);
+			
 			discordPresence.partyId = server_context; // Thanks, whoever gave us Mumble support, for implementing the EXACT thing Discord wanted for this field!
 			discordPresence.partySize = D_NumPlayers(); // Players in server
 			discordPresence.partyMax = cv_maxplayers.value; // Max players
@@ -954,11 +1003,6 @@ void DRPC_UpdatePresence(void)
 			//// Emeralds ////
 			if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 3)
 			{
-				// Emerald Math, Provided By Monster Iestyn and Uncapped Plus Fababis
-				for (i = 0; i < 7; i++)
-					if ((gametyperules & GTR_POWERSTONES && (players[consoleplayer].powers[pw_emeralds] & (1<<i))) || (emeralds & (1<<i)))
-						emeraldCount += 1;
-				
 				// Grammar
 				if (!cv_discordshowonstatus.value && !splitscreen)
 					snprintf(emeraldComma, 3, ", ");
@@ -987,7 +1031,7 @@ void DRPC_UpdatePresence(void)
 			
 			//// SRB2 Playtime ////
 			if (cv_discordshowonstatus.value == 7)
-				strlcat(((Playing() && !netgame) ? detailstr : statestr), va("Total Playtime: %d Hours, %d Minutes, %d Seconds", G_TicsToHours(totalplaytime), G_TicsToMinutes(totalplaytime, false), G_TicsToSeconds(totalplaytime)), 128);
+				strlcat(((Playing() && !netgame) ? detailstr : statestr), va("Total Playtime: %d Hours, %d Minutes, and %d Seconds", G_TicsToHours(totalplaytime), G_TicsToMinutes(totalplaytime, false), G_TicsToSeconds(totalplaytime)), 128);
 
 			//// Tiny Detail Things; Complete Games, etc. ////
 			if (!splitscreen && !netgame)
@@ -1111,7 +1155,7 @@ void DRPC_UpdatePresence(void)
 					discordPresence.largeImageKey = "misctitle";
 			}
 
-			if (Playing() || paused || menuactive)
+			if (Playing() && (paused || menuactive))
 			{
 				const time_t currentTime = time(NULL);
 				const time_t mapTimeStart = currentTime - (leveltime / TICRATE);
@@ -1155,7 +1199,7 @@ void DRPC_UpdatePresence(void)
 		
 		// Supported Characters //
 		// Main Characters
-		for (i = 0; i < 25; i++) // 25 Custom Characters Are Currently Supported :P
+		for (i = 0; i < 26; i++) // 26 Custom Characters Are Currently Supported :P
 		{
 			// Sonic & Tails!
 			if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") == 0) && (strcmp(skins[players[1].skin].name, "tails") == 0))
@@ -1218,45 +1262,12 @@ void DRPC_UpdatePresence(void)
 	//// Custom Statuses ////
 	if (cv_discordshowonstatus.value == 8)
 	{
+		// Run Our Starting Things //
+		DRPC_StringError();
+
 		// Write the Heading Strings to Discord //
-		discordPresence.details = cv_customdiscorddetails.string;
-		discordPresence.state = cv_customdiscordstate.string;
-
-		// Replace Strings in Words //
-		/*
-		char string, newW, oldW;
-		char* result;  
-		int i, cnt = 0;  
-		int newWlen = strlen(newW);  
-		int oldWlen = strlen(oldW);  
-		
-		// Counting the number of times the old word occurs in the string  
-		for (i = 0; string[i] != '\0'; i++) {  
-			if (strstr(&s[i], oldW) == &string[i]) {  
-				cnt++;
-				i += oldWlen - 1; // Jumping to index after the old word.
-			}  
-		}  
-		
-		// Making new string of enough length  
-		result = (char*)malloc(i + cnt * (newWlen - oldWlen) + 1);  
-		
-		i = 0;  
-		while (*string) {  
-			// compare the substring with the result  
-			if (strstr(string, oldW) == string) {  
-				strcpy(&result[i], newW);  
-				i += newWlen;  
-				s += oldWlen;  
-			}  
-			else
-				result[i++] = *string++;  
-		}  
-
-		result[i] = '\0';  
-		string = result;
-		CONS_Printf("%s", string);
-		*/
+		(strlen(cv_customdiscorddetails.string) > 2 ? discordPresence.details = cv_customdiscorddetails.string : 0);
+		(strlen(cv_customdiscordstate.string) > 2 ? discordPresence.state = cv_customdiscordstate.string : 0);
 
 		// Write The Images and Their Text to Discord //
 		// Small Images
@@ -1267,7 +1278,7 @@ void DRPC_UpdatePresence(void)
 				(cv_customdiscordsmallimagetype.value == 3 ? supportedMaps[cv_customdiscordsmallmapimage.value] : supportedMiscs[cv_customdiscordsmallmiscimage.value])));
 		
 			discordPresence.smallImageKey = customSImage;
-			discordPresence.smallImageText = cv_customdiscordsmallimagetext.string;
+			(strlen(cv_customdiscordsmallimagetext.string) > 2 ? discordPresence.smallImageText = cv_customdiscordsmallimagetext.string : 0);
 		}
 		
 		// Large Images
@@ -1278,7 +1289,7 @@ void DRPC_UpdatePresence(void)
 				(cv_customdiscordlargeimagetype.value == 3 ? supportedMaps[cv_customdiscordlargemapimage.value] : supportedMiscs[cv_customdiscordlargemiscimage.value])));
 
 			discordPresence.largeImageKey = customLImage;
-			discordPresence.largeImageText = cv_customdiscordlargeimagetext.string;
+			(strlen(cv_customdiscordlargeimagetext.string) > 2 ? discordPresence.largeImageText = cv_customdiscordlargeimagetext.string : 0);
 		}
 	}
 

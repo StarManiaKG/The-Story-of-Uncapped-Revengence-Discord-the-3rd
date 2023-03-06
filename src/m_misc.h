@@ -41,7 +41,7 @@ void M_StopMovie(void);
 
 // the file where game vars and settings are saved
 #define CONFIGFILENAME "config.cfg"
-#define AUTOLOADCONFIGNAME "autoload.cfg"
+#define AUTOLOADCONFIGFILENAME "autoload.cfg"
 
 INT32 M_MapNumber(char first, char second);
 
