@@ -2602,6 +2602,7 @@ static void ST_doItemFinderIconsAndSound(void)
 		S_StartSound(NULL, sfx_emfind);
 }
 
+<<<<<<< HEAD
 // STAR SECTION //
 //
 // Draws Jukebox Text On The Screen/HUD
@@ -2657,6 +2658,8 @@ void ST_drawJukebox(void)
 
 // END OF STAR SECTION //
 
+=======
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 //
 // Draw the status bar overlay, customisable: the user chooses which
 // kind of information to overlay
@@ -2819,10 +2822,13 @@ static void ST_overlayDrawer(void)
 	if (modeattacking && !(demoplayback && hu_showscores))
 		ST_drawInput();
 
+<<<<<<< HEAD
 	// Render Jukebox HUD
 	ST_drawJukebox();
 
-	// Render Debug Info Over Everything Else
+	// Render Debug Info Over Everything
+=======
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 	ST_drawDebugInfo();
 }
 

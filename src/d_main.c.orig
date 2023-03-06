@@ -1228,10 +1228,13 @@ static void IdentifyVersion(void)
 	D_AddFile(&startupwadfiles, va(pandf,srb2waddir, "patch.pk3"));
 #endif
 
+<<<<<<< HEAD
 	// Add this custom build's fun stuff
 	D_AddFile(&startupwadfiles, va(pandf,srb2waddir, "tsourdt3rd.pk3"));
 
 	// Add the music
+=======
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 #if !defined (HAVE_SDL) || defined (HAVE_MIXER)
 	{
 #define MUSICTEST(str) \
@@ -1246,10 +1249,18 @@ static void IdentifyVersion(void)
 
 		MUSICTEST("music.dta")
 		//MUSICTEST("patch_music.pk3")
+<<<<<<< HEAD
 
 		MUSICTEST("jukebox.pk3")
 	}
 #endif
+=======
+	}
+#endif
+
+	//Add Star's Patches and Graphics lol
+	D_AddFile(&startupwadfiles, va(pandf,srb2waddir, "tsourdt3rd.pk3"));
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 }
 
 static void
@@ -1464,12 +1475,17 @@ void D_SRB2Main(void)
 	// Have to be done here before files are loaded
 	M_InitCharacterTables();
 
+<<<<<<< HEAD
 	mainwads = 4; // doesn't include music.dta and jukebox.pk3
+=======
+	mainwads = 3; // doesn't include music.dta and tsourdt3rd.pk3
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 #ifdef USE_PATCH_DTA
 	mainwads++;
 #endif
 
 	// load wad, including the main wad file
+<<<<<<< HEAD
 	CONS_Printf("W_InitMultipleFiles(): Adding IWAD and main PWADs.\n");
 	W_InitMultipleFiles(&startupwadfiles);
 	D_CleanFile(&startupwadfiles);
@@ -1480,11 +1496,30 @@ void D_SRB2Main(void)
 	// don't check music.dta because people like to modify it, and it doesn't matter if they do
 	// ...except it does if they slip maps in there, and that's what W_VerifyNMUSlumps is for.
 
+=======
+	autoloadpath = fopen(va("%s"PATHSEP"%s",srb2home,AUTOLOADCONFIGNAME), "r");
+
+	CONS_Printf("W_InitMultipleFiles(): Adding IWAD and main PWADs.\n");
+	W_InitMultipleFiles(&startupwadfiles);
+	D_CleanFile(&startupwadfiles);
+	if (autoloadpath)
+	{
+		mainwads++;
+		CONS_Printf("D_AutoLoadAddons(): Autoloading Addons.\n");
+		D_AutoLoadAddons(&startupwadfiles, va(pandf,srb2home,AUTOLOADCONFIGNAME));
+		D_CleanFile(&startupwadfiles);
+	}
+
+#ifndef DEVELOP // md5s last updated 22/02/20 (ddmmyy)
+
+	// Check MD5s of autoloaded files
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 	W_VerifyFileMD5(0, ASSET_HASH_SRB2_PK3); // srb2.pk3
 	W_VerifyFileMD5(1, ASSET_HASH_ZONES_PK3); // zones.pk3
 	W_VerifyFileMD5(2, ASSET_HASH_PLAYER_DTA); // player.dta
 #ifdef USE_PATCH_DTA
 	W_VerifyFileMD5(3, ASSET_HASH_PATCH_PK3); // patch.pk3
+<<<<<<< HEAD
 	W_VerifyFileMD5(4, ASSET_HASH_TSOURDT3RD_PK3); // tsourdt3rd.pk3
 #else
 	W_VerifyFileMD5(3, ASSET_HASH_TSOURDT3RD_PK3); // tsourdt3rd.pk3
@@ -1496,11 +1531,18 @@ void D_SRB2Main(void)
 
 	if (autoloadpath)
 	{
-		CONS_Printf("D_AutoLoadAddons(): Autoloading Addons...\n");
+		CONS_Printf("D_AutoLoadAddons(): Autoloading Addons.\n");
 		D_AutoLoadAddons(&startupwadfiles, va(pandf,srb2home,AUTOLOADCONFIGFILENAME));
 		D_CleanFile(&startupwadfiles);
 	}
 
+=======
+#endif
+	// don't check music.dta because people like to modify it, and it doesn't matter if they do
+	// ...except it does if they slip maps in there, and that's what W_VerifyNMUSlumps is for.
+#endif //ifndef DEVELOP
+
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 	cht_Init();
 
 	//---------------------------------------------------- READY SCREEN
@@ -1649,7 +1691,10 @@ void D_SRB2Main(void)
 		if (!M_IsNextParm())
 			I_Error("usage: -room <room_id>\nCheck the Master Server's webpage for room ID numbers.\n");
 		ms_RoomId = atoi(M_GetNextParm());
+<<<<<<< HEAD
 		msServerType = ms_RoomId;
+=======
+>>>>>>> 7a2192b4339bed2c820f9671ee6935860e50c714
 
 #ifdef UPDATE_ALERT
 		GetMODVersion_Console();
