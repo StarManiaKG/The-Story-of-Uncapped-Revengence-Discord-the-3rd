@@ -1464,7 +1464,7 @@ void D_SRB2Main(void)
 	// Have to be done here before files are loaded
 	M_InitCharacterTables();
 
-	mainwads = 3; // doesn't include music.dta and jukebox.pk3
+	mainwads = 4; // doesn't include music.dta and jukebox.pk3
 #ifdef USE_PATCH_DTA
 	mainwads++;
 #endif
@@ -1492,12 +1492,12 @@ void D_SRB2Main(void)
 #endif //ifndef DEVELOP
 
 	// autoload other wads
-	autoloadpath = fopen(va("%s"PATHSEP"%s",srb2home,AUTOLOADCONFIGNAME), "r");
+	autoloadpath = fopen(va("%s"PATHSEP"%s",srb2home,AUTOLOADCONFIGFILENAME), "r");
 
 	if (autoloadpath)
 	{
 		CONS_Printf("D_AutoLoadAddons(): Autoloading Addons.\n");
-		D_AutoLoadAddons(&startupwadfiles, va(pandf,srb2home,AUTOLOADCONFIGNAME));
+		D_AutoLoadAddons(&startupwadfiles, va(pandf,srb2home,AUTOLOADCONFIGFILENAME));
 		D_CleanFile(&startupwadfiles);
 	}
 
@@ -1649,6 +1649,7 @@ void D_SRB2Main(void)
 		if (!M_IsNextParm())
 			I_Error("usage: -room <room_id>\nCheck the Master Server's webpage for room ID numbers.\n");
 		ms_RoomId = atoi(M_GetNextParm());
+		msServerType = ms_RoomId;
 
 #ifdef UPDATE_ALERT
 		GetMODVersion_Console();

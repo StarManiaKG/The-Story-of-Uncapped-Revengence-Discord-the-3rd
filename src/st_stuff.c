@@ -2621,7 +2621,7 @@ void ST_drawJukebox(void)
 		{
 			if (initJukeboxHUD)
 			{
-				if (chosenColor == -1)
+				if (chosenColor < 0)
 					chosenColor = M_RandomRange(0, MAXSKINCOLORS);
 
 				if (boxw != 245)
@@ -2819,9 +2819,8 @@ static void ST_overlayDrawer(void)
 	if (modeattacking && !(demoplayback && hu_showscores))
 		ST_drawInput();
 
-	// STAR/TSOURDT3RD Stuff lol
-	if (jukeboxMusicPlaying)
-		ST_drawJukebox();
+	// Render Jukebox HUD
+	ST_drawJukebox();
 
 	// Render Debug Info Over Everything
 	ST_drawDebugInfo();

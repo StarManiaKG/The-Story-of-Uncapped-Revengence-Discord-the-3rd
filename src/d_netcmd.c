@@ -949,6 +949,7 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_discordshowonstatus);
 	CV_RegisterVar(&cv_discordstatusmemes);
 	CV_RegisterVar(&cv_discordcharacterimagetype);
+	
 	// Custom Things //
 	CV_RegisterVar(&cv_customdiscorddetails);
 	CV_RegisterVar(&cv_customdiscordstate);

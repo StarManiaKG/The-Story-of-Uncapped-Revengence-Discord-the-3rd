@@ -755,7 +755,7 @@ void G_SetNightsRecords(void)
 // for consistency among messages: this modifies the game and removes savemoddata.
 void G_SetGameModified(boolean silent)
 {
-	if (modifiedgame && !savemoddata)// || autoloading)
+	if ((modifiedgame && !savemoddata) || autoloading)
 		return;
 
 	modifiedgame = true;

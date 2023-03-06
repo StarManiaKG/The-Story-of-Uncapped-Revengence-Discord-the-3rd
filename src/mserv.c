@@ -72,6 +72,7 @@ consvar_t cv_servername = CVAR_INIT ("servername", "SRB2 server", CV_SAVE|CV_NET
 consvar_t cv_masterserver_update_rate = CVAR_INIT ("masterserver_update_rate", "15", CV_SAVE|CV_CALL|CV_NOINIT, masterserver_update_rate_cons_t, Update_parameters);
 
 INT16 ms_RoomId = -1;
+INT16 msServerType = -1; // STAR thing lol
 
 #if defined (MASTERSERVER) && defined (HAVE_THREADS)
 int           ms_QueryId;

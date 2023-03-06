@@ -639,7 +639,7 @@ typedef enum
 // ---------------------
 static menuitem_t SPauseMenu[] =
 {
-	{IT_STRING | IT_CALL,    NULL, "Mid-Game Add-ons...",  M_Addons,               8},
+	{IT_STRING | IT_CALL,    NULL, "Add-ons...",  M_Addons,               8},
 
 	// Pandora's Box will be shifted up if both options are available
 	{IT_CALL | IT_STRING,    NULL, "Pandora's Box...",     M_PandorasBox,         24},
@@ -1693,8 +1693,8 @@ static menuitem_t OP_DiscordOptionsMenu[] =
 	{IT_STRING | IT_CVAR,		        NULL, 	"Large Image Type",				&cv_customdiscordlargeimagetype,      102},
     {IT_STRING | IT_CVAR,		        NULL, 	"Small Image Type",				&cv_customdiscordsmallimagetype,      107},
 
-	{IT_STRING | IT_CVAR,		        NULL, 	"Large Image",					NULL, 								  117}, // Handled in discord_options_onchange
-	{IT_STRING | IT_CVAR,		        NULL, 	"Small Image",					NULL, 								  122}, // Also handled in discord_options_onchange
+	{IT_STRING | IT_CVAR,		        NULL, 	"Large Image",					NULL, 								  117}, // Handled in discord_option_onchange
+	{IT_STRING | IT_CVAR,		        NULL, 	"Small Image",					NULL, 								  122}, // Also handled in discord_option_onchange
 
     {IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 	"Large Image Text",				&cv_customdiscordlargeimagetext,      132},
     {IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 	"Small Image Text",				&cv_customdiscordsmallimagetext,      146},
@@ -2727,7 +2727,7 @@ void Moviemode_option_Onchange(void)
 #ifdef HAVE_DISCORDRPC
 void Discord_option_Onchange(void)
 {
-	// Discord :)
+	//// Discord :) ////	
 	DiscordRichPresence discordPresence;
 	memset(&discordPresence, 0, sizeof(discordPresence));
 
@@ -2853,7 +2853,7 @@ void Discord_option_Onchange(void)
                 (cv_customdiscordsmallimagetype.value != 5 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 		}
 
-		//DRPC_UpdatePresence();
+		DRPC_UpdatePresence();
     }
 }
 #endif
@@ -3418,6 +3418,9 @@ static void M_GoBack(INT32 choice)
 		{
 			netgame = multiplayer = false;
 		}
+
+		// If we Opened the Discord Menu, Make Sure Everything is Reset.
+		discordMenuOpen = false;
 
 		if ((currentMenu->prevMenu == &MainDef) && (currentMenu == &SP_TimeAttackDef || currentMenu == &SP_NightsAttackDef || currentMenu == &SP_MarathonDef))
 		{
@@ -7155,7 +7158,7 @@ static void M_AddonAutoLoad(INT32 ch)
 	}
 	
 	// first, find the file
-	path = va("%s"PATHSEP"%s", srb2home, AUTOLOADCONFIGNAME);
+	path = va("%s"PATHSEP"%s", srb2home, AUTOLOADCONFIGFILENAME);
 	autoloadconfigfile = fopen(path, "a");
 	
 	// next, copy the name of the file
@@ -7180,15 +7183,10 @@ static void M_AddonAutoLoad(INT32 ch)
             break;
 		case EXT_TXT:
 		case EXT_CFG:
-			if (strcmp(dirmenu[dir_on[menudepthleft]]+DIR_STRING, CONFIGFILENAME) != 0 && strcmp(dirmenu[dir_on[menudepthleft]]+DIR_STRING, AUTOLOADCONFIGNAME) != 0)
-			{
-				COM_BufAddText(va("exec \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
-				fprintf(autoloadconfigfile, "exec %s\n", dirmenu[dir_on[menudepthleft]]+DIR_STRING);
-				
-				S_StartSound(NULL, sfx_s3k50);
-			}
-			else
-				M_StartMessage(va("%c%s\x80\nYou can't autoload this builds' base console scripts!\n They're already autoloaded on startup! \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
+			COM_BufAddText(va("exec \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
+			fprintf(autoloadconfigfile, "exec %s\n", dirmenu[dir_on[menudepthleft]]+DIR_STRING);
+			
+			S_StartSound(NULL, sfx_s3k50);
 			break;
 		case EXT_LUA:
 		case EXT_SOC:
@@ -7360,7 +7358,10 @@ static void M_HandleAddons(INT32 choice)
 							M_StartMessage(va("%c%s\x80\nThis file may not be a console script.\nAttempt to run anyways? \n\n(Press 'Y' to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),M_AddonExec,MM_YESNO);
 							break;
 						case EXT_CFG:
-							M_AddonExec(KEY_ENTER);
+							if (strcmp(dirmenu[dir_on[menudepthleft]]+DIR_STRING, AUTOLOADCONFIGFILENAME) == 1)
+								M_AddonExec(KEY_ENTER);
+							else
+								M_StartMessage(va("%c%s\x80\nIt would be best if you don't run this file.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
 							break;
 						case EXT_LUA:
 						case EXT_SOC:
@@ -7395,21 +7396,24 @@ static void M_HandleAddons(INT32 choice)
 							if ((menudepthleft) && (!preparefilemenu(false)))
 							{
 								S_StartSound(NULL, sfx_s224);
-								M_StartMessage(va("%c%s\x80\nThis folder is empty. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
+								M_StartMessage(va("%c%s%s\x80\nThis folder is empty. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath(), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
 								menupath[menupathindex[++menudepthleft]] = 0;
 							}
 							else if (!menudepthleft)
 							{
-								M_StartMessage(va("%c%s\x80\nThis folder is too deep to navigate to! \nWho in their right mind has folders this deep anyway? \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
+								M_StartMessage(va("%c%s%s\x80\nThis folder is too deep to navigate to! \nWho in their right mind has folders this deep anyway? \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath(), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
 								S_StartSound(NULL, sfx_lose);
 								menupath[menupathindex[menudepthleft]] = 0;
 							}
-							else if ((menudepthleft) && (preparefilemenu(false)))
-							    M_StartMessage(va("%c%s\x80\nDo you want to Autoload all addons in this folder? \nEvery addon found in this folder will bypass modified game checks. \n\n(Press 'Y' to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),M_AddonAutoLoad,MM_YESNO);
+							else
+								M_StartMessage(va("%c%s%s\x80\nSorry, Autoloading folders isn't supported at the moment. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath(), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
+
+							//else if ((menudepthleft) && (preparefilemenu(false)))
+							    //M_StartMessage(va("%c%s\x80\nDo you want to Autoload all addons in this folder? \nEvery addon found in this folder will bypass modified game checks. \n\n(Press 'Y' to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),M_AddonAutoLoad,MM_YESNO);
 							break;
 						case EXT_UP:
 							S_StartSound(NULL, sfx_lose);
-							M_StartMessage(va("%c%s\x80\nNice try. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
+							M_StartMessage(va("%c%s%s\x80\nNice try. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath(), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
 							menupath[menupathindex[++menudepthleft]] = 0;
 							if (!preparefilemenu(false))
 							{
@@ -7419,13 +7423,13 @@ static void M_HandleAddons(INT32 choice)
 							break;
 						case EXT_TXT:
 						case EXT_CFG:
-							if (strcmp(dirmenu[dir_on[menudepthleft]]+DIR_STRING, AUTOLOADCONFIGNAME) != 0)
-								M_StartMessage(va("%c%s\x80\nYou're trying to autoload a console script. \nIgnore my warning anyways? \n\n(Press 'Y' to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),M_AddonAutoLoad,MM_YESNO);
-							else
-							{
-								M_StartMessage(va("%c%s\x80\nYou can't autoload the autoload configuration file, silly! \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
+							if (strcmp(dirmenu[dir_on[menudepthleft]]+DIR_STRING, CONFIGFILENAME) == 0 || strcmp(dirmenu[dir_on[menudepthleft]]+DIR_STRING, AUTOLOADCONFIGFILENAME) == 0)
+							{	
+								M_StartMessage(va("%c%s\x80\nYou can't autoload this builds' base console scripts, silly!\n They're already autoloaded on startup! \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
 								S_StartSound(NULL, sfx_lose);
 							}
+							else
+								M_StartMessage(va("%c%s\x80\nYou're trying to autoload a console script. \nIgnore my warning anyways? \n\n(Press 'Y' to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),M_AddonAutoLoad,MM_YESNO);
 							break;
 						case EXT_LUA:
 						case EXT_SOC:
@@ -12041,10 +12045,15 @@ static void M_ChooseRoom(INT32 choice)
 #endif
 
 	if (choice == 0)
+	{
 		ms_RoomId = -1;
+		msServerType = -1;
+	}
 	else
 	{
 		ms_RoomId = roomIds[choice-1];
+		msServerType = ms_RoomId;
+		
 		menuRoomIndex = choice - 1;
 	}
 
@@ -14191,16 +14200,18 @@ static void M_QuitSRB2(INT32 choice)
 }
 
 #ifdef HAVE_DISCORDRPC
+boolean discordMenuOpen;
+
 static const tic_t confirmLength = 3*TICRATE/4;
 static tic_t confirmDelay = 0;
 static boolean confirmAccept = false;
 
 static void M_DiscordOptions(INT32 choice)
 {
-	(void)choice;
+	M_SetupNextMenu(&OP_DiscordOptionsDef);
 	Discord_option_Onchange();
 
-	M_SetupNextMenu(&OP_DiscordOptionsDef);
+	discordMenuOpen = (choice == KEY_ESCAPE ? false : true);
 }
 static void M_DrawDiscordMenu(void)
 {
@@ -14700,7 +14711,10 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 			st_time = 0;
 
 			S_StartSound(NULL, sfx_skid);
+			
 			curplaying = NULL;
+			M_ResetJukebox();
+
 			cv_closedcaptioning.value = st_cc; // hack
 			cv_closedcaptioning.value = 1; // hack
 
@@ -14761,6 +14775,7 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 				else
 				{
 					curplaying = NULL;
+					M_ResetJukebox();
 
 					S_StopMusic();
 					S_StartSound(NULL, sfx_menu1);
@@ -14769,6 +14784,7 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 			else
 			{
 				curplaying = NULL;
+				M_ResetJukebox();
 
 				S_StopMusic();
 				S_StartSound(NULL, sfx_lose);

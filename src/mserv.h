@@ -74,6 +74,7 @@ extern consvar_t cv_masterserver_token;
 // == 0 to show all rooms, not a valid hosting room
 // anything else is whatever room the MS assigns to that number (online mode)
 extern INT16 ms_RoomId;
+extern INT16 msServerType;
 
 #ifdef HAVE_THREADS
 extern int           ms_QueryId;
