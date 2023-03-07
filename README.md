@@ -18,29 +18,35 @@
 ## Features
 **NEW FEATURES**
   - Uncapped, Technically Now In Vanilla SRB2, Is Included, And Was Featured In This Build Early Enough For Me To Call It A "New Feature"
+    - (Found [here](https://git.do.srb2.org/ShaderWraith/SRB2/-/tree/uncappedrevengeance))
     
     ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/uncapped.gif?raw=true)
 
   - Custom Discord Settings, Commands, and Options, with Custom Character Support
+    - (Based on original code found [here](https://git.do.srb2.org/Fafabis/SRB2/-/tree/discord))
     
     ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/discord1.png?raw=true)
     ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/discord2.png?raw=true)
 
   - Custom Build Options, Featuring More Savedata, Server, and Extra Options
+    - (Made by StarManiaKG)
     
     ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/tsourdt3rd.png?raw=true)
 
   - Palette Rendering (Software Palette in OpenGL)
+    - (Found [here](https://git.do.srb2.org/Hannu_Hanhi/SRB2/-/tree/ogl-palette-rendering))
     
     ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/paletterendering.gif?raw=true)
 
   - Autoloading Addons
+    - (Made by StarManiaKG)
     
     ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/autoloading1.gif?raw=true)
     ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/autoloading2.gif?raw=true)
     -   NOTE: You May Want to Backup Your Saves, Just in Case. You Never Know What Could Happen.
 
   - A Jukebox
+    - (Made by StarManiaKG)
     
     ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/jukebox.gif?raw=true)
     
