@@ -22,7 +22,7 @@
 #define SRB2_COMP_REVISION    "${SRB2_COMP_REVISION}"
 #define SRB2_COMP_BRANCH      "${SRB2_COMP_BRANCH}"
 
-#define CMAKE_ASSETS_DIR      "${CMAKE_SOURCE_DIR}/assets/TSOURDt3rd-Assets"
+#define CMAKE_ASSETS_DIR      "${CMAKE_SOURCE_DIR}/assets/TSoURDt3RD-Assets"
 
 #else
 
