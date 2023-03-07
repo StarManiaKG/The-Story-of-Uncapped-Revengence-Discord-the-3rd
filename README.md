@@ -18,12 +18,12 @@
 ## Features
 **NEW FEATURES**
   - Uncapped, Technically Now In Vanilla SRB2, Is Included, And Was Featured In This Build Early Enough For Me To Call It A "New Feature"
-    - (Found [here](https://git.do.srb2.org/ShaderWraith/SRB2/-/tree/uncappedrevengeance))
+    - (Made by Eidolon, Found [here](https://git.do.srb2.org/ShaderWraith/SRB2/-/tree/uncappedrevengeance))
     
     ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/uncapped.gif?raw=true)
 
   - Custom Discord Settings, Commands, and Options, with Custom Character Support
-    - (Based on original code found [here](https://git.do.srb2.org/Fafabis/SRB2/-/tree/discord))
+    - (Based on original code by Fafabis and the Kart Krew, found [here](https://git.do.srb2.org/Fafabis/SRB2/-/tree/discord))
     
     ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/discord1.png?raw=true)
     ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/discord2.png?raw=true)
@@ -34,7 +34,7 @@
     ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/tsourdt3rd.png?raw=true)
 
   - Palette Rendering (Software Palette in OpenGL)
-    - (Found [here](https://git.do.srb2.org/Hannu_Hanhi/SRB2/-/tree/ogl-palette-rendering))
+    - (Made by Hannu Hanhi, Found [here](https://git.do.srb2.org/Hannu_Hanhi/SRB2/-/tree/ogl-palette-rendering))
     
     ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/paletterendering.gif?raw=true)
 
