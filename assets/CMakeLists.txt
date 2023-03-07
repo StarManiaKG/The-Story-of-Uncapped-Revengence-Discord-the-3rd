@@ -9,7 +9,7 @@ FUNCTION(PREPEND var prefix)
    SET(${var} "${listVar}" PARENT_SCOPE)
 ENDFUNCTION(PREPEND)
 
-set(SRB2_ASSET_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/TSOURDt3rd-Assets"
+set(SRB2_ASSET_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/TSoURDt3RD-Assets"
 	CACHE STRING "Path to directory that contains all asset files for the installer.")
 
 set(SRB2_ASSET_INSTALL ON

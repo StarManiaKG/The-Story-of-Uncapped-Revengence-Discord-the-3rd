@@ -1,4 +1,4 @@
-# TSOURDt3RD: An Sonic Robo Blast 2 Original
+# TSoURDt3RD: An Sonic Robo Blast 2 Original
 **Latest Stable Release:** [![latest release](https://badgen.net/github/release/starmaniakg/the-story-of-uncapped-revengence-discord-the-3rd/stable)](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/releases/latest)
 
 **Latest Unstable Release:** [![latest release](https://badgen.net/github/release/starmaniakg/the-story-of-uncapped-revengence-discord-the-3rd)](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/releases/latest)
@@ -10,10 +10,10 @@
 [Sonic Robo Blast 2](https://srb2.org/) is a 3D Sonic the Hedgehog fangame based on a modified version of [Doom Legacy](http://doomlegacy.sourceforge.net/), and [This Custom Build](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd) is based upon those.
 
 ## Branches
-  - ```main``` - Holds all the current, stable TSOURDt3RD code
-  - ```unstablemain``` - Holds all the extremely current, but unstable, TSOURDt3RD code
-  - ```main-2.1.25``` - Holds all the current, stable, TSOURDt3RD 2.1.25 code
-  - ```androidmain``` - Holds all the current, stable, TSOURDt3RD Android Support code
+  - ```main``` - Holds all the current, stable TSoURDt3RD code
+  - ```unstablemain``` - Holds all the extremely current, but unstable, TSoURDt3RD code
+  - ```main-2.1.25``` - Holds all the current, stable, TSoURDt3RD 2.1.25 code
+  - ```androidmain``` - Holds all the current, stable, TSoURDt3RD Android Support code
 
 ## Features
 **NEW FEATURES**
