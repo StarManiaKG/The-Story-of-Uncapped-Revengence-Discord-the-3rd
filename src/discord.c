@@ -396,6 +396,7 @@ static void DRPC_HandleJoin(const char *secret)
 		G_CheckDemoStatus(); //Stop the title demo, so that the connect command doesn't error if a demo is playing
 
 	COM_BufAddText(va("connect \"%s\"\n", DRPC_XORIPString(secret)));
+	free(DRPC_XORIPString(secret));
 }
 
 /*--------------------------------------------------
@@ -1141,8 +1142,10 @@ void DRPC_UpdatePresence(void)
 				discordPresence.largeImageText = "???"; // Hell map, hide the name
 			else
 			{
-				// Find The Map Name
-				snprintf(mapname, 48, ((gamemap != 99 && gamestate != GS_TITLESCREEN && !titlemapinaction) ? "%s" : "Title Screen"), ((gamemap != 99 && gamestate != GS_TITLESCREEN && !titlemapinaction) ? G_BuildMapTitle(gamemap) : 0));
+				// Find The Map Name (Now With no Leaks, Thanks Kart Krew and SRB2 Discord!)
+				char *maptitle = G_BuildMapTitle(gamemap);
+				snprintf(mapname, 48, ((gamemap != 99 && gamestate != GS_TITLESCREEN && !titlemapinaction) ? "%s" : "Title Screen"), ((gamemap != 99 && gamestate != GS_TITLESCREEN && !titlemapinaction) ? maptitle : 0));
+				Z_Free(maptitle);
 
 				// List the Map Name
 				discordPresence.largeImageText = mapname;

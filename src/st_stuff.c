@@ -2613,6 +2613,8 @@ INT32 boxw = 300; // Slides our Filed Box to Width 245
 INT32 strw = 300; // Slides our Regular String to Width 230
 INT32 tstrw = 300; // Slides our Thin String to Width 195
 
+INT32 slidetime = (1*TICRATE-2);
+
 void ST_drawJukebox(void)
 {
 	if (cv_jukeboxhud.value)
@@ -2624,37 +2626,33 @@ void ST_drawJukebox(void)
 				if (chosenColor < 0)
 					chosenColor = M_RandomRange(0, MAXSKINCOLORS);
 
-				if (boxw != 245)
+				if (slidetime > 0)
+				{
 					boxw -= 5;
-
-				if (strw != 230)
 					strw -= 5;
-
-				if (tstrw != 195)
 					tstrw -= 5;
 
-				if (boxw == 245 && strw == 230 && tstrw == 195)
+					slidetime -= 1;
+				}
+				else
 					initJukeboxHUD = false;
 			}
 
-			V_DrawFillConsoleMap(boxw, 45, 130, 25, V_HUDTRANSHALF|chosenColor);
+			V_DrawFillConsoleMap((BASEVIDWIDTH/5)+boxw, 45, 130, 25, V_SNAPTORIGHT|V_HUDTRANSHALF|chosenColor);
 			
-			V_DrawString(strw, 45, V_SNAPTORIGHT|V_ALLOWLOWERCASE, "JUKEBOX");
-			V_DrawThinString(tstrw, 60, V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP, va("PLAYING: %s", jukeboxMusicName));
-		}
-		else
-		{
-			boxw = strw = tstrw = 300;
-			chosenColor = -1;
+			V_DrawString(((BASEVIDWIDTH/4)+20)+strw, 45, V_SNAPTORIGHT|V_ALLOWLOWERCASE, "JUKEBOX");
+			V_DrawThinString(((BASEVIDWIDTH/5)+1)+tstrw, 60, V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP, va("PLAYING: %s", jukeboxMusicName));
 		}
 	}
-	else
+
+	if (!cv_jukeboxhud.value || !jukeboxMusicPlaying)
 	{
 		boxw = strw = tstrw = 300;
+		slidetime = (1*TICRATE-2);
+			
 		chosenColor = -1;
 	}
 }
-
 // END OF STAR SECTION //
 
 //
