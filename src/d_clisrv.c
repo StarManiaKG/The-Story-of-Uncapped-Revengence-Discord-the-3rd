@@ -3839,6 +3839,8 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 	if (!rejoined)
 		LUA_HookInt(newplayernum, HOOK(PlayerJoin));
 #ifdef HAVE_DISCORDRPC
+		if (strcmp(discordUserName, " ") == 0)
+			DRPC_Init();
     	DRPC_UpdatePresence();
 #endif
 }

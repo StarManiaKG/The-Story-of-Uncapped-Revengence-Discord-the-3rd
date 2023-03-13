@@ -2441,7 +2441,7 @@ menu_t OP_DataOptionsDef = DEFAULTMENUSTYLE(
 //star stuff lol
 menu_t OP_Tsourdt3rdOptionsDef = DEFAULTSCROLLMENUSTYLE(
 	MTREE2(MN_OP_MAIN, MN_OP_TSOURDT3RD),
-	NULL, OP_Tsourdt3rdOptionsMenu, &OP_MainDef, 30, 30); //M_TSOURDT3RD
+	"M_TSOURDT3RD", OP_Tsourdt3rdOptionsMenu, &OP_MainDef, 30, 30);
 
 menu_t OP_Tsourdt3rdJukeboxDef =
 {
@@ -2472,7 +2472,7 @@ menu_t OP_DiscordOptionsDef =
 
 menu_t OP_CustomStatusOutputDef = DEFAULTMENUSTYLE(
 	MTREE3(MN_OP_MAIN, MN_DISCORD_OPT, MN_DISCORDCS_OUTPUT), 
-	"M_DISCORDCUSTOMSTATUSOUTPUT", OP_CustomStatusOutputMenu, &OP_DiscordOptionsDef, 30, 30);
+	"M_DISCORDOUTPUT", OP_CustomStatusOutputMenu, &OP_DiscordOptionsDef, 30, 30);
 #endif
 
 menu_t OP_ScreenshotOptionsDef =
@@ -8254,6 +8254,7 @@ static INT32 st_sel = 0, st_cc = 0;
 static fixed_t st_time = 0;
 static patch_t* st_radio[9];
 static patch_t* st_launchpad[4];
+boolean soundtestMenuOpen; // Helps Prevent Crashes for the Sound Test and Resets Memory for Both the Sound Test and Jukebox
 
 static void M_CacheSoundTest(void)
 {
@@ -8291,7 +8292,10 @@ static void M_SoundTest(INT32 choice)
 
 	M_CacheSoundTest();
 
+	soundtestMenuOpen = true;
+
 	curplaying = NULL;
+	M_ResetJukebox();
 	st_time = 0;
 
 	st_sel = 0;
@@ -8327,6 +8331,7 @@ static void M_DrawSoundTest(void)
 			fixed_t stoppingtics = (fixed_t)(curplaying->stoppingtics) << FRACBITS;
 			if (stoppingtics && st_time >= stoppingtics)
 			{
+				// Whoa, Whoa, We Ran Out of Time
 				curplaying = NULL;
 				st_time = 0;
 			}
@@ -8576,6 +8581,7 @@ static void M_HandleSoundTest(INT32 choice)
 			break;
 		case KEY_ESCAPE:
 			exitmenu = true;
+			soundtestMenuOpen = false;
 			break;
 
 		case KEY_RIGHTARROW:
@@ -8628,6 +8634,8 @@ static void M_HandleSoundTest(INT32 choice)
 	{
 		Z_Free(soundtestdefs);
 		soundtestdefs = NULL;
+
+		curplaying = NULL;
 		
 		cv_closedcaptioning.value = st_cc; // undo hac
 
@@ -14208,10 +14216,13 @@ static boolean confirmAccept = false;
 
 static void M_DiscordOptions(INT32 choice)
 {
-	M_SetupNextMenu(&OP_DiscordOptionsDef);
 	Discord_option_Onchange();
-
+	if (strcmp(discordUserName, " ") == 0)
+		DRPC_Init();
+	
 	discordMenuOpen = (choice == KEY_ESCAPE ? false : true);
+	
+	M_SetupNextMenu(&OP_DiscordOptionsDef);
 }
 static void M_DrawDiscordMenu(void)
 {
@@ -14374,6 +14385,8 @@ static void M_DrawDiscordRequests(void)
 #endif
 
 //Star Stuff WEEEE
+boolean jukeboxMenuOpen;
+
 static void M_Tsourdt3rdOptions(INT32 choice)
 {
 	(void)choice;
@@ -14413,6 +14426,7 @@ static void M_Tsourdt3rdOptions(INT32 choice)
 			break;
 		}
 	}
+	
 	M_SetupNextMenu(&OP_Tsourdt3rdOptionsDef);
 }
 
@@ -14467,9 +14481,8 @@ static void M_DrawTsourdt3rdJukebox(void)
 			fixed_t stoppingtics = (fixed_t)(curplaying->stoppingtics) << FRACBITS;
 			if (stoppingtics && st_time >= stoppingtics)
 			{
-				curplaying = NULL;
+				// Whoa, Whoa, We Ran Out of Time
 				M_ResetJukebox();
-				
 				st_time = 0;
 			}
 			else
@@ -14661,7 +14674,7 @@ static void M_DrawTsourdt3rdJukebox(void)
 
 static void M_HandleTsourdt3rdJukebox(INT32 choice)
 {
-	boolean exitmenu = false; // exit to previous menu
+	jukeboxMenuOpen = true;
 
 	switch (choice)
 	{
@@ -14712,7 +14725,6 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 
 			S_StartSound(NULL, sfx_skid);
 			
-			curplaying = NULL;
 			M_ResetJukebox();
 
 			cv_closedcaptioning.value = st_cc; // hack
@@ -14722,7 +14734,7 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 				S_ChangeMusicEx(mapheaderinfo[gamemap-1]->musname, mapmusflags, true, mapmusposition, 0, 0);
 			break;
 		case KEY_ESCAPE:
-			exitmenu = true;
+			jukeboxMenuOpen = false;
 			break;
 
 		case KEY_RIGHTARROW:
@@ -14771,37 +14783,28 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 						jukeboxMusicPlaying = true;
 						initJukeboxHUD = true;
 					}
-				}
-				else
-				{
-					curplaying = NULL;
-					M_ResetJukebox();
 
-					S_StopMusic();
-					S_StartSound(NULL, sfx_menu1);
+					break;
 				}
 			}
-			else
-			{
-				curplaying = NULL;
-				M_ResetJukebox();
 
-				S_StopMusic();
-				S_StartSound(NULL, sfx_lose);
-			}
+			M_ResetJukebox();
+
+			S_StopMusic();
+			S_StartSound(NULL, sfx_menu1);
 			break;
 
 		default:
 			break;
 	}
-	if (exitmenu)
-	{
-		if (!jukeboxMusicPlaying)
-		{
-			Z_Free(soundtestdefs);
-			soundtestdefs = NULL;
-		}
 
+	if (!jukeboxMenuOpen)
+	{
+		// Free the Memory Up
+		Z_Free(soundtestdefs);
+		soundtestdefs = NULL;
+
+		// Close the Menu
 		cv_closedcaptioning.value = st_cc; // undo hack
 		if (currentMenu->prevMenu)
 			M_SetupNextMenu(currentMenu->prevMenu);
@@ -14811,9 +14814,17 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 }
 void M_ResetJukebox(void)
 {
+	curplaying = NULL;
 	jukeboxMusicPlaying = false;
 	initJukeboxHUD = false;
 
-	for (INT32 i = 0; jukeboxMusicName[i] != '\0'; i++) jukeboxMusicName[i] = '\0';
+	for (INT32 i = 0; jukeboxMusicName[i] != '\0'; i++) jukeboxMusicName[i] = '\0';	
 	for (INT32 i = 0; jukeboxMusicTrack[i] != '\0'; i++) jukeboxMusicTrack[i] = '\0';
+
+	// The Following Section Prevents Memory Leaks (Thanks SRB2 Discord!)
+	if (soundtestdefs && (!jukeboxMenuOpen && !soundtestMenuOpen))
+	{
+		Z_Free(soundtestdefs);
+		soundtestdefs = NULL;
+	}
 }

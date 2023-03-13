@@ -985,6 +985,8 @@ void D_StartTitle(void)
 	SV_StopServer();
 	SV_ResetServer();
 #ifdef HAVE_DISCORDRPC
+	if (strcmp(discordUserName, " ") == 0)
+		DRPC_Init();
 	DRPC_UpdatePresence();
 #endif
 

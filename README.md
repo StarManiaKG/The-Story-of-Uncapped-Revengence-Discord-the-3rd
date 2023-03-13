@@ -20,16 +20,47 @@
   - Uncapped, Technically Now In Vanilla SRB2, Is Included, And Was Featured In This Build Early Enough For Me To Call It A "New Feature"
     - (Made by Eidolon, Found [here](https://git.do.srb2.org/ShaderWraith/SRB2/-/tree/uncappedrevengeance))
     
+      - Currently Supported Characters:
+        - Sonic
+        - Tails
+        - Knuckles
+        - Amy
+        - Fang
+        - Metal Sonic
+        - Sonic & Tails
+        - Adventure Sonic
+        - Shadow
+        - Skip
+        - Jana
+        - Surge
+        - Cacee
+        - Milne
+        - Maimy
+        - Mario
+        - Luigi
+        - Blaze
+        - Marine
+        - Tails Doll
+        - Metal Knuckles
+        - Smiles
+        - Whisper
+        - Speccy
+	   
+	  - Currently Supported Charatcer Portraits:
+        - CSS Portraits
+    	- Continue Sprite Portraits
+    	- Life Icon Portraits
+    
     ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/uncapped.gif?raw=true)
 
   - Custom Discord Settings, Commands, and Options, with Custom Character Support
-    - (Based on original code by Fafabis and the Kart Krew, found [here](https://git.do.srb2.org/Fafabis/SRB2/-/tree/discord))
+    - (Based on Original code by the Kart Krew and Fafabis, found [here](https://git.do.srb2.org/Fafabis/SRB2/-/tree/discord))
     
     ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/discord1.png?raw=true)
     ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/discord2.png?raw=true)
 
   - Custom Build Options, Featuring More Savedata, Server, and Extra Options
-    - (Made by StarManiaKG)
+    - (Holepunching and Extra Features Made by StarManiaKG)
     
     ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/tsourdt3rd.png?raw=true)
 
@@ -41,12 +72,26 @@
   - Autoloading Addons
     - (Made by StarManiaKG)
     
+    - Using Right Shift over a mod in the addons menu allows you to select mods that will autoload when SRB2 first starts up.
+    - This feature also allows you to bypass modifiedgame checks when the game first starts up, allowing you to play all the mods you want, in whatever savefiles or modes you want.
+    
+    - To stop certain, or all, addons from autoloading on startup, look at the ```autoload.cfg``` file, located in your SRB2 directory, and remove the mods there.
+    - Autoloading doesn't affect netgames and the ability to join them. You still need to relaunch with the base IWADS loaded in other to join other netgames.
+    
     ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/autoloading1.gif?raw=true)
     ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/autoloading2.gif?raw=true)
-    -   NOTE: You May Want to Backup Your Saves, Just in Case. You Never Know What Could Happen.
+    -   NOTE: You may want to back up your savefiles when using this feature, just in case.
 
   - A Jukebox
     - (Made by StarManiaKG)
+    
+    - Play any of your favorite songs, even during a game, all from the comfort of your own Jukebox.
+    - (You need to have the Sound Test unlocked in order to use this feature.)
+    
+    - How To Add Custom Music to the Jukebox
+      - First, you need to have the ```jukebox.pk3``` file and your custom music on hand. Make sure your music is in the proper format.
+      - Then, you need to add your music to the ```jukebox.pk3``` file.
+      - Lastly, open the ```MUSICDEF``` file within ```jukebox.pk3``` and add your custom music to that file. If you need to, use some of the pre-existing lumps in the ```MUSICDEF``` file as an example on how to add your music to the file.
     
     ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/jukebox.gif?raw=true)
     
