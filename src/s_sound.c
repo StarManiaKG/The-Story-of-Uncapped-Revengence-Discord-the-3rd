@@ -2018,6 +2018,9 @@ boolean S_RecallMusic(UINT16 status, boolean fromfirst)
 	boolean currentmidi = (I_SongType() == MU_MID || I_SongType() == MU_MID_EX);
 	boolean midipref = cv_musicpref.value;
 
+	if (jukeboxMusicPlaying)
+		return; // We're Playing Music in the Jukebox, So Don't Do Anything
+
 	if (status)
 		result = S_GetMusicStackEntry(status, fromfirst, -1);
 	else
