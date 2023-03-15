@@ -16,6 +16,9 @@ UINT32 I_GetFreeMem(UINT32 *total)
 
 void I_Sleep(UINT32 ms){}
 
+<<<<<<< HEAD
+precise_t I_GetPreciseTime(void) {
+=======
 precise_t I_GetPreciseTime(void)
 {
 	return 0;
@@ -24,6 +27,7 @@ precise_t I_GetPreciseTime(void)
 int I_PreciseToMicros(precise_t d)
 {
 	(void)d;
+>>>>>>> SRB2/master
 	return 0;
 }
 

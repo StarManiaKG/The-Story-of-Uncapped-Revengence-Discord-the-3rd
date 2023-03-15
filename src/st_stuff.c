@@ -1421,7 +1421,7 @@ luahook:
 	if (renderisnewtic)
 	{
 		LUA_HUD_ClearDrawList(luahuddrawlist_titlecard);
-		LUA_HUDHOOK(titlecard, luahuddrawlist_titlecard);
+		LUA_HUDHOOK(titlecard);
 	}
 	LUA_HUD_DrawList(luahuddrawlist_titlecard);
 }
@@ -2852,7 +2852,7 @@ static void ST_overlayDrawer(void)
 		if (renderisnewtic)
 		{
 			LUA_HUD_ClearDrawList(luahuddrawlist_game[hooklistindex]);
-			LUA_HUDHOOK(game, luahuddrawlist_game[hooklistindex]);
+			LUA_HUDHOOK(game);
 		}
 		LUA_HUD_DrawList(luahuddrawlist_game[hooklistindex]);
 	}
