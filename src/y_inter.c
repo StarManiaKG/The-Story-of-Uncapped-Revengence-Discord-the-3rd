@@ -439,7 +439,7 @@ void Y_IntermissionDrawer(void)
 	if (renderisnewtic)
 	{
 		LUA_HUD_ClearDrawList(luahuddrawlist_intermission);
-		LUA_HUDHOOK(intermission, luahuddrawlist_intermission);
+		LUA_HUDHOOK(intermission);
 	}
 	LUA_HUD_DrawList(luahuddrawlist_intermission);
 
