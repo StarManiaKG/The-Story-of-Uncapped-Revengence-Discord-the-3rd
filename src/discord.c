@@ -559,7 +559,6 @@ static void DRPC_GotServerIP(UINT32 address)
 {
 	const unsigned char * p = (const unsigned char *)&address;
 	sprintf(self_ip, "%u.%u.%u.%u:%u", p[0], p[1], p[2], p[3], current_port);
-	//DRPC_UpdatePresence();
 }
 
 /*--------------------------------------------------
@@ -929,19 +928,23 @@ void DRPC_UpdatePresence(void)
 			}
 		}
 
-		switch (msServerType)
+		if (Playing())
 		{
-			case 33: snprintf(servertype, 26, "Standard"); break;
-			case 28: snprintf(servertype, 26, "Casual"); break;
-			case 38: snprintf(servertype, 26, "Custom Gametype"); break;
-			case 31: snprintf(servertype, 26, "OLDC"); break;
+			switch (msServerType)
+			{
+				case 33: snprintf(servertype, 26, "Standard"); break;
+				case 28: snprintf(servertype, 26, "Casual"); break;
+				case 38: snprintf(servertype, 26, "Custom Gametype"); break;
+				case 31: snprintf(servertype, 26, "OLDC"); break;
 
-			// Fallbacks
-			case 0: snprintf(servertype, 26, "Public"); break;
-			default: snprintf(servertype, 26, "Private"); break;
+				// Fallbacks
+				case 0: snprintf(servertype, 26, "Public"); break;
+				default: snprintf(servertype, 26, "Private"); break;
+			}
 		}
+
 		if (cv_discordshowonstatus.value != 8)
-			snprintf(detailstr, 60, (server ? (!dedicated ? "Hosting a %s Server" : "Hosting a Dedicated %s Server") : "In a %s Server"), servertype);
+			snprintf(detailstr, 60, (Playing() ? (server ? (!dedicated ? "Hosting a %s Server" : "Hosting a Dedicated %s Server") : "In a %s Server") : "Looking for a Server"), servertype);
 			
 		discordPresence.partyId = server_context; // Thanks, whoever gave us Mumble support, for implementing the EXACT thing Discord wanted for this field!
 		discordPresence.partySize = D_NumPlayers(); // Players in server
@@ -1115,7 +1118,7 @@ void DRPC_UpdatePresence(void)
 		}
 
 		// Map Info //
-		else if (gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || (gamestate == GS_TITLESCREEN || !titlemapinaction))
+		if (gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || (gamestate == GS_TITLESCREEN || !titlemapinaction))
 		{
 			// Map Images
 			if ((gamemap >= 1 && gamemap <= 73) // Supported Co-op maps
