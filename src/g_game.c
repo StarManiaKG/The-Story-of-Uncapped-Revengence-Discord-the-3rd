@@ -47,6 +47,7 @@
 #include "m_cond.h" // condition sets
 #include "lua_script.h"
 #include "r_fps.h" // frame interpolation/uncapped
+#include "i_time.h"
 
 #include "lua_hud.h"
 
@@ -769,6 +770,7 @@ void G_SetGameModified(boolean silent)
 		M_EndModeAttackRun();
 	else if (marathonmode)
 		Command_ExitGame_f();
+
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
 #endif
@@ -1915,7 +1917,10 @@ void G_PreLevelTitleCard(void)
 	{
 		// draw loop
 		while (!((nowtime = I_GetTime()) - lasttime))
-			I_Sleep();
+		{
+			I_Sleep(cv_sleep.value);
+			I_UpdateTime(cv_timescale.value);
+		}
 		lasttime = nowtime;
 
 		ST_runTitleCard();
@@ -4201,10 +4206,6 @@ static void G_DoContinued(void)
 	I_Assert(!netgame && !multiplayer);
 	I_Assert(pl->continues > 0);
 
-#ifdef HAVE_DISCORDRPC
-    DRPC_UpdatePresence();
-#endif
-
 	if (pl->continues)
 		pl->continues--;
 
@@ -4224,6 +4225,10 @@ static void G_DoContinued(void)
 	D_MapChange(gamemap, gametype, ultimatemode, false, 0, false, false);
 
 	gameaction = ga_nothing;
+
+#ifdef HAVE_DISCORDRPC
+    DRPC_UpdatePresence();
+#endif
 }
 
 //
@@ -4261,10 +4266,6 @@ void G_EndGame(void)
 
 	// 1100 or competitive multiplayer, so go back to title screen.
 	D_StartTitle();
-
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
 }
 
 //
@@ -5281,6 +5282,7 @@ INT32 G_FindMapByNameOrCode(const char *mapname, char **realmapnamep)
 void G_SetGamestate(gamestate_t newstate)
 {
 	gamestate = newstate;
+
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
 #endif

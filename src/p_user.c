@@ -57,7 +57,7 @@
 #endif
 
 #ifdef HAVE_DISCORDRPC
-#include "discord.h" //DRPC_UpdatePresence
+#include "discord.h"
 #endif
 
 #if 0
@@ -10441,6 +10441,9 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 boolean P_SpectatorJoinGame(player_t *player)
 {
+	boolean skiptodiscord = false;
+	boolean skiptodiscordnoreturn = false;
+
 	if (!G_CoopGametype() && !cv_allowteamchange.value)
 	{
 		if (P_IsLocalPlayer(player))
@@ -10504,11 +10507,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 		else if (changeto == 2)
 			CONS_Printf(M_GetText("%s switched to the %c%s%c.\n"), player_names[player-players], '\x84', M_GetText("Blue team"), '\x80');
 
-#ifdef HAVE_DISCORDRPC
-		DRPC_UpdatePresence(); //just in case, you never know :)
-#endif
-
-		return true; // no more player->mo, cannot continue.
+		skiptodiscord = true;
 	}
 	// Joining in game from firing.
 	else
@@ -10551,11 +10550,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 			if (!G_CoopGametype())
 				CONS_Printf(M_GetText("%s entered the game.\n"), player_names[player-players]);
 
-#ifdef HAVE_DISCORDRPC
-		DRPC_UpdatePresence(); //just in case, you never know :)
-#endif
-
-			return true; // no more player->mo, cannot continue.
+			skiptodiscord = true;
 		}
 		else
 		{
@@ -10563,10 +10558,20 @@ boolean P_SpectatorJoinGame(player_t *player)
 				CONS_Printf(M_GetText("You must wait until next round to enter the game.\n"));
 			player->powers[pw_flashing] += 2*TICRATE; //to prevent message spam.
 		}
-#ifdef HAVE_DISCORDRPC
-		DRPC_UpdatePresence(); //just in case, you never know :)
-#endif
+		skiptodiscord = true;
+		skiptodiscordnoreturn = true;
 	}
+
+	if (skiptodiscord)
+	{
+#ifdef HAVE_DISCORDRPC
+		DRPC_UpdatePresence();
+#endif
+
+		if (!skiptodiscordnoreturn)
+			return true;
+	}
+
 	return false;
 }
 

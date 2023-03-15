@@ -23,6 +23,7 @@
 #include "d_netcmd.h"
 #include "console.h"
 #include "r_fps.h"
+#include "i_time.h"
 #include "r_local.h"
 #include "hu_stuff.h"
 #include "g_game.h"
@@ -355,7 +356,7 @@ void M_ResetJukebox(void);
 menu_t OP_DataOptionsDef, OP_ScreenshotOptionsDef, OP_EraseDataDef;
 menu_t OP_ServerOptionsDef;
 #ifdef HAVE_DISCORDRPC
-boolean discordMenuOpen;
+boolean discordMenuOpen = false;
 
 static void M_DiscordOptions(INT32 choice);
 static void M_DrawDiscordMenu(void);
@@ -376,8 +377,8 @@ static patch_t *addonsp[NUM_EXT+5];
 static void M_Tsourdt3rdOptions(INT32 choice);
 
 boolean jukeboxMusicPlaying = false;
-char jukeboxMusicName[32+20+12];
-char jukeboxMusicTrack[7];
+char jukeboxMusicName[32+20+12] = "";
+char jukeboxMusicTrack[7] = "";
 static void M_Tsourdt3rdJukebox(INT32 choice);
 static void M_DrawTsourdt3rdJukebox(void);
 static void M_HandleTsourdt3rdJukebox(INT32 choice);
@@ -2729,10 +2730,6 @@ void Moviemode_option_Onchange(void)
 #ifdef HAVE_DISCORDRPC
 void Discord_option_Onchange(void)
 {
-	//// Discord :) ////	
-	DiscordRichPresence discordPresence;
-	memset(&discordPresence, 0, sizeof(discordPresence));
-
 	//// Is Rich Presence Even On? ////
 	// Main //
 	OP_DiscordOptionsMenu[op_richpresenceheader].status =
@@ -2854,9 +2851,9 @@ void Discord_option_Onchange(void)
             OP_DiscordOptionsMenu[op_customdiscordsmallimagetext].status =
                 (cv_customdiscordsmallimagetype.value != 5 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 		}
-
-		DRPC_UpdatePresence();
     }
+
+	DRPC_UpdatePresence();
 }
 #endif
 
@@ -3982,7 +3979,9 @@ void M_Drawer(void)
 	boolean wipe = WipeInAction;
 
 	if (currentMenu == &MessageDef)
+	{
 		menuactive = true;
+	}
 
 	if (menuactive)
 	{
@@ -4023,6 +4022,7 @@ void M_Drawer(void)
 		else
 			V_DrawCenteredString(BASEVIDWIDTH/2, (BASEVIDHEIGHT/2) - (4), V_YELLOWMAP, "Focus Lost");
 	}
+
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
 #endif
@@ -11343,6 +11343,11 @@ void M_DrawMarathon(void)
 	fa = (FixedAngle(cnt)>>ANGLETOFINESHIFT) & FINEMASK;
 	y -= (10*FINECOSINE(fa));
 
+	if (renderisnewtic)
+	{
+		recatkdrawtimer += FRACUNIT;
+	}
+
 	recatkdrawtimer++;
 
 	soffset = cnt = (recatkdrawtimer%50);
@@ -11384,7 +11389,7 @@ void M_DrawMarathon(void)
 	}
 
 	w = char_scroll + (((8-cnt)*(8-cnt))<<(FRACBITS-5));
-	if (soffset == 50-1)
+	if (soffset == 50-1 && renderisnewtic)
 		w += FRACUNIT/2;
 
 	{
@@ -12120,9 +12125,6 @@ static void M_StartServer(INT32 choice)
 		}
 		D_MapChange(cv_nextmap.value, cv_newgametype.value, false, 1, 1, false, false);
 	}
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
 
 	M_ClearMenus(true);
 }
@@ -14195,7 +14197,8 @@ void M_QuitResponse(INT32 ch)
 		{
 			V_DrawScaledPatch(0, 0, 0, W_CachePatchName("GAMEQUIT", PU_PATCH)); // Demo 3 Quit Screen Tails 06-16-2001
 			I_FinishUpdate(); // Update the screen with the image Tails 06-19-2001
-			I_Sleep();
+			I_Sleep(cv_sleep.value);
+			I_UpdateTime(cv_timescale.value);
 		}
 	}
 	I_Quit();
@@ -14216,11 +14219,10 @@ static boolean confirmAccept = false;
 
 static void M_DiscordOptions(INT32 choice)
 {
+	(void)choice;
+
 	Discord_option_Onchange();
-	if (strcmp(discordUserName, " ") == 0)
-		DRPC_Init();
-	
-	discordMenuOpen = (choice == KEY_ESCAPE ? false : true);
+	discordMenuOpen = true;
 	
 	M_SetupNextMenu(&OP_DiscordOptionsDef);
 }
@@ -14658,7 +14660,14 @@ static void M_DrawTsourdt3rdJukebox(void)
 			}
 			else
 			{
-				V_DrawString(x, y, (t == st_sel ? V_YELLOWMAP : 0)|V_ALLOWLOWERCASE, soundtestdefs[t]->title);
+				// Draw Strings
+				(strlen(soundtestdefs[t]->title) < 17 ?
+					// Normal Strings
+					V_DrawString(x, y, (t == st_sel ? V_YELLOWMAP : 0)|V_ALLOWLOWERCASE, soundtestdefs[t]->title) :
+
+					// Thin Strings
+					V_DrawThinString(x, y, (t == st_sel ? V_YELLOWMAP : 0)|V_ALLOWLOWERCASE, soundtestdefs[t]->title));
+
 				if (curplaying == soundtestdefs[t])
 				{
 					V_DrawFill(165+140-9, y-4, 8, 16, 150);

@@ -28,6 +28,7 @@
 #include "z_zone.h"
 #include "i_tcp.h"
 #include "d_main.h" // srb2home
+#include "i_time.h"
 
 //
 // NETWORKING
@@ -618,7 +619,10 @@ void Net_WaitAllAckReceived(UINT32 timeout)
 	while (timeout > I_GetTime() && !Net_AllAcksReceived())
 	{
 		while (tictac == I_GetTime())
-			I_Sleep();
+		{
+			I_Sleep(cv_sleep.value);
+			I_UpdateTime(cv_timescale.value);
+		}
 		tictac = I_GetTime();
 		HGetPacket();
 		Net_AckTicker();

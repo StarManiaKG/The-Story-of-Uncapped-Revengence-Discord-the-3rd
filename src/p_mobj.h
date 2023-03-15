@@ -274,6 +274,7 @@ typedef enum {
 } precipflag_t;
 
 // Map Object definition.
+// Map Object definition.
 typedef struct mobj_s
 {
 	// List: thinker links.
@@ -302,6 +303,8 @@ typedef struct mobj_s
 	INT32 blendmode; // blend mode
 	fixed_t spritexscale, spriteyscale;
 	fixed_t spritexoffset, spriteyoffset;
+	fixed_t old_spritexscale, old_spriteyscale;
+	fixed_t old_spritexoffset, old_spriteyoffset;
 	struct pslope_s *floorspriteslope; // The slope that the floorsprite is rotated by
 
 	struct msecnode_s *touching_sectorlist; // a linked list of sectors where this object appears
@@ -377,6 +380,8 @@ typedef struct mobj_s
 	UINT32 mobjnum; // A unique number for this mobj. Used for restoring pointers on save games.
 
 	fixed_t scale;
+	fixed_t old_scale; // interpolation
+	fixed_t old_scale2;
 	fixed_t destscale;
 	fixed_t scalespeed;
 
@@ -391,6 +396,7 @@ typedef struct mobj_s
 
 	struct pslope_s *standingslope; // The slope that the object is standing on (shouldn't need synced in savegames, right?)
 
+	boolean resetinterp; // if true, some fields should not be interpolated (see R_InterpolateMobjState implementation)
 	boolean colorized; // Whether the mobj uses the rainbow colormap
 	boolean mirrored; // The object's rotations will be mirrored left to right, e.g., see frame AL from the right and AR from the left
 	fixed_t shadowscale; // If this object casts a shadow, and the size relative to radius
@@ -433,6 +439,8 @@ typedef struct precipmobj_s
 	INT32 blendmode; // blend mode
 	fixed_t spritexscale, spriteyscale;
 	fixed_t spritexoffset, spriteyoffset;
+	fixed_t old_spritexscale, old_spriteyscale;
+	fixed_t old_spritexoffset, old_spriteyoffset;
 	struct pslope_s *floorspriteslope; // The slope that the floorsprite is rotated by
 
 	struct mprecipsecnode_s *touching_sectorlist; // a linked list of sectors where this object appears

@@ -16,6 +16,7 @@
 #include "console.h"
 #include "am_map.h"
 #include "i_system.h"
+#include "i_time.h"
 #include "i_video.h"
 #include "r_local.h"
 #include "r_sky.h"
@@ -40,7 +41,6 @@
 #include "hardware/hw_model.h"
 #endif
 
-// SRB2Kart
 #include "r_fps.h" // R_GetFramerateCap
 
 #if defined (USEASM) && !defined (NORUSEASM)//&& (!defined (_MSC_VER) || (_MSC_VER <= 1200))
@@ -453,55 +453,69 @@ boolean SCR_IsAspectCorrect(INT32 width, INT32 height)
 
 double averageFPS = 0.0f;
 
-#define FPS_SAMPLE_RATE (50000) // How often to update FPS samples, in microseconds
-#define NUM_FPS_SAMPLES 16 // Number of samples to store
+#define USE_FPS_SAMPLES
+
+#ifdef USE_FPS_SAMPLES
+#define FPS_SAMPLE_RATE (0.05) // How often to update FPS samples, in seconds
+#define NUM_FPS_SAMPLES (16) // Number of samples to store
 
 static double fps_samples[NUM_FPS_SAMPLES];
+static double updateElapsed = 0.0;
+#endif
+
+static boolean fps_init = false;
+static precise_t fps_enter = 0;
 
 void SCR_CalculateFPS(void)
 {
-	static boolean init = false;
+	precise_t fps_finish = 0;
 
-	static precise_t startTime = 0;
-	precise_t endTime = 0;
+	double frameElapsed = 0.0;
 
-	static precise_t updateTime = 0;
-	int updateElapsed = 0;
-	int i;
-
-	endTime = I_GetPreciseTime();
-
-	if (init == false)
+	if (fps_init == false)
 	{
-		startTime = updateTime = endTime;
-		init = true;
-		return;
+		fps_enter = I_GetPreciseTime();
+		fps_init = true;
 	}
 
-	updateElapsed = I_PreciseToMicros(endTime - updateTime);
+	fps_finish = I_GetPreciseTime();
+	frameElapsed = (double)((INT64)(fps_finish - fps_enter)) / I_GetPrecisePrecision();
+	fps_enter = fps_finish;
+
+#ifdef USE_FPS_SAMPLES
+	updateElapsed += frameElapsed;
 
 	if (updateElapsed >= FPS_SAMPLE_RATE)
 	{
 		static int sampleIndex = 0;
-		int frameElapsed = I_PreciseToMicros(endTime - startTime);
+		int i;
 
-		fps_samples[sampleIndex] = frameElapsed / 1000.0f;
+		fps_samples[sampleIndex] = frameElapsed;
 
 		sampleIndex++;
 		if (sampleIndex >= NUM_FPS_SAMPLES)
 			sampleIndex = 0;
 
-		averageFPS = 0.0f;
+		averageFPS = 0.0;
 		for (i = 0; i < NUM_FPS_SAMPLES; i++)
 		{
 			averageFPS += fps_samples[i];
 		}
-		averageFPS = 1000.0f / (averageFPS / NUM_FPS_SAMPLES);
 
-		updateTime = endTime;
+		if (averageFPS > 0.0)
+		{
+			averageFPS = 1.0 / (averageFPS / NUM_FPS_SAMPLES);
+		}
 	}
 
-	startTime = endTime;
+	while (updateElapsed >= FPS_SAMPLE_RATE)
+	{
+		updateElapsed -= FPS_SAMPLE_RATE;
+	}
+#else
+	// Direct, unsampled counter.
+	averageFPS = 1.0 / frameElapsed;
+#endif
 }
 
 void SCR_DisplayTicRate(void)
@@ -601,7 +615,13 @@ void SCR_ClosedCaptions(void)
 		y = basey-((i + 2)*10);
 
 		if (closedcaptions[i].b)
+		{
 			y -= (closedcaptions[i].b--)*vid.dupy;
+			if (renderisnewtic)
+			{
+				closedcaptions[i].b--;
+			}
+		}
 
 		if (closedcaptions[i].t < CAPTIONFADETICS)
 			flags |= (((CAPTIONFADETICS-closedcaptions[i].t)/2)*V_10TRANS);

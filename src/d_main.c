@@ -40,6 +40,7 @@
 #include "hu_stuff.h"
 #include "i_sound.h"
 #include "i_system.h"
+#include "i_time.h"
 #include "i_threads.h"
 #include "i_video.h"
 #include "m_argv.h"
@@ -699,15 +700,13 @@ tic_t rendergametic;
 
 void D_SRB2Loop(void)
 {
-	tic_t oldentertics = 0, entertic = 0, realtics = 0, rendertimeout = INFTICS;
+	tic_t entertic = 0, oldentertics = 0, realtics = 0, rendertimeout = INFTICS;
+	double deltatics = 0.0;
+	double deltasecs = 0.0;
 	static lumpnum_t gstartuplumpnum;
 
-	boolean ticked = false;
 	boolean interp = false;
 	boolean doDisplay = false;
-	boolean screenUpdate = false;
-
-	double frameEnd = 0.0;
 
 	if (dedicated)
 		server = true;
@@ -719,6 +718,7 @@ void D_SRB2Loop(void)
 	I_DoStartupMouse();
 #endif
 
+	I_UpdateTime(cv_timescale.value);
 	oldentertics = I_GetTime();
 
 	// end of loading screen: CONS_Printf() will no more call FinishUpdate()
@@ -759,6 +759,19 @@ void D_SRB2Loop(void)
 
 	for (;;)
 	{
+		// capbudget is the minimum precise_t duration of a single loop iteration
+		precise_t capbudget;
+		precise_t enterprecise = I_GetPreciseTime();
+		precise_t finishprecise = enterprecise;
+
+		{
+			// Casting the return value of a function is bad practice (apparently)
+			double budget = round((1.0 / R_GetFramerateCap()) * I_GetPrecisePrecision());
+			capbudget = (precise_t) budget;
+		}
+
+		I_UpdateTime(cv_timescale.value);
+
 		if (lastwipetic)
 		{
 			oldentertics = lastwipetic;
@@ -783,8 +796,7 @@ void D_SRB2Loop(void)
 #endif
 
 		interp = R_UsingFrameInterpolation() && !dedicated;
-		doDisplay = screenUpdate = false;
-		ticked = false;
+		doDisplay = false;
 
 #ifdef HW3SOUND
 		HW3S_BeginFrameUpdate();
@@ -800,12 +812,12 @@ void D_SRB2Loop(void)
 				realtics = 1;
 
 			// process tics (but maybe not if realtic == 0)
-			ticked = TryRunTics(realtics);
+			TryRunTics(realtics);
 
 			if (lastdraw || singletics || gametic > rendergametic)
 			{
 				rendergametic = gametic;
-				rendertimeout = entertic+TICRATE/17;
+				rendertimeout = entertic + TICRATE/17;
 
 				doDisplay = true;
 			}
@@ -828,56 +840,31 @@ void D_SRB2Loop(void)
 
 				doDisplay = true;
 			}
-		}
 
-		if (autoloading)
+			renderisnewtic = true;
+		}
+		else
 		{
-			if (!savemoddata)
-				modifiedgame = false;
-			autoloading = false;
+			renderisnewtic = false;
 		}
 
 		if (interp)
 		{
-			static float tictime = 0.0f;
-			static float prevtime = 0.0f;
-			float entertime = I_GetTimeFrac();
+			// I looked at the possibility of putting in a float drawer for
+			// perfstats and it's very complicated, so we'll just do this instead...
+			ps_interp_frac.value.p = (precise_t)((FIXED_TO_FLOAT(g_time.timefrac)) * 1000.0f);
+			ps_interp_lag.value.p = (precise_t)((deltasecs) * 1000.0f);
 
-			fixed_t entertimefrac = FRACUNIT;
+			renderdeltatics = FLOAT_TO_FIXED(deltatics);
 
-			if (ticked)
+			if (!(paused || P_AutoPause()) && deltatics < 1.0 && !hu_stopped)
 			{
-				tictime = entertime;
+				rendertimefrac = g_time.timefrac;
 			}
-
-			if (!(paused || P_AutoPause()))
+			else
 			{
-#if 0
-				CONS_Printf("prevtime = %f\n", prevtime);
-				CONS_Printf("entertime = %f\n", entertime);
-				CONS_Printf("tictime = %f\n", tictime);
-				CONS_Printf("entertime - prevtime = %f\n", entertime - prevtime);
-				CONS_Printf("entertime - tictime = %f\n", entertime - tictime);
-				CONS_Printf("========\n");
-#endif
-
-				if (entertime - prevtime >= 1.0f)
-				{
-					// Lagged for more frames than a gametic...
-					// No need for interpolation.
-					entertimefrac = FRACUNIT;
-				}
-				else
-				{
-					entertimefrac = min(FRACUNIT, FLOAT_TO_FIXED(entertime - tictime));
-				}
-
-				// renderdeltatics is a bit awkard to evaluate, since the system time interface is whole tic-based
-				renderdeltatics = FloatToFixed(entertime - prevtime);
-				rendertimefrac = entertimefrac;
+				rendertimefrac = FRACUNIT;
 			}
-
-			prevtime = entertime;
 		}
 		else
 		{
@@ -887,12 +874,19 @@ void D_SRB2Loop(void)
 
 		if (interp || doDisplay)
 		{
-			screenUpdate = D_Display();
+			D_Display();
 		}
 
-		// consoleplayer -> displayplayer (hear sounds from viewpoint)
+		// Only take screenshots after drawing.
+		if (moviemode)
+			M_SaveFrame();
+		if (takescreenshot)
+			M_DoScreenShot();
+
+		// consoleplayer -> displayplayers (hear sounds from viewpoint)
 		S_UpdateSounds(); // move positional sounds
-		S_UpdateClosedCaptions();
+		if (realtics > 0 || singletics)
+			S_UpdateClosedCaptions();
 
 #ifdef HW3SOUND
 		HW3S_EndFrameUpdate();
@@ -901,36 +895,28 @@ void D_SRB2Loop(void)
 		LUA_Step();
 
 		// Fully completed frame made.
-		frameEnd = I_GetFrameTime();
-		if (!singletics && !dedicated)
+		finishprecise = I_GetPreciseTime();
+		if (!singletics)
 		{
-			I_FrameCapSleep(frameEnd);
-		}
-		else if (dedicated)
-		{
-			// Preserve the pre-interp sleeping behavior for dedicated mode
-			I_Sleep();
-		}
+			INT64 elapsed = (INT64)(finishprecise - enterprecise);
 
-		// I_FinishUpdate is now here instead of D_Display,
-		// because it synchronizes it more closely with the frame counter.
-		if (screenUpdate == true)
-		{
-			PS_START_TIMING(ps_swaptime);
-			I_FinishUpdate(); // page flip or blit buffer
-			PS_STOP_TIMING(ps_swaptime);
-		}
+			// in the case of "match refresh rate" + vsync, don't sleep at all
+			const boolean vsync_with_match_refresh = cv_vidwait.value && cv_fpscap.value == 0;
 
-		// Only take screenshots after drawing.
-		if (moviemode)
-			M_SaveFrame();
-		if (takescreenshot)
-			M_DoScreenShot();
-		
-#ifdef HAVE_DISCORDRPC
-		Discord_RunCallbacks();
-#endif
+			if (elapsed > 0 && (INT64)capbudget > elapsed && !vsync_with_match_refresh)
+			{
+				I_SleepDuration(capbudget - (finishprecise - enterprecise));
+			}
+		}
+		// Capture the time once more to get the real delta time.
+		finishprecise = I_GetPreciseTime();
+		deltasecs = (double)((INT64)(finishprecise - enterprecise)) / I_GetPrecisePrecision();
+		deltatics = deltasecs * NEWTICRATE;
 	}
+
+#ifdef HAVE_DISCORDRPC
+	Discord_RunCallbacks();
+#endif
 }
 
 //
@@ -953,11 +939,11 @@ void D_StartTitle(void)
 {
 	INT32 i;
 
-	// Just so this meanie doesn't reset me having fun with my music >:(
+	// Put a New Section Here Just so It Doesn't Reset My Fun lol
 	if (!jukeboxMusicPlaying)
 		S_StopMusic();
 	else if (jukeboxMusicPlaying && paused)
-		S_ResumeAudio(); // keep playing my music please
+		S_ResumeAudio();
 
 	if (netgame)
 	{
@@ -985,8 +971,6 @@ void D_StartTitle(void)
 	SV_StopServer();
 	SV_ResetServer();
 #ifdef HAVE_DISCORDRPC
-	if (strcmp(discordUserName, " ") == 0)
-		DRPC_Init();
 	DRPC_UpdatePresence();
 #endif
 

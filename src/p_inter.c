@@ -31,7 +31,7 @@
 #include "m_menu.h" // jukebox thingies
 
 #ifdef HAVE_DISCORDRPC
-#include "discord.h" // Mainly DRPC_UpdatePresence()
+#include "discord.h"
 #endif
 
 // CTF player names
@@ -308,6 +308,11 @@ void P_DoMatchSuper(player_t *player)
 					S_ChangeMusicInternal((mariomode) ? "_minv" : "_inv", false);
 				}
 			}
+
+
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 }
 
 /** Takes action based on a ::MF_SPECIAL thing touched by a player.
@@ -2570,10 +2575,6 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			if (!(target->player->pflags & PF_FINISHED))
 				target->player->lives -= 1; // Lose a life Tails 03-11-2000
 
-#ifdef HAVE_DISCORDRPC
-    		DRPC_UpdatePresence();
-#endif
-
 			if (target->player->lives <= 0) // Tails 03-14-2000
 			{
 				boolean gameovermus = false;
@@ -2605,6 +2606,10 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 						G_SaveGameOver((UINT32)cursaveslot, (target->player->continues <= 0));
 				}
 			}
+
+#ifdef HAVE_DISCORDRPC
+    		DRPC_UpdatePresence();
+#endif
 		}
 		target->player->playerstate = PST_DEAD;
 

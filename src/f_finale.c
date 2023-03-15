@@ -25,6 +25,7 @@
 #include "w_wad.h"
 #include "z_zone.h"
 #include "i_system.h"
+#include "i_time.h"
 #include "i_threads.h"
 #include "m_menu.h"
 #include "dehacked.h"
@@ -42,6 +43,7 @@
 
 #include "lua_hud.h"
 #include "lua_hook.h"
+#include "lua_hudlib_drawlist.h"
 
 // Stage of animation:
 // 0 = text, 1 = art screen
@@ -226,6 +228,8 @@ static tic_t cutscene_lasttextwrite = 0;
 
 // STJR Intro
 char stjrintro[9] = "STJRI000";
+
+static huddrawlist_h luahuddrawlist_title;
 
 //
 // This alters the text string cutscene_disptext.
@@ -913,7 +917,10 @@ void F_IntroTicker(void)
 				while (quittime > nowtime)
 				{
 					while (!((nowtime = I_GetTime()) - lasttime))
-						I_Sleep();
+					{
+						I_Sleep(cv_sleep.value);
+						I_UpdateTime(cv_timescale.value);
+					}
 					lasttime = nowtime;
 
 					I_OsPolling();
@@ -3401,7 +3408,21 @@ void F_TitleScreenDrawer(void)
 	ST_drawJukebox(); // show us the music we're playing in the jukebox, if we are playing anything
 
 luahook:
-	LUA_HUDHOOK(title);
+	// The title drawer is sometimes called without first being started
+	// In order to avoid use-before-initialization crashes, let's check and
+	// create the drawlist if it doesn't exist.
+	if (!LUA_HUD_IsDrawListValid(luahuddrawlist_title))
+	{
+		LUA_HUD_DestroyDrawList(luahuddrawlist_title);
+		luahuddrawlist_title = LUA_HUD_CreateDrawList();
+	}
+
+	if (renderisnewtic)
+	{
+		LUA_HUD_ClearDrawList(luahuddrawlist_title);
+		LUA_HUDHOOK(title, luahuddrawlist_title);
+	}
+	LUA_HUD_DrawList(luahuddrawlist_title);
 }
 
 // separate animation timer for backgrounds, since we also count
@@ -3827,7 +3848,8 @@ boolean F_ContinueResponder(event_t *event)
 	keypressed = true;
 	imcontinuing = true;
 	S_StartSound(NULL, sfx_kc6b);
-	I_FadeSong(0, MUSICRATE, &S_StopMusic);
+	if (!jukeboxMusicPlaying)
+		I_FadeSong(0, MUSICRATE, &S_StopMusic);
 
 	return true;
 }

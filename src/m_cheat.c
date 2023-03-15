@@ -37,7 +37,7 @@
 #include "lua_hook.h"
 
 #ifdef HAVE_DISCORDRPC
-#include "discord.h" // DRPC_UpdatePresence
+#include "discord.h"
 #endif
 
 //
@@ -934,6 +934,7 @@ void Command_Setlives_f(void)
 
 		G_SetGameModified(multiplayer);
 	}
+
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
 #endif

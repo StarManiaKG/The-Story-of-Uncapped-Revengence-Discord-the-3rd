@@ -42,17 +42,17 @@ extern UINT8 keyboard_started;
 */
 UINT32 I_GetFreeMem(UINT32 *total);
 
-/**	\brief  Called by D_SRB2Loop, returns current time in game tics.
-*/
-tic_t I_GetTime(void);
-
-/** \brief  Get the current time in game tics, including fractions.
-*/
-float I_GetTimeFrac(void);
-
-/**	\brief	Returns precise time value for performance measurement.
+/**	\brief	Returns precise time value for performance measurement. The precise
+            time should be a monotonically increasing counter, and will wrap.
+			precise_t is internally represented as an unsigned integer and
+			integer arithmetic may be used directly between values of precise_t.
   */
 precise_t I_GetPreciseTime(void);
+
+/** \brief  Get the precision of precise_t in units per second. Invocations of
+            this function for the program's duration MUST return the same value.
+  */
+UINT64 I_GetPrecisePrecision(void);
 
 /**	\brief	Converts a precise_t to microseconds and casts it to a 32 bit integer.
   */
@@ -62,11 +62,16 @@ int I_PreciseToMicros(precise_t d);
 */
 double I_GetFrameTime(void);
 
-/**	\brief	Sleeps by the value of cv_sleep
+/**	\brief	Sleeps for the given duration in milliseconds. Depending on the
+            operating system's scheduler, the calling thread may give up its
+			time slice for a longer duration. The implementation should give a
+			best effort to sleep for the given duration, without spin-locking.
+			Calling code should check the current precise time after sleeping
+			and not assume the thread has slept for the expected duration.
 
 	\return	void
 */
-void I_Sleep(void);
+void I_Sleep(UINT32 ms);
 
 /**	\brief	Sleeps for a variable amount of time, depending on how much time the last frame took.
 

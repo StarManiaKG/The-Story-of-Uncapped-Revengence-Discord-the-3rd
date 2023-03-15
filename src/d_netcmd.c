@@ -17,6 +17,7 @@
 #include "console.h"
 #include "command.h"
 #include "i_system.h"
+#include "i_time.h"
 #include "g_game.h"
 #include "hu_stuff.h"
 #include "g_input.h"
@@ -631,10 +632,8 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_stunserver);
 #endif
 
-#ifdef HAVE_DISCORDRPC
 	CV_RegisterVar(&cv_discordinvites);
 	RegisterNetXCmd(XD_DISCORD, Got_DiscordInfo);
-#endif
 }
 
 // =========================================================================
@@ -2948,9 +2947,6 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 		if (displayplayer != consoleplayer) // You're already viewing yourself. No big deal.
 			LUA_HookViewpointSwitch(&players[consoleplayer], &players[consoleplayer], true);
 		displayplayer = consoleplayer;
-#ifdef HAVE_DISCORDRPC
-		DRPC_UpdatePresence();
-#endif
 	}
 
 	if (G_GametypeHasTeams())
@@ -2967,6 +2963,10 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 	// In tag, check to see if you still have a game.
 	if (G_TagGametype())
 		P_CheckSurvivors();
+
+#ifdef HAVE_DISCORDRPC
+		DRPC_UpdatePresence();
+#endif
 }
 
 //
@@ -5037,11 +5037,12 @@ void Got_DiscordInfo(UINT8 **p, INT32 playernum)
 		return;
 	}
 
-	// Don't do anything with the information if we don't have Discord RP support
+	// Don't do anything with the information if we don't have Discord RPC support
 #ifdef HAVE_DISCORDRPC
 	discordInfo.maxPlayers = READUINT8(*p);
-	discordInfo.joinsAllowed = READUINT8(*p);
+	discordInfo.joinsAllowed = (boolean)READUINT8(*p);
 	discordInfo.whoCanInvite = READUINT8(*p);
+
 	DRPC_UpdatePresence();
 #else
 	(*p) += 3;

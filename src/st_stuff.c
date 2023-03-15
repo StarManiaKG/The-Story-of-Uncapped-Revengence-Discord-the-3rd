@@ -43,7 +43,10 @@
 #endif
 
 #include "lua_hud.h"
+#include "lua_hudlib_drawlist.h"
 #include "lua_hook.h"
+
+#include "r_fps.h"
 
 UINT16 objectsdrawn = 0;
 
@@ -165,6 +168,9 @@ hudinfo_t hudinfo[NUMHUDITEMS] =
 
 	{ 288, 176, V_SNAPTORIGHT|V_SNAPTOBOTTOM}, // HUD_POWERUPS
 };
+
+static huddrawlist_h luahuddrawlist_game[2];
+static huddrawlist_h luahuddrawlist_titlecard;
 
 //
 // STATUS BAR CODE
@@ -1412,7 +1418,12 @@ void ST_drawTitleCard(void)
 	lt_lasttic = lt_ticker;
 
 luahook:
-	LUA_HUDHOOK(titlecard);
+	if (renderisnewtic)
+	{
+		LUA_HUD_ClearDrawList(luahuddrawlist_titlecard);
+		LUA_HUDHOOK(titlecard, luahuddrawlist_titlecard);
+	}
+	LUA_HUD_DrawList(luahuddrawlist_titlecard);
 }
 
 //
@@ -2536,7 +2547,7 @@ static void ST_doHuntIconsAndSound(void)
 			interval = newinterval;
 	}
 
-	if (!(P_AutoPause() || paused) && interval > 0 && leveltime && leveltime % interval == 0)
+	if (!(P_AutoPause() || paused) && interval > 0 && leveltime && leveltime % interval == 0 && renderisnewtic)
 		S_StartSound(NULL, sfx_emfind);
 }
 
@@ -2598,7 +2609,7 @@ static void ST_doItemFinderIconsAndSound(void)
 
 	}
 
-	if (!(P_AutoPause() || paused) && interval > 0 && leveltime && leveltime % interval == 0)
+	if (!(P_AutoPause() || paused) && interval > 0 && leveltime && leveltime % interval == 0 && renderisnewtic)
 		S_StartSound(NULL, sfx_emfind);
 }
 
@@ -2607,7 +2618,7 @@ static void ST_doItemFinderIconsAndSound(void)
 // Draws Jukebox Text On The Screen/HUD
 //
 boolean initJukeboxHUD;
-INT32 chosenColor;
+UINT16 chosenColor;
 
 INT32 boxw = 300; // Slides our Filed Box to Width 245
 INT32 strw = 300; // Slides our Regular String to Width 230
@@ -2617,14 +2628,35 @@ INT32 slidetime = (1*TICRATE-2);
 
 void ST_drawJukebox(void)
 {
+	UINT16 boxColors[16] = {
+		[1] = V_MAGENTAMAP,
+		V_YELLOWMAP,
+		V_GREENMAP,
+		V_BLUEMAP,
+		V_REDMAP,
+		V_GRAYMAP,
+		V_ORANGEMAP,
+		V_SKYMAP,
+		V_PURPLEMAP,
+		V_AQUAMAP,
+		V_PERIDOTMAP,
+		V_AZUREMAP,
+		V_BROWNMAP,
+		V_ROSYMAP,
+		V_INVERTMAP,
+	};
+
 	if (cv_jukeboxhud.value)
 	{
 		if (jukeboxMusicPlaying)
 		{
 			if (initJukeboxHUD)
 			{
-				if (chosenColor < 0)
-					chosenColor = M_RandomRange(0, MAXSKINCOLORS);
+				if (!chosenColor)
+				{
+					chosenColor = boxColors[M_RandomRange(1, 16)];
+					CONS_Printf("%d\n", chosenColor);
+				}
 
 				if (slidetime > 0)
 				{
@@ -2638,10 +2670,20 @@ void ST_drawJukebox(void)
 					initJukeboxHUD = false;
 			}
 
-			V_DrawFillConsoleMap((BASEVIDWIDTH/5)+boxw, 45, 130, 25, V_SNAPTORIGHT|V_HUDTRANSHALF|chosenColor);
+			V_DrawFillConsoleMap((BASEVIDWIDTH/5)+boxw, 45, 130, 25, chosenColor|V_SNAPTORIGHT|V_HUDTRANSHALF);
 			
 			V_DrawString(((BASEVIDWIDTH/4)+20)+strw, 45, V_SNAPTORIGHT|V_ALLOWLOWERCASE, "JUKEBOX");
-			V_DrawThinString(((BASEVIDWIDTH/5)+1)+tstrw, 60, V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP, va("PLAYING: %s", jukeboxMusicName));
+
+			if (strlen(jukeboxMusicName) < 18)
+				V_DrawThinString(((BASEVIDWIDTH/5)+1)+tstrw, 60, V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP, va("PLAYING: %s", jukeboxMusicName));
+			else
+			{
+				for (INT32 i = 0; jukeboxMusicName[i] != '\0'; i++)
+				{
+					V_DrawThinString(((BASEVIDWIDTH/5)+1)+tstrw, 60, V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP, "PLAYING: ");
+					V_DrawThinString(((BASEVIDWIDTH/5)+1)+(tstrw+3), 60, V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP, va("%d", jukeboxMusicName[i]));
+				}
+			}		
 		}
 	}
 
@@ -2650,7 +2692,7 @@ void ST_drawJukebox(void)
 		boxw = strw = tstrw = 300;
 		slidetime = (1*TICRATE-2);
 			
-		chosenColor = -1;
+		chosenColor = 0;
 	}
 }
 // END OF STAR SECTION //
@@ -2805,7 +2847,15 @@ static void ST_overlayDrawer(void)
 		ST_drawPowerupHUD(); // same as it ever was...
 
 	if (!(netgame || multiplayer) || !hu_showscores)
-		LUA_HUDHOOK(game);
+	{
+		INT32 hooklistindex = splitscreen && stplyr == &players[secondarydisplayplayer] ? 1 : 0;
+		if (renderisnewtic)
+		{
+			LUA_HUD_ClearDrawList(luahuddrawlist_game[hooklistindex]);
+			LUA_HUDHOOK(game, luahuddrawlist_game[hooklistindex]);
+		}
+		LUA_HUD_DrawList(luahuddrawlist_game[hooklistindex]);
+	}
 
 	// draw level title Tails
 	if (stagetitle && (!WipeInAction) && (!WipeStageTitle))

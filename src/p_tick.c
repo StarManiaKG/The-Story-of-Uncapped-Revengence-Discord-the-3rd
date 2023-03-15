@@ -26,7 +26,11 @@
 #include "r_fps.h"
 #include "i_video.h" // rendermode
 #include "m_cheat.h" // Object place
-//#include "r_main.h" // cv_skybox, currently broken though
+#include "r_main.h" // cv_skybox
+
+#ifdef HAVE_DISCORDRPC
+#include "discord.h"
+#endif
 
 tic_t leveltime;
 tic_t emeraldtime;
@@ -619,8 +623,10 @@ void P_Ticker(boolean run)
 		if (OP_FreezeObjectplace())
 		{
 			P_MapStart();
+			R_UpdateMobjInterpolators();
 			OP_ObjectplaceMovement(&players[0]);
 			P_MoveChaseCamera(&players[0], &camera, false);
+			R_UpdateViewInterpolation();
 			P_MapEnd();
 			S_SetStackAdjustmentStart();
 			return;
@@ -773,6 +779,10 @@ void P_Ticker(boolean run)
 			{
 				all7matchemeralds = false;
 				emeraldtime = 0;
+				
+#ifdef HAVE_DISCORDRPC
+				DRPC_UpdatePresence();
+#endif
 			}
 		}
 
@@ -782,7 +792,6 @@ void P_Ticker(boolean run)
 	if (run)
 	{
 		R_UpdateLevelInterpolators();
-		/*
 		R_UpdateViewInterpolation();
 
 		// Hack: ensure newview is assigned every tic.
@@ -813,8 +822,7 @@ void P_Ticker(boolean run)
 				}
 			}
 		}
-		*/
-		
+
 	}
 
 	P_MapEnd();
@@ -836,6 +844,8 @@ void P_PreTicker(INT32 frames)
 	for (framecnt = 0; framecnt < frames; ++framecnt)
 	{
 		P_MapStart();
+
+		R_UpdateMobjInterpolators();
 
 		LUA_HOOK(PreThinkFrame);
 
@@ -874,6 +884,10 @@ void P_PreTicker(INT32 frames)
 		P_RespawnSpecials();
 
 		LUA_HOOK(PostThinkFrame);
+
+		R_UpdateLevelInterpolators();
+		R_UpdateViewInterpolation();
+		R_ResetViewInterpolation(0);
 
 		P_MapEnd();
 	}
