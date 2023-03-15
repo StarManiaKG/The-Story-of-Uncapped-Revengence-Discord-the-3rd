@@ -73,12 +73,6 @@ double I_GetFrameTime(void);
 */
 void I_Sleep(UINT32 ms);
 
-/**	\brief	Sleeps for a variable amount of time, depending on how much time the last frame took.
-
-	\return	void
-*/
-boolean I_FrameCapSleep(const double frameStart);
-
 /**	\brief Get events
 
 	Called by D_SRB2Loop,
