@@ -47,6 +47,7 @@
 #include "md5.h"
 #include "m_perfstats.h"
 #include "s_sound.h" // sfx_syfail
+#include "i_time.h"
 
 #ifndef NONET
 // cl loading screen
@@ -117,6 +118,9 @@ static INT16 consistancy[BACKUPTICS];
 
 static UINT8 player_joining = false;
 UINT8 hu_redownloadinggamestate = 0;
+
+// true when a player is connecting or disconnecting so that the gameplay has stopped in its tracks
+boolean hu_stopped = false;
 
 UINT8 adminpassmd5[16];
 boolean adminpasswordset = false;
@@ -1101,10 +1105,6 @@ static inline void CL_DrawConnectionStatus(void)
 
 					V_DrawRightAlignedString(BASEVIDWIDTH/2+128, BASEVIDHEIGHT-16, V_20TRANS|V_MONOSPACE,
 						va("%3.1fK/s ", ((double)getbps)/1024));
-
-#ifdef HAVE_DISCORDRPC
-					DRPC_UpdatePresence();
-#endif
 				}
 				else
 					cltext = M_GetText("Waiting to download game state...");
@@ -1454,6 +1454,10 @@ static boolean SV_SendServerConfig(INT32 node)
 	netbuffer->u.servercfg.gamestate = (UINT8)gamestate;
 	netbuffer->u.servercfg.gametype = (UINT8)gametype;
 	netbuffer->u.servercfg.modifiedgame = (UINT8)modifiedgame;
+
+	netbuffer->u.servercfg.maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
+	netbuffer->u.servercfg.allownewplayer = cv_allownewplayer.value;
+	netbuffer->u.servercfg.discordinvites = (UINT8)cv_discordinvites.value;
 
 	memcpy(netbuffer->u.servercfg.server_context, server_context, 8);
 
@@ -2459,7 +2463,11 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 #endif
 	}
 	else
-		I_Sleep();
+	{
+		I_Sleep(cv_sleep.value);
+		I_UpdateTime(cv_timescale.value);
+	}
+
 
 	return true;
 }
@@ -2920,10 +2928,6 @@ void CL_RemovePlayer(INT32 playernum, kickreason_t reason)
 		P_CheckSurvivors();
 	else if (gametyperules & GTR_RACE)
 		P_CheckRacers();
-	
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
 }
 
 void CL_Reset(void)
@@ -3455,8 +3459,9 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 	}
 	else
 		CL_RemovePlayer(pnum, kickreason);
+
 #ifdef HAVE_DISCORDRPC
-    	DRPC_UpdatePresence();
+    DRPC_UpdatePresence();
 #endif
 }
 
@@ -3472,6 +3477,10 @@ static CV_PossibleValue_t joindelay_cons_t[] = {{1, "MIN"}, {3600, "MAX"}, {0, "
 consvar_t cv_joindelay = CVAR_INIT ("joindelay", "10", CV_SAVE|CV_NETVAR, joindelay_cons_t, NULL);
 static CV_PossibleValue_t rejointimeout_cons_t[] = {{1, "MIN"}, {60 * FRACUNIT, "MAX"}, {0, "Off"}, {0, NULL}};
 consvar_t cv_rejointimeout = CVAR_INIT ("rejointimeout", "2", CV_SAVE|CV_NETVAR|CV_FLOAT, rejointimeout_cons_t, NULL);
+
+// Here for dedicated servers or something idk
+static CV_PossibleValue_t discordinvites_cons_t[] = {{0, "Admins"}, {1, "Everyone"}, {2, "Only Server"}, {0, NULL}};
+consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Everyone", CV_SAVE|CV_CALL, discordinvites_cons_t, Joinable_OnChange);
 
 static CV_PossibleValue_t resynchattempts_cons_t[] = {{1, "MIN"}, {20, "MAX"}, {0, "No"}, {0, NULL}};
 consvar_t cv_resynchattempts = CVAR_INIT ("resynchattempts", "10", CV_SAVE|CV_NETVAR, resynchattempts_cons_t, NULL);
@@ -3501,10 +3510,9 @@ void Joinable_OnChange(void)
 
 	WRITEUINT8(p, maxplayer);
 	WRITEUINT8(p, cv_allownewplayer.value);
-#ifdef HAVE_DISCORDRPC
 	WRITEUINT8(p, cv_discordinvites.value);
+
 	SendNetXCmd(XD_DISCORD, &buf, 3);
-#endif
 }
 
 // called one time at init
@@ -3838,10 +3846,9 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 	if (!rejoined)
 		LUA_HookInt(newplayernum, HOOK(PlayerJoin));
+
 #ifdef HAVE_DISCORDRPC
-		if (strcmp(discordUserName, " ") == 0)
-			DRPC_Init();
-    	DRPC_UpdatePresence();
+	DRPC_UpdatePresence();
 #endif
 }
 
@@ -3977,10 +3984,6 @@ void SV_StopServer(void)
 	maketic = gametic+1;
 	neededtic = maketic;
 	serverrunning = false;
-
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
 }
 
 // called at singleplayer start and stopdemo
@@ -4397,7 +4400,7 @@ static void HandlePacketFromAwayNode(SINT8 node)
 			}
 
 #ifdef HAVE_DISCORDRPC
-			discordInfo.maxPlayers = netbuffer->u.serverinfo.maxplayer;
+			discordInfo.maxPlayers = netbuffer->u.servercfg.maxplayer;
 			discordInfo.joinsAllowed = netbuffer->u.servercfg.allownewplayer;
 			discordInfo.whoCanInvite = netbuffer->u.servercfg.discordinvites;
 #endif
@@ -5320,8 +5323,16 @@ boolean TryRunTics(tic_t realtics)
 
 	ticking = neededtic > gametic;
 
+	if (ticking)
+	{
+		if (realtics)
+			hu_stopped = false;
+	}
+
 	if (player_joining)
 	{
+		if (realtics)
+			hu_stopped = true;
 		return false;
 	}
 
@@ -5360,6 +5371,11 @@ boolean TryRunTics(tic_t realtics)
 				if (client && gamestate == GS_LEVEL && leveltime > 3 && neededtic <= gametic + cv_netticbuffer.value)
 					break;
 			}
+	}
+	else
+	{
+		if (realtics)
+			hu_stopped = true;
 	}
 
 	return ticking;

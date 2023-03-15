@@ -2019,7 +2019,7 @@ boolean S_RecallMusic(UINT16 status, boolean fromfirst)
 	boolean midipref = cv_musicpref.value;
 
 	if (jukeboxMusicPlaying)
-		return; // We're Playing Music in the Jukebox, So Don't Do Anything
+		return false; // We're Playing Music in the Jukebox, So Don't Do Anything
 
 	if (status)
 		result = S_GetMusicStackEntry(status, fromfirst, -1);
@@ -2447,7 +2447,7 @@ boolean S_FadeOutStopMusic(UINT32 ms)
 void S_StartEx(boolean reset)
 {
 	if (jukeboxMusicPlaying)
-		return; //torture is my favorite form of punishment how did you know
+		return; // torture is my favorite form of punishment how did you know
 	
 	if (mapmusflags & MUSIC_RELOADRESET)
 	{

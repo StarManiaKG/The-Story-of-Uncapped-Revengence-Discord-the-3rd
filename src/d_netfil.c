@@ -37,6 +37,7 @@
 #include "g_game.h"
 #include "i_net.h"
 #include "i_system.h"
+#include "i_time.h"
 #include "m_argv.h"
 #include "d_net.h"
 #include "w_wad.h"

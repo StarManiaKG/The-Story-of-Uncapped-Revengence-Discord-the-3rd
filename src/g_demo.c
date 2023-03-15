@@ -18,6 +18,7 @@
 #include "d_clisrv.h"
 #include "p_setup.h"
 #include "i_system.h"
+#include "i_time.h"
 #include "m_random.h"
 #include "p_local.h"
 #include "r_draw.h"
