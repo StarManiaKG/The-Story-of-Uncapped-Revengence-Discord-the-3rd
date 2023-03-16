@@ -3945,6 +3945,9 @@ static void Command_Playintro_f(void)
 
 	if (dirmenu)
 		closefilemenu(true);
+	
+	if (menuactive)
+		M_ClearMenus(true);
 
 	F_StartIntro();
 }

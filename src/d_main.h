@@ -23,7 +23,8 @@ extern boolean advancedemo;
 extern tic_t rendergametic;
 
 extern char srb2home[256]; //Alam: My Home
-extern boolean autoloading; //Star: Are you Autoloading, Son?
+extern boolean autoloading; //Star: Autoloading
+extern INT32 extrawads; // Star: Using Extra Optional Mods
 extern boolean usehome; //Alam: which path?
 extern const char *pandf; //Alam: how to path?
 extern char srb2path[256]; //Alam: SRB2's Home

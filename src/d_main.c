@@ -142,6 +142,7 @@ char srb2path[256] = ".";
 
 boolean usehome = true;
 boolean autoloading = false;
+INT32 extrawads;
 
 const char *pandf = "%s" PATHSEP "%s";
 static char addonsdir[MAX_WADPATH];
@@ -1242,6 +1243,41 @@ static void IdentifyVersion(void)
 		MUSICTEST("jukebox.pk3")
 	}
 #endif
+
+	// Do Extra Star Stuff //
+	// Extra Wads
+	char *musicdta = malloc(strlen(srb2waddir)+1+9+1);
+	if (musicdta)
+	{
+		sprintf(musicdta, pandf, srb2waddir, "music.dta");
+		if (FIL_ReadFileOK(musicdta))
+		{
+			extrawads += 1;
+			free(musicdta);
+		}
+	}
+
+	char *patchmusicdta = malloc(strlen(srb2waddir)+1+15+1);
+	if (patchmusicdta)
+	{
+		sprintf(patchmusicdta, pandf, srb2waddir, "patch_music.pk3");
+		if (FIL_ReadFileOK(patchmusicdta))
+		{
+			extrawads += 1;
+			free(patchmusicdta);
+		}
+	}
+
+	char *jukeboxpk3 = malloc(strlen(srb2waddir)+1+11+1);
+	if (jukeboxpk3)
+	{
+		sprintf(jukeboxpk3, pandf, srb2waddir, "jukebox.pk3");
+		if (FIL_ReadFileOK(jukeboxpk3))
+		{
+			extrawads += 1;
+			free(jukeboxpk3);
+		}
+	}
 }
 
 static void
