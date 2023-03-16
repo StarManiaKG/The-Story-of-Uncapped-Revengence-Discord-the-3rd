@@ -169,9 +169,6 @@ hudinfo_t hudinfo[NUMHUDITEMS] =
 	{ 288, 176, V_SNAPTORIGHT|V_SNAPTOBOTTOM}, // HUD_POWERUPS
 };
 
-static huddrawlist_h luahuddrawlist_game[2];
-static huddrawlist_h luahuddrawlist_titlecard;
-
 //
 // STATUS BAR CODE
 //
@@ -1418,12 +1415,7 @@ void ST_drawTitleCard(void)
 	lt_lasttic = lt_ticker;
 
 luahook:
-	if (renderisnewtic)
-	{
-		LUA_HUD_ClearDrawList(luahuddrawlist_titlecard);
-		LUA_HUDHOOK(titlecard);
-	}
-	LUA_HUD_DrawList(luahuddrawlist_titlecard);
+	LUA_HUDHOOK(titlecard);
 }
 
 //
@@ -2618,7 +2610,25 @@ static void ST_doItemFinderIconsAndSound(void)
 // Draws Jukebox Text On The Screen/HUD
 //
 boolean initJukeboxHUD;
+
 UINT16 chosenColor;
+static const UINT16 boxColors[V_INVERTMAP] = {
+	V_MAGENTAMAP,
+	V_YELLOWMAP,
+	V_GREENMAP,
+	V_BLUEMAP,
+	V_REDMAP,
+	V_GRAYMAP,
+	V_ORANGEMAP,
+	V_SKYMAP,
+	V_PURPLEMAP,
+	V_AQUAMAP,
+	V_PERIDOTMAP,
+	V_AZUREMAP,
+	V_BROWNMAP,
+	V_ROSYMAP,
+	V_INVERTMAP,
+};
 
 INT32 boxw = 300; // Slides our Filed Box to Width 245
 INT32 strw = 300; // Slides our Regular String to Width 230
@@ -2628,63 +2638,47 @@ INT32 slidetime = (1*TICRATE-2);
 
 void ST_drawJukebox(void)
 {
-	UINT16 boxColors[16] = {
-		[1] = V_MAGENTAMAP,
-		V_YELLOWMAP,
-		V_GREENMAP,
-		V_BLUEMAP,
-		V_REDMAP,
-		V_GRAYMAP,
-		V_ORANGEMAP,
-		V_SKYMAP,
-		V_PURPLEMAP,
-		V_AQUAMAP,
-		V_PERIDOTMAP,
-		V_AZUREMAP,
-		V_BROWNMAP,
-		V_ROSYMAP,
-		V_INVERTMAP,
-	};
-
-	if (cv_jukeboxhud.value)
+	if (cv_jukeboxhud.value && jukeboxMusicPlaying)
 	{
-		if (jukeboxMusicPlaying)
+		// Run Variables First //
+		if (initJukeboxHUD)
 		{
-			if (initJukeboxHUD)
+			if (!chosenColor)
+				chosenColor = boxColors[M_RandomRange(1, 16)];
+		
+			if (slidetime > 0)
 			{
-				if (!chosenColor)
-				{
-					chosenColor = boxColors[M_RandomRange(1, 16)];
-					CONS_Printf("%d\n", chosenColor);
-				}
-
-				if (slidetime > 0)
-				{
-					boxw -= 5;
-					strw -= 5;
-					tstrw -= 5;
-
-					slidetime -= 1;
-				}
-				else
-					initJukeboxHUD = false;
-			}
-
-			V_DrawFillConsoleMap((BASEVIDWIDTH/5)+boxw, 45, 130, 25, chosenColor|V_SNAPTORIGHT|V_HUDTRANSHALF);
+				boxw -= 5;
+				strw -= 5;
+				tstrw -= 5;
 			
-			V_DrawString(((BASEVIDWIDTH/4)+20)+strw, 45, V_SNAPTORIGHT|V_ALLOWLOWERCASE, "JUKEBOX");
-
-			if (strlen(jukeboxMusicName) < 18)
-				V_DrawThinString(((BASEVIDWIDTH/5)+1)+tstrw, 60, V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP, va("PLAYING: %s", jukeboxMusicName));
+				slidetime -= 1;
+			}
 			else
-			{
-				for (INT32 i = 0; jukeboxMusicName[i] != '\0'; i++)
-				{
-					V_DrawThinString(((BASEVIDWIDTH/5)+1)+tstrw, 60, V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP, "PLAYING: ");
-					V_DrawThinString(((BASEVIDWIDTH/5)+1)+(tstrw+3), 60, V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP, va("%d", jukeboxMusicName[i]));
-				}
-			}		
+				initJukeboxHUD = false;
 		}
+
+		// Apply Variables and Render Things //
+		// The Box
+		V_DrawFillConsoleMap(
+			((BASEVIDWIDTH/5)+(boxw-(strlen(jukeboxMusicName) < 18 ? 0 : strlen(jukeboxMusicName)+30))), 		// X Width
+			(45),																					  	   		// Y Height
+			(130+(strlen(jukeboxMusicName) < 18 ? 0 : strlen(jukeboxMusicName)+30)),					  		// Box Width
+			(25),																					  	  		// Box Height
+			(chosenColor|V_SNAPTORIGHT|V_HUDTRANSHALF));											  	 		// Box Flags
+		
+		// The Strings
+		V_DrawString(
+			(((BASEVIDWIDTH/4)+20)+(strw-(strlen(jukeboxMusicName) < 18 ? 0 : strlen(jukeboxMusicName)-5))), 	// String Width
+			(45),																						   	    // String Height
+			(V_SNAPTORIGHT|V_ALLOWLOWERCASE), 															   	    // String Flags
+			("JUKEBOX"));																				        // String
+		
+		V_DrawThinString(
+			(((((BASEVIDWIDTH/5)+1)+tstrw)-(strlen(jukeboxMusicName) < 18 ? 0 : strlen(jukeboxMusicName)+30))), // String Width
+			(60),																						   	    // String Height
+			(V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP), 														// String Flags
+			(va("PLAYING: %s", jukeboxMusicName)));																// String
 	}
 
 	if (!cv_jukeboxhud.value || !jukeboxMusicPlaying)
@@ -2847,15 +2841,7 @@ static void ST_overlayDrawer(void)
 		ST_drawPowerupHUD(); // same as it ever was...
 
 	if (!(netgame || multiplayer) || !hu_showscores)
-	{
-		INT32 hooklistindex = splitscreen && stplyr == &players[secondarydisplayplayer] ? 1 : 0;
-		if (renderisnewtic)
-		{
-			LUA_HUD_ClearDrawList(luahuddrawlist_game[hooklistindex]);
-			LUA_HUDHOOK(game);
-		}
-		LUA_HUD_DrawList(luahuddrawlist_game[hooklistindex]);
-	}
+		LUA_HUDHOOK(game);
 
 	// draw level title Tails
 	if (stagetitle && (!WipeInAction) && (!WipeStageTitle))

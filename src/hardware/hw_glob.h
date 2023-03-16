@@ -74,6 +74,8 @@ typedef struct gl_vissprite_s
 	float spritexscale, spriteyscale;
 	float spritexoffset, spriteyoffset;
 
+	skincolornum_t color;
+
 	UINT32 renderflags;
 	UINT8 rotateflags;
 
@@ -81,6 +83,8 @@ typedef struct gl_vissprite_s
 	boolean precip; // Tails 08-25-2002
 	boolean rotated;
 	UINT8 translucency;       //alpha level 0-255
+
+	angle_t angle; // for splats
 
 	//Hurdler: 25/04/2000: now support colormap in hardware mode
 	UINT8 *colormap;
@@ -105,7 +109,6 @@ void HWR_FreeExtraSubsectors(void);
 // hw_cache.c
 // --------
 RGBA_t *HWR_GetTexturePalette(void);
-
 void HWR_InitMapTextures(void);
 void HWR_LoadMapTextures(size_t pnumtextures);
 void HWR_FreeMapTextures(void);
@@ -134,7 +137,6 @@ void HWR_SetMapPalette(void);
 UINT32 HWR_CreateLightTable(UINT8 *lighttable);
 UINT32 HWR_GetLightTableID(extracolormap_t *colormap);
 void HWR_ClearLightTables(void);
-
 
 // --------
 // hw_draw.c

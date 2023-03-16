@@ -229,8 +229,6 @@ static tic_t cutscene_lasttextwrite = 0;
 // STJR Intro
 char stjrintro[9] = "STJRI000";
 
-static huddrawlist_h luahuddrawlist_title;
-
 //
 // This alters the text string cutscene_disptext.
 // Use the typical string drawing functions to display it.
@@ -3407,21 +3405,7 @@ void F_TitleScreenDrawer(void)
 	ST_drawJukebox(); // show us the music we're playing in the jukebox, if we are playing anything
 
 luahook:
-	// The title drawer is sometimes called without first being started
-	// In order to avoid use-before-initialization crashes, let's check and
-	// create the drawlist if it doesn't exist.
-	if (!LUA_HUD_IsDrawListValid(luahuddrawlist_title))
-	{
-		LUA_HUD_DestroyDrawList(luahuddrawlist_title);
-		luahuddrawlist_title = LUA_HUD_CreateDrawList();
-	}
-
-	if (renderisnewtic)
-	{
-		LUA_HUD_ClearDrawList(luahuddrawlist_title);
-		LUA_HUDHOOK(title);
-	}
-	LUA_HUD_DrawList(luahuddrawlist_title);
+	LUA_HUDHOOK(title);
 }
 
 // separate animation timer for backgrounds, since we also count

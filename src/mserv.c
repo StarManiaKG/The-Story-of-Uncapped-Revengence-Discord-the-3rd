@@ -274,6 +274,10 @@ Finish_update (void)
 
 	if (! done)
 		Finish_update();
+
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 }
 
 static void

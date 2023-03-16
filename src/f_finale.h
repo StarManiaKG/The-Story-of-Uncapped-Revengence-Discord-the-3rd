@@ -187,6 +187,9 @@ void F_WipeStageTitle(void);
 tic_t F_GetWipeLength(UINT8 wipetype);
 boolean F_WipeExists(UINT8 wipetype);
 
+// Stat stuff woooooooo
+extern consvar_t cv_preintroscene;
+
 enum
 {
 	wipe_credits_intermediate, // makes a good 0 I guess.

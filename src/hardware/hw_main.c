@@ -3678,13 +3678,9 @@ static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 	interpmobjstate_t interp = {0};
 
 	if (R_UsingFrameInterpolation() && !paused)
-	{
 		R_InterpolateMobjState(thing, rendertimefrac, &interp);
-	}
 	else
-	{
 		R_InterpolateMobjState(thing, FRACUNIT, &interp);
-	}
 
 	groundz = R_GetShadowZ(thing, &groundslope);
 
@@ -3791,24 +3787,16 @@ static void HWR_RotateSpritePolyToAim(gl_vissprite_t *spr, FOutVector *wallVerts
 		if (R_UsingFrameInterpolation() && !paused)
 		{
 			if (precip)
-			{
 				R_InterpolatePrecipMobjState((precipmobj_t *)spr->mobj, rendertimefrac, &interp);
-			}
 			else
-			{
 				R_InterpolateMobjState(spr->mobj, rendertimefrac, &interp);
-			}
 		}
 		else
 		{
 			if (precip)
-			{
 				R_InterpolatePrecipMobjState((precipmobj_t *)spr->mobj, FRACUNIT, &interp);
-			}
 			else
-			{
 				R_InterpolateMobjState(spr->mobj, FRACUNIT, &interp);
-			}
 		}
 
 		if (P_MobjFlip(spr->mobj) == -1)
@@ -5133,13 +5121,12 @@ static void HWR_ProjectSprite(mobj_t *thing)
 
 
 	if (R_UsingFrameInterpolation() && !paused)
-	{
 		R_InterpolateMobjState(thing, rendertimefrac, &interp);
-	}
 	else
-	{
 		R_InterpolateMobjState(thing, FRACUNIT, &interp);
-	}
+
+	if (interp.spritexscale < 1 || interp.spriteyscale < 1)
+		return;
 
 	this_scale = FIXED_TO_FLOAT(thing->scale);
 	spritexscale = FIXED_TO_FLOAT(thing->spritexscale);
@@ -5320,11 +5307,24 @@ static void HWR_ProjectSprite(mobj_t *thing)
 
 		if (caster && !P_MobjWasRemoved(caster))
 		{
-			fixed_t groundz = R_GetShadowZ(thing, NULL);
-			fixed_t floordiff = abs(((thing->eflags & MFE_VERTICALFLIP) ? caster->height : 0) + caster->z - groundz);
+			interpmobjstate_t casterinterp = { 0 };
+			fixed_t groundz;
+			fixed_t floordiff;
+
+			if (R_UsingFrameInterpolation() && !paused)
+			{
+				R_InterpolateMobjState(caster, rendertimefrac, &casterinterp);
+			}
+			else
+			{
+				R_InterpolateMobjState(caster, FRACUNIT, &casterinterp);
+			}
+
+			groundz = R_GetShadowZ(thing, NULL);
+			floordiff = abs(((thing->eflags & MFE_VERTICALFLIP) ? caster->height : 0) + casterinterp.z - groundz);
 
 			shadowheight = FIXED_TO_FLOAT(floordiff);
-			shadowscale = FIXED_TO_FLOAT(FixedMul(FRACUNIT - floordiff/640, caster->scale));
+			shadowscale = FIXED_TO_FLOAT(FixedMul(FRACUNIT - floordiff/640, casterinterp.scale));
 
 			if (splat)
 				spritexscale *= shadowscale;
@@ -5335,43 +5335,52 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	this_xscale = spritexscale * this_scale;
 	this_yscale = spriteyscale * this_scale;
 
-	if (flip)
+	if (splat)
 	{
-		x1 = (FIXED_TO_FLOAT(spr_width - spr_offset) * this_xscale);
-		x2 = (FIXED_TO_FLOAT(spr_offset) * this_xscale);
+		z1 = z2 = tr_y;
+		x1 = x2 = tr_x;
+		gz = gzt = interp.z;
 	}
 	else
 	{
-		x1 = (FIXED_TO_FLOAT(spr_offset) * this_xscale);
-		x2 = (FIXED_TO_FLOAT(spr_width - spr_offset) * this_xscale);
-	}
+		if (flip)
+		{
+			x1 = (FIXED_TO_FLOAT(spr_width - spr_offset) * this_xscale);
+			x2 = (FIXED_TO_FLOAT(spr_offset) * this_xscale);
+		}
+		else
+		{
+			x1 = (FIXED_TO_FLOAT(spr_offset) * this_xscale);
+			x2 = (FIXED_TO_FLOAT(spr_width - spr_offset) * this_xscale);
+		}
 
-	// test if too close
-/*
-	if (papersprite)
-	{
-		z1 = tz - x1 * angle_scalez;
-		z2 = tz + x2 * angle_scalez;
+		// test if too close
+		/*
+		if (papersprite)
+		{
+			z1 = tz - x1 * angle_scalez;
+			z2 = tz + x2 * angle_scalez;
 
-		if (max(z1, z2) < ZCLIP_PLANE)
-			return;
-	}
-*/
+			if (max(z1, z2) < ZCLIP_PLANE)
+				return;
+		}
+		*/
 
-	z1 = tr_y + x1 * rightsin;
-	z2 = tr_y - x2 * rightsin;
-	x1 = tr_x + x1 * rightcos;
-	x2 = tr_x - x2 * rightcos;
+		z1 = tr_y + x1 * rightsin;
+		z2 = tr_y - x2 * rightsin;
+		x1 = tr_x + x1 * rightcos;
+		x2 = tr_x - x2 * rightcos;
 
-	if (vflip)
-	{
-		gz = FIXED_TO_FLOAT(interp.z + thing->height) - (FIXED_TO_FLOAT(spr_topoffset) * this_yscale);
-		gzt = gz + (FIXED_TO_FLOAT(spr_height) * this_yscale);
-	}
-	else
-	{
-		gzt = FIXED_TO_FLOAT(interp.z) + (FIXED_TO_FLOAT(spr_topoffset) * this_yscale);
-		gz = gzt - (FIXED_TO_FLOAT(spr_height) * this_yscale);
+		if (vflip)
+		{
+			gz = FIXED_TO_FLOAT(interp.z + thing->height) - (FIXED_TO_FLOAT(spr_topoffset) * this_yscale);
+			gzt = gz + (FIXED_TO_FLOAT(spr_height) * this_yscale);
+		}
+		else
+		{
+			gzt = FIXED_TO_FLOAT(interp.z) + (FIXED_TO_FLOAT(spr_topoffset) * this_yscale);
+			gz = gzt - (FIXED_TO_FLOAT(spr_height) * this_yscale);
+		}
 	}
 
 	if (thing->subsector->sector->cullheight)
@@ -5388,31 +5397,33 @@ static void HWR_ProjectSprite(mobj_t *thing)
 
 	if (heightsec != -1 && phs != -1) // only clip things which are in special sectors
 	{
+		float top = gzt;
+		float bottom = FIXED_TO_FLOAT(interp.z);
+
+		if (R_ThingIsFloorSprite(thing))
+			top = bottom;
+
 		if (gl_viewz < FIXED_TO_FLOAT(sectors[phs].floorheight) ?
-		FIXED_TO_FLOAT(interp.z) >= FIXED_TO_FLOAT(sectors[heightsec].floorheight) :
-		gzt < FIXED_TO_FLOAT(sectors[heightsec].floorheight))
+		bottom >= FIXED_TO_FLOAT(sectors[heightsec].floorheight) :
+		top < FIXED_TO_FLOAT(sectors[heightsec].floorheight))
 			return;
 		if (gl_viewz > FIXED_TO_FLOAT(sectors[phs].ceilingheight) ?
-		gzt < FIXED_TO_FLOAT(sectors[heightsec].ceilingheight) && gl_viewz >= FIXED_TO_FLOAT(sectors[heightsec].ceilingheight) :
-		FIXED_TO_FLOAT(interp.z) >= FIXED_TO_FLOAT(sectors[heightsec].ceilingheight))
+		top < FIXED_TO_FLOAT(sectors[heightsec].ceilingheight) && gl_viewz >= FIXED_TO_FLOAT(sectors[heightsec].ceilingheight) :
+		bottom >= FIXED_TO_FLOAT(sectors[heightsec].ceilingheight))
 			return;
 	}
 
 	if ((thing->flags2 & MF2_LINKDRAW) && thing->tracer)
 	{
-		interpmobjstate_t tracer_interp = {};
+		interpmobjstate_t tracer_interp = { 0 };
 
 		if (! R_ThingVisible(thing->tracer))
 			return;
 
 		if (R_UsingFrameInterpolation() && !paused)
-		{
 			R_InterpolateMobjState(thing->tracer, rendertimefrac, &tracer_interp);
-		}
 		else
-		{
 			R_InterpolateMobjState(thing->tracer, FRACUNIT, &tracer_interp);
-		}
 
 		// calculate tz for tracer, same way it is calculated for this sprite
 		// transform the origin point
@@ -5472,6 +5483,10 @@ static void HWR_ProjectSprite(mobj_t *thing)
 		vis->gpatch = (patch_t *)W_CachePatchNum(sprframe->lumppat[rot], PU_SPRITE);
 
 	vis->mobj = thing;
+	if ((thing->flags2 & MF2_LINKDRAW) && thing->tracer && thing->color == SKINCOLOR_NONE)
+		vis->color = thing->tracer->color;
+	else
+		vis->color = thing->color;
 
 	//Hurdler: 25/04/2000: now support colormap in hardware mode
 	if ((vis->mobj->flags & (MF_ENEMY|MF_BOSS)) && (vis->mobj->flags2 & MF2_FRET) && !(vis->mobj->flags & MF_GRENADEBOUNCE) && (leveltime & 1)) // Bosses "flash"
@@ -5481,13 +5496,13 @@ static void HWR_ProjectSprite(mobj_t *thing)
 		else if (vis->mobj->type == MT_METALSONIC_BATTLE)
 			vis->colormap = R_GetTranslationColormap(TC_METALSONIC, 0, GTC_CACHE);
 		else
-			vis->colormap = R_GetTranslationColormap(TC_BOSS, vis->mobj->color, GTC_CACHE);
+			vis->colormap = R_GetTranslationColormap(TC_BOSS, vis->color, GTC_CACHE);
 	}
-	else if (thing->color)
+	else if (vis->color)
 	{
 		// New colormap stuff for skins Tails 06-07-2002
 		if (thing->colorized)
-			vis->colormap = R_GetTranslationColormap(TC_RAINBOW, thing->color, GTC_CACHE);
+			vis->colormap = R_GetTranslationColormap(TC_RAINBOW, vis->color, GTC_CACHE);
 		else if (thing->player && thing->player->dashmode >= DASHMODE_THRESHOLD
 			&& (thing->player->charflags & SF_DASHMODE)
 			&& ((leveltime/2) & 1))
@@ -5495,15 +5510,15 @@ static void HWR_ProjectSprite(mobj_t *thing)
 			if (thing->player->charflags & SF_MACHINE)
 				vis->colormap = R_GetTranslationColormap(TC_DASHMODE, 0, GTC_CACHE);
 			else
-				vis->colormap = R_GetTranslationColormap(TC_RAINBOW, thing->color, GTC_CACHE);
+				vis->colormap = R_GetTranslationColormap(TC_RAINBOW, vis->color, GTC_CACHE);
 		}
 		else if (thing->skin && thing->sprite == SPR_PLAY) // This thing is a player!
 		{
 			size_t skinnum = (skin_t*)thing->skin-skins;
-			vis->colormap = R_GetTranslationColormap((INT32)skinnum, thing->color, GTC_CACHE);
+			vis->colormap = R_GetTranslationColormap((INT32)skinnum, vis->color, GTC_CACHE);
 		}
 		else
-			vis->colormap = R_GetTranslationColormap(TC_DEFAULT, vis->mobj->color ? vis->mobj->color : SKINCOLOR_CYAN, GTC_CACHE);
+			vis->colormap = R_GetTranslationColormap(TC_DEFAULT, vis->color ? vis->color : SKINCOLOR_CYAN, GTC_CACHE);
 	}
 	else
 		vis->colormap = NULL;
@@ -5518,6 +5533,8 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	vis->vflip = vflip;
 
 	vis->precip = false;
+
+	vis->angle = interp.angle;
 }
 
 #ifdef HWPRECIP
@@ -5551,13 +5568,9 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 
 	// do interpolation
 	if (R_UsingFrameInterpolation() && !paused)
-	{
 		R_InterpolatePrecipMobjState(thing, rendertimefrac, &interp);
-	}
 	else
-	{
 		R_InterpolatePrecipMobjState(thing, FRACUNIT, &interp);
-	}
 
 	// transform the origin point
 	tr_x = FIXED_TO_FLOAT(interp.x) - gl_viewx;
@@ -5629,6 +5642,7 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 	vis->gpatch = (patch_t *)W_CachePatchNum(sprframe->lumppat[rot], PU_SPRITE);
 	vis->flip = flip;
 	vis->mobj = (mobj_t *)thing;
+	vis->color = SKINCOLOR_NONE;
 
 	vis->colormap = NULL;
 

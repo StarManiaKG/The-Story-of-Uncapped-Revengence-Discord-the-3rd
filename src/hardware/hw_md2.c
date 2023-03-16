@@ -1349,24 +1349,26 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		interpmobjstate_t interp;
 
 		if (R_UsingFrameInterpolation() && !paused)
-		{
 			R_InterpolateMobjState(spr->mobj, rendertimefrac, &interp);
-		}
 		else
-		{
 			R_InterpolateMobjState(spr->mobj, FRACUNIT, &interp);
-		}
 
 		// Apparently people don't like jump frames like that, so back it goes
 		//if (tics > durs)
 			//durs = tics;
 
+		INT32 blendmode;
+		if (spr->mobj->frame & FF_BLENDMASK)
+			blendmode = ((spr->mobj->frame & FF_BLENDMASK) >> FF_BLENDSHIFT) + 1;
+		else
+			blendmode = spr->mobj->blendmode;
+
 		if (spr->mobj->frame & FF_TRANSMASK)
-			Surf.PolyFlags = HWR_SurfaceBlend(spr->mobj->blendmode, (spr->mobj->frame & FF_TRANSMASK)>>FF_TRANSSHIFT, &Surf);
+			Surf.PolyFlags = HWR_SurfaceBlend(blendmode, (spr->mobj->frame & FF_TRANSMASK)>>FF_TRANSSHIFT, &Surf);
 		else
 		{
 			Surf.PolyColor.s.alpha = (spr->mobj->flags2 & MF2_SHADOW) ? 0x40 : 0xff;
-			Surf.PolyFlags = HWR_GetBlendModeFlag(spr->mobj->blendmode);
+			Surf.PolyFlags = HWR_GetBlendModeFlag(blendmode);
 		}
 
 		// don't forget to enable the depth test because we can't do this
@@ -1656,9 +1658,8 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 #ifdef USE_FTRANSFORM_MIRROR
 		p.mirror = atransform.mirror; // from Kart
 #endif
-
-		if (HWR_UseShader())
-			HWD.pfnSetShader(HWR_GetShaderFromTarget(SHADER_MODEL));
+		
+		HWD.pfnSetShader(SHADER_MODEL);	// model shader
 		HWD.pfnDrawModel(md2->model, frame, durs, tics, nextFrame, &p, finalscale, flip, hflip, &Surf);
 	}
 

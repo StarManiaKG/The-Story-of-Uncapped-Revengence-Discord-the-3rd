@@ -45,6 +45,9 @@
 #include "m_cheat.h"
 // Thok camera snap (ctrl-f "chalupa")
 #include "g_input.h"
+// FPS things
+#include "r_main.h"
+#include "r_fps.h"
 // Jukebox Things
 #include "m_menu.h"
 
@@ -11095,6 +11098,21 @@ static void P_MinecartThink(player_t *player)
 					S_StartSound(minecart, minecart->info->activesound);
 				}
 			}
+
+			// Mark interpolation; the old positions need to be relative to the displacement from the minecart _after_ it's moved.
+			// This isn't quite correct (it captures the landing wobble) but it works well enough
+			if (detleft)
+			{
+				detleft->old_x = detleft->x - (minecart->old_x - minecart->old_x2);
+				detleft->old_y = detleft->y - (minecart->old_y - minecart->old_y2);
+				detleft->old_z = detleft->z - (minecart->old_z - minecart->old_z2);
+			}
+			if (detright)
+			{
+				detright->old_x = detright->x - (minecart->old_x - minecart->old_x2);
+				detright->old_y = detright->y - (minecart->old_y - minecart->old_y2);
+				detright->old_z = detright->z - (minecart->old_z - minecart->old_z2);
+			}
 		}
 		else
 		{
@@ -11354,6 +11372,7 @@ static void P_DoMetalJetFume(player_t *player, mobj_t *fume)
 	tic_t dashmode = min(player->dashmode, DASHMODE_MAX);
 	boolean underwater = mo->eflags & MFE_UNDERWATER;
 	statenum_t stat = fume->state-states;
+	boolean resetinterp = false;
 
 	if (panim != PA_WALK && panim != PA_RUN && panim != PA_DASH) // turn invisible when not in a coherent movement state
 	{
@@ -11405,6 +11424,7 @@ static void P_DoMetalJetFume(player_t *player, mobj_t *fume)
 	{
 		P_SetMobjState(fume, (stat = fume->info->seestate));
 		P_SetScale(fume, mo->scale);
+		resetinterp = true;
 	}
 
 	if (dashmode > DASHMODE_THRESHOLD && stat != fume->info->seestate) // If in dashmode, grow really big and flash
@@ -11448,6 +11468,7 @@ static void P_DoMetalJetFume(player_t *player, mobj_t *fume)
 	fume->y = mo->y + P_ReturnThrustY(fume, angle, dist);
 	fume->z = mo->z + heightoffset - (fume->height >> 1);
 	P_SetThingPosition(fume);
+	if (resetinterp) R_ResetMobjInterpolationState(fume);
 
 	// If dashmode is high enough, spawn a trail
 	if (player->normalspeed >= skins[player->skin].normalspeed*2)

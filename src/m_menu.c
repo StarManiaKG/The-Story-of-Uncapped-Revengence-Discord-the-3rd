@@ -1675,32 +1675,32 @@ enum
 static menuitem_t OP_DiscordOptionsMenu[] =
 {
 	{IT_HEADER,							NULL, 	"Discord Rich Presence",		NULL,					 	  	        0},
-	{IT_STRING | IT_CVAR,				NULL, 		"Rich Presence",			&cv_discordrp,			 	  		    7},
-	{IT_STRING | IT_CVAR,				NULL, 		"Streamer Mode",			&cv_discordstreamer,	 	 		   12},
+	{IT_STRING | IT_CVAR,				NULL, 		"Rich Presence",			&cv_discordrp,			 	  		    6},
+	{IT_STRING | IT_CVAR,				NULL, 		"Streamer Mode",			&cv_discordstreamer,	 	 		   11},
 
-	{IT_HEADER,							NULL,	"Main Rich Presence Settings",	NULL,					 	 		   17},
-	{IT_STRING | IT_CVAR,				NULL, 		"Ask To Join",				&cv_discordasks,		 	 		   24},
-	{IT_STRING | IT_CVAR,				NULL,  "Ask to Join Permissions",		&cv_discordinvites,		 	 		   29},
+	{IT_HEADER,							NULL,	"Main Rich Presence Settings",	NULL,					 	 		   20},
+	{IT_STRING | IT_CVAR,				NULL, 		"Ask To Join",				&cv_discordasks,		 	 		   26},
+	{IT_STRING | IT_CVAR,				NULL,  "Ask to Join Permissions",		&cv_discordinvites,		 	 		   31},
 
-	{IT_STRING | IT_CVAR,				NULL, 		"Show on Status",			&cv_discordshowonstatus, 	 	       39},
+	{IT_STRING | IT_CVAR,				NULL, 		"Show on Status",			&cv_discordshowonstatus, 	 	       41},
 	
-	{IT_HEADER,							NULL,	"Misc. Rich Presence Settings",	NULL,					 	 		   44},
-	{IT_STRING | IT_CVAR,				NULL, 		"Memes on Status",			&cv_discordstatusmemes,	 	 		   51},
-	{IT_STRING | IT_CVAR,				NULL, 		"Skin Image Type",			&cv_discordcharacterimagetype,		   56},
+	{IT_HEADER,							NULL,	"Misc. Rich Presence Settings",	NULL,					 	 		   50},
+	{IT_STRING | IT_CVAR,				NULL, 		"Memes on Status",			&cv_discordstatusmemes,	 	 		   56},
+	{IT_STRING | IT_CVAR,				NULL, 		"Skin Image Type",			&cv_discordcharacterimagetype,		   61},
 
 	// Custom Things
-	{IT_HEADER,							NULL, "Custom Discord Status",			NULL,					 	 		   61},
-	{IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 		"Header",			        &cv_customdiscorddetails, 	 		   68},
-	{IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 		"State",			        &cv_customdiscordstate, 			   82},
+	{IT_HEADER,							NULL, "Custom Discord Status",			NULL,					 	 		   70},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 		"Header",			        &cv_customdiscorddetails, 	 		   76},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 		"State",			        &cv_customdiscordstate, 			   90},
 
-	{IT_STRING | IT_CVAR,		        NULL, 	"Large Image Type",				&cv_customdiscordlargeimagetype,      102},
-    {IT_STRING | IT_CVAR,		        NULL, 	"Small Image Type",				&cv_customdiscordsmallimagetype,      107},
+	{IT_STRING | IT_CVAR,		        NULL, 	"Large Image Type",				&cv_customdiscordlargeimagetype,      104},
+    {IT_STRING | IT_CVAR,		        NULL, 	"Small Image Type",				&cv_customdiscordsmallimagetype,      119},
 
-	{IT_STRING | IT_CVAR,		        NULL, 	"Large Image",					NULL, 								  117}, // Handled in discord_option_onchange
-	{IT_STRING | IT_CVAR,		        NULL, 	"Small Image",					NULL, 								  122}, // Also handled in discord_option_onchange
+	{IT_STRING | IT_CVAR,		        NULL, 	"Large Image",					NULL, 								  119}, // Handled in discord_option_onchange
+	{IT_STRING | IT_CVAR,		        NULL, 	"Small Image",					NULL, 								  124}, // Also handled in discord_option_onchange
 
-    {IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 	"Large Image Text",				&cv_customdiscordlargeimagetext,      132},
-    {IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 	"Small Image Text",				&cv_customdiscordsmallimagetext,      146},
+    {IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 	"Large Image Text",				&cv_customdiscordlargeimagetext,      134},
+    {IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 	"Small Image Text",				&cv_customdiscordsmallimagetext,      148},
 
     // Let's Output Our Stuff
 	{IT_STRING | IT_SUBMENU,			NULL, 		"Output",					&OP_CustomStatusOutputDef,	          162},
@@ -1824,22 +1824,25 @@ static menuitem_t OP_MonitorToggleMenu[] =
 // STAR OPTIONS LETS GOOOOOOOOOOOOO
 static menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 {
-	{IT_HEADER, 			NULL, 	"Savedata Options", 		NULL, 					  	0},
-	{IT_STRING | IT_CVAR,	NULL,	"Continues",				&cv_continues,		  		7},
+	{IT_HEADER, 			NULL, 	"Game Options", 			NULL, 					  	0},
+	{IT_STRING | IT_CVAR,	NULL,	"Pre-Intro Scene",			&cv_preintroscene,		  	6},
 
-	{IT_HEADER, 			NULL, 	"Extra Server Options", 	NULL,					   14},
+	{IT_HEADER, 			NULL, 	"Savedata Options", 		NULL, 					   15},
+	{IT_STRING | IT_CVAR,	NULL,	"Continues",				&cv_continues,		  	   21},
+
+	{IT_HEADER, 			NULL, 	"Server Options", 			NULL,					   30},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,	
-							NULL,   "Holepunch Server",  		&cv_holepunchserver,	   20},
+							NULL,   "Holepunch Server",  		&cv_holepunchserver,	   36},
 	
-	{IT_STRING | IT_CVAR,   NULL,   "Show Connecting Players",  &cv_noticedownload,        34},
-	{IT_STRING | IT_CVAR,   NULL,   "Max File Transfer (kB)", 	&cv_maxsend,     	       39},
-	{IT_STRING | IT_CVAR,   NULL,   "File Transfer Packet Rate",&cv_downloadspeed,     	   44},
+	{IT_STRING | IT_CVAR,   NULL,   "Show Connecting Players",  &cv_noticedownload,        50},
+	{IT_STRING | IT_CVAR,   NULL,   "Max File Transfer (kB)", 	&cv_maxsend,     	       55},
+	{IT_STRING | IT_CVAR,   NULL,   "File Transfer Packet Rate",&cv_downloadspeed,     	   60},
 
-	{IT_STRING | IT_CVAR,   NULL,   "Player Setup While Moving",&cv_movingplayersetup,	   54},
+	{IT_STRING | IT_CVAR,   NULL,   "Player Setup While Moving",&cv_movingplayersetup,	   70},
 
-	{IT_HEADER, 			NULL, 	"Miscellanious Extras",     NULL,					   59},
-	{IT_STRING | IT_CALL, 	NULL, 	"Jukebox",				    M_Tsourdt3rdJukebox,   	   65},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Jukebox HUD",				&cv_jukeboxhud,   	       70},
+	{IT_HEADER, 			NULL, 	"Miscellanious Extras",     NULL,					   79},
+	{IT_STRING | IT_CALL, 	NULL, 	"Jukebox",				    M_Tsourdt3rdJukebox,   	   85},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Jukebox HUD",				&cv_jukeboxhud,   	       90},
 };
 static menuitem_t OP_Tsourdt3rdJukeboxMenu[] =
 {
@@ -1848,16 +1851,16 @@ static menuitem_t OP_Tsourdt3rdJukeboxMenu[] =
 
 enum
 {
-	op_usecontinues = 1,
+	op_continues = 3,
 
-	op_holepunchserver = 3,
+	op_holepunchserver = 5,
 	op_noticedownload,
 	op_maxsend,
 	op_downloadspeed,
 
 	op_movingplayeroptionswitch,
 
-	op_jukebox = 9,
+	op_jukebox = 11,
 	op_jukeboxhud,
 };
 
@@ -2439,7 +2442,7 @@ menu_t OP_DataOptionsDef = DEFAULTMENUSTYLE(
 	MTREE2(MN_OP_MAIN, MN_OP_DATA),
 	"M_DATA", OP_DataOptionsMenu, &OP_MainDef, 60, 30);
 
-//star stuff lol
+// star stuff lol
 menu_t OP_Tsourdt3rdOptionsDef = DEFAULTSCROLLMENUSTYLE(
 	MTREE2(MN_OP_MAIN, MN_OP_TSOURDT3RD),
 	"M_TSOURDT3RD", OP_Tsourdt3rdOptionsMenu, &OP_MainDef, 30, 30);
@@ -8389,12 +8392,13 @@ static void M_DrawSoundTest(void)
 
 	y = (BASEVIDWIDTH-(vid.width/vid.dupx))/2;
 
-	V_DrawFill(y, 20, vid.width/vid.dupx, 24, 159);
+	V_DrawFill(y, 20, (vid.width/vid.dupx)+12, 24, 159);
 	{
 		static fixed_t st_scroll = -FRACUNIT;
 		const char* titl;
 		x = 16;
 		V_DrawString(x, 10, 0, "NOW PLAYING:");
+
 		if (curplaying)
 		{
 			if (curplaying->alttitle[0])
@@ -8404,7 +8408,7 @@ static void M_DrawSoundTest(void)
 		}
 		else
 			titl = "None - ";
-		
+
 		i = V_LevelNameWidth(titl);
 
 		st_scroll += renderdeltatics;
@@ -8426,7 +8430,7 @@ static void M_DrawSoundTest(void)
 			V_DrawRightAlignedThinString(BASEVIDWIDTH-16, 46, V_ALLOWLOWERCASE, curplaying->authors);
 	}
 
-	V_DrawFill(165, 60, 140, 112, 159);
+	V_DrawFill(165, 60, 140+15, 112, 159);
 
 	{
 		INT32 t, b, q, m = 112;
@@ -8461,8 +8465,6 @@ static void M_DrawSoundTest(void)
 			}
 		}
 
-		V_DrawFill(165+140-1, 60 + i, 1, m, 0);
-
 		if (t != 0)
 			V_DrawString(165+140+4, 60+4 - (skullAnimCounter/5), V_YELLOWMAP, "\x1A");
 
@@ -8475,7 +8477,7 @@ static void M_DrawSoundTest(void)
 		while (t <= b)
 		{
 			if (t == st_sel)
-				V_DrawFill(165, y-4, 140-1, 16, 155);
+				V_DrawFill(165, y-4, 140-1+16, 16, 155);
 			if (!soundtestdefs[t]->allowed)
 			{
 				V_DrawString(x, y, (t == st_sel ? V_YELLOWMAP : 0)|V_ALLOWLOWERCASE, "???");
@@ -8496,23 +8498,33 @@ static void M_DrawSoundTest(void)
 				{
 					sfxstr = (cv_soundtest.value) ? S_sfx[cv_soundtest.value].name : "N/A";
 					i = V_StringWidth(sfxstr, 0);
-					V_DrawFill(165+140-9-i, y-4, i+8, 16, 150);
-					V_DrawRightAlignedString(165+140-5, y, V_YELLOWMAP, sfxstr);
+					V_DrawFill(165+140-9-i+16, y-4, i+8, 16, 150);
+					V_DrawRightAlignedString(165+140-5+16, y, V_YELLOWMAP, sfxstr);
 				}
 			}
 			else
 			{
-				V_DrawString(x, y, (t == st_sel ? V_YELLOWMAP : 0)|V_ALLOWLOWERCASE, soundtestdefs[t]->title);
+				// Draw Strings
+				(strlen(soundtestdefs[t]->title) < 17 ?
+					// Normal Strings
+					V_DrawString(x, y, (t == st_sel ? V_YELLOWMAP : 0)|V_ALLOWLOWERCASE, soundtestdefs[t]->title) :
+
+					// Thin Strings
+					V_DrawThinString(x, y, (t == st_sel ? V_YELLOWMAP : 0)|V_ALLOWLOWERCASE, soundtestdefs[t]->title));
+
 				if (curplaying == soundtestdefs[t])
 				{
-					V_DrawFill(165+140-9, y-4, 8, 16, 150);
-					//V_DrawCharacter(165+140-8, y, '\x19' | V_YELLOWMAP, false);
-					V_DrawFixedPatch((165+140-9)<<FRACBITS, (y<<FRACBITS)-(bounce*4), FRACUNIT, 0, hu_font['\x19'-HU_FONTSTART], V_GetStringColormap(V_YELLOWMAP));
+					V_DrawFill(165+140-9+24, y-4, 8, 16, 150);
+					
+					//V_DrawCharacter(165+140-8+24, y, '\x19' | V_YELLOWMAP, false);
+					V_DrawFixedPatch((165+140-9+24)<<FRACBITS, (y<<FRACBITS)-(bounce*4), FRACUNIT, 0, hu_font['\x19'-HU_FONTSTART], V_GetStringColormap(V_YELLOWMAP));
 				}
 			}
 			t++;
 			y += 16;
 		}
+
+		V_DrawFill(165+140-1+15, 60 + i, 1, m, 0); // White Scroll Bar
 	}
 }
 
@@ -14388,7 +14400,7 @@ static void M_Tsourdt3rdOptions(INT32 choice)
 {
 	(void)choice;
 
-	OP_Tsourdt3rdOptionsMenu[op_usecontinues].status =
+	OP_Tsourdt3rdOptionsMenu[op_continues].status =
 		((!(Playing() && playeringame[consoleplayer])) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
 	
 	if ((splitscreen || (netgame && !server)) || currentMenu == &MP_SplitServerDef)
@@ -14541,7 +14553,7 @@ static void M_DrawTsourdt3rdJukebox(void)
 
 	y = (BASEVIDWIDTH-(vid.width/vid.dupx))/2;
 
-	V_DrawFill(y, 20, vid.width/vid.dupx, 24, 159);
+	V_DrawFill(y, 20, (vid.width/vid.dupx)+12, 24, 159);
 	{
 		static fixed_t st_scroll = -FRACUNIT;
 		const char* titl;
@@ -14579,7 +14591,7 @@ static void M_DrawTsourdt3rdJukebox(void)
 			V_DrawRightAlignedThinString(BASEVIDWIDTH-16, 46, V_ALLOWLOWERCASE, curplaying->authors);
 	}
 
-	V_DrawFill(165, 60, 140, 112, 159);
+	V_DrawFill(165, 60, 140+15, 112, 159);
 
 	{
 		INT32 t, b, q, m = 112;
@@ -14614,8 +14626,6 @@ static void M_DrawTsourdt3rdJukebox(void)
 			}
 		}
 
-		V_DrawFill(165+140-1, 60 + i, 1, m, 0);
-
 		if (t != 0)
 			V_DrawString(165+140+4, 60+4 - (skullAnimCounter/5), V_YELLOWMAP, "\x1A");
 
@@ -14628,7 +14638,7 @@ static void M_DrawTsourdt3rdJukebox(void)
 		while (t <= b)
 		{
 			if (t == st_sel)
-				V_DrawFill(165, y-4, 140-1, 16, 155);
+				V_DrawFill(165, y-4, 140-1+16, 16, 155);
 			if (!soundtestdefs[t]->allowed)
 			{
 				V_DrawString(x, y, (t == st_sel ? V_YELLOWMAP : 0)|V_ALLOWLOWERCASE, "???");
@@ -14649,8 +14659,8 @@ static void M_DrawTsourdt3rdJukebox(void)
 				{
 					sfxstr = (cv_soundtest.value) ? S_sfx[cv_soundtest.value].name : "N/A";
 					i = V_StringWidth(sfxstr, 0);
-					V_DrawFill(165+140-9-i, y-4, i+8, 16, 150);
-					V_DrawRightAlignedString(165+140-5, y, V_YELLOWMAP, sfxstr);
+					V_DrawFill(165+140-9-i+16, y-4, i+8, 16, 150);
+					V_DrawRightAlignedString(165+140-5+16, y, V_YELLOWMAP, sfxstr);
 				}
 			}
 			else
@@ -14665,14 +14675,17 @@ static void M_DrawTsourdt3rdJukebox(void)
 
 				if (curplaying == soundtestdefs[t])
 				{
-					V_DrawFill(165+140-9, y-4, 8, 16, 150);
-					V_DrawCharacter(165+140-8, y, '\x19' | V_YELLOWMAP, false);
-					V_DrawFixedPatch((165+140-9)<<FRACBITS, (y<<FRACBITS)-(bounce*4), FRACUNIT, 0, hu_font['\x19'-HU_FONTSTART], V_GetStringColormap(V_YELLOWMAP));
+					V_DrawFill(165+140-9+24, y-4, 8, 16, 150);
+					
+					//V_DrawCharacter(165+140-8+24, y, '\x19' | V_YELLOWMAP, false);
+					V_DrawFixedPatch((165+140-9+24)<<FRACBITS, (y<<FRACBITS)-(bounce*4), FRACUNIT, 0, hu_font['\x19'-HU_FONTSTART], V_GetStringColormap(V_YELLOWMAP));
 				}
 			}
 			t++;
 			y += 16;
 		}
+
+		V_DrawFill(165+140-1+15, 60 + i, 1, m, 0); // White Scroll Bar
 	}
 }
 
@@ -14723,13 +14736,13 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 			}
 			break;
 		case KEY_BACKSPACE:
+			M_ResetJukebox();
+
 			S_StopSounds();
 			S_StopMusic();
 			st_time = 0;
 
 			S_StartSound(NULL, sfx_skid);
-			
-			M_ResetJukebox();
 
 			cv_closedcaptioning.value = st_cc; // hack
 			cv_closedcaptioning.value = 1; // hack
@@ -14762,6 +14775,8 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 			}
 			break;
 		case KEY_ENTER:
+			M_ResetJukebox();
+			
 			S_StopSounds();
 			S_StopMusic();
 			st_time = 0;
@@ -14778,12 +14793,12 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 					}
 					else
 					{
-						snprintf(jukeboxMusicName, 64, "%s", curplaying->title);
-						snprintf(jukeboxMusicTrack, 7, "%s", curplaying->name);
-
+						strcpy(jukeboxMusicName, curplaying->title);
+						strcpy(jukeboxMusicTrack, curplaying->name);
+	
 						S_ChangeMusicInternal(jukeboxMusicTrack, !curplaying->stoppingtics);
 						CONS_Printf(M_GetText("Loaded track \x82%s\x80 into the Jukebox.\n"), jukeboxMusicName);
-						
+
 						jukeboxMusicPlaying = true;
 						initJukeboxHUD = true;
 					}
@@ -14816,13 +14831,14 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 			M_ClearMenus(true);
 	}
 }
+
 void M_ResetJukebox(void)
 {
 	curplaying = NULL;
 	jukeboxMusicPlaying = false;
 	initJukeboxHUD = false;
 
-	for (INT32 i = 0; jukeboxMusicName[i] != '\0'; i++) jukeboxMusicName[i] = '\0';	
+	for (INT32 i = 0; jukeboxMusicName[i] != '\0'; i++) jukeboxMusicName[i] = '\0';
 	for (INT32 i = 0; jukeboxMusicTrack[i] != '\0'; i++) jukeboxMusicTrack[i] = '\0';
 
 	// The Following Section Prevents Memory Leaks (Thanks SRB2 Discord!)
