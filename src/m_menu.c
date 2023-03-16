@@ -14237,7 +14237,9 @@ static void M_DrawDiscordMenu(void)
 {
 	M_DrawGenericScrollMenu();
 	
-	V_DrawCenteredString(BASEVIDWIDTH/2, 200, ((strcmp(discordUserName, " ") == 1) ? V_GREENMAP : V_REDMAP), ((strcmp(discordUserName, " ") == 1) ? va("Connected to: %s", discordUserName) : "Not Connected"));
+	V_DrawCenteredString(BASEVIDWIDTH/2, 200,																// String Width and Height
+		((strcmp(discordUserName, " ") == 0) ? V_REDMAP : V_GREENMAP),										// String Flags
+		((strcmp(discordUserName, " ") == 0) ? "Not Connected" : va("Connected to: %s", discordUserName))); // Show the Player's Name, Or Show We're Not Connected
 }
 
 static void M_HandleDiscordRequests(INT32 choice)
