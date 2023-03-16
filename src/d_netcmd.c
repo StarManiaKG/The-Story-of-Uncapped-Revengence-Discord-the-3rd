@@ -965,7 +965,7 @@ void D_RegisterClientCommands(void)
 #endif
 
 	// Custom Funny Star Things :)
-	CV_RegisterVar(&cv_preintrowipe);
+	CV_RegisterVar(&cv_stjrintro);
 	
 	CV_RegisterVar(&cv_continues);
 	CV_RegisterVar(&cv_movingplayersetup);

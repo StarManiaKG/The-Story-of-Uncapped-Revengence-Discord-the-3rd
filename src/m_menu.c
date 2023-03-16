@@ -377,7 +377,7 @@ static patch_t *addonsp[NUM_EXT+5];
 static void M_Tsourdt3rdOptions(INT32 choice);
 
 boolean jukeboxMusicPlaying = false;
-char jukeboxMusicName[32+20+12] = "";
+char jukeboxMusicName[22+12] = "";
 char jukeboxMusicTrack[7] = "";
 static void M_Tsourdt3rdJukebox(INT32 choice);
 static void M_DrawTsourdt3rdJukebox(void);
@@ -1825,7 +1825,7 @@ static menuitem_t OP_MonitorToggleMenu[] =
 static menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 {
 	{IT_HEADER, 			NULL, 	"Game Options", 			NULL, 					  	0},
-	{IT_STRING | IT_CVAR,	NULL,	"Pre-Intro Scene",			&cv_preintroscene,		  	6},
+	{IT_STRING | IT_CVAR,	NULL,	"Sonic Team Jr Intro",		&cv_stjrintro,		  		6},
 
 	{IT_HEADER, 			NULL, 	"Savedata Options", 		NULL, 					   15},
 	{IT_STRING | IT_CVAR,	NULL,	"Continues",				&cv_continues,		  	   21},

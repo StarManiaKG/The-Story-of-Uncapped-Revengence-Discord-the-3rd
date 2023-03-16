@@ -2661,9 +2661,9 @@ void ST_drawJukebox(void)
 		// Apply Variables and Render Things //
 		// The Box
 		V_DrawFillConsoleMap(
-			((BASEVIDWIDTH/5)+(boxw-(strlen(jukeboxMusicName) < 18 ? 0 : strlen(jukeboxMusicName)+30))), 		// X Width
+			((BASEVIDWIDTH/5)+(boxw-(strlen(jukeboxMusicName) < 18 ? 0 : strlen(jukeboxMusicName)+36))), 		// X Width
 			(45),																					  	   		// Y Height
-			(130+(strlen(jukeboxMusicName) < 18 ? 0 : strlen(jukeboxMusicName)+30)),					  		// Box Width
+			(130+(strlen(jukeboxMusicName) < 18 ? 0 : strlen(jukeboxMusicName)+36)),					  		// Box Width
 			(25),																					  	  		// Box Height
 			(chosenColor|V_SNAPTORIGHT|V_HUDTRANSHALF));											  	 		// Box Flags
 		
@@ -2675,7 +2675,7 @@ void ST_drawJukebox(void)
 			("JUKEBOX"));																				        // String
 		
 		V_DrawThinString(
-			(((((BASEVIDWIDTH/5)+1)+tstrw)-(strlen(jukeboxMusicName) < 18 ? 0 : strlen(jukeboxMusicName)+30))), // String Width
+			(((((BASEVIDWIDTH/5)+1)+tstrw)-(strlen(jukeboxMusicName) < 18 ? 0 : strlen(jukeboxMusicName)+36))), // String Width
 			(60),																						   	    // String Height
 			(V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP), 														// String Flags
 			(va("PLAYING: %s", jukeboxMusicName)));																// String
