@@ -39,7 +39,7 @@
 #include "p_setup.h"
 #include "st_stuff.h" // hud hiding
 #include "fastcmp.h"
-#include "console.h"
+#include "command.h"
 
 #include "lua_hud.h"
 #include "lua_hook.h"
@@ -229,6 +229,10 @@ static tic_t cutscene_lasttextwrite = 0;
 // STJR Intro
 char stjrintro[9] = "STJRI000";
 
+// Star stuff yaya
+static CV_PossibleValue_t stjrintro_t[] = {{0, "Default"}, {1, "Pure Fat"}, {0, NULL}};
+consvar_t cv_stjrintro = CVAR_INIT ("stjrintro", "Default", CV_SAVE, stjrintro_t, NULL);
+
 //
 // This alters the text string cutscene_disptext.
 // Use the typical string drawing functions to display it.
@@ -316,7 +320,7 @@ const char *introtext[NUMINTROSCENES];
 
 static tic_t introscenetime[NUMINTROSCENES] =
 {
-	5*TICRATE,	// STJr Presents
+	5*TICRATE,					// STJr Presents
 	11*TICRATE + (TICRATE/2),	// Two months had passed since...
 	15*TICRATE + (TICRATE/2),	// As it was about to drain the rings...
 	14*TICRATE,					// What Sonic, Tails, and Knuckles...
@@ -340,6 +344,11 @@ void F_StartCustomCutscene(INT32 cutscenenum, boolean precutscene, boolean reset
 
 void F_StartIntro(void)
 {
+	if (!cv_stjrintro.value)
+		introscenetime[0] = 5*TICRATE;				   // This Game Should Not Be Sold
+	else
+		introscenetime[0] = (7*TICRATE + (TICRATE/2)); // Pure Fat		
+
 	if (!jukeboxMusicPlaying)
 		S_StopMusic();
 	S_StopSounds();
@@ -621,30 +630,131 @@ void F_IntroDrawer(void)
 		else
 			V_DrawScaledPatch(bgxoffs, 0, 0, background);
 	}
-	else if (intro_scenenum == 0) // STJr presents
+	else if (intro_scenenum == 0) // STJr Presents
 	{
-		if (intro_curtime > 1 && intro_curtime < (INT32)introscenetime[intro_scenenum])
+		if (!cv_stjrintro.value) // This Game Should Not Be Sold
 		{
-			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+			if (intro_curtime > 1 && intro_curtime < (INT32)introscenetime[intro_scenenum])
+			{
+				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 
-			if (intro_curtime < TICRATE-5) // Make the text shine!
-			{
-				sprintf(stjrintro, "STJRI%03u", intro_curtime-1);
-			}
-			else if (intro_curtime >= TICRATE-6 && intro_curtime < 2*TICRATE-20) // Pause on black screen for just a second
-			{
-				return;
-			}
-			else if (intro_curtime == 2*TICRATE-19)
-			{
-				// Fade in the text
-				// The text fade out is automatically handled when switching to a new intro scene
-				strncpy(stjrintro, "STJRI029", 9);
-				background = W_CachePatchName(stjrintro, PU_PATCH_LOWPRIORITY);
-				V_DrawSmallScaledPatch(bgxoffs, 84, 0, background);
-			}
+				if (intro_curtime < TICRATE-5) // Make the text shine!
+				{
+					sprintf(stjrintro, "STJRI%03u", intro_curtime-1);
+				}
+				else if (intro_curtime >= TICRATE-6 && intro_curtime < 2*TICRATE-20) // Pause on black screen for just a second
+				{
+					return;
+				}
+				else if (intro_curtime == 2*TICRATE-19)
+				{
+					// Fade in the text
+					// The text fade out is automatically handled when switching to a new intro scene
+					strncpy(stjrintro, "STJRI029", 9);
+					background = W_CachePatchName(stjrintro, PU_PATCH_LOWPRIORITY);
+					V_DrawSmallScaledPatch(bgxoffs, 84, 0, background);
+				}
 
-			if (!WipeInAction) // Draw the patch if not in a wipe
+				if (!WipeInAction) // Draw the patch if not in a wipe
+				{
+					background = W_CachePatchName(stjrintro, PU_PATCH_LOWPRIORITY);
+					V_DrawSmallScaledPatch(bgxoffs, 84, 0, background);
+				}
+			}
+		}
+		else // "Waaaaaaah" intro
+		{
+			strncpy(stjrintro, "STJRI029", 9);
+
+			if (finalecount-TICRATE/2 < 4*TICRATE+23) {
+				// aspect is FRACUNIT/2 for 4:3 (source) resolutions, smaller for 16:10 (SRB2) resolutions
+				fixed_t aspect = (FRACUNIT + (FRACUNIT*4/3 - FRACUNIT*vid.width/vid.height)/2)>>1;
+				fixed_t x,y;
+				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 2);
+				if (finalecount < 30) { // Cry!
+					if (finalecount < 4)
+						S_StopMusic();
+					if (finalecount == 4)
+						S_ChangeMusicInternal("_pure", false);
+					x = (BASEVIDWIDTH<<FRACBITS)/2 - FixedMul(334<<FRACBITS, aspect)/2;
+					y = (BASEVIDHEIGHT<<FRACBITS)/2 - FixedMul(358<<FRACBITS, aspect)/2;
+					V_DrawSciencePatch(x, y, 0, (patch = W_CachePatchName("WAHH1", PU_PATCH)), aspect);
+					W_UnlockCachedPatch(patch);
+					if (finalecount > 6) {
+						V_DrawSciencePatch(x, y, 0, (patch = W_CachePatchName("WAHH2", PU_PATCH)), aspect);
+						W_UnlockCachedPatch(patch);
+					}
+					if (finalecount > 10) {
+						V_DrawSciencePatch(x, y, 0, (patch = W_CachePatchName("WAHH3", PU_PATCH)), aspect);
+						W_UnlockCachedPatch(patch);
+					}
+					if (finalecount > 14) {
+						V_DrawSciencePatch(x, y, 0, (patch = W_CachePatchName("WAHH4", PU_PATCH)), aspect);
+						W_UnlockCachedPatch(patch);
+					}
+				}
+				else if (finalecount-30 < 20) { // Big eggy
+					background = W_CachePatchName("FEEDIN", PU_PATCH);
+					x = (BASEVIDWIDTH<<FRACBITS)/2 - FixedMul(560<<FRACBITS, aspect)/2;
+					y = (BASEVIDHEIGHT<<FRACBITS) - FixedMul(477<<FRACBITS, aspect);
+					V_DrawSciencePatch(x, y, V_SNAPTOBOTTOM, background, aspect);
+				}
+				else if (finalecount-50 < 30) { // Zoom out
+					fixed_t scale = FixedDiv(aspect, FixedDiv((finalecount-50)<<FRACBITS, (15<<FRACBITS))+FRACUNIT);
+					background = W_CachePatchName("FEEDIN", PU_PATCH);
+					x = (BASEVIDWIDTH<<FRACBITS)/2 - FixedMul(560<<FRACBITS, aspect)/2 + (FixedMul(560<<FRACBITS, aspect) - FixedMul(560<<FRACBITS, scale));
+					y = (BASEVIDHEIGHT<<FRACBITS) - FixedMul(477<<FRACBITS, scale);
+					V_DrawSciencePatch(x, y, V_SNAPTOBOTTOM, background, scale);
+				}
+				else
+				{
+					{
+						// Draw tiny eggy
+						fixed_t scale = FixedMul(FRACUNIT/3, aspect);
+						background = W_CachePatchName("FEEDIN", PU_PATCH);
+						x = (BASEVIDWIDTH<<FRACBITS)/2 - FixedMul(560<<FRACBITS, aspect)/2 + (FixedMul(560<<FRACBITS, aspect) - FixedMul(560<<FRACBITS, scale));
+						y = (BASEVIDHEIGHT<<FRACBITS) - FixedMul(477<<FRACBITS, scale);
+						V_DrawSciencePatch(x, y, V_SNAPTOBOTTOM, background, scale);
+					}
+
+					if (finalecount-84 < 58) { // Pure Fat is driving up!
+						int ftime = (finalecount-84);
+						x = (-189*FRACUNIT) + (FixedMul((6<<FRACBITS)+FRACUNIT/3, ftime<<FRACBITS) - FixedMul((6<<FRACBITS)+FRACUNIT/3, FixedDiv(FixedMul(ftime<<FRACBITS, ftime<<FRACBITS), 120<<FRACBITS)));
+						y = (BASEVIDHEIGHT<<FRACBITS) - FixedMul(417<<FRACBITS, aspect);
+						// Draw the body
+						V_DrawSciencePatch(x, y, V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName("PUREFAT1", PU_PATCH)), aspect);
+						W_UnlockCachedPatch(patch);
+						// Draw the door
+						V_DrawSciencePatch(x+FixedMul(344<<FRACBITS, aspect), y+FixedMul(292<<FRACBITS, aspect), V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName("PUREFAT2", PU_PATCH)), aspect);
+						W_UnlockCachedPatch(patch);
+						// Draw the wheel
+						V_DrawSciencePatch(x+FixedMul(178<<FRACBITS, aspect), y+FixedMul(344<<FRACBITS, aspect), V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName(va("TYRE%02u",(abs(finalecount-144)/3)%16), PU_PATCH)), aspect);
+						W_UnlockCachedPatch(patch);
+						// Draw the wheel cover
+						V_DrawSciencePatch(x+FixedMul(88<<FRACBITS, aspect), y+FixedMul(238<<FRACBITS, aspect), V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName("PUREFAT3", PU_PATCH)), aspect);
+						W_UnlockCachedPatch(patch);
+					} else { // Pure Fat has stopped!
+						y = (BASEVIDHEIGHT<<FRACBITS) - FixedMul(417<<FRACBITS, aspect);
+						// Draw the body
+						V_DrawSciencePatch(0, y, V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName("PUREFAT1", PU_PATCH)), aspect);
+						W_UnlockCachedPatch(patch);
+						// Draw the wheel
+						V_DrawSciencePatch(FixedMul(178<<FRACBITS, aspect), y+FixedMul(344<<FRACBITS, aspect), V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName("TYRE00", PU_PATCH)), aspect);
+						W_UnlockCachedPatch(patch);
+						// Draw the wheel cover
+						V_DrawSciencePatch(FixedMul(88<<FRACBITS, aspect), y+FixedMul(238<<FRACBITS, aspect), V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName("PUREFAT3", PU_PATCH)), aspect);
+						W_UnlockCachedPatch(patch);
+						// Draw the door
+						if (finalecount-TICRATE/2 > 4*TICRATE) { // Door is being raised!
+							int ftime = (finalecount-TICRATE/2-4*TICRATE);
+							y -= FixedDiv((ftime*ftime)<<FRACBITS, 23<<FRACBITS);
+						}
+						V_DrawSciencePatch(FixedMul(344<<FRACBITS, aspect), y+FixedMul(292<<FRACBITS, aspect), V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName("PUREFAT2", PU_PATCH)), aspect);
+						W_UnlockCachedPatch(patch);
+					}
+				}
+			}
+			else
 			{
 				background = W_CachePatchName(stjrintro, PU_PATCH_LOWPRIORITY);
 				V_DrawSmallScaledPatch(bgxoffs, 84, 0, background);
@@ -954,31 +1064,34 @@ void F_IntroTicker(void)
 
 	if (rendermode != render_none)
 	{
-		if (intro_scenenum == 0 && intro_curtime == 2*TICRATE-19)
+		if (!cv_stjrintro.value) // This Game Should Not Be Sold
 		{
-			S_ChangeMusicInternal("_stjr", false);
+			if (intro_scenenum == 0 && intro_curtime == 2*TICRATE-19)
+			{
+				S_ChangeMusicInternal("_stjr", false);
 
-			wipestyleflags = WSF_FADEIN;
-			F_WipeStartScreen();
-			F_TryColormapFade(31);
+				wipestyleflags = WSF_FADEIN;
+				F_WipeStartScreen();
+				F_TryColormapFade(31);
 
-			F_IntroDrawer();
+				F_IntroDrawer();
 
-			F_WipeEndScreen();
-			F_RunWipe(99,true);
-		}
-		else if ((intro_scenenum == 5 && intro_curtime == 5*TICRATE)
-			|| (intro_scenenum == 7 && intro_curtime == 6*TICRATE)
-			//|| (intro_scenenum == 11 && intro_curtime == 7*TICRATE)
-			|| (intro_scenenum == 15 && intro_curtime == 7*TICRATE))
-		{
-			F_WipeStartScreen();
-			F_WipeColorFill(31);
+				F_WipeEndScreen();
+				F_RunWipe(99,true);
+			}
+			else if ((intro_scenenum == 5 && intro_curtime == 5*TICRATE)
+				|| (intro_scenenum == 7 && intro_curtime == 6*TICRATE)
+				//|| (intro_scenenum == 11 && intro_curtime == 7*TICRATE)
+				|| (intro_scenenum == 15 && intro_curtime == 7*TICRATE))
+			{
+				F_WipeStartScreen();
+				F_WipeColorFill(31);
 
-			F_IntroDrawer();
+				F_IntroDrawer();
 
-			F_WipeEndScreen();
-			F_RunWipe(99,true);
+				F_WipeEndScreen();
+				F_RunWipe(99,true);
+			}
 		}
 	}
 
@@ -1196,7 +1309,17 @@ static const char *credits[] = {
 	"Colin \"Sonict\" Pfaff",
 	"Bill \"Tets\" Reed",
 	"",
-	"\1Special Thanks",
+	"\1TSoURDt3rd",
+	"StarManiaKG \"Star\"",
+	"",
+	"\1TSoURDt3rd Emotional Support Crew",
+	"Speccy",
+	"Zeno/Uukoo \"Oreo\"",
+	"NARBluebear"
+	"Smiles \"Future Smiles the Fox\"",
+	"\"Team Comet\"",
+	"",
+	"\1Vanilla SRB2 Special Thanks",
 	"id Software",
 	"Doom Legacy Project",
 	"FreeDoom Project", // Used some of the mancubus and rocket launcher sprites for Brak

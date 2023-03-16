@@ -776,7 +776,7 @@ void P_Ticker(boolean run)
 		{
 			emeraldtime++;	
 
-			if (emeraldtime == (TICRATE*20))
+			if (emeraldtime == 20*TICRATE)
 			{
 				all7matchemeralds = false;
 				emeraldtime = 0;

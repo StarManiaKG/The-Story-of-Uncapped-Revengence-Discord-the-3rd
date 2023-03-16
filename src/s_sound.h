@@ -183,8 +183,8 @@ boolean S_SpeedMusic(float speed);
 typedef struct musicdef_s
 {
 	char name[7];
-	char title[32];
-	char alttitle[66];
+	char title[34];
+	char alttitle[64];
 	char authors[256];
 	//char usage[256]; -- probably never going to be relevant to vanilla
 	/*

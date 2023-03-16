@@ -18,6 +18,7 @@
 #include "doomtype.h"
 #include "d_event.h"
 #include "p_mobj.h"
+#include "command.h"
 
 //
 // FINALE
@@ -188,7 +189,7 @@ tic_t F_GetWipeLength(UINT8 wipetype);
 boolean F_WipeExists(UINT8 wipetype);
 
 // Stat stuff woooooooo
-extern consvar_t cv_preintroscene;
+extern consvar_t cv_stjrintro;
 
 enum
 {

@@ -505,7 +505,7 @@ void M_RefreshPauseMenu(void);
 extern consvar_t cv_jukeboxhud;
 
 extern boolean jukeboxMusicPlaying;
-extern char jukeboxMusicName[32+20+12];
+extern char jukeboxMusicName[22+12];
 extern char jukeboxMusicTrack[7];
 void M_ResetJukebox(void);
 
