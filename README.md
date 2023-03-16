@@ -56,8 +56,7 @@
   - Custom Discord Settings, Commands, and Options, with Custom Character Support
     - (Based on Original code by the Kart Krew and Fafabis, found [here](https://git.do.srb2.org/Fafabis/SRB2/-/tree/discord))
     
-    ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/discord1.png?raw=true)
-    ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/discord2.png?raw=true)
+    ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/discord.png?raw=true)
 
   - Custom Build Options, Featuring More Savedata, Server, and Extra Options
     - (Holepunching and Extra Features Made by StarManiaKG)
