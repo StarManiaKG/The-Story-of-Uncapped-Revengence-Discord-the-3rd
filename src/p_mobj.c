@@ -4024,12 +4024,11 @@ void P_NullPrecipThinker(precipmobj_t *mobj)
 {
 	//(void)mobj;
 	mobj->precipflags &= ~PCF_THUNK;
+	R_ResetPrecipitationMobjInterpolationState(mobj);
 }
 
 void P_SnowThinker(precipmobj_t *mobj)
 {
-	R_ResetPrecipitationMobjInterpolationState(mobj);
-
 	P_CycleStateAnimation((mobj_t *)mobj);
 
 	// adjust height
@@ -4042,8 +4041,6 @@ void P_SnowThinker(precipmobj_t *mobj)
 
 void P_RainThinker(precipmobj_t *mobj)
 {
-	R_ResetPrecipitationMobjInterpolationState(mobj);
-
 	P_CycleStateAnimation((mobj_t *)mobj);
 
 	if (mobj->state != &states[S_RAIN1])
@@ -10883,7 +10880,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	R_AddMobjInterpolator(mobj);
 
 	return mobj;
-}
+};
 
 static precipmobj_t *P_SpawnPrecipMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 {
@@ -11098,20 +11095,41 @@ void P_RemovePrecipMobj(precipmobj_t *mobj)
 void P_RemoveSavegameMobj(mobj_t *mobj)
 {
 	// unlink from sector and block lists
-	P_UnsetThingPosition(mobj);
-
-	// Remove touching_sectorlist from mobj.
-	if (sector_list)
+	if (((thinker_t *)mobj)->function.acp1 == (actionf_p1)P_NullPrecipThinker)
 	{
-		P_DelSeclist(sector_list);
-		sector_list = NULL;
+		P_UnsetPrecipThingPosition((precipmobj_t *)mobj);
+
+		if (precipsector_list)
+		{
+			P_DelPrecipSeclist(precipsector_list);
+			precipsector_list = NULL;
+		}
+	}
+	else
+	{
+		// unlink from sector and block lists
+		P_UnsetThingPosition(mobj);
+
+		// Remove touching_sectorlist from mobj.
+		if (sector_list)
+		{
+			P_DelSeclist(sector_list);
+			sector_list = NULL;
+		}
 	}
 
 	// stop any playing sound
 	S_StopSound(mobj);
+	R_RemoveMobjInterpolator(mobj);
 
 	// free block
-	P_RemoveThinker((thinker_t *)mobj);
+	// Here we use the same code as R_RemoveThinkerDelayed, but without reference counting (we're removing everything so it shouldn't matter) and without touching currentthinker since we aren't in P_RunThinkers
+	{
+		thinker_t *thinker = (thinker_t *)mobj;
+		thinker_t *next = thinker->next;
+		(next->prev = thinker->prev)->next = next;
+		Z_Free(thinker);
+	}
 }
 
 static CV_PossibleValue_t respawnitemtime_cons_t[] = {{1, "MIN"}, {300, "MAX"}, {0, NULL}};
@@ -13225,6 +13243,8 @@ static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y,
 	// Final set of not being able to draw nightsitems.
 	if (mobj->flags & MF_NIGHTSITEM)
 		mobj->flags2 |= MF2_DONTDRAW;
+	
+	R_AddMobjInterpolator(mobj);
 
 	return mobj;
 }
@@ -13974,9 +13994,43 @@ mobj_t *P_SpawnMobjFromMobj(mobj_t *mobj, fixed_t xofs, fixed_t yofs, fixed_t zo
 		newmobj->eflags |= MFE_VERTICALFLIP;
 		newmobj->flags2 |= MF2_OBJECTFLIP;
 		newmobj->z = mobj->z + mobj->height - zofs - elementheight;
+
+		newmobj->old_z = mobj->old_z + mobj->height - zofs - elementheight;
+		newmobj->old_z2 = mobj->old_z2 + mobj->height - zofs - elementheight;
+	}
+	else
+	{
+		newmobj->old_z = mobj->old_z + zofs;
+		newmobj->old_z2 = mobj->old_z2 + zofs;
 	}
 
 	newmobj->destscale = mobj->destscale;
 	P_SetScale(newmobj, mobj->scale);
+
+	newmobj->old_x2 = mobj->old_x2 + xofs;
+	newmobj->old_y2 = mobj->old_y2 + yofs;
+	newmobj->old_x = mobj->old_x + xofs;
+	newmobj->old_y = mobj->old_y + yofs;
+
+	// This angle hack is needed for Lua scripts that set the angle after
+	// spawning, to avoid erroneous interpolation.
+	if (mobj->player)
+	{
+		newmobj->old_angle2 = mobj->player->old_drawangle2;
+		newmobj->old_angle = mobj->player->old_drawangle;
+	}
+	else
+	{
+		newmobj->old_angle2 = mobj->old_angle2;
+		newmobj->old_angle = mobj->old_angle;
+	}
+
+	newmobj->old_scale2 = mobj->old_scale2;
+	newmobj->old_scale = mobj->old_scale;
+	newmobj->old_spritexscale = mobj->old_spritexscale;
+	newmobj->old_spriteyscale = mobj->old_spriteyscale;
+	newmobj->old_spritexoffset = mobj->old_spritexoffset;
+	newmobj->old_spriteyoffset = mobj->old_spriteyoffset;
+
 	return newmobj;
 }

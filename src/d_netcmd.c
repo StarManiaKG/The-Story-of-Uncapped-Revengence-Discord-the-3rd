@@ -965,6 +965,8 @@ void D_RegisterClientCommands(void)
 #endif
 
 	// Custom Funny Star Things :)
+	CV_RegisterVar(&cv_preintrowipe);
+	
 	CV_RegisterVar(&cv_continues);
 	CV_RegisterVar(&cv_movingplayersetup);
 
@@ -5042,7 +5044,6 @@ void Got_DiscordInfo(UINT8 **p, INT32 playernum)
 	discordInfo.maxPlayers = READUINT8(*p);
 	discordInfo.joinsAllowed = (boolean)READUINT8(*p);
 	discordInfo.whoCanInvite = READUINT8(*p);
-
 	DRPC_UpdatePresence();
 #else
 	(*p) += 3;

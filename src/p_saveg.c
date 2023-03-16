@@ -2968,6 +2968,18 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 			mobj->player->viewz = mobj->player->mo->z + mobj->player->viewheight;
 	}
 
+	if (mobj->type == MT_SKYBOX && mobj->spawnpoint)
+	{
+		mtag_t tag = Tag_FGet(&mobj->spawnpoint->tags);
+		if (tag >= 0 && tag <= 15)
+		{
+			if (mobj->spawnpoint->args[0])
+				skyboxcenterpnts[tag] = mobj;
+			else
+				skyboxviewpnts[tag] = mobj;
+		}
+	}
+
 	mobj->info = (mobjinfo_t *)next; // temporarily, set when leave this function
 
 	R_AddMobjInterpolator(mobj);
@@ -3581,10 +3593,14 @@ static void P_NetUnArchiveThinkers(void)
 		{
 			next = currentthinker->next;
 
-			if (currentthinker->function.acp1 == (actionf_p1)P_MobjThinker)
+			if (currentthinker->function.acp1 == (actionf_p1)P_MobjThinker || currentthinker->function.acp1 == (actionf_p1)P_NullPrecipThinker)
 				P_RemoveSavegameMobj((mobj_t *)currentthinker); // item isn't saved, don't remove it
 			else
+			{
+				(next->prev = currentthinker->prev)->next = next;
+				R_DestroyLevelInterpolators(currentthinker);
 				Z_Free(currentthinker);
+			}
 		}
 	}
 

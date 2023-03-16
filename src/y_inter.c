@@ -166,8 +166,6 @@ static INT32 endtic = -1;
 intertype_t intertype = int_none;
 intertype_t intermissiontypes[NUMGAMETYPES];
 
-static huddrawlist_h luahuddrawlist_intermission;
-
 static void Y_RescaleScreenBuffer(void);
 static void Y_AwardCoopBonuses(void);
 static void Y_AwardSpecialStageBonus(void);
@@ -436,13 +434,7 @@ void Y_IntermissionDrawer(void)
 	else if (bgtile)
 		V_DrawPatchFill(bgtile);
 
-	if (renderisnewtic)
-	{
-		LUA_HUD_ClearDrawList(luahuddrawlist_intermission);
-		LUA_HUDHOOK(intermission);
-	}
-	LUA_HUD_DrawList(luahuddrawlist_intermission);
-
+	LUA_HUDHOOK(titlecard);
 	if (!LUA_HudEnabled(hud_intermissiontally))
 		goto skiptallydrawer;
 

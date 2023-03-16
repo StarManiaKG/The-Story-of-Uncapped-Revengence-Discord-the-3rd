@@ -89,15 +89,16 @@
 #include "hardware/hw3sound.h"
 #endif
 
+#ifdef HAVE_DISCORDRPC
+#include "discord.h"
+#endif
+
 #include "lua_script.h"
+#include "lua_hudlib_drawlist.h"
 
 // Version numbers for netplay :upside_down_face:
 int    VERSION;
 int SUBVERSION;
-
-#ifdef HAVE_DISCORDRPC
-#include "discord.h"
-#endif
 
 // platform independant focus loss
 UINT8 window_notinfocus = false;
@@ -138,8 +139,10 @@ char liveeventbackup[256];
 
 char srb2home[256] = ".";
 char srb2path[256] = ".";
-boolean autoloading = false;
+
 boolean usehome = true;
+boolean autoloading = false;
+
 const char *pandf = "%s" PATHSEP "%s";
 static char addonsdir[MAX_WADPATH];
 
@@ -303,17 +306,17 @@ gamestate_t wipegamestate = GS_LEVEL;
 INT16 wipetypepre = -1;
 INT16 wipetypepost = -1;
 
-static boolean D_Display(void)
+static void D_Display(void)
 {
 	boolean forcerefresh = false;
 	static boolean wipe = false;
 	INT32 wipedefindex = 0;
 
 	if (dedicated)
-		return false;
+		return;
 
 	if (nodrawers)
-		return false; // for comparative timing/profiling
+		return; // for comparative timing/profiling
 
 	// Lactozilla: Switching renderers works by checking
 	// if the game has to do it right when the frame
@@ -480,7 +483,6 @@ static boolean D_Display(void)
 		if (gamestate == GS_LEVEL || (gamestate == GS_TITLESCREEN && titlemapinaction && curbghide && (!hidetitlemap)))
 		{
 			// draw the view directly
-
 			if (!automapactive && !dedicated && cv_renderview.value)
 			{
 				R_ApplyLevelInterpolators(R_UsingFrameInterpolation() ? rendertimefrac : FRACUNIT);
@@ -584,8 +586,9 @@ static boolean D_Display(void)
 		INT32 y = ((automapactive) ? (32) : (BASEVIDHEIGHT/2));
 		M_DrawTextBox((BASEVIDWIDTH/2) - (60), y - (16), 13, 2);
 		V_DrawCenteredString(BASEVIDWIDTH/2, y - (4), V_YELLOWMAP, "Game Paused");
-	}
 #endif
+	}
+
 	// vid size change is now finished if it was on...
 	vid.recalc = 0;
 
@@ -686,10 +689,10 @@ static boolean D_Display(void)
 			M_DrawPerfStats();
 		}
 
-		return true; // Do I_FinishUpdate in the main loop
+		PS_START_TIMING(ps_swaptime);
+		I_FinishUpdate(); // page flip or blit buffer
+		PS_STOP_TIMING(ps_swaptime);
 	}
-
-	return false;
 }
 
 // =========================================================================
@@ -846,6 +849,13 @@ void D_SRB2Loop(void)
 		else
 		{
 			renderisnewtic = false;
+		}
+
+		if (autoloading)
+		{
+			if (!savemoddata)
+				modifiedgame = false;
+			autoloading = false;
 		}
 
 		if (interp)
@@ -1070,9 +1080,6 @@ static void D_AddFolder(addfilelist_t *list, const char *file)
 	list->files[index] = newfile;
 }
 
-//
-// D_AutoLoadAddons
-//
 static void D_AutoLoadAddons(addfilelist_t *list, const char *file)
 {
 	char *newfile;
@@ -1093,7 +1100,6 @@ static void D_AutoLoadAddons(addfilelist_t *list, const char *file)
 
 	COM_ImmedExecute(va("exec %s\n", newfile));
 }
-
 #undef REALLOC_FILE_LIST
 
 static inline void D_CleanFile(addfilelist_t *list)
@@ -1440,8 +1446,8 @@ void D_SRB2Main(void)
 	//---------------------------------------------------- READY TIME
 	// we need to check for dedicated before initialization of some subsystems
 
-	CONS_Printf("I_StartupTimer()...\n");
-	I_StartupTimer();
+	CONS_Printf("I_InitializeTime()...\n");
+	I_InitializeTime();
 
 	// Make backups of some SOCcable tables.
 	P_BackupTables();
@@ -1460,7 +1466,7 @@ void D_SRB2Main(void)
 	W_InitMultipleFiles(&startupwadfiles);
 	D_CleanFile(&startupwadfiles);
 
-#ifndef DEVELOP // md5s last updated 03/03/23 (star)
+#ifndef DEVELOP // md5s last updated 03/15/23 (star)
 	// Check MD5s of autoloaded files //
 
 	// don't check music.dta because people like to modify it, and it doesn't matter if they do
@@ -1536,9 +1542,9 @@ void D_SRB2Main(void)
 
 	G_LoadGameData();
 
-	// initalize discord
+	// Initialize Discord //
 #ifdef HAVE_DISCORDRPC
-    CONS_Printf("DRPC_Init(): Initalizing Discord Rich Presence.\n");
+    CONS_Printf("DRPC_Init(): Initalizing Discord Rich Presence...\n");
     DRPC_Init();
 #endif
 
@@ -1782,7 +1788,7 @@ void D_SRB2Main(void)
 				D_MapChange(pstartmap, gametype, ultimatemode, true, 0, false, false);
 			}
 		}
-	}	
+	}
 	else if (M_CheckParm("-skipintro"))
 	{
 		F_InitMenuPresValues();
@@ -1790,7 +1796,7 @@ void D_SRB2Main(void)
 	}
 	else
 		F_StartIntro(); // Tails 03-03-2002
-	
+
 	CON_ToggleOff();
 
 	if (dedicated && server)
