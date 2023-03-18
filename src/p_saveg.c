@@ -2973,7 +2973,8 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 		mtag_t tag = Tag_FGet(&mobj->spawnpoint->tags);
 		if (tag >= 0 && tag <= 15)
 		{
-			if (mobj->spawnpoint->args[0])
+			//if (mobj->spawnpoint->args[0])
+			if (mobj->spawnpoint->options & MTF_OBJECTSPECIAL)
 				skyboxcenterpnts[tag] = mobj;
 			else
 				skyboxviewpnts[tag] = mobj;
@@ -3801,6 +3802,10 @@ static void P_NetUnArchiveThinkers(void)
 
 		CONS_Debug(DBG_NETPLAY, "%u thinkers loaded in list %d\n", numloaded, i);
 	}
+
+	// Set each skyboxmo to the first skybox (or NULL)
+	skyboxmo[0] = skyboxviewpnts[0];
+	skyboxmo[1] = skyboxcenterpnts[0];
 
 	if (restoreNum)
 	{

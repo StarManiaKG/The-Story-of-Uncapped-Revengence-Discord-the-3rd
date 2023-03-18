@@ -155,7 +155,6 @@ extern void (*I_NetRequestHolePunch)(INT32 node);
 */
 extern void (*I_NetRegisterHolePunch)(void);
 
-
 extern boolean (*I_Ban) (INT32 node);
 extern void (*I_ClearBans)(void);
 extern const char *(*I_GetNodeAddress) (INT32 node);

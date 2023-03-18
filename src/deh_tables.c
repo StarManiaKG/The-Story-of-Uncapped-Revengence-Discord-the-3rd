@@ -4813,6 +4813,15 @@ const char *const MENUTYPES_LIST[] = {
 	"OP_SCREENSHOTS",
 	"OP_ERASEDATA",
 
+	"OP_TSOURDT3RD",
+	"OP_TSOURDT3RD_JUKEBOX",
+
+#ifdef HAVE_DISCORDRPC
+	"OP_DISCORD_RQ", //discord requests, for future notice
+	"OP_DISCORD_OPT",
+	"OP_DISCORDCS_OUTPUT",
+#endif
+
 	// Extras
 	"SR_MAIN",
 	"SR_PANDORA",

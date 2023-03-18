@@ -356,7 +356,7 @@ void M_ResetJukebox(void);
 menu_t OP_DataOptionsDef, OP_ScreenshotOptionsDef, OP_EraseDataDef;
 menu_t OP_ServerOptionsDef;
 #ifdef HAVE_DISCORDRPC
-boolean discordMenuOpen = false;
+boolean discordMenuOpen;
 
 static void M_DiscordOptions(INT32 choice);
 static void M_DrawDiscordMenu(void);
@@ -525,6 +525,9 @@ consvar_t cv_dummyloadless = CVAR_INIT ("dummyloadless", "In-game", CV_HIDEN, lo
 
 // STAR Commands Yay
 consvar_t cv_jukeboxhud = CVAR_INIT ("jukeboxhud", "On", CV_SAVE|CV_CALL, CV_OnOff, STAR_JukeboxHUD_OnChange);
+
+static CV_PossibleValue_t stjrintro_t[] = {{0, "Default"}, {1, "Pure Fat"}, {0, NULL}};
+consvar_t cv_stjrintro = CVAR_INIT ("stjrintro", "Default", CV_SAVE, stjrintro_t, NULL);
 
 // ==========================================================================
 // ORGANIZATION START.
@@ -3422,7 +3425,9 @@ static void M_GoBack(INT32 choice)
 		}
 
 		// If we Opened the Discord Menu, Make Sure Everything is Reset.
+#ifdef HAVE_DISCORDRPC
 		discordMenuOpen = false;
+#endif
 
 		if ((currentMenu->prevMenu == &MainDef) && (currentMenu == &SP_TimeAttackDef || currentMenu == &SP_NightsAttackDef || currentMenu == &SP_MarathonDef))
 		{

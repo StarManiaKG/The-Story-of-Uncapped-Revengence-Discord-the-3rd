@@ -551,7 +551,7 @@ typedef struct player_s
 	INT16 lastsidehit, lastlinehit;
 
 	tic_t losstime;
-	UINT8 timeshit; // That's TIMES HIT, not TIME SHIT, you doofus!
+	UINT8 timeshit; // That's TIMES HIT, not TIME SHIT, you dofus!
 
 	INT32 onconveyor; // You are on a conveyor belt if nonzero
 

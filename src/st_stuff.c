@@ -43,7 +43,6 @@
 #endif
 
 #include "lua_hud.h"
-#include "lua_hudlib_drawlist.h"
 #include "lua_hook.h"
 
 #include "r_fps.h"
@@ -2610,25 +2609,7 @@ static void ST_doItemFinderIconsAndSound(void)
 // Draws Jukebox Text On The Screen/HUD
 //
 boolean initJukeboxHUD;
-
 UINT16 chosenColor;
-static const UINT16 boxColors[V_INVERTMAP] = {
-	V_MAGENTAMAP,
-	V_YELLOWMAP,
-	V_GREENMAP,
-	V_BLUEMAP,
-	V_REDMAP,
-	V_GRAYMAP,
-	V_ORANGEMAP,
-	V_SKYMAP,
-	V_PURPLEMAP,
-	V_AQUAMAP,
-	V_PERIDOTMAP,
-	V_AZUREMAP,
-	V_BROWNMAP,
-	V_ROSYMAP,
-	V_INVERTMAP,
-};
 
 INT32 boxw = 300; // Slides our Filed Box to Width 245
 INT32 strw = 300; // Slides our Regular String to Width 230
@@ -2644,7 +2625,27 @@ void ST_drawJukebox(void)
 		if (initJukeboxHUD)
 		{
 			if (!chosenColor)
-				chosenColor = boxColors[M_RandomRange(1, 16)];
+			{
+				switch (M_RandomRange(0, 14))
+				{
+					// Refuses to Work At The Moment, No Matter What I Do //
+					case 0: chosenColor = V_MAGENTAMAP; break;
+					case 1: chosenColor = V_YELLOWMAP; break;
+					case 2: chosenColor = V_GREENMAP; break;
+					case 3: chosenColor = V_BLUEMAP; break;
+					case 4: chosenColor = V_REDMAP; break;
+					case 5: chosenColor = V_GRAYMAP; break;
+					case 6: chosenColor = V_ORANGEMAP; break;
+					case 7: chosenColor = V_SKYMAP; break;
+					case 8: chosenColor = V_PURPLEMAP; break;
+					case 9: chosenColor = V_AQUAMAP; break;
+					case 10: chosenColor = V_PERIDOTMAP; break;
+					case 11: chosenColor = V_AZUREMAP; break;
+					case 12: chosenColor = V_BROWNMAP; break;
+					case 13: chosenColor = V_ROSYMAP; break;
+					case 14: chosenColor = V_INVERTMAP; break;
+				}
+			}
 		
 			if (slidetime > 0)
 			{

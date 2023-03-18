@@ -16,8 +16,8 @@
 
 #include "console.h"
 #include "command.h"
-#include "i_system.h"
 #include "i_time.h"
+#include "i_system.h"
 #include "g_game.h"
 #include "hu_stuff.h"
 #include "g_input.h"
@@ -49,6 +49,7 @@
 #include "m_anigif.h"
 #include "md5.h"
 #include "m_perfstats.h"
+#include "hardware/u_list.h" // TODO: this should be a standard utility class
 #include "doomstat.h" //useContinues
 
 #ifdef NETGAME_DEVMODE
@@ -79,7 +80,6 @@ static void Got_RandomSeed(UINT8 **cp, INT32 playernum);
 static void Got_RunSOCcmd(UINT8 **cp, INT32 playernum);
 static void Got_Teamchange(UINT8 **cp, INT32 playernum);
 static void Got_Clearscores(UINT8 **cp, INT32 playernum);
-static void Got_DiscordInfo(UINT8 **cp, INT32 playernum);
 
 static void PointLimit_OnChange(void);
 static void TimeLimit_OnChange(void);
@@ -115,9 +115,6 @@ static void SoundTest_OnChange(void);
 #ifdef NETGAME_DEVMODE
 static void Fishcake_OnChange(void);
 #endif
-
-//Star Things gotta go fast
-static void STAR_UseContinues_OnChange(void);
 
 static void Command_Playdemo_f(void);
 static void Command_Timedemo_f(void);
@@ -173,6 +170,9 @@ static void Command_Cheats_f(void);
 static void Command_Togglemodified_f(void);
 static void Command_Archivetest_f(void);
 #endif
+
+//Star Things gotta go fast
+static void STAR_UseContinues_OnChange(void);
 
 // =========================================================================
 //                           CLIENT VARIABLES
@@ -410,7 +410,6 @@ INT16 gametypecount = (GT_CTF + 1);
 
 boolean splitscreen = false;
 boolean circuitmap = false;
-
 INT32 adminplayers[MAXPLAYERS];
 
 /// \warning Keep this up-to-date if you add/remove/rename net text commands
@@ -631,9 +630,6 @@ void D_RegisterServerCommands(void)
 #ifdef USE_STUN
 	CV_RegisterVar(&cv_stunserver);
 #endif
-
-	CV_RegisterVar(&cv_discordinvites);
-	RegisterNetXCmd(XD_DISCORD, Got_DiscordInfo);
 }
 
 // =========================================================================
@@ -902,7 +898,7 @@ void D_RegisterClientCommands(void)
 
 	// ingame object placing
 	COM_AddCommand("objectplace", Command_ObjectPlace_f);
-	COM_AddCommand("writethings", Command_Writethings_f);
+	//COM_AddCommand("writethings", Command_Writethings_f);
 	CV_RegisterVar(&cv_speed);
 	CV_RegisterVar(&cv_opflags);
 	CV_RegisterVar(&cv_ophoopflags);
@@ -941,15 +937,17 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("dumplua", Command_Dumplua_f);
 #endif
 
+	// Discord Things //
 #ifdef HAVE_DISCORDRPC
 	CV_RegisterVar(&cv_discordrp);
 	CV_RegisterVar(&cv_discordstreamer);
 	CV_RegisterVar(&cv_discordasks);
+	CV_RegisterVar(&cv_discordinvites);
 	CV_RegisterVar(&cv_discordshowonstatus);
 	CV_RegisterVar(&cv_discordstatusmemes);
 	CV_RegisterVar(&cv_discordcharacterimagetype);
 	
-	// Custom Things //
+	// Custom Things
 	CV_RegisterVar(&cv_customdiscorddetails);
 	CV_RegisterVar(&cv_customdiscordstate);
 	CV_RegisterVar(&cv_customdiscordlargeimagetype);
@@ -964,7 +962,7 @@ void D_RegisterClientCommands(void)
     CV_RegisterVar(&cv_customdiscordsmallimagetext);
 #endif
 
-	// Custom Funny Star Things :)
+	// Custom Funny Star Things :) //
 	CV_RegisterVar(&cv_stjrintro);
 	
 	CV_RegisterVar(&cv_continues);
@@ -1261,6 +1259,7 @@ static void ForceAllSkins(INT32 forcedskin)
 				CV_StealthSet(&cv_skin2, skins[forcedskin].name);
 		}
 	}
+
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
 #endif
@@ -2284,10 +2283,10 @@ static void Got_Pause(UINT8 **cp, INT32 playernum)
 			S_ResumeAudio();
 	}
 
+	I_UpdateMouseGrab();
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
 #endif
-	I_UpdateMouseGrab();
 }
 
 // Command for stuck characters in netgames, griefing, etc.
@@ -2967,7 +2966,7 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 		P_CheckSurvivors();
 
 #ifdef HAVE_DISCORDRPC
-		DRPC_UpdatePresence();
+	DRPC_UpdatePresence();
 #endif
 }
 
@@ -3343,6 +3342,69 @@ static void Got_RunSOCcmd(UINT8 **cp, INT32 playernum)
 	G_SetGameModified(true);
 }
 
+// C++ would make this SO much simpler!
+typedef struct addedfile_s
+{
+	struct addedfile_s *next;
+	struct addedfile_s *prev;
+	char *value;
+} addedfile_t;
+
+static boolean AddedFileContains(addedfile_t *list, const char *value)
+{
+	addedfile_t *node;
+	for (node = list; node; node = node->next)
+	{
+		if (!strcmp(value, node->value))
+			return true;
+	}
+
+	return false;
+}
+
+static void AddedFilesAdd(addedfile_t **list, const char *value)
+{
+	addedfile_t *item = Z_Calloc(sizeof(addedfile_t), PU_STATIC, NULL);
+	item->value = Z_StrDup(value);
+	ListAdd(item, (listitem_t**)list);
+}
+
+static void AddedFilesRemove(void *pItem, addedfile_t **itemHead)
+{
+	addedfile_t *item = (addedfile_t *)pItem;
+
+	if (item == *itemHead) // Start of list
+	{
+		*itemHead = item->next;
+
+		if (*itemHead)
+			(*itemHead)->prev = NULL;
+	}
+	else if (item->next == NULL) // end of list
+	{
+		item->prev->next = NULL;
+	}
+	else // Somewhere in between
+	{
+		item->prev->next = item->next;
+		item->next->prev = item->prev;
+	}
+
+	Z_Free(item->value);
+	Z_Free(item);
+}
+
+static void AddedFilesClearList(addedfile_t **itemHead)
+{
+	addedfile_t *item;
+	addedfile_t *next;
+	for (item = *itemHead; item; item = next)
+	{
+		next = item->next;
+		AddedFilesRemove(item, itemHead);
+	}
+}
+
 /** Adds a pwad at runtime.
   * Searches for sounds, maps, music, new images.
   */
@@ -3351,8 +3413,7 @@ static void Command_Addfile(void)
 	size_t argc = COM_Argc(); // amount of arguments total
 	size_t curarg; // current argument index
 
-	const char *addedfiles[argc]; // list of filenames already processed
-	size_t numfilesadded = 0; // the amount of filenames processed
+	addedfile_t *addedfiles = NULL; // list of filenames already processed
 
 	if (argc < 2)
 	{
@@ -3367,25 +3428,14 @@ static void Command_Addfile(void)
 		char buf[256];
 		char *buf_p = buf;
 		INT32 i;
-		size_t ii;
 		int musiconly; // W_VerifyNMUSlumps isn't boolean
 		boolean fileadded = false;
 
 		fn = COM_Argv(curarg);
 
 		// For the amount of filenames previously processed...
-		for (ii = 0; ii < numfilesadded; ii++)
-		{
-			// If this is one of them, don't try to add it.
-			if (!strcmp(fn, addedfiles[ii]))
-			{
-				fileadded = true;
-				break;
-			}
-		}
-
-		// If we've added this one, skip to the next one.
-		if (fileadded)
+		fileadded = AddedFileContains(addedfiles, fn);
+		if (fileadded) // If this is one of them, don't try to add it.
 		{
 			CONS_Alert(CONS_WARNING, M_GetText("Already processed %s, skipping\n"), fn);
 			continue;
@@ -3394,13 +3444,16 @@ static void Command_Addfile(void)
 		// Disallow non-printing characters and semicolons.
 		for (i = 0; fn[i] != '\0'; i++)
 			if (!isprint(fn[i]) || fn[i] == ';')
+			{
+				AddedFilesClearList(&addedfiles);
 				return;
+			}
 
 		musiconly = W_VerifyNMUSlumps(fn, false);
 
 		if (musiconly == -1)
 		{
-			addedfiles[numfilesadded++] = fn;
+			AddedFilesAdd(&addedfiles, fn);
 			continue;
 		}
 
@@ -3419,7 +3472,7 @@ static void Command_Addfile(void)
 		if (!(netgame || multiplayer) || musiconly)
 		{
 			P_AddWadFile(fn);
-			addedfiles[numfilesadded++] = fn;
+			AddedFilesAdd(&addedfiles, fn);
 			continue;
 		}
 
@@ -3434,6 +3487,7 @@ static void Command_Addfile(void)
 		if (numwadfiles >= MAX_WADFILES)
 		{
 			CONS_Alert(CONS_ERROR, M_GetText("Too many files loaded to add %s\n"), fn);
+			AddedFilesClearList(&addedfiles);
 			return;
 		}
 
@@ -3473,13 +3527,15 @@ static void Command_Addfile(void)
 			WRITEMEM(buf_p, md5sum, 16);
 		}
 
-		addedfiles[numfilesadded++] = fn;
+		AddedFilesAdd(&addedfiles, fn);
 
 		if (IsPlayerAdmin(consoleplayer) && (!server)) // Request to add file
 			SendNetXCmd(XD_REQADDFILE, buf, buf_p - buf);
 		else
 			SendNetXCmd(XD_ADDFILE, buf, buf_p - buf);
 	}
+
+	AddedFilesClearList(&addedfiles);
 }
 
 static void Command_Addfolder(void)
@@ -3487,8 +3543,7 @@ static void Command_Addfolder(void)
 	size_t argc = COM_Argc(); // amount of arguments total
 	size_t curarg; // current argument index
 
-	const char *addedfolders[argc]; // list of filenames already processed
-	size_t numfoldersadded = 0; // the amount of filenames processed
+	addedfile_t *addedfolders = NULL; // list of filenames already processed
 
 	if (argc < 2)
 	{
@@ -3504,24 +3559,13 @@ static void Command_Addfolder(void)
 		char buf[256];
 		char *buf_p = buf;
 		INT32 i, stat;
-		size_t ii;
 		boolean folderadded = false;
 
 		fn = COM_Argv(curarg);
 
 		// For the amount of filenames previously processed...
-		for (ii = 0; ii < numfoldersadded; ii++)
-		{
-			// If this is one of them, don't try to add it.
-			if (!strcmp(fn, addedfolders[ii]))
-			{
-				folderadded = true;
-				break;
-			}
-		}
-
-		// If we've added this one, skip to the next one.
-		if (folderadded)
+		folderadded = AddedFileContains(addedfolders, fn);
+		if (folderadded) // If we've added this one, skip to the next one.
 		{
 			CONS_Alert(CONS_WARNING, M_GetText("Already processed %s, skipping\n"), fn);
 			continue;
@@ -3530,13 +3574,16 @@ static void Command_Addfolder(void)
 		// Disallow non-printing characters and semicolons.
 		for (i = 0; fn[i] != '\0'; i++)
 			if (!isprint(fn[i]) || fn[i] == ';')
+			{
+				AddedFilesClearList(&addedfolders);
 				return;
+			}
 
 		// Add file on your client directly if you aren't in a netgame.
 		if (!(netgame || multiplayer))
 		{
 			P_AddFolder(fn);
-			addedfolders[numfoldersadded++] = fn;
+			AddedFilesAdd(&addedfolders, fn);
 			continue;
 		}
 
@@ -3558,6 +3605,7 @@ static void Command_Addfolder(void)
 		if (numwadfiles >= MAX_WADFILES)
 		{
 			CONS_Alert(CONS_ERROR, M_GetText("Too many files loaded to add %s\n"), fn);
+			AddedFilesClearList(&addedfolders);
 			return;
 		}
 
@@ -3603,7 +3651,7 @@ static void Command_Addfolder(void)
 
 		Z_Free(fullpath);
 
-		addedfolders[numfoldersadded++] = fn;
+		AddedFilesAdd(&addedfolders, fn);
 
 		WRITESTRINGN(buf_p,p,240);
 
@@ -3878,7 +3926,7 @@ static void Command_Version_f(void)
 #elif defined(UNIXCOMMON)
 	CONS_Printf("Unix (Common) ");
 #else
-	CONS_Printf("Unknown OS ");
+	CONS_Printf("Unknown/Other OS ");
 #endif
 
 	// Bitness
@@ -3945,7 +3993,7 @@ static void Command_Playintro_f(void)
 
 	if (dirmenu)
 		closefilemenu(true);
-	
+
 	if (menuactive)
 		M_ClearMenus(true);
 
@@ -4105,9 +4153,6 @@ static void CoopLives_OnChange(void)
 			CONS_Printf(M_GetText("Lives are now shared between players.\n"));
 			break;
 	}
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
 
 	if (cv_coopstarposts.value == 2)
 		return;
@@ -4125,6 +4170,10 @@ static void CoopLives_OnChange(void)
 
 		P_SpectatorJoinGame(&players[i]);
 	}
+
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
 }
 
 static void ExitMove_OnChange(void)
@@ -4170,7 +4219,7 @@ static void TimeLimit_OnChange(void)
 		CV_SetValue(&cv_timelimit, 0);
 		return;
 	}
-		
+
 	if (cv_timelimit.value != 0)
 	{
 		CONS_Printf(M_GetText("Levels will end after %d minute%s.\n"),cv_timelimit.value,cv_timelimit.value == 1 ? "" : "s"); // Graue 11-17-2003
@@ -4186,7 +4235,7 @@ static void TimeLimit_OnChange(void)
 	}
 	else if (netgame || multiplayer)
 		CONS_Printf(M_GetText("Time limit disabled\n"));
-		
+
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
 #endif
@@ -4328,6 +4377,7 @@ void D_GameTypeChanged(INT32 lastgametype)
 			teamscramble = 0;
 		}
 	}
+
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
 #endif
@@ -4669,6 +4719,7 @@ void Command_Retry_f(void)
 		M_ClearMenus(true);
 		G_SetRetryFlag();
 	}
+
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
 #endif
@@ -4813,6 +4864,7 @@ static void ForceSkin_OnChange(void)
 		CONS_Printf("The server is restricting all players to skin \"%s\".\n",skins[cv_forceskin.value].name);
 		ForceAllSkins(cv_forceskin.value);
 	}
+
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
 #endif
@@ -4865,6 +4917,7 @@ static void Skin_OnChange(void)
 		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));
 		CV_StealthSet(&cv_skin, skins[players[consoleplayer].skin].name);
 	}
+
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
 #endif
@@ -4887,6 +4940,7 @@ static void Skin2_OnChange(void)
 		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));
 		CV_StealthSet(&cv_skin2, skins[players[secondarydisplayplayer].skin].name);
 	}
+
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
 #endif
@@ -4914,7 +4968,6 @@ static void Color_OnChange(void)
 			SendNameAndColor(); // Color change menu scrolling fix is no longer necessary
 		else
 		{
-			CONS_Alert(CONS_NOTICE, M_GetText("That is an inaccessible skincolor.\n"));
 			CV_StealthSetValue(&cv_playercolor,
 				players[consoleplayer].skincolor);
 		}
@@ -4940,7 +4993,6 @@ static void Color2_OnChange(void)
 			SendNameAndColor2(); // Color change menu scrolling fix is no longer necessary
 		else
 		{
-			CONS_Alert(CONS_NOTICE, M_GetText("That is an inaccessible skincolor.\n"));
 			CV_StealthSetValue(&cv_playercolor2,
 				players[secondarydisplayplayer].skincolor);
 		}
@@ -5029,28 +5081,6 @@ static void BaseNumLaps_OnChange(void)
 		else
 			CONS_Printf(M_GetText("Number of laps will be changed to %d next round.\n"), cv_basenumlaps.value);
 	}
-}
-
-void Got_DiscordInfo(UINT8 **p, INT32 playernum)
-{
-	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
-	{
-		// protect against hacked/buggy client
-		CONS_Alert(CONS_WARNING, M_GetText("Illegal Discord info command received from %s\n"), player_names[playernum]);
-		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
-		return;
-	}
-
-	// Don't do anything with the information if we don't have Discord RPC support
-#ifdef HAVE_DISCORDRPC
-	discordInfo.maxPlayers = READUINT8(*p);
-	discordInfo.joinsAllowed = (boolean)READUINT8(*p);
-	discordInfo.whoCanInvite = READUINT8(*p);
-	DRPC_UpdatePresence();
-#else
-	(*p) += 3;
-#endif
 }
 
 //Star Commands: Electric Boogalo LETS GOOOOOOO

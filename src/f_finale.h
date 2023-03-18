@@ -18,7 +18,6 @@
 #include "doomtype.h"
 #include "d_event.h"
 #include "p_mobj.h"
-#include "command.h"
 
 //
 // FINALE
@@ -187,9 +186,6 @@ void F_WipeStageTitle(void);
 #define F_WipeColorFill(c) V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, c)
 tic_t F_GetWipeLength(UINT8 wipetype);
 boolean F_WipeExists(UINT8 wipetype);
-
-// Stat stuff woooooooo
-extern consvar_t cv_stjrintro;
 
 enum
 {

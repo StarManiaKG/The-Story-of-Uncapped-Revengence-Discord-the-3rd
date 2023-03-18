@@ -160,13 +160,6 @@ typedef struct
 	UINT8 modifiedgame;
 
 	char server_context[8]; // Unique context id, generated at server startup.
-
-	// Discord info (always defined for net compatibility)
-	UINT8 maxplayer;
-	boolean allownewplayer;
-	UINT8 discordinvites;
-
-	UINT8 varlengthinputs[0]; // Playernames and netvars
 } ATTRPACK serverconfig_pak;
 
 typedef struct
@@ -353,7 +346,6 @@ extern INT32 mapchangepending;
 // Points inside doomcom
 extern doomdata_t *netbuffer;
 extern consvar_t cv_stunserver;
-extern consvar_t cv_stunserver;
 extern consvar_t cv_showjoinaddress;
 extern consvar_t cv_playbackspeed;
 
@@ -406,8 +398,6 @@ extern consvar_t cv_netticbuffer, cv_allownewplayer, cv_joinnextround, cv_maxpla
 extern consvar_t cv_resynchattempts, cv_blamecfail;
 extern consvar_t cv_maxsend, cv_noticedownload, cv_downloadspeed;
 
-extern consvar_t cv_discordinvites;
-
 // Used in d_net, the only dependence
 tic_t ExpandTics(INT32 low, INT32 node);
 void D_ClientServerInit(void);
@@ -419,7 +409,7 @@ void SendNetXCmd2(netxcmd_t id, const void *param, size_t nparam); // splitsreen
 void SendKick(UINT8 playernum, UINT8 msg);
 
 // Create any new ticcmds and broadcast to other players.
-void NetUpdate(void); //srb2 version of net keep alive from kart
+void NetUpdate(void);
 
 void SV_StartSinglePlayerServer(void);
 boolean SV_SpawnServer(void);
@@ -466,12 +456,9 @@ void D_MD5PasswordPass(const UINT8 *buffer, size_t len, const char *salt, void *
 
 extern UINT8 hu_redownloadinggamestate;
 
-extern boolean hu_stopped;
-
 extern UINT8 adminpassmd5[16];
 extern boolean adminpasswordset;
 
-// Commands on Change
-void Joinable_OnChange(void);
+extern boolean hu_stopped;
 
 #endif

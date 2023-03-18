@@ -44,6 +44,12 @@
 // length of IP strings
 #define IP_SIZE 21
 
+static CV_PossibleValue_t discordinvites_cons_t[] = { // Here for dedicated servers or something idk
+	{0, "Admins"},
+	{1, "Everyone"},
+	{2, "Server Only"},
+	{0, NULL}};
+
 static CV_PossibleValue_t statustype_cons_t[] = {
     {0, "Default"},
 
@@ -249,6 +255,7 @@ static CV_PossibleValue_t custommiscimage_cons_t[] = {
 consvar_t cv_discordrp = CVAR_INIT ("discordrp", "On", CV_SAVE|CV_CALL, CV_OnOff, Discord_option_Onchange);
 consvar_t cv_discordstreamer = CVAR_INIT ("discordstreamer", "Off", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
 consvar_t cv_discordasks = CVAR_INIT ("discordasks", "Yes", CV_SAVE|CV_CALL, CV_OnOff, Discord_option_Onchange);
+consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Everyone", CV_SAVE|CV_CALL, discordinvites_cons_t, DRPC_UpdatePresence);
 consvar_t cv_discordstatusmemes = CVAR_INIT ("discordstatusmemes", "Yes", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
 consvar_t cv_discordshowonstatus = CVAR_INIT ("discordshowonstatus", "Default", CV_SAVE|CV_CALL, statustype_cons_t, Discord_option_Onchange);
 consvar_t cv_discordcharacterimagetype = CVAR_INIT ("discordcharacterimagetype", "CS Portrait", CV_SAVE|CV_CALL, characterimagetype_cons_t, DRPC_UpdatePresence);
@@ -278,7 +285,6 @@ consvar_t cv_customdiscordsmallmiscimage = CVAR_INIT ("customdiscordsmallmiscima
 consvar_t cv_customdiscordlargeimagetext = CVAR_INIT ("customdiscordlargeimagetext", "My Favorite Character!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
 consvar_t cv_customdiscordsmallimagetext = CVAR_INIT ("customdiscordsmallimagetext", "My Other Favorite Character!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
 
-struct discordInfo_s discordInfo;
 discordRequest_t *discordRequestList = NULL;
 
 static char self_ip[IP_SIZE+1];
@@ -295,9 +301,9 @@ static char self_ip[IP_SIZE+1];
 --------------------------------------------------*/
 static char *DRPC_XORIPString(const char *input)
 {
-	UINT8 i;
 	char *output = malloc(sizeof(char) * (IP_SIZE+1));
 	const UINT8 xor[IP_SIZE] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21};
+	UINT8 i;
 		
 	for (i = 0; i < IP_SIZE; i++)
 	{
@@ -414,11 +420,11 @@ static boolean DRPC_InvitesAreAllowed(void)
 		|| (!Playing()))		  // We're Not Playing, So No Invites Should Be Sent.
 		return false; 
 	
-	if (discordInfo.joinsAllowed) // Are We Allowing Players to join the Server?
+	if (cv_allownewplayer.value) // Are We Allowing Players to join the Server?
 	{
-		if ((!discordInfo.whoCanInvite && (consoleplayer == serverplayer || IsPlayerAdmin(consoleplayer))) // Only Admins are Allowed!
-			|| (discordInfo.whoCanInvite == 2 && consoleplayer == serverplayer)							   // Only the Server Player is Allowed!
-			|| (discordInfo.whoCanInvite == 1)) 														   // Everyone's allowed!
+		if ((!cv_discordinvites.value && (consoleplayer == serverplayer || IsPlayerAdmin(consoleplayer))) // Only Admins are Allowed!
+			|| (cv_discordinvites.value == 2 && consoleplayer == serverplayer)							  // Only the Server Player is Allowed!
+			|| (cv_discordinvites.value == 1)) 														   	  // Everyone's allowed!
 			return true;
 	}
 
@@ -963,14 +969,12 @@ void DRPC_UpdatePresence(void)
 			
 		discordPresence.partyId = server_context; 		   // Thanks, whoever gave us Mumble support, for implementing the EXACT thing Discord wanted for this field!
 		discordPresence.partySize = D_NumPlayers(); 	   // Current Amount of Players in the Server
-		discordPresence.partyMax = discordInfo.maxPlayers; // Max Players
+		discordPresence.partyMax = cv_maxplayers.value;    // Max Players
 		discordPresence.instance = 1;					   // Initialize Discord Net Instance, Just In Case
 
 		if (!joinSecretSet)
 			DRPC_EmptyRequests(); 						   // Flush the Request List, if it Exists and We Can't Join
 	}
-	else
-		memset(&discordInfo, 0, sizeof(discordInfo)); 	   // Reset Discord Info/Presence for Clients Compiled Without HAVE_DISCORDRPC, so You Never Receieve Bad Information From Other Players!
 
 	//// 	  STATUSES 		////
 	if (cv_discordshowonstatus.value != 8)
@@ -1338,7 +1342,6 @@ void DRPC_ShutDown(void)
 	// Initialize Discord Once More
 	DiscordRichPresence discordPresence;
 	memset(&discordPresence, 0, sizeof(discordPresence));
-	memset(&discordInfo, 0, sizeof(discordInfo));
 	
 	// Assign a Custom Status Because We Can
 	discordPresence.details = "Currently Closing...";

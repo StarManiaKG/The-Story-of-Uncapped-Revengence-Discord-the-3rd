@@ -48,7 +48,6 @@
 #endif
 
 #include "lua_hud.h"
-#include "lua_hudlib_drawlist.h"
 #include "lua_hook.h"
 
 // coords are scaled

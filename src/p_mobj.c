@@ -12687,6 +12687,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 			skyboxviewpnts[tag] = mobj;
 		break;
 	}
+
 	case MT_EGGSTATUE:
 		if (mthing->options & MTF_EXTRA)
 		{

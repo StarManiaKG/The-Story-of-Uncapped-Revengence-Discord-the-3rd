@@ -660,7 +660,7 @@ static void COM_ExecuteString(char *ptext)
 	// check cvars
 	// Hurdler: added at Ebola's request ;)
 	// (don't flood the console in software mode with bad gl_xxx command)
-	if (!CV_Command() && con_destlines)
+	if (!CV_Command() && (con_destlines || dedicated))
 		CONS_Printf(M_GetText("Unknown command '%s'\n"), COM_Argv(0));
 }
 
@@ -1451,14 +1451,14 @@ static void Setvalue(consvar_t *var, const char *valstr, boolean stealth)
 				}
 
 
-			if ((v != INT32_MIN && v < var->PossibleValue[MINVAL].value) || (!stricmp(valstr, "MIN")))
+			if ((v != INT32_MIN && v < var->PossibleValue[MINVAL].value) || !stricmp(valstr, "MIN"))
 			{
 				v = var->PossibleValue[MINVAL].value;
 				valstr = var->PossibleValue[MINVAL].strvalue;
 				override = true;
 				overrideval = v;
 			}
-			else if ((v != INT32_MIN && v > var->PossibleValue[MAXVAL].value) || (!stricmp(valstr, "MAX")))
+			else if ((v != INT32_MIN && v > var->PossibleValue[MAXVAL].value) || !stricmp(valstr, "MAX"))
 			{
 				v = var->PossibleValue[MAXVAL].value;
 				valstr = var->PossibleValue[MAXVAL].strvalue;
@@ -1725,9 +1725,13 @@ void CV_SaveVars(UINT8 **p, boolean in_demo)
 		if ((cvar->flags & CV_NETVAR) && !CV_IsSetToDefault(cvar))
 		{
 			if (in_demo)
+			{
 				WRITESTRING(*p, cvar->name);
+			}
 			else
+			{
 				WRITEUINT16(*p, cvar->netid);
+			}
 			WRITESTRING(*p, cvar->string);
 			WRITEUINT8(*p, false);
 			++count;
