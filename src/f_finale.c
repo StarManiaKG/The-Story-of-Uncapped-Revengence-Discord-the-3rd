@@ -39,11 +39,9 @@
 #include "p_setup.h"
 #include "st_stuff.h" // hud hiding
 #include "fastcmp.h"
-#include "command.h"
 
 #include "lua_hud.h"
 #include "lua_hook.h"
-#include "lua_hudlib_drawlist.h"
 
 // Stage of animation:
 // 0 = text, 1 = art screen
@@ -228,10 +226,6 @@ static tic_t cutscene_lasttextwrite = 0;
 
 // STJR Intro
 char stjrintro[9] = "STJRI000";
-
-// Star stuff yaya
-static CV_PossibleValue_t stjrintro_t[] = {{0, "Default"}, {1, "Pure Fat"}, {0, NULL}};
-consvar_t cv_stjrintro = CVAR_INIT ("stjrintro", "Default", CV_SAVE, stjrintro_t, NULL);
 
 //
 // This alters the text string cutscene_disptext.
@@ -1274,6 +1268,7 @@ static const char *credits[] = {
 	"Ben \"Mystic\" Geyer",
 	"Nathan \"Jazz\" Giroux",
 	"Vivian \"toaster\" Grannell",
+	"Dan \"Blitzzo\" Hagerstrand",
 	"James \"SeventhSentinel\" Hall",
 	"Kepa \"Nev3r\" Iceta",
 	"Thomas \"Shadow Hog\" Igoe",

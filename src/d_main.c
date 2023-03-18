@@ -94,7 +94,6 @@
 #endif
 
 #include "lua_script.h"
-#include "lua_hudlib_drawlist.h"
 
 // Version numbers for netplay :upside_down_face:
 int    VERSION;

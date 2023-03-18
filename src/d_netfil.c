@@ -35,9 +35,9 @@
 #include "doomstat.h"
 #include "d_main.h"
 #include "g_game.h"
+#include "i_time.h"
 #include "i_net.h"
 #include "i_system.h"
-#include "i_time.h"
 #include "m_argv.h"
 #include "d_net.h"
 #include "w_wad.h"
@@ -1302,6 +1302,7 @@ void PT_FileFragment(void)
 		&& strcmp(filename, "patch.pk3")
 		&& strcmp(filename, "music.dta")
 		
+		// TSoURDt3rd Files
 		&& strcmp(filename, "tsourdt3rd.pk3")
 		&& strcmp(filename, "jukebox.pk3")
 		))

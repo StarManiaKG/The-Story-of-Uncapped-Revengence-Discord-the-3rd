@@ -9,12 +9,12 @@
 /// \file  stun.h
 /// \brief RFC 5389 client implementation to fetch external IP address.
 
-#ifndef KART_STUN_H
-#define KART_STUN_H
+#ifndef SRB2_STUN_H
+#define SRB2_STUN_H
 
 typedef void (*stun_callback_t)(UINT32 address);
 
 void    STUN_bind (stun_callback_t);
 boolean STUN_got_response (const char * const buffer, const size_t size);
 
-#endif/*KART_STUN_H*/
+#endif/*SRB2_STUN_H*/

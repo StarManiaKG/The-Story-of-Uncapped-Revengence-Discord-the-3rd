@@ -15,10 +15,12 @@
 #include <unistd.h> //for unlink
 #endif
 
+#include "i_time.h"
 #include "i_net.h"
 #include "i_system.h"
 #include "i_video.h"
 #include "d_net.h"
+#include "d_netcmd.h"
 #include "d_main.h"
 #include "g_game.h"
 #include "st_stuff.h"
@@ -48,6 +50,9 @@
 #include "m_perfstats.h"
 #include "s_sound.h" // sfx_syfail
 #include "i_time.h"
+
+// aaaaaa
+#include "i_joy.h"
 
 #ifndef NONET
 // cl loading screen
@@ -330,11 +335,10 @@ static UINT8* D_GetExistingTextcmd(tic_t tic, INT32 playernum)
 	// Do we have an entry for the tic? If so, look for player.
 	if (textcmdtic)
 	{
-		textcmdplayer_t *limit = (textcmdplayer_t*)255;
 		textcmdplayer_t *textcmdplayer = textcmdtic->playercmds[playernum & (TEXTCMD_HASH_SIZE - 1)];
-		while (textcmdplayer > limit && textcmdplayer->playernum != playernum) textcmdplayer = textcmdplayer->next;
+		while (textcmdplayer && textcmdplayer->playernum != playernum) textcmdplayer = textcmdplayer->next;
 
-		if (textcmdplayer > limit) return textcmdplayer->cmd;
+		if (textcmdplayer) return textcmdplayer->cmd;
 	}
 
 	return NULL;
@@ -656,6 +660,22 @@ static UINT8 Snake_GetOppositeDir(UINT8 dir)
 		return 12 + 5 - dir;
 }
 
+event_t *snakejoyevents[MAXEVENTS];
+UINT16 joyeventcount = 0;
+
+// I'm screaming the hack is clean - ashi
+static boolean Snake_Joy_Grabber(event_t *ev)
+{
+	if (ev->type == ev_joystick  && ev->key == 0)
+	{
+		snakejoyevents[joyeventcount] = ev;
+		joyeventcount++;
+		return true;
+	}
+	else
+		return false;
+}
+
 static void Snake_FindFreeSlot(UINT8 *freex, UINT8 *freey, UINT8 headx, UINT8 heady)
 {
 	UINT8 x, y;
@@ -682,6 +702,9 @@ static void Snake_Handle(void)
 	UINT8 x, y;
 	UINT8 oldx, oldy;
 	UINT16 i;
+	UINT16 j;
+	UINT16 joystate = 0;
+	static INT32 pjoyx = 0, pjoyy = 0;
 
 	// Handle retry
 	if (snake->gameover && (PLAYER1INPUTDOWN(GC_JUMP) || gamekeydown[KEY_ENTER]))
@@ -710,23 +733,58 @@ static void Snake_Handle(void)
 	oldx = snake->snakex[1];
 	oldy = snake->snakey[1];
 
+	// process the input events in here dear lord
+	for (j = 0; j < joyeventcount; j++)
+	{
+		event_t *ev = snakejoyevents[j];
+		const INT32 jdeadzone = (JOYAXISRANGE * cv_digitaldeadzone.value) / FRACUNIT;
+		if (ev->y != INT32_MAX)
+		{
+			if (Joystick.bGamepadStyle || abs(ev->y) > jdeadzone)
+			{
+				if (ev->y < 0 && pjoyy >= 0)
+					joystate = 1;
+				else if (ev->y > 0 && pjoyy <= 0)
+					joystate = 2;
+				pjoyy = ev->y;
+			}
+			else
+				pjoyy = 0;
+		}
+
+		if (ev->x != INT32_MAX)
+		{
+			if (Joystick.bGamepadStyle || abs(ev->x) > jdeadzone)
+			{
+				if (ev->x < 0 && pjoyx >= 0)
+					joystate = 3;
+				else if (ev->x > 0 && pjoyx <= 0)
+					joystate = 4;
+				pjoyx = ev->x;
+			}
+			else
+				pjoyx = 0;
+		}
+	}
+	joyeventcount = 0;
+
 	// Update direction
-	if (gamekeydown[KEY_LEFTARROW])
+	if (PLAYER1INPUTDOWN(GC_STRAFELEFT) || gamekeydown[KEY_LEFTARROW] || joystate == 3)
 	{
 		if (snake->snakelength < 2 || x <= oldx)
 			snake->snakedir[0] = 1;
 	}
-	else if (gamekeydown[KEY_RIGHTARROW])
+	else if (PLAYER1INPUTDOWN(GC_STRAFERIGHT) || gamekeydown[KEY_RIGHTARROW] || joystate == 4)
 	{
 		if (snake->snakelength < 2 || x >= oldx)
 			snake->snakedir[0] = 2;
 	}
-	else if (gamekeydown[KEY_UPARROW])
+	else if (PLAYER1INPUTDOWN(GC_FORWARD) || gamekeydown[KEY_UPARROW] || joystate == 1)
 	{
 		if (snake->snakelength < 2 || y <= oldy)
 			snake->snakedir[0] = 3;
 	}
-	else if (gamekeydown[KEY_DOWNARROW])
+	else if (PLAYER1INPUTDOWN(GC_BACKWARD) || gamekeydown[KEY_DOWNARROW] || joystate == 2)
 	{
 		if (snake->snakelength < 2 || y >= oldy)
 			snake->snakedir[0] = 4;
@@ -1455,10 +1513,6 @@ static boolean SV_SendServerConfig(INT32 node)
 	netbuffer->u.servercfg.gametype = (UINT8)gametype;
 	netbuffer->u.servercfg.modifiedgame = (UINT8)modifiedgame;
 
-	netbuffer->u.servercfg.maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
-	netbuffer->u.servercfg.allownewplayer = cv_allownewplayer.value;
-	netbuffer->u.servercfg.discordinvites = (UINT8)cv_discordinvites.value;
-
 	memcpy(netbuffer->u.servercfg.server_context, server_context, 8);
 
 	{
@@ -1724,11 +1778,8 @@ static void SendAskInfo(INT32 node)
 {
 	tic_t asktime;
 
-	if (node != 0 && node != BROADCASTADDR &&
-			cv_holepunchserver.string[0])
-	{
+	if (node != 0 && node != BROADCASTADDR && cv_holepunchserver.string[0])
 		I_NetRequestHolePunch(node);
-	}
 
 	asktime = I_GetTime();
 	netbuffer->packettype = PT_ASKINFO;
@@ -1952,7 +2003,7 @@ static void M_ConfirmConnect(event_t *ev)
 #ifndef NONET
 	if (ev->type == ev_keydown)
 	{
-		if (ev->key == ' ' || ev->key == 'y' || ev->key == KEY_ENTER)
+		if (ev->key == ' ' || ev->key == 'y' || ev->key == KEY_ENTER || ev->key == KEY_JOY1)
 		{
 			if (totalfilesrequestednum > 0)
 			{
@@ -1967,7 +2018,7 @@ static void M_ConfirmConnect(event_t *ev)
 
 			M_ClearMenus(true);
 		}
-		else if (ev->key == 'n' || ev->key == KEY_ESCAPE)
+		else if (ev->key == 'n' || ev->key == KEY_ESCAPE || ev->key == KEY_JOY1 + 3)
 		{
 			cl_mode = CL_ABORTED;
 			M_ClearMenus(true);
@@ -1982,6 +2033,7 @@ static boolean CL_FinishedFileList(void)
 {
 	INT32 i;
 	char *downloadsize = NULL;
+
 	//CONS_Printf(M_GetText("Checking files...\n"));
 	i = CL_CheckFiles();
 	if (i == 4) // still checking ...
@@ -2397,8 +2449,14 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 			D_ProcessEvents(); //needed for menu system to receive inputs
 		else
 		{
+			// my hand has been forced and I am dearly sorry for this awful hack :vomit:
 			for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
-				G_MapEventsToControls(&events[eventtail]);
+			{
+#ifndef NONET
+				if (!Snake_Joy_Grabber(&events[eventtail]))
+#endif
+					G_MapEventsToControls(&events[eventtail]);
+			}
 		}
 
 		if (gamekeydown[KEY_ESCAPE] || gamekeydown[KEY_JOY1+1] || cl_mode == CL_ABORTED)
@@ -2467,7 +2525,6 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 		I_Sleep(cv_sleep.value);
 		I_UpdateTime(cv_timescale.value);
 	}
-
 
 	return true;
 }
@@ -2737,8 +2794,12 @@ static void Command_connect(void)
 	}
 
 	if (Playing() || titledemo)
-		//CONS_Printf(M_GetText("You cannot connect while in a game. End this game first.\n"));
+	{
+		if (menuactive)
+			M_ClearMenus(true);
+
 		Command_ExitGame_f();
+	}
 
 	// modified game check: no longer handled
 	// we don't request a restart unless the filelist differs
@@ -3339,11 +3400,7 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 #endif
 	}
 
-	if (msg == KICK_MSG_PLAYER_QUIT)
-		S_StartSound(NULL, sfx_leave); // intended leave
-	else
-		S_StartSound(NULL, sfx_syfail); // he he he
-
+	S_StartSound(NULL, ((msg == KICK_MSG_PLAYER_QUIT) ? sfx_leave : sfx_syfail)); // play funny discord sounds
 	switch (msg)
 	{
 		case KICK_MSG_GO_AWAY:
@@ -3464,19 +3521,14 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 static CV_PossibleValue_t netticbuffer_cons_t[] = {{0, "MIN"}, {3, "MAX"}, {0, NULL}};
 consvar_t cv_netticbuffer = CVAR_INIT ("netticbuffer", "1", CV_SAVE, netticbuffer_cons_t, NULL);
 
-void Joinable_OnChange(void);
-consvar_t cv_allownewplayer = CVAR_INIT ("allowjoin", "On", CV_SAVE|CV_CALL|CV_NETVAR, CV_OnOff, Joinable_OnChange);
+consvar_t cv_allownewplayer = CVAR_INIT ("allowjoin", "On", CV_SAVE|CV_NETVAR, CV_OnOff, NULL);
 consvar_t cv_joinnextround = CVAR_INIT ("joinnextround", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL); /// \todo not done
 static CV_PossibleValue_t maxplayers_cons_t[] = {{2, "MIN"}, {32, "MAX"}, {0, NULL}};
-consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_SAVE|CV_CALL|CV_NETVAR, maxplayers_cons_t, Joinable_OnChange);
+consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_SAVE|CV_NETVAR, maxplayers_cons_t, NULL);
 static CV_PossibleValue_t joindelay_cons_t[] = {{1, "MIN"}, {3600, "MAX"}, {0, "Off"}, {0, NULL}};
 consvar_t cv_joindelay = CVAR_INIT ("joindelay", "10", CV_SAVE|CV_NETVAR, joindelay_cons_t, NULL);
 static CV_PossibleValue_t rejointimeout_cons_t[] = {{1, "MIN"}, {60 * FRACUNIT, "MAX"}, {0, "Off"}, {0, NULL}};
 consvar_t cv_rejointimeout = CVAR_INIT ("rejointimeout", "2", CV_SAVE|CV_NETVAR|CV_FLOAT, rejointimeout_cons_t, NULL);
-
-// Here for dedicated servers or something idk
-static CV_PossibleValue_t discordinvites_cons_t[] = {{0, "Admins"}, {1, "Everyone"}, {2, "Server Only"}, {0, NULL}};
-consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Everyone", CV_SAVE|CV_CALL|CV_NETVAR, discordinvites_cons_t, Joinable_OnChange);
 
 static CV_PossibleValue_t resynchattempts_cons_t[] = {{1, "MIN"}, {20, "MAX"}, {0, "No"}, {0, NULL}};
 consvar_t cv_resynchattempts = CVAR_INIT ("resynchattempts", "10", CV_SAVE|CV_NETVAR, resynchattempts_cons_t, NULL);
@@ -3488,28 +3540,10 @@ consvar_t cv_maxsend = CVAR_INIT ("maxsend", "4096", CV_SAVE|CV_NETVAR, maxsend_
 consvar_t cv_noticedownload = CVAR_INIT ("noticedownload", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL);
 
 // Speed of file downloading (in packets per tic)
-static CV_PossibleValue_t downloadspeed_cons_t[] = {{0, "MIN"}, {300, "MAX"}, {0, NULL}};
+static CV_PossibleValue_t downloadspeed_cons_t[] = {{1, "MIN"}, {300, "MAX"}, {0, NULL}};
 consvar_t cv_downloadspeed = CVAR_INIT ("downloadspeed", "16", CV_SAVE|CV_NETVAR, downloadspeed_cons_t, NULL);
 
 static void Got_AddPlayer(UINT8 **p, INT32 playernum);
-
-void Joinable_OnChange(void)
-{
-	UINT8 buf[3];
-	UINT8 *p = buf;
-	UINT8 maxplayer;
-
-	if (!server)
-		return;
-
-	maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
-
-	WRITEUINT8(p, maxplayer);
-	WRITEUINT8(p, cv_allownewplayer.value);
-	WRITEUINT8(p, cv_discordinvites.value);
-
-	SendNetXCmd(XD_DISCORD, &buf, 3);
-}
 
 // called one time at init
 void D_ClientServerInit(void)
@@ -3654,8 +3688,6 @@ void D_QuitNetGame(void)
 
 	if (!netgame || !netbuffer)
 		return;
-
-	
 
 	DEBFILE("===========================================================================\n"
 	        "                  Quitting Game, closing connection\n"
@@ -4394,12 +4426,6 @@ static void HandlePacketFromAwayNode(SINT8 node)
 				modifiedgame = netbuffer->u.servercfg.modifiedgame;
 				memcpy(server_context, netbuffer->u.servercfg.server_context, 8);
 			}
-
-#ifdef HAVE_DISCORDRPC
-			discordInfo.maxPlayers = netbuffer->u.servercfg.maxplayer;
-			discordInfo.joinsAllowed = netbuffer->u.servercfg.allownewplayer;
-			discordInfo.whoCanInvite = netbuffer->u.servercfg.discordinvites;
-#endif
 
 			nodeingame[(UINT8)servernode] = true;
 			serverplayer = netbuffer->u.servercfg.serverplayer;
@@ -5451,7 +5477,7 @@ static inline void PingUpdate(void)
 	// send the server's maxping as last element of our ping table. This is useful to let us know when we're about to get kicked.
 	netbuffer->u.pingtable[MAXPLAYERS] = cv_maxping.value;
 
-	//send out our ping packets /// Handle timeouts to prevent definitive freezes from happenning ////I dislike both this and that word
+	//send out our ping packets
 	for (i = 0; i < MAXNETNODES; i++)
 		if (nodeingame[i])
 			HSendPacket(i, true, 0, sizeof(INT32) * (MAXPLAYERS+1));
@@ -5527,9 +5553,7 @@ void NetUpdate(void)
 #endif
 
 	if (netgame && serverrunning)
-	{
 		RenewHolePunch();
-	}
 
 	if (client)
 	{

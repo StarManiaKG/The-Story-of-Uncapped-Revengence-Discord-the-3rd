@@ -2,6 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
 // Copyright (C) 2018-2020 by Kart Krew.
+// Copyright (C) 2020-2023 by Star "I Make My Own Copyrights" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -20,6 +21,7 @@
 extern consvar_t cv_discordrp;
 extern consvar_t cv_discordstreamer;
 extern consvar_t cv_discordasks;
+extern consvar_t cv_discordinvites;
 extern consvar_t cv_discordshowonstatus;
 extern consvar_t cv_discordstatusmemes;
 extern consvar_t cv_discordcharacterimagetype;
@@ -40,12 +42,6 @@ extern consvar_t cv_customdiscordsmallimagetext;
 
 extern char discordUserName[64];
 
-extern struct discordInfo_s {
-	UINT8 maxPlayers;
-	boolean joinsAllowed;
-	UINT8 whoCanInvite;
-} discordInfo;
-
 typedef struct discordRequest_s {
 	char *username; // Discord user name.
 	char *discriminator; // Discord discriminator (The little hashtag thing after the username). Separated for a "hide discriminators" cvar.
@@ -56,8 +52,7 @@ typedef struct discordRequest_s {
 	// but it can *also* be a JEPG, WebP, or GIF :)
 	// Hey, wanna add ImageMagick as a dependency? :dying:
 	// ...Essentially, VERY WIP
-	//patch *avatar;
-	//char *avatar;
+	//patch *avatar; // might turn into a char instead, idk
 
 	struct discordRequest_s *next; // Next request in the list.
 	struct discordRequest_s *prev; // Previous request in the list. Not used normally, but just in case something funky happens, this should repair the list.

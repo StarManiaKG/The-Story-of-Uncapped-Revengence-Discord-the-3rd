@@ -502,7 +502,7 @@ void M_FreePlayerSetupColors(void);
 void M_RefreshPauseMenu(void);
 
 //star stuff weeeeee
-extern consvar_t cv_jukeboxhud;
+extern consvar_t cv_jukeboxhud, cv_stjrintro;
 
 extern boolean jukeboxMusicPlaying;
 extern char jukeboxMusicName[22+12];

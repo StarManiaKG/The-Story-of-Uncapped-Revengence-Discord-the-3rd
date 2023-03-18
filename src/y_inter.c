@@ -38,7 +38,6 @@
 #include "lua_hook.h" // IntermissionThinker hook
 
 #include "lua_hud.h"
-#include "lua_hudlib_drawlist.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"

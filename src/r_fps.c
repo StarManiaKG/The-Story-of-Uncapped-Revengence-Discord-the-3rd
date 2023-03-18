@@ -13,7 +13,7 @@
 /// \brief Uncapped framerate stuff.
 
 #include "r_fps.h"
-
+#include "i_time.h"
 #include "r_main.h"
 #include "g_game.h"
 #include "i_video.h"
