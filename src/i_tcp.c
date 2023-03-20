@@ -139,7 +139,7 @@
 #include "i_tcp.h"
 #include "m_argv.h"
 #include "stun.h"
-#include "z_zone.h"
+#include "z_zone.h" // maybe might not be necessary
 
 #include "doomstat.h"
 
@@ -527,8 +527,7 @@ void Command_Numnodes(void)
 
 #ifndef NONET
 /* not one of the reserved "local" addresses */
-static boolean
-is_external_address (UINT32 p)
+static boolean is_external_address(UINT32 p)
 {
 	UINT8 a = (p & 255);
 	UINT8 b = ((p >> 8) & 255);
@@ -554,7 +553,7 @@ is_external_address (UINT32 p)
 static boolean hole_punch(ssize_t c)
 {
 	/* See ../doc/Holepunch-Protocol.txt */
-	if (cv_holepunchserver.string[0] &&
+	if (cv_rendezvousserver.string[0] &&
 			c == 10 && holepunchpacket->magic == hole_punch_magic &&
 			is_external_address(ntohl(holepunchpacket->addr)))
 	{
@@ -589,12 +588,11 @@ static boolean SOCK_Get(void)
 		fromlen = (socklen_t)sizeof(fromaddress);
 		c = recvfrom(mysockets[n], (char *)&doomcom->data, MAXPACKETLENGTH, 0,
 			(void *)&fromaddress, &fromlen);
-		if (c > 0)
+		if (c != ERRSOCKET)
 		{
 #ifdef USE_STUN
 			if (STUN_got_response(doomcom->data, c))
 			{
-				return false;
 				break;
 			}
 #endif
@@ -1218,12 +1216,13 @@ void I_ShutdownTcpDriver(void)
 }
 
 #ifndef NONET
-static boolean SOCK_GetAddr(struct sockaddr_in *sin, const char *address, const char *port, boolean test)
+static SINT8 SOCK_NetMakeNodewPort(const char *address, const char *port)
 {
+	SINT8 newnode = -1;
 	struct my_addrinfo *ai = NULL, *runp, hints;
 	int gaie;
 
-	if (!port || !port[0])
+	 if (!port || !port[0])
 		port = DEFAULTPORT;
 
 	DEBFILE(va("Creating new node: %s@%s\n", address, port));
@@ -1235,57 +1234,36 @@ static boolean SOCK_GetAddr(struct sockaddr_in *sin, const char *address, const 
 	hints.ai_protocol = IPPROTO_UDP;
 
 	gaie = I_getaddrinfo(address, port, &hints, &ai);
-
-	if (gaie != 0)
+	if (gaie == 0)
+	{
+		newnode = getfreenode();
+	}
+	if (newnode == -1)
 	{
 		I_freeaddrinfo(ai);
-		return false;
+		return -1;
 	}
-	
-	runp = ai;
+	else
+		runp = ai;
 
-	if (test)
+	while (runp != NULL)
 	{
-		while (runp != NULL)
+		// find ip of the server
+		if (sendto(mysockets[0], NULL, 0, 0, runp->ai_addr, runp->ai_addrlen) == 0)
 		{
-			// find ip of the server
-			if (sendto(mysockets[0], NULL, 0, 0, runp->ai_addr, runp->ai_addrlen) == 0)
-				break;
-				
-			runp = runp->ai_next;
+			memcpy(&clientaddress[newnode], runp->ai_addr, runp->ai_addrlen);
+			break;
 		}
+		runp = runp->ai_next;
 	}
-
-	if (runp != NULL)
-		memcpy(sin, runp->ai_addr, runp->ai_addrlen);
-
 	I_freeaddrinfo(ai);
-	
-	return (runp != NULL);
-}
-
-static SINT8 SOCK_NetMakeNodewPort(const char *address, const char *port)
-{
-	SINT8 newnode = getfreenode();
-
-	DEBFILE(va("Creating new node: %s@%s\n", address, port));
-
-	if (newnode != -1)
-	{
-		if (!SOCK_GetAddr(&clientaddress[newnode].ip4, address, port, true))
-		{
-			nodeconnected[newnode] = false;
-			return -1;
-		}
-	}
-
 	return newnode;
 }
 
 /* See ../doc/Holepunch-Protocol.txt */
 static void rendezvous(int size)
 {
-	char *addrs = strdup(cv_holepunchserver.string);
+	char *addrs = strdup(cv_rendezvousserver.string);
 
 	char *host = strtok(addrs, ":");
 	char *port = strtok(NULL,  ":");
@@ -1297,14 +1275,14 @@ static void rendezvous(int size)
 
 	if (tic != refreshtic)
 	{
-		if (SOCK_GetAddr(&rzv.ip4, host, (port ? port : "7777"), false))
+		if (SOCK_NetMakeNodewPort(host, (port ? port : "7777")))
 		{
 			refreshtic = tic;
 		}
 		else
 		{
 			CONS_Alert(CONS_ERROR, "Failed to contact rendezvous server (%s).\n",
-					cv_holepunchserver.string);
+					cv_rendezvousserver.string);
 		}
 	}
 	

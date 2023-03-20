@@ -21,7 +21,6 @@
 extern consvar_t cv_discordrp;
 extern consvar_t cv_discordstreamer;
 extern consvar_t cv_discordasks;
-extern consvar_t cv_discordinvites;
 extern consvar_t cv_discordshowonstatus;
 extern consvar_t cv_discordstatusmemes;
 extern consvar_t cv_discordcharacterimagetype;
@@ -41,6 +40,10 @@ extern consvar_t cv_customdiscordlargeimagetext;
 extern consvar_t cv_customdiscordsmallimagetext;
 
 extern char discordUserName[64];
+
+extern struct discordInfo_s {
+	UINT8 whoCanInvite;
+} discordInfo;
 
 typedef struct discordRequest_s {
 	char *username; // Discord user name.

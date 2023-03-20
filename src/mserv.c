@@ -57,7 +57,7 @@ static void Command_Listserv_f(void);
 
 static void Update_parameters (void);
 
-static void MasterServer_OnChange (void);
+static void MasterServer_OnChange(void);
 
 static CV_PossibleValue_t masterserver_update_rate_cons_t[] = {
 	{2,  "MIN"},
@@ -66,7 +66,8 @@ static CV_PossibleValue_t masterserver_update_rate_cons_t[] = {
 };
 
 consvar_t cv_masterserver = CVAR_INIT ("masterserver", "https://mb.srb2.org/MS/0", CV_SAVE|CV_CALL, NULL, MasterServer_OnChange);
-consvar_t cv_holepunchserver = CVAR_INIT ("holepunchserver", "jart-dev.jameds.org", CV_SAVE, NULL, NULL);
+consvar_t cv_rendezvousserver = CVAR_INIT ("holepunchserver", "jart-dev.jameds.org", CV_SAVE, NULL, NULL);
+
 consvar_t cv_servername = CVAR_INIT ("servername", "SRB2 server", CV_SAVE|CV_NETVAR|CV_CALL|CV_NOINIT, NULL, Update_parameters);
 
 consvar_t cv_masterserver_update_rate = CVAR_INIT ("masterserver_update_rate", "15", CV_SAVE|CV_CALL|CV_NOINIT, masterserver_update_rate_cons_t, Update_parameters);
@@ -90,18 +91,18 @@ msg_rooms_t room_list[NUM_LIST_ROOMS+1]; // +1 for easy test
 
 /** Adds variables and commands relating to the master server.
   *
-  * \sa cv_masterserver, cv_holepunchserver, cv_servername,
+  * \sa cv_masterserver, cv_rendezvousserver, cv_servername,
   *     Command_Listserv_f
   */
 void AddMServCommands(void)
 {
 #ifndef NONET
 	CV_RegisterVar(&cv_masterserver);
-	CV_RegisterVar(&cv_holepunchserver);
 	CV_RegisterVar(&cv_masterserver_update_rate);
 	CV_RegisterVar(&cv_masterserver_timeout);
 	CV_RegisterVar(&cv_masterserver_debug);
 	CV_RegisterVar(&cv_masterserver_token);
+	CV_RegisterVar(&cv_rendezvousserver);
 	CV_RegisterVar(&cv_servername);
 #ifdef MASTERSERVER
 	COM_AddCommand("listserv", Command_Listserv_f);
@@ -539,8 +540,7 @@ Update_parameters (void)
 #endif/*MASTERSERVER*/
 }
 
-static void 
-MasterServer_OnChange (void)
+static void MasterServer_OnChange(void)
 {
 #ifdef MASTERSERVER
 	UnregisterServer();

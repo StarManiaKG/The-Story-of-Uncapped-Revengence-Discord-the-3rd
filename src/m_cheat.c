@@ -36,10 +36,6 @@
 #include "lua_script.h"
 #include "lua_hook.h"
 
-#ifdef HAVE_DISCORDRPC
-#include "discord.h"
-#endif
-
 //
 // CHEAT SEQUENCE PACKAGE
 //
@@ -934,10 +930,6 @@ void Command_Setlives_f(void)
 
 		G_SetGameModified(multiplayer);
 	}
-
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
 }
 
 void Command_Setcontinues_f(void)

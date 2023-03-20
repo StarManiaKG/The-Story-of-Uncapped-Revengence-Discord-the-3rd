@@ -213,62 +213,7 @@ DWORD I_EndProfile(VOID)
 	return ret;
 }
 
-/*
-// ---------
-// I_GetTime
-// Use the High Resolution Timer if available,
-// else use the multimedia timer which has 1 millisecond precision on Windowz 95,
-// but lower precision on Windows NT
-// ---------
-static long hacktics = 0; // used locally for keyboard repeat keys
-static DWORD starttickcount = 0; // hack for win2k time bug
-
-tic_t I_GetTime(void)
-{
-	tic_t newtics = 0;
-
-	if (!starttickcount) // high precision timer
-	{
-		LARGE_INTEGER currtime; // use only LowPart if high resolution counter is not available
-		static LARGE_INTEGER basetime = {{0, 0}};
-
-		// use this if High Resolution timer is found
-		static LARGE_INTEGER frequency;
-
-		if (!basetime.LowPart)
-		{
-			if (!QueryPerformanceFrequency(&frequency))
-				frequency.QuadPart = 0;
-			else
-				QueryPerformanceCounter(&basetime);
-		}
-
-		if (frequency.LowPart && QueryPerformanceCounter(&currtime))
-		{
-			newtics = (int)((currtime.QuadPart - basetime.QuadPart) * NEWTICRATE
-				/ frequency.QuadPart);
-		}
-		else
-		{
-			currtime.LowPart = timeGetTime();
-			if (!basetime.LowPart)
-				basetime.LowPart = currtime.LowPart;
-			newtics = ((currtime.LowPart - basetime.LowPart)/(1000/NEWTICRATE));
-		}
-	}
-	else
-		newtics = (GetTickCount() - starttickcount)/(1000/NEWTICRATE);
-
-	hacktics = newtics; // a local counter for keyboard repeat key
-	return newtics;
-}
-
-void I_Sleep(void)
-{
-	if (cv_sleep.value != -1)
-		Sleep(cv_sleep.value);
-}
-*/
+/* I_GetTime used to be here, but is now no longer necessary */
 
 // should move to i_video
 void I_WaitVBL(INT32 count)

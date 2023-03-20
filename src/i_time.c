@@ -24,7 +24,7 @@
 timestate_t g_time;
 
 static CV_PossibleValue_t timescale_cons_t[] = {{FRACUNIT/20, "MIN"}, {20*FRACUNIT, "MAX"}, {0, NULL}};
-consvar_t cv_timescale = CVAR_INIT ("timescale", "1.0", CV_CHEAT|CV_FLOAT, timescale_cons_t, NULL); // hack, is supposed to be a CV_NETVAR
+consvar_t cv_timescale = CVAR_INIT ("timescale", "1.0", CV_CHEAT|CV_FLOAT, timescale_cons_t, NULL); // Hack, Supposed to be a CV_NETVAR
 
 static precise_t enterprecise, oldenterprecise;
 static fixed_t entertic, oldentertics;
