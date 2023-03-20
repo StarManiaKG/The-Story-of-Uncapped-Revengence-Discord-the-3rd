@@ -2973,7 +2973,6 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 		mtag_t tag = Tag_FGet(&mobj->spawnpoint->tags);
 		if (tag >= 0 && tag <= 15)
 		{
-			//if (mobj->spawnpoint->args[0])
 			if (mobj->spawnpoint->options & MTF_OBJECTSPECIAL)
 				skyboxcenterpnts[tag] = mobj;
 			else

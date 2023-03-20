@@ -2606,10 +2606,6 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 						G_SaveGameOver((UINT32)cursaveslot, (target->player->continues <= 0));
 				}
 			}
-
-#ifdef HAVE_DISCORDRPC
-    		DRPC_UpdatePresence();
-#endif
 		}
 		target->player->playerstate = PST_DEAD;
 

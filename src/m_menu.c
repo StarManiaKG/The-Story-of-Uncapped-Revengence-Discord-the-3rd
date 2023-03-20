@@ -1835,7 +1835,7 @@ static menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 
 	{IT_HEADER, 			NULL, 	"Server Options", 			NULL,					   30},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,	
-							NULL,   "Holepunch Server",  		&cv_holepunchserver,	   36},
+							NULL,   "Holepunch Server",  		&cv_rendezvousserver,	   36},
 	
 	{IT_STRING | IT_CVAR,   NULL,   "Show Connecting Players",  &cv_noticedownload,        50},
 	{IT_STRING | IT_CVAR,   NULL,   "Max File Transfer (kB)", 	&cv_maxsend,     	       55},
@@ -12733,13 +12733,39 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 			&& (R_SkinAvailable(setupm_cvdefaultskin->string) != setupm_fakeskin
 			|| setupm_cvdefaultcolor->value != setupm_fakecolor->color))
 			{
-				S_StartSound(NULL,(((gametyperules & GTR_TEAMS && !players[consoleplayer].spectator) || !R_SkinUsable(-1, setupm_cvdefaultskin->value) || !CanChangeSkin(consoleplayer)) ? sfx_skid : sfx_strpst));
+				// Play A Sound //
+				S_StartSound(NULL, 
+					(((gametyperules & GTR_TEAMS && !players[consoleplayer].spectator) || !R_SkinUsable(-1, setupm_cvdefaultskin->value) || !CanChangeSkin(consoleplayer)) ? sfx_skid : sfx_strpst));
 				
-				setupm_fakeskin = ((R_SkinUsable(-1, setupm_cvdefaultskin->value) || CanChangeSkin(consoleplayer)) ? setupm_cvdefaultskin->value : setupm_fakeskin);
-				setupm_fakecolor->color = (gametyperules & GTR_TEAMS ? (!players[consoleplayer].spectator ? (players[consoleplayer].ctfteam == 1 ? skincolor_redteam : skincolor_blueteam): setupm_cvdefaultcolor->value) : setupm_cvdefaultcolor->value);
+				// Reset Properties //
+				// Also for some reason changing your skin using ->value with the command doesn't work lol
+				(CanChangeSkin(consoleplayer) ? (setupm_fakeskin = R_SkinAvailable(setupm_cvdefaultskin->string)) : 0);
+				setupm_fakecolor->color = 
+											// Team Modes
+											(gametyperules & GTR_TEAMS ?
+												(!players[consoleplayer].spectator ?
+													(players[consoleplayer].ctfteam == 1 ? skincolor_redteam : skincolor_blueteam) :
+													(setupm_cvdefaultcolor->value)) :
+											
+											// Other Modes
+											(setupm_cvdefaultcolor->value));
 				
-				if ((gametyperules & GTR_TEAMS && !players[consoleplayer].spectator) || !R_SkinUsable(-1, setupm_cvdefaultskin->value) || !CanChangeSkin(consoleplayer))
-					CONS_Printf(M_GetText("Some player settings cannot be reset at the moment.\n"));
+				CONS_Printf(
+					// Errors //
+					// Both Skin and Color
+					((!CanChangeSkin(consoleplayer) && ((gametyperules & GTR_TEAMS && !players[consoleplayer].spectator)) ?
+						(M_GetText("Your skin and color cannot be reset at the moment.\n")) :
+
+					// Skin Only
+					(!CanChangeSkin(consoleplayer) ?
+						(M_GetText("Your skin cannot be reset at the moment.\n")) :
+
+					// Color Only
+					((gametyperules & GTR_TEAMS && !players[consoleplayer].spectator) ?
+						(M_GetText("Your color cannot be reset at the moment.\n")) :
+
+					// No Errors! //
+					M_GetText("Your skin and color were successfully reset!\n"))))));
 			}
 			break;
 			/* FALLTHRU */
@@ -14242,9 +14268,16 @@ static void M_DrawDiscordMenu(void)
 {
 	M_DrawGenericScrollMenu();
 	
-	V_DrawCenteredString(BASEVIDWIDTH/2, 200,																// String Width and Height
-		((strcmp(discordUserName, " ") == 0) ? V_REDMAP : V_GREENMAP),										// String Flags
-		((strcmp(discordUserName, " ") == 0) ? "Not Connected" : va("Connected to: %s", discordUserName))); // Show the Player's Name, Or Show We're Not Connected
+	V_DrawCenteredString(BASEVIDWIDTH/2, 200,																											// String Width and Height
+		(((strcmp(discordUserName, " ") == 0) || (strcmp(discordUserName, "  ") == 0)) ? V_REDMAP : V_GREENMAP),										// String Flags
+			((strcmp(discordUserName, " ") == 0) ? "Disconnected" :																						// Disconnected String
+			((strcmp(discordUserName, "  ") == 0) ? "Not Connected" :																					// Not Connected String, Enabled the Other HUD Hook
+			va("Connected to: %s", discordUserName))));																									// Connected, Show the Player's Name
+
+	if (strcmp(discordUserName, "  ") == 0)
+		V_DrawCenteredString(BASEVIDWIDTH/2, 210,																										// String Width and Height
+			(V_REDMAP),																																	// String Flag
+				("Is Discord Open?"));																													// Other Half of the Not Connected String, Points Towards Discord Not Being Open or your Privacy Settings Being the Problem
 }
 
 static void M_HandleDiscordRequests(INT32 choice)

@@ -904,6 +904,11 @@ void D_SRB2Loop(void)
 
 		LUA_Step();
 
+#ifdef HAVE_DISCORDRPC
+		if (!dedicated)
+			Discord_RunCallbacks();
+#endif
+
 		// Fully completed frame made.
 		finishprecise = I_GetPreciseTime();
 		if (!singletics)
@@ -923,10 +928,6 @@ void D_SRB2Loop(void)
 		deltasecs = (double)((INT64)(finishprecise - enterprecise)) / I_GetPrecisePrecision();
 		deltatics = deltasecs * NEWTICRATE;
 	}
-
-#ifdef HAVE_DISCORDRPC
-	Discord_RunCallbacks();
-#endif
 }
 
 //
@@ -1256,7 +1257,7 @@ static void IdentifyVersion(void)
 		}
 	}
 
-	char *patchmusicdta = malloc(strlen(srb2waddir)+1+15+1);
+	/*char *patchmusicdta = malloc(strlen(srb2waddir)+1+15+1);
 	if (patchmusicdta)
 	{
 		sprintf(patchmusicdta, pandf, srb2waddir, "patch_music.pk3");
@@ -1265,7 +1266,7 @@ static void IdentifyVersion(void)
 			extrawads += 1;
 			free(patchmusicdta);
 		}
-	}
+	}*/
 
 	char *jukeboxpk3 = malloc(strlen(srb2waddir)+1+11+1);
 	if (jukeboxpk3)
@@ -1577,7 +1578,7 @@ void D_SRB2Main(void)
 
 	G_LoadGameData();
 
-	// Initialize Discord //
+// Initialize Discord //
 #ifdef HAVE_DISCORDRPC
     CONS_Printf("DRPC_Init(): Initalizing Discord Rich Presence...\n");
     DRPC_Init();

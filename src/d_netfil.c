@@ -1301,7 +1301,7 @@ void PT_FileFragment(void)
 		&& strcmp(filename, "player.dta")
 		&& strcmp(filename, "patch.pk3")
 		&& strcmp(filename, "music.dta")
-		
+
 		// TSoURDt3rd Files
 		&& strcmp(filename, "tsourdt3rd.pk3")
 		&& strcmp(filename, "jukebox.pk3")

@@ -6051,8 +6051,15 @@ static void HWR_SetTransformAiming(FTransform *trans, player_t *player, boolean 
 //
 static void HWR_SetShaderState(void)
 {
-	HWD.pfnSetSpecialState(HWD_SET_SHADERS, (INT32)HWR_UseShader());
+	INT32 state = cv_glshaders.value;
+
+	if (!cv_glallowshaders.value)
+		state = cv_glshaders.value;
+
+	HWD.pfnSetSpecialState(HWD_SET_SHADERS, (INT32)(state));
+	HWD.pfnSetShader(0);
 }
+
 
 // ==========================================================================
 // Same as rendering the player view, but from the skybox object

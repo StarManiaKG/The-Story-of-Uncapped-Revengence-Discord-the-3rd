@@ -658,7 +658,7 @@ void F_IntroDrawer(void)
 		}
 		else // "Waaaaaaah" intro
 		{
-			strncpy(stjrintro, "STJRI029", 9);
+			strncpy(stjrintro, "STJRI029", 9); // Move the Frames of the Graphic Along While The Pure Fat is Fattening, So The Graphic Is At It's Final Frame When Shown
 
 			if (finalecount-TICRATE/2 < 4*TICRATE+23) {
 				// aspect is FRACUNIT/2 for 4:3 (source) resolutions, smaller for 16:10 (SRB2) resolutions

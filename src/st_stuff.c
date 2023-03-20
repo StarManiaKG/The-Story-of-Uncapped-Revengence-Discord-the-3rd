@@ -134,8 +134,7 @@ static patch_t *fnshico;
 static boolean facefreed[MAXPLAYERS];
 
 #ifdef HAVE_DISCORDRPC
-// Discord Rich Presence
-static patch_t *envelope;
+static patch_t *envelope; // Discord Rich Presence Requests
 #endif
 
 hudinfo_t hudinfo[NUMHUDITEMS] =
@@ -2624,11 +2623,12 @@ void ST_drawJukebox(void)
 		// Run Variables First //
 		if (initJukeboxHUD)
 		{
-			if (!chosenColor)
+			// I'll Rework This Into Something Cool Later, Probably
+			/*if (!chosenColor)
 			{
+				
 				switch (M_RandomRange(0, 14))
 				{
-					// Refuses to Work At The Moment, No Matter What I Do //
 					case 0: chosenColor = V_MAGENTAMAP; break;
 					case 1: chosenColor = V_YELLOWMAP; break;
 					case 2: chosenColor = V_GREENMAP; break;
@@ -2645,7 +2645,7 @@ void ST_drawJukebox(void)
 					case 13: chosenColor = V_ROSYMAP; break;
 					case 14: chosenColor = V_INVERTMAP; break;
 				}
-			}
+			}*/
 		
 			if (slidetime > 0)
 			{
@@ -2662,24 +2662,24 @@ void ST_drawJukebox(void)
 		// Apply Variables and Render Things //
 		// The Box
 		V_DrawFillConsoleMap(
-			((BASEVIDWIDTH/5)+(boxw-(strlen(jukeboxMusicName) < 18 ? 0 : strlen(jukeboxMusicName)+36))), 		// X Width
-			(45),																					  	   		// Y Height
-			(130+(strlen(jukeboxMusicName) < 18 ? 0 : strlen(jukeboxMusicName)+36)),					  		// Box Width
-			(25),																					  	  		// Box Height
-			(chosenColor|V_SNAPTORIGHT|V_HUDTRANSHALF));											  	 		// Box Flags
+			((BASEVIDWIDTH/5)+(boxw-(strlen(jukeboxMusicName) < 18 ? 0 : strlen(va("PLAYING: %s", jukeboxMusicName))+27))), 		// X Width
+			(45),																					  	   							// Y Height
+			(130+(strlen(jukeboxMusicName) < 18 ? 0 : strlen(va("PLAYING: %s", jukeboxMusicName))+27)),					  			// Box Width
+			(25),																					  	  							// Box Height
+			(V_SNAPTORIGHT|V_HUDTRANSHALF));																						// Box Flags
 		
 		// The Strings
 		V_DrawString(
-			(((BASEVIDWIDTH/4)+20)+(strw-(strlen(jukeboxMusicName) < 18 ? 0 : strlen(jukeboxMusicName)-5))), 	// String Width
-			(45),																						   	    // String Height
-			(V_SNAPTORIGHT|V_ALLOWLOWERCASE), 															   	    // String Flags
-			("JUKEBOX"));																				        // String
+			(((BASEVIDWIDTH/4)+20)+(strw-(strlen(jukeboxMusicName) < 18 ? 0 : strlen(va("PLAYING: %s", jukeboxMusicName))-14))), 	// String Width
+			(45),																						   	    					// String Height
+			(V_SNAPTORIGHT|V_ALLOWLOWERCASE), 															   	   						// String Flags
+			("JUKEBOX"));																				        					// String
 		
 		V_DrawThinString(
-			(((((BASEVIDWIDTH/5)+1)+tstrw)-(strlen(jukeboxMusicName) < 18 ? 0 : strlen(jukeboxMusicName)+36))), // String Width
-			(60),																						   	    // String Height
-			(V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP), 														// String Flags
-			(va("PLAYING: %s", jukeboxMusicName)));																// String
+			(((((BASEVIDWIDTH/5)+1)+tstrw)-(strlen(jukeboxMusicName) < 18 ? 0 : strlen(va("PLAYING: %s", jukeboxMusicName))+27))), 	// String Width
+			(60),																						   	    				   	// String Height
+			(V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP), 																			// String Flags and Color
+			(va("PLAYING: %s", jukeboxMusicName)));																					// String
 	}
 
 	if (!cv_jukeboxhud.value || !jukeboxMusicPlaying)

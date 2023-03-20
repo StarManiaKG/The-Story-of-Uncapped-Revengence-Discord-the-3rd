@@ -80,6 +80,7 @@ static void Got_RandomSeed(UINT8 **cp, INT32 playernum);
 static void Got_RunSOCcmd(UINT8 **cp, INT32 playernum);
 static void Got_Teamchange(UINT8 **cp, INT32 playernum);
 static void Got_Clearscores(UINT8 **cp, INT32 playernum);
+static void Got_DiscordInfo(UINT8 **cp, INT32 playernum);
 
 static void PointLimit_OnChange(void);
 static void TimeLimit_OnChange(void);
@@ -437,7 +438,7 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"SUICIDE",
 	"LUACMD",
 	"LUAVAR",
-	"LUAFILE"
+	"LUAFILE",
 };
 
 // =========================================================================
@@ -627,9 +628,13 @@ void D_RegisterServerCommands(void)
 
 	CV_RegisterVar(&cv_dummyconsvar);
 
+	// Discord Things //
 #ifdef USE_STUN
 	CV_RegisterVar(&cv_stunserver);
 #endif
+
+	CV_RegisterVar(&cv_discordinvites);
+	RegisterNetXCmd(XD_DISCORD, Got_DiscordInfo);
 }
 
 // =========================================================================
@@ -898,7 +903,7 @@ void D_RegisterClientCommands(void)
 
 	// ingame object placing
 	COM_AddCommand("objectplace", Command_ObjectPlace_f);
-	//COM_AddCommand("writethings", Command_Writethings_f);
+//	COM_AddCommand("writethings", Command_Writethings_f);
 	CV_RegisterVar(&cv_speed);
 	CV_RegisterVar(&cv_opflags);
 	CV_RegisterVar(&cv_ophoopflags);
@@ -942,7 +947,6 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_discordrp);
 	CV_RegisterVar(&cv_discordstreamer);
 	CV_RegisterVar(&cv_discordasks);
-	CV_RegisterVar(&cv_discordinvites);
 	CV_RegisterVar(&cv_discordshowonstatus);
 	CV_RegisterVar(&cv_discordstatusmemes);
 	CV_RegisterVar(&cv_discordcharacterimagetype);
@@ -1259,10 +1263,6 @@ static void ForceAllSkins(INT32 forcedskin)
 				CV_StealthSet(&cv_skin2, skins[forcedskin].name);
 		}
 	}
-
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
 }
 
 static INT32 snacpending = 0, snac2pending = 0, chmappending = 0;
@@ -2284,9 +2284,6 @@ static void Got_Pause(UINT8 **cp, INT32 playernum)
 	}
 
 	I_UpdateMouseGrab();
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
 }
 
 // Command for stuck characters in netgames, griefing, etc.
@@ -4170,10 +4167,6 @@ static void CoopLives_OnChange(void)
 
 		P_SpectatorJoinGame(&players[i]);
 	}
-
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
 }
 
 static void ExitMove_OnChange(void)
@@ -4235,10 +4228,6 @@ static void TimeLimit_OnChange(void)
 	}
 	else if (netgame || multiplayer)
 		CONS_Printf(M_GetText("Time limit disabled\n"));
-
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
 }
 
 /** Adjusts certain settings to match a changed gametype.
@@ -4719,10 +4708,6 @@ void Command_Retry_f(void)
 		M_ClearMenus(true);
 		G_SetRetryFlag();
 	}
-
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
 }
 
 #ifdef NETGAME_DEVMODE
@@ -4864,10 +4849,6 @@ static void ForceSkin_OnChange(void)
 		CONS_Printf("The server is restricting all players to skin \"%s\".\n",skins[cv_forceskin.value].name);
 		ForceAllSkins(cv_forceskin.value);
 	}
-
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
 }
 
 //Allows the player's name to be changed if cv_mute is off.
@@ -4917,10 +4898,6 @@ static void Skin_OnChange(void)
 		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));
 		CV_StealthSet(&cv_skin, skins[players[consoleplayer].skin].name);
 	}
-
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
 }
 
 /** Sends a skin change for the secondary splitscreen player, unless that
@@ -4940,10 +4917,6 @@ static void Skin2_OnChange(void)
 		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));
 		CV_StealthSet(&cv_skin2, skins[players[secondarydisplayplayer].skin].name);
 	}
-
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
 }
 
 /** Sends a color change for the console player, unless that player is moving.
@@ -5081,6 +5054,27 @@ static void BaseNumLaps_OnChange(void)
 		else
 			CONS_Printf(M_GetText("Number of laps will be changed to %d next round.\n"), cv_basenumlaps.value);
 	}
+}
+
+// Discord Things Yay
+void Got_DiscordInfo(UINT8 **p, INT32 playernum)
+{
+	// Protect Others Against a Hacked/Buggy Client
+	if (playernum != serverplayer /*&& !IsPlayerAdmin(playernum)*/)
+	{
+		CONS_Alert(CONS_WARNING, M_GetText("Illegal Discord info command received from %s\n"), player_names[playernum]);
+		if (server)
+			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+		return;
+	}
+
+	// Don't do anything with the information if we don't have Discord RPC support
+#ifdef HAVE_DISCORDRPC
+	discordInfo.whoCanInvite = READUINT8(*p);
+	DRPC_UpdatePresence();
+#else
+	(*p) += 1;
+#endif
 }
 
 //Star Commands: Electric Boogalo LETS GOOOOOOO

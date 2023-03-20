@@ -159,6 +159,12 @@ typedef struct
 	UINT8 gametype;
 	UINT8 modifiedgame;
 
+	// The Following is Kinda Needed for Discord RPC //
+	//UINT8 maxplayer;
+	//boolean allownewplayer;
+	UINT8 discordinvites;
+	// End of Kinda Required Discord RPC Stuff //
+
 	char server_context[8]; // Unique context id, generated at server startup.
 } ATTRPACK serverconfig_pak;
 
@@ -397,6 +403,8 @@ extern tic_t servermaxping;
 extern consvar_t cv_netticbuffer, cv_allownewplayer, cv_joinnextround, cv_maxplayers, cv_joindelay, cv_rejointimeout;
 extern consvar_t cv_resynchattempts, cv_blamecfail;
 extern consvar_t cv_maxsend, cv_noticedownload, cv_downloadspeed;
+
+extern consvar_t cv_discordinvites; // Discord Invites yayyaya
 
 // Used in d_net, the only dependence
 tic_t ExpandTics(INT32 low, INT32 node);

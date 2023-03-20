@@ -770,10 +770,6 @@ void G_SetGameModified(boolean silent)
 		M_EndModeAttackRun();
 	else if (marathonmode)
 		Command_ExitGame_f();
-
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
 }
 
 /** Builds an original game map name from a map number.
@@ -2119,9 +2115,6 @@ boolean G_Responder(event_t *ev)
 
 			// tell who's the view
 			CONS_Printf(M_GetText("Viewpoint: %s\n"), player_names[displayplayer]);
-#ifdef HAVE_DISCORDRPC
-			DRPC_UpdatePresence();
-#endif
 
 			return true;
 		}
@@ -3368,10 +3361,6 @@ void G_ExitLevel(void)
 	{
 		F_StartGameEvaluation();
 	}
-
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
 }
 
 // See also the enum GameType in doomstat.h

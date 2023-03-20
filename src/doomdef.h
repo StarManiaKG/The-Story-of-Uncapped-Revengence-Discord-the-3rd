@@ -583,10 +583,10 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 // Compile them at your own risk!
 
 ///	Allows the use of devmode in multiplayer. AKA "fishcake"
-#define NETGAME_DEVMODE
+//#define NETGAME_DEVMODE
 
 ///	Allows gravity changes in netgames, no questions asked.
-#define NETGAME_GRAVITY
+//#define NETGAME_GRAVITY
 
 ///	Dumps the contents of a network save game upon consistency failure for debugging.
 //#define DUMPCONSISTENCY

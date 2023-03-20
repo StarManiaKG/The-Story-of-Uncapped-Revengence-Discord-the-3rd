@@ -1513,6 +1513,10 @@ static boolean SV_SendServerConfig(INT32 node)
 	netbuffer->u.servercfg.gametype = (UINT8)gametype;
 	netbuffer->u.servercfg.modifiedgame = (UINT8)modifiedgame;
 
+	//netbuffer->u.servercfg.maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
+	//netbuffer->u.servercfg.allownewplayer = cv_allownewplayer.value;
+	netbuffer->u.servercfg.discordinvites = (UINT8)cv_discordinvites.value;
+
 	memcpy(netbuffer->u.servercfg.server_context, server_context, 8);
 
 	{
@@ -1778,7 +1782,7 @@ static void SendAskInfo(INT32 node)
 {
 	tic_t asktime;
 
-	if (node != 0 && node != BROADCASTADDR && cv_holepunchserver.string[0])
+	if (node != 0 && node != BROADCASTADDR && cv_rendezvousserver.string[0])
 		I_NetRequestHolePunch(node);
 
 	asktime = I_GetTime();
@@ -3521,6 +3525,8 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 static CV_PossibleValue_t netticbuffer_cons_t[] = {{0, "MIN"}, {3, "MAX"}, {0, NULL}};
 consvar_t cv_netticbuffer = CVAR_INIT ("netticbuffer", "1", CV_SAVE, netticbuffer_cons_t, NULL);
 
+void DiscordInfo_OnChange(void);
+
 consvar_t cv_allownewplayer = CVAR_INIT ("allowjoin", "On", CV_SAVE|CV_NETVAR, CV_OnOff, NULL);
 consvar_t cv_joinnextround = CVAR_INIT ("joinnextround", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL); /// \todo not done
 static CV_PossibleValue_t maxplayers_cons_t[] = {{2, "MIN"}, {32, "MAX"}, {0, NULL}};
@@ -3529,6 +3535,10 @@ static CV_PossibleValue_t joindelay_cons_t[] = {{1, "MIN"}, {3600, "MAX"}, {0, "
 consvar_t cv_joindelay = CVAR_INIT ("joindelay", "10", CV_SAVE|CV_NETVAR, joindelay_cons_t, NULL);
 static CV_PossibleValue_t rejointimeout_cons_t[] = {{1, "MIN"}, {60 * FRACUNIT, "MAX"}, {0, "Off"}, {0, NULL}};
 consvar_t cv_rejointimeout = CVAR_INIT ("rejointimeout", "2", CV_SAVE|CV_NETVAR|CV_FLOAT, rejointimeout_cons_t, NULL);
+
+// Here for Dedicated Servers or Something idk
+static CV_PossibleValue_t discordinvites_cons_t[] = {{0, "Admins"}, {1, "Everyone"}, {2, "Server Only"}, {0, NULL}};
+consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Everyone", CV_SAVE|CV_CALL, discordinvites_cons_t, DiscordInfo_OnChange); // Was Originally A CV_NETVAR, But Until I Figure This Stuff Out, Not Anymore :P
 
 static CV_PossibleValue_t resynchattempts_cons_t[] = {{1, "MIN"}, {20, "MAX"}, {0, "No"}, {0, NULL}};
 consvar_t cv_resynchattempts = CVAR_INIT ("resynchattempts", "10", CV_SAVE|CV_NETVAR, resynchattempts_cons_t, NULL);
@@ -3544,6 +3554,18 @@ static CV_PossibleValue_t downloadspeed_cons_t[] = {{1, "MIN"}, {300, "MAX"}, {0
 consvar_t cv_downloadspeed = CVAR_INIT ("downloadspeed", "16", CV_SAVE|CV_NETVAR, downloadspeed_cons_t, NULL);
 
 static void Got_AddPlayer(UINT8 **p, INT32 playernum);
+
+void DiscordInfo_OnChange(void)
+{
+	UINT8 buf[1];
+	UINT8 *p = buf;
+
+	if (!server)
+		return;
+
+	WRITEUINT8(p, cv_discordinvites.value);
+	SendNetXCmd(XD_DISCORD, buf, 1);
+}
 
 // called one time at init
 void D_ClientServerInit(void)
@@ -4426,6 +4448,12 @@ static void HandlePacketFromAwayNode(SINT8 node)
 				modifiedgame = netbuffer->u.servercfg.modifiedgame;
 				memcpy(server_context, netbuffer->u.servercfg.server_context, 8);
 			}
+
+#ifdef HAVE_DISCORDRPC
+			//discordInfo.maxPlayers = netbuffer->u.servercfg.maxplayer;
+			//discordInfo.joinsAllowed = netbuffer->u.servercfg.allownewplayer;
+			discordInfo.whoCanInvite = netbuffer->u.servercfg.discordinvites;
+#endif
 
 			nodeingame[(UINT8)servernode] = true;
 			serverplayer = netbuffer->u.servercfg.serverplayer;
@@ -5487,7 +5515,7 @@ static inline void PingUpdate(void)
 
 static void RenewHolePunch(void)
 {
-	if (cv_holepunchserver.string[0])
+	if (cv_rendezvousserver.string[0])
 	{
 		static time_t past;
 

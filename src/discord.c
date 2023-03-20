@@ -44,12 +44,6 @@
 // length of IP strings
 #define IP_SIZE 21
 
-static CV_PossibleValue_t discordinvites_cons_t[] = { // Here for dedicated servers or something idk
-	{0, "Admins"},
-	{1, "Everyone"},
-	{2, "Server Only"},
-	{0, NULL}};
-
 static CV_PossibleValue_t statustype_cons_t[] = {
     {0, "Default"},
 
@@ -255,7 +249,6 @@ static CV_PossibleValue_t custommiscimage_cons_t[] = {
 consvar_t cv_discordrp = CVAR_INIT ("discordrp", "On", CV_SAVE|CV_CALL, CV_OnOff, Discord_option_Onchange);
 consvar_t cv_discordstreamer = CVAR_INIT ("discordstreamer", "Off", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
 consvar_t cv_discordasks = CVAR_INIT ("discordasks", "Yes", CV_SAVE|CV_CALL, CV_OnOff, Discord_option_Onchange);
-consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Everyone", CV_SAVE|CV_CALL, discordinvites_cons_t, DRPC_UpdatePresence);
 consvar_t cv_discordstatusmemes = CVAR_INIT ("discordstatusmemes", "Yes", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
 consvar_t cv_discordshowonstatus = CVAR_INIT ("discordshowonstatus", "Default", CV_SAVE|CV_CALL, statustype_cons_t, Discord_option_Onchange);
 consvar_t cv_discordcharacterimagetype = CVAR_INIT ("discordcharacterimagetype", "CS Portrait", CV_SAVE|CV_CALL, characterimagetype_cons_t, DRPC_UpdatePresence);
@@ -286,8 +279,10 @@ consvar_t cv_customdiscordlargeimagetext = CVAR_INIT ("customdiscordlargeimagete
 consvar_t cv_customdiscordsmallimagetext = CVAR_INIT ("customdiscordsmallimagetext", "My Other Favorite Character!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
 
 discordRequest_t *discordRequestList = NULL;
+struct discordInfo_s discordInfo; // Dedicated Server Safety Crew
 
 static char self_ip[IP_SIZE+1];
+char discordUserName[64] = "  ";
 
 /*--------------------------------------------------
 	static char *DRPC_XORIPString(const char *input)
@@ -335,7 +330,6 @@ static char *DRPC_XORIPString(const char *input)
 	Return:-
 		None
 --------------------------------------------------*/
-char discordUserName[64] = " ";
 static void DRPC_HandleReady(const DiscordUser *user)
 {
 	strcpy(discordUserName, user->username);
@@ -422,9 +416,9 @@ static boolean DRPC_InvitesAreAllowed(void)
 	
 	if (cv_allownewplayer.value) // Are We Allowing Players to join the Server?
 	{
-		if ((!cv_discordinvites.value && (consoleplayer == serverplayer || IsPlayerAdmin(consoleplayer))) // Only Admins are Allowed!
-			|| (cv_discordinvites.value == 2 && consoleplayer == serverplayer)							  // Only the Server Player is Allowed!
-			|| (cv_discordinvites.value == 1)) 														   	  // Everyone's allowed!
+		if ((!cv_discordinvites.value && (consoleplayer == serverplayer || IsPlayerAdmin(consoleplayer))) 	// Only Admins are Allowed!
+			|| (cv_discordinvites.value == 2 && consoleplayer == serverplayer)							  	// Only the Server Player is Allowed!
+			|| (cv_discordinvites.value == 1)) 														   		// Everyone's allowed!
 			return true;
 	}
 
@@ -449,7 +443,7 @@ static void DRPC_HandleJoinRequest(const DiscordUser *requestUser)
 	discordRequest_t *append = discordRequestList;
 	discordRequest_t *newRequest;
 
-	// Something weird happened if this occurred...
+	// Invites Aren't Allowed? Check Your Settings Then.
 	if (!DRPC_InvitesAreAllowed())
 	{
 		Discord_Respond(requestUser->userId, DISCORD_REPLY_IGNORE);
@@ -971,25 +965,34 @@ void DRPC_UpdatePresence(void)
 		discordPresence.partySize = D_NumPlayers(); 	   // Current Amount of Players in the Server
 		discordPresence.partyMax = cv_maxplayers.value;    // Max Players
 		discordPresence.instance = 1;					   // Initialize Discord Net Instance, Just In Case
-
-		if (!joinSecretSet)
-			DRPC_EmptyRequests(); 						   // Flush the Request List, if it Exists and We Can't Join
 	}
+	else
+		memset(&discordInfo, 0, sizeof(discordInfo));
 
 	//// 	  STATUSES 		////
 	if (cv_discordshowonstatus.value != 8)
 	{
 		//// Status Pictures ////
-		if ((!Playing() || gamestate == GS_NULL) || ((!Playing() || gamestate == GS_NULL) && (cv_discordshowonstatus.value != 1 && cv_discordshowonstatus.value != 5)) || (cv_discordshowonstatus.value >= 2 && cv_discordshowonstatus.value != 5))
+		if ((!Playing() || gamestate == GS_NULL || gamestate == GS_TIMEATTACK) || ((!Playing() || gamestate == GS_NULL || gamestate == GS_TIMEATTACK) && (cv_discordshowonstatus.value != 1 && cv_discordshowonstatus.value != 5)) || (cv_discordshowonstatus.value >= 2 && cv_discordshowonstatus.value != 5))
 		{
 			strcpy(imagestr, "misctitle");
-			strcpy(imagetxtstr, (!cv_discordshowonstatus.value ? "Title Screen" : "Sonic Robo Blast 2"));
+			strcpy(imagetxtstr,
+					// Allow Statuses
+					((!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 6) ?
+						((gamestate == GS_TIMEATTACK) ? "Time Attack" : "Title Screen") :
+					
+					// Show No Statuses
+					("Sonic Robo Blast 2")));
 			
 			(((!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 6) && !Playing()) ?
-				snprintf((cv_discordshowonstatus.value == 7 ? detailstr : statestr), 130, 
+				snprintf(statestr, 130,
+						// Game States
+						((gamestate == GS_TIMEATTACK) ? "In the Time Attack Menu" :
+
+						// Demo States
 						((!demoplayback && !titledemo) ? "Main Menu" :
 						((demoplayback && !titledemo) ? "Watching Replays" :
-						((demoplayback && titledemo) ? "Watching A Demo" : "???")))) : 0);
+						((demoplayback && titledemo) ? "Watching A Demo" : "???"))))) : 0);
 		}
 
 		//// Status Text ////
@@ -1005,48 +1008,51 @@ void DRPC_UpdatePresence(void)
 			//// Emeralds ////
 			if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 3)
 			{
-				// Emerald Math, Provided By Monster Iestyn and Uncapped Plus Fafabis
-				for (INT32 i = 0; i < 7; i++) {
-					if ((gametyperules & GTR_POWERSTONES && (players[consoleplayer].powers[pw_emeralds] & (1<<i))) || (!(gametyperules & GTR_POWERSTONES) && emeralds & (1<<i)))
-						emeraldCount += 1;
-				}
-
-				// Grammar
-				if (!cv_discordshowonstatus.value && !splitscreen)
-					snprintf(emeraldComma, 3, ", ");
-				if (emeraldCount > 1)
-					snprintf(emeraldGrammar, 2, "s");
-				if (emeraldCount == 7)
-					snprintf(allEmeralds, 5, "All ");
-				
-				// Memes
-				if (cv_discordstatusmemes.value)
+				if (!modeattacking)
 				{
-					// Puncuation
-					if (!emeraldCount || emeraldCount == 3 || emeraldCount == 4)
-						snprintf(emeraldGrammar, 3, (emeraldCount == 3 || emeraldCount == 4) ? "s;" : "s?");
-					
-					// Fun Fact: the subtitles in Shadow the Hedgehog emphasized "fourth", even though Jason Griffith emphasized "damn" in this sentence
-					if (emeraldCount == 3 || emeraldCount == 4)
-						snprintf(emeraldMeme, 27, ((emeraldCount == 3) ? " Where's That DAMN FOURTH?" : " Found That DAMN FOURTH!"));
-					
-					// Goku Mode
-					if (emeraldCount == 7)
-						snprintf(emeraldMeme, 27, " Currently In Goku Mode");
-				}
-					
-				// Apply Strings
-				strlcat((!cv_discordshowonstatus.value ? detailstr : statestr),
-						// No Emeralds
-						((cv_discordstatusmemes.value && ((!(gametyperules & GTR_POWERSTONES) && !emeraldCount) || (gametyperules & GTR_POWERSTONES && !all7matchemeralds))) ? 
-							va("%s%s%d EMERALDS?", emeraldComma, allEmeralds, emeraldCount) :
-								
-						// Seven Emeralds
-						(all7matchemeralds ? va("%s All 7 Emeralds", emeraldComma) :
-						((players[consoleplayer].powers[pw_super] ? (va("%s%s", emeraldComma, (cv_discordstatusmemes.value ? emeraldMeme : " Currently Super"))) :
+					// Emerald Math, Provided By Monster Iestyn and Uncapped Plus Fafabis
+					for (INT32 i = 0; i < 7; i++) {
+						if ((gametyperules & GTR_POWERSTONES && (players[consoleplayer].powers[pw_emeralds] & (1<<i))) || (!(gametyperules & GTR_POWERSTONES) && emeralds & (1<<i)))
+							emeraldCount += 1;
+					}
 
-						// Some Emeralds
-						va("%s%s%d Emerald%s", emeraldComma, allEmeralds, emeraldCount, emeraldGrammar))))), 130);
+					// Grammar
+					if (!cv_discordshowonstatus.value && !splitscreen)
+						snprintf(emeraldComma, 3, ", ");
+					if (emeraldCount > 1)
+						snprintf(emeraldGrammar, 2, "s");
+					if (emeraldCount == 7)
+						snprintf(allEmeralds, 5, "All ");
+					
+					// Memes
+					if (cv_discordstatusmemes.value)
+					{
+						// Puncuation
+						if (!emeraldCount || emeraldCount == 3 || emeraldCount == 4)
+							snprintf(emeraldGrammar, 3, (emeraldCount == 3 || emeraldCount == 4) ? "s;" : "s?");
+						
+						// Fun Fact: the subtitles in Shadow the Hedgehog emphasized "fourth", even though Jason Griffith emphasized "damn" in this sentence
+						if (emeraldCount == 3 || emeraldCount == 4)
+							snprintf(emeraldMeme, 27, ((emeraldCount == 3) ? " Where's That DAMN FOURTH?" : " Found That DAMN FOURTH!"));
+						
+						// Goku Mode
+						if (emeraldCount == 7)
+							snprintf(emeraldMeme, 27, " Currently In Goku Mode");
+					}
+						
+					// Apply Strings
+					strlcat((!cv_discordshowonstatus.value ? detailstr : statestr),
+							// No Emeralds
+							((cv_discordstatusmemes.value && ((!(gametyperules & GTR_POWERSTONES) && !emeraldCount) || (gametyperules & GTR_POWERSTONES && !all7matchemeralds))) ? 
+								va("%s%s%d EMERALDS?", emeraldComma, allEmeralds, emeraldCount) :
+									
+							// Seven Emeralds
+							(all7matchemeralds ? va("%s All 7 Emeralds", emeraldComma) :
+							((players[consoleplayer].powers[pw_super] ? (va("%s%s", emeraldComma, (cv_discordstatusmemes.value ? emeraldMeme : " Currently Super"))) :
+
+							// Some Emeralds
+							va("%s%s%d Emerald%s", emeraldComma, allEmeralds, emeraldCount, emeraldGrammar))))), 130);
+				}
 			}
 
 			//// Score ////
@@ -1086,7 +1092,7 @@ void DRPC_UpdatePresence(void)
 					strlcat(gameType, ((numwadfiles - (mainwads+extrawads) > 1) ? va(" With %d Mods", numwadfiles - (mainwads+extrawads)) : (" With 1 Mod")), 105);
 				
 				// Lives //
-				if (!players[consoleplayer].spectator && gametyperules & GTR_LIVES && !ultimatemode)
+				if (!players[consoleplayer].spectator && gametyperules & GTR_LIVES && !(ultimatemode || modeattacking))
 					snprintf(lifeGrammar, 22, (!players[consoleplayer].lives ? ", Game Over..." : ((players[consoleplayer].lives == INFLIVES) || (!cv_cooplives.value && (netgame || multiplayer))) ? ", Has Infinite Lives" : (players[consoleplayer].lives == 1 ? ", %d Life Left" : ", %d Lives Left")), players[consoleplayer].lives);
 				
 				// Spectators //
@@ -1128,7 +1134,7 @@ void DRPC_UpdatePresence(void)
 	if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 5)
 	{
 		// Scene Info //
-		if (gamestate == GS_EVALUATION || gamestate == GS_GAMEEND || gamestate == GS_INTRO || gamestate == GS_CUTSCENE || gamestate == GS_CREDITS || gamestate == GS_ENDING || gamestate == GS_CONTINUING || gamestate == GS_TIMEATTACK) // Status Info
+		if (gamestate == GS_EVALUATION || gamestate == GS_GAMEEND || gamestate == GS_INTRO || gamestate == GS_CUTSCENE || gamestate == GS_CREDITS || gamestate == GS_ENDING || gamestate == GS_CONTINUING)
 		{
 			strcpy(imagestr, (gamestate == GS_INTRO ? "miscintro1" : "misctitle"));
 			strcpy(imagetxtstr, (gamestate == GS_INTRO ? "Intro" : "Sonic Robo Blast 2"));
@@ -1142,8 +1148,7 @@ void DRPC_UpdatePresence(void)
 								(gamestate == GS_ENDING ? "Watching the Ending" :
 								(gamestate == GS_GAMEEND ? (!cv_discordstatusmemes.value ? "Returning to the Main Menu..." : "Did You Get All Those Chaos Emeralds?") :
 								(gamestate == GS_INTRO ? "Watching The Intro" :
-								(gamestate == GS_CUTSCENE ? "Watching A Cutscene" :
-								(gamestate == GS_TIMEATTACK ? "In The Time Attack Menu" : "???")))))))) :
+								(gamestate == GS_CUTSCENE ? "Watching A Cutscene" : "???"))))))) :
 								
 							// Ultimate Mode
 							(!cv_discordstatusmemes.value ? "Just Beat Ultimate Mode!" : "Look Guys, It's my Greatest Achievement: An SRB2 Discord RPC Status Saying I Beat Ultimate Mode!")));
@@ -1153,9 +1158,21 @@ void DRPC_UpdatePresence(void)
 		else if (gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || (gamestate == GS_TITLESCREEN || titlemapinaction))
 		{
 			// Map Images
-			if ((gamemap >= 1 && gamemap <= 73) // Supported Co-op maps
-			|| (gamemap >= 280 && gamemap <= 288) // Supported CTF maps
-			|| (gamemap >= 532 && gamemap <= 543)) // Supported Match maps
+			if ((gamemap >= 1 && gamemap <= 16) 	// Supported Co-op Maps (GFZ-RVZ1)
+			|| (gamemap >= 22 && gamemap <= 23) 	// Supported Co-op Maps (ERZ1-ERZ2)
+			|| (gamemap >= 25 && gamemap <= 27) 	// Supported Co-op Maps (BCZ1-BCZ3)
+
+			|| (gamemap >= 30 && gamemap <= 33) 	// Supported Extra Maps
+			|| (gamemap >= 40 && gamemap <= 42) 	// Supported Advanced Maps
+
+			|| (gamemap >= 50 && gamemap <= 57) 	// Supported Singleplayer NiGHTS Stages
+			|| (gamemap >= 60 && gamemap <= 66) 	// Supported Co-op Special Stages
+			|| (gamemap >= 70 && gamemap <= 73) 	// Supported Bonus NiGHTS Stages
+
+			|| (gamemap >= 280 && gamemap <= 288) 	// Supported CTF Maps
+			|| (gamemap >= 532 && gamemap <= 543) 	// Supported Match Maps
+
+			|| (gamemap == 1000))					// Tutorial Zone
 			{
 				snprintf(mapimg, 8, "%s", G_BuildMapName(gamemap));
 				strlwr(mapimg);
@@ -1324,6 +1341,10 @@ void DRPC_UpdatePresence(void)
 	discordPresence.largeImageKey = imagestr;
 	discordPresence.largeImageText = imagetxtstr;
 
+	// Flush the Request List, if it Exists and We Can't Join
+	if (!joinSecretSet)
+		DRPC_EmptyRequests();
+
 	Discord_UpdatePresence(&discordPresence);
 }
 
@@ -1342,6 +1363,7 @@ void DRPC_ShutDown(void)
 	// Initialize Discord Once More
 	DiscordRichPresence discordPresence;
 	memset(&discordPresence, 0, sizeof(discordPresence));
+	memset(&discordInfo, 0, sizeof(discordInfo));
 	
 	// Assign a Custom Status Because We Can
 	discordPresence.details = "Currently Closing...";
