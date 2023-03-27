@@ -22,7 +22,7 @@
     
       - Currently Supported Characters:
         - Sonic
-	- Super Sonic
+		- Super Sonic
         - Tails
         - Knuckles
         - Amy
