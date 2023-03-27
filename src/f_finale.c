@@ -339,7 +339,7 @@ void F_StartCustomCutscene(INT32 cutscenenum, boolean precutscene, boolean reset
 void F_StartIntro(void)
 {
 	if (!cv_stjrintro.value)
-		introscenetime[0] = 5*TICRATE;				   // This Game Should Not Be Sold
+		introscenetime[0] = 5*TICRATE;				   // STJr Presents
 	else
 		introscenetime[0] = (7*TICRATE + (TICRATE/2)); // Pure Fat		
 
@@ -624,9 +624,9 @@ void F_IntroDrawer(void)
 		else
 			V_DrawScaledPatch(bgxoffs, 0, 0, background);
 	}
-	else if (intro_scenenum == 0) // STJr Presents
+	else if (intro_scenenum == 0) // The Scene/Wipe Before the Start of the Intro
 	{
-		if (!cv_stjrintro.value) // This Game Should Not Be Sold
+		if (!cv_stjrintro.value) // STJR Presents
 		{
 			if (intro_curtime > 1 && intro_curtime < (INT32)introscenetime[intro_scenenum])
 			{
@@ -1058,7 +1058,7 @@ void F_IntroTicker(void)
 
 	if (rendermode != render_none)
 	{
-		if (!cv_stjrintro.value) // This Game Should Not Be Sold
+		if (!cv_stjrintro.value) // STJr Presents
 		{
 			if (intro_scenenum == 0 && intro_curtime == 2*TICRATE-19)
 			{
@@ -1691,7 +1691,7 @@ void F_GameEvaluationDrawer(void)
 #if 0 // the following looks like hot garbage the more unlockables we add, and we now have a lot of unlockables
 	if (finalecount >= 5*TICRATE)
 	{
-		V_DrawString(8, 16, V_YELLOWMAP, "Unlocked:");
+		V_DrawString(8, 16, menuColor[cv_menucolor.value], "Unlocked:");
 
 		if (!(netgame) && (!modifiedgame || savemoddata))
 		{
@@ -1709,9 +1709,9 @@ void F_GameEvaluationDrawer(void)
 			}
 		}
 		else if (netgame)
-			V_DrawString(8, 96, V_YELLOWMAP, "Multiplayer games\ncan't unlock\nextras!");
+			V_DrawString(8, 96, menuColor[cv_menucolor.value], "Multiplayer games\ncan't unlock\nextras!");
 		else
-			V_DrawString(8, 96, V_YELLOWMAP, "Modified games\ncan't unlock\nextras!");
+			V_DrawString(8, 96, menuColor[cv_menucolor.value], "Modified games\ncan't unlock\nextras!");
 	}
 #endif
 

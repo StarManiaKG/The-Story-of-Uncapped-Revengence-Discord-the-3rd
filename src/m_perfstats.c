@@ -23,6 +23,8 @@
 #include "hardware/hw_main.h"
 #endif
 
+#include "m_menu.h" // menu coloring
+
 struct perfstatrow;
 
 typedef struct perfstatrow perfstatrow_t;
@@ -648,7 +650,7 @@ static void PS_DrawRenderStats(void)
 
 	PS_DrawDescriptorHeader();
 
-	y = PS_DrawPerfRows(20, 10, V_YELLOWMAP, rendertime_rows);
+	y = PS_DrawPerfRows(20, 10, menuColor[cv_menucolor.value], rendertime_rows);
 
 	PS_DrawPerfRows(20, y + half_row, V_GRAYMAP, gamelogicbrief_row);
 
@@ -684,7 +686,7 @@ static void PS_DrawGameLogicStats(void)
 
 	PS_DrawDescriptorHeader();
 
-	PS_DrawPerfRows(20, 10, V_YELLOWMAP, gamelogic_rows);
+	PS_DrawPerfRows(20, 10, menuColor[cv_menucolor.value], gamelogic_rows);
 
 	x = hires ? 115 : 90;
 	PS_DrawPerfRows(x, 10, V_BLUEMAP, thinkercount_rows);
@@ -756,7 +758,7 @@ if (y > 192) \
 				V_DrawSmallString(x, y, V_MONOSPACE | V_ALLOWLOWERCASE | V_GRAYMAP, s);
 				NEXT_ROW()
 			}
-			text_color = V_YELLOWMAP;
+			text_color = menuColor[cv_menucolor.value];
 		}
 		else
 		{
@@ -802,8 +804,8 @@ void M_DrawPerfStats(void)
 			// Low resolutions can't really use V_DrawSmallString that is used by thinkframe stats.
 			// A low-res version using V_DrawThinString could be implemented,
 			// but it would have much less space for information.
-			V_DrawThinString(80, 92, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, "Perfstats 3 is not available");
-			V_DrawThinString(80, 100, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, "for resolutions below 640x400.");
+			V_DrawThinString(80, 92, V_MONOSPACE | V_ALLOWLOWERCASE | menuColor[cv_menucolor.value], "Perfstats 3 is not available");
+			V_DrawThinString(80, 100, V_MONOSPACE | V_ALLOWLOWERCASE | menuColor[cv_menucolor.value], "for resolutions below 640x400.");
 		}
 		else
 		{

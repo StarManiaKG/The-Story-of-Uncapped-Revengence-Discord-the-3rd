@@ -573,20 +573,23 @@ static void D_Display(void)
 	// draw pause pic
 	if (paused && cv_showhud.value && (!menuactive || netgame))
 	{
-#if 0
-		INT32 py;
-		patch_t *patch;
-		if (automapactive)
-			py = 4;
-		else
-			py = viewwindowy + 4;
-		patch = W_CachePatchName("M_PAUSE", PU_PATCH);
-		V_DrawScaledPatch(viewwindowx + (BASEVIDWIDTH - patch->width)/2, py, 0, patch);
-#else
-		INT32 y = ((automapactive) ? (32) : (BASEVIDHEIGHT/2));
-		M_DrawTextBox((BASEVIDWIDTH/2) - (60), y - (16), 13, 2);
-		V_DrawCenteredString(BASEVIDWIDTH/2, y - (4), V_YELLOWMAP, "Game Paused");
-#endif
+		if (cv_pausemenustyle.value) // Old-School
+		{
+			INT32 py;
+			patch_t *patch;
+			if (automapactive)
+				py = 4;
+			else
+				py = viewwindowy + 4;
+			patch = W_CachePatchName("M_PAUSE", PU_PATCH);
+			V_DrawScaledPatch(viewwindowx + (BASEVIDWIDTH - patch->width)/2, py, 0, patch);
+		}
+		else						// Default
+		{
+			INT32 y = ((automapactive) ? (32) : (BASEVIDHEIGHT/2));
+			M_DrawTextBox((BASEVIDWIDTH/2) - (60), y - (16), 13, 2);
+			V_DrawCenteredString(BASEVIDWIDTH/2, y - (4), menuColor[cv_menucolor.value], "Game Paused");
+		}
 	}
 
 	// vid size change is now finished if it was on...
@@ -675,13 +678,13 @@ static void D_Display(void)
 			s[sizeof s - 1] = '\0';
 
 			snprintf(s, sizeof s - 1, "get %d b/s", getbps);
-			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-40, V_YELLOWMAP, s);
+			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-40, menuColor[cv_menucolor.value], s);
 			snprintf(s, sizeof s - 1, "send %d b/s", sendbps);
-			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-30, V_YELLOWMAP, s);
+			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-30, menuColor[cv_menucolor.value], s);
 			snprintf(s, sizeof s - 1, "GameMiss %.2f%%", gamelostpercent);
-			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-20, V_YELLOWMAP, s);
+			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-20, menuColor[cv_menucolor.value], s);
 			snprintf(s, sizeof s - 1, "SysMiss %.2f%%", lostpercent);
-			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-10, V_YELLOWMAP, s);
+			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-10, menuColor[cv_menucolor.value], s);
 		}
 
 		if (cv_perfstats.value)
@@ -754,7 +757,15 @@ void D_SRB2Loop(void)
 	/* Smells like a hack... Don't fade Sonic's ass into the title screen. */
 	if (gamestate != GS_TITLESCREEN)
 	{
-		gstartuplumpnum = W_CheckNumForName("STARTUP");
+		if (!cv_startupscreen.value)
+			gstartuplumpnum = W_CheckNumForName("STARTUP");
+		else
+		{
+			if (cv_startupscreen.value == 1)
+				gstartuplumpnum = W_CheckNumForName("CONSBACK");
+			else
+				gstartuplumpnum = W_CheckNumForName("BABYSONIC");
+		}
 		if (gstartuplumpnum == LUMPERROR)
 			gstartuplumpnum = W_GetNumForName("MISSING");
 		V_DrawScaledPatch(0, 0, 0, W_CachePatchNum(gstartuplumpnum, PU_PATCH));
@@ -981,9 +992,6 @@ void D_StartTitle(void)
 	// (otherwise the game still thinks we're playing!)
 	SV_StopServer();
 	SV_ResetServer();
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
 
 	for (i = 0; i < MAXPLAYERS; i++)
 		CL_ClearPlayer(i);
@@ -1578,10 +1586,13 @@ void D_SRB2Main(void)
 
 	G_LoadGameData();
 
-// Initialize Discord //
+	// Initialize Discord //
 #ifdef HAVE_DISCORDRPC
-    CONS_Printf("DRPC_Init(): Initalizing Discord Rich Presence...\n");
-    DRPC_Init();
+   	if (! dedicated)
+	{
+		CONS_Printf("DRPC_Init(): Initalizing Discord Rich Presence...\n");
+		DRPC_Init();
+	}
 #endif
 
 #if defined (__unix__) || defined (UNIXCOMMON) || defined (HAVE_SDL)

@@ -48,7 +48,7 @@
 // FPS things
 #include "r_main.h"
 #include "r_fps.h"
-// Jukebox Things
+// Misc. Star Things
 #include "m_menu.h"
 
 #ifdef HW3SOUND
@@ -1634,7 +1634,8 @@ void P_RestoreMusic(player_t *player)
 	if (!P_IsLocalPlayer(player)) // Only applies to a local player
 		return;
 
-	S_SpeedMusic(1.0f);
+	if (!jukeboxMusicPlaying)
+		S_SpeedMusic(1.0f);
 
 	// Jingles have a priority in this order, so follow it
 	// and as a default case, go down the music stack.
@@ -1664,7 +1665,8 @@ void P_RestoreMusic(player_t *player)
 		S_StartCaption(sfx_None, -1, player->powers[pw_sneakers]);
 		if (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC)
 		{
-			S_SpeedMusic(1.4f);
+			if (!jukeboxMusicPlaying)
+				S_SpeedMusic(1.4f);
 			if (!S_RecallMusic(JT_MASTER, true))
 				S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
 		}
@@ -4348,11 +4350,11 @@ static void P_DoSuperStuff(player_t *player)
 boolean P_SuperReady(player_t *player)
 {
 	if (!player->powers[pw_super]
-	&& !player->powers[pw_invulnerability]
+	&& ((!cv_superwithshield.value && !player->powers[pw_invulnerability]) || (cv_superwithshield.value))
 	&& !player->powers[pw_tailsfly]
 	&& (player->charflags & SF_SUPER)
 	&& (player->pflags & PF_JUMPED)
-	&& !(player->powers[pw_shield] & SH_NOSTACK)
+	&& ((!(player->powers[pw_shield] & SH_NOSTACK) && !cv_superwithshield.value) || (cv_superwithshield.value))
 	&& !(maptol & TOL_NIGHTS)
 	&& ALL7EMERALDS(emeralds)
 	&& (player->rings >= 50))
@@ -5037,7 +5039,7 @@ static boolean P_PlayerShieldThink(player_t *player, ticcmd_t *cmd, mobj_t *lock
 {
 	mobj_t *lockonshield = NULL;
 
-	if ((player->powers[pw_shield] & SH_NOSTACK) && !player->powers[pw_super] && !(player->pflags & PF_SPINDOWN)
+	if ((player->powers[pw_shield] & SH_NOSTACK) && (!player->powers[pw_super] || (player->powers[pw_super] && cv_armageddonnukesuper.value && (player->powers[pw_shield] & SH_NOSTACK) == SH_ARMAGEDDON)) && !(player->pflags & PF_SPINDOWN)
 		&& ((!(player->pflags & PF_THOKKED) || (((player->powers[pw_shield] & SH_NOSTACK) == SH_BUBBLEWRAP || (player->powers[pw_shield] & SH_NOSTACK) == SH_ATTRACT) && player->secondjump == UINT8_MAX) ))) // thokked is optional if you're bubblewrapped / 3dblasted
 	{
 		if ((player->powers[pw_shield] & SH_NOSTACK) == SH_ATTRACT && !(player->charflags & SF_NOSHIELDABILITY))
@@ -5065,6 +5067,10 @@ static boolean P_PlayerShieldThink(player_t *player, ticcmd_t *cmd, mobj_t *lock
 		}
 		if ((!(player->charflags & SF_NOSHIELDABILITY)) && (cmd->buttons & BT_SPIN && !LUA_HookPlayer(player, HOOK(ShieldSpecial)))) // Spin button effects
 		{
+			// Make sure we're not super, so we don't accidentally run anything here
+			if (cv_superwithshield.value && P_SuperReady(player))
+				return false;
+			
 			// Force stop
 			if ((player->powers[pw_shield] & ~(SH_FORCEHP|SH_STACK)) == SH_FORCE)
 			{
@@ -10445,9 +10451,6 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 boolean P_SpectatorJoinGame(player_t *player)
 {
-	boolean skiptodiscord = false;
-	boolean skiptodiscordnoreturn = false;
-
 	if (!G_CoopGametype() && !cv_allowteamchange.value)
 	{
 		if (P_IsLocalPlayer(player))
@@ -10511,7 +10514,11 @@ boolean P_SpectatorJoinGame(player_t *player)
 		else if (changeto == 2)
 			CONS_Printf(M_GetText("%s switched to the %c%s%c.\n"), player_names[player-players], '\x84', M_GetText("Blue team"), '\x80');
 
-		skiptodiscord = true;
+#ifdef HAVE_DISCORDRPC
+		DRPC_UpdatePresence(); // just in case, you never know :)
+#endif
+
+		return true; // no more player->mo, cannot continue.
 	}
 	// Joining in game from firing.
 	else
@@ -10554,7 +10561,11 @@ boolean P_SpectatorJoinGame(player_t *player)
 			if (!G_CoopGametype())
 				CONS_Printf(M_GetText("%s entered the game.\n"), player_names[player-players]);
 
-			skiptodiscord = true;
+#ifdef HAVE_DISCORDRPC
+			DRPC_UpdatePresence(); // just in case, you never know :)
+#endif
+
+			return true; // no more player->mo, cannot continue.
 		}
 		else
 		{
@@ -10562,18 +10573,9 @@ boolean P_SpectatorJoinGame(player_t *player)
 				CONS_Printf(M_GetText("You must wait until next round to enter the game.\n"));
 			player->powers[pw_flashing] += 2*TICRATE; //to prevent message spam.
 		}
-		skiptodiscord = true;
-		skiptodiscordnoreturn = true;
-	}
-
-	if (skiptodiscord)
-	{
 #ifdef HAVE_DISCORDRPC
-		DRPC_UpdatePresence();
+		DRPC_UpdatePresence(); // just in case, you never know :)
 #endif
-
-		if (!skiptodiscordnoreturn)
-			return true;
 	}
 
 	return false;
@@ -11341,6 +11343,11 @@ static void P_DoTailsOverlay(player_t *player, mobj_t *tails)
 	tails->y = player->mo->y + P_ReturnThrustY(tails, tails->angle, FixedMul(backwards, tails->scale));
 	tails->z = player->mo->z + zoffs;
 	P_SetThingPosition(tails);
+
+	if (player->mo->flags2 & MF2_SHADOW)
+		tails->flags2 |= MF2_SHADOW;
+	else
+		tails->flags2 &= ~MF2_SHADOW;
 }
 
 // Metal Sonic's jet fume

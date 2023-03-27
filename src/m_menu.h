@@ -502,7 +502,12 @@ void M_FreePlayerSetupColors(void);
 void M_RefreshPauseMenu(void);
 
 //star stuff weeeeee
-extern consvar_t cv_jukeboxhud, cv_stjrintro;
+extern boolean AlwaysOverlayInvincibility;
+extern consvar_t cv_startupscreen, cv_stjrintro, cv_menucolor, cv_fpscountercolor, cv_pausemenustyle;
+extern consvar_t cv_superwithshield, cv_armageddonnukesuper, cv_alwaysoverlayinvuln;
+extern consvar_t cv_jukeboxhud, cv_jukeboxspeed;
+
+extern UINT16 menuColor[16];
 
 extern boolean jukeboxMusicPlaying;
 extern char jukeboxMusicName[22+12];

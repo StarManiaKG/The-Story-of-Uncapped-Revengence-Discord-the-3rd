@@ -1541,9 +1541,9 @@ static void HU_drawChatLog(INT32 offset)
 	// draw arrows to indicate that we can (or not) scroll.
 	// account for Y = -1 offset in tinyfont
 	if (chat_scroll > 0)
-		V_DrawThinString(chatx-8, ((justscrolledup) ? (chat_topy-1) : (chat_topy)) - 1, V_SNAPTOBOTTOM | V_SNAPTOLEFT | V_YELLOWMAP, "\x1A"); // up arrow
+		V_DrawThinString(chatx-8, ((justscrolledup) ? (chat_topy-1) : (chat_topy)) - 1, V_SNAPTOBOTTOM | V_SNAPTOLEFT | menuColor[cv_menucolor.value], "\x1A"); // up arrow
 	if (chat_scroll < chat_maxscroll)
-		V_DrawThinString(chatx-8, chat_bottomy-((justscrolleddown) ? 5 : 6) - 1, V_SNAPTOBOTTOM | V_SNAPTOLEFT | V_YELLOWMAP, "\x1B"); // down arrow
+		V_DrawThinString(chatx-8, chat_bottomy-((justscrolleddown) ? 5 : 6) - 1, V_SNAPTOBOTTOM | V_SNAPTOLEFT | menuColor[cv_menucolor.value], "\x1B"); // down arrow
 
 	justscrolleddown = false;
 	justscrolledup = false;
@@ -1919,13 +1919,13 @@ static void HU_DrawDemoInfo(void)
 	if (modeattacking == ATTACKING_NIGHTS)
 		h -= 12;
 
-	V_DrawString(4, h-24, V_YELLOWMAP|V_ALLOWLOWERCASE, va(M_GetText("%s's replay"), player_names[0]));
+	V_DrawString(4, h-24, menuColor[cv_menucolor.value]|V_ALLOWLOWERCASE, va(M_GetText("%s's replay"), player_names[0]));
 	if (modeattacking)
 	{
-		V_DrawString(4, h-16, V_YELLOWMAP|V_MONOSPACE, "SCORE:");
+		V_DrawString(4, h-16, menuColor[cv_menucolor.value]|V_MONOSPACE, "SCORE:");
 		V_DrawRightAlignedString(120, h-16, V_MONOSPACE, va("%d", hu_demoscore));
 
-		V_DrawString(4, h-8, V_YELLOWMAP|V_MONOSPACE, "TIME:");
+		V_DrawString(4, h-8, menuColor[cv_menucolor.value]|V_MONOSPACE, "TIME:");
 		if (hu_demotime != UINT32_MAX)
 			V_DrawRightAlignedString(120, h-8, V_MONOSPACE, va("%i:%02i.%02i",
 				G_TicsToMinutes(hu_demotime,true),
@@ -1936,7 +1936,7 @@ static void HU_DrawDemoInfo(void)
 
 		if (modeattacking == ATTACKING_RECORD)
 		{
-			V_DrawString(4, h, V_YELLOWMAP|V_MONOSPACE, "RINGS:");
+			V_DrawString(4, h, menuColor[cv_menucolor.value]|V_MONOSPACE, "RINGS:");
 			V_DrawRightAlignedString(120, h, V_MONOSPACE, va("%d", hu_demorings));
 		}
 	}
@@ -2010,7 +2010,7 @@ void HU_Drawer(void)
 		for (i = 0; i < (resynch_ticker / 16) % 4; i++)
 			strcat(resynch_text, ".");
 
-		V_DrawCenteredString(BASEVIDWIDTH/2, 180, V_YELLOWMAP | V_ALLOWLOWERCASE, resynch_text);
+		V_DrawCenteredString(BASEVIDWIDTH/2, 180, menuColor[cv_menucolor.value] | V_ALLOWLOWERCASE, resynch_text);
 	}
 
 	if (modeattacking && pausedelay > 0 && !pausebreakkey)
@@ -2187,7 +2187,7 @@ void HU_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, I
 			if (tab[i].num != serverplayer)
 				HU_drawPing(x + 253, y, players[tab[i].num].quittime ? UINT32_MAX : playerpingtable[tab[i].num], false, 0);
 			//else
-			//	V_DrawSmallString(x+ 246, y+4, V_YELLOWMAP, "SERVER");
+			//	V_DrawSmallString(x+ 246, y+4, menuColor[cv_menucolor.value], "SERVER");
 		}
 
 		if (!players[tab[i].num].quittime || (leveltime / (TICRATE/2) & 1))

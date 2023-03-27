@@ -1,7 +1,8 @@
-// SONIC ROBO BLAST 2 -- WITH DISCORD RPC BROUGHT TO YOU BY THE KART KREW (And Star lol)
+// SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
 // Copyright (C) 2018-2020 by Kart Krew.
+// Copyright (C) 2020-2023 by Star "I Make My Own Copyrights" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -20,23 +21,26 @@
 #include "i_net.h"
 #include "g_game.h"
 #include "p_tick.h"
-#include "p_local.h" // all7matchemeralds
-#include "m_menu.h" // gametype_cons_t and discord custom string pointers and jukebox stuff and things like that
+#include "m_menu.h" // gametype_cons_t and jukebox stuff
 #include "r_things.h" // skins
-#include "mserv.h" // ms_RoomId
-#include "m_cond.h" // queries about emblems
+#include "mserv.h" // msServerId
 #include "z_zone.h"
 #include "byteptr.h"
 #include "stun.h"
 #include "i_tcp.h" // current_port
-#include "discord.h" // duh
+
+#include "discord.h"
 #include "doomdef.h"
+
+#include "p_local.h" // all7matchemeralds
+#include "m_cond.h" // queries about emblems
+#include "v_video.h" // hud stuff, mainly
+
 #include "w_wad.h" // numwadfiles
 #include "d_main.h" // extrawads
 #include "d_netfil.h" // nameonly
 #include "doomstat.h" // savemoddata
 #include "dehacked.h" // titlechanged
-#include "v_video.h" // hud stuff, mainly
 
 // Please feel free to provide your own Discord app if you're making a new custom build :)
 #define DISCORD_APPID "1013126566236135516"
@@ -71,22 +75,26 @@ static CV_PossibleValue_t customimagetype_cons_t[] = {
 	{1, "Continue Sprites"},
 	{2, "Life Icon Sprites"},
 
-	{3, "Maps"},
-	{4, "Miscellaneous"},
-	{5, "None"},
+	{3, "Super CS Portraits"},
+	{4, "Super Continue Sprites"},
+	{5, "Super Life Icon Sprites"},
+
+	{6, "Maps"},
+	{7, "Miscellaneous"},
+	{8, "None"},
 	{0, NULL}};
 
 // Characters //
 static CV_PossibleValue_t customcharacterimage_cons_t[] = {
     // Vanilla Chars
-    {0, "Default"}, //does ghost sonic count as a vanilla char? maybe.
+    {0, "Default"}, // does ghost sonic count as a vanilla char? maybe.
     {1, "Sonic"},
     {2, "Tails"},
     {3, "Knuckles"},
     {4, "Amy"},
     {5, "Fang"},
     {6, "Metal Sonic"},
-    {7, "Sonic & Tails"}, //Bots, am i right?
+    {7, "Sonic & Tails"}, // Bots, am I right?
     
 	// Custom Chars
     {8, "Adventure Sonic"},
@@ -113,8 +121,14 @@ static CV_PossibleValue_t customcharacterimage_cons_t[] = {
 	{25, "Speccy"},
     {0, NULL}};
 
+static CV_PossibleValue_t customsupercharacterimage_cons_t[] = {
+    // Vanilla Chars
+    {0, "Sonic"},
+	{1, "Sonic & Tails"}, // Bots, am I right?
+	{0, NULL}};
+
 // Maps //
-static CV_PossibleValue_t custommapimage_cons_t[] = { // Maps //
+static CV_PossibleValue_t custommapimage_cons_t[] = {
     // Singleplayer/Co-op Maps
     {0, "GFZ1"},
     {1, "GFZ2"},
@@ -232,15 +246,22 @@ static CV_PossibleValue_t custommiscimage_cons_t[] = {
 	{10, "Alt. Sonic Image 2"},
 	{11, "Alt. Sonic Image 3"},
 	{12, "Alt. Sonic Image 4"},
-	{13, "Alt. Tails Image 1"},
-	{14, "Alt. Tails Image 2"},
-	{15, "Alt. Knuckles Image 1"},
-	{16, "Alt. Knuckles Image 2"},
-	{17, "Alt. Amy Image 1"},
-	{18, "Alt. Fang Image 1"},
-	{19, "Alt. Metal Sonic Image 1"},
-	{20, "Alt. Metal Sonic Image 2"},
-	{21, "Alt. Eggman Image 1"},
+	{13, "Alt. Sonic Image 5"},
+
+	{14, "Alt. Tails Image 1"},
+	{15, "Alt. Tails Image 2"},
+
+	{16, "Alt. Knuckles Image 1"},
+	{17, "Alt. Knuckles Image 2"},
+
+	{18, "Alt. Amy Image 1"},
+
+	{19, "Alt. Fang Image 1"},
+
+	{20, "Alt. Metal Sonic Image 1"},
+	{21, "Alt. Metal Sonic Image 2"},
+
+	{22, "Alt. Eggman Image 1"},
 	{0, NULL}};
 
                                                 ////////////////////////////
@@ -264,8 +285,11 @@ consvar_t cv_customdiscordsmallimagetype = CVAR_INIT ("customdiscordsmallimagety
 // Custom Discord Status Images
     // Characters //
 consvar_t cv_customdiscordlargecharacterimage = CVAR_INIT ("customdiscordlargecharacterimage", "Sonic", CV_SAVE|CV_CALL, customcharacterimage_cons_t, DRPC_UpdatePresence);
-consvar_t cv_customdiscordsmallcharacterimage = CVAR_INIT ("customdiscordsmallimage", "Tails", CV_SAVE|CV_CALL, customcharacterimage_cons_t, DRPC_UpdatePresence);
-    
+consvar_t cv_customdiscordsmallcharacterimage = CVAR_INIT ("customdiscordsmallcharacterimage", "Tails", CV_SAVE|CV_CALL, customcharacterimage_cons_t, DRPC_UpdatePresence);
+
+consvar_t cv_customdiscordlargesupercharacterimage = CVAR_INIT ("customdiscordlargesupercharacterimage", "Sonic", CV_SAVE|CV_CALL, customsupercharacterimage_cons_t, DRPC_UpdatePresence);
+consvar_t cv_customdiscordsmallsupercharacterimage = CVAR_INIT ("customdiscordsmallsupercharacterimage", "Sonic", CV_SAVE|CV_CALL, customsupercharacterimage_cons_t, DRPC_UpdatePresence);
+
 	// Maps //
 consvar_t cv_customdiscordlargemapimage = CVAR_INIT ("customdiscordlargemapimage", "GFZ1", CV_SAVE|CV_CALL, custommapimage_cons_t, DRPC_UpdatePresence);
 consvar_t cv_customdiscordsmallmapimage = CVAR_INIT ("customdiscordsmallmapimage", "Custom", CV_SAVE|CV_CALL, custommapimage_cons_t, DRPC_UpdatePresence);
@@ -278,11 +302,12 @@ consvar_t cv_customdiscordsmallmiscimage = CVAR_INIT ("customdiscordsmallmiscima
 consvar_t cv_customdiscordlargeimagetext = CVAR_INIT ("customdiscordlargeimagetext", "My Favorite Character!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
 consvar_t cv_customdiscordsmallimagetext = CVAR_INIT ("customdiscordsmallimagetext", "My Other Favorite Character!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
 
-discordRequest_t *discordRequestList = NULL;
 struct discordInfo_s discordInfo; // Dedicated Server Safety Crew
+discordRequest_t *discordRequestList = NULL;
 
-static char self_ip[IP_SIZE+1];
 char discordUserName[64] = "  ";
+
+static char self_ip[IP_SIZE];
 
 /*--------------------------------------------------
 	static char *DRPC_XORIPString(const char *input)
@@ -296,14 +321,14 @@ char discordUserName[64] = "  ";
 --------------------------------------------------*/
 static char *DRPC_XORIPString(const char *input)
 {
-	char *output = malloc(sizeof(char) * (IP_SIZE+1));
 	const UINT8 xor[IP_SIZE] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21};
+	char *output = malloc(sizeof(char) * (IP_SIZE+1));
 	UINT8 i;
-		
+
 	for (i = 0; i < IP_SIZE; i++)
 	{
 		char xorinput;
-	
+
 		if (!input[i])
 			break;
 
@@ -314,6 +339,7 @@ static char *DRPC_XORIPString(const char *input)
 
 		output[i] = xorinput;
 	}
+
 	output[i] = '\0';
 
 	return output;
@@ -332,8 +358,12 @@ static char *DRPC_XORIPString(const char *input)
 --------------------------------------------------*/
 static void DRPC_HandleReady(const DiscordUser *user)
 {
-	strcpy(discordUserName, user->username);
-	(cv_discordstreamer.value ? CONS_Printf("Discord: connected to %s\n", user->username) : CONS_Printf("Discord: connected to %s#%s (%s)\n", user->username, user->discriminator, user->userId));
+	// Streamer Mode Enabled
+	(cv_discordstreamer.value ?
+		(CONS_Printf("Discord: connected to %s\n", user->username), strcpy(discordUserName, user->username)) :
+	
+	// Streamer Mode Disabled
+	(CONS_Printf("Discord: connected to %s#%s (%s)\n", user->username, user->discriminator, user->userId), strcpy(discordUserName, va("%s%s", user->username, user->discriminator))));
 }
 
 /*--------------------------------------------------
@@ -350,8 +380,8 @@ static void DRPC_HandleReady(const DiscordUser *user)
 --------------------------------------------------*/
 static void DRPC_HandleDisconnect(int err, const char *msg)
 {
-	strcpy(discordUserName, " ");
 	CONS_Printf("Discord: disconnected (%d: %s)\n", err, msg);
+	strcpy(discordUserName, " ");
 }
 
 /*--------------------------------------------------
@@ -386,14 +416,15 @@ static void DRPC_HandleError(int err, const char *msg)
 --------------------------------------------------*/
 static void DRPC_HandleJoin(const char *secret)
 {
-	CONS_Printf("Connecting to %s via Discord\n", DRPC_XORIPString(secret));
+	char *ip = DRPC_XORIPString(secret);
+	CONS_Printf("Connecting to %s via Discord\n", ip);
 
-	M_ClearMenus(true); // Don't have menus open during connection screen
+	M_ClearMenus(true); 			// Don't have menus open during connection screen
 	if (demoplayback && titledemo)
-		G_CheckDemoStatus(); // Stop the title demo, so that the connect command doesn't error if a demo is playing
+		G_CheckDemoStatus(); 		// Stop the title demo, so that the connect command doesn't error if a demo is playing
 
-	COM_BufAddText(va("connect \"%s\"\n", DRPC_XORIPString(secret)));
-	free(DRPC_XORIPString(secret));
+	COM_BufAddText(va("connect \"%s\"\n", ip));
+	free(ip);
 }
 
 /*--------------------------------------------------
@@ -410,11 +441,12 @@ static void DRPC_HandleJoin(const char *secret)
 --------------------------------------------------*/
 static boolean DRPC_InvitesAreAllowed(void)
 {
-	if ((!cv_discordasks.value)   // Client Doesn't Allow Ask to Join.
-		|| (!Playing()))		  // We're Not Playing, So No Invites Should Be Sent.
-		return false; 
+	if (!Playing())
+		return false;  				// We're Not Playing, So No Invites Should Be Sent.
+	if (!cv_discordasks.value)
+		return false;				// Client Doesn't Allow Ask to Join.
 	
-	if (cv_allownewplayer.value) // Are We Allowing Players to join the Server?
+	if (cv_allownewplayer.value) 	// Are We Allowing Players to join the Server?
 	{
 		if ((!cv_discordinvites.value && (consoleplayer == serverplayer || IsPlayerAdmin(consoleplayer))) 	// Only Admins are Allowed!
 			|| (cv_discordinvites.value == 2 && consoleplayer == serverplayer)							  	// Only the Server Player is Allowed!
@@ -443,9 +475,9 @@ static void DRPC_HandleJoinRequest(const DiscordUser *requestUser)
 	discordRequest_t *append = discordRequestList;
 	discordRequest_t *newRequest;
 
-	// Invites Aren't Allowed? Check Your Settings Then.
-	if (!DRPC_InvitesAreAllowed())
+	if (DRPC_InvitesAreAllowed() == false)
 	{
+		// Something weird happened if this occurred...
 		Discord_Respond(requestUser->userId, DISCORD_REPLY_IGNORE);
 		return;
 	}
@@ -580,9 +612,9 @@ static const char *DRPC_GetServerIP(void)
 	{
 		if (strcmp(address, "self"))
 		{
-			// We're not the server, so we could successfully get the IP! No need to do anything else :)
-			sprintf(self_ip, "%s:%u", address, current_port);
-			return self_ip;
+			// We're not the server, so we could successfully get the IP!
+			// No need to do anything else :)
+			return address;
 		}
 	}
 
@@ -639,7 +671,7 @@ static void DRPC_StringError(void) // Prints a Message if Your Discord RPC Strin
 			
 			if (!alreadyWarned && customStringTooLow)
 			{
-                M_StartMessage(va("%c%s\x80\nSorry, Discord RPC requires Strings to be longer than two characters. \n\n(Press a key)\n", ('\x80' + (V_YELLOWMAP|V_CHARCOLORSHIFT)), "Discord RPC"),NULL,MM_NOTHING);
+                M_StartMessage(va("%c%s\x80\nSorry, Discord RPC requires Strings to be longer than two characters. \n\n(Press a key)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Discord RPC"),NULL,MM_NOTHING);
 				S_StartSound(NULL, sfx_skid);
 				
 				alreadyWarned = true;
@@ -665,10 +697,13 @@ void DRPC_UpdatePresence(void)
 	char mapname[5+21+21+2+1] = "";
 
 	char charimgS[4+SKINNAMESIZE+7] = "";
-	char charimg[4+SKINNAMESIZE+7] = "";
+	char charimg[7+SKINNAMESIZE+4] = "";
 
 	char charnameS[11+SKINNAMESIZE+1] = "";
 	char charname[11+SKINNAMESIZE+1] = "";
+
+	char customSImage[32+18] = "";
+	char customLImage[35+7+8] = "";
 
 	char servertype[15+10] = "";
 
@@ -692,21 +727,21 @@ void DRPC_UpdatePresence(void)
 	char gametypeGrammar[2+3+1+9] = "";
 	char gameType[2+3+8+9] = "";
 
-	char customSImage[32+18] = "";
-	char customLImage[35+7+8] = "";
-
 	char charImageType[2+2+1] = "";
 	// end of nerd emojis
 
 	static const char *supportedSkins[] = {
 		// Vanilla Chars
 		"custom",
+
 		"sonic",
+
 		"tails",
 		"knuckles",
 		"amy",
 		"fang",
 		"metalsonic",
+		
 		"sonictails",
 		
 		// Custom Chars
@@ -732,6 +767,19 @@ void DRPC_UpdatePresence(void)
 
 		// My Friendos' Chars
 		"speccy",
+		NULL
+	};
+
+	static const char *supportedSuperSkins[] = {
+		// Vanilla Chars
+		"sonic",
+		"sonictails",
+		NULL
+	};
+
+	static const char *supportedSpecialSkinCases[] = {
+		// Custom Chars
+		"supersonic",
 		NULL
 	};
 
@@ -847,6 +895,7 @@ void DRPC_UpdatePresence(void)
 		"altsonicimage2",
 		"altsonicimage3",
 		"altsonicimage4",
+		"altsonicimage5",
 		
 		// Tails
 		"alttailsimage1",
@@ -876,6 +925,10 @@ void DRPC_UpdatePresence(void)
 		"cont",
 		"life",
 
+		"charsuper",
+		"contsuper",
+		"lifesuper",
+
 		"map",
 		"misc",
 		NULL
@@ -892,8 +945,11 @@ void DRPC_UpdatePresence(void)
 	};*/
 
 	// Counters
+	INT32 i = 0;
 	UINT8 emeraldCount = 0; // Helps Me To Find The Emeralds
-	INT32 DISCORDMAXSKINS = 26; // The Amount of Skins That Are Currently Supported
+
+	INT32 checkSkin = 0; 		// Checks Through The Consoleplayer's Skin
+	INT32 checkSideSkin = 0; 	// Checks Through The Seconddary Display Player's Skin
 
 	// Booleans
 #ifdef DEVELOP
@@ -907,6 +963,10 @@ void DRPC_UpdatePresence(void)
 	////// 	  INITIALIZE 	 //////
 	DiscordRichPresence discordPresence;
 	memset(&discordPresence, 0, sizeof(discordPresence));
+
+	////// 	  DEDICATED SERVER ONE LINER 	 //////
+	if (dedicated)
+		return; 	// Sorry Boss, That's As Far As You're Going.
 
 	////// 	  DEVMODE/NO STATUS? 	 //////
 	if (!cv_discordrp.value || devmode)
@@ -929,14 +989,14 @@ void DRPC_UpdatePresence(void)
 	////////////////////////////////////////////
 	//////// ALL GAME INFO ////////
 	////// 	  SERVER INFO 	 //////
-	if (dedicated || netgame)
+	if (netgame)
 	{
-		if (DRPC_InvitesAreAllowed())
+		if (DRPC_InvitesAreAllowed() == true)
 		{
 			const char *join;
 
 			// Grab the host's IP for joining.
-			if ((join = DRPC_GetServerIP()))
+			if ((join = DRPC_GetServerIP()) != NULL)
 			{
 				discordPresence.joinSecret = DRPC_XORIPString(join);
 				joinSecretSet = true;
@@ -947,19 +1007,19 @@ void DRPC_UpdatePresence(void)
 		{
 			switch (msServerType)
 			{
-				case 33: snprintf(servertype, 26, "Standard"); break;
-				case 28: snprintf(servertype, 26, "Casual"); break;
-				case 38: snprintf(servertype, 26, "Custom Gametype"); break;
-				case 31: snprintf(servertype, 26, "OLDC"); break;
+				case 33: strcpy(servertype, "Standard"); break;
+				case 28: strcpy(servertype, "Casual"); break;
+				case 38: strcpy(servertype, "Custom Gametype"); break;
+				case 31: strcpy(servertype, "OLDC"); break;
 
 				// Fallbacks
-				case 0: snprintf(servertype, 26, "Public"); break;
-				default: snprintf(servertype, 26, "Private"); break;
+				case 0: strcpy(servertype, "Public"); break;
+				default: strcpy(servertype, "Private"); break;
 			}
 		}
 
 		if (cv_discordshowonstatus.value != 8)
-			snprintf(detailstr, 60, (Playing() ? (server ? (!dedicated ? "Hosting a %s Server" : "Hosting a Dedicated %s Server") : "In a %s Server") : "Looking for a Server"), servertype);
+			snprintf(detailstr, 60, (Playing() ? (server ? "Hosting a %s Server" : "In a %s Server") : "Looking for a Server"), servertype);
 			
 		discordPresence.partyId = server_context; 		   // Thanks, whoever gave us Mumble support, for implementing the EXACT thing Discord wanted for this field!
 		discordPresence.partySize = D_NumPlayers(); 	   // Current Amount of Players in the Server
@@ -1011,39 +1071,39 @@ void DRPC_UpdatePresence(void)
 				if (!modeattacking)
 				{
 					// Emerald Math, Provided By Monster Iestyn and Uncapped Plus Fafabis
-					for (INT32 i = 0; i < 7; i++) {
+					for (i = 0; i < 7; i++) {
 						if ((gametyperules & GTR_POWERSTONES && (players[consoleplayer].powers[pw_emeralds] & (1<<i))) || (!(gametyperules & GTR_POWERSTONES) && emeralds & (1<<i)))
 							emeraldCount += 1;
 					}
 
 					// Grammar
 					if (!cv_discordshowonstatus.value && !splitscreen)
-						snprintf(emeraldComma, 3, ", ");
+						strcpy(emeraldComma, ", ");
 					if (emeraldCount > 1)
-						snprintf(emeraldGrammar, 2, "s");
+						strcpy(emeraldGrammar, "s");
 					if (emeraldCount == 7)
-						snprintf(allEmeralds, 5, "All ");
+						strcpy(allEmeralds, "All ");
 					
 					// Memes
 					if (cv_discordstatusmemes.value)
 					{
 						// Puncuation
 						if (!emeraldCount || emeraldCount == 3 || emeraldCount == 4)
-							snprintf(emeraldGrammar, 3, (emeraldCount == 3 || emeraldCount == 4) ? "s;" : "s?");
+							strcpy(emeraldGrammar, (emeraldCount == 3 || emeraldCount == 4) ? "s;" : "s?");
 						
 						// Fun Fact: the subtitles in Shadow the Hedgehog emphasized "fourth", even though Jason Griffith emphasized "damn" in this sentence
 						if (emeraldCount == 3 || emeraldCount == 4)
-							snprintf(emeraldMeme, 27, ((emeraldCount == 3) ? " Where's That DAMN FOURTH?" : " Found That DAMN FOURTH!"));
+							strcpy(emeraldMeme, ((emeraldCount == 3) ? " Where's That DAMN FOURTH?" : " Found That DAMN FOURTH!"));
 						
 						// Goku Mode
 						if (emeraldCount == 7)
-							snprintf(emeraldMeme, 27, " Currently In Goku Mode");
+							strcpy(emeraldMeme, " Currently In Goku Mode");
 					}
 						
 					// Apply Strings
 					strlcat((!cv_discordshowonstatus.value ? detailstr : statestr),
 							// No Emeralds
-							((cv_discordstatusmemes.value && ((!(gametyperules & GTR_POWERSTONES) && !emeraldCount) || (gametyperules & GTR_POWERSTONES && !all7matchemeralds))) ? 
+							((cv_discordstatusmemes.value && ((!(gametyperules & GTR_POWERSTONES) && !emeraldCount) || (gametyperules & GTR_POWERSTONES && !all7matchemeralds && !emeraldCount))) ? 
 								va("%s%s%d EMERALDS?", emeraldComma, allEmeralds, emeraldCount) :
 									
 							// Seven Emeralds
@@ -1067,7 +1127,7 @@ void DRPC_UpdatePresence(void)
 			if (!splitscreen && !netgame)
 			{
 				if (Playing() && (cv_discordshowonstatus.value != 1 && cv_discordshowonstatus.value != 3 && cv_discordshowonstatus.value != 5 && cv_discordshowonstatus.value != 6))
-					snprintf(detailGrammar, 3, ", ");
+					strcpy(detailGrammar, ", ");
 				
 				if (gamecomplete) // You've Beaten the Game? You Get A Special Status Then!
 					strlcat(detailstr, va("%sHas Beaten the Game" , detailGrammar), 128);
@@ -1084,7 +1144,7 @@ void DRPC_UpdatePresence(void)
 			if (Playing())
 			{
 				// Modes //
-				snprintf(gametypeGrammar, 20, (!ultimatemode ? "Playing " : "Taking on "));
+				strcpy(gametypeGrammar, (!ultimatemode ? "Playing " : "Taking on "));
 				(modeattacking ? (snprintf(gameType, 12, ((maptol != TOL_NIGHTS && maptol != TOL_XMAS) ? "Time Attack" : "NiGHTS Mode"))) : (snprintf(gameType, 24, (!splitscreen ? ((gametype == GT_COOP && !netgame) ? (!ultimatemode ? "Single-Player" : "Ultimate Mode") : "%s") : "Split-Screen"), (netgame ? gametype_cons_t[gametype].strvalue : NULL))));
 				
 				// Mods //
@@ -1098,20 +1158,20 @@ void DRPC_UpdatePresence(void)
 				// Spectators //
 				if (!players[consoleplayer].spectator)
 				{
-					snprintf(spectatorGrammar, 4, (((displayplayer != consoleplayer) || (cv_discordstatusmemes.value && (displayplayer != consoleplayer))) ? "ing" : "er"));
-					snprintf(spectatorType, 21, ", View%s", spectatorGrammar);
+					strcpy(spectatorGrammar, (((displayplayer != consoleplayer) || (cv_discordstatusmemes.value && (displayplayer != consoleplayer))) ? "ing" : "er"));
+					strcpy(spectatorType, va(", View%s", spectatorGrammar));
 				}
 				else
 				{
-					snprintf(lifeGrammar, 12, ", Dead; ");
-					snprintf(spectatorGrammar, 4, (((displayplayer != consoleplayer) || (cv_discordstatusmemes.value && (displayplayer == consoleplayer))) ? "ing" : "or"));
-					snprintf(spectatorType, 21, "Spectat%s", spectatorGrammar);
+					strcpy(lifeGrammar, ", Dead; ");
+					strcpy(spectatorGrammar, (((displayplayer != consoleplayer) || (cv_discordstatusmemes.value && (displayplayer == consoleplayer))) ? "ing" : "or"));
+					strcpy(spectatorType, va("Spectat%s", spectatorGrammar));
 					
 					if (displayplayer == consoleplayer)
-						snprintf(lifeType, 27, (!cv_discordstatusmemes.value ? "In %s Mode" : "%s Air"), spectatorType);
+						strcpy(lifeType, va((!cv_discordstatusmemes.value ? "In %s Mode" : "%s Air"), spectatorType));
 				}
 				if (displayplayer != consoleplayer)
-					snprintf(lifeType, 30, "%s %s", spectatorType, player_names[displayplayer]);
+					strcpy(lifeType, va("%s %s", spectatorType, player_names[displayplayer]));
 			}
 
 			//// Statuses That Can Appear Whenever ////
@@ -1119,7 +1179,7 @@ void DRPC_UpdatePresence(void)
 			if (paused || menuactive || jukeboxMusicPlaying)
 			{
 				if (!cv_discordshowonstatus.value || (cv_discordshowonstatus.value == 6 && Playing()) || !Playing())
-					snprintf(stateGrammar, 3, ", ");
+					strcpy(stateGrammar, ", ");
 
 				snprintf(stateType, 27, (paused ? "%sCurrently Paused" : (menuactive ? "%sScrolling Through Menus" : "")), stateGrammar);
 				strlcat(stateType, (jukeboxMusicPlaying ? va("%sPlaying %s in the Jukebox", stateGrammar, jukeboxMusicName) : ""), 95);
@@ -1157,7 +1217,7 @@ void DRPC_UpdatePresence(void)
 		// Map Info //
 		else if (gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || (gamestate == GS_TITLESCREEN || titlemapinaction))
 		{
-			// Map Images
+			// Map Images (Now With More Specificness)
 			if ((gamemap >= 1 && gamemap <= 16) 	// Supported Co-op Maps (GFZ-RVZ1)
 			|| (gamemap >= 22 && gamemap <= 23) 	// Supported Co-op Maps (ERZ1-ERZ2)
 			|| (gamemap >= 25 && gamemap <= 27) 	// Supported Co-op Maps (BCZ1-BCZ3)
@@ -1174,7 +1234,7 @@ void DRPC_UpdatePresence(void)
 
 			|| (gamemap == 1000))					// Tutorial Zone
 			{
-				snprintf(mapimg, 8, "%s", G_BuildMapName(gamemap));
+				strcpy(mapimg, va("%s", G_BuildMapName(gamemap)));
 				strlwr(mapimg);
 				strcpy(imagestr, mapimg);
 			}
@@ -1223,78 +1283,133 @@ void DRPC_UpdatePresence(void)
 	////// 	  CHARACTERS 	 //////
 	if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 1)
 	{
-		// Character Types //
-		snprintf(charImageType, 5, (!cv_discordcharacterimagetype.value ? "char" : (cv_discordcharacterimagetype.value == 1 ? "cont" : "life")));
+		//// Character Types ////
+		strcpy(charImageType, (!cv_discordcharacterimagetype.value ? "char" : (cv_discordcharacterimagetype.value == 1 ? "cont" : "life")));
 
-		// Character Images //
-		snprintf(charimg, 36, "%scustom", charImageType);
-		snprintf(charimgS, 36, ((cv_discordshowonstatus.value && ((playeringame[1] && players[1].bot) || splitscreen)) ? "%scustom" : ""), ((cv_discordshowonstatus.value && ((playeringame[1] && players[1].bot) || splitscreen)) ? charImageType : 0));
+		//// Character Images ////
+		strcpy(charimg, va("%scustom", charImageType));
+		strcpy(charimgS, va(((cv_discordshowonstatus.value && ((playeringame[1] && players[1].bot) || splitscreen)) ? "%scustom" : ""), ((cv_discordshowonstatus.value && ((playeringame[1] && players[1].bot) || splitscreen)) ? charImageType : 0)));
 		
-		// Renderers //
-		if (Playing() && playeringame[consoleplayer])
+		if (Playing())
 		{
 			// Supported Characters //
 			// Main Characters
-			for (INT32 i = 0; i < DISCORDMAXSKINS; i++)
+			while (supportedSkins[checkSkin] != NULL)
 			{
-				// Sonic & Tails!
-				if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") == 0) && (strcmp(skins[players[1].skin].name, "tails") == 0))
+				// Supers //
+				if (players[consoleplayer].powers[pw_super])
 				{
-					(!cv_discordshowonstatus.value ? snprintf(charimg, 36, "%ssonictails", charImageType) : (snprintf(charimg, 36, "%ssonic", charImageType), snprintf(charimgS, 36, "%stails", charImageType)));
-					break;
-				}				
-				
-				// Others!					
-				if (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[i]) == 0)
-				{
-					snprintf(charimg, 36, "%s%s", charImageType, skins[players[consoleplayer].skin].name);	
-					break;
-				}
-			}
-			
-			// Side Characters; The Above: Electric Boogalo
-			if (cv_discordshowonstatus.value && playeringame[1] && players[1].bot)
-			{
-				for (INT32 iS = 0; iS < DISCORDMAXSKINS; iS++) 
-				{
-					if (strcmp(skins[players[1].skin].name, supportedSkins[iS]) == 0)
-					{	
-						snprintf(charimgS, 36, "%s%s", charImageType, skins[players[1].skin].name);
+					// Dynamic Duos //
+					// Sonic & Tails!
+					if (((strcmp(skins[players[consoleplayer].skin].name, "sonic") == 0) || (strcmp(skins[players[consoleplayer].skin].name, "supersonic") == 0))
+						&& ((playeringame[1] && players[1].bot) && strcmp(skins[players[1].skin].name, "tails") == 0))
+					{
+						(!cv_discordshowonstatus.value ?
+							// With the Default Show Status Option
+							strcpy(charimg, va("%ssupersonictails", charImageType)) :
+							
+							// Withe the Only Characters Show Status Option
+							(strcpy(charimg, va("%ssupersonic", charImageType)), strcpy(charimgS, va("%stails", charImageType))));
+						break;
+					}
+					
+					// Others!
+					if ((strcmp(skins[players[consoleplayer].skin].name, supportedSuperSkins[checkSkin]) == 0) || (strcmp(skins[players[consoleplayer].skin].name, supportedSpecialSkinCases[checkSkin]) == 0))
+					{
+						snprintf(charimg, 27, "%s%s", charImageType, ((strcmp(skins[players[consoleplayer].skin].name, supportedSpecialSkinCases[checkSkin]) == 0) ? supportedSpecialSkinCases[checkSkin] : va("super%s", supportedSuperSkins[checkSkin])));
 						break;
 					}
 				}
+
+				// Dynamic Duos //
+				// Sonic & Tails!
+				if ((strcmp(skins[players[consoleplayer].skin].name, "sonic") == 0) &&
+					((playeringame[1] && players[1].bot) && strcmp(skins[players[1].skin].name, "tails") == 0))
+				{
+					(!cv_discordshowonstatus.value ?
+						// With the Default Show Status Option
+						strcpy(charimg, va("%ssonictails", charImageType)) :
+						
+						// Withe the Only Characters Show Status Option
+						(strcpy(charimg, va("%ssonic", charImageType)), strcpy(charimgS, va("%stails", charImageType))));
+					break;
+				}
+
+				// Others!
+				if (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[checkSkin]) == 0)
+				{
+					strcpy(charimg, va("%s%s", charImageType, supportedSkins[checkSkin]));	
+					break;
+				}
+
+				checkSkin++;
 			}
 			
-			// Display Character Names //
-			if (!splitscreen)
-				(!players[1].bot ? (snprintf(charname, 75, "Playing As: %s", skins[players[consoleplayer].skin].realname)) : (!cv_discordshowonstatus.value ? snprintf(charname, 75, "Playing As: %s & %s", skins[players[consoleplayer].skin].realname, skins[players[1].skin].realname) : (snprintf(charname, 75, "Playing As: %s", skins[players[consoleplayer].skin].realname), snprintf(charnameS, 75, "& %s", skins[players[1].skin].realname))));
-			else
-				(!cv_discordshowonstatus.value ? snprintf(charname, 75, "%s & %s", player_names[consoleplayer], player_names[1]) : (snprintf(charname, 75, "%s", player_names[consoleplayer]), snprintf(charnameS, 75, "%s", player_names[1])));
+			// Side Characters; The Above: Electric Boogalo Electric Boogalo
+			if (cv_discordshowonstatus.value && ((playeringame[1] && players[1].bot) || (splitscreen)))
+			{
+				while (supportedSkins[checkSideSkin] != NULL)
+				{
+					if (strcmp(skins[players[1].skin].name, supportedSkins[checkSideSkin]) == 0)
+					{	
+						strcpy(charimgS, va("%s%s", charImageType, supportedSkins[checkSideSkin]));
+						break;
+					}
+
+					checkSideSkin++;
+				}
+			}
 			
-			// Apply Character Images and Names //
-			(!cv_discordshowonstatus.value ? strcpy(simagetxtstr, charname) : (strcpy(imagetxtstr, charname), strcpy(simagetxtstr, charnameS))); // Character Names, And Bot Names, If They Exist
-			(!cv_discordshowonstatus.value ? strcpy(simagestr, charimg) : (strcpy(imagestr, charimg), strcpy(simagestr, charimgS))); // Character images			
-			
-			// Also Set it On Their Status, Since They Set it To Be That Way //
-			if (cv_discordshowonstatus.value)
-				strcpy(statestr,
-						// Split-Screen //
-						(strcmp(charnameS, "") != 0 ? (splitscreen ? va("%s & %s", charname, charnameS) :
-						
-						// No Split-Screen //
-						// Bots
-						(players[2].bot ?
-							// Three Bots
-							(!players[3].bot ? va("%s %s & %s", charname, charnameS, skins[players[2].skin].realname) :
-						
-							// More Than Three Bots
-							va("%s %s & %s With Multiple Bots", charname, charnameS, skins[players[2].skin].realname)) :
+			//// Renderers ////
+			if (playeringame[consoleplayer])
+			{
+				// Display Character Names //
+				if (!splitscreen)
+					// No Bots
+					(!(playeringame[1] && players[1].bot) ?
+					(snprintf(charname, 75, "Playing As: %s",
+											((players[consoleplayer].powers[pw_super] && (strcmp(skins[players[consoleplayer].skin].name, "sonic") == 0)) ? "Super Sonic" : skins[players[consoleplayer].skin].realname))) :
+					
+					// One Bot, Default Status Option
+					(!cv_discordshowonstatus.value ?
+					snprintf(charname, 75, "Playing As: %s & %s",
+						((players[consoleplayer].powers[pw_super] && (strcmp(skins[players[consoleplayer].skin].name, "sonic") == 0)) ? "Super Sonic" : skins[players[consoleplayer].skin].realname), skins[players[1].skin].realname) :
+					
+					// One Bot, Only Characters Status Option
+					(snprintf(charname, 75, "Playing As: %s", ((players[consoleplayer].powers[pw_super] && (strcmp(skins[players[consoleplayer].skin].name, "sonic") == 0)) ? "Super Sonic" : skins[players[consoleplayer].skin].realname)), snprintf(charnameS, 75, "& %s", skins[players[1].skin].realname))));
+				else
+					// The Secondary Display Player, Default Status Option
+					(!cv_discordshowonstatus.value ?
+					snprintf(charname, 75, "%s & %s", player_names[consoleplayer], player_names[1]) :
+					
+					// The Secondary Display Player, Default Status Option
+					(snprintf(charname, 75, "%s", player_names[consoleplayer]), snprintf(charnameS, 75, "%s", player_names[1])));
+				
+				// Apply Character Images and Names //
+				(!cv_discordshowonstatus.value ? strcpy(simagetxtstr, charname) : (strcpy(imagetxtstr, charname), strcpy(simagetxtstr, charnameS))); // Character Names, And Bot Names, If They Exist
+				(!cv_discordshowonstatus.value ? strcpy(simagestr, charimg) : (strcpy(imagestr, charimg), strcpy(simagestr, charimgS))); // Character images			
+				
+				// Also Set it On Their Status, Since They Set it To Be That Way //
+				if (cv_discordshowonstatus.value)
+					strcpy(statestr,
+							// Split-Screen //
+							(strcmp(charnameS, "") != 0 ? (splitscreen ? va("%s & %s", charname, charnameS) :
 							
-							// Two Bots
-							va("%s %s", charname, charnameS))) : 
-						
-						// No Bots
-						charname));
+							// No Split-Screen //
+							// Bots
+							((playeringame[2] && players[2].bot) ?
+								// Three Bots
+								(!(playeringame[3] && players[3].bot) ? va("%s %s & %s", charname, charnameS, skins[players[2].skin].realname) :
+							
+								// More Than Three Bots
+								va("%s %s & %s With Multiple Bots", charname, charnameS, skins[players[2].skin].realname)) :
+								
+								// Two Bots
+								va("%s %s", charname, charnameS))) : 
+							
+							// No Bots
+							charname));
+			}
 		}
 	}
 	
@@ -1309,22 +1424,26 @@ void DRPC_UpdatePresence(void)
 
 		// Write The Images and Their Text to Discord //
 		// Small Images
-		if (cv_customdiscordsmallimagetype.value != 5)
+		if (cv_customdiscordsmallimagetype.value != 8)
 		{
-			snprintf(customSImage, 50, "%s%s", customStringType[cv_customdiscordsmallimagetype.value],
+			strcpy(customSImage, va("%s%s", customStringType[cv_customdiscordsmallimagetype.value],
 				(cv_customdiscordsmallimagetype.value <= 2 ? supportedSkins[cv_customdiscordsmallcharacterimage.value] :
-				(cv_customdiscordsmallimagetype.value == 3 ? supportedMaps[cv_customdiscordsmallmapimage.value] : supportedMiscs[cv_customdiscordsmallmiscimage.value])));
+				((cv_customdiscordsmallimagetype.value >= 3 && cv_customdiscordsmallimagetype.value <= 5) ? supportedSuperSkins[cv_customdiscordsmallsupercharacterimage.value] :
+				(cv_customdiscordsmallimagetype.value == 6 ? supportedMaps[cv_customdiscordsmallmapimage.value] :
+			supportedMiscs[cv_customdiscordsmallmiscimage.value])))));
 		
 			strcpy(simagestr, customSImage);
 			(strlen(cv_customdiscordsmallimagetext.string) > 2 ? strcpy(simagetxtstr, cv_customdiscordsmallimagetext.string) : 0);
 		}
 		
 		// Large Images
-		if (cv_customdiscordlargeimagetype.value != 5)
+		if (cv_customdiscordlargeimagetype.value != 8)
 		{
-			snprintf(customLImage, 50, "%s%s", customStringType[cv_customdiscordlargeimagetype.value],
+			strcpy(customLImage, va("%s%s", customStringType[cv_customdiscordlargeimagetype.value],
 				(cv_customdiscordlargeimagetype.value <= 2 ? supportedSkins[cv_customdiscordlargecharacterimage.value] :
-				(cv_customdiscordlargeimagetype.value == 3 ? supportedMaps[cv_customdiscordlargemapimage.value] : supportedMiscs[cv_customdiscordlargemiscimage.value])));
+				((cv_customdiscordlargeimagetype.value >= 3 && cv_customdiscordlargeimagetype.value <= 5) ? supportedSuperSkins[cv_customdiscordlargesupercharacterimage.value] :
+				(cv_customdiscordlargeimagetype.value == 6 ? supportedMaps[cv_customdiscordlargemapimage.value] :
+			supportedMiscs[cv_customdiscordlargemiscimage.value])))));
 
 			strcpy(imagestr, customLImage);
 			(strlen(cv_customdiscordlargeimagetext.string) > 2 ? strcpy(imagetxtstr, cv_customdiscordlargeimagetext.string) : 0);

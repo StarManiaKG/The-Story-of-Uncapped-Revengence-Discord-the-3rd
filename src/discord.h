@@ -1,4 +1,4 @@
-// SONIC ROBO BLAST 2 -- WITH DISCORD RPC BROUGHT TO YOU BY THE KART KREW (And Star lol)
+// SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
 // Copyright (C) 2018-2020 by Kart Krew.
@@ -32,6 +32,8 @@ extern consvar_t cv_customdiscordlargeimagetype;
 extern consvar_t cv_customdiscordsmallimagetype;
 extern consvar_t cv_customdiscordlargecharacterimage;
 extern consvar_t cv_customdiscordsmallcharacterimage;
+extern consvar_t cv_customdiscordlargesupercharacterimage;
+extern consvar_t cv_customdiscordsmallsupercharacterimage;
 extern consvar_t cv_customdiscordlargemapimage;
 extern consvar_t cv_customdiscordsmallmapimage;
 extern consvar_t cv_customdiscordlargemiscimage;
@@ -42,6 +44,8 @@ extern consvar_t cv_customdiscordsmallimagetext;
 extern char discordUserName[64];
 
 extern struct discordInfo_s {
+	UINT8 maxPlayers;
+	boolean joinsAllowed;
 	UINT8 whoCanInvite;
 } discordInfo;
 

@@ -42,6 +42,7 @@
 #endif
 
 #include "r_fps.h" // R_GetFramerateCap
+#include "m_menu.h" // fps coloring command
 
 #if defined (USEASM) && !defined (NORUSEASM)//&& (!defined (_MSC_VER) || (_MSC_VER <= 1200))
 #define RUSEASM //MSC.NET can't patch itself
@@ -518,6 +519,25 @@ void SCR_CalculateFPS(void)
 #endif
 }
 
+// Remember This From st_stuff.c? Yeah, I Reworked It!
+UINT16 positiveTicRateColor[16] = {
+	[0] = V_GREENMAP,
+	V_MAGENTAMAP,
+	V_YELLOWMAP,
+	V_BLUEMAP,
+	V_REDMAP,
+	V_GRAYMAP,
+	V_ORANGEMAP,
+	V_SKYMAP,
+	V_PURPLEMAP,
+	V_AQUAMAP,
+	V_PERIDOTMAP,
+	V_AZUREMAP,
+	V_BROWNMAP,
+	V_ROSYMAP,
+	V_INVERTMAP,
+};
+
 void SCR_DisplayTicRate(void)
 {
 	INT32 ticcntcolor = 0;
@@ -532,11 +552,13 @@ void SCR_DisplayTicRate(void)
 	{
 		if (fps <= cap / 2.0) ticcntcolor = V_REDMAP;
 		else if (fps <= cap * 0.90) ticcntcolor = V_YELLOWMAP;
-		else ticcntcolor = V_GREENMAP;
+		else {
+			ticcntcolor = positiveTicRateColor[cv_fpscountercolor.value];
+		}
 	}
 	else
 	{
-		ticcntcolor = V_GREENMAP;
+		ticcntcolor = positiveTicRateColor[cv_fpscountercolor.value];
 	}
 
 	if (cv_ticrate.value == 2) // compact counter
@@ -558,7 +580,7 @@ void SCR_DisplayTicRate(void)
 		width = V_StringWidth(drawnstr, V_NOSCALESTART);
 
 		V_DrawString(vid.width - ((7 * 8 * vid.dupx) + V_StringWidth("FPS: ", V_NOSCALESTART)), h,
-			V_YELLOWMAP|V_NOSCALESTART|V_USERHUDTRANS, "FPS:");
+			menuColor[cv_menucolor.value]|V_NOSCALESTART|V_USERHUDTRANS, "FPS:");
 		V_DrawString(vid.width - width, h,
 			ticcntcolor|V_NOSCALESTART|V_USERHUDTRANS, drawnstr);
 	}
@@ -654,7 +676,7 @@ void SCR_DisplayMarathonInfo(void)
 	{
 		entertic = I_GetTime();
 		if (gamecomplete)
-			flags |= V_YELLOWMAP;
+			flags |= menuColor[cv_menucolor.value];
 		else if (marathonmode & MA_INGAME)
 			; // see also G_Ticker
 		else if (marathonmode & MA_INIT)
