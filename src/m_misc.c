@@ -36,11 +36,11 @@
 #include "v_video.h"
 #include "z_zone.h"
 #include "g_input.h"
+#include "i_time.h"
 #include "i_video.h"
 #include "d_main.h"
 #include "m_argv.h"
 #include "i_system.h"
-#include "i_time.h"
 #include "command.h" // cv_execversion
 
 #include "m_anigif.h"
@@ -567,10 +567,13 @@ void M_FirstLoadConfig(void)
 	gameconfig_loaded = true;
 
 	// reset to default player stuff
-	COM_BufAddText (va("%s \"%s\"\n",cv_skin.name,cv_defaultskin.string));
-	COM_BufAddText (va("%s \"%s\"\n",cv_playercolor.name,cv_defaultplayercolor.string));
-	COM_BufAddText (va("%s \"%s\"\n",cv_skin2.name,cv_defaultskin2.string));
-	COM_BufAddText (va("%s \"%s\"\n",cv_playercolor2.name,cv_defaultplayercolor2.string));
+	if (!dedicated)
+	{
+		COM_BufAddText (va("%s \"%s\"\n",cv_skin.name,cv_defaultskin.string));
+		COM_BufAddText (va("%s \"%s\"\n",cv_playercolor.name,cv_defaultplayercolor.string));
+		COM_BufAddText (va("%s \"%s\"\n",cv_skin2.name,cv_defaultskin2.string));
+		COM_BufAddText (va("%s \"%s\"\n",cv_playercolor2.name,cv_defaultplayercolor2.string));
+	}
 }
 
 /** Saves the game configuration.
@@ -1249,7 +1252,7 @@ void M_SaveFrame(void)
 	// paranoia: should be unnecessary without singletics
 	static tic_t oldtic = 0;
 
-	if (oldtic == I_GetTime() && !singletics)
+	if (oldtic == I_GetTime())
 		return;
 	else
 		oldtic = I_GetTime();
@@ -2285,6 +2288,75 @@ static FUNCTARGET("mmx") void *mmx2_cpy(void *dest, const void *src, size_t n)
 			__asm__ __volatile__ (
 				"prefetchnta 320(%0);"
 				"prefetchnta 352(%0);"
+				"movq (%0), %%mm0;"
+				"movq 8(%0), %%mm1;"
+				"movq 16(%0), %%mm2;"
+				"movq 24(%0), %%mm3;"
+				"movq 32(%0), %%mm4;"
+				"movq 40(%0), %%mm5;"
+				"movq 48(%0), %%mm6;"
+				"movq 56(%0), %%mm7;"
+				"movntq %%mm0, (%1);"
+				"movntq %%mm1, 8(%1);"
+				"movntq %%mm2, 16(%1);"
+				"movntq %%mm3, 24(%1);"
+				"movntq %%mm4, 32(%1);"
+				"movntq %%mm5, 40(%1);"
+				"movntq %%mm6, 48(%1);"
+				"movntq %%mm7, 56(%1);"
+			:: "r" (src), "r" (dest) : "memory");
+			src = ((const unsigned char *)src) + 64;
+			dest = ((unsigned char *)dest) + 64;
+		}
+		/* since movntq is weakly-ordered, a "sfence"
+		* is needed to become ordered again. */
+		__asm__ __volatile__ ("sfence":::"memory");
+		__asm__ __volatile__ ("emms":::"memory");
+	}
+	/*
+	 *	Now do the tail of the block
+	 */
+	if (n) __memcpy(dest, src, n);
+	return retval;
+}
+
+static FUNCTARGET("sse2") void *mmx1_cpy(void *dest, const void *src, size_t n) //3DNOW
+{
+	void *retval = dest;
+	size_t i;
+
+	/* PREFETCH has effect even for MOVSB instruction ;) */
+	__asm__ __volatile__ (
+		"prefetch (%0);"
+		"prefetch 32(%0);"
+		"prefetch 64(%0);"
+		"prefetch 96(%0);"
+		"prefetch 128(%0);"
+		"prefetch 160(%0);"
+		"prefetch 192(%0);"
+		"prefetch 224(%0);"
+		"prefetch 256(%0);"
+		"prefetch 288(%0);"
+	: : "r" (src));
+
+	if (n >= MMX1_MIN_LEN)
+	{
+		register unsigned long int delta;
+		/* Align destinition to MMREG_SIZE -boundary */
+		delta = ((unsigned long int)dest)&(MMX_MMREG_SIZE-1);
+		if (delta)
+		{
+			delta=MMX_MMREG_SIZE-delta;
+			n -= delta;
+			small_memcpy(dest, src, delta);
+		}
+		i = n >> 6; /* n/64 */
+		n&=63;
+		for (; i>0; i--)
+		{
+			__asm__ __volatile__ (
+				"prefetch 320(%0);"
+				"prefetch 352(%0);"
 				"movq (%0), %%mm0;"
 				"movq 8(%0), %%mm1;"
 				"movq 16(%0), %%mm2;"
