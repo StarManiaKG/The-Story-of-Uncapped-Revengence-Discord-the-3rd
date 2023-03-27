@@ -48,7 +48,7 @@
 #include "lua_libs.h"
 #include "md5.h"
 #include "m_perfstats.h"
-#include "s_sound.h" // sfx_syfail
+#include "s_sound.h" // funny discord sounds
 #include "i_time.h"
 
 // aaaaaa
@@ -1105,7 +1105,7 @@ static void CL_DrawConnectionStatusBox(void)
 {
 	M_DrawTextBox(BASEVIDWIDTH/2-128-8, BASEVIDHEIGHT-16-8, 32, 1);
 	if (cl_mode != CL_CONFIRMCONNECT)
-		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-16, V_YELLOWMAP, "Press ESC to abort");
+		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-16, menuColor[cv_menucolor.value], "Press ESC to abort");
 }
 
 //
@@ -1188,7 +1188,7 @@ static inline void CL_DrawConnectionStatus(void)
 				cltext = M_GetText("Connecting to server...");
 				break;
 		}
-		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-24, V_YELLOWMAP, cltext);
+		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-24, menuColor[cv_menucolor.value], cltext);
 	}
 	else
 	{
@@ -1198,7 +1198,7 @@ static inline void CL_DrawConnectionStatus(void)
 			INT32 loadcompletednum = 0;
 			INT32 i;
 
-			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-16, V_YELLOWMAP, "Press ESC to abort");
+			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-16, menuColor[cv_menucolor.value], "Press ESC to abort");
 
 			//ima just count files here
 			if (fileneeded)
@@ -1209,7 +1209,7 @@ static inline void CL_DrawConnectionStatus(void)
 			}
 
 			// Loading progress
-			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-24, V_YELLOWMAP, "Loading server addons...");
+			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-24, menuColor[cv_menucolor.value], "Loading server addons...");
 			totalfileslength = (INT32)((loadcompletednum/(double)(fileneedednum)) * 256);
 			M_DrawTextBox(BASEVIDWIDTH/2-128-8, BASEVIDHEIGHT-16-8, 32, 1);
 			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-16, 256, 8, 111);
@@ -1261,7 +1261,7 @@ static inline void CL_DrawConnectionStatus(void)
 				strncpy(tempname, filename, sizeof(tempname)-1);
 			}
 
-			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-24, V_YELLOWMAP,
+			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-24, menuColor[cv_menucolor.value],
 				va(M_GetText("Downloading \"%s\""), tempname));
 			V_DrawString(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-16, V_20TRANS|V_MONOSPACE,
 				va(" %4uK/%4uK",fileneeded[lastfilenum].currentsize>>10,file->totalsize>>10));
@@ -1274,7 +1274,7 @@ static inline void CL_DrawConnectionStatus(void)
 				Snake_Draw();
 
 			CL_DrawConnectionStatusBox();
-			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-24, V_YELLOWMAP,
+			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-24, menuColor[cv_menucolor.value],
 				M_GetText("Waiting to download files..."));
 		}
 	}
@@ -1513,8 +1513,8 @@ static boolean SV_SendServerConfig(INT32 node)
 	netbuffer->u.servercfg.gametype = (UINT8)gametype;
 	netbuffer->u.servercfg.modifiedgame = (UINT8)modifiedgame;
 
-	//netbuffer->u.servercfg.maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
-	//netbuffer->u.servercfg.allownewplayer = cv_allownewplayer.value;
+	netbuffer->u.servercfg.maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
+	netbuffer->u.servercfg.allownewplayer = cv_allownewplayer.value;
 	netbuffer->u.servercfg.discordinvites = (UINT8)cv_discordinvites.value;
 
 	memcpy(netbuffer->u.servercfg.server_context, server_context, 8);
@@ -3527,10 +3527,10 @@ consvar_t cv_netticbuffer = CVAR_INIT ("netticbuffer", "1", CV_SAVE, netticbuffe
 
 void DiscordInfo_OnChange(void);
 
-consvar_t cv_allownewplayer = CVAR_INIT ("allowjoin", "On", CV_SAVE|CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_allownewplayer = CVAR_INIT ("allowjoin", "On", CV_SAVE|CV_NETVAR|CV_CALL, CV_OnOff, DiscordInfo_OnChange);
 consvar_t cv_joinnextround = CVAR_INIT ("joinnextround", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL); /// \todo not done
 static CV_PossibleValue_t maxplayers_cons_t[] = {{2, "MIN"}, {32, "MAX"}, {0, NULL}};
-consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_SAVE|CV_NETVAR, maxplayers_cons_t, NULL);
+consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_SAVE|CV_NETVAR|CV_CALL, maxplayers_cons_t, DiscordInfo_OnChange);
 static CV_PossibleValue_t joindelay_cons_t[] = {{1, "MIN"}, {3600, "MAX"}, {0, "Off"}, {0, NULL}};
 consvar_t cv_joindelay = CVAR_INIT ("joindelay", "10", CV_SAVE|CV_NETVAR, joindelay_cons_t, NULL);
 static CV_PossibleValue_t rejointimeout_cons_t[] = {{1, "MIN"}, {60 * FRACUNIT, "MAX"}, {0, "Off"}, {0, NULL}};
@@ -3557,14 +3557,20 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum);
 
 void DiscordInfo_OnChange(void)
 {
-	UINT8 buf[1];
+	UINT8 buf[3];
 	UINT8 *p = buf;
+	UINT8 maxplayer;
 
 	if (!server)
 		return;
 
+	maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
+
+	WRITEUINT8(p, maxplayer);
+	WRITEUINT8(p, cv_allownewplayer.value);
 	WRITEUINT8(p, cv_discordinvites.value);
-	SendNetXCmd(XD_DISCORD, buf, 1);
+
+	SendNetXCmd(XD_DISCORD, buf, 3);
 }
 
 // called one time at init
@@ -3873,6 +3879,10 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 	if (netgame)
 	{
 		char joinmsg[256];
+
+		// Discord Sound Thingy Yay
+		if (node != mynode)
+			S_StartSound(NULL, sfx_join);
 
 		if (rejoined)
 			strcpy(joinmsg, M_GetText("\x82*%s has rejoined the game (player %d)"));
@@ -4450,8 +4460,8 @@ static void HandlePacketFromAwayNode(SINT8 node)
 			}
 
 #ifdef HAVE_DISCORDRPC
-			//discordInfo.maxPlayers = netbuffer->u.servercfg.maxplayer;
-			//discordInfo.joinsAllowed = netbuffer->u.servercfg.allownewplayer;
+			discordInfo.maxPlayers = netbuffer->u.servercfg.maxplayer;
+			discordInfo.joinsAllowed = netbuffer->u.servercfg.allownewplayer;
 			discordInfo.whoCanInvite = netbuffer->u.servercfg.discordinvites;
 #endif
 

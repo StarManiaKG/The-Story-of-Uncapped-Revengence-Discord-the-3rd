@@ -591,14 +591,15 @@ static void loading_status(void)
 	y = BASEVIDHEIGHT/2;
 	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31); // Black background to match fade in effect
 	//V_DrawPatchFill(W_CachePatchName("SRB2BACK",PU_CACHE)); // SRB2 background, ehhh too bright.
+
 	M_DrawTextBox(x-58, y-8, 13, 1);
-	V_DrawString(x-50, y, V_YELLOWMAP, "Loading...");
-	V_DrawRightAlignedString(x+50, y, V_YELLOWMAP, s);
+	V_DrawString(x-50, y, menuColor[cv_menucolor.value], "Loading...");
+	V_DrawRightAlignedString(x+50, y, menuColor[cv_menucolor.value], s);
 
 	// Is this really necessary at this point..?
-	V_DrawCenteredString(BASEVIDWIDTH/2, 40, V_YELLOWMAP, "OPENGL MODE IS INCOMPLETE AND MAY");
-	V_DrawCenteredString(BASEVIDWIDTH/2, 50, V_YELLOWMAP, "NOT DISPLAY SOME SURFACES.");
-	V_DrawCenteredString(BASEVIDWIDTH/2, 70, V_YELLOWMAP, "USE AT SONIC'S RISK.");
+	V_DrawCenteredString(BASEVIDWIDTH/2, 40, menuColor[cv_menucolor.value], "OPENGL MODE IS INCOMPLETE AND MAY");
+	V_DrawCenteredString(BASEVIDWIDTH/2, 50, menuColor[cv_menucolor.value], "NOT DISPLAY SOME SURFACES.");
+	V_DrawCenteredString(BASEVIDWIDTH/2, 70, menuColor[cv_menucolor.value], "USE AT SONIC'S RISK.");
 
 	I_UpdateNoVsync();
 }

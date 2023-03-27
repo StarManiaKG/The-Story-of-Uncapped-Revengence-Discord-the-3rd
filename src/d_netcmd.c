@@ -958,6 +958,8 @@ void D_RegisterClientCommands(void)
     CV_RegisterVar(&cv_customdiscordsmallimagetype);
 	CV_RegisterVar(&cv_customdiscordlargecharacterimage);
 	CV_RegisterVar(&cv_customdiscordsmallcharacterimage);
+	CV_RegisterVar(&cv_customdiscordlargesupercharacterimage);
+	CV_RegisterVar(&cv_customdiscordsmallsupercharacterimage);
     CV_RegisterVar(&cv_customdiscordlargemapimage);
     CV_RegisterVar(&cv_customdiscordsmallmapimage);
     CV_RegisterVar(&cv_customdiscordlargemiscimage);
@@ -967,12 +969,24 @@ void D_RegisterClientCommands(void)
 #endif
 
 	// Custom Funny Star Things :) //
+	CV_RegisterVar(&cv_startupscreen);
 	CV_RegisterVar(&cv_stjrintro);
-	
+
+	CV_RegisterVar(&cv_menucolor);
+	CV_RegisterVar(&cv_fpscountercolor);
+
+	CV_RegisterVar(&cv_pausemenustyle);
+
+	CV_RegisterVar(&cv_superwithshield);
+	CV_RegisterVar(&cv_armageddonnukesuper);
+
+	CV_RegisterVar(&cv_alwaysoverlayinvuln);
+
 	CV_RegisterVar(&cv_continues);
 	CV_RegisterVar(&cv_movingplayersetup);
 
 	CV_RegisterVar(&cv_jukeboxhud);
+	CV_RegisterVar(&cv_jukeboxspeed);
 }
 
 /** Checks if a name (as received from another player) is okay.
@@ -4891,6 +4905,15 @@ static void Skin_OnChange(void)
 		return;
 	}
 
+	// No Cheating in Race-Type Modes
+	if (gametyperules & GTR_RACE && (cv_movingplayersetup.value && P_PlayerMoving(consoleplayer)))
+	{
+		CONS_Printf("Nice try%s.\n",
+			(((strcmp(discordUserName, " ") == 0) || (strcmp(discordUserName, "  ") == 0)) ? "" : va(", %s", discordUserName)));
+		CV_StealthSet(&cv_skin, skins[players[consoleplayer].skin].name);
+		return;
+	}
+
 	if (CanChangeSkin(consoleplayer) && (cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(consoleplayer))))
 		SendNameAndColor();
 	else
@@ -4909,6 +4932,15 @@ static void Skin2_OnChange(void)
 {
 	if (!Playing() || !splitscreen)
 		return; // do whatever you want
+
+	// No Cheating in Race-Type Modes
+	if (gametyperules & GTR_RACE && (cv_movingplayersetup.value && P_PlayerMoving(secondarydisplayplayer)))
+	{
+		CONS_Printf("Nice try%s.\n",
+			(((strcmp(discordUserName, " ") == 0) || (strcmp(discordUserName, "  ") == 0)) ? "" : va(", %s's friend", discordUserName)));
+		CV_StealthSet(&cv_skin2, skins[players[secondarydisplayplayer].skin].name);
+		return;
+	}
 
 	if (CanChangeSkin(secondarydisplayplayer) && (cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(secondarydisplayplayer))))
 		SendNameAndColor2();
@@ -5070,10 +5102,13 @@ void Got_DiscordInfo(UINT8 **p, INT32 playernum)
 
 	// Don't do anything with the information if we don't have Discord RPC support
 #ifdef HAVE_DISCORDRPC
+	discordInfo.maxPlayers = READUINT8(*p);
+	discordInfo.joinsAllowed = (boolean)READUINT8(*p);
 	discordInfo.whoCanInvite = READUINT8(*p);
+
 	DRPC_UpdatePresence();
 #else
-	(*p) += 1;
+	(*p) += 3;
 #endif
 }
 

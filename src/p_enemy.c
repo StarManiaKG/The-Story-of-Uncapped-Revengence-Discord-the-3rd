@@ -26,6 +26,7 @@
 #include "z_zone.h"
 #include "lua_hook.h"
 #include "m_cond.h" // SECRET_SKIN
+#include "m_menu.h" // jukebox
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -4325,10 +4326,14 @@ void A_SuperSneakers(mobj_t *actor)
 
 	if (P_IsLocalPlayer(player) && !player->powers[pw_super])
 	{
-		if (S_SpeedMusic(0.0f) && (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC))
-			S_SpeedMusic(1.4f);
+		if ((mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC) && !jukeboxMusicPlaying)
+		{
+			if (S_SpeedMusic(0.0f))
+				S_SpeedMusic(1.4f);
+		}
 		else
 			P_PlayJingle(player, JT_SHOES);
+		
 		strlcpy(S_sfx[sfx_None].caption, "Speed shoes", 12);
 		S_StartCaption(sfx_None, -1, player->powers[pw_sneakers]);
 	}

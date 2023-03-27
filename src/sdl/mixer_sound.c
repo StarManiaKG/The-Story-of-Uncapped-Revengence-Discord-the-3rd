@@ -859,6 +859,15 @@ boolean I_SetSongSpeed(float speed)
 {
 	if (speed > 250.0f)
 		speed = 250.0f; //limit speed up to 250x
+
+#ifdef HAVE_MIXERX
+	if (music)
+	{
+		Mix_SetMusicSpeed(music, (double)speed);
+		return true;
+	}
+	else
+#endif
 #ifdef HAVE_GME
 	if (gme)
 	{
@@ -886,6 +895,7 @@ boolean I_SetSongSpeed(float speed)
 #endif
 		return true;
 	}
+	else
 #else
 	(void)speed;
 	return false;

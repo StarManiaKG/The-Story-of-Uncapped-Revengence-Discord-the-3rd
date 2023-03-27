@@ -2474,6 +2474,12 @@ static void Command_Tunes_f(void)
 	UINT32 position = 0;
 	const size_t argc = COM_Argc();
 
+	if (jukeboxMusicPlaying)
+	{
+		CONS_Printf("Sorry, you can't use this command while playing music in the Jukebox.\n");
+		return;
+	}
+
 	if (argc < 2) //tunes slot ...
 	{
 		CONS_Printf("tunes <name/num> [track] [speed] [position] / <-show> / <-default> / <-none>:\n");
@@ -2539,13 +2545,12 @@ static void Command_RestartAudio_f(void)
 	I_StartupSound();
 	I_InitMusic();
 
-// These must be called or no sound and music until manually set.
-// star note: since this is a command i will grant you the ability to restart jukebox audio and stop it from playing here
+	// These must be called or no sound and music until manually set.
 	I_SetSfxVolume(cv_soundvolume.value);
 	S_SetMusicVolume(cv_digmusicvolume.value, cv_midimusicvolume.value);
 	if (Playing()) // Gotta make sure the player is in a level
 		P_RestoreMusic(&players[consoleplayer]);
-	if (jukeboxMusicPlaying) //Fine, I'll let you do it here...
+	if (jukeboxMusicPlaying) // Fine, I'll let you do it here...
 		M_ResetJukebox();
 }
 

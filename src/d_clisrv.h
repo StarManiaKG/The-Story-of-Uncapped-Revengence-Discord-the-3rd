@@ -159,13 +159,12 @@ typedef struct
 	UINT8 gametype;
 	UINT8 modifiedgame;
 
-	// The Following is Kinda Needed for Discord RPC //
-	//UINT8 maxplayer;
-	//boolean allownewplayer;
-	UINT8 discordinvites;
-	// End of Kinda Required Discord RPC Stuff //
-
 	char server_context[8]; // Unique context id, generated at server startup.
+
+	// The Following is Kinda Needed for Discord RPC Compatibility //
+	UINT8 maxplayer;
+	boolean allownewplayer;
+	UINT8 discordinvites;
 } ATTRPACK serverconfig_pak;
 
 typedef struct

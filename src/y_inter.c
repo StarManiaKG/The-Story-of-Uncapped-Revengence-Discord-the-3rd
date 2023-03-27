@@ -570,7 +570,12 @@ void Y_IntermissionDrawer(void)
 		{
 			if (LUA_HudEnabled(hud_intermissiontitletext))
 			{
-				const char *ringtext = "\x82" "50 rings, no shield";
+				const char *ringtext;
+				if (cv_superwithshield.value)
+					ringtext = "\x82" "50 rings";
+				else
+					ringtext = "\x82" "50 rings, no shield";
+
 				const char *tut1text = "\x82" "press " "\x80" "spin";
 				const char *tut2text = "\x82" "mid-" "\x80" "jump";
 				ttheight = 8;
@@ -967,12 +972,12 @@ skiptallydrawer:
 		return;
 
 	if (timer)
-		V_DrawCenteredString(BASEVIDWIDTH/2, 188, V_YELLOWMAP,
+		V_DrawCenteredString(BASEVIDWIDTH/2, 188, menuColor[cv_menucolor.value],
 			va("start in %d seconds", timer/TICRATE));
 
 	// Make it obvious that scrambling is happening next round.
 	if (cv_scrambleonchange.value && cv_teamscramble.value && (intertic/TICRATE % 2 == 0))
-		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2, V_YELLOWMAP, M_GetText("Teams will be scrambled next round!"));
+		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2, menuColor[cv_menucolor.value], M_GetText("Teams will be scrambled next round!"));
 }
 
 //

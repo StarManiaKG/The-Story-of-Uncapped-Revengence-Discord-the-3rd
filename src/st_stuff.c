@@ -349,8 +349,7 @@ void ST_LoadGraphics(void)
 		ngradeletters[i] = W_CachePatchName(va("GRADE%d", i), PU_HUDGFX);
 
 #ifdef HAVE_DISCORDRPC
-	// Discord Rich Presence
-	envelope = W_CachePatchName("K_REQUES", PU_HUDGFX);
+	envelope = W_CachePatchName("D_REQUES", PU_HUDGFX); // Discord Rich Presence
 #endif
 }
 
@@ -1206,7 +1205,7 @@ static void ST_drawInput(void)
 		}
 	}
 	if (!demosynced) // should always be last, so it doesn't push anything else around
-		V_DrawThinString(x, y, hudinfo[HUD_LIVES].f|((leveltime & 4) ? V_YELLOWMAP : V_REDMAP), "BAD DEMO!!");
+		V_DrawThinString(x, y, hudinfo[HUD_LIVES].f|((leveltime & 4) ? menuColor[cv_menucolor.value] : V_REDMAP), "BAD DEMO!!");
 }
 
 static patch_t *lt_patches[3];
@@ -1696,7 +1695,7 @@ static void ST_drawNightsRecords(void)
 			if (!(netgame || multiplayer) && G_GetBestNightsScore(gamemap, stplyr->lastmare + 1) <= stplyr->lastmarescore)
 			{
 				if (stplyr->texttimer & 16)
-					V_DrawCenteredString(BASEVIDWIDTH/2, 184, V_YELLOWMAP|aflag, "* NEW RECORD *");
+					V_DrawCenteredString(BASEVIDWIDTH/2, 184, menuColor[cv_menucolor.value]|aflag, "* NEW RECORD *");
 			}
 
 			if (P_HasGrades(gamemap, stplyr->lastmare + 1))
@@ -2066,7 +2065,7 @@ static void ST_drawNiGHTSHUD(void)
 
 		// Show exact time in debug
 		if (cv_debug & DBG_NIGHTSBASIC)
-			V_DrawString(160 + numbersize + 8, 24, V_SNAPTOTOP|((realnightstime < 10) ? V_REDMAP : V_YELLOWMAP), va("%02d", G_TicsToCentiseconds(stplyr->nightstime)));
+			V_DrawString(160 + numbersize + 8, 24, V_SNAPTOTOP|((realnightstime < 10) ? V_REDMAP : menuColor[cv_menucolor.value]), va("%02d", G_TicsToCentiseconds(stplyr->nightstime)));
 	}
 
 	if (oldspecialstage)
@@ -2608,7 +2607,6 @@ static void ST_doItemFinderIconsAndSound(void)
 // Draws Jukebox Text On The Screen/HUD
 //
 boolean initJukeboxHUD;
-UINT16 chosenColor;
 
 INT32 boxw = 300; // Slides our Filed Box to Width 245
 INT32 strw = 300; // Slides our Regular String to Width 230
@@ -2622,31 +2620,7 @@ void ST_drawJukebox(void)
 	{
 		// Run Variables First //
 		if (initJukeboxHUD)
-		{
-			// I'll Rework This Into Something Cool Later, Probably
-			/*if (!chosenColor)
-			{
-				
-				switch (M_RandomRange(0, 14))
-				{
-					case 0: chosenColor = V_MAGENTAMAP; break;
-					case 1: chosenColor = V_YELLOWMAP; break;
-					case 2: chosenColor = V_GREENMAP; break;
-					case 3: chosenColor = V_BLUEMAP; break;
-					case 4: chosenColor = V_REDMAP; break;
-					case 5: chosenColor = V_GRAYMAP; break;
-					case 6: chosenColor = V_ORANGEMAP; break;
-					case 7: chosenColor = V_SKYMAP; break;
-					case 8: chosenColor = V_PURPLEMAP; break;
-					case 9: chosenColor = V_AQUAMAP; break;
-					case 10: chosenColor = V_PERIDOTMAP; break;
-					case 11: chosenColor = V_AZUREMAP; break;
-					case 12: chosenColor = V_BROWNMAP; break;
-					case 13: chosenColor = V_ROSYMAP; break;
-					case 14: chosenColor = V_INVERTMAP; break;
-				}
-			}*/
-		
+		{		
 			if (slidetime > 0)
 			{
 				boxw -= 5;
@@ -2686,8 +2660,6 @@ void ST_drawJukebox(void)
 	{
 		boxw = strw = tstrw = 300;
 		slidetime = (1*TICRATE-2);
-			
-		chosenColor = 0;
 	}
 }
 // END OF STAR SECTION //

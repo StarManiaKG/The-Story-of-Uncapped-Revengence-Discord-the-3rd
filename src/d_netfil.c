@@ -1296,15 +1296,12 @@ void PT_FileFragment(void)
 	filename = va("%s", file->filename);
 	nameonly(filename);
 
+	// TSoURDt3rd Stuff Was Originally Here, but Not Anymore lol
 	if (!(strcmp(filename, "srb2.pk3")
 		&& strcmp(filename, "zones.pk3")
 		&& strcmp(filename, "player.dta")
 		&& strcmp(filename, "patch.pk3")
 		&& strcmp(filename, "music.dta")
-
-		// TSoURDt3rd Files
-		&& strcmp(filename, "tsourdt3rd.pk3")
-		&& strcmp(filename, "jukebox.pk3")
 		))
 		I_Error("Tried to download \"%s\"", filename);
 
