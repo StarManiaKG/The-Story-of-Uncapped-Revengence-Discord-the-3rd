@@ -1,0 +1,10 @@
+prefix=/home/star/Github/actualmixerx-install32
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: libADLMIDI
+Description: A MIDI playback library with OPL3 (YMF262) emulator
+Version: 1.5.1
+Libs: -L${libdir} -lADLMIDI
+Cflags: -I${includedir}

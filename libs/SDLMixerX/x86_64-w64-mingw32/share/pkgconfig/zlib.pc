@@ -1,0 +1,13 @@
+prefix=/home/star/Github/mixerx-install32
+exec_prefix=/home/star/Github/mixerx-install32
+libdir=lib
+sharedlibdir=lib
+includedir=include
+
+Name: zlib
+Description: zlib compression library
+Version: 
+
+Requires:
+Libs: -L${libdir} -L${sharedlibdir} -lz
+Cflags: -I${includedir}

@@ -1,0 +1,13 @@
+prefix=/home/star/Github/actualmixerx-install32
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: wavpack
+Description: wavpack library
+Version: 5.6.0
+Requires:
+Conflicts:
+Libs: -L${libdir} -lwavpack
+Libs.private: -lm
+Cflags: -I${includedir}

@@ -1,0 +1,12 @@
+prefix=/home/star/Github/mixerx-install32
+exec_prefix=/home/star/Github/mixerx-install32
+libdir=/home/star/Github/mixerx-install32/lib
+includedir=/home/star/Github/mixerx-install32/include
+
+Name: libsyn123
+Description: A signal synthesis library accompanying mpg123
+Requires: 
+Version: 1.29.3
+Libs: -L${libdir} -lsyn123 
+Libs.private: 
+Cflags: -I${includedir} 
