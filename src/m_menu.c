@@ -470,7 +470,7 @@ boolean AlwaysOverlayInvincibility;
 
 static void STAR_InvulnAndShield_OnChange(void);
 static void STAR_JukeboxHUD_OnChange(void);
-static void STAR_JukeboxSpeed_OnChange(void);
+//static void STAR_JukeboxSpeed_OnChange(void);
 
 // ==========================================================================
 // CONSOLE VARIABLES AND THEIR POSSIBLE VALUES GO HERE.
@@ -605,7 +605,7 @@ consvar_t cv_alwaysoverlayinvuln = CVAR_INIT ("alwaysoverlayinvincibility", "On"
 
 consvar_t cv_jukeboxhud = CVAR_INIT ("jukeboxhud", "On", CV_SAVE|CV_CALL, CV_OnOff, STAR_JukeboxHUD_OnChange);
 
-static CV_PossibleValue_t jukebox_speed_t[] =  {
+/*static CV_PossibleValue_t jukebox_speed_t[] =  {
 	// Slowest
 	{1, "0.1"},
 	{2, "0.2"},
@@ -644,6 +644,7 @@ static CV_PossibleValue_t jukebox_speed_t[] =  {
 	{25, "2.5"},
 	{0, NULL}};
 consvar_t cv_jukeboxspeed = CVAR_INIT ("jukeboxspeed", "1.0", CV_SAVE|CV_CALL, jukebox_speed_t, STAR_JukeboxSpeed_OnChange);
+*/
 
 // ==========================================================================
 // ORGANIZATION START.
@@ -3033,11 +3034,11 @@ static void STAR_JukeboxHUD_OnChange(void)
 	}
 }
 
-static void STAR_JukeboxSpeed_OnChange(void)
+/*static void STAR_JukeboxSpeed_OnChange(void)
 {
 	if (jukeboxMusicPlaying)
 		S_SpeedMusic(strtof(cv_jukeboxspeed.string, NULL));
-}
+}*/
 
 // ==========================================================================
 // END ORGANIZATION STUFF.
@@ -14701,7 +14702,7 @@ static void M_DrawTsourdt3rdJukebox(void)
 			}
 			else
 			{
-				fixed_t work, bpm = (curplaying->bpm/strtof(cv_jukeboxspeed.string, NULL));
+				fixed_t work, bpm = curplaying->bpm; //(curplaying->bpm/strtof(cv_jukeboxspeed.string, NULL));
 				angle_t ang;
 				//bpm = FixedDiv((60*TICRATE)<<FRACBITS, bpm); -- bake this in on load
 
@@ -14892,7 +14893,7 @@ static void M_DrawTsourdt3rdJukebox(void)
 
 		V_DrawFill(165+140-1+15, 60 + i, 1, m, 0); // White Scroll Bar
 
-		// Draw the Speed Option //
+		/*// Draw the Speed Option //
 		// Strings
 		V_DrawString(((BASEVIDWIDTH/2)+15), ((BASEVIDWIDTH/2)+15),
 			(V_SNAPTORIGHT|((soundtestdefs[st_sel] == &soundtestsfx) ? V_TRANSLUCENT : menuColor[cv_menucolor.value])),
@@ -14901,6 +14902,7 @@ static void M_DrawTsourdt3rdJukebox(void)
 		// Arrows
 		V_DrawCharacter(((BASEVIDWIDTH/2)+107), ((BASEVIDWIDTH/2)+15), '\x1C' | V_SNAPTORIGHT | ((soundtestdefs[st_sel] == &soundtestsfx) ? V_TRANSLUCENT : menuColor[cv_menucolor.value]), false); // left
 		V_DrawCharacter(((BASEVIDWIDTH/2)+145), ((BASEVIDWIDTH/2)+15), '\x1D' | V_SNAPTORIGHT | ((soundtestdefs[st_sel] == &soundtestsfx) ? V_TRANSLUCENT : menuColor[cv_menucolor.value]), false); // right
+		*/
 	}
 }
 
@@ -14983,7 +14985,7 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 				else
 				{
 					S_StartSound(NULL, sfx_menu1);
-					CV_AddValue(&cv_jukeboxspeed, 1);
+					//CV_AddValue(&cv_jukeboxspeed, 1);
 				}
 			}
 			break;
@@ -15001,7 +15003,7 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 				else
 				{
 					S_StartSound(NULL, sfx_menu1);
-					CV_AddValue(&cv_jukeboxspeed, -1);
+					//CV_AddValue(&cv_jukeboxspeed, -1);
 				}
 			}
 			break;
@@ -15028,7 +15030,7 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 						strcpy(jukeboxMusicTrack, curplaying->name);
 	
 						S_ChangeMusicInternal(jukeboxMusicTrack, !curplaying->stoppingtics);
-						S_SpeedMusic(strtof(cv_jukeboxspeed.string, NULL));
+						//S_SpeedMusic(strtof(cv_jukeboxspeed.string, NULL));
 
 						CONS_Printf(M_GetText("Loaded track \x82%s\x80 into the Jukebox.\n"), jukeboxMusicName);
 						jukeboxMusicPlaying = true;
@@ -15080,5 +15082,5 @@ void M_ResetJukebox(void)
 		soundtestdefs = NULL;
 	}
 
-	S_SpeedMusic(1.0f); // Reset the Speed of the Music (Even Though the Game Already Does it for us), Just in Case
+	//S_SpeedMusic(1.0f); // Reset the Speed of the Music (Even Though the Game Already Does it for us), Just in Case
 }
