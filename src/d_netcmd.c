@@ -986,7 +986,7 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_movingplayersetup);
 
 	CV_RegisterVar(&cv_jukeboxhud);
-	CV_RegisterVar(&cv_jukeboxspeed);
+	//CV_RegisterVar(&cv_jukeboxspeed);
 }
 
 /** Checks if a name (as received from another player) is okay.

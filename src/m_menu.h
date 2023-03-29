@@ -505,7 +505,7 @@ void M_RefreshPauseMenu(void);
 extern boolean AlwaysOverlayInvincibility;
 extern consvar_t cv_startupscreen, cv_stjrintro, cv_menucolor, cv_fpscountercolor, cv_pausemenustyle;
 extern consvar_t cv_superwithshield, cv_armageddonnukesuper, cv_alwaysoverlayinvuln;
-extern consvar_t cv_jukeboxhud, cv_jukeboxspeed;
+extern consvar_t cv_jukeboxhud; //, cv_jukeboxspeed;
 
 extern UINT16 menuColor[16];
 
