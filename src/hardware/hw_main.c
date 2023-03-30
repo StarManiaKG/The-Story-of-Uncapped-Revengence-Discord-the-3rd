@@ -3654,6 +3654,175 @@ static boolean HWR_DoCulling(line_t *cullheight, line_t *viewcullheight, float v
 	return false;
 }
 
+#if 0
+static void HWR_DrawSpriteShadow(gl_vissprite_t *spr, GLPatch_t *gpatch, float this_scale)
+{
+	FOutVector swallVerts[4];
+	FSurfaceInfo sSurf;
+	patch_t *gpatch2;
+	fixed_t floorheight, mobjfloor, floordiff, groundz;
+	extracolormap_t *colormap = NULL;
+	float offset = 0;
+
+	mobjfloor = HWR_OpaqueFloorAtPos(
+		spr->mobj->x, spr->mobj->y,
+		spr->mobj->z, spr->mobj->height);
+	
+	// uncapped/interpolation
+	interpmobjstate_t interp = {0};
+
+	groundz = R_GetShadowZ(mobjfloor, &groundslope);
+	mobjfloor = abs((flip < 0 ? spr->mobj->z : 0) + interp.z - groundz); //floordiff
+
+	/*if (cv_shadowoffs.value)
+	{
+		angle_t shadowdir;
+
+		// Set direction
+		if (splitscreen && stplyr == &players[secondarydisplayplayer])
+			shadowdir = localangle2 + FixedAngle(cv_cam2_rotate.value);
+		else
+			shadowdir = localangle + FixedAngle(cv_cam_rotate.value);
+
+		// Find floorheight
+		floorheight = HWR_OpaqueFloorAtPos(
+			spr->mobj->x + P_ReturnThrustX(spr->mobj, shadowdir, spr->mobj->z - mobjfloor),
+			spr->mobj->y + P_ReturnThrustY(spr->mobj, shadowdir, spr->mobj->z - mobjfloor),
+			spr->mobj->z, spr->mobj->height);
+
+		// The shadow is falling ABOVE it's mobj?
+		// Don't draw it, then!
+		if (spr->mobj->z < floorheight)
+			return;
+		else
+		{
+			fixed_t floorz;
+			floorz = HWR_OpaqueFloorAtPos(
+				spr->mobj->x + P_ReturnThrustX(spr->mobj, shadowdir, spr->mobj->z - floorheight),
+				spr->mobj->y + P_ReturnThrustY(spr->mobj, shadowdir, spr->mobj->z - floorheight),
+				spr->mobj->z, spr->mobj->height);
+			// The shadow would be falling on a wall? Don't draw it, then.
+			// Would draw midair otherwise.
+			if (floorz < floorheight)
+				return;
+		}
+
+		floorheight = FixedInt(spr->mobj->z - floorheight);
+
+		offset = floorheight;
+	}
+	else*/
+		floorheight = FixedInt(spr->mobj->z - mobjfloor);
+
+	// create the sprite billboard
+	//
+	//  3--2
+	//  | /|
+	//  |/ |
+	//  0--1
+
+	// x1/x2 were already scaled in HWR_ProjectSprite
+	// First match the normal sprite
+	swallVerts[0].x = swallVerts[3].x = spr->x1;
+	swallVerts[2].x = swallVerts[1].x = spr->x2;
+	swallVerts[0].z = swallVerts[3].z = spr->z1;
+	swallVerts[2].z = swallVerts[1].z = spr->z2;
+
+	if (spr->mobj && fabsf(this_scale - 1.0f) > 1.0E-36f)
+	{
+		// Always a pixel above the floor, perfectly flat.
+		swallVerts[0].y = swallVerts[1].y = swallVerts[2].y = swallVerts[3].y = spr->ty - gpatch->topoffset * this_scale - (floorheight+3);
+
+		// Now transform the TOP vertices along the floor in the direction of the camera
+		swallVerts[3].x = spr->x1 + ((gpatch->height * this_scale) + offset) * gr_viewcos;
+		swallVerts[2].x = spr->x2 + ((gpatch->height * this_scale) + offset) * gr_viewcos;
+		swallVerts[3].z = spr->z1 + ((gpatch->height * this_scale) + offset) * gr_viewsin;
+		swallVerts[2].z = spr->z2 + ((gpatch->height * this_scale) + offset) * gr_viewsin;
+	}
+	else
+	{
+		// Always a pixel above the floor, perfectly flat.
+		swallVerts[0].y = swallVerts[1].y = swallVerts[2].y = swallVerts[3].y = spr->ty - gpatch->topoffset - (floorheight+3);
+
+		// Now transform the TOP vertices along the floor in the direction of the camera
+		swallVerts[3].x = spr->x1 + (gpatch->height + offset) * gr_viewcos;
+		swallVerts[2].x = spr->x2 + (gpatch->height + offset) * gr_viewcos;
+		swallVerts[3].z = spr->z1 + (gpatch->height + offset) * gr_viewsin;
+		swallVerts[2].z = spr->z2 + (gpatch->height + offset) * gr_viewsin;
+	}
+
+	/*// We also need to move the bottom ones away when shadowoffs is on
+	if (cv_shadowoffs.value)
+	{
+		swallVerts[0].x = spr->x1 + offset * gr_viewcos;
+		swallVerts[1].x = spr->x2 + offset * gr_viewcos;
+		swallVerts[0].z = spr->z1 + offset * gr_viewsin;
+		swallVerts[1].z = spr->z2 + offset * gr_viewsin;
+	}*/
+
+	if (spr->flip)
+	{
+		swallVerts[0].s = swallVerts[3].s = gpatch->max_s;
+		swallVerts[2].s = swallVerts[1].s = 0;
+	}
+	else
+	{
+		swallVerts[0].s = swallVerts[3].s = 0;
+		swallVerts[2].s = swallVerts[1].s = gpatch->max_s;
+	}
+
+	// flip the texture coords (look familiar?)
+	if (spr->vflip)
+	{
+		swallVerts[3].t = swallVerts[2].t = gpatch->max_t;
+		swallVerts[0].t = swallVerts[1].t = 0;
+	}
+	else
+	{
+		swallVerts[3].t = swallVerts[2].t = 0;
+		swallVerts[0].t = swallVerts[1].t = gpatch->max_t;
+	}
+
+	if (spr->mobj->frame & FF_TRANSMASK || spr->mobj->flags2 & MF2_SHADOW)
+	{
+		sector_t *sector = spr->mobj->subsector->sector;
+		UINT8 lightlevel = 255;
+		extracolormap_t *colormap = sector->extra_colormap;
+
+		if (sector->numlights)
+		{
+			INT32 light = R_GetPlaneLight(sector, spr->mobj->floorz, false);
+
+			if (!(spr->mobj->frame & FF_FULLBRIGHT))
+				lightlevel = *sector->lightlist[light].lightlevel;
+
+			if (sector->lightlist[light].extra_colormap)
+				colormap = sector->lightlist[light].extra_colormap;
+		}
+		else
+		{
+			lightlevel = sector->lightlevel;
+
+			if (sector->extra_colormap)
+				colormap = sector->extra_colormap;
+		}
+	}
+
+	alpha = floordiff / (4*FRACUNIT) + 75;
+	if (alpha >= 255) return;
+	alpha = 255 - alpha;
+
+	HWR_Lighting(&sSurf, 0, colormap);
+	sSurf.PolyColor.s.alpha = alpha;
+
+	if (sSurf.PolyColor.s.alpha > floorheight/4)
+	{
+		sSurf.PolyColor.s.alpha = (UINT8)(sSurf.PolyColor.s.alpha - floorheight/4);
+		HWR_ProcessPolygon(&sSurf, swallVerts, 4, PF_Translucent|PF_Modulated|PF_Clip, shader, false);
+	}
+}
+#endif
+
 static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 {
 	patch_t *gpatch;

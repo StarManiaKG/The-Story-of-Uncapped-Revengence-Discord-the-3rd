@@ -122,6 +122,11 @@ typedef enum
 	QUIT3MSG4,
 	QUIT3MSG5,
 	QUIT3MSG6,
+
+	QUITSMSG1,
+	QUITSMSG2,
+	QUITSMSG3,
+	QUITSMSG4,
 	NUM_QUITMESSAGES
 } text_enum;
 
@@ -4567,6 +4572,8 @@ void M_Init(void)
 	quitmsg[QUIT3MSG4] = M_GetText("Every time you press 'Y', an\nSRB2 Developer cries...\n\n(Press 'Y' to quit)");
 	quitmsg[QUIT3MSG5] = M_GetText("You'll be back to play soon, though...\n......right?\n\n(Press 'Y' to quit)");
 	quitmsg[QUIT3MSG6] = M_GetText("Aww, is Egg Rock Zone too\ndifficult for you?\n\n(Press 'Y' to quit)");
+
+	/* The Star Quit Messages Are Utilized in M_QuitSRB2 :) */
 
 	/*
 	Well the menu sucks for forcing us to have an item set
@@ -14443,7 +14450,25 @@ static void M_QuitSRB2(INT32 choice)
 	// We pick index 0 which is language sensitive, or one at random,
 	// between 1 and maximum number.
 	(void)choice;
+
+	char *maptitle = G_BuildMapTitle(gamemap);
+
+	// Star Quit Messages
+	// Static
+	quitmsg[QUITSMSG1] = M_GetText("Every time you press 'Y', \nStarManiaKG cries...\n\n(Press 'Y' to quit)");
+	quitmsg[QUITSMSG2] = M_GetText("Who do you think you are? \nItaly?\n\n(Press 'Y' to quit)");
+	
+	// Dynamic
+	quitmsg[QUITSMSG3] = (gamestate == GS_LEVEL ? M_GetText(va("Hehe, was \n%s\ntoo hard for you, cutie?\n\n(Press 'Y' to quit)", maptitle)) : M_GetText("Heh, you couldn't even make\nit past the Title Screen, \ncould you, cutie?\n\n(Press 'Y' to quit)"));
+#ifdef HAVE_DISCORDRPC	
+	quitmsg[QUITSMSG4] = M_GetText(va("Wait, %s!\nCome back! I need you!\n\n(Press 'Y' to quit)", (((strcmp(discordUserName, " ") == 0) || (strcmp(discordUserName, "  ") == 0)) ? (Playing() ? player_names[consoleplayer] : cv_playername.string) : discordUserName)));
+#else
+	quitmsg[QUITSMSG4] = M_GetText(va("Wait, %s!\nCome back! I need you!\n\n(Press 'Y' to quit)", (Playing() ? player_names[consoleplayer] : cv_playername.string)));
+#endif
+
 	M_StartMessage(quitmsg[M_RandomKey(NUM_QUITMESSAGES)], M_QuitResponse, MM_YESNO);
+
+	Z_Free(maptitle);
 }
 
 #ifdef HAVE_DISCORDRPC
