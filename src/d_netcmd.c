@@ -982,7 +982,13 @@ void D_RegisterClientCommands(void)
 
 	CV_RegisterVar(&cv_alwaysoverlayinvuln);
 
+	CV_RegisterVar(&cv_perfectsave);
+	CV_RegisterVar(&cv_perfectsavestripe1);
+	CV_RegisterVar(&cv_perfectsavestripe2);
+	CV_RegisterVar(&cv_perfectsavestripe3);
+
 	CV_RegisterVar(&cv_continues);
+
 	CV_RegisterVar(&cv_movingplayersetup);
 
 	CV_RegisterVar(&cv_jukeboxhud);

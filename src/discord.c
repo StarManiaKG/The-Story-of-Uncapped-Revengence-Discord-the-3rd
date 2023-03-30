@@ -42,6 +42,8 @@
 #include "doomstat.h" // savemoddata
 #include "dehacked.h" // titlechanged
 
+#include "fastcmp.h" // fastcmp, helps with super stuff
+
 // Please feel free to provide your own Discord app if you're making a new custom build :)
 #define DISCORD_APPID "1013126566236135516"
 
@@ -772,14 +774,8 @@ void DRPC_UpdatePresence(void)
 
 	static const char *supportedSuperSkins[] = {
 		// Vanilla Chars
-		"sonic",
+		"sonic", "supersonic",
 		"sonictails",
-		NULL
-	};
-
-	static const char *supportedSpecialSkinCases[] = {
-		// Custom Chars
-		"supersonic",
 		NULL
 	};
 
@@ -948,8 +944,10 @@ void DRPC_UpdatePresence(void)
 	INT32 i = 0;
 	UINT8 emeraldCount = 0; // Helps Me To Find The Emeralds
 
-	INT32 checkSkin = 0; 		// Checks Through The Consoleplayer's Skin
-	INT32 checkSideSkin = 0; 	// Checks Through The Seconddary Display Player's Skin
+	INT32 checkSkin = 0; 			// Checks Through The Consoleplayer's Skin
+	INT32 checkSuperSkin = 0;		// Checks Through The Consoleplayer's Super Skin
+	INT32 checkSideSkin = 0; 		// Checks Through The Secondary Display Player's Skin
+	INT32 checkSuperSideSkin = 0;	// Checks Through The Secondary Display Player's Super Skin
 
 	// Booleans
 #ifdef DEVELOP
@@ -1283,42 +1281,49 @@ void DRPC_UpdatePresence(void)
 	////// 	  CHARACTERS 	 //////
 	if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 1)
 	{
-		//// Character Types ////
+		///// Character Types /////
 		strcpy(charImageType, (!cv_discordcharacterimagetype.value ? "char" : (cv_discordcharacterimagetype.value == 1 ? "cont" : "life")));
-
-		//// Character Images ////
-		strcpy(charimg, va("%scustom", charImageType));
-		strcpy(charimgS, va(((cv_discordshowonstatus.value && ((playeringame[1] && players[1].bot) || splitscreen)) ? "%scustom" : ""), ((cv_discordshowonstatus.value && ((playeringame[1] && players[1].bot) || splitscreen)) ? charImageType : 0)));
 		
+		strcpy(charimg, va("%scustom", charImageType));
+		((cv_discordshowonstatus.value && ((playeringame[1] && players[1].bot) || splitscreen)) ? strcpy(charimgS, va("%scustom", charImageType)) : 0);
+
+		///// Renderers /////
 		if (Playing())
 		{
-			// Supported Characters //
-			// Main Characters
+			//// Supported Character Images ////
+			/// Main Player ///
 			while (supportedSkins[checkSkin] != NULL)
 			{
-				// Supers //
+				/// Supers ///
 				if (players[consoleplayer].powers[pw_super])
 				{
-					// Dynamic Duos //
-					// Sonic & Tails!
-					if (((strcmp(skins[players[consoleplayer].skin].name, "sonic") == 0) || (strcmp(skins[players[consoleplayer].skin].name, "supersonic") == 0))
-						&& ((playeringame[1] && players[1].bot) && strcmp(skins[players[1].skin].name, "tails") == 0))
+					while (supportedSuperSkins[checkSuperSkin] != NULL)
 					{
-						(!cv_discordshowonstatus.value ?
-							// With the Default Show Status Option
-							strcpy(charimg, va("%ssupersonictails", charImageType)) :
-							
-							// Withe the Only Characters Show Status Option
-							(strcpy(charimg, va("%ssupersonic", charImageType)), strcpy(charimgS, va("%stails", charImageType))));
-						break;
+						// Dynamic Duos //
+						// Sonic & Tails!
+						if (((strcmp(skins[players[consoleplayer].skin].name, "sonic") == 0) || (strcmp(skins[players[consoleplayer].skin].name, "supersonic") == 0))
+							&& ((playeringame[1] && players[1].bot) && strcmp(skins[players[1].skin].name, "tails") == 0))
+						{
+							(!cv_discordshowonstatus.value ?
+								// With the Default Show Status Option
+								strcpy(charimg, va("%ssupersonictails", charImageType)) :
+								
+								// Withe the Only Characters Show Status Option
+								(strcpy(charimg, va("%ssupersonic", charImageType)), strcpy(charimgS, va("%stails", charImageType))));
+							break;
+						}
+						
+						// Others //
+						if (strcmp(skins[players[consoleplayer].skin].name, supportedSuperSkins[checkSuperSkin]) == 0)
+						{
+							snprintf(charimg, 27, "%s%s", charImageType, (fastncmp(supportedSuperSkins[checkSuperSkin], "super", 5) ? supportedSuperSkins[checkSuperSkin] : va("super%s", supportedSuperSkins[checkSuperSkin])));
+							break;
+						}
+
+						checkSuperSkin++;
 					}
-					
-					// Others!
-					if ((strcmp(skins[players[consoleplayer].skin].name, supportedSuperSkins[checkSkin]) == 0) || (strcmp(skins[players[consoleplayer].skin].name, supportedSpecialSkinCases[checkSkin]) == 0))
-					{
-						snprintf(charimg, 27, "%s%s", charImageType, ((strcmp(skins[players[consoleplayer].skin].name, supportedSpecialSkinCases[checkSkin]) == 0) ? supportedSpecialSkinCases[checkSkin] : va("super%s", supportedSuperSkins[checkSkin])));
+					if (supportedSuperSkins[checkSuperSkin] != NULL)
 						break;
-					}
 				}
 
 				// Dynamic Duos //
@@ -1335,7 +1340,7 @@ void DRPC_UpdatePresence(void)
 					break;
 				}
 
-				// Others!
+				// Others! //
 				if (strcmp(skins[players[consoleplayer].skin].name, supportedSkins[checkSkin]) == 0)
 				{
 					strcpy(charimg, va("%s%s", charImageType, supportedSkins[checkSkin]));	
@@ -1345,11 +1350,30 @@ void DRPC_UpdatePresence(void)
 				checkSkin++;
 			}
 			
-			// Side Characters; The Above: Electric Boogalo Electric Boogalo
+			/// Side Player ///
 			if (cv_discordshowonstatus.value && ((playeringame[1] && players[1].bot) || (splitscreen)))
 			{
 				while (supportedSkins[checkSideSkin] != NULL)
 				{
+					/// Supers ///
+					if (players[1].powers[pw_super])
+					{
+						while (supportedSuperSkins[checkSuperSideSkin] != NULL)
+						{
+							// Others //
+							if (strcmp(skins[players[1].skin].name, supportedSuperSkins[checkSuperSideSkin]) == 0)
+							{
+								snprintf(charimgS, 27, "%s%s", charImageType, (fastncmp(supportedSuperSkins[checkSuperSideSkin], "super", 5) ? supportedSuperSkins[checkSuperSideSkin] : va("super%s", supportedSuperSkins[checkSuperSideSkin])));
+								break;
+							}
+
+							checkSuperSideSkin++;
+						}
+						if (supportedSuperSkins[checkSuperSideSkin] != NULL)
+							break;
+					}
+
+					/// Others ///
 					if (strcmp(skins[players[1].skin].name, supportedSkins[checkSideSkin]) == 0)
 					{	
 						strcpy(charimgS, va("%s%s", charImageType, supportedSkins[checkSideSkin]));
@@ -1360,23 +1384,28 @@ void DRPC_UpdatePresence(void)
 				}
 			}
 			
-			//// Renderers ////
+			//// Strings ////
 			if (playeringame[consoleplayer])
 			{
 				// Display Character Names //
 				if (!splitscreen)
-					// No Bots
 					(!(playeringame[1] && players[1].bot) ?
-					(snprintf(charname, 75, "Playing As: %s",
-											((players[consoleplayer].powers[pw_super] && (strcmp(skins[players[consoleplayer].skin].name, "sonic") == 0)) ? "Super Sonic" : skins[players[consoleplayer].skin].realname))) :
-					
-					// One Bot, Default Status Option
-					(!cv_discordshowonstatus.value ?
-					snprintf(charname, 75, "Playing As: %s & %s",
-						((players[consoleplayer].powers[pw_super] && (strcmp(skins[players[consoleplayer].skin].name, "sonic") == 0)) ? "Super Sonic" : skins[players[consoleplayer].skin].realname), skins[players[1].skin].realname) :
-					
-					// One Bot, Only Characters Status Option
-					(snprintf(charname, 75, "Playing As: %s", ((players[consoleplayer].powers[pw_super] && (strcmp(skins[players[consoleplayer].skin].name, "sonic") == 0)) ? "Super Sonic" : skins[players[consoleplayer].skin].realname)), snprintf(charnameS, 75, "& %s", skins[players[1].skin].realname))));
+						// No Bots; Default Character Status String
+						(snprintf(charname, 75, "Playing As: %s",
+							(players[consoleplayer].powers[pw_super] ? (fastncmp(skins[players[consoleplayer].skin].realname, "Super ", 6) ? skins[players[consoleplayer].skin].realname : va("Super %s", skins[players[consoleplayer].skin].realname)) : skins[players[consoleplayer].skin].realname))) :
+						
+						// One Bot, Default Status Option
+						(!cv_discordshowonstatus.value ?
+							snprintf(charname, 75, "Playing As: %s & %s",
+								(players[consoleplayer].powers[pw_super] ? (fastncmp(skins[players[consoleplayer].skin].realname, "Super ", 6) ? skins[players[consoleplayer].skin].realname : va("Super %s", skins[players[consoleplayer].skin].realname)) : skins[players[consoleplayer].skin].realname),
+									(players[1].powers[pw_super] ? (fastncmp(skins[players[1].skin].realname, "Super ", 6) ? skins[players[1].skin].realname : va("Super %s", skins[players[1].skin].realname)) : skins[players[1].skin].realname)) :
+						
+						// One Bot, Only Characters Status Option
+						(snprintf(charname, 75, "Playing As: %s",
+							((players[consoleplayer].powers[pw_super] ? (fastncmp(skins[players[consoleplayer].skin].realname, "Super ", 6) ? skins[players[consoleplayer].skin].realname : va("Super %s", skins[players[consoleplayer].skin].realname)) : skins[players[consoleplayer].skin].realname))),
+						
+						snprintf(charnameS, 75, "& %s",
+							((players[1].powers[pw_super] ? (fastncmp(skins[players[1].skin].realname, "Super ", 6) ? skins[players[1].skin].realname : va("Super %s", skins[players[1].skin].realname)) : skins[players[1].skin].realname))))));
 				else
 					// The Secondary Display Player, Default Status Option
 					(!cv_discordshowonstatus.value ?
@@ -1398,11 +1427,14 @@ void DRPC_UpdatePresence(void)
 							// No Split-Screen //
 							// Bots
 							((playeringame[2] && players[2].bot) ?
-								// Three Bots
-								(!(playeringame[3] && players[3].bot) ? va("%s %s & %s", charname, charnameS, skins[players[2].skin].realname) :
+								(!(playeringame[3] && players[3].bot) ?
+									// Three Bots
+									va("%s %s & %s", charname, charnameS, 
+										(players[2].powers[pw_super] ? (fastncmp(skins[players[2].skin].realname, "Super ", 6) ? skins[players[2].skin].realname : va("Super %s", skins[players[2].skin].realname)) : skins[players[2].skin].realname)) :
 							
-								// More Than Three Bots
-								va("%s %s & %s With Multiple Bots", charname, charnameS, skins[players[2].skin].realname)) :
+									// More Than Three Bots
+									va("%s %s & %s With Multiple Bots", charname, charnameS,
+										(players[2].powers[pw_super] ? (fastncmp(skins[players[2].skin].realname, "Super ", 6) ? skins[players[2].skin].realname : va("Super %s", skins[players[2].skin].realname)) : skins[players[2].skin].realname))) :
 								
 								// Two Bots
 								va("%s %s", charname, charnameS))) : 

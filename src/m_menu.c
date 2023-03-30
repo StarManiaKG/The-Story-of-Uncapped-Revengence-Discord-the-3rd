@@ -468,7 +468,10 @@ UINT16 menuColor[16] = {
 
 boolean AlwaysOverlayInvincibility;
 
+static void STAR_PerfectSave_OnChange(void);
+
 static void STAR_InvulnAndShield_OnChange(void);
+
 static void STAR_JukeboxHUD_OnChange(void);
 //static void STAR_JukeboxSpeed_OnChange(void);
 
@@ -598,7 +601,14 @@ consvar_t cv_fpscountercolor = CVAR_INIT ("fpscountercolor", "Default", CV_SAVE,
 static CV_PossibleValue_t pausestyle_t[] = {{0, "Default"}, {1, "Old-School"}, {0, NULL}};
 consvar_t cv_pausemenustyle = CVAR_INIT ("pausemenustyle", "Default", CV_SAVE, pausestyle_t, NULL);
 
-consvar_t cv_superwithshield = CVAR_INIT ("cv_superwithshield", "On", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_perfectsave = CVAR_INIT ("perfectsave", "On", CV_SAVE|CV_CALL, CV_OnOff, STAR_PerfectSave_OnChange);
+
+static CV_PossibleValue_t perfectsavestripe_t[] = {{0, "MIN"}, {255, "MAX"}, {0, NULL}};
+consvar_t cv_perfectsavestripe1 = CVAR_INIT ("perfectsavestripe1", "134", CV_SAVE, perfectsavestripe_t, NULL);
+consvar_t cv_perfectsavestripe2 = CVAR_INIT ("perfectsavestripe2", "201", CV_SAVE, perfectsavestripe_t, NULL);
+consvar_t cv_perfectsavestripe3 = CVAR_INIT ("perfectsavestripe3", "1", CV_SAVE, perfectsavestripe_t, NULL);
+
+consvar_t cv_superwithshield = CVAR_INIT ("superwithshield", "On", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_armageddonnukesuper = CVAR_INIT ("armageddonnukesuper", "On", CV_SAVE, CV_OnOff, NULL);
 
 consvar_t cv_alwaysoverlayinvuln = CVAR_INIT ("alwaysoverlayinvincibility", "On", CV_SAVE|CV_CALL, CV_OnOff, STAR_InvulnAndShield_OnChange);
@@ -1963,21 +1973,26 @@ static menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 																&cv_alwaysoverlayinvuln,   66},
 
 	{IT_HEADER, 			NULL, 	"Savedata Options", 		NULL, 					   75},
-	{IT_STRING | IT_CVAR,	NULL,	"Continues",				&cv_continues,		  	   81},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save", 			&cv_perfectsave, 		   81},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 1", 	&cv_perfectsavestripe1,	   86},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 2", 	&cv_perfectsavestripe2,    91},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 3", 	&cv_perfectsavestripe3,    96},
 
-	{IT_HEADER, 			NULL, 	"Server Options", 			NULL,					   90},
+	{IT_STRING | IT_CVAR,	NULL,	"Continues",				&cv_continues,		  	  106},
+
+	{IT_HEADER, 			NULL, 	"Server Options", 			NULL,					  115},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,	
-							NULL,   "Holepunch Server",  		&cv_rendezvousserver,	   96},
+							NULL,   "Holepunch Server",  		&cv_rendezvousserver,	  121},
 	
-	{IT_STRING | IT_CVAR,   NULL,   "Show Connecting Players",  &cv_noticedownload,       110},
-	{IT_STRING | IT_CVAR,   NULL,   "Max File Transfer (KB)", 	&cv_maxsend,     	      115},
-	{IT_STRING | IT_CVAR,   NULL,   "File Transfer Packet Rate",&cv_downloadspeed,     	  120},
+	{IT_STRING | IT_CVAR,   NULL,   "Show Connecting Players",  &cv_noticedownload,       135},
+	{IT_STRING | IT_CVAR,   NULL,   "Max File Transfer (KB)", 	&cv_maxsend,     	      140},
+	{IT_STRING | IT_CVAR,   NULL,   "File Transfer Packet Rate",&cv_downloadspeed,     	  145},
 
-	{IT_STRING | IT_CVAR,   NULL,   "Player Setup While Moving",&cv_movingplayersetup,	  130},
+	{IT_STRING | IT_CVAR,   NULL,   "Player Setup While Moving",&cv_movingplayersetup,	  155},
 
-	{IT_HEADER, 			NULL, 	"Miscellanious Extras",     NULL,					  139},
-	{IT_STRING | IT_CALL, 	NULL, 	"Jukebox",				    M_Tsourdt3rdJukebox,   	  145},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Jukebox HUD",				&cv_jukeboxhud,   	      150},
+	{IT_HEADER, 			NULL, 	"Miscellanious Extras",     NULL,					  164},
+	{IT_STRING | IT_CALL, 	NULL, 	"Jukebox",				    M_Tsourdt3rdJukebox,   	  170},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Jukebox HUD",				&cv_jukeboxhud,   	      175},
 };
 static menuitem_t OP_Tsourdt3rdJukeboxMenu[] =
 {
@@ -1988,16 +2003,21 @@ enum
 {
 	op_alwaysoverlayinvuln = 9,
 
-	op_continues = 11,
+	op_perfectsave = 11,
+	op_perfectsavestripe1,
+	op_perfectsavestripe2,
+	op_perfectsavestripe3,
 
-	op_holepunchserver = 13,
+	op_continues,
+
+	op_holepunchserver = 17,
 	op_noticedownload,
 	op_maxsend,
 	op_downloadspeed,
 
 	op_movingplayeroptionswitch,
 
-	op_jukebox = 19,
+	op_jukebox = 23,
 	op_jukeboxhud,
 };
 
@@ -3014,6 +3034,16 @@ void Discord_option_Onchange(void)
 #endif
 
 // Other STAR stuff yay
+static void STAR_PerfectSave_OnChange(void)
+{
+	OP_Tsourdt3rdOptionsMenu[op_perfectsavestripe1].status =
+		((!(Playing() && playeringame[consoleplayer]) && cv_perfectsave.value) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+	OP_Tsourdt3rdOptionsMenu[op_perfectsavestripe2].status =
+		((!(Playing() && playeringame[consoleplayer]) && cv_perfectsave.value) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+		OP_Tsourdt3rdOptionsMenu[op_perfectsavestripe3].status =
+		((!(Playing() && playeringame[consoleplayer]) && cv_perfectsave.value) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+}
+
 static void STAR_InvulnAndShield_OnChange(void)
 {
 	if (players[consoleplayer].powers[pw_invulnerability] && (players[consoleplayer].powers[pw_shield] & SH_NOSTACK) != SH_NONE)
@@ -9193,18 +9223,16 @@ static void M_DrawLoadGameData(void)
 			{
 				V_DrawSmallScaledPatch(x+2, y+64, 0, savselp[5]);
 			}
-#ifdef PERFECTSAVE // disabled on request
-			else if ((savegameinfo[savetodraw].skinnum == 1)
+			else if (cv_perfectsave.value && ((savegameinfo[savetodraw].skinnum == 1)
 			&& (savegameinfo[savetodraw].lives == 99)
 			&& (savegameinfo[savetodraw].gamemap & 8192)
 			&& (savegameinfo[savetodraw].numgameovers == 0)
-			&& (savegameinfo[savetodraw].numemeralds == ((1<<7) - 1))) // perfect save
+			&& (savegameinfo[savetodraw].numemeralds == ((1<<7) - 1)))) // perfect save
 			{
-				V_DrawFill(x+6, y+64, 72, 50, 134);
-				V_DrawFill(x+6, y+74, 72, 30, 201);
-				V_DrawFill(x+6, y+84, 72, 10, 1);
+				V_DrawFill(x+6, y+64, 72, 50, cv_perfectsavestripe1.value);
+				V_DrawFill(x+6, y+74, 72, 30, cv_perfectsavestripe2.value);
+				V_DrawFill(x+6, y+84, 72, 10, cv_perfectsavestripe3.value);
 			}
-#endif
 			else
 			{
 				if (savegameinfo[savetodraw].lives == -42)
@@ -14603,8 +14631,13 @@ static void M_Tsourdt3rdOptions(INT32 choice)
 {
 	(void)choice;
 
+	STAR_PerfectSave_OnChange();
+
+	OP_Tsourdt3rdOptionsMenu[op_perfectsave].status =
+		(!(Playing() && playeringame[consoleplayer]) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+
 	OP_Tsourdt3rdOptionsMenu[op_continues].status =
-		((!(Playing() && playeringame[consoleplayer])) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+		(!(Playing() && playeringame[consoleplayer]) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
 	
 	OP_Tsourdt3rdOptionsMenu[op_alwaysoverlayinvuln].status =
 		((players[consoleplayer].powers[pw_invulnerability] && (players[consoleplayer].powers[pw_shield] & SH_NOSTACK) != SH_NONE) ? IT_GRAYEDOUT : IT_CVAR|IT_STRING);
