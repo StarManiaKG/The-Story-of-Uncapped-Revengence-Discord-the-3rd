@@ -68,6 +68,7 @@
 		1E44AF6F0B67CEC200BAD059 /* r_data.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E44AF580B67CEC100BAD059 /* r_data.c */; };
 		1E44AF700B67CEC200BAD059 /* r_draw.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E44AF590B67CEC100BAD059 /* r_draw.c */; };
 		1E44AF730B67CEC200BAD059 /* r_main.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E44AF5C0B67CEC100BAD059 /* r_main.c */; };
+		1E44AF730B67CEC200BAD050 /* r_fps.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E44AF5C0B67CEC100BAD059 /* r_fps.c */; };
 		1E44AF780B67CEC200BAD059 /* r_plane.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E44AF610B67CEC100BAD059 /* r_plane.c */; };
 		1E44AF7A0B67CEC200BAD059 /* r_segs.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E44AF630B67CEC100BAD059 /* r_segs.c */; };
 		1E44AF7C0B67CEC200BAD059 /* r_sky.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E44AF650B67CEC200BAD059 /* r_sky.c */; };
@@ -299,6 +300,8 @@
 		1E44AF5B0B67CEC100BAD059 /* r_draw8.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = r_draw8.c; path = ../../r_draw8.c; sourceTree = SOURCE_ROOT; };
 		1E44AF5C0B67CEC100BAD059 /* r_main.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = r_main.c; path = ../../r_main.c; sourceTree = SOURCE_ROOT; };
 		1E44AF5D0B67CEC100BAD059 /* r_main.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = r_main.h; path = ../../r_main.h; sourceTree = SOURCE_ROOT; };
+		1E44AF5C0B67CEC100BAD050 /* r_fps.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = r_fps.c; path = ../../r_fps.c; sourceTree = SOURCE_ROOT; };
+		1F44AF5D0B67CEC100BAD050 /* r_fps.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = r_fps.h; path = ../../r_fps.h; sourceTree = SOURCE_ROOT; };
 		1E44AF5E0B67CEC100BAD059 /* r_data.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = r_data.h; path = ../../r_data.h; sourceTree = SOURCE_ROOT; };
 		1E44AF5F0B67CEC100BAD059 /* r_draw.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = r_draw.h; path = ../../r_draw.h; sourceTree = SOURCE_ROOT; };
 		1E44AF600B67CEC100BAD059 /* r_local.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = r_local.h; path = ../../r_local.h; sourceTree = SOURCE_ROOT; };
@@ -754,6 +757,8 @@
 				1E44AF590B67CEC100BAD059 /* r_draw.c */,
 				1E44AF5A0B67CEC100BAD059 /* r_draw16.c */,
 				1E44AF5B0B67CEC100BAD059 /* r_draw8.c */,
+				1E44AF5C0B67CEC100BAD050 /* r_fps.c */,
+				1F44AF5D0B67CEC100BAD050 /* r_fps.h */,
 				1E44AF5C0B67CEC100BAD059 /* r_main.c */,
 				1E44AF5D0B67CEC100BAD059 /* r_main.h */,
 				1E44AF5E0B67CEC100BAD059 /* r_data.h */,
@@ -1127,6 +1132,7 @@
 				1E44AF6C0B67CEC200BAD059 /* r_bsp.c in Sources */,
 				1E44AF6F0B67CEC200BAD059 /* r_data.c in Sources */,
 				1E44AF700B67CEC200BAD059 /* r_draw.c in Sources */,
+				1E44AF730B67CEC200BAD050 /* r_fps.c in Sources */,
 				1E44AF730B67CEC200BAD059 /* r_main.c in Sources */,
 				1E44AF780B67CEC200BAD059 /* r_plane.c in Sources */,
 				1E44AF7A0B67CEC200BAD059 /* r_segs.c in Sources */,

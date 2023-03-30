@@ -29,6 +29,8 @@
 #include "../v_video.h"
 #include "../p_local.h"
 #include "../p_setup.h"
+#include "../r_fps.h"
+#include "../r_things.h" // R_GetShadowZ
 #include "../r_local.h"
 #include "../r_bsp.h"
 #include "../d_clisrv.h"
@@ -39,6 +41,7 @@
 #include "../st_stuff.h"
 #include "../i_system.h"
 #include "../m_cheat.h"
+#include "../d_main.h"
 #ifdef ESLOPE
 #include "../p_slopes.h"
 #endif
@@ -3393,6 +3396,7 @@ static void HWR_Subsector(size_t num)
 	INT32 light = 0;
 	extracolormap_t *floorcolormap;
 	extracolormap_t *ceilingcolormap;
+	ffloor_t *rover;
 
 #ifdef PARANOIA //no risk while developing, enough debugging nights!
 	if (num >= addsubsector)
@@ -3485,7 +3489,22 @@ static void HWR_Subsector(size_t num)
 
 	if (gr_frontsector->ffloors)
 	{
-		if (gr_frontsector->moved)
+		boolean anyMoved = gr_frontsector->moved;
+
+		if (anyMoved == false)
+		{
+			for (rover = gr_frontsector->ffloors; rover; rover = rover->next)
+			{
+				sector_t *controlSec = &sectors[rover->secnum];
+				if (controlSec->moved == true)
+				{
+					anyMoved = true;
+					break;
+				}
+			}
+		}
+
+		if (anyMoved == true)
 		{
 			gr_frontsector->numlights = sub->sector->numlights = 0;
 			R_Prep3DFloors(gr_frontsector);
@@ -3564,7 +3583,6 @@ static void HWR_Subsector(size_t num)
 	if (gr_frontsector->ffloors)
 	{
 		/// \todo fix light, xoffs, yoffs, extracolormap ?
-		ffloor_t * rover;
 		for (rover = gr_frontsector->ffloors;
 			rover; rover = rover->next)
 		{
@@ -4073,6 +4091,139 @@ static boolean HWR_DoCulling(line_t *cullheight, line_t *viewcullheight, float v
 	return false;
 }
 
+static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
+{
+	GLPatch_t *gpatch;
+	FOutVector shadowVerts[4];
+	FSurfaceInfo sSurf;
+	float fscale; float fx; float fy; float offset;
+	extracolormap_t *colormap = NULL;
+	FBITFIELD blendmode = PF_Translucent|PF_Modulated;
+	UINT8 i;
+	INT32 heightsec, phs;
+	SINT8 flip = P_MobjFlip(thing);
+
+	INT32 light;
+	fixed_t scalemul;
+	UINT16 alpha;
+	fixed_t floordiff;
+	fixed_t groundz;
+	fixed_t slopez;
+	pslope_t *groundslope;
+
+	UINT8 lightlevel = 255;
+
+	// uncapped/interpolation
+	interpmobjstate_t interp = {0};
+
+	if (R_UsingFrameInterpolation() && !paused)
+	{
+		R_InterpolateMobjState(thing, rendertimefrac, &interp);
+	}
+	else
+	{
+		R_InterpolateMobjState(thing, FRACUNIT, &interp);
+	}
+
+	groundz = R_GetShadowZ(thing, &groundslope);
+
+	heightsec = thing->subsector->sector->heightsec;
+	if (viewplayer->mo && viewplayer->mo->subsector)
+		phs = viewplayer->mo->subsector->sector->heightsec;
+	else
+		phs = -1;
+
+	if (heightsec != -1 && phs != -1) // only clip things which are in special sectors
+	{
+		if (gr_viewz < FIXED_TO_FLOAT(sectors[phs].floorheight) ?
+		thing->z >= sectors[heightsec].floorheight :
+		thing->z < sectors[heightsec].floorheight)
+			return;
+		if (gr_viewz > FIXED_TO_FLOAT(sectors[phs].ceilingheight) ?
+		thing->z < sectors[heightsec].ceilingheight && gr_viewz >= FIXED_TO_FLOAT(sectors[heightsec].ceilingheight) :
+		thing->z >= sectors[heightsec].ceilingheight)
+			return;
+	}
+
+	floordiff = abs((flip < 0 ? thing->height : 0) + interp.z - groundz);
+
+	alpha = floordiff / (4*FRACUNIT) + 75;
+	if (alpha >= 255) return;
+	alpha = 255 - alpha;
+
+	gpatch = (GLPatch_t *)W_CachePatchName("DSHADOW", PU_CACHE);
+	//if (!(gpatch && ((GLPatch_t *)gpatch->hardware)->mipmap->format)) return;
+	HWR_GetPatch(gpatch);
+
+	scalemul = FixedMul(FRACUNIT - floordiff/640, scale);
+	scalemul = FixedMul(scalemul, (thing->radius*2) / gpatch->height);
+
+	fscale = FIXED_TO_FLOAT(scalemul);
+	fx = FIXED_TO_FLOAT(interp.x);
+	fy = FIXED_TO_FLOAT(interp.y);
+
+	//  3--2
+	//  | /|
+	//  |/ |
+	//  0--1
+
+	if (thing && fabsf(fscale - 1.0f) > 1.0E-36f)
+		offset = ((gpatch->height)/2) * fscale;
+	else
+		offset = (float)((gpatch->height)/2);
+
+	shadowVerts[2].x = shadowVerts[3].x = fx + offset;
+	shadowVerts[1].x = shadowVerts[0].x = fx - offset;
+	shadowVerts[1].z = shadowVerts[2].z = fy - offset;
+	shadowVerts[0].z = shadowVerts[3].z = fy + offset;
+
+	for (i = 0; i < 4; i++)
+	{
+		float oldx = shadowVerts[i].x;
+		float oldy = shadowVerts[i].z;
+		shadowVerts[i].x = fx + ((oldx - fx) * gr_viewcos) - ((oldy - fy) * gr_viewsin);
+		shadowVerts[i].z = fy + ((oldx - fx) * gr_viewsin) + ((oldy - fy) * gr_viewcos);
+	}
+
+	if (groundslope)
+	{
+		for (i = 0; i < 4; i++)
+		{
+			slopez = P_GetSlopeZAt(groundslope, FLOAT_TO_FIXED(shadowVerts[i].x), FLOAT_TO_FIXED(shadowVerts[i].z));
+			shadowVerts[i].y = FIXED_TO_FLOAT(slopez) + flip * 0.05f;
+		}
+	}
+	else
+	{
+		for (i = 0; i < 4; i++)
+			shadowVerts[i].y = FIXED_TO_FLOAT(groundz) + flip * 0.05f;
+	}
+
+	shadowVerts[0].s = shadowVerts[3].s = 0;
+	shadowVerts[2].s = shadowVerts[1].s = ((GLPatch_t *)gpatch)->max_s;
+
+	shadowVerts[3].t = shadowVerts[2].t = 0;
+	shadowVerts[0].t = shadowVerts[1].t = ((GLPatch_t *)gpatch)->max_t;
+
+	if (thing->subsector->sector->numlights)
+	{
+		// Always use the light at the top instead of whatever I was doing before
+		light = R_GetPlaneLight(thing->subsector->sector, groundz, false);
+	
+		if (thing->subsector->sector->lightlist[light].extra_colormap)
+			colormap = thing->subsector->sector->lightlist[light].extra_colormap;
+	}
+	else if (thing->subsector->sector->extra_colormap)
+		colormap = thing->subsector->sector->extra_colormap;
+
+	if (colormap)
+		sSurf.FlatColor.rgba = HWR_Lighting(lightlevel, colormap->rgba, colormap->fadergba, false, true);
+	else
+		sSurf.FlatColor.rgba = HWR_Lighting(lightlevel, NORMALFOG, FADEFOG, false, true);
+
+	HWD.pfnDrawPolygon(&sSurf, shadowVerts, 4, blendmode);
+}
+
 static void HWR_DrawSpriteShadow(gr_vissprite_t *spr, GLPatch_t *gpatch, float this_scale)
 {
 	FOutVector swallVerts[4];
@@ -4319,7 +4470,7 @@ static void HWR_SplitSprite(gr_vissprite_t *spr)
 	HWR_GetMappedPatch(gpatch, spr->colormap);
 
 	// Draw shadow BEFORE sprite
-	if (cv_shadow.value // Shadows enabled
+	if (cv_shadow.value == 1 // Shadows enabled
 		&& (spr->mobj->flags & (MF_SCENERY|MF_SPAWNCEILING|MF_NOGRAVITY)) != (MF_SCENERY|MF_SPAWNCEILING|MF_NOGRAVITY) // Ceiling scenery have no shadow.
 		&& !(spr->mobj->flags2 & MF2_DEBRIS) // Debris have no corona or shadow.
 #ifdef ALAM_LIGHTING
@@ -4718,7 +4869,7 @@ static void HWR_DrawSprite(gr_vissprite_t *spr)
 	HWR_GetMappedPatch(gpatch, spr->colormap);
 
 	// Draw shadow BEFORE sprite
-	if (cv_shadow.value // Shadows enabled
+	if (cv_shadow.value == 1 // Shadows enabled
 		&& (spr->mobj->flags & (MF_SCENERY|MF_SPAWNCEILING|MF_NOGRAVITY)) != (MF_SCENERY|MF_SPAWNCEILING|MF_NOGRAVITY) // Ceiling scenery have no shadow.
 		&& !(spr->mobj->flags2 & MF2_DEBRIS) // Debris have no corona or shadow.
 #ifdef ALAM_LIGHTING
@@ -5324,6 +5475,8 @@ static void HWR_CreateDrawNodes(void)
 // added the stransform so they can be switched as drawing happenes so MD2s and sprites are sorted correctly with each other
 static void HWR_DrawSprites(void)
 {
+	boolean skipshadow = false; // skip shadow if it was drawn already for a linkdraw sprite encountered earlier in the list
+
 	if (gr_visspritecount > 0)
 	{
 		gr_vissprite_t *spr;
@@ -5338,6 +5491,32 @@ static void HWR_DrawSprites(void)
 				HWR_DrawPrecipitationSprite(spr);
 			else
 #endif
+			{
+				if (spr->mobj && spr->mobj->shadowscale && cv_shadow.value == 2 && !skipshadow)
+					HWR_DrawDropShadow(spr->mobj, spr->mobj->shadowscale);
+
+				if (spr->mobj->tracer)
+				{
+					// If this linkdraw sprite is behind a sprite that has a shadow,
+					// then that shadow has to be drawn first, otherwise the shadow ends up on top of
+					// the linkdraw sprite because the linkdraw sprite does not modify the z-buffer.
+					// The !skipshadow check is there in case there are multiple linkdraw sprites connected
+					// to the same tracer, so the tracer's shadow only gets drawn once.
+					if (cv_shadow.value == 2 && !skipshadow && spr->dispoffset < 0 && spr->mobj->tracer->shadowscale)
+					{
+						HWR_DrawDropShadow(spr->mobj->tracer, spr->mobj->tracer->shadowscale);
+						skipshadow = true;
+						// The next sprite in this loop should be either another linkdraw sprite or the tracer.
+						// When the tracer is inevitably encountered, skipshadow will cause it's shadow
+						// to get skipped and skipshadow will get set to false by the 'else' clause below.
+					}
+				}
+				else
+				{
+					skipshadow = false;
+				}
+
+
 				if (spr->mobj && spr->mobj->skin && spr->mobj->sprite == SPR_PLAY)
 				{
 					if (!cv_grmd2.value || md2_playermodels[(skin_t*)spr->mobj->skin-skins].notfound || md2_playermodels[(skin_t*)spr->mobj->skin-skins].scale < 0.0f)
@@ -5352,6 +5531,7 @@ static void HWR_DrawSprites(void)
 					else
 						HWR_DrawMD2(spr);
 				}
+			}
 		}
 	}
 }
@@ -5572,6 +5752,18 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	{
 		if (HWR_DoCulling(thing->subsector->sector->cullheight, viewsector->cullheight, gr_viewz, gz, gzt))
 			return;
+	}
+
+	// uncapped/interpolation
+	interpmobjstate_t interp = {0};
+
+	if (R_UsingFrameInterpolation() && !paused)
+	{
+		R_InterpolateMobjState(thing, rendertimefrac, &interp);
+	}
+	else
+	{
+		R_InterpolateMobjState(thing, FRACUNIT, &interp);
 	}
 
 	heightsec = thing->subsector->sector->heightsec;

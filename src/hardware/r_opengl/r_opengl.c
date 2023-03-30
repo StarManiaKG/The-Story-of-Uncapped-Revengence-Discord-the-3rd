@@ -1894,11 +1894,11 @@ static  void DrawMD2Ex(INT32 *gl_cmd_buffer, md2_frame_t *frame, float duration,
 	GLfloat LightPos[] = {0.0f, 1.0f, 0.0f, 0.0f};
 #endif
 
-	if (duration != 0 && duration != -1 && tics != -1) // don't interpolate if instantaneous or infinite in length
+	if (duration > 0.0 && tics >= 0.0) // don't interpolate if instantaneous or infinite in length
 	{
-		UINT32 newtime = (duration - tics); // + 1;
+		float newtime = (duration - tics); // + 1;
 
-		pol = (newtime)/(float)duration;
+		pol = newtime / duration;
 
 		if (pol > 1.0f)
 			pol = 1.0f;
@@ -2044,7 +2044,7 @@ static  void DrawMD2Ex(INT32 *gl_cmd_buffer, md2_frame_t *frame, float duration,
 // -----------------+
 // HWRAPI DrawMD2   : Draw an MD2 model with glcommands
 // -----------------+
-EXPORT void HWRAPI(DrawMD2i) (INT32 *gl_cmd_buffer, md2_frame_t *frame, INT32 duration, INT32 tics, md2_frame_t *nextframe, FTransform *pos, float scale, UINT8 flipped, UINT8 *color)
+EXPORT void HWRAPI(DrawMD2i) (INT32 *gl_cmd_buffer, md2_frame_t *frame, float duration, float tics, md2_frame_t *nextframe, FTransform *pos, float scale, UINT8 flipped, UINT8 *color)
 {
 	DrawMD2Ex(gl_cmd_buffer, frame, duration, tics,  nextframe, pos, scale, flipped, color);
 }

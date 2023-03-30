@@ -7013,7 +7013,7 @@ static void P_MovePlayer(player_t *player)
 #endif
 
 #ifdef FLOORSPLATS
-	if (cv_shadow.value && rendermode == render_soft)
+	if (cv_shadow.value == 1 && rendermode == render_soft)
 		R_AddFloorSplat(player->mo->subsector, player->mo, "SHADOW", player->mo->x,
 			player->mo->y, player->mo->floorz, SPLATDRAWMODE_OPAQUE);
 #endif

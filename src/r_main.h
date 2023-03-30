@@ -26,8 +26,18 @@ extern INT32 centerx, centery;
 
 extern fixed_t centerxfrac, centeryfrac;
 extern fixed_t projection, projectiony;
+extern fixed_t fovtan;
 
 extern size_t validcount, linecount, loopcount, framecount;
+
+#define AIMINGTODY(a) FixedDiv((FINETANGENT((2048+(((INT32)a)>>ANGLETOFINESHIFT)) & FINEMASK)*160), fovtan)
+
+// The fraction of a tic being drawn (for interpolation between two tics)
+extern fixed_t rendertimefrac;
+// Evaluated delta tics for this frame (how many tics since the last frame)
+extern fixed_t renderdeltatics;
+// The current render is a new logical tic
+extern boolean renderisnewtic;
 
 //
 // Lighting LUT.

@@ -393,6 +393,9 @@
     <ClInclude Include="..\r_draw.h">
       <Filter>R_Rend</Filter>
     </ClInclude>
+    <ClInclude Include="..\r_fps.h">
+      <Filter>R_Rend</Filter>
+    </ClInclude>
     <ClInclude Include="..\r_local.h">
       <Filter>R_Rend</Filter>
     </ClInclude>
@@ -802,6 +805,9 @@
       <Filter>R_Rend</Filter>
     </ClCompile>
     <ClCompile Include="..\r_draw8.c">
+      <Filter>R_Rend</Filter>
+    </ClCompile>
+    <ClCompile Include="..\r_fps.c">
       <Filter>R_Rend</Filter>
     </ClCompile>
     <ClCompile Include="..\r_main.c">

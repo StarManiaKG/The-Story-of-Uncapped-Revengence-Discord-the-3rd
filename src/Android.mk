@@ -53,6 +53,7 @@ LOCAL_SRC_FILES :=      am_map.c \
                         r_bsp.c \
                         r_data.c \
                         r_draw.c \
+                        r_fps.c \
                         r_main.c \
                         r_plane.c \
                         r_segs.c \

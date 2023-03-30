@@ -195,7 +195,7 @@ void I_FinishUpdate(void)
 		return;
 
 	// display a graph of ticrate
-	if (cv_ticrate.value)
+	if (cv_showfps.value)
 		SCR_DisplayTicRate();
 
 	//

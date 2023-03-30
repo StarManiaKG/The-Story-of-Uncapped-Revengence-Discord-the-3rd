@@ -1617,6 +1617,20 @@
 			path = ../../r_draw16.c;
 			refType = 2;
 		};
+		8417778B085A111B000C01D0 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			name = r_fps.c;
+			path = ../../r_fps.c;
+			refType = 2;
+		};
+		8417778C085A111B000C01D9 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			name = r_fps.h;
+			path = ../../r_fps.h;
+			refType = 2;
+		};
 		8417778A085A111B000C01D8 = {
 			fileEncoding = 30;
 			isa = PBXFileReference;

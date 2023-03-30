@@ -100,6 +100,12 @@ void strcatbf(char *s1, const char *s2, const char *s3);
 
 void M_SetupMemcpy(void);
 
+/*
+Return dot and then the fractional part of a float, without
+trailing zeros, or "" if the fractional part is zero.
+*/
+const char * M_Ftrim (double);
+
 // counting bits, for weapon ammo code, usually
 FUNCMATH UINT8 M_CountBits(UINT32 num, UINT8 size);
 

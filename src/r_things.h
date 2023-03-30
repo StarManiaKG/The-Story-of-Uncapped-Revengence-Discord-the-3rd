@@ -61,6 +61,8 @@ void R_ClearSprites(void);
 void R_ClipSprites(void);
 void R_DrawMasked(void);
 
+fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope);
+
 // -----------
 // SKINS STUFF
 // -----------

@@ -910,6 +910,14 @@ SOURCE=..\r_draw8.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\r_fps.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\r_fps.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\r_local.h
 # End Source File
 # Begin Source File

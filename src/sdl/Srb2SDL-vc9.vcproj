@@ -4279,6 +4279,14 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\r_fps.c"
+				>
+			</File>
+			<File
+				RelativePath="..\r_fps.h"
+				>
+			</File>
+			<File
 				RelativePath="..\r_local.h"
 				>
 			</File>

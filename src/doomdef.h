@@ -144,15 +144,15 @@ extern FILE *logstream;
 #ifdef DEVELOP
 #define VERSION    0 // Game version
 #define SUBVERSION 0 // more precise version number
-#define VERSIONSTRING "Development EXE"
-#define VERSIONSTRINGW L"Development EXE"
+#define VERSIONSTRING "TSoURDt3rd v2.1.25 Development EXE (Made by StarManiaKG#4884)"
+#define VERSIONSTRINGW L"TSoURDt3rd v2.1.25 Development EXE (Made by StarManiaKG#4884)"
 // most interface strings are ignored in development mode.
 // we use comprevision and compbranch instead.
 #else
 #define VERSION    100 // Game version
 #define SUBVERSION 7  // more precise version number
-#define VERSIONSTRING "PlusC v1.07.0 (v2.1.25)"
-#define VERSIONSTRINGW L"PlusC v1.07.0 (v2.1.25)"
+#define VERSIONSTRING "TSoURDt3rd v2.1.25 (Made by StarManiaKG#4884)"
+#define VERSIONSTRINGW L"TSoURDt3rd v2.1.25 (Made by StarManiaKG#4884)"
 
 // Hey! If you change this, add 1 to the MODVERSION below!
 // Otherwise we can't force updates!
@@ -324,9 +324,9 @@ enum {
 // Name of local directory for config files and savegames
 #if !defined(_arch_dreamcast) && !defined(_WIN32_WCE) && !defined(GP2X) && !defined(_WII) && !defined(_PS3)
 #if (((defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON)) && !defined (__CYGWIN__)) && !defined (__APPLE__)
-#define DEFAULTDIR ".srb2"
+#define DEFAULTDIR ".srb2-21"
 #else
-#define DEFAULTDIR "srb2"
+#define DEFAULTDIR "srb2-21"
 #endif
 #endif
 

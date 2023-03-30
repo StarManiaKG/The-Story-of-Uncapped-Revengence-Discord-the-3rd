@@ -91,7 +91,7 @@ static void I_BlitScreenVesa1(void);   //see later
 void I_FinishUpdate (void)
 {
 	// draw FPS if enabled
-	if (cv_ticrate.value)
+	if (cv_showfps.value)
 		SCR_DisplayTicRate();
 
 	//blast it to the screen

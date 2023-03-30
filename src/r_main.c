@@ -57,6 +57,8 @@ fixed_t centerxfrac, centeryfrac;
 fixed_t projection;
 fixed_t projectiony; // aspect ratio
 
+fixed_t fovtan; // field of view
+
 // just for profiling purposes
 size_t framecount;
 
@@ -69,6 +71,10 @@ boolean viewsky, skyVisible;
 boolean skyVisible1, skyVisible2; // saved values of skyVisible for P1 and P2, for splitscreen
 sector_t *viewsector;
 player_t *viewplayer;
+
+fixed_t rendertimefrac;
+fixed_t renderdeltatics;
+boolean renderisnewtic;
 
 // PORTALS!
 // You can thank and/or curse JTE for these.
@@ -144,7 +150,8 @@ consvar_t cv_chasecam2 = {"chasecam2", "On", CV_CALL, CV_OnOff, ChaseCam2_OnChan
 consvar_t cv_flipcam = {"flipcam", "No", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, FlipCam_OnChange, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_flipcam2 = {"flipcam2", "No", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, FlipCam2_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
-consvar_t cv_shadow = {"shadow", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
+static CV_PossibleValue_t shadow_cons_t[] = {{0, "Off"}, {1, "Realistic"}, {2, "Drop"}, {0, NULL}};
+consvar_t cv_shadow = {"shadow", "Off", CV_SAVE, shadow_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_shadowoffs = {"offsetshadows", "Off", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_skybox = {"skybox", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 consvar_t cv_soniccd = {"soniccd", "Off", CV_NETVAR, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
@@ -555,6 +562,35 @@ static inline void R_InitLightTables(void)
 	}
 }
 
+static struct {
+	angle_t rollangle; // pre-shifted by fineshift
+#ifdef WOUGHMP_WOUGHMP
+	fixed_t fisheye;
+#endif
+
+	fixed_t zoomneeded;
+	INT32 *scrmap;
+	INT32 scrmapsize;
+
+	INT32 x1; // clip rendering horizontally for efficiency
+	INT16 ceilingclip[MAXVIDWIDTH], floorclip[MAXVIDWIDTH];
+
+	boolean use;
+} viewmorph = {
+	0,
+#ifdef WOUGHMP_WOUGHMP
+	0,
+#endif
+
+	FRACUNIT,
+	NULL,
+	0,
+
+	0,
+	{}, {},
+
+	false
+};
 
 //
 // R_SetViewSize
@@ -579,6 +615,7 @@ void R_ExecuteSetViewSize(void)
 	INT32 j;
 	INT32 level;
 	INT32 startmapl;
+	angle_t fov;
 
 	setsizeneeded = false;
 
@@ -600,6 +637,11 @@ void R_ExecuteSetViewSize(void)
 	centery = viewheight/2;
 	centerxfrac = centerx<<FRACBITS;
 	centeryfrac = centery<<FRACBITS;
+
+	fov = FixedAngle(cv_grfov.value/2) + ANGLE_90;
+	fovtan = FixedMul(FINETANGENT(fov >> ANGLETOFINESHIFT), viewmorph.zoomneeded);
+	if (splitscreen == 1) // Splitscreen FOV should be adjusted to maintain expected vertical view
+		fovtan = 17*fovtan/10;
 
 	projection = centerxfrac;
 	//projectiony = (((vid.height*centerx*BASEVIDWIDTH)/BASEVIDHEIGHT)/vid.width)<<FRACBITS;
@@ -744,7 +786,7 @@ subsector_t *R_IsPointInSubsector(fixed_t x, fixed_t y)
 static mobj_t *viewmobj;
 
 // WARNING: a should be unsigned but to add with 2048, it isn't!
-#define AIMINGTODY(a) ((FINETANGENT((2048+(((INT32)a)>>ANGLETOFINESHIFT)) & FINEMASK)*160)>>FRACBITS)
+//#define AIMINGTODY(a) ((FINETANGENT((2048+(((INT32)a)>>ANGLETOFINESHIFT)) & FINEMASK)*160)>>FRACBITS)
 
 // recalc necessary stuff for mouseaiming
 // slopes are already calculated for the full possible view (which is 4*viewheight).
@@ -764,7 +806,7 @@ static void R_SetupFreelook(void)
 	centeryfrac = centery<<FRACBITS;
 }
 
-#undef AIMINGTODY
+//#undef AIMINGTODY
 
 void R_SetupFrame(player_t *player, boolean skybox)
 {

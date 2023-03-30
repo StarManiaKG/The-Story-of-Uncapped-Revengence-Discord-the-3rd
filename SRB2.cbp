@@ -1732,6 +1732,10 @@ HW3SOUND for 3D hardware sound  support
 			<Option compile="0" />
 			<Option link="0" />
 		</Unit>
+		<Unit filename="src/r_fps.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/r_fps.h" />
 		<Unit filename="src/r_local.h" />
 		<Unit filename="src/r_main.c">
 			<Option compilerVar="CC" />

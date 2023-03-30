@@ -39,6 +39,7 @@
 #include "d_main.h"
 #include "m_random.h"
 #include "f_finale.h"
+#include "r_fps.h" // uncapped
 #include "filesrch.h"
 #include "mserv.h"
 #include "z_zone.h"
@@ -813,6 +814,9 @@ void D_RegisterClientCommands(void)
 #if defined(HAVE_BLUA) && defined(LUA_ALLOW_BYTECODE)
 	COM_AddCommand("dumplua", Command_Dumplua_f);
 #endif
+
+	// TSoURDt3rd Stuff
+	CV_RegisterVar(&cv_fpscap);
 }
 
 /** Checks if a name (as received from another player) is okay.

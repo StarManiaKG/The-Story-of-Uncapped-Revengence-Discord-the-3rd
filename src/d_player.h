@@ -251,6 +251,7 @@ typedef enum
 // ========================================================================
 //                          PLAYER STRUCTURE
 // ========================================================================
+//Main struct
 typedef struct player_s
 {
 	mobj_t *mo;
@@ -261,6 +262,8 @@ typedef struct player_s
 	playerstate_t playerstate;
 
 	// Determine POV, including viewpoint bobbing during movement.
+	fixed_t camerascale;
+	fixed_t shieldscale;
 	// Focal origin above r.z
 	fixed_t viewz;
 	// Base height above floor for viewz.
@@ -269,6 +272,11 @@ typedef struct player_s
 	fixed_t deltaviewheight;
 	// bounded/scaled total momentum.
 	fixed_t bob;
+
+	angle_t viewrollangle;
+
+	INT16 angleturn;
+	INT16 oldrelangleturn;
 
 	// Mouse aiming, where the guy is looking at!
 	// It is updated with cmd->aiming.
@@ -279,9 +287,22 @@ typedef struct player_s
 	/// \todo Remove this.  We don't need a second health definition for players.
 	INT32 health;
 
+	// fun thing for player sprite
+	angle_t drawangle;
+	angle_t old_drawangle;
+	angle_t old_drawangle2;
+
+	// player's ring count
+	INT16 rings;
+	INT16 spheres;
+
 	SINT8 pity; // i pity the fool.
 	INT32 currentweapon; // current weapon selected.
 	INT32 ringweapons; // weapons currently obtained.
+
+	UINT16 ammoremoval; // amount of ammo removed for the current weapon.
+	tic_t  ammoremovaltimer; // flashing counter for ammo used.
+	INT32  ammoremovalweapon; // weapon from which the ammo was removed.
 
 	// Power ups. invinc and invis are tic counters.
 	UINT16 powers[NUMPOWERS];
@@ -301,6 +322,7 @@ typedef struct player_s
 	UINT8 skincolor;
 
 	INT32 skin;
+	UINT32 availabilities;
 
 	UINT32 score; // player score
 	fixed_t dashspeed; // dashing speed
@@ -322,6 +344,8 @@ typedef struct player_s
 	mobjtype_t thokitem; // Object # to spawn for the thok
 	mobjtype_t spinitem; // Object # to spawn for spindash/spinning
 	mobjtype_t revitem; // Object # to spawn for spindash/spinning
+	mobjtype_t followitem; // Object # to spawn for Smiles
+	mobj_t *followmobj; // Smiles all around
 
 	fixed_t actionspd; // Speed of thok/glide/fly
 	fixed_t mindash; // Minimum spindash speed
@@ -329,7 +353,10 @@ typedef struct player_s
 
 	fixed_t jumpfactor; // How high can the player jump?
 
-	SINT8 lives;
+	fixed_t height; // Bounding box changes.
+	fixed_t spinheight;
+
+	SINT8 lives; // number of lives - if == INFLIVES, the player has infinite lives
 	SINT8 continues; // continues that player has acquired
 
 	SINT8 xtralife; // Ring Extra Life counter
@@ -347,6 +374,7 @@ typedef struct player_s
 	tic_t exiting; // Exitlevel timer
 
 	UINT8 homing; // Are you homing?
+	tic_t dashmode; // counter for dashmode ability
 
 	tic_t skidtime; // Skid timer
 
@@ -382,6 +410,7 @@ typedef struct player_s
 	INT32 starpostnum; // The number of the last starpost you hit
 	tic_t starposttime; // Your time when you hit the starpost
 	angle_t starpostangle; // Angle that the starpost is facing - you respawn facing this way
+	fixed_t starpostscale; // Scale of the player; if negative, player is gravflipped
 
 	/////////////////
 	// NiGHTS Stuff//
@@ -402,16 +431,28 @@ typedef struct player_s
 	UINT8 drilldelay;
 	boolean bonustime; // Capsule destroyed, now it's bonus time!
 	mobj_t *capsule; // Go inside the capsule
+	mobj_t *drone; // Move center to the drone
+	fixed_t oldscale; // Pre-Nightserize scale
 	UINT8 mare; // Current mare
+	UINT8 marelap; // Current mare lap
+	UINT8 marebonuslap; // Current mare lap starting from bonus time
 
 	// Statistical purposes.
 	tic_t marebegunat; // Leveltime when mare begun
 	tic_t startedtime; // Time which you started this mare with.
 	tic_t finishedtime; // Time it took you to finish the mare (used for display)
-	INT16 finishedrings; // The rings you had left upon finishing the mare
+	tic_t lapbegunat; // Leveltime when lap begun
+	tic_t lapstartedtime; // Time which you started this lap with.
+	INT16 finishedspheres; // The spheres you had left upon finishing the mare
+	INT16 finishedrings; // The rings/stars you had left upon finishing the mare
 	UINT32 marescore; // score for this nights stage
 	UINT32 lastmarescore; // score for the last mare
+	UINT32 totalmarescore; // score for all mares
 	UINT8 lastmare; // previous mare
+	UINT8 lastmarelap; // previous mare lap
+	UINT8 lastmarebonuslap; // previous mare bonus lap
+	UINT8 totalmarelap; // total mare lap
+	UINT8 totalmarebonuslap; // total mare bonus lap
 	INT32 maxlink; // maximum link obtained
 	UINT8 texttimer; // nights_texttime should not be local
 	UINT8 textvar; // which line of NiGHTS text to show -- let's not use cheap hacks
@@ -427,13 +468,16 @@ typedef struct player_s
 	INT32 awayviewtics;
 	angle_t awayviewaiming; // Used for cut-away view
 
-	// miru: let's add stuff to player struct!
-	angle_t viewrollangle; // Roll angle (software)
-
 	boolean spectator;
+	boolean outofcoop;
+	boolean removing;
 	UINT8 bot;
-
+	struct player_s *botleader;
+	UINT16 lastbuttons;
+	boolean blocked;
+	
 	tic_t jointime; // Timer when player joins game to change skin/color
+	tic_t quittime; // Time elapsed since user disconnected, zero if connected
 #ifdef HWRENDER
 	fixed_t fovadd; // adjust FOV for hw rendering
 #endif

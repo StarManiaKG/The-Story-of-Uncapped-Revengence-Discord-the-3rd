@@ -20,6 +20,7 @@
 #include "z_zone.h"
 #include "m_misc.h"
 #include "i_video.h" // rendermode
+#include "r_fps.h"
 #include "r_things.h"
 #include "r_plane.h"
 #include "p_tick.h"
@@ -1093,6 +1094,113 @@ static void R_SplitSprite(vissprite_t *sprite, mobj_t *thing)
 		}
 		sprite = newsprite;
 	}
+}
+
+//
+// R_GetShadowZ(thing, shadowslope)
+// Get the first visible floor below the object for shadows
+// shadowslope is filled with the floor's slope, if provided
+//
+fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope)
+{
+	fixed_t halfHeight;
+	boolean isflipped = thing->eflags & MFE_VERTICALFLIP;
+	fixed_t floorz;
+	fixed_t ceilingz;
+	fixed_t z, groundz = isflipped ? INT32_MAX : INT32_MIN;
+	pslope_t *slope, *groundslope = NULL;
+	msecnode_t *node;
+	sector_t *sector;
+	ffloor_t *rover;
+
+	// for frame interpolation
+	interpmobjstate_t interp = {0};
+
+	if (R_UsingFrameInterpolation() && !paused)
+	{
+		R_InterpolateMobjState(thing, rendertimefrac, &interp);
+	}
+	else
+	{
+		R_InterpolateMobjState(thing, FRACUNIT, &interp);
+	}
+
+	halfHeight = interp.z + (thing->height >> 1);
+	floorz = P_GetFloorZ(thing, interp.subsector->sector, interp.x, interp.y, NULL);
+	ceilingz = P_GetCeilingZ(thing, interp.subsector->sector, interp.x, interp.y, NULL);
+
+#define CHECKZ (isflipped ? z > halfHeight && z < groundz : z < halfHeight && z > groundz)
+
+	for (node = thing->touching_sectorlist; node; node = node->m_sectorlist_next)
+	{
+		sector = node->m_sector;
+
+		slope = sector->heightsec != -1 ? NULL : (isflipped ? sector->c_slope : sector->f_slope);
+
+		if (sector->heightsec != -1)
+			z = isflipped ? sectors[sector->heightsec].ceilingheight : sectors[sector->heightsec].floorheight;
+		else
+			z = isflipped ? P_GetSectorCeilingZAt(sector, interp.x, interp.y) : P_GetSectorFloorZAt(sector, interp.x, interp.y);
+
+		if CHECKZ
+		{
+			groundz = z;
+			groundslope = slope;
+		}
+
+		if (sector->ffloors)
+			for (rover = sector->ffloors; rover; rover = rover->next)
+			{
+				if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_RENDERPLANES) || (rover->alpha < 90 && !(rover->flags & FF_SWIMMABLE)))
+					continue;
+
+				z = isflipped ? P_GetFFloorBottomZAt(rover, interp.x, interp.y) : P_GetFFloorTopZAt(rover, interp.x, interp.y);
+				if CHECKZ
+				{
+					groundz = z;
+					groundslope = isflipped ? *rover->b_slope : *rover->t_slope;
+				}
+			}
+	}
+
+	// Check polyobjects and see if groundz needs to be altered
+	{
+		// This isn't very precise, but the precise method was far too slow.
+		// (Polies are just naturally pretty flickery anyway :P)
+		polyobj_t *po = interp.subsector->polyList;
+
+		while (po)
+		{
+			if (!(po->flags & POF_RENDERPLANES) || !P_MobjInsidePolyobj(po, thing))
+			{
+				po = (polyobj_t *)(po->link.next);
+				continue;
+			}
+
+			// We're inside it! Yess...
+			z = isflipped ? po->lines[0]->backsector->floorheight : po->lines[0]->backsector->ceilingheight;
+			if CHECKZ
+			{
+				groundz = z;
+				groundslope = NULL;
+			}
+
+			po = (polyobj_t *)(po->link.next);
+		}
+	}
+
+	if (isflipped ? (ceilingz < groundz - (!groundslope ? 0 : FixedMul(abs(groundslope->zdelta), thing->radius*3/2)))
+		: (floorz > groundz + (!groundslope ? 0 : FixedMul(abs(groundslope->zdelta), thing->radius*3/2))))
+	{
+		groundz = isflipped ? ceilingz : floorz;
+		groundslope = NULL;
+	}
+
+	if (shadowslope != NULL)
+		*shadowslope = groundslope;
+
+	return groundz;
+#undef CHECKZ
 }
 
 //

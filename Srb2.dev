@@ -793,6 +793,26 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
+[Unit280]
+FileName=src\r_fps.c
+Folder=R_Rend
+Compile=1
+CompileCpp=0
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit281]
+FileName=src\r_fps.h
+Folder=R_Rend
+Compile=1
+CompileCpp=0
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
 [Unit81]
 FileName=src\r_local.h
 Folder=R_Rend
