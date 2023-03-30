@@ -83,10 +83,6 @@ typedef union
 		INT32 passedx3;
 		INT32 passedx4;
 
-		INT32 emeraldbounces;
-		INT32 emeraldmomy;
-		INT32 emeraldy;
-
 		y_bonus_t bonuses[2];
 		patch_t *bonuspatches[2];
 
@@ -433,7 +429,7 @@ void Y_IntermissionDrawer(void)
 	else if (bgtile)
 		V_DrawPatchFill(bgtile);
 
-	LUA_HUDHOOK(titlecard);
+	LUA_HUDHOOK(intermission);
 	if (!LUA_HudEnabled(hud_intermissiontally))
 		goto skiptallydrawer;
 
@@ -570,12 +566,7 @@ void Y_IntermissionDrawer(void)
 		{
 			if (LUA_HudEnabled(hud_intermissiontitletext))
 			{
-				const char *ringtext;
-				if (cv_superwithshield.value)
-					ringtext = "\x82" "50 rings";
-				else
-					ringtext = "\x82" "50 rings, no shield";
-
+				const char *ringtext = "\x82" "50 rings, no shield";
 				const char *tut1text = "\x82" "press " "\x80" "spin";
 				const char *tut2text = "\x82" "mid-" "\x80" "jump";
 				ttheight = 8;
@@ -655,6 +646,7 @@ void Y_IntermissionDrawer(void)
 		}
 
 		// draw the emeralds
+		//if (intertic & 1)
 		if (LUA_HudEnabled(hud_intermissionemeralds))
 		{
 			boolean drawthistic = !(ALL7EMERALDS(emeralds) && (intertic & 1));
@@ -671,6 +663,10 @@ void Y_IntermissionDrawer(void)
 			}
 			else if (em < 7)
 			{
+				static UINT8 emeraldbounces = 0;
+				static INT32 emeraldmomy = 20;
+				static INT32 emeraldy = -40;
+
 				if (drawthistic)
 					for (i = 0; i < 7; ++i)
 					{
@@ -681,15 +677,45 @@ void Y_IntermissionDrawer(void)
 
 				emeraldx = 152 + (em-3)*28;
 
-				if (intertic > 1)
+				if (intertic <= 1)
 				{
-					if (stagefailed && data.spec.emeraldy < (vid.height/vid.dupy)+16)
+					emeraldbounces = 0;
+					emeraldmomy = 20;
+					emeraldy = -40;
+				}
+				else
+				{
+					if (!stagefailed)
 					{
-						emeraldx += intertic - 6;
+						if (emeraldbounces < 3)
+						{
+							emeraldy += (++emeraldmomy);
+							if (emeraldy > 74)
+							{
+								S_StartSound(NULL, sfx_tink); // tink
+								emeraldbounces++;
+								emeraldmomy = -(emeraldmomy/2);
+								emeraldy = 74;
+							}
+						}
 					}
-
+					else
+					{
+						if (emeraldy < (vid.height/vid.dupy)+16)
+						{
+							emeraldy += (++emeraldmomy);
+							emeraldx += intertic - 6;
+						}
+						if (emeraldbounces < 1 && emeraldy > 74)
+						{
+							S_StartSound(NULL, sfx_shldls); // nope
+							emeraldbounces++;
+							emeraldmomy = -(emeraldmomy/2);
+							emeraldy = 74;
+						}
+					}
 					if (drawthistic)
-						V_DrawScaledPatch(emeraldx, data.spec.emeraldy, 0, emeraldpics[0][em]);
+						V_DrawScaledPatch(emeraldx, emeraldy, 0, emeraldpics[0][em]);
 				}
 			}
 		}
@@ -972,12 +998,12 @@ skiptallydrawer:
 		return;
 
 	if (timer)
-		V_DrawCenteredString(BASEVIDWIDTH/2, 188, menuColor[cv_menucolor.value],
+		V_DrawCenteredString(BASEVIDWIDTH/2, 188, V_YELLOWMAP,
 			va("start in %d seconds", timer/TICRATE));
 
 	// Make it obvious that scrambling is happening next round.
 	if (cv_scrambleonchange.value && cv_teamscramble.value && (intertic/TICRATE % 2 == 0))
-		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2, menuColor[cv_menucolor.value], M_GetText("Teams will be scrambled next round!"));
+		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2, V_YELLOWMAP, M_GetText("Teams will be scrambled next round!"));
 }
 
 //
@@ -1127,45 +1153,6 @@ void Y_Ticker(void)
 				S_ChangeMusicInternal("_clear", false); // don't loop it
 			tallydonetic = -1;
 		}
-		
-		// emerald bounce
-		if (intertic <= 1)
-		{
-			data.spec.emeraldbounces = 0;
-			data.spec.emeraldmomy = 20;
-			data.spec.emeraldy = -40;
-		}
-		else
-		{
-			if (!stagefailed)
-			{
-				if (data.spec.emeraldbounces < 3)
-				{
-					data.spec.emeraldy += (++data.spec.emeraldmomy);
-					if (data.spec.emeraldy > 74)
-					{
-						S_StartSound(NULL, sfx_tink); // tink
-						data.spec.emeraldbounces++;
-						data.spec.emeraldmomy = -(data.spec.emeraldmomy/2);
-						data.spec.emeraldy = 74;
-					}
-				}
-			}
-			else
-			{
-				if (data.spec.emeraldy < (vid.height/vid.dupy)+16)
-				{
-					data.spec.emeraldy += (++data.spec.emeraldmomy);
-				}
-				if (data.spec.emeraldbounces < 1 && data.spec.emeraldy > 74)
-				{
-					S_StartSound(NULL, sfx_shldls); // nope
-					data.spec.emeraldbounces++;
-					data.spec.emeraldmomy = -(data.spec.emeraldmomy/2);
-					data.spec.emeraldy = 74;
-				}
-			}
-		}
 
 		if (intertic < 2*TICRATE) // TWO second pause before tally begins, thank you mazmazz
 			return;
@@ -1249,7 +1236,8 @@ void Y_Ticker(void)
 	else if (intertype == int_race || intertype == int_comp) // race
 	{
 		if (!intertic) // first time only
-			S_ChangeMusicInternal("_inter", true); // loop it!
+			S_ChangeMusicInternal("_inter", true); // loop it
+
 		// Don't bother recalcing for race. It doesn't make as much sense.
 	}
 }

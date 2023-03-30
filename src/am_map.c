@@ -25,6 +25,8 @@
 #include "hardware/hw_main.h"
 #endif
 
+#include "m_menu.h" // cv_automapoutsidedevmode
+
 // For use if I do walls with outsides/insides
 static const UINT8 REDS        = (8*16);
 static const UINT8 REDRANGE    = 16;
@@ -454,11 +456,11 @@ boolean AM_Responder(event_t *ev)
 {
 	INT32 rc = false;
 
-	if (devparm || cv_debug) // only automap in Debug Tails 01-19-2001
+	if (devparm || cv_debug || cv_automapoutsidedevmode.value) // only automap in Debug Tails 01-19-2001
 	{
 		if (!automapactive)
 		{
-			if (ev->type == ev_keydown && ev->key == AM_TOGGLEKEY)
+			if ((!cv_automapoutsidedevmode.value && ev->type == ev_keydown && ev->key == AM_TOGGLEKEY) || (cv_automapoutsidedevmode.value && ev->type == ev_keydown && ev->key == AM_TOGGLEKEY))
 			{
 				//faB: prevent alt-tab in win32 version to activate automap just before
 				//     minimizing the app; doesn't do any harm to the DOS version
@@ -625,7 +627,7 @@ static inline void AM_doFollowPlayer(void)
   */
 void AM_Ticker(void)
 {
-	if (!cv_debug)
+	if (!cv_automapoutsidedevmode.value && !cv_debug)
 		AM_Stop();
 
 	if (dedicated || !automapactive)

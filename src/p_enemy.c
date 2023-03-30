@@ -39,6 +39,9 @@ INT32 var1;
 INT32 var2;
 INT32 modulothing;
 
+// Star Stuff Yay
+consvar_t cv_soniccd = CVAR_INIT ("soniccd", "Off", CV_SAVE, CV_OnOff, NULL);
+
 //
 // P_NewChaseDir related LUT.
 //
@@ -11642,7 +11645,10 @@ mobj_t *P_InternalFlickySpawn(mobj_t *actor, mobjtype_t flickytype, fixed_t momz
 		else
 		{
 			INT32 prandom = P_RandomKey(mapheaderinfo[gamemap-1]->numFlickies);
-			flickytype = mapheaderinfo[gamemap-1]->flickies[prandom];
+			if (!cv_soniccd.value)
+				flickytype = mapheaderinfo[gamemap-1]->flickies[prandom];
+			else
+				flickytype = MT_SEED;
 		}
 	}
 
