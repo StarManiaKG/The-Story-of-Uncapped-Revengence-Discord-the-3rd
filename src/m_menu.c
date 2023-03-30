@@ -601,6 +601,8 @@ consvar_t cv_fpscountercolor = CVAR_INIT ("fpscountercolor", "Default", CV_SAVE,
 static CV_PossibleValue_t pausestyle_t[] = {{0, "Default"}, {1, "Old-School"}, {0, NULL}};
 consvar_t cv_pausemenustyle = CVAR_INIT ("pausemenustyle", "Default", CV_SAVE, pausestyle_t, NULL);
 
+consvar_t cv_automapoutsidedevmode = CVAR_INIT ("automapoutsidedevmode", "On", CV_SAVE, CV_OnOff, NULL);
+
 consvar_t cv_perfectsave = CVAR_INIT ("perfectsave", "On", CV_SAVE|CV_CALL, CV_OnOff, STAR_PerfectSave_OnChange);
 
 static CV_PossibleValue_t perfectsavestripe_t[] = {{0, "MIN"}, {255, "MAX"}, {0, NULL}};
@@ -1268,9 +1270,9 @@ static menuitem_t OP_MainMenu[] =
 
 #ifdef HAVE_DISCORDRPC
 	{IT_CALL    | IT_STRING, NULL, "Discord Options...",   M_DiscordOptions,	120},
-	{IT_CALL    | IT_STRING, NULL, "TSOURDT3RD Options...",M_Tsourdt3rdOptions, 130},
+	{IT_CALL    | IT_STRING, NULL, "TSoURDt3rd Options...",M_Tsourdt3rdOptions, 130},
 #else
-	{IT_CALL    | IT_STRING, NULL, "TSOURDT3RD Options...",M_Tsourdt3rdOptions, 120},
+	{IT_CALL    | IT_STRING, NULL, "TSoURDt3rd Options...",M_Tsourdt3rdOptions, 120},
 #endif
 };
 
@@ -1823,8 +1825,8 @@ static menuitem_t OP_DiscordOptionsMenu[] =
 	{IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 		"Header",			        &cv_customdiscorddetails, 	 		   76},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 		"State",			        &cv_customdiscordstate, 			   90},
 
-	{IT_STRING | IT_CVAR,		        NULL, 	"Large Image Type",				&cv_customdiscordlargeimagetype,      104},
-    {IT_STRING | IT_CVAR,		        NULL, 	"Small Image Type",				&cv_customdiscordsmallimagetype,      109},
+	{IT_STRING | IT_CVAR,		        NULL, 	"L. Image Type",				&cv_customdiscordlargeimagetype,      104},
+    {IT_STRING | IT_CVAR,		        NULL, 	"S. Image Type",				&cv_customdiscordsmallimagetype,      109},
 
 	{IT_STRING | IT_CVAR,		        NULL, 	"Large Image",					NULL, 								  119}, // Handled in discord_option_onchange
 	{IT_STRING | IT_CVAR,		        NULL, 	"Small Image",					NULL, 								  124}, // Also handled in discord_option_onchange
@@ -1962,37 +1964,40 @@ static menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 	{IT_STRING | IT_CVAR,	NULL,	"Fps Counter Color",		&cv_fpscountercolor,	   26},
 
 	{IT_STRING | IT_CVAR,	NULL,	"Pause Menu Style",			&cv_pausemenustyle,	   	   36},
+	{IT_STRING | IT_CVAR,	NULL,	"Automap Outside Devmode",	&cv_automapoutsidedevmode, 41},
 
-	{IT_HEADER, 			NULL, 	"Player Options", 			NULL, 					   45},
+	{IT_STRING | IT_CVAR,	NULL,	"Sonic CD Mode",			&cv_soniccd,	   	   	   51},
+
+	{IT_HEADER, 			NULL, 	"Player Options", 			NULL, 					   60},
 	{IT_STRING | IT_CVAR,	NULL,	"Transform Regardless of Shield",
-																&cv_superwithshield,   	   51},
+																&cv_superwithshield,   	   66},
 	{IT_STRING | IT_CVAR,	NULL,	"Armageddon Nuke While Super",
-																&cv_armageddonnukesuper,   56},
+																&cv_armageddonnukesuper,   71},
 
 	{IT_STRING | IT_CVAR,	NULL,	"Always Overlay Invincibility",
-																&cv_alwaysoverlayinvuln,   66},
+																&cv_alwaysoverlayinvuln,   81},
 
-	{IT_HEADER, 			NULL, 	"Savedata Options", 		NULL, 					   75},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save", 			&cv_perfectsave, 		   81},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 1", 	&cv_perfectsavestripe1,	   86},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 2", 	&cv_perfectsavestripe2,    91},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 3", 	&cv_perfectsavestripe3,    96},
+	{IT_HEADER, 			NULL, 	"Savedata Options", 		NULL, 					   90},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save", 			&cv_perfectsave, 		   96},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 1", 	&cv_perfectsavestripe1,	  101},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 2", 	&cv_perfectsavestripe2,   106},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 3", 	&cv_perfectsavestripe3,   111},
 
-	{IT_STRING | IT_CVAR,	NULL,	"Continues",				&cv_continues,		  	  106},
+	{IT_STRING | IT_CVAR,	NULL,	"Continues",				&cv_continues,		  	  121},
 
-	{IT_HEADER, 			NULL, 	"Server Options", 			NULL,					  115},
+	{IT_HEADER, 			NULL, 	"Server Options", 			NULL,					  130},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,	
-							NULL,   "Holepunch Server",  		&cv_rendezvousserver,	  121},
+							NULL,   "Holepunch Server",  		&cv_rendezvousserver,	  139},
 	
-	{IT_STRING | IT_CVAR,   NULL,   "Show Connecting Players",  &cv_noticedownload,       135},
-	{IT_STRING | IT_CVAR,   NULL,   "Max File Transfer (KB)", 	&cv_maxsend,     	      140},
-	{IT_STRING | IT_CVAR,   NULL,   "File Transfer Packet Rate",&cv_downloadspeed,     	  145},
+	{IT_STRING | IT_CVAR,   NULL,   "Show Connecting Players",  &cv_noticedownload,       153},
+	{IT_STRING | IT_CVAR,   NULL,   "Max File Transfer (KB)", 	&cv_maxsend,     	      158},
+	{IT_STRING | IT_CVAR,   NULL,   "File Transfer Packet Rate",&cv_downloadspeed,     	  163},
 
-	{IT_STRING | IT_CVAR,   NULL,   "Player Setup While Moving",&cv_movingplayersetup,	  155},
+	{IT_STRING | IT_CVAR,   NULL,   "Player Setup While Moving",&cv_movingplayersetup,	  173},
 
-	{IT_HEADER, 			NULL, 	"Miscellanious Extras",     NULL,					  164},
-	{IT_STRING | IT_CALL, 	NULL, 	"Jukebox",				    M_Tsourdt3rdJukebox,   	  170},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Jukebox HUD",				&cv_jukeboxhud,   	      175},
+	{IT_HEADER, 			NULL, 	"Miscellanious Extras",     NULL,					  182},
+	{IT_STRING | IT_CALL, 	NULL, 	"Jukebox",				    M_Tsourdt3rdJukebox,   	  188},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Jukebox HUD",				&cv_jukeboxhud,   	      193},
 };
 static menuitem_t OP_Tsourdt3rdJukeboxMenu[] =
 {
@@ -2001,23 +2006,23 @@ static menuitem_t OP_Tsourdt3rdJukeboxMenu[] =
 
 enum
 {
-	op_alwaysoverlayinvuln = 9,
+	op_alwaysoverlayinvuln = 11,
 
-	op_perfectsave = 11,
+	op_perfectsave = 13,
 	op_perfectsavestripe1,
 	op_perfectsavestripe2,
 	op_perfectsavestripe3,
 
 	op_continues,
 
-	op_holepunchserver = 17,
+	op_holepunchserver = 19,
 	op_noticedownload,
 	op_maxsend,
 	op_downloadspeed,
 
 	op_movingplayeroptionswitch,
 
-	op_jukebox = 23,
+	op_jukebox = 25,
 	op_jukeboxhud,
 };
 

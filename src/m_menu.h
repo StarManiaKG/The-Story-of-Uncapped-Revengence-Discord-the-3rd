@@ -503,7 +503,7 @@ void M_RefreshPauseMenu(void);
 
 //star stuff weeeeee
 extern boolean AlwaysOverlayInvincibility;
-extern consvar_t cv_startupscreen, cv_stjrintro, cv_menucolor, cv_fpscountercolor, cv_pausemenustyle;
+extern consvar_t cv_startupscreen, cv_stjrintro, cv_menucolor, cv_fpscountercolor, cv_pausemenustyle, cv_automapoutsidedevmode;
 extern consvar_t cv_perfectsave, cv_perfectsavestripe1, cv_perfectsavestripe2, cv_perfectsavestripe3;
 extern consvar_t cv_superwithshield, cv_armageddonnukesuper, cv_alwaysoverlayinvuln;
 extern consvar_t cv_jukeboxhud; //, cv_jukeboxspeed;

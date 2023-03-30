@@ -976,6 +976,9 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_fpscountercolor);
 
 	CV_RegisterVar(&cv_pausemenustyle);
+	CV_RegisterVar(&cv_automapoutsidedevmode);
+
+	CV_RegisterVar(&cv_soniccd);
 
 	CV_RegisterVar(&cv_superwithshield);
 	CV_RegisterVar(&cv_armageddonnukesuper);
