@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2022 by Sonic Team Junior.
+// Copyright (C) 1999-2023 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -651,5 +651,8 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 #else
 #undef UPDATE_ALERT
 #endif
+
+// STAR STUFF YAY
+#define APRIL_FOOLS
 
 #endif // __DOOMDEF__

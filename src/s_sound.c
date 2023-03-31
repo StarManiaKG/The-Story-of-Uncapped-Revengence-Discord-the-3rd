@@ -2451,7 +2451,15 @@ void S_StartEx(boolean reset)
 	
 	if (mapmusflags & MUSIC_RELOADRESET)
 	{
+#ifdef APRIL_FOOLS
+		if (cv_ultimatemode.value)
+			strncpy(mapmusname, "_hehe", 7);
+		else
+			strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname, 7);
+#else
 		strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname, 7);
+#endif
+
 		mapmusname[6] = 0;
 		mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
 		mapmusposition = mapheaderinfo[gamemap-1]->muspos;
@@ -2473,6 +2481,11 @@ static void Command_Tunes_f(void)
 	UINT16 track = 0;
 	UINT32 position = 0;
 	const size_t argc = COM_Argc();
+
+#ifdef APRIL_FOOLS
+	CONS_Printf("Nice Try.\n");
+	return;
+#endif
 
 	if (jukeboxMusicPlaying)
 	{
@@ -2507,7 +2520,11 @@ static void Command_Tunes_f(void)
 	}
 	else if (!strcasecmp(tunearg, "-default"))
 	{
+#ifdef APRIL_FOOLS
+		tunearg = "_hehe";
+#else
 		tunearg = mapheaderinfo[gamemap-1]->musname;
+#endif
 		track = mapheaderinfo[gamemap-1]->mustrack;
 	}
 

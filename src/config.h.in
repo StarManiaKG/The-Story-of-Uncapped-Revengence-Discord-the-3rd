@@ -1,7 +1,8 @@
 /** SRB2 CMake Configuration */
-
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
+
+#include "doomdef.h"
 
 /* DO NOT MODIFY config.h DIRECTLY! It will be overwritten by cmake.
  * If you want to change a configuration option here, modify it in
@@ -42,6 +43,7 @@
  * Last updated 2023 / 02 / 06 - TSOURDT3RD v2.2.10 - updated assets directory
  * Last updated 2023 / 03 / 03 - TSOURDT3RD v2.2.10 - made tsourdt3rd.pk3 optional and added jukebox.pk3, with the latter being optional, and containing all of the jukebox music that you want
  * Last updated 2023 / 27 / 03 - TSOURDT3RD v2.2.10 - updated the hash for tsourdt3rd.pk3 again
+ * Last updated 2023 / 31 / 03 - TSOURDT3RD v2.2.10 - added support for future april fools stuff
 */
 #define ASSET_HASH_SRB2_PK3   "ad911f29a28a18968ee5b2d11c2acb39"
 #define ASSET_HASH_ZONES_PK3  "86ae55cae4e0a93ceda868635706a093"
@@ -49,7 +51,12 @@
 #ifdef USE_PATCH_DTA
 #define ASSET_HASH_PATCH_PK3  "7d467a883f7887b3c311798ee2f56b6a"
 #endif
+
+#ifndef APRIL_FOOLS
 #define ASSET_HASH_TSOURDT3RD_PK3 "5b1fb62969c0977787f279939c4a3fa3"
+#else
+#define ASSET_HASH_TSOURDT3RD_PK3 "30799c73e8f95d51a624eb19f9db189e"
+#endif
 
 #endif
 #endif

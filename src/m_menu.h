@@ -3,7 +3,7 @@
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 2011-2016 by Matthew "Kaito Sinclaire" Walsh.
-// Copyright (C) 1999-2022 by Sonic Team Junior.
+// Copyright (C) 1999-2023 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -502,8 +502,13 @@ void M_FreePlayerSetupColors(void);
 void M_RefreshPauseMenu(void);
 
 //star stuff weeeeee
-extern boolean AlwaysOverlayInvincibility;
+extern boolean AlwaysOverlayInvincibility, TransformSuperWithShield;
 extern consvar_t cv_startupscreen, cv_stjrintro, cv_menucolor, cv_fpscountercolor, cv_pausemenustyle, cv_automapoutsidedevmode;
+
+#ifdef APRIL_FOOLS
+extern consvar_t cv_ultimatemode;
+#endif
+
 extern consvar_t cv_perfectsave, cv_perfectsavestripe1, cv_perfectsavestripe2, cv_perfectsavestripe3;
 extern consvar_t cv_superwithshield, cv_armageddonnukesuper, cv_alwaysoverlayinvuln;
 extern consvar_t cv_jukeboxhud; //, cv_jukeboxspeed;

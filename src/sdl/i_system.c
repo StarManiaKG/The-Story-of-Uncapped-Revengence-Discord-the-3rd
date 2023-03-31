@@ -5,7 +5,7 @@
 //
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Portions Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 2014-2022 by Sonic Team Junior.
+// Copyright (C) 2014-2023 by Sonic Team Junior.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -340,7 +340,11 @@ static void I_ReportSignal(int num, int coredumped)
 		sigmsg = "SIGFPE - mathematical exception";
 		break;
 	case SIGSEGV:
+#ifndef APRIL_FOOLS
 		sigmsg = "SIGSEGV - segment violation";
+#else
+		sigmsg = "SIGSEGV - seventh sentinel";
+#endif
 		break;
 //	case SIGTERM:
 //		sigmsg = "SIGTERM - Software termination signal from kill";
