@@ -1245,7 +1245,7 @@ static const char *credits[] = {
 	"Dave \"DemonTomatoDave\" Bulmer",
 	"Paul \"Boinciel\" Clempson",
 	"\"Cyan Helkaraxe\"",
-	"Shane \"CobaltBW\" Ellis",
+	"Shane \"Clairebun\" Ellis",
 	"James \"SeventhSentinel\" Hall",
 	"Kepa \"Nev3r\" Iceta",
 	"Iestyn \"Monster Iestyn\" Jealous",
@@ -1304,17 +1304,19 @@ static const char *credits[] = {
 	"Colin \"Sonict\" Pfaff",
 	"Bill \"Tets\" Reed",
 	"",
-	"\1TSoURDt3rd",
+	"\1TSoURDt3rd Team",
 	"StarManiaKG \"Star\"",
+	"MarioMario \"Sapphire\"",
+	"Mini the Bunnyboy\"Talis\"",
 	"",
-	"\1TSoURDt3rd Emotional Support Crew",
-	"Speccy",
-	"Zeno/Uukoo \"Oreo\"",
-	"NARBluebear"
-	"Smiles \"Future Smiles the Fox\"",
-	"\"Team Comet\"",
+	"\1TSoURDt3rd Extras",
+	"Speccy - Emotional Support, Ideas",
+	"Zeno/Uukoo \"Oreo\" - Emotional Support",
+	"NARBluebear - Emotional Support",
+	"Smiles \"The Fox\" - Emotional Support",
+	"\"Team Comet\" - Emotional Support",
 	"",
-	"\1Vanilla SRB2 Special Thanks",
+	"\1Special Thanks",
 	"id Software",
 	"Doom Legacy Project",
 	"FreeDoom Project", // Used some of the mancubus and rocket launcher sprites for Brak
@@ -1460,7 +1462,7 @@ void F_CreditTicker(void)
 				default: credits_height += 12; break;
 			}
 		}
-		credits_height = 131*credits_height/80; // account for scroll speeds. This is a guess now, so you may need to update this if you change the credits length.
+		credits_height = 132*credits_height/80; // account for scroll speeds. This is a guess now, so you may need to update this if you change the credits length.
 	}
 
 	// Draw credits text on top

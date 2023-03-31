@@ -606,7 +606,7 @@ consvar_t cv_fpscountercolor = CVAR_INIT ("fpscountercolor", "Default", CV_SAVE,
 static CV_PossibleValue_t pausestyle_t[] = {{0, "Default"}, {1, "Old-School"}, {0, NULL}};
 consvar_t cv_pausemenustyle = CVAR_INIT ("pausemenustyle", "Default", CV_SAVE, pausestyle_t, NULL);
 
-consvar_t cv_automapoutsidedevmode = CVAR_INIT ("automapoutsidedevmode", "On", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_automapoutsidedevmode = CVAR_INIT ("automapoutsidedevmode", "Off", CV_SAVE, CV_OnOff, NULL);
 
 consvar_t cv_perfectsave = CVAR_INIT ("perfectsave", "On", CV_SAVE|CV_CALL, CV_OnOff, STAR_PerfectSave_OnChange);
 
