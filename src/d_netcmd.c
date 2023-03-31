@@ -203,7 +203,10 @@ static CV_PossibleValue_t chances_cons_t[] = {{0, "MIN"}, {9, "MAX"}, {0, NULL}}
 static CV_PossibleValue_t match_scoring_cons_t[] = {{0, "Normal"}, {1, "Classic"}, {0, NULL}};
 static CV_PossibleValue_t pause_cons_t[] = {{0, "Server"}, {1, "All"}, {0, NULL}};
 
-static CV_PossibleValue_t timetic_cons_t[] = {{0, "Normal"}, {1, "Tics"}, {2, "Centiseconds"}, {0, NULL}};
+static CV_PossibleValue_t timetic_cons_t[] = {{0, "Normal"}, {1, "Centiseconds"}, {2, "Mania"}, {3, "Tics"}, {0, NULL}};
+//Using "Normal" instead of 2.2's "Classic" in order to be compatible with people's existing configurations.
+
+static CV_PossibleValue_t  scorepos_cons_t[] = {{0, "Normal"}, {1, "Modern"}, {0, NULL}};
 
 #ifdef NETGAME_DEVMODE
 static consvar_t cv_fishcake = {"fishcake", "Off", CV_CALL|CV_NOSHOWHELP|CV_RESTRICT, CV_OnOff, Fishcake_OnChange, 0, NULL, NULL, 0, 0, NULL};
@@ -321,6 +324,7 @@ consvar_t cv_overtime = {"overtime", "Yes", CV_NETVAR, CV_YesNo, NULL, 0, NULL, 
 consvar_t cv_rollingdemos = {"rollingdemos", "On", CV_SAVE, CV_OnOff, NULL, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_timetic = {"timerres", "Normal", CV_SAVE, timetic_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL}; // use tics in display
+consvar_t cv_scorepos = {"scorepos", "Normal", CV_SAVE, scorepos_cons_t, NULL, 0, NULL, NULL, 0, 0, NULL}; // for score position
 static CV_PossibleValue_t pointlimit_cons_t[] = {{0, "MIN"}, {999999990, "MAX"}, {0, NULL}};
 consvar_t cv_pointlimit = {"pointlimit", "0", CV_NETVAR|CV_CALL|CV_NOINIT, pointlimit_cons_t,
 	PointLimit_OnChange, 0, NULL, NULL, 0, 0, NULL};
@@ -364,6 +368,8 @@ consvar_t cv_pause = {"pausepermission", "Server", CV_NETVAR, pause_cons_t, NULL
 consvar_t cv_mute = {"mute", "Off", CV_NETVAR|CV_CALL, CV_OnOff, Mute_OnChange, 0, NULL, NULL, 0, 0, NULL};
 
 consvar_t cv_sleep = {"cpusleep", "-1", CV_SAVE, sleeping_cons_t, NULL, -1, NULL, NULL, 0, 0, NULL};
+consvar_t cv_freedemocamera = {"freedemocamera", "Off", CV_SAVE, CV_OnOff, NULL};
+
 
 INT16 gametype = GT_COOP;
 boolean splitscreen = false;
@@ -669,6 +675,7 @@ void D_RegisterClientCommands(void)
 
 	// HUD
 	CV_RegisterVar(&cv_timetic);
+	CV_RegisterVar(&cv_scorepos);
 	CV_RegisterVar(&cv_itemfinder);
 
 	// time attack ghost options are also saved to config
@@ -786,6 +793,8 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_mapthingnum);
 //	CV_RegisterVar(&cv_grid);
 //	CV_RegisterVar(&cv_snapto);
+
+	CV_RegisterVar(&cv_freedemocamera);
 
 	// add cheat commands
 	COM_AddCommand("noclip", Command_CheatNoClip_f);
@@ -1942,6 +1951,8 @@ static void Got_Pause(UINT8 **cp, INT32 playernum)
 		else
 			S_ResumeAudio();
 	}
+
+	I_UpdateMouseGrab();
 }
 
 // Command for stuck characters in netgames, griefing, etc.
@@ -4358,3 +4369,4 @@ static void Command_ShowTime_f(void)
 
 	CONS_Printf(M_GetText("The current time is %f.\nThe timelimit is %f\n"), (double)leveltime/TICRATE, (double)timelimitintics/TICRATE);
 }
+

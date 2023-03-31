@@ -567,6 +567,8 @@ void CON_ToggleOff(void)
 	CON_ClearHUD();
 	con_forcepic = 0;
 	con_clipviewtop = -1; // remove console clipping of view
+
+	I_UpdateMouseGrab();
 }
 
 boolean CON_Ready(void)
@@ -585,14 +587,6 @@ void CON_Ticker(void)
 	con_tick++;
 	con_tick &= 7;
 
-	// if the menu is open then close the console.
-	if (menuactive && con_destlines)
-	{
-		consoletoggle = false;
-		con_destlines = 0;
-		CON_ClearHUD();
-	}
-
 	// console key was pushed
 	if (consoletoggle)
 	{
@@ -603,6 +597,7 @@ void CON_Ticker(void)
 		{
 			con_destlines = 0;
 			CON_ClearHUD();
+			I_UpdateMouseGrab();
 		}
 		else
 			CON_ChangeHeight();
@@ -1591,3 +1586,4 @@ void CON_Drawer(void)
 	else if (gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_CUTSCENE || gamestate == GS_CREDITS)
 		CON_DrawHudlines();
 }
+
