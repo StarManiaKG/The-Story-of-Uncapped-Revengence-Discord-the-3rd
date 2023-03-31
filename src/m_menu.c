@@ -3,7 +3,7 @@
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 2011-2016 by Matthew "Kaito Sinclaire" Walsh.
-// Copyright (C) 1999-2022 by Sonic Team Junior.
+// Copyright (C) 1999-2023 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -127,6 +127,13 @@ typedef enum
 	QUITSMSG2,
 	QUITSMSG3,
 	QUITSMSG4,
+
+#ifdef APRIL_FOOLS
+	QUITAMSG1,
+	QUITAMSG2,
+	QUITAMSG3,
+#endif
+
 	NUM_QUITMESSAGES
 } text_enum;
 
@@ -472,9 +479,15 @@ UINT16 menuColor[16] = {
 };
 
 boolean AlwaysOverlayInvincibility;
+boolean TransformSuperWithShield;
+
+#ifdef APRIL_FOOLS
+static void STAR_AprilFools_OnChange(void);
+#endif
 
 static void STAR_PerfectSave_OnChange(void);
 
+static void STAR_SuperWithShield_OnChange(void);
 static void STAR_InvulnAndShield_OnChange(void);
 
 static void STAR_JukeboxHUD_OnChange(void);
@@ -606,6 +619,10 @@ consvar_t cv_fpscountercolor = CVAR_INIT ("fpscountercolor", "Default", CV_SAVE,
 static CV_PossibleValue_t pausestyle_t[] = {{0, "Default"}, {1, "Old-School"}, {0, NULL}};
 consvar_t cv_pausemenustyle = CVAR_INIT ("pausemenustyle", "Default", CV_SAVE, pausestyle_t, NULL);
 
+#ifdef APRIL_FOOLS
+consvar_t cv_ultimatemode = CVAR_INIT ("ultimatemode", "Off", CV_SAVE|CV_CALL, CV_OnOff, STAR_AprilFools_OnChange);
+#endif
+
 consvar_t cv_automapoutsidedevmode = CVAR_INIT ("automapoutsidedevmode", "Off", CV_SAVE, CV_OnOff, NULL);
 
 consvar_t cv_perfectsave = CVAR_INIT ("perfectsave", "On", CV_SAVE|CV_CALL, CV_OnOff, STAR_PerfectSave_OnChange);
@@ -615,7 +632,7 @@ consvar_t cv_perfectsavestripe1 = CVAR_INIT ("perfectsavestripe1", "134", CV_SAV
 consvar_t cv_perfectsavestripe2 = CVAR_INIT ("perfectsavestripe2", "201", CV_SAVE, perfectsavestripe_t, NULL);
 consvar_t cv_perfectsavestripe3 = CVAR_INIT ("perfectsavestripe3", "1", CV_SAVE, perfectsavestripe_t, NULL);
 
-consvar_t cv_superwithshield = CVAR_INIT ("superwithshield", "On", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_superwithshield = CVAR_INIT ("superwithshield", "On", CV_SAVE|CV_CALL, CV_OnOff, STAR_SuperWithShield_OnChange);
 consvar_t cv_armageddonnukesuper = CVAR_INIT ("armageddonnukesuper", "On", CV_SAVE, CV_OnOff, NULL);
 
 consvar_t cv_alwaysoverlayinvuln = CVAR_INIT ("alwaysoverlayinvincibility", "On", CV_SAVE|CV_CALL, CV_OnOff, STAR_InvulnAndShield_OnChange);
@@ -1959,6 +1976,12 @@ static menuitem_t OP_MonitorToggleMenu[] =
 };
 
 // STAR OPTIONS LETS GOOOOOOOOOOOOO
+#ifdef APRIL_FOOLS
+#define STAROPTIONREST 5
+#else
+#define STAROPTIONREST 0
+#endif
+
 static menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 {
 	{IT_HEADER, 			NULL, 	"Game Options", 			NULL, 					  	0},
@@ -1972,37 +1995,40 @@ static menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 	{IT_STRING | IT_CVAR,	NULL,	"Automap Outside Devmode",	&cv_automapoutsidedevmode, 41},
 
 	{IT_STRING | IT_CVAR,	NULL,	"Sonic CD Mode",			&cv_soniccd,	   	   	   51},
+#ifdef APRIL_FOOLS	
+	{IT_STRING | IT_CVAR,	NULL,	"Ultimate Mode!",			&cv_ultimatemode,	   	   56},
+#endif
 
-	{IT_HEADER, 			NULL, 	"Player Options", 			NULL, 					   60},
+	{IT_HEADER, 			NULL, 	"Player Options", 			NULL, 					   60+STAROPTIONREST},
 	{IT_STRING | IT_CVAR,	NULL,	"Transform Regardless of Shield",
-																&cv_superwithshield,   	   66},
+																&cv_superwithshield,   	   66+STAROPTIONREST},
 	{IT_STRING | IT_CVAR,	NULL,	"Armageddon Nuke While Super",
-																&cv_armageddonnukesuper,   71},
+																&cv_armageddonnukesuper,   71+STAROPTIONREST},
 
 	{IT_STRING | IT_CVAR,	NULL,	"Always Overlay Invincibility",
-																&cv_alwaysoverlayinvuln,   81},
+																&cv_alwaysoverlayinvuln,   81+STAROPTIONREST},
 
-	{IT_HEADER, 			NULL, 	"Savedata Options", 		NULL, 					   90},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save", 			&cv_perfectsave, 		   96},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 1", 	&cv_perfectsavestripe1,	  101},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 2", 	&cv_perfectsavestripe2,   106},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 3", 	&cv_perfectsavestripe3,   111},
+	{IT_HEADER, 			NULL, 	"Savedata Options", 		NULL, 					   90+STAROPTIONREST},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save", 			&cv_perfectsave, 		   96+STAROPTIONREST},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 1", 	&cv_perfectsavestripe1,	  101+STAROPTIONREST},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 2", 	&cv_perfectsavestripe2,   106+STAROPTIONREST},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 3", 	&cv_perfectsavestripe3,   111+STAROPTIONREST},
 
-	{IT_STRING | IT_CVAR,	NULL,	"Continues",				&cv_continues,		  	  121},
+	{IT_STRING | IT_CVAR,	NULL,	"Continues",				&cv_continues,		  	  121+STAROPTIONREST},
 
-	{IT_HEADER, 			NULL, 	"Server Options", 			NULL,					  130},
+	{IT_HEADER, 			NULL, 	"Server Options", 			NULL,					  130+STAROPTIONREST},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,	
-							NULL,   "Holepunch Server",  		&cv_rendezvousserver,	  139},
+							NULL,   "Holepunch Server",  		&cv_rendezvousserver,	  137+STAROPTIONREST},
 	
-	{IT_STRING | IT_CVAR,   NULL,   "Show Connecting Players",  &cv_noticedownload,       153},
-	{IT_STRING | IT_CVAR,   NULL,   "Max File Transfer (KB)", 	&cv_maxsend,     	      158},
-	{IT_STRING | IT_CVAR,   NULL,   "File Transfer Packet Rate",&cv_downloadspeed,     	  163},
+	{IT_STRING | IT_CVAR,   NULL,   "Show Connecting Players",  &cv_noticedownload,       151+STAROPTIONREST},
+	{IT_STRING | IT_CVAR,   NULL,   "Max File Transfer (KB)", 	&cv_maxsend,     	      156+STAROPTIONREST},
+	{IT_STRING | IT_CVAR,   NULL,   "File Transfer Packet Rate",&cv_downloadspeed,     	  161+STAROPTIONREST},
 
-	{IT_STRING | IT_CVAR,   NULL,   "Player Setup While Moving",&cv_movingplayersetup,	  173},
+	{IT_STRING | IT_CVAR,   NULL,   "Player Setup While Moving",&cv_movingplayersetup,	  171+STAROPTIONREST},
 
-	{IT_HEADER, 			NULL, 	"Miscellanious Extras",     NULL,					  182},
-	{IT_STRING | IT_CALL, 	NULL, 	"Jukebox",				    M_Tsourdt3rdJukebox,   	  188},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Jukebox HUD",				&cv_jukeboxhud,   	      193},
+	{IT_HEADER, 			NULL, 	"Miscellanious Extras",     NULL,					  180+STAROPTIONREST},
+	{IT_STRING | IT_CALL, 	NULL, 	"Jukebox",				    M_Tsourdt3rdJukebox,   	  186+STAROPTIONREST},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Jukebox HUD",				&cv_jukeboxhud,   	      191+STAROPTIONREST},
 };
 static menuitem_t OP_Tsourdt3rdJukeboxMenu[] =
 {
@@ -2011,6 +2037,9 @@ static menuitem_t OP_Tsourdt3rdJukeboxMenu[] =
 
 enum
 {
+#ifndef APRIL_FOOLS
+	op_superwithshield = 9,
+
 	op_alwaysoverlayinvuln = 11,
 
 	op_perfectsave = 13,
@@ -2029,7 +2058,33 @@ enum
 
 	op_jukebox = 25,
 	op_jukeboxhud,
+#else
+	op_aprilfools = 8,
+	
+	op_superwithshield = 10,
+
+	op_alwaysoverlayinvuln = 12,
+
+	op_perfectsave = 14,
+	op_perfectsavestripe1,
+	op_perfectsavestripe2,
+	op_perfectsavestripe3,
+
+	op_continues,
+
+	op_holepunchserver = 20,
+	op_noticedownload,
+	op_maxsend,
+	op_downloadspeed,
+
+	op_movingplayeroptionswitch,
+
+	op_jukebox = 26,
+	op_jukeboxhud,
+#endif
 };
+
+#undef STAROPTIONREST
 
 // ==========================================================================
 // ALL MENU DEFINITIONS GO HERE
@@ -3044,14 +3099,55 @@ void Discord_option_Onchange(void)
 #endif
 
 // Other STAR stuff yay
+#ifdef APRIL_FOOLS
+static void STAR_AprilFools_OnChange(void)
+{
+	M_ResetJukebox();
+	
+	if (Playing() || playeringame[consoleplayer])
+	{
+		if (!cv_ultimatemode.value)
+		{
+			CV_StealthSetValue(&cv_ultimatemode, 1);
+			CONS_Printf("Nice Try.\n");
+		}
+
+		if (cv_ultimatemode.value)
+		{
+			if (cv_ultimatemode.value)
+				strncpy(mapmusname, "_hehe", 7);
+			else
+				strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname, 7);
+
+			mapmusname[6] = 0;
+			mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
+			mapmusposition = mapheaderinfo[gamemap-1]->muspos;
+			
+			S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
+		}
+	}
+}
+#endif
+
 static void STAR_PerfectSave_OnChange(void)
 {
 	OP_Tsourdt3rdOptionsMenu[op_perfectsavestripe1].status =
 		((!(Playing() && playeringame[consoleplayer]) && cv_perfectsave.value) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
 	OP_Tsourdt3rdOptionsMenu[op_perfectsavestripe2].status =
 		((!(Playing() && playeringame[consoleplayer]) && cv_perfectsave.value) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
-		OP_Tsourdt3rdOptionsMenu[op_perfectsavestripe3].status =
+	OP_Tsourdt3rdOptionsMenu[op_perfectsavestripe3].status =
 		((!(Playing() && playeringame[consoleplayer]) && cv_perfectsave.value) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+}
+
+static void STAR_SuperWithShield_OnChange(void)
+{
+	if (netgame)
+	{
+		CONS_Printf("Sorry, you can't change this while in a netgame.\n");
+		CV_StealthSetValue(&cv_superwithshield, (!cv_superwithshield.value ? 1 : 0));
+	}
+	else
+		TransformSuperWithShield = cv_superwithshield.value;
 }
 
 static void STAR_InvulnAndShield_OnChange(void)
@@ -4574,6 +4670,13 @@ void M_Init(void)
 	quitmsg[QUIT3MSG6] = M_GetText("Aww, is Egg Rock Zone too\ndifficult for you?\n\n(Press 'Y' to quit)");
 
 	/* The Star Quit Messages Are Utilized in M_QuitSRB2 :) */
+
+	// April Fools Messages //
+#ifdef APRIL_FOOLS
+	quitmsg[QUITAMSG1] = M_GetText("Aww, was today's April Fools\ntoo much for you?\n\n(Press 'Y' to quit)");
+	quitmsg[QUITAMSG2] = M_GetText("Happy April Fools!\n\n(Press 'Y' to quit)");
+	quitmsg[QUITAMSG3] = M_GetText("Wait!\nActivate Ultimate Mode!\n\n(Press 'Y' to quit)");
+#endif
 
 	/*
 	Well the menu sucks for forcing us to have an item set
@@ -12319,6 +12422,9 @@ static void M_StartServer(INT32 choice)
 	// Still need to reset devmode
 	cv_debug = 0;
 
+	// Reset Star Stuff
+	CV_StealthSetValue(&cv_superwithshield, 0);
+
 	if (demoplayback)
 		G_StopDemo();
 	if (metalrecording)
@@ -12516,6 +12622,8 @@ static void M_ConnectIP(INT32 choice)
 	}
 
 	M_ClearMenus(true);
+
+	CV_StealthSetValue(&cv_superwithshield, 0);
 
 	COM_BufAddText(va("connect \"%s\"\n", setupm_ip));
 
@@ -14453,7 +14561,7 @@ static void M_QuitSRB2(INT32 choice)
 
 	char *maptitle = G_BuildMapTitle(gamemap);
 
-	// Star Quit Messages
+	/* Star Quit Messages */
 	// Static
 	quitmsg[QUITSMSG1] = M_GetText("Every time you press 'Y', \nStarManiaKG cries...\n\n(Press 'Y' to quit)");
 	quitmsg[QUITSMSG2] = M_GetText("Who do you think you are? \nItaly?\n\n(Press 'Y' to quit)");
@@ -14466,7 +14574,14 @@ static void M_QuitSRB2(INT32 choice)
 	quitmsg[QUITSMSG4] = M_GetText(va("Wait, %s!\nCome back! I need you!\n\n(Press 'Y' to quit)", (Playing() ? player_names[consoleplayer] : cv_playername.string)));
 #endif
 
+#ifndef APRIL_FOOLS
 	M_StartMessage(quitmsg[M_RandomKey(NUM_QUITMESSAGES)], M_QuitResponse, MM_YESNO);
+#else
+	if (cv_ultimatemode.value)
+		M_StartMessage(quitmsg[M_RandomRange(QUITAMSG1, QUITAMSG3)], M_QuitResponse, MM_YESNO);
+	else
+		M_StartMessage(quitmsg[M_RandomKey(NUM_QUITMESSAGES)], M_QuitResponse, MM_YESNO);
+#endif
 
 	Z_Free(maptitle);
 }
@@ -14661,6 +14776,20 @@ static void M_Tsourdt3rdOptions(INT32 choice)
 {
 	(void)choice;
 
+	// Game Options //
+#ifdef APRIL_FOOLS
+	OP_Tsourdt3rdOptionsMenu[op_aprilfools].status =
+		((!(Playing() && playeringame[consoleplayer])) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+#endif
+
+	// Player Options //
+	OP_Tsourdt3rdOptionsMenu[op_superwithshield].status =
+		(!netgame ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+	
+	OP_Tsourdt3rdOptionsMenu[op_alwaysoverlayinvuln].status =
+		((players[consoleplayer].powers[pw_invulnerability] && (players[consoleplayer].powers[pw_shield] & SH_NOSTACK) != SH_NONE) ? IT_GRAYEDOUT : IT_CVAR|IT_STRING);
+
+	// Savegame Options //
 	STAR_PerfectSave_OnChange();
 
 	OP_Tsourdt3rdOptionsMenu[op_perfectsave].status =
@@ -14668,10 +14797,8 @@ static void M_Tsourdt3rdOptions(INT32 choice)
 
 	OP_Tsourdt3rdOptionsMenu[op_continues].status =
 		(!(Playing() && playeringame[consoleplayer]) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
-	
-	OP_Tsourdt3rdOptionsMenu[op_alwaysoverlayinvuln].status =
-		((players[consoleplayer].powers[pw_invulnerability] && (players[consoleplayer].powers[pw_shield] & SH_NOSTACK) != SH_NONE) ? IT_GRAYEDOUT : IT_CVAR|IT_STRING);
-	
+
+	// Server Options //
 	if ((splitscreen || (netgame && !server)) || currentMenu == &MP_SplitServerDef)
 	{
 		OP_Tsourdt3rdOptionsMenu[op_holepunchserver].status = IT_GRAYEDOUT; // Holepunch server
@@ -14688,6 +14815,7 @@ static void M_Tsourdt3rdOptions(INT32 choice)
 
 	}
 
+	// Misc. Options //
 	for (INT32 i = 0; i < MAXUNLOCKABLES; i++)
 	{
 		OP_Tsourdt3rdOptionsMenu[op_jukebox].status = IT_GRAYEDOUT;
@@ -15028,7 +15156,13 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 			cv_closedcaptioning.value = 1; // hack
 
 			if (Playing())
+			{
+#ifdef APRIL_FOOLS
+				S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
+#else
 				S_ChangeMusicEx(mapheaderinfo[gamemap-1]->musname, mapmusflags, true, mapmusposition, 0, 0);
+#endif
+			}
 			break;
 		case KEY_ESCAPE:
 			jukeboxMenuOpen = false;
@@ -15089,6 +15223,7 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 					}
 					else
 					{
+#ifndef APRIL_FOOLS
 						strcpy(jukeboxMusicName, curplaying->title);
 						strcpy(jukeboxMusicTrack, curplaying->name);
 	
@@ -15096,6 +15231,16 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 						//S_SpeedMusic(strtof(cv_jukeboxspeed.string, NULL));
 
 						CONS_Printf(M_GetText("Loaded track \x82%s\x80 into the Jukebox.\n"), jukeboxMusicName);
+#else
+						strcpy(jukeboxMusicName, (cv_ultimatemode.value ? "Get Trolled, Cutie~" : curplaying->title));
+						strcpy(jukeboxMusicTrack, (cv_ultimatemode.value ? "_hehe" : curplaying->name));
+	
+						S_ChangeMusicInternal(jukeboxMusicTrack, !curplaying->stoppingtics);
+						//S_SpeedMusic(strtof(cv_jukeboxspeed.string, NULL));
+
+						(!cv_ultimatemode.value ? CONS_Printf(M_GetText("Loaded track \x82%s\x80 into the Jukebox.\n"), jukeboxMusicName) : CONS_Printf(M_GetText("Hehe Time, Cutie~\n")));
+#endif
+
 						jukeboxMusicPlaying = true;
 						initJukeboxHUD = true;
 					}
@@ -15119,6 +15264,19 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 		// Free the Memory Up
 		Z_Free(soundtestdefs);
 		soundtestdefs = NULL;
+
+		// Play Music if Jukebox Music Isn't Playing
+		if (!jukeboxMusicPlaying)
+		{
+			if (Playing())
+			{
+#ifdef APRIL_FOOLS
+				S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
+#else
+				S_ChangeMusicEx(mapheaderinfo[gamemap-1]->musname, mapmusflags, true, mapmusposition, 0, 0);
+#endif
+			}
+		}
 
 		// Close the Menu
 		cv_closedcaptioning.value = st_cc; // undo hack

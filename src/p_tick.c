@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2022 by Sonic Team Junior.
+// Copyright (C) 1999-2023 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -32,6 +32,11 @@
 // Discord
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
+#endif
+
+#ifdef APRIL_FOOLS
+#include "fastcmp.h"
+#include "v_video.h"
 #endif
 
 tic_t leveltime;
@@ -600,6 +605,9 @@ static inline void P_DoCTFStuff(void)
 void P_Ticker(boolean run)
 {
 	INT32 i;
+#ifdef APRIL_FOOLS
+	INT32 noSonic = 0;
+#endif
 
 	// Increment jointime and quittime even if paused
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -782,6 +790,41 @@ void P_Ticker(boolean run)
 				all7matchemeralds = false;
 				emeraldtime = 0;
 				DRPC_UpdatePresence();
+			}
+		}
+#endif
+
+#ifdef APRIL_FOOLS
+		// Sonic's Dead lol
+		if (cv_ultimatemode.value)
+		{
+			if (!netgame)
+			{
+				while (noSonic < MAXPLAYERS)
+				{
+					if (playeringame[noSonic] && fastncmp(skins[players[noSonic].skin].name, "sonic", 5))
+					{
+						SetPlayerSkinByNum(noSonic, 1);
+						if (!noSonic)
+						{
+							CONS_Printf("You can't play as Sonic; He's Dead.\n");
+							CV_StealthSet(&cv_skin, skins[1].name);
+						}
+						else if (noSonic == 1)
+							CV_StealthSet(&cv_skin2, skins[1].name);
+					}
+
+					noSonic++;
+				}
+			}
+			else
+			{
+				if (fastncmp(skins[players[consoleplayer].skin].name, "sonic", 5))
+				{
+					CONS_Printf("You can't play as Sonic; He's Dead.\n");
+					SetPlayerSkinByNum(consoleplayer, 1);
+					CV_StealthSet(&cv_skin, skins[1].name);
+				}
 			}
 		}
 #endif

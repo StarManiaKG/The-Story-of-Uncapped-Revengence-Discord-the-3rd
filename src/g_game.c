@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2022 by Sonic Team Junior.
+// Copyright (C) 1999-2023 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -2732,7 +2732,15 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	{
 		if (mapmusflags & MUSIC_RELOADRESET)
 		{
+#ifdef APRIL_FOOLS
+			if (cv_ultimatemode.value)
+				strncpy(mapmusname, "_hehe", 7);
+			else
+				strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname, 7);
+#else
 			strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname, 7);
+#endif
+
 			mapmusname[6] = 0;
 			mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
 			mapmusposition = mapheaderinfo[gamemap-1]->muspos;

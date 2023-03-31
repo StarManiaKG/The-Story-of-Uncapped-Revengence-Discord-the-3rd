@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2022 by Sonic Team Junior.
+// Copyright (C) 1999-2023 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -977,6 +977,10 @@ void D_RegisterClientCommands(void)
 
 	CV_RegisterVar(&cv_pausemenustyle);
 	CV_RegisterVar(&cv_automapoutsidedevmode);
+
+#ifdef APRIL_FOOLS
+	CV_RegisterVar(&cv_ultimatemode);
+#endif
 
 	CV_RegisterVar(&cv_soniccd);
 
@@ -4714,6 +4718,9 @@ void Command_ExitGame_f(void)
 
 	if (!modeattacking)
 		D_StartTitle();
+
+	// Star Stuff YAY
+	CV_StealthSetValue(&cv_superwithshield, TransformSuperWithShield);
 }
 
 void Command_Retry_f(void)

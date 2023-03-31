@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2022 by Sonic Team Junior.
+// Copyright (C) 1999-2023 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -9994,9 +9994,16 @@ static boolean P_FuseThink(mobj_t *mobj)
 	case MT_METALSONIC_BATTLE:
 		break; // don't remove
 	case MT_SPIKE:
+		P_SetMobjState(mobj, mobj->state->nextstate);
+		mobj->fuse = mobj->info->speed;
+		if (mobj->spawnpoint)
+			mobj->fuse += mobj->spawnpoint->angle;
+		break;
 	case MT_WALLSPIKE:
 		P_SetMobjState(mobj, mobj->state->nextstate);
-		mobj->fuse = mobj->spawnpoint ? mobj->spawnpoint->angle : mobj->info->speed;
+		mobj->fuse = mobj->info->speed;
+		if (mobj->spawnpoint)
+			mobj->fuse += (mobj->spawnpoint->angle / 360);
 		break;
 	case MT_NIGHTSCORE:
 		P_RemoveMobj(mobj);
@@ -13076,7 +13083,6 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		{
 			mobj->flags &= ~MF_SCENERY;
 			mobj->fuse = (16 - mthing->extrainfo)*(mthing->angle + mobj->info->speed)/16;
-			
 			if (mthing->options & MTF_EXTRA)
 				P_SetMobjState(mobj, mobj->info->meleestate);
 		}

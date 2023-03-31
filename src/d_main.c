@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2022 by Sonic Team Junior.
+// Copyright (C) 1999-2023 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -470,6 +470,11 @@ static void D_Display(void)
 		case GS_NULL:
 			break;
 	}
+
+#ifdef APRIL_FOOLS
+	if (cv_ultimatemode.value && (gamestate == GS_ENDING))
+		I_Error("SIGSEGV - seventh sentinel");
+#endif
 
 	// STUPID race condition...
 	if (wipegamestate == GS_INTRO && gamestate == GS_TITLESCREEN)
@@ -1230,7 +1235,11 @@ static void IdentifyVersion(void)
 #endif
 
 	// Add this custom build's fun stuff
+#ifndef APRIL_FOOLS
 	D_AddFile(&startupwadfiles, va(pandf,srb2waddir, "tsourdt3rd.pk3"));
+#else
+	D_AddFile(&startupwadfiles, va(pandf,srb2waddir, "_tsourdt3rd.pk3"));
+#endif
 
 	// Add the music
 #if !defined (HAVE_SDL) || defined (HAVE_MIXER)
@@ -1321,7 +1330,7 @@ void D_SRB2Main(void)
 	// Print GPL notice for our console users (Linux)
 	CONS_Printf(
 	"\n\nSonic Robo Blast 2\n"
-	"Copyright (C) 1998-2022 by Sonic Team Junior\n\n"
+	"Copyright (C) 1998-2023 by Sonic Team Junior\n\n"
 	"This program comes with ABSOLUTELY NO WARRANTY.\n\n"
 	"This is free software, and you are welcome to redistribute it\n"
 	"and/or modify it under the terms of the GNU General Public License\n"

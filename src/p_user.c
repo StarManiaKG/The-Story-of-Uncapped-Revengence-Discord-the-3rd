@@ -3,7 +3,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2022 by Sonic Team Junior.
+// Copyright (C) 1999-2023 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -1345,8 +1345,10 @@ void P_GiveCoopLives(player_t *player, INT32 numlives, boolean sound)
 void P_DoSuperTransformation(player_t *player, boolean giverings)
 {
 	player->powers[pw_super] = 1;
+#ifndef APRIL_FOOLS	
 	if (!(mapheaderinfo[gamemap-1]->levelflags & LF_NOSSMUSIC) && P_IsLocalPlayer(player))
 		P_PlayJingle(player, JT_SUPER);
+#endif
 
 	S_StartSound(NULL, sfx_supert); //let all players hear it -mattw_cfi
 
@@ -1645,9 +1647,14 @@ void P_RestoreMusic(player_t *player)
 		return;
 
 	// Super
+#ifndef APRIL_FOOLS
 	else if (player->powers[pw_super] && !(mapheaderinfo[gamemap-1]->levelflags & LF_NOSSMUSIC)
 		&& !S_RecallMusic(JT_SUPER, false))
 		P_PlayJingle(player, JT_SUPER);
+#else
+	else if (player->powers[pw_super])
+		S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
+#endif
 
 	// Invulnerability
 	else if (player->powers[pw_invulnerability] > 1 && !player->powers[pw_super])
@@ -4349,15 +4356,20 @@ static void P_DoSuperStuff(player_t *player)
 //
 boolean P_SuperReady(player_t *player)
 {
-	if (!player->powers[pw_super]
-	&& ((!cv_superwithshield.value && !player->powers[pw_invulnerability]) || (cv_superwithshield.value))
+	if ((!player->powers[pw_super]
+	&& ((!TransformSuperWithShield && !player->powers[pw_invulnerability]) || (TransformSuperWithShield))
 	&& !player->powers[pw_tailsfly]
 	&& (player->charflags & SF_SUPER)
 	&& (player->pflags & PF_JUMPED)
-	&& ((!(player->powers[pw_shield] & SH_NOSTACK) && !cv_superwithshield.value) || (cv_superwithshield.value))
+	&& ((!(player->powers[pw_shield] & SH_NOSTACK) && !TransformSuperWithShield) || (TransformSuperWithShield))
 	&& !(maptol & TOL_NIGHTS)
 	&& ALL7EMERALDS(emeralds)
 	&& (player->rings >= 50))
+
+#ifdef APRIL_FOOLS
+	|| (cv_ultimatemode.value && player->rings && !player->powers[pw_super] && !netgame)
+#endif
+	)
 		return true;
 
 	return false;
@@ -5068,7 +5080,7 @@ static boolean P_PlayerShieldThink(player_t *player, ticcmd_t *cmd, mobj_t *lock
 		if ((!(player->charflags & SF_NOSHIELDABILITY)) && (cmd->buttons & BT_SPIN && !LUA_HookPlayer(player, HOOK(ShieldSpecial)))) // Spin button effects
 		{
 			// Make sure we're not super, so we don't accidentally run anything here
-			if (cv_superwithshield.value && P_SuperReady(player))
+			if (TransformSuperWithShield && P_SuperReady(player))
 				return false;
 			
 			// Force stop
@@ -5185,13 +5197,37 @@ static void P_DoJumpStuff(player_t *player, ticcmd_t *cmd)
 			;
 		else if (P_PlayerShieldThink(player, cmd, lockonthok, visual))
 			;
-		else if ((cmd->buttons & BT_SPIN))
+		else if (((cmd->buttons & BT_SPIN))
+#ifdef APRIL_FOOLS
+			|| (cv_ultimatemode.value && (cmd->buttons & BT_JUMP) && !(players[consoleplayer].powers[pw_super]))
+#endif
+		)
 		{
-			if (!(player->pflags & PF_SPINDOWN) && P_SuperReady(player))
+			if ((!(player->pflags & PF_SPINDOWN) && P_SuperReady(player))
+#ifdef APRIL_FOOLS
+				|| (cv_ultimatemode.value && !netgame && P_SuperReady(player))
+#endif
+			)
 			{
-				// If you can turn super and aren't already,
-				// and you don't have a shield, do it!
-				P_DoSuperTransformation(player, false);
+#ifdef APRIL_FOOLS
+				if (cv_ultimatemode.value && !netgame)
+				{
+					if (gametyperules & GTR_POWERSTONES)
+					{
+						if (players[consoleplayer].powers[pw_emeralds] != 127)
+							players[consoleplayer].powers[pw_emeralds] = ((EMERALD7)*2)-1;
+					}
+					else
+					{
+						if (emeralds != 127)
+							emeralds = ((EMERALD7)*2)-1;
+					}
+
+					if (!(player->charflags & SF_SUPER))
+						player->charflags += SF_SUPER;
+				}
+#endif
+				P_DoSuperTransformation(player, false); // If you can turn super and aren't already, do it!
 			}
 			else if (!LUA_HookPlayer(player, HOOK(JumpSpinSpecial)))
 				switch (player->charability)
