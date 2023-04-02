@@ -90,6 +90,8 @@ UINT8 modeattacking = ATTACKING_NONE;
 boolean disableSpeedAdjust = false;
 boolean imcontinuing = false;
 boolean runemeraldmanager = false;
+boolean camera_motionblur;
+INT32 forward_postimgparam;
 
 // menu demo things
 UINT8  numDemos      = 3;
@@ -1724,6 +1726,7 @@ void G_DoLoadLevel(boolean resetplayer)
 		titlemapinaction = TITLEMAP_OFF;
 
 	G_SetGamestate(GS_LEVEL);
+	I_UpdateMouseGrab();
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{

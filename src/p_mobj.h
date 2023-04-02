@@ -497,7 +497,7 @@ extern boolean runemeraldmanager;
 extern INT32 numstarposts;
 #endif
 
-boolean camera_motionblur;
-INT32 forward_postimgparam;
+extern boolean camera_motionblur;
+extern INT32 forward_postimgparam;
 boolean P_CheckMotionBlur(void);
 void P_SetActiveMotionBlur(boolean active, INT32 param);
