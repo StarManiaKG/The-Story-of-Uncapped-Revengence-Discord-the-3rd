@@ -1345,10 +1345,12 @@ void P_GiveCoopLives(player_t *player, INT32 numlives, boolean sound)
 void P_DoSuperTransformation(player_t *player, boolean giverings)
 {
 	player->powers[pw_super] = 1;
-#ifndef APRIL_FOOLS	
-	if (!(mapheaderinfo[gamemap-1]->levelflags & LF_NOSSMUSIC) && P_IsLocalPlayer(player))
-		P_PlayJingle(player, JT_SUPER);
+	if ((!(mapheaderinfo[gamemap-1]->levelflags & LF_NOSSMUSIC) && P_IsLocalPlayer(player))
+#ifdef APRIL_FOOLS
+		&& (!cv_ultimatemode.value)
 #endif
+	)
+		P_PlayJingle(player, JT_SUPER);
 
 	S_StartSound(NULL, sfx_supert); //let all players hear it -mattw_cfi
 
@@ -1647,14 +1649,13 @@ void P_RestoreMusic(player_t *player)
 		return;
 
 	// Super
-#ifndef APRIL_FOOLS
-	else if (player->powers[pw_super] && !(mapheaderinfo[gamemap-1]->levelflags & LF_NOSSMUSIC)
+	else if ((player->powers[pw_super] && !(mapheaderinfo[gamemap-1]->levelflags & LF_NOSSMUSIC)
 		&& !S_RecallMusic(JT_SUPER, false))
-		P_PlayJingle(player, JT_SUPER);
-#else
-	else if (player->powers[pw_super])
-		S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
+#ifdef APRIL_FOOLS
+		&& (!cv_ultimatemode.value)
 #endif
+	)
+		P_PlayJingle(player, JT_SUPER);
 
 	// Invulnerability
 	else if (player->powers[pw_invulnerability] > 1 && !player->powers[pw_super])
@@ -5199,7 +5200,7 @@ static void P_DoJumpStuff(player_t *player, ticcmd_t *cmd)
 			;
 		else if (((cmd->buttons & BT_SPIN))
 #ifdef APRIL_FOOLS
-			|| (cv_ultimatemode.value && (cmd->buttons & BT_JUMP) && !(players[consoleplayer].powers[pw_super]))
+			|| (cv_ultimatemode.value && (cmd->buttons & BT_JUMP) && !netgame && !(players[consoleplayer].powers[pw_super]))
 #endif
 		)
 		{
