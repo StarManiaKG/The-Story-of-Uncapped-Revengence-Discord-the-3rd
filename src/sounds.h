@@ -877,6 +877,9 @@ typedef enum
 	sfx_requst,
 	sfx_syfail,
 
+	// other star sounds
+	sfx_dygatce,
+
 	// free slots for S_AddSoundFx() at run-time --------------------
 	sfx_freeslot0,
 	//

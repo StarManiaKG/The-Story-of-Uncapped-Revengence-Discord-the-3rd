@@ -826,7 +826,10 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"join",   false,  96,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, "Player Joined Server"},
   {"leave",  false,  96,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, "Player Left Server"}, 
   {"requst", false,  96,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, "Discord Join Request Received"}, 
-  {"syfail", false,  96,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, "Sync Failure"}, 
+  {"syfail", false,  96,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, "Sync Failure"},
+
+  // star stuff yay
+  {"dygatce",false,  96,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, "Final Demo Joke"},
 
   // skin sounds free slots to add sounds at run time (Boris HACK!!!)
   // initialized to NULL

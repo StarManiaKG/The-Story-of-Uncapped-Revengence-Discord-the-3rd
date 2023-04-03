@@ -472,8 +472,8 @@ static void D_Display(void)
 	}
 
 #ifdef APRIL_FOOLS
-	if (cv_ultimatemode.value && (gamestate == GS_ENDING))
-		I_Error("SIGSEGV - seventh sentinel");
+	if (cv_ultimatemode.value && gamestate == (GS_ENDING|GS_CREDITS|GS_EVALUATION))
+		I_Error("SIGSEGV - seventh sentinel (core dumped)");
 #endif
 
 	// STUPID race condition...

@@ -2483,8 +2483,11 @@ static void Command_Tunes_f(void)
 	const size_t argc = COM_Argc();
 
 #ifdef APRIL_FOOLS
-	CONS_Printf("Nice Try.\n");
-	return;
+	if (cv_ultimatemode.value)
+	{
+		CONS_Printf("Nice Try. Maybe there's a command you need to turn off, perhaps?\n");
+		return;
+	}
 #endif
 
 	if (jukeboxMusicPlaying)
@@ -2521,7 +2524,10 @@ static void Command_Tunes_f(void)
 	else if (!strcasecmp(tunearg, "-default"))
 	{
 #ifdef APRIL_FOOLS
-		tunearg = "_hehe";
+		if (cv_ultimatemode.value)
+			tunearg = "_hehe";
+		else
+			tunearg = mapheaderinfo[gamemap-1]->musname;
 #else
 		tunearg = mapheaderinfo[gamemap-1]->musname;
 #endif

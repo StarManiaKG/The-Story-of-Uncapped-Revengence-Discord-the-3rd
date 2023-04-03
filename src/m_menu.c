@@ -132,6 +132,7 @@ typedef enum
 	QUITAMSG1,
 	QUITAMSG2,
 	QUITAMSG3,
+	QUITAMSG4,
 #endif
 
 	NUM_QUITMESSAGES
@@ -3102,23 +3103,20 @@ void Discord_option_Onchange(void)
 #ifdef APRIL_FOOLS
 static void STAR_AprilFools_OnChange(void)
 {
-	M_ResetJukebox();
-	
 	if (Playing() || playeringame[consoleplayer])
 	{
-		if (!cv_ultimatemode.value)
+		if (!cv_ultimatemode.value && cv_ultimatemode.changed)
 		{
 			CV_StealthSetValue(&cv_ultimatemode, 1);
-			CONS_Printf("Nice Try.\n");
+			CONS_Printf("Nice Try. You need to be on the title screen in order to change this.\n");
 		}
 
 		if (cv_ultimatemode.value)
 		{
-			if (cv_ultimatemode.value)
-				strncpy(mapmusname, "_hehe", 7);
-			else
-				strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname, 7);
-
+			if (jukeboxMusicPlaying)
+				M_ResetJukebox();
+			
+			strncpy(mapmusname, "_hehe", 7);
 			mapmusname[6] = 0;
 			mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
 			mapmusposition = mapheaderinfo[gamemap-1]->muspos;
@@ -3126,6 +3124,9 @@ static void STAR_AprilFools_OnChange(void)
 			S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
 		}
 	}
+
+	OP_Tsourdt3rdOptionsMenu[op_aprilfools].status =
+		((!(Playing() && playeringame[consoleplayer] && cv_ultimatemode.value)) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
 }
 #endif
 
@@ -4673,9 +4674,10 @@ void M_Init(void)
 
 	// April Fools Messages //
 #ifdef APRIL_FOOLS
-	quitmsg[QUITAMSG1] = M_GetText("Aww, was today's April Fools\ntoo much for you?\n\n(Press 'Y' to quit)");
+	quitmsg[QUITAMSG1] = M_GetText("Aww, was April Fools\ntoo much for you to handle?\n\n(Press 'Y' to quit)");
 	quitmsg[QUITAMSG2] = M_GetText("Happy April Fools!\n\n(Press 'Y' to quit)");
 	quitmsg[QUITAMSG3] = M_GetText("Wait!\nActivate Ultimate Mode!\n\n(Press 'Y' to quit)");
+	quitmsg[QUITAMSG4] = M_GetText("Happy April Fools... week,\nI suppose?\n\n(Press 'Y' to quit)");
 #endif
 
 	/*
@@ -14559,7 +14561,8 @@ static void M_QuitSRB2(INT32 choice)
 	// between 1 and maximum number.
 	(void)choice;
 
-	char *maptitle = G_BuildMapTitle(gamemap);
+	INT32 RandomMessage; 						// Helps Add More Dynamic Things to the Quit MessageThing
+	char *maptitle = G_BuildMapTitle(gamemap); 	// Needed for Dynamic Message QUITSMSG3
 
 	/* Star Quit Messages */
 	// Static
@@ -14575,13 +14578,21 @@ static void M_QuitSRB2(INT32 choice)
 #endif
 
 #ifndef APRIL_FOOLS
-	M_StartMessage(quitmsg[M_RandomKey(NUM_QUITMESSAGES)], M_QuitResponse, MM_YESNO);
+	RandomMessage = M_RandomKey(NUM_QUITMESSAGES);
 #else
 	if (cv_ultimatemode.value)
-		M_StartMessage(quitmsg[M_RandomRange(QUITAMSG1, QUITAMSG3)], M_QuitResponse, MM_YESNO);
+		RandomMessage = M_RandomRange(QUITAMSG1, QUITAMSG4);
 	else
-		M_StartMessage(quitmsg[M_RandomKey(NUM_QUITMESSAGES)], M_QuitResponse, MM_YESNO);
+		RandomMessage = M_RandomKey(NUM_QUITMESSAGES);
 #endif
+
+	switch(RandomMessage)
+	{
+		case QUIT2MSG3: S_StartSound(NULL, sfx_dygatce); break;
+		default: BwehHehHe(); break;
+	}
+
+	M_StartMessage(quitmsg[RandomMessage], M_QuitResponse, MM_YESNO);
 
 	Z_Free(maptitle);
 }
@@ -14778,8 +14789,7 @@ static void M_Tsourdt3rdOptions(INT32 choice)
 
 	// Game Options //
 #ifdef APRIL_FOOLS
-	OP_Tsourdt3rdOptionsMenu[op_aprilfools].status =
-		((!(Playing() && playeringame[consoleplayer])) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+	STAR_AprilFools_OnChange();
 #endif
 
 	// Player Options //
@@ -15157,10 +15167,23 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 
 			if (Playing())
 			{
+				player_t *player = &players[consoleplayer];
+
 #ifdef APRIL_FOOLS
-				S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
+				if (cv_ultimatemode.value)
+					S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
+				else
+				{
+					if (players[consoleplayer].powers[pw_super])
+						P_PlayJingle(player, JT_SUPER);
+					else
+						S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
+				}
 #else
-				S_ChangeMusicEx(mapheaderinfo[gamemap-1]->musname, mapmusflags, true, mapmusposition, 0, 0);
+				if (players[consoleplayer].powers[pw_super])
+					P_PlayJingle(player, JT_SUPER);
+				else
+					S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
 #endif
 			}
 			break;
@@ -15270,10 +15293,23 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 		{
 			if (Playing())
 			{
+				player_t *player = &players[consoleplayer];
+
 #ifdef APRIL_FOOLS
-				S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
+				if (cv_ultimatemode.value)
+					S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
+				else
+				{
+					if (players[consoleplayer].powers[pw_super])
+						P_PlayJingle(player, JT_SUPER);
+					else
+						S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
+				}
 #else
-				S_ChangeMusicEx(mapheaderinfo[gamemap-1]->musname, mapmusflags, true, mapmusposition, 0, 0);
+				if (players[consoleplayer].powers[pw_super])
+					P_PlayJingle(player, JT_SUPER);
+				else
+					S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
 #endif
 			}
 		}
