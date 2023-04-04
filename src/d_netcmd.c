@@ -634,7 +634,7 @@ void D_RegisterServerCommands(void)
 #endif
 
 	CV_RegisterVar(&cv_discordinvites);
-	RegisterNetXCmd(XD_DISCORD, Got_DiscordInfo);
+	RegisterNetXCmd(XD_DISCORD,Got_DiscordInfo);
 }
 
 // =========================================================================
@@ -4718,9 +4718,6 @@ void Command_ExitGame_f(void)
 
 	if (!modeattacking)
 		D_StartTitle();
-
-	// Star Stuff YAY
-	CV_StealthSetValue(&cv_superwithshield, TransformSuperWithShield);
 }
 
 void Command_Retry_f(void)
@@ -5128,7 +5125,7 @@ void Got_DiscordInfo(UINT8 **p, INT32 playernum)
 #endif
 }
 
-//Star Commands: Electric Boogalo LETS GOOOOOOO
+// Star Commands: Electric Boogalo LETS GOOOOOOO //
 static void STAR_UseContinues_OnChange(void)
 {
 	if (Playing())

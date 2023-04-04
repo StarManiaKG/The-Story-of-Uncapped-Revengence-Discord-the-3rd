@@ -12730,28 +12730,6 @@ static mobj_t *P_MakeSoftwareCorona(mobj_t *mo, INT32 height)
 	return corona;
 }
 
-static boolean P_MapAlreadyHasStarPost(mobj_t *mobj)
-{
-	thinker_t *th;
-	mobj_t *mo2;
-
-	for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
-	{
-		if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
-			continue;
-
-		mo2 = (mobj_t *)th;
-
-		if (mo2 == mobj)
-			continue;
-
-		if (mo2->type == MT_STARPOST && mo2->health == mobj->health)
-			return true;
-	}
-
-	return false;
-}
-
 static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean *doangle)
 {
 	boolean override = LUA_HookMapThingSpawn(mobj, mthing);
@@ -13073,10 +13051,43 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		}
 		break;
 	case MT_STARPOST:
-		mobj->health = (mthing->angle/360) + 1;
-		if (!P_MapAlreadyHasStarPost(mobj))
+	{
+		thinker_t* th;
+		mobj_t* mo2;
+		boolean foundanother = false;
+
+		if (mthing->extrainfo)
+			// Allow thing Parameter to define star post num too!
+			// For starposts above param 15 (the 16th), add 360 to the angle like before and start parameter from 1 (NOT 0)!
+			// So the 16th starpost is angle=0 param=15, the 17th would be angle=360 param=1.
+			// This seems more intuitive for mappers to use until UDMF is ready, since most SP maps won't have over 16 consecutive star posts.
+			mobj->health = mthing->extrainfo + (mthing->angle/360)*15 + 1;
+		else
+			// Old behavior if Parameter is 0; add 360 to the angle for each consecutive star post.
+			mobj->health = (mthing->angle/360) + 1;
+
+		// See if other starposts exist in this level that have the same value.
+		for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
+		{
+			if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
+				continue;
+
+			mo2 = (mobj_t*)th;
+
+			if (mo2 == mobj)
+				continue;
+
+			if (mo2->type == MT_STARPOST && mo2->health == mobj->health)
+			{
+				foundanother = true;
+				break;
+			}
+		}
+
+		if (!foundanother)
 			numstarposts++;
 		break;
+	}
 	case MT_SPIKE:
 		// Pop up spikes!
 		if (mthing->options & MTF_OBJECTSPECIAL)

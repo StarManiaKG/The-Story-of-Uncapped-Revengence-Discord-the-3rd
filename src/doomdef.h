@@ -652,7 +652,16 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 #undef UPDATE_ALERT
 #endif
 
-// STAR STUFF YAY
+// Enable Alam's Lighting
+//#define ALAM_LIGHTING
+
+//// STAR STUFF YAY ////
+// Savefiles //
+//#define SAVEGAMEFOLDER "SRB2" // barely does anything, here for the future
+//extern char savegamefolder[256];
+
+// Events //
+// April Fools
 #define APRIL_FOOLS
 
 #endif // __DOOMDEF__
