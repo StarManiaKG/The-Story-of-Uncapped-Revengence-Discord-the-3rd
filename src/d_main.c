@@ -146,6 +146,9 @@ INT32 extrawads;
 const char *pandf = "%s" PATHSEP "%s";
 static char addonsdir[MAX_WADPATH];
 
+// star stuff yay
+//char savegamefolder[256];
+
 //
 // EVENT HANDLING
 //
@@ -866,13 +869,22 @@ void D_SRB2Loop(void)
 		{
 			renderisnewtic = false;
 		}
-
+		
+		// STAR Stuff //
 		if (autoloading)
 		{
 			if (!savemoddata)
 				modifiedgame = false;
 			autoloading = false;
 		}
+
+		if ((!modifiedgame || savemoddata) && cv_ultimatemode.value)
+		{
+			CONS_Printf("You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nyour game has been set to modified.\n");
+			G_SetGameModified(false);
+		}
+
+		// That's the End of That :p //
 
 		if (interp)
 		{

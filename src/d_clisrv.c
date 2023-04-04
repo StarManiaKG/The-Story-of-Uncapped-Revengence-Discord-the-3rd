@@ -3755,6 +3755,9 @@ void D_QuitNetGame(void)
 
 	D_CloseConnection();
 	ClearAdminPlayers();
+	
+	// Star Stuff YAY
+	CV_StealthSetValue(&cv_superwithshield, TransformSuperWithShield);
 
 	DEBFILE("===========================================================================\n"
 	        "                         Log finish\n"

@@ -516,6 +516,8 @@ extern consvar_t cv_jukeboxhud; //, cv_jukeboxspeed;
 extern UINT16 menuColor[16];
 
 extern boolean jukeboxMusicPlaying;
+extern boolean jukeboxChecked, jukeboxUnlocked;
+
 extern char jukeboxMusicName[22+12];
 extern char jukeboxMusicTrack[7];
 void M_ResetJukebox(void);
