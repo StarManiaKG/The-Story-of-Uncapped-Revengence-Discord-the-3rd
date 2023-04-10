@@ -48,6 +48,16 @@ static INT32 current_track;
 static Music_Emu *gme;
 #endif
 
+#ifdef HAVE_MIXERX
+#include "SDL_mixer_ext.h"
+#endif
+
+/* This macro will evaluate to true if compiled with SDL_mixer at least X.Y.Z */
+#ifndef SDL_MIXER_VERSION_ATLEAST
+#define SDL_MIXER_VERSION_ATLEAST(X, Y, Z) \
+	(SDL_MIXER_COMPILEDVERSION >= SDL_VERSIONNUM(X, Y, Z))
+#endif
+
 //
 // SYSTEM
 //
@@ -516,6 +526,17 @@ boolean I_SetSongSpeed(float speed)
 		return false;
 	if (speed > 250.0f)
 		speed = 250.0f; //limit speed up to 250x
+
+#ifdef HAVE_MIXERX
+#if (SDL_MIXER_VERSION_ATLEAST(2,6,0))
+	if (music)
+	{
+		Mix_SetMusicSpeed(music, (double)speed);
+		return true;
+	}
+	else
+#endif
+#endif
 
 #ifdef HAVE_LIBGME
 	// Try to set GME speed

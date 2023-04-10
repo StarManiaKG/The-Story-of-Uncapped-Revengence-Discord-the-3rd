@@ -658,10 +658,9 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 //// STAR STUFF YAY ////
 // Savefiles //
 //#define SAVEGAMEFOLDER "SRB2" // barely does anything, here for the future
-//extern char savegamefolder[256];
 
 // Events //
 // April Fools
-#define APRIL_FOOLS
+//#define APRIL_FOOLS
 
 #endif // __DOOMDEF__

@@ -503,7 +503,7 @@ void M_RefreshPauseMenu(void);
 
 //star stuff weeeeee
 extern boolean AlwaysOverlayInvincibility, TransformSuperWithShield;
-extern consvar_t cv_startupscreen, cv_stjrintro, cv_menucolor, cv_fpscountercolor, cv_pausemenustyle, cv_automapoutsidedevmode;
+extern consvar_t cv_startupscreen, cv_stjrintro, cv_menucolor, cv_fpscountercolor, cv_tpscountercolor, cv_pausemenustyle, cv_automapoutsidedevmode;
 
 #ifdef APRIL_FOOLS
 extern consvar_t cv_ultimatemode;
@@ -511,12 +511,12 @@ extern consvar_t cv_ultimatemode;
 
 extern consvar_t cv_perfectsave, cv_perfectsavestripe1, cv_perfectsavestripe2, cv_perfectsavestripe3;
 extern consvar_t cv_superwithshield, cv_armageddonnukesuper, cv_alwaysoverlayinvuln;
-extern consvar_t cv_jukeboxhud; //, cv_jukeboxspeed;
+extern consvar_t cv_jukeboxhud, cv_jukeboxspeed;
 
 extern UINT16 menuColor[16];
 
 extern boolean jukeboxMusicPlaying;
-extern boolean jukeboxChecked, jukeboxUnlocked;
+extern boolean jukeboxUnlocked;
 
 extern char jukeboxMusicName[22+12];
 extern char jukeboxMusicTrack[7];

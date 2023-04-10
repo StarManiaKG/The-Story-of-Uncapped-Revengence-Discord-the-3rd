@@ -146,8 +146,12 @@ INT32 extrawads;
 const char *pandf = "%s" PATHSEP "%s";
 static char addonsdir[MAX_WADPATH];
 
-// star stuff yay
+// STAR stuff yay
 //char savegamefolder[256];
+
+boolean aprilfoolsmode; 		// April Fools Event Setter
+boolean eastermode;				// Easter Event Setter
+boolean xmasmode, xmasoverride;	// Christmas Event Setter
 
 //
 // EVENT HANDLING
@@ -295,6 +299,69 @@ void D_ProcessEvents(void)
 		G_SetMouseDeltas(mouse.rdx, mouse.rdy, 1);
 	if (mouse2.rdx || mouse2.rdy)
 		G_SetMouseDeltas(mouse2.rdx, mouse2.rdy, 2);
+}
+
+// FUN STAR STUFF :) //
+// Ported from Final Demo, Date Checking is Back!
+static void STAR_Time(void)
+{
+	time_t t1; // Date-Checker
+	struct tm* tptr; // Date-Checker: Electric Boogalo
+
+	// Do Special Stuff //
+	t1 = time(NULL);
+	if (t1 != (time_t)-1)
+	{
+		tptr = localtime(&t1);
+
+		if (tptr)
+		{
+			// April Fools
+			if (tptr->tm_mon == 3 && (tptr->tm_mday >= 1 && tptr->tm_mday <= 3))
+			{
+				aprilfoolsmode = true;
+				modifiedgame = false;
+			}
+
+			// Easter (Changes Every Year Though, so just have it for all of April)
+			else if (tptr->tm_mon == 3)
+			{
+				eastermode = true;
+				modifiedgame = false;
+			}
+
+			// Christmas Eve to New Years
+			else if (((tptr->tm_mon == 11 && tptr->tm_mday >= 24)) && (!M_CheckParm("-noxmas")))
+			{
+				xmasmode = true;
+				xmasoverride = true;
+				modifiedgame = false;
+			}
+		}
+	}
+
+	// Do Special Stuff: Electric Boogalo //
+	// April Fools
+	if (M_CheckParm("-aprilfools"))
+	{
+		aprilfoolsmode = true;
+		modifiedgame = false;
+	}
+
+	// Easter
+	else if (M_CheckParm("-easter"))
+	{
+		eastermode = true;
+		modifiedgame = false;
+	}
+
+	// Christmas
+	else if (!eastermode && M_CheckParm("-xmas"))
+	{
+		xmasmode = true;
+		xmasoverride = true;
+		modifiedgame = false;
+	}
 }
 
 //
@@ -878,12 +945,13 @@ void D_SRB2Loop(void)
 			autoloading = false;
 		}
 
-		if ((!modifiedgame || savemoddata) && cv_ultimatemode.value)
+#ifdef APRIL_FOOLS
+		if ((!modifiedgame || savemoddata) && (cv_ultimatemode.value))
 		{
 			CONS_Printf("You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nyour game has been set to modified.\n");
 			G_SetGameModified(false);
 		}
-
+#endif
 		// That's the End of That :p //
 
 		if (interp)
@@ -1247,11 +1315,7 @@ static void IdentifyVersion(void)
 #endif
 
 	// Add this custom build's fun stuff
-#ifndef APRIL_FOOLS
 	D_AddFile(&startupwadfiles, va(pandf,srb2waddir, "tsourdt3rd.pk3"));
-#else
-	D_AddFile(&startupwadfiles, va(pandf,srb2waddir, "_tsourdt3rd.pk3"));
-#endif
 
 	// Add the music
 #if !defined (HAVE_SDL) || defined (HAVE_MIXER)
@@ -1373,6 +1437,9 @@ void D_SRB2Main(void)
 
 	// Netgame URL special case: change working dir to EXE folder.
 	ChangeDirForUrlHandler();
+
+	// STAR: Check the Time on Our Computer
+	STAR_Time();
 
 	// identify the main IWAD file to use
 	IdentifyVersion();

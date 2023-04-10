@@ -53,3 +53,8 @@ void D_AdvanceDemo(void);
 void D_StartTitle(void);
 
 #endif //__D_MAIN__
+
+// Event Setter
+extern boolean aprilfoolsmode; 		    // April Fools Event Setter
+extern boolean eastermode;				// Easter Event Setter
+extern boolean xmasmode, xmasoverride;	// Christmas Event Setter
