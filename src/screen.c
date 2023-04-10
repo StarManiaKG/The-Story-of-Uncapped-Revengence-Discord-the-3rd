@@ -545,44 +545,94 @@ void SCR_DisplayTicRate(void)
 	UINT32 cap = R_GetFramerateCap();
 	double fps = round(averageFPS);
 
+	// TPS Specific
+	tic_t i;
+	tic_t ontic = I_GetTime();
+	tic_t totaltics = 0;
+	static tic_t lasttic;
+	static boolean ticsgraph[TICRATE];
+	INT32 tpscntcolor = 0;
+
 	if (gamestate == GS_NULL)
 		return;
 
-	if (cap > 0)
+	// FPS //
+	if (cv_ticrate.value)
 	{
-		if (fps <= cap / 2.0) ticcntcolor = V_REDMAP;
-		else if (fps <= cap * 0.90) ticcntcolor = V_YELLOWMAP;
-		else {
+		if (cap > 0)
+		{
+			if (fps <= cap / 2.0) ticcntcolor = V_REDMAP;
+			else if (fps <= cap * 0.90) ticcntcolor = V_YELLOWMAP;
+			else {
+				ticcntcolor = positiveTicRateColor[cv_fpscountercolor.value];
+			}
+		}
+		else
+		{
 			ticcntcolor = positiveTicRateColor[cv_fpscountercolor.value];
 		}
+
+		if (cv_ticrate.value == 2) // compact counter
+		{			
+			V_DrawRightAlignedString(vid.width, h,
+				ticcntcolor|V_NOSCALESTART|V_USERHUDTRANS, va("%04.2f", averageFPS)); // use averageFPS directly
+		}
+		else // full counter
+		{
+			const char *drawnstr;
+			INT32 width;
+
+			// The highest assignable cap is < 1000, so 3 characters is fine.
+			if (cap > 0)
+				drawnstr = va("%3.0f/%3u", fps, cap);
+			else
+				drawnstr = va("%4.2f", averageFPS);
+
+			width = V_StringWidth(drawnstr, V_NOSCALESTART);
+
+			V_DrawString(vid.width - ((7 * 8 * vid.dupx) + V_StringWidth("FPS: ", V_NOSCALESTART)), h,
+				menuColor[cv_menucolor.value]|V_NOSCALESTART|V_USERHUDTRANS, "FPS:");
+			V_DrawString(vid.width - width, h,
+				ticcntcolor|V_NOSCALESTART|V_USERHUDTRANS, drawnstr);
+		}
 	}
-	else
+
+	// TPS //
+	if (cv_tpsrate.value)
 	{
-		ticcntcolor = positiveTicRateColor[cv_fpscountercolor.value];
-	}
+		for (i = lasttic + 1; i < TICRATE+lasttic && i < ontic; ++i)
+			ticsgraph[i % TICRATE] = false;
+		
+		ticsgraph[ontic % TICRATE] = true;
 
-	if (cv_ticrate.value == 2) // compact counter
-	{
-		V_DrawRightAlignedString(vid.width, h,
-			ticcntcolor|V_NOSCALESTART|V_USERHUDTRANS, va("%04.2f", averageFPS)); // use averageFPS directly
-	}
-	else if (cv_ticrate.value == 1) // full counter
-	{
-		const char *drawnstr;
-		INT32 width;
+		for (i = 0; i < TICRATE; ++i)
+			if (ticsgraph[i])
+				++totaltics;
 
-		// The highest assignable cap is < 1000, so 3 characters is fine.
-		if (cap > 0)
-			drawnstr = va("%3.0f/%3u", fps, cap);
-		else
-			drawnstr = va("%4.2f", averageFPS);
+		if (totaltics <= TICRATE/2) tpscntcolor = V_REDMAP;
+		else if (totaltics <= TICRATE-8) tpscntcolor = V_YELLOWMAP;
+		else {
+			tpscntcolor = positiveTicRateColor[cv_tpscountercolor.value];
+		}
 
-		width = V_StringWidth(drawnstr, V_NOSCALESTART);
+		if (cv_tpsrate.value == 2) // compact counter
+			V_DrawRightAlignedString(vid.width, h-(8*vid.dupy),
+				tpscntcolor|V_NOSCALESTART|V_USERHUDTRANS, va("%02d", totaltics));
+		else // full counter
+		{
+			const char *drawntpsStr;
+			INT32 tpswidth;
+			
+			drawntpsStr = va("%02d/%02u", totaltics, TICRATE);
+			tpswidth = V_StringWidth(drawntpsStr, V_NOSCALESTART);
 
-		V_DrawString(vid.width - ((7 * 8 * vid.dupx) + V_StringWidth("FPS: ", V_NOSCALESTART)), h,
-			menuColor[cv_menucolor.value]|V_NOSCALESTART|V_USERHUDTRANS, "FPS:");
-		V_DrawString(vid.width - width, h,
-			ticcntcolor|V_NOSCALESTART|V_USERHUDTRANS, drawnstr);
+			V_DrawString(vid.width - ((7 * 8 * vid.dupx) + V_StringWidth("TPS: ", V_NOSCALESTART)), h-(8*vid.dupy),
+				menuColor[cv_menucolor.value]|V_NOSCALESTART|V_USERHUDTRANS, "TPS:");
+			V_DrawString(vid.width - tpswidth, h-(8*vid.dupy),
+				tpscntcolor|V_NOSCALESTART|V_USERHUDTRANS, drawntpsStr);
+		}
+
+		lasttic = ontic;
 	}
 }
 

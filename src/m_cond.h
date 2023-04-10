@@ -192,3 +192,12 @@ INT32 M_UnlockableSkinNum(unlockable_t *unlock);
 INT32 M_EmblemSkinNum(emblem_t *emblem);
 
 #define M_Achieved(a) ((a) >= MAXCONDITIONSETS || conditionSets[a].achieved)
+
+// =============
+// STAR Stuff
+// =============
+// Easter
+#define NUMEGGS 12
+extern INT32 foundeggs;
+
+extern emblem_t egglocations[NUMEGGS];

@@ -492,7 +492,7 @@ static void STAR_SuperWithShield_OnChange(void);
 static void STAR_InvulnAndShield_OnChange(void);
 
 static void STAR_JukeboxHUD_OnChange(void);
-//static void STAR_JukeboxSpeed_OnChange(void);
+static void STAR_JukeboxSpeed_OnChange(void);
 
 // ==========================================================================
 // CONSOLE VARIABLES AND THEIR POSSIBLE VALUES GO HERE.
@@ -596,7 +596,7 @@ static CV_PossibleValue_t menucolor_cons_t[] = {
 	{0, NULL}};
 consvar_t cv_menucolor = CVAR_INIT ("menucolor", "Default", CV_SAVE, menucolor_cons_t, NULL);
 
-static CV_PossibleValue_t fpscountercolor_t[] = {
+static CV_PossibleValue_t ticcountercolor_t[] = {
 	{0, "Default"},
 	
 	{1, "Magenta"},
@@ -615,7 +615,8 @@ static CV_PossibleValue_t fpscountercolor_t[] = {
 	{14, "Inverted"},
 
 	{0, NULL}};
-consvar_t cv_fpscountercolor = CVAR_INIT ("fpscountercolor", "Default", CV_SAVE, fpscountercolor_t, NULL);
+consvar_t cv_fpscountercolor = CVAR_INIT ("fpscountercolor", "Default", CV_SAVE, ticcountercolor_t, NULL);
+consvar_t cv_tpscountercolor = CVAR_INIT ("tpscountercolor", "Default", CV_SAVE, ticcountercolor_t, NULL);
 
 static CV_PossibleValue_t pausestyle_t[] = {{0, "Default"}, {1, "Old-School"}, {0, NULL}};
 consvar_t cv_pausemenustyle = CVAR_INIT ("pausemenustyle", "Default", CV_SAVE, pausestyle_t, NULL);
@@ -633,14 +634,14 @@ consvar_t cv_perfectsavestripe1 = CVAR_INIT ("perfectsavestripe1", "134", CV_SAV
 consvar_t cv_perfectsavestripe2 = CVAR_INIT ("perfectsavestripe2", "201", CV_SAVE, perfectsavestripe_t, NULL);
 consvar_t cv_perfectsavestripe3 = CVAR_INIT ("perfectsavestripe3", "1", CV_SAVE, perfectsavestripe_t, NULL);
 
-consvar_t cv_superwithshield = CVAR_INIT ("superwithshield", "On", CV_SAVE|CV_CALL, CV_OnOff, STAR_SuperWithShield_OnChange);
-consvar_t cv_armageddonnukesuper = CVAR_INIT ("armageddonnukesuper", "On", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_superwithshield = CVAR_INIT ("superwithshield", "Off", CV_SAVE|CV_CALL, CV_OnOff, STAR_SuperWithShield_OnChange);
+consvar_t cv_armageddonnukesuper = CVAR_INIT ("armageddonnukesuper", "Off", CV_SAVE, CV_OnOff, NULL);
 
-consvar_t cv_alwaysoverlayinvuln = CVAR_INIT ("alwaysoverlayinvincibility", "On", CV_SAVE|CV_CALL, CV_OnOff, STAR_InvulnAndShield_OnChange);
+consvar_t cv_alwaysoverlayinvuln = CVAR_INIT ("alwaysoverlayinvincibility", "Off", CV_SAVE|CV_CALL, CV_OnOff, STAR_InvulnAndShield_OnChange);
 
 consvar_t cv_jukeboxhud = CVAR_INIT ("jukeboxhud", "On", CV_SAVE|CV_CALL, CV_OnOff, STAR_JukeboxHUD_OnChange);
 
-/*static CV_PossibleValue_t jukebox_speed_t[] =  {
+static CV_PossibleValue_t jukebox_speed_t[] =  {
 	// Slowest
 	{1, "0.1"},
 	{2, "0.2"},
@@ -679,7 +680,6 @@ consvar_t cv_jukeboxhud = CVAR_INIT ("jukeboxhud", "On", CV_SAVE|CV_CALL, CV_OnO
 	{25, "2.5"},
 	{0, NULL}};
 consvar_t cv_jukeboxspeed = CVAR_INIT ("jukeboxspeed", "1.0", CV_SAVE|CV_CALL, jukebox_speed_t, STAR_JukeboxSpeed_OnChange);
-*/
 
 // ==========================================================================
 // ORGANIZATION START.
@@ -2577,8 +2577,10 @@ static menuitem_t OP_MonitorToggleMenu[] =
 // STAR OPTIONS LETS GOOOOOOOOOOOOO
 #ifdef APRIL_FOOLS
 #define STAROPTIONREST 5
+#define STARENUMADDITION 1
 #else
 #define STAROPTIONREST 0
+#define STARENUMADDITION 0
 #endif
 
 static menuitem_t OP_Tsourdt3rdOptionsMenu[] =
@@ -2588,46 +2590,49 @@ static menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 	{IT_STRING | IT_CVAR,	NULL,	"Sonic Team Jr Intro",		&cv_stjrintro,		  	   11},
 
 	{IT_STRING | IT_CVAR,	NULL,	"Menu Color",				&cv_menucolor,	   		   21},
-	{IT_STRING | IT_CVAR,	NULL,	"Fps Counter Color",		&cv_fpscountercolor,	   26},
+	{IT_STRING | IT_CVAR,	NULL,	"FPS Counter Color",		&cv_fpscountercolor,	   26},
 
-	{IT_STRING | IT_CVAR,	NULL,	"Pause Menu Style",			&cv_pausemenustyle,	   	   36},
-	{IT_STRING | IT_CVAR,	NULL,	"Automap Outside Devmode",	&cv_automapoutsidedevmode, 41},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Show TPS",                 &cv_tpsrate,         	   36},
+	{IT_STRING | IT_CVAR,	NULL,	"TPS Counter Color",		&cv_tpscountercolor,	   41},
 
-	{IT_STRING | IT_CVAR,	NULL,	"Sonic CD Mode",			&cv_soniccd,	   	   	   51},
+	{IT_STRING | IT_CVAR,	NULL,	"Pause Menu Style",			&cv_pausemenustyle,	   	   51},
+	{IT_STRING | IT_CVAR,	NULL,	"Automap Outside Devmode",	&cv_automapoutsidedevmode, 56},
+
+	{IT_STRING | IT_CVAR,	NULL,	"Sonic CD Mode",			&cv_soniccd,	   	   	   66},
 #ifdef APRIL_FOOLS	
-	{IT_STRING | IT_CVAR,	NULL,	"Ultimate Mode!",			&cv_ultimatemode,	   	   56},
+	{IT_STRING | IT_CVAR,	NULL,	"Ultimate Mode!",			&cv_ultimatemode,	   	   71},
 #endif
 
-	{IT_HEADER, 			NULL, 	"Player Options", 			NULL, 					   60+STAROPTIONREST},
+	{IT_HEADER, 			NULL, 	"Player Options", 			NULL, 					   75+STAROPTIONREST},
 	{IT_STRING | IT_CVAR,	NULL,	"Transform Regardless of Shield",
-																&cv_superwithshield,   	   66+STAROPTIONREST},
+																&cv_superwithshield,   	   81+STAROPTIONREST},
 	{IT_STRING | IT_CVAR,	NULL,	"Armageddon Nuke While Super",
-																&cv_armageddonnukesuper,   71+STAROPTIONREST},
+																&cv_armageddonnukesuper,   86+STAROPTIONREST},
 
 	{IT_STRING | IT_CVAR,	NULL,	"Always Overlay Invincibility",
-																&cv_alwaysoverlayinvuln,   81+STAROPTIONREST},
+																&cv_alwaysoverlayinvuln,   96+STAROPTIONREST},
 
-	{IT_HEADER, 			NULL, 	"Savedata Options", 		NULL, 					   90+STAROPTIONREST},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save", 			&cv_perfectsave, 		   96+STAROPTIONREST},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 1", 	&cv_perfectsavestripe1,	  101+STAROPTIONREST},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 2", 	&cv_perfectsavestripe2,   106+STAROPTIONREST},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 3", 	&cv_perfectsavestripe3,   111+STAROPTIONREST},
+	{IT_HEADER, 			NULL, 	"Savedata Options", 		NULL, 					  105+STAROPTIONREST},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save", 			&cv_perfectsave, 		  111+STAROPTIONREST},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 1", 	&cv_perfectsavestripe1,	  116+STAROPTIONREST},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 2", 	&cv_perfectsavestripe2,   121+STAROPTIONREST},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 3", 	&cv_perfectsavestripe3,   126+STAROPTIONREST},
 
-	{IT_STRING | IT_CVAR,	NULL,	"Continues",				&cv_continues,		  	  121+STAROPTIONREST},
+	{IT_STRING | IT_CVAR,	NULL,	"Continues",				&cv_continues,		  	  136+STAROPTIONREST},
 
-	{IT_HEADER, 			NULL, 	"Server Options", 			NULL,					  130+STAROPTIONREST},
+	{IT_HEADER, 			NULL, 	"Server Options", 			NULL,					  145+STAROPTIONREST},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,	
-							NULL,   "Holepunch Server",  		&cv_rendezvousserver,	  137+STAROPTIONREST},
+							NULL,   "Holepunch Server",  		&cv_rendezvousserver,	  151+STAROPTIONREST},
 	
-	{IT_STRING | IT_CVAR,   NULL,   "Show Connecting Players",  &cv_noticedownload,       151+STAROPTIONREST},
-	{IT_STRING | IT_CVAR,   NULL,   "Max File Transfer (KB)", 	&cv_maxsend,     	      156+STAROPTIONREST},
-	{IT_STRING | IT_CVAR,   NULL,   "File Transfer Packet Rate",&cv_downloadspeed,     	  161+STAROPTIONREST},
+	{IT_STRING | IT_CVAR,   NULL,   "Show Connecting Players",  &cv_noticedownload,       165+STAROPTIONREST},
+	{IT_STRING | IT_CVAR,   NULL,   "Max File Transfer (KB)", 	&cv_maxsend,     	      170+STAROPTIONREST},
+	{IT_STRING | IT_CVAR,   NULL,   "File Transfer Packet Rate",&cv_downloadspeed,     	  175+STAROPTIONREST},
 
-	{IT_STRING | IT_CVAR,   NULL,   "Player Setup While Moving",&cv_movingplayersetup,	  171+STAROPTIONREST},
+	{IT_STRING | IT_CVAR,   NULL,   "Player Setup While Moving",&cv_movingplayersetup,	  185+STAROPTIONREST},
 
-	{IT_HEADER, 			NULL, 	"Miscellanious Extras",     NULL,					  180+STAROPTIONREST},
-	{IT_STRING | IT_CALL, 	NULL, 	"Jukebox",				    M_Tsourdt3rdJukebox,   	  186+STAROPTIONREST},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Jukebox HUD",				&cv_jukeboxhud,   	      191+STAROPTIONREST},
+	{IT_HEADER, 			NULL, 	"Miscellanious Extras",     NULL,					  194+STAROPTIONREST},
+	{IT_STRING | IT_CALL, 	NULL, 	"Jukebox",				    M_Tsourdt3rdJukebox,   	  200+STAROPTIONREST},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Jukebox HUD",				&cv_jukeboxhud,   	      205+STAROPTIONREST},
 };
 static menuitem_t OP_Tsourdt3rdJukeboxMenu[] =
 {
@@ -2636,54 +2641,33 @@ static menuitem_t OP_Tsourdt3rdJukeboxMenu[] =
 
 enum
 {
-#ifndef APRIL_FOOLS
-	op_superwithshield = 9,
-
-	op_alwaysoverlayinvuln = 11,
-
-	op_perfectsave = 13,
-	op_perfectsavestripe1,
-	op_perfectsavestripe2,
-	op_perfectsavestripe3,
-
-	op_continues,
-
-	op_holepunchserver = 19,
-	op_noticedownload,
-	op_maxsend,
-	op_downloadspeed,
-
-	op_movingplayeroptionswitch,
-
-	op_jukebox = 25,
-	op_jukeboxhud,
-#else
-	op_aprilfools = 8,
-	
-	op_superwithshield = 10,
-
-	op_alwaysoverlayinvuln = 12,
-
-	op_perfectsave = 14,
-	op_perfectsavestripe1,
-	op_perfectsavestripe2,
-	op_perfectsavestripe3,
-
-	op_continues,
-
-	op_holepunchserver = 20,
-	op_noticedownload,
-	op_maxsend,
-	op_downloadspeed,
-
-	op_movingplayeroptionswitch,
-
-	op_jukebox = 26,
-	op_jukeboxhud,
+#ifdef APRIL_FOOLS
+	op_aprilfools = 10,
 #endif
+	op_superwithshield = 11+STARENUMADDITION,
+
+	op_alwaysoverlayinvuln = 13+STARENUMADDITION,
+
+	op_perfectsave = 15+STARENUMADDITION,
+	op_perfectsavestripe1,
+	op_perfectsavestripe2,
+	op_perfectsavestripe3,
+
+	op_continues,
+
+	op_holepunchserver = 21+STARENUMADDITION,
+	op_noticedownload,
+	op_maxsend,
+	op_downloadspeed,
+
+	op_movingplayeroptionswitch,
+
+	op_jukebox = 27+STARENUMADDITION,
+	op_jukeboxhud,
 };
 
 #undef STAROPTIONREST
+#undef STARENUMADDITION
 
 // ==========================================================================
 // ALL MENU DEFINITIONS GO HERE
@@ -3758,11 +3742,11 @@ static void STAR_JukeboxHUD_OnChange(void)
 	}
 }
 
-/*static void STAR_JukeboxSpeed_OnChange(void)
+static void STAR_JukeboxSpeed_OnChange(void)
 {
 	if (jukeboxMusicPlaying)
 		S_SpeedMusic(strtof(cv_jukeboxspeed.string, NULL));
-}*/
+}
 
 // ==========================================================================
 // END ORGANIZATION STUFF.
@@ -15370,8 +15354,6 @@ static void M_DrawDiscordRequests(void)
 
 //Star Stuff WEEEE
 boolean jukeboxMenuOpen;
-
-boolean jukeboxChecked;
 boolean jukeboxUnlocked;
 
 static void M_Tsourdt3rdOptions(INT32 choice)
@@ -15412,7 +15394,7 @@ static void M_Tsourdt3rdOptions(INT32 choice)
 	}
 
 	// Misc. Options //
-	if (!jukeboxChecked && !jukeboxUnlocked)
+	if (!jukeboxUnlocked)
 	{
 		for (INT32 i = 0; i < MAXUNLOCKABLES; i++)
 		{
@@ -15432,8 +15414,6 @@ static void M_Tsourdt3rdOptions(INT32 choice)
 				break;
 			}
 		}
-
-		jukeboxChecked = true;
 	}
 	
 	M_SetupNextMenu(&OP_Tsourdt3rdOptionsDef);
@@ -15496,7 +15476,7 @@ static void M_DrawTsourdt3rdJukebox(void)
 			}
 			else
 			{
-				fixed_t work, bpm = curplaying->bpm; //(curplaying->bpm/strtof(cv_jukeboxspeed.string, NULL));
+				fixed_t work, bpm = (curplaying->bpm/strtof(cv_jukeboxspeed.string, NULL));
 				angle_t ang;
 				//bpm = FixedDiv((60*TICRATE)<<FRACBITS, bpm); -- bake this in on load
 
@@ -15687,7 +15667,7 @@ static void M_DrawTsourdt3rdJukebox(void)
 
 		V_DrawFill(165+140-1+15, 60 + i, 1, m, 0); // White Scroll Bar
 
-		/*// Draw the Speed Option //
+		// Draw the Speed Option //
 		// Strings
 		V_DrawString(((BASEVIDWIDTH/2)+15), ((BASEVIDWIDTH/2)+15),
 			(V_SNAPTORIGHT|((soundtestdefs[st_sel] == &soundtestsfx) ? V_TRANSLUCENT : menuColor[cv_menucolor.value])),
@@ -15696,7 +15676,6 @@ static void M_DrawTsourdt3rdJukebox(void)
 		// Arrows
 		V_DrawCharacter(((BASEVIDWIDTH/2)+107), ((BASEVIDWIDTH/2)+15), '\x1C' | V_SNAPTORIGHT | ((soundtestdefs[st_sel] == &soundtestsfx) ? V_TRANSLUCENT : menuColor[cv_menucolor.value]), false); // left
 		V_DrawCharacter(((BASEVIDWIDTH/2)+145), ((BASEVIDWIDTH/2)+15), '\x1D' | V_SNAPTORIGHT | ((soundtestdefs[st_sel] == &soundtestsfx) ? V_TRANSLUCENT : menuColor[cv_menucolor.value]), false); // right
-		*/
 	}
 }
 
@@ -15798,7 +15777,7 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 				else
 				{
 					S_StartSound(NULL, sfx_menu1);
-					//CV_AddValue(&cv_jukeboxspeed, 1);
+					CV_AddValue(&cv_jukeboxspeed, 1);
 				}
 			}
 			break;
@@ -15816,7 +15795,7 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 				else
 				{
 					S_StartSound(NULL, sfx_menu1);
-					//CV_AddValue(&cv_jukeboxspeed, -1);
+					CV_AddValue(&cv_jukeboxspeed, -1);
 				}
 			}
 			break;
@@ -15844,7 +15823,7 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 						strcpy(jukeboxMusicTrack, curplaying->name);
 	
 						S_ChangeMusicInternal(jukeboxMusicTrack, !curplaying->stoppingtics);
-						//S_SpeedMusic(strtof(cv_jukeboxspeed.string, NULL));
+						S_SpeedMusic(strtof(cv_jukeboxspeed.string, NULL));
 
 						CONS_Printf(M_GetText("Loaded track \x82%s\x80 into the Jukebox.\n"), jukeboxMusicName);
 #else
@@ -15852,7 +15831,7 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 						strcpy(jukeboxMusicTrack, (cv_ultimatemode.value ? "_hehe" : curplaying->name));
 	
 						S_ChangeMusicInternal(jukeboxMusicTrack, !curplaying->stoppingtics);
-						//S_SpeedMusic(strtof(cv_jukeboxspeed.string, NULL));
+						S_SpeedMusic(strtof(cv_jukeboxspeed.string, NULL));
 
 						(!cv_ultimatemode.value ? CONS_Printf(M_GetText("Loaded track \x82%s\x80 into the Jukebox.\n"), jukeboxMusicName) : CONS_Printf(M_GetText("Hehe Time, Cutie~\n")));
 #endif

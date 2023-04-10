@@ -458,6 +458,42 @@ INT16 rw_maximums[NUM_WEAPONS] =
 	50   // MAX_RAIL
 };
 
+// OTHER FUN STAR STUFF YAYAYSUHDUISHUIBHOUIHBDU()*FH*D(UIYVLBGUIYDG(UDOPBIYGD*OUFBHO(P))) //
+// Easter
+INT32 foundeggs = 0;
+
+/*emblem_t eggparamaters[NUMEGGS] =
+{
+	{0, 0, 1, 13, SKINCOLOR_GREEN},
+	{0, 0, 1, 13},
+	{0, 0, 2, 13},
+	{0, 0, 2, 13},
+	{0, 0, 4, 13},
+	{0, 0, 4, 13},
+	{0, 0, 5, 13},
+	{0, 0, 5, 13},
+	{0, 0, 7, 13},
+	{0, 0, 7, 13},
+	{0, 0, 8, 13},
+	{0, 0, 8, 13}
+};
+
+UINT32 egglocations[NUMEGGS] =
+{
+	{-472,   2041,  103},
+	{3201,   6794,  103},
+	{6300,   4544, 1536},
+	{2803,  -6232, 1300},
+	{-1072, -10618, 2172},
+	{2158,  -1378, 2468},
+	{-10057, 5274, 1280},
+	{374,   -1373, 1024},
+	{3322,   5459,  624},
+	{-5441,  3907, 1088},
+	{4784,  -2816,  408},
+	{-3877, -2077,  601}
+};*/
+
 // Allocation for time and nights data
 void G_AllocMainRecordData(INT16 i)
 {

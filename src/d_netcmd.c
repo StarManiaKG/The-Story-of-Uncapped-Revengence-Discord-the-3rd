@@ -397,7 +397,7 @@ consvar_t cv_ps_descriptor = CVAR_INIT ("ps_descriptor", "Average", 0, ps_descri
 consvar_t cv_freedemocamera = CVAR_INIT("freedemocamera", "Off", CV_SAVE, CV_OnOff, NULL);
 
 // Star Commands lol
-consvar_t cv_continues = CVAR_INIT ("continues", "On", CV_SAVE|CV_CALL, CV_OnOff, STAR_UseContinues_OnChange);
+consvar_t cv_continues = CVAR_INIT ("continues", "Off", CV_SAVE|CV_CALL, CV_OnOff, STAR_UseContinues_OnChange);
 consvar_t cv_movingplayersetup = CVAR_INIT ("movingplayersetup", "Off", CV_SAVE, CV_OnOff, NULL);
 
 char timedemo_name[256];
@@ -975,6 +975,9 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_menucolor);
 	CV_RegisterVar(&cv_fpscountercolor);
 
+	CV_RegisterVar(&cv_tpsrate);
+	CV_RegisterVar(&cv_tpscountercolor);
+
 	CV_RegisterVar(&cv_pausemenustyle);
 	CV_RegisterVar(&cv_automapoutsidedevmode);
 
@@ -999,7 +1002,7 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_movingplayersetup);
 
 	CV_RegisterVar(&cv_jukeboxhud);
-	//CV_RegisterVar(&cv_jukeboxspeed);
+	CV_RegisterVar(&cv_jukeboxspeed);
 }
 
 /** Checks if a name (as received from another player) is okay.

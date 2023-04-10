@@ -581,8 +581,6 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 	if (gamedataadded)
 	{
 		G_LoadGameData();
-
-		jukeboxChecked = false;
 		jukeboxUnlocked = false;
 	}
 
