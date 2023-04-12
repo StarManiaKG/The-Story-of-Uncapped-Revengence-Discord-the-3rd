@@ -1002,6 +1002,7 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_movingplayersetup);
 
 	CV_RegisterVar(&cv_jukeboxhud);
+	//CV_RegisterVar(&cv_luacanstopthejukebox);
 	CV_RegisterVar(&cv_jukeboxspeed);
 }
 
@@ -4925,7 +4926,12 @@ static void Skin_OnChange(void)
 	if (gametyperules & GTR_RACE && (cv_movingplayersetup.value && P_PlayerMoving(consoleplayer)))
 	{
 		CONS_Printf("Nice try%s.\n",
-			(((strcmp(discordUserName, " ") == 0) || (strcmp(discordUserName, "  ") == 0)) ? "" : va(", %s", discordUserName)));
+#ifdef HAVE_DISCORDRPC
+			(((strcmp(discordUserName, " ") == 0) || (strcmp(discordUserName, "  ") == 0)) ? ((Playing() ? player_names[consoleplayer] : cv_playername.string)) : va(", %s", discordUserName))
+#else
+			((Playing() ? player_names[consoleplayer] : cv_playername.string))
+#endif
+		);
 		CV_StealthSet(&cv_skin, skins[players[consoleplayer].skin].name);
 		return;
 	}
@@ -4953,7 +4959,12 @@ static void Skin2_OnChange(void)
 	if (gametyperules & GTR_RACE && (cv_movingplayersetup.value && P_PlayerMoving(secondarydisplayplayer)))
 	{
 		CONS_Printf("Nice try%s.\n",
-			(((strcmp(discordUserName, " ") == 0) || (strcmp(discordUserName, "  ") == 0)) ? "" : va(", %s's friend", discordUserName)));
+#ifdef HAVE_DISCORDRPC
+			(((strcmp(discordUserName, " ") == 0) || (strcmp(discordUserName, "  ") == 0)) ? ((Playing() ? player_names[secondarydisplayplayer] : cv_playername2.string)) : va(", %s's friend", discordUserName))
+#else
+			((Playing() ? player_names[secondarydisplayplayer] : cv_playername2.string))
+#endif
+		);
 		CV_StealthSet(&cv_skin2, skins[players[secondarydisplayplayer].skin].name);
 		return;
 	}
