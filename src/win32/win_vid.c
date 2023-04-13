@@ -374,7 +374,7 @@ void I_FinishUpdate(void)
 		SCR_ClosedCaptions();
 
 	// display a graph of ticrate
-	if (cv_ticrate.value)
+	if (cv_ticrate.value || cv_tpsrate.value)
 		SCR_DisplayTicRate();
 
 	if (cv_showping.value && netgame && consoleplayer != serverplayer)

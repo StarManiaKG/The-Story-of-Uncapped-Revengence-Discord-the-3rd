@@ -18,28 +18,20 @@
 
 #include "discord_rpc.h"
 
-extern consvar_t cv_discordrp;
-extern consvar_t cv_discordstreamer;
+// Commands //
+// Main Things
+extern consvar_t cv_discordrp, cv_discordstreamer;
 extern consvar_t cv_discordasks;
-extern consvar_t cv_discordshowonstatus;
-extern consvar_t cv_discordstatusmemes;
-extern consvar_t cv_discordcharacterimagetype;
+extern consvar_t cv_discordshowonstatus, cv_discordstatusmemes, cv_discordcharacterimagetype;
 
 // Custom Things
-extern consvar_t cv_customdiscorddetails;
-extern consvar_t cv_customdiscordstate;
-extern consvar_t cv_customdiscordlargeimagetype;
-extern consvar_t cv_customdiscordsmallimagetype;
-extern consvar_t cv_customdiscordlargecharacterimage;
-extern consvar_t cv_customdiscordsmallcharacterimage;
-extern consvar_t cv_customdiscordlargesupercharacterimage;
-extern consvar_t cv_customdiscordsmallsupercharacterimage;
-extern consvar_t cv_customdiscordlargemapimage;
-extern consvar_t cv_customdiscordsmallmapimage;
-extern consvar_t cv_customdiscordlargemiscimage;
-extern consvar_t cv_customdiscordsmallmiscimage;
-extern consvar_t cv_customdiscordlargeimagetext;
-extern consvar_t cv_customdiscordsmallimagetext;
+extern consvar_t cv_customdiscorddetails, cv_customdiscordstate;
+extern consvar_t cv_customdiscordlargeimagetype, cv_customdiscordsmallimagetype;
+extern consvar_t cv_customdiscordlargecharacterimage, cv_customdiscordsmallcharacterimage;
+extern consvar_t cv_customdiscordlargesupercharacterimage, cv_customdiscordsmallsupercharacterimage;
+extern consvar_t cv_customdiscordlargemapimage, cv_customdiscordsmallmapimage;
+extern consvar_t cv_customdiscordlargemiscimage, cv_customdiscordsmallmiscimage;
+extern consvar_t cv_customdiscordlargeimagetext, cv_customdiscordsmallimagetext;
 
 extern char discordUserName[64];
 
