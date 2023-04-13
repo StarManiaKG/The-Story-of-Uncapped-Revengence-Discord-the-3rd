@@ -365,7 +365,7 @@ static void DRPC_HandleReady(const DiscordUser *user)
 		(CONS_Printf("Discord: connected to %s\n", user->username), strcpy(discordUserName, user->username)) :
 	
 	// Streamer Mode Disabled
-	(CONS_Printf("Discord: connected to %s#%s (%s)\n", user->username, user->discriminator, user->userId), strcpy(discordUserName, va("%s%s", user->username, user->discriminator))));
+	(CONS_Printf("Discord: connected to %s#%s (%s)\n", user->username, user->discriminator, user->userId), strcpy(discordUserName, va("%s#%s", user->username, user->discriminator))));
 }
 
 /*--------------------------------------------------
@@ -985,6 +985,7 @@ void DRPC_UpdatePresence(void)
 	////////////////////////////////////////////
 	////   Main Rich Presence Status Info   ////
 	////////////////////////////////////////////
+
 	//////// ALL GAME INFO ////////
 	////// 	  SERVER INFO 	 //////
 	if (netgame)
@@ -1409,10 +1410,10 @@ void DRPC_UpdatePresence(void)
 				else
 					// The Secondary Display Player, Default Status Option
 					(!cv_discordshowonstatus.value ?
-					snprintf(charname, 75, "%s & %s", player_names[consoleplayer], player_names[1]) :
-					
-					// The Secondary Display Player, Default Status Option
-					(snprintf(charname, 75, "%s", player_names[consoleplayer]), snprintf(charnameS, 75, "%s", player_names[1])));
+						snprintf(charname, 75, "%s & %s", player_names[consoleplayer], player_names[1]) :
+						
+						// The Secondary Display Player, Default Status Option
+						(snprintf(charname, 75, "%s", player_names[consoleplayer]), snprintf(charnameS, 75, "%s", player_names[1])));
 				
 				// Apply Character Images and Names //
 				(!cv_discordshowonstatus.value ? strcpy(simagetxtstr, charname) : (strcpy(imagetxtstr, charname), strcpy(simagetxtstr, charnameS))); // Character Names, And Bot Names, If They Exist
@@ -1525,6 +1526,7 @@ void DRPC_ShutDown(void)
 	DRPC_EmptyRequests();
 
 	// Close Everything Down
+	CONS_Printf("DRPC_ShutDown: Shutting Down Discord Rich Presence...\n");
 	Discord_ClearPresence();
 	Discord_Shutdown();
 }

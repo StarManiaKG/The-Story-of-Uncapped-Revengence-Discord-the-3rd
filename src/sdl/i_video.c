@@ -1231,7 +1231,7 @@ void I_FinishUpdate(void)
 	if (cv_closedcaptioning.value)
 		SCR_ClosedCaptions();
 
-	if (cv_ticrate.value)
+	if (cv_ticrate.value || cv_tpsrate.value)
 		SCR_DisplayTicRate();
 
 	if (cv_showping.value && netgame && consoleplayer != serverplayer)
