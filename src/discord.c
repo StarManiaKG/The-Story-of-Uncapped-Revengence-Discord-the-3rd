@@ -1526,7 +1526,7 @@ void DRPC_ShutDown(void)
 	DRPC_EmptyRequests();
 
 	// Close Everything Down
-	CONS_Printf("DRPC_ShutDown: Shutting Down Discord Rich Presence...\n");
+	CONS_Printf("DRPC_ShutDown(): Shutting Down Discord Rich Presence...\n");
 	Discord_ClearPresence();
 	Discord_Shutdown();
 }
