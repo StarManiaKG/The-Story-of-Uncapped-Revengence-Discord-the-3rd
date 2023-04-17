@@ -576,7 +576,7 @@ void DRPC_Init(void)
 	Discord_Initialize(DISCORD_APPID, &handlers, 1, NULL);
 	
 	I_AddExitFunc(Discord_Shutdown);
-	I_AddExitFunc(DRPC_ShutDown);
+	I_AddExitFunc(DRPC_Shutdown);
 	
 	DRPC_UpdatePresence();
 }
@@ -1501,7 +1501,7 @@ void DRPC_UpdatePresence(void)
 }
 
 /*--------------------------------------------------
-	void DRPC_ShutDown(void)
+	void DRPC_Shutdown(void)
 
 		Clears Everything Related to Discord
 		Rich Presence. Only Runs On Game Close
@@ -1510,7 +1510,7 @@ void DRPC_UpdatePresence(void)
 	Input Arguments:-
 		None
 --------------------------------------------------*/
-void DRPC_ShutDown(void)
+void DRPC_Shutdown(void)
 {
 	// Initialize Discord Once More
 	DiscordRichPresence discordPresence;
@@ -1526,7 +1526,7 @@ void DRPC_ShutDown(void)
 	DRPC_EmptyRequests();
 
 	// Close Everything Down
-	CONS_Printf("DRPC_ShutDown(): Shutting Down Discord Rich Presence...\n");
+	CONS_Printf("DRPC_Shutdown(): Shutting Down Discord Rich Presence...\n");
 	Discord_ClearPresence();
 	Discord_Shutdown();
 }
