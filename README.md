@@ -1,7 +1,7 @@
 # TSoURDt3RD: An Sonic Robo Blast 2 Original
-**Latest Stable Release:** [![latest release](https://badgen.net/github/release/starmaniakg/the-story-of-uncapped-revengence-discord-the-3rd/stable)](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/releases/latest)
+![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/srb2.png?raw=true)
 
-**Latest Unstable Release:** [![latest release](https://badgen.net/github/release/starmaniakg/the-story-of-uncapped-revengence-discord-the-3rd)](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/releases/latest)
+**Latest Release:** [![latest release](https://badgen.net/github/release/starmaniakg/the-story-of-uncapped-revengence-discord-the-3rd/stable)](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/releases/latest)
 
 [![Build status](https://ci.appveyor.com/api/projects/status/399d4hcw9yy7hg2y?svg=true)](https://ci.appveyor.com/project/STJr/srb2)
 [![Build status](https://travis-ci.org/STJr/SRB2.svg?branch=master)](https://travis-ci.org/STJr/SRB2)
@@ -10,10 +10,10 @@
 [Sonic Robo Blast 2](https://srb2.org/) is a 3D Sonic the Hedgehog fangame based on a modified version of [Doom Legacy](http://doomlegacy.sourceforge.net/), and [This Custom Build](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd) is based upon those.
 
 ## Branches
-  - ```main``` - Holds all the current, stable TSoURDt3RD code
+  - ```main``` - Holds all the current, stable, TSoURDt3RD code
   - ```unstablemain``` - Holds all the extremely current, but unstable, TSoURDt3RD code
   - ```main-2.1.25``` - Holds all the current, stable, TSoURDt3RD 2.1.25 code
-  - ```androidmain``` - Holds all the current, stable, TSoURDt3RD Android Support code
+  - ```androidmain``` - Holds all the current, stable, TSoURDt3RD android code
 
 ## Features
 **NEW FEATURES**
