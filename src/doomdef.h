@@ -660,6 +660,10 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 //#define SAVEGAMEFOLDER "SRB2" // barely does anything, here for the future
 
 // Events
-//#define APRIL_FOOLS
+//#define APRIL_FOOLS			// enables april fools mode, but won't exist in the future, thanks to STAR_CheckTime
+
+// Extras
+//#define BLAME_SEV				// blames sev
+// END OF STAR STUFF //
 
 #endif // __DOOMDEF__

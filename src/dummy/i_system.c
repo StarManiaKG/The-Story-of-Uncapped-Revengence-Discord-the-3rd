@@ -127,7 +127,9 @@ INT32 I_StartupSystem(void)
 }
 
 #ifdef HAVE_DISCORDRPC
-void DRPC_ShutDown(void){}
+#include "discord.h"
+
+void DRPC_Shutdown(void);
 #endif
 
 void I_ShutdownSystem(void){}
