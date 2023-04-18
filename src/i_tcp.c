@@ -143,6 +143,10 @@
 
 #include "doomstat.h"
 
+// STAR STUFF //
+#include "d_clisrv.h"
+// END OF THAT //
+
 // win32
 #ifdef USE_WINSOCK
 	// winsock stuff (in winsock a socket is not a file)
@@ -762,8 +766,15 @@ static void SOCK_Send(void)
 	{
 		int e = errno; // save error code so it can't be modified later
 		if (e != ECONNREFUSED && e != EWOULDBLOCK)
-			I_Error("SOCK_Send, error sending to node %d (%s) #%u: %s", doomcom->remotenode,
-				SOCK_GetNodeAddress(doomcom->remotenode), e, strerror(e));
+		{
+			// DO STAR STUFF //
+			NetUpdate();
+			CONS_Alert(CONS_NOTICE, "SOCK_Send() - Error Prevented :)\n");
+			// DID STAR STUFF //
+
+			/*I_Error("SOCK_Send, error sending to node %d (%s) #%u: %s", doomcom->remotenode,
+				SOCK_GetNodeAddress(doomcom->remotenode), e, strerror(e));*/
+		}
 	}
 }
 #endif
