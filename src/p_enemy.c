@@ -32,15 +32,19 @@
 #include "hardware/hw3sound.h"
 #endif
 
+// STAR STUFF WEEE //
+// STAR NOTE
+//#include "STAR/star_vars.h"
+
+consvar_t cv_soniccd = CVAR_INIT ("soniccd", "Off", CV_SAVE, CV_OnOff, NULL);
+// END OF THAT THING //
+
 boolean LUA_CallAction(enum actionnum actionnum, mobj_t *actor);
 
 player_t *stplyr;
 INT32 var1;
 INT32 var2;
 INT32 modulothing;
-
-// Star Stuff Yay
-consvar_t cv_soniccd = CVAR_INIT ("soniccd", "Off", CV_SAVE, CV_OnOff, NULL);
 
 //
 // P_NewChaseDir related LUT.
