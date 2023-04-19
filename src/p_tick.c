@@ -34,13 +34,21 @@
 #include "discord.h"
 #endif
 
+// STAR STUFF //
 #ifdef APRIL_FOOLS
 #include "fastcmp.h"
 #include "v_video.h"
 #endif
 
+//#include "STAR/star_vars.h"
+// END OF THAT //
+
 tic_t leveltime;
+
+// STAR STUFF //
 tic_t emeraldtime;
+boolean timeover;
+// END OF THAT STUFF //
 
 //
 // THINKERS
@@ -605,9 +613,14 @@ static inline void P_DoCTFStuff(void)
 void P_Ticker(boolean run)
 {
 	INT32 i;
+
+	// STAR STUFF YAY //
 #ifdef APRIL_FOOLS
 	INT32 noSonic = 0;
 #endif
+
+	INT32 imGonnaKillAllOfYou = 0;
+	// END OF STAR STUFF WEEEEEEE //
 
 	// Increment jointime and quittime even if paused
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -748,6 +761,11 @@ void P_Ticker(boolean run)
 
 				if (multiplayer || netgame)
 					players[i].exiting = 0;
+
+				// DO STAR STUFF FIRST //
+				timeover = true;
+				// AND WE'RE DONE :) //
+
 				P_DamageMobj(players[i].mo, NULL, NULL, 1, DMG_INSTAKILL);
 			}
 		}
@@ -793,7 +811,7 @@ void P_Ticker(boolean run)
 			}
 		}
 #endif
-
+		// DO STAR STUFF FOR KICKS //
 #ifdef APRIL_FOOLS
 		// Sonic's Dead lol
 		if (cv_ultimatemode.value)
@@ -828,6 +846,25 @@ void P_Ticker(boolean run)
 			}
 		}
 #endif
+		// Time Over...
+		// MAJOR STAR NOTE
+    	/*if (((Playing() && !netgame) && (leveltime >= 20999 && AllowTypicalTimeOver))  // one tic off so the timer doesn't display 10:00.00
+			 || (timeover))														// here for lua purposes
+		{
+			if (!timeover)														// still here for lua purposes
+				timeover = true;
+			
+			while (imGonnaKillAllOfYou < MAXPLAYERS)
+			{
+				player_t* player = &players[imGonnaKillAllOfYou];
+
+				if (player->mo)
+					P_DamageMobj(player->mo, NULL, NULL, 1, DMG_INSTAKILL);
+
+				imGonnaKillAllOfYou++;
+			}
+		}*/
+		// END OF THAT STAR STUFF FOR KICKS //
 
 		LUA_HOOK(PostThinkFrame);
 	}

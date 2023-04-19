@@ -19,6 +19,7 @@
 #include "f_finale.h"
 #include "p_setup.h"
 #include "p_saveg.h"
+#include "i_time.h"
 #include "i_system.h"
 #include "am_map.h"
 #include "m_random.h"
@@ -47,7 +48,6 @@
 #include "m_cond.h" // condition sets
 #include "lua_script.h"
 #include "r_fps.h" // frame interpolation/uncapped
-#include "i_time.h"
 
 #include "lua_hud.h"
 
@@ -458,42 +458,6 @@ INT16 rw_maximums[NUM_WEAPONS] =
 	50   // MAX_RAIL
 };
 
-// OTHER FUN STAR STUFF YAYAYSUHDUISHUIBHOUIHBDU()*FH*D(UIYVLBGUIYDG(UDOPBIYGD*OUFBHO(P))) //
-// Easter
-INT32 foundeggs = 0;
-
-/*emblem_t eggparamaters[NUMEGGS] =
-{
-	{0, 0, 1, 13, SKINCOLOR_GREEN},
-	{0, 0, 1, 13},
-	{0, 0, 2, 13},
-	{0, 0, 2, 13},
-	{0, 0, 4, 13},
-	{0, 0, 4, 13},
-	{0, 0, 5, 13},
-	{0, 0, 5, 13},
-	{0, 0, 7, 13},
-	{0, 0, 7, 13},
-	{0, 0, 8, 13},
-	{0, 0, 8, 13}
-};
-
-UINT32 egglocations[NUMEGGS] =
-{
-	{-472,   2041,  103},
-	{3201,   6794,  103},
-	{6300,   4544, 1536},
-	{2803,  -6232, 1300},
-	{-1072, -10618, 2172},
-	{2158,  -1378, 2468},
-	{-10057, 5274, 1280},
-	{374,   -1373, 1024},
-	{3322,   5459,  624},
-	{-5441,  3907, 1088},
-	{4784,  -2816,  408},
-	{-3877, -2077,  601}
-};*/
-
 // Allocation for time and nights data
 void G_AllocMainRecordData(INT16 i)
 {
@@ -792,7 +756,8 @@ void G_SetNightsRecords(void)
 // for consistency among messages: this modifies the game and removes savemoddata.
 void G_SetGameModified(boolean silent)
 {
-	if ((modifiedgame && !savemoddata) || autoloading)
+	if ((modifiedgame && !savemoddata)
+		|| autoloading)
 		return;
 
 	modifiedgame = true;
@@ -2003,6 +1968,87 @@ INT32 pausedelay = 0;
 boolean pausebreakkey = false;
 static INT32 camtoggledelay, camtoggledelay2 = 0;
 
+static boolean ViewpointSwitchResponder(event_t *ev)
+{
+	// ViewpointSwitch Lua hook.
+	UINT8 canSwitchView = 0;
+
+	INT32 direction = 0;
+	if (gamestate == GS_LEVEL && ev->type == ev_keydown && (ev->key == KEY_F12 || ev->key == gamecontrol[GC_VIEWPOINT][0] || ev->key == gamecontrol[GC_VIEWPOINT][1]))
+		direction = 1;
+	/*if (ev->key == KEY_F12 || ev->key == gamecontrol[GC_VIEWPOINTNEXT][0] || ev->key == gamecontrol[GC_VIEWPOINTNEXT][1])
+		direction = 1;
+	if (ev->key == gamecontrol[GC_VIEWPOINTPREV][0] || ev->key == gamecontrol[GC_VIEWPOINTPREV][1])
+		direction = -1;*/
+	// This enabled reverse-iterating with shift+F12, sadly I had to
+	// disable this in case your shift key is bound to a control =((
+	//if (shiftdown)
+	//	direction = -direction;
+
+	// allow spy mode changes even during the demo
+	if (!(gamestate == GS_LEVEL && ev->type == ev_keydown && direction != 0))
+		return false;
+
+	if (splitscreen || !netgame)
+	{
+		displayplayer = consoleplayer;
+		return false;
+	}
+
+	// spy mode
+	do
+	{
+		// Wrap in both directions
+		displayplayer += direction;
+		displayplayer = (displayplayer + MAXPLAYERS) % MAXPLAYERS;
+
+		if (!playeringame[displayplayer])
+			continue;
+
+		// Call ViewpointSwitch hooks here.
+		canSwitchView = LUA_HookViewpointSwitch(&players[consoleplayer], &players[displayplayer], false);
+		if (canSwitchView == 1) // Set viewpoint to this player
+			break;
+		else if (canSwitchView == 2) // Skip this player
+			continue;
+
+		if (players[displayplayer].spectator)
+			continue;
+
+		if (G_GametypeHasTeams())
+		{
+			if (players[consoleplayer].ctfteam
+				&& players[displayplayer].ctfteam != players[consoleplayer].ctfteam)
+				continue;
+		}
+		else if (gametyperules & GTR_HIDEFROZEN)
+		{
+			if (players[consoleplayer].pflags & PF_TAGIT)
+				continue;
+		}
+		// Other Tag-based gametypes?
+		else if (G_TagGametype())
+		{
+			if (!players[consoleplayer].spectator
+				&& (players[consoleplayer].pflags & PF_TAGIT) != (players[displayplayer].pflags & PF_TAGIT))
+				continue;
+		}
+		else if (G_GametypeHasSpectators() && G_RingSlingerGametype())
+		{
+			if (!players[consoleplayer].spectator)
+				continue;
+		}
+
+		break;
+	} while (displayplayer != consoleplayer);
+
+	// change statusbar also if playing back demo
+	if (singledemo)
+		ST_changeDemoView();
+
+	return true;
+}
+
 //
 // G_Responder
 // Get info needed to make ticcmd_ts for the players.
@@ -2087,74 +2133,8 @@ boolean G_Responder(event_t *ev)
 		if (HU_Responder(ev))
 			return true; // chat ate the event
 
-	// allow spy mode changes even during the demo
-	if (gamestate == GS_LEVEL && ev->type == ev_keydown
-		&& (ev->key == KEY_F12 || ev->key == gamecontrol[GC_VIEWPOINT][0] || ev->key == gamecontrol[GC_VIEWPOINT][1]))
-	{
-		// ViewpointSwitch Lua hook.
-		UINT8 canSwitchView = 0;
-
-		if (splitscreen || !netgame)
-			displayplayer = consoleplayer;
-		else
-		{
-			// spy mode
-			do
-			{
-				displayplayer++;
-				if (displayplayer == MAXPLAYERS)
-					displayplayer = 0;
-
-				if (!playeringame[displayplayer])
-					continue;
-
-				// Call ViewpointSwitch hooks here.
-				canSwitchView = LUA_HookViewpointSwitch(&players[consoleplayer], &players[displayplayer], false);
-				if (canSwitchView == 1) // Set viewpoint to this player
-					break;
-				else if (canSwitchView == 2) // Skip this player
-					continue;
-
-				if (players[displayplayer].spectator)
-					continue;
-
-				if (G_GametypeHasTeams())
-				{
-					if (players[consoleplayer].ctfteam
-					 && players[displayplayer].ctfteam != players[consoleplayer].ctfteam)
-						continue;
-				}
-				else if (gametyperules & GTR_HIDEFROZEN)
-				{
-					if (players[consoleplayer].pflags & PF_TAGIT)
-						continue;
-				}
-				// Other Tag-based gametypes?
-				else if (G_TagGametype())
-				{
-					if (!players[consoleplayer].spectator
-					 && (players[consoleplayer].pflags & PF_TAGIT) != (players[displayplayer].pflags & PF_TAGIT))
-						continue;
-				}
-				else if (G_GametypeHasSpectators() && G_RingSlingerGametype())
-				{
-					if (!players[consoleplayer].spectator)
-						continue;
-				}
-
-				break;
-			} while (displayplayer != consoleplayer);
-
-			// change statusbar also if playing back demo
-			if (singledemo)
-				ST_changeDemoView();
-
-			// tell who's the view
-			CONS_Printf(M_GetText("Viewpoint: %s\n"), player_names[displayplayer]);
-
-			return true;
-		}
-	}
+	if (ViewpointSwitchResponder(ev))
+		return true;
 
 	// update keys current state
 	G_MapEventsToControls(ev);
@@ -2411,6 +2391,7 @@ void G_Ticker(boolean run)
 			F_TextPromptTicker();
 			AM_Ticker();
 			HU_Ticker();
+
 			break;
 
 		case GS_INTERMISSION:
@@ -2860,9 +2841,12 @@ void G_MovePlayerToSpawnOrStarpost(INT32 playernum)
 		P_MovePlayerToStarpost(playernum);
 	else
 		P_MovePlayerToSpawn(playernum, G_FindMapStart(playernum));
-	
+
 	R_ResetMobjInterpolationState(players[playernum].mo);
-	
+
+	if (players[playernum].bot) // don't reset the camera for bots
+		return;
+
 	if (playernum == consoleplayer)
 		P_ResetCamera(&players[playernum], &camera);
 	else if (playernum == secondarydisplayplayer)
@@ -4248,7 +4232,7 @@ static void G_DoContinued(void)
 	gameaction = ga_nothing;
 
 #ifdef HAVE_DISCORDRPC
-    DRPC_UpdatePresence();
+	DRPC_UpdatePresence();
 #endif
 }
 
