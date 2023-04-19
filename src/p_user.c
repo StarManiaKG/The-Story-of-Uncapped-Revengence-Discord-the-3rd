@@ -64,6 +64,11 @@
 #include "discord.h"
 #endif
 
+// STAR STUFF //
+//#include "STAR/star_vars.h"
+// STAR NOTE
+// END OF THAT //
+
 #if 0
 static void P_NukeAllPlayers(player_t *player);
 #endif
@@ -1525,6 +1530,11 @@ void P_PlayLivesJingle(player_t *player)
 
 void P_PlayJingle(player_t *player, jingletype_t jingletype)
 {
+	// STAR STUFF //
+	// strcpy(jingleinfo[JT_GOVER].musname, gameoverMusic[cv_gameovermusic.value]);
+	// STAR NOTE
+	// END OF THAT //
+
 	const char *musname = jingleinfo[jingletype].musname;
 	UINT16 musflags = 0;
 	boolean looping = jingleinfo[jingletype].looping;
@@ -9520,12 +9530,26 @@ void P_RestoreMultiMusic(player_t *player)
 // Decrease POV height to floor height.
 //
 
+// STAR STUFF //
+/*INT32 gameoverMusicTics[2] = {
+	[1] = 15*TICRATE,
+};*/
+// STAR NOTE
+// END OF THAT //
+
 static void P_DeathThink(player_t *player)
 {
 	INT32 j = MAXPLAYERS;
 
 	ticcmd_t *cmd = &player->cmd;
 	player->deltaviewheight = 0;
+
+	// STAR STUFF YAY //
+#ifdef APRIL_FOOLS
+	if (cv_ultimatemode.value && ultimatemode && !netgame)
+		return; // it's funnier this way
+#endif
+	// END OF STAR STUFF YAY //
 
 	if (player->deadtimer < INT32_MAX)
 		player->deadtimer++;
@@ -9534,12 +9558,18 @@ static void P_DeathThink(player_t *player)
 		goto notrealplayer;
 
 	// continue logic
+	// STAR NOTE: CONTAINS timeover NOW lol //
 	if (!(netgame || multiplayer) && player->lives <= 0 && player == &players[consoleplayer]) //Extra players in SP can't be allowed to continue or end game
 	{
 		if (player->deadtimer > (3*TICRATE) && (cmd->buttons & BT_SPIN || cmd->buttons & BT_JUMP) && (!continuesInSession || player->continues > 0))
 			G_UseContinue();
 		else if (player->deadtimer >= gameovertics)
 			G_UseContinue(); // Even if we don't have one this handles ending the game
+		// STAR NOTE
+		/*else if ((!timeover && player->deadtimer >= gameovertics)
+				|| (timeover && ((!gameoverMusicTics[cv_gameovermusic.value] && player->deadtimer >= gameovertics)
+				|| (gameoverMusicTics[cv_gameovermusic.value] && player->deadtimer >= gameoverMusicTics[cv_gameovermusic.value]))))
+		*/
 	}
 
 	if ((cv_cooplives.value != 1)
@@ -9597,6 +9627,13 @@ static void P_DeathThink(player_t *player)
 			}
 
 			// Single player auto respawn
+			// STAR NOTE: this includes timeover now too lol //
+			/*if (!(netgame || multiplayer)
+				&& ((!timeover && player->deadtimer > TICRATE<<1)
+				
+				|| (timeover && ((!gameoverMusicTics[cv_gameovermusic.value] && player->deadtimer >= gameovertics)
+				|| (gameoverMusicTics[cv_gameovermusic.value] && player->deadtimer >= gameoverMusicTics[cv_gameovermusic.value])))))
+				*/
 			if (!(netgame || multiplayer) && player->deadtimer > TICRATE<<1)
 				player->playerstate = PST_REBORN;
 		}
@@ -10599,7 +10636,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 				CONS_Printf(M_GetText("%s entered the game.\n"), player_names[player-players]);
 
 #ifdef HAVE_DISCORDRPC
-			DRPC_UpdatePresence(); // just in case, you never know :)
+			DRPC_UpdatePresence(); // still just in case, you never know :)
 #endif
 
 			return true; // no more player->mo, cannot continue.
@@ -10611,7 +10648,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 			player->powers[pw_flashing] += 2*TICRATE; //to prevent message spam.
 		}
 #ifdef HAVE_DISCORDRPC
-		DRPC_UpdatePresence(); // just in case, you never know :)
+		DRPC_UpdatePresence(); // just in case: the threequel :)
 #endif
 	}
 

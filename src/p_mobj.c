@@ -2191,20 +2191,15 @@ void P_AdjustMobjFloorZ_FFloors(mobj_t *mo, sector_t *sector, UINT8 motype)
 				case 2: // scenery does things differently for some reason
 					if (mo->z < topheight && bottomheight < thingtop)
 					{
-						if (!(mo->eflags & MFE_VERTICALFLIP))
-							mo->floorz = mo->z;
-						else if (mo->eflags & MFE_VERTICALFLIP)
-							mo->ceilingz = thingtop;
+						mo->floorz = mo->z;
 						continue;
 					}
 					break;
 				default:
 					if (mo->z < topheight && bottomheight < thingtop)
 					{
-						if (!(mo->eflags & MFE_VERTICALFLIP) && mo->floorz < mo->z)
+						if (mo->floorz < mo->z)
 							mo->floorz = mo->z;
-						else if (mo->eflags & MFE_VERTICALFLIP && mo->ceilingz > thingtop)
-							mo->ceilingz = thingtop;
 					}
 					continue; // This is so you can jump/spring up through quicksand from below.
 			}
@@ -4354,8 +4349,7 @@ static void P_Boss2Thinker(mobj_t *mobj)
 	{
 		mobj->flags &= ~MF_NOGRAVITY;
 		A_Boss2Pogo(mobj);
-		if (mobj->spawnpoint)
-			P_LinedefExecute(LE_PINCHPHASE, mobj, NULL);
+		P_LinedefExecute(LE_PINCHPHASE, mobj, NULL);
 	}
 }
 
@@ -4484,8 +4478,7 @@ static void P_Boss3Thinker(mobj_t *mobj)
 			dummy->cusval = mobj->cusval;
 
 			CONS_Debug(DBG_GAMELOGIC, "Eggman path %d - Dummy selected paths %d and %d\n", way0, way1, way2);
-			if (mobj->spawnpoint)
-				P_LinedefExecute(LE_PINCHPHASE+(mobj->cusval*LE_PARAMWIDTH), mobj, NULL);
+			P_LinedefExecute(LE_PINCHPHASE+(mobj->cusval*LE_PARAMWIDTH), mobj, NULL);
 		}
 	}
 	else if (mobj->movecount) // Firing mode
@@ -4656,9 +4649,6 @@ static boolean P_Boss4MoveCage(mobj_t *mobj, fixed_t delta)
 	sector_t *sector;
 	boolean gotcage = false;
 
-	if (!mobj->spawnpoint)
-		return false;
-
 	TAG_ITER_SECTORS(tag, snum)
 	{
 		sector = &sectors[snum];
@@ -4743,9 +4733,6 @@ static void P_Boss4DestroyCage(mobj_t *mobj)
 	size_t a;
 	sector_t *sector, *rsec;
 	ffloor_t *rover;
-
-	if (!mobj->spawnpoint)
-		return;
 
 	TAG_ITER_SECTORS(tag, snum)
 	{
@@ -5020,15 +5007,13 @@ static void P_Boss4Thinker(mobj_t *mobj)
 			{ // Proceed to pinch phase!
 				P_Boss4DestroyCage(mobj);
 				mobj->movedir = 3;
-				if (mobj->spawnpoint)
-					P_LinedefExecute(LE_PINCHPHASE + (mobj->spawnpoint ? mobj->spawnpoint->extrainfo*LE_PARAMWIDTH : 0), mobj, NULL);
+				P_LinedefExecute(LE_PINCHPHASE + (mobj->spawnpoint ? mobj->spawnpoint->extrainfo*LE_PARAMWIDTH : 0), mobj, NULL);
 				P_Boss4MoveSpikeballs(mobj, FixedAngle(mobj->movecount), 0);
 				var1 = 3;
 				A_BossJetFume(mobj);
 				return;
 			}
-			if (mobj->spawnpoint)
-				P_LinedefExecute(LE_BOSS4DROP - (mobj->info->spawnhealth-mobj->health) + (mobj->spawnpoint ? mobj->spawnpoint->extrainfo*LE_PARAMWIDTH : 0), mobj, NULL);
+			P_LinedefExecute(LE_BOSS4DROP - (mobj->info->spawnhealth-mobj->health) + (mobj->spawnpoint ? mobj->spawnpoint->extrainfo*LE_PARAMWIDTH : 0), mobj, NULL);
 			// 1 -> 1.5 second timer
 			mobj->threshold = TICRATE+(TICRATE*(mobj->info->spawnhealth-mobj->health)/10);
 			if (mobj->threshold < 1)
@@ -5060,8 +5045,7 @@ static void P_Boss4Thinker(mobj_t *mobj)
 	{ // Proceed to pinch phase!
 		P_Boss4DestroyCage(mobj);
 		mobj->movedir = 3;
-		if (mobj->spawnpoint)
-			P_LinedefExecute(LE_PINCHPHASE + (mobj->spawnpoint ? mobj->spawnpoint->extrainfo*LE_PARAMWIDTH : 0), mobj, NULL);
+		P_LinedefExecute(LE_PINCHPHASE + (mobj->spawnpoint ? mobj->spawnpoint->extrainfo*LE_PARAMWIDTH : 0), mobj, NULL);
 		var1 = 3;
 		A_BossJetFume(mobj);
 		return;
@@ -5201,8 +5185,7 @@ static void P_Boss7Thinker(mobj_t *mobj)
 			// Begin platform destruction
 			mobj->flags2 |= MF2_FRET;
 			P_SetMobjState(mobj, mobj->info->raisestate);
-			if (mobj->spawnpoint)
-				P_LinedefExecute(LE_PINCHPHASE, mobj, NULL);
+			P_LinedefExecute(LE_PINCHPHASE, mobj, NULL);
 		}
 	}
 	else if (mobj->state == &states[S_BLACKEGG_HITFACE4] && mobj->tics == mobj->state->tics)
@@ -6061,8 +6044,7 @@ static void P_Boss9Thinker(mobj_t *mobj)
 						mobj->watertop = mobj->floorz + 16*FRACUNIT;
 					else
 						mobj->watertop = mobj->target->floorz + 16*FRACUNIT;
-					if (mobj->spawnpoint)
-						P_LinedefExecute(LE_PINCHPHASE, mobj, NULL);
+					P_LinedefExecute(LE_PINCHPHASE, mobj, NULL);
 
 #if 0
 					whoosh = P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_GHOST); // done here so the offset is correct
@@ -6532,7 +6514,7 @@ void P_MaceRotate(mobj_t *center, INT32 baserot, INT32 baseprevrot)
 	INT32 prevrot;
 
 	dist = pos_sideways[0] = pos_sideways[1] = pos_sideways[2] = pos_sideways[3] = unit_sideways[3] =\
-	pos_lengthways[0] = pos_lengthways[1] = pos_lengthways[2] = pos_lengthways[3] = 0;
+	 pos_lengthways[0] = pos_lengthways[1] = pos_lengthways[2] = pos_lengthways[3] = 0;
 
 	while (mobj)
 	{
@@ -7249,7 +7231,8 @@ static void P_FlameJetSceneryThink(mobj_t *mobj)
 	else
 		flame->angle += FixedAngle(mobj->fuse<<FRACBITS);
 
-	strength = (mobj->movedir ? mobj->movedir : 80)<<(FRACBITS-2);
+	strength = 20*FRACUNIT;
+	strength -= ((20*FRACUNIT)/16)*mobj->movedir;
 
 	P_InstaThrust(flame, flame->angle, strength);
 	S_StartSound(flame, sfx_fire);
@@ -7279,7 +7262,8 @@ static void P_VerticalFlameJetSceneryThink(mobj_t *mobj)
 
 	flame = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_FLAMEJETFLAME);
 
-	strength = (mobj->movedir ? mobj->movedir : 80)<<(FRACBITS-2);
+	strength = 20*FRACUNIT;
+	strength -= ((20*FRACUNIT)/16)*mobj->movedir;
 
 	// If deaf'd, the object spawns on the ceiling.
 	if (mobj->flags2 & MF2_AMBUSH)
@@ -7313,22 +7297,8 @@ static boolean P_ParticleGenSceneryThink(mobj_t *mobj)
 
 		mobj->fuse = (tic_t)mobj->reactiontime;
 
-		if (line != -1)
-		{
-			bottomheight = lines[line].frontsector->floorheight;
-			topheight = lines[line].frontsector->ceilingheight - mobjinfo[(mobjtype_t)type].height;
-		}
-		else if (mobj->flags2 & MF2_OBJECTFLIP)
-		{
-			bottomheight = mobj->z - mobj->extravalue1;
-			topheight = mobj->z - mobjinfo[(mobjtype_t)type].height;
-		}
-		else
-		{
-			bottomheight = mobj->z;
-			topheight = mobj->z + mobj->extravalue1 - mobjinfo[(mobjtype_t)type].height;
-		}
-
+		bottomheight = lines[line].frontsector->floorheight;
+		topheight = lines[line].frontsector->ceilingheight - mobjinfo[(mobjtype_t)type].height;
 
 		if (mobj->waterbottom != bottomheight || mobj->watertop != topheight)
 		{
@@ -7337,8 +7307,7 @@ static boolean P_ParticleGenSceneryThink(mobj_t *mobj)
 			else
 				mobj->health = 0;
 
-			if (line != -1)
-				mobj->z = ((mobj->flags2 & MF2_OBJECTFLIP) ? topheight : bottomheight);
+			mobj->z = ((mobj->flags2 & MF2_OBJECTFLIP) ? topheight : bottomheight);
 		}
 
 		if (!mobj->health)
@@ -10317,9 +10286,6 @@ boolean P_RailThinker(mobj_t *mobj)
 // Unquick, unoptimized function for pushables
 void P_PushableThinker(mobj_t *mobj)
 {
-	I_Assert(mobj != NULL);
-	I_Assert(!P_MobjWasRemoved(mobj));
-
 	sector_t *sec;
 
 	I_Assert(mobj != NULL);
@@ -11657,7 +11623,7 @@ void P_MovePlayerToSpawn(INT32 playernum, mapthing_t *mthing)
 	{
 		fixed_t offset = mthing->z << FRACBITS;
 
-		// Setting the spawnpoint's args[0] will make the player start on the ceiling
+		// Flagging a player's ambush will make them start on the ceiling
 		// Objectflip inverts
 		if (!!(mthing->options & MTF_AMBUSH) ^ !!(mthing->options & MTF_OBJECTFLIP))
 			z = ceilingspawn - offset;
@@ -12525,7 +12491,7 @@ static boolean P_SetupParticleGen(mapthing_t *mthing, mobj_t *mobj)
 	}
 	else
 	{
-		numdivisions = 1; // Simple trick to make P_ParticleGenSceneryThink simpler.
+		numdivisions = 1; // Simple trick to make A_ParticleSpawn and P_ParticleGenSceneryThink simpler.
 		radius = 0;
 		anglespeed = 0;
 		angledivision = 0;
@@ -12874,7 +12840,10 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		mobj->movecount = mthing->extrainfo;
 		break;
 	case MT_POPUPTURRET:
-		mobj->threshold = ((mthing->angle) ? mthing->angle : (TICRATE*2)-1);
+		if (mthing->angle)
+			mobj->threshold = mthing->angle;
+		else
+			mobj->threshold = (TICRATE*2)-1;
 		break;
 	case MT_NIGHTSBUMPER:
 		// Pitch of the bumper is set in 30 degree increments.
@@ -12882,11 +12851,11 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		P_SetMobjState(mobj, mobj->info->spawnstate + mobj->threshold);
 		break;
 	case MT_EGGCAPSULE:
-		if (mobj->health <= 0)
-			mobj->health = 20; // prevent 0 health
-		
-		mobj->threshold = min(mthing->extrainfo, 7);
+		if (mthing->angle <= 0)
+			mthing->angle = 20; // prevent 0 health
+
 		mobj->health = mthing->angle;
+		mobj->threshold = min(mthing->extrainfo, 7);
 		break;
 	case MT_TUBEWAYPOINT:
 	{
@@ -13022,7 +12991,8 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		if (mthing->angle & 16384)
 			mobj->flags2 |= MF2_AMBUSH;
 
-		mobj->radius = (mthing->angle & 16383) << FRACBITS;
+		if (mthing->angle > 0)
+			mobj->radius = (mthing->angle & 16383) << FRACBITS;
 		// FALLTHRU
 	case MT_AXISTRANSFER:
 	case MT_AXISTRANSFERLINE:
@@ -13094,6 +13064,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		{
 			mobj->flags &= ~MF_SCENERY;
 			mobj->fuse = (16 - mthing->extrainfo)*(mthing->angle + mobj->info->speed)/16;
+			
 			if (mthing->options & MTF_EXTRA)
 				P_SetMobjState(mobj, mobj->info->meleestate);
 		}
@@ -13283,9 +13254,6 @@ static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y,
 		if (mthing->options & MTF_OBJECTSPECIAL)
 			P_SetObjectSpecial(mobj);
 	}
-
-	if (!udmf && (mthing->options & MTF_AMBUSH))
-		P_SetAmbush(mobj);
 
 	// Generic reverse gravity for individual objects flag.
 	if (mthing->options & MTF_OBJECTFLIP)
@@ -13536,7 +13504,7 @@ static void P_SpawnItemRow(mapthing_t *mthing, mobjtype_t *itemtypes, UINT8 numi
 static void P_SpawnSingularItemRow(mapthing_t *mthing, mobjtype_t itemtype, INT32 numitems, fixed_t horizontalspacing, fixed_t verticalspacing, INT16 fixedangle, boolean bonustime)
 {
 	mobjtype_t itemtypes[1] = { itemtype };
-	P_SpawnItemRow(mthing, itemtypes, 1, numitems, horizontalspacing, verticalspacing, fixedangle, bonustime);
+	return P_SpawnItemRow(mthing, itemtypes, 1, numitems, horizontalspacing, verticalspacing, fixedangle, bonustime);
 }
 
 static void P_SpawnItemCircle(mapthing_t *mthing, mobjtype_t *itemtypes, UINT8 numitemtypes, INT32 numitems, fixed_t size, boolean bonustime)
@@ -13597,35 +13565,6 @@ static void P_SpawnItemCircle(mapthing_t *mthing, mobjtype_t *itemtypes, UINT8 n
 	}
 }
 
-static void P_ParseItemTypes(char *itemstring, mobjtype_t *itemtypes, UINT8 *numitemtypes)
-{
-	char *tok;
-
-	*numitemtypes = 0;
-	if (itemstring)
-	{
-		char *stringcopy = Z_Malloc(strlen(itemstring) + 1, PU_LEVEL, NULL);
-		M_Memcpy(stringcopy, itemstring, strlen(itemstring));
-		stringcopy[strlen(itemstring)] = '\0';
-
-		tok = strtok(stringcopy, " ");
-		while (tok && *numitemtypes < 128)
-		{
-			itemtypes[*numitemtypes] = get_number(tok);
-			tok = strtok(NULL, " ");
-			(*numitemtypes)++;
-		}
-
-		Z_Free(stringcopy);
-	}
-	else
-	{
-		//If no types are supplied, default to ring
-		itemtypes[0] = MT_RING;
-		*numitemtypes = 1;
-	}
-}
-
 void P_SpawnItemPattern(mapthing_t *mthing, boolean bonustime)
 {
 	switch (mthing->type)
@@ -13661,27 +13600,6 @@ void P_SpawnItemPattern(mapthing_t *mthing, boolean bonustime)
 		fixed_t size = (mthing->type & 1) ? 192*FRACUNIT : 96*FRACUNIT;
 		mobjtype_t itemtypes[2] = { MT_RING, MT_BLUESPHERE };
 		P_SpawnItemCircle(mthing, itemtypes, 2, numitems, size, bonustime);
-		return;
-	}
-	case 610: // Generic item row
-	{
-		mobjtype_t itemtypes[128]; //If you want to have a row with more than 128 different object types, you're crazy.
-		UINT8 numitemtypes;
-		if (!udmf)
-			return;
-		P_ParseItemTypes(mthing->stringargs[0], itemtypes, &numitemtypes);
-		P_SpawnItemRow(mthing, itemtypes, numitemtypes, mthing->args[0], mthing->args[1] << FRACBITS, mthing->args[2] << FRACBITS, mthing->angle, bonustime);
-		return;
-	}
-	case 611: // Generic item circle
-	{
-		mobjtype_t itemtypes[128]; //If you want to have a circle with more than 128 different object types, you're crazy.
-		UINT8 numitemtypes;
-		if (!udmf)
-			return;
-		CONS_Printf("Itemstring: %s\n", mthing->stringargs[0]);
-		P_ParseItemTypes(mthing->stringargs[0], itemtypes, &numitemtypes);
-		P_SpawnItemCircle(mthing, itemtypes, numitemtypes, mthing->args[0], mthing->args[1] << FRACBITS, bonustime);
 		return;
 	}
 	default:
