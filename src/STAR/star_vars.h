@@ -27,8 +27,19 @@ extern boolean tsourdt3rd;
 // Commands //
 extern consvar_t cv_soniccd;
 
-// Time Over... ///
-extern char gameoverMusic[6][7];
+// Time Over...
+char gameoverMusic[6][7] = {
+	[0] = "_gover",
+	"_govr1",
+	"_govrc",
+	"_govr3",
+	"_govrm",
+	"_govrs",
+};
+INT32 gameoverMusicTics[2] = {
+	[1] = 15*TICRATE,
+};
+
 extern boolean timeover;
 
 // Easter //
