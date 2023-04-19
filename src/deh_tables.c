@@ -91,6 +91,8 @@ actionpointer_t actionpointers[] =
 	{{A_FaceTracer},             "A_FACETRACER"},
 	{{A_Scream},                 "A_SCREAM"},
 	{{A_BossDeath},              "A_BOSSDEATH"},
+	{{A_SetShadowScale},         "A_SETSHADOWSCALE"},
+	{{A_ShadowScream},           "A_SHADOWSCREAM"},
 	{{A_CustomPower},            "A_CUSTOMPOWER"},
 	{{A_GiveWeapon},             "A_GIVEWEAPON"},
 	{{A_RingBox},                "A_RINGBOX"},
@@ -4813,15 +4815,6 @@ const char *const MENUTYPES_LIST[] = {
 	"OP_SCREENSHOTS",
 	"OP_ERASEDATA",
 
-	"OP_TSOURDT3RD",
-	"OP_TSOURDT3RD_JUKEBOX",
-
-#ifdef HAVE_DISCORDRPC
-	"OP_DISCORD_RQ", //discord requests, for future notice
-	"OP_DISCORD_OPT",
-	"OP_DISCORDCS_OUTPUT",
-#endif
-
 	// Extras
 	"SR_MAIN",
 	"SR_PANDORA",
@@ -4846,7 +4839,21 @@ const char *const MENUTYPES_LIST[] = {
 	// "MAPAUSE",
 	// "HELP",
 
-	"SPECIAL"
+	"SPECIAL",
+
+	// Discord
+#ifdef HAVE_DISCORDRPC
+	"OP_DISCORD_RQ", // discord requests, for future notice
+	"OP_DISCORD_OPT",
+	"OP_DISCORDCS_OUTPUT",
+#endif
+
+	// FUN STAR STUFF //
+	"OP_TSOURDT3RD",
+	
+	"OP_TSOURDT3RD_JUKEBOX",
+	"OP_TSOURDT3RD_EASTER"
+	// END OF THAT //
 };
 
 struct int_const_s const INT_CONST[] = {
@@ -5617,6 +5624,10 @@ struct int_const_s const INT_CONST[] = {
 	{"MB_BUTTON8",MB_BUTTON8},
 	{"MB_SCROLLUP",MB_SCROLLUP},
 	{"MB_SCROLLDOWN",MB_SCROLLDOWN},
+
+	// STAR STUFF //
+	{"TOTALEGGS",TOTALEGGS},
+	// END OF STAR STUFF //
 
 	{NULL,0}
 };

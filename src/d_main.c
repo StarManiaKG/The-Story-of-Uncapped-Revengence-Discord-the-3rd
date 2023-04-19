@@ -140,18 +140,25 @@ char srb2home[256] = ".";
 char srb2path[256] = ".";
 
 boolean usehome = true;
-boolean autoloading = false;
-INT32 extrawads;
 
 const char *pandf = "%s" PATHSEP "%s";
 static char addonsdir[MAX_WADPATH];
 
-// STAR stuff yay
+// STAR STUFF WEEEEE //
+// Discord Stuff
+INT32 extrawads;
+
+// Autoloading
+boolean autoloading;
+
+// Savefiles
 //char savegamefolder[256];
 
+// Events
 boolean aprilfoolsmode; 		// April Fools Event Setter
 boolean eastermode;				// Easter Event Setter
 boolean xmasmode, xmasoverride;	// Christmas Event Setter
+// END OF ALL THAT STAR STUFF //
 
 //
 // EVENT HANDLING
@@ -303,7 +310,7 @@ void D_ProcessEvents(void)
 
 // FUN STAR STUFF :) //
 // Ported from Final Demo, Date Checking is Back!
-static void STAR_Time(void)
+static void STAR_CheckTime(void)
 {
 	time_t t1; // Date-Checker
 	struct tm* tptr; // Date-Checker: Electric Boogalo
@@ -362,7 +369,21 @@ static void STAR_Time(void)
 		xmasoverride = true;
 		modifiedgame = false;
 	}
+
+	// Run Special Stuff Functions //
+	// April Fools
+	if (aprilfoolsmode)
+		CONS_Printf("STAR_CheckTime(): April Fools Mode Enabled!\n");
+
+	// Easter
+	else if (eastermode)
+		CONS_Printf("STAR_CheckTime(): Easter Mode Enabled!\n");
+
+	// Christmas
+	else if (xmasmode)
+		CONS_Printf("STAR_CheckTime(): Christmas Mode Enabled!\n");
 }
+// END OF FUN STAR STUFF //
 
 //
 // D_Display
@@ -648,7 +669,7 @@ static void D_Display(void)
 	// draw pause pic
 	if (paused && cv_showhud.value && (!menuactive || netgame))
 	{
-		if (cv_pausemenustyle.value) // Old-School
+		if (cv_pausegraphicstyle.value) // Old-School
 		{
 			INT32 py;
 			patch_t *patch;
@@ -936,23 +957,6 @@ void D_SRB2Loop(void)
 		{
 			renderisnewtic = false;
 		}
-		
-		// STAR Stuff //
-		if (autoloading)
-		{
-			if (!savemoddata)
-				modifiedgame = false;
-			autoloading = false;
-		}
-
-#ifdef APRIL_FOOLS
-		if ((!modifiedgame || savemoddata) && (cv_ultimatemode.value))
-		{
-			CONS_Printf("You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nyour game has been set to modified.\n");
-			G_SetGameModified(false);
-		}
-#endif
-		// That's the End of That :p //
 
 		if (interp)
 		{
@@ -1004,6 +1008,23 @@ void D_SRB2Loop(void)
 		if (!dedicated)
 			Discord_RunCallbacks();
 #endif
+
+		// STAR STUFF //
+		if (autoloading)
+		{
+			if (!savemoddata)
+				modifiedgame = false;
+			autoloading = false;
+		}
+
+#ifdef APRIL_FOOLS
+		if ((!modifiedgame || savemoddata) && (cv_ultimatemode.value))
+		{
+			CONS_Printf("You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nyour game has been set to modified.\n");
+			G_SetGameModified(false);
+		}
+#endif
+		// THAT'S THE END :P //
 
 		// Fully completed frame made.
 		finishprecise = I_GetPreciseTime();
@@ -1174,24 +1195,16 @@ static void D_AddFolder(addfilelist_t *list, const char *file)
 	list->files[index] = newfile;
 }
 
-static void D_AutoLoadAddons(addfilelist_t *list, const char *file)
+static void D_AutoLoadAddons(/*addfilelist_t *list, */const char *file)
 {
 	char *newfile;
-	size_t index = 0;
-
-	REALLOC_FILE_LIST
-
-	//this is extremely dumb
-	for (index = 0; list->files[index]; index++)
-		;
 
 	newfile = malloc(strlen(file) + 1);
 	if (!newfile)
-		I_Error("D_AutoLoadAddons: No more free memory to Autoload %s", newfile);
-
+		I_Error("D_AutoLoadAddons: No more free memory to autload file %s", file);
 	autoloading = true;
-	strcpy(newfile, file);
 
+	strcpy(newfile, file);
 	COM_ImmedExecute(va("exec %s\n", newfile));
 }
 #undef REALLOC_FILE_LIST
@@ -1439,7 +1452,7 @@ void D_SRB2Main(void)
 	ChangeDirForUrlHandler();
 
 	// STAR: Check the Time on Our Computer
-	STAR_Time();
+	STAR_CheckTime();
 
 	// identify the main IWAD file to use
 	IdentifyVersion();
@@ -1615,15 +1628,16 @@ void D_SRB2Main(void)
 #endif
 #endif //ifndef DEVELOP
 
+	// STAR STUFF //
 	// autoload other wads
 	autoloadpath = fopen(va("%s"PATHSEP"%s",srb2home,AUTOLOADCONFIGFILENAME), "r");
-
 	if (autoloadpath)
 	{
 		CONS_Printf("D_AutoLoadAddons(): Autoloading Addons...\n");
-		D_AutoLoadAddons(&startupwadfiles, va(pandf,srb2home,AUTOLOADCONFIGFILENAME));
-		D_CleanFile(&startupwadfiles);
+		D_AutoLoadAddons(/*&startupwadfiles, */va(pandf,srb2home,AUTOLOADCONFIGFILENAME));
+		//D_CleanFile(&startupwadfiles);
 	}
+	// END OF THAT STUFF //
 
 	cht_Init();
 
