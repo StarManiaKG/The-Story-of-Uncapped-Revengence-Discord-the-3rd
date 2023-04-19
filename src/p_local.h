@@ -537,9 +537,4 @@ void P_DoSuperTransformation(player_t *player, boolean giverings);
 void P_ExplodeMissile(mobj_t *mo);
 void P_CheckGravity(mobj_t *mo, boolean affect);
 
-//
-// STAR STUFF YAY
-//
-extern consvar_t cv_soniccd;
-
 #endif // __P_LOCAL__

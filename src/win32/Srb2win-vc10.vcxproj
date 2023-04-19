@@ -476,6 +476,7 @@
     <ClInclude Include="..\w_wad.h" />
     <ClInclude Include="..\y_inter.h" />
     <ClInclude Include="..\z_zone.h" />
+    <ClInclude Include="..\STAR\star_vars.h" />
     <ClInclude Include="afxres.h" />
     <ClInclude Include="dx_error.h" />
     <ClInclude Include="fabdxlib.h" />

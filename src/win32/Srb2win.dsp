@@ -982,6 +982,12 @@ SOURCE=..\w_wad.h
 # End Group
 # Begin Group "Docs"
 
+## STAR STUFF ##
+SOURCE=..\STAR\star_vars.h
+# End Source File
+# Begin Source File
+## END OF THAT STAR STUFF ##
+
 # PROP Default_Filter ""
 # Begin Source File
 
