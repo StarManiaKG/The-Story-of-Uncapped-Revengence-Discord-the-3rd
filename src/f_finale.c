@@ -20,12 +20,12 @@
 #include "hu_stuff.h"
 #include "r_local.h"
 #include "s_sound.h"
+#include "i_time.h"
 #include "i_video.h"
 #include "v_video.h"
 #include "w_wad.h"
 #include "z_zone.h"
 #include "i_system.h"
-#include "i_time.h"
 #include "i_threads.h"
 #include "m_menu.h"
 #include "dehacked.h"
@@ -39,6 +39,7 @@
 #include "p_setup.h"
 #include "st_stuff.h" // hud hiding
 #include "fastcmp.h"
+#include "console.h"
 
 #include "lua_hud.h"
 #include "lua_hook.h"
@@ -338,6 +339,7 @@ void F_StartCustomCutscene(INT32 cutscenenum, boolean precutscene, boolean reset
 
 void F_StartIntro(void)
 {
+	// STAR STUFF //
 	if (!cv_stjrintro.value)
 		introscenetime[0] = 5*TICRATE;				   // STJr Presents
 	else
@@ -345,6 +347,7 @@ void F_StartIntro(void)
 
 	if (!jukeboxMusicPlaying)
 		S_StopMusic();
+	// STAR STUFF OVER //
 	S_StopSounds();
 
 	if (introtoplay)
@@ -1159,6 +1162,7 @@ static const char *credits[] = {
 	"Johnny \"Sonikku\" Wallbank",
 	"",
 	"\1Programming",
+	"\"altaluna\"",
 	"Alam \"GBC\" Arias",
 	"Logan \"GBA\" Arias",
 	"Zolton \"Zippy_Zolton\" Auburn",
@@ -1196,7 +1200,6 @@ static const char *credits[] = {
 	"Jonas \"MascaraSnake\" Sauer",
 	"Wessel \"sphere\" Smit",
 	"\"SSNTails\"",
-	"\"Varren\"",
 	"\"VelocitOni\"", // Wrote the original dashmode script
 	"Ikaro \"Tatsuru\" Vinhas",
 	"Ben \"Cue\" Woodford",
@@ -1268,7 +1271,6 @@ static const char *credits[] = {
 	"Ben \"Mystic\" Geyer",
 	"Nathan \"Jazz\" Giroux",
 	"Vivian \"toaster\" Grannell",
-	"Dan \"Blitzzo\" Hagerstrand",
 	"James \"SeventhSentinel\" Hall",
 	"Kepa \"Nev3r\" Iceta",
 	"Thomas \"Shadow Hog\" Igoe",
@@ -1306,7 +1308,6 @@ static const char *credits[] = {
 	"",
 	"\1TSoURDt3rd Team",
 	"StarManiaKG \"Star\"",
-	"MarioMario \"Sapphire\"",
 	"Mini the Bunnyboy\"Talis\"",
 	"",
 	"\1TSoURDt3rd Extras",
@@ -1315,6 +1316,9 @@ static const char *credits[] = {
 	"NARBluebear - Emotional Support",
 	"Smiles \"The Fox\" - Emotional Support",
 	"\"Team Comet\" - Emotional Support",
+	"",
+	"\1In Loving Memory Of",
+	"MarioMario \"Sapphire\" - TSoURDt3rd Member",
 	"",
 	"\1Special Thanks",
 	"id Software",
@@ -1693,7 +1697,7 @@ void F_GameEvaluationDrawer(void)
 #if 0 // the following looks like hot garbage the more unlockables we add, and we now have a lot of unlockables
 	if (finalecount >= 5*TICRATE)
 	{
-		V_DrawString(8, 16, menuColor[cv_menucolor.value], "Unlocked:");
+		V_DrawString(8, 16, V_YELLOWMAP, "Unlocked:");
 
 		if (!(netgame) && (!modifiedgame || savemoddata))
 		{
@@ -1711,9 +1715,9 @@ void F_GameEvaluationDrawer(void)
 			}
 		}
 		else if (netgame)
-			V_DrawString(8, 96, menuColor[cv_menucolor.value], "Multiplayer games\ncan't unlock\nextras!");
+			V_DrawString(8, 96, V_YELLOWMAP, "Multiplayer games\ncan't unlock\nextras!");
 		else
-			V_DrawString(8, 96, menuColor[cv_menucolor.value], "Modified games\ncan't unlock\nextras!");
+			V_DrawString(8, 96, V_YELLOWMAP, "Modified games\ncan't unlock\nextras!");
 	}
 #endif
 
@@ -2620,6 +2624,8 @@ void F_StartTitleScreen(void)
 	{
 		titlemapinaction = TITLEMAP_OFF;
 		gamemap = 1; // g_game.c
+		if (!mapheaderinfo[gamemap-1])
+			P_AllocMapHeader(gamemap-1);
 		CON_ClearHUD();
 	}
 
@@ -3536,9 +3542,12 @@ void F_TitleScreenDrawer(void)
 	}
 
 	// STAR STUFF LOL //
-	ST_drawJukebox(); // show us the music we're playing in the jukebox, if we are playing anything
+	// Show the Jukebox
+	ST_drawJukebox();
+	// END OF STAR STUFF //
 
 luahook:
+	//if (renderisnewtic)
 	LUA_HUDHOOK(title);
 }
 
@@ -3977,11 +3986,27 @@ boolean F_ContinueResponder(event_t *event)
 static INT32 scenenum, cutnum;
 static INT32 picxpos, picypos, picnum, pictime, picmode, numpics, pictoloop;
 static INT32 textxpos, textypos;
-static boolean dofadenow = false, cutsceneover = false;
+static boolean cutsceneover = false;
 static boolean runningprecutscene = false, precutresetplayer = false;
 
 static void F_AdvanceToNextScene(void)
 {
+	if (rendermode != render_none)
+	{
+		F_WipeStartScreen();
+
+		// Fade to any palette color you want.
+		if (cutscenes[cutnum]->scene[scenenum].fadecolor)
+		{
+			V_DrawFill(0,0,BASEVIDWIDTH,BASEVIDHEIGHT,cutscenes[cutnum]->scene[scenenum].fadecolor);
+
+			F_WipeEndScreen();
+			F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeinid, true);
+
+			F_WipeStartScreen();
+		}
+	}
+
 	// Don't increment until after endcutscene check
 	// (possible overflow / bad patch names from the one tic drawn before the fade)
 	if (scenenum+1 >= cutscenes[cutnum]->numscenes)
@@ -3989,6 +4014,7 @@ static void F_AdvanceToNextScene(void)
 		F_EndCutScene();
 		return;
 	}
+	
 	++scenenum;
 
 	timetonext = 0;
@@ -4004,7 +4030,6 @@ static void F_AdvanceToNextScene(void)
 			cutscenes[cutnum]->scene[scenenum].musswitchposition, 0, 0);
 
 	// Fade to the next
-	dofadenow = true;
 	F_NewCutscene(cutscenes[cutnum]->scene[scenenum].text);
 
 	picnum = 0;
@@ -4014,6 +4039,14 @@ static void F_AdvanceToNextScene(void)
 	textypos = cutscenes[cutnum]->scene[scenenum].textypos;
 
 	animtimer = pictime = cutscenes[cutnum]->scene[scenenum].picduration[picnum];
+
+	if (rendermode != render_none)
+	{
+		F_CutsceneDrawer();
+
+		F_WipeEndScreen();
+		F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeoutid, true);
+	}
 }
 
 // See also G_AfterIntermission, the only other place which handles intra-map/ending transitions
@@ -4088,21 +4121,6 @@ void F_StartCustomCutscene(INT32 cutscenenum, boolean precutscene, boolean reset
 //
 void F_CutsceneDrawer(void)
 {
-	if (dofadenow && rendermode != render_none)
-	{
-		F_WipeStartScreen();
-
-		// Fade to any palette color you want.
-		if (cutscenes[cutnum]->scene[scenenum].fadecolor)
-		{
-			V_DrawFill(0,0,BASEVIDWIDTH,BASEVIDHEIGHT,cutscenes[cutnum]->scene[scenenum].fadecolor);
-
-			F_WipeEndScreen();
-			F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeinid, true);
-
-			F_WipeStartScreen();
-		}
-	}
 	V_DrawFill(0,0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 
 	if (cutscenes[cutnum]->scene[scenenum].picname[picnum][0] != '\0')
@@ -4113,12 +4131,6 @@ void F_CutsceneDrawer(void)
 		else
 			V_DrawScaledPatch(picxpos,picypos, 0,
 				W_CachePatchName(cutscenes[cutnum]->scene[scenenum].picname[picnum], PU_PATCH_LOWPRIORITY));
-	}
-
-	if (dofadenow && rendermode != render_none)
-	{
-		F_WipeEndScreen();
-		F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeoutid, true);
 	}
 
 	V_DrawString(textxpos, textypos, V_ALLOWLOWERCASE, cutscene_disptext);
@@ -4136,8 +4148,6 @@ void F_CutsceneTicker(void)
 	// advance animation
 	finalecount++;
 	cutscene_boostspeed = 0;
-
-	dofadenow = false;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{

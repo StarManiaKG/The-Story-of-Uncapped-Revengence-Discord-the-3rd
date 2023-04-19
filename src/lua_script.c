@@ -38,6 +38,12 @@
 #include "doomstat.h"
 #include "g_state.h"
 
+// STAR STUFF //
+#include "d_main.h"
+
+#include "STAR/star_vars.h"
+// END OF THAT //
+
 lua_State *gL = NULL;
 
 // List of internal libraries to load from SRB2
@@ -401,7 +407,51 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 			return 0;
 		LUA_PushUserdata(L, &camera2, META_CAMERA);
 		return 1;
+
+	// STAR STUFF YAY //
+	// main //
+	// global tsourdt3rd variable
+	} else if (fastcmp(word,"tsourdt3rd")) {
+		lua_pushboolean(L, tsourdt3rd);
+		return 1;
+
+	// time over...
+	} else if (fastcmp(word,"timeover")) {
+		lua_pushboolean(L, timeover);
+		return 1;
+
+	// events //
+	// easter
+	} else if (fastcmp(word,"eastermode")) {
+		lua_pushboolean(L, eastermode);
+		return 1;
+
+	} else if (fastcmp(word,"foundeggs")) {
+		if (!eastermode)
+			return 0;
+		lua_pushinteger(L, foundeggs);
+		return 1;
+	
+	} else if (fastcmp(word,"collectedmapeggs")) {
+		if (!eastermode)
+			return 0;
+		lua_pushinteger(L, collectedmapeggs);
+		return 1;
+
+	} else if (fastcmp(word,"currenteggs")) {
+		if (!eastermode)
+			return 0;
+		lua_pushinteger(L, currenteggs);
+		return 1;
+
+	} else if (fastcmp(word,"numstageEggs")) {
+		if (!eastermode)
+			return 0;
+		lua_pushinteger(L, numstageEggs);
+		return 1;
 	}
+	// END OF STAR STUFF YAY //
+
 	return 0;
 }
 
@@ -452,6 +502,44 @@ int LUA_CheckGlobals(lua_State *L, const char *word)
 		mapmusflags = (UINT16)luaL_checkinteger(L, 2);
 	else if (fastcmp(word, "stagefailed"))
 		stagefailed = luaL_checkboolean(L, 2);
+
+	// STAR STUFF YAY //
+	// main stuff //
+	// time over...
+	else if (fastcmp(word, "timeover"))
+		timeover = luaL_checkboolean(L, 2);
+
+	// events //
+	// easter
+	else if (fastcmp(word, "foundeggs"))
+	{
+		if (!eastermode)
+			return luaL_error(L, "global variable foundeggs has no unless easter mode is enabled!");
+		foundeggs = (INT32)luaL_checkinteger(L, 2);
+	}
+
+	else if (fastcmp(word, "collectedmapeggs"))
+	{
+		if (!eastermode)
+			return luaL_error(L, "global variable collectedmapeggs has no unless easter mode is enabled!");
+		collectedmapeggs = (INT32)luaL_checkinteger(L, 2);
+	}
+
+	else if (fastcmp(word, "currenteggs"))
+	{
+		if (!eastermode)
+			return luaL_error(L, "global variable currenteggs has no unless easter mode is enabled!");
+		currenteggs = (INT32)luaL_checkinteger(L, 2);	
+	}
+
+	else if (fastcmp(word, "numstageEggs"))
+	{
+		if (!eastermode)
+			return luaL_error(L, "global variable numstageEggs has no unless easter mode is enabled!");
+		numstageEggs = (INT32)luaL_checkinteger(L, 2);	
+	}
+	// END OF STAR STUFF YAY //
+
 	else
 		return 0;
 

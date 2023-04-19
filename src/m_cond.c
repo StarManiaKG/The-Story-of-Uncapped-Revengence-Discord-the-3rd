@@ -23,6 +23,12 @@
 
 #include "m_menu.h" // menu coloring
 
+// STAR STUFF //
+#include "d_main.h"
+
+#include "STAR/star_vars.h"
+// END OF THAT //
+
 // Map triggers for linedef executors
 // 32 triggers, one bit each
 UINT32 unlocktriggers;
@@ -95,6 +101,11 @@ void M_ClearSecrets(void)
 
 	// Re-unlock any always unlocked things
 	M_SilentUpdateUnlockablesAndEmblems();
+
+	// DO SOME STAR STUFF //
+	if (eastermode)
+		foundeggs = 0;
+	// END SOME STAR STUFF //
 }
 
 // ----------------------
