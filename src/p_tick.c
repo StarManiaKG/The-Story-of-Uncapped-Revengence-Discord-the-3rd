@@ -36,7 +36,7 @@
 #endif
 
 // STAR STUFF //
-//#include "STAR/star_vars.h"
+#include "STAR/star_vars.h"
 #include "m_menu.h" // jukebox
 
 #ifdef APRIL_FOOLS
@@ -849,12 +849,12 @@ void P_Ticker(boolean run)
 			}
 		}
 #endif
+
 		// Time Over...
-		// MAJOR STAR NOTE
-    	/*if (((Playing() && !netgame) && (leveltime >= 20999 && AllowTypicalTimeOver))  // one tic off so the timer doesn't display 10:00.00
-			 || (timeover))														// here for lua purposes
+		if (((Playing() && !netgame) && (leveltime >= 20999 && AllowTypicalTimeOver))  	// one tic off so the timer doesn't display 10:00.00
+			 || (timeover))																// here for lua purposes
 		{
-			if (!timeover)														// still here for lua purposes
+			if (!timeover)																// still here for lua purposes
 				timeover = true;
 			
 			while (imGonnaKillAllOfYou < MAXPLAYERS)
@@ -866,7 +866,7 @@ void P_Ticker(boolean run)
 
 				imGonnaKillAllOfYou++;
 			}
-		}*/
+		}
 		// END OF THAT STAR STUFF FOR KICKS //
 
 		LUA_HOOK(PostThinkFrame);

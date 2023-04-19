@@ -44,6 +44,8 @@
 
 #include "fastcmp.h" // fastcmp, helps with super stuff
 
+#include "STAR/star_vars.h" // provides unique star stuff
+
 // Please feel free to provide your own Discord app if you're making a new custom build :)
 #define DISCORD_APPID "1013126566236135516"
 
@@ -1153,6 +1155,8 @@ void DRPC_UpdatePresence(void)
 				// Lives //
 				if (!players[consoleplayer].spectator && gametyperules & GTR_LIVES && !(ultimatemode || modeattacking))
 					snprintf(lifeGrammar, 22, (!players[consoleplayer].lives ? ", Game Over..." : ((players[consoleplayer].lives == INFLIVES) || (!cv_cooplives.value && (netgame || multiplayer))) ? ", Has Infinite Lives" : (players[consoleplayer].lives == 1 ? ", %d Life Left" : ", %d Lives Left")), players[consoleplayer].lives);
+				else if (timeover)
+					strcpy(lifeGrammar, ", Time Over...");
 				
 				// Spectators //
 				if (!players[consoleplayer].spectator)

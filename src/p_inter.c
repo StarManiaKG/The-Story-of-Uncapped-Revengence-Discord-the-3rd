@@ -34,6 +34,10 @@
 #include "discord.h"
 #endif
 
+// STAR STUFF //
+#include "STAR/star_vars.h"
+// END OF THAT //
+
 // CTF player names
 #define CTFTEAMCODE(pl) pl->ctfteam ? (pl->ctfteam == 1 ? "\x85" : "\x84") : ""
 #define CTFTEAMENDCODE(pl) pl->ctfteam ? "\x80" : ""
@@ -2569,13 +2573,13 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 		if ((target->player->lives <= 1) && (netgame || multiplayer) && G_GametypeUsesCoopLives() && (cv_cooplives.value == 0))
 			;
-		else if ((!target->player->bot || target->player->bot == BOT_MPAI) && !target->player->spectator && (target->player->lives != INFLIVES)
+		else if ((!target->player->bot || target->player->bot == BOT_MPAI) && !target->player->spectator && ((target->player->lives != INFLIVES) || timeover)
 		 && G_GametypeUsesLives())
 		{
 			if (!(target->player->pflags & PF_FINISHED))
 				target->player->lives -= 1; // Lose a life Tails 03-11-2000
 
-			if (target->player->lives <= 0) // Tails 03-14-2000
+			if (target->player->lives <= 0 || timeover) // Tails 03-14-2000, Star 04-14-2023
 			{
 				boolean gameovermus = false;
 				if ((netgame || multiplayer) && G_GametypeUsesCoopLives() && (cv_cooplives.value != 1))
@@ -2596,10 +2600,13 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 					gameovermus = true;
 
 				if (gameovermus) // Yousa dead now, Okieday? Tails 03-14-2000
-					S_ChangeMusicEx("_gover", 0, 0, 0, (2*MUSICRATE) - (MUSICRATE/25), 0); // 1.96 seconds
+					S_ChangeMusicEx(gameoverMusic[cv_gameovermusic.value], 0, 0, 0, (2*MUSICRATE) - (MUSICRATE/25), 0); // 1.96 seconds
 					//P_PlayJingle(target->player, JT_GOVER); // can't be used because incompatible with track fadeout
 
-				if (!(netgame || multiplayer || demoplayback || demorecording || metalrecording || modeattacking) && numgameovers < maxgameovers)
+				if ((!(netgame || multiplayer || demoplayback || demorecording || metalrecording || modeattacking)
+					|| (!(target->player->lives <= 0) && timeover && !(netgame || multiplayer || demoplayback || demorecording || metalrecording || modeattacking)))
+					
+					&& (numgameovers < maxgameovers))
 				{
 					numgameovers++;
 					if ((!modifiedgame || savemoddata) && cursaveslot > 0)
