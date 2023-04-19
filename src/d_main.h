@@ -60,7 +60,8 @@ void D_StartTitle(void);
 
 #endif //__D_MAIN__
 
-// Event Setter
+// STAR STUFF //
+// Events
 extern boolean aprilfoolsmode; 		    // April Fools Event Setter
 extern boolean eastermode;				// Easter Event Setter
 extern boolean xmasmode, xmasoverride;	// Christmas Event Setter

@@ -110,9 +110,6 @@ typedef enum
 	MN_OP_SCREENSHOTS,
 	MN_OP_ERASEDATA,
 
-	MN_OP_TSOURDT3RD,
-	MN_OP_TSOURDT3RD_JUKEBOX,
-
 	// Extras
 	MN_SR_MAIN,
 	MN_SR_PANDORA,
@@ -138,11 +135,20 @@ typedef enum
 	// MN_HELP,
 
 	MN_SPECIAL,
+
 #ifdef HAVE_DISCORDRPC
-	MN_DISCORD_RQ, //discord requests, for future notice
-	MN_DISCORD_OPT,
-	MN_DISCORDCS_OUTPUT,
+	MN_OP_DISCORD_RQ, // discord requests, for future notice
+	MN_OP_DISCORD_OPT,
+	MN_OP_DISCORDCS_OUTPUT,
 #endif
+
+	// FUN STAR STUFF //
+	MN_OP_TSOURDT3RD,
+	
+	MN_OP_TSOURDT3RD_JUKEBOX,
+	MN_OP_TSOURDT3RD_EASTER,
+	// END OF THAT //
+
 	NUMMENUTYPES,
 } menutype_t; // up to 63; MN_SPECIAL = 53
 #define MTREE2(a,b) (a | (b<<MENUBITS))
@@ -501,26 +507,37 @@ void M_InitPlayerSetupColors(void);
 void M_FreePlayerSetupColors(void);
 void M_RefreshPauseMenu(void);
 
-//star stuff weeeeee
-extern boolean AlwaysOverlayInvincibility, TransformSuperWithShield;
-extern consvar_t cv_startupscreen, cv_stjrintro, cv_menucolor, cv_fpscountercolor, cv_tpscountercolor, cv_pausemenustyle, cv_automapoutsidedevmode;
+// star stuff weeeeee //
+// main build menu stuff
+extern boolean AllowTypicalTimeOver, AlwaysOverlayInvincibility, TransformSuperWithShield;
+extern consvar_t cv_startupscreen, cv_stjrintro;
+extern consvar_t cv_menucolor, cv_fpscountercolor, cv_tpscountercolor;
+extern consvar_t cv_allowtypicaltimeover, cv_pausegraphicstyle, cv_automapoutsidedevmode;
 
 #ifdef APRIL_FOOLS
 extern consvar_t cv_ultimatemode;
 #endif
 
+extern consvar_t cv_gameovermusic;
+
 extern consvar_t cv_perfectsave, cv_perfectsavestripe1, cv_perfectsavestripe2, cv_perfectsavestripe3;
 extern consvar_t cv_superwithshield, cv_armageddonnukesuper, cv_alwaysoverlayinvuln;
-extern consvar_t cv_jukeboxhud, cv_jukeboxspeed;
+extern consvar_t cv_jukeboxhud, cv_luacanstopthejukebox, cv_jukeboxspeed;
 
 extern UINT16 menuColor[16];
 
+// jukebox stuff
 extern boolean jukeboxMusicPlaying;
 extern boolean jukeboxUnlocked;
 
 extern char jukeboxMusicName[22+12];
 extern char jukeboxMusicTrack[7];
 void M_ResetJukebox(void);
+
+// extra stuff
+void STAR_SetProblematicCommandsForNetgames(void);
+void STAR_ResetProblematicCommandsAfterNetgames(void);
+// end of star stuff //
 
 // These defines make it a little easier to make menus
 #define DEFAULTMENUSTYLE(id, header, source, prev, x, y)\
