@@ -78,8 +78,7 @@
     - To stop certain, or all, addons from autoloading on startup, look at the ```autoload.cfg``` file, located in your SRB2 directory, and remove the mods there.
     - Autoloading doesn't affect netgames and the ability to join them. You still need to relaunch with the base IWADS loaded in other to join other netgames.
     
-    ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/autoloading1.gif?raw=true)
-    ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/autoloading2.gif?raw=true)
+    ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/autoloading.gif?raw=true)
     -   NOTE: You may want to back up your savefiles when using this feature, just in case.
 
   - A Jukebox
