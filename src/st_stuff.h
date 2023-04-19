@@ -128,8 +128,12 @@ extern hudinfo_t hudinfo[NUMHUDITEMS];
 
 extern UINT16 objectsdrawn;
 
-// STAR Stuff lol
+// STAR STUFF LOL //
+// Jukebox
 void ST_drawJukebox(void);
 extern boolean initJukeboxHUD;
+
+// Easter
+void ST_drawEggs(void);
 
 #endif

@@ -4607,6 +4607,10 @@
 				RelativePath="..\w_wad.h"
 				>
 			</File>
+			<File
+				RelativePath="..\STAR\star_vars.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Docs"

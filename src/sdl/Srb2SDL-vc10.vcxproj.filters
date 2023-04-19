@@ -481,6 +481,9 @@
     <ClInclude Include="..\w_wad.h">
       <Filter>W_Wad</Filter>
     </ClInclude>
+    <ClInclude Include="..\STAR\star_vars.h">
+      <Filter>G_Game</Filter>
+    </ClInclude>
     <ClInclude Include="endtxt.h">
       <Filter>SDLApp</Filter>
     </ClInclude>

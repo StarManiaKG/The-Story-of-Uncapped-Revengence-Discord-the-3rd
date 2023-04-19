@@ -329,4 +329,7 @@ void S_StopSoundByNum(sfxenum_t sfxnum);
 #define S_StartScreamSound S_StartSound
 #endif
 
+// STAR STUFF, FOR MUSIC, YOU KNOW //
+extern boolean StopMusicCausedByLua;
+
 #endif
