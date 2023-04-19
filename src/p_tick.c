@@ -26,8 +26,9 @@
 #include "r_main.h"
 #include "r_fps.h"
 #include "i_video.h" // rendermode
-#include "m_cheat.h" // Object place
-#include "m_menu.h" // jukebox
+
+// Object place
+#include "m_cheat.h"
 
 // Discord
 #ifdef HAVE_DISCORDRPC
@@ -35,20 +36,19 @@
 #endif
 
 // STAR STUFF //
+//#include "STAR/star_vars.h"
+#include "m_menu.h" // jukebox
+
 #ifdef APRIL_FOOLS
 #include "fastcmp.h"
 #include "v_video.h"
 #endif
 
-//#include "STAR/star_vars.h"
+tic_t emeraldtime;
+boolean timeover;
 // END OF THAT //
 
 tic_t leveltime;
-
-// STAR STUFF //
-tic_t emeraldtime;
-boolean timeover;
-// END OF THAT STUFF //
 
 //
 // THINKERS
@@ -491,7 +491,8 @@ static inline void P_DoSpecialStageStuff(void)
 		players[i].powers[pw_underwater] = players[i].powers[pw_spacetime] = 0;
 	}
 
-	if (sstimer < 15*TICRATE+6 && sstimer > 7 && (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC) && !jukeboxMusicPlaying)
+	if (sstimer < 15*TICRATE+6 && sstimer > 7 && (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC)
+		&& (!jukeboxMusicPlaying))
 		S_SpeedMusic(1.4f);
 
 	if (sstimer && !objectplacing)
@@ -798,6 +799,7 @@ void P_Ticker(boolean run)
 			G_ConsGhostTic();
 		if (modeattacking)
 			G_GhostTicker();
+
 #ifdef HAVE_DISCORDRPC
 		if (gametyperules & GTR_POWERSTONES && all7matchemeralds)
 		{
@@ -811,6 +813,7 @@ void P_Ticker(boolean run)
 			}
 		}
 #endif
+
 		// DO STAR STUFF FOR KICKS //
 #ifdef APRIL_FOOLS
 		// Sonic's Dead lol
@@ -873,24 +876,36 @@ void P_Ticker(boolean run)
 	{
 		R_UpdateLevelInterpolators();
 		R_UpdateViewInterpolation();
-		
+
+		// Hack: ensure newview is assigned every tic.
+		// Ensures view interpolation is T-1 to T in poor network conditions
+		// We need a better way to assign view state decoupled from game logic
 		if (rendermode != render_none)
 		{
 			player_t *player1 = &players[displayplayer];
 			if (player1->mo && skyboxmo[0] && cv_skybox.value)
+			{
 				R_SkyboxFrame(player1);
+			}
 			if (player1->mo)
+			{
 				R_SetupFrame(player1);
-			
+			}
+
 			if (splitscreen)
 			{
 				player_t *player2 = &players[secondarydisplayplayer];
 				if (player2->mo && skyboxmo[0] && cv_skybox.value)
+				{
 					R_SkyboxFrame(player2);
+				}
 				if (player2->mo)
+				{
 					R_SetupFrame(player2);
+				}
 			}
 		}
+
 	}
 
 	P_MapEnd();
