@@ -150,6 +150,10 @@ INT32 extrawads;
 
 // Autoloading
 boolean autoloading;
+boolean waitToWarp;
+
+INT32 maptoLoadAfterAutoload;
+const char *mapNameToLoadAfterAutoload;
 
 // Savefiles
 //char savegamefolder[256];
@@ -1010,11 +1014,48 @@ void D_SRB2Loop(void)
 #endif
 
 		// STAR STUFF //
+		// Do Basic Autoloading Stuff
 		if (autoloading)
 		{
 			if (!savemoddata)
 				modifiedgame = false;
 			autoloading = false;
+		}
+
+		// Do Extra Autoloading Stuff
+		else
+		{
+			maptoLoadAfterAutoload = G_FindMapByNameOrCode(mapNameToLoadAfterAutoload, 0);
+
+			// Map Loading (kinda ported from D_SRB2Main(), but not really at the same time)
+			if (waitToWarp)
+			{
+				gameaction = ga_nothing;
+				
+				CV_ClearChangedFlags(); // Do this here so if you run SRB2 with eg +timelimit 5, the time limit counts as having been modified for the first game.
+				M_PushSpecialParameters(); // push all "+" parameter at the command buffer
+				COM_BufExecute(); // ensure the command buffer gets executed before the map starts (+skin)
+				
+				if (server)
+				{
+					// Prevent warping to nonexistent levels
+					if (W_CheckNumForName(G_BuildMapName(maptoLoadAfterAutoload)) == LUMPERROR)
+						I_Error("Could not warp to %s (map not found)\n", G_BuildMapName(maptoLoadAfterAutoload));
+					// Prevent warping to locked levels
+					// ... unless you're in a dedicated server.  Yes, technically this means you can view any level by
+					// running a dedicated server and joining it yourself, but that's better than making dedicated server's
+					// lives hell.
+					else if (!dedicated && M_MapLocked(maptoLoadAfterAutoload))
+						I_Error("You need to unlock this level before you can warp to it!\n");
+					else
+					{
+						D_MapChange(maptoLoadAfterAutoload, gametype, ultimatemode, true, 0, false, false);
+
+						maptoLoadAfterAutoload = 0;
+						waitToWarp = false;
+					}
+				}
+			}
 		}
 
 #ifdef APRIL_FOOLS
@@ -1194,20 +1235,22 @@ static void D_AddFolder(addfilelist_t *list, const char *file)
 
 	list->files[index] = newfile;
 }
+#undef REALLOC_FILE_LIST
 
-static void D_AutoLoadAddons(/*addfilelist_t *list, */const char *file)
+// STAR STUFF //
+static void D_AutoLoadAddons(const char *file)
 {
 	char *newfile;
 
 	newfile = malloc(strlen(file) + 1);
 	if (!newfile)
-		I_Error("D_AutoLoadAddons: No more free memory to autload file %s", file);
+		I_Error("D_AutoLoadAddons: No more free memory to autoload file %s", file);
 	autoloading = true;
 
 	strcpy(newfile, file);
 	COM_ImmedExecute(va("exec %s\n", newfile));
 }
-#undef REALLOC_FILE_LIST
+// END OF THAT //
 
 static inline void D_CleanFile(addfilelist_t *list)
 {
@@ -1634,8 +1677,7 @@ void D_SRB2Main(void)
 	if (autoloadpath)
 	{
 		CONS_Printf("D_AutoLoadAddons(): Autoloading Addons...\n");
-		D_AutoLoadAddons(/*&startupwadfiles, */va(pandf,srb2home,AUTOLOADCONFIGFILENAME));
-		//D_CleanFile(&startupwadfiles);
+		D_AutoLoadAddons(va(pandf,srb2home,AUTOLOADCONFIGFILENAME));
 	}
 	// END OF THAT STUFF //
 
@@ -1717,16 +1759,20 @@ void D_SRB2Main(void)
 	{
 		const char *word = M_GetNextParm();
 		pstartmap = G_FindMapByNameOrCode(word, 0);
-		if (! pstartmap)
-			I_Error("Cannot find a map remotely named '%s'\n", word);
+
+		if (!M_CheckParm("-server"))
+			G_SetGameModified(true);
+		
+		if (!autoloading)
+		{
+			if (! pstartmap)
+				I_Error("Cannot find a map remotely named '%s'\n", word);
+			autostart = true;
+		}
 		else
 		{
-			if (!M_CheckParm("-server"))
-			{
-				autoloading = false;
-				G_SetGameModified(true);
-			}
-			autostart = true;
+			mapNameToLoadAfterAutoload = word;
+			waitToWarp = true;
 		}
 	}
 
