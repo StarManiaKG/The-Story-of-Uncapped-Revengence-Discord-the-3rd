@@ -1121,8 +1121,9 @@ static inline void CL_DrawConnectionStatus(void)
 {
 	INT32 ccstime = I_GetTime();
 
-	// Do Star Stuff
-	CV_StealthSetValue(&cv_superwithshield, 0);
+	// DO STAR STUFF //
+	STAR_SetProblematicCommandsForNetgames();
+	// DID STAR STUFF //
 
 	// Draw background fade
 	V_DrawFadeScreen(0xFF00, 16); // force default
@@ -3756,8 +3757,9 @@ void D_QuitNetGame(void)
 	D_CloseConnection();
 	ClearAdminPlayers();
 	
-	// Star Stuff YAY
-	CV_StealthSetValue(&cv_superwithshield, TransformSuperWithShield);
+	// STAR STUFF ENGAGED //
+	STAR_ResetProblematicCommandsAfterNetgames();
+	// STAR STUFF DISENGAGED //
 
 	DEBFILE("===========================================================================\n"
 	        "                         Log finish\n"

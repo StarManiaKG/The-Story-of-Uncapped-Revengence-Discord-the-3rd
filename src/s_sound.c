@@ -2323,7 +2323,12 @@ void S_StopMusic(void)
 		return;
 	
 	if (jukeboxMusicPlaying)
-		M_ResetJukebox();
+	{
+		if (!cv_luacanstopthejukebox.value && StopMusicCausedByLua)
+			return;
+		else
+			M_ResetJukebox();
+	}
 
 	if (I_SongPaused())
 		I_ResumeSong();
