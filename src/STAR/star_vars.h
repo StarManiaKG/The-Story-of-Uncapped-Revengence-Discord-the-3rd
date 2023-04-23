@@ -32,7 +32,7 @@ extern consvar_t cv_soniccd;
 
 // Time Over...
 extern const char gameoverMusic[7][7];
-extern INT32 gameoverMusicTics[8];
+extern const INT32 gameoverMusicTics[7];
 
 extern boolean timeover;
 extern boolean ForceTimeOver;
