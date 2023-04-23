@@ -9596,9 +9596,9 @@ const char gameoverMusic[7][7] = {
 	"_govrg",
 };
 
-INT32 gameoverMusicTics[8] = {
+const INT32 gameoverMusicTics[7] = {
 	[1] = 15*TICRATE,
-	[7] = 4*TICRATE,
+	[6] = 6*TICRATE,
 };
 // END OF THAT //
 
@@ -9752,10 +9752,6 @@ static void P_DeathThink(player_t *player)
 		if (!G_CoopGametype() && player->lives <= 0 && player->deadtimer == gameovertics)
 			P_RestoreMultiMusic(player);
 	}
-
-	// STAR STUFF YAYS //
-	memset(&gameoverMusicTics, 0, sizeof(gameoverMusicTics));
-	// PLEASE HELP ME //
 
 notrealplayer:
 
