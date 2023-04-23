@@ -593,7 +593,8 @@ static const char *gamecontrolname[NUM_GAMECONTROLS] =
 	"systemmenu",
 	"screenshot",
 	"recordgif",
-	"viewpoint",
+	"viewpoint", // Rename this to "viewpointnext" for the next major version
+	"viewpointprev",
 	"custom1",
 	"custom2",
 	"custom3",
@@ -735,7 +736,7 @@ void G_DefineDefaultControls(void)
 		gamecontroldefault[i][GC_PAUSE      ][0] = 'p';
 		gamecontroldefault[i][GC_SCREENSHOT ][0] = KEY_F8;
 		gamecontroldefault[i][GC_RECORDGIF  ][0] = KEY_F9;
-		gamecontroldefault[i][GC_VIEWPOINT  ][0] = KEY_F12;
+		gamecontroldefault[i][GC_VIEWPOINTNEXT][0] = KEY_F12;
 
 		// Gamepad controls -- same for both schemes
 		gamecontroldefault[i][GC_JUMP       ][1] = KEY_JOY1+0; // A
@@ -749,7 +750,7 @@ void G_DefineDefaultControls(void)
 		gamecontroldefault[i][GC_SCREENSHOT ][1] = KEY_JOY1+6; // Back
 		gamecontroldefault[i][GC_SYSTEMMENU ][0] = KEY_JOY1+7; // Start
 		gamecontroldefault[i][GC_CAMTOGGLE  ][1] = KEY_HAT1+0; // D-Pad Up
-		gamecontroldefault[i][GC_VIEWPOINT  ][1] = KEY_HAT1+1; // D-Pad Down
+		gamecontroldefault[i][GC_VIEWPOINTNEXT][1] = KEY_JOY1+9; // Right Stick
 		gamecontroldefault[i][GC_TOSSFLAG   ][1] = KEY_HAT1+2; // D-Pad Left
 		gamecontroldefault[i][GC_SCORES     ][1] = KEY_HAT1+3; // D-Pad Right
 
@@ -765,7 +766,7 @@ void G_DefineDefaultControls(void)
 		gamecontrolbisdefault[i][GC_SCREENSHOT ][1] = KEY_2JOY1+6; // Back
 		//gamecontrolbisdefault[i][GC_SYSTEMMENU ][0] = KEY_2JOY1+7; // Start
 		gamecontrolbisdefault[i][GC_CAMTOGGLE  ][1] = KEY_2HAT1+0; // D-Pad Up
-		gamecontrolbisdefault[i][GC_VIEWPOINT  ][1] = KEY_2HAT1+1; // D-Pad Down
+		gamecontrolbisdefault[i][GC_VIEWPOINTNEXT][1] = KEY_2JOY1+9; // Right Stick
 		gamecontrolbisdefault[i][GC_TOSSFLAG   ][1] = KEY_2HAT1+2; // D-Pad Left
 		//gamecontrolbisdefault[i][GC_SCORES     ][1] = KEY_2HAT1+3; // D-Pad Right
 	}

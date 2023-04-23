@@ -1987,12 +1987,10 @@ static boolean ViewpointSwitchResponder(event_t *ev)
 	UINT8 canSwitchView = 0;
 
 	INT32 direction = 0;
-	if (gamestate == GS_LEVEL && ev->type == ev_keydown && (ev->key == KEY_F12 || ev->key == gamecontrol[GC_VIEWPOINT][0] || ev->key == gamecontrol[GC_VIEWPOINT][1]))
-		direction = 1;
-	/*if (ev->key == KEY_F12 || ev->key == gamecontrol[GC_VIEWPOINTNEXT][0] || ev->key == gamecontrol[GC_VIEWPOINTNEXT][1])
+	if (ev->key == KEY_F12 || ev->key == gamecontrol[GC_VIEWPOINTNEXT][0] || ev->key == gamecontrol[GC_VIEWPOINTNEXT][1])
 		direction = 1;
 	if (ev->key == gamecontrol[GC_VIEWPOINTPREV][0] || ev->key == gamecontrol[GC_VIEWPOINTPREV][1])
-		direction = -1;*/
+		direction = -1;
 	// This enabled reverse-iterating with shift+F12, sadly I had to
 	// disable this in case your shift key is bound to a control =((
 	//if (shiftdown)

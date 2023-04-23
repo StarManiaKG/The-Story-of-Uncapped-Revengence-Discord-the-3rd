@@ -154,7 +154,10 @@ typedef enum
 #define MTREE2(a,b) (a | (b<<MENUBITS))
 #define MTREE3(a,b,c) MTREE2(a, MTREE2(b,c))
 #define MTREE4(a,b,c,d) MTREE2(a, MTREE3(b,c,d))
+
+// STAR STUFF: OLD MENU STUFF EDITION //
 #define MTREE5(a,b,c,d,e) MTREE2(a, MTREE4(b,c,d,e))
+// THAT'S IT LOL //
 
 typedef struct
 {
@@ -404,9 +407,9 @@ typedef struct
 // level select platter
 typedef struct
 {
-	char header[22+5]; // mapheader_t lvltttl max length + " ZONE"
+	char header[22+5]; // mapheader_t lvlttl max length + " ZONE"
 	INT32 maplist[3];
-	char mapnames[3][17+1];
+	char mapnames[3][22]; // lvlttl max length
 	boolean mapavailable[4]; // mapavailable[3] == wide or not
 } levelselectrow_t;
 
@@ -487,6 +490,8 @@ void Moviemode_option_Onchange(void);
 #ifdef HAVE_DISCORDRPC
 extern boolean discordMenuOpen;
 void Discord_option_Onchange(void);
+
+void M_RefreshPauseMenu(void);
 #endif
 
 // Player Setup menu colors linked list
@@ -505,8 +510,6 @@ UINT16 M_GetColorBefore(UINT16 color);
 UINT16 M_GetColorAfter(UINT16 color);
 void M_InitPlayerSetupColors(void);
 void M_FreePlayerSetupColors(void);
-void M_RefreshPauseMenu(void);
-
 // STAR STUFF SUBISHUHFLUKJDJIPOKD //
 // main build menu stuff
 extern boolean AllowTypicalTimeOver;
