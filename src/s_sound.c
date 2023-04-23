@@ -2018,9 +2018,6 @@ boolean S_RecallMusic(UINT16 status, boolean fromfirst)
 	boolean currentmidi = (I_SongType() == MU_MID || I_SongType() == MU_MID_EX);
 	boolean midipref = cv_musicpref.value;
 
-	if (jukeboxMusicPlaying)
-		return false; // We're Playing Music in the Jukebox, So Don't Do Anything
-
 	if (status)
 		result = S_GetMusicStackEntry(status, fromfirst, -1);
 	else
@@ -2073,6 +2070,15 @@ boolean S_RecallMusic(UINT16 status, boolean fromfirst)
 		Z_Free(entry);
 		return false;
 	}
+
+	// STAR STUFF YAY //
+	// We're Playing Music in the Jukebox, Clear the Memory and Don't Do Anything
+	if (jukeboxMusicPlaying)
+	{
+		Z_Free(entry);
+		return false;
+	}
+	// END THAT STUFF //
 
 	if (strncmp(entry->musname, S_MusicName(), 7) || // don't restart music if we're already playing it
 		(midipref != currentmidi && S_PrefAvailable(midipref, entry->musname))) // but do if the user's preference has changed
@@ -2258,8 +2264,14 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 	if (S_MusicDisabled())
 		return;
 	
+	// STAR STUFF //
 	if (jukeboxMusicPlaying)
+	{
+		if (Playing() && playeringame[consoleplayer])
+			S_ResumeAudio();
 		return;
+	}
+	// END STAR STUFF //
 
 	strncpy(newmusic, mmusic, 7);
 	if (LUA_HookMusicChange(music_name, &hook_param))
@@ -2322,8 +2334,15 @@ void S_StopMusic(void)
 	if (!I_SongPlaying())
 		return;
 	
+	// STAR SPECIFIC STUFF //
 	if (jukeboxMusicPlaying)
-		M_ResetJukebox();
+	{
+		if (!cv_luacanstopthejukebox.value && StopMusicCausedByLua)
+			return;
+		else
+			M_ResetJukebox();
+	}
+	// I MUST LABEL EVERYTHING //
 
 	if (I_SongPaused())
 		I_ResumeSong();
@@ -2418,8 +2437,10 @@ void S_StopFadingMusic(void)
 
 boolean S_FadeMusicFromVolume(UINT8 target_volume, INT16 source_volume, UINT32 ms)
 {
+	// STAR STUFF LOL //
 	if (jukeboxMusicPlaying)
 		return false;
+	// END STAR STUFF LOL //
 		
 	if (source_volume < 0)
 		return I_FadeSong(target_volume, ms, NULL);
@@ -2429,8 +2450,10 @@ boolean S_FadeMusicFromVolume(UINT8 target_volume, INT16 source_volume, UINT32 m
 
 boolean S_FadeOutStopMusic(UINT32 ms)
 {
+	// MORE STAR STUFF //
 	if (jukeboxMusicPlaying)
 		return false;
+	// NO MORE STAR STUFF //
 
 	return I_FadeSong(0, ms, &S_StopMusic);
 }
@@ -2446,9 +2469,6 @@ boolean S_FadeOutStopMusic(UINT32 ms)
 //
 void S_StartEx(boolean reset)
 {
-	if (jukeboxMusicPlaying)
-		return; // torture is my favorite form of punishment how did you know
-	
 	if (mapmusflags & MUSIC_RELOADRESET)
 	{
 #ifdef APRIL_FOOLS
@@ -2464,6 +2484,11 @@ void S_StartEx(boolean reset)
 		mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
 		mapmusposition = mapheaderinfo[gamemap-1]->muspos;
 	}
+
+	// STAR STUFF YAY //
+	if (jukeboxMusicPlaying)
+		return;
+	// TORTURE IS MY FAVORITE FORM OF PUNISHMENT, HOW DID YOU KNOW //
 
 	if (RESETMUSIC || reset)
 		S_StopMusic();
@@ -2482,6 +2507,7 @@ static void Command_Tunes_f(void)
 	UINT32 position = 0;
 	const size_t argc = COM_Argc();
 
+	// STAR STUFF EEEEEEEE //
 #ifdef APRIL_FOOLS
 	if (cv_ultimatemode.value)
 	{
@@ -2495,6 +2521,7 @@ static void Command_Tunes_f(void)
 		CONS_Printf("Sorry, you can't use this command while playing music in the Jukebox.\n");
 		return;
 	}
+	// I MEAN, IT MAKES SENSE, RIGHT? //
 
 	if (argc < 2) //tunes slot ...
 	{
@@ -2573,8 +2600,10 @@ static void Command_RestartAudio_f(void)
 	S_SetMusicVolume(cv_digmusicvolume.value, cv_midimusicvolume.value);
 	if (Playing()) // Gotta make sure the player is in a level
 		P_RestoreMusic(&players[consoleplayer]);
-	if (jukeboxMusicPlaying) // Fine, I'll let you do it here...
+	// STAR STUFF FOR REASONS I GUESS //
+	if (jukeboxMusicPlaying)
 		M_ResetJukebox();
+	// FINE, I'LL LET YOU DO IT HERE... //
 }
 
 void GameSounds_OnChange(void)

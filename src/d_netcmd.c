@@ -62,6 +62,10 @@
 #include "discord.h"
 #endif
 
+// STAR STUFF YAYA //
+#include "STAR/star_vars.h"
+// END OF THAT MESS //
+
 // ------
 // protos
 // ------
@@ -396,9 +400,10 @@ consvar_t cv_ps_descriptor = CVAR_INIT ("ps_descriptor", "Average", 0, ps_descri
 
 consvar_t cv_freedemocamera = CVAR_INIT("freedemocamera", "Off", CV_SAVE, CV_OnOff, NULL);
 
-// Star Commands lol
+// STAR COMMANDS I THINK //
 consvar_t cv_continues = CVAR_INIT ("continues", "Off", CV_SAVE|CV_CALL, CV_OnOff, STAR_UseContinues_OnChange);
 consvar_t cv_movingplayersetup = CVAR_INIT ("movingplayersetup", "Off", CV_SAVE, CV_OnOff, NULL);
+// OH MY GOD, SOMEBODY HELP MEEEEEEEE //
 
 char timedemo_name[256];
 boolean timedemo_csv;
@@ -942,8 +947,9 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("dumplua", Command_Dumplua_f);
 #endif
 
-	// Discord Things //
 #ifdef HAVE_DISCORDRPC
+	// Discord Things //
+	// Main Things
 	CV_RegisterVar(&cv_discordrp);
 	CV_RegisterVar(&cv_discordstreamer);
 	CV_RegisterVar(&cv_discordasks);
@@ -968,7 +974,7 @@ void D_RegisterClientCommands(void)
     CV_RegisterVar(&cv_customdiscordsmallimagetext);
 #endif
 
-	// Custom Funny Star Things :) //
+	// CUSTOM FUNNY STAR THINGS :) //
 	CV_RegisterVar(&cv_startupscreen);
 	CV_RegisterVar(&cv_stjrintro);
 
@@ -978,14 +984,18 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_tpsrate);
 	CV_RegisterVar(&cv_tpscountercolor);
 
-	CV_RegisterVar(&cv_pausemenustyle);
+	CV_RegisterVar(&cv_allowtypicaltimeover);
+	CV_RegisterVar(&cv_pausegraphicstyle);
 	CV_RegisterVar(&cv_automapoutsidedevmode);
 
+	CV_RegisterVar(&cv_soniccd);
 #ifdef APRIL_FOOLS
 	CV_RegisterVar(&cv_ultimatemode);
 #endif
 
-	CV_RegisterVar(&cv_soniccd);
+	CV_RegisterVar(&cv_quitscreen);
+
+	CV_RegisterVar(&cv_gameovermusic);
 
 	CV_RegisterVar(&cv_superwithshield);
 	CV_RegisterVar(&cv_armageddonnukesuper);
@@ -1002,8 +1012,14 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_movingplayersetup);
 
 	CV_RegisterVar(&cv_jukeboxhud);
-	//CV_RegisterVar(&cv_luacanstopthejukebox);
+
+	CV_RegisterVar(&cv_luacanstopthejukebox);
+	
 	CV_RegisterVar(&cv_jukeboxspeed);
+
+	CV_RegisterVar(&cv_alloweasteregghunt);
+	CV_RegisterVar(&cv_easteregghuntbonuses);
+	// THE STAR VARS ARE COMPLETE! //
 }
 
 /** Checks if a name (as received from another player) is okay.
@@ -2050,6 +2066,11 @@ static void Command_Map_f(void)
 	{
 		G_SetGameModified(false);
 	}
+
+	// DO STAR STUFF //
+	if (menuactive)
+		M_ClearMenus(true);
+	// END OF STAR STUFF //
 
 	// new gametype value
 	// use current one by default
@@ -4770,6 +4791,12 @@ static void Command_Isgamemodified_f(void)
 		CONS_Printf(M_GetText("modifiedgame is true, but you can save emblem and time data in this mod.\n"));
 	else if (modifiedgame)
 		CONS_Printf(M_GetText("modifiedgame is true, extras will not be unlocked\n"));
+	
+	// STAR STUFF YAY //
+	else if (autoloaded)
+		CONS_Printf(M_GetText("modifiedgame is false, and extras can still be unlocked,\n but keep in mind that you have autoloaded game-changing add-ons.\n"));
+	// END STAR STUFF YAY //
+
 	else
 		CONS_Printf(M_GetText("modifiedgame is false, you can unlock extras\n"));
 }
@@ -5139,7 +5166,7 @@ void Got_DiscordInfo(UINT8 **p, INT32 playernum)
 #endif
 }
 
-// Star Commands: Electric Boogalo LETS GOOOOOOO //
+// STAR COMMANDS: ELECTRIC BOOGALO //
 static void STAR_UseContinues_OnChange(void)
 {
 	if (Playing())

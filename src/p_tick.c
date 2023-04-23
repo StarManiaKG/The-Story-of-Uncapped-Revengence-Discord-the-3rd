@@ -45,7 +45,9 @@
 #endif
 
 tic_t emeraldtime;
+
 boolean timeover;
+boolean ForceTimeOver;
 // END OF THAT //
 
 tic_t leveltime;
@@ -852,16 +854,15 @@ void P_Ticker(boolean run)
 
 		// Time Over...
 		if (((Playing() && !netgame) && (leveltime >= 20999 && AllowTypicalTimeOver))  	// one tic off so the timer doesn't display 10:00.00
-			 || (timeover))																// here for lua purposes
+			 || (ForceTimeOver))														// here for lua purposes
 		{
-			if (!timeover)																// still here for lua purposes
-				timeover = true;
+			timeover = true;
 			
 			while (imGonnaKillAllOfYou < MAXPLAYERS)
 			{
 				player_t* player = &players[imGonnaKillAllOfYou];
 
-				if (player->mo)
+				if (player->mo && (Playing() && playeringame[imGonnaKillAllOfYou]))
 					P_DamageMobj(player->mo, NULL, NULL, 1, DMG_INSTAKILL);
 
 				imGonnaKillAllOfYou++;

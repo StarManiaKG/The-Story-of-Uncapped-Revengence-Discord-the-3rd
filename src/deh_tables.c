@@ -5624,11 +5624,7 @@ struct int_const_s const INT_CONST[] = {
 	{"MB_BUTTON8",MB_BUTTON8},
 	{"MB_SCROLLUP",MB_SCROLLUP},
 	{"MB_SCROLLDOWN",MB_SCROLLDOWN},
-
-	// STAR STUFF //
-	{"TOTALEGGS",TOTALEGGS},
-	// END OF STAR STUFF //
-
+	
 	{NULL,0}
 };
 

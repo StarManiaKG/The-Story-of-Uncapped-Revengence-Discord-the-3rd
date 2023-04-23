@@ -64,7 +64,8 @@
 boolean tsourdt3rd = true;
 
 // Easter
-INT32 foundeggs = 0;
+INT32 TOTALEGGS;
+INT32 foundeggs;
 // END OF THAT
 
 gameaction_t gameaction;
@@ -765,7 +766,7 @@ void G_SetNightsRecords(void)
 void G_SetGameModified(boolean silent)
 {
 	if ((modifiedgame && !savemoddata)
-		|| autoloading)
+		|| autoloading)	// STAR NOTE: THIS IS ONLY HERE SO THAT IT DOESN'T SCREAM MISINFOMRATION IN THE CONSOLE
 		return;
 
 	modifiedgame = true;
@@ -773,6 +774,10 @@ void G_SetGameModified(boolean silent)
 
 	if (!silent)
 		CONS_Alert(CONS_NOTICE, M_GetText("Game must be restarted to record statistics.\n"));
+
+	// STAR STUFF YAY //
+	M_UpdateJukebox();
+	// END OF THAT //
 
 	// If in record attack recording, cancel it.
 	if (modeattacking)

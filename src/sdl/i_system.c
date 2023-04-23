@@ -212,6 +212,10 @@ static char returnWadPath[256];
 #include "../byteptr.h"
 #endif
 
+#ifdef HAVE_DISCORDRPC
+#include "../discord.h"
+#endif
+
 /**	\brief	The JoyReset function
 
 	\param	JoySet	Joystick info to reset
@@ -340,10 +344,15 @@ static void I_ReportSignal(int num, int coredumped)
 		sigmsg = "SIGFPE - mathematical exception";
 		break;
 	case SIGSEGV:
-#ifndef APRIL_FOOLS
-		sigmsg = "SIGSEGV - segment violation";
-#else
+#ifdef BLAME_SEV
 		sigmsg = "SIGSEGV - seventh sentinel";
+#else
+		sigmsg = "SIGSEGV - segment violation";
+#endif
+#ifdef APRIL_FOOLS
+		sigmsg = "SIGSEGV - seventh sentinel";
+#else
+		sigmsg = "SIGSEGV - segment violation";
 #endif
 		break;
 //	case SIGTERM:
@@ -2352,6 +2361,14 @@ void I_Quit(void)
 	if (quiting) goto death;
 	SDLforceUngrabMouse();
 	quiting = SDL_FALSE;
+	// Do Discord Stuff //
+#ifdef HAVE_DISCORDRPC
+	DRPC_Shutdown();
+#endif
+	// Did Discord Stuff //
+	// DO STAR STUF //
+	STAR_ResetProblematicCommandsAfterNetgames();
+	// DID STAR STUFF //
 	M_SaveConfig(NULL); //save game config, cvars..
 #ifndef NONET
 	D_SaveBan(); // save the ban list
@@ -2417,6 +2434,14 @@ void I_Error(const char *error, ...)
 {
 	va_list argptr;
 	char buffer[8192];
+
+#ifdef HAVE_DISCORDRPC
+	DRPC_Shutdown();
+#endif
+
+	// DO STAR STUFF AGAIN //
+	STAR_ResetProblematicCommandsAfterNetgames();
+	// DID STAR STUFF AGAIN //
 
 	// recursive error detecting
 	if (shutdowning)

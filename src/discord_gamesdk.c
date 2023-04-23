@@ -106,8 +106,6 @@ void DRPC_Init(int argc, char** argv)
 void DRPC_UpdatePresence(void)
 {	
 	char sonic[64] = "sonic";
-
-	//DRPC_Init(1, sonic);
 	CONS_Printf("%s", sonic);
 }
 

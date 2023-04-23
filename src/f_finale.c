@@ -228,6 +228,8 @@ static tic_t cutscene_lasttextwrite = 0;
 // STJR Intro
 char stjrintro[9] = "STJRI000";
 
+static huddrawlist_h luahuddrawlist_title;
+
 //
 // This alters the text string cutscene_disptext.
 // Use the typical string drawing functions to display it.
@@ -315,7 +317,7 @@ const char *introtext[NUMINTROSCENES];
 
 static tic_t introscenetime[NUMINTROSCENES] =
 {
-	5*TICRATE,					// STJr Presents
+	5*TICRATE,	// STJr Presents
 	11*TICRATE + (TICRATE/2),	// Two months had passed since...
 	15*TICRATE + (TICRATE/2),	// As it was about to drain the rings...
 	14*TICRATE,					// What Sonic, Tails, and Knuckles...
@@ -339,16 +341,15 @@ void F_StartCustomCutscene(INT32 cutscenenum, boolean precutscene, boolean reset
 
 void F_StartIntro(void)
 {
+	S_StopMusic();
+	S_StopSounds();
+
 	// STAR STUFF //
 	if (!cv_stjrintro.value)
 		introscenetime[0] = 5*TICRATE;				   // STJr Presents
 	else
-		introscenetime[0] = (7*TICRATE + (TICRATE/2)); // Pure Fat		
-
-	if (!jukeboxMusicPlaying)
-		S_StopMusic();
+		introscenetime[0] = (7*TICRATE + (TICRATE/2)); // Pure Fat
 	// STAR STUFF OVER //
-	S_StopSounds();
 
 	if (introtoplay)
 	{
@@ -1061,34 +1062,32 @@ void F_IntroTicker(void)
 
 	if (rendermode != render_none)
 	{
-		if (!cv_stjrintro.value) // STJr Presents
+		if ((intro_scenenum == 0 && intro_curtime == 2*TICRATE-19)
+			&& (!cv_stjrintro.value)) // STAR STUFF: STJr Presents
 		{
-			if (intro_scenenum == 0 && intro_curtime == 2*TICRATE-19)
-			{
-				S_ChangeMusicInternal("_stjr", false);
+			S_ChangeMusicInternal("_stjr", false);
 
-				wipestyleflags = WSF_FADEIN;
-				F_WipeStartScreen();
-				F_TryColormapFade(31);
+			wipestyleflags = WSF_FADEIN;
+			F_WipeStartScreen();
+			F_TryColormapFade(31);
 
-				F_IntroDrawer();
+			F_IntroDrawer();
 
-				F_WipeEndScreen();
-				F_RunWipe(99,true);
-			}
-			else if ((intro_scenenum == 5 && intro_curtime == 5*TICRATE)
-				|| (intro_scenenum == 7 && intro_curtime == 6*TICRATE)
-				//|| (intro_scenenum == 11 && intro_curtime == 7*TICRATE)
-				|| (intro_scenenum == 15 && intro_curtime == 7*TICRATE))
-			{
-				F_WipeStartScreen();
-				F_WipeColorFill(31);
+			F_WipeEndScreen();
+			F_RunWipe(99,true);
+		}
+		else if ((intro_scenenum == 5 && intro_curtime == 5*TICRATE)
+			|| (intro_scenenum == 7 && intro_curtime == 6*TICRATE)
+			//|| (intro_scenenum == 11 && intro_curtime == 7*TICRATE)
+			|| (intro_scenenum == 15 && intro_curtime == 7*TICRATE))
+		{
+			F_WipeStartScreen();
+			F_WipeColorFill(31);
 
-				F_IntroDrawer();
+			F_IntroDrawer();
 
-				F_WipeEndScreen();
-				F_RunWipe(99,true);
-			}
+			F_WipeEndScreen();
+			F_RunWipe(99,true);
 		}
 	}
 
@@ -1308,11 +1307,11 @@ static const char *credits[] = {
 	"",
 	"\1TSoURDt3rd Team",
 	"StarManiaKG \"Star\"",
-	"Mini the Bunnyboy\"Talis\"",
+	"Mini the Bunnyboy \"Talis\"",
 	"",
 	"\1TSoURDt3rd Extras",
 	"Speccy - Emotional Support, Ideas",
-	"Zeno/Uukoo \"Oreo\" - Emotional Support",
+	"Zeno/Uukoo - Emotional Support",
 	"NARBluebear - Emotional Support",
 	"Smiles \"The Fox\" - Emotional Support",
 	"\"Team Comet\" - Emotional Support",
@@ -1466,7 +1465,7 @@ void F_CreditTicker(void)
 				default: credits_height += 12; break;
 			}
 		}
-		credits_height = 132*credits_height/80; // account for scroll speeds. This is a guess now, so you may need to update this if you change the credits length.
+		credits_height = 131*credits_height/80; // account for scroll speeds. This is a guess now, so you may need to update this if you change the credits length.
 	}
 
 	// Draw credits text on top
@@ -2407,6 +2406,9 @@ void F_InitMenuPresValues(void)
 	M_SetMenuCurBackground((gamestate == GS_TIMEATTACK) ? "RECATTBG" : "TITLESKY");
 	M_SetMenuCurFadeValue(16);
 	M_SetMenuCurTitlePics();
+
+	LUA_HUD_DestroyDrawList(luahuddrawlist_title);
+	luahuddrawlist_title = LUA_HUD_CreateDrawList();
 }
 
 //
@@ -3265,86 +3267,83 @@ void F_TitleScreenDrawer(void)
 				}
 			}
 
+			if ((finalecount >= SONICSTART)
 #ifdef APRIL_FOOLS
-			if (!cv_ultimatemode.value)
-			{
+				&& (!cv_ultimatemode.value)
 #endif
-				if (finalecount >= SONICSTART)
+			)
+			{
+				if (finalecount < SONICIDLE)
 				{
-					if (finalecount < SONICIDLE)
-					{
-						//
-						// Sonic Back Layer Intro
-						//
-						if      (finalecount >= SONICSTART+0   && finalecount < SONICSTART+6  )
-							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[0 ], sc);
-						else if (finalecount >= SONICSTART+6   && finalecount < SONICSTART+11 )
-							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[1 ], sc);
-						else if (finalecount >= SONICSTART+11  && finalecount < SONICSTART+14 )
-							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[2 ], sc);
-						else if (finalecount >= SONICSTART+14  && finalecount < SONICSTART+18 )
-							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[3 ], sc);
-						else if (finalecount >= SONICSTART+18  && finalecount < SONICSTART+19 )
-							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[4 ], sc);
-						else if (finalecount >= SONICSTART+19  && finalecount < SONICSTART+27 )
-							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[5 ], sc);
-						else if (finalecount >= SONICSTART+27  && finalecount < SONICSTART+31 )
-							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[6 ], sc);
-						//else if (finalecount >= SONICSTART+31  && finalecount < SONICSTART+33 )
-						//  Frame is blank
-						//	V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[7 ], sc);
-						else if (finalecount >= SONICSTART+33  && finalecount < SONICSTART+36 )
-							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[8 ], sc);
-						else if (finalecount >= SONICSTART+36  && finalecount < SONICSTART+40 )
-							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[9 ], sc);
-						else if (finalecount >= SONICSTART+40  && finalecount < SONICSTART+44 )
-							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[10], sc);
-						else if (finalecount >= SONICSTART+44  && finalecount < SONICSTART+47 )
-							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[11], sc);
-						else if (finalecount >= SONICSTART+47  && finalecount < SONICSTART+49 )
-							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[12], sc);
-						else if (finalecount >= SONICSTART+49  && finalecount < SONICSTART+50 )
-							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[13], sc);
-						else if (finalecount >= SONICSTART+50  && finalecount < SONICSTART+53 )
-							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[14], sc);
-						else if (finalecount >= SONICSTART+53  && finalecount < SONICSTART+57 )
-							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[15], sc);
-						// Start idle animation (frame S17-B)
-					}
+					//
+					// Sonic Back Layer Intro
+					//
+					if      (finalecount >= SONICSTART+0   && finalecount < SONICSTART+6  )
+						V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[0 ], sc);
+					else if (finalecount >= SONICSTART+6   && finalecount < SONICSTART+11 )
+						V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[1 ], sc);
+					else if (finalecount >= SONICSTART+11  && finalecount < SONICSTART+14 )
+						V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[2 ], sc);
+					else if (finalecount >= SONICSTART+14  && finalecount < SONICSTART+18 )
+						V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[3 ], sc);
+					else if (finalecount >= SONICSTART+18  && finalecount < SONICSTART+19 )
+						V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[4 ], sc);
+					else if (finalecount >= SONICSTART+19  && finalecount < SONICSTART+27 )
+						V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[5 ], sc);
+					else if (finalecount >= SONICSTART+27  && finalecount < SONICSTART+31 )
+						V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[6 ], sc);
+					//else if (finalecount >= SONICSTART+31  && finalecount < SONICSTART+33 )
+					//  Frame is blank
+					//	V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[7 ], sc);
+					else if (finalecount >= SONICSTART+33  && finalecount < SONICSTART+36 )
+						V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[8 ], sc);
+					else if (finalecount >= SONICSTART+36  && finalecount < SONICSTART+40 )
+						V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[9 ], sc);
+					else if (finalecount >= SONICSTART+40  && finalecount < SONICSTART+44 )
+						V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[10], sc);
+					else if (finalecount >= SONICSTART+44  && finalecount < SONICSTART+47 )
+						V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[11], sc);
+					else if (finalecount >= SONICSTART+47  && finalecount < SONICSTART+49 )
+						V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[12], sc);
+					else if (finalecount >= SONICSTART+49  && finalecount < SONICSTART+50 )
+						V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[13], sc);
+					else if (finalecount >= SONICSTART+50  && finalecount < SONICSTART+53 )
+						V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[14], sc);
+					else if (finalecount >= SONICSTART+53  && finalecount < SONICSTART+57 )
+						V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIB[15], sc);
+					// Start idle animation (frame S17-B)
+				}
+				else
+				{
+					//
+					// Sonic Back Layer Idle
+					//
+					if (!sonic_blink)
+						V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOBA[0], sc);
 					else
 					{
 						//
-						// Sonic Back Layer Idle
+						// Sonic Blinking
 						//
-						if (!sonic_blink)
+						SINT8 idlecount = finalecount - sonic_idle_start;
+						if      (idlecount >= 0  && idlecount < 2 )
+							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOBK[0], sc);
+						else if (idlecount >= 2  && idlecount < 6 )
+							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOBK[1], sc);
+						else if (idlecount >= 6  && idlecount < 7 )
+							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOBK[2], sc);
+						// We reach this point if sonic_blink_twice == true
+						else if (idlecount >= 7  && idlecount < 10)
 							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOBA[0], sc);
-						else
-						{
-							//
-							// Sonic Blinking
-							//
-							SINT8 idlecount = finalecount - sonic_idle_start;
-							if      (idlecount >= 0  && idlecount < 2 )
-								V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOBK[0], sc);
-							else if (idlecount >= 2  && idlecount < 6 )
-								V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOBK[1], sc);
-							else if (idlecount >= 6  && idlecount < 7 )
-								V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOBK[2], sc);
-							// We reach this point if sonic_blink_twice == true
-							else if (idlecount >= 7  && idlecount < 10)
-								V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOBA[0], sc);
-							else if (idlecount >= 10 && idlecount < 12)
-								V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOBK[0], sc);
-							else if (idlecount >= 12 && idlecount < 16)
-								V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOBK[1], sc);
-							else if (idlecount >= 16 && idlecount < 17)
-								V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOBK[2], sc);
-						}
+						else if (idlecount >= 10 && idlecount < 12)
+							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOBK[0], sc);
+						else if (idlecount >= 12 && idlecount < 16)
+							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOBK[1], sc);
+						else if (idlecount >= 16 && idlecount < 17)
+							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOBK[2], sc);
 					}
 				}
-#ifdef APRIL_FOOLS
 			}
-#endif
 
 			//
 			// LOGO LAYER
@@ -3443,69 +3442,66 @@ void F_TitleScreenDrawer(void)
 				// No Tails Front Layer Idle
 			}
 
+			if ((finalecount >= SONICSTART)
 #ifdef APRIL_FOOLS
-			if (!cv_ultimatemode.value)
-			{
+				&& (!cv_ultimatemode.value)
 #endif
-				if (finalecount >= SONICSTART)
+			)
+			{
+				if (finalecount < SONICIDLE)
 				{
-					if (finalecount < SONICIDLE)
+					//
+					// Sonic Front Layer Intro
+					//
+					if      (finalecount >= SONICSTART+19  && finalecount < SONICSTART+27 )
+						V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIF[5 ], sc);
+					else if (finalecount >= SONICSTART+27  && finalecount < SONICSTART+31 )
+						V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIF[6 ], sc);
+					else if (finalecount >= SONICSTART+31  && finalecount < SONICSTART+33 )
+						V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIF[7 ], sc);
+					else if (finalecount >= SONICSTART+33  && finalecount < SONICSTART+36 )
+						V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIF[8 ], sc);
+					else if (finalecount >= SONICSTART+36  && finalecount < SONICSTART+40 )
+						V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIF[9 ], sc);
+					else if (finalecount >= SONICSTART+40  && finalecount < SONICSTART+44 )
+						V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIF[10], sc);
+					else if (finalecount >= SONICSTART+44  && finalecount < SONICSTART+47 )
+						V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIF[11], sc);
+					// ...
+					else if (finalecount >= SONICSTART+53  && finalecount < SONICSTART+57 )
+						V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIF[15], sc);
+				}
+				else
+				{
+					//
+					// Sonic Front Layer Idle
+					//
+					if (!sonic_blink)
 					{
-						//
-						// Sonic Front Layer Intro
-						//
-						if      (finalecount >= SONICSTART+19  && finalecount < SONICSTART+27 )
-							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIF[5 ], sc);
-						else if (finalecount >= SONICSTART+27  && finalecount < SONICSTART+31 )
-							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIF[6 ], sc);
-						else if (finalecount >= SONICSTART+31  && finalecount < SONICSTART+33 )
-							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIF[7 ], sc);
-						else if (finalecount >= SONICSTART+33  && finalecount < SONICSTART+36 )
-							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIF[8 ], sc);
-						else if (finalecount >= SONICSTART+36  && finalecount < SONICSTART+40 )
-							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIF[9 ], sc);
-						else if (finalecount >= SONICSTART+40  && finalecount < SONICSTART+44 )
-							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIF[10], sc);
-						else if (finalecount >= SONICSTART+44  && finalecount < SONICSTART+47 )
-							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIF[11], sc);
-						// ...
-						else if (finalecount >= SONICSTART+53  && finalecount < SONICSTART+57 )
-							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSOIF[15], sc);
+						SINT8 idlecount = finalecount - sonic_idle_start;
+						if      (idlecount >= 0  && idlecount < 5 )
+							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSODH[0], sc);
+						else if (idlecount >= 5  && idlecount < 8 )
+							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSODH[1], sc);
+						else if (idlecount >= 8  && idlecount < 9 )
+							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSODH[2], sc);
+						else if (idlecount >= 9  && idlecount < 12)
+							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSODH[3], sc);
+						else if (idlecount >= 12 && idlecount < 17)
+							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSODH[4], sc);
+						else if (idlecount >= 17 && idlecount < 19)
+							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSODH[5], sc);
+						else if (idlecount >= 19 && idlecount < 21)
+							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSODH[6], sc);
+						else if (idlecount >= 21 && idlecount < 22)
+							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSODH[7], sc);
+						else if (idlecount >= 22 && idlecount < 25)
+							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSODH[8], sc);
 					}
 					else
-					{
-						//
-						// Sonic Front Layer Idle
-						//
-						if (!sonic_blink)
-						{
-							SINT8 idlecount = finalecount - sonic_idle_start;
-							if      (idlecount >= 0  && idlecount < 5 )
-								V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSODH[0], sc);
-							else if (idlecount >= 5  && idlecount < 8 )
-								V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSODH[1], sc);
-							else if (idlecount >= 8  && idlecount < 9 )
-								V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSODH[2], sc);
-							else if (idlecount >= 9  && idlecount < 12)
-								V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSODH[3], sc);
-							else if (idlecount >= 12 && idlecount < 17)
-								V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSODH[4], sc);
-							else if (idlecount >= 17 && idlecount < 19)
-								V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSODH[5], sc);
-							else if (idlecount >= 19 && idlecount < 21)
-								V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSODH[6], sc);
-							else if (idlecount >= 21 && idlecount < 22)
-								V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSODH[7], sc);
-							else if (idlecount >= 22 && idlecount < 25)
-								V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSODH[8], sc);
-						}
-						else
-							V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSODH[0], sc);
-					}
+						V_DrawSciencePatch(SONICX<<FRACBITS, SONICY<<FRACBITS, 0, TTSODH[0], sc);
 				}
-#ifdef APRIL_FOOLS
 			}
-#endif
 
 #undef CHARSTART
 #undef SONICSTART
@@ -3547,8 +3543,21 @@ void F_TitleScreenDrawer(void)
 	// END OF STAR STUFF //
 
 luahook:
-	//if (renderisnewtic)
-	LUA_HUDHOOK(title);
+	// The title drawer is sometimes called without first being started
+	// In order to avoid use-before-initialization crashes, let's check and
+	// create the drawlist if it doesn't exist.
+	if (!LUA_HUD_IsDrawListValid(luahuddrawlist_title))
+	{
+		LUA_HUD_DestroyDrawList(luahuddrawlist_title);
+		luahuddrawlist_title = LUA_HUD_CreateDrawList();
+	}
+
+	if (renderisnewtic)
+	{
+		LUA_HUD_ClearDrawList(luahuddrawlist_title);
+		LUA_HUDHOOK(title, luahuddrawlist_title);
+	}
+	LUA_HUD_DrawList(luahuddrawlist_title);
 }
 
 // separate animation timer for backgrounds, since we also count
@@ -3869,6 +3878,10 @@ void F_ContinueDrawer(void)
 		V_DrawFadeScreen(31, timetonext-(11*TICRATE));
 	if (continuetime > ((3*TICRATE) - 10))
 		V_DrawFadeScreen(0, (continuetime - ((3*TICRATE) - 10)));
+
+	// OOH STAR STUFF //
+	ST_drawJukebox();
+	// END OF THAT //
 }
 
 void F_ContinueTicker(void)
@@ -4014,7 +4027,7 @@ static void F_AdvanceToNextScene(void)
 		F_EndCutScene();
 		return;
 	}
-	
+
 	++scenenum;
 
 	timetonext = 0;

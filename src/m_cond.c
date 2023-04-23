@@ -103,8 +103,9 @@ void M_ClearSecrets(void)
 	M_SilentUpdateUnlockablesAndEmblems();
 
 	// DO SOME STAR STUFF //
-	if (eastermode)
-		foundeggs = 0;
+	(eastermode ?
+		(foundeggs = collectedmapeggs = currenteggs = numMapEggs = 0) :
+		(TOTALEGGS = foundeggs = collectedmapeggs = currenteggs = numMapEggs = 0));
 	// END SOME STAR STUFF //
 }
 

@@ -246,6 +246,7 @@
     <ClCompile Include="..\lua_consolelib.c" />
     <ClCompile Include="..\lua_hooklib.c" />
     <ClCompile Include="..\lua_hudlib.c" />
+    <ClInclude Include="..\lua_hudlib_drawlist.c" />
     <ClCompile Include="..\lua_infolib.c" />
     <ClCompile Include="..\lua_maplib.c" />
     <ClCompile Include="..\lua_mathlib.c" />
@@ -421,6 +422,7 @@
     <ClInclude Include="..\keys.h" />
     <ClInclude Include="..\lua_hook.h" />
     <ClInclude Include="..\lua_hud.h" />
+    <ClInclude Include="..\lua_hudlib_drawlist.h" />
     <ClInclude Include="..\lua_libs.h" />
     <ClInclude Include="..\lua_script.h" />
     <ClInclude Include="..\lzf.h" />

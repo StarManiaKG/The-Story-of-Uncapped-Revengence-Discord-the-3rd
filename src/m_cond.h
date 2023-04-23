@@ -192,8 +192,3 @@ INT32 M_UnlockableSkinNum(unlockable_t *unlock);
 INT32 M_EmblemSkinNum(emblem_t *emblem);
 
 #define M_Achieved(a) ((a) >= MAXCONDITIONSETS || conditionSets[a].achieved)
-
-// DO EXTRA STAR STUFF //
-#define TOTALEGGS 14
-extern emblem_t eggparamaters[TOTALEGGS];
-// END OF THAT STUFF //

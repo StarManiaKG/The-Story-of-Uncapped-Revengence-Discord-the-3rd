@@ -237,6 +237,9 @@
     <ClCompile Include="..\lua_hudlib.c">
       <Filter>LUA</Filter>
     </ClCompile>
+     <ClCompile Include="..\lua_hudlib_drawlist.c">
+      <Filter>LUA</Filter>
+    </ClCompile>
     <ClCompile Include="..\lua_infolib.c">
       <Filter>LUA</Filter>
     </ClCompile>
@@ -703,6 +706,9 @@
       <Filter>LUA</Filter>
     </ClInclude>
     <ClInclude Include="..\lua_hud.h">
+      <Filter>LUA</Filter>
+    </ClInclude>
+    <ClInclude Include="..\lua_hudlib_drawlist.h">
       <Filter>LUA</Filter>
     </ClInclude>
     <ClInclude Include="..\lua_libs.h">

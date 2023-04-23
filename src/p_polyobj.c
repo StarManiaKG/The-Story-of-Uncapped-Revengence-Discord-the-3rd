@@ -2188,7 +2188,7 @@ boolean EV_DoPolyObjWaypoint(polywaypointdata_t *pwdata)
 	R_CreateInterpolator_Polyobj(&th->thinker, po);
 	// T_PolyObjWaypoint is the only polyobject movement
 	// that can adjust z, so we add these ones too.
-	R_CreateInterpolator_SectorPlane(&th->thinker, po->lines[0]->backsector, false); 
+	R_CreateInterpolator_SectorPlane(&th->thinker, po->lines[0]->backsector, false);
 	R_CreateInterpolator_SectorPlane(&th->thinker, po->lines[0]->backsector, true);
 
 	// Most other polyobject functions handle children by recursively

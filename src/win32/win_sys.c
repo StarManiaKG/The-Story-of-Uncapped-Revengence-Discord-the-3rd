@@ -83,6 +83,10 @@
 #include "../byteptr.h"
 #endif
 
+#ifdef HAVE_DISCORDRPC
+#include "../discord.h"
+#endif
+
 #define DIRECTINPUT_VERSION     0x0500
 // Force dinput.h to generate old DX3 headers.
 #define DXVERSION_NTCOMPATIBLE  0x0300
@@ -551,8 +555,12 @@ void I_Error(const char *error, ...)
 	char txt[8192];
 
 #ifdef HAVE_DISCORDRPC
-	DRPC_ShutDown();
+	DRPC_Shutdown();
 #endif
+
+	// DO STAR STUFF, WINDOWS EDITION //
+	STAR_ResetProblematicCommandsAfterNetgames();
+	// DID STAR STUFF, WINDOWS EDITION //
 
 	// added 11-2-98 recursive error detecting
 	if (shutdowning)
@@ -688,8 +696,12 @@ void I_Quit(void)
 	DWORD mode;
 
 #ifdef HAVE_DISCORDRPC
-	DRPC_ShutDown();
+	DRPC_Shutdown();
 #endif
+
+	// DID STAR STUFF //
+	STAR_ResetProblematicCommandsAfterNetgames();
+	// PLEASE HELP //
 
 	// when recording a demo, should exit using 'q',
 	// but sometimes we forget and use Alt+F4, so save here too.

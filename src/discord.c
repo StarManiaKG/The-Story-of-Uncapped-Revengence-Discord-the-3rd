@@ -118,7 +118,7 @@ static CV_PossibleValue_t customcharacterimage_cons_t[] = {
     {22, "Smiles"},
     {23, "Whisper"},
 
-	// My Chars/Mods
+	// My Chars
     {24, "Hexhog"},
 
 	// My Friendos' Chars
@@ -766,7 +766,7 @@ void DRPC_UpdatePresence(void)
 		"smiles",
 		"whisper",
 
-		// My Chars/Mods
+		// My Chars
 		"hexhog",
 
 		// My Friendos' Chars
@@ -1148,9 +1148,9 @@ void DRPC_UpdatePresence(void)
 				strcpy(gametypeGrammar, (!ultimatemode ? "Playing " : "Taking on "));
 				(modeattacking ? (snprintf(gameType, 12, ((maptol != TOL_NIGHTS && maptol != TOL_XMAS) ? "Time Attack" : "NiGHTS Mode"))) : (snprintf(gameType, 24, (!splitscreen ? ((gametype == GT_COOP && !netgame) ? (!ultimatemode ? "Single-Player" : "Ultimate Mode") : "%s") : "Split-Screen"), (netgame ? gametype_cons_t[gametype].strvalue : NULL))));
 				
-				// Mods //
-				if (modifiedgame && numwadfiles > (mainwads+extrawads))
-					strlcat(gameType, ((numwadfiles - (mainwads+extrawads) > 1) ? va(" With %d Mods", numwadfiles - (mainwads+extrawads)) : (" With 1 Mod")), 105);
+				// Add-ons //
+				if ((modifiedgame || autoloaded) && numwadfiles > (mainwads+extrawads))
+					strlcat(gameType, ((numwadfiles - (mainwads+extrawads) > 1) ? va(" With %d %sAdd-ons", (numwadfiles - (mainwads+extrawads)), (autoloaded ? "Autoloaded " : "")) : va(" With 1 %sAdd-on", (autoloaded ? "Autoloaded " : ""))), 105);
 				
 				// Lives //
 				if (!players[consoleplayer].spectator && gametyperules & GTR_LIVES && !(ultimatemode || modeattacking))

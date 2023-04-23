@@ -252,6 +252,7 @@
     <ClInclude Include="..\libdivide.h" />
     <ClInclude Include="..\lua_hook.h" />
     <ClInclude Include="..\lua_hud.h" />
+    <ClInclude Include="..\lua_hudlib_drawlist.h" />
     <ClInclude Include="..\lua_libs.h" />
     <ClInclude Include="..\lua_script.h" />
     <ClInclude Include="..\lzf.h" />
@@ -411,6 +412,7 @@
     <ClCompile Include="..\lua_consolelib.c" />
     <ClCompile Include="..\lua_hooklib.c" />
     <ClCompile Include="..\lua_hudlib.c" />
+    <ClCompile Include="..\lua_hudlib_drawlist.c" />
     <ClCompile Include="..\lua_infolib.c" />
     <ClCompile Include="..\lua_inputlib.c" />
     <ClCompile Include="..\lua_maplib.c" />
