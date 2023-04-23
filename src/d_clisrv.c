@@ -1121,8 +1121,9 @@ static inline void CL_DrawConnectionStatus(void)
 {
 	INT32 ccstime = I_GetTime();
 
-	// Do Star Stuff
-	CV_StealthSetValue(&cv_superwithshield, 0);
+	// DO STAR STUFF //
+	STAR_SetProblematicCommandsForNetgames();
+	// DID STAR STUFF //
 
 	// Draw background fade
 	V_DrawFadeScreen(0xFF00, 16); // force default
@@ -2079,6 +2080,25 @@ static boolean CL_FinishedFileList(void)
 		), NULL, MM_NOTHING);
 		return false;
 	}
+
+	// STAR STUFF //
+	else if (i == 5) // you've autoloaded some game changing mods
+	{
+		D_QuitNetGame();
+		CL_Reset();
+		D_StartTitle();
+		M_StartMessage(M_GetText(
+			"You've autoloaded some game changing mods.\n\n"
+			"To play on this server, remove your\n"
+			"autoload configuration file and restart SRB2.\n"
+			"Afterwards, SRB2 will automatically add\n"
+			"everything you need when you join.\n\n"
+			"Press ESC\n"
+		), NULL, MM_NOTHING);
+		return false;
+	}
+	// END OF THAT //
+
 	else if (i == 1)
 	{
 		if (serverisfull)
@@ -3756,8 +3776,9 @@ void D_QuitNetGame(void)
 	D_CloseConnection();
 	ClearAdminPlayers();
 	
-	// Star Stuff YAY
-	CV_StealthSetValue(&cv_superwithshield, TransformSuperWithShield);
+	// STAR STUFF ENGAGED //
+	STAR_ResetProblematicCommandsAfterNetgames();
+	// STAR STUFF DISENGAGED //
 
 	DEBFILE("===========================================================================\n"
 	        "                         Log finish\n"
@@ -4556,6 +4577,19 @@ static void HandlePacketFromAwayNode(SINT8 node)
 
 	}
 #undef SERVERONLY
+
+	// STAR STUFF YAY //
+	if (autoloading)
+	{
+		if (netgame)
+		{
+			if (modifiedgame)
+				autoloaded = true;
+			doWarp = true;
+			autoloading = false;
+		}
+	}
+	// END THAT STUFF //
 }
 
 /** Handles a packet received from a node that is in game

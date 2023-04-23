@@ -3093,6 +3093,26 @@ OverrideBuildCmd=0
 BuildCmd=
 
 [Unit280]
+FileName=src\lua_hudlib_drawlist.c
+CompileCpp=0
+Folder=LUA
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit281]
+FileName=src\lua_hudlib_drawlist.h
+CompileCpp=0
+Folder=LUA
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit282]
 FileName=src\STAR\star_vars.h
 CompileCpp=0
 Folder=G_Game

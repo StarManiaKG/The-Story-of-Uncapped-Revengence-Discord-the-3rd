@@ -95,6 +95,10 @@
 
 #include "lua_script.h"
 
+// STAR STUFF YAY //
+#include "STAR/star_vars.h"
+// END OF THAT //
+
 // Version numbers for netplay :upside_down_face:
 int    VERSION;
 int SUBVERSION;
@@ -150,6 +154,11 @@ INT32 extrawads;
 
 // Autoloading
 boolean autoloading;
+boolean autoloaded;
+
+boolean doWarp;
+INT32 maptoLoadAfterAutoload;
+const char *mapNameToLoadAfterAutoload;
 
 // Savefiles
 //char savegamefolder[256];
@@ -331,7 +340,7 @@ static void STAR_CheckTime(void)
 			}
 
 			// Easter (Changes Every Year Though, so just have it for all of April)
-			else if (tptr->tm_mon == 3)
+			else if ((tptr->tm_mon == 3) && (!M_CheckParm("-noeaster")))
 			{
 				eastermode = true;
 				modifiedgame = false;
@@ -356,7 +365,7 @@ static void STAR_CheckTime(void)
 	}
 
 	// Easter
-	else if (M_CheckParm("-easter"))
+	else if ((M_CheckParm("-easter")) && (!M_CheckParm("-noeaster"))) // you never know
 	{
 		eastermode = true;
 		modifiedgame = false;
@@ -1010,13 +1019,56 @@ void D_SRB2Loop(void)
 #endif
 
 		// STAR STUFF //
+		// Do Basic Autoloading Stuff
 		if (autoloading)
 		{
-			if (!savemoddata)
-				modifiedgame = false;
-			autoloading = false;
+			if (!netgame)
+			{
+				if (modifiedgame)
+				{
+					autoloaded = true;
+					modifiedgame = false;
+				}
+				autoloading = false;
+			}
 		}
 
+		// Do Extra Autoloading Stuff
+		else
+		{
+			// Map Loading (kinda ported from D_SRB2Main(), but not really at the same time)
+			if (doWarp)
+			{
+				G_SetGameModified(false);
+				
+				if (server && !M_CheckParm("+map"))
+				{
+					// Store the Map in the Variable First, Again :p
+					maptoLoadAfterAutoload = G_FindMapByNameOrCode(mapNameToLoadAfterAutoload, 0);
+
+					// Prevent warping to nonexistent levels, again :p
+					if (W_CheckNumForName(G_BuildMapName(maptoLoadAfterAutoload)) == LUMPERROR)
+						I_Error("Could not warp to %s (map not found)\n", G_BuildMapName(maptoLoadAfterAutoload));
+					// Prevent warping to locked levels, again :p
+					// ... unless you're in a dedicated server.  Yes, technically this means you can view any level by
+					// running a dedicated server and joining it yourself, but that's better than making dedicated server's
+					// lives hell.
+					else if (!dedicated && M_MapLocked(maptoLoadAfterAutoload))
+						I_Error("You need to unlock this level before you can warp to it!\n");
+					// Since We Found the Map This Time,
+					// End Everything Here.
+					else
+					{
+						D_MapChange(maptoLoadAfterAutoload, gametype, ultimatemode, true, 0, false, false);
+
+						maptoLoadAfterAutoload = 0;
+						doWarp = false;
+					}
+				}
+			}
+		}
+
+		// Do April Fools Stuff
 #ifdef APRIL_FOOLS
 		if ((!modifiedgame || savemoddata) && (cv_ultimatemode.value))
 		{
@@ -1024,6 +1076,30 @@ void D_SRB2Loop(void)
 			G_SetGameModified(false);
 		}
 #endif
+
+		// Do Some Prevention Stuff
+		if (!eastermode && (cv_alloweasteregghunt.value || cv_easteregghuntbonuses.value || EnableEasterEggHuntBonuses))
+		{
+			CV_StealthSetValue(&cv_alloweasteregghunt, 0);
+			CV_StealthSetValue(&cv_easteregghuntbonuses, 0);
+
+			EnableEasterEggHuntBonuses = 0;
+		}
+		else if (eastermode)
+		{
+			if (currenteggs != TOTALEGGS && (cv_easteregghuntbonuses.value || EnableEasterEggHuntBonuses))
+			{
+				CV_StealthSetValue(&cv_easteregghuntbonuses, 0);
+				EnableEasterEggHuntBonuses = 0;
+			}
+			else if ((!modifiedgame || savemoddata) && (EnableEasterEggHuntBonuses))
+			{
+				CONS_Printf("You have the Easter Egg Hunt Bonus features enabled.\nTherefore, to prevent dumb things from happening,\nyour game has been set to modified.\n");
+				G_SetGameModified(false);
+
+				M_UpdateEasterStuff();
+			}
+		}
 		// THAT'S THE END :P //
 
 		// Fully completed frame made.
@@ -1194,20 +1270,22 @@ static void D_AddFolder(addfilelist_t *list, const char *file)
 
 	list->files[index] = newfile;
 }
+#undef REALLOC_FILE_LIST
 
-static void D_AutoLoadAddons(/*addfilelist_t *list, */const char *file)
+// STAR STUFF //
+static void D_AutoLoadAddons(const char *file)
 {
 	char *newfile;
 
 	newfile = malloc(strlen(file) + 1);
 	if (!newfile)
-		I_Error("D_AutoLoadAddons: No more free memory to autload file %s", file);
+		I_Error("D_AutoLoadAddons: No more free memory to autoload files");
 	autoloading = true;
 
 	strcpy(newfile, file);
 	COM_ImmedExecute(va("exec %s\n", newfile));
 }
-#undef REALLOC_FILE_LIST
+// END OF THAT //
 
 static inline void D_CleanFile(addfilelist_t *list)
 {
@@ -1634,8 +1712,7 @@ void D_SRB2Main(void)
 	if (autoloadpath)
 	{
 		CONS_Printf("D_AutoLoadAddons(): Autoloading Addons...\n");
-		D_AutoLoadAddons(/*&startupwadfiles, */va(pandf,srb2home,AUTOLOADCONFIGFILENAME));
-		//D_CleanFile(&startupwadfiles);
+		D_AutoLoadAddons(va(pandf,srb2home,AUTOLOADCONFIGFILENAME));
 	}
 	// END OF THAT STUFF //
 
@@ -1696,6 +1773,7 @@ void D_SRB2Main(void)
 		DRPC_Init();
 	}
 #endif
+	// Initialized Discord //
 
 #if defined (__unix__) || defined (UNIXCOMMON) || defined (HAVE_SDL)
 	VID_PrepareModeList(); // Regenerate Modelist according to cv_fullscreen
@@ -1713,21 +1791,31 @@ void D_SRB2Main(void)
 	// this must be done after loading gamedata,
 	// to avoid setting off the corrupted gamedata code in G_LoadGameData if a SOC with custom gamedata is added
 	// -- Monster Iestyn 20/02/20
+
+	// STAR NOTE: THIS HAS BEEN EDITED!
+	// -- StarManiaKG 21/4/23
 	if (M_CheckParm("-warp") && M_IsNextParm())
 	{
 		const char *word = M_GetNextParm();
 		pstartmap = G_FindMapByNameOrCode(word, 0);
-		if (! pstartmap)
-			I_Error("Cannot find a map remotely named '%s'\n", word);
-		else
+
+		if (!autoloading)
 		{
 			if (!M_CheckParm("-server"))
-			{
-				autoloading = false;
 				G_SetGameModified(true);
-			}
+			if (! pstartmap)
+				I_Error("Cannot find a map remotely named '%s'\n", word);
 			autostart = true;
 		}
+
+		// STAR STUFF //
+		else
+		{
+			mapNameToLoadAfterAutoload = word;
+			if (!netgame)
+				doWarp = true;
+		}
+		// END THAT STUFF //
 	}
 
 	if (M_CheckParm("-noupload"))
@@ -1921,21 +2009,62 @@ void D_SRB2Main(void)
 			}
 		}
 
+		// STAR NOTE: THIS HAS ALSO BEEN EDITED!
 		if (server && !M_CheckParm("+map"))
 		{
-			// Prevent warping to nonexistent levels
-			if (W_CheckNumForName(G_BuildMapName(pstartmap)) == LUMPERROR)
-				I_Error("Could not warp to %s (map not found)\n", G_BuildMapName(pstartmap));
-			// Prevent warping to locked levels
-			// ... unless you're in a dedicated server.  Yes, technically this means you can view any level by
-			// running a dedicated server and joining it yourself, but that's better than making dedicated server's
-			// lives hell.
-			else if (!dedicated && M_MapLocked(pstartmap))
-				I_Error("You need to unlock this level before you can warp to it!\n");
+			if (!autoloading)
+			{
+				// Prevent warping to nonexistent levels
+				if (W_CheckNumForName(G_BuildMapName(pstartmap)) == LUMPERROR)
+					I_Error("Could not warp to %s (map not found)\n", G_BuildMapName(pstartmap));
+				// Prevent warping to locked levels
+				// ... unless you're in a dedicated server.  Yes, technically this means you can view any level by
+				// running a dedicated server and joining it yourself, but that's better than making dedicated server's
+				// lives hell.
+				else if (!dedicated && M_MapLocked(pstartmap))
+					I_Error("You need to unlock this level before you can warp to it!\n");
+				else
+				{
+					D_MapChange(pstartmap, gametype, ultimatemode, true, 0, false, false);
+				}
+			}
+
+			// STAR STUFF //
 			else
 			{
-				D_MapChange(pstartmap, gametype, ultimatemode, true, 0, false, false);
+				// Store the Map in the Variable First
+				maptoLoadAfterAutoload = G_FindMapByNameOrCode(mapNameToLoadAfterAutoload, 0);
+
+				// Prevent warping to nonexistent levels
+				if (W_CheckNumForName(G_BuildMapName(maptoLoadAfterAutoload)) == LUMPERROR)
+				{
+					CONS_Printf("Could not warp to %s (map not found).\nUnless you've made an error, this is supposed to happen after autoloading add-ons\n and loading into a map within the autoloaded add-on.\n\n", G_BuildMapName(maptoLoadAfterAutoload));
+					CONS_Printf("Loading into the next avaliable map.\nThen, we'll try to load into your requested map again.\n");
+					
+					D_MapChange(1, gametype, ultimatemode, true, 0, false, false);
+				}
+				// Prevent warping to locked levels
+				// ... unless you're in a dedicated server.  Yes, technically this means you can view any level by
+				// running a dedicated server and joining it yourself, but that's better than making dedicated server's
+				// lives hell.
+				else if (!dedicated && M_MapLocked(maptoLoadAfterAutoload))
+				{
+					CONS_Printf("You need to unlock this level before you can warp to it!\n");
+					CONS_Printf("Loading into the next avaliable map.\nThen, we'll try to load into your requested map again.");
+
+					D_MapChange(1, gametype, ultimatemode, true, 0, false, false);
+				}
+				// Since We Found The Map,
+				// End this Map Warp Before Doing Anything Else
+				else
+				{
+					D_MapChange(maptoLoadAfterAutoload, gametype, ultimatemode, true, 0, false, false);
+					
+					maptoLoadAfterAutoload = 0;
+					doWarp = false;
+				}
 			}
+			// HEHE //
 		}
 	}
 	else if (M_CheckParm("-skipintro"))

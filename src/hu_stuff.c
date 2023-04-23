@@ -48,6 +48,7 @@
 #endif
 
 #include "lua_hud.h"
+#include "lua_hudlib_drawlist.h"
 #include "lua_hook.h"
 
 // coords are scaled
@@ -165,6 +166,8 @@ static char cechotext[1024];
 static tic_t cechotimer = 0;
 static tic_t cechoduration = 5*TICRATE;
 static INT32 cechoflags = 0;
+
+static huddrawlist_h luahuddrawlist_scores;
 
 //======================================================================
 //                          HEADS UP INIT
@@ -334,6 +337,8 @@ void HU_Init(void)
 
 	// set shift translation table
 	shiftxform = english_shiftxform;
+
+	luahuddrawlist_scores = LUA_HUD_CreateDrawList();
 }
 
 static inline void HU_Stop(void)
@@ -877,6 +882,7 @@ void HU_Ticker(void)
 	else
 		hu_showscores = false;
 
+#ifndef NONET
 	if (chat_on)
 	{
 		// count down the scroll timer.
@@ -904,6 +910,7 @@ void HU_Ticker(void)
 				HU_removeChatText_Mini();
 		}
 	}
+#endif
 
 	if (cechotimer > 0) --cechotimer;
 
@@ -1990,7 +1997,12 @@ void HU_Drawer(void)
 		else
 			HU_DrawCoopOverlay();
 
-		LUA_HUDHOOK(scores);
+		if (renderisnewtic)
+		{
+			LUA_HUD_ClearDrawList(luahuddrawlist_scores);
+			LUA_HUDHOOK(scores, luahuddrawlist_scores);
+		}
+		LUA_HUD_DrawList(luahuddrawlist_scores);
 	}
 
 	if (gamestate != GS_LEVEL)
@@ -2187,7 +2199,7 @@ void HU_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, I
 			if (tab[i].num != serverplayer)
 				HU_drawPing(x + 253, y, players[tab[i].num].quittime ? UINT32_MAX : playerpingtable[tab[i].num], false, 0);
 			//else
-			//	V_DrawSmallString(x+ 246, y+4, menuColor[cv_menucolor.value], "SERVER");
+			//	V_DrawSmallString(x+ 246, y+4, V_YELLOWMAP, "SERVER");
 		}
 
 		if (!players[tab[i].num].quittime || (leveltime / (TICRATE/2) & 1))

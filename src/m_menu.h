@@ -507,9 +507,12 @@ void M_InitPlayerSetupColors(void);
 void M_FreePlayerSetupColors(void);
 void M_RefreshPauseMenu(void);
 
-// star stuff weeeeee //
+// STAR STUFF SUBISHUHFLUKJDJIPOKD //
 // main build menu stuff
-extern boolean AllowTypicalTimeOver, AlwaysOverlayInvincibility, TransformSuperWithShield;
+extern boolean AllowTypicalTimeOver;
+extern boolean AlwaysOverlayInvincibility, TransformSuperWithShield;
+extern boolean AllowEasterEggHunt, EnableEasterEggHuntBonuses;
+
 extern consvar_t cv_startupscreen, cv_stjrintro;
 extern consvar_t cv_menucolor, cv_fpscountercolor, cv_tpscountercolor;
 extern consvar_t cv_allowtypicaltimeover, cv_pausegraphicstyle, cv_automapoutsidedevmode;
@@ -518,11 +521,15 @@ extern consvar_t cv_allowtypicaltimeover, cv_pausegraphicstyle, cv_automapoutsid
 extern consvar_t cv_ultimatemode;
 #endif
 
+extern consvar_t cv_quitscreen;
+
 extern consvar_t cv_gameovermusic;
 
 extern consvar_t cv_perfectsave, cv_perfectsavestripe1, cv_perfectsavestripe2, cv_perfectsavestripe3;
 extern consvar_t cv_superwithshield, cv_armageddonnukesuper, cv_alwaysoverlayinvuln;
 extern consvar_t cv_jukeboxhud, cv_luacanstopthejukebox, cv_jukeboxspeed;
+
+extern consvar_t cv_alloweasteregghunt, cv_easteregghuntbonuses;
 
 extern UINT16 menuColor[16];
 
@@ -533,11 +540,15 @@ extern boolean jukeboxUnlocked;
 extern char jukeboxMusicName[22+12];
 extern char jukeboxMusicTrack[7];
 void M_ResetJukebox(void);
+void M_UpdateJukebox(void);
+
+// easter stuff
+void M_UpdateEasterStuff(void);
 
 // extra stuff
 void STAR_SetProblematicCommandsForNetgames(void);
 void STAR_ResetProblematicCommandsAfterNetgames(void);
-// end of star stuff //
+// END OF STAR STUFF SHUGDCUYSIGIUDIOHSBIDJ //
 
 // These defines make it a little easier to make menus
 #define DEFAULTMENUSTYLE(id, header, source, prev, x, y)\

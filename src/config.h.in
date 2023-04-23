@@ -36,6 +36,7 @@
  * Last updated 2020 / 10 / 02 - v2.2.8 - patch.pk3
  * Last updated 2021 / 05 / 06 - v2.2.9 - patch.pk3 & zones.pk3
  * Last updated 2022 / 03 / 06 - v2.2.10 - main assets
+ 
  * Last updated 2022 / 08 / 21 - TSOURDT3RD v2.2.10 - starmaniakg.pk3
  * Last updated 2023 / 02 / 05 - TSOURDT3RD v2.2.10 - made starmaniakg.pk3 (now renamed to tsourdt3rd.pk3) optional
  * Last updated 2023 / 02 / 06 - TSOURDT3RD v2.2.10 - updated assets directory
@@ -43,6 +44,9 @@
  * Last updated 2023 / 27 / 03 - TSOURDT3RD v2.2.10 - updated the hash for tsourdt3rd.pk3 again
  * Last updated 2023 / 31 / 03 - TSOURDT3RD v2.2.10 - added support for future april fools stuff
  * Last updated 2023 / 10 / 04 - TSOURDT3RD v2.2.10 - merged the april fools pk3 with the regular pk3
+ * Last updated 2023 / 13 / 04 - TSOURDT3RD v2.2.10 - fixed the easter egg sprite and added tons of more fun stuff
+ * Last updated 2023 / 21 / 04 - TSOURDT3RD v2.2.10 - dispenser going up
+ * Last updated 2023 / 21 / 04 - TSOURDT3RD v2.2.10 - accidentally deleted the file and all my final changes, so i had to recreate them, but you're lucky though, the old egg hunt for dsz2 was going to be a bit of a hassle
 */
 #define ASSET_HASH_SRB2_PK3   "ad911f29a28a18968ee5b2d11c2acb39"
 #define ASSET_HASH_ZONES_PK3  "86ae55cae4e0a93ceda868635706a093"
@@ -51,7 +55,7 @@
 #define ASSET_HASH_PATCH_PK3  "7d467a883f7887b3c311798ee2f56b6a"
 #endif
 
-#define ASSET_HASH_TSOURDT3RD_PK3 "c32b80000f4ed8cacd78f1ab91a0f5b7"
+#define ASSET_HASH_TSOURDT3RD_PK3 "67aa94f63099005dce8a32945916025b"
 
 #endif
 #endif

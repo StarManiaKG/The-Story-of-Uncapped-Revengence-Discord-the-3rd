@@ -18,7 +18,10 @@
 // 	 STAR Stuff																					//
 //   Technically All Of It Is STAR Stuff,														//
 //      But Seeing as How I Just Ported Most Of This From The Other Scripts, like m_cond.h,		//
-//          I Don't Actually Care																//
+//          I Don't Actually Care.																//
+//                                                                                              //
+//   Anyways, Most of This Stuff is Handled in the tsourdt3rd.pk3.                              //
+//      If you Want to Look at Some Code, Check that pk3 Out.                                   //
 // ============================================================================================	//
 
 // Main Stuff //
@@ -28,26 +31,21 @@ extern boolean tsourdt3rd;
 extern consvar_t cv_soniccd;
 
 // Time Over...
-char gameoverMusic[6][7] = {
-	[0] = "_gover",
-	"_govr1",
-	"_govrc",
-	"_govr3",
-	"_govrm",
-	"_govrs",
-};
-INT32 gameoverMusicTics[2] = {
-	[1] = 15*TICRATE,
-};
+extern const char gameoverMusic[7][7];
+extern INT32 gameoverMusicTics[8];
 
 extern boolean timeover;
+extern boolean ForceTimeOver;
 
-// Easter //
+// TF2
+extern boolean SpawnTheDispenser;
+
+// Easter (STAR NOTE: Most of the Other Egg Stuff is Handled in tsourdt3rd.pk3, Just so You Know :p) //
+extern INT32 TOTALEGGS;
+
 extern INT32 foundeggs;
 extern INT32 collectedmapeggs;
 extern INT32 currenteggs;
-extern INT32 numstageEggs;
-
-// NOTE: The Rest of The Egg Stuff Is Handled in tsourdt3rd.pk3
+extern INT32 numMapEggs;
 
 #endif // __STAR_VARS__

@@ -126,17 +126,17 @@ extern char logfilename[1024];
 
 //#define DEVELOP // Disable this for release builds to remove excessive cheat commands and enable MD5 checking and stuff, all in one go. :3
 #ifdef DEVELOP
-#define VERSIONSTRING "2.2.10; TSoURDt3rd 2.5 (by StarManiaKG#4884) - Dev Mode Edition"
-#define VERSIONSTRING_RC "2.2.10; TSoURDt3rd 2.5 (by StarManiaKG#4884) - Dev Mode Edition" "\0"
+#define VERSIONSTRING "v2.2.10; TSoURDt3rd v2.5 (by StarManiaKG#4884) - Dev Mode Edition"
+#define VERSIONSTRING_RC "2.2.10; TSoURDt3rd v2.5 (by StarManiaKG#4884) - Dev Mode Edition" "\0"
 // most interface strings are ignored in development mode.
 // we use comprevision and compbranch instead.
 // VERSIONSTRING_RC is for the resource-definition script used by windows builds
 #else
 #ifdef BETAVERSION
-#define VERSIONSTRING "v"SRB2VERSION" "BETAVERSION
-#define VERSIONSTRING_RC SRB2VERSION " " BETAVERSION "\0"
+#define VERSIONSTRING "v"SRB2VERSION"; TSoURDt3rd v2.5 (by StarManiaKG#4884) "BETAVERSION
+#define VERSIONSTRING_RC SRB2VERSION "; TSoURDt3rd v2.5 (by StarManiaKG#4884) " BETAVERSION "\0"
 #else
-#define VERSIONSTRING "2.2.10; TSoURDt3rd 2.5 (by StarManiaKG#4884)" // please don't remove this i'm begging you
+#define VERSIONSTRING "v"SRB2VERSION"; TSoURDt3rd v2.5 (by StarManiaKG#4884)" // please don't remove this i'm begging you
 #define VERSIONSTRING_RC SRB2VERSION "\0"
 #endif
 // Hey! If you change this, add 1 to the MODVERSION below!

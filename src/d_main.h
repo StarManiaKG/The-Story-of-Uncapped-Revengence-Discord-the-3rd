@@ -27,14 +27,6 @@ extern boolean usehome; //Alam: which path?
 extern const char *pandf; //Alam: how to path?
 extern char srb2path[256]; //Alam: SRB2's Home
 
-// EXTRA STAR STUFF //
-// Discord Stuff
-extern INT32 extrawads; // Star: Using Extra Optional Mods
-
-// Autoloading
-extern boolean autoloading; // Star: Autoloading
-// I DON'T KNOW ANYMORE //
-
 // the infinite loop of D_SRB2Loop() called from win_main for windows version
 void D_SRB2Loop(void) FUNCNORETURN;
 
@@ -61,6 +53,15 @@ void D_StartTitle(void);
 #endif //__D_MAIN__
 
 // STAR STUFF //
+// Discord Stuff
+extern INT32 extrawads;                 // Star: Using Extra Optional Wads
+
+// Autoloading
+extern boolean autoloading;             // Star: Autoloading Wads
+extern boolean autoloaded;              // Star: Have We Autoloaded Any Game-Changing Mods?
+
+extern boolean doWarp;                  // Star: Autoloading into Maps
+
 // Events
 extern boolean aprilfoolsmode; 		    // April Fools Event Setter
 extern boolean eastermode;				// Easter Event Setter

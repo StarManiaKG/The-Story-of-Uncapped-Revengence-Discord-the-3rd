@@ -12,6 +12,7 @@
 /// \brief Enemy thinking, AI
 ///        Action Pointer Functions that are associated with states/frames
 
+#include "dehacked.h"
 #include "doomdef.h"
 #include "g_game.h"
 #include "p_local.h"
@@ -26,15 +27,14 @@
 #include "z_zone.h"
 #include "lua_hook.h"
 #include "m_cond.h" // SECRET_SKIN
-#include "m_menu.h" // jukebox
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
 #endif
 
 // STAR STUFF WEEE //
-// STAR NOTE
-//#include "STAR/star_vars.h"
+#include "m_menu.h" // jukebox
+#include "STAR/star_vars.h"
 
 consvar_t cv_soniccd = CVAR_INIT ("soniccd", "Off", CV_SAVE, CV_OnOff, NULL);
 // END OF THAT THING //
@@ -115,6 +115,8 @@ void A_GoldMonitorRestore(mobj_t *actor);
 void A_GoldMonitorSparkle(mobj_t *actor);
 void A_Explode(mobj_t *actor);
 void A_BossDeath(mobj_t *actor);
+void A_SetShadowScale(mobj_t *actor);
+void A_ShadowScream(mobj_t *actor);
 void A_CustomPower(mobj_t *actor);
 void A_GiveWeapon(mobj_t *actor);
 void A_RingBox(mobj_t *actor);
@@ -1409,6 +1411,9 @@ void A_StatueBurst(mobj_t *actor)
 	if (LUA_CallAction(A_STATUEBURST, actor))
 		return;
 
+	// make statue intangible upon spawning so you can't stand above the created object for 40 tics
+	actor->flags &= ~MF_SOLID;
+
 	if (!locvar1 || !(new = P_SpawnMobjFromMobj(actor, 0, 0, 0, locvar1)))
 		return;
 
@@ -1520,13 +1525,22 @@ void A_JetJawChomp(mobj_t *actor)
 // var1 = unused
 // var2 = unused
 //
+
+// Function: A_PointyThink
+//
+// Description: Thinker function for Pointy
+//
+// var1 = unused
+// var2 = unused
+//
 void A_PointyThink(mobj_t *actor)
 {
 	INT32 i;
 	player_t *player = NULL;
 	mobj_t *ball;
-	TVector v;
-	TVector *res;
+	matrix_t m;
+	vector4_t v;
+	vector4_t res;
 	angle_t fa;
 	fixed_t radius = FixedMul(actor->info->radius*actor->info->reactiontime, actor->scale);
 	boolean firsttime = true;
@@ -1568,7 +1582,7 @@ void A_PointyThink(mobj_t *actor)
 	if (!player)
 		return;
 
-	// Okay, we found the closest player. Let's move based on his movement.
+	// Okay, we found the closest player. Let's move based on their movement.
 	P_SetTarget(&actor->target, player->mo);
 	A_FaceTarget(actor);
 
@@ -1592,24 +1606,33 @@ void A_PointyThink(mobj_t *actor)
 	// Position spike balls relative to the value of 'lastlook'.
 	ball = actor->tracer;
 
-	i = 0;
+	// STAR NOTE: YOU'RE WELCOME TORTURED PLANET FANS
+	// ANOTHER STAR NOTE: i wanna take the time to point out that i fixed it before stjr lol
+	i = 1;
 	while (ball)
 	{
 		fa = actor->lastlook+i;
-		v[0] = FixedMul(FINECOSINE(fa),radius);
-		v[1] = 0;
-		v[2] = FixedMul(FINESINE(fa),radius);
-		v[3] = FRACUNIT;
+		v.x = FixedMul(FINECOSINE(fa),radius);
+		v.y = 0;
+		v.z = FixedMul(FINESINE(fa),radius);
+		v.a = FRACUNIT;
 
-		res = VectorMatrixMultiply(v, *RotateXMatrix(FixedAngle(actor->lastlook+i)));
-		M_Memcpy(&v, res, sizeof (v));
-		res = VectorMatrixMultiply(v, *RotateZMatrix(actor->angle+ANGLE_180));
-		M_Memcpy(&v, res, sizeof (v));
+		FM_RotateX(&m, FixedAngle(actor->lastlook+i));
+		FV4_Copy(&v, FM_MultMatrixVec4(&m, &v, &res));
+
+		FM_RotateZ(&m, actor->angle+ANGLE_180);
+		FV4_Copy(&v, FM_MultMatrixVec4(&m, &v, &res));
 
 		P_UnsetThingPosition(ball);
-		ball->x = actor->x + v[0];
-		ball->y = actor->y + v[1];
-		ball->z = actor->z + (actor->height>>1) + v[2];
+		ball->x = actor->x + v.x;
+		ball->y = actor->y + v.y;
+		ball->z = actor->z + (actor->height>>1) + v.z;
+
+		// STAR STUFF: interpolation edition: electric boogalo //
+		ball->old_x = actor->old_x + v.x;
+		ball->old_y = actor->old_y + v.y;
+		ball->old_z = actor->old_z + (actor->height>>1) + v.z;
+		// end of star's ball interpolation: electric boogalo :) //
 		P_SetThingPosition(ball);
 
 		ball = ball->tracer;
@@ -2670,7 +2693,7 @@ void A_LobShot(mobj_t *actor)
 	fixed_t z;
 	fixed_t dist;
 	fixed_t vertical, horizontal;
-	fixed_t airtime = var2 & 65535;
+	fixed_t airtime = max(1, var2 & 65535);
 
 	if (LUA_CallAction(A_LOBSHOT, actor))
 		return;
@@ -4177,6 +4200,40 @@ bossjustdie:
 	}
 }
 
+// Function: A_SetShadowScale
+//
+// Description: Sets the target's shadowscale.
+//
+// var1 = new fixed_t shadowscale (default = FRACUNIT)
+// var2 = unused
+//
+void A_SetShadowScale(mobj_t *actor)
+{
+	INT32 locvar1 = var1;
+
+	if (LUA_CallAction(A_SETSHADOWSCALE, actor))
+		return;
+
+	actor->shadowscale = locvar1;
+}
+
+
+// Function: A_ShadowScream
+//
+// Description: Sets the target's shadowscale and starts the death sound of the object.
+//
+// var1 = new fixed_t shadowscale (default = FRACUNIT)
+// var2 = unused
+//
+void A_ShadowScream(mobj_t *actor)
+{
+	if (LUA_CallAction(A_SHADOWSCREAM, actor))
+		return;
+
+	A_SetShadowScale(actor);
+	A_Scream(actor);
+}
+
 // Function: A_CustomPower
 //
 // Description: Provides a custom powerup. Target (must be a player) is awarded the powerup. Reactiontime of the object is used as an index to the powers array.
@@ -4333,14 +4390,14 @@ void A_SuperSneakers(mobj_t *actor)
 
 	if (P_IsLocalPlayer(player) && !player->powers[pw_super])
 	{
-		if ((mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC) && !jukeboxMusicPlaying)
+		if ((mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC)
+			&& (!jukeboxMusicPlaying))
 		{
 			if (S_SpeedMusic(0.0f))
 				S_SpeedMusic(1.4f);
 		}
 		else
 			P_PlayJingle(player, JT_SHOES);
-		
 		strlcpy(S_sfx[sfx_None].caption, "Speed shoes", 12);
 		S_StartCaption(sfx_None, -1, player->powers[pw_sneakers]);
 	}
@@ -4811,12 +4868,12 @@ void A_FishJump(mobj_t *actor)
 		fixed_t jumpval;
 
 		if (locvar1)
-			jumpval = var1;
+			jumpval = locvar1;
 		else
 			jumpval = FixedMul(AngleFixed(actor->angle)/4, actor->scale);
 
 		if (!jumpval) jumpval = FixedMul(44*(FRACUNIT/4), actor->scale);
-		actor->momz = jumpval;
+		actor->momz = FixedMul(jumpval, actor->scale);
 		P_SetMobjStateNF(actor, actor->info->seestate);
 	}
 
@@ -7195,7 +7252,7 @@ void A_Boss2Chase(mobj_t *actor)
 	}
 	else
 	{
-		// Only speed up if you have the 'Deaf' flag.
+		// Only speed up if you have the ambush flag.
 		if (actor->flags2 & MF2_AMBUSH)
 			speedvar = actor->health;
 		else
@@ -8113,10 +8170,6 @@ void A_Boss3TakeDamage(mobj_t *actor)
 
 	actor->movecount = var1;
 	actor->movefactor = -512*FRACUNIT;
-
-	/*if (actor->target && actor->target->spawnpoint)
-		actor->threshold = actor->target->spawnpoint->extrainfo;*/
-
 }
 
 // Function: A_Boss3Path
@@ -11649,10 +11702,7 @@ mobj_t *P_InternalFlickySpawn(mobj_t *actor, mobjtype_t flickytype, fixed_t momz
 		else
 		{
 			INT32 prandom = P_RandomKey(mapheaderinfo[gamemap-1]->numFlickies);
-			if (!cv_soniccd.value)
-				flickytype = mapheaderinfo[gamemap-1]->flickies[prandom];
-			else
-				flickytype = MT_SEED;
+			flickytype = (!cv_soniccd.value ? mapheaderinfo[gamemap-1]->flickies[prandom] : MT_SEED);
 		}
 	}
 
@@ -11715,7 +11765,7 @@ void A_FlickySpawn(mobj_t *actor)
 }
 
 // Internal Flicky color setting
-void P_InternalFlickySetColor(mobj_t *actor, UINT8 extrainfo)
+void P_InternalFlickySetColor(mobj_t *actor, UINT8 color)
 {
 	UINT8 flickycolors[] = {
 		SKINCOLOR_RED,
@@ -11735,11 +11785,11 @@ void P_InternalFlickySetColor(mobj_t *actor, UINT8 extrainfo)
 		SKINCOLOR_YELLOW,
 	};
 
-	if (extrainfo == 0)
+	if (color == 0)
 		// until we can customize flicky colors by level header, just stick to SRB2's defaults
 		actor->color = flickycolors[P_RandomKey(2)]; //flickycolors[P_RandomKey(sizeof(flickycolors))];
 	else
-		actor->color = flickycolors[min(extrainfo-1, 14)]; // sizeof(flickycolors)-1
+		actor->color = flickycolors[min(color-1, 14)]; // sizeof(flickycolors)-1
 }
 
 // Function: A_FlickyCenter
@@ -12640,7 +12690,7 @@ void A_WhoCaresIfYourSonIsABee(mobj_t *actor)
 
 // Function: A_ParentTriesToSleep
 //
-// Description: If extravalue1 is less than or equal to var1, go to var2.
+// Description: If extravalue1 is greater than 0 go to var1
 //
 // var1 = state to go to when extravalue1
 // var2 = unused
@@ -12733,7 +12783,7 @@ void A_Boss5FindWaypoint(mobj_t *actor)
 
 	avoidcenter = !actor->tracer || (actor->health == actor->info->damage+1);
 
-	if (locvar1 == 2) // look for the boss waypoint
+	if (locvar1 == 2) // look for the boss waypoint/flypoint
 	{
 		thinker_t *th;
 		mobj_t *mo2;
@@ -13435,6 +13485,9 @@ static boolean PIT_DustDevilLaunch(mobj_t *thing)
 	player_t *player = thing->player;
 
 	if (!player)
+		return true;
+
+	if (player->spectator)
 		return true;
 
 	if (player->powers[pw_carry] != CR_DUSTDEVIL && (player->powers[pw_ignorelatch] & (1<<15)))

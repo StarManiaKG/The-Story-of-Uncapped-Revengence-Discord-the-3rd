@@ -36,7 +36,11 @@
 #include "p_slopes.h"
 #include "f_finale.h"
 #include "m_cond.h"
+
+// STAR STUFF //
 #include "m_menu.h" // mainly commands
+#include "STAR/star_vars.h" // mainly booleans
+// HELP ME //
 
 static CV_PossibleValue_t CV_BobSpeed[] = {{0, "MIN"}, {4*FRACUNIT, "MAX"}, {0, NULL}};
 consvar_t cv_movebob = CVAR_INIT ("movebob", "1.0", CV_FLOAT|CV_SAVE, CV_BobSpeed, NULL);
@@ -4349,7 +4353,8 @@ static void P_Boss2Thinker(mobj_t *mobj)
 	{
 		mobj->flags &= ~MF_NOGRAVITY;
 		A_Boss2Pogo(mobj);
-		P_LinedefExecute(LE_PINCHPHASE, mobj, NULL);
+		if (mobj->spawnpoint)
+			P_LinedefExecute(LE_PINCHPHASE, mobj, NULL);
 	}
 }
 
@@ -4478,7 +4483,8 @@ static void P_Boss3Thinker(mobj_t *mobj)
 			dummy->cusval = mobj->cusval;
 
 			CONS_Debug(DBG_GAMELOGIC, "Eggman path %d - Dummy selected paths %d and %d\n", way0, way1, way2);
-			P_LinedefExecute(LE_PINCHPHASE+(mobj->cusval*LE_PARAMWIDTH), mobj, NULL);
+			if (mobj->spawnpoint)
+				P_LinedefExecute(LE_PINCHPHASE+(mobj->cusval*LE_PARAMWIDTH), mobj, NULL);
 		}
 	}
 	else if (mobj->movecount) // Firing mode
@@ -5007,13 +5013,15 @@ static void P_Boss4Thinker(mobj_t *mobj)
 			{ // Proceed to pinch phase!
 				P_Boss4DestroyCage(mobj);
 				mobj->movedir = 3;
-				P_LinedefExecute(LE_PINCHPHASE + (mobj->spawnpoint ? mobj->spawnpoint->extrainfo*LE_PARAMWIDTH : 0), mobj, NULL);
+				if (mobj->spawnpoint)
+					P_LinedefExecute(LE_PINCHPHASE + (mobj->spawnpoint ? mobj->spawnpoint->extrainfo*LE_PARAMWIDTH : 0), mobj, NULL);
 				P_Boss4MoveSpikeballs(mobj, FixedAngle(mobj->movecount), 0);
 				var1 = 3;
 				A_BossJetFume(mobj);
 				return;
 			}
-			P_LinedefExecute(LE_BOSS4DROP - (mobj->info->spawnhealth-mobj->health) + (mobj->spawnpoint ? mobj->spawnpoint->extrainfo*LE_PARAMWIDTH : 0), mobj, NULL);
+			if (mobj->spawnpoint)
+				P_LinedefExecute(LE_BOSS4DROP - (mobj->info->spawnhealth-mobj->health) + (mobj->spawnpoint ? mobj->spawnpoint->extrainfo*LE_PARAMWIDTH : 0), mobj, NULL);
 			// 1 -> 1.5 second timer
 			mobj->threshold = TICRATE+(TICRATE*(mobj->info->spawnhealth-mobj->health)/10);
 			if (mobj->threshold < 1)
@@ -5045,7 +5053,8 @@ static void P_Boss4Thinker(mobj_t *mobj)
 	{ // Proceed to pinch phase!
 		P_Boss4DestroyCage(mobj);
 		mobj->movedir = 3;
-		P_LinedefExecute(LE_PINCHPHASE + (mobj->spawnpoint ? mobj->spawnpoint->extrainfo*LE_PARAMWIDTH : 0), mobj, NULL);
+		if (mobj->spawnpoint)
+			P_LinedefExecute(LE_PINCHPHASE + (mobj->spawnpoint ? mobj->spawnpoint->extrainfo*LE_PARAMWIDTH : 0), mobj, NULL);
 		var1 = 3;
 		A_BossJetFume(mobj);
 		return;
@@ -5185,7 +5194,8 @@ static void P_Boss7Thinker(mobj_t *mobj)
 			// Begin platform destruction
 			mobj->flags2 |= MF2_FRET;
 			P_SetMobjState(mobj, mobj->info->raisestate);
-			P_LinedefExecute(LE_PINCHPHASE, mobj, NULL);
+			if (mobj->spawnpoint)
+				P_LinedefExecute(LE_PINCHPHASE, mobj, NULL);
 		}
 	}
 	else if (mobj->state == &states[S_BLACKEGG_HITFACE4] && mobj->tics == mobj->state->tics)
@@ -5373,7 +5383,7 @@ static void P_Boss7Thinker(mobj_t *mobj)
 			break;
 		}
 
-		if (hitspot == NULL)
+		if ((!hitspot) || (hitspot == NULL))
 		{
 			CONS_Debug(DBG_GAMELOGIC, "BlackEggman unable to find waypoint #%d!\n", waypointNum);
 			P_SetMobjState(mobj, mobj->info->spawnstate);
@@ -6044,7 +6054,8 @@ static void P_Boss9Thinker(mobj_t *mobj)
 						mobj->watertop = mobj->floorz + 16*FRACUNIT;
 					else
 						mobj->watertop = mobj->target->floorz + 16*FRACUNIT;
-					P_LinedefExecute(LE_PINCHPHASE, mobj, NULL);
+					if (mobj->spawnpoint)
+						P_LinedefExecute(LE_PINCHPHASE, mobj, NULL);
 
 #if 0
 					whoosh = P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_GHOST); // done here so the offset is correct
@@ -6714,7 +6725,8 @@ static boolean P_ShieldLook(mobj_t *thing, shieldtype_t shield)
 {
 	if (!thing->target || thing->target->health <= 0 || !thing->target->player
 		|| (thing->target->player->powers[pw_shield] & SH_NOSTACK) == SH_NONE || thing->target->player->powers[pw_super]
-		|| (thing->target->player->powers[pw_invulnerability] > 1 && !AlwaysOverlayInvincibility))
+		|| ((thing->target->player->powers[pw_invulnerability] > 1)
+			&& (!AlwaysOverlayInvincibility)))
 	{
 		P_RemoveMobj(thing);
 		return false;
@@ -6801,7 +6813,8 @@ static boolean P_AddShield(mobj_t *thing)
 
 	if (!thing->target || thing->target->health <= 0 || !thing->target->player
 		|| (thing->target->player->powers[pw_shield] & SH_NOSTACK) == SH_NONE || thing->target->player->powers[pw_super]
-		|| (thing->target->player->powers[pw_invulnerability] > 1 && !AlwaysOverlayInvincibility))
+		|| ((thing->target->player->powers[pw_invulnerability] > 1)
+			&& (!AlwaysOverlayInvincibility)))
 	{
 		P_RemoveMobj(thing);
 		return false;
@@ -10286,6 +10299,9 @@ boolean P_RailThinker(mobj_t *mobj)
 // Unquick, unoptimized function for pushables
 void P_PushableThinker(mobj_t *mobj)
 {
+	I_Assert(mobj != NULL);
+	I_Assert(!P_MobjWasRemoved(mobj));
+	
 	sector_t *sec;
 
 	I_Assert(mobj != NULL);
@@ -13504,7 +13520,7 @@ static void P_SpawnItemRow(mapthing_t *mthing, mobjtype_t *itemtypes, UINT8 numi
 static void P_SpawnSingularItemRow(mapthing_t *mthing, mobjtype_t itemtype, INT32 numitems, fixed_t horizontalspacing, fixed_t verticalspacing, INT16 fixedangle, boolean bonustime)
 {
 	mobjtype_t itemtypes[1] = { itemtype };
-	return P_SpawnItemRow(mthing, itemtypes, 1, numitems, horizontalspacing, verticalspacing, fixedangle, bonustime);
+	P_SpawnItemRow(mthing, itemtypes, 1, numitems, horizontalspacing, verticalspacing, fixedangle, bonustime);
 }
 
 static void P_SpawnItemCircle(mapthing_t *mthing, mobjtype_t *itemtypes, UINT8 numitemtypes, INT32 numitems, fixed_t size, boolean bonustime)

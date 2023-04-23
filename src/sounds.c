@@ -828,8 +828,9 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"requst", false,  96,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, "Discord Join Request Received"}, 
   {"syfail", false,  96,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, "Sync Failure"},
 
-  // star stuff yay
+  // STAR STUFF YAY //
   {"dygatce",false,  96,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, "Final Demo Joke"},
+  // END OF THAT //
 
   // skin sounds free slots to add sounds at run time (Boris HACK!!!)
   // initialized to NULL

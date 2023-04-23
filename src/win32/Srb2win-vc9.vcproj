@@ -4676,6 +4676,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\lua_hudlib_drawlist.c"
+				>
+			</File>
+			<File
+				RelativePath="..\lua_hudlib_drawlist.h"
+				>
+			</File>
+			<File
 				RelativePath="..\lua_infolib.c"
 				>
 			</File>

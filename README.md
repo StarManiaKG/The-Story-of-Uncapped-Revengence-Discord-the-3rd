@@ -72,14 +72,14 @@
   - Autoloading Addons
     - (Made by StarManiaKG)
     
-    - Using Right Shift over a mod in the addons menu allows you to select mods that will autoload when SRB2 first starts up.
-    - This feature also allows you to bypass modifiedgame checks when the game first starts up, allowing you to play all the mods you want, in whatever savefiles or modes you want.
+    - Using Right Shift over an add-on or folder in the add-ons menu allows you to select add-ons or folders that will autoload when SRB2 first starts up.
+    - This feature also allows you to bypass modifiedgame checks when the game first starts up, allowing you to play all the add-ons you want, in whatever savefiles or modes you want.
     
-    - To stop certain, or all, addons from autoloading on startup, look at the ```autoload.cfg``` file, located in your SRB2 directory, and remove the mods there.
-    - Autoloading doesn't affect netgames and the ability to join them. You still need to relaunch with the base IWADS loaded in other to join other netgames.
+    - To stop certain, or all, addons from autoloading on startup, look at the ```autoload.cfg``` file, located in your SRB2 directory, and remove the add-ons and folder names there.
+    - Autoloading add-ons still does affect netgames and the ability to join them, though. You still need to relaunch with the base IWADS loaded in other to join other netgames.
     
     ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/autoloading.gif?raw=true)
-    -   NOTE: You may want to back up your savefiles when using this feature, just in case.
+    -   NOTE: You may want to back up your savefiles when using this feature, just in case. Bu I'm not the boss, though, you are.
 
   - A Jukebox
     - (Made by StarManiaKG)
@@ -108,7 +108,6 @@
 
 **FUTURE FEATURES (WITH ENOUGH TIME IN THE OVEN)**
   - Netplus (really on a limb here)
-  - Autoloading Folder Support (it's a funny story)
   - Dynamic Resolutions (an annoyance to port from srb2 2.2.6 to 2.2.11)
   - Software Models (an annoyance to port just like Dynamic Resolutions)
   - ...And A Boatload of More Annoyances!
