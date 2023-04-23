@@ -1607,7 +1607,7 @@ void A_PointyThink(mobj_t *actor)
 	ball = actor->tracer;
 
 	// STAR NOTE: YOU'RE WELCOME TORTURED PLANET FANS
-	// ANOTHER STAR NOTE: i wanna take the time to point out that i fixed it before stjr lol
+	// ANOTHER STAR NOTE: i wanna take the time to point out that i fixed it before stjr could lol
 	i = 1;
 	while (ball)
 	{
@@ -1634,6 +1634,12 @@ void A_PointyThink(mobj_t *actor)
 		ball->old_z = actor->old_z + (actor->height>>1) + v.z;
 		// end of star's ball interpolation: electric boogalo :) //
 		P_SetThingPosition(ball);
+
+		// interpolation //
+		ball->old_x = ball->x;
+		ball->old_y = ball->y;
+		ball->old_z = ball->z;
+		// end of ball interpolation //
 
 		ball = ball->tracer;
 		i += ANGLE_90 >> ANGLETOFINESHIFT;
