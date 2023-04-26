@@ -487,6 +487,9 @@
     <ClInclude Include="..\STAR\star_vars.h">
       <Filter>G_Game</Filter>
     </ClInclude>
+    <ClInclude Include="..\STAR\star_webinfo.h">
+      <Filter>G_Game</Filter>
+    </ClInclude>
     <ClInclude Include="endtxt.h">
       <Filter>SDLApp</Filter>
     </ClInclude>
@@ -971,6 +974,9 @@
     <ClCompile Include="..\w_wad.c">
       <Filter>W_Wad</Filter>
     </ClCompile>
+    <ClInclude Include="..\STAR\star_functions.c">
+      <Filter>G_Game</Filter>
+    </ClInclude>
     <ClCompile Include="dosstr.c">
       <Filter>SDLApp</Filter>
     </ClCompile>

@@ -559,7 +559,8 @@ void I_Error(const char *error, ...)
 #endif
 
 	// DO STAR STUFF, WINDOWS EDITION //
-	STAR_ResetProblematicCommandsAfterNetgames();
+	if (netgame)
+		STAR_ResetProblematicCommandsAfterNetgames();
 	// DID STAR STUFF, WINDOWS EDITION //
 
 	// added 11-2-98 recursive error detecting
@@ -700,7 +701,8 @@ void I_Quit(void)
 #endif
 
 	// DID STAR STUFF //
-	STAR_ResetProblematicCommandsAfterNetgames();
+	if (netgame)
+		STAR_ResetProblematicCommandsAfterNetgames();
 	// PLEASE HELP //
 
 	// when recording a demo, should exit using 'q',

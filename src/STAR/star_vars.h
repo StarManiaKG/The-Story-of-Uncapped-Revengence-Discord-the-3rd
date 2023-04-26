@@ -1,4 +1,4 @@
-// SONIC ROBO BLAST 2
+// SONIC ROBO BLAST 2 - TSOURDT3RD EDITION
 //-----------------------------------------------------------------------------
 // Copyright (C) 2023 by Star "Guy Who Named a Script After Him" ManiaKG.
 //
@@ -24,11 +24,12 @@
 //      If you Want to Look at Some Code, Check that pk3 Out.                                   //
 // ============================================================================================	//
 
-// Main Stuff //
+// VARIABLES //
 extern boolean tsourdt3rd;
 
-// Commands //
+// COMMANDS //
 extern consvar_t cv_soniccd;
+extern consvar_t cv_socksendlimit;
 
 // Time Over...
 extern const char gameoverMusic[7][7];
@@ -47,5 +48,14 @@ extern INT32 foundeggs;
 extern INT32 collectedmapeggs;
 extern INT32 currenteggs;
 extern INT32 numMapEggs;
+
+// FUNCTIONS //
+// Savedata
+void STAR_WriteExtraData(void);
+void STAR_ReadExtraData(void);
+
+// Online
+void STAR_DoOnlineStuff(void);
+void STAR_GrabFromTsourdt3rdGithub(char *tsourdt3rdURL);
 
 #endif // __STAR_VARS__

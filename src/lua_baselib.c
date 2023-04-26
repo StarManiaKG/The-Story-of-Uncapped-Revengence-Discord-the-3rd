@@ -2252,7 +2252,6 @@ static int lib_pThingOnSpecial3DFloor(lua_State *L)
 	INLEVEL
 	if (!mo)
 		return LUA_ErrInvalid(L, "mobj_t");
-	LUA_Deprecated(L, "P_ThingOnSpecial3DFloor", "P_MobjTouchingSectorSpecial\" or \"P_MobjTouchingSectorSpecialFlag");
 	LUA_PushUserdata(L, P_ThingOnSpecial3DFloor(mo), META_SECTOR);
 	return 1;
 }

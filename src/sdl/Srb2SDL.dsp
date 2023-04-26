@@ -1024,6 +1024,10 @@ SOURCE=..\w_wad.h
 # Begin Group "Docs"
 
 ## STAR STUFF ##
+SOURCE=..\STAR\star_functions.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\STAR\star_vars.h
 # End Source File
 # Begin Source File

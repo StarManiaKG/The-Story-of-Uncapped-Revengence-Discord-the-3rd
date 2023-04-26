@@ -513,7 +513,7 @@ void M_FreePlayerSetupColors(void);
 // STAR STUFF SUBISHUHFLUKJDJIPOKD //
 // main build menu stuff
 extern boolean AllowTypicalTimeOver;
-extern boolean AlwaysOverlayInvincibility, TransformSuperWithShield;
+extern boolean AlwaysOverlayInvincibility, ShieldBlocksTransformation;
 extern boolean AllowEasterEggHunt, EnableEasterEggHuntBonuses;
 
 extern consvar_t cv_startupscreen, cv_stjrintro;
@@ -529,7 +529,7 @@ extern consvar_t cv_quitscreen;
 extern consvar_t cv_gameovermusic;
 
 extern consvar_t cv_perfectsave, cv_perfectsavestripe1, cv_perfectsavestripe2, cv_perfectsavestripe3;
-extern consvar_t cv_superwithshield, cv_armageddonnukesuper, cv_alwaysoverlayinvuln;
+extern consvar_t cv_shieldblockstransformation, cv_armageddonnukesuper, cv_alwaysoverlayinvuln;
 extern consvar_t cv_jukeboxhud, cv_luacanstopthejukebox, cv_jukeboxspeed;
 
 extern consvar_t cv_alloweasteregghunt, cv_easteregghuntbonuses;

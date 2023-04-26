@@ -443,6 +443,8 @@ boolean PT_RequestFile(INT32 node)
   *         3 too many files, over WADLIMIT
   *         4 still checking, continuing next tic
   *
+  *			5 you've autoloaded mods, and need to reset the game
+  *
   */
 INT32 CL_CheckFiles(void)
 {

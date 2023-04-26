@@ -2515,6 +2515,18 @@ int W_VerifyNMUSlumps(const char *filename, boolean exit_on_error)
 		{"SHADERS", 7}, // OpenGL shader definitions
 		{"SH_", 3}, // GLSL shader
 
+		// STAR STUFF //
+		{"SRB2BACK", 8}, // SRB2 Titlecard Background
+		
+		{"LTZIGZAG", 8}, // SRB2 Titlecard Zig-Zag
+		{"LTZZTEXT", 8}, // SRB2 Titlecard Text
+		{"LTACTBLU", 8}, // SRB2 Titlecard Icon
+
+		{"BLANKLVL", 8}, // NO LEVEL ICONS?
+
+		{"CHAR", 4}, 	 // Character Select Screen Graphics
+		// NETGAME-COMPATIBLE, TOO //
+
 		{NULL, 0},
 	};
 

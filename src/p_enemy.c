@@ -1600,6 +1600,12 @@ void A_PointyThink(mobj_t *actor)
 		actor->lastlook %= FINEANGLES/4;
 	}
 
+	// STAR NOTE: even though i clearly fixed the pointys first, we're going to put this change here.
+	//				nothing wrong with being safer, rather than sorry, right?
+	// Catch case where actor lastlook is -1 (which segfaults the following blocks)
+	if (actor->lastlook < 0)
+		return;
+
 	if (!actor->tracer) // For some reason we do not have spike balls...
 		return;
 
@@ -1628,18 +1634,16 @@ void A_PointyThink(mobj_t *actor)
 		ball->y = actor->y + v.y;
 		ball->z = actor->z + (actor->height>>1) + v.z;
 
-		// STAR STUFF: interpolation edition: electric boogalo //
+		// STAR STUFF: interpolation edition //
 		ball->old_x = actor->old_x + v.x;
 		ball->old_y = actor->old_y + v.y;
 		ball->old_z = actor->old_z + (actor->height>>1) + v.z;
-		// end of star's ball interpolation: electric boogalo :) //
-		P_SetThingPosition(ball);
-
-		// interpolation //
+		
 		ball->old_x = ball->x;
 		ball->old_y = ball->y;
 		ball->old_z = ball->z;
-		// end of ball interpolation //
+		// end of star's ball interpolation //
+		P_SetThingPosition(ball);
 
 		ball = ball->tracer;
 		i += ANGLE_90 >> ANGLETOFINESHIFT;

@@ -11,7 +11,7 @@
 /// \file  discord.h
 /// \brief Discord Rich Presence handling
 
-#ifdef HAVE_DISCORDRPC // HAVE_DISCORDRPC
+#ifdef HAVE_DISCORDRPC
 
 #include <time.h>
 

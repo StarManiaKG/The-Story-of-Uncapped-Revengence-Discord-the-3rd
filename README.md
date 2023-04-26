@@ -110,6 +110,7 @@
   - Netplus (really on a limb here)
   - Dynamic Resolutions (an annoyance to port from srb2 2.2.6 to 2.2.11)
   - Software Models (an annoyance to port just like Dynamic Resolutions)
+  - MP4 Support (this is all lj sonic's fault, because he inspired me to do this, and i'm definitely not doing this of my own volition)
   - ...And A Boatload of More Annoyances!
       
 ## Dependencies

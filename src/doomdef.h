@@ -126,8 +126,8 @@ extern char logfilename[1024];
 
 //#define DEVELOP // Disable this for release builds to remove excessive cheat commands and enable MD5 checking and stuff, all in one go. :3
 #ifdef DEVELOP
-#define VERSIONSTRING "v2.2.10; TSoURDt3rd v2.5 (by StarManiaKG#4884) - Dev Mode Edition"
-#define VERSIONSTRING_RC "2.2.10; TSoURDt3rd v2.5 (by StarManiaKG#4884) - Dev Mode Edition" "\0"
+#define VERSIONSTRING "v2.2.10; TSoURDt3rd v2.5 (by StarManiaKG#4884); Dev Mode Edition"
+#define VERSIONSTRING_RC "2.2.10; TSoURDt3rd v2.5 (by StarManiaKG#4884); Dev Mode Edition" "\0"
 // most interface strings are ignored in development mode.
 // we use comprevision and compbranch instead.
 // VERSIONSTRING_RC is for the resource-definition script used by windows builds

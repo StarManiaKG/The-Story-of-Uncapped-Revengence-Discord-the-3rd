@@ -3113,6 +3113,16 @@ OverrideBuildCmd=0
 BuildCmd=
 
 [Unit282]
+FileName=src\STAR\star_functions.c
+CompileCpp=0
+Folder=G_Game
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit283]
 FileName=src\STAR\star_vars.h
 CompileCpp=0
 Folder=G_Game
