@@ -506,6 +506,11 @@
     <ClCompile Include="..\w_wad.c" />
     <ClCompile Include="..\y_inter.c" />
     <ClCompile Include="..\z_zone.c" />
+    <ClCompile Include="..\STAR\star_function.c" />
+    <ClCompile Include="..\STAR\star_vars.h" />
+    <ClCompile Include="..\STAR\star_webinfo.h" />
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="dosstr.c" />
     <ClCompile Include="endtxt.c" />
     <ClCompile Include="hwsym_sdl.c" />

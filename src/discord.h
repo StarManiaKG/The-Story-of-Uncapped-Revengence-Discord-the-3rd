@@ -35,11 +35,11 @@ extern consvar_t cv_customdiscordlargeimagetext, cv_customdiscordsmallimagetext;
 
 extern char discordUserName[64];
 
-extern struct discordInfo_s {
+/*extern struct discordInfo_s {
 	UINT8 maxPlayers;
 	boolean joinsAllowed;
 	UINT8 whoCanInvite;
-} discordInfo;
+} discordInfo;*/
 
 typedef struct discordRequest_s {
 	char *username; // Discord user name.

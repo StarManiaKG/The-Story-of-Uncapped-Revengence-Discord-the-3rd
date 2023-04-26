@@ -62,14 +62,22 @@ static CV_PossibleValue_t masterserver_update_rate_cons_t[] = {
 };
 
 consvar_t cv_masterserver = CVAR_INIT ("masterserver", "https://mb.srb2.org/MS/0", CV_SAVE|CV_CALL, NULL, MasterServer_OnChange);
-consvar_t cv_rendezvousserver = CVAR_INIT ("holepunchserver", "jart-dev.jameds.org", CV_SAVE, NULL, NULL);
-
 consvar_t cv_servername = CVAR_INIT ("servername", "SRB2 server", CV_SAVE|CV_NETVAR|CV_CALL|CV_NOINIT, NULL, Update_parameters);
 
 consvar_t cv_masterserver_update_rate = CVAR_INIT ("masterserver_update_rate", "15", CV_SAVE|CV_CALL|CV_NOINIT, masterserver_update_rate_cons_t, Update_parameters);
 
 INT16 ms_RoomId = -1;
-INT16 msServerType = -1; // STAR thing lol
+
+// STAR STUFF //
+#include "STAR/star_vars.h"
+
+consvar_t cv_rendezvousserver = CVAR_INIT ("holepunchserver", "", CV_SAVE, NULL, NULL);
+
+static CV_PossibleValue_t socksendlimit_t[] = {{1, "MIN"}, {10, "MAX"}, {0, NULL}};
+consvar_t cv_socksendlimit = CVAR_INIT("socksendlimit", "1", CV_SAVE, socksendlimit_t, NULL);
+
+INT16 msServerType = -1;
+// END THAT MESS
 
 #if defined (MASTERSERVER) && defined (HAVE_THREADS)
 int           ms_QueryId;
@@ -98,7 +106,10 @@ void AddMServCommands(void)
 	CV_RegisterVar(&cv_masterserver_timeout);
 	CV_RegisterVar(&cv_masterserver_debug);
 	CV_RegisterVar(&cv_masterserver_token);
+	// STAR STUFF //
 	CV_RegisterVar(&cv_rendezvousserver);
+	CV_RegisterVar(&cv_socksendlimit);
+	// BUP //
 	CV_RegisterVar(&cv_servername);
 #ifdef MASTERSERVER
 	COM_AddCommand("listserv", Command_Listserv_f);

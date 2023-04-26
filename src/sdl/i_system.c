@@ -2367,7 +2367,8 @@ void I_Quit(void)
 #endif
 	// Did Discord Stuff //
 	// DO STAR STUF //
-	STAR_ResetProblematicCommandsAfterNetgames();
+	if (netgame)
+		STAR_ResetProblematicCommandsAfterNetgames();
 	// DID STAR STUFF //
 	M_SaveConfig(NULL); //save game config, cvars..
 #ifndef NONET
@@ -2440,7 +2441,8 @@ void I_Error(const char *error, ...)
 #endif
 
 	// DO STAR STUFF AGAIN //
-	STAR_ResetProblematicCommandsAfterNetgames();
+	if (netgame)
+		STAR_ResetProblematicCommandsAfterNetgames();
 	// DID STAR STUFF AGAIN //
 
 	// recursive error detecting

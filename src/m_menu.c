@@ -5220,6 +5220,15 @@ void M_StartControlPanel(void)
 		MPauseMenu[mpause_switchteam].status = IT_DISABLED;
 		MPauseMenu[mpause_psetup].status = IT_DISABLED;
 
+		// STAR STUFF YAY //
+		// NOTE: i don't even know why this is required
+		//			but this was here before I even started working on tsourdt3rd
+		//				and since removing it breaks stuff, we're keeping it lol
+		MPauseMenu[mpause_addons].alphaKey = 8;
+		MPauseMenu[mpause_scramble].alphaKey = 8;
+		MPauseMenu[mpause_switchmap].alphaKey = 24;
+		// END OF THAT MESS //
+
 		if ((server || IsPlayerAdmin(consoleplayer)))
 		{
 			MPauseMenu[mpause_switchmap].status = IT_STRING | IT_CALL;
@@ -15558,6 +15567,9 @@ static void M_QuitSRB2(INT32 choice)
 }
 
 #ifdef HAVE_DISCORDRPC
+//			 //
+// VARIABLES //
+//			 //
 static const tic_t confirmLength = 3*TICRATE/4;
 static tic_t confirmDelay = 0;
 static boolean confirmAccept = false;
@@ -15572,6 +15584,9 @@ static void M_DiscordOptions(INT32 choice)
 	M_SetupNextMenu(&OP_DiscordOptionsDef);
 }
 
+//			 		 //
+// MAIN DISCORD MENU //
+//					 //
 static void M_DrawDiscordMenu(void)
 {
 	// Render Some Basic Strings at The Bottom //
@@ -15588,6 +15603,9 @@ static void M_DrawDiscordMenu(void)
 			("Is Discord Open?"));																														// Other Half of the Not Connected String, Points Towards Discord Not Being Open or your Privacy Settings Being the Problem
 }
 
+//			 		 	 //
+// DISCORD REQUESTS MENU //
+//						 //
 static void M_HandleDiscordRequests(INT32 choice)
 {
 	if (confirmDelay > 0)
