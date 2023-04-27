@@ -2366,7 +2366,7 @@ void I_Quit(void)
 	DRPC_Shutdown();
 #endif
 	// Did Discord Stuff //
-	// DO STAR STUF //
+	// DO STAR STUFF //
 	if (netgame)
 		STAR_ResetProblematicCommandsAfterNetgames();
 	// DID STAR STUFF //

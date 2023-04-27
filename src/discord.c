@@ -44,13 +44,12 @@
 
 #include "fastcmp.h" // fastcmp, helps with super stuff
 
-#include "STAR/star_vars.h" // provides unique star stuff
+#include "STAR/star_vars.h" // STAR STUFF: PROVIDES UNIQUE STUFF
 
 // Please feel free to provide your own Discord app if you're making a new custom build :)
 #define DISCORD_APPID "1013126566236135516"
 
-// length of IP strings
-#define IP_SIZE 21
+#define IP_SIZE 21 // length of IP strings
 
 static CV_PossibleValue_t statustype_cons_t[] = {
     {0, "Default"},
@@ -282,31 +281,33 @@ consvar_t cv_discordcharacterimagetype = CVAR_INIT ("discordcharacterimagetype",
 consvar_t cv_customdiscorddetails = CVAR_INIT ("customdiscorddetails", "I'm Feeling Good!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
 consvar_t cv_customdiscordstate = CVAR_INIT ("customdiscordstate", "I'm Playing Sonic Robo Blast 2!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
 
-// Custom Discord Status Image Type
+// Custom Discord Status Image Type //
 consvar_t cv_customdiscordlargeimagetype = CVAR_INIT ("customdiscordlargeimagetype", "CS Portraits", CV_SAVE|CV_CALL, customimagetype_cons_t, Discord_option_Onchange);
 consvar_t cv_customdiscordsmallimagetype = CVAR_INIT ("customdiscordsmallimagetype", "Continue Sprites", CV_SAVE|CV_CALL, customimagetype_cons_t, Discord_option_Onchange);
 
-// Custom Discord Status Images
-    // Characters //
+// Custom Discord Status Images //
+// Characters
 consvar_t cv_customdiscordlargecharacterimage = CVAR_INIT ("customdiscordlargecharacterimage", "Sonic", CV_SAVE|CV_CALL, customcharacterimage_cons_t, DRPC_UpdatePresence);
 consvar_t cv_customdiscordsmallcharacterimage = CVAR_INIT ("customdiscordsmallcharacterimage", "Tails", CV_SAVE|CV_CALL, customcharacterimage_cons_t, DRPC_UpdatePresence);
 
 consvar_t cv_customdiscordlargesupercharacterimage = CVAR_INIT ("customdiscordlargesupercharacterimage", "Sonic", CV_SAVE|CV_CALL, customsupercharacterimage_cons_t, DRPC_UpdatePresence);
 consvar_t cv_customdiscordsmallsupercharacterimage = CVAR_INIT ("customdiscordsmallsupercharacterimage", "Sonic", CV_SAVE|CV_CALL, customsupercharacterimage_cons_t, DRPC_UpdatePresence);
 
-	// Maps //
+// Maps
 consvar_t cv_customdiscordlargemapimage = CVAR_INIT ("customdiscordlargemapimage", "GFZ1", CV_SAVE|CV_CALL, custommapimage_cons_t, DRPC_UpdatePresence);
 consvar_t cv_customdiscordsmallmapimage = CVAR_INIT ("customdiscordsmallmapimage", "Custom", CV_SAVE|CV_CALL, custommapimage_cons_t, DRPC_UpdatePresence);
     
-	// Miscellanious //
+// Miscellanious
 consvar_t cv_customdiscordlargemiscimage = CVAR_INIT ("customdiscordlargemiscimage", "Default", CV_SAVE|CV_CALL, custommiscimage_cons_t, DRPC_UpdatePresence);
 consvar_t cv_customdiscordsmallmiscimage = CVAR_INIT ("customdiscordsmallmiscimage", "Intro 1", CV_SAVE|CV_CALL, custommiscimage_cons_t, DRPC_UpdatePresence);
    
-    // Captions //
+// Captions
 consvar_t cv_customdiscordlargeimagetext = CVAR_INIT ("customdiscordlargeimagetext", "My Favorite Character!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
 consvar_t cv_customdiscordsmallimagetext = CVAR_INIT ("customdiscordsmallimagetext", "My Other Favorite Character!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
 
-struct discordInfo_s discordInfo; // Dedicated Server Safety Crew
+// Dedicated Server Safety Crew
+//struct discordInfo_s discordInfo; // NOTE: CAUSES RESYNCHES AND STUFF
+
 discordRequest_t *discordRequestList = NULL;
 
 char discordUserName[64] = "  ";
@@ -479,9 +480,9 @@ static void DRPC_HandleJoinRequest(const DiscordUser *requestUser)
 	discordRequest_t *append = discordRequestList;
 	discordRequest_t *newRequest;
 
+	// Something weird happened if this occurred...
 	if (DRPC_InvitesAreAllowed() == false)
 	{
-		// Something weird happened if this occurred...
 		Discord_Respond(requestUser->userId, DISCORD_REPLY_IGNORE);
 		return;
 	}
@@ -525,7 +526,7 @@ static void DRPC_HandleJoinRequest(const DiscordUser *requestUser)
 	}
 
 	// Made it to the end, request was valid, so play the request sound :)
-	S_StartSound(NULL, sfx_requst);
+	S_StartSound(NULL, sfx_kc5d);
 }
 
 /*--------------------------------------------------
@@ -1027,8 +1028,8 @@ void DRPC_UpdatePresence(void)
 		discordPresence.partyMax = cv_maxplayers.value;    // Max Players
 		discordPresence.instance = 1;					   // Initialize Discord Net Instance, Just In Case
 	}
-	else
-		memset(&discordInfo, 0, sizeof(discordInfo));
+	/*else
+		memset(&discordInfo, 0, sizeof(discordInfo));*/
 
 	//// 	  STATUSES 		////
 	if (cv_discordshowonstatus.value != 8)
@@ -1150,7 +1151,7 @@ void DRPC_UpdatePresence(void)
 				
 				// Add-ons //
 				if ((modifiedgame || autoloaded) && numwadfiles > (mainwads+extrawads))
-					strlcat(gameType, ((numwadfiles - (mainwads+extrawads) > 1) ? va(" With %d %sAdd-ons", (numwadfiles - (mainwads+extrawads)), (autoloaded ? "Autoloaded " : "")) : va(" With 1 %sAdd-on", (autoloaded ? "Autoloaded " : ""))), 105);
+					strlcat(gameType, ((numwadfiles - (mainwads+extrawads) > 1) ? va(" With %d Add-ons", (numwadfiles - (mainwads+extrawads))) : " With 1 Add-on"), 105);
 				
 				// Lives //
 				if (!players[consoleplayer].spectator && gametyperules & GTR_LIVES && !(ultimatemode || modeattacking))
@@ -1267,7 +1268,7 @@ void DRPC_UpdatePresence(void)
 			}
 
 			// Time //
-			if (Playing() || (Playing() && (paused || menuactive)))
+			if (Playing() && (playeringame[consoleplayer] || paused || menuactive))
 			{
 				const time_t currentTime = time(NULL);
 				const time_t mapTimeStart = currentTime - (leveltime / TICRATE);
@@ -1519,7 +1520,7 @@ void DRPC_Shutdown(void)
 	// Initialize Discord Once More
 	DiscordRichPresence discordPresence;
 	memset(&discordPresence, 0, sizeof(discordPresence));
-	memset(&discordInfo, 0, sizeof(discordInfo));
+	//memset(&discordInfo, 0, sizeof(discordInfo));
 	
 	// Assign a Custom Status Because We Can
 	discordPresence.details = "Currently Closing...";

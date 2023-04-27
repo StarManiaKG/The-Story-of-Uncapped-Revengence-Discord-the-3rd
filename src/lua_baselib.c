@@ -44,13 +44,9 @@ return luaL_error(L, "HUD rendering code should not call this function!");\
 else if (hook_cmd_running)\
 return luaL_error(L, "CMD building code should not call this function!");
 
-//
-// STAR STUFF YAY
-//
+// STAR STUFF YAY //
 boolean StopMusicCausedByLua;
-//
-// END OF THE STAR STUFF YAY
-//
+// END STAR STUFF YAY //
 
 boolean luaL_checkboolean(lua_State *L, int narg) {
 	luaL_checktype(L, narg, LUA_TBOOLEAN);

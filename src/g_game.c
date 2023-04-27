@@ -60,6 +60,8 @@
 #endif
 
 // OTHER FUN STAR STUFF YAYAYSUHDUISHUIBHOUIHBDU()*FH*D(UIYVLBGUIYDG(UDOPBIYGD*OUFBHO(P))) //
+#include "STAR/star_vars.h"
+
 // Main Build
 boolean tsourdt3rd = true;
 
@@ -4454,6 +4456,10 @@ void G_LoadGameData(void)
 	// Silent update unlockables in case they're out of sync with conditions
 	M_SilentUpdateUnlockablesAndEmblems();
 
+	// STUFF FOR STAR: STEAL DATA //
+	STAR_ReadExtraData();
+	// I MADE THIS ALL ON MY OWN //
+
 	return;
 
 	// Landing point for corrupt gamedata
@@ -4589,6 +4595,10 @@ void G_SaveGameData(void)
 	FIL_WriteFile(va(pandf, srb2home, gamedatafilename), savebuffer, length);
 	free(savebuffer);
 	save_p = savebuffer = NULL;
+
+	// STAR STUFF //
+	STAR_WriteExtraData();
+	// END MY DUMB STUFF //
 }
 
 #define VERSIONSIZE 16

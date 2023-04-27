@@ -88,6 +88,10 @@
 
 #include "taglist.h"
 
+// STAR STUFF, FOR FUNNIES //
+#include "STAR/star_vars.h"
+// END THE STAR STUFF, FOR FUNNIES //
+
 //
 // Map MD5, calculated on level load.
 // Sent to clients in PT_SERVERINFO.

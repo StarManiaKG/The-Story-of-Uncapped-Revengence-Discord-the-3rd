@@ -36,7 +36,7 @@
 #endif
 
 // STAR STUFF //
-#include "STAR/star_vars.h"
+#include "STAR/star_vars.h" // extra star variables
 #include "m_menu.h" // jukebox
 
 #ifdef APRIL_FOOLS

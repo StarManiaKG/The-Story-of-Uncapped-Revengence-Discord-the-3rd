@@ -703,7 +703,7 @@ void I_Quit(void)
 	// DID STAR STUFF //
 	if (netgame)
 		STAR_ResetProblematicCommandsAfterNetgames();
-	// PLEASE HELP //
+	// PLEASE HELP ME //
 
 	// when recording a demo, should exit using 'q',
 	// but sometimes we forget and use Alt+F4, so save here too.

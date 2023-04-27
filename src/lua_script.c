@@ -39,10 +39,10 @@
 #include "g_state.h"
 
 // STAR STUFF //
+#include "STAR/star_vars.h"
+
 #include "d_main.h"
 #include "m_menu.h"
-
-#include "STAR/star_vars.h"
 // END OF THAT //
 
 lua_State *gL = NULL;
