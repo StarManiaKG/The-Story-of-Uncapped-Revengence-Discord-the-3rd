@@ -33,8 +33,8 @@
 #endif
 
 // STAR STUFF WEEE //
+#include "STAR/star_vars.h" // extra variables
 #include "m_menu.h" // jukebox
-#include "STAR/star_vars.h"
 
 consvar_t cv_soniccd = CVAR_INIT ("soniccd", "Off", CV_SAVE, CV_OnOff, NULL);
 // END OF THAT THING //

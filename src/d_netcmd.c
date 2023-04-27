@@ -84,7 +84,7 @@ static void Got_RandomSeed(UINT8 **cp, INT32 playernum);
 static void Got_RunSOCcmd(UINT8 **cp, INT32 playernum);
 static void Got_Teamchange(UINT8 **cp, INT32 playernum);
 static void Got_Clearscores(UINT8 **cp, INT32 playernum);
-static void Got_DiscordInfo(UINT8 **cp, INT32 playernum);
+//static void Got_Tsourdt3rdInfo(UINT8 **cp, INT32 playernum);
 
 static void PointLimit_OnChange(void);
 static void TimeLimit_OnChange(void);
@@ -633,13 +633,13 @@ void D_RegisterServerCommands(void)
 
 	CV_RegisterVar(&cv_dummyconsvar);
 
-	// Discord Things //
+	// DISCORD THINGIES //
 #ifdef USE_STUN
 	CV_RegisterVar(&cv_stunserver);
 #endif
 
 	CV_RegisterVar(&cv_discordinvites);
-	RegisterNetXCmd(XD_DISCORD,Got_DiscordInfo);
+	//RegisterNetXCmd(XD_TSOURDT3RD,Got_Tsourdt3rdInfo);
 }
 
 // =========================================================================
@@ -997,7 +997,7 @@ void D_RegisterClientCommands(void)
 
 	CV_RegisterVar(&cv_gameovermusic);
 
-	CV_RegisterVar(&cv_superwithshield);
+	CV_RegisterVar(&cv_shieldblockstransformation);
 	CV_RegisterVar(&cv_armageddonnukesuper);
 
 	CV_RegisterVar(&cv_alwaysoverlayinvuln);
@@ -5143,10 +5143,10 @@ static void BaseNumLaps_OnChange(void)
 }
 
 // Discord Things Yay
-void Got_DiscordInfo(UINT8 **p, INT32 playernum)
+/*void Got_Tsourdt3rdInfo(UINT8 **p, INT32 playernum)
 {
 	// Protect Others Against a Hacked/Buggy Client
-	if (playernum != serverplayer /*&& !IsPlayerAdmin(playernum)*/)
+	if (playernum != serverplayer) // && !IsPlayerAdmin(playernum))
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal Discord info command received from %s\n"), player_names[playernum]);
 		if (server)
@@ -5164,7 +5164,7 @@ void Got_DiscordInfo(UINT8 **p, INT32 playernum)
 #else
 	(*p) += 3;
 #endif
-}
+}*/
 
 // STAR COMMANDS: ELECTRIC BOOGALO //
 static void STAR_UseContinues_OnChange(void)

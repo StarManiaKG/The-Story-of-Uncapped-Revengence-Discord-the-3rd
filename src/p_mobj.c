@@ -38,8 +38,8 @@
 #include "m_cond.h"
 
 // STAR STUFF //
-#include "m_menu.h" // mainly commands
 #include "STAR/star_vars.h" // mainly booleans
+#include "m_menu.h" // mainly commands
 // HELP ME //
 
 static CV_PossibleValue_t CV_BobSpeed[] = {{0, "MIN"}, {4*FRACUNIT, "MAX"}, {0, NULL}};

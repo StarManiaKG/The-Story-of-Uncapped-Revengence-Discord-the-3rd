@@ -871,15 +871,6 @@ typedef enum
 	sfx_kc6d,
 	sfx_kc6e,
 
-	// discord rpc
-	sfx_join,
-	sfx_leave,
-	sfx_requst,
-	sfx_syfail,
-
-	// other star sounds
-	sfx_dygatce,
-
 	// free slots for S_AddSoundFx() at run-time --------------------
 	sfx_freeslot0,
 	//

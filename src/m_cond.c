@@ -24,9 +24,8 @@
 #include "m_menu.h" // menu coloring
 
 // STAR STUFF //
-#include "d_main.h"
-
 #include "STAR/star_vars.h"
+#include "d_main.h"
 // END OF THAT //
 
 // Map triggers for linedef executors

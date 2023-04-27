@@ -2727,27 +2727,27 @@ void ST_drawEggs(void)
 	if (numMapEggs && (collectedmapeggs != numMapEggs))
 	{	
 		// Map Eggs
-		V_DrawScaledPatch(16, 64, V_SNAPTOLEFT|V_SNAPTOTOP|V_PERPLAYER, stageeggs);
+		V_DrawScaledPatch(16, 64, V_SNAPTOLEFT|V_SNAPTOTOP|V_PERPLAYER|((stplyr->spectator) ? V_HUDTRANSHALF : V_HUDTRANS), stageeggs);
 
-		V_DrawTallNum(115, 64, V_SNAPTOLEFT|V_SNAPTOTOP|V_PERPLAYER, collectedmapeggs);
-		V_DrawString(115, 64, V_SNAPTOLEFT|V_SNAPTOTOP|V_PERPLAYER, "/");
-		V_DrawTallNum(140, 64, V_SNAPTOLEFT|V_SNAPTOTOP|V_PERPLAYER, numMapEggs);
+		V_DrawTallNum(115, 64, V_SNAPTOLEFT|V_SNAPTOTOP|V_PERPLAYER|((stplyr->spectator) ? V_HUDTRANSHALF : V_HUDTRANS), collectedmapeggs);
+		V_DrawString(115, 64, V_SNAPTOLEFT|V_SNAPTOTOP|V_PERPLAYER|((stplyr->spectator) ? V_HUDTRANSHALF : V_HUDTRANS), "/");
+		V_DrawTallNum(140, 64, V_SNAPTOLEFT|V_SNAPTOTOP|V_PERPLAYER|((stplyr->spectator) ? V_HUDTRANSHALF : V_HUDTRANS), numMapEggs);
 		
 		// Total Eggs
-		V_DrawScaledPatch(16, 80, V_SNAPTOLEFT|V_SNAPTOTOP|V_PERPLAYER, totaleggs);
+		V_DrawScaledPatch(16, 80, V_SNAPTOLEFT|V_SNAPTOTOP|V_PERPLAYER|((stplyr->spectator) ? V_HUDTRANSHALF : V_HUDTRANS), totaleggs);
 
-		V_DrawTallNum(115, 80, V_SNAPTOLEFT|V_SNAPTOTOP|V_PERPLAYER, currenteggs);
-		V_DrawString(115, 80, V_SNAPTOLEFT|V_SNAPTOTOP|V_PERPLAYER, "/");
-		V_DrawTallNum(140, 80, V_SNAPTOLEFT|V_SNAPTOTOP|V_PERPLAYER, TOTALEGGS);
+		V_DrawTallNum(115, 80, V_SNAPTOLEFT|V_SNAPTOTOP|V_PERPLAYER|((stplyr->spectator) ? V_HUDTRANSHALF : V_HUDTRANS), currenteggs);
+		V_DrawString(115, 80, V_SNAPTOLEFT|V_SNAPTOTOP|V_PERPLAYER|((stplyr->spectator) ? V_HUDTRANSHALF : V_HUDTRANS), "/");
+		V_DrawTallNum(140, 80, V_SNAPTOLEFT|V_SNAPTOTOP|V_PERPLAYER|((stplyr->spectator) ? V_HUDTRANSHALF : V_HUDTRANS), TOTALEGGS);
 	}
 
 	// Draw the Egg Notifier //
 	else if (currenteggs == TOTALEGGS)
-		V_DrawCenteredThinString(16, 64, V_GREENMAP, "All Eggs Have Been Found!");
+		V_DrawCenteredThinString(16, 64, V_GREENMAP|((stplyr->spectator) ? V_HUDTRANSHALF : V_HUDTRANS), "All Eggs Have Been Found!");
 	else if (numMapEggs && (collectedmapeggs == numMapEggs))
-		V_DrawCenteredThinString(16, 64, V_GREENMAP, "All Eggs in this Map Have Been Found!");
+		V_DrawCenteredThinString(16, 64, V_GREENMAP|((stplyr->spectator) ? V_HUDTRANSHALF : V_HUDTRANS), "All Eggs in this Map Have Been Found!");
 	else
-		V_DrawCenteredThinString(16, 64, V_REDMAP, "There Are No Eggs in This Map!");
+		V_DrawCenteredThinString(16, 64, V_REDMAP|((stplyr->spectator) ? V_HUDTRANSHALF : V_HUDTRANS), "There Are No Eggs in This Map!");
 }
 // END OF STAR SECTION //
 

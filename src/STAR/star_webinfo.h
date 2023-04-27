@@ -14,6 +14,4 @@
 // This is needed by the online STAR functions, found in star_functions.c
 //
 
-#include "../doomdef.h" // tsourdt3rd version, mainly
-
-#define FINDTSOURDT3RDVERSION TSOURDT3RDVERSION
+#define TSOURDT3RDVERSION "2.5.1"

@@ -822,16 +822,6 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"kc6d",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"kc6e",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
 
-  // discord rpc
-  {"join",   false,  96,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, "Player Joined Server"},
-  {"leave",  false,  96,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, "Player Left Server"}, 
-  {"requst", false,  96,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, "Discord Join Request Received"}, 
-  {"syfail", false,  96,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, "Sync Failure"},
-
-  // STAR STUFF YAY //
-  {"dygatce",false,  96,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, "Final Demo Joke"},
-  // END OF THAT //
-
   // skin sounds free slots to add sounds at run time (Boris HACK!!!)
   // initialized to NULL
 };

@@ -121,9 +121,10 @@ extern boolean timedemo_quit;
 
 extern consvar_t cv_freedemocamera;
 
-// Custom Star Things
+// STAR STUFF //
 extern consvar_t cv_continues;
 extern consvar_t cv_movingplayersetup;
+// CUSTOM STAR STUFF OVER //
 
 typedef enum
 {
@@ -151,7 +152,9 @@ typedef enum
 	XD_LUACMD,      // 22
 	XD_LUAVAR,      // 23
 	XD_LUAFILE,     // 24
-	XD_DISCORD,		// 25
+	// STAR STUFF //
+	//XD_TSOURDT3RD,// 25
+	// MESS OVER //
 	MAXNETXCMD
 } netxcmd_t;
 
