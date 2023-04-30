@@ -50,8 +50,8 @@
 #include "md5.h"
 #include "m_perfstats.h"
 #include "hardware/u_list.h" // TODO: this should be a standard utility class
-#include "doomstat.h" //useContinues
 
+// STAR NOTE: HI! THIS CAN CAUSE NETGAME RESYNCS, IF YOU ENABLE THE DEFINITION, OF COURSE, SO BE CAREFUL!
 #ifdef NETGAME_DEVMODE
 #define CV_RESTRICT CV_NETVAR
 #else
@@ -62,9 +62,19 @@
 #include "discord.h"
 #endif
 
-// STAR STUFF YAYA //
+//// STAR STUFF YAYA ////
 #include "STAR/star_vars.h"
-// END OF THAT MESS //
+#include "doomstat.h" //useContinues
+
+// STAR FUNCTIONS, GOTTA GEW FEST //
+//static void Got_Tsourdt3rdInfo(UINT8 **cp, INT32 playernum);
+
+static void STAR_UseContinues_OnChange(void);
+
+// STAR COMMANDS I THINK //
+consvar_t cv_continues = CVAR_INIT ("continues", "Off", CV_SAVE|CV_CALL, CV_OnOff, STAR_UseContinues_OnChange);
+consvar_t cv_movingplayersetup = CVAR_INIT ("movingplayersetup", "Off", CV_SAVE, CV_OnOff, NULL);
+//// END OF THAT MESS ////
 
 // ------
 // protos
@@ -84,7 +94,6 @@ static void Got_RandomSeed(UINT8 **cp, INT32 playernum);
 static void Got_RunSOCcmd(UINT8 **cp, INT32 playernum);
 static void Got_Teamchange(UINT8 **cp, INT32 playernum);
 static void Got_Clearscores(UINT8 **cp, INT32 playernum);
-//static void Got_Tsourdt3rdInfo(UINT8 **cp, INT32 playernum);
 
 static void PointLimit_OnChange(void);
 static void TimeLimit_OnChange(void);
@@ -176,9 +185,6 @@ static void Command_Togglemodified_f(void);
 static void Command_Archivetest_f(void);
 #endif
 
-//Star Things gotta go fast
-static void STAR_UseContinues_OnChange(void);
-
 // =========================================================================
 //                           CLIENT VARIABLES
 // =========================================================================
@@ -206,7 +212,7 @@ static CV_PossibleValue_t joyport_cons_t[] = {{1, "/dev/js0"}, {2, "/dev/js1"}, 
 static CV_PossibleValue_t teamscramble_cons_t[] = {{0, "Off"}, {1, "Random"}, {2, "Points"}, {0, NULL}};
 
 static CV_PossibleValue_t startingliveslimit_cons_t[] = {{1, "MIN"}, {99, "MAX"}, {0, NULL}};
-static CV_PossibleValue_t sleeping_cons_t[] = {{0, "MIN"}, {1000/TICRATE, "MAX"}, {0, NULL}};
+static CV_PossibleValue_t sleeping_cons_t[] = {{-1, "MIN"}, {1000/TICRATE, "MAX"}, {0, NULL}};
 static CV_PossibleValue_t competitionboxes_cons_t[] = {{0, "Normal"}, {1, "Mystery"}, //{2, "Teleport"},
 	{3, "None"}, {0, NULL}};
 
@@ -400,11 +406,6 @@ consvar_t cv_ps_descriptor = CVAR_INIT ("ps_descriptor", "Average", 0, ps_descri
 
 consvar_t cv_freedemocamera = CVAR_INIT("freedemocamera", "Off", CV_SAVE, CV_OnOff, NULL);
 
-// STAR COMMANDS I THINK //
-consvar_t cv_continues = CVAR_INIT ("continues", "Off", CV_SAVE|CV_CALL, CV_OnOff, STAR_UseContinues_OnChange);
-consvar_t cv_movingplayersetup = CVAR_INIT ("movingplayersetup", "Off", CV_SAVE, CV_OnOff, NULL);
-// OH MY GOD, SOMEBODY HELP MEEEEEEEE //
-
 char timedemo_name[256];
 boolean timedemo_csv;
 char timedemo_csv_id[256];
@@ -443,7 +444,7 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"SUICIDE",
 	"LUACMD",
 	"LUAVAR",
-	"LUAFILE",
+	"LUAFILE"
 };
 
 // =========================================================================
@@ -638,7 +639,6 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_stunserver);
 #endif
 
-	CV_RegisterVar(&cv_discordinvites);
 	//RegisterNetXCmd(XD_TSOURDT3RD,Got_Tsourdt3rdInfo);
 }
 
@@ -908,7 +908,7 @@ void D_RegisterClientCommands(void)
 
 	// ingame object placing
 	COM_AddCommand("objectplace", Command_ObjectPlace_f);
-//	COM_AddCommand("writethings", Command_Writethings_f);
+	COM_AddCommand("writethings", Command_Writethings_f);
 	CV_RegisterVar(&cv_speed);
 	CV_RegisterVar(&cv_opflags);
 	CV_RegisterVar(&cv_ophoopflags);
@@ -953,6 +953,7 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_discordrp);
 	CV_RegisterVar(&cv_discordstreamer);
 	CV_RegisterVar(&cv_discordasks);
+	CV_RegisterVar(&cv_discordinvites);
 	CV_RegisterVar(&cv_discordshowonstatus);
 	CV_RegisterVar(&cv_discordstatusmemes);
 	CV_RegisterVar(&cv_discordcharacterimagetype);
@@ -994,6 +995,8 @@ void D_RegisterClientCommands(void)
 #endif
 
 	CV_RegisterVar(&cv_quitscreen);
+
+	CV_RegisterVar(&cv_tsourdt3rdupdatemessage);
 
 	CV_RegisterVar(&cv_gameovermusic);
 
@@ -3391,69 +3394,6 @@ static void Got_RunSOCcmd(UINT8 **cp, INT32 playernum)
 	G_SetGameModified(true);
 }
 
-// C++ would make this SO much simpler!
-typedef struct addedfile_s
-{
-	struct addedfile_s *next;
-	struct addedfile_s *prev;
-	char *value;
-} addedfile_t;
-
-static boolean AddedFileContains(addedfile_t *list, const char *value)
-{
-	addedfile_t *node;
-	for (node = list; node; node = node->next)
-	{
-		if (!strcmp(value, node->value))
-			return true;
-	}
-
-	return false;
-}
-
-static void AddedFilesAdd(addedfile_t **list, const char *value)
-{
-	addedfile_t *item = Z_Calloc(sizeof(addedfile_t), PU_STATIC, NULL);
-	item->value = Z_StrDup(value);
-	ListAdd(item, (listitem_t**)list);
-}
-
-static void AddedFilesRemove(void *pItem, addedfile_t **itemHead)
-{
-	addedfile_t *item = (addedfile_t *)pItem;
-
-	if (item == *itemHead) // Start of list
-	{
-		*itemHead = item->next;
-
-		if (*itemHead)
-			(*itemHead)->prev = NULL;
-	}
-	else if (item->next == NULL) // end of list
-	{
-		item->prev->next = NULL;
-	}
-	else // Somewhere in between
-	{
-		item->prev->next = item->next;
-		item->next->prev = item->prev;
-	}
-
-	Z_Free(item->value);
-	Z_Free(item);
-}
-
-static void AddedFilesClearList(addedfile_t **itemHead)
-{
-	addedfile_t *item;
-	addedfile_t *next;
-	for (item = *itemHead; item; item = next)
-	{
-		next = item->next;
-		AddedFilesRemove(item, itemHead);
-	}
-}
-
 /** Adds a pwad at runtime.
   * Searches for sounds, maps, music, new images.
   */
@@ -3462,7 +3402,8 @@ static void Command_Addfile(void)
 	size_t argc = COM_Argc(); // amount of arguments total
 	size_t curarg; // current argument index
 
-	addedfile_t *addedfiles = NULL; // list of filenames already processed
+	const char *addedfiles[argc]; // list of filenames already processed
+	size_t numfilesadded = 0; // the amount of filenames processed
 
 	if (argc < 2)
 	{
@@ -3477,14 +3418,25 @@ static void Command_Addfile(void)
 		char buf[256];
 		char *buf_p = buf;
 		INT32 i;
+		size_t ii;
 		int musiconly; // W_VerifyNMUSlumps isn't boolean
 		boolean fileadded = false;
 
 		fn = COM_Argv(curarg);
 
 		// For the amount of filenames previously processed...
-		fileadded = AddedFileContains(addedfiles, fn);
-		if (fileadded) // If this is one of them, don't try to add it.
+		for (ii = 0; ii < numfilesadded; ii++)
+		{
+			// If this is one of them, don't try to add it.
+			if (!strcmp(fn, addedfiles[ii]))
+			{
+				fileadded = true;
+				break;
+			}
+		}
+
+		// If we've added this one, skip to the next one.
+		if (fileadded)
 		{
 			CONS_Alert(CONS_WARNING, M_GetText("Already processed %s, skipping\n"), fn);
 			continue;
@@ -3493,16 +3445,13 @@ static void Command_Addfile(void)
 		// Disallow non-printing characters and semicolons.
 		for (i = 0; fn[i] != '\0'; i++)
 			if (!isprint(fn[i]) || fn[i] == ';')
-			{
-				AddedFilesClearList(&addedfiles);
 				return;
-			}
 
 		musiconly = W_VerifyNMUSlumps(fn, false);
 
 		if (musiconly == -1)
 		{
-			AddedFilesAdd(&addedfiles, fn);
+			addedfiles[numfilesadded++] = fn;
 			continue;
 		}
 
@@ -3521,7 +3470,7 @@ static void Command_Addfile(void)
 		if (!(netgame || multiplayer) || musiconly)
 		{
 			P_AddWadFile(fn);
-			AddedFilesAdd(&addedfiles, fn);
+			addedfiles[numfilesadded++] = fn;
 			continue;
 		}
 
@@ -3536,7 +3485,6 @@ static void Command_Addfile(void)
 		if (numwadfiles >= MAX_WADFILES)
 		{
 			CONS_Alert(CONS_ERROR, M_GetText("Too many files loaded to add %s\n"), fn);
-			AddedFilesClearList(&addedfiles);
 			return;
 		}
 
@@ -3576,15 +3524,13 @@ static void Command_Addfile(void)
 			WRITEMEM(buf_p, md5sum, 16);
 		}
 
-		AddedFilesAdd(&addedfiles, fn);
+		addedfiles[numfilesadded++] = fn;
 
 		if (IsPlayerAdmin(consoleplayer) && (!server)) // Request to add file
 			SendNetXCmd(XD_REQADDFILE, buf, buf_p - buf);
 		else
 			SendNetXCmd(XD_ADDFILE, buf, buf_p - buf);
 	}
-
-	AddedFilesClearList(&addedfiles);
 }
 
 static void Command_Addfolder(void)
@@ -3592,7 +3538,8 @@ static void Command_Addfolder(void)
 	size_t argc = COM_Argc(); // amount of arguments total
 	size_t curarg; // current argument index
 
-	addedfile_t *addedfolders = NULL; // list of filenames already processed
+	const char *addedfolders[argc]; // list of filenames already processed
+	size_t numfoldersadded = 0; // the amount of filenames processed
 
 	if (argc < 2)
 	{
@@ -3608,13 +3555,24 @@ static void Command_Addfolder(void)
 		char buf[256];
 		char *buf_p = buf;
 		INT32 i, stat;
+		size_t ii;
 		boolean folderadded = false;
 
 		fn = COM_Argv(curarg);
 
 		// For the amount of filenames previously processed...
-		folderadded = AddedFileContains(addedfolders, fn);
-		if (folderadded) // If we've added this one, skip to the next one.
+		for (ii = 0; ii < numfoldersadded; ii++)
+		{
+			// If this is one of them, don't try to add it.
+			if (!strcmp(fn, addedfolders[ii]))
+			{
+				folderadded = true;
+				break;
+			}
+		}
+
+		// If we've added this one, skip to the next one.
+		if (folderadded)
 		{
 			CONS_Alert(CONS_WARNING, M_GetText("Already processed %s, skipping\n"), fn);
 			continue;
@@ -3623,16 +3581,13 @@ static void Command_Addfolder(void)
 		// Disallow non-printing characters and semicolons.
 		for (i = 0; fn[i] != '\0'; i++)
 			if (!isprint(fn[i]) || fn[i] == ';')
-			{
-				AddedFilesClearList(&addedfolders);
 				return;
-			}
 
 		// Add file on your client directly if you aren't in a netgame.
 		if (!(netgame || multiplayer))
 		{
 			P_AddFolder(fn);
-			AddedFilesAdd(&addedfolders, fn);
+			addedfolders[numfoldersadded++] = fn;
 			continue;
 		}
 
@@ -3654,7 +3609,6 @@ static void Command_Addfolder(void)
 		if (numwadfiles >= MAX_WADFILES)
 		{
 			CONS_Alert(CONS_ERROR, M_GetText("Too many files loaded to add %s\n"), fn);
-			AddedFilesClearList(&addedfolders);
 			return;
 		}
 
@@ -3700,7 +3654,7 @@ static void Command_Addfolder(void)
 
 		Z_Free(fullpath);
 
-		AddedFilesAdd(&addedfolders, fn);
+		addedfolders[numfoldersadded++] = fn;
 
 		WRITESTRINGN(buf_p,p,240);
 
@@ -3975,7 +3929,9 @@ static void Command_Version_f(void)
 #elif defined(UNIXCOMMON)
 	CONS_Printf("Unix (Common) ");
 #else
+	// STAR WAS HERE //
 	CONS_Printf("Unknown/Other OS ");
+	// HEHEHEHE //
 #endif
 
 	// Bitness
@@ -4043,8 +3999,10 @@ static void Command_Playintro_f(void)
 	if (dirmenu)
 		closefilemenu(true);
 
+	// STAR STUFF BEP //
 	if (menuactive)
 		M_ClearMenus(true);
+	// ADDING STUFF FOR CONVENIENCE IS FUN //
 
 	F_StartIntro();
 }
@@ -5048,7 +5006,9 @@ static void Color2_OnChange(void)
 	}
 	else
 	{
-		if ((skincolors[players[secondarydisplayplayer].skincolor].accessible == true) && (cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(secondarydisplayplayer))))
+		if ((skincolors[players[secondarydisplayplayer].skincolor].accessible == true)
+			&& (cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(secondarydisplayplayer))))
+			
 			SendNameAndColor2(); // Color change menu scrolling fix is no longer necessary
 		else
 		{
@@ -5142,7 +5102,8 @@ static void BaseNumLaps_OnChange(void)
 	}
 }
 
-// Discord Things Yay
+// STAR COMMANDS: ELECTRIC BOOGALO //
+// Discord and STAR Things
 /*void Got_Tsourdt3rdInfo(UINT8 **p, INT32 playernum)
 {
 	// Protect Others Against a Hacked/Buggy Client
@@ -5166,7 +5127,7 @@ static void BaseNumLaps_OnChange(void)
 #endif
 }*/
 
-// STAR COMMANDS: ELECTRIC BOOGALO //
+// STAR THINGS
 static void STAR_UseContinues_OnChange(void)
 {
 	if (Playing())

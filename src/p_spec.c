@@ -15,7 +15,6 @@
 ///        utility functions, etc.
 ///        Line Tag handling. Line and Sector triggers.
 
-#include "dehacked.h"
 #include "doomdef.h"
 #include "g_game.h"
 #include "p_local.h"
@@ -3407,7 +3406,7 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 							false,                              // do not handle colormap
 							false,                              // do not handle collision
 							false,                              // do not do ghost fade (no collision during fade)
-							true);                              // use exact alpha values (for opengl)
+							true);                               // use exact alpha values (for opengl)
 					}
 				}
 
@@ -4201,71 +4200,6 @@ static boolean P_MobjReadyToTrigger(mobj_t *mo, sector_t *sec)
   * \todo Split up into multiple functions.
   * \sa P_PlayerInSpecialSector, P_PlayerOnSpecial3DFloor
   */
-
-static void P_ProcessZoomTube(player_t *player, mtag_t sectag, boolean end)
-{
-	INT32 sequence;
-	fixed_t speed;
-	INT32 lineindex;
-	mobj_t *waypoint = NULL;
-	angle_t an;
-
-	if (player->mo->tracer && player->mo->tracer->type == MT_TUBEWAYPOINT && player->powers[pw_carry] == CR_ZOOMTUBE)
-		return;
-
-	if (player->powers[pw_ignorelatch] & (1<<15))
-		return;
-
-	// Find line #3 tagged to this sector
-	lineindex = Tag_FindLineSpecial(3, sectag);
-
-	if (lineindex == -1)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "ERROR: Zoom tube missing line special #3.\n");
-		return;
-	}
-
-	// Grab speed and sequence values
-	speed = abs(sides[lines[lineindex].sidenum[0]].textureoffset)/8;
-	if (end)
-		speed *= -1;
-	sequence = abs(sides[lines[lineindex].sidenum[0]].rowoffset)>>FRACBITS;
-
-	if (speed == 0)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "ERROR: Waypoint sequence %d at zero speed.\n", sequence);
-		return;
-	}
-
-	waypoint = end ? P_GetLastWaypoint(sequence) : P_GetFirstWaypoint(sequence);
-
-	if (!waypoint)
-	{
-		CONS_Debug(DBG_GAMELOGIC, "ERROR: %s WAYPOINT IN SEQUENCE %d NOT FOUND.\n", end ? "LAST" : "FIRST", sequence);
-		return;
-	}
-	else
-		CONS_Debug(DBG_GAMELOGIC, "Waypoint %d found in sequence %d - speed = %d\n", waypoint->health, sequence, speed);
-
-	an = R_PointToAngle2(player->mo->x, player->mo->y, waypoint->x, waypoint->y) - player->mo->angle;
-
-	if (an > ANGLE_90 && an < ANGLE_270 && !(lines[lineindex].args[2]))
-		return; // behind back
-
-	P_SetTarget(&player->mo->tracer, waypoint);
-	player->powers[pw_carry] = CR_ZOOMTUBE;
-	player->speed = speed;
-	player->pflags |= PF_SPINNING;
-	player->pflags &= ~(PF_JUMPED|PF_NOJUMPDAMAGE|PF_GLIDING|PF_BOUNCING|PF_SLIDING|PF_CANCARRY);
-	player->climbing = 0;
-
-	if (player->mo->state-states != S_PLAY_ROLL)
-	{
-		P_SetPlayerMobjState(player->mo, S_PLAY_ROLL);
-		S_StartSound(player->mo, sfx_spin);
-	}
-}
-
 void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *roversector)
 {
 	INT32 i = 0;
@@ -4720,10 +4654,133 @@ DoneSection2:
 			break;
 
 		case 8: // Zoom Tube Start
-			P_ProcessZoomTube(player, sectag, false);
+			{
+				INT32 sequence;
+				fixed_t speed;
+				INT32 lineindex;
+				mobj_t *waypoint = NULL;
+				angle_t an;
+
+				if (player->mo->tracer && player->mo->tracer->type == MT_TUBEWAYPOINT && player->powers[pw_carry] == CR_ZOOMTUBE)
+					break;
+
+				if (player->powers[pw_ignorelatch] & (1<<15))
+					break;
+
+				// Find line #3 tagged to this sector
+				lineindex = Tag_FindLineSpecial(3, sectag);
+
+				if (lineindex == -1)
+				{
+					CONS_Debug(DBG_GAMELOGIC, "ERROR: Sector special %d missing line special #3.\n", sector->special);
+					break;
+				}
+
+				// Grab speed and sequence values
+				speed = abs(sides[lines[lineindex].sidenum[0]].textureoffset)/8;
+				sequence = abs(sides[lines[lineindex].sidenum[0]].rowoffset)>>FRACBITS;
+
+				if (speed == 0)
+				{
+					CONS_Debug(DBG_GAMELOGIC, "ERROR: Waypoint sequence %d at zero speed.\n", sequence);
+					break;
+				}
+
+				waypoint = P_GetFirstWaypoint(sequence);
+
+				if (!waypoint)
+				{
+					CONS_Debug(DBG_GAMELOGIC, "ERROR: FIRST WAYPOINT IN SEQUENCE %d NOT FOUND.\n", sequence);
+					break;
+				}
+				else
+				{
+					CONS_Debug(DBG_GAMELOGIC, "Waypoint %d found in sequence %d - speed = %d\n", waypoint->health, sequence, speed);
+				}
+
+				an = R_PointToAngle2(player->mo->x, player->mo->y, waypoint->x, waypoint->y) - player->mo->angle;
+
+				if (an > ANGLE_90 && an < ANGLE_270 && !(lines[lineindex].flags & ML_EFFECT4))
+					break; // behind back
+
+				P_SetTarget(&player->mo->tracer, waypoint);
+				player->powers[pw_carry] = CR_ZOOMTUBE;
+				player->speed = speed;
+				player->pflags |= PF_SPINNING;
+				player->pflags &= ~(PF_JUMPED|PF_NOJUMPDAMAGE|PF_GLIDING|PF_BOUNCING|PF_SLIDING|PF_CANCARRY);
+				player->climbing = 0;
+
+				if (player->mo->state-states != S_PLAY_ROLL)
+				{
+					P_SetPlayerMobjState(player->mo, S_PLAY_ROLL);
+					S_StartSound(player->mo, sfx_spin);
+				}
+			}
 			break;
+
 		case 9: // Zoom Tube End
-			P_ProcessZoomTube(player, sectag, true);
+			{
+				INT32 sequence;
+				fixed_t speed;
+				INT32 lineindex;
+				mobj_t *waypoint = NULL;
+				angle_t an;
+
+				if (player->mo->tracer && player->mo->tracer->type == MT_TUBEWAYPOINT && player->powers[pw_carry] == CR_ZOOMTUBE)
+					break;
+
+				if (player->powers[pw_ignorelatch] & (1<<15))
+					break;
+
+				// Find line #3 tagged to this sector
+				lineindex = Tag_FindLineSpecial(3, sectag);
+
+				if (lineindex == -1)
+				{
+					CONS_Debug(DBG_GAMELOGIC, "ERROR: Sector special %d missing line special #3.\n", sector->special);
+					break;
+				}
+
+				// Grab speed and sequence values
+				speed = -abs(sides[lines[lineindex].sidenum[0]].textureoffset)/8; // Negative means reverse
+				sequence = abs(sides[lines[lineindex].sidenum[0]].rowoffset)>>FRACBITS;
+
+				if (speed == 0)
+				{
+					CONS_Debug(DBG_GAMELOGIC, "ERROR: Waypoint sequence %d at zero speed.\n", sequence);
+					break;
+				}
+
+				waypoint = P_GetLastWaypoint(sequence);
+
+				if (!waypoint)
+				{
+					CONS_Debug(DBG_GAMELOGIC, "ERROR: LAST WAYPOINT IN SEQUENCE %d NOT FOUND.\n", sequence);
+					break;
+				}
+				else
+				{
+					CONS_Debug(DBG_GAMELOGIC, "Waypoint %d found in sequence %d - speed = %d\n", waypoint->health, sequence, speed);
+				}
+
+				an = R_PointToAngle2(player->mo->x, player->mo->y, waypoint->x, waypoint->y) - player->mo->angle;
+
+				if (an > ANGLE_90 && an < ANGLE_270 && !(lines[lineindex].flags & ML_EFFECT4))
+					break; // behind back
+
+				P_SetTarget(&player->mo->tracer, waypoint);
+				player->powers[pw_carry] = CR_ZOOMTUBE;
+				player->speed = speed;
+				player->pflags |= PF_SPINNING;
+				player->pflags &= ~(PF_JUMPED|PF_NOJUMPDAMAGE|PF_GLIDING|PF_BOUNCING|PF_SLIDING|PF_CANCARRY);
+				player->climbing = 0;
+
+				if (player->mo->state-states != S_PLAY_ROLL)
+				{
+					P_SetPlayerMobjState(player->mo, S_PLAY_ROLL);
+					S_StartSound(player->mo, sfx_spin);
+				}
+			}
 			break;
 
 		case 10: // Finish Line
@@ -6063,6 +6120,12 @@ void P_SpawnSpecials(boolean fromnetsave)
 				break;
 		}
 
+		// Process Section 3
+/*		switch(GETSECSPECIAL(player->specialsector, 3))
+		{
+
+		}*/
+
 		// Process Section 4
 		switch(GETSECSPECIAL(sector->special, 4))
 		{
@@ -7345,8 +7408,7 @@ static void Add_Scroller(INT32 type, fixed_t dx, fixed_t dy, INT32 control, INT3
 	s->accel = accel;
 	s->exclusive = exclusive;
 	s->vdx = s->vdy = 0;
-	s->control = control;
-	if (s->control != -1)
+	if ((s->control = control) != -1)
 		s->last_height = sectors[control].floorheight + sectors[control].ceilingheight;
 	s->affectee = affectee;
 	P_AddThinker(THINK_MAIN, &s->thinker);

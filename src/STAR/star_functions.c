@@ -25,6 +25,8 @@
 #ifdef HAVE_CURL
 #include <curl/curl.h>		// internet variables
 #include "../i_threads.h"	// internet variables 2
+
+#include "../fastcmp.h"		// string variables
 #endif
 
 ///////////////////////////////////
@@ -34,14 +36,26 @@
 ///////////////////////////////////
 
 // VARIABLES //
-const char *tsourdt3rdLocation = "https://github.com/StarManiaKG/The-Story-of-Uncapped-Revengence-Discord-the-3rd/";
+#ifdef HAVE_CURL
+boolean GrabbingTSoURDt3rdInfo = true;
+boolean NotifyAboutTSoURDt3rdUpdate = true;
 
-static char *hms_tsourdt3rd_api;
+char *hms_tsourdt3rd_api;
+
 #ifdef HAVE_THREADS
 static I_mutex hms_tsourdt3rd_api_mutex;
 #endif
+#endif
+
+// COMMANDS //
+consvar_t cv_tsourdt3rdupdatemessage = CVAR_INIT ("tsourdt3rdupdatemessage", "On", CV_SAVE, CV_OnOff, NULL);
 
 // SAVEDATA RELATED //
+
+//
+// void STAR_WriteExtraData(void)
+// Writes Extra Gamedata to tsourdt3rd.dat
+//
 void STAR_WriteExtraData(void)
 {
     // Initialize Some Variables //
@@ -52,7 +66,7 @@ void STAR_WriteExtraData(void)
 	if ((!eastermode)
 		|| (!AllowEasterEggHunt)
 		|| (netgame)
-		|| (modifiedgame)
+		|| (TSoURDt3rd_NoMoreExtras)
 		|| (autoloaded))
 
 		return;
@@ -69,6 +83,10 @@ void STAR_WriteExtraData(void)
     fclose(tsourdt3rdgamedata);
 }
 
+//
+// void STAR_ReadExtraData(void)
+// Reads the Info Written to tsourdt3rd.dat
+//
 void STAR_ReadExtraData(void)
 {
     // Initialize Some Variables //
@@ -79,7 +97,7 @@ void STAR_ReadExtraData(void)
 	if ((!eastermode)
 		|| (!AllowEasterEggHunt)
 		|| (netgame)
-		|| (modifiedgame)
+		|| (TSoURDt3rd_NoMoreExtras)
 		|| (autoloaded))
 
 		return;
@@ -99,58 +117,99 @@ void STAR_ReadExtraData(void)
 }
 
 // ONLINE RELATED //
+
+//
+// static void STAR_SetAPI(char *API)
 // Sets the Website API to Use
+//
 #ifdef HAVE_CURL
-static void STAR_SetAPI(char *api)
+static void STAR_SetAPI(char *API)
 {
 #ifdef HAVE_THREADS
 	I_lock_mutex(&hms_tsourdt3rd_api_mutex);
 #endif
 	{
 		free(hms_tsourdt3rd_api);
-		hms_tsourdt3rd_api = api;
+		hms_tsourdt3rd_api = API;
 	}
 #ifdef HAVE_THREADS
 	I_unlock_mutex(hms_tsourdt3rd_api_mutex);
 #endif
 }
 
+//
+// void STAR_FindAPI(const char *API)
 // Finds the Specified Website API
-static void STAR_FindAPI(const char *api)
+//
+void STAR_FindAPI(const char *API)
 {
 #ifdef HAVE_THREADS
 	I_spawn_thread(
 			"grab-tsourdt3rd-stuff",
 			(I_thread_fn)STAR_SetAPI,
-			strdup(api)
+			strdup(API)
 	);
 #else
-	STAR_SetAPI(strdup(api));
+	STAR_SetAPI(strdup(API));
 #endif
 }
 
-// Try to Grab Something From the Github of TSoURDt3rd
-void STAR_GrabFromTsourdt3rdGithub(char *tsourdt3rdURL)
+//
+// void STAR_GrabFromTsourdt3rdGithub(char *URL)
+// Try to Grab Extra Info From the Github of TSoURDt3rd
+//
+void STAR_GrabFromTsourdt3rdGithub(char *URL)
 {
-	CURL *curl;
-	curl = curl_easy_init();
-
-	STAR_FindAPI(tsourdt3rdLocation);
-	strlcat(tsourdt3rdURL, va("%s", hms_tsourdt3rd_api), sizeof(tsourdt3rdURL));
-
-	//curl_easy_setopt(curl, CURLOPT_URL, tsourdt3rdURL);
-	//CONS_Printf("%p\n", curl);
-	curl_easy_setopt(curl, CURLOPT_READDATA, tsourdt3rdURL);
-	CONS_Printf("%p\n", curl);
-}
-
-// Combine All of the Above Into One Easy Function
-void STAR_DoOnlineStuff(void)
-{
-	char *URL;
-	URL = malloc(strlen("tree/main/src/STAR/version") + 1);
-	strlcat(URL, "tree/main/src/STAR/star_webinfo.h", sizeof(URL));
+	CURL *curl = curl_easy_init();
+	CURLcode res;
 	
-	STAR_GrabFromTsourdt3rdGithub(URL);
+	FILE *fp;
+	char *outfilename;
+
+	char finalURL[256];
+	char finalINFO[256];
+
+	char *tsourdt3rdIdentifyLine;
+
+	if (curl && hms_tsourdt3rd_api != NULL)
+	{
+		outfilename = va("%s"PATHSEP"%s", srb2home, "tsourdt3rdwebinfo.html");
+		fp = fopen(outfilename, "w+");
+		
+		snprintf(finalURL, 256, "%s%s", hms_tsourdt3rd_api, URL);
+	
+		fseek(fp, 0, SEEK_SET);
+		curl_easy_setopt(curl, CURLOPT_URL, finalURL);
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
+       	curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+       	
+       	res = curl_easy_perform(curl);
+       	if (res != CURLE_OK)
+	   		CONS_Printf("curl_easy_perform(): Failed to Grab TSoURDt3rd Web Info.\n");
+	  	else
+	  	{
+			tsourdt3rdIdentifyLine = va("#define TSOURDT3RDVERSION \"%s\"", TSOURDT3RDVERSION);
+			
+			fseek(fp, 0, SEEK_SET);
+			while (fgets(finalINFO, 256, fp) != NULL)
+			{
+				fread(finalINFO, 0, 0, fp);
+				
+				if (NotifyAboutTSoURDt3rdUpdate && fasticmp(finalINFO, tsourdt3rdIdentifyLine))
+				{
+					NotifyAboutTSoURDt3rdUpdate = false;
+					break;
+				}
+			}
+	  	}
+		
+		fclose(fp);
+		remove(outfilename);
+		
+		curl_easy_cleanup(curl);
+		GrabbingTSoURDt3rdInfo = false;
+	}
+	else if (!curl)
+		GrabbingTSoURDt3rdInfo = false;
 }
 #endif // HAVE_CURL

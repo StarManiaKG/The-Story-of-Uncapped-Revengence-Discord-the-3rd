@@ -443,7 +443,8 @@ boolean PT_RequestFile(INT32 node)
   *         3 too many files, over WADLIMIT
   *         4 still checking, continuing next tic
   *
-  *			5 you've autoloaded mods, and need to reset the game
+  *			STAR STUFF
+  *				5 you've autoloaded mods, and need to reset the game
   *
   */
 INT32 CL_CheckFiles(void)
@@ -1304,7 +1305,7 @@ void PT_FileFragment(void)
 	filename = va("%s", file->filename);
 	nameonly(filename);
 
-	// TSoURDt3rd Stuff Was Originally Here, but Not Anymore lol
+	// STAR NOTE: TSoURDt3rd Stuff Was Originally Here, but Not Anymore lol //
 	if (!(strcmp(filename, "srb2.pk3")
 		&& strcmp(filename, "zones.pk3")
 		&& strcmp(filename, "player.dta")

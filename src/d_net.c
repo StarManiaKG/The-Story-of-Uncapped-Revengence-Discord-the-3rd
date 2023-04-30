@@ -50,8 +50,10 @@ tic_t connectiontimeout = (10*TICRATE);
 doomcom_t *doomcom = NULL;
 /// \brief network packet data, points inside doomcom
 doomdata_t *netbuffer = NULL;
+// HOLE-PUNCHING STUFF I THINK //
 /// \brief hole punching packet, also points inside doomcom
 holepunch_t *holepunchpacket = NULL;
+// YEAH THAT //
 
 #ifdef DEBUGFILE
 FILE *debugfile = NULL; // put some net info in a file during the game
@@ -75,8 +77,10 @@ boolean (*I_NetCanGet)(void) = NULL;
 void (*I_NetCloseSocket)(void) = NULL;
 void (*I_NetFreeNodenum)(INT32 nodenum) = NULL;
 SINT8 (*I_NetMakeNodewPort)(const char *address, const char* port) = NULL;
+// HOLE-PUNCHING STUFF //
 void (*I_NetRequestHolePunch)(INT32 node) = NULL;
 void (*I_NetRegisterHolePunch)(void) = NULL;
+// OK //
 boolean (*I_NetOpenSocket)(void) = NULL;
 boolean (*I_Ban) (INT32 node) = NULL;
 void (*I_ClearBans)(void) = NULL;

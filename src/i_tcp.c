@@ -144,7 +144,10 @@
 #include "doomstat.h"
 
 // STAR STUFF //
+#include "STAR/star_vars.h"
 #include "d_clisrv.h"
+
+INT32 reachedSockSendErrorLimit;
 // END OF THAT //
 
 // win32
@@ -768,12 +771,22 @@ static void SOCK_Send(void)
 		if (e != ECONNREFUSED && e != EWOULDBLOCK)
 		{
 			// DO STAR STUFF //
-			NetUpdate();
-			CONS_Alert(CONS_NOTICE, "SOCK_Send() - Error Prevented :)\n");
-			// DID STAR STUFF //
-
 			/*I_Error("SOCK_Send, error sending to node %d (%s) #%u: %s", doomcom->remotenode,
 				SOCK_GetNodeAddress(doomcom->remotenode), e, strerror(e));*/
+			reachedSockSendErrorLimit++;
+
+			if (reachedSockSendErrorLimit >= cv_socksendlimit.value)
+			{
+				PT_WillResendGamestate();
+				reachedSockSendErrorLimit = 0;
+			}
+			
+			NetUpdate();
+			CONS_Alert(CONS_NOTICE, "SOCK_Send() - Error Prevented :)\n");
+			
+			e = 0;
+			c = 0;
+			// DID STAR STUFF //
 		}
 	}
 }

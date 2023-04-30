@@ -25,7 +25,10 @@
 #include "hardware/hw_main.h"
 #endif
 
-#include "m_menu.h" // cv_automapoutsidedevmode
+// STAR STUFF //
+#include "STAR/star_vars.h" // small dumb stuff
+#include "m_menu.h" 		// cv_automapoutsidedevmode
+// END THAT STUFF //
 
 // For use if I do walls with outsides/insides
 static const UINT8 REDS        = (8*16);
@@ -456,7 +459,8 @@ boolean AM_Responder(event_t *ev)
 {
 	INT32 rc = false;
 
-	if (devparm || cv_debug || cv_automapoutsidedevmode.value) // only automap in Debug Tails 01-19-2001
+	if ((devparm || cv_debug)					// only automap in Debug Tails 01-19-2001
+		|| (cv_automapoutsidedevmode.value)) 	// now you can have it whenever you want Star 03/??/23
 	{
 		if (!automapactive)
 		{
@@ -627,6 +631,7 @@ static inline void AM_doFollowPlayer(void)
   */
 void AM_Ticker(void)
 {
+	// STAR NOTE: THIS SMALL BLOCK HAS BEEN EDITED!
 	if (!cv_automapoutsidedevmode.value && !cv_debug)
 		AM_Stop();
 

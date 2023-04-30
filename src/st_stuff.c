@@ -2715,7 +2715,7 @@ void ST_drawEggs(void)
 	if (!Playing() 										// We Need to Play, Jesse
 		|| (netgame || multiplayer)						// You Can't Manipulate Your Friends for This Egg Hunt
 		|| (!eastermode)								// We Shouldn't Even Show This If It's Not Easter
-		|| (modifiedgame)								// No Cheating
+		|| (TSoURDt3rd_NoMoreExtras)					// No Cheating
 		|| (autoloaded)									// No Cheating: Electric Boogalo
 		|| (!AllowEasterEggHunt)						// Hooray for Consent
 		

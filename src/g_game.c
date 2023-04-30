@@ -65,6 +65,13 @@
 // Main Build
 boolean tsourdt3rd = true;
 
+// Sound Effects
+INT32 STAR_JoinSFX = sfx_kc48;
+INT32 STAR_LeaveSFX = sfx_kc52;
+INT32 STAR_SynchFailureSFX = sfx_kc46;
+
+INT32 DISCORD_RequestSFX = sfx_kc5d;
+
 // Easter
 INT32 TOTALEGGS;
 INT32 foundeggs;
@@ -779,6 +786,9 @@ void G_SetGameModified(boolean silent)
 
 	// STAR STUFF YAY //
 	M_UpdateJukebox();
+	M_UpdateEasterStuff();
+	if (TSoURDt3rd_LoadedExtras)
+		TSoURDt3rd_NoMoreExtras = true;
 	// END OF THAT //
 
 	// If in record attack recording, cancel it.

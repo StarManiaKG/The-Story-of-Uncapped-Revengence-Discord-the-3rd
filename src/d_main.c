@@ -95,10 +95,6 @@
 
 #include "lua_script.h"
 
-// STAR STUFF YAY //
-#include "STAR/star_vars.h"
-// END OF THAT //
-
 // Version numbers for netplay :upside_down_face:
 int    VERSION;
 int SUBVERSION;
@@ -149,8 +145,17 @@ const char *pandf = "%s" PATHSEP "%s";
 static char addonsdir[MAX_WADPATH];
 
 // STAR STUFF WEEEEE //
+#include "STAR/star_vars.h"
+
 // Discord Stuff
 INT32 extrawads;
+boolean checkedExtraWads;
+
+// STAR Stuff
+boolean TSoURDt3rd_TouchyModifiedGame;
+boolean TSoURDt3rd_LoadExtras;
+boolean TSoURDt3rd_LoadedExtras;
+boolean TSoURDt3rd_NoMoreExtras;
 
 // Autoloading
 boolean autoloading;
@@ -340,7 +345,8 @@ static void STAR_CheckTime(void)
 			}
 
 			// Easter (Changes Every Year Though, so just have it for all of April)
-			else if ((tptr->tm_mon == 3) && (!M_CheckParm("-noeaster")))
+			else if ((tptr->tm_mon == 3)
+				&& (!M_CheckParm("-noeaster"))) // you never know
 			{
 				eastermode = true;
 				modifiedgame = false;
@@ -365,7 +371,8 @@ static void STAR_CheckTime(void)
 	}
 
 	// Easter
-	else if ((M_CheckParm("-easter")) && (!M_CheckParm("-noeaster"))) // you never know
+	else if ((M_CheckParm("-easter"))
+		&& (!M_CheckParm("-noeaster"))) // you never know
 	{
 		eastermode = true;
 		modifiedgame = false;
@@ -382,15 +389,24 @@ static void STAR_CheckTime(void)
 	// Run Special Stuff Functions //
 	// April Fools
 	if (aprilfoolsmode)
+	{
 		CONS_Printf("STAR_CheckTime(): April Fools Mode Enabled!\n");
+		TSoURDt3rd_LoadExtras = true;
+	}
 
 	// Easter
 	else if (eastermode)
+	{
 		CONS_Printf("STAR_CheckTime(): Easter Mode Enabled!\n");
+		TSoURDt3rd_LoadExtras = true;
+	}
 
 	// Christmas
 	else if (xmasmode)
+	{
 		CONS_Printf("STAR_CheckTime(): Christmas Mode Enabled!\n");
+		TSoURDt3rd_LoadExtras = true;
+	}
 }
 // END OF FUN STAR STUFF //
 
@@ -1062,6 +1078,8 @@ void D_SRB2Loop(void)
 						D_MapChange(maptoLoadAfterAutoload, gametype, ultimatemode, true, 0, false, false);
 
 						maptoLoadAfterAutoload = 0;
+						mapNameToLoadAfterAutoload = NULL;
+
 						doWarp = false;
 					}
 				}
@@ -1092,13 +1110,67 @@ void D_SRB2Loop(void)
 				CV_StealthSetValue(&cv_easteregghuntbonuses, 0);
 				EnableEasterEggHuntBonuses = 0;
 			}
-			else if ((!modifiedgame || savemoddata) && (EnableEasterEggHuntBonuses))
+			else if ((!modifiedgame || savemoddata) && (!TSoURDt3rd_NoMoreExtras) && (EnableEasterEggHuntBonuses))
 			{
 				CONS_Printf("You have the Easter Egg Hunt Bonus features enabled.\nTherefore, to prevent dumb things from happening,\nyour game has been set to modified.\n");
 				G_SetGameModified(false);
 
 				M_UpdateEasterStuff();
 			}
+		}
+
+#ifdef HAVE_CURL
+		// Grab TSoURDt3rd Stuff From Online
+		if (GrabbingTSoURDt3rdInfo)
+		{
+			const char *API = "https://raw.githubusercontent.com/StarManiaKG/The-Story-of-Uncapped-Revengence-Discord-the-3rd/";
+			char URL[256] = "main/src/STAR/star_webinfo.h";
+
+			STAR_FindAPI(API);
+			STAR_GrabFromTsourdt3rdGithub(URL);
+		}
+
+		// Notify the User About Things lol
+		else
+		{
+			if (NotifyAboutTSoURDt3rdUpdate)
+			{	
+				if (cv_tsourdt3rdupdatemessage.value)
+					M_StartMessage(va("%c%s\x80\nYou're using an outdated version of TSoURDt3rd.\n\nCheck the SRB2 Message Board for the latest version! \n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Update TSoURDt3rd, Please"),NULL,MM_NOTHING);
+				NotifyAboutTSoURDt3rdUpdate = false;
+			}
+		}
+#endif
+
+		// Add What Extra Mods We Have Added to an Extra Interval, for Discord
+		if (!checkedExtraWads)
+		{
+			INT32 i = numwadfiles;
+			char *tempname;
+
+			extrawads = 0;
+			for (i--; i >= 1; i--)
+			{
+				nameonly(tempname = va("%s", wadfiles[i]->filename));
+				if ((strcmp(tempname, "music.dta") == 0)
+					|| (strcmp(tempname, "jukebox.pk3") == 0)
+					|| (strcmp(tempname, "patch_music.pk3") == 0)
+					|| (strcmp(tempname, "tsourdt3rdextras.pk3") == 0))
+				{
+					if (strcmp(tempname, "tsourdt3rdextras.pk3") == 0)
+					{
+						if (!TSoURDt3rd_LoadedExtras)
+						{
+							TSoURDt3rd_LoadedExtras = true;
+							TSoURDt3rd_TouchyModifiedGame = true;
+						}
+						M_UpdateEasterStuff();
+					}
+					extrawads++;
+					continue;
+				}
+			}
+			checkedExtraWads = true;
 		}
 		// THAT'S THE END :P //
 
@@ -1143,11 +1215,13 @@ void D_StartTitle(void)
 {
 	INT32 i;
 
+	// STAR STUFF YAY //
 	// Put a New Section Here Just so It Doesn't Reset My Fun lol
 	if (!jukeboxMusicPlaying)
 		S_StopMusic();
 	else if (jukeboxMusicPlaying && paused)
 		S_ResumeAudio();
+	// END THAT STUFF //
 
 	if (netgame)
 	{
@@ -1408,6 +1482,15 @@ static void IdentifyVersion(void)
 	// Add this custom build's fun stuff
 	D_AddFile(&startupwadfiles, va(pandf,srb2waddir, "tsourdt3rd.pk3"));
 
+	// Add this custom build's extra fun stuff, using lock-on technology
+	if (M_CheckParm("-tsourdt3rd_lockonextras") || TSoURDt3rd_LoadExtras)
+	{
+		D_AddFile(&startupwadfiles, va(pandf,srb2waddir, "tsourdt3rdextras.pk3"));
+		
+		TSoURDt3rd_LoadExtras = false;
+		TSoURDt3rd_LoadedExtras = true;
+	}
+
 	// Add the music
 #if !defined (HAVE_SDL) || defined (HAVE_MIXER)
 	{
@@ -1427,41 +1510,6 @@ static void IdentifyVersion(void)
 		MUSICTEST("jukebox.pk3")
 	}
 #endif
-
-	// Do Extra Star Stuff //
-	// Extra Wads
-	char *musicdta = malloc(strlen(srb2waddir)+1+9+1);
-	if (musicdta)
-	{
-		sprintf(musicdta, pandf, srb2waddir, "music.dta");
-		if (FIL_ReadFileOK(musicdta))
-		{
-			extrawads += 1;
-			free(musicdta);
-		}
-	}
-
-	/*char *patchmusicdta = malloc(strlen(srb2waddir)+1+15+1);
-	if (patchmusicdta)
-	{
-		sprintf(patchmusicdta, pandf, srb2waddir, "patch_music.pk3");
-		if (FIL_ReadFileOK(patchmusicdta))
-		{
-			extrawads += 1;
-			free(patchmusicdta);
-		}
-	}*/
-
-	char *jukeboxpk3 = malloc(strlen(srb2waddir)+1+11+1);
-	if (jukeboxpk3)
-	{
-		sprintf(jukeboxpk3, pandf, srb2waddir, "jukebox.pk3");
-		if (FIL_ReadFileOK(jukeboxpk3))
-		{
-			extrawads += 1;
-			free(jukeboxpk3);
-		}
-	}
 }
 
 static void
@@ -1679,7 +1727,7 @@ void D_SRB2Main(void)
 	// Have to be done here before files are loaded
 	M_InitCharacterTables();
 
-	mainwads = 4; // doesn't include music.dta and jukebox.pk3
+	mainwads = 4; // doesn't include music.dta /* STAR NOTE: also doesn't include jukebox.pk3 */
 #ifdef USE_PATCH_DTA
 	mainwads++;
 #endif
@@ -1700,9 +1748,16 @@ void D_SRB2Main(void)
 	W_VerifyFileMD5(2, ASSET_HASH_PLAYER_DTA); // player.dta
 #ifdef USE_PATCH_DTA
 	W_VerifyFileMD5(3, ASSET_HASH_PATCH_PK3); // patch.pk3
-	W_VerifyFileMD5(4, ASSET_HASH_TSOURDT3RD_PK3); // tsourdt3rd.pk3
+
+	// STAR STUFF //
+	W_VerifyFileMD5(4, ASSET_HASH_TSOURDT3RD_PK3); 				// tsourdt3rd.pk3
+	if (M_CheckParm("-tsourdt3rd_lockonextras"))
+		W_VerifyFileMD5(5, ASSET_HASH_TSOURDT3RD_EXTRAS_PK3); 	// tsourdt3rdextras.pk3
 #else
-	W_VerifyFileMD5(3, ASSET_HASH_TSOURDT3RD_PK3); // tsourdt3rd.pk3
+	W_VerifyFileMD5(3, ASSET_HASH_TSOURDT3RD_PK3); 				// tsourdt3rd.pk3
+	if (M_CheckParm("-tsourdt3rd_lockonextras"))
+		W_VerifyFileMD5(4, ASSET_HASH_TSOURDT3RD_EXTRAS_PK3); 	// tsourdt3rdextras.pk3
+	// 0011001101010 //
 #endif
 #endif //ifndef DEVELOP
 
@@ -1814,6 +1869,7 @@ void D_SRB2Main(void)
 			mapNameToLoadAfterAutoload = word;
 			if (!netgame)
 				doWarp = true;
+			autostart = true;
 		}
 		// END THAT STUFF //
 	}
@@ -1975,6 +2031,14 @@ void D_SRB2Main(void)
 
 	if (autostart || netgame)
 	{
+		// STAR STUFF YAY //
+		if (autoloading)
+		{
+			if (modifiedgame)
+				autoloaded = true;
+		}
+		// END THAT STUFF //
+
 		gameaction = ga_nothing;
 
 		CV_ClearChangedFlags();
@@ -2042,6 +2106,7 @@ void D_SRB2Main(void)
 					CONS_Printf("Loading into the next avaliable map.\nThen, we'll try to load into your requested map again.\n");
 					
 					D_MapChange(1, gametype, ultimatemode, true, 0, false, false);
+					doWarp = true;
 				}
 				// Prevent warping to locked levels
 				// ... unless you're in a dedicated server.  Yes, technically this means you can view any level by
@@ -2053,6 +2118,7 @@ void D_SRB2Main(void)
 					CONS_Printf("Loading into the next avaliable map.\nThen, we'll try to load into your requested map again.");
 
 					D_MapChange(1, gametype, ultimatemode, true, 0, false, false);
+					doWarp = true;
 				}
 				// Since We Found The Map,
 				// End this Map Warp Before Doing Anything Else
@@ -2061,18 +2127,23 @@ void D_SRB2Main(void)
 					D_MapChange(maptoLoadAfterAutoload, gametype, ultimatemode, true, 0, false, false);
 					
 					maptoLoadAfterAutoload = 0;
+					mapNameToLoadAfterAutoload = NULL;
+					
 					doWarp = false;
 				}
+
+				autoloading = false;
 			}
 			// HEHE //
 		}
 	}
-	else if (M_CheckParm("-skipintro"))
+	else if ((M_CheckParm("-skipintro"))
+		&& (!doWarp))									// STAR NOTE: Here for Autoloading and Stuff
 	{
 		F_InitMenuPresValues();
 		F_StartTitleScreen();
 	}
-	else
+	else if (!doWarp)									// STAR NOTE: Same as Above
 		F_StartIntro(); // Tails 03-03-2002
 
 	CON_ToggleOff();
