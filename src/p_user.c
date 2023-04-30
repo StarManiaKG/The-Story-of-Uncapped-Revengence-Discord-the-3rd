@@ -10718,7 +10718,10 @@ boolean P_SpectatorJoinGame(player_t *player)
 // STAR STUFF, ALMOST OVER //
 STAR_return:
 	if (automapactive)
+	{
+		CONS_Alert(CONS_NOTICE, "A node has switched teams, closing the automap to prevent a crash...\n");
 		AM_Stop();
+	}
 
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
