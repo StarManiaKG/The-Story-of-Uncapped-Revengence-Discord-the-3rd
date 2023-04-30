@@ -2542,6 +2542,8 @@ int W_VerifyNMUSlumps(const char *filename, boolean exit_on_error)
 		{"LTZIGZAG", 8}, // SRB2 Titlecard Zig-Zag
 		{"LTZZTEXT", 8}, // SRB2 Titlecard Text
 		{"LTACTBLU", 8}, // SRB2 Titlecard Icon
+		
+		{"PUREFAT", 7},  // Pure Fat Truck
 
 		{"BLANKLVL", 8}, // NO LEVEL ICONS?
 
