@@ -10656,7 +10656,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 		// STAR STUFF //
 		// no more player->mo, cannot continue.
 		discordReturnTrue = true;
-		goto discordreturn;
+		goto STAR_return;
 		// END THAT //
 	}
 	// Joining in game from firing.
@@ -10702,7 +10702,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 
 			// STAR STUFF, AGAIN //
 			discordReturnTrue = true;
-			goto discordreturn; // no more player->mo, cannot continue.
+			goto STAR_return; // no more player->mo, cannot continue.
 			// END IT, AGAIN //
 		}
 		else
@@ -10712,18 +10712,20 @@ boolean P_SpectatorJoinGame(player_t *player)
 			player->powers[pw_flashing] += 2*TICRATE; //to prevent message spam.
 		}
 		// STAR STUFF, AGAIN AGAIN //
-		goto discordreturn; // return, but don't return true
+		goto STAR_return; // return, but don't return true
 		// END THAT, AGAIN AGAIN //
 
 // STAR STUFF, ALMOST OVER //
-discordreturn:
+STAR_return:
+	if (automapactive)
+		AM_Stop();
+
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
 #endif
 	if (discordReturnTrue)
 		return true;
 // END THAT MESS, WE'RE FINALLY OVER //
-
 	}
 
 	return false;
