@@ -164,7 +164,7 @@ void STAR_GrabFromTsourdt3rdGithub(char *URL)
 	CURLcode res;
 	
 	FILE *fp;
-	char *outfilename;
+	char outfilename[256];
 
 	char finalURL[256];
 	char finalINFO[256];
@@ -173,7 +173,7 @@ void STAR_GrabFromTsourdt3rdGithub(char *URL)
 
 	if (curl && hms_tsourdt3rd_api != NULL)
 	{
-		outfilename = va("%s"PATHSEP"%s", srb2home, "tsourdt3rdwebinfo.html");
+		strcpy(outfilename, va("%s"PATHSEP"%s", srb2home, "tsourdt3rdwebinfo.html"));
 		fp = fopen(outfilename, "w+");
 		
 		snprintf(finalURL, 256, "%s%s", hms_tsourdt3rd_api, URL);
@@ -202,11 +202,11 @@ void STAR_GrabFromTsourdt3rdGithub(char *URL)
 				}
 			}
 	  	}
-		
-		fclose(fp);
+	  	fclose(fp);
+
 		remove(outfilename);
-		
 		curl_easy_cleanup(curl);
+		
 		GrabbingTSoURDt3rdInfo = false;
 	}
 	else if (!curl)
