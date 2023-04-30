@@ -416,6 +416,15 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 	} else if (fastcmp(word,"tsourdt3rd")) {
 		lua_pushboolean(L, tsourdt3rd);
 		return 1;
+	
+	// loaded tsourdt3rdextras.pk3
+	} else if (fastcmp(word,"TSoURDt3rd_LoadedExtras")) {
+		lua_pushboolean(L, TSoURDt3rd_LoadedExtras);
+		return 1;
+	
+	} else if (fastcmp(word,"TSoURDt3rd_NoMoreExtras")) {
+		lua_pushboolean(L, TSoURDt3rd_NoMoreExtras);
+		return 1;
 
 	// autoloaded mods
 	} else if (fastcmp(word,"autoloaded")) {
@@ -425,6 +434,29 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 	// time over...
 	} else if (fastcmp(word,"ForceTimeOver")) {
 		lua_pushboolean(L, ForceTimeOver);
+		return 1;
+	
+	// sound effects //
+	// STAR //
+	// joining
+	} else if (fastcmp(word,"STAR_JoinSFX")) {
+		lua_pushinteger(L, STAR_JoinSFX);
+		return 1;
+	
+	// leaving
+	} else if (fastcmp(word,"STAR_LeaveSFX")) {
+		lua_pushinteger(L, STAR_LeaveSFX);
+		return 1;
+	
+	// synch failure
+	} else if (fastcmp(word,"STAR_SynchFailureSFX")) {
+		lua_pushinteger(L, STAR_SynchFailureSFX);
+		return 1;
+	
+	// DISCORD
+	// requests
+	} else if (fastcmp(word,"DISCORD_RequestSFX")) {
+		lua_pushinteger(L, DISCORD_RequestSFX);
 		return 1;
 
 	// extras //
@@ -546,94 +578,190 @@ int LUA_CheckGlobals(lua_State *L, const char *word)
 		ForceTimeOver = luaL_checkboolean(L, 2);
 	}
 
+	// sound effects //
+	// STAR //
+	// joining
+	else if (fastcmp(word, "STAR_JoinSFX"))
+	{
+		sfxenum_t sound_id = luaL_checkinteger(L, 2);
+		if (sound_id >= NUMSFX)
+			return luaL_error(L, "sfx %d out of range (0 - %d)", sound_id, NUMSFX-1);
+
+		STAR_JoinSFX = (INT32)luaL_checkinteger(L, 2);
+	}
+
+	// leaving
+	else if (fastcmp(word, "STAR_LeaveSFX"))
+	{
+		sfxenum_t sound_id = luaL_checkinteger(L, 2);
+		if (sound_id >= NUMSFX)
+			return luaL_error(L, "sfx %d out of range (0 - %d)", sound_id, NUMSFX-1);
+		STAR_LeaveSFX = (INT32)luaL_checkinteger(L, 2);
+	}
+
+	// synch failure
+	else if (fastcmp(word, "STAR_SynchFailureSFX"))
+	{
+		sfxenum_t sound_id = luaL_checkinteger(L, 2);
+		if (sound_id >= NUMSFX)
+			return luaL_error(L, "sfx %d out of range (0 - %d)", sound_id, NUMSFX-1);
+		STAR_SynchFailureSFX = (INT32)luaL_checkinteger(L, 2);
+	}
+
+	// DISCORD //
+	// requests
+	else if (fastcmp(word, "DISCORD_RequestSFX"))
+	{
+		sfxenum_t sound_id = luaL_checkinteger(L, 2);
+		if (sound_id >= NUMSFX)
+			return luaL_error(L, "sfx %d out of range (0 - %d)", sound_id, NUMSFX-1);
+		DISCORD_RequestSFX = (INT32)luaL_checkinteger(L, 2);
+	}
+
 	// extras //
 	// tf2
 	else if (fastcmp(word, "SpawnTheDispenser"))
 	{
-		if (netgame)
-			return luaL_error(L, "global variable SpawnTheDispenser can't be changed in netgames!");
-		else if (autoloaded)
-			return luaL_error(L, "global variable SpawnTheDispenser can't be changed after autoloading add-ons!");
-		SpawnTheDispenser = luaL_checkboolean(L, 2);
+		if (!TSoURDt3rd_LoadedExtras)
+			return luaL_error(L, "global variable SpawnTheDispenser has no use without tsourdt3rdextras.pk3!");
+		else
+		{
+			if (TSoURDt3rd_NoMoreExtras)
+				return luaL_error(L, "global variable SpawnTheDispenser can't be used while the game is modified!");
+			else if (netgame)
+				return luaL_error(L, "global variable SpawnTheDispenser can't be changed in netgames!");
+			else if (autoloaded)
+				return luaL_error(L, "global variable SpawnTheDispenser can't be changed after autoloading add-ons!");
+			SpawnTheDispenser = luaL_checkboolean(L, 2);
+		}
 	}
 
 	// events //
 	// easter
 	else if (fastcmp(word, "AllowEasterEggHunt"))
 	{
-		if (!eastermode)
-			return luaL_error(L, "global variable AllowEasterEggHunt has no unless easter mode is enabled!");
-		else if (netgame)
-			return luaL_error(L, "global variable AllowEasterEggHunt can't be changed in netgames!");
-		else if (autoloaded)
-			return luaL_error(L, "global variable AllowEasterEggHunt can't be changed after autoloading add-ons!");
-		AllowEasterEggHunt = luaL_checkboolean(L, 2);
+		if (!TSoURDt3rd_LoadedExtras)
+			return luaL_error(L, "global variable AllowEasterEggHunt has no use without tsourdt3rdextras.pk3!");
+		else
+		{
+			if (TSoURDt3rd_NoMoreExtras)
+				return luaL_error(L, "global variable AllowEasterEggHunt can't be used while the game is modified!");
+			else if (!eastermode)
+				return luaL_error(L, "global variable AllowEasterEggHunt has no unless easter mode is enabled!");
+			else if (netgame)
+				return luaL_error(L, "global variable AllowEasterEggHunt can't be changed in netgames!");
+			else if (autoloaded)
+				return luaL_error(L, "global variable AllowEasterEggHunt can't be changed after autoloading add-ons!");
+			AllowEasterEggHunt = luaL_checkboolean(L, 2);
+		}
 	}
 
 	else if (fastcmp(word, "EnableEasterEggHuntBonuses"))
 	{
-		if (!eastermode)
-			return luaL_error(L, "global variable EnableEasterEggHuntBonuses has no unless easter mode is enabled!");
-		else if (netgame)
-			return luaL_error(L, "global variable EnableEasterEggHuntBonuses can't be changed in netgames!");
-		else if (autoloaded)
-			return luaL_error(L, "global variable EnableEasterEggHuntBonuses can't be changed after autoloading add-ons!");
-		EnableEasterEggHuntBonuses = luaL_checkboolean(L, 2);
+		if (!TSoURDt3rd_LoadedExtras)
+			return luaL_error(L, "global variable EnableEasterEggHuntBonuses has no use without tsourdt3rdextras.pk3!");
+		else
+		{
+			if (TSoURDt3rd_NoMoreExtras)
+				return luaL_error(L, "global variable EnableEasterEggHuntBonuses can't be used while the game is modified!");
+			else if (!eastermode)
+				return luaL_error(L, "global variable EnableEasterEggHuntBonuses has no unless easter mode is enabled!");
+			else if (netgame)
+				return luaL_error(L, "global variable EnableEasterEggHuntBonuses can't be changed in netgames!");
+			else if (autoloaded)
+				return luaL_error(L, "global variable EnableEasterEggHuntBonuses can't be changed after autoloading add-ons!");
+			EnableEasterEggHuntBonuses = luaL_checkboolean(L, 2);
+		}
 	}
 
 	else if (fastcmp(word, "TOTALEGGS"))
 	{
-		if (!eastermode)
-			return luaL_error(L, "global variable TOTALEGGS has no unless easter mode is enabled!");
-		else if (netgame)
-			return luaL_error(L, "global variable TOTALEGGS can't be changed in netgames!");
-		else if (autoloaded)
-			return luaL_error(L, "global variable TOTALEGGS can't be changed after autoloading add-ons!");
-		TOTALEGGS = (INT32)luaL_checkinteger(L, 2);
+		if (!TSoURDt3rd_LoadedExtras)
+			return luaL_error(L, "global variable TOTALEGGS has no use without tsourdt3rdextras.pk3!");
+		else
+		{
+			if (TSoURDt3rd_NoMoreExtras)
+				return luaL_error(L, "global variable TOTALEGGS can't be used while the game is modified!");
+			else if (!eastermode)
+				return luaL_error(L, "global variable TOTALEGGS has no unless easter mode is enabled!");
+			else if (netgame)
+				return luaL_error(L, "global variable TOTALEGGS can't be changed in netgames!");
+			else if (autoloaded)
+				return luaL_error(L, "global variable TOTALEGGS can't be changed after autoloading add-ons!");
+			TOTALEGGS = (INT32)luaL_checkinteger(L, 2);
+		}
 	}
 
 	else if (fastcmp(word, "foundeggs"))
 	{
-		if (!eastermode)
-			return luaL_error(L, "global variable foundeggs has no unless easter mode is enabled!");
-		else if (netgame)
-			return luaL_error(L, "global variable foundeggs can't be changed in netgames!");
-		else if (autoloaded)
-			return luaL_error(L, "global variable foundeggs can't be changed after autoloading add-ons!");
-		foundeggs = (INT32)luaL_checkinteger(L, 2);
+		if (!TSoURDt3rd_LoadedExtras)
+			return luaL_error(L, "global variable foundeggs has no use without tsourdt3rdextras.pk3!");
+		else
+		{
+			if (TSoURDt3rd_NoMoreExtras)
+				return luaL_error(L, "global variable foundeggs can't be used while the game is modified!");
+			else if (!eastermode)
+				return luaL_error(L, "global variable foundeggs has no unless easter mode is enabled!");
+			else if (netgame)
+				return luaL_error(L, "global variable foundeggs can't be changed in netgames!");
+			else if (autoloaded)
+				return luaL_error(L, "global variable foundeggs can't be changed after autoloading add-ons!");
+			foundeggs = (INT32)luaL_checkinteger(L, 2);
+		}
 	}
 
 	else if (fastcmp(word, "collectedmapeggs"))
 	{
-		if (!eastermode)
-			return luaL_error(L, "global variable collectedmapeggs has no unless easter mode is enabled!");
-		else if (netgame)
-			return luaL_error(L, "global variable collectedmapeggs can't be changed in netgames!");
-		else if (autoloaded)
-			return luaL_error(L, "global variable collectedmapeggs can't be changed after autoloading add-ons!");
-		collectedmapeggs = (INT32)luaL_checkinteger(L, 2);
+		if (!TSoURDt3rd_LoadedExtras)
+			return luaL_error(L, "global variable collectedmapeggs has no use without tsourdt3rdextras.pk3!");
+		else
+		{
+			if (TSoURDt3rd_NoMoreExtras)
+				return luaL_error(L, "global variable collectedmapeggs can't be used while the game is modified!");
+			else if (!eastermode)
+				return luaL_error(L, "global variable collectedmapeggs has no unless easter mode is enabled!");
+			else if (netgame)
+				return luaL_error(L, "global variable collectedmapeggs can't be changed in netgames!");
+			else if (autoloaded)
+				return luaL_error(L, "global variable collectedmapeggs can't be changed after autoloading add-ons!");
+			collectedmapeggs = (INT32)luaL_checkinteger(L, 2);
+		}
 	}
 
 	else if (fastcmp(word, "currenteggs"))
 	{
-		if (!eastermode)
-			return luaL_error(L, "global variable currenteggs has no unless easter mode is enabled!");
-		else if (netgame)
-			return luaL_error(L, "global variable currenteggs can't be changed in netgames!");
-		else if (autoloaded)
-			return luaL_error(L, "global variable currenteggs can't be changed after autoloading add-ons!");
-		currenteggs = (INT32)luaL_checkinteger(L, 2);	
+		if (!TSoURDt3rd_LoadedExtras)
+			return luaL_error(L, "global variable currenteggs has no use without tsourdt3rdextras.pk3!");
+		else
+		{
+			if (TSoURDt3rd_NoMoreExtras)
+				return luaL_error(L, "global variable currenteggs can't be used while the game is modified!");
+			else if (!eastermode)
+				return luaL_error(L, "global variable currenteggs has no unless easter mode is enabled!");
+			else if (netgame)
+				return luaL_error(L, "global variable currenteggs can't be changed in netgames!");
+			else if (autoloaded)
+				return luaL_error(L, "global variable currenteggs can't be changed after autoloading add-ons!");
+			currenteggs = (INT32)luaL_checkinteger(L, 2);
+		}
 	}
 
 	else if (fastcmp(word, "numMapEggs"))
 	{
-		if (!eastermode)
-			return luaL_error(L, "global variable numMapEggs has no unless easter mode is enabled!");
-		else if (netgame)
-			return luaL_error(L, "global variable numMapEggs can't be changed in netgames!");
-		else if (autoloaded)
-			return luaL_error(L, "global variable numMapEggs can't be changed after autoloading add-ons!");
-		numMapEggs = (INT32)luaL_checkinteger(L, 2);	
+		if (!TSoURDt3rd_LoadedExtras)
+			return luaL_error(L, "global variable numMapEggs has no use without tsourdt3rdextras.pk3!");
+		else
+		{
+			if (TSoURDt3rd_NoMoreExtras)
+				return luaL_error(L, "global variable numMapEggs can't be used while the game is modified!");
+			else if (!eastermode)
+				return luaL_error(L, "global variable numMapEggs has no unless easter mode is enabled!");
+			else if (netgame)
+				return luaL_error(L, "global variable numMapEggs can't be changed in netgames!");
+			else if (autoloaded)
+				return luaL_error(L, "global variable numMapEggs can't be changed after autoloading add-ons!");
+			numMapEggs = (INT32)luaL_checkinteger(L, 2);
+		}
 	}
 	// END OF STAR STUFF YAY //
 

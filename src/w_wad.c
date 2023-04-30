@@ -83,6 +83,10 @@
 #define O_BINARY 0
 #endif
 
+// STAR STUFF //
+#include "STAR/star_vars.h"
+// END THAT //
+
 
 typedef struct
 {
@@ -931,11 +935,20 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 		return W_InitFileError(filename, startup);
 	}
 
+	// STAR NOTE: I EDITED THIS lol //
 	if (important && !mainfile)
 	{
-		//G_SetGameModified(true);
-		modifiedgame = true; // avoid savemoddata being set to false
+		if (!TSoURDt3rd_TouchyModifiedGame)
+		{
+			//G_SetGameModified(true);
+			modifiedgame = true; // avoid savemoddata being set to false
+
+			TSoURDt3rd_TouchyModifiedGame = true;
+		}
+		else
+			TSoURDt3rd_NoMoreExtras = true;
 	}
+	// END THAT EDITED STUFF lol //
 
 	//
 	// link wad file to search files
@@ -972,6 +985,10 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 
 	// Read shaders from file
 	W_ReadFileShaders(wadfile);
+
+	// STAR STUFF //
+	checkedExtraWads = false;
+	// AGAIN, AGAIN //
 
 	// TODO: HACK ALERT - Load Lua & SOC stuff right here. I feel like this should be out of this place, but... Let's stick with this for now.
 	switch (wadfile->type)
@@ -1150,6 +1167,10 @@ UINT16 W_InitFolder(const char *path, boolean mainfile, boolean startup)
 	W_ReadFileShaders(wadfile);
 	W_LoadDehackedLumpsPK3(numwadfiles - 1, mainfile);
 	W_InvalidateLumpnumCache();
+
+	// STAR STUFF //
+	checkedExtraWads = false;
+	// AGAIN, AGAIN, AGAIN //
 
 	return wadfile->numlumps;
 }

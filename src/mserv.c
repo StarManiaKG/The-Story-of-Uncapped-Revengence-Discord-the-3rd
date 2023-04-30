@@ -74,7 +74,7 @@ INT16 ms_RoomId = -1;
 consvar_t cv_rendezvousserver = CVAR_INIT ("holepunchserver", "", CV_SAVE, NULL, NULL);
 
 static CV_PossibleValue_t socksendlimit_t[] = {{1, "MIN"}, {10, "MAX"}, {0, NULL}};
-consvar_t cv_socksendlimit = CVAR_INIT("socksendlimit", "1", CV_SAVE, socksendlimit_t, NULL);
+consvar_t cv_socksendlimit = CVAR_INIT("socksendlimit", "3", CV_SAVE, socksendlimit_t, NULL);
 
 INT16 msServerType = -1;
 // END THAT MESS

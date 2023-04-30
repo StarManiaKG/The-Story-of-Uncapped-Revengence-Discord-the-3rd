@@ -21,7 +21,7 @@
 // Commands //
 // Main Things
 extern consvar_t cv_discordrp, cv_discordstreamer;
-extern consvar_t cv_discordasks;
+extern consvar_t cv_discordasks, cv_discordinvites;
 extern consvar_t cv_discordshowonstatus, cv_discordstatusmemes, cv_discordcharacterimagetype;
 
 // Custom Things

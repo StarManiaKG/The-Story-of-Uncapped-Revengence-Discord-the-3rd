@@ -48,7 +48,6 @@
 #include "lua_libs.h"
 #include "md5.h"
 #include "m_perfstats.h"
-#include "s_sound.h" // funny discord sounds
 #include "i_time.h"
 
 // aaaaaa
@@ -63,6 +62,13 @@
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
 #endif
+
+// STAR STUFF //
+#include "STAR/star_vars.h"
+
+/*boolean serverUsesTSoURDt3rd;
+void Tsourdt3rdInfo_OnChange(void);*/
+// END THAT //
 
 //
 // NETWORKING
@@ -332,6 +338,7 @@ static UINT8* D_GetExistingTextcmd(tic_t tic, INT32 playernum)
 	textcmdtic_t *textcmdtic = textcmds[tic & (TEXTCMD_HASH_SIZE - 1)];
 	while (textcmdtic && textcmdtic->tic != tic) textcmdtic = textcmdtic->next;
 
+	// STAR NOTE: THIS IS THE LEAVEBUG FIX //
 	// Do we have an entry for the tic? If so, look for player.
 	if (textcmdtic && textcmdtic->playercmds)
 	{
@@ -551,34 +558,6 @@ static cl_mode_t cl_mode = CL_SEARCHING;
 
 static UINT16 cl_lastcheckedfilecount = 0;	// used for full file list
 
-#ifndef NONET
-#define SNAKE_SPEED 5
-
-#define SNAKE_NUM_BLOCKS_X 20
-#define SNAKE_NUM_BLOCKS_Y 10
-#define SNAKE_BLOCK_SIZE 12
-#define SNAKE_BORDER_SIZE 12
-
-#define SNAKE_MAP_WIDTH  (SNAKE_NUM_BLOCKS_X * SNAKE_BLOCK_SIZE)
-#define SNAKE_MAP_HEIGHT (SNAKE_NUM_BLOCKS_Y * SNAKE_BLOCK_SIZE)
-
-#define SNAKE_LEFT_X ((BASEVIDWIDTH - SNAKE_MAP_WIDTH) / 2 - SNAKE_BORDER_SIZE)
-#define SNAKE_RIGHT_X (SNAKE_LEFT_X + SNAKE_MAP_WIDTH + SNAKE_BORDER_SIZE * 2 - 1)
-#define SNAKE_BOTTOM_Y (BASEVIDHEIGHT - 48)
-#define SNAKE_TOP_Y (SNAKE_BOTTOM_Y - SNAKE_MAP_HEIGHT - SNAKE_BORDER_SIZE * 2 + 1)
-
-enum snake_bonustype_s {
-	SNAKE_BONUS_NONE = 0,
-	SNAKE_BONUS_SLOW,
-	SNAKE_BONUS_FAST,
-	SNAKE_BONUS_GHOST,
-	SNAKE_BONUS_NUKE,
-	SNAKE_BONUS_SCISSORS,
-	SNAKE_BONUS_REVERSE,
-	SNAKE_BONUS_EGGMAN,
-	SNAKE_NUM_BONUSES,
-};
-
 static const char *snake_bonuspatches[] = {
 	NULL,
 	"DL_SLOW",
@@ -603,33 +582,9 @@ static const char *snake_backgrounds[] = {
 	"RVZGRS04",
 };
 
-typedef struct snake_s
-{
-	boolean paused;
-	boolean pausepressed;
-	tic_t time;
-	tic_t nextupdate;
-	boolean gameover;
-	UINT8 background;
+snake_t *snake = NULL;
 
-	UINT16 snakelength;
-	enum snake_bonustype_s snakebonus;
-	tic_t snakebonustime;
-	UINT8 snakex[SNAKE_NUM_BLOCKS_X * SNAKE_NUM_BLOCKS_Y];
-	UINT8 snakey[SNAKE_NUM_BLOCKS_X * SNAKE_NUM_BLOCKS_Y];
-	UINT8 snakedir[SNAKE_NUM_BLOCKS_X * SNAKE_NUM_BLOCKS_Y];
-
-	UINT8 applex;
-	UINT8 appley;
-
-	enum snake_bonustype_s bonustype;
-	UINT8 bonusx;
-	UINT8 bonusy;
-} snake_t;
-
-static snake_t *snake = NULL;
-
-static void Snake_Initialise(void)
+void Snake_Initialise(void)
 {
 	if (!snake)
 		snake = malloc(sizeof(snake_t));
@@ -668,7 +623,7 @@ event_t *snakejoyevents[MAXEVENTS];
 UINT16 joyeventcount = 0;
 
 // I'm screaming the hack is clean - ashi
-static boolean Snake_Joy_Grabber(event_t *ev)
+boolean Snake_Joy_Grabber(event_t *ev)
 {
 	if (ev->type == ev_joystick  && ev->key == 0)
 	{
@@ -701,7 +656,7 @@ static void Snake_FindFreeSlot(UINT8 *freex, UINT8 *freey, UINT8 headx, UINT8 he
 	*freey = y;
 }
 
-static void Snake_Handle(void)
+void Snake_Handle(void)
 {
 	UINT8 x, y;
 	UINT8 oldx, oldy;
@@ -997,7 +952,7 @@ static void Snake_Handle(void)
 	}
 }
 
-static void Snake_Draw(void)
+void Snake_Draw(void)
 {
 	INT16 i;
 
@@ -1105,6 +1060,7 @@ static void Snake_Draw(void)
 		);
 }
 
+#ifndef NONET
 static void CL_DrawConnectionStatusBox(void)
 {
 	M_DrawTextBox(BASEVIDWIDTH/2-128-8, BASEVIDHEIGHT-16-8, 32, 1);
@@ -1121,12 +1077,12 @@ static inline void CL_DrawConnectionStatus(void)
 {
 	INT32 ccstime = I_GetTime();
 
+	// Draw background fade
+	V_DrawFadeScreen(0xFF00, 16); // force default
+
 	// DO STAR STUFF //
 	STAR_SetProblematicCommandsForNetgames();
 	// DID STAR STUFF //
-
-	// Draw background fade
-	V_DrawFadeScreen(0xFF00, 16); // force default
 
 	if (cl_mode != CL_DOWNLOADFILES && cl_mode != CL_LOADFILES)
 	{
@@ -1521,9 +1477,18 @@ static boolean SV_SendServerConfig(INT32 node)
 	netbuffer->u.servercfg.gametype = (UINT8)gametype;
 	netbuffer->u.servercfg.modifiedgame = (UINT8)modifiedgame;
 
-	netbuffer->u.servercfg.maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
-	netbuffer->u.servercfg.allownewplayer = cv_allownewplayer.value;
-	netbuffer->u.servercfg.discordinvites = (UINT8)cv_discordinvites.value;
+	/*if (serverUsesTSoURDt3rd)
+	{
+		// STAR STUFF YAY //
+		netbuffer->u.servercfg.tsourdt3rd = tsourdt3rd;
+		// END THE STUFF //
+
+		// DISCORD STUFF //
+		netbuffer->u.servercfg.maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
+		netbuffer->u.servercfg.allownewplayer = cv_allownewplayer.value;
+		netbuffer->u.servercfg.discordinvites = (UINT8)cv_discordinvites.value;
+		// END THAT PLEASE //
+	}*/
 
 	memcpy(netbuffer->u.servercfg.server_context, server_context, 8);
 
@@ -1788,12 +1753,16 @@ static void CL_ReloadReceivedSavegame(void)
 #ifndef NONET
 static void SendAskInfo(INT32 node)
 {
-	tic_t asktime;
+	const tic_t asktime = I_GetTime();
 
-	if (node != 0 && node != BROADCASTADDR && cv_rendezvousserver.string[0])
+	// HOLE-PUNCHING STUFF GOES HERE THIS TIME //
+	if (node != 0 && node != BROADCASTADDR &&
+			cv_rendezvousserver.string[0])
+	{
 		I_NetRequestHolePunch(node);
+	}
+	// END THAT STUFF //
 
-	asktime = I_GetTime();
 	netbuffer->packettype = PT_ASKINFO;
 	netbuffer->u.askinfo.version = VERSION;
 	netbuffer->u.askinfo.time = (tic_t)LONG(asktime);
@@ -2045,7 +2014,6 @@ static boolean CL_FinishedFileList(void)
 {
 	INT32 i;
 	char *downloadsize = NULL;
-
 	//CONS_Printf(M_GetText("Checking files...\n"));
 	i = CL_CheckFiles();
 	if (i == 4) // still checking ...
@@ -2824,6 +2792,7 @@ static void Command_connect(void)
 		return;
 	}
 
+	// STAR NOTE: I EDITED THIS A WHILE AGO LOL //
 	if (Playing() || titledemo)
 	{
 		if (menuactive)
@@ -3431,7 +3400,9 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 #endif
 	}
 
-	S_StartSound(NULL, ((msg == KICK_MSG_PLAYER_QUIT) ? sfx_leave : sfx_syfail)); // play funny discord sounds
+	// DISCORD STUFF MEEP //
+	S_StartSound(NULL, ((msg == KICK_MSG_PLAYER_QUIT) ? STAR_LeaveSFX : STAR_SynchFailureSFX));
+	// I LIKE YOUR FUNNY WORDS, MAGIC FUNCTION //
 	switch (msg)
 	{
 		case KICK_MSG_GO_AWAY:
@@ -3552,27 +3523,21 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 static CV_PossibleValue_t netticbuffer_cons_t[] = {{0, "MIN"}, {3, "MAX"}, {0, NULL}};
 consvar_t cv_netticbuffer = CVAR_INIT ("netticbuffer", "1", CV_SAVE, netticbuffer_cons_t, NULL);
 
-void DiscordInfo_OnChange(void);
-
-consvar_t cv_allownewplayer = CVAR_INIT ("allowjoin", "On", CV_SAVE|CV_NETVAR|CV_CALL, CV_OnOff, DiscordInfo_OnChange);
+consvar_t cv_allownewplayer = CVAR_INIT ("allowjoin", "On", CV_SAVE|CV_NETVAR/*|CV_CALL*/, CV_OnOff, /*Tsourdt3rdInfo_OnChange*/NULL);
 consvar_t cv_joinnextround = CVAR_INIT ("joinnextround", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL); /// \todo not done
 static CV_PossibleValue_t maxplayers_cons_t[] = {{2, "MIN"}, {32, "MAX"}, {0, NULL}};
-consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_SAVE|CV_NETVAR|CV_CALL, maxplayers_cons_t, DiscordInfo_OnChange);
+consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_SAVE|CV_NETVAR/*|CV_CALL*/, maxplayers_cons_t, /*Tsourdt3rdInfo_OnChange*/NULL);
 static CV_PossibleValue_t joindelay_cons_t[] = {{1, "MIN"}, {3600, "MAX"}, {0, "Off"}, {0, NULL}};
 consvar_t cv_joindelay = CVAR_INIT ("joindelay", "10", CV_SAVE|CV_NETVAR, joindelay_cons_t, NULL);
 static CV_PossibleValue_t rejointimeout_cons_t[] = {{1, "MIN"}, {60 * FRACUNIT, "MAX"}, {0, "Off"}, {0, NULL}};
 consvar_t cv_rejointimeout = CVAR_INIT ("rejointimeout", "2", CV_SAVE|CV_NETVAR|CV_FLOAT, rejointimeout_cons_t, NULL);
-
-// Here for Dedicated Servers or Something idk
-static CV_PossibleValue_t discordinvites_cons_t[] = {{0, "Admins"}, {1, "Everyone"}, {2, "Server Only"}, {0, NULL}};
-consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Everyone", CV_SAVE|CV_CALL, discordinvites_cons_t, DiscordInfo_OnChange); // Was Originally A CV_NETVAR, But Until I Figure This Stuff Out, Not Anymore :P
 
 static CV_PossibleValue_t resynchattempts_cons_t[] = {{1, "MIN"}, {20, "MAX"}, {0, "No"}, {0, NULL}};
 consvar_t cv_resynchattempts = CVAR_INIT ("resynchattempts", "10", CV_SAVE|CV_NETVAR, resynchattempts_cons_t, NULL);
 consvar_t cv_blamecfail = CVAR_INIT ("blamecfail", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL);
 
 // max file size to send to a player (in kilobytes)
-static CV_PossibleValue_t maxsend_cons_t[] = {{0, "MIN"}, {51200, "MAX"}, {0, NULL}};
+static CV_PossibleValue_t maxsend_cons_t[] = {{0, "MIN"}, {204800, "MAX"}, {0, NULL}};
 consvar_t cv_maxsend = CVAR_INIT ("maxsend", "4096", CV_SAVE|CV_NETVAR, maxsend_cons_t, NULL);
 consvar_t cv_noticedownload = CVAR_INIT ("noticedownload", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL);
 
@@ -3580,9 +3545,18 @@ consvar_t cv_noticedownload = CVAR_INIT ("noticedownload", "Off", CV_SAVE|CV_NET
 static CV_PossibleValue_t downloadspeed_cons_t[] = {{1, "MIN"}, {300, "MAX"}, {0, NULL}};
 consvar_t cv_downloadspeed = CVAR_INIT ("downloadspeed", "16", CV_SAVE|CV_NETVAR, downloadspeed_cons_t, NULL);
 
+/*
+// DISCORD STUFF //
+// Here for Dedicated Servers or Something idk
+static CV_PossibleValue_t discordinvites_cons_t[] = {{0, "Admins"}, {1, "Everyone"}, {2, "Server Only"}, {0, NULL}};
+consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Everyone", CV_SAVE|CV_CALL, discordinvites_cons_t, Tsourdt3rdInfo_OnChangeNULL);
+// END THIS MESS //
+*/
+
 static void Got_AddPlayer(UINT8 **p, INT32 playernum);
 
-void DiscordInfo_OnChange(void)
+// STAR STUFF //
+/*void Tsourdt3rdInfo_OnChange(void)
 {
 	UINT8 buf[3];
 	UINT8 *p = buf;
@@ -3591,14 +3565,20 @@ void DiscordInfo_OnChange(void)
 	if (!server)
 		return;
 
+	if (!serverUsesTSoURDt3rd)
+		return;
+
 	maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
+
+	WRITEUINT8(p, tsourdt3rd);
 
 	WRITEUINT8(p, maxplayer);
 	WRITEUINT8(p, cv_allownewplayer.value);
 	WRITEUINT8(p, cv_discordinvites.value);
 
-	SendNetXCmd(XD_DISCORD, buf, 3);
-}
+	SendNetXCmd(XD_TSOURDT3RD, buf, 3);
+}*/
+// END THAT. LITERALLY //
 
 // called one time at init
 void D_ClientServerInit(void)
@@ -3775,7 +3755,7 @@ void D_QuitNetGame(void)
 
 	D_CloseConnection();
 	ClearAdminPlayers();
-	
+
 	// STAR STUFF ENGAGED //
 	STAR_ResetProblematicCommandsAfterNetgames();
 	// STAR STUFF DISENGAGED //
@@ -3911,9 +3891,10 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 	{
 		char joinmsg[256];
 
-		// Discord Sound Thingy Yay
+		// DISCORD STUFF YAY //
 		if (node != mynode)
-			S_StartSound(NULL, sfx_join);
+			S_StartSound(NULL, STAR_JoinSFX);
+		// DISCORD SOUND THINGY YAY //
 
 		if (rejoined)
 			strcpy(joinmsg, M_GetText("\x82*%s has rejoined the game (player %d)"));
@@ -3937,6 +3918,11 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 	if (!rejoined)
 		LUA_HookInt(newplayernum, HOOK(PlayerJoin));
+
+	// DO STAR STUFF //
+	if (automapactive)
+		AM_Stop();
+	// END THAT //
 
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
@@ -4319,7 +4305,7 @@ static void HandleServerInfo(SINT8 node)
 }
 #endif
 
-static void PT_WillResendGamestate(void)
+void PT_WillResendGamestate(void)
 {
 #ifndef NONET
 	char tmpsave[256];
@@ -4490,11 +4476,21 @@ static void HandlePacketFromAwayNode(SINT8 node)
 				memcpy(server_context, netbuffer->u.servercfg.server_context, 8);
 			}
 
+			/*
+			// DISCORD STUFF, STAR STUFF //
+			serverUsesTSoURDt3rd = netbuffer->u.servercfg.tsourdt3rd;
+			CONS_Printf("Discord Packets Recieved! Value: %d\n", serverUsesTSoURDt3rd);
+
 #ifdef HAVE_DISCORDRPC
-			discordInfo.maxPlayers = netbuffer->u.servercfg.maxplayer;
-			discordInfo.joinsAllowed = netbuffer->u.servercfg.allownewplayer;
-			discordInfo.whoCanInvite = netbuffer->u.servercfg.discordinvites;
+			if (serverUsesTSoURDt3rd)
+			{
+				discordInfo.maxPlayers = netbuffer->u.servercfg.maxplayer;
+				discordInfo.joinsAllowed = netbuffer->u.servercfg.allownewplayer;
+				discordInfo.whoCanInvite = netbuffer->u.servercfg.discordinvites;
+			}
 #endif
+			// END THIS ENTIRE MESS //
+			*/
 
 			nodeingame[(UINT8)servernode] = true;
 			serverplayer = netbuffer->u.servercfg.serverplayer;
@@ -4577,19 +4573,6 @@ static void HandlePacketFromAwayNode(SINT8 node)
 
 	}
 #undef SERVERONLY
-
-	// STAR STUFF YAY //
-	if (autoloading)
-	{
-		if (netgame)
-		{
-			if (modifiedgame)
-				autoloaded = true;
-			doWarp = true;
-			autoloading = false;
-		}
-	}
-	// END THAT STUFF //
 }
 
 /** Handles a packet received from a node that is in game
@@ -5635,7 +5618,9 @@ void NetUpdate(void)
 #endif
 
 	if (netgame && serverrunning)
+	{
 		RenewHolePunch();
+	}
 
 	if (client)
 	{

@@ -4399,11 +4399,11 @@ static void P_DoSuperStuff(player_t *player)
 boolean P_SuperReady(player_t *player)
 {
 	if ((!player->powers[pw_super]
-	&& ((!TransformSuperWithShield && !player->powers[pw_invulnerability]) || (TransformSuperWithShield))
+	&& ((!ShieldBlocksTransformation && !player->powers[pw_invulnerability]) || (ShieldBlocksTransformation))
 	&& !player->powers[pw_tailsfly]
 	&& (player->charflags & SF_SUPER)
 	&& (player->pflags & PF_JUMPED)
-	&& ((!(player->powers[pw_shield] & SH_NOSTACK) && !TransformSuperWithShield) || (TransformSuperWithShield))
+	&& ((!(player->powers[pw_shield] & SH_NOSTACK) && !ShieldBlocksTransformation) || (ShieldBlocksTransformation))
 	&& !(maptol & TOL_NIGHTS)
 	&& ALL7EMERALDS(emeralds)
 	&& (player->rings >= 50))
@@ -5126,7 +5126,7 @@ static boolean P_PlayerShieldThink(player_t *player, ticcmd_t *cmd, mobj_t *lock
 		if ((!(player->charflags & SF_NOSHIELDABILITY)) && (cmd->buttons & BT_SPIN && !LUA_HookPlayer(player, HOOK(ShieldSpecial)))) // Spin button effects
 		{
 			// Make sure we're not super, so we don't accidentally run anything here
-			if (TransformSuperWithShield && P_SuperReady(player))
+			if (ShieldBlocksTransformation && P_SuperReady(player))
 				return false;
 			
 			// Force stop
@@ -10586,6 +10586,10 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 boolean P_SpectatorJoinGame(player_t *player)
 {
+	// STAR STUFF //
+	boolean discordReturnTrue;
+	// END OF THE CONVIENENCE //
+
 	if (!G_CoopGametype() && !cv_allowteamchange.value)
 	{
 		if (P_IsLocalPlayer(player))
@@ -10649,11 +10653,11 @@ boolean P_SpectatorJoinGame(player_t *player)
 		else if (changeto == 2)
 			CONS_Printf(M_GetText("%s switched to the %c%s%c.\n"), player_names[player-players], '\x84', M_GetText("Blue team"), '\x80');
 
-#ifdef HAVE_DISCORDRPC
-		DRPC_UpdatePresence(); // just in case, you never know :)
-#endif
-
-		return true; // no more player->mo, cannot continue.
+		// STAR STUFF //
+		// no more player->mo, cannot continue.
+		discordReturnTrue = true;
+		goto discordreturn;
+		// END THAT //
 	}
 	// Joining in game from firing.
 	else
@@ -10696,11 +10700,10 @@ boolean P_SpectatorJoinGame(player_t *player)
 			if (!G_CoopGametype())
 				CONS_Printf(M_GetText("%s entered the game.\n"), player_names[player-players]);
 
-#ifdef HAVE_DISCORDRPC
-			DRPC_UpdatePresence(); // still just in case, you never know :)
-#endif
-
-			return true; // no more player->mo, cannot continue.
+			// STAR STUFF, AGAIN //
+			discordReturnTrue = true;
+			goto discordreturn; // no more player->mo, cannot continue.
+			// END IT, AGAIN //
 		}
 		else
 		{
@@ -10708,9 +10711,19 @@ boolean P_SpectatorJoinGame(player_t *player)
 				CONS_Printf(M_GetText("You must wait until next round to enter the game.\n"));
 			player->powers[pw_flashing] += 2*TICRATE; //to prevent message spam.
 		}
+		// STAR STUFF, AGAIN AGAIN //
+		goto discordreturn; // return, but don't return true
+		// END THAT, AGAIN AGAIN //
+
+// STAR STUFF, ALMOST OVER //
+discordreturn:
 #ifdef HAVE_DISCORDRPC
-		DRPC_UpdatePresence(); // just in case: the threequel :)
+	DRPC_UpdatePresence();
 #endif
+	if (discordReturnTrue)
+		return true;
+// END THAT MESS, WE'RE FINALLY OVER //
+
 	}
 
 	return false;

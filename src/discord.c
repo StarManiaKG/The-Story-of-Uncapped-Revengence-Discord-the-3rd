@@ -51,6 +51,7 @@
 
 #define IP_SIZE 21 // length of IP strings
 
+static CV_PossibleValue_t discordinvites_cons_t[] = {{0, "Admins"}, {1, "Everyone"}, {2, "Server Only"}, {0, NULL}};
 static CV_PossibleValue_t statustype_cons_t[] = {
     {0, "Default"},
 
@@ -273,6 +274,7 @@ static CV_PossibleValue_t custommiscimage_cons_t[] = {
 consvar_t cv_discordrp = CVAR_INIT ("discordrp", "On", CV_SAVE|CV_CALL, CV_OnOff, Discord_option_Onchange);
 consvar_t cv_discordstreamer = CVAR_INIT ("discordstreamer", "Off", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
 consvar_t cv_discordasks = CVAR_INIT ("discordasks", "Yes", CV_SAVE|CV_CALL, CV_OnOff, Discord_option_Onchange);
+consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Everyone", CV_SAVE, discordinvites_cons_t, NULL);
 consvar_t cv_discordstatusmemes = CVAR_INIT ("discordstatusmemes", "Yes", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
 consvar_t cv_discordshowonstatus = CVAR_INIT ("discordshowonstatus", "Default", CV_SAVE|CV_CALL, statustype_cons_t, Discord_option_Onchange);
 consvar_t cv_discordcharacterimagetype = CVAR_INIT ("discordcharacterimagetype", "CS Portrait", CV_SAVE|CV_CALL, characterimagetype_cons_t, DRPC_UpdatePresence);
@@ -526,7 +528,7 @@ static void DRPC_HandleJoinRequest(const DiscordUser *requestUser)
 	}
 
 	// Made it to the end, request was valid, so play the request sound :)
-	S_StartSound(NULL, sfx_kc5d);
+	S_StartSound(NULL, DISCORD_RequestSFX);
 }
 
 /*--------------------------------------------------

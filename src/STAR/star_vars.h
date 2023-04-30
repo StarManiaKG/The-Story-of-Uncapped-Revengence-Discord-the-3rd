@@ -27,9 +27,26 @@
 // VARIABLES //
 extern boolean tsourdt3rd;
 
-// COMMANDS //
-extern consvar_t cv_soniccd;
-extern consvar_t cv_socksendlimit;
+extern boolean TSoURDt3rd_TouchyModifiedGame;
+extern boolean TSoURDt3rd_LoadedExtras;
+extern boolean TSoURDt3rd_NoMoreExtras;
+
+extern boolean checkedExtraWads;
+
+#ifdef HAVE_CURL
+extern boolean GrabbingTSoURDt3rdInfo;
+extern boolean NotifyAboutTSoURDt3rdUpdate;
+#endif
+
+// Sound Effects
+extern INT32 STAR_JoinSFX;
+extern INT32 STAR_LeaveSFX;
+extern INT32 STAR_SynchFailureSFX;
+
+extern INT32 DISCORD_RequestSFX;
+
+// Server
+extern INT32 reachedSockSendErrorLimit;
 
 // Time Over...
 extern const char gameoverMusic[7][7];
@@ -49,13 +66,20 @@ extern INT32 collectedmapeggs;
 extern INT32 currenteggs;
 extern INT32 numMapEggs;
 
+// COMMANDS //
+extern consvar_t cv_soniccd;
+extern consvar_t cv_tsourdt3rdupdatemessage;
+extern consvar_t cv_socksendlimit;
+
 // FUNCTIONS //
 // Savedata
 void STAR_WriteExtraData(void);
 void STAR_ReadExtraData(void);
 
 // Online
-void STAR_DoOnlineStuff(void);
-void STAR_GrabFromTsourdt3rdGithub(char *tsourdt3rdURL);
+#ifdef HAVE_CURL
+void STAR_FindAPI(const char *API);
+void STAR_GrabFromTsourdt3rdGithub(char *URL);
+#endif
 
 #endif // __STAR_VARS__

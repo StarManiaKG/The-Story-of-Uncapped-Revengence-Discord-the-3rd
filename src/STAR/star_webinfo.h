@@ -11,7 +11,7 @@
 ///        TSoURDt3rd's Web Data
 
 // Do not edit! Unless, of course, you know what you're doing, of course :)
-// This is needed by the online STAR functions, found in star_functions.c
+// This info is needed by the online STAR functions, found in star_functions.c.
 //
 
-#define TSOURDT3RDVERSION "2.5.1"
+#define TSOURDT3RDVERSION "2.6"

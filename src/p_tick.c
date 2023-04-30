@@ -851,8 +851,10 @@ void P_Ticker(boolean run)
 #endif
 
 		// Time Over...
-		if (((Playing() && !netgame) && (leveltime >= 20999 && AllowTypicalTimeOver))  	// one tic off so the timer doesn't display 10:00.00
+		if (((Playing() && leveltime >= 20999 && AllowTypicalTimeOver)					// one tic off so the timer doesn't display 10:00.00
 			 || (ForceTimeOver))														// here for lua purposes
+
+			 && (!netgame))																// no netgames
 		{
 			timeover = true;
 			
