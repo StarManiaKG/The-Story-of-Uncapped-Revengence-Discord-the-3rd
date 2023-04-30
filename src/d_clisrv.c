@@ -3921,7 +3921,10 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 	// DO STAR STUFF //
 	if (automapactive)
+	{
+		CONS_Alert(CONS_NOTICE, "A new node has joined, closing the automap to prevent a crash...\n");
 		AM_Stop();
+	}
 	// END THAT //
 
 #ifdef HAVE_DISCORDRPC
