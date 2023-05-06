@@ -803,14 +803,17 @@ void P_Ticker(boolean run)
 			G_GhostTicker();
 
 #ifdef HAVE_DISCORDRPC
-		if (gametyperules & GTR_POWERSTONES && all7matchemeralds)
-			emeraldtime++;	
-
-		if (emeraldtime == 20*TICRATE)
+		if (gametyperules & GTR_POWERSTONES)
 		{
-			all7matchemeralds = false;
-			emeraldtime = 0;
-			DRPC_UpdatePresence();
+			if (all7matchemeralds)
+				emeraldtime++;
+
+			if (emeraldtime == 20*TICRATE)
+			{
+				all7matchemeralds = false;
+				emeraldtime = 0;
+				DRPC_UpdatePresence();
+			}
 		}
 #endif
 

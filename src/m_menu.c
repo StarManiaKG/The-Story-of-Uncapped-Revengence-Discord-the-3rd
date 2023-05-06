@@ -89,6 +89,7 @@
 
 // STAR STUFF //
 #include "STAR/star_vars.h"
+#include "deh_soc.h"
 // END OF THAT //
 
 #define SKULLXOFF -32
@@ -2602,6 +2603,9 @@ static menuitem_t OP_MonitorToggleMenu[] =
 };
 
 #ifdef HAVE_DISCORDRPC
+// ================================ //
+// 		DISCORD OPTIONS lol			//
+// ================================ //
 static menuitem_t MISC_DiscordRequestsMenu[] =
 {
 	{IT_KEYHANDLER|IT_NOTHING, NULL, "", M_HandleDiscordRequests, 0},
@@ -2633,11 +2637,11 @@ static menuitem_t OP_DiscordOptionsMenu[] =
 	{IT_STRING | IT_CVAR,		        NULL, 	"L. Image Type",				&cv_customdiscordlargeimagetype,      104},
     {IT_STRING | IT_CVAR,		        NULL, 	"S. Image Type",				&cv_customdiscordsmallimagetype,      109},
 
-	{IT_STRING | IT_CVAR,		        NULL, 	"Large Image",					NULL, 								  119}, // Handled in discord_option_onchange
-	{IT_STRING | IT_CVAR,		        NULL, 	"Small Image",					NULL, 								  124}, // Also handled in discord_option_onchange
+	{IT_STRING | IT_CVAR,		        NULL, 	"L. Image",						NULL, 								  119}, // Handled in discord_option_onchange
+	{IT_STRING | IT_CVAR,		        NULL, 	"S. Image",						NULL, 								  124}, // Also handled in discord_option_onchange
 
-    {IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 	"Large Image Text",				&cv_customdiscordlargeimagetext,      134},
-    {IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 	"Small Image Text",				&cv_customdiscordsmallimagetext,      148},
+    {IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 	"L. Image Text",				&cv_customdiscordlargeimagetext,      134},
+    {IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 	"S. Image Text",				&cv_customdiscordsmallimagetext,      148},
 
     // Show Output Things
 	{IT_STRING | IT_SUBMENU,			NULL, 		"Show Output",				&OP_CustomStatusOutputDef,	          162},
@@ -2731,36 +2735,38 @@ static menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 																&cv_alwaysoverlayinvuln,  136+STAROPTIONREST},
 
 	{IT_HEADER, 			NULL, 	"Savedata Options", 		NULL, 					  145+STAROPTIONREST},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save", 			&cv_perfectsave, 		  151+STAROPTIONREST},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 1", 	&cv_perfectsavestripe1,	  156+STAROPTIONREST},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 2", 	&cv_perfectsavestripe2,   161+STAROPTIONREST},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 3", 	&cv_perfectsavestripe3,   166+STAROPTIONREST},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Store Saves in Folders", 	&cv_storesavesinfolders,  151+STAROPTIONREST},
+	
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save", 			&cv_perfectsave, 		  161+STAROPTIONREST},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 1", 	&cv_perfectsavestripe1,	  166+STAROPTIONREST},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 2", 	&cv_perfectsavestripe2,   171+STAROPTIONREST},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 3", 	&cv_perfectsavestripe3,   176+STAROPTIONREST},
 
-	{IT_STRING | IT_CVAR,	NULL,	"Continues",				&cv_continues,		  	  176+STAROPTIONREST},
+	{IT_STRING | IT_CVAR,	NULL,	"Continues",				&cv_continues,		  	  186+STAROPTIONREST},
 
-	{IT_HEADER, 			NULL, 	"Server Options", 			NULL,					  185+STAROPTIONREST},
+	{IT_HEADER, 			NULL, 	"Server Options", 			NULL,					  195+STAROPTIONREST},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,	
-							NULL,   "Holepunch Server",  		&cv_rendezvousserver,	  191+STAROPTIONREST},
+							NULL,   "Holepunch Server",  		&cv_rendezvousserver,	  201+STAROPTIONREST},
 	
-	{IT_STRING | IT_CVAR,   NULL,   "Show Connecting Players",  &cv_noticedownload,       205+STAROPTIONREST},
-	{IT_STRING | IT_CVAR,   NULL,   "Max File Transfer (KB)", 	&cv_maxsend,     	      210+STAROPTIONREST},
-	{IT_STRING | IT_CVAR,   NULL,   "File Transfer Packet Rate",&cv_downloadspeed,     	  215+STAROPTIONREST},
+	{IT_STRING | IT_CVAR,   NULL,   "Show Connecting Players",  &cv_noticedownload,       215+STAROPTIONREST},
+	{IT_STRING | IT_CVAR,   NULL,   "Max File Transfer (KB)", 	&cv_maxsend,     	      220+STAROPTIONREST},
+	{IT_STRING | IT_CVAR,   NULL,   "File Transfer Packet Rate",&cv_downloadspeed,     	  225+STAROPTIONREST},
 
-	{IT_STRING | IT_CVAR,   NULL,   "Sock Send Limit",			&cv_socksendlimit,     	  225+STAROPTIONREST},
-	{IT_STRING | IT_CVAR,   NULL,   "Player Setup While Moving",&cv_movingplayersetup,	  230+STAROPTIONREST},
+	{IT_STRING | IT_CVAR,   NULL,   "Sock Send Limit",			&cv_socksendlimit,     	  235+STAROPTIONREST},
+	{IT_STRING | IT_CVAR,   NULL,   "Player Setup While Moving",&cv_movingplayersetup,	  240+STAROPTIONREST},
 
-	{IT_HEADER, 			NULL, 	"Jukebox Options",     		NULL,					  239+STAROPTIONREST},
-	{IT_STRING | IT_CALL, 	NULL, 	"Enter Jukebox...",			M_Tsourdt3rdJukebox,   	  245+STAROPTIONREST},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Jukebox HUD",				&cv_jukeboxhud,   	      250+STAROPTIONREST},
+	{IT_HEADER, 			NULL, 	"Jukebox Options",     		NULL,					  249+STAROPTIONREST},
+	{IT_STRING | IT_CALL, 	NULL, 	"Enter Jukebox...",			M_Tsourdt3rdJukebox,   	  255+STAROPTIONREST},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Jukebox HUD",				&cv_jukeboxhud,   	      260+STAROPTIONREST},
 
-	{IT_STRING | IT_CVAR, 	NULL, 	"Lua Can Stop The Jukebox", &cv_luacanstopthejukebox, 260+STAROPTIONREST},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Lua Can Stop The Jukebox", &cv_luacanstopthejukebox, 270+STAROPTIONREST},
 
-	{IT_HEADER, 			NULL, 	"Miscellanious Extras",     NULL,					  269+STAROPTIONREST},
-	{IT_STRING | IT_CALL, 	NULL, 	"Play Snake",				STAR_InitializeSnakeMenu, 275+STAROPTIONREST},
-	{IT_STRING | IT_CALL,	NULL, 	"Dispenser Goin' Up",		STAR_SpawnDispenser,   	  280+STAROPTIONREST},
+	{IT_HEADER, 			NULL, 	"Miscellanious Extras",     NULL,					  279+STAROPTIONREST},
+	{IT_STRING | IT_CALL, 	NULL, 	"Play Snake",				STAR_InitializeSnakeMenu, 285+STAROPTIONREST},
+	{IT_STRING | IT_CALL,	NULL, 	"Dispenser Goin' Up",		STAR_SpawnDispenser,   	  290+STAROPTIONREST},
 	
-	{IT_DISABLED, 			NULL,   "Allow Easter Egg Hunt",    &cv_alloweasteregghunt,   290+STAROPTIONREST},
-	{IT_DISABLED, 			NULL,   "Easter Egg Hunt Bonuses",  &cv_easteregghuntbonuses, 295+STAROPTIONREST},
+	{IT_DISABLED, 			NULL,   "Allow Easter Egg Hunt",    &cv_alloweasteregghunt,   300+STAROPTIONREST},
+	{IT_DISABLED, 			NULL,   "Easter Egg Hunt Bonuses",  &cv_easteregghuntbonuses, 305+STAROPTIONREST},
 };
 static menuitem_t OP_Tsourdt3rdJukeboxMenu[] =
 {
@@ -2785,26 +2791,28 @@ enum
 
 	op_alwaysoverlayinvuln = 18+STARENUMADDITION,
 
-	op_perfectsave = 20+STARENUMADDITION,
+	op_storesavesinfolders = 20+STARENUMADDITION,
+
+	op_perfectsave,
 	op_perfectsavestripe1,
 	op_perfectsavestripe2,
 	op_perfectsavestripe3,
 
 	op_continues,
 
-	op_holepunchserver = 26+STARENUMADDITION,
+	op_holepunchserver = 27+STARENUMADDITION,
 	op_noticedownload,
 	op_maxsend,
 	op_downloadspeed,
 
 	op_movingplayeroptionswitch,
 
-	op_jukebox = 33+STARENUMADDITION,
+	op_jukebox = 34+STARENUMADDITION,
 	op_jukeboxhud,
 
 	op_luacanstopthejukebox,
 
-	op_snake = 37+STARENUMADDITION,
+	op_snake = 38+STARENUMADDITION,
 	op_dispensergoingup,
 
 	op_alloweasteregghunt,
@@ -3757,7 +3765,7 @@ void Discord_option_Onchange(void)
 			((cv_customdiscordlargeimagetype.value >= 3 && cv_customdiscordlargeimagetype.value <= 5) ? &cv_customdiscordlargesupercharacterimage :
 			
 			// Maps
-			(cv_customdiscordlargeimagetype.value == 3 ? &cv_customdiscordlargemapimage :
+			(cv_customdiscordlargeimagetype.value == 6 ? &cv_customdiscordlargemapimage :
 			
 			// Misc
 			&cv_customdiscordlargemiscimage)));
@@ -3770,7 +3778,7 @@ void Discord_option_Onchange(void)
 			((cv_customdiscordsmallimagetype.value >= 3 && cv_customdiscordsmallimagetype.value <= 5) ? &cv_customdiscordsmallsupercharacterimage :
 			
 			// Maps
-			(cv_customdiscordsmallimagetype.value == 3 ? &cv_customdiscordsmallmapimage :
+			(cv_customdiscordsmallimagetype.value == 6 ? &cv_customdiscordsmallmapimage :
 		
 			// Misc
 			&cv_customdiscordsmallmiscimage)));
@@ -3913,7 +3921,7 @@ static void STAR_AprilFools_OnChange(void)
 }
 #endif
 
-// Save
+// Savefiles
 static void STAR_PerfectSave_OnChange(void)
 {
 	OP_Tsourdt3rdOptionsMenu[op_perfectsavestripe1].status =
@@ -3924,7 +3932,7 @@ static void STAR_PerfectSave_OnChange(void)
 		((!(Playing() && playeringame[consoleplayer]) && cv_perfectsave.value) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
 }
 
-// Player
+// Players
 static void STAR_SuperWithShield_OnChange(void)
 {
 	if (netgame)
@@ -10777,6 +10785,12 @@ static void M_HandleLoadSave(INT32 choice)
 			break;
 
 		case KEY_ENTER:
+			// STAR STUFF //
+			if (savemoddata)
+				TSoURDt3rd_LoadedGamedataAddon = true;
+			STAR_SetSavefileProperties();
+			// END THAT, NOW DO THE NEXT THING //
+
 			if (ultimate_selectable && saveSlotSelected == NOSAVESLOT && !savemoddata && !modifiedgame)
 			{
 				loadgamescroll = 0;
@@ -11085,6 +11099,12 @@ static void M_HandleChoosePlayerMenu(INT32 choice)
 			break;
 
 		case KEY_ENTER:
+			// STAR STUFF //
+			if (savemoddata)
+				TSoURDt3rd_LoadedGamedataAddon = true;
+			STAR_SetSavefileProperties();
+			// END THAT, NOW DO THE REST //
+
 			S_StartSound(NULL, sfx_menu1);
 			char_scroll = 0; // finish scrolling the menu
 			M_DrawSetupChoosePlayerMenu(); // draw the finally selected character one last time for the fadeout
@@ -15854,6 +15874,9 @@ static void M_Tsourdt3rdOptions(INT32 choice)
 		((players[consoleplayer].powers[pw_invulnerability] && (players[consoleplayer].powers[pw_shield] & SH_NOSTACK) != SH_NONE) ? IT_GRAYEDOUT : IT_CVAR|IT_STRING);
 
 	// Savegame Options //
+	OP_Tsourdt3rdOptionsMenu[op_storesavesinfolders].status =
+		(!netgame ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+	
 	OP_Tsourdt3rdOptionsMenu[op_perfectsave].status =
 		(!(Playing() && playeringame[consoleplayer]) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
 	STAR_PerfectSave_OnChange();
@@ -15862,7 +15885,7 @@ static void M_Tsourdt3rdOptions(INT32 choice)
 		(!(Playing() && playeringame[consoleplayer]) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
 
 	// Server Options //
-	if ((splitscreen || (netgame && !server)) || currentMenu == &MP_SplitServerDef)
+	if (splitscreen || (netgame && !server))
 	{
 		OP_Tsourdt3rdOptionsMenu[op_holepunchserver].status = IT_GRAYEDOUT;
 		OP_Tsourdt3rdOptionsMenu[op_noticedownload].status = IT_GRAYEDOUT;

@@ -581,7 +581,10 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 	if (gamedataadded)
 	{
 		G_LoadGameData();
+
+		// STAR STUFF //
 		jukeboxUnlocked = false;
+		// MARKING STUFF IS FUN //
 	}
 
 	if (gamestate == GS_TITLESCREEN)

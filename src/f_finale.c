@@ -44,6 +44,11 @@
 #include "lua_hud.h"
 #include "lua_hook.h"
 
+// STAR STUFF //
+#include "STAR/star_vars.h"
+#include "deh_soc.h"
+// END THIS //
+
 // Stage of animation:
 // 0 = text, 1 = art screen
 INT32 finalecount;
@@ -1792,6 +1797,20 @@ void F_GameEvaluationTicker(void)
 
 			if (M_UpdateUnlockablesAndExtraEmblems())
 				S_StartSound(NULL, sfx_s3k68);
+			
+			// STAR STUFF //
+			if (cv_storesavesinfolders.value)
+			{
+				I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER, srb2home), 0755);
+				if (useTSOURDT3RDasFileName)
+				{
+					I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd", srb2home), 0755);
+					I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd" PATHSEP "%s", srb2home, timeattackfolder), 0755);
+				}
+				else
+					I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "%s", srb2home, timeattackfolder), 0755);
+			}
+			// END THAT //
 
 			G_SaveGameData();
 		}

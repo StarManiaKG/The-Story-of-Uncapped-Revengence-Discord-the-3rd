@@ -90,6 +90,7 @@
 
 // STAR STUFF, FOR FUNNIES //
 #include "STAR/star_vars.h"
+#include "deh_soc.h"
 // END THE STAR STUFF, FOR FUNNIES //
 
 //
@@ -4494,6 +4495,13 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	P_RunCachedActions();
 
 	P_MapEnd(); // tmthing is no longer needed from this point onwards
+
+	// STAR STUFF //
+	if (savemoddata)
+		TSoURDt3rd_LoadedGamedataAddon = true;
+	if (!netgame)
+		STAR_SetSavefileProperties();
+	// END THAT //
 
 	// Took me 3 hours to figure out why my progression kept on getting overwritten with the titlemap...
 	if (!titlemapinaction)

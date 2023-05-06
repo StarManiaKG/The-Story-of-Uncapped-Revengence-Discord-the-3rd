@@ -61,6 +61,7 @@
 
 // OTHER FUN STAR STUFF YAYAYSUHDUISHUIBHOUIHBDU()*FH*D(UIYVLBGUIYDG(UDOPBIYGD*OUFBHO(P))) //
 #include "STAR/star_vars.h"
+#include "deh_soc.h"
 
 // Main Build
 boolean tsourdt3rd = true;
@@ -3947,6 +3948,20 @@ static boolean CanSaveLevel(INT32 mapnum)
 
 static void G_HandleSaveLevel(void)
 {
+	// STAR STUFF //
+	if (cv_storesavesinfolders.value)
+	{
+		I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER, srb2home), 0755);
+		if (useTSOURDT3RDasFileName)
+		{
+			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd", srb2home), 0755);
+			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd" PATHSEP "%s", srb2home, timeattackfolder), 0755);
+		}
+		else
+			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "%s", srb2home, timeattackfolder), 0755);
+	}
+	// END THAT, AND NOW DO EVERYTHING ELSE //
+
 	// do this before running the intermission or custom cutscene, mostly for the sake of marathon mode but it also massively reduces redundant file save events in f_finale.c
 	if (nextmap >= 1100-1)
 	{
@@ -4244,6 +4259,20 @@ static void G_DoContinued(void)
 	tokenlist = 0;
 	token = 0;
 
+	// STAR STUFF //
+	if (cv_storesavesinfolders.value)
+	{
+		I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER, srb2home), 0755);
+		if (useTSOURDT3RDasFileName)
+		{
+			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd", srb2home), 0755);
+			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd" PATHSEP "%s", srb2home, timeattackfolder), 0755);
+		}
+		else
+			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "%s", srb2home, timeattackfolder), 0755);
+	}
+	// END THAT, NOW DO THE NEXT THING //
+
 	if (!(netgame || multiplayer || demoplayback || demorecording || metalrecording || modeattacking) && (!modifiedgame || savemoddata) && cursaveslot > 0)
 		G_SaveGameOver((UINT32)cursaveslot, true);
 
@@ -4508,6 +4537,10 @@ void G_SaveGameData(void)
 
 	if (modifiedgame && !savemoddata)
 	{
+		// STAR STUFF //
+		STAR_WriteExtraData();
+		// END MY DUMB STUFF //
+
 		free(savebuffer);
 		save_p = savebuffer = NULL;
 		return;
@@ -4608,7 +4641,7 @@ void G_SaveGameData(void)
 
 	// STAR STUFF //
 	STAR_WriteExtraData();
-	// END MY DUMB STUFF //
+	// VIVA LA AUTOLOADING //
 }
 
 #define VERSIONSIZE 16

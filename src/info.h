@@ -44,8 +44,6 @@ enum actionnum
 	A_FACETRACER,
 	A_SCREAM,
 	A_BOSSDEATH,
-	A_SETSHADOWSCALE,
-	A_SHADOWSCREAM,
 	A_CUSTOMPOWER,
 	A_GIVEWEAPON,
 	A_RINGBOX,
@@ -314,8 +312,6 @@ void A_FaceTarget();
 void A_FaceTracer();
 void A_Scream();
 void A_BossDeath();
-void A_SetShadowScale();
-void A_ShadowScream(); // MARIA!!!!!!
 void A_CustomPower(); // Use this for a custom power
 void A_GiveWeapon(); // Gives the player weapon(s)
 void A_RingBox(); // Obtained Ring Box Tails
