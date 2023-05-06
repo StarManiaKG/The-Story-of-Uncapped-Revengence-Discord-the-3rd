@@ -115,8 +115,6 @@ void A_GoldMonitorRestore(mobj_t *actor);
 void A_GoldMonitorSparkle(mobj_t *actor);
 void A_Explode(mobj_t *actor);
 void A_BossDeath(mobj_t *actor);
-void A_SetShadowScale(mobj_t *actor);
-void A_ShadowScream(mobj_t *actor);
 void A_CustomPower(mobj_t *actor);
 void A_GiveWeapon(mobj_t *actor);
 void A_RingBox(mobj_t *actor);
@@ -1525,14 +1523,6 @@ void A_JetJawChomp(mobj_t *actor)
 // var1 = unused
 // var2 = unused
 //
-
-// Function: A_PointyThink
-//
-// Description: Thinker function for Pointy
-//
-// var1 = unused
-// var2 = unused
-//
 void A_PointyThink(mobj_t *actor)
 {
 	INT32 i;
@@ -1643,6 +1633,7 @@ void A_PointyThink(mobj_t *actor)
 		ball->old_y = ball->y;
 		ball->old_z = ball->z;
 		// end of star's ball interpolation //
+		
 		P_SetThingPosition(ball);
 
 		ball = ball->tracer;
@@ -4208,40 +4199,6 @@ bossjustdie:
 			break;
 		}
 	}
-}
-
-// Function: A_SetShadowScale
-//
-// Description: Sets the target's shadowscale.
-//
-// var1 = new fixed_t shadowscale (default = FRACUNIT)
-// var2 = unused
-//
-void A_SetShadowScale(mobj_t *actor)
-{
-	INT32 locvar1 = var1;
-
-	if (LUA_CallAction(A_SETSHADOWSCALE, actor))
-		return;
-
-	actor->shadowscale = locvar1;
-}
-
-
-// Function: A_ShadowScream
-//
-// Description: Sets the target's shadowscale and starts the death sound of the object.
-//
-// var1 = new fixed_t shadowscale (default = FRACUNIT)
-// var2 = unused
-//
-void A_ShadowScream(mobj_t *actor)
-{
-	if (LUA_CallAction(A_SHADOWSCREAM, actor))
-		return;
-
-	A_SetShadowScale(actor);
-	A_Scream(actor);
 }
 
 // Function: A_CustomPower
@@ -7262,7 +7219,7 @@ void A_Boss2Chase(mobj_t *actor)
 	}
 	else
 	{
-		// Only speed up if you have the ambush flag.
+		// Only speed up if you have the ambush/'Deaf' flag.
 		if (actor->flags2 & MF2_AMBUSH)
 			speedvar = actor->health;
 		else
@@ -11712,7 +11669,7 @@ mobj_t *P_InternalFlickySpawn(mobj_t *actor, mobjtype_t flickytype, fixed_t momz
 		else
 		{
 			INT32 prandom = P_RandomKey(mapheaderinfo[gamemap-1]->numFlickies);
-			flickytype = (!cv_soniccd.value ? mapheaderinfo[gamemap-1]->flickies[prandom] : MT_SEED);
+			flickytype = (cv_soniccd.value ? MT_SEED : mapheaderinfo[gamemap-1]->flickies[prandom]);
 		}
 	}
 

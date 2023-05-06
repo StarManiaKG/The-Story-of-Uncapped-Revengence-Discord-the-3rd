@@ -79,9 +79,9 @@ static CV_PossibleValue_t customimagetype_cons_t[] = {
 	{1, "Continue Sprites"},
 	{2, "Life Icon Sprites"},
 
-	{3, "Super CS Portraits"},
-	{4, "Super Continue Sprites"},
-	{5, "Super Life Icon Sprites"},
+	{3, "S. CS Portraits"},
+	{4, "S. Continue Sprites"},
+	{5, "S. Life Icon Sprites"},
 
 	{6, "Maps"},
 	{7, "Miscellaneous"},

@@ -64,7 +64,7 @@
 
 //// STAR STUFF YAYA ////
 #include "STAR/star_vars.h"
-#include "doomstat.h" //useContinues
+#include "doomstat.h" // useContinues
 
 // STAR FUNCTIONS, GOTTA GEW FEST //
 //static void Got_Tsourdt3rdInfo(UINT8 **cp, INT32 playernum);
@@ -74,6 +74,7 @@ static void STAR_UseContinues_OnChange(void);
 // STAR COMMANDS I THINK //
 consvar_t cv_continues = CVAR_INIT ("continues", "Off", CV_SAVE|CV_CALL, CV_OnOff, STAR_UseContinues_OnChange);
 consvar_t cv_movingplayersetup = CVAR_INIT ("movingplayersetup", "Off", CV_SAVE, CV_OnOff, NULL);
+
 //// END OF THAT MESS ////
 
 // ------
@@ -1004,6 +1005,8 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_armageddonnukesuper);
 
 	CV_RegisterVar(&cv_alwaysoverlayinvuln);
+
+	CV_RegisterVar(&cv_storesavesinfolders);
 
 	CV_RegisterVar(&cv_perfectsave);
 	CV_RegisterVar(&cv_perfectsavestripe1);
@@ -4910,9 +4913,9 @@ static void Skin_OnChange(void)
 	// No Cheating in Race-Type Modes
 	if (gametyperules & GTR_RACE && (cv_movingplayersetup.value && P_PlayerMoving(consoleplayer)))
 	{
-		CONS_Printf("Nice try%s.\n",
+		CONS_Printf("Nice try, %s.\n",
 #ifdef HAVE_DISCORDRPC
-			(((strcmp(discordUserName, " ") == 0) || (strcmp(discordUserName, "  ") == 0)) ? ((Playing() ? player_names[consoleplayer] : cv_playername.string)) : va(", %s", discordUserName))
+			(((strcmp(discordUserName, " ") == 0) || (strcmp(discordUserName, "  ") == 0)) ? ((Playing() ? player_names[consoleplayer] : cv_playername.string)) : (discordUserName))
 #else
 			((Playing() ? player_names[consoleplayer] : cv_playername.string))
 #endif
@@ -4921,8 +4924,16 @@ static void Skin_OnChange(void)
 		return;
 	}
 
-	if (CanChangeSkin(consoleplayer) && (cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(consoleplayer))))
+	if ((CanChangeSkin(consoleplayer))
+		&& (cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(consoleplayer))))
+	{	
+		if (cv_movingplayersetup.value && P_PlayerMoving(consoleplayer))
+		{
+			player_t *player = &players[consoleplayer];
+			P_ResetPlayer(player);
+		}
 		SendNameAndColor();
+	}
 	else
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));
@@ -4943,9 +4954,9 @@ static void Skin2_OnChange(void)
 	// No Cheating in Race-Type Modes
 	if (gametyperules & GTR_RACE && (cv_movingplayersetup.value && P_PlayerMoving(secondarydisplayplayer)))
 	{
-		CONS_Printf("Nice try%s.\n",
+		CONS_Printf("Nice try %s's friend.\n",
 #ifdef HAVE_DISCORDRPC
-			(((strcmp(discordUserName, " ") == 0) || (strcmp(discordUserName, "  ") == 0)) ? ((Playing() ? player_names[secondarydisplayplayer] : cv_playername2.string)) : va(", %s's friend", discordUserName))
+			(((strcmp(discordUserName, " ") == 0) || (strcmp(discordUserName, "  ") == 0)) ? ((Playing() ? player_names[secondarydisplayplayer] : cv_playername2.string)) : (discordUserName))
 #else
 			((Playing() ? player_names[secondarydisplayplayer] : cv_playername2.string))
 #endif
@@ -4954,8 +4965,16 @@ static void Skin2_OnChange(void)
 		return;
 	}
 
-	if (CanChangeSkin(secondarydisplayplayer) && (cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(secondarydisplayplayer))))
+	if ((CanChangeSkin(secondarydisplayplayer))
+		&& (cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(secondarydisplayplayer))))
+	{	
+		if (cv_movingplayersetup.value && P_PlayerMoving(secondarydisplayplayer))
+		{
+			player_t *player2 = &players[secondarydisplayplayer];
+			P_ResetPlayer(player2);
+		}
 		SendNameAndColor2();
+	}
 	else
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));
@@ -4981,8 +5000,12 @@ static void Color_OnChange(void)
 			return;
 		}
 
-		if ((skincolors[players[consoleplayer].skincolor].accessible == true) && (cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(consoleplayer))))	
+		if ((cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(consoleplayer)))
+			&& (skincolors[players[consoleplayer].skincolor].accessible == true))	
+		{
+			// Color change menu scrolling fix is no longer necessary	
 			SendNameAndColor(); // Color change menu scrolling fix is no longer necessary
+		}
 		else
 		{
 			CV_StealthSetValue(&cv_playercolor,
@@ -5006,10 +5029,12 @@ static void Color2_OnChange(void)
 	}
 	else
 	{
-		if ((skincolors[players[secondarydisplayplayer].skincolor].accessible == true)
-			&& (cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(secondarydisplayplayer))))
-			
+		if ((cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(secondarydisplayplayer)))
+			&& (skincolors[players[secondarydisplayplayer].skincolor].accessible == true))
+		{
+			// Color change menu scrolling fix is no longer necessary
 			SendNameAndColor2(); // Color change menu scrolling fix is no longer necessary
+		}
 		else
 		{
 			CV_StealthSetValue(&cv_playercolor2,

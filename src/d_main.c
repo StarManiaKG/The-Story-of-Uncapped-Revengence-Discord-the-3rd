@@ -165,13 +165,22 @@ boolean doWarp;
 INT32 maptoLoadAfterAutoload;
 const char *mapNameToLoadAfterAutoload;
 
+boolean TSoURDt3rd_loadLastAddons;
+
 // Savefiles
-//char savegamefolder[256];
+consvar_t cv_storesavesinfolders = CVAR_INIT ("storesavesinfolders", "Off", CV_SAVE|CV_CALL, CV_OnOff, STAR_SetSavefileProperties);
+
+boolean useTSOURDT3RDasFileName;
+char savegamefolder[256];
 
 // Events
 boolean aprilfoolsmode; 		// April Fools Event Setter
 boolean eastermode;				// Easter Event Setter
 boolean xmasmode, xmasoverride;	// Christmas Event Setter
+
+// Define Other Random Things Up Here
+static inline void D_CleanFile(addfilelist_t *list);
+
 // END OF ALL THAT STAR STUFF //
 
 //
@@ -587,10 +596,13 @@ static void D_Display(void)
 			break;
 	}
 
+	// STAR STUFF //
 #ifdef APRIL_FOOLS
-	if (cv_ultimatemode.value && gamestate == (GS_ENDING|GS_CREDITS|GS_EVALUATION))
+	// Close the Game if We're on Ultimate Mode But We've Beaten the Game
+	if (cv_ultimatemode.value && (gamestate == (GS_ENDING|GS_CREDITS|GS_EVALUATION)))
 		I_Error("SIGSEGV - seventh sentinel (core dumped)");
 #endif
+	// WHY YOU DO BAD //
 
 	// STUPID race condition...
 	if (wipegamestate == GS_INTRO && gamestate == GS_TITLESCREEN)
@@ -1036,17 +1048,25 @@ void D_SRB2Loop(void)
 
 		// STAR STUFF //
 		// Do Basic Autoloading Stuff
-		if (autoloading)
+		if (autoloading && !netgame)
 		{
-			if (!netgame)
+			// Load the Other Mods That You Specified
+			if (startuppwads.numfiles && TSoURDt3rd_loadLastAddons)
 			{
-				if (modifiedgame)
-				{
-					autoloaded = true;
-					modifiedgame = false;
-				}
-				autoloading = false;
+				CONS_Printf("W_InitMultipleFiles(): Adding extra PWADs.\n");
+				W_InitMultipleFiles(&startuppwads);
+				D_CleanFile(&startuppwads);
+
+				TSoURDt3rd_loadLastAddons = false;
 			}
+
+			// Set Some Important Variables
+			if (modifiedgame)
+			{
+				autoloaded = true;
+				modifiedgame = false;
+			}
+			autoloading = false;
 		}
 
 		// Do Extra Autoloading Stuff
@@ -1086,8 +1106,8 @@ void D_SRB2Loop(void)
 			}
 		}
 
-		// Do April Fools Stuff
 #ifdef APRIL_FOOLS
+		// Do April Fools Stuff
 		if ((!modifiedgame || savemoddata) && (cv_ultimatemode.value))
 		{
 			CONS_Printf("You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nyour game has been set to modified.\n");
@@ -1141,6 +1161,15 @@ void D_SRB2Loop(void)
 			}
 		}
 #endif
+
+		// Load the Extra PK3
+		if (TSoURDt3rd_LoadExtras)
+		{
+			if (aprilfoolsmode || eastermode || xmasmode)
+				M_StartMessage(va("%c%s\x80\nTSoURDt3rd is having a seasonal event!\n\nWould you like to load tsourdt3rdextras.pk3 to engage in it? \n\n(Press 'Y' or 'Enter' for 'Yes', 'N' or any other key for 'No')\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "A TSoURDt3rd Event is Occuring"),STAR_Tsourdt3rdEventMessage,MM_YESNO);
+			else
+				COM_BufInsertText("addfile tsourdt3rdextras.pk3\n");
+		}
 
 		// Add What Extra Mods We Have Added to an Extra Interval, for Discord
 		if (!checkedExtraWads)
@@ -1355,6 +1384,7 @@ static void D_AutoLoadAddons(const char *file)
 	if (!newfile)
 		I_Error("D_AutoLoadAddons: No more free memory to autoload files");
 	autoloading = true;
+	useTSOURDT3RDasFileName = true;
 
 	strcpy(newfile, file);
 	COM_ImmedExecute(va("exec %s\n", newfile));
@@ -1483,13 +1513,8 @@ static void IdentifyVersion(void)
 	D_AddFile(&startupwadfiles, va(pandf,srb2waddir, "tsourdt3rd.pk3"));
 
 	// Add this custom build's extra fun stuff, using lock-on technology
-	if (M_CheckParm("-tsourdt3rd_lockonextras") || TSoURDt3rd_LoadExtras)
-	{
-		D_AddFile(&startupwadfiles, va(pandf,srb2waddir, "tsourdt3rdextras.pk3"));
-		
-		TSoURDt3rd_LoadExtras = false;
-		TSoURDt3rd_LoadedExtras = true;
-	}
+	if (M_CheckParm("-tsourdt3rd_lockonextras"))
+		TSoURDt3rd_LoadExtras = true;
 
 	// Add the music
 #if !defined (HAVE_SDL) || defined (HAVE_MIXER)
@@ -1601,10 +1626,6 @@ void D_SRB2Main(void)
 	if (devparm)
 		CONS_Printf(M_GetText("Development mode ON.\n"));
 
-	// default savegame
-	strcpy(savegamename, SAVEGAMENAME"%u.ssg");
-	strcpy(liveeventbackup, "live"SAVEGAMENAME".bkp"); // intentionally not ending with .ssg
-
 	{
 		const char *userhome = D_Home(); //Alam: path to home
 
@@ -1630,9 +1651,7 @@ void D_SRB2Main(void)
 			else
 				snprintf(configfile, sizeof configfile, "%s" PATHSEP CONFIGFILENAME, srb2home);
 
-			// can't use sprintf since there is %u in savegamename
-			strcatbf(savegamename, srb2home, PATHSEP);
-			strcatbf(liveeventbackup, srb2home, PATHSEP);
+			/* STAR NOTE: SAVEDATA STUFF IS NOW HANDLED IN STAR_SetSavefileProperties IN m_menu.c! */
 
 			snprintf(luafiledir, sizeof luafiledir, "%s" PATHSEP "luafiles", srb2home);
 #else // DEFAULTDIR
@@ -1643,9 +1662,7 @@ void D_SRB2Main(void)
 			else
 				snprintf(configfile, sizeof configfile, "%s" PATHSEP CONFIGFILENAME, userhome);
 
-			// can't use sprintf since there is %u in savegamename
-			strcatbf(savegamename, userhome, PATHSEP);
-			strcatbf(liveeventbackup, userhome, PATHSEP);
+			/* STAR NOTE: SAVEDATA STUFF IS NOW HANDLED IN STAR_SetSavefileProperties IN m_menu.c! */
 
 			snprintf(luafiledir, sizeof luafiledir, "%s" PATHSEP "luafiles", userhome);
 #endif // DEFAULTDIR
@@ -1751,12 +1768,8 @@ void D_SRB2Main(void)
 
 	// STAR STUFF //
 	W_VerifyFileMD5(4, ASSET_HASH_TSOURDT3RD_PK3); 				// tsourdt3rd.pk3
-	if (M_CheckParm("-tsourdt3rd_lockonextras"))
-		W_VerifyFileMD5(5, ASSET_HASH_TSOURDT3RD_EXTRAS_PK3); 	// tsourdt3rdextras.pk3
 #else
 	W_VerifyFileMD5(3, ASSET_HASH_TSOURDT3RD_PK3); 				// tsourdt3rd.pk3
-	if (M_CheckParm("-tsourdt3rd_lockonextras"))
-		W_VerifyFileMD5(4, ASSET_HASH_TSOURDT3RD_EXTRAS_PK3); 	// tsourdt3rdextras.pk3
 	// 0011001101010 //
 #endif
 #endif //ifndef DEVELOP
@@ -1803,11 +1816,17 @@ void D_SRB2Main(void)
 
 	CON_StopRefresh(); // Temporarily stop refreshing the screen for wad loading
 
+	// STAR NOTE: i've edited this lol
 	if (startuppwads.numfiles)
 	{
-		CONS_Printf("W_InitMultipleFiles(): Adding extra PWADs.\n");
-		W_InitMultipleFiles(&startuppwads);
-		D_CleanFile(&startuppwads);
+		if (!autoloading)
+		{
+			CONS_Printf("W_InitMultipleFiles(): Adding extra PWADs.\n");
+			W_InitMultipleFiles(&startuppwads);
+			D_CleanFile(&startuppwads);
+		}
+		else
+			TSoURDt3rd_loadLastAddons = true;
 	}
 
 	CON_StartRefresh(); // Restart the refresh!
@@ -2034,6 +2053,15 @@ void D_SRB2Main(void)
 		// STAR STUFF YAY //
 		if (autoloading)
 		{
+			// Load the Other Mods That You Specified
+			if (startuppwads.numfiles)
+			{
+				CONS_Printf("W_InitMultipleFiles(): Adding extra PWADs.\n");
+				W_InitMultipleFiles(&startuppwads);
+				D_CleanFile(&startuppwads);
+			}
+
+			// Set Some Important Variables
 			if (modifiedgame)
 				autoloaded = true;
 		}

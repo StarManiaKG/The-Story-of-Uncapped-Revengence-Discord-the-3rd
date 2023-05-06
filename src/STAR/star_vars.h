@@ -28,6 +28,7 @@
 extern boolean tsourdt3rd;
 
 extern boolean TSoURDt3rd_TouchyModifiedGame;
+extern boolean TSoURDt3rd_LoadExtras;
 extern boolean TSoURDt3rd_LoadedExtras;
 extern boolean TSoURDt3rd_NoMoreExtras;
 
@@ -75,6 +76,11 @@ extern consvar_t cv_socksendlimit;
 // Savedata
 void STAR_WriteExtraData(void);
 void STAR_ReadExtraData(void);
+
+void STAR_SetSavefileProperties(void);
+
+// Messages
+void STAR_Tsourdt3rdEventMessage(INT32 choice);
 
 // Online
 #ifdef HAVE_CURL

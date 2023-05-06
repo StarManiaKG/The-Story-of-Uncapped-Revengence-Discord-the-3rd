@@ -36,6 +36,8 @@
 
 // STAR STUFF //
 #include "STAR/star_vars.h"
+#include "d_main.h"
+#include "deh_soc.h"
 // END OF THAT //
 
 // CTF player names
@@ -2601,6 +2603,20 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				if (gameovermus) // Yousa dead now, Okieday? Tails 03-14-2000
 					S_ChangeMusicEx(gameoverMusic[cv_gameovermusic.value], 0, 0, 0, (2*MUSICRATE) - (MUSICRATE/25), 0); // 1.96 seconds
 					//P_PlayJingle(target->player, JT_GOVER); // can't be used because incompatible with track fadeout
+
+				// STAR STUFF //
+				if (cv_storesavesinfolders.value)
+				{
+					I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER, srb2home), 0755);
+					if (useTSOURDT3RDasFileName)
+					{
+						I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd", srb2home), 0755);
+						I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd" PATHSEP "%s", srb2home, timeattackfolder), 0755);
+					}
+					else
+						I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "%s", srb2home, timeattackfolder), 0755);
+				}
+				// END THAT //
 
 				if ((!(netgame || multiplayer || demoplayback || demorecording || metalrecording || modeattacking)
 					|| (!(target->player->lives <= 0) && timeover && !(netgame || multiplayer || demoplayback || demorecording || metalrecording || modeattacking)))

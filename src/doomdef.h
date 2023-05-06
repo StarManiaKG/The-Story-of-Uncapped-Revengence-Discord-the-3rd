@@ -657,6 +657,9 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 #undef UPDATE_ALERT
 #endif
 
+// STAR STUFF YAY //
+// STAR NOTE: SOME OF THESE MAY ALSO BE UNSTABLE TOO
+
 // Enable Alam's Lighting
 //#define ALAM_LIGHTING
 
@@ -664,15 +667,14 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 //#define _DEBUG
 //#define DEBUGFILE
 
-// STAR STUFF YAY //
 // Savefiles
-//#define SAVEGAMEFOLDER "SRB2" // barely does anything now, but is here for the future
+#define SAVEGAMEFOLDER "saves"
+extern char savegamefolder[256];
 
 // Events
 //#define APRIL_FOOLS			// enables april fools mode, but won't exist in the future, thanks to STAR_CheckTime
 
 // Extras
 //#define BLAME_SEV				// blames sev
-// END OF STAR STUFF //
 
 #endif // __DOOMDEF__

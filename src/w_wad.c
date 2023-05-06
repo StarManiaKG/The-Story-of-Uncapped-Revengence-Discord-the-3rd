@@ -85,6 +85,8 @@
 
 // STAR STUFF //
 #include "STAR/star_vars.h"
+#include "deh_soc.h"
+#include "v_video.h"
 // END THAT //
 
 
@@ -814,6 +816,19 @@ static UINT16 W_InitFileError (const char *filename, boolean exitworthy)
 	}
 	else
 		CONS_Printf(M_GetText("Errors occurred while loading %s; not added.\n"), filename);
+	
+	// STAR STUFF //
+	if (TSoURDt3rd_LoadExtras)
+	{
+		M_StartMessage(va("%c%s\x80\nWe weren't able to load tsourdt3rdextras.pk3\n\nEvents will not be started. \n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Couldn't Load tsourdt3rdextras.pk3"),NULL,MM_NOTHING);
+
+		aprilfoolsmode = false;
+		eastermode = false;
+		xmasmode = false;
+
+		TSoURDt3rd_LoadExtras = false;
+	}
+	// END THAT //
 	return INT16_MAX;
 }
 
@@ -938,6 +953,25 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 	// STAR NOTE: I EDITED THIS lol //
 	if (important && !mainfile)
 	{
+		if (TSoURDt3rd_LoadExtras)
+		{
+			if (aprilfoolsmode || eastermode || xmasmode)
+			{
+				if (eastermode && (!netgame && !TSoURDt3rd_TouchyModifiedGame))
+				{
+					CV_StealthSetValue(&cv_alloweasteregghunt, 1);
+					AllowEasterEggHunt = true;
+
+					M_UpdateEasterStuff();
+				}
+
+				STAR_ReadExtraData();
+			}
+
+			TSoURDt3rd_LoadedExtras = true;
+			TSoURDt3rd_LoadExtras = false;
+		}
+
 		if (!TSoURDt3rd_TouchyModifiedGame)
 		{
 			//G_SetGameModified(true);
@@ -1140,8 +1174,37 @@ UINT16 W_InitFolder(const char *path, boolean mainfile, boolean startup)
 		return W_InitFileError(path, startup);
 	}
 
+	// STAR NOTE: I DRASTICALLY EDITED THIS lol //
 	if (important && !mainfile)
-		G_SetGameModified(true);
+	{
+		if (TSoURDt3rd_LoadExtras)
+		{
+			if (aprilfoolsmode || eastermode || xmasmode)
+			{
+				if (eastermode && (!netgame && !TSoURDt3rd_TouchyModifiedGame))
+				{
+					CV_StealthSetValue(&cv_alloweasteregghunt, 1);
+					AllowEasterEggHunt = true;
+
+					M_UpdateEasterStuff();
+				}
+
+				STAR_ReadExtraData();
+			}
+
+			TSoURDt3rd_LoadedExtras = true;
+			TSoURDt3rd_LoadExtras = false;
+		}
+
+		if (!TSoURDt3rd_TouchyModifiedGame)
+		{
+			G_SetGameModified(true);
+			TSoURDt3rd_TouchyModifiedGame = true;
+		}
+		else
+			TSoURDt3rd_NoMoreExtras = true;
+	}
+	// END THAT DRASTICALLY EDITED STUFF lol //
 
 	wadfile = Z_Malloc(sizeof (*wadfile), PU_STATIC, NULL);
 	wadfile->filename = fn;

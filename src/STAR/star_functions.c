@@ -19,6 +19,8 @@
 #include "star_vars.h" 		// star variables
 #include "../m_menu.h" 		// egg variables
 #include "../d_main.h" 		// event variables
+#include "../deh_soc.h"		// savefile variables
+#include "../keys.h"		// key variables
 
 #include "../z_zone.h"		// memory variables
 
@@ -37,7 +39,7 @@
 
 // VARIABLES //
 #ifdef HAVE_CURL
-boolean GrabbingTSoURDt3rdInfo = true;
+boolean GrabbingTSoURDt3rdInfo;
 boolean NotifyAboutTSoURDt3rdUpdate = true;
 
 char *hms_tsourdt3rd_api;
@@ -116,6 +118,123 @@ void STAR_ReadExtraData(void)
     fclose(tsourdt3rdgamedata);
 }
 
+//
+// void STAR_SetSavefileProperties(void)
+// Sets the Current Savefile Name and Position
+//
+void STAR_SetSavefileProperties(void)
+{
+	// Make Some Variables //
+	INT32 i;
+
+	// Before we Start, Ensure Some Things //
+	if (netgame)
+	{
+		CONS_Printf("You can't change this while in a netgame.\n");
+		CV_StealthSetValue(&cv_storesavesinfolders, (!cv_storesavesinfolders.value ? 1 : 0));
+
+		return;
+	}
+
+	// Erase the Strings, Just in Case //
+	if (savegamename != NULL || liveeventbackup != NULL || savegamefolder != NULL)
+	{
+		for (i = 0; i < 256; i++)
+		{
+			if (savegamename[i] != '\0')
+				savegamename[i] = '\0';
+			if (liveeventbackup[i] != '\0')
+				liveeventbackup[i] = '\0';
+			if (savegamefolder[i] != '\0')
+				savegamefolder[i] = '\0';
+		}
+	}
+
+	// Make the Folder //
+	if (cv_storesavesinfolders.value)
+	{
+		I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER, srb2home), 0755);
+		if (useTSOURDT3RDasFileName)
+		{
+			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd", srb2home), 0755);
+			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd" PATHSEP "%s", srb2home, timeattackfolder), 0755);
+		}
+		else
+			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "%s", srb2home, timeattackfolder), 0755);
+	}
+
+	// Store our Folder Name in a Variable //
+	strcpy(savegamefolder, va(SAVEGAMEFOLDER PATHSEP "%s%s",
+		(useTSOURDT3RDasFileName ? ("TSoURDt3rd"PATHSEP) : ("")), timeattackfolder));
+	
+	// Store our Savefile Names in a Variable //
+	if (!TSoURDt3rd_LoadedGamedataAddon)
+	{
+		strcpy(savegamename, (useTSOURDT3RDasFileName ? ("tsourdt3rd_"SAVEGAMENAME"%u.ssg") : (SAVEGAMENAME"%u.ssg")));
+		strcpy(liveeventbackup, va("%slive"SAVEGAMENAME".bkp", (useTSOURDT3RDasFileName ? ("tsourdt3rd_") : ("")))); // intentionally not ending with .ssg
+	}
+	else
+	{
+		strcpy(savegamename,  va("%s%s", (useTSOURDT3RDasFileName ? ("tsourdt3rd_") : ("")), timeattackfolder));
+		strlcat(savegamename, "%u.ssg", sizeof(savegamename));
+
+		strcpy(liveeventbackup, va("%slive%s.bkp", (useTSOURDT3RDasFileName ? ("tsourdt3rd_") : ("")), timeattackfolder));
+	}
+
+	// Merge our Variables Together //
+	// NOTE: can't use sprintf since there is %u in savegamename
+#ifdef DEFAULTDIR
+	if (!cv_storesavesinfolders.value)
+	{
+		strcatbf(savegamename, srb2home, PATHSEP);
+		strcatbf(liveeventbackup, srb2home, PATHSEP);
+	}
+	else
+	{
+		strcatbf(savegamename, srb2home, va(PATHSEP"%s"PATHSEP, savegamefolder));
+		strcatbf(liveeventbackup, srb2home, va(PATHSEP"%s"PATHSEP, savegamefolder));
+	}
+
+#else
+
+	if (!cv_storesavesinfolders.value)
+	{
+		strcatbf(savegamename, userhome, PATHSEP);
+		strcatbf(liveeventbackup, userhome, PATHSEP);
+	}
+	else
+	{
+		strcatbf(savegamename, userhome, va(PATHSEP"%s"PATHSEP, savegamefolder));
+		strcatbf(liveeventbackup, userhome, va(PATHSEP"%s"PATHSEP, savegamefolder));
+	}
+#endif
+}
+
+// MESSAGE RELATED //
+
+//
+// void STAR_Tsourdt3rdEventMessage(INT32 choice)
+// Displays a Message on the Screen Asking About Engaging in TSoURDt3rd Events
+//
+void STAR_Tsourdt3rdEventMessage(INT32 choice)
+{
+	if (choice == 'y' || choice == KEY_ENTER)
+	{
+		S_StartSound(NULL, sfx_spdpad);
+		COM_BufInsertText("addfile tsourdt3rdextras.pk3\n");
+		
+		return;
+	}
+
+	S_StartSound(NULL, sfx_adderr);
+	aprilfoolsmode = false;
+	eastermode = false;
+	xmasmode = false;
+
+	TSoURDt3rd_LoadExtras = false;
+	return;
+}
+
 // ONLINE RELATED //
 
 //
@@ -171,6 +290,7 @@ void STAR_GrabFromTsourdt3rdGithub(char *URL)
 
 	char *tsourdt3rdIdentifyLine;
 
+	GrabbingTSoURDt3rdInfo = true;
 	if (curl && hms_tsourdt3rd_api != NULL)
 	{
 		strcpy(outfilename, va("%s"PATHSEP"%s", srb2home, "tsourdt3rdwebinfo.html"));

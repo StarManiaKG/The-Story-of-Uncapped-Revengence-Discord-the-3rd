@@ -47,6 +47,10 @@
 #include "deh_lua.h" // included due to some LUA_SetLuaAction hack smh
 #include "deh_tables.h"
 
+// STAR STUFF //
+#include "STAR/star_vars.h"
+boolean TSoURDt3rd_LoadedGamedataAddon;
+// END THAT STUFF //
 
 // Loops through every constant and operation in word and performs its calculations, returning the final value.
 fixed_t get_number(const char *word)
@@ -3840,6 +3844,20 @@ void readmaincfg(MYFILE *f)
 				if (!GoodDataFileName(word2))
 					I_Error("Maincfg: bad data file name '%s'\n", word2);
 
+				// STAR STUFF: EXTRA EDITION //
+				if (cv_storesavesinfolders.value)
+				{
+					I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER, srb2home), 0755);
+					if (useTSOURDT3RDasFileName)
+					{
+						I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd", srb2home), 0755);
+						I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd" PATHSEP "%s", srb2home, timeattackfolder), 0755);
+					}
+					else
+						I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "%s", srb2home, timeattackfolder), 0755);
+				}
+				// END THE EXTRA FUN STUFF //
+
 				G_SaveGameData();
 				strlcpy(gamedatafilename, word2, sizeof (gamedatafilename));
 				strlwr(gamedatafilename);
@@ -3852,11 +3870,24 @@ void readmaincfg(MYFILE *f)
 
 				strcpy(savegamename, timeattackfolder);
 				strlcat(savegamename, "%u.ssg", sizeof(savegamename));
-				// can't use sprintf since there is %u in savegamename
-				strcatbf(savegamename, srb2home, PATHSEP);
 
-				strcpy(liveeventbackup, va("live%s.bkp", timeattackfolder));
-				strcatbf(liveeventbackup, srb2home, PATHSEP);
+				// STAR NOTE: the rest of this is edited lol
+				if (!cv_storesavesinfolders.value)
+				{
+					strcpy(liveeventbackup, va("live%s.bkp", timeattackfolder));
+
+					// can't use sprintf since there is %u in savegamename
+					strcatbf(savegamename, srb2home, PATHSEP);
+					strcatbf(liveeventbackup, srb2home, PATHSEP);
+				}
+				
+				// MORE STAR STUFF //
+				else
+				{
+					TSoURDt3rd_LoadedGamedataAddon = true;
+					STAR_SetSavefileProperties();
+				}
+				// END THAT //
 
 				gamedataadded = true;
 				titlechanged = true;

@@ -66,3 +66,7 @@ extern boolean doWarp;                  // Star: Autoloading into Maps
 extern boolean aprilfoolsmode; 		    // April Fools Event Setter
 extern boolean eastermode;				// Easter Event Setter
 extern boolean xmasmode, xmasoverride;	// Christmas Event Setter
+
+// Savefiles
+extern consvar_t cv_storesavesinfolders;
+extern boolean useTSOURDT3RDasFileName;
