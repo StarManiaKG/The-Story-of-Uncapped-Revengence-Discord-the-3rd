@@ -4847,6 +4847,8 @@ const char *const MENUTYPES_LIST[] = {
 #endif
 
 	// FUN STAR STUFF //
+	"TSOURDT3RD_README",
+	
 	"OP_TSOURDT3RD",
 	
 	"OP_TSOURDT3RD_JUKEBOX",

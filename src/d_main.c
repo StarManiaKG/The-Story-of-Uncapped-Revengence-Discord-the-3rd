@@ -157,6 +157,8 @@ boolean TSoURDt3rd_LoadExtras;
 boolean TSoURDt3rd_LoadedExtras;
 boolean TSoURDt3rd_NoMoreExtras;
 
+boolean TSoURDt3rd_CheckedVersion; // Needed for the Version Checking Stuff in D_SRB2Loop()
+
 // Autoloading
 boolean autoloading;
 boolean autoloaded;
@@ -1140,25 +1142,22 @@ void D_SRB2Loop(void)
 		}
 
 #ifdef HAVE_CURL
-		// Grab TSoURDt3rd Stuff From Online
-		if (GrabbingTSoURDt3rdInfo)
+		// Grab the Current Version of TSoURDt3rd
+		// STAR NOTE: If You're Planning on Making Something Like This, Use This as an Example :)
+		if (!TSoURDt3rd_CheckedVersion)
 		{
+			// Print Words
+			CONS_Printf("STAR_GrabStringFromWebsite(): Grabbing current version...\n");
+
+			// Make Some Variables
 			const char *API = "https://raw.githubusercontent.com/StarManiaKG/The-Story-of-Uncapped-Revengence-Discord-the-3rd/";
 			char URL[256] = "main/src/STAR/star_webinfo.h";
-
-			STAR_FindAPI(API);
-			STAR_GrabFromTsourdt3rdGithub(URL);
-		}
-
-		// Notify the User About Things lol
-		else
-		{
-			if (NotifyAboutTSoURDt3rdUpdate)
-			{	
-				if (cv_tsourdt3rdupdatemessage.value)
-					M_StartMessage(va("%c%s\x80\nYou're using an outdated version of TSoURDt3rd.\n\nCheck the SRB2 Message Board for the latest version! \n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Update TSoURDt3rd, Please"),NULL,MM_NOTHING);
-				NotifyAboutTSoURDt3rdUpdate = false;
-			}
+			char INFO[256]; strcpy(INFO, va("#define TSOURDT3RDVERSION \"%s\"", TSOURDT3RDVERSION));
+			
+			// Run the Function
+			if (!STAR_GrabStringFromWebsite(API, URL, INFO, false) && cv_tsourdt3rdupdatemessage.value)
+				M_StartMessage(va("%c%s\x80\nYou're using an outdated version of TSoURDt3rd.\n\nCheck the SRB2 Message Board for the latest version! \n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Update TSoURDt3rd, Please"),NULL,MM_NOTHING);
+			TSoURDt3rd_CheckedVersion = true;
 		}
 #endif
 

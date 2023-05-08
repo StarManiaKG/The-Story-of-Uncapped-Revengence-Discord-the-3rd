@@ -362,6 +362,8 @@ menu_t OP_SoundAdvancedDef;
 
 // STAR THINGS YAY OR SOMETHING IDK ANYMORE //
 // main build menu
+menu_t OP_Tsourdt3rdReadMeDef;
+
 menu_t OP_Tsourdt3rdOptionsDef;
 menu_t OP_Tsourdt3rdJukeboxDef;
 void M_ResetJukebox(void);
@@ -406,6 +408,10 @@ static patch_t *addonsp[NUM_EXT+5];
 
 // STAR STUFF WEEEE //
 // main build menu stuff
+static void M_Tsourdt3rdReadMe(INT32 choice);
+static void M_DrawTsourdt3rdReadMe(void);
+static void M_HandleTsourdt3rdReadMe(INT32 choice);
+
 static void M_Tsourdt3rdOptions(INT32 choice);
 
 // jukebox stuff
@@ -779,6 +785,10 @@ static menuitem_t MainMenu[] =
 	{IT_CALL   |IT_STRING, NULL, "Add-ons",      M_Addons,               100},
 	{IT_STRING|IT_CALL,    NULL, "Options",     M_Options,              108},
 	{IT_STRING|IT_CALL,    NULL, "Quit  Game",  M_QuitSRB2,             116},
+
+	// STAR STUFF //
+	{IT_STRING|IT_CALL,    NULL, "READ ME!", 	M_Tsourdt3rdReadMe,     132},
+	// READ ME? MORE LIKE AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA //
 };
 
 typedef enum
@@ -2695,6 +2705,12 @@ enum
 #endif
 
 // Main Build Menu
+static menuitem_t OP_Tsourdt3rdReadMeMenu[] =
+{
+	{IT_KEYHANDLER | IT_STRING,
+							NULL, 	"", 						M_HandleTsourdt3rdReadMe,	0},
+};
+
 static menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 {
 	{IT_HEADER, 			NULL, 	"Game Options", 			NULL, 					  	0},
@@ -3447,6 +3463,19 @@ menu_t OP_EraseDataDef = DEFAULTMENUSTYLE(
 
 // main build options stuff //
 // main stuff
+menu_t OP_Tsourdt3rdReadMeDef =
+{
+	MN_TSOURDT3RD_README,
+	NULL,
+	sizeof (OP_Tsourdt3rdReadMeMenu)/sizeof (menuitem_t),
+	&MainDef,
+	OP_Tsourdt3rdReadMeMenu,
+	M_DrawTsourdt3rdReadMe,
+	30, 30,
+	0,
+	NULL
+};
+
 menu_t OP_Tsourdt3rdOptionsDef = DEFAULTSCROLLMENUSTYLE(
 	MTREE2(MN_OP_MAIN, MN_OP_TSOURDT3RD),
 	"M_TSOURDT3RD", OP_Tsourdt3rdOptionsMenu, &OP_MainDef, 30, 30);
@@ -3888,6 +3917,8 @@ static void STAR_AprilFools_ChangeMenus(void)
 		MainMenu[3].text = "Mods";
 		MainMenu[4].text = "Settings";
 		MainMenu[5].text = "EXIT TO DOS";
+
+		MainMenu[6].text = "DOOM EASTER EGG THING!";
 	}
 	else
 	{
@@ -3898,6 +3929,8 @@ static void STAR_AprilFools_ChangeMenus(void)
 		MainMenu[3].text = "Add-ons";
 		MainMenu[4].text = "Options";
 		MainMenu[5].text = "Quit Game";
+
+		MainMenu[6].text = "READ ME!";
 	}
 }
 
@@ -15622,7 +15655,7 @@ void M_QuitResponse(INT32 ch)
 		ptime = I_GetTime() + NEWTICRATE*2; // Shortened the quit time, used to be 2 seconds Tails 03-26-2001
 		while (ptime > I_GetTime())
 		{
-			// STAR NOTE: HI! I EDITED THIS FUNCTION, LOL
+			// STAR NOTE: HI! I EDITED THIS FUNCTION, lol
 			V_DrawScaledPatch(0, 0, 0, W_CachePatchName(quitGraphic[cv_quitscreen.value], PU_PATCH));
 			if (cv_quitscreen.value)
 				V_DrawScaledPatch(0, 0, 0, W_CachePatchName("TGSNBS", PU_PATCH));
@@ -15642,8 +15675,9 @@ static void M_QuitSRB2(INT32 choice)
 	// between 1 and maximum number.
 	(void)choice;
 
-	// Do Star Stuff //
+	// STAR STUFF //
 	STAR_QuitStuff();
+	// DID IT lol //
 
 	M_StartMessage(quitmsg[RandomMessage], M_QuitResponse, MM_YESNO);
 }
@@ -15857,6 +15891,69 @@ boolean jukeboxMenuOpen;
 boolean jukeboxUnlocked;
 
 // Main Menu
+static void M_Tsourdt3rdReadMe(INT32 choice)
+{
+	(void)choice;
+	M_SetupNextMenu(&OP_Tsourdt3rdReadMeDef);
+}
+
+static void M_DrawTsourdt3rdReadMe(void)
+{
+	// Make Variables //
+	UINT16 i;
+	fixed_t y = 30<<FRACBITS;
+
+	static const char *TSoURDt3rd_credits[] = {
+		"\1TSoURDt3rd Team",
+		"StarManiaKG \"Star\"",
+		"Mini the Bunnyboy \"Talis\"",
+		"",
+		"\1TSoURDt3rd Extras",
+		"Speccy - Emotional Support, Ideas",
+		"	(She Also Formed the Idea of This Menu)",
+		"",
+		"Zeno/Uukoo/Fen - Emotional Support, Ideas",
+		"NARBluebear - Emotional Support",
+		"\"Future\" Smiles \"The Fox\" - Emotional Support",
+		"\"Team Comet\" - Emotional Support",
+		"",
+		"\1In Loving Memory Of",
+		"MarioMario \"Sapphire\" - TSoURDt3rd Team Member"
+	};
+
+	// Run Extra Things //
+	V_DrawFadeScreen(0xFF00, 16);
+
+	// Draw Strings //
+	for (i = 0; TSoURDt3rd_credits[i]; i++)
+	{
+		switch(TSoURDt3rd_credits[i][0])
+		{
+			case 1:
+				V_DrawCreditString(45, y, 0, TSoURDt3rd_credits[i]);
+				y += 24<<FRACBITS;
+				break;
+
+			default:
+				V_DrawStringAtFixed(30, y, V_ALLOWLOWERCASE, TSoURDt3rd_credits[i]);
+				y += 8<<FRACBITS;
+				break;
+		}
+	}
+}
+
+static void M_HandleTsourdt3rdReadMe(INT32 choice)
+{
+	// Close the Menu //
+	if (choice == KEY_ESCAPE)
+	{
+		if (currentMenu->prevMenu)
+			M_SetupNextMenu(currentMenu->prevMenu);
+		else
+			M_ClearMenus(true);
+	}
+}
+
 static void M_Tsourdt3rdOptions(INT32 choice)
 {
 	(void)choice;

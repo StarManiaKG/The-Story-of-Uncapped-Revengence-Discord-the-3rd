@@ -1316,7 +1316,7 @@ static const char *credits[] = {
 	"",
 	"\1TSoURDt3rd Extras",
 	"Speccy - Emotional Support, Ideas",
-	"Zeno/Uukoo - Emotional Support",
+	"Zeno/Uukoo/Fen - Emotional Support, Ideas",
 	"NARBluebear - Emotional Support",
 	"Smiles \"The Fox\" - Emotional Support",
 	"\"Team Comet\" - Emotional Support",

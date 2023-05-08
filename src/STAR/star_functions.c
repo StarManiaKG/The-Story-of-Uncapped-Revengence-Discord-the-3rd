@@ -21,6 +21,7 @@
 #include "../d_main.h" 		// event variables
 #include "../deh_soc.h"		// savefile variables
 #include "../keys.h"		// key variables
+#include "../v_video.h"		// video variables
 
 #include "../z_zone.h"		// memory variables
 
@@ -39,9 +40,6 @@
 
 // VARIABLES //
 #ifdef HAVE_CURL
-boolean GrabbingTSoURDt3rdInfo;
-boolean NotifyAboutTSoURDt3rdUpdate = true;
-
 char *hms_tsourdt3rd_api;
 
 #ifdef HAVE_THREADS
@@ -52,8 +50,7 @@ static I_mutex hms_tsourdt3rd_api_mutex;
 // COMMANDS //
 consvar_t cv_tsourdt3rdupdatemessage = CVAR_INIT ("tsourdt3rdupdatemessage", "On", CV_SAVE, CV_OnOff, NULL);
 
-// SAVEDATA RELATED //
-
+// SAVEDATA //
 //
 // void STAR_WriteExtraData(void)
 // Writes Extra Gamedata to tsourdt3rd.dat
@@ -210,14 +207,14 @@ void STAR_SetSavefileProperties(void)
 #endif
 }
 
-// MESSAGE RELATED //
-
+// MESSAGES //
 //
 // void STAR_Tsourdt3rdEventMessage(INT32 choice)
 // Displays a Message on the Screen Asking About Engaging in TSoURDt3rd Events
 //
 void STAR_Tsourdt3rdEventMessage(INT32 choice)
 {
+	// Yes //
 	if (choice == 'y' || choice == KEY_ENTER)
 	{
 		S_StartSound(NULL, sfx_spdpad);
@@ -226,6 +223,7 @@ void STAR_Tsourdt3rdEventMessage(INT32 choice)
 		return;
 	}
 
+	// No //
 	S_StartSound(NULL, sfx_adderr);
 	aprilfoolsmode = false;
 	eastermode = false;
@@ -235,8 +233,7 @@ void STAR_Tsourdt3rdEventMessage(INT32 choice)
 	return;
 }
 
-// ONLINE RELATED //
-
+// ONLINE INFO //
 //
 // static void STAR_SetAPI(char *API)
 // Sets the Website API to Use
@@ -260,8 +257,11 @@ static void STAR_SetAPI(char *API)
 // void STAR_FindAPI(const char *API)
 // Finds the Specified Website API
 //
+// STAR NOTE: THIS MUST BE RAN BEFORE STAR_GrabStringFromWebsite()
+//
 void STAR_FindAPI(const char *API)
 {
+	// Find Our Website //
 #ifdef HAVE_THREADS
 	I_spawn_thread(
 			"grab-tsourdt3rd-stuff",
@@ -274,11 +274,12 @@ void STAR_FindAPI(const char *API)
 }
 
 //
-// void STAR_GrabFromTsourdt3rdGithub(char *URL)
-// Try to Grab Extra Info From the Github of TSoURDt3rd
+// boolean STAR_GrabStringFromWebsite(const char *API, char *URL, char *INFO, boolean verbose)
+// Try to Grab Info From Websites, Returns 'true' if it Does
 //
-void STAR_GrabFromTsourdt3rdGithub(char *URL)
+boolean STAR_GrabStringFromWebsite(const char *API, char *URL, char *INFO, boolean verbose)
 {
+	// Make Variables //
 	CURL *curl = curl_easy_init();
 	CURLcode res;
 	
@@ -288,48 +289,65 @@ void STAR_GrabFromTsourdt3rdGithub(char *URL)
 	char finalURL[256];
 	char finalINFO[256];
 
-	char *tsourdt3rdIdentifyLine;
+	// Create the File //
+	strcpy(outfilename, va("%s"PATHSEP"%s", srb2home, "tsourdt3rd_webinfo.html"));
+	fp = fopen(outfilename, "w+");
 
-	GrabbingTSoURDt3rdInfo = true;
-	if (curl && hms_tsourdt3rd_api != NULL)
-	{
-		strcpy(outfilename, va("%s"PATHSEP"%s", srb2home, "tsourdt3rdwebinfo.html"));
-		fp = fopen(outfilename, "w+");
-		
-		snprintf(finalURL, 256, "%s%s", hms_tsourdt3rd_api, URL);
-	
+	// Find the API //
+	while (hms_tsourdt3rd_api == NULL)
+		STAR_FindAPI(API);
+
+	// Print Words //
+	if (verbose)
+		CONS_Printf("STAR_GrabStringFromWebsite(): Attempting to grab string %s from website %s using provided api %s...\n", INFO, URL, API);
+
+	// Do Our Website Stuffs //
+	if (curl)
+	{	
+		// Combine the Website Strings
+		snprintf(finalURL, 256, "%s%s", API, URL);
+			
+		// Grab the Info
 		fseek(fp, 0, SEEK_SET);
 		curl_easy_setopt(curl, CURLOPT_URL, finalURL);
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
-       	curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
-       	
-       	res = curl_easy_perform(curl);
-       	if (res != CURLE_OK)
-	   		CONS_Printf("curl_easy_perform(): Failed to Grab TSoURDt3rd Web Info.\n");
-	  	else
-	  	{
-			tsourdt3rdIdentifyLine = va("#define TSOURDT3RDVERSION \"%s\"", TSOURDT3RDVERSION);
-			
+		curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+		
+		// Use CURL to Perform Actions
+		res = curl_easy_perform(curl);
+		if (res != CURLE_OK)
+			CONS_Printf("STAR_GrabStringFromWebsite() - curl_easy_perform(): Failed to grab website info.\n");
+		else
+		{
+			// Read Strings
 			fseek(fp, 0, SEEK_SET);
 			while (fgets(finalINFO, 256, fp) != NULL)
 			{
 				fread(finalINFO, 0, 0, fp);
 				
-				if (NotifyAboutTSoURDt3rdUpdate && fasticmp(finalINFO, tsourdt3rdIdentifyLine))
+				if (fastcmp(finalINFO, INFO))
 				{
-					NotifyAboutTSoURDt3rdUpdate = false;
-					break;
+					// Close the File, End Curl, and We're Done :)
+					if (verbose)
+						CONS_Printf("STAR_GrabStringFromWebsite(): Found the info!\n");
+					fclose(fp);
+		
+					remove(outfilename);
+					curl_easy_cleanup(curl);
+
+					return true;
 				}
 			}
-	  	}
-	  	fclose(fp);
-
-		remove(outfilename);
-		curl_easy_cleanup(curl);
-		
-		GrabbingTSoURDt3rdInfo = false;
+		}
 	}
-	else if (!curl)
-		GrabbingTSoURDt3rdInfo = false;
+
+	// We Failed Somewhere, but we Still Have to Close the File and End Curl //
+	fclose(fp);
+		
+	remove(outfilename);
+	curl_easy_cleanup(curl);
+
+	return false;
 }
+
 #endif // HAVE_CURL
