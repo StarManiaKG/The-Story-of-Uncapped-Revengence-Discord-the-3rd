@@ -34,11 +34,6 @@ extern boolean TSoURDt3rd_NoMoreExtras;
 
 extern boolean checkedExtraWads;
 
-#ifdef HAVE_CURL
-extern boolean GrabbingTSoURDt3rdInfo;
-extern boolean NotifyAboutTSoURDt3rdUpdate;
-#endif
-
 // Sound Effects
 extern INT32 STAR_JoinSFX;
 extern INT32 STAR_LeaveSFX;
@@ -85,7 +80,7 @@ void STAR_Tsourdt3rdEventMessage(INT32 choice);
 // Online
 #ifdef HAVE_CURL
 void STAR_FindAPI(const char *API);
-void STAR_GrabFromTsourdt3rdGithub(char *URL);
+boolean STAR_GrabStringFromWebsite(const char *API, char *URL, char *INFO, boolean verbose);
 #endif
 
 #endif // __STAR_VARS__
