@@ -21,7 +21,7 @@
 #define SRB2_COMP_REVISION    "${SRB2_COMP_REVISION}"
 #define SRB2_COMP_BRANCH      "${SRB2_COMP_BRANCH}"
 
-#define CMAKE_ASSETS_DIR      "${CMAKE_SOURCE_DIR}/assets/TSoURDt3RD-Assets"
+#define CMAKE_ASSETS_DIR      "${CMAKE_SOURCE_DIR}/assets"
 
 #else
 
@@ -52,6 +52,7 @@
  * Last updated 2023 / 05 / 06 - TSOURDT3RD v2.2.10 - removed md5 checking for tsourdt3rdextras.pk3
  * Last updated 2023 / 05 / 07 - TSOURDT3RD v2.2.10 - added a little graphic
  * Last updated 2023 / 05 / 08 - TSOURDT3RD v2.2.10 - removed that little graphic
+ * Last updated 2023 / 05 / 13 - TSOURDT3RD v2.2.10 - removed the assets from the repository. thanks for the heads up in that one commit, bitten
 */
 #define ASSET_HASH_SRB2_PK3   "ad911f29a28a18968ee5b2d11c2acb39"
 #define ASSET_HASH_ZONES_PK3  "86ae55cae4e0a93ceda868635706a093"

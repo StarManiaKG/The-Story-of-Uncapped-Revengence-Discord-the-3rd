@@ -26,6 +26,8 @@ set(SRB2_CONFIG_HAVE_DISCORDRPC OFF CACHE BOOL
 	"Enable Discord rich presence support.")
 set(SRB2_CONFIG_HAVE_DISCORDGAMESDK OFF CACHE BOOL
 	"Enable Discord Game SDK support.")
+set(SRB2_CONFIG_HAVE_LIBAV OFF CACHE BOOL
+	"Enable TSoURDt3rd's MP4 support.")
 set(SRB2_CONFIG_HAVE_CURL ON CACHE BOOL
 	"Enable curl support.")
 set(SRB2_CONFIG_HAVE_THREADS ON CACHE BOOL
@@ -110,6 +112,28 @@ if(${SRB2_CONFIG_HAVE_DISCORDRPC})
 		target_sources(SRB2SDL2 PRIVATE discord.c discord.h stun.c stun.h)
 	else()
 		message(WARNING "You have specified that Discord Rich Presence is available but it was not found.")
+	endif()
+endif()
+
+if(${SRB2_CONFIG_HAVE_LIBAV})
+	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
+		set(LIBAV_FOUND ON)
+		if(${SRB2_SYSTEM_BITS} EQUAL 64)
+			set(LIBAV_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/libav/x86_64-w64-mingw32/include)
+			set(LIBAV_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/libav/x86_64-w64-mingw32/lib -llibav")
+		else() # 32-bit
+			set(LIBAV_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/libav/i686-w64-mingw32/include)
+			set(LIBAV_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/libav/i686-w64-mingw32/lib -llibav")
+		endif()
+	else()
+		find_package(LibAV)
+	endif()
+	if(${LIBAV_FOUND})
+		set(SRB2_HAVE_LIBAV ON)
+		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_LIBAV)
+		target_sources(SRB2SDL2 PRIVATE libav.c libav.h)
+	else()
+		message(WARNING "You have specified that LibAV is avaliable but it was not found.")
 	endif()
 endif()
 
