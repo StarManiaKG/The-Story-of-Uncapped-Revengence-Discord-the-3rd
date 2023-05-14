@@ -91,14 +91,14 @@ static CV_PossibleValue_t customimagetype_cons_t[] = {
 // Characters //
 static CV_PossibleValue_t customcharacterimage_cons_t[] = {
     // Vanilla Chars
-    {0, "Default"}, // does ghost sonic count as a vanilla char? maybe.
+    {0, "Default"},			// ...Does ghost sonic count as a vanilla char? Maybe.
     {1, "Sonic"},
     {2, "Tails"},
     {3, "Knuckles"},
     {4, "Amy"},
     {5, "Fang"},
     {6, "Metal Sonic"},
-    {7, "Sonic & Tails"}, // Bots, am I right?
+    {7, "Sonic & Tails"}, 	// Bots, am I right?
     
 	// Custom Chars
     {8, "Adventure Sonic"},
@@ -714,7 +714,7 @@ void DRPC_UpdatePresence(void)
 
 	char servertype[15+10] = "";
 
-	//nerd emoji moment
+	// nerd emoji moment //
 	char detailGrammar[1+2] = "";
 	
 	char stateGrammar[2+2] = "";
@@ -735,11 +735,11 @@ void DRPC_UpdatePresence(void)
 	char gameType[2+3+8+9] = "";
 
 	char charImageType[2+2+1] = "";
-	// end of nerd emojis
+	// end of the nerd emoji moment //
 
 	static const char *supportedSkins[] = {
 		// Vanilla Chars
-		"custom",
+		"custom",		// ...Does ghost sonic count as a vanilla char? Maybe.
 
 		"sonic",
 
@@ -749,7 +749,7 @@ void DRPC_UpdatePresence(void)
 		"fang",
 		"metalsonic",
 		
-		"sonictails",
+		"sonictails",	// Bots, am I right?
 		
 		// Custom Chars
 		"adventuresonic",
@@ -773,14 +773,14 @@ void DRPC_UpdatePresence(void)
 		"hexhog",
 
 		// My Friendos' Chars
-		"speccy",
+		"speccy",		// Spec Spec is my Friendo
 		NULL
 	};
 
 	static const char *supportedSuperSkins[] = {
 		// Vanilla Chars
 		"sonic", "supersonic",
-		"sonictails",
+		"sonictails",			// Bots, am I right?
 		NULL
 	};
 
@@ -935,7 +935,9 @@ void DRPC_UpdatePresence(void)
 		NULL
 	};
 
-	/*static const char *customStringLink[] = {
+	/*
+	// STAR NOTE: I Might Have a Better Idea for This, Actually
+	static const char *customStringLink[] = {
 		// Statuses
 		"#s",
 		"#j",
@@ -946,8 +948,8 @@ void DRPC_UpdatePresence(void)
 	};*/
 
 	// Counters
-	INT32 i = 0;
-	UINT8 emeraldCount = 0; // Helps Me To Find The Emeralds
+	INT32 i = 0;					// General Iterator
+	UINT8 emeraldCount = 0;			// Helps Me To Find The Emeralds
 
 	INT32 checkSkin = 0; 			// Checks Through The Consoleplayer's Skin
 	INT32 checkSuperSkin = 0;		// Checks Through The Consoleplayer's Super Skin
@@ -967,20 +969,18 @@ void DRPC_UpdatePresence(void)
 	DiscordRichPresence discordPresence;
 	memset(&discordPresence, 0, sizeof(discordPresence));
 
-	////// 	  DEDICATED SERVER ONE LINER 	 //////
-	if (dedicated)
-		return; 	// Sorry Boss, That's As Far As You're Going.
-
-	////// 	  DEVMODE/NO STATUS? 	 //////
-	if (!cv_discordrp.value || devmode)
+	////// 	  NO STATUS?/DEVMODE/DEDICATED 	 //////
+	if ((!cv_discordrp.value)	// Since The User Doesn't Want To Show Their Status, This Just Shows That They're Playing SRB2. (If that's too much, then they should just disable game activity :V)
+		|| (devmode)			// Enabled the DEVELOP flag? Let Them Cook Then :P
+		|| (dedicated))			// Dedicated Servers Deserve Love Too
 	{
-		// Since The User Doesn't Want To Show Their Status, This Just Shows That They're Playing SRB2. (If that's too much, then they should just disable game activity :V)
-		// However, Now it also shows a few predetermined states, based on whether you have Discord RPC off or have enabled the DEVELOP flag, thanks to Star :)
 		discordPresence.largeImageKey = (devmode ? "mapcustom" : "misctitle");
 		discordPresence.largeImageText = (devmode ? "Hey! No Peeking!" : "Sonic Robo Blast 2");
 		
 		discordPresence.details = (devmode ? "Developing a Masterpiece" : "In Game");
-		discordPresence.state = (devmode ? "Keep your Eyes Peeled!" : (paused ? "Currently Paused" : ((menuactive || !Playing() ? "In The Menu" : "Actively Playing"))));
+		discordPresence.state = (devmode ? "Keep your Eyes Peeled!" :
+									(dedicated ? "Hosting a Dedicated Server" :
+									(paused ? "Currently Paused" : ((menuactive || !Playing() ? "In The Menu" : "Actively Playing")))));
 
 		DRPC_EmptyRequests();
 		Discord_UpdatePresence(&discordPresence);
@@ -1134,7 +1134,7 @@ void DRPC_UpdatePresence(void)
 					strcpy(detailGrammar, ", ");
 				
 				if (gamecomplete) // You've Beaten the Game? You Get A Special Status Then!
-					strlcat(detailstr, va("%sHas Beaten the Game" , detailGrammar), 128);
+					strlcat(detailstr, va("%sHas Beaten the Game", detailGrammar), 128);
 			}
 		}
 	}
@@ -1224,21 +1224,21 @@ void DRPC_UpdatePresence(void)
 		else if (gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || (gamestate == GS_TITLESCREEN || titlemapinaction))
 		{
 			// Map Images (Now With More Specificness)
-			if ((gamemap >= 1 && gamemap <= 16) 	// Supported Co-op Maps (GFZ-RVZ1)
-			|| (gamemap >= 22 && gamemap <= 23) 	// Supported Co-op Maps (ERZ1-ERZ2)
-			|| (gamemap >= 25 && gamemap <= 27) 	// Supported Co-op Maps (BCZ1-BCZ3)
+			if ((gamemap >= 1 && gamemap <= 16) 		// Supported Co-op Maps (GFZ-RVZ1)
+				|| (gamemap >= 22 && gamemap <= 23) 	// Supported Co-op Maps (ERZ1-ERZ2)
+				|| (gamemap >= 25 && gamemap <= 27) 	// Supported Co-op Maps (BCZ1-BCZ3)
 
-			|| (gamemap >= 30 && gamemap <= 33) 	// Supported Extra Maps
-			|| (gamemap >= 40 && gamemap <= 42) 	// Supported Advanced Maps
+				|| (gamemap >= 30 && gamemap <= 33) 	// Supported Extra Maps
+				|| (gamemap >= 40 && gamemap <= 42) 	// Supported Advanced Maps
 
-			|| (gamemap >= 50 && gamemap <= 57) 	// Supported Singleplayer NiGHTS Stages
-			|| (gamemap >= 60 && gamemap <= 66) 	// Supported Co-op Special Stages
-			|| (gamemap >= 70 && gamemap <= 73) 	// Supported Bonus NiGHTS Stages
+				|| (gamemap >= 50 && gamemap <= 57) 	// Supported Singleplayer NiGHTS Stages
+				|| (gamemap >= 60 && gamemap <= 66) 	// Supported Co-op Special Stages
+				|| (gamemap >= 70 && gamemap <= 73) 	// Supported Bonus NiGHTS Stages
 
-			|| (gamemap >= 280 && gamemap <= 288) 	// Supported CTF Maps
-			|| (gamemap >= 532 && gamemap <= 543) 	// Supported Match Maps
+				|| (gamemap >= 280 && gamemap <= 288) 	// Supported CTF Maps
+				|| (gamemap >= 532 && gamemap <= 543) 	// Supported Match Maps
 
-			|| (gamemap == 1000))					// Tutorial Zone
+				|| (gamemap == 1000))					// Tutorial Zone
 			{
 				strcpy(mapimg, va("%s", G_BuildMapName(gamemap)));
 				strlwr(mapimg);
@@ -1504,6 +1504,7 @@ void DRPC_UpdatePresence(void)
 	if (!joinSecretSet)
 		DRPC_EmptyRequests();
 
+	// Finally Push Our Status and Finish Everything! //
 	Discord_UpdatePresence(&discordPresence);
 }
 
@@ -1511,8 +1512,8 @@ void DRPC_UpdatePresence(void)
 	void DRPC_Shutdown(void)
 
 		Clears Everything Related to Discord
-		Rich Presence. Only Runs On Game Close
-		or Crash.
+		Rich Presence. Only Runs When the
+		Game Closes or Crashes.
 
 	Input Arguments:-
 		None

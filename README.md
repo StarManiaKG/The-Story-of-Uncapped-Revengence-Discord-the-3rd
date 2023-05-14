@@ -128,9 +128,7 @@
   - SDL-Mixer-X (Advanced Sound/MIDI Support and Options; Windows Included, Mac/Linux users can find/compile them [here](https://github.com/WohlSoft/SDL-Mixer-X))
 
 ## Assets
-All of the following assets can be found in the "assets" folder of this repository, under a folder with the name "TSOURDT3RD-Assets".
-
-![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/assets.png?raw=true)
+All of the following assets can be found in the current zip file of TSoURDt3rd, found on the SRB2 Message Board [here](https://mb.srb2.org/addons/the-story-of-uncapped-revengence-discord-the-3rd.4932/download).
 
 **REQUIRED ASSETS**
   - srb2.pk3
