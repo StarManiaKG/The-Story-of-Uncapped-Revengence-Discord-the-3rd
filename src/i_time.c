@@ -24,7 +24,7 @@
 timestate_t g_time;
 
 static CV_PossibleValue_t timescale_cons_t[] = {{FRACUNIT/20, "MIN"}, {20*FRACUNIT, "MAX"}, {0, NULL}};
-consvar_t cv_timescale = CVAR_INIT ("timescale", "1.0", /*CV_NETVAR*/CV_CHEAT|CV_FLOAT, timescale_cons_t, NULL); // STAR NOTE: MAKE THIS A NETVAR ONCE 2.2.11 IS OFFICIALLY OUT
+consvar_t cv_timescale = CVAR_INIT ("timescale", "1.0", CV_NETVAR|CV_CHEAT|CV_FLOAT, timescale_cons_t, NULL);
 
 static precise_t enterprecise, oldenterprecise;
 static fixed_t entertic, oldentertics;
@@ -43,18 +43,20 @@ tic_t I_GetTime(void)
 
 void I_InitializeTime(void)
 {
-	g_time.time = 0;
-	g_time.timefrac = 0;
-
-	enterprecise = 0;
-	oldenterprecise = 0;
-	tictimer = 0.0;
-
 	CV_RegisterVar(&cv_timescale);
 
 	// I_StartupTimer is preserved for potential subsystems that need to setup
 	// timing information for I_GetPreciseTime and sleeping
 	I_StartupTimer();
+
+	g_time.time = 0;
+	g_time.timefrac = 0;
+
+	enterprecise = I_GetPreciseTime();
+	oldenterprecise = enterprecise;
+	entertic = 0;
+	oldentertics = 0;
+	tictimer = 0.0;
 }
 
 void I_UpdateTime(fixed_t timescale)

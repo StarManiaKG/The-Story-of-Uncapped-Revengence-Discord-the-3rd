@@ -31,17 +31,7 @@
 #include <stdint.h>
 #endif
 
-#define UINT8 unsigned __int8
 #define SINT8 signed __int8
-
-#define UINT16 unsigned __int16
-#define INT16 __int16
-
-#define INT32 __int32
-#define UINT32 unsigned __int32
-
-#define INT64  __int64
-#define UINT64 unsigned __int64
 
 typedef long ssize_t;
 
@@ -106,6 +96,9 @@ typedef long ssize_t;
 
 char *strcasestr(const char *in, const char *what);
 #define stristr strcasestr
+
+int startswith (const char *base, const char *tag);
+int endswith (const char *base, const char *tag);
 
 #if defined (macintosh) //|| defined (__APPLE__) //skip all boolean/Boolean crap
 	#define true 1

@@ -95,10 +95,14 @@ static void ReconfigureViaVertexes (pslope_t *slope, const vector3_t v1, const v
 static void ReconfigureViaConstants (pslope_t *slope, const fixed_t a, const fixed_t b, const fixed_t c, const fixed_t d)
 {
 	fixed_t m;
+	fixed_t o = 0;
 	vector3_t *normal = &slope->normal;
 
+	if (c)
+		o = abs(c) <= FRACUNIT ? -FixedMul(d, FixedDiv(FRACUNIT, c)) : -FixedDiv(d, c);
+
 	// Set origin.
-	FV3_Load(&slope->o, 0, 0, c ? -FixedDiv(d, c) : 0);
+	FV3_Load(&slope->o, 0, 0, o);
 
 	// Get slope's normal.
 	FV3_Load(normal, a, b, c);
@@ -169,11 +173,13 @@ void T_DynamicSlopeVert (dynplanethink_t* th)
 	size_t i;
 	INT32 l;
 
-	for (i = 0; i < 3; i++) {
-		l = Tag_FindLineSpecial(799, th->tags[i]);
-		if (l != -1) {
-			th->vex[i].z = lines[l].frontsector->floorheight;
-		}
+	for (i = 0; i < 3; i++)
+	{
+		if (!th->secs[i])
+			continue;
+
+		if (th->relative & (1 << i))
+			th->vex[i].z = th->origvecheights[i] + (th->secs[i]->floorheight - th->origsecheights[i]);
 		else
 			th->vex[i].z = 0;
 	}
@@ -206,6 +212,25 @@ static inline void P_AddDynSlopeThinker (pslope_t* slope, dynplanetype_t type, l
 	R_CreateInterpolator_DynSlope(&th->thinker, slope);
 }
 
+static inline void P_AddDynVertexSlopeThinker (pslope_t* slope, const INT16 tags[3], const vector3_t vx[3])
+{
+	dynvertexplanethink_t* th = Z_Calloc(sizeof (*th), PU_LEVSPEC, NULL);
+	size_t i;
+	INT32 l;
+	th->thinker.function.acp1 = (actionf_p1)T_DynamicSlopeVert;
+	th->slope = slope;
+
+	for (i = 0; i < 3; i++) {
+		l = Tag_FindLineSpecial(799, tags[i]);
+		th->secs[i] = (l == -1) ? NULL : lines[l].frontsector;
+		th->vex[i] = vx[i];
+		th->origsecheights[i] = (l == -1) ? 0 : lines[l].frontsector->floorheight;
+		th->origvecheights[i] = vx[i].z;
+		if (l != -1 && lines[l].args[0])
+			th->relative |= 1<<i;
+	}
+	P_AddThinker(THINK_DYNSLOPE, &th->thinker);
+}
 
 /// Create a new slope and add it to the slope list.
 static inline pslope_t* Slope_Add (const UINT8 flags)

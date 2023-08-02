@@ -104,6 +104,8 @@
 #include <io.h>
 #endif
 
+FILE *fopenfile(const char*, const char*);
+
 //#define NOMD5
 
 // Uncheck this to compile debugging code
@@ -150,7 +152,7 @@ extern char logfilename[1024];
 
 // Does this version require an added patch file?
 // Comment or uncomment this as necessary.
-// #define USE_PATCH_DTA
+#define USE_PATCH_DTA
 
 // Enforce a limit of loaded WAD files.
 //#define ENFORCE_WAD_LIMIT

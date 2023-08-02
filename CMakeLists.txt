@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 
+if("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+	message(FATAL_ERROR "In-source builds are blocked. Please build from a separate directory.")
+endif()
+
 # Set up CMAKE path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
@@ -63,17 +67,35 @@ cmake_dependent_option(
 )
 option(SRB2_CONFIG_HWRENDER "Enable hardware render (OpenGL) support" ON)
 option(SRB2_CONFIG_STATIC_OPENGL "Enable static linking GL (do not do this)" OFF)
+option(SRB2_CONFIG_ERRORMODE "Compile C code with warnings treated as errors." OFF)
+option(SRB2_CONFIG_DEBUGMODE "Compile with PARANOIA, ZDEBUG, RANGECHECK and PACKETDROP defined." OFF)
+option(SRB2_CONFIG_MOBJCONSISTANCY "Compile with MOBJCONSISTANCY defined." OFF)
+option(SRB2_CONFIG_PACKETDROP "Compile with PACKETDROP defined." OFF)
+option(SRB2_CONFIG_ZDEBUG "Compile with ZDEBUG defined." OFF)
+# SRB2_CONFIG_PROFILEMODE is probably superceded by some CMake setting.
+option(SRB2_CONFIG_PROFILEMODE "Compile for profiling (GCC only)." OFF)
+set(SRB2_CONFIG_ASSET_DIRECTORY "" CACHE PATH "Path to directory that contains all asset files for the installer. If set, assets will be part of installation and cpack.")
 
-# Enable CCache early
-set(SRB2_USE_CCACHE OFF CACHE BOOL "Use CCache")
-if (${SRB2_USE_CCACHE})
-	find_program(CCACHE_PROGRAM ccache)
-	if(CCACHE_PROGRAM)
-		message(STATUS "Found CCache: ${CCACHE_PROGRAM}")
-		set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
-	else()
-		message(WARNING "You have specified to use CCACHE but it was not found. Object files will not be cached.")
+# Enable CCache
+# (Set USE_CCACHE=ON to use, CCACHE_OPTIONS for options)
+if("${CMAKE_HOST_SYSTEM_NAME}" STREQUAL Windows)
+	option(USE_CCACHE "Enable ccache support" OFF)
+
+	if(USE_CCACHE)
+		find_program(CCACHE_TOOL_PATH ccache)
+		if(CCACHE_TOOL_PATH)
+			set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE_TOOL_PATH} CACHE STRING "" FORCE)
+			set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_TOOL_PATH} CACHE STRING "" FORCE)
+		else()
+			message(WARNING "USE_CCACHE was set but ccache is not found (set CCACHE_TOOL_PATH)")
+		endif()
 	endif()
+else()
+	CPMAddPackage(
+		NAME Ccache.cmake
+		GITHUB_REPOSITORY TheLartians/Ccache.cmake
+		VERSION 1.2
+	)
 endif()
 
 # Dependencies

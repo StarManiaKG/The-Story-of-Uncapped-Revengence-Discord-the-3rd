@@ -395,8 +395,8 @@ static void R_AddLine(seg_t *line)
 		return;
 
 	// big room fix
-	angle1 = R_PointToAngleEx(viewx, viewy, line->v1->x, line->v1->y);
-	angle2 = R_PointToAngleEx(viewx, viewy, line->v2->x, line->v2->y);
+	angle1 = R_PointToAngle64(line->v1->x, line->v1->y);
+	angle2 = R_PointToAngle64(line->v2->x, line->v2->y);
 	curline = line;
 
 	// Clip to view edges.
@@ -616,8 +616,8 @@ static boolean R_CheckBBox(const fixed_t *bspcoord)
 	check = checkcoord[boxpos];
 
 	// big room fix
-	angle1 = R_PointToAngleEx(viewx, viewy, bspcoord[check[0]], bspcoord[check[1]]) - viewangle;
-	angle2 = R_PointToAngleEx(viewx, viewy, bspcoord[check[2]], bspcoord[check[3]]) - viewangle;
+	angle1 = R_PointToAngle64(bspcoord[check[0]], bspcoord[check[1]]) - viewangle;
+	angle2 = R_PointToAngle64(bspcoord[check[2]], bspcoord[check[3]]) - viewangle;
 
 	if ((signed)angle1 < (signed)angle2)
 	{
@@ -931,7 +931,7 @@ static void R_Subsector(size_t num)
 
 		for (rover = frontsector->ffloors; rover && numffloors < MAXFFLOORS; rover = rover->next)
 		{
-			if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_RENDERPLANES))
+			if (!(rover->fofflags & FOF_EXISTS) || !(rover->fofflags & FOF_RENDERPLANES))
 				continue;
 
 			if (frontsector->cullheight)
@@ -951,8 +951,8 @@ static void R_Subsector(size_t num)
 			planecenterz = P_GetFFloorBottomZAt(rover, frontsector->soundorg.x, frontsector->soundorg.y);
 			if (planecenterz <= ceilingcenterz
 				&& planecenterz >= floorcenterz
-				&& ((viewz < heightcheck && (rover->flags & FF_BOTHPLANES || !(rover->flags & FF_INVERTPLANES)))
-				|| (viewz > heightcheck && (rover->flags & FF_BOTHPLANES || rover->flags & FF_INVERTPLANES))))
+				&& ((viewz < heightcheck && (rover->fofflags & FOF_BOTHPLANES || !(rover->fofflags & FOF_INVERTPLANES)))
+				|| (viewz > heightcheck && (rover->fofflags & FOF_BOTHPLANES || rover->fofflags & FOF_INVERTPLANES))))
 			{
 				light = R_GetPlaneLight(frontsector, planecenterz,
 					viewz < heightcheck);
@@ -981,8 +981,8 @@ static void R_Subsector(size_t num)
 			planecenterz = P_GetFFloorTopZAt(rover, frontsector->soundorg.x, frontsector->soundorg.y);
 			if (planecenterz >= floorcenterz
 				&& planecenterz <= ceilingcenterz
-				&& ((viewz > heightcheck && (rover->flags & FF_BOTHPLANES || !(rover->flags & FF_INVERTPLANES)))
-				|| (viewz < heightcheck && (rover->flags & FF_BOTHPLANES || rover->flags & FF_INVERTPLANES))))
+				&& ((viewz > heightcheck && (rover->fofflags & FOF_BOTHPLANES || !(rover->fofflags & FOF_INVERTPLANES)))
+				|| (viewz < heightcheck && (rover->fofflags & FOF_BOTHPLANES || rover->fofflags & FOF_INVERTPLANES))))
 			{
 				light = R_GetPlaneLight(frontsector, planecenterz, viewz < heightcheck);
 
@@ -1118,11 +1118,11 @@ void R_Prep3DFloors(sector_t *sector)
 	count = 1;
 	for (rover = sector->ffloors; rover; rover = rover->next)
 	{
-		if ((rover->flags & FF_EXISTS) && (!(rover->flags & FF_NOSHADE)
-			|| (rover->flags & FF_CUTLEVEL) || (rover->flags & FF_CUTSPRITES)))
+		if ((rover->fofflags & FOF_EXISTS) && (!(rover->fofflags & FOF_NOSHADE)
+			|| (rover->fofflags & FOF_CUTLEVEL) || (rover->fofflags & FOF_CUTSPRITES)))
 		{
 			count++;
-			if (rover->flags & FF_DOUBLESHADOW)
+			if (rover->fofflags & FOF_DOUBLESHADOW)
 				count++;
 		}
 	}
@@ -1153,8 +1153,8 @@ void R_Prep3DFloors(sector_t *sector)
 		for (rover = sector->ffloors; rover; rover = rover->next)
 		{
 			rover->lastlight = 0;
-			if (!(rover->flags & FF_EXISTS) || (rover->flags & FF_NOSHADE
-				&& !(rover->flags & FF_CUTLEVEL) && !(rover->flags & FF_CUTSPRITES)))
+			if (!(rover->fofflags & FOF_EXISTS) || (rover->fofflags & FOF_NOSHADE
+				&& !(rover->fofflags & FOF_CUTLEVEL) && !(rover->fofflags & FOF_CUTSPRITES)))
 			continue;
 
 			heighttest = P_GetFFloorTopZAt(rover, sector->soundorg.x, sector->soundorg.y);
@@ -1166,7 +1166,7 @@ void R_Prep3DFloors(sector_t *sector)
 				bestslope = *rover->t_slope;
 				continue;
 			}
-			if (rover->flags & FF_DOUBLESHADOW) {
+			if (rover->fofflags & FOF_DOUBLESHADOW) {
 				heighttest = P_GetFFloorBottomZAt(rover, sector->soundorg.x, sector->soundorg.y);
 
 				if (heighttest > bestheight
@@ -1187,16 +1187,16 @@ void R_Prep3DFloors(sector_t *sector)
 
 		sector->lightlist[i].height = maxheight = bestheight;
 		sector->lightlist[i].caster = best;
-		sector->lightlist[i].flags = best->flags;
+		sector->lightlist[i].flags = best->fofflags;
 		sector->lightlist[i].slope = bestslope;
 		sec = &sectors[best->secnum];
 
-		if (best->flags & FF_NOSHADE)
+		if (best->fofflags & FOF_NOSHADE)
 		{
 			sector->lightlist[i].lightlevel = sector->lightlist[i-1].lightlevel;
 			sector->lightlist[i].extra_colormap = sector->lightlist[i-1].extra_colormap;
 		}
-		else if (best->flags & FF_COLORMAPONLY)
+		else if (best->fofflags & FOF_COLORMAPONLY)
 		{
 			sector->lightlist[i].lightlevel = sector->lightlist[i-1].lightlevel;
 			sector->lightlist[i].extra_colormap = &sec->extra_colormap;
@@ -1207,7 +1207,7 @@ void R_Prep3DFloors(sector_t *sector)
 			sector->lightlist[i].extra_colormap = &sec->extra_colormap;
 		}
 
-		if (best->flags & FF_DOUBLESHADOW)
+		if (best->fofflags & FOF_DOUBLESHADOW)
 		{
 			heighttest = P_GetFFloorBottomZAt(best, sector->soundorg.x, sector->soundorg.y);
 			if (bestheight == heighttest) ///TODO: do this in a more efficient way -Red

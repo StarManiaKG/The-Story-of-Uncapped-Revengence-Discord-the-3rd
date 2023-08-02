@@ -129,6 +129,8 @@ if(${SDL2_FOUND})
 	endif()
 
 	#target_link_libraries(SRB2SDL2 PRIVATE SRB2Core)
+endif()
+
 
 	if(${SRB2_USEASM})
 		if(${SRB2_CONFIG_YASM})

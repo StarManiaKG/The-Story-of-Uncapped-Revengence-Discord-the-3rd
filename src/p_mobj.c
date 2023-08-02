@@ -961,11 +961,11 @@ void P_ExplodeMissile(mobj_t *mo)
 boolean P_InsideANonSolidFFloor(mobj_t *mobj, ffloor_t *rover)
 {
 	fixed_t topheight, bottomheight;
-	if (!(rover->flags & FF_EXISTS))
+	if (!(rover->fofflags & FOF_EXISTS))
 		return false;
 
-	if ((((rover->flags & FF_BLOCKPLAYER) && mobj->player)
-		|| ((rover->flags & FF_BLOCKOTHERS) && !mobj->player)))
+	if ((((rover->fofflags & FOF_BLOCKPLAYER) && mobj->player)
+		|| ((rover->fofflags & FOF_BLOCKOTHERS) && !mobj->player)))
 		return false;
 
 	topheight    = P_GetFFloorTopZAt   (rover, mobj->x, mobj->y);
@@ -1437,7 +1437,7 @@ static void P_PlayerFlip(mobj_t *mo)
 fixed_t P_GetMobjGravity(mobj_t *mo)
 {
 	fixed_t gravityadd = 0;
-	boolean no3dfloorgrav = true; // Custom gravity
+	sector_t *gravsector = NULL; // Custom gravity
 	boolean goopgravity = false;
 	boolean wasflip;
 
@@ -1445,9 +1445,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 	I_Assert(!P_MobjWasRemoved(mo));
 
 	wasflip = (mo->eflags & MFE_VERTICALFLIP) != 0;
-	
-	if (mo->type != MT_SPINFIRE)
-		mo->eflags &= ~MFE_VERTICALFLIP;
+	mo->eflags &= ~MFE_VERTICALFLIP;
 
 	if (mo->subsector->sector->ffloors) // Check for 3D floor gravity too.
 	{
@@ -1455,36 +1453,30 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 
 		for (rover = mo->subsector->sector->ffloors; rover; rover = rover->next)
 		{
-			if (!(rover->flags & FF_EXISTS) || !P_InsideANonSolidFFloor(mo, rover)) // P_InsideANonSolidFFloor checks for FF_EXISTS itself, but let's not always call this function
+			if (!(rover->fofflags & FOF_EXISTS) || !P_InsideANonSolidFFloor(mo, rover)) // P_InsideANonSolidFFloor checks for FOF_EXISTS itself, but let's not always call this function
 				continue;
 
-			if ((rover->flags & (FF_SWIMMABLE|FF_GOOWATER)) == (FF_SWIMMABLE|FF_GOOWATER))
+			if ((rover->fofflags & (FOF_SWIMMABLE|FOF_GOOWATER)) == (FOF_SWIMMABLE|FOF_GOOWATER))
 				goopgravity = true;
 
-			if (!(rover->master->frontsector->gravity))
+			if (P_GetSectorGravityFactor(rover->master->frontsector) == FRACUNIT)
 				continue;
 
-			gravityadd = -FixedMul(gravity,
-				(FixedDiv(*rover->master->frontsector->gravity>>FRACBITS, 1000)));
-
-			if (rover->master->frontsector->verticalflip && gravityadd > 0)
-				mo->eflags |= MFE_VERTICALFLIP;
-
-			no3dfloorgrav = false;
+			gravsector = rover->master->frontsector;
 			break;
 		}
 	}
 
-	if (no3dfloorgrav)
-	{
-		if (mo->subsector->sector->gravity)
-			gravityadd = -FixedMul(gravity,
-				(FixedDiv(*mo->subsector->sector->gravity>>FRACBITS, 1000)));
-		else
-			gravityadd = -gravity;
+	if (!gravsector) // If there is no 3D floor gravity, check sector's gravity
+		gravsector = mo->subsector->sector;
 
-		if (mo->subsector->sector->verticalflip && gravityadd > 0)
-			mo->eflags |= MFE_VERTICALFLIP;
+	gravityadd = -FixedMul(gravity, P_GetSectorGravityFactor(gravsector));
+
+	if ((gravsector->flags & MSF_GRAVITYFLIP) && gravityadd > 0)
+	{
+		if (gravsector->specialflags & SSF_GRAVITYOVERRIDE)
+			mo->flags2 &= ~MF2_OBJECTFLIP;
+		mo->eflags |= MFE_VERTICALFLIP;
 	}
 
 	// Less gravity underwater.
@@ -1522,36 +1514,6 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 		{
 			switch (mo->type)
 			{
-				case MT_FLINGRING:
-				case MT_FLINGCOIN:
-				case MT_FLINGBLUESPHERE:
-				case MT_FLINGNIGHTSCHIP:
-				case MT_FLINGEMERALD:
-				case MT_BOUNCERING:
-				case MT_RAILRING:
-				case MT_INFINITYRING:
-				case MT_AUTOMATICRING:
-				case MT_EXPLOSIONRING:
-				case MT_SCATTERRING:
-				case MT_GRENADERING:
-				case MT_BOUNCEPICKUP:
-				case MT_RAILPICKUP:
-				case MT_AUTOPICKUP:
-				case MT_EXPLODEPICKUP:
-				case MT_SCATTERPICKUP:
-				case MT_GRENADEPICKUP:
-				case MT_REDFLAG:
-				case MT_BLUEFLAG:
-					if (mo->target)
-					{
-						// Flung items copy the gravity of their tosser.
-						if ((mo->target->eflags & MFE_VERTICALFLIP) && !(mo->eflags & MFE_VERTICALFLIP))
-						{
-							gravityadd = -gravityadd;
-							mo->eflags |= MFE_VERTICALFLIP;
-						}
-					}
-					break;
 				case MT_WATERDROP:
 				case MT_CYBRAKDEMON:
 					gravityadd >>= 1;
@@ -1722,10 +1684,10 @@ static void P_PushableCheckBustables(mobj_t *mo)
 
 		for (rover = node->m_sector->ffloors; rover; rover = rover->next)
 		{
-			if (!(rover->flags & FF_EXISTS))
+			if (!(rover->fofflags & FOF_EXISTS))
 				continue;
 
-			if (!(rover->flags & FF_BUSTUP))
+			if (!(rover->fofflags & FOF_BUSTUP))
 				continue;
 
 			// Needs ML_EFFECT4 flag for pushables to break it
@@ -2171,7 +2133,7 @@ void P_AdjustMobjFloorZ_FFloors(mobj_t *mo, sector_t *sector, UINT8 motype)
 
 	for (rover = sector->ffloors; rover; rover = rover->next)
 	{
-		if (!(rover->flags & FF_EXISTS))
+		if (!(rover->fofflags & FOF_EXISTS))
 			continue;
 
 		topheight = P_GetFOFTopZ(mo, sector, rover, mo->x, mo->y, NULL);
@@ -2179,31 +2141,36 @@ void P_AdjustMobjFloorZ_FFloors(mobj_t *mo, sector_t *sector, UINT8 motype)
 
 		if (mo->player && (P_CheckSolidLava(rover) || P_CanRunOnWater(mo->player, rover))) // only the player should stand on lava or run on water
 			;
-		else if (motype != 0 && rover->flags & FF_SWIMMABLE) // "scenery" only
+		else if (motype != 0 && rover->fofflags & FOF_SWIMMABLE) // "scenery" only
 			continue;
-		else if (rover->flags & FF_QUICKSAND) // quicksand
+		else if (rover->fofflags & FOF_QUICKSAND) // quicksand
 			;
 		else if (!( // if it's not either of the following...
-				(rover->flags & (FF_BLOCKPLAYER|FF_MARIO) && mo->player) // ...solid to players? (mario blocks are always solid from beneath to players)
-			    || (rover->flags & FF_BLOCKOTHERS && !mo->player) // ...solid to others?
+				(rover->fofflags & (FOF_BLOCKPLAYER|FOF_MARIO) && mo->player) // ...solid to players? (mario blocks are always solid from beneath to players)
+			    || (rover->fofflags & FOF_BLOCKOTHERS && !mo->player) // ...solid to others?
 				)) // ...don't take it into account.
 			continue;
-		if (rover->flags & FF_QUICKSAND)
+		if (rover->fofflags & FOF_QUICKSAND)
 		{
 			switch (motype)
 			{
 				case 2: // scenery does things differently for some reason
 					if (mo->z < topheight && bottomheight < thingtop)
 					{
-						mo->floorz = mo->z;
+						if (!(mo->eflags & MFE_VERTICALFLIP))
+							mo->floorz = mo->z;
+						else if (mo->eflags & MFE_VERTICALFLIP)
+							mo->ceilingz = thingtop;
 						continue;
 					}
 					break;
 				default:
 					if (mo->z < topheight && bottomheight < thingtop)
 					{
-						if (mo->floorz < mo->z)
+						if (!(mo->eflags & MFE_VERTICALFLIP) && mo->floorz < mo->z)
 							mo->floorz = mo->z;
+						else if (mo->eflags & MFE_VERTICALFLIP && mo->ceilingz > thingtop)
+							mo->ceilingz = thingtop;
 					}
 					continue; // This is so you can jump/spring up through quicksand from below.
 			}
@@ -2213,15 +2180,15 @@ void P_AdjustMobjFloorZ_FFloors(mobj_t *mo, sector_t *sector, UINT8 motype)
 		delta2 = thingtop - (bottomheight + ((topheight - bottomheight)/2));
 
 		if (topheight > mo->floorz && abs(delta1) < abs(delta2)
-			&& (rover->flags & FF_SOLID) // Non-FF_SOLID Mario blocks are only solid from bottom
-			&& !(rover->flags & FF_REVERSEPLATFORM)
-			&& ((P_MobjFlip(mo)*mo->momz >= 0) || (!(rover->flags & FF_PLATFORM)))) // In reverse gravity, only clip for FOFs that are intangible from their bottom (the "top" you're falling through) if you're coming from above ("below" in your frame of reference)
+			&& (rover->fofflags & FOF_SOLID) // Non-FOF_SOLID Mario blocks are only solid from bottom
+			&& !(rover->fofflags & FOF_REVERSEPLATFORM)
+			&& ((P_MobjFlip(mo)*mo->momz >= 0) || (!(rover->fofflags & FOF_PLATFORM)))) // In reverse gravity, only clip for FOFs that are intangible from their bottom (the "top" you're falling through) if you're coming from above ("below" in your frame of reference)
 		{
 			mo->floorz = topheight;
 		}
 		if (bottomheight < mo->ceilingz && abs(delta1) >= abs(delta2)
-			&& !(rover->flags & FF_PLATFORM)
-			&& ((P_MobjFlip(mo)*mo->momz >= 0) || ((rover->flags & FF_SOLID) && !(rover->flags & FF_REVERSEPLATFORM)))) // In normal gravity, only clip for FOFs that are intangible from the top if you're coming from below
+			&& !(rover->fofflags & FOF_PLATFORM)
+			&& ((P_MobjFlip(mo)*mo->momz >= 0) || ((rover->fofflags & FOF_SOLID) && !(rover->fofflags & FOF_REVERSEPLATFORM)))) // In normal gravity, only clip for FOFs that are intangible from the top if you're coming from below
 		{
 			mo->ceilingz = bottomheight;
 		}
@@ -2337,11 +2304,7 @@ boolean P_CheckDeathPitCollide(mobj_t *mo)
 
 boolean P_CheckSolidLava(ffloor_t *rover)
 {
-	if (rover->flags & FF_SWIMMABLE && GETSECSPECIAL(rover->master->frontsector->special, 1) == 3
-		&& !(rover->master->flags & ML_BLOCKMONSTERS))
-			return true;
-
-	return false;
+	return (rover->fofflags & FOF_SWIMMABLE) && (rover->master->frontsector->damagetype == SD_LAVA);
 }
 
 //
@@ -2835,10 +2798,10 @@ static void P_CheckMarioBlocks(mobj_t *mo)
 
 		for (rover = node->m_sector->ffloors; rover; rover = rover->next)
 		{
-			if (!(rover->flags & FF_EXISTS))
+			if (!(rover->fofflags & FOF_EXISTS))
 				continue;
 
-			if (!(rover->flags & FF_MARIO))
+			if (!(rover->fofflags & FOF_MARIO))
 				continue;
 
 			if (mo->eflags & MFE_VERTICALFLIP)
@@ -2847,7 +2810,7 @@ static void P_CheckMarioBlocks(mobj_t *mo)
 			if (*rover->bottomheight != mo->ceilingz)
 				continue;
 
-			if (rover->flags & FF_SHATTERBOTTOM) // Brick block!
+			if (rover->fofflags & FOF_GOOWATER) // Brick block!
 				EV_CrumbleChain(node->m_sector, rover);
 			else // Question block!
 				EV_MarioBlock(rover, node->m_sector, mo);
@@ -3237,7 +3200,7 @@ boolean P_CanRunOnWater(player_t *player, ffloor_t *rover)
 
 	if (!player->powers[pw_carry] && !player->homing
 		&& ((player->powers[pw_super] || player->charflags & SF_RUNONWATER || player->dashmode >= DASHMODE_THRESHOLD) && doifit)
-		&& (rover->flags & FF_SWIMMABLE) && !(player->pflags & PF_SPINNING) && player->speed > FixedMul(player->runspeed, player->mo->scale)
+		&& (rover->fofflags & FOF_SWIMMABLE) && !(player->pflags & PF_SPINNING) && player->speed > FixedMul(player->runspeed, player->mo->scale)
 		&& !(player->pflags & PF_SLIDING)
 		&& abs(playerbottom - surfaceheight) < FixedMul(30*FRACUNIT, player->mo->scale))
 		return true;
@@ -3271,9 +3234,9 @@ void P_MobjCheckWater(mobj_t *mobj)
 	for (rover = sector->ffloors; rover; rover = rover->next)
 	{
 		fixed_t topheight, bottomheight;
-		if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_SWIMMABLE)
-		 || (((rover->flags & FF_BLOCKPLAYER) && mobj->player)
-		 || ((rover->flags & FF_BLOCKOTHERS) && !mobj->player)))
+		if (!(rover->fofflags & FOF_EXISTS) || !(rover->fofflags & FOF_SWIMMABLE)
+		 || (((rover->fofflags & FOF_BLOCKPLAYER) && mobj->player)
+		 || ((rover->fofflags & FOF_BLOCKOTHERS) && !mobj->player)))
 			continue;
 
 		topheight = P_GetSpecialTopZ(mobj, sectors + rover->secnum, sector);
@@ -3311,7 +3274,7 @@ void P_MobjCheckWater(mobj_t *mobj)
 			if (GETSECSPECIAL(rover->master->frontsector->special, 1) == 3)
 				mobj->eflags |= MFE_TOUCHLAVA;
 
-			if (rover->flags & FF_GOOWATER && !(mobj->flags & MF_NOGRAVITY))
+			if (rover->fofflags & FOF_GOOWATER && !(mobj->flags & MF_NOGRAVITY))
 				mobj->eflags |= MFE_GOOWATER;
 		}
 	}
@@ -3519,7 +3482,7 @@ static void P_SceneryCheckWater(mobj_t *mobj)
 
 		for (rover = sector->ffloors; rover; rover = rover->next)
 		{
-			if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_SWIMMABLE) || rover->flags & FF_BLOCKOTHERS)
+			if (!(rover->fofflags & FOF_EXISTS) || !(rover->fofflags & FOF_SWIMMABLE) || rover->fofflags & FOF_BLOCKOTHERS)
 				continue;
 
 			topheight    = P_GetFFloorTopZAt   (rover, mobj->x, mobj->y);
@@ -3568,7 +3531,7 @@ static boolean P_CameraCheckHeat(camera_t *thiscam)
 
 		for (rover = sector->ffloors; rover; rover = rover->next)
 		{
-			if (!(rover->flags & FF_EXISTS))
+			if (!(rover->fofflags & FOF_EXISTS))
 				continue;
 
 			if (halfheight >= P_GetFFloorTopZAt(rover, thiscam->x, thiscam->y))
@@ -3599,7 +3562,7 @@ static boolean P_CameraCheckWater(camera_t *thiscam)
 
 		for (rover = sector->ffloors; rover; rover = rover->next)
 		{
-			if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_SWIMMABLE) || rover->flags & FF_BLOCKOTHERS)
+			if (!(rover->fofflags & FOF_EXISTS) || !(rover->fofflags & FOF_SWIMMABLE) || rover->fofflags & FOF_BLOCKOTHERS)
 				continue;
 
 			if (halfheight >= P_GetFFloorTopZAt(rover, thiscam->x, thiscam->y))
@@ -3793,10 +3756,10 @@ static void P_CheckCrumblingPlatforms(mobj_t *mobj)
 
 		for (rover = node->m_sector->ffloors; rover; rover = rover->next)
 		{
-			if (!(rover->flags & FF_EXISTS))
+			if (!(rover->fofflags & FOF_EXISTS))
 				continue;
 
-			if (!(rover->flags & FF_CRUMBLE))
+			if (!(rover->fofflags & FOF_CRUMBLE))
 				continue;
 
 			if (mobj->eflags & MFE_VERTICALFLIP)
@@ -3810,7 +3773,7 @@ static void P_CheckCrumblingPlatforms(mobj_t *mobj)
 					continue;
 			}
 
-			EV_StartCrumble(rover->master->frontsector, rover, (rover->flags & FF_FLOATBOB), mobj->player, rover->alpha, !(rover->flags & FF_NORETURN));
+			EV_StartCrumble(rover->master->frontsector, rover, (rover->fofflags & FOF_FLOATBOB), mobj->player, rover->alpha, !(rover->fofflags & FOF_NORETURN));
 		}
 	}
 }
@@ -3828,10 +3791,10 @@ static boolean P_MobjTouchesSectorWithWater(mobj_t *mobj)
 
 		for (rover = node->m_sector->ffloors; rover; rover = rover->next)
 		{
-			if (!(rover->flags & FF_EXISTS))
+			if (!(rover->fofflags & FOF_EXISTS))
 				continue;
 
-			if (!(rover->flags & FF_SWIMMABLE))
+			if (!(rover->fofflags & FOF_SWIMMABLE))
 				continue;
 
 			return true;
@@ -3862,10 +3825,10 @@ static void P_CheckFloatbobPlatforms(mobj_t *mobj)
 
 		for (rover = node->m_sector->ffloors; rover; rover = rover->next)
 		{
-			if (!(rover->flags & FF_EXISTS))
+			if (!(rover->fofflags & FOF_EXISTS))
 				continue;
 
-			if (!(rover->flags & FF_FLOATBOB))
+			if (!(rover->fofflags & FOF_FLOATBOB))
 				continue;
 
 
@@ -3995,10 +3958,10 @@ static void CalculatePrecipFloor(precipmobj_t *mobj)
 		for (rover = mobjsecsubsec->ffloors; rover; rover = rover->next)
 		{
 			// If it exists, it'll get rained on.
-			if (!(rover->flags & FF_EXISTS))
+			if (!(rover->fofflags & FOF_EXISTS))
 				continue;
 
-			if (!(rover->flags & FF_BLOCKOTHERS) && !(rover->flags & FF_SWIMMABLE))
+			if (!(rover->fofflags & FOF_BLOCKOTHERS) && !(rover->fofflags & FOF_SWIMMABLE))
 				continue;
 
 			topheight = P_GetFFloorTopZAt(rover, mobj->x, mobj->y);
@@ -4106,11 +4069,13 @@ static void P_KillRingsInLava(mobj_t *mo)
 
 			for (rover = node->m_sector->ffloors; rover; rover = rover->next) // go through all fofs in the sector
 			{
-				if (!(rover->flags & FF_EXISTS)) continue; // fof must be real
+				if (!(rover->fofflags & FOF_EXISTS)) continue; // fof must be real
 
-				if (!(rover->flags & FF_SWIMMABLE // fof must be water
-					&& GETSECSPECIAL(rover->master->frontsector->special, 1) == 3)) // fof must be lava water
-					continue;
+				if (!(rover->fofflags & FOF_SWIMMABLE))
+					continue; // fof must be water
+
+				if (rover->master->frontsector->damagetype != SD_FIRE && rover->master->frontsector->damagetype != SD_LAVA)
+					continue;  // fof must have fire or lava damage
 
 				// find heights of FOF
 				topheight = P_GetFOFTopZ(mo, node->m_sector, rover, mo->x, mo->y, NULL);
@@ -4484,7 +4449,7 @@ static void P_Boss3Thinker(mobj_t *mobj)
 
 			CONS_Debug(DBG_GAMELOGIC, "Eggman path %d - Dummy selected paths %d and %d\n", way0, way1, way2);
 			if (mobj->spawnpoint)
-				P_LinedefExecute(LE_PINCHPHASE+(mobj->cusval*LE_PARAMWIDTH), mobj, NULL);
+				P_LinedefExecute(mobj->spawnpoint->args[4], mobj, NULL);
 		}
 	}
 	else if (mobj->movecount) // Firing mode
@@ -4749,14 +4714,14 @@ static void P_Boss4DestroyCage(mobj_t *mobj)
 		{
 			rsec = &sectors[sector->attached[a]];
 			for (rover = rsec->ffloors; rover; rover = rover->next)
-				if (rover->flags & FF_EXISTS && rover->secnum == (size_t)snum)
+				if (rover->fofflags & FOF_EXISTS && rover->secnum == (size_t)snum)
 				{
-					if (rover->flags & FF_RENDERALL) // checking for FF_RENDERANY.
+					if (rover->fofflags & FOF_RENDERALL) // checking for FF_RENDERANY.
 						EV_CrumbleChain(rsec, rover); // This FOF is visible to some extent? Crumble it.
 					else // Completely invisible FOF
 					{
 						// no longer exists (can't collide with again)
-						rover->flags &= ~FF_EXISTS;
+						rover->fofflags &= ~FOF_EXISTS;
 						sector->moved = true;
 						rsec->moved = true;
 					}
@@ -5714,21 +5679,25 @@ static void P_Boss9Thinker(mobj_t *mobj)
 					missile->fuse = 1;
 
 				if (missile->fuse > mobj->fuse)
-					P_RemoveMobj(missile);
-
-				if (mobj->health > mobj->info->damage)
 				{
-					P_SetScale(missile, FRACUNIT/3);
-					missile->color = SKINCOLOR_MAGENTA; // sonic OVA/4 purple power
+					P_RemoveMobj(missile);
 				}
 				else
 				{
-					P_SetScale(missile, FRACUNIT/5);
-					missile->color = SKINCOLOR_SUNSET; // sonic cd electric power
+					if (mobj->health > mobj->info->damage)
+					{
+						P_SetScale(missile, FRACUNIT/3);
+						missile->color = SKINCOLOR_MAGENTA; // sonic OVA/4 purple power
+					}
+					else
+					{
+						P_SetScale(missile, FRACUNIT/5);
+						missile->color = SKINCOLOR_SUNSET; // sonic cd electric power
+					}
+					missile->destscale = missile->scale*2;
+					missile->scalespeed = abs(missile->scale - missile->destscale)/missile->fuse;
+					missile->colorized = true;
 				}
-				missile->destscale = missile->scale*2;
-				missile->scalespeed = abs(missile->scale - missile->destscale)/missile->fuse;
-				missile->colorized = true;
 			}
 
 			// ...then down. easier than changing the missile's momz after-the-fact
@@ -6215,8 +6184,9 @@ static void P_MoveHoop(mobj_t *mobj)
 {
 	const fixed_t fuse = (mobj->fuse*mobj->extravalue2);
 	const angle_t fa = mobj->movedir*(FINEANGLES/mobj->extravalue1);
-	TVector v;
-	TVector *res;
+	matrix_t m;
+	vector4_t v;
+	vector4_t res;
 	fixed_t finalx, finaly, finalz;
 	fixed_t x, y, z;
 
@@ -6229,19 +6199,20 @@ static void P_MoveHoop(mobj_t *mobj)
 	z = mobj->target->z+mobj->target->height/2;
 
 	// Make the sprite travel towards the center of the hoop
-	v[0] = FixedMul(FINECOSINE(fa),fuse);
-	v[1] = 0;
-	v[2] = FixedMul(FINESINE(fa),fuse);
-	v[3] = FRACUNIT;
+	v.x = FixedMul(FINECOSINE(fa),fuse);
+	v.y = 0;
+	v.z = FixedMul(FINESINE(fa),fuse);
+	v.a = FRACUNIT;
 
-	res = VectorMatrixMultiply(v, *RotateXMatrix(FixedAngle(mobj->target->movedir*FRACUNIT)));
-	M_Memcpy(&v, res, sizeof (v));
-	res = VectorMatrixMultiply(v, *RotateZMatrix(FixedAngle(mobj->target->movecount*FRACUNIT)));
-	M_Memcpy(&v, res, sizeof (v));
+	FM_RotateX(&m, FixedAngle(mobj->target->movedir*FRACUNIT));
+	FV4_Copy(&v, FM_MultMatrixVec4(&m, &v, &res));
 
-	finalx = x + v[0];
-	finaly = y + v[1];
-	finalz = z + v[2];
+	FM_RotateZ(&m, FixedAngle(mobj->target->movecount*FRACUNIT));
+	FV4_Copy(&v, FM_MultMatrixVec4(&m, &v, &res));
+
+	finalx = x + v.x;
+	finaly = y + v.y;
+	finalz = z + v.z;
 
 	P_UnsetThingPosition(mobj);
 	mobj->x = finalx;
@@ -6254,8 +6225,9 @@ void P_SpawnHoopOfSomething(fixed_t x, fixed_t y, fixed_t z, fixed_t radius, INT
 {
 	mobj_t *mobj;
 	INT32 i;
-	TVector v;
-	TVector *res;
+	matrix_t m;
+	vector4_t v;
+	vector4_t res;
 	fixed_t finalx, finaly, finalz;
 	mobj_t hoopcenter;
 	mobj_t *axis;
@@ -6297,19 +6269,20 @@ void P_SpawnHoopOfSomething(fixed_t x, fixed_t y, fixed_t z, fixed_t radius, INT
 	for (i = 0; i < number; i++)
 	{
 		fa = (i*degrees);
-		v[0] = FixedMul(FINECOSINE(fa),radius);
-		v[1] = 0;
-		v[2] = FixedMul(FINESINE(fa),radius);
-		v[3] = FRACUNIT;
+		v.x = FixedMul(FINECOSINE(fa),radius);
+		v.y = 0;
+		v.z = FixedMul(FINESINE(fa),radius);
+		v.a = FRACUNIT;
 
-		res = VectorMatrixMultiply(v, *RotateXMatrix(rotangle));
-		M_Memcpy(&v, res, sizeof (v));
-		res = VectorMatrixMultiply(v, *RotateZMatrix(closestangle));
-		M_Memcpy(&v, res, sizeof (v));
+		FM_RotateX(&m, rotangle);
+		FV4_Copy(&v, FM_MultMatrixVec4(&m, &v, &res));
 
-		finalx = x + v[0];
-		finaly = y + v[1];
-		finalz = z + v[2];
+		FM_RotateZ(&m, closestangle);
+		FV4_Copy(&v, FM_MultMatrixVec4(&m, &v, &res));
+
+		finalx = x + v.x;
+		finaly = y + v.y;
+		finalz = z + v.z;
 
 		mobj = P_SpawnMobj(finalx, finaly, finalz, type);
 		mobj->z -= mobj->height/2;
@@ -6320,8 +6293,9 @@ void P_SpawnParaloop(fixed_t x, fixed_t y, fixed_t z, fixed_t radius, INT32 numb
 {
 	mobj_t *mobj;
 	INT32 i;
-	TVector v;
-	TVector *res;
+	matrix_t m;
+	vector4_t v;
+	vector4_t res;
 	fixed_t finalx, finaly, finalz, dist;
 	angle_t degrees, fa, closestangle;
 	fixed_t mobjx, mobjy, mobjz;
@@ -6336,19 +6310,20 @@ void P_SpawnParaloop(fixed_t x, fixed_t y, fixed_t z, fixed_t radius, INT32 numb
 	for (i = 0; i < number; i++)
 	{
 		fa = (i*degrees);
-		v[0] = FixedMul(FINECOSINE(fa),radius);
-		v[1] = 0;
-		v[2] = FixedMul(FINESINE(fa),radius);
-		v[3] = FRACUNIT;
+		v.x = FixedMul(FINECOSINE(fa),radius);
+		v.y = 0;
+		v.z = FixedMul(FINESINE(fa),radius);
+		v.a = FRACUNIT;
 
-		res = VectorMatrixMultiply(v, *RotateXMatrix(rotangle));
-		M_Memcpy(&v, res, sizeof (v));
-		res = VectorMatrixMultiply(v, *RotateZMatrix(closestangle));
-		M_Memcpy(&v, res, sizeof (v));
+		FM_RotateX(&m, rotangle);
+		FV4_Copy(&v, FM_MultMatrixVec4(&m, &v, &res));
 
-		finalx = x + v[0];
-		finaly = y + v[1];
-		finalz = z + v[2];
+		FM_RotateZ(&m, closestangle);
+		FV4_Copy(&v, FM_MultMatrixVec4(&m, &v, &res));
+
+		finalx = x + v.x;
+		finaly = y + v.y;
+		finalz = z + v.z;
 
 		mobj = P_SpawnMobj(finalx, finaly, finalz, type);
 
@@ -6511,9 +6486,10 @@ static void P_NightsItemChase(mobj_t *thing)
 //
 void P_MaceRotate(mobj_t *center, INT32 baserot, INT32 baseprevrot)
 {
-	TVector unit_lengthways, unit_sideways, pos_lengthways, pos_sideways;
-	TVector *res;
-	fixed_t radius, dist, zstore;
+	matrix_t m;
+	vector4_t unit_lengthways, unit_sideways, pos_lengthways, pos_sideways;
+	vector4_t res;
+	fixed_t radius, dist = 0, zstore;
 	angle_t fa;
 	boolean dosound = false;
 	mobj_t *mobj = center->hnext, *hnext = NULL;
@@ -6524,8 +6500,9 @@ void P_MaceRotate(mobj_t *center, INT32 baserot, INT32 baseprevrot)
 	INT32 rot;
 	INT32 prevrot;
 
-	dist = pos_sideways[0] = pos_sideways[1] = pos_sideways[2] = pos_sideways[3] = unit_sideways[3] =\
-	 pos_lengthways[0] = pos_lengthways[1] = pos_lengthways[2] = pos_lengthways[3] = 0;
+	FV4_Load(&pos_sideways, 0, 0, 0, 0);
+	FV4_Load(&unit_sideways, 0, 0, 0, 0);
+	FV4_Load(&pos_lengthways, 0, 0, 0, 0);
 
 	while (mobj)
 	{
@@ -6543,15 +6520,15 @@ void P_MaceRotate(mobj_t *center, INT32 baserot, INT32 baseprevrot)
 			rot = (baserot + mobj->threshold) & FINEMASK;
 			prevrot = (baseprevrot + mobj->threshold) & FINEMASK;
 
-			pos_lengthways[0] = pos_lengthways[1] = pos_lengthways[2] = pos_lengthways[3] = 0;
+			FV4_Load(&pos_lengthways, 0, 0, 0, 0);
 
 			dist = ((mobj->info->speed) ? mobj->info->speed : mobjinfo[MT_SMALLMACECHAIN].speed);
 			dist = ((center->scale == FRACUNIT) ? dist : FixedMul(dist, center->scale));
 
 			fa = (FixedAngle(center->movefactor*FRACUNIT) >> ANGLETOFINESHIFT);
 			radius = FixedMul(dist, FINECOSINE(fa));
-			unit_lengthways[1] = -FixedMul(dist, FINESINE(fa));
-			unit_lengthways[3] = FRACUNIT;
+			unit_lengthways.y = -FixedMul(dist, FINESINE(fa));
+			unit_lengthways.a = FRACUNIT;
 
 			// Swinging Chain.
 			if (center->flags2 & MF2_STRONGBOX)
@@ -6564,8 +6541,8 @@ void P_MaceRotate(mobj_t *center, INT32 baserot, INT32 baseprevrot)
 
 				fa = ((FixedAngle(swingmag) >> ANGLETOFINESHIFT) + mobj->friction) & FINEMASK;
 
-				unit_lengthways[0] = FixedMul(FINESINE(fa), -radius);
-				unit_lengthways[2] = FixedMul(FINECOSINE(fa), -radius);
+				unit_lengthways.x = FixedMul(FINESINE(fa), -radius);
+				unit_lengthways.z = FixedMul(FINECOSINE(fa), -radius);
 			}
 			// Rotating Chain.
 			else
@@ -6576,15 +6553,16 @@ void P_MaceRotate(mobj_t *center, INT32 baserot, INT32 baseprevrot)
 				if (!(prevfa > (FINEMASK/2)) && (fa > (FINEMASK/2))) // completed a full swing
 					dosound = true;
 
-				unit_lengthways[0] = FixedMul(FINECOSINE(fa), radius);
-				unit_lengthways[2] = FixedMul(FINESINE(fa), radius);
+				unit_lengthways.x = FixedMul(FINECOSINE(fa), radius);
+				unit_lengthways.z = FixedMul(FINESINE(fa), radius);
 			}
 
 			// Calculate the angle matrixes for the link.
-			res = VectorMatrixMultiply(unit_lengthways, *RotateXMatrix(center->threshold << ANGLETOFINESHIFT));
-			M_Memcpy(&unit_lengthways, res, sizeof(unit_lengthways));
-			res = VectorMatrixMultiply(unit_lengthways, *RotateZMatrix(center->angle));
-			M_Memcpy(&unit_lengthways, res, sizeof(unit_lengthways));
+			FM_RotateX(&m, center->threshold << ANGLETOFINESHIFT);
+			FV4_Copy(&unit_lengthways, FM_MultMatrixVec4(&m, &unit_lengthways, &res));
+
+			FM_RotateZ(&m, center->angle);
+			FV4_Copy(&unit_lengthways, FM_MultMatrixVec4(&m, &unit_lengthways, &res));
 
 			lastthreshold = mobj->threshold;
 			lastfriction = mobj->friction;
@@ -6596,63 +6574,64 @@ void P_MaceRotate(mobj_t *center, INT32 baserot, INT32 baseprevrot)
 			dosound = false;
 		}
 
-		if (pos_sideways[3] != mobj->movefactor)
+		if (pos_sideways.a != mobj->movefactor)
 		{
-			if (!unit_sideways[3])
+			if (!unit_sideways.a)
 			{
-				unit_sideways[1] = dist;
-				unit_sideways[0] = unit_sideways[2] = 0;
-				unit_sideways[3] = FRACUNIT;
+				unit_sideways.y = dist;
+				unit_sideways.x = unit_sideways.z = 0;
+				unit_sideways.a = FRACUNIT;
 
-				res = VectorMatrixMultiply(unit_sideways, *RotateXMatrix(center->threshold << ANGLETOFINESHIFT));
-				M_Memcpy(&unit_sideways, res, sizeof(unit_sideways));
-				res = VectorMatrixMultiply(unit_sideways, *RotateZMatrix(center->angle));
-				M_Memcpy(&unit_sideways, res, sizeof(unit_sideways));
+				FM_RotateX(&m, center->threshold << ANGLETOFINESHIFT);
+				FV4_Copy(&unit_sideways, FM_MultMatrixVec4(&m, &unit_sideways, &res));
+
+				FM_RotateZ(&m, center->angle);
+				FV4_Copy(&unit_sideways, FM_MultMatrixVec4(&m, &unit_sideways, &res));
 			}
 
-			if (pos_sideways[3] > mobj->movefactor)
+			if (pos_sideways.a > mobj->movefactor)
 			{
 				do
 				{
-					pos_sideways[0] -= unit_sideways[0];
-					pos_sideways[1] -= unit_sideways[1];
-					pos_sideways[2] -= unit_sideways[2];
+					pos_sideways.x -= unit_sideways.x;
+					pos_sideways.y -= unit_sideways.y;
+					pos_sideways.z -= unit_sideways.z;
 				}
-				while ((--pos_sideways[3]) != mobj->movefactor);
+				while ((--pos_sideways.a) != mobj->movefactor);
 			}
 			else
 			{
 				do
 				{
-					pos_sideways[0] += unit_sideways[0];
-					pos_sideways[1] += unit_sideways[1];
-					pos_sideways[2] += unit_sideways[2];
+					pos_sideways.x += unit_sideways.x;
+					pos_sideways.y += unit_sideways.y;
+					pos_sideways.z += unit_sideways.z;
 				}
-				while ((++pos_sideways[3]) != mobj->movefactor);
+				while ((++pos_sideways.a) != mobj->movefactor);
 			}
 		}
 
 		hnext = mobj->hnext; // just in case the mobj is removed
 
-		if (pos_lengthways[3] > mobj->movecount)
+		if (pos_lengthways.a > mobj->movecount)
 		{
 			do
 			{
-				pos_lengthways[0] -= unit_lengthways[0];
-				pos_lengthways[1] -= unit_lengthways[1];
-				pos_lengthways[2] -= unit_lengthways[2];
+				pos_lengthways.x -= unit_lengthways.x;
+				pos_lengthways.y -= unit_lengthways.y;
+				pos_lengthways.z -= unit_lengthways.z;
 			}
-			while ((--pos_lengthways[3]) != mobj->movecount);
+			while ((--pos_lengthways.a) != mobj->movecount);
 		}
-		else if (pos_lengthways[3] < mobj->movecount)
+		else if (pos_lengthways.a < mobj->movecount)
 		{
 			do
 			{
-				pos_lengthways[0] += unit_lengthways[0];
-				pos_lengthways[1] += unit_lengthways[1];
-				pos_lengthways[2] += unit_lengthways[2];
+				pos_lengthways.x += unit_lengthways.x;
+				pos_lengthways.y += unit_lengthways.y;
+				pos_lengthways.z += unit_lengthways.z;
 			}
-			while ((++pos_lengthways[3]) != mobj->movecount);
+			while ((++pos_lengthways.a) != mobj->movecount);
 		}
 
 		P_UnsetThingPosition(mobj);
@@ -6662,17 +6641,17 @@ void P_MaceRotate(mobj_t *center, INT32 baserot, INT32 baseprevrot)
 		mobj->z = center->z;
 
 		// Add on the appropriate distances to the center's co-ordinates.
-		if (pos_lengthways[3])
+		if (pos_lengthways.a)
 		{
-			mobj->x += pos_lengthways[0];
-			mobj->y += pos_lengthways[1];
-			zstore = pos_lengthways[2] + pos_sideways[2];
+			mobj->x += pos_lengthways.x;
+			mobj->y += pos_lengthways.y;
+			zstore = pos_lengthways.z + pos_sideways.z;
 		}
 		else
-			zstore = pos_sideways[2];
+			zstore = pos_sideways.z;
 
-		mobj->x += pos_sideways[0];
-		mobj->y += pos_sideways[1];
+		mobj->x += pos_sideways.x;
+		mobj->y += pos_sideways.y;
 
 		// Cut the height to align the link with the axis.
 		if (mobj->type == MT_SMALLMACECHAIN || mobj->type == MT_BIGMACECHAIN || mobj->type == MT_SMALLGRABCHAIN || mobj->type == MT_BIGGRABCHAIN)
@@ -6690,7 +6669,7 @@ void P_MaceRotate(mobj_t *center, INT32 baserot, INT32 baseprevrot)
 		P_SetThingPosition(mobj);
 
 #if 0 // toaster's height-clipping dealie!
-		if (!pos_lengthways[3] || P_MobjWasRemoved(mobj) || (mobj->flags & MF_NOCLIPHEIGHT))
+		if (!pos_lengthways.a || P_MobjWasRemoved(mobj) || (mobj->flags & MF_NOCLIPHEIGHT))
 			goto cont;
 
 		if ((fa = ((center->threshold & (FINEMASK/2)) << ANGLETOFINESHIFT)) > ANGLE_45 && fa < ANGLE_135) // only move towards center when the motion is towards/away from the ground, rather than alongside it
@@ -6710,8 +6689,8 @@ void P_MaceRotate(mobj_t *center, INT32 baserot, INT32 baseprevrot)
 
 		P_UnsetThingPosition(mobj);
 
-		mobj->x -= FixedMul(unit_lengthways[0], zstore);
-		mobj->y -= FixedMul(unit_lengthways[1], zstore);
+		mobj->x -= FixedMul(unit_lengthways.x, zstore);
+		mobj->y -= FixedMul(unit_lengthways.y, zstore);
 
 		P_SetThingPosition(mobj);
 
@@ -6941,6 +6920,13 @@ static void P_AddOverlay(mobj_t *thing)
 static void P_RemoveOverlay(mobj_t *thing)
 {
 	mobj_t *mo;
+	if (overlaycap == thing)
+	{
+		P_SetTarget(&overlaycap, thing->hnext);
+		P_SetTarget(&thing->hnext, NULL);
+		return;
+	}
+
 	for (mo = overlaycap; mo; mo = mo->hnext)
 	{
 		if (mo->hnext != thing)
@@ -9983,9 +9969,9 @@ static boolean P_FuseThink(mobj_t *mobj)
 		break;
 	case MT_WALLSPIKE:
 		P_SetMobjState(mobj, mobj->state->nextstate);
-		mobj->fuse = mobj->info->speed;
-		if (mobj->spawnpoint)
-			mobj->fuse += (mobj->spawnpoint->angle / 360);
+		if (P_MobjWasRemoved(mobj))
+			return false;
+		mobj->fuse = mobj->spawnpoint ? mobj->spawnpoint->args[0] : mobj->info->speed;
 		break;
 	case MT_NIGHTSCORE:
 		P_RemoveMobj(mobj);
@@ -11179,10 +11165,10 @@ void P_RemoveSavegameMobj(mobj_t *mobj)
 }
 
 static CV_PossibleValue_t respawnitemtime_cons_t[] = {{1, "MIN"}, {300, "MAX"}, {0, NULL}};
-consvar_t cv_itemrespawntime = CVAR_INIT ("respawnitemtime", "30", CV_SAVE|CV_NETVAR|CV_CHEAT, respawnitemtime_cons_t, NULL);
-consvar_t cv_itemrespawn = CVAR_INIT ("respawnitem", "On", CV_SAVE|CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_itemrespawntime = CVAR_INIT ("respawnitemtime", "30", CV_SAVE|CV_NETVAR|CV_CHEAT|CV_ALLOWLUA, respawnitemtime_cons_t, NULL);
+consvar_t cv_itemrespawn = CVAR_INIT ("respawnitem", "On", CV_SAVE|CV_NETVAR|CV_ALLOWLUA, CV_OnOff, NULL);
 static CV_PossibleValue_t flagtime_cons_t[] = {{0, "MIN"}, {300, "MAX"}, {0, NULL}};
-consvar_t cv_flagtime = CVAR_INIT ("flagtime", "30", CV_SAVE|CV_NETVAR|CV_CHEAT, flagtime_cons_t, NULL);
+consvar_t cv_flagtime = CVAR_INIT ("flagtime", "30", CV_SAVE|CV_NETVAR|CV_CHEAT|CV_ALLOWLUA, flagtime_cons_t, NULL);
 
 void P_SpawnPrecipitation(void)
 {
@@ -11801,7 +11787,6 @@ fixed_t P_GetMapThingSpawnHeight(const mobjtype_t mobjtype, const mapthing_t* mt
 	case MT_EMERHUNT:
 	case MT_EMERALDSPAWN:
 	case MT_TOKEN:
-	case MT_EMBLEM:
 	case MT_RING:
 	case MT_REDTEAMRING:
 	case MT_BLUETEAMRING:
@@ -11811,6 +11796,10 @@ fixed_t P_GetMapThingSpawnHeight(const mobjtype_t mobjtype, const mapthing_t* mt
 	case MT_NIGHTSCHIP:
 	case MT_NIGHTSSTAR:
 		offset += mthing->options & MTF_AMBUSH ? 24*FRACUNIT : 0;
+		break;
+
+	case MT_EMBLEM:
+		offset += mthing->args[1] ? 0 : 24 * FRACUNIT;
 		break;
 
 	// Remaining objects.
@@ -13219,6 +13208,12 @@ static void P_SetObjectSpecial(mobj_t *mobj)
 		// any monitor with nonzero speed is allowed to respawn like this
 		mobj->flags2 |= MF2_STRONGBOX;
 	}
+	// Custom ambient sounds
+	if ((mobj->flags & MF_AMBIENT) && mobj->type != MT_AMBIENT)
+	{
+		mobj->threshold = mobj->info->seesound;
+		mobj->health = mobj->info->spawnhealth;
+	}
 
 	// Requires you to be in bonus time to activate
 	if (mobj->flags & MF_NIGHTSITEM)
@@ -13230,6 +13225,23 @@ static void P_SetObjectSpecial(mobj_t *mobj)
 		mobj->flags2 |= MF2_SLIDEPUSH;
 		mobj->flags |= MF_BOUNCE;
 	}
+}
+
+// Pre-UDMF backwards compatibility stuff. Remove for 2.3
+static void P_SetAmbush(mapthing_t *mthing, mobj_t *mobj)
+{
+	if (mobj->type == MT_NIGHTSBUMPER
+		|| mobj->type == MT_AXIS
+		|| mobj->type == MT_AXISTRANSFER
+		|| mobj->type == MT_AXISTRANSFERLINE
+		|| mobj->type == MT_NIGHTSBUMPER
+		|| mobj->type == MT_STARPOST)
+		return;
+
+	if ((mthing->options & MTF_OBJECTSPECIAL) && (mobj->flags & MF_PUSHABLE))
+		return;
+
+	mobj->flags2 |= MF2_AMBUSH;
 }
 
 static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y, fixed_t z, mobjtype_t i)
@@ -13254,22 +13266,8 @@ static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y,
 
 	mthing->mobj = mobj;
 
-	// ignore MTF_ flags and return early
-	if (i == MT_NIGHTSBUMPER)
-		return mobj;
-
-	if ((mthing->options & MTF_AMBUSH)
-		&& (mthing->options & MTF_OBJECTSPECIAL)
-		&& (mobj->flags & MF_PUSHABLE))
-		mobj->flags2 |= MF2_CLASSICPUSH;
-	else
-	{
-		if (mthing->options & MTF_AMBUSH)
-			P_SetAmbush(mobj);
-
-		if (mthing->options & MTF_OBJECTSPECIAL)
-			P_SetObjectSpecial(mobj);
-	}
+	if (!udmf && (mthing->options & MTF_AMBUSH))
+		P_SetAmbush(mthing, mobj);
 
 	// Generic reverse gravity for individual objects flag.
 	if (mthing->options & MTF_OBJECTFLIP)
@@ -13341,11 +13339,13 @@ static void P_SpawnHoopInternal(mapthing_t *mthing, INT32 hoopsize, fixed_t size
 	mobj_t *mobj = NULL;
 	mobj_t *nextmobj = NULL;
 	mobj_t *hoopcenter;
-	TMatrix *pitchmatrix, *yawmatrix;
-	fixed_t radius = hoopsize*sizefactor;
+	matrix_t pitchmatrix, yawmatrix;
+	fixed_t radius = mthing->args[0] << FRACBITS;
+	fixed_t sizefactor = 4*FRACUNIT;
+	fixed_t hoopsize = radius/sizefactor;
 	INT32 i;
 	angle_t fa;
-	TVector v, *res;
+	vector4_t v, res;
 	fixed_t x = mthing->x << FRACBITS;
 	fixed_t y = mthing->y << FRACBITS;
 	fixed_t z = P_GetMobjSpawnHeight(MT_HOOP, x, y, mthing->z << FRACBITS, 0, false, mthing->scale);
@@ -13359,11 +13359,10 @@ static void P_SpawnHoopInternal(mapthing_t *mthing, INT32 hoopsize, fixed_t size
 	hoopcenter->y = y;
 	P_SetThingPosition(hoopcenter);
 
-	// Scale 0-255 to 0-359 =(
-	hoopcenter->movedir = ((mthing->angle & 255)*360)/256; // Pitch
-	pitchmatrix = RotateXMatrix(FixedAngle(hoopcenter->movedir << FRACBITS));
-	hoopcenter->movecount = (((UINT16)mthing->angle >> 8)*360)/256; // Yaw
-	yawmatrix = RotateZMatrix(FixedAngle(hoopcenter->movecount << FRACBITS));
+	hoopcenter->movedir = mthing->pitch;
+	FM_RotateX(&pitchmatrix, FixedAngle(hoopcenter->movedir << FRACBITS));
+	hoopcenter->movecount = mthing->angle;
+	FM_RotateZ(&yawmatrix, FixedAngle(hoopcenter->movecount << FRACBITS));
 
 	// For the hoop when it flies away
 	hoopcenter->extravalue1 = hoopsize;
@@ -13373,17 +13372,15 @@ static void P_SpawnHoopInternal(mapthing_t *mthing, INT32 hoopsize, fixed_t size
 	for (i = 0; i < hoopsize; i++)
 	{
 		fa = i*(FINEANGLES/hoopsize);
-		v[0] = FixedMul(FINECOSINE(fa), radius);
-		v[1] = 0;
-		v[2] = FixedMul(FINESINE(fa), radius);
-		v[3] = FRACUNIT;
+		v.x = FixedMul(FINECOSINE(fa), radius);
+		v.y = 0;
+		v.z = FixedMul(FINESINE(fa), radius);
+		v.a = FRACUNIT;
 
-		res = VectorMatrixMultiply(v, *pitchmatrix);
-		M_Memcpy(&v, res, sizeof(v));
-		res = VectorMatrixMultiply(v, *yawmatrix);
-		M_Memcpy(&v, res, sizeof(v));
+		FV4_Copy(&v, FM_MultMatrixVec4(&pitchmatrix, &v, &res));
+		FV4_Copy(&v, FM_MultMatrixVec4(&yawmatrix, &v, &res));
 
-		mobj = P_SpawnMobj(x + v[0], y + v[1], z + v[2], MT_HOOP);
+		mobj = P_SpawnMobj(x + v.x, y + v.y, z + v.z, MT_HOOP);
 		mobj->z -= mobj->height/2;
 
 		if (maptol & TOL_XMAS)
@@ -13419,17 +13416,15 @@ static void P_SpawnHoopInternal(mapthing_t *mthing, INT32 hoopsize, fixed_t size
 		for (i = 0; i < hoopsize; i++)
 		{
 			fa = i*(FINEANGLES/hoopsize);
-			v[0] = FixedMul(FINECOSINE(fa), radius);
-			v[1] = 0;
-			v[2] = FixedMul(FINESINE(fa), radius);
-			v[3] = FRACUNIT;
+			v.x = FixedMul(FINECOSINE(fa), radius);
+			v.y = 0;
+			v.z = FixedMul(FINESINE(fa), radius);
+			v.a = FRACUNIT;
 
-			res = VectorMatrixMultiply(v, *pitchmatrix);
-			M_Memcpy(&v, res, sizeof(v));
-			res = VectorMatrixMultiply(v, *yawmatrix);
-			M_Memcpy(&v, res, sizeof(v));
+			FV4_Copy(&v, FM_MultMatrixVec4(&pitchmatrix, &v, &res));
+			FV4_Copy(&v, FM_MultMatrixVec4(&yawmatrix, &v, &res));
 
-			mobj = P_SpawnMobj(x + v[0], y + v[1], z + v[2], MT_HOOPCOLLIDE);
+			mobj = P_SpawnMobj(x + v.x, y + v.y, z + v.z, MT_HOOPCOLLIDE);
 			mobj->z -= mobj->height/2;
 
 			// Link all the collision sprites together.
@@ -13533,7 +13528,8 @@ static void P_SpawnItemCircle(mapthing_t *mthing, mobjtype_t *itemtypes, UINT8 n
 	angle_t angle = FixedAngle(mthing->angle << FRACBITS);
 	angle_t fa;
 	INT32 i;
-	TVector v, *res;
+	matrix_t m;
+	vector4_t v, res;
 
 	for (i = 0; i < numitemtypes; i++)
 	{
@@ -13561,15 +13557,15 @@ static void P_SpawnItemCircle(mapthing_t *mthing, mobjtype_t *itemtypes, UINT8 n
 		dummything.type = mobjinfo[itemtype].doomednum;
 
 		fa = i*FINEANGLES/numitems;
-		v[0] = FixedMul(FINECOSINE(fa), size);
-		v[1] = 0;
-		v[2] = FixedMul(FINESINE(fa), size);
-		v[3] = FRACUNIT;
+		v.x = FixedMul(FINECOSINE(fa), size);
+		v.y = 0;
+		v.z = FixedMul(FINESINE(fa), size);
+		v.a = FRACUNIT;
 
-		res = VectorMatrixMultiply(v, *RotateZMatrix(angle));
-		M_Memcpy(&v, res, sizeof(v));
+		FM_RotateZ(&m, angle);
+		FV4_Copy(&v, FM_MultMatrixVec4(&m, &v, &res));
 
-		mobj = P_SpawnMobjFromMapThing(&dummything, x + v[0], y + v[1], z + v[2], itemtype);
+		mobj = P_SpawnMobjFromMapThing(&dummything, x + v.x, y + v.y, z + v.z, itemtype);
 
 		if (!mobj)
 			continue;
