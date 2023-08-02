@@ -101,6 +101,7 @@ if(${SDL2_FOUND})
 			${CURL_LIBRARIES}
 			${DISCORDRPC_LIBRARIES}
 			${DISCORDGAMESDK_LIBRARIES}
+			${LIBAV_LIBRARIES}
 		)
 		set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME "${CPACK_PACKAGE_DESCRIPTION_SUMMARY}")
 	else()
@@ -116,6 +117,7 @@ if(${SDL2_FOUND})
 			${CURL_LIBRARIES}
 			${DISCORDRPC_LIBRARIES}
 			${DISCORDGAMESDK_LIBRARIES}
+			${LIBAV_LIBRARIES}
 		)
 
 		if(${CMAKE_SYSTEM} MATCHES Linux)
@@ -162,6 +164,7 @@ if(${SDL2_FOUND})
 		${OPENGL_INCLUDE_DIRS}
 		${CURL_INCLUDE_DIRS}
 		${DISCORDRPC_INCLUDE_DIRS}
+		${LIBAV_INCLUDE_DIRS}
 	)
 
 	if((${SRB2_HAVE_MIXER}) OR (${SRB2_HAVE_MIXERX}))
@@ -280,6 +283,16 @@ if(${SDL2_FOUND})
 		endif()
 		if(${SRB2_CONFIG_HAVE_DISCORDGAMESDK})
 			getwinlib(discord_gamesdk "discord_game_sdk.dll")
+		endif()
+		if(${SRB2_CONFIG_HAVE_LIBAV})
+			getwinlib(libav "avcodec-58.dll")
+			getwinlib(libav "avfilter-7.dll")
+			getwinlib(libav "avresample-4.dll")
+			getwinlib(libav "swscale-5.dll")
+			getwinlib(libav "avdevice-57.dll")
+			getwinlib(libav "avformat-58.dll")
+			getwinlib(libav "avresample-4.dll")
+			getwinlib(libav "avutil-56.dll")
 		endif()
 
 		install(PROGRAMS

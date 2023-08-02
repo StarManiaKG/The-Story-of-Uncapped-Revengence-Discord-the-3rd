@@ -69,14 +69,14 @@ extern consvar_t cv_masterserver_update_rate;
 extern consvar_t cv_masterserver_timeout;
 extern consvar_t cv_masterserver_debug;
 extern consvar_t cv_masterserver_token;
-
+// HOLEPUNCHING STUFF //
 extern consvar_t cv_rendezvousserver;
+// FINALLY, IT'S OVER //
 
 // < 0 to not connect (usually -1) (offline mode)
 // == 0 to show all rooms, not a valid hosting room
 // anything else is whatever room the MS assigns to that number (online mode)
 extern INT16 ms_RoomId;
-extern INT16 msServerType;
 
 #ifdef HAVE_THREADS
 extern int           ms_QueryId;

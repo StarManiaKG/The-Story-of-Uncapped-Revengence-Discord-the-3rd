@@ -62,20 +62,18 @@
 #include "discord.h"
 #endif
 
-//// STAR STUFF YAYA ////
+// STAR STUFF YAYA //
 #include "STAR/star_vars.h"
 #include "doomstat.h" // useContinues
 
-// STAR FUNCTIONS, GOTTA GEW FEST //
-//static void Got_Tsourdt3rdInfo(UINT8 **cp, INT32 playernum);
-
+// Functions
 static void STAR_UseContinues_OnChange(void);
 
-// STAR COMMANDS I THINK //
+// Commands
 consvar_t cv_continues = CVAR_INIT ("continues", "Off", CV_SAVE|CV_CALL, CV_OnOff, STAR_UseContinues_OnChange);
 consvar_t cv_movingplayersetup = CVAR_INIT ("movingplayersetup", "Off", CV_SAVE, CV_OnOff, NULL);
 
-//// END OF THAT MESS ////
+// END OF THAT MESS //
 
 // ------
 // protos
@@ -95,6 +93,9 @@ static void Got_RandomSeed(UINT8 **cp, INT32 playernum);
 static void Got_RunSOCcmd(UINT8 **cp, INT32 playernum);
 static void Got_Teamchange(UINT8 **cp, INT32 playernum);
 static void Got_Clearscores(UINT8 **cp, INT32 playernum);
+// STAR STUFF //
+static void Got_Tsourdt3rdInfo(UINT8 **cp, INT32 playernum);
+// END THAT //
 
 static void PointLimit_OnChange(void);
 static void TimeLimit_OnChange(void);
@@ -635,12 +636,15 @@ void D_RegisterServerCommands(void)
 
 	CV_RegisterVar(&cv_dummyconsvar);
 
-	// DISCORD THINGIES //
+	// STAR STUFF //
 #ifdef USE_STUN
 	CV_RegisterVar(&cv_stunserver);
 #endif
 
-	//RegisterNetXCmd(XD_TSOURDT3RD,Got_Tsourdt3rdInfo);
+	CV_RegisterVar(&cv_discordinvites);
+
+	RegisterNetXCmd(XD_TSOURDT3RD, Got_Tsourdt3rdInfo);
+	// END THIS PLEASE //
 }
 
 // =========================================================================
@@ -949,12 +953,11 @@ void D_RegisterClientCommands(void)
 #endif
 
 #ifdef HAVE_DISCORDRPC
-	// Discord Things //
+	// DISCORD THINGS //
 	// Main Things
 	CV_RegisterVar(&cv_discordrp);
 	CV_RegisterVar(&cv_discordstreamer);
 	CV_RegisterVar(&cv_discordasks);
-	CV_RegisterVar(&cv_discordinvites);
 	CV_RegisterVar(&cv_discordshowonstatus);
 	CV_RegisterVar(&cv_discordstatusmemes);
 	CV_RegisterVar(&cv_discordcharacterimagetype);
@@ -974,11 +977,15 @@ void D_RegisterClientCommands(void)
     CV_RegisterVar(&cv_customdiscordsmallmiscimage);
     CV_RegisterVar(&cv_customdiscordlargeimagetext);
     CV_RegisterVar(&cv_customdiscordsmallimagetext);
+	// END OF THE DISCORD THINGS //
 #endif
 
 	// CUSTOM FUNNY STAR THINGS :) //
 	CV_RegisterVar(&cv_startupscreen);
 	CV_RegisterVar(&cv_stjrintro);
+
+	CV_RegisterVar(&cv_loadingscreen);
+	CV_RegisterVar(&cv_loadingscreenimage);
 
 	CV_RegisterVar(&cv_menucolor);
 	CV_RegisterVar(&cv_fpscountercolor);
@@ -1025,6 +1032,11 @@ void D_RegisterClientCommands(void)
 
 	CV_RegisterVar(&cv_alloweasteregghunt);
 	CV_RegisterVar(&cv_easteregghuntbonuses);
+
+	CV_RegisterVar(&cv_windowtitletype);
+	CV_RegisterVar(&cv_customwindowtitle);
+	
+	CV_RegisterVar(&cv_memesonwindowtitle);
 	// THE STAR VARS ARE COMPLETE! //
 }
 
@@ -2074,8 +2086,9 @@ static void Command_Map_f(void)
 	}
 
 	// DO STAR STUFF //
-	if (menuactive)
-		M_ClearMenus(true);
+	M_ClearMenus(true);
+	if (demoplayback && titledemo)
+		G_CheckDemoStatus();
 	// END OF STAR STUFF //
 
 	// new gametype value
@@ -3908,10 +3921,11 @@ static void Command_ListWADS_f(void)
   */
 static void Command_Version_f(void)
 {
+	// STAR NOTE: i was here :)
 #ifdef DEVELOP
-	CONS_Printf("Sonic Robo Blast 2 %s-%s (%s %s) ", compbranch, comprevision, compdate, comptime);
+	CONS_Printf("Sonic Robo Blast 2; %s - %s-%s (%s %s) ", TSOURDT3RDVERSIONSTRING, compbranch, comprevision, compdate, comptime);
 #else
-	CONS_Printf("Sonic Robo Blast 2 %s (%s %s %s %s) ", VERSIONSTRING, compdate, comptime, comprevision, compbranch);
+	CONS_Printf("Sonic Robo Blast 2 %s; %s %s (%s %s %s %s) ", VERSIONSTRING, TSOURDT3RDVERSIONSTRING, TSOURDT3RDBYSTARMANIAKGSTRING, compdate, comptime, comprevision, compbranch);
 #endif
 
 	// Base library
@@ -4003,8 +4017,9 @@ static void Command_Playintro_f(void)
 		closefilemenu(true);
 
 	// STAR STUFF BEP //
-	if (menuactive)
-		M_ClearMenus(true);
+	M_ClearMenus(true);
+	if (demoplayback && titledemo)
+		G_CheckDemoStatus();
 	// ADDING STUFF FOR CONVENIENCE IS FUN //
 
 	F_StartIntro();
@@ -4913,11 +4928,11 @@ static void Skin_OnChange(void)
 	// No Cheating in Race-Type Modes
 	if (gametyperules & GTR_RACE && (cv_movingplayersetup.value && P_PlayerMoving(consoleplayer)))
 	{
-		CONS_Printf("Nice try, %s.\n",
+		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment. Nice try, %s.\n"),
 #ifdef HAVE_DISCORDRPC
-			(((strcmp(discordUserName, " ") == 0) || (strcmp(discordUserName, "  ") == 0)) ? ((Playing() ? player_names[consoleplayer] : cv_playername.string)) : (discordUserName))
+			((discordInfo.Disconnected || !discordInfo.Initialized) ? (Playing() ? player_names[consoleplayer] : cv_playername.string) : discordInfo.sessionUsername)
 #else
-			((Playing() ? player_names[consoleplayer] : cv_playername.string))
+			(Playing() ? player_names[consoleplayer] : cv_playername.string)
 #endif
 		);
 		CV_StealthSet(&cv_skin, skins[players[consoleplayer].skin].name);
@@ -4926,19 +4941,31 @@ static void Skin_OnChange(void)
 
 	if ((CanChangeSkin(consoleplayer))
 		&& (cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(consoleplayer))))
-	{	
+	{
+		SendNameAndColor();
+
 		if (cv_movingplayersetup.value && P_PlayerMoving(consoleplayer))
 		{
 			player_t *player = &players[consoleplayer];
-			P_ResetPlayer(player);
+			if (player->mo && !(P_IsObjectOnGround(player->mo)))
+				P_ResetPlayer(player);
+
+			if (netgame)
+				NetUpdate(); // update the player
 		}
-		SendNameAndColor();
 	}
 	else
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));
 		CV_StealthSet(&cv_skin, skins[players[consoleplayer].skin].name);
 	}
+
+#ifdef HAVE_SDL
+	// STAR STUFF //
+	if (cv_windowtitletype.value == 1)
+		STAR_SetWindowTitle();
+	// END THAT //
+#endif
 }
 
 /** Sends a skin change for the secondary splitscreen player, unless that
@@ -4954,11 +4981,11 @@ static void Skin2_OnChange(void)
 	// No Cheating in Race-Type Modes
 	if (gametyperules & GTR_RACE && (cv_movingplayersetup.value && P_PlayerMoving(secondarydisplayplayer)))
 	{
-		CONS_Printf("Nice try %s's friend.\n",
+		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment. Nice try, %s's friend.\n"),
 #ifdef HAVE_DISCORDRPC
-			(((strcmp(discordUserName, " ") == 0) || (strcmp(discordUserName, "  ") == 0)) ? ((Playing() ? player_names[secondarydisplayplayer] : cv_playername2.string)) : (discordUserName))
+			((discordInfo.Disconnected || !discordInfo.Initialized) ? (Playing() ? player_names[consoleplayer] : cv_playername.string) : discordInfo.sessionUsername)
 #else
-			((Playing() ? player_names[secondarydisplayplayer] : cv_playername2.string))
+			(Playing() ? player_names[consoleplayer] : cv_playername.string)
 #endif
 		);
 		CV_StealthSet(&cv_skin2, skins[players[secondarydisplayplayer].skin].name);
@@ -4967,13 +4994,15 @@ static void Skin2_OnChange(void)
 
 	if ((CanChangeSkin(secondarydisplayplayer))
 		&& (cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(secondarydisplayplayer))))
-	{	
+	{
+		SendNameAndColor2();
+
 		if (cv_movingplayersetup.value && P_PlayerMoving(secondarydisplayplayer))
 		{
 			player_t *player2 = &players[secondarydisplayplayer];
-			P_ResetPlayer(player2);
+			if (player2->mo && !(P_IsObjectOnGround(player2->mo)))
+				P_ResetPlayer(player2);
 		}
-		SendNameAndColor2();
 	}
 	else
 	{
@@ -5127,12 +5156,11 @@ static void BaseNumLaps_OnChange(void)
 	}
 }
 
-// STAR COMMANDS: ELECTRIC BOOGALO //
-// Discord and STAR Things
-/*void Got_Tsourdt3rdInfo(UINT8 **p, INT32 playernum)
+// STAR STUFF: ELECTRIC BOOGALO //
+static void Got_Tsourdt3rdInfo(UINT8 **cp, INT32 playernum)
 {
-	// Protect Others Against a Hacked/Buggy Client
-	if (playernum != serverplayer) // && !IsPlayerAdmin(playernum))
+	// Protect Others Against a Hacked/Buggy Client //
+	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal Discord info command received from %s\n"), player_names[playernum]);
 		if (server)
@@ -5140,19 +5168,28 @@ static void BaseNumLaps_OnChange(void)
 		return;
 	}
 
-	// Don't do anything with the information if we don't have Discord RPC support
+	// Apply Info, and We're Done :) //
+	TSoURDt3rdInfo.serverUsesTSoURDt3rd 	= (boolean)READUINT8(*cp);	
+
+	TSoURDt3rdInfo.majorVersion 			= READUINT8(*cp);
+	TSoURDt3rdInfo.minorVersion 			= READUINT8(*cp);
+	TSoURDt3rdInfo.subVersion 				= READUINT8(*cp);
+
+	TSoURDt3rdInfo.serverTSoURDt3rdVersion 	= STAR_CombineNumbers(3, TSoURDt3rdInfo.majorVersion, TSoURDt3rdInfo.minorVersion, TSoURDt3rdInfo.subVersion);
+
+	// DISCORD STUFF //
 #ifdef HAVE_DISCORDRPC
-	discordInfo.maxPlayers = READUINT8(*p);
-	discordInfo.joinsAllowed = (boolean)READUINT8(*p);
-	discordInfo.whoCanInvite = READUINT8(*p);
+	discordInfo.maxPlayers 					= READUINT8(*cp);
+	discordInfo.joinsAllowed 				= (boolean)READUINT8(*cp);
+	discordInfo.whoCanInvite 				= READUINT8(*cp);
 
 	DRPC_UpdatePresence();
 #else
-	(*p) += 3;
+	(*cp) += 3; // Don't do anything with the information if we don't have Discord RPC support
 #endif
-}*/
+	// END THAT DISCORD STUFF //
+}
 
-// STAR THINGS
 static void STAR_UseContinues_OnChange(void)
 {
 	if (Playing())

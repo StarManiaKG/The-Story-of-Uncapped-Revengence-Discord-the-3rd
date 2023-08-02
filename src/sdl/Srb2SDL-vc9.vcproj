@@ -4998,7 +4998,7 @@
 				RelativePath="..\w_wad.h"
 				>
 			</File>
-						<File
+			<File
 				RelativePath="..\STAR\star_functions.c"
 				>
 				<FileConfiguration
@@ -5040,6 +5040,50 @@
 			</File>
 			<File
 				RelativePath="..\STAR\star_vars.h"
+				>
+			</File>
+			<File
+				RelativePath="..\libav\LIBAV_coders.c"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\libav\LIBAV_coders.h"
 				>
 			</File>
 		</Filter>

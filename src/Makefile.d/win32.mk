@@ -70,6 +70,18 @@ libs+=-L../libs/discord-game-sdk/x86_64
 else
 libs+=-L../libs/discord-game-sdk/x86
 endif
+#libs+=-ldiscord_gamesdk // this isn't exactly something you can compile :p
+endif
+
+ifdef HAVE_LIBAV
+ifdef MINGW64
+opts+=-I../libs/libav/x86_64-w64-mingw32/include
+libs+=-L../libs/libav/x86_64-w64-mingw32/lib
+else
+opts+=-I../libs/libav/i686-w64-mingw32/include
+libs+=-L../libs/libav/i686-w64-mingw32/lib
+endif
+libs+=-lvfw32 -lws2_32 -lbcrypt -luser32
 endif
 
 mingw:=$(i686)-w64-mingw32

@@ -1007,7 +1007,7 @@ void Y_Ticker(void)
 	if (cv_storesavesinfolders.value)
 	{
 		I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER, srb2home), 0755);
-		if (useTSOURDT3RDasFileName)
+		if (TSoURDt3rd_useAsFileName)
 		{
 			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd", srb2home), 0755);
 			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd" PATHSEP "%s", srb2home, timeattackfolder), 0755);

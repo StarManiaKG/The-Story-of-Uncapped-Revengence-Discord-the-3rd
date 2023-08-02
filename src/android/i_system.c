@@ -216,12 +216,6 @@ INT32 I_StartupSystem(void)
 
 void I_ShutdownSystem(void){}
 
-#ifdef HAVE_DISCORDRPC
-#include "discord.h"
-
-void DRPC_Shutdown(void);
-#endif
-
 void I_GetDiskFreeSpace(INT64* freespace)
 {
   *freespace = 0;

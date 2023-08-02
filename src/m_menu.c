@@ -319,6 +319,11 @@ static void M_StartSplitServerMenu(INT32 choice);
 static void M_StartServer(INT32 choice);
 static void M_ServerOptions(INT32 choice);
 #ifndef NONET
+// STAR STUFF: KART STUFF //
+static void M_PreStartServerMenuChoice(INT32 choice);
+static void M_PreConnectMenuChoice(INT32 choice);
+// END THAT PLEASE //
+
 static void M_StartServerMenu(INT32 choice);
 static void M_ConnectMenu(INT32 choice);
 static void M_ConnectMenuModChecks(INT32 choice);
@@ -360,29 +365,21 @@ menu_t OP_OpenGLLightingDef;
 menu_t OP_SoundOptionsDef;
 menu_t OP_SoundAdvancedDef;
 
-// STAR THINGS YAY OR SOMETHING IDK ANYMORE //
-// main build menu
-menu_t OP_Tsourdt3rdReadMeDef;
-
-menu_t OP_Tsourdt3rdOptionsDef;
-menu_t OP_Tsourdt3rdJukeboxDef;
-void M_ResetJukebox(void);
-
-// snake
-static void STAR_InitializeSnakeMenu(INT32 choice);
-static void STAR_DrawSnakeMenu(void);
-static void STAR_HandleSnakeMenu(INT32 choice);
-
-// extras
-void STAR_SetProblematicCommandsForNetgames(void);
-void STAR_ResetProblematicCommandsAfterNetgames(void);
-// KIMOKAWAII //
-
 //Misc
 menu_t OP_DataOptionsDef, OP_ScreenshotOptionsDef, OP_EraseDataDef;
 menu_t OP_ServerOptionsDef;
 
+menu_t OP_MonitorToggleDef;
+static void M_ScreenshotOptions(INT32 choice);
+static void M_SetupScreenshotMenu(void);
+static void M_EraseData(INT32 choice);
+
+static void M_Addons(INT32 choice);
+static void M_AddonsOptions(INT32 choice);
+static patch_t *addonsp[NUM_EXT+5];
+
 #ifdef HAVE_DISCORDRPC
+// DISCORD THINGIES //
 boolean discordMenuOpen;
 
 static void M_DiscordOptions(INT32 choice);
@@ -395,32 +392,43 @@ static void M_DrawDiscordMenu(void);
 menu_t MISC_DiscordRequestsDef;
 menu_t OP_DiscordOptionsDef;
 menu_t OP_CustomStatusOutputDef;
+// KIMOKAWAIII //
 #endif
 
-menu_t OP_MonitorToggleDef;
-static void M_ScreenshotOptions(INT32 choice);
-static void M_SetupScreenshotMenu(void);
-static void M_EraseData(INT32 choice);
-
-static void M_Addons(INT32 choice);
-static void M_AddonsOptions(INT32 choice);
-static patch_t *addonsp[NUM_EXT+5];
-
 // STAR STUFF WEEEE //
-// main build menu stuff
-static void M_Tsourdt3rdReadMe(INT32 choice);
+// main menu stuff
+menu_t OP_Tsourdt3rdReadMeDef;
 static void M_DrawTsourdt3rdReadMe(void);
 static void M_HandleTsourdt3rdReadMe(INT32 choice);
 
+// server menu stuff
+static void STAR_InitializeExtendedServerPropertyMenu(INT32 choice);
+static void STAR_DrawExtendedServerPropertyMenu(void);
+static void STAR_HandleExtendedServerPropertyMenu(INT32 choice);
+
+// main build menu stuff
+menu_t OP_Tsourdt3rdOptionsDef;
 static void M_Tsourdt3rdOptions(INT32 choice);
 
 // jukebox stuff
+menu_t OP_Tsourdt3rdJukeboxDef;
+
 boolean jukeboxMusicPlaying = false;
 char jukeboxMusicName[22+12] = "";
 char jukeboxMusicTrack[7] = "";
 static void M_Tsourdt3rdJukebox(INT32 choice);
 static void M_DrawTsourdt3rdJukebox(void);
 static void M_HandleTsourdt3rdJukebox(INT32 choice);
+void M_ResetJukebox(void);
+
+// snake
+static void STAR_InitializeSnakeMenu(INT32 choice);
+static void STAR_DrawSnakeMenu(void);
+static void STAR_HandleSnakeMenu(INT32 choice);
+
+// extras
+void STAR_SetProblematicCommandsForNetgames(void);
+void STAR_ResetProblematicCommandsAfterNetgames(void);
 // GOODBYE FOR NOW //
 
 #define addonmenusize 9 // number of items actually displayed in the addons menu view, formerly (2*numaddonsshown + 1)
@@ -516,6 +524,8 @@ boolean SpawnTheDispenser;
 boolean AllowEasterEggHunt;
 boolean EnableEasterEggHuntBonuses;
 
+INT32 STAR_ServerToExtend;
+
 static void STAR_TimeOver_OnChange(void);
 
 #ifdef APRIL_FOOLS
@@ -534,6 +544,8 @@ static void STAR_SpawnDispenser(INT32 choice);
 
 static void STAR_EasterEggHunt_OnChange(void);
 static void STAR_EnableEasterEggHuntBonuses_OnChange(void);
+
+static void STAR_WindowTitleVars_OnChange(void);
 
 // ==========================================================================
 // CONSOLE VARIABLES AND THEIR POSSIBLE VALUES GO HERE.
@@ -759,6 +771,14 @@ consvar_t cv_jukeboxspeed = CVAR_INIT ("jukeboxspeed", "1.0", CV_SAVE|CV_CALL, j
 
 consvar_t cv_alloweasteregghunt = CVAR_INIT ("alloweasteregghunt", "No", CV_SAVE|CV_CALL, CV_YesNo, STAR_EasterEggHunt_OnChange);
 consvar_t cv_easteregghuntbonuses = CVAR_INIT ("easteregghuntbonuses", "Off", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, STAR_EnableEasterEggHuntBonuses_OnChange);
+
+#ifdef HAVE_SDL
+static CV_PossibleValue_t windowtitle_t[] = {{0, "Default"}, {1, "Dynamic"}, {2, "Semi-Custom"}, {3, "Fully Custom"}, {0, NULL}};
+consvar_t cv_windowtitletype = CVAR_INIT ("windowtitletype", "Default", CV_SAVE|CV_CALL, windowtitle_t, STAR_WindowTitleVars_OnChange);
+
+consvar_t cv_customwindowtitle = CVAR_INIT ("customwindowtitle", "Currently Robo Blasting in", CV_SAVE|CV_CALL, NULL, STAR_WindowTitleVars_OnChange);
+consvar_t cv_memesonwindowtitle = CVAR_INIT ("memesonwindowtitle", "Yes", CV_SAVE|CV_CALL, CV_YesNo, STAR_WindowTitleVars_OnChange);
+#endif
 //// END OF STAR COMMANDS ////
 
 // ==========================================================================
@@ -787,7 +807,7 @@ static menuitem_t MainMenu[] =
 	{IT_STRING|IT_CALL,    NULL, "Quit  Game",  M_QuitSRB2,             116},
 
 	// STAR STUFF //
-	{IT_STRING|IT_CALL,    NULL, "READ ME!", 	M_Tsourdt3rdReadMe,     132},
+	{IT_STRING|IT_SUBMENU, NULL, "READ ME!",	&OP_Tsourdt3rdReadMeDef,132},
 	// READ ME? MORE LIKE AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA //
 };
 
@@ -798,7 +818,11 @@ typedef enum
 	secrets,
 	addons,
 	options,
-	quitdoom
+	quitdoom,
+
+	// STAR STUFF YAY //
+	tsourdt3rdreadme
+	// END THAT //
 } main_e;
 
 static menuitem_t MISC_AddonsMenu[] =
@@ -906,24 +930,6 @@ typedef enum
 // ---------------------
 static menuitem_t SPauseMenu[] =
 {
-#ifdef APRIL_FOOLS
-	{IT_STRING | IT_CALL,    NULL, "Mods",  			   M_Addons,               8},
-
-	// Pandora's Box will be shifted up if both options are available
-	{IT_CALL | IT_STRING,    NULL, "Enable Hacks",     	   M_PandorasBox,         16},
-	{IT_CALL | IT_STRING,    NULL, "where are the emblems help",
-														   M_EmblemHints,         24},
-	{IT_CALL | IT_STRING,    NULL, "What Map??",      	   M_LoadGameLevelSelect, 32},
-
-	{IT_CALL | IT_STRING,    NULL, "Keep Going",           M_SelectableClearMenus,48},
-	{IT_CALL | IT_STRING,    NULL, "Try Again",            M_Retry,               56},
-	{IT_CALL | IT_STRING,    NULL, "Settings",             M_Options,             64},
-
-	{IT_CALL | IT_STRING,    NULL, "Bored Already?",       M_EndGame,             80},
-	{IT_CALL | IT_STRING,    NULL, "EXIT TO DOS",          M_QuitSRB2,            88},
-
-#else
-
 	{IT_STRING | IT_CALL,    NULL, "Add-ons",  			   M_Addons,           	   8},
 
 	// Pandora's Box will be shifted up if both options are available
@@ -937,14 +943,13 @@ static menuitem_t SPauseMenu[] =
 
 	{IT_CALL | IT_STRING,    NULL, "Return to Title",      M_EndGame,             88},
 	{IT_CALL | IT_STRING,    NULL, "Quit Game",            M_QuitSRB2,            96},
-#endif // APRIL_FOOLS
 };
 
 typedef enum
 {
 	// STAR STUFF //
 	spause_addons = 0,
-	// YOU SHOULD BE ABLE TO DO IT WHENEVER YOU WANT, LOL //
+	// YOU SHOULD BE ABLE TO LOAD ADDONS WHENEVER YOU WANT //
 	
 	spause_pandora,
 	spause_hints,
@@ -1358,6 +1363,11 @@ static menuitem_t MP_SplitServerMenu[] =
 };
 
 #ifndef NONET
+// STAR STUFF //
+static menuitem_t MP_ExtendedServerPropertyMenu[] = {
+	{IT_KEYHANDLER | IT_NOTHING, NULL, "", STAR_HandleExtendedServerPropertyMenu, 0}
+};
+// I'M TIRED //
 
 static menuitem_t MP_MainMenu[] =
 {
@@ -1428,17 +1438,17 @@ static menuitem_t MP_ConnectMenu[] =
 	{IT_STRING | IT_KEYHANDLER, NULL, "Page",     M_HandleServerPage, 20},
 	{IT_STRING | IT_CALL,       NULL, "Refresh",  M_Refresh,          28},
 
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,          48-4},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,          60-4},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,          72-4},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,          84-4},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,          96-4},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,         108-4},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,         120-4},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,         132-4},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,         144-4},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,         156-4},
-	{IT_STRING | IT_SPACE, NULL, "",              M_Connect,         168-4},
+	{IT_STRING | IT_SPACE, NULL, "",              STAR_InitializeExtendedServerPropertyMenu,          48-4},
+	{IT_STRING | IT_SPACE, NULL, "",              STAR_InitializeExtendedServerPropertyMenu,          60-4},
+	{IT_STRING | IT_SPACE, NULL, "",              STAR_InitializeExtendedServerPropertyMenu,          72-4},
+	{IT_STRING | IT_SPACE, NULL, "",              STAR_InitializeExtendedServerPropertyMenu,          84-4},
+	{IT_STRING | IT_SPACE, NULL, "",              STAR_InitializeExtendedServerPropertyMenu,          96-4},
+	{IT_STRING | IT_SPACE, NULL, "",              STAR_InitializeExtendedServerPropertyMenu,         108-4},
+	{IT_STRING | IT_SPACE, NULL, "",              STAR_InitializeExtendedServerPropertyMenu,         120-4},
+	{IT_STRING | IT_SPACE, NULL, "",              STAR_InitializeExtendedServerPropertyMenu,         132-4},
+	{IT_STRING | IT_SPACE, NULL, "",              STAR_InitializeExtendedServerPropertyMenu,         144-4},
+	{IT_STRING | IT_SPACE, NULL, "",              STAR_InitializeExtendedServerPropertyMenu,         156-4},
+	{IT_STRING | IT_SPACE, NULL, "",              STAR_InitializeExtendedServerPropertyMenu,         168-4},
 };
 
 enum
@@ -2252,25 +2262,25 @@ static menuitem_t OP_OpenGLOptionsMenu[] =
 {
 #ifdef APRIL_FOOLS
 	{IT_HEADER, NULL, "3D Sprites", NULL, 0},
-	{IT_STRING|IT_CVAR,         NULL, "3D sprites",              &cv_glmodels,             12},
+	{IT_STRING|IT_CVAR,         NULL, "3D sprites",          &cv_glmodels,        	   12},
 	{IT_STRING|IT_CVAR,         NULL, "Slide interpolation", &cv_glmodelinterpolation, 22},
 	{IT_STRING|IT_CVAR,         NULL, "Ambient lighting",    &cv_glmodellighting,      32},
 
 	{IT_HEADER, NULL, "Main Stuff", NULL, 51},
-	{IT_STRING|IT_CVAR,         NULL, "Cool effects",             &cv_glshaders,            63},
-	{IT_STRING|IT_CVAR,         NULL, "Software Mode",   &cv_glpaletterendering,   73},
-	{IT_STRING|IT_CVAR,         NULL, "Vertical walls", &cv_glshearing,           73},
-	{IT_STRING|IT_CVAR,         NULL, "Quake pro rate",       &cv_fov,                  83},
+	{IT_STRING|IT_CVAR,         NULL, "Cool effects",        &cv_glshaders,      	   63},
+	{IT_STRING|IT_CVAR,         NULL, "Software Mode",   	 &cv_glpaletterendering,   73},
+	{IT_STRING|IT_CVAR,         NULL, "Vertical walls", 	 &cv_glshearing,           83},
+	{IT_STRING|IT_CVAR,         NULL, "Quake pro rate",      &cv_fov,                  93},
 
-	{IT_HEADER, NULL, "The Other Stuff", NULL, 102},
-	{IT_STRING|IT_CVAR,         NULL, "Bit depth",           &cv_scr_depth,           114},
-	{IT_STRING|IT_CVAR,         NULL, "Texture filter",      &cv_glfiltermode,        124},
-	{IT_STRING|IT_CVAR,         NULL, "Anisotropic",         &cv_glanisotropicmode,   134},
+	{IT_HEADER, NULL, "The Other Stuff", NULL, 112},
+	{IT_STRING|IT_CVAR,         NULL, "Bit depth",           &cv_scr_depth,           124},
+	{IT_STRING|IT_CVAR,         NULL, "Texture filter",      &cv_glfiltermode,        134},
+	{IT_STRING|IT_CVAR,         NULL, "Anisotropic",         &cv_glanisotropicmode,   144},
 #ifdef ALAM_LIGHTING
-	{IT_SUBMENU|IT_STRING,      NULL, "Lighting...",         &OP_OpenGLLightingDef,   144},
+	{IT_SUBMENU|IT_STRING,     	NULL, "Lighting...",         &OP_OpenGLLightingDef,   154},
 #endif
 #if defined (_WINDOWS) && (!((defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)))
-	{IT_STRING|IT_CVAR,         NULL, "Make big screen",          &cv_fullscreen,          154},
+	{IT_STRING|IT_CVAR,         NULL, "Make big screen",     &cv_fullscreen,          164},
 #endif
 
 #else
@@ -2303,10 +2313,10 @@ static menuitem_t OP_OpenGLOptionsMenu[] =
 static menuitem_t OP_OpenGLLightingMenu[] =
 {
 #ifdef APRIL_FOOLS
-	{IT_STRING|IT_CVAR, NULL, "Coronavirus",          &cv_glcoronas,          0},
-	{IT_STRING|IT_CVAR, NULL, "Coronavirus size",     &cv_glcoronasize,      10},
-	{IT_STRING|IT_CVAR, NULL, "Moving lighting", &cv_gldynamiclighting, 20},
-	{IT_STRING|IT_CVAR, NULL, "Lazy lighting",  &cv_glstaticlighting,  30},
+	{IT_STRING|IT_CVAR, NULL, "Coronavirus",      &cv_glcoronas,          0},
+	{IT_STRING|IT_CVAR, NULL, "Coronavirus size", &cv_glcoronasize,      10},
+	{IT_STRING|IT_CVAR, NULL, "Moving lighting",  &cv_gldynamiclighting, 20},
+	{IT_STRING|IT_CVAR, NULL, "Lazy lighting",    &cv_glstaticlighting,  30},
 
 #else
 	
@@ -2697,10 +2707,8 @@ enum
 // STAR OPTIONS LETS GOOOOOOOOOOOOO //
 // ================================ //
 #ifdef APRIL_FOOLS
-#define STAROPTIONREST 5
 #define STARENUMADDITION 1
 #else
-#define STAROPTIONREST 0
 #define STARENUMADDITION 0
 #endif
 
@@ -2717,72 +2725,86 @@ static menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 	{IT_STRING | IT_CVAR,	NULL,	"Startup Screen",			&cv_startupscreen,		  	6},
 	{IT_STRING | IT_CVAR,	NULL,	"Sonic Team Jr Intro",		&cv_stjrintro,		  	   11},
 
-	{IT_STRING | IT_CVAR,	NULL,	"Menu Color",				&cv_menucolor,	   		   21},
+	{IT_STRING | IT_CVAR,	NULL,	"Loading Screen",			&cv_loadingscreen,		   21},
+	{IT_STRING | IT_CVAR,	NULL,	"Loading Screen Image",     &cv_loadingscreenimage,	   26},
 
-	{IT_STRING | IT_CVAR, 	NULL, 	"Show TPS",                 &cv_tpsrate,         	   31},
-	{IT_STRING | IT_CVAR,	NULL,	"FPS Counter Color",		&cv_fpscountercolor,	   36},
-	{IT_STRING | IT_CVAR,	NULL,	"TPS Counter Color",		&cv_tpscountercolor,	   41},
+	{IT_STRING | IT_CVAR,	NULL,	"Menu Color",				&cv_menucolor,	   		   36},
 
-	{IT_STRING | IT_CVAR,	NULL,	"Allow Typical Time Over",	&cv_allowtypicaltimeover,  51},
-	{IT_STRING | IT_CVAR,	NULL,	"Pause Graphic Style",		&cv_pausegraphicstyle,	   56},
-	{IT_STRING | IT_CVAR,	NULL,	"Automap Outside Devmode",	&cv_automapoutsidedevmode, 61},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Show TPS",                 &cv_tpsrate,         	   46},
+	{IT_STRING | IT_CVAR,	NULL,	"FPS Counter Color",		&cv_fpscountercolor,	   51},
+	{IT_STRING | IT_CVAR,	NULL,	"TPS Counter Color",		&cv_tpscountercolor,	   56},
 
-	{IT_STRING | IT_CVAR,	NULL,	"Sonic CD Mode",			&cv_soniccd,	   	   	   71},
+	{IT_STRING | IT_CVAR,	NULL,	"Shadow Type",				&cv_shadow,	  			   66},
+	{IT_STRING | IT_CVAR,	NULL,	"Realistic Shadows Can Rotate",
+																&cv_realisticshadowscanrotate,
+																						   71},
+
+	{IT_STRING | IT_CVAR,	NULL,	"Allow Typical Time Over",	&cv_allowtypicaltimeover,  81},
+	{IT_STRING | IT_CVAR,	NULL,	"Pause Graphic Style",		&cv_pausegraphicstyle,	   86},
+	{IT_STRING | IT_CVAR,	NULL,	"Automap Outside Devmode",	&cv_automapoutsidedevmode, 91},
+
+	{IT_STRING | IT_CVAR,	NULL,	"Sonic CD Mode",			&cv_soniccd,	   	   	  101},
 #ifdef APRIL_FOOLS	
-	{IT_STRING | IT_CVAR,	NULL,	"Ultimate Mode!",			&cv_ultimatemode,	   	   76},
+	{IT_STRING | IT_CVAR,	NULL,	"Ultimate Mode!",			&cv_ultimatemode,	   	  106},
 #endif
 
-	{IT_STRING | IT_CVAR,	NULL,	"Quit Screen",				&cv_quitscreen,	  		   81+STAROPTIONREST},
+	{IT_STRING | IT_CVAR,	NULL,	"Quit Screen",				&cv_quitscreen,	  		  111},
 
 	{IT_STRING | IT_CVAR,	NULL,	"TSoURDt3rd Update Message",&cv_tsourdt3rdupdatemessage,
-																						   91+STAROPTIONREST},
+																						  121},
 
-	{IT_HEADER, 			NULL, 	"Audio Options", 			NULL, 					  100+STAROPTIONREST},
-	{IT_STRING | IT_CVAR,	NULL,	"Game Over Music",			&cv_gameovermusic,		  106+STAROPTIONREST},
+	{IT_HEADER, 			NULL, 	"Audio Options", 			NULL, 					  130},
+	{IT_STRING | IT_CVAR,	NULL,	"Game Over Music",			&cv_gameovermusic,		  136},
 
-	{IT_HEADER, 			NULL, 	"Player Options", 			NULL, 					  115+STAROPTIONREST},
+	{IT_HEADER, 			NULL, 	"Player Options", 			NULL, 					  145},
 	{IT_STRING | IT_CVAR,	NULL,	"Shield Blocks Transformation",
 																&cv_shieldblockstransformation,
-																						  121+STAROPTIONREST},
+																						  151},
 	{IT_STRING | IT_CVAR,	NULL,	"Armageddon Nuke While Super",
-																&cv_armageddonnukesuper,  126+STAROPTIONREST},
+																&cv_armageddonnukesuper,  156},
 
 	{IT_STRING | IT_CVAR,	NULL,	"Always Overlay Invincibility",
-																&cv_alwaysoverlayinvuln,  136+STAROPTIONREST},
+																&cv_alwaysoverlayinvuln,  166},
 
-	{IT_HEADER, 			NULL, 	"Savedata Options", 		NULL, 					  145+STAROPTIONREST},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Store Saves in Folders", 	&cv_storesavesinfolders,  151+STAROPTIONREST},
+	{IT_HEADER, 			NULL, 	"Savedata Options", 		NULL, 					  175},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Store Saves in Folders", 	&cv_storesavesinfolders,  181},
 	
-	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save", 			&cv_perfectsave, 		  161+STAROPTIONREST},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 1", 	&cv_perfectsavestripe1,	  166+STAROPTIONREST},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 2", 	&cv_perfectsavestripe2,   171+STAROPTIONREST},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 3", 	&cv_perfectsavestripe3,   176+STAROPTIONREST},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save", 			&cv_perfectsave, 		  191},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 1", 	&cv_perfectsavestripe1,	  196},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 2", 	&cv_perfectsavestripe2,   201},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 3", 	&cv_perfectsavestripe3,   206},
 
-	{IT_STRING | IT_CVAR,	NULL,	"Continues",				&cv_continues,		  	  186+STAROPTIONREST},
+	{IT_STRING | IT_CVAR,	NULL,	"Continues",				&cv_continues,		  	  216},
 
-	{IT_HEADER, 			NULL, 	"Server Options", 			NULL,					  195+STAROPTIONREST},
+	{IT_HEADER, 			NULL, 	"Server Options", 			NULL,					  225},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,	
-							NULL,   "Holepunch Server",  		&cv_rendezvousserver,	  201+STAROPTIONREST},
+							NULL,   "Holepunch Server",  		&cv_rendezvousserver,	  231},
 	
-	{IT_STRING | IT_CVAR,   NULL,   "Show Connecting Players",  &cv_noticedownload,       215+STAROPTIONREST},
-	{IT_STRING | IT_CVAR,   NULL,   "Max File Transfer (KB)", 	&cv_maxsend,     	      220+STAROPTIONREST},
-	{IT_STRING | IT_CVAR,   NULL,   "File Transfer Packet Rate",&cv_downloadspeed,     	  225+STAROPTIONREST},
+	{IT_STRING | IT_CVAR,   NULL,   "Show Connecting Players",  &cv_noticedownload,       245},
+	{IT_STRING | IT_CVAR,   NULL,   "Max File Transfer (KB)", 	&cv_maxsend,     	      250},
+	{IT_STRING | IT_CVAR,   NULL,   "File Transfer Packet Rate",&cv_downloadspeed,     	  255},
 
-	{IT_STRING | IT_CVAR,   NULL,   "Sock Send Limit",			&cv_socksendlimit,     	  235+STAROPTIONREST},
-	{IT_STRING | IT_CVAR,   NULL,   "Player Setup While Moving",&cv_movingplayersetup,	  240+STAROPTIONREST},
+	{IT_STRING | IT_CVAR,   NULL,   "Sock Send Limit",			&cv_socksendlimit,     	  265},
+	{IT_STRING | IT_CVAR,   NULL,   "Player Setup While Moving",&cv_movingplayersetup,	  270},
 
-	{IT_HEADER, 			NULL, 	"Jukebox Options",     		NULL,					  249+STAROPTIONREST},
-	{IT_STRING | IT_CALL, 	NULL, 	"Enter Jukebox...",			M_Tsourdt3rdJukebox,   	  255+STAROPTIONREST},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Jukebox HUD",				&cv_jukeboxhud,   	      260+STAROPTIONREST},
+	{IT_HEADER, 			NULL, 	"Jukebox Options",     		NULL,					  279},
+	{IT_STRING | IT_CALL, 	NULL, 	"Enter Jukebox...",			M_Tsourdt3rdJukebox,   	  285},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Jukebox HUD",				&cv_jukeboxhud,   	      290},
 
-	{IT_STRING | IT_CVAR, 	NULL, 	"Lua Can Stop The Jukebox", &cv_luacanstopthejukebox, 270+STAROPTIONREST},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Lua Can Stop The Jukebox", &cv_luacanstopthejukebox, 300},
 
-	{IT_HEADER, 			NULL, 	"Miscellanious Extras",     NULL,					  279+STAROPTIONREST},
-	{IT_STRING | IT_CALL, 	NULL, 	"Play Snake",				STAR_InitializeSnakeMenu, 285+STAROPTIONREST},
-	{IT_STRING | IT_CALL,	NULL, 	"Dispenser Goin' Up",		STAR_SpawnDispenser,   	  290+STAROPTIONREST},
+	{IT_HEADER, 			NULL, 	"Miscellanious Extras",     NULL,					  309},
+	{IT_STRING | IT_CALL, 	NULL, 	"Play Snake",				STAR_InitializeSnakeMenu, 315},
+	{IT_STRING | IT_CALL,	NULL, 	"Dispenser Goin' Up",		STAR_SpawnDispenser,   	  320},
 	
-	{IT_DISABLED, 			NULL,   "Allow Easter Egg Hunt",    &cv_alloweasteregghunt,   300+STAROPTIONREST},
-	{IT_DISABLED, 			NULL,   "Easter Egg Hunt Bonuses",  &cv_easteregghuntbonuses, 305+STAROPTIONREST},
+	{IT_GRAYEDOUT, 			NULL,   "Allow Easter Egg Hunt",    &cv_alloweasteregghunt,   330},
+	{IT_GRAYEDOUT, 			NULL,   "Easter Egg Hunt Bonuses",  &cv_easteregghuntbonuses, 335},
+
+	{IT_STRING | IT_CVAR, 	NULL,   "Window Title Type",    	&cv_windowtitletype,   	  345},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,
+							NULL,   "Custom Window Title",  	&cv_customwindowtitle,    350},
+
+	{IT_STRING | IT_CVAR, 	NULL,   "Memes on Window Title",    &cv_memesonwindowtitle,   365},
 };
 static menuitem_t OP_Tsourdt3rdJukeboxMenu[] =
 {
@@ -2797,17 +2819,17 @@ static menuitem_t OP_Tsourdt3rdSnakeMenu[] =
 
 enum
 {
-	op_allowtypicaltimeover = 7,
+	op_allowtypicaltimeover = 11,
 
 #ifdef APRIL_FOOLS
-	op_aprilfools = 11,
+	op_aprilfools = 15,
 #endif
 
-	op_shieldblockstransformation = 16+STARENUMADDITION,
+	op_shieldblockstransformation = 20+STARENUMADDITION,
 
-	op_alwaysoverlayinvuln = 18+STARENUMADDITION,
+	op_alwaysoverlayinvuln = 22+STARENUMADDITION,
 
-	op_storesavesinfolders = 20+STARENUMADDITION,
+	op_storesavesinfolders = 24+STARENUMADDITION,
 
 	op_perfectsave,
 	op_perfectsavestripe1,
@@ -2816,26 +2838,30 @@ enum
 
 	op_continues,
 
-	op_holepunchserver = 27+STARENUMADDITION,
+	op_holepunchserver = 31+STARENUMADDITION,
 	op_noticedownload,
 	op_maxsend,
 	op_downloadspeed,
 
 	op_movingplayeroptionswitch,
 
-	op_jukebox = 34+STARENUMADDITION,
+	op_jukebox = 38+STARENUMADDITION,
 	op_jukeboxhud,
 
 	op_luacanstopthejukebox,
 
-	op_snake = 38+STARENUMADDITION,
+	op_snake = 42+STARENUMADDITION,
 	op_dispensergoingup,
 
 	op_alloweasteregghunt,
 	op_easteregghuntbonuses,
+
+	op_windowtitletype = 46+STARENUMADDITION,
+	op_customwindowtitle,
+	op_memesonwindowtitle,
+	TSOURDT3RDLASTOPTION
 };
 
-#undef STAROPTIONREST
 #undef STARENUMADDITION
 // ======================================= //
 // END OF STAR OPTIONS LETS GOOOOOOOOOOOOO //
@@ -2846,7 +2872,7 @@ enum
 // ==========================================================================
 
 // Main Menu and related
-menu_t MainDef = CENTERMENUSTYLE(MN_MAIN, NULL, MainMenu, NULL, 72);
+menu_t MainDef = CENTERMENUSTYLE(MN_MAIN, NULL, MainMenu, NULL, 56);
 
 menu_t MISC_AddonsDef =
 {
@@ -3195,6 +3221,21 @@ menu_t MP_RoomDef =
 	0,
 	NULL
 };
+
+// STAR STUFF //
+menu_t MP_ExtendedServerPropertyDef =
+{
+	MTREE3(MN_MP_MAIN, MN_MP_CONNECT, MN_MP_EXTENDEDSERVERPROPERTIES),
+	"M_MULTI",
+	sizeof (MP_ExtendedServerPropertyMenu)/sizeof (menuitem_t),
+	&MP_ConnectDef,
+	MP_ExtendedServerPropertyMenu,
+	STAR_DrawExtendedServerPropertyMenu,
+	30, 30,
+	0,
+	NULL
+};
+// END THE DEFINITIONS //
 #endif
 
 menu_t MP_PlayerSetupDef =
@@ -3507,6 +3548,7 @@ menu_t OP_Tsourdt3rdSnakeDef =
 	0,
 	NULL
 };
+
 // ========================== //
 // 	 END OF STAR STUFF LOL	  //
 // ========================== //
@@ -3901,36 +3943,66 @@ static void STAR_TimeOver_OnChange(void)
 		AllowTypicalTimeOver = cv_allowtypicaltimeover.value;
 }
 
-// Events
+// Events //
+// April Fools
 #ifdef APRIL_FOOLS
 static void STAR_AprilFools_ChangeMenus(void)
 {
-	if (menuactive)
+	// Run Small Functions First
+	if (Playing())
 		M_ClearMenus(true);
+	else
+		D_StartTitle();
+	
+	if (demoplayback && titledemo)
+		G_CheckDemoStatus();
 
+	// April Fools Features Enabled
 	if (cv_ultimatemode.value)
 	{
 		// Main Menu
-		MainMenu[0].text = "No Friends Mode";
-		MainMenu[1].text = "The Friend Zone";
-		MainMenu[2].text = "More Stuff";
-		MainMenu[3].text = "Mods";
-		MainMenu[4].text = "Settings";
-		MainMenu[5].text = "EXIT TO DOS";
+		MainMenu[singleplr].text			= "No Friends Mode";
+		MainMenu[multiplr].text				= "The Friend Zone";
+		MainMenu[secrets].text				= "More Stuff";
+		MainMenu[addons].text				= "Mods";
+		MainMenu[options].text				= "Settings";
+		MainMenu[quitdoom].text				= "EXIT TO DOS";
+		MainMenu[tsourdt3rdreadme].text 	= "DOOM EASTER EGG THING!";
 
-		MainMenu[6].text = "DOOM EASTER EGG THING!";
+		// Single Player Main Menu
+		SPauseMenu[spause_addons].text 		= "Mods";
+		SPauseMenu[spause_pandora].text		= "Enable Hacks";
+		SPauseMenu[spause_hints].text		= "where are the emblems help";
+		SPauseMenu[spause_levelselect].text	= "What Map??";
+		SPauseMenu[spause_continue].text	= "Keep Going";
+		SPauseMenu[spause_retry].text		= "Try Again";
+		SPauseMenu[spause_options].text		= "Settings";
+		SPauseMenu[spause_title].text		= "Bored Already";
+		SPauseMenu[spause_quit].text		= "EXIT TO DOS";
 	}
+
+	// April Fools Features Disabled
 	else
 	{
 		// Main Menu
-		MainMenu[0].text = "Single Player";
-		MainMenu[1].text = "Multiplayer";
-		MainMenu[2].text = "Extras";
-		MainMenu[3].text = "Add-ons";
-		MainMenu[4].text = "Options";
-		MainMenu[5].text = "Quit Game";
+		MainMenu[singleplr].text			= "Single Player";
+		MainMenu[multiplr].text 			= "Multiplayer";
+		MainMenu[secrets].text 				= "Extras";
+		MainMenu[addons].text 				= "Add-ons";
+		MainMenu[options].text 				= "Options";
+		MainMenu[quitdoom].text 			= "Quit Game";
+		MainMenu[tsourdt3rdreadme].text 	= "READ ME!";
 
-		MainMenu[6].text = "READ ME!";
+		// Single Player Main Menu
+		SPauseMenu[spause_addons].text 		= "Add-ons";
+		SPauseMenu[spause_pandora].text		= "Pandora's Box...";
+		SPauseMenu[spause_hints].text		= "Emblem Hints...";
+		SPauseMenu[spause_levelselect].text	= "Level Select...";
+		SPauseMenu[spause_continue].text	= "Continue";
+		SPauseMenu[spause_retry].text		= "Retry";
+		SPauseMenu[spause_options].text		= "Options";
+		SPauseMenu[spause_title].text		= "Return to Title";
+		SPauseMenu[spause_quit].text		= "Quit Game";
 	}
 }
 
@@ -3954,7 +4026,7 @@ static void STAR_AprilFools_OnChange(void)
 }
 #endif
 
-// Savefiles
+// Savefiles //
 static void STAR_PerfectSave_OnChange(void)
 {
 	OP_Tsourdt3rdOptionsMenu[op_perfectsavestripe1].status =
@@ -3965,7 +4037,7 @@ static void STAR_PerfectSave_OnChange(void)
 		((!(Playing() && playeringame[consoleplayer]) && cv_perfectsave.value) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
 }
 
-// Players
+// Players //
 static void STAR_SuperWithShield_OnChange(void)
 {
 	if (netgame)
@@ -3989,7 +4061,7 @@ static void STAR_InvulnAndShield_OnChange(void)
 		AlwaysOverlayInvincibility = cv_alwaysoverlayinvuln.value;
 }
 
-// Jukebox
+// Jukebox //
 static void STAR_JukeboxHUD_OnChange(void)
 {
 	if (cv_jukeboxhud.value)
@@ -4005,7 +4077,8 @@ static void STAR_JukeboxSpeed_OnChange(void)
 		S_SpeedMusic(strtof(cv_jukeboxspeed.string, NULL));
 }
 
-// Extras
+// Extras //
+// Easter
 static void STAR_EasterEggHunt_OnChange(void)
 {
 	if (eastermode)
@@ -4051,6 +4124,15 @@ static void STAR_EnableEasterEggHuntBonuses_OnChange(void)
 		else
 			EnableEasterEggHuntBonuses = cv_easteregghuntbonuses.value;
 	}
+}
+
+// Window Titles
+static void STAR_WindowTitleVars_OnChange(void)
+{
+	OP_Tsourdt3rdOptionsMenu[op_customwindowtitle].status =
+		((cv_windowtitletype.value >= 2) ? IT_STRING|IT_CVAR|IT_CV_STRING : IT_GRAYEDOUT);
+	
+	STAR_SetWindowTitle();
 }
 // FINALLY, THIS COMMAND STUFF IS OVER! //
 
@@ -4642,7 +4724,7 @@ static void M_ChangeCvar(INT32 choice)
 	{
 		if (cv == &cv_playercolor)
 		{
-			SINT8 skinno = R_SkinAvailable(cv_chooseskin.string);
+			INT32 skinno = R_SkinAvailable(cv_chooseskin.string); // STAR NOTE: i was here, and changed this from a SINT8 to an INT32 lol
 			if (skinno != -1)
 				CV_SetValue(cv,skins[skinno].prefcolor);
 			return;
@@ -5183,22 +5265,28 @@ void M_Drawer(void)
 
 		// Draw version down in corner
 		// ... but only in the MAIN MENU.  I'm a picky bastard.
+		// STAR NOTE: i was here :)
 		if (currentMenu == &MainDef)
 		{
 			if (customversionstring[0] != '\0')
 			{
-				V_DrawThinString(vid.dupx, vid.height - 17*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT, "Mod version:");
-				V_DrawThinString(vid.dupx, vid.height - 9*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, customversionstring);
+				V_DrawThinString(vid.dupx, vid.height - 41*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT, "Mod version:");
+				V_DrawThinString(vid.dupx, vid.height - 33*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, customversionstring);
 			}
 			else
 			{
-#ifdef DEVELOP // Development -- show revision / branch info
-				V_DrawThinString(vid.dupx, vid.height - 17*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, compbranch);
-				V_DrawThinString(vid.dupx, vid.height - 9*vid.dupy,  V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, comprevision);
-#else // Regular build
-				V_DrawThinString(vid.dupx, vid.height - 9*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, va("%s", VERSIONSTRING));
+#ifdef DEVELOP 		// Development -- show revision / branch info
+				V_DrawThinString(vid.dupx, vid.height - 41*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, compbranch);
+				V_DrawThinString(vid.dupx, vid.height - 33*vid.dupy,  V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, comprevision);
+#else				// Regular build
+				V_DrawThinString(vid.dupx, vid.height - 33*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, va("%s", VERSIONSTRING));
 #endif
 			}
+
+			// EXTRA STAR STUFF //
+			V_DrawThinString(vid.dupx, vid.height - 17*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, va("%s", TSOURDT3RDVERSIONSTRING));
+			V_DrawThinString(vid.dupx, vid.height - 9*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, va("%s", TSOURDT3RDBYSTARMANIAKGSTRING));
+			// THIS HURTS MAN //
 		}
 	}
 
@@ -5551,7 +5639,7 @@ void M_Init(void)
 	quitmsg[QUIT3MSG5] = M_GetText("You'll be back to play soon, though...\n......right?\n\n(Press 'Y' to quit)");
 	quitmsg[QUIT3MSG6] = M_GetText("Aww, is Egg Rock Zone too\ndifficult for you?\n\n(Press 'Y' to quit)");
 
-	/* Star's Quit Messages Are Utilized in STAR_QuitStuff :) */
+	//** STAR NOTE: My Quit Messages Are Utilized in STAR_QuitMessages :) **//
 
 	/*
 	Well the menu sucks for forcing us to have an item set
@@ -8374,28 +8462,23 @@ static void M_AddonAutoLoad(INT32 ch)
 	    case EXT_FOLDER:
 	        if (!(refreshdirmenu & REFRESHDIR_MAX))
         	{
-				CONS_Printf("Added the \x82\"%s%s\"\x80 folder to the autoload list.\n", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING);
-                fprintf(autoloadconfigfile, "addfolder \"%s%s\"\n", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING);
+				CONS_Printf("Added the \x82\"%s%s\"\x80 folder to the autoload configuration list.\n", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING);
+                fprintf(autoloadconfigfile, "%s%s\n", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING);
                   
 			    S_StartSound(NULL, sfx_spdpad);
             }
             else
             {
-                M_StartMessage(va("%c%s\x80\nToo many add-ons are loaded! \nYou need to restart the game to autoload more add-ons and folders. \nYou can still autoload console scripts though. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
+                M_StartMessage(va("%c%s\x80\nToo many add-ons are loaded! \nYou need to restart the game to autoload more folders. \nYou can still autoload console scripts though. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
                 S_StartSound(NULL, sfx_lose);
             }
             break;
 		case EXT_TXT:
 		case EXT_CFG:
-			if (strcmp(dirmenu[dir_on[menudepthleft]]+DIR_STRING, AUTOLOADCONFIGFILENAME) != 0 && (strcmp(dirmenu[dir_on[menudepthleft]]+DIR_STRING, CONFIGFILENAME) != 0))
-			{	
-				CONS_Printf("Added the \x82%s\x80 console script to the autoload list.\n", dirmenu[dir_on[menudepthleft]]+DIR_STRING);
-				fprintf(autoloadconfigfile, "exec %s\n", dirmenu[dir_on[menudepthleft]]+DIR_STRING);
+			CONS_Printf("Added the \x82%s\x80 console script to the autoload configuration list.\n", dirmenu[dir_on[menudepthleft]]+DIR_STRING);
+			fprintf(autoloadconfigfile, "%s\n", dirmenu[dir_on[menudepthleft]]+DIR_STRING);
 				
-				S_StartSound(NULL, sfx_spdpad);
-			}
-			else
-				M_StartMessage(va("%c%s\x80\nIt would be best if you don't run this file.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
+			S_StartSound(NULL, sfx_spdpad);
 			break;
 		case EXT_LUA:
 		case EXT_SOC:
@@ -8407,8 +8490,8 @@ static void M_AddonAutoLoad(INT32 ch)
 		default:
 			if (!(refreshdirmenu & REFRESHDIR_MAX))
 			{
-				CONS_Printf("Added \x82%s\x80 to the autoload list.\n", dirmenu[dir_on[menudepthleft]]+DIR_STRING);
-				fprintf(autoloadconfigfile, "addfile %s\n", dirmenu[dir_on[menudepthleft]]+DIR_STRING);
+				CONS_Printf("Added \x82%s\x80 to the autoload configuration list.\n", dirmenu[dir_on[menudepthleft]]+DIR_STRING);
+				fprintf(autoloadconfigfile, "%s\n", dirmenu[dir_on[menudepthleft]]+DIR_STRING);
 				
 				S_StartSound(NULL, sfx_spdpad);
 			}
@@ -8626,7 +8709,10 @@ static void M_HandleAddons(INT32 choice)
 							break;
 						case EXT_TXT:
 						case EXT_CFG:
-							if (strcmp(dirmenu[dir_on[menudepthleft]]+DIR_STRING, CONFIGFILENAME) == 0 || strcmp(dirmenu[dir_on[menudepthleft]]+DIR_STRING, AUTOLOADCONFIGFILENAME) == 0)
+							if ((strcmp(dirmenu[dir_on[menudepthleft]]+DIR_STRING, CONFIGFILENAME) == 0)
+								|| (strcmp(dirmenu[dir_on[menudepthleft]]+DIR_STRING, AUTOLOADCONFIGFILENAME) == 0)
+								|| (strcmp(dirmenu[dir_on[menudepthleft]]+DIR_STRING, "adedserv.cfg") == 0)
+								|| (strcmp(dirmenu[dir_on[menudepthleft]]+DIR_STRING, "autoexec.cfg") == 0))
 							{	
 								M_StartMessage(va("%c%s\x80\nYou can't autoload this builds' base console scripts, silly!\n They're already autoloaded on startup! \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
 								S_StartSound(NULL, sfx_lose);
@@ -12877,6 +12963,7 @@ static void M_Connect(INT32 choice)
 	// do not call menuexitfunc
 	M_ClearMenus(false);
 
+	// STAR NOTE: i was here lol
 	COM_BufAddText(va("connect node %d\n", serverlist[choice-FIRSTSERVERLINE + serverlistpage * SERVERS_PER_PAGE].node));
 }
 
@@ -13234,14 +13321,42 @@ static void M_ConnectMenuModChecks(INT32 choice)
 	}
 
 	// STAR STUFF YAY //
+	// Autoloading
 	else if (autoloaded)
 	{
 		M_StartMessage(M_GetText("You have autoloaded game-changing add-ons.\nYou won't be able to join netgames!\n\nTo play online, restart the game\nand don't load any add-ons.\nSRB2 will automatically add\neverything you need when you join.\n\n(Press a key)\n"),M_ConnectMenu,MM_EVENTHANDLER);
 		return;
 	}
+
+	// Reset Master Server
+	else if (!CV_IsSetToDefault(&cv_masterserver) && !TSoURDt3rdInfo.alreadyWarnedPlayer)
+		M_StartMessage(M_GetText("Hey! You've changed the Server Browser address.\n\nYou won't be able to see games from the official Server Browser.\nUnless you're from the future, this probably isn't what you want.\n\nPress 'Y' or 'Enter' to fix this and continue.\nPress any other key to continue anyway.\n"),M_PreConnectMenuChoice,MM_YESNO);
 	// END THAT MESS //
 
 	M_ConnectMenu(-1);
+}
+
+static void M_HandleMasterServerResetChoice(INT32 choice)
+{
+	if (choice == 'y' || choice == KEY_ENTER)
+	{
+		CV_Set(&cv_masterserver, cv_masterserver.defaultvalue);
+		S_StartSound(NULL, sfx_s221);
+	}
+
+	TSoURDt3rdInfo.alreadyWarnedPlayer = true;
+}
+
+static void M_PreStartServerMenuChoice(INT32 choice)
+{
+	M_HandleMasterServerResetChoice(choice);
+	M_StartServerMenu(-1);
+}
+
+static void M_PreConnectMenuChoice(INT32 choice)
+{
+	M_HandleMasterServerResetChoice(choice);
+	M_ConnectMenuModChecks(-1);
 }
 
 UINT32 roomIds[NUM_LIST_ROOMS];
@@ -13313,23 +13428,21 @@ static void M_ChooseRoom(INT32 choice)
 #endif
 
 	if (choice == 0)
-	{
 		ms_RoomId = -1;
-		// STAR STUFF //
-		msServerType = -1;
-		// THERE'S GOING TO BE A LOT OF THIS HERE //
-	}
 	else
 	{
 		ms_RoomId = roomIds[choice-1];
-		// STAR STUFF //
-		msServerType = ms_RoomId;
-		// UH //
-
 		menuRoomIndex = choice - 1;
 	}
 
 	serverlistpage = 0;
+
+#ifdef HAVE_DISCORDRPC
+	// DISCORD STUFFS //
+	discordInfo.serverRoom = ms_RoomId;
+	// END THAT //
+#endif
+
 	/*
 	We were on the Multiplayer menu? That means that we must have been trying to
 	view the server browser, but we hadn't selected a room yet. So we need to go
@@ -13344,6 +13457,75 @@ static void M_ChooseRoom(INT32 choice)
 		M_Refresh(0);
 }
 #endif //NONET
+
+// STAR STUFF //
+static void STAR_InitializeExtendedServerPropertyMenu(INT32 choice)
+{
+	STAR_ServerToExtend = choice-FIRSTSERVERLINE + serverlistpage * SERVERS_PER_PAGE;	
+
+	M_Connect(choice);
+	//M_SetupNextMenu(&MP_ExtendedServerPropertyDef);
+}
+
+static void STAR_DrawExtendedServerPropertyMenu(void)
+{
+	// Make Variables //
+	char *gt;
+	UINT32 globalflags = (serverlist[STAR_ServerToExtend].info.refusereason ? V_TRANSLUCENT : 0)|V_ALLOWLOWERCASE;
+
+	// Draw Everything //
+	M_DrawGenericMenu();
+	V_DrawString(currentMenu->x, 0, globalflags, serverlist[STAR_ServerToExtend].info.servername);
+
+	// Don't use color flags intentionally, the global yellow color will auto override the text color code
+	if (serverlist[STAR_ServerToExtend].info.modifiedgame)
+		V_DrawSmallString(currentMenu->x+202, 8, globalflags, "\x85" "Mod");
+	if (serverlist[STAR_ServerToExtend].info.cheatsenabled)
+		V_DrawSmallString(currentMenu->x+222, 8, globalflags, "\x83" "Cheats");
+
+	V_DrawSmallString(currentMenu->x, 8, globalflags,
+		                   va("Ping: %u", (UINT32)LONG(serverlist[STAR_ServerToExtend].info.time)));
+
+	gt = serverlist[STAR_ServerToExtend].info.gametypename;
+
+	V_DrawSmallString(currentMenu->x+46, 24, globalflags,
+	                         va("Players: %02d/%02d", serverlist[STAR_ServerToExtend].info.numberofplayer, serverlist[STAR_ServerToExtend].info.maxplayer));
+
+	if (strlen(gt) > 11)
+		gt = va("Gametype: %.11s...", gt);
+	else
+		gt = va("Gametype: %s", gt);
+
+	V_DrawSmallString(currentMenu->x+112, 32, globalflags, gt);
+}
+
+static void STAR_HandleExtendedServerPropertyMenu(INT32 choice)
+{
+	boolean exitmenu = false;
+
+	switch (choice)
+	{
+		case KEY_ENTER:
+			M_Connect(STAR_ServerToExtend);
+			break;
+
+		case KEY_ESCAPE:
+			exitmenu = true;
+			break;
+
+		default:
+			break;
+	}
+	
+	if (exitmenu)
+	{
+		if (currentMenu->prevMenu == &MP_ConnectDef)
+			M_SetupNextMenu(currentMenu->prevMenu);
+		else
+			M_ClearMenus(false);	
+	}
+}
+// END THIS NETWORK STUFF //
 
 //===========================================================================
 // Start Server Menu
@@ -13504,7 +13686,24 @@ static void M_ServerOptions(INT32 choice)
 static void M_StartServerMenu(INT32 choice)
 {
 	(void)choice;
+
+	// STAR STUFF //
+	// Master Server Address Changed
+	if (!CV_IsSetToDefault(&cv_masterserver) && !TSoURDt3rdInfo.alreadyWarnedPlayer)
+		M_StartMessage(M_GetText("Hey! You've changed the Server Browser address.\n\nYou won't be able to host games on the official Server Browser.\nUnless you're from the future, this probably isn't what you want.\n\nPress 'Y' or 'Enter' to fix this and continue.\nPress any other key to continue anyway.\n"),M_PreStartServerMenuChoice,MM_YESNO);
+
+	// Found Some Infractions
+	else if (STAR_FindServerInfractions())
+		return;
+	// END THIS //
+
 	ms_RoomId = -1;
+#ifdef HAVE_DISCORDRPC
+	// DISCORD STUFFS //
+	discordInfo.serverRoom = ms_RoomId;
+	// END THAT //
+#endif
+
 	levellistmode = LLM_CREATESERVER;
 	Newgametype_OnChange();
 	M_SetupNextMenu(&MP_ServerDef);
@@ -15506,12 +15705,11 @@ static void M_DrawMonitorToggles(void)
 // =========
 
 // STAR STUFF //
-INT32 RandomMessage; // Helps Add More Dynamic Things to the Quit MessageThing
-
-static void STAR_QuitStuff(void)
+static INT32 STAR_QuitMessages(void)
 {
 	// Variables //
-	char *maptitle = G_BuildMapTitle(gamemap); 	// Needed for Dynamic Message QUITSMSG3
+	INT32 RandomMessage;
+	char *maptitle = G_BuildMapTitle(gamemap); // Needed for Dynamic Message QUITSMSG3
 
 	// Quit Messages //
 	// Static
@@ -15519,11 +15717,15 @@ static void STAR_QuitStuff(void)
 	quitmsg[QUITSMSG2] = M_GetText("Who do you think you are? \nItaly?\n\n(Press 'Y' to quit)");
 
 	// Dynamic
-	quitmsg[QUITSMSG3] = (gamestate == GS_LEVEL ? M_GetText(va("Hehe, was \n%s\ntoo hard for you, cutie?\n\n(Press 'Y' to quit)", maptitle)) : M_GetText("Heh, you couldn't even make\nit past the Title Screen, \ncould you, cutie?\n\n(Press 'Y' to quit)"));
+	quitmsg[QUITSMSG3] = ((Playing() && gamestate == GS_LEVEL) ?
+							(M_GetText(va("Hehe, was \n%s\ntoo hard for you?\n\n(Press 'Y' to quit)", maptitle))) :
+							(M_GetText("Hehe, you couldn't even make\nit past the Title Screen, \ncould you, silly?\n\n(Press 'Y' to quit)")));
 
 	quitmsg[QUITSMSG4] = M_GetText(va("Wait, %s!\nCome back! I need you!\n\n(Press 'Y' to quit)",
 #ifdef HAVE_DISCORDRPC
-		(((strcmp(discordUserName, " ") == 0) || (strcmp(discordUserName, "  ") == 0)) ? (Playing() ? player_names[consoleplayer] : cv_playername.string) : discordUserName)
+		((discordInfo.Disconnected || !discordInfo.Initialized) ? 
+			(Playing() ? player_names[consoleplayer] : cv_playername.string) :
+			(discordInfo.sessionUsername))
 #else
 		(Playing() ? player_names[consoleplayer] : cv_playername.string)
 #endif
@@ -15531,8 +15733,7 @@ static void STAR_QuitStuff(void)
 
 	quitmsg[QUITSMSG5] = (jukeboxMusicPlaying ? 
 							(M_GetText(va("Come back!\nFinish listening to\n%s!\n\n(Press 'Y' to quit)", jukeboxMusicName))) :
-							(M_GetText("Come back!\nYou have more jukebox music to play!\n\n(Press 'Y' to quit)"))
-						);
+							(M_GetText("Come back!\nYou have more jukebox music to play!\n\n(Press 'Y' to quit)")));
 
 	// April Fools
 #ifdef APRIL_FOOLS
@@ -15547,10 +15748,8 @@ static void STAR_QuitStuff(void)
 	if (aprilfoolsmode && cv_ultimatemode.value)
 		RandomMessage = M_RandomRange(QUITAMSG1, QUITSMSG5);
 	else
-		RandomMessage = M_RandomKey(NUM_QUITMESSAGES);
-#else
-	RandomMessage = M_RandomKey(NUM_QUITMESSAGES);
 #endif
+		RandomMessage = M_RandomKey(NUM_QUITMESSAGES);
 
 	// Chooses a Quit Sound //
 	switch(RandomMessage)
@@ -15595,8 +15794,9 @@ static void STAR_QuitStuff(void)
 		case QUIT3MSG3: S_StartSound(NULL, sfx_s3k95); break;
 	}
 
-	// Free up Memory //
+	// Free up Memory, Return Our Random Message, and We're Done :) //
 	Z_Free(maptitle);
+	return RandomMessage;
 }
 // END OF THAT //
 
@@ -15675,11 +15875,8 @@ static void M_QuitSRB2(INT32 choice)
 	// between 1 and maximum number.
 	(void)choice;
 
-	// STAR STUFF //
-	STAR_QuitStuff();
-	// DID IT lol //
-
-	M_StartMessage(quitmsg[RandomMessage], M_QuitResponse, MM_YESNO);
+	// STAR NOTE: i was here lol
+	M_StartMessage(quitmsg[STAR_QuitMessages()], M_QuitResponse, MM_YESNO);
 }
 
 #ifdef HAVE_DISCORDRPC
@@ -15703,29 +15900,18 @@ static void M_DiscordOptions(INT32 choice)
 //					 //
 static void M_DrawDiscordMenu(void)
 {
-	// Render Some Basic Strings at The Bottom //
+	// Render the Basic Menu System //
 	M_DrawGenericScrollMenu();
-	
-	V_DrawCenteredString(BASEVIDWIDTH/2, 200,																											// String Width and Height
-		(((strcmp(discordUserName, " ") == 0) || (strcmp(discordUserName, "  ") == 0)) ? V_REDMAP : menuColor[cv_menucolor.value]),						// String Flags
-			((strcmp(discordUserName, " ") == 0) ? "Disconnected" :																						// Disconnected String
-			((strcmp(discordUserName, "  ") == 0) ? "Not Connected" :																					// Not Connected String, Enabled the Other HUD Hook
-				va("Connected to: %s", discordUserName))));																								// Connected, Show the Player's Name
 
-	if (strcmp(discordUserName, "  ") == 0)
-		V_DrawCenteredString(BASEVIDWIDTH/2, 210, V_REDMAP,																								// String Width and Height
-			("Is Discord Open?"));																														// Other Half of the Not Connected String, Points Towards Discord Not Being Open or your Privacy Settings Being the Problem
+	// Render Some Basic Strings at The Bottom, and We're Done :) //
+	V_DrawCenteredString(BASEVIDWIDTH/2, 200,																																				// String Width and Height
+		((!discordInfo.Initialized || discordInfo.Disconnected) ? V_REDMAP : menuColor[cv_menucolor.value]),																				// String Flags
+		((discordInfo.Initialized && discordInfo.Disconnected) ? "Disconnected" :																											// Disconnected String
+			((!discordInfo.Initialized) ? "Not Connected" :																																	// Not Connected String, Enabled the Other HUD Hook
+				(va("Connected to: %s", discordInfo.sessionUsername)))));																													// Connected, Shows the Player's Name
 
-	/*
-		STAR NOTE: HERE FOR SOME FUTURE STUFF
-
-		if (
-				! cv_masterserver.changed &&
-				strcmp(cv_masterserver.string, "ms.srb2.org:28900") == 0
-		){
-			CV_StealthSet(&cv_masterserver, cv_masterserver.defaultvalue);
-		}
-	*/
+	if (!discordInfo.Initialized)
+		V_DrawCenteredString(BASEVIDWIDTH/2, 210, V_REDMAP,	"Is Discord Open?");																											// String Width, Height, and the Other Half of the Not Connected String, Which Points Towards Discord Not Being Open
 }
 
 //			 		 	 //
@@ -15891,34 +16077,31 @@ boolean jukeboxMenuOpen;
 boolean jukeboxUnlocked;
 
 // Main Menu
-static void M_Tsourdt3rdReadMe(INT32 choice)
-{
-	(void)choice;
-	M_SetupNextMenu(&OP_Tsourdt3rdReadMeDef);
-}
-
 static void M_DrawTsourdt3rdReadMe(void)
 {
 	// Make Variables //
 	UINT16 i;
-	fixed_t y = 30<<FRACBITS;
+	fixed_t y = 12<<FRACBITS;
 
 	static const char *TSoURDt3rd_credits[] = {
 		"\1TSoURDt3rd Team",
-		"StarManiaKG \"Star\"",
-		"Mini the Bunnyboy \"Talis\"",
+		"StarManiaKG \"Star\" - Creator",
+		"Mini the Bunnyboy \"Talis\" - Co-Creator",
 		"",
 		"\1TSoURDt3rd Extras",
-		"Speccy - Emotional Support, Ideas",
-		"	(She Also Formed the Idea of This Menu)",
+		"Speccy \"Supeki\" - Emotional Support, Ideas",
+		"\t\t(She Also Formed the Idea of This Menu)",
 		"",
-		"Zeno/Uukoo/Fen - Emotional Support, Ideas",
+		"OVAPico - Voluntary Tester, Ideas",
+		"The Gamer Gang - Voluntary Testers",
+		"\t\t(Provided Emotional Support and Ideas too)",
+		"",
 		"NARBluebear - Emotional Support",
 		"\"Future\" Smiles \"The Fox\" - Emotional Support",
-		"\"Team Comet\" - Emotional Support",
 		"",
 		"\1In Loving Memory Of",
-		"MarioMario \"Sapphire\" - TSoURDt3rd Team Member"
+		"MarioMario \"Sapphire\" - Creator",
+		NULL
 	};
 
 	// Run Extra Things //
@@ -15930,15 +16113,18 @@ static void M_DrawTsourdt3rdReadMe(void)
 		switch(TSoURDt3rd_credits[i][0])
 		{
 			case 1:
-				V_DrawCreditString(45, y, 0, TSoURDt3rd_credits[i]);
+				V_DrawCreditString((120 - (V_CreditStringWidth(&TSoURDt3rd_credits[i][1])>>1))<<FRACBITS, y, 0, &TSoURDt3rd_credits[i][1]);
 				y += 24<<FRACBITS;
 				break;
 
 			default:
-				V_DrawStringAtFixed(30, y, V_ALLOWLOWERCASE, TSoURDt3rd_credits[i]);
+				V_DrawStringAtFixed(26<<FRACBITS, y, V_ALLOWLOWERCASE, TSoURDt3rd_credits[i]);
 				y += 8<<FRACBITS;
 				break;
 		}
+
+		if (FixedMul(y, vid.dupy) > vid.height)
+			break;
 	}
 }
 
@@ -15958,6 +16144,12 @@ static void M_Tsourdt3rdOptions(INT32 choice)
 {
 	(void)choice;
 	INT32 i;
+
+	// Menu Heights //
+#ifdef APRIL_FOOLS
+	for (i = op_aprilfools+1; i < TSOURDT3RDLASTOPTION; i++)
+		OP_Tsourdt3rdOptionsMenu[i].alphaKey += 5;
+#endif
 
 	// Game Options //
 	OP_Tsourdt3rdOptionsMenu[op_allowtypicaltimeover].status =
@@ -16031,7 +16223,13 @@ static void M_Tsourdt3rdOptions(INT32 choice)
 	
 	// Easter
 	M_UpdateEasterStuff();
-	
+
+	// Window Titles
+#ifndef HAVE_SDL
+	for (i = op_windowtitletype; i < op_memesonwindowtitle; i++)
+		OP_Tsourdt3rdOptionsMenu[i].status = IT_GRAYEDOUT;
+#endif
+
 	M_SetupNextMenu(&OP_Tsourdt3rdOptionsDef);
 }
 
@@ -16449,7 +16647,7 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 
 						CONS_Printf(M_GetText("Loaded track \x82%s\x80 into the Jukebox.\n"), jukeboxMusicName);
 #else
-						strcpy(jukeboxMusicName, (cv_ultimatemode.value ? "Get Trolled, Cutie~" : curplaying->title));
+						strcpy(jukeboxMusicName, (cv_ultimatemode.value ? "Rick" : curplaying->title));
 						strcpy(jukeboxMusicTrack, (cv_ultimatemode.value ? "_hehe" : curplaying->name));
 	
 						S_ChangeMusicInternal(jukeboxMusicTrack, !curplaying->stoppingtics);
@@ -16457,7 +16655,7 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 
 						(!cv_ultimatemode.value ?
 							(CONS_Printf(M_GetText("Loaded track \x82%s\x80 into the Jukebox.\n"), jukeboxMusicName)) :
-							(CONS_Printf(M_GetText("Hehe Time, Cutie~\n"))));
+							(CONS_Printf(M_GetText("Rick\n"))));
 #endif
 
 						jukeboxMusicPlaying = true;
@@ -16554,6 +16752,8 @@ void M_UpdateJukebox(void)
 
 	OP_Tsourdt3rdOptionsMenu[op_jukeboxhud].status = IT_STRING | IT_CVAR;
 	OP_Tsourdt3rdOptionsMenu[op_luacanstopthejukebox].status = IT_STRING | IT_CVAR;
+
+	S_PrepareSoundTest();
 }
 
 // Snake
@@ -16574,8 +16774,7 @@ static void STAR_InitializeSnakeMenu(INT32 choice)
 static void STAR_DrawSnakeMenu(void)
 {
 	Snake_Draw();
-	
-	V_DrawRightAlignedString(BASEVIDWIDTH-4, BASEVIDHEIGHT-12, V_ALLOWLOWERCASE, "\x86""Press ""\x82""ESC""\x86"" to abort...");
+	V_DrawRightAlignedString(BASEVIDWIDTH-4, BASEVIDHEIGHT-12, V_ALLOWLOWERCASE, "\x86""Press ""\x82""ESC""\x86"" to quit.");
 }
 
 static void STAR_HandleSnakeMenu(INT32 choice)
@@ -16657,24 +16856,28 @@ void M_UpdateEasterStuff(void)
 		OP_Tsourdt3rdOptionsMenu[op_alloweasteregghunt].status =
 			(((!(Playing() && playeringame[consoleplayer]) && !netgame) && (currenteggs != TOTALEGGS)) ? IT_STRING|IT_CVAR : IT_GRAYEDOUT);
 	else
-		OP_Tsourdt3rdOptionsMenu[op_alloweasteregghunt].status = (eastermode ? IT_GRAYEDOUT : IT_DISABLED);
+		OP_Tsourdt3rdOptionsMenu[op_alloweasteregghunt].status = IT_GRAYEDOUT;
 
 	if (eastermode && currenteggs == TOTALEGGS && !netgame && !TSoURDt3rd_NoMoreExtras && !autoloaded)
 		OP_Tsourdt3rdOptionsMenu[op_easteregghuntbonuses].status = IT_STRING | IT_CVAR;
 	else
-		OP_Tsourdt3rdOptionsMenu[op_easteregghuntbonuses].status = (eastermode ? IT_GRAYEDOUT : IT_DISABLED);
+		OP_Tsourdt3rdOptionsMenu[op_easteregghuntbonuses].status = IT_GRAYEDOUT;
 }
 
 // Other STAR Stuff //
 // Commands
 void STAR_SetProblematicCommandsForNetgames(void)
 {
-	reachedSockSendErrorLimit = 0; // technically not a command, but still :p
+	// Variables
+	TSoURDt3rdInfo.reachedSockSendErrorLimit = 0;
 
+	// Game
 	CV_StealthSetValue(&cv_allowtypicaltimeover, 0);
 
+	// Player
 	CV_StealthSetValue(&cv_shieldblockstransformation, 0);
 
+	// Events
 	if (eastermode)
 	{
 		CV_StealthSetValue(&cv_alloweasteregghunt, 0);
@@ -16684,12 +16887,16 @@ void STAR_SetProblematicCommandsForNetgames(void)
 
 void STAR_ResetProblematicCommandsAfterNetgames(void)
 {
-	reachedSockSendErrorLimit = 0; // technically not a command, but still :P
+	// Variables
+	TSoURDt3rdInfo.reachedSockSendErrorLimit = 0;
 
+	// Game
 	CV_StealthSetValue(&cv_allowtypicaltimeover, AllowTypicalTimeOver);
 
+	// Player
 	CV_StealthSetValue(&cv_shieldblockstransformation, ShieldBlocksTransformation);
 
+	// Events
 	if (eastermode)
 	{
 		CV_StealthSetValue(&cv_alloweasteregghunt, AllowEasterEggHunt);
@@ -16716,4 +16923,4 @@ static void STAR_SpawnDispenser(INT32 choice)
 	}
 }
 
-// END OF ALL THOSE STAR STUFFS //
+// SOMETIMES YOU HAVE TO DO THINGS YOU DON'T ALWAYS LIKE FOR THE GREATER GOOD //

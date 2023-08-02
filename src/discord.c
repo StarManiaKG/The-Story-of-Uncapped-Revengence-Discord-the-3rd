@@ -51,7 +51,6 @@
 
 #define IP_SIZE 21 // length of IP strings
 
-static CV_PossibleValue_t discordinvites_cons_t[] = {{0, "Admins"}, {1, "Everyone"}, {2, "Server Only"}, {0, NULL}};
 static CV_PossibleValue_t statustype_cons_t[] = {
     {0, "Default"},
 
@@ -272,9 +271,8 @@ static CV_PossibleValue_t custommiscimage_cons_t[] = {
                                                 //    Discord Commands    //
                                                 ////////////////////////////
 consvar_t cv_discordrp = CVAR_INIT ("discordrp", "On", CV_SAVE|CV_CALL, CV_OnOff, Discord_option_Onchange);
-consvar_t cv_discordstreamer = CVAR_INIT ("discordstreamer", "Off", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
+consvar_t cv_discordstreamer = CVAR_INIT ("discordstreamer", "Off", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdateUsername);
 consvar_t cv_discordasks = CVAR_INIT ("discordasks", "Yes", CV_SAVE|CV_CALL, CV_OnOff, Discord_option_Onchange);
-consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Everyone", CV_SAVE, discordinvites_cons_t, NULL);
 consvar_t cv_discordstatusmemes = CVAR_INIT ("discordstatusmemes", "Yes", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
 consvar_t cv_discordshowonstatus = CVAR_INIT ("discordshowonstatus", "Default", CV_SAVE|CV_CALL, statustype_cons_t, Discord_option_Onchange);
 consvar_t cv_discordcharacterimagetype = CVAR_INIT ("discordcharacterimagetype", "CS Portrait", CV_SAVE|CV_CALL, characterimagetype_cons_t, DRPC_UpdatePresence);
@@ -307,12 +305,14 @@ consvar_t cv_customdiscordsmallmiscimage = CVAR_INIT ("customdiscordsmallmiscima
 consvar_t cv_customdiscordlargeimagetext = CVAR_INIT ("customdiscordlargeimagetext", "My Favorite Character!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
 consvar_t cv_customdiscordsmallimagetext = CVAR_INIT ("customdiscordsmallimagetext", "My Other Favorite Character!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
 
-// Dedicated Server Safety Crew
-//struct discordInfo_s discordInfo; // NOTE: CAUSES RESYNCHES AND STUFF
-
+struct discordInfo_s discordInfo; // Dedicated Server Safety Struct
 discordRequest_t *discordRequestList = NULL;
 
-char discordUserName[64] = "  ";
+#ifndef DEVELOP
+boolean devmode = false;
+#else
+boolean devmode = true;
+#endif
 
 static char self_ip[IP_SIZE];
 
@@ -325,6 +325,9 @@ static char self_ip[IP_SIZE];
 
 	Input Arguments:-
 		input - Struct that will be used to make an XOR IP String.
+	
+	Return:-
+		XOR IP String
 --------------------------------------------------*/
 static char *DRPC_XORIPString(const char *input)
 {
@@ -353,6 +356,29 @@ static char *DRPC_XORIPString(const char *input)
 }
 
 /*--------------------------------------------------
+	void DRPC_UpdateUsername(void);
+
+		Updates the current Discord Rich Presence username.
+	
+	Input Arguments:-
+		None
+
+	Return:-
+		None
+--------------------------------------------------*/
+
+void DRPC_UpdateUsername(void)
+{
+	if (!discordInfo.Initialized)
+		return;
+	memset(&discordInfo.sessionUsername, 0, sizeof(discordInfo.sessionUsername));
+
+	strcpy(discordInfo.sessionUsername, discordInfo.grabbedUsername);
+	if (!cv_discordstreamer.value)
+		strlcat(discordInfo.sessionUsername, va("#%s", discordInfo.discriminator), 256);
+}
+
+/*--------------------------------------------------
 	static void DRPC_HandleReady(const DiscordUser *user)
 
 		Callback function, ran when the game connects to Discord.
@@ -365,12 +391,21 @@ static char *DRPC_XORIPString(const char *input)
 --------------------------------------------------*/
 static void DRPC_HandleReady(const DiscordUser *user)
 {
-	// Streamer Mode Enabled
-	(cv_discordstreamer.value ?
-		(CONS_Printf("Discord: connected to %s\n", user->username), strcpy(discordUserName, user->username)) :
+	// Print Name
+	CONS_Printf("Discord: connected to %s%s\n", user->username,
+				(cv_discordstreamer.value ? "" : va("#%s (%s)", user->discriminator, user->userId)));
 	
-	// Streamer Mode Disabled
-	(CONS_Printf("Discord: connected to %s#%s (%s)\n", user->username, user->discriminator, user->userId), strcpy(discordUserName, va("%s#%s", user->username, user->discriminator))));
+	// Store Things
+	discordInfo.Disconnected = false;
+
+	strcpy(discordInfo.grabbedUsername, user->username);
+	strcpy(discordInfo.discriminator, user->discriminator);
+	strcpy(discordInfo.userID, user->userId);
+
+	discordInfo.Initialized	= true;
+
+	// Run Functions, and We're Done :)
+	DRPC_UpdateUsername();
 }
 
 /*--------------------------------------------------
@@ -388,7 +423,7 @@ static void DRPC_HandleReady(const DiscordUser *user)
 static void DRPC_HandleDisconnect(int err, const char *msg)
 {
 	CONS_Printf("Discord: disconnected (%d: %s)\n", err, msg);
-	strcpy(discordUserName, " ");
+	discordInfo.Disconnected = true;
 }
 
 /*--------------------------------------------------
@@ -444,24 +479,24 @@ static void DRPC_HandleJoin(const char *secret)
 		None
 
 	Return:-
-		true if invites are allowed, false otherwise.
+		true if invites are allowed, false otherwise
 --------------------------------------------------*/
 static boolean DRPC_InvitesAreAllowed(void)
 {
-	if (!Playing())
-		return false;  				// We're Not Playing, So No Invites Should Be Sent.
-	if (!cv_discordasks.value)
-		return false;				// Client Doesn't Allow Ask to Join.
-	
-	if (cv_allownewplayer.value) 	// Are We Allowing Players to join the Server?
-	{
-		if ((!cv_discordinvites.value && (consoleplayer == serverplayer || IsPlayerAdmin(consoleplayer))) 	// Only Admins are Allowed!
-			|| (cv_discordinvites.value == 2 && consoleplayer == serverplayer)							  	// Only the Server Player is Allowed!
-			|| (cv_discordinvites.value == 1)) 														   		// Everyone's allowed!
-			return true;
-	}
+	if ((!Playing())									// We're Not Playing, So No Invites Should Be Sent.
+		|| (!cv_discordasks.value)						// The Client Doesn't Allow Invites, so Don't Send Any in the First Place.
+		|| (D_NumPlayers() >= discordInfo.maxPlayers)	// The Server is Already Full, so Don't Send Any Invites.
+		|| (!discordInfo.joinsAllowed))					// Player's Aren't Allowed to Join the Server, so Don't Send Invites Out.
+		
+		return false;
 
-	return false; // Did not pass any of the checks
+	if ((!discordInfo.whoCanInvite && consoleplayer == serverplayer) 											// Only the Server Player is Allowed to Invite!
+		|| (discordInfo.whoCanInvite == 1 && (consoleplayer == serverplayer || IsPlayerAdmin(consoleplayer)))	// Only Admins and the Server are Allowed to Invite!
+		|| (discordInfo.whoCanInvite == 2)) 														   			// Everyone's Allowed to Invite!
+		
+		return true;
+
+	return false; // Did Not Pass Any of the Checks, so Still Don't Send Any Invites.
 }
 
 /*--------------------------------------------------
@@ -475,7 +510,7 @@ static boolean DRPC_InvitesAreAllowed(void)
 		requestUser - DiscordUser struct for the user trying to connect.
 
 	Return:-
-		None
+		nil if an error occured or duplicate requests were found, or none otherwise
 --------------------------------------------------*/
 static void DRPC_HandleJoinRequest(const DiscordUser *requestUser)
 {
@@ -535,6 +570,12 @@ static void DRPC_HandleJoinRequest(const DiscordUser *requestUser)
 	void DRPC_RemoveRequest(discordRequest_t *removeRequest)
 
 		See header file for description.
+	
+	Input Arguments:-
+		None
+	
+	Return:-
+		None
 --------------------------------------------------*/
 void DRPC_RemoveRequest(discordRequest_t *removeRequest)
 {
@@ -566,6 +607,9 @@ void DRPC_RemoveRequest(discordRequest_t *removeRequest)
 
 	Input Arguments:-
 		None
+	
+	Return:-
+		None
 --------------------------------------------------*/
 void DRPC_Init(void)
 {
@@ -579,10 +623,6 @@ void DRPC_Init(void)
 	handlers.joinRequest = DRPC_HandleJoinRequest;
 
 	Discord_Initialize(DISCORD_APPID, &handlers, 1, NULL);
-	
-	I_AddExitFunc(Discord_Shutdown);
-	I_AddExitFunc(DRPC_Shutdown);
-	
 	DRPC_UpdatePresence();
 }
 
@@ -609,6 +649,12 @@ static void DRPC_GotServerIP(UINT32 address)
 		Retrieves the IP address of the server that you're
 		connected to. Will attempt to use STUN for getting your
 		own IP address.
+	
+	Input Arguments:-
+		None
+	
+	Return:-
+		the server IP if it was found, none if otherwise
 --------------------------------------------------*/
 static const char *DRPC_GetServerIP(void)
 {
@@ -626,7 +672,9 @@ static const char *DRPC_GetServerIP(void)
 	}
 
 	if (self_ip[0])
+	{
 		return self_ip;
+	}
 	else
 	{
 		// There happens to be a good way to get it after all! :D
@@ -642,6 +690,9 @@ static const char *DRPC_GetServerIP(void)
 		will get an ignore reply.
 
 	Input Arguments:-
+		None
+	
+	Return:-
 		None
 --------------------------------------------------*/
 static void DRPC_EmptyRequests(void)
@@ -659,6 +710,9 @@ static void DRPC_EmptyRequests(void)
 		See header file for description.
 
 	Input Arguments:-
+		None
+	
+	Return:-
 		None
 --------------------------------------------------*/
 //////// 	  DEPENDANCIES 	 	////////
@@ -732,7 +786,9 @@ void DRPC_UpdatePresence(void)
 	char spectatorGrammar[2+3] = "";
 
 	char gametypeGrammar[2+3+1+9] = "";
-	char gameType[2+3+8+9] = "";
+	char gameType[2+3+8+9+25+12] = "";
+
+	char addonsLoaded[3+2+9+8+7+5] = "";
 
 	char charImageType[2+2+1] = "";
 	// end of the nerd emoji moment //
@@ -947,7 +1003,7 @@ void DRPC_UpdatePresence(void)
 		NULL
 	};*/
 
-	// Counters
+	// Iterators
 	INT32 i = 0;					// General Iterator
 	UINT8 emeraldCount = 0;			// Helps Me To Find The Emeralds
 
@@ -957,12 +1013,6 @@ void DRPC_UpdatePresence(void)
 	INT32 checkSuperSideSkin = 0;	// Checks Through The Secondary Display Player's Super Skin
 
 	// Booleans
-#ifdef DEVELOP
-	boolean devmode = true;
-#else
-	boolean devmode = false;
-#endif
-
 	boolean joinSecretSet = false;
 
 	////// 	  INITIALIZE 	 //////
@@ -1007,19 +1057,16 @@ void DRPC_UpdatePresence(void)
 			}
 		}
 
-		if (Playing())
+		switch (discordInfo.serverRoom)
 		{
-			switch (msServerType)
-			{
-				case 33: strcpy(servertype, "Standard"); break;
-				case 28: strcpy(servertype, "Casual"); break;
-				case 38: strcpy(servertype, "Custom Gametype"); break;
-				case 31: strcpy(servertype, "OLDC"); break;
+			case 33: strcpy(servertype, "Standard"); break;
+			case 28: strcpy(servertype, "Casual"); break;
+			case 38: strcpy(servertype, "Custom Gametype"); break;
+			case 31: strcpy(servertype, "OLDC"); break;
 
-				// Fallbacks
-				case 0: strcpy(servertype, "Public"); break;
-				default: strcpy(servertype, "Private"); break;
-			}
+			case 0: strcpy(servertype, "Public"); break;
+			case -1: strcpy(servertype, "Unknown Room"); break;
+			default: strcpy(servertype, "Private"); break;
 		}
 
 		if (cv_discordshowonstatus.value != 8)
@@ -1027,11 +1074,15 @@ void DRPC_UpdatePresence(void)
 			
 		discordPresence.partyId = server_context; 		   // Thanks, whoever gave us Mumble support, for implementing the EXACT thing Discord wanted for this field!
 		discordPresence.partySize = D_NumPlayers(); 	   // Current Amount of Players in the Server
-		discordPresence.partyMax = cv_maxplayers.value;    // Max Players
+		discordPresence.partyMax = discordInfo.maxPlayers; // Max Players
 		discordPresence.instance = 1;					   // Initialize Discord Net Instance, Just In Case
 	}
-	/*else
-		memset(&discordInfo, 0, sizeof(discordInfo));*/
+	else
+	{
+		memset(&discordInfo.maxPlayers, 0, sizeof(discordInfo.maxPlayers));
+		memset(&discordInfo.joinsAllowed, 0, sizeof(discordInfo.joinsAllowed));
+		memset(&discordInfo.whoCanInvite, 0, sizeof(discordInfo.whoCanInvite));
+	}
 
 	//// 	  STATUSES 		////
 	if (cv_discordshowonstatus.value != 8)
@@ -1149,11 +1200,23 @@ void DRPC_UpdatePresence(void)
 			{
 				// Modes //
 				strcpy(gametypeGrammar, (!ultimatemode ? "Playing " : "Taking on "));
-				(modeattacking ? (snprintf(gameType, 12, ((maptol != TOL_NIGHTS && maptol != TOL_XMAS) ? "Time Attack" : "NiGHTS Mode"))) : (snprintf(gameType, 24, (!splitscreen ? ((gametype == GT_COOP && !netgame) ? (!ultimatemode ? "Single-Player" : "Ultimate Mode") : "%s") : "Split-Screen"), (netgame ? gametype_cons_t[gametype].strvalue : NULL))));
+				snprintf(gameType, 64,
+					// Main Gametypes/Ultimate Mode/Mode Attacking/Split-Screen
+					(modeattacking ?
+						((maptol != TOL_NIGHTS && maptol != TOL_XMAS) ? "Time Attack" : "NiGHTS Mode") :
+
+						(!splitscreen ? ((gametype == GT_COOP && !netgame) ?
+							(!ultimatemode ? "Single-Player" : "Ultimate Mode") : "%s") :
+						("Split-Screen"))),
+					
+					// Custom Gametypes/Mode Attacking
+					(modeattacking ?
+						("") :
+						(netgame ? gametype_cons_t[gametype].strvalue : "")));
 				
 				// Add-ons //
 				if ((modifiedgame || autoloaded) && numwadfiles > (mainwads+extrawads))
-					strlcat(gameType, ((numwadfiles - (mainwads+extrawads) > 1) ? va(" With %d Add-ons", (numwadfiles - (mainwads+extrawads))) : " With 1 Add-on"), 105);
+					strcpy(addonsLoaded, ((numwadfiles - (mainwads+extrawads) > 1) ? va(" With %d Add-ons", (numwadfiles - (mainwads+extrawads))) : " With 1 Add-on"));
 				
 				// Lives //
 				if (!players[consoleplayer].spectator && gametyperules & GTR_LIVES && !(ultimatemode || modeattacking))
@@ -1192,7 +1255,7 @@ void DRPC_UpdatePresence(void)
 			}
 			
 			// Copy All Of Our Strings //
-			strlcat(statestr, va("%s%s%s%s%s", gametypeGrammar, gameType, lifeGrammar, lifeType, stateType), 130);
+			strlcat(statestr, va("%s%s%s%s%s%s", gametypeGrammar, gameType, addonsLoaded, lifeGrammar, lifeType, stateType), 130);
 		}
 	}
 
@@ -1213,8 +1276,8 @@ void DRPC_UpdatePresence(void)
 								(gamestate == GS_CREDITS ? "Viewing the Credits" :
 								(gamestate == GS_ENDING ? "Watching the Ending" :
 								(gamestate == GS_GAMEEND ? (!cv_discordstatusmemes.value ? "Returning to the Main Menu..." : "Did You Get All Those Chaos Emeralds?") :
-								(gamestate == GS_INTRO ? "Watching The Intro" :
-								(gamestate == GS_CUTSCENE ? "Watching A Cutscene" : "???"))))))) :
+								(gamestate == GS_INTRO ? "Watching the Intro" :
+								(gamestate == GS_CUTSCENE ? "Watching a Cutscene" : "???"))))))) :
 								
 							// Ultimate Mode
 							(!cv_discordstatusmemes.value ? "Just Beat Ultimate Mode!" : "Look Guys, It's my Greatest Achievement: An SRB2 Discord RPC Status Saying I Beat Ultimate Mode!")));
@@ -1238,11 +1301,16 @@ void DRPC_UpdatePresence(void)
 				|| (gamemap >= 280 && gamemap <= 288) 	// Supported CTF Maps
 				|| (gamemap >= 532 && gamemap <= 543) 	// Supported Match Maps
 
-				|| (gamemap == 1000))					// Tutorial Zone
+				|| (tutorialmode))						// Tutorial Zone
 			{
 				strcpy(mapimg, va("%s", G_BuildMapName(gamemap)));
 				strlwr(mapimg);
 				strcpy(imagestr, mapimg);
+			}
+			else if ((gamemap == titlemap) && (gamestate != GS_TITLESCREEN && !titlemapinaction) && Playing())
+			{
+				strcpy(imagestr, "misctitle");
+				strcpy(imagetxtstr, "What is Wrong With You.");
 			}
 			else
 				strcpy(imagestr, "mapcustom");
@@ -1517,13 +1585,16 @@ void DRPC_UpdatePresence(void)
 
 	Input Arguments:-
 		None
+	
+	Return:-
+		None
 --------------------------------------------------*/
 void DRPC_Shutdown(void)
 {
 	// Initialize Discord Once More
 	DiscordRichPresence discordPresence;
 	memset(&discordPresence, 0, sizeof(discordPresence));
-	//memset(&discordInfo, 0, sizeof(discordInfo));
+	memset(&discordInfo, 0, sizeof(discordInfo));
 	
 	// Assign a Custom Status Because We Can
 	discordPresence.details = "Currently Closing...";
@@ -1534,9 +1605,10 @@ void DRPC_Shutdown(void)
 	DRPC_EmptyRequests();
 
 	// Close Everything Down
-	CONS_Printf("DRPC_Shutdown(): Shutting Down Discord Rich Presence...\n");
+	I_OutputMsg("DRPC_Shutdown(): ");
 	Discord_ClearPresence();
 	Discord_Shutdown();
+	I_OutputMsg((dedicated || devmode || !cv_discordrp.value) ? "barely started, but shut down anyways\n" : "shut down\n");
 }
 
 #endif // HAVE_DISCORDRPC

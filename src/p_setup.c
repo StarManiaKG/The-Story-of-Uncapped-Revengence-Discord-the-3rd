@@ -4291,6 +4291,13 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		wipegamestate = FORCEWIPEOFF;
 	wipestyleflags = 0;
 
+	// HOLEPUNCHING STUFFS: PLEASE HELP ME EDITION //
+	if (netgame && serverrunning)
+	{
+		RenewHolePunch();
+	}
+	// END THAT PLEASE //
+
 	// Special stage & record attack retry fade to white
 	// This is handled BEFORE sounds are stopped.
 	if (G_GetModeAttackRetryFlag())
@@ -4351,6 +4358,10 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 				(mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE) ? "" : " Zone",
 				(mapheaderinfo[gamemap-1]->actnum > 0) ? va(" %d",mapheaderinfo[gamemap-1]->actnum) : "");
 			V_DrawSmallString(1, 195, V_ALLOWLOWERCASE|V_TRANSLUCENT|V_SNAPTOLEFT|V_SNAPTOBOTTOM, tx);
+			// STAR STUFF //
+			if (cv_loadingscreen.value && rendermode != render_opengl)
+				STAR_LoadingStatus(false);
+			// HELP ME PLEASE //
 			I_UpdateNoVsync();
 		}
 
@@ -4501,6 +4512,9 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		TSoURDt3rd_LoadedGamedataAddon = true;
 	if (!netgame)
 		STAR_SetSavefileProperties();
+#ifdef HAVE_SDL
+	STAR_SetWindowTitle();
+#endif
 	// END THAT //
 
 	// Took me 3 hours to figure out why my progression kept on getting overwritten with the titlemap...

@@ -77,19 +77,23 @@ typedef struct
 	char data[MAXPACKETLENGTH];
 } ATTRPACK doomcom_t;
 
+// HOLEPUNCHING STUFF //
 typedef struct
 {
 	INT32 magic;
 	INT32 addr;
 	INT16 port;
 } ATTRPACK holepunch_t;
+// MARKING STUFF IS BORING, BUT WORTH IT //
 
 #if defined(_MSC_VER)
 #pragma pack()
 #endif
 
 extern doomcom_t *doomcom;
+// HOLEPUNCHING STUFF //
 extern holepunch_t *holepunchpacket;
+// NOTING STUFF FOR SNOOPERS AND STUFFS //
 
 /**	\brief return packet in doomcom struct
 */
@@ -147,6 +151,8 @@ extern boolean (*I_NetOpenSocket)(void);
 */
 extern void (*I_NetCloseSocket)(void);
 
+
+// HOLEPUNCHING STUFFS //
 /**	\brief send a hole punching request
 */
 extern void (*I_NetRequestHolePunch)(INT32 node);
@@ -154,6 +160,8 @@ extern void (*I_NetRequestHolePunch)(INT32 node);
 /**	\brief register this machine on the hole punching server
 */
 extern void (*I_NetRegisterHolePunch)(void);
+// END THISE STUFFS //
+
 
 extern boolean (*I_Ban) (INT32 node);
 extern void (*I_ClearBans)(void);

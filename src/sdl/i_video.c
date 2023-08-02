@@ -90,6 +90,10 @@
 #include "../discord.h"
 #endif
 
+// STAR STUFF //
+#include "../STAR/star_vars.h"
+// END THAT STUFF //
+
 // maximum number of windowed modes (see windowedModes[][])
 #define MAXWINMODES (18)
 
@@ -1666,7 +1670,8 @@ static SDL_bool Impl_CreateWindow(SDL_bool fullscreen)
 #endif
 
 	// Create a window
-	window = SDL_CreateWindow("SRB2 "VERSIONSTRING, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+	// STAR NOTE: i was here lol
+	window = SDL_CreateWindow(STAR_SetWindowTitle(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 			realwidth, realheight, flags);
 
 

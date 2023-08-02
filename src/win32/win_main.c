@@ -49,6 +49,10 @@
 // MSWheel support for Win95/NT3.51
 #include <zmouse.h>
 
+// STAR STUFF //
+#include "../STAR/star_vars.h"
+// END THAT //
+
 #ifndef WM_XBUTTONDOWN
 #define WM_XBUTTONDOWN 523
 #endif
@@ -612,7 +616,8 @@ static int WINAPI HandledWinMain(HINSTANCE hInstance)
 #endif
 
 	// open a dummy window, both OpenGL and DirectX need one.
-	if ((hWndMain = OpenMainWindow(hInstance, va("SRB2 "VERSIONSTRING))) == INVALID_HANDLE_VALUE)
+	// STAR NOTE: i was here lol
+	if ((hWndMain = OpenMainWindow(hInstance, va(STAR_SetWindowTitle()))) == INVALID_HANDLE_VALUE)
 	{
 		tlErrorMessage(TEXT("Couldn't open window"));
 		return FALSE;

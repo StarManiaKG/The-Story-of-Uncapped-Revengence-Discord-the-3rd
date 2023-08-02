@@ -100,6 +100,10 @@ typedef off_t off64_t;
  #endif
 #endif
 
+// STAR STUFF //
+#include "STAR/star_vars.h"
+// END THIS //
+
 static CV_PossibleValue_t screenshot_cons_t[] = {{0, "Default"}, {1, "HOME"}, {2, "SRB2"}, {3, "CUSTOM"}, {0, NULL}};
 consvar_t cv_screenshot_option = CVAR_INIT ("screenshot_option", "Default", CV_SAVE|CV_CALL, screenshot_cons_t, Screenshot_option_Onchange);
 consvar_t cv_screenshot_folder = CVAR_INIT ("screenshot_folder", "", CV_SAVE, NULL, NULL);
@@ -790,7 +794,7 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 	char keytxt[SRB2PNGTXT][12] = {
 	"Title", "Description", "Playername", "Mapnum", "Mapname",
 	"Location", "Interface", "Render Mode", "Revision", "Build Date", "Build Time"};
-	char titletxt[] = "Sonic Robo Blast 2 " VERSIONSTRING;
+	char titletxt[] = "Sonic Robo Blast 2 " VERSIONSTRING"; " TSOURDT3RDVERSIONSTRING " " TSOURDT3RDBYSTARMANIAKGSTRING;
 	png_charp playertxt =  cv_playername.zstring;
 	char desctxt[] = "SRB2 Screenshot";
 	char Movietxt[] = "SRB2 Movie";

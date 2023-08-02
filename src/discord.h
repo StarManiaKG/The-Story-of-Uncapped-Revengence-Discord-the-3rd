@@ -21,7 +21,7 @@
 // Commands //
 // Main Things
 extern consvar_t cv_discordrp, cv_discordstreamer;
-extern consvar_t cv_discordasks, cv_discordinvites;
+extern consvar_t cv_discordasks;
 extern consvar_t cv_discordshowonstatus, cv_discordstatusmemes, cv_discordcharacterimagetype;
 
 // Custom Things
@@ -33,13 +33,22 @@ extern consvar_t cv_customdiscordlargemapimage, cv_customdiscordsmallmapimage;
 extern consvar_t cv_customdiscordlargemiscimage, cv_customdiscordsmallmiscimage;
 extern consvar_t cv_customdiscordlargeimagetext, cv_customdiscordsmallimagetext;
 
-extern char discordUserName[64];
+extern struct discordInfo_s {
+	boolean Initialized;
 
-/*extern struct discordInfo_s {
+	char sessionUsername[256];
+	char grabbedUsername[256];
+	char discriminator[6];
+	char userID[20];
+
+	boolean Disconnected;
+	
 	UINT8 maxPlayers;
 	boolean joinsAllowed;
 	UINT8 whoCanInvite;
-} discordInfo;*/
+
+	INT16 serverRoom;
+} discordInfo;
 
 typedef struct discordRequest_s {
 	char *username; // Discord user name.
@@ -50,14 +59,23 @@ typedef struct discordRequest_s {
 	// *Maybe* if it was only PNG I would boot up curl just to get AND convert this to Doom GFX,
 	// but it can *also* be a JEPG, WebP, or GIF :)
 	// Hey, wanna add ImageMagick as a dependency? :dying:
-	// ...Essentially, VERY WIP
-	//patch *avatar; // might turn into a char instead, idk
+	//patch_t *avatar;
 
 	struct discordRequest_s *next; // Next request in the list.
 	struct discordRequest_s *prev; // Previous request in the list. Not used normally, but just in case something funky happens, this should repair the list.
 } discordRequest_t;
 
 extern discordRequest_t *discordRequestList;
+
+/*--------------------------------------------------
+	void DRPC_UpdateUsername(void);
+
+		Updates the current Discord Rich Presence
+		username.
+--------------------------------------------------*/
+
+void DRPC_UpdateUsername(void);
+
 
 /*--------------------------------------------------
 	void DRPC_RemoveRequest(void);

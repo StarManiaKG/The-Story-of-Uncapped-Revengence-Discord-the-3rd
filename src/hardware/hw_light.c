@@ -238,15 +238,15 @@ light_t *t_lspr[NUMSPRITES] =
 	// Collectible Items
 	&lspr[NOLIGHT],     // SPR_RING
 	&lspr[NOLIGHT],     // SPR_TRNG
-	&lspr[NOLIGHT],     // SPR_TOKE
+	&lspr[ORANGESHINE_L],// SPR_TOKE
 	&lspr[REDBALL_L],   // SPR_RFLG
 	&lspr[BLUEBALL_L],  // SPR_BFLG
 	&lspr[NOLIGHT],     // SPR_SPHR
 	&lspr[NOLIGHT],     // SPR_NCHP
 	&lspr[NOLIGHT],     // SPR_NSTR
 	&lspr[NOLIGHT],     // SPR_EMBM
-	&lspr[NOLIGHT],     // SPR_CEMG
-	&lspr[NOLIGHT],     // SPR_SHRD
+	&lspr[BLUESHINE_L], // SPR_CEMG
+	&lspr[GREENSHINE_L],// SPR_SHRD
 
 	// Interactive Objects
 	&lspr[NOLIGHT],     // SPR_BBLS
@@ -757,12 +757,12 @@ static void HWR_SetLight(void);
 // --------------------------------------------------------------------------
 static float HWR_DistP2D(FOutVector *p1, FOutVector *p2, FVector *p3, FVector *inter)
 {
-	if (p1->z == p2->z)
+	if (FLOAT_TO_FIXED(p1->z) == FLOAT_TO_FIXED(p2->z))
 	{
 		inter->x = p3->x;
 		inter->z = p1->z;
 	}
-	else if (p1->x == p2->x)
+	else if (FLOAT_TO_FIXED(p1->x) == FLOAT_TO_FIXED(p2->x))
 	{
 		inter->x = p1->x;
 		inter->z = p3->z;
@@ -783,7 +783,9 @@ static float HWR_DistP2D(FOutVector *p1, FOutVector *p2, FVector *p3, FVector *i
 // check if sphere (radius r) centred in p3 touch the bounding box defined by p1, p2
 static boolean SphereTouchBBox3D(FOutVector *p1, FOutVector *p2, FVector *p3, float r)
 {
-	float minx = p1->x,maxx = p2->x,miny = p2->y,maxy = p1->y,minz = p2->z,maxz = p1->z;
+	float minx = p1->x, maxx = p2->x;
+	float miny = p2->y, maxy = p1->y;
+	float minz = p2->z, maxz = p1->z;
 
 	if (minx > maxx)
 	{
@@ -1078,7 +1080,7 @@ void HWR_DrawCoronas(void)
 		float           cx = LIGHT_POS(j).x;
 		float           cy = LIGHT_POS(j).y;
 		float           cz = LIGHT_POS(j).z; // gravity center
-		float           size;
+		float           size = 0.0f;
 		light_t         *p_lspr = dynlights->p_lspr[j];
 
 		// it's an object which emits light
@@ -1111,12 +1113,12 @@ void HWR_DrawCoronas(void)
 				break;
 			case ROCKET_SPR:
 				Surf.PolyColor.s.alpha = (UINT8)((M_RandomByte()>>1)&0xff);
-				// don't need a break
+				break; // STAR NOTE: previous comments say that a break isn't needed here, but for now we'll put one so that the compiler doesn't complain
 			case CORONA_SPR:
 				size  = p_lspr->corona_radius  * ((cz+60.0f)/100.0f); // d'ou vienne ces constante ?
 				break;
 			default:
-				I_Error("HWR_DoCoronasLighting: unknow light type %d",p_lspr->type);
+				I_Error("HWR_DrawCoronas(): unknown light type %d", p_lspr->type);
 				continue;
 		}
 		if (size > p_lspr->corona_radius)
@@ -1207,18 +1209,27 @@ void HWR_DL_AddLight(gl_vissprite_t *spr, GLPatch_t *patch)
 	dynlights->nb++;
 }
 
-static GLMipmap_t lightmappatchmipmap;
-static GLPatch_t lightmappatch = { .mipmap = &lightmappatchmipmap };
+static GLPatch_t *lightmappatch;
 
 void HWR_InitLight(void)
 {
+	// Make Variables //
 	size_t i;
+	static patch_t *coronapatch;
+	
+	// Cache the Patch //
+	coronapatch = (patch_t *)W_CachePatchName("CORONA", PU_CACHE);
+	if (!(coronapatch && ((GLPatch_t *)coronapatch->hardware)->mipmap->format)) return;
+	lightmappatch = ((GLPatch_t *)coronapatch->hardware);
 
-	// precalculate sqr radius
+	// precalculate sqr radius //
 	for (i = 0;i < NUMLIGHTS;i++)
 		lspr[i].dynamic_sqrradius = lspr[i].dynamic_radius*lspr[i].dynamic_radius;
 
-	lightmappatch.mipmap->downloaded = false;
+	coronapatch->width = 128;
+	coronapatch->height = 128;
+
+	lightmappatch->mipmap->downloaded = false;
 	coronalumpnum = W_CheckNumForName("CORONA");
 }
 
@@ -1229,10 +1240,10 @@ static void HWR_SetLight(void)
 {
 	int    i, j;
 
-	if (!lightmappatch.mipmap->downloaded && !lightmappatch.mipmap->data)
+	if (!lightmappatch->mipmap->downloaded && !lightmappatch->mipmap->data)
 	{
 
-		UINT16 *Data = Z_Malloc(129*128*sizeof (UINT16), PU_HWRCACHE, &lightmappatch.mipmap->data);
+		UINT16 *Data = Z_Malloc(129*128*sizeof (UINT16), PU_HWRCACHE, &lightmappatch->mipmap->data);
 
 		for (i = 0; i < 128; i++)
 		{
@@ -1245,18 +1256,16 @@ static void HWR_SetLight(void)
 					Data[i*128+j] = 0;
 			}
 		}
-		lightmappatch.mipmap->format = GL_TEXFMT_ALPHA_INTENSITY_88;
+		lightmappatch->mipmap->format = GL_TEXFMT_ALPHA_INTENSITY_88;
 
-		lightmappatch.width = 128;
-		lightmappatch.height = 128;
-		lightmappatch.mipmap->width = 128;
-		lightmappatch.mipmap->height = 128;
-		lightmappatch.mipmap->flags = 0; //TF_WRAPXY; // DEBUG: view the overdraw !
+		lightmappatch->mipmap->width = 128;
+		lightmappatch->mipmap->height = 128;
+		lightmappatch->mipmap->flags = 0; //TF_WRAPXY; // DEBUG: view the overdraw !
 	}
-	HWD.pfnSetTexture(lightmappatch.mipmap);
+	HWD.pfnSetTexture(lightmappatch->mipmap);
 
 	// The system-memory data can be purged now.
-	Z_ChangeTag(lightmappatch.mipmap->data, PU_HWRCACHE_UNLOCKED);
+	Z_ChangeTag(lightmappatch->mipmap->data, PU_HWRCACHE_UNLOCKED);
 }
 
 //**********************************************************

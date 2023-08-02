@@ -234,14 +234,6 @@ void I_RemoveExitFunc(void (*func)());
 
 INT32 I_StartupSystem(void);
 
-#ifdef HAVE_DISCORDRPC
-#include "discord.h"
-
-/**	\brief Shutdown Discord Rich Presence Processes
-*/
-void DRPC_Shutdown(void);
-#endif
-
 /**	\brief Shutdown systems
 */
 void I_ShutdownSystem(void);

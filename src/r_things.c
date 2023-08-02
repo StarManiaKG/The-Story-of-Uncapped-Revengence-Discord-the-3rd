@@ -1325,7 +1325,11 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 
 	scalemul = FixedMul(FRACUNIT - floordiff/640, scale);
 
+	// STAR STUFF //
+	//patch = (cv_shadow.value == 2 ? (vis->patch) : (W_CachePatchName("DSHADOW", PU_SPRITE))); // STAR NOTE: i was here lol
 	patch = W_CachePatchName("DSHADOW", PU_SPRITE);
+	// END THAT //
+
 	xscale = FixedDiv(projection, tz);
 	yscale = FixedDiv(projectiony, tz);
 	shadowxscale = FixedMul(thing->radius*2, scalemul);

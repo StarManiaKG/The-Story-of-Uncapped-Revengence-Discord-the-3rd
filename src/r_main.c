@@ -155,7 +155,13 @@ consvar_t cv_chasecam2 = CVAR_INIT ("chasecam2", "On", CV_CALL, CV_OnOff, ChaseC
 consvar_t cv_flipcam = CVAR_INIT ("flipcam", "No", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, FlipCam_OnChange);
 consvar_t cv_flipcam2 = CVAR_INIT ("flipcam2", "No", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, FlipCam2_OnChange);
 
-consvar_t cv_shadow = CVAR_INIT ("shadow", "On", CV_SAVE, CV_OnOff, NULL);
+// STAR NOTE: i was here lol
+static CV_PossibleValue_t shadow_cons_t[] = {{0, "Off"}, {1, "Drop"}, {2, "OpenGL Realistic"}, {0, NULL}};
+consvar_t cv_shadow = CVAR_INIT ("shadow", "Drop", CV_SAVE, shadow_cons_t, NULL);
+// STAR STUFF //
+consvar_t cv_realisticshadowscanrotate = CVAR_INIT ("realisticshadowscanrotate", "No", CV_SAVE, CV_YesNo, NULL);
+// END THIS //
+
 consvar_t cv_skybox = CVAR_INIT ("skybox", "On", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_ffloorclip = CVAR_INIT ("ffloorclip", "On", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_allowmlook = CVAR_INIT ("allowmlook", "Yes", CV_NETVAR, CV_YesNo, NULL);
@@ -1603,6 +1609,9 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_chasecam2);
 
 	CV_RegisterVar(&cv_shadow);
+	// STAR STUFF //
+	CV_RegisterVar(&cv_realisticshadowscanrotate);
+	// END THAT //
 	CV_RegisterVar(&cv_skybox);
 	CV_RegisterVar(&cv_ffloorclip);
 

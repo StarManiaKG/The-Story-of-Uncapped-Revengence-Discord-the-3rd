@@ -16,12 +16,6 @@ find_library(DISCORDRPC_LIBRARY
 		${DISCORDRPC_PKGCONF_LIBRARY_DIRS}
 		"/usr/lib"
 		"/usr/local/lib"
-	
-	NAMES discord-rpc
-	PATHS
-		${DISCORDRPC_PKGCONF_LIBRARY_DIRS}
-		"/usr/lib"
-		"/usr/local/lib"
 )
 
 set(DISCORDRPC_PROCESS_INCLUDES DISCORDRPC_INCLUDE_DIR)
