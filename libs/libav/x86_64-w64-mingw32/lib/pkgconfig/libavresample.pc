@@ -1,0 +1,14 @@
+prefix=../BUILD64
+exec_prefix=${prefix}
+libdir=../BUILD64/lib
+includedir=../BUILD64/include
+
+Name: libavresample
+Description: Libav audio resampling library
+Version: 4.0.0
+Requires: 
+Requires.private: libavutil >= 56.8.0
+Conflicts:
+Libs: -L${libdir} -lavresample 
+Libs.private: -lm
+Cflags: -I${includedir}

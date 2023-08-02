@@ -1,0 +1,14 @@
+prefix=../BUILD64
+exec_prefix=${prefix}
+libdir=../BUILD64/lib
+includedir=../BUILD64/include
+
+Name: libavdevice
+Description: Libav device handling library
+Version: 57.0.2
+Requires: 
+Requires.private: libavformat >= 58.2.0, libavcodec >= 58.12.1, libavresample >= 4.0.0, libavutil >= 56.8.0
+Conflicts:
+Libs: -L${libdir} -lavdevice 
+Libs.private: -lm -lvfw32
+Cflags: -I${includedir}

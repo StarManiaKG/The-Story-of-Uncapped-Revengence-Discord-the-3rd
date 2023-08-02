@@ -1,0 +1,14 @@
+prefix=../BUILD32
+exec_prefix=${prefix}
+libdir=../BUILD32/lib
+includedir=../BUILD32/include
+
+Name: libavcodec
+Description: Libav codec library
+Version: 58.12.1
+Requires: 
+Requires.private: libavresample >= 4.0.0, libavutil >= 56.8.0
+Conflicts:
+Libs: -L${libdir} -lavcodec 
+Libs.private: -lm -lz -lole32
+Cflags: -I${includedir}

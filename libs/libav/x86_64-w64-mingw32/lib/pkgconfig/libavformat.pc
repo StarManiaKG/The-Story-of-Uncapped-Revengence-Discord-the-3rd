@@ -1,0 +1,14 @@
+prefix=../BUILD64
+exec_prefix=${prefix}
+libdir=../BUILD64/lib
+includedir=../BUILD64/include
+
+Name: libavformat
+Description: Libav container format library
+Version: 58.2.0
+Requires: 
+Requires.private: libavcodec >= 58.12.1, libavresample >= 4.0.0, libavutil >= 56.8.0
+Conflicts:
+Libs: -L${libdir} -lavformat 
+Libs.private: -lm -lz -lws2_32
+Cflags: -I${includedir}
