@@ -45,6 +45,8 @@ set(SRB2_CONFIG_DEV_BUILD OFF CACHE BOOL
 
 add_subdirectory(blua)
 
+add_subdirectory(STAR)
+
 if(${SRB2_CONFIG_HAVE_GME})
 	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
 		set(GME_FOUND ON)
