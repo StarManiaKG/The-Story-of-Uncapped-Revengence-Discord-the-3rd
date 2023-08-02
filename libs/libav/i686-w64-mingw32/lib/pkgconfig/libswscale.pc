@@ -1,0 +1,14 @@
+prefix=../BUILD32
+exec_prefix=${prefix}
+libdir=../BUILD32/lib
+includedir=../BUILD32/include
+
+Name: libswscale
+Description: Libav image rescaling library
+Version: 5.0.1
+Requires: 
+Requires.private: libavutil >= 56.8.0
+Conflicts:
+Libs: -L${libdir} -lswscale 
+Libs.private: -lm
+Cflags: -I${includedir}
