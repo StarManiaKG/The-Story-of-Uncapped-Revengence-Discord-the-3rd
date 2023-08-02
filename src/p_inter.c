@@ -3587,6 +3587,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		UINT8 shouldForce = LUA_HookShouldDamage(target, inflictor, source, damage, damagetype);
 		if (P_MobjWasRemoved(target))
 			return (shouldForce == 1); // mobj was removed
+		if (P_MobjWasRemoved(source))
+			source = NULL;
 		if (shouldForce == 1)
 			force = true;
 		else if (shouldForce == 2)
@@ -3804,6 +3806,9 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	else
 		P_SetMobjState(target, target->info->painstate);
 
+	if (P_MobjWasRemoved(target))
+		return false;
+
 	if (target->type == MT_HIVEELEMENTAL)
 		target->extravalue1 += 3;
 
@@ -3924,7 +3929,10 @@ void P_PlayerRingBurst(player_t *player, INT32 num_rings)
 				P_SetObjectMomZ(mo, ns, true);
 		}
 		if (player->mo->eflags & MFE_VERTICALFLIP)
+		{
 			mo->momz *= -1;
+			mo->flags2 |= MF2_OBJECTFLIP;
+		}
 	}
 
 	player->losstime += 10*TICRATE;
@@ -4148,6 +4156,8 @@ void P_PlayerWeaponPanelOrAmmoBurst(player_t *player)
 		P_SetObjectMomZ(mo, 4*FRACUNIT, false); \
 		if (i & 1) \
 			P_SetObjectMomZ(mo, 4*FRACUNIT, true); \
+		if (player->mo->eflags & MFE_VERTICALFLIP) \
+			mo->flags2 |= MF2_OBJECTFLIP; \
 		++i; \
 	} \
 	else if (player->powers[power] > 0) \
@@ -4167,6 +4177,8 @@ void P_PlayerWeaponPanelOrAmmoBurst(player_t *player)
 		P_SetObjectMomZ(mo, 3*FRACUNIT, false); \
 		if (i & 1) \
 			P_SetObjectMomZ(mo, 3*FRACUNIT, true); \
+		if (player->mo->eflags & MFE_VERTICALFLIP) \
+			mo->flags2 |= MF2_OBJECTFLIP; \
 		player->powers[power] = 0; \
 		++i; \
 	}
@@ -4307,7 +4319,10 @@ void P_PlayerEmeraldBurst(player_t *player, boolean toss)
 			P_SetObjectMomZ(mo, 3*FRACUNIT, false);
 
 			if (player->mo->eflags & MFE_VERTICALFLIP)
+			{
 				mo->momz = -mo->momz;
+				mo->flags2 |= MF2_OBJECTFLIP;
+			}
 
 			if (toss)
 				player->tossdelay = 2*TICRATE;
@@ -4336,7 +4351,10 @@ void P_PlayerFlagBurst(player_t *player, boolean toss)
 	flag = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, type);
 
 	if (player->mo->eflags & MFE_VERTICALFLIP)
+	{
 		flag->z += player->mo->height - flag->height;
+		flag->flags2 |= MF2_OBJECTFLIP;
+	}
 
 	if (toss)
 		P_InstaThrust(flag, player->mo->angle, FixedMul(6*FRACUNIT, player->mo->scale));

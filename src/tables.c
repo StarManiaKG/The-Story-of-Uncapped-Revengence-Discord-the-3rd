@@ -540,4 +540,3 @@ matrix_t *FM_RotateZ(matrix_t *dest, angle_t rad)
 }
 
 #undef M
-#undef M

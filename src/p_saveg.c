@@ -905,7 +905,7 @@ static boolean CheckFFloorDiff(const sector_t *ss)
 
 	for (rover = ss->ffloors; rover; rover = rover->next)
 	{
-		if (rover->flags != rover->spawnflags
+		if (rover->fofflags != rover->spawnflags
 		|| rover->alpha != rover->spawnalpha)
 			{
 				return true; // we found an FOF that changed!
@@ -925,7 +925,7 @@ static void ArchiveFFloors(const sector_t *ss)
 	for (rover = ss->ffloors; rover; rover = rover->next)
 	{
 		fflr_diff = 0; // reset diff flags
-		if (rover->flags != rover->spawnflags)
+		if (rover->fofflags != rover->spawnflags)
 			fflr_diff |= FD_FLAGS;
 		if (rover->alpha != rover->spawnalpha)
 			fflr_diff |= FD_ALPHA;
@@ -935,7 +935,7 @@ static void ArchiveFFloors(const sector_t *ss)
 			WRITEUINT16(save_p, j); // save ffloor "number"
 			WRITEUINT8(save_p, fflr_diff);
 			if (fflr_diff & FD_FLAGS)
-				WRITEUINT32(save_p, rover->flags);
+				WRITEUINT32(save_p, rover->fofflags);
 			if (fflr_diff & FD_ALPHA)
 				WRITEINT16(save_p, rover->alpha);
 		}
@@ -973,7 +973,7 @@ static void UnArchiveFFloors(const sector_t *ss)
 		fflr_diff = READUINT8(save_p);
 
 		if (fflr_diff & FD_FLAGS)
-			rover->flags = READUINT32(save_p);
+			rover->fofflags = READUINT32(save_p);
 		if (fflr_diff & FD_ALPHA)
 			rover->alpha = READINT16(save_p);
 
@@ -2973,7 +2973,7 @@ static thinker_t* LoadMobjThinker(actionf_p1 thinker)
 		mtag_t tag = Tag_FGet(&mobj->spawnpoint->tags);
 		if (tag >= 0 && tag <= 15)
 		{
-			if (mobj->spawnpoint->options & MTF_OBJECTSPECIAL)
+			if (mobj->spawnpoint->args[0])
 				skyboxcenterpnts[tag] = mobj;
 			else
 				skyboxviewpnts[tag] = mobj;

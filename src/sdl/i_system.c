@@ -146,13 +146,13 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 // Locations to directly check for srb2.pk3 in
 const char *wadDefaultPaths[] = {
 #if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
-	"/usr/local/share/games/SRB2-2.2.10",
-	"/usr/local/games/SRB2-2.2.10",
-	"/usr/share/games/SRB2-2.2.10",
-	"/usr/games/SRB2-2.2.10",
+	"/usr/local/share/games/SRB2",
+	"/usr/local/games/SRB2",
+	"/usr/share/games/SRB2",
+	"/usr/games/SRB2",
 #elif defined (_WIN32)
-	"c:\\games\\srb2-2.2.10",
-	"\\games\\srb2-2.2.10",
+	"c:\\games\\srb2",
+	"\\games\\srb2",
 #endif
 	NULL
 };

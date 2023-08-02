@@ -262,13 +262,15 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 			}
 			else
 			{
-				INT32 pflags = object->player->pflags & (PF_JUMPED|PF_NOJUMPDAMAGE|PF_SPINNING|PF_THOKKED|PF_BOUNCING); // Not identical to below...
+				INT32 pflags = object->player->pflags & (PF_JUMPED|PF_NOJUMPDAMAGE|PF_SPINNING|PF_THOKKED|PF_BOUNCING|PF_CANCARRY); // Not identical to below...
 				UINT8 secondjump = object->player->secondjump;
+				UINT16 tailsfly = object->player->powers[pw_tailsfly];
 				if (object->player->pflags & PF_GLIDING)
 					P_SetPlayerMobjState(object, S_PLAY_FALL);
 				P_ResetPlayer(object->player);
 				object->player->pflags |= pflags;
 				object->player->secondjump = secondjump;
+				object->player->powers[pw_tailsfly] = tailsfly;
 			}
 		}
 
@@ -418,7 +420,20 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 				P_SetPlayerMobjState(object, S_PLAY_ROLL);
 		}
 		else
-			pflags = object->player->pflags & (PF_STARTJUMP|PF_JUMPED|PF_NOJUMPDAMAGE|PF_SPINNING|PF_THOKKED|PF_BOUNCING); // I still need these.
+		{
+			boolean wasSpindashing = object->player->dashspeed > 0 && (object->player->charability2 == CA2_SPINDASH);
+
+			pflags = object->player->pflags & (PF_STARTJUMP | PF_JUMPED | PF_NOJUMPDAMAGE | PF_SPINNING | PF_THOKKED | PF_BOUNCING); // I still need these.
+
+			if (wasSpindashing) // Ensure we're in the rolling state, and not spindash.
+				P_SetPlayerMobjState(object, S_PLAY_ROLL);
+
+			if (object->player->charability == CA_GLIDEANDCLIMB && object->player->skidtime && (pflags & PF_JUMPED))
+			{
+				object->player->skidtime = 0; // No skidding should be happening, either.
+				pflags &= ~PF_JUMPED;
+			}
+		}
 		secondjump = object->player->secondjump;
 		washoming = object->player->homing;
 		P_ResetPlayer(object->player);
@@ -530,11 +545,12 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 			if (flipval*object->momz > FixedMul(speed, spring->scale))
 				object->momz = flipval*FixedMul(speed, spring->scale);
 
-			if (p && !p->powers[pw_tailsfly]) // doesn't reset anim for Tails' flight
+			if (p && !p->powers[pw_tailsfly] && !p->powers[pw_carry]) // doesn't reset anim for Tails' flight
 			{
 				P_ResetPlayer(p);
-				if (p->panim != PA_FALL)
-					P_SetPlayerMobjState(object, S_PLAY_FALL);
+				P_SetPlayerMobjState(object, S_PLAY_FALL);
+				P_SetTarget(&object->tracer, spring);
+				p->powers[pw_carry] = CR_FAN;
 			}
 			break;
 		case MT_STEAM: // Steam
@@ -592,7 +608,7 @@ static void P_DoPterabyteCarry(player_t *player, mobj_t *ptera)
 	player->mo->x = ptera->x;
 	player->mo->y = ptera->y;
 	P_SetThingPosition(player->mo);
-	ptera->movefactor = 3*TICRATE;
+	ptera->movefactor = 3*TICRATE; // timer before dropping
 	ptera->watertop = ptera->waterbottom = ptera->cusval = 0;
 }
 
@@ -2098,13 +2114,13 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y)
 		{
 			fixed_t topheight, bottomheight;
 
-			if (!(rover->flags & FF_EXISTS))
+			if (!(rover->fofflags & FOF_EXISTS))
 				continue;
 
 			topheight = P_GetFOFTopZ(thing, newsubsec->sector, rover, x, y, NULL);
 			bottomheight = P_GetFOFBottomZ(thing, newsubsec->sector, rover, x, y, NULL);
 
-			if ((rover->flags & (FF_SWIMMABLE|FF_GOOWATER)) == (FF_SWIMMABLE|FF_GOOWATER) && !(thing->flags & MF_NOGRAVITY))
+			if ((rover->fofflags & (FOF_SWIMMABLE|FOF_GOOWATER)) == (FOF_SWIMMABLE|FOF_GOOWATER) && !(thing->flags & MF_NOGRAVITY))
 			{
 				// If you're inside goowater and slowing down
 				fixed_t sinklevel = FixedMul(thing->info->height/6, thing->scale);
@@ -2143,21 +2159,29 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y)
 
 			if (thing->player && (P_CheckSolidLava(rover) || P_CanRunOnWater(thing->player, rover)))
 				;
-			else if (thing->type == MT_SKIM && (rover->flags & FF_SWIMMABLE))
+			else if (thing->type == MT_SKIM && (rover->fofflags & FOF_SWIMMABLE))
 				;
-			else if (!((rover->flags & FF_BLOCKPLAYER && thing->player)
-			    || (rover->flags & FF_BLOCKOTHERS && !thing->player)
-				|| rover->flags & FF_QUICKSAND))
+			else if (!((rover->fofflags & FOF_BLOCKPLAYER && thing->player)
+			    || (rover->fofflags & FOF_BLOCKOTHERS && !thing->player)
+				|| rover->fofflags & FOF_QUICKSAND))
 				continue;
 
-			if (rover->flags & FF_QUICKSAND)
+			if (rover->fofflags & FOF_QUICKSAND)
 			{
-				if (thing->z < topheight && bottomheight < thingtop)
+				if (!(thing->eflags & MFE_VERTICALFLIP) && thing->z < topheight && bottomheight < thingtop)
 				{
 					if (tmfloorz < thing->z) {
 						tmfloorz = thing->z;
 						tmfloorrover = rover;
 						tmfloorslope = NULL;
+					}
+				}
+				else if (thing->eflags & MFE_VERTICALFLIP && thing->z < topheight && bottomheight < thingtop)
+				{
+					if (tmceilingz > thingtop) {
+						tmceilingz = thingtop;
+						tmceilingrover = rover;
+						tmceilingslope = NULL;
 					}
 				}
 				// Quicksand blocks never change heights otherwise.
@@ -2170,15 +2194,15 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y)
 				+ ((topheight - bottomheight)/2));
 
 			if (topheight > tmfloorz && abs(delta1) < abs(delta2)
-				&& !(rover->flags & FF_REVERSEPLATFORM))
+				&& !(rover->fofflags & FOF_REVERSEPLATFORM))
 			{
 				tmfloorz = tmdropoffz = topheight;
 				tmfloorrover = rover;
 				tmfloorslope = *rover->t_slope;
 			}
 			if (bottomheight < tmceilingz && abs(delta1) >= abs(delta2)
-				&& !(rover->flags & FF_PLATFORM)
-				&& !(thing->type == MT_SKIM && (rover->flags & FF_SWIMMABLE)))
+				&& !(rover->fofflags & FOF_PLATFORM)
+				&& !(thing->type == MT_SKIM && (rover->fofflags & FOF_SWIMMABLE)))
 			{
 				tmceilingz = tmdrpoffceilz = bottomheight;
 				tmceilingrover = rover;
@@ -2396,7 +2420,7 @@ boolean P_CheckCameraPosition(fixed_t x, fixed_t y, camera_t *thiscam)
 		for (rover = newsubsec->sector->ffloors; rover; rover = rover->next)
 		{
 			fixed_t topheight, bottomheight;
-			if (!(rover->flags & FF_BLOCKOTHERS) || !(rover->flags & FF_EXISTS) || !(rover->flags & FF_RENDERALL) || GETSECSPECIAL(rover->master->frontsector->special, 4) == 12)
+			if (!(rover->fofflags & FOF_BLOCKOTHERS) || !(rover->fofflags & FOF_EXISTS) || !(rover->fofflags & FOF_RENDERALL) || (rover->master->frontsector->flags & MSF_NOCLIPCAMERA))
 				continue;
 
 			topheight = P_CameraGetFOFTopZ(thiscam, newsubsec->sector, rover, x, y, NULL);
@@ -3049,9 +3073,9 @@ static boolean P_ThingHeightClip(mobj_t *thing)
 	{
 		rover = (thing->eflags & MFE_VERTICALFLIP) ? oldceilingrover : oldfloorrover;
 
-		// Match the Thing's old floorz to an FOF and check for FF_EXISTS
-		// If ~FF_EXISTS, don't set mobj Z.
-		if (!rover || ((rover->flags & FF_EXISTS) && (rover->flags & FF_SOLID)))
+		// Match the Thing's old floorz to an FOF and check for FOF_EXISTS
+		// If ~FOF_EXISTS, don't set mobj Z.
+		if (!rover || ((rover->fofflags & FOF_EXISTS) && (rover->fofflags & FOF_SOLID)))
 		{
 			hitfloor = bouncing;
 			if (thing->eflags & MFE_VERTICALFLIP)
@@ -3312,7 +3336,7 @@ static boolean P_IsClimbingValid(player_t *player, angle_t angle)
 
 		for (rover = glidesector->ffloors; rover; rover = rover->next)
 		{
-			if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_BLOCKPLAYER))
+			if (!(rover->fofflags & FOF_EXISTS) || !(rover->fofflags & FOF_BLOCKPLAYER))
 				continue;
 
 			topheight    = P_GetFFloorTopZAt   (rover, mo->x, mo->y);
@@ -3428,7 +3452,7 @@ static void PTR_GlideClimbTraverse(line_t *li)
 	{
 		for (rover = checksector->ffloors; rover; rover = rover->next)
 		{
-			if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_BLOCKPLAYER) || ((rover->flags & FF_BUSTUP) && (slidemo->player->charflags & SF_CANBUSTWALLS)))
+			if (!(rover->fofflags & FOF_EXISTS) || !(rover->fofflags & FOF_BLOCKPLAYER) || ((rover->fofflags & FOF_BUSTUP) && (slidemo->player->charflags & SF_CANBUSTWALLS)))
 				continue;
 
 			topheight    = P_GetFFloorTopZAt   (rover, slidemo->x, slidemo->y);
@@ -3656,10 +3680,10 @@ static void P_CheckLavaWall(mobj_t *mo, sector_t *sec)
 
 	for (rover = sec->ffloors; rover; rover = rover->next)
 	{
-		if (!(rover->flags & FF_EXISTS))
+		if (!(rover->fofflags & FOF_EXISTS))
 			continue;
 
-		if (!(rover->flags & FF_SWIMMABLE))
+		if (!(rover->fofflags & FOF_SWIMMABLE))
 			continue;
 
 		if (GETSECSPECIAL(rover->master->frontsector->special, 1) != 3)
@@ -4269,8 +4293,8 @@ static boolean PIT_ChangeSector(mobj_t *thing, boolean realcrush)
 
 			for (rover = thing->subsector->sector->ffloors; rover; rover = rover->next)
 			{
-				if (!(((rover->flags & FF_BLOCKPLAYER) && thing->player)
-				|| ((rover->flags & FF_BLOCKOTHERS) && !thing->player)) || !(rover->flags & FF_EXISTS))
+				if (!(((rover->fofflags & FOF_BLOCKPLAYER) && thing->player)
+				|| ((rover->fofflags & FOF_BLOCKOTHERS) && !thing->player)) || !(rover->fofflags & FOF_EXISTS))
 					continue;
 
 				topheight = *rover->topheight;
@@ -5064,16 +5088,16 @@ fixed_t P_FloorzAtPos(fixed_t x, fixed_t y, fixed_t z, fixed_t height)
 		for (rover = sec->ffloors; rover; rover = rover->next)
 		{
 			fixed_t topheight, bottomheight;
-			if (!(rover->flags & FF_EXISTS))
+			if (!(rover->fofflags & FOF_EXISTS))
 				continue;
 
-			if ((!(rover->flags & FF_SOLID || rover->flags & FF_QUICKSAND) || (rover->flags & FF_SWIMMABLE)))
+			if ((!(rover->fofflags & FOF_SOLID || rover->fofflags & FOF_QUICKSAND) || (rover->fofflags & FOF_SWIMMABLE)))
 				continue;
 
 			topheight    = P_GetFFloorTopZAt   (rover, x, y);
 			bottomheight = P_GetFFloorBottomZAt(rover, x, y);
 
-			if (rover->flags & FF_QUICKSAND)
+			if (rover->fofflags & FOF_QUICKSAND)
 			{
 				if (z < topheight && bottomheight < thingtop)
 				{
@@ -5108,21 +5132,21 @@ fixed_t P_CeilingzAtPos(fixed_t x, fixed_t y, fixed_t z, fixed_t height)
 		for (rover = sec->ffloors; rover; rover = rover->next)
 		{
 			fixed_t topheight, bottomheight;
-			if (!(rover->flags & FF_EXISTS))
+			if (!(rover->fofflags & FOF_EXISTS))
 				continue;
 
-			if ((!(rover->flags & FF_SOLID || rover->flags & FF_QUICKSAND) || (rover->flags & FF_SWIMMABLE)))
+			if ((!(rover->fofflags & FOF_SOLID || rover->fofflags & FOF_QUICKSAND) || (rover->fofflags & FOF_SWIMMABLE)))
 				continue;
 
 			topheight    = P_GetFFloorTopZAt   (rover, x, y);
 			bottomheight = P_GetFFloorBottomZAt(rover, x, y);
 
-			if (rover->flags & FF_QUICKSAND)
+			if (rover->fofflags & FOF_QUICKSAND)
 			{
 				if (thingtop > bottomheight && topheight > z)
 				{
-					if (ceilingz > z)
-						ceilingz = z;
+					if (ceilingz > thingtop)
+						ceilingz = thingtop;
 				}
 				continue;
 			}

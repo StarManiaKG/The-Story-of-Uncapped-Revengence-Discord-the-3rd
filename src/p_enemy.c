@@ -502,7 +502,7 @@ static boolean P_WaterInSector(mobj_t *mobj, fixed_t x, fixed_t y)
 
 		for (rover = sector->ffloors; rover; rover = rover->next)
 		{
-			if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_SWIMMABLE))
+			if (!(rover->fofflags & FOF_EXISTS) || !(rover->fofflags & FOF_SWIMMABLE))
 				continue;
 
 			if (*rover->topheight >= mobj->floorz && *rover->topheight <= mobj->z)
@@ -1597,6 +1597,10 @@ void A_PointyThink(mobj_t *actor)
 		return;
 
 	if (!actor->tracer) // For some reason we do not have spike balls...
+		return;
+
+	// Catch case where actor lastlook is -1 (which segfaults the following blocks)
+	if (actor->lastlook < 0)
 		return;
 
 	// Position spike balls relative to the value of 'lastlook'.
@@ -4837,9 +4841,13 @@ void A_FishJump(mobj_t *actor)
 		if (locvar1)
 			jumpval = locvar1;
 		else
-			jumpval = FixedMul(AngleFixed(actor->angle)/4, actor->scale);
+		{
+			if (actor->spawnpoint && actor->spawnpoint->args[0])
+				jumpval = actor->spawnpoint->args[0] << (FRACBITS - 2);
+			else
+				jumpval = 44 << (FRACBITS - 2);
+		}
 
-		if (!jumpval) jumpval = FixedMul(44*(FRACUNIT/4), actor->scale);
 		actor->momz = FixedMul(jumpval, actor->scale);
 		P_SetMobjStateNF(actor, actor->info->seestate);
 	}
@@ -14322,7 +14330,7 @@ void A_SpawnPterabytes(mobj_t *actor)
 		return;
 
 	if (actor->spawnpoint)
-		amount = actor->spawnpoint->extrainfo + 1;
+		amount = max(1, actor->spawnpoint->args[0]);
 
 	interval = FixedAngle(FRACUNIT*360/amount);
 

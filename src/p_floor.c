@@ -604,7 +604,7 @@ static fixed_t P_SectorCheckWater(sector_t *analyzesector,
 
 		for (rover = analyzesector->ffloors; rover; rover = rover->next)
 		{
-			if (!(rover->flags & FF_EXISTS) || !(rover->flags & FF_SWIMMABLE) || rover->flags & FF_SOLID)
+			if (!(rover->fofflags & FOF_EXISTS) || !(rover->fofflags & FOF_SWIMMABLE) || rover->fofflags & FOF_SOLID)
 				continue;
 
 			// If the sector is below the water, don't bother.
@@ -642,7 +642,6 @@ void T_BounceCheese(bouncecheese_t *bouncer)
 	if (bouncer->sector->crumblestate == CRUMBLE_RESTORE || bouncer->sector->crumblestate == CRUMBLE_WAIT
 		|| bouncer->sector->crumblestate == CRUMBLE_ACTIVATED) // Oops! Crumbler says to remove yourself!
 	{
-		bouncer->sector->crumblestate = CRUMBLE_WAIT;
 		bouncer->sector->ceilingdata = NULL;
 		bouncer->sector->ceilspeed = 0;
 		bouncer->sector->floordata = NULL;
@@ -811,10 +810,10 @@ void T_StartCrumble(crumble_t *crumble)
 
 				for (rover = sector->ffloors; rover; rover = rover->next)
 				{
-					if (!(rover->flags & FF_CRUMBLE))
+					if (!(rover->fofflags & FOF_CRUMBLE))
 						continue;
 
-					if (!(rover->flags & FF_FLOATBOB))
+					if (!(rover->fofflags & FOF_FLOATBOB))
 						continue;
 
 					if (rover->master != crumble->sourceline)
@@ -823,7 +822,7 @@ void T_StartCrumble(crumble_t *crumble)
 					rover->alpha = crumble->origalpha;
 
 					if (rover->alpha == 0xff)
-						rover->flags &= ~FF_TRANSLUCENT;
+						rover->fofflags &= ~FOF_TRANSLUCENT;
 				}
 			}
 
@@ -847,13 +846,13 @@ void T_StartCrumble(crumble_t *crumble)
 
 				for (rover = sector->ffloors; rover; rover = rover->next)
 				{
-					if (rover->flags & FF_NORETURN)
+					if (rover->fofflags & FOF_NORETURN)
 						continue;
 
-					if (!(rover->flags & FF_CRUMBLE))
+					if (!(rover->fofflags & FOF_CRUMBLE))
 						continue;
 
-					if (!(rover->flags & FF_FLOATBOB))
+					if (!(rover->fofflags & FOF_FLOATBOB))
 						continue;
 
 					if (rover->master != crumble->sourceline)
@@ -861,7 +860,7 @@ void T_StartCrumble(crumble_t *crumble)
 
 					if (rover->alpha == crumble->origalpha)
 					{
-						rover->flags |= FF_TRANSLUCENT;
+						rover->fofflags |= FOF_TRANSLUCENT;
 						rover->alpha = 0x00;
 					}
 					else
@@ -869,7 +868,7 @@ void T_StartCrumble(crumble_t *crumble)
 						rover->alpha = crumble->origalpha;
 
 						if (rover->alpha == 0xff)
-							rover->flags &= ~FF_TRANSLUCENT;
+							rover->fofflags &= ~FOF_TRANSLUCENT;
 					}
 				}
 			}
@@ -1153,7 +1152,7 @@ void T_ThwompSector(thwomp_t *thwomp)
 
 	if (thwomp->direction == 0) // Not going anywhere, so look for players.
 	{
-		if (rover->flags & FF_EXISTS)
+		if (rover->fofflags & FOF_EXISTS)
 		{
 			UINT8 i;
 			// scan the players to find victims!
@@ -1246,7 +1245,7 @@ void T_ThwompSector(thwomp_t *thwomp)
 
 			if (res == pastdest)
 			{
-				if (rover->flags & FF_EXISTS)
+				if (rover->fofflags & FOF_EXISTS)
 					S_StartSound((void *)&actionsector->soundorg, thwomp->sound);
 
 				thwomp->direction = 1; // start heading back up
@@ -1897,16 +1896,9 @@ void EV_DoFloor(line_t *line, floor_e floortype)
 					dofloor->direction = -1; // down
 
 				// chained linedef executing ability
-				if (line->flags & ML_BLOCKMONSTERS)
-				{
-					// Only set it on one of the moving sectors (the
-					// smallest numbered) and only if the front side
-					// x offset is positive, indicating a valid tag.
-					if (firstone && sides[line->sidenum[0]].textureoffset > 0)
-						dofloor->texture = (sides[line->sidenum[0]].textureoffset>>FRACBITS) - 32769;
-					else
-						dofloor->texture = -1;
-				}
+				// Only set it on one of the moving sectors (the smallest numbered)
+				if (line->args[3])
+					dofloor->tag = firstone ? (INT16)line->args[3] : 0;
 
 				// flat changing ability
 				else if (line->flags & ML_NOCLIMB)
@@ -2211,11 +2203,10 @@ void EV_CrumbleChain(sector_t *sec, ffloor_t *rover)
 		}
 	}
 
-#undef controlsec
-
-	// soundorg z height never gets set normally, so MEH.
-	sec->soundorg.z = sec->floorheight;
+	sec->soundorg.z = (controlsec->floorheight + controlsec->ceilingheight)/2;
 	S_StartSound(&sec->soundorg, mobjinfo[type].activesound);
+
+#undef controlsec
 
 	// Find the outermost vertexes in the subsector
 	for (i = 0; i < sec->linecount; i++)
@@ -2278,7 +2269,7 @@ void EV_CrumbleChain(sector_t *sec, ffloor_t *rover)
 	}
 
 	// no longer exists (can't collide with again)
-	rover->flags &= ~FF_EXISTS;
+	rover->fofflags &= ~FOF_EXISTS;
 	rover->master->frontsector->moved = true;
 	P_RecalcPrecipInSector(sec);
 }
@@ -2416,8 +2407,8 @@ void EV_MarioBlock(ffloor_t *rover, sector_t *sector, mobj_t *puncher)
 	if (roversec->floordata || roversec->ceilingdata)
 		return;
 
-	if (!(rover->flags & FF_SOLID))
-		rover->flags |= (FF_SOLID|FF_RENDERALL|FF_CUTLEVEL);
+	if (!(rover->fofflags & FOF_SOLID))
+		rover->fofflags |= (FOF_SOLID|FOF_RENDERALL|FOF_CUTLEVEL);
 
 	// Find an item to pop out!
 	thing = SearchMarioNode(roversec->touching_thinglist);

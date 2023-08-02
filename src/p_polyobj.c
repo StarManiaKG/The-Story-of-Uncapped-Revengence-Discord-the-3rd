@@ -2051,7 +2051,11 @@ boolean EV_DoPolyObjRotate(polyrotdata_t *prdata)
 	// interpolation
 	R_CreateInterpolator_Polyobj(&th->thinker, po);
 
-	th->turnobjs = prdata->turnobjs;
+	th->turnobjs = 0;
+	if (!(prdata->flags & TMPR_DONTROTATEOTHERS))
+		th->turnobjs |= PTF_OTHERS;
+	if (prdata->flags & TMPR_ROTATEPLAYERS)
+		th->turnobjs |= PTF_PLAYERS;
 
 	// apply action to mirroring polyobjects as well
 	start = 0;

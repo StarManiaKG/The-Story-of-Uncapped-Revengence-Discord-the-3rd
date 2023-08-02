@@ -419,4 +419,22 @@ void Tag_SectorFSet (const size_t id, const mtag_t tag)
 	Taggroup_Remove(tags_sectors, curtag, id);
 	Taggroup_Add(tags_sectors, tag, id);
 	Tag_FSet(&sec->tags, tag);
+
+	// Sectors with linedef trigger effects need to have their trigger tag updated too
+	// This is a bit of a hack...
+	if (!udmf && GETSECSPECIAL(sec->special, 2) >= 1 && GETSECSPECIAL(sec->special, 2) <= 7)
+		sec->triggertag = tag;
+}
+
+mtag_t Tag_NextUnused(mtag_t start)
+{
+	while ((UINT16)start < MAXTAGS)
+	{
+		if (!in_bit_array(tags_available, (UINT16)start))
+			return start;
+
+		start++;
+	}
+
+	return (mtag_t)MAXTAGS;
 }
