@@ -561,7 +561,7 @@ void A_ChangeHeight();
 extern boolean actionsoverridden[NUMACTIONS];
 
 // ratio of states to sprites to mobj types is roughly 6 : 1 : 1
-#define NUMMOBJFREESLOTS 512
+#define NUMMOBJFREESLOTS 1024 // STAR NOTE: i was here lol (also, if you want to reset the limits back to vanilla's limits, set this to 512)
 #define NUMSPRITEFREESLOTS NUMMOBJFREESLOTS
 #define NUMSTATEFREESLOTS (NUMMOBJFREESLOTS*8)
 
@@ -1148,7 +1148,7 @@ typedef enum playersprite
 	SPR2_XTRA, // stuff that isn't in-map - "would this ever need an md2 or variable length animation?"
 
 	SPR2_FIRSTFREESLOT,
-	SPR2_LASTFREESLOT = 0x7f,
+	SPR2_LASTFREESLOT = 0x14f, // STAR NOTE: i was here lol (also, if you want to reset the numbers back to vanilla, set this to 0x7f)
 	NUMPLAYERSPRITES
 } playersprite_t;
 

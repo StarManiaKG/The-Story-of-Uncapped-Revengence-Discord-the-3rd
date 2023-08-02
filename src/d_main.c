@@ -149,7 +149,7 @@ static char addonsdir[MAX_WADPATH];
 
 // Discord Stuff
 INT32 extrawads;
-boolean checkedExtraWads;
+boolean TSoURDt3rd_checkedExtraWads;
 
 // STAR Stuff
 boolean TSoURDt3rd_TouchyModifiedGame;
@@ -157,32 +157,22 @@ boolean TSoURDt3rd_LoadExtras;
 boolean TSoURDt3rd_LoadedExtras;
 boolean TSoURDt3rd_NoMoreExtras;
 
-boolean TSoURDt3rd_CheckedVersion; // Needed for the Version Checking Stuff in D_SRB2Loop()
-
 // Autoloading
+static addfilelist_t autoloadwadfiles;
+
 boolean autoloading;
 boolean autoloaded;
-
-boolean doWarp;
-INT32 maptoLoadAfterAutoload;
-const char *mapNameToLoadAfterAutoload;
-
-boolean TSoURDt3rd_loadLastAddons;
 
 // Savefiles
 consvar_t cv_storesavesinfolders = CVAR_INIT ("storesavesinfolders", "Off", CV_SAVE|CV_CALL, CV_OnOff, STAR_SetSavefileProperties);
 
-boolean useTSOURDT3RDasFileName;
+boolean TSoURDt3rd_useAsFileName;
 char savegamefolder[256];
 
 // Events
 boolean aprilfoolsmode; 		// April Fools Event Setter
 boolean eastermode;				// Easter Event Setter
 boolean xmasmode, xmasoverride;	// Christmas Event Setter
-
-// Define Other Random Things Up Here
-static inline void D_CleanFile(addfilelist_t *list);
-
 // END OF ALL THAT STAR STUFF //
 
 //
@@ -333,93 +323,6 @@ void D_ProcessEvents(void)
 		G_SetMouseDeltas(mouse2.rdx, mouse2.rdy, 2);
 }
 
-// FUN STAR STUFF :) //
-// Ported from Final Demo, Date Checking is Back!
-static void STAR_CheckTime(void)
-{
-	time_t t1; // Date-Checker
-	struct tm* tptr; // Date-Checker: Electric Boogalo
-
-	// Do Special Stuff //
-	t1 = time(NULL);
-	if (t1 != (time_t)-1)
-	{
-		tptr = localtime(&t1);
-
-		if (tptr)
-		{
-			// April Fools
-			if (tptr->tm_mon == 3 && (tptr->tm_mday >= 1 && tptr->tm_mday <= 3))
-			{
-				aprilfoolsmode = true;
-				modifiedgame = false;
-			}
-
-			// Easter (Changes Every Year Though, so just have it for all of April)
-			else if ((tptr->tm_mon == 3)
-				&& (!M_CheckParm("-noeaster"))) // you never know
-			{
-				eastermode = true;
-				modifiedgame = false;
-			}
-
-			// Christmas Eve to New Years
-			else if (((tptr->tm_mon == 11 && tptr->tm_mday >= 24)) && (!M_CheckParm("-noxmas")))
-			{
-				xmasmode = true;
-				xmasoverride = true;
-				modifiedgame = false;
-			}
-		}
-	}
-
-	// Do Special Stuff: Electric Boogalo //
-	// April Fools
-	if (M_CheckParm("-aprilfools"))
-	{
-		aprilfoolsmode = true;
-		modifiedgame = false;
-	}
-
-	// Easter
-	else if ((M_CheckParm("-easter"))
-		&& (!M_CheckParm("-noeaster"))) // you never know
-	{
-		eastermode = true;
-		modifiedgame = false;
-	}
-
-	// Christmas
-	else if (!eastermode && M_CheckParm("-xmas"))
-	{
-		xmasmode = true;
-		xmasoverride = true;
-		modifiedgame = false;
-	}
-
-	// Run Special Stuff Functions //
-	// April Fools
-	if (aprilfoolsmode)
-	{
-		CONS_Printf("STAR_CheckTime(): April Fools Mode Enabled!\n");
-		TSoURDt3rd_LoadExtras = true;
-	}
-
-	// Easter
-	else if (eastermode)
-	{
-		CONS_Printf("STAR_CheckTime(): Easter Mode Enabled!\n");
-		TSoURDt3rd_LoadExtras = true;
-	}
-
-	// Christmas
-	else if (xmasmode)
-	{
-		CONS_Printf("STAR_CheckTime(): Christmas Mode Enabled!\n");
-		TSoURDt3rd_LoadExtras = true;
-	}
-}
-// END OF FUN STAR STUFF //
 
 //
 // D_Display
@@ -706,9 +609,11 @@ static void D_Display(void)
 		V_SetPalette(0);
 
 	// draw pause pic
+	// STAR NOTE: i was here lol
 	if (paused && cv_showhud.value && (!menuactive || netgame))
 	{
-		if (cv_pausegraphicstyle.value) // Old-School
+		// Old-School
+		if (cv_pausegraphicstyle.value)
 		{
 			INT32 py;
 			patch_t *patch;
@@ -719,7 +624,9 @@ static void D_Display(void)
 			patch = W_CachePatchName("M_PAUSE", PU_PATCH);
 			V_DrawScaledPatch(viewwindowx + (BASEVIDWIDTH - patch->width)/2, py, 0, patch);
 		}
-		else						// Default
+
+		// Default
+		else
 		{
 			INT32 y = ((automapactive) ? (32) : (BASEVIDHEIGHT/2));
 			M_DrawTextBox((BASEVIDWIDTH/2) - (60), y - (16), 13, 2);
@@ -890,17 +797,17 @@ void D_SRB2Loop(void)
 	because I_FinishUpdate was called afterward
 	*/
 	/* Smells like a hack... Don't fade Sonic's ass into the title screen. */
+	// STAR NOTE: i was here lol
 	if (gamestate != GS_TITLESCREEN)
 	{
-		if (!cv_startupscreen.value)
-			gstartuplumpnum = W_CheckNumForName("STARTUP");
-		else
-		{
-			if (cv_startupscreen.value == 1)
-				gstartuplumpnum = W_CheckNumForName("CONSBACK");
-			else
-				gstartuplumpnum = W_CheckNumForName("BABYSONIC");
-		}
+		static const char *gstartuplumpnumtype[] = {
+			"STARTUP",
+			"CONSBACK",
+			"BABYSONIC",
+			NULL
+		};
+
+		gstartuplumpnum = W_CheckNumForName(gstartuplumpnumtype[cv_startupscreen.value]);
 		if (gstartuplumpnum == LUMPERROR)
 			gstartuplumpnum = W_GetNumForName("MISSING");
 		V_DrawScaledPatch(0, 0, 0, W_CachePatchNum(gstartuplumpnum, PU_PATCH));
@@ -1048,68 +955,10 @@ void D_SRB2Loop(void)
 			Discord_RunCallbacks();
 #endif
 
-		// STAR STUFF //
-		// Do Basic Autoloading Stuff
-		if (autoloading && !netgame)
-		{
-			// Load the Other Mods That You Specified
-			if (startuppwads.numfiles && TSoURDt3rd_loadLastAddons)
-			{
-				CONS_Printf("W_InitMultipleFiles(): Adding extra PWADs.\n");
-				W_InitMultipleFiles(&startuppwads);
-				D_CleanFile(&startuppwads);
-
-				TSoURDt3rd_loadLastAddons = false;
-			}
-
-			// Set Some Important Variables
-			if (modifiedgame)
-			{
-				autoloaded = true;
-				modifiedgame = false;
-			}
-			autoloading = false;
-		}
-
-		// Do Extra Autoloading Stuff
-		else
-		{
-			// Map Loading (kinda ported from D_SRB2Main(), but not really at the same time)
-			if (doWarp)
-			{
-				G_SetGameModified(false);
-				
-				if (server && !M_CheckParm("+map"))
-				{
-					// Store the Map in the Variable First, Again :p
-					maptoLoadAfterAutoload = G_FindMapByNameOrCode(mapNameToLoadAfterAutoload, 0);
-
-					// Prevent warping to nonexistent levels, again :p
-					if (W_CheckNumForName(G_BuildMapName(maptoLoadAfterAutoload)) == LUMPERROR)
-						I_Error("Could not warp to %s (map not found)\n", G_BuildMapName(maptoLoadAfterAutoload));
-					// Prevent warping to locked levels, again :p
-					// ... unless you're in a dedicated server.  Yes, technically this means you can view any level by
-					// running a dedicated server and joining it yourself, but that's better than making dedicated server's
-					// lives hell.
-					else if (!dedicated && M_MapLocked(maptoLoadAfterAutoload))
-						I_Error("You need to unlock this level before you can warp to it!\n");
-					// Since We Found the Map This Time,
-					// End Everything Here.
-					else
-					{
-						D_MapChange(maptoLoadAfterAutoload, gametype, ultimatemode, true, 0, false, false);
-
-						maptoLoadAfterAutoload = 0;
-						mapNameToLoadAfterAutoload = NULL;
-
-						doWarp = false;
-					}
-				}
-			}
-		}
-
+		//// STAR STUFF ////
+		// Do Event Stuff //
 #ifdef APRIL_FOOLS
-		// Do April Fools Stuff
+		// April Fools
 		if ((!modifiedgame || savemoddata) && (cv_ultimatemode.value))
 		{
 			CONS_Printf("You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nyour game has been set to modified.\n");
@@ -1117,7 +966,7 @@ void D_SRB2Loop(void)
 		}
 #endif
 
-		// Do Some Prevention Stuff
+		// Easter
 		if (!eastermode && (cv_alloweasteregghunt.value || cv_easteregghuntbonuses.value || EnableEasterEggHuntBonuses))
 		{
 			CV_StealthSetValue(&cv_alloweasteregghunt, 0);
@@ -1142,36 +991,47 @@ void D_SRB2Loop(void)
 		}
 
 #ifdef HAVE_CURL
-		// Grab the Current Version of TSoURDt3rd
-		// STAR NOTE: If You're Planning on Making Something Like This, Use This as an Example :)
-		if (!TSoURDt3rd_CheckedVersion)
+		// Do Internet Stuff //
+		// Grab the Current TSoURDt3rd Version
+		if (!TSoURDt3rdInfo.checkedVersion)
 		{
-			// Print Words
-			CONS_Printf("STAR_GrabStringFromWebsite(): Grabbing current version...\n");
-
+			// STAR NOTE: If You're Planning on Using the Internet Functions, Use This Block as an Example :) //
 			// Make Some Variables
 			const char *API = "https://raw.githubusercontent.com/StarManiaKG/The-Story-of-Uncapped-Revengence-Discord-the-3rd/";
 			char URL[256] = "main/src/STAR/star_webinfo.h";
 			char INFO[256]; strcpy(INFO, va("#define TSOURDT3RDVERSION \"%s\"", TSOURDT3RDVERSION));
 			
-			// Run the Function
-			if (!STAR_GrabStringFromWebsite(API, URL, INFO, false) && cv_tsourdt3rdupdatemessage.value)
-				M_StartMessage(va("%c%s\x80\nYou're using an outdated version of TSoURDt3rd.\n\nCheck the SRB2 Message Board for the latest version! \n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Update TSoURDt3rd, Please"),NULL,MM_NOTHING);
-			TSoURDt3rd_CheckedVersion = true;
+			// Check the Version, And If They Don't Match, Run the Block Below
+			CONS_Printf("STAR_FindStringOnWebsite() & STAR_ReturnStringFromWebsite(): Grabbing latest TSoURDt3rd version...\n");
+			
+			if (!STAR_FindStringOnWebsite(API, URL, INFO, false) && cv_tsourdt3rdupdatemessage.value)
+			{				
+				char RETURNINFO[256] = "#define TSOURDT3RDVERSION";
+
+				UINT32 versionNumber = STAR_ConvertStringToCompressedNumber(STAR_ReturnStringFromWebsite(API, URL, RETURNINFO, false), 0, 26, true);
+				const char *displayVersionString = STAR_ConvertNumberToString(versionNumber, 0, 0, true);
+
+				if (TSoURDt3rd_CurrentVersion() < versionNumber)
+					M_StartMessage(va("%c%s\x80\nYou're using an outdated version of TSoURDt3rd.\n\nThe newest version is: %s\nYou're using version: %s\n\nCheck the SRB2 Message Board for the latest version! \n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Update TSoURDt3rd, Please", displayVersionString, TSOURDT3RDVERSION),NULL,MM_NOTHING);
+				else if (TSoURDt3rd_CurrentVersion() > versionNumber)
+					M_StartMessage(va("%c%s\x80\nYou're using a version of TSoURDt3rd that hasn't even released yet. \n\nYou're probably a tester or coder,\nand in that case, hello!\n\nEnjoy messing around with the build! \n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Hello, Tester/Coder!"),NULL,MM_NOTHING);
+			}
+			TSoURDt3rdInfo.checkedVersion = true;
 		}
 #endif
 
-		// Load the Extra PK3
+		// Do Extra Stuff //
+		// Lock-on the Extra PK3
 		if (TSoURDt3rd_LoadExtras)
 		{
 			if (aprilfoolsmode || eastermode || xmasmode)
-				M_StartMessage(va("%c%s\x80\nTSoURDt3rd is having a seasonal event!\n\nWould you like to load tsourdt3rdextras.pk3 to engage in it? \n\n(Press 'Y' or 'Enter' for 'Yes', 'N' or any other key for 'No')\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "A TSoURDt3rd Event is Occuring"),STAR_Tsourdt3rdEventMessage,MM_YESNO);
+				M_StartMessage(va("%c%s\x80\nTSoURDt3rd is having a seasonal event!\n\nWould you like to load tsourdt3rdextras.pk3 to engage in it? \n\n(Press 'Y' or 'Enter' for 'Yes'; 'N' or any other key for 'No')\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "A TSoURDt3rd Event is Occuring"),TSoURDt3rd_EventMessage,MM_YESNO);
 			else
-				COM_BufInsertText("addfile tsourdt3rdextras.pk3\n");
+				COM_BufAddText("addfile tsourdt3rdextras.pk3\n");
 		}
 
-		// Add What Extra Mods We Have Added to an Extra Interval, for Discord
-		if (!checkedExtraWads)
+		// Check What Extra Add-ons we Have Currently Loaded
+		if (!TSoURDt3rd_checkedExtraWads)
 		{
 			INT32 i = numwadfiles;
 			char *tempname;
@@ -1194,13 +1054,20 @@ void D_SRB2Loop(void)
 						}
 						M_UpdateEasterStuff();
 					}
+					
 					extrawads++;
 					continue;
 				}
 			}
-			checkedExtraWads = true;
+			TSoURDt3rd_checkedExtraWads = true;
 		}
-		// THAT'S THE END :P //
+
+		// Do Server Stuff //
+		// Find Current Server Infractions
+		if (Playing() && (netgame || dedicated))
+			STAR_FindServerInfractions();
+		
+		//// THAT'S THE END :P ////
 
 		// Fully completed frame made.
 		finishprecise = I_GetPreciseTime();
@@ -1372,23 +1239,108 @@ static void D_AddFolder(addfilelist_t *list, const char *file)
 
 	list->files[index] = newfile;
 }
-#undef REALLOC_FILE_LIST
 
 // STAR STUFF //
-static void D_AutoLoadAddons(const char *file)
+static void D_AutoLoadAddons(addfilelist_t *list, const char *file)
 {
 	char *newfile;
+	size_t index = 0;
+	INT32 fileType = STAR_DetectFileType(file);
 
-	newfile = malloc(strlen(file) + 1);
+	REALLOC_FILE_LIST
+
+	newfile = malloc(strlen(file) + (fileType == 1 ? 2 : 1)); // Path delimiter + NULL terminator
 	if (!newfile)
-		I_Error("D_AutoLoadAddons: No more free memory to autoload files");
+		I_Error("D_AutoLoadAddons: No more free memory to autoload file %s", file);
 	autoloading = true;
-	useTSOURDT3RDasFileName = true;
+	TSoURDt3rd_useAsFileName = true;
 
-	strcpy(newfile, file);
-	COM_ImmedExecute(va("exec %s\n", newfile));
+	if (!fileType)
+		CONS_Printf("D_AutoLoadAddons: File %s is unknown or invalid\n", file);
+	else
+	{
+		strcpy(newfile, file);
+		if (fileType == 1)
+			strcat(newfile, PATHSEP);
+		
+		if (fileType <= 6)
+			list->files[index] = newfile;
+		else
+			COM_BufAddText(va("exec %s\n", newfile));
+	}
 }
-// END OF THAT //
+
+static void TSoURDt3rd_FindAddonsToAutoload(void)
+{
+	// Make Variables //
+	FILE *autoloadconfigfile;
+	const char *autoloadpath;
+
+	INT32 i;
+	char wadsToAutoload[256] = "", renameAutoloadStrings[256] = "";
+
+	// Check For the File //
+	autoloadpath = va("%s"PATHSEP"%s",srb2home,AUTOLOADCONFIGFILENAME);
+	autoloadconfigfile = fopen(autoloadpath, "r");
+
+	// If the File is Found, Run Our Main Things
+	CON_StopRefresh(); // Temporarily stop refreshing the screen for wad autoloading
+
+	if (autoloadconfigfile)
+	{
+		while (fgets(wadsToAutoload, sizeof wadsToAutoload, autoloadconfigfile) != NULL)
+		{
+			// Skip the Line if it's Empty or Commented Out
+			if ((wadsToAutoload[1] == '\0' || wadsToAutoload[1] == '\n')
+				|| (wadsToAutoload[0] == '#'))
+
+				continue;
+			
+			// If the Line is Outdated, Clear and Update Them to the Current Autoloading Format
+			else if (fastncmp(wadsToAutoload, "addfile ", 8) || fastncmp(wadsToAutoload, "addfolder ", 10))
+			{
+				i = (fastncmp(wadsToAutoload, "addfile ", 8) ? 8 : 10);
+				INT32 j = 0, k = 0;
+
+				while (wadsToAutoload[i] != '\0' && wadsToAutoload[i] != '\n')
+				{
+					renameAutoloadStrings[j] = wadsToAutoload[i];
+					i++, j++;
+				}
+				for (i = 0; wadsToAutoload[i]; i++) wadsToAutoload[i] = '\0';
+				while (renameAutoloadStrings[k] != '\0' && renameAutoloadStrings[k] != '\n')
+				{
+					wadsToAutoload[k] = renameAutoloadStrings[k];
+					renameAutoloadStrings[k] = '\0';
+
+					k++;
+				}		
+			}
+
+			// Remove Any Empty or Skipped Lines
+			for (i = 0; wadsToAutoload[i] != '\0'; i++)
+			{
+				if (wadsToAutoload[i] == '\n')
+					wadsToAutoload[i] = '\0';
+			}
+
+			// Load the File, Even if it's Unknown/Invalid
+			D_AutoLoadAddons(&autoloadwadfiles, wadsToAutoload);
+
+			// Empty All the Strings
+			for (i = 0; wadsToAutoload[i] != '\0'; i++)
+				wadsToAutoload[i] = '\0';
+		}
+
+		// Close the File, and We're Done :)
+		fclose(autoloadconfigfile);
+	}
+
+	CON_StartRefresh(); // Restart the refresh!
+}
+
+#undef REALLOC_FILE_LIST
+// END THIS STAR STUFF //
 
 static inline void D_CleanFile(addfilelist_t *list)
 {
@@ -1561,8 +1513,6 @@ void D_SRB2Main(void)
 	INT32 pstartmap = 1;
 	boolean autostart = false;
 
-	FILE *autoloadpath; //autoload wad feature
-
 	/* break the version string into version numbers, for netplay */
 	D_ConvertVersionNumbers();
 
@@ -1601,8 +1551,9 @@ void D_SRB2Main(void)
 	// Netgame URL special case: change working dir to EXE folder.
 	ChangeDirForUrlHandler();
 
-	// STAR: Check the Time on Our Computer
-	STAR_CheckTime();
+	// STAR STUFF: Check the Time on Our Computer //
+	TSoURDt3rd_CheckTime();
+	// END THIS STUFF //
 
 	// identify the main IWAD file to use
 	IdentifyVersion();
@@ -1642,6 +1593,7 @@ void D_SRB2Main(void)
 		else
 		{
 			// use user specific config file
+			// STAR NOTE: MAIN SAVEDATA STUFF IS NOW HANDLED IN STAR_SetSavefileProperties WITHIN star_functions.c!
 #ifdef DEFAULTDIR
 			snprintf(srb2home, sizeof srb2home, "%s" PATHSEP DEFAULTDIR, userhome);
 			snprintf(downloaddir, sizeof downloaddir, "%s" PATHSEP "DOWNLOAD", srb2home);
@@ -1649,8 +1601,6 @@ void D_SRB2Main(void)
 				snprintf(configfile, sizeof configfile, "%s" PATHSEP "d"CONFIGFILENAME, srb2home);
 			else
 				snprintf(configfile, sizeof configfile, "%s" PATHSEP CONFIGFILENAME, srb2home);
-
-			/* STAR NOTE: SAVEDATA STUFF IS NOW HANDLED IN STAR_SetSavefileProperties IN m_menu.c! */
 
 			snprintf(luafiledir, sizeof luafiledir, "%s" PATHSEP "luafiles", srb2home);
 #else // DEFAULTDIR
@@ -1660,8 +1610,6 @@ void D_SRB2Main(void)
 				snprintf(configfile, sizeof configfile, "%s" PATHSEP "d"CONFIGFILENAME, userhome);
 			else
 				snprintf(configfile, sizeof configfile, "%s" PATHSEP CONFIGFILENAME, userhome);
-
-			/* STAR NOTE: SAVEDATA STUFF IS NOW HANDLED IN STAR_SetSavefileProperties IN m_menu.c! */
 
 			snprintf(luafiledir, sizeof luafiledir, "%s" PATHSEP "luafiles", userhome);
 #endif // DEFAULTDIR
@@ -1682,6 +1630,10 @@ void D_SRB2Main(void)
 
 	if (M_CheckParm("-password") && M_IsNextParm())
 		D_SetPassword(M_GetNextParm());
+
+	// STAR STUFF: AUTOLOAD ADD-ONS //
+	TSoURDt3rd_FindAddonsToAutoload();
+	// END THOSE THINGS //
 
 	// player setup menu colors must be initialized before
 	// any wad file is added, as they may contain colors themselves
@@ -1759,28 +1711,41 @@ void D_SRB2Main(void)
 	// don't check music.dta because people like to modify it, and it doesn't matter if they do
 	// ...except it does if they slip maps in there, and that's what W_VerifyNMUSlumps is for.
 
-	W_VerifyFileMD5(0, ASSET_HASH_SRB2_PK3); // srb2.pk3
-	W_VerifyFileMD5(1, ASSET_HASH_ZONES_PK3); // zones.pk3
-	W_VerifyFileMD5(2, ASSET_HASH_PLAYER_DTA); // player.dta
+	W_VerifyFileMD5(0, ASSET_HASH_SRB2_PK3); 		// srb2.pk3
+	W_VerifyFileMD5(1, ASSET_HASH_ZONES_PK3); 		// zones.pk3
+	W_VerifyFileMD5(2, ASSET_HASH_PLAYER_DTA); 		// player.dta
 #ifdef USE_PATCH_DTA
-	W_VerifyFileMD5(3, ASSET_HASH_PATCH_PK3); // patch.pk3
+	W_VerifyFileMD5(3, ASSET_HASH_PATCH_PK3); 		// patch.pk3
 
 	// STAR STUFF //
-	W_VerifyFileMD5(4, ASSET_HASH_TSOURDT3RD_PK3); 				// tsourdt3rd.pk3
+	W_VerifyFileMD5(4, ASSET_HASH_TSOURDT3RD_PK3);	// tsourdt3rd.pk3
 #else
-	W_VerifyFileMD5(3, ASSET_HASH_TSOURDT3RD_PK3); 				// tsourdt3rd.pk3
+	W_VerifyFileMD5(3, ASSET_HASH_TSOURDT3RD_PK3); 	// tsourdt3rd.pk3
 	// 0011001101010 //
 #endif
 #endif //ifndef DEVELOP
 
 	// STAR STUFF //
-	// autoload other wads
-	autoloadpath = fopen(va("%s"PATHSEP"%s",srb2home,AUTOLOADCONFIGFILENAME), "r");
-	if (autoloadpath)
+	// Autoloading Wads
+	CON_StopRefresh(); // Temporarily stop refreshing the screen for wad autoloading
+
+	if (autoloadwadfiles.numfiles)
 	{
 		CONS_Printf("D_AutoLoadAddons(): Autoloading Addons...\n");
-		D_AutoLoadAddons(va(pandf,srb2home,AUTOLOADCONFIGFILENAME));
+		W_InitMultipleFiles(&autoloadwadfiles);
+		D_CleanFile(&autoloadwadfiles);
+
+		if (modifiedgame)
+		{
+			autoloaded = true;
+			modifiedgame = false;
+		}
+		autoloading = false;
+
+		M_UpdateJukebox();
 	}
+
+	CON_StartRefresh(); // Restart the refresh!
 	// END OF THAT STUFF //
 
 	cht_Init();
@@ -1815,17 +1780,11 @@ void D_SRB2Main(void)
 
 	CON_StopRefresh(); // Temporarily stop refreshing the screen for wad loading
 
-	// STAR NOTE: i've edited this lol
 	if (startuppwads.numfiles)
 	{
-		if (!autoloading)
-		{
-			CONS_Printf("W_InitMultipleFiles(): Adding extra PWADs.\n");
-			W_InitMultipleFiles(&startuppwads);
-			D_CleanFile(&startuppwads);
-		}
-		else
-			TSoURDt3rd_loadLastAddons = true;
+		CONS_Printf("W_InitMultipleFiles(): Adding extra PWADs.\n");
+		W_InitMultipleFiles(&startuppwads);
+		D_CleanFile(&startuppwads);
 	}
 
 	CON_StartRefresh(); // Restart the refresh!
@@ -1864,32 +1823,18 @@ void D_SRB2Main(void)
 	// this must be done after loading gamedata,
 	// to avoid setting off the corrupted gamedata code in G_LoadGameData if a SOC with custom gamedata is added
 	// -- Monster Iestyn 20/02/20
-
-	// STAR NOTE: THIS HAS BEEN EDITED!
-	// -- StarManiaKG 21/4/23
 	if (M_CheckParm("-warp") && M_IsNextParm())
 	{
 		const char *word = M_GetNextParm();
 		pstartmap = G_FindMapByNameOrCode(word, 0);
-
-		if (!autoloading)
+		if (! pstartmap)
+			I_Error("Cannot find a map remotely named '%s'\n", word);
+		else
 		{
 			if (!M_CheckParm("-server"))
 				G_SetGameModified(true);
-			if (! pstartmap)
-				I_Error("Cannot find a map remotely named '%s'\n", word);
 			autostart = true;
 		}
-
-		// STAR STUFF //
-		else
-		{
-			mapNameToLoadAfterAutoload = word;
-			if (!netgame)
-				doWarp = true;
-			autostart = true;
-		}
-		// END THAT STUFF //
 	}
 
 	if (M_CheckParm("-noupload"))
@@ -1952,7 +1897,11 @@ void D_SRB2Main(void)
 		if (!M_IsNextParm())
 			I_Error("usage: -room <room_id>\nCheck the Master Server's webpage for room ID numbers.\n");
 		ms_RoomId = atoi(M_GetNextParm());
-		msServerType = ms_RoomId;
+#ifdef HAVE_DISCORDRPC
+		// DISCORD STUFFS //
+		discordInfo.serverRoom = ms_RoomId;
+		// END THAT //
+#endif
 
 #ifdef UPDATE_ALERT
 		GetMODVersion_Console();
@@ -2049,23 +1998,6 @@ void D_SRB2Main(void)
 
 	if (autostart || netgame)
 	{
-		// STAR STUFF YAY //
-		if (autoloading)
-		{
-			// Load the Other Mods That You Specified
-			if (startuppwads.numfiles)
-			{
-				CONS_Printf("W_InitMultipleFiles(): Adding extra PWADs.\n");
-				W_InitMultipleFiles(&startuppwads);
-				D_CleanFile(&startuppwads);
-			}
-
-			// Set Some Important Variables
-			if (modifiedgame)
-				autoloaded = true;
-		}
-		// END THAT STUFF //
-
 		gameaction = ga_nothing;
 
 		CV_ClearChangedFlags();
@@ -2100,77 +2032,29 @@ void D_SRB2Main(void)
 			}
 		}
 
-		// STAR NOTE: THIS HAS ALSO BEEN EDITED!
 		if (server && !M_CheckParm("+map"))
 		{
-			if (!autoloading)
-			{
-				// Prevent warping to nonexistent levels
-				if (W_CheckNumForName(G_BuildMapName(pstartmap)) == LUMPERROR)
-					I_Error("Could not warp to %s (map not found)\n", G_BuildMapName(pstartmap));
-				// Prevent warping to locked levels
-				// ... unless you're in a dedicated server.  Yes, technically this means you can view any level by
-				// running a dedicated server and joining it yourself, but that's better than making dedicated server's
-				// lives hell.
-				else if (!dedicated && M_MapLocked(pstartmap))
-					I_Error("You need to unlock this level before you can warp to it!\n");
-				else
-				{
-					D_MapChange(pstartmap, gametype, ultimatemode, true, 0, false, false);
-				}
-			}
-
-			// STAR STUFF //
+			// Prevent warping to nonexistent levels
+			if (W_CheckNumForName(G_BuildMapName(pstartmap)) == LUMPERROR)
+				I_Error("Could not warp to %s (map not found)\n", G_BuildMapName(pstartmap));
+			// Prevent warping to locked levels
+			// ... unless you're in a dedicated server.  Yes, technically this means you can view any level by
+			// running a dedicated server and joining it yourself, but that's better than making dedicated server's
+			// lives hell.
+			else if (!dedicated && M_MapLocked(pstartmap))
+				I_Error("You need to unlock this level before you can warp to it!\n");
 			else
 			{
-				// Store the Map in the Variable First
-				maptoLoadAfterAutoload = G_FindMapByNameOrCode(mapNameToLoadAfterAutoload, 0);
-
-				// Prevent warping to nonexistent levels
-				if (W_CheckNumForName(G_BuildMapName(maptoLoadAfterAutoload)) == LUMPERROR)
-				{
-					CONS_Printf("Could not warp to %s (map not found).\nUnless you've made an error, this is supposed to happen after autoloading add-ons\n and loading into a map within the autoloaded add-on.\n\n", G_BuildMapName(maptoLoadAfterAutoload));
-					CONS_Printf("Loading into the next avaliable map.\nThen, we'll try to load into your requested map again.\n");
-					
-					D_MapChange(1, gametype, ultimatemode, true, 0, false, false);
-					doWarp = true;
-				}
-				// Prevent warping to locked levels
-				// ... unless you're in a dedicated server.  Yes, technically this means you can view any level by
-				// running a dedicated server and joining it yourself, but that's better than making dedicated server's
-				// lives hell.
-				else if (!dedicated && M_MapLocked(maptoLoadAfterAutoload))
-				{
-					CONS_Printf("You need to unlock this level before you can warp to it!\n");
-					CONS_Printf("Loading into the next avaliable map.\nThen, we'll try to load into your requested map again.");
-
-					D_MapChange(1, gametype, ultimatemode, true, 0, false, false);
-					doWarp = true;
-				}
-				// Since We Found The Map,
-				// End this Map Warp Before Doing Anything Else
-				else
-				{
-					D_MapChange(maptoLoadAfterAutoload, gametype, ultimatemode, true, 0, false, false);
-					
-					maptoLoadAfterAutoload = 0;
-					mapNameToLoadAfterAutoload = NULL;
-					
-					doWarp = false;
-				}
-
-				autoloading = false;
+				D_MapChange(pstartmap, gametype, ultimatemode, true, 0, false, false);
 			}
-			// HEHE //
 		}
 	}
-	else if ((M_CheckParm("-skipintro"))
-		&& (!doWarp))									// STAR NOTE: Here for Autoloading and Stuff
+	else if (M_CheckParm("-skipintro"))
 	{
 		F_InitMenuPresValues();
 		F_StartTitleScreen();
 	}
-	else if (!doWarp)									// STAR NOTE: Same as Above
+	else
 		F_StartIntro(); // Tails 03-03-2002
 
 	CON_ToggleOff();

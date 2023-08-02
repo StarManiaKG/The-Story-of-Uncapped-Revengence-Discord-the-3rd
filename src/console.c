@@ -1739,17 +1739,17 @@ static void CON_DrawBackpic(void)
 	int x, w, h;
 
 	// Get the lumpnum for CONSBACK, STARTUP (Only during game startup) or fallback into MISSING.
+	// STAR NOTE: i was here lol
 	if (con_startup)
 	{
-		if (!cv_startupscreen.value)
-			piclump = W_CheckNumForName("STARTUP");
-		else
-		{
-			if (cv_startupscreen.value == 1)
-				piclump = W_CheckNumForName("CONSBACK");
-			else
-				piclump = W_CheckNumForName("BABYSONIC");
-		}
+		static const char *gstartuplumpnumtype[] = {
+			"STARTUP",
+			"CONSBACK",
+			"BABYSONIC",
+			NULL
+		};
+
+		piclump = W_CheckNumForName(gstartuplumpnumtype[cv_startupscreen.value]);
 	}
 	else
 		piclump = W_CheckNumForName("CONSBACK");

@@ -12,6 +12,7 @@
 #ifndef __STAR_VARS__
 #define __STAR_VARS__
 
+#include "star_webinfo.h"
 #include "../command.h"
 
 // ============================================================================================	//
@@ -24,6 +25,14 @@
 //      If you Want to Look at Some Code, Check that pk3 Out.                                   //
 // ============================================================================================	//
 
+// DEFINITIONS //
+#ifdef DEVELOP
+#define TSOURDT3RDBYSTARMANIAKGSTRING "(By StarManiaKG#4884); Dev Mode Edition"
+#else
+#define TSOURDT3RDBYSTARMANIAKGSTRING "(By StarManiaKG#4884)"
+#endif
+#define TSOURDT3RDVERSIONSTRING "TSoURDt3rd v"TSOURDT3RDVERSION
+
 // VARIABLES //
 extern boolean tsourdt3rd;
 
@@ -32,7 +41,22 @@ extern boolean TSoURDt3rd_LoadExtras;
 extern boolean TSoURDt3rd_LoadedExtras;
 extern boolean TSoURDt3rd_NoMoreExtras;
 
-extern boolean checkedExtraWads;
+extern boolean TSoURDt3rd_checkedExtraWads;
+
+// STRUCTS //
+extern struct TSoURDt3rdInfo_s {
+	// General Stuff
+	boolean checkedVersion;
+	INT32 reachedSockSendErrorLimit;
+
+	// Server Stuff
+	boolean alreadyWarnedPlayer;
+
+	boolean serverUsesTSoURDt3rd;
+	UINT8 majorVersion, minorVersion, subVersion;
+
+	INT32 serverTSoURDt3rdVersion;
+} TSoURDt3rdInfo;
 
 // Sound Effects
 extern INT32 STAR_JoinSFX;
@@ -40,9 +64,6 @@ extern INT32 STAR_LeaveSFX;
 extern INT32 STAR_SynchFailureSFX;
 
 extern INT32 DISCORD_RequestSFX;
-
-// Server
-extern INT32 reachedSockSendErrorLimit;
 
 // Time Over...
 extern const char gameoverMusic[7][7];
@@ -63,7 +84,7 @@ extern INT32 currenteggs;
 extern INT32 numMapEggs;
 
 // COMMANDS //
-extern consvar_t cv_soniccd;
+extern consvar_t cv_loadingscreen, cv_loadingscreenimage, cv_soniccd;
 extern consvar_t cv_tsourdt3rdupdatemessage;
 extern consvar_t cv_socksendlimit;
 
@@ -74,13 +95,42 @@ void STAR_ReadExtraData(void);
 
 void STAR_SetSavefileProperties(void);
 
-// Messages
-void STAR_Tsourdt3rdEventMessage(INT32 choice);
+// Files
+INT32 STAR_DetectFileType(const char* filename);
 
-// Online
+// Events
+void TSoURDt3rd_CheckTime(void);
+
+// Messages
+void TSoURDt3rd_EventMessage(INT32 choice);
+
+// The World Wide Web
 #ifdef HAVE_CURL
 void STAR_FindAPI(const char *API);
-boolean STAR_GrabStringFromWebsite(const char *API, char *URL, char *INFO, boolean verbose);
+
+boolean STAR_FindStringOnWebsite(const char *API, char *URL, char *INFO, boolean verbose);
+char *STAR_ReturnStringFromWebsite(const char *API, char *URL, char *RETURNINFO, boolean verbose);
+#endif
+
+// Servers
+boolean STAR_FindServerInfractions(void);
+
+// Miscellanious
+UINT32 TSoURDt3rd_CurrentVersion(void);
+
+UINT8 TSoURDt3rd_CurrentMajorVersion(void);
+UINT8 TSoURDt3rd_CurrentMinorVersion(void);
+UINT8 TSoURDt3rd_CurrentSubversion(void);
+
+INT32 STAR_ConvertStringToCompressedNumber(char *STRING, INT32 startIFrom, INT32 startJFrom, boolean twoToThreeDigit);
+char *STAR_ConvertNumberToString(INT32 NUMBER, INT32 startIFrom, INT32 startJFrom, boolean turnIntoVersionString);
+INT32 STAR_ConvertNumberToStringAndBack(INT32 NUMBER, INT32 startI1From, INT32 startJ1From, INT32 startI2From, INT32 startJ2From, boolean turnIntoVersionString, boolean twoToThreeDigit);
+
+INT32 STAR_CombineNumbers(INT32 ARGS, INT32 FIRSTNUM, ...);
+
+#ifdef HAVE_SDL
+void STAR_RenameWindow(const char *title);
+const char *STAR_SetWindowTitle(void);
 #endif
 
 #endif // __STAR_VARS__

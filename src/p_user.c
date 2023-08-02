@@ -10587,7 +10587,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 boolean P_SpectatorJoinGame(player_t *player)
 {
 	// STAR STUFF //
-	boolean discordReturnTrue;
+	boolean discordReturnTrue = false;
 	// END OF THE CONVIENENCE //
 
 	if (!G_CoopGametype() && !cv_allowteamchange.value)
@@ -10711,9 +10711,13 @@ boolean P_SpectatorJoinGame(player_t *player)
 				CONS_Printf(M_GetText("You must wait until next round to enter the game.\n"));
 			player->powers[pw_flashing] += 2*TICRATE; //to prevent message spam.
 		}
+		
 		// STAR STUFF, AGAIN AGAIN //
 		goto STAR_return; // return, but don't return true
 		// END THAT, AGAIN AGAIN //
+	}
+
+	return false;
 
 // STAR STUFF, ALMOST OVER //
 STAR_return:
@@ -10726,12 +10730,8 @@ STAR_return:
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
 #endif
-	if (discordReturnTrue)
-		return true;
+	return discordReturnTrue;
 // END THAT MESS, WE'RE FINALLY OVER //
-	}
-
-	return false;
 }
 
 // the below is first person only, if you're curious. check out P_CalcChasePostImg in p_mobj.c for chasecam

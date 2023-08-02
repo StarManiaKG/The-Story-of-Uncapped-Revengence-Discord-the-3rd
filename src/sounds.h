@@ -42,7 +42,7 @@ typedef enum
 } skinsound_t;
 
 // free sfx for S_AddSoundFx()
-#define NUMSFXFREESLOTS 1600 // Matches SOC Editor.
+#define NUMSFXFREESLOTS 9999 // Matches SOC Editor. //* STAR NOTE: i was here lol (also, if you want to reset the limits back to vanilla's limits, set this to 1600) *//
 #define NUMSKINSFXSLOTS (MAXSKINS*NUMSKINSOUNDS)
 
 //
@@ -875,6 +875,7 @@ typedef enum
 	sfx_freeslot0,
 	//
 	// ... 60 free sounds here ...
+	//* STAR NOTE: NOW CONTAINS A FEW THOUSAND MORE FREESLOTS :) *//
 	//
 	sfx_lastfreeslot = sfx_freeslot0 + NUMSFXFREESLOTS-1,
 	// end of freeslots ---------------------------------------------

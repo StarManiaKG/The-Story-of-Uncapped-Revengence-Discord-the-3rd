@@ -21,6 +21,10 @@
 #include "d_player.h"
 #include "mserv.h"
 
+// STAR STUFF //
+#include "d_event.h"
+// END THAT //
+
 /*
 The 'packet version' is used to distinguish packet
 formats. This version is independent of VERSION and
@@ -161,17 +165,19 @@ typedef struct
 
 	char server_context[8]; // Unique context id, generated at server startup.
 
-	/*
 	// STAR STUFF //
 	boolean tsourdt3rd;
-	// END THAT //
+	
+	UINT8 tsourdt3rdmajorversion;
+	UINT8 tsourdt3rdminorversion;
+	UINT8 tsourdt3rdsubversion;
 
 	// DISCORD COMPATIBILITY STUFF //
 	UINT8 maxplayer;
 	boolean allownewplayer;
 	UINT8 discordinvites;
 	// END THAT LARGE MESS //
-	*/
+	// END THAT OTHER STUFF TOO //
 } ATTRPACK serverconfig_pak;
 
 typedef struct
@@ -412,9 +418,9 @@ extern consvar_t cv_netticbuffer, cv_allownewplayer, cv_joinnextround, cv_maxpla
 extern consvar_t cv_resynchattempts, cv_blamecfail;
 extern consvar_t cv_maxsend, cv_noticedownload, cv_downloadspeed;
 
-// DISCORD STUFFS? //
-//extern consvar_t cv_discordinvites; // Discord Invites yayyaya
-// HMMMMMMMMMMMMM //
+// DISCORD STUFF: INVITATION EDITION //
+extern consvar_t cv_discordinvites;
+// PLEASE HELP ME //
 
 // Used in d_net, the only dependence
 tic_t ExpandTics(INT32 low, INT32 node);
@@ -480,9 +486,8 @@ extern boolean adminpasswordset;
 extern boolean hu_stopped;
 
 // STAR STUFF //
-#include "d_event.h"
-
 // Expose Some Net Things for Extra STAR Stuff
+void RenewHolePunch(void);
 void PT_WillResendGamestate(void);
 
 // Expose Some Snake Things for Extra STAR Stuff

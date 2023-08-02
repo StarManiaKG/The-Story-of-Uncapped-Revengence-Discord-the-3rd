@@ -329,7 +329,8 @@
     </ClCompile>
     <ClCompile Include="..\v_video.c" />
     <ClCompile Include="..\w_wad.c" />
-     <ClCompile Include="..\STAR\star_functions.c" />
+    <ClCompile Include="..\STAR\star_functions.c" />
+    <ClCompile Include="..\libav\LIBAV_coders.c" />
     <ClCompile Include="..\y_inter.c" />
     <ClCompile Include="..\z_zone.c" />
     <ClCompile Include="dx_error.c" />
@@ -481,6 +482,7 @@
     <ClInclude Include="..\z_zone.h" />
     <ClInclude Include="..\STAR\star_vars.h" />
     <ClInclude Include="..\STAR\star_webinfo.h" />
+    <ClCompile Include="..\libav\LIBAV_coders.h" />
     <ClInclude Include="afxres.h" />
     <ClInclude Include="dx_error.h" />
     <ClInclude Include="fabdxlib.h" />

@@ -64,9 +64,6 @@
 
 // STAR STUFF //
 #include "STAR/star_vars.h"
-
-/*boolean serverUsesTSoURDt3rd;
-void Tsourdt3rdInfo_OnChange(void);*/
 // END THAT //
 
 //
@@ -318,7 +315,7 @@ static void D_FreeTextcmd(tic_t tic)
 		{
 			textcmdplayer_t *textcmdplayer = textcmdtic->playercmds[i];
 
-			while (textcmdplayer > (textcmdplayer_t*)255)  // STAR NOTE: LEAVEBUG HACK
+			while (textcmdplayer > (textcmdplayer_t*)255) // STAR NOTE: LEAVEBUG HACK
 			{
 				textcmdplayer_t *tcpnext = textcmdplayer->next;
 				Z_Free(textcmdplayer);
@@ -348,7 +345,7 @@ static UINT8* D_GetExistingTextcmd(tic_t tic, INT32 playernum)
 		if (textcmdplayer > limit)
 			return textcmdplayer->cmd;
 		else if (textcmdplayer)
-			CONS_Debug(DBG_NETPLAY, "textcmdplayer is %p: CRASH AVERTED\n", textcmdplayer);
+			CONS_Alert(CONS_WARNING, "textcmdplayer is %p: CRASH AVERTED\n", textcmdplayer);
 	}
 
 	return NULL;
@@ -1476,18 +1473,19 @@ static boolean SV_SendServerConfig(INT32 node)
 	netbuffer->u.servercfg.gametype = (UINT8)gametype;
 	netbuffer->u.servercfg.modifiedgame = (UINT8)modifiedgame;
 
-	/*if (serverUsesTSoURDt3rd)
-	{
-		// STAR STUFF YAY //
-		netbuffer->u.servercfg.tsourdt3rd = tsourdt3rd;
-		// END THE STUFF //
+	// STAR STUFF YAY //
+	netbuffer->u.servercfg.tsourdt3rd = (boolean)tsourdt3rd;
 
-		// DISCORD STUFF //
-		netbuffer->u.servercfg.maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
-		netbuffer->u.servercfg.allownewplayer = cv_allownewplayer.value;
-		netbuffer->u.servercfg.discordinvites = (UINT8)cv_discordinvites.value;
-		// END THAT PLEASE //
-	}*/
+	netbuffer->u.servercfg.tsourdt3rdmajorversion = TSoURDt3rd_CurrentMajorVersion();
+	netbuffer->u.servercfg.tsourdt3rdminorversion = TSoURDt3rd_CurrentMinorVersion();
+	netbuffer->u.servercfg.tsourdt3rdsubversion = TSoURDt3rd_CurrentSubversion();
+
+	// DISCORD STUFF //
+	netbuffer->u.servercfg.maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
+	netbuffer->u.servercfg.allownewplayer = cv_allownewplayer.value;
+	netbuffer->u.servercfg.discordinvites = cv_discordinvites.value;
+	// END THAT PLEASE //
+	// END THE STAR STUFF TOO //
 
 	memcpy(netbuffer->u.servercfg.server_context, server_context, 8);
 
@@ -1754,7 +1752,7 @@ static void SendAskInfo(INT32 node)
 {
 	const tic_t asktime = I_GetTime();
 
-	// HOLE-PUNCHING STUFF GOES HERE THIS TIME //
+	// HOLEPUNCHING STUFF //
 	if (node != 0 && node != BROADCASTADDR &&
 			cv_rendezvousserver.string[0])
 	{
@@ -2791,14 +2789,22 @@ static void Command_connect(void)
 		return;
 	}
 
-	// STAR NOTE: I EDITED THIS A WHILE AGO LOL //
+	// STAR STUFF //
+	M_ClearMenus(true);
+	if (demoplayback && titledemo)
+		G_CheckDemoStatus();
+	
 	if (Playing() || titledemo)
 	{
-		if (menuactive)
-			M_ClearMenus(true);
+		if (netgame)
+		{
+			D_QuitNetGame();
+			CL_Reset();
+		}
 
-		Command_ExitGame_f();
+		D_StartTitle();
 	}
+	// DONE WITH THAT //
 
 	// modified game check: no longer handled
 	// we don't request a restart unless the filelist differs
@@ -3399,9 +3405,6 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 #endif
 	}
 
-	// DISCORD STUFF MEEP //
-	S_StartSound(NULL, ((msg == KICK_MSG_PLAYER_QUIT) ? STAR_LeaveSFX : STAR_SynchFailureSFX));
-	// I LIKE YOUR FUNNY WORDS, MAGIC FUNCTION //
 	switch (msg)
 	{
 		case KICK_MSG_GO_AWAY:
@@ -3517,15 +3520,56 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 	}
 	else
 		CL_RemovePlayer(pnum, kickreason);
+
+	// DISCORD STUFF //
+	S_StartSound(NULL, ((msg == KICK_MSG_PLAYER_QUIT) ? STAR_LeaveSFX : STAR_SynchFailureSFX));
+	// I LIKE YOUR FUNNY WORDS, MAGIC FUNCTION //
 }
+
+// STAR STUFF //
+static void Tsourdt3rdInfo_OnChange(void)
+{
+	UINT8 buf[7];
+	UINT8 *p = buf;
+	
+	UINT8 currentmajorversion;
+	UINT8 currentminorversion;
+	UINT8 currentsubversion;
+
+	UINT8 maxplayer;
+
+	if (!server)
+		return;
+
+	currentmajorversion = TSoURDt3rd_CurrentMajorVersion();
+	currentminorversion = TSoURDt3rd_CurrentMinorVersion();
+	currentsubversion = TSoURDt3rd_CurrentSubversion();
+
+	maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
+
+	WRITEUINT8(p, tsourdt3rd);
+
+	WRITEUINT8(p, currentmajorversion);
+	WRITEUINT8(p, currentminorversion);
+	WRITEUINT8(p, currentsubversion);
+
+	// DISCORD STUFF //
+	WRITEUINT8(p, maxplayer);
+	WRITEUINT8(p, cv_allownewplayer.value);
+	WRITEUINT8(p, cv_discordinvites.value);
+	// YOU GET THE GIST //
+
+	SendNetXCmd(XD_TSOURDT3RD, &buf, 7);
+}
+// END THAT. LITERALLY //
 
 static CV_PossibleValue_t netticbuffer_cons_t[] = {{0, "MIN"}, {3, "MAX"}, {0, NULL}};
 consvar_t cv_netticbuffer = CVAR_INIT ("netticbuffer", "1", CV_SAVE, netticbuffer_cons_t, NULL);
 
-consvar_t cv_allownewplayer = CVAR_INIT ("allowjoin", "On", CV_SAVE|CV_NETVAR/*|CV_CALL*/, CV_OnOff, /*Tsourdt3rdInfo_OnChange*/NULL);
+consvar_t cv_allownewplayer = CVAR_INIT ("allowjoin", "On", CV_SAVE|CV_NETVAR|CV_CALL, CV_OnOff, Tsourdt3rdInfo_OnChange);
 consvar_t cv_joinnextround = CVAR_INIT ("joinnextround", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL); /// \todo not done
 static CV_PossibleValue_t maxplayers_cons_t[] = {{2, "MIN"}, {32, "MAX"}, {0, NULL}};
-consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_SAVE|CV_NETVAR/*|CV_CALL*/, maxplayers_cons_t, /*Tsourdt3rdInfo_OnChange*/NULL);
+consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_SAVE|CV_NETVAR|CV_CALL, maxplayers_cons_t, Tsourdt3rdInfo_OnChange);
 static CV_PossibleValue_t joindelay_cons_t[] = {{1, "MIN"}, {3600, "MAX"}, {0, "Off"}, {0, NULL}};
 consvar_t cv_joindelay = CVAR_INIT ("joindelay", "10", CV_SAVE|CV_NETVAR, joindelay_cons_t, NULL);
 static CV_PossibleValue_t rejointimeout_cons_t[] = {{1, "MIN"}, {60 * FRACUNIT, "MAX"}, {0, "Off"}, {0, NULL}};
@@ -3544,40 +3588,13 @@ consvar_t cv_noticedownload = CVAR_INIT ("noticedownload", "Off", CV_SAVE|CV_NET
 static CV_PossibleValue_t downloadspeed_cons_t[] = {{1, "MIN"}, {300, "MAX"}, {0, NULL}};
 consvar_t cv_downloadspeed = CVAR_INIT ("downloadspeed", "16", CV_SAVE|CV_NETVAR, downloadspeed_cons_t, NULL);
 
-/*
 // DISCORD STUFF //
-// Here for Dedicated Servers or Something idk
-static CV_PossibleValue_t discordinvites_cons_t[] = {{0, "Admins"}, {1, "Everyone"}, {2, "Server Only"}, {0, NULL}};
-consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Everyone", CV_SAVE|CV_CALL, discordinvites_cons_t, Tsourdt3rdInfo_OnChangeNULL);
+// Here for Dedicated Servers or Something for Some Reason idk
+static CV_PossibleValue_t discordinvites_cons_t[] = {{0, "Server"}, {1, "Admins"}, {2, "Everyone"}, {0, NULL}};
+consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Everyone", CV_SAVE|CV_CALL, discordinvites_cons_t, Tsourdt3rdInfo_OnChange);
 // END THIS MESS //
-*/
 
 static void Got_AddPlayer(UINT8 **p, INT32 playernum);
-
-// STAR STUFF //
-/*void Tsourdt3rdInfo_OnChange(void)
-{
-	UINT8 buf[3];
-	UINT8 *p = buf;
-	UINT8 maxplayer;
-
-	if (!server)
-		return;
-
-	if (!serverUsesTSoURDt3rd)
-		return;
-
-	maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
-
-	WRITEUINT8(p, tsourdt3rd);
-
-	WRITEUINT8(p, maxplayer);
-	WRITEUINT8(p, cv_allownewplayer.value);
-	WRITEUINT8(p, cv_discordinvites.value);
-
-	SendNetXCmd(XD_TSOURDT3RD, buf, 3);
-}*/
-// END THAT. LITERALLY //
 
 // called one time at init
 void D_ClientServerInit(void)
@@ -3806,6 +3823,14 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 	rejoined = playeringame[newplayernum];
 
+	// DO STAR STUFF //
+	if (automapactive)
+	{
+		CONS_Alert(CONS_NOTICE, "A new node has joined, closing the automap to prevent a crash...\n");
+		AM_Stop();
+	}
+	// END THAT //
+
 	if (!rejoined)
 	{
 		// Clear player before joining, lest some things get set incorrectly
@@ -3893,7 +3918,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 		// DISCORD STUFF YAY //
 		if (node != mynode)
 			S_StartSound(NULL, STAR_JoinSFX);
-		// DISCORD SOUND THINGY YAY //
+		// MEEP //
 
 		if (rejoined)
 			strcpy(joinmsg, M_GetText("\x82*%s has rejoined the game (player %d)"));
@@ -3917,14 +3942,6 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 	if (!rejoined)
 		LUA_HookInt(newplayernum, HOOK(PlayerJoin));
-
-	// DO STAR STUFF //
-	if (automapactive)
-	{
-		CONS_Alert(CONS_NOTICE, "A new node has joined, closing the automap to prevent a crash...\n");
-		AM_Stop();
-	}
-	// END THAT //
 
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
@@ -4478,21 +4495,28 @@ static void HandlePacketFromAwayNode(SINT8 node)
 				memcpy(server_context, netbuffer->u.servercfg.server_context, 8);
 			}
 
-			/*
-			// DISCORD STUFF, STAR STUFF //
-			serverUsesTSoURDt3rd = netbuffer->u.servercfg.tsourdt3rd;
-			CONS_Printf("Discord Packets Recieved! Value: %d\n", serverUsesTSoURDt3rd);
+			// STAR STUFF //
+			TSoURDt3rdInfo.serverUsesTSoURDt3rd = (((netbuffer->u.servercfg.tsourdt3rd > 1 || netbuffer->u.servercfg.tsourdt3rd < 0) || TSoURDt3rd_CurrentVersion() < 280) ? 0 : 1);
+			
+			if (netgame && !server)
+				(TSoURDt3rdInfo.serverUsesTSoURDt3rd ? 
+					(CONS_Printf("Server uses TSoURDt3rd, running features...\n")) :
+					(CONS_Printf("Server doesn't use TSoURDt3rd or is using an outdated TSoURDt3rd, working around this...\n")));
+
+			TSoURDt3rdInfo.majorVersion 			= (TSoURDt3rdInfo.serverUsesTSoURDt3rd ? netbuffer->u.servercfg.tsourdt3rdmajorversion : 0);
+			TSoURDt3rdInfo.minorVersion 			= (TSoURDt3rdInfo.serverUsesTSoURDt3rd ? netbuffer->u.servercfg.tsourdt3rdminorversion : 0);
+			TSoURDt3rdInfo.subVersion 				= (TSoURDt3rdInfo.serverUsesTSoURDt3rd ? netbuffer->u.servercfg.tsourdt3rdsubversion : 0);
+
+			TSoURDt3rdInfo.serverTSoURDt3rdVersion 	= STAR_CombineNumbers(3, TSoURDt3rdInfo.majorVersion, TSoURDt3rdInfo.minorVersion, TSoURDt3rdInfo.subVersion);
 
 #ifdef HAVE_DISCORDRPC
-			if (serverUsesTSoURDt3rd)
-			{
-				discordInfo.maxPlayers = netbuffer->u.servercfg.maxplayer;
-				discordInfo.joinsAllowed = netbuffer->u.servercfg.allownewplayer;
-				discordInfo.whoCanInvite = netbuffer->u.servercfg.discordinvites;
-			}
+			// DISCORD STUFF //
+			discordInfo.maxPlayers 					= (TSoURDt3rdInfo.serverUsesTSoURDt3rd ? netbuffer->u.servercfg.maxplayer : (UINT8)cv_maxplayers.value);
+			discordInfo.joinsAllowed 				= (TSoURDt3rdInfo.serverUsesTSoURDt3rd ? netbuffer->u.servercfg.allownewplayer : (boolean)cv_allownewplayer.value);
+			discordInfo.whoCanInvite 				= (TSoURDt3rdInfo.serverUsesTSoURDt3rd ? netbuffer->u.servercfg.discordinvites : (UINT8)cv_discordinvites.value);
+			// END OF THE DISCORD STUFF //
 #endif
-			// END THIS ENTIRE MESS //
-			*/
+			// END OF THE ENTIRE STAR MESS TOO //
 
 			nodeingame[(UINT8)servernode] = true;
 			serverplayer = netbuffer->u.servercfg.serverplayer;
@@ -5552,7 +5576,8 @@ static inline void PingUpdate(void)
 	pingmeasurecount = 1; //Reset count
 }
 
-static void RenewHolePunch(void)
+// HOLEPUNCHING STUFFS //
+void RenewHolePunch(void)
 {
 	if (cv_rendezvousserver.string[0])
 	{
@@ -5567,6 +5592,7 @@ static void RenewHolePunch(void)
 		}
 	}
 }
+// END THAT PLEASE //
 
 void NetUpdate(void)
 {
@@ -5619,10 +5645,12 @@ void NetUpdate(void)
 	MasterClient_Ticker(); // Acking the Master Server
 #endif
 
+	// HOLEPUNCHING STUFFS //
 	if (netgame && serverrunning)
 	{
 		RenewHolePunch();
 	}
+	// END THAT PLEASE //
 
 	if (client)
 	{

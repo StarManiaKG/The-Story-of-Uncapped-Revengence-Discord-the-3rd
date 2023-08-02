@@ -104,10 +104,6 @@
 #include <io.h>
 #endif
 
-// STAR STUFF BEP //
-#include "STAR/star_webinfo.h"
-// DONE, BEEPO //
-
 //#define NOMD5
 
 // Uncheck this to compile debugging code
@@ -130,17 +126,17 @@ extern char logfilename[1024];
 
 //#define DEVELOP // Disable this for release builds to remove excessive cheat commands and enable MD5 checking and stuff, all in one go. :3
 #ifdef DEVELOP
-#define VERSIONSTRING "v2.2.10; TSoURDt3rd v"TSOURDT3RDVERSION" (by StarManiaKG#4884); Dev Mode Edition"
-#define VERSIONSTRING_RC "2.2.10; TSoURDt3rd "TSOURDT3RDVERSION" (by StarManiaKG#4884); Dev Mode Edition" "\0"
+#define VERSIONSTRING "Development EXE"
+#define VERSIONSTRING_RC "Development EXE" "\0"
 // most interface strings are ignored in development mode.
 // we use comprevision and compbranch instead.
 // VERSIONSTRING_RC is for the resource-definition script used by windows builds
 #else
 #ifdef BETAVERSION
-#define VERSIONSTRING "v"SRB2VERSION"; TSoURDt3rd v"TSOURDT3RDVERSION" (by StarManiaKG#4884) "BETAVERSION
-#define VERSIONSTRING_RC SRB2VERSION "; TSoURDt3rd "TSOURDT3RDVERSION" (by StarManiaKG#4884) " BETAVERSION "\0"
+#define VERSIONSTRING "v"SRB2VERSION" "BETAVERSION
+#define VERSIONSTRING_RC SRB2VERSION " " BETAVERSION "\0"
 #else
-#define VERSIONSTRING "v"SRB2VERSION"; TSoURDt3rd v"TSOURDT3RDVERSION" (by StarManiaKG#4884)" // please don't remove this i'm begging you
+#define VERSIONSTRING "v"SRB2VERSION
 #define VERSIONSTRING_RC SRB2VERSION "\0"
 #endif
 // Hey! If you change this, add 1 to the MODVERSION below!
@@ -228,7 +224,7 @@ extern char logfilename[1024];
 // NOTE: it needs more than this to increase the number of players...
 
 #define MAXPLAYERS 32
-#define MAXSKINS 32
+#define MAXSKINS 255 // STAR NOTE: i was here lol (also, if you want to set the limits back to vanilla's limits, set this to 32)
 #define PLAYERSMASK (MAXPLAYERS-1)
 #define MAXPLAYERNAME 21
 
@@ -660,7 +656,7 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 // STAR STUFF YAY //
 // STAR NOTE: SOME OF THESE MAY ALSO BE UNSTABLE TOO
 
-// Enable Alam's Lighting
+// Enable Alam's Lighting, With Touch-ups by Star :p (Currently in Extreme Beta lol)
 //#define ALAM_LIGHTING
 
 // Enable More Debugging Features
@@ -672,7 +668,7 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 extern char savegamefolder[256];
 
 // Events
-//#define APRIL_FOOLS			// enables april fools mode, but won't exist in the future, thanks to STAR_CheckTime
+//#define APRIL_FOOLS			// enables april fools mode, but won't exist in the future, thanks to TSoURDt3rd_CheckTime
 
 // Extras
 //#define BLAME_SEV				// blames sev

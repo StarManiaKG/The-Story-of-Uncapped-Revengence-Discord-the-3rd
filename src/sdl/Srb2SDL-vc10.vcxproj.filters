@@ -490,6 +490,9 @@
     <ClInclude Include="..\STAR\star_webinfo.h">
       <Filter>G_Game</Filter>
     </ClInclude>
+    <ClInclude Include="..\libav\LIBAV_coders.h">
+      <Filter>G_Game</Filter>
+    </ClInclude>
     <ClInclude Include="endtxt.h">
       <Filter>SDLApp</Filter>
     </ClInclude>
@@ -975,6 +978,9 @@
       <Filter>W_Wad</Filter>
     </ClCompile>
     <ClInclude Include="..\STAR\star_functions.c">
+      <Filter>G_Game</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libav\LIBAV_coders.c">
       <Filter>G_Game</Filter>
     </ClInclude>
     <ClCompile Include="dosstr.c">

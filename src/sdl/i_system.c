@@ -146,13 +146,13 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 // Locations to directly check for srb2.pk3 in
 const char *wadDefaultPaths[] = {
 #if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
-	"/usr/local/share/games/SRB2",
-	"/usr/local/games/SRB2",
-	"/usr/share/games/SRB2",
-	"/usr/games/SRB2",
+	"/usr/local/share/games/SRB2-2.2.10",
+	"/usr/local/games/SRB2-2.2.10",
+	"/usr/share/games/SRB2-2.2.10",
+	"/usr/games/SRB2-2.2.10",
 #elif defined (_WIN32)
-	"c:\\games\\srb2",
-	"\\games\\srb2",
+	"c:\\games\\srb2-2.2.10",
+	"\\games\\srb2-2.2.10",
 #endif
 	NULL
 };
@@ -215,6 +215,10 @@ static char returnWadPath[256];
 #ifdef HAVE_DISCORDRPC
 #include "../discord.h"
 #endif
+
+// STAR STUFF //
+#include "../STAR/star_vars.h"
+// END THAT STUFF //
 
 /**	\brief	The JoyReset function
 
@@ -1739,8 +1743,8 @@ void I_UpdateMumble(const mobj_t *mobj, const listener_t listener)
 		return;
 
 	if(mumble->uiVersion != 2) {
-		wcsncpy(mumble->name, L"SRB2 "VERSIONSTRINGW, 256);
-		wcsncpy(mumble->description, L"Sonic Robo Blast 2 with integrated Mumble Link support.", 2048);
+		wcsncpy(mumble->name, L"SRB2 "VERSIONSTRINGW"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING, 256);
+		wcsncpy(mumble->description, L"Sonic Robo Blast 2; TSoURDt3rd with integrated Mumble Link support.", 2048);
 		mumble->uiVersion = 2;
 	}
 	mumble->uiTick++;
@@ -2361,11 +2365,11 @@ void I_Quit(void)
 	if (quiting) goto death;
 	SDLforceUngrabMouse();
 	quiting = SDL_FALSE;
-	// Do Discord Stuff //
 #ifdef HAVE_DISCORDRPC
+	// DO DISCORD STUFFS //
 	DRPC_Shutdown();
+	// ENDED DISCORD STUFFS //
 #endif
-	// Did Discord Stuff //
 	// DO STAR STUFF //
 	if (netgame)
 		STAR_ResetProblematicCommandsAfterNetgames();
@@ -2437,7 +2441,9 @@ void I_Error(const char *error, ...)
 	char buffer[8192];
 
 #ifdef HAVE_DISCORDRPC
+	// DO DISCORD STUFFS AGAIN //
 	DRPC_Shutdown();
+	// ENDED DISCORD STUFFS AGAIN //
 #endif
 
 	// DO STAR STUFF AGAIN //
@@ -2479,7 +2485,7 @@ void I_Error(const char *error, ...)
 			// on the target system
 			if (!M_CheckParm("-dedicated"))
 				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-					"SRB2 "VERSIONSTRING" Recursive Error",
+					"SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING" Recursive Error",
 					buffer, NULL);
 
 			W_Shutdown();
@@ -2524,7 +2530,7 @@ void I_Error(const char *error, ...)
 	// on the target system
 	if (!M_CheckParm("-dedicated"))
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-			"SRB2 "VERSIONSTRING" Error",
+			"SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING" Error",
 			buffer, NULL);
 	// Note that SDL_ShowSimpleMessageBox does *not* require SDL to be
 	// initialized at the time, so calling it after SDL_Quit() is

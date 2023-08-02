@@ -43,6 +43,7 @@
 
 #include "d_main.h"
 #include "m_menu.h"
+#include "hu_stuff.h"
 // END OF THAT //
 
 lua_State *gL = NULL;
@@ -410,11 +411,21 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 		LUA_PushUserdata(L, &camera2, META_CAMERA);
 		return 1;
 
-	// STAR STUFF YAY //
-	// main //
+	//// STAR STUFF YAY ////
+	// MAIN //
 	// global tsourdt3rd variable
 	} else if (fastcmp(word,"tsourdt3rd")) {
 		lua_pushboolean(L, tsourdt3rd);
+		return 1;
+
+	// short tsourdt3rd version string
+	} else if (fastcmp(word,"TSOURDT3RDVERSION")) {
+		lua_pushstring(L, TSOURDT3RDVERSION);
+		return 1;
+	
+	// extended tsourdt3rd version string
+	} else if (fastcmp(word,"TSOURDT3RDVERSIONSTRING")) {
+		lua_pushstring(L, TSOURDT3RDVERSIONSTRING);
 		return 1;
 	
 	// loaded tsourdt3rdextras.pk3
@@ -436,7 +447,18 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 		lua_pushboolean(L, ForceTimeOver);
 		return 1;
 	
-	// sound effects //
+	// SERVERS //
+	// server uses tsourdt3rd
+	} else if (fastcmp(word,"serverUsesTSoURDt3rd")) {
+		lua_pushboolean(L, TSoURDt3rdInfo.serverUsesTSoURDt3rd);
+		return 1;
+	
+	// server tsourdt3rd version
+	} else if (fastcmp(word,"serverTSoURDt3rdVersion")) {
+		lua_pushinteger(L, TSoURDt3rdInfo.serverTSoURDt3rdVersion);
+		return 1;
+	
+	// SOUND EFFECTS //
 	// STAR //
 	// joining
 	} else if (fastcmp(word,"STAR_JoinSFX")) {
@@ -453,19 +475,19 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 		lua_pushinteger(L, STAR_SynchFailureSFX);
 		return 1;
 	
-	// DISCORD
+	// DISCORD //
 	// requests
 	} else if (fastcmp(word,"DISCORD_RequestSFX")) {
 		lua_pushinteger(L, DISCORD_RequestSFX);
 		return 1;
 
-	// extras //
+	// EXTRAS //
 	// tf2
 	} else if (fastcmp(word,"SpawnTheDispenser")) {
 		lua_pushboolean(L, SpawnTheDispenser);
 		return 1;
 
-	// events //
+	// EVENTS //
 	// easter
 	} else if (fastcmp(word,"eastermode")) {
 		lua_pushboolean(L, eastermode);
@@ -512,8 +534,14 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 			return 0;
 		lua_pushinteger(L, numMapEggs);
 		return 1;
+
+	// MISC. THINGS //
+	// text chat on
+	} else if (fastcmp(word,"chat_on")) {
+		lua_pushboolean(L, chat_on);
+		return 1;
 	}
-	// END OF STAR STUFF YAY //
+	//// END OF STAR STUFF YAY ////
 
 	return 0;
 }

@@ -982,7 +982,9 @@ SOURCE=..\w_wad.h
 # End Group
 # Begin Group "Docs"
 
-## STAR STUFF ##
+##################
+### STAR STUFF ###
+##################
 SOURCE=..\STAR\star_functions.c
 # End Source File
 # Begin Source File
@@ -990,7 +992,17 @@ SOURCE=..\STAR\star_functions.c
 SOURCE=..\STAR\star_vars.h
 # End Source File
 # Begin Source File
-## END OF THAT STAR STUFF ##
+
+SOURCE=..\libav\LIBAV_coders.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\libav\LIBAV_coders.h
+# End Source File
+# Begin Source File
+##############################
+### END OF THAT STAR STUFF ###
+##############################
 
 # PROP Default_Filter ""
 # Begin Source File

@@ -414,6 +414,9 @@
     <ClInclude Include="..\STAR\star_functions.c">
       <Filter>G_Game</Filter>
     </ClInclude>
+     <ClInclude Include="..\libav\LIBAV_coders.c">
+      <Filter>G_Game</Filter>
+    </ClInclude>
     <ClCompile Include="..\lzf.c">
       <Filter>W_Wad</Filter>
     </ClCompile>
@@ -847,6 +850,9 @@
       <Filter>G_Game</Filter>
     </ClInclude>
     <ClInclude Include="..\STAR\star_webinfo.h">
+      <Filter>G_Game</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libav\LIBAV_coders.h">
       <Filter>G_Game</Filter>
     </ClInclude>
     <ClInclude Include="..\lzf.h">

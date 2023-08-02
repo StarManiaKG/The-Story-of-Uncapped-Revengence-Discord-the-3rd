@@ -1021,7 +1021,7 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 	W_ReadFileShaders(wadfile);
 
 	// STAR STUFF //
-	checkedExtraWads = false;
+	TSoURDt3rd_checkedExtraWads = false;
 	// AGAIN, AGAIN //
 
 	// TODO: HACK ALERT - Load Lua & SOC stuff right here. I feel like this should be out of this place, but... Let's stick with this for now.
@@ -1232,7 +1232,7 @@ UINT16 W_InitFolder(const char *path, boolean mainfile, boolean startup)
 	W_InvalidateLumpnumCache();
 
 	// STAR STUFF //
-	checkedExtraWads = false;
+	TSoURDt3rd_checkedExtraWads = false;
 	// AGAIN, AGAIN, AGAIN //
 
 	return wadfile->numlumps;
@@ -1571,6 +1571,24 @@ lumpnum_t W_GetNumForName(const char *name)
 
 	if (i == LUMPERROR)
 		I_Error("W_GetNumForName: %s not found!\n", name);
+
+	return i;
+}
+
+//
+// W_GetNumForMusicName
+//
+// Calls W_CheckNumForName, but does NOT bomb out if not found.
+// Geared towards checking for music files where the lump not
+// being found is not a call for a crash.
+//
+// STAR NOTE: Ported From SRB2 Persona lol
+//
+lumpnum_t W_GetNumForMusicName(const char *name)
+{
+	lumpnum_t i;
+
+	i = W_CheckNumForName(name);
 
 	return i;
 }

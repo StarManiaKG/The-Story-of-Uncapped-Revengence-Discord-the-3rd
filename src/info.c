@@ -22016,7 +22016,7 @@ void P_PatchInfoTables(void)
 	INT32 i;
 	char *tempname;
 
-#if NUMSPRITEFREESLOTS > 1000
+#if NUMSPRITEFREESLOTS > 9999 // STAR NOTE: if you want to reset the limits back to vanilla's limits, set this to 1000
 "Update P_PatchInfoTables, you big dumb head"
 #endif
 
@@ -22024,8 +22024,14 @@ void P_PatchInfoTables(void)
 	for (i = SPR_FIRSTFREESLOT; i <= SPR_LASTFREESLOT; i++)
 	{
 		tempname = sprnames[i];
-		tempname[0] = 'F';
-		tempname[1] = (char)('0' + (char)((i-SPR_FIRSTFREESLOT+1)/100));
+		/*
+			STAR NOTE: i was here lol (also, these are preserved for just in case senarios)
+
+			tempname[0] = 'F';
+			tempname[1] = (char)('0' + (char)((i-SPR_FIRSTFREESLOT+1)/100));
+		*/
+		tempname[0] = (char)('0' + (char)((i-SPR_FIRSTFREESLOT+1)/1000));
+		tempname[1] = (char)('0' + (char)(((i-SPR_FIRSTFREESLOT+1)/100)%10));
 		tempname[2] = (char)('0' + (char)(((i-SPR_FIRSTFREESLOT+1)/10)%10));
 		tempname[3] = (char)('0' + (char)((i-SPR_FIRSTFREESLOT+1)%10));
 		tempname[4] = '\0';

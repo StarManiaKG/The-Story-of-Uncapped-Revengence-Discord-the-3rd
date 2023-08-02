@@ -69,14 +69,10 @@ consvar_t cv_masterserver_update_rate = CVAR_INIT ("masterserver_update_rate", "
 INT16 ms_RoomId = -1;
 
 // STAR STUFF //
-#include "STAR/star_vars.h"
-
-consvar_t cv_rendezvousserver = CVAR_INIT ("holepunchserver", "", CV_SAVE, NULL, NULL);
+consvar_t cv_rendezvousserver = CVAR_INIT ("holepunchserver", "jart-dev.jameds.org", CV_SAVE, NULL, NULL);
 
 static CV_PossibleValue_t socksendlimit_t[] = {{1, "MIN"}, {10, "MAX"}, {0, NULL}};
 consvar_t cv_socksendlimit = CVAR_INIT("socksendlimit", "3", CV_SAVE, socksendlimit_t, NULL);
-
-INT16 msServerType = -1;
 // END THAT MESS
 
 #if defined (MASTERSERVER) && defined (HAVE_THREADS)
@@ -95,7 +91,7 @@ msg_rooms_t room_list[NUM_LIST_ROOMS+1]; // +1 for easy test
 
 /** Adds variables and commands relating to the master server.
   *
-  * \sa cv_masterserver, cv_rendezvousserver, cv_servername,
+  * \sa cv_masterserver, cv_servername,
   *     Command_Listserv_f
   */
 void AddMServCommands(void)

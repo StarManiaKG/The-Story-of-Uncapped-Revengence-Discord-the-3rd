@@ -153,8 +153,8 @@ typedef enum
 	XD_LUAVAR,      // 23
 	XD_LUAFILE,     // 24
 	// STAR STUFF //
-	//XD_TSOURDT3RD,// 25
-	// MESS OVER //
+	XD_TSOURDT3RD,	// 25
+	// THIS MESS IS NOW OVER //
 	MAXNETXCMD
 } netxcmd_t;
 

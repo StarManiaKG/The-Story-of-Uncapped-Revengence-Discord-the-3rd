@@ -3,9 +3,9 @@
 
 **Latest Release:** [![latest release](https://badgen.net/github/release/starmaniakg/the-story-of-uncapped-revengence-discord-the-3rd/stable)](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/releases/latest)
 
-[![Build status](https://ci.appveyor.com/api/projects/status/399d4hcw9yy7hg2y?svg=true)](https://ci.appveyor.com/project/STJr/srb2)
-[![Build status](https://travis-ci.org/STJr/SRB2.svg?branch=master)](https://travis-ci.org/STJr/SRB2)
-[![CircleCI](https://circleci.com/gh/STJr/SRB2/tree/master.svg?style=svg)](https://circleci.com/gh/STJr/SRB2/tree/master)
+[![Vanilla SRB2's Build status](https://ci.appveyor.com/api/projects/status/399d4hcw9yy7hg2y?svg=true)](https://ci.appveyor.com/project/STJr/srb2)
+[![Vanilla SRB2's Build status](https://travis-ci.org/STJr/SRB2.svg?branch=master)](https://travis-ci.org/STJr/SRB2)
+[![Vanilla SRB2's CircleCI](https://circleci.com/gh/STJr/SRB2/tree/master.svg?style=svg)](https://circleci.com/gh/STJr/SRB2/tree/master)
 
 [Sonic Robo Blast 2](https://srb2.org/) is a 3D Sonic the Hedgehog fangame based on a modified version of [Doom Legacy](http://doomlegacy.sourceforge.net/), and [This Custom Build](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd) is based upon those.
 
@@ -13,22 +13,20 @@
   - ```main``` - Holds all the current, stable, TSoURDt3RD code
   - ```unstablemain``` - Holds all the extremely current, but unstable, TSoURDt3RD code
   - ```main-2.1.25``` - Holds all the current, stable, TSoURDt3RD 2.1.25 code
-  - ```androidmain``` - Holds all the current, stable, TSoURDt3RD android code
+  - ```androidmain``` - Holds all the current, stable, TSoURDt3RD Android code
 
 ## Features
 **NEW FEATURES**
-  - Uncapped, Technically Now In Vanilla SRB2, Is Included, And Was Featured In This Build Early Enough For Me To Call It A "New Feature"
-    - (Made by Eidolon, Found [here](https://git.do.srb2.org/ShaderWraith/SRB2/-/tree/uncappedrevengeance))
+  - Uncapped, Now In Vanilla SRB2, Is Included, And Was Featured In This Build Early Enough For Me To Call It A "New Feature"
+    - (By Eidolon, Original Source Code found [here](https://git.do.srb2.org/ShaderWraith/SRB2/-/tree/uncappedrevengeance))
     
       - Currently Supported Characters:
-        - Sonic
-		- Super Sonic
+        - Sonic, Super Sonic, Sonic & Tails
         - Tails
         - Knuckles
         - Amy
         - Fang
         - Metal Sonic
-        - Sonic & Tails
         - Adventure Sonic
         - Shadow
         - Skip
@@ -48,70 +46,92 @@
         - Speccy
 	   
 	  - Currently Supported Charatcer Portraits:
-        - CSS Portraits
-    	- Continue Sprite Portraits
-    	- Life Icon Portraits
+        - CSS Portraits & Super CSS Portraits
+    	- Continue Sprite Portraits & Super Continue Sprite Portraits
+    	- Life Icon Portraits & Super Life Icon Portraits
     
     ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/uncapped.gif?raw=true)
 
   - Custom Discord Settings, Commands, and Options, with Custom Character Support
-    - (Based on Original code by the Kart Krew and Fafabis, found [here](https://git.do.srb2.org/Fafabis/SRB2/-/tree/discord))
+    - (Original Source Code by the Kart Krew and Fafabis, can be found [here](https://git.do.srb2.org/Fafabis/SRB2/-/tree/discord))
     
     ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/discord.png?raw=true)
 
-  - Custom Build Options, Featuring More Savedata, Server, and Extra Options
-    - (Holepunching and Extra Features Made by StarManiaKG)
+  - Custom Build Options, directed towards Saves, Servers, and Extra Features
+    - (Holepunching Ported from SRB2 Kart by Me)
+    - (Original Leavebug Fix Coded by flarn2006)
+    - Here's a General Overview on the Other Extra Features this Build Offers:
+        - Legacy Features, such as
+          - Startup Screens
+          - Commands
+          - Graphics
+          - Holiday Events
+        - Game and Engine Modifying Features, such as
+          - Realistic Shadows
+        - Audio Features, such as
+          - Customizable Jingle Music
+        - Savefile Features, such as
+          - Perfect Saves
+          - Continues
+          - The Ability to Store Savefiles in Folders
+        - Server Features, such as
+          - A Removed SOCK_SEND Error
+          - Holepunching
+          - The Ability to Change Your Character While Moving
+        - Miscellaneous Features, such as
+          - Extra Events and Event Features
+          - QoL Changes and Features
     
     ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/tsourdt3rd.png?raw=true)
 
-  - Palette Rendering (Software Palette in OpenGL)
-    - (Made by Hannu Hanhi, Found [here](https://git.do.srb2.org/Hannu_Hanhi/SRB2/-/tree/ogl-palette-rendering))
+  - Palette Rendering
+    - (Software Palette in OpenGL)
+    - (Made by Hannu Hanhi, source code found [here](https://git.do.srb2.org/Hannu_Hanhi/SRB2/-/tree/ogl-palette-rendering))
     
     ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/paletterendering.gif?raw=true)
 
   - Autoloading Addons
-    - (Made by StarManiaKG)
-    
+    - (Made by Me)
+
     - Using Right Shift over an add-on or folder in the add-ons menu allows you to select add-ons or folders that will autoload when SRB2 first starts up.
+
     - This feature also allows you to bypass modifiedgame checks when the game first starts up, allowing you to play all the add-ons you want, in whatever savefiles or modes you want.
+
+    - This feature also creates new savefiles for whenever autoloading is active, meaning that your normal savefiles are safe and secure. Your gamedata is still used and intact, however.
     
     - To stop certain, or all, addons from autoloading on startup, look at the ```autoload.cfg``` file, located in your SRB2 directory, and remove the add-ons and folder names there.
-    - Autoloading add-ons still does affect netgames and the ability to join them, though. You still need to relaunch with the base IWADS loaded in other to join other netgames.
+    
+    - Autoloading add-ons still does affect netgames and the ability to join them, though. If you've loaded game-changig add-ons, you still need to relaunch with the base IWADS loaded in other to join other netgames.
     
     ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/autoloading.gif?raw=true)
-    -   NOTE: You may want to back up your savefiles when using this feature, just in case. Bu I'm not the boss, though, you are.
 
   - A Jukebox
-    - (Made by StarManiaKG)
+    - (Made by Me)
     
     - Play any of your favorite songs, even during a game, all from the comfort of your own Jukebox.
+    
     - (You need to have the Sound Test unlocked in order to use this feature.)
     
     - How To Add Custom Music to the Jukebox
       - First, you need to have the ```jukebox.pk3``` file and your custom music on hand. Make sure your music is in the proper format.
       - Then, you need to add your music to the ```jukebox.pk3``` file.
       - Lastly, open the ```MUSICDEF``` file within ```jukebox.pk3``` and add your custom music to that file. If you need to, use some of the pre-existing lumps in the ```MUSICDEF``` file as an example on how to add your music to the file.
-    
-    ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/jukebox.gif?raw=true)
-    
-    
-  - ...And More Annoyances!
+        - Make Sure you Name the Files Correctly. Remember that The First Two Characters in the Name of a Music Lump, I.E O_ or D_, Are Exempted From the Lump Name in the ```MUSICDEF`` file, with the Other Characters Being Required in that Field.
+      - Alternatively, you could just follow this SRB2 Wiki tutorial on how to create ```MUSICDEF``` files.
 
-**FEATURES THAT WORK WITH ENOUGH EFFORT**
-  - Holepunching; Requires Vanilla-SRB2 Based Relay Server, Kart Krew's Most Likely Won't Work
-  - ...And A Few More Annoyances!
+    ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/jukebox.gif?raw=true)
 
 **WIP FEATURES (MOST LIKELY CAN BE FOUND ON OTHER BRANCHES)**
-  - Discord's Game SDK (it compiles fine, nothing's just there yet :P)
+  - Discord's Game SDK (it compiles fine, but nothing's there yet :P)
   - Android Support (currently at the extremely bare minimum :P)
-  - ...And Even More Annoyances, Most Likely!
+  - ...And Even Some Annoyances!
 
 **FUTURE FEATURES (WITH ENOUGH TIME IN THE OVEN)**
   - Netplus (really on a limb here)
-  - Dynamic Resolutions (an annoyance to port from srb2 2.2.6 to 2.2.11)
-  - Software Models (an annoyance to port just like Dynamic Resolutions)
+  - Dynamic Resolutions (annoying to port from SRB2 v2.2.6 to v2.2.11)
+  - Software Models (its going to be annoying to port, just like the above)
   - MP4 Support (this is all lj sonic's fault, because he inspired me to do this, and i'm definitely not doing this of my own volition)
-  - ...And A Boatload of More Annoyances!
+  - ...And A Boatload of Even More Annoyances!
       
 ## Dependencies
 **NECESSARY DEPENDENCIES**

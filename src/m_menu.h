@@ -145,6 +145,8 @@ typedef enum
 	// FUN STAR STUFF //
 	MN_TSOURDT3RD_README,
 	
+	MN_MP_EXTENDEDSERVERPROPERTIES,
+	
 	MN_OP_TSOURDT3RD,
 	
 	MN_OP_TSOURDT3RD_JUKEBOX,
@@ -512,6 +514,7 @@ UINT16 M_GetColorBefore(UINT16 color);
 UINT16 M_GetColorAfter(UINT16 color);
 void M_InitPlayerSetupColors(void);
 void M_FreePlayerSetupColors(void);
+
 // STAR STUFF SUBISHUHFLUKJDJIPOKD //
 // main build menu stuff
 extern boolean AllowTypicalTimeOver;
@@ -535,6 +538,7 @@ extern consvar_t cv_shieldblockstransformation, cv_armageddonnukesuper, cv_alway
 extern consvar_t cv_jukeboxhud, cv_luacanstopthejukebox, cv_jukeboxspeed;
 
 extern consvar_t cv_alloweasteregghunt, cv_easteregghuntbonuses;
+extern consvar_t cv_windowtitletype, cv_customwindowtitle, cv_memesonwindowtitle;
 
 extern UINT16 menuColor[16];
 

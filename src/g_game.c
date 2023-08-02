@@ -3952,7 +3952,7 @@ static void G_HandleSaveLevel(void)
 	if (cv_storesavesinfolders.value)
 	{
 		I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER, srb2home), 0755);
-		if (useTSOURDT3RDasFileName)
+		if (TSoURDt3rd_useAsFileName)
 		{
 			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd", srb2home), 0755);
 			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd" PATHSEP "%s", srb2home, timeattackfolder), 0755);
@@ -4263,7 +4263,7 @@ static void G_DoContinued(void)
 	if (cv_storesavesinfolders.value)
 	{
 		I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER, srb2home), 0755);
-		if (useTSOURDT3RDasFileName)
+		if (TSoURDt3rd_useAsFileName)
 		{
 			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd", srb2home), 0755);
 			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd" PATHSEP "%s", srb2home, timeattackfolder), 0755);
@@ -4285,6 +4285,11 @@ static void G_DoContinued(void)
 
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
+#endif
+#ifdef HAVE_SDL
+	// STAR STUFF //
+	STAR_SetWindowTitle();
+	// END THAT //
 #endif
 }
 
@@ -4535,12 +4540,12 @@ void G_SaveGameData(void)
 		return;
 	}
 
+	// STAR STUFF //
+	STAR_WriteExtraData();
+	// VIVA LA AUTOLOADING //
+
 	if (modifiedgame && !savemoddata)
 	{
-		// STAR STUFF //
-		STAR_WriteExtraData();
-		// END MY DUMB STUFF //
-
 		free(savebuffer);
 		save_p = savebuffer = NULL;
 		return;
@@ -4638,10 +4643,6 @@ void G_SaveGameData(void)
 	FIL_WriteFile(va(pandf, srb2home, gamedatafilename), savebuffer, length);
 	free(savebuffer);
 	save_p = savebuffer = NULL;
-
-	// STAR STUFF //
-	STAR_WriteExtraData();
-	// VIVA LA AUTOLOADING //
 }
 
 #define VERSIONSIZE 16
@@ -5354,6 +5355,11 @@ void G_SetGamestate(gamestate_t newstate)
 
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
+#endif
+#ifdef HAVE_SDL
+	// STAR STUFF //
+	STAR_SetWindowTitle();
+	// END THAT //
 #endif
 }
 

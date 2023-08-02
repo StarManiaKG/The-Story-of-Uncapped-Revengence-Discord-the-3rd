@@ -60,8 +60,6 @@ extern INT32 extrawads;                 // Star: Using Extra Optional Wads
 extern boolean autoloading;             // Star: Autoloading Wads
 extern boolean autoloaded;              // Star: Have We Autoloaded Any Game-Changing Mods?
 
-extern boolean doWarp;                  // Star: Autoloading into Maps
-
 // Events
 extern boolean aprilfoolsmode; 		    // April Fools Event Setter
 extern boolean eastermode;				// Easter Event Setter
@@ -69,4 +67,4 @@ extern boolean xmasmode, xmasoverride;	// Christmas Event Setter
 
 // Savefiles
 extern consvar_t cv_storesavesinfolders;
-extern boolean useTSOURDT3RDasFileName;
+extern boolean TSoURDt3rd_useAsFileName;

@@ -21,9 +21,6 @@
 // the original aspect ratio of Doom graphics isn't square
 #define ORIGINAL_ASPECT (320.0f/200.0f)
 
-// Uncomment this to enable the OpenGL loading screen
-//#define HWR_LOADING_SCREEN
-
 // -----------
 // structures
 // -----------
@@ -104,6 +101,10 @@ void HWR_InitPolyPool(void);
 void HWR_FreePolyPool(void);
 
 void HWR_FreeExtraSubsectors(void);
+
+// STAR STUFF: UNVAULTED EDITION //
+void STAR_LoadingStatus(boolean opengl);
+// END THIS FOR ME PLEASE //
 
 // --------
 // hw_cache.c

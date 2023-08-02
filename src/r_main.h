@@ -113,7 +113,7 @@ extern consvar_t cv_homremoval;
 extern consvar_t cv_chasecam, cv_chasecam2;
 extern consvar_t cv_flipcam, cv_flipcam2;
 
-extern consvar_t cv_shadow;
+extern consvar_t cv_shadow, cv_realisticshadowscanrotate; // STAR NOTE: i was here lol
 extern consvar_t cv_ffloorclip;
 extern consvar_t cv_translucency;
 extern consvar_t cv_drawdist, cv_drawdist_nights, cv_drawdist_precip;

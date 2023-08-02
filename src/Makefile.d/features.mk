@@ -62,15 +62,20 @@ ifdef HAVE_DISCORDRPC
 libs+=-ldiscord-rpc
 CFLAGS+=-DHAVE_DISCORDRPC -DUSE_STUN
 opts+=-DHAVE_DISCORDRPC -DUSE_STUN
-OBJS+=$(OBJDIR)/discord.o $(OBJDIR)/stun.o
 sources+=discord.c stun.c
 endif
 
 ifdef HAVE_DISCORDGAMESDK
-CFLAGS+=-DHAVE_DISCORDGAMESDK
-opts+=-DHAVE_DISCORDGAMESDK
-OBJS+=$(OBJDIR)/discord_gamesdk.o
-sources+=discord_gamesdk.c
+CFLAGS+=-DHAVE_DISCORDGAMESDK -DUSE_STUN
+opts+=-DHAVE_DISCORDGAMESDK -DUSE_STUN
+sources+=discord_gamesdk.c stun.c
+endif
+
+ifdef HAVE_LIBAV
+libs+=-lm -lz -lavcodec -lavdevice -lavfilter -lavformat -lavresample -lavutil -lswscale
+CFLAGS+=-DHAVE_LIBAV
+opts+=-DHAVE_LIBAV
+sources+=$(call List,libav/Sourcefile)
 endif
 
 # (Valgrind is a memory debugger.)

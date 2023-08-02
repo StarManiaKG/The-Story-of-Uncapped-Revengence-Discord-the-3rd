@@ -555,7 +555,9 @@ void I_Error(const char *error, ...)
 	char txt[8192];
 
 #ifdef HAVE_DISCORDRPC
+	// DO DISCORD STUFFS, WINDOWS EDITION //
 	DRPC_Shutdown();
+	// ENDED THE DISCORD STUFFS, WINDOWS EDITION //
 #endif
 
 	// DO STAR STUFF, WINDOWS EDITION //
@@ -697,13 +699,15 @@ void I_Quit(void)
 	DWORD mode;
 
 #ifdef HAVE_DISCORDRPC
+	// DO DISCORD STUFFS AGAIN, WINDOWS EDITION //
 	DRPC_Shutdown();
+	// DID THE DISCORD STUFFS AGAIN, WINDOWS EDITION //
 #endif
 
-	// DID STAR STUFF //
+	// DO STAR STUFF AGAIN, WINDOWS EDITION //
 	if (netgame)
 		STAR_ResetProblematicCommandsAfterNetgames();
-	// PLEASE HELP ME //
+	// PLEASE HELP ME AGAIN, WINDOWS EDITION //
 
 	// when recording a demo, should exit using 'q',
 	// but sometimes we forget and use Alt+F4, so save here too.
@@ -3058,8 +3062,8 @@ void I_UpdateMumble(const mobj_t *mobj, const listener_t listener)
 		return;
 
 	if(mumble->uiVersion != 2) {
-		wcsncpy(mumble->name, L"SRB2 "VERSIONSTRINGW, 256);
-		wcsncpy(mumble->description, L"Sonic Robo Blast 2 with integrated Mumble Link support.", 2048);
+		wcsncpy(mumble->name, L"SRB2 "VERSIONSTRINGW"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING, 256);
+		wcsncpy(mumble->description, L"Sonic Robo Blast 2; TSoURDt3rd with integrated Mumble Link support.", 2048);
 		mumble->uiVersion = 2;
 	}
 	mumble->uiTick++;
