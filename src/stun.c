@@ -42,7 +42,7 @@ static stun_callback_t stun_callback;
 #define BIND_REQUEST  0x0001
 #define BIND_RESPONSE 0x0101
 
-static const UINT32 MAGIC_COOKIE = MSBF_LONG (0x2112A442);
+static const UINT32 MAGIC_COOKIE = LONG (0x2112A442);
 
 static char transaction_id[12];
 
@@ -109,7 +109,7 @@ STUN_bind (stun_callback_t callback)
 {
 	/* 6. STUN Message Structure */
 
-	const UINT16 type = MSBF_SHORT (BIND_REQUEST);
+	const UINT16 type = SHORT (BIND_REQUEST);
 
 	const SINT8 node = STUN_node();
 
@@ -150,8 +150,8 @@ static size_t
 STUN_parse_attribute (const char * const attribute)
 {
 	/* 15. STUN Attributes */
-	const UINT16 type   = MSBF_SHORT (*(const UINT16 *)&attribute[0]);
-	const UINT16 length = MSBF_SHORT (*(const UINT16 *)&attribute[2]);
+	const UINT16 type   = SHORT (*(const UINT16 *)&attribute[0]);
+	const UINT16 length = SHORT (*(const UINT16 *)&attribute[2]);
 
 	/* 15.2 XOR-MAPPED-ADDRESS */
 	if (
@@ -199,8 +199,8 @@ STUN_got_response
 			*(const UINT32 *)&buffer[4] == MAGIC_COOKIE &&
 			memcmp(&buffer[8], transaction_id, 12U) == 0
 	){
-		type   = MSBF_SHORT (*(const UINT16 *)&buffer[0]);
-		length = MSBF_SHORT (*(const UINT16 *)&buffer[2]);
+		type   = SHORT (*(const UINT16 *)&buffer[0]);
+		length = SHORT (*(const UINT16 *)&buffer[2]);
 
 		if (
 				(type >> 14)    == 0U &&

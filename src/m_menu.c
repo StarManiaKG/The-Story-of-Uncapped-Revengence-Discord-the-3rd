@@ -15833,7 +15833,7 @@ static INT32 quitsounds[] =
 };
 
 // JUST KIDDING, MORE STAR STUFF //
-static const char *quitGraphic[5] = {
+static const char *quitGraphic[] = {
 	[0] = "GAMEQUIT", 	// Demo 3 Quit Screen Tails 06-16-2001
 	"COLORQUIT",		// aseprite moment
 	
