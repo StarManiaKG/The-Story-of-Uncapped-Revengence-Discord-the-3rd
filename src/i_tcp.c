@@ -145,6 +145,14 @@
 #include "d_clisrv.h"
 // END OF THAT //
 
+// HOLEPUNCHING STUFFS //
+#include "i_time.h"
+// END THAT PLEASE //
+
+// STUN STUFFS //
+#include "stun.h"
+// END THAT ALSO //
+
 // win32
 #ifdef USE_WINSOCK
 	// winsock stuff (in winsock a socket is not a file)
@@ -185,7 +193,7 @@
 	static UINT8 bannedmask[MAXBANS];
 	// HOLEPUNCHING STUFFS //
 	/* See ../doc/Holepunch-Protocol.txt */
-	static const INT32 hole_punch_magic = MSBF_LONG (0x52eb11);
+	static const INT32 hole_punch_magic = LONG (0x52eb11);
 	// END THE MAGIC HERE //
 #endif
 
