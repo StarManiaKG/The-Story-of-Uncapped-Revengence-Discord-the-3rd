@@ -28,16 +28,19 @@
 #include "m_misc.h"
 #include "v_video.h" // video flags for CEchos
 #include "f_finale.h"
-#include "m_menu.h" // jukebox thingies
 
 #ifdef HAVE_DISCORDRPC
+// DISCORD STUFFS //
 #include "discord.h"
+// END THAT //
 #endif
 
 // STAR STUFF //
 #include "STAR/star_vars.h"
+
 #include "d_main.h"
 #include "deh_soc.h"
+#include "m_menu.h" // jukebox thingies
 // END OF THAT //
 
 // CTF player names
@@ -253,7 +256,7 @@ void P_DoNightsScore(player_t *player)
 //
 // Checks if you have all 7 pw_emeralds, then turns you "super". =P
 //
-boolean all7matchemeralds;
+boolean all7matchemeralds; // STAR NOTE: needed for some discord texts
 void P_DoMatchSuper(player_t *player)
 {
 	UINT16 match_emeralds = player->powers[pw_emeralds];
@@ -273,14 +276,16 @@ void P_DoMatchSuper(player_t *player)
 		return;
 
 	// Got 'em all? Turn "super"!
+	// STAR STUFF //
 	all7matchemeralds = true;
+	// END THAT //
 	emeraldspawndelay = invulntics + 1;
 	player->powers[pw_emeralds] = 0;
 	player->powers[pw_invulnerability] = emeraldspawndelay;
 	player->powers[pw_sneakers] = emeraldspawndelay;
 	if (P_IsLocalPlayer(player) && !player->powers[pw_super])
 	{
-		if (!jukeboxMusicPlaying)
+		if (!jukeboxMusicPlaying) // STAR NOTE: i was here lol
 			S_StopMusic();
 		if (mariomode)
 			G_GhostAddColor(GHC_INVINCIBLE);
@@ -299,13 +304,15 @@ void P_DoMatchSuper(player_t *player)
 			if (playeringame[i] && players[i].ctfteam == player->ctfteam
 			&& players[i].powers[pw_emeralds] != 0)
 			{
+				// STAR STUFF //
 				all7matchemeralds = true;
+				// END THAT //
 				players[i].powers[pw_emeralds] = 0;
 				player->powers[pw_invulnerability] = invulntics + 1;
 				player->powers[pw_sneakers] = player->powers[pw_invulnerability];
 				if (P_IsLocalPlayer(player) && !player->powers[pw_super])
 				{
-					if (!jukeboxMusicPlaying)
+					if (!jukeboxMusicPlaying) // STAR NOTE: i was here lol
 						S_StopMusic();
 					if (mariomode)
 						G_GhostAddColor(GHC_INVINCIBLE);
@@ -317,7 +324,9 @@ void P_DoMatchSuper(player_t *player)
 
 
 #ifdef HAVE_DISCORDRPC
+	// DISCORD STUFFS //
 	DRPC_UpdatePresence();
+	// END THAT PLEASE //
 #endif
 }
 
@@ -678,7 +687,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				else
 					S_StartSound(toucher, sfx_chchng);
 				
-				P_GiveCoopLives(player, 1, true); // now, you should always give a life, since we're using this custom build!
+				P_GiveCoopLives(player, 1, true); // STAR NOTE: now, you should always give a life, since we're using this build!
 			}
 			else
 			{
@@ -782,6 +791,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 //				return;
 			{
 				UINT8 flagteam = (special->type == MT_REDFLAG) ? 1 : 2;
+				sectorspecialflags_t specialflag = (special->type == MT_REDFLAG) ? SSF_REDTEAMBASE : SSF_BLUETEAMBASE;
 				const char *flagtext;
 				char flagcolor;
 				char plname[MAXPLAYERNAME+4];
@@ -811,7 +821,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 						special->fuse = 1;
 						special->flags2 |= MF2_JUSTATTACKED;
 
-						if (!P_PlayerTouchingSectorSpecial(player, 4, 2 + flagteam))
+						if (!P_PlayerTouchingSectorSpecialFlag(player, specialflag))
 						{
 							CONS_Printf(M_GetText("%s returned the %c%s%c to base.\n"), plname, flagcolor, flagtext, 0x80);
 
@@ -1400,19 +1410,14 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			return;
 		case MT_AXE:
 			{
-				line_t junk;
 				thinker_t  *th;
 				mobj_t *mo2;
 
 				if (player->bot && player->bot != BOT_MPAI)
 					return;
 
-				// Initialize my junk
-				junk.tags.tags = NULL;
-				junk.tags.count = 0;
-
-				Tag_FSet(&junk.tags, LE_AXE);
-				EV_DoElevator(&junk, bridgeFall, false);
+				if (special->spawnpoint)
+					EV_DoElevator(special->spawnpoint->args[0], NULL, bridgeFall);
 
 				// scan the remaining thinkers to find koopa
 				for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
@@ -1461,7 +1466,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 // Misc touchables //
 // *************** //
 		case MT_STARPOST:
-			P_TouchStarPost(special, player, special->spawnpoint && (special->spawnpoint->options & MTF_OBJECTSPECIAL));
+			P_TouchStarPost(special, player, special->spawnpoint && special->spawnpoint->args[1]);
 			return;
 
 		case MT_FAKEMOBILE:
@@ -2574,7 +2579,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 		if ((target->player->lives <= 1) && (netgame || multiplayer) && G_GametypeUsesCoopLives() && (cv_cooplives.value == 0))
 			;
-		else if ((!target->player->bot || target->player->bot == BOT_MPAI) && !target->player->spectator && ((target->player->lives != INFLIVES) || timeover)
+		else if ((!target->player->bot || target->player->bot == BOT_MPAI) && !target->player->spectator && ((target->player->lives != INFLIVES) || timeover) // STAR NOTE: i was here lol
 		 && G_GametypeUsesLives())
 		{
 			if (!(target->player->pflags & PF_FINISHED))
@@ -2601,7 +2606,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 					gameovermus = true;
 
 				if (gameovermus) // Yousa dead now, Okieday? Tails 03-14-2000
-					S_ChangeMusicEx(gameoverMusic[cv_gameovermusic.value], 0, 0, 0, (2*MUSICRATE) - (MUSICRATE/25), 0); // 1.96 seconds
+					S_ChangeMusicEx(gameoverMusic[cv_gameovermusic.value], 0, 0, 0, (2*MUSICRATE) - (MUSICRATE/25), 0); // 1.96 seconds (STAR NOTE: i was here too lol)
 					//P_PlayJingle(target->player, JT_GOVER); // can't be used because incompatible with track fadeout
 
 				// STAR STUFF //
@@ -2812,7 +2817,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 		case MT_BLASTEXECUTOR:
 			if (target->spawnpoint)
-				P_LinedefExecute(target->spawnpoint->angle, (source ? source : inflictor), target->subsector->sector);
+				P_LinedefExecute(target->spawnpoint->args[0], (source ? source : inflictor), target->subsector->sector);
 			break;
 
 		case MT_SPINBOBERT:

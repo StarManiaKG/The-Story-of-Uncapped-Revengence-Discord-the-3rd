@@ -24,14 +24,14 @@
 #include "w_wad.h"
 #include "z_zone.h"
 
+#include "i_time.h"
 #include "i_system.h"
 #include "i_threads.h"
 #include "m_menu.h"
 #include "console.h"
 #include "d_main.h"
 #include "g_game.h"
-#include "m_misc.h" // movie 
-#include "i_time.h"
+#include "m_misc.h" // movie mode
 
 #include "doomstat.h"
 
@@ -569,7 +569,7 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu)
 			if (rendermode == render_opengl)
 			{
 				// send in the wipe type and wipe frame because we need to cache the graphic
-				HWR_DoWipe(wipetype, wipeframe-1);
+				HWR_DoTintedWipe(wipetype, wipeframe-1);
 			}
 			else
 #endif

@@ -73,7 +73,7 @@ consvar_t cv_rendezvousserver = CVAR_INIT ("holepunchserver", "jart-dev.jameds.o
 
 static CV_PossibleValue_t socksendlimit_t[] = {{1, "MIN"}, {10, "MAX"}, {0, NULL}};
 consvar_t cv_socksendlimit = CVAR_INIT("socksendlimit", "3", CV_SAVE, socksendlimit_t, NULL);
-// END THAT MESS
+// END THAT MESS //
 
 #if defined (MASTERSERVER) && defined (HAVE_THREADS)
 int           ms_QueryId;

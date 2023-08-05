@@ -54,10 +54,6 @@ precise_t I_GetPreciseTime(void);
   */
 UINT64 I_GetPrecisePrecision(void);
 
-/**	\brief	Converts a precise_t to microseconds and casts it to a 32 bit integer.
-  */
-int I_PreciseToMicros(precise_t d);
-
 /** \brief  Get the current time in rendering tics, including fractions.
 */
 double I_GetFrameTime(void);
@@ -231,7 +227,6 @@ void I_RemoveExitFunc(void (*func)());
 
 /**	\brief Setup signal handler, plus stuff for trapping errors and cleanly exit.
 */
-
 INT32 I_StartupSystem(void);
 
 /**	\brief Shutdown systems

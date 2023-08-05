@@ -490,12 +490,13 @@ void Addons_option_Onchange(void);
 // Moviemode menu updating
 void Moviemode_option_Onchange(void);
 
-// Discord menu updating
 #ifdef HAVE_DISCORDRPC
+// DISCORD STUFFS //
 extern boolean discordMenuOpen;
 void Discord_option_Onchange(void);
 
 void M_RefreshPauseMenu(void);
+// END THE DISCORD //
 #endif
 
 // Player Setup menu colors linked list

@@ -21,11 +21,11 @@
 #include "r_skins.h" // numskins
 #include "r_draw.h" // R_GetColorByName
 
-#include "m_menu.h" // menu coloring
-
 // STAR STUFF //
 #include "STAR/star_vars.h"
+
 #include "d_main.h"
+#include "m_menu.h" // menu coloring
 // END OF THAT //
 
 // Map triggers for linedef executors

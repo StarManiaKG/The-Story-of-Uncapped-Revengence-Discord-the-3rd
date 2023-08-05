@@ -20,7 +20,6 @@
 #include "i_system.h"
 #include "i_video.h"
 #include "d_net.h"
-#include "d_netcmd.h"
 #include "d_main.h"
 #include "g_game.h"
 #include "st_stuff.h"
@@ -59,7 +58,9 @@
 #endif
 
 #ifdef HAVE_DISCORDRPC
+// DISCORD STUFF //
 #include "discord.h"
+// END THIS PLEASE //
 #endif
 
 // STAR STUFF //
@@ -554,6 +555,7 @@ static cl_mode_t cl_mode = CL_SEARCHING;
 
 static UINT16 cl_lastcheckedfilecount = 0;	// used for full file list
 
+// STAR NOTE: i edited some snake stuff, some of it is handled in d_clisrv.h :) //
 static const char *snake_bonuspatches[] = {
 	NULL,
 	"DL_SLOW",

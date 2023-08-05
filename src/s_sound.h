@@ -183,7 +183,7 @@ boolean S_SpeedMusic(float speed);
 typedef struct musicdef_s
 {
 	char name[7];
-	char title[34];
+	char title[34];	// STAR NOTE: i was here, and changed this for jukebox purposes lol (if you want to, though, you can reset it back to 32)
 	char alttitle[64];
 	char authors[256];
 	//char usage[256]; -- probably never going to be relevant to vanilla

@@ -30,7 +30,7 @@
 #include "m_misc.h" // for tunes command
 #include "m_cond.h" // for conditionsets
 #include "lua_hook.h" // MusicChange hook
-#include "m_menu.h" // Jukeboxes
+#include "m_menu.h" // STAR STUFF: Jukeboxes
 
 #ifdef HW3SOUND
 // 3D Sound Interface
@@ -2263,7 +2263,7 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 
 	if (S_MusicDisabled())
 		return;
-	
+
 	// STAR STUFF //
 	if (jukeboxMusicPlaying)
 	{
@@ -2330,10 +2330,10 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 }
 
 void S_StopMusic(void)
-{	
+{
 	if (!I_SongPlaying())
 		return;
-	
+
 	// STAR SPECIFIC STUFF //
 	if (jukeboxMusicPlaying)
 	{
@@ -2441,7 +2441,7 @@ boolean S_FadeMusicFromVolume(UINT8 target_volume, INT16 source_volume, UINT32 m
 	if (jukeboxMusicPlaying)
 		return false;
 	// END STAR STUFF LOL //
-		
+
 	if (source_volume < 0)
 		return I_FadeSong(target_volume, ms, NULL);
 	else
@@ -2603,7 +2603,7 @@ static void Command_RestartAudio_f(void)
 	// STAR STUFF FOR REASONS I GUESS //
 	if (jukeboxMusicPlaying)
 		M_ResetJukebox();
-	// FINE, I'LL LET YOU DO IT HERE... //
+	// FINE, I'LL LET YOU STOP IT HERE... //
 }
 
 void GameSounds_OnChange(void)
@@ -2640,7 +2640,7 @@ void GameDigiMusic_OnChange(void)
 
 		if (Playing())
 			P_RestoreMusic(&players[consoleplayer]);
-		else if ((!cv_musicpref.value || midi_disabled) && S_DigExists("_clear") && titlemapinaction && menuactive) // hack, prevent's errors from screaming at us
+		else if ((!cv_musicpref.value || midi_disabled) && S_DigExists("_clear")) /* STAR NOTE: i'll leave this here for now (titlemapinaction && menuactive) */
 			S_ChangeMusicInternal("_clear", false);
 	}
 	else
@@ -2653,7 +2653,7 @@ void GameDigiMusic_OnChange(void)
 			{
 				if (Playing())
 					P_RestoreMusic(&players[consoleplayer]);
-				else if (titlemapinaction && menuactive) // hack, prevent's errors from screaming at us
+				else /* STAR NOTE: i'll also leave this here for now (titlemapinaction && menuactive) */
 					S_ChangeMusicInternal("_clear", false);
 			}
 		}
@@ -2675,7 +2675,7 @@ void GameMIDIMusic_OnChange(void)
 
 		if (Playing())
 			P_RestoreMusic(&players[consoleplayer]);
-		else if ((cv_musicpref.value || digital_disabled) && S_MIDIExists("_clear") && titlemapinaction && menuactive) // hack, prevent's errors from screaming at us
+		else if ((cv_musicpref.value || digital_disabled) && S_MIDIExists("_clear")) /* STAR NOTE: i'll leave this here for now too (titlemapinaction && menuactive) */
 			S_ChangeMusicInternal("_clear", false);
 	}
 	else
@@ -2688,7 +2688,7 @@ void GameMIDIMusic_OnChange(void)
 			{
 				if (Playing())
 					P_RestoreMusic(&players[consoleplayer]);
-				else if (titlemapinaction && menuactive) // hack, prevent's errors from screaming at us
+				else /* STAR NOTE: i'll leave this here for now as well (titlemapinaction && menuactive) */
 					S_ChangeMusicInternal("_clear", false);
 			}
 		}
@@ -2703,7 +2703,7 @@ void MusicPref_OnChange(void)
 
 	if (Playing())
 		P_RestoreMusic(&players[consoleplayer]);
-	else if (S_PrefAvailable(cv_musicpref.value, "_clear") && titlemapinaction && menuactive) // hack, prevent's errors from screaming at us
+	else if (S_PrefAvailable(cv_musicpref.value, "_clear")) /* STAR NOTE: i'll also leave this here for now, just in case (titlemapinaction && menuactive) */
 		S_ChangeMusicInternal("_clear", false);
 }
 

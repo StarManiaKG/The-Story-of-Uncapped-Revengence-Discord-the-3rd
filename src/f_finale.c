@@ -635,7 +635,7 @@ void F_IntroDrawer(void)
 	}
 	else if (intro_scenenum == 0) // The Scene/Wipe Before the Start of the Intro
 	{
-		if (!cv_stjrintro.value) // STJR Presents
+		if (!cv_stjrintro.value) // STAR NOTE: STJR Presents
 		{
 			if (intro_curtime > 1 && intro_curtime < (INT32)introscenetime[intro_scenenum])
 			{
@@ -665,6 +665,8 @@ void F_IntroDrawer(void)
 				}
 			}
 		}
+		
+		// STAR STUFF //
 		else // "Waaaaaaah" intro
 		{
 			strncpy(stjrintro, "STJRI029", 9); // Move the Frames of the Graphic Along While The Pure Fat is Fattening, So The Graphic Is At It's Final Frame When Shown
@@ -757,6 +759,8 @@ void F_IntroDrawer(void)
 					}
 				}
 			}
+			// END THAT //
+
 			else
 			{
 				background = W_CachePatchName(stjrintro, PU_PATCH_LOWPRIORITY);
@@ -1311,18 +1315,23 @@ static const char *credits[] = {
 	"Bill \"Tets\" Reed",
 	"",
 	"\1TSoURDt3rd Team",
-	"StarManiaKG \"Star\"",
-	"Mini the Bunnyboy \"Talis\"",
+	"StarManiaKG \"Star\" - Creator",
+	"Mini the Bunnyboy \"Talis\" - Co-Creator",
 	"",
 	"\1TSoURDt3rd Extras",
-	"Speccy - Emotional Support, Ideas",
-	"Zeno/Uukoo/Fen - Emotional Support, Ideas",
-	"NARBluebear - Emotional Support",
-	"Smiles \"The Fox\" - Emotional Support",
-	"\"Team Comet\" - Emotional Support",
+	"Speccy \"Supeki\" - Emotional Support, Ideas",
+	"\t\t(She Also Formed the Idea of This Menu)",
+	"",
+	"OVAPico - Voluntary Tester, Ideas",
+	"The Gamer Gang - Voluntary Testers",
+	"\t\t(Provided Emotional Support and Ideas too)",
+	"",
+	"NARBluebear - Best Friend",
+	"\t\t(Also Provided Emotional Support and All)",
+	"\"Future\" Smiles \"The Fox\" - Emotional Support",
 	"",
 	"\1In Loving Memory Of",
-	"MarioMario \"Sapphire\" - TSoURDt3rd Member",
+	"MarioMario \"Sapphire\" - Creator",
 	"",
 	"\1Special Thanks",
 	"id Software",
@@ -1797,7 +1806,7 @@ void F_GameEvaluationTicker(void)
 
 			if (M_UpdateUnlockablesAndExtraEmblems())
 				S_StartSound(NULL, sfx_s3k68);
-			
+
 			// STAR STUFF //
 			if (cv_storesavesinfolders.value)
 			{
@@ -3288,7 +3297,7 @@ void F_TitleScreenDrawer(void)
 
 			if ((finalecount >= SONICSTART)
 #ifdef APRIL_FOOLS
-				&& (!cv_ultimatemode.value)
+				&& (!cv_ultimatemode.value) // STAR NOTE: i was here lol
 #endif
 			)
 			{
@@ -3463,7 +3472,7 @@ void F_TitleScreenDrawer(void)
 
 			if ((finalecount >= SONICSTART)
 #ifdef APRIL_FOOLS
-				&& (!cv_ultimatemode.value)
+				&& (!cv_ultimatemode.value) // STAR NOTE: i was also here lol
 #endif
 			)
 			{
@@ -3898,9 +3907,9 @@ void F_ContinueDrawer(void)
 	if (continuetime > ((3*TICRATE) - 10))
 		V_DrawFadeScreen(0, (continuetime - ((3*TICRATE) - 10)));
 
-	// OOH STAR STUFF //
+	// STAR STUFF //
 	ST_drawJukebox();
-	// END OF THAT //
+	// OOH, WHAT DOES THIS STAR STUFF DO? //
 }
 
 void F_ContinueTicker(void)
@@ -4006,7 +4015,7 @@ boolean F_ContinueResponder(event_t *event)
 	keypressed = true;
 	imcontinuing = true;
 	S_StartSound(NULL, sfx_kc6b);
-	if (!jukeboxMusicPlaying)
+	if (!jukeboxMusicPlaying) // STAR NOTE: hi, i was here again lol
 		I_FadeSong(0, MUSICRATE, &S_StopMusic);
 
 	return true;

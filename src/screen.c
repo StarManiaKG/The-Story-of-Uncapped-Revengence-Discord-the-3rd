@@ -15,8 +15,8 @@
 #include "screen.h"
 #include "console.h"
 #include "am_map.h"
-#include "i_system.h"
 #include "i_time.h"
+#include "i_system.h"
 #include "i_video.h"
 #include "r_local.h"
 #include "r_sky.h"
@@ -41,8 +41,12 @@
 #include "hardware/hw_model.h"
 #endif
 
+// SRB2Kart
 #include "r_fps.h" // R_GetFramerateCap
+
+// STAR STUFF //
 #include "m_menu.h" // fps coloring command
+// END THAT PLEASE //
 
 #if defined (USEASM) && !defined (NORUSEASM)//&& (!defined (_MSC_VER) || (_MSC_VER <= 1200))
 #define RUSEASM //MSC.NET can't patch itself
@@ -524,6 +528,7 @@ void SCR_CalculateFPS(void)
 #endif
 }
 
+// STAR STUFF //
 // Remember This From st_stuff.c? Yeah, I Reworked It!
 UINT16 positiveTicRateColor[16] = {
 	[0] = V_GREENMAP,
@@ -542,6 +547,7 @@ UINT16 positiveTicRateColor[16] = {
 	V_ROSYMAP,
 	V_INVERTMAP,
 };
+// BEP BEP //
 
 void SCR_DisplayTicRate(void)
 {
@@ -550,6 +556,7 @@ void SCR_DisplayTicRate(void)
 	UINT32 cap = R_GetFramerateCap();
 	double fps = round(averageFPS);
 
+	// STAR STUFF //
 	// TPS Specific
 	tic_t i;
 	tic_t ontic = I_GetTime();
@@ -557,11 +564,12 @@ void SCR_DisplayTicRate(void)
 	static tic_t lasttic;
 	static boolean ticsgraph[TICRATE];
 	INT32 tpscntcolor = 0;
+	// END THAT FOR NOW //
 
 	if (gamestate == GS_NULL)
 		return;
 
-	// FPS //
+	// FPS
 	if (cv_ticrate.value)
 	{
 		if (cap > 0)
@@ -602,7 +610,8 @@ void SCR_DisplayTicRate(void)
 		}
 	}
 
-	// TPS //
+	// STAR STUFF //
+	// TPS
 	if (cv_tpsrate.value)
 	{
 		for (i = lasttic + 1; i < TICRATE+lasttic && i < ontic; ++i)
@@ -639,6 +648,7 @@ void SCR_DisplayTicRate(void)
 
 		lasttic = ontic;
 	}
+	// END THAT //
 }
 
 void SCR_DisplayLocalPing(void)
@@ -646,7 +656,7 @@ void SCR_DisplayLocalPing(void)
 	UINT32 ping = playerpingtable[consoleplayer];	// consoleplayer's ping is everyone's ping in a splitnetgame :P
 	if (cv_showping.value == 1 || (cv_showping.value == 2 && servermaxping && ping > servermaxping))	// only show 2 (warning) if our ping is at a bad level
 	{
-		INT32 dispy = (((cv_ticrate.value && cv_tpsrate.value) || cv_tpsrate.value) ? 171 : (cv_ticrate.value ? 180 : 189));
+		INT32 dispy = (((cv_ticrate.value && cv_tpsrate.value) || cv_tpsrate.value) ? 171 : (cv_ticrate.value ? 180 : 189)); // STAR NOTE: i was here
 		HU_drawPing(307, dispy, ping, true, V_SNAPTORIGHT | V_SNAPTOBOTTOM);
 	}
 }
@@ -731,7 +741,7 @@ void SCR_DisplayMarathonInfo(void)
 	{
 		entertic = I_GetTime();
 		if (gamecomplete)
-			flags |= menuColor[cv_menucolor.value];
+			flags |= menuColor[cv_menucolor.value]; // STAR NOTE: i was also here lol
 		else if (marathonmode & MA_INGAME)
 			; // see also G_Ticker
 		else if (marathonmode & MA_INIT)

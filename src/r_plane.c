@@ -31,7 +31,6 @@
 #include "w_wad.h"
 #include "z_zone.h"
 #include "p_tick.h"
-#include "m_easing.h" // easing maths
 
 //
 // opening

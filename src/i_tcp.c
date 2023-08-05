@@ -132,14 +132,11 @@
 #define MAXBANS 100
 
 #include "i_system.h"
-#include "i_time.h"
 #include "i_net.h"
 #include "d_net.h"
 #include "d_netfil.h"
 #include "i_tcp.h"
 #include "m_argv.h"
-#include "stun.h"
-#include "z_zone.h" // maybe might not be necessary
 
 #include "doomstat.h"
 
@@ -1369,7 +1366,6 @@ static SINT8 SOCK_NetMakeNodewPort(const char *address, const char *port)
 	I_freeaddrinfo(ai);
 	return newnode;
 }
-
 #endif
 
 static boolean SOCK_OpenSocket(void)

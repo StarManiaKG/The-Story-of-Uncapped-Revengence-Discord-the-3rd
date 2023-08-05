@@ -51,7 +51,7 @@
 #include "m_perfstats.h"
 #include "hardware/u_list.h" // TODO: this should be a standard utility class
 
-// STAR NOTE: HI! THIS CAN CAUSE NETGAME RESYNCS, IF YOU ENABLE THE DEFINITION, OF COURSE, SO BE CAREFUL!
+// STAR NOTE: HI! THIS CAN CAUSE NETGAME RESYNCS, IF YOU ENABLE THE DEFINITION OF COURSE, SO BE CAREFUL!
 #ifdef NETGAME_DEVMODE
 #define CV_RESTRICT CV_NETVAR
 #else
@@ -59,7 +59,9 @@
 #endif
 
 #ifdef HAVE_DISCORDRPC
+// DISCORD STUFFS //
 #include "discord.h"
+// END THIS PLEASE //
 #endif
 
 // STAR STUFF YAYA //
@@ -214,7 +216,7 @@ static CV_PossibleValue_t joyport_cons_t[] = {{1, "/dev/js0"}, {2, "/dev/js1"}, 
 static CV_PossibleValue_t teamscramble_cons_t[] = {{0, "Off"}, {1, "Random"}, {2, "Points"}, {0, NULL}};
 
 static CV_PossibleValue_t startingliveslimit_cons_t[] = {{1, "MIN"}, {99, "MAX"}, {0, NULL}};
-static CV_PossibleValue_t sleeping_cons_t[] = {{-1, "MIN"}, {1000/TICRATE, "MAX"}, {0, NULL}};
+static CV_PossibleValue_t sleeping_cons_t[] = {{0, "MIN"}, {1000/TICRATE, "MAX"}, {0, NULL}};
 static CV_PossibleValue_t competitionboxes_cons_t[] = {{0, "Normal"}, {1, "Mystery"}, //{2, "Teleport"},
 	{3, "None"}, {0, NULL}};
 
@@ -1682,8 +1684,10 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 		SetPlayerSkinByNum(playernum, skin);
 
 #ifdef HAVE_DISCORDRPC
+	// DISCORD STUFFS //
 	if (playernum == consoleplayer)
 		DRPC_UpdatePresence();
+	// END OF THE DISCORD THINGY //
 #endif
 }
 
@@ -2283,7 +2287,9 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	demo_start = true;
 
 #ifdef HAVE_DISCORDRPC
+	// DISCORD STUFFS //
 	DRPC_UpdatePresence();
+	// END THIS PLEASE //
 #endif
 }
 
@@ -3038,7 +3044,9 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 		P_CheckSurvivors();
 
 #ifdef HAVE_DISCORDRPC
+	// DISCORD STUFFS //
 	DRPC_UpdatePresence();
+	// ENDED THIS //
 #endif
 }
 
@@ -3999,9 +4007,7 @@ static void Command_Version_f(void)
 #elif defined(UNIXCOMMON)
 	CONS_Printf("Unix (Common) ");
 #else
-	// STAR WAS HERE //
-	CONS_Printf("Unknown/Other OS ");
-	// HEHEHEHE //
+	CONS_Printf("Unknown/Other OS "); // STAR NOTE: STAR WAS HERE, HEHEHE
 #endif
 
 	// Bitness
@@ -4449,7 +4455,9 @@ void D_GameTypeChanged(INT32 lastgametype)
 	}
 
 #ifdef HAVE_DISCORDRPC
+	// DISCORD STUFFS //
 	DRPC_UpdatePresence();
+	// TECHNICALLY I DON'T HAVE TO MAKE ALL OF THESE COMMENTS, BUT I STILL MAKE THEM JUST BECAUSE ITS EASIER FOR EVERYONE, I GUESS //
 #endif
 }
 
@@ -4978,7 +4986,7 @@ static void Skin_OnChange(void)
 		return;
 	}
 
-	// No Cheating in Race-Type Modes
+	// STAR NOTE: No Cheating in Race-Type Modes
 	if (gametyperules & GTR_RACE && (cv_movingplayersetup.value && P_PlayerMoving(consoleplayer)))
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment. Nice try, %s.\n"),
@@ -4992,6 +5000,7 @@ static void Skin_OnChange(void)
 		return;
 	}
 
+	// STAR NOTE: i was here lol
 	if ((CanChangeSkin(consoleplayer))
 		&& (cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(consoleplayer))))
 	{
@@ -5031,7 +5040,7 @@ static void Skin2_OnChange(void)
 	if (!Playing() || !splitscreen)
 		return; // do whatever you want
 
-	// No Cheating in Race-Type Modes
+	// STAR NOTE: No Cheating in Race-Type Modes 2
 	if (gametyperules & GTR_RACE && (cv_movingplayersetup.value && P_PlayerMoving(secondarydisplayplayer)))
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment. Nice try, %s's friend.\n"),
@@ -5045,6 +5054,7 @@ static void Skin2_OnChange(void)
 		return;
 	}
 
+	// STAR NOTE: i was here 2
 	if ((CanChangeSkin(secondarydisplayplayer))
 		&& (cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(secondarydisplayplayer))))
 	{
@@ -5082,11 +5092,12 @@ static void Color_OnChange(void)
 			return;
 		}
 
+		// STAR NOTE: i was here :)
 		if ((cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(consoleplayer)))
 			&& (skincolors[players[consoleplayer].skincolor].accessible == true))	
 		{
-			// Color change menu scrolling fix is no longer necessary	
-			SendNameAndColor(); // Color change menu scrolling fix is no longer necessary
+			// Color change menu scrolling fix is no longer necessary
+			SendNameAndColor();
 		}
 		else
 		{
@@ -5111,11 +5122,12 @@ static void Color2_OnChange(void)
 	}
 	else
 	{
+		// STAR NOTE: i was here 2 :)
 		if ((cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(secondarydisplayplayer)))
 			&& (skincolors[players[secondarydisplayplayer].skincolor].accessible == true))
 		{
 			// Color change menu scrolling fix is no longer necessary
-			SendNameAndColor2(); // Color change menu scrolling fix is no longer necessary
+			SendNameAndColor2();
 		}
 		else
 		{

@@ -23,7 +23,7 @@
 #include "hardware/hw_main.h"
 #endif
 
-#include "m_menu.h" // menu coloring
+#include "m_menu.h" // STAR NOTE: menu coloring
 
 struct perfstatrow;
 
