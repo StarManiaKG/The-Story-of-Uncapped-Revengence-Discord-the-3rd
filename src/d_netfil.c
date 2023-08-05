@@ -458,7 +458,7 @@ INT32 CL_CheckFiles(void)
 	// must be identical in files loaded AND in order
 	// Return 2 on failure -- disconnect from server
 	if ((modifiedgame)
-		|| (autoloaded)) // Prevents Cheating and Desyncing in Netgames
+		|| (autoloaded)) // STAR NOTE: Prevents Cheating, Desyncing, and Other Dumbness in Netgames
 	{
 		CONS_Debug(DBG_NETPLAY, "game is modified; only doing basic checks\n");
 		for (i = 0, j = mainwads; i < fileneedednum || j < numwadfiles;)

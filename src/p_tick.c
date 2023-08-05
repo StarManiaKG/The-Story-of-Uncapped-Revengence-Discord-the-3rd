@@ -30,9 +30,10 @@
 // Object place
 #include "m_cheat.h"
 
-// Discord
 #ifdef HAVE_DISCORDRPC
+// DISCORD STUFF //
 #include "discord.h"
+// END IT PLEASE //
 #endif
 
 // STAR STUFF //
@@ -493,8 +494,10 @@ static inline void P_DoSpecialStageStuff(void)
 		players[i].powers[pw_underwater] = players[i].powers[pw_spacetime] = 0;
 	}
 
+	// STAR NOTE: i was here lol
 	if (sstimer < 15*TICRATE+6 && sstimer > 7 && (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC)
 		&& (!jukeboxMusicPlaying))
+		
 		S_SpeedMusic(1.4f);
 
 	if (sstimer && !objectplacing)
@@ -803,6 +806,7 @@ void P_Ticker(boolean run)
 			G_GhostTicker();
 
 #ifdef HAVE_DISCORDRPC
+		// DISCORD STUFFS //
 		if (gametyperules & GTR_POWERSTONES)
 		{
 			if (all7matchemeralds)
@@ -815,6 +819,7 @@ void P_Ticker(boolean run)
 				DRPC_UpdatePresence();
 			}
 		}
+		// END THAT, NOW! //
 #endif
 
 		// DO STAR STUFF FOR KICKS //

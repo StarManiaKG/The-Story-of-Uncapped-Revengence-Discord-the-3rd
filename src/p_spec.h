@@ -489,6 +489,8 @@ void P_SetupLevelFlatAnims(void);
 
 // at map load
 void P_InitSpecials(void);
+void P_ApplyFlatAlignment(sector_t* sector, angle_t flatangle, fixed_t xoffs, fixed_t yoffs, boolean floor, boolean ceiling);
+fixed_t P_GetSectorGravityFactor(sector_t *sec);
 void P_SpawnSpecials(boolean fromnetsave);
 
 // every tic
@@ -497,7 +499,12 @@ sector_t *P_MobjTouchingSectorSpecial(mobj_t *mo, INT32 section, INT32 number);
 sector_t *P_ThingOnSpecial3DFloor(mobj_t *mo);
 sector_t *P_MobjTouchingSectorSpecialFlag(mobj_t *mo, sectorspecialflags_t flag);
 sector_t *P_PlayerTouchingSectorSpecial(player_t *player, INT32 section, INT32 number);
+sector_t *P_PlayerTouchingSectorSpecialFlag(player_t *player, sectorspecialflags_t flag);
 void P_PlayerInSpecialSector(player_t *player);
+void P_CheckMobjTrigger(mobj_t *mobj, boolean pushable);
+sector_t *P_FindPlayerTrigger(player_t *player, line_t *sourceline);
+boolean P_IsPlayerValid(size_t playernum);
+boolean P_CanPlayerTrigger(size_t playernum);
 void P_ProcessSpecialSector(player_t *player, sector_t *sector, sector_t *roversector);
 
 fixed_t P_FindLowestFloorSurrounding(sector_t *sec);
@@ -514,6 +521,10 @@ INT32 P_FindMinSurroundingLight(sector_t *sector, INT32 max);
 void P_SetupSignExit(player_t *player);
 boolean P_IsFlagAtBase(mobjtype_t flag);
 
+boolean P_IsMobjTouchingSectorPlane(mobj_t *mo, sector_t *sec);
+boolean P_IsMobjTouching3DFloor(mobj_t *mo, ffloor_t *ffloor, sector_t *sec);
+boolean P_IsMobjTouchingPolyobj(mobj_t *mo, polyobj_t *po, sector_t *polysec);
+
 void P_SwitchWeather(INT32 weathernum);
 
 boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller);
@@ -526,6 +537,12 @@ void P_RunNightsCapsuleTouchExecutors(mobj_t *actor, boolean entering, boolean e
 UINT16 P_GetFFloorID(ffloor_t *fflr);
 ffloor_t *P_GetFFloorByID(sector_t *sec, UINT16 id);
 
+// Use this when you don't know the type of your thinker data struct but need to access its thinker.
+typedef struct
+{
+	thinker_t thinker;
+} thinkerdata_t;
+
 //
 // P_LIGHTS
 //
@@ -537,8 +554,8 @@ typedef struct
 	sector_t *sector;  ///< The sector where action is taking place.
 	INT32 count;
 	INT32 resetcount;
-	INT32 maxlight;    ///< The brightest light level to use.
-	INT32 minlight;    ///< The darkest light level to use.
+	INT16 maxlight;    ///< The brightest light level to use.
+	INT16 minlight;    ///< The darkest light level to use.
 } fireflicker_t;
 
 typedef struct
@@ -566,8 +583,8 @@ typedef struct
 	thinker_t thinker; ///< The thinker in use for the effect.
 	sector_t *sector;  ///< The sector where the action is taking place.
 	INT32 count;
-	INT32 minlight;    ///< The minimum light level to use.
-	INT32 maxlight;    ///< The maximum light level to use.
+	INT16 minlight;    ///< The minimum light level to use.
+	INT16 maxlight;    ///< The maximum light level to use.
 	INT32 darktime;    ///< How INT32 to use minlight.
 	INT32 brighttime;  ///< How INT32 to use maxlight.
 } strobe_t;
@@ -576,10 +593,10 @@ typedef struct
 {
 	thinker_t thinker;
 	sector_t *sector;
-	INT32 minlight;
-	INT32 maxlight;
-	INT32 direction;
-	INT32 speed;
+	INT16 minlight;
+	INT16 maxlight;
+	INT16 direction;
+	INT16 speed;
 } glow_t;
 
 /** Thinker struct for fading lights.
@@ -605,18 +622,18 @@ typedef struct
 void P_RemoveLighting(sector_t *sector);
 
 void T_FireFlicker(fireflicker_t *flick);
-fireflicker_t *P_SpawnAdjustableFireFlicker(sector_t *minsector, sector_t *maxsector, INT32 length);
+fireflicker_t *P_SpawnAdjustableFireFlicker(sector_t *sector, INT16 lighta, INT16 lightb, INT32 length);
 void T_LightningFlash(lightflash_t *flash);
 void T_StrobeFlash(strobe_t *flash);
 
 void P_SpawnLightningFlash(sector_t *sector);
-strobe_t * P_SpawnAdjustableStrobeFlash(sector_t *minsector, sector_t *maxsector, INT32 darktime, INT32 brighttime, boolean inSync);
+strobe_t * P_SpawnAdjustableStrobeFlash(sector_t *sector, INT16 lighta, INT16 lightb, INT32 darktime, INT32 brighttime, boolean inSync);
 
 void T_Glow(glow_t *g);
-glow_t *P_SpawnAdjustableGlowingLight(sector_t *minsector, sector_t *maxsector, INT32 length);
+glow_t *P_SpawnAdjustableGlowingLight(sector_t *sector, INT16 lighta, INT16 lightb, INT32 length);
 
 void P_FadeLightBySector(sector_t *sector, INT32 destvalue, INT32 speed, boolean ticbased);
-void P_FadeLight(INT16 tag, INT32 destvalue, INT32 speed, boolean ticbased, boolean force);
+void P_FadeLight(INT16 tag, INT32 destvalue, INT32 speed, boolean ticbased, boolean force, boolean relative);
 void T_LightFade(lightlevel_t *ll);
 
 typedef enum
@@ -632,22 +649,19 @@ typedef enum
 typedef enum
 {
 	raiseToHighest,
-	lowerToLowest,
-	raiseToLowest,
 	lowerToLowestFast,
 
 	instantRaise, // instant-move for ceilings
 
-	lowerAndCrush,
 	crushAndRaise,
-	fastCrushAndRaise,
+	raiseAndCrush,
 	crushCeilOnce,
 	crushBothOnce,
 
 	moveCeilingByFrontSector,
 	instantMoveCeilingByFrontSector,
 
-	moveCeilingByFrontTexture,
+	moveCeilingByDistance,
 
 	bounceCeiling,
 	bounceCeilingCrush,
@@ -663,7 +677,6 @@ typedef struct
 	fixed_t bottomheight; ///< The lowest height to move to.
 	fixed_t topheight;    ///< The highest height to move to.
 	fixed_t speed;        ///< Ceiling speed.
-	fixed_t oldspeed;
 	fixed_t delay;
 	fixed_t delaytimer;
 	UINT8 crush;           ///< Whether to crush things or not.
@@ -672,17 +685,16 @@ typedef struct
 	INT32 direction;      ///< 1 = up, 0 = waiting, -1 = down.
 
 	// ID
-	INT32 tag;
-	INT32 olddirection;
+	INT16 tag;            ///< Tag of linedef executor to run when movement is done.
 	fixed_t origspeed;    ///< The original, "real" speed.
 	INT32 sourceline;     ///< Index of the source linedef
 } ceiling_t;
 
 #define CEILSPEED (FRACUNIT)
 
-INT32 EV_DoCeiling(line_t *line, ceiling_e type);
+INT32 EV_DoCeiling(mtag_t tag, line_t *line, ceiling_e type);
 
-INT32 EV_DoCrush(line_t *line, ceiling_e type);
+INT32 EV_DoCrush(mtag_t tag, line_t *line, ceiling_e type);
 void T_CrushCeiling(ceiling_t *ceiling);
 
 void T_MoveCeiling(ceiling_t *ceiling);
@@ -692,9 +704,6 @@ void T_MoveCeiling(ceiling_t *ceiling);
 //
 typedef enum
 {
-	// lower floor to lowest surrounding floor
-	lowerFloorToLowest,
-
 	// raise floor to next highest surrounding floor
 	raiseFloorToNearestFast,
 
@@ -704,7 +713,7 @@ typedef enum
 	moveFloorByFrontSector,
 	instantMoveFloorByFrontSector,
 
-	moveFloorByFrontTexture,
+	moveFloorByDistance,
 
 	bounceFloor,
 	bounceFloorCrush,
@@ -716,7 +725,6 @@ typedef enum
 {
 	elevateUp,
 	elevateDown,
-	elevateCurrent,
 	elevateContinuous,
 	elevateBounce,
 	elevateHighest,
@@ -736,6 +744,8 @@ typedef struct
 	fixed_t origspeed;
 	fixed_t delay;
 	fixed_t delaytimer;
+	INT16 tag;
+	INT32 sourceline;
 } floormove_t;
 
 typedef struct
@@ -857,7 +867,6 @@ typedef struct
 	thinker_t thinker;
 	line_t *sourceline; // Source line of the thinker
 	boolean playersInArea[MAXPLAYERS];
-	boolean playersOnArea[MAXPLAYERS];
 	boolean triggerOnExit;
 } eachtime_t;
 
@@ -893,8 +902,8 @@ typedef enum
 
 result_e T_MovePlane(sector_t *sector, fixed_t speed, fixed_t dest, boolean crush,
 	boolean ceiling, INT32 direction);
-void EV_DoFloor(line_t *line, floor_e floortype);
-void EV_DoElevator(line_t *line, elevator_e elevtype, boolean customspeed);
+void EV_DoFloor(mtag_t tag, line_t *line, floor_e floortype);
+void EV_DoElevator(mtag_t tag, line_t *line, elevator_e elevtype);
 void EV_CrumbleChain(sector_t *sec, ffloor_t *rover);
 void EV_BounceSector(sector_t *sector, fixed_t momz, line_t *sourceline);
 
@@ -979,30 +988,20 @@ void T_Friction(friction_t *f);
 
 typedef enum
 {
-	p_push,        ///< Point pusher or puller.
 	p_wind,        ///< Wind.
 	p_current,     ///< Current.
-	p_upcurrent,   ///< Upwards current.
-	p_downcurrent, ///< Downwards current.
-	p_upwind,      ///< Upwards wind.
-	p_downwind     ///< Downwards wind.
 } pushertype_e;
 
 // Model for pushers for push/pull effects
 typedef struct
 {
-	thinker_t thinker; ///< Thinker structure for push/pull effect.
-	/** Types of push/pull effects.
-	*/
-	pushertype_e type;  ///< Type of push/pull effect.
-	mobj_t *source;     ///< Point source if point pusher/puller.
-	INT32 x_mag;        ///< X strength.
-	INT32 y_mag;        ///< Y strength.
-	INT32 magnitude;    ///< Vector strength for point pusher/puller.
-	INT32 radius;       ///< Effective radius for point pusher/puller.
-	INT32 x, y, z;      ///< Point source if point pusher/puller.
+	thinker_t thinker;  ///< Thinker structure for pusher effect.
+	pushertype_e type;  ///< Type of pusher effect.
+	fixed_t x_mag;      ///< X strength.
+	fixed_t y_mag;      ///< Y strength.
+	fixed_t z_mag;      ///< Z strength.
 	INT32 affectee;     ///< Number of affected sector.
-	UINT8 roverpusher;   ///< flag for whether pusher originated from a FOF or not
+	UINT8 roverpusher;  ///< flag for whether pusher originated from a FOF or not
 	INT32 referrer;     ///< If roverpusher == true, then this will contain the sector # of the control sector where the effect was applied.
 	INT32 exclusive;    /// < Once this affect has been applied to a mobj, no other pushers may affect it.
 	INT32 slider;       /// < Should the player go into an uncontrollable slide?
@@ -1064,9 +1063,8 @@ typedef struct
 
 void T_FadeColormap(fadecolormap_t *d);
 
-// Prototype functions for pushers
+// Prototype function for pushers
 void T_Pusher(pusher_t *p);
-mobj_t *P_GetPushThing(UINT32 s);
 
 // Plane displacement
 typedef struct
@@ -1090,7 +1088,5 @@ typedef struct
 void T_PlaneDisplace(planedisplace_t *pd);
 
 void P_CalcHeight(player_t *player);
-
-sector_t *P_ThingOnSpecial3DFloor(mobj_t *mo);
 
 #endif

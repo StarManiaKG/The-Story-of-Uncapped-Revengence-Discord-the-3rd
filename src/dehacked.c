@@ -14,7 +14,7 @@
 #include "m_cond.h"
 #include "deh_soc.h"
 #include "deh_tables.h"
-#include "s_sound.h" // S_StopMusic
+#include "s_sound.h" // STAR NOTE: S_StopMusic
 
 boolean deh_loaded = false;
 
@@ -183,8 +183,10 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 
 	deh_num_warning = 0;
 
+	// STAR STUFF //
 	if (jukeboxMusicPlaying && savemoddata && (introchanged || titlechanged))
 		S_StopMusic();
+	// END IT PLEASE //
 
 	gamedataadded = titlechanged = introchanged = false;
 

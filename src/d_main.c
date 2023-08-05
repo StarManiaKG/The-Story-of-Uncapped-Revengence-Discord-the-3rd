@@ -90,7 +90,9 @@
 #endif
 
 #ifdef HAVE_DISCORDRPC
+// DISCORD STUFFS //
 #include "discord.h"
+// END IT, WEEEEEEE //
 #endif
 
 #include "lua_script.h"
@@ -138,9 +140,7 @@ char liveeventbackup[256];
 
 char srb2home[256] = ".";
 char srb2path[256] = ".";
-
 boolean usehome = true;
-
 const char *pandf = "%s" PATHSEP "%s";
 static char addonsdir[MAX_WADPATH];
 
@@ -322,7 +322,6 @@ void D_ProcessEvents(void)
 	if (mouse2.rdx || mouse2.rdy)
 		G_SetMouseDeltas(mouse2.rdx, mouse2.rdy, 2);
 }
-
 
 //
 // D_Display
@@ -521,6 +520,7 @@ static void D_Display(void)
 		if (gamestate == GS_LEVEL || (gamestate == GS_TITLESCREEN && titlemapinaction && curbghide && (!hidetitlemap)))
 		{
 			// draw the view directly
+
 			if (!automapactive && !dedicated && cv_renderview.value)
 			{
 				R_ApplyLevelInterpolators(R_UsingFrameInterpolation() ? rendertimefrac : FRACUNIT);
@@ -951,8 +951,10 @@ void D_SRB2Loop(void)
 		LUA_Step();
 
 #ifdef HAVE_DISCORDRPC
+		// DISCORD STUFFS //
 		if (!dedicated)
 			Discord_RunCallbacks();
+		// END THIS PLEASE //
 #endif
 
 		//// STAR STUFF ////
@@ -1460,14 +1462,13 @@ static void IdentifyVersion(void)
 	D_AddFile(&startupwadfiles, va(pandf,srb2waddir, "patch.pk3"));
 #endif
 
-	// Add this custom build's fun stuff
+	// STAR: Add this custom build's fun stuff
 	D_AddFile(&startupwadfiles, va(pandf,srb2waddir, "tsourdt3rd.pk3"));
 
-	// Add this custom build's extra fun stuff, using lock-on technology
+	// STAR: Add this custom build's extra fun stuff, using lock-on technology
 	if (M_CheckParm("-tsourdt3rd_lockonextras"))
 		TSoURDt3rd_LoadExtras = true;
 
-	// Add the music
 #if !defined (HAVE_SDL) || defined (HAVE_MIXER)
 	{
 #define MUSICTEST(str) \
@@ -1483,7 +1484,7 @@ static void IdentifyVersion(void)
 		MUSICTEST("music.dta")
 		//MUSICTEST("patch_music.pk3")
 
-		MUSICTEST("jukebox.pk3")
+		MUSICTEST("jukebox.pk3") // STAR: Add this build's custom music enjoyment system
 	}
 #endif
 }
@@ -1593,7 +1594,7 @@ void D_SRB2Main(void)
 		else
 		{
 			// use user specific config file
-			// STAR NOTE: MAIN SAVEDATA STUFF IS NOW HANDLED IN STAR_SetSavefileProperties WITHIN star_functions.c!
+			// STAR NOTE: MAIN SAVEDATA STUFF IS NOW HANDLED IN STAR_SetSavefileProperties WITHIN star_functions.c! //
 #ifdef DEFAULTDIR
 			snprintf(srb2home, sizeof srb2home, "%s" PATHSEP DEFAULTDIR, userhome);
 			snprintf(downloaddir, sizeof downloaddir, "%s" PATHSEP "DOWNLOAD", srb2home);
@@ -1695,7 +1696,7 @@ void D_SRB2Main(void)
 	// Have to be done here before files are loaded
 	M_InitCharacterTables();
 
-	mainwads = 4; // doesn't include music.dta /* STAR NOTE: also doesn't include jukebox.pk3 */
+	mainwads = 4; // doesn't include music.dta //* STAR NOTE: also doesn't include jukebox.pk3 *//
 #ifdef USE_PATCH_DTA
 	mainwads++;
 #endif
@@ -1797,15 +1798,15 @@ void D_SRB2Main(void)
 
 	G_LoadGameData();
 
-	// Initialize Discord //
 #ifdef HAVE_DISCORDRPC
+	// DISCORD STUFFS: INITIALIZE //
    	if (! dedicated)
 	{
 		CONS_Printf("DRPC_Init(): Initalizing Discord Rich Presence...\n");
 		DRPC_Init();
 	}
+	// INITIALIZED DISCORD AND STUFFS //
 #endif
-	// Initialized Discord //
 
 #if defined (__unix__) || defined (UNIXCOMMON) || defined (HAVE_SDL)
 	VID_PrepareModeList(); // Regenerate Modelist according to cv_fullscreen

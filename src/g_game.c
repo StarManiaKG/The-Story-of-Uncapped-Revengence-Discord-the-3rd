@@ -51,6 +51,7 @@
 
 #include "lua_hud.h"
 
+// DISCORD STUFF //
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
 #endif
@@ -58,6 +59,7 @@
 #ifdef HAVE_DISCORDGAMESDK
 #include "discord_gamesdk.h"
 #endif
+// END THAT //
 
 // OTHER FUN STAR STUFF YAYAYSUHDUISHUIBHOUIHBDU()*FH*D(UIYVLBGUIYDG(UDOPBIYGD*OUFBHO(P))) //
 #include "STAR/star_vars.h"
@@ -76,7 +78,7 @@ INT32 DISCORD_RequestSFX = sfx_kc5d;
 // Easter
 INT32 TOTALEGGS;
 INT32 foundeggs;
-// END OF THAT
+// END OF THAT STAR STUFF //
 
 gameaction_t gameaction;
 gamestate_t gamestate = GS_NULL;
@@ -3302,7 +3304,9 @@ void G_DoReborn(INT32 playernum)
 	}
 
 #ifdef HAVE_DISCORDRPC
+	// DISCORD STUFF //
 	DRPC_UpdatePresence();
+	// END THAT //
 #endif
 }
 
@@ -3353,7 +3357,9 @@ void G_AddPlayer(INT32 playernum)
 		P_DoPlayerExit(p);
 
 #ifdef HAVE_DISCORDRPC
+	// DISCORD STUFF //
 	DRPC_UpdatePresence();
+	// END THAT //
 #endif
 }
 
@@ -4284,7 +4290,9 @@ static void G_DoContinued(void)
 	gameaction = ga_nothing;
 
 #ifdef HAVE_DISCORDRPC
+	// DISCORD STUFF //
 	DRPC_UpdatePresence();
+	// END THAT //
 #endif
 #ifdef HAVE_SDL
 	// STAR STUFF //
@@ -4500,7 +4508,7 @@ void G_LoadGameData(void)
 	// Silent update unlockables in case they're out of sync with conditions
 	M_SilentUpdateUnlockablesAndEmblems();
 
-	// STUFF FOR STAR: STEAL DATA //
+	// STAR STUFF: STEAL SAVEFILE DATA //
 	STAR_ReadExtraData();
 	// I MADE THIS ALL ON MY OWN //
 
@@ -5354,7 +5362,9 @@ void G_SetGamestate(gamestate_t newstate)
 	gamestate = newstate;
 
 #ifdef HAVE_DISCORDRPC
+	// DISCORD STUFFS //
 	DRPC_UpdatePresence();
+	// END THAT //
 #endif
 #ifdef HAVE_SDL
 	// STAR STUFF //

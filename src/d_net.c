@@ -18,6 +18,7 @@
 
 #include "doomdef.h"
 #include "g_game.h"
+#include "i_time.h"
 #include "i_net.h"
 #include "i_system.h"
 #include "m_argv.h"
@@ -28,7 +29,6 @@
 #include "z_zone.h"
 #include "i_tcp.h"
 #include "d_main.h" // srb2home
-#include "i_time.h"
 
 //
 // NETWORKING
@@ -77,7 +77,7 @@ boolean (*I_NetCanGet)(void) = NULL;
 void (*I_NetCloseSocket)(void) = NULL;
 void (*I_NetFreeNodenum)(INT32 nodenum) = NULL;
 SINT8 (*I_NetMakeNodewPort)(const char *address, const char* port) = NULL;
-// HOLE-PUNCHING STUFF //
+// HOLEPUNCHING STUFF //
 void (*I_NetRequestHolePunch)(INT32 node) = NULL;
 void (*I_NetRegisterHolePunch)(void) = NULL;
 // OK //

@@ -140,7 +140,7 @@ static patch_t *fnshico;
 static boolean facefreed[MAXPLAYERS];
 
 #ifdef HAVE_DISCORDRPC
-static patch_t *envelope; // Discord Rich Presence Requests
+static patch_t *envelope; // DISCORD STUFFS: Discord Rich Presence Requests
 #endif
 
 // STAR STUFF //
@@ -231,6 +231,7 @@ void ST_doPaletteStuff(void)
 		palette = 0;
 
 #ifdef HWRENDER
+	// STAR NOTE: i was here lol
 	if (rendermode == render_opengl && !HWR_ShouldUsePaletteRendering())
 		palette = 0; // Don't set the palette to a flashpal in OpenGL's truecolor mode
 #endif
@@ -364,7 +365,7 @@ void ST_LoadGraphics(void)
 		ngradeletters[i] = W_CachePatchName(va("GRADE%d", i), PU_HUDGFX);
 
 #ifdef HAVE_DISCORDRPC
-	envelope = W_CachePatchName("D_REQUES", PU_HUDGFX); // Discord Rich Presence
+	envelope = W_CachePatchName("D_REQUES", PU_HUDGFX); // DISCORD STUFFS: rich presence requests
 #endif
 
 	//// STAR STUFF ////
@@ -372,7 +373,7 @@ void ST_LoadGraphics(void)
 	// Easter
 	stageeggs = W_CachePatchName("STAGEEGS", PU_HUDGFX);
 	totaleggs = W_CachePatchName("TOTLEGS", PU_HUDGFX);
-	//// GRAPHICS SORTED, SIR ////
+	//// GRAPHICS SORTED, YAY ////
 }
 
 // made separate so that skins code can reload custom face graphics
@@ -2801,7 +2802,7 @@ static void ST_overlayDrawer(void)
 		&& (netgame || multiplayer)
 		&& (cv_cooplives.value == 0))
 	;
-	else if ((G_GametypeUsesLives() || ((gametyperules & (GTR_RACE|GTR_LIVES)) == GTR_RACE)) && (stplyr->lives <= 0 || timeover) && !(hu_showscores && (netgame || multiplayer)))
+	else if ((G_GametypeUsesLives() || ((gametyperules & (GTR_RACE|GTR_LIVES)) == GTR_RACE)) && (stplyr->lives <= 0 || timeover) && !(hu_showscores && (netgame || multiplayer))) // STAR NOTE: i was here lol
 	{
 		INT32 i = MAXPLAYERS;
 		INT32 deadtimer = stplyr->spectator ? TICRATE : (stplyr->deadtimer-(TICRATE<<1));
@@ -2828,7 +2829,7 @@ static void ST_overlayDrawer(void)
 			INT32 lvlttlx = min(6*deadtimer, BASEVIDWIDTH/2);
 			UINT32 flags = V_PERPLAYER|(stplyr->spectator ? V_HUDTRANSHALF : V_HUDTRANS);
 
-			V_DrawScaledPatch(lvlttlx - 8, BASEVIDHEIGHT/2, flags, ((countdown == 1 || timeover) ? slidtime : slidgame));
+			V_DrawScaledPatch(lvlttlx - 8, BASEVIDHEIGHT/2, flags, ((countdown == 1 || timeover) ? slidtime : slidgame)); // STAR NOTE: i was also here lol
 			V_DrawScaledPatch(BASEVIDWIDTH + 8 - lvlttlx, BASEVIDHEIGHT/2, flags, slidover);
 		}
 	}
@@ -2933,7 +2934,6 @@ static void ST_overlayDrawer(void)
 	ST_drawJukebox();
 	// ENDED THIS MESS, YAY //
 
-	// Render Debug Info Over Everything Else
 	ST_drawDebugInfo();
 }
 
@@ -2992,7 +2992,7 @@ void ST_Drawer(void)
 	//25/08/99: Hurdler: palette changes is done for all players,
 	//                   not only player1! That's why this part
 	//                   of code is moved somewhere else.
-	if (rendermode == render_soft || HWR_ShouldUsePaletteRendering())
+	if (rendermode == render_soft || HWR_ShouldUsePaletteRendering()) // STAR NOTE: i was here too lol
 #endif
 		if (rendermode != render_none) ST_doPaletteStuff();
 

@@ -158,6 +158,7 @@ consvar_t cv_flipcam2 = CVAR_INIT ("flipcam2", "No", CV_SAVE|CV_CALL|CV_NOINIT, 
 // STAR NOTE: i was here lol
 static CV_PossibleValue_t shadow_cons_t[] = {{0, "Off"}, {1, "Drop"}, {2, "OpenGL Realistic"}, {0, NULL}};
 consvar_t cv_shadow = CVAR_INIT ("shadow", "Drop", CV_SAVE, shadow_cons_t, NULL);
+
 // STAR STUFF //
 consvar_t cv_realisticshadowscanrotate = CVAR_INIT ("realisticshadowscanrotate", "No", CV_SAVE, CV_YesNo, NULL);
 // END THIS //

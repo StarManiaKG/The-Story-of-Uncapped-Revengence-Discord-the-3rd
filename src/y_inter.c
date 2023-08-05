@@ -946,7 +946,9 @@ void Y_IntermissionDrawer(void)
 				// already constrained to 8 characters
 				V_DrawString(x+36, y, V_ALLOWLOWERCASE, data.competition.name[i]);
 
-				if (players[data.competition.num[i]].pflags & PF_GAMETYPEOVER || timeover)
+				if ((players[data.competition.num[i]].pflags & PF_GAMETYPEOVER)
+					|| (timeover)) // STAR NOTE: i was here lol
+
 					snprintf(sstrtime, sizeof sstrtime, "Time Over");
 				else if (players[data.competition.num[i]].lives <= 0)
 					snprintf(sstrtime, sizeof sstrtime, "Game Over");
