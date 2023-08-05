@@ -36,7 +36,7 @@
 #include "i_system.h"
 #include "i_threads.h"
 
-// Addfile (and now autoloading lol)
+// Addfile (STAR NOTE: and now autoloading too lol)
 #include "filesrch.h"
 
 #include "v_video.h"
@@ -128,6 +128,7 @@ typedef enum
 	QUIT3MSG5,
 	QUIT3MSG6,
 
+	// STAR STUFF //
 	QUITSMSG1,
 	QUITSMSG2,
 	QUITSMSG3,
@@ -140,6 +141,7 @@ typedef enum
 	QUITAMSG3,
 	QUITAMSG4,
 #endif
+	// END THAT PLEASE //
 
 	NUM_QUITMESSAGES
 } text_enum;
@@ -323,7 +325,6 @@ static void M_ServerOptions(INT32 choice);
 static void M_PreStartServerMenuChoice(INT32 choice);
 static void M_PreConnectMenuChoice(INT32 choice);
 // END THAT PLEASE //
-
 static void M_StartServerMenu(INT32 choice);
 static void M_ConnectMenu(INT32 choice);
 static void M_ConnectMenuModChecks(INT32 choice);
@@ -368,7 +369,6 @@ menu_t OP_SoundAdvancedDef;
 //Misc
 menu_t OP_DataOptionsDef, OP_ScreenshotOptionsDef, OP_EraseDataDef;
 menu_t OP_ServerOptionsDef;
-
 menu_t OP_MonitorToggleDef;
 static void M_ScreenshotOptions(INT32 choice);
 static void M_SetupScreenshotMenu(void);
@@ -950,7 +950,7 @@ typedef enum
 	// STAR STUFF //
 	spause_addons = 0,
 	// YOU SHOULD BE ABLE TO LOAD ADDONS WHENEVER YOU WANT //
-	
+
 	spause_pandora,
 	spause_hints,
 	spause_levelselect,
@@ -1367,7 +1367,7 @@ static menuitem_t MP_SplitServerMenu[] =
 static menuitem_t MP_ExtendedServerPropertyMenu[] = {
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "", STAR_HandleExtendedServerPropertyMenu, 0}
 };
-// I'M TIRED //
+// MAN, I'M TIRED //
 
 static menuitem_t MP_MainMenu[] =
 {
@@ -2534,6 +2534,7 @@ static menuitem_t OP_AddonsOptionsMenu[] =
 	{IT_STRING|IT_CVAR|IT_CV_STRING, NULL, "Custom Folder",               &cv_addons_folder,       22},
 	{IT_STRING|IT_CVAR,              NULL, "Identify add-ons via",        &cv_addons_md5,          50},
 	{IT_STRING|IT_CVAR,              NULL, "Show unsupported file types", &cv_addons_showall,      60},
+
 	{IT_HEADER,                      NULL, "Search",                      NULL,                    78},
 	{IT_STRING|IT_CVAR,              NULL, "Matching",                    &cv_addons_search_type,  90},
 	{IT_STRING|IT_CVAR,              NULL, "Case-sensitive",              &cv_addons_search_case, 100},
@@ -2872,7 +2873,7 @@ enum
 // ==========================================================================
 
 // Main Menu and related
-menu_t MainDef = CENTERMENUSTYLE(MN_MAIN, NULL, MainMenu, NULL, 56);
+menu_t MainDef = CENTERMENUSTYLE(MN_MAIN, NULL, MainMenu, NULL, 56); // STAR NOTE: i was here, i had to change the number value from 72 to 56 for the readme :)
 
 menu_t MISC_AddonsDef =
 {
@@ -3447,6 +3448,7 @@ menu_t OP_DataOptionsDef = DEFAULTMENUSTYLE(
 	"M_DATA", OP_DataOptionsMenu, &OP_MainDef, 60, 30);
 
 #ifdef HAVE_DISCORDRPC
+// DISCORD STUFFS //
 menu_t MISC_DiscordRequestsDef = {
     MN_OP_DISCORD_RQ,
 	NULL,
@@ -3475,6 +3477,7 @@ menu_t OP_DiscordOptionsDef =
 menu_t OP_CustomStatusOutputDef = DEFAULTMENUSTYLE(
 	MTREE3(MN_OP_MAIN, MN_OP_DISCORD_OPT, MN_OP_DISCORDCS_OUTPUT), 
 	"M_DISCORDOUTPUT", OP_CustomStatusOutputMenu, &OP_DiscordOptionsDef, 30, 30);
+// DID THIS, ENDED THAT //
 #endif
 
 menu_t OP_ScreenshotOptionsDef =
@@ -5393,14 +5396,13 @@ void M_StartControlPanel(void)
 		MPauseMenu[mpause_switchteam].status = IT_DISABLED;
 		MPauseMenu[mpause_psetup].status = IT_DISABLED;
 
-		// STAR STUFF YAY //
-		// NOTE: i don't even know why this is required
-		//			but this was here before I even started working on tsourdt3rd
-		//				and since removing it breaks stuff, we're keeping it lol
+		/*/ STAR NOTE: i don't even know why this is required
+				but this was here before I even started working on tsourdt3rd
+				and since removing it breaks stuff, we're keeping it lol /*/
 		MPauseMenu[mpause_addons].alphaKey = 8;
 		MPauseMenu[mpause_scramble].alphaKey = 8;
 		MPauseMenu[mpause_switchmap].alphaKey = 24;
-		// END OF THAT MESS //
+		// END OF THIS MESS //
 
 		if ((server || IsPlayerAdmin(consoleplayer)))
 		{
@@ -5429,6 +5431,7 @@ void M_StartControlPanel(void)
 		}
 
 #ifdef HAVE_DISCORDRPC
+		// DISCORD STUFFS //
 		{
 			UINT8 i;
 
@@ -5440,6 +5443,7 @@ void M_StartControlPanel(void)
 			M_RefreshPauseMenu();
 		}
 		DRPC_UpdatePresence();
+		// ENDED THAT //
 #endif
 
 		currentMenu = &MPauseDef;
@@ -8276,6 +8280,7 @@ static void M_DrawAddons(void)
 		return;
 	}
 
+	// STAR NOTE: i was here lol
 	if (Playing())
 		V_DrawCenteredString(BASEVIDWIDTH/2, -5, warningflags, "Adding files mid-game may cause problems.");
 	V_DrawCenteredString(BASEVIDWIDTH/2, 5, 0, LOCATIONSTRING1);
@@ -8774,8 +8779,8 @@ static void M_PandorasBox(INT32 choice)
 		CV_StealthSetValue(&cv_dummylives, max(players[consoleplayer].lives, 1));
 	CV_StealthSetValue(&cv_dummycontinues, players[consoleplayer].continues);
 	SR_PandorasBox[3].status = (continuesInSession) ? (IT_STRING | IT_CVAR) : (IT_GRAYEDOUT);
-	SR_PandorasBox[5].status = (players[consoleplayer].charflags & SF_SUPER) ? (IT_GRAYEDOUT) : (IT_STRING | IT_CALL);
-	SR_PandorasBox[6].status = (emeralds == ((EMERALD7)*2)-1) ? (IT_GRAYEDOUT) : (IT_STRING | IT_CALL);
+	SR_PandorasBox[5].status = (players[consoleplayer].charflags & SF_SUPER) ? (IT_GRAYEDOUT) : (IT_STRING | IT_CALL); // STAR NOTE: i was here; had to change the number
+	SR_PandorasBox[6].status = (emeralds == ((EMERALD7)*2)-1) ? (IT_GRAYEDOUT) : (IT_STRING | IT_CALL); // STAR NOTE: i was also here; had to change the number here too
 	M_SetupNextMenu(&SR_PandoraDef);
 }
 
@@ -8913,11 +8918,13 @@ static void M_SelectableClearMenus(INT32 choice)
 }
 
 #ifdef HAVE_DISCORDRPC
+// DISCORD STUFFS //
 void M_RefreshPauseMenu(void)
 {
 	MPauseMenu[mpause_discordrequests].status =
 		(discordRequestList != NULL ? IT_STRING|IT_SUBMENU : IT_GRAYEDOUT);
 }
+// ENDED IT //
 #endif
 
 // ======
@@ -8937,7 +8944,7 @@ static void M_AllowSuper(INT32 choice)
 
 	players[consoleplayer].charflags |= SF_SUPER;
 	M_StartMessage(M_GetText("You are now capable of turning super.\nRemember to get all the emeralds!\n"),NULL,MM_NOTHING);
-	SR_PandorasBox[5].status = IT_GRAYEDOUT;
+	SR_PandorasBox[5].status = IT_GRAYEDOUT; // STAR NOTE: i was here, had to change the number here
 
 	G_SetGameModified(multiplayer);
 }
@@ -8948,7 +8955,7 @@ static void M_GetAllEmeralds(INT32 choice)
 
 	emeralds = ((EMERALD7)*2)-1;
 	M_StartMessage(M_GetText("You now have all 7 emeralds.\nUse them wisely.\nWith great power comes great ring drain.\n"),NULL,MM_NOTHING);
-	SR_PandorasBox[6].status = IT_GRAYEDOUT;
+	SR_PandorasBox[6].status = IT_GRAYEDOUT; // STAR NOTE: i was here, had to change the number here too
 
 	G_SetGameModified(multiplayer);
 }
@@ -9538,9 +9545,7 @@ static fixed_t st_time = 0;
 static patch_t* st_radio[9];
 static patch_t* st_launchpad[4];
 
-// STAR STUFF //
-boolean soundtestMenuOpen; // Helps Prevent Crashes for the Sound Test and Resets Memory for Both the Sound Test and Jukebox
-// DID THAT //
+boolean soundtestMenuOpen; // STAR NOTE: Helps Prevent Crashes for the Sound Test and Resets Memory for Both the Sound Test and Jukebox
 
 static void M_CacheSoundTest(void)
 {
@@ -9817,7 +9822,7 @@ static void M_DrawSoundTest(void)
 			y += 16;
 		}
 
-		V_DrawFill(165+140-1+15, 60 + i, 1, m, 0); // White Scroll Bar
+		V_DrawFill(165+140-1+15, 60 + i, 1, m, 0); // STAR NOTE: This is a White Scroll Bar
 	}
 }
 
@@ -9937,7 +9942,7 @@ static void M_HandleSoundTest(INT32 choice)
 		Z_Free(soundtestdefs);
 		soundtestdefs = NULL;
 
-		cv_closedcaptioning.value = st_cc; // undo hac
+		cv_closedcaptioning.value = st_cc; // undo hack
 
 		if (currentMenu->prevMenu)
 			M_SetupNextMenu(currentMenu->prevMenu);
@@ -10319,7 +10324,7 @@ static void M_DrawLoadGameData(void)
 				V_DrawSmallScaledPatch(x+2, y+64, 0, savselp[5]);
 			}
 
-			// STAR NOTE: PERFECT SAVES HAVE BEEN RE-ADDED LOL //
+			// STAR NOTE: "PERFECT SAVES" HAVE BEEN RE-ADDED LOL //
 			else if (cv_perfectsave.value
 				&& (savegameinfo[savetodraw].lives == 99)
 				&& (savegameinfo[savetodraw].gamemap & 8192)
@@ -13336,6 +13341,7 @@ static void M_ConnectMenuModChecks(INT32 choice)
 	M_ConnectMenu(-1);
 }
 
+// KART STUFFS //
 static void M_HandleMasterServerResetChoice(INT32 choice)
 {
 	if (choice == 'y' || choice == KEY_ENTER)
@@ -13358,6 +13364,7 @@ static void M_PreConnectMenuChoice(INT32 choice)
 	M_HandleMasterServerResetChoice(choice);
 	M_ConnectMenuModChecks(-1);
 }
+// END THIS PLEASE //
 
 UINT32 roomIds[NUM_LIST_ROOMS];
 
@@ -14232,6 +14239,7 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 				// you know what? always putting these in the buffer won't hurt anything.
 				COM_BufAddText (va("%s \"%s\"\n",setupm_cvdefaultskin->name,skins[setupm_fakeskin].name));
 				COM_BufAddText (va("%s %d\n",setupm_cvdefaultcolor->name,setupm_fakecolor->color));
+				break;
 			}
 
 			// STAR STUFF //
@@ -14276,7 +14284,7 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 			// HELP ME, AAAAAAAAA //
 
 			break;
-			/* FALLTHRU */
+
 		case KEY_RIGHTARROW:
 			if (itemOn == 1)       //player skin
 			{
@@ -15831,7 +15839,8 @@ static const char *quitGraphic[5] = {
 	
 	"SMUGQUIT",			// aseprite moment 2
 	"KELQUIT",			// better aseprite moment
-	"SATRBQUIT"			// better aseprite moment 2
+	"SATRBQUIT",		// better aseprite moment 2
+	NULL
 };
 // OK, I'M DONE FOR NOW //
 
@@ -15849,7 +15858,7 @@ void M_QuitResponse(INT32 ch)
 		marathonmode = 0;
 
 		mrand = M_RandomKey(sizeof(quitsounds)/sizeof(INT32));
-		if (quitsounds[mrand]) S_StartSound(NULL, quitsounds[mrand]); else S_StartSound(NULL, sfx_cdpcm3);
+		if (quitsounds[mrand]) S_StartSound(NULL, quitsounds[mrand]);
 
 		//added : 12-02-98: do that instead of I_WaitVbl which does not work
 		ptime = I_GetTime() + NEWTICRATE*2; // Shortened the quit time, used to be 2 seconds Tails 03-26-2001
@@ -16096,7 +16105,8 @@ static void M_DrawTsourdt3rdReadMe(void)
 		"The Gamer Gang - Voluntary Testers",
 		"\t\t(Provided Emotional Support and Ideas too)",
 		"",
-		"NARBluebear - Emotional Support",
+		"NARBluebear - Best Friend",
+		"\t\t(Also Provided Emotional Support and All)",
 		"\"Future\" Smiles \"The Fox\" - Emotional Support",
 		"",
 		"\1In Loving Memory Of",
