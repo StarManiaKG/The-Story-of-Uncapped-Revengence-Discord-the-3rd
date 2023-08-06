@@ -348,6 +348,7 @@ static void I_ReportSignal(int num, int coredumped)
 		sigmsg = "SIGFPE - mathematical exception";
 		break;
 	case SIGSEGV:
+		// STAR STUFF //
 #ifdef BLAME_SEV
 		sigmsg = "SIGSEGV - seventh sentinel";
 #else
@@ -358,6 +359,7 @@ static void I_ReportSignal(int num, int coredumped)
 #else
 		sigmsg = "SIGSEGV - segment violation";
 #endif
+		// END THIS PLEASE //
 		break;
 //	case SIGTERM:
 //		sigmsg = "SIGTERM - Software termination signal from kill";

@@ -423,7 +423,6 @@
     <ClCompile Include="..\hardware\hw_md2load.c" />
     <ClCompile Include="..\hardware\hw_md3load.c" />
     <ClCompile Include="..\hardware\hw_model.c" />
-    <ClCompile Include="..\hardware\hw_shaders.c" />
     <ClCompile Include="..\hardware\r_opengl\r_opengl.c" />
     <ClCompile Include="..\hardware\u_list.c" />
     <ClCompile Include="..\hu_stuff.c" />
@@ -535,10 +534,6 @@
     <ClCompile Include="..\y_inter.c" />
     <ClCompile Include="..\z_zone.c" />
     <ClCompile Include="..\STAR\star_function.c" />
-    <ClCompile Include="..\STAR\star_vars.h" />
-    <ClCompile Include="..\STAR\star_webinfo.h" />
-      <ExcludedFromBuild>true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="dosstr.c" />
     <ClCompile Include="endtxt.c" />
     <ClCompile Include="hwsym_sdl.c" />

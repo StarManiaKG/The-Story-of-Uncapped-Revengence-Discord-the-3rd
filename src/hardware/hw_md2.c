@@ -1357,9 +1357,13 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		interpmobjstate_t interp;
 
 		if (R_UsingFrameInterpolation() && !paused)
+		{
 			R_InterpolateMobjState(spr->mobj, rendertimefrac, &interp);
+		}
 		else
+		{
 			R_InterpolateMobjState(spr->mobj, FRACUNIT, &interp);
+		}
 
 		// Apparently people don't like jump frames like that, so back it goes
 		//if (tics > durs)
@@ -1666,7 +1670,7 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 #ifdef USE_FTRANSFORM_MIRROR
 		p.mirror = atransform.mirror; // from Kart
 #endif
-		
+
 		HWD.pfnSetShader(SHADER_MODEL);	// model shader
 		HWD.pfnDrawModel(md2->model, frame, durs, tics, nextFrame, &p, finalscale, flip, hflip, &Surf);
 	}
