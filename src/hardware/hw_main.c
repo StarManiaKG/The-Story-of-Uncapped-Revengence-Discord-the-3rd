@@ -128,6 +128,26 @@ static line_t *gl_linedef;
 static sector_t *gl_frontsector;
 static sector_t *gl_backsector;
 
+// --------------------------------------------------------------------------
+//                                              STUFF FOR THE PROJECTION CODE
+// --------------------------------------------------------------------------
+
+FTransform atransform;
+// duplicates of the main code, set after R_SetupFrame() passed them into sharedstruct,
+// copied here for local use
+static fixed_t dup_viewx, dup_viewy, dup_viewz;
+static angle_t dup_viewangle;
+
+static float gl_viewx, gl_viewy, gl_viewz;
+static float gl_viewsin, gl_viewcos;
+
+// Maybe not necessary with the new T&L code (needs to be checked!)
+static float gl_viewludsin, gl_viewludcos; // look up down kik test
+static float gl_fovlud;
+
+static angle_t gl_aimingangle;
+static void HWR_SetTransformAiming(FTransform *trans, player_t *player, boolean skybox);
+
 // Render stats
 ps_metric_t ps_hw_skyboxtime = {0};
 ps_metric_t ps_hw_nodesorttime = {0};
@@ -154,26 +174,6 @@ boolean gl_shadersavailable = false;
 
 // Whether the internal state is set to palette rendering or not.
 static boolean gl_palette_rendering_state = false;
-
-// --------------------------------------------------------------------------
-//                                              STUFF FOR THE PROJECTION CODE
-// --------------------------------------------------------------------------
-
-FTransform atransform;
-// duplicates of the main code, set after R_SetupFrame() passed them into sharedstruct,
-// copied here for local use
-static fixed_t dup_viewx, dup_viewy, dup_viewz;
-static angle_t dup_viewangle;
-
-static float gl_viewx, gl_viewy, gl_viewz;
-static float gl_viewsin, gl_viewcos;
-
-// Maybe not necessary with the new T&L code (needs to be checked!)
-static float gl_viewludsin, gl_viewludcos; // look up down kik test
-static float gl_fovlud;
-
-static angle_t gl_aimingangle;
-static void HWR_SetTransformAiming(FTransform *trans, player_t *player, boolean skybox);
 
 // ==========================================================================
 // Lighting
@@ -374,7 +374,7 @@ static void HWR_RenderPlane(subsector_t *subsector, extrasubsector_t *xsub, bool
 	FOutVector *v3d;
 	polyvertex_t *pv;
 	pslope_t *slope = NULL;
-	INT32 shader = SHADER_DEFAULT;
+	INT32 shader = -1;
 
 	size_t nrPlaneVerts;
 	INT32 i;
@@ -850,8 +850,12 @@ static void HWR_SplitWall(sector_t *sector, FOutVector *wallVerts, INT32 texnum,
 	fixed_t v2y = FloatToFixed(wallVerts[1].z);
 
 	const UINT8 alpha = Surf->PolyColor.s.alpha;
-	FUINT lightnum = HWR_CalcWallLight(sector->lightlevel, v1x, v1y, v2x, v2y);
+	FUINT lightnum;
 	extracolormap_t *colormap = NULL;
+
+	lightnum = gl_frontsector->lightlevel;
+	colormap = gl_frontsector->extra_colormap;
+	lightnum = colormap ? lightnum : HWR_CalcWallLight(lightnum, v1x, v1y, v2x, v2y);
 
 	realtop = top = wallVerts[3].y;
 	realbot = bot = wallVerts[0].y;
@@ -1113,13 +1117,12 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 	float cliplow = (float)texturehpeg;
 	float cliphigh = (float)(texturehpeg + (gl_curline->flength*FRACUNIT));
 
-	// SUPER D USED CARS //
-	//lightnum = gl_frontsector->lightlevel;
-	//colormap = gl_frontsector->extra_colormap;
-	//lightnum = colormap ? lightnum : HWR_CalcWallLight(lightnum, vs.x, vs.y, ve.x, ve.y);
+	FUINT lightnum;
+	extracolormap_t *colormap = NULL;
 
-	FUINT lightnum = HWR_CalcWallLight(gl_frontsector->lightlevel, vs.x, vs.y, ve.x, ve.y);
-	extracolormap_t *colormap = gl_frontsector->extra_colormap;
+	lightnum = gl_frontsector->lightlevel;
+	colormap = gl_frontsector->extra_colormap;
+	lightnum = colormap ? lightnum : HWR_CalcWallLight(lightnum, vs.x, vs.y, ve.x, ve.y);
 
 	FSurfaceInfo Surf;
 	Surf.PolyColor.s.alpha = 255;
@@ -1296,7 +1299,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 
 			if (gl_sidedef->repeatcnt)
 				repeats = 1 + gl_sidedef->repeatcnt;
-			else if (gl_linedef->flags & ML_EFFECT5)
+			else if (gl_linedef->flags & ML_WRAPMIDTEX)
 			{
 				fixed_t high, low;
 
@@ -1653,13 +1656,13 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 					{
 						texturevpeg = sides[newline->sidenum[0]].rowoffset;
 						attachtobottom = !!(newline->flags & ML_DONTPEGBOTTOM);
-						slopeskew = !!(newline->flags & ML_DONTPEGTOP);
+						slopeskew = !!(newline->flags & ML_SKEWTD);
 					}
 					else
 					{
 						texturevpeg = sides[rover->master->sidenum[0]].rowoffset;
 						attachtobottom = !!(gl_linedef->flags & ML_DONTPEGBOTTOM);
-						slopeskew = !!(rover->master->flags & ML_DONTPEGTOP);
+						slopeskew = !!(rover->master->flags & ML_SKEWTD);
 					}
 
 					grTex = HWR_GetTexture(texnum);
@@ -3532,7 +3535,7 @@ static boolean HWR_DoCulling(line_t *cullheight, line_t *viewcullheight, float v
 		return false;
 
 	cullplane = FIXED_TO_FLOAT(cullheight->frontsector->floorheight);
-	if (cullheight->flags & ML_NOCLIMB) // Group culling
+	if (cullheight->args[1]) // Group culling
 	{
 		if (!viewcullheight)
 			return false;
@@ -3585,9 +3588,13 @@ static void HWR_DrawShadows(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale)
 	interpmobjstate_t interp = {0};
 
 	if (R_UsingFrameInterpolation() && !paused)
+	{
 		R_InterpolateMobjState(thing, rendertimefrac, &interp);
+	}
 	else
+	{
 		R_InterpolateMobjState(thing, FRACUNIT, &interp);
+	}
 
 	groundz = R_GetShadowZ(thing, &groundslope);
 
@@ -3771,7 +3778,7 @@ static void HWR_DrawShadows(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale)
 		sSurf.PolyColor.s.blue = 0x00;
 		sSurf.PolyColor.s.green = 0x00;
 	}
-	
+
 	if (HWR_UseShader())
 	{
 		shader = SHADER_SPRITE;
@@ -3796,16 +3803,24 @@ static void HWR_RotateSpritePolyToAim(gl_vissprite_t *spr, FOutVector *wallVerts
 		if (R_UsingFrameInterpolation() && !paused)
 		{
 			if (precip)
+			{
 				R_InterpolatePrecipMobjState((precipmobj_t *)spr->mobj, rendertimefrac, &interp);
+			}
 			else
+			{
 				R_InterpolateMobjState(spr->mobj, rendertimefrac, &interp);
+			}
 		}
 		else
 		{
 			if (precip)
+			{
 				R_InterpolatePrecipMobjState((precipmobj_t *)spr->mobj, FRACUNIT, &interp);
+			}
 			else
+			{
 				R_InterpolateMobjState(spr->mobj, FRACUNIT, &interp);
+			}
 		}
 
 		if (P_MobjFlip(spr->mobj) == -1)
@@ -5126,9 +5141,6 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	if (!thing)
 		return;
 
-	if (thing->spritexscale < 1 || thing->spriteyscale < 1)
-		return;
-
 	INT32 blendmode;
 	if (thing->frame & FF_BLENDMASK)
 		blendmode = ((thing->frame & FF_BLENDMASK) >> FF_BLENDSHIFT) + 1;
@@ -5146,16 +5158,20 @@ static void HWR_ProjectSprite(mobj_t *thing)
 
 
 	if (R_UsingFrameInterpolation() && !paused)
+	{
 		R_InterpolateMobjState(thing, rendertimefrac, &interp);
+	}
 	else
+	{
 		R_InterpolateMobjState(thing, FRACUNIT, &interp);
+	}
 
 	if (interp.spritexscale < 1 || interp.spriteyscale < 1)
 		return;
 
-	this_scale = FIXED_TO_FLOAT(thing->scale);
-	spritexscale = FIXED_TO_FLOAT(thing->spritexscale);
-	spriteyscale = FIXED_TO_FLOAT(thing->spriteyscale);
+	this_scale = FIXED_TO_FLOAT(interp.scale);
+	spritexscale = FIXED_TO_FLOAT(interp.spritexscale);
+	spriteyscale = FIXED_TO_FLOAT(interp.spriteyscale);
 
 	// transform the origin point
 	tr_x = FIXED_TO_FLOAT(interp.x) - gl_viewx;
@@ -5314,8 +5330,8 @@ static void HWR_ProjectSprite(mobj_t *thing)
 
 	if (thing->renderflags & RF_ABSOLUTEOFFSETS)
 	{
-		spr_offset = thing->spritexoffset;
-		spr_topoffset = thing->spriteyoffset;
+		spr_offset = interp.spritexoffset;
+		spr_topoffset = interp.spriteyoffset;
 	}
 	else
 	{
@@ -5324,8 +5340,8 @@ static void HWR_ProjectSprite(mobj_t *thing)
 		if ((thing->renderflags & RF_FLIPOFFSETS) && flip)
 			flipoffset = -1;
 
-		spr_offset += thing->spritexoffset * flipoffset;
-		spr_topoffset += thing->spriteyoffset * flipoffset;
+		spr_offset += interp.spritexoffset * flipoffset;
+		spr_topoffset += interp.spriteyoffset * flipoffset;
 	}
 
 	if (papersprite)
@@ -5395,14 +5411,16 @@ static void HWR_ProjectSprite(mobj_t *thing)
 		}
 
 		// test if too close
-		/*if (papersprite)
+	/*
+		if (papersprite)
 		{
 			z1 = tz - x1 * angle_scalez;
 			z2 = tz + x2 * angle_scalez;
 
 			if (max(z1, z2) < ZCLIP_PLANE)
 				return;
-		}*/
+		}
+	*/
 
 		z1 = tr_y + x1 * rightsin;
 		z2 = tr_y - x2 * rightsin;
@@ -5459,9 +5477,13 @@ static void HWR_ProjectSprite(mobj_t *thing)
 			return;
 
 		if (R_UsingFrameInterpolation() && !paused)
+		{
 			R_InterpolateMobjState(thing->tracer, rendertimefrac, &tracer_interp);
+		}
 		else
+		{
 			R_InterpolateMobjState(thing->tracer, FRACUNIT, &tracer_interp);
+		}
 
 		// calculate tz for tracer, same way it is calculated for this sprite
 		// transform the origin point
@@ -5606,9 +5628,13 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 
 	// do interpolation
 	if (R_UsingFrameInterpolation() && !paused)
+	{
 		R_InterpolatePrecipMobjState(thing, rendertimefrac, &interp);
+	}
 	else
+	{
 		R_InterpolatePrecipMobjState(thing, FRACUNIT, &interp);
+	}
 
 	// transform the origin point
 	tr_x = FIXED_TO_FLOAT(interp.x) - gl_viewx;
@@ -5897,7 +5923,7 @@ static void HWR_DrawSkyBackground(player_t *player)
 		}
 
 		if (HWR_UseShader())
-			HWD.pfnSetShader(HWR_GetShaderFromTarget(SHADER_SKY));
+			HWD.pfnSetShader(HWR_GetShaderFromTarget(SHADER_SKY)); // sky shader
 		HWD.pfnSetTransform(&dometransform);
 		HWD.pfnRenderSkyDome(&gl_sky);
 	}

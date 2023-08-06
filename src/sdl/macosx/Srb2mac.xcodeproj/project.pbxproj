@@ -368,7 +368,6 @@
 		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		67259DFA18D2687D00F02971 /* lua_hud.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = lua_hud.h; path = ../../lua_hud.h; sourceTree = SOURCE_ROOT; };
 		67259DFB18D2687D00F02971 /* lua_hudlib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lua_hudlib.c; path = ../../lua_hudlib.c; sourceTree = SOURCE_ROOT; };
-		67259DFE18D2687D00F02971 /* lua_hudlib_drawlist.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lua_hudlib_drawlist.c; path = ../../lua_hudlib_drawlist.c; sourceTree = SOURCE_ROOT; };
 		67259DFC18D2687D00F02971 /* lua_skinlib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lua_skinlib.c; path = ../../lua_skinlib.c; sourceTree = SOURCE_ROOT; };
 		67259DFF18D268AE00F02971 /* m_anigif.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = m_anigif.c; path = ../../m_anigif.c; sourceTree = SOURCE_ROOT; };
 		67259E0018D268AE00F02971 /* m_anigif.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = m_anigif.h; path = ../../m_anigif.h; sourceTree = SOURCE_ROOT; };
@@ -887,8 +886,6 @@
 			children = (
 				67259DFA18D2687D00F02971 /* lua_hud.h */,
 				67259DFB18D2687D00F02971 /* lua_hudlib.c */,
-				67259DFE18D2687D00F02971 /* lua_hudlib_drawlist.c */,
-				67259DFF18D2687D00F02971 /* lua_hudlib_drawlist.h */,
 				67259DFC18D2687D00F02971 /* lua_skinlib.c */,
 				67B83C2C14F57F1500AAAE4E /* fastcmp.h */,
 				67B83C1514F57EE600AAAE4E /* lua_baselib.c */,

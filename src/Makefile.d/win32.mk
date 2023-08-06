@@ -52,6 +52,7 @@ x86=x86_64
 i686=x86_64
 endif
 
+## STAR STUFF ##
 ifdef HAVE_DISCORDRPC
 ifdef MINGW64
 opts+=-I../libs/discord-rpc/win64-dynamic/include
@@ -83,6 +84,8 @@ libs+=-L../libs/libav/i686-w64-mingw32/lib
 endif
 libs+=-lvfw32 -lws2_32 -lbcrypt -luser32
 endif
+
+## END THIS PLEASE ##
 
 mingw:=$(i686)-w64-mingw32
 
