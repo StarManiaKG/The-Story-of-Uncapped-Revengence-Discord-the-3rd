@@ -448,7 +448,8 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"SUICIDE",
 	"LUACMD",
 	"LUAVAR",
-	"LUAFILE"
+	"LUAFILE",
+	"TSOURDT3RD"
 };
 
 // =========================================================================
@@ -993,9 +994,10 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_loadingscreen);
 	CV_RegisterVar(&cv_loadingscreenimage);
 
+	CV_RegisterVar(&cv_isitcalledsingleplayer);
 	CV_RegisterVar(&cv_menucolor);
-	CV_RegisterVar(&cv_fpscountercolor);
 
+	CV_RegisterVar(&cv_fpscountercolor);
 	CV_RegisterVar(&cv_tpsrate);
 	CV_RegisterVar(&cv_tpscountercolor);
 

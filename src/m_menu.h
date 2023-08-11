@@ -523,7 +523,7 @@ extern boolean AlwaysOverlayInvincibility, ShieldBlocksTransformation;
 extern boolean AllowEasterEggHunt, EnableEasterEggHuntBonuses;
 
 extern consvar_t cv_startupscreen, cv_stjrintro;
-extern consvar_t cv_menucolor, cv_fpscountercolor, cv_tpscountercolor;
+extern consvar_t cv_isitcalledsingleplayer, cv_menucolor, cv_fpscountercolor, cv_tpscountercolor;
 extern consvar_t cv_allowtypicaltimeover, cv_pausegraphicstyle, cv_automapoutsidedevmode;
 
 #ifdef APRIL_FOOLS

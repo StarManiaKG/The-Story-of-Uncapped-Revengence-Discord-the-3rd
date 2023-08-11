@@ -526,6 +526,8 @@ boolean EnableEasterEggHuntBonuses;
 
 INT32 STAR_ServerToExtend;
 
+static void STAR_IsItCalledSinglePlayer_OnChange(void);
+
 static void STAR_TimeOver_OnChange(void);
 
 #ifdef APRIL_FOOLS
@@ -629,7 +631,9 @@ consvar_t cv_startupscreen = CVAR_INIT ("startupscreen", "Default", CV_SAVE, sta
 static CV_PossibleValue_t stjrintro_t[] = {{0, "Default"}, {1, "Pure Fat"}, {0, NULL}};
 consvar_t cv_stjrintro = CVAR_INIT ("stjrintro", "Default", CV_SAVE, stjrintro_t, NULL);
 
-// Colors
+static CV_PossibleValue_t isitcalledsingleplayer_t[] = {{0, "No!"}, {1, "Yes!"}, {0, NULL}};
+consvar_t cv_isitcalledsingleplayer = CVAR_INIT ("isitcalledsingleplayer", "Yes!", CV_SAVE|CV_CALL, isitcalledsingleplayer_t, STAR_IsItCalledSinglePlayer_OnChange);
+
 static CV_PossibleValue_t menucolor_cons_t[] = {
 	{0, "Default"},
 	
@@ -673,7 +677,6 @@ static CV_PossibleValue_t ticcountercolor_t[] = {
 consvar_t cv_fpscountercolor = CVAR_INIT ("fpscountercolor", "Default", CV_SAVE, ticcountercolor_t, NULL);
 consvar_t cv_tpscountercolor = CVAR_INIT ("tpscountercolor", "Default", CV_SAVE, ticcountercolor_t, NULL);
 
-// Extras
 consvar_t cv_allowtypicaltimeover = CVAR_INIT ("allowtypicaltimeover", "No", CV_SAVE|CV_CALL, CV_YesNo, STAR_TimeOver_OnChange);
 
 static CV_PossibleValue_t pausestyle_t[] = {{0, "Default"}, {1, "Old-School"}, {0, NULL}};
@@ -2729,83 +2732,85 @@ static menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 	{IT_STRING | IT_CVAR,	NULL,	"Loading Screen",			&cv_loadingscreen,		   21},
 	{IT_STRING | IT_CVAR,	NULL,	"Loading Screen Image",     &cv_loadingscreenimage,	   26},
 
-	{IT_STRING | IT_CVAR,	NULL,	"Menu Color",				&cv_menucolor,	   		   36},
+	{IT_STRING | IT_CVAR,	NULL,	"Is it Called 'Single Player'",
+																&cv_isitcalledsingleplayer,36},
+	{IT_STRING | IT_CVAR,	NULL,	"Menu Color",				&cv_menucolor,	   		   41},
 
-	{IT_STRING | IT_CVAR, 	NULL, 	"Show TPS",                 &cv_tpsrate,         	   46},
-	{IT_STRING | IT_CVAR,	NULL,	"FPS Counter Color",		&cv_fpscountercolor,	   51},
-	{IT_STRING | IT_CVAR,	NULL,	"TPS Counter Color",		&cv_tpscountercolor,	   56},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Show TPS",                 &cv_tpsrate,         	   51},
+	{IT_STRING | IT_CVAR,	NULL,	"FPS Counter Color",		&cv_fpscountercolor,	   56},
+	{IT_STRING | IT_CVAR,	NULL,	"TPS Counter Color",		&cv_tpscountercolor,	   61},
 
-	{IT_STRING | IT_CVAR,	NULL,	"Shadow Type",				&cv_shadow,	  			   66},
+	{IT_STRING | IT_CVAR,	NULL,	"Shadow Type",				&cv_shadow,	  			   71},
 	{IT_STRING | IT_CVAR,	NULL,	"Realistic Shadows Can Rotate",
 																&cv_realisticshadowscanrotate,
-																						   71},
+																						   76},
 
-	{IT_STRING | IT_CVAR,	NULL,	"Allow Typical Time Over",	&cv_allowtypicaltimeover,  81},
-	{IT_STRING | IT_CVAR,	NULL,	"Pause Graphic Style",		&cv_pausegraphicstyle,	   86},
-	{IT_STRING | IT_CVAR,	NULL,	"Automap Outside Devmode",	&cv_automapoutsidedevmode, 91},
+	{IT_STRING | IT_CVAR,	NULL,	"Allow Typical Time Over",	&cv_allowtypicaltimeover,  86},
+	{IT_STRING | IT_CVAR,	NULL,	"Pause Graphic Style",		&cv_pausegraphicstyle,	   91},
+	{IT_STRING | IT_CVAR,	NULL,	"Automap Outside Devmode",	&cv_automapoutsidedevmode, 96},
 
-	{IT_STRING | IT_CVAR,	NULL,	"Sonic CD Mode",			&cv_soniccd,	   	   	  101},
+	{IT_STRING | IT_CVAR,	NULL,	"Sonic CD Mode",			&cv_soniccd,	   	   	  106},
 #ifdef APRIL_FOOLS	
-	{IT_STRING | IT_CVAR,	NULL,	"Ultimate Mode!",			&cv_ultimatemode,	   	  106},
+	{IT_STRING | IT_CVAR,	NULL,	"Ultimate Mode!",			&cv_ultimatemode,	   	  111},
 #endif
 
-	{IT_STRING | IT_CVAR,	NULL,	"Quit Screen",				&cv_quitscreen,	  		  111},
+	{IT_STRING | IT_CVAR,	NULL,	"Quit Screen",				&cv_quitscreen,	  		  116},
 
 	{IT_STRING | IT_CVAR,	NULL,	"TSoURDt3rd Update Message",&cv_tsourdt3rdupdatemessage,
-																						  121},
+																						  126},
 
-	{IT_HEADER, 			NULL, 	"Audio Options", 			NULL, 					  130},
-	{IT_STRING | IT_CVAR,	NULL,	"Game Over Music",			&cv_gameovermusic,		  136},
+	{IT_HEADER, 			NULL, 	"Audio Options", 			NULL, 					  135},
+	{IT_STRING | IT_CVAR,	NULL,	"Game Over Music",			&cv_gameovermusic,		  141},
 
-	{IT_HEADER, 			NULL, 	"Player Options", 			NULL, 					  145},
+	{IT_HEADER, 			NULL, 	"Player Options", 			NULL, 					  150},
 	{IT_STRING | IT_CVAR,	NULL,	"Shield Blocks Transformation",
 																&cv_shieldblockstransformation,
-																						  151},
+																						  156},
 	{IT_STRING | IT_CVAR,	NULL,	"Armageddon Nuke While Super",
-																&cv_armageddonnukesuper,  156},
+																&cv_armageddonnukesuper,  161},
 
 	{IT_STRING | IT_CVAR,	NULL,	"Always Overlay Invincibility",
-																&cv_alwaysoverlayinvuln,  166},
+																&cv_alwaysoverlayinvuln,  171},
 
-	{IT_HEADER, 			NULL, 	"Savedata Options", 		NULL, 					  175},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Store Saves in Folders", 	&cv_storesavesinfolders,  181},
+	{IT_HEADER, 			NULL, 	"Savedata Options", 		NULL, 					  180},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Store Saves in Folders", 	&cv_storesavesinfolders,  186},
 	
-	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save", 			&cv_perfectsave, 		  191},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 1", 	&cv_perfectsavestripe1,	  196},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 2", 	&cv_perfectsavestripe2,   201},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 3", 	&cv_perfectsavestripe3,   206},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save", 			&cv_perfectsave, 		  196},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 1", 	&cv_perfectsavestripe1,	  201},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 2", 	&cv_perfectsavestripe2,   206},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 3", 	&cv_perfectsavestripe3,   211},
 
-	{IT_STRING | IT_CVAR,	NULL,	"Continues",				&cv_continues,		  	  216},
+	{IT_STRING | IT_CVAR,	NULL,	"Continues",				&cv_continues,		  	  221},
 
-	{IT_HEADER, 			NULL, 	"Server Options", 			NULL,					  225},
+	{IT_HEADER, 			NULL, 	"Server Options", 			NULL,					  230},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,	
-							NULL,   "Holepunch Server",  		&cv_rendezvousserver,	  231},
+							NULL,   "Holepunch Server",  		&cv_rendezvousserver,	  236},
 	
-	{IT_STRING | IT_CVAR,   NULL,   "Show Connecting Players",  &cv_noticedownload,       245},
-	{IT_STRING | IT_CVAR,   NULL,   "Max File Transfer (KB)", 	&cv_maxsend,     	      250},
-	{IT_STRING | IT_CVAR,   NULL,   "File Transfer Packet Rate",&cv_downloadspeed,     	  255},
+	{IT_STRING | IT_CVAR,   NULL,   "Show Connecting Players",  &cv_noticedownload,       250},
+	{IT_STRING | IT_CVAR,   NULL,   "Max File Transfer (KB)", 	&cv_maxsend,     	      255},
+	{IT_STRING | IT_CVAR,   NULL,   "File Transfer Packet Rate",&cv_downloadspeed,     	  260},
 
-	{IT_STRING | IT_CVAR,   NULL,   "Sock Send Limit",			&cv_socksendlimit,     	  265},
-	{IT_STRING | IT_CVAR,   NULL,   "Player Setup While Moving",&cv_movingplayersetup,	  270},
+	{IT_STRING | IT_CVAR,   NULL,   "Sock Send Limit",			&cv_socksendlimit,     	  270},
+	{IT_STRING | IT_CVAR,   NULL,   "Player Setup While Moving",&cv_movingplayersetup,	  275},
 
-	{IT_HEADER, 			NULL, 	"Jukebox Options",     		NULL,					  279},
-	{IT_STRING | IT_CALL, 	NULL, 	"Enter Jukebox...",			M_Tsourdt3rdJukebox,   	  285},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Jukebox HUD",				&cv_jukeboxhud,   	      290},
+	{IT_HEADER, 			NULL, 	"Jukebox Options",     		NULL,					  284},
+	{IT_STRING | IT_CALL, 	NULL, 	"Enter Jukebox...",			M_Tsourdt3rdJukebox,   	  290},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Jukebox HUD",				&cv_jukeboxhud,   	      295},
 
-	{IT_STRING | IT_CVAR, 	NULL, 	"Lua Can Stop The Jukebox", &cv_luacanstopthejukebox, 300},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Lua Can Stop The Jukebox", &cv_luacanstopthejukebox, 305},
 
-	{IT_HEADER, 			NULL, 	"Miscellanious Extras",     NULL,					  309},
-	{IT_STRING | IT_CALL, 	NULL, 	"Play Snake",				STAR_InitializeSnakeMenu, 315},
-	{IT_STRING | IT_CALL,	NULL, 	"Dispenser Goin' Up",		STAR_SpawnDispenser,   	  320},
+	{IT_HEADER, 			NULL, 	"Miscellanious Extras",     NULL,					  314},
+	{IT_STRING | IT_CALL, 	NULL, 	"Play Snake",				STAR_InitializeSnakeMenu, 320},
+	{IT_STRING | IT_CALL,	NULL, 	"Dispenser Goin' Up",		STAR_SpawnDispenser,   	  325},
 	
-	{IT_GRAYEDOUT, 			NULL,   "Allow Easter Egg Hunt",    &cv_alloweasteregghunt,   330},
-	{IT_GRAYEDOUT, 			NULL,   "Easter Egg Hunt Bonuses",  &cv_easteregghuntbonuses, 335},
+	{IT_GRAYEDOUT, 			NULL,   "Allow Easter Egg Hunt",    &cv_alloweasteregghunt,   335},
+	{IT_GRAYEDOUT, 			NULL,   "Easter Egg Hunt Bonuses",  &cv_easteregghuntbonuses, 340},
 
-	{IT_STRING | IT_CVAR, 	NULL,   "Window Title Type",    	&cv_windowtitletype,   	  345},
+	{IT_STRING | IT_CVAR, 	NULL,   "Window Title Type",    	&cv_windowtitletype,   	  350},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,
-							NULL,   "Custom Window Title",  	&cv_customwindowtitle,    350},
+							NULL,   "Custom Window Title",  	&cv_customwindowtitle,    355},
 
-	{IT_STRING | IT_CVAR, 	NULL,   "Memes on Window Title",    &cv_memesonwindowtitle,   365},
+	{IT_STRING | IT_CVAR, 	NULL,   "Memes on Window Title",    &cv_memesonwindowtitle,   370},
 };
 static menuitem_t OP_Tsourdt3rdJukeboxMenu[] =
 {
@@ -2820,17 +2825,17 @@ static menuitem_t OP_Tsourdt3rdSnakeMenu[] =
 
 enum
 {
-	op_allowtypicaltimeover = 11,
+	op_allowtypicaltimeover = 12,
 
 #ifdef APRIL_FOOLS
-	op_aprilfools = 15,
+	op_aprilfools = 16,
 #endif
 
-	op_shieldblockstransformation = 20+STARENUMADDITION,
+	op_shieldblockstransformation = 21+STARENUMADDITION,
 
-	op_alwaysoverlayinvuln = 22+STARENUMADDITION,
+	op_alwaysoverlayinvuln = 23+STARENUMADDITION,
 
-	op_storesavesinfolders = 24+STARENUMADDITION,
+	op_storesavesinfolders = 25+STARENUMADDITION,
 
 	op_perfectsave,
 	op_perfectsavestripe1,
@@ -2839,25 +2844,25 @@ enum
 
 	op_continues,
 
-	op_holepunchserver = 31+STARENUMADDITION,
+	op_holepunchserver = 32+STARENUMADDITION,
 	op_noticedownload,
 	op_maxsend,
 	op_downloadspeed,
 
 	op_movingplayeroptionswitch,
 
-	op_jukebox = 38+STARENUMADDITION,
+	op_jukebox = 39+STARENUMADDITION,
 	op_jukeboxhud,
 
 	op_luacanstopthejukebox,
 
-	op_snake = 42+STARENUMADDITION,
+	op_snake = 43+STARENUMADDITION,
 	op_dispensergoingup,
 
 	op_alloweasteregghunt,
 	op_easteregghuntbonuses,
 
-	op_windowtitletype = 46+STARENUMADDITION,
+	op_windowtitletype = 47+STARENUMADDITION,
 	op_customwindowtitle,
 	op_memesonwindowtitle,
 	TSOURDT3RDLASTOPTION
@@ -3934,6 +3939,11 @@ void Discord_option_Onchange(void)
 
 // STAR COMMAND STUFF YAY //
 // Game //
+static void STAR_IsItCalledSinglePlayer_OnChange(void)
+{
+	MainMenu[singleplr].text = (cv_isitcalledsingleplayer.value ? "Single  Player" : "1  Player");
+}
+
 static void STAR_TimeOver_OnChange(void)
 {
 	if (netgame)
@@ -3988,12 +3998,12 @@ static void STAR_AprilFools_ChangeMenus(void)
 	else
 	{
 		// Main Menu
-		MainMenu[singleplr].text			= "Single Player";
+		MainMenu[singleplr].text 			= (cv_isitcalledsingleplayer.value ? "Single  Player" : "1  Player");
 		MainMenu[multiplr].text 			= "Multiplayer";
 		MainMenu[secrets].text 				= "Extras";
 		MainMenu[addons].text 				= "Add-ons";
 		MainMenu[options].text 				= "Options";
-		MainMenu[quitdoom].text 			= "Quit Game";
+		MainMenu[quitdoom].text 			= "Quit  Game";
 		MainMenu[tsourdt3rdreadme].text 	= "READ ME!";
 
 		// Single Player Main Menu
