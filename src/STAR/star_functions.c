@@ -22,6 +22,7 @@
 #include "../deh_soc.h"		// savefile variables
 #include "../keys.h"		// key variables
 #include "../v_video.h"		// video variables
+#include "../i_video.h"		// video variables 2
 #include "../filesrch.h"	// file variables
 #include "../r_skins.h"		// skin variables
 #include "../sounds.h"		// sound variables
@@ -62,10 +63,314 @@ struct TSoURDt3rdInfo_s TSoURDt3rdInfo;
 // COMMANDS //
 consvar_t cv_loadingscreen = CVAR_INIT ("loadingscreen", "Off", CV_SAVE, CV_OnOff, NULL);
 
-static CV_PossibleValue_t loadingscreenbackground_t[] = {{0, "Off"}, {1, "Intermission"}, {2, "Retro"}, {3, "Checkerboard"}, {0, NULL}};
+static CV_PossibleValue_t loadingscreenbackground_t[] = {
+	{0, "Off"},
+	{1, "Dynamic"},
+
+	{2, "Intermission"},
+	{3, "Retro"},
+
+	{4, "Greenflower"},
+	{5, "Techno Hill"},
+	{6, "Deep Sea"},
+	{7, "Castle"},
+	{8, "Arid Canyon"},
+	{9, "Red Volcano"},
+	{10, "Egg Rock"},
+	{11, "Black Core"},
+
+	{12, "Frozen Hill"},
+	{13, "Pipe Tower"},
+	{14, "Fortress"},
+	{15, "Retro Techno"},
+
+	{16, "Halloween"},
+	{17, "Aerial"},
+	{18, "Temple"},
+
+	{19, "NiGHTs"},
+	{20, "Black Hole"},
+
+	{21, "Random"},
+	{0, NULL}};
+
 consvar_t cv_loadingscreenimage = CVAR_INIT ("loadingscreenimage", "Intermission", CV_SAVE, loadingscreenbackground_t, NULL);
 
 consvar_t cv_tsourdt3rdupdatemessage = CVAR_INIT ("tsourdt3rdupdatemessage", "On", CV_SAVE, CV_OnOff, NULL);
+
+// GAME //
+//
+// void STAR_LoadingScreen(boolean opengl)
+// Displays a Loading Screen
+//
+size_t ls_count = 0;
+UINT8 ls_percent = 0;
+
+INT32 STAR_loadingscreentouse = 0;
+
+void STAR_LoadingScreen(boolean opengl)
+{
+	char s[16];
+	INT32 x, y;
+
+	static const char *gstartuplumpnumtype[] = {
+		[2] = "SRB2BACK",	// SRB2 titlecard background
+		"DEFLTFLR",
+		
+		"GFZL",
+		"THZL",
+		"DSZL",
+		"CEZL",
+		"ACZL",
+		"RVZL",
+		"ERZL",
+		"BCZL",
+
+		"FHZL",
+		"PTZL",
+		"FFZL",
+		"TLZL",
+
+		"HHZL",
+		"AGZL",
+		"ATZL",
+
+		"ASSL",
+		"BHZL",
+		NULL
+	};
+
+	I_OsPolling();
+	//CON_Drawer(); // console shouldn't appear while in a loading screen, honestly
+
+	if (opengl)
+		sprintf(s, "%d%%", (++ls_percent)<<1);
+	x = BASEVIDWIDTH/2;
+	y = BASEVIDHEIGHT/2;
+	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31); // Black background to match fade in effect
+	if (cv_loadingscreenimage.value)
+	{
+		// Dynamic //
+		if (cv_loadingscreenimage.value == 1)
+		{
+			// In-Game
+			if (Playing())
+			{
+				// Modified-Game Images
+				if (autoloaded || savemoddata || modifiedgame)
+					STAR_loadingscreentouse = 3;
+
+				// Vanilla/Unmodified-Game Images
+				else
+				{
+					switch (gamemap)
+					{
+						// GFZ
+						case 1:
+						case 2:
+						case 3:
+						{
+							STAR_loadingscreentouse = 4;
+							break;
+						}
+						
+						// THZ
+						case 4:
+						case 5:
+						case 6:
+						{
+							STAR_loadingscreentouse = 5;
+							break;
+						}
+			
+						// DSZ
+						case 7:
+						case 8:
+						case 9:
+						{
+							STAR_loadingscreentouse = 6;
+							break;
+						}
+
+						// CEZ
+						case 10:
+						case 11:
+						case 12:
+						{
+							STAR_loadingscreentouse = 7;
+							break;
+						}
+
+						// ACZ
+						case 13:
+						case 14:
+						case 15:
+						{
+							STAR_loadingscreentouse = 8;
+							break;
+						}
+
+						// RVZ
+						case 16:
+						{
+							STAR_loadingscreentouse = 9;
+							break;
+						}
+
+						// ERZ
+						case 22:
+						case 23:
+						{
+							STAR_loadingscreentouse = 10;
+							break;
+						}
+
+						// BCZ
+						case 25:
+						case 26:
+						case 27:
+						{
+							STAR_loadingscreentouse = 11;
+							break;
+						}
+
+						// FHZ
+						case 30:
+						{
+							STAR_loadingscreentouse = 12;
+							break;
+						}
+
+						// PTZ
+						case 31:
+						{
+							STAR_loadingscreentouse = 13;
+							break;
+						}
+
+						// FFZ
+						case 32:
+							STAR_loadingscreentouse = 14;
+							break;
+			
+						// TLZ
+						case 33:
+							STAR_loadingscreentouse = 15;
+							break;
+
+						// HHZ
+						case 40:
+						{
+							STAR_loadingscreentouse = 16;
+							break;
+						}
+
+						// AGZ
+						case 41:
+						{
+							STAR_loadingscreentouse = 17;
+							break;
+						}
+
+						// ATZ
+						case 42:
+						{
+							STAR_loadingscreentouse = 18;
+							break;
+						}
+
+						// All Special Stages
+						case 50:
+						case 51:
+						case 52:
+						case 53:
+						case 54:
+						case 55:
+						case 56:
+
+						case 60:
+						case 61:
+						case 62:
+						case 63:
+						case 64:
+						case 65:
+						case 66:
+
+						case 70:
+						case 71:
+						case 72:
+						case 73:
+						{
+							STAR_loadingscreentouse = 19;
+							break;
+						}
+
+						// BHZ
+						case 57:
+						{
+							STAR_loadingscreentouse = 20;
+							break;
+						}
+
+						// CTF, Match, and Custom Maps
+						case 280:
+						case 281:
+						case 282:
+						case 283:
+						case 284:
+						case 285:
+						case 286:
+						case 287:
+						case 288:
+
+						case 532:
+						case 533:
+						case 534:
+						case 535:
+						case 536:
+						case 537:
+						case 538:
+						case 539:
+						case 540:
+						case 541:
+						case 542:
+						case 543:
+
+						default:
+						{
+							STAR_loadingscreentouse = 3;
+							break;
+						}
+					}
+				}
+			}
+
+			// Not In-Game
+			else
+				STAR_loadingscreentouse = 2;
+		}
+
+		// Random //
+		else if (cv_loadingscreenimage.value == 21 && !STAR_loadingscreentouse)
+			STAR_loadingscreentouse = M_RandomRange(2, 20);
+
+		// Apply the Image, and We're Good :) //
+		V_DrawPatchFill(W_CachePatchName(
+			((cv_loadingscreenimage.value == 1 || cv_loadingscreenimage.value == 21) ? gstartuplumpnumtype[STAR_loadingscreentouse] : gstartuplumpnumtype[cv_loadingscreenimage.value]),
+			(PU_CACHE)));
+	}
+
+	M_DrawTextBox(x-58, y-8, 13, 1);
+	if (opengl)
+	{
+		V_DrawString(x-50, y, menuColor[cv_menucolor.value], "Loading...");
+		V_DrawRightAlignedString(x+50, y, menuColor[cv_menucolor.value], s);
+	}
+	else
+		V_DrawCenteredString(x, y, menuColor[cv_menucolor.value], "Loading...");
+
+	I_UpdateNoVsync();
+}
 
 // SAVEDATA //
 //
@@ -923,7 +1228,33 @@ const char *STAR_SetWindowTitle(void)
 			// Map Specific
 			if (Playing())
 			{
-				if (!TSoURDt3rd_NoMoreExtras)
+				// Modified-Game Titles
+				if (autoloaded || savemoddata || modifiedgame)
+				{
+					// Player is on The Titlemap
+					if (gamemap == titlemap)
+						dynamictitle = "What is Wrong With You. -";
+		
+					// Super Character Window Title
+					else if (players[consoleplayer].powers[pw_super])
+					{
+						if (cv_memesonwindowtitle.value)
+							dynamictitle = "Playing as Goku in";
+						else
+							dynamictitle = "Going Super in";
+					}
+
+					// Player is Learning How to Play SRB2
+					else if (tutorialmode)
+						dynamictitle = "Learning How to Play";
+
+					// Player is on a Custom Map
+					else
+						dynamictitle = va("%s Through MAP%d -", (cv_memesonwindowtitle.value ? "D_RUNNIN" : "Running"), gamemap);
+				}
+
+				// Vanilla/Unmodified-Game Titles
+				else
 				{
 					switch (gamemap)
 					{
@@ -931,10 +1262,7 @@ const char *STAR_SetWindowTitle(void)
 						case 1:
 						case 2:
 						{
-							if (cv_memesonwindowtitle.value)
-								dynamictitle = "Where ARE the Green Flowers in";
-							else
-								dynamictitle = "The Bright Beginning -";
+							dynamictitle = (cv_memesonwindowtitle.value ? "Where ARE the Green Flowers in" : "The Green Beginning -");
 							break;
 						}
 						
@@ -979,10 +1307,7 @@ const char *STAR_SetWindowTitle(void)
 						case 10:
 						case 11:
 						{
-							if (cv_memesonwindowtitle.value)
-								dynamictitle = "How Did Eggman Manage to Build This Castle so Fast in";
-							else
-								dynamictitle = "Such a Large Castle in";
+							dynamictitle = (cv_memesonwindowtitle.value ? "How Did Eggman Manage to Build This Castle so Fast in" : "Such a Large Castle in");
 							break;
 						}
 
@@ -990,30 +1315,21 @@ const char *STAR_SetWindowTitle(void)
 						case 13:
 						case 14:
 						{
-							if (cv_memesonwindowtitle.value)
-								dynamictitle = "Playing Through Grand Canyon Zone in";
-							else
-								dynamictitle = "Why is There So Much TNT in";
+							dynamictitle = (cv_memesonwindowtitle.value ? "Playing Through Grand Canyon Zone in" : "Why is There So Much TNT in");
 							break;
 						}
 
 						// Fang
 						case 15:
 						{
-							if (cv_memesonwindowtitle.value)
-								dynamictitle = "There is a Jerboa With a Popgun in";
-							else
-								dynamictitle = "We're on a Train in";
+							dynamictitle = (cv_memesonwindowtitle.value ? "There is a Jerboa With a Popgun in" : "We're on a Train in");
 							break;
 						}
 
 						// RVZ
 						case 16:
 						{
-							if (cv_memesonwindowtitle.value)
-								dynamictitle = "Where is the Blue Volcano in";
-							else
-								dynamictitle = "Too Much Lava in";
+							dynamictitle = (cv_memesonwindowtitle.value ? "Where is the Blue Volcano in" : "Too Much Lava in");
 							break;
 						}
 
@@ -1021,10 +1337,7 @@ const char *STAR_SetWindowTitle(void)
 						case 22:
 						case 23:
 						{
-							if (cv_memesonwindowtitle.value)
-								dynamictitle = "Robotnik has Too Many Rocks in";
-							else
-								dynamictitle = "Be Careful Not to Fall Into Space in";
+							dynamictitle = (cv_memesonwindowtitle.value ? "Robotnik has Too Many Rocks in" : "Be Careful Not to Fall Into Space in");
 							break;
 						}
 
@@ -1032,10 +1345,7 @@ const char *STAR_SetWindowTitle(void)
 						case 25:
 						case 26:
 						{
-							if (cv_memesonwindowtitle.value)
-								dynamictitle = "STRRANGE, ISN'T IT? -";
-							else
-								dynamictitle = "Beating a Hedgehog Robot in";
+							dynamictitle = (cv_memesonwindowtitle.value ? "STRRANGE, ISN'T IT? -" : "Beating a Doppelgänger Hedgehog Robot in");
 							break;
 						}
 
@@ -1045,30 +1355,21 @@ const char *STAR_SetWindowTitle(void)
 						case 9:
 						case 12:
 						{
-							if (cv_memesonwindowtitle.value)
-								dynamictitle = "He's the Egg Man, With the Master Plan -";
-							else
-								dynamictitle = "Fighting a Giant Talking Egg";
+							dynamictitle = (cv_memesonwindowtitle.value ? "He is the EggMan, With the Master Plan -" : "Fighting a Giant Talking Egg in");
 							break;
 						}
 
-						// Black Eggman (Yes, Technically its Name is Black Eggman)
+						// Black Eggman (Yes, Technically Brak's Name is Black Eggman)
 						case 27:
 						{
-							if (cv_memesonwindowtitle.value)
-								dynamictitle = "No Way Guys, the Cyberdemon is in";
-							else
-								dynamictitle = "Fighting the Final Boss in";
+							dynamictitle = (cv_memesonwindowtitle.value ? "No Way Guys, the Cyberdemon is in" : "Fighting the Final Boss in");
 							break;
 						}
 
 						// FHZ
 						case 30:
 						{
-							if (cv_memesonwindowtitle.value)
-								dynamictitle = "Use the 'Destory All Enemies' Cheat in";
-							else
-								dynamictitle = "Be Careful Not to Slip in";
+							dynamictitle = (cv_memesonwindowtitle.value ? "Use the 'Destroy All Enemies' Cheat in" : "Be Careful Not to Slip in");
 							break;
 						}
 
@@ -1099,21 +1400,22 @@ const char *STAR_SetWindowTitle(void)
 
 						// FFZ
 						case 32:
+						{
 							dynamictitle = "There's an In-Construction Castle in";
 							break;
+						}
 			
 						// TLZ
 						case 33:
+						{
 							dynamictitle = "So Much Prehistoric Technology in";
 							break;
+						}
 
 						// HHZ
 						case 40:
 						{
-							if (cv_memesonwindowtitle.value)
-								dynamictitle = "No Way Guys, Cacodemons Are Also in";
-							else
-								dynamictitle = "The Final Boss in";
+							dynamictitle = (cv_memesonwindowtitle.value ? "No Way Guys, Cacodemons Are Also in" : "The Final Boss in");
 							break;
 						}
 
@@ -1161,23 +1463,22 @@ const char *STAR_SetWindowTitle(void)
 						case 64:
 						case 65:
 						case 66:
+						{
 							dynamictitle = "Trying to Get All Those Chaos Emeralds in";
 							break;
+						}
 
 						// Special Stage 4
 						case 53:
 						case 63:
 						{
-							if (cv_memesonwindowtitle.value)
-								dynamictitle = "Trying to Get That DAMN FOURTH Chaos Emerald in";
-							else
-								dynamictitle = "Trying to Get All Those Chaos Emeralds in";
+							dynamictitle = (cv_memesonwindowtitle.value ? "Trying to Get That DAMN FOURTH Chaos Emerald in" : "Trying to Get All Those Chaos Emeralds in");
 							break;
 						}
 
-						// Special Stage 8
+						// BHZ
 						case 57:
-							dynamictitle = "The TRUE Final Boss in";
+							dynamictitle = "The True Final Boss in";
 							break;
 		
 						// The Extra Special Stages
@@ -1186,10 +1487,7 @@ const char *STAR_SetWindowTitle(void)
 						case 72:
 						case 73:
 						{
-							if (cv_memesonwindowtitle.value)
-								dynamictitle = "Playing the Extra Special Stages For no Reason in";
-							else
-								dynamictitle = "Playing the Extra Special Stages in";
+							dynamictitle = (cv_memesonwindowtitle.value ? "Playing the Extra Special Stages For no Reason in" : "Playing the Extra Special Stages in");
 							break;
 						}
 
@@ -1204,10 +1502,7 @@ const char *STAR_SetWindowTitle(void)
 						case 287:
 						case 288:
 						{
-							if (cv_memesonwindowtitle.value)
-								dynamictitle = "Playing Zandronum in";
-							else
-								dynamictitle = "Capturing Flags in";
+							dynamictitle = (cv_memesonwindowtitle.value ? "Playing Zandronum in" : "Capturing Flags in");
 							break;
 						}
 
@@ -1259,10 +1554,7 @@ const char *STAR_SetWindowTitle(void)
 							// Super Character Window Title
 							else if (players[consoleplayer].powers[pw_super])
 							{
-								if (cv_memesonwindowtitle.value)
-									dynamictitle = "Playing as Goku in";
-								else
-									dynamictitle = "Got All Those Chaos Emeralds in";
+								dynamictitle = (cv_memesonwindowtitle.value ? "Playing as Goku in" : "Got All Those Chaos Emeralds in");
 								break;
 							}
 
@@ -1276,41 +1568,10 @@ const char *STAR_SetWindowTitle(void)
 							// Player is on a Custom Map
 							else
 							{
-								char *maptitle = G_BuildMapTitle(gamemap);
-								dynamictitle = va("%s Through %s", (cv_memesonwindowtitle.value ? "D_RUNNIN" : "Running"), maptitle);
-								
-								Z_Free(maptitle);
+								dynamictitle = va("%s Through MAP%d -", (cv_memesonwindowtitle.value ? "D_RUNNIN" : "Running"), gamemap);
 								break;
 							}
 						}
-					}
-				}
-				else
-				{
-					// Player is on The Titlemap
-					if (gamemap == titlemap)
-						dynamictitle = "What is Wrong With You -";
-		
-					// Super Character Window Title
-					else if (players[consoleplayer].powers[pw_super])
-					{
-						if (cv_memesonwindowtitle.value)
-							dynamictitle = "Playing as Goku in";
-						else
-							dynamictitle = "Got All Those Chaos Emeralds in";
-					}
-
-					// Player is Learning How to Play SRB2
-					else if (tutorialmode)
-						dynamictitle = "Learning How to Play";
-
-					// Player is on a Custom Map
-					else
-					{
-						char *maptitle = G_BuildMapTitle(gamemap);
-						dynamictitle = va("%s Through %s", (cv_memesonwindowtitle.value ? "D_RUNNIN" : "Running"), maptitle);
-						
-						Z_Free(maptitle);
 					}
 				}
 			}
@@ -1335,7 +1596,7 @@ const char *STAR_SetWindowTitle(void)
 					if (cv_memesonwindowtitle.value)
 						dynamictitle = "End of Chapter! -";
 					else
-						dynamictitle = "You Got Pass the Act in";
+						dynamictitle = "You Got Pass the Act! -";
 					break;
 				}
 

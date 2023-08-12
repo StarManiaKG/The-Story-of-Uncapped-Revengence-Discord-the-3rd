@@ -102,10 +102,6 @@ void HWR_FreePolyPool(void);
 
 void HWR_FreeExtraSubsectors(void);
 
-// STAR STUFF: UNVAULTED EDITION //
-void STAR_LoadingStatus(boolean opengl);
-// END THIS FOR ME PLEASE //
-
 // --------
 // hw_cache.c
 // --------
