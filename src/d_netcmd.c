@@ -1016,6 +1016,8 @@ void D_RegisterClientCommands(void)
 
 	CV_RegisterVar(&cv_gameovermusic);
 
+	CV_RegisterVar(&cv_defaultmaptrack);
+
 	CV_RegisterVar(&cv_shieldblockstransformation);
 	CV_RegisterVar(&cv_armageddonnukesuper);
 

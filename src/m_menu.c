@@ -516,6 +516,8 @@ UINT16 menuColor[16] = {
 
 boolean AllowTypicalTimeOver;
 
+INT32 DefaultMapTrack;
+
 boolean AlwaysOverlayInvincibility;
 boolean ShieldBlocksTransformation;
 
@@ -533,6 +535,8 @@ static void STAR_TimeOver_OnChange(void);
 #ifdef APRIL_FOOLS
 static void STAR_AprilFools_OnChange(void);
 #endif
+
+static void STAR_DefaultMapTrack_OnChange(void);
 
 static void STAR_PerfectSave_OnChange(void);
 
@@ -700,6 +704,9 @@ static CV_PossibleValue_t quitscreen_t[] = {
 consvar_t cv_quitscreen = CVAR_INIT ("quitscreen", "Default", CV_SAVE, quitscreen_t, NULL);
 
 // Audio //
+static CV_PossibleValue_t defaultmaptrack_t[] = {{0, "None"}, {1, "GFZ1"}, {2, "D_RUNNIN"}, {0, NULL}};
+consvar_t cv_defaultmaptrack = CVAR_INIT ("defaultmaptrack", "D_RUNNIN", CV_SAVE|CV_CALL, defaultmaptrack_t, STAR_DefaultMapTrack_OnChange);
+
 static CV_PossibleValue_t gameovermusic_t[] = {
 	{0, "Default"},
 	
@@ -2762,55 +2769,57 @@ static menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 	{IT_HEADER, 			NULL, 	"Audio Options", 			NULL, 					  135},
 	{IT_STRING | IT_CVAR,	NULL,	"Game Over Music",			&cv_gameovermusic,		  141},
 
-	{IT_HEADER, 			NULL, 	"Player Options", 			NULL, 					  150},
+	{IT_STRING | IT_CVAR,	NULL,	"Default Map Track",		&cv_defaultmaptrack,	  151},
+
+	{IT_HEADER, 			NULL, 	"Player Options", 			NULL, 					  160},
 	{IT_STRING | IT_CVAR,	NULL,	"Shield Blocks Transformation",
 																&cv_shieldblockstransformation,
-																						  156},
+																						  166},
 	{IT_STRING | IT_CVAR,	NULL,	"Armageddon Nuke While Super",
-																&cv_armageddonnukesuper,  161},
+																&cv_armageddonnukesuper,  171},
 
 	{IT_STRING | IT_CVAR,	NULL,	"Always Overlay Invincibility",
-																&cv_alwaysoverlayinvuln,  171},
+																&cv_alwaysoverlayinvuln,  181},
 
-	{IT_HEADER, 			NULL, 	"Savedata Options", 		NULL, 					  180},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Store Saves in Folders", 	&cv_storesavesinfolders,  186},
+	{IT_HEADER, 			NULL, 	"Savedata Options", 		NULL, 					  190},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Store Saves in Folders", 	&cv_storesavesinfolders,  196},
 	
-	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save", 			&cv_perfectsave, 		  196},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 1", 	&cv_perfectsavestripe1,	  201},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 2", 	&cv_perfectsavestripe2,   206},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 3", 	&cv_perfectsavestripe3,   211},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save", 			&cv_perfectsave, 		  206},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 1", 	&cv_perfectsavestripe1,	  211},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 2", 	&cv_perfectsavestripe2,   216},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Perfect Save Stripe 3", 	&cv_perfectsavestripe3,   221},
 
-	{IT_STRING | IT_CVAR,	NULL,	"Continues",				&cv_continues,		  	  221},
+	{IT_STRING | IT_CVAR,	NULL,	"Continues",				&cv_continues,		  	  231},
 
-	{IT_HEADER, 			NULL, 	"Server Options", 			NULL,					  230},
+	{IT_HEADER, 			NULL, 	"Server Options", 			NULL,					  240},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,	
-							NULL,   "Holepunch Server",  		&cv_rendezvousserver,	  236},
+							NULL,   "Holepunch Server",  		&cv_rendezvousserver,	  246},
 	
-	{IT_STRING | IT_CVAR,   NULL,   "Show Connecting Players",  &cv_noticedownload,       250},
-	{IT_STRING | IT_CVAR,   NULL,   "Max File Transfer (KB)", 	&cv_maxsend,     	      255},
-	{IT_STRING | IT_CVAR,   NULL,   "File Transfer Packet Rate",&cv_downloadspeed,     	  260},
+	{IT_STRING | IT_CVAR,   NULL,   "Show Connecting Players",  &cv_noticedownload,       260},
+	{IT_STRING | IT_CVAR,   NULL,   "Max File Transfer (KB)", 	&cv_maxsend,     	      265},
+	{IT_STRING | IT_CVAR,   NULL,   "File Transfer Packet Rate",&cv_downloadspeed,     	  270},
 
-	{IT_STRING | IT_CVAR,   NULL,   "Sock Send Limit",			&cv_socksendlimit,     	  270},
-	{IT_STRING | IT_CVAR,   NULL,   "Player Setup While Moving",&cv_movingplayersetup,	  275},
+	{IT_STRING | IT_CVAR,   NULL,   "Sock Send Limit",			&cv_socksendlimit,     	  280},
+	{IT_STRING | IT_CVAR,   NULL,   "Player Setup While Moving",&cv_movingplayersetup,	  285},
 
-	{IT_HEADER, 			NULL, 	"Jukebox Options",     		NULL,					  284},
-	{IT_STRING | IT_CALL, 	NULL, 	"Enter Jukebox...",			M_Tsourdt3rdJukebox,   	  290},
-	{IT_STRING | IT_CVAR, 	NULL, 	"Jukebox HUD",				&cv_jukeboxhud,   	      295},
+	{IT_HEADER, 			NULL, 	"Jukebox Options",     		NULL,					  294},
+	{IT_STRING | IT_CALL, 	NULL, 	"Enter Jukebox...",			M_Tsourdt3rdJukebox,   	  300},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Jukebox HUD",				&cv_jukeboxhud,   	      305},
 
-	{IT_STRING | IT_CVAR, 	NULL, 	"Lua Can Stop The Jukebox", &cv_luacanstopthejukebox, 305},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Lua Can Stop The Jukebox", &cv_luacanstopthejukebox, 315},
 
-	{IT_HEADER, 			NULL, 	"Miscellanious Extras",     NULL,					  314},
-	{IT_STRING | IT_CALL, 	NULL, 	"Play Snake",				STAR_InitializeSnakeMenu, 320},
-	{IT_STRING | IT_CALL,	NULL, 	"Dispenser Goin' Up",		STAR_SpawnDispenser,   	  325},
+	{IT_HEADER, 			NULL, 	"Miscellanious Extras",     NULL,					  324},
+	{IT_STRING | IT_CALL, 	NULL, 	"Play Snake",				STAR_InitializeSnakeMenu, 330},
+	{IT_STRING | IT_CALL,	NULL, 	"Dispenser Goin' Up",		STAR_SpawnDispenser,   	  335},
 	
-	{IT_GRAYEDOUT, 			NULL,   "Allow Easter Egg Hunt",    &cv_alloweasteregghunt,   335},
-	{IT_GRAYEDOUT, 			NULL,   "Easter Egg Hunt Bonuses",  &cv_easteregghuntbonuses, 340},
+	{IT_GRAYEDOUT, 			NULL,   "Allow Easter Egg Hunt",    &cv_alloweasteregghunt,   345},
+	{IT_GRAYEDOUT, 			NULL,   "Easter Egg Hunt Bonuses",  &cv_easteregghuntbonuses, 350},
 
-	{IT_STRING | IT_CVAR, 	NULL,   "Window Title Type",    	&cv_windowtitletype,   	  350},
+	{IT_STRING | IT_CVAR, 	NULL,   "Window Title Type",    	&cv_windowtitletype,   	  360},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,
-							NULL,   "Custom Window Title",  	&cv_customwindowtitle,    355},
+							NULL,   "Custom Window Title",  	&cv_customwindowtitle,    365},
 
-	{IT_STRING | IT_CVAR, 	NULL,   "Memes on Window Title",    &cv_memesonwindowtitle,   370},
+	{IT_STRING | IT_CVAR, 	NULL,   "Memes on Window Title",    &cv_memesonwindowtitle,   380},
 };
 static menuitem_t OP_Tsourdt3rdJukeboxMenu[] =
 {
@@ -2830,12 +2839,14 @@ enum
 #ifdef APRIL_FOOLS
 	op_aprilfools = 16,
 #endif
+	
+	op_defaultmaptrack = 20+STARENUMADDITION,
 
-	op_shieldblockstransformation = 21+STARENUMADDITION,
+	op_shieldblockstransformation = 22+STARENUMADDITION,
 
-	op_alwaysoverlayinvuln = 23+STARENUMADDITION,
+	op_alwaysoverlayinvuln = 24+STARENUMADDITION,
 
-	op_storesavesinfolders = 25+STARENUMADDITION,
+	op_storesavesinfolders = 26+STARENUMADDITION,
 
 	op_perfectsave,
 	op_perfectsavestripe1,
@@ -2844,25 +2855,25 @@ enum
 
 	op_continues,
 
-	op_holepunchserver = 32+STARENUMADDITION,
+	op_holepunchserver = 33+STARENUMADDITION,
 	op_noticedownload,
 	op_maxsend,
 	op_downloadspeed,
 
 	op_movingplayeroptionswitch,
 
-	op_jukebox = 39+STARENUMADDITION,
+	op_jukebox = 40+STARENUMADDITION,
 	op_jukeboxhud,
 
 	op_luacanstopthejukebox,
 
-	op_snake = 43+STARENUMADDITION,
+	op_snake = 44+STARENUMADDITION,
 	op_dispensergoingup,
 
 	op_alloweasteregghunt,
 	op_easteregghuntbonuses,
 
-	op_windowtitletype = 47+STARENUMADDITION,
+	op_windowtitletype = 48+STARENUMADDITION,
 	op_customwindowtitle,
 	op_memesonwindowtitle,
 	TSOURDT3RDLASTOPTION
@@ -4028,7 +4039,7 @@ static void STAR_AprilFools_OnChange(void)
 		if (jukeboxMusicPlaying)
 			M_ResetJukebox();
 			
-		strncpy(mapmusname, (cv_ultimatemode.value ? "_hehe" : mapheaderinfo[gamemap-1]->musname), 7);	
+		strncpy(mapmusname, (cv_ultimatemode.value ? "_hehe" : mapheaderinfo[gamemap-1]->musname), 7);
 
 		mapmusname[6] = 0;
 		mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
@@ -4038,6 +4049,21 @@ static void STAR_AprilFools_OnChange(void)
 	}
 }
 #endif
+
+// Audio //
+// STAR STUFF //
+static void STAR_DefaultMapTrack_OnChange(void)
+{
+	if (Playing() && playeringame[consoleplayer])
+	{
+		CONS_Printf("Sorry, you can't set this while playing.\n");
+		CV_StealthSetValue(&cv_defaultmaptrack, DefaultMapTrack);
+		return;
+	}
+	else
+		DefaultMapTrack = cv_defaultmaptrack.value;
+}
+// END THAT STAR STUFF PLEASE //
 
 // Savefiles //
 static void STAR_PerfectSave_OnChange(void)
@@ -4147,7 +4173,7 @@ static void STAR_WindowTitleVars_OnChange(void)
 	
 	STAR_SetWindowTitle();
 }
-// FINALLY, THIS COMMAND STUFF IS OVER! //
+// FINALLY, THE STAR COMMAND STUFF IS OVER! //
 
 // ==========================================================================
 // END ORGANIZATION STUFF.
@@ -16174,6 +16200,10 @@ static void M_Tsourdt3rdOptions(INT32 choice)
 	// Game Options //
 	OP_Tsourdt3rdOptionsMenu[op_allowtypicaltimeover].status =
 		(!netgame ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+
+	// Audio Options //
+	OP_Tsourdt3rdOptionsMenu[op_defaultmaptrack].status =
+		(!(Playing() && playeringame[consoleplayer]) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
 
 	// Player Options //
 	OP_Tsourdt3rdOptionsMenu[op_shieldblockstransformation].status =
