@@ -3857,20 +3857,21 @@ static void HWR_DrawShadows(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale)
 
 	HWR_Lighting(&sSurf, 0, colormap);
 	sSurf.PolyColor.s.alpha = alpha;
-
-	// STAR NOTE: i was also here lol
-	if (cv_shadow.value == 2)
-	{
-		sSurf.PolyColor.s.red = 0x00;
-		sSurf.PolyColor.s.blue = 0x00;
-		sSurf.PolyColor.s.green = 0x00;
-	}
 	
 	if (HWR_UseShader())
 	{
 		shader = SHADER_SPRITE;
 		blendmode |= PF_ColorMapped;
 	}
+
+	// STAR STUFF //
+	if (cv_shadow.value == 2 && HWR_ShouldUsePaletteRendering())
+	{
+		sSurf.PolyColor.s.red = 0x00;
+		sSurf.PolyColor.s.blue = 0x00;
+		sSurf.PolyColor.s.green = 0x00;
+	}
+	// END THAT PLEASE //
 
 	HWR_ProcessPolygon(&sSurf, shadowVerts, 4, blendmode, shader, false);
 }

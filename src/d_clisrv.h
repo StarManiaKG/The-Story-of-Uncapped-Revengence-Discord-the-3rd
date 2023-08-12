@@ -45,7 +45,8 @@ therein, increment this number.
 // Networking and tick handling related.
 #define BACKUPTICS 1024
 #define CLIENTBACKUPTICS 32
-#define MAXTEXTCMD 256
+#define MAXTEXTCMD 264 // STAR NOTE: i was here lol (if you want to reset this, set it back to 256 :p)
+
 //
 // Packet structure
 //

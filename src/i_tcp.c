@@ -188,7 +188,7 @@
 	static UINT8 bannedmask[MAXBANS];
 	// HOLEPUNCHING STUFFS //
 	/* See ../doc/Holepunch-Protocol.txt */
-	static const INT32 hole_punch_magic = MSBF_LONG (0x52eb11);
+	static const INT32 hole_punch_magic = LONG (0x52eb11);
 	// END THE MAGIC HERE //
 #endif
 

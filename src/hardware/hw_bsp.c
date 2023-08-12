@@ -26,6 +26,9 @@
 
 // STAR STUFF //
 #include "../STAR/star_vars.h"
+
+#include "../d_main.h"
+#include "../m_random.h"
 // END THIS PLEASE //
 
 // --------------------------------------------------------------------------
@@ -578,48 +581,6 @@ static inline void SearchDivline(node_t *bsp, fdivline_t *divline)
 	divline->dy = FIXED_TO_FLOAT(bsp->dy);
 }
 
-// Hurdler: implement a loading status
-// STAR NOTE: i was here lol
-static size_t ls_count = 0;
-static UINT8 ls_percent = 0;
-
-void STAR_LoadingStatus(boolean opengl)
-{
-	char s[16];
-	int x, y;
-
-	I_OsPolling();
-	//CON_Drawer(); // console shouldn't appear while in a loading screen, honestly
-
-	if (opengl)
-		sprintf(s, "%d%%", (++ls_percent)<<1);
-	x = BASEVIDWIDTH/2;
-	y = BASEVIDHEIGHT/2;
-	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31); // Black background to match fade in effect
-	if (cv_loadingscreenimage.value)
-	{
-		static const char *gstartuplumpnumtype[] = {
-			[1] = "SRB2BACK",	// SRB2 titlecard background
-			"GFZFLR",
-			"GFZCHEK",
-			NULL
-		};
-
-		V_DrawPatchFill(W_CachePatchName(gstartuplumpnumtype[cv_loadingscreenimage.value], PU_CACHE));
-	}
-
-	M_DrawTextBox(x-58, y-8, 13, 1);
-	if (opengl)
-	{
-		V_DrawString(x-50, y, menuColor[cv_menucolor.value], "Loading...");
-		V_DrawRightAlignedString(x+50, y, menuColor[cv_menucolor.value], s);
-	}
-	else
-		V_DrawCenteredString(x, y, menuColor[cv_menucolor.value], "Loading...");
-
-	I_UpdateNoVsync();
-}
-
 // poly : the convex polygon that encloses all child subsectors
 static void WalkBSPNode(INT32 bspnum, poly_t *poly, UINT16 *leafnode, fixed_t *bbox)
 {
@@ -664,7 +625,7 @@ static void WalkBSPNode(INT32 bspnum, poly_t *poly, UINT16 *leafnode, fixed_t *b
 			if (cv_loadingscreen.value && ls_count-- <= 0)
 			{
 				ls_count = numsubsectors/50;
-				STAR_LoadingStatus(true);
+				STAR_LoadingScreen(true);
 			}
 		}
 		M_ClearBox(bbox);
@@ -851,8 +812,12 @@ static INT32 SolveTProblem(void)
 
 	// STAR NOTE: i was here lol
 	if (cv_loadingscreen.value)
+	{
 		//CON_Drawer(); // console shouldn't appear while in a loading screen, honestly
 		I_FinishUpdate(); // page flip or blit buffer
+
+		STAR_loadingscreentouse = 0; // reset the loading screen to use	
+	}
 
 	numsplitpoly = 0;
 
@@ -980,6 +945,8 @@ void HWR_CreatePlanePolygons(INT32 bspnum)
 	if (cv_loadingscreen.value)
 	{
 		ls_count = ls_percent = 0; // reset the loading status
+		STAR_loadingscreentouse = 0; // reset the loading screen to use
+
 		//CON_Drawer(); // console shouldn't appear while in a loading screen, honestly
 		I_FinishUpdate(); // page flip or blit buffer
 	}

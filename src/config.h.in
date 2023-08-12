@@ -55,6 +55,7 @@
  * Last updated 2023 / 05 / 13 - TSOURDT3RD v2.2.10 - removed the assets from the repository. thanks for the heads up in that one commit, bitten
  * Last updated 2023 / 05 / 24 - TSOURDT3RD v2.2.10 - worked a bit on readding corona support
  * Last updated 2023 / 08 / 01 - TSOURDT3RD v2.2.10 - added some loading screen graphics
+ * Last updated 2023 / 08 / 12 - TSOURDT3RD v2.2.10 - added some more loading scren graphics
 */
 #define ASSET_HASH_SRB2_PK3   "ad911f29a28a18968ee5b2d11c2acb39"
 #define ASSET_HASH_ZONES_PK3  "86ae55cae4e0a93ceda868635706a093"
@@ -63,7 +64,7 @@
 #define ASSET_HASH_PATCH_PK3  "7d467a883f7887b3c311798ee2f56b6a"
 #endif
 
-#define ASSET_HASH_TSOURDT3RD_PK3 "4032c13330f3c6db782597011c4bebc6"
+#define ASSET_HASH_TSOURDT3RD_PK3 "befd3d7c5b1bb47936af5584b012b8ff"
 
 #endif
 #endif

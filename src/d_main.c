@@ -998,14 +998,14 @@ void D_SRB2Loop(void)
 			// STAR NOTE: If You're Planning on Using the Internet Functions, Use This Block as an Example :) //
 			// Make Some Variables
 			const char *API = "https://raw.githubusercontent.com/StarManiaKG/The-Story-of-Uncapped-Revengence-Discord-the-3rd/";
-			char URL[256] = "main/src/STAR/star_webinfo.h";
+			char URL[256];	strcpy(URL,	 va("%s/src/STAR/star_webinfo.h", compbranch));
 			char INFO[256]; strcpy(INFO, va("#define TSOURDT3RDVERSION \"%s\"", TSOURDT3RDVERSION));
 			
-			// Check the Version, And If They Don't Match, Run the Block Below
+			// Check the Version, And If They Don't Match the Branch's Version, Run the Block Below
 			CONS_Printf("STAR_FindStringOnWebsite() & STAR_ReturnStringFromWebsite(): Grabbing latest TSoURDt3rd version...\n");
 			
 			if (!STAR_FindStringOnWebsite(API, URL, INFO, false) && cv_tsourdt3rdupdatemessage.value)
-			{				
+			{
 				char RETURNINFO[256] = "#define TSOURDT3RDVERSION";
 
 				UINT32 versionNumber = STAR_ConvertStringToCompressedNumber(STAR_ReturnStringFromWebsite(API, URL, RETURNINFO, false), 0, 26, true);

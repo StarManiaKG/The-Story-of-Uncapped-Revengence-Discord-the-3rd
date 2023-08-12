@@ -4360,7 +4360,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			V_DrawSmallString(1, 195, V_ALLOWLOWERCASE|V_TRANSLUCENT|V_SNAPTOLEFT|V_SNAPTOBOTTOM, tx);
 			// STAR STUFF //
 			if (cv_loadingscreen.value && rendermode != render_opengl)
-				STAR_LoadingStatus(false);
+				STAR_LoadingScreen(false);
 			// HELP ME PLEASE //
 			I_UpdateNoVsync();
 		}
@@ -4515,6 +4515,8 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 #ifdef HAVE_SDL
 	STAR_SetWindowTitle();
 #endif
+
+	STAR_loadingscreentouse = 0;
 	// END THAT //
 
 	// Took me 3 hours to figure out why my progression kept on getting overwritten with the titlemap...

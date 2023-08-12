@@ -2143,6 +2143,20 @@ static boolean S_LoadMusic(const char *mname)
 	lumpnum_t mlumpnum;
 	void *mdata;
 
+	// STAR STUFF //
+	static const char *defaultMusicTrackName[] = {
+		[1] = "GFZ1", 		// GFZ1
+		"D_RUNNIN",			// DooM Wad Anthem
+		NULL
+	};
+
+	static const char *defaultMusicTrack[] = {
+		[1] = "gfz1", 		// GFZ1
+		"_runin",			// DooM Wad Anthem
+		NULL
+	};
+	// END THAT FOR NOW //
+
 	if (S_MusicDisabled())
 		return false;
 
@@ -2151,7 +2165,19 @@ static boolean S_LoadMusic(const char *mname)
 	if (mlumpnum == LUMPERROR)
 	{
 		CONS_Alert(CONS_ERROR, "Music %.6s could not be loaded: lump not found!\n", mname);
-		return false;
+
+		// STAR STUFF //
+		if (cv_defaultmaptrack.value)
+		{
+			CONS_Alert(CONS_NOTICE, "Playing default map track %s as requested by TSoURDt3rd...\n", defaultMusicTrackName[cv_defaultmaptrack.value]);
+			
+			mlumpnum = S_GetMusicLumpNum(defaultMusicTrack[cv_defaultmaptrack.value]);
+			if (mlumpnum == LUMPERROR)
+				return false;
+		}
+		else
+			return false;
+		// END OF STAR STUFF //
 	}
 
 	// load & register it

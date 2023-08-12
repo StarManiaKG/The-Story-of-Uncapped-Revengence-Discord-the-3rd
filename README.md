@@ -11,6 +11,8 @@
 
 ## Branches
   - ```main``` - Holds all the current, stable, TSoURDt3RD code
+  - ```main-v2``` - Holds all the current, stable, TSoURDt3RD v2 (SRB2 2.2.10) code
+
   - ```unstablemain``` - Holds all the extremely current, but unstable, TSoURDt3RD code
   - ```main-2.1.25``` - Holds all the current, stable, TSoURDt3RD 2.1.25 code
   - ```androidmain``` - Holds all the current, stable, TSoURDt3RD Android code
@@ -18,42 +20,42 @@
 ## Features
 **NEW FEATURES**
   - Uncapped, Now In Vanilla SRB2, Is Included, And Was Featured In This Build Early Enough For Me To Call It A "New Feature"
-    - (By Eidolon, Original Source Code found [here](https://git.do.srb2.org/ShaderWraith/SRB2/-/tree/uncappedrevengeance))
-    
-      - Currently Supported Characters:
-        - Sonic, Super Sonic, Sonic & Tails
-        - Tails
-        - Knuckles
-        - Amy
-        - Fang
-        - Metal Sonic
-        - Adventure Sonic
-        - Shadow
-        - Skip
-        - Jana
-        - Surge
-        - Cacee
-        - Milne
-        - Maimy
-        - Mario
-        - Luigi
-        - Blaze
-        - Marine
-        - Tails Doll
-        - Metal Knuckles
-        - Smiles
-        - Whisper
-        - Speccy
-	   
-	  - Currently Supported Charatcer Portraits:
-        - CSS Portraits & Super CSS Portraits
-    	- Continue Sprite Portraits & Super Continue Sprite Portraits
-    	- Life Icon Portraits & Super Life Icon Portraits
-    
+    - (By Eidolon, Old Original Source Code found [here](https://git.do.srb2.org/ShaderWraith/SRB2/-/tree/uncappedrevengeance))
+
     ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/uncapped.gif?raw=true)
 
   - Custom Discord Settings, Commands, and Options, with Custom Character Support
     - (Original Source Code by the Kart Krew and Fafabis, can be found [here](https://git.do.srb2.org/Fafabis/SRB2/-/tree/discord))
+
+    - Currently Supported Characters:
+      - Sonic, Super Sonic, Sonic & Tails
+      - Tails
+      - Knuckles
+      - Amy
+      - Fang
+      - Metal Sonic
+      - Adventure Sonic
+      - Shadow
+      - Skip
+      - Jana
+      - Surge
+      - Cacee
+      - Milne
+      - Maimy
+      - Mario
+      - Luigi
+      - Blaze
+      - Marine
+      - Tails Doll
+      - Metal Knuckles
+      - Smiles
+      - Whisper
+      - Speccy
+    
+    - Currently Supported Charatcer Portraits:
+      - CSS Portraits & Super CSS Portraits
+      - Continue Sprite Portraits & Super Continue Sprite Portraits
+      - Life Icon Portraits & Super Life Icon Portraits
     
     ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/discord.png?raw=true)
 
@@ -68,8 +70,10 @@
           - Holiday Events
         - Game and Engine Modifying Features, such as
           - Realistic Shadows
+          - Loading Screens
         - Audio Features, such as
           - Customizable Jingle Music
+          - Default Map Music, for Maps With No Music
         - Savefile Features, such as
           - Perfect Saves
           - Continues
@@ -81,6 +85,7 @@
         - Miscellaneous Features, such as
           - Extra Events and Event Features
           - QoL Changes and Features
+          - Customizable and Dynamic Window Titles
     
     ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/tsourdt3rd.png?raw=true)
 
@@ -103,7 +108,8 @@
     
     - Autoloading add-ons still does affect netgames and the ability to join them, though. If you've loaded game-changig add-ons, you still need to relaunch with the base IWADS loaded in other to join other netgames.
     
-    ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/autoloading.gif?raw=true)
+    ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/autoloading1.gif?raw=true)
+    ![](https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/autoloading2.gif?raw=true)
 
   - A Jukebox
     - (Made by Me)

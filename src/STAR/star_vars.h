@@ -7,7 +7,7 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  star_vars.h
-/// \brief star variables, typically used when allowing lua support
+/// \brief star variables, typically used when allowing lua support or just for dumb stuff
 
 #ifndef __STAR_VARS__
 #define __STAR_VARS__
@@ -22,10 +22,10 @@
 //          I Don't Actually Care.																//
 //                                                                                              //
 //   Anyways, Most of This Stuff is Handled in the tsourdt3rd.pk3.                              //
-//      If you Want to Look at Some Code, Check that pk3 Out.                                   //
+//      If you Want to Look at Some Code, Check that PK3 Out.                                   //
 // ============================================================================================	//
 
-// DEFINITIONS //
+//// DEFINITIONS ////
 #ifdef DEVELOP
 #define TSOURDT3RDBYSTARMANIAKGSTRING "(By StarManiaKG#4884); Dev Mode Edition"
 #else
@@ -33,17 +33,7 @@
 #endif
 #define TSOURDT3RDVERSIONSTRING "TSoURDt3rd v"TSOURDT3RDVERSION
 
-// VARIABLES //
-extern boolean tsourdt3rd;
-
-extern boolean TSoURDt3rd_TouchyModifiedGame;
-extern boolean TSoURDt3rd_LoadExtras;
-extern boolean TSoURDt3rd_LoadedExtras;
-extern boolean TSoURDt3rd_NoMoreExtras;
-
-extern boolean TSoURDt3rd_checkedExtraWads;
-
-// STRUCTS //
+//// STRUCTS ////
 extern struct TSoURDt3rdInfo_s {
 	// General Stuff
 	boolean checkedVersion;
@@ -58,20 +48,36 @@ extern struct TSoURDt3rdInfo_s {
 	INT32 serverTSoURDt3rdVersion;
 } TSoURDt3rdInfo;
 
-// Sound Effects
+//// VARIABLES ////
+// TSoURDt3rd Stuff //
+extern boolean tsourdt3rd;
+
+extern boolean TSoURDt3rd_TouchyModifiedGame;
+extern boolean TSoURDt3rd_LoadExtras;
+extern boolean TSoURDt3rd_LoadedExtras;
+extern boolean TSoURDt3rd_NoMoreExtras;
+
+extern boolean TSoURDt3rd_checkedExtraWads;
+
+// Sound Effects //
 extern INT32 STAR_JoinSFX;
 extern INT32 STAR_LeaveSFX;
 extern INT32 STAR_SynchFailureSFX;
 
 extern INT32 DISCORD_RequestSFX;
 
-// Time Over...
+// Game //
+extern size_t ls_count;
+extern UINT8 ls_percent;
+extern INT32 STAR_loadingscreentouse;
+
 extern const char gameoverMusic[7][7];
 extern const INT32 gameoverMusicTics[7];
 
 extern boolean timeover;
 extern boolean ForceTimeOver;
 
+// Extras //
 // TF2
 extern boolean SpawnTheDispenser;
 
@@ -83,12 +89,15 @@ extern INT32 collectedmapeggs;
 extern INT32 currenteggs;
 extern INT32 numMapEggs;
 
-// COMMANDS //
+//// COMMANDS ////
 extern consvar_t cv_loadingscreen, cv_loadingscreenimage, cv_soniccd;
 extern consvar_t cv_tsourdt3rdupdatemessage;
 extern consvar_t cv_socksendlimit;
 
-// FUNCTIONS //
+//// FUNCTIONS ////
+// Game
+void STAR_LoadingScreen(boolean opengl);
+
 // Savedata
 void STAR_WriteExtraData(void);
 void STAR_ReadExtraData(void);
