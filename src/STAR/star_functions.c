@@ -733,7 +733,7 @@ void STAR_FindAPI(const char *API)
 INT32 STAR_FindStringOnWebsite(const char *API, char *URL, char *INFO, boolean verbose)
 {
 	// Make Variables //
-	CURL *curl;
+	CURL *curl, *sidecurl;
 	CURLcode res;
 
 	FILE *webinfo;
@@ -749,23 +749,23 @@ INT32 STAR_FindStringOnWebsite(const char *API, char *URL, char *INFO, boolean v
 	// Find the API //
 	while (hms_tsourdt3rd_api == NULL)
 		STAR_FindAPI(API);
-	curl = curl_easy_init();
+	curl = curl_easy_init(); sidecurl = curl_easy_init();
 
 	// Print Words //
 	if (verbose)
 		CONS_Printf("STAR_FindStringOnWebsite(): Attempting to grab string %s from website %s using provided api %s...\n", INFO, URL, API);
 
 	// Do Our Website Stuffs //
-	if (curl)
+	if (curl && sidecurl)
 	{
 		// Combine the Website Strings
 		snprintf(finalURL, 256, "%s%s", API, URL);
 
 		// Check if the Website Actually Exists
-		curl_easy_setopt(curl, CURLOPT_URL, finalURL);
-		curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
+		curl_easy_setopt(sidecurl, CURLOPT_URL, finalURL);
+		curl_easy_setopt(sidecurl, CURLOPT_NOBODY, 1);
 
-		res = curl_easy_perform(curl);
+		res = curl_easy_perform(sidecurl);
 		if (res != CURLE_OK)
 		{
 			CONS_Printf("STAR_FindStringOnWebsite() - Failed to check if website was valid.\n");	
@@ -773,12 +773,14 @@ INT32 STAR_FindStringOnWebsite(const char *API, char *URL, char *INFO, boolean v
 			fclose(webinfo);
 
 			remove(webinfofilelocation);
-			curl_easy_cleanup(curl);
+			curl_easy_cleanup(sidecurl);
 
 			return 0;
 		}
+		curl_easy_cleanup(sidecurl);
 		
 		// Grab the Actual Info and Write it to a File
+		curl_easy_setopt(curl, CURLOPT_URL, finalURL);
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, webinfo);
 
@@ -852,7 +854,7 @@ char finalRETURNINFO[256] = " ";
 char *STAR_ReturnStringFromWebsite(const char *API, char *URL, char *RETURNINFO, boolean verbose)
 {
 	// Make Variables //
-	CURL *curl;
+	CURL *curl, *sidecurl;
 	CURLcode res;
 
 	FILE *webinfo;
@@ -872,23 +874,23 @@ char *STAR_ReturnStringFromWebsite(const char *API, char *URL, char *RETURNINFO,
 	// Find the API //
 	while (hms_tsourdt3rd_api == NULL)
 		STAR_FindAPI(API);
-	curl = curl_easy_init();
+	curl = curl_easy_init(); sidecurl = curl_easy_init();
 
 	// Print Words //
 	if (verbose)
 		CONS_Printf("STAR_ReturnStringFromWebsite(): Attempting to return string %s from website %s using provided api %s...\n", RETURNINFO, URL, API);
 
 	// Do Our Website Stuffs //
-	if (curl)
+	if (curl && sidecurl)
 	{
 		// Combine the Website Strings
 		snprintf(finalURL, 256, "%s%s", API, URL);
 
 		// Check if the Website Actually Exists
-		curl_easy_setopt(curl, CURLOPT_URL, finalURL);
-		curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
+		curl_easy_setopt(sidecurl, CURLOPT_URL, finalURL);
+		curl_easy_setopt(sidecurl, CURLOPT_NOBODY, 1);
 
-		res = curl_easy_perform(curl);
+		res = curl_easy_perform(sidecurl);
 		if (res != CURLE_OK)
 		{
 			CONS_Printf("STAR_ReturnStringFromWebsite() - Failed to check if website was valid.\n");	
@@ -896,12 +898,14 @@ char *STAR_ReturnStringFromWebsite(const char *API, char *URL, char *RETURNINFO,
 			fclose(webinfo);
 
 			remove(webinfofilelocation);
-			curl_easy_cleanup(curl);
+			curl_easy_cleanup(sidecurl);
 
 			return finalRETURNINFO;
 		}
+		curl_easy_cleanup(sidecurl);
 
 		// Grab the Actual Info and Write it to a File
+		curl_easy_setopt(curl, CURLOPT_URL, finalURL);
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, webinfo);
 
@@ -1198,7 +1202,7 @@ INT32 STAR_ConvertStringToCompressedNumber(char *STRING, INT32 startIFrom, INT32
 
 	// Add an Extra Digit if Our Version Has Less Than 2 Digits, Return Our Compressed Number, and We're Done! //
 	if (twoToThreeDigit && strlen(convertedVersionString) <= 2)
-		convertedVersionString[i] = '0';
+		convertedVersionString[2] = '0';
 	return atoi(convertedVersionString);
 }
 
@@ -1247,13 +1251,9 @@ char *STAR_ConvertNumberToString(INT32 NUMBER, INT32 startIFrom, INT32 startJFro
 //
 INT32 STAR_ConvertNumberToStringAndBack(INT32 NUMBER, INT32 startI1From, INT32 startJ1From, INT32 startI2From, INT32 startJ2From, boolean turnIntoVersionString, boolean twoToThreeDigit)
 {
-	// Make Variables //
-	char numberString[256] = ""; strcpy(numberString, STAR_ConvertNumberToString(NUMBER, startI1From, startJ1From, turnIntoVersionString));
-	INT32 convertedNumber = STAR_ConvertStringToCompressedNumber(numberString, startI2From, startJ2From, twoToThreeDigit);
-
 	// Return The Number, and We're Done :) //
-	CONS_Printf("convertednumber - %d\n", convertedNumber);
-	return convertedNumber;
+	char numberString[256] = ""; strcpy(numberString, STAR_ConvertNumberToString(NUMBER, startI1From, startJ1From, turnIntoVersionString));
+	return STAR_ConvertStringToCompressedNumber(numberString, startI2From, startJ2From, twoToThreeDigit);
 }
 
 //
@@ -1266,7 +1266,6 @@ INT32 STAR_CombineNumbers(INT32 ARGS, INT32 FIRSTNUM, ...)
 	va_list argptr;
 	INT32 i;
 	
-	INT32 convertedNumber = 0;
 	char numberString[256] = ""; sprintf(numberString, "%d", FIRSTNUM);
 	
 	// Initialize and Iterate Through the Variable List of Arguments, Combine our Number Strings Together, and Then End it //
@@ -1276,8 +1275,7 @@ INT32 STAR_CombineNumbers(INT32 ARGS, INT32 FIRSTNUM, ...)
 	va_end(argptr);
 
 	// Convert the String Made Earlier Into a Number, Return The Number, and We're Done :) //
-	convertedNumber = STAR_ConvertStringToCompressedNumber(numberString, 0, 0, false);
-	return convertedNumber;
+	return STAR_ConvertStringToCompressedNumber(numberString, 0, 0, false);
 }
 
 #ifdef HAVE_SDL

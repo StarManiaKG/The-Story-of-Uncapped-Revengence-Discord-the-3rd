@@ -611,7 +611,8 @@ static boolean SOCK_GetHolepunchAddr(struct sockaddr_in *sin, const char *addres
 	if (runp != NULL)
 		memcpy(sin, runp->ai_addr, runp->ai_addrlen);
 
-	I_freeaddrinfo(ai);	
+	I_freeaddrinfo(ai);
+
 	return (runp != NULL);
 }
 
