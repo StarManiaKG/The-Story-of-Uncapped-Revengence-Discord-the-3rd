@@ -1004,7 +1004,7 @@ void D_SRB2Loop(void)
 			// Check the Version, And If They Don't Match the Branch's Version, Run the Block Below
 			CONS_Printf("STAR_FindStringOnWebsite() & STAR_ReturnStringFromWebsite(): Grabbing latest TSoURDt3rd version...\n");
 			
-			if (!STAR_FindStringOnWebsite(API, URL, INFO, false) && cv_tsourdt3rdupdatemessage.value)
+			if (STAR_FindStringOnWebsite(API, URL, INFO, false) == 1 && cv_tsourdt3rdupdatemessage.value)
 			{
 				char RETURNINFO[256] = "#define TSOURDT3RDVERSION";
 

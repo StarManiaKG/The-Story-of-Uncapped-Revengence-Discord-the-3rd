@@ -117,7 +117,7 @@ void TSoURDt3rd_EventMessage(INT32 choice);
 #ifdef HAVE_CURL
 void STAR_FindAPI(const char *API);
 
-boolean STAR_FindStringOnWebsite(const char *API, char *URL, char *INFO, boolean verbose);
+INT32 STAR_FindStringOnWebsite(const char *API, char *URL, char *INFO, boolean verbose);
 char *STAR_ReturnStringFromWebsite(const char *API, char *URL, char *RETURNINFO, boolean verbose);
 #endif
 

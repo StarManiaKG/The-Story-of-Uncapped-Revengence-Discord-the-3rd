@@ -22,6 +22,7 @@
 #include "../deh_soc.h"		// savefile variables
 #include "../keys.h"		// key variables
 #include "../v_video.h"		// video variables
+#include "../i_video.h"
 #include "../filesrch.h"	// file variables
 #include "../r_skins.h"		// skin variables
 #include "../sounds.h"		// sound variables
@@ -722,13 +723,17 @@ void STAR_FindAPI(const char *API)
 }
 
 //
-// boolean STAR_FindStringOnWebsite(const char *API, char *URL, char *INFO, boolean verbose)
-// Tries to Find Info From the Given Website, Returns 'true' if it Does
+// INT32 STAR_FindStringOnWebsite(const char *API, char *URL, char *INFO, boolean verbose)
+// Tries to Find Info From the Given Website, Returns 2 if it Does
 //
-boolean STAR_FindStringOnWebsite(const char *API, char *URL, char *INFO, boolean verbose)
+// 0 - Couldn't Even Access the Website Info in the First Place.
+// 1 - Accessed the Website, but Didn't Find the String.
+// 2 - Found the String on the Website!
+//
+INT32 STAR_FindStringOnWebsite(const char *API, char *URL, char *INFO, boolean verbose)
 {
 	// Make Variables //
-	CURL *curl = curl_easy_init();
+	CURL *curl;
 	CURLcode res;
 
 	FILE *webinfo;
@@ -744,6 +749,7 @@ boolean STAR_FindStringOnWebsite(const char *API, char *URL, char *INFO, boolean
 	// Find the API //
 	while (hms_tsourdt3rd_api == NULL)
 		STAR_FindAPI(API);
+	curl = curl_easy_init();
 
 	// Print Words //
 	if (verbose)
@@ -751,24 +757,66 @@ boolean STAR_FindStringOnWebsite(const char *API, char *URL, char *INFO, boolean
 
 	// Do Our Website Stuffs //
 	if (curl)
-	{	
+	{
 		// Combine the Website Strings
 		snprintf(finalURL, 256, "%s%s", API, URL);
 
-		// Grab the Info
+		// Check if the Website Actually Exists
 		curl_easy_setopt(curl, CURLOPT_URL, finalURL);
+		curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
+
+		res = curl_easy_perform(curl);
+		if (res != CURLE_OK)
+		{
+			CONS_Printf("STAR_FindStringOnWebsite() - Failed to check if website was valid.\n");	
+
+			fclose(webinfo);
+
+			remove(webinfofilelocation);
+			curl_easy_cleanup(curl);
+
+			return 0;
+		}
+		
+		// Grab the Actual Info and Write it to a File
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, webinfo);
 
 		// Use CURL, Check if Everything Went Through, and Then Perform our Actions
 		res = curl_easy_perform(curl);
 		if (res != CURLE_OK)
-			CONS_Printf("STAR_FindStringOnWebsite() - curl_easy_perform(): Failed to grab website info.\n");
+		{
+			CONS_Printf("STAR_FindStringOnWebsite() - curl_easy_perform(): Failed to grab website info.\n");	
+
+			fclose(webinfo);
+
+			remove(webinfofilelocation);
+			curl_easy_cleanup(curl);
+
+			return 0;
+		}
 
 		// Read Strings
 		else
 		{
+			// Check if the File is Empty
+			fseek(webinfo, 0, SEEK_END);
+			if (ftell(webinfo) == 0)
+			{
+				CONS_Printf("STAR_FindStringOnWebsite() - Failed to grab website info.\n");	
+
+				fclose(webinfo);
+
+				remove(webinfofilelocation);
+				curl_easy_cleanup(curl);
+
+				return 0;
+			}
+
+			// File Isn't Empty, so Actually Set the File Position
 			fseek(webinfo, 0, SEEK_SET);
+
+			// Grab the Website Info
 			while (fgets(finalINFO, sizeof finalINFO, webinfo) != NULL)
 			{
 				// We've Found the String, so Close the File, Remove it, Clean up, and We're Done :)
@@ -781,7 +829,7 @@ boolean STAR_FindStringOnWebsite(const char *API, char *URL, char *INFO, boolean
 					remove(webinfofilelocation);
 					curl_easy_cleanup(curl);
 
-					return true;
+					return 2;
 				}
 			}
 		}
@@ -792,19 +840,19 @@ boolean STAR_FindStringOnWebsite(const char *API, char *URL, char *INFO, boolean
 		
 	remove(webinfofilelocation);
 	curl_easy_cleanup(curl);
-	return false;
+	return 1;
 }
 
 //
 // char *STAR_ReturnStringFromWebsite(const char *API, char *URL, char *RETURNINFO, boolean verbose)
 // Tries to Find the Given Info From the Given Website, Returns the String if it Does
 //
-char finalRETURNINFO[256] = "";
+char finalRETURNINFO[256] = " ";
 
 char *STAR_ReturnStringFromWebsite(const char *API, char *URL, char *RETURNINFO, boolean verbose)
 {
 	// Make Variables //
-	CURL *curl = curl_easy_init();
+	CURL *curl;
 	CURLcode res;
 
 	FILE *webinfo;
@@ -813,16 +861,18 @@ char *STAR_ReturnStringFromWebsite(const char *API, char *URL, char *RETURNINFO,
 	char finalURL[256];
 	INT32 i = 0;
 
+	// Reset the Main Variable //
+	while (finalRETURNINFO[i] != '\0') { finalRETURNINFO[i] = '\0'; i++; }
+	strcpy(finalRETURNINFO, " ");
+
 	// Create the File //
 	webinfofilelocation = va("%s"PATHSEP"%s", srb2home, "tsourdt3rd_grabbedwebsiteinfo.html");
 	webinfo = fopen(webinfofilelocation, "w+");
 
-	// Clear the Return Info String Before Proceeding //
-	while (finalRETURNINFO[i] != '\0') { finalRETURNINFO[i] = '\0'; i++; }
-
 	// Find the API //
 	while (hms_tsourdt3rd_api == NULL)
 		STAR_FindAPI(API);
+	curl = curl_easy_init();
 
 	// Print Words //
 	if (verbose)
@@ -830,24 +880,66 @@ char *STAR_ReturnStringFromWebsite(const char *API, char *URL, char *RETURNINFO,
 
 	// Do Our Website Stuffs //
 	if (curl)
-	{	
+	{
 		// Combine the Website Strings
 		snprintf(finalURL, 256, "%s%s", API, URL);
 
-		// Grab the Info
+		// Check if the Website Actually Exists
 		curl_easy_setopt(curl, CURLOPT_URL, finalURL);
+		curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
+
+		res = curl_easy_perform(curl);
+		if (res != CURLE_OK)
+		{
+			CONS_Printf("STAR_ReturnStringFromWebsite() - Failed to check if website was valid.\n");	
+
+			fclose(webinfo);
+
+			remove(webinfofilelocation);
+			curl_easy_cleanup(curl);
+
+			return finalRETURNINFO;
+		}
+
+		// Grab the Actual Info and Write it to a File
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, webinfo);
 
 		// Use CURL, Check if Everything Went Through, and Then Perform our Actions
 		res = curl_easy_perform(curl);
 		if (res != CURLE_OK)
-			CONS_Printf("STAR_ReturnStringFromWebsite() - curl_easy_perform(): Failed to grab website info.\n");
+		{
+			CONS_Printf("STAR_ReturnStringFromWebsite() - curl_easy_perform(): Failed to grab website info.\n");	
+
+			fclose(webinfo);
+
+			remove(webinfofilelocation);
+			curl_easy_cleanup(curl);
+
+			return finalRETURNINFO;
+		}
 
 		// Read Strings
 		else
 		{
+			// Check if the File is Empty
+			fseek(webinfo, 0, SEEK_END);
+			if (ftell(webinfo) == 0)
+			{
+				CONS_Printf("STAR_ReturnStringFromWebsite() - Failed to grab website info.\n");	
+
+				fclose(webinfo);
+
+				remove(webinfofilelocation);
+				curl_easy_cleanup(curl);
+
+				return finalRETURNINFO;
+			}
+
+			// File Isn't Empty, so Actually Set the File Position
 			fseek(webinfo, 0, SEEK_SET);
+
+			// Find the String in the File
 			while (fgets(finalRETURNINFO, sizeof finalRETURNINFO, webinfo) != NULL)
 			{
 				// We've Found the String, so Close the File, Remove it, Clean up, Return the String, and We're Done :)
@@ -871,7 +963,7 @@ char *STAR_ReturnStringFromWebsite(const char *API, char *URL, char *RETURNINFO,
 
 	remove(webinfofilelocation);
 	curl_easy_cleanup(curl);
-	return false;
+	return finalRETURNINFO;
 }
 
 #endif // HAVE_CURL
