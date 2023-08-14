@@ -960,6 +960,12 @@ boolean STAR_FindServerInfractions(void)
 		|| (numstates >= 4096)						// Too Many States
 		|| (numobjects >= 512))						// Too Many Objects
 	{
+		if (dedicated)
+		{
+			I_Error("You've loaded too many add-ons, and now your game isn't vanilla compatible.\n\nYour current values compared to the\nvanilla limits are:\n\nSkins - %d/29\nSounds - %d/2335\nSkin Sounds - %d/3007\nSprites - %d/512\nSprite2s - %d/68\nStates - %d/4096\nObjects - %d/512\n\nIf any of these values are above the vanilla limits, you won't be able to\nhost servers until you restart the game and remove some add-ons.\n", accuratenumskins, accuratenumsounds, accuratenumskinsounds, accuratenumsprites, accuratenumsprite2s, numstates, numobjects);
+			return true;
+		}
+
 		D_QuitNetGame();
 		CL_Reset();
 		D_StartTitle();
