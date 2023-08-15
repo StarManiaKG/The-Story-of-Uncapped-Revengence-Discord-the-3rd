@@ -483,17 +483,16 @@ static void DRPC_HandleJoin(const char *secret)
 --------------------------------------------------*/
 static boolean DRPC_InvitesAreAllowed(void)
 {
-	if ((!Playing())									// We're Not Playing, So No Invites Should Be Sent.
-		|| (!cv_discordasks.value)						// The Client Doesn't Allow Invites, so Don't Send Any in the First Place.
-		|| (D_NumPlayers() >= discordInfo.maxPlayers)	// The Server is Already Full, so Don't Send Any Invites.
-		|| (!discordInfo.joinsAllowed))					// Player's Aren't Allowed to Join the Server, so Don't Send Invites Out.
-		
+	if ((!Playing())					// We're Not Playing, So No Invites Should Be Sent.
+		|| (!cv_discordasks.value)		// The Client Doesn't Allow Invites, so Don't Send Any in the First Place.
+		|| (!discordInfo.joinsAllowed))	// Player's Aren't Allowed to Join the Server, so Don't Send
+
 		return false;
 
 	if ((!discordInfo.whoCanInvite && consoleplayer == serverplayer) 											// Only the Server Player is Allowed to Invite!
 		|| (discordInfo.whoCanInvite == 1 && (consoleplayer == serverplayer || IsPlayerAdmin(consoleplayer)))	// Only Admins and the Server are Allowed to Invite!
 		|| (discordInfo.whoCanInvite == 2)) 														   			// Everyone's Allowed to Invite!
-		
+
 		return true;
 
 	return false; // Did Not Pass Any of the Checks, so Still Don't Send Any Invites.
@@ -623,6 +622,7 @@ void DRPC_Init(void)
 	handlers.joinRequest = DRPC_HandleJoinRequest;
 
 	Discord_Initialize(DISCORD_APPID, &handlers, 1, NULL);
+	I_AddExitFunc(Discord_Shutdown);
 	DRPC_UpdatePresence();
 }
 
@@ -1019,23 +1019,24 @@ void DRPC_UpdatePresence(void)
 	DiscordRichPresence discordPresence;
 	memset(&discordPresence, 0, sizeof(discordPresence));
 
-	////// 	  NO STATUS?/DEVMODE/DEDICATED 	 //////
-	if ((!cv_discordrp.value)	// Since The User Doesn't Want To Show Their Status, This Just Shows That They're Playing SRB2. (If that's too much, then they should just disable game activity :V)
-		|| (devmode)			// Enabled the DEVELOP flag? Let Them Cook Then :P
-		|| (dedicated))			// Dedicated Servers Deserve Love Too
+	////// 	  NO RICH PRESENCE ALLOWED/DEVMODE/DEDICATED MODE	 //////
+	if (!cv_discordrp.value || devmode)
 	{
+		// Since The User Doesn't Want To Show Their Status, or Since They're Using the DEVELOP Flag, This Just Shows That They're Playing SRB2. (If that's too much, then they should just disable game activity :V)
+		// However, Now it also shows a few predetermined states, based on whether you have Discord RPC off or have enabled the DEVELOP flag, thanks to Star :)
+
 		discordPresence.largeImageKey = (devmode ? "mapcustom" : "misctitle");
 		discordPresence.largeImageText = (devmode ? "Hey! No Peeking!" : "Sonic Robo Blast 2");
 		
 		discordPresence.details = (devmode ? "Developing a Masterpiece" : "In Game");
-		discordPresence.state = (devmode ? "Keep your Eyes Peeled!" :
-									(dedicated ? "Hosting a Dedicated Server" :
-									(paused ? "Currently Paused" : ((menuactive || !Playing() ? "In The Menu" : "Actively Playing")))));
+		discordPresence.state = (devmode ? "Keep your Eyes Peeled!" : (paused ? "Currently Paused" : ((menuactive || !Playing() ? "In The Menu" : "Actively Playing"))));
 
 		DRPC_EmptyRequests();
 		Discord_UpdatePresence(&discordPresence);
 		return;
 	}
+	else if (dedicated)
+		return;
 	
 	////////////////////////////////////////////
 	////   Main Rich Presence Status Info   ////
@@ -1045,6 +1046,25 @@ void DRPC_UpdatePresence(void)
 	////// 	  SERVER INFO 	 //////
 	if (netgame)
 	{
+		switch (discordInfo.serverRoom)
+		{
+			case 33: strcpy(servertype, "Standard"); break;
+			case 28: strcpy(servertype, "Casual"); break;
+			case 38: strcpy(servertype, "Custom Gametype"); break;
+			case 31: strcpy(servertype, "OLDC"); break;
+
+			case 0: strcpy(servertype, "Public"); break;
+			default: strcpy(servertype, "Unknown/Private"); break;
+		}
+
+		if (cv_discordshowonstatus.value != 8)
+			snprintf(detailstr, 60, (Playing() ? (server ? "Hosting a %s Server" : "In a %s Server") : "Looking for a Server"), servertype);
+
+		discordPresence.partyId = server_context; 		   // Thanks, whoever gave us Mumble support, for implementing the EXACT thing Discord wanted for this field!
+		discordPresence.partySize = D_NumPlayers(); 	   // Current Amount of Players in the Server
+		discordPresence.partyMax = discordInfo.maxPlayers; // Max Players
+		discordPresence.instance = 1;					   // Initialize Discord Net Instance, Just In Case
+
 		if (DRPC_InvitesAreAllowed() == true)
 		{
 			const char *join;
@@ -1056,26 +1076,6 @@ void DRPC_UpdatePresence(void)
 				joinSecretSet = true;
 			}
 		}
-
-		switch (discordInfo.serverRoom)
-		{
-			case 33: strcpy(servertype, "Standard"); break;
-			case 28: strcpy(servertype, "Casual"); break;
-			case 38: strcpy(servertype, "Custom Gametype"); break;
-			case 31: strcpy(servertype, "OLDC"); break;
-
-			case 0: strcpy(servertype, "Public"); break;
-			case -1: strcpy(servertype, "Unknown Room"); break;
-			default: strcpy(servertype, "Private"); break;
-		}
-
-		if (cv_discordshowonstatus.value != 8)
-			snprintf(detailstr, 60, (Playing() ? (server ? "Hosting a %s Server" : "In a %s Server") : "Looking for a Server"), servertype);
-			
-		discordPresence.partyId = server_context; 		   // Thanks, whoever gave us Mumble support, for implementing the EXACT thing Discord wanted for this field!
-		discordPresence.partySize = D_NumPlayers(); 	   // Current Amount of Players in the Server
-		discordPresence.partyMax = discordInfo.maxPlayers; // Max Players
-		discordPresence.instance = 1;					   // Initialize Discord Net Instance, Just In Case
 	}
 	else
 	{
@@ -1568,8 +1568,8 @@ void DRPC_UpdatePresence(void)
 	discordPresence.largeImageKey = imagestr;
 	discordPresence.largeImageText = imagetxtstr;
 
-	// Flush the Request List, if it Exists and We Can't Join
-	if (!joinSecretSet)
+	// Flush the Request List, if it Exists and We Can't Join.
+	if (joinSecretSet == false)
 		DRPC_EmptyRequests();
 
 	// Finally Push Our Status and Finish Everything! //

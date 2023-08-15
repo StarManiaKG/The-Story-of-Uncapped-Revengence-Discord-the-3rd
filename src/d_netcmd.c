@@ -5173,19 +5173,20 @@ static void Got_Tsourdt3rdInfo(UINT8 **cp, INT32 playernum)
 	}
 
 	// Apply Info, and We're Done :) //
-	TSoURDt3rdInfo.serverUsesTSoURDt3rd 	= (boolean)READUINT8(*cp);	
+	UINT8 serverUsesTSoURDt3rd				= (boolean)READUINT8(*cp);
+	TSoURDt3rdInfo.serverUsesTSoURDt3rd		= (((UINT8)serverUsesTSoURDt3rd != 1 && serverUsesTSoURDt3rd != 0) ? 0 : 1);
 
-	TSoURDt3rdInfo.majorVersion 			= READUINT8(*cp);
-	TSoURDt3rdInfo.minorVersion 			= READUINT8(*cp);
-	TSoURDt3rdInfo.subVersion 				= READUINT8(*cp);
+	TSoURDt3rdInfo.majorVersion 			= (TSoURDt3rdInfo.serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
+	TSoURDt3rdInfo.minorVersion 			= (TSoURDt3rdInfo.serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
+	TSoURDt3rdInfo.subVersion 				= (TSoURDt3rdInfo.serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
 
-	TSoURDt3rdInfo.serverTSoURDt3rdVersion 	= STAR_CombineNumbers(3, TSoURDt3rdInfo.majorVersion, TSoURDt3rdInfo.minorVersion, TSoURDt3rdInfo.subVersion);
+	//TSoURDt3rdInfo.serverTSoURDt3rdVersion 	= STAR_CombineNumbers(3, TSoURDt3rdInfo.majorVersion, TSoURDt3rdInfo.minorVersion, TSoURDt3rdInfo.subVersion);
 
 	// DISCORD STUFF //
 #ifdef HAVE_DISCORDRPC
-	discordInfo.maxPlayers 					= READUINT8(*cp);
-	discordInfo.joinsAllowed 				= (boolean)READUINT8(*cp);
-	discordInfo.whoCanInvite 				= READUINT8(*cp);
+	discordInfo.maxPlayers 					= (TSoURDt3rdInfo.serverUsesTSoURDt3rd ? READUINT8(*cp) : (UINT8)cv_maxplayers.value);
+	discordInfo.joinsAllowed 				= (TSoURDt3rdInfo.serverUsesTSoURDt3rd ? (boolean)READUINT8(*cp) : (boolean)cv_allownewplayer.value);
+	discordInfo.whoCanInvite 				= (TSoURDt3rdInfo.serverUsesTSoURDt3rd ? READUINT8(*cp) : (UINT8)cv_discordinvites.value);
 
 	DRPC_UpdatePresence();
 #else

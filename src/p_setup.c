@@ -4361,8 +4361,9 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			// STAR STUFF //
 			if (cv_loadingscreen.value && rendermode != render_opengl)
 				STAR_LoadingScreen(false);
+			else
+				I_UpdateNoVsync();
 			// HELP ME PLEASE //
-			I_UpdateNoVsync();
 		}
 
 		// As oddly named as this is, this handles music only.

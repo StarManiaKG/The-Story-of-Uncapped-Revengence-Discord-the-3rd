@@ -188,7 +188,7 @@
 	static UINT8 bannedmask[MAXBANS];
 	// HOLEPUNCHING STUFFS //
 	/* See ../doc/Holepunch-Protocol.txt */
-	static const INT32 hole_punch_magic = LONG (0x52eb11);
+	static const INT32 hole_punch_magic = MSBF_LONG (0x52eb11);
 	// END THE MAGIC HERE //
 #endif
 
@@ -611,7 +611,8 @@ static boolean SOCK_GetHolepunchAddr(struct sockaddr_in *sin, const char *addres
 	if (runp != NULL)
 		memcpy(sin, runp->ai_addr, runp->ai_addrlen);
 
-	I_freeaddrinfo(ai);	
+	I_freeaddrinfo(ai);
+
 	return (runp != NULL);
 }
 

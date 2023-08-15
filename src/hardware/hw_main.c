@@ -3865,7 +3865,7 @@ static void HWR_DrawShadows(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale)
 	}
 
 	// STAR STUFF //
-	if (cv_shadow.value == 2 && HWR_ShouldUsePaletteRendering())
+	if (cv_shadow.value == 2)
 	{
 		sSurf.PolyColor.s.red = 0x00;
 		sSurf.PolyColor.s.blue = 0x00;

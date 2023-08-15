@@ -4496,7 +4496,7 @@ static void HandlePacketFromAwayNode(SINT8 node)
 			}
 
 			// STAR STUFF //
-			TSoURDt3rdInfo.serverUsesTSoURDt3rd = (((netbuffer->u.servercfg.tsourdt3rd > 1 || netbuffer->u.servercfg.tsourdt3rd < 0) || TSoURDt3rd_CurrentVersion() < 280) ? 0 : 1);
+			TSoURDt3rdInfo.serverUsesTSoURDt3rd = ((netbuffer->u.servercfg.tsourdt3rd > 1 || netbuffer->u.servercfg.tsourdt3rd < 0) ? 0 : 1);
 			
 			if (netgame && !server)
 				(TSoURDt3rdInfo.serverUsesTSoURDt3rd ? 

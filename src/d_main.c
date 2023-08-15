@@ -951,7 +951,7 @@ void D_SRB2Loop(void)
 		LUA_Step();
 
 #ifdef HAVE_DISCORDRPC
-		if (!dedicated)
+		if (! dedicated)
 			Discord_RunCallbacks();
 #endif
 
@@ -1064,7 +1064,7 @@ void D_SRB2Loop(void)
 
 		// Do Server Stuff //
 		// Find Current Server Infractions
-		if (Playing() && (netgame || dedicated))
+		if ((Playing() && netgame) || dedicated)
 			STAR_FindServerInfractions();
 		
 		//// THAT'S THE END :P ////
