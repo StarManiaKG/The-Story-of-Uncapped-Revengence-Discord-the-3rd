@@ -849,7 +849,7 @@ INT32 STAR_FindStringOnWebsite(const char *API, char *URL, char *INFO, boolean v
 // char *STAR_ReturnStringFromWebsite(const char *API, char *URL, char *RETURNINFO, boolean verbose)
 // Tries to Find the Given Info From the Given Website, Returns the String if it Does
 //
-char finalRETURNINFO[256] = "";
+char finalRETURNINFO[256] = " ";
 
 char *STAR_ReturnStringFromWebsite(const char *API, char *URL, char *RETURNINFO, boolean verbose)
 {
