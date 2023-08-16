@@ -1199,9 +1199,12 @@ INT32 STAR_ConvertStringToCompressedNumber(char *STRING, INT32 startIFrom, INT32
 	// Initialize the Main String, and Iterate Through Our Two Strings //
 	while (STRING[j] != '\0')
 	{
-		if (STRING[j] == '.' || STRING[j] == '"')
+		if (STRING[j] == '.' || STRING[j] == '"' || STRING[j] == ' ')
+		{
 			j++;
-		
+			continue;
+		}
+
 		convertedVersionString[i] = STRING[j];
 		i++, j++;
 	}
@@ -1281,7 +1284,7 @@ INT32 STAR_CombineNumbers(INT32 ARGS, INT32 FIRSTNUM, ...)
 	va_end(argptr);
 
 	// Convert the String Made Earlier Into a Number, Return The Number, and We're Done :) //
-	return STAR_ConvertStringToCompressedNumber(numberString, 0, 0, false);;
+	return STAR_ConvertStringToCompressedNumber(numberString, 0, 0, false);
 }
 
 #ifdef HAVE_SDL
