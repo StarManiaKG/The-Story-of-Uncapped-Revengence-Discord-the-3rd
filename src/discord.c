@@ -488,7 +488,7 @@ static boolean DRPC_InvitesAreAllowed(void)
 
 		return false;
 
-	if (discordInfo.joinsAllowed)																					// Player's Aren't Allowed to Join the Server, so Don't Send an Invite.
+	if (discordInfo.joinsAllowed)		// Are Players Allowed to Join the Server?
 	{
 		if ((!discordInfo.whoCanInvite && consoleplayer == serverplayer) 											// Only the Server Player is Allowed to Invite!
 			|| (discordInfo.whoCanInvite == 1 && (consoleplayer == serverplayer || IsPlayerAdmin(consoleplayer)))	// Only Admins and the Server are Allowed to Invite!
