@@ -5180,7 +5180,7 @@ static void Got_Tsourdt3rdInfo(UINT8 **cp, INT32 playernum)
 	TSoURDt3rdInfo.minorVersion 			= (TSoURDt3rdInfo.serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
 	TSoURDt3rdInfo.subVersion 				= (TSoURDt3rdInfo.serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
 
-	//TSoURDt3rdInfo.serverTSoURDt3rdVersion 	= STAR_CombineNumbers(3, TSoURDt3rdInfo.majorVersion, TSoURDt3rdInfo.minorVersion, TSoURDt3rdInfo.subVersion);
+	TSoURDt3rdInfo.serverTSoURDt3rdVersion 	= STAR_CombineNumbers(3, TSoURDt3rdInfo.majorVersion, TSoURDt3rdInfo.minorVersion, TSoURDt3rdInfo.subVersion);
 
 	// DISCORD STUFF //
 #ifdef HAVE_DISCORDRPC
