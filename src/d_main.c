@@ -1007,13 +1007,16 @@ void D_SRB2Loop(void)
 			if (STAR_FindStringOnWebsite(API, URL, INFO, false) == 1 && cv_tsourdt3rdupdatemessage.value)
 			{
 				char RETURNINFO[256] = "#define TSOURDT3RDVERSION";
+				char RETURNEDSTRING[256] = ""; strcpy(RETURNEDSTRING, STAR_ReturnStringFromWebsite(API, URL, RETURNINFO, false));
 
-				UINT32 versionNumber = STAR_ConvertStringToCompressedNumber(STAR_ReturnStringFromWebsite(API, URL, RETURNINFO, false), 0, 26, true);
-				const char *displayVersionString = STAR_ConvertNumberToString(versionNumber, 0, 0, true);
+				UINT32 internalVersionNumber = STAR_ConvertStringToCompressedNumber(RETURNEDSTRING, 0, 26, true);
 
-				if (TSoURDt3rd_CurrentVersion() < versionNumber)
+				UINT32 displayVersionNumber = STAR_ConvertStringToCompressedNumber(RETURNEDSTRING, 0, 26, false);
+				const char *displayVersionString = STAR_ConvertNumberToString(displayVersionNumber, 0, 0, true);
+
+				if (TSoURDt3rd_CurrentVersion() < internalVersionNumber)
 					M_StartMessage(va("%c%s\x80\nYou're using an outdated version of TSoURDt3rd.\n\nThe newest version is: %s\nYou're using version: %s\n\nCheck the SRB2 Message Board for the latest version! \n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Update TSoURDt3rd, Please", displayVersionString, TSOURDT3RDVERSION),NULL,MM_NOTHING);
-				else if (TSoURDt3rd_CurrentVersion() > versionNumber)
+				else if (TSoURDt3rd_CurrentVersion() > internalVersionNumber)
 					M_StartMessage(va("%c%s\x80\nYou're using a version of TSoURDt3rd that hasn't even released yet. \n\nYou're probably a tester or coder,\nand in that case, hello!\n\nEnjoy messing around with the build! \n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Hello, Tester/Coder!"),NULL,MM_NOTHING);
 			}
 			TSoURDt3rdInfo.checkedVersion = true;

@@ -1199,9 +1199,12 @@ INT32 STAR_ConvertStringToCompressedNumber(char *STRING, INT32 startIFrom, INT32
 	// Initialize the Main String, and Iterate Through Our Two Strings //
 	while (STRING[j] != '\0')
 	{
-		if (STRING[j] == '.' || STRING[j] == '"')
+		if (STRING[j] == '.' || STRING[j] == '"' || STRING[j] == ' ')
+		{
 			j++;
-		
+			continue;
+		}
+
 		convertedVersionString[i] = STRING[j];
 		i++, j++;
 	}
