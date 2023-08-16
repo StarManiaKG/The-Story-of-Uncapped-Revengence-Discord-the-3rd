@@ -484,18 +484,20 @@ static void DRPC_HandleJoin(const char *secret)
 static boolean DRPC_InvitesAreAllowed(void)
 {
 	if ((!Playing())					// We're Not Playing, So No Invites Should Be Sent.
-		|| (!cv_discordasks.value)		// The Client Doesn't Allow Invites, so Don't Send Any in the First Place.
-		|| (!discordInfo.joinsAllowed))	// Player's Aren't Allowed to Join the Server, so Don't Send
+		|| (!cv_discordasks.value))		// The Client Doesn't Allow Invites, so Don't Send Any in the First Place.
 
 		return false;
 
-	if ((!discordInfo.whoCanInvite && consoleplayer == serverplayer) 											// Only the Server Player is Allowed to Invite!
-		|| (discordInfo.whoCanInvite == 1 && (consoleplayer == serverplayer || IsPlayerAdmin(consoleplayer)))	// Only Admins and the Server are Allowed to Invite!
-		|| (discordInfo.whoCanInvite == 2)) 														   			// Everyone's Allowed to Invite!
+	if (discordInfo.joinsAllowed)																					// Player's Aren't Allowed to Join the Server, so Don't Send an Invite.
+	{
+		if ((!discordInfo.whoCanInvite && consoleplayer == serverplayer) 											// Only the Server Player is Allowed to Invite!
+			|| (discordInfo.whoCanInvite == 1 && (consoleplayer == serverplayer || IsPlayerAdmin(consoleplayer)))	// Only Admins and the Server are Allowed to Invite!
+			|| (discordInfo.whoCanInvite == 2)) 														   			// Everyone's Allowed to Invite!
 
 		return true;
+	}
 
-	return false; // Did Not Pass Any of the Checks, so Still Don't Send Any Invites.
+	return false;						// Did Not Pass Any of the Checks, so Still Don't Send Any Invites.
 }
 
 /*--------------------------------------------------
@@ -1046,6 +1048,18 @@ void DRPC_UpdatePresence(void)
 	////// 	  SERVER INFO 	 //////
 	if (netgame)
 	{
+		if (DRPC_InvitesAreAllowed() == true)
+		{
+			const char *join;
+
+			// Grab the host's IP for joining.
+			if ((join = DRPC_GetServerIP()) != NULL)
+			{
+				discordPresence.joinSecret = DRPC_XORIPString(join);
+				joinSecretSet = true;
+			}
+		}
+
 		switch (discordInfo.serverRoom)
 		{
 			case 33: strcpy(servertype, "Standard"); break;
@@ -1064,18 +1078,6 @@ void DRPC_UpdatePresence(void)
 		discordPresence.partySize = D_NumPlayers(); 	   // Current Amount of Players in the Server
 		discordPresence.partyMax = discordInfo.maxPlayers; // Max Players
 		discordPresence.instance = 1;					   // Initialize Discord Net Instance, Just In Case
-
-		if (DRPC_InvitesAreAllowed() == true)
-		{
-			const char *join;
-
-			// Grab the host's IP for joining.
-			if ((join = DRPC_GetServerIP()) != NULL)
-			{
-				discordPresence.joinSecret = DRPC_XORIPString(join);
-				joinSecretSet = true;
-			}
-		}
 	}
 	else
 	{
