@@ -946,7 +946,7 @@ char *STAR_ReturnStringFromWebsite(const char *API, char *URL, char *RETURNINFO,
 			// Find the String in the File
 			while (fgets(finalRETURNINFO, sizeof finalRETURNINFO, webinfo) != NULL)
 			{
-				// We've Found the String, so Close the File, Remove it, Clean up, Return the String, and We're Done :)
+				// We've Found the String, so Close the File, Remove it, Clean up Curl, Clean up the String and Return it, and We're Done :)
 				if (fastncmp(finalRETURNINFO, RETURNINFO, sizeof(RETURNINFO)))
 				{
 					if (verbose)
@@ -955,6 +955,14 @@ char *STAR_ReturnStringFromWebsite(const char *API, char *URL, char *RETURNINFO,
 
 					remove(webinfofilelocation);
 					curl_easy_cleanup(curl);
+
+					i = 0;
+					while (finalRETURNINFO[i] != '\0')
+					{
+						if (finalRETURNINFO[i] == '\n')
+							finalRETURNINFO[i] = '\0';
+						i++;
+					}
 
 					return finalRETURNINFO;
 				}
@@ -1183,18 +1191,20 @@ UINT8 TSoURDt3rd_CurrentSubversion(void)
 }
 
 //
-// INT32 STAR_ConvertStringToCompressedNumber(char *STRING, INT32 startIFrom, INT32 startJFrom, boolean twoToThreeDigit)
+// INT32 STAR_ConvertStringToCompressedNumber(char *STRING, INT32 startIFrom, INT32 startJFrom, boolean turnIntoVersionNumber)
 // Converts Strings to Compressed Numbers
 //
 // Example of a Possible Return:
-//	STRING == '2.8', twoToThreeDigit = true		=	Returned Number = 280
-//	STRING == '2.7.1', twoToThreeDigit = false	=	Returned Number = 271
+//	STRING == '2.8', turnIntoVersionNumber = true		=	Returned Number = 280
+//	STRING == '2.7.1', turnIntoVersionNumber = false	=	Returned Number = 271
 //
-INT32 STAR_ConvertStringToCompressedNumber(char *STRING, INT32 startIFrom, INT32 startJFrom, boolean twoToThreeDigit)
+INT32 STAR_ConvertStringToCompressedNumber(char *STRING, INT32 startIFrom, INT32 startJFrom, boolean turnIntoVersionNumber)
 {
 	// Make Variables //
 	INT32 i = startIFrom, j = startJFrom;
-	char convertedVersionString[256] = "";
+
+	char convertedString[256] = "";
+	INT32 finalNumber = 0;
 
 	// Initialize the Main String, and Iterate Through Our Two Strings //
 	while (STRING[j] != '\0')
@@ -1205,14 +1215,17 @@ INT32 STAR_ConvertStringToCompressedNumber(char *STRING, INT32 startIFrom, INT32
 			continue;
 		}
 
-		convertedVersionString[i] = STRING[j];
+		convertedString[i] = STRING[j];
 		i++, j++;
 	}
 
-	// Add an Extra Digit if Our Version Has Less Than 2 Digits, Return Our Compressed Number, and We're Done! //
-	if (twoToThreeDigit && strlen(convertedVersionString) <= 2)
-		convertedVersionString[2] = '0';
-	return atoi(convertedVersionString);
+	// Add an Extra Digit or Two if Our String Has Less Than 2 Digits, Else Return Our Compressed Number, and We're Done! //
+	finalNumber = ((turnIntoVersionNumber && strlen(convertedString) <= 2) ?
+					(strlen(convertedString) == 2 ? 
+						(STAR_CombineNumbers(2, atoi(convertedString), 0)) :
+						(STAR_CombineNumbers(3, atoi(convertedString), 0, 0))) :
+					(atoi(convertedString)));
+	return finalNumber;
 }
 
 //
@@ -1255,14 +1268,14 @@ char *STAR_ConvertNumberToString(INT32 NUMBER, INT32 startIFrom, INT32 startJFro
 }
 
 //
-// INT32 STAR_ConvertNumberToStringAndBack(INT32 NUMBER, INT32 startI1From, INT32 startJ1From, INT32 startI2From, INT32 startJ2From, boolean turnIntoVersionString, boolean twoToThreeDigit)
+// INT32 STAR_ConvertNumberToStringAndBack(INT32 NUMBER, INT32 startI1From, INT32 startJ1From, INT32 startI2From, INT32 startJ2From, boolean turnIntoVersionString, boolean turnIntoVersionNumber)
 // Converts Numbers to Strings, and Then Converts Them Back to Numbers
 //
-INT32 STAR_ConvertNumberToStringAndBack(INT32 NUMBER, INT32 startI1From, INT32 startJ1From, INT32 startI2From, INT32 startJ2From, boolean turnIntoVersionString, boolean twoToThreeDigit)
+INT32 STAR_ConvertNumberToStringAndBack(INT32 NUMBER, INT32 startI1From, INT32 startJ1From, INT32 startI2From, INT32 startJ2From, boolean turnIntoVersionString, boolean turnIntoVersionNumber)
 {
 	// Return The Number, and We're Done :) //
 	char numberString[256] = ""; strcpy(numberString, STAR_ConvertNumberToString(NUMBER, startI1From, startJ1From, turnIntoVersionString));
-	return STAR_ConvertStringToCompressedNumber(numberString, startI2From, startJ2From, twoToThreeDigit);
+	return STAR_ConvertStringToCompressedNumber(numberString, startI2From, startJ2From, turnIntoVersionNumber);
 }
 
 //

@@ -131,9 +131,9 @@ UINT8 TSoURDt3rd_CurrentMajorVersion(void);
 UINT8 TSoURDt3rd_CurrentMinorVersion(void);
 UINT8 TSoURDt3rd_CurrentSubversion(void);
 
-INT32 STAR_ConvertStringToCompressedNumber(char *STRING, INT32 startIFrom, INT32 startJFrom, boolean twoToThreeDigit);
+INT32 STAR_ConvertStringToCompressedNumber(char *STRING, INT32 startIFrom, INT32 startJFrom, boolean turnIntoVersionNumber);
 char *STAR_ConvertNumberToString(INT32 NUMBER, INT32 startIFrom, INT32 startJFrom, boolean turnIntoVersionString);
-INT32 STAR_ConvertNumberToStringAndBack(INT32 NUMBER, INT32 startI1From, INT32 startJ1From, INT32 startI2From, INT32 startJ2From, boolean turnIntoVersionString, boolean twoToThreeDigit);
+INT32 STAR_ConvertNumberToStringAndBack(INT32 NUMBER, INT32 startI1From, INT32 startJ1From, INT32 startI2From, INT32 startJ2From, boolean turnIntoVersionString, boolean turnIntoVersionNumber);
 
 INT32 STAR_CombineNumbers(INT32 ARGS, INT32 FIRSTNUM, ...);
 
