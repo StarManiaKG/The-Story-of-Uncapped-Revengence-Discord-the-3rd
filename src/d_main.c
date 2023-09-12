@@ -995,7 +995,7 @@ void D_SRB2Loop(void)
 #ifdef HAVE_CURL
 		// Do Internet Stuff //
 		// Grab the Current TSoURDt3rd Version
-		if (!TSoURDt3rdInfo.checkedVersion)
+		if (!TSoURDt3rd->checkedVersion && cv_tsourdt3rdupdatemessage.value)
 		{
 			// STAR NOTE: If You're Planning on Using the Internet Functions, Use This Block as an Example :) //
 			// Make Some Variables
@@ -1006,7 +1006,7 @@ void D_SRB2Loop(void)
 			// Check the Version, And If They Don't Match the Branch's Version, Run the Block Below
 			CONS_Printf("STAR_FindStringOnWebsite() & STAR_ReturnStringFromWebsite(): Grabbing latest TSoURDt3rd version...\n");
 			
-			if (STAR_FindStringOnWebsite(API, URL, INFO, false) == 1 && cv_tsourdt3rdupdatemessage.value)
+			if (STAR_FindStringOnWebsite(API, URL, INFO, false) == 1)
 			{
 				char RETURNINFO[256] = "#define TSOURDT3RDVERSION";
 				char RETURNEDSTRING[256] = ""; strcpy(RETURNEDSTRING, STAR_ReturnStringFromWebsite(API, URL, RETURNINFO, false));
@@ -1017,11 +1017,15 @@ void D_SRB2Loop(void)
 				const char *displayVersionString = STAR_ConvertNumberToString(displayVersionNumber, 0, 0, true);
 
 				if (TSoURDt3rd_CurrentVersion() < internalVersionNumber)
-					M_StartMessage(va("%c%s\x80\nYou're using an outdated version of TSoURDt3rd.\n\nThe newest version is: %s\nYou're using version: %s\n\nCheck the SRB2 Message Board for the latest version! \n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Update TSoURDt3rd, Please", displayVersionString, TSOURDT3RDVERSION),NULL,MM_NOTHING);
+					(cv_tsourdt3rdupdatemessage.value == 1 ?
+						(M_StartMessage(va("%c%s\x80\nYou're using an outdated version of TSoURDt3rd.\n\nThe newest version is: %s\nYou're using version: %s\n\nCheck the SRB2 Message Board for the latest version!\n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Update TSoURDt3rd, Please", displayVersionString, TSOURDT3RDVERSION),NULL,MM_NOTHING)) :
+						(CONS_Alert(CONS_WARNING, "You're using an outdated version of TSoURDt3rd.\n\nThe newest version is: %s\nYou're using version: %s\n\nCheck the SRB2 Message Board for the latest version!\n", displayVersionString, TSOURDT3RDVERSION)));
 				else if (TSoURDt3rd_CurrentVersion() > internalVersionNumber)
-					M_StartMessage(va("%c%s\x80\nYou're using a version of TSoURDt3rd that hasn't even released yet. \n\nYou're probably a tester or coder,\nand in that case, hello!\n\nEnjoy messing around with the build! \n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Hello, Tester/Coder!"),NULL,MM_NOTHING);
+					(cv_tsourdt3rdupdatemessage.value == 1 ?
+						(M_StartMessage(va("%c%s\x80\nYou're using a version of TSoURDt3rd that hasn't even released yet.\n\nYou're probably a tester or coder,\nand in that case, hello!\n\nEnjoy messing around with the build!\n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Hello, Tester/Coder!"),NULL,MM_NOTHING)) :
+						(CONS_Alert(CONS_NOTICE, "You're using a version of TSoURDt3rd that hasn't even released yet.\nYou're probably a tester or coder, and in that case, hello!\nEnjoy messing around with the build!\n")));
 			}
-			TSoURDt3rdInfo.checkedVersion = true;
+			TSoURDt3rd->checkedVersion = true;
 		}
 #endif
 

@@ -7,7 +7,7 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  star_vars.h
-/// \brief star variables, typically used when allowing lua support or just for dumb stuff
+/// \brief star variables, typically used when allowing lua support or just for doing dumb stuff
 
 #ifndef __STAR_VARS__
 #define __STAR_VARS__
@@ -21,8 +21,9 @@
 //      But Seeing as How I Just Ported Most Of This From The Other Scripts, like m_cond.h,		//
 //          I Don't Actually Care.																//
 //                                                                                              //
-//   Anyways, Most of This Stuff is Handled in the tsourdt3rd.pk3.                              //
-//      If you Want to Look at Some Code, Check that PK3 Out.                                   //
+//   Anyways, Most of This Stuff Externed Here is Handled in the tsourdt3rd.pk3.                //
+//		There's Also Code That's Mainly Used in tsourdt3rdextras.pk3 too.                       //
+//      	If you Want to Look at Some Code, Check Those PK3s Out.                             //
 // ============================================================================================	//
 
 //// DEFINITIONS ////
@@ -34,10 +35,11 @@
 #define TSOURDT3RDVERSIONSTRING "TSoURDt3rd v"TSOURDT3RDVERSION
 
 //// STRUCTS ////
-extern struct TSoURDt3rdInfo_s {
+typedef struct TSoURDt3rd_s {
 	// General Stuff
+	boolean usingTSoURDt3rd;
 	boolean checkedVersion;
-	INT32 reachedSockSendErrorLimit;
+	UINT32 reachedSockSendErrorLimit;
 
 	// Server Stuff
 	boolean alreadyWarnedPlayer;
@@ -45,8 +47,10 @@ extern struct TSoURDt3rdInfo_s {
 	boolean serverUsesTSoURDt3rd;
 	UINT8 majorVersion, minorVersion, subVersion;
 
-	INT32 serverTSoURDt3rdVersion;
-} TSoURDt3rdInfo;
+	UINT32 serverTSoURDt3rdVersion;
+} TSoURDt3rd_t;
+
+extern TSoURDt3rd_t TSoURDt3rdPlayers[MAXPLAYERS];
 
 //// VARIABLES ////
 // TSoURDt3rd Stuff //

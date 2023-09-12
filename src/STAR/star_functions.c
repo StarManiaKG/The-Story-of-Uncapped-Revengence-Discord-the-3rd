@@ -48,6 +48,10 @@
 //				YAY				 	//
 //////////////////////////////////////
 
+// STRUCTS //
+TSoURDt3rd_t TSoURDt3rd;
+TSoURDt3rd_t TSoURDt3rdPlayers[MAXPLAYERS];
+
 // VARIABLES //
 #ifdef HAVE_CURL
 char *hms_tsourdt3rd_api;
@@ -56,9 +60,6 @@ char *hms_tsourdt3rd_api;
 static I_mutex hms_tsourdt3rd_api_mutex;
 #endif
 #endif
-
-// STRUCTS //
-struct TSoURDt3rdInfo_s TSoURDt3rdInfo;
 
 // COMMANDS //
 consvar_t cv_loadingscreen = CVAR_INIT ("loadingscreen", "Off", CV_SAVE, CV_OnOff, NULL);
@@ -96,7 +97,8 @@ static CV_PossibleValue_t loadingscreenbackground_t[] = {
 
 consvar_t cv_loadingscreenimage = CVAR_INIT ("loadingscreenimage", "Intermission", CV_SAVE, loadingscreenbackground_t, NULL);
 
-consvar_t cv_tsourdt3rdupdatemessage = CVAR_INIT ("tsourdt3rdupdatemessage", "On", CV_SAVE, CV_OnOff, NULL);
+static CV_PossibleValue_t tsourdt3rdupdatemessage_t[] = {{0, "Off"}, {1, "Message"}, {21, "Console"}, {0, NULL}};
+consvar_t cv_tsourdt3rdupdatemessage = CVAR_INIT ("tsourdt3rdupdatemessage", "On", CV_SAVE, tsourdt3rdupdatemessage_t, NULL);
 
 // GAME //
 //
@@ -114,7 +116,7 @@ void STAR_LoadingScreen(boolean opengl)
 	INT32 x, y;
 
 	static const char *gstartuplumpnumtype[] = {
-		[2] = "SRB2BACK",	// SRB2 titlecard background
+		[2] = "SRB2BACK",	// SRB2 Titlecard Background
 		"DEFLTFLR",
 		
 		"GFZL",
