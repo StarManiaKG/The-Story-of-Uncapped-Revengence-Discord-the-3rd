@@ -96,7 +96,7 @@ static void Got_RunSOCcmd(UINT8 **cp, INT32 playernum);
 static void Got_Teamchange(UINT8 **cp, INT32 playernum);
 static void Got_Clearscores(UINT8 **cp, INT32 playernum);
 // STAR STUFF //
-static void Got_Tsourdt3rdInfo(UINT8 **cp, INT32 playernum);
+static void Got_Tsourdt3rdPackets(UINT8 **cp, INT32 playernum);
 // END THAT //
 
 static void PointLimit_OnChange(void);
@@ -5226,7 +5226,7 @@ static void BaseNumLaps_OnChange(void)
 }
 
 // STAR STUFF: ELECTRIC BOOGALO //
-static void Got_Tsourdt3rdInfo(UINT8 **cp, INT32 playernum)
+static void Got_Tsourdt3rdPackets(UINT8 **cp, INT32 playernum)
 {
 	// Protect Others Against a Hacked/Buggy Client //
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
@@ -5239,7 +5239,7 @@ static void Got_Tsourdt3rdInfo(UINT8 **cp, INT32 playernum)
 
 	// Apply Info, and We're Done :) //
 	UINT8 serverUsesTSoURDt3rd				= (boolean)READUINT8(*cp);
-	TSoURDt3rdInfo.serverUsesTSoURDt3rd		= (((UINT8)serverUsesTSoURDt3rd != 1 && serverUsesTSoURDt3rd != 0) ? 0 : 1);
+	TSoURDt3rdInfo.serverUsesTSoURDt3rd		= ((serverUsesTSoURDt3rd > 1 || serverUsesTSoURDt3rd < 0) ? 0 : 1);
 
 	TSoURDt3rdInfo.majorVersion 			= (TSoURDt3rdInfo.serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
 	TSoURDt3rdInfo.minorVersion 			= (TSoURDt3rdInfo.serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
