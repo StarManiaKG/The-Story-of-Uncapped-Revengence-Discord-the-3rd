@@ -14,4 +14,4 @@
 // This info is needed by the online STAR functions, found in star_functions.c.
 //
 
-#define TSOURDT3RDVERSION "3.0"
+#define TSOURDT3RDVERSION "4.0"

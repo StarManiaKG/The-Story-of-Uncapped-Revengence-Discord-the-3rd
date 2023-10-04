@@ -135,5 +135,7 @@ extern boolean initJukeboxHUD;
 
 // Easter
 void ST_drawEggs(void);
+#define NUMLINKCOLORS 12
+extern skincolornum_t linkColor[3][NUMLINKCOLORS];
 
 #endif

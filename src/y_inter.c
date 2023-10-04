@@ -1019,8 +1019,10 @@ void Y_Ticker(void)
 	}
 	// END THAT //
 
+	// bitten if in doubt switch this around
 	LUA_HookBool(intertype == int_spec && stagefailed,
 			HOOK(IntermissionThinker));
+	//LUA_HookBool(stagefailed, HOOK(IntermissionThinker));
 
 	intertic++;
 
@@ -1113,12 +1115,14 @@ void Y_Ticker(void)
 			S_StartSound(NULL, (gottoken ? sfx_token : sfx_chchng)); // cha-ching!
 
 			// Update when done with tally
-			if ((!modifiedgame || savemoddata) && !(netgame || multiplayer) && !demoplayback)
+			if (!demoplayback)
 			{
-				if (M_UpdateUnlockablesAndExtraEmblems())
+				M_SilentUpdateUnlockablesAndEmblems(serverGamedata);
+
+				if (M_UpdateUnlockablesAndExtraEmblems(clientGamedata))
 					S_StartSound(NULL, sfx_s3k68);
 
-				G_SaveGameData();
+				G_SaveGameData(clientGamedata);
 			}
 		}
 		else if (!(intertic & 1))
@@ -1249,12 +1253,14 @@ void Y_Ticker(void)
 			S_StartSound(NULL, (gottoken ? sfx_token : sfx_chchng)); // cha-ching!
 
 			// Update when done with tally
-			if ((!modifiedgame || savemoddata) && !(netgame || multiplayer) && !demoplayback)
+			if (!demoplayback)
 			{
-				if (M_UpdateUnlockablesAndExtraEmblems())
+				M_SilentUpdateUnlockablesAndEmblems(serverGamedata);
+
+				if (M_UpdateUnlockablesAndExtraEmblems(clientGamedata))
 					S_StartSound(NULL, sfx_s3k68);
 
-				G_SaveGameData();
+				G_SaveGameData(clientGamedata);
 			}
 		}
 		else if (!(intertic & 1))
@@ -1494,10 +1500,10 @@ void Y_StartIntermission(void)
 				if (players[consoleplayer].charflags & SF_SUPER)
 				{
 					strcpy(data.spec.passed3, "can now become");
-					snprintf(data.spec.passed4,
-						sizeof data.spec.passed4, "Super %s",
-						skins[players[consoleplayer].skin].realname);
-					data.spec.passed4[sizeof data.spec.passed4 - 1] = '\0';
+					if (strlen(skins[players[consoleplayer].skin].supername) > 20) //too long, use generic
+						strcpy(data.spec.passed4, "their super form");
+					else
+						strcpy(data.spec.passed4, skins[players[consoleplayer].skin].supername);
 				}
 			}
 			else
@@ -2061,7 +2067,7 @@ static void Y_AwardCoopBonuses(void)
 	y_bonus_t localbonuses[4];
 
 	// set score/total first
-	data.coop.total = 0;
+	data.coop.total = players[consoleplayer].recordscore;
 	data.coop.score = players[consoleplayer].score;
 	data.coop.gotperfbonus = -1;
 	memset(data.coop.bonuses, 0, sizeof(data.coop.bonuses));
@@ -2082,6 +2088,9 @@ static void Y_AwardCoopBonuses(void)
 			players[i].score += localbonuses[j].points;
 			if (players[i].score > MAXSCORE)
 				players[i].score = MAXSCORE;
+			players[i].recordscore += localbonuses[j].points;
+			if (players[i].recordscore > MAXSCORE)
+				players[i].recordscore = MAXSCORE;
 		}
 
 		ptlives = min(
@@ -2138,6 +2147,10 @@ static void Y_AwardSpecialStageBonus(void)
 		players[i].score += localbonuses[1].points;
 		if (players[i].score > MAXSCORE)
 			players[i].score = MAXSCORE;
+		players[i].recordscore += localbonuses[0].points;
+		players[i].recordscore += localbonuses[1].points;
+		if (players[i].recordscore > MAXSCORE)
+			players[i].recordscore = MAXSCORE;
 
 		// grant extra lives right away since tally is faked
 		ptlives = min(

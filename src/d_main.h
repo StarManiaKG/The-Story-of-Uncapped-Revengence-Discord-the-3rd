@@ -16,6 +16,7 @@
 
 #include "d_event.h"
 #include "w_wad.h"   // for MAX_WADFILES
+#include "command.h"
 
 extern boolean advancedemo;
 
