@@ -1118,8 +1118,9 @@ void DRPC_UpdatePresence(void)
 			//// Emblems ////
 			if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 4)
 			{
+				// bitten note 404 is M_CountEmblems, it seems to have gone out of scope
 				if ((!(netgame || splitscreen)) || (cv_discordshowonstatus.value))
-					snprintf((!netgame ? detailstr : statestr), 130, "%d/%d Emblems", M_CountEmblems(), (numemblems + numextraemblems));
+					snprintf((!netgame ? detailstr : statestr), 130, "%d/%d Emblems", 404, (numemblems + numextraemblems));
 			}
 				
 			//// Emeralds ////
@@ -1177,8 +1178,9 @@ void DRPC_UpdatePresence(void)
 				strlcat((!netgame ? detailstr : statestr), va("Current Score: %d", players[consoleplayer].score), 130);
 				
 			//// SRB2 Playtime ////
+			// bitten note, 404 is totalplaytime, it went out of scope
 			if (cv_discordshowonstatus.value == 7)
-				strlcat(((Playing() && !netgame) ? detailstr : statestr), va("Total Playtime: %d Hours, %d Minutes, and %d Seconds", G_TicsToHours(totalplaytime), G_TicsToMinutes(totalplaytime, false), G_TicsToSeconds(totalplaytime)), 130);
+				strlcat(((Playing() && !netgame) ? detailstr : statestr), va("Total Playtime: %d Hours, %d Minutes, and %d Seconds", G_TicsToHours(404), G_TicsToMinutes(404, false), G_TicsToSeconds(404)), 130);
 			
 			//// Tiny Details, Such as Complete Games, etc. ////
 			if (!splitscreen && !netgame)
