@@ -1179,8 +1179,9 @@ void DRPC_UpdatePresence(void)
 				
 			//// SRB2 Playtime ////
 			// bitten note, 404 is totalplaytime, it went out of scope
+			gamedata_t *data = serverGamedata;
 			if (cv_discordshowonstatus.value == 7)
-				strlcat(((Playing() && !netgame) ? detailstr : statestr), va("Total Playtime: %d Hours, %d Minutes, and %d Seconds", G_TicsToHours(404), G_TicsToMinutes(404, false), G_TicsToSeconds(404)), 130);
+				strlcat(((Playing() && !netgame) ? detailstr : statestr), va("Total Playtime: %d Hours, %d Minutes, and %d Seconds", G_TicsToHours(data->totalplaytime), G_TicsToMinutes(data->totalplaytime, false), G_TicsToSeconds(data->totalplaytime)), 130);
 			
 			//// Tiny Details, Such as Complete Games, etc. ////
 			if (!splitscreen && !netgame)
