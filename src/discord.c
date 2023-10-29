@@ -1089,6 +1089,10 @@ void DRPC_UpdatePresence(void)
 	//// 	  STATUSES 		////
 	if (cv_discordshowonstatus.value != 8)
 	{
+		//// Pointer to the gamedata ////
+		//// bitten's note, there are 2 varibles, serverGamedata and clientGamedata, it seems that serverGamedata works for both
+		gamedata_t *data = serverGamedata;
+	
 		//// Status Pictures ////
 		if ((!Playing() || gamestate == GS_NULL || gamestate == GS_TIMEATTACK) || ((!Playing() || gamestate == GS_NULL || gamestate == GS_TIMEATTACK) && (cv_discordshowonstatus.value != 1 && cv_discordshowonstatus.value != 5)) || (cv_discordshowonstatus.value >= 2 && cv_discordshowonstatus.value != 5))
 		{
@@ -1120,7 +1124,7 @@ void DRPC_UpdatePresence(void)
 			{
 				// bitten note 404 is M_CountEmblems, it seems to have gone out of scope
 				if ((!(netgame || splitscreen)) || (cv_discordshowonstatus.value))
-					snprintf((!netgame ? detailstr : statestr), 130, "%d/%d Emblems", 404, (numemblems + numextraemblems));
+					snprintf((!netgame ? detailstr : statestr), 130, "%d/%d Emblems", M_CountEmblems(data), (numemblems + numextraemblems));
 			}
 				
 			//// Emeralds ////
@@ -1178,8 +1182,6 @@ void DRPC_UpdatePresence(void)
 				strlcat((!netgame ? detailstr : statestr), va("Current Score: %d", players[consoleplayer].score), 130);
 				
 			//// SRB2 Playtime ////
-			// bitten note, 404 is totalplaytime, it went out of scope
-			gamedata_t *data = serverGamedata;
 			if (cv_discordshowonstatus.value == 7)
 				strlcat(((Playing() && !netgame) ? detailstr : statestr), va("Total Playtime: %d Hours, %d Minutes, and %d Seconds", G_TicsToHours(data->totalplaytime), G_TicsToMinutes(data->totalplaytime, false), G_TicsToSeconds(data->totalplaytime)), 130);
 			
