@@ -1361,7 +1361,7 @@ const char *STAR_SetWindowTitle(void)
 
 					// Player is on a Custom Map
 					else
-						dynamictitle = va("%s Through MAP%d -", (cv_memesonwindowtitle.value ? "D_RUNNIN" : "Running"), gamemap);
+						dynamictitle = va("%s Through %s -", (cv_memesonwindowtitle.value ? "D_RUNNIN" : "Running"), mapheaderinfo[gamemap]->lvlttl);
 				}
 
 				// Vanilla/Unmodified-Game Titles
