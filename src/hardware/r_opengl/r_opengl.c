@@ -634,9 +634,12 @@ typedef struct gl_shader_s
 	char *fragment_shader;
 	GLuint program;
 	GLint uniforms[gluniform_max+1];
+	boolean custom;
 } gl_shader_t;
 
 static gl_shader_t gl_shaders[HWR_MAXSHADERS];
+static gl_shader_t gl_usershaders[HWR_MAXSHADERS];
+static shadersource_t gl_customshaders[HWR_MAXSHADERS];
 
 static gl_shader_t gl_fallback_shader;
 
@@ -873,24 +876,38 @@ EXPORT void HWRAPI(SetShader) (int type)
 		return;
 	}
 
-	if (gl_allowshaders)
+	if (gl_allowshaders != HWD_SHADEROPTION_OFF)
 	{
-		gl_shader_t *next_shader = &gl_shaders[slot]; // the gl_shader_t we are going to switch to
+		gl_shader_t *shader = gl_shaderstate.current;
 
-		if (!next_shader->program)
-			next_shader = &gl_fallback_shader; // unusable shader, use fallback instead
+		// If using model lighting, set the appropriate shader.
+		// However don't override a custom shader.
+		if (type == SHADER_MODEL && model_lighting
+		&& !(gl_shaders[SHADER_MODEL].custom && !gl_shaders[SHADER_MODEL_LIGHTING].custom))
+			type = SHADER_MODEL_LIGHTING;
 
-		// update gl_shaderstate if an actual shader switch is needed
-		if (gl_shaderstate.current != next_shader)
+		if ((shader == NULL) || (GLuint)type != gl_shaderstate.type)
 		{
-			gl_shaderstate.current = next_shader;
-			gl_shaderstate.program = next_shader->program;
-			gl_shaderstate.type = slot;
+			gl_shader_t *baseshader = &gl_shaders[type];
+			gl_shader_t *usershader = &gl_usershaders[type];
+
+			if (usershader->program)
+				shader = (gl_allowshaders == HWD_SHADEROPTION_NOCUSTOM) ? baseshader : usershader;
+			else
+				shader = baseshader;
+
+			gl_shaderstate.current = shader;
+			gl_shaderstate.type = type;
 			gl_shaderstate.changed = true;
 		}
 
-		gl_shadersenabled = true;
+		if (gl_shaderstate.program != shader->program)
+		{
+			gl_shaderstate.program = shader->program;
+			gl_shaderstate.changed = true;
+		}
 
+		gl_shadersenabled = (shader->program != 0);
 		return;
 	}
 #else
@@ -902,12 +919,15 @@ EXPORT void HWRAPI(SetShader) (int type)
 EXPORT void HWRAPI(UnSetShader) (void)
 {
 #ifdef GL_SHADERS
-	gl_shaderstate.current = NULL;
-	gl_shaderstate.type = 0;
-	gl_shaderstate.program = 0;
+	if (gl_shadersenabled) // don't repeatedly call glUseProgram if not needed
+	{
+		gl_shaderstate.current = NULL;
+		gl_shaderstate.type = 0;
+		gl_shaderstate.program = 0;
 
-	if (pglUseProgram)
-		pglUseProgram(0);
+		if (pglUseProgram)
+			pglUseProgram(0);
+	}
 #endif
 
 	gl_shadersenabled = false;

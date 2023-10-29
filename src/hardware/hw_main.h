@@ -75,6 +75,7 @@ FBITFIELD HWR_SurfaceBlend(INT32 style, INT32 transtablenum, FSurfaceInfo *pSurf
 FBITFIELD HWR_TranstableToAlpha(INT32 transtablenum, FSurfaceInfo *pSurf);
 
 boolean HWR_ShouldUsePaletteRendering(void);
+boolean HWR_UseShader(void);
 
 extern CV_PossibleValue_t glanisotropicmode_cons_t[];
 

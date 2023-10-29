@@ -135,12 +135,10 @@ typedef struct
 enum
 {
 	SHADER_NONE = -1,
-	SHADER_DEFAULT = 0,
-
-	SHADER_FLOOR,
+	SHADER_FLOOR = 0,
 	SHADER_WALL,
 	SHADER_SPRITE,
-	SHADER_MODEL,
+	SHADER_MODEL, SHADER_MODEL_LIGHTING,
 	SHADER_WATER,
 	SHADER_FOG,
 	SHADER_SKY,
@@ -154,6 +152,13 @@ enum
 // Maximum amount of shader programs
 // Must be at least NUMSHADERTARGETS*2 to fit base and custom shaders for each shader target.
 #define HWR_MAXSHADERS NUMSHADERTARGETS*2
+
+// Shader sources (vertex and fragment)
+typedef struct
+{
+	char *vertex;
+	char *fragment;
+} shadersource_t;
 
 // Custom shader reference table
 typedef struct
@@ -296,6 +301,14 @@ enum hwdsetspecialstate
 };
 
 typedef enum hwdsetspecialstate hwdspecialstate_t;
+
+// Lactozilla: Shader options
+enum hwdshaderoption
+{
+	HWD_SHADEROPTION_OFF,
+	HWD_SHADEROPTION_ON,
+	HWD_SHADEROPTION_NOCUSTOM,
+};
 
 enum hwdshaderstage
 {
