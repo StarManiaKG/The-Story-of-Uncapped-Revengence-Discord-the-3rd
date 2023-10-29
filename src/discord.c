@@ -1122,7 +1122,6 @@ void DRPC_UpdatePresence(void)
 			//// Emblems ////
 			if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 4)
 			{
-				// bitten note 404 is M_CountEmblems, it seems to have gone out of scope
 				if ((!(netgame || splitscreen)) || (cv_discordshowonstatus.value))
 					snprintf((!netgame ? detailstr : statestr), 130, "%d/%d Emblems", M_CountEmblems(data), (numemblems + numextraemblems));
 			}
