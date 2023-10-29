@@ -13869,7 +13869,7 @@ static char setupm_ip[CONNIP_LEN];
 static void M_DrawConnectIP(void)
 {
 	INT32 x = currentMenu->x;
-	INT32 y = currentMenu->y + 22;
+	INT32 y = currentMenu->y + 12;
 
 	const INT32 boxwidth = /*16*8 + 6*/ (BASEVIDWIDTH - 2*(x+5));
 	const INT32 maxstrwidth = boxwidth - 5;
@@ -13877,19 +13877,7 @@ static void M_DrawConnectIP(void)
 	char *drawnstr_orig = drawnstr;
 	boolean drawthin, shorten = false;
 
-	// use generic drawer for cursor, items and title
-	M_DrawGenericMenu();
-
-	V_DrawRightAlignedString(BASEVIDWIDTH-x, y+66,
-		((itemOn == 4) ? menuColor[cv_menucolor.value] : 0), va("(2-%d players)", MAXPLAYERS));
-
-	V_DrawRightAlignedString(BASEVIDWIDTH-x, y+76,
-		((itemOn == 5) ? menuColor[cv_menucolor.value] : 0), "(2 players)");
-
-	V_DrawRightAlignedString(BASEVIDWIDTH-x, y+116,
-		((itemOn == 8) ? menuColor[cv_menucolor.value] : 0), "(splitscreen)");
-
-	y += 22;
+	y += 12;
 
 	V_DrawFill(x+5, y+4+5, boxwidth, 8+6, 159);
 
@@ -14394,28 +14382,6 @@ faildraw:
 #undef chary
 
 colordraw:
-	x = MP_PlayerSetupDef.x;
-	y += 75;
-
-	M_DrawLevelPlatterHeader(y - (lsheadingheight - 12), "Color", true, false);
-	if (itemOn == 2)
-		cursory = y;
-
-	// draw color string
-	V_DrawRightAlignedString(BASEVIDWIDTH - x, y,
-	             ((MP_PlayerSetupMenu[2].status & IT_TYPE) == IT_SPACE ? V_TRANSLUCENT : 0)|(itemOn == 2 ? menuColor[cv_menucolor.value] : 0)|V_ALLOWLOWERCASE,
-	             skincolors[setupm_fakecolor->color].name);
-
-	if (itemOn == 2 && (MP_PlayerSetupMenu[2].status & IT_TYPE) != IT_SPACE)
-	{
-		V_DrawCharacter(BASEVIDWIDTH - x - 10 - V_StringWidth(skincolors[setupm_fakecolor->color].name, V_ALLOWLOWERCASE) - (skullAnimCounter/5), y,
-			'\x1C' | menuColor[cv_menucolor.value], false);
-		V_DrawCharacter(BASEVIDWIDTH - x + 2 + (skullAnimCounter/5), y,
-			'\x1D' | menuColor[cv_menucolor.value], false);
-	}
-
-	y += 11;
-
 #define indexwidth 8
 
 	if (colorgrid) // Draw color grid & skip the later options
@@ -14664,6 +14630,13 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 				break;
 			}
 
+			else if (itemOn == 2)
+			{
+				if (!colorgrid)
+					S_StartSound(NULL,sfx_menu1);
+				colorgrid = !colorgrid;
+				break;
+			}
 			// STAR STUFF //
 			else if (itemOn == 4
 			&& (R_SkinAvailable(setupm_cvdefaultskin->string) != setupm_fakeskin
@@ -14704,15 +14677,6 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 					M_GetText("Your skin and color were successfully reset!\n"))))));
 			}
 			// HELP ME, AAAAAAAAA //
-
-
-			else if (itemOn == 2)
-			{
-				if (!colorgrid)
-					S_StartSound(NULL,sfx_menu1);
-				colorgrid = !colorgrid;
-				break;
-			}
 			/* FALLTHRU */
 			break;
 		case KEY_RIGHTARROW:
