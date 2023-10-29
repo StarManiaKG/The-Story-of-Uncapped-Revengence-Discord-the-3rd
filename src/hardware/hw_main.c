@@ -129,26 +129,6 @@ static line_t *gl_linedef;
 static sector_t *gl_frontsector;
 static sector_t *gl_backsector;
 
-// --------------------------------------------------------------------------
-//                                              STUFF FOR THE PROJECTION CODE
-// --------------------------------------------------------------------------
-
-FTransform atransform;
-// duplicates of the main code, set after R_SetupFrame() passed them into sharedstruct,
-// copied here for local use
-static fixed_t dup_viewx, dup_viewy, dup_viewz;
-static angle_t dup_viewangle;
-
-static float gl_viewx, gl_viewy, gl_viewz;
-float gl_viewsin, gl_viewcos;
-
-// Maybe not necessary with the new T&L code (needs to be checked!)
-static float gl_viewludsin, gl_viewludcos; // look up down kik test
-static float gl_fovlud;
-
-static angle_t gl_aimingangle;
-static void HWR_SetTransformAiming(FTransform *trans, player_t *player, boolean skybox);
-
 // Render stats
 ps_metric_t ps_hw_skyboxtime = {0};
 ps_metric_t ps_hw_nodesorttime = {0};
@@ -176,12 +156,32 @@ boolean gl_shadersavailable = false;
 // Whether the internal state is set to palette rendering or not.
 static boolean gl_palette_rendering_state = false;
 
+// --------------------------------------------------------------------------
+//                                              STUFF FOR THE PROJECTION CODE
+// --------------------------------------------------------------------------
+
+FTransform atransform;
+// duplicates of the main code, set after R_SetupFrame() passed them into sharedstruct,
+// copied here for local use
+static fixed_t dup_viewx, dup_viewy, dup_viewz;
+static angle_t dup_viewangle;
+
+static float gl_viewx, gl_viewy, gl_viewz;
+float gl_viewsin, gl_viewcos;
+
+// Maybe not necessary with the new T&L code (needs to be checked!)
+static float gl_viewludsin, gl_viewludcos; // look up down kik test
+static float gl_fovlud;
+
+static angle_t gl_aimingangle;
+static void HWR_SetTransformAiming(FTransform *trans, player_t *player, boolean skybox);
+
 // ==========================================================================
 // Lighting
 // ==========================================================================
 
 // Returns true if shaders can be used.
-static boolean HWR_UseShader(void)
+boolean HWR_UseShader(void)
 {
 	return (cv_glshaders.value && gl_shadersavailable);
 }
@@ -375,7 +375,7 @@ static void HWR_RenderPlane(subsector_t *subsector, extrasubsector_t *xsub, bool
 	FOutVector *v3d;
 	polyvertex_t *pv;
 	pslope_t *slope = NULL;
-	INT32 shader = -1;
+	INT32 shader = SHADER_NONE;
 
 	size_t nrPlaneVerts;
 	INT32 i;
@@ -779,7 +779,7 @@ static void HWR_AddTransparentWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, I
 //
 static void HWR_ProjectWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, FBITFIELD blendmode, INT32 lightlevel, extracolormap_t *wallcolormap)
 {
-	INT32 shader = -1;
+	INT32 shader = SHADER_NONE;
 
 	HWR_Lighting(pSurf, lightlevel, wallcolormap);
 
@@ -1118,11 +1118,8 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 	float cliplow = (float)texturehpeg;
 	float cliphigh = (float)(texturehpeg + (gl_curline->flength*FRACUNIT));
 
-	FUINT lightnum;
-	extracolormap_t *colormap = NULL;
-
-	lightnum = gl_frontsector->lightlevel;
-	colormap = gl_frontsector->extra_colormap;
+	FUINT lightnum = gl_frontsector->lightlevel;
+	extracolormap_t *colormap = gl_frontsector->extra_colormap;
 	lightnum = colormap ? lightnum : HWR_CalcWallLight(lightnum, vs.x, vs.y, ve.x, ve.y);
 
 	FSurfaceInfo Surf;
@@ -2666,7 +2663,7 @@ static void HWR_RenderPolyObjectPlane(polyobj_t *polysector, boolean isceiling, 
 {
 	FSurfaceInfo Surf;
 	FOutVector *v3d;
-	INT32 shader = -1;
+	INT32 shader = SHADER_NONE;
 
 	size_t nrPlaneVerts = polysector->numVertices;
 	INT32 i;
@@ -3572,7 +3569,7 @@ static void HWR_DrawShadows(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale)
 	float fscale; float fx; float fy; float offset;
 	extracolormap_t *colormap = NULL;
 	FBITFIELD blendmode = PF_Translucent|PF_Modulated;
-	INT32 shader = -1;
+	INT32 shader = SHADER_NONE;
 	UINT8 i;
 	INT32 heightsec, phs;
 	SINT8 flip = P_MobjFlip(thing);
@@ -3867,7 +3864,7 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 	boolean lightset = true;
 	FBITFIELD blend = 0;
 	FBITFIELD occlusion;
-	INT32 shader = -1;
+	INT32 shader = SHADER_NONE;
 	boolean use_linkdraw_hack = false;
 	UINT8 alpha;
 
@@ -4255,14 +4252,11 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 		float xscale, yscale;
 		float xoffset, yoffset;
 		float leftoffset, topoffset;
-		float scale = spr->scale;
 		float zoffset = (P_MobjFlip(spr->mobj) * 0.05f);
 		pslope_t *splatslope = NULL;
 		INT32 i;
 
 		renderflags_t renderflags = spr->renderflags;
-		if (renderflags & RF_SHADOWEFFECTS)
-			scale *= spr->shadowscale;
 
 		if (spr->rotateflags & SRF_3D || renderflags & RF_NOSPLATBILLBOARD)
 			angle = spr->mobj->angle;
@@ -4446,7 +4440,7 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 	}
 
 	{
-		INT32 shader = -1;
+		INT32 shader = SHADER_NONE;
 		FBITFIELD blend = 0;
 		FBITFIELD occlusion;
 		boolean use_linkdraw_hack = false;
@@ -4520,7 +4514,7 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 // Sprite drawer for precipitation
 static inline void HWR_DrawPrecipitationSprite(gl_vissprite_t *spr)
 {
-	INT32 shader = -1;
+	INT32 shader = SHADER_NONE;
 	FBITFIELD blend = 0;
 	FOutVector wallVerts[4];
 	patch_t *gpatch;
@@ -6997,7 +6991,7 @@ void HWR_RenderWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, FBITFIELD blend,
 	FBITFIELD blendmode = blend;
 	UINT8 alpha = pSurf->PolyColor.s.alpha; // retain the alpha
 
-	INT32 shader = -1;
+	INT32 shader = SHADER_NONE;
 
 	// Lighting is done here instead so that fog isn't drawn incorrectly on transparent walls after sorting
 	HWR_Lighting(pSurf, lightlevel, wallcolormap);

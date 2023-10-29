@@ -24,7 +24,6 @@
 // ==========================================================================
 //                                                       STANDARD DLL EXPORTS
 // ==========================================================================
-
 EXPORT boolean HWRAPI(Init) (void);
 #ifndef HAVE_SDL
 EXPORT void HWRAPI(Shutdown) (void);
@@ -51,8 +50,8 @@ EXPORT void HWRAPI(SetSpecialState) (hwdspecialstate_t IdState, INT32 Value);
 
 // bitten note, if in doubt switch this line
 //Hurdler: added for new development
+//EXPORT void HWRAPI(DrawModel) (model_t *model, INT32 frameIndex, float duration, float tics, INT32 nextFrameIndex, FTransform *pos, float hscale, float vscale, UINT8 flipped, UINT8 hflipped, FSurfaceInfo *Surface);
 EXPORT void HWRAPI(DrawModel) (model_t *model, INT32 frameIndex, float duration, float tics, INT32 nextFrameIndex, FTransform *pos, float hscale, float vscale, UINT8 flipped, UINT8 hflipped, FSurfaceInfo *Surface);
-//EXPORT void HWRAPI(DrawModel) (model_t *model, INT32 frameIndex, float duration, float tics, INT32 nextFrameIndex, FTransform *pos, float scale, UINT8 flipped, UINT8 hflipped, FSurfaceInfo *Surface);
 EXPORT void HWRAPI(CreateModelVBOs) (model_t *model);
 EXPORT void HWRAPI(SetTransform) (FTransform *ptransform);
 EXPORT INT32 HWRAPI(GetTextureUsed) (void);
