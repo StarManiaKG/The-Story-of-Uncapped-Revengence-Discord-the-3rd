@@ -634,12 +634,9 @@ typedef struct gl_shader_s
 	char *fragment_shader;
 	GLuint program;
 	GLint uniforms[gluniform_max+1];
-	boolean custom;
 } gl_shader_t;
 
 static gl_shader_t gl_shaders[HWR_MAXSHADERS];
-static gl_shader_t gl_usershaders[HWR_MAXSHADERS];
-static shadersource_t gl_customshaders[HWR_MAXSHADERS];
 
 static gl_shader_t gl_fallback_shader;
 
@@ -831,83 +828,32 @@ EXPORT void HWRAPI(SetShaderInfo) (hwdshaderinfo_t info, INT32 value)
 #endif
 }
 
-EXPORT void HWRAPI(LoadCustomShader) (int number, char *code, size_t size, boolean isfragment)
+EXPORT void HWRAPI(SetShader) (int slot)
 {
 #ifdef GL_SHADERS
-	shadersource_t *shader;
-
-	if (!pglUseProgram)
-		return;
-
-	if (number < 1 || number > HWR_MAXSHADERS)
-		I_Error("LoadCustomShader: cannot load shader %d (min 1, max %d)", number, HWR_MAXSHADERS);
-	else if (code == NULL)
-		I_Error("LoadCustomShader: empty shader");
-
-	shader = &gl_customshaders[number];
-
-#define COPYSHADER(source) { \
-	if (shader->source) \
-		free(shader->source); \
-	shader->source = malloc(size+1); \
-	strncpy(shader->source, code, size); \
-	shader->source[size] = 0; \
-	}
-
-	if (isfragment)
-		COPYSHADER(fragment)
-	else
-		COPYSHADER(vertex)
-
-#else
-	(void)number;
-	(void)shader;
-	(void)size;
-	(void)fragment;
-#endif
-}
-
-EXPORT void HWRAPI(SetShader) (int type)
-{
-#ifdef GL_SHADERS
-	if (type == SHADER_NONE)
+	if (slot == SHADER_NONE)
 	{
 		UnSetShader();
 		return;
 	}
-
-	if (gl_allowshaders != HWD_SHADEROPTION_OFF)
+	if (gl_allowshaders)
 	{
-		gl_shader_t *shader = gl_shaderstate.current;
+		gl_shader_t *next_shader = &gl_shaders[slot]; // the gl_shader_t we are going to switch to
 
-		// If using model lighting, set the appropriate shader.
-		// However don't override a custom shader.
-		if (type == SHADER_MODEL && model_lighting
-		&& !(gl_shaders[SHADER_MODEL].custom && !gl_shaders[SHADER_MODEL_LIGHTING].custom))
-			type = SHADER_MODEL_LIGHTING;
+		if (!next_shader->program)
+			next_shader = &gl_fallback_shader; // unusable shader, use fallback instead
 
-		if ((shader == NULL) || (GLuint)type != gl_shaderstate.type)
+		// update gl_shaderstate if an actual shader switch is needed
+		if (gl_shaderstate.current != next_shader)
 		{
-			gl_shader_t *baseshader = &gl_shaders[type];
-			gl_shader_t *usershader = &gl_usershaders[type];
-
-			if (usershader->program)
-				shader = (gl_allowshaders == HWD_SHADEROPTION_NOCUSTOM) ? baseshader : usershader;
-			else
-				shader = baseshader;
-
-			gl_shaderstate.current = shader;
-			gl_shaderstate.type = type;
+			gl_shaderstate.current = next_shader;
+			gl_shaderstate.program = next_shader->program;
+			gl_shaderstate.type = slot;
 			gl_shaderstate.changed = true;
 		}
 
-		if (gl_shaderstate.program != shader->program)
-		{
-			gl_shaderstate.program = shader->program;
-			gl_shaderstate.changed = true;
-		}
+		gl_shadersenabled = true;
 
-		gl_shadersenabled = (shader->program != 0);
 		return;
 	}
 #else
