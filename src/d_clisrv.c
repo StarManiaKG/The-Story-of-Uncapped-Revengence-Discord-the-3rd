@@ -5667,8 +5667,6 @@ void RenewHolePunch(void)
 
 static tic_t gametime = 0;
 
-// bitten if in doubt swap these around
-//void NetUpdate(void)
 static void UpdatePingTable(void)
 {
 	INT32 i;
