@@ -45,6 +45,8 @@
 #include "m_cheat.h"
 // Thok camera snap (ctrl-f "chalupa")
 #include "g_input.h"
+// automap
+#include "am_map.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -10765,7 +10767,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 
 // STAR STUFF, ALMOST OVER //
 STAR_return:
-	if (false) // bitten note, used to have automapactive, but that is nolonger in scope
+	if (automapactive)
 	{
 		CONS_Alert(CONS_NOTICE, "A node has switched teams, closing the automap to prevent a crash...\n");
 		AM_Stop();
