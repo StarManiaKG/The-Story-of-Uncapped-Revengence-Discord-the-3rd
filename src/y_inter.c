@@ -1019,10 +1019,7 @@ void Y_Ticker(void)
 	}
 	// END THAT //
 
-	// bitten if in doubt switch this around
-	LUA_HookBool(intertype == int_spec && stagefailed,
-			HOOK(IntermissionThinker));
-	//LUA_HookBool(stagefailed, HOOK(IntermissionThinker));
+	LUA_HookBool(stagefailed, HOOK(IntermissionThinker));
 
 	intertic++;
 

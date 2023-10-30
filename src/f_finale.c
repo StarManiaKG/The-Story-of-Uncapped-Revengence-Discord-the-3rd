@@ -1813,11 +1813,8 @@ void F_GameEvaluationTicker(void)
 				++timesBeatenUltimate;
 */
 
-// bitten disabling for now, i dont feel like updating every time this is called
-/*
-			if (M_UpdateUnlockablesAndExtraEmblems())
+			if (M_UpdateUnlockablesAndExtraEmblems(clientGamedata))
 				S_StartSound(NULL, sfx_s3k68);
-*/
 
 			// STAR STUFF //
 			if (cv_storesavesinfolders.value)
