@@ -1804,14 +1804,11 @@ void F_GameEvaluationTicker(void)
 
 		if (M_UpdateUnlockablesAndExtraEmblems(clientGamedata))
 			S_StartSound(NULL, sfx_s3k68);
-// bitten disabling because these arnt in scope
-/*
 			if (ALL7EMERALDS(emeralds))
-				++timesBeatenWithEmeralds;
+				++clientGamedata->timesBeatenWithEmeralds;
 
 			if (ultimatemode)
-				++timesBeatenUltimate;
-*/
+				++clientGamedata->timesBeatenUltimate;
 
 			if (M_UpdateUnlockablesAndExtraEmblems(clientGamedata))
 				S_StartSound(NULL, sfx_s3k68);
