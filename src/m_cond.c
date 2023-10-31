@@ -171,7 +171,7 @@ void M_ClearSecrets(gamedata_t *data)
 	M_SilentUpdateSkinAvailabilites();
 
 	// DO SOME STAR STUFF //
-	if (AllowWriteToExtra) // 2.2.12, why do you cLl this when entering a level
+	if (AllowWriteToExtra) // 2.2.12, why do you call this when entering a level
 		(eastermode ?
 			(foundeggs = collectedmapeggs = currenteggs = numMapEggs = 0) :
 			(TOTALEGGS = foundeggs = collectedmapeggs = currenteggs = numMapEggs = 0));
