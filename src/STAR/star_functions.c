@@ -371,8 +371,6 @@ void STAR_LoadingScreen(boolean opengl)
 
 	I_UpdateNoVsync();
 }
-// preventmloading a save file to reset data
-boolean AllowWriteToExtra = true;
 // SAVEDATA //
 //
 // void STAR_WriteExtraData(void)
@@ -387,7 +385,6 @@ void STAR_WriteExtraData(void)
     // Run Some Checks //
 	if ((!eastermode)
 		|| (!AllowEasterEggHunt)
-		|| (!AllowWriteToExtra)
 		|| (netgame)
 		|| (TSoURDt3rd_NoMoreExtras)
 		|| (autoloaded))

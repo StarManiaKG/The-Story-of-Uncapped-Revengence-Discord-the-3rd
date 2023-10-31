@@ -52,7 +52,7 @@ INT32 numextraemblems = 0;
 
 // Temporary holding place for nights data for the current map
 nightsdata_t ntemprecords[MAXPLAYERS];
-
+boolean AllowWriteToExtra = true;
 // Create a new gamedata_t, for start-up
 gamedata_t *M_NewGameDataStruct(void)
 {
@@ -171,9 +171,10 @@ void M_ClearSecrets(gamedata_t *data)
 	M_SilentUpdateSkinAvailabilites();
 
 	// DO SOME STAR STUFF //
-	(eastermode ?
-		(foundeggs = collectedmapeggs = currenteggs = numMapEggs = 0) :
-		(TOTALEGGS = foundeggs = collectedmapeggs = currenteggs = numMapEggs = 0));
+	if (AllowWriteToExtra) // 2.2.12, why do you cLl this when entering a level
+		(eastermode ?
+			(foundeggs = collectedmapeggs = currenteggs = numMapEggs = 0) :
+			(TOTALEGGS = foundeggs = collectedmapeggs = currenteggs = numMapEggs = 0));
 	// END SOME STAR STUFF //
 }
 
