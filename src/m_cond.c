@@ -66,8 +66,10 @@ void M_CopyGameData(gamedata_t *dest, gamedata_t *src)
 {
 	INT32 i, j;
 
+	AllowWriteToExtra = false;
 	M_ClearSecrets(dest);
 	G_ClearRecords(dest);
+	AllowWriteToExtra = true;
 
 	dest->loaded = src->loaded;
 	dest->totalplaytime = src->totalplaytime;

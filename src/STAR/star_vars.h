@@ -88,7 +88,7 @@ extern INT32 foundeggs;
 extern INT32 collectedmapeggs;
 extern INT32 currenteggs;
 extern INT32 numMapEggs;
-
+extern boolean AllowWriteToExtra;
 //// COMMANDS ////
 extern consvar_t cv_loadingscreen, cv_loadingscreenimage, cv_soniccd;
 extern consvar_t cv_tsourdt3rdupdatemessage;
