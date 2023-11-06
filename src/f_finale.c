@@ -1803,6 +1803,7 @@ void F_GameEvaluationTicker(void)
 		M_SilentUpdateUnlockablesAndEmblems(serverGamedata);
 
 		if (M_UpdateUnlockablesAndExtraEmblems(clientGamedata))
+		{
 			S_StartSound(NULL, sfx_s3k68);
 			if (ALL7EMERALDS(emeralds))
 				++clientGamedata->timesBeatenWithEmeralds;
@@ -1825,8 +1826,10 @@ void F_GameEvaluationTicker(void)
 				else
 					I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "%s", srb2home, timeattackfolder), 0755);
 			}
-			// END THAT //
-	G_SaveGameData(clientGamedata);
+            // END THAT //
+		}
+			
+	    G_SaveGameData(clientGamedata);
 	}
 }
 

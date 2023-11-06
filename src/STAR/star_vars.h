@@ -17,11 +17,8 @@
 
 // ============================================================================================	//
 // 	 STAR Stuff																					//
-//   Technically All Of It Is STAR Stuff,														//
-//      But Seeing as How I Just Ported Most Of This From The Other Scripts, like m_cond.h,		//
-//          I Don't Actually Care.																//
 //                                                                                              //
-//   Anyways, Most of This Stuff is Handled in the tsourdt3rd.pk3.                              //
+//   Just so you Know, Some of This Stuff is Handled in the tsourdt3rd.pk3 too.                 //
 //      If you Want to Look at Some Code, Check that PK3 Out.                                   //
 // ============================================================================================	//
 
@@ -88,6 +85,7 @@ extern INT32 foundeggs;
 extern INT32 collectedmapeggs;
 extern INT32 currenteggs;
 extern INT32 numMapEggs;
+
 //// COMMANDS ////
 extern consvar_t cv_loadingscreen, cv_loadingscreenimage, cv_soniccd;
 extern consvar_t cv_tsourdt3rdupdatemessage;
@@ -96,6 +94,11 @@ extern consvar_t cv_socksendlimit;
 //// FUNCTIONS ////
 // Game
 void STAR_LoadingScreen(boolean opengl);
+
+#ifdef HAVE_SDL
+void STAR_RenameWindow(const char *title);
+const char *STAR_SetWindowTitle(void);
+#endif
 
 // Savedata
 void STAR_WriteExtraData(void);
@@ -135,10 +138,5 @@ char *STAR_ConvertNumberToString(INT32 NUMBER, INT32 startIFrom, INT32 startJFro
 INT32 STAR_ConvertNumberToStringAndBack(INT32 NUMBER, INT32 startI1From, INT32 startJ1From, INT32 startI2From, INT32 startJ2From, boolean turnIntoVersionString, boolean turnIntoVersionNumber);
 
 INT32 STAR_CombineNumbers(INT32 ARGS, INT32 FIRSTNUM, ...);
-
-#ifdef HAVE_SDL
-void STAR_RenameWindow(const char *title);
-const char *STAR_SetWindowTitle(void);
-#endif
 
 #endif // __STAR_VARS__
