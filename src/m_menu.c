@@ -950,7 +950,7 @@ static menuitem_t SPauseMenu[] =
 	// Pandora's Box will be shifted up if both options are available
 	{IT_CALL | IT_STRING,    NULL, "Pandora's Box...",     M_PandorasBox,         24},
 	{IT_CALL | IT_STRING,    NULL, "Emblem Hints...",      M_EmblemHints,         32},
-	{IT_CALL | IT_STRING,    NULL, "Level Select...",      M_LoadGameLevelSelect, 40},
+	{IT_CALL | IT_STRING,    NULL, "Level Select...",      M_PauseLevelSelect,    40},
 
 	{IT_CALL | IT_STRING,    NULL, "Continue",             M_SelectableClearMenus,56},
 	{IT_CALL | IT_STRING,    NULL, "Retry",                M_Retry,               64},
