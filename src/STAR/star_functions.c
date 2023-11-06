@@ -43,7 +43,7 @@
 #endif
 
 //////////////////////////////////////
-//		ABSOLUTELY UNNESSECARY	 	//
+//		ABSOLUTELY HILARIOUS	 	//
 //			STAR FUNCTIONS		 	//
 //				YAY				 	//
 //////////////////////////////////////
@@ -64,7 +64,7 @@ struct TSoURDt3rdInfo_s TSoURDt3rdInfo;
 consvar_t cv_loadingscreen = CVAR_INIT ("loadingscreen", "Off", CV_SAVE, CV_OnOff, NULL);
 
 static CV_PossibleValue_t loadingscreenbackground_t[] = {
-	{0, "Off"},
+	{0, "None"},
 	{1, "Dynamic"},
 
 	{2, "Intermission"},
@@ -371,6 +371,460 @@ void STAR_LoadingScreen(boolean opengl)
 
 	I_UpdateNoVsync();
 }
+
+#ifdef HAVE_SDL
+//
+// void STAR_RenameWindow(const char *title)
+// Renames SRB2's Window Title
+//
+void STAR_RenameWindow(const char *title)
+{
+	if (window == NULL)
+		return;
+	SDL_SetWindowTitle(window, title);
+}
+
+//
+// const char *STAR_SetWindowTitle(void)
+// Sets SRB2's Window Title
+//
+char randomTitleTable[5][256];
+
+const char *STAR_SetWindowTitle(void)
+{
+	// Make Variables //
+	const char *windowtitle = "";
+	const char *dynamictitle = "";
+
+	// Configure the Window Title //
+	// Default Title
+	if (!cv_windowtitletype.value)
+		windowtitle = ("SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING);
+
+	// Others
+	else
+	{
+		// Dynamic Titles
+		if (cv_windowtitletype.value == 1)
+		{
+			// Main Window Titles
+			// Map Specific
+			if (Playing())
+			{
+				// Modified-Game Titles
+				if (autoloaded || savemoddata || modifiedgame)
+				{
+					// Player is on The Titlemap
+					if (gamemap == titlemap)
+						dynamictitle = "What is Wrong With You. -";
+		
+					// Super Character Window Title
+					else if (players[consoleplayer].powers[pw_super])
+					{
+						if (cv_memesonwindowtitle.value)
+							dynamictitle = "Playing as Goku in";
+						else
+							dynamictitle = "Going Super in";
+					}
+
+					// Player is Learning How to Play SRB2
+					else if (tutorialmode)
+						dynamictitle = "Learning How to Play";
+
+					// Player is on a Custom Map
+					else
+						dynamictitle = va("%s Through %s %s -", (cv_memesonwindowtitle.value ? "D_RUNNIN" : "Running"), mapheaderinfo[gamemap-1]->lvlttl, ((mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE) ? "" : "Zone"));
+				}
+
+				// Vanilla/Unmodified-Game Titles
+				else
+				{
+					switch (gamemap)
+					{
+						// GFZ
+						case 1:
+						case 2:
+						{
+							dynamictitle = (cv_memesonwindowtitle.value ? "Where ARE the Green Flowers in" : "The Green Beginning -");
+							break;
+						}
+						
+						// THZ
+						case 4:
+						case 5:
+						{
+							if (cv_memesonwindowtitle.value)
+							{
+								if (randomTitleTable[1] == NULL || randomTitleTable[1][0] == '\0')
+								{
+									switch (M_RandomRange(0, 1))
+									{
+										case 1:
+											strcpy(randomTitleTable[1], "Industrial Society and its Future -");
+											break;
+										default:
+											strcpy(randomTitleTable[1], "Climate Change -");
+											break;
+									}
+								}
+				
+								dynamictitle = randomTitleTable[1];
+							}
+							else
+								dynamictitle = "So Much Advanced Technology in";
+							break;
+						}
+			
+						// DSZ
+						case 7:
+						case 8:
+						{
+							if (fastncmp(skins[players[consoleplayer].skin].name, "sonic", 5))
+								dynamictitle = "Ugh, I Hate Water in";
+							else
+								dynamictitle = "Swimming Around in";
+							break;
+						}
+
+						// CEZ
+						case 10:
+						case 11:
+						{
+							dynamictitle = (cv_memesonwindowtitle.value ? "How Did Eggman Manage to Build This Castle so Fast in" : "Such a Large Castle in");
+							break;
+						}
+
+						// ACZ
+						case 13:
+						case 14:
+						{
+							dynamictitle = (cv_memesonwindowtitle.value ? "Playing Through Grand Canyon Zone in" : "Why is There So Much TNT in");
+							break;
+						}
+
+						// Fang
+						case 15:
+						{
+							dynamictitle = (cv_memesonwindowtitle.value ? "There is a Jerboa With a Popgun in" : "We're on a Train in");
+							break;
+						}
+
+						// RVZ
+						case 16:
+						{
+							dynamictitle = (cv_memesonwindowtitle.value ? "Where is the Blue Volcano in" : "Too Much Lava in");
+							break;
+						}
+
+						// ERZ
+						case 22:
+						case 23:
+						{
+							dynamictitle = (cv_memesonwindowtitle.value ? "Robotnik has Too Many Rocks in" : "Be Careful Not to Fall Into Space in");
+							break;
+						}
+
+						// Metal Sonic
+						case 25:
+						case 26:
+						{
+							dynamictitle = (cv_memesonwindowtitle.value ? "STRRANGE, ISN'T IT? -" : "Beating a Doppelgänger Hedgehog Robot in");
+							break;
+						}
+
+						// Bosses
+						case 3:
+						case 6:
+						case 9:
+						case 12:
+						{
+							dynamictitle = (cv_memesonwindowtitle.value ? "He is the EggMan, With the Master Plan -" : "Fighting a Giant Talking Egg in");
+							break;
+						}
+
+						// Black Eggman (Yes, Technically Brak's Name is Black Eggman)
+						case 27:
+						{
+							dynamictitle = (cv_memesonwindowtitle.value ? "No Way Guys, the Cyberdemon is in" : "Fighting the Final Boss in");
+							break;
+						}
+
+						// FHZ
+						case 30:
+						{
+							dynamictitle = (cv_memesonwindowtitle.value ? "Use the 'Destroy All Enemies' Cheat in" : "Be Careful Not to Slip in");
+							break;
+						}
+
+						// PTZ
+						case 31:
+						{
+							if (cv_memesonwindowtitle.value)
+							{
+								if (randomTitleTable[2] == NULL || randomTitleTable[2][0] == '\0')
+								{
+									switch (M_RandomRange(0, 1))
+									{
+										case 1:
+											strcpy(randomTitleTable[2], "The Princess is in Another Tower in");
+											break;
+										default:
+											strcpy(randomTitleTable[2], "Super Mario in Real Life -");
+											break;
+									}
+								}
+
+								dynamictitle = randomTitleTable[2];
+							}
+							else
+								dynamictitle = "We're in Another Dimension in";
+							break;
+						}
+
+						// FFZ
+						case 32:
+						{
+							dynamictitle = "There's an In-Construction Castle in";
+							break;
+						}
+			
+						// TLZ
+						case 33:
+						{
+							dynamictitle = "So Much Prehistoric Technology in";
+							break;
+						}
+
+						// HHZ
+						case 40:
+						{
+							dynamictitle = (cv_memesonwindowtitle.value ? "No Way Guys, Cacodemons Are Also in" : "The Final Boss in");
+							break;
+						}
+
+						// AGZ
+						case 41:
+						{
+							if (cv_memesonwindowtitle.value)
+							{
+								if (randomTitleTable[3] == NULL || randomTitleTable[3][0] == '\0')
+								{
+									switch (M_RandomRange(0, 1))
+									{
+										case 1:
+											strcpy(randomTitleTable[3], "According to all known laws of aviation, there is no way a bee should be able to fly. Its wings are too small to get its fat little body off the ground. The bee, of course, flies anyway, because bees don't care what humans think is impossible. -");
+											break;
+										default:
+											strcpy(randomTitleTable[3], "Welcome to the Bee Zone. -");
+											break;
+									}
+								}
+
+								dynamictitle = randomTitleTable[3];
+							}
+							else
+								dynamictitle = "There are So Many Bees in";
+							break;
+						}
+
+						// ATZ
+						case 42:
+							dynamictitle = "The Zone Everyone Hates. -";
+							break;
+
+						// Special Stages
+						case 50:
+						case 51:
+						case 52:
+						case 54:
+						case 55:
+						case 56:
+			
+						case 60:
+						case 61:
+						case 62:
+						case 64:
+						case 65:
+						case 66:
+						{
+							dynamictitle = "Trying to Get All Those Chaos Emeralds in";
+							break;
+						}
+
+						// Special Stage 4
+						case 53:
+						case 63:
+						{
+							dynamictitle = (cv_memesonwindowtitle.value ? "Trying to Get That DAMN FOURTH Chaos Emerald in" : "Trying to Get All Those Chaos Emeralds in");
+							break;
+						}
+
+						// BHZ
+						case 57:
+							dynamictitle = "The True Final Boss in";
+							break;
+		
+						// The Extra Special Stages
+						case 70:
+						case 71:
+						case 72:
+						case 73:
+						{
+							dynamictitle = (cv_memesonwindowtitle.value ? "Playing the Extra Special Stages For no Reason in" : "Playing the Extra Special Stages in");
+							break;
+						}
+
+						// CTF Maps
+						case 280:
+						case 281:
+						case 282:
+						case 283:
+						case 284:
+						case 285:
+						case 286:
+						case 287:
+						case 288:
+						{
+							dynamictitle = (cv_memesonwindowtitle.value ? "Playing Zandronum in" : "Capturing Flags in");
+							break;
+						}
+
+						// Match Maps
+						case 532:
+						case 533:
+						case 534:
+						case 535:
+						case 536:
+						case 537:
+						case 538:
+						case 539:
+						case 540:
+						case 541:
+						case 542:
+						case 543:
+						{
+							if (cv_memesonwindowtitle.value)
+							{
+								if (randomTitleTable[4] == NULL || randomTitleTable[4][0] == '\0')
+								{
+									switch (M_RandomRange(0, 1))
+									{
+										case 1:
+											strcpy(randomTitleTable[4], "Playing Zandronum in");
+											break;
+										default:
+											strcpy(randomTitleTable[4], "Ringslinger Will be Removed in the Next 5 Minutes -");
+											break;
+									}
+								}
+
+								dynamictitle = randomTitleTable[4];
+							}
+							else
+								dynamictitle = "Capturing Flags in";
+							break;
+						}
+
+						default:
+						{
+							// Player is on The Titlemap
+							if (gamemap == titlemap)
+							{
+								dynamictitle = "What is Wrong With You -";
+								break;
+							}
+
+							// Super Character Window Title
+							else if (players[consoleplayer].powers[pw_super])
+							{
+								dynamictitle = (cv_memesonwindowtitle.value ? "Playing as Goku in" : "Got All Those Chaos Emeralds in");
+								break;
+							}
+
+							// Player is Learning How to Play SRB2
+							else if (tutorialmode)
+							{
+								dynamictitle = "Learning How to Play";
+								break;
+							}
+
+							// Player is on a Custom Map
+							else
+							{
+                                dynamictitle = va("%s Through %s %s -", (cv_memesonwindowtitle.value ? "D_RUNNIN" : "Running"), mapheaderinfo[gamemap-1]->lvlttl, ((mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE) ? "" : "Zone"));
+								break;
+							}
+						}
+					}
+				}
+			}
+
+			// Gamestate Specific
+			switch (gamestate)
+			{
+				case GS_INTRO:
+					dynamictitle = "Introduction -";
+					break;
+	
+				case GS_CUTSCENE:
+					dynamictitle = "Watching a Cutscene in";
+					break;
+
+				case GS_CONTINUING:
+					dynamictitle = "Continue? -";
+					break;
+
+				case GS_INTERMISSION:
+				{
+					if (cv_memesonwindowtitle.value)
+						dynamictitle = "End of Chapter! -";
+					else
+						dynamictitle = "You Got Pass the Act! -";
+					break;
+				}
+
+				case GS_CREDITS:
+				case GS_ENDING:
+				case GS_EVALUATION:
+				case GS_GAMEEND:
+				{
+					if (cv_memesonwindowtitle.value)
+						dynamictitle = "Did You Get All Those Chaos Emeralds? -";
+					else
+						dynamictitle = "The End. -";
+					break;
+				}
+
+				default:
+				{
+					if (gamestate == GS_NULL || (gamestate == GS_TITLESCREEN || titlemapinaction))
+					{
+						STAR_RenameWindow("SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING);
+						return ("SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING);
+					}
+		
+					break;
+				}
+			}
+
+			windowtitle = va("%s SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING, dynamictitle);
+		}
+
+		// Semi-Custom Titles
+		else if (cv_windowtitletype.value == 2)
+			windowtitle = va("%s SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING, cv_customwindowtitle.string);
+
+		// Fully Custom Titles
+		else
+			windowtitle = cv_customwindowtitle.string;
+	}
+
+	// Set the Window Title, Return it, and We're Done :) //
+	STAR_RenameWindow(windowtitle);
+	return windowtitle;
+}
+#endif
+
 // SAVEDATA //
 //
 // void STAR_WriteExtraData(void)
@@ -676,6 +1130,7 @@ void TSoURDt3rd_EventMessage(INT32 choice)
 
 	// No //
 	S_StartSound(NULL, sfx_adderr);
+
 	aprilfoolsmode = false;
 	eastermode = false;
 	xmasmode = false;
@@ -1298,456 +1753,3 @@ INT32 STAR_CombineNumbers(INT32 ARGS, INT32 FIRSTNUM, ...)
 	// Convert the String Made Earlier Into a Number, Return The Number, and We're Done :) //
 	return STAR_ConvertStringToCompressedNumber(numberString, 0, 0, false);
 }
-
-#ifdef HAVE_SDL
-//
-// void STAR_RenameWindow(const char *title)
-// Renames SRB2's Window Title
-//
-void STAR_RenameWindow(const char *title)
-{
-	if (window == NULL)
-		return;
-	SDL_SetWindowTitle(window, title);
-}
-
-//
-// const char *STAR_SetWindowTitle(void)
-// Sets SRB2's Window Title
-//
-char randomTitleTable[5][256];
-
-const char *STAR_SetWindowTitle(void)
-{
-	// Make Variables //
-	const char *windowtitle = "";
-	const char *dynamictitle = "";
-
-	// Configure the Window Title //
-	// Default Title
-	if (!cv_windowtitletype.value)
-		windowtitle = ("SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING);
-
-	// Others
-	else
-	{
-		// Dynamic Titles
-		if (cv_windowtitletype.value == 1)
-		{
-			// Main Window Titles
-			// Map Specific
-			if (Playing())
-			{
-				// Modified-Game Titles
-				if (autoloaded || savemoddata || modifiedgame)
-				{
-					// Player is on The Titlemap
-					if (gamemap == titlemap)
-						dynamictitle = "What is Wrong With You. -";
-		
-					// Super Character Window Title
-					else if (players[consoleplayer].powers[pw_super])
-					{
-						if (cv_memesonwindowtitle.value)
-							dynamictitle = "Playing as Goku in";
-						else
-							dynamictitle = "Going Super in";
-					}
-
-					// Player is Learning How to Play SRB2
-					else if (tutorialmode)
-						dynamictitle = "Learning How to Play";
-
-					// Player is on a Custom Map
-					else
-						dynamictitle = va("%s Through %s -", (cv_memesonwindowtitle.value ? "D_RUNNIN" : "Running"), mapheaderinfo[gamemap]->lvlttl);
-				}
-
-				// Vanilla/Unmodified-Game Titles
-				else
-				{
-					switch (gamemap)
-					{
-						// GFZ
-						case 1:
-						case 2:
-						{
-							dynamictitle = (cv_memesonwindowtitle.value ? "Where ARE the Green Flowers in" : "The Green Beginning -");
-							break;
-						}
-						
-						// THZ
-						case 4:
-						case 5:
-						{
-							if (cv_memesonwindowtitle.value)
-							{
-								if (randomTitleTable[1] == NULL || randomTitleTable[1][0] == '\0')
-								{
-									switch (M_RandomRange(0, 1))
-									{
-										case 1:
-											strcpy(randomTitleTable[1], "Industrial Society and its Future -");
-											break;
-										default:
-											strcpy(randomTitleTable[1], "Climate Change -");
-											break;
-									}
-								}
-				
-								dynamictitle = randomTitleTable[1];
-							}
-							else
-								dynamictitle = "So Much Advanced Technology in";
-							break;
-						}
-			
-						// DSZ
-						case 7:
-						case 8:
-						{
-							if (fastncmp(skins[players[consoleplayer].skin].name, "sonic", 5))
-								dynamictitle = "Ugh, I Hate Water in";
-							else
-								dynamictitle = "Swimming Around in";
-							break;
-						}
-
-						// CEZ
-						case 10:
-						case 11:
-						{
-							dynamictitle = (cv_memesonwindowtitle.value ? "How Did Eggman Manage to Build This Castle so Fast in" : "Such a Large Castle in");
-							break;
-						}
-
-						// ACZ
-						case 13:
-						case 14:
-						{
-							dynamictitle = (cv_memesonwindowtitle.value ? "Playing Through Grand Canyon Zone in" : "Why is There So Much TNT in");
-							break;
-						}
-
-						// Fang
-						case 15:
-						{
-							dynamictitle = (cv_memesonwindowtitle.value ? "There is a Jerboa With a Popgun in" : "We're on a Train in");
-							break;
-						}
-
-						// RVZ
-						case 16:
-						{
-							dynamictitle = (cv_memesonwindowtitle.value ? "Where is the Blue Volcano in" : "Too Much Lava in");
-							break;
-						}
-
-						// ERZ
-						case 22:
-						case 23:
-						{
-							dynamictitle = (cv_memesonwindowtitle.value ? "Robotnik has Too Many Rocks in" : "Be Careful Not to Fall Into Space in");
-							break;
-						}
-
-						// Metal Sonic
-						case 25:
-						case 26:
-						{
-							dynamictitle = (cv_memesonwindowtitle.value ? "STRRANGE, ISN'T IT? -" : "Beating a Doppelgänger Hedgehog Robot in");
-							break;
-						}
-
-						// Bosses
-						case 3:
-						case 6:
-						case 9:
-						case 12:
-						{
-							dynamictitle = (cv_memesonwindowtitle.value ? "He is the EggMan, With the Master Plan -" : "Fighting a Giant Talking Egg in");
-							break;
-						}
-
-						// Black Eggman (Yes, Technically Brak's Name is Black Eggman)
-						case 27:
-						{
-							dynamictitle = (cv_memesonwindowtitle.value ? "No Way Guys, the Cyberdemon is in" : "Fighting the Final Boss in");
-							break;
-						}
-
-						// FHZ
-						case 30:
-						{
-							dynamictitle = (cv_memesonwindowtitle.value ? "Use the 'Destroy All Enemies' Cheat in" : "Be Careful Not to Slip in");
-							break;
-						}
-
-						// PTZ
-						case 31:
-						{
-							if (cv_memesonwindowtitle.value)
-							{
-								if (randomTitleTable[2] == NULL || randomTitleTable[2][0] == '\0')
-								{
-									switch (M_RandomRange(0, 1))
-									{
-										case 1:
-											strcpy(randomTitleTable[2], "The Princess is in Another Tower in");
-											break;
-										default:
-											strcpy(randomTitleTable[2], "Super Mario in Real Life -");
-											break;
-									}
-								}
-
-								dynamictitle = randomTitleTable[2];
-							}
-							else
-								dynamictitle = "We're in Another Dimension in";
-							break;
-						}
-
-						// FFZ
-						case 32:
-						{
-							dynamictitle = "There's an In-Construction Castle in";
-							break;
-						}
-			
-						// TLZ
-						case 33:
-						{
-							dynamictitle = "So Much Prehistoric Technology in";
-							break;
-						}
-
-						// HHZ
-						case 40:
-						{
-							dynamictitle = (cv_memesonwindowtitle.value ? "No Way Guys, Cacodemons Are Also in" : "The Final Boss in");
-							break;
-						}
-
-						// AGZ
-						case 41:
-						{
-							if (cv_memesonwindowtitle.value)
-							{
-								if (randomTitleTable[3] == NULL || randomTitleTable[3][0] == '\0')
-								{
-									switch (M_RandomRange(0, 1))
-									{
-										case 1:
-											strcpy(randomTitleTable[3], "According to all known laws of aviation, there is no way a bee should be able to fly. Its wings are too small to get its fat little body off the ground. The bee, of course, flies anyway, because bees don't care what humans think is impossible. -");
-											break;
-										default:
-											strcpy(randomTitleTable[3], "Welcome to the Bee Zone. -");
-											break;
-									}
-								}
-
-								dynamictitle = randomTitleTable[3];
-							}
-							else
-								dynamictitle = "There are So Many Bees in";
-							break;
-						}
-
-						// ATZ
-						case 42:
-							dynamictitle = "The Zone Everyone Hates. -";
-							break;
-
-						// Special Stages
-						case 50:
-						case 51:
-						case 52:
-						case 54:
-						case 55:
-						case 56:
-			
-						case 60:
-						case 61:
-						case 62:
-						case 64:
-						case 65:
-						case 66:
-						{
-							dynamictitle = "Trying to Get All Those Chaos Emeralds in";
-							break;
-						}
-
-						// Special Stage 4
-						case 53:
-						case 63:
-						{
-							dynamictitle = (cv_memesonwindowtitle.value ? "Trying to Get That DAMN FOURTH Chaos Emerald in" : "Trying to Get All Those Chaos Emeralds in");
-							break;
-						}
-
-						// BHZ
-						case 57:
-							dynamictitle = "The True Final Boss in";
-							break;
-		
-						// The Extra Special Stages
-						case 70:
-						case 71:
-						case 72:
-						case 73:
-						{
-							dynamictitle = (cv_memesonwindowtitle.value ? "Playing the Extra Special Stages For no Reason in" : "Playing the Extra Special Stages in");
-							break;
-						}
-
-						// CTF Maps
-						case 280:
-						case 281:
-						case 282:
-						case 283:
-						case 284:
-						case 285:
-						case 286:
-						case 287:
-						case 288:
-						{
-							dynamictitle = (cv_memesonwindowtitle.value ? "Playing Zandronum in" : "Capturing Flags in");
-							break;
-						}
-
-						// Match Maps
-						case 532:
-						case 533:
-						case 534:
-						case 535:
-						case 536:
-						case 537:
-						case 538:
-						case 539:
-						case 540:
-						case 541:
-						case 542:
-						case 543:
-						{
-							if (cv_memesonwindowtitle.value)
-							{
-								if (randomTitleTable[4] == NULL || randomTitleTable[4][0] == '\0')
-								{
-									switch (M_RandomRange(0, 1))
-									{
-										case 1:
-											strcpy(randomTitleTable[4], "Playing Zandronum in");
-											break;
-										default:
-											strcpy(randomTitleTable[4], "Ringslinger Will be Removed in the Next 5 Minutes -");
-											break;
-									}
-								}
-
-								dynamictitle = randomTitleTable[4];
-							}
-							else
-								dynamictitle = "Capturing Flags in";
-							break;
-						}
-
-						default:
-						{
-							// Player is on The Titlemap
-							if (gamemap == titlemap)
-							{
-								dynamictitle = "What is Wrong With You -";
-								break;
-							}
-
-							// Super Character Window Title
-							else if (players[consoleplayer].powers[pw_super])
-							{
-								dynamictitle = (cv_memesonwindowtitle.value ? "Playing as Goku in" : "Got All Those Chaos Emeralds in");
-								break;
-							}
-
-							// Player is Learning How to Play SRB2
-							else if (tutorialmode)
-							{
-								dynamictitle = "Learning How to Play";
-								break;
-							}
-
-							// Player is on a Custom Map
-							else
-							{
-								dynamictitle = va("%s Through MAP%d -", (cv_memesonwindowtitle.value ? "D_RUNNIN" : "Running"), gamemap);
-								break;
-							}
-						}
-					}
-				}
-			}
-
-			// Gamestate Specific
-			switch (gamestate)
-			{
-				case GS_INTRO:
-					dynamictitle = "Introduction -";
-					break;
-	
-				case GS_CUTSCENE:
-					dynamictitle = "Watching a Cutscene in";
-					break;
-
-				case GS_CONTINUING:
-					dynamictitle = "Continue? -";
-					break;
-
-				case GS_INTERMISSION:
-				{
-					if (cv_memesonwindowtitle.value)
-						dynamictitle = "End of Chapter! -";
-					else
-						dynamictitle = "You Got Pass the Act! -";
-					break;
-				}
-
-				case GS_CREDITS:
-				case GS_ENDING:
-				case GS_EVALUATION:
-				case GS_GAMEEND:
-				{
-					if (cv_memesonwindowtitle.value)
-						dynamictitle = "Did You Get All Those Chaos Emeralds? -";
-					else
-						dynamictitle = "The End. -";
-					break;
-				}
-
-				default:
-				{
-					if (gamestate == GS_NULL || (gamestate == GS_TITLESCREEN || titlemapinaction))
-					{
-						STAR_RenameWindow("SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING);
-						return ("SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING);
-					}
-		
-					break;
-				}
-			}
-
-			windowtitle = va("%s SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING, dynamictitle);
-		}
-
-		// Semi-Custom Titles
-		else if (cv_windowtitletype.value == 2)
-			windowtitle = va("%s SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING, cv_customwindowtitle.string);
-
-		// Fully Custom Titles
-		else
-			windowtitle = cv_customwindowtitle.string;
-	}
-
-	// Set the Window Title, Return it, and We're Done :) //
-	STAR_RenameWindow(windowtitle);
-	return windowtitle;
-}
-#endif
