@@ -433,7 +433,7 @@ const char *STAR_SetWindowTitle(void)
 
 					// Player is on a Custom Map
 					else
-						dynamictitle = va("%s Through %s %s -", (cv_memesonwindowtitle.value ? "D_RUNNIN" : "Running"), mapheaderinfo[gamemap-1]->lvlttl, (mapheaderinfo[gamemap-1].nozone ? "" : "ZONE"));
+						dynamictitle = va("%s Through %s %s -", (cv_memesonwindowtitle.value ? "D_RUNNIN" : "Running"), mapheaderinfo[gamemap-1]->lvlttl, ((mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE) ? "" : "Zone"));
 				}
 
 				// Vanilla/Unmodified-Game Titles
@@ -751,7 +751,7 @@ const char *STAR_SetWindowTitle(void)
 							// Player is on a Custom Map
 							else
 							{
-                                dynamictitle = va("%s Through %s %s -", (cv_memesonwindowtitle.value ? "D_RUNNIN" : "Running"), mapheaderinfo[gamemap-1]->lvlttl, (mapheaderinfo[gamemap-1].nozone ? "" : "ZONE"));
+                                dynamictitle = va("%s Through %s %s -", (cv_memesonwindowtitle.value ? "D_RUNNIN" : "Running"), mapheaderinfo[gamemap-1]->lvlttl, ((mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE) ? "" : "Zone"));
 								break;
 							}
 						}
