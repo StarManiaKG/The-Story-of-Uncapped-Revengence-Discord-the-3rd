@@ -1006,9 +1006,9 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_automapoutsidedevmode);
 
 	CV_RegisterVar(&cv_soniccd);
-#ifdef APRIL_FOOLS
-	CV_RegisterVar(&cv_ultimatemode);
-#endif
+
+	if (aprilfoolsmode)
+		CV_RegisterVar(&cv_ultimatemode);
 
 	CV_RegisterVar(&cv_quitscreen);
 

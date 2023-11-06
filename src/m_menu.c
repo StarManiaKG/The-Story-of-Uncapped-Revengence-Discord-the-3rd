@@ -129,18 +129,18 @@ typedef enum
 	QUIT3MSG6,
 
 	// STAR STUFF //
+	// Regulars
 	QUITSMSG1,
 	QUITSMSG2,
 	QUITSMSG3,
 	QUITSMSG4,
 	QUITSMSG5,
 
-#ifdef APRIL_FOOLS
+	// April Fools
 	QUITAMSG1,
 	QUITAMSG2,
 	QUITAMSG3,
 	QUITAMSG4,
-#endif
 	// END THAT PLEASE //
 
 	NUM_QUITMESSAGES
@@ -532,9 +532,7 @@ static void STAR_IsItCalledSinglePlayer_OnChange(void);
 
 static void STAR_TimeOver_OnChange(void);
 
-#ifdef APRIL_FOOLS
 static void STAR_AprilFools_OnChange(void);
-#endif
 
 static void STAR_DefaultMapTrack_OnChange(void);
 
@@ -688,9 +686,7 @@ consvar_t cv_pausegraphicstyle = CVAR_INIT ("pausegraphicstyle", "Default", CV_S
 
 consvar_t cv_automapoutsidedevmode = CVAR_INIT ("automapoutsidedevmode", "Off", CV_SAVE, CV_OnOff, NULL);
 
-#ifdef APRIL_FOOLS
 consvar_t cv_ultimatemode = CVAR_INIT ("ultimatemode", "Off", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, STAR_AprilFools_OnChange);
-#endif
 
 static CV_PossibleValue_t quitscreen_t[] = {
 	{0, "Default"},
@@ -3969,7 +3965,6 @@ static void STAR_TimeOver_OnChange(void)
 
 // Events //
 // April Fools
-#ifdef APRIL_FOOLS
 static void STAR_AprilFools_ChangeMenus(void)
 {
 	// Run Small Functions First
@@ -4048,7 +4043,6 @@ static void STAR_AprilFools_OnChange(void)
 		S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
 	}
 }
-#endif
 
 // Audio //
 // STAR STUFF //

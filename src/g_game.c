@@ -2775,14 +2775,11 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	{
 		if (mapmusflags & MUSIC_RELOADRESET)
 		{
-#ifdef APRIL_FOOLS
-			if (cv_ultimatemode.value)
-				strncpy(mapmusname, "_hehe", 7);
-			else
-				strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname, 7);
-#else
-			strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname, 7);
-#endif
+			// STAR STUFF //
+			(aprilfoolsmode ?
+				(strncpy(mapmusname, (cv_ultimatemode.value ? "_hehe" : mapheaderinfo[gamemap-1]->musname), 7)) :
+				(strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname, 7)));
+			// END THIS PLEASE //
 
 			mapmusname[6] = 0;
 			mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);

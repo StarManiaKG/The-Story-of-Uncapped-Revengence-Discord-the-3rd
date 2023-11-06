@@ -501,11 +501,10 @@ static void D_Display(void)
 	}
 
 	// STAR STUFF //
-#ifdef APRIL_FOOLS
-	// Close the Game if We're on Ultimate Mode But We've Beaten the Game
-	if (cv_ultimatemode.value && (gamestate == (GS_ENDING|GS_CREDITS|GS_EVALUATION)))
+	// Events //
+	// April Fools; Close the Game if We're on Ultimate Mode But We've Beaten the Game
+	if (aprilfoolsmode && cv_ultimatemode.value && (gamestate == (GS_ENDING|GS_CREDITS|GS_EVALUATION)))
 		I_Error("SIGSEGV - seventh sentinel (core dumped)");
-#endif
 	// WHY YOU DO BAD //
 
 	// STUPID race condition...
@@ -959,14 +958,12 @@ void D_SRB2Loop(void)
 
 		//// STAR STUFF ////
 		// Do Event Stuff //
-#ifdef APRIL_FOOLS
 		// April Fools
-		if ((!modifiedgame || savemoddata) && (cv_ultimatemode.value))
+		if (aprilfoolsmode && cv_ultimatemode.value && (!modifiedgame || savemoddata))
 		{
 			CONS_Printf("You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nyour game has been set to modified.\n");
 			G_SetGameModified(false);
 		}
-#endif
 
 		// Easter
 		if (!eastermode && (cv_alloweasteregghunt.value || cv_easteregghuntbonuses.value || EnableEasterEggHuntBonuses))

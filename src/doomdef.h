@@ -683,9 +683,6 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 #define SAVEGAMEFOLDER "saves"
 extern char savegamefolder[256];
 
-// Events
-//#define APRIL_FOOLS			// enables april fools mode, but won't exist in the future, thanks to TSoURDt3rd_CheckTime
-
 // Extras
 //#define BLAME_SEV				// blames sev
 
