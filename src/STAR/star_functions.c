@@ -64,7 +64,7 @@ struct TSoURDt3rdInfo_s TSoURDt3rdInfo;
 consvar_t cv_loadingscreen = CVAR_INIT ("loadingscreen", "Off", CV_SAVE, CV_OnOff, NULL);
 
 static CV_PossibleValue_t loadingscreenbackground_t[] = {
-	{0, "Off"},
+	{0, "None"},
 	{1, "Dynamic"},
 
 	{2, "Intermission"},
