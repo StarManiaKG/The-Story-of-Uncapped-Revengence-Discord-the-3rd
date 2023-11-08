@@ -7,8 +7,7 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  star_functions.c
-/// \brief Contains all the Info Portraying to
-///        TSoURDt3rd's Extra STAR Functions
+/// \brief Contains all the Info Portraying to TSoURDt3rd's Variables and STAR Functions
 
 #include <time.h>
 
@@ -48,6 +47,10 @@
 //				YAY				 	//
 //////////////////////////////////////
 
+// STRUCTS //
+TSoURDt3rd_t TSoURDt3rd;
+TSoURDt3rd_t TSoURDt3rdPlayers[MAXPLAYERS-1];
+
 // VARIABLES //
 #ifdef HAVE_CURL
 char *hms_tsourdt3rd_api;
@@ -56,9 +59,6 @@ char *hms_tsourdt3rd_api;
 static I_mutex hms_tsourdt3rd_api_mutex;
 #endif
 #endif
-
-// STRUCTS //
-struct TSoURDt3rdInfo_s TSoURDt3rdInfo;
 
 // COMMANDS //
 consvar_t cv_loadingscreen = CVAR_INIT ("loadingscreen", "Off", CV_SAVE, CV_OnOff, NULL);
@@ -96,7 +96,8 @@ static CV_PossibleValue_t loadingscreenbackground_t[] = {
 
 consvar_t cv_loadingscreenimage = CVAR_INIT ("loadingscreenimage", "Intermission", CV_SAVE, loadingscreenbackground_t, NULL);
 
-consvar_t cv_tsourdt3rdupdatemessage = CVAR_INIT ("tsourdt3rdupdatemessage", "On", CV_SAVE, CV_OnOff, NULL);
+static CV_PossibleValue_t tsourdt3rdupdatemessage_t[] = {{0, "Off"}, {1, "Screen"}, {2, "Console"}, {0, NULL}};
+consvar_t cv_tsourdt3rdupdatemessage = CVAR_INIT ("tsourdt3rdupdatemessage", "Screen", CV_SAVE|CV_CALL, tsourdt3rdupdatemessage_t, TSoURDt3rd_FindCurrentVersion);
 
 // GAME //
 //
@@ -114,7 +115,7 @@ void STAR_LoadingScreen(boolean opengl)
 	INT32 x, y;
 
 	static const char *gstartuplumpnumtype[] = {
-		[2] = "SRB2BACK",	// SRB2 titlecard background
+		[2] = "SRB2BACK",	// SRB2 Titlecard Background
 		"DEFLTFLR",
 		
 		"GFZL",
@@ -1432,6 +1433,52 @@ char *STAR_ReturnStringFromWebsite(const char *API, char *URL, char *RETURNINFO,
 	return finalRETURNINFO;
 }
 
+
+//
+// void TSoURDt3rd_FindCurrentVersion(void)
+// Finds the Current Version of TSoURDt3rd From the Github Repository
+//
+void TSoURDt3rd_FindCurrentVersion(void)
+{
+	// Have we Already Checked the Version? If so, Don't Run This Again.
+	if (!TSoURDt3rd->checkedVersion) 
+		return;
+
+	// Do we not Allow Screen or Console Messages? If so, Don't Run This.
+	if (!cv_tsourdt3rdupdatemessage.value)
+		return;
+
+	// Make Some Variables
+	// STAR NOTE: If You're Planning on Using the Internet Functions, Use This Block as an Example :)
+	const char *API = "https://raw.githubusercontent.com/StarManiaKG/The-Story-of-Uncapped-Revengence-Discord-the-3rd/";
+	char URL[256];	strcpy(URL,	 va("%s/src/STAR/star_webinfo.h", compbranch));
+	char INFO[256]; strcpy(INFO, va("#define TSOURDT3RDVERSION \"%s\"", TSOURDT3RDVERSION));
+
+	// Check the Version, And If They Don't Match the Branch's Version, Run the Block Below
+	CONS_Printf("STAR_FindStringOnWebsite() & STAR_ReturnStringFromWebsite(): Grabbing latest TSoURDt3rd version...\n");
+	
+	if (STAR_FindStringOnWebsite(API, URL, INFO, false) == 1)
+	{
+		char RETURNINFO[256] = "#define TSOURDT3RDVERSION";
+		char RETURNEDSTRING[256] = ""; strcpy(RETURNEDSTRING, STAR_ReturnStringFromWebsite(API, URL, RETURNINFO, false));
+
+		UINT32 internalVersionNumber = STAR_ConvertStringToCompressedNumber(RETURNEDSTRING, 0, 26, true);
+
+		UINT32 displayVersionNumber = STAR_ConvertStringToCompressedNumber(RETURNEDSTRING, 0, 26, false);
+		const char *displayVersionString = STAR_ConvertNumberToString(displayVersionNumber, 0, 0, true);
+
+		if (TSoURDt3rd_CurrentVersion() < internalVersionNumber)
+			(cv_tsourdt3rdupdatemessage.value == 1 ?
+				(M_StartMessage(va("%c%s\x80\nYou're using an outdated version of TSoURDt3rd.\n\nThe newest version is: %s\nYou're using version: %s\n\nCheck the SRB2 Message Board for the latest version!\n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Update TSoURDt3rd, Please", displayVersionString, TSOURDT3RDVERSION),NULL,MM_NOTHING)) :
+				(CONS_Alert(CONS_WARNING, "You're using an outdated version of TSoURDt3rd.\n\nThe newest version is: %s\nYou're using version: %s\n\nCheck the SRB2 Message Board for the latest version!\n", displayVersionString, TSOURDT3RDVERSION)));
+		else if (TSoURDt3rd_CurrentVersion() > internalVersionNumber)
+			(cv_tsourdt3rdupdatemessage.value == 1 ?
+				(M_StartMessage(va("%c%s\x80\nYou're using a version of TSoURDt3rd that hasn't even released yet.\n\nYou're probably a tester or coder,\nand in that case, hello!\n\nEnjoy messing around with the build!\n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Hello, Tester/Coder!"),NULL,MM_NOTHING)) :
+				(CONS_Alert(CONS_NOTICE, "You're using a version of TSoURDt3rd that hasn't even released yet.\nYou're probably a tester or coder, and in that case, hello!\nEnjoy messing around with the build!\n")));
+	}
+
+	TSoURDt3rd->checkedVersion = true;
+}
 #endif // HAVE_CURL
 
 // SERVERS //

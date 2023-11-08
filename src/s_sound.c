@@ -2498,15 +2498,7 @@ void S_StartEx(boolean reset)
 {
 	if (mapmusflags & MUSIC_RELOADRESET)
 	{
-#ifdef APRIL_FOOLS
-		if (cv_ultimatemode.value)
-			strncpy(mapmusname, "_hehe", 7);
-		else
-			strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname, 7);
-#else
-		strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname, 7);
-#endif
-
+		strncpy(mapmusname, ((aprilfoolsmode && cv_ultimatemode.value) ? "_hehe" : mapheaderinfo[gamemap-1]->musname), 7);
 		mapmusname[6] = 0;
 		mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
 		mapmusposition = mapheaderinfo[gamemap-1]->muspos;
@@ -2535,15 +2527,12 @@ static void Command_Tunes_f(void)
 	const size_t argc = COM_Argc();
 
 	// STAR STUFF EEEEEEEE //
-#ifdef APRIL_FOOLS
-	if (cv_ultimatemode.value)
+	if (aprilfoolsmode && cv_ultimatemode.value)
 	{
 		CONS_Printf("Nice Try. Maybe there's a command you need to turn off, perhaps?\n");
 		return;
 	}
-#endif
-
-	if (jukeboxMusicPlaying)
+	else if (jukeboxMusicPlaying)
 	{
 		CONS_Printf("Sorry, you can't use this command while playing music in the Jukebox.\n");
 		return;
@@ -2577,14 +2566,7 @@ static void Command_Tunes_f(void)
 	}
 	else if (!strcasecmp(tunearg, "-default"))
 	{
-#ifdef APRIL_FOOLS
-		if (cv_ultimatemode.value)
-			tunearg = "_hehe";
-		else
-			tunearg = mapheaderinfo[gamemap-1]->musname;
-#else
-		tunearg = mapheaderinfo[gamemap-1]->musname;
-#endif
+		tunearg = ((aprilfoolsmode && cv_ultimatemode.value) ? "_hehe" : mapheaderinfo[gamemap-1]->musname);
 		track = mapheaderinfo[gamemap-1]->mustrack;
 	}
 

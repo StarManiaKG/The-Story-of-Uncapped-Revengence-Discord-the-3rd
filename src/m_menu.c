@@ -129,18 +129,19 @@ typedef enum
 	QUIT3MSG6,
 
 	// STAR STUFF //
+	// Regular Quit Messages
 	QUITSMSG1,
 	QUITSMSG2,
 	QUITSMSG3,
 	QUITSMSG4,
 	QUITSMSG5,
+	QUITSMSG6,
 
-#ifdef APRIL_FOOLS
+	// April Fools Quit Messages
 	QUITAMSG1,
 	QUITAMSG2,
 	QUITAMSG3,
 	QUITAMSG4,
-#endif
 	// END THAT PLEASE //
 
 	NUM_QUITMESSAGES
@@ -534,9 +535,7 @@ static void STAR_IsItCalledSinglePlayer_OnChange(void);
 
 static void STAR_TimeOver_OnChange(void);
 
-#ifdef APRIL_FOOLS
 static void STAR_AprilFools_OnChange(void);
-#endif
 
 static void STAR_DefaultMapTrack_OnChange(void);
 
@@ -690,9 +689,7 @@ consvar_t cv_pausegraphicstyle = CVAR_INIT ("pausegraphicstyle", "Default", CV_S
 
 consvar_t cv_automapoutsidedevmode = CVAR_INIT ("automapoutsidedevmode", "Off", CV_SAVE, CV_OnOff, NULL);
 
-#ifdef APRIL_FOOLS
 consvar_t cv_ultimatemode = CVAR_INIT ("ultimatemode", "Off", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, STAR_AprilFools_OnChange);
-#endif
 
 static CV_PossibleValue_t quitscreen_t[] = {
 	{0, "Default"},
@@ -1475,7 +1472,7 @@ static menuitem_t MP_PlayerSetupMenu[] =
 	{IT_KEYHANDLER, NULL, "", M_HandleSetupMultiPlayer, 0}, // default
 
 	// STAR STUFF //
-	{IT_KEYHANDLER, NULL, "", M_HandleSetupMultiPlayer, 0}, // reset
+	{IT_KEYHANDLER, NULL, "", M_HandleSetupMultiPlayer, 0}, // STAR NOTE: this is the reset one lol
 	// END THAT //
 };
 
@@ -2690,19 +2687,15 @@ enum
 // ================================ //
 // STAR OPTIONS LETS GOOOOOOOOOOOOO //
 // ================================ //
-#ifdef APRIL_FOOLS
-#define STARENUMADDITION 1
-#else
-#define STARENUMADDITION 0
-#endif
 
-// Main Build Menu
+// README Menu
 static menuitem_t OP_Tsourdt3rdReadMeMenu[] =
 {
 	{IT_KEYHANDLER | IT_STRING,
 							NULL, 	"", 						M_HandleTsourdt3rdReadMe,	0},
 };
 
+// Main Build Menu
 static menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 {
 	{IT_HEADER, 			NULL, 	"Game Options", 			NULL, 					  	0},
@@ -2730,9 +2723,8 @@ static menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 	{IT_STRING | IT_CVAR,	NULL,	"Automap Outside Devmode",	&cv_automapoutsidedevmode, 96},
 
 	{IT_STRING | IT_CVAR,	NULL,	"Sonic CD Mode",			&cv_soniccd,	   	   	  106},
-#ifdef APRIL_FOOLS	
+	
 	{IT_STRING | IT_CVAR,	NULL,	"Ultimate Mode!",			&cv_ultimatemode,	   	  111},
-#endif
 
 	{IT_STRING | IT_CVAR,	NULL,	"Quit Screen",				&cv_quitscreen,	  		  116},
 
@@ -2794,11 +2786,15 @@ static menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 
 	{IT_STRING | IT_CVAR, 	NULL,   "Memes on Window Title",    &cv_memesonwindowtitle,   380},
 };
+
+// Jukebox Menu
 static menuitem_t OP_Tsourdt3rdJukeboxMenu[] =
 {
 	{IT_KEYHANDLER | IT_STRING,
 							NULL, 	"", 						M_HandleTsourdt3rdJukebox,			       0},
 };
+
+// Freeplay Snake Menu
 static menuitem_t OP_Tsourdt3rdSnakeMenu[] =
 {
 	{IT_KEYHANDLER | IT_STRING,
@@ -2809,17 +2805,15 @@ enum
 {
 	op_allowtypicaltimeover = 12,
 
-#ifdef APRIL_FOOLS
 	op_aprilfools = 16,
-#endif
 	
-	op_defaultmaptrack = 20+STARENUMADDITION,
+	op_defaultmaptrack = 21,
 
-	op_shieldblockstransformation = 22+STARENUMADDITION,
+	op_shieldblockstransformation = 23,
 
-	op_alwaysoverlayinvuln = 24+STARENUMADDITION,
+	op_alwaysoverlayinvuln = 25,
 
-	op_storesavesinfolders = 26+STARENUMADDITION,
+	op_storesavesinfolders = 27,
 
 	op_perfectsave,
 	op_perfectsavestripe1,
@@ -2828,31 +2822,30 @@ enum
 
 	op_continues,
 
-	op_holepunchserver = 33+STARENUMADDITION,
+	op_holepunchserver = 34,
 	op_noticedownload,
 	op_maxsend,
 	op_downloadspeed,
 
 	op_movingplayeroptionswitch,
 
-	op_jukebox = 40+STARENUMADDITION,
+	op_jukebox = 41,
 	op_jukeboxhud,
 
 	op_luacanstopthejukebox,
 
-	op_snake = 44+STARENUMADDITION,
+	op_snake = 45,
 	op_dispensergoingup,
 
 	op_alloweasteregghunt,
 	op_easteregghuntbonuses,
 
-	op_windowtitletype = 48+STARENUMADDITION,
+	op_windowtitletype = 49,
 	op_customwindowtitle,
 	op_memesonwindowtitle,
 	TSOURDT3RDLASTOPTION
 };
 
-#undef STARENUMADDITION
 // ======================================= //
 // END OF STAR OPTIONS LETS GOOOOOOOOOOOOO //
 // ======================================= //
@@ -3229,7 +3222,7 @@ menu_t MP_ExtendedServerPropertyDef =
 	0,
 	NULL
 };
-// END THE DEFINITIONS //
+// END THE MULTIPLAYER DEFINITIONS //
 #endif
 
 menu_t MP_PlayerSetupDef =
@@ -3498,8 +3491,7 @@ menu_t OP_EraseDataDef = DEFAULTMENUSTYLE(
 // 	 STAR STUFF LOL	  //
 // ================== //
 
-// main build options stuff //
-// main stuff
+// read me stuff
 menu_t OP_Tsourdt3rdReadMeDef =
 {
 	MN_TSOURDT3RD_README,
@@ -3513,6 +3505,7 @@ menu_t OP_Tsourdt3rdReadMeDef =
 	NULL
 };
 
+// main build menu stuff
 menu_t OP_Tsourdt3rdOptionsDef = DEFAULTSCROLLMENUSTYLE(
 	MTREE2(MN_OP_MAIN, MN_OP_TSOURDT3RD),
 	"M_TSOURDT3RD", OP_Tsourdt3rdOptionsMenu, &OP_MainDef, 30, 30);
@@ -3948,7 +3941,6 @@ static void STAR_TimeOver_OnChange(void)
 
 // Events //
 // April Fools
-#ifdef APRIL_FOOLS
 static void STAR_AprilFools_ChangeMenus(void)
 {
 	// Run Small Functions First
@@ -4027,10 +4019,8 @@ static void STAR_AprilFools_OnChange(void)
 		S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
 	}
 }
-#endif
 
 // Audio //
-// STAR STUFF //
 static void STAR_DefaultMapTrack_OnChange(void)
 {
 	if (Playing() && playeringame[consoleplayer])
@@ -4042,7 +4032,6 @@ static void STAR_DefaultMapTrack_OnChange(void)
 	else
 		DefaultMapTrack = cv_defaultmaptrack.value;
 }
-// END THAT STAR STUFF PLEASE //
 
 // Savefiles //
 static void STAR_PerfectSave_OnChange(void)
@@ -4773,6 +4762,8 @@ static void M_ChangeCvar(INT32 choice)
 		// STAR STUFF //
 		if (cv == &cv_maxsend)
 			choice *= 512;
+		else if (cv == &cv_downloadspeed)
+			choice *= 15;
 		// END THAT //
 
 		CV_AddValue(cv,choice);
@@ -8461,7 +8452,7 @@ static void M_AddonExec(INT32 ch)
 
 //
 // static void M_AddonAutoLoad(INT32 ch);
-// exports mods to a file, which helps in autoloading that file
+// exports certain mods to autoload.cfg, which allows TSoURDt3rd to autoload those given files
 //
 static void M_AddonAutoLoad(INT32 ch)
 {
@@ -8529,6 +8520,19 @@ static void M_AddonAutoLoad(INT32 ch)
 	
 	// lastly, do some last things and close the autoload config file //
 	fclose(autoloadconfigfile);
+}
+
+//
+// static void M_FolderExec(INT32 ch);
+// loads folders as addons
+//
+static void M_FolderExec(INT32 ch)
+{
+	if (ch != 'y' && ch != KEY_ENTER)
+		return;
+
+	S_StartSound(NULL, sfx_strpst);
+	COM_BufAddText(va("addfolder \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
 }
 // END OF STAR STUFF //
 
@@ -8697,7 +8701,9 @@ static void M_HandleAddons(INT32 choice)
 			}
 			break;
 
-		// STAR STUFF: AUTOLOADING FILES //
+		// STAR STUFF //
+		// Autoloading Files
+		case KEY_LSHIFT:
 		case KEY_RSHIFT:
 			{
 				boolean refresh = true;
@@ -8755,6 +8761,65 @@ static void M_HandleAddons(INT32 choice)
 							break;
 						default:
 							M_StartMessage(va("%c%s\x80\nIt may be dangerous to Autoload this file. \nBut you're the boss, and I'm just hand-written code.\n Proceed? \n\n(Press 'Y' to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),M_AddonAutoLoad,MM_YESNO);
+							break;
+					}
+				}
+				if (refresh)
+					refreshdirmenu |= REFRESHDIR_NORMAL;
+			}
+			break;
+		
+		// Loading Folders
+		case KEY_LSHIFT + KEY_ENTER:
+		case KEY_RSHIFT + KEY_ENTER:
+			{
+				boolean refresh = true;
+				if (!dirmenu[dir_on[menudepthleft]])
+					S_StartSound(NULL, sfx_lose);
+				else
+				{
+					switch (dirmenu[dir_on[menudepthleft]][DIR_TYPE])
+					{
+						case EXT_FOLDER:
+							if (!menudepthleft)
+							{
+								M_StartMessage(va("%c%s%s\x80\nThis folder is too deep to navigate to! \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath(), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
+								S_StartSound(NULL, sfx_lose);
+								menupath[menupathindex[menudepthleft]] = 0;
+							}
+							else
+							{
+								if (!preparefilemenu(false))
+								{
+									S_StartSound(NULL, sfx_adderr);
+									M_StartMessage(va("%c%s%s\x80\nThis folder is empty. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath(), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
+									menupath[menupathindex[++menudepthleft]] = 0;
+								}
+								else
+									M_StartMessage(va("%c%s\x80\nDo you want to load this folder? \nBare in mind that the file structure for folders should be similar to the structure of a PK3.\n\n(Press 'Y' to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),M_FolderExec,MM_YESNO);
+								refresh = false;
+							}
+							break;
+						case EXT_UP:
+							S_StartSound(NULL, sfx_lose);
+							M_StartMessage(va("%c%s%s\x80\nYou can only use this keybind to load folders. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath(), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
+							break;
+						case EXT_TXT:
+						case EXT_CFG:
+							S_StartSound(NULL, sfx_lose);
+							M_StartMessage(va("%c%s\x80\nYou can only use this keybind to load folders. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
+							break;
+						case EXT_LUA:
+						case EXT_SOC:
+						case EXT_WAD:
+#ifdef USE_KART
+						case EXT_KART:
+#endif
+						case EXT_PK3:
+							M_StartMessage(va("%c%s\x80\nYou can only use this keybind to load folders. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
+							break;
+						default:
+							M_StartMessage(va("%c%s\x80\nYou can only use this keybind to load folders. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
 							break;
 					}
 				}
@@ -13475,7 +13540,7 @@ static void M_ConnectMenuModChecks(INT32 choice)
 	}
 
 	// Reset Master Server
-	else if (!CV_IsSetToDefault(&cv_masterserver) && !TSoURDt3rdInfo.alreadyWarnedPlayer)
+	else if (!CV_IsSetToDefault(&cv_masterserver) && !TSoURDt3rd->alreadyWarnedPlayer)
 		M_StartMessage(M_GetText("Hey! You've changed the Server Browser address.\n\nYou won't be able to see games from the official Server Browser.\nUnless you're from the future, this probably isn't what you want.\n\nPress 'Y' or 'Enter' to fix this and continue.\nPress any other key to continue anyway.\n"),M_PreConnectMenuChoice,MM_YESNO);
 	// END THAT MESS //
 
@@ -13491,7 +13556,7 @@ static void M_HandleMasterServerResetChoice(INT32 choice)
 		S_StartSound(NULL, sfx_s221);
 	}
 
-	TSoURDt3rdInfo.alreadyWarnedPlayer = true;
+	TSoURDt3rd->alreadyWarnedPlayer = true;
 }
 
 static void M_PreStartServerMenuChoice(INT32 choice)
@@ -13837,7 +13902,7 @@ static void M_StartServerMenu(INT32 choice)
 
 	// STAR STUFF //
 	// Master Server Address Changed
-	if (!CV_IsSetToDefault(&cv_masterserver) && !TSoURDt3rdInfo.alreadyWarnedPlayer)
+	if (!CV_IsSetToDefault(&cv_masterserver) && !TSoURDt3rd->alreadyWarnedPlayer)
 		M_StartMessage(M_GetText("Hey! You've changed the Server Browser address.\n\nYou won't be able to host games on the official Server Browser.\nUnless you're from the future, this probably isn't what you want.\n\nPress 'Y' or 'Enter' to fix this and continue.\nPress any other key to continue anyway.\n"),M_PreStartServerMenuChoice,MM_YESNO);
 
 	// Found Some Infractions
@@ -16219,27 +16284,29 @@ static void M_DrawMonitorToggles(void)
 // STAR STUFF //
 static INT32 STAR_QuitMessages(void)
 {
-	// Variables //
+	//// Variables ////
 	INT32 RandomMessage;
-	char *maptitle = G_BuildMapTitle(gamemap); // Needed for Dynamic Message QUITSMSG3
+	char *maptitle = G_BuildMapTitle(gamemap); // Needed for QUITSMSG3
 
-	// Quit Messages //
+	//// Quit Messages ////
+	// Star Messages //
 	// Static
-	quitmsg[QUITSMSG1] = M_GetText("Every time you press 'Y', \nStarManiaKG cries...\n\n(Press 'Y' to quit)");
-	quitmsg[QUITSMSG2] = M_GetText("Who do you think you are? \nItaly?\n\n(Press 'Y' to quit)");
+	quitmsg[QUITSMSG1] = M_GetText("Every time you press 'Y',\nthe TSoURDt3rd Devs cry...\n\n(Press 'Y' to quit)");
+	quitmsg[QUITSMSG2] = M_GetText("Who do you think you are?\nItaly?\n\n(Press 'Y' to quit)");
+	quitmsg[QUITSMSG6] = M_GetText("You know, I have to say\nsomething cool here in order to\nclose the game...\n\n(Press 'Y' to quit)");
 
 	// Dynamic
 	quitmsg[QUITSMSG3] = ((Playing() && gamestate == GS_LEVEL) ?
 							(M_GetText(va("Hehe, was \n%s\ntoo hard for you?\n\n(Press 'Y' to quit)", maptitle))) :
-							(M_GetText("Hehe, you couldn't even make\nit past the Title Screen, \ncould you, silly?\n\n(Press 'Y' to quit)")));
+							(M_GetText("Hehe, you couldn't even make\nit past the Title Screen,\ncould you, silly?\n\n(Press 'Y' to quit)")));
 
 	quitmsg[QUITSMSG4] = M_GetText(va("Wait, %s!\nCome back! I need you!\n\n(Press 'Y' to quit)",
 #ifdef HAVE_DISCORDRPC
-		((discordInfo.Disconnected || !discordInfo.Initialized) ? 
-			(Playing() ? player_names[consoleplayer] : cv_playername.string) :
-			(discordInfo.sessionUsername))
+							((discordInfo.Disconnected || !discordInfo.Initialized) ? 
+								(Playing() ? player_names[consoleplayer] : cv_playername.string) :
+								(discordInfo.sessionUsername))
 #else
-		(Playing() ? player_names[consoleplayer] : cv_playername.string)
+							(Playing() ? player_names[consoleplayer] : cv_playername.string)
 #endif
 	));
 
@@ -16247,46 +16314,55 @@ static INT32 STAR_QuitMessages(void)
 							(M_GetText(va("Come back!\nFinish listening to\n%s!\n\n(Press 'Y' to quit)", jukeboxMusicName))) :
 							(M_GetText("Come back!\nYou have more jukebox music to play!\n\n(Press 'Y' to quit)")));
 
-	// April Fools
-#ifdef APRIL_FOOLS
+
+	// April Fools Messages //
 	quitmsg[QUITAMSG1] = M_GetText("Aww, was April Fools\ntoo much for you to handle?\n\n(Press 'Y' to quit)");
 	quitmsg[QUITAMSG2] = M_GetText("Happy April Fools!\n\n(Press 'Y' to quit)");
 	quitmsg[QUITAMSG3] = M_GetText("Wait!\nActivate Ultimate Mode!\n\n(Press 'Y' to quit)");
-	quitmsg[QUITAMSG4] = M_GetText("Happy April Fools... week,\nI suppose?\n\n(Press 'Y' to quit)");
-#endif
+	quitmsg[QUITAMSG4] = M_GetText("Aww, could you not handle\nall the pranks?\n\n(Press 'Y' to quit)");
 
-	// Chooses a Quit Message //
-#ifdef APRIL_FOOLS
+	//// Chooses a Quit Message ////
+	// April Fools Mode Specific //
 	if (aprilfoolsmode && cv_ultimatemode.value)
 		RandomMessage = M_RandomRange(QUITAMSG1, QUITSMSG5);
+
+	// Default Messages, Excludes April Fools Mode Messages //
 	else
-#endif
+	{
 		RandomMessage = M_RandomKey(NUM_QUITMESSAGES);
 
-	// Chooses a Quit Sound //
+		if (RandomMessage == (QUITAMSG1|QUITAMSG2|QUITAMSG3|QUITAMSG4))
+		{
+			while ((RandomMessage == (QUITAMSG1|QUITAMSG2|QUITAMSG3|QUITAMSG4)))
+				RandomMessage = M_RandomKey(NUM_QUITMESSAGES);
+		}
+	}
+
+	//// Chooses a Quit Sound ////
 	switch(RandomMessage)
 	{
-		default: BwehHehHe(); break;
-
+		// Message Section 1 //
 		case QUITMSG4: S_StartSound(NULL, sfx_adderr); break;
 		case QUITMSG5: S_StartSound(NULL, sfx_cgot); break;
 
+		// Message Section 2 //
 		case QUIT2MSG1: case QUIT2MSG2: S_StartSound(NULL, sfx_pop); break;
+
 		case QUIT2MSG3:
 		{
-			INT32 RandomMessage2 = M_RandomRange(0, 1);
-			switch(RandomMessage2)
+			switch(M_RandomRange(0, 1))
 			{
 				default: S_StartSound(NULL, sfx_cgot); break;
 				case 1: S_StartSound(NULL, sfx_supert); break;
 			}
 			break;
 		}
+
 		case QUIT2MSG4: S_StartSound(NULL, sfx_spin); break;
+
 		case QUIT2MSG5: 
 		{
-			INT32 RandomMessage2 = M_RandomRange(0, 9);
-			switch(RandomMessage2)
+			switch(M_RandomRange(0, 9))
 			{
 				default: S_StartSound(NULL, sfx_cdpcm0); break;
 				case 1: S_StartSound(NULL, sfx_cdpcm1); break;
@@ -16302,11 +16378,12 @@ static INT32 STAR_QuitMessages(void)
 			break;
 		}
 
+		// Message Section 3 //
 		case QUIT3MSG2: S_StartSound(NULL, sfx_supert); break;
 		case QUIT3MSG3: S_StartSound(NULL, sfx_s3k95); break;
 	}
 
-	// Free up Memory, Return Our Random Message, and We're Done :) //
+	//// Free up Memory, Return Our Random Message, and We're Done :) ////
 	Z_Free(maptitle);
 	return RandomMessage;
 }
@@ -16340,8 +16417,9 @@ static INT32 quitsounds[] =
 static const char *quitGraphic[] = {
 	[0] = "GAMEQUIT", 	// Demo 3 Quit Screen Tails 06-16-2001
 	"COLORQUIT",		// aseprite moment
-	
+
 	"SMUGQUIT",			// aseprite moment 2
+
 	"KELQUIT",			// better aseprite moment
 	"SATRBQUIT",		// better aseprite moment 2
 	NULL
@@ -16659,15 +16737,12 @@ static void M_Tsourdt3rdOptions(INT32 choice)
 	(void)choice;
 	INT32 i;
 
-	// Menu Heights //
-#ifdef APRIL_FOOLS
-	for (i = op_aprilfools+1; i < TSOURDT3RDLASTOPTION; i++)
-		OP_Tsourdt3rdOptionsMenu[i].alphaKey += 5;
-#endif
-
 	// Game Options //
 	OP_Tsourdt3rdOptionsMenu[op_allowtypicaltimeover].status =
 		(!netgame ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+
+	OP_Tsourdt3rdOptionsMenu[op_aprilfools].status =
+		(aprilfoolsmode ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
 
 	// Audio Options //
 	OP_Tsourdt3rdOptionsMenu[op_defaultmaptrack].status =
@@ -17084,11 +17159,12 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 			{
 				player_t *player = &players[consoleplayer];
 
-#ifdef APRIL_FOOLS
-				if (cv_ultimatemode.value)
+				// Do Funniness for April Fools
+				if (aprilfoolsmode && cv_ultimatemode.value)
 					S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
+				
+				// Regularly Execute Everything
 				else
-#endif
 				{
 					if (players[consoleplayer].powers[pw_super])
 						P_PlayJingle(player, JT_SUPER);
@@ -17156,25 +17232,15 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 					}
 					else
 					{
-#ifndef APRIL_FOOLS
-						strcpy(jukeboxMusicName, curplaying->title);
-						strcpy(jukeboxMusicTrack, curplaying->name);
-	
+						strcpy(jukeboxMusicName, ((aprilfoolsmode && cv_ultimatemode.value) ? "Rick" : curplaying->title));
+						strcpy(jukeboxMusicTrack, ((aprilfoolsmode && cv_ultimatemode.value) ? "_hehe" : curplaying->name));
+
 						S_ChangeMusicInternal(jukeboxMusicTrack, !curplaying->stoppingtics);
 						S_SpeedMusic(strtof(cv_jukeboxspeed.string, NULL));
 
-						CONS_Printf(M_GetText("Loaded track \x82%s\x80 into the Jukebox.\n"), jukeboxMusicName);
-#else
-						strcpy(jukeboxMusicName, (cv_ultimatemode.value ? "Rick" : curplaying->title));
-						strcpy(jukeboxMusicTrack, (cv_ultimatemode.value ? "_hehe" : curplaying->name));
-	
-						S_ChangeMusicInternal(jukeboxMusicTrack, !curplaying->stoppingtics);
-						S_SpeedMusic(strtof(cv_jukeboxspeed.string, NULL));
-
-						(!cv_ultimatemode.value ?
-							(CONS_Printf(M_GetText("Loaded track \x82%s\x80 into the Jukebox.\n"), jukeboxMusicName)) :
-							(CONS_Printf(M_GetText("Rick\n"))));
-#endif
+						((aprilfoolsmode && cv_ultimatemode.value) ?
+							(CONS_Printf(M_GetText("Get rickrolled lol\n"))) :
+							(CONS_Printf(M_GetText("Loaded track \x82%s\x80 into the Jukebox.\n"), jukeboxMusicName)));
 
 						jukeboxMusicPlaying = true;
 						initJukeboxHUD = true;
@@ -17207,11 +17273,12 @@ static void M_HandleTsourdt3rdJukebox(INT32 choice)
 			{
 				player_t *player = &players[consoleplayer];
 
-#ifdef APRIL_FOOLS
-				if (cv_ultimatemode.value)
+				// We Mess Around a Little Here
+				if (aprilfoolsmode && cv_ultimatemode.value)
 					S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
+				
+				// Play the Music Regularly
 				else
-#endif
 				{
 					if (players[consoleplayer].powers[pw_super])
 						P_PlayJingle(player, JT_SUPER);
@@ -17387,7 +17454,7 @@ void M_UpdateEasterStuff(void)
 void STAR_SetProblematicCommandsForNetgames(void)
 {
 	// Variables
-	TSoURDt3rdInfo.reachedSockSendErrorLimit = 0;
+	TSoURDt3rd->reachedSockSendErrorLimit = 0;
 
 	// Game
 	CV_StealthSetValue(&cv_allowtypicaltimeover, 0);
@@ -17406,7 +17473,7 @@ void STAR_SetProblematicCommandsForNetgames(void)
 void STAR_ResetProblematicCommandsAfterNetgames(void)
 {
 	// Variables
-	TSoURDt3rdInfo.reachedSockSendErrorLimit = 0;
+	TSoURDt3rd->reachedSockSendErrorLimit = 0;
 
 	// Game
 	CV_StealthSetValue(&cv_allowtypicaltimeover, AllowTypicalTimeOver);

@@ -477,12 +477,12 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 	// SERVERS //
 	// server uses tsourdt3rd
 	} else if (fastcmp(word,"serverUsesTSoURDt3rd")) {
-		lua_pushboolean(L, TSoURDt3rdInfo.serverUsesTSoURDt3rd);
+		lua_pushboolean(L, TSoURDt3rd->serverUsesTSoURDt3rd);
 		return 1;
 	
 	// server tsourdt3rd version
 	} else if (fastcmp(word,"serverTSoURDt3rdVersion")) {
-		lua_pushinteger(L, TSoURDt3rdInfo.serverTSoURDt3rdVersion);
+		lua_pushinteger(L, TSoURDt3rd->serverTSoURDt3rdVersion);
 		return 1;
 	
 	// SOUND EFFECTS //

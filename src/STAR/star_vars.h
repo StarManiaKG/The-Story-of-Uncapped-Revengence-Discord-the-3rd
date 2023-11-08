@@ -7,7 +7,7 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  star_vars.h
-/// \brief star variables, typically used when allowing lua support or just for dumb stuff
+/// \brief star variables, typically used when allowing lua support or just for making and doing dumb stuff
 
 #ifndef __STAR_VARS__
 #define __STAR_VARS__
@@ -16,10 +16,11 @@
 #include "../command.h"
 
 // ============================================================================================	//
-// 	 STAR Stuff																					//
+// 	 STAR NOTE:																					//
 //                                                                                              //
-//   Just so you Know, Some of This Stuff is Handled in the tsourdt3rd.pk3 too.                 //
-//      If you Want to Look at Some Code, Check that PK3 Out.                                   //
+//   Just so you Know, Some of This Stuff is Also Handled in tsourdt3rd.pk3.                 	//
+//		There's Even Some Extra Code in tsourdt3rdextras.pk3 too.								//
+//      If you Want to Look at Some Other Code, Check Those PK3 Out.                            //
 // ============================================================================================	//
 
 //// DEFINITIONS ////
@@ -31,10 +32,11 @@
 #define TSOURDT3RDVERSIONSTRING "TSoURDt3rd v"TSOURDT3RDVERSION
 
 //// STRUCTS ////
-extern struct TSoURDt3rdInfo_s {
+typedef struct TSoURDt3rd_s {
 	// General Stuff
+	boolean usingTSoURDt3rd;
 	boolean checkedVersion;
-	INT32 reachedSockSendErrorLimit;
+	UINT32 reachedSockSendErrorLimit;
 
 	// Server Stuff
 	boolean alreadyWarnedPlayer;
@@ -42,8 +44,10 @@ extern struct TSoURDt3rdInfo_s {
 	boolean serverUsesTSoURDt3rd;
 	UINT8 majorVersion, minorVersion, subVersion;
 
-	INT32 serverTSoURDt3rdVersion;
-} TSoURDt3rdInfo;
+	UINT32 serverTSoURDt3rdVersion;
+} TSoURDt3rd_t;
+
+extern TSoURDt3rd_t TSoURDt3rdPlayers[MAXPLAYERS-1];
 
 //// VARIABLES ////
 // TSoURDt3rd Stuff //
@@ -121,6 +125,8 @@ void STAR_FindAPI(const char *API);
 
 INT32 STAR_FindStringOnWebsite(const char *API, char *URL, char *INFO, boolean verbose);
 char *STAR_ReturnStringFromWebsite(const char *API, char *URL, char *RETURNINFO, boolean verbose);
+
+void TSoURDt3rd_FindCurrentVersion(void);
 #endif
 
 // Servers

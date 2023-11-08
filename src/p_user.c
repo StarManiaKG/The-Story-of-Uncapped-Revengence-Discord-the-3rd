@@ -1351,11 +1351,7 @@ void P_GiveCoopLives(player_t *player, INT32 numlives, boolean sound)
 void P_DoSuperTransformation(player_t *player, boolean giverings)
 {
 	player->powers[pw_super] = 1;
-	if ((!(mapheaderinfo[gamemap-1]->levelflags & LF_NOSSMUSIC) && P_IsLocalPlayer(player))
-#ifdef APRIL_FOOLS
-		&& (!cv_ultimatemode.value) // STAR NOTE: i was here lol
-#endif
-	)
+	if ((!(mapheaderinfo[gamemap-1]->levelflags & LF_NOSSMUSIC) && P_IsLocalPlayer(player)) && (aprilfoolsmode && !cv_ultimatemode.value)) // STAR NOTE: i was here lol
 		P_PlayJingle(player, JT_SUPER);
 
 	S_StartSound(NULL, sfx_supert); //let all players hear it -mattw_cfi
@@ -1669,10 +1665,7 @@ void P_RestoreMusic(player_t *player)
 	// Super
 	else if ((player->powers[pw_super] && !(mapheaderinfo[gamemap-1]->levelflags & LF_NOSSMUSIC)
 		&& !S_RecallMusic(JT_SUPER, false))
-#ifdef APRIL_FOOLS
-		&& (!cv_ultimatemode.value) // STAR NOTE: i was here too :)
-#endif
-	)
+		&& (aprilfoolsmode && !cv_ultimatemode.value)) // STAR NOTE: i was here too :)
 		P_PlayJingle(player, JT_SUPER);
 
 	// Invulnerability
@@ -4437,14 +4430,11 @@ boolean P_SuperReady(player_t *player)
 	&& ALL7EMERALDS(emeralds)
 	&& (player->rings >= 50))
 
-	|| (
-#ifdef APRIL_FOOLS
-		cv_ultimatemode.value
-#else
-		(EnableEasterEggHuntBonuses && currenteggs == TOTALEGGS && ALL7EMERALDS(emeralds) && player->rings >= TOTALEGGS)
-#endif
-			&& player->rings && !player->powers[pw_super] && !netgame)
-	)
+	// STAR STUFF //
+	|| (((aprilfoolsmode && cv_ultimatemode.value) || (EnableEasterEggHuntBonuses && currenteggs == TOTALEGGS && ALL7EMERALDS(emeralds) && player->rings))
+	// END THAT PLEASE //
+	
+	&& player->rings && !player->powers[pw_super] && !netgame))
 		return true;
 
 	return false;
@@ -5288,35 +5278,14 @@ static void P_DoJumpStuff(player_t *player, ticcmd_t *cmd)
 		else if (P_PlayerShieldThink(player, cmd, lockonthok, visual))
 			;
 		
-		// STAR NOTE: i was here, but this is kinda a mess lol //
 		else if (((cmd->buttons & BT_SPIN))
-			|| (
-#ifdef APRIL_FOOLS
-				cv_ultimatemode.value
-#else
-				(EnableEasterEggHuntBonuses && currenteggs == TOTALEGGS)
-#endif
-					&& (cmd->buttons & BT_JUMP) && !netgame && !(players[consoleplayer].powers[pw_super]))
-		)
+			|| (((aprilfoolsmode && cv_ultimatemode.value) || (EnableEasterEggHuntBonuses && currenteggs == TOTALEGGS)) // STAR NOTE: i was here, it's kinda a mess lol
+				&& (cmd->buttons & BT_JUMP) && !netgame && !(players[consoleplayer].powers[pw_super])))
 		{
 			if ((!(player->pflags & PF_SPINDOWN) && P_SuperReady(player))
-
-				|| (
-#ifdef APRIL_FOOLS
-				cv_ultimatemode.value
-#else
-				(EnableEasterEggHuntBonuses && currenteggs == TOTALEGGS)
-#endif
-					&& !netgame && P_SuperReady(player))
-			)
+				|| (((aprilfoolsmode && cv_ultimatemode.value) || (EnableEasterEggHuntBonuses && currenteggs == TOTALEGGS)) && !netgame && P_SuperReady(player))) // STAR NOTE: i was here, and it's less of a mess lol
 			{
-				if (
-#ifdef APRIL_FOOLS
-					cv_ultimatemode.value
-#else
-					(EnableEasterEggHuntBonuses && currenteggs == TOTALEGGS)
-#endif
-						&& !netgame)
+				if (((aprilfoolsmode && cv_ultimatemode.value) || (EnableEasterEggHuntBonuses && currenteggs == TOTALEGGS)) && !netgame) // STAR NOTE: i was here again lol
 				{
 					if (gametyperules & GTR_POWERSTONES)
 					{
@@ -9658,10 +9627,8 @@ static void P_DeathThink(player_t *player)
 	player->deltaviewheight = 0;
 
 	// STAR STUFF YAY //
-#ifdef APRIL_FOOLS
-	if (cv_ultimatemode.value && ultimatemode && !netgame)
+	if (aprilfoolsmode && cv_ultimatemode.value && ultimatemode && !netgame)
 		return; // it's funnier this way
-#endif
 	// END OF STAR STUFF YAY //
 
 	if (player->deadtimer < INT32_MAX)

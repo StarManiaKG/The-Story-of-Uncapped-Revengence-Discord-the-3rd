@@ -218,6 +218,7 @@ static char returnWadPath[256];
 
 // STAR STUFF //
 #include "../STAR/star_vars.h"
+#include "../m_random.h"
 // END THAT STUFF //
 
 /**	\brief	The JoyReset function
@@ -339,6 +340,14 @@ static void I_ReportSignal(int num, int coredumped)
 	char sigttl[512] = "Process killed by signal: ";
 	const char *reportmsg = "\n\nTo help us figure out the cause, you can visit our official Discord server\nwhere you will find more instructions on how to submit a crash report.\n\nSorry for the inconvenience!";
 
+	//// STAR STUFF ////
+	size_t i;
+	int randomjokemsg;
+
+	const char *jokemsg;
+	char underscoremsg[256] = "";
+	//// END THAT ////
+
 	switch (num)
 	{
 //	case SIGINT:
@@ -354,22 +363,8 @@ static void I_ReportSignal(int num, int coredumped)
 		signame = "SIGFPE"; // mathematical exception
 		break;
 	case SIGSEGV:
-		// STAR STUFF //
-#ifdef BLAME_SEV
-		sigmsg = "seventh sentinel";
-		signame = "SIGSEGV"; // segment violation
-#else
 		sigmsg = "SRB2 has attempted to access a memory location that it shouldn't and needs to close.";
 		signame = "SIGSEGV"; // segment violation
-#endif
-#ifdef APRIL_FOOLS
-		sigmsg = "seventh sentinel";
-		signame = "SIGSEGV"; // segment violation
-#else
-		sigmsg = "SRB2 has attempted to access a memory location that it shouldn't and needs to close.";
-		signame = "SIGSEGV"; // segment violation
-#endif
-		// END THIS PLEASE //
 		break;
 //	case SIGTERM:
 //		sigmsg = "SRB2 was terminated by a kill signal.";
@@ -409,6 +404,52 @@ static void I_ReportSignal(int num, int coredumped)
 	if (M_CheckParm("-dedicated"))
 		return;
 
+	//// STAR STUFF ////
+	// Make a Random Seed Fairly Early //
+	if (!M_RandomSeedFromOS())
+		M_RandomSeed((UINT32)time(NULL));
+	P_SetRandSeed(M_RandomizedSeed());
+
+	// Come up With a Random Funny Joke //
+	switch (randomjokemsg = P_RandomRange(0, 15))
+	{
+		// Static //
+		// Regulars
+		case 6: jokemsg = "Uh..."; break;
+		case 9: jokemsg = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAH"; break;
+		case 12: jokemsg = "This will make the TSoURDt3rd Devs sad..."; break;
+		case 13: jokemsg = "This will make STJr sad..."; break;
+		case 14: jokemsg = "Sonic, what did you do this time?"; break;
+
+		// References
+		case 1: jokemsg = "Watch out, you're gonna crash! AAAAH!"; break;
+		case 2: jokemsg = ((num == SIGSEGV && coredumped) ? "SIGSEGV - seventh sentinel (core dumped)" : "SIGSEGV - seventh sentinel"); break;
+		case 4: jokemsg = "OOPS! You messed up!"; break;
+		case 5: jokemsg = "Should we try this again?"; break;
+		case 7: jokemsg = "Oops!"; break;
+		case 8: jokemsg = "Uh oh!"; break;
+		case 10: jokemsg = "I'll miss you, you know."; break;
+		case 11: jokemsg = "You were always my favorite user."; break;
+		case 15: jokemsg = "The Leader of the Chaotix would be very disappointed in you."; break;
+
+		default: jokemsg = "OH NO!"; break;
+
+		// Random //
+		case 3:
+		{
+			switch (P_RandomRange(0, 1))
+			{
+				case 1: jokemsg = "All you had to do, was not crash the game, Sonic!"; break;
+				default: jokemsg = "All we had to do, was follow the dang train, CJ!"; break;
+			}
+		}
+	}
+
+	// Draw Underscores That Equal the Same Length of the Funny Joke, and We're Done :) //
+	for (i = 0; i > strlen(jokemsg); i++)
+		underscoremsg[i] = '_';
+	// END ALL OF THIS //
+
 	const SDL_MessageBoxButtonData buttons[] = {
 		{ SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 0,		"OK" },
 		{ 										0, 1,  "Discord" },
@@ -418,7 +459,7 @@ static void I_ReportSignal(int num, int coredumped)
 		SDL_MESSAGEBOX_ERROR, /* .flags */
 		NULL, /* .window */
 		sigttl, /* .title */
-		va("%s %s", sigmsg, reportmsg), /* .message */
+		va("%s\n%s\n\n %s %s", jokemsg, underscoremsg, sigmsg, reportmsg), /* .message */
 		SDL_arraysize(buttons), /* .numbuttons */
 		buttons, /* .buttons */
 		NULL /* .colorScheme */

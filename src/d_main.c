@@ -153,7 +153,7 @@ static char addonsdir[MAX_WADPATH];
 INT32 extrawads;
 boolean TSoURDt3rd_checkedExtraWads;
 
-// STAR Stuff
+// TSoURDt3rd Stuff
 boolean TSoURDt3rd_TouchyModifiedGame;
 boolean TSoURDt3rd_LoadExtras;
 boolean TSoURDt3rd_LoadedExtras;
@@ -172,9 +172,9 @@ boolean TSoURDt3rd_useAsFileName;
 char savegamefolder[256];
 
 // Events
-boolean aprilfoolsmode; 		// April Fools Event Setter
-boolean eastermode;				// Easter Event Setter
-boolean xmasmode, xmasoverride;	// Christmas Event Setter
+boolean aprilfoolsmode;
+boolean eastermode;
+boolean xmasmode, xmasoverride;
 // END OF ALL THAT STAR STUFF //
 
 //
@@ -510,11 +510,9 @@ static void D_Display(void)
 	}
 
 	// STAR STUFF //
-#ifdef APRIL_FOOLS
-	// Close the Game if We're on Ultimate Mode But We've Beaten the Game
-	if (cv_ultimatemode.value && (gamestate == (GS_ENDING|GS_CREDITS|GS_EVALUATION)))
+	// April Fools; Close the Game if We're on Ultimate Mode But We've Beaten the Game
+	if (aprilfoolsmode && cv_ultimatemode.value && (gamestate == (GS_ENDING|GS_CREDITS|GS_EVALUATION)))
 		I_Error("SIGSEGV - seventh sentinel (core dumped)");
-#endif
 	// WHY YOU DO BAD //
 
 	// STUPID race condition...
@@ -968,14 +966,12 @@ void D_SRB2Loop(void)
 
 		//// STAR STUFF ////
 		// Do Event Stuff //
-#ifdef APRIL_FOOLS
 		// April Fools
-		if ((!modifiedgame || savemoddata) && (cv_ultimatemode.value))
+		if (aprilfoolsmode && cv_ultimatemode.value && (!modifiedgame || savemoddata))
 		{
 			CONS_Printf("You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nyour game has been set to modified.\n");
 			G_SetGameModified(false);
 		}
-#endif
 
 		// Easter
 		if (!eastermode && (cv_alloweasteregghunt.value || cv_easteregghuntbonuses.value || EnableEasterEggHuntBonuses))
@@ -1003,35 +999,8 @@ void D_SRB2Loop(void)
 
 #ifdef HAVE_CURL
 		// Do Internet Stuff //
-		// Grab the Current TSoURDt3rd Version
-		if (!TSoURDt3rdInfo.checkedVersion)
-		{
-			// STAR NOTE: If You're Planning on Using the Internet Functions, Use This Block as an Example :) //
-			// Make Some Variables
-			const char *API = "https://raw.githubusercontent.com/StarManiaKG/The-Story-of-Uncapped-Revengence-Discord-the-3rd/";
-			char URL[256];	strcpy(URL,	 va("%s/src/STAR/star_webinfo.h", compbranch));
-			char INFO[256]; strcpy(INFO, va("#define TSOURDT3RDVERSION \"%s\"", TSOURDT3RDVERSION));
-			
-			// Check the Version, And If They Don't Match the Branch's Version, Run the Block Below
-			CONS_Printf("STAR_FindStringOnWebsite() & STAR_ReturnStringFromWebsite(): Grabbing latest TSoURDt3rd version...\n");
-			
-			if (STAR_FindStringOnWebsite(API, URL, INFO, false) == 1 && cv_tsourdt3rdupdatemessage.value)
-			{
-				char RETURNINFO[256] = "#define TSOURDT3RDVERSION";
-				char RETURNEDSTRING[256] = ""; strcpy(RETURNEDSTRING, STAR_ReturnStringFromWebsite(API, URL, RETURNINFO, false));
-
-				UINT32 internalVersionNumber = STAR_ConvertStringToCompressedNumber(RETURNEDSTRING, 0, 26, true);
-
-				UINT32 displayVersionNumber = STAR_ConvertStringToCompressedNumber(RETURNEDSTRING, 0, 26, false);
-				const char *displayVersionString = STAR_ConvertNumberToString(displayVersionNumber, 0, 0, true);
-
-				if (TSoURDt3rd_CurrentVersion() < internalVersionNumber)
-					M_StartMessage(va("%c%s\x80\nYou're using an outdated version of TSoURDt3rd.\n\nThe newest version is: %s\nYou're using version: %s\n\nCheck the SRB2 Message Board for the latest version! \n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Update TSoURDt3rd, Please", displayVersionString, TSOURDT3RDVERSION),NULL,MM_NOTHING);
-				else if (TSoURDt3rd_CurrentVersion() > internalVersionNumber)
-					M_StartMessage(va("%c%s\x80\nYou're using a version of TSoURDt3rd that hasn't even released yet. \n\nYou're probably a tester or coder,\nand in that case, hello!\n\nEnjoy messing around with the build! \n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Hello, Tester/Coder!"),NULL,MM_NOTHING);
-			}
-			TSoURDt3rdInfo.checkedVersion = true;
-		}
+		// Grab the Current TSoURDt3rd Version, if the Update Message Command Allows it
+		TSoURDt3rd_FindCurrentVersion();
 #endif
 
 		// Do Extra Stuff //

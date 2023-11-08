@@ -731,24 +731,18 @@ extern int
 #undef UPDATE_ALERT
 #endif
 
-// STAR STUFF YAY //
-// STAR NOTE: SOME OF THESE MAY ALSO BE UNSTABLE TOO
-
-// Enable Alam's Lighting, With Touch-ups by Star :p (Currently in Extreme Beta lol)
-//#define ALAM_LIGHTING
-
-// Enable More Debugging Features
-//#define _DEBUG
-//#define DEBUGFILE
-
+//// STAR STUFF YAY ////
+// Stable Features //
 // Savefiles
 #define SAVEGAMEFOLDER "saves"
 extern char savegamefolder[256];
 
-// Events
-//#define APRIL_FOOLS			// enables april fools mode, but won't exist in the future, thanks to TSoURDt3rd_CheckTime
+// Untstable Features //
+// Enable Alam's Lighting, With Touch-ups by Star :p (Currently in Extreme Beta lol)
+//#define ALAM_LIGHTING
 
-// Extras
-//#define BLAME_SEV				// blames sev
+// Debugging Features //
+//#define _DEBUG
+//#define DEBUGFILE
 
 #endif // __DOOMDEF__

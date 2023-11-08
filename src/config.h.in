@@ -41,26 +41,28 @@
  * Last updated 2023 / 09 / 06 - v2.2.12 - patch.pk3
  * Last updated 2023 / 09 / 09 - v2.2.13 - none
  
- * Last updated 2022 / 08 / 21 - TSOURDT3RD v2.2.10 - starmaniakg.pk3
- * Last updated 2023 / 02 / 05 - TSOURDT3RD v2.2.10 - made starmaniakg.pk3 (now renamed to tsourdt3rd.pk3) optional
- * Last updated 2023 / 02 / 06 - TSOURDT3RD v2.2.10 - updated assets directory
- * Last updated 2023 / 03 / 03 - TSOURDT3RD v2.2.10 - made tsourdt3rd.pk3 optional and added jukebox.pk3, with the latter being optional, and containing all of the jukebox music that you want
- * Last updated 2023 / 03 / 27 - TSOURDT3RD v2.2.10 - updated the hash for tsourdt3rd.pk3 again
- * Last updated 2023 / 03 / 31 - TSOURDT3RD v2.2.10 - added support for future april fools stuff
- * Last updated 2023 / 04 / 10 - TSOURDT3RD v2.2.10 - merged the april fools pk3 with the regular pk3
- * Last updated 2023 / 04 / 13 - TSOURDT3RD v2.2.10 - fixed the easter egg sprite and added tons of more fun stuff
- * Last updated 2023 / 04 / 21 - TSOURDT3RD v2.2.10 - dispenser going up
- * Last updated 2023 / 04 / 21 - TSOURDT3RD v2.2.10 - accidentally deleted the file and all my final changes, so i had to recreate them, but you're lucky though, the old egg hunt for dsz2 was going to be a bit of a hassle
- * Last updated 2023 / 04 / 26 - TSOURDT3RD v2.2.10 - made some changes to make the build more netgame-compatible
- * Last updated 2023 / 04 / 28 - TSOURDT3RD v2.2.10 - decided to split things up between 2 pk3s
- * Last updated 2023 / 05 / 06 - TSOURDT3RD v2.2.10 - removed md5 checking for tsourdt3rdextras.pk3
- * Last updated 2023 / 05 / 07 - TSOURDT3RD v2.2.10 - added a little graphic
- * Last updated 2023 / 05 / 08 - TSOURDT3RD v2.2.10 - removed that little graphic
- * Last updated 2023 / 05 / 13 - TSOURDT3RD v2.2.10 - removed the assets from the repository. thanks for the heads up in that one commit, bitten
- * Last updated 2023 / 05 / 24 - TSOURDT3RD v2.2.10 - worked a bit on readding corona support
- * Last updated 2023 / 08 / 01 - TSOURDT3RD v2.2.10 - added some loading screen graphics
- * Last updated 2023 / 08 / 02 - TSOURDT3RD v2.2.11 - updated things to 2.2.11
- * Last updated 2023 / 08 / 12 - TSOURDT3RD v2.2.11 - added some more loading scren graphics
+ * Last updated 2022 / 08 / 21 - TSOURDT3RD V2 (2.2.10) - starmaniakg.pk3
+ * Last updated 2023 / 02 / 05 - TSOURDT3RD V2 (2.2.10) - made starmaniakg.pk3 (now renamed to tsourdt3rd.pk3) optional
+ * Last updated 2023 / 02 / 06 - TSOURDT3RD V2 (2.2.10) - updated assets directory
+ * Last updated 2023 / 03 / 03 - TSOURDT3RD V2 (2.2.10) - made tsourdt3rd.pk3 optional and added jukebox.pk3, with the latter being optional, and containing all of the jukebox music that you want
+ * Last updated 2023 / 03 / 27 - TSOURDT3RD V2 (2.2.10) - updated the hash for tsourdt3rd.pk3 again
+ * Last updated 2023 / 03 / 31 - TSOURDT3RD V2 (2.2.10) - added support for future april fools stuff
+ * Last updated 2023 / 04 / 10 - TSOURDT3RD V2 (2.2.10) - merged the april fools pk3 with the regular pk3
+ * Last updated 2023 / 04 / 13 - TSOURDT3RD V2 (2.2.10) - fixed the easter egg sprite and added tons of more fun stuff
+ * Last updated 2023 / 04 / 21 - TSOURDT3RD V2 (2.2.10) - dispenser going up
+ * Last updated 2023 / 04 / 21 - TSOURDT3RD V2 (2.2.10) - accidentally deleted the file and all my final changes, so i had to recreate them, but you're lucky though, the old egg hunt for dsz2 was going to be a bit of a hassle
+ * Last updated 2023 / 04 / 26 - TSOURDT3RD V2 (2.2.10) - made some changes to make the build more netgame-compatible
+ * Last updated 2023 / 04 / 28 - TSOURDT3RD V2 (2.2.10) - decided to split things up between 2 pk3s
+ * Last updated 2023 / 05 / 06 - TSOURDT3RD V2 (2.2.10) - removed md5 checking for tsourdt3rdextras.pk3
+ * Last updated 2023 / 05 / 07 - TSOURDT3RD V2 (2.2.10) - added a little graphic
+ * Last updated 2023 / 05 / 08 - TSOURDT3RD V2 (2.2.10) - removed that little graphic
+ * Last updated 2023 / 05 / 13 - TSOURDT3RD V2 (2.2.10) - removed the assets from the repository. thanks for the heads up in that one commit, bitten
+ * Last updated 2023 / 05 / 24 - TSOURDT3RD V2 (2.2.10) - worked a bit on readding corona support
+ * Last updated 2023 / 08 / 01 - TSOURDT3RD V2 (2.2.10) - added some loading screen graphics
+ * Last updated 2023 / 08 / 02 - TSOURDT3RD V3 (2.2.11) - updated things to 2.2.11
+ * Last updated 2023 / 08 / 12 - TSOURDT3RD V3 (2.2.11) - added some more loading scren graphics
+ * Last updated 2023 / 10 / 04 - TSOURDT3RD V4 (2.2.12) - added absolutely nothing
+ * Last updated 2023 / 11 / 07 - TSOURDT3RD V5 (2.2.13) - added absolutely nothing again
 */
 #define ASSET_HASH_SRB2_PK3   "ad911f29a28a18968ee5b2d11c2acb39"
 #define ASSET_HASH_ZONES_PK3  "1c8adf8d079ecb87d00081f158acf3c7"
