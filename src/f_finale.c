@@ -3281,11 +3281,7 @@ void F_TitleScreenDrawer(void)
 				}
 			}
 
-			if ((finalecount >= SONICSTART)
-#ifdef APRIL_FOOLS
-				&& (!cv_ultimatemode.value) // STAR NOTE: i was here lol
-#endif
-			)
+			if ((finalecount >= SONICSTART) && (aprilfoolsmode && !cv_ultimatemode.value)) // STAR NOTE: no more sonic for april fools lol
 			{
 				if (finalecount < SONICIDLE)
 				{
@@ -3456,11 +3452,7 @@ void F_TitleScreenDrawer(void)
 				// No Tails Front Layer Idle
 			}
 
-			if ((finalecount >= SONICSTART)
-#ifdef APRIL_FOOLS
-				&& (!cv_ultimatemode.value) // STAR NOTE: i was also here lol
-#endif
-			)
+			if ((finalecount >= SONICSTART) && (aprilfoolsmode && !cv_ultimatemode.value)) // STAR NOTE: no more sonic for april fools, electric boogalo
 			{
 				if (finalecount < SONICIDLE)
 				{

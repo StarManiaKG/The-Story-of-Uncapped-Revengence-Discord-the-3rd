@@ -40,10 +40,8 @@
 #include "STAR/star_vars.h" // extra star variables
 #include "m_menu.h" // jukebox
 
-#ifdef APRIL_FOOLS
-#include "fastcmp.h"
-#include "v_video.h"
-#endif
+#include "fastcmp.h" // april fools stuff 1
+#include "v_video.h" // april fools stuff 2
 
 tic_t emeraldtime;
 
@@ -713,10 +711,7 @@ void P_Ticker(boolean run)
 	INT32 i;
 
 	// STAR STUFF YAY //
-#ifdef APRIL_FOOLS
-	INT32 noSonic = 0;
-#endif
-
+	INT32 noMoreSonic = 0;
 	INT32 imGonnaKillAllOfYou = 0;
 	// END OF STAR STUFF WEEEEEEE //
 
@@ -918,27 +913,26 @@ void P_Ticker(boolean run)
 #endif
 
 		// DO STAR STUFF FOR KICKS //
-#ifdef APRIL_FOOLS
 		// Sonic's Dead lol
-		if (cv_ultimatemode.value)
+		if (aprilfoolsmode && cv_ultimatemode.value)
 		{
 			if (!netgame)
 			{
-				while (noSonic < MAXPLAYERS)
+				while (noMoreSonic < MAXPLAYERS)
 				{
-					if (playeringame[noSonic] && fastncmp(skins[players[noSonic].skin].name, "sonic", 5))
+					if (playeringame[noMoreSonic] && fastncmp(skins[players[noMoreSonic].skin].name, "sonic", 5))
 					{
-						SetPlayerSkinByNum(noSonic, 1);
-						if (!noSonic)
+						SetPlayerSkinByNum(noMoreSonic, 1);
+						if (!noMoreSonic)
 						{
 							CONS_Printf("You can't play as Sonic; He's Dead.\n");
 							CV_StealthSet(&cv_skin, skins[1].name);
 						}
-						else if (noSonic == 1)
+						else if (noMoreSonic == 1)
 							CV_StealthSet(&cv_skin2, skins[1].name);
 					}
 
-					noSonic++;
+					noMoreSonic++;
 				}
 			}
 			else
@@ -951,7 +945,6 @@ void P_Ticker(boolean run)
 				}
 			}
 		}
-#endif
 
 		// Time Over...
 		if (((Playing() && leveltime >= 20999 && AllowTypicalTimeOver)					// one tic off so the timer doesn't display 10:00.00

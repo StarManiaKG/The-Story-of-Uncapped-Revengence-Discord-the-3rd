@@ -96,7 +96,7 @@ static void Got_RunSOCcmd(UINT8 **cp, INT32 playernum);
 static void Got_Teamchange(UINT8 **cp, INT32 playernum);
 static void Got_Clearscores(UINT8 **cp, INT32 playernum);
 // STAR STUFF //
-static void Got_Tsourdt3rdInfo(UINT8 **cp, INT32 playernum);
+static void Got_Tsourdt3rdStructures(UINT8 **cp, INT32 playernum);
 // END THAT //
 
 static void PointLimit_OnChange(void);
@@ -648,10 +648,9 @@ void D_RegisterServerCommands(void)
 #ifdef USE_STUN
 	CV_RegisterVar(&cv_stunserver);
 #endif
-
 	CV_RegisterVar(&cv_discordinvites);
 
-	RegisterNetXCmd(XD_TSOURDT3RD, Got_Tsourdt3rdInfo);
+	RegisterNetXCmd(XD_TSOURDT3RD, Got_Tsourdt3rdStructures);
 	// END THIS PLEASE //
 }
 
@@ -1014,9 +1013,9 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_automapoutsidedevmode);
 
 	CV_RegisterVar(&cv_soniccd);
-#ifdef APRIL_FOOLS
-	CV_RegisterVar(&cv_ultimatemode);
-#endif
+
+	if (aprilfoolsmode)
+		CV_RegisterVar(&cv_ultimatemode);
 
 	CV_RegisterVar(&cv_quitscreen);
 
@@ -4882,7 +4881,7 @@ static void Command_Isgamemodified_f(void)
 	
 	// STAR STUFF YAY //
 	else if (autoloaded)
-		CONS_Printf(M_GetText("modifiedgame is false, and extras can still be unlocked,\n but keep in mind that you have autoloaded game-changing add-ons.\n"));
+		CONS_Printf(M_GetText("modifiedgame is false, and time data can still be saved,\n but keep in mind that you have autoloaded at least one game-changing mod.\n"));
 	// END STAR STUFF YAY //
 
 	else
@@ -5273,7 +5272,7 @@ static void BaseNumLaps_OnChange(void)
 }
 
 // STAR STUFF: ELECTRIC BOOGALO //
-static void Got_Tsourdt3rdInfo(UINT8 **cp, INT32 playernum)
+static void Got_Tsourdt3rdStructures(UINT8 **cp, INT32 playernum)
 {
 	// Protect Others Against a Hacked/Buggy Client //
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
@@ -5285,20 +5284,20 @@ static void Got_Tsourdt3rdInfo(UINT8 **cp, INT32 playernum)
 	}
 
 	// Apply Info, and We're Done :) //
-	UINT8 serverUsesTSoURDt3rd				= (boolean)READUINT8(*cp);
-	TSoURDt3rdInfo.serverUsesTSoURDt3rd		= (((UINT8)serverUsesTSoURDt3rd != 1 && serverUsesTSoURDt3rd != 0) ? 0 : 1);
+	UINT8 serverUsesTSoURDt3rd								= (boolean)READUINT8(*cp);
+	TSoURDt3rdPlayers[playernum].serverUsesTSoURDt3rd		= ((serverUsesTSoURDt3rd > 1 || serverUsesTSoURDt3rd < 0) ? 0 : 1);
 
-	TSoURDt3rdInfo.majorVersion 			= (TSoURDt3rdInfo.serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
-	TSoURDt3rdInfo.minorVersion 			= (TSoURDt3rdInfo.serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
-	TSoURDt3rdInfo.subVersion 				= (TSoURDt3rdInfo.serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
+	TSoURDt3rdPlayers[playernum].majorVersion 				= (TSoURDt3rdPlayers[playernum].serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
+	TSoURDt3rdPlayers[playernum].minorVersion 				= (TSoURDt3rdPlayers[playernum].serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
+	TSoURDt3rdPlayers[playernum].subVersion 				= (TSoURDt3rdPlayers[playernum].serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
 
-	TSoURDt3rdInfo.serverTSoURDt3rdVersion 	= STAR_CombineNumbers(3, TSoURDt3rdInfo.majorVersion, TSoURDt3rdInfo.minorVersion, TSoURDt3rdInfo.subVersion);
+	TSoURDt3rdPlayers[playernum].serverTSoURDt3rdVersion 	= STAR_CombineNumbers(3, TSoURDt3rdPlayers[playernum].majorVersion, TSoURDt3rdPlayers[playernum].minorVersion, TSoURDt3rdPlayers[playernum].subVersion);
 
 	// DISCORD STUFF //
 #ifdef HAVE_DISCORDRPC
-	discordInfo.maxPlayers 					= (TSoURDt3rdInfo.serverUsesTSoURDt3rd ? READUINT8(*cp) : (UINT8)cv_maxplayers.value);
-	discordInfo.joinsAllowed 				= (TSoURDt3rdInfo.serverUsesTSoURDt3rd ? (boolean)READUINT8(*cp) : (boolean)cv_allownewplayer.value);
-	discordInfo.whoCanInvite 				= (TSoURDt3rdInfo.serverUsesTSoURDt3rd ? READUINT8(*cp) : (UINT8)cv_discordinvites.value);
+	discordInfo.maxPlayers 		= (TSoURDt3rdPlayers[playernum].serverUsesTSoURDt3rd ? READUINT8(*cp) : (UINT8)cv_maxplayers.value);
+	discordInfo.joinsAllowed 	= (TSoURDt3rdPlayers[playernum].serverUsesTSoURDt3rd ? (boolean)READUINT8(*cp) : (boolean)cv_allownewplayer.value);
+	discordInfo.whoCanInvite 	= (TSoURDt3rdPlayers[playernum].serverUsesTSoURDt3rd ? READUINT8(*cp) : (UINT8)cv_discordinvites.value);
 
 	DRPC_UpdatePresence();
 #else

@@ -880,12 +880,11 @@ static void SOCK_Send(void)
 			/*I_Error("SOCK_Send, error sending to node %d (%s) #%u: %s", doomcom->remotenode,
 				SOCK_GetNodeAddress(doomcom->remotenode), e, strerror(e));*/
 
-			TSoURDt3rdInfo.reachedSockSendErrorLimit++;
-
-			if (TSoURDt3rdInfo.reachedSockSendErrorLimit >= cv_socksendlimit.value)
+			TSoURDt3rd->reachedSockSendErrorLimit++;
+			if (TSoURDt3rd->reachedSockSendErrorLimit >= cv_socksendlimit.value)
 			{
 				PT_WillResendGamestate();
-				TSoURDt3rdInfo.reachedSockSendErrorLimit = 0;
+				TSoURDt3rd->reachedSockSendErrorLimit = 0;
 			}
 			NetUpdate(); // Check for new console commands and update the client
 
