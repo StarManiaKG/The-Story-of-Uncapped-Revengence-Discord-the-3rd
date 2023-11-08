@@ -5272,7 +5272,7 @@ static void BaseNumLaps_OnChange(void)
 }
 
 // STAR STUFF: ELECTRIC BOOGALO //
-static void Got_Tsourdt3rdStructures(UINT8 **cp, INT32 playernum)
+static void Got_Tsourdt3rdPackets(UINT8 **cp, INT32 playernum)
 {
 	// Protect Others Against a Hacked/Buggy Client //
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
