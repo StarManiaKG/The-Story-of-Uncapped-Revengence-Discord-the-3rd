@@ -3578,17 +3578,10 @@ static void Tsourdt3rdStructures_OnChange(void)
 static CV_PossibleValue_t netticbuffer_cons_t[] = {{0, "MIN"}, {3, "MAX"}, {0, NULL}};
 consvar_t cv_netticbuffer = CVAR_INIT ("netticbuffer", "1", CV_SAVE, netticbuffer_cons_t, NULL);
 
-<<<<<<< HEAD
 consvar_t cv_allownewplayer = CVAR_INIT ("allowjoin", "On", CV_SAVE|CV_NETVAR|CV_CALL|CV_ALLOWLUA, CV_OnOff, Tsourdt3rdStructures_OnChange);
 consvar_t cv_joinnextround = CVAR_INIT ("joinnextround", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL); /// \todo not done
 static CV_PossibleValue_t maxplayers_cons_t[] = {{2, "MIN"}, {32, "MAX"}, {0, NULL}};
 consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_SAVE|CV_NETVAR|CV_CALL|CV_ALLOWLUA, maxplayers_cons_t, Tsourdt3rdStructures_OnChange);
-=======
-consvar_t cv_allownewplayer = CVAR_INIT ("allowjoin", "On", CV_SAVE|CV_NETVAR|CV_CALL|CV_ALLOWLUA, CV_OnOff, Tsourdt3rdPackets_OnChange);
-consvar_t cv_joinnextround = CVAR_INIT ("joinnextround", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL); /// \todo not done
-static CV_PossibleValue_t maxplayers_cons_t[] = {{2, "MIN"}, {32, "MAX"}, {0, NULL}};
-consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_SAVE|CV_NETVAR|CV_CALL|CV_ALLOWLUA, maxplayers_cons_t, Tsourdt3rdPackets_OnChange);
->>>>>>> origin/main
 static CV_PossibleValue_t joindelay_cons_t[] = {{1, "MIN"}, {3600, "MAX"}, {0, "Off"}, {0, NULL}};
 consvar_t cv_joindelay = CVAR_INIT ("joindelay", "10", CV_SAVE|CV_NETVAR, joindelay_cons_t, NULL);
 static CV_PossibleValue_t rejointimeout_cons_t[] = {{1, "MIN"}, {60 * FRACUNIT, "MAX"}, {0, "Off"}, {0, NULL}};
@@ -3608,15 +3601,9 @@ static CV_PossibleValue_t downloadspeed_cons_t[] = {{1, "MIN"}, {300, "MAX"}, {0
 consvar_t cv_downloadspeed = CVAR_INIT ("downloadspeed", "16", CV_SAVE|CV_NETVAR, downloadspeed_cons_t, NULL);
 
 // DISCORD STUFF //
-<<<<<<< HEAD
 // Discord Invites; Here for Dedicated Servers or Something for Some Reason idk
 static CV_PossibleValue_t discordinvites_cons_t[] = {{0, "Server"}, {1, "Admins"}, {2, "Everyone"}, {0, NULL}};
 consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Everyone", CV_SAVE|CV_CALL, discordinvites_cons_t, Tsourdt3rdStructures_OnChange);
-=======
-// Discord Invitses; Here for Dedicated Servers or Something for Some Reason idk
-static CV_PossibleValue_t discordinvites_cons_t[] = {{0, "Server"}, {1, "Admins"}, {2, "Everyone"}, {0, NULL}};
-consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Everyone", CV_SAVE|CV_CALL, discordinvites_cons_t, Tsourdt3rdPackets_OnChange);
->>>>>>> origin/main
 // END THIS MESS //
 
 static void Got_AddPlayer(UINT8 **p, INT32 playernum);
@@ -4532,7 +4519,6 @@ static void HandlePacketFromAwayNode(SINT8 node)
 					(CONS_Printf("Server uses TSoURDt3rd, running features...\n")) :
 					(CONS_Printf("Server either doesn't use TSoURDt3rd or is using an outdated TSoURDt3rd, working around this...\n")));
 
-<<<<<<< HEAD
 			TSoURDt3rdPlayers[node].majorVersion 				= (TSoURDt3rdPlayers[node].serverUsesTSoURDt3rd ? netbuffer->u.servercfg.tsourdt3rdmajorversion : 0);
 			TSoURDt3rdPlayers[node].minorVersion 				= (TSoURDt3rdPlayers[node].serverUsesTSoURDt3rd ? netbuffer->u.servercfg.tsourdt3rdminorversion : 0);
 			TSoURDt3rdPlayers[node].subVersion 					= (TSoURDt3rdPlayers[node].serverUsesTSoURDt3rd ? netbuffer->u.servercfg.tsourdt3rdsubversion : 0);
@@ -4544,19 +4530,6 @@ static void HandlePacketFromAwayNode(SINT8 node)
 			discordInfo.maxPlayers 		= (TSoURDt3rdPlayers[node].serverUsesTSoURDt3rd ? netbuffer->u.servercfg.maxplayer : (UINT8)cv_maxplayers.value);
 			discordInfo.joinsAllowed 	= (TSoURDt3rdPlayers[node].serverUsesTSoURDt3rd ? netbuffer->u.servercfg.allownewplayer : (boolean)cv_allownewplayer.value);
 			discordInfo.whoCanInvite 	= (TSoURDt3rdPlayers[node].serverUsesTSoURDt3rd ? netbuffer->u.servercfg.discordinvites : (UINT8)cv_discordinvites.value);
-=======
-			TSoURDt3rdPlayers[node].majorVersion 			= (TSoURDt3rdPlayers[node].serverUsesTSoURDt3rd ? netbuffer->u.servercfg.tsourdt3rdmajorversion : 0);
-			TSoURDt3rdPlayers[node].minorVersion 			= (TSoURDt3rdPlayers[node].serverUsesTSoURDt3rd ? netbuffer->u.servercfg.tsourdt3rdminorversion : 0);
-			TSoURDt3rdPlayers[node].subVersion 				= (TSoURDt3rdPlayers[node].serverUsesTSoURDt3rd ? netbuffer->u.servercfg.tsourdt3rdsubversion : 0);
-
-			TSoURDt3rdPlayers[node].serverTSoURDt3rdVersion = STAR_CombineNumbers(3, TSoURDt3rdPlayers[node].majorVersion, TSoURDt3rdPlayers[node].minorVersion, TSoURDt3rdPlayers[node].subVersion);
-
-#ifdef HAVE_DISCORDRPC
-			// DISCORD STUFF //
-			discordInfo.maxPlayers 							= (TSoURDt3rdPlayers[node].serverUsesTSoURDt3rd ? netbuffer->u.servercfg.maxplayer : (UINT8)cv_maxplayers.value);
-			discordInfo.joinsAllowed 						= (TSoURDt3rdPlayers[node].serverUsesTSoURDt3rd ? netbuffer->u.servercfg.allownewplayer : (boolean)cv_allownewplayer.value);
-			discordInfo.whoCanInvite 						= (TSoURDt3rdPlayers[node].serverUsesTSoURDt3rd ? netbuffer->u.servercfg.discordinvites : (UINT8)cv_discordinvites.value);
->>>>>>> origin/main
 			// END OF THE DISCORD STUFF //
 #endif
 			// END OF THE ENTIRE STAR MESS TOO //
