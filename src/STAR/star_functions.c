@@ -11,11 +11,12 @@
 
 #include <time.h>
 
+#include "star_vars.h" 		// star variables
+
 #include "../i_system.h"
 #include "../doomdef.h"
 #include "../byteptr.h"
 #include "../m_misc.h" 		// extra file functions
-#include "star_vars.h" 		// star variables
 #include "../m_menu.h" 		// egg and command variables
 #include "../d_main.h" 		// event variables
 #include "../deh_soc.h"		// savefile variables
