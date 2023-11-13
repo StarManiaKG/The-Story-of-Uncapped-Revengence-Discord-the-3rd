@@ -36,7 +36,8 @@ typedef struct TSoURDt3rd_s {
 	// General Stuff
 	boolean usingTSoURDt3rd;
 	boolean checkedVersion;
-	UINT32 reachedSockSendErrorLimit;
+
+	INT32 reachedSockSendErrorLimit;
 
 	// Server Stuff
 	boolean alreadyWarnedPlayer;
@@ -47,7 +48,8 @@ typedef struct TSoURDt3rd_s {
 	UINT32 serverTSoURDt3rdVersion;
 } TSoURDt3rd_t;
 
-extern TSoURDt3rd_t TSoURDt3rdPlayers[MAXPLAYERS-1];
+extern TSoURDt3rd_t *TSoURDt3rd;
+extern TSoURDt3rd_t TSoURDt3rdPlayers[MAXPLAYERS];
 
 //// VARIABLES ////
 // TSoURDt3rd Stuff //
@@ -61,22 +63,31 @@ extern boolean TSoURDt3rd_NoMoreExtras;
 extern boolean TSoURDt3rd_checkedExtraWads;
 
 // Sound Effects //
+// Star SFX
 extern INT32 STAR_JoinSFX;
 extern INT32 STAR_LeaveSFX;
 extern INT32 STAR_SynchFailureSFX;
 
+// Discord SFX
 extern INT32 DISCORD_RequestSFX;
 
 // Game //
+// Loading Screens
 extern size_t ls_count;
 extern UINT8 ls_percent;
 extern INT32 STAR_loadingscreentouse;
 
-extern const char gameoverMusic[7][7];
-extern const INT32 gameoverMusicTics[7];
-
+// Time Over
 extern boolean timeover;
 extern boolean ForceTimeOver;
+
+// Discord
+extern boolean all7matchemeralds;
+
+// Audio //
+// Game Over Music
+extern const char gameoverMusic[7][7];
+extern const INT32 gameoverMusicTics[7];
 
 // Extras //
 // TF2
@@ -91,12 +102,15 @@ extern INT32 currenteggs;
 extern INT32 numMapEggs;
 
 //// COMMANDS ////
+// Game //
 extern consvar_t cv_loadingscreen, cv_loadingscreenimage, cv_soniccd;
 extern consvar_t cv_tsourdt3rdupdatemessage;
+
+// Servers //
 extern consvar_t cv_socksendlimit;
 
 //// FUNCTIONS ////
-// Game
+// Game //
 void STAR_LoadingScreen(boolean opengl);
 
 #ifdef HAVE_SDL
@@ -104,22 +118,22 @@ void STAR_RenameWindow(const char *title);
 const char *STAR_SetWindowTitle(void);
 #endif
 
-// Savedata
+// Savedata //
 void STAR_WriteExtraData(void);
 void STAR_ReadExtraData(void);
 
 void STAR_SetSavefileProperties(void);
 
-// Files
+// Files //
 INT32 STAR_DetectFileType(const char* filename);
 
-// Events
+// Events //
 void TSoURDt3rd_CheckTime(void);
 
-// Messages
+// Messages //
 void TSoURDt3rd_EventMessage(INT32 choice);
 
-// The World Wide Web
+// The World Wide Web //
 #ifdef HAVE_CURL
 void STAR_FindAPI(const char *API);
 
@@ -129,10 +143,10 @@ char *STAR_ReturnStringFromWebsite(const char *API, char *URL, char *RETURNINFO,
 void TSoURDt3rd_FindCurrentVersion(void);
 #endif
 
-// Servers
+// Servers //
 boolean STAR_FindServerInfractions(void);
 
-// Miscellanious
+// Miscellanious //
 UINT32 TSoURDt3rd_CurrentVersion(void);
 
 UINT8 TSoURDt3rd_CurrentMajorVersion(void);

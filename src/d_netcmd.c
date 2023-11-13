@@ -5285,7 +5285,7 @@ static void Got_Tsourdt3rdStructures(UINT8 **cp, INT32 playernum)
 
 	// Apply Info, and We're Done :) //
 	UINT8 serverUsesTSoURDt3rd								= (boolean)READUINT8(*cp);
-	TSoURDt3rdPlayers[playernum].serverUsesTSoURDt3rd		= ((serverUsesTSoURDt3rd > 1 || serverUsesTSoURDt3rd < 0) ? 0 : 1);
+	TSoURDt3rdPlayers[playernum].serverUsesTSoURDt3rd		= ((serverUsesTSoURDt3rd > 1) ? 0 : 1);
 
 	TSoURDt3rdPlayers[playernum].majorVersion 				= (TSoURDt3rdPlayers[playernum].serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
 	TSoURDt3rdPlayers[playernum].minorVersion 				= (TSoURDt3rdPlayers[playernum].serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);

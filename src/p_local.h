@@ -514,7 +514,6 @@ boolean P_CanPickupEmblem(player_t *player, INT32 emblemID);
 boolean P_EmblemWasCollected(INT32 emblemID);
 void P_DoNightsScore(player_t *player);
 void P_DoMatchSuper(player_t *player);
-extern boolean all7matchemeralds; // STAR NOTE: i was here lol
 
 //
 // P_SPEC

@@ -217,7 +217,10 @@ static char returnWadPath[256];
 #endif
 
 // STAR STUFF //
+#include <time.h>
+
 #include "../STAR/star_vars.h"
+
 #include "../m_random.h"
 // END THAT STUFF //
 
@@ -345,7 +348,7 @@ static void I_ReportSignal(int num, int coredumped)
 	int randomjokemsg;
 
 	const char *jokemsg;
-	char underscoremsg[256] = "";
+	char underscoremsg[256] = " ";
 	//// END THAT ////
 
 	switch (num)
@@ -411,7 +414,7 @@ static void I_ReportSignal(int num, int coredumped)
 	P_SetRandSeed(M_RandomizedSeed());
 
 	// Come up With a Random Funny Joke //
-	switch (randomjokemsg = P_RandomRange(0, 15))
+	switch (randomjokemsg = M_RandomRange(0, 15))
 	{
 		// Static //
 		// Regulars
@@ -437,7 +440,7 @@ static void I_ReportSignal(int num, int coredumped)
 		// Random //
 		case 3:
 		{
-			switch (P_RandomRange(0, 1))
+			switch (M_RandomRange(0, 1))
 			{
 				case 1: jokemsg = "All you had to do, was not crash the game, Sonic!"; break;
 				default: jokemsg = "All we had to do, was follow the dang train, CJ!"; break;
@@ -446,8 +449,7 @@ static void I_ReportSignal(int num, int coredumped)
 	}
 
 	// Draw Underscores That Equal the Same Length of the Funny Joke, and We're Done :) //
-	for (i = 0; i > strlen(jokemsg); i++)
-		underscoremsg[i] = '_';
+	for (i = 0; i <= strlen(jokemsg); i++) underscoremsg[i] = '_';
 	// END ALL OF THIS //
 
 	const SDL_MessageBoxButtonData buttons[] = {
@@ -459,7 +461,7 @@ static void I_ReportSignal(int num, int coredumped)
 		SDL_MESSAGEBOX_ERROR, /* .flags */
 		NULL, /* .window */
 		sigttl, /* .title */
-		va("%s\n%s\n\n %s %s", jokemsg, underscoremsg, sigmsg, reportmsg), /* .message */
+		va("%s\n%s\n\n%s %s", jokemsg, underscoremsg, sigmsg, reportmsg), /* .message */ // STAR NOTE: i was here lol
 		SDL_arraysize(buttons), /* .numbuttons */
 		buttons, /* .buttons */
 		NULL /* .colorScheme */

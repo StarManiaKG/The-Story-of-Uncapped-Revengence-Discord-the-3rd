@@ -9,6 +9,11 @@
 /// \file  star_functions.c
 /// \brief Contains all the Info Portraying to TSoURDt3rd's Variables and STAR Functions
 
+#ifdef HAVE_CURL
+#include <curl/curl.h>		// internet variables
+#include "../i_threads.h"	// internet variables 2
+#endif
+
 #include <time.h>
 
 #include "star_vars.h" 		// star variables
@@ -21,8 +26,10 @@
 #include "../d_main.h" 		// event variables
 #include "../deh_soc.h"		// savefile variables
 #include "../keys.h"		// key variables
+
 #include "../v_video.h"		// video variables
 #include "../i_video.h"		// video variables 2
+
 #include "../filesrch.h"	// file variables
 #include "../r_skins.h"		// skin variables
 #include "../sounds.h"		// sound variables
@@ -31,9 +38,6 @@
 #include "../z_zone.h"		// memory variables
 
 #ifdef HAVE_CURL
-#include <curl/curl.h>		// internet variables
-#include "../i_threads.h"	// internet variables 2
-
 #include "../fastcmp.h"		// string variables
 #endif
 
@@ -49,8 +53,8 @@
 //////////////////////////////////////
 
 // STRUCTS //
-TSoURDt3rd_t TSoURDt3rd;
-TSoURDt3rd_t TSoURDt3rdPlayers[MAXPLAYERS-1];
+TSoURDt3rd_t *TSoURDt3rd;
+TSoURDt3rd_t TSoURDt3rdPlayers[MAXPLAYERS];
 
 // VARIABLES //
 #ifdef HAVE_CURL
@@ -363,13 +367,9 @@ void STAR_LoadingScreen(boolean opengl)
 	}
 
 	M_DrawTextBox(x-58, y-8, 13, 1);
+	V_DrawString((opengl ? (x-50) : x), y, menuColor[cv_menucolor.value], "Loading...");
 	if (opengl)
-	{
-		V_DrawString(x-50, y, menuColor[cv_menucolor.value], "Loading...");
 		V_DrawRightAlignedString(x+50, y, menuColor[cv_menucolor.value], s);
-	}
-	else
-		V_DrawCenteredString(x, y, menuColor[cv_menucolor.value], "Loading...");
 
 	I_UpdateNoVsync();
 }
@@ -457,7 +457,7 @@ const char *STAR_SetWindowTitle(void)
 						{
 							if (cv_memesonwindowtitle.value)
 							{
-								if (randomTitleTable[1] == NULL || randomTitleTable[1][0] == '\0')
+								if (randomTitleTable[1][0] == '\0')
 								{
 									switch (M_RandomRange(0, 1))
 									{
@@ -563,7 +563,7 @@ const char *STAR_SetWindowTitle(void)
 						{
 							if (cv_memesonwindowtitle.value)
 							{
-								if (randomTitleTable[2] == NULL || randomTitleTable[2][0] == '\0')
+								if (randomTitleTable[2][0] == '\0')
 								{
 									switch (M_RandomRange(0, 1))
 									{
@@ -609,7 +609,7 @@ const char *STAR_SetWindowTitle(void)
 						{
 							if (cv_memesonwindowtitle.value)
 							{
-								if (randomTitleTable[3] == NULL || randomTitleTable[3][0] == '\0')
+								if (randomTitleTable[3][0] == '\0')
 								{
 									switch (M_RandomRange(0, 1))
 									{
@@ -707,7 +707,7 @@ const char *STAR_SetWindowTitle(void)
 						{
 							if (cv_memesonwindowtitle.value)
 							{
-								if (randomTitleTable[4] == NULL || randomTitleTable[4][0] == '\0')
+								if (randomTitleTable[4][0] == '\0')
 								{
 									switch (M_RandomRange(0, 1))
 									{
@@ -1441,32 +1441,39 @@ char *STAR_ReturnStringFromWebsite(const char *API, char *URL, char *RETURNINFO,
 //
 void TSoURDt3rd_FindCurrentVersion(void)
 {
-	// Have we Already Checked the Version? If so, Don't Run This Again.
-	if (!TSoURDt3rd->checkedVersion) 
-		return;
-
-	// Do we not Allow Screen or Console Messages? If so, Don't Run This.
-	if (!cv_tsourdt3rdupdatemessage.value)
-		return;
-
-	// Make Some Variables
+	// Make Some Variables //
 	// STAR NOTE: If You're Planning on Using the Internet Functions, Use This Block as an Example :)
 	const char *API = "https://raw.githubusercontent.com/StarManiaKG/The-Story-of-Uncapped-Revengence-Discord-the-3rd/";
 	char URL[256];	strcpy(URL,	 va("%s/src/STAR/star_webinfo.h", compbranch));
 	char INFO[256]; strcpy(INFO, va("#define TSOURDT3RDVERSION \"%s\"", TSOURDT3RDVERSION));
 
+	char RETURNINFO[256] = "#define TSOURDT3RDVERSION";
+	char RETURNEDSTRING[256] = "";
+
+	UINT32 internalVersionNumber;
+
+	UINT32 displayVersionNumber;
+	const char *displayVersionString;
+
+	// Run Some Checks //
+	if ((gamestate == GS_NULL)					// Have we Even Initialized the Game? If not, Don't Run This.
+		|| (!TSoURDt3rd->checkedVersion)		// Have we Already Checked the Version? If so, Don't Run This Again.
+		|| (!cv_tsourdt3rdupdatemessage.value))	// Do we Allow Screen or Console Messages? If not, Don't Run This.
+
+		return;
+
+	// Run the Main Code //
 	// Check the Version, And If They Don't Match the Branch's Version, Run the Block Below
 	CONS_Printf("STAR_FindStringOnWebsite() & STAR_ReturnStringFromWebsite(): Grabbing latest TSoURDt3rd version...\n");
-	
+
 	if (STAR_FindStringOnWebsite(API, URL, INFO, false) == 1)
 	{
-		char RETURNINFO[256] = "#define TSOURDT3RDVERSION";
-		char RETURNEDSTRING[256] = ""; strcpy(RETURNEDSTRING, STAR_ReturnStringFromWebsite(API, URL, RETURNINFO, false));
+		strcpy(RETURNEDSTRING, STAR_ReturnStringFromWebsite(API, URL, RETURNINFO, false));
 
-		UINT32 internalVersionNumber = STAR_ConvertStringToCompressedNumber(RETURNEDSTRING, 0, 26, true);
+		internalVersionNumber = STAR_ConvertStringToCompressedNumber(RETURNEDSTRING, 0, 26, true);
 
-		UINT32 displayVersionNumber = STAR_ConvertStringToCompressedNumber(RETURNEDSTRING, 0, 26, false);
-		const char *displayVersionString = STAR_ConvertNumberToString(displayVersionNumber, 0, 0, true);
+		displayVersionNumber = STAR_ConvertStringToCompressedNumber(RETURNEDSTRING, 0, 26, false);
+		displayVersionString = STAR_ConvertNumberToString(displayVersionNumber, 0, 0, true);
 
 		if (TSoURDt3rd_CurrentVersion() < internalVersionNumber)
 			(cv_tsourdt3rdupdatemessage.value == 1 ?
@@ -1530,7 +1537,7 @@ boolean STAR_FindServerInfractions(void)
 	}
 	for (totalnumsprite2s = SPR2_FIRSTFREESLOT; totalnumsprite2s < free_spr2; totalnumsprite2s++)
 	{
-		if (spr2names[totalnumsprite2s])
+		if (spr2names[totalnumsprite2s][0] != '\0')
 			continue;
 		break;
 	}
