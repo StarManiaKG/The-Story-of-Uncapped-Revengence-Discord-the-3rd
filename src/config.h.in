@@ -61,8 +61,7 @@
  * Last updated 2023 / 08 / 01 - TSOURDT3RD V2 (2.2.10) - added some loading screen graphics
  * Last updated 2023 / 08 / 02 - TSOURDT3RD V3 (2.2.11) - updated things to 2.2.11
  * Last updated 2023 / 08 / 12 - TSOURDT3RD V3 (2.2.11) - added some more loading scren graphics
- * Last updated 2023 / 10 / 04 - TSOURDT3RD V4 (2.2.12) - added absolutely nothing
- * Last updated 2023 / 11 / 07 - TSOURDT3RD V5 (2.2.13) - added absolutely nothing again
+ * Last updated 2023 / 11 / 07 - TSOURDT3RD V4 (2.2.13) - added absolutely nothing while initially porting
 */
 #define ASSET_HASH_SRB2_PK3   "ad911f29a28a18968ee5b2d11c2acb39"
 #define ASSET_HASH_ZONES_PK3  "1c8adf8d079ecb87d00081f158acf3c7"

@@ -999,7 +999,7 @@ void D_SRB2Loop(void)
 
 #ifdef HAVE_CURL
 		// Do Internet Stuff //
-		// Grab the Current TSoURDt3rd Version, if the Update Message Command Allows it
+		// Grab the Current TSoURDt3rd Version, if We Haven't Checked Before and the Function's Checks Allow it
 		TSoURDt3rd_FindCurrentVersion();
 #endif
 

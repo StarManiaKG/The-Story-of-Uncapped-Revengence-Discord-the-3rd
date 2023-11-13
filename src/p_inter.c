@@ -310,7 +310,7 @@ void P_DoMatchSuper(player_t *player)
 
 	// Got 'em all? Turn "super"!
 	// STAR STUFF //
-	all7matchemeralds = true;
+	all7matchemeralds = true; // let discord know we got all those chaos emeralds in match
 	// END THAT //
 	emeraldspawndelay = invulntics + 1;
 	player->powers[pw_emeralds] = 0;
@@ -338,7 +338,7 @@ void P_DoMatchSuper(player_t *player)
 			&& players[i].powers[pw_emeralds] != 0)
 			{
 				// STAR STUFF //
-				all7matchemeralds = true;
+				all7matchemeralds = true; // let discord know our team helped us get all those chaos emeralds in match
 				// END THAT //
 				players[i].powers[pw_emeralds] = 0;
 				player->powers[pw_invulnerability] = invulntics + 1;

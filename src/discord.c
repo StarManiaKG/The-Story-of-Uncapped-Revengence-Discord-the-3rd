@@ -1017,6 +1017,10 @@ void DRPC_UpdatePresence(void)
 	// Booleans
 	boolean joinSecretSet = false;
 
+	// Pointers
+	gamedata_t *data = serverGamedata; // Proper Gamedata Pointer, Made by Bitten
+	// STAR NOTE: come back here later
+
 	////// 	  INITIALIZE 	 //////
 	DiscordRichPresence discordPresence;
 	memset(&discordPresence, 0, sizeof(discordPresence));
@@ -1089,10 +1093,6 @@ void DRPC_UpdatePresence(void)
 	//// 	  STATUSES 		////
 	if (cv_discordshowonstatus.value != 8)
 	{
-		//// Pointer to the gamedata ////
-		//// bitten's note, there are 2 varibles, serverGamedata and clientGamedata, it seems that serverGamedata works for both
-		gamedata_t *data = serverGamedata;
-	
 		//// Status Pictures ////
 		if ((!Playing() || gamestate == GS_NULL || gamestate == GS_TIMEATTACK) || ((!Playing() || gamestate == GS_NULL || gamestate == GS_TIMEATTACK) && (cv_discordshowonstatus.value != 1 && cv_discordshowonstatus.value != 5)) || (cv_discordshowonstatus.value >= 2 && cv_discordshowonstatus.value != 5))
 		{

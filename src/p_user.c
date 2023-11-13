@@ -62,8 +62,10 @@
 #endif
 
 // STAR STUFF //
-#include "m_menu.h"
 #include "STAR/star_vars.h"
+
+#include "m_menu.h"
+#include "d_main.h"
 // END OF THAT //
 
 #if 0

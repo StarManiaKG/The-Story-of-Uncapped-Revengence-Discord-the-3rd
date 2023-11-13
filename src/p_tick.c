@@ -42,6 +42,7 @@
 
 #include "fastcmp.h" // april fools stuff 1
 #include "v_video.h" // april fools stuff 2
+#include "d_main.h" // april fools stuff 3
 
 tic_t emeraldtime;
 
