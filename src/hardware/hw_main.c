@@ -5239,7 +5239,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	tr_x = FIXED_TO_FLOAT(interp.x) - gl_viewx;
 	tr_y = FIXED_TO_FLOAT(interp.y) - gl_viewy;
 
-	// otation around vertical axis
+	// rotation around vertical axis
 	tz = (tr_x * gl_viewcos) + (tr_y * gl_viewsin);
 
 	// thing is behind view plane?
