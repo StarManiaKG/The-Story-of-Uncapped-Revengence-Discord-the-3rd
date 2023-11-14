@@ -3697,8 +3697,8 @@ static void HWR_DrawShadows(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale)
 		// STAR NOTE: i was here lol
 		if (cv_shadow.value != 2 || cv_realisticshadowscanrotate.value)
 		{
-			shadowVerts[i].x = fx + ((oldx - fx) * gl_viewcos) - ((oldy - fy) * gl_viewsin);
-			shadowVerts[i].z = fy + ((oldx - fx) * gl_viewsin) + ((oldy - fy) * gl_viewcos);
+			shadowVerts[i].x = fx + ((oldx - fx) * gl_viewcos) + ((oldy - fy) * gl_viewsin);
+			shadowVerts[i].z = fy + ((oldx - fx) * gl_viewsin) - ((oldy - fy) * gl_viewcos);
 		}
 	}
 
@@ -5239,7 +5239,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	tr_x = FIXED_TO_FLOAT(interp.x) - gl_viewx;
 	tr_y = FIXED_TO_FLOAT(interp.y) - gl_viewy;
 
-	// rotation around vertical axis
+	// otation around vertical axis
 	tz = (tr_x * gl_viewcos) + (tr_y * gl_viewsin);
 
 	// thing is behind view plane?
