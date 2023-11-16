@@ -825,8 +825,8 @@ static UINT16 W_InitFileError (const char *filename, boolean exitworthy)
 	{
 		M_StartMessage(va("%c%s\x80\nWe weren't able to load tsourdt3rdextras.pk3\n\nEvents will not be started. \n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Couldn't Load tsourdt3rdextras.pk3"),NULL,MM_NOTHING);
 
-		aprilfoolsmode = false;
 		eastermode = false;
+		aprilfoolsmode = false;
 		xmasmode = false;
 
 		TSoURDt3rd_LoadExtras = false;
@@ -957,24 +957,7 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 	// STAR NOTE: I EDITED THIS lol //
 	if (important && !mainfile)
 	{
-		if (TSoURDt3rd_LoadExtras)
-		{
-			if (aprilfoolsmode || eastermode || xmasmode)
-			{
-				if (eastermode && (!netgame && !TSoURDt3rd_TouchyModifiedGame))
-				{
-					CV_StealthSetValue(&cv_alloweasteregghunt, 1);
-					AllowEasterEggHunt = true;
-
-					M_UpdateEasterStuff();
-				}
-
-				STAR_ReadExtraData();
-			}
-
-			TSoURDt3rd_LoadedExtras = true;
-			TSoURDt3rd_LoadExtras = false;
-		}
+		TSoURDt3rd_TryToLoadTheExtras();
 
 		if (!TSoURDt3rd_TouchyModifiedGame)
 		{
@@ -1181,24 +1164,7 @@ UINT16 W_InitFolder(const char *path, boolean mainfile, boolean startup)
 	// STAR NOTE: I DRASTICALLY EDITED THIS lol //
 	if (important && !mainfile)
 	{
-		if (TSoURDt3rd_LoadExtras)
-		{
-			if (aprilfoolsmode || eastermode || xmasmode)
-			{
-				if (eastermode && (!netgame && !TSoURDt3rd_TouchyModifiedGame))
-				{
-					CV_StealthSetValue(&cv_alloweasteregghunt, 1);
-					AllowEasterEggHunt = true;
-
-					M_UpdateEasterStuff();
-				}
-
-				STAR_ReadExtraData();
-			}
-
-			TSoURDt3rd_LoadedExtras = true;
-			TSoURDt3rd_LoadExtras = false;
-		}
+		TSoURDt3rd_TryToLoadTheExtras();
 
 		if (!TSoURDt3rd_TouchyModifiedGame)
 		{

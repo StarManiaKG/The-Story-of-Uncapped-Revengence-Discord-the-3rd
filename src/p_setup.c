@@ -7760,7 +7760,11 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	// Fade out music here. Deduct 2 tics so the fade volume actually reaches 0.
 	// But don't halt the music! S_Start will take care of that. This dodges a MIDI crash bug.
 	// STAR NOTE: i was here lol
-	if (!(reloadinggamestate || titlemapinaction) && (RESETMUSIC || strnicmp(S_MusicName(), (aprilfoolsmode ? (mapmusname) : ((mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname)), 7)))
+	if (!(reloadinggamestate || titlemapinaction) && (RESETMUSIC ||
+		strnicmp(S_MusicName(),
+			(TSoURDt3rd_InAprilFoolsMode() ?
+				(mapmusname) :
+				((mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname)), 7)))
 	{
 		S_FadeMusic(0, FixedMul(
 			FixedDiv((F_GetWipeLength(wipedefs[wipe_level_toblack])-2)*NEWTICRATERATIO, NEWTICRATE), MUSICRATE));

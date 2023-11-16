@@ -112,7 +112,7 @@ The build and its executable files can be found in the provided ZIP file, with f
         - Holepunching
         - Changing Your Character While Moving
     - _Miscellaneous Features, such as:_
-        - Extra Events and Event Features
+        - Events (Holiday Events, Celebration Events, etc.)
         - QoL Changes and Features
         - Customizable and Dynamic Window Titles
 		- Speeding Up More Music Formats

@@ -1253,15 +1253,17 @@ void I_FinishUpdate(void)
 	if (cv_closedcaptioning.value)
 		SCR_ClosedCaptions();
 
-	if (cv_ticrate.value || cv_tpsrate.value)
+	if (cv_ticrate.value || cv_tpsrate.value) // STAR NOTE: i was here lol
 		SCR_DisplayTicRate();
 
 	if (cv_showping.value && netgame && consoleplayer != serverplayer)
 		SCR_DisplayLocalPing();
 
 #ifdef HAVE_DISCORDRPC
+	// DISCORD STUFF //
 	if (discordRequestList != NULL)
 		ST_AskToJoinEnvelope();
+	// END THAT PLEASE //
 #endif
 
 	if (rendermode == render_soft && screens[0])

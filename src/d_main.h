@@ -57,17 +57,17 @@ void D_StartTitle(void);
 #endif //__D_MAIN__
 
 // STAR STUFF //
+// Events
+extern boolean eastermode;				// Easter Event Setter
+extern boolean aprilfoolsmode; 		    // April Fools Event Setter
+extern boolean xmasmode, xmasoverride;	// Christmas Event Setter
+
 // Discord Stuff
 extern INT32 extrawads;                 // Star: Using Extra Optional Wads
 
 // Autoloading
 extern boolean autoloading;             // Star: Autoloading Wads
 extern boolean autoloaded;              // Star: Have We Autoloaded Any Game-Changing Mods?
-
-// Events
-extern boolean aprilfoolsmode; 		    // April Fools Event Setter
-extern boolean eastermode;				// Easter Event Setter
-extern boolean xmasmode, xmasoverride;	// Christmas Event Setter
 
 // Savefiles
 extern consvar_t cv_storesavesinfolders;

@@ -1486,9 +1486,9 @@ static boolean SV_SendServerConfig(INT32 node)
 	// STAR STUFF YAY //
 	netbuffer->u.servercfg.tsourdt3rd = (boolean)tsourdt3rd;
 
-	netbuffer->u.servercfg.tsourdt3rdmajorversion = TSoURDt3rd_CurrentMajorVersion();
-	netbuffer->u.servercfg.tsourdt3rdminorversion = TSoURDt3rd_CurrentMinorVersion();
-	netbuffer->u.servercfg.tsourdt3rdsubversion = TSoURDt3rd_CurrentSubversion();
+	netbuffer->u.servercfg.tsourdt3rdmajorversion	= TSoURDt3rd_CurrentMajorVersion();
+	netbuffer->u.servercfg.tsourdt3rdminorversion	= TSoURDt3rd_CurrentMinorVersion();
+	netbuffer->u.servercfg.tsourdt3rdsubversion		= TSoURDt3rd_CurrentSubversion();
 
 	// DISCORD STUFF //
 	netbuffer->u.servercfg.maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
@@ -2890,6 +2890,10 @@ void CL_ClearPlayer(INT32 playernum)
 		P_RemoveMobj(players[playernum].mo);
 	memset(&players[playernum], 0, sizeof (player_t));
 	memset(playeraddress[playernum], 0, sizeof(*playeraddress));
+	// STAR STUFF //
+	memset(&TSoURDt3rdPlayers[playernum].serverPlayers, 0, sizeof (TSoURDt3rdServers_t));
+	TSoURDt3rd_ReinitializeServerStructures();
+	// END THAT PLEASE //
 }
 
 //
@@ -4512,24 +4516,24 @@ static void HandlePacketFromAwayNode(SINT8 node)
 			}
 
 			// STAR STUFF //
-			TSoURDt3rdPlayers[node].serverUsesTSoURDt3rd = ((netbuffer->u.servercfg.tsourdt3rd > 1 || netbuffer->u.servercfg.tsourdt3rd < 0) ? 0 : 1);
+			TSoURDt3rdPlayers[node].serverPlayers.serverUsesTSoURDt3rd = ((netbuffer->u.servercfg.tsourdt3rd > 1 || netbuffer->u.servercfg.tsourdt3rd < 0) ? 0 : 1);
 			
 			if (netgame && !server)
-				(TSoURDt3rdPlayers[node].serverUsesTSoURDt3rd ? 
+				(TSoURDt3rdPlayers[node].serverPlayers.serverUsesTSoURDt3rd ? 
 					(CONS_Printf("Server uses TSoURDt3rd, running features...\n")) :
 					(CONS_Printf("Server either doesn't use TSoURDt3rd or is using an outdated TSoURDt3rd, working around this...\n")));
 
-			TSoURDt3rdPlayers[node].majorVersion 				= (TSoURDt3rdPlayers[node].serverUsesTSoURDt3rd ? netbuffer->u.servercfg.tsourdt3rdmajorversion : 0);
-			TSoURDt3rdPlayers[node].minorVersion 				= (TSoURDt3rdPlayers[node].serverUsesTSoURDt3rd ? netbuffer->u.servercfg.tsourdt3rdminorversion : 0);
-			TSoURDt3rdPlayers[node].subVersion 					= (TSoURDt3rdPlayers[node].serverUsesTSoURDt3rd ? netbuffer->u.servercfg.tsourdt3rdsubversion : 0);
+			TSoURDt3rdPlayers[node].serverPlayers.majorVersion 				= (TSoURDt3rdPlayers[node].serverPlayers.serverUsesTSoURDt3rd ? netbuffer->u.servercfg.tsourdt3rdmajorversion : 0);
+			TSoURDt3rdPlayers[node].serverPlayers.minorVersion 				= (TSoURDt3rdPlayers[node].serverPlayers.serverUsesTSoURDt3rd ? netbuffer->u.servercfg.tsourdt3rdminorversion : 0);
+			TSoURDt3rdPlayers[node].serverPlayers.subVersion 				= (TSoURDt3rdPlayers[node].serverPlayers.serverUsesTSoURDt3rd ? netbuffer->u.servercfg.tsourdt3rdsubversion : 0);
 
-			TSoURDt3rdPlayers[node].serverTSoURDt3rdVersion 	= STAR_CombineNumbers(3, TSoURDt3rdPlayers[node].majorVersion, TSoURDt3rdPlayers[node].minorVersion, TSoURDt3rdPlayers[node].subVersion);
+			TSoURDt3rdPlayers[node].serverPlayers.serverTSoURDt3rdVersion 	= STAR_CombineNumbers(3, TSoURDt3rdPlayers[node].serverPlayers.majorVersion, TSoURDt3rdPlayers[node].serverPlayers.minorVersion, TSoURDt3rdPlayers[node].serverPlayers.subVersion);
 
 #ifdef HAVE_DISCORDRPC
 			// DISCORD STUFF //
-			discordInfo.maxPlayers 		= (TSoURDt3rdPlayers[node].serverUsesTSoURDt3rd ? netbuffer->u.servercfg.maxplayer : (UINT8)cv_maxplayers.value);
-			discordInfo.joinsAllowed 	= (TSoURDt3rdPlayers[node].serverUsesTSoURDt3rd ? netbuffer->u.servercfg.allownewplayer : (boolean)cv_allownewplayer.value);
-			discordInfo.whoCanInvite 	= (TSoURDt3rdPlayers[node].serverUsesTSoURDt3rd ? netbuffer->u.servercfg.discordinvites : (UINT8)cv_discordinvites.value);
+			discordInfo.maxPlayers 		= (TSoURDt3rdPlayers[node].serverPlayers.serverUsesTSoURDt3rd ? netbuffer->u.servercfg.maxplayer : (UINT8)cv_maxplayers.value);
+			discordInfo.joinsAllowed 	= (TSoURDt3rdPlayers[node].serverPlayers.serverUsesTSoURDt3rd ? netbuffer->u.servercfg.allownewplayer : (boolean)cv_allownewplayer.value);
+			discordInfo.whoCanInvite 	= (TSoURDt3rdPlayers[node].serverPlayers.serverUsesTSoURDt3rd ? netbuffer->u.servercfg.discordinvites : (UINT8)cv_discordinvites.value);
 			// END OF THE DISCORD STUFF //
 #endif
 			// END OF THE ENTIRE STAR MESS TOO //

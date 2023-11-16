@@ -1315,16 +1315,18 @@ static const char *credits[] = {
 	"\1TSoURDt3rd Team",
 	"StarManiaKG \"Star\" - Creator",
 	"Mini the Bunnyboy \"Talis\" - Co-Creator",
+	"Bitten2Up \"Bitten\" - Co-Creator",
 	"",
 	"\1TSoURDt3rd Extras",
-	"Speccy \"Supeki\" - Emotional Support, Ideas",
-	"\t\t(She Also Formed the Idea of This Menu)",
-	"OVAPico - Voluntary Tester, Ideas",
-	"The Gamer Gang - Voluntary Testers",
-	"\t\t(Provided Emotional Support and Ideas too)",
+	"Marilyn - Emotional Support, Ideas",
+	"\t\t(Also Formed the Idea of This Menu)",
+	"OVAPico & Other Gamer Gang GC Members",
+	"\t\t(Voluntary Testers, Ideas)",
+	"\t\t(Also Provided Emotional Support)",
 	"NARBluebear - Best Friend",
-	"\t\t(Also Provided Emotional Support and All)",
-	"\"Future\" Smiles \"The Fox\" - Emotional Support",
+	"\t\t(Provided Emotional Support)",
+	"\"Future\" Smiles \"The Fox\" - Best Friend",
+	"\t\t(Provided Emotional Support)",
 	"",
 	"\1In Loving Memory Of",
 	"MarioMario \"Sapphire\" - Creator",
@@ -3281,8 +3283,7 @@ void F_TitleScreenDrawer(void)
 				}
 			}
 
-			if ((finalecount >= SONICSTART)
-				&& ((aprilfoolsmode && !cv_ultimatemode.value) || (!aprilfoolsmode))) // STAR NOTE: no more sonic for april fools lol
+			if ((finalecount >= SONICSTART) && !TSoURDt3rd_InAprilFoolsMode()) // STAR NOTE: no more sonic for april fools lol
 			{
 				if (finalecount < SONICIDLE)
 				{
@@ -3453,8 +3454,7 @@ void F_TitleScreenDrawer(void)
 				// No Tails Front Layer Idle
 			}
 
-			if ((finalecount >= SONICSTART)
-				&& ((aprilfoolsmode && !cv_ultimatemode.value) || (!aprilfoolsmode))) // STAR NOTE: no more sonic for april fools, electric boogalo
+			if ((finalecount >= SONICSTART) && !TSoURDt3rd_InAprilFoolsMode()) // STAR NOTE: no more sonic for april fools, electric boogalo
 			{
 				if (finalecount < SONICIDLE)
 				{

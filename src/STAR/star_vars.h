@@ -1,6 +1,6 @@
-// SONIC ROBO BLAST 2 - TSOURDT3RD EDITION
+// SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2023 by Star "Guy Who Named a Script After Him" ManiaKG.
+// Copyright (C) 2023 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -25,27 +25,32 @@
 
 //// DEFINITIONS ////
 #ifdef DEVELOP
-#define TSOURDT3RDBYSTARMANIAKGSTRING "(By StarManiaKG#4884); Dev Mode Edition"
+#define TSOURDT3RDBYSTARMANIAKGSTRING "(By StarManiaKG); Dev Mode Edition"
 #else
-#define TSOURDT3RDBYSTARMANIAKGSTRING "(By StarManiaKG#4884)"
+#define TSOURDT3RDBYSTARMANIAKGSTRING "(By StarManiaKG)"
 #endif
 #define TSOURDT3RDVERSIONSTRING "TSoURDt3rd v"TSOURDT3RDVERSION
 
 //// STRUCTS ////
-typedef struct TSoURDt3rd_s {
-	// General Stuff
-	boolean usingTSoURDt3rd;
-	boolean checkedVersion;
-
-	INT32 reachedSockSendErrorLimit;
-
-	// Server Stuff
-	boolean alreadyWarnedPlayer;
-
+// Servers //
+typedef struct TSoURDt3rdServers_s {
 	boolean serverUsesTSoURDt3rd;
 	UINT8 majorVersion, minorVersion, subVersion;
 
 	UINT32 serverTSoURDt3rdVersion;
+} TSoURDt3rdServers_t;
+
+// Main Struct //
+typedef struct TSoURDt3rd_s {
+	// Game Stuff
+	boolean usingTSoURDt3rd;
+	boolean checkedVersion;
+
+	// Server Stuff
+	INT32 reachedSockSendErrorLimit;
+	boolean masterServerAddressChanged;
+
+	TSoURDt3rdServers_t serverPlayers;
 } TSoURDt3rd_t;
 
 extern TSoURDt3rd_t *TSoURDt3rd;
@@ -62,14 +67,14 @@ extern boolean TSoURDt3rd_NoMoreExtras;
 
 extern boolean TSoURDt3rd_checkedExtraWads;
 
-// Sound Effects //
-// Star SFX
-extern INT32 STAR_JoinSFX;
-extern INT32 STAR_LeaveSFX;
-extern INT32 STAR_SynchFailureSFX;
+// Events //
+// Easter (STAR NOTE: Most of the Other Egg Stuff is Handled in tsourdt3rd.pk3, Just so You Know :p) //
+extern INT32 TOTALEGGS;
 
-// Discord SFX
-extern INT32 DISCORD_RequestSFX;
+extern INT32 foundeggs;
+extern INT32 collectedmapeggs;
+extern INT32 currenteggs;
+extern INT32 numMapEggs;
 
 // Game //
 // Loading Screens
@@ -89,28 +94,38 @@ extern boolean all7matchemeralds;
 extern const char gameoverMusic[7][7];
 extern const INT32 gameoverMusicTics[7];
 
+// Star SFX
+extern INT32 STAR_JoinSFX;
+extern INT32 STAR_LeaveSFX;
+extern INT32 STAR_SynchFailureSFX;
+
+// Discord SFX
+extern INT32 DISCORD_RequestSFX;
+
 // Extras //
 // TF2
 extern boolean SpawnTheDispenser;
 
-// Easter (STAR NOTE: Most of the Other Egg Stuff is Handled in tsourdt3rd.pk3, Just so You Know :p) //
-extern INT32 TOTALEGGS;
-
-extern INT32 foundeggs;
-extern INT32 collectedmapeggs;
-extern INT32 currenteggs;
-extern INT32 numMapEggs;
-
 //// COMMANDS ////
 // Game //
-extern consvar_t cv_loadingscreen, cv_loadingscreenimage, cv_soniccd;
-extern consvar_t cv_tsourdt3rdupdatemessage;
+extern consvar_t cv_loadingscreen, cv_loadingscreenimage;
+extern consvar_t cv_soniccd;
+extern consvar_t cv_updatenotice;
 
 // Servers //
 extern consvar_t cv_socksendlimit;
 
 //// FUNCTIONS ////
+// Events //
+void TSoURDt3rd_CheckTime(void);
+void TSoURDt3rd_EventMessage(INT32 choice);
+
+boolean TSoURDt3rd_InAprilFoolsMode(void);
+
 // Game //
+void TSoURDt3rd_InitializeStructures(void);
+void TSoURDt3rd_ReinitializeServerStructures(void);
+
 void STAR_LoadingScreen(boolean opengl);
 
 #ifdef HAVE_SDL
@@ -125,13 +140,8 @@ void STAR_ReadExtraData(void);
 void STAR_SetSavefileProperties(void);
 
 // Files //
+void TSoURDt3rd_TryToLoadTheExtras(void);
 INT32 STAR_DetectFileType(const char* filename);
-
-// Events //
-void TSoURDt3rd_CheckTime(void);
-
-// Messages //
-void TSoURDt3rd_EventMessage(INT32 choice);
 
 // The World Wide Web //
 #ifdef HAVE_CURL

@@ -1,6 +1,6 @@
-// SONIC ROBO BLAST 2 - TSOURDT3RD EDITION
+// SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2023 by Star "Guy Who Named Another Script After Him" ManiaKG.
+// Copyright (C) 2023 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -53,7 +53,7 @@
 //////////////////////////////////////
 
 // STRUCTS //
-TSoURDt3rd_t *TSoURDt3rd;
+TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[0];
 TSoURDt3rd_t TSoURDt3rdPlayers[MAXPLAYERS];
 
 // VARIABLES //
@@ -66,10 +66,11 @@ static I_mutex hms_tsourdt3rd_api_mutex;
 #endif
 
 // COMMANDS //
-consvar_t cv_loadingscreen = CVAR_INIT ("loadingscreen", "Off", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_loadingscreen = CVAR_INIT ("loadingscreen", "Off", CV_SAVE|CV_CALL, CV_OnOff, STAR_LoadingScreen_OnChange);
 
 static CV_PossibleValue_t loadingscreenbackground_t[] = {
 	{0, "None"},
+
 	{1, "Dynamic"},
 
 	{2, "Intermission"},
@@ -102,9 +103,175 @@ static CV_PossibleValue_t loadingscreenbackground_t[] = {
 consvar_t cv_loadingscreenimage = CVAR_INIT ("loadingscreenimage", "Intermission", CV_SAVE, loadingscreenbackground_t, NULL);
 
 static CV_PossibleValue_t tsourdt3rdupdatemessage_t[] = {{0, "Off"}, {1, "Screen"}, {2, "Console"}, {0, NULL}};
-consvar_t cv_tsourdt3rdupdatemessage = CVAR_INIT ("tsourdt3rdupdatemessage", "Screen", CV_SAVE|CV_CALL, tsourdt3rdupdatemessage_t, TSoURDt3rd_FindCurrentVersion);
+consvar_t cv_updatenotice = CVAR_INIT ("tsourdt3rdupdatenotice", "Screen", CV_SAVE|CV_CALL, tsourdt3rdupdatemessage_t, STAR_UpdateNotice_OnChange);
+
+// EVENTS //
+//
+// void TSoURDt3rd_CheckTime(void)
+// Ported from Final Demo, Date Checking is Back!
+// This Helps Check the Current Time on the User's Computer!
+//
+void TSoURDt3rd_CheckTime(void)
+{
+	time_t t1;
+	struct tm* tptr;
+
+	// Do Special Stuff //
+	t1 = time(NULL);
+	if (t1 != (time_t)-1)
+	{
+		tptr = localtime(&t1);
+
+		if (tptr)
+		{
+			// April Fools
+			if (tptr->tm_mon == 3 && (tptr->tm_mday >= 1 && tptr->tm_mday <= 3))
+			{
+				aprilfoolsmode = true;
+				modifiedgame = false;
+			}
+
+			// Easter (Changes Every Year Though, so just have it for all of April)
+			else if ((tptr->tm_mon == 3)
+				&& (!M_CheckParm("-noeaster")))
+			{
+				eastermode = true;
+				modifiedgame = false;
+			}
+
+			// Christmas Eve to New Years
+			else if (((tptr->tm_mon == 11 && tptr->tm_mday >= 24))
+				&& (!M_CheckParm("-noxmas")))
+			{
+				xmasmode = true;
+				xmasoverride = true;
+				modifiedgame = false;
+			}
+		}
+	}
+
+	// Do Special Paramater Stuff //
+	// April Fools
+	if (M_CheckParm("-aprilfools"))
+	{
+		aprilfoolsmode = true;
+		modifiedgame = false;
+	}
+
+	// Easter
+	else if (M_CheckParm("-easter"))
+	{
+		eastermode = true;
+		modifiedgame = false;
+	}
+
+	// Christmas
+	else if (!eastermode && M_CheckParm("-xmas"))
+	{
+		xmasmode = true;
+		xmasoverride = true;
+		modifiedgame = false;
+	}
+
+	// Run Special Stuff Functions //
+	// April Fools
+	if (aprilfoolsmode)
+	{
+		CONS_Printf("TSoURDt3rd_CheckTime(): April Fools Mode Enabled!\n");
+		TSoURDt3rd_LoadExtras = true;
+	}
+
+	// Easter
+	else if (eastermode)
+	{
+		CONS_Printf("TSoURDt3rd_CheckTime(): Easter Mode Enabled!\n");
+		TSoURDt3rd_LoadExtras = true;
+	}
+
+	// Christmas
+	else if (xmasmode)
+	{
+		CONS_Printf("TSoURDt3rd_CheckTime(): Christmas Mode Enabled!\n");
+		TSoURDt3rd_LoadExtras = true;
+	}
+}
+
+//
+// void TSoURDt3rd_EventMessage(INT32 choice)
+// Displays a Message on the Screen Asking About Engaging in TSoURDt3rd Events
+//
+void TSoURDt3rd_EventMessage(INT32 choice)
+{
+	// Yes //
+	if (choice == 'y' || choice == KEY_ENTER)
+	{
+		S_StartSound(NULL, sfx_spdpad);
+		COM_BufInsertText("addfile tsourdt3rdextras.pk3\n");
+		
+		return;
+	}
+
+	// No //
+	S_StartSound(NULL, sfx_adderr);
+
+	aprilfoolsmode = false;
+	eastermode = false;
+	xmasmode = false;
+
+	TSoURDt3rd_LoadExtras = false;
+}
+
+//
+// boolean TSoURDt3rd_InAprilFoolsMode(void)
+// Checks If TSoURDt3rd is in April Fools Mode, and Returns True if so
+//
+boolean TSoURDt3rd_InAprilFoolsMode(void)
+{
+	return (aprilfoolsmode && cv_ultimatemode.value);
+}
 
 // GAME //
+//
+// void TSoURDt3rd_InitializeStructures(void)
+// Initializes TSoURDt3rd's Structures
+//
+void TSoURDt3rd_InitializeStructures(void)
+{
+	// Set the Structures and We're Done :) //
+	// Game Stuff
+	TSoURDt3rd->usingTSoURDt3rd							= true;
+	TSoURDt3rd->checkedVersion							= false;
+
+	TSoURDt3rd->reachedSockSendErrorLimit 				= 0;
+
+	// Server Stuff
+	TSoURDt3rd->masterServerAddressChanged				= false;
+
+	TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd		= true;
+	
+	TSoURDt3rd->serverPlayers.majorVersion				= TSoURDt3rd_CurrentMajorVersion();
+	TSoURDt3rd->serverPlayers.minorVersion				= TSoURDt3rd_CurrentMinorVersion();
+	TSoURDt3rd->serverPlayers.subVersion				= TSoURDt3rd_CurrentSubversion();
+
+	TSoURDt3rd->serverPlayers.serverTSoURDt3rdVersion	= TSoURDt3rd_CurrentVersion();
+}
+
+//
+// void TSoURDt3rd_ReinitializeServerStructures(void)
+// Reinitializes TSoURDt3rd's Server Structures After Servers Wipe Them
+//
+void TSoURDt3rd_ReinitializeServerStructures(void)
+{
+	// Reinitialize the Structures and We're Done :) //
+	TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd		= true;
+	
+	TSoURDt3rd->serverPlayers.majorVersion				= TSoURDt3rd_CurrentMajorVersion();
+	TSoURDt3rd->serverPlayers.minorVersion				= TSoURDt3rd_CurrentMinorVersion();
+	TSoURDt3rd->serverPlayers.subVersion				= TSoURDt3rd_CurrentSubversion();
+
+	TSoURDt3rd->serverPlayers.serverTSoURDt3rdVersion	= TSoURDt3rd_CurrentVersion();
+}
+
 //
 // void STAR_LoadingScreen(boolean opengl)
 // Displays a Loading Screen
@@ -977,6 +1144,38 @@ void STAR_SetSavefileProperties(void)
 
 // FILES //
 //
+// void TSoURDt3rd_TryToLoadTheExtras(void)
+// Tries to Load Extras, Usually Stuff From tsourdt3rdextras.pk3
+//
+void TSoURDt3rd_TryToLoadTheExtras(void)
+{
+	// Run Some Checks First //
+	// Are we Being Requested to Load tsourdt3rdextras.pk3? If not, Don't Run This.
+	if (!TSoURDt3rd_LoadExtras)
+		return;
+
+	// Run the Main Code Now //
+	if (eastermode || aprilfoolsmode || xmasmode)
+	{
+		// Easter Specific Stuff
+		if (eastermode && (!netgame && !TSoURDt3rd_TouchyModifiedGame))
+		{
+			CV_StealthSetValue(&cv_alloweasteregghunt, 1);
+			AllowEasterEggHunt = true;
+
+			M_UpdateEasterStuff();
+		}
+
+		// General Stuff
+		STAR_ReadExtraData();
+	}
+
+	// Set Our Variables, and We're Done :) //
+	TSoURDt3rd_LoadedExtras = true;
+	TSoURDt3rd_LoadExtras = false;
+}
+
+//
 // void STAR_DetectFileType(void)
 // Detects the Specific File Type of the File Given
 //
@@ -1021,123 +1220,6 @@ INT32 STAR_DetectFileType(const char* filename)
 	}
 
 	return 0;
-}
-
-// EVENTS //
-//
-// void TSoURDt3rd_CheckTime(void)
-// Ported from Final Demo, Date Checking is Back!
-// This Helps Check the Current Time on the User's Computer!
-//
-void TSoURDt3rd_CheckTime(void)
-{
-	time_t t1;
-	struct tm* tptr;
-
-	// Do Special Stuff //
-	t1 = time(NULL);
-	if (t1 != (time_t)-1)
-	{
-		tptr = localtime(&t1);
-
-		if (tptr)
-		{
-			// April Fools
-			if (tptr->tm_mon == 3 && (tptr->tm_mday >= 1 && tptr->tm_mday <= 3))
-			{
-				aprilfoolsmode = true;
-				modifiedgame = false;
-			}
-
-			// Easter (Changes Every Year Though, so just have it for all of April)
-			else if ((tptr->tm_mon == 3)
-				&& (!M_CheckParm("-noeaster")))
-			{
-				eastermode = true;
-				modifiedgame = false;
-			}
-
-			// Christmas Eve to New Years
-			else if (((tptr->tm_mon == 11 && tptr->tm_mday >= 24))
-				&& (!M_CheckParm("-noxmas")))
-			{
-				xmasmode = true;
-				xmasoverride = true;
-				modifiedgame = false;
-			}
-		}
-	}
-
-	// Do Special Paramater Stuff //
-	// April Fools
-	if (M_CheckParm("-aprilfools"))
-	{
-		aprilfoolsmode = true;
-		modifiedgame = false;
-	}
-
-	// Easter
-	else if (M_CheckParm("-easter"))
-	{
-		eastermode = true;
-		modifiedgame = false;
-	}
-
-	// Christmas
-	else if (!eastermode && M_CheckParm("-xmas"))
-	{
-		xmasmode = true;
-		xmasoverride = true;
-		modifiedgame = false;
-	}
-
-	// Run Special Stuff Functions //
-	// April Fools
-	if (aprilfoolsmode)
-	{
-		CONS_Printf("TSoURDt3rd_CheckTime(): April Fools Mode Enabled!\n");
-		TSoURDt3rd_LoadExtras = true;
-	}
-
-	// Easter
-	else if (eastermode)
-	{
-		CONS_Printf("TSoURDt3rd_CheckTime(): Easter Mode Enabled!\n");
-		TSoURDt3rd_LoadExtras = true;
-	}
-
-	// Christmas
-	else if (xmasmode)
-	{
-		CONS_Printf("TSoURDt3rd_CheckTime(): Christmas Mode Enabled!\n");
-		TSoURDt3rd_LoadExtras = true;
-	}
-}
-
-// MESSAGES //
-//
-// void TSoURDt3rd_EventMessage(INT32 choice)
-// Displays a Message on the Screen Asking About Engaging in TSoURDt3rd Events
-//
-void TSoURDt3rd_EventMessage(INT32 choice)
-{
-	// Yes //
-	if (choice == 'y' || choice == KEY_ENTER)
-	{
-		S_StartSound(NULL, sfx_spdpad);
-		COM_BufInsertText("addfile tsourdt3rdextras.pk3\n");
-		
-		return;
-	}
-
-	// No //
-	S_StartSound(NULL, sfx_adderr);
-
-	aprilfoolsmode = false;
-	eastermode = false;
-	xmasmode = false;
-
-	TSoURDt3rd_LoadExtras = false;
 }
 
 // THE WORLD WIDE WEB //
@@ -1456,9 +1538,9 @@ void TSoURDt3rd_FindCurrentVersion(void)
 	const char *displayVersionString;
 
 	// Run Some Checks //
-	if ((gamestate == GS_NULL)					// Have we Even Initialized the Game? If not, Don't Run This.
-		|| (!TSoURDt3rd->checkedVersion)		// Have we Already Checked the Version? If so, Don't Run This Again.
-		|| (!cv_tsourdt3rdupdatemessage.value))	// Do we Allow Screen or Console Messages? If not, Don't Run This.
+	if ((gamestate == GS_NULL)			// Have we Even Initialized the Game? If not, Don't Run This.
+		|| (TSoURDt3rd->checkedVersion)	// Have we Already Checked the Version? If so, Don't Run This Again.
+		|| (!cv_updatenotice.value))	// Do we Allow Screen or Console Messages? If not, Don't Run This.
 
 		return;
 
@@ -1476,11 +1558,11 @@ void TSoURDt3rd_FindCurrentVersion(void)
 		displayVersionString = STAR_ConvertNumberToString(displayVersionNumber, 0, 0, true);
 
 		if (TSoURDt3rd_CurrentVersion() < internalVersionNumber)
-			(cv_tsourdt3rdupdatemessage.value == 1 ?
+			(cv_updatenotice.value == 1 ?
 				(M_StartMessage(va("%c%s\x80\nYou're using an outdated version of TSoURDt3rd.\n\nThe newest version is: %s\nYou're using version: %s\n\nCheck the SRB2 Message Board for the latest version!\n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Update TSoURDt3rd, Please", displayVersionString, TSOURDT3RDVERSION),NULL,MM_NOTHING)) :
 				(CONS_Alert(CONS_WARNING, "You're using an outdated version of TSoURDt3rd.\n\nThe newest version is: %s\nYou're using version: %s\n\nCheck the SRB2 Message Board for the latest version!\n", displayVersionString, TSOURDT3RDVERSION)));
 		else if (TSoURDt3rd_CurrentVersion() > internalVersionNumber)
-			(cv_tsourdt3rdupdatemessage.value == 1 ?
+			(cv_updatenotice.value == 1 ?
 				(M_StartMessage(va("%c%s\x80\nYou're using a version of TSoURDt3rd that hasn't even released yet.\n\nYou're probably a tester or coder,\nand in that case, hello!\n\nEnjoy messing around with the build!\n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Hello, Tester/Coder!"),NULL,MM_NOTHING)) :
 				(CONS_Alert(CONS_NOTICE, "You're using a version of TSoURDt3rd that hasn't even released yet.\nYou're probably a tester or coder, and in that case, hello!\nEnjoy messing around with the build!\n")));
 	}
@@ -1492,7 +1574,8 @@ void TSoURDt3rd_FindCurrentVersion(void)
 // SERVERS //
 //
 // boolean STAR_FindServerInfractions(void)
-// Finds Server Infractions. These Can be Related to Having Too Many Skins for Vanilla Servers to Join, and More
+// Finds Server Infractions, and Returns True if Any Were Found.
+// These Can be Related to Having Too Many Skins for Vanilla Servers to Join, and More
 //
 // STAR NOTE: the 'accurate' variables are used for the M_StartMessage function at the bottom :p of the hook
 //		...Except for accuratenumskinsounds. That one's used to properly check skin sound limits.

@@ -2814,7 +2814,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	{
 		if (mapmusflags & MUSIC_RELOADRESET)
 		{
-			strncpy(mapmusname, ((aprilfoolsmode && cv_ultimatemode.value) ? "_hehe" : mapheaderinfo[gamemap-1]->musname), 7);
+			strncpy(mapmusname, (TSoURDt3rd_InAprilFoolsMode() ? "_hehe" : mapheaderinfo[gamemap-1]->musname), 7);
 			mapmusname[6] = 0;
 			mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
 			mapmusposition = mapheaderinfo[gamemap-1]->muspos;

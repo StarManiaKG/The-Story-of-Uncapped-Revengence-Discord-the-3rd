@@ -5025,12 +5025,10 @@ static void HWR_DrawSprites(void)
 #endif
 		{
 			// STAR NOTE: i was here lol
-			if (spr->mobj && spr->mobj->shadowscale)
+			if (spr->mobj && ((!cv_allobjectshaveshadows.value && spr->mobj->shadowscale) || (cv_allobjectshaveshadows.value)))
 			{
-				if ((cv_shadow.value == 1 && !skipshadow)
-					|| (cv_shadow.value == 2))
-					
-					HWR_DrawShadows(spr, spr->mobj, spr->mobj->shadowscale);
+				if ((cv_shadow.value == 1 || cv_shadow.value == 2) && !skipshadow)
+					HWR_DrawShadows(spr, spr->mobj, (cv_allobjectshaveshadows.value ? 1*FRACUNIT : spr->mobj->shadowscale));
 			}
 
 			// STAR NOTE: i was also here lol
@@ -5041,13 +5039,12 @@ static void HWR_DrawSprites(void)
 				// the linkdraw sprite because the linkdraw sprite does not modify the z-buffer.
 				// The !skipshadow check is there in case there are multiple linkdraw sprites connected
 				// to the same tracer, so the tracer's shadow only gets drawn once.
-				if (spr->mobj->tracer->shadowscale)
+				if ((!cv_allobjectshaveshadows.value && spr->mobj->tracer->shadowscale) || (cv_allobjectshaveshadows.value))
 				{
-					if ((cv_shadow.value == 1 && !skipshadow && spr->dispoffset < 0)
-						|| (cv_shadow.value == 2 && !skipshadow))
+					if ((cv_shadow.value == 1 && !skipshadow && spr->dispoffset < 0) || (cv_shadow.value == 2 && !skipshadow))
 					{
 						
-						HWR_DrawShadows(spr, spr->mobj->tracer, spr->mobj->tracer->shadowscale);
+						HWR_DrawShadows(spr, spr->mobj->tracer, (cv_allobjectshaveshadows.value ? 1*FRACUNIT : spr->mobj->tracer->shadowscale));
 						skipshadow = true;
 					}
 

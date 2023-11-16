@@ -1,4 +1,4 @@
-// SONIC ROBO BLAST 2
+// SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
 // Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
 // Copyright (C) 2018-2020 by Kart Krew.
@@ -29,7 +29,7 @@
 #include "stun.h"
 #include "i_tcp.h" // current_port
 
-#include "discord.h"
+#include "discord.h" // discord, duh
 #include "doomdef.h"
 
 #include "p_local.h" // all7matchemeralds
