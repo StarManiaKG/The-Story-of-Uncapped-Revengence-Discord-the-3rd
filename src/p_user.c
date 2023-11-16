@@ -1353,7 +1353,9 @@ void P_GiveCoopLives(player_t *player, INT32 numlives, boolean sound)
 void P_DoSuperTransformation(player_t *player, boolean giverings)
 {
 	player->powers[pw_super] = 1;
-	if ((!(mapheaderinfo[gamemap-1]->levelflags & LF_NOSSMUSIC) && P_IsLocalPlayer(player)) && (aprilfoolsmode && !cv_ultimatemode.value)) // STAR NOTE: i was here lol
+	if ((!(mapheaderinfo[gamemap-1]->levelflags & LF_NOSSMUSIC) && P_IsLocalPlayer(player))
+		&& (!TSoURDt3rd_InAprilFoolsMode())) // STAR NOTE: i was here lol
+
 		P_PlayJingle(player, JT_SUPER);
 
 	S_StartSound(NULL, sfx_supert); //let all players hear it -mattw_cfi
@@ -1667,7 +1669,7 @@ void P_RestoreMusic(player_t *player)
 	// Super
 	else if ((player->powers[pw_super] && !(mapheaderinfo[gamemap-1]->levelflags & LF_NOSSMUSIC)
 		&& !S_RecallMusic(JT_SUPER, false))
-		&& (aprilfoolsmode && !cv_ultimatemode.value)) // STAR NOTE: i was here too :)
+		&& (!TSoURDt3rd_InAprilFoolsMode())) // STAR NOTE: i was here too :)
 		P_PlayJingle(player, JT_SUPER);
 
 	// Invulnerability
@@ -4421,7 +4423,7 @@ static void P_DoSuperStuff(player_t *player)
 //
 boolean P_SuperReady(player_t *player)
 {
-	// STAR NOTE: i edited some parts of this function, just so you know
+	// STAR NOTE: i edited some parts of this block, just so you know
 	if ((!player->powers[pw_super]
 	&& ((!ShieldBlocksTransformation && !player->powers[pw_invulnerability]) || (ShieldBlocksTransformation))
 	&& !player->powers[pw_tailsfly]
@@ -4433,10 +4435,10 @@ boolean P_SuperReady(player_t *player)
 	&& (player->rings >= 50))
 
 	// STAR STUFF //
-	|| (((aprilfoolsmode && cv_ultimatemode.value) || (EnableEasterEggHuntBonuses && currenteggs == TOTALEGGS && ALL7EMERALDS(emeralds) && player->rings))
+	|| ((TSoURDt3rd_InAprilFoolsMode() || (EnableEasterEggHuntBonuses && currenteggs == TOTALEGGS && ALL7EMERALDS(emeralds) && player->rings))
+		&& (player->rings && !player->powers[pw_super] && !netgame)))
 	// END THAT PLEASE //
-	
-	&& player->rings && !player->powers[pw_super] && !netgame))
+
 		return true;
 
 	return false;
@@ -5127,7 +5129,7 @@ static boolean P_PlayerShieldThink(player_t *player, ticcmd_t *cmd, mobj_t *lock
 {
 	mobj_t *lockonshield = NULL;
 
-	if ((player->powers[pw_shield] & SH_NOSTACK) && (!player->powers[pw_super] || (player->powers[pw_super] && cv_armageddonnukesuper.value && (player->powers[pw_shield] & SH_NOSTACK) == SH_ARMAGEDDON)) && !(player->pflags & PF_SPINDOWN) // STAR NOTE: i was here by the way
+	if ((player->powers[pw_shield] & SH_NOSTACK) && (!player->powers[pw_super] || (player->powers[pw_super] && cv_armageddonnukewhilesuper.value && (player->powers[pw_shield] & SH_NOSTACK) == SH_ARMAGEDDON)) && !(player->pflags & PF_SPINDOWN) // STAR NOTE: i was here by the way
 		&& ((!(player->pflags & PF_THOKKED) || (((player->powers[pw_shield] & SH_NOSTACK) == SH_BUBBLEWRAP || (player->powers[pw_shield] & SH_NOSTACK) == SH_ATTRACT) && player->secondjump == UINT8_MAX) ))) // thokked is optional if you're bubblewrapped / 3dblasted
 	{
 		if ((player->powers[pw_shield] & SH_NOSTACK) == SH_ATTRACT && !(player->charflags & SF_NOSHIELDABILITY))
@@ -5281,13 +5283,16 @@ static void P_DoJumpStuff(player_t *player, ticcmd_t *cmd)
 			;
 		
 		else if (((cmd->buttons & BT_SPIN))
-			|| (((aprilfoolsmode && cv_ultimatemode.value) || (EnableEasterEggHuntBonuses && currenteggs == TOTALEGGS)) // STAR NOTE: i was here, it's kinda a mess lol
+			// STAR STUFF //
+			|| ((TSoURDt3rd_InAprilFoolsMode() || (EnableEasterEggHuntBonuses && currenteggs == TOTALEGGS))
 				&& (cmd->buttons & BT_JUMP) && !netgame && !(players[consoleplayer].powers[pw_super])))
+			// END THAT MESS PLEASE //
 		{
 			if ((!(player->pflags & PF_SPINDOWN) && P_SuperReady(player))
-				|| (((aprilfoolsmode && cv_ultimatemode.value) || (EnableEasterEggHuntBonuses && currenteggs == TOTALEGGS)) && !netgame && P_SuperReady(player))) // STAR NOTE: i was here, and it's less of a mess lol
+				|| ((TSoURDt3rd_InAprilFoolsMode() || (EnableEasterEggHuntBonuses && currenteggs == TOTALEGGS)) && !netgame && P_SuperReady(player))) // STAR NOTE: i was here, and it's a little messy lol
 			{
-				if (((aprilfoolsmode && cv_ultimatemode.value) || (EnableEasterEggHuntBonuses && currenteggs == TOTALEGGS)) && !netgame) // STAR NOTE: i was here again lol
+				// SOME OF THIS IS STAR STUFF //
+				if ((TSoURDt3rd_InAprilFoolsMode() || (EnableEasterEggHuntBonuses && currenteggs == TOTALEGGS)) && !netgame)
 				{
 					if (gametyperules & GTR_POWERSTONES)
 					{
@@ -5303,10 +5308,10 @@ static void P_DoJumpStuff(player_t *player, ticcmd_t *cmd)
 					if (!(player->charflags & SF_SUPER))
 						player->charflags += SF_SUPER;
 				}
+				// END THIS MESS TOO PLEASE //
 
 				P_DoSuperTransformation(player, false); // If you can turn super and aren't already, do it!
 			}
-			// END OF THE STAR NOTE, BY THE WAY //
 
 			else if (!LUA_HookPlayer(player, HOOK(JumpSpinSpecial)))
 				switch (player->charability)
@@ -9629,7 +9634,7 @@ static void P_DeathThink(player_t *player)
 	player->deltaviewheight = 0;
 
 	// STAR STUFF YAY //
-	if (aprilfoolsmode && cv_ultimatemode.value && ultimatemode && !netgame)
+	if (TSoURDt3rd_InAprilFoolsMode() && ultimatemode && !netgame)
 		return; // it's funnier this way
 	// END OF STAR STUFF YAY //
 

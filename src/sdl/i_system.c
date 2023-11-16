@@ -348,7 +348,7 @@ static void I_ReportSignal(int num, int coredumped)
 	int randomjokemsg;
 
 	const char *jokemsg;
-	char underscoremsg[256] = " ";
+	char underscoremsg[512] = " ";
 	//// END THAT ////
 
 	switch (num)
@@ -2528,7 +2528,7 @@ void I_Error(const char *error, ...)
 
 #ifdef HAVE_DISCORDRPC
 	// DO DISCORD STUFFS AGAIN //
-	DRPC_Shutdown();
+	//DRPC_Shutdown();
 	// ENDED DISCORD STUFFS AGAIN //
 #endif
 

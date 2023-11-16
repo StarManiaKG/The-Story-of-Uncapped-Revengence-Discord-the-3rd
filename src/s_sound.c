@@ -30,7 +30,12 @@
 #include "m_misc.h" // for tunes command
 #include "m_cond.h" // for conditionsets
 #include "lua_hook.h" // MusicChange hook
-#include "m_menu.h" // STAR STUFF: Jukeboxes
+
+// STAR STUFF //
+#include "STAR/star_vars.h" // event stuff
+
+#include "m_menu.h" // jukebox
+// END THAT PLEASE //
 
 #ifdef HW3SOUND
 // 3D Sound Interface
@@ -2498,7 +2503,7 @@ void S_StartEx(boolean reset)
 {
 	if (mapmusflags & MUSIC_RELOADRESET)
 	{
-		strncpy(mapmusname, ((aprilfoolsmode && cv_ultimatemode.value) ? "_hehe" : mapheaderinfo[gamemap-1]->musname), 7);
+		strncpy(mapmusname, (TSoURDt3rd_InAprilFoolsMode() ? "_hehe" : mapheaderinfo[gamemap-1]->musname), 7);
 		mapmusname[6] = 0;
 		mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
 		mapmusposition = mapheaderinfo[gamemap-1]->muspos;
@@ -2527,7 +2532,7 @@ static void Command_Tunes_f(void)
 	const size_t argc = COM_Argc();
 
 	// STAR STUFF EEEEEEEE //
-	if (aprilfoolsmode && cv_ultimatemode.value)
+	if (TSoURDt3rd_InAprilFoolsMode())
 	{
 		CONS_Printf("Nice Try. Maybe there's a command you need to turn off, perhaps?\n");
 		return;
@@ -2566,7 +2571,7 @@ static void Command_Tunes_f(void)
 	}
 	else if (!strcasecmp(tunearg, "-default"))
 	{
-		tunearg = ((aprilfoolsmode && cv_ultimatemode.value) ? "_hehe" : mapheaderinfo[gamemap-1]->musname);
+		tunearg = (TSoURDt3rd_InAprilFoolsMode() ? "_hehe" : mapheaderinfo[gamemap-1]->musname);
 		track = mapheaderinfo[gamemap-1]->mustrack;
 	}
 

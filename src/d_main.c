@@ -511,7 +511,7 @@ static void D_Display(void)
 
 	// STAR STUFF //
 	// April Fools; Close the Game if We're on Ultimate Mode But We've Beaten the Game
-	if (aprilfoolsmode && cv_ultimatemode.value && (gamestate == (GS_ENDING|GS_CREDITS|GS_EVALUATION)))
+	if (TSoURDt3rd_InAprilFoolsMode() && (gamestate == (GS_ENDING|GS_CREDITS|GS_EVALUATION)))
 		I_Error("SIGSEGV - seventh sentinel (core dumped)");
 	// WHY YOU DO BAD //
 
@@ -967,7 +967,7 @@ void D_SRB2Loop(void)
 		//// STAR STUFF ////
 		// Do Event Stuff //
 		// April Fools
-		if (aprilfoolsmode && cv_ultimatemode.value && (!modifiedgame || savemoddata))
+		if (TSoURDt3rd_InAprilFoolsMode() && (!modifiedgame || savemoddata))
 		{
 			CONS_Printf("You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nyour game has been set to modified.\n");
 			G_SetGameModified(false);
@@ -1007,7 +1007,7 @@ void D_SRB2Loop(void)
 		// Lock-on the Extra PK3
 		if (TSoURDt3rd_LoadExtras)
 		{
-			if (aprilfoolsmode || eastermode || xmasmode)
+			if (eastermode || aprilfoolsmode || xmasmode)
 				M_StartMessage(va("%c%s\x80\nTSoURDt3rd is having a seasonal event!\n\nWould you like to load tsourdt3rdextras.pk3 to engage in it? \n\n(Press 'Y' or 'Enter' for 'Yes'; 'N' or any other key for 'No')\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "A TSoURDt3rd Event is Occuring"),TSoURDt3rd_EventMessage,MM_YESNO);
 			else
 				COM_BufAddText("addfile tsourdt3rdextras.pk3\n");
@@ -1547,8 +1547,9 @@ void D_SRB2Main(void)
 	// Netgame URL special case: change working dir to EXE folder.
 	ChangeDirForUrlHandler();
 
-	// STAR STUFF: Check the Time on Our Computer //
-	TSoURDt3rd_CheckTime();
+	// STAR STUFF //
+	TSoURDt3rd_InitializeStructures();	// Initialize the Build and its Structures
+	TSoURDt3rd_CheckTime();				// Check the Time on Our Computer
 	// END THIS STUFF //
 
 	// identify the main IWAD file to use

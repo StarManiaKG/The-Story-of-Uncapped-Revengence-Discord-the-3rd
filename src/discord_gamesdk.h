@@ -1,7 +1,6 @@
-// SONIC ROBO BLAST 2
+// SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// DISCORD GAME SDK BY STARMANIAKG(#4884)
-// Copyright (C) 2022-2023 by StarManiaKG.
+// Copyright (C) 2023 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.

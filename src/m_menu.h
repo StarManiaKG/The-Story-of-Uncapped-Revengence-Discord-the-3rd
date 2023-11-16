@@ -518,43 +518,64 @@ menucolor_t* M_GetColorFromIndex(UINT16 index);
 void M_InitPlayerSetupColors(void);
 void M_FreePlayerSetupColors(void);
 
-// STAR STUFF SUBISHUHFLUKJDJIPOKD //
-// main build menu stuff
-extern boolean AllowTypicalTimeOver;
-extern boolean AlwaysOverlayInvincibility, ShieldBlocksTransformation;
+//// STAR STUFF SUBISHUHFLUKJDJIPOKD ////
+// variables //
+// events
 extern boolean AllowEasterEggHunt, EnableEasterEggHuntBonuses;
 
-extern consvar_t cv_startupscreen, cv_stjrintro;
-extern consvar_t cv_isitcalledsingleplayer, cv_menucolor, cv_fpscountercolor, cv_tpscountercolor;
-extern consvar_t cv_allowtypicaltimeover, cv_pausegraphicstyle, cv_automapoutsidedevmode;
-
-extern consvar_t cv_ultimatemode;
-
-extern consvar_t cv_quitscreen;
-
-extern consvar_t cv_gameovermusic;
-extern consvar_t cv_defaultmaptrack;
-
-extern consvar_t cv_perfectsave, cv_perfectsavestripe1, cv_perfectsavestripe2, cv_perfectsavestripe3;
-extern consvar_t cv_shieldblockstransformation, cv_armageddonnukesuper, cv_alwaysoverlayinvuln;
-extern consvar_t cv_jukeboxhud, cv_luacanstopthejukebox, cv_jukeboxspeed;
-
-extern consvar_t cv_alloweasteregghunt, cv_easteregghuntbonuses;
-extern consvar_t cv_windowtitletype, cv_customwindowtitle, cv_memesonwindowtitle;
-
+// game
+extern boolean AllowTypicalTimeOver;
 extern UINT16 menuColor[16];
 
-// jukebox stuff
+// players
+extern boolean AlwaysOverlayInvincibility, ShieldBlocksTransformation;
+
+// jukebox
 extern boolean jukeboxMusicPlaying;
 extern boolean jukeboxUnlocked;
 
 extern char jukeboxMusicName[22+12];
 extern char jukeboxMusicTrack[7];
+
+// commands //
+// events
+extern consvar_t cv_alloweasteregghunt, cv_easteregghuntbonuses;
+extern consvar_t cv_ultimatemode;
+
+// game
+extern consvar_t cv_startupscreen, cv_stjrintro, cv_quitscreen;
+extern consvar_t cv_isitcalledsingleplayer;
+extern consvar_t cv_menucolor, cv_fpscountercolor, cv_tpscountercolor;
+extern consvar_t cv_allowtypicaltimeover, cv_pausegraphicstyle, cv_automapoutsidedevmode;
+
+// audio
+extern consvar_t cv_gameovermusic, cv_defaultmaptrack;
+
+// players
+extern consvar_t cv_shieldblockstransformation, cv_armageddonnukewhilesuper, cv_alwaysoverlayinvuln;
+
+// savefiles
+extern consvar_t cv_perfectsave, cv_perfectsavestripe1, cv_perfectsavestripe2, cv_perfectsavestripe3;
+
+// jukebox
+extern consvar_t cv_jukeboxhud, cv_luacanstopthejukebox, cv_jukeboxspeed;
+
+// misc. stuff
+extern consvar_t cv_windowtitletype, cv_customwindowtitle, cv_memesonwindowtitle;
+
+// functions //
+// events
+void M_UpdateEasterStuff(void);
+
+// game
+void STAR_LoadingScreen_OnChange(void);
+void STAR_TPSRate_OnChange(void);
+void STAR_Shadow_OnChange(void);
+void STAR_UpdateNotice_OnChange(void);
+
+// jukebox 
 void M_ResetJukebox(void);
 void M_UpdateJukebox(void);
-
-// easter stuff
-void M_UpdateEasterStuff(void);
 
 // extra stuff
 void STAR_SetProblematicCommandsForNetgames(void);

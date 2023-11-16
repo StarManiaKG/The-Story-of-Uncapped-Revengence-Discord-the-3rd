@@ -439,81 +439,6 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 		return 1;
 
 	//// STAR STUFF YAY ////
-	// MAIN //
-	// global tsourdt3rd variable
-	} else if (fastcmp(word,"tsourdt3rd")) {
-		lua_pushboolean(L, tsourdt3rd);
-		return 1;
-
-	// short tsourdt3rd version string
-	} else if (fastcmp(word,"TSOURDT3RDVERSION")) {
-		lua_pushstring(L, TSOURDT3RDVERSION);
-		return 1;
-	
-	// extended tsourdt3rd version string
-	} else if (fastcmp(word,"TSOURDT3RDVERSIONSTRING")) {
-		lua_pushstring(L, TSOURDT3RDVERSIONSTRING);
-		return 1;
-	
-	// loaded tsourdt3rdextras.pk3
-	} else if (fastcmp(word,"TSoURDt3rd_LoadedExtras")) {
-		lua_pushboolean(L, TSoURDt3rd_LoadedExtras);
-		return 1;
-	
-	} else if (fastcmp(word,"TSoURDt3rd_NoMoreExtras")) {
-		lua_pushboolean(L, TSoURDt3rd_NoMoreExtras);
-		return 1;
-
-	// autoloaded mods
-	} else if (fastcmp(word,"autoloaded")) {
-		lua_pushboolean(L, autoloaded);
-		return 1;
-
-	// time over...
-	} else if (fastcmp(word,"ForceTimeOver")) {
-		lua_pushboolean(L, ForceTimeOver);
-		return 1;
-	
-	// SERVERS //
-	// server uses tsourdt3rd
-	} else if (fastcmp(word,"serverUsesTSoURDt3rd")) {
-		lua_pushboolean(L, TSoURDt3rd->serverUsesTSoURDt3rd);
-		return 1;
-	
-	// server tsourdt3rd version
-	} else if (fastcmp(word,"serverTSoURDt3rdVersion")) {
-		lua_pushinteger(L, TSoURDt3rd->serverTSoURDt3rdVersion);
-		return 1;
-	
-	// SOUND EFFECTS //
-	// STAR //
-	// joining
-	} else if (fastcmp(word,"STAR_JoinSFX")) {
-		lua_pushinteger(L, STAR_JoinSFX);
-		return 1;
-	
-	// leaving
-	} else if (fastcmp(word,"STAR_LeaveSFX")) {
-		lua_pushinteger(L, STAR_LeaveSFX);
-		return 1;
-	
-	// synch failure
-	} else if (fastcmp(word,"STAR_SynchFailureSFX")) {
-		lua_pushinteger(L, STAR_SynchFailureSFX);
-		return 1;
-	
-	// DISCORD //
-	// requests
-	} else if (fastcmp(word,"DISCORD_RequestSFX")) {
-		lua_pushinteger(L, DISCORD_RequestSFX);
-		return 1;
-
-	// EXTRAS //
-	// tf2
-	} else if (fastcmp(word,"SpawnTheDispenser")) {
-		lua_pushboolean(L, SpawnTheDispenser);
-		return 1;
-
 	// EVENTS //
 	// easter
 	} else if (fastcmp(word,"eastermode")) {
@@ -560,6 +485,81 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 		if (!eastermode)
 			return 0;
 		lua_pushinteger(L, numMapEggs);
+		return 1;
+
+	// MAIN //
+	// global tsourdt3rd variable
+	} else if (fastcmp(word,"tsourdt3rd")) {
+		lua_pushboolean(L, tsourdt3rd);
+		return 1;
+
+	// short tsourdt3rd version string
+	} else if (fastcmp(word,"TSOURDT3RDVERSION")) {
+		lua_pushstring(L, TSOURDT3RDVERSION);
+		return 1;
+	
+	// extended tsourdt3rd version string
+	} else if (fastcmp(word,"TSOURDT3RDVERSIONSTRING")) {
+		lua_pushstring(L, TSOURDT3RDVERSIONSTRING);
+		return 1;
+	
+	// loaded tsourdt3rdextras.pk3
+	} else if (fastcmp(word,"TSoURDt3rd_LoadedExtras")) {
+		lua_pushboolean(L, TSoURDt3rd_LoadedExtras);
+		return 1;
+	
+	} else if (fastcmp(word,"TSoURDt3rd_NoMoreExtras")) {
+		lua_pushboolean(L, TSoURDt3rd_NoMoreExtras);
+		return 1;
+
+	// autoloaded mods
+	} else if (fastcmp(word,"autoloaded")) {
+		lua_pushboolean(L, autoloaded);
+		return 1;
+
+	// time over...
+	} else if (fastcmp(word,"ForceTimeOver")) {
+		lua_pushboolean(L, ForceTimeOver);
+		return 1;
+	
+	// SERVERS //
+	// server uses tsourdt3rd
+	} else if (fastcmp(word,"serverUsesTSoURDt3rd")) {
+		lua_pushboolean(L, TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd);
+		return 1;
+	
+	// server tsourdt3rd version
+	} else if (fastcmp(word,"serverTSoURDt3rdVersion")) {
+		lua_pushinteger(L, TSoURDt3rd->serverPlayers.serverTSoURDt3rdVersion);
+		return 1;
+	
+	// SOUND EFFECTS //
+	// STAR //
+	// joining
+	} else if (fastcmp(word,"STAR_JoinSFX")) {
+		lua_pushinteger(L, STAR_JoinSFX);
+		return 1;
+	
+	// leaving
+	} else if (fastcmp(word,"STAR_LeaveSFX")) {
+		lua_pushinteger(L, STAR_LeaveSFX);
+		return 1;
+	
+	// synch failure
+	} else if (fastcmp(word,"STAR_SynchFailureSFX")) {
+		lua_pushinteger(L, STAR_SynchFailureSFX);
+		return 1;
+	
+	// DISCORD //
+	// requests
+	} else if (fastcmp(word,"DISCORD_RequestSFX")) {
+		lua_pushinteger(L, DISCORD_RequestSFX);
+		return 1;
+
+	// EXTRAS //
+	// tf2
+	} else if (fastcmp(word,"SpawnTheDispenser")) {
+		lua_pushboolean(L, SpawnTheDispenser);
 		return 1;
 
 	// MISC. THINGS //
