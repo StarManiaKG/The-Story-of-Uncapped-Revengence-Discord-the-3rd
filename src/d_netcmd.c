@@ -5060,12 +5060,11 @@ static void Skin_OnChange(void)
 	{
 		SendNameAndColor();
 
-		if (cv_movingplayersetup.value && P_PlayerMoving(consoleplayer))
+		player_t *player = &players[consoleplayer];
+		if ((cv_movingplayersetup.value && P_PlayerMoving(consoleplayer))
+			&& (player->mo && !(P_IsObjectOnGround(player->mo))))
 		{
-			player_t *player = &players[consoleplayer];
-			if (player->mo && !(P_IsObjectOnGround(player->mo)))
-				P_ResetPlayer(player);
-
+			P_ResetPlayer(player);
 			if (netgame)
 				NetUpdate(); // update the player
 		}
@@ -5114,11 +5113,11 @@ static void Skin2_OnChange(void)
 	{
 		SendNameAndColor2();
 
-		if (cv_movingplayersetup.value && P_PlayerMoving(secondarydisplayplayer))
+		player_t *player2 = &players[secondarydisplayplayer];
+		if ((cv_movingplayersetup.value && P_PlayerMoving(secondarydisplayplayer))
+			&& (player2->mo && !(P_IsObjectOnGround(player2->mo))))
 		{
-			player_t *player2 = &players[secondarydisplayplayer];
-			if (player2->mo && !(P_IsObjectOnGround(player2->mo)))
-				P_ResetPlayer(player2);
+			P_ResetPlayer(player2); // update the second player
 		}
 	}
 	else
