@@ -960,7 +960,12 @@ void D_SRB2Loop(void)
 #ifdef HAVE_DISCORDRPC
 		// DISCORD STUFFS //
 		if (! dedicated)
+		{
+#ifdef DISCORD_DISABLE_IO_THREAD
+			Discord_UpdateConnection();
+#endif
 			Discord_RunCallbacks();
+		}
 		// END THIS PLEASE //
 #endif
 
