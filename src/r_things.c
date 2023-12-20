@@ -1369,7 +1369,7 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	shadowxscale = FixedMul(interp.radius*2, scalemul);
 	shadowyscale = FixedMul(FixedMul(interp.radius*2, scalemul*2), FixedDiv(abs(groundz - viewz), tz));
 	// STAR STUFF //
-	shadowyscale = (cv_shadow.value == 1 ? patch->height : (min(shadowyscale, shadowxscale) / patch->height));
+	shadowyscale = (cv_shadow.value == 2 ? (min(shadowyscale, shadowxscale) / patch->height): patch->height);
 	// END THIS //
 	shadowxscale /= patch->width;
 	shadowskew = 0;
