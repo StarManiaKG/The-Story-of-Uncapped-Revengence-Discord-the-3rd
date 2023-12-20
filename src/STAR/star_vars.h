@@ -12,8 +12,10 @@
 #ifndef __STAR_VARS__
 #define __STAR_VARS__
 
-#include "star_webinfo.h"
-#include "../command.h"
+#include "star_webinfo.h" // star variables
+#include "../command.h" // command variables
+#include "../g_input.h" // input variables
+#include "../s_sound.h" // sound variables
 
 // ============================================================================================	//
 // 	 STAR NOTE:																					//
@@ -40,6 +42,19 @@ typedef struct TSoURDt3rdServers_s {
 	UINT32 serverTSoURDt3rdVersion;
 } TSoURDt3rdServers_t;
 
+// Jukebox //
+typedef struct TSoURDt3rdJukebox_s {
+	boolean Unlocked;
+
+	boolean initHUD;
+
+	boolean musicPlaying;
+	char musicName[34];
+	char musicTrack[7];
+
+	musicdef_t *lastTrackPlayed;
+} TSoURDt3rdJukebox_t;
+
 // Main Struct //
 typedef struct TSoURDt3rd_s {
 	// Game Stuff
@@ -51,10 +66,23 @@ typedef struct TSoURDt3rd_s {
 	boolean masterServerAddressChanged;
 
 	TSoURDt3rdServers_t serverPlayers;
+
+	// Jukebox Stuff
+	TSoURDt3rdJukebox_t jukebox;
 } TSoURDt3rd_t;
 
 extern TSoURDt3rd_t *TSoURDt3rd;
 extern TSoURDt3rd_t TSoURDt3rdPlayers[MAXPLAYERS];
+
+// Input Struct //
+typedef struct star_gamekey_s {
+	INT32 keyDown;
+
+	boolean pressed;
+	boolean tapReady;
+} star_gamekey_t;
+
+extern star_gamekey_t STAR_GameKeyDown[3][NUM_GAMECONTROLS];
 
 //// VARIABLES ////
 // TSoURDt3rd Stuff //
@@ -91,8 +119,8 @@ extern boolean all7matchemeralds;
 
 // Audio //
 // Game Over Music
-extern const char gameoverMusic[7][7];
-extern const INT32 gameoverMusicTics[7];
+extern const char gameoverMusic[9][7];
+extern const INT32 gameoverMusicTics[9];
 
 // Star SFX
 extern INT32 STAR_JoinSFX;
@@ -126,12 +154,16 @@ boolean TSoURDt3rd_InAprilFoolsMode(void);
 void TSoURDt3rd_InitializeStructures(void);
 void TSoURDt3rd_ReinitializeServerStructures(void);
 
-void STAR_LoadingScreen(boolean opengl);
+void STAR_LoadingScreen(void);
 
 #ifdef HAVE_SDL
 void STAR_RenameWindow(const char *title);
 const char *STAR_SetWindowTitle(void);
 #endif
+
+const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean coredumped);
+
+boolean STAR_Responder(UINT8 player, UINT8 input, boolean preventhold);
 
 // Savedata //
 void STAR_WriteExtraData(void);
@@ -141,7 +173,9 @@ void STAR_SetSavefileProperties(void);
 
 // Files //
 void TSoURDt3rd_TryToLoadTheExtras(void);
+
 INT32 STAR_DetectFileType(const char* filename);
+boolean STAR_DoesStringMatchHarcodedFileName(const char *string);
 
 // The World Wide Web //
 #ifdef HAVE_CURL

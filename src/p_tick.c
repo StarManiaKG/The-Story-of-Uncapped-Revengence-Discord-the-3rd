@@ -587,7 +587,7 @@ static inline void P_DoSpecialStageStuff(void)
 
 	// STAR NOTE: i was here lol
 	if (sstimer < 15*TICRATE+6 && sstimer > 7 && (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC)
-		&& (!jukeboxMusicPlaying))
+		&& (!TSoURDt3rd->jukebox.musicPlaying))
 		
 		S_SpeedMusic(1.4f);
 

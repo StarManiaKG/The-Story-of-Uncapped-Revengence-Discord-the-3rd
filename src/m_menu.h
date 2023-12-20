@@ -150,6 +150,7 @@ typedef enum
 	MN_OP_TSOURDT3RD,
 	
 	MN_OP_TSOURDT3RD_JUKEBOX,
+	MN_OP_TSOURDT3RD_JUKEBOXCONTROLS,
 	MN_OP_TSOURDT3RD_SNAKE,
 	// END OF THAT //
 
@@ -492,10 +493,8 @@ void Moviemode_option_Onchange(void);
 
 #ifdef HAVE_DISCORDRPC
 // DISCORD STUFFS //
-extern boolean discordMenuOpen;
 void Discord_option_Onchange(void);
-
-void M_RefreshPauseMenu(void);
+void M_RefreshDiscordRequestsOption(void);
 // END THE DISCORD //
 #endif
 
@@ -519,7 +518,26 @@ void M_InitPlayerSetupColors(void);
 void M_FreePlayerSetupColors(void);
 
 //// STAR STUFF SUBISHUHFLUKJDJIPOKD ////
+// structs //
+typedef struct messagequeue_s
+{
+	UINT16 status;		// show IT_xxx
+
+	const char *patch;
+	const char *text;	// used when FONTBxx lump is found
+
+	void *itemaction;	// FIXME: should be itemaction_t
+
+	UINT16 alphaKey;	// hotkey in menu or y of the item
+
+	INT16 x, y;			// x, y of menu
+	INT16 lastOn;		// last item user was on in menu
+} messagequeue_t;
+
 // variables //
+// vanilla source code extras
+extern menu_t MessageDef;
+
 // events
 extern boolean AllowEasterEggHunt, EnableEasterEggHuntBonuses;
 
@@ -529,13 +547,6 @@ extern UINT16 menuColor[16];
 
 // players
 extern boolean AlwaysOverlayInvincibility, ShieldBlocksTransformation;
-
-// jukebox
-extern boolean jukeboxMusicPlaying;
-extern boolean jukeboxUnlocked;
-
-extern char jukeboxMusicName[22+12];
-extern char jukeboxMusicTrack[7];
 
 // commands //
 // events
@@ -558,7 +569,7 @@ extern consvar_t cv_shieldblockstransformation, cv_armageddonnukewhilesuper, cv_
 extern consvar_t cv_perfectsave, cv_perfectsavestripe1, cv_perfectsavestripe2, cv_perfectsavestripe3;
 
 // jukebox
-extern consvar_t cv_jukeboxhud, cv_luacanstopthejukebox, cv_jukeboxspeed;
+extern consvar_t cv_jukeboxspeed, cv_jukeboxhud, cv_luacanstopthejukebox;
 
 // misc. stuff
 extern consvar_t cv_windowtitletype, cv_customwindowtitle, cv_memesonwindowtitle;
@@ -566,6 +577,7 @@ extern consvar_t cv_windowtitletype, cv_customwindowtitle, cv_memesonwindowtitle
 // functions //
 // events
 void M_UpdateEasterStuff(void);
+void STAR_StoreDefaultMenuStrings(void);
 
 // game
 void STAR_LoadingScreen_OnChange(void);
@@ -573,9 +585,9 @@ void STAR_TPSRate_OnChange(void);
 void STAR_Shadow_OnChange(void);
 void STAR_UpdateNotice_OnChange(void);
 
-// jukebox 
+// jukebox
+void M_TSoURDt3rdJukebox(INT32 choice);
 void M_ResetJukebox(void);
-void M_UpdateJukebox(void);
 
 // extra stuff
 void STAR_SetProblematicCommandsForNetgames(void);

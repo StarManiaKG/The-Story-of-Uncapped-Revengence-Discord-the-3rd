@@ -4417,13 +4417,10 @@ void A_SuperSneakers(mobj_t *actor)
 
 	if (P_IsLocalPlayer(player) && !player->powers[pw_super])
 	{
-		// STAR NOTE: i was here lol
 		if ((mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC)
-			&& (!jukeboxMusicPlaying))
-		{
-			if (S_SpeedMusic(0.0f))
-				S_SpeedMusic(1.4f);
-		}
+			&& (!TSoURDt3rd->jukebox.musicPlaying)) // STAR NOTE: i was here lol
+
+			S_SpeedMusic(1.4f);
 		else
 			P_PlayJingle(player, JT_SHOES);
 		strlcpy(S_sfx[sfx_None].caption, "Speed shoes", 12);

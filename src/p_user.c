@@ -1357,6 +1357,13 @@ void P_DoSuperTransformation(player_t *player, boolean giverings)
 		&& (!TSoURDt3rd_InAprilFoolsMode())) // STAR NOTE: i was here lol
 
 		P_PlayJingle(player, JT_SUPER);
+	
+#ifdef HAVE_SDL
+	// STAR STUFF //
+	if (cv_windowtitletype.value == 1)
+		STAR_SetWindowTitle();
+	// END MORE OF THIS STAR STUFF PLEASE //
+#endif
 
 	S_StartSound(NULL, sfx_supert); //let all players hear it -mattw_cfi
 
@@ -1522,7 +1529,7 @@ void P_PlayLivesJingle(player_t *player)
 	if (mariomode)
 		S_StartSound(NULL, sfx_marioa);
 	else if ((use1upSound || cv_1upsound.value)
-			|| (jukeboxMusicPlaying)) // STAR NOTE: i was also here lol
+			|| (TSoURDt3rd->jukebox.musicPlaying)) // STAR NOTE: i was also here lol
 		S_StartSound(NULL, sfx_oneup);
 	else
 	{
@@ -1562,7 +1569,7 @@ void P_PlayJingleMusic(player_t *player, const char *musname, UINT16 musflags, b
 {
 	// If gamestate != GS_LEVEL, always play the jingle (1-up intermission)
 	if ((gamestate == GS_LEVEL && player && !P_IsLocalPlayer(player))
-		|| (jukeboxMusicPlaying)) // STAR NOTE: i was here as well
+		|| (TSoURDt3rd->jukebox.musicPlaying)) // STAR NOTE: i was here as well
 		return;
 
 	S_RetainMusic(musname, musflags, looping, 0, status);
@@ -1655,7 +1662,7 @@ void P_RestoreMusic(player_t *player)
 		return;
 
 	// STAR STUFF //
-	if (!jukeboxMusicPlaying)
+	if (!TSoURDt3rd->jukebox.musicPlaying)
 		S_SpeedMusic(1.0f);
 	// END THAT //
 
@@ -1689,9 +1696,10 @@ void P_RestoreMusic(player_t *player)
 		if (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC)
 		{
 			// STAR STUFF //
-			if (!jukeboxMusicPlaying)
+			if (!TSoURDt3rd->jukebox.musicPlaying)
 				S_SpeedMusic(1.4f);
 			// END THIS //
+
 			if (!S_RecallMusic(JT_MASTER, true))
 				S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
 		}
@@ -4325,6 +4333,13 @@ static void P_DoSuperStuff(player_t *player)
 			P_RestoreMusic(player);
 			P_SpawnShieldOrb(player);
 
+#ifdef HAVE_SDL
+			// STAR STUFF //
+			if (cv_windowtitletype.value == 1)
+				STAR_SetWindowTitle();
+			// EEEEEEEEEEEEEEEEEE //
+#endif
+
 			// Restore color
 			if ((player->powers[pw_shield] & SH_STACK) == SH_FIREFLOWER)
 			{
@@ -4374,6 +4389,13 @@ static void P_DoSuperStuff(player_t *player)
 			P_SpawnGhostMobj(player->mo);
 
 			player->powers[pw_super] = 0;
+
+#ifdef HAVE_SDL
+			// STAR STUFF //
+			if (cv_windowtitletype.value == 1)
+				STAR_SetWindowTitle();
+			// NOW GO END THAT STAR STUFF RIGHT NOW! //
+#endif
 
 			// Restore color
 			if ((player->powers[pw_shield] & SH_STACK) == SH_FIREFLOWER)
@@ -4425,11 +4447,11 @@ boolean P_SuperReady(player_t *player)
 {
 	// STAR NOTE: i edited some parts of this block, just so you know
 	if ((!player->powers[pw_super]
-	&& ((!ShieldBlocksTransformation && !player->powers[pw_invulnerability]) || (ShieldBlocksTransformation))
+	&& ((ShieldBlocksTransformation && !player->powers[pw_invulnerability]) || (!ShieldBlocksTransformation))
 	&& !player->powers[pw_tailsfly]
 	&& (player->charflags & SF_SUPER)
 	&& (player->pflags & PF_JUMPED)
-	&& ((!(player->powers[pw_shield] & SH_NOSTACK) && !ShieldBlocksTransformation) || (ShieldBlocksTransformation))
+	&& ((!(player->powers[pw_shield] & SH_NOSTACK) && ShieldBlocksTransformation) || (!ShieldBlocksTransformation))
 	&& !(maptol & TOL_NIGHTS)
 	&& ALL7EMERALDS(emeralds)
 	&& (player->rings >= 50))
@@ -5158,9 +5180,11 @@ static boolean P_PlayerShieldThink(player_t *player, ticcmd_t *cmd, mobj_t *lock
 		}
 		if ((!(player->charflags & SF_NOSHIELDABILITY)) && (cmd->buttons & BT_SPIN && !LUA_HookPlayer(player, HOOK(ShieldSpecial)))) // Spin button effects
 		{
-			// STAR NOTE: Make sure we're not super, so we don't accidentally run anything here
-			if (ShieldBlocksTransformation && P_SuperReady(player))
+			// STAR STUFF //
+			// Let the Player Transform While Carrying a Shield, if They Want
+			if (!ShieldBlocksTransformation && P_SuperReady(player))
 				return false;
+			// END THIS PLEASE //
 
 			// Force stop
 			if ((player->powers[pw_shield] & ~(SH_FORCEHP|SH_STACK)) == SH_FORCE)
@@ -9608,21 +9632,23 @@ void P_RestoreMultiMusic(player_t *player)
 //
 
 // STAR STUFF //
-const char gameoverMusic[7][7] = {
+const char gameoverMusic[9][7] = {
 	[0] = "_gover",
 	
 	"_govr1",
-	"_govrc",
+	"_govcd",
 	"_govr3",
+	"_govrr",
 	"_govrm",
 	
 	"_govrs",
-	"_govrg",
+	"_govrc",
+	"_govry"
 };
 
-const INT32 gameoverMusicTics[7] = {
+const INT32 gameoverMusicTics[9] = {
 	[1] = 15*TICRATE,
-	[6] = 6*TICRATE,
+	[7] = 6*TICRATE
 };
 // END OF THAT //
 

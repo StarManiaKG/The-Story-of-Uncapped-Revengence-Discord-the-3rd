@@ -39,14 +39,14 @@
 #include "taglist.h" // P_FindSpecialLineFromTag
 #include "lua_hook.h" // hook_cmd_running errors
 
+// STAR STUFF YAY //
+#include "STAR/star_vars.h" // jukebox stuff
+// END STAR STUFF YAY //
+
 #define NOHUD if (hud_running)\
 return luaL_error(L, "HUD rendering code should not call this function!");\
 else if (hook_cmd_running)\
 return luaL_error(L, "CMD building code should not call this function!");
-
-// STAR STUFF YAY //
-boolean StopMusicCausedByLua;
-// END STAR STUFF YAY //
 
 boolean luaL_checkboolean(lua_State *L, int narg) {
 	luaL_checktype(L, narg, LUA_TBOOLEAN);
@@ -3047,7 +3047,7 @@ static int lib_sSpeedMusic(lua_State *L)
 			return LUA_ErrInvalid(L, "player_t");
 	}
 	if ((!player || P_IsLocalPlayer(player))
-		&& (!jukeboxMusicPlaying)) // STAR NOTE: i was here lol
+		&& (!TSoURDt3rd->jukebox.musicPlaying)) // STAR NOTE: i was here lol
 
 		S_SpeedMusic(speed);
 	return 0;
@@ -3064,11 +3064,8 @@ static int lib_sStopMusic(lua_State *L)
 			return LUA_ErrInvalid(L, "player_t");
 	}
 	// STAR NOTE: i was also here lol
-	if (!player || P_IsLocalPlayer(player))
-	{
-		StopMusicCausedByLua = true;
+	if ((!player || P_IsLocalPlayer(player)) && !cv_luacanstopthejukebox.value)
 		S_StopMusic();
-	}
 	return 0;
 }
 

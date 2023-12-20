@@ -96,6 +96,13 @@ boolean I_SetSongSpeed(float speed)
         return false;
 }
 
+// STAR STUFF //
+boolean I_CanSetSongSpeed(void)
+{
+        return false;
+}
+// YOU GOTTA DO WHAT? //
+
 /// ------------------------
 //  MUSIC SEEKING
 /// ------------------------

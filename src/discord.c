@@ -560,7 +560,7 @@ static void DRPC_HandleJoinRequest(const DiscordUser *requestUser)
 	else
 	{
 		discordRequestList = newRequest;
-		M_RefreshPauseMenu();
+		M_RefreshDiscordRequestsOption();
 	}
 
 	// Made it to the end, request was valid, so play the request sound :)
@@ -717,33 +717,6 @@ static void DRPC_EmptyRequests(void)
 	Return:-
 		None
 --------------------------------------------------*/
-//////// 	  DEPENDANCIES 	 	////////
-boolean customStringTooLow;
-boolean alreadyWarned;
-
-static void DRPC_StringError(void) // Prints a Message if Your Discord RPC Strings Are Two Small (...Get It?)
-{
-	if (cv_discordrp.value && cv_discordshowonstatus.value == 8)
-	{
-		if (!discordMenuOpen && !Playing())
-			alreadyWarned = customStringTooLow = false;
-		else
-		{
-			if (!(alreadyWarned && customStringTooLow) && (strlen(cv_customdiscorddetails.string) <= 2 || strlen(cv_customdiscordstate.string) <= 2 || strlen(cv_customdiscordsmallimagetext.string) <= 2 || strlen(cv_customdiscordlargeimagetext.string) <= 2))
-				customStringTooLow = true;
-			
-			if (!alreadyWarned && customStringTooLow)
-			{
-                M_StartMessage(va("%c%s\x80\nSorry, Discord RPC requires Strings to be longer than two characters. \n\n(Press a key)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Discord RPC"),NULL,MM_NOTHING);
-				S_StartSound(NULL, sfx_skid);
-				
-				alreadyWarned = true;
-			}
-		}
-	}
-}
-
-//////// 	  MAIN 	 	////////
 void DRPC_UpdatePresence(void)
 {
 	////// 	  DECLARE VARS 	 //////
@@ -1019,18 +992,19 @@ void DRPC_UpdatePresence(void)
 
 	// Pointers
 	gamedata_t *data = serverGamedata; // Proper Gamedata Pointer, Made by Bitten
-	// STAR NOTE: come back here later
 
 	////// 	  INITIALIZE 	 //////
 	DiscordRichPresence discordPresence;
 	memset(&discordPresence, 0, sizeof(discordPresence));
 
-	////// 	  NO RICH PRESENCE ALLOWED/DEVMODE/DEDICATED MODE	 //////
-	if (!cv_discordrp.value || devmode)
+	////// 	  CONTROL BASIC RICH PRESENCE STUFFS FIRST	 //////
+	if (!cv_discordrp.value || devmode || dedicated)
 	{
 		// Since The User Doesn't Want To Show Their Status, or Since They're Using the DEVELOP Flag, This Just Shows That They're Playing SRB2. (If that's too much, then they should just disable game activity :V)
 		// However, Now it also shows a few predetermined states, based on whether you have Discord RPC off or have enabled the DEVELOP flag, thanks to Star :)
-	
+		if (dedicated)
+			return;
+
 		discordPresence.largeImageKey = (devmode ? "mapcustom" : "misctitle");
 		discordPresence.largeImageText = (devmode ? "Hey! No Peeking!" : "Sonic Robo Blast 2");
 		
@@ -1041,8 +1015,6 @@ void DRPC_UpdatePresence(void)
 		Discord_UpdatePresence(&discordPresence);
 		return;
 	}
-	else if (dedicated)
-		return;
 	
 	////////////////////////////////////////////
 	////   Main Rich Presence Status Info   ////
@@ -1078,10 +1050,10 @@ void DRPC_UpdatePresence(void)
 		if (cv_discordshowonstatus.value != 8)
 			snprintf(detailstr, 60, (Playing() ? (server ? "Hosting a %s Server" : "In a %s Server") : "Looking for a Server"), servertype);
 			
-		discordPresence.partyId = server_context; 		   // Thanks, whoever gave us Mumble support, for implementing the EXACT thing Discord wanted for this field!
-		discordPresence.partySize = D_NumPlayers(); 	   // Current Amount of Players in the Server
-		discordPresence.partyMax = discordInfo.maxPlayers; // Max Players
-		discordPresence.instance = 1;					   // Initialize Discord Net Instance, Just In Case
+		discordPresence.partyId		= server_context; 		  	// Thanks, whoever gave us Mumble support, for implementing the EXACT thing Discord wanted for this field!
+		discordPresence.partySize	= D_NumPlayers(); 	   		// Current Amount of Players in the Server
+		discordPresence.partyMax	= discordInfo.maxPlayers;	// Max Players
+		discordPresence.instance	= 1;					  	// Initialize Discord Net Instance, Just In Case
 	}
 	else
 	{
@@ -1199,7 +1171,7 @@ void DRPC_UpdatePresence(void)
 	////// 	  STATUSES - ELECTRIC BOOGALO 	 //////
 	if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 6)
 	{
-		if (((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) && Playing() && playeringame[consoleplayer]) || (paused || menuactive || jukeboxMusicPlaying))
+		if (((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) && Playing() && playeringame[consoleplayer]) || (paused || menuactive || TSoURDt3rd->jukebox.musicPlaying))
 		{
 			//// Statuses That Only Appear In-Game ////
 			if (Playing())
@@ -1251,13 +1223,13 @@ void DRPC_UpdatePresence(void)
 
 			//// Statuses That Can Appear Whenever ////
 			// Tiny States, Such as Pausing, Scrolling Through Menus, etc. //
-			if (paused || menuactive || jukeboxMusicPlaying)
+			if (paused || menuactive || TSoURDt3rd->jukebox.musicPlaying)
 			{
 				if (!cv_discordshowonstatus.value || (cv_discordshowonstatus.value == 6 && Playing()) || !Playing())
 					strcpy(stateGrammar, ", ");
 
 				snprintf(stateType, 27, (paused ? "%sCurrently Paused" : (menuactive ? "%sScrolling Through Menus" : "")), stateGrammar);
-				strlcat(stateType, (jukeboxMusicPlaying ? va("%sPlaying %s in the Jukebox", stateGrammar, jukeboxMusicName) : ""), 95);
+				strlcat(stateType, (TSoURDt3rd->jukebox.musicPlaying ? va("%sPlaying %s in the Jukebox", stateGrammar, TSoURDt3rd->jukebox.musicName) : ""), 95);
 			}
 			
 			// Copy All Of Our Strings //
@@ -1530,7 +1502,23 @@ void DRPC_UpdatePresence(void)
 	////// 	  CUSTOM STATUSES 	 //////
 	if (cv_discordshowonstatus.value == 8)
 	{
-		DRPC_StringError();
+		// Error Out if the String is Less Than Two Letters Long //
+		// MAJOR STAR TODO NOTE: please come back to this and flesh it out more lol //
+		if (strlen(cv_customdiscorddetails.string) <= 2 || strlen(cv_customdiscordstate.string) <= 2 || strlen(cv_customdiscordsmallimagetext.string) <= 2 || strlen(cv_customdiscordlargeimagetext.string) <= 2)
+		{
+			M_StartMessage(va("%c%s\x80\nSorry, Discord RPC requires Strings to be longer than two characters.\n\nResetting strings with less than two letters back to defaults. \n\n(Press a key)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Custom Discord RPC String Too Short"),NULL,MM_NOTHING);
+			S_StartSound(NULL, sfx_skid);
+
+			if (strlen(cv_customdiscorddetails.string) <= 2)
+				CV_Set(&cv_customdiscorddetails, cv_customdiscorddetails.defaultvalue);
+			if (strlen(cv_customdiscordstate.string) <= 2)
+				CV_Set(&cv_customdiscordstate, cv_customdiscordstate.defaultvalue);
+
+			if (strlen(cv_customdiscordsmallimagetext.string) <= 2)
+				CV_Set(&cv_customdiscordsmallimagetext, cv_customdiscordsmallimagetext.defaultvalue);
+			if (strlen(cv_customdiscordlargeimagetext.string) <= 2)
+				CV_Set(&cv_customdiscordlargeimagetext, cv_customdiscordlargeimagetext.defaultvalue);
+		}
 
 		// Write the Heading Strings to Discord //
 		(strlen(cv_customdiscorddetails.string) > 2 ? strcpy(detailstr, cv_customdiscorddetails.string) : 0);
@@ -1597,24 +1585,30 @@ void DRPC_UpdatePresence(void)
 --------------------------------------------------*/
 void DRPC_Shutdown(void)
 {
-	// Initialize Discord Once More
+	// Initialize Discord Once More //
 	DiscordRichPresence discordPresence;
 	memset(&discordPresence, 0, sizeof(discordPresence));
 	memset(&discordInfo, 0, sizeof(discordInfo));
-	
-	// Assign a Custom Status Because We Can
-	discordPresence.details = "Currently Closing...";
-	discordPresence.state = "Clearing SRB2 Discord Rich Presence...";
-	Discord_UpdatePresence(&discordPresence);
-	
-	// Empty Requests
+
+	// Empty Requests //
 	DRPC_EmptyRequests();
 
-	// Close Everything Down
-	I_OutputMsg("DRPC_Shutdown(): ");
+	// Assign a New Closing Status Because We Can //
+	discordPresence.details = "Currently Closing...";
+	discordPresence.state = "Clearing SRB2 Discord Rich Presence...";
+
+	Discord_UpdatePresence(&discordPresence);
+
+#ifdef DISCORD_DISABLE_IO_THREAD
+	Discord_UpdateConnection();
+#endif
+	Discord_RunCallbacks();
+
+	// Finally, Close Everything Down, and We're Done :) //
 	Discord_ClearPresence();
 	Discord_Shutdown();
-	I_OutputMsg((dedicated || devmode || !cv_discordrp.value) ? "barely started, but shut down anyways\n" : "shut down\n");
+
+	I_OutputMsg("DRPC_Shutdown(): %s\n", ((dedicated || devmode || !cv_discordrp.value) ? "barely started, but shut down anyways" : "shut down"));
 }
 
 #endif // HAVE_DISCORDRPC

@@ -1008,6 +1008,60 @@ void D_SRB2Loop(void)
 		TSoURDt3rd_FindCurrentVersion();
 #endif
 
+		// Do Jukebox Stuff //
+		// Whoa, Whoa, We Ran Out of Time (except again for keybind execution reasons)
+		static fixed_t jb_time = 0;
+
+		if (!TSoURDt3rd->jukebox.musicPlaying)
+		{
+			if (jb_time)
+				jb_time = 0;
+		}
+		else
+		{
+			if (TSoURDt3rd->jukebox.lastTrackPlayed)
+			{
+				fixed_t jb_stoppingtics = (fixed_t)(TSoURDt3rd->jukebox.lastTrackPlayed->stoppingtics) << FRACBITS;
+
+				if (jb_stoppingtics && jb_time >= jb_stoppingtics)
+				{
+					M_ResetJukebox();
+					jb_time = 0;
+
+					if (Playing())
+					{
+						// We Mess Around a Little Here
+						if (TSoURDt3rd_InAprilFoolsMode())
+							S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
+						
+						// Play the Music Regularly
+						else
+						{
+							player_t *player = &players[consoleplayer];
+							(players->powers[pw_super] ? P_PlayJingle(player, JT_SUPER) : S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0));
+						}
+					}
+				}
+				else
+				{
+					fixed_t work = 0, bpm = 0;
+					work = bpm = (S_CanSpeedMusic() ?
+									(TSoURDt3rd->jukebox.lastTrackPlayed->bpm/atof(cv_jukeboxspeed.string)) :
+									(TSoURDt3rd->jukebox.lastTrackPlayed->bpm));
+
+					work = jb_time;
+					work %= bpm;
+					if (jb_time >= (FRACUNIT << (FRACBITS - 2))) // prevent overflow jump - takes about 15 minutes of loop on the same song to reach
+						jb_time = work;
+					work = FixedDiv(work*180, bpm);
+
+					jb_time += (S_CanSpeedMusic() ?
+								(renderdeltatics*atof(cv_jukeboxspeed.string)) :
+								(renderdeltatics));
+				}
+			}
+		}
+
 		// Do Extra Stuff //
 		// Lock-on the Extra PK3
 		if (TSoURDt3rd_LoadExtras)
@@ -1100,9 +1154,9 @@ void D_StartTitle(void)
 
 	// STAR STUFF YAY //
 	// Put a New Section Here Just so It Doesn't Reset My Fun lol
-	if (!jukeboxMusicPlaying)
+	if (!TSoURDt3rd->jukebox.musicPlaying)
 		S_StopMusic();
-	else if (jukeboxMusicPlaying && paused)
+	else if (TSoURDt3rd->jukebox.musicPlaying && paused)
 		S_ResumeAudio();
 	// END THAT STUFF //
 
@@ -1162,7 +1216,11 @@ void D_StartTitle(void)
 	F_InitMenuPresValues();
 	F_StartTitleScreen();
 
-	currentMenu = &MainDef; // reset the current menu ID
+	// STAR STUFF //
+	// Helps Out With M_StartMessage Queueing Stuff (found in m_menu.c by the way)
+	if (currentMenu != &MessageDef)
+		currentMenu = &MainDef; // reset the current menu ID
+	// END THIS FOR ME PLEASE //
 
 	// Reset the palette
 	if (rendermode != render_none)
@@ -1750,7 +1808,7 @@ void D_SRB2Main(void)
 		}
 		autoloading = false;
 
-		M_UpdateJukebox();
+		S_PrepareSoundTest();
 	}
 
 	CON_StartRefresh(); // Restart the refresh!

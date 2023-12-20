@@ -179,6 +179,11 @@ boolean S_MusicExists(const char *mname, boolean checkMIDI, boolean checkDigi);
 // Set Speed of Music
 boolean S_SpeedMusic(float speed);
 
+// STAR STUFF //
+// Can we Set Speed of Music?
+boolean S_CanSpeedMusic(void);
+// BEP BEP BOOP //
+
 // Music definitions
 typedef struct musicdef_s
 {
@@ -328,8 +333,5 @@ void S_StopSoundByNum(sfxenum_t sfxnum);
 #define S_StartAttackSound S_StartSound
 #define S_StartScreamSound S_StartSound
 #endif
-
-// STAR STUFF, FOR MUSIC, YOU KNOW //
-extern boolean StopMusicCausedByLua;
 
 #endif

@@ -1902,3 +1902,64 @@ void CON_Drawer(void)
 
 	Unlock_state();
 }
+
+//// STAR STUFF YAY ////
+//
+// void STAR_CONS_Printf(star_messagetype_t starMessageType, const char *fmt, ...)
+// A function specifically dedicated towards printing out certain STAR Stuff in the Console!
+//
+// starMessageType Parameters:
+//		0/NULL				- Doesn't Add Anything Extra, Therefore Returns the Function Entirely.
+//		STAR_CONS_JUKEBOX	- "\x82TSoURDt3rd Jukebox:\x80 " + ...
+//
+void STAR_CONS_Printf(star_messagetype_t starMessageType, const char *fmt, ...)
+{
+	va_list argptr;
+	static char *txt = NULL;
+	char starTxt[256] = "";
+	boolean refresh;
+
+	if (txt == NULL)
+		txt = malloc(8192);
+
+	va_start(argptr, fmt);
+	switch (starMessageType)
+	{
+		case STAR_CONS_JUKEBOX: sprintf(starTxt, "\x82TSoURDt3rd Jukebox:\x80 "); break;
+
+		default:
+		{
+			CONS_Printf("\x82STAR_CONS_Printf:\x80 You must specify a specific message type!\n");
+			free(txt);
+
+			return;
+			break;
+		}
+	}
+	vsprintf(txt, va("%s%s", starTxt, fmt), argptr);
+	va_end(argptr);
+
+	// echo console prints to log file
+	DEBFILE(txt);
+
+	// write message in con text buffer
+	if (con_started)
+		CON_Print(txt);
+
+	CON_LogMessage(txt);
+
+	Lock_state();
+
+	// make sure new text is visible
+	con_scrollup = 0;
+	refresh = con_refresh;
+
+	Unlock_state();
+
+	// if not in display loop, force screen update
+	if (refresh)
+	{
+		CON_Drawer(); // here we display the console text
+		I_FinishUpdate(); // page flip or blit buffer
+	}
+}

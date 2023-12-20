@@ -1048,11 +1048,11 @@ void D_RegisterClientCommands(void)
 
 	CV_RegisterVar(&cv_movingplayersetup);
 
+	CV_RegisterVar(&cv_jukeboxspeed);
+
 	CV_RegisterVar(&cv_jukeboxhud);
 
 	CV_RegisterVar(&cv_luacanstopthejukebox);
-	
-	CV_RegisterVar(&cv_jukeboxspeed);
 
 	CV_RegisterVar(&cv_windowtitletype);
 	CV_RegisterVar(&cv_customwindowtitle);

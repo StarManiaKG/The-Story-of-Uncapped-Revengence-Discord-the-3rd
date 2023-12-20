@@ -95,6 +95,13 @@ boolean I_SetSongSpeed(float speed)
 	return false;
 }
 
+// STAR STUFF //
+boolean I_CanSetSongSpeed(void)
+{
+    return false;
+}
+// I GOTTA BELIEVE! //
+
 /// ------------------------
 //  MUSIC SEEKING
 /// ------------------------
