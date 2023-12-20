@@ -1362,19 +1362,15 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 
 	scalemul = FixedMul(FRACUNIT - floordiff/640, scale);
 
-	// STAR STUFF //
-	//patch = W_CachePatchName("DSHADOW", PU_SPRITE);
-	patch = (cv_shadow.value == 2 ? (vis->patch) : (W_CachePatchName("DSHADOW", PU_SPRITE))); // STAR NOTE: i was here lol
-	// END THAT //
+	patch = (cv_shadow.value == 2 ? vis->patch : W_CachePatchName("DSHADOW", PU_SPRITE)); // STAR NOTE: i was here lol
 
 	xscale = FixedDiv(projection, tz);
 	yscale = FixedDiv(projectiony, tz);
 	shadowxscale = FixedMul(interp.radius*2, scalemul);
 	shadowyscale = FixedMul(FixedMul(interp.radius*2, scalemul*2), FixedDiv(abs(groundz - viewz), tz));
-	if (cv_shadow.value == 1)
-		shadowyscale = min(shadowyscale, shadowxscale) / patch->height;
-	else
-		shadowyscale /= patch->height;
+	// STAR STUFF //
+	shadowyscale = (cv_shadow.value == 2 ? patch->height : (min(shadowyscale, shadowxscale) / patch->height));
+	// END THIS //
 	shadowxscale /= patch->width;
 	shadowskew = 0;
 
@@ -1406,7 +1402,7 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	shadow->gy = interp.y;
 	shadow->gzt = (isflipped ? shadow->pzt : shadow->pz) + patch->height * shadowyscale / 2;
 	shadow->gz = shadow->gzt - patch->height * shadowyscale;
-	shadow->texturemid = FixedMul(interp.scale, FixedDiv(shadow->gzt - viewz, shadowyscale * (cv_shadow.value == 2 ? 1.15 : 1)));
+	shadow->texturemid = FixedMul(interp.scale, FixedDiv(shadow->gzt - viewz, shadowyscale * (cv_shadow.value == 2 ? 1.15 : 1))); // STAR NOTE: i was also here lol
 	if (thing->skin && ((skin_t *)thing->skin)->flags & SF_HIRES)
 		shadow->texturemid = FixedMul(shadow->texturemid, ((skin_t *)thing->skin)->highresscale);
 	shadow->scalestep = 0;

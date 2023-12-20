@@ -2692,60 +2692,67 @@ static boolean ST_doItemFinderIconsAndSound(void)
 // void ST_drawJukebox(void);
 // Draws Jukebox Text On The Screen/HUD
 //
-boolean initJukeboxHUD;				// Initializes the Processes Below
+INT32 boxw;							// Slides our Filed Box
+INT32 strw; 						// Slides our Header Text
+INT32 tstrw; 						// Slides our Track Text
+INT32 sstrw;						// Slides our Side Jukebox HUD Text
 
-INT32 boxw; 						// Slides our Filed Box to Width 245
-INT32 strw; 						// Slides our Regular String to Width 230
-INT32 tstrw; 						// Slides our Thin String to Width 195
-
-INT32 slidetime;					// The Time it Will Take to Slide Those Properties Over
+INT32 jukeboxw;						// Stores the String Width of the Current Jukebox Track
 
 void ST_drawJukebox(void)
 {
-	if (cv_jukeboxhud.value && jukeboxMusicPlaying)
+	// Hide the Jukebox HUD if Circumstances Have Been Met //
+	if (!cv_jukeboxhud.value || !TSoURDt3rd->jukebox.musicPlaying)
 	{
-		// Run Variables First //
-		if (initJukeboxHUD)
-		{		
-			if (slidetime > 0)
-			{
-				boxw -= 5;
-				strw -= 5;
-				tstrw -= 5;
-			
-				slidetime -= 1;
-			}
-			else
-				initJukeboxHUD = false;
-		}
+		boxw = 320; strw = 335; tstrw = 320; sstrw = 360;
+		jukeboxw = 0;
 
-		// Apply Variables and Render Things //
-		// The Box
-		V_DrawFillConsoleMap(
-			((BASEVIDWIDTH/5)+(boxw-(strlen(jukeboxMusicName) < 18 ? 4 : strlen(va("PLAYING: %s", jukeboxMusicName))+27))), 		// X Width
-			(45),																					  	   							// Y Height
-			(130+(strlen(jukeboxMusicName) < 18 ? 0 : strlen(va("PLAYING: %s", jukeboxMusicName))+27)),					  			// Box Width
-			(25),																					  	  							// Box Height
-			(V_SNAPTORIGHT|V_HUDTRANSHALF));																						// Box Flags
-		
-		// The Strings
-		V_DrawString(
-			(((BASEVIDWIDTH/4)+20)+(strw-(strlen(jukeboxMusicName) < 18 ? 4 : strlen(va("PLAYING: %s", jukeboxMusicName))-14))), 	// String Width
-			(45),																						   	    					// String Height
-			(V_SNAPTORIGHT|V_ALLOWLOWERCASE), 															   	   						// String Flags
-			("JUKEBOX"));																				        					// String
-		
-		V_DrawThinString(
-			(((((BASEVIDWIDTH/5)+1)+tstrw)-(strlen(jukeboxMusicName) < 18 ? 4 : strlen(va("PLAYING: %s", jukeboxMusicName))+27))), 	// String Width
-			(60),																						   	    				   	// String Height
-			(V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP), 																			// String Flags and Color
-			(va("PLAYING: %s", jukeboxMusicName)));																					// String
+		return;
 	}
 
-	if (!cv_jukeboxhud.value || !jukeboxMusicPlaying)
+	// Initialize the Jukebox HUD //
+	while (TSoURDt3rd->jukebox.initHUD)
+	{		
+		while (boxw > 21) boxw -= 5;
+		while (strw > 36) strw -= 5;
+		while (tstrw > 21) tstrw -= 5;
+		while (sstrw > 61) sstrw -= 5;
+
+		jukeboxw = V_ThinStringWidth(va("PLAYING: %s", TSoURDt3rd->jukebox.musicName), V_SNAPTORIGHT|V_ALLOWLOWERCASE);
+		TSoURDt3rd->jukebox.initHUD = false;
+	}
+
+	// Apply Variables and Render Things //
+	// The Box
+	V_DrawFillConsoleMap(BASEVIDWIDTH-(boxw+jukeboxw), (45),
+		(130+jukeboxw),
+		(cv_jukeboxhud.value == 1 ? 25 : 55),
+		(V_SNAPTORIGHT|V_HUDTRANSHALF));
+
+	// Header Text
+	V_DrawString(BASEVIDWIDTH-(strw+(jukeboxw/2)), (45),
+		(V_SNAPTORIGHT|menuColor[cv_menucolor.value]),
+		("JUKEBOX"));
+
+	// Track Title
+	V_DrawThinString(BASEVIDWIDTH-(tstrw+jukeboxw-(cv_jukeboxhud.value == 1 ? 10 : 0)), (60),
+		(V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP),
+		(va("PLAYING: %s", TSoURDt3rd->jukebox.musicName)));
+
+	// Render Some Extra Things, and We're Done :) //
+	if (cv_jukeboxhud.value == 2)
 	{
-		boxw = strw = tstrw = 300;
-		slidetime = (1*TICRATE-2);
+		// Track
+		V_DrawThinString(BASEVIDWIDTH-sstrw, (80),
+			(V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP),
+			(va("TRACK: %s", TSoURDt3rd->jukebox.musicTrack)));
+
+		// Track Speed
+		V_DrawThinString(BASEVIDWIDTH-sstrw, (90),
+			(V_SNAPTORIGHT|V_YELLOWMAP),
+			(atof(cv_jukeboxspeed.string) < 10.0f ?
+				(va("SPEED: %.3s", cv_jukeboxspeed.string)) :
+				(va("SPEED: %.4s", cv_jukeboxspeed.string))));
 	}
 }
 
@@ -2771,9 +2778,10 @@ void ST_drawEggs(void)
 		|| (!AllowEasterEggHunt)						// Hooray for Consent
 		
 		|| (F_GetPromptHideHud(hudinfo[HUD_RINGS].y)))	// If Rings are Hidden, So Are the Eggs
+
 		return;
 
-	//// NOW WE RENDER! ////
+	//// NOW WE RENDER, AND WE'RE DONE! :) ////
 	// Draw the Patches and Strings //
 	if (numMapEggs && (collectedmapeggs != numMapEggs))
 	{	
@@ -2793,14 +2801,15 @@ void ST_drawEggs(void)
 	}
 
 	// Draw the Egg Notifier //
-	else if (currenteggs == TOTALEGGS)
-		V_DrawCenteredThinString(16, 64, V_GREENMAP|((stplyr->spectator) ? V_HUDTRANSHALF : V_HUDTRANS), "All Eggs Have Been Found!");
-	else if (numMapEggs && (collectedmapeggs == numMapEggs))
-		V_DrawCenteredThinString(16, 64, V_GREENMAP|((stplyr->spectator) ? V_HUDTRANSHALF : V_HUDTRANS), "All Eggs in this Map Have Been Found!");
 	else
-		V_DrawCenteredThinString(16, 64, V_REDMAP|((stplyr->spectator) ? V_HUDTRANSHALF : V_HUDTRANS), "There Are No Eggs in This Map!");
+		V_DrawCenteredThinString(16, 64,
+			((((currenteggs == TOTALEGGS) || (numMapEggs && (collectedmapeggs == numMapEggs))) ? (V_GREENMAP) : (V_REDMAP))|((stplyr->spectator) ? V_HUDTRANSHALF : V_HUDTRANS)),
+			((currenteggs == TOTALEGGS) ? ("All Eggs Have Been Found!") : ((numMapEggs && (collectedmapeggs == numMapEggs)) ? ("All Eggs in this Map Have Been Found!") : ("There Are No Eggs in This Map!"))));
 }
-// END OF STAR SECTION //
+
+//									//
+// 		END OF THE STAR SECTION 	//
+//									//
 
 //
 // Draw the status bar overlay, customisable: the user chooses which

@@ -15,6 +15,7 @@
 #endif
 
 #include <time.h>
+#include <signal.h>
 
 #include "star_vars.h" 		// star variables
 
@@ -55,6 +56,8 @@
 // STRUCTS //
 TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[0];
 TSoURDt3rd_t TSoURDt3rdPlayers[MAXPLAYERS];
+
+star_gamekey_t STAR_GameKeyDown[3][NUM_GAMECONTROLS];
 
 // VARIABLES //
 #ifdef HAVE_CURL
@@ -179,6 +182,8 @@ void TSoURDt3rd_CheckTime(void)
 	{
 		CONS_Printf("TSoURDt3rd_CheckTime(): April Fools Mode Enabled!\n");
 		TSoURDt3rd_LoadExtras = true;
+
+		STAR_StoreDefaultMenuStrings();
 	}
 
 	// Easter
@@ -254,6 +259,12 @@ void TSoURDt3rd_InitializeStructures(void)
 	TSoURDt3rd->serverPlayers.subVersion				= TSoURDt3rd_CurrentSubversion();
 
 	TSoURDt3rd->serverPlayers.serverTSoURDt3rdVersion	= TSoURDt3rd_CurrentVersion();
+
+	// Jukebox Stuff
+	TSoURDt3rd->jukebox.Unlocked 						= false;
+	TSoURDt3rd->jukebox.lastTrackPlayed					= NULL;
+
+	M_ResetJukebox();
 }
 
 //
@@ -273,7 +284,7 @@ void TSoURDt3rd_ReinitializeServerStructures(void)
 }
 
 //
-// void STAR_LoadingScreen(boolean opengl)
+// void STAR_LoadingScreen(void)
 // Displays a Loading Screen
 //
 size_t ls_count = 0;
@@ -281,14 +292,15 @@ UINT8 ls_percent = 0;
 
 INT32 STAR_loadingscreentouse = 0;
 
-void STAR_LoadingScreen(boolean opengl)
+void STAR_LoadingScreen(void)
 {
+	// Make Variables //
 	char s[16];
 	INT32 x, y;
 
 	static const char *gstartuplumpnumtype[] = {
 		[2] = "SRB2BACK",	// SRB2 Titlecard Background
-		"DEFLTFLR",
+		"DFTL",
 		
 		"GFZL",
 		"THZL",
@@ -313,17 +325,20 @@ void STAR_LoadingScreen(boolean opengl)
 		NULL
 	};
 
+	// Set Parameters and Run Some Functions //
 	I_OsPolling();
 	//CON_Drawer(); // console shouldn't appear while in a loading screen, honestly
 
-	if (opengl)
+	if (rendermode == render_opengl)
 		sprintf(s, "%d%%", (++ls_percent)<<1);
 	x = BASEVIDWIDTH/2;
 	y = BASEVIDHEIGHT/2;
 	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31); // Black background to match fade in effect
+
+	// Set Our Loading Screen //
 	if (cv_loadingscreenimage.value)
 	{
-		// Dynamic //
+		// Dynamic
 		if (cv_loadingscreenimage.value == 1)
 		{
 			// In-Game
@@ -341,116 +356,60 @@ void STAR_LoadingScreen(boolean opengl)
 						// GFZ
 						case 1:
 						case 2:
-						case 3:
-						{
-							STAR_loadingscreentouse = 4;
-							break;
-						}
+						case 3: STAR_loadingscreentouse = 4; break;
 						
 						// THZ
 						case 4:
 						case 5:
-						case 6:
-						{
-							STAR_loadingscreentouse = 5;
-							break;
-						}
+						case 6: STAR_loadingscreentouse = 5; break;
 			
 						// DSZ
 						case 7:
 						case 8:
-						case 9:
-						{
-							STAR_loadingscreentouse = 6;
-							break;
-						}
+						case 9: STAR_loadingscreentouse = 6; break;
 
 						// CEZ
 						case 10:
 						case 11:
-						case 12:
-						{
-							STAR_loadingscreentouse = 7;
-							break;
-						}
+						case 12: STAR_loadingscreentouse = 7; break;
 
 						// ACZ
 						case 13:
 						case 14:
-						case 15:
-						{
-							STAR_loadingscreentouse = 8;
-							break;
-						}
+						case 15: STAR_loadingscreentouse = 8; break;
 
 						// RVZ
-						case 16:
-						{
-							STAR_loadingscreentouse = 9;
-							break;
-						}
+						case 16: STAR_loadingscreentouse = 9; break;
 
 						// ERZ
 						case 22:
-						case 23:
-						{
-							STAR_loadingscreentouse = 10;
-							break;
-						}
+						case 23: STAR_loadingscreentouse = 10; break;
 
 						// BCZ
 						case 25:
 						case 26:
-						case 27:
-						{
-							STAR_loadingscreentouse = 11;
-							break;
-						}
+						case 27: STAR_loadingscreentouse = 11; break;
 
 						// FHZ
-						case 30:
-						{
-							STAR_loadingscreentouse = 12;
-							break;
-						}
+						case 30: STAR_loadingscreentouse = 12; break;
 
 						// PTZ
-						case 31:
-						{
-							STAR_loadingscreentouse = 13;
-							break;
-						}
+						case 31: STAR_loadingscreentouse = 13; break;
 
 						// FFZ
-						case 32:
-							STAR_loadingscreentouse = 14;
-							break;
+						case 32: STAR_loadingscreentouse = 14; break;
 			
 						// TLZ
-						case 33:
-							STAR_loadingscreentouse = 15;
-							break;
+						case 33: STAR_loadingscreentouse = 15; break;
 
 						// HHZ
-						case 40:
-						{
-							STAR_loadingscreentouse = 16;
-							break;
-						}
+						case 40: STAR_loadingscreentouse = 16; break;
 
 						// AGZ
-						case 41:
-						{
-							STAR_loadingscreentouse = 17;
-							break;
-						}
+						case 41: STAR_loadingscreentouse = 17; break;
 
 						// ATZ
-						case 42:
-						{
-							STAR_loadingscreentouse = 18;
-							break;
-						}
+						case 42: STAR_loadingscreentouse = 18; break;
 
 						// All Special Stages
 						case 50:
@@ -472,18 +431,10 @@ void STAR_LoadingScreen(boolean opengl)
 						case 70:
 						case 71:
 						case 72:
-						case 73:
-						{
-							STAR_loadingscreentouse = 19;
-							break;
-						}
+						case 73: STAR_loadingscreentouse = 19; break;
 
 						// BHZ
-						case 57:
-						{
-							STAR_loadingscreentouse = 20;
-							break;
-						}
+						case 57: STAR_loadingscreentouse = 20; break;
 
 						// CTF, Match, and Custom Maps
 						case 280:
@@ -509,11 +460,7 @@ void STAR_LoadingScreen(boolean opengl)
 						case 542:
 						case 543:
 
-						default:
-						{
-							STAR_loadingscreentouse = 3;
-							break;
-						}
+						default: STAR_loadingscreentouse = 3; break;
 					}
 				}
 			}
@@ -523,19 +470,20 @@ void STAR_LoadingScreen(boolean opengl)
 				STAR_loadingscreentouse = 2;
 		}
 
-		// Random //
+		// Random
 		else if (cv_loadingscreenimage.value == 21 && !STAR_loadingscreentouse)
 			STAR_loadingscreentouse = M_RandomRange(2, 20);
 
-		// Apply the Image, and We're Good :) //
+		// Finally, Apply the Image, and We're Good Here :) //
 		V_DrawPatchFill(W_CachePatchName(
 			((cv_loadingscreenimage.value == 1 || cv_loadingscreenimage.value == 21) ? gstartuplumpnumtype[STAR_loadingscreentouse] : gstartuplumpnumtype[cv_loadingscreenimage.value]),
 			(PU_CACHE)));
 	}
 
+	// Run Some Other Necessary Functions Here, and We're Done :) //
 	M_DrawTextBox(x-58, y-8, 13, 1);
-	V_DrawString((opengl ? (x-50) : x), y, menuColor[cv_menucolor.value], "Loading...");
-	if (opengl)
+	V_DrawString(((rendermode == render_opengl) ? (x-50) : x), y, menuColor[cv_menucolor.value], "Loading...");
+	if (rendermode == render_opengl)
 		V_DrawRightAlignedString(x+50, y, menuColor[cv_menucolor.value], s);
 
 	I_UpdateNoVsync();
@@ -580,389 +528,217 @@ const char *STAR_SetWindowTitle(void)
 			// Map Specific
 			if (Playing())
 			{
-				// Modified-Game Titles
-				if (autoloaded || savemoddata || modifiedgame)
+				// General Game Titles
+				if ((autoloaded || savemoddata || modifiedgame)
+					|| (gamemap == titlemap)
+					|| (players[consoleplayer].powers[pw_super])
+					|| (tutorialmode))
+
+					goto generalgametitles;
+
+				// Level Titles
+				switch (gamemap)
 				{
-					// Player is on The Titlemap
-					if (gamemap == titlemap)
-						dynamictitle = "What is Wrong With You. -";
-		
-					// Super Character Window Title
-					else if (players[consoleplayer].powers[pw_super])
+					// GFZ
+					case 1: case 2: dynamictitle = (cv_memesonwindowtitle.value ? "Where ARE the Green Flowers in" : "The Green Beginning -"); break;
+
+					// THZ
+					case 4:
+					case 5:
 					{
 						if (cv_memesonwindowtitle.value)
-							dynamictitle = "Playing as Goku in";
+						{
+							if (randomTitleTable[1][0] == '\0')
+							{
+								switch (M_RandomRange(0, 1))
+								{
+									case 1: strcpy(randomTitleTable[1], "Industrial Society and its Future -"); break;
+									default: strcpy(randomTitleTable[1], "Climate Change -"); break;
+								}
+							}
+
+							dynamictitle = randomTitleTable[1];
+						}
 						else
-							dynamictitle = "Going Super in";
+							dynamictitle = "So Much Advanced Technology in";
+
+						break;
 					}
 
-					// Player is Learning How to Play SRB2
-					else if (tutorialmode)
-						dynamictitle = "Learning How to Play";
+					// DSZ
+					case 7: case 8: dynamictitle = ((fastncmp(skins[players[consoleplayer].skin].name, "sonic", 5)) ? ("Ugh, I Hate Water in") : ("Swimming Around in")); break;
 
-					// Player is on a Custom Map
-					else
-						dynamictitle = va("%s Through %s %s -", (cv_memesonwindowtitle.value ? "D_RUNNIN" : "Running"), mapheaderinfo[gamemap-1]->lvlttl, ((mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE) ? "" : "Zone"));
-				}
+					// CEZ
+					case 10: case 11: dynamictitle = (cv_memesonwindowtitle.value ? "How Did Eggman Manage to Build This Castle so Fast in" : "Such a Large Castle in"); break;
 
-				// Vanilla/Unmodified-Game Titles
-				else
-				{
-					switch (gamemap)
+					// ACZ
+					case 13: case 14: dynamictitle = (cv_memesonwindowtitle.value ? "Playing Through Grand Canyon Zone in" : "Why is There So Much TNT in"); break;
+
+					// Fang
+					case 15: dynamictitle = (cv_memesonwindowtitle.value ? "There is a Jerboa With a Popgun in" : "We're on a Train in"); break;
+
+					// RVZ
+					case 16: dynamictitle = (cv_memesonwindowtitle.value ? "Where is the Blue Volcano in" : "Too Much Lava in"); break;
+
+					// ERZ
+					case 22: case 23: dynamictitle = (cv_memesonwindowtitle.value ? "Robotnik has Too Many Rocks in" : "Be Careful Not to Fall Into Space in"); break;
+
+					// Metal Sonic
+					case 25: case 26: dynamictitle = (cv_memesonwindowtitle.value ? "STRRANGE, ISN'T IT? -" : "Beating a Doppelgänger Hedgehog Robot in"); break;
+
+					// Bosses
+					case 3: case 6: case 9: case 12: dynamictitle = (cv_memesonwindowtitle.value ? "He is the Eggman, With the Master Plan -" : "Fighting a Giant Talking Egg in"); break;
+
+					// Black Eggman (Yes, Technically Brak's Name is Black Eggman)
+					case 27: dynamictitle = (cv_memesonwindowtitle.value ? "No Way Guys, the Cyberdemon is in" : "Fighting the Final Boss in"); break;
+
+					// FHZ
+					case 30: dynamictitle = (cv_memesonwindowtitle.value ? "Use the 'Destroy All Enemies' Cheat in" : "Be Careful Not to Slip in"); break;
+
+					// PTZ
+					case 31:
 					{
-						// GFZ
-						case 1:
-						case 2:
+						if (cv_memesonwindowtitle.value)
 						{
-							dynamictitle = (cv_memesonwindowtitle.value ? "Where ARE the Green Flowers in" : "The Green Beginning -");
-							break;
-						}
-						
-						// THZ
-						case 4:
-						case 5:
-						{
-							if (cv_memesonwindowtitle.value)
+							if (randomTitleTable[2][0] == '\0')
 							{
-								if (randomTitleTable[1][0] == '\0')
+								switch (M_RandomRange(0, 1))
 								{
-									switch (M_RandomRange(0, 1))
-									{
-										case 1:
-											strcpy(randomTitleTable[1], "Industrial Society and its Future -");
-											break;
-										default:
-											strcpy(randomTitleTable[1], "Climate Change -");
-											break;
-									}
+									case 1: strcpy(randomTitleTable[2], "The Princess is in Another Tower in"); break;
+									default: strcpy(randomTitleTable[2], "Super Mario in Real Life -"); break;
 								}
-				
-								dynamictitle = randomTitleTable[1];
-							}
-							else
-								dynamictitle = "So Much Advanced Technology in";
-							break;
-						}
-			
-						// DSZ
-						case 7:
-						case 8:
-						{
-							if (fastncmp(skins[players[consoleplayer].skin].name, "sonic", 5))
-								dynamictitle = "Ugh, I Hate Water in";
-							else
-								dynamictitle = "Swimming Around in";
-							break;
-						}
-
-						// CEZ
-						case 10:
-						case 11:
-						{
-							dynamictitle = (cv_memesonwindowtitle.value ? "How Did Eggman Manage to Build This Castle so Fast in" : "Such a Large Castle in");
-							break;
-						}
-
-						// ACZ
-						case 13:
-						case 14:
-						{
-							dynamictitle = (cv_memesonwindowtitle.value ? "Playing Through Grand Canyon Zone in" : "Why is There So Much TNT in");
-							break;
-						}
-
-						// Fang
-						case 15:
-						{
-							dynamictitle = (cv_memesonwindowtitle.value ? "There is a Jerboa With a Popgun in" : "We're on a Train in");
-							break;
-						}
-
-						// RVZ
-						case 16:
-						{
-							dynamictitle = (cv_memesonwindowtitle.value ? "Where is the Blue Volcano in" : "Too Much Lava in");
-							break;
-						}
-
-						// ERZ
-						case 22:
-						case 23:
-						{
-							dynamictitle = (cv_memesonwindowtitle.value ? "Robotnik has Too Many Rocks in" : "Be Careful Not to Fall Into Space in");
-							break;
-						}
-
-						// Metal Sonic
-						case 25:
-						case 26:
-						{
-							dynamictitle = (cv_memesonwindowtitle.value ? "STRRANGE, ISN'T IT? -" : "Beating a Doppelgänger Hedgehog Robot in");
-							break;
-						}
-
-						// Bosses
-						case 3:
-						case 6:
-						case 9:
-						case 12:
-						{
-							dynamictitle = (cv_memesonwindowtitle.value ? "He is the EggMan, With the Master Plan -" : "Fighting a Giant Talking Egg in");
-							break;
-						}
-
-						// Black Eggman (Yes, Technically Brak's Name is Black Eggman)
-						case 27:
-						{
-							dynamictitle = (cv_memesonwindowtitle.value ? "No Way Guys, the Cyberdemon is in" : "Fighting the Final Boss in");
-							break;
-						}
-
-						// FHZ
-						case 30:
-						{
-							dynamictitle = (cv_memesonwindowtitle.value ? "Use the 'Destroy All Enemies' Cheat in" : "Be Careful Not to Slip in");
-							break;
-						}
-
-						// PTZ
-						case 31:
-						{
-							if (cv_memesonwindowtitle.value)
-							{
-								if (randomTitleTable[2][0] == '\0')
-								{
-									switch (M_RandomRange(0, 1))
-									{
-										case 1:
-											strcpy(randomTitleTable[2], "The Princess is in Another Tower in");
-											break;
-										default:
-											strcpy(randomTitleTable[2], "Super Mario in Real Life -");
-											break;
-									}
-								}
-
-								dynamictitle = randomTitleTable[2];
-							}
-							else
-								dynamictitle = "We're in Another Dimension in";
-							break;
-						}
-
-						// FFZ
-						case 32:
-						{
-							dynamictitle = "There's an In-Construction Castle in";
-							break;
-						}
-			
-						// TLZ
-						case 33:
-						{
-							dynamictitle = "So Much Prehistoric Technology in";
-							break;
-						}
-
-						// HHZ
-						case 40:
-						{
-							dynamictitle = (cv_memesonwindowtitle.value ? "No Way Guys, Cacodemons Are Also in" : "The Final Boss in");
-							break;
-						}
-
-						// AGZ
-						case 41:
-						{
-							if (cv_memesonwindowtitle.value)
-							{
-								if (randomTitleTable[3][0] == '\0')
-								{
-									switch (M_RandomRange(0, 1))
-									{
-										case 1:
-											strcpy(randomTitleTable[3], "According to all known laws of aviation, there is no way a bee should be able to fly. Its wings are too small to get its fat little body off the ground. The bee, of course, flies anyway, because bees don't care what humans think is impossible. -");
-											break;
-										default:
-											strcpy(randomTitleTable[3], "Welcome to the Bee Zone. -");
-											break;
-									}
-								}
-
-								dynamictitle = randomTitleTable[3];
-							}
-							else
-								dynamictitle = "There are So Many Bees in";
-							break;
-						}
-
-						// ATZ
-						case 42:
-							dynamictitle = "The Zone Everyone Hates. -";
-							break;
-
-						// Special Stages
-						case 50:
-						case 51:
-						case 52:
-						case 54:
-						case 55:
-						case 56:
-			
-						case 60:
-						case 61:
-						case 62:
-						case 64:
-						case 65:
-						case 66:
-						{
-							dynamictitle = "Trying to Get All Those Chaos Emeralds in";
-							break;
-						}
-
-						// Special Stage 4
-						case 53:
-						case 63:
-						{
-							dynamictitle = (cv_memesonwindowtitle.value ? "Trying to Get That DAMN FOURTH Chaos Emerald in" : "Trying to Get All Those Chaos Emeralds in");
-							break;
-						}
-
-						// BHZ
-						case 57:
-							dynamictitle = "The True Final Boss in";
-							break;
-		
-						// The Extra Special Stages
-						case 70:
-						case 71:
-						case 72:
-						case 73:
-						{
-							dynamictitle = (cv_memesonwindowtitle.value ? "Playing the Extra Special Stages For no Reason in" : "Playing the Extra Special Stages in");
-							break;
-						}
-
-						// CTF Maps
-						case 280:
-						case 281:
-						case 282:
-						case 283:
-						case 284:
-						case 285:
-						case 286:
-						case 287:
-						case 288:
-						{
-							dynamictitle = (cv_memesonwindowtitle.value ? "Playing Zandronum in" : "Capturing Flags in");
-							break;
-						}
-
-						// Match Maps
-						case 532:
-						case 533:
-						case 534:
-						case 535:
-						case 536:
-						case 537:
-						case 538:
-						case 539:
-						case 540:
-						case 541:
-						case 542:
-						case 543:
-						{
-							if (cv_memesonwindowtitle.value)
-							{
-								if (randomTitleTable[4][0] == '\0')
-								{
-									switch (M_RandomRange(0, 1))
-									{
-										case 1:
-											strcpy(randomTitleTable[4], "Playing Zandronum in");
-											break;
-										default:
-											strcpy(randomTitleTable[4], "Ringslinger Will be Removed in the Next 5 Minutes -");
-											break;
-									}
-								}
-
-								dynamictitle = randomTitleTable[4];
-							}
-							else
-								dynamictitle = "Capturing Flags in";
-							break;
-						}
-
-						default:
-						{
-							// Player is on The Titlemap
-							if (gamemap == titlemap)
-							{
-								dynamictitle = "What is Wrong With You -";
-								break;
 							}
 
-							// Super Character Window Title
-							else if (players[consoleplayer].powers[pw_super])
-							{
-								dynamictitle = (cv_memesonwindowtitle.value ? "Playing as Goku in" : "Got All Those Chaos Emeralds in");
-								break;
-							}
-
-							// Player is Learning How to Play SRB2
-							else if (tutorialmode)
-							{
-								dynamictitle = "Learning How to Play";
-								break;
-							}
-
-							// Player is on a Custom Map
-							else
-							{
-                                dynamictitle = va("%s Through %s %s -", (cv_memesonwindowtitle.value ? "D_RUNNIN" : "Running"), mapheaderinfo[gamemap-1]->lvlttl, ((mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE) ? "" : "Zone"));
-								break;
-							}
+							dynamictitle = randomTitleTable[2];
 						}
+						else
+							dynamictitle = "We're in Another Dimension in";
+
+						break;
 					}
+
+					// FFZ
+					case 32: dynamictitle = "There's an In-Construction Castle in"; break;
+
+					// TLZ
+					case 33: dynamictitle = "So Much Prehistoric Technology in"; break;
+
+					// HHZ
+					case 40: dynamictitle = (cv_memesonwindowtitle.value ? "No Way Guys, Cacodemons Are Also in" : "The Final Boss in"); break;
+
+					// AGZ
+					case 41:
+					{
+						if (cv_memesonwindowtitle.value)
+						{
+							if (randomTitleTable[3][0] == '\0')
+							{
+								switch (M_RandomRange(0, 1))
+								{
+									case 1: strcpy(randomTitleTable[3], "According to all known laws of aviation, there is no way a bee should be able to fly. Its wings are too small to get its fat little body off the ground. The bee, of course, flies anyway, because bees don't care what humans think is impossible. -"); break;
+									default: strcpy(randomTitleTable[3], "Welcome to the Bee Zone. -"); break;
+								}
+							}
+
+							dynamictitle = randomTitleTable[3];
+						}
+						else
+							dynamictitle = "There are So Many Bees in";
+
+						break;
+					}
+
+					// ATZ
+					case 42: dynamictitle = "The Zone Everyone Hates. -"; break;
+
+					// Special Stages
+					case 50:
+					case 51:
+					case 52:
+					case 54:
+					case 55:
+					case 56:
+
+					case 60:
+					case 61:
+					case 62:
+					case 64:
+					case 65:
+					case 66: dynamictitle = "Trying to Get All Those Chaos Emeralds in"; break;
+
+					// Special Stage 4
+					case 53: case 63: dynamictitle = (cv_memesonwindowtitle.value ? "Trying to Get That DAMN FOURTH Chaos Emerald in" : "Trying to Get All Those Chaos Emeralds in"); break;
+
+					// BHZ
+					case 57: dynamictitle = "The True Final Boss in"; break;
+
+					// The Extra Special Stages
+					case 70:
+					case 71:
+					case 72:
+					case 73: dynamictitle = (cv_memesonwindowtitle.value ? "Playing the Extra Special Stages For no Reason in" : "Playing the Extra Special Stages in"); break;
+
+					// CTF Maps
+					case 280:
+					case 281:
+					case 282:
+					case 283:
+					case 284:
+					case 285:
+					case 286:
+					case 287:
+					case 288: dynamictitle = (cv_memesonwindowtitle.value ? "Playing Zandronum in" : "Capturing Flags in"); break;
+
+					// Match Maps
+					case 532:
+					case 533:
+					case 534:
+					case 535:
+					case 536:
+					case 537:
+					case 538:
+					case 539:
+					case 540:
+					case 541:
+					case 542:
+					case 543:
+					{
+						if (cv_memesonwindowtitle.value)
+						{
+							if (randomTitleTable[4][0] == '\0')
+							{
+								switch (M_RandomRange(0, 1))
+								{
+									case 1: strcpy(randomTitleTable[4], "Playing Zandronum in"); break;
+									default: strcpy(randomTitleTable[4], "Ringslinger Will be Removed in the Next 5 Minutes -"); break;
+								}
+							}
+
+							dynamictitle = randomTitleTable[4];
+						}
+						else
+							dynamictitle = "Capturing Flags in";
+
+						break;
+					}
+
+					// Maps That Aren't Specified Here
+					default: goto generalgametitles; break;
 				}
 			}
 
 			// Gamestate Specific
 			switch (gamestate)
 			{
-				case GS_INTRO:
-					dynamictitle = "Introduction -";
-					break;
-	
-				case GS_CUTSCENE:
-					dynamictitle = "Watching a Cutscene in";
-					break;
-
-				case GS_CONTINUING:
-					dynamictitle = "Continue? -";
-					break;
-
-				case GS_INTERMISSION:
-				{
-					if (cv_memesonwindowtitle.value)
-						dynamictitle = "End of Chapter! -";
-					else
-						dynamictitle = "You Got Pass the Act! -";
-					break;
-				}
+				case GS_INTRO: dynamictitle = "Introduction -"; break;
+				case GS_CUTSCENE: dynamictitle = "Watching a Cutscene in"; break;
+				case GS_CONTINUING: dynamictitle = "Continue? -"; break;
+				case GS_INTERMISSION: dynamictitle = (cv_memesonwindowtitle.value ? "End of Chapter! -" : (!mapheaderinfo[gamemap-1]->actnum ? "You Got Pass the Act! -" : va("You Got Pass Act %d! -", mapheaderinfo[gamemap-1]->actnum))); break;
 
 				case GS_CREDITS:
 				case GS_ENDING:
 				case GS_EVALUATION:
-				case GS_GAMEEND:
-				{
-					if (cv_memesonwindowtitle.value)
-						dynamictitle = "Did You Get All Those Chaos Emeralds? -";
-					else
-						dynamictitle = "The End. -";
-					break;
-				}
+				case GS_GAMEEND: dynamictitle = (cv_memesonwindowtitle.value ? "Did You Get All Those Chaos Emeralds? -" : "The End. -"); break;
 
 				default:
 				{
@@ -971,7 +747,7 @@ const char *STAR_SetWindowTitle(void)
 						STAR_RenameWindow("SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING);
 						return ("SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING);
 					}
-		
+
 					break;
 				}
 			}
@@ -991,8 +767,272 @@ const char *STAR_SetWindowTitle(void)
 	// Set the Window Title, Return it, and We're Done :) //
 	STAR_RenameWindow(windowtitle);
 	return windowtitle;
+
+generalgametitles:
+	// Did we Get Sent Here by a Goto? Let's Check Some Things First Then. //
+	// Player is on The Titlemap
+	if (gamemap == titlemap)
+		dynamictitle = "What is Wrong With You -";
+
+	// Super Character Window Title
+	else if (players[consoleplayer].powers[pw_super])
+		dynamictitle = (cv_memesonwindowtitle.value ? "Playing as Goku in" : "Got All Those Chaos Emeralds in");
+
+	// Player is Learning How to Play SRB2
+	else if (tutorialmode)
+		dynamictitle = "Learning How to Play";
+
+	// Player is on a Custom Map
+	else
+		dynamictitle = va("%s Through %s %s -", (cv_memesonwindowtitle.value ? "D_RUNNIN" : "Running"), mapheaderinfo[gamemap-1]->lvlttl, ((mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE) ? "" : "Zone"));
+
+	// Now That We've Set Our Things, Let's Return our Window Title, and We're Done :)
+	windowtitle = va("%s SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING, dynamictitle);
+
+	STAR_RenameWindow(windowtitle);
+	return windowtitle;
 }
 #endif
+
+//
+// const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean coredumped)
+// Generates a Funny Crash Message Everytime TSoURDt3rd Crashes
+//
+const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean coredumped)
+{
+	// Make Variables //
+	const char *jokemsg;
+	char underscoremsg[256] = "";
+
+	size_t i;
+	size_t tabend;
+	size_t current, total;
+
+	// Creates a Random Seed, Generally Needed For Situations Where SRB2 Wasn't Able to Fully Start Up //
+	if (!M_RandomSeedFromOS())
+		M_RandomSeed((UINT32)time(NULL));
+	P_SetRandSeed(M_RandomizedSeed());
+
+	// Come up With a Random Funny Joke //
+	switch (M_RandomRange(0, 10))
+	{
+		// Static //
+		default: jokemsg = "Uh..."; break;
+		case 1: jokemsg = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAH!"; break;
+		case 2: jokemsg = "This will make the TSoURDt3rd Devs sad..."; break;
+		case 3: jokemsg = "This will make STJr sad..."; break;
+		case 4: jokemsg = "Sonic, what did you do this time?"; break;
+
+		// References //
+		// Sonic Adventure
+		case 5:
+		{
+			switch (M_RandomRange(0, 1))
+			{
+				case 1: jokemsg = "Watch out, you're gonna crash! AAAAH!"; break;
+				default: jokemsg = "OH NO!"; break;
+			}
+			break;
+		}
+
+		// Grand Theft Auto
+		case 6:
+		{
+			switch (M_RandomRange(0, 1))
+			{
+				case 1: jokemsg = "All you had to do, was not crash the game, Sonic!"; break;
+				default: jokemsg = "All we had to do, was follow the dang train, CJ!"; break;
+			}
+			break;
+		}
+
+		// Baldi's Basics
+		case 7: jokemsg = "OOPS! You messed up!"; break;
+
+		// Sonic Rush
+		case 8:
+		{
+			switch (M_RandomRange(0, 1))
+			{
+				case 1: jokemsg = "Should we try this again?"; break;
+				default: jokemsg = "Never get on my bad side!"; break;
+			}
+			break;
+		}
+
+		// Parappa the Rapper
+		case 9:
+		{
+			switch (M_RandomRange(0, 3))
+			{
+				case 1:
+				{
+					switch (M_RandomRange(0, 6))
+					{
+						case 1: jokemsg = "I gotta, I gotta... No! I can't believe..."; break;
+						case 2: jokemsg = "Remember, you gotta believe!"; break;
+
+						case 3: jokemsg = "TSoURDt3rd cut a few corners but we didn't think it would be this bad..."; break;
+						case 4: jokemsg = "No cutting corners!"; break;
+
+						case 5: jokemsg = "Oops!"; break;
+						case 6: jokemsg = "Uh oh!"; break;
+
+						default: jokemsg = "\t\t\tTRY AGAIN!!\n\n\t\t(X) YES\t\t      (O) NO\t\t\t\t"; break;
+					}
+					break;
+				}
+
+				case 2:
+				{
+					switch (M_RandomRange(0, 12))
+					{
+						case 1: jokemsg = "Coding, TSoURDt3rd, it's all in the mind."; break;
+
+						case 2: jokemsg = "Alright, we're here, just playing TSoURDt3rd, I want you to show me if you can get far."; break;
+						case 3: jokemsg = "Whoa ho ho ho, stop TSoURDt3rd!\nWe got an emergency, can't you see?"; break;
+
+						case 4: jokemsg = "TSoURDt3rd is all you need!"; break;
+						case 5: jokemsg = "All you ever need is to be nice and friendly!"; break;
+
+						case 6: jokemsg = "Every single day, stress comes in every way."; break;
+						case 7: jokemsg = "Seafood cake comes just like the riddle."; break;
+						case 8: jokemsg = "TSoURDt3rd comes just like the riddle."; break;
+
+						case 9: jokemsg = "Nuh uh, nuh uh, no way!"; break;
+
+						case 10: jokemsg = "Whatcha gonna do, when they come?"; break;
+						case 11: jokemsg = "I gotta redeem!\nI gotta relieve!\nI gotta receive!\nI GOTTA BELIEVE!"; break;
+						case 12: jokemsg = "Breakin' out was the name of the game for me, you, you, You, and YOU!"; break;
+						default: jokemsg = "Somebody say ho! Say ho ho! Say ho ho ho! Now scream!\nEverybody say ho! Say ho ho! Say ho ho ho! Now scream!"; break;
+					}
+					break;
+				}
+
+				case 3:
+				{
+					switch (M_RandomRange(0, 6))
+					{
+						case 1: jokemsg = "Again."; break;
+						case 2: jokemsg = "You gotta do it again!"; break;
+						case 3: jokemsg = "Uh uh, uh uh, come on, let's do this all over again."; break;
+						case 4: jokemsg = "Peep! Peep! (TRY AGAIN!!)"; break;
+						case 5: jokemsg = "Maybe next time..."; break;
+						case 6: jokemsg = "O, oh, I didn't think you'd do THIS bad!"; break;
+						default: jokemsg = "U rappin' AWFUL!"; break;
+					}
+					break;
+				}
+		
+				default:
+				{
+					switch (M_RandomRange(0, 3))
+					{
+						case 1: jokemsg = "TSoURDt3rd Devs are codin' AWFUL!"; break;
+						case 2: jokemsg = "I'm crashin' AWFUL!"; break;
+						case 3: jokemsg = "U playin' COOL!"; break;
+						default: jokemsg = "I shouldn't cut corners.\nYou shouldn't cut corners.\nTSoURDt3rd Devs and STJr shouldn't cut corners."; break;
+					}
+					break;
+				}
+			}
+			break;
+		}
+
+		// SRB2
+		case 10:
+		{
+			switch (M_RandomRange(0, 2))
+			{
+				// STJr Members
+				case 1: jokemsg = (crashnum == SIGSEGV ? (coredumped ? "SIGSEGV - seventh sentinel (core dumped)" : "SIGSEGV - seventh sentinel") : "...Huh. This is awkward..."); break;
+
+				// Zone Builder
+				case 2:
+				{
+					switch (M_RandomRange(0, 1))
+					{
+						case 1: jokemsg = "I'll miss you, you know."; break;
+						default: jokemsg = "You were always my favorite user."; break;
+					}
+					break;
+				}
+
+				// Bugs
+				default: jokemsg = "The Leader of the Chaotix would be very disappointed in you."; break;
+			}
+			break;
+		}
+	}
+
+	// Underscore our Funny Crash Message, Return it, and We're Done :) //
+	for (i = current = total = 0; jokemsg[current] != '\0'; i++, current++)
+	{
+		// Run Special Operations //
+		// Tabs
+		if (jokemsg[current] == '\t')
+			for (tabend = i+8; i < tabend; i++) underscoremsg[i] = '_';
+		// New Lines
+		else if (jokemsg[current] == '\n')
+			i = 0;
+
+		// Uppercase Letters
+		else if ((isupper(jokemsg[current]))
+			&& ((!isupper(jokemsg[current+1]))
+			&& (jokemsg[current+1] != ' ')
+			&& (jokemsg[current+1] != '\t')
+			&& (jokemsg[current+1] != '\n')))
+		{
+			underscoremsg[i] = '_';
+			i++;
+		}
+
+		// Add an Underscore and Continue //
+		if (total <= i)
+		{
+			underscoremsg[i] = '_';
+			total = i;
+		}
+	}
+
+	return va("%s\n%s", jokemsg, underscoremsg);
+}
+
+//
+// boolean STAR_Responder(UINT8 player, UINT8 input, boolean preventhold)
+// Checks if the Given Key is Being Pressed
+// However, it Implements Checks For Good General Input Consistancy
+//
+boolean STAR_Responder(UINT8 player, UINT8 input, boolean preventhold)
+{
+	// Make the Variables //
+	STAR_GameKeyDown[player][input].pressed = (player == 2 ?
+			(gamekeydown[gamecontrol[input][0]] || gamekeydown[gamecontrol[input][1]]) :
+			(gamekeydown[gamecontrolbis[input][0]] || gamekeydown[gamecontrolbis[input][1]]));
+
+	// Control Key Stuff //
+	// Reset Everything if Not Tapping
+	if (!STAR_GameKeyDown[player][input].pressed)
+	{
+		STAR_GameKeyDown[player][input].keyDown		= 0;
+		STAR_GameKeyDown[player][input].tapReady	= false;
+	}
+
+	// Set Things While Tapping
+	else
+	{
+		if (STAR_GameKeyDown[player][input].tapReady)
+		{
+			STAR_GameKeyDown[player][input].pressed	= ((STAR_GameKeyDown[player][input].keyDown > TICRATE/2 && !preventhold) ? true : false);
+			STAR_GameKeyDown[player][input].keyDown++;
+		}
+
+		STAR_GameKeyDown[player][input].tapReady	= true;
+	}
+
+	// Return, and We're Done :) //
+	return STAR_GameKeyDown[player][input].pressed;
+}
 
 // SAVEDATA //
 //
@@ -1067,7 +1107,7 @@ void STAR_ReadExtraData(void)
 void STAR_SetSavefileProperties(void)
 {
 	// Make Some Variables //
-	INT32 a = 0, b = 0, c = 0;
+	INT32 i;
 
 	// Before we Start, Ensure Some Things //
 	if (netgame)
@@ -1078,9 +1118,9 @@ void STAR_SetSavefileProperties(void)
 	}
 
 	// Erase the Strings, Just in Case //
-	while (savegamename[a] != '\0') { savegamename[a] = '\0'; a++; }
-	while (liveeventbackup[b] != '\0') { liveeventbackup[b] = '\0'; b++; }
-	while (savegamefolder[c] != '\0') { savegamefolder[c] = '\0'; c++; }
+	for (i = 0; savegamename[i] != '\0'; i++) savegamename[i] = '\0';
+	for (i = 0; liveeventbackup[i] != '\0'; i++) liveeventbackup[i] = '\0';
+	for (i = 0; savegamefolder[i] != '\0'; i++) savegamefolder[i] = '\0';
 
 	// Make the Folder //
 	if (cv_storesavesinfolders.value)
@@ -1098,7 +1138,7 @@ void STAR_SetSavefileProperties(void)
 	// Store our Folder Name in a Variable //
 	strcpy(savegamefolder, va(SAVEGAMEFOLDER PATHSEP "%s%s",
 		(TSoURDt3rd_useAsFileName ? ("TSoURDt3rd"PATHSEP) : ("")), timeattackfolder));
-	
+
 	// Store our Savefile Names in a Variable //
 	if (!TSoURDt3rd_LoadedGamedataAddon)
 	{
@@ -1113,7 +1153,7 @@ void STAR_SetSavefileProperties(void)
 		strcpy(liveeventbackup, va("%slive%s.bkp", (TSoURDt3rd_useAsFileName ? ("tsourdt3rd_") : ("")), timeattackfolder));
 	}
 
-	// Merge our Variables Together //
+	// Merge the Variables Together, and We're Done :) //
 	// NOTE: can't use sprintf since there is %u in savegamename
 #ifdef DEFAULTDIR
 	if (!cv_storesavesinfolders.value)
@@ -1176,7 +1216,7 @@ void TSoURDt3rd_TryToLoadTheExtras(void)
 }
 
 //
-// void STAR_DetectFileType(void)
+// INT32 STAR_DetectFileType(const char* filename)
 // Detects the Specific File Type of the File Given
 //
 // Possible Returns:
@@ -1212,7 +1252,7 @@ INT32 STAR_DetectFileType(const char* filename)
 			return 5;
 		else if (!stricmp(&filename[strlen(filename) - 4], ".soc"))
 			return 6;
-		
+
 		else if (!stricmp(&filename[strlen(filename) - 4], ".cfg"))
 			return 7;
 		else if (!stricmp(&filename[strlen(filename) - 4], ".txt"))
@@ -1220,6 +1260,36 @@ INT32 STAR_DetectFileType(const char* filename)
 	}
 
 	return 0;
+}
+
+//
+// boolean STAR_DoesStringMatchHarcodedFileName(const char *string)
+// Detects if the String Given Matches the Name of a Hardcoded File, and Returns True if it Does
+//
+boolean STAR_DoesStringMatchHarcodedFileName(const char *string)
+{
+	// Does the String Given Match the Name of a Hardcoded File? If so, Return True. //
+	if ((strcmp(string, CONFIGFILENAME) == 0)
+		|| (strcmp(string, AUTOLOADCONFIGFILENAME) == 0)
+
+		|| (strcmp(string, "adedserv.cfg") == 0)
+		|| (strcmp(string, "autoexec.cfg") == 0)
+
+		|| (strcmp(string, "srb2.pk3") == 0)
+		|| (strcmp(string, "zones.pk3") == 0)
+		|| (strcmp(string, "player.dta") == 0)
+		|| (strcmp(string, "music.dta") == 0)
+#ifdef USE_PATCH_DTA
+		|| (strcmp(string, "patch.pk3") == 0)
+#endif
+
+		|| (strcmp(string, "tsourdt3rd.pk3") == 0)
+		|| (strcmp(string, "jukebox.pk3") == 0))
+
+		return true;
+
+	// The String Given Doesn't Match the Name of a Hardcoded File? Return False Then. //
+	return false;
 }
 
 // THE WORLD WIDE WEB //
@@ -1248,7 +1318,6 @@ static void STAR_SetAPI(char *API)
 //
 void STAR_FindAPI(const char *API)
 {
-	// Find Our Website //
 #ifdef HAVE_THREADS
 	I_spawn_thread(
 			"grab-tsourdt3rd-stuff",
@@ -1285,8 +1354,7 @@ INT32 STAR_FindStringOnWebsite(const char *API, char *URL, char *INFO, boolean v
 	webinfo = fopen(webinfofilelocation, "w+");
 
 	// Find the API //
-	while (hms_tsourdt3rd_api == NULL)
-		STAR_FindAPI(API);
+	while (hms_tsourdt3rd_api == NULL) STAR_FindAPI(API);
 	curl = curl_easy_init(); sidecurl = curl_easy_init();
 
 	// Print Words //
@@ -1399,10 +1467,10 @@ char *STAR_ReturnStringFromWebsite(const char *API, char *URL, char *RETURNINFO,
 	const char *webinfofilelocation;
 
 	char finalURL[256];
-	INT32 i = 0;
+	INT32 i;
 
 	// Reset the Main Variable //
-	while (finalRETURNINFO[i] != '\0') { finalRETURNINFO[i] = '\0'; i++; }
+	for (i = 0; finalRETURNINFO[i] != '\0'; i++) finalRETURNINFO[i] = '\0';
 	strcpy(finalRETURNINFO, " ");
 
 	// Create the File //
@@ -1410,8 +1478,7 @@ char *STAR_ReturnStringFromWebsite(const char *API, char *URL, char *RETURNINFO,
 	webinfo = fopen(webinfofilelocation, "w+");
 
 	// Find the API //
-	while (hms_tsourdt3rd_api == NULL)
-		STAR_FindAPI(API);
+	while (hms_tsourdt3rd_api == NULL) STAR_FindAPI(API);
 	curl = curl_easy_init(); sidecurl = curl_easy_init();
 
 	// Print Words //
@@ -1494,12 +1561,10 @@ char *STAR_ReturnStringFromWebsite(const char *API, char *URL, char *RETURNINFO,
 					remove(webinfofilelocation);
 					curl_easy_cleanup(curl);
 
-					i = 0;
-					while (finalRETURNINFO[i] != '\0')
+					for (i = 0; finalRETURNINFO[i] != '\0'; i++)
 					{
 						if (finalRETURNINFO[i] == '\n')
 							finalRETURNINFO[i] = '\0';
-						i++;
 					}
 
 					return finalRETURNINFO;
@@ -1587,25 +1652,27 @@ boolean STAR_FindServerInfractions(void)
 {
 	// Make Variables //
 	UINT32 accuratenumskins = (numskins-6);
+
 	sfxenum_t numsounds; UINT32 accuratenumsounds;
 	sfxenum_t numskinsounds; UINT32 accuratenumskinsounds;
+
 	spritenum_t totalnumsprites; UINT32 accuratenumsprites;
 	playersprite_t totalnumsprite2s; UINT32 accuratenumsprite2s;
+
 	statenum_t numstates;
+
 	mobjtype_t numobjects;
 
 	// Run Some Initial Things //
 	// Count the Sounds
 	for (numsounds = sfx_freeslot0; numsounds <= sfx_lastfreeslot; numsounds++)
 	{
-		if (S_sfx[numsounds].priority > 0)
-			continue;
+		if (S_sfx[numsounds].priority > 0) continue;
 		break;
 	}
 	for (numskinsounds = sfx_skinsoundslot0; numskinsounds <= sfx_lastskinsoundslot; numskinsounds++)
 	{
-		if (S_sfx[numskinsounds].priority > 0 && S_sfx[numskinsounds].name)
-			continue;
+		if (S_sfx[numskinsounds].priority > 0 && S_sfx[numskinsounds].name) continue;
 		break;
 	}
 	accuratenumsounds = (numsounds - sfx_freeslot0);
@@ -1614,14 +1681,12 @@ boolean STAR_FindServerInfractions(void)
 	// Count the Sprites
 	for (totalnumsprites = SPR_FIRSTFREESLOT; totalnumsprites <= SPR_LASTFREESLOT; totalnumsprites++)
 	{
-		if (used_spr[(totalnumsprites-SPR_FIRSTFREESLOT)/8] & (1<<(totalnumsprites%8)))
-			continue;
+		if (used_spr[(totalnumsprites-SPR_FIRSTFREESLOT)/8] & (1<<(totalnumsprites%8))) continue;
 		break;
 	}
 	for (totalnumsprite2s = SPR2_FIRSTFREESLOT; totalnumsprite2s < free_spr2; totalnumsprite2s++)
 	{
-		if (spr2names[totalnumsprite2s][0] != '\0')
-			continue;
+		if (spr2names[totalnumsprite2s][0] != '\0') continue;
 		break;
 	}
 	accuratenumsprites = (totalnumsprites - SPR_FIRSTFREESLOT);
@@ -1630,16 +1695,14 @@ boolean STAR_FindServerInfractions(void)
 	// Count the States
 	for (numstates = 0; numstates < NUMSTATEFREESLOTS; numstates++)
 	{
-		if (FREE_STATES[numstates])
-			continue;
+		if (FREE_STATES[numstates]) continue;
 		break;
 	}
-	
+
 	// Count the Objects
 	for (numobjects = 0; numobjects < NUMMOBJFREESLOTS; numobjects++)
 	{
-		if (FREE_MOBJS[numobjects])
-			continue;
+		if (FREE_MOBJS[numobjects]) continue;
 		break;
 	}
 
@@ -1647,11 +1710,11 @@ boolean STAR_FindServerInfractions(void)
 	if ((numskins > 35)								// Too Many Skins
 		|| (numsounds > 2335)						// Too Many Sounds
 		|| (accuratenumskinsounds > 3007)			// Too Many Skin Sounds
-		
+
 		|| (totalnumsprites > 907)					// Too Many Sprites
 		|| ((totalnumsprite2s >= free_spr2)
 			&& (totalnumsprite2s >= 128))			// Too Many Sprite2s
-		
+
 		|| (numstates >= 4096)						// Too Many States
 		|| (numobjects >= 512))						// Too Many Objects
 	{
@@ -1689,20 +1752,19 @@ UINT32 TSoURDt3rd_CurrentVersion(void)
 //
 UINT8 TSoURDt3rd_CurrentMajorVersion(void)
 {
-	INT32 i = 0;
+	INT32 i;
+
 	char majorVersionString[256] = ""; strcpy(majorVersionString, TSOURDT3RDVERSION);
 	char iterateString[256] = "";
 
 	// Iterate Through Our Two Strings //
-	while (majorVersionString[i] != '\0')
+	for (i = 0; majorVersionString[i] != '\0'; i++)
 	{
 		iterateString[i] = majorVersionString[i];
 
 		// Found a Dot? Return the Major Version, and We're Done!
 		if (majorVersionString[i+1] == '.')
 			return atoi(iterateString);
-
-		i++;
 	}
 
 	// How Did We Not Find Anything? //
@@ -1715,12 +1777,13 @@ UINT8 TSoURDt3rd_CurrentMajorVersion(void)
 //
 UINT8 TSoURDt3rd_CurrentMinorVersion(void)
 {
-	INT32 i = 0, j;
+	INT32 i, j;
+
 	char minorVersionString[256] = ""; strcpy(minorVersionString, TSOURDT3RDVERSION);
 	char iterateString[256] = "";
 
 	// Iterate Through Our Two Strings //
-	while (minorVersionString[i] != '\0')
+	for (i = 0; minorVersionString[i] != '\0'; i++)
 	{
 		// We Found One Dot, So Let's Iterate Through it, Stop at Another Dot, and We're Done :)
 		if (minorVersionString[i] == '.')
@@ -1728,11 +1791,9 @@ UINT8 TSoURDt3rd_CurrentMinorVersion(void)
 			i++;
 			for (j = 0; (minorVersionString[i] != '.' && minorVersionString[i] != '\0'); j++, i++)
 				iterateString[j] = minorVersionString[i];
-			
+
 			return atoi(iterateString);
 		}
-
-		i++;
 	}
 
 	// How Did We Still Not Find Anything? //
@@ -1745,13 +1806,14 @@ UINT8 TSoURDt3rd_CurrentMinorVersion(void)
 //
 UINT8 TSoURDt3rd_CurrentSubversion(void)
 {
-	INT32 i = 0, j;
+	INT32 i, j;
 	boolean oneDotFound = false;
+
 	char subVersionString[256] = ""; strcpy(subVersionString, TSOURDT3RDVERSION);
 	char iterateString[256] = "";
 
 	// Iterate Through Our Two Strings //
-	while (subVersionString[i] != '\0')
+	for (i = 0; subVersionString[i] != '\0'; i++)
 	{
 		// We Found A Dot!
 		if (subVersionString[i] == '.')
@@ -1760,7 +1822,6 @@ UINT8 TSoURDt3rd_CurrentSubversion(void)
 			if (!oneDotFound)
 			{
 				oneDotFound = true;
-				i++;
 				continue;
 			}
 
@@ -1770,12 +1831,10 @@ UINT8 TSoURDt3rd_CurrentSubversion(void)
 				i++;
 				for (j = 0; subVersionString[i] != '\0'; j++, i++)
 					iterateString[j] = subVersionString[i];
-			
+
 				return atoi(iterateString);
 			}
 		}
-
-		i++;
 	}
 
 	// This Outcome is More Reasonable, Honestly //
@@ -1794,9 +1853,9 @@ INT32 STAR_ConvertStringToCompressedNumber(char *STRING, INT32 startIFrom, INT32
 {
 	// Make Variables //
 	INT32 i = startIFrom, j = startJFrom;
+	INT32 finalNumber;
 
 	char convertedString[256] = "";
-	INT32 finalNumber = 0;
 
 	// Initialize the Main String, and Iterate Through Our Two Strings //
 	while (STRING[j] != '\0')
@@ -1842,8 +1901,7 @@ char *STAR_ConvertNumberToString(INT32 NUMBER, INT32 startIFrom, INT32 startJFro
 		while (convertedNumberString[j] != '\0')
 		{
 			finalNumberString[i] = convertedNumberString[j];
-			i++;
-			j++;
+			i++; j++;
 
 			if (convertedNumberString[j] != '\0') // Prevents an Extra Dot From Being Added at the End
 			{
@@ -1878,10 +1936,10 @@ INT32 STAR_CombineNumbers(INT32 ARGS, INT32 FIRSTNUM, ...)
 {
 	// Make Variables //
 	va_list argptr;
+
 	INT32 i;
-	
 	char numberString[256] = ""; sprintf(numberString, "%d", FIRSTNUM);
-	
+
 	// Initialize and Iterate Through the Variable List of Arguments, Combine our Number Strings Together, and Then End it //
 	va_start(argptr, FIRSTNUM);
 	for (i = 0; i < ARGS-1; i++)

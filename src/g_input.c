@@ -598,6 +598,13 @@ static const char *gamecontrolname[NUM_GAMECONTROLS] =
 	"custom1",
 	"custom2",
 	"custom3",
+	// STAR STUFF //
+	"openjukebox",
+	"increasemusicspeed",
+	"decreasemusicspeed",
+	"playmostrecenttrack",
+	"stopjukebox",
+	// END THE UNIQUE STAR CONTROLS PLEASE //
 };
 
 #define NUMKEYNAMES (sizeof (keynames)/sizeof (keyname_t))
@@ -738,6 +745,14 @@ void G_DefineDefaultControls(void)
 		gamecontroldefault[i][GC_RECORDGIF    ][0] = KEY_F9;
 		gamecontroldefault[i][GC_VIEWPOINTNEXT][0] = KEY_F12;
 
+		// STAR STUFF //
+		gamecontroldefault[i][JB_OPENJUKEBOX  		 ][0] = 'j';
+		gamecontroldefault[i][JB_INCREASEMUSICSPEED  ][0] = '=';
+		gamecontroldefault[i][JB_DECREASEMUSICSPEED  ][0] = '-';
+		gamecontroldefault[i][JB_PLAYMOSTRECENTTRACK ][0] = 'l';
+		gamecontroldefault[i][JB_STOPJUKEBOX 		 ][0] = 'k';
+		// WE'RE USING CONTROLS HERE //
+
 		// Gamepad controls -- same for both schemes
 		gamecontroldefault[i][GC_JUMP         ][1] = KEY_JOY1+0; // A
 		gamecontroldefault[i][GC_SPIN         ][1] = KEY_JOY1+2; // X
@@ -769,6 +784,14 @@ void G_DefineDefaultControls(void)
 		gamecontrolbisdefault[i][GC_VIEWPOINTNEXT][1] = KEY_2JOY1+9; // Right Stick
 		gamecontrolbisdefault[i][GC_TOSSFLAG     ][1] = KEY_2HAT1+0; // D-Pad Up
 		//gamecontrolbisdefault[i][GC_SCORES       ][1] = KEY_2HAT1+1; // D-Pad Down
+
+		// STAR STUFF //
+		gamecontrolbisdefault[i][JB_OPENJUKEBOX  		][0] = 'j';
+		gamecontrolbisdefault[i][JB_INCREASEMUSICSPEED  ][0] = '=';
+		gamecontrolbisdefault[i][JB_DECREASEMUSICSPEED  ][0] = '-';
+		gamecontrolbisdefault[i][JB_PLAYMOSTRECENTTRACK ][0] = 'l';
+		gamecontrolbisdefault[i][JB_STOPJUKEBOX 		][0] = 'k';
+		// WE'RE USING CONTROLS HERE //
 	}
 }
 

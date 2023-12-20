@@ -821,7 +821,7 @@ void G_SetUsedCheats(boolean silent)
 		CONS_Alert(CONS_NOTICE, M_GetText("Game must be restarted to save progress.\n"));
 
 	// STAR STUFF YAY //
-	M_UpdateJukebox();
+	S_PrepareSoundTest();
 	M_UpdateEasterStuff();
 	if (TSoURDt3rd_LoadedExtras)
 		TSoURDt3rd_NoMoreExtras = true;
@@ -1164,6 +1164,11 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	boolean centerviewdown = false;
 
 	UINT8 forplayer = ssplayer-1;
+
+	// STAR STUFF //
+	// Jukebox Stuffs
+	boolean openjukeboxkey, increasemusicspeedkey, decreasemusicspeedkey, playmostrecenttrackkey, stopjukeboxkey;
+	// END THE DEFINITIONS PLEASE //
 
 	if (ssplayer == 1)
 	{
@@ -1764,6 +1769,96 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	cmd->angleturn = (INT16)(cmd->angleturn + ticcmd_oldangleturn[forplayer]);
 	ticcmd_oldangleturn[forplayer] = cmd->angleturn;
+
+	// STAR STUFF //
+	// Give Variables Their Properties //
+	openjukeboxkey			= STAR_Responder(ssplayer, JB_OPENJUKEBOX, true);
+
+	increasemusicspeedkey	= STAR_Responder(ssplayer, JB_INCREASEMUSICSPEED, false);
+	decreasemusicspeedkey	= STAR_Responder(ssplayer, JB_DECREASEMUSICSPEED, false);
+
+	playmostrecenttrackkey	= STAR_Responder(ssplayer, JB_PLAYMOSTRECENTTRACK, true);
+
+	stopjukeboxkey			= STAR_Responder(ssplayer, JB_STOPJUKEBOX, true);
+
+	// Do Jukebox Stuff //
+	// Open the Jukebox Menu if the Key was Pressed
+	if (openjukeboxkey)
+	{
+		M_StartControlPanel();
+		M_TSoURDt3rdJukebox(0);
+
+		currentMenu->prevMenu = NULL;
+	}
+
+	// Increase the Music Speed if the Key was Pressed
+	if (increasemusicspeedkey)
+		(atof(cv_jukeboxspeed.string) >= 20.0f ?
+			(STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Can't increase the speed any further!\n")) :
+			(CV_Set(&cv_jukeboxspeed, va("%f", atof(cv_jukeboxspeed.string)+(0.1f)))));
+
+	// Decrease the Music Speed if the Key was Pressed
+	if (decreasemusicspeedkey)
+		(atof(cv_jukeboxspeed.string) < 0.1f ?
+			(STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Can't decrease the speed any further!\n")) :
+			(CV_Set(&cv_jukeboxspeed, va("%f", atof(cv_jukeboxspeed.string)-(0.1f)))));
+
+	// Replay the Most Recent Jukebox Track if the Key was Pressed
+	if (playmostrecenttrackkey)
+	{
+		// Haven't Recently Played a Track
+		if (!TSoURDt3rd->jukebox.lastTrackPlayed)
+			STAR_CONS_Printf(STAR_CONS_JUKEBOX, "You haven't recently played a track!\n");
+
+		// Already Have the Track Playing
+		else if (TSoURDt3rd->jukebox.musicPlaying)
+			STAR_CONS_Printf(STAR_CONS_JUKEBOX, "There's already a track playing!\n");
+
+		// Run Everything Normally, and We're Done :)
+		else
+		{
+			M_TSoURDt3rdJukebox(0);
+
+			strcpy(TSoURDt3rd->jukebox.musicName, (TSoURDt3rd_InAprilFoolsMode() ? "Get rickrolled lol" : TSoURDt3rd->jukebox.lastTrackPlayed->title));
+			strcpy(TSoURDt3rd->jukebox.musicTrack, (TSoURDt3rd_InAprilFoolsMode() ? "_hehe" : TSoURDt3rd->jukebox.lastTrackPlayed->name));
+
+			S_ChangeMusicInternal(TSoURDt3rd->jukebox.musicTrack, !TSoURDt3rd->jukebox.lastTrackPlayed->stoppingtics);
+			S_SpeedMusic(atof(cv_jukeboxspeed.string));
+
+			STAR_CONS_Printf(STAR_CONS_JUKEBOX, M_GetText("Loaded track \x82%s\x80.\n"), TSoURDt3rd->jukebox.musicName);
+
+			TSoURDt3rd->jukebox.musicPlaying			= true;
+			TSoURDt3rd->jukebox.initHUD					= true;
+		}
+	}
+
+	// Stop the Jukebox if the Key was Pressed
+	if (stopjukeboxkey)
+	{
+		if (!TSoURDt3rd->jukebox.musicPlaying)
+		{
+			STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Nothing is currently playing in the jukebox!\n");
+			S_StartSound(NULL, sfx_lose);
+		}
+		else
+		{
+			M_ResetJukebox();
+
+			S_StopSounds();
+			S_StopMusic();
+
+			S_StartSound(NULL, sfx_skid);
+
+			if (Playing())
+				(TSoURDt3rd_InAprilFoolsMode() ?
+					// Do Funniness for April Fools
+					(S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0)) :
+
+					// Regularly Execute Everything
+					(player->powers[pw_super] ? P_PlayJingle(player, JT_SUPER) : S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0)));
+		}
+	}
+	// END THE CONTROL STUFF PLEASE //
 }
 
 ticcmd_t *G_CopyTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n)

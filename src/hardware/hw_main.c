@@ -3561,6 +3561,7 @@ static boolean HWR_DoCulling(line_t *cullheight, line_t *viewcullheight, float v
 	return false;
 }
 
+// STAR NOTE: I was here in this function alot lol //
 static void HWR_DrawShadows(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale)
 {
 	patch_t *gpatch;
@@ -3646,7 +3647,7 @@ static void HWR_DrawShadows(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale)
 	shadowVerts[1].z = shadowVerts[2].z = fy - offset;
 	shadowVerts[0].z = shadowVerts[3].z = fy + offset;
 
-	// STAR NOTE //
+	// STAR STUFF //
 	if (cv_shadow.value == 2)
 	{
 		shadowVerts[0].x = shadowVerts[3].x = spr->x1;
@@ -3786,6 +3787,7 @@ static void HWR_DrawShadows(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale)
 
 	HWR_ProcessPolygon(&sSurf, shadowVerts, 4, blendmode, shader, false);
 }
+// END OF THE STAR NOTE //
 
 // This is expecting a pointer to an array containing 4 wallVerts for a sprite
 static void HWR_RotateSpritePolyToAim(gl_vissprite_t *spr, FOutVector *wallVerts, const boolean precip)
@@ -5027,7 +5029,7 @@ static void HWR_DrawSprites(void)
 			// STAR NOTE: i was here lol
 			if (spr->mobj && ((!cv_allobjectshaveshadows.value && spr->mobj->shadowscale) || (cv_allobjectshaveshadows.value)))
 			{
-				if ((cv_shadow.value == 1 || cv_shadow.value == 2) && !skipshadow)
+				if ((cv_shadow.value == 1 && !skipshadow) || cv_shadow.value == 2)
 					HWR_DrawShadows(spr, spr->mobj, (cv_allobjectshaveshadows.value ? 1*FRACUNIT : spr->mobj->shadowscale));
 			}
 
@@ -5041,7 +5043,7 @@ static void HWR_DrawSprites(void)
 				// to the same tracer, so the tracer's shadow only gets drawn once.
 				if ((!cv_allobjectshaveshadows.value && spr->mobj->tracer->shadowscale) || (cv_allobjectshaveshadows.value))
 				{
-					if ((cv_shadow.value == 1 && !skipshadow && spr->dispoffset < 0) || (cv_shadow.value == 2 && !skipshadow))
+					if (cv_shadow.value && !skipshadow && spr->dispoffset < 0)
 					{
 						
 						HWR_DrawShadows(spr, spr->mobj->tracer, (cv_allobjectshaveshadows.value ? 1*FRACUNIT : spr->mobj->tracer->shadowscale));

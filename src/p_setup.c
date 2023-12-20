@@ -7795,8 +7795,8 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 				(mapheaderinfo[gamemap-1]->actnum > 0) ? va(" %d",mapheaderinfo[gamemap-1]->actnum) : "");
 			V_DrawSmallString(1, 195, V_ALLOWLOWERCASE|V_TRANSLUCENT|V_SNAPTOLEFT|V_SNAPTOBOTTOM, tx);
 			// STAR STUFF //
-			if (cv_loadingscreen.value && rendermode != render_opengl)
-				STAR_LoadingScreen(false);
+			if (cv_loadingscreen.value)
+				STAR_LoadingScreen();
 			else
 				I_UpdateNoVsync();
 			// HELP ME PLEASE //

@@ -869,16 +869,28 @@ boolean I_SetSongSpeed(float speed)
 {
 	if (speed > 250.0f)
 		speed = 250.0f; //limit speed up to 250x
+// STAR STUFF //
 #ifdef HAVE_MIXERX
-#if (SDL_MIXER_VERSION_ATLEAST(2,6,0))
 	if (music)
 	{
+		// Lower the Music Speed if it Goes Above 20x
+		if (speed > 20.0f)
+		{
+			CONS_Printf("I_SetSongSpeed(): Music speed cannot be set above 20x, lowering music speed to 20x.\n");
+			speed = 20.0f;
+		}
+
+		// Speed up Our Music, and We're Done :)
+#if (SDL_MIXER_VERSION_ATLEAST(2,6,0))
 		Mix_SetMusicSpeed(music, (double)speed);
+#else
+		Mix_SetMusicTempo(music, (double)speed);
+#endif
 		return true;
 	}
 	else
 #endif
-#endif
+// END THAT PLEASE //
 #ifdef HAVE_GME
 	if (gme)
 	{
@@ -913,6 +925,31 @@ boolean I_SetSongSpeed(float speed)
 #endif
 	return false;
 }
+
+// STAR STUFF //
+boolean I_CanSetSongSpeed(void)
+{
+#ifdef HAVE_MIXERX
+	if (music)
+		return true;
+	else
+#endif
+#ifdef HAVE_GME
+	if (gme)
+		return true;
+	else
+#endif
+#ifdef HAVE_OPENMPT
+	if (openmpt_mhandle)
+		return true;
+	else
+#else
+		return false;
+#endif
+
+	return false;
+}
+// END THAT STAR STUFF PLEASE //
 
 /// ------------------------
 ///  MUSIC SEEKING

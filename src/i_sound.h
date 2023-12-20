@@ -145,6 +145,10 @@ boolean I_SongPaused(void);
 
 boolean I_SetSongSpeed(float speed);
 
+// STAR STUFF //
+boolean I_CanSetSongSpeed(void);
+// AGAIN. //
+
 /// ------------------------
 //  MUSIC SEEKING
 /// ------------------------

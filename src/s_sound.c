@@ -1798,6 +1798,13 @@ boolean S_SpeedMusic(float speed)
 	return I_SetSongSpeed(speed);
 }
 
+// STAR STUFF //
+boolean S_CanSpeedMusic(void)
+{
+	return I_CanSetSongSpeed();
+}
+// WE GOTTA DO IT AGAIN! //
+
 /// ------------------------
 /// Music Seeking
 /// ------------------------
@@ -2079,7 +2086,7 @@ boolean S_RecallMusic(UINT16 status, boolean fromfirst)
 
 	// STAR STUFF YAY //
 	// We're Playing Music in the Jukebox, Clear the Memory and Don't Do Anything
-	if (jukeboxMusicPlaying)
+	if (TSoURDt3rd->jukebox.musicPlaying)
 	{
 		Z_Free(entry);
 		return false;
@@ -2297,7 +2304,7 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 		return;
 
 	// STAR STUFF //
-	if (jukeboxMusicPlaying)
+	if (TSoURDt3rd->jukebox.musicPlaying)
 	{
 		if (Playing() && playeringame[consoleplayer])
 			S_ResumeAudio();
@@ -2366,14 +2373,9 @@ void S_StopMusic(void)
 	if (!I_SongPlaying())
 		return;
 
-	// STAR SPECIFIC STUFF //
-	if (jukeboxMusicPlaying)
-	{
-		if (!cv_luacanstopthejukebox.value && StopMusicCausedByLua)
-			return;
-		else
-			M_ResetJukebox();
-	}
+	// STAR STUFF //
+	if (TSoURDt3rd->jukebox.musicPlaying)
+		M_ResetJukebox();
 	// I MUST LABEL EVERYTHING //
 
 	if (I_SongPaused())
@@ -2470,7 +2472,7 @@ void S_StopFadingMusic(void)
 boolean S_FadeMusicFromVolume(UINT8 target_volume, INT16 source_volume, UINT32 ms)
 {
 	// STAR STUFF LOL //
-	if (jukeboxMusicPlaying)
+	if (TSoURDt3rd->jukebox.musicPlaying)
 		return false;
 	// END STAR STUFF LOL //
 
@@ -2483,7 +2485,7 @@ boolean S_FadeMusicFromVolume(UINT8 target_volume, INT16 source_volume, UINT32 m
 boolean S_FadeOutStopMusic(UINT32 ms)
 {
 	// MORE STAR STUFF //
-	if (jukeboxMusicPlaying)
+	if (TSoURDt3rd->jukebox.musicPlaying)
 		return false;
 	// NO MORE STAR STUFF //
 
@@ -2510,7 +2512,7 @@ void S_StartEx(boolean reset)
 	}
 
 	// STAR STUFF YAY //
-	if (jukeboxMusicPlaying)
+	if (TSoURDt3rd->jukebox.musicPlaying)
 		return;
 	// TORTURE IS MY FAVORITE FORM OF PUNISHMENT, HOW DID YOU KNOW //
 
@@ -2530,19 +2532,6 @@ static void Command_Tunes_f(void)
 	UINT16 track = 0;
 	UINT32 position = 0;
 	const size_t argc = COM_Argc();
-
-	// STAR STUFF EEEEEEEE //
-	if (TSoURDt3rd_InAprilFoolsMode())
-	{
-		CONS_Printf("Nice Try. Maybe there's a command you need to turn off, perhaps?\n");
-		return;
-	}
-	else if (jukeboxMusicPlaying)
-	{
-		CONS_Printf("Sorry, you can't use this command while playing music in the Jukebox.\n");
-		return;
-	}
-	// I MEAN, IT MAKES SENSE, RIGHT? //
 
 	if (argc < 2) //tunes slot ...
 	{
@@ -2574,6 +2563,19 @@ static void Command_Tunes_f(void)
 		tunearg = (TSoURDt3rd_InAprilFoolsMode() ? "_hehe" : mapheaderinfo[gamemap-1]->musname);
 		track = mapheaderinfo[gamemap-1]->mustrack;
 	}
+
+	// STAR STUFF //
+	if (TSoURDt3rd_InAprilFoolsMode())
+	{
+		CONS_Printf("Nice Try. Maybe there's a command you need to turn off, perhaps?\n");
+		return;
+	}
+	else if (TSoURDt3rd->jukebox.musicPlaying)
+	{
+		STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Sorry, you can't use this command while playing music in the Jukebox.\n");
+		return;
+	}
+	// I MEAN, IT MAKES SENSE, RIGHT? //
 
 	if (strlen(tunearg) > 6) // This is automatic -- just show the error just in case
 		CONS_Alert(CONS_NOTICE, M_GetText("Music name too long - truncated to six characters.\n"));
@@ -2615,7 +2617,7 @@ static void Command_RestartAudio_f(void)
 	if (Playing()) // Gotta make sure the player is in a level
 		P_RestoreMusic(&players[consoleplayer]);
 	// STAR STUFF FOR REASONS I GUESS //
-	if (jukeboxMusicPlaying)
+	if (TSoURDt3rd->jukebox.musicPlaying)
 		M_ResetJukebox();
 	// FINE, I'LL LET YOU STOP IT HERE... //
 }

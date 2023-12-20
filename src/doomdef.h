@@ -732,6 +732,15 @@ extern int
 #endif
 
 //// STAR STUFF YAY ////
+// Structs //
+typedef enum
+{
+	STAR_CONS_JUKEBOX = 1
+} star_messagetype_t;
+
+// Functions //
+void STAR_CONS_Printf(star_messagetype_t starMessageType, const char *fmt, ...);
+
 // Stable Features //
 // Savefiles
 #define SAVEGAMEFOLDER "saves"
