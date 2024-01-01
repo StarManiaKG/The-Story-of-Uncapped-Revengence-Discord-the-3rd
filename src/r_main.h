@@ -116,7 +116,7 @@ extern consvar_t cv_flipcam, cv_flipcam2;
 extern consvar_t cv_shadow; // STAR NOTE: i was here lol
 // STAR STUFF //
 extern consvar_t cv_allobjectshaveshadows;
-extern consvar_t cv_realisticshadowscanrotate;
+extern consvar_t cv_shadowsrotate;
 // END THAT PLEASE //
 extern consvar_t cv_ffloorclip, cv_spriteclip;
 extern consvar_t cv_translucency;

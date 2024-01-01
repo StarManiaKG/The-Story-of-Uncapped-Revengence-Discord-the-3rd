@@ -3696,10 +3696,15 @@ static void HWR_DrawShadows(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale)
 		float oldy = shadowVerts[i].z;
 
 		// STAR NOTE: i was here lol
-		if (cv_shadow.value != 2 || cv_realisticshadowscanrotate.value)
+		if (cv_shadow.value != 2 || cv_shadowsrotate.value)
 		{
-			shadowVerts[i].x = fx + ((oldx - fx) * gl_viewcos) + ((oldy - fy) * gl_viewsin);
-			shadowVerts[i].z = fy + ((oldx - fx) * gl_viewsin) - ((oldy - fy) * gl_viewcos);
+			shadowVerts[i].x = (cv_shadowsrotate.value == 1 ?
+								(fx + ((oldx - fx) * gl_viewcos) - ((oldy - fy) * gl_viewsin)) :
+								(fx + ((oldx - fx) * gl_viewcos) + ((oldy - fy) * gl_viewsin)));
+
+			shadowVerts[i].z = (cv_shadowsrotate.value == 1 ?
+								(fy + ((oldx - fx) * gl_viewsin) + ((oldy - fy) * gl_viewcos)) :
+								(fy + ((oldx - fx) * gl_viewsin) - ((oldy - fy) * gl_viewcos)));
 		}
 	}
 

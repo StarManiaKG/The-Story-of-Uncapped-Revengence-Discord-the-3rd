@@ -2685,9 +2685,7 @@ static menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 
 	{IT_STRING | IT_CVAR,	NULL,	"Shadow Type",				&cv_shadow,	  			  111},
 	{IT_STRING | IT_CVAR,	NULL,	"All Objects Have Shadows",	&cv_allobjectshaveshadows,116},
-	{IT_STRING | IT_CVAR,	NULL,	"Realistic Shadows Can Rotate",
-																&cv_realisticshadowscanrotate,
-																						  121},
+	{IT_STRING | IT_CVAR,	NULL,	"Shadows Rotate",			&cv_shadowsrotate,		  121},
 
 	{IT_STRING | IT_CVAR,	NULL,	"Allow Typical Time Over",	&cv_allowtypicaltimeover, 131},
 	{IT_STRING | IT_CVAR,	NULL,	"Pause Graphic Style",		&cv_pausegraphicstyle,	  136},
@@ -2802,7 +2800,7 @@ enum
 	op_fpscountercolor = 13,
 	op_tpscountercolor,
 
-	op_realisticshadowscanrotate = 17,
+	op_shadowsrotate = 17,
 
 	op_allowtypicaltimeover,
 
@@ -4002,7 +4000,11 @@ static void STAR_AprilFools_ChangeMenus(void)
 		MPauseMenu[mpause_hints].text			= SPauseMenu[spause_hints].text;
 		MPauseMenu[mpause_switchmap].text		= "Can We Play Tag?";
 
+#ifdef HAVE_DISCORDRPC
+		// DISCORD STUFFS //
 		MPauseMenu[mpause_discordrequests].text	= "Facebook Requests...";
+		// END THAT PLEASE //
+#endif
 
 		MPauseMenu[mpause_continue].text		= "Keep Going";
 
@@ -4088,7 +4090,7 @@ void STAR_TPSRate_OnChange(void)
 
 void STAR_Shadow_OnChange(void)
 {
-	OP_Tsourdt3rdOptionsMenu[op_realisticshadowscanrotate].status = (cv_shadow.value == 2 ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+	OP_Tsourdt3rdOptionsMenu[op_shadowsrotate].status = (cv_shadow.value == 2 ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
 }
 
 static void STAR_TimeOver_OnChange(void)
