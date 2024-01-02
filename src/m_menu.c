@@ -16971,7 +16971,7 @@ static void M_TSoURDt3rdOptions(INT32 choice)
 #ifdef HAVE_SDL
 	STAR_WindowTitleVars_OnChange();
 #else
-	for (i = op_windowtitletype; i < op_memesonwindowtitle; i++)
+	for (INT32 i = op_windowtitletype; i < op_memesonwindowtitle; i++)
 		OP_Tsourdt3rdOptionsMenu[i].status = IT_GRAYEDOUT;	
 #endif
 

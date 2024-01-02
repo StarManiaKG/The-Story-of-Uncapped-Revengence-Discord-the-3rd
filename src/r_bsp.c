@@ -23,6 +23,10 @@
 #include "z_zone.h" // Check R_Prep3DFloors
 #include "taglist.h"
 
+// STAR STUFF //
+#include "STAR/star_vars.h"
+// LOADING... LOAD COMPLETE. //
+
 seg_t *curline;
 side_t *sidedef;
 line_t *linedef;
@@ -1276,6 +1280,9 @@ void R_RenderBSPNode(INT32 bspnum)
 			return;
 
 		bspnum = bsp->children[side^1];
+		// STAR STUFF //
+		TSoURDt3rd->loadingScreens.bspCount = bspnum;
+		// SHE'S ON THE BORDER, NOW! //
 	}
 
 	// PORTAL CULLING

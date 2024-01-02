@@ -34,6 +34,17 @@
 #define TSOURDT3RDVERSIONSTRING "TSoURDt3rd v"TSOURDT3RDVERSION
 
 //// STRUCTS ////
+// Game //
+typedef struct TSoURDt3rdLoadingScreen_s {
+	size_t loadCount;
+	UINT8 loadPercentage;
+	INT32 bspCount;
+
+	INT32 screenToUse;
+
+	boolean softwareLoadComplete;
+} TSoURDt3rdLoadingScreen_t;
+
 // Servers //
 typedef struct TSoURDt3rdServers_s {
 	boolean serverUsesTSoURDt3rd;
@@ -60,6 +71,8 @@ typedef struct TSoURDt3rd_s {
 	// Game Stuff
 	boolean usingTSoURDt3rd;
 	boolean checkedVersion;
+
+	TSoURDt3rdLoadingScreen_t loadingScreens;
 
 	// Server Stuff
 	INT32 reachedSockSendErrorLimit;
@@ -105,11 +118,6 @@ extern INT32 currenteggs;
 extern INT32 numMapEggs;
 
 // Game //
-// Loading Screens
-extern size_t ls_count;
-extern UINT8 ls_percent;
-extern INT32 STAR_loadingscreentouse;
-
 // Time Over
 extern boolean timeover;
 extern boolean ForceTimeOver;
