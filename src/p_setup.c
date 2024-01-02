@@ -7796,10 +7796,24 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			V_DrawSmallString(1, 195, V_ALLOWLOWERCASE|V_TRANSLUCENT|V_SNAPTOLEFT|V_SNAPTOBOTTOM, tx);
 			// STAR STUFF //
 			if (cv_loadingscreen.value)
-				STAR_LoadingScreen();
+			{
+				if (rendermode == render_soft && TSoURDt3rd->loadingScreens.loadCount-- <= 0 && !TSoURDt3rd->loadingScreens.softwareLoadComplete)
+				{
+					while (TSoURDt3rd->loadingScreens.bspCount != 1 && (((TSoURDt3rd->loadingScreens.loadPercentage)<<1) < 100))
+					{
+						TSoURDt3rd->loadingScreens.loadCount = numsubsectors/50;
+						STAR_LoadingScreen();
+					}
+
+					TSoURDt3rd->loadingScreens.loadCount = TSoURDt3rd->loadingScreens.loadPercentage = 0; // reset the loading status
+					TSoURDt3rd->loadingScreens.screenToUse = 0; // reset the loading screen to use
+
+					TSoURDt3rd->loadingScreens.softwareLoadComplete = true; // loading... load complete.
+				}
+			}
 			else
 				I_UpdateNoVsync();
-			// HELP ME PLEASE //
+			// NO CUTTING CORNERS! //
 		}
 
 		// As oddly named as this is, this handles music only.
@@ -7942,7 +7956,8 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	STAR_SetWindowTitle();
 #endif
 
-	STAR_loadingscreentouse = 0;
+	TSoURDt3rd->loadingScreens.softwareLoadComplete = false; // reset the software loading status
+	TSoURDt3rd->loadingScreens.screenToUse = 0; // reset the loading screen to use
 	// END THAT //
 
 	// Took me 3 hours to figure out why my progression kept on getting overwritten with the titlemap...

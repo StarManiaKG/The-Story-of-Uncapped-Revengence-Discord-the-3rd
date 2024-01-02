@@ -876,7 +876,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 		colfunc = colfuncs[COLDRAWFUNC_TRANS];
 
 	// Hack: Use a special column function for drop shadows that bypasses
-	// invalid memory access crashes caused by R_ProjectDropShadow putting wrong values
+	// invalid memory access crashes caused by R_ProjectShadows putting wrong values
 	// in dc_texturemid and dc_iscale when the shadow is sloped.
 	if (vis->cut & SC_SHADOW)
 		colfunc = R_DrawDropShadowColumn_8;
@@ -1310,7 +1310,8 @@ static void R_SkewShadowSprite(
 	*shadowskew = xslope;
 }
 
-static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, fixed_t tx, fixed_t tz)
+// STAR NOTE: i was here a fair bit lol
+static void R_ProjectShadows(mobj_t *thing, vissprite_t *vis, fixed_t scale, fixed_t tx, fixed_t tz)
 {
 	vissprite_t *shadow;
 	patch_t *patch;
@@ -2334,8 +2335,9 @@ static void R_ProjectSprite(mobj_t *thing)
 	if (thing->subsector->sector->numlights && !(shadowdraw || splat))
 		R_SplitSprite(vis);
 
-	if (oldthing->shadowscale && cv_shadow.value)
-		R_ProjectDropShadow(oldthing, vis, oldthing->shadowscale, basetx, basetz);
+	// STAR NOTE: i was here lol
+	if (cv_shadow.value &&((!cv_allobjectshaveshadows.value && oldthing->shadowscale) || cv_allobjectshaveshadows.value))
+		R_ProjectShadows(oldthing, vis, (cv_allobjectshaveshadows.value ? (oldthing->shadowscale ? oldthing->shadowscale : 1*FRACUNIT) : oldthing->shadowscale), basetx, basetz);
 
 	R_ProjectBoundingBox(oldthing, vis);
 

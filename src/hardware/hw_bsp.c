@@ -622,9 +622,9 @@ static void WalkBSPNode(INT32 bspnum, poly_t *poly, UINT16 *leafnode, fixed_t *b
 
 			// Hurdler: implement a loading status
 			// STAR NOTE: i was here lol
-			if (cv_loadingscreen.value && ls_count-- <= 0)
+			if (cv_loadingscreen.value && TSoURDt3rd->loadingScreens.loadCount-- <= 0)
 			{
-				ls_count = numsubsectors/50;
+				TSoURDt3rd->loadingScreens.loadCount = numsubsectors/50;
 				STAR_LoadingScreen();
 			}
 		}
@@ -816,7 +816,7 @@ static INT32 SolveTProblem(void)
 		//CON_Drawer(); // console shouldn't appear while in a loading screen, honestly
 		I_FinishUpdate(); // page flip or blit buffer
 
-		STAR_loadingscreentouse = 0;
+		TSoURDt3rd->loadingScreens.screenToUse = 0; // reset the loading screen to use
 	}
 
 	numsplitpoly = 0;
@@ -944,8 +944,8 @@ void HWR_CreatePlanePolygons(INT32 bspnum)
 	// STAR NOTE: i was here lol
 	if (cv_loadingscreen.value)
 	{
-		ls_count = ls_percent = 0; // reset the loading status
-		STAR_loadingscreentouse = 0; // reset the loading screen to use
+		TSoURDt3rd->loadingScreens.loadCount = TSoURDt3rd->loadingScreens.loadPercentage = 0; // reset the loading status
+		TSoURDt3rd->loadingScreens.screenToUse = 0; // reset the loading screen to use
 
 		//CON_Drawer(); // console shouldn't appear while in a loading screen, honestly
 		I_FinishUpdate(); // page flip or blit buffer

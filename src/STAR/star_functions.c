@@ -249,6 +249,14 @@ void TSoURDt3rd_InitializeStructures(void)
 
 	TSoURDt3rd->reachedSockSendErrorLimit 				= 0;
 
+	TSoURDt3rd->loadingScreens.loadCount 				= 0;
+	TSoURDt3rd->loadingScreens.loadPercentage 			= 0;
+	TSoURDt3rd->loadingScreens.bspCount 				= 0;
+
+	TSoURDt3rd->loadingScreens.screenToUse 				= 0;
+
+	TSoURDt3rd->loadingScreens.softwareLoadComplete 	= false;
+
 	// Server Stuff
 	TSoURDt3rd->masterServerAddressChanged				= false;
 
@@ -287,11 +295,6 @@ void TSoURDt3rd_ReinitializeServerStructures(void)
 // void STAR_LoadingScreen(void)
 // Displays a Loading Screen
 //
-size_t ls_count = 0;
-UINT8 ls_percent = 0;
-
-INT32 STAR_loadingscreentouse = 0;
-
 void STAR_LoadingScreen(void)
 {
 	// Make Variables //
@@ -329,8 +332,7 @@ void STAR_LoadingScreen(void)
 	I_OsPolling();
 	//CON_Drawer(); // console shouldn't appear while in a loading screen, honestly
 
-	if (rendermode == render_opengl)
-		sprintf(s, "%d%%", (++ls_percent)<<1);
+	sprintf(s, "%d%%", (++TSoURDt3rd->loadingScreens.loadPercentage)<<1);
 	x = BASEVIDWIDTH/2;
 	y = BASEVIDHEIGHT/2;
 	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31); // Black background to match fade in effect
@@ -346,7 +348,7 @@ void STAR_LoadingScreen(void)
 			{
 				// Modified-Game Images
 				if (autoloaded || savemoddata || modifiedgame)
-					STAR_loadingscreentouse = 3;
+					TSoURDt3rd->loadingScreens.screenToUse = 3;
 
 				// Vanilla/Unmodified-Game Images
 				else
@@ -356,60 +358,60 @@ void STAR_LoadingScreen(void)
 						// GFZ
 						case 1:
 						case 2:
-						case 3: STAR_loadingscreentouse = 4; break;
+						case 3: TSoURDt3rd->loadingScreens.screenToUse = 4; break;
 						
 						// THZ
 						case 4:
 						case 5:
-						case 6: STAR_loadingscreentouse = 5; break;
+						case 6: TSoURDt3rd->loadingScreens.screenToUse = 5; break;
 			
 						// DSZ
 						case 7:
 						case 8:
-						case 9: STAR_loadingscreentouse = 6; break;
+						case 9: TSoURDt3rd->loadingScreens.screenToUse = 6; break;
 
 						// CEZ
 						case 10:
 						case 11:
-						case 12: STAR_loadingscreentouse = 7; break;
+						case 12: TSoURDt3rd->loadingScreens.screenToUse = 7; break;
 
 						// ACZ
 						case 13:
 						case 14:
-						case 15: STAR_loadingscreentouse = 8; break;
+						case 15: TSoURDt3rd->loadingScreens.screenToUse = 8; break;
 
 						// RVZ
-						case 16: STAR_loadingscreentouse = 9; break;
+						case 16: TSoURDt3rd->loadingScreens.screenToUse = 9; break;
 
 						// ERZ
 						case 22:
-						case 23: STAR_loadingscreentouse = 10; break;
+						case 23: TSoURDt3rd->loadingScreens.screenToUse = 10; break;
 
 						// BCZ
 						case 25:
 						case 26:
-						case 27: STAR_loadingscreentouse = 11; break;
+						case 27: TSoURDt3rd->loadingScreens.screenToUse = 11; break;
 
 						// FHZ
-						case 30: STAR_loadingscreentouse = 12; break;
+						case 30: TSoURDt3rd->loadingScreens.screenToUse = 12; break;
 
 						// PTZ
-						case 31: STAR_loadingscreentouse = 13; break;
+						case 31: TSoURDt3rd->loadingScreens.screenToUse = 13; break;
 
 						// FFZ
-						case 32: STAR_loadingscreentouse = 14; break;
+						case 32: TSoURDt3rd->loadingScreens.screenToUse = 14; break;
 			
 						// TLZ
-						case 33: STAR_loadingscreentouse = 15; break;
+						case 33: TSoURDt3rd->loadingScreens.screenToUse = 15; break;
 
 						// HHZ
-						case 40: STAR_loadingscreentouse = 16; break;
+						case 40: TSoURDt3rd->loadingScreens.screenToUse = 16; break;
 
 						// AGZ
-						case 41: STAR_loadingscreentouse = 17; break;
+						case 41: TSoURDt3rd->loadingScreens.screenToUse = 17; break;
 
 						// ATZ
-						case 42: STAR_loadingscreentouse = 18; break;
+						case 42: TSoURDt3rd->loadingScreens.screenToUse = 18; break;
 
 						// All Special Stages
 						case 50:
@@ -431,10 +433,10 @@ void STAR_LoadingScreen(void)
 						case 70:
 						case 71:
 						case 72:
-						case 73: STAR_loadingscreentouse = 19; break;
+						case 73: TSoURDt3rd->loadingScreens.screenToUse = 19; break;
 
 						// BHZ
-						case 57: STAR_loadingscreentouse = 20; break;
+						case 57: TSoURDt3rd->loadingScreens.screenToUse = 20; break;
 
 						// CTF, Match, and Custom Maps
 						case 280:
@@ -460,31 +462,30 @@ void STAR_LoadingScreen(void)
 						case 542:
 						case 543:
 
-						default: STAR_loadingscreentouse = 3; break;
+						default: TSoURDt3rd->loadingScreens.screenToUse = 3; break;
 					}
 				}
 			}
 
 			// Not In-Game
 			else
-				STAR_loadingscreentouse = 2;
+				TSoURDt3rd->loadingScreens.screenToUse = 2;
 		}
 
 		// Random
-		else if (cv_loadingscreenimage.value == 21 && !STAR_loadingscreentouse)
-			STAR_loadingscreentouse = M_RandomRange(2, 20);
+		else if (cv_loadingscreenimage.value == 21 && !TSoURDt3rd->loadingScreens.screenToUse)
+			TSoURDt3rd->loadingScreens.screenToUse = M_RandomRange(2, 20);
 
 		// Finally, Apply the Image, and We're Good Here :) //
 		V_DrawPatchFill(W_CachePatchName(
-			((cv_loadingscreenimage.value == 1 || cv_loadingscreenimage.value == 21) ? gstartuplumpnumtype[STAR_loadingscreentouse] : gstartuplumpnumtype[cv_loadingscreenimage.value]),
+			(gstartuplumpnumtype[(cv_loadingscreenimage.value == 1 || cv_loadingscreenimage.value == 21) ? TSoURDt3rd->loadingScreens.screenToUse : cv_loadingscreenimage.value]),
 			(PU_CACHE)));
 	}
 
 	// Run Some Other Necessary Functions Here, and We're Done :) //
 	M_DrawTextBox(x-58, y-8, 13, 1);
-	V_DrawString(((rendermode == render_opengl) ? (x-50) : x), y, menuColor[cv_menucolor.value], "Loading...");
-	if (rendermode == render_opengl)
-		V_DrawRightAlignedString(x+50, y, menuColor[cv_menucolor.value], s);
+	V_DrawString(x-50, y, menuColor[cv_menucolor.value], "Loading...");
+	V_DrawRightAlignedString(x+50, y, menuColor[cv_menucolor.value], s);
 
 	I_UpdateNoVsync();
 }

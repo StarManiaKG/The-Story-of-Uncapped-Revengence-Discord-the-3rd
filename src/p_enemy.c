@@ -36,7 +36,7 @@
 #include "STAR/star_vars.h" // extra variables
 #include "m_menu.h" // jukebox
 
-consvar_t cv_soniccd = CVAR_INIT ("soniccd", "Off", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_soniccd = CVAR_INIT ("soniccd", "Off", CV_SAVE|CV_ALLOWLUA, CV_OnOff, NULL);
 // END OF THAT THING //
 
 boolean LUA_CallAction(enum actionnum actionnum, mobj_t *actor);
