@@ -45,6 +45,12 @@ typedef struct TSoURDt3rdLoadingScreen_s {
 	boolean softwareLoadComplete;
 } TSoURDt3rdLoadingScreen_t;
 
+// Music //
+typedef struct TSoURDt3rdDefaultMusicTracks_s {
+	const char *trackName;
+	const char *track;
+} TSoURDt3rdDefaultMusicTracks_t;
+
 // Servers //
 typedef struct TSoURDt3rdServers_s {
 	boolean serverUsesTSoURDt3rd;
@@ -74,6 +80,9 @@ typedef struct TSoURDt3rd_s {
 	boolean checkedVersion;
 
 	TSoURDt3rdLoadingScreen_t loadingScreens;
+
+	// Music Stuff
+	TSoURDt3rdDefaultMusicTracks_t *defaultMusicTracks;
 
 	// Server Stuff
 	INT32 reachedSockSendErrorLimit;

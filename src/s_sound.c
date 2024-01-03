@@ -2156,20 +2156,6 @@ static boolean S_LoadMusic(const char *mname)
 	lumpnum_t mlumpnum;
 	void *mdata;
 
-	// STAR STUFF //
-	static const char *defaultMusicTrackName[] = {
-		[1] = "GFZ1", 		// GFZ1
-		"D_RUNNIN",			// DooM Wad Anthem
-		NULL
-	};
-
-	static const char *defaultMusicTrack[] = {
-		[1] = "gfz1", 		// GFZ1
-		"_runin",			// DooM Wad Anthem
-		NULL
-	};
-	// END THAT FOR NOW //
-
 	if (S_MusicDisabled())
 		return false;
 
@@ -2182,9 +2168,9 @@ static boolean S_LoadMusic(const char *mname)
 		// STAR STUFF //
 		if (cv_defaultmaptrack.value)
 		{
-			CONS_Alert(CONS_NOTICE, "Playing default map track %s as requested by TSoURDt3rd...\n", defaultMusicTrackName[cv_defaultmaptrack.value]);
-			
-			mlumpnum = S_GetMusicLumpNum(defaultMusicTrack[cv_defaultmaptrack.value]);
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "Playing default map track %s as requested by cv_defaultmaptrack...\n", TSoURDt3rd->defaultMusicTracks[cv_defaultmaptrack.value].trackName);
+
+			mlumpnum = S_GetMusicLumpNum(TSoURDt3rd->defaultMusicTracks[cv_defaultmaptrack.value].track);
 			if (mlumpnum == LUMPERROR)
 				return false;
 		}
@@ -2567,7 +2553,7 @@ static void Command_Tunes_f(void)
 	// STAR STUFF //
 	if (TSoURDt3rd_InAprilFoolsMode())
 	{
-		CONS_Printf("Nice Try. Maybe there's a command you need to turn off, perhaps?\n");
+		STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "Nice Try. Maybe there's a command you need to turn off, perhaps?\n");
 		return;
 	}
 	else if (TSoURDt3rd->jukebox.musicPlaying)
