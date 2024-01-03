@@ -59,6 +59,12 @@ TSoURDt3rd_t TSoURDt3rdPlayers[MAXPLAYERS];
 
 star_gamekey_t STAR_GameKeyDown[1][NUM_GAMECONTROLS];
 
+static TSoURDt3rdDefaultMusicTracks_t defaultMusicTracks[] =
+{
+	[1] = {"GFZ1", 		  "gfz1"}, // GFZ1
+		  {"D_RUNNIN",  "_runin"}  // DooM Wad Anthem
+};
+
 // VARIABLES //
 #ifdef HAVE_CURL
 char *hms_tsourdt3rd_api;
@@ -256,6 +262,9 @@ void TSoURDt3rd_InitializeStructures(void)
 	TSoURDt3rd->loadingScreens.screenToUse 				= 0;
 
 	TSoURDt3rd->loadingScreens.softwareLoadComplete 	= false;
+
+	// Music Stuff
+	TSoURDt3rd->defaultMusicTracks						= defaultMusicTracks;
 
 	// Server Stuff
 	TSoURDt3rd->masterServerAddressChanged				= false;
@@ -734,7 +743,7 @@ const char *STAR_SetWindowTitle(void)
 				case GS_INTRO: dynamictitle = "Introduction -"; break;
 				case GS_CUTSCENE: dynamictitle = "Watching a Cutscene in"; break;
 				case GS_CONTINUING: dynamictitle = "Continue? -"; break;
-				case GS_INTERMISSION: dynamictitle = (cv_memesonwindowtitle.value ? "End of Chapter! -" : (!mapheaderinfo[gamemap-1]->actnum ? va("%s Got Pass the Act! -", skins[players[consoleplayer].skin].realname) : va("%s Got Pass Act %d! -", skins[players[consoleplayer].skin].realname, mapheaderinfo[gamemap-1]->actnum))); break;
+				case GS_INTERMISSION: dynamictitle = (cv_memesonwindowtitle.value ? "End of Chapter! -" : va("%s Got Through %s! -", skins[players[consoleplayer].skin].realname, (!mapheaderinfo[gamemap-1]->actnum ? "the Act" : va("Act %d", mapheaderinfo[gamemap-1]->actnum)))); break;
 
 				case GS_CREDITS:
 				case GS_ENDING:
@@ -785,7 +794,7 @@ generalgametitles:
 
 	// Player is on a Custom Map
 	else
-		dynamictitle = va("%s Through %s %s -", (cv_memesonwindowtitle.value ? "D_RUNNIN" : "Running"), mapheaderinfo[gamemap-1]->lvlttl, ((mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE) ? "" : "Zone"));
+		dynamictitle = va("%s as %s Through %s %s -", (cv_memesonwindowtitle.value ? "D_RUNNIN" : "Running"), skins[players[consoleplayer].skin].realname, mapheaderinfo[gamemap-1]->lvlttl, ((mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE) ? "" : "Zone"));
 
 	// Now That We've Set Our Things, Let's Return our Window Title, and We're Done :)
 	windowtitle = va("%s SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING, dynamictitle);
