@@ -44,7 +44,7 @@
 
 #include "fastcmp.h" // fastcmp, helps with super stuff
 
-#include "STAR/star_vars.h" // STAR STUFF: PROVIDES UNIQUE STUFF
+#include "STAR/star_vars.h" // provides unique star stuff
 
 // Please feel free to provide your own Discord app if you're making a new custom build :)
 #define DISCORD_APPID "1013126566236135516"

@@ -57,7 +57,7 @@
 TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[0];
 TSoURDt3rd_t TSoURDt3rdPlayers[MAXPLAYERS];
 
-star_gamekey_t STAR_GameKeyDown[3][NUM_GAMECONTROLS];
+star_gamekey_t STAR_GameKeyDown[1][NUM_GAMECONTROLS];
 
 // VARIABLES //
 #ifdef HAVE_CURL
@@ -734,7 +734,7 @@ const char *STAR_SetWindowTitle(void)
 				case GS_INTRO: dynamictitle = "Introduction -"; break;
 				case GS_CUTSCENE: dynamictitle = "Watching a Cutscene in"; break;
 				case GS_CONTINUING: dynamictitle = "Continue? -"; break;
-				case GS_INTERMISSION: dynamictitle = (cv_memesonwindowtitle.value ? "End of Chapter! -" : (!mapheaderinfo[gamemap-1]->actnum ? "You Got Pass the Act! -" : va("You Got Pass Act %d! -", mapheaderinfo[gamemap-1]->actnum))); break;
+				case GS_INTERMISSION: dynamictitle = (cv_memesonwindowtitle.value ? "End of Chapter! -" : (!mapheaderinfo[gamemap-1]->actnum ? va("%s Got Pass the Act! -", skins[players[consoleplayer].skin].realname) : va("%s Got Pass Act %d! -", skins[players[consoleplayer].skin].realname, mapheaderinfo[gamemap-1]->actnum))); break;
 
 				case GS_CREDITS:
 				case GS_ENDING:
@@ -1007,9 +1007,9 @@ const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean coredum
 boolean STAR_Responder(UINT8 player, UINT8 input, boolean preventhold)
 {
 	// Make the Variables //
-	STAR_GameKeyDown[player][input].pressed = (player == 2 ?
-			(gamekeydown[gamecontrol[input][0]] || gamekeydown[gamecontrol[input][1]]) :
-			(gamekeydown[gamecontrolbis[input][0]] || gamekeydown[gamecontrolbis[input][1]]));
+	STAR_GameKeyDown[player][input].pressed = (!player ?
+			(gamekeydown[gamecontrol[input][player]] || gamekeydown[gamecontrol[input][player]]) :
+			(gamekeydown[gamecontrolbis[input][player]] || gamekeydown[gamecontrolbis[input][player]]));
 
 	// Control Key Stuff //
 	// Reset Everything if Not Tapping
@@ -1027,12 +1027,119 @@ boolean STAR_Responder(UINT8 player, UINT8 input, boolean preventhold)
 			STAR_GameKeyDown[player][input].pressed	= ((STAR_GameKeyDown[player][input].keyDown > TICRATE/2 && !preventhold) ? true : false);
 			STAR_GameKeyDown[player][input].keyDown++;
 		}
-
-		STAR_GameKeyDown[player][input].tapReady	= true;
+		else
+			STAR_GameKeyDown[player][input].tapReady = STAR_GameKeyDown[player][input].pressed = true;
 	}
 
 	// Return, and We're Done :) //
 	return STAR_GameKeyDown[player][input].pressed;
+}
+
+//
+// void TSoURDt3rd_BuildTicCMD(UINT8 player)
+// Builds TSoURDt3rd's Custom Keybinds and Runs Their Functions
+//
+void TSoURDt3rd_BuildTicCMD(UINT8 player)
+{
+	// Make the Variables //
+	// Jukebox
+	boolean openjukeboxkey;
+	boolean increasemusicspeedkey, decreasemusicspeedkey;
+	boolean playmostrecenttrackkey;
+	boolean stopjukeboxkey;
+
+	// Give Variables Their Values //
+	// Jukebox
+	openjukeboxkey			= STAR_Responder(player, JB_OPENJUKEBOX, true);
+
+	increasemusicspeedkey	= STAR_Responder(player, JB_INCREASEMUSICSPEED, false);
+	decreasemusicspeedkey	= STAR_Responder(player, JB_DECREASEMUSICSPEED, false);
+
+	playmostrecenttrackkey	= STAR_Responder(player, JB_PLAYMOSTRECENTTRACK, true);
+
+	stopjukeboxkey			= STAR_Responder(player, JB_STOPJUKEBOX, true);
+
+	// Run the Main Inputs //
+	// Jukebox Inputs
+	// Open the Jukebox Menu if the Key was Pressed
+	if (openjukeboxkey)
+	{
+		M_StartControlPanel();
+		M_TSoURDt3rdJukebox(0);
+
+		currentMenu->prevMenu = NULL;
+	}
+
+	// Increase the Music Speed if the Key was Pressed
+	if (increasemusicspeedkey)
+		(atof(cv_jukeboxspeed.string) >= 20.0f ?
+			(STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Can't increase the speed any further!\n")) :
+			(CV_Set(&cv_jukeboxspeed, va("%f", atof(cv_jukeboxspeed.string)+(0.1f)))));
+
+	// Decrease the Music Speed if the Key was Pressed
+	if (decreasemusicspeedkey)
+		(atof(cv_jukeboxspeed.string) < 0.1f ?
+			(STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Can't decrease the speed any further!\n")) :
+			(CV_Set(&cv_jukeboxspeed, va("%f", atof(cv_jukeboxspeed.string)-(0.1f)))));
+
+	// Replay the Most Recent Jukebox Track if the Key was Pressed
+	if (playmostrecenttrackkey)
+	{
+		// Haven't Recently Played a Track
+		if (!TSoURDt3rd->jukebox.lastTrackPlayed)
+			STAR_CONS_Printf(STAR_CONS_JUKEBOX, "You haven't recently played a track!\n");
+
+		// Already Have the Track Playing
+		else if (TSoURDt3rd->jukebox.musicPlaying)
+			STAR_CONS_Printf(STAR_CONS_JUKEBOX, "There's already a track playing!\n");
+
+		// Run Everything Normally, and We're Done :)
+		else
+		{
+			M_TSoURDt3rdJukebox(0);
+
+			strcpy(TSoURDt3rd->jukebox.musicName, (TSoURDt3rd_InAprilFoolsMode() ? "Get rickrolled lol" : TSoURDt3rd->jukebox.lastTrackPlayed->title));
+			strcpy(TSoURDt3rd->jukebox.musicTrack, (TSoURDt3rd_InAprilFoolsMode() ? "_hehe" : TSoURDt3rd->jukebox.lastTrackPlayed->name));
+
+			S_ChangeMusicInternal(TSoURDt3rd->jukebox.musicTrack, !TSoURDt3rd->jukebox.lastTrackPlayed->stoppingtics);
+			S_SpeedMusic(atof(cv_jukeboxspeed.string));
+
+			STAR_CONS_Printf(STAR_CONS_JUKEBOX, M_GetText("Loaded track \x82%s\x80.\n"), TSoURDt3rd->jukebox.musicName);
+
+			TSoURDt3rd->jukebox.musicPlaying			= true;
+			TSoURDt3rd->jukebox.initHUD					= true;
+		}
+	}
+
+	// Stop the Jukebox if the Key was Pressed
+	if (stopjukeboxkey)
+	{
+		if (!TSoURDt3rd->jukebox.musicPlaying)
+		{
+			STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Nothing is currently playing in the jukebox!\n");
+			S_StartSound(NULL, sfx_lose);
+		}
+		else
+		{
+			M_ResetJukebox();
+
+			S_StopSounds();
+			S_StopMusic();
+
+			S_StartSound(NULL, sfx_skid);
+
+			if (Playing())
+			{
+				player_t *rplayer = &players[consoleplayer];
+				(TSoURDt3rd_InAprilFoolsMode() ?
+					// Do Funniness for April Fools
+					(S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0)) :
+
+					// Regularly Execute Everything
+					(P_RestoreMusic(rplayer)));
+			}
+		}
+	}
 }
 
 // SAVEDATA //
@@ -1626,11 +1733,11 @@ void TSoURDt3rd_FindCurrentVersion(void)
 		if (TSoURDt3rd_CurrentVersion() < internalVersionNumber)
 			(cv_updatenotice.value == 1 ?
 				(M_StartMessage(va("%c%s\x80\nYou're using an outdated version of TSoURDt3rd.\n\nThe newest version is: %s\nYou're using version: %s\n\nCheck the SRB2 Message Board for the latest version!\n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Update TSoURDt3rd, Please", displayVersionString, TSOURDT3RDVERSION),NULL,MM_NOTHING)) :
-				(CONS_Alert(CONS_WARNING, "You're using an outdated version of TSoURDt3rd.\n\nThe newest version is: %s\nYou're using version: %s\n\nCheck the SRB2 Message Board for the latest version!\n", displayVersionString, TSOURDT3RDVERSION)));
+				(STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "You're using an outdated version of TSoURDt3rd.\n\nThe newest version is: %s\nYou're using version: %s\n\nCheck the SRB2 Message Board for the latest version!\n", displayVersionString, TSOURDT3RDVERSION)));
 		else if (TSoURDt3rd_CurrentVersion() > internalVersionNumber)
 			(cv_updatenotice.value == 1 ?
 				(M_StartMessage(va("%c%s\x80\nYou're using a version of TSoURDt3rd that hasn't even released yet.\n\nYou're probably a tester or coder,\nand in that case, hello!\n\nEnjoy messing around with the build!\n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Hello, Tester/Coder!"),NULL,MM_NOTHING)) :
-				(CONS_Alert(CONS_NOTICE, "You're using a version of TSoURDt3rd that hasn't even released yet.\nYou're probably a tester or coder, and in that case, hello!\nEnjoy messing around with the build!\n")));
+				(STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "You're using a version of TSoURDt3rd that hasn't even released yet.\nYou're probably a tester or coder, and in that case, hello!\nEnjoy messing around with the build!\n")));
 	}
 
 	TSoURDt3rd->checkedVersion = true;

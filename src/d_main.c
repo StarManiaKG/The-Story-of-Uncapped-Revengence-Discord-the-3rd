@@ -974,7 +974,7 @@ void D_SRB2Loop(void)
 		// April Fools
 		if (TSoURDt3rd_InAprilFoolsMode() && (!modifiedgame || savemoddata))
 		{
-			CONS_Printf("You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nyour game has been set to modified.\n");
+			STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nyour game has been set to modified.\n");
 			G_SetGameModified(false);
 		}
 
@@ -995,7 +995,7 @@ void D_SRB2Loop(void)
 			}
 			else if ((!modifiedgame || savemoddata) && (!TSoURDt3rd_NoMoreExtras) && (EnableEasterEggHuntBonuses))
 			{
-				CONS_Printf("You have the Easter Egg Hunt Bonus features enabled.\nTherefore, to prevent dumb things from happening,\nyour game has been set to modified.\n");
+				STAR_CONS_Printf(STAR_CONS_EASTER, "You have the Easter Egg Hunt Bonus features enabled.\nTherefore, to prevent dumb things from happening,\nyour game has been set to modified.\n");
 				G_SetGameModified(false);
 
 				M_UpdateEasterStuff();
@@ -1010,12 +1010,10 @@ void D_SRB2Loop(void)
 
 		// Do Jukebox Stuff //
 		// Whoa, Whoa, We Ran Out of Time (except again for keybind execution reasons)
-		static fixed_t jb_time = 0;
-
 		if (!TSoURDt3rd->jukebox.musicPlaying)
 		{
-			if (jb_time)
-				jb_time = 0;
+			if (TSoURDt3rd->jukebox.stoppingTics)
+				TSoURDt3rd->jukebox.stoppingTics = 0;
 		}
 		else
 		{
@@ -1023,23 +1021,20 @@ void D_SRB2Loop(void)
 			{
 				fixed_t jb_stoppingtics = (fixed_t)(TSoURDt3rd->jukebox.lastTrackPlayed->stoppingtics) << FRACBITS;
 
-				if (jb_stoppingtics && jb_time >= jb_stoppingtics)
+				if (jb_stoppingtics && TSoURDt3rd->jukebox.stoppingTics >= jb_stoppingtics)
 				{
 					M_ResetJukebox();
-					jb_time = 0;
+					TSoURDt3rd->jukebox.stoppingTics = 0;
 
 					if (Playing())
 					{
-						// We Mess Around a Little Here
-						if (TSoURDt3rd_InAprilFoolsMode())
-							S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
-						
-						// Play the Music Regularly
-						else
-						{
-							player_t *player = &players[consoleplayer];
-							(players->powers[pw_super] ? P_PlayJingle(player, JT_SUPER) : S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0));
-						}
+						player_t *player = &players[consoleplayer];
+						(TSoURDt3rd_InAprilFoolsMode() ?
+							// We Mess Around a Little Here
+							(S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0)) :
+	
+							// Play the Music Regularly
+							(P_RestoreMusic(player)));
 					}
 				}
 				else
@@ -1049,13 +1044,13 @@ void D_SRB2Loop(void)
 									(TSoURDt3rd->jukebox.lastTrackPlayed->bpm/atof(cv_jukeboxspeed.string)) :
 									(TSoURDt3rd->jukebox.lastTrackPlayed->bpm));
 
-					work = jb_time;
+					work = TSoURDt3rd->jukebox.stoppingTics;
 					work %= bpm;
-					if (jb_time >= (FRACUNIT << (FRACBITS - 2))) // prevent overflow jump - takes about 15 minutes of loop on the same song to reach
-						jb_time = work;
+					if (TSoURDt3rd->jukebox.stoppingTics >= (FRACUNIT << (FRACBITS - 2))) // prevent overflow jump - takes about 15 minutes of loop on the same song to reach
+						TSoURDt3rd->jukebox.stoppingTics = work;
 					work = FixedDiv(work*180, bpm);
 
-					jb_time += (S_CanSpeedMusic() ?
+					TSoURDt3rd->jukebox.stoppingTics += (S_CanSpeedMusic() ?
 								(renderdeltatics*atof(cv_jukeboxspeed.string)) :
 								(renderdeltatics));
 				}
@@ -1287,7 +1282,7 @@ static void D_AddFolder(addfilelist_t *list, const char *file)
 }
 
 // STAR STUFF //
-static void D_AutoLoadAddons(addfilelist_t *list, const char *file)
+static void TSoURDt3rd_AutoLoadAddons(addfilelist_t *list, const char *file)
 {
 	char *newfile;
 	size_t index = 0;
@@ -1297,12 +1292,12 @@ static void D_AutoLoadAddons(addfilelist_t *list, const char *file)
 
 	newfile = malloc(strlen(file) + (fileType == 1 ? 2 : 1)); // Path delimiter + NULL terminator
 	if (!newfile)
-		I_Error("D_AutoLoadAddons: No more free memory to autoload file %s", file);
+		I_Error("TSoURDt3rd_AutoLoadAddons: No more free memory to autoload file %s", file);
 	autoloading = true;
 	TSoURDt3rd_useAsFileName = true;
 
 	if (!fileType)
-		CONS_Printf("D_AutoLoadAddons: File %s is unknown or invalid\n", file);
+		CONS_Printf("TSoURDt3rd_AutoLoadAddons: File %s is unknown or invalid\n", file);
 	else
 	{
 		strcpy(newfile, file);
@@ -1371,7 +1366,7 @@ static void TSoURDt3rd_FindAddonsToAutoload(void)
 			}
 
 			// Load the File, Even if it's Unknown/Invalid
-			D_AutoLoadAddons(&autoloadwadfiles, wadsToAutoload);
+			TSoURDt3rd_AutoLoadAddons(&autoloadwadfiles, wadsToAutoload);
 
 			// Empty All the Strings
 			for (i = 0; wadsToAutoload[i] != '\0'; i++)
@@ -1797,7 +1792,7 @@ void D_SRB2Main(void)
 
 	if (autoloadwadfiles.numfiles)
 	{
-		CONS_Printf("D_AutoLoadAddons(): Autoloading Addons...\n");
+		CONS_Printf("TSoURDt3rd_AutoLoadAddons(): Autoloading Addons...\n");
 		W_InitMultipleFiles(&autoloadwadfiles);
 		D_CleanFile(&autoloadwadfiles);
 

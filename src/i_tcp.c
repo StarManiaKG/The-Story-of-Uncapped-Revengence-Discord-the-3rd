@@ -888,7 +888,7 @@ static void SOCK_Send(void)
 			}
 			NetUpdate(); // Check for new console commands and update the client
 
-			CONS_Alert(CONS_NOTICE, "SOCK_Send() - Error Prevented :)\n");
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "SOCK_Send() - Error Prevented :)\n");
 			return;
 			// DID STAR STUFF //
 		}

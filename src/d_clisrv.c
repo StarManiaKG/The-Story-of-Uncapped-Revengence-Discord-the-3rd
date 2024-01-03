@@ -4519,9 +4519,9 @@ static void HandlePacketFromAwayNode(SINT8 node)
 			TSoURDt3rdPlayers[node].serverPlayers.serverUsesTSoURDt3rd = ((netbuffer->u.servercfg.tsourdt3rd > 1 || netbuffer->u.servercfg.tsourdt3rd < 0) ? 0 : 1);
 			
 			if (netgame && !server)
-				(TSoURDt3rdPlayers[node].serverPlayers.serverUsesTSoURDt3rd ? 
-					(CONS_Printf("Server uses TSoURDt3rd, running features...\n")) :
-					(CONS_Printf("Server either doesn't use TSoURDt3rd or is using an outdated TSoURDt3rd, working around this...\n")));
+				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD, ((TSoURDt3rdPlayers[node].serverPlayers.serverUsesTSoURDt3rd) ? 
+					("Server uses TSoURDt3rd, running features...\n") :
+					("Server either doesn't use TSoURDt3rd or is using an outdated TSoURDt3rd, working around this...\n")));
 
 			TSoURDt3rdPlayers[node].serverPlayers.majorVersion 				= (TSoURDt3rdPlayers[node].serverPlayers.serverUsesTSoURDt3rd ? netbuffer->u.servercfg.tsourdt3rdmajorversion : 0);
 			TSoURDt3rdPlayers[node].serverPlayers.minorVersion 				= (TSoURDt3rdPlayers[node].serverPlayers.serverUsesTSoURDt3rd ? netbuffer->u.servercfg.tsourdt3rdminorversion : 0);
@@ -5834,6 +5834,11 @@ void NetUpdate(void)
 		maketic = neededtic;
 
 	Local_Maketic(realtics); // make local tic, and call menu?
+	// STAR STUFF //
+	TSoURDt3rd_BuildTicCMD(0);
+	if (splitscreen || botingame)
+		TSoURDt3rd_BuildTicCMD(1);
+	// END ALL THE THINGIES //
 
 	if (server)
 		CL_SendClientCmd(); // send it

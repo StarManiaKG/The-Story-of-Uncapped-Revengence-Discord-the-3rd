@@ -735,7 +735,14 @@ extern int
 // Structs //
 typedef enum
 {
-	STAR_CONS_JUKEBOX = 1
+	STAR_CONS_TSOURDT3RD = 1,
+	STAR_CONS_TSOURDT3RD_NOTICE,
+	STAR_CONS_TSOURDT3RD_ALERT,
+
+	STAR_CONS_APRILFOOLS,
+	STAR_CONS_EASTER,
+
+	STAR_CONS_JUKEBOX
 } star_messagetype_t;
 
 // Functions //

@@ -1909,57 +1909,48 @@ void CON_Drawer(void)
 // A function specifically dedicated towards printing out certain STAR Stuff in the Console!
 //
 // starMessageType Parameters:
-//		0/NULL				- Doesn't Add Anything Extra, Therefore Returns the Function Entirely.
-//		STAR_CONS_JUKEBOX	- "\x82TSoURDt3rd Jukebox:\x80 " + ...
+//		0/NULL						- Doesn't Add Anything Extra, Therefore Returns the Function Entirely.
+//		STAR_CONS_TSOURDT3RD		- CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd:")) + ...
+//		STAR_CONS_TSOURDT3RD_NOTICE	- CONS_Printf("\x83" "%s" "\x80 ", M_GetText("TSoURDt3rd:")) + ...
+//		STAR_CONS_TSOURDT3RD_ALERT	- CONS_Printf("\x85" "%s" "\x80 ", M_GetText("TSoURDt3rd:")) + ...
+//		STAR_CONS_APRILFOOLS		- CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd April Fools:")) + ...
+//		STAR_CONS_EASTER			- CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd Easter:")) + ...
+//		STAR_CONS_JUKEBOX			- CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd Jukebox:")) + ...
 //
 void STAR_CONS_Printf(star_messagetype_t starMessageType, const char *fmt, ...)
 {
 	va_list argptr;
 	static char *txt = NULL;
-	char starTxt[256] = "";
-	boolean refresh;
 
 	if (txt == NULL)
 		txt = malloc(8192);
 
 	va_start(argptr, fmt);
+	vsprintf(txt, fmt, argptr);
+	va_end(argptr);
+
+	// Now, just like STJr, I am lazy and I feel like just letting CONS_Printf take care of things.
+	// That should be fine with you.
 	switch (starMessageType)
 	{
-		case STAR_CONS_JUKEBOX: sprintf(starTxt, "\x82TSoURDt3rd Jukebox:\x80 "); break;
+		case STAR_CONS_TSOURDT3RD: CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd:")); break;
+		case STAR_CONS_TSOURDT3RD_NOTICE: CONS_Printf("\x83" "%s" "\x80 ", M_GetText("TSoURDt3rd:")); break;
+		case STAR_CONS_TSOURDT3RD_ALERT: CONS_Printf("\x85" "%s" "\x80 ", M_GetText("TSoURDt3rd:")); break;
+
+		case STAR_CONS_APRILFOOLS: CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd April Fools:")); break;
+		case STAR_CONS_EASTER: CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd Easter:")); break;
+
+		case STAR_CONS_JUKEBOX: CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd Jukebox:")); break;
 
 		default:
 		{
 			CONS_Printf("\x82STAR_CONS_Printf:\x80 You must specify a specific message type!\n");
 			free(txt);
 
-			return;
-			break;
+			return; break;
 		}
 	}
-	vsprintf(txt, va("%s%s", starTxt, fmt), argptr);
-	va_end(argptr);
 
-	// echo console prints to log file
-	DEBFILE(txt);
-
-	// write message in con text buffer
-	if (con_started)
-		CON_Print(txt);
-
-	CON_LogMessage(txt);
-
-	Lock_state();
-
-	// make sure new text is visible
-	con_scrollup = 0;
-	refresh = con_refresh;
-
-	Unlock_state();
-
-	// if not in display loop, force screen update
-	if (refresh)
-	{
-		CON_Drawer(); // here we display the console text
-		I_FinishUpdate(); // page flip or blit buffer
-	}
+	// ...Right?
+	CONS_Printf("%s", txt);
 }

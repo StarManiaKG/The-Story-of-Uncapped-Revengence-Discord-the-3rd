@@ -32,7 +32,7 @@ set(SRB2_ASSETS_GAME
 	"patch.pk3"
 	"music.dta"
 	"models.dat"
-	"tsourdt3rd.pk3" # STAR STUFF #
+	"tsourdt3rd.pk3" ## STAR STUFF ##
 )
 list(TRANSFORM SRB2_ASSETS_GAME PREPEND "/")
 list(TRANSFORM SRB2_ASSETS_GAME PREPEND "${SRB2_ASSET_DIRECTORY_ABSOLUTE}")

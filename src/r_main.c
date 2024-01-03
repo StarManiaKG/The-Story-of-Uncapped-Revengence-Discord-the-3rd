@@ -151,8 +151,8 @@ consvar_t cv_shadow = CVAR_INIT ("shadow", "Drop", CV_SAVE|CV_CALL, shadow_cons_
 
 // STAR STUFF //
 consvar_t cv_allobjectshaveshadows = CVAR_INIT ("allobjectshaveshadows", "No", CV_SAVE, CV_YesNo, NULL);
-static CV_PossibleValue_t shadowsrotate_cons_t[] = {{0, "No"}, {1, "Around Camera"}, {2, "Around Position"}, {0, NULL}};
-consvar_t cv_shadowsrotate = CVAR_INIT ("shadowsrotate", "No", CV_SAVE, shadowsrotate_cons_t, NULL);
+static CV_PossibleValue_t shadowposition_cons_t[] = {{0, "Object's Front"}, {1, "Camera Position"}, {2, "Static Position"}, {0, NULL}};
+consvar_t cv_shadowposition = CVAR_INIT ("shadowposition", "Object's Front", CV_SAVE, shadowposition_cons_t, NULL);
 // END THIS //
 
 consvar_t cv_skybox = CVAR_INIT ("skybox", "On", CV_SAVE, CV_OnOff, NULL);
@@ -1591,7 +1591,7 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_shadow);
 	// STAR STUFF //
 	CV_RegisterVar(&cv_allobjectshaveshadows);
-	CV_RegisterVar(&cv_shadowsrotate);
+	CV_RegisterVar(&cv_shadowposition);
 	// END THAT //
 	CV_RegisterVar(&cv_skybox);
 	CV_RegisterVar(&cv_ffloorclip);
