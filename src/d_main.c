@@ -1213,7 +1213,7 @@ void D_StartTitle(void)
 
 	// STAR STUFF //
 	// Helps Out With M_StartMessage Queueing Stuff (found in m_menu.c by the way)
-	if (currentMenu != &MessageDef)
+	if (!menuactive)
 		currentMenu = &MainDef; // reset the current menu ID
 	// END THIS FOR ME PLEASE //
 
