@@ -217,7 +217,7 @@ static void M_StopMessage(INT32 choice);
 static boolean stopstopmessage = false;
 
 // STAR STUFF //
-static messagequeue_t messageQueue[256];
+// Needed for Message Queueing
 static void M_ShiftMessageQueueDown(void);
 // END THIS PLEASE //
 
@@ -5165,6 +5165,7 @@ boolean M_Responder(event_t *ev)
 
 				// STAR STUFF //
 				M_ShiftMessageQueueDown();
+				//M_StartMessage("hi star, this is a test",NULL,MM_YESNO);
 				// END IT HERE PLEASE //
 			}
 			return true;
@@ -7828,12 +7829,13 @@ static menuitem_t MessageMenu[] =
 	// TO HACK
 	{0,NULL, NULL, NULL,0}
 };
+static INT16 MessageMenuDisplay[3][256];
 
 menu_t MessageDef =
 {
 	MN_SPECIAL,
 	NULL,               // title
-	1,                  // # of menu items
+	256,                // # of menu items
 	NULL,               // previous menu       (TO HACK)
 	MessageMenu,        // menuitem_t ->
 	M_DrawMessageMenu,  // drawing routine ->
@@ -7842,33 +7844,34 @@ menu_t MessageDef =
 	NULL
 };
 
-// (MAJOR STAR TODO NOTE: FIX THIS QUEUED MESSAGE STUFF) //
 // STAR STUFF //
 static void M_ShiftMessageQueueDown(void)
 {
+	// Make Variables //
+	size_t i, j;
+
 	// Shift the Tables Down //
-	if (messageQueue[1].text == NULL)
+	// Is the Message After The One on Screen Empty? Clear the Message Table, and We're Done Early :)
+	if (MessageDef.menuitems[1].text == NULL)
 	{
-		memset(messageQueue, 0, sizeof(messageQueue));
+		memset(MessageMenu, 0, sizeof(MessageMenu));
+		memset(MessageMenuDisplay, 0, sizeof(MessageMenuDisplay));
+
 		return;
 	}
-	for (size_t i = 0, j = 1; i < 256; i++, j++)
-		memmove(&messageQueue[i], &messageQueue[j], sizeof(messageQueue[j]));
+	for (i = 0; i < 256; i++)
+	{
+		memmove(&MessageMenu[i], &MessageMenu[i+1], sizeof(MessageMenu[i+1]));
+		for (j = 0; j < 3; j++)
+			memmove(&MessageMenuDisplay[j][i], &MessageMenuDisplay[j][i+1], sizeof(MessageMenuDisplay[j][i+1]));
+	}
 
-	// Now Just Change the Current Message, Play a Cute Sound, and We're Done :) //
-	MessageDef.menuitems[0].status		= messageQueue[0].status;
-	MessageDef.menuitems[0].itemaction	= messageQueue[0].itemaction;
+	// Now Just Change Where our New Message is Displayed, Play a Cute Sound, and We're Done :) //
+	MessageDef.x						= MessageMenuDisplay[0][0];
+	MessageDef.y						= MessageMenuDisplay[1][0];
 
-	MessageDef.menuitems[0].text	 	= messageQueue[0].text;
-	MessageDef.menuitems[0].alphaKey 	= (UINT8)messageQueue[0].alphaKey;
-
-	MessageDef.x						= (INT16)messageQueue[0].x;
-	MessageDef.y						= (INT16)messageQueue[0].y;
-
-	MessageDef.lastOn					= (INT16)messageQueue[0].lastOn;
-
-	if (messageQueue[1].text != NULL)
-		S_StartSound(NULL, sfx_zoom);
+	MessageDef.lastOn					= MessageMenuDisplay[2][0];
+	S_StartSound(NULL, sfx_zoom);
 }
 // END THAT PLEASE //
 
@@ -7877,6 +7880,9 @@ void M_StartMessage(const char *string, void *routine,
 	menumessagetype_t itemtype)
 {
 	size_t max = 0, start = 0, i, strlines;
+	// STAR STUFF //
+	size_t newMessage, dupMessage;
+	// END THAT PLEASE //
 	static char *message = NULL;
 	Z_Free(message);
 	message = Z_StrDup(string);
@@ -7921,79 +7927,75 @@ void M_StartMessage(const char *string, void *routine,
 	MessageDef.prevMenu = (currentMenu == &MessageDef ? &MainDef : currentMenu);
 
 	// STAR STUFF //
-	// Iterate Through the Message Queue Table and Queue Our Message
-	for (size_t newMessage = 0, dupMessage = 0; newMessage < 256; newMessage++)
+	// Iterate Through the Message Table and Queue Our Message
+	for (newMessage = 0; newMessage < 256; newMessage++)
 	{
 		// Ensure That the Table is Empty Before we do Anything Else
-		if (messageQueue[newMessage].text != NULL) continue;
-		memset(&messageQueue[newMessage], 0, sizeof(messageQueue[newMessage]));
+		if (MessageDef.menuitems[newMessage].text != NULL) continue;
+
+		memset(&MessageDef.menuitems[newMessage], 0, sizeof(MessageDef.menuitems[newMessage]));
+		for (i = 0; i < 3; i++)
+			memset(&MessageMenuDisplay[i][newMessage], 0, sizeof(MessageMenuDisplay[i][newMessage]));
 
 		// Make Sure This New Queued Message Isn't a Duplicate One
 		for (dupMessage = 0; dupMessage < 256; dupMessage++)
 		{
-			if (messageQueue[dupMessage].text == NULL) continue;
+			if (MessageDef.menuitems[dupMessage].text == NULL) continue;
 
-			if (strcmp(messageQueue[dupMessage].text, message) == 0 || &messageQueue[dupMessage] == &messageQueue[newMessage])
+			if (strcmp(MessageDef.menuitems[dupMessage].text, message) == 0 || &MessageDef.menuitems[dupMessage] == &MessageDef.menuitems[newMessage])
 			{
-				memset(&messageQueue[newMessage], 0, sizeof(messageQueue[newMessage]));
-				goto wrapitUp;
+				memset(&MessageDef.menuitems[newMessage], 0, sizeof(MessageDef.menuitems[newMessage]));
+				return;
 			}
 		}
 
-		// Set our Initial Message Queueing Properties, and We're Done :)
-		messageQueue[newMessage].status			= IT_MSGHANDLER;
-		switch (itemtype)
-		{
-			case MM_NOTHING: messageQueue[newMessage].itemaction = M_StopMessage; break;
-			case MM_YESNO: case MM_EVENTHANDLER: messageQueue[newMessage].itemaction = routine; break;
-		}
-
-		messageQueue[newMessage].text			= message;
-		if (!routine && itemtype != MM_NOTHING) itemtype = MM_NOTHING;
-		messageQueue[newMessage].alphaKey		= (UINT8)itemtype;
-
-		// STAR NOTE: this block already existed here lol
-		//added : 06-02-98: now draw a textbox around the message
-		// compute lenght max and the numbers of lines
-		for (strlines = 0; *(message+start); strlines++)
-		{
-			for (i = 0;i < strlen(message+start);i++)
-			{
-				if (*(message+start+i) == '\n')
-				{
-					if (i > max)
-						max = i;
-					start += i;
-					i = (size_t)-1; //added : 07-02-98 : damned!
-					start++;
-					break;
-				}
-			}
-
-			if (i == strlen(message+start))
-				start += i;
-		}
-
-		messageQueue[newMessage].x				= (INT16)((BASEVIDWIDTH  - 8*max-16)/2);
-		messageQueue[newMessage].y				= (INT16)((BASEVIDHEIGHT - M_StringHeight(message))/2);
-		messageQueue[newMessage].lastOn 		= (INT16)((strlines<<8)+max);
-
-		goto wrapitUp;
+		// Break, and We're Done :)
+		break;
 	}
 	// END THE STAR STUFFS NOW PLEASE //
 
-wrapitUp:
+	// Set our Initial Message Queueing Properties, and We're Done :)
+	MessageDef.menuitems[newMessage].text		= Z_StrDup(message);
+	MessageDef.menuitems[newMessage].alphaKey	= (UINT8)itemtype;
+	MessageDef.menuitems[newMessage].status		= IT_MSGHANDLER;
+	if (!routine && itemtype != MM_NOTHING) itemtype = MM_NOTHING;
+	switch (itemtype)
+	{
+		case MM_NOTHING: MessageDef.menuitems[newMessage].itemaction = M_StopMessage; break;
+		case MM_YESNO: case MM_EVENTHANDLER: MessageDef.menuitems[newMessage].itemaction = routine; break;
+	}
+
+	//added : 06-02-98: now draw a textbox around the message
+	// compute lenght max and the numbers of lines
+	for (strlines = 0; *(message+start); strlines++)
+	{
+		for (i = 0;i < strlen(message+start);i++)
+		{
+			if (*(message+start+i) == '\n')
+			{
+				if (i > max)
+					max = i;
+				start += i;
+				i = (size_t)-1; //added : 07-02-98 : damned!
+				start++;
+				break;
+			}
+		}
+
+		if (i == strlen(message+start))
+			start += i;
+	}
+
 	// STAR NOTE: i was here a fair bit lol
-	MessageDef.menuitems[0].status		= messageQueue[0].status;
-	MessageDef.menuitems[0].itemaction	= messageQueue[0].itemaction;
+	MessageMenuDisplay[0][newMessage] 	= (INT16)((BASEVIDWIDTH  - 8*max-16)/2);
+	MessageMenuDisplay[1][newMessage] 	= (INT16)((BASEVIDHEIGHT - M_StringHeight(message))/2);
 
-	MessageDef.menuitems[0].text	 	= messageQueue[0].text;
-	MessageDef.menuitems[0].alphaKey 	= (UINT8)messageQueue[0].alphaKey;
+	MessageMenuDisplay[2][newMessage]	= (INT16)((strlines<<8)+max);
 
-	MessageDef.x						= (INT16)messageQueue[0].x;
-	MessageDef.y						= (INT16)messageQueue[0].y;
+	MessageDef.x						= MessageMenuDisplay[0][0];
+	MessageDef.y						= MessageMenuDisplay[1][0];
 
-	MessageDef.lastOn					= (INT16)messageQueue[0].lastOn;
+	MessageDef.lastOn					= MessageMenuDisplay[2][0];
 
 	//M_SetupNextMenu();
 	currentMenu = &MessageDef;
@@ -8089,8 +8091,8 @@ static void M_StopMessage(INT32 choice)
 {
 	(void)choice;
 
-	// STAR STUFF //
-	if (messageQueue[1].text != NULL)
+	// STAR STUFF //	
+	if (MessageDef.menuitems[1].text != NULL)
 	{
 		M_ShiftMessageQueueDown();
 		return;

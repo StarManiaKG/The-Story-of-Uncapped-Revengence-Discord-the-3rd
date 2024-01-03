@@ -518,26 +518,7 @@ void M_InitPlayerSetupColors(void);
 void M_FreePlayerSetupColors(void);
 
 //// STAR STUFF SUBISHUHFLUKJDJIPOKD ////
-// structs //
-typedef struct messagequeue_s
-{
-	UINT16 status;		// show IT_xxx
-
-	const char *patch;
-	const char *text;	// used when FONTBxx lump is found
-
-	void *itemaction;	// FIXME: should be itemaction_t
-
-	UINT16 alphaKey;	// hotkey in menu or y of the item
-
-	INT16 x, y;			// x, y of menu
-	INT16 lastOn;		// last item user was on in menu
-} messagequeue_t;
-
 // variables //
-// vanilla source code extras
-extern menu_t MessageDef;
-
 // events
 extern boolean AllowEasterEggHunt, EnableEasterEggHuntBonuses;
 
