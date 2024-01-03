@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
 // Copyright (C) 2018-2020 by Kart Krew.
-// Copyright (C) 2020-2023 by Star "I Make My Own Copyrights" ManiaKG.
+// Copyright (C) 2020-2023 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
