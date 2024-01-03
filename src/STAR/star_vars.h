@@ -64,6 +64,7 @@ typedef struct TSoURDt3rdJukebox_s {
 	char musicTrack[7];
 
 	musicdef_t *lastTrackPlayed;
+	fixed_t stoppingTics;
 } TSoURDt3rdJukebox_t;
 
 // Main Struct //
@@ -95,7 +96,7 @@ typedef struct star_gamekey_s {
 	boolean tapReady;
 } star_gamekey_t;
 
-extern star_gamekey_t STAR_GameKeyDown[3][NUM_GAMECONTROLS];
+extern star_gamekey_t STAR_GameKeyDown[1][NUM_GAMECONTROLS];
 
 //// VARIABLES ////
 // TSoURDt3rd Stuff //
@@ -172,6 +173,7 @@ const char *STAR_SetWindowTitle(void);
 const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean coredumped);
 
 boolean STAR_Responder(UINT8 player, UINT8 input, boolean preventhold);
+void TSoURDt3rd_BuildTicCMD(UINT8 player);
 
 // Savedata //
 void STAR_WriteExtraData(void);

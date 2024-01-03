@@ -978,6 +978,10 @@ void Y_IntermissionDrawer(void)
 		}
 	}
 
+	// STAR STUFF //
+	ST_drawJukebox();
+	// END THAT PLEASE //
+
 skiptallydrawer:
 	if (!LUA_HudEnabled(hud_intermissionmessages))
 		return;

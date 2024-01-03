@@ -1280,10 +1280,11 @@ void R_RenderBSPNode(INT32 bspnum)
 			return;
 
 		bspnum = bsp->children[side^1];
-		// STAR STUFF //
-		TSoURDt3rd->loadingScreens.bspCount = bspnum;
-		// SHE'S ON THE BORDER, NOW! //
 	}
+
+	// STAR STUFF //
+	TSoURDt3rd->loadingScreens.bspCount = bspnum;
+	// SHE'S ON THE BORDER, NOW! //
 
 	// PORTAL CULLING
 	if (portalcullsector) {

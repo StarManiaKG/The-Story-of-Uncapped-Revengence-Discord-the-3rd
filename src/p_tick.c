@@ -926,7 +926,7 @@ void P_Ticker(boolean run)
 						SetPlayerSkinByNum(noMoreSonic, 1);
 						if (!noMoreSonic)
 						{
-							CONS_Printf("You can't play as Sonic; He's Dead.\n");
+							STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "You can't play as Sonic; He's Dead.\n");
 							CV_StealthSet(&cv_skin, skins[1].name);
 						}
 						else if (noMoreSonic == 1)
@@ -940,7 +940,7 @@ void P_Ticker(boolean run)
 			{
 				if (fastncmp(skins[players[consoleplayer].skin].name, "sonic", 5))
 				{
-					CONS_Printf("You can't play as Sonic; He's Dead.\n");
+					STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "You can't play as Sonic; He's Dead.\n");
 					SetPlayerSkinByNum(consoleplayer, 1);
 					CV_StealthSet(&cv_skin, skins[1].name);
 				}

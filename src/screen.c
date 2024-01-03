@@ -45,6 +45,7 @@
 #include "r_fps.h" // R_GetFramerateCap
 
 // STAR STUFF //
+#include "STAR/star_vars.h" // loading screen stuff
 #include "m_menu.h" // fps coloring command
 // END THAT PLEASE //
 
@@ -437,6 +438,13 @@ void SCR_ChangeRenderer(void)
 
 #endif
 
+	// STAR STUFF //
+	TSoURDt3rd->loadingScreens.loadCount = TSoURDt3rd->loadingScreens.loadPercentage = 0; // reset loading status
+	TSoURDt3rd->loadingScreens.bspCount = 0; // reset bsp count
+
+	TSoURDt3rd->loadingScreens.softwareLoadComplete = false; // reset software loading status
+	// END THE LOADING STUFF PLEASE //
+
 	// Set the new render mode
 	setrenderneeded = cv_renderer.value;
 }
@@ -604,7 +612,7 @@ void SCR_DisplayTicRate(void)
 			const char *drawntpsStr;
 			INT32 tpswidth;
 			
-			drawntpsStr = va("%02d/%02u", totaltics, TICRATE);
+			drawntpsStr = va("%02d/ %02u", totaltics, TICRATE);
 			tpswidth = V_StringWidth(drawntpsStr, V_NOSCALESTART);
 
 			V_DrawString(vid.width - ((7 * 8 * vid.dupx) + V_StringWidth("TPS: ", V_NOSCALESTART)), h-(8*vid.dupy),

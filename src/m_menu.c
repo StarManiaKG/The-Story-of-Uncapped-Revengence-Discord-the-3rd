@@ -2685,7 +2685,7 @@ static menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 
 	{IT_STRING | IT_CVAR,	NULL,	"Shadow Type",				&cv_shadow,	  			  111},
 	{IT_STRING | IT_CVAR,	NULL,	"All Objects Have Shadows",	&cv_allobjectshaveshadows,116},
-	{IT_STRING | IT_CVAR,	NULL,	"Shadows Rotate",			&cv_shadowsrotate,		  121},
+	{IT_STRING | IT_CVAR,	NULL,	"Shadow Position",			&cv_shadowposition,		  121},
 
 	{IT_STRING | IT_CVAR,	NULL,	"Allow Typical Time Over",	&cv_allowtypicaltimeover, 131},
 	{IT_STRING | IT_CVAR,	NULL,	"Pause Graphic Style",		&cv_pausegraphicstyle,	  136},
@@ -10007,6 +10007,7 @@ static void M_DrawSoundTest(void)
 					// Thin Strings
 					V_DrawThinString(x, y, (t == st_sel ? menuColor[cv_menucolor.value] : 0)|V_ALLOWLOWERCASE, soundtestdefs[t]->title));
 
+				// STAR NOTE: this is a music note
 				if (curplaying == soundtestdefs[t])
 				{
 					V_DrawFill(165+140-9+24, y-4, 8, 16, 150);
@@ -17013,7 +17014,7 @@ void M_TSoURDt3rdJukebox(INT32 choice)
 	}
 
 	M_CacheSoundTest();
-	if (TSoURDt3rd->jukebox.lastTrackPlayed)
+	if (TSoURDt3rd->jukebox.musicPlaying && TSoURDt3rd->jukebox.lastTrackPlayed)
 		curplaying = TSoURDt3rd->jukebox.lastTrackPlayed;
 
 	st_time = 0;
@@ -17236,6 +17237,7 @@ static void M_DrawTSoURDt3rdJukebox(void)
 					V_DrawString(x, y, (t == st_sel ? menuColor[cv_menucolor.value] : 0)|V_ALLOWLOWERCASE, soundtestdefs[t]->title) :
 					V_DrawThinString(x, y, (t == st_sel ? menuColor[cv_menucolor.value] : 0)|V_ALLOWLOWERCASE, soundtestdefs[t]->title));
 
+				// Music Note
 				if (curplaying == soundtestdefs[t])
 				{
 					V_DrawFill(165+140-9+24, y-4, 8, 16, 150);
@@ -17440,21 +17442,15 @@ static void M_HandleTSoURDt3rdJukebox(INT32 choice)
 		soundtestdefs = NULL;
 
 		// Play Default Stage Music if Jukebox Music Isn't Playing
-		if (!TSoURDt3rd->jukebox.musicPlaying)
+		if (!TSoURDt3rd->jukebox.musicPlaying && Playing())
 		{
-			if (Playing())
-			{
+			player_t *player = &players[consoleplayer];
+			(TSoURDt3rd_InAprilFoolsMode() ?
 				// We Mess Around a Little Here
-				if (TSoURDt3rd_InAprilFoolsMode())
-					S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
-				
+				(S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0)) :
+
 				// Play the Music Regularly
-				else
-				{
-					player_t *player = &players[consoleplayer];
-					(players->powers[pw_super] ? P_PlayJingle(player, JT_SUPER) : S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0));
-				}
-			}
+				(P_RestoreMusic(player)));
 		}
 
 		// Close the Menu
@@ -17485,6 +17481,8 @@ void M_ResetJukebox(void)
 	TSoURDt3rd->jukebox.musicPlaying = false;
 	memset(&TSoURDt3rd->jukebox.musicTrack, 0, sizeof(TSoURDt3rd->jukebox.musicTrack));
 	memset(&TSoURDt3rd->jukebox.musicName, 0, sizeof(TSoURDt3rd->jukebox.musicName));
+
+	TSoURDt3rd->jukebox.stoppingTics = 0;
 
 	// The Following Section Prevents Memory Leaks (Thanks SRB2 Discord!)
 	if (soundtestdefs && (currentMenu != &OP_TSoURDt3rdJukeboxDef && currentMenu != &SR_SoundTestDef))
