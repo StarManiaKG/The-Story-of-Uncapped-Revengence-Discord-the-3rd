@@ -5165,7 +5165,6 @@ boolean M_Responder(event_t *ev)
 
 				// STAR STUFF //
 				M_ShiftMessageQueueDown();
-				//M_StartMessage("hi star, this is a test",NULL,MM_YESNO);
 				// END IT HERE PLEASE //
 			}
 			return true;
@@ -7824,12 +7823,8 @@ static INT32 M_GetFirstLevelInList(INT32 gt)
 static void M_DrawMessageMenu(void);
 
 // Because this is just a hack-ish 'menu', I'm not putting this with the others
-static menuitem_t MessageMenu[] =
-{
-	// TO HACK
-	{0,NULL, NULL, NULL,0}
-};
-static INT16 MessageMenuDisplay[3][256];
+static menuitem_t MessageMenu[256]; // TO HACK
+static INT16 MessageMenuDisplay[3][256]; // TO HACK
 
 menu_t MessageDef =
 {
@@ -7932,10 +7927,6 @@ void M_StartMessage(const char *string, void *routine,
 	{
 		// Ensure That the Table is Empty Before we do Anything Else
 		if (MessageDef.menuitems[newMessage].text != NULL) continue;
-
-		memset(&MessageDef.menuitems[newMessage], 0, sizeof(MessageDef.menuitems[newMessage]));
-		for (i = 0; i < 3; i++)
-			memset(&MessageMenuDisplay[i][newMessage], 0, sizeof(MessageMenuDisplay[i][newMessage]));
 
 		// Make Sure This New Queued Message Isn't a Duplicate One
 		for (dupMessage = 0; dupMessage < 256; dupMessage++)
