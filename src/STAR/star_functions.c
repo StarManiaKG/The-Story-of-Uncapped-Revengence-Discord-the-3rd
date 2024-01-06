@@ -249,6 +249,9 @@ boolean TSoURDt3rd_InAprilFoolsMode(void)
 void TSoURDt3rd_InitializeStructures(void)
 {
 	// Set the Structures and We're Done :) //
+	// Main Stuff
+	TSoURDt3rd											= &TSoURDt3rdPlayers[consoleplayer];
+
 	// Game Stuff
 	TSoURDt3rd->usingTSoURDt3rd							= true;
 	TSoURDt3rd->checkedVersion							= false;
@@ -269,13 +272,13 @@ void TSoURDt3rd_InitializeStructures(void)
 	// Server Stuff
 	TSoURDt3rd->masterServerAddressChanged				= false;
 
-	TSoURDt3rd->serverPlayers->serverUsesTSoURDt3rd		= true;
+	TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd		= true;
 	
-	TSoURDt3rd->serverPlayers->majorVersion				= TSoURDt3rd_CurrentMajorVersion();
-	TSoURDt3rd->serverPlayers->minorVersion				= TSoURDt3rd_CurrentMinorVersion();
-	TSoURDt3rd->serverPlayers->subVersion				= TSoURDt3rd_CurrentSubversion();
+	TSoURDt3rd->serverPlayers.majorVersion				= TSoURDt3rd_CurrentMajorVersion();
+	TSoURDt3rd->serverPlayers.minorVersion				= TSoURDt3rd_CurrentMinorVersion();
+	TSoURDt3rd->serverPlayers.subVersion				= TSoURDt3rd_CurrentSubversion();
 
-	TSoURDt3rd->serverPlayers->serverTSoURDt3rdVersion	= TSoURDt3rd_CurrentVersion();
+	TSoURDt3rd->serverPlayers.serverTSoURDt3rdVersion	= TSoURDt3rd_CurrentVersion();
 
 	// Jukebox Stuff
 	TSoURDt3rd->jukebox.Unlocked 						= false;
@@ -285,22 +288,21 @@ void TSoURDt3rd_InitializeStructures(void)
 }
 
 //
-// void TSoURDt3rd_ReinitializeServerStructures(INT32 playernum)
+// void TSoURDt3rd_ReinitializeServerStructures(void)
 // Reinitializes TSoURDt3rd's Server Structures After Servers Wipe Them
 //
-void TSoURDt3rd_ReinitializeServerStructures(INT32 playernum)
+void TSoURDt3rd_ReinitializeServerStructures(void)
 {
-	// Clear the Table Right Quick //
-	memset(&TSoURDt3rdPlayers[playernum].serverPlayers, 0, sizeof (TSoURDt3rdServers_t));
-
 	// Reinitialize the Structures and We're Done :) //
-	TSoURDt3rdPlayers[playernum].serverPlayers->serverUsesTSoURDt3rd	= true;
-	
-	TSoURDt3rdPlayers[playernum].serverPlayers->majorVersion			= TSoURDt3rd_CurrentMajorVersion();
-	TSoURDt3rdPlayers[playernum].serverPlayers->minorVersion			= TSoURDt3rd_CurrentMinorVersion();
-	TSoURDt3rdPlayers[playernum].serverPlayers->subVersion				= TSoURDt3rd_CurrentSubversion();
+	TSoURDt3rd											= &TSoURDt3rdPlayers[consoleplayer];
 
-	TSoURDt3rdPlayers[playernum].serverPlayers->serverTSoURDt3rdVersion	= TSoURDt3rd_CurrentVersion();
+	TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd		= true;
+	
+	TSoURDt3rd->serverPlayers.majorVersion				= TSoURDt3rd_CurrentMajorVersion();
+	TSoURDt3rd->serverPlayers.minorVersion				= TSoURDt3rd_CurrentMinorVersion();
+	TSoURDt3rd->serverPlayers.subVersion				= TSoURDt3rd_CurrentSubversion();
+
+	TSoURDt3rd->serverPlayers.serverTSoURDt3rdVersion	= TSoURDt3rd_CurrentVersion();
 }
 
 //
