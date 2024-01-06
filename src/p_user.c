@@ -10769,7 +10769,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 STAR_return:
 	if (automapactive)
 	{
-		CONS_Alert(CONS_NOTICE, "A node has switched teams, closing the automap to prevent a crash...\n");
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "A node has switched teams, closing the automap to prevent a crash...\n");
 		AM_Stop();
 	}
 

@@ -5277,6 +5277,9 @@ static void BaseNumLaps_OnChange(void)
 // STAR STUFF: ELECTRIC BOOGALO //
 static void Got_Tsourdt3rdStructures(UINT8 **cp, INT32 playernum)
 {
+	// Make Variables //
+	UINT8 serverUsesTSoURDt3rd;
+
 	// Protect Others Against a Hacked/Buggy Client //
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
 	{
@@ -5287,20 +5290,23 @@ static void Got_Tsourdt3rdStructures(UINT8 **cp, INT32 playernum)
 	}
 
 	// Apply Info, and We're Done :) //
-	UINT8 serverUsesTSoURDt3rd											= (boolean)READUINT8(*cp);
-	TSoURDt3rdPlayers[playernum].serverPlayers->serverUsesTSoURDt3rd		= ((serverUsesTSoURDt3rd > 1) ? 0 : 1);
+	if (playernum == consoleplayer)
+		TSoURDt3rd														= &TSoURDt3rdPlayers[playernum];
 
-	TSoURDt3rdPlayers[playernum].serverPlayers->majorVersion 			= (TSoURDt3rdPlayers[playernum].serverPlayers->serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
-	TSoURDt3rdPlayers[playernum].serverPlayers->minorVersion 			= (TSoURDt3rdPlayers[playernum].serverPlayers->serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
-	TSoURDt3rdPlayers[playernum].serverPlayers->subVersion 				= (TSoURDt3rdPlayers[playernum].serverPlayers->serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
+	serverUsesTSoURDt3rd												= (boolean)READUINT8(*cp);
+	TSoURDt3rdPlayers[playernum].serverPlayers.serverUsesTSoURDt3rd		= ((serverUsesTSoURDt3rd > 1) ? 0 : 1);
 
-	TSoURDt3rdPlayers[playernum].serverPlayers->serverTSoURDt3rdVersion 	= STAR_CombineNumbers(3, TSoURDt3rdPlayers[playernum].serverPlayers->majorVersion, TSoURDt3rdPlayers[playernum].serverPlayers->minorVersion, TSoURDt3rdPlayers[playernum].serverPlayers->subVersion);
+	TSoURDt3rdPlayers[playernum].serverPlayers.majorVersion 			= (TSoURDt3rdPlayers[playernum].serverPlayers.serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
+	TSoURDt3rdPlayers[playernum].serverPlayers.minorVersion 			= (TSoURDt3rdPlayers[playernum].serverPlayers.serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
+	TSoURDt3rdPlayers[playernum].serverPlayers.subVersion 				= (TSoURDt3rdPlayers[playernum].serverPlayers.serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
+
+	TSoURDt3rdPlayers[playernum].serverPlayers.serverTSoURDt3rdVersion 	= STAR_CombineNumbers(3, TSoURDt3rdPlayers[playernum].serverPlayers.majorVersion, TSoURDt3rdPlayers[playernum].serverPlayers.minorVersion, TSoURDt3rdPlayers[playernum].serverPlayers.subVersion);
 
 #ifdef HAVE_DISCORDRPC
 	// DISCORD STUFF //
-	discordInfo.maxPlayers 		= (TSoURDt3rdPlayers[playernum].serverPlayers->serverUsesTSoURDt3rd ? READUINT8(*cp) : (UINT8)cv_maxplayers.value);
-	discordInfo.joinsAllowed 	= (TSoURDt3rdPlayers[playernum].serverPlayers->serverUsesTSoURDt3rd ? (boolean)READUINT8(*cp) : (boolean)cv_allownewplayer.value);
-	discordInfo.whoCanInvite 	= (TSoURDt3rdPlayers[playernum].serverPlayers->serverUsesTSoURDt3rd ? READUINT8(*cp) : (UINT8)cv_discordinvites.value);
+	discordInfo.maxPlayers 		= (TSoURDt3rdPlayers[playernum].serverPlayers.serverUsesTSoURDt3rd ? READUINT8(*cp) : (UINT8)cv_maxplayers.value);
+	discordInfo.joinsAllowed 	= (TSoURDt3rdPlayers[playernum].serverPlayers.serverUsesTSoURDt3rd ? (boolean)READUINT8(*cp) : (boolean)cv_allownewplayer.value);
+	discordInfo.whoCanInvite 	= (TSoURDt3rdPlayers[playernum].serverPlayers.serverUsesTSoURDt3rd ? READUINT8(*cp) : (UINT8)cv_discordinvites.value);
 
 	DRPC_UpdatePresence();
 	// END THAT DISCORD STUFF //
