@@ -88,7 +88,7 @@ typedef struct TSoURDt3rd_s {
 	INT32 reachedSockSendErrorLimit;
 	boolean masterServerAddressChanged;
 
-	TSoURDt3rdServers_t serverPlayers;
+	TSoURDt3rdServers_t *serverPlayers;
 
 	// Jukebox Stuff
 	TSoURDt3rdJukebox_t jukebox;
@@ -170,7 +170,7 @@ boolean TSoURDt3rd_InAprilFoolsMode(void);
 
 // Game //
 void TSoURDt3rd_InitializeStructures(void);
-void TSoURDt3rd_ReinitializeServerStructures(void);
+void TSoURDt3rd_ReinitializeServerStructures(INT32 playernum);
 
 void STAR_LoadingScreen(void);
 
