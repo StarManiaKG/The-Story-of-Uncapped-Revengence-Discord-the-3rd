@@ -1283,7 +1283,7 @@ void R_RenderBSPNode(INT32 bspnum)
 	}
 
 	// STAR STUFF //
-	TSoURDt3rd->loadingScreens.bspCount = bspnum;
+	TSoURDt3rdPlayers[consoleplayer].loadingScreens.bspCount = bspnum;
 	// SHE'S ON THE BORDER, NOW! //
 
 	// PORTAL CULLING

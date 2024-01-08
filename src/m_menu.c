@@ -4055,7 +4055,7 @@ static void STAR_AprilFools_OnChange(void)
 
 	if (Playing() || playeringame[consoleplayer])
 	{
-		if (TSoURDt3rd->jukebox.musicPlaying)
+		if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
 			M_ResetJukebox();
 
 		strncpy(mapmusname, (cv_ultimatemode.value ? "_hehe" : mapheaderinfo[gamemap-1]->musname), 7);
@@ -4164,12 +4164,12 @@ static void STAR_PerfectSave_OnChange(void)
 // Jukebox //
 static void STAR_JukeboxHUD_OnChange(void)
 {
-	TSoURDt3rd->jukebox.initHUD = (boolean)cv_jukeboxhud.value;
+	TSoURDt3rdPlayers[consoleplayer].jukebox.initHUD = (boolean)cv_jukeboxhud.value;
 }
 
 static void STAR_JukeboxSpeed_OnChange(void)
 {
-	if (TSoURDt3rd->jukebox.musicPlaying)
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
 		S_SpeedMusic(atof(cv_jukeboxspeed.string));
 }
 
@@ -4478,7 +4478,7 @@ void M_ChangeMenuMusic(const char *defaultmusname, boolean defaultmuslooping)
 	menupresmusic_t defaultmusic;
 
 	// STAR STUFF YAY //
-	if (TSoURDt3rd->jukebox.musicPlaying)
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
 		return;
 	//		NO		//
 
@@ -12789,7 +12789,7 @@ static void M_ModeAttackEndGame(INT32 choice)
 	modeattacking = ATTACKING_NONE;
 	M_ChangeMenuMusic("_title", true);
 	// STAR STUFF //
-	if (TSoURDt3rd->jukebox.musicPlaying && paused)
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying && paused)
 		S_ResumeAudio();
 	// KEEP PLAYING MY MUSIC PLEASE //
 	Nextmap_OnChange();
@@ -13608,7 +13608,7 @@ static void M_ConnectMenuModChecks(INT32 choice)
 	}
 
 	// Reset Master Server
-	else if (!CV_IsSetToDefault(&cv_masterserver) && !TSoURDt3rd->masterServerAddressChanged)
+	else if (!CV_IsSetToDefault(&cv_masterserver) && !TSoURDt3rdPlayers[consoleplayer].masterServerAddressChanged)
 		M_StartMessage(M_GetText("Hey! You've changed the Server Browser address.\n\nYou won't be able to see games from the official Server Browser.\nUnless you're from the future, this probably isn't what you want.\n\nPress 'Y' or 'Enter' to fix this and continue.\nPress any other key to continue anyway.\n"),M_PreConnectMenuChoice,MM_YESNO);
 	// END THAT MESS //
 
@@ -13624,7 +13624,7 @@ static void M_HandleMasterServerResetChoice(INT32 choice)
 		S_StartSound(NULL, sfx_s221);
 	}
 
-	TSoURDt3rd->masterServerAddressChanged = true;
+	TSoURDt3rdPlayers[consoleplayer].masterServerAddressChanged = true;
 }
 
 static void M_PreStartServerMenuChoice(INT32 choice)
@@ -13970,7 +13970,7 @@ static void M_StartServerMenu(INT32 choice)
 
 	// STAR STUFF //
 	// Master Server Address Changed
-	if (!CV_IsSetToDefault(&cv_masterserver) && !TSoURDt3rd->masterServerAddressChanged)
+	if (!CV_IsSetToDefault(&cv_masterserver) && !TSoURDt3rdPlayers[consoleplayer].masterServerAddressChanged)
 		M_StartMessage(M_GetText("Hey! You've changed the Server Browser address.\n\nYou won't be able to host games on the official Server Browser.\nUnless you're from the future, this probably isn't what you want.\n\nPress 'Y' or 'Enter' to fix this and continue.\nPress any other key to continue anyway.\n"),M_PreStartServerMenuChoice,MM_YESNO);
 
 	// Found Some Infractions
@@ -16378,8 +16378,8 @@ static INT32 STAR_QuitMessages(void)
 #endif
 	));
 
-	quitmsg[QUITSMSG5] = (TSoURDt3rd->jukebox.musicPlaying ? 
-							(M_GetText(va("Come back!\nFinish listening to\n%s!\n\n(Press 'Y' to quit)", TSoURDt3rd->jukebox.musicName))) :
+	quitmsg[QUITSMSG5] = (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying ? 
+							(M_GetText(va("Come back!\nFinish listening to\n%s!\n\n(Press 'Y' to quit)", TSoURDt3rdPlayers[consoleplayer].jukebox.musicName))) :
 							(M_GetText("Come back!\nYou have more jukebox music to play!\n\n(Press 'Y' to quit)")));
 
 
@@ -16775,7 +16775,7 @@ static void M_CheckForTSoURDt3rdUpdates(INT32 choice)
 {
 	(void)choice;
 
-	TSoURDt3rd->checkedVersion = false;
+	TSoURDt3rdPlayers[consoleplayer].checkedVersion = false;
 	TSoURDt3rd_FindCurrentVersion();
 }
 
@@ -16977,6 +16977,7 @@ static void M_TSoURDt3rdOptions(INT32 choice)
 void M_TSoURDt3rdJukebox(INT32 choice)
 {
 	INT32 ul = skyRoomMenuTranslations[choice-1];
+	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer];
 
 	soundtestpage = (UINT8)(unlockables[ul].variable);
 	if (!soundtestpage)
@@ -17025,6 +17026,8 @@ static void M_DrawTSoURDt3rdJukebox(void)
 	INT32 x, y, i;
 	fixed_t hscale = FRACUNIT/2, vscale = FRACUNIT/2, bounce = 0;
 	UINT8 frame[4] = {0, 0, -1, SKINCOLOR_RUBY};
+
+	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer];
 
 	// let's handle the ticker first.
 	// STAR NOTE: there's a duplicate of the latter, non-sfx part of this ticker in d_main.c, where the D_SRB2Loop function is, just so you know :p
@@ -17262,6 +17265,7 @@ static void M_DrawTSoURDt3rdJukebox(void)
 static void M_HandleTSoURDt3rdJukebox(INT32 choice)
 {
 	boolean exitmenu = true;
+	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer];
 
 	switch (choice)
 	{
@@ -17466,6 +17470,8 @@ static void M_TSoURDt3rdJukeboxControls(INT32 choice)
 void M_ResetJukebox(void)
 {
 	// Clear the Music Stuff //
+	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer];
+
 	if (curplaying)
 		STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Resetting Jukebox...\n");
 	curplaying = NULL;
@@ -17585,7 +17591,7 @@ static void STAR_HandleSnakeMenu(INT32 choice)
 void STAR_SetProblematicCommandsForNetgames(void)
 {
 	// Structs
-	TSoURDt3rd->reachedSockSendErrorLimit = 0;
+	TSoURDt3rdPlayers[consoleplayer].reachedSockSendErrorLimit = 0;
 
 	// Events
 	if (eastermode)
@@ -17604,7 +17610,7 @@ void STAR_SetProblematicCommandsForNetgames(void)
 void STAR_ResetProblematicCommandsAfterNetgames(void)
 {
 	// Structs
-	TSoURDt3rd->reachedSockSendErrorLimit = 0;
+	TSoURDt3rdPlayers[consoleplayer].reachedSockSendErrorLimit = 0;
 
 	// Events
 	if (eastermode)

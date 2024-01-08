@@ -3996,7 +3996,7 @@ boolean F_ContinueResponder(event_t *event)
 	keypressed = true;
 	imcontinuing = true;
 	S_StartSound(NULL, sfx_kc6b);
-	if (!TSoURDt3rd->jukebox.musicPlaying) // STAR NOTE: hi, i was here again lol
+	if (!TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying) // STAR NOTE: hi, i was here again lol
 		I_FadeSong(0, MUSICRATE, &S_StopMusic);
 
 	return true;

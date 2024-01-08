@@ -188,7 +188,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 	deh_num_warning = 0;
 
 	// STAR STUFF //
-	if (TSoURDt3rd->jukebox.musicPlaying && savemoddata && (introchanged || titlechanged))
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying && savemoddata && (introchanged || titlechanged))
 		S_StopMusic();
 	// END IT PLEASE //
 
@@ -589,7 +589,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 		G_LoadGameData(clientGamedata);
 
 		// STAR STUFF //
-		TSoURDt3rd->jukebox.Unlocked = false;
+		TSoURDt3rdPlayers[consoleplayer].jukebox.Unlocked = false;
 		// MARKING STUFF IS FUN //
 	}
 

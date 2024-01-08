@@ -2086,7 +2086,7 @@ boolean S_RecallMusic(UINT16 status, boolean fromfirst)
 
 	// STAR STUFF YAY //
 	// We're Playing Music in the Jukebox, Clear the Memory and Don't Do Anything
-	if (TSoURDt3rd->jukebox.musicPlaying)
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
 	{
 		Z_Free(entry);
 		return false;
@@ -2168,9 +2168,9 @@ static boolean S_LoadMusic(const char *mname)
 		// STAR STUFF //
 		if (cv_defaultmaptrack.value)
 		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "Playing default map track %s as requested by cv_defaultmaptrack...\n", TSoURDt3rd->defaultMusicTracks[cv_defaultmaptrack.value].trackName);
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "Playing default map track %s as requested by cv_defaultmaptrack...\n", TSoURDt3rdPlayers[consoleplayer].defaultMusicTracks[cv_defaultmaptrack.value].trackName);
 
-			mlumpnum = S_GetMusicLumpNum(TSoURDt3rd->defaultMusicTracks[cv_defaultmaptrack.value].track);
+			mlumpnum = S_GetMusicLumpNum(TSoURDt3rdPlayers[consoleplayer].defaultMusicTracks[cv_defaultmaptrack.value].track);
 			if (mlumpnum == LUMPERROR)
 				return false;
 		}
@@ -2290,7 +2290,7 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 		return;
 
 	// STAR STUFF //
-	if (TSoURDt3rd->jukebox.musicPlaying)
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
 	{
 		if (Playing() && playeringame[consoleplayer])
 			S_ResumeAudio();
@@ -2360,7 +2360,7 @@ void S_StopMusic(void)
 		return;
 
 	// STAR STUFF //
-	if (TSoURDt3rd->jukebox.musicPlaying)
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
 		M_ResetJukebox();
 	// I MUST LABEL EVERYTHING //
 
@@ -2458,7 +2458,7 @@ void S_StopFadingMusic(void)
 boolean S_FadeMusicFromVolume(UINT8 target_volume, INT16 source_volume, UINT32 ms)
 {
 	// STAR STUFF LOL //
-	if (TSoURDt3rd->jukebox.musicPlaying)
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
 		return false;
 	// END STAR STUFF LOL //
 
@@ -2471,7 +2471,7 @@ boolean S_FadeMusicFromVolume(UINT8 target_volume, INT16 source_volume, UINT32 m
 boolean S_FadeOutStopMusic(UINT32 ms)
 {
 	// MORE STAR STUFF //
-	if (TSoURDt3rd->jukebox.musicPlaying)
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
 		return false;
 	// NO MORE STAR STUFF //
 
@@ -2498,7 +2498,7 @@ void S_StartEx(boolean reset)
 	}
 
 	// STAR STUFF YAY //
-	if (TSoURDt3rd->jukebox.musicPlaying)
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
 		return;
 	// TORTURE IS MY FAVORITE FORM OF PUNISHMENT, HOW DID YOU KNOW //
 
@@ -2556,7 +2556,7 @@ static void Command_Tunes_f(void)
 		STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "Nice Try. Maybe there's a command you need to turn off, perhaps?\n");
 		return;
 	}
-	else if (TSoURDt3rd->jukebox.musicPlaying)
+	else if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
 	{
 		STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Sorry, you can't use this command while playing music in the Jukebox.\n");
 		return;
@@ -2603,7 +2603,7 @@ static void Command_RestartAudio_f(void)
 	if (Playing()) // Gotta make sure the player is in a level
 		P_RestoreMusic(&players[consoleplayer]);
 	// STAR STUFF FOR REASONS I GUESS //
-	if (TSoURDt3rd->jukebox.musicPlaying)
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
 		M_ResetJukebox();
 	// FINE, I'LL LET YOU STOP IT HERE... //
 }

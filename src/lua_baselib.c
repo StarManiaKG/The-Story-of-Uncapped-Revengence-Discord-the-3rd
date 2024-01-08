@@ -3047,7 +3047,7 @@ static int lib_sSpeedMusic(lua_State *L)
 			return LUA_ErrInvalid(L, "player_t");
 	}
 	if ((!player || P_IsLocalPlayer(player))
-		&& (!TSoURDt3rd->jukebox.musicPlaying)) // STAR NOTE: i was here lol
+		&& (!TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)) // STAR NOTE: i was here lol
 
 		S_SpeedMusic(speed);
 	return 0;

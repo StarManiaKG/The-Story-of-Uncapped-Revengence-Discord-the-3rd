@@ -54,9 +54,7 @@
 //////////////////////////////////////
 
 // STRUCTS //
-TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[0];
 TSoURDt3rd_t TSoURDt3rdPlayers[MAXPLAYERS];
-
 star_gamekey_t STAR_GameKeyDown[1][NUM_GAMECONTROLS];
 
 static TSoURDt3rdDefaultMusicTracks_t defaultMusicTracks[] =
@@ -243,14 +241,14 @@ boolean TSoURDt3rd_InAprilFoolsMode(void)
 
 // GAME //
 //
-// void TSoURDt3rd_InitializeStructures(void)
+// void TSoURDt3rd_InitializeStructures(INT32 playernum)
 // Initializes TSoURDt3rd's Structures
 //
-void TSoURDt3rd_InitializeStructures(void)
+void TSoURDt3rd_InitializeStructures(INT32 playernum)
 {
 	// Set the Structures and We're Done :) //
 	// Main Stuff
-	TSoURDt3rd											= &TSoURDt3rdPlayers[consoleplayer];
+	TSoURDt3rd_t *TSoURDt3rd							= &TSoURDt3rdPlayers[playernum];
 
 	// Game Stuff
 	TSoURDt3rd->usingTSoURDt3rd							= true;
@@ -294,8 +292,10 @@ void TSoURDt3rd_InitializeStructures(void)
 void TSoURDt3rd_ReinitializeServerStructures(void)
 {
 	// Reinitialize the Structures and We're Done :) //
-	TSoURDt3rd											= &TSoURDt3rdPlayers[consoleplayer];
+	// Main Stuff
+	TSoURDt3rd_t *TSoURDt3rd							= &TSoURDt3rdPlayers[consoleplayer];
 
+	// Server Stuff
 	TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd		= true;
 	
 	TSoURDt3rd->serverPlayers.majorVersion				= TSoURDt3rd_CurrentMajorVersion();
@@ -312,6 +312,8 @@ void TSoURDt3rd_ReinitializeServerStructures(void)
 void STAR_LoadingScreen(void)
 {
 	// Make Variables //
+	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer];
+
 	char s[16];
 	INT32 x, y;
 
@@ -1056,6 +1058,9 @@ boolean STAR_Responder(UINT8 player, UINT8 input, boolean preventhold)
 void TSoURDt3rd_BuildTicCMD(UINT8 player)
 {
 	// Make the Variables //
+	// Main
+	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer];
+
 	// Jukebox
 	boolean openjukeboxkey;
 	boolean increasemusicspeedkey, decreasemusicspeedkey;
@@ -1725,9 +1730,9 @@ void TSoURDt3rd_FindCurrentVersion(void)
 	const char *displayVersionString;
 
 	// Run Some Checks //
-	if ((gamestate == GS_NULL)			// Have we Even Initialized the Game? If not, Don't Run This.
-		|| (TSoURDt3rd->checkedVersion)	// Have we Already Checked the Version? If so, Don't Run This Again.
-		|| (!cv_updatenotice.value))	// Do we Allow Screen or Console Messages? If not, Don't Run This.
+	if ((gamestate == GS_NULL)									// Have we Even Initialized the Game? If not, Don't Run This.
+		|| (TSoURDt3rdPlayers[consoleplayer].checkedVersion)	// Have we Already Checked the Version? If so, Don't Run This Again.
+		|| (!cv_updatenotice.value))							// Do we Allow Screen or Console Messages? If not, Don't Run This.
 
 		return;
 
@@ -1754,7 +1759,7 @@ void TSoURDt3rd_FindCurrentVersion(void)
 				(STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "You're using a version of TSoURDt3rd that hasn't even released yet.\nYou're probably a tester or coder, and in that case, hello!\nEnjoy messing around with the build!\n")));
 	}
 
-	TSoURDt3rd->checkedVersion = true;
+	TSoURDt3rdPlayers[consoleplayer].checkedVersion = true;
 }
 #endif // HAVE_CURL
 

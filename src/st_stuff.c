@@ -2701,6 +2701,9 @@ INT32 jukeboxw;						// Stores the String Width of the Current Jukebox Track
 
 void ST_drawJukebox(void)
 {
+	// Make Some Extra Variables //
+	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer];
+
 	// Hide the Jukebox HUD if Circumstances Have Been Met //
 	if (!cv_jukeboxhud.value || !TSoURDt3rd->jukebox.musicPlaying)
 	{

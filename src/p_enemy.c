@@ -4418,7 +4418,7 @@ void A_SuperSneakers(mobj_t *actor)
 	if (P_IsLocalPlayer(player) && !player->powers[pw_super])
 	{
 		if ((mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC)
-			&& (!TSoURDt3rd->jukebox.musicPlaying)) // STAR NOTE: i was here lol
+			&& (!TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)) // STAR NOTE: i was here lol
 
 			S_SpeedMusic(1.4f);
 		else
