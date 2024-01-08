@@ -970,6 +970,9 @@ void D_SRB2Loop(void)
 #endif
 
 		//// STAR STUFF ////
+		// Make Variables //
+		TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer];
+
 		// Do Event Stuff //
 		// April Fools
 		if (TSoURDt3rd_InAprilFoolsMode() && (!modifiedgame || savemoddata))
@@ -1149,9 +1152,9 @@ void D_StartTitle(void)
 
 	// STAR STUFF YAY //
 	// Put a New Section Here Just so It Doesn't Reset My Fun lol
-	if (!TSoURDt3rd->jukebox.musicPlaying)
+	if (!TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
 		S_StopMusic();
-	else if (TSoURDt3rd->jukebox.musicPlaying && paused)
+	else if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying && paused)
 		S_ResumeAudio();
 	// END THAT STUFF //
 
@@ -1606,8 +1609,8 @@ void D_SRB2Main(void)
 	ChangeDirForUrlHandler();
 
 	// STAR STUFF //
-	TSoURDt3rd_InitializeStructures();	// Initialize the Build and its Structures
-	TSoURDt3rd_CheckTime();				// Check the Time on Our Computer
+	TSoURDt3rd_InitializeStructures(consoleplayer);	// Initialize the Build and its Structures
+	TSoURDt3rd_CheckTime();							// Check the Time on Our Computer
 	// END THIS STUFF //
 
 	// identify the main IWAD file to use

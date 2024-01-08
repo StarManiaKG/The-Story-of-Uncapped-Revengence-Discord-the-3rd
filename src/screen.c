@@ -439,10 +439,10 @@ void SCR_ChangeRenderer(void)
 #endif
 
 	// STAR STUFF //
-	TSoURDt3rd->loadingScreens.loadCount = TSoURDt3rd->loadingScreens.loadPercentage = 0; // reset loading status
-	TSoURDt3rd->loadingScreens.bspCount = 0; // reset bsp count
+	TSoURDt3rdPlayers[consoleplayer].loadingScreens.loadCount = TSoURDt3rdPlayers[consoleplayer].loadingScreens.loadPercentage = 0; // reset loading status
+	TSoURDt3rdPlayers[consoleplayer].loadingScreens.bspCount = 0; // reset bsp count
 
-	TSoURDt3rd->loadingScreens.softwareLoadComplete = false; // reset software loading status
+	TSoURDt3rdPlayers[consoleplayer].loadingScreens.softwareLoadComplete = false; // reset software loading status
 	// END THE LOADING STUFF PLEASE //
 
 	// Set the new render mode

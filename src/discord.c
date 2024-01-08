@@ -992,6 +992,7 @@ void DRPC_UpdatePresence(void)
 
 	// Pointers
 	gamedata_t *data = serverGamedata; // Proper Gamedata Pointer, Made by Bitten
+	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer];
 
 	////// 	  INITIALIZE 	 //////
 	DiscordRichPresence discordPresence;

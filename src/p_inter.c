@@ -318,7 +318,7 @@ void P_DoMatchSuper(player_t *player)
 	player->powers[pw_sneakers] = emeraldspawndelay;
 	if (P_IsLocalPlayer(player) && !player->powers[pw_super])
 	{
-		if (!TSoURDt3rd->jukebox.musicPlaying) // STAR NOTE: i was here lol
+		if (!TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying) // STAR NOTE: i was here lol
 			S_StopMusic();
 		if (mariomode)
 			G_GhostAddColor(GHC_INVINCIBLE);
@@ -345,7 +345,7 @@ void P_DoMatchSuper(player_t *player)
 				player->powers[pw_sneakers] = player->powers[pw_invulnerability];
 				if (P_IsLocalPlayer(player) && !player->powers[pw_super])
 				{
-					if (!TSoURDt3rd->jukebox.musicPlaying) // STAR NOTE: i was here lol
+					if (!TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying) // STAR NOTE: i was here lol
 						S_StopMusic();
 					if (mariomode)
 						G_GhostAddColor(GHC_INVINCIBLE);

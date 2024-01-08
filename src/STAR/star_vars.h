@@ -94,7 +94,6 @@ typedef struct TSoURDt3rd_s {
 	TSoURDt3rdJukebox_t jukebox;
 } TSoURDt3rd_t;
 
-extern TSoURDt3rd_t *TSoURDt3rd;
 extern TSoURDt3rd_t TSoURDt3rdPlayers[MAXPLAYERS];
 
 // Input Struct //
@@ -169,7 +168,7 @@ void TSoURDt3rd_EventMessage(INT32 choice);
 boolean TSoURDt3rd_InAprilFoolsMode(void);
 
 // Game //
-void TSoURDt3rd_InitializeStructures(void);
+void TSoURDt3rd_InitializeStructures(INT32 playernum);
 void TSoURDt3rd_ReinitializeServerStructures(void);
 
 void STAR_LoadingScreen(void);

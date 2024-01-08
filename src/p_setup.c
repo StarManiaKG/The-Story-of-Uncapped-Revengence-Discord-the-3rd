@@ -7662,6 +7662,10 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	sector_t *ss;
 	levelloading = true;
 
+	// STAR STUFF //
+	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer];
+	// REAL FUN //
+
 	// This is needed. Don't touch.
 	maptol = mapheaderinfo[gamemap-1]->typeoflevel;
 	gametyperules = gametypedefaultrules[gametype];

@@ -3858,6 +3858,10 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 			CL_ClearPlayer(newplayernum);
 		playeringame[newplayernum] = true;
 		G_AddPlayer(newplayernum);
+		// STAR STUFF //
+		memset(&TSoURDt3rdPlayers[newplayernum].serverPlayers, 0, sizeof (TSoURDt3rdServers_t));
+		TSoURDt3rd_InitializeStructures(newplayernum);
+		// WUH //
 		if (newplayernum+1 > doomcom->numslots)
 			doomcom->numslots = (INT16)(newplayernum+1);
 
@@ -3933,16 +3937,21 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 	{
 		char joinmsg[256];
 
-		// DISCORD STUFF YAY //
-		if (node != mynode)
-			S_StartSound(NULL, STAR_JoinSFX);
-		// MEEP //
-
 		// STAR STUFF TOO YAY //
-		TSoURDt3rd_t *t = &TSoURDt3rdPlayers[newplayernum];
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD, (t->usingTSoURDt3rd ? 
-				("Joining player is using TSoURDt3rd!\n") :
-				("Joining player doesn't seem to be using TSoURDt3rd, please be cautious of what you do!\n")));
+		if (node != mynode)
+		{
+			if (server)
+			{
+				TSoURDt3rd_t *t = &TSoURDt3rdPlayers[newplayernum];
+				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD, (t->usingTSoURDt3rd ? 
+						("Joining player is using TSoURDt3rd!\n") :
+						("Joining player doesn't seem to be using TSoURDt3rd, please be cautious of what you do!\n")));
+			}
+
+			// DISCORD STUFF YAY //
+			S_StartSound(NULL, STAR_JoinSFX);
+			// MEEP //
+		}
 		// END THAT PLEASE //
 
 		if (rejoined)

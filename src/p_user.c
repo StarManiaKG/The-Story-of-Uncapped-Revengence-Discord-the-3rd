@@ -1529,7 +1529,7 @@ void P_PlayLivesJingle(player_t *player)
 	if (mariomode)
 		S_StartSound(NULL, sfx_marioa);
 	else if ((use1upSound || cv_1upsound.value)
-			|| (TSoURDt3rd->jukebox.musicPlaying)) // STAR NOTE: i was also here lol
+		|| (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)) // STAR NOTE: i was also here lol
 		S_StartSound(NULL, sfx_oneup);
 	else
 	{
@@ -1569,7 +1569,7 @@ void P_PlayJingleMusic(player_t *player, const char *musname, UINT16 musflags, b
 {
 	// If gamestate != GS_LEVEL, always play the jingle (1-up intermission)
 	if ((gamestate == GS_LEVEL && player && !P_IsLocalPlayer(player))
-		|| (TSoURDt3rd->jukebox.musicPlaying)) // STAR NOTE: i was here as well
+		|| (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)) // STAR NOTE: i was here as well
 		return;
 
 	S_RetainMusic(musname, musflags, looping, 0, status);
@@ -1662,7 +1662,7 @@ void P_RestoreMusic(player_t *player)
 		return;
 
 	// STAR STUFF //
-	if (!TSoURDt3rd->jukebox.musicPlaying)
+	if (!TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
 		S_SpeedMusic(1.0f);
 	// END THAT //
 
@@ -1696,7 +1696,7 @@ void P_RestoreMusic(player_t *player)
 		if (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC)
 		{
 			// STAR STUFF //
-			if (!TSoURDt3rd->jukebox.musicPlaying)
+			if (!TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
 				S_SpeedMusic(1.4f);
 			// END THIS //
 
