@@ -13972,10 +13972,6 @@ static void M_StartServerMenu(INT32 choice)
 	// Master Server Address Changed
 	if (!CV_IsSetToDefault(&cv_masterserver) && !TSoURDt3rdPlayers[consoleplayer].masterServerAddressChanged)
 		M_StartMessage(M_GetText("Hey! You've changed the Server Browser address.\n\nYou won't be able to host games on the official Server Browser.\nUnless you're from the future, this probably isn't what you want.\n\nPress 'Y' or 'Enter' to fix this and continue.\nPress any other key to continue anyway.\n"),M_PreStartServerMenuChoice,MM_YESNO);
-
-	// Found Some Infractions
-	else if (STAR_FindServerInfractions())
-		return;
 	// END THIS //
 
 	ms_RoomId = -1;
@@ -14770,6 +14766,7 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 				colorgrid = !colorgrid;
 				break;
 			}
+
 			// STAR STUFF //
 			else if (itemOn == 4
 			&& (R_SkinAvailable(setupm_cvdefaultskin->string) != setupm_fakeskin
@@ -14808,10 +14805,13 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 
 					// No Errors! //
 					M_GetText("Your skin and color were successfully reset!\n"))))));
+
+				// Break, and We're Done :) //
+				break;
 			}
 			// HELP ME, AAAAAAAAA //
+
 			/* FALLTHRU */
-			break;
 		case KEY_RIGHTARROW:
 			if (itemOn == 1)       //player skin
 			{

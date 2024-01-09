@@ -5055,18 +5055,20 @@ static void Skin_OnChange(void)
 	}
 
 	// STAR NOTE: i was here lol
-	if ((CanChangeSkin(consoleplayer))
-		&& (cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(consoleplayer))))
+	if (CanChangeSkin(consoleplayer))
 	{
-		SendNameAndColor();
-
-		player_t *player = &players[consoleplayer];
-		if ((cv_movingplayersetup.value && P_PlayerMoving(consoleplayer))
-			&& (player->mo && !(P_IsObjectOnGround(player->mo))))
+		if (cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(consoleplayer)))
 		{
-			P_ResetPlayer(player);
-			if (netgame)
-				NetUpdate(); // update the player
+			SendNameAndColor();
+
+			if (P_PlayerMoving(consoleplayer))
+			{
+				player_t *player = &players[consoleplayer];
+				P_ResetPlayer(player);
+
+				if (netgame)
+					NetUpdate(); // update the player
+			}
 		}
 	}
 	else
@@ -5107,17 +5109,18 @@ static void Skin2_OnChange(void)
 		return;
 	}
 
-	// STAR NOTE: i was here 2
-	if ((CanChangeSkin(secondarydisplayplayer))
-		&& (cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(secondarydisplayplayer))))
+	// STAR NOTE: i was here lol 2
+	if (CanChangeSkin(secondarydisplayplayer))
 	{
-		SendNameAndColor2();
-
-		player_t *player2 = &players[secondarydisplayplayer];
-		if ((cv_movingplayersetup.value && P_PlayerMoving(secondarydisplayplayer))
-			&& (player2->mo && !(P_IsObjectOnGround(player2->mo))))
+		if (cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(secondarydisplayplayer)))
 		{
-			P_ResetPlayer(player2); // update the second player
+			SendNameAndColor2();
+
+			if (P_PlayerMoving(secondarydisplayplayer))
+			{
+				player_t *player = &players[secondarydisplayplayer];
+				P_ResetPlayer(player); // update the second player
+			}
 		}
 	}
 	else
@@ -5277,10 +5280,6 @@ static void BaseNumLaps_OnChange(void)
 // STAR STUFF: ELECTRIC BOOGALO //
 static void Got_Tsourdt3rdStructures(UINT8 **cp, INT32 playernum)
 {
-	// Make Variables //
-	UINT8 serverUsesTSoURDt3rd;
-	TSoURDt3rd_t *t;
-
 	// Protect Others Against a Hacked/Buggy Client //
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
 	{
@@ -5291,22 +5290,22 @@ static void Got_Tsourdt3rdStructures(UINT8 **cp, INT32 playernum)
 	}
 
 	// Apply Info, and We're Done :) //
-	serverUsesTSoURDt3rd												= (boolean)READUINT8(*cp);
-	t																	= &TSoURDt3rdPlayers[playernum];
+	UINT8 serverUsesTSoURDt3rd							= (boolean)READUINT8(*cp);
+	TSoURDt3rd_t *TSoURDt3rd							= &TSoURDt3rdPlayers[playernum];
 
-	TSoURDt3rdPlayers[playernum].serverPlayers.serverUsesTSoURDt3rd		= (serverUsesTSoURDt3rd > 1 ? 0 : 1);
+	TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd		= (serverUsesTSoURDt3rd > 1 ? 0 : 1);
 
-	TSoURDt3rdPlayers[playernum].serverPlayers.majorVersion 			= (t->serverPlayers.serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
-	TSoURDt3rdPlayers[playernum].serverPlayers.minorVersion 			= (t->serverPlayers.serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
-	TSoURDt3rdPlayers[playernum].serverPlayers.subVersion 				= (t->serverPlayers.serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
+	TSoURDt3rd->serverPlayers.majorVersion 				= (TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
+	TSoURDt3rd->serverPlayers.minorVersion 				= (TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
+	TSoURDt3rd->serverPlayers.subVersion 				= (TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
 
-	TSoURDt3rdPlayers[playernum].serverPlayers.serverTSoURDt3rdVersion 	= STAR_CombineNumbers(3, t->serverPlayers.majorVersion, t->serverPlayers.minorVersion, t->serverPlayers.subVersion);
+	TSoURDt3rd->serverPlayers.serverTSoURDt3rdVersion 	= STAR_CombineNumbers(3, TSoURDt3rd->serverPlayers.majorVersion, TSoURDt3rd->serverPlayers.minorVersion, TSoURDt3rd->serverPlayers.subVersion);
 
 #ifdef HAVE_DISCORDRPC
 	// DISCORD STUFF //
-	discordInfo.maxPlayers 		= (t->serverPlayers.serverUsesTSoURDt3rd ? READUINT8(*cp) : (UINT8)cv_maxplayers.value);
-	discordInfo.joinsAllowed 	= (t->serverPlayers.serverUsesTSoURDt3rd ? (boolean)READUINT8(*cp) : (boolean)cv_allownewplayer.value);
-	discordInfo.whoCanInvite 	= (t->serverPlayers.serverUsesTSoURDt3rd ? READUINT8(*cp) : (UINT8)cv_discordinvites.value);
+	discordInfo.maxPlayers 		= (TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd ? READUINT8(*cp) : (UINT8)cv_maxplayers.value);
+	discordInfo.joinsAllowed 	= (TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd ? (boolean)READUINT8(*cp) : (boolean)cv_allownewplayer.value);
+	discordInfo.whoCanInvite 	= (TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd ? READUINT8(*cp) : (UINT8)cv_discordinvites.value);
 
 	DRPC_UpdatePresence();
 	// END THAT DISCORD STUFF //
