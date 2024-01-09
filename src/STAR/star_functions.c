@@ -750,12 +750,12 @@ const char *STAR_SetWindowTitle(void)
 				case GS_INTRO: dynamictitle = "Introduction -"; break;
 				case GS_CUTSCENE: dynamictitle = "Watching a Cutscene in"; break;
 				case GS_CONTINUING: dynamictitle = "Continue? -"; break;
-				case GS_INTERMISSION: dynamictitle = (cv_memesonwindowtitle.value ? "End of Chapter! -" : va("%s Got Through %s! -", skins[players[consoleplayer].skin].realname, (!mapheaderinfo[gamemap-1]->actnum ? "the Act" : va("Act %d", mapheaderinfo[gamemap-1]->actnum)))); break;
+				case GS_INTERMISSION: dynamictitle = (cv_memesonwindowtitle.value ? "End of Chapter! -" : (!mapheaderinfo[gamemap-1]->actnum ? (va("%s Got Through the Act! -", skins[players[consoleplayer].skin].realname)) : (va("%s Got Through Act %d! -", skins[players[consoleplayer].skin].realname, mapheaderinfo[gamemap-1]->actnum)))); break;
 
 				case GS_CREDITS:
 				case GS_ENDING:
 				case GS_EVALUATION:
-				case GS_GAMEEND: dynamictitle = (cv_memesonwindowtitle.value ? "Did You Get All Those Chaos Emeralds? -" : "The End. -"); break;
+				case GS_GAMEEND: dynamictitle = (cv_memesonwindowtitle.value ? "Did You Get All Those Chaos Emeralds? -" : "The End of"); break;
 
 				default:
 				{
@@ -1737,7 +1737,7 @@ void TSoURDt3rd_FindCurrentVersion(void)
 
 	// Run the Main Code //
 	// Check the Version, And If They Don't Match the Branch's Version, Run the Block Below
-	CONS_Printf("STAR_FindStringOnWebsite() & STAR_ReturnStringFromWebsite(): Grabbing latest TSoURDt3rd version...\n");
+	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD, "Checking for updates...\n");
 
 	if (STAR_FindStringOnWebsite(API, URL, INFO, false) == 1)
 	{
