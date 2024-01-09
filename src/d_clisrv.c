@@ -2917,10 +2917,8 @@ void CL_ClearPlayer(INT32 playernum)
 	if (!netgame)
 	{
 		memmove(&TSoURDt3rdPlayers[0], &TSoURDt3rdPlayers[playernum], sizeof(TSoURDt3rdPlayers[playernum].serverPlayers));
-
 		if (consoleplayer != playernum)
 			memset(&TSoURDt3rdPlayers[playernum], 0, sizeof (TSoURDt3rdServers_t));
-		break;
 	}
 
 	memset(&TSoURDt3rdPlayers[playernum].serverPlayers, 0, sizeof (TSoURDt3rdServers_t));
