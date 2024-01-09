@@ -220,6 +220,9 @@ typedef struct
 	UINT8 localplayers;
 	UINT8 mode;
 	char names[MAXSPLITSCREENPLAYERS][MAXPLAYERNAME];
+	// STAR STUFF //
+	UINT8 tsourdt3rd;
+	// END THAT PLEASE //
 } ATTRPACK clientconfig_pak;
 
 #define SV_DEDICATED    0x40 // server is dedicated
