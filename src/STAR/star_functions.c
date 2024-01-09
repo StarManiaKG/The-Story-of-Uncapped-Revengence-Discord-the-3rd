@@ -1708,7 +1708,6 @@ char *STAR_ReturnStringFromWebsite(const char *API, char *URL, char *RETURNINFO,
 	return finalRETURNINFO;
 }
 
-
 //
 // void TSoURDt3rd_FindCurrentVersion(void)
 // Finds the Current Version of TSoURDt3rd From the Github Repository
@@ -1764,103 +1763,6 @@ void TSoURDt3rd_FindCurrentVersion(void)
 #endif // HAVE_CURL
 
 // SERVERS //
-//
-// boolean STAR_FindServerInfractions(void)
-// Finds Server Infractions, and Returns True if Any Were Found.
-// These Can be Related to Having Too Many Skins for Vanilla Servers to Join, and More
-//
-// STAR NOTE: the 'accurate' variables are used for the M_StartMessage function at the bottom :p of the hook
-//		...Except for accuratenumskinsounds. That one's used to properly check skin sound limits.
-//
-//		However, the 'numstates' and 'numobjects' variables are already accurate, so there's no need to assign
-//			those 'accurate' variables.
-//
-boolean STAR_FindServerInfractions(void)
-{
-	// Make Variables //
-	UINT32 accuratenumskins = (numskins-6);
-
-	sfxenum_t numsounds; UINT32 accuratenumsounds;
-	sfxenum_t numskinsounds; UINT32 accuratenumskinsounds;
-
-	spritenum_t totalnumsprites; UINT32 accuratenumsprites;
-	playersprite_t totalnumsprite2s; UINT32 accuratenumsprite2s;
-
-	statenum_t numstates;
-
-	mobjtype_t numobjects;
-
-	// Run Some Initial Things //
-	// Count the Sounds
-	for (numsounds = sfx_freeslot0; numsounds <= sfx_lastfreeslot; numsounds++)
-	{
-		if (S_sfx[numsounds].priority > 0) continue;
-		break;
-	}
-	for (numskinsounds = sfx_skinsoundslot0; numskinsounds <= sfx_lastskinsoundslot; numskinsounds++)
-	{
-		if (S_sfx[numskinsounds].priority > 0 && S_sfx[numskinsounds].name) continue;
-		break;
-	}
-	accuratenumsounds = (numsounds - sfx_freeslot0);
-	accuratenumskinsounds = (numskinsounds - sfx_skinsoundslot0);
-
-	// Count the Sprites
-	for (totalnumsprites = SPR_FIRSTFREESLOT; totalnumsprites <= SPR_LASTFREESLOT; totalnumsprites++)
-	{
-		if (used_spr[(totalnumsprites-SPR_FIRSTFREESLOT)/8] & (1<<(totalnumsprites%8))) continue;
-		break;
-	}
-	for (totalnumsprite2s = SPR2_FIRSTFREESLOT; totalnumsprite2s < free_spr2; totalnumsprite2s++)
-	{
-		if (spr2names[totalnumsprite2s][0] != '\0') continue;
-		break;
-	}
-	accuratenumsprites = (totalnumsprites - SPR_FIRSTFREESLOT);
-	accuratenumsprite2s = (totalnumsprite2s - SPR2_FIRSTFREESLOT);
-
-	// Count the States
-	for (numstates = 0; numstates < NUMSTATEFREESLOTS; numstates++)
-	{
-		if (FREE_STATES[numstates]) continue;
-		break;
-	}
-
-	// Count the Objects
-	for (numobjects = 0; numobjects < NUMMOBJFREESLOTS; numobjects++)
-	{
-		if (FREE_MOBJS[numobjects]) continue;
-		break;
-	}
-
-	// Find Some Infractions //
-	if ((numskins > 35)								// Too Many Skins
-		|| (numsounds > 2335)						// Too Many Sounds
-		|| (accuratenumskinsounds > 3007)			// Too Many Skin Sounds
-
-		|| (totalnumsprites > 907)					// Too Many Sprites
-		|| ((totalnumsprite2s >= free_spr2)
-			&& (totalnumsprite2s >= 128))			// Too Many Sprite2s
-
-		|| (numstates >= 4096)						// Too Many States
-		|| (numobjects >= 512))						// Too Many Objects
-	{
-		if (dedicated)
-		{
-			I_Error("You've loaded too many add-ons, and now your game isn't vanilla compatible.\n\nYour current values compared to the\nvanilla limits are:\n\nSkins - %d/29\nSounds - %d/2335\nSkin Sounds - %d/3007\nSprites - %d/512\nSprite2s - %d/68\nStates - %d/4096\nObjects - %d/512\n\nIf any of these values are above the vanilla limits, you won't be able to\nhost servers until you restart the game and remove some add-ons.\n", accuratenumskins, accuratenumsounds, accuratenumskinsounds, accuratenumsprites, accuratenumsprite2s, numstates, numobjects);
-			return true;
-		}
-
-		D_QuitNetGame();
-		CL_Reset();
-		D_StartTitle();
-
-		M_StartMessage(va("%c%s\x80\nYou've loaded too many add-ons, and now your game isn't vanilla compatible.\n\nYour current values compared to the\nvanilla limits are:\n\n\x82Skins - %d/29\n\x82Sounds - %d/2335\n\x82Skin Sounds - %d/3007\n\x82Sprites - %d/512\n\x82Sprite2s - %d/68\n\x82States - %d/4096\n\x82Objects - %d/512\n\nIf any of these values are above the vanilla limits, you won't be able to\nhost servers until you restart the game and remove some add-ons. \n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Netgame Won't Be Vanilla-Compatible!", accuratenumskins, accuratenumsounds, accuratenumskinsounds, accuratenumsprites, accuratenumsprite2s, numstates, numobjects),NULL,MM_NOTHING);
-		return true;
-	}
-
-	return false;
-}
 
 // MISCELLANIOUS //
 //

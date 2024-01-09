@@ -34,7 +34,7 @@
 #define TSOURDT3RDVERSIONSTRING "TSoURDt3rd v"TSOURDT3RDVERSION
 
 //// STRUCTS ////
-// Game //
+// Game
 typedef struct TSoURDt3rdLoadingScreen_s {
 	size_t loadCount;
 	UINT8 loadPercentage;
@@ -45,13 +45,13 @@ typedef struct TSoURDt3rdLoadingScreen_s {
 	boolean softwareLoadComplete;
 } TSoURDt3rdLoadingScreen_t;
 
-// Music //
+// Music
 typedef struct TSoURDt3rdDefaultMusicTracks_s {
 	const char *trackName;
 	const char *track;
 } TSoURDt3rdDefaultMusicTracks_t;
 
-// Servers //
+// Servers
 typedef struct TSoURDt3rdServers_s {
 	boolean serverUsesTSoURDt3rd;
 	UINT8 majorVersion, minorVersion, subVersion;
@@ -59,7 +59,7 @@ typedef struct TSoURDt3rdServers_s {
 	UINT32 serverTSoURDt3rdVersion;
 } TSoURDt3rdServers_t;
 
-// Jukebox //
+// Jukebox
 typedef struct TSoURDt3rdJukebox_s {
 	boolean Unlocked;
 
@@ -206,7 +206,7 @@ void TSoURDt3rd_FindCurrentVersion(void);
 #endif
 
 // Servers //
-boolean STAR_FindServerInfractions(void);
+
 
 // Miscellanious //
 UINT32 TSoURDt3rd_CurrentVersion(void);

@@ -1100,13 +1100,7 @@ void D_SRB2Loop(void)
 				}
 			}
 			TSoURDt3rd_checkedExtraWads = true;
-		}
-
-		// Do Server Stuff //
-		// Find Current Server Infractions
-		if ((Playing() && netgame) || dedicated)
-			STAR_FindServerInfractions();
-		
+		}		
 		//// THAT'S THE END :P ////
 
 		// Fully completed frame made.
