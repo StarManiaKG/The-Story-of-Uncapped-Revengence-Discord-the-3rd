@@ -1230,7 +1230,7 @@ void DRPC_UpdatePresence(void)
 					strcpy(stateGrammar, ", ");
 
 				snprintf(stateType, 27, (paused ? "%sCurrently Paused" : (menuactive ? "%sScrolling Through Menus" : "")), stateGrammar);
-				strlcat(stateType, (TSoURDt3rd->jukebox.musicPlaying ? va("%sPlaying %s in the Jukebox", stateGrammar, TSoURDt3rd->jukebox.musicName) : ""), 95);
+				strlcat(stateType, (TSoURDt3rd->jukebox.musicPlaying ? va("%sPlaying '%s' in the Jukebox", stateGrammar, TSoURDt3rd->jukebox.musicName) : ""), 95);
 			}
 			
 			// Copy All Of Our Strings //

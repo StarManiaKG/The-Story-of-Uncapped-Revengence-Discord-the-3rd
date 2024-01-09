@@ -766,7 +766,7 @@ static void I_StartupConsole(void)
 
 	if (gotConsole)
 	{
-		SetConsoleTitleA("SRB2 Console");
+		SetConsoleTitleA("SRB2 - "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING" - Console"); // STAR NOTE: i was here lol
 		consolevent = SDL_TRUE;
 	}
 

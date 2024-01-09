@@ -17,13 +17,13 @@
 #include "../g_input.h" // input variables
 #include "../s_sound.h" // sound variables
 
-// ============================================================================================	//
-// 	 STAR NOTE:																					//
-//                                                                                              //
-//   Just so you Know, Some of This Stuff is Also Handled in tsourdt3rd.pk3.                 	//
-//		There's Even Some Extra Code in tsourdt3rdextras.pk3 too.								//
-//      If you Want to Look at Some Other Code, Check Those PK3 Out.                            //
-// ============================================================================================	//
+// ============================================================================	//
+// 	 STAR NOTE:																	//
+//                                                                              //
+//   Just so you Know, Some of This Stuff is Also Handled in tsourdt3rd.pk3.	//
+//		There's Even Some Extra Code in tsourdt3rdextras.pk3 too.				//
+//      If you Want to Look at Some Other Code, Check Those PK3 Out.            //
+// ============================================================================ //
 
 //// DEFINITIONS ////
 #ifdef DEVELOP
