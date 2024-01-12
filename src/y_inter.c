@@ -987,7 +987,7 @@ skiptallydrawer:
 		return;
 
 	if (timer)
-		V_DrawCenteredString(BASEVIDWIDTH/2, 188, V_YELLOWMAP,
+		V_DrawCenteredString(BASEVIDWIDTH/2, 188, menuColor[cv_menucolor.value], // STAR NOTE: i was here lol
 			va("start in %d seconds", timer/TICRATE));
 
 	// Make it obvious that scrambling is happening next round.
