@@ -3573,6 +3573,9 @@ static int lib_gAddPlayer(lua_State *L)
 
 	playeringame[newplayernum] = true;
 	G_AddPlayer(newplayernum);
+	// STAR STUFF //
+	TSoURDt3rd_InitializeStructures(newplayernum);
+	// END THAT PLEASE //
 	newplayer = &players[newplayernum];
 
 	newplayer->jointime = 0;

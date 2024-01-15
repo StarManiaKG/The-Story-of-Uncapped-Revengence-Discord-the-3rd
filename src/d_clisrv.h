@@ -169,15 +169,15 @@ typedef struct
 	char server_context[8]; // Unique context id, generated at server startup.
 
 	// STAR STUFF //
-	boolean tsourdt3rd;
+	UINT8 tsourdt3rd;
 	
 	UINT8 tsourdt3rdmajorversion;
 	UINT8 tsourdt3rdminorversion;
 	UINT8 tsourdt3rdsubversion;
 
-	// DISCORD COMPATIBILITY STUFF //
+	// DISCORD STUFFS //
 	UINT8 maxplayer;
-	boolean allownewplayer;
+	UINT8 allownewplayer;
 	UINT8 discordinvites;
 	// END THAT LARGE MESS //
 	// END THAT OTHER STUFF TOO //
@@ -333,12 +333,12 @@ typedef struct
 		clientcmd_pak clientpak;            //         144 bytes
 		client2cmd_pak client2pak;          //         200 bytes
 		servertics_pak serverpak;           //      132495 bytes (more around 360, no?)
-		serverconfig_pak servercfg;         //         773 bytes
+		serverconfig_pak servercfg;         //         773 bytes // STAR NOTE (About 790 or so now)
 		UINT8 textcmd[MAXTEXTCMD+1];        //       66049 bytes (wut??? 64k??? More like 257 bytes...)
 		filetx_pak filetxpak;               //         139 bytes
 		fileack_pak fileack;
 		UINT8 filereceived;
-		clientconfig_pak clientcfg;         //         136 bytes
+		clientconfig_pak clientcfg;         //         136 bytes // STAR NOTE (About 162 bytes now)
 		UINT8 md5sum[16];
 		serverinfo_pak serverinfo;          //        1024 bytes
 		serverrefuse_pak serverrefuse;      //       65025 bytes (somehow I feel like those values are garbage...)

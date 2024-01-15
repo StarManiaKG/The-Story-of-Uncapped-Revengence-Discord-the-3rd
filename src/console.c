@@ -1936,6 +1936,7 @@ void STAR_CONS_Printf(star_messagetype_t starMessageType, const char *fmt, ...)
 		case STAR_CONS_TSOURDT3RD: CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd:")); break;
 		case STAR_CONS_TSOURDT3RD_NOTICE: CONS_Printf("\x83" "%s" "\x80 ", M_GetText("TSoURDt3rd:")); break;
 		case STAR_CONS_TSOURDT3RD_ALERT: CONS_Printf("\x85" "%s" "\x80 ", M_GetText("TSoURDt3rd:")); break;
+		case STAR_CONS_TSOURDT3RD_DEBUG: CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd Debugging:")); break;
 
 		case STAR_CONS_APRILFOOLS: CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd April Fools:")); break;
 		case STAR_CONS_EASTER: CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd Easter:")); break;
