@@ -645,10 +645,14 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_dummyconsvar);
 
 	// STAR STUFF //
+	// Discord
 #ifdef USE_STUN
 	CV_RegisterVar(&cv_stunserver);
 #endif
 	CV_RegisterVar(&cv_discordinvites);
+
+	// TSoURDt3rd
+	CV_RegisterVar(&cv_updatenotice);
 
 	RegisterNetXCmd(XD_TSOURDT3RD, Got_Tsourdt3rdStructures);
 	// END THIS PLEASE //
@@ -995,6 +999,7 @@ void D_RegisterClientCommands(void)
 #endif
 
 	// CUSTOM FUNNY STAR THINGS :) //
+	// Events
 	if (eastermode)
 	{
 		CV_RegisterVar(&cv_alloweasteregghunt);
@@ -1004,6 +1009,7 @@ void D_RegisterClientCommands(void)
 	if (aprilfoolsmode)
 		CV_RegisterVar(&cv_ultimatemode);
 
+	// Game
 	CV_RegisterVar(&cv_startupscreen);
 	CV_RegisterVar(&cv_stjrintro);
 
@@ -1026,17 +1032,18 @@ void D_RegisterClientCommands(void)
 
 	CV_RegisterVar(&cv_soniccd);
 
-	CV_RegisterVar(&cv_updatenotice);
-
+	// Audio
 	CV_RegisterVar(&cv_gameovermusic);
 
 	CV_RegisterVar(&cv_defaultmaptrack);
 
+	// Players
 	CV_RegisterVar(&cv_shieldblockstransformation);
 	CV_RegisterVar(&cv_armageddonnukewhilesuper);
 
 	CV_RegisterVar(&cv_alwaysoverlayinvuln);
 
+	// Savefiles
 	CV_RegisterVar(&cv_storesavesinfolders);
 
 	CV_RegisterVar(&cv_perfectsave);
@@ -1046,14 +1053,17 @@ void D_RegisterClientCommands(void)
 
 	CV_RegisterVar(&cv_continues);
 
+	// Servers
 	CV_RegisterVar(&cv_movingplayersetup);
 
+	// Jukebox
 	CV_RegisterVar(&cv_jukeboxspeed);
 
 	CV_RegisterVar(&cv_jukeboxhud);
 
 	CV_RegisterVar(&cv_luacanstopthejukebox);
 
+	// Window Titles
 	CV_RegisterVar(&cv_windowtitletype);
 	CV_RegisterVar(&cv_customwindowtitle);
 	
@@ -5289,29 +5299,18 @@ static void Got_Tsourdt3rdStructures(UINT8 **cp, INT32 playernum)
 		return;
 	}
 
-	// Apply Info, and We're Done :) //
-	UINT8 serverUsesTSoURDt3rd							= (boolean)READUINT8(*cp);
-	TSoURDt3rd_t *TSoURDt3rd							= &TSoURDt3rdPlayers[playernum];
-
-	TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd		= (serverUsesTSoURDt3rd > 1 ? 0 : 1);
-
-	TSoURDt3rd->serverPlayers.majorVersion 				= (TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
-	TSoURDt3rd->serverPlayers.minorVersion 				= (TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
-	TSoURDt3rd->serverPlayers.subVersion 				= (TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
-
-	TSoURDt3rd->serverPlayers.serverTSoURDt3rdVersion 	= STAR_CombineNumbers(3, TSoURDt3rd->serverPlayers.majorVersion, TSoURDt3rd->serverPlayers.minorVersion, TSoURDt3rd->serverPlayers.subVersion);
-
-#ifdef HAVE_DISCORDRPC
 	// DISCORD STUFF //
-	discordInfo.maxPlayers 		= (TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd ? READUINT8(*cp) : (UINT8)cv_maxplayers.value);
-	discordInfo.joinsAllowed 	= (TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd ? (boolean)READUINT8(*cp) : (boolean)cv_allownewplayer.value);
-	discordInfo.whoCanInvite 	= (TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd ? READUINT8(*cp) : (UINT8)cv_discordinvites.value);
+	// Apply Info, and We're Done :)
+#ifdef HAVE_DISCORDRPC
+	discordInfo.maxPlayers 		= (TSoURDt3rdPlayers[serverplayer].serverPlayers.serverUsesTSoURDt3rd ? READUINT8(*cp) : (UINT8)cv_maxplayers.value);
+	discordInfo.joinsAllowed 	= (TSoURDt3rdPlayers[serverplayer].serverPlayers.serverUsesTSoURDt3rd ? READUINT8(*cp) : (UINT8)cv_allownewplayer.value);
+	discordInfo.whoCanInvite 	= (TSoURDt3rdPlayers[serverplayer].serverPlayers.serverUsesTSoURDt3rd ? READUINT8(*cp) : (UINT8)cv_discordinvites.value);
 
 	DRPC_UpdatePresence();
-	// END THAT DISCORD STUFF //
 #else
 	(*cp) += 3; // STAR NOTE: Don't do anything with the information if we don't have Discord RPC support
 #endif
+	// END THAT DISCORD STUFF //
 }
 
 static void STAR_UseContinues_OnChange(void)
