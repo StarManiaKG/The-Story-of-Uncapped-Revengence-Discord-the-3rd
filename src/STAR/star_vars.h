@@ -79,6 +79,8 @@ typedef struct TSoURDt3rd_s {
 	boolean usingTSoURDt3rd;
 	boolean checkedVersion;
 
+	const char *Name;
+
 	TSoURDt3rdLoadingScreen_t loadingScreens;
 
 	// Music Stuff
@@ -169,7 +171,8 @@ boolean TSoURDt3rd_InAprilFoolsMode(void);
 
 // Game //
 void TSoURDt3rd_InitializeStructures(INT32 playernum);
-void TSoURDt3rd_ReinitializeServerStructures(void);
+void TSoURDt3rd_ResetServerPlayer(INT32 playernum);
+void TSoURDt3rd_ClearServerPlayer(INT32 playernum);
 
 void STAR_LoadingScreen(void);
 
