@@ -270,13 +270,7 @@ void TSoURDt3rd_InitializeStructures(INT32 playernum)
 	// Server Stuff
 	TSoURDt3rd->masterServerAddressChanged				= false;
 
-	TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd		= true;
-	
-	TSoURDt3rd->serverPlayers.majorVersion				= TSoURDt3rd_CurrentMajorVersion();
-	TSoURDt3rd->serverPlayers.minorVersion				= TSoURDt3rd_CurrentMinorVersion();
-	TSoURDt3rd->serverPlayers.subVersion				= TSoURDt3rd_CurrentSubversion();
-
-	TSoURDt3rd->serverPlayers.serverTSoURDt3rdVersion	= TSoURDt3rd_CurrentVersion();
+	TSoURDt3rd_ResetServerPlayer(playernum);
 
 	// Jukebox Stuff
 	TSoURDt3rd->jukebox.Unlocked 						= false;
@@ -286,14 +280,14 @@ void TSoURDt3rd_InitializeStructures(INT32 playernum)
 }
 
 //
-// void TSoURDt3rd_ReinitializeServerStructures(void)
-// Reinitializes TSoURDt3rd's Server Structures After Servers Wipe Them
+// void TSoURDt3rd_ResetServerPlayer(INT32 playernum)
+// Reinitializes TSoURDt3rd's Server Structures For Given Players After Servers Wipe Them
 //
-void TSoURDt3rd_ReinitializeServerStructures(void)
+void TSoURDt3rd_ResetServerPlayer(INT32 playernum)
 {
 	// Reinitialize the Structures and We're Done :) //
 	// Main Stuff
-	TSoURDt3rd_t *TSoURDt3rd							= &TSoURDt3rdPlayers[consoleplayer];
+	TSoURDt3rd_t *TSoURDt3rd							= &TSoURDt3rdPlayers[playernum];
 
 	// Server Stuff
 	TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd		= true;
@@ -303,6 +297,35 @@ void TSoURDt3rd_ReinitializeServerStructures(void)
 	TSoURDt3rd->serverPlayers.subVersion				= TSoURDt3rd_CurrentSubversion();
 
 	TSoURDt3rd->serverPlayers.serverTSoURDt3rdVersion	= TSoURDt3rd_CurrentVersion();
+}
+
+//
+// void TSoURDt3rd_ClearServerPlayer(INT32 playernum)
+// Wipes Server Players From the TSoURDt3rd Table
+// Also Fully Resets Them for the Local Client
+//
+void TSoURDt3rd_ClearServerPlayer(INT32 playernum)
+{
+	// Clear the Structures and We're Done :) //
+	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "net - %d, p - %d\n", netgame, playernum);
+	if (!netgame)
+	{
+		if (playernum == netbuffer->u.servercfg.clientnode)
+			TSoURDt3rdPlayers[consoleplayer] = TSoURDt3rdPlayers[playernum];
+	}
+#if 0
+	if (playernum != consoleplayer)
+		memset(&TSoURDt3rdPlayers[playernum], 0, sizeof (TSoURDt3rd_t));
+#endif
+	TSoURDt3rdPlayers[playernum] = TSoURDt3rdPlayers[consoleplayer];
+	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "tsourdt3rd is %d\n", TSoURDt3rdPlayers[playernum].usingTSoURDt3rd);
+
+	//memset(&TSoURDt3rdPlayers[consoleplayer], 0, sizeof (TSoURDt3rd_t));
+#if 0
+	TSoURDt3rd_InitializeStructures(playernum);
+#else
+	TSoURDt3rd_ResetServerPlayer(playernum);
+#endif
 }
 
 //
@@ -1749,11 +1772,11 @@ void TSoURDt3rd_FindCurrentVersion(void)
 		displayVersionString = STAR_ConvertNumberToString(displayVersionNumber, 0, 0, true);
 
 		if (TSoURDt3rd_CurrentVersion() < internalVersionNumber)
-			(cv_updatenotice.value == 1 ?
+			((cv_updatenotice.value == 1 && !dedicated) ?
 				(M_StartMessage(va("%c%s\x80\nYou're using an outdated version of TSoURDt3rd.\n\nThe newest version is: %s\nYou're using version: %s\n\nCheck the SRB2 Message Board for the latest version!\n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Update TSoURDt3rd, Please", displayVersionString, TSOURDT3RDVERSION),NULL,MM_NOTHING)) :
 				(STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "You're using an outdated version of TSoURDt3rd.\n\nThe newest version is: %s\nYou're using version: %s\n\nCheck the SRB2 Message Board for the latest version!\n", displayVersionString, TSOURDT3RDVERSION)));
 		else if (TSoURDt3rd_CurrentVersion() > internalVersionNumber)
-			(cv_updatenotice.value == 1 ?
+			((cv_updatenotice.value == 1 && !dedicated) ?
 				(M_StartMessage(va("%c%s\x80\nYou're using a version of TSoURDt3rd that hasn't even released yet.\n\nYou're probably a tester or coder,\nand in that case, hello!\n\nEnjoy messing around with the build!\n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Hello, Tester/Coder!"),NULL,MM_NOTHING)) :
 				(STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "You're using a version of TSoURDt3rd that hasn't even released yet.\nYou're probably a tester or coder, and in that case, hello!\nEnjoy messing around with the build!\n")));
 	}
