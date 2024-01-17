@@ -307,25 +307,31 @@ void TSoURDt3rd_ResetServerPlayer(INT32 playernum)
 void TSoURDt3rd_ClearServerPlayer(INT32 playernum)
 {
 	// Clear the Structures and We're Done :) //
-	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "net - %d, p - %d\n", netgame, playernum);
+	// In Netgames
 	if (!netgame)
 	{
-		if (playernum == netbuffer->u.servercfg.clientnode)
+		if (playernum == consoleplayer)
 			TSoURDt3rdPlayers[consoleplayer] = TSoURDt3rdPlayers[playernum];
+		else
+			memset(&TSoURDt3rdPlayers[playernum], 0, sizeof (TSoURDt3rd_t));
 	}
-#if 0
-	if (playernum != consoleplayer)
-		memset(&TSoURDt3rdPlayers[playernum], 0, sizeof (TSoURDt3rd_t));
-#endif
-	TSoURDt3rdPlayers[playernum] = TSoURDt3rdPlayers[consoleplayer];
-	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "tsourdt3rd is %d\n", TSoURDt3rdPlayers[playernum].usingTSoURDt3rd);
 
-	//memset(&TSoURDt3rdPlayers[consoleplayer], 0, sizeof (TSoURDt3rd_t));
-#if 0
-	TSoURDt3rd_InitializeStructures(playernum);
-#else
+	// Outside Netgames
+	else
+	{
+		if (playernum == consoleplayer)
+		{
+			TSoURDt3rdPlayers[playernum] = TSoURDt3rdPlayers[consoleplayer];
+			memset(&TSoURDt3rdPlayers[consoleplayer], 0, sizeof (TSoURDt3rd_t));
+		}
+		else
+		{
+			if (!nodeingame[playernum])
+				memset(&TSoURDt3rdPlayers[playernum], 0, sizeof (TSoURDt3rd_t));
+		}
+	}
+
 	TSoURDt3rd_ResetServerPlayer(playernum);
-#endif
 }
 
 //
