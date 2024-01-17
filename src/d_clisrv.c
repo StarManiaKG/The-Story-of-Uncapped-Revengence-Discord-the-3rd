@@ -3537,10 +3537,6 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 		playernode[pnum] = UINT8_MAX;
 
 		players[pnum].quittime = 1;
-
-		// STAR STUFF //
-		//TSoURDt3rd_ClearServerPlayer(pnum);
-		// END THAT PLEASE //
 	}
 	else
 		CL_RemovePlayer(pnum, kickreason);
@@ -3837,8 +3833,6 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "A new node has joined, closing the automap to prevent a crash...\n");
 		AM_Stop();
 	}
-
-	//TSoURDt3rd_ClearServerPlayer(newplayernum);
 	// NOW GO CLEAR SOME PLAYERS RIGHT NOW! //
 
 	if (!rejoined)
@@ -4130,7 +4124,6 @@ static void SV_SendRefuse(INT32 node, const char *reason)
 	netbuffer->packettype = PT_SERVERREFUSE;
 	HSendPacket(node, true, 0, strlen(netbuffer->u.serverrefuse.reason) + 1);
 	Net_CloseConnection(node);
-
 	// STAR STUFF //
 	TSoURDt3rd_ClearServerPlayer(node);
 	// END THAT, PRETTY PLEASE //
@@ -4301,12 +4294,6 @@ static void HandleConnect(SINT8 node)
 		// STAR STUFF //
 		TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[node];
 		TSoURDt3rdPlayers[node] = TSoURDt3rdPlayers[consoleplayer];
-		//memset(&TSoURDt3rdPlayers[consoleplayer], 0, sizeof(TSoURDt3rd_t));
-
-		if (server)
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, (netbuffer->u.clientcfg.tsourdt3rd == 1 ? 
-				("-2 - Joining player is using TSoURDt3rd!\n") :
-				("-2 - Joining player doesn't seem to be using TSoURDt3rd, please be cautious of what you do!\n")));
 
 		if (netbuffer->u.clientcfg.tsourdt3rd != 1)
 		{
@@ -4315,14 +4302,9 @@ static void HandleConnect(SINT8 node)
 		}
 		else
 		{
-			if (server)
-				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, (TSoURDt3rd->usingTSoURDt3rd ? 
-					("-1 - Joining player is using TSoURDt3rd!\n") :
-					("-1 - Joining player doesn't seem to be using TSoURDt3rd, please be cautious of what you do!\n")));
-
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
-				if (playeringame[i] || i == node)
+				if (playeringame[i] || nodeingame[i] || i == node || node == netbuffer->u.servercfg.clientnode)
 					continue;
 				memset(&TSoURDt3rdPlayers[i], 0, sizeof(TSoURDt3rd_t));
 			}
@@ -4580,10 +4562,7 @@ static void HandlePacketFromAwayNode(SINT8 node)
 			{
 				if (!nodeingame[i] && (i != serverplayer || i != node))
 					continue;
-				if (!TSoURDt3rdPlayers[i].usingTSoURDt3rd)
-					STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "doesn't use it :P\n");
 				TSoURDt3rd->Name = ((dedicated && i != serverplayer) ? "SERVER" : player_names[node]);
-				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "name of node - %s, %s\n", TSoURDt3rdPlayers[i].Name, player_names[i]);
 			}
 
 #ifdef HAVE_DISCORDRPC
@@ -4593,8 +4572,7 @@ static void HandlePacketFromAwayNode(SINT8 node)
 			discordInfo.whoCanInvite = (TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd ? netbuffer->u.servercfg.discordinvites : (UINT8)cv_discordinvites.value);
 			// END OF THE DISCORD STUFF //
 #endif
-
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "v%d.%d.%d\n", TSoURDt3rdPlayers[0].serverPlayers.majorVersion, TSoURDt3rdPlayers[0].serverPlayers.minorVersion, TSoURDt3rdPlayers[0].serverPlayers.subVersion);
+			// END OF THE STAR STUFF TOO //
 
 			nodeingame[(UINT8)servernode] = true;
 			serverplayer = netbuffer->u.servercfg.serverplayer;
