@@ -16774,9 +16774,7 @@ void STAR_StoreDefaultMenuStrings(void)
 static void M_CheckForTSoURDt3rdUpdates(INT32 choice)
 {
 	(void)choice;
-
 	TSoURDt3rdPlayers[consoleplayer].checkedVersion = false;
-	TSoURDt3rd_FindCurrentVersion();
 }
 
 //// Menus ////
@@ -16976,34 +16974,34 @@ static void M_TSoURDt3rdOptions(INT32 choice)
 // Jukebox //
 void M_TSoURDt3rdJukebox(INT32 choice)
 {
+	INT32 i;
 	INT32 ul = skyRoomMenuTranslations[choice-1];
 	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer];
 
-	soundtestpage = (UINT8)(unlockables[ul].variable);
-	if (!soundtestpage)
-		soundtestpage = 1;
-
 	if (!TSoURDt3rd->jukebox.Unlocked)
 	{
-		for (INT32 i = 0; i < MAXUNLOCKABLES; i++)
+		for (i = 0; i < MAXUNLOCKABLES; i++)
 		{
 			if ((unlockables[i].type == SECRET_SOUNDTEST)				// you need the sound test in order to use the jukebox
 				|| ((modifiedgame && !savemoddata) || (autoloaded)))	// for fairness sake
 			{
 				TSoURDt3rd->jukebox.Unlocked = true;
-				break;
+				goto mainFunction; break;
 			}
 		}
+
+		M_StartMessage(M_GetText("You haven't unlocked the jukebox yet!\nGo and unlock the sound test first!\n"), NULL, MM_NOTHING);
+		return;
 	}
+
+mainFunction:
+	soundtestpage = (UINT8)(unlockables[ul].variable);
+	if (!soundtestpage)
+		soundtestpage = 1;
 
 	if (!S_PrepareSoundTest())
 	{
 		M_StartMessage(M_GetText("No accessible tracks found in the jukebox.\n"),NULL,MM_NOTHING);
-		return;
-	}
-	else if (!TSoURDt3rd->jukebox.Unlocked)
-	{
-		M_StartMessage(M_GetText("You haven't unlocked the jukebox yet!\nGo and unlock the sound test first!\n"),NULL,MM_NOTHING);
 		return;
 	}
 

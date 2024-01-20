@@ -4558,13 +4558,6 @@ static void HandlePacketFromAwayNode(SINT8 node)
 
 			TSoURDt3rd->serverPlayers.serverTSoURDt3rdVersion = STAR_CombineNumbers(3, TSoURDt3rd->serverPlayers.majorVersion, TSoURDt3rd->serverPlayers.minorVersion, TSoURDt3rd->serverPlayers.subVersion);
 
-			for (INT32 i = 0; i < MAXPLAYERS; i++)
-			{
-				if (!nodeingame[i] && (i != serverplayer || i != node))
-					continue;
-				TSoURDt3rd->Name = ((dedicated && i != serverplayer) ? "SERVER" : player_names[node]);
-			}
-
 #ifdef HAVE_DISCORDRPC
 			// DISCORD STUFF //
 			discordInfo.maxPlayers = (TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd ? netbuffer->u.servercfg.maxplayer : (UINT8)cv_maxplayers.value);
