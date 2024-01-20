@@ -254,6 +254,8 @@ void TSoURDt3rd_InitializeStructures(INT32 playernum)
 	TSoURDt3rd->usingTSoURDt3rd							= true;
 	TSoURDt3rd->checkedVersion							= false;
 
+	TSoURDt3rd->Name									= ((dedicated && server) ? "SERVER" : cv_playername.string);
+
 	TSoURDt3rd->reachedSockSendErrorLimit 				= 0;
 
 	TSoURDt3rd->loadingScreens.loadCount 				= 0;

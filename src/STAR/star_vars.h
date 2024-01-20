@@ -13,6 +13,7 @@
 #define __STAR_VARS__
 
 #include "star_webinfo.h" // star variables
+
 #include "../command.h" // command variables
 #include "../g_input.h" // input variables
 #include "../s_sound.h" // sound variables
@@ -54,7 +55,10 @@ typedef struct TSoURDt3rdDefaultMusicTracks_s {
 // Servers
 typedef struct TSoURDt3rdServers_s {
 	boolean serverUsesTSoURDt3rd;
-	UINT8 majorVersion, minorVersion, subVersion;
+
+	UINT8 majorVersion;
+	UINT8 minorVersion;
+	UINT8 subVersion;
 
 	UINT32 serverTSoURDt3rdVersion;
 } TSoURDt3rdServers_t;
@@ -87,7 +91,7 @@ typedef struct TSoURDt3rd_s {
 	TSoURDt3rdDefaultMusicTracks_t *defaultMusicTracks;
 
 	// Server Stuff
-	INT32 reachedSockSendErrorLimit;
+	UINT8 reachedSockSendErrorLimit;
 	boolean masterServerAddressChanged;
 
 	TSoURDt3rdServers_t serverPlayers;
