@@ -522,6 +522,11 @@ char sprnames[NUMSPRITES + 1][5] =
 	// Gravity Well Objects
 	"GWLG",
 	"GWLR",
+
+	// STAR STUFF //
+	[SPR_EEGG] = "EEGG",
+	"TF2D",
+	// SPRITES NAMED! //
 };
 
 char spr2names[NUMPLAYERSPRITES][5] =
@@ -3986,6 +3991,11 @@ state_t states[NUMSTATES] =
 	{SPR_BRIY, FF_ANIMATE|FF_RANDOMANIM, -1, {NULL}, 31, 1, S_NULL}, // S_YELLOWBRICKDEBRIS
 
 	{SPR_NULL, 0, 1, {NULL}, 0, 0, S_NULL}, // S_NAMECHECK
+
+	// STAR STUFF //
+	[S_EEGG] = {SPR_EEGG, 0, -1, {NULL}, 0, 0, S_NULL},
+	{SPR_TF2D, 0, -1, {NULL}, 0, 0, S_NULL}, // S_TF2D
+	// STATES NAMED! //
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
@@ -21568,6 +21578,63 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		MF_NOBLOCKMAP|MF_NOSECTOR|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_SCENERY, // flags
 		S_NULL          // raisestate
 	},
+
+	// STAR STUFF //
+	[MT_EASTEREGG] =
+	{
+		-1,             // doomednum
+		S_EEGG,         // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		8*FRACUNIT,     // radius
+		24*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		1,              // damage
+		sfx_None,       // activesound
+		MF_SPECIAL|MF_NOGRAVITY, // flags
+		S_NULL          // raisestate
+	},
+
+	{            // MT_TF2DISPENSER
+		-1,             // doomednum
+		S_TF2D,         // spawnstate
+		1000,           // spawnhealth
+		S_TF2D,         // seestate
+		sfx_tf2d,       // seesound
+		8,              // reactiontime
+		sfx_tf2d,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_tf2d,       // painsound
+		S_TF2D,         // meleestate
+		S_TF2D,         // missilestate
+		S_TF2D,         // deathstate
+		S_TF2D,         // xdeathstate
+		sfx_tf2d,       // deathsound
+		25,             // speed
+		30*FRACUNIT,    // radius
+		36*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		1,              // damage
+		sfx_tf2d,       // activesound
+		MF_SPECIAL|MF_NOGRAVITY, // flags
+		S_TF2D          // raisestate
+	},
+	// MOBJS NAMED! //
 };
 
 skincolor_t skincolors[MAXSKINCOLORS] = {
@@ -21756,7 +21823,7 @@ void P_PatchInfoTables(void)
 	INT32 i;
 	char *tempname;
 
-#if NUMSPRITEFREESLOTS > 9999 // STAR NOTE: if you want to reset the limits back to vanilla's limits, set this to 1000
+#if NUMSPRITEFREESLOTS > 9999 // STAR NOTE: if you want to reset the limits back to vanilla's limits, set this to 1000 //
 "Update P_PatchInfoTables, you big dumb head"
 #endif
 
@@ -21764,15 +21831,16 @@ void P_PatchInfoTables(void)
 	for (i = SPR_FIRSTFREESLOT; i <= SPR_LASTFREESLOT; i++)
 	{
 		tempname = sprnames[i];
-		/*
-			STAR NOTE: i was here lol (also, these are preserved for just in case senarios)
 
-			tempname[0] = 'F';
-			tempname[1] = (char)('0' + (char)((i-SPR_FIRSTFREESLOT+1)/100));
-		*/
+#if 0
+		// STAR NOTE: these are preserved, just in case //
+		tempname[0] = 'F';
+		tempname[1] = (char)('0' + (char)((i-SPR_FIRSTFREESLOT+1)/100));
+#else
 		tempname[0] = (char)('0' + (char)((i-SPR_FIRSTFREESLOT+1)/1000));
 		tempname[1] = (char)('0' + (char)(((i-SPR_FIRSTFREESLOT+1)/100)%10));
-		
+#endif
+
 		tempname[2] = (char)('0' + (char)(((i-SPR_FIRSTFREESLOT+1)/10)%10));
 		tempname[3] = (char)('0' + (char)((i-SPR_FIRSTFREESLOT+1)%10));
 		tempname[4] = '\0';
@@ -21780,6 +21848,12 @@ void P_PatchInfoTables(void)
 		t_lspr[i] = &lspr[NOLIGHT];
 #endif
 	}
+
+	/* STAR STUFF: Doing our stuff can cause weird mess to happen.
+ 		Therefore, let's just set 'i' to NUMSPRITES, please. */
+	i = NUMSPRITES;
+	// DONE! //
+
 	sprnames[i][0] = '\0'; // i == NUMSPRITES
 	memset(&states[S_FIRSTFREESLOT], 0, sizeof (state_t) * NUMSTATEFREESLOTS);
 	memset(&mobjinfo[MT_FIRSTFREESLOT], 0, sizeof (mobjinfo_t) * NUMMOBJFREESLOTS);

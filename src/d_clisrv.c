@@ -58,14 +58,14 @@
 #endif
 
 #ifdef HAVE_DISCORDRPC
-// DISCORD STUFF //
-#include "discord.h"
-// END THIS PLEASE //
+#include "discord.h" // DISCORD STUFF: Add our coolness! //
 #endif
 
 // STAR STUFF //
 #include "STAR/star_vars.h"
-// END THAT //
+#include "STAR/ss_main.h" // STAR_CONS_Printf() //
+#include "STAR/m_menu.h" // V_MENUCOLORMAP //
+// WE'RE DONE! //
 
 //
 // NETWORKING
@@ -318,7 +318,7 @@ static void D_FreeTextcmd(tic_t tic)
 		{
 			textcmdplayer_t *textcmdplayer = textcmdtic->playercmds[i];
 
-			while (textcmdplayer > (textcmdplayer_t*)255) // STAR NOTE: LEAVEBUG HACK
+			while (textcmdplayer > (textcmdplayer_t*)255) // STAR NOTE: LEAVEBUG HACK //
 			{
 				textcmdplayer_t *tcpnext = textcmdplayer->next;
 				Z_Free(textcmdplayer);
@@ -1065,7 +1065,7 @@ static void CL_DrawConnectionStatusBox(void)
 {
 	M_DrawTextBox(BASEVIDWIDTH/2-128-8, BASEVIDHEIGHT-16-8, 32, 1);
 	if (cl_mode != CL_CONFIRMCONNECT)
-		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-16, menuColor[cv_menucolor.value], "Press ESC to abort");
+		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-16, V_MENUCOLORMAP, "Press ESC to abort");
 }
 
 //
@@ -1079,10 +1079,6 @@ static inline void CL_DrawConnectionStatus(void)
 
 	// Draw background fade
 	V_DrawFadeScreen(0xFF00, 16); // force default
-
-	// DO STAR STUFF //
-	STAR_SetProblematicCommandsForNetgames();
-	// DID STAR STUFF //
 
 	if (cl_mode != CL_DOWNLOADFILES && cl_mode != CL_LOADFILES)
 	{
@@ -1152,7 +1148,7 @@ static inline void CL_DrawConnectionStatus(void)
 				cltext = M_GetText("Connecting to server...");
 				break;
 		}
-		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-24, menuColor[cv_menucolor.value], cltext);
+		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-24, V_MENUCOLORMAP, cltext);
 	}
 	else
 	{
@@ -1162,7 +1158,7 @@ static inline void CL_DrawConnectionStatus(void)
 			INT32 loadcompletednum = 0;
 			INT32 i;
 
-			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-16, menuColor[cv_menucolor.value], "Press ESC to abort");
+			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-16, V_MENUCOLORMAP, "Press ESC to abort");
 
 			//ima just count files here
 			if (fileneeded)
@@ -1173,7 +1169,7 @@ static inline void CL_DrawConnectionStatus(void)
 			}
 
 			// Loading progress
-			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-24, menuColor[cv_menucolor.value], "Loading server addons...");
+			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-24, V_MENUCOLORMAP, "Loading server addons...");
 			totalfileslength = (INT32)((loadcompletednum/(double)(fileneedednum)) * 256);
 			M_DrawTextBox(BASEVIDWIDTH/2-128-8, BASEVIDHEIGHT-16-8, 32, 1);
 			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-16, 256, 8, 111);
@@ -1225,7 +1221,7 @@ static inline void CL_DrawConnectionStatus(void)
 				strncpy(tempname, filename, sizeof(tempname)-1);
 			}
 
-			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-24, menuColor[cv_menucolor.value],
+			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-24, V_MENUCOLORMAP,
 				va(M_GetText("Downloading \"%s\""), tempname));
 			V_DrawString(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-16, V_20TRANS|V_MONOSPACE,
 				va(" %4uK/%4uK",fileneeded[lastfilenum].currentsize>>10,file->totalsize>>10));
@@ -1238,7 +1234,7 @@ static inline void CL_DrawConnectionStatus(void)
 				Snake_Draw();
 
 			CL_DrawConnectionStatusBox();
-			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-24, menuColor[cv_menucolor.value],
+			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-24, V_MENUCOLORMAP,
 				M_GetText("Waiting to download files..."));
 		}
 	}
@@ -1290,9 +1286,7 @@ static boolean CL_SendJoin(void)
 	strncpy(netbuffer->u.clientcfg.names[0], cv_playername.zstring, MAXPLAYERNAME);
 	strncpy(netbuffer->u.clientcfg.names[1], player2name, MAXPLAYERNAME);
 
-	// STAR STUFF //
-	netbuffer->u.clientcfg.tsourdt3rd = 1;
-	// END THAT PLEASE //
+	netbuffer->u.clientcfg.tsourdt3rd = tsourdt3rd; // STAR STUFF: set our variable right quick //
 
 	return HSendPacket(servernode, true, 0, sizeof (clientconfig_pak));
 }
@@ -1488,7 +1482,6 @@ static boolean SV_SendServerConfig(INT32 node)
 	netbuffer->u.servercfg.usedCheats = (UINT8)usedCheats;
 
 	// STAR STUFF YAY //
-	TSoURDt3rdPlayers[node] = TSoURDt3rdPlayers[consoleplayer];
 	netbuffer->u.servercfg.tsourdt3rd = (UINT8)tsourdt3rd;
 
 	netbuffer->u.servercfg.tsourdt3rdmajorversion = (UINT8)TSoURDt3rd_CurrentMajorVersion();
@@ -2062,8 +2055,8 @@ static boolean CL_FinishedFileList(void)
 		return false;
 	}
 
-	// STAR STUFF //
-	else if (i == 5) // you've autoloaded some game changing mods
+	// STAR STUFF: you've autoloaded some game changing mods //
+	else if (i == 5)
 	{
 		D_QuitNetGame();
 		CL_Reset();
@@ -2806,13 +2799,13 @@ static void Command_connect(void)
 		return;
 	}
 
-	// STAR STUFF //
-	M_ClearMenus(true);
-	if (demoplayback && titledemo)
-		G_CheckDemoStatus();
-	
+	// STAR STUFF: allow us to join servers from anywhere at any time //
 	if (Playing() || titledemo)
 	{
+		M_ClearMenus(true);
+		if (demoplayback && titledemo)
+			G_CheckDemoStatus();
+
 		if (netgame)
 		{
 			D_QuitNetGame();
@@ -2895,9 +2888,8 @@ void CL_ClearPlayer(INT32 playernum)
 		P_RemoveMobj(players[playernum].mo);
 	memset(&players[playernum], 0, sizeof (player_t));
 	memset(playeraddress[playernum], 0, sizeof(*playeraddress));
-	// STAR STUFF //
-	TSoURDt3rd_ClearServerPlayer(playernum);
-	// END THAT PLEASE //
+
+	//TSoURDt3rd_ClearPlayer(playernum); // STAR STUFF: Free this player from their prison. //
 }
 
 //
@@ -3541,36 +3533,16 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 	else
 		CL_RemovePlayer(pnum, kickreason);
 
-	// DISCORD STUFF //
-	S_StartSound(NULL, ((msg == KICK_MSG_PLAYER_QUIT) ? STAR_LeaveSFX : STAR_SynchFailureSFX));
-	// I LIKE YOUR FUNNY WORDS, MAGIC FUNCTION //
+	S_StartSound(NULL, ((msg == KICK_MSG_PLAYER_QUIT) ? STAR_LeaveSFX : STAR_SynchFailureSFX)); // DISCORD STUFF: I LIKE YOUR FUNNY SOUNDS, MAGIC FUNCTION //
 }
-
-// STAR STUFF //
-static void Tsourdt3rdStructures_OnChange(void)
-{
-	UINT8 buf[3];
-
-	if (!server)
-		return;
-
-	UINT8 maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
-
-	buf[0] = maxplayer;
-	buf[1] = (UINT8)cv_allownewplayer.value;
-	buf[2] = (UINT8)cv_discordinvites.value;
-
-	SendNetXCmd(XD_TSOURDT3RD, &buf, 3);
-}
-// END THAT. LITERALLY //
 
 static CV_PossibleValue_t netticbuffer_cons_t[] = {{0, "MIN"}, {3, "MAX"}, {0, NULL}};
 consvar_t cv_netticbuffer = CVAR_INIT ("netticbuffer", "1", CV_SAVE, netticbuffer_cons_t, NULL);
 
-consvar_t cv_allownewplayer = CVAR_INIT ("allowjoin", "On", CV_SAVE|CV_NETVAR|CV_CALL|CV_ALLOWLUA, CV_OnOff, Tsourdt3rdStructures_OnChange);
+consvar_t cv_allownewplayer = CVAR_INIT ("allowjoin", "On", CV_SAVE|CV_NETVAR|CV_CALL|CV_ALLOWLUA, CV_OnOff, TSoURDt3rd_DiscordCommands_OnChange); // STAR NOTE: added TSoURDt3rd_DiscordCommands_OnChange //
 consvar_t cv_joinnextround = CVAR_INIT ("joinnextround", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL); /// \todo not done
 static CV_PossibleValue_t maxplayers_cons_t[] = {{2, "MIN"}, {32, "MAX"}, {0, NULL}};
-consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_SAVE|CV_NETVAR|CV_CALL|CV_ALLOWLUA, maxplayers_cons_t, Tsourdt3rdStructures_OnChange);
+consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_SAVE|CV_NETVAR|CV_CALL|CV_ALLOWLUA, maxplayers_cons_t, TSoURDt3rd_DiscordCommands_OnChange); // STAR NOTE: added TSoURDt3rd_DiscordCommands_OnChange //
 static CV_PossibleValue_t joindelay_cons_t[] = {{1, "MIN"}, {3600, "MAX"}, {0, "Off"}, {0, NULL}};
 consvar_t cv_joindelay = CVAR_INIT ("joindelay", "10", CV_SAVE|CV_NETVAR, joindelay_cons_t, NULL);
 static CV_PossibleValue_t rejointimeout_cons_t[] = {{1, "MIN"}, {60 * FRACUNIT, "MAX"}, {0, "Off"}, {0, NULL}};
@@ -3589,10 +3561,9 @@ consvar_t cv_noticedownload = CVAR_INIT ("noticedownload", "Off", CV_SAVE|CV_NET
 static CV_PossibleValue_t downloadspeed_cons_t[] = {{1, "MIN"}, {300, "MAX"}, {0, NULL}};
 consvar_t cv_downloadspeed = CVAR_INIT ("downloadspeed", "16", CV_SAVE|CV_NETVAR, downloadspeed_cons_t, NULL);
 
-// DISCORD STUFF //
-// Discord Invites; Here for Dedicated Servers or Something for Some Reason idk
+// DISCORD STUFF: Discord Invites; Here for Dedicated Servers or Something for Some Reason idk //
 static CV_PossibleValue_t discordinvites_cons_t[] = {{0, "Server"}, {1, "Admins"}, {2, "Everyone"}, {0, NULL}};
-consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Everyone", CV_SAVE|CV_CALL, discordinvites_cons_t, Tsourdt3rdStructures_OnChange);
+consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Everyone", CV_SAVE|CV_CALL, discordinvites_cons_t, TSoURDt3rd_DiscordCommands_OnChange);
 // END THIS MESS //
 
 static void Got_AddPlayer(UINT8 **p, INT32 playernum);
@@ -3776,10 +3747,6 @@ void D_QuitNetGame(void)
 	D_CloseConnection();
 	ClearAdminPlayers();
 
-	// STAR STUFF ENGAGED //
-	STAR_ResetProblematicCommandsAfterNetgames();
-	// STAR STUFF DISENGAGED //
-
 	DEBFILE("===========================================================================\n"
 	        "                         Log finish\n"
 	        "===========================================================================\n");
@@ -3919,16 +3886,25 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 		char joinmsg[256];
 
 		// STAR STUFF YAY //
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "ADDING USER: node - %d, consoleplayer - %d\n", node, consoleplayer);
+
+		if (node == mynode)
+		{
+			TSoURDt3rdPlayers[consoleplayer] = TSoURDt3rdPlayers[0];
+			M_Memcpy(&TSoURDt3rdPlayers[consoleplayer], &TSoURDt3rdPlayers[0], sizeof(TSoURDt3rd_t));
+
+			TSoURDt3rd_ClearPlayer(consoleplayer);
+			memset(&TSoURDt3rdPlayers[0], 0, sizeof(TSoURDt3rd_t));
+		}
+
 		if (node != mynode)
 		{
 			if (server)
-				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, (TSoURDt3rdPlayers[newplayernum].usingTSoURDt3rd ? 
+				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, (TSoURDt3rdPlayers[newplayernum].usingTSoURDt3rd ?
 					("Joining player is using TSoURDt3rd!\n") :
 					("Joining player doesn't seem to be using TSoURDt3rd, please be cautious of what you do!\n")));
 
-			// DISCORD STUFF TOO YAY //
-			S_StartSound(NULL, STAR_JoinSFX);
-			// MEEP //
+			S_StartSound(NULL, STAR_JoinSFX); // DISCORD STUFF: (technically star stuff too): plays sound when joining //
 		}
 		// END THAT PLEASE //
 
@@ -3956,15 +3932,11 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 		LUA_HookInt(newplayernum, HOOK(PlayerJoin));
 
 #ifdef HAVE_DISCORDRPC
-	// DISCORD STUFF //
-	DRPC_UpdatePresence();
-	// END OF THE MORE DISCORD STUFF //
+	DRPC_UpdatePresence(); // DISCORD STUFF: Update! //
 #endif
 
 #ifdef HAVE_SDL
-	// STAR STUFF //
-	STAR_SetWindowTitle();
-	// END THE WINDOW STUFF PLEASE //
+	STAR_SetWindowTitle(); // STAR STUFF: Update the Title! //
 #endif
 }
 
@@ -4124,9 +4096,8 @@ static void SV_SendRefuse(INT32 node, const char *reason)
 	netbuffer->packettype = PT_SERVERREFUSE;
 	HSendPacket(node, true, 0, strlen(netbuffer->u.serverrefuse.reason) + 1);
 	Net_CloseConnection(node);
-	// STAR STUFF //
-	TSoURDt3rd_ClearServerPlayer(node);
-	// END THAT, PRETTY PLEASE //
+
+	TSoURDt3rd_ClearPlayer(node); // STAR STUFF: clear our players, pretty please //
 }
 
 // used at txtcmds received to check packetsize bound
@@ -4251,6 +4222,51 @@ static void HandleConnect(SINT8 node)
 			}
 		}
 
+		// STAR STUFF //
+#if 0
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "ADDING FOR CONNECT: node - %d, consoleplayer - %d\n", node, consoleplayer);
+
+#if 0
+		TSoURDt3rdPlayers[consoleplayer] = TSoURDt3rdPlayers[0];
+		M_Memcpy(&TSoURDt3rdPlayers[consoleplayer], &TSoURDt3rdPlayers[9], sizeof(TSoURDt3rd_t));
+		memset(&TSoURDt3rdPlayers[0], 0, sizeof(TSoURDt3rd_t));
+
+#if 0
+		if (netbuffer->u.clientcfg.tsourdt3rd != 1)
+		{
+			if (TSoURDt3rdPlayers[node].usingTSoURDt3rd)
+				memset(&TSoURDt3rdPlayers[node], 0, sizeof(TSoURDt3rd_t));
+		}
+		else
+		{
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (playeringame[i] || nodeingame[i] || i == node || node == netbuffer->u.servercfg.clientnode)
+					continue;
+				memset(&TSoURDt3rdPlayers[i], 0, sizeof(TSoURDt3rd_t));
+			}
+		}
+#endif
+#endif
+#if 0
+#if 0
+		if ((SINT8)doomcom->remotenode == netbuffer->u.servercfg.clientnode)
+		{
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "ADDING: node - %d, consoleplayer - %d\n", node, consoleplayer);
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "before: tsourdt3rdnode - %d\n", TSoURDt3rdPlayers[node].num);
+
+			TSoURDt3rdPlayers[node] = TSoURDt3rdPlayers[consoleplayer];
+			M_Memcpy(&TSoURDt3rdPlayers[node], &TSoURDt3rdPlayers[consoleplayer], sizeof(TSoURDt3rd_t));
+
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "after: tsourdt3rdnode - %d\n", TSoURDt3rdPlayers[node].num);
+		}
+#else
+		TSoURDt3rd_ClearPlayer(node);
+#endif
+#endif
+#endif
+		// END THE STAR STUFF TOO //
+
 		// client authorised to join
 		nodewaiting[node] = (UINT8)(netbuffer->u.clientcfg.localplayers - playerpernode[node]);
 		if (!nodeingame[node])
@@ -4290,26 +4306,6 @@ static void HandleConnect(SINT8 node)
 			player_joining = true;
 		}
 #endif
-
-		// STAR STUFF //
-		TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[node];
-		TSoURDt3rdPlayers[node] = TSoURDt3rdPlayers[consoleplayer];
-
-		if (netbuffer->u.clientcfg.tsourdt3rd != 1)
-		{
-			if (TSoURDt3rd->usingTSoURDt3rd)
-				memset(&TSoURDt3rdPlayers[node], 0, sizeof(TSoURDt3rd_t));
-		}
-		else
-		{
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (playeringame[i] || nodeingame[i] || i == node || node == netbuffer->u.servercfg.clientnode)
-					continue;
-				memset(&TSoURDt3rdPlayers[i], 0, sizeof(TSoURDt3rd_t));
-			}
-		}
-		// END THE STAR STUFF TOO //
 	}
 }
 
@@ -4540,10 +4536,9 @@ static void HandlePacketFromAwayNode(SINT8 node)
 				memcpy(server_context, netbuffer->u.servercfg.server_context, 8);
 			}
 
-			// STAR STUFF //
-			// Check if the Server is Using TSoURDt3rd
+			// STAR STUFF: Check if the Server is Using TSoURDt3rd //
 			TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[node];
-			TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd = (netbuffer->u.servercfg.tsourdt3rd > 1 ? 0 : 1);
+			TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd = (netbuffer->u.servercfg.tsourdt3rd != 1 ? 0 : 1);
 
 			// Print Some Little Strings
 			if (client)

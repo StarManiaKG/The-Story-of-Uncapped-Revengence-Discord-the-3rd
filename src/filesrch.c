@@ -860,7 +860,10 @@ char exttable[NUM_EXT_TABLE][7] = { // maximum extension length (currently 4) pl
 #ifdef USE_KART
 	"\6.kart",
 #endif
-	"\5.pk3", "\5.soc", "\5.lua"}; // addfile
+	"\5.pk3", "\5.soc", "\5.lua", // addfile
+	// STAR STUFF //
+	"\6.star"}; // addfile part 2
+	// TABLE ARRAYS //
 
 static char (*filenamebuf)[MAX_WADPATH];
 

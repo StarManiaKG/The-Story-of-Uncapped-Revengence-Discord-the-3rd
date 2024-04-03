@@ -43,6 +43,8 @@
 #include "hardware/hw_main.h"
 #endif
 
+#include "STAR/ss_main.h" // STAR STUFF: TSoURDt3rd_CON_DrawStartupScreen() //
+
 #define MAXHUDLINES 20
 
 #ifdef HAVE_THREADS
@@ -1752,18 +1754,8 @@ static void CON_DrawBackpic(void)
 	int x, w, h;
 
 	// Get the lumpnum for CONSBACK, STARTUP (Only during game startup) or fallback into MISSING.
-	// STAR NOTE: i was here lol
 	if (con_startup)
-	{
-		static const char *gstartuplumpnumtype[] = {
-			"STARTUP",
-			"CONSBACK",
-			"BABYSONIC",
-			NULL
-		};
-
-		piclump = W_CheckNumForName(gstartuplumpnumtype[cv_startupscreen.value]);
-	}
+		piclump = W_CheckNumForName(TSoURDt3rd_CON_DrawStartupScreen());
 	else
 		piclump = W_CheckNumForName("CONSBACK");
 
@@ -1901,57 +1893,4 @@ void CON_Drawer(void)
 		CON_DrawHudlines();
 
 	Unlock_state();
-}
-
-//// STAR STUFF YAY ////
-//
-// void STAR_CONS_Printf(star_messagetype_t starMessageType, const char *fmt, ...)
-// A function specifically dedicated towards printing out certain STAR Stuff in the Console!
-//
-// starMessageType Parameters:
-//		0/NULL						- Doesn't Add Anything Extra, Therefore Returns the Function Entirely.
-//		STAR_CONS_TSOURDT3RD		- CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd:")) + ...
-//		STAR_CONS_TSOURDT3RD_NOTICE	- CONS_Printf("\x83" "%s" "\x80 ", M_GetText("TSoURDt3rd:")) + ...
-//		STAR_CONS_TSOURDT3RD_ALERT	- CONS_Printf("\x85" "%s" "\x80 ", M_GetText("TSoURDt3rd:")) + ...
-//		STAR_CONS_APRILFOOLS		- CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd April Fools:")) + ...
-//		STAR_CONS_EASTER			- CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd Easter:")) + ...
-//		STAR_CONS_JUKEBOX			- CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd Jukebox:")) + ...
-//
-void STAR_CONS_Printf(star_messagetype_t starMessageType, const char *fmt, ...)
-{
-	va_list argptr;
-	static char *txt = NULL;
-
-	if (txt == NULL)
-		txt = malloc(8192);
-
-	va_start(argptr, fmt);
-	vsprintf(txt, fmt, argptr);
-	va_end(argptr);
-
-	// Now, just like STJr, I am lazy and I feel like just letting CONS_Printf take care of things.
-	// That should be fine with you.
-	switch (starMessageType)
-	{
-		case STAR_CONS_TSOURDT3RD: CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd:")); break;
-		case STAR_CONS_TSOURDT3RD_NOTICE: CONS_Printf("\x83" "%s" "\x80 ", M_GetText("TSoURDt3rd:")); break;
-		case STAR_CONS_TSOURDT3RD_ALERT: CONS_Printf("\x85" "%s" "\x80 ", M_GetText("TSoURDt3rd:")); break;
-		case STAR_CONS_TSOURDT3RD_DEBUG: CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd Debugging:")); break;
-
-		case STAR_CONS_APRILFOOLS: CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd April Fools:")); break;
-		case STAR_CONS_EASTER: CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd Easter:")); break;
-
-		case STAR_CONS_JUKEBOX: CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd Jukebox:")); break;
-
-		default:
-		{
-			CONS_Printf("\x82STAR_CONS_Printf:\x80 You must specify a specific message type!\n");
-			free(txt);
-
-			return; break;
-		}
-	}
-
-	// ...Right?
-	CONS_Printf("%s", txt);
 }

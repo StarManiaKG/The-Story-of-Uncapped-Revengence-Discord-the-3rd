@@ -89,18 +89,27 @@ boolean I_SongPaused(void)
 //  MUSIC EFFECTS
 /// ------------------------
 
-boolean I_SetSongSpeed(float speed)
+void I_SetSongSpeed(float speed) // StarManiaKG: was originally boolean, no longer needs to be //
 {
 	(void)speed;
-	return false;
+	return;
 }
 
-// STAR STUFF //
-boolean I_CanSetSongSpeed(void)
+float I_GetSongSpeed(void)
 {
-    return false;
+    return 0.0f;
 }
-// I GOTTA BELIEVE! //
+
+void I_SetSongPitch(float pitch)
+{
+    (void)pitch;
+	return;
+}
+
+float I_GetSongPitch(void)
+{
+    return 0.0f;
+}
 
 /// ------------------------
 //  MUSIC SEEKING

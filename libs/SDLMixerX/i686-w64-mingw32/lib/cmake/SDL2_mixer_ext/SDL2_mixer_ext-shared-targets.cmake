@@ -7,7 +7,7 @@ if(CMAKE_VERSION VERSION_LESS "2.8.3")
    message(FATAL_ERROR "CMake >= 2.8.3 required")
 endif()
 cmake_policy(PUSH)
-cmake_policy(VERSION 2.8.3...3.25)
+cmake_policy(VERSION 2.8.3...3.26)
 #----------------------------------------------------------------
 # Generated CMake target import file.
 #----------------------------------------------------------------
@@ -57,6 +57,10 @@ endif()
 
 # Create imported target SDL2_mixer_ext::SDL2_mixer_ext
 add_library(SDL2_mixer_ext::SDL2_mixer_ext SHARED IMPORTED)
+
+set_target_properties(SDL2_mixer_ext::SDL2_mixer_ext PROPERTIES
+  INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include/SDL2"
+)
 
 # Load information for each installed configuration.
 file(GLOB _cmake_config_files "${CMAKE_CURRENT_LIST_DIR}/SDL2_mixer_ext-shared-targets-*.cmake")

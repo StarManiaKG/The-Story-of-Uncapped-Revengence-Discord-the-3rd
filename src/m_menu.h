@@ -137,18 +137,19 @@ typedef enum
 	MN_SPECIAL,
 
 #ifdef HAVE_DISCORDRPC
-	MN_OP_DISCORD_RQ, // discord requests, for future notice
+	// DISCORD STUFF //
+	MN_OP_DISCORD_RQ,
 	MN_OP_DISCORD_OPT,
 	MN_OP_DISCORDCS_OUTPUT,
+	// SET AND READY! //
 #endif
 
-	// FUN STAR STUFF //
+	// STAR STUFF //
 	MN_TSOURDT3RD_README,
 	
 	MN_MP_EXTENDEDSERVERPROPERTIES,
 	
 	MN_OP_TSOURDT3RD,
-	
 	MN_OP_TSOURDT3RD_JUKEBOX,
 	MN_OP_TSOURDT3RD_JUKEBOXCONTROLS,
 	MN_OP_TSOURDT3RD_SNAKE,
@@ -159,10 +160,6 @@ typedef enum
 #define MTREE2(a,b) (a | (b<<MENUBITS))
 #define MTREE3(a,b,c) MTREE2(a, MTREE2(b,c))
 #define MTREE4(a,b,c,d) MTREE2(a, MTREE3(b,c,d))
-
-// STAR STUFF: OLD MENU STUFF EDITION //
-#define MTREE5(a,b,c,d,e) MTREE2(a, MTREE4(b,c,d,e))
-// THAT'S IT LOL //
 
 typedef struct
 {
@@ -522,29 +519,21 @@ void M_FreePlayerSetupColors(void);
 // events
 extern boolean AllowEasterEggHunt, EnableEasterEggHuntBonuses;
 
-// game
-extern boolean AllowTypicalTimeOver;
-extern UINT16 menuColor[16];
-
-// players
-extern boolean AlwaysOverlayInvincibility, ShieldBlocksTransformation;
-
 // commands //
-// events
-extern consvar_t cv_alloweasteregghunt, cv_easteregghuntbonuses;
-extern consvar_t cv_ultimatemode;
-
 // game
 extern consvar_t cv_startupscreen, cv_stjrintro, cv_quitscreen;
 extern consvar_t cv_isitcalledsingleplayer;
-extern consvar_t cv_menucolor, cv_fpscountercolor, cv_tpscountercolor;
-extern consvar_t cv_allowtypicaltimeover, cv_pausegraphicstyle, cv_automapoutsidedevmode;
+extern consvar_t cv_pausegraphicstyle, cv_automapoutsidedevmode;
 
 // audio
-extern consvar_t cv_gameovermusic, cv_defaultmaptrack;
+extern consvar_t cv_bossmusic, cv_finalbossmusic, cv_truefinalbossmusic;
+extern consvar_t cv_bosspinchmusic, cv_postbossmusic;
+extern consvar_t cv_actclearmusic, cv_bossclearmusic;
+extern consvar_t cv_gameovermusic;
+extern consvar_t cv_defaultmaptrack;
 
 // players
-extern consvar_t cv_shieldblockstransformation, cv_armageddonnukewhilesuper, cv_alwaysoverlayinvuln;
+extern consvar_t cv_armageddonnukewhilesuper;
 
 // savefiles
 extern consvar_t cv_perfectsave, cv_perfectsavestripe1, cv_perfectsavestripe2, cv_perfectsavestripe3;
@@ -562,17 +551,8 @@ void STAR_StoreDefaultMenuStrings(void);
 
 // game
 void STAR_LoadingScreen_OnChange(void);
-void STAR_TPSRate_OnChange(void);
 void STAR_Shadow_OnChange(void);
 void STAR_UpdateNotice_OnChange(void);
-
-// jukebox
-void M_TSoURDt3rdJukebox(INT32 choice);
-void M_ResetJukebox(void);
-
-// extra stuff
-void STAR_SetProblematicCommandsForNetgames(void);
-void STAR_ResetProblematicCommandsAfterNetgames(void);
 // END OF STAR STUFF SHUGDCUYSIGIUDIOHSBIDJ //
 
 // These defines make it a little easier to make menus

@@ -57,6 +57,7 @@ void D_SaveBan(void);
 #endif
 boolean D_CheckNetGame(void);
 void D_CloseConnection(void);
+boolean Net_IsNodeIPv6(INT32 node);
 void Net_UnAcknowledgePacket(INT32 node);
 void Net_CloseConnection(INT32 node);
 void Net_ConnectionTimeout(INT32 node);

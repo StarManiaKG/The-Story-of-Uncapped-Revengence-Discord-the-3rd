@@ -31,18 +31,20 @@
 #include "m_cond.h" // for conditionsets
 #include "lua_hook.h" // MusicChange hook
 
-// STAR STUFF //
-#include "STAR/star_vars.h" // event stuff
-
-#include "m_menu.h" // jukebox
-// END THAT PLEASE //
-
 #ifdef HW3SOUND
 // 3D Sound Interface
 #include "hardware/hw3sound.h"
 #else
 static INT32 S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 *vol, INT32 *sep, INT32 *pitch, sfxinfo_t *sfxinfo);
 #endif
+
+// STAR STUFF //
+#include "STAR/star_vars.h" // tsourdt3rd stuff
+#include "STAR/ss_main.h" // STAR_CONS_Printf() //
+#include "STAR/s_sound.h" // M_ResetJukebox //
+
+#include "m_menu.h" // cv_defaultmaptrack //
+// END THAT PLEASE //
 
 CV_PossibleValue_t soundvolume_cons_t[] = {{0, "MIN"}, {31, "MAX"}, {0, NULL}};
 static void SetChannelsNum(void);
@@ -170,6 +172,10 @@ static channel_t *channels = NULL;
 static INT32 numofchannels = 0;
 
 caption_t closedcaptions[NUMCAPTIONS];
+
+// allow the grabbing of internal volumes
+INT32 internal_volume = min(max(100, 0), 100);
+INT32 internal_sfx_volume = 0;
 
 void S_ResetCaptions(void)
 {
@@ -1793,17 +1799,27 @@ boolean S_MusicExists(const char *mname, boolean checkMIDI, boolean checkDigi)
 /// Music Effects
 /// ------------------------
 
-boolean S_SpeedMusic(float speed)
+void S_SpeedMusic(float speed) // StarManiaKG: was originally boolean, no longer needs to be //
 {
-	return I_SetSongSpeed(speed);
+	I_SetSongSpeed(speed);
+	return;
 }
 
-// STAR STUFF //
-boolean S_CanSpeedMusic(void)
+float S_GetSpeedMusic(void)
 {
-	return I_CanSetSongSpeed();
+	return I_GetSongSpeed();
 }
-// WE GOTTA DO IT AGAIN! //
+
+void S_PitchMusic(float pitch)
+{
+	I_SetSongPitch(pitch);
+	return;
+}
+
+float S_GetPitchMusic(void)
+{
+	return I_GetSongPitch();
+}
 
 /// ------------------------
 /// Music Seeking
@@ -2084,8 +2100,7 @@ boolean S_RecallMusic(UINT16 status, boolean fromfirst)
 		return false;
 	}
 
-	// STAR STUFF YAY //
-	// We're Playing Music in the Jukebox, Clear the Memory and Don't Do Anything
+	// STAR STUFF: We're Playing Music in the Jukebox, so Clear the Memory and Don't Do Anything //
 	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
 	{
 		Z_Free(entry);
@@ -2168,15 +2183,19 @@ static boolean S_LoadMusic(const char *mname)
 		// STAR STUFF //
 		if (cv_defaultmaptrack.value)
 		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "Playing default map track %s as requested by cv_defaultmaptrack...\n", TSoURDt3rdPlayers[consoleplayer].defaultMusicTracks[cv_defaultmaptrack.value].trackName);
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "Playing default map track %s as requested by cv_defaultmaptrack...\n", cv_defaultmaptrack.string);
 
-			mlumpnum = S_GetMusicLumpNum(TSoURDt3rdPlayers[consoleplayer].defaultMusicTracks[cv_defaultmaptrack.value].track);
+			mlumpnum = S_GetMusicLumpNum(defaultMusicTracks[cv_defaultmaptrack.value].track);
 			if (mlumpnum == LUMPERROR)
+			{
+				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "Music %.6s could not be loaded: lump not found!\n", mname);
 				return false;
+			}
 		}
 		else
-			return false;
 		// END OF STAR STUFF //
+
+		return false;		
 	}
 
 	// load & register it
@@ -2296,7 +2315,7 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 			S_ResumeAudio();
 		return;
 	}
-	// END STAR STUFF //
+	// CONTROL OUR MUSIC, PLEASE! //
 
 	strncpy(newmusic, mmusic, 7);
 	if (LUA_HookMusicChange(music_name, &hook_param))
@@ -2346,12 +2365,14 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 	{
 		I_SetSongPosition(position);
 		I_FadeSong(100, fadeinms, NULL);
-}
+	}
 	else // reset volume to 100 with same music
 	{
 		I_StopFadingSong();
 		I_FadeSong(100, 500, NULL);
 	}
+
+	TSoURDt3rd_ControlMusicEffects(); // STAR STUFF: Set the effects again, just to be sure.... //
 }
 
 void S_StopMusic(void)
@@ -2359,15 +2380,9 @@ void S_StopMusic(void)
 	if (!I_SongPlaying())
 		return;
 
-	// STAR STUFF //
-	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
-		M_ResetJukebox();
-	// I MUST LABEL EVERYTHING //
-
 	if (I_SongPaused())
 		I_ResumeSong();
 
-	S_SpeedMusic(1.0f);
 	I_StopSong();
 	S_UnloadMusic(); // for now, stopping also means you unload the song
 
@@ -2386,6 +2401,12 @@ void S_StopMusic(void)
 				closedcaptions[0].t = CAPTIONFADETICS;
 		}
 	}
+
+	// STAR STUFF: reset music stuffs //
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
+		M_ResetJukebox(false);
+	TSoURDt3rd_ControlMusicEffects();
+	// I MUST LABEL EVERYTHING //
 }
 
 //
@@ -2447,7 +2468,37 @@ void S_SetMusicVolume(INT32 digvolume, INT32 seqvolume)
 
 void S_SetInternalMusicVolume(INT32 volume)
 {
-	I_SetInternalMusicVolume(min(max(volume, 0), 100));
+	internal_volume = min(max(volume, 0), 100);
+	I_SetInternalMusicVolume((UINT8)internal_volume);
+}
+
+INT32 S_GetInternalMusicVolume(void)
+{
+    return internal_volume;
+}
+
+void S_SetInternalSfxVolume(INT32 volume)
+{
+	if (volume < 0 || volume > 31)
+	{
+		CONS_Alert(CONS_WARNING, "sfxvolume should be between 0-31\n");
+		volume = (volume < 0 ? 0 : 31);
+	}
+	internal_sfx_volume = volume;
+
+#ifdef HW3SOUND
+	hws_mode == HWS_DEFAULT_MODE ? I_SetSfxVolume(internal_sfx_volume&0x1F) : HW3S_SetSfxVolume(internal_sfx_volume&0x1F);
+#else
+	// now hardware volume
+	I_SetSfxVolume(internal_sfx_volume&0x1F);
+#endif
+}
+
+INT32 S_GetInternalSfxVolume(void)
+{
+	if (!internal_sfx_volume && cv_soundvolume.value)
+		internal_sfx_volume = cv_soundvolume.value;
+    return internal_sfx_volume;
 }
 
 void S_StopFadingMusic(void)
@@ -2489,9 +2540,10 @@ boolean S_FadeOutStopMusic(UINT32 ms)
 //
 void S_StartEx(boolean reset)
 {
+	// STAR NOTE: i was here lol
 	if (mapmusflags & MUSIC_RELOADRESET)
 	{
-		strncpy(mapmusname, (TSoURDt3rd_InAprilFoolsMode() ? "_hehe" : mapheaderinfo[gamemap-1]->musname), 7);
+		strncpy(mapmusname, TSoURDt3rd_DetermineLevelMusic(), 7);
 		mapmusname[6] = 0;
 		mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
 		mapmusposition = mapheaderinfo[gamemap-1]->muspos;
@@ -2521,7 +2573,7 @@ static void Command_Tunes_f(void)
 
 	if (argc < 2) //tunes slot ...
 	{
-		CONS_Printf("tunes <name/num> [track] [speed] [position] / <-show> / <-default> / <-none>:\n");
+		CONS_Printf("tunes <name/num> [track] [speed] [pitch] [position] / <-show> / <-default> / <-none>:\n");
 		CONS_Printf(M_GetText("Play an arbitrary music lump. If a map number is used, 'MAP##M' is played.\n"));
 		CONS_Printf(M_GetText("If the format supports multiple songs, you can specify which one to play.\n\n"));
 		CONS_Printf(M_GetText("* With \"-show\", shows the currently playing tune and track.\n"));
@@ -2546,7 +2598,8 @@ static void Command_Tunes_f(void)
 	}
 	else if (!strcasecmp(tunearg, "-default"))
 	{
-		tunearg = (TSoURDt3rd_InAprilFoolsMode() ? "_hehe" : mapheaderinfo[gamemap-1]->musname);
+		// STAR NOTE: i was here lol
+		tunearg = TSoURDt3rd_DetermineLevelMusic();
 		track = mapheaderinfo[gamemap-1]->mustrack;
 	}
 
@@ -2570,11 +2623,12 @@ static void Command_Tunes_f(void)
 		track = (UINT16)atoi(COM_Argv(2))-1;
 
 	strncpy(mapmusname, tunearg, 7);
-
-	if (argc > 4)
-		position = (UINT32)atoi(COM_Argv(4));
-
 	mapmusname[6] = 0;
+
+	// STAR NOTE: i was here lol
+	if (argc > 5)
+		position = (UINT32)atoi(COM_Argv(5));
+
 	mapmusflags = (track & MUSIC_TRACKMASK);
 	mapmusposition = position;
 
@@ -2586,6 +2640,37 @@ static void Command_Tunes_f(void)
 		if (speed > 0.0f)
 			S_SpeedMusic(speed);
 	}
+	// STAR STUFF //
+	else
+	{
+		float speed;
+		switch (cv_vapemode.value)
+		{
+			case 1:	speed = 0.9f;	break;
+			case 2:	speed = 0.75f;	break;
+			default:speed = 1.0f;	break;
+		}
+		S_SpeedMusic(speed);
+	}
+
+	if (argc > 4)
+	{
+		float pitch = (float)atof(COM_Argv(4));
+		if (pitch > 0.0f)
+			S_PitchMusic(pitch);
+	}
+	else
+	{
+		float pitch;
+		switch (cv_vapemode.value)
+		{
+			case 1:	pitch = 0.9f; break;
+			case 2:	pitch = 0.5f; break;
+			default:pitch = 1.0f; break;
+		}
+		S_PitchMusic(pitch);
+	}
+	// LEMONADE PITCHER //
 }
 
 static void Command_RestartAudio_f(void)
@@ -2604,7 +2689,7 @@ static void Command_RestartAudio_f(void)
 		P_RestoreMusic(&players[consoleplayer]);
 	// STAR STUFF FOR REASONS I GUESS //
 	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
-		M_ResetJukebox();
+		M_ResetJukebox(false);
 	// FINE, I'LL LET YOU STOP IT HERE... //
 }
 
@@ -2642,7 +2727,7 @@ void GameDigiMusic_OnChange(void)
 
 		if (Playing())
 			P_RestoreMusic(&players[consoleplayer]);
-		else if ((!cv_musicpref.value || midi_disabled) && S_DigExists("_clear")) /* STAR NOTE: i'll leave this here for now (titlemapinaction && menuactive) */
+		else if ((!cv_musicpref.value || midi_disabled) && S_DigExists("_clear"))
 			S_ChangeMusicInternal("_clear", false);
 	}
 	else
@@ -2655,7 +2740,7 @@ void GameDigiMusic_OnChange(void)
 			{
 				if (Playing())
 					P_RestoreMusic(&players[consoleplayer]);
-				else /* STAR NOTE: i'll also leave this here for now (titlemapinaction && menuactive) */
+				else
 					S_ChangeMusicInternal("_clear", false);
 			}
 		}
@@ -2677,7 +2762,7 @@ void GameMIDIMusic_OnChange(void)
 
 		if (Playing())
 			P_RestoreMusic(&players[consoleplayer]);
-		else if ((cv_musicpref.value || digital_disabled) && S_MIDIExists("_clear")) /* STAR NOTE: i'll leave this here for now too (titlemapinaction && menuactive) */
+		else if ((cv_musicpref.value || digital_disabled) && S_MIDIExists("_clear"))
 			S_ChangeMusicInternal("_clear", false);
 	}
 	else
@@ -2690,7 +2775,7 @@ void GameMIDIMusic_OnChange(void)
 			{
 				if (Playing())
 					P_RestoreMusic(&players[consoleplayer]);
-				else /* STAR NOTE: i'll leave this here for now as well (titlemapinaction && menuactive) */
+				else
 					S_ChangeMusicInternal("_clear", false);
 			}
 		}
@@ -2700,12 +2785,13 @@ void GameMIDIMusic_OnChange(void)
 void MusicPref_OnChange(void)
 {
 	if (M_CheckParm("-nomusic") || M_CheckParm("-noaudio") ||
-		M_CheckParm("-nomidimusic") || M_CheckParm("-nodigmusic"))
+		M_CheckParm("-nomidimusic") || M_CheckParm("-nodigmusic") ||
+		!sound_started) // STAR NOTE: i was here lol
 		return;
 
 	if (Playing())
 		P_RestoreMusic(&players[consoleplayer]);
-	else if (S_PrefAvailable(cv_musicpref.value, "_clear")) /* STAR NOTE: i'll also leave this here for now, just in case (titlemapinaction && menuactive) */
+	else if (S_PrefAvailable(cv_musicpref.value, "_clear"))
 		S_ChangeMusicInternal("_clear", false);
 }
 

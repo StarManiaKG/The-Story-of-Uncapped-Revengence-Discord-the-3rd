@@ -51,18 +51,19 @@
 
 #include "lua_hud.h"
 
-// DISCORD STUFF //
 #ifdef HAVE_DISCORDRPC
-#include "discord.h"
+#include "discord.h" // DISCORD STUFF: rpc presence //
 #endif
 
 #ifdef HAVE_DISCORDGAMESDK
-#include "discord_gamesdk.h"
+#include "discord_gamesdk.h" // DISCORD STUFF: gamesdk presence //
 #endif
-// END THAT //
 
 // OTHER FUN STAR STUFF YAYAYSUHDUISHUIBHOUIHBDU()*FH*D(UIYVLBGUIYDG(UDOPBIYGD*OUFBHO(P))) //
-#include "STAR/star_vars.h"
+#include "STAR/star_vars.h" // variousness & TSoURDt3rd_DetermineLevelMusic() //
+#include "STAR/ss_cmds.h" // cv_storesavesinfolders //
+#include "STAR/ss_main.h"
+
 #include "deh_soc.h"
 
 // Main Build
@@ -76,8 +77,8 @@ INT32 STAR_SynchFailureSFX = sfx_kc46;
 INT32 DISCORD_RequestSFX = sfx_kc5d;
 
 // Easter
-INT32 TOTALEGGS;
-INT32 foundeggs;
+INT32 TOTALEGGS = 0;
+INT32 foundeggs = 0;
 // END OF THAT STAR STUFF //
 
 gameaction_t gameaction;
@@ -793,9 +794,13 @@ static void G_SetNightsRecords(gamedata_t *data, player_t *player)
 // for consistency among messages: this modifies the game and removes savemoddata.
 void G_SetGameModified(boolean silent)
 {
-	if ((modifiedgame && !savemoddata)
-		|| autoloading)	// STAR NOTE: THIS IS ONLY HERE SO THAT IT DOESN'T SCREAM MISINFOMRATION IN THE CONSOLE
+	if (modifiedgame && !savemoddata)
 		return;
+
+	// STAR STUFF: please don't scream misinformation in the console //
+	if (autoloading)
+		return;
+	// DONE! //
 
 	modifiedgame = true;
 	savemoddata = false;
@@ -823,8 +828,12 @@ void G_SetUsedCheats(boolean silent)
 	// STAR STUFF YAY //
 	S_PrepareSoundTest();
 	M_UpdateEasterStuff();
-	if (TSoURDt3rd_LoadedExtras)
-		TSoURDt3rd_NoMoreExtras = true;
+
+	if (autoloading)
+	{
+		TSoURDt3rd_useAsFileName = true;
+		usedCheats = false;
+	}
 	// END OF THAT //
 
 	// If in record attack recording, cancel it.
@@ -2814,7 +2823,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	{
 		if (mapmusflags & MUSIC_RELOADRESET)
 		{
-			strncpy(mapmusname, (TSoURDt3rd_InAprilFoolsMode() ? "_hehe" : mapheaderinfo[gamemap-1]->musname), 7);
+			strncpy(mapmusname, TSoURDt3rd_DetermineLevelMusic(), 7);
 			mapmusname[6] = 0;
 			mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
 			mapmusposition = mapheaderinfo[gamemap-1]->muspos;
@@ -4038,6 +4047,7 @@ static void G_HandleSaveLevel(void)
 			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "%s", srb2home, timeattackfolder), 0755);
 	}
 	// END THAT, AND NOW DO EVERYTHING ELSE //
+
 	// Update records & emblems
 	G_UpdateAllVisited();
 
@@ -4382,14 +4392,10 @@ static void G_DoContinued(void)
 	gameaction = ga_nothing;
 
 #ifdef HAVE_DISCORDRPC
-	// DISCORD STUFF //
-	DRPC_UpdatePresence();
-	// END THAT //
+	DRPC_UpdatePresence(); // DISCORD STUFF: update rpc //
 #endif
 #ifdef HAVE_SDL
-	// STAR STUFF //
-	STAR_SetWindowTitle();
-	// END THAT //
+	STAR_SetWindowTitle(); // STAR STUFF: do cool window title stuff //
 #endif
 }
 
@@ -4671,9 +4677,7 @@ void G_LoadGameData(gamedata_t *data)
 	M_SilentUpdateUnlockablesAndEmblems(data);
 	M_SilentUpdateSkinAvailabilites();
 
-	// STAR STUFF: STEAL SAVEFILE DATA //
-	STAR_ReadExtraData();
-	// I MADE THIS ALL ON MY OWN //
+	STAR_ReadExtraData(); // STAR STUFF: STEAL SAVEFILE DATA //
 
 	return;
 
@@ -4711,9 +4715,7 @@ void G_SaveGameData(gamedata_t *data)
 		return;
 	}
 
-	// STAR STUFF //
-	STAR_WriteExtraData();
-	// VIVA LA AUTOLOADING //
+	STAR_WriteExtraData(); // STAR STUFF: VIVA LA AUTOLOADING //
 
 	if (usedCheats)
 	{
@@ -5545,14 +5547,10 @@ void G_SetGamestate(gamestate_t newstate)
 	gamestate = newstate;
 
 #ifdef HAVE_DISCORDRPC
-	// DISCORD STUFFS //
-	DRPC_UpdatePresence();
-	// END THAT //
+	DRPC_UpdatePresence(); // DISCORD STUFFS: update presence again //
 #endif
 #ifdef HAVE_SDL
-	// STAR STUFF //
-	STAR_SetWindowTitle();
-	// END THAT //
+	STAR_SetWindowTitle(); // STAR STUFF: constantly update our title please //
 #endif
 }
 

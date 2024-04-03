@@ -489,7 +489,7 @@ static int libd_getSpritePatch(lua_State *L)
 	if (i == SPR_PLAY) // Use getSprite2Patch instead!
 		return 0;
 
-	sprdef = &sprites[i];
+	sprdef = sprites[i];
 
 	// set frame number
 	frame = luaL_optinteger(L, 2, 0);

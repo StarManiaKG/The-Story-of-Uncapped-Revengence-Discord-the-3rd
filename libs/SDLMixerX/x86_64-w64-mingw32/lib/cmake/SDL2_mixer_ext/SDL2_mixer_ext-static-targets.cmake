@@ -7,7 +7,7 @@ if(CMAKE_VERSION VERSION_LESS "2.8.3")
    message(FATAL_ERROR "CMake >= 2.8.3 required")
 endif()
 cmake_policy(PUSH)
-cmake_policy(VERSION 2.8.3...3.25)
+cmake_policy(VERSION 2.8.3...3.26)
 #----------------------------------------------------------------
 # Generated CMake target import file.
 #----------------------------------------------------------------
@@ -57,6 +57,15 @@ endif()
 
 # Create imported target SDL2_mixer_ext::SDL2_mixer_ext_Static
 add_library(SDL2_mixer_ext::SDL2_mixer_ext_Static STATIC IMPORTED)
+
+set_target_properties(SDL2_mixer_ext::SDL2_mixer_ext_Static PROPERTIES
+  INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include/SDL2"
+  INTERFACE_LINK_LIBRARIES "C:/msys64/home/Drayt/Github/codecbuild64/lib/libopusfile.a;C:/msys64/home/Drayt/Github/codecbuild64/lib/libopus.a;C:/msys64/home/Drayt/Github/codecbuild64/lib/libopusfile.a;C:/msys64/home/Drayt/Github/codecbuild64/lib/libopus.a;C:/msys64/home/Drayt/Github/codecbuild64/lib/libwavpack.a;C:/msys64/home/Drayt/Github/codecbuild64/lib/libwavpack.a;C:/msys64/home/Drayt/Github/codecbuild64/lib/libmodplug.a;C:/msys64/home/Drayt/Github/BittenTSoURDt3rd/libs/gme/win64/libgme.dll.a;C:/msys64/mingw64/lib/libz.dll.a;C:/msys64/home/Drayt/Github/codecbuild64/lib/libOPNMIDI.a;C:/msys64/home/Drayt/Github/codecbuild64/bin/libfluidlite.dll;C:/msys64/home/Drayt/Github/codecbuild64/lib/libvorbisfile.a;C:/msys64/home/Drayt/Github/codecbuild64/lib/libvorbis.a;winmm;C:/msys64/home/Drayt/Github/codecbuild64/lib/libogg.a;SDL2::SDL2;SDL2::SDL2main;stdc++"
+)
+
+if(CMAKE_VERSION VERSION_LESS 2.8.12)
+  message(FATAL_ERROR "This file relies on consumers using CMake 2.8.12 or greater.")
+endif()
 
 # Load information for each installed configuration.
 file(GLOB _cmake_config_files "${CMAKE_CURRENT_LIST_DIR}/SDL2_mixer_ext-static-targets-*.cmake")

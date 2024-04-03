@@ -585,13 +585,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 	} // end while
 
 	if (gamedataadded)
-	{
 		G_LoadGameData(clientGamedata);
-
-		// STAR STUFF //
-		TSoURDt3rdPlayers[consoleplayer].jukebox.Unlocked = false;
-		// MARKING STUFF IS FUN //
-	}
 
 	if (gamestate == GS_TITLESCREEN)
 	{

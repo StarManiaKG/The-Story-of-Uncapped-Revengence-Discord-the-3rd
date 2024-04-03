@@ -50,6 +50,9 @@
 
 // STAR STUFF //
 #include "STAR/star_vars.h"
+#include "STAR/ss_cmds.h" // cv_storesavesinfolders //
+#include "STAR/ss_main.h" // SAVEGAMEFOLDER //
+
 boolean TSoURDt3rd_LoadedGamedataAddon;
 // END THAT STUFF //
 
@@ -3888,7 +3891,7 @@ void readmaincfg(MYFILE *f)
 				strcpy(savegamename, timeattackfolder);
 				strlcat(savegamename, "%u.ssg", sizeof(savegamename));
 
-				// STAR NOTE: the rest of this is edited lol
+				// STAR STUFF: update savefile folders (some of this was previously here lol) //
 				if (!cv_storesavesinfolders.value)
 				{
 					strcpy(liveeventbackup, va("live%s.bkp", timeattackfolder));
@@ -3897,8 +3900,6 @@ void readmaincfg(MYFILE *f)
 					strcatbf(savegamename, srb2home, PATHSEP);
 					strcatbf(liveeventbackup, srb2home, PATHSEP);
 				}
-				
-				// MORE STAR STUFF //
 				else
 				{
 					TSoURDt3rd_LoadedGamedataAddon = true;
@@ -4137,6 +4138,13 @@ mobjtype_t get_mobjtype(const char *word)
 	for (i = 0; i < MT_FIRSTFREESLOT; i++)
 		if (fastcmp(word, MOBJTYPE_LIST[i]+3))
 			return i;
+
+	// STAR STUFF: scan for our unique mobjs please (SOC EDITION!) //
+	for (i = MT_LASTFREESLOT+1; i < NUMMOBJTYPES; i++)
+		if (fastcmp(word, MOBJTYPE_LIST[i]+3))
+			return i;
+	// HOPEFULLY WE FOUND THE MOBJ! //
+
 	deh_warning("Couldn't find mobjtype named 'MT_%s'",word);
 	return MT_NULL;
 }
@@ -4157,6 +4165,13 @@ statenum_t get_state(const char *word)
 	for (i = 0; i < S_FIRSTFREESLOT; i++)
 		if (fastcmp(word, STATE_LIST[i]+2))
 			return i;
+
+	// STAR STUFF: scan for our unique states please (SOC EDITION!) //
+	for (i = S_LASTFREESLOT+1; i < NUMSTATES; i++)
+		if (fastcmp(word, STATE_LIST[i]+2))
+			return i;
+	// HOPEFULLY WE FOUND THE STATE! //
+
 	deh_warning("Couldn't find state named 'S_%s'",word);
 	return S_NULL;
 }

@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2023 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2023-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -11,13 +11,15 @@
 
 #ifdef HAVE_CURL
 #include <curl/curl.h>		// internet variables
-#include "../i_threads.h"	// internet variables 2
+#include "../i_threads.h"	// multithreading variables
 #endif
 
-#include <time.h>
 #include <signal.h>
 
 #include "star_vars.h" 		// star variables
+#include "ss_main.h"		// star variables 2
+#include "s_sound.h"		// star variables 3
+#include "m_menu.h"			// star variables 4
 
 #include "../i_system.h"
 #include "../doomdef.h"
@@ -38,6 +40,8 @@
 #include "../m_random.h"	// m_random functions
 #include "../z_zone.h"		// memory variables
 
+#include "../i_net.h"		// net variables
+
 #ifdef HAVE_CURL
 #include "../fastcmp.h"		// string variables
 #endif
@@ -52,18 +56,7 @@
 //			STAR FUNCTIONS		 	//
 //				YAY				 	//
 //////////////////////////////////////
-
-// STRUCTS //
-TSoURDt3rd_t TSoURDt3rdPlayers[MAXPLAYERS];
-star_gamekey_t STAR_GameKeyDown[1][NUM_GAMECONTROLS];
-
-static TSoURDt3rdDefaultMusicTracks_t defaultMusicTracks[] =
-{
-	[1] = {"GFZ1", 		  "gfz1"}, // GFZ1
-		  {"D_RUNNIN",  "_runin"}  // DooM Wad Anthem
-};
-
-// VARIABLES //
+//// VARIABLES ////
 #ifdef HAVE_CURL
 char *hms_tsourdt3rd_api;
 
@@ -72,7 +65,70 @@ static I_mutex hms_tsourdt3rd_api_mutex;
 #endif
 #endif
 
-// COMMANDS //
+//// STRUCTS ////
+TSoURDt3rd_t TSoURDt3rdPlayers[MAXPLAYERS];
+star_gamekey_t STAR_GameKeyDown[1][NUM_GAMECONTROLS];
+
+TSoURDt3rdBossMusic_t bossMusic[] = {
+	[1] = {"_s1b",	NULL, 		0},	// Sonic 1
+	{"_scdb", 		NULL, 		0},	// Sonic CD
+	{"_s2b", 		NULL, 		0},	// Sonic 2
+	{"_s3b1", 		NULL, 		0},	// Sonic 3
+	{"_&kb1", 		NULL, 		0},	// & Knuckles
+	{"_s3kb", 		NULL, 		0},	// Sonic 3 & Knuckles
+
+	{"_a2b", 	 "_a2bp", 		0},	// Sonic Advance 2 - R
+	{"_a27b", 	"_a27bp", 		0},	// Sonic Advance 2 - Z7
+	{"_a3b", 	 "_a3bp", 		0},	// Sonic Advance 3 - R
+	{"_a37b", 	"_a37bp", 		0},	// Sonic Advance 3 - Z7
+	{"_rms", 	 "_rmsp", 		0},	// Sonic Rush - MS
+	{"_rvn", 	 "_rvnp", 		0},	// Sonic Rush - VN
+	{"_rab", 	 	NULL,	 5500},	// Rush Adventure - R
+	{"_ra7b", 	 	NULL, 		0},	// Rush Adventure - Z7
+
+	{"_smrd", 		NULL, 		0},	// Sonic Mania: RD
+	{"_smhp", 		NULL, 		0},	// Sonic Mania: HP
+	{"_smhbh", 		NULL, 		0}	// Sonic Mania: HBH
+};
+
+TSoURDt3rdFinalBossMusic_t finalBossMusic[] = {
+	[1] = {"_s1fb",	NULL,	   	  NULL,		   NULL},	// Sonic 1
+	{"_scdfb",	  	NULL,		  NULL,    	   NULL},	// Sonic CD
+	{"_s2fb",	  	NULL,	   	  NULL,    	   NULL},	// Sonic 2
+	{"_s3kfb",	  	NULL,	   "_&kdz",	 	   NULL},	// Sonic 3&K
+
+	{"_a2fb",	"_a2fbp",	"	_a253",    	   NULL},	// Sonic Advance 2
+	{"_a3fb",   "_a3fbp",  	   "_a3eb",    "_a3ebp"},	// Sonic Advance 3
+	{"_rbb", 	 "_rbbp",      "_rwib",    "_rwibp"},	// Sonic Rush
+	{"_rafb", 	"_rafbp",      "_radc",    "_radcp"},	// Rush Adventure
+
+	{"_smri",	  	NULL,	   "_smer",    "_smerp"}	// Sonic Mania
+};
+
+static TSoURDt3rdActClearMusic_t actClearMusic[] = {
+	[1] = {"_s12ac",NULL,	  	NULL, 	   	   NULL},	// Sonic 1&2
+	{"_scdac", 	   	NULL,	  	NULL,		   NULL},	// Sonic CD
+	{"_s3kac",	   	NULL,    "_s3fc",		"_&kfc"},	// Sonic 3&K
+
+	{"_a2ac",	 "_a2bc",	"_a2fbc",	   "_a2tfb"},	// Sonic Advance 2
+	{"_a3ac",	 "_a3bc",	"_a3fbc",	   "_a3tfb"},	// Sonic Advance 3
+	{"_rac",	  "_rbc",    "_rfbc",      "_rtfbc"},	// Sonic Rush
+	{"_raac",	 "_rabc",   "_rafbc",      "_ratfb"},	// Rush Adventure
+
+	{"_smac",	   	NULL,	  	NULL,		   NULL},	// Sonic Mania
+
+	{"_btsac",	   	NULL, 	  	NULL,		   NULL}	// Sonic BTS (Before the Sequel)
+};
+
+TSoURDt3rdDefaultMusicTracks_t defaultMusicTracks[] = {
+	[1] = {"gfz1"},	// GFZ1
+	{"_runin"}		// DooM Wad Anthem
+};
+
+TSoURDt3rdBossMusic_t *curBossMusic = NULL;
+TSoURDt3rdFinalBossMusic_t *curFinaleBossMusic = NULL;
+
+//// COMMANDS ////
 consvar_t cv_loadingscreen = CVAR_INIT ("loadingscreen", "Off", CV_SAVE|CV_CALL, CV_OnOff, STAR_LoadingScreen_OnChange);
 
 static CV_PossibleValue_t loadingscreenbackground_t[] = {
@@ -112,186 +168,38 @@ consvar_t cv_loadingscreenimage = CVAR_INIT ("loadingscreenimage", "Intermission
 static CV_PossibleValue_t tsourdt3rdupdatemessage_t[] = {{0, "Off"}, {1, "Screen"}, {2, "Console"}, {0, NULL}};
 consvar_t cv_updatenotice = CVAR_INIT ("tsourdt3rdupdatenotice", "Screen", CV_SAVE|CV_CALL, tsourdt3rdupdatemessage_t, STAR_UpdateNotice_OnChange);
 
-// EVENTS //
-//
-// void TSoURDt3rd_CheckTime(void)
-// Ported from Final Demo, Date Checking is Back!
-// This Helps Check the Current Time on the User's Computer!
-//
-void TSoURDt3rd_CheckTime(void)
-{
-	time_t t1;
-	struct tm* tptr;
+static CV_PossibleValue_t vapemode_t[] = {{0, "Off"}, {1, "TSoURDt3rd"}, {2, "Sonic Mania Plus"}, {0, NULL}};
+consvar_t cv_vapemode = CVAR_INIT ("vapemode", "Off", CV_SAVE|CV_CALL, vapemode_t, TSoURDt3rd_ControlMusicEffects);
 
-	// Do Special Stuff //
-	t1 = time(NULL);
-	if (t1 != (time_t)-1)
-	{
-		tptr = localtime(&t1);
-
-		if (tptr)
-		{
-			// April Fools
-			if (tptr->tm_mon == 3 && (tptr->tm_mday >= 1 && tptr->tm_mday <= 3))
-			{
-				aprilfoolsmode = true;
-				modifiedgame = false;
-			}
-
-			// Easter (Changes Every Year Though, so just have it for all of April)
-			else if ((tptr->tm_mon == 3)
-				&& (!M_CheckParm("-noeaster")))
-			{
-				eastermode = true;
-				modifiedgame = false;
-			}
-
-			// Christmas Eve to New Years
-			else if (((tptr->tm_mon == 11 && tptr->tm_mday >= 24))
-				&& (!M_CheckParm("-noxmas")))
-			{
-				xmasmode = true;
-				xmasoverride = true;
-				modifiedgame = false;
-			}
-		}
-	}
-
-	// Do Special Paramater Stuff //
-	// April Fools
-	if (M_CheckParm("-aprilfools"))
-	{
-		aprilfoolsmode = true;
-		modifiedgame = false;
-	}
-
-	// Easter
-	else if (M_CheckParm("-easter"))
-	{
-		eastermode = true;
-		modifiedgame = false;
-	}
-
-	// Christmas
-	else if (!eastermode && M_CheckParm("-xmas"))
-	{
-		xmasmode = true;
-		xmasoverride = true;
-		modifiedgame = false;
-	}
-
-	// Run Special Stuff Functions //
-	// April Fools
-	if (aprilfoolsmode)
-	{
-		CONS_Printf("TSoURDt3rd_CheckTime(): April Fools Mode Enabled!\n");
-		TSoURDt3rd_LoadExtras = true;
-
-		STAR_StoreDefaultMenuStrings();
-	}
-
-	// Easter
-	else if (eastermode)
-	{
-		CONS_Printf("TSoURDt3rd_CheckTime(): Easter Mode Enabled!\n");
-		TSoURDt3rd_LoadExtras = true;
-	}
-
-	// Christmas
-	else if (xmasmode)
-	{
-		CONS_Printf("TSoURDt3rd_CheckTime(): Christmas Mode Enabled!\n");
-		TSoURDt3rd_LoadExtras = true;
-	}
-}
-
-//
-// void TSoURDt3rd_EventMessage(INT32 choice)
-// Displays a Message on the Screen Asking About Engaging in TSoURDt3rd Events
-//
-void TSoURDt3rd_EventMessage(INT32 choice)
-{
-	// Yes //
-	if (choice == 'y' || choice == KEY_ENTER)
-	{
-		S_StartSound(NULL, sfx_spdpad);
-		COM_BufInsertText("addfile tsourdt3rdextras.pk3\n");
-		
-		return;
-	}
-
-	// No //
-	S_StartSound(NULL, sfx_adderr);
-
-	aprilfoolsmode = false;
-	eastermode = false;
-	xmasmode = false;
-
-	TSoURDt3rd_LoadExtras = false;
-}
-
-//
-// boolean TSoURDt3rd_InAprilFoolsMode(void)
-// Checks If TSoURDt3rd is in April Fools Mode, and Returns True if so
-//
-boolean TSoURDt3rd_InAprilFoolsMode(void)
-{
-	return (aprilfoolsmode && cv_ultimatemode.value);
-}
-
+//// FUNCTIONS ////
 // GAME //
 //
-// void TSoURDt3rd_InitializeStructures(INT32 playernum)
-// Initializes TSoURDt3rd's Structures
+// void TSoURDt3rd_InitializePlayer(INT32 playernum)
+// Initializes TSoURDt3rd's Structures For the Given Player
 //
-void TSoURDt3rd_InitializeStructures(INT32 playernum)
+void TSoURDt3rd_InitializePlayer(INT32 playernum)
 {
-	// Set the Structures and We're Done :) //
-	// Main Stuff
+	// Main //
 	TSoURDt3rd_t *TSoURDt3rd							= &TSoURDt3rdPlayers[playernum];
 
-	// Game Stuff
 	TSoURDt3rd->usingTSoURDt3rd							= true;
-	TSoURDt3rd->checkedVersion							= false;
+	TSoURDt3rd->checkedVersion							= ((playeringame[playernum] && players[playernum].bot) ? true : false);
 
-	TSoURDt3rd->Name									= ((dedicated && server) ? "SERVER" : cv_playername.string);
+	TSoURDt3rd->num										= playernum+1;
 
-	TSoURDt3rd->reachedSockSendErrorLimit 				= 0;
-
+	// Game //
 	TSoURDt3rd->loadingScreens.loadCount 				= 0;
 	TSoURDt3rd->loadingScreens.loadPercentage 			= 0;
 	TSoURDt3rd->loadingScreens.bspCount 				= 0;
 
 	TSoURDt3rd->loadingScreens.screenToUse 				= 0;
 
-	TSoURDt3rd->loadingScreens.softwareLoadComplete 	= false;
+	TSoURDt3rd->loadingScreens.loadComplete 			= false;
 
-	// Music Stuff
-	TSoURDt3rd->defaultMusicTracks						= defaultMusicTracks;
-
-	// Server Stuff
+	// Servers //
+	TSoURDt3rd->reachedSockSendErrorLimit 				= 0;
 	TSoURDt3rd->masterServerAddressChanged				= false;
 
-	TSoURDt3rd_ResetServerPlayer(playernum);
-
-	// Jukebox Stuff
-	TSoURDt3rd->jukebox.Unlocked 						= false;
-	TSoURDt3rd->jukebox.lastTrackPlayed					= NULL;
-
-	M_ResetJukebox();
-}
-
-//
-// void TSoURDt3rd_ResetServerPlayer(INT32 playernum)
-// Reinitializes TSoURDt3rd's Server Structures For Given Players After Servers Wipe Them
-//
-void TSoURDt3rd_ResetServerPlayer(INT32 playernum)
-{
-	// Reinitialize the Structures and We're Done :) //
-	// Main Stuff
-	TSoURDt3rd_t *TSoURDt3rd							= &TSoURDt3rdPlayers[playernum];
-
-	// Server Stuff
 	TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd		= true;
 	
 	TSoURDt3rd->serverPlayers.majorVersion				= TSoURDt3rd_CurrentMajorVersion();
@@ -299,41 +207,55 @@ void TSoURDt3rd_ResetServerPlayer(INT32 playernum)
 	TSoURDt3rd->serverPlayers.subVersion				= TSoURDt3rd_CurrentSubversion();
 
 	TSoURDt3rd->serverPlayers.serverTSoURDt3rdVersion	= TSoURDt3rd_CurrentVersion();
+
+	// Jukebox //
+	TSoURDt3rd->jukebox.Unlocked 						= false;
+	TSoURDt3rd->jukebox.lastTrackPlayed					= NULL;
+
+	M_ResetJukebox(false);
 }
 
 //
-// void TSoURDt3rd_ClearServerPlayer(INT32 playernum)
-// Wipes Server Players From the TSoURDt3rd Table
-// Also Fully Resets Them for the Local Client
+// void TSoURDt3rd_ClearPlayer(INT32 playernum)
+// Fully Resets the TSoURDt3rd Player Table for Both Servers and the Local Client
 //
-void TSoURDt3rd_ClearServerPlayer(INT32 playernum)
+void TSoURDt3rd_ClearPlayer(INT32 playernum)
 {
-	// Clear the Structures and We're Done :) //
-	// In Netgames
-	if (!netgame)
+#if 0
+	SINT8 node = (netgame ? (SINT8)doomcom->remotenode : playernum);
+	SINT8 mynode = ((netbuffer->u.servercfg.clientnode < MAXPLAYERS) ? (SINT8)netbuffer->u.servercfg.clientnode : consoleplayer);
+#else
+	INT32 node = playernum;
+	INT32 mynode = consoleplayer;
+#endif
+
+	for (INT32 i = 0; i < MAXPLAYERS; i++)
 	{
-		if (playernum == consoleplayer)
-			TSoURDt3rdPlayers[consoleplayer] = TSoURDt3rdPlayers[playernum];
-		else
-			memset(&TSoURDt3rdPlayers[playernum], 0, sizeof (TSoURDt3rd_t));
+		if (!TSoURDt3rdPlayers[i].num)
+			continue;
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "num %d = %d\n", i, TSoURDt3rdPlayers[i].num);
 	}
 
-	// Outside Netgames
-	else
+	if (node == mynode)
 	{
-		if (playernum == consoleplayer)
-		{
-			TSoURDt3rdPlayers[playernum] = TSoURDt3rdPlayers[consoleplayer];
-			memset(&TSoURDt3rdPlayers[consoleplayer], 0, sizeof (TSoURDt3rd_t));
-		}
-		else
-		{
-			if (!nodeingame[playernum])
-				memset(&TSoURDt3rdPlayers[playernum], 0, sizeof (TSoURDt3rd_t));
-		}
+#if 0		
+		if (!memcmp(&TSoURDt3rdPlayers[node], &TSoURDt3rdPlayers[mynode], sizeof(TSoURDt3rd_t)))
+			return;
+#endif
+
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "before: tsourdt3rdnode - %d\n", TSoURDt3rdPlayers[node].num);
+
+		TSoURDt3rdPlayers[node].reachedSockSendErrorLimit = 0;
+
+		TSoURDt3rdPlayers[mynode] = TSoURDt3rdPlayers[node];
+		M_Memcpy(&TSoURDt3rdPlayers[mynode], &TSoURDt3rdPlayers[node], sizeof(TSoURDt3rd_t));
+
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "after: tsourdt3rdnode - %d\n", TSoURDt3rdPlayers[mynode].num);
+		return;
 	}
 
-	TSoURDt3rd_ResetServerPlayer(playernum);
+	if ((!netgame) || (netgame && !playeringame[node]))
+		memset(&TSoURDt3rdPlayers[node], 0, sizeof(TSoURDt3rd_t));
 }
 
 //
@@ -348,7 +270,7 @@ void STAR_LoadingScreen(void)
 	char s[16];
 	INT32 x, y;
 
-	static const char *gstartuplumpnumtype[] = {
+	static const char *loadingscreenlumpnumtype[] = {
 		[2] = "SRB2BACK",	// SRB2 Titlecard Background
 		"DFTL",
 		
@@ -525,14 +447,14 @@ void STAR_LoadingScreen(void)
 
 		// Finally, Apply the Image, and We're Good Here :) //
 		V_DrawPatchFill(W_CachePatchName(
-			(gstartuplumpnumtype[(cv_loadingscreenimage.value == 1 || cv_loadingscreenimage.value == 21) ? TSoURDt3rd->loadingScreens.screenToUse : cv_loadingscreenimage.value]),
+			(loadingscreenlumpnumtype[(cv_loadingscreenimage.value == 1 || cv_loadingscreenimage.value == 21) ? TSoURDt3rd->loadingScreens.screenToUse : cv_loadingscreenimage.value]),
 			(PU_CACHE)));
 	}
 
 	// Run Some Other Necessary Functions Here, and We're Done :) //
 	M_DrawTextBox(x-58, y-8, 13, 1);
-	V_DrawString(x-50, y, menuColor[cv_menucolor.value], "Loading...");
-	V_DrawRightAlignedString(x+50, y, menuColor[cv_menucolor.value], s);
+	V_DrawString(x-50, y, V_MENUCOLORMAP, "Loading...");
+	V_DrawRightAlignedString(x+50, y, V_MENUCOLORMAP, s);
 
 	I_UpdateNoVsync();
 }
@@ -553,11 +475,11 @@ void STAR_RenameWindow(const char *title)
 // const char *STAR_SetWindowTitle(void)
 // Sets SRB2's Window Title
 //
-char randomTitleTable[5][256];
-
 const char *STAR_SetWindowTitle(void)
 {
 	// Make Variables //
+	static char randomTitleTable[5][256];
+
 	const char *windowtitle = "";
 	const char *dynamictitle = "";
 
@@ -765,7 +687,7 @@ const char *STAR_SetWindowTitle(void)
 							dynamictitle = randomTitleTable[4];
 						}
 						else
-							dynamictitle = "Capturing Flags in";
+							dynamictitle = "Having a Friendly Deathmatch in";
 
 						break;
 					}
@@ -900,10 +822,13 @@ const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean coredum
 		// Sonic Rush
 		case 8:
 		{
-			switch (M_RandomRange(0, 1))
+			switch (M_RandomRange(0, 3))
 			{
 				case 1: jokemsg = "Should we try this again?"; break;
-				default: jokemsg = "Never get on my bad side!"; break;
+				case 2: jokemsg = "Never get on my bad side!"; break;
+
+				case 3: jokemsg = "Feeling hounded and surrounded!"; break;
+				default: jokemsg = "Step by step."; break;
 			}
 			break;
 		}
@@ -976,8 +901,8 @@ const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean coredum
 				{
 					switch (M_RandomRange(0, 3))
 					{
-						case 1: jokemsg = "TSoURDt3rd Devs are codin' AWFUL!"; break;
-						case 2: jokemsg = "I'm crashin' AWFUL!"; break;
+						case 1: jokemsg = "TSoURDt3rd's Devs are codin' AWFUL!"; break;
+						case 2: jokemsg = "We're crashin' AWFUL!"; break;
 						case 3: jokemsg = "U playin' COOL!"; break;
 						default: jokemsg = "I shouldn't cut corners.\nYou shouldn't cut corners.\nTSoURDt3rd Devs and STJr shouldn't cut corners."; break;
 					}
@@ -998,9 +923,10 @@ const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean coredum
 				// Zone Builder
 				case 2:
 				{
-					switch (M_RandomRange(0, 1))
+					switch (M_RandomRange(0, 2))
 					{
 						case 1: jokemsg = "I'll miss you, you know."; break;
+						case 2: jokemsg = "GAME OVER!"; break;
 						default: jokemsg = "You were always my favorite user."; break;
 					}
 					break;
@@ -1025,11 +951,10 @@ const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean coredum
 			i = 0;
 
 		// Uppercase Letters
-		else if ((isupper(jokemsg[current]))
-			&& ((!isupper(jokemsg[current+1]))
+		else if ((isupper(jokemsg[current]) && !isupper(jokemsg[current+1]))
 			&& (jokemsg[current+1] != ' ')
 			&& (jokemsg[current+1] != '\t')
-			&& (jokemsg[current+1] != '\n')))
+			&& (jokemsg[current+1] != '\n'))
 		{
 			underscoremsg[i] = '_';
 			i++;
@@ -1062,8 +987,8 @@ boolean STAR_Responder(UINT8 player, UINT8 input, boolean preventhold)
 	// Reset Everything if Not Tapping
 	if (!STAR_GameKeyDown[player][input].pressed)
 	{
-		STAR_GameKeyDown[player][input].keyDown		= 0;
-		STAR_GameKeyDown[player][input].tapReady	= false;
+		STAR_GameKeyDown[player][input].keyDown	= 0;
+		STAR_GameKeyDown[player][input].tapReady = false;
 	}
 
 	// Set Things While Tapping
@@ -1088,11 +1013,9 @@ boolean STAR_Responder(UINT8 player, UINT8 input, boolean preventhold)
 //
 void TSoURDt3rd_BuildTicCMD(UINT8 player)
 {
-	// Make the Variables //
-	// Main
 	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer];
+	TSoURDt3rdJukebox_t *TSoURDt3rdJukebox = &TSoURDt3rd->jukebox;
 
-	// Jukebox
 	boolean openjukeboxkey;
 	boolean increasemusicspeedkey, decreasemusicspeedkey;
 	boolean playmostrecenttrackkey;
@@ -1116,8 +1039,6 @@ void TSoURDt3rd_BuildTicCMD(UINT8 player)
 	{
 		M_StartControlPanel();
 		M_TSoURDt3rdJukebox(0);
-
-		currentMenu->prevMenu = NULL;
 	}
 
 	// Increase the Music Speed if the Key was Pressed
@@ -1136,28 +1057,28 @@ void TSoURDt3rd_BuildTicCMD(UINT8 player)
 	if (playmostrecenttrackkey)
 	{
 		// Haven't Recently Played a Track
-		if (!TSoURDt3rd->jukebox.lastTrackPlayed)
+		if (!TSoURDt3rdJukebox->lastTrackPlayed)
 			STAR_CONS_Printf(STAR_CONS_JUKEBOX, "You haven't recently played a track!\n");
 
 		// Already Have the Track Playing
-		else if (TSoURDt3rd->jukebox.musicPlaying)
+		else if (TSoURDt3rdJukebox->musicPlaying)
 			STAR_CONS_Printf(STAR_CONS_JUKEBOX, "There's already a track playing!\n");
 
 		// Run Everything Normally, and We're Done :)
-		else
+		else if (!TSoURDt3rd_M_IsJukeboxUnlocked(TSoURDt3rdJukebox))
 		{
 			M_TSoURDt3rdJukebox(0);
 
-			strcpy(TSoURDt3rd->jukebox.musicName, (TSoURDt3rd_InAprilFoolsMode() ? "Get rickrolled lol" : TSoURDt3rd->jukebox.lastTrackPlayed->title));
-			strcpy(TSoURDt3rd->jukebox.musicTrack, (TSoURDt3rd_InAprilFoolsMode() ? "_hehe" : TSoURDt3rd->jukebox.lastTrackPlayed->name));
+			strcpy(TSoURDt3rdJukebox->musicName, (TSoURDt3rd_InAprilFoolsMode() ? "Get rickrolled lol" : TSoURDt3rdJukebox->lastTrackPlayed->title));
+			strcpy(TSoURDt3rdJukebox->musicTrack, (TSoURDt3rd_InAprilFoolsMode() ? "_hehe" : TSoURDt3rdJukebox->lastTrackPlayed->name));
 
-			S_ChangeMusicInternal(TSoURDt3rd->jukebox.musicTrack, !TSoURDt3rd->jukebox.lastTrackPlayed->stoppingtics);
-			S_SpeedMusic(atof(cv_jukeboxspeed.string));
+			S_ChangeMusicInternal(TSoURDt3rdJukebox->musicTrack, !TSoURDt3rdJukebox->lastTrackPlayed->stoppingtics);
+			STAR_CONS_Printf(STAR_CONS_JUKEBOX, M_GetText("Loaded track \x82%s\x80.\n"), TSoURDt3rdJukebox->musicName);
 
-			STAR_CONS_Printf(STAR_CONS_JUKEBOX, M_GetText("Loaded track \x82%s\x80.\n"), TSoURDt3rd->jukebox.musicName);
+			TSoURDt3rdJukebox->musicPlaying			= true;
+			TSoURDt3rdJukebox->initHUD				= true;
 
-			TSoURDt3rd->jukebox.musicPlaying			= true;
-			TSoURDt3rd->jukebox.initHUD					= true;
+			TSoURDt3rd_ControlMusicEffects();
 		}
 	}
 
@@ -1171,26 +1092,212 @@ void TSoURDt3rd_BuildTicCMD(UINT8 player)
 		}
 		else
 		{
-			M_ResetJukebox();
-
 			S_StopSounds();
 			S_StopMusic();
 
 			S_StartSound(NULL, sfx_skid);
 
-			if (Playing())
-			{
-				player_t *rplayer = &players[consoleplayer];
-				(TSoURDt3rd_InAprilFoolsMode() ?
-					// Do Funniness for April Fools
-					(S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0)) :
-
-					// Regularly Execute Everything
-					(P_RestoreMusic(rplayer)));
-			}
+			M_ResetJukebox(true);
 		}
 	}
 }
+
+// PLAYERS //
+//
+// boolean STAR_CanPlayerMoveAndChangeSkin(INT32 playernum)
+// Checks if the Player is Allowed to Both Move and Change Their Skin, Returns True if They Can
+//
+boolean STAR_CanPlayerMoveAndChangeSkin(INT32 playernum)
+{
+	return (cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(playernum)));
+}
+
+// AUDIO //
+//
+// void TSoURDt3rd_ControlMusicEffects(void)
+// Controls the Effects of the Currently Playing Music, Based on Factors like Vape Mode
+//
+void TSoURDt3rd_ControlMusicEffects(void)
+{
+	float speed, pitch;
+
+	switch (cv_vapemode.value)
+	{
+		case 1:		speed = 0.9f;	pitch = 0.9f; break;
+		case 2:		speed = 0.75f;	pitch = 0.5f; break;
+		default:	speed = 1.0f;	pitch = 1.0f; break;
+	}
+
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
+	{
+		speed = atof(cv_jukeboxspeed.string);
+		pitch = 1.0f;
+	}
+
+	S_SpeedMusic(speed);
+	S_PitchMusic(pitch);
+}
+
+//
+// const char *TSoURDt3rd_DetermineLevelMusic(void)
+// Determines and Returns What Music Should be Played on the Current Stage
+//
+#define MUSICEXISTS(music) (music && S_MusicExists(music, !midi_disabled, !digital_disabled))
+
+const char *TSoURDt3rd_DetermineLevelMusic(void)
+{
+	mobj_t *mobj = TSoURDt3rd_BossInMap();
+
+	boolean pinchPhase = ((mobj && mobj->health <= mobj->info->damage) && cv_bosspinchmusic.value);
+	boolean allEmeralds = (emeralds == 127);
+
+	boolean bossMap = (mobj && (mapheaderinfo[gamemap-1]->bonustype == 1 || (mapheaderinfo[gamemap-1]->levelflags & LF_WARNINGTITLE))); // Boss BonusType or Warning Title
+	boolean finalBossMap = (mobj && ((mapheaderinfo[gamemap-1]->bonustype == 2 || mapheaderinfo[gamemap-1]->typeoflevel & TOL_ERZ3 || (mapheaderinfo[gamemap-1]->levelflags & LF_WARNINGTITLE)) // ERZ3 BonusType, ERZ3 TypeOfLevel, or Warning Title
+		&& ((mapheaderinfo[gamemap-1]->nextlevel == 1101) // Evaluation
+			|| (mapheaderinfo[gamemap-1]->nextlevel == 1102) // Credits
+			|| (mapheaderinfo[gamemap-1]->nextlevel == 1103)))); // Ending
+	boolean trueFinalBossMap = (finalBossMap && allEmeralds);
+
+	if (curBossMusic)
+	{
+		memset(curBossMusic, 0, sizeof(TSoURDt3rdBossMusic_t));
+		curBossMusic = NULL;
+	}
+
+	if (curFinaleBossMusic)
+	{
+		memset(curFinaleBossMusic, 0, sizeof(TSoURDt3rdFinalBossMusic_t));
+		curFinaleBossMusic = NULL;
+	}
+
+	// Conflicting music //
+#if 0
+	if (strnicmp(TSoURDt3rd_DetermineLevelMusic(), S_MusicName(), 7))
+		return mapmusname;
+#endif
+
+	// Event music //
+	if (TSoURDt3rd_InAprilFoolsMode())
+		return "_hehe";
+
+	// Gamestate-based music //
+	switch (gamestate)
+	{
+		case GS_INTERMISSION:
+		{
+			if (!cv_actclearmusic.value || (cv_actclearmusic.value && !actClearMusic[cv_actclearmusic.value].actClear))
+				return (MUSICEXISTS(mapheaderinfo[gamemap-1]->musintername) ? mapheaderinfo[gamemap-1]->musintername : "_clear");
+
+			if (cv_bossclearmusic.value)
+			{
+				if (trueFinalBossMap && actClearMusic[cv_actclearmusic.value].trueFinalBossClear)
+					return actClearMusic[cv_actclearmusic.value].trueFinalBossClear;
+				else if (finalBossMap && actClearMusic[cv_actclearmusic.value].finalBossClear)
+					return actClearMusic[cv_actclearmusic.value].finalBossClear;
+				else if (bossMap && actClearMusic[cv_actclearmusic.value].bossClear)
+					return actClearMusic[cv_actclearmusic.value].bossClear;
+			}
+			return actClearMusic[cv_actclearmusic.value].actClear;
+		}
+
+		case GS_EVALUATION:
+		case GS_GAMEEND:
+		{
+			if (!cv_actclearmusic.value)
+				break;
+
+			if (allEmeralds && actClearMusic[cv_actclearmusic.value].trueFinalBossClear)
+				return actClearMusic[cv_actclearmusic.value].trueFinalBossClear;
+			else if (actClearMusic[cv_actclearmusic.value].finalBossClear)
+				return actClearMusic[cv_actclearmusic.value].finalBossClear;
+
+			break;
+		}
+
+		case GS_LEVEL:
+		default:
+		{
+			if ((mobj && mobj->health <= 0) && cv_postbossmusic.value && MUSICEXISTS(mapheaderinfo[gamemap-1]->muspostbossname))
+				return mapheaderinfo[gamemap-1]->muspostbossname;
+			else if (finalBossMap)
+			{
+				if (!cv_finalbossmusic.value)
+					break;
+
+				if (pinchPhase)
+				{
+					curFinaleBossMusic = &finalBossMusic[cv_finalbossmusic.value];
+
+					if (trueFinalBossMap && cv_truefinalbossmusic.value)
+					{
+						if (finalBossMusic[cv_finalbossmusic.value].trueFinalBossPinchMusic)
+							return finalBossMusic[cv_finalbossmusic.value].trueFinalBossPinchMusic;
+					}
+					else if (finalBossMusic[cv_finalbossmusic.value].finalBossPinchMusic)
+						return finalBossMusic[cv_finalbossmusic.value].finalBossPinchMusic;
+
+					return mapmusname;
+				}
+				else
+				{
+					if (trueFinalBossMap && cv_truefinalbossmusic.value)
+					{	
+						if (finalBossMusic[cv_finalbossmusic.value].trueFinalBossMusic)
+							return finalBossMusic[cv_finalbossmusic.value].trueFinalBossMusic;
+					}
+					else if (finalBossMusic[cv_finalbossmusic.value].finalBossMusic)
+						return finalBossMusic[cv_finalbossmusic.value].finalBossMusic;
+				}
+			}
+			else if (bossMap)
+			{
+				if (!cv_bossmusic.value)
+					break;
+
+				if (pinchPhase)
+				{
+					curBossMusic = &bossMusic[cv_bossmusic.value];
+
+					if (bossMusic[cv_bossmusic.value].bossPinchMusic)
+						return bossMusic[cv_bossmusic.value].bossPinchMusic;
+					return mapmusname;
+				}
+				else if (bossMusic[cv_bossmusic.value].bossMusic)
+					return bossMusic[cv_bossmusic.value].bossMusic;
+			}
+
+			break;
+		}
+	}	
+
+	// Made it here? Play the map's default track, and we're done :) //
+	if (RESETMUSIC || strnicmp(S_MusicName(),
+		((mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname), 7))
+		return ((mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname);
+	else
+		return mapheaderinfo[gamemap-1]->musname;
+
+	//return ((!mapmusname[0] || !strnicmp(mapmusname, S_MusicName(), 7)) ? mapheaderinfo[gamemap-1]->musname : mapmusname);
+}
+
+UINT32 TSoURDt3rd_PinchMusicPosition(void)
+{
+	if (!curBossMusic || !curBossMusic->pinchMusicPos)
+		return mapmusposition;
+	return curBossMusic->pinchMusicPos;
+}
+
+boolean TSoURDt3rd_SetPinchMusicSpeed(void)
+{
+	if (curBossMusic && !curBossMusic->bossPinchMusic)
+		return true;
+	else if (curFinaleBossMusic && !curFinaleBossMusic->finalBossPinchMusic && !curFinaleBossMusic->trueFinalBossPinchMusic)
+		return true;
+	return false;
+}
+
+
+#undef MUSICEXISTS
 
 // SAVEDATA //
 //
@@ -1235,6 +1342,8 @@ void STAR_ReadExtraData(void)
     FILE *tsourdt3rdgamedata;
 	const char *path;
 
+	TSoURDt3rdPlayers[consoleplayer].jukebox.Unlocked = false;
+
 	// Find The File //
 	path = va("%s"PATHSEP"%s", srb2home, "tsourdt3rd.dat");
     tsourdt3rdgamedata = fopen(path, "r");
@@ -1264,33 +1373,40 @@ void STAR_ReadExtraData(void)
 //
 void STAR_SetSavefileProperties(void)
 {
-	// Make Some Variables //
-	INT32 i;
+#ifdef DEFAULTDIR
+	char homepath[256] = "."; // STAR: My Home
+	memcpy(homepath, srb2home, sizeof(srb2home));
+#else
+	const char *homepath = userhome; // STAR: My Home
+#endif
 
 	// Before we Start, Ensure Some Things //
+#if 0	
 	if (netgame)
 	{
-		CONS_Printf("You can't change this while in a netgame.\n");
-		CV_StealthSetValue(&cv_storesavesinfolders, (!cv_storesavesinfolders.value ? 1 : 0));
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "You can't change this while in a netgame.\n");
+		CV_StealthSetValue(&cv_storesavesinfolders, !cv_storesavesinfolders.value);
+
 		return;
 	}
+#endif
 
 	// Erase the Strings, Just in Case //
-	for (i = 0; savegamename[i] != '\0'; i++) savegamename[i] = '\0';
-	for (i = 0; liveeventbackup[i] != '\0'; i++) liveeventbackup[i] = '\0';
-	for (i = 0; savegamefolder[i] != '\0'; i++) savegamefolder[i] = '\0';
+	memset(savegamename, 0, sizeof(savegamename));
+	memset(liveeventbackup, 0, sizeof(liveeventbackup));
+	memset(savegamefolder, 0, sizeof(savegamefolder));
 
 	// Make the Folder //
 	if (cv_storesavesinfolders.value)
 	{
-		I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER, srb2home), 0755);
+		I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER, homepath), 0755);
 		if (TSoURDt3rd_useAsFileName)
 		{
-			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd", srb2home), 0755);
-			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd" PATHSEP "%s", srb2home, timeattackfolder), 0755);
+			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd", homepath), 0755);
+			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd" PATHSEP "%s", homepath, timeattackfolder), 0755);
 		}
 		else
-			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "%s", srb2home, timeattackfolder), 0755);
+			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "%s", homepath, timeattackfolder), 0755);
 	}
 
 	// Store our Folder Name in a Variable //
@@ -1313,31 +1429,16 @@ void STAR_SetSavefileProperties(void)
 
 	// Merge the Variables Together, and We're Done :) //
 	// NOTE: can't use sprintf since there is %u in savegamename
-#ifdef DEFAULTDIR
 	if (!cv_storesavesinfolders.value)
 	{
-		strcatbf(savegamename, srb2home, PATHSEP);
-		strcatbf(liveeventbackup, srb2home, PATHSEP);
+		strcatbf(savegamename, homepath, PATHSEP);
+		strcatbf(liveeventbackup, homepath, PATHSEP);
 	}
 	else
 	{
-		strcatbf(savegamename, srb2home, va(PATHSEP"%s"PATHSEP, savegamefolder));
-		strcatbf(liveeventbackup, srb2home, va(PATHSEP"%s"PATHSEP, savegamefolder));
+		strcatbf(savegamename, homepath, va(PATHSEP"%s"PATHSEP, savegamefolder));
+		strcatbf(liveeventbackup, homepath, va(PATHSEP"%s"PATHSEP, savegamefolder));
 	}
-
-#else
-
-	if (!cv_storesavesinfolders.value)
-	{
-		strcatbf(savegamename, userhome, PATHSEP);
-		strcatbf(liveeventbackup, userhome, PATHSEP);
-	}
-	else
-	{
-		strcatbf(savegamename, userhome, va(PATHSEP"%s"PATHSEP, savegamefolder));
-		strcatbf(liveeventbackup, userhome, va(PATHSEP"%s"PATHSEP, savegamefolder));
-	}
-#endif
 }
 
 // FILES //
@@ -1358,7 +1459,7 @@ void TSoURDt3rd_TryToLoadTheExtras(void)
 		// Easter Specific Stuff
 		if (eastermode && (!netgame && !TSoURDt3rd_TouchyModifiedGame))
 		{
-			CV_StealthSetValue(&cv_alloweasteregghunt, 1);
+			CV_StealthSetValue(&cv_easter_allowegghunt, 1);
 			AllowEasterEggHunt = true;
 
 			M_UpdateEasterStuff();
@@ -1378,18 +1479,21 @@ void TSoURDt3rd_TryToLoadTheExtras(void)
 // Detects the Specific File Type of the File Given
 //
 // Possible Returns:
-//	0 - Unsupported
+//	0 - Unsupported/Unknown
+//
 // 	1 - Folder
 //
 // 	2 - WAD
 // 	3 - PK3
-//	4 - KART (if enabled)
+//	4 - KART (if USE_KART enabled)
 //
 //	5 - LUA
 //	6 - SOC
 //
-//	7 - CFG
-//	8 - TXT
+//	7 - STAR
+//
+//	8 - CFG
+//	9 - TXT
 //
 INT32 STAR_DetectFileType(const char* filename)
 {
@@ -1411,10 +1515,13 @@ INT32 STAR_DetectFileType(const char* filename)
 		else if (!stricmp(&filename[strlen(filename) - 4], ".soc"))
 			return 6;
 
-		else if (!stricmp(&filename[strlen(filename) - 4], ".cfg"))
+		else if (!stricmp(&filename[strlen(filename) - 5], ".star"))
 			return 7;
-		else if (!stricmp(&filename[strlen(filename) - 4], ".txt"))
+
+		else if (!stricmp(&filename[strlen(filename) - 4], ".cfg"))
 			return 8;
+		else if (!stricmp(&filename[strlen(filename) - 4], ".txt"))
+			return 9;
 	}
 
 	return 0;
@@ -1437,6 +1544,7 @@ boolean STAR_DoesStringMatchHarcodedFileName(const char *string)
 		|| (strcmp(string, "zones.pk3") == 0)
 		|| (strcmp(string, "player.dta") == 0)
 		|| (strcmp(string, "music.dta") == 0)
+
 #ifdef USE_PATCH_DTA
 		|| (strcmp(string, "patch.pk3") == 0)
 #endif
@@ -1628,7 +1736,11 @@ char *STAR_ReturnStringFromWebsite(const char *API, char *URL, char *RETURNINFO,
 	INT32 i;
 
 	// Reset the Main Variable //
+#if 0	
+	memset(finalRETURNINFO, 0, sizeof(finalRETURNINFO));
+#else
 	for (i = 0; finalRETURNINFO[i] != '\0'; i++) finalRETURNINFO[i] = '\0';
+#endif
 	strcpy(finalRETURNINFO, " ");
 
 	// Create the File //
@@ -1781,19 +1893,21 @@ void TSoURDt3rd_FindCurrentVersion(void)
 
 		if (TSoURDt3rd_CurrentVersion() < internalVersionNumber)
 			((cv_updatenotice.value == 1 && !dedicated) ?
-				(M_StartMessage(va("%c%s\x80\nYou're using an outdated version of TSoURDt3rd.\n\nThe newest version is: %s\nYou're using version: %s\n\nCheck the SRB2 Message Board for the latest version!\n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Update TSoURDt3rd, Please", displayVersionString, TSOURDT3RDVERSION),NULL,MM_NOTHING)) :
+				(M_StartMessage(va("%c%s\x80\nYou're using an outdated version of TSoURDt3rd.\n\nThe newest version is: %s\nYou're using version: %s\n\nCheck the SRB2 Message Board for the latest version!\n\n(Press any key to continue)\n", ('\x80' + (V_MENUCOLORMAP|V_CHARCOLORSHIFT)), "Update TSoURDt3rd, Please", displayVersionString, TSOURDT3RDVERSION),NULL,MM_NOTHING)) :
 				(STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "You're using an outdated version of TSoURDt3rd.\n\nThe newest version is: %s\nYou're using version: %s\n\nCheck the SRB2 Message Board for the latest version!\n", displayVersionString, TSOURDT3RDVERSION)));
 		else if (TSoURDt3rd_CurrentVersion() > internalVersionNumber)
 			((cv_updatenotice.value == 1 && !dedicated) ?
-				(M_StartMessage(va("%c%s\x80\nYou're using a version of TSoURDt3rd that hasn't even released yet.\n\nYou're probably a tester or coder,\nand in that case, hello!\n\nEnjoy messing around with the build!\n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Hello, Tester/Coder!"),NULL,MM_NOTHING)) :
+				(M_StartMessage(va("%c%s\x80\nYou're using a version of TSoURDt3rd that hasn't even released yet.\n\nYou're probably a tester or coder,\nand in that case, hello!\n\nEnjoy messing around with the build!\n\n(Press any key to continue)\n", ('\x80' + (V_MENUCOLORMAP|V_CHARCOLORSHIFT)), "Hello, Tester/Coder!"),NULL,MM_NOTHING)) :
 				(STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "You're using a version of TSoURDt3rd that hasn't even released yet.\nYou're probably a tester or coder, and in that case, hello!\nEnjoy messing around with the build!\n")));
 	}
 
 	TSoURDt3rdPlayers[consoleplayer].checkedVersion = true;
+	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "Checked for updates!\n");
 }
 #endif // HAVE_CURL
 
 // SERVERS //
+// Nobody came.
 
 // MISCELLANIOUS //
 //

@@ -45,8 +45,8 @@
 #include "r_fps.h" // R_GetFramerateCap
 
 // STAR STUFF //
-#include "STAR/star_vars.h" // loading screen stuff
-#include "m_menu.h" // fps coloring command
+#include "STAR/m_menu.h" // V_MENUCOLORMAP & V_FPSCOLORMAP //
+#include "STAR/ss_main.h" // TSoURDt3rd_SCR_SetPingHeight //
 // END THAT PLEASE //
 
 // --------------------------------------------
@@ -438,13 +438,6 @@ void SCR_ChangeRenderer(void)
 
 #endif
 
-	// STAR STUFF //
-	TSoURDt3rdPlayers[consoleplayer].loadingScreens.loadCount = TSoURDt3rdPlayers[consoleplayer].loadingScreens.loadPercentage = 0; // reset loading status
-	TSoURDt3rdPlayers[consoleplayer].loadingScreens.bspCount = 0; // reset bsp count
-
-	TSoURDt3rdPlayers[consoleplayer].loadingScreens.softwareLoadComplete = false; // reset software loading status
-	// END THE LOADING STUFF PLEASE //
-
 	// Set the new render mode
 	setrenderneeded = cv_renderer.value;
 }
@@ -503,27 +496,6 @@ void SCR_CalculateFPS(void)
 #endif
 }
 
-// STAR STUFF //
-// Remember This From st_stuff.c? Yeah, I Reworked It!
-UINT16 positiveTicRateColor[16] = {
-	[0] = V_GREENMAP,
-	V_MAGENTAMAP,
-	V_YELLOWMAP,
-	V_BLUEMAP,
-	V_REDMAP,
-	V_GRAYMAP,
-	V_ORANGEMAP,
-	V_SKYMAP,
-	V_PURPLEMAP,
-	V_AQUAMAP,
-	V_PERIDOTMAP,
-	V_AZUREMAP,
-	V_BROWNMAP,
-	V_ROSYMAP,
-	V_INVERTMAP,
-};
-// BEP BEP //
-
 void SCR_DisplayTicRate(void)
 {
 	INT32 ticcntcolor = 0;
@@ -531,99 +503,43 @@ void SCR_DisplayTicRate(void)
 	UINT32 cap = R_GetFramerateCap();
 	double fps = round(averageFPS);
 
-	// STAR STUFF //
-	// TPS Specific
-	tic_t i;
-	tic_t ontic = I_GetTime();
-	tic_t totaltics = 0;
-	static tic_t lasttic;
-	static boolean ticsgraph[TICRATE];
-	INT32 tpscntcolor = 0;
-	// END THAT FOR NOW //
-
 	if (gamestate == GS_NULL)
 		return;
 
-	// FPS
-	if (cv_ticrate.value)
+	if (cap > 0)
 	{
+		if (fps <= cap / 2.0) ticcntcolor = V_REDMAP;
+		else if (fps <= cap * 0.90) ticcntcolor = V_YELLOWMAP;
+		else ticcntcolor = V_FPSCOLORMAP;
+	}
+	else
+	{
+		ticcntcolor = V_FPSCOLORMAP;
+	}
+
+	if (cv_ticrate.value == 2) // compact counter
+	{
+		V_DrawRightAlignedString(vid.width, h,
+			ticcntcolor|V_NOSCALESTART|V_USERHUDTRANS, va("%04.2f", averageFPS)); // use averageFPS directly
+	}
+	else if (cv_ticrate.value == 1) // full counter
+	{
+		const char *drawnstr;
+		INT32 width;
+
+		// The highest assignable cap is < 1000, so 3 characters is fine.
 		if (cap > 0)
-		{
-			if (fps <= cap / 2.0) ticcntcolor = V_REDMAP;
-			else if (fps <= cap * 0.90) ticcntcolor = V_YELLOWMAP;
-			else {
-				ticcntcolor = positiveTicRateColor[cv_fpscountercolor.value];
-			}
-		}
+			drawnstr = va("%3.0f/%3u", fps, cap);
 		else
-		{
-			ticcntcolor = positiveTicRateColor[cv_fpscountercolor.value];
-		}
+			drawnstr = va("%4.2f", averageFPS);
 
-		if (cv_ticrate.value == 2) // compact counter
-		{			
-			V_DrawRightAlignedString(vid.width, h,
-				ticcntcolor|V_NOSCALESTART|V_USERHUDTRANS, va("%04.2f", averageFPS)); // use averageFPS directly
-		}
-		else // full counter
-		{
-			const char *drawnstr;
-			INT32 width;
+		width = V_StringWidth(drawnstr, V_NOSCALESTART);
 
-			// The highest assignable cap is < 1000, so 3 characters is fine.
-			if (cap > 0)
-				drawnstr = va("%3.0f/%3u", fps, cap);
-			else
-				drawnstr = va("%4.2f", averageFPS);
-
-			width = V_StringWidth(drawnstr, V_NOSCALESTART);
-
-			V_DrawString(vid.width - ((7 * 8 * vid.dupx) + V_StringWidth("FPS: ", V_NOSCALESTART)), h,
-				menuColor[cv_menucolor.value]|V_NOSCALESTART|V_USERHUDTRANS, "FPS:");
-			V_DrawString(vid.width - width, h,
-				ticcntcolor|V_NOSCALESTART|V_USERHUDTRANS, drawnstr);
-		}
+		V_DrawString(vid.width - ((7 * 8 * vid.dupx) + V_StringWidth("FPS: ", V_NOSCALESTART)), h,
+			V_MENUCOLORMAP|V_NOSCALESTART|V_USERHUDTRANS, "FPS:");
+		V_DrawString(vid.width - width, h,
+			ticcntcolor|V_NOSCALESTART|V_USERHUDTRANS, drawnstr);
 	}
-
-	// STAR STUFF //
-	// TPS
-	if (cv_tpsrate.value)
-	{
-		for (i = lasttic + 1; i < TICRATE+lasttic && i < ontic; ++i)
-			ticsgraph[i % TICRATE] = false;
-		
-		ticsgraph[ontic % TICRATE] = true;
-
-		for (i = 0; i < TICRATE; ++i)
-			if (ticsgraph[i])
-				++totaltics;
-
-		if (totaltics <= TICRATE/2) tpscntcolor = V_REDMAP;
-		else if (totaltics <= TICRATE-8) tpscntcolor = V_YELLOWMAP;
-		else {
-			tpscntcolor = positiveTicRateColor[cv_tpscountercolor.value];
-		}
-
-		if (cv_tpsrate.value == 2) // compact counter
-			V_DrawRightAlignedString(vid.width, h-(8*vid.dupy),
-				tpscntcolor|V_NOSCALESTART|V_USERHUDTRANS, va("%02d", totaltics));
-		else // full counter
-		{
-			const char *drawntpsStr;
-			INT32 tpswidth;
-			
-			drawntpsStr = va("%02d/ %02u", totaltics, TICRATE);
-			tpswidth = V_StringWidth(drawntpsStr, V_NOSCALESTART);
-
-			V_DrawString(vid.width - ((7 * 8 * vid.dupx) + V_StringWidth("TPS: ", V_NOSCALESTART)), h-(8*vid.dupy),
-				menuColor[cv_menucolor.value]|V_NOSCALESTART|V_USERHUDTRANS, "TPS:");
-			V_DrawString(vid.width - tpswidth, h-(8*vid.dupy),
-				tpscntcolor|V_NOSCALESTART|V_USERHUDTRANS, drawntpsStr);
-		}
-
-		lasttic = ontic;
-	}
-	// END THAT //
 }
 
 void SCR_DisplayLocalPing(void)
@@ -631,7 +547,7 @@ void SCR_DisplayLocalPing(void)
 	UINT32 ping = playerpingtable[consoleplayer];	// consoleplayer's ping is everyone's ping in a splitnetgame :P
 	if (cv_showping.value == 1 || (cv_showping.value == 2 && servermaxping && ping > servermaxping))	// only show 2 (warning) if our ping is at a bad level
 	{
-		INT32 dispy = (((cv_ticrate.value && cv_tpsrate.value) || cv_tpsrate.value) ? 171 : (cv_ticrate.value ? 180 : 189)); // STAR NOTE: i was here
+		INT32 dispy = TSoURDt3rd_SCR_SetPingHeight();
 		HU_drawPing(307, dispy, ping, true, V_SNAPTORIGHT | V_SNAPTOBOTTOM);
 	}
 }
@@ -716,7 +632,7 @@ void SCR_DisplayMarathonInfo(void)
 	{
 		entertic = I_GetTime();
 		if (gamecomplete)
-			flags |= menuColor[cv_menucolor.value]; // STAR NOTE: i was also here lol
+			flags |= V_MENUCOLORMAP;
 		else if (marathonmode & MA_INGAME)
 			; // see also G_Ticker
 		else if (marathonmode & MA_INIT)

@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
 // Copyright (C) 2018-2020 by Kart Krew.
-// Copyright (C) 2020-2023 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2020-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -45,6 +45,7 @@
 #include "fastcmp.h" // fastcmp, helps with super stuff
 
 #include "STAR/star_vars.h" // provides unique star stuff
+#include "STAR/m_menu.h" // V_MENUCOLORMAP //
 
 // Please feel free to provide your own Discord app if you're making a new custom build :)
 #define DISCORD_APPID "1013126566236135516"
@@ -1504,10 +1505,10 @@ void DRPC_UpdatePresence(void)
 	if (cv_discordshowonstatus.value == 8)
 	{
 		// Error Out if the String is Less Than Two Letters Long //
-		// MAJOR STAR TODO NOTE: please come back to this and flesh it out more lol //
+		// MAJOR STAR NOTE: please come back to this and flesh it out more lol //
 		if (strlen(cv_customdiscorddetails.string) <= 2 || strlen(cv_customdiscordstate.string) <= 2 || strlen(cv_customdiscordsmallimagetext.string) <= 2 || strlen(cv_customdiscordlargeimagetext.string) <= 2)
 		{
-			M_StartMessage(va("%c%s\x80\nSorry, Discord RPC requires Strings to be longer than two characters.\n\nResetting strings with less than two letters back to defaults. \n\n(Press a key)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Custom Discord RPC String Too Short"),NULL,MM_NOTHING);
+			M_StartMessage(va("%c%s\x80\nSorry, Discord RPC requires Strings to be longer than two characters.\n\nResetting strings with less than two letters back to defaults. \n\n(Press a key)\n", ('\x80' + (V_MENUCOLORMAP|V_CHARCOLORSHIFT)), "Custom Discord RPC String Too Short"),NULL,MM_NOTHING);
 			S_StartSound(NULL, sfx_skid);
 
 			if (strlen(cv_customdiscorddetails.string) <= 2)

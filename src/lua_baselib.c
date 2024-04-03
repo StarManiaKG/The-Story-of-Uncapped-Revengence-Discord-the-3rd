@@ -39,9 +39,7 @@
 #include "taglist.h" // P_FindSpecialLineFromTag
 #include "lua_hook.h" // hook_cmd_running errors
 
-// STAR STUFF YAY //
-#include "STAR/star_vars.h" // jukebox stuff
-// END STAR STUFF YAY //
+#include "STAR/star_vars.h" // STAR STUFF: tsourdt3rd stuff //
 
 #define NOHUD if (hud_running)\
 return luaL_error(L, "HUD rendering code should not call this function!");\
@@ -3046,11 +3044,66 @@ static int lib_sSpeedMusic(lua_State *L)
 		if (!player)
 			return LUA_ErrInvalid(L, "player_t");
 	}
-	if ((!player || P_IsLocalPlayer(player))
-		&& (!TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)) // STAR NOTE: i was here lol
 
+	// STAR STUFF: DON'T INTERUPT OUR MUSIC PLEASE :) //
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
+		return 1;
+	// DONE! //
+
+	if (!player || P_IsLocalPlayer(player))
 		S_SpeedMusic(speed);
 	return 0;
+}
+
+static int lib_sGetSpeedMusic(lua_State *L)
+{
+	player_t *player = NULL;
+	//NOHUD
+	if (!lua_isnone(L, 1) && lua_isuserdata(L, 1))
+	{
+		player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+	if (!player || P_IsLocalPlayer(player))
+		lua_pushinteger(L, S_GetSpeedMusic());
+	else
+		lua_pushnil(L);
+	return 1;
+}
+
+static int lib_sPitchMusic(lua_State *L)
+{
+	fixed_t fixedpitch = luaL_checkfixed(L, 1);
+	float pitch = FIXED_TO_FLOAT(fixedpitch);
+	player_t *player = NULL;
+	//NOHUD
+	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
+	{
+		player = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+	if (!player || P_IsLocalPlayer(player))
+		S_PitchMusic(pitch);
+	return 0;
+}
+
+static int lib_sGetPitchMusic(lua_State *L)
+{
+	player_t *player = NULL;
+	//NOHUD
+	if (!lua_isnone(L, 1) && lua_isuserdata(L, 1))
+	{
+		player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+	if (!player || P_IsLocalPlayer(player))
+		lua_pushinteger(L, S_GetPitchMusic());
+	else
+		lua_pushnil(L);
+	return 1;
 }
 
 static int lib_sStopMusic(lua_State *L)
@@ -3063,8 +3116,13 @@ static int lib_sStopMusic(lua_State *L)
 		if (!player)
 			return LUA_ErrInvalid(L, "player_t");
 	}
-	// STAR NOTE: i was also here lol
-	if ((!player || P_IsLocalPlayer(player)) && !cv_luacanstopthejukebox.value)
+
+	// STAR STUFF: STOP INTERUPTING OUR MUSIC PLEASE (if we allow it) //
+	if (cv_luacanstopthejukebox.value && TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
+		return 1;
+	// DONE AGAIN! //
+
+	if (!player || P_IsLocalPlayer(player))
 		S_StopMusic();
 	return 0;
 }
@@ -3085,6 +3143,61 @@ static int lib_sSetInternalMusicVolume(lua_State *L)
 		S_SetInternalMusicVolume(volume);
 		lua_pushboolean(L, true);
 	}
+	else
+		lua_pushnil(L);
+	return 1;
+}
+
+static int lib_sGetInternalMusicVolume(lua_State *L)
+{
+	player_t *player = NULL;
+	//NOHUD
+	if (!lua_isnone(L, 1) && lua_isuserdata(L, 1))
+	{
+		player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+	if (!player || P_IsLocalPlayer(player))
+		lua_pushinteger(L, (UINT32)S_GetInternalMusicVolume());
+	else
+		lua_pushnil(L);
+	return 1;
+}
+
+static int lib_sSetInternalSfxVolume(lua_State *L)
+{
+	UINT32 sfxvolume = (UINT32)luaL_checkinteger(L, 1);
+	player_t *player = NULL;
+	//NOHUD
+	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
+	{
+		player = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+	if (!player || P_IsLocalPlayer(player))
+	{
+		S_SetInternalSfxVolume(sfxvolume);
+		lua_pushboolean(L, true);
+	}
+	else
+		lua_pushnil(L);
+	return 1;
+}
+
+static int lib_sGetInternalSfxVolume(lua_State *L)
+{
+	player_t *player = NULL;
+	//NOHUD
+	if (!lua_isnone(L, 1) && lua_isuserdata(L, 1))
+	{
+		player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+	if (!player || P_IsLocalPlayer(player))
+		lua_pushinteger(L, (UINT32)S_GetInternalSfxVolume());
 	else
 		lua_pushnil(L);
 	return 1;
@@ -3573,9 +3686,9 @@ static int lib_gAddPlayer(lua_State *L)
 
 	playeringame[newplayernum] = true;
 	G_AddPlayer(newplayernum);
-	// STAR STUFF //
-	TSoURDt3rd_InitializeStructures(newplayernum);
-	// END THAT PLEASE //
+
+	TSoURDt3rd_InitializePlayer(newplayernum); // STAR STUFF: add our new player to the roster :P //
+
 	newplayer = &players[newplayernum];
 
 	newplayer->jointime = 0;
@@ -4248,8 +4361,14 @@ static luaL_Reg lib[] = {
 	{"S_StopSoundByID",lib_sStopSoundByID},
 	{"S_ChangeMusic",lib_sChangeMusic},
 	{"S_SpeedMusic",lib_sSpeedMusic},
+	{"S_GetSpeedMusic",lib_sGetSpeedMusic},
+	{"S_PitchMusic",lib_sPitchMusic},
+	{"S_GetPitchMusic",lib_sGetPitchMusic},
 	{"S_StopMusic",lib_sStopMusic},
 	{"S_SetInternalMusicVolume", lib_sSetInternalMusicVolume},
+	{"S_GetInternalMusicVolume", lib_sGetInternalMusicVolume},
+	{"S_SetInternalSfxVolume", lib_sSetInternalSfxVolume},
+	{"S_GetInternalSfxVolume", lib_sGetInternalSfxVolume},
 	{"S_StopFadingMusic",lib_sStopFadingMusic},
 	{"S_FadeMusic",lib_sFadeMusic},
 	{"S_FadeOutStopMusic",lib_sFadeOutStopMusic},

@@ -234,7 +234,7 @@ extern char logfilename[1024];
 // NOTE: it needs more than this to increase the number of players...
 
 #define MAXPLAYERS 32
-#define MAXSKINS 255 // STAR NOTE: i was here lol (also, if you want to set the limits back to vanilla's limits, set this to 32)
+#define MAXSKINS 255 // STAR NOTE: i was here lol (if you want to set the limits back to vanilla, set this to 32) //
 #define PLAYERSMASK (MAXPLAYERS-1)
 #define MAXPLAYERNAME 21
 
@@ -661,7 +661,6 @@ extern int
 // Compile them at your own risk!
 
 ///	Allows the use of devmode in multiplayer. AKA "fishcake"
-// STAR NOTE: HI! THIS CAN CAUSE NETGAME RESYNCS, IF YOU ENABLE THE DEFINITION, OF COURSE, SO BE CAREFUL!
 //#define NETGAME_DEVMODE
 
 ///	Allows gravity changes in netgames, no questions asked.
@@ -730,36 +729,5 @@ extern int
 #else
 #undef UPDATE_ALERT
 #endif
-
-//// STAR STUFF YAY ////
-// Structs //
-typedef enum
-{
-	STAR_CONS_TSOURDT3RD = 1,
-	STAR_CONS_TSOURDT3RD_NOTICE,
-	STAR_CONS_TSOURDT3RD_ALERT,
-	STAR_CONS_TSOURDT3RD_DEBUG,
-
-	STAR_CONS_APRILFOOLS,
-	STAR_CONS_EASTER,
-
-	STAR_CONS_JUKEBOX
-} star_messagetype_t;
-
-// Functions //
-void STAR_CONS_Printf(star_messagetype_t starMessageType, const char *fmt, ...);
-
-// Stable Features //
-// Savefiles
-#define SAVEGAMEFOLDER "saves"
-extern char savegamefolder[256];
-
-// Untstable Features //
-// Enable Alam's Lighting, With Touch-ups by Star :p (Currently in Extreme Beta lol)
-//#define ALAM_LIGHTING
-
-// Debugging Features //
-//#define _DEBUG
-//#define DEBUGFILE
 
 #endif // __DOOMDEF__

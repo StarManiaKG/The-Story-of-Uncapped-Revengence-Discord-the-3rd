@@ -45,7 +45,11 @@
 #endif
 
 // STAR STUFF //
-#include "STAR/star_vars.h"
+#include "STAR/star_vars.h" // TSoURDt3rd_DetermineLevelMusic() //
+#include "STAR/ss_cmds.h" // cv_storesavesinfolders //
+#include "STAR/ss_main.h" // SAVEGAMEFOLDER //
+#include "STAR/m_menu.h" // V_MENUCOLORMAP //
+
 #include "deh_soc.h"
 // END OF THAT //
 
@@ -947,7 +951,7 @@ void Y_IntermissionDrawer(void)
 				V_DrawString(x+36, y, V_ALLOWLOWERCASE, data.competition.name[i]);
 
 				if ((players[data.competition.num[i]].pflags & PF_GAMETYPEOVER)
-					|| (timeover)) // STAR NOTE: i was here lol
+					|| (timeover)) // STAR NOTE: time over rendering //
 
 					snprintf(sstrtime, sizeof sstrtime, "Time Over");
 				else if (players[data.competition.num[i]].lives <= 0)
@@ -978,16 +982,14 @@ void Y_IntermissionDrawer(void)
 		}
 	}
 
-	// STAR STUFF //
-	ST_drawJukebox();
-	// END THAT PLEASE //
+	ST_drawJukebox(); // STAR STUFF: render the jukebox please //
 
 skiptallydrawer:
 	if (!LUA_HudEnabled(hud_intermissionmessages))
 		return;
 
 	if (timer)
-		V_DrawCenteredString(BASEVIDWIDTH/2, 188, menuColor[cv_menucolor.value], // STAR NOTE: i was here lol
+		V_DrawCenteredString(BASEVIDWIDTH/2, 188, V_MENUCOLORMAP,
 			va("start in %d seconds", timer/TICRATE));
 
 	// Make it obvious that scrambling is happening next round.
@@ -1074,10 +1076,8 @@ void Y_Ticker(void)
 #endif
 			)
 				S_FadeOutStopMusic(mapheaderinfo[gamemap-1]->musinterfadeout);
-			else if (mapheaderinfo[gamemap-1]->musintername[0] && S_MusicExists(mapheaderinfo[gamemap-1]->musintername, !midi_disabled, !digital_disabled))
-				S_ChangeMusicInternal(mapheaderinfo[gamemap-1]->musintername, false); // don't loop it
 			else
-				S_ChangeMusicInternal("_clear", false); // don't loop it
+				S_ChangeMusicInternal(TSoURDt3rd_DetermineLevelMusic(), false); // don't loop it
 			tallydonetic = -1;
 		}
 
@@ -1151,10 +1151,8 @@ void Y_Ticker(void)
 #endif
 			)
 				S_FadeOutStopMusic(mapheaderinfo[gamemap-1]->musinterfadeout);
-			else if (mapheaderinfo[gamemap-1]->musintername[0] && S_MusicExists(mapheaderinfo[gamemap-1]->musintername, !midi_disabled, !digital_disabled))
-				S_ChangeMusicInternal(mapheaderinfo[gamemap-1]->musintername, false); // don't loop it
 			else
-				S_ChangeMusicInternal("_clear", false); // don't loop it
+				S_ChangeMusicInternal(TSoURDt3rd_DetermineLevelMusic(), false); // don't loop it
 			tallydonetic = -1;
 		}
 

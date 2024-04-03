@@ -49,8 +49,11 @@
 #include "r_fps.h"
 
 // STAR STUFF //
-#include "d_main.h"
 #include "STAR/star_vars.h"
+#include "STAR/ss_main.h" // eastermode //
+#include "STAR/m_menu.h" // V_MENUCOLORMAP //
+
+#include "d_main.h" // autoloaded & autoloading //
 // END OF THAT //
 
 UINT16 objectsdrawn = 0;
@@ -146,8 +149,7 @@ static boolean facefreed[MAXPLAYERS];
 static patch_t *envelope; // DISCORD STUFFS: Discord Rich Presence Requests
 #endif
 
-// STAR STUFF //
-// Easter
+// STAR STUFF: Easter //
 static patch_t *stageeggs;
 static patch_t *totaleggs;
 // THAT'S THE END //
@@ -243,7 +245,7 @@ void ST_doPaletteStuff(void)
 		palette = 0;
 
 #ifdef HWRENDER
-	// STAR NOTE: i was here lol
+	// STAR NOTE: palette rendering //
 	if (rendermode == render_opengl && !HWR_ShouldUsePaletteRendering())
 		palette = 0; // Don't set the palette to a flashpal in OpenGL's truecolor mode
 #endif
@@ -384,12 +386,10 @@ void ST_LoadGraphics(void)
 	envelope = W_CachePatchName("D_REQUES", PU_HUDGFX); // DISCORD STUFFS: rich presence requests
 #endif
 
-	//// STAR STUFF ////
-	// Events //
-	// Easter
+	// STAR STUFF: Easter Graphics //
 	stageeggs = W_CachePatchName("STAGEEGS", PU_HUDGFX);
 	totaleggs = W_CachePatchName("TOTLEGS", PU_HUDGFX);
-	//// GRAPHICS SORTED, YAY ////
+	// GRAPHICS SORTED, YAY //
 }
 
 // made separate so that skins code can reload custom face graphics
@@ -1267,7 +1267,7 @@ static void ST_drawInput(void)
 		}
 	}
 	if (!demosynced) // should always be last, so it doesn't push anything else around
-		V_DrawThinString(x, y, hudinfo[HUD_LIVES].f|((leveltime & 4) ? menuColor[cv_menucolor.value] : V_REDMAP), "BAD DEMO!!");
+		V_DrawThinString(x, y, hudinfo[HUD_LIVES].f|((leveltime & 4) ? V_MENUCOLORMAP : V_REDMAP), "BAD DEMO!!");
 }
 
 static patch_t *lt_patches[3];
@@ -1729,7 +1729,7 @@ static void ST_drawFirstPersonHUD(void)
 		airtime += 6;  // Robots use different drown numbers
 
 	// Get the front angle patch for the frame
-	sprframe = &sprites[SPR_DRWN].spriteframes[airtime];
+	sprframe = &sprites[SPR_DRWN]->spriteframes[airtime];
 	p = W_CachePatchNum(sprframe->lumppat[0], PU_CACHE);
 
 	// Display the countdown drown numbers!
@@ -1790,7 +1790,7 @@ static void ST_drawNightsRecords(void)
 			if (!(netgame || multiplayer) && G_GetBestNightsScore(gamemap, stplyr->lastmare + 1, clientGamedata) <= stplyr->lastmarescore)
 			{
 				if (stplyr->texttimer & 16)
-					V_DrawCenteredString(BASEVIDWIDTH/2, 184, menuColor[cv_menucolor.value]|aflag, "* NEW RECORD *");
+					V_DrawCenteredString(BASEVIDWIDTH/2, 184, V_MENUCOLORMAP|aflag, "* NEW RECORD *");
 			}
 
 			if (P_HasGrades(gamemap, stplyr->lastmare + 1))
@@ -2128,7 +2128,7 @@ static void ST_drawNiGHTSHUD(void)
 
 		// Show exact time in debug
 		if (cv_debug & DBG_NIGHTSBASIC)
-			V_DrawString(160 + numbersize + 8, 24, V_SNAPTOTOP|((realnightstime < 10) ? V_REDMAP : menuColor[cv_menucolor.value]), va("%02d", G_TicsToCentiseconds(stplyr->nightstime)));
+			V_DrawString(160 + numbersize + 8, 24, V_SNAPTOTOP|((realnightstime < 10) ? V_REDMAP : V_MENUCOLORMAP), va("%02d", G_TicsToCentiseconds(stplyr->nightstime)));
 	}
 
 	if (oldspecialstage)
@@ -2687,22 +2687,22 @@ static boolean ST_doItemFinderIconsAndSound(void)
 //				//
 // STAR SECTION //
 //				//
-
 //
 // void ST_drawJukebox(void);
 // Draws Jukebox Text On The Screen/HUD
 //
-INT32 boxw;							// Slides our Filed Box
-INT32 strw; 						// Slides our Header Text
-INT32 tstrw; 						// Slides our Track Text
-INT32 sstrw;						// Slides our Side Jukebox HUD Text
-
-INT32 jukeboxw;						// Stores the String Width of the Current Jukebox Track
-
 void ST_drawJukebox(void)
 {
 	// Make Some Extra Variables //
 	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer];
+
+	static INT32 boxw		= 320;	// Slides our Filed Box
+
+	static INT32 strw		= 335; 	// Slides our Header Text
+	static INT32 tstrw		= 320; 	// Slides our Track Text
+
+	static INT32 sstrw		= 360;	// Slides our Side Jukebox HUD Text
+	static INT32 jukeboxw	= 0;	// Stores the String Width of the Current Jukebox Track
 
 	// Hide the Jukebox HUD if Circumstances Have Been Met //
 	if (!cv_jukeboxhud.value || !TSoURDt3rd->jukebox.musicPlaying)
@@ -2727,18 +2727,18 @@ void ST_drawJukebox(void)
 
 	// Apply Variables and Render Things //
 	// The Box
-	V_DrawFillConsoleMap(BASEVIDWIDTH-(boxw+jukeboxw), (45),
+	V_DrawFillConsoleMap(BASEVIDWIDTH-(boxw+jukeboxw), 45,
 		(130+jukeboxw),
 		(cv_jukeboxhud.value == 1 ? 25 : 55),
 		(V_SNAPTORIGHT|V_HUDTRANSHALF));
 
 	// Header Text
-	V_DrawString(BASEVIDWIDTH-(strw+(jukeboxw/2)), (45),
-		(V_SNAPTORIGHT|menuColor[cv_menucolor.value]),
+	V_DrawString(BASEVIDWIDTH-(strw+(jukeboxw/2)), 45,
+		(V_SNAPTORIGHT|V_MENUCOLORMAP),
 		("JUKEBOX"));
 
 	// Track Title
-	V_DrawThinString(BASEVIDWIDTH-(tstrw+jukeboxw-(cv_jukeboxhud.value == 1 ? 10 : 0)), (60),
+	V_DrawThinString(BASEVIDWIDTH-(tstrw+jukeboxw-(cv_jukeboxhud.value == 1 ? 10 : 0)), 60,
 		(V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP),
 		(va("PLAYING: %s", TSoURDt3rd->jukebox.musicName)));
 
@@ -2746,12 +2746,12 @@ void ST_drawJukebox(void)
 	if (cv_jukeboxhud.value == 2)
 	{
 		// Track
-		V_DrawThinString(BASEVIDWIDTH-sstrw, (80),
+		V_DrawThinString(BASEVIDWIDTH-sstrw, 80,
 			(V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP),
 			(va("TRACK: %s", TSoURDt3rd->jukebox.musicTrack)));
 
 		// Track Speed
-		V_DrawThinString(BASEVIDWIDTH-sstrw, (90),
+		V_DrawThinString(BASEVIDWIDTH-sstrw, 90,
 			(V_SNAPTORIGHT|V_YELLOWMAP),
 			(atof(cv_jukeboxspeed.string) < 10.0f ?
 				(va("SPEED: %.3s", cv_jukeboxspeed.string)) :
@@ -2809,7 +2809,6 @@ void ST_drawEggs(void)
 			((((currenteggs == TOTALEGGS) || (numMapEggs && (collectedmapeggs == numMapEggs))) ? (V_GREENMAP) : (V_REDMAP))|((stplyr->spectator) ? V_HUDTRANSHALF : V_HUDTRANS)),
 			((currenteggs == TOTALEGGS) ? ("All Eggs Have Been Found!") : ((numMapEggs && (collectedmapeggs == numMapEggs)) ? ("All Eggs in this Map Have Been Found!") : ("There Are No Eggs in This Map!"))));
 }
-
 //									//
 // 		END OF THE STAR SECTION 	//
 //									//
@@ -2848,10 +2847,7 @@ static void ST_overlayDrawer(void)
 			{
 				ST_drawRings();
 
-				// STAR STUFF YAY //
-				// Render Easter HUD With the Rings
-				ST_drawEggs();
-				// END THIS MESS //
+				ST_drawEggs(); // STAR STUFF: Render Easter HUD With the Rings //
 			}
 
 			if (!modeattacking && LUA_HudEnabled(hud_lives))
@@ -2864,7 +2860,7 @@ static void ST_overlayDrawer(void)
 		&& (netgame || multiplayer)
 		&& (cv_cooplives.value == 0))
 	;
-	else if ((G_GametypeUsesLives() || ((gametyperules & (GTR_RACE|GTR_LIVES)) == GTR_RACE)) && (stplyr->lives <= 0 || timeover) && !(hu_showscores && (netgame || multiplayer))) // STAR NOTE: i was here lol
+	else if ((G_GametypeUsesLives() || ((gametyperules & (GTR_RACE|GTR_LIVES)) == GTR_RACE)) && (stplyr->lives <= 0 || timeover) && !(hu_showscores && (netgame || multiplayer))) // STAR NOTE: time over rendering //
 	{
 		INT32 i = MAXPLAYERS;
 		INT32 deadtimer = stplyr->spectator ? TICRATE : (stplyr->deadtimer-(TICRATE<<1));
@@ -2987,10 +2983,7 @@ static void ST_overlayDrawer(void)
 	if (modeattacking && !(demoplayback && hu_showscores))
 		ST_drawInput();
 
-	// STAR STUFF WEEEEE //
-	// Render Jukebox HUD
-	ST_drawJukebox();
-	// ENDED THIS MESS, YAY //
+	ST_drawJukebox(); // STAR STUFF: Render Jukebox HUD //
 
 	ST_drawDebugInfo();
 }
@@ -3050,7 +3043,7 @@ void ST_Drawer(void)
 	//25/08/99: Hurdler: palette changes is done for all players,
 	//                   not only player1! That's why this part
 	//                   of code is moved somewhere else.
-	if (rendermode == render_soft || HWR_ShouldUsePaletteRendering()) // STAR NOTE: i was here too lol
+	if (rendermode == render_soft || HWR_ShouldUsePaletteRendering()) // STAR NOTE: palette rendering //
 #endif
 		if (rendermode != render_none) ST_doPaletteStuff();
 

@@ -46,6 +46,10 @@
 
 // STAR STUFF //
 #include "STAR/star_vars.h"
+#include "STAR/ss_cmds.h" // cv_storesavesinfolders //
+#include "STAR/ss_main.h"
+#include "STAR/m_menu.h"
+
 #include "deh_soc.h"
 // END THIS //
 
@@ -60,7 +64,7 @@ static INT32 timetonext; // Delay between screen changes
 static INT32 continuetime; // Short delay when continuing
 
 static tic_t animtimer; // Used for some animation timings
-static INT16 skullAnimCounter; // Prompts: Chevron animation
+//static INT16 skullAnimCounter; // Prompts: Chevron animation /* STAR NOTE: now externed in STAR/m_menu.h */
 
 static INT32 deplete;
 static tic_t stoptimer;
@@ -302,7 +306,7 @@ static void F_NewCutscene(const char *basetext)
 	cutscene_basetext = basetext;
 	memset(cutscene_disptext,0,sizeof(cutscene_disptext));
 	cutscene_writeptr = cutscene_baseptr = 0;
-	cutscene_textspeed = 9;
+	cutscene_textspeed = 8;
 	cutscene_textcount = TICRATE/2;
 }
 
@@ -318,22 +322,22 @@ const char *introtext[NUMINTROSCENES];
 static tic_t introscenetime[NUMINTROSCENES] =
 {
 	5*TICRATE,	// STJr Presents
-	11*TICRATE + (TICRATE/2),	// Two months had passed since...
-	15*TICRATE + (TICRATE/2),	// As it was about to drain the rings...
-	14*TICRATE,					// What Sonic, Tails, and Knuckles...
-	18*TICRATE,					// About once every year, a strange...
-	19*TICRATE + (TICRATE/2),	// Curses! Eggman yelled. That ridiculous...
-	19*TICRATE + (TICRATE/4),	// It was only later that he had an idea...
-	10*TICRATE + (TICRATE/2),	// Before beginning his scheme, Eggman decided to give Sonic...
-	16*TICRATE,					// We're ready to fire in 15 seconds, the robot said...
-	16*TICRATE,					// Meanwhile, Sonic was tearing across the zones...
-	16*TICRATE + (TICRATE/2),	// Sonic knew he was getting closer to the city...
-	17*TICRATE,					// Greenflower City was gone...
-	 7*TICRATE,					// You're not quite as dead as we thought, huh?...
-	 8*TICRATE,					// We'll see... let's give you a quick warm up...
-	18*TICRATE + (TICRATE/2),	// Eggman took this as his cue and blasted off...
-	16*TICRATE,					// Easy! We go find Eggman and stop his...
-	25*TICRATE,					// I'm just finding what mission obje...
+	10*TICRATE + (TICRATE/2),		// Two months had passed since...
+	12*TICRATE + ((TICRATE/4) * 3),	// As it was about to drain the rings...
+	12*TICRATE + (TICRATE/2),		// What Sonic, Tails, and Knuckles...
+	16*TICRATE,						// About once every year, a strange...
+	20*TICRATE + (TICRATE/2),		// Curses! Eggman yelled. That ridiculous...
+	18*TICRATE + (TICRATE/4),		// It was only later that he had an idea...
+	9*TICRATE + (TICRATE/2),		// Before beginning his scheme, Eggman decided to give Sonic...
+	14*TICRATE,						// We're ready to fire in 15 seconds, the robot said...
+	16*TICRATE,						// Meanwhile, Sonic was tearing across the zones...
+	16*TICRATE + (TICRATE/2),		// Sonic knew he was getting closer to the city...
+	11*TICRATE + (TICRATE/2),		// Greenflower City was gone...
+	 8*TICRATE,						// You're not quite as dead as we thought, huh?...
+	 8*TICRATE,						// We'll see... let's give you a quick warm up...
+	18*TICRATE + (TICRATE/2),		// Eggman took this as his cue and blasted off...
+	15*TICRATE,						// Easy! We go find Eggman and stop his...
+	23*TICRATE,						// I'm just finding what mission obje...
 };
 
 // custom intros
@@ -661,8 +665,8 @@ void F_IntroDrawer(void)
 			}
 		}
 		
-		// STAR STUFF //
-		else // "Waaaaaaah" intro
+		// STAR STUFF: "Waaaaaaah" intro //
+		else
 		{
 			strncpy(stjrintro, "STJRI029", 9); // Move the Frames of the Graphic Along While The Pure Fat is Fattening, So The Graphic Is At It's Final Frame When Shown
 
@@ -1067,7 +1071,7 @@ void F_IntroTicker(void)
 	if (rendermode != render_none)
 	{
 		if ((intro_scenenum == 0 && intro_curtime == 2*TICRATE-19)
-			&& (!cv_stjrintro.value)) // STAR STUFF: STJr Presents
+			&& !cv_stjrintro.value) // STAR STUFF: STJr Presents //
 		{
 			S_ChangeMusicInternal("_stjr", false);
 
@@ -1147,6 +1151,20 @@ boolean F_IntroResponder(event_t *event)
 
 	if (keypressed)
 		return false;
+
+	// STAR STUFF: helps with M_StartMessage queueing stuff (found in m_menu.c by the way) //
+	if (menuactive)
+	{
+		if (MessageDef.menuitems[1].text != NULL)
+			M_ShiftMessageQueueDown();
+		else
+		{
+			M_ClearMenus(true);
+			S_StartSound(NULL, sfx_strpst);
+		}
+		return false;
+	}
+	// END THAT PLEASE //
 
 	keypressed = true;
 	return true;
@@ -1816,7 +1834,7 @@ void F_GameEvaluationTicker(void)
 			if (M_UpdateUnlockablesAndExtraEmblems(clientGamedata))
 				S_StartSound(NULL, sfx_s3k68);
 
-			// STAR STUFF //
+			// STAR STUFF: Update our Savefile Directory //
 			if (cv_storesavesinfolders.value)
 			{
 				I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER, srb2home), 0755);
@@ -1833,6 +1851,11 @@ void F_GameEvaluationTicker(void)
 			
 	    G_SaveGameData(clientGamedata);
 	}
+
+	// STAR STUFF: play finale music //
+	if (finalecount == 4*TICRATE)
+		S_ChangeMusicInternal(TSoURDt3rd_DetermineLevelMusic(), false);
+	// PLAY OUR COOL FINALE MUSIC! //
 }
 
 #undef SPARKLLOOPTIME
@@ -2382,7 +2405,11 @@ void F_StartGameEnd(void)
 	// In case menus are still up?!!
 	M_ClearMenus(true);
 
+#if 0
+	timetonext = 10*TICRATE; // STAR NOTE: i was also here lol
+#else
 	timetonext = TICRATE;
+#endif
 }
 
 //
@@ -2391,6 +2418,7 @@ void F_StartGameEnd(void)
 void F_GameEndDrawer(void)
 {
 	// this function does nothing
+	//TSoURDt3rd_GameEnd(); // STAR STUFF: ....except this (WORLD 7 SUPER PAPER MARIO) //
 }
 
 //
@@ -3283,7 +3311,8 @@ void F_TitleScreenDrawer(void)
 				}
 			}
 
-			if ((finalecount >= SONICSTART) && !TSoURDt3rd_InAprilFoolsMode()) // STAR NOTE: no more sonic for april fools lol
+			// STAR NOTE: no more sonic for april fools lol //
+			if ((finalecount >= SONICSTART) && !TSoURDt3rd_InAprilFoolsMode())
 			{
 				if (finalecount < SONICIDLE)
 				{
@@ -3454,7 +3483,8 @@ void F_TitleScreenDrawer(void)
 				// No Tails Front Layer Idle
 			}
 
-			if ((finalecount >= SONICSTART) && !TSoURDt3rd_InAprilFoolsMode()) // STAR NOTE: no more sonic for april fools, electric boogalo
+			// STAR NOTE: no more sonic for april fools, electric boogalo //
+			if ((finalecount >= SONICSTART) && !TSoURDt3rd_InAprilFoolsMode())
 			{
 				if (finalecount < SONICIDLE)
 				{
@@ -3545,10 +3575,7 @@ void F_TitleScreenDrawer(void)
 			break;
 	}
 
-	// STAR STUFF LOL //
-	// Show the Jukebox
-	ST_drawJukebox();
-	// END OF STAR STUFF //
+	ST_drawJukebox(); // STAR STUFF: Show the jukebox! //
 
 luahook:
 	// The title drawer is sometimes called without first being started
@@ -3888,9 +3915,7 @@ void F_ContinueDrawer(void)
 	if (continuetime > ((3*TICRATE) - 10))
 		V_DrawFadeScreen(0, (continuetime - ((3*TICRATE) - 10)));
 
-	// STAR STUFF //
-	ST_drawJukebox();
-	// OOH, WHAT DOES THIS STAR STUFF DO? //
+	ST_drawJukebox(); // STAR STUFF: OOH, WHAT DOES THIS STUFF DO? //
 }
 
 void F_ContinueTicker(void)
@@ -3996,7 +4021,9 @@ boolean F_ContinueResponder(event_t *event)
 	keypressed = true;
 	imcontinuing = true;
 	S_StartSound(NULL, sfx_kc6b);
-	if (!TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying) // STAR NOTE: hi, i was here again lol
+
+	// STAR NOTE: don't fade music if we're playing music in the jukebox :p //
+	if (!TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
 		I_FadeSong(0, MUSICRATE, &S_StopMusic);
 
 	return true;

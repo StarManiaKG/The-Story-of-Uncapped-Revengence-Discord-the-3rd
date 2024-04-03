@@ -36,6 +36,8 @@
 #include "lua_script.h"
 #include "p_slopes.h"
 
+#include "STAR/p_saveg.h" // STAR STUFF: TSoURDt3rd_NetArchiveUsers() & TSoURDt3rd_NetUnArchiveUsers() //
+
 savedata_t savedata;
 UINT8 *save_p;
 
@@ -350,6 +352,8 @@ static void P_NetArchivePlayers(void)
 		WRITEFIXED(save_p, players[i].jumpfactor);
 		WRITEFIXED(save_p, players[i].height);
 		WRITEFIXED(save_p, players[i].spinheight);
+
+		TSoURDt3rd_NetArchiveUsers(save_p, i);
 	}
 }
 
@@ -565,6 +569,8 @@ static void P_NetUnArchivePlayers(void)
 		players[i].spinheight = READFIXED(save_p);
 
 		players[i].viewheight = 41*players[i].height/48; // scale cannot be factored in at this point
+
+		TSoURDt3rd_NetUnArchiveUsers(save_p, i);
 	}
 }
 

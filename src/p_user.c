@@ -58,11 +58,14 @@
 #endif
 
 #ifdef HAVE_DISCORDRPC
-#include "discord.h"
+#include "discord.h" // DISCORD STUFFS: discord //
 #endif
 
 // STAR STUFF //
 #include "STAR/star_vars.h"
+#include "STAR/ss_cmds.h" // cv_shieldblockstransformation //
+#include "STAR/ss_main.h" // STAR_CONS_Printf() //
+#include "STAR/p_user.h"
 
 #include "m_menu.h"
 #include "d_main.h"
@@ -1568,9 +1571,13 @@ void P_PlayJingle(player_t *player, jingletype_t jingletype)
 void P_PlayJingleMusic(player_t *player, const char *musname, UINT16 musflags, boolean looping, UINT16 status)
 {
 	// If gamestate != GS_LEVEL, always play the jingle (1-up intermission)
-	if ((gamestate == GS_LEVEL && player && !P_IsLocalPlayer(player))
-		|| (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)) // STAR NOTE: i was here as well
+	if (gamestate == GS_LEVEL && player && !P_IsLocalPlayer(player))
 		return;
+
+	// STAR STUFF: don't play jingles if we got jukebox music
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
+		return;
+	// DONE! //
 
 	S_RetainMusic(musname, musflags, looping, 0, status);
 	S_StopMusic();
@@ -1660,11 +1667,6 @@ void P_RestoreMusic(player_t *player)
 {
 	if (!P_IsLocalPlayer(player)) // Only applies to a local player
 		return;
-
-	// STAR STUFF //
-	if (!TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
-		S_SpeedMusic(1.0f);
-	// END THAT //
 
 	// Jingles have a priority in this order, so follow it
 	// and as a default case, go down the music stack.
@@ -4445,23 +4447,22 @@ static void P_DoSuperStuff(player_t *player)
 //
 boolean P_SuperReady(player_t *player)
 {
-	// STAR NOTE: i edited some parts of this block, just so you know
-	if ((!player->powers[pw_super]
-	&& ((ShieldBlocksTransformation && !player->powers[pw_invulnerability]) || (!ShieldBlocksTransformation))
+	if (!player->powers[pw_super]
+	&& ((cv_shieldblockstransformation.value && !player->powers[pw_invulnerability]) || (!cv_shieldblockstransformation.value))
 	&& !player->powers[pw_tailsfly]
 	&& (player->charflags & SF_SUPER)
 	&& (player->pflags & PF_JUMPED)
-	&& ((!(player->powers[pw_shield] & SH_NOSTACK) && ShieldBlocksTransformation) || (!ShieldBlocksTransformation))
+	&& ((!(player->powers[pw_shield] & SH_NOSTACK) && cv_shieldblockstransformation.value) || (!cv_shieldblockstransformation.value))
 	&& !(maptol & TOL_NIGHTS)
 	&& ALL7EMERALDS(emeralds)
 	&& (player->rings >= 50))
 
-	// STAR STUFF //
-	|| ((TSoURDt3rd_InAprilFoolsMode() || (EnableEasterEggHuntBonuses && currenteggs == TOTALEGGS && ALL7EMERALDS(emeralds) && player->rings))
-		&& (player->rings && !player->powers[pw_super] && !netgame)))
-	// END THAT PLEASE //
-
 		return true;
+
+	// STAR STUFF: allow our custom properties to allow transformations :) //
+	if (TSoURDt3rd_P_SuperReady(player))
+		return true;
+	// END THAT PLEASE //
 
 	return false;
 }
@@ -5180,9 +5181,8 @@ static boolean P_PlayerShieldThink(player_t *player, ticcmd_t *cmd, mobj_t *lock
 		}
 		if ((!(player->charflags & SF_NOSHIELDABILITY)) && (cmd->buttons & BT_SPIN && !LUA_HookPlayer(player, HOOK(ShieldSpecial)))) // Spin button effects
 		{
-			// STAR STUFF //
-			// Let the Player Transform While Carrying a Shield, if They Want
-			if (!ShieldBlocksTransformation && P_SuperReady(player))
+			// STAR STUFF: Let the Player Transform While Carrying a Shield, if They Want //
+			if (!cv_shieldblockstransformation.value && P_SuperReady(player))
 				return false;
 			// END THIS PLEASE //
 
@@ -12563,6 +12563,8 @@ void P_PlayerThink(player_t *player)
 		dashmode = 0;
 	}
 #undef dashmode
+
+	TSoURDt3rd_PlayerThink(player); // STAR STUFF: THE RUNNING OF OUR UNIQUE PLAYER STUFF! //
 
 	LUA_HookPlayer(player, HOOK(PlayerThink));
 

@@ -30,13 +30,14 @@
 #include "f_finale.h"
 
 #ifdef HAVE_DISCORDRPC
-// DISCORD STUFFS //
-#include "discord.h"
-// END THAT //
+#include "discord.h" // DISCORD STUFFSL present presence //
 #endif
 
 // STAR STUFF //
 #include "STAR/star_vars.h"
+#include "STAR/ss_cmds.h" // cv_storesavesinfolders //
+#include "STAR/ss_main.h" // SAVEGAMEFOLDER //
+#include "STAR/p_user.h" // TSoURDt3rd_P_DamageMobj() //
 
 #include "d_main.h"
 #include "deh_soc.h"
@@ -290,6 +291,7 @@ void P_DoNightsScore(player_t *player)
 // Checks if you have all 7 pw_emeralds, then turns you "super". =P
 //
 boolean all7matchemeralds; // STAR NOTE: needed for some discord texts
+
 void P_DoMatchSuper(player_t *player)
 {
 	UINT16 match_emeralds = player->powers[pw_emeralds];
@@ -308,10 +310,11 @@ void P_DoMatchSuper(player_t *player)
 	if (!ALL7EMERALDS(match_emeralds))
 		return;
 
-	// Got 'em all? Turn "super"!
-	// STAR STUFF //
-	all7matchemeralds = true; // let discord know we got all those chaos emeralds in match
+	// STAR STUFF: needed for some discord texts (let discord know we got all those chaos emeralds in match) //
+	all7matchemeralds = true;
 	// END THAT //
+
+	// Got 'em all? Turn "super"!
 	emeraldspawndelay = invulntics + 1;
 	player->powers[pw_emeralds] = 0;
 	player->powers[pw_invulnerability] = emeraldspawndelay;
@@ -340,6 +343,7 @@ void P_DoMatchSuper(player_t *player)
 				// STAR STUFF //
 				all7matchemeralds = true; // let discord know our team helped us get all those chaos emeralds in match
 				// END THAT //
+
 				players[i].powers[pw_emeralds] = 0;
 				player->powers[pw_invulnerability] = invulntics + 1;
 				player->powers[pw_sneakers] = player->powers[pw_invulnerability];
@@ -357,9 +361,7 @@ void P_DoMatchSuper(player_t *player)
 
 
 #ifdef HAVE_DISCORDRPC
-	// DISCORD STUFFS //
-	DRPC_UpdatePresence();
-	// END THAT PLEASE //
+	DRPC_UpdatePresence(); // DISCORD STUFFS: refresh presence //
 #endif
 }
 
@@ -716,7 +718,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				else
 					S_StartSound(toucher, sfx_chchng);
 				
-				P_GiveCoopLives(player, 1, true); // STAR NOTE: now, you should always give a life, since we're using this build!
+				//P_GiveCoopLives(player, 1, true); // STAR NOTE: now, you should always give a life, since we're using this build!
 			}
 			else
 			{
@@ -2665,13 +2667,13 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 		if ((target->player->lives <= 1) && (netgame || multiplayer) && G_GametypeUsesCoopLives() && (cv_cooplives.value == 0))
 			;
-		else if ((!target->player->bot || target->player->bot == BOT_MPAI) && !target->player->spectator && ((target->player->lives != INFLIVES) || timeover) // STAR NOTE: i was here lol
+		else if ((!target->player->bot || target->player->bot == BOT_MPAI) && !target->player->spectator && ((target->player->lives != INFLIVES) || timeover) /* STAR NOTE: 04-14-2023; timeover */
 		 && G_GametypeUsesLives())
 		{
 			if (!(target->player->pflags & PF_FINISHED))
 				target->player->lives -= 1; // Lose a life Tails 03-11-2000
 
-			if (target->player->lives <= 0 || timeover) // Tails 03-14-2000, Star 04-14-2023
+			if (target->player->lives <= 0 || timeover) // Tails 03-14-2000, /* STAR NOTE: 04-14-2023; timeover */
 			{
 				boolean gameovermus = false;
 				if ((netgame || multiplayer) && G_GametypeUsesCoopLives() && (cv_cooplives.value != 1))
@@ -3911,6 +3913,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		// chase after this one
 		P_SetTarget(&target->target, source);
 	}
+
+	TSoURDt3rd_P_DamageMobj(target, inflictor, source, damage, damagetype);
 
 	return true;
 }

@@ -5,7 +5,7 @@ Ver=3
 IsCpp=0
 Type=0
 UnitCount=279
-Folders=B_Bot,BLUA,D_Doom,F_Frame,G_Game,H_Hud,Hw_Hardware,Hw_Hardware/r_opengl,I_Interface,I_Interface/Dummy,I_Interface/SDL,I_Interface/Win32,LUA,M_Misc,P_Play,R_Rend,S_Sounds,W_Wad
+Folders=B_Bot,BLUA,D_Doom,F_Frame,G_Game,H_Hud,Hw_Hardware,Hw_Hardware/r_opengl,I_Interface,I_Interface/Dummy,I_Interface/SDL,I_Interface/Win32,LUA,M_Misc,P_Play,R_Rend,S_Sounds,W_Wad,DISCORD,LIBAV,STAR
 CommandLine=
 CompilerSettings=00000000000100000111e1
 PchHead=-1
@@ -3063,9 +3063,9 @@ OverrideBuildCmd=0
 BuildCmd=
 
 [Unit282]
-FileName=src\STAR\star_functions.c
+FileName=src\discord.c
 CompileCpp=0
-Folder=G_Game
+Folder=DISCORD
 Compile=1
 Link=1
 Priority=1000
@@ -3073,9 +3073,9 @@ OverrideBuildCmd=0
 BuildCmd=
 
 [Unit283]
-FileName=src\STAR\star_vars.h
+FileName=src\discord.h
 CompileCpp=0
-Folder=G_Game
+Folder=DISCORD
 Compile=1
 Link=1
 Priority=1000
@@ -3083,9 +3083,9 @@ OverrideBuildCmd=0
 BuildCmd=
 
 [Unit284]
-FileName=src\libav\LIBAV_coders.c
+FileName=src\discord_gamesdk.c
 CompileCpp=0
-Folder=G_Game
+Folder=DISCORD
 Compile=1
 Link=1
 Priority=1000
@@ -3093,9 +3093,49 @@ OverrideBuildCmd=0
 BuildCmd=
 
 [Unit285]
+FileName=src\discord_gamesdk.h
+CompileCpp=0
+Folder=DISCORD
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit286]
+FileName=src\STAR\star_functions.c
+CompileCpp=0
+Folder=STAR
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit287]
+FileName=src\STAR\star_vars.h
+CompileCpp=0
+Folder=STAR
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit288]
+FileName=src\libav\LIBAV_coders.c
+CompileCpp=0
+Folder=LIBAV
+Compile=1
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
+[Unit289]
 FileName=src\libav\LIBAV_coders.h
 CompileCpp=0
-Folder=G_Game
+Folder=LIBAV
 Compile=1
 Link=1
 Priority=1000

@@ -3544,6 +3544,11 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_YELLOWBRICKDEBRIS",
 
 	"S_NAMECHECK",
+
+	// STAR STUFF //
+	[S_EEGG] = "S_EEGG",
+	"TF2D",
+	// STATES MADE CONSTANT! //
 };
 
 // RegEx to generate this from info.h: ^\tMT_([^,]+), --> \t"MT_\1",
@@ -4320,6 +4325,11 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_NAMECHECK",
 	"MT_RAY",
+
+	// STAR STUFF //
+	[MT_EASTEREGG] = "MT_EASTEREGG",
+	"MT_TF2DISPENSER",
+	// MOBJS MADE CONSTANT! //
 };
 
 const char *const MOBJFLAG_LIST[] = {
@@ -4945,24 +4955,24 @@ const char *const MENUTYPES_LIST[] = {
 
 	"SPECIAL",
 
-	// Discord
 #ifdef HAVE_DISCORDRPC
-	"OP_DISCORD_RQ", // discord requests, for future notice
+	// DISCORD STUFF //
+	"OP_DISCORD_RQ",
 	"OP_DISCORD_OPT",
 	"OP_DISCORDCS_OUTPUT",
+	// COOL! //
 #endif
 
-	// FUN STAR STUFF //
+	// STAR STUFF //
 	"TSOURDT3RD_README",
 
 	"MP_EXTENDEDSERVERPROPERTIES",
 	
 	"OP_TSOURDT3RD",
-	
 	"OP_TSOURDT3RD_JUKEBOX",
 	"OP_TSOURDT3RD_JUKEBOXCONTROLS",
 	"OP_TSOURDT3RD_SNAKE"
-	// END OF THAT //
+	// FUN STUFF DONE! //
 };
 
 struct int_const_s const INT_CONST[] = {
@@ -5795,14 +5805,6 @@ struct int_const_s const INT_CONST[] = {
 	{"GC_CUSTOM1",GC_CUSTOM1},
 	{"GC_CUSTOM2",GC_CUSTOM2},
 	{"GC_CUSTOM3",GC_CUSTOM3},
-	// STAR STUFF //
-	// Jukebox Controls
-	{"JB_OPENJUKEBOX",JB_OPENJUKEBOX},
-	{"JB_INCREASEMUSICSPEED",JB_INCREASEMUSICSPEED},
-	{"JB_DECREASEMUSICSPEED",JB_DECREASEMUSICSPEED},
-	{"JB_PLAYMOSTRECENTTRACK",JB_PLAYMOSTRECENTTRACK},
-	{"JB_STOPJUKEBOX",JB_STOPJUKEBOX},
-	// END THAT PLEASE //
 	{"NUM_GAMECONTROLS",NUM_GAMECONTROLS},
 
 	// Mouse buttons
@@ -5816,6 +5818,15 @@ struct int_const_s const INT_CONST[] = {
 	{"MB_BUTTON8",MB_BUTTON8},
 	{"MB_SCROLLUP",MB_SCROLLUP},
 	{"MB_SCROLLDOWN",MB_SCROLLDOWN},
+
+	// STAR STUFF //
+	// Controls: Jukebox
+	{"JB_OPENJUKEBOX",JB_OPENJUKEBOX},
+	{"JB_INCREASEMUSICSPEED",JB_INCREASEMUSICSPEED},
+	{"JB_DECREASEMUSICSPEED",JB_DECREASEMUSICSPEED},
+	{"JB_PLAYMOSTRECENTTRACK",JB_PLAYMOSTRECENTTRACK},
+	{"JB_STOPJUKEBOX",JB_STOPJUKEBOX},
+	// END THAT PLEASE //
 
 	{NULL,0}
 };

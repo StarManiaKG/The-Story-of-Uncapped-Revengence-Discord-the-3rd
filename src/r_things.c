@@ -73,7 +73,7 @@ spriteinfo_t spriteinfo[NUMSPRITES];
 //
 
 // variables used to look up and range check thing_t sprites patches
-spritedef_t *sprites;
+spritedef_t *sprites[NUMSPRITES+1]; // STAR NOTE: added NUMSPRITES here //
 size_t numsprites;
 
 static spriteframe_t sprtemp[64];
@@ -503,7 +503,7 @@ void R_AddSpriteDefs(UINT16 wadnum)
 		if (sprnames[i][4] && wadnum >= (UINT16)sprnames[i][4])
 			continue;
 
-		if (R_AddSingleSpriteDef(sprnames[i], &sprites[i], wadnum, start, end))
+		if (R_AddSingleSpriteDef(sprnames[i], sprites[i], wadnum, start, end))
 		{
 #ifdef HWRENDER
 			if (rendermode == render_opengl)
@@ -558,12 +558,19 @@ void R_InitSprites(void)
 	//
 	numsprites = 0;
 	for (i = 0; i < NUMSPRITES + 1; i++)
-		if (sprnames[i][0] != '\0') numsprites++;
+	{
+		// STAR NOTE: edited due to our 'dynamic' 'freeslotting' system //
+		if (sprnames[i][0] != '\0')
+		{
+			sprites[i] = Z_Calloc(sizeof (spritedef_t), PU_STATIC, NULL);
+			numsprites = i+1;
+		}
+	}
 
 	if (!numsprites)
 		I_Error("R_AddSpriteDefs: no sprites in namelist\n");
 
-	sprites = Z_Calloc(numsprites * sizeof (*sprites), PU_STATIC, NULL);
+	//sprites = Z_Calloc(numsprites * sizeof (*sprites), PU_STATIC, NULL);
 
 	// find sprites in each -file added pwad
 	for (i = 0; i < numwadfiles; i++)
@@ -1693,7 +1700,7 @@ static void R_ProjectSprite(mobj_t *thing)
 			CONS_Alert(CONS_ERROR, M_GetText("R_ProjectSprite: invalid skins[\"%s\"].sprites[%sSPR2_%s] frame %s\n"), ((skin_t *)thing->skin)->name, ((thing->sprite2 & FF_SPR2SUPER) ? "FF_SPR2SUPER|": ""), spr2names[(thing->sprite2 & ~FF_SPR2SUPER)], sizeu5(frame));
 			thing->sprite = states[S_UNKNOWN].sprite;
 			thing->frame = states[S_UNKNOWN].frame;
-			sprdef = &sprites[thing->sprite];
+			sprdef = sprites[thing->sprite];
 #ifdef ROTSPRITE
 			sprinfo = &spriteinfo[thing->sprite];
 #endif
@@ -1702,7 +1709,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	}
 	else
 	{
-		sprdef = &sprites[thing->sprite];
+		sprdef = sprites[thing->sprite];
 #ifdef ROTSPRITE
 		sprinfo = &spriteinfo[thing->sprite];
 #endif
@@ -1718,7 +1725,7 @@ static void R_ProjectSprite(mobj_t *thing)
 			}
 			thing->sprite = states[S_UNKNOWN].sprite;
 			thing->frame = states[S_UNKNOWN].frame;
-			sprdef = &sprites[thing->sprite];
+			sprdef = sprites[thing->sprite];
 			sprinfo = &spriteinfo[thing->sprite];
 			frame = thing->frame&FF_FRAMEMASK;
 		}
@@ -2404,7 +2411,7 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 			thing->sprite);
 #endif
 
-	sprdef = &sprites[thing->sprite];
+	sprdef = sprites[thing->sprite];
 
 #ifdef RANGECHECK
 	if ((UINT8)(thing->frame&FF_FRAMEMASK) >= sprdef->numframes)
