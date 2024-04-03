@@ -94,6 +94,7 @@ UINT8 sound_started = false;
 
 static Mix_Music *music;
 static UINT8 music_volume, sfx_volume, internal_volume;
+static float music_speed, music_pitch;
 static float loop_point;
 static float song_length; // length in seconds
 static boolean songpaused;
@@ -125,9 +126,74 @@ static int result;
 #endif
 
 #ifdef HAVE_MIXERX
+//
+// Timdity Handlers (By StarManiaKG) //
+// (You can tell which is Timidity based :p)
+//
+#if defined(__WIN32__)
+#define TIMIDITY_CFG "sf2/timidity"
+#elif defined(__OS2__)
+#define TIMIDITY_CFG "/@unixroot/etc/timidity"
+#else
+#define TIMIDITY_CFG "/etc/timidity"
+#endif
+
+static int I_SetTimidityCFG(const char *path)
+{
+#if SDL_MIXER_VERSION_ATLEAST(2,0,4)
+	return Mix_SetTimidityCfg(path);
+#else
+	return Mix_Timidity_addToPathList(path);
+#endif
+}
+
+static const char *I_GetTimidityCFG(void)
+{
+#if SDL_MIXER_VERSION_ATLEAST(2,0,4)
+	return Mix_GetTimidityCfg();
+#else
+	static const char *CFGPaths[] = {
+		va("%s/timidity.cfg", cv_miditimiditypath.string),
+		TIMIDITY_CFG,
+		NULL
+	}
+
+	for (INT32 i = 0; CFGPaths[i]; i++)
+	{
+		SDL_RWops *rw = SDL_RWFromFile(CFGPaths[i], "r");
+		if (rw != NULL)
+		{
+			SDL_RWclose(rw);
+			return CFGPaths[i];
+		}
+	}
+
+	return NULL;
+#endif
+}
+
+static void I_ControlTimidityCFG(void)
+{
+	const char *path = va("%s/timidity.cfg", cv_miditimiditypath.string);
+
+	if (Mix_GetMidiPlayer() != MIDI_Timidity || (I_SongType() != MU_NONE && I_SongType() != MU_MID_EX))
+		return;
+
+	if (!I_SetTimidityCFG(path) && (I_GetTimidityCFG() != NULL && stricmp(I_GetTimidityCFG(), path))) // == 0 means error
+		CONS_Alert(CONS_ERROR, "Timdity CFG error: %s\n", Mix_GetError());
+	else
+	{
+		if (I_GetTimidityCFG() != NULL && stricmp(I_GetTimidityCFG(), path))
+			S_StartEx(true);
+	}
+}
+
 static void Midiplayer_Onchange(void)
 {
 	boolean restart = false;
+
+	const char *fluidsynthsoundfonts = Mix_GetSoundFonts();
+	const char *timiditycfgs;
 
 	if (I_SongType() != MU_NONE && I_SongType() != MU_MID_EX && I_SongType() != MU_MID)
 		return;
@@ -140,7 +206,7 @@ static void Midiplayer_Onchange(void)
 			restart = true;
 	}
 
-	if (stricmp(Mix_GetSoundFonts(), cv_midisoundfontpath.string))
+	if (fluidsynthsoundfonts != NULL && stricmp(fluidsynthsoundfonts, cv_midisoundfontpath.string))
 	{
 		if (!Mix_SetSoundFonts(cv_midisoundfontpath.string)) // == 0 means error
 			CONS_Alert(CONS_ERROR, "Sound font error: %s\n", Mix_GetError());
@@ -148,11 +214,10 @@ static void Midiplayer_Onchange(void)
 			restart = true;
 	}
 
-#if SDL_MIXER_VERSION_ATLEAST(2,5,0)
-	Mix_SetTimidityCfg(cv_miditimiditypath.string);
-#else
-	Mix_Timidity_addToPathList(cv_miditimiditypath.string);
-#endif
+	I_ControlTimidityCFG();
+	timiditycfgs = I_GetTimidityCFG();
+	if (timiditycfgs != NULL && stricmp(timiditycfgs, va("%s/timidity.cfg", cv_miditimiditypath.string)))
+		restart = true;
 
 	if (restart)
 		S_StartEx(true);
@@ -203,14 +268,16 @@ static void MidiSoundfontPath_Onchange(void)
 static CV_PossibleValue_t midiplayer_cons_t[] = {{MIDI_OPNMIDI, "OPNMIDI"}, {MIDI_Fluidsynth, "Fluidsynth"}, {MIDI_Timidity, "Timidity"}, {MIDI_Native, "Native"}, {0, NULL}};
 consvar_t cv_midiplayer = CVAR_INIT ("midiplayer", "OPNMIDI" /*MIDI_OPNMIDI*/, CV_CALL|CV_NOINIT|CV_SAVE, midiplayer_cons_t, Midiplayer_Onchange);
 consvar_t cv_midisoundfontpath = CVAR_INIT ("midisoundfont", "sf2/8bitsf.SF2", CV_CALL|CV_NOINIT|CV_SAVE, NULL, MidiSoundfontPath_Onchange);
-consvar_t cv_miditimiditypath = CVAR_INIT ("midisoundbank", "./timidity", CV_SAVE, NULL, NULL);
-#endif
+consvar_t cv_miditimiditypath = CVAR_INIT ("midisoundbank", TIMIDITY_CFG, CV_CALL|CV_NOINIT|CV_SAVE, NULL, I_ControlTimidityCFG);
+#endif // HAVE_MIXERX
 
 static void var_cleanup(void)
 {
 	song_length = loop_point = 0.0f;
 	music_bytes = fading_source = fading_target =\
 	 fading_timer = fading_duration = 0;
+
+	music_speed = music_pitch = 1.0f;
 
 	songpaused = is_looping =\
 	 is_fading = false;
@@ -290,11 +357,7 @@ void I_StartupSound(void)
 #ifdef HAVE_MIXERX
 	Mix_SetMidiPlayer(cv_midiplayer.value);
 	Mix_SetSoundFonts(cv_midisoundfontpath.string);
-#if SDL_MIXER_VERSION_ATLEAST(2,5,0)
-	Mix_SetTimidityCfg(cv_miditimiditypath.string);
-#else
-	Mix_Timidity_addToPathList(cv_miditimiditypath.string);
-#endif
+	I_ControlTimidityCFG();
 #endif
 #if SDL_MIXER_VERSION_ATLEAST(1,2,11)
 	Mix_Init(MIX_INIT_FLAC|MIX_INIT_MP3|MIX_INIT_OGG|MIX_INIT_MOD);
@@ -648,13 +711,15 @@ void I_SetSfxVolume(UINT8 volume)
 
 static UINT32 get_real_volume(UINT8 volume)
 {
-#ifdef _WIN32
+#if defined (HAVE_MIXERX) && (_WIN32)
+#if !SDL_MIXER_VERSION_ATLEAST(2,6,0) // StarManiaKG: recent SDL_Mixer_X builds fix whatever issue was here, apparently :p //
 	if (I_SongType() == MU_MID)
 		// HACK: Until we stop using native MIDI,
 		// disable volume changes
 		return ((UINT32)31*128/31); // volume = 31
-	else
 #endif
+#endif
+
 		// convert volume to mixer's 128 scale
 		// then apply internal_volume as a percentage
 		return ((UINT32)volume*128/31) * (UINT32)internal_volume / 100;
@@ -865,91 +930,147 @@ boolean I_SongPaused(void)
 /// Music Effects
 /// ------------------------
 
-boolean I_SetSongSpeed(float speed)
+void I_SetSongSpeed(float speed) // StarManiaKG: was originally boolean, no longer needs to be //
 {
 	if (speed > 250.0f)
 		speed = 250.0f; //limit speed up to 250x
-// STAR STUFF //
-#ifdef HAVE_MIXERX
-	if (music)
-	{
-		// Lower the Music Speed if it Goes Above 20x
-		if (speed > 20.0f)
-		{
-			CONS_Printf("I_SetSongSpeed(): Music speed cannot be set above 20x, lowering music speed to 20x.\n");
-			speed = 20.0f;
-		}
+	music_speed = speed;
 
-		// Speed up Our Music, and We're Done :)
-#if (SDL_MIXER_VERSION_ATLEAST(2,6,0))
-		Mix_SetMusicSpeed(music, (double)speed);
-#else
-		Mix_SetMusicTempo(music, (double)speed);
-#endif
-		return true;
-	}
-	else
-#endif
-// END THAT PLEASE //
 #ifdef HAVE_GME
 	if (gme)
 	{
 		SDL_LockAudio();
 		gme_set_tempo(gme, speed);
 		SDL_UnlockAudio();
-		return true;
+		return;
 	}
-	else
 #endif
+
 #ifdef HAVE_OPENMPT
 	if (openmpt_mhandle)
 	{
 		if (speed > 4.0f)
-			speed = 4.0f; // Limit this to 4x to prevent crashing, stupid fix but... ~SteelT 27/9/19
+			music_speed = speed = 4.0f; // Limit this to 4x to prevent crashing, stupid fix but... ~SteelT 27/9/19
+
 #if OPENMPT_API_VERSION_MAJOR < 1 && OPENMPT_API_VERSION_MINOR < 5
-		{
-			// deprecated in 0.5.0
-			char modspd[13];
-			sprintf(modspd, "%g", speed);
-			openmpt_module_ctl_set(openmpt_mhandle, "play.tempo_factor", modspd);
-		}
+		// deprecated in 0.5.0
+		char modspd[13];
+		sprintf(modspd, "%g", speed);
+		openmpt_module_ctl_set(openmpt_mhandle, "play.tempo_factor", modspd);
 #else
 		openmpt_module_ctl_set_floatingpoint(openmpt_mhandle, "play.tempo_factor", (double)speed);
 #endif
-		return true;
+
+		return;
 	}
-	else
-#else
-	(void)speed;
-	return false;
 #endif
-	return false;
+
+	// StarManiaKG: a new speed system! (tons of modding options here!) //
+#ifdef HAVE_MIXERX
+	if (music)
+	{
+		if (speed > 20.0f) // Limit this to 20x to prevent errors
+		{
+			CONS_Alert(CONS_WARNING, "I_SetSongSpeed(): Music speed cannot be set above 20x, lowering music speed to 20x.\n");
+			music_speed = speed = 20.0f;
+		}
+
+		if (Mix_SetMusicTempo(music, speed) >= 0)
+			return;
+#if (SDL_MIXER_VERSION_ATLEAST(2,6,0))
+		else if (Mix_SetMusicSpeed(music, speed) >= 0)
+			return;
+#endif
+
+		music_speed = -1.0f;
+	}
+#endif
+
+	return;
 }
 
-// STAR STUFF //
-boolean I_CanSetSongSpeed(void)
+float I_GetSongSpeed(void)
 {
 #ifdef HAVE_MIXERX
 	if (music)
-		return true;
-	else
+	{
+		if (Mix_GetMusicTempo(music) >= 0)
+			return Mix_GetMusicTempo(music);
+#if (SDL_MIXER_VERSION_ATLEAST(2,6,0))
+		else if (Mix_GetMusicSpeed(music) >= 0)
+			return Mix_GetMusicSpeed(music);
 #endif
-#ifdef HAVE_GME
-	if (gme)
-		return true;
-	else
-#endif
-#ifdef HAVE_OPENMPT
-	if (openmpt_mhandle)
-		return true;
-	else
-#else
-		return false;
+	}
 #endif
 
-	return false;
+	return music_speed;
 }
-// END THAT STAR STUFF PLEASE //
+
+void I_SetSongPitch(float pitch)
+{
+	if (pitch > 250.0f)
+		pitch = 250.0f; // limit pitch up to 250x
+	music_pitch = pitch;
+
+#ifdef HAVE_GME
+	if (gme)
+	{
+		SDL_LockAudio();
+		gme_set_stereo_depth(gme, pitch);
+		SDL_UnlockAudio();
+		return;
+	}
+#endif
+
+#ifdef HAVE_OPENMPT
+	if (openmpt_mhandle)
+	{
+		if (pitch > 4.0f)
+			music_pitch = pitch = 4.0f; // Limit this to 4x to prevent crashing, stupid fix but... ~StarManiaKG 20/1/24 (stolen from SteelT)
+
+#if OPENMPT_API_VERSION_MAJOR < 1 && OPENMPT_API_VERSION_MINOR < 5
+		// deprecated in 0.5.0
+		char modspd[13];
+		sprintf(modspd, "%g", pitch);
+		openmpt_module_ctl_set(openmpt_mhandle, "play.pitch_factor", modspd);
+#else
+		openmpt_module_ctl_set_floatingpoint(openmpt_mhandle, "play.pitch_factor", (double)pitch);
+#endif
+
+		return;
+	}
+#endif
+
+#ifdef HAVE_MIXERX
+	if (music)
+	{
+		if (pitch > 20.0f) // Limit this to 20x to prevent errors
+		{
+			CONS_Alert(CONS_WARNING, "I_SetSongPitch(): Music pitch cannot be set above 20x, lowering music pitch to 20x.\n");
+			music_pitch = pitch = 20.0f;
+		}
+
+		if (Mix_SetMusicPitch(music, pitch) >= 0)
+			return;
+		music_pitch = -1.0f;
+	}
+#endif
+
+	return;
+}
+
+float I_GetSongPitch(void)
+{
+#ifdef HAVE_MIXERX
+	if (music)
+	{
+		if (Mix_GetMusicPitch(music) >= 0)
+			return Mix_GetMusicPitch(music);
+	}
+#endif
+
+	return music_pitch;
+}
 
 /// ------------------------
 ///  MUSIC SEEKING
@@ -1258,13 +1379,9 @@ boolean I_LoadSong(char *data, size_t len)
 #ifdef HAVE_MIXERX
 	if (Mix_GetMidiPlayer() != cv_midiplayer.value)
 		Mix_SetMidiPlayer(cv_midiplayer.value);
-	if (stricmp(Mix_GetSoundFonts(), cv_midisoundfontpath.string))
+	if (!Mix_GetSoundFonts() || stricmp(Mix_GetSoundFonts(), cv_midisoundfontpath.string))
 		Mix_SetSoundFonts(cv_midisoundfontpath.string);
-#if SDL_MIXER_VERSION_ATLEAST(2,5,0)
-	Mix_SetTimidityCfg(cv_miditimiditypath.string); // this overwrites previous custom path
-#else
-	Mix_Timidity_addToPathList(cv_miditimiditypath.string); // this overwrites previous custom path
-#endif
+	I_ControlTimidityCFG(); // this overwrites previous custom path
 #endif
 
 #ifdef HAVE_OPENMPT
@@ -1493,12 +1610,14 @@ void I_SetMusicVolume(UINT8 volume)
 	if (!I_SongPlaying())
 		return;
 
-#ifdef _WIN32
+#if defined (HAVE_MIXERX) && (_WIN32)
+#if !SDL_MIXER_VERSION_ATLEAST(2,6,0) // StarManiaKG: recent SDL_Mixer_X builds fix whatever issue was here, apparently :p //
 	if (I_SongType() == MU_MID)
 		// HACK: Until we stop using native MIDI,
 		// disable volume changes
 		music_volume = 31;
 	else
+#endif
 #endif
 		music_volume = volume;
 

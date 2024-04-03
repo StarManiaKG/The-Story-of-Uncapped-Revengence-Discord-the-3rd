@@ -3621,7 +3621,7 @@ static void HWR_DrawShadows(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale)
 	if (alpha >= 255) return;
 	alpha = 255 - alpha;
 
-	gpatch = (cv_shadow.value == 2 ? (spr->gpatch) : ((patch_t *)W_CachePatchName("DSHADOW", PU_SPRITE))); // STAR NOTE: i was here lol
+	gpatch = (cv_shadow.value == 2 ? spr->gpatch : ((patch_t *)W_CachePatchName("DSHADOW", PU_SPRITE))); // STAR NOTE: i was here lol //
 	if (!(gpatch && ((GLPatch_t *)gpatch->hardware)->mipmap->format)) return;
 	HWR_GetPatch(gpatch);
 
@@ -3666,10 +3666,31 @@ static void HWR_DrawShadows(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale)
 			}
 
 			// Now transform the TOP vertices along the floor in the direction of the camera
+#if 0
 			shadowVerts[3].x = spr->x1 + ((gpatch->height * FIXED_TO_FLOAT(scale)) + offset) * gl_viewcos;
 			shadowVerts[2].x = spr->x2 + ((gpatch->height * FIXED_TO_FLOAT(scale)) + offset) * gl_viewcos;
 			shadowVerts[3].z = spr->z1 + ((gpatch->height * FIXED_TO_FLOAT(scale)) + offset) * gl_viewsin;
 			shadowVerts[2].z = spr->z2 + ((gpatch->height * FIXED_TO_FLOAT(scale)) + offset) * gl_viewsin;
+#else
+#if 0
+			shadowVerts[3].x = (spr->x1 + offset) * gl_viewcos;
+			shadowVerts[2].x = (spr->x2 + offset) * gl_viewcos;
+			shadowVerts[3].z = (spr->z1 + offset) * gl_viewsin;
+			shadowVerts[2].z = (spr->z2 + offset) * gl_viewsin;
+#else
+#if 0
+			shadowVerts[3].x = spr->x1 + ((gpatch->height * fscale) + offset) * gl_viewcos;
+			shadowVerts[2].x = spr->x2 + ((gpatch->height * fscale) + offset) * gl_viewcos;
+			shadowVerts[3].z = spr->z1 + ((gpatch->height * fscale) + offset) * gl_viewsin;
+			shadowVerts[2].z = spr->z2 + ((gpatch->height * fscale) + offset) * gl_viewsin;
+#else
+			shadowVerts[3].x = spr->x1 + (gpatch->height + fscale + offset) * gl_viewcos;
+			shadowVerts[2].x = spr->x2 + (gpatch->height + fscale + offset) * gl_viewcos;
+			shadowVerts[3].z = spr->z1 + (gpatch->height + fscale + offset) * gl_viewsin;
+			shadowVerts[2].z = spr->z2 + (gpatch->height + fscale + offset) * gl_viewsin;
+#endif
+#endif
+#endif
 		}
 		else
 		{
@@ -3695,7 +3716,7 @@ static void HWR_DrawShadows(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale)
 		float oldx = shadowVerts[i].x;
 		float oldy = shadowVerts[i].z;
 
-		// STAR NOTE: i was here lol
+		// STAR NOTE: controls shadow positions //
 		if (cv_shadow.value != 2 || cv_shadowposition.value)
 		{
 			shadowVerts[i].x = (cv_shadowposition.value == 1 ?
@@ -3728,7 +3749,7 @@ static void HWR_DrawShadows(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale)
 	shadowVerts[3].t = shadowVerts[2].t = 0;
 	shadowVerts[0].t = shadowVerts[1].t = ((GLPatch_t *)gpatch->hardware)->max_t;
 
-	// STAR STUFF: ELECTRIC BOOGALO //
+	// STAR STUFF: flip shadow sprites please //
 	if (cv_shadow.value == 2)
 	{
 		if (spr->flip)
@@ -3756,7 +3777,7 @@ static void HWR_DrawShadows(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale)
 		}
 #endif
 	}
-	// END THAT //
+	// ELECTRIC BOOGALO //
 
 	if (!(thing->renderflags & RF_NOCOLORMAPS))
 	{
@@ -3792,6 +3813,242 @@ static void HWR_DrawShadows(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale)
 
 	HWR_ProcessPolygon(&sSurf, shadowVerts, 4, blendmode, shader, false);
 }
+
+/////////////////
+// MD2 SHADOWS //
+/////////////////
+// MAJOR STAR TODO NOTE: come back later please :) //
+#if 0
+#include "r_opengl/r_opengl.h"
+
+enum
+{
+	X,
+	Y,
+	Z,
+	W
+};
+
+enum
+{
+	A,
+	B,
+	C,
+	D
+};
+
+static GLfloat floorVertices[4][3] = {
+	{ -20.0, 0.0, 20.0 },
+	{ 20.0, 0.0, 20.0 },
+	{ 20.0, 0.0, -20.0 },
+	{ -20.0, 0.0, -20.0 },
+};
+
+static GLfloat lightPosition[4];
+float lightAngle, lightHeight;
+
+/* Create a matrix that will project the desired shadow. */
+static void shadowMatrix(GLfloat shadowMat[4][4], GLfloat groundplane[4], GLfloat lightpos[4])
+{
+	GLfloat dot;
+	
+	/* Find dot product between light position vector and ground plane normal. */
+	dot = groundplane[X] * lightpos[X] +
+    groundplane[Y] * lightpos[Y] +
+    groundplane[Z] * lightpos[Z] +
+    groundplane[W] * lightpos[W];
+	
+	shadowMat[0][0] = dot - lightpos[X] * groundplane[X];
+	shadowMat[1][0] = 0.f - lightpos[X] * groundplane[Y];
+	shadowMat[2][0] = 0.f - lightpos[X] * groundplane[Z];
+	shadowMat[3][0] = 0.f - lightpos[X] * groundplane[W];
+	
+	shadowMat[X][1] = 0.f - lightpos[Y] * groundplane[X];
+	shadowMat[1][1] = dot - lightpos[Y] * groundplane[Y];
+	shadowMat[2][1] = 0.f - lightpos[Y] * groundplane[Z];
+	shadowMat[3][1] = 0.f - lightpos[Y] * groundplane[W];
+	
+	shadowMat[X][2] = 0.f - lightpos[Z] * groundplane[X];
+	shadowMat[1][2] = 0.f - lightpos[Z] * groundplane[Y];
+	shadowMat[2][2] = dot - lightpos[Z] * groundplane[Z];
+	shadowMat[3][2] = 0.f - lightpos[Z] * groundplane[W];
+	
+	shadowMat[X][3] = 0.f - lightpos[W] * groundplane[X];
+	shadowMat[1][3] = 0.f - lightpos[W] * groundplane[Y];
+	shadowMat[2][3] = 0.f - lightpos[W] * groundplane[Z];
+	shadowMat[3][3] = dot - lightpos[W] * groundplane[W];
+	
+}
+
+/* Find the plane equation given 3 points. */
+static void findPlane(GLfloat plane[4], GLfloat v0[3], GLfloat v1[3], GLfloat v2[3])
+{
+	GLfloat vec0[3], vec1[3];
+	
+	/* Need 2 vectors to find cross product. */
+	vec0[X] = v1[X] - v0[X];
+	vec0[Y] = v1[Y] - v0[Y];
+	vec0[Z] = v1[Z] - v0[Z];
+	
+	vec1[X] = v2[X] - v0[X];
+	vec1[Y] = v2[Y] - v0[Y];
+	vec1[Z] = v2[Z] - v0[Z];
+	
+	/* find cross product to get A, B, and C of plane equation */
+	plane[A] = vec0[Y] * vec1[Z] - vec0[Z] * vec1[Y];
+	plane[B] = -(vec0[X] * vec1[Z] - vec0[Z] * vec1[X]);
+	plane[C] = vec0[X] * vec1[Y] - vec0[Y] * vec1[X];
+	
+	plane[D] = -(plane[A] * v0[X] + plane[B] * v0[Y] + plane[C] * v0[Z]);
+}
+
+// SRB2CBTODO: MATRIX BASED SHADOWS!!!!! WHOOOOOO
+// TODO: Make them sync to the floor and all that good stuff
+// AND when that's done, MAKE THEM CAST OVER GEOMERTRY!!!!
+// AND *THEN* make an OpenGL based unified light and shadow Global illumination system!
+ // SRB2CBTODO: Create displaylists for MD2 models to speed things up
+void GL_DrawMD2Shadow(int *gl_cmd_buffer, mdlframe_t *frame, ULONG duration, ULONG tics, mdlframe_t *nextframe,
+					  FTransform *pos, float scale, fixed_t height, fixed_t light, fixed_t offset, mobj_t *mobj)
+{
+	int val, count, pindex;
+	GLfloat s, t;
+
+	float pol;
+	ULONG newtime;
+
+	if (duration == 0)
+		duration = 1;
+
+	newtime = (duration - tics) + 1;
+
+	pol = (newtime)/(float)duration;
+
+	if (pol > 1.0f)
+		pol = 1.0f;
+
+	if (pol < 0.0f)
+		pol = 0.0f;
+
+	height = light = offset = 0; // SRB2CBTODO: Use this
+
+	glColor4f(0.0f,0.0f,0.0f, 0.15f);
+	
+	HWD.pfnDrawPolygon(NULL, NULL, 0, PF_Masked|PF_Modulated|PF_Occlude); // A polygon is drawn and then transformed by the code below
+
+	glEnable(GL_POLYGON_OFFSET_FILL);
+	glPolygonOffset(-2.0, -1.0);
+	glLineWidth(3.0);
+
+	glPushMatrix(); // should be the same as glLoadIdentity
+
+	glTranslatef(pos->x, FIXED_TO_FLOAT(mobj->floorz), pos->y);
+	// Yaw, Roll, and Pitch (in that order too) // SRB2CBTODO: Align MD2 shadows to a plane!!!
+	glRotatef(0, 0.0f, -1.0f, 0.0f); // Roll
+	glRotatef(0, -1.0f, 0.0f, 0.0f); // Yaw
+	glRotatef(0, 0.0f, 0.0f, -1.0f); // Pitch (rollangle is pitch angle for MD2's)
+
+	glScalef(scale, 1, scale);
+	glColor4f(0.0f,0.0f,0.0f, 0.15f); // SRB2CBTODO: Make this one solid color and make the multiple polygons not show through
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // alpha = level of transparency
+	glDepthMask(GL_FALSE);
+
+	lightAngle = 0;//pos->angley/(ANG45/45);//44;//viewangle/(ANG45/45)/36.0f;
+
+	lightHeight = 100; // The height of the light for shadows, make it high for now, SRB2CBTODO: Cascading shadows on everything!!!
+
+	GLfloat floorPlane[4];
+	GLfloat floorShadow[4][4];
+
+	/* Reposition the light source. */
+	lightPosition[0] = 12*cos(lightAngle)+10;
+	lightPosition[1] = lightHeight;
+	lightPosition[2] = 12*sin(lightAngle)-80;
+	lightPosition[3] = 1.0;
+
+	/* Setup floor plane for projected shadow calculations. */
+	findPlane(floorPlane, floorVertices[1], floorVertices[2], floorVertices[3]);
+
+	shadowMatrix(floorShadow, floorPlane, lightPosition);
+	//glRotatef(pos->angley, 0.0f, -1.0f, 0.0f); // Roll
+	glMultMatrixf((GLfloat *) floorShadow);
+
+	// Now we're modifying how the shadow looks, not the actual coords of the shadow polygon
+	glRotatef(pos->angley, 0.0f, -1.0f, 0.0f); // Roll
+	glRotatef(pos->anglex, -1.0f, 0.0f, 0.0f); // Yaw
+	glRotatef(pos->rollangle, 0.0f, 0.0f, -1.0f); // Pitch (rollangle is pitch angle for MD2's)
+
+	val = *gl_cmd_buffer++;
+
+	while (val != 0)
+	{
+		if (val < 0)
+		{
+			glBegin(GL_TRIANGLE_FAN);
+			count = -val;
+		}
+		else
+		{
+			glBegin(GL_TRIANGLE_STRIP);
+			count = val;
+		}
+
+		while (count--)
+		{
+			s = *(float *) gl_cmd_buffer++;
+			t = *(float *) gl_cmd_buffer++;
+			pindex = *gl_cmd_buffer++;
+
+			glTexCoord2f(s, t);
+
+			if (!nextframe)
+			{
+				glNormal3f(frame->vertices[pindex].normal[0],
+						   frame->vertices[pindex].normal[1],
+						   frame->vertices[pindex].normal[2]);
+
+				glVertex3f(frame->vertices[pindex].vertex[0]*0.5f,
+						   frame->vertices[pindex].vertex[1]*0.5,
+						   frame->vertices[pindex].vertex[2]*0.5f);
+			}
+			else
+			{
+				// Interpolate
+				float px1 = frame->vertices[pindex].vertex[0]*0.5f;
+				float px2 = nextframe->vertices[pindex].vertex[0]*0.5f;
+				float py1 = frame->vertices[pindex].vertex[1]*0.5f;
+				float py2 = nextframe->vertices[pindex].vertex[1]*0.5f;
+				float pz1 = frame->vertices[pindex].vertex[2]*0.5;
+				float pz2 = nextframe->vertices[pindex].vertex[2]*0.5f;
+				float nx1 = frame->vertices[pindex].normal[0];
+				float nx2 = nextframe->vertices[pindex].normal[0];
+				float ny1 = frame->vertices[pindex].normal[1];
+				float ny2 = nextframe->vertices[pindex].normal[1];
+				float nz1 = frame->vertices[pindex].normal[2];
+				float nz2 = nextframe->vertices[pindex].normal[2];
+
+				glNormal3f((nx1 + pol * (nx2 - nx1)),
+						   (ny1 + pol * (ny2 - ny1)),
+						   (nz1 + pol * (nz2 - nz1)));
+				glVertex3f((px1 + pol * (px2 - px1)),
+						   (py1 + pol * (py2 - py1)),
+						   (pz1 + pol * (pz2 - pz1)));
+			}
+		}
+
+		glEnd();
+
+		val = *gl_cmd_buffer++;
+	}
+
+	// The depth is changed back and forth when a model is transparent
+	//if (color[3] < 255)
+	glDepthMask(GL_TRUE);
+
+	glPopMatrix(); // should be the same as glLoadIdentity
+
+	glDisable(GL_POLYGON_OFFSET_FILL);
+}
+#endif
 // END OF THE STAR NOTE //
 
 // This is expecting a pointer to an array containing 4 wallVerts for a sprite
@@ -5285,7 +5542,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 	}
 	else
 	{
-		sprdef = &sprites[thing->sprite];
+		sprdef = sprites[thing->sprite];
 #ifdef ROTSPRITE
 		sprinfo = &spriteinfo[thing->sprite];
 #endif
@@ -5297,7 +5554,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 			sizeu1(rot), sizeu2(sprdef->numframes), sprnames[thing->sprite]);
 		thing->sprite = states[S_UNKNOWN].sprite;
 		thing->frame = states[S_UNKNOWN].frame;
-		sprdef = &sprites[thing->sprite];
+		sprdef = sprites[thing->sprite];
 #ifdef ROTSPRITE
 		sprinfo = &spriteinfo[thing->sprite];
 #endif
@@ -5729,7 +5986,7 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 		return;
 #endif
 
-	sprdef = &sprites[thing->sprite];
+	sprdef = sprites[thing->sprite];
 
 	if ((size_t)(thing->frame&FF_FRAMEMASK) >= sprdef->numframes)
 #ifdef RANGECHECK

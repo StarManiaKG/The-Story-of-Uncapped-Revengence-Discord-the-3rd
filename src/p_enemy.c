@@ -32,12 +32,10 @@
 #include "hardware/hw3sound.h"
 #endif
 
-// STAR STUFF WEEE //
-#include "STAR/star_vars.h" // extra variables
-#include "m_menu.h" // jukebox
-
-consvar_t cv_soniccd = CVAR_INIT ("soniccd", "Off", CV_SAVE|CV_ALLOWLUA, CV_OnOff, NULL);
-// END OF THAT THING //
+// STAR STUFF //
+#include "STAR/star_vars.h" // TSoURDt3rdPlayers::jukebox::musicPlaying & TSoURDt3rd_DetermineLevelMusic() //
+#include "STAR/ss_cmds.h" // cv_soniccd //
+// WEEEEEEEEE //
 
 boolean LUA_CallAction(enum actionnum actionnum, mobj_t *actor);
 
@@ -3978,10 +3976,12 @@ static void P_DoBossVictory(mobj_t *mo)
 			// Touching the egg trap button calls P_DoPlayerExit, which calls P_RestoreMusic.
 			// So just park ourselves in the mapmus variables.
 			// But don't change the mapmus variables if they were modified from their level header values (e.g., TUNES).
-			boolean changed = strnicmp(mapheaderinfo[gamemap-1]->musname, S_MusicName(), 7);
-			if (!strnicmp(mapheaderinfo[gamemap-1]->musname, mapmusname, 7))
+			//** STAR NOTE: chosen music after boss rocking is now done with TSoURDt3rd_DetermineLevelMusic() :) **//
+			const char *determinedMusic = TSoURDt3rd_DetermineLevelMusic();
+			boolean changed = (!(strnicmp(determinedMusic, S_MusicName(), 7)));
+			if (!strnicmp(mapheaderinfo[gamemap-1]->musname, mapmusname, 7) || !changed)
 			{
-				strncpy(mapmusname, mapheaderinfo[gamemap-1]->muspostbossname, 7);
+				strncpy(mapmusname, determinedMusic, 7);
 				mapmusname[6] = 0;
 				mapmusflags = (mapheaderinfo[gamemap-1]->muspostbosstrack & MUSIC_TRACKMASK) | MUSIC_RELOADRESET;
 				mapmusposition = mapheaderinfo[gamemap-1]->muspostbosspos;
@@ -4417,10 +4417,12 @@ void A_SuperSneakers(mobj_t *actor)
 
 	if (P_IsLocalPlayer(player) && !player->powers[pw_super])
 	{
-		if ((mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC)
-			&& (!TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)) // STAR NOTE: i was here lol
-
-			S_SpeedMusic(1.4f);
+		if (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC)
+		{
+			// STAR NOTE: stop interrupting my jukebox session please //
+			if (!TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
+				S_SpeedMusic(1.4f);
+		}
 		else
 			P_PlayJingle(player, JT_SHOES);
 		strlcpy(S_sfx[sfx_None].caption, "Speed shoes", 12);
@@ -11825,7 +11827,7 @@ mobj_t *P_InternalFlickySpawn(mobj_t *actor, mobjtype_t flickytype, fixed_t momz
 		else
 		{
 			INT32 prandom = P_RandomKey(mapheaderinfo[gamemap-1]->numFlickies);
-			flickytype = (cv_soniccd.value ? MT_SEED : mapheaderinfo[gamemap-1]->flickies[prandom]); // STAR NOTE: i was here lol
+			flickytype = (cv_soniccd.value ? MT_SEED : mapheaderinfo[gamemap-1]->flickies[prandom]);
 		}
 	}
 

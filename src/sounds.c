@@ -825,6 +825,10 @@ sfxinfo_t S_sfx[NUMSFX] =
 
   // skin sounds free slots to add sounds at run time (Boris HACK!!!)
   // initialized to NULL
+
+  // STAR STUFF //
+  [sfx_tf2d] = {"tf2d",   false,  64, 0,                  -1, NULL, 0, -1, -1, LUMPERROR, "Dispenser Goin' Up."},
+  // SOUNDS MADE! //
 };
 
 char freeslotnames[sfx_freeslot0 + NUMSFXFREESLOTS + NUMSKINSFXSLOTS][7];
@@ -840,22 +844,22 @@ void S_InitRuntimeSounds (void)
 	{
 		value = (i+1) - sfx_freeslot0;
 
-    // STAR NOTE: i was here lol
+    // STAR NOTE: edited to allow for more sounds, with minor preservations //
     if (value < 10)
 			sprintf(soundname, "fre00%d", value);
 		else if (value < 100)
 			sprintf(soundname, "fre0%d", value);
 		else if (value < 1000)
 			sprintf(soundname, "fre%d", value);
-    /* STAR NOTE: preserved for just in case scenarios
-      else
-			  sprintf(soundname, "fr%d", value);
-    */
-
-		else if (value < 10000)
+#if 1
+    else if (value < 10000)
 			sprintf(soundname, "fr%d", value);
 		else
 			sprintf(soundname, "f%d", value);
+#else
+    else
+			sprintf(soundname, "fr%d", value);
+#endif
 
 		strcpy(freeslotnames[value-1], soundname);
 

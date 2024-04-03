@@ -31,13 +31,13 @@
 #include "m_cheat.h"
 
 #ifdef HAVE_DISCORDRPC
-// DISCORD STUFF //
-#include "discord.h"
-// END IT PLEASE //
+#include "discord.h" // DISCORD STUFF: present //
 #endif
 
 // STAR STUFF //
 #include "STAR/star_vars.h" // extra star variables
+#include "STAR/ss_cmds.h" // cv_allowtypicaltimeover & TSOURDT3RD_TIMELIMIT //
+#include "STAR/ss_main.h" // STAR_CONS_Printf() //
 #include "m_menu.h" // jukebox
 
 #include "fastcmp.h" // april fools stuff 1
@@ -585,11 +585,12 @@ static inline void P_DoSpecialStageStuff(void)
 		players[i].powers[pw_underwater] = players[i].powers[pw_spacetime] = 0;
 	}
 
-	// STAR NOTE: i was here lol
-	if (sstimer < 15*TICRATE+6 && sstimer > 7 && (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC)
-		&& (!TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying))
-		
-		S_SpeedMusic(1.4f);
+	if (sstimer < 15*TICRATE+6 && sstimer > 7 && (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC))
+	{
+		// STAR NOTE: you're interrupting my brooding >:| //
+		if (!TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
+			S_SpeedMusic(1.4f);
+	}
 
 	if (sstimer && !objectplacing)
 	{
@@ -948,10 +949,8 @@ void P_Ticker(boolean run)
 		}
 
 		// Time Over...
-		if (((Playing() && leveltime >= 20999 && AllowTypicalTimeOver)	// one tic off so the timer doesn't display 10:00.00
-			 || (ForceTimeOver))										// here for lua purposes
-
-			 && (!netgame))												// no netgames
+		if (((Playing() && leveltime >= TSOURDT3RD_TIMELIMIT && cv_allowtypicaltimeover.value) || (ForceTimeOver))
+			&& (!netgame))
 		{
 			timeover = true;
 			

@@ -215,16 +215,10 @@ static char returnWadPath[256];
 #endif
 
 #ifdef HAVE_DISCORDRPC
-#include "../discord.h"
+#include "../discord.h" // DISCORD STUFFS: present the presence //
 #endif
 
-// STAR STUFF //
-#include <time.h>
-
-#include "../STAR/star_vars.h"
-
-#include "../m_random.h"
-// END THAT STUFF //
+#include "../STAR/star_vars.h" // STAR STUFF: TSoURDt3rd_GenerateFunnyCrashMessage(), TSOURDT3RDVERSIONSTRING, & TSOURDT3RDBYSTARMANIAKGSTRING //
 
 /**	\brief	The JoyReset function
 
@@ -416,7 +410,7 @@ static void I_ReportSignal(int num, int coredumped)
 		SDL_MESSAGEBOX_ERROR, /* .flags */
 		NULL, /* .window */
 		sigttl, /* .title */
-		va("%s\n\n%s %s", TSoURDt3rd_GenerateFunnyCrashMessage(num, coredumped), sigmsg, reportmsg), /* .message */ // STAR NOTE: i was here lol
+		va("%s\n\n%s %s", TSoURDt3rd_GenerateFunnyCrashMessage(num, coredumped), sigmsg, reportmsg), /* .message */
 		SDL_arraysize(buttons), /* .numbuttons */
 		buttons, /* .buttons */
 		NULL /* .colorScheme */
@@ -766,7 +760,7 @@ static void I_StartupConsole(void)
 
 	if (gotConsole)
 	{
-		SetConsoleTitleA("SRB2 - "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING" - Console"); // STAR NOTE: i was here lol
+		SetConsoleTitleA("SRB2 - "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING" - Console");
 		consolevent = SDL_TRUE;
 	}
 
@@ -2407,15 +2401,8 @@ void I_Quit(void)
 	SDLforceUngrabMouse();
 	quiting = SDL_FALSE;
 #ifdef HAVE_DISCORDRPC
-	// DO DISCORD STUFFS //
-	DRPC_Shutdown();
-	// ENDED DISCORD STUFFS //
+	DRPC_Shutdown(); // DISCORD STUFFS: shut down please //
 #endif
-	// DO STAR STUFF //
-	if (netgame)
-		STAR_ResetProblematicCommandsAfterNetgames();
-	M_ResetJukebox();
-	// DID STAR STUFF //
 	M_SaveConfig(NULL); //save game config, cvars..
 #ifndef NONET
 	D_SaveBan(); // save the ban list
@@ -2483,16 +2470,8 @@ void I_Error(const char *error, ...)
 	char buffer[8192];
 
 #ifdef HAVE_DISCORDRPC
-	// DO DISCORD STUFFS AGAIN //
-	DRPC_Shutdown();
-	// ENDED DISCORD STUFFS AGAIN //
+	DRPC_Shutdown(); // DISCORD STUFFS: shut down discord please //
 #endif
-
-	// DO STAR STUFF AGAIN //
-	if (netgame)
-		STAR_ResetProblematicCommandsAfterNetgames();
-	M_ResetJukebox();
-	// DID STAR STUFF AGAIN //
 
 	// recursive error detecting
 	if (shutdowning)
@@ -3239,4 +3218,5 @@ const CPUInfoFlags *I_CPUInfo(void)
 
 // note CPUAFFINITY code used to reside here
 void I_RegisterSysCommands(void) {}
+
 #endif

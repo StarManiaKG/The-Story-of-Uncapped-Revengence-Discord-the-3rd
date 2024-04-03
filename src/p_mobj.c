@@ -37,10 +37,7 @@
 #include "f_finale.h"
 #include "m_cond.h"
 
-// STAR STUFF //
-#include "STAR/star_vars.h" // mainly booleans
-#include "m_menu.h" // mainly commands
-// HELP ME //
+#include "STAR/ss_cmds.h" // STAR STUFF: cv_alwaysoverlayinvuln //
 
 static CV_PossibleValue_t CV_BobSpeed[] = {{0, "MIN"}, {4*FRACUNIT, "MAX"}, {0, NULL}};
 consvar_t cv_movebob = CVAR_INIT ("movebob", "1.0", CV_FLOAT|CV_SAVE, CV_BobSpeed, NULL);
@@ -6724,7 +6721,7 @@ static boolean P_ShieldLook(mobj_t *thing, shieldtype_t shield)
 	if (!thing->target || thing->target->health <= 0 || !thing->target->player
 		|| (thing->target->player->powers[pw_shield] & SH_NOSTACK) == SH_NONE || thing->target->player->powers[pw_super]
 		|| ((thing->target->player->powers[pw_invulnerability] > 1)
-			&& (!AlwaysOverlayInvincibility))) // STAR NOTE: hi, i was here lol
+			&& (!cv_alwaysoverlayinvuln.value)))
 	{
 		P_RemoveMobj(thing);
 		return false;
@@ -6813,7 +6810,7 @@ static boolean P_AddShield(mobj_t *thing)
 	if (!thing->target || thing->target->health <= 0 || !thing->target->player
 		|| (thing->target->player->powers[pw_shield] & SH_NOSTACK) == SH_NONE || thing->target->player->powers[pw_super]
 		|| ((thing->target->player->powers[pw_invulnerability] > 1)
-			&& (!AlwaysOverlayInvincibility))) // STAR NOTE: i was also here lol
+			&& (!cv_alwaysoverlayinvuln.value)))
 	{
 		P_RemoveMobj(thing);
 		return false;

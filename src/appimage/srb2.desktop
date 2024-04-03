@@ -3,7 +3,7 @@
 Categories=Game;
 Comment=heheheha
 Exec="\\$HOME/SRB2.AppImage"
-Icon=/home/star/.icons/srb2.png
+Icon="\\$HOME/.icons/srb2.png"
 MimeType=
 Name=Sonic Robo Blast 2
 Path=

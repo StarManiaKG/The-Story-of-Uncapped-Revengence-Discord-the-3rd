@@ -21,12 +21,8 @@
 #include "r_skins.h" // numskins
 #include "r_draw.h" // R_GetColorByName
 
-// STAR STUFF //
-#include "STAR/star_vars.h"
+#include "STAR/m_menu.h" // STAR STUFF: V_MENUCOLORMAP //
 
-#include "d_main.h"
-#include "m_menu.h" // menu coloring
-// END OF THAT //
 gamedata_t *clientGamedata; // Our gamedata
 gamedata_t *serverGamedata; // Server's gamedata
 
@@ -52,7 +48,7 @@ INT32 numextraemblems = 0;
 
 // Temporary holding place for nights data for the current map
 nightsdata_t ntemprecords[MAXPLAYERS];
-boolean AllowWriteToExtra = true;
+
 // Create a new gamedata_t, for start-up
 gamedata_t *M_NewGameDataStruct(void)
 {
@@ -61,6 +57,8 @@ gamedata_t *M_NewGameDataStruct(void)
 	G_ClearRecords(data);
 	return data;
 }
+
+boolean AllowWriteToExtra = true;
 
 void M_CopyGameData(gamedata_t *dest, gamedata_t *src)
 {
@@ -169,13 +167,6 @@ void M_ClearSecrets(gamedata_t *data)
 	// Re-unlock any always unlocked things
 	M_SilentUpdateUnlockablesAndEmblems(data);
 	M_SilentUpdateSkinAvailabilites();
-
-	// DO SOME STAR STUFF //
-	if (AllowWriteToExtra) // BITTEN NOTE: 2.2.12, why do you call this when entering a level
-		(eastermode ?
-			(foundeggs = collectedmapeggs = currenteggs = numMapEggs = 0) :
-			(TOTALEGGS = foundeggs = collectedmapeggs = currenteggs = numMapEggs = 0));
-	// END SOME STAR STUFF //
 }
 
 // ----------------------
@@ -326,7 +317,7 @@ UINT8 M_UpdateUnlockablesAndExtraEmblems(gamedata_t *data)
 
 		strcat(slashed, cechoText);
 
-		HU_SetCEchoFlags(menuColor[cv_menucolor.value]|V_RETURN8);
+		HU_SetCEchoFlags(V_MENUCOLORMAP|V_RETURN8);
 		HU_SetCEchoDuration(6);
 		HU_DoCEcho(slashed);
 		return true;

@@ -740,6 +740,11 @@ light_t *t_lspr[NUMSPRITES] =
 	&lspr[NOLIGHT],
 	&lspr[NOLIGHT],
 	&lspr[NOLIGHT],
+
+	// STAR STUFF //
+	[SPR_EEGG] = &lspr[GREENSHINE_L],
+	&lspr[SUPERSONIC_L], // SPR_TF2D
+	// LIGHT TABLE SET! //
 };
 
 #ifdef ALAM_LIGHTING
@@ -1209,14 +1214,15 @@ void HWR_DL_AddLight(gl_vissprite_t *spr, GLPatch_t *patch)
 	dynlights->nb++;
 }
 
-static GLPatch_t *lightmappatch;
+static GLMipmap_t lightmappatchmipmap;
+static GLPatch_t lightmappatch = { .mipmap = &lightmappatchmipmap };
 
 void HWR_InitLight(void)
 {
 	// Make Variables //
 	size_t i;
 	static patch_t *coronapatch;
-	
+
 	// Cache the Patch //
 	coronapatch = (patch_t *)W_CachePatchName("CORONA", PU_CACHE);
 	if (!(coronapatch && ((GLPatch_t *)coronapatch->hardware)->mipmap->format)) return;
@@ -1226,10 +1232,10 @@ void HWR_InitLight(void)
 	for (i = 0;i < NUMLIGHTS;i++)
 		lspr[i].dynamic_sqrradius = lspr[i].dynamic_radius*lspr[i].dynamic_radius;
 
-	coronapatch->width = 128;
-	coronapatch->height = 128;
+	coronapatch->width = 256;
+	coronapatch->height = 256;
 
-	lightmappatch->mipmap->downloaded = false;
+	lightmappatch.mipmap->downloaded = false;
 	coronalumpnum = W_CheckNumForName("CORONA");
 }
 
@@ -1240,10 +1246,10 @@ static void HWR_SetLight(void)
 {
 	int    i, j;
 
-	if (!lightmappatch->mipmap->downloaded && !lightmappatch->mipmap->data)
+	if (!lightmappatch.mipmap->downloaded && !lightmappatch.mipmap->data)
 	{
 
-		UINT16 *Data = Z_Malloc(129*128*sizeof (UINT16), PU_HWRCACHE, &lightmappatch->mipmap->data);
+		UINT16 *Data = Z_Malloc(129*128*sizeof (UINT16), PU_HWRCACHE, &lightmappatch.mipmap->data);
 
 		for (i = 0; i < 128; i++)
 		{
@@ -1256,16 +1262,18 @@ static void HWR_SetLight(void)
 					Data[i*128+j] = 0;
 			}
 		}
-		lightmappatch->mipmap->format = GL_TEXFMT_ALPHA_INTENSITY_88;
+		lightmappatch.mipmap->format = GL_TEXFMT_ALPHA_INTENSITY_88;
 
-		lightmappatch->mipmap->width = 128;
-		lightmappatch->mipmap->height = 128;
-		lightmappatch->mipmap->flags = 0; //TF_WRAPXY; // DEBUG: view the overdraw !
+		lightmappatchmipmap.width = 256;
+		lightmappatchmipmap.height = 256;
+		lightmappatch.mipmap->width = 256;
+		lightmappatch.mipmap->height = 256;
+		lightmappatch.mipmap->flags = 0; //TF_WRAPXY; // DEBUG: view the overdraw !
 	}
-	HWD.pfnSetTexture(lightmappatch->mipmap);
+	HWD.pfnSetTexture(lightmappatch.mipmap);
 
 	// The system-memory data can be purged now.
-	Z_ChangeTag(lightmappatch->mipmap->data, PU_HWRCACHE_UNLOCKED);
+	Z_ChangeTag(lightmappatch.mipmap->data, PU_HWRCACHE_UNLOCKED);
 }
 
 //**********************************************************

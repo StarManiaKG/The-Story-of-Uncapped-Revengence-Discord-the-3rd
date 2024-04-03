@@ -220,7 +220,6 @@ All of the following assets can be found in the current zip file of TSoURDt3rd, 
 **OPTIONAL ASSETS**
   - music.dta
   - jukebox.pk3
-  - tsourdt3rdextras.pk3
 
 ## Compiling
 - See [SRB2 Wiki/Source code compiling](http://wiki.srb2.org/wiki/Source_code_compiling)

@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2023 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2023-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -20,10 +20,8 @@
 
 // ============================================================================	//
 // 	 STAR NOTE:																	//
-//                                                                              //
-//   Just so you Know, Some of This Stuff is Also Handled in tsourdt3rd.pk3.	//
-//		There's Even Some Extra Code in tsourdt3rdextras.pk3 too.				//
-//      If you Want to Look at Some Other Code, Check Those PK3 Out.            //
+//   Just so you know, some of this stuff is also handled in tsourdt3rd.pk3.	//
+//      If you want to look at some other code, check that PK3 out.             //
 // ============================================================================ //
 
 //// DEFINITIONS ////
@@ -35,7 +33,7 @@
 #define TSOURDT3RDVERSIONSTRING "TSoURDt3rd v"TSOURDT3RDVERSION
 
 //// STRUCTS ////
-// Game
+// Game //
 typedef struct TSoURDt3rdLoadingScreen_s {
 	size_t loadCount;
 	UINT8 loadPercentage;
@@ -43,12 +41,28 @@ typedef struct TSoURDt3rdLoadingScreen_s {
 
 	INT32 screenToUse;
 
-	boolean softwareLoadComplete;
+	boolean loadComplete;
 } TSoURDt3rdLoadingScreen_t;
 
-// Music
+// Audio //
+typedef struct TSoURDt3rdBossMusic_s {
+	const char *bossMusic;
+	const char *bossPinchMusic;
+
+	UINT32 pinchMusicPos;
+} TSoURDt3rdBossMusic_t;
+
+typedef struct TSoURDt3rdFinalBossMusic_s {
+	const char *finalBossMusic, *finalBossPinchMusic;
+	const char *trueFinalBossMusic, *trueFinalBossPinchMusic;
+} TSoURDt3rdFinalBossMusic_t;
+
+typedef struct TSoURDt3rdActClearMusic_s {
+	const char *actClear;
+	const char *bossClear, *finalBossClear, *trueFinalBossClear;
+} TSoURDt3rdActClearMusic_t;
+
 typedef struct TSoURDt3rdDefaultMusicTracks_s {
-	const char *trackName;
 	const char *track;
 } TSoURDt3rdDefaultMusicTracks_t;
 
@@ -56,20 +70,17 @@ typedef struct TSoURDt3rdDefaultMusicTracks_s {
 typedef struct TSoURDt3rdServers_s {
 	boolean serverUsesTSoURDt3rd;
 
-	UINT8 majorVersion;
-	UINT8 minorVersion;
-	UINT8 subVersion;
-
+	UINT8 majorVersion, minorVersion, subVersion;
 	UINT32 serverTSoURDt3rdVersion;
 } TSoURDt3rdServers_t;
 
-// Jukebox
+// Jukebox //
 typedef struct TSoURDt3rdJukebox_s {
 	boolean Unlocked;
 
 	boolean initHUD;
-
 	boolean musicPlaying;
+
 	char musicName[34];
 	char musicTrack[7];
 
@@ -77,18 +88,16 @@ typedef struct TSoURDt3rdJukebox_s {
 	fixed_t stoppingTics;
 } TSoURDt3rdJukebox_t;
 
-// Main Struct //
+// Main //
 typedef struct TSoURDt3rd_s {
-	// Game Stuff
+	// Main Stuff
 	boolean usingTSoURDt3rd;
 	boolean checkedVersion;
 
-	const char *Name;
+	INT32 num;
 
+	// Game Stuff
 	TSoURDt3rdLoadingScreen_t loadingScreens;
-
-	// Music Stuff
-	TSoURDt3rdDefaultMusicTracks_t *defaultMusicTracks;
 
 	// Server Stuff
 	UINT8 reachedSockSendErrorLimit;
@@ -100,9 +109,7 @@ typedef struct TSoURDt3rd_s {
 	TSoURDt3rdJukebox_t jukebox;
 } TSoURDt3rd_t;
 
-extern TSoURDt3rd_t TSoURDt3rdPlayers[MAXPLAYERS];
-
-// Input Struct //
+// Inputs //
 typedef struct star_gamekey_s {
 	INT32 keyDown;
 
@@ -110,7 +117,13 @@ typedef struct star_gamekey_s {
 	boolean tapReady;
 } star_gamekey_t;
 
+extern TSoURDt3rd_t TSoURDt3rdPlayers[MAXPLAYERS];
 extern star_gamekey_t STAR_GameKeyDown[1][NUM_GAMECONTROLS];
+
+extern TSoURDt3rdBossMusic_t bossMusic[];
+extern TSoURDt3rdFinalBossMusic_t finalBossMusic[];
+//extern TSoURDt3rdActClearMusic_t actClearMusic[];
+extern TSoURDt3rdDefaultMusicTracks_t defaultMusicTracks[];
 
 //// VARIABLES ////
 // TSoURDt3rd Stuff //
@@ -160,8 +173,10 @@ extern boolean SpawnTheDispenser;
 //// COMMANDS ////
 // Game //
 extern consvar_t cv_loadingscreen, cv_loadingscreenimage;
-extern consvar_t cv_soniccd;
 extern consvar_t cv_updatenotice;
+
+// Audio //
+extern consvar_t cv_vapemode;
 
 // Servers //
 extern consvar_t cv_socksendlimit;
@@ -169,14 +184,10 @@ extern consvar_t cv_socksendlimit;
 //// FUNCTIONS ////
 // Events //
 void TSoURDt3rd_CheckTime(void);
-void TSoURDt3rd_EventMessage(INT32 choice);
-
-boolean TSoURDt3rd_InAprilFoolsMode(void);
 
 // Game //
-void TSoURDt3rd_InitializeStructures(INT32 playernum);
-void TSoURDt3rd_ResetServerPlayer(INT32 playernum);
-void TSoURDt3rd_ClearServerPlayer(INT32 playernum);
+void TSoURDt3rd_InitializePlayer(INT32 playernum);
+void TSoURDt3rd_ClearPlayer(INT32 playernum);
 
 void STAR_LoadingScreen(void);
 
@@ -189,6 +200,16 @@ const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean coredum
 
 boolean STAR_Responder(UINT8 player, UINT8 input, boolean preventhold);
 void TSoURDt3rd_BuildTicCMD(UINT8 player);
+
+// Players //
+boolean STAR_CanPlayerMoveAndChangeSkin(INT32 playernum);
+
+// Audio //
+void TSoURDt3rd_ControlMusicEffects(void);
+const char *TSoURDt3rd_DetermineLevelMusic(void);
+
+UINT32 TSoURDt3rd_PinchMusicPosition(void);
+boolean TSoURDt3rd_SetPinchMusicSpeed(void);
 
 // Savedata //
 void STAR_WriteExtraData(void);
@@ -213,7 +234,7 @@ void TSoURDt3rd_FindCurrentVersion(void);
 #endif
 
 // Servers //
-
+// Nobody came.
 
 // Miscellanious //
 UINT32 TSoURDt3rd_CurrentVersion(void);

@@ -1,4 +1,4 @@
-prefix=C:/Users/DraytonM2/AppData/Local/Microsoft/Windows/INetCache/IE/RBXMSA13/msys64/home/DraytonM2/Github/BittenTSoURDt3rd/libs/SDLMixerX/x86_64-w64-mingw32
+prefix=C:/msys64/home/Drayt/Github/build64
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include

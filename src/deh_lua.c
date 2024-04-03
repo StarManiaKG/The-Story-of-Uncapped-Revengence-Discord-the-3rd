@@ -432,6 +432,15 @@ static int ScanConstants(lua_State *L, boolean mathlib, const char *word)
 				CacheAndPushConstant(L, word, i);
 				return 1;
 			}
+
+		// STAR STUFF: scan for our unique states please //
+		for (i = S_LASTFREESLOT+1; i < NUMSTATES; i++)
+			if (fastcmp(p, STATE_LIST[i]+2)) {
+				CacheAndPushConstant(L, word, i);
+				return 1;
+			}
+		// HOPEFULLY WE FOUND THE STATE! //
+
 		return luaL_error(L, "state '%s' does not exist.\n", word);
 	}
 	else if (fastncmp("MT_",word,3)) {
@@ -449,6 +458,15 @@ static int ScanConstants(lua_State *L, boolean mathlib, const char *word)
 				CacheAndPushConstant(L, word, i);
 				return 1;
 			}
+
+		// STAR STUFF: scan for our unique mobjs please //
+		for (i = MT_LASTFREESLOT+1; i < NUMMOBJTYPES; i++)
+			if (fastcmp(p, MOBJTYPE_LIST[i]+3)) {
+				CacheAndPushConstant(L, word, i);
+				return 1;
+			}
+		// HOPEFULLY WE FOUND THE MOBJ! //
+
 		return luaL_error(L, "mobjtype '%s' does not exist.\n", word);
 	}
 	else if (fastncmp("SPR_",word,4)) {

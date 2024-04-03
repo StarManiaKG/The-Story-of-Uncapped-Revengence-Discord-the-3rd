@@ -87,11 +87,13 @@
 #endif
 
 #ifdef HAVE_DISCORDRPC
-#include "../discord.h"
+#include "../discord.h" // DISCORD STUFF: discord //
 #endif
 
 // STAR STUFF //
-#include "../STAR/star_vars.h"
+#include "../STAR/star_vars.h" // STAR_SetWindowTitle() //
+#include "../STAR/ss_cmds.h" // cv_tpsrate //
+#include "../STAR/ss_main.h" // TSoURDt3rd_SCR_DisplayTpsRate() //
 // END THAT STUFF //
 
 // maximum number of windowed modes (see windowedModes[][])
@@ -1253,8 +1255,11 @@ void I_FinishUpdate(void)
 	if (cv_closedcaptioning.value)
 		SCR_ClosedCaptions();
 
-	if (cv_ticrate.value || cv_tpsrate.value) // STAR NOTE: i was here lol
+	if (cv_ticrate.value)
 		SCR_DisplayTicRate();
+
+	if (cv_tpsrate.value)
+		TSoURDt3rd_SCR_DisplayTpsRate();
 
 	if (cv_showping.value && netgame && consoleplayer != serverplayer)
 		SCR_DisplayLocalPing();
@@ -1722,7 +1727,6 @@ static SDL_bool Impl_CreateWindow(SDL_bool fullscreen)
 #endif
 
 	// Create a window
-	// STAR NOTE: i was here lol
 	window = SDL_CreateWindow(STAR_SetWindowTitle(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 			realwidth, realheight, flags);
 

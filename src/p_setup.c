@@ -90,6 +90,8 @@
 
 // STAR STUFF, FOR FUNNIES //
 #include "STAR/star_vars.h"
+#include "STAR/ss_main.h"
+
 #include "deh_soc.h"
 // END THE STAR STUFF, FOR FUNNIES //
 
@@ -7664,6 +7666,12 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	// STAR STUFF //
 	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer];
+
+	const char *determinedMusic; // set current level music
+	boolean restartLevelMusic = false; // restart level music
+
+	TSoURDt3rd->loadingScreens.loadCount = TSoURDt3rd->loadingScreens.loadPercentage = 0; // reset loading status
+	TSoURDt3rd->loadingScreens.bspCount = 0; // reset bsp count
 	// REAL FUN //
 
 	// This is needed. Don't touch.
@@ -7763,12 +7771,9 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	// Fade out music here. Deduct 2 tics so the fade volume actually reaches 0.
 	// But don't halt the music! S_Start will take care of that. This dodges a MIDI crash bug.
-	// STAR NOTE: i was here lol
 	if (!(reloadinggamestate || titlemapinaction) && (RESETMUSIC ||
 		strnicmp(S_MusicName(),
-			(TSoURDt3rd_InAprilFoolsMode() ?
-				(mapmusname) :
-				((mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname)), 7)))
+			(mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname, 7)))
 	{
 		S_FadeMusic(0, FixedMul(
 			FixedDiv((F_GetWipeLength(wipedefs[wipe_level_toblack])-2)*NEWTICRATERATIO, NEWTICRATE), MUSICRATE));
@@ -7798,32 +7803,37 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 				(mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE) ? "" : " Zone",
 				(mapheaderinfo[gamemap-1]->actnum > 0) ? va(" %d",mapheaderinfo[gamemap-1]->actnum) : "");
 			V_DrawSmallString(1, 195, V_ALLOWLOWERCASE|V_TRANSLUCENT|V_SNAPTOLEFT|V_SNAPTOBOTTOM, tx);
+
 			// STAR STUFF //
-			if (cv_loadingscreen.value)
+			if (cv_loadingscreen.value && TSoURDt3rd->loadingScreens.loadCount-- <= 0 && !TSoURDt3rd->loadingScreens.loadComplete)
 			{
-				if (rendermode == render_soft && TSoURDt3rd->loadingScreens.loadCount-- <= 0 && !TSoURDt3rd->loadingScreens.softwareLoadComplete)
+				while (TSoURDt3rd->loadingScreens.bspCount != 1 && (((TSoURDt3rd->loadingScreens.loadPercentage)<<1) < 100) && rendermode == render_soft)
 				{
-					while (TSoURDt3rd->loadingScreens.bspCount != 1 && (((TSoURDt3rd->loadingScreens.loadPercentage)<<1) < 100))
-					{
-						TSoURDt3rd->loadingScreens.loadCount = numsubsectors/50;
-						STAR_LoadingScreen();
-					}
-
-					TSoURDt3rd->loadingScreens.loadCount = TSoURDt3rd->loadingScreens.loadPercentage = 0; // reset the loading status
-					TSoURDt3rd->loadingScreens.screenToUse = 0; // reset the loading screen to use
-
-					TSoURDt3rd->loadingScreens.softwareLoadComplete = true; // loading... load complete.
+					TSoURDt3rd->loadingScreens.loadCount = numsubsectors/50;
+					STAR_LoadingScreen();
 				}
+
+				TSoURDt3rd->loadingScreens.loadCount = TSoURDt3rd->loadingScreens.loadPercentage = 0; // reset the loading status
+				TSoURDt3rd->loadingScreens.screenToUse = 0; // reset the loading screen to use
+
+				TSoURDt3rd->loadingScreens.loadComplete = true; // loading... load complete.
 			}
 			else
-				I_UpdateNoVsync();
 			// NO CUTTING CORNERS! //
+
+			I_UpdateNoVsync();
 		}
 
 		// As oddly named as this is, this handles music only.
 		// We should be fine starting it here.
-		// Don't do this during titlemap, because the menu code handles music by itself.
-		S_Start();
+		// Don't do this during titlemap, because the menu code handles music by itself.	
+#if 0		
+		if (!strnicmp(S_MusicName(),
+			(mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname, 7))
+			S_Start();
+#else
+		restartLevelMusic = true;
+#endif	
 	}
 
 	levelfadecol = (ranspecialwipe) ? 0 : 31;
@@ -7960,8 +7970,41 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	STAR_SetWindowTitle();
 #endif
 
-	TSoURDt3rd->loadingScreens.softwareLoadComplete = false; // reset the software loading status
-	TSoURDt3rd->loadingScreens.screenToUse = 0; // reset the loading screen to use
+	determinedMusic = TSoURDt3rd_DetermineLevelMusic();
+	if (!(reloadinggamestate || titlemapinaction))
+	{
+		boolean musicChanged = strnicmp(S_MusicName(),
+			(mapmusflags & MUSIC_RELOADRESET) ? /*mapheaderinfo[gamemap-1]->musname*/mapmusname : determinedMusic, 7);
+
+		if (musicChanged)
+		{
+			strncpy(mapmusname, determinedMusic, 7);
+
+			mapmusname[6] = 0;
+			mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
+			mapmusposition = mapheaderinfo[gamemap-1]->muspos;
+
+			/* STAR NOTE: As mentioned earlier, while oddly named, it only handles music.
+				Starting it again here for our stuff should be fine, just don't do it during the titlemap :p */
+			restartLevelMusic = true;
+		}
+
+		// We couldn't fade out the music above, but we can here!
+		// Deduct 2 tics so the fade volume actually reaches 0.
+		// Don't halt music though, S_Start will take care of that! This dodges a MIDI crash bug.
+		if (RESETMUSIC || strnicmp(S_MusicName(),
+			(mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname, 7))
+		{
+			S_FadeMusic(0, FixedMul(
+				FixedDiv((F_GetWipeLength(wipedefs[wipe_level_toblack])-2)*NEWTICRATERATIO, NEWTICRATE), MUSICRATE));
+		}
+	}
+
+	if (restartLevelMusic)
+	{
+		S_Start();
+		memset(&determinedMusic, 0, sizeof(determinedMusic));
+	}
 	// END THAT //
 
 	// Took me 3 hours to figure out why my progression kept on getting overwritten with the titlemap...
