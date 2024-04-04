@@ -119,3 +119,7 @@ lumpnum_t W_GetNumForMusicName(const char *name)
 	(void)node;
 #endif
 #endif
+
+
+
+if (textures[i]->hash == hash && !strncasecmp(textures[i]->name, name, 8))
