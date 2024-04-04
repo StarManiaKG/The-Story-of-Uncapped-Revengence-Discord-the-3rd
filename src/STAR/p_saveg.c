@@ -70,7 +70,6 @@ void TSoURDt3rd_NetArchiveUsers(UINT8 *save_p, INT32 playernum)
 
 	WRITEUINT8(save_p, TSoURDt3rd->num);
 
-	WRITEUINT8(save_p, TSoURDt3rd->reachedSockSendErrorLimit);
 	WRITEUINT8(save_p, TSoURDt3rd->masterServerAddressChanged);
 
 	WRITEUINT8(save_p, TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd);
@@ -93,7 +92,6 @@ void TSoURDt3rd_NetUnArchiveUsers(UINT8 *save_p, INT32 playernum)
 
 	TSoURDt3rd->num = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, playernum+1);
 
-	TSoURDt3rd->reachedSockSendErrorLimit = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, 0);
 	TSoURDt3rd->masterServerAddressChanged = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, false);
 
 	TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, false);

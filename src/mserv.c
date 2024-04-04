@@ -68,12 +68,8 @@ consvar_t cv_masterserver_update_rate = CVAR_INIT ("masterserver_update_rate", "
 
 INT16 ms_RoomId = -1;
 
-// STAR STUFF //
+// HOLEPUNCHING STUFFS: rendezvous please //
 consvar_t cv_rendezvousserver = CVAR_INIT ("holepunchserver", "jart-dev.jameds.org", CV_SAVE, NULL, NULL);
-
-static CV_PossibleValue_t socksendlimit_t[] = {{1, "MIN"}, {10, "MAX"}, {0, NULL}};
-consvar_t cv_socksendlimit = CVAR_INIT("socksendlimit", "3", CV_SAVE, socksendlimit_t, NULL);
-// END THAT MESS //
 
 #if defined (MASTERSERVER) && defined (HAVE_THREADS)
 int           ms_QueryId;
@@ -102,10 +98,7 @@ void AddMServCommands(void)
 	CV_RegisterVar(&cv_masterserver_timeout);
 	CV_RegisterVar(&cv_masterserver_debug);
 	CV_RegisterVar(&cv_masterserver_token);
-	// STAR STUFF //
-	CV_RegisterVar(&cv_rendezvousserver);
-	CV_RegisterVar(&cv_socksendlimit);
-	// BUP //
+	CV_RegisterVar(&cv_rendezvousserver); // HOLEPUNCHING STUFFS: rendezvous //
 	CV_RegisterVar(&cv_servername);
 #ifdef MASTERSERVER
 	COM_AddCommand("listserv", Command_Listserv_f, 0);

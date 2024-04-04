@@ -143,27 +143,26 @@ menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 	{IT_STRING | IT_CVAR,   NULL,   "Max File Transfer (KB)", 		&cv_maxsend,     	       375},
 	{IT_STRING | IT_CVAR,   NULL,   "File Transfer Packet Rate",	&cv_downloadspeed,     	   380},
 
-	{IT_STRING | IT_CVAR,   NULL,   "Sock Send Limit",				&cv_socksendlimit,     	   390},
-	{IT_STRING | IT_CVAR,   NULL,   "Player Setup While Moving",	&cv_movingplayersetup,	   395},
+	{IT_STRING | IT_CVAR,   NULL,   "Player Setup While Moving",	&cv_movingplayersetup,	   390},
 
-	{IT_HEADER, 			NULL, 	"Jukebox Options",     			NULL,					   404},
-	{IT_STRING | IT_CALL, 	NULL, 	"Enter Jukebox...",				M_TSoURDt3rdJukebox,   	   410},
+	{IT_HEADER, 			NULL, 	"Jukebox Options",     			NULL,					   399},
+	{IT_STRING | IT_CALL, 	NULL, 	"Enter Jukebox...",				M_TSoURDt3rdJukebox,   	   405},
 	{IT_STRING | IT_CALL,	NULL, 	"Jukebox Controls...",			M_TSoURDt3rdJukeboxControls,
-																							   415},
+																							   410},
 
-	{IT_STRING | IT_CVAR, 	NULL, 	"Jukebox HUD",					&cv_jukeboxhud,   	       425},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Jukebox HUD",					&cv_jukeboxhud,   	       420},
 
-	{IT_STRING | IT_CVAR, 	NULL, 	"Lua Can Stop The Jukebox", 	&cv_luacanstopthejukebox,  435},
+	{IT_STRING | IT_CVAR, 	NULL, 	"Lua Can Stop The Jukebox", 	&cv_luacanstopthejukebox,  430},
 
-	{IT_HEADER, 			NULL, 	"Miscellanious Extras",     	NULL,					   444},
-	{IT_STRING | IT_CALL, 	NULL, 	"Play Snake",					STAR_InitializeSnakeMenu,  450},
-	{IT_STRING | IT_CALL,	NULL, 	"Dispenser Goin' Up",			STAR_SpawnDispenser,   	   455},
+	{IT_HEADER, 			NULL, 	"Miscellanious Extras",     	NULL,					   439},
+	{IT_STRING | IT_CALL, 	NULL, 	"Play Snake",					STAR_InitializeSnakeMenu,  445},
+	{IT_STRING | IT_CALL,	NULL, 	"Dispenser Goin' Up",			STAR_SpawnDispenser,   	   450},
 
-	{IT_STRING | IT_CVAR, 	NULL,   "Window Title Type",    		&cv_windowtitletype,   	   465},
+	{IT_STRING | IT_CVAR, 	NULL,   "Window Title Type",    		&cv_windowtitletype,   	   460},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,
-							NULL,   "Custom Window Title",  		&cv_customwindowtitle,     470},
+							NULL,   "Custom Window Title",  		&cv_customwindowtitle,     465},
 
-	{IT_STRING | IT_CVAR, 	NULL,   "Memes on Window Title",    	&cv_memesonwindowtitle,    488},
+	{IT_STRING | IT_CVAR, 	NULL,   "Memes on Window Title",    	&cv_memesonwindowtitle,    483},
 };
 
 static menuitem_t OP_Tsourdt3rdJukeboxMenu[] =
