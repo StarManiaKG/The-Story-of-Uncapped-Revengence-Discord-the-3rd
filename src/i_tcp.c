@@ -933,25 +933,8 @@ static void SOCK_Send(void)
 	{
 		int e = errno; // save error code so it can't be modified later
 		if (e != ECONNREFUSED && e != EWOULDBLOCK && e != EHOSTUNREACH)
-		{
-			// STAR STUFF: don't crazy because of SOCK_SEND :p //
-#if 0
 			I_Error("SOCK_Send, error sending to node %d (%s) #%u: %s", doomcom->remotenode,
 				SOCK_GetNodeAddress(doomcom->remotenode), e, strerror(e));
-#else
-			TSoURDt3rdPlayers[consoleplayer].reachedSockSendErrorLimit++;
-			if (TSoURDt3rdPlayers[consoleplayer].reachedSockSendErrorLimit >= cv_socksendlimit.value)
-			{
-				PT_WillResendGamestate();
-				TSoURDt3rdPlayers[consoleplayer].reachedSockSendErrorLimit = 0;
-			}
-			NetUpdate(); // Check for new console commands and update the client
-
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "SOCK_Send() - Error Prevented :)\n");
-			return;
-#endif
-			// ONLY YOU CAN PREVENT CRASHING! //
-		}
 	}
 }
 #endif

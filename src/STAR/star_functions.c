@@ -197,7 +197,6 @@ void TSoURDt3rd_InitializePlayer(INT32 playernum)
 	TSoURDt3rd->loadingScreens.loadComplete 			= false;
 
 	// Servers //
-	TSoURDt3rd->reachedSockSendErrorLimit 				= 0;
 	TSoURDt3rd->masterServerAddressChanged				= false;
 
 	TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd		= true;
@@ -244,8 +243,6 @@ void TSoURDt3rd_ClearPlayer(INT32 playernum)
 #endif
 
 		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "before: tsourdt3rdnode - %d\n", TSoURDt3rdPlayers[node].num);
-
-		TSoURDt3rdPlayers[node].reachedSockSendErrorLimit = 0;
 
 		TSoURDt3rdPlayers[mynode] = TSoURDt3rdPlayers[node];
 		M_Memcpy(&TSoURDt3rdPlayers[mynode], &TSoURDt3rdPlayers[node], sizeof(TSoURDt3rd_t));

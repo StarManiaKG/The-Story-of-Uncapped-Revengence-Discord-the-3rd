@@ -100,7 +100,6 @@ typedef struct TSoURDt3rd_s {
 	TSoURDt3rdLoadingScreen_t loadingScreens;
 
 	// Server Stuff
-	UINT8 reachedSockSendErrorLimit;
 	boolean masterServerAddressChanged;
 
 	TSoURDt3rdServers_t serverPlayers;
@@ -177,9 +176,6 @@ extern consvar_t cv_updatenotice;
 
 // Audio //
 extern consvar_t cv_vapemode;
-
-// Servers //
-extern consvar_t cv_socksendlimit;
 
 //// FUNCTIONS ////
 // Events //
