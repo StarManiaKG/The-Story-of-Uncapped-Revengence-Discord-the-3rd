@@ -77,7 +77,7 @@ enum
 
 	op_movingplayeroptionswitch,
 
-	op_snake = 60,
+	op_snake = 59,
 	op_dispensergoingup,
 
 	op_windowtitletype,
