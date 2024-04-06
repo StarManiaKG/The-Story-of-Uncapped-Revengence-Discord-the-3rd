@@ -1332,8 +1332,7 @@ boolean CON_Responder(event_t *ev)
 
 	if (input_sel != input_cur)
 		CON_InputDelSelection();
-	if (ev->type == ev_console)
-		CON_InputAddChar(key);
+	CON_InputAddChar(key);
 
 	return true;
 }
