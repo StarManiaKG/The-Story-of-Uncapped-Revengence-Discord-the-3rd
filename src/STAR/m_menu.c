@@ -346,24 +346,26 @@ void STAR_M_InitQuitMessages(void)
 void STAR_M_InitDynamicQuitMessages(void)
 {
 	char *maptitle = G_BuildMapTitle(gamemap);
-	const char *discordname =
-#ifdef HAVE_DISCORDRPC
-		((discordInfo.Disconnected || !discordInfo.Initialized) ? 
-			(Playing() ? player_names[consoleplayer] : cv_playername.string) :
-			(discordInfo.sessionUsername));
-#else
-		(Playing() ? player_names[consoleplayer] : cv_playername.string);
-#endif
+	const char *discordname;
 
-	quitmsg[QUITSMSG3] = ((Playing() && gamestate == GS_LEVEL) ?
-		(va(M_GetText("Hehe, was \n%s\ntoo hard for you?\n\n(Press 'Y' to quit)"), maptitle)) :
-		(M_GetText("Hehe, you couldn't even make\nit past the Title Screen,\ncould you, silly?\n\n(Press 'Y' to quit)")));
+#ifdef HAVE_DISCORDRPC
+	if (!discordInfo.Disconnected && discordInfo.Initialized)
+		discordname = discordInfo.sessionUsername;
+	else
+#endif
+		discordname = (Playing() ? player_names[consoleplayer] : cv_playername.string);
+
+	if (Playing() && gamestate == GS_LEVEL)
+		quitmsg[QUITSMSG3] = va(M_GetText("Hehe, was \n%s\ntoo hard for you?\n\n(Press 'Y' to quit)"), maptitle);
+	else
+		quitmsg[QUITSMSG3] = M_GetText("Hehe, you couldn't even make\nit past the Title Screen,\ncould you, silly?\n\n(Press 'Y' to quit)");
 
 	quitmsg[QUITSMSG4] = va(M_GetText("Wait, %s!\nCome back! I need you!\n\n(Press 'Y' to quit)"), discordname);
 
-	quitmsg[QUITSMSG5] = (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying ? 
-		(va(M_GetText("Come back!\nFinish listening to\n%s!\n\n(Press 'Y' to quit)"), TSoURDt3rdPlayers[consoleplayer].jukebox.musicName)) :
-		(M_GetText("Come back!\nYou have more jukebox music to play!\n\n(Press 'Y' to quit)")));
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
+		quitmsg[QUITSMSG5] = va(M_GetText("Come back!\nFinish listening to\n%s!\n\n(Press 'Y' to quit)"), TSoURDt3rdPlayers[consoleplayer].jukebox.musicName);
+	else
+		quitmsg[QUITSMSG5] = M_GetText("Come back!\nYou have more jukebox music to play!\n\n(Press 'Y' to quit)");
 
 	Z_Free(maptitle);
 }
@@ -376,11 +378,12 @@ INT32 STAR_M_SelectQuitMessage(void)
 {
 	// Assign a quit message //
 	INT32 randomMessage = M_RandomKey(NUM_QUITMESSAGES);
+	STAR_M_InitDynamicQuitMessages();
 
 	if (!TSoURDt3rd_InAprilFoolsMode()) // No April Fools messages when it's not April Fools! //
 	{
 		static INT32 aprilFools[] = {
-			QUITAMSG1,
+			[QUITAMSG1] = QUITAMSG1,
 			QUITAMSG2,
 			QUITAMSG3,
 			QUITAMSG4
@@ -418,7 +421,6 @@ INT32 STAR_M_SelectQuitMessage(void)
 	}
 
 	// Return our random message and we're done :) //
-	STAR_M_InitDynamicQuitMessages();
 	return randomMessage;
 }
 
