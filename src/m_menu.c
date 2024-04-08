@@ -93,7 +93,7 @@
 #include "STAR/ss_cmds.h" // various vast TSoURDt3rd commands and command functions //
 #include "STAR/ss_main.h" // AUTOLOADCONFIGFILENAME, SAVEGAMEFOLDER, & STAR_CONS_Printf() //
 
-#include "STAR/m_menu.h"
+#include "STAR/m_menu.h" // STAR_M_SelectQuitMessage() //
 #include "STAR/s_sound.h"
 
 #include "deh_soc.h"
@@ -15860,7 +15860,7 @@ static void M_QuitSRB2(INT32 choice)
 	// We pick index 0 which is language sensitive, or one at random,
 	// between 1 and maximum number.
 	(void)choice;
-	M_StartMessage(quitmsg[STAR_M_SelectQuitMessage()], M_QuitResponse, MM_YESNO); // STAR NOTE: render some quit messages for us! //
+	M_StartMessage(quitmsg[STAR_M_SelectQuitMessage()], M_QuitResponse, MM_YESNO);
 }
 
 #ifdef HAVE_DISCORDRPC
