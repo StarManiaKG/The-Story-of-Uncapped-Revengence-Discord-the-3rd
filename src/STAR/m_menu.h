@@ -68,7 +68,7 @@ enum
 	op_perfectsavestripe2,
 	op_perfectsavestripe3,
 
-	op_continues,LBS_SORT
+	op_continues,
 
 	op_snake = 59,
 	op_dispensergoingup,
