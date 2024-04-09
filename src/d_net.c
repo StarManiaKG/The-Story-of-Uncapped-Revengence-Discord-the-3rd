@@ -50,10 +50,6 @@ tic_t connectiontimeout = (10*TICRATE);
 doomcom_t *doomcom = NULL;
 /// \brief network packet data, points inside doomcom
 doomdata_t *netbuffer = NULL;
-// HOLEPUNCHING STUFF //
-/// \brief hole punching packet, also points inside doomcom
-holepunch_t *holepunchpacket = NULL;
-// YEAH, WHAT THAT SAID //
 
 #ifdef DEBUGFILE
 FILE *debugfile = NULL; // put some net info in a file during the game
@@ -77,10 +73,6 @@ boolean (*I_NetCanGet)(void) = NULL;
 void (*I_NetCloseSocket)(void) = NULL;
 void (*I_NetFreeNodenum)(INT32 nodenum) = NULL;
 SINT8 (*I_NetMakeNodewPort)(const char *address, const char* port) = NULL;
-// HOLEPUNCHING STUFF //
-void (*I_NetRequestHolePunch)(INT32 node) = NULL;
-void (*I_NetRegisterHolePunch)(void) = NULL;
-// OK //
 boolean (*I_NetOpenSocket)(void) = NULL;
 boolean (*I_Ban) (INT32 node) = NULL;
 void (*I_ClearBans)(void) = NULL;
@@ -89,6 +81,14 @@ const char *(*I_GetBanAddress) (size_t ban) = NULL;
 const char *(*I_GetBanMask) (size_t ban) = NULL;
 boolean (*I_SetBanAddress) (const char *address, const char *mask) = NULL;
 boolean *bannednode = NULL;
+
+// HOLEPUNCHING STUFF //
+/// \brief hole punching packet, also points inside doomcom
+holepunch_t *holepunchpacket = NULL;
+
+void (*I_NetRequestHolePunch)(INT32 node) = NULL;
+void (*I_NetRegisterHolePunch)(void) = NULL;
+// OK //
 
 
 // network stats
@@ -1352,9 +1352,9 @@ boolean D_CheckNetGame(void)
 		I_Error("Too many nodes (%d), max:%d", doomcom->numnodes, MAXNETNODES);
 
 	netbuffer = (doomdata_t *)(void *)&doomcom->data;
-	// HOLEPUNCHING STUFF //
+
+	// HOLEPUNCHING STUFF: holes //
 	holepunchpacket = (holepunch_t *)(void *)&doomcom->data;
-	// FUNNY. //
 
 #ifdef DEBUGFILE
 	if (M_CheckParm("-debugfile"))

@@ -1759,7 +1759,6 @@ static void CL_ReloadReceivedSavegame(void)
 static void SendAskInfo(INT32 node)
 {
 	const tic_t asktime = I_GetTime();
-
 	// HOLEPUNCHING STUFF //
 	if (node != 0 && node != BROADCASTADDR &&
 			cv_rendezvousserver.string[0])
@@ -1767,7 +1766,6 @@ static void SendAskInfo(INT32 node)
 		I_NetRequestHolePunch(node);
 	}
 	// END THAT STUFF //
-
 	netbuffer->packettype = PT_ASKINFO;
 	netbuffer->u.askinfo.version = VERSION;
 	netbuffer->u.askinfo.time = (tic_t)LONG(asktime);
@@ -4363,7 +4361,7 @@ static void HandleServerInfo(SINT8 node)
 }
 #endif
 
-void PT_WillResendGamestate(void)
+static void PT_WillResendGamestate(void)
 {
 #ifndef NONET
 	char tmpsave[256];

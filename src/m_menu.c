@@ -16258,19 +16258,6 @@ static void M_TSoURDt3rdOptions(INT32 choice)
 	OP_Tsourdt3rdOptionsMenu[op_continues].status =
 		(!(Playing() && playeringame[consoleplayer]) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
 
-	// Server Options //
-	OP_Tsourdt3rdOptionsMenu[op_holepunchserver].status =
-		(!(splitscreen || (netgame && !server)) ? IT_CV_STRING|IT_CVAR|IT_STRING : IT_GRAYEDOUT);
-
-	OP_Tsourdt3rdOptionsMenu[op_noticedownload].status =
-		(!(splitscreen || (netgame && !server)) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
-
-	OP_Tsourdt3rdOptionsMenu[op_maxsend].status =
-		(!(splitscreen || (netgame && !server)) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
-
-	OP_Tsourdt3rdOptionsMenu[op_downloadspeed].status =
-		(!(splitscreen || (netgame && !server)) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
-
 	// Extra Options //
 	// Snake
 	OP_Tsourdt3rdOptionsMenu[op_snake].status =
