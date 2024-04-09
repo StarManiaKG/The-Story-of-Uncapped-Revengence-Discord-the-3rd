@@ -68,14 +68,7 @@ enum
 	op_perfectsavestripe2,
 	op_perfectsavestripe3,
 
-	op_continues,
-
-	op_holepunchserver = 48,
-	op_noticedownload,
-	op_maxsend,
-	op_downloadspeed,
-
-	op_movingplayeroptionswitch,
+	op_continues,LBS_SORT
 
 	op_snake = 59,
 	op_dispensergoingup,

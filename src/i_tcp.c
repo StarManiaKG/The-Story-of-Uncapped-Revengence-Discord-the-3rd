@@ -198,10 +198,6 @@ static size_t broadcastaddresses = 0;
 static boolean nodeconnected[MAXNETNODES+1];
 static mysockaddr_t banned[MAXBANS];
 static UINT8 bannedmask[MAXBANS];
-
-// HOLEPUNCHING STUFFS: (/* See ../doc/Holepunch-Protocol.txt */) //
-static const INT32 hole_punch_magic = MSBF_LONG (0x52eb11);
-// END THE MAGIC HERE //
 #endif
 
 static size_t numbans = 0;
@@ -604,6 +600,8 @@ void Command_Numnodes(void)
 // HOLEPUNCHING STUFFS //
 /* See ../doc/Holepunch-Protocol.txt */
 
+static const INT32 hole_punch_magic = LONG (0x52eb11);
+
 /* not one of the reserved "local" addresses */
 static boolean is_external_address(UINT32 p)
 {
@@ -753,21 +751,19 @@ static boolean SOCK_Get(void)
 			(void *)&fromaddress, &fromlen);
 		if (c != ERRSOCKET)
 		{
-			// STUN STUFFS //
+			// STAR STUFF: HOLEPUNCHING AND STUN STUFFS //
 #ifdef USE_STUN
-			if (STUN_got_response(doomcom->data, c))
+			if (hole_punch(c) || STUN_got_response(doomcom->data, c))
 			{
 				break;
 			}
-#endif
-			// ...I'M STUNNED... //
-
-			// HOLEPUNCHING STUFFS //
+#else
 			if (hole_punch(c))
 			{
 				break;
 			}
-			// HOLES PUNCHED! //
+#endif
+			// SOCK HAS BEEN BROKEN! //
 
 			// find remote node number
 			for (j = 1; j <= MAXNETNODES; j++) //include LAN

@@ -498,11 +498,8 @@ extern boolean adminpasswordset;
 extern boolean hu_stopped;
 
 // STAR STUFF //
-// Expose Some Net Things for Extra STAR Stuff
 void RenewHolePunch(void);
-void PT_WillResendGamestate(void);
 
-// Expose Some Snake Things for Extra STAR Stuff
 #define SNAKE_SPEED 5
 
 #define SNAKE_NUM_BLOCKS_X 20

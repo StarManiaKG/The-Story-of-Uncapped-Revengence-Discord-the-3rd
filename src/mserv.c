@@ -66,10 +66,10 @@ consvar_t cv_servername = CVAR_INIT ("servername", "SRB2 server", CV_SAVE|CV_NET
 
 consvar_t cv_masterserver_update_rate = CVAR_INIT ("masterserver_update_rate", "15", CV_SAVE|CV_CALL|CV_NOINIT, masterserver_update_rate_cons_t, Update_parameters);
 
-INT16 ms_RoomId = -1;
-
 // HOLEPUNCHING STUFFS: rendezvous please //
 consvar_t cv_rendezvousserver = CVAR_INIT ("holepunchserver", "jart-dev.jameds.org", CV_SAVE, NULL, NULL);
+
+INT16 ms_RoomId = -1;
 
 #if defined (MASTERSERVER) && defined (HAVE_THREADS)
 int           ms_QueryId;
@@ -98,12 +98,12 @@ void AddMServCommands(void)
 	CV_RegisterVar(&cv_masterserver_timeout);
 	CV_RegisterVar(&cv_masterserver_debug);
 	CV_RegisterVar(&cv_masterserver_token);
-	CV_RegisterVar(&cv_rendezvousserver); // HOLEPUNCHING STUFFS: rendezvous //
 	CV_RegisterVar(&cv_servername);
 #ifdef MASTERSERVER
 	COM_AddCommand("listserv", Command_Listserv_f, 0);
 	COM_AddCommand("masterserver_update", Update_parameters, COM_LUA); // allows people to updates manually in case you were delisted by accident
 #endif
+	CV_RegisterVar(&cv_rendezvousserver); // HOLEPUNCHING STUFFS: rendezvous //
 #endif
 }
 
