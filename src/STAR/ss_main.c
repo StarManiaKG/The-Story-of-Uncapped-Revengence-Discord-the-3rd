@@ -170,10 +170,6 @@ void TSoURDt3rd_CheckTime(void)
 			&& !M_CheckParm("-noxmas"))
 		TSoURDt3rd_CurrentEvent = TSOURDT3RD_CHRISTMAS;
 
-	// STAR NOTE: remove later //
-	TSoURDt3rd_CurrentEvent = TSOURDT3RD_EASTER;
-	// heheheheheheheheheh //
-
 	switch (TSoURDt3rd_CurrentEvent)
 	{
 		case TSOURDT3RD_EASTER:
@@ -188,13 +184,6 @@ void TSoURDt3rd_CheckTime(void)
 
 			TSoURDt3rd_LoadExtras = true;
 
-			// STAR NOTE: remove later //
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "TSoURDt3rd_CheckTime(): April Fools Mode Enabled!\n");
-			CV_RegisterVar(&cv_aprilfools_ultimatemode);
-			aprilfoolsmode = true;
-			STAR_StoreDefaultMenuStrings();
-			// hehehhehe //
-
 			break;
 		}
 
@@ -207,13 +196,6 @@ void TSoURDt3rd_CheckTime(void)
 			aprilfoolsmode = true;
 			modifiedgame = false;
 			STAR_StoreDefaultMenuStrings();
-
-			// STAR NOTE: remove later //
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "TSoURDt3rd_CheckTime(): Easter Mode Enabled!\n");
-			CV_RegisterVar(&cv_easter_allowegghunt);
-			CV_RegisterVar(&cv_easter_egghuntbonuses);
-			eastermode = true;
-			// hehehhehe //
 
 			TSoURDt3rd_LoadExtras = true;
 			break;
@@ -240,25 +222,26 @@ void TSoURDt3rd_CheckTime(void)
 // ======
 mobj_t *TSoURDt3rd_BossInMap(void)
 {
-	thinker_t *think;
-	mobj_t *mobj = NULL;
+	thinker_t *th;
+	mobj_t *mobj;
 
-	// Are we in the right gamestate? //
 	if (!(gamestate == GS_LEVEL || gamestate == GS_INTERMISSION))
-		return mobj;
+		return NULL;
 
-	// Find our boss(es), and we're done :) //
-	for (think = thlist[THINK_MOBJ].next; think != &thlist[THINK_MOBJ]; think = think->next)
+	for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 	{
-		if ((think->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
-			|| (!(((mobj_t *)think)->flags & MF_BOSS)))
-
+		if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
 			continue;
 
-		mobj = (mobj_t *)think;
-		break;
+		mobj = (mobj_t *)th;
+		if (mobj == NULL || P_MobjWasRemoved(mobj))
+			continue;
+		if (!(mobj->flags & MF_BOSS))
+			continue;
+
+		return mobj;
 	}
-	return mobj;
+	return NULL;
 }
 
 // ======
@@ -293,7 +276,10 @@ void TSoURDt3rd_GameEnd(void)
 	else
 	{
 		if (!(endcount % 2*TICRATE/8))
-			if (headerScroll >= TICRATE) headerScroll--;
+		{
+			if (headerScroll >= TICRATE)
+				headerScroll--;
+		}
 
 		V_DrawCenteredString(((BASEVIDWIDTH/2)-headerScroll), 65, V_SNAPTOBOTTOM|V_MENUCOLORMAP, "Great Job!");
 		V_DrawCenteredString(BASEVIDWIDTH/2, 65, V_MENUCOLORMAP, cv_playername.string);
