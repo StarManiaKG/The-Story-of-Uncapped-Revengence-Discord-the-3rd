@@ -7666,8 +7666,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	// STAR STUFF //
 	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer];
-
-	const char *determinedMusic; // set current level music
 	boolean restartLevelMusic = false; // restart level music
 
 	TSoURDt3rd->loadingScreens.loadCount = TSoURDt3rd->loadingScreens.loadPercentage = 0; // reset loading status
@@ -7826,14 +7824,15 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 		// As oddly named as this is, this handles music only.
 		// We should be fine starting it here.
-		// Don't do this during titlemap, because the menu code handles music by itself.	
+		// Don't do this during titlemap, because the menu code handles music by itself.
+		// STAR NOTE: moved S_Start() code further down so TSoURDt3rd_DetermineLevelMusic() can work its magic :) //
 #if 0		
 		if (!strnicmp(S_MusicName(),
 			(mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname, 7))
 			S_Start();
 #else
 		restartLevelMusic = true;
-#endif	
+#endif
 	}
 
 	levelfadecol = (ranspecialwipe) ? 0 : 31;
@@ -7970,11 +7969,11 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	STAR_SetWindowTitle();
 #endif
 
-	determinedMusic = TSoURDt3rd_DetermineLevelMusic();
 	if (!(reloadinggamestate || titlemapinaction))
 	{
+		const char *determinedMusic = TSoURDt3rd_DetermineLevelMusic();
 		boolean musicChanged = strnicmp(S_MusicName(),
-			(mapmusflags & MUSIC_RELOADRESET) ? /*mapheaderinfo[gamemap-1]->musname*/mapmusname : determinedMusic, 7);
+			((mapmusflags & MUSIC_RELOADRESET) ? mapmusname : determinedMusic), 7);
 
 		if (musicChanged)
 		{
@@ -7984,8 +7983,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
 			mapmusposition = mapheaderinfo[gamemap-1]->muspos;
 
-			/* STAR NOTE: As mentioned earlier, while oddly named, it only handles music.
-				Starting it again here for our stuff should be fine, just don't do it during the titlemap :p */
 			restartLevelMusic = true;
 		}
 
@@ -7998,12 +7995,11 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			S_FadeMusic(0, FixedMul(
 				FixedDiv((F_GetWipeLength(wipedefs[wipe_level_toblack])-2)*NEWTICRATERATIO, NEWTICRATE), MUSICRATE));
 		}
-	}
 
-	if (restartLevelMusic)
-	{
-		S_Start();
-		memset(&determinedMusic, 0, sizeof(determinedMusic));
+		/* STAR NOTE: As mentioned earlier, while oddly named, it only handles music.
+			Starting it again here for our stuff should be fine, just don't do it during the titlemap :p */
+		if (restartLevelMusic)
+			S_Start();
 	}
 	// END THAT //
 
