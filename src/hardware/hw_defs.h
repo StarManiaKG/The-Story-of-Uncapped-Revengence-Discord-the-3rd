@@ -235,19 +235,13 @@ enum EPolyFlags
 	PF_WireFrame        = 0x00200000,   // Draws vertices as lines instead of triangles
 };
 
-
-enum ESurfFlags
-{
-	SF_DYNLIGHT         = 0x00000001,
-};
-
 enum ETextureFlags
 {
-	TF_WRAPX       = 0x00000001,        // wrap around X
-	TF_WRAPY       = 0x00000002,        // wrap around Y
-	TF_WRAPXY      = TF_WRAPY|TF_WRAPX, // very common so use alias is more easy
-	TF_CHROMAKEYED = 0x00000010,
-	TF_TRANSPARENT = 0x00000040,        // texture with some alpha == 0
+	TF_WRAPX       		= 0x00000001,        // wrap around X
+	TF_WRAPY       		= 0x00000002,        // wrap around Y
+	TF_WRAPXY      		= TF_WRAPY|TF_WRAPX, // very common so use alias is more easy
+	TF_CHROMAKEYED 		= 0x00000010,
+	TF_TRANSPARENT 		= 0x00000040,        // texture with some alpha == 0
 };
 
 struct FTextureInfo

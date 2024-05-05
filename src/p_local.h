@@ -539,4 +539,18 @@ void P_ExplodeMissile(mobj_t *mo);
 void P_CheckGravity(mobj_t *mo, boolean affect);
 void P_SetPitchRollFromSlope(mobj_t *mo, pslope_t *slope);
 
+#ifdef ALAM_LIGHTING
+//
+// CORONAS
+//
+boolean LCR_SuperSonicLight(mobj_t *mobj);
+
+extern consvar_t cv_corona;
+extern consvar_t cv_coronasize;
+extern consvar_t cv_corona_draw_mode;
+
+extern light_t lspr[NUMLIGHTS];
+extern light_t *t_lspr[NUMSPRITES];
+#endif
+
 #endif // __P_LOCAL__

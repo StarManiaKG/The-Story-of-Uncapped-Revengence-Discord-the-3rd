@@ -364,6 +364,38 @@ static FUINT HWR_CalcSlopeLight(FUINT lightnum, angle_t dir, fixed_t delta)
 //                                   FLOOR/CEILING GENERATION FROM SUBSECTORS
 // ==========================================================================
 
+//
+// HWR_Transform(float *cx, float *cy, float *cz)
+// Used by Coronas to place them on maps
+// 
+void HWR_Transform(float *cx, float *cy, float *cz)
+{
+	float tr_x, tr_y;
+	float viewludsin, viewludcos;
+
+	viewludsin = FIXED_TO_FLOAT(FINECOSINE((aimingangle)>>ANGLETOFINESHIFT));
+	viewludcos = FIXED_TO_FLOAT(-FINESINE((aimingangle)>>ANGLETOFINESHIFT));
+
+	// translation
+	tr_x = *cx - gl_viewx;
+	tr_y = *cz - gl_viewy;
+//	*cy = *cy;
+
+	// rotation around vertical y axis
+	*cx = (tr_x * gl_viewsin) - (tr_y * gl_viewcos);
+	tr_x = (tr_x * gl_viewcos) + (tr_y * gl_viewsin);
+
+	// look up/down, do the 2 in one!
+	tr_y = *cy - gl_viewz;
+
+	*cy = (tr_x * viewludcos) + (tr_y * viewludsin);
+	*cz = (tr_x * viewludsin) - (tr_y * viewludcos);
+
+	//scale y before frustum so that frustum can be scaled to screen height
+	*cy *= ORIGINAL_ASPECT * gl_fovlud;
+	*cx *= gl_fovlud;
+}
+
 #ifdef DOPLANES
 
 // -----------------+
@@ -571,6 +603,14 @@ static void HWR_RenderPlane(subsector_t *subsector, extrasubsector_t *xsub, bool
 
 	HWR_ProcessPolygon(&Surf, planeVerts, nrPlaneVerts, PolyFlags, shader, false);
 
+#ifdef ALAM_LIGHTING
+	// add here code for dynamic lighting on planes
+	HWR_PlaneLighting(planeVerts, nrPlaneVerts);
+
+	// SRB2CBTODO: dynamic lighting on planes, polyobjects too
+	//HWR_RenderFloorSplat(planeVerts, nrPlaneVerts);
+#endif
+
 	if (subsector)
 	{
 		// Horizon lines
@@ -639,15 +679,18 @@ static void HWR_RenderPlane(subsector_t *subsector, extrasubsector_t *xsub, bool
 
 					// Draw
 					HWR_ProcessPolygon(&Surf, horizonpts, 6, PolyFlags, shader, true);
+
+#ifdef ALAM_LIGHTING
+					// add here code for dynamic lighting on planes
+					HWR_PlaneLighting(horizonpts, 6);
+
+					// SRB2CBTODO: dynamic lighting on planes, polyobjects too
+					//HWR_RenderFloorSplat(horizonpts, 6);
+#endif
 				}
 			}
 		}
 	}
-
-#ifdef ALAM_LIGHTING
-	// add here code for dynamic lighting on planes
-	HWR_PlaneLighting(planeVerts, nrPlaneVerts);
-#endif
 }
 
 #ifdef POLYSKY
@@ -790,6 +833,17 @@ static void HWR_ProjectWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, FBITFIEL
 	}
 
 	HWR_ProcessPolygon(pSurf, wallVerts, 4, blendmode|PF_Modulated|PF_Occlude, shader, false);
+
+#ifdef ALAM_LIGHTING
+	// Hurdler: TODO: do static lighting using gr_curline->lm
+	// Setup dynamic lighting for walls too
+	HWR_WallLighting(wallVerts);
+	//HWR_WallShading(wallVerts);
+
+	// Hurdler: for better dynamic light in dark area, we should draw the light first and then the wall all that with the right blending func
+	// SRB2CBTODO: for 'real' dynamic light in dark area, we should draw the light first and then the wall with the right blending func
+	//HWD.pfnDrawPolygon(pSurf, wallVerts, 4, blendmode|PF_Modulated|PF_Occlude);
+#endif
 }
 
 // ==========================================================================
@@ -3330,8 +3384,7 @@ static void HWR_RenderBSPNode(INT32 bspnum)
 	// Possibly divide back space.
 	if (HWR_CheckBBox(bsp->bbox[side^1]))
 	{
-		// BP: big hack for a test in lighning ref : 1249753487AB
-		hwbbox = bsp->bbox[side^1];
+		hwbbox = bsp->bbox[side^1]; // BP: big hack for a test in lighning ref : 1249753487AB
 		HWR_RenderBSPNode(bsp->children[side^1]);
 	}
 }
@@ -4147,6 +4200,11 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 
 	gpatch = spr->gpatch;
 
+#ifdef ALAM_LIGHTING
+    // dynamic lighting
+	HWR_DL_AddLightSprite(spr);
+#endif
+
 	// cache the patch in the graphics card memory
 	//12/12/99: Hurdler: same comment as above (for md2)
 	//Hurdler: 25/04/2000: now support colormap in hardware mode
@@ -4405,6 +4463,17 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 
 	if (use_linkdraw_hack)
 		HWR_LinkDrawHackAdd(wallVerts, spr);
+
+#ifdef ALAM_LIGHTING
+#ifdef SPDR_CORONAS
+#ifdef CORONA_CHOICE
+    if (cv_corona.value && (cv_glcorona_draw.value == 1 || cv_glcorona_draw.value == 3))
+#else
+    if (cv_corona.value)
+#endif
+		HWR_DoCoronasLighting(wallVerts, spr); // draw a corona if this sprite contain light(s)
+#endif
+#endif
 }
 
 static void HWR_DrawBoundingBox(gl_vissprite_t *vis)
@@ -4488,14 +4557,8 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 	gpatch = spr->gpatch;
 
 #ifdef ALAM_LIGHTING
-	if (!(spr->mobj->flags2 & MF2_DEBRIS) && (spr->mobj->sprite != SPR_PLAY ||
-	 (spr->mobj->player && spr->mobj->player->powers[pw_super])))
-	{
-		GLPatch_t *coronapatch;
-		coronapatch = ((GLPatch_t *)gpatch->hardware);
-
-		HWR_DL_AddLight(spr, coronapatch);
-	}
+    // dynamic lighting
+	HWR_DL_AddLightSprite(spr);
 #endif
 
 	// create the sprite billboard
@@ -4771,6 +4834,20 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 
 		if (use_linkdraw_hack)
 			HWR_LinkDrawHackAdd(wallVerts, spr);
+
+#ifdef ALAM_LIGHTING
+#ifdef SPDR_CORONAS
+#ifdef CORONA_CHOICE
+    	if (cv_corona.value && (cv_glcorona_draw.value == 1 || cv_glcorona_draw.value == 3))
+#else
+   		if (cv_corona.value)
+#endif
+		{	// draw a corona if this sprite contain light(s)
+			HWR_SpriteLighting(wallVerts); // SRB2CBTODO: !
+			HWR_DoCoronasLighting(wallVerts, spr);
+		}
+#endif
+#endif
 	}
 }
 
@@ -6510,10 +6587,11 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 		stplyr = player;
 		ST_doPaletteStuff();
 		stplyr = saved_player;
-#ifdef ALAM_LIGHTING
-		HWR_SetLights(viewnumber);
-#endif
 	}
+
+#ifdef ALAM_LIGHTING
+	HWR_Set_Lights(viewnumber);
+#endif
 
 	// note: sets viewangle, viewx, viewy, viewz
 	R_SkyboxFrame(player);
@@ -6653,18 +6731,28 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 	NetUpdate();
 
 #ifdef ALAM_LIGHTING
-	//14/11/99: Hurdler: moved here because it doesn't work with
-	// subsector, see other comments;
-	HWR_ResetLights();
+	// 14/11/99: Hurdler: moved here because it doesn't work with subsector, see other comments;
+	HWR_Reset_Lights();
 #endif
 
 	// Draw MD2 and sprites
 	HWR_SortVisSprites();
 	HWR_DrawSprites();
 
-#ifdef NEWCORONAS
-	//Hurdler: they must be drawn before translucent planes, what about gl fog?
-	HWR_DrawCoronas();
+#ifdef ALAM_LIGHTING
+#ifdef DYLT_CORONAS
+#ifdef CORONA_CHOICE
+	if (cv_corona.value && cv_glcorona_draw.value == 2)
+#else
+    if (cv_corona.value)
+#endif
+    {	// Hurdler: they must be drawn before translucent planes, what about gl fog? 
+		HWD.pfnSetTransform(NULL);
+		HWD.pfnUnSetShader();
+
+		HWR_DL_Draw_Coronas();
+	}
+#endif
 #endif
 
 	if (numplanes || numpolyplanes || numwalls) //Hurdler: render 3D water and transparent walls after everything
@@ -6723,10 +6811,11 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 		stplyr = player;
 		ST_doPaletteStuff();
 		stplyr = saved_player;
-#ifdef ALAM_LIGHTING
-		HWR_SetLights(viewnumber);
-#endif
 	}
+
+#ifdef ALAM_LIGHTING
+	HWR_Set_Lights(viewnumber);
+#endif
 
 	// note: sets viewangle, viewx, viewy, viewz
 	R_SetupFrame(player);
@@ -6873,9 +6962,8 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	NetUpdate();
 
 #ifdef ALAM_LIGHTING
-	//14/11/99: Hurdler: moved here because it doesn't work with
-	// subsector, see other comments;
-	HWR_ResetLights();
+	// 14/11/99: Hurdler: moved here because it doesn't work with subsector, see other comments;
+	HWR_Reset_Lights();
 #endif
 
 	// Draw MD2 and sprites
@@ -6887,9 +6975,20 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	HWR_DrawSprites();
 	PS_STOP_TIMING(ps_hw_spritedrawtime);
 
-#ifdef NEWCORONAS
-	//Hurdler: they must be drawn before translucent planes, what about gl fog?
-	HWR_DrawCoronas();
+#ifdef ALAM_LIGHTING
+#ifdef DYLT_CORONAS
+#ifdef CORONA_CHOICE
+	if (cv_corona.value && cv_glcorona_draw.value == 2)
+#else
+    if (cv_corona.value)
+#endif
+    {	// Hurdler: they must be drawn before translucent planes, what about gl fog?
+		HWD.pfnSetTransform(NULL);
+		HWD.pfnUnSetShader();
+
+		HWR_DL_Draw_Coronas();
+	}
+#endif
 #endif
 
 	ps_numdrawnodes.value.i = 0;
@@ -6966,8 +7065,9 @@ static void HWR_TogglePaletteRendering(void)
 void HWR_LoadLevel(void)
 {
 #ifdef ALAM_LIGHTING
-	// BP: reset light between levels (we draw preview frame lights on current frame)
-	HWR_ResetLights();
+    // BP: reset light between levels (we draw preview frame lights on current frame)
+    HWR_Reset_Lights();
+	HWR_Create_StaticLightmaps();
 #endif
 
 	HWR_CreatePlanePolygons((INT32)numnodes - 1);
@@ -7015,6 +7115,16 @@ consvar_t cv_gldynamiclighting = CVAR_INIT ("gr_dynamiclighting", "On", CV_SAVE,
 consvar_t cv_glstaticlighting  = CVAR_INIT ("gr_staticlighting", "On", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_glcoronas = CVAR_INIT ("gr_coronas", "On", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_glcoronasize = CVAR_INIT ("gr_coronasize", "1", CV_SAVE|CV_FLOAT, 0, NULL);
+
+#ifdef CORONA_CHOICE
+CV_PossibleValue_t glcorona_draw_cons_t[] = {
+	{0, "Off"},
+	{1, "Sprite"},
+	{2, "Dyn"},
+	{3, "Auto"},
+	{0, NULL}};
+consvar_t cv_glcorona_draw = CVAR_INIT ("gl_corona_draw", "Auto", CV_SAVE, glcorona_draw_cons_t, NULL);
+#endif
 #endif
 
 consvar_t cv_glmodels = CVAR_INIT ("gr_models", "Off", CV_SAVE, CV_OnOff, NULL);
@@ -7100,6 +7210,9 @@ void HWR_AddCommands(void)
 	CV_RegisterVar(&cv_gldynamiclighting);
 	CV_RegisterVar(&cv_glcoronasize);
 	CV_RegisterVar(&cv_glcoronas);
+#ifdef CORONA_CHOICE
+	CV_RegisterVar(&cv_glcorona_draw);
+#endif
 #endif
 
 	CV_RegisterVar(&cv_glmodellighting);
@@ -7150,7 +7263,7 @@ void HWR_Startup(void)
 		HWR_InitMapTextures();
 		HWR_InitModels();
 #ifdef ALAM_LIGHTING
-		HWR_InitLight();
+		HWR_Init_Light();
 #endif
 
 		gl_shadersavailable = HWR_InitShaders();
@@ -7197,29 +7310,6 @@ void HWR_Shutdown(void)
 	HWR_FreePolyPool();
 	HWR_FreeMapTextures();
 	HWD.pfnFlushScreenTextures();
-}
-
-void transform(float *cx, float *cy, float *cz)
-{
-	float tr_x,tr_y;
-	// translation
-	tr_x = *cx - gl_viewx;
-	tr_y = *cz - gl_viewy;
-//	*cy = *cy;
-
-	// rotation around vertical y axis
-	*cx = (tr_x * gl_viewsin) - (tr_y * gl_viewcos);
-	tr_x = (tr_x * gl_viewcos) + (tr_y * gl_viewsin);
-
-	//look up/down ----TOTAL SUCKS!!!--- do the 2 in one!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	tr_y = *cy - gl_viewz;
-
-	*cy = (tr_x * gl_viewludcos) + (tr_y * gl_viewludsin);
-	*cz = (tr_x * gl_viewludsin) - (tr_y * gl_viewludcos);
-
-	//scale y before frustum so that frustum can be scaled to screen height
-	*cy *= ORIGINAL_ASPECT * gl_fovlud;
-	*cx *= gl_fovlud;
 }
 
 void HWR_AddTransparentWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, INT32 texnum, FBITFIELD blend, boolean fogwall, INT32 lightlevel, extracolormap_t *wallcolormap)
@@ -7277,6 +7367,17 @@ void HWR_RenderWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, FBITFIELD blend,
 
 	blendmode |= PF_Modulated;	// No PF_Occlude means overlapping (incorrect) transparency
 	HWR_ProcessPolygon(pSurf, wallVerts, 4, blendmode, shader, false);
+
+#ifdef ALAM_LIGHTING
+	// Hurdler: TODO: do static lighting using gr_curline->lm
+	// Setup dynamic lighting for walls too
+	HWR_WallLighting(wallVerts);
+	//HWR_WallShading(wallVerts);
+
+	// Hurdler: for better dynamic light in dark area, we should draw the light first and then the wall all that with the right blending func
+	// SRB2CBTODO: for 'real' dynamic light in dark area, we should draw the light first and then the wall with the right blending func
+	//HWD.pfnDrawPolygon(pSurf, wallVerts, 4, blendmode|PF_Modulated|PF_Occlude);
+#endif
 }
 
 INT32 HWR_GetTextureUsed(void)

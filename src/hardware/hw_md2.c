@@ -1410,6 +1410,11 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		if (gpatch)
 			hwrPatch = ((GLPatch_t *)gpatch->hardware);
 
+#ifdef ALAM_LIGHTING
+		// dynamic lighting
+		HWR_DL_AddLightSprite(spr);
+#endif
+
 		// Load blend texture
 		blendgpatch = md2->blendgrpatch;
 		if (blendgpatch)

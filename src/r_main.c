@@ -1015,6 +1015,9 @@ void R_Init(void)
 	// screensize independent
 	//I_OutputMsg("\nR_InitData");
 	R_InitData();
+#ifdef ALAM_LIGHTING
+	R_Load_Corona();
+#endif
 
 	//I_OutputMsg("\nR_InitViewBorder");
 	R_InitViewBorder();
@@ -1636,4 +1639,11 @@ void R_RegisterEngineStuff(void)
 
 	// Frame interpolation/uncapped
 	CV_RegisterVar(&cv_fpscap);
+
+#ifdef ALAM_LIGHTING
+	// Coronas
+    CV_RegisterVar(&cv_corona);
+    CV_RegisterVar(&cv_coronasize);
+    CV_RegisterVar(&cv_corona_draw_mode);
+#endif
 }
