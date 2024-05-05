@@ -832,7 +832,7 @@ void readlight(MYFILE *f, INT32 num)
 			}
 			else if (fastcmp(word, "CORONACOLOR"))
 			{
-				lspr[num].corona_color = value;
+				lspr[num].corona_color = (UINT32)value;
 			}
 			else if (fastcmp(word, "CORONARADIUS"))
 			{
@@ -840,7 +840,7 @@ void readlight(MYFILE *f, INT32 num)
 			}
 			else if (fastcmp(word, "DYNAMICCOLOR"))
 			{
-				lspr[num].dynamic_color = value;
+				lspr[num].dynamic_color = (UINT32)value;
 			}
 			else if (fastcmp(word, "DYNAMICRADIUS"))
 			{
@@ -848,6 +848,16 @@ void readlight(MYFILE *f, INT32 num)
 
 				/// \note Update the sqrradius! unnecessary?
 				lspr[num].dynamic_sqrradius = fvalue * fvalue;
+			}
+			else if (fastcmp(word, "CORONAROUTINE"))
+			{
+				switch (value)
+				{
+					case 1: lspr[num].coronaroutine = LCR_SuperSonicLight; break;
+					case 0: lspr[num].coronaroutine = NULL; break;
+
+					default: deh_warning("Light %d: unknown routine '%d'", num, value); break;
+				}
 			}
 			else
 				deh_warning("Light %d: unknown word '%s'", num, word);
@@ -1000,14 +1010,22 @@ void readspriteinfo(MYFILE *f, INT32 num, boolean sprite2)
 			if (fastcmp(word, "LIGHTTYPE"))
 			{
 				if (sprite2)
-					deh_warning("Sprite2 %s: invalid word '%s'", spr2names[num], word);
-				else
 				{
-					INT32 oldvar;
-					for (oldvar = 0; t_lspr[num] != &lspr[oldvar]; oldvar++)
-						;
-					t_lspr[num] = &lspr[value];
+					deh_warning("Sprite2 %s: property '%s' is only available for sprites!", spr2names[num], word);
+					continue;
 				}
+
+				INT32 oldvar = 0;
+				while (t_lspr[num] != &lspr[oldvar])
+				{
+					if (oldvar > NUMSPRITES)
+					{
+						deh_warning("Sprite2 %s: invalid lighttype '%s'", spr2names[num], word2);
+						continue;
+					}
+					oldvar++;
+				}
+				t_lspr[num] = &lspr[value];
 			}
 			else
 #endif

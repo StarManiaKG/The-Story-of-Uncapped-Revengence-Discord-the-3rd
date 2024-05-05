@@ -21844,6 +21844,7 @@ void P_PatchInfoTables(void)
 		tempname[2] = (char)('0' + (char)(((i-SPR_FIRSTFREESLOT+1)/10)%10));
 		tempname[3] = (char)('0' + (char)((i-SPR_FIRSTFREESLOT+1)%10));
 		tempname[4] = '\0';
+
 #ifdef HWRENDER
 		t_lspr[i] = &lspr[NOLIGHT];
 #endif

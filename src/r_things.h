@@ -88,6 +88,15 @@ boolean R_ThingIsFullBright (mobj_t *thing);
 boolean R_ThingIsSemiBright (mobj_t *thing);
 boolean R_ThingIsFullDark (mobj_t *thing);
 
+#ifdef ALAM_LIGHTING
+// =======
+// CORONAS
+// =======
+
+void R_Load_Corona(void);
+void R_Release_Corona(void);
+#endif
+
 // --------------
 // MASKED DRAWING
 // --------------

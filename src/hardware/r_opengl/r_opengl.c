@@ -100,7 +100,7 @@ const GLubyte *gl_version = NULL;
 const GLubyte *gl_renderer = NULL;
 const GLubyte *gl_extensions = NULL;
 
-//Hurdler: 04/10/2000: added for the kick ass coronas as Boris wanted;-)
+// Hurdler: 04/10/2000: added for the kick ass coronas as Boris wanted;-)
 static GLfloat modelMatrix[16];
 static GLfloat projMatrix[16];
 static GLint   viewport[4];
@@ -738,7 +738,7 @@ EXPORT boolean HWRAPI(InitShaders) (void)
 #ifdef GL_SHADERS
 	if (!pglUseProgram)
 		return false;
-	
+
 	gl_fallback_shader.vertex_shader = Z_StrDup(GLSL_FALLBACK_VERTEX_SHADER);
 	gl_fallback_shader.fragment_shader = Z_StrDup(GLSL_FALLBACK_FRAGMENT_SHADER);
 
@@ -924,13 +924,13 @@ static void GLPerspective(GLfloat fovy, GLfloat aspect)
 	pglMultMatrixf(&m[0][0]);
 }
 
-static void GLProject(GLfloat objX, GLfloat objY, GLfloat objZ,
-                      GLfloat* winX, GLfloat* winY, GLfloat* winZ)
+// Used for coronas
+static void GLProject(GLfloat objX, GLfloat objY, GLfloat objZ, GLfloat* winX, GLfloat* winY, GLfloat* winZ)
 {
 	GLfloat in[4], out[4];
 	int i;
 
-	for (i=0; i<4; i++)
+	for (i = 0; i < 4; i++)
 	{
 		out[i] =
 			objX * modelMatrix[0*4+i] +
@@ -938,7 +938,7 @@ static void GLProject(GLfloat objX, GLfloat objY, GLfloat objZ,
 			objZ * modelMatrix[2*4+i] +
 			modelMatrix[3*4+i];
 	}
-	for (i=0; i<4; i++)
+	for (i = 0; i < 4; i++)
 	{
 		in[i] =
 			out[0] * projMatrix[0*4+i] +
@@ -947,9 +947,11 @@ static void GLProject(GLfloat objX, GLfloat objY, GLfloat objZ,
 			out[3] * projMatrix[3*4+i];
 	}
 	if (fpclassify(in[3]) == FP_ZERO) return;
+
 	in[0] /= in[3];
 	in[1] /= in[3];
 	in[2] /= in[3];
+
 	/* Map x, y and z to range 0-1 */
 	in[0] = in[0] * 0.5f + 0.5f;
 	in[1] = in[1] * 0.5f + 0.5f;
@@ -1053,7 +1055,9 @@ void SetStates(void)
 	// bp : when no t&l :)
 	pglLoadIdentity();
 	pglScalef(1.0f, 1.0f, -1.0f);
-	pglGetFloatv(GL_MODELVIEW_MATRIX, modelMatrix); // added for new coronas' code (without depth buffer)
+
+	// added for new coronas' code (without depth buffer)
+	pglGetFloatv(GL_MODELVIEW_MATRIX, modelMatrix);
 }
 
 
@@ -1270,8 +1274,8 @@ EXPORT void HWRAPI(ClearBuffer) (FBOOLEAN ColorMask,
 // HWRAPI Draw2DLine: Render a 2D line
 // -----------------+
 EXPORT void HWRAPI(Draw2DLine) (F2DCoord * v1,
-                                   F2DCoord * v2,
-                                   RGBA_t Color)
+								   F2DCoord * v2,
+								   RGBA_t Color)
 {
 	// GL_DBG_Printf ("DrawLine() (%f %f %f) %d\n", v1->x, -v1->y, -v1->z, v1->argb);
 	GLfloat p[12];
@@ -2025,22 +2029,18 @@ static void PreparePolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FBITFIELD
 		}
 	}
 
-	// this test is added for new coronas' code (without depth buffer)
+	// This test was added for the new HW corona code (without depth buffer)
 	// I think I should do a separate function for drawing coronas, so it will be a little faster
-	if (PolyFlags & PF_Corona) // check to see if we need to draw the corona
+	if (PolyFlags & PF_Corona) // Check to see if we need to draw the corona
 	{
-		FUINT i;
-		FUINT j;
+		// rem: all 8 (or 8.0f) values are hard coded: it can be changed to a higher value
+		GLfloat		buf[8][8];
+		GLfloat		cx, cy, cz;
+		GLfloat		px = 0.0f, py = 0.0f, pz = -1.0f;
+		GLfloat		scalef = 0.0f;
 
-		//rem: all 8 (or 8.0f) values are hard coded: it can be changed to a higher value
-		GLfloat     buf[8][8];
-		GLfloat    cx, cy, cz;
-		GLfloat    px = 0.0f, py = 0.0f, pz = -1.0f;
-		GLfloat     scalef = 0.0f;
-
-		GLubyte c[4];
-
-		float alpha;
+		GLubyte		c[4];
+		float		alpha;
 
 		cx = (pOutVerts[0].x + pOutVerts[2].x) / 2.0f; // we should change the coronas' ...
 		cy = (pOutVerts[0].y + pOutVerts[2].y) / 2.0f; // ... code so its only done once.
@@ -2050,19 +2050,21 @@ static void PreparePolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FBITFIELD
 		GLProject(cx, cy, cz, &px, &py, &pz);
 		//GL_DBG_Printf("Projection: (%f, %f, %f)\n", px, py, pz);
 
-		if ((pz <  0.0l) ||
-			(px < -8.0l) ||
-			(py < viewport[1]-8.0l) ||
-			(px > viewport[2]+8.0l) ||
-			(py > viewport[1]+viewport[3]+8.0l))
+		if ((pz <  0.0) ||
+			(px < -8.0) ||
+			(py < viewport[1]-8.0) ||
+			(px > viewport[2]+8.0) ||
+			(py > viewport[1]+viewport[3]+8.0))
 			return;
 
 		// the damned slow glReadPixels functions :(
 		pglReadPixels((INT32)px-4, (INT32)py, 8, 8, GL_DEPTH_COMPONENT, GL_FLOAT, buf);
 		//GL_DBG_Printf("DepthBuffer: %f %f\n", buf[0][0], buf[3][3]);
 
-		for (i = 0; i < 8; i++)
-			for (j = 0; j < 8; j++)
+		// count pixels that are closer
+		for (FUINT i = 0; i < 8; i++)
+			for (FUINT j = 0; j < 8; j++)
+				//scalef += ((buf[i][j] < (pz - 0.00005f)) ? 0 : 1);
 				scalef += (pz > buf[i][j]+0.00005f) ? 0 : 1;
 
 		// quick test for screen border (not 100% correct, but looks ok)
@@ -2074,6 +2076,7 @@ static void PreparePolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FBITFIELD
 		scalef /= 64;
 		//GL_DBG_Printf("Scale factor: %f\n", scalef);
 
+		// �a sert � rien de tracer la light
 		if (scalef < 0.05f)
 			return;
 
@@ -2084,7 +2087,8 @@ static void PreparePolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FBITFIELD
 
 		alpha = byte2float[pSurf->PolyColor.s.alpha];
 		alpha *= scalef; // change the alpha value (it seems better than changing the size of the corona)
-		c[3] = (unsigned char)(alpha * 255);
+		c[3] = (UINT8)(alpha * 255);
+
 		pglColor4ubv(c);
 	}
 
@@ -2836,11 +2840,11 @@ EXPORT void HWRAPI(SetTransform) (FTransform *stransform)
 	else
 		GLPerspective(used_fov, ASPECT_RATIO);
 
-	pglGetFloatv(GL_PROJECTION_MATRIX, projMatrix); // added for new coronas' code (without depth buffer)
+	// added for new coronas' code (without depth buffer)
+	pglGetFloatv(GL_PROJECTION_MATRIX, projMatrix);
 	pglMatrixMode(GL_MODELVIEW);
 
-	pglGetFloatv(GL_MODELVIEW_MATRIX, modelMatrix); // added for new coronas' code (without depth buffer)
-
+	pglGetFloatv(GL_MODELVIEW_MATRIX, modelMatrix);
 }
 
 EXPORT INT32  HWRAPI(GetTextureUsed) (void)

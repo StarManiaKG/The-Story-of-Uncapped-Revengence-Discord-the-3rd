@@ -319,6 +319,9 @@ static void M_AssignJoystick(INT32 choice);
 // Video & Sound
 static void M_VideoOptions(INT32 choice);
 menu_t OP_VideoOptionsDef, OP_VideoModeDef, OP_ColorOptionsDef;
+#ifdef ALAM_LIGHTING
+menu_t OP_SoftwareLightingDef;
+#endif // ALAM_LIGHTING
 #ifdef HWRENDER
 static void M_OpenGLOptionsMenu(void);
 menu_t OP_OpenGLOptionsDef;
@@ -1952,6 +1955,10 @@ static menuitem_t OP_VideoOptionsMenu[] =
 	{IT_STRING | IT_CVAR, NULL, "2.3 Leaks",      				  &cv_fpscap,          219},
 #endif
 
+#ifdef ALAM_LIGHTING
+	{IT_SUBMENU | IT_STRING, NULL, "Reshade...",	 &OP_SoftwareLightingDef,	229},
+#endif
+
 #else
 
 	{IT_HEADER, NULL, "Screen", NULL, 0},
@@ -2008,6 +2015,10 @@ static menuitem_t OP_VideoOptionsMenu[] =
 	{IT_HEADER, NULL, "Renderer", NULL, 208},
 	{IT_CALL | IT_STRING, NULL, "OpenGL Options...",         M_OpenGLOptionsMenu, 214},
 	{IT_STRING | IT_CVAR, NULL, "FPS Cap",                   &cv_fpscap,          219},
+#endif
+
+#ifdef ALAM_LIGHTING
+	{IT_SUBMENU | IT_STRING, NULL, "Software Lighting...",	 &OP_SoftwareLightingDef,	229},
 #endif
 #endif // APRIL_FOOLS
 };
@@ -2157,20 +2168,39 @@ static menuitem_t OP_OpenGLLightingMenu[] =
 {
 #ifdef APRIL_FOOLS
 	{IT_STRING|IT_CVAR, NULL, "Coronavirus",      &cv_glcoronas,          0},
-	{IT_STRING|IT_CVAR, NULL, "Coronavirus size", &cv_glcoronasize,      10},
+	{IT_STRING|IT_CVAR, NULL, "Coronavirus population", &cv_glcoronasize,10},
 	{IT_STRING|IT_CVAR, NULL, "Moving lighting",  &cv_gldynamiclighting, 20},
 	{IT_STRING|IT_CVAR, NULL, "Lazy lighting",    &cv_glstaticlighting,  30},
 
+	{IT_STRING|IT_CVAR, NULL, "Coronavirus drawing", &cv_glcorona_draw,50},
 #else
 	
 	{IT_STRING|IT_CVAR, NULL, "Coronas",          &cv_glcoronas,          0},
 	{IT_STRING|IT_CVAR, NULL, "Coronas size",     &cv_glcoronasize,      10},
 	{IT_STRING|IT_CVAR, NULL, "Dynamic lighting", &cv_gldynamiclighting, 20},
 	{IT_STRING|IT_CVAR, NULL, "Static lighting",  &cv_glstaticlighting,  30},
+	{IT_STRING|IT_CVAR, NULL, "Corona draw mode", &cv_glcorona_draw,     50},
 #endif // APRIL_FOOLS
 };
 #endif // ALAM_LIGHTING
 
+#endif
+
+#ifdef ALAM_LIGHTING
+static menuitem_t OP_SoftwareLightingMenu[]=
+{
+#ifdef APRIL_FOOLS
+	{IT_STRING | IT_CVAR,	NULL,	"Coronavirus",		&cv_corona,				0},
+	{IT_STRING | IT_CVAR,	NULL,	"Coronavirus Population",	&cv_coronasize,10},
+	{IT_STRING | IT_CVAR,	NULL,	"Coronavirus Drawing",&cv_corona_draw_mode,20},
+
+#else
+
+	{IT_STRING | IT_CVAR,	NULL,	"Coronas",		&cv_corona,				0},
+	{IT_STRING | IT_CVAR,	NULL,	"Corona Size",	&cv_coronasize,		   10},
+	{IT_STRING | IT_CVAR,	NULL,	"Corona Draw Mode",	&cv_corona_draw_mode,  20},
+#endif // APRIL_FOOLS
+};
 #endif
 
 static menuitem_t OP_SoundOptionsMenu[] =
@@ -3100,6 +3130,11 @@ menu_t OP_ColorOptionsDef =
 	0,
 	NULL
 };
+#ifdef ALAM_LIGHTING
+menu_t OP_SoftwareLightingDef = DEFAULTMENUSTYLE(
+	MTREE2(MN_OP_MAIN, MN_OP_VIDEO),
+	"M_VIDEO", OP_SoftwareLightingMenu, &OP_VideoOptionsDef, 60, 40);
+#endif
 menu_t OP_SoundOptionsDef = DEFAULTSCROLLMENUSTYLE(
 	MTREE2(MN_OP_MAIN, MN_OP_SOUND),
 	"M_SOUND", OP_SoundOptionsMenu, &OP_MainDef, 30, 30);

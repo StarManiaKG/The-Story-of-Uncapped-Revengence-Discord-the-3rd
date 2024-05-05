@@ -297,6 +297,10 @@ void SCR_Recalc(void)
 	if (dedicated)
 		return;
 
+#ifdef ALAM_LIGHTING
+	R_Release_Corona();
+#endif
+
 	// bytes per pixel quick access
 	scr_bpp = vid.bpp;
 
@@ -320,6 +324,10 @@ void SCR_Recalc(void)
 	// vid.recalc lasts only for the next refresh...
 	con_recalc = true;
 	am_recalc = true;
+
+#ifdef ALAM_LIGHTING
+	R_Load_Corona();
+#endif
 
 #ifdef HWRENDER
 	// Shoot! The screen texture was flushed!
