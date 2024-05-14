@@ -443,9 +443,6 @@ boolean PT_RequestFile(INT32 node)
   *         3 too many files, over WADLIMIT
   *         4 still checking, continuing next tic
   *
-  *			STAR STUFF
-  *				5 you've autoloaded mods, and need to reset the game
-  *
   */
 INT32 CL_CheckFiles(void)
 {
@@ -454,20 +451,19 @@ INT32 CL_CheckFiles(void)
 	size_t filestoload = 0;
 	boolean downloadrequired = false;
 
+	// STAR STUFF: \return 5: you've autoloaded mods //
+	if (autoloaded)
+		return 5;
+	// Prevents cheating, desyncing, and other dumbness in netgames :p //
+
 	// Modified game handling -- check for an identical file list
 	// must be identical in files loaded AND in order
 	// Return 2 on failure -- disconnect from server
-	if ((modifiedgame)
-		|| (autoloaded)) // STAR NOTE: Prevents Cheating, Desyncing, and Other Dumbness in Netgames
+	if (modifiedgame)
 	{
 		CONS_Debug(DBG_NETPLAY, "game is modified; only doing basic checks\n");
 		for (i = 0, j = mainwads; i < fileneedednum || j < numwadfiles;)
 		{
-			// START OF STAR STUFF //
-			if (autoloaded)
-				return 5;
-			// END OF STAR STUFF //
-
 			if (j < numwadfiles && !wadfiles[j]->important)
 			{
 				// Unimportant on our side.
@@ -1305,7 +1301,6 @@ void PT_FileFragment(void)
 	filename = va("%s", file->filename);
 	nameonly(filename);
 
-	// STAR NOTE: TSoURDt3rd Stuff Was Originally Here, but Not Anymore lol //
 	if (!(strcmp(filename, "srb2.pk3")
 		&& strcmp(filename, "zones.pk3")
 		&& strcmp(filename, "player.dta")

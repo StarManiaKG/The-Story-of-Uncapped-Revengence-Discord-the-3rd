@@ -136,8 +136,8 @@ extern musicdef_t *curplaying;
 extern fixed_t st_time;
 extern INT32 st_sel, st_cc;
 
-extern patch_t* st_radio[9]; /* STAR NOTE: now externed in STAR/m_menu.h */
-extern patch_t* st_launchpad[4]; /* STAR NOTE: now externed in STAR/m_menu.h */
+extern patch_t* st_radio[9];
+extern patch_t* st_launchpad[4];
 
 extern UINT8 skyRoomMenuTranslations[MAXUNLOCKABLES];
 

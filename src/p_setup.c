@@ -7664,14 +7664,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	sector_t *ss;
 	levelloading = true;
 
-	// STAR STUFF //
-	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer];
-	boolean restartLevelMusic = false; // restart level music
-
-	TSoURDt3rd->loadingScreens.loadCount = TSoURDt3rd->loadingScreens.loadPercentage = 0; // reset loading status
-	TSoURDt3rd->loadingScreens.bspCount = 0; // reset bsp count
-	// REAL FUN //
-
 	// This is needed. Don't touch.
 	maptol = mapheaderinfo[gamemap-1]->typeoflevel;
 	gametyperules = gametypedefaultrules[gametype];
@@ -7801,37 +7793,16 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 				(mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE) ? "" : " Zone",
 				(mapheaderinfo[gamemap-1]->actnum > 0) ? va(" %d",mapheaderinfo[gamemap-1]->actnum) : "");
 			V_DrawSmallString(1, 195, V_ALLOWLOWERCASE|V_TRANSLUCENT|V_SNAPTOLEFT|V_SNAPTOBOTTOM, tx);
-
-			// STAR STUFF //
-			if (cv_loadingscreen.value && TSoURDt3rd->loadingScreens.loadCount-- <= 0 && !TSoURDt3rd->loadingScreens.loadComplete)
-			{
-				while (TSoURDt3rd->loadingScreens.bspCount != 1 && (((TSoURDt3rd->loadingScreens.loadPercentage)<<1) < 100) && rendermode == render_soft)
-				{
-					TSoURDt3rd->loadingScreens.loadCount = numsubsectors/50;
-					STAR_LoadingScreen();
-				}
-
-				TSoURDt3rd->loadingScreens.loadCount = TSoURDt3rd->loadingScreens.loadPercentage = 0; // reset the loading status
-				TSoURDt3rd->loadingScreens.screenToUse = 0; // reset the loading screen to use
-
-				TSoURDt3rd->loadingScreens.loadComplete = true; // loading... load complete.
-			}
-			else
-			// NO CUTTING CORNERS! //
-
 			I_UpdateNoVsync();
 		}
 
 		// As oddly named as this is, this handles music only.
 		// We should be fine starting it here.
 		// Don't do this during titlemap, because the menu code handles music by itself.
-		// STAR NOTE: moved S_Start() code further down so TSoURDt3rd_DetermineLevelMusic() can work its magic :) //
-#if 0		
+#if 0	// STAR NOTE: moved S_Start() code further down so TSoURDt3rd_LoadLevel() can work its magic :) //
 		if (!strnicmp(S_MusicName(),
 			(mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname, 7))
 			S_Start();
-#else
-		restartLevelMusic = true;
 #endif
 	}
 
@@ -7960,48 +7931,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	P_MapEnd(); // tmthing is no longer needed from this point onwards
 
-	// STAR STUFF //
-	if (savemoddata)
-		TSoURDt3rd_LoadedGamedataAddon = true;
-	if (!netgame)
-		STAR_SetSavefileProperties();
-#ifdef HAVE_SDL
-	STAR_SetWindowTitle();
-#endif
-
-	if (!(reloadinggamestate || titlemapinaction))
-	{
-		const char *determinedMusic = TSoURDt3rd_DetermineLevelMusic();
-		boolean musicChanged = strnicmp(S_MusicName(),
-			((mapmusflags & MUSIC_RELOADRESET) ? mapmusname : determinedMusic), 7);
-
-		if (musicChanged)
-		{
-			strncpy(mapmusname, determinedMusic, 7);
-
-			mapmusname[6] = 0;
-			mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
-			mapmusposition = mapheaderinfo[gamemap-1]->muspos;
-
-			restartLevelMusic = true;
-		}
-
-		// We couldn't fade out the music above, but we can here!
-		// Deduct 2 tics so the fade volume actually reaches 0.
-		// Don't halt music though, S_Start will take care of that! This dodges a MIDI crash bug.
-		if (RESETMUSIC || strnicmp(S_MusicName(),
-			(mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname, 7))
-		{
-			S_FadeMusic(0, FixedMul(
-				FixedDiv((F_GetWipeLength(wipedefs[wipe_level_toblack])-2)*NEWTICRATERATIO, NEWTICRATE), MUSICRATE));
-		}
-
-		/* STAR NOTE: As mentioned earlier, while oddly named, it only handles music.
-			Starting it again here for our stuff should be fine, just don't do it during the titlemap :p */
-		if (restartLevelMusic)
-			S_Start();
-	}
-	// END THAT //
+	TSoURDt3rd_LoadLevel(reloadinggamestate); // STAR STUFF: loads cool level data //
 
 	// Took me 3 hours to figure out why my progression kept on getting overwritten with the titlemap...
 	if (!titlemapinaction)

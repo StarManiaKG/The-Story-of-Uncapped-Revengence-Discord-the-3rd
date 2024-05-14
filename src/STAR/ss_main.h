@@ -18,6 +18,7 @@
 // ------------------------ //
 //       Definitions
 // ------------------------ //
+
 ///#define TSOURDT3RD_DEBUGGING /* Debugging */
 
 #define AUTOLOADCONFIGFILENAME "autoload.cfg"
@@ -33,9 +34,11 @@ extern char savegamefolder[256];
 // ------------------------ //
 //        Variables
 // ------------------------ //
+
 // ======
-// Events
+// EVENTS
 // ======
+
 typedef enum
 {
 	STAR_CONS_TSOURDT3RD = 1,
@@ -66,31 +69,38 @@ extern boolean xmasmode, xmasoverride;
 // ------------------------ //
 //        Functions
 // ------------------------ //
+
 void STAR_CONS_Printf(star_messagetype_t starMessageType, const char *fmt, ...);
 const char *TSoURDt3rd_CON_DrawStartupScreen(void);
 
 void TSoURDt3rd_D_Display(void);
 
 // ======
-// Events
+// EVENTS
 // ======
+
 boolean TSoURDt3rd_Easter_AllEggsCollected(void);
 
 boolean TSoURDt3rd_InAprilFoolsMode(void);
 
 // ======
-// Things
+// LEVELS
 // ======
+
 mobj_t *TSoURDt3rd_BossInMap(void);
 
+void TSoURDt3rd_LoadLevel(boolean reloadinggamestate);
+
 // ======
-// Scenes
+// SCENES
 // ======
+
 void TSoURDt3rd_GameEnd(void);
 
 // ======
-// Screen
+// SCREEN
 // ======
+
 void TSoURDt3rd_SCR_DisplayTpsRate(void);
 INT32 TSoURDt3rd_SCR_SetPingHeight(void);
 

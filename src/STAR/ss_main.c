@@ -1,3 +1,13 @@
+// SONIC ROBO BLAST 2; TSOURDT3RD
+//-----------------------------------------------------------------------------
+// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+/// \file  ss_main.c
+/// \brief Contains all of TSoURDt3rd's main necessary info and structures
 
 #include <time.h>
 
@@ -11,10 +21,13 @@
 #include "../v_video.h"
 #include "../p_local.h"
 #include "../m_argv.h"
+#include "../i_video.h" // rendermode
+#include "../deh_soc.h" // TSoURDt3rd_LoadedGamedataAddon
 
 // ------------------------ //
 //        Variables
 // ------------------------ //
+
 static saveinfo_t* cursave = NULL;
 static INT32 endcount;
 
@@ -33,8 +46,9 @@ typedef struct
 #endif
 
 // ======
-// Events
+// EVENTS
 // ======
+
 tsourdt3rdevent_t TSoURDt3rd_CurrentEvent = 0;
 
 boolean aprilfoolsmode = false;
@@ -44,6 +58,7 @@ boolean xmasmode = false, xmasoverride = false;
 // ------------------------ //
 //        Functions
 // ------------------------ //
+
 //
 // void STAR_CONS_Printf(star_messagetype_t starMessageType, const char *fmt, ...)
 // A function specifically dedicated towards printing out certain TSoURDt3rd and STAR stuff in the console!
@@ -133,8 +148,9 @@ void TSoURDt3rd_D_Display(void)
 }
 
 // ======
-// Events
+// EVENTS
 // ======
+
 //
 // void TSoURDt3rd_CheckTime(void)
 // Handles checking the current time on the user's computer.
@@ -218,38 +234,107 @@ void TSoURDt3rd_CheckTime(void)
 }
 
 // ======
-// Things
+// LEVELS
 // ======
+
+//
+// mobj_t *TSoURDt3rd_BossInMap(void)
+// Scans the player's map for any bosses.
+//
 mobj_t *TSoURDt3rd_BossInMap(void)
 {
-	thinker_t *th;
-	mobj_t *mobj;
-
 	if (!(gamestate == GS_LEVEL || gamestate == GS_INTERMISSION))
 		return NULL;
 
-	for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
+	for (thinker_t *th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 	{
 		if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
 			continue;
 
-		mobj = (mobj_t *)th;
+		mobj_t *mobj = (mobj_t *)th;
 		if (mobj == NULL || P_MobjWasRemoved(mobj))
 			continue;
 		if (!(mobj->flags & MF_BOSS))
 			continue;
 
-		return mobj;
+		return (mobj_t *)th;
 	}
 	return NULL;
 }
 
+//
+// void TSoURDt3rd_LoadLevel(boolean reloadinggamestate)
+// Loads various bits of level data, exclusively for TSoURDt3rd.
+//
+void TSoURDt3rd_LoadLevel(boolean reloadinggamestate)
+{
+	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer];
+	const char *cmptrack = ((mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname);
+
+	TSoURDt3rd->loadingScreens.loadCount = TSoURDt3rd->loadingScreens.loadPercentage = 0; // reset loading status
+	TSoURDt3rd->loadingScreens.bspCount = 0; // reset bsp count
+
+	if (savemoddata)
+		TSoURDt3rd_LoadedGamedataAddon = true;
+	if (!netgame)
+		STAR_SetSavefileProperties();
+#ifdef HAVE_SDL
+	STAR_SetWindowTitle();
+#endif
+
+	if (!(reloadinggamestate || titlemapinaction))
+	{
+		const char *determinedMusic = TSoURDt3rd_DetermineLevelMusic();
+		boolean musicChanged = strnicmp(S_MusicName(), cmptrack, 7);
+
+		if (rendermode != render_none)
+		{
+			if (cv_loadingscreen.value && TSoURDt3rd->loadingScreens.loadCount-- <= 0 && !TSoURDt3rd->loadingScreens.loadComplete)
+			{
+				while (TSoURDt3rd->loadingScreens.bspCount != 1 && (((TSoURDt3rd->loadingScreens.loadPercentage)<<1) < 100) && rendermode == render_soft)
+				{
+					TSoURDt3rd->loadingScreens.loadCount = numsubsectors/50;
+					STAR_LoadingScreen();
+				}
+
+				TSoURDt3rd->loadingScreens.loadCount = TSoURDt3rd->loadingScreens.loadPercentage = 0; // reset the loading status
+				TSoURDt3rd->loadingScreens.screenToUse = 0; // reset the loading screen to use
+
+				TSoURDt3rd->loadingScreens.loadComplete = true; // loading... load complete.
+			}
+		}
+
+		/* PS: As mentioned in P_LoadLevel, while oddly named, S_Start() only handles music.
+			Starting it again here for our stuff should be fine, just don't do it during the titlemap :p */
+		if (musicChanged)
+		{
+			strncpy(mapmusname, determinedMusic, 7);
+
+			mapmusname[6] = 0;
+			mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
+			mapmusposition = mapheaderinfo[gamemap-1]->muspos;
+
+			// Fade music, by the way.
+			if (RESETMUSIC || strnicmp(S_MusicName(), cmptrack, 7))
+			{
+				S_FadeMusic(0, FixedMul(
+					FixedDiv((F_GetWipeLength(wipedefs[wipe_level_toblack])-2)*NEWTICRATERATIO, NEWTICRATE), MUSICRATE));
+			}
+			S_Start();
+		}
+		else if (!strnicmp(S_MusicName(), cmptrack, 7))
+			S_Start();
+	}
+}
+
+
 // ======
-// Scenes
+// SCENES
 // ======
+
 void TSoURDt3rd_GameEnd(void)
 {
-	static INT32 headerScroll;
+	static INT32 headerScroll = BASEVIDWIDTH;
 
 	// draw a background so we don't have weird mirroring errors
 	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
@@ -297,8 +382,9 @@ void TSoURDt3rd_GameEnd(void)
 }
 
 // ======
-// Screen
+// SCREEN
 // ======
+
 void TSoURDt3rd_SCR_DisplayTpsRate(void)
 {
 	INT32 tpscntcolor = 0;

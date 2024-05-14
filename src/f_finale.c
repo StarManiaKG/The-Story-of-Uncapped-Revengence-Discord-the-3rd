@@ -2405,11 +2405,7 @@ void F_StartGameEnd(void)
 	// In case menus are still up?!!
 	M_ClearMenus(true);
 
-#if 0
-	timetonext = 10*TICRATE; // STAR NOTE: i was also here lol
-#else
-	timetonext = TICRATE;
-#endif
+	timetonext = 10*TICRATE; // STAR NOTE: i was also here lol //
 }
 
 //
@@ -2418,7 +2414,7 @@ void F_StartGameEnd(void)
 void F_GameEndDrawer(void)
 {
 	// this function does nothing
-	//TSoURDt3rd_GameEnd(); // STAR STUFF: ....except this (WORLD 7 SUPER PAPER MARIO) //
+	TSoURDt3rd_GameEnd(); // STAR STUFF: ....except this (WORLD 7 SUPER PAPER MARIO) //
 }
 
 //
