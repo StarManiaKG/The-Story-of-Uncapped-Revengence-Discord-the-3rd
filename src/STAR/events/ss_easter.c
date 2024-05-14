@@ -1,28 +1,38 @@
+// SONIC ROBO BLAST 2; TSOURDT3RD
+//-----------------------------------------------------------------------------
+// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+/// \file  ss_easter.c
+/// \brief Easter event, related functions and data
 
 #include "../ss_main.h"
-
 #include "../star_vars.h"
-
 #include "../../m_menu.h"
-
 #include "../../d_main.h" // autoloaded //
 #include "../../g_game.h" // playeringame[] //
 
 // ------------------------ //
 //        Variables
 // ------------------------ //
+
 static void STAR_Easter_EggHunt_OnChange(void);
 static void STAR_Easter_EnableEggHuntBonuses_OnChange(void);
 
 // ------------------------ //
 //        Commands
 // ------------------------ //
+
 consvar_t cv_easter_allowegghunt = CVAR_INIT ("easter_allowegghunt", "No", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, STAR_Easter_EggHunt_OnChange);
 consvar_t cv_easter_egghuntbonuses = CVAR_INIT ("easter_egghuntbonuses", "Off", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, STAR_Easter_EnableEggHuntBonuses_OnChange);
 
 // ------------------------ //
 //        Functions
 // ------------------------ //
+
 boolean TSoURDt3rd_Easter_AllEggsCollected(void)
 {
 	return (EnableEasterEggHuntBonuses && currenteggs == TOTALEGGS);

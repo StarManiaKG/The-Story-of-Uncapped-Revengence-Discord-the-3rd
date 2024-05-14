@@ -609,22 +609,18 @@ static void D_Display(void)
 	// draw pause pic
 	if (paused && cv_showhud.value && (!menuactive || netgame))
 	{
-		// STAR NOTE: i was here for cv_pausegraphicstyle lol //
-		// Old-School
-		if (cv_pausegraphicstyle.value)
+		// STAR NOTE: cv_pausegraphicstyle edits are included here lol //
+		if (cv_pausegraphicstyle.value) // Old-School
 		{
 			INT32 py;
 			patch_t *patch;
-			if (automapactive)
-				py = 4;
-			else
-				py = viewwindowy + 4;
+			py = 4;
+			if (!automapactive)
+				py += viewwindowy;
 			patch = W_CachePatchName("M_PAUSE", PU_PATCH);
 			V_DrawScaledPatch(viewwindowx + (BASEVIDWIDTH - patch->width)/2, py, 0, patch);
 		}
-
-		// Default
-		else
+		else // Default
 		{
 			INT32 y = ((automapactive) ? (32) : (BASEVIDHEIGHT/2));
 			M_DrawTextBox((BASEVIDWIDTH/2) - (60), y - (16), 13, 2);
@@ -1545,8 +1541,9 @@ void D_SRB2Main(void)
 		}
 		else
 		{
+			//** STAR NOTE: MAIN SAVEDATA STUFF IS NOW HANDLED IN STAR_SetSavefileProperties WITHIN star_functions.c! **//
+
 			// use user specific config file
-			// STAR NOTE: MAIN SAVEDATA STUFF IS NOW HANDLED IN STAR_SetSavefileProperties WITHIN star_functions.c! //
 #ifdef DEFAULTDIR
 			snprintf(srb2home, sizeof srb2home, "%s" PATHSEP DEFAULTDIR, userhome);
 			snprintf(downloaddir, sizeof downloaddir, "%s" PATHSEP "DOWNLOAD", srb2home);
@@ -1652,7 +1649,7 @@ void D_SRB2Main(void)
 	// Have to be done here before files are loaded
 	M_InitCharacterTables();
 
-	mainwads = 4; // doesn't include music.dta //* STAR NOTE: also doesn't include jukebox.pk3 *//
+	mainwads = 4; // doesn't include music.dta //** STAR NOTE: also doesn't include jukebox.pk3 **//
 #ifdef USE_PATCH_DTA
 	mainwads++;
 #endif
@@ -1662,7 +1659,7 @@ void D_SRB2Main(void)
 	W_InitMultipleFiles(&startupwadfiles);
 	D_CleanFile(&startupwadfiles);
 
-#ifndef DEVELOP // md5s last updated 03/15/23 (star)
+#ifndef DEVELOP // md5s last updated 04/06/24 (star)
 	// Check MD5s of autoloaded files //
 
 	// don't check music.dta because people like to modify it, and it doesn't matter if they do

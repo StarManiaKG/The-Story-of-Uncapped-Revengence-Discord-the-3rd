@@ -1145,7 +1145,7 @@ const char *TSoURDt3rd_DetermineLevelMusic(void)
 {
 	mobj_t *mobj = TSoURDt3rd_BossInMap();
 
-	boolean pinchPhase = ((mobj && mobj->health <= mobj->info->damage) && cv_bosspinchmusic.value);
+	boolean pinchPhase = ((mobj && mobj->health <= (mobj->info->damage ? mobj->info->damage : 3)) && cv_bosspinchmusic.value);
 	boolean allEmeralds = (emeralds == 127);
 
 	boolean bossMap = (mobj && (mapheaderinfo[gamemap-1]->bonustype == 1 || (mapheaderinfo[gamemap-1]->levelflags & LF_WARNINGTITLE))); // Boss BonusType or Warning Title
@@ -1154,18 +1154,6 @@ const char *TSoURDt3rd_DetermineLevelMusic(void)
 			|| (mapheaderinfo[gamemap-1]->nextlevel == 1102) // Credits
 			|| (mapheaderinfo[gamemap-1]->nextlevel == 1103)))); // Ending
 	boolean trueFinalBossMap = (finalBossMap && allEmeralds);
-
-	if (curBossMusic)
-	{
-		memset(curBossMusic, 0, sizeof(TSoURDt3rdBossMusic_t));
-		curBossMusic = NULL;
-	}
-
-	if (curFinaleBossMusic)
-	{
-		memset(curFinaleBossMusic, 0, sizeof(TSoURDt3rdFinalBossMusic_t));
-		curFinaleBossMusic = NULL;
-	}
 
 	// Conflicting music //
 #if 0
@@ -1214,7 +1202,9 @@ const char *TSoURDt3rd_DetermineLevelMusic(void)
 		case GS_LEVEL:
 		default:
 		{
-			if ((mobj && mobj->health <= 0) && cv_postbossmusic.value && MUSICEXISTS(mapheaderinfo[gamemap-1]->muspostbossname))
+			if ((mobj && mobj->health <= 0)
+				&& (cv_postbossmusic.value && MUSICEXISTS(mapheaderinfo[gamemap-1]->muspostbossname)))
+
 				return mapheaderinfo[gamemap-1]->muspostbossname;
 			else if (finalBossMap)
 			{
@@ -1225,26 +1215,20 @@ const char *TSoURDt3rd_DetermineLevelMusic(void)
 				{
 					curFinaleBossMusic = &finalBossMusic[cv_finalbossmusic.value];
 
-					if (trueFinalBossMap && cv_truefinalbossmusic.value)
-					{
-						if (finalBossMusic[cv_finalbossmusic.value].trueFinalBossPinchMusic)
-							return finalBossMusic[cv_finalbossmusic.value].trueFinalBossPinchMusic;
-					}
+					if ((trueFinalBossMap && cv_truefinalbossmusic.value)
+						&& finalBossMusic[cv_finalbossmusic.value].trueFinalBossPinchMusic)
+
+						return finalBossMusic[cv_finalbossmusic.value].trueFinalBossPinchMusic;
 					else if (finalBossMusic[cv_finalbossmusic.value].finalBossPinchMusic)
 						return finalBossMusic[cv_finalbossmusic.value].finalBossPinchMusic;
+				}
 
-					return mapmusname;
-				}
-				else
-				{
-					if (trueFinalBossMap && cv_truefinalbossmusic.value)
-					{	
-						if (finalBossMusic[cv_finalbossmusic.value].trueFinalBossMusic)
-							return finalBossMusic[cv_finalbossmusic.value].trueFinalBossMusic;
-					}
-					else if (finalBossMusic[cv_finalbossmusic.value].finalBossMusic)
-						return finalBossMusic[cv_finalbossmusic.value].finalBossMusic;
-				}
+				if ((trueFinalBossMap && cv_truefinalbossmusic.value)
+					&& finalBossMusic[cv_finalbossmusic.value].trueFinalBossMusic)
+
+					return finalBossMusic[cv_finalbossmusic.value].trueFinalBossMusic;
+				else if (finalBossMusic[cv_finalbossmusic.value].finalBossMusic)
+					return finalBossMusic[cv_finalbossmusic.value].finalBossMusic;
 			}
 			else if (bossMap)
 			{
@@ -1257,9 +1241,9 @@ const char *TSoURDt3rd_DetermineLevelMusic(void)
 
 					if (bossMusic[cv_bossmusic.value].bossPinchMusic)
 						return bossMusic[cv_bossmusic.value].bossPinchMusic;
-					return mapmusname;
 				}
-				else if (bossMusic[cv_bossmusic.value].bossMusic)
+
+				if (bossMusic[cv_bossmusic.value].bossMusic)
 					return bossMusic[cv_bossmusic.value].bossMusic;
 			}
 
@@ -1288,7 +1272,7 @@ boolean TSoURDt3rd_SetPinchMusicSpeed(void)
 {
 	if (curBossMusic && !curBossMusic->bossPinchMusic)
 		return true;
-	else if (curFinaleBossMusic && !curFinaleBossMusic->finalBossPinchMusic && !curFinaleBossMusic->trueFinalBossPinchMusic)
+	if (curFinaleBossMusic && !curFinaleBossMusic->finalBossPinchMusic && !curFinaleBossMusic->trueFinalBossPinchMusic)
 		return true;
 	return false;
 }
@@ -1855,7 +1839,7 @@ char *STAR_ReturnStringFromWebsite(const char *API, char *URL, char *RETURNINFO,
 void TSoURDt3rd_FindCurrentVersion(void)
 {
 	// Make Some Variables //
-	// STAR NOTE: If You're Planning on Using the Internet Functions, Use This Block as an Example :)
+	// (Hey You! If You're Planning on Using the Internet Functions, Use This Block as an Example :))
 	const char *API = "https://raw.githubusercontent.com/StarManiaKG/The-Story-of-Uncapped-Revengence-Discord-the-3rd/";
 	char URL[256];	strcpy(URL,	 va("%s/src/STAR/star_webinfo.h", compbranch));
 	char INFO[256]; strcpy(INFO, va("#define TSOURDT3RDVERSION \"%s\"", TSOURDT3RDVERSION));

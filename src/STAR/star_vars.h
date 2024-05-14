@@ -18,8 +18,7 @@
 #include "../g_input.h" // input variables
 #include "../s_sound.h" // sound variables
 
-// ============================================================================	//
-// 	 STAR NOTE:																	//
+// ============================================================================	//																//
 //   Just so you know, some of this stuff is also handled in tsourdt3rd.pk3.	//
 //      If you want to look at some other code, check that PK3 out.             //
 // ============================================================================ //
@@ -136,7 +135,7 @@ extern boolean TSoURDt3rd_NoMoreExtras;
 extern boolean TSoURDt3rd_checkedExtraWads;
 
 // Events //
-// Easter (STAR NOTE: Most of the Other Egg Stuff is Handled in tsourdt3rd.pk3, Just so You Know :p) //
+// Easter
 extern INT32 TOTALEGGS;
 
 extern INT32 foundeggs;

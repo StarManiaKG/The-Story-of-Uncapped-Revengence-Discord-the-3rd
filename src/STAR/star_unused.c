@@ -7,14 +7,15 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  star_functions.c
-/// \brief Contains all the Info Portraying to, at Least at This Point in Time,
-///        TSoURDt3rd's Unused Stuff
+/// \brief Contains all the Info Portraying to, at Least at This Point in Time, TSoURDt3rd's Unused Stuff
 
 #include "../doomdef.h"
 #include "../w_wad.h"
 
-// NUMBERS //
-//
+// =======
+// NUMBERS
+// =======
+
 // INT32 **STAR_SplitNumber(INT32 NUMBER, boolean useINT16Format)
 // Splits Numbers Into Smaller Numbers, Depending on the Format Specified
 //
@@ -74,10 +75,9 @@ INT32 **STAR_SplitNumber(INT32 NUMBER, boolean useINT16Format)
 	return finalSplitNumbers;
 }
 
-
-
-
-
+// ====
+// WADS
+// ====
 
 //
 // W_GetNumForMusicName
@@ -86,7 +86,7 @@ INT32 **STAR_SplitNumber(INT32 NUMBER, boolean useINT16Format)
 // Geared towards checking for music files where the lump not
 // being found is not a call for a crash.
 //
-// STAR NOTE: Ported From SRB2 Persona lol
+// Ported From SRB2 Persona lol
 //
 lumpnum_t W_GetNumForMusicName(const char *name)
 {
@@ -96,6 +96,14 @@ lumpnum_t W_GetNumForMusicName(const char *name)
 
 	return i;
 }
+
+// =====
+// MISC.
+// =====
+
+#if 0
+	if (textures[i]->hash == hash && !strncasecmp(textures[i]->name, name, 8))
+#endif
 
 #if 0
 #if 0
@@ -119,7 +127,3 @@ lumpnum_t W_GetNumForMusicName(const char *name)
 	(void)node;
 #endif
 #endif
-
-
-
-if (textures[i]->hash == hash && !strncasecmp(textures[i]->name, name, 8))

@@ -1,3 +1,13 @@
+// SONIC ROBO BLAST 2; TSOURDT3RD
+//-----------------------------------------------------------------------------
+// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+/// \file  ss_aprilfools.c
+/// \brief April Fools event, related functions and data
 
 #include "../ss_cmds.h"
 #include "../ss_main.h"
@@ -5,12 +15,13 @@
 #include "../s_sound.h"
 #include "../../g_demo.h"
 
-#include "../../d_main.h" // autoloaded //
+#include "../../d_main.h" // autoloaded/autoloading //
 #include "../../g_game.h" // playeringame[] //
 
 // ------------------------ //
 //        Variables
 // ------------------------ //
+
 enum
 {
 	singleplr = 0,
@@ -20,7 +31,7 @@ enum
 	options,
 	quitdoom,
 
-	tsourdt3rdreadme // STAR STUFF: YAY! //
+	tsourdt3rdreadme
 };
 
 enum
@@ -68,11 +79,13 @@ static void STAR_AprilFools_OnChange(void);
 // ------------------------ //
 //        Commands
 // ------------------------ //
+
 consvar_t cv_aprilfools_ultimatemode = CVAR_INIT ("aprilfools_ultimatemode", "Off", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, STAR_AprilFools_OnChange);
 
 // ------------------------ //
 //        Functions
 // ------------------------ //
+
 // boolean TSoURDt3rd_InAprilFoolsMode(void)
 // Checks If TSoURDt3rd is in April Fools Mode, and Returns True if so
 //
@@ -93,8 +106,8 @@ static void STAR_AprilFools_ChangeMenus(void)
 	if (demoplayback && titledemo)
 		G_CheckDemoStatus();
 
-	//OP_Tsourdt3rdOptionsMenu[op_isitcalledsingleplayer].status =
-	//	(!cv_aprilfools_ultimatemode.value ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+	OP_Tsourdt3rdOptionsMenu[op_isitcalledsingleplayer].status =
+		(!cv_aprilfools_ultimatemode.value ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
 
 	if (cv_aprilfools_ultimatemode.value)
 	{

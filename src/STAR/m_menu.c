@@ -1,6 +1,15 @@
+// SONIC ROBO BLAST 2; TSOURDT3RD
+//-----------------------------------------------------------------------------
+// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+/// \file  m_menu.c
+/// \brief TSoURDt3rd related menu functions, structures, and data
 
 #include "ss_main.h"
-
 #include "m_menu.h"
 #include "s_sound.h"
 #include "../doomstat.h"
@@ -18,16 +27,17 @@
 #include "../r_draw.h"
 #include "../hu_stuff.h"
 
+#include "../d_main.h" // autoloaded/autoloading //
+#include "../r_main.h" // shadows //
+
 #ifdef HAVE_DISCORDRPC
 #include "../discord.h"
 #endif
 
-#include "../d_main.h" // autoloaded //
-#include "../r_main.h" // shadow stuff //
-
 // ------------------------ //
 //        Variables
 // ------------------------ //
+
 INT16 MessageMenuDisplay[3][256]; // TO HACK
 
 menuitem_t defaultMenuTitles[256][256];
@@ -35,11 +45,13 @@ menuitem_t defaultMenuTitles[256][256];
 // ====
 // Game
 // ====
+
 static void M_CheckForTSoURDt3rdUpdates(INT32 choice);
 
 // =======
 // Jukebox
 // =======
+
 static void M_DrawTSoURDt3rdJukebox(void);
 static void M_HandleTSoURDt3rdJukebox(INT32 choice);
 
@@ -48,6 +60,7 @@ static void M_TSoURDt3rdJukeboxControls(INT32 choice);
 // =====
 // Snake
 // =====
+
 static void STAR_InitializeSnakeMenu(INT32 choice);
 static void STAR_DrawSnakeMenu(void);
 static void STAR_HandleSnakeMenu(INT32 choice);
@@ -55,11 +68,13 @@ static void STAR_HandleSnakeMenu(INT32 choice);
 // =====
 // Misc.
 // =====
+
 static void STAR_SpawnDispenser(INT32 choice);
 
 // ------------------------ //
 //        	Menus
 // ------------------------ //
+
 menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 {
 	{IT_HEADER, 			NULL, 	"Event Options", 				NULL, 					  	 0},
@@ -228,9 +243,11 @@ menu_t OP_TSoURDt3rdSnakeDef =
 // ------------------------ //
 //        Functions
 // ------------------------ //
+
 // ====
 // Game
 // ====
+
 static void M_CheckForTSoURDt3rdUpdates(INT32 choice)
 {
 	(void)choice;
@@ -240,6 +257,7 @@ static void M_CheckForTSoURDt3rdUpdates(INT32 choice)
 // =======
 // Servers
 // =======
+
 //
 // void M_HandleMasterServerResetChoice(INT32 choice)
 // Handles resetting the master server address.
@@ -316,6 +334,7 @@ void M_ShiftMessageQueueDown(void)
 // =========
 // Quit Game
 // =========
+
 //
 // void STAR_M_InitQuitMessages(void)
 // Initializes our quit messages.
@@ -376,8 +395,7 @@ void STAR_M_InitDynamicQuitMessages(void)
 //
 INT32 STAR_M_SelectQuitMessage(void)
 {
-	// Assign a quit message //
-	INT32 randomMessage = M_RandomKey(NUM_QUITMESSAGES);
+	INT32 randomMessage = M_RandomKey(NUM_QUITMESSAGES); // Assign a quit message //
 	STAR_M_InitDynamicQuitMessages();
 
 	if (!TSoURDt3rd_InAprilFoolsMode()) // No April Fools messages when it's not April Fools! //
@@ -393,8 +411,7 @@ INT32 STAR_M_SelectQuitMessage(void)
 			randomMessage = M_RandomKey(NUM_QUITMESSAGES);
 	}
 
-	// Choose a quit sound //
-	switch (randomMessage)
+	switch (randomMessage) // Choose a quit sound //
 	{
 		case QUITMSG4: S_StartSound(NULL, sfx_adderr); break;
 		case QUITMSG5: S_StartSound(NULL, sfx_cgot); break;
@@ -420,8 +437,7 @@ INT32 STAR_M_SelectQuitMessage(void)
 		case QUIT3MSG3: S_StartSound(NULL, sfx_s3k95); break;
 	}
 
-	// Return our random message and we're done :) //
-	return randomMessage;
+	return randomMessage; // Return our random message and we're done :) //
 }
 
 //
@@ -443,6 +459,7 @@ const char *STAR_M_SelectQuitGraphic(void)
 // =======
 // Jukebox
 // =======
+
 //
 // boolean TSoURDt3rd_M_IsJukeboxUnlocked(TSoURDt3rdJukebox_t *TSoURDt3rdJukebox)
 // Checks if TSoURDt3rd's Jukebox has been unlocked.
@@ -723,17 +740,18 @@ static void M_DrawTSoURDt3rdJukebox(void)
 
 		V_DrawFill(165+140-1+15, 60 + i, 1, m, 0); // White Scroll Bar
 
-		// Music Speed Option //
-		// Strings
 		V_DrawString(((BASEVIDWIDTH/2)+15), ((BASEVIDWIDTH/2)+15),
 			(V_SNAPTORIGHT|((soundtestdefs[st_sel] == &soundtestsfx) ? V_TRANSLUCENT : V_MENUCOLORMAP)),
 			(atof(cv_jukeboxspeed.string) < 10.0f ?
 				(va("Music Speed     %.3s", cv_jukeboxspeed.string)) :
 				(va("Music Speed     %.4s", cv_jukeboxspeed.string))));
 
-		// Arrows
-		V_DrawCharacter(((BASEVIDWIDTH/2)+107), ((BASEVIDWIDTH/2)+15), '\x1C' | V_SNAPTORIGHT | (((soundtestdefs[st_sel] == &soundtestsfx) || atof(cv_jukeboxspeed.string) < 0.1f) ? V_TRANSLUCENT : V_MENUCOLORMAP), false);													// Left
-		V_DrawCharacter(((BASEVIDWIDTH/2)+(atof(cv_jukeboxspeed.string) < 10.0f ? 145 : 152)), ((BASEVIDWIDTH/2)+15), '\x1D' | V_SNAPTORIGHT | (((soundtestdefs[st_sel] == &soundtestsfx) || atof(cv_jukeboxspeed.string) >= 20.0f) ? V_TRANSLUCENT : V_MENUCOLORMAP), false);	// Right
+		V_DrawCharacter(((BASEVIDWIDTH/2)+107), ((BASEVIDWIDTH/2)+15),
+			'\x1C' | V_SNAPTORIGHT | (((soundtestdefs[st_sel] == &soundtestsfx) || atof(cv_jukeboxspeed.string) < 0.1f) ? V_TRANSLUCENT : V_MENUCOLORMAP),
+			false); // Left Arrow
+		V_DrawCharacter(((BASEVIDWIDTH/2)+(atof(cv_jukeboxspeed.string) < 10.0f ? 145 : 152)),
+			((BASEVIDWIDTH/2)+15), '\x1D' | V_SNAPTORIGHT | (((soundtestdefs[st_sel] == &soundtestsfx) || atof(cv_jukeboxspeed.string) >= 20.0f) ? V_TRANSLUCENT : V_MENUCOLORMAP),
+			false);	// Right Arrow
 	}
 }
 
@@ -919,6 +937,7 @@ static void M_TSoURDt3rdJukeboxControls(INT32 choice)
 // =====
 // Snake
 // =====
+
 static void STAR_InitializeSnakeMenu(INT32 choice)
 {
 	// Run Menu Thingies //

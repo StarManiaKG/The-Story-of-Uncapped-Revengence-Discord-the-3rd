@@ -334,12 +334,12 @@ typedef struct
 		clientcmd_pak clientpak;            //         144 bytes
 		client2cmd_pak client2pak;          //         200 bytes
 		servertics_pak serverpak;           //      132495 bytes (more around 360, no?)
-		serverconfig_pak servercfg;         //         773 bytes // STAR NOTE (About 790 or so now)
+		serverconfig_pak servercfg;         //         773 bytes // STAR NOTE: takes up a little bit more bits now //
 		UINT8 textcmd[MAXTEXTCMD+1];        //       66049 bytes (wut??? 64k??? More like 257 bytes...)
 		filetx_pak filetxpak;               //         139 bytes
 		fileack_pak fileack;
 		UINT8 filereceived;
-		clientconfig_pak clientcfg;         //         136 bytes // STAR NOTE (About 162 bytes now)
+		clientconfig_pak clientcfg;         //         136 bytes // STAR NOTE: takes up a little bit more bits now //
 		UINT8 md5sum[16];
 		serverinfo_pak serverinfo;          //        1024 bytes
 		serverrefuse_pak serverrefuse;      //       65025 bytes (somehow I feel like those values are garbage...)

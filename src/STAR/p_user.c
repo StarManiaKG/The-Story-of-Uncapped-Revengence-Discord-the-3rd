@@ -1,3 +1,13 @@
+// SONIC ROBO BLAST 2; TSOURDT3RD
+//-----------------------------------------------------------------------------
+// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+/// \file  p_user.c
+/// \brief TSoURDt3rd exclusive user and player functions
 
 #include "star_vars.h"
 #include "ss_cmds.h" // cv_watermuffling //
@@ -14,6 +24,7 @@
 // ------------------------ //
 //        Functions
 // ------------------------ //
+
 //
 // void TSoURDt3rd_PlayerThink(player_t *player)
 // Controls many new features that TSoURDt3rd allows for its players.

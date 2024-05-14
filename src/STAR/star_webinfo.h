@@ -9,11 +9,9 @@
 /// \file  star_webinfo.h
 /// \brief Contains All Web Dated Needed for TSoURDt3rd's Web Stuff
 
-//==================================================================================//
-//  STAR NOTE:                                                                      //
-//                                                                                  //
+// ================================================================================ //                                                                         //
 //  Do not edit! Unless, of course, you know what you're doing, of course :)        //
 //  This info is needed by the online STAR functions, found in star_functions.c.    //
-//==================================================================================//
+// ================================================================================ //
 
 #define TSOURDT3RDVERSION "4.0"
