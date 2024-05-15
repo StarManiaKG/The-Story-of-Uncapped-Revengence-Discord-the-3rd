@@ -37,7 +37,7 @@
 #include "f_finale.h"
 #include "m_cond.h"
 
-#include "STAR/ss_cmds.h" // STAR STUFF: cv_alwaysoverlayinvuln //
+#include "STAR/ss_cmds.h" // cv_alwaysoverlayinvuln //
 
 static CV_PossibleValue_t CV_BobSpeed[] = {{0, "MIN"}, {4*FRACUNIT, "MAX"}, {0, NULL}};
 consvar_t cv_movebob = CVAR_INIT ("movebob", "1.0", CV_FLOAT|CV_SAVE, CV_BobSpeed, NULL);

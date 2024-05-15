@@ -215,10 +215,10 @@ static char returnWadPath[256];
 #endif
 
 #ifdef HAVE_DISCORDRPC
-#include "../discord.h" // DISCORD STUFFS: present the presence //
+#include "../discord.h" // present the presence //
 #endif
 
-#include "../STAR/star_vars.h" // STAR STUFF: TSoURDt3rd_GenerateFunnyCrashMessage(), TSOURDT3RDVERSIONSTRING, & TSOURDT3RDBYSTARMANIAKGSTRING //
+#include "../STAR/star_vars.h" // TSoURDt3rd_GenerateFunnyCrashMessage(), TSOURDT3RDVERSIONSTRING, & TSOURDT3RDBYSTARMANIAKGSTRING //
 
 /**	\brief	The JoyReset function
 

@@ -269,7 +269,7 @@ mobj_t *TSoURDt3rd_BossInMap(void)
 void TSoURDt3rd_LoadLevel(boolean reloadinggamestate)
 {
 	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer];
-	const char *cmptrack = ((mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname);
+	const char *determinedMusic = TSoURDt3rd_DetermineLevelMusic();
 
 	TSoURDt3rd->loadingScreens.loadCount = TSoURDt3rd->loadingScreens.loadPercentage = 0; // reset loading status
 	TSoURDt3rd->loadingScreens.bspCount = 0; // reset bsp count
@@ -284,9 +284,6 @@ void TSoURDt3rd_LoadLevel(boolean reloadinggamestate)
 
 	if (!(reloadinggamestate || titlemapinaction))
 	{
-		const char *determinedMusic = TSoURDt3rd_DetermineLevelMusic();
-		boolean musicChanged = strnicmp(S_MusicName(), cmptrack, 7);
-
 		if (rendermode != render_none)
 		{
 			if (cv_loadingscreen.value && TSoURDt3rd->loadingScreens.loadCount-- <= 0 && !TSoURDt3rd->loadingScreens.loadComplete)
@@ -304,25 +301,31 @@ void TSoURDt3rd_LoadLevel(boolean reloadinggamestate)
 			}
 		}
 
-		/* PS: As mentioned in P_LoadLevel, while oddly named, S_Start() only handles music.
-			Starting it again here for our stuff should be fine, just don't do it during the titlemap :p */
-		if (musicChanged)
+		// Change music :)
+		if (strnicmp(S_MusicName(),
+			((mapmusflags & MUSIC_RELOADRESET) ? mapmusname : determinedMusic), 7))
 		{
 			strncpy(mapmusname, determinedMusic, 7);
 
 			mapmusname[6] = 0;
 			mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
 			mapmusposition = mapheaderinfo[gamemap-1]->muspos;
-
-			// Fade music, by the way.
-			if (RESETMUSIC || strnicmp(S_MusicName(), cmptrack, 7))
-			{
-				S_FadeMusic(0, FixedMul(
-					FixedDiv((F_GetWipeLength(wipedefs[wipe_level_toblack])-2)*NEWTICRATERATIO, NEWTICRATE), MUSICRATE));
-			}
-			S_Start();
 		}
-		else if (!strnicmp(S_MusicName(), cmptrack, 7))
+
+		// Fade music, by the way.
+		if (RESETMUSIC || strnicmp(S_MusicName(),
+			(mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname, 7))
+		{
+			S_FadeMusic(0, FixedMul(
+				FixedDiv((F_GetWipeLength(wipedefs[wipe_level_toblack])-2)*NEWTICRATERATIO, NEWTICRATE), MUSICRATE));
+		}
+
+		/* PS: As mentioned in P_LoadLevel, while oddly named, S_Start() only handles music.
+			Starting it again here for our stuff should be fine, just don't do it during the titlemap :p */
+		if ((!strnicmp(S_MusicName(),
+			(mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname, 7))
+		|| (strnicmp(S_MusicName(),
+			((mapmusflags & MUSIC_RELOADRESET) ? mapmusname : determinedMusic), 7)))
 			S_Start();
 	}
 }

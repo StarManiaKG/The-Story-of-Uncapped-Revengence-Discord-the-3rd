@@ -1009,7 +1009,7 @@ typedef enum
 } sprite_corona_fade_e;
    
 #define NUM_FIRE_PATTERN 64
-static INT8 fire_pattern[NUM_FIRE_PATTERN];
+static UINT8 fire_pattern[NUM_FIRE_PATTERN];
 static UINT8 fire_pattern_tic[NUM_FIRE_PATTERN];
 
 #define NUM_RAND_PATTERN 32
@@ -1395,7 +1395,7 @@ static void Draw_Sprite_Corona_Light(vissprite_t * vis)
 	int texturecolumn;
 
 	// Sprite has a corona, and coronas are enabled.
-	LONG dr_alpha = (((UINT8)corona_alpha * 7) + (2 * (16-7))) >> 4; // compensate for different HWR alpha 
+	long dr_alpha = (((UINT8)corona_alpha * 7) + (2 * (16-7))) >> 4; // compensate for different HWR alpha 
 
 #ifdef ENABLE_DRAW_ALPHA
 	colfunc = alpha_colfunc;  // R_DrawAlphaColumn
