@@ -303,7 +303,7 @@ void TSoURDt3rd_LoadLevel(boolean reloadinggamestate)
 
 		// Change music :)
 		if (strnicmp(S_MusicName(),
-			((mapmusflags & MUSIC_RELOADRESET) ? mapmusname : determinedMusic), 7))
+			((mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : determinedMusic), 7))
 		{
 			strncpy(mapmusname, determinedMusic, 7);
 
@@ -325,7 +325,7 @@ void TSoURDt3rd_LoadLevel(boolean reloadinggamestate)
 		if ((!strnicmp(S_MusicName(),
 			(mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname, 7))
 		|| (strnicmp(S_MusicName(),
-			((mapmusflags & MUSIC_RELOADRESET) ? mapmusname : determinedMusic), 7)))
+			((mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : determinedMusic), 7)))
 			S_Start();
 	}
 }
