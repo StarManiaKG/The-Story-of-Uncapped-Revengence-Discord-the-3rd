@@ -1768,7 +1768,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 				{
 					FBITFIELD blendmode = PF_Masked;
 
-					if ((rover->fofflags & FOF_TRANSLUCENT && !(rover->fofflags & FOF_SPLAT)) || (rover->fofflags & FOF_TRANSLUCENT && rover->alpha < 256) || rover->blend) // STAR NOTE: edited for palette rendering
+					if ((rover->fofflags & FOF_TRANSLUCENT && !(rover->fofflags & FOF_SPLAT)) || (rover->fofflags & FOF_TRANSLUCENT && rover->alpha < 256) || rover->blend)
 					{
 						blendmode = rover->blend ? HWR_GetBlendModeFlag(rover->blend) : PF_Translucent;
 						Surf.PolyColor.s.alpha = max(0, min(rover->alpha, 255));
@@ -1892,7 +1892,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 				{
 					FBITFIELD blendmode = PF_Masked;
 
-					if ((rover->fofflags & FOF_TRANSLUCENT && !(rover->fofflags & FOF_SPLAT)) || (rover->fofflags & FOF_TRANSLUCENT && rover->alpha < 256) || rover->blend) // STAR NOTE: edited for palette rendering
+					if ((rover->fofflags & FOF_TRANSLUCENT && !(rover->fofflags & FOF_SPLAT)) || (rover->fofflags & FOF_TRANSLUCENT && rover->alpha < 256) || rover->blend)
 					{
 						blendmode = rover->blend ? HWR_GetBlendModeFlag(rover->blend) : PF_Translucent;
 						Surf.PolyColor.s.alpha = max(0, min(rover->alpha, 255));
@@ -3159,7 +3159,7 @@ static void HWR_Subsector(size_t num)
 					                       alpha, rover->master->frontsector, PF_Fog|PF_NoTexture,
 										   true, rover->master->frontsector->extra_colormap);
 				}
-				else if ((rover->fofflags & FOF_TRANSLUCENT && !(rover->fofflags & FOF_SPLAT)) || (rover->fofflags & FOF_TRANSLUCENT && rover->alpha < 256) || rover->blend) // SoM: Flags are more efficient //* STAR NOTE: edited for palette rendering *//
+				else if ((rover->fofflags & FOF_TRANSLUCENT && !(rover->fofflags & FOF_SPLAT)) || (rover->fofflags & FOF_TRANSLUCENT && rover->alpha < 256) || rover->blend) // SoM: Flags are more efficient
 				{
 					light = R_GetPlaneLight(gl_frontsector, centerHeight, dup_viewz < cullHeight ? true : false);
 
@@ -3205,7 +3205,7 @@ static void HWR_Subsector(size_t num)
 					                       alpha, rover->master->frontsector, PF_Fog|PF_NoTexture,
 										   true, rover->master->frontsector->extra_colormap);
 				}
-				else if ((rover->fofflags & FOF_TRANSLUCENT && !(rover->fofflags & FOF_SPLAT)) || (rover->fofflags & FOF_TRANSLUCENT && rover->alpha < 256) || rover->blend) // STAR NOTE: edited for palette rendering
+				else if ((rover->fofflags & FOF_TRANSLUCENT && !(rover->fofflags & FOF_SPLAT)) || (rover->fofflags & FOF_TRANSLUCENT && rover->alpha < 256) || rover->blend)
 				{
 					light = R_GetPlaneLight(gl_frontsector, centerHeight, dup_viewz < cullHeight ? true : false);
 
@@ -3614,7 +3614,8 @@ static boolean HWR_DoCulling(line_t *cullheight, line_t *viewcullheight, float v
 	return false;
 }
 
-// STAR NOTE: I was here in this function alot lol //
+/** STAR NOTE: i was here for realistic shadow stuff lol
+ 	(I.E: cv_shadow.value == 2, cv_allobjectshaveshadows, etc. :p) **/
 static void HWR_DrawShadows(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale)
 {
 	patch_t *gpatch;
@@ -3674,7 +3675,7 @@ static void HWR_DrawShadows(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale)
 	if (alpha >= 255) return;
 	alpha = 255 - alpha;
 
-	gpatch = (cv_shadow.value == 2 ? spr->gpatch : ((patch_t *)W_CachePatchName("DSHADOW", PU_SPRITE))); // STAR NOTE: i was here lol //
+	gpatch = (cv_shadow.value == 2 ? spr->gpatch : ((patch_t *)W_CachePatchName("DSHADOW", PU_SPRITE)));
 	if (!(gpatch && ((GLPatch_t *)gpatch->hardware)->mipmap->format)) return;
 	HWR_GetPatch(gpatch);
 
@@ -3700,7 +3701,7 @@ static void HWR_DrawShadows(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale)
 	shadowVerts[1].z = shadowVerts[2].z = fy - offset;
 	shadowVerts[0].z = shadowVerts[3].z = fy + offset;
 
-	// STAR STUFF //
+	// Realistic shadows :)
 	if (cv_shadow.value == 2)
 	{
 		shadowVerts[0].x = shadowVerts[3].x = spr->x1;
@@ -3762,14 +3763,13 @@ static void HWR_DrawShadows(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale)
 			shadowVerts[2].z = spr->z2 + (gpatch->height + offset) * gl_viewsin;
 		}
 	}
-	// END THIS //
 
 	for (i = 0; i < 4; i++)
 	{
 		float oldx = shadowVerts[i].x;
 		float oldy = shadowVerts[i].z;
 
-		// STAR NOTE: controls shadow positions //
+		// Cool realistic shadow positions
 		if (cv_shadow.value != 2 || cv_shadowposition.value)
 		{
 			shadowVerts[i].x = (cv_shadowposition.value == 1 ?
@@ -3802,7 +3802,7 @@ static void HWR_DrawShadows(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale)
 	shadowVerts[3].t = shadowVerts[2].t = 0;
 	shadowVerts[0].t = shadowVerts[1].t = ((GLPatch_t *)gpatch->hardware)->max_t;
 
-	// STAR STUFF: flip shadow sprites please //
+	// Flip realistic shadows please
 	if (cv_shadow.value == 2)
 	{
 		if (spr->flip)
@@ -3855,14 +3855,13 @@ static void HWR_DrawShadows(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale)
 		blendmode |= PF_ColorMapped;
 	}
 
-	// STAR STUFF //
+	// Set realistic shadow colors, so cool!
 	if (cv_shadow.value == 2)
 	{
 		sSurf.PolyColor.s.red = 0x00;
 		sSurf.PolyColor.s.blue = 0x00;
 		sSurf.PolyColor.s.green = 0x00;
 	}
-	// END THAT PLEASE //
 
 	HWR_ProcessPolygon(&sSurf, shadowVerts, 4, blendmode, shader, false);
 }
@@ -5365,14 +5364,15 @@ static void HWR_DrawSprites(void)
 		else
 #endif
 		{
-			// STAR NOTE: i was here lol
+			/** STAR NOTE: i was here for realistic shadow stuff lol
+ 				(I.E: cv_shadow.value == 2, cv_allobjectshaveshadows, etc. :p) **/
+
 			if (spr->mobj && ((!cv_allobjectshaveshadows.value && spr->mobj->shadowscale) || cv_allobjectshaveshadows.value))
 			{
 				if ((cv_shadow.value == 1 && !skipshadow) || cv_shadow.value == 2)
 					HWR_DrawShadows(spr, spr->mobj, (cv_allobjectshaveshadows.value ? (spr->mobj->shadowscale ? spr->mobj->shadowscale : 1*FRACUNIT) : spr->mobj->shadowscale));
 			}
 
-			// STAR NOTE: i was also here lol
 			if ((spr->mobj->flags2 & MF2_LINKDRAW) && spr->mobj->tracer)
 			{
 				// If this linkdraw sprite is behind a sprite that has a shadow,
@@ -5384,7 +5384,6 @@ static void HWR_DrawSprites(void)
 				{
 					if (cv_shadow.value && !skipshadow && spr->dispoffset < 0)
 					{
-						
 						HWR_DrawShadows(spr, spr->mobj->tracer, (cv_allobjectshaveshadows.value ? (spr->mobj->tracer->shadowscale ? spr->mobj->tracer->shadowscale : 1*FRACUNIT) : spr->mobj->tracer->shadowscale));
 						skipshadow = true;
 					}
