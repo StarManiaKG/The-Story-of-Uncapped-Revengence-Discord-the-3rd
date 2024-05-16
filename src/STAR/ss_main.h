@@ -19,7 +19,7 @@
 //       Definitions
 // ------------------------ //
 
-///#define TSOURDT3RD_DEBUGGING /* Debugging */
+#define TSOURDT3RD_DEBUGGING /* Debugging */
 
 #define AUTOLOADCONFIGFILENAME "autoload.cfg"
 
