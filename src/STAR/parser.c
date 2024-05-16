@@ -7,15 +7,13 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  parser.c
-/// \brief Contains all the Info Portraying to Parsing TSoURDt3rd's Custom STAR Scripts
+/// \brief Contains STAR script parsing data
 
 #include <time.h>
 
 #include "parser.h"
 #include "ss_main.h" // STAR_CONS_Printf() //
-
 #include "../d_main.h" // srb2home //
-
 #include "../i_system.h"
 #include "../doomdef.h"
 #include "../byteptr.h"
@@ -24,12 +22,18 @@
 #include "../s_sound.h"
 #include "../fastcmp.h"
 
-//// VARIABLES ////
+// ------------------------ //
+//        Variables
+// ------------------------ //
+
 INT32 star_lumploading = 0; // is TSoURDt3rd_LoadLump being called?
 INT32 star_line = -1; // are we checking for our lines?
 INT32 star_brackets = 1; // are we checking for our brackets?
 
-//// FUNCTIONS ////
+// ------------------------ //
+//        Functions
+// ------------------------ //
+
 #if 0
 static void MusicDefStrcpy (char *p, const char *s, size_t n)
 {
@@ -39,7 +43,10 @@ static void MusicDefStrcpy (char *p, const char *s, size_t n)
 }
 #endif
 
-// Load a script from a MYFILE
+//
+// static inline void TSoURDt3rd_LoadFile(MYFILE *f, char *name)
+// Loads a script from the given 'MYFILE'.
+//
 static inline void TSoURDt3rd_LoadFile(MYFILE *f, char *name)
 {
 	star_lumploading++; // turn on loading flag
@@ -53,6 +60,10 @@ static inline void TSoURDt3rd_LoadFile(MYFILE *f, char *name)
 	star_lumploading--; // turn off loading flag
 }
 
+//
+// void TSoURDt3rd_LoadLump(UINT16 wad, UINT16 lump)
+// Loads the given STAR script lump.
+//
 void TSoURDt3rd_LoadLump(UINT16 wad, UINT16 lump)
 {
 	MYFILE f;
@@ -116,7 +127,6 @@ static boolean BracketFound(const char *string)
 		star_brackets++;
 		return true;
 	}
-
 	return false;
 }
 
@@ -177,12 +187,11 @@ void TSoURDt3rd_ParseScript(MYFILE *f)
 	path = va("%s"PATHSEP"%s", srb2home, "STAR_starfilecontents.star");
 	af = fopen(path, "w+");
 
-	// Look for namespace at the beginning.
+	// Look for the TSoURDt3rd namespace initializer at the beginning.
 	if (!fastcmp(tkn, "{"))
 	{
 		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "No initializing bracket at beginning of lump '%s'!\n", lump);
 		M_TokenizerClose();
-
 		return;
 	}
 
@@ -190,35 +199,27 @@ void TSoURDt3rd_ParseScript(MYFILE *f)
 	while ((tkn = M_TokenizerRead(0)) && M_TokenizerGetEndPos() < f->size)
 	{
 		fputs(va("%s\n", tkn), af);
-
-		// Increment our lines.
-		star_line++;
+		star_line++; // Increment our lines.
 
 		// Check for brackets.
 		if (fastcmp(tkn, "}"))
 		{
-#if 0
-			if (fastcmp(M_TokenizerRead(0), ";") == 0)
+			if (fastcmp(M_TokenizerRead(0), ";") <= 0)
 			{
 				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "Missing semicolon directly after bracket! (near line %d)\n", star_line);
 				M_TokenizerClose();
-
-				return false;
+				return;
 			}
-#endif
-
 			star_brackets--;
 		}
 		else if (fastcmp(tkn, "{"))
 			star_brackets++;
 
 		// Check for valid fields.
-		else if (ValidTerm(tkn, "JUKEBOXDEF"))
+		if (ValidTerm(tkn, "JUKEBOXDEF"))
 			TSoURDt3rd_Parse(f, TSoURDt3rd_ParseJukeboxDef);
 		else if (ValidTerm(tkn, "WINDOWTITLES"))
 			TSoURDt3rd_Parse(f, NULL);
-
-		// Found invalid field, skip it.
 		else
 			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "Unknown field '%s' in lump '%s'.\n", tkn, lump);
 
@@ -227,7 +228,6 @@ void TSoURDt3rd_ParseScript(MYFILE *f)
 		{
 			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "Some brackets are not properly enclosed! (in lump %s)\n", lump);
 			M_TokenizerClose();
-
 			return;
 		}
 	}

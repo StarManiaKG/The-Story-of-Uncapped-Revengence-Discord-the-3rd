@@ -7,7 +7,7 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  parsed.c
-/// \brief Contains all Info Related to Helping Parse Specific Info Within TSoURDt3rd's Custom STAR Scripts
+/// \brief Contains STAR script property parsing functions
 
 #include <time.h>
 
@@ -47,7 +47,6 @@ void TSoURDt3rd_ParseJukeboxDef(MYFILE *f, const char *word, const char *value)
 	(void)defp;
 	(void)jukeTest;
 
-	// PAGETITLES
 	if (ValidTerm(word, "PAGETITLES"))
 	{
 		test_t *prev = NULL;
@@ -84,8 +83,6 @@ void TSoURDt3rd_ParseJukeboxDef(MYFILE *f, const char *word, const char *value)
 		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "\nTEST: %s, %s\nHI: %s\n", word, value, juke->pageName);
 		//(*jukeTest) = juke;
 	}
-
-	// LUMP
 	else if (ValidTerm(word, "LUMP"))
 	{
 		//value = word;
@@ -124,8 +121,6 @@ void TSoURDt3rd_ParseJukeboxDef(MYFILE *f, const char *word, const char *value)
 			(void)prev;
 		}
 	}
-
-	// Everything Else
 	else
 	{
         STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "made it here instead, %s\n", word);
