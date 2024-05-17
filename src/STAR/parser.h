@@ -15,13 +15,19 @@
 #include "parsed.h"
 #include "../doomstat.h"
 
-// VARIABLES //
+// ------------------------ //
+//        Variables
+// ------------------------ //
+
 extern INT32 star_line;
 
-// FUNCTIONS //
-boolean ValidTerm(const char *string, const char *word);
+// ------------------------ //
+//        Functions
+// ------------------------ //
 
 void TSoURDt3rd_LoadLump(UINT16 wad, UINT16 lump);
+
+void TSoURDt3rd_Parse(MYFILE *f, void (*parserfunc)(MYFILE *, const char *, const char *));
 void TSoURDt3rd_ParseScript(MYFILE *f);
 
 #endif // __STAR_PARSER__
