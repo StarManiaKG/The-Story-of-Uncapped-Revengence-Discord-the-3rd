@@ -28,7 +28,8 @@
 
 INT32 star_lumploading = 0; // is TSoURDt3rd_LoadLump being called? //
 INT32 star_line = -1; // are we checking for our lines? //
-INT32 star_brackets = 1; // are we checking for our brackets? //
+
+INT32 star_brackets = 0; // are we checking for our brackets? //
 
 INT32 star_parseerror = 0; // have we stumbled upon a parser error? //
 
@@ -36,6 +37,7 @@ enum star_term_e
 {
 	star_jukeboxdef,
 	star_windowtitles,
+	NUMSTARTERMS
 };
 
 static const char *const star_term_opt[] = {
@@ -70,8 +72,10 @@ static inline void TSoURDt3rd_LoadFile(MYFILE *f, char *name)
 	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "Loading STAR script from %s\n", name);
     TSoURDt3rd_ParseScript(f);
 
-	star_line = 0; // clear lines checked
 	star_lumploading--; // turn off loading flag
+	star_line = -1; // clear lines checked
+
+	star_brackets = 0; // clear bracket amounts
 
 	star_parseerror = 0; // clear parser errors
 }
@@ -108,7 +112,6 @@ void TSoURDt3rd_LoadLump(UINT16 wad, UINT16 lump)
 	}
 
 	TSoURDt3rd_LoadFile(&f, name); // actually load file!
-	star_line = 0; // clear lines checked
 
 	free(name);
 	Z_Free(f.data);
@@ -125,14 +128,22 @@ void TSoURDt3rd_LoadLump(UINT16 wad, UINT16 lump)
 //
 static boolean CheckForEnclosedBrackets(const char *string)
 {
+	//M_TokenizerSetEndPos(M_TokenizerGetEndPos()); // set the end position for this text junk right quick please
+
 	if (fastcmp(string, "}"))
 	{
-		if (!fastcmp(M_TokenizerRead(1), ";"))
+#if 1
+		string = M_TokenizerRead(0);
+		//STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "CheckForEnclosedBrackets_AFTER: '%s, %s'!\n", M_TokenizerRead(0), M_TokenizerRead(1));
+#endif
+#if 0		
+		if (!fastcmp(string, ";"))
 		{
 			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "Missing semicolon directly after bracket! (near line %d)\n", star_line);
-			M_TokenizerClose();
 			return 2;
 		}
+#endif
+
 		star_brackets--;
 		return 1;
 	}
@@ -154,58 +165,38 @@ void TSoURDt3rd_Parse(MYFILE *f, void (*parserfunc)(MYFILE *, const char *, cons
 	const char *param, *val;
 
 	// Check for opening term brackets first! //
-	string = M_TokenizerRead(0);
+	param = M_TokenizerRead(0);
 	star_line++;
 
-	if (!fastcmp(string, "{"))
+	if (!fastcmp(param, "{"))
 	{
 		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "Opening bracket at line %d missing!\n", star_line);
 		star_parseerror++;
 		return;
 	}
-
 	star_brackets++;
-	M_TokenizerSetEndPos(M_TokenizerGetEndPos()); // set the end position for this text junk right quick please
 
 	// Iterate through even more of our data please! //
-	while ((param = M_TokenizerRead(0)) && M_TokenizerGetEndPos() < f->size)
+	M_TokenizerSetEndPos(M_TokenizerGetEndPos()); // set the end position for this text junk right quick please
+
+	while (star_brackets <= 1)
 	{
+		// Continue...
+		param = M_TokenizerRead(0);
 
 		// Check for properly enclosed brackets...
-#if 0
-		if (fastcmp(param, "}"))
-		{
-			star_brackets--;
-			if (!star_brackets)
-				break;
-			else
-				continue;
-		}
-		else if (fastcmp(param, "{"))
-		{
-			star_brackets++;
-			continue;
-		}
-#else
-		if (CheckForEnclosedBrackets(param) != 2)
-		{
-			if (!star_brackets)
-				break;
-			continue;
-		}
-		else
+		if (CheckForEnclosedBrackets(param) == 2)
 		{
 			star_parseerror++;
 			return;
 		}
-#endif
 
 		val = M_TokenizerRead(1); // value after the '=' sign
 		if (parserfunc) // here for non-crashing reasons mainly (although, you should make sure each term has a function :p)
 			parserfunc(f, param, val);
 		else
 			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "coming soon! - %s and %s\n", param, val);
-	}	
+	}
 }
 
 //
@@ -216,6 +207,8 @@ void TSoURDt3rd_ParseScript(MYFILE *f)
 {
 	char *lump = wadfiles[f->wad]->filename;
 	const char *tkn;
+
+	INT32 termFound;
 
 	FILE *af;
 	const char *path;
@@ -232,6 +225,7 @@ void TSoURDt3rd_ParseScript(MYFILE *f)
 		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "No initializing bracket at beginning of lump '%s'!\n", lump);
 		goto closeFile;
 	}
+	//star_brackets++;
 
 	fputs(va("%s\n", tkn), af);
 
@@ -248,14 +242,21 @@ void TSoURDt3rd_ParseScript(MYFILE *f)
 			goto closeFile;
 
 		// Check for valid fields.
-		if (star_term_opt[tkn])
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "TOKEN OPT THING: %s\n", star_term_opt[tkn]);
-		switch (star_term_opt[tkn])
+		for (termFound = 0; termFound < NUMSTARTERMS; termFound++)
+		{
+			if (fasticmp(tkn, star_term_opt[termFound]))
+			{
+				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "TOKEN OPT THING: %s\n", star_term_opt[termFound]);
+				break;
+			}
+		}
+
+		switch (termFound)
 		{
 			case star_jukeboxdef:
 				TSoURDt3rd_Parse(f, TSoURDt3rd_ParseJukeboxDef);
 				break;
-			
+
 			case star_windowtitles:
 				TSoURDt3rd_Parse(f, NULL);
 				break;
@@ -277,6 +278,7 @@ void TSoURDt3rd_ParseScript(MYFILE *f)
 		{
 			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "Stumbled upon a parser error (in lump %s, near line %d)\n", lump, star_line);
 			star_parseerror--;
+			goto closeFile;
 		}
 	}
 
