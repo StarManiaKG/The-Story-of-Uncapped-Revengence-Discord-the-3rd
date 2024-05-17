@@ -119,6 +119,15 @@ void STAR_CONS_Printf(star_messagetype_t starMessageType, const char *fmt, ...)
 	CONS_Printf("%s", txt);
 }
 
+//
+// void STAR_M_StartMessage(const char *header)
+// M_StartMessage, but customized to show headers, add a little more flare, and easier accessibility.
+//
+void STAR_M_StartMessage(const char *header)
+{
+	
+}
+
 const char *TSoURDt3rd_CON_DrawStartupScreen(void)
 {
 	switch (cv_startupscreen.value)

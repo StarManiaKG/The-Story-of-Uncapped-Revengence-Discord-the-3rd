@@ -6,7 +6,7 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  discord_gamesdk.h
+/// \file  discord_gamesdk.c
 /// \brief Discord Game SDK handling
 
 #ifdef HAVE_DISCORDGAMESDK // HAVE_DISCORDGAMESDK
@@ -33,6 +33,7 @@
 
 		See header file for description.
 --------------------------------------------------*/
+
 void DRPC_Init(int argc, char** argv)
 {
     struct Application app;
@@ -51,19 +52,19 @@ void DRPC_Init(int argc, char** argv)
 
     struct DiscordCreateParams params;
     DiscordCreateParamsSetDefault(&params);
-    params.client_id = 418559331265675294;
-    params.flags = DiscordCreateFlags_Default;
-    params.event_data = &app;
-    params.activity_events = &activities_events;
-    params.relationship_events = &relationships_events;
-    params.user_events = &users_events;
+    params.client_id			= //418559331265675294;
+    params.flags				= DiscordCreateFlags_Default;
+    params.event_data			= &app;
+    params.activity_events		= &activities_events;
+    params.relationship_events	= &relationships_events;
+    params.user_events			= &users_events;
     DISCORD_REQUIRE(DiscordCreate(DISCORD_VERSION, &params, &app.core));
 
-    app.users = app.core->get_user_manager(app.core);
-    app.achievements = app.core->get_achievement_manager(app.core);
-    app.activities = app.core->get_activity_manager(app.core);
-    app.application = app.core->get_application_manager(app.core);
-    app.lobbies = app.core->get_lobby_manager(app.core);
+    app.users			= app.core->get_user_manager(app.core);
+    app.achievements	= app.core->get_achievement_manager(app.core);
+    app.activities		= app.core->get_activity_manager(app.core);
+    app.application		= app.core->get_application_manager(app.core);
+    app.lobbies			= app.core->get_lobby_manager(app.core);
 
     app.lobbies->connect_lobby_with_activity_secret(
       app.lobbies, "invalid_secret", &app, OnLobbyConnect);
@@ -95,9 +96,11 @@ void DRPC_Init(int argc, char** argv)
 
 		See header file for description.
 --------------------------------------------------*/
+
 void DRPC_UpdatePresence(void)
 {	
 	char sonic[64] = "sonic";
+	snprintf();
 	CONS_Printf("%s", sonic);
 }
 

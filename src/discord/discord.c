@@ -15,6 +15,9 @@
 
 #include <time.h>
 
+#include "discord.h" // discord stuff, duh
+#include "doomdef.h"
+
 #include "i_system.h"
 #include "d_clisrv.h"
 #include "d_netcmd.h"
@@ -29,9 +32,6 @@
 #include "stun.h"
 #include "i_tcp.h" // current_port
 
-#include "discord.h" // discord, duh
-#include "doomdef.h"
-
 #include "p_local.h" // all7matchemeralds
 #include "m_cond.h" // queries about emblems
 #include "v_video.h" // hud stuff, mainly
@@ -44,11 +44,11 @@
 
 #include "fastcmp.h" // fastcmp, helps with super stuff
 
-#include "STAR/star_vars.h" // provides unique star stuff
+#include "STAR/star_vars.h" // provides unique STAR stuff
 #include "STAR/m_menu.h" // V_MENUCOLORMAP //
 
-struct discordInfo_s discordInfo; // Dedicated Server Safety Struct
-discordRequest_t *discordRequestList = NULL;
+struct discordInfo_s discordInfo; // Contains cool discord info and all
+discordRequest_t *discordRequestList = NULL; // Holds all our requests to join
 
 #ifndef DEVELOP
 boolean devmode = false;
@@ -708,19 +708,18 @@ void DRPC_UpdatePresence(void)
 		NULL
 	};
 
-	/*
-	// STAR NOTE: I Might Have a Better Idea for This, Actually
+#if 0
+	/* STAR NOTE: I Might Have a Better Idea for This, Actually */
 	static const char *customStringLink[] = {
-		// Statuses
 		"#s",
 		"#j",
 		"#t",
 		"#e",
 		"#m",
 		NULL
-	};*/
+	};
+#endif
 
-	// Iterators
 	INT32 i = 0;					// General Iterator
 	UINT8 emeraldCount = 0;			// Helps Me To Find The Emeralds
 
@@ -729,22 +728,23 @@ void DRPC_UpdatePresence(void)
 	INT32 checkSideSkin = 0; 		// Checks Through The Secondary Display Player's Skin
 	INT32 checkSuperSideSkin = 0;	// Checks Through The Secondary Display Player's Super Skin
 
-	// Booleans
 	boolean joinSecretSet = false;
 
-	// Pointers
 	gamedata_t *data = serverGamedata; // Proper Gamedata Pointer, Made by Bitten
-	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer];
+	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer]; // Obvious
 
-	////// 	  INITIALIZE 	 //////
+	// INITIALIZE //
 	DiscordRichPresence discordPresence;
 	memset(&discordPresence, 0, sizeof(discordPresence));
 
-	////// 	  CONTROL BASIC RICH PRESENCE STUFFS FIRST	 //////
+	// FALLBACK/BASIC RICH PRESENCE //
+	/* Since The User Doesn't Want To Show Their Status, or Since They're Using the DEVELOP Flag,
+		This Just Shows That They're Playing SRB2, Along With a Few Extra Predetermined Strings ( Thanks to Star :) ).
+
+		(If that's too much, then they should just disable game activity :V)
+	*/
 	if (!cv_discordrp.value || devmode || dedicated)
 	{
-		// Since The User Doesn't Want To Show Their Status, or Since They're Using the DEVELOP Flag, This Just Shows That They're Playing SRB2. (If that's too much, then they should just disable game activity :V)
-		// However, Now it also shows a few predetermined states, based on whether you have Discord RPC off or have enabled the DEVELOP flag, thanks to Star :)
 		if (dedicated)
 			return;
 
@@ -756,22 +756,18 @@ void DRPC_UpdatePresence(void)
 
 		DRPC_EmptyRequests();
 		Discord_UpdatePresence(&discordPresence);
+
 		return;
 	}
-	
-	////////////////////////////////////////////
-	////   Main Rich Presence Status Info   ////
-	////////////////////////////////////////////
 
-	//////// ALL GAME INFO ////////
-	////// 	  SERVER INFO 	 //////
+	// MAIN INFO //
+	// Servers
 	if (netgame)
 	{
 		if (DRPC_InvitesAreAllowed() == true)
 		{
-			const char *join;
-
 			// Grab the host's IP for joining.
+			const char *join;
 			if ((join = DRPC_GetServerIP()) != NULL)
 			{
 				discordPresence.joinSecret = DRPC_XORIPString(join);
@@ -792,7 +788,7 @@ void DRPC_UpdatePresence(void)
 
 		if (cv_discordshowonstatus.value != 8)
 			snprintf(detailstr, 60, (Playing() ? (server ? "Hosting a %s Server" : "In a %s Server") : "Looking for a Server"), servertype);
-			
+
 		discordPresence.partyId		= server_context; 		  	// Thanks, whoever gave us Mumble support, for implementing the EXACT thing Discord wanted for this field!
 		discordPresence.partySize	= D_NumPlayers(); 	   		// Current Amount of Players in the Server
 		discordPresence.partyMax	= discordInfo.maxPlayers;	// Max Players
@@ -1263,9 +1259,11 @@ void DRPC_UpdatePresence(void)
 				CV_Set(&cv_customdiscordlargeimagetext, cv_customdiscordlargeimagetext.defaultvalue);
 		}
 
-		// Write the Heading Strings to Discord //
-		(strlen(cv_customdiscorddetails.string) > 2 ? strcpy(detailstr, cv_customdiscorddetails.string) : 0);
-		(strlen(cv_customdiscordstate.string) > 2 ? strcpy(statestr, cv_customdiscordstate.string) : 0);
+		// Write the Heading Strings to Discord
+		if (strlen(cv_customdiscorddetails.string) > 2)
+			strcpy(detailstr, cv_customdiscorddetails.string);
+		if (strlen(cv_customdiscordstate.string) > 2)
+			strcpy(statestr, cv_customdiscordstate.string);
 
 		// Write The Images and Their Text to Discord //
 		// Small Images
@@ -1295,21 +1293,18 @@ void DRPC_UpdatePresence(void)
 		}
 	}
 
-	////// 	  APPLY ALL INFO 	 //////
-	discordPresence.details = detailstr;
-	discordPresence.state = statestr;
+	// We can finally push our new status! :) //
+	discordPresence.details			= detailstr;
+	discordPresence.state			= statestr;
 
-	discordPresence.smallImageKey = simagestr;
-	discordPresence.smallImageText = simagetxtstr;
+	discordPresence.smallImageKey	= simagestr;
+	discordPresence.smallImageText	= simagetxtstr;
 
-	discordPresence.largeImageKey = imagestr;
-	discordPresence.largeImageText = imagetxtstr;
-
-	// Flush the Request List, if it Exists and We Can't Join.
-	if (joinSecretSet == false)
+	discordPresence.largeImageKey	= imagestr;
+	discordPresence.largeImageText	= imagetxtstr;
+	
+	if (!joinSecretSet) // Flush the Request List, if it Exists and We Can't Join.
 		DRPC_EmptyRequests();
-
-	// Finally Push Our Status and Finish Everything! //
 	Discord_UpdatePresence(&discordPresence);
 }
 
@@ -1326,32 +1321,30 @@ void DRPC_UpdatePresence(void)
 	Return:-
 		None
 --------------------------------------------------*/
+
 void DRPC_Shutdown(void)
 {
-	// Initialize Discord Once More //
 	DiscordRichPresence discordPresence;
-	memset(&discordPresence, 0, sizeof(discordPresence));
-	memset(&discordInfo, 0, sizeof(discordInfo));
 
-	// Empty Requests //
 	DRPC_EmptyRequests();
 
-	// Assign a New Closing Status Because We Can //
 	discordPresence.details = "Currently Closing...";
 	discordPresence.state = "Clearing SRB2 Discord Rich Presence...";
 
 	Discord_UpdatePresence(&discordPresence);
+
+	memset(&discordPresence, 0, sizeof(discordPresence));
+	memset(&discordInfo, 0, sizeof(discordInfo));
 
 #ifdef DISCORD_DISABLE_IO_THREAD
 	Discord_UpdateConnection();
 #endif
 	Discord_RunCallbacks();
 
-	// Finally, Close Everything Down, and We're Done :) //
 	Discord_ClearPresence();
 	Discord_Shutdown();
 
-	I_OutputMsg("DRPC_Shutdown(): %s\n", ((dedicated || devmode || !cv_discordrp.value) ? "barely started, but shut down anyways" : "shut down"));
+	I_OutputMsg("DRPC_Shutdown(): shut down\n");
 }
 
 #endif // HAVE_DISCORDRPC
