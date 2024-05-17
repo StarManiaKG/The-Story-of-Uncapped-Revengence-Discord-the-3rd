@@ -1,5 +1,19 @@
+// SONIC ROBO BLAST 2; TSOURDT3RD
+//-----------------------------------------------------------------------------
+// Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
+// Copyright (C) 2018-2020 by Kart Krew.
+// Copyright (C) 2020-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+/// \file  discord_cmds.c
+/// \brief Discord Rich Presence commands
 
-#include "../command.h"
+#if defined (HAVE_DISCORDRPC) || defined (HAVE_DISCORDGAMESDK)
+
+#include "discord.h"
 
 static CV_PossibleValue_t statustype_cons_t[] = {
     {0, "Default"},
@@ -12,13 +26,16 @@ static CV_PossibleValue_t statustype_cons_t[] = {
     {6, "Only Statuses"},
     {7, "Only Playtime"},
     {8, "Custom"},
-    {0, NULL}};
+
+    {0, NULL}
+};
 
 static CV_PossibleValue_t characterimagetype_cons_t[] = {
 	{0, "CS Portrait"},
 	{1, "Continue Sprite"},
 	{2, "Life Icon Sprite"},
-	{0, NULL}};
+	{0, NULL}
+};
 
 static CV_PossibleValue_t custom_imagetype_cons_t[] = {
 	{0, "CS Portraits"},
@@ -32,10 +49,10 @@ static CV_PossibleValue_t custom_imagetype_cons_t[] = {
 	{6, "Maps"},
 	{7, "Miscellaneous"},
 	{8, "None"},
-	{0, NULL}};
+	{0, NULL}
+};
 
 static CV_PossibleValue_t custom_characterimage_cons_t[] = {
-    // Vanilla Chars
     {0, "Default"},	// ...Does ghost sonic count as a vanilla char? Maybe.
     {1, "Sonic"},
     {2, "Tails"},
@@ -45,7 +62,6 @@ static CV_PossibleValue_t custom_characterimage_cons_t[] = {
     {6, "Metal Sonic"},
     {7, "Sonic & Tails"}, // Bots, am I right?
 
-    // Custom Chars
     {8, "Adventure Sonic"},
     {9, "Shadow"},
     {10, "Skip"},
@@ -68,12 +84,15 @@ static CV_PossibleValue_t custom_characterimage_cons_t[] = {
 
     // Friendos' Char
 	{25, "Speccy"},
-    {0, NULL}};
+
+    {0, NULL}
+};
 
 static CV_PossibleValue_t custom_supercharacterimage_cons_t[] = {
     {0, "Sonic"},
 	{1, "Sonic & Tails"},
-	{0, NULL}};
+	{0, NULL}
+};
 
 static CV_PossibleValue_t custom_mapimage_cons_t[] = {
     // Singleplayer/Co-op Maps
@@ -172,12 +191,13 @@ static CV_PossibleValue_t custom_mapimage_cons_t[] = {
     
     // Custom Map
     {69, "Custom"},
-    {0, NULL}};
+
+    {0, NULL}
+};
 
 static CV_PossibleValue_t custom_miscimage_cons_t[] = {
 	{0, "Default"},
-	
-	// Intro Stuff
+
 	{1, "Intro 1"},
 	{2, "Intro 2"},
 	{3, "Intro 3"},
@@ -186,8 +206,7 @@ static CV_PossibleValue_t custom_miscimage_cons_t[] = {
 	{6, "Intro 6"},
 	{7, "Intro 7"},
 	{8, "Intro 8"},
-	
-	// Alternate Images
+
 	{9, "Alt. Sonic Image 1"},
 	{10, "Alt. Sonic Image 2"},
 	{11, "Alt. Sonic Image 3"},
@@ -208,7 +227,9 @@ static CV_PossibleValue_t custom_miscimage_cons_t[] = {
 	{21, "Alt. Metal Sonic Image 2"},
 
 	{22, "Alt. Eggman Image 1"},
-	{0, NULL}};
+
+	{0, NULL}
+};
 
                                                 ////////////////////////////
                                                 //    Discord Commands    //
@@ -247,3 +268,5 @@ consvar_t cv_customdiscordsmallmiscimage = CVAR_INIT ("customdiscordsmallmiscima
 // Captions
 consvar_t cv_customdiscordlargeimagetext = CVAR_INIT ("customdiscordlargeimagetext", "My Favorite Character!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
 consvar_t cv_customdiscordsmallimagetext = CVAR_INIT ("customdiscordsmallimagetext", "My Other Favorite Character!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
+
+#endif // #if defined (HAVE_DISCORDRPC) || defined (HAVE_DISCORDGAMESDK)

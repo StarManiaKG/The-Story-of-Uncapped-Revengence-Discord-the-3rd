@@ -14,9 +14,15 @@
 #ifndef __DISCORD__
 #define __DISCORD__
 
-#ifdef HAVE_DISCORDRPC
+#if defined (HAVE_DISCORDRPC) || defined (HAVE_DISCORDGAMESDK)
 
 #include "discord_rpc.h"
+
+#include "../command.h"
+
+// ------------------------ //
+//       Definitions
+// ------------------------ //
 
 // Please feel free to provide your own Discord app if you're making a new custom build :)
 #define DISCORD_APPID "1013126566236135516"
@@ -24,13 +30,14 @@
 // length of IP strings
 #define IP_SIZE 21
 
-// Commands //
-// Main Things
+// ------------------------ //
+//         Commands
+// ------------------------ //
+
 extern consvar_t cv_discordrp, cv_discordstreamer;
 extern consvar_t cv_discordasks;
 extern consvar_t cv_discordshowonstatus, cv_discordstatusmemes, cv_discordcharacterimagetype;
 
-// Custom Things
 extern consvar_t cv_customdiscorddetails, cv_customdiscordstate;
 extern consvar_t cv_customdiscordlargeimagetype, cv_customdiscordsmallimagetype;
 extern consvar_t cv_customdiscordlargecharacterimage, cv_customdiscordsmallcharacterimage;
@@ -120,7 +127,9 @@ void DRPC_UpdatePresence(void);
 		Rich Presence. Only Runs When the
 		Game Closes or Crashes.
 --------------------------------------------------*/
+
 void DRPC_Shutdown(void);
 
-#endif // HAVE_DISCORDRPC
+#endif // #if defined (HAVE_DISCORDRPC) || defined (HAVE_DISCORDGAMESDK)
+
 #endif // __DISCORD__

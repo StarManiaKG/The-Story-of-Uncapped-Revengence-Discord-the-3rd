@@ -12,24 +12,15 @@
 #include <time.h>
 
 #include "parser.h"
-#include "ss_main.h" // STAR_CONS_Printf() //
-#include "../d_main.h" // srb2home //
-#include "../i_system.h"
-#include "../doomdef.h"
-#include "../byteptr.h"
-#include "../w_wad.h"
-#include "../z_zone.h"
-#include "../s_sound.h"
-#include "../fastcmp.h"
 
 // ------------------------ //
 //        Variables
 // ------------------------ //
 
-INT32 star_lumploading = 0; // is TSoURDt3rd_LoadLump being called? //
-INT32 star_line = -1; // are we checking for our lines? //
+INT32 star_lumploading = 0; // are we loading our lump(s)? //
+INT32 star_line = -1; // what line are we on? //
 
-INT32 star_brackets = 0; // are we checking for our brackets? //
+INT32 star_brackets = 0; // are we checking for our proper brackets? //
 
 INT32 star_parseerror = 0; // have we stumbled upon a parser error? //
 
@@ -50,14 +41,9 @@ static const char *const star_term_opt[] = {
 //        Functions
 // ------------------------ //
 
-#if 0
-static void MusicDefStrcpy (char *p, const char *s, size_t n)
-{
-	strlcpy(p, s, n);
-	while (( p = strchr(p, '_') ))
-		*p++ = ' '; // turn _ into spaces.
-}
-#endif
+// ============
+// FILE LOADING
+// ============
 
 //
 // static inline void TSoURDt3rd_LoadFile(MYFILE *f, char *name)
@@ -117,6 +103,37 @@ void TSoURDt3rd_LoadLump(UINT16 wad, UINT16 lump)
 	Z_Free(f.data);
 }
 
+// ============
+// PARSER TOOLS
+// ============
+
+#if 0
+static void MusicDefStrcpy (char *p, const char *s, size_t n)
+{
+	strlcpy(p, s, n);
+	while (( p = strchr(p, '_') ))
+		*p++ = ' '; // turn _ into spaces.
+}
+#endif
+
+void STAR_Script_Error(const char *err, star_script_errortype verboseness)
+{
+	switch (verboseness)
+	{
+		case STAR_SCRIPT_ERROR_FULL:
+			strcpy(err, va(" (in lump %s, line %d)", lump, star_line));
+			break;
+
+		case STAR_SCRIPT_ERROR_LUMP:
+			strcpy(err, va(" (in lump %s)", lump));
+			break;
+
+		default:
+			break;
+	}
+	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, va("%s\n", err));
+}
+
 //
 // static boolean CheckForEnclosedBrackets(const char *string)
 // Checks for brackets within the STAR script and whether or not they're enclosed.
@@ -128,18 +145,17 @@ void TSoURDt3rd_LoadLump(UINT16 wad, UINT16 lump)
 //
 static boolean CheckForEnclosedBrackets(const char *string)
 {
-	//M_TokenizerSetEndPos(M_TokenizerGetEndPos()); // set the end position for this text junk right quick please
+	M_TokenizerSetEndPos(M_TokenizerGetEndPos()); // set the end position for this text junk right quick please
 
 	if (fastcmp(string, "}"))
 	{
-#if 1
+#if 0
 		string = M_TokenizerRead(0);
-		//STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "CheckForEnclosedBrackets_AFTER: '%s, %s'!\n", M_TokenizerRead(0), M_TokenizerRead(1));
-#endif
-#if 0		
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "CheckForEnclosedBrackets_AFTER: '%s, %s'!\n", M_TokenizerRead(0), M_TokenizerRead(1));
+		
 		if (!fastcmp(string, ";"))
 		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "Missing semicolon directly after bracket! (near line %d)\n", star_line);
+			"Missing semicolon directly after bracket! (near line %d)", star_line);
 			return 2;
 		}
 #endif
@@ -156,11 +172,15 @@ static boolean CheckForEnclosedBrackets(const char *string)
 	return 0;
 }
 
+// ======
+// PARSER
+// ======
+
 //
-// void TSoURDt3rd_Parse(MYFILE *f, void (*parserfunc)(MYFILE *, const char *, const char *))
-// Parses the (already) given STAR script term, using function 'parserfunc' (if defined (which it should be)).
+// void TSoURDt3rd_Parse(MYFILE *f, void (*parserfunc)(MYFILE *, const char *, const char *, ...))
+// Parses the (already) given STAR script term, using function 'parserfunc' (if defined (which it should be, because that makes sense)).
 //
-void TSoURDt3rd_Parse(MYFILE *f, void (*parserfunc)(MYFILE *, const char *, const char *))
+void TSoURDt3rd_Parse(MYFILE *f, void (*parserfunc)(MYFILE *, const char *, const char *, ...))
 {
 	const char *param, *val;
 
@@ -179,12 +199,8 @@ void TSoURDt3rd_Parse(MYFILE *f, void (*parserfunc)(MYFILE *, const char *, cons
 	// Iterate through even more of our data please! //
 	M_TokenizerSetEndPos(M_TokenizerGetEndPos()); // set the end position for this text junk right quick please
 
-	while (star_brackets <= 1)
+	while (star_brackets <= 1 && ((param = M_TokenizerRead(0)) && M_TokenizerGetEndPos() < f->size))
 	{
-		// Continue...
-		param = M_TokenizerRead(0);
-
-		// Check for properly enclosed brackets...
 		if (CheckForEnclosedBrackets(param) == 2)
 		{
 			star_parseerror++;
@@ -192,10 +208,10 @@ void TSoURDt3rd_Parse(MYFILE *f, void (*parserfunc)(MYFILE *, const char *, cons
 		}
 
 		val = M_TokenizerRead(1); // value after the '=' sign
-		if (parserfunc) // here for non-crashing reasons mainly (although, you should make sure each term has a function :p)
-			parserfunc(f, param, val);
+		if (parserfunc)
+			parserfunc(f, param, val, ...);
 		else
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "coming soon! - %s and %s\n", param, val);
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "No parser function for term %s found!\n", param);
 	}
 }
 
@@ -207,8 +223,6 @@ void TSoURDt3rd_ParseScript(MYFILE *f)
 {
 	char *lump = wadfiles[f->wad]->filename;
 	const char *tkn;
-
-	INT32 termFound;
 
 	FILE *af;
 	const char *path;
@@ -222,7 +236,7 @@ void TSoURDt3rd_ParseScript(MYFILE *f)
 
 	if (!fastcmp(tkn, "{"))
 	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "No initializing bracket at beginning of lump '%s'!\n", lump);
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "No script initializing bracket! (in lump '%s')\n", lump);
 		goto closeFile;
 	}
 	//star_brackets++;
@@ -235,6 +249,7 @@ void TSoURDt3rd_ParseScript(MYFILE *f)
 		fputs(va("%s\n", tkn), af);
 
 		// Increment our lines.
+		enum star_term_e term;
 		star_line++;
 
 		// Check for proper brackets.
@@ -242,16 +257,16 @@ void TSoURDt3rd_ParseScript(MYFILE *f)
 			goto closeFile;
 
 		// Check for valid fields.
-		for (termFound = 0; termFound < NUMSTARTERMS; termFound++)
+		for (term = 0; term < sizeof(star_term_e); term++)
 		{
-			if (fasticmp(tkn, star_term_opt[termFound]))
+			if (fasticmp(tkn, star_term_opt[term]))
 			{
-				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "TOKEN OPT THING: %s\n", star_term_opt[termFound]);
+				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "TOKEN OPT THING: %s\n", star_term_opt[term]);
 				break;
 			}
 		}
 
-		switch (termFound)
+		switch (term)
 		{
 			case star_jukeboxdef:
 				TSoURDt3rd_Parse(f, TSoURDt3rd_ParseJukeboxDef);
@@ -266,17 +281,19 @@ void TSoURDt3rd_ParseScript(MYFILE *f)
 				break;
 		}
 
-		// Check if all brackets have been properly enclosed, then rinse and repeat :)
+		// Check for errors, then rinse and repeat :)
 		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "BRACKETS: %d\n", star_brackets);
 		if (star_brackets)
 		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "Some brackets are not properly enclosed! (in lump %s)\n", lump);
+			STAR_Script_Error("Some brackets are not properly enclosed!", STAR_SCRIPT_ERROR_LUMP);
 			goto closeFile;
 		}
 
 		if (star_parseerror)
 		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "Stumbled upon a parser error (in lump %s, near line %d)\n", lump, star_line);
+			M_StartMessage();
+			STAR_Script_Error("Stumbled upon a parser error!", STAR_SCRIPT_ERROR_FULL);
+
 			star_parseerror--;
 			goto closeFile;
 		}

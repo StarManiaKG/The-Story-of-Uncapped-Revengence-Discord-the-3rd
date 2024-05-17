@@ -11,15 +11,11 @@
 
 #include <time.h>
 
-#include "parsed.h"
-#include "ss_main.h" // STAR_CONS_Printf() //
-#include "../i_system.h"
-#include "../doomdef.h"
-#include "../byteptr.h"
-#include "../w_wad.h"
-#include "../z_zone.h"
-#include "../s_sound.h"
-#include "../fastcmp.h"
+#include "parser.h"
+
+// ------------------------ //
+//         Structs
+// ------------------------ //
 
 typedef struct test_s {
 	INT32 page;
@@ -36,7 +32,56 @@ test_t testMusic = {
 
 test_t *jukedefstart = &testMusic;
 
-void TSoURDt3rd_ParseJukeboxDef(MYFILE *f, const char *word, const char *value)
+// ------------------------ //
+//        Functions
+// ------------------------ //
+
+// =======
+// PARSING
+// =======
+
+static void TSoURDt3rd_Parse_JukeboxDef_PageTitles(MYFILE *f, const char *word, const char *value)
+{
+	test_t *prev = NULL;
+	test_t *juke = jukedefstart;
+
+	while (juke)
+	{
+		if (!stricmp(juke->pageName, value))
+		{
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "JUKEBOXDEF: Found page replacement '%s'\n", juke->pageName);
+			break;
+		}
+
+		prev = juke;
+		juke = juke->next;
+	}
+
+	if (!juke)
+	{
+		juke = Z_Calloc(sizeof (test_t), PU_STATIC, NULL);
+		STRBUFCPY(juke->pageName, value);
+		strlwr(juke->pageName);
+		if (prev != NULL)
+			prev->next = juke;
+	}
+	else
+	{
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "JUKEBOXDEF: Page %s already exists! Replacing contents...\n", word);
+
+		STRBUFCPY(juke->pageName, value);
+		strlwr(juke->pageName);
+	}
+
+	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "\nTEST: %s, %s\nHI: %s\n", word, value, juke->pageName);
+	//(*jukeTest) = juke;
+}
+
+// ====
+// MAIN
+// ====
+
+void TSoURDt3rd_ParseJukeboxDef(MYFILE *f, const char *word, const char *value, ...)
 {
 	musicdef_t **defp = NULL;
 	musicdef_t *def = NULL;
@@ -48,43 +93,7 @@ void TSoURDt3rd_ParseJukeboxDef(MYFILE *f, const char *word, const char *value)
 	(void)jukeTest;
 
 	if (fasticmp(word, "PAGETITLES"))
-	{
 		TSoURDt3rd_Parse(f, NULL);
-
-		test_t *prev = NULL;
-		juke = jukedefstart;
-
-		while (juke)
-		{
-			if (!stricmp(juke->pageName, value))
-			{
-				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "JUKEBOXDEF: Found page replacement '%s'\n", juke->pageName);
-				break;
-			}
-
-			prev = juke;
-			juke = juke->next;
-		}
-
-		if (!juke)
-		{
-			juke = Z_Calloc(sizeof (test_t), PU_STATIC, NULL);
-			STRBUFCPY(juke->pageName, value);
-			strlwr(juke->pageName);
-			if (prev != NULL)
-				prev->next = juke;
-		}
-		else
-		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "JUKEBOXDEF: Page %s already exists! Replacing contents...\n", word);
-
-			STRBUFCPY(juke->pageName, value);
-			strlwr(juke->pageName);
-		}
-
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "\nTEST: %s, %s\nHI: %s\n", word, value, juke->pageName);
-		//(*jukeTest) = juke;
-	}
 	else if (fasticmp(word, "LUMP"))
 	{
 		TSoURDt3rd_Parse(f, NULL);

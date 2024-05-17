@@ -7,7 +7,7 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  discord_gamesdk.h
-/// \brief Discord Game SDK handling
+/// \brief Discord Game SDK handling data
 
 #ifndef _DISCORDGAMESDK__
 #define _DISCORDGAMESDK__
@@ -60,4 +60,5 @@ void DRPC_Init(int argc, char** argv);
 void DRPC_UpdatePresence(void);
 
 #endif // HAVE_DISCORDGAMESDK
+
 #endif // _DISCORDGAMESDK__
