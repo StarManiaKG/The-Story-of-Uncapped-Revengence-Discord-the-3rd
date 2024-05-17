@@ -15,7 +15,10 @@
 #include "parser.h"
 #include "../doomstat.h"
 
-//// FUNCTIONS ////
+// ------------------------ //
+//        Functions
+// ------------------------ //
+
 void TSoURDt3rd_ParseJukeboxDef(MYFILE *f, const char *word, const char *value);
 
 #endif // __STAR_PARSED__

@@ -47,8 +47,10 @@ void TSoURDt3rd_ParseJukeboxDef(MYFILE *f, const char *word, const char *value)
 	(void)defp;
 	(void)jukeTest;
 
-	if (ValidTerm(word, "PAGETITLES"))
+	if (fasticmp(word, "PAGETITLES"))
 	{
+		TSoURDt3rd_Parse(f, NULL);
+
 		test_t *prev = NULL;
 		juke = jukedefstart;
 
@@ -83,8 +85,10 @@ void TSoURDt3rd_ParseJukeboxDef(MYFILE *f, const char *word, const char *value)
 		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "\nTEST: %s, %s\nHI: %s\n", word, value, juke->pageName);
 		//(*jukeTest) = juke;
 	}
-	else if (ValidTerm(word, "LUMP"))
+	else if (fasticmp(word, "LUMP"))
 	{
+		TSoURDt3rd_Parse(f, NULL);
+
 		//value = word;
 		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "made it here, %s, %s\n", word, value);
 
