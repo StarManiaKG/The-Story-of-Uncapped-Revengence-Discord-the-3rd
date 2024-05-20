@@ -58,5 +58,4 @@ void DRPC_Init(int argc, char** argv);
 void DRPC_UpdatePresence(void);
 
 #endif // HAVE_DISCORDGAMESDK
-
 #endif // _DISCORDGAMESDK__

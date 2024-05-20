@@ -836,6 +836,18 @@ next_token:
 #endif
 
 		numskins++;
+
+#ifdef HAVE_DISCORDRPC
+#if 0
+		// MAJOR STAR NOTE: come back here right now! //
+		for (size_t i = 0; i < numwadfiles; i++)
+		{
+			if (i == mainwads)
+				g_discord_skins = numskins;
+		}
+#endif
+#endif
+
 	}
 	return;
 }
