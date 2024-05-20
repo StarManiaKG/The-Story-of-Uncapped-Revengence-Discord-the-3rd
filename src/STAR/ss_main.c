@@ -16,7 +16,6 @@
 #include "../f_finale.h"
 #include "../i_time.h"
 #include "../z_zone.h"
-#include "../m_menu.h"
 #include "../r_main.h"
 #include "../v_video.h"
 #include "../p_local.h"
@@ -119,15 +118,6 @@ void STAR_CONS_Printf(star_messagetype_t starMessageType, const char *fmt, ...)
 	CONS_Printf("%s", txt);
 }
 
-//
-// void STAR_M_StartMessage(const char *header)
-// M_StartMessage, but customized to show headers, add a little more flare, and easier accessibility.
-//
-void STAR_M_StartMessage(const char *header)
-{
-	
-}
-
 const char *TSoURDt3rd_CON_DrawStartupScreen(void)
 {
 	switch (cv_startupscreen.value)
@@ -154,6 +144,28 @@ void TSoURDt3rd_D_Display(void)
 
 		default: break;	
 	}
+}
+
+//
+// void STAR_M_StartMessage(const char *header, INT32 headerflags, const char *string, void *routine, menumessagetype_t itemtype)
+// M_StartMessage, but customized to show headers, add a little more flare, and easier accessibility.
+//
+void STAR_M_StartMessage(const char *header, INT32 headerflags, const char *string, void *routine, menumessagetype_t itemtype)
+{
+	if (header != NULL)
+	{
+		if (!headerflags)
+			headerflags = (V_MENUCOLORMAP|V_CHARCOLORSHIFT);
+		header = va("%c%s\x80\n", ('\x80' + headerflags), header);
+	}
+	else
+		header = 0;
+
+	M_StartMessage(
+		va("%s%s", header, string),
+		routine,
+		itemtype
+	);
 }
 
 // ======

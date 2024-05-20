@@ -7,17 +7,20 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  ss_main.h
-/// \brief hosts TSoURDt3rd's main functions and properties
+/// \brief Hosts TSoURDt3rd's main functions and properties
 
 #ifndef __SS_MAIN__
 #define __SS_MAIN__
 
 #include "../doomtype.h"
 #include "../p_mobj.h"
+#include "../m_menu.h"
 
 // ------------------------ //
-//       Definitions
+//        Variables
 // ------------------------ //
+
+#define APRIL_FOOLS // MARKED FOR REMOVAL //
 
 #define TSOURDT3RD_DEBUGGING /* Debugging */
 
@@ -31,10 +34,6 @@ extern char savegamefolder[256];
 //#define _DEBUG /* Debugging */
 //#define DEBUGFILE /* Debugging */
 
-// ------------------------ //
-//        Variables
-// ------------------------ //
-
 // ======
 // EVENTS
 // ======
@@ -44,6 +43,7 @@ typedef enum
 	STAR_CONS_TSOURDT3RD = 1,
 	STAR_CONS_TSOURDT3RD_NOTICE,
 	STAR_CONS_TSOURDT3RD_ALERT,
+
 	STAR_CONS_TSOURDT3RD_DEBUG,
 
 	STAR_CONS_APRILFOOLS,
@@ -74,6 +74,8 @@ void STAR_CONS_Printf(star_messagetype_t starMessageType, const char *fmt, ...);
 const char *TSoURDt3rd_CON_DrawStartupScreen(void);
 
 void TSoURDt3rd_D_Display(void);
+
+void STAR_M_StartMessage(const char *header, INT32 headerflags, const char *string, void *routine, menumessagetype_t itemtype);
 
 // ======
 // EVENTS

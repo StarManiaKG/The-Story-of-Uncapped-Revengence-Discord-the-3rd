@@ -1,3 +1,13 @@
+// SONIC ROBO BLAST 2; TSOURDT3RD
+//-----------------------------------------------------------------------------
+// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+/// \file  m_menu.h
+/// \brief Globalizes all of TSoURDt3rd's cool menu data, plus a little more
 
 #ifndef __STAR_M_MENU__
 #define __STAR_M_MENU__
@@ -5,30 +15,13 @@
 #include "star_vars.h"
 #include "ss_cmds.h"
 #include "../m_menu.h"
-#include "../s_sound.h"
-#include "../r_defs.h"
-#include "../v_video.h"
 #include "../m_cond.h"
-
-// ------------------------ //
-//       Definitions
-// ------------------------ //
-#define MTREE5(a,b,c,d,e) MTREE2(a, MTREE4(b,c,d,e)) // (just in case)
-
-// ===================================================================
-// Dynamic Video Colors
-// 	Remember this from some previous TSoURDt3rd commits of st_stuff.c?
-// 		Yeah, I reworked it! Just like I said I would!
-//		But this time, I've reworked it even more!
-// ===================================================================
-#define V_MENUCOLORMAP (cv_menucolor.value)
-#define V_FPSCOLORMAP (cv_fpscountercolor.value)
-#define V_TPSCOLORMAP (cv_tpscountercolor.value)
 
 // ------------------------ //
 //        Variables
 // ------------------------ //
-extern INT32   (*setupcontrols)[2];  // pointer to the gamecontrols of the player being edited
+
+extern INT32 (*setupcontrols)[2]; // pointer to the gamecontrols of the player being edited
 
 extern INT16 skullAnimCounter; // skull animation counter; Prompts: Chevron animation
 
@@ -79,9 +72,10 @@ enum
 };
 
 // ================================================================
-// Quit Messages
+// QUIT MESSAGES
 // 	Now externed, and are defined here instead, of inside m_menu.c!
 // ================================================================
+
 typedef enum
 {
 	QUITMSG = 0,
@@ -109,19 +103,17 @@ typedef enum
 	QUIT3MSG5,
 	QUIT3MSG6,
 
-	// TSoURDt3rd unique messages! //
-	QUITSMSG1,
-	QUITSMSG2,
-	QUITSMSG3,
-	QUITSMSG4,
-	QUITSMSG5,
-	QUITSMSG6,
+	TSOURDT3RD_QUITSMSG1,
+	TSOURDT3RD_QUITSMSG2,
+	TSOURDT3RD_QUITSMSG3,
+	TSOURDT3RD_QUITSMSG4,
+	TSOURDT3RD_QUITSMSG5,
+	TSOURDT3RD_QUITSMSG6,
 
-	// April Fools unique messages //
-	QUITAMSG1,
-	QUITAMSG2,
-	QUITAMSG3,
-	QUITAMSG4,
+	TSOURDT3RD_AF_QUITAMSG1,
+	TSOURDT3RD_AF_QUITAMSG2,
+	TSOURDT3RD_AF_QUITAMSG3,
+	TSOURDT3RD_AF_QUITAMSG4,
 
 	NUM_QUITMESSAGES
 } text_enum;
@@ -129,8 +121,9 @@ typedef enum
 extern const char *quitmsg[NUM_QUITMESSAGES];
 
 // =======
-// Jukebox
+// JUKEBOX
 // =======
+
 extern musicdef_t *curplaying;
 
 extern fixed_t st_time;
@@ -141,9 +134,12 @@ extern patch_t* st_launchpad[4];
 
 extern UINT8 skyRoomMenuTranslations[MAXUNLOCKABLES];
 
-// ------------------------ //
-//        	Menus
-// ------------------------ //
+// =====
+// MENUS
+// =====
+
+#define MTREE5(a,b,c,d,e) MTREE2(a, MTREE4(b,c,d,e)) // just in case
+
 extern menu_t OP_MainDef;
 extern menuitem_t MainMenu[];
 
@@ -163,6 +159,11 @@ extern menuitem_t defaultMenuTitles[256][256];
 // ------------------------ //
 //        Functions
 // ------------------------ //
+
+// =====
+// MENUS
+// =====
+
 void M_DrawGenericScrollMenu(void);
 void M_DrawControl(void);
 
@@ -178,18 +179,20 @@ void M_PreConnectMenuChoice(INT32 choice);
 void M_StartServerMenu(INT32 choice);
 void M_ConnectMenuModChecks(INT32 choice);
 
-// =========
-// Quit Game
-// =========
+// ======
+// I QUIT
+// ======
+
 void STAR_M_InitQuitMessages(void);
 void STAR_M_InitDynamicQuitMessages(void);
 
 INT32 STAR_M_SelectQuitMessage(void);
 const char *STAR_M_SelectQuitGraphic(void);
 
-// =======
-// Jukebox
-// =======
+// =============
+// JUKEBOX MENUS
+// =============
+
 void M_CacheSoundTest(void);
 boolean TSoURDt3rd_M_IsJukeboxUnlocked(TSoURDt3rdJukebox_t *TSoURDt3rdJukebox);
 void M_TSoURDt3rdJukebox(INT32 choice);

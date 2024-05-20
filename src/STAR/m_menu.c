@@ -23,6 +23,7 @@
 #include "../i_time.h"
 #include "../i_system.h"
 #include "../i_video.h"
+#include "../v_video.h"
 #include "../m_misc.h"
 #include "../r_draw.h"
 #include "../hu_stuff.h"
@@ -43,13 +44,13 @@ INT16 MessageMenuDisplay[3][256]; // TO HACK
 menuitem_t defaultMenuTitles[256][256];
 
 // ====
-// Game
+// GAME
 // ====
 
 static void M_CheckForTSoURDt3rdUpdates(INT32 choice);
 
 // =======
-// Jukebox
+// JUKEBOX
 // =======
 
 static void M_DrawTSoURDt3rdJukebox(void);
@@ -58,7 +59,7 @@ static void M_HandleTSoURDt3rdJukebox(INT32 choice);
 static void M_TSoURDt3rdJukeboxControls(INT32 choice);
 
 // =====
-// Snake
+// SNAKE
 // =====
 
 static void STAR_InitializeSnakeMenu(INT32 choice);
@@ -66,14 +67,14 @@ static void STAR_DrawSnakeMenu(void);
 static void STAR_HandleSnakeMenu(INT32 choice);
 
 // =====
-// Misc.
+// MISC.
 // =====
 
 static void STAR_SpawnDispenser(INT32 choice);
 
-// ------------------------ //
-//        	Menus
-// ------------------------ //
+// =====
+// MENUS
+// =====
 
 menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 {
@@ -245,7 +246,7 @@ menu_t OP_TSoURDt3rdSnakeDef =
 // ------------------------ //
 
 // ====
-// Game
+// GAME
 // ====
 
 static void M_CheckForTSoURDt3rdUpdates(INT32 choice)
@@ -255,7 +256,7 @@ static void M_CheckForTSoURDt3rdUpdates(INT32 choice)
 }
 
 // =======
-// Servers
+// SERVERS
 // =======
 
 //
@@ -331,9 +332,9 @@ void M_ShiftMessageQueueDown(void)
 	S_StartSound(NULL, sfx_zoom);
 }
 
-// =========
-// Quit Game
-// =========
+// ======
+// I QUIT
+// ======
 
 //
 // void STAR_M_InitQuitMessages(void)
@@ -341,21 +342,19 @@ void M_ShiftMessageQueueDown(void)
 //
 void STAR_M_InitQuitMessages(void)
 {
-	// Star Messages //
-	quitmsg[QUITSMSG1] = M_GetText("Every time you press 'Y',\nthe TSoURDt3rd Devs cry...\n\n(Press 'Y' to quit)");
-	quitmsg[QUITSMSG2] = M_GetText("Who do you think you are?\nItaly?\n\n(Press 'Y' to quit)");
+	quitmsg[TSOURDT3RD_QUITSMSG1] = M_GetText("Every time you press 'Y',\nthe TSoURDt3rd Devs cry...\n\n(Press 'Y' to quit)");
+	quitmsg[TSOURDT3RD_QUITSMSG2] = M_GetText("Who do you think you are?\nItaly?\n\n(Press 'Y' to quit)");
 
-	quitmsg[QUITSMSG3] = M_GetText("Hehe, you couldn't even make\nit past the Title Screen,\ncould you, silly?\n\n(Press 'Y' to quit)"); // tmp string
-	quitmsg[QUITSMSG4] = M_GetText("Wait, <insert player name here>!\nCome back! I need you!\n\n(Press 'Y' to quit)"); // tmp string
-	quitmsg[QUITSMSG5] = M_GetText("Come back!\nYou have more jukebox music to play!\n\n(Press 'Y' to quit)"); // tmp string
+	quitmsg[TSOURDT3RD_QUITSMSG3] = M_GetText("Hehe, you couldn't even make\nit past the Title Screen,\ncould you, silly?\n\n(Press 'Y' to quit)"); // tmp string
+	quitmsg[TSOURDT3RD_QUITSMSG4] = M_GetText("Wait, <insert player name here>!\nCome back! I need you!\n\n(Press 'Y' to quit)"); // tmp string
+	quitmsg[TSOURDT3RD_QUITSMSG5] = M_GetText("Come back!\nYou have more jukebox music to play!\n\n(Press 'Y' to quit)"); // tmp string
 
-	quitmsg[QUITSMSG6] = M_GetText("You know, I have to say\nsomething cool here in order to\nclose the game...\n\n(Press 'Y' to quit)");
+	quitmsg[TSOURDT3RD_QUITSMSG6] = M_GetText("You know, I have to say\nsomething cool here in order to\nclose the game...\n\n(Press 'Y' to quit)");
 
-	// April Fools Messages //
-	quitmsg[QUITAMSG1] = M_GetText("Aww, was April Fools\ntoo much for you to handle?\n\n(Press 'Y' to quit)");
-	quitmsg[QUITAMSG2] = M_GetText("Happy April Fools!\n\n(Press 'Y' to quit)");
-	quitmsg[QUITAMSG3] = M_GetText("Wait!\nActivate Ultimate Mode!\n\n(Press 'Y' to quit)");
-	quitmsg[QUITAMSG4] = M_GetText("Could you not deal with\nall the pranks?\n\n(Press 'Y' to quit)");
+	quitmsg[TSOURDT3RD_AF_QUITAMSG1] = M_GetText("Aww, was April Fools\ntoo much for you to handle?\n\n(Press 'Y' to quit)");
+	quitmsg[TSOURDT3RD_AF_QUITAMSG2] = M_GetText("Happy April Fools!\n\n(Press 'Y' to quit)");
+	quitmsg[TSOURDT3RD_AF_QUITAMSG3] = M_GetText("Wait!\nActivate Ultimate Mode!\n\n(Press 'Y' to quit)");
+	quitmsg[TSOURDT3RD_AF_QUITAMSG4] = M_GetText("Could you not deal with\nall the pranks?\n\n(Press 'Y' to quit)");
 }
 
 //
@@ -375,16 +374,16 @@ void STAR_M_InitDynamicQuitMessages(void)
 		discordname = (Playing() ? player_names[consoleplayer] : cv_playername.string);
 
 	if (Playing() && gamestate == GS_LEVEL)
-		quitmsg[QUITSMSG3] = va(M_GetText("Hehe, was \n%s\ntoo hard for you?\n\n(Press 'Y' to quit)"), maptitle);
+		quitmsg[TSOURDT3RD_QUITSMSG3] = va(M_GetText("Hehe, was \n%s\ntoo hard for you?\n\n(Press 'Y' to quit)"), maptitle);
 	else
-		quitmsg[QUITSMSG3] = M_GetText("Hehe, you couldn't even make\nit past the Title Screen,\ncould you, silly?\n\n(Press 'Y' to quit)");
+		quitmsg[TSOURDT3RD_QUITSMSG3] = M_GetText("Hehe, you couldn't even make\nit past the Title Screen,\ncould you, silly?\n\n(Press 'Y' to quit)");
 
-	quitmsg[QUITSMSG4] = va(M_GetText("Wait, %s!\nCome back! I need you!\n\n(Press 'Y' to quit)"), discordname);
+	quitmsg[TSOURDT3RD_QUITSMSG4] = va(M_GetText("Wait, %s!\nCome back! I need you!\n\n(Press 'Y' to quit)"), discordname);
 
 	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
-		quitmsg[QUITSMSG5] = va(M_GetText("Come back!\nFinish listening to\n%s!\n\n(Press 'Y' to quit)"), TSoURDt3rdPlayers[consoleplayer].jukebox.musicName);
+		quitmsg[TSOURDT3RD_QUITSMSG5] = va(M_GetText("Come back!\nFinish listening to\n%s!\n\n(Press 'Y' to quit)"), TSoURDt3rdPlayers[consoleplayer].jukebox.musicName);
 	else
-		quitmsg[QUITSMSG5] = M_GetText("Come back!\nYou have more jukebox music to play!\n\n(Press 'Y' to quit)");
+		quitmsg[TSOURDT3RD_QUITSMSG5] = M_GetText("Come back!\nYou have more jukebox music to play!\n\n(Press 'Y' to quit)");
 
 	Z_Free(maptitle);
 }
@@ -401,10 +400,10 @@ INT32 STAR_M_SelectQuitMessage(void)
 	if (!TSoURDt3rd_InAprilFoolsMode()) // No April Fools messages when it's not April Fools! //
 	{
 		static INT32 aprilFools[] = {
-			[QUITAMSG1] = QUITAMSG1,
-			QUITAMSG2,
-			QUITAMSG3,
-			QUITAMSG4
+			[TSOURDT3RD_AF_QUITAMSG1] = TSOURDT3RD_AF_QUITAMSG1,
+			TSOURDT3RD_AF_QUITAMSG2,
+			TSOURDT3RD_AF_QUITAMSG3,
+			TSOURDT3RD_AF_QUITAMSG4
 		};
 
 		while (aprilFools[randomMessage])
@@ -456,9 +455,84 @@ const char *STAR_M_SelectQuitGraphic(void)
 	}
 }
 
-// =======
-// Jukebox
-// =======
+// ================
+// TSOURDT3RD MENUS
+// ================
+
+#if 0
+static void M_TSoURDt3rdOptions(INT32 choice)
+{
+	(void)choice;
+
+	// Event Options //
+	// Main Option Header
+	OP_Tsourdt3rdOptionsMenu[op_eventoptionsheader].status =
+		((eastermode || aprilfoolsmode || xmasmode) ? IT_HEADER : IT_HEADER|IT_GRAYEDOUT);
+
+	// Easter
+	M_UpdateEasterStuff();
+
+	// April Fools
+	OP_Tsourdt3rdOptionsMenu[op_aprilfools].status =
+		(aprilfoolsmode ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+
+	// Game Options //
+	STAR_LoadingScreen_OnChange();
+
+	OP_Tsourdt3rdOptionsMenu[op_fpscountercolor].status =
+		(cv_ticrate.value ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+	STAR_TPSRate_OnChange();
+
+	STAR_Shadow_OnChange();
+
+	OP_Tsourdt3rdOptionsMenu[op_allowtypicaltimeover].status =
+		(!netgame ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+
+	STAR_UpdateNotice_OnChange();
+
+	// Audio Options //
+	OP_Tsourdt3rdOptionsMenu[op_defaultmaptrack].status =
+		(!(Playing() && playeringame[consoleplayer]) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+
+	// Player Options //
+	OP_Tsourdt3rdOptionsMenu[op_shieldblockstransformation].status =
+		(!netgame ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+	
+	OP_Tsourdt3rdOptionsMenu[op_alwaysoverlayinvuln].status =
+		((players[consoleplayer].powers[pw_invulnerability] && (players[consoleplayer].powers[pw_shield] & SH_NOSTACK) != SH_NONE) ? IT_GRAYEDOUT : IT_CVAR|IT_STRING);
+
+	// Savegame Options //
+	OP_Tsourdt3rdOptionsMenu[op_storesavesinfolders].status =
+		(!netgame ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+
+	STAR_PerfectSave_OnChange();
+
+	OP_Tsourdt3rdOptionsMenu[op_continues].status =
+		(!(Playing() && playeringame[consoleplayer]) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+
+	// Extra Options //
+	// Snake
+	OP_Tsourdt3rdOptionsMenu[op_snake].status =
+		(!Playing() ? IT_CALL|IT_STRING : IT_GRAYEDOUT);
+
+	// TF2
+	OP_Tsourdt3rdOptionsMenu[op_dispensergoingup].status =
+		(!netgame ? IT_CALL|IT_STRING : IT_GRAYEDOUT);
+
+#ifdef HAVE_SDL
+	STAR_WindowTitleVars_OnChange();
+#else
+	for (INT32 i = op_windowtitletype; i < op_memesonwindowtitle; i++)
+		OP_Tsourdt3rdOptionsMenu[i].status = IT_GRAYEDOUT;	
+#endif
+
+	M_SetupNextMenu(&OP_TSoURDt3rdOptionsDef);
+}
+#endif
+
+// =============
+// JUKEBOX MENUS
+// =============
 
 //
 // boolean TSoURDt3rd_M_IsJukeboxUnlocked(TSoURDt3rdJukebox_t *TSoURDt3rdJukebox)
@@ -518,6 +592,10 @@ void M_TSoURDt3rdJukebox(INT32 choice)
 	M_SetupNextMenu(&OP_TSoURDt3rdJukeboxDef);
 }
 
+//
+// static void M_DrawTSoURDt3rdJukebox(void)
+// Draws the main Jukebox menu.
+//
 static void M_DrawTSoURDt3rdJukebox(void)
 {
 	INT32 x, y, i;
@@ -755,6 +833,10 @@ static void M_DrawTSoURDt3rdJukebox(void)
 	}
 }
 
+//
+// static void M_HandleTSoURDt3rdJukebox(INT32 choice)
+// Controller system for the main Jukebox menu.
+//
 static void M_HandleTSoURDt3rdJukebox(INT32 choice)
 {
 	boolean exitmenu = true;
@@ -888,10 +970,10 @@ static void M_HandleTSoURDt3rdJukebox(INT32 choice)
 					S_ChangeMusicInternal(TSoURDt3rd->jukebox.musicTrack, !curplaying->stoppingtics);
 					STAR_CONS_Printf(STAR_CONS_JUKEBOX, M_GetText("Loaded track \x82%s\x80.\n"), TSoURDt3rd->jukebox.musicName);
 
-					TSoURDt3rd->jukebox.musicPlaying			= true;
-					TSoURDt3rd->jukebox.initHUD					= true;
+					TSoURDt3rd->jukebox.musicPlaying	= true;
+					TSoURDt3rd->jukebox.initHUD			= true;
 
-					TSoURDt3rd->jukebox.lastTrackPlayed			= curplaying;
+					TSoURDt3rd->jukebox.lastTrackPlayed	= curplaying;
 
 					TSoURDt3rd_ControlMusicEffects();
 				}
@@ -935,12 +1017,11 @@ static void M_TSoURDt3rdJukeboxControls(INT32 choice)
 }
 
 // =====
-// Snake
+// SNAKE
 // =====
 
 static void STAR_InitializeSnakeMenu(INT32 choice)
 {
-	// Run Menu Thingies //
 	(void)choice;
 
 	if (snake)
@@ -961,7 +1042,6 @@ static void STAR_DrawSnakeMenu(void)
 
 static void STAR_HandleSnakeMenu(INT32 choice)
 {
-	// Initialize Variables //
 	(void)choice;
 	tic_t nowtime, quittime, lasttime;
 
@@ -1035,10 +1115,14 @@ static void STAR_HandleSnakeMenu(INT32 choice)
 }
 
 // =====
-// Misc.
+// MISC.
 // =====
+
 //
-// Custom TSoURDt3rd Objects
+// static void STAR_SpawnDispenser(INT32 choice)
+// Spawns a TF2 Dispenser.
+//
+// Part of TSoURDt3rd's custom objects!
 //
 static void STAR_SpawnDispenser(INT32 choice)
 {

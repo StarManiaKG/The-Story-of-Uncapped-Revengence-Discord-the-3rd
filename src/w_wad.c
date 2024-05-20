@@ -88,10 +88,8 @@
 #include "STAR/ss_main.h" // eastermode, aprilfoolsmode, xmasmode //
 
 #include "STAR/parser.h"
-#include "STAR/m_menu.h" // V_MENUCOLORMAP //
 
 #include "deh_soc.h"
-#include "v_video.h"
 // END THAT //
 
 typedef struct
@@ -961,6 +959,12 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 	case RET_LUA:
 		lumpinfo = ResGetLumpsStandalone(handle, &numlumps, "LUA_INIT");
 		break;
+	case RET_PK3:
+		lumpinfo = ResGetLumpsZip(handle, &numlumps);
+		break;
+	case RET_WAD:
+		lumpinfo = ResGetLumpsWad(handle, &numlumps, filename);
+		break;
 
 	// STAR STUFF //
 	case RET_STAR:
@@ -968,12 +972,6 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 		break;
 	// HUH.... //
 
-	case RET_PK3:
-		lumpinfo = ResGetLumpsZip(handle, &numlumps);
-		break;
-	case RET_WAD:
-		lumpinfo = ResGetLumpsWad(handle, &numlumps, filename);
-		break;
 	default:
 		CONS_Alert(CONS_ERROR, "Unsupported file format\n");
 	}
@@ -2332,17 +2330,17 @@ static lumpchecklist_t folderblacklist[] =
 {
 	{"Lua/", 4},
 	{"SOC/", 4},
+	{"Sprites/",  8},
+	{"Textures/", 9},
+	{"Patches/", 8},
+	{"Flats/", 6},
+	{"Fades/", 6},
 
 	// STAR STUFF //
 	{"STAR/", 5},
 	{"TSoURDt3rd/", 11},
 	// HERE WE GO! //
 
-	{"Sprites/",  8},
-	{"Textures/", 9},
-	{"Patches/", 8},
-	{"Flats/", 6},
-	{"Fades/", 6},
 	{NULL, 0},
 };
 
@@ -2612,11 +2610,11 @@ int W_VerifyNMUSlumps(const char *filename, boolean exit_on_error)
 		{"LTZZTEXT", 8}, // SRB2 Titlecard Text
 		{"LTACTBLU", 8}, // SRB2 Titlecard Icon
 		
-		{"PUREFAT", 7},  // Pure Fat Truck
+		{"PUREFAT", 7}, // Pure Fat Truck
 
 		{"BLANKLVL", 8}, // NO LEVEL ICONS?
 
-		{"CHAR", 4}, 	 // Character Select Screen Graphics
+		{"CHAR", 4}, // Character Select Screen Graphics
 		// NETGAME-COMPATIBLE, TOO //
 
 		{NULL, 0},

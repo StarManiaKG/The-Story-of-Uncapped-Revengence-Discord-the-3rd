@@ -23,8 +23,6 @@
 #include "hardware/hw_main.h"
 #endif
 
-#include "STAR/m_menu.h" // STAR STUFF: V_MENUCOLORMAP //
-
 struct perfstatrow;
 
 typedef struct perfstatrow perfstatrow_t;

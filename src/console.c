@@ -43,7 +43,7 @@
 #include "hardware/hw_main.h"
 #endif
 
-#include "STAR/ss_main.h" // STAR STUFF: TSoURDt3rd_CON_DrawStartupScreen() //
+#include "STAR/ss_main.h" // TSoURDt3rd_CON_DrawStartupScreen() //
 
 #define MAXHUDLINES 20
 

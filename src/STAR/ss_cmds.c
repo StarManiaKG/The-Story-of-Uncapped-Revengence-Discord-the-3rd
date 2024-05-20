@@ -1,3 +1,13 @@
+// SONIC ROBO BLAST 2; TSOURDT3RD
+//-----------------------------------------------------------------------------
+// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+/// \file  ss_cmds.c
+/// \brief TSoURDt3rd's command library
 
 #include "ss_cmds.h"
 #include "ss_main.h"
@@ -10,29 +20,11 @@
 // ------------------------ //
 //        Variables
 // ------------------------ //
-// ====
-// Game
-// ====
-static void STAR_TimeOver_OnChange(void);
 
-// =======
-// Players
-// =======
-static void STAR_SuperWithShield_OnChange(void);
-
-static void STAR_InvulnAndShield_OnChange(void);
-
-// =========
-// Savefiles
-// =========
-static void STAR_UseContinues_OnChange(void);
-
-// ------------------------ //
-//        Commands
-// ------------------------ //
 // ====
-// Game
+// GAME
 // ====
+
 // Ported from Uncapped Plus, TPS is Back! (for some reason)
 static CV_PossibleValue_t tpsrate_cons_t[] = {{0, "No"}, {1, "Full"}, {2, "Compact"}, {0, NULL}};
 consvar_t cv_tpsrate = CVAR_INIT ("showtps", "No", CV_SAVE|CV_CALL, tpsrate_cons_t, STAR_TPSRate_OnChange);
@@ -58,32 +50,40 @@ consvar_t cv_menucolor = CVAR_INIT ("menucolor", "Yellow", CV_SAVE, color_cons_t
 consvar_t cv_fpscountercolor = CVAR_INIT ("fpscountercolor", "Green", CV_SAVE, color_cons_t, NULL);
 consvar_t cv_tpscountercolor = CVAR_INIT ("tpscountercolor", "Green", CV_SAVE, color_cons_t, NULL);
 
-consvar_t cv_storesavesinfolders = CVAR_INIT ("storesavesinfolders", "Off", CV_SAVE|CV_CALL, CV_OnOff, STAR_SetSavefileProperties);
-
+static void STAR_TimeOver_OnChange(void);
 consvar_t cv_allowtypicaltimeover = CVAR_INIT ("allowtypicaltimeover", "No", CV_SAVE|CV_CALL, CV_YesNo, STAR_TimeOver_OnChange);
 
 consvar_t cv_soniccd = CVAR_INIT ("soniccd", "Off", CV_SAVE|CV_ALLOWLUA, CV_OnOff, NULL);
 
 // =====
-// Audio
+// AUDIO
 // =====
+
 consvar_t cv_watermuffling = CVAR_INIT ("watermuffling", "Off", CV_SAVE|CV_ALLOWLUA, CV_OnOff, NULL);
 
 // =======
-// Players
+// PLAYERS
 // =======
+
+static void STAR_SuperWithShield_OnChange(void);
 consvar_t cv_shieldblockstransformation = CVAR_INIT ("shieldblockstransformation", "Off", CV_SAVE|CV_CALL, CV_OnOff, STAR_SuperWithShield_OnChange);
 
+static void STAR_InvulnAndShield_OnChange(void);
 consvar_t cv_alwaysoverlayinvuln = CVAR_INIT ("alwaysoverlayinvincibility", "Off", CV_SAVE|CV_CALL, CV_OnOff, STAR_InvulnAndShield_OnChange);
 
 // =========
-// Savefiles
+// SAVEFILES
 // =========
+
+consvar_t cv_storesavesinfolders = CVAR_INIT ("storesavesinfolders", "Off", CV_SAVE|CV_CALL, CV_OnOff, STAR_SetSavefileProperties);
+
+static void STAR_UseContinues_OnChange(void);
 consvar_t cv_continues = CVAR_INIT ("continues", "Off", CV_SAVE|CV_CALL, CV_OnOff, STAR_UseContinues_OnChange);
 
 // =======
-// Servers
+// SERVERS
 // =======
+
 consvar_t cv_movingplayersetup = CVAR_INIT ("movingplayersetup", "Off", CV_SAVE, CV_OnOff, NULL);
 
 // ------------------------ //
@@ -97,7 +97,6 @@ static void TSoURDt3rd_InitServerCommands(void)
 
 static void TSoURDt3rd_InitClientCommands(void)
 {
-#if 0	
 	// Game //
 	CV_RegisterVar(&cv_startupscreen);
 	CV_RegisterVar(&cv_stjrintro);
@@ -126,7 +125,6 @@ static void TSoURDt3rd_InitClientCommands(void)
 
 	// Servers //
 	CV_RegisterVar(&cv_movingplayersetup);
-#endif
 }
 #endif
 
@@ -145,8 +143,9 @@ void TSoURDt3rd_DiscordCommands_OnChange(void)
 }
 
 // ====
-// Game
+// GAME
 // ====
+
 void STAR_TPSRate_OnChange(void)
 {
 	OP_Tsourdt3rdOptionsMenu[op_tpscountercolor].status = (cv_tpsrate.value ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
@@ -154,25 +153,26 @@ void STAR_TPSRate_OnChange(void)
 
 static void STAR_TimeOver_OnChange(void)
 {
-	if (netgame)
-	{
-		if (Playing())
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "Sorry, you can't change this while in a netgame.\n");
-		CV_StealthSetValue(&cv_allowtypicaltimeover, !cv_allowtypicaltimeover.value);
-	}
+	if (!netgame)
+		return;
+
+	if (Playing())
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "Sorry, you can't change this while in a netgame.\n");
+	CV_StealthSetValue(&cv_allowtypicaltimeover, !cv_allowtypicaltimeover.value);
 }
 
 // =======
-// Players
+// PLAYERS
 // =======
+
 static void STAR_SuperWithShield_OnChange(void)
 {
-	if (netgame)
-	{
-		if (Playing())
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "Sorry, you can't change this while in a netgame.\n");
-		CV_StealthSetValue(&cv_shieldblockstransformation, !cv_shieldblockstransformation.value);
-	}
+	if (!netgame)
+		return;
+
+	if (Playing())
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "Sorry, you can't change this while in a netgame.\n");
+	CV_StealthSetValue(&cv_shieldblockstransformation, !cv_shieldblockstransformation.value);
 }
 
 static void STAR_InvulnAndShield_OnChange(void)
@@ -183,19 +183,21 @@ static void STAR_InvulnAndShield_OnChange(void)
 		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "Sorry, you can't change this while you have both invincibility and a shield.\n");
 		CV_StealthSetValue(&cv_alwaysoverlayinvuln, !cv_alwaysoverlayinvuln.value);
 	}
-#endif
+#else
 	return;
+#endif
 }
 
 // =========
-// Savefiles
+// SAVEFILES
 // =========
+
 static void STAR_UseContinues_OnChange(void)
 {
 	if (Playing())
 		return;
 
 	if (netgame || multiplayer)
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "Please note that this only works in Singleplayer.\n");
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "Please note that continues only work in Singleplayer.\n");
 	useContinues = cv_continues.value;
 }

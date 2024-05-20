@@ -51,8 +51,6 @@
 #include "lua_hudlib_drawlist.h"
 #include "lua_hook.h"
 
-#include "STAR/m_menu.h" // STAR STUFF: V_MENUCOLORMAP //
-
 // coords are scaled
 #define HU_INPUTX 0
 #define HU_INPUTY 0

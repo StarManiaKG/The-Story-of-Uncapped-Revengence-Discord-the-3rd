@@ -25,95 +25,94 @@ typedef struct test_s {
 } test_t;
 
 test_t testMusic = {
-	0,
+	1,
 	"Main",
 	NULL
 };
-
-test_t *jukedefstart = &testMusic;
 
 // ------------------------ //
 //        Functions
 // ------------------------ //
 
-// =======
-// PARSING
-// =======
+//#define JUKEDEF_MEM
 
-static void TSoURDt3rd_Parse_JukeboxDef_PageTitles(MYFILE *f, const char *word, const char *value)
+boolean TSoURDt3rd_ParseJukeboxDef(const char *word, const char *value)
 {
-	test_t *prev = NULL;
-	test_t *juke = jukedefstart;
+	INT32 ivalue;
 
-	while (juke)
-	{
-		if (!stricmp(juke->pageName, value))
-		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "JUKEBOXDEF: Found page replacement '%s'\n", juke->pageName);
-			break;
-		}
+#ifdef JUKEDEF_MEM
+	musicdef_t **defp;
+	musicdef_t *def;
 
-		prev = juke;
-		juke = juke->next;
-	}
-
-	if (!juke)
-	{
-		juke = Z_Calloc(sizeof (test_t), PU_STATIC, NULL);
-		STRBUFCPY(juke->pageName, value);
-		strlwr(juke->pageName);
-		if (prev != NULL)
-			prev->next = juke;
-	}
-	else
-	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "JUKEBOXDEF: Page %s already exists! Replacing contents...\n", word);
-
-		STRBUFCPY(juke->pageName, value);
-		strlwr(juke->pageName);
-	}
-
-	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "\nTEST: %s, %s\nHI: %s\n", word, value, juke->pageName);
-	//(*jukeTest) = juke;
-}
-
-// ====
-// MAIN
-// ====
-
-void TSoURDt3rd_ParseJukeboxDef(MYFILE *f, const char *word, const char *value, ...)
-{
-	musicdef_t **defp = NULL;
+	test_t **jukep;
+	test_t *juke;
+#else
 	musicdef_t *def = NULL;
-
-	test_t **jukeTest = NULL;
 	test_t *juke = NULL;
+#endif
 
-	(void)defp;
-	(void)jukeTest;
-
-	if (fasticmp(word, "PAGETITLES"))
-		TSoURDt3rd_Parse(f, NULL);
-	else if (fasticmp(word, "LUMP"))
+	if (STAR_Script_ValidTerm(word, value, "PAGETITLES"))
 	{
-		TSoURDt3rd_Parse(f, NULL);
+		test_t *prev = NULL;
+		juke = &testMusic;
 
+		do
+		{
+			while (juke)
+			{
+				if (!stricmp(juke->pageName, value))
+				{
+					STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "JUKEBOXDEF: Page %s, %s, already exists! Replacing contents...\n", word, juke->pageName);
+
+					STRBUFCPY(juke->pageName, value);
+					strlwr(juke->pageName);
+
+					break;
+				}
+
+				prev = juke;
+				juke = juke->next;
+			}
+
+			if (!juke)
+			{
+				juke = Z_Calloc(sizeof (test_t), PU_STATIC, NULL);
+
+				STRBUFCPY(juke->pageName, value);
+				strlwr(juke->pageName);
+
+				ivalue = (INT32)atoi(word);
+				juke->page = ivalue;
+
+				if (prev != NULL)
+					prev->next = juke;
+			}
+
+			word = STAR_Script_ReadNewLine(0);
+#ifdef JUKEDEF_MEM
+			(*jukep) = juke;
+#endif
+
+			if (!STAR_Script_ValidTerm(word, value, ","))
+				break;
+		} while (true); //while (STAR_Script_ValidTerm(word, value, ",")); // run until I say we're done :)
+	}
+	else if (STAR_Script_ValidTerm(word, value, "LUMP"))
+	{
 		//value = word;
 		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "made it here, %s, %s\n", word, value);
 
 		if (!value)
 		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT,
-					"JUKEBOXDEF: Field '%s' is missing name. (file %s, near line %d)\n",
-					word, wadfiles[f->wad]->filename, star_line);
-			return;
+			STAR_Script_Error(va("JUKEBOXDEF: Field '%s' is missing name.\n", word), STAR_SCRIPT_ERROR_FULL);
+			return false;
 		}
 		else
 		{
 			musicdef_t *prev = NULL;
 			def = musicdefstart;
 
-			// Search if this is a replacement
+			// Check if this is a replacement
 			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "JUKEBOXDEF: Searching for song replacement...\n");
 			while (def)
 			{
@@ -127,32 +126,45 @@ void TSoURDt3rd_ParseJukeboxDef(MYFILE *f, const char *word, const char *value, 
 				def = def->next;
 			}
 
-			// Nothing found, return an error.
-			if (!def)
-				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "JUKEBOXDEF: Lump '%s' must already have a MUSICDEF!\n", value);
-
-			(void)prev;
+			if (def) // Found it!
+			{
+				def = Z_Calloc(sizeof (musicdef_t), PU_STATIC, NULL);
+				STRBUFCPY(def->name, value);
+				strlwr(def->name);
+				def->bpm = TICRATE<<(FRACBITS-1); // FixedDiv((60*TICRATE)<<FRACBITS, 120<<FRACBITS)
+				if (prev != NULL)
+					prev->next = def;
+				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "JUKEBOXDEF: Replaced song '%s'\n", def->name);
+#ifdef JUKEDEF_MEM
+				(*defp) = def;
+#endif
+			}
+			else // Nothing found, return an error.
+			{
+				STAR_Script_Error(va("JUKEBOXDEF: Lump '%s' must already have a MUSICDEF!\n", value), STAR_SCRIPT_ERROR_STANDARD);
+				return false;
+			}
 		}
 	}
 	else
 	{
-        STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "made it here instead, %s\n", word);
+        STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "made it here instead, %s + %s\n", word, value);
 
 		if (!value)
 		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT,
-					"JUKEBOXDEF: Field '%s' is missing value. (file %s, line %d)\n",
-					word, wadfiles[f->wad]->filename, star_line);
-			return;
+			STAR_Script_Error(va("JUKEBOXDEF: Field '%s' is missing value.", word), STAR_SCRIPT_ERROR_FULL);
+			return false;
 		}
 		else
 		{
+#ifdef JUKEDEF_MEM
+			def = (*defp);
+#endif
+
 			if (!def)
 			{
-				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT,
-						"JUKEBOXDEF: No music definition before field '%s'. (file %s, line %d)\n",
-						word, wadfiles[f->wad]->filename, star_line);
-				return;
+				STAR_Script_Error(va("JUKEBOXDEF: No music definition before field '%s'.", word), STAR_SCRIPT_ERROR_FULL);
+				return false;
 			}
 
 			if (fasticmp(word, "title"))
@@ -186,10 +198,10 @@ void TSoURDt3rd_ParseJukeboxDef(MYFILE *f, const char *word, const char *value, 
 				def->loop_ms = atoi(textline);
 #endif
 			} else {
-				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT,
-						"JUKEBOXDEF: Invalid field '%s'. (file %s, line %d)\n",
-						word, wadfiles[f->wad]->filename, star_line);
+				STAR_Script_Error(va("JUKEBOXDEF: Invalid field '%s'.", word), STAR_SCRIPT_ERROR_FULL);
 			}
 		}
 	}
+
+	return true;
 }

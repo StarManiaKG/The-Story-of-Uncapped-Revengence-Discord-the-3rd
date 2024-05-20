@@ -15,8 +15,10 @@
 
 #include <time.h>
 
-#include "discord.h" // discord stuff, duh
 #include "doomdef.h"
+
+#include "discord.h"
+#include "stun.h"
 
 #include "i_system.h"
 #include "d_clisrv.h"
@@ -29,7 +31,6 @@
 #include "mserv.h" // msServerId
 #include "z_zone.h"
 #include "byteptr.h"
-#include "stun.h"
 #include "i_tcp.h" // current_port
 
 #include "p_local.h" // all7matchemeralds
@@ -45,7 +46,6 @@
 #include "fastcmp.h" // fastcmp, helps with super stuff
 
 #include "STAR/star_vars.h" // provides unique STAR stuff
-#include "STAR/m_menu.h" // V_MENUCOLORMAP //
 
 struct discordInfo_s discordInfo; // Contains cool discord info and all
 discordRequest_t *discordRequestList = NULL; // Holds all our requests to join

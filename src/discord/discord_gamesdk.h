@@ -14,29 +14,27 @@
 
 #ifdef HAVE_DISCORDGAMESDK
 
-#include <stdint.h>
-#include <stdio.h>
-#include <assert.h>
 #include "discord_game_sdk.h"
 
-#ifdef _WIN32
-#include <Windows.h>
-#else
-#include <unistd.h>
-#include <string.h>
-#endif
+// ------------------------ //
+//         Structs
+// ------------------------ //
 
-extern struct discordGameSDK_s {
-    struct IDiscordCore* core;
-    struct IDiscordUserManager* users;
-    struct IDiscordAchievementManager* achievements;
-    struct IDiscordActivityManager* activities;
-    struct IDiscordRelationshipManager* relationships;
-    struct IDiscordApplicationManager* application;
-    struct IDiscordLobbyManager* lobbies;
-    
-    DiscordUserId user_id;
+typedef struct discordGameSDK_s {
+	struct IDiscordCore *core;
+	struct IDiscordUsers *users;
+	struct IDiscordAchievementManager *achievements;
+	struct IDiscordActivityManager *activities;
+	struct IDiscordRelationshipManager *relationships;
+	struct IDiscordApplicationManager *application;
+	struct IDiscordLobbyManager *lobbies;
+	
+	DiscordUserId user_id;
 } discordGameSDK_t;
+
+// ------------------------ //
+//        Functions
+// ------------------------ //
 
 #define DISCORD_REQUIRE(x) assert(x == DiscordResult_Ok)
 

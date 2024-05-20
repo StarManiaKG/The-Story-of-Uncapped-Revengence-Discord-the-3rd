@@ -48,7 +48,7 @@
 #include "STAR/star_vars.h"
 #include "STAR/ss_cmds.h" // cv_storesavesinfolders //
 #include "STAR/ss_main.h"
-#include "STAR/m_menu.h"
+#include "STAR/m_menu.h" // skullAnimCounter, MessageDef, & M_ShiftMessageQueueDown() //
 
 #include "deh_soc.h"
 // END THIS //
