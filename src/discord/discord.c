@@ -8,8 +8,8 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  discord.h
-/// \brief Discord Rich Presence handling
+/// \file  discord.c
+/// \brief Main Discord Rich Presence handling
 
 #ifdef HAVE_DISCORDRPC
 
@@ -45,10 +45,20 @@
 
 #include "fastcmp.h" // fastcmp, helps with super stuff
 
-#include "STAR/star_vars.h" // provides unique STAR stuff
+#include "STAR/star_vars.h" // TSoURDt3rd structure
 
-struct discordInfo_s discordInfo; // Contains cool discord info and all
-discordRequest_t *discordRequestList = NULL; // Holds all our requests to join
+// ------------------------ //
+//        Variables
+// ------------------------ //
+
+discordInfo_t *discordInfo = NULL;
+//struct discordInfo_s discordInfo;
+
+discordRequest_t *discordRequestList = NULL;
+
+size_t g_discord_skins = 0;
+
+static char self_ip[IP_SIZE];
 
 #ifndef DEVELOP
 boolean devmode = false;
@@ -56,7 +66,11 @@ boolean devmode = false;
 boolean devmode = true;
 #endif
 
-static char self_ip[IP_SIZE];
+static char discord_username[256];
+
+// ------------------------ //
+//        Functions
+// ------------------------ //
 
 /*--------------------------------------------------
 	static char *DRPC_XORIPString(const char *input)
@@ -98,26 +112,30 @@ static char *DRPC_XORIPString(const char *input)
 }
 
 /*--------------------------------------------------
-	void DRPC_UpdateUsername(void);
+	const char *DRPC_ReturnUsername(const DiscordUser *user);
 
-		Updates the current Discord Rich Presence username.
+		Returns the Discord username of the user.
 	
 	Input Arguments:-
 		None
 
 	Return:-
-		None
+		Discord username string
 --------------------------------------------------*/
 
-void DRPC_UpdateUsername(void)
+const char *DRPC_ReturnUsername(const DiscordUser *user)
 {
-	if (!discordInfo.Initialized)
-		return;
-	memset(&discordInfo.sessionUsername, 0, sizeof(discordInfo.sessionUsername));
+	const char extrainfo;
 
-	strcpy(discordInfo.sessionUsername, discordInfo.grabbedUsername);
-	if (!cv_discordstreamer.value)
-		strlcat(discordInfo.sessionUsername, va("#%s", discordInfo.discriminator), 256);
+	if (user != NULL)
+	{
+		if (!cv_discordstreamer.value)
+			extrainfo = va("#%s (%s)", user->discriminator, user->userId);
+		else
+			extrainfo = 0;
+		sprintf(discord_username, "%s %s", user->username, extrainfo);
+	}
+	return discord_username;
 }
 
 /*--------------------------------------------------
@@ -133,21 +151,10 @@ void DRPC_UpdateUsername(void)
 --------------------------------------------------*/
 static void DRPC_HandleReady(const DiscordUser *user)
 {
-	// Print Name
-	CONS_Printf("Discord: connected to %s%s\n", user->username,
-				(cv_discordstreamer.value ? "" : va("#%s (%s)", user->discriminator, user->userId)));
-	
-	// Store Things
+	CONS_Printf("Discord: connected to %s\n", DRPC_ReturnUsername(user));
+
 	discordInfo.Disconnected = false;
-
-	strcpy(discordInfo.grabbedUsername, user->username);
-	strcpy(discordInfo.discriminator, user->discriminator);
-	strcpy(discordInfo.userID, user->userId);
-
 	discordInfo.Initialized	= true;
-
-	// Run Functions, and We're Done :)
-	DRPC_UpdateUsername();
 }
 
 /*--------------------------------------------------
@@ -202,11 +209,9 @@ static void DRPC_HandleJoin(const char *secret)
 {
 	char *ip = DRPC_XORIPString(secret);
 	CONS_Printf("Connecting to %s via Discord\n", ip);
-
-	M_ClearMenus(true); 			// Don't have menus open during connection screen
+	M_ClearMenus(true); // Don't have menus open during connection screen
 	if (demoplayback && titledemo)
-		G_CheckDemoStatus(); 		// Stop the title demo, so that the connect command doesn't error if a demo is playing
-
+		G_CheckDemoStatus(); // Stop the title demo, so that the connect command doesn't error if a demo is playing
 	COM_BufAddText(va("connect \"%s\"\n", ip));
 	free(ip);
 }
@@ -221,25 +226,43 @@ static void DRPC_HandleJoin(const char *secret)
 		None
 
 	Return:-
-		true if invites are allowed, false otherwise
+		true if invites are allowed, false otherwise.
 --------------------------------------------------*/
 static boolean DRPC_InvitesAreAllowed(void)
 {
-	if ((!Playing())					// We're Not Playing, So No Invites Should Be Sent.
-		|| (!cv_discordasks.value))		// The Client Doesn't Allow Invites, so Don't Send Any in the First Place.
-
-		return false;
-
-	if (discordInfo.joinsAllowed)		// Are Players Allowed to Join the Server?
+	if (!Playing())
 	{
-		if ((!discordInfo.whoCanInvite && consoleplayer == serverplayer) 											// Only the Server Player is Allowed to Invite!
-			|| (discordInfo.whoCanInvite == 1 && (consoleplayer == serverplayer || IsPlayerAdmin(consoleplayer)))	// Only Admins and the Server are Allowed to Invite!
-			|| (discordInfo.whoCanInvite == 2)) 														   			// Everyone's Allowed to Invite!
-
-		return true;
+		// We're not playing, so we should not be getting invites.
+		return false;
 	}
 
-	return false;						// Did Not Pass Any of the Checks, so Still Don't Send Any Invites.
+	if (cv_discordasks.value == 0)
+	{
+		// Client has the CVar set to off, so never allow invites from this client.
+		return false;
+	}
+
+	if (discordInfo.joinsAllowed == true)
+	{
+		if (discordInfo.whoCanInvite == 2)
+		{
+			// Everyone's allowed!
+			return true;
+		}
+		else if (discordInfo.whoCanInvite == 1 && (consoleplayer == serverplayer || IsPlayerAdmin(consoleplayer)))
+		{
+			// Only admins are allowed!
+			return true;
+		}
+		else if (consoleplayer == serverplayer)
+		{
+			// Only the server is allowed!
+			return true;
+		}
+	}
+
+	// Did not pass any of the checks
+	return false;
 }
 
 /*--------------------------------------------------
@@ -260,9 +283,9 @@ static void DRPC_HandleJoinRequest(const DiscordUser *requestUser)
 	discordRequest_t *append = discordRequestList;
 	discordRequest_t *newRequest;
 
-	// Something weird happened if this occurred...
-	if (DRPC_InvitesAreAllowed() == false)
+	if (DRPC_InvitesAreAllowed()  == false)
 	{
+		// Something weird happened if this occurred...
 		Discord_Respond(requestUser->userId, DISCORD_REPLY_IGNORE);
 		return;
 	}
@@ -272,8 +295,10 @@ static void DRPC_HandleJoinRequest(const DiscordUser *requestUser)
 	newRequest->username = Z_Calloc(344, PU_STATIC, NULL);
 	snprintf(newRequest->username, 344, "%s", requestUser->username);
 
+#ifdef DISCORD_DISCRIMINATORS
 	newRequest->discriminator = Z_Calloc(8, PU_STATIC, NULL);
 	snprintf(newRequest->discriminator, 8, "%s", requestUser->discriminator);
+#endif
 
 	newRequest->userID = Z_Calloc(32, PU_STATIC, NULL);
 	snprintf(newRequest->userID, 32, "%s", requestUser->userId);
@@ -323,22 +348,31 @@ static void DRPC_HandleJoinRequest(const DiscordUser *requestUser)
 void DRPC_RemoveRequest(discordRequest_t *removeRequest)
 {
 	if (removeRequest->prev != NULL)
+	{
 		removeRequest->prev->next = removeRequest->next;
+	}
 
 	if (removeRequest->next != NULL)
 	{
 		removeRequest->next->prev = removeRequest->prev;
 
 		if (removeRequest == discordRequestList)
+		{
 			discordRequestList = removeRequest->next;
+		}
 	}
 	else
 	{
 		if (removeRequest == discordRequestList)
+		{
 			discordRequestList = NULL;
+		}
 	}
 
 	Z_Free(removeRequest->username);
+#ifdef DISCORD_DISCRIMINATORS
+	Z_Free(removeRequest->discriminator);
+#endif
 	Z_Free(removeRequest->userID);
 	Z_Free(removeRequest);
 }
@@ -347,12 +381,6 @@ void DRPC_RemoveRequest(discordRequest_t *removeRequest)
 	void DRPC_Init(void)
 
 		See header file for description.
-
-	Input Arguments:-
-		None
-	
-	Return:-
-		None
 --------------------------------------------------*/
 void DRPC_Init(void)
 {
@@ -385,20 +413,15 @@ static void DRPC_GotServerIP(UINT32 address)
 {
 	const unsigned char * p = (const unsigned char *)&address;
 	sprintf(self_ip, "%u.%u.%u.%u:%u", p[0], p[1], p[2], p[3], current_port);
+	DRPC_UpdatePresence();
 }
 
 /*--------------------------------------------------
 	static const char *DRPC_GetServerIP(void)
 
 		Retrieves the IP address of the server that you're
-		connected to. Will attempt to use STUN for getting your
-		own IP address.
-	
-	Input Arguments:-
-		None
-	
-	Return:-
-		the server IP if it was found, none if otherwise
+		connected to. Will attempt to use curl for getting your
+		own IP address, if it's not yours.
 --------------------------------------------------*/
 static const char *DRPC_GetServerIP(void)
 {
@@ -428,16 +451,10 @@ static const char *DRPC_GetServerIP(void)
 }
 
 /*--------------------------------------------------
-	static void DRPC_EmptyRequests(void)
+	void DRPC_EmptyRequests(void)
 
 		Empties the request list. Any existing requests
 		will get an ignore reply.
-
-	Input Arguments:-
-		None
-	
-	Return:-
-		None
 --------------------------------------------------*/
 static void DRPC_EmptyRequests(void)
 {
@@ -452,16 +469,14 @@ static void DRPC_EmptyRequests(void)
 	void DRPC_UpdatePresence(void)
 
 		See header file for description.
-
-	Input Arguments:-
-		None
-	
-	Return:-
-		None
 --------------------------------------------------*/
 void DRPC_UpdatePresence(void)
 {
-	////// 	  DECLARE VARS 	 //////
+	boolean joinSecretSet = false;
+
+	DiscordRichPresence discordPresence;
+	memset(&discordPresence, 0, sizeof(discordPresence));
+
 	char detailstr[64+26+17+23] = "";
 	char statestr[64+26+15+25] = "";
 
@@ -482,8 +497,6 @@ void DRPC_UpdatePresence(void)
 
 	char customSImage[32+18] = "";
 	char customLImage[35+7+8] = "";
-
-	char servertype[15+10] = "";
 
 	// nerd emoji moment //
 	char detailGrammar[1+2] = "";
@@ -551,7 +564,6 @@ void DRPC_UpdatePresence(void)
 	};
 
 	static const char *supportedSuperSkins[] = {
-		// Vanilla Chars
 		"sonic", "supersonic",
 		"sonictails",			// Bots, am I right?
 		NULL
@@ -651,10 +663,8 @@ void DRPC_UpdatePresence(void)
 	};
 
 	static const char *supportedMiscs[] = {
-		// Title Screen
 		"title",
 
-		// Intro
 		"intro1",
 		"intro2",
 		"intro3",
@@ -664,33 +674,27 @@ void DRPC_UpdatePresence(void)
 		"intro7",
 		"intro8",
 
-		// Sonic
 		"altsonicimage1",
 		"altsonicimage2",
 		"altsonicimage3",
 		"altsonicimage4",
 		"altsonicimage5",
-		
-		// Tails
+
 		"alttailsimage1",
 		"alttailsimage2",
-		
-		// Knuckles
+
 		"altknucklesimage1",
 		"altknucklesimage2",
-		
-		// Amy
+
 		"altamyimage1",
-		
-		// Fang
+
 		"altfangimage1",
-		
-		// Metal Sonic
+
 		"altmetalsonicimage1",
 		"altmetalsonicimage2",
-		
-		// Eggman
+
 		"alteggmanimage1",
+
 		NULL
 	};
 
@@ -705,6 +709,7 @@ void DRPC_UpdatePresence(void)
 
 		"map",
 		"misc",
+
 		NULL
 	};
 
@@ -728,14 +733,8 @@ void DRPC_UpdatePresence(void)
 	INT32 checkSideSkin = 0; 		// Checks Through The Secondary Display Player's Skin
 	INT32 checkSuperSideSkin = 0;	// Checks Through The Secondary Display Player's Super Skin
 
-	boolean joinSecretSet = false;
-
 	gamedata_t *data = serverGamedata; // Proper Gamedata Pointer, Made by Bitten
 	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer]; // Obvious
-
-	// INITIALIZE //
-	DiscordRichPresence discordPresence;
-	memset(&discordPresence, 0, sizeof(discordPresence));
 
 	// FALLBACK/BASIC RICH PRESENCE //
 	/* Since The User Doesn't Want To Show Their Status, or Since They're Using the DEVELOP Flag,
@@ -766,33 +765,52 @@ void DRPC_UpdatePresence(void)
 	{
 		if (DRPC_InvitesAreAllowed() == true)
 		{
-			// Grab the host's IP for joining.
 			const char *join;
+
+			// Grab the host's IP for joining.
 			if ((join = DRPC_GetServerIP()) != NULL)
 			{
 				discordPresence.joinSecret = DRPC_XORIPString(join);
 				joinSecretSet = true;
 			}
-		}
-
-		switch (discordInfo.serverRoom)
-		{
-			case 33: strcpy(servertype, "Standard"); break;
-			case 28: strcpy(servertype, "Casual"); break;
-			case 38: strcpy(servertype, "Custom Gametype"); break;
-			case 31: strcpy(servertype, "OLDC"); break;
-
-			case 0: strcpy(servertype, "Public"); break;
-			default: strcpy(servertype, "Unknown/Private"); break;
+			else
+				return;
 		}
 
 		if (cv_discordshowonstatus.value != 8)
-			snprintf(detailstr, 60, (Playing() ? (server ? "Hosting a %s Server" : "In a %s Server") : "Looking for a Server"), servertype);
+		{
+			const char *serverstr;
 
-		discordPresence.partyId		= server_context; 		  	// Thanks, whoever gave us Mumble support, for implementing the EXACT thing Discord wanted for this field!
-		discordPresence.partySize	= D_NumPlayers(); 	   		// Current Amount of Players in the Server
-		discordPresence.partyMax	= discordInfo.maxPlayers;	// Max Players
-		discordPresence.instance	= 1;					  	// Initialize Discord Net Instance, Just In Case
+			if (server)
+				serverstr = "Hosting";
+
+			switch (discordInfo.serverRoom)
+			{
+				case 33: strlcat(serverstr, "Standard"); break;
+				case 28: serverstr = "Casual"; break;
+				case 38: serverstr = "Custom Gametype"; break;
+				case 31: serverstr = "OLDC"; break;
+
+				case 0: serverstr = "Public"; break;
+				case -1: serverstr = "Private"; break;
+
+				default: serverstr = "Unknown"; break;
+			}
+
+			
+
+			if ((Playing())
+				snprintf(detailstr, 60,  ?  ?  : "Looking for a Server"), servroom);
+			else
+
+			snprintf(detailstr, 60,  ? (server ? "Hosting a %s Server" : "In a %s Server") : "Looking for a Server"), servroom);
+		}
+
+		discordPresence.partyId	= server_context; // Thanks, whoever gave us Mumble support, for implementing the EXACT thing Discord wanted for this field!
+		discordPresence.partySize = D_NumPlayers(); // Players in server
+		discordPresence.partyMax = discordInfo.maxPlayers; // Max players
+
+		discordPresence.instance = 1; // Net instance
 	}
 	else
 	{
@@ -1311,30 +1329,21 @@ void DRPC_UpdatePresence(void)
 /*--------------------------------------------------
 	void DRPC_Shutdown(void)
 
-		Clears Everything Related to Discord
-		Rich Presence. Only Runs When the
-		Game Closes or Crashes.
-
-	Input Arguments:-
-		None
-	
-	Return:-
-		None
+		Clears everything related to Discord Rich Presence.
+		Only runs when the game closes or crashes.
 --------------------------------------------------*/
 
 void DRPC_Shutdown(void)
 {
 	DiscordRichPresence discordPresence;
-
-	DRPC_EmptyRequests();
+	memset(&discordPresence, 0, sizeof(discordPresence));
+	memset(&discordInfo, 0, sizeof(discordInfo));
 
 	discordPresence.details = "Currently Closing...";
 	discordPresence.state = "Clearing SRB2 Discord Rich Presence...";
 
-	Discord_UpdatePresence(&discordPresence);
-
-	memset(&discordPresence, 0, sizeof(discordPresence));
-	memset(&discordInfo, 0, sizeof(discordInfo));
+	DRPC_UpdatePresence();
+	DRPC_EmptyRequests();
 
 #ifdef DISCORD_DISABLE_IO_THREAD
 	Discord_UpdateConnection();

@@ -9,7 +9,7 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  discord.h
-/// \brief Discord Rich Presence handling
+/// \brief Globalizes Discord Rich Presence data
 
 #ifndef __DISCORD__
 #define __DISCORD__
@@ -18,11 +18,12 @@
 
 #include "discord_rpc.h"
 
-#include "../command.h"
-
 // ------------------------ //
 //        Variables
 // ------------------------ //
+
+// Defines that we're compiling with discord support!
+#define HAVE_DISCORDSUPPORT
 
 // Please feel free to provide your own Discord app if you're making a new custom build :)
 #define DISCORD_APPID "1013126566236135516"
@@ -30,30 +31,17 @@
 // length of IP strings
 #define IP_SIZE 21
 
+// Discord discriminators
+#define DISCORD_DISCRIMINATORS
+
+extern size_t g_discord_skins;
+
 // ------------------------ //
 //         Commands
 // ------------------------ //
 
-extern consvar_t cv_discordrp, cv_discordstreamer;
-extern consvar_t cv_discordasks;
-extern consvar_t cv_discordshowonstatus, cv_discordstatusmemes, cv_discordcharacterimagetype;
-
-extern consvar_t cv_customdiscorddetails, cv_customdiscordstate;
-extern consvar_t cv_customdiscordlargeimagetype, cv_customdiscordsmallimagetype;
-extern consvar_t cv_customdiscordlargecharacterimage, cv_customdiscordsmallcharacterimage;
-extern consvar_t cv_customdiscordlargesupercharacterimage, cv_customdiscordsmallsupercharacterimage;
-extern consvar_t cv_customdiscordlargemapimage, cv_customdiscordsmallmapimage;
-extern consvar_t cv_customdiscordlargemiscimage, cv_customdiscordsmallmiscimage;
-extern consvar_t cv_customdiscordlargeimagetext, cv_customdiscordsmallimagetext;
-
-extern struct discordInfo_s {
+typedef struct discordInfo_s {
 	boolean Initialized;
-
-	char sessionUsername[256];
-	char grabbedUsername[256];
-	char discriminator[6];
-	char userID[20];
-
 	boolean Disconnected;
 	
 	UINT8 maxPlayers;
@@ -61,7 +49,7 @@ extern struct discordInfo_s {
 	UINT8 whoCanInvite;
 
 	INT16 serverRoom;
-} discordInfo;
+} discordInfo_t;
 
 typedef struct discordRequest_s {
 	char *username; // Discord user name.
@@ -81,13 +69,12 @@ typedef struct discordRequest_s {
 extern discordRequest_t *discordRequestList;
 
 /*--------------------------------------------------
-	void DRPC_UpdateUsername(void);
+	const char *DRPC_ReturnUsername(const DiscordUser *user);
 
-		Updates the current Discord Rich Presence
-		username.
+		Returns the Discord username of the user.
 --------------------------------------------------*/
 
-void DRPC_UpdateUsername(void);
+const char *DRPC_ReturnUsername(const DiscordUser *user);
 
 
 /*--------------------------------------------------
@@ -123,13 +110,11 @@ void DRPC_UpdatePresence(void);
 /*--------------------------------------------------
 	void DRPC_Shutdown(void)
 
-		Clears Everything Related to Discord
-		Rich Presence. Only Runs When the
-		Game Closes or Crashes.
+		Clears everything related to Discord Rich Presence.
+		Only runs when the game closes or crashes.
 --------------------------------------------------*/
 
 void DRPC_Shutdown(void);
 
 #endif // #if defined (HAVE_DISCORDRPC) || defined (HAVE_DISCORDGAMESDK)
-
 #endif // __DISCORD__

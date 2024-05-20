@@ -11,9 +11,9 @@
 /// \file  discord_cmds.c
 /// \brief Discord Rich Presence commands
 
-#if defined (HAVE_DISCORDRPC) || defined (HAVE_DISCORDGAMESDK)
+#include "discord_cmds.h"
 
-#include "discord.h"
+#ifdef HAVE_DISCORDSUPPORT
 
 static CV_PossibleValue_t statustype_cons_t[] = {
     {0, "Default"},
@@ -48,6 +48,7 @@ static CV_PossibleValue_t custom_imagetype_cons_t[] = {
 
 	{6, "Maps"},
 	{7, "Miscellaneous"},
+
 	{8, "None"},
 	{0, NULL}
 };
@@ -79,10 +80,8 @@ static CV_PossibleValue_t custom_characterimage_cons_t[] = {
     {22, "Smiles"},
     {23, "Whisper"},
 
-    // My Char
     {24, "Hexhog"},
 
-    // Friendos' Char
 	{25, "Speccy"},
 
     {0, NULL}
@@ -95,7 +94,6 @@ static CV_PossibleValue_t custom_supercharacterimage_cons_t[] = {
 };
 
 static CV_PossibleValue_t custom_mapimage_cons_t[] = {
-    // Singleplayer/Co-op Maps
     {0, "GFZ1"},
     {1, "GFZ2"},
     {2, "GFZ3"},
@@ -161,7 +159,6 @@ static CV_PossibleValue_t custom_mapimage_cons_t[] = {
     {45, "NBS - APZ1"},
     {46, "NBS - APZ2"},
 
-    // CTF Maps
     {47, "CTF - LFZ"},
     {48, "CTF - LPZ"},
     {49, "CTF - SCZ"},
@@ -172,7 +169,6 @@ static CV_PossibleValue_t custom_mapimage_cons_t[] = {
     {54, "CTF - DFZ"},
     {55, "CTF - NRZ"},
 
-    // Match/Team Match/H&S/Tag Maps
     {56, "MATCH - JVZ"},
     {57, "MATCH - NFZ"},
     {58, "MATCH - TPZ"},
@@ -186,10 +182,8 @@ static CV_PossibleValue_t custom_mapimage_cons_t[] = {
     {66, "MATCH - FCZ"},
     {67, "MATCH - MMZ"},
 
-    // Tutorial Map
     {68, "Tutorial - TZ"},
     
-    // Custom Map
     {69, "Custom"},
 
     {0, NULL}
@@ -269,4 +263,4 @@ consvar_t cv_customdiscordsmallmiscimage = CVAR_INIT ("customdiscordsmallmiscima
 consvar_t cv_customdiscordlargeimagetext = CVAR_INIT ("customdiscordlargeimagetext", "My Favorite Character!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
 consvar_t cv_customdiscordsmallimagetext = CVAR_INIT ("customdiscordsmallimagetext", "My Other Favorite Character!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
 
-#endif // #if defined (HAVE_DISCORDRPC) || defined (HAVE_DISCORDGAMESDK)
+#endif // HAVE_DISCORDSUPPORT

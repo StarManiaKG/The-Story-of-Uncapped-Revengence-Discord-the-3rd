@@ -16032,10 +16032,12 @@ static void M_DrawDiscordMenu(void)
 // Discord Request Menus //
 static const char *M_GetDiscordName(discordRequest_t *r)
 {
-	if (r == NULL)					return "";			// Return 'null'
-	if (cv_discordstreamer.value)	return r->username;	// Return the username, minus the discriminator
+	if (r == NULL)
+		return "";
 
-	return va("%s#%s", r->username, r->discriminator);	// Return the username, plus the discriminator
+	if (cv_discordstreamer.value)
+		return r->username;
+	return va("%s#%s", r->username, r->discriminator);
 }
 
 static void M_HandleDiscordRequests(INT32 choice)
