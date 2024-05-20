@@ -18,6 +18,8 @@
 #include "doomtype.h"
 #include "r_defs.h"
 
+#include "STAR/v_video.h" // V_MENUCOLORMAP & V_FPSCOLORMAP //
+
 //
 // VIDEO
 //

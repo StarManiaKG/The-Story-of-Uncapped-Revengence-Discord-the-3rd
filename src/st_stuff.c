@@ -51,7 +51,6 @@
 // STAR STUFF //
 #include "STAR/star_vars.h"
 #include "STAR/ss_main.h" // eastermode //
-#include "STAR/m_menu.h" // V_MENUCOLORMAP //
 
 #include "d_main.h" // autoloaded & autoloading //
 // END OF THAT //
@@ -245,7 +244,6 @@ void ST_doPaletteStuff(void)
 		palette = 0;
 
 #ifdef HWRENDER
-	// STAR NOTE: palette rendering //
 	if (rendermode == render_opengl && !HWR_ShouldUsePaletteRendering())
 		palette = 0; // Don't set the palette to a flashpal in OpenGL's truecolor mode
 #endif

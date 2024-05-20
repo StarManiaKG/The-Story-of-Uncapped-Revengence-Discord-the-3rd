@@ -21,8 +21,6 @@
 #include "r_skins.h" // numskins
 #include "r_draw.h" // R_GetColorByName
 
-#include "STAR/m_menu.h" // STAR STUFF: V_MENUCOLORMAP //
-
 gamedata_t *clientGamedata; // Our gamedata
 gamedata_t *serverGamedata; // Server's gamedata
 

@@ -97,8 +97,6 @@
 #include "STAR/s_sound.h"
 
 #include "deh_soc.h"
-
-#define APRIL_FOOLS
 // END OF THAT //
 
 #define SKULLXOFF -32

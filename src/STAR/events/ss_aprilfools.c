@@ -14,9 +14,10 @@
 #include "../m_menu.h"
 #include "../s_sound.h"
 #include "../../g_demo.h"
+#include "../../g_game.h" // playeringame[]
+#include "../../v_video.h"
 
 #include "../../d_main.h" // autoloaded/autoloading //
-#include "../../g_game.h" // playeringame[] //
 
 // ------------------------ //
 //        Variables

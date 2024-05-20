@@ -45,7 +45,6 @@
 #include "r_fps.h" // R_GetFramerateCap
 
 // TSoURDt3rd
-#include "STAR/m_menu.h" // V_MENUCOLORMAP & V_FPSCOLORMAP //
 #include "STAR/ss_main.h" // TSoURDt3rd_SCR_SetPingHeight //
 
 // --------------------------------------------

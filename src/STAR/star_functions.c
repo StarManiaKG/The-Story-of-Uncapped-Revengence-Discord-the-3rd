@@ -1874,11 +1874,11 @@ void TSoURDt3rd_FindCurrentVersion(void)
 
 		if (TSoURDt3rd_CurrentVersion() < internalVersionNumber)
 			((cv_updatenotice.value == 1 && !dedicated) ?
-				(M_StartMessage(va("%c%s\x80\nYou're using an outdated version of TSoURDt3rd.\n\nThe newest version is: %s\nYou're using version: %s\n\nCheck the SRB2 Message Board for the latest version!\n\n(Press any key to continue)\n", ('\x80' + (V_MENUCOLORMAP|V_CHARCOLORSHIFT)), "Update TSoURDt3rd, Please", displayVersionString, TSOURDT3RDVERSION),NULL,MM_NOTHING)) :
+				(STAR_M_StartMessage("Update TSoURDt3rd, Please", 0, va("You're using an outdated version of TSoURDt3rd.\n\nThe newest version is: %s\nYou're using version: %s\n\nCheck the SRB2 Message Board for the latest version!\n\n(Press any key to continue)\n", displayVersionString, TSOURDT3RDVERSION), NULL,MM_NOTHING)) :
 				(STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "You're using an outdated version of TSoURDt3rd.\n\nThe newest version is: %s\nYou're using version: %s\n\nCheck the SRB2 Message Board for the latest version!\n", displayVersionString, TSOURDT3RDVERSION)));
 		else if (TSoURDt3rd_CurrentVersion() > internalVersionNumber)
 			((cv_updatenotice.value == 1 && !dedicated) ?
-				(M_StartMessage(va("%c%s\x80\nYou're using a version of TSoURDt3rd that hasn't even released yet.\n\nYou're probably a tester or coder,\nand in that case, hello!\n\nEnjoy messing around with the build!\n\n(Press any key to continue)\n", ('\x80' + (V_MENUCOLORMAP|V_CHARCOLORSHIFT)), "Hello, Tester/Coder!"),NULL,MM_NOTHING)) :
+				(STAR_M_StartMessage("Hello TSoURDt3rd Tester/Coder!", 0, va("You're using a version of TSoURDt3rd that hasn't even released yet.\n\nYou're probably a tester or coder,\nand in that case, hello!\n\nEnjoy messing around with the build!\n\n(Press any key to continue)\n"),NULL,MM_NOTHING)) :
 				(STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "You're using a version of TSoURDt3rd that hasn't even released yet.\nYou're probably a tester or coder, and in that case, hello!\nEnjoy messing around with the build!\n")));
 	}
 

@@ -149,7 +149,6 @@ static char addonsdir[MAX_WADPATH];
 #include "STAR/ss_main.h" // AUTOLOADCONFIGFILENAME, TSoURDt3rd_CheckTime(), STAR_CONS_Printf(), & TSoURDt3rd_CON_DrawStartupScreen() //
 
 #include "STAR/s_sound.h" // jukebox //
-#include "STAR/m_menu.h" // V_MENUCOLORMAP //
 
 // Discord Stuff
 INT32 extrawads;

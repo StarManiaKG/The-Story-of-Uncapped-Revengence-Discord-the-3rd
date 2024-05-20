@@ -4394,6 +4394,7 @@ static void G_DoContinued(void)
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence(); // DISCORD STUFF: update rpc //
 #endif
+
 #ifdef HAVE_SDL
 	STAR_SetWindowTitle(); // STAR STUFF: do cool window title stuff //
 #endif
@@ -5549,6 +5550,7 @@ void G_SetGamestate(gamestate_t newstate)
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence(); // DISCORD STUFFS: update presence again //
 #endif
+
 #ifdef HAVE_SDL
 	STAR_SetWindowTitle(); // STAR STUFF: constantly update our title please //
 #endif

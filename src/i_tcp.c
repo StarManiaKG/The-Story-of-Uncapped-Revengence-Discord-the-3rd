@@ -147,16 +147,8 @@ typedef union
 
 #include "doomstat.h"
 
-// STAR STUFF //
-#include "STAR/star_vars.h"
-#include "STAR/ss_main.h" // STAR_CONS_Printf() //
-
-#include "d_clisrv.h"
-
 #include "i_time.h" // HOLEPUNCHING STUFFS: holepunch this please //
-
-#include "stun.h" // STUN STUFFS: needed for discord stuffs //
-// END OF THAT //
+#include "discord/stun.h" // STUN_got_response() //
 
 // win32
 #ifdef USE_WINSOCK
@@ -754,14 +746,10 @@ static boolean SOCK_Get(void)
 			// STAR STUFF: HOLEPUNCHING AND STUN STUFFS //
 #ifdef USE_STUN
 			if (hole_punch(c) || STUN_got_response(doomcom->data, c))
-			{
 				break;
-			}
 #else
 			if (hole_punch(c))
-			{
 				break;
-			}
 #endif
 			// SOCK HAS BEEN BROKEN! //
 

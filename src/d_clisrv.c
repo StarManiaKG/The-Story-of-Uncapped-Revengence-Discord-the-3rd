@@ -64,7 +64,6 @@
 // STAR STUFF //
 #include "STAR/star_vars.h"
 #include "STAR/ss_main.h" // STAR_CONS_Printf() //
-#include "STAR/m_menu.h" // V_MENUCOLORMAP //
 // WE'RE DONE! //
 
 //
@@ -2052,6 +2051,23 @@ static boolean CL_FinishedFileList(void)
 		), NULL, MM_NOTHING);
 		return false;
 	}
+	else if (i == 1)
+	{
+		if (serverisfull)
+		{
+			M_StartMessage(M_GetText(
+				"This server is full!\n"
+				"\n"
+				"You may load server addons (if any), and wait for a slot.\n"
+				"\n"
+				"Press ENTER to continue\nor ESC to cancel.\n\n"
+			), M_ConfirmConnect, MM_EVENTHANDLER);
+			cl_mode = CL_CONFIRMCONNECT;
+			curfadevalue = 0;
+		}
+		else
+			cl_mode = CL_LOADFILES;
+	}
 
 	// STAR STUFF: you've autoloaded some game changing mods //
 	else if (i == 5)
@@ -2071,23 +2087,6 @@ static boolean CL_FinishedFileList(void)
 	}
 	// END OF THAT //
 
-	else if (i == 1)
-	{
-		if (serverisfull)
-		{
-			M_StartMessage(M_GetText(
-				"This server is full!\n"
-				"\n"
-				"You may load server addons (if any), and wait for a slot.\n"
-				"\n"
-				"Press ENTER to continue\nor ESC to cancel.\n\n"
-			), M_ConfirmConnect, MM_EVENTHANDLER);
-			cl_mode = CL_CONFIRMCONNECT;
-			curfadevalue = 0;
-		}
-		else
-			cl_mode = CL_LOADFILES;
-	}
 	else
 	{
 		// must download something

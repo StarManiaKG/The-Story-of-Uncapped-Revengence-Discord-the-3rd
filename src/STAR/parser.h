@@ -12,9 +12,8 @@
 #ifndef __STAR_PARSER__
 #define __STAR_PARSER__
 
-#include "ss_main.h" // STAR_CONS_Printf() //
+#include "ss_main.h" // STAR_CONS_Printf() & STAR_M_StartMessage() //
 #include "../doomstat.h"
-#include "../d_main.h" // srb2home //
 #include "../i_system.h"
 #include "../doomdef.h"
 #include "../byteptr.h"
@@ -23,15 +22,19 @@
 #include "../s_sound.h"
 #include "../fastcmp.h"
 
+#include "../d_main.h" // srb2home //
+
 // ------------------------ //
 //        Variables
 // ------------------------ //
 
-enum star_script_errortype {
+typedef enum
+{
 	STAR_SCRIPT_ERROR_STANDARD,
 	STAR_SCRIPT_ERROR_LUMP,
+	STAR_SCRIPT_ERROR_LINE,
 	STAR_SCRIPT_ERROR_FULL,
-}
+} star_script_errortype_t;
 
 // ------------------------ //
 //        Functions
@@ -43,13 +46,18 @@ enum star_script_errortype {
 
 void TSoURDt3rd_LoadLump(UINT16 wad, UINT16 lump);
 
-void TSoURDt3rd_Parse(MYFILE *f, void (*parserfunc)(MYFILE *, const char *, const char *, ...));
+void STAR_Script_Error(const char *err, star_script_errortype_t verboseness);
+
+const char *STAR_Script_ReadNewLine(UINT32 i);
+boolean STAR_Script_ValidTerm(const char *string, const char *value, const char *cmpstring);
+
+void TSoURDt3rd_Parse(MYFILE *f, boolean (*parserfunc)(const char *, const char *));
 void TSoURDt3rd_ParseScript(MYFILE *f);
 
 // =======
 // PARSING
 // =======
 
-void TSoURDt3rd_ParseJukeboxDef(MYFILE *f, const char *word, const char *value, ...);
+boolean TSoURDt3rd_ParseJukeboxDef(const char *word, const char *value);
 
 #endif // __STAR_PARSER__

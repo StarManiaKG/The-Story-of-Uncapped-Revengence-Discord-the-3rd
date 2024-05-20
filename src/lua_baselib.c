@@ -22,7 +22,6 @@
 #include "m_random.h"
 #include "s_sound.h"
 #include "g_game.h"
-#include "m_menu.h"
 #include "y_inter.h"
 #include "hu_stuff.h"	// HU_AddChatText
 #include "console.h"
@@ -39,7 +38,7 @@
 #include "taglist.h" // P_FindSpecialLineFromTag
 #include "lua_hook.h" // hook_cmd_running errors
 
-#include "STAR/star_vars.h" // STAR STUFF: tsourdt3rd stuff //
+#include "STAR/star_vars.h" // STAR STUFF: TSoURDt3rd::jukebox, cv_luacanstopthejukebox, & TSoURDt3rd_InitializePlayer() //
 
 #define NOHUD if (hud_running)\
 return luaL_error(L, "HUD rendering code should not call this function!");\
@@ -3047,7 +3046,7 @@ static int lib_sSpeedMusic(lua_State *L)
 
 	// STAR STUFF: DON'T INTERUPT OUR MUSIC PLEASE :) //
 	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
-		return 1;
+		return 0;
 	// DONE! //
 
 	if (!player || P_IsLocalPlayer(player))
@@ -3119,7 +3118,7 @@ static int lib_sStopMusic(lua_State *L)
 
 	// STAR STUFF: STOP INTERUPTING OUR MUSIC PLEASE (if we allow it) //
 	if (cv_luacanstopthejukebox.value && TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
-		return 1;
+		return 0;
 	// DONE AGAIN! //
 
 	if (!player || P_IsLocalPlayer(player))
@@ -3687,7 +3686,7 @@ static int lib_gAddPlayer(lua_State *L)
 	playeringame[newplayernum] = true;
 	G_AddPlayer(newplayernum);
 
-	TSoURDt3rd_InitializePlayer(newplayernum); // STAR STUFF: add our new player to the roster :P //
+	TSoURDt3rd_InitializePlayer(newplayernum); // add our new player to the roster :P //
 
 	newplayer = &players[newplayernum];
 

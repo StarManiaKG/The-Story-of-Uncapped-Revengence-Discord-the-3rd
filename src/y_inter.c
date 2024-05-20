@@ -48,7 +48,6 @@
 #include "STAR/star_vars.h" // TSoURDt3rd_DetermineLevelMusic() //
 #include "STAR/ss_cmds.h" // cv_storesavesinfolders //
 #include "STAR/ss_main.h" // SAVEGAMEFOLDER //
-#include "STAR/m_menu.h" // V_MENUCOLORMAP //
 
 #include "deh_soc.h"
 // END OF THAT //

@@ -21,10 +21,10 @@
 #error "Need CSPRNG."
 #endif
 
-#include "doomdef.h"
-#include "d_clisrv.h"
-#include "command.h"
-#include "i_net.h"
+#include "../doomdef.h"
+#include "../d_clisrv.h"
+#include "../command.h"
+#include "../i_net.h"
 #include "stun.h"
 
 /* https://gist.github.com/zziuni/3741933 */

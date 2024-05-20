@@ -26,10 +26,10 @@
 #include "mserv.h" // msServerId
 #include "z_zone.h"
 #include "byteptr.h"
-#include "stun.h"
+#include "discord/stun.h"
 #include "i_tcp.h" // current_port
 
-#include "discord.h" // discord, duh
+#include "discord.h"
 #include "doomdef.h"
 
 #include "p_local.h" // all7matchemeralds
@@ -45,7 +45,6 @@
 #include "fastcmp.h" // fastcmp, helps with super stuff
 
 #include "STAR/star_vars.h" // provides unique star stuff
-#include "STAR/m_menu.h" // V_MENUCOLORMAP //
 
 // Please feel free to provide your own Discord app if you're making a new custom build :)
 #define DISCORD_APPID "1013126566236135516"

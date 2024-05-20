@@ -21,7 +21,7 @@
 #include "../command.h"
 
 // ------------------------ //
-//       Definitions
+//        Variables
 // ------------------------ //
 
 // Please feel free to provide your own Discord app if you're making a new custom build :)

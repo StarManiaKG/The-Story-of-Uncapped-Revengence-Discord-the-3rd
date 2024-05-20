@@ -5,62 +5,64 @@
 #include "../command.h"
 
 // ------------------------ //
-//       Definitions
+//        Variables
 // ------------------------ //
-// ====
-// Game
-// ====
-// one tic off so the timer doesn't display 10:00.00
-#define TSOURDT3RD_TIMELIMIT (20999)
 
-// ------------------------ //
-//        Commands
-// ------------------------ //
 // ======
-// Events
+// EVENTS
 // ======
-// events
+
 extern consvar_t cv_easter_allowegghunt, cv_easter_egghuntbonuses;
 extern consvar_t cv_aprilfools_ultimatemode;
 
 // ====
-// Game
+// GAME
 // ====
+
 extern consvar_t cv_tpsrate;
 extern consvar_t cv_menucolor, cv_fpscountercolor, cv_tpscountercolor;
 extern consvar_t cv_storesavesinfolders;
+
 extern consvar_t cv_allowtypicaltimeover;
+#define TSOURDT3RD_TIMELIMIT (20999) // one tic off so the timer doesn't display 10:00.00
+
 extern consvar_t cv_soniccd;
 
 // =====
-// Audio
+// AUDIO
 // =====
+
 extern consvar_t cv_watermuffling;
 
 // =======
-// Players
+// PLAYERS
 // =======
+
 extern consvar_t cv_shieldblockstransformation;
 extern consvar_t cv_alwaysoverlayinvuln;
 
 // =========
-// Savefiles
+// SAVEFILES
 // =========
+
 extern consvar_t cv_continues;
 
 // =======
-// Servers
+// SERVERS
 // =======
+
 extern consvar_t cv_movingplayersetup;
 
 // ------------------------ //
 //        Functions
 // ------------------------ //
+
 void TSoURDt3rd_DiscordCommands_OnChange(void);
 
 // ====
-// Game
+// GAME
 // ====
+
 void STAR_TPSRate_OnChange(void);
 
 #endif // __SS_CMDS__
