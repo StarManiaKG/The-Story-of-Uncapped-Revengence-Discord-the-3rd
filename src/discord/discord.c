@@ -477,8 +477,13 @@ void DRPC_UpdatePresence(void)
 	DiscordRichPresence discordPresence;
 	memset(&discordPresence, 0, sizeof(discordPresence));
 
-	char detailstr[64+26+17+23] = "";
-	char statestr[64+26+15+25] = "";
+	char detailstr[128];
+	char statestr[128];
+
+	char charimg[32];
+	char charname[128];
+
+	//char gtname[128];
 
 	char simagestr[30+26+8] = "";
 	char simagetxtstr[22+26+16] = "";
@@ -490,10 +495,10 @@ void DRPC_UpdatePresence(void)
 	char mapname[5+21+21+2+1] = "";
 
 	char charimgS[4+SKINNAMESIZE+7] = "";
-	char charimg[7+SKINNAMESIZE+4] = "";
+	//char charimg[7+SKINNAMESIZE+4] = "";
 
 	char charnameS[11+SKINNAMESIZE+1] = "";
-	char charname[11+SKINNAMESIZE+1] = "";
+	//char charname[11+SKINNAMESIZE+1] = "";
 
 	char customSImage[32+18] = "";
 	char customLImage[35+7+8] = "";
@@ -736,33 +741,47 @@ void DRPC_UpdatePresence(void)
 	gamedata_t *data = serverGamedata; // Proper Gamedata Pointer, Made by Bitten
 	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer]; // Obvious
 
-	// FALLBACK/BASIC RICH PRESENCE //
-	/* Since The User Doesn't Want To Show Their Status, or Since They're Using the DEVELOP Flag,
-		This Just Shows That They're Playing SRB2, Along With a Few Extra Predetermined Strings ( Thanks to Star :) ).
+	/* FALLBACK/BASIC RICH PRESENCE
+
+		Since The User Doesn't Want To Show Their Status, or Since They're Using the DEVELOP Flag,
+			This Just Shows That They're Playing SRB2, Along With a Few Extra Predetermined Strings
+			( Thanks to Star :) ).
 
 		(If that's too much, then they should just disable game activity :V)
 	*/
-	if (!cv_discordrp.value || devmode || dedicated)
-	{
-		if (dedicated)
-			return;
-
-		discordPresence.largeImageKey = (devmode ? "mapcustom" : "misctitle");
-		discordPresence.largeImageText = (devmode ? "Hey! No Peeking!" : "Sonic Robo Blast 2");
-		
-		discordPresence.details = (devmode ? "Developing a Masterpiece" : "In Game");
-		discordPresence.state = (devmode ? "Keep your Eyes Peeled!" : (paused ? "Currently Paused" : ((menuactive || !Playing() ? "In The Menu" : "Actively Playing"))));
-
-		DRPC_EmptyRequests();
-		Discord_UpdatePresence(&discordPresence);
-
+	if (dedicated)
 		return;
+	else if (!cv_discordrp.value)
+	{
+		snprintf(imagestr, 128, "misctitle");
+		snprintf(imagetxtstr, 128, "Sonic Robo Blast 2");
+
+		snprintf(detailstr, 128, "In Game");
+		if (paused)
+			snprintf(statestr, 128, "Currently Paused");
+		else if (menuactive || !Playing())
+			snprintf(statestr, 128, "In The Menu");
+		else
+			snprintf(statestr, 128, "Actively Playing");
+
+		goto pushPresence;
+	}
+	else if (devmode)
+	{
+		snprintf(imagestr, 128, "mapcustom");
+		snprintf(imagetxtstr, 128, "Hey! No Peeking!");
+
+		snprintf(detailstr, 128, "Developing a Masterpiece");
+		snprintf(statestr, 128, "Keep your Eyes Peeled!");
+
+		goto pushPresence;
 	}
 
-	// MAIN INFO //
-	// Servers
+	// Servers //
 	if (netgame)
 	{
+		const char *serverstr;
+
 		if (DRPC_InvitesAreAllowed() == true)
 		{
 			const char *join;
@@ -777,39 +796,29 @@ void DRPC_UpdatePresence(void)
 				return;
 		}
 
-		if (cv_discordshowonstatus.value != 8)
+		if (server)
+			serverstr = "Hosting ";
+		else if (Playing() && !playeringame[consoleplayer])
+			serverstr = "Looking for ";
+
+		switch (discordInfo.serverRoom)
 		{
-			const char *serverstr;
+			case 33: serverstr += "Standard"; break;
+			case 28: serverstr += "Casual"; break;
+			case 38: serverstr += "Custom Gametype"; break;
+			case 31: serverstr += "OLDC"; break;
 
-			if (server)
-				serverstr = "Hosting";
+			case 0: serverstr += "Public"; break;
+			case -1: serverstr += "Private"; break;
 
-			switch (discordInfo.serverRoom)
-			{
-				case 33: strlcat(serverstr, "Standard"); break;
-				case 28: serverstr = "Casual"; break;
-				case 38: serverstr = "Custom Gametype"; break;
-				case 31: serverstr = "OLDC"; break;
-
-				case 0: serverstr = "Public"; break;
-				case -1: serverstr = "Private"; break;
-
-				default: serverstr = "Unknown"; break;
-			}
-
-			
-
-			if ((Playing())
-				snprintf(detailstr, 60,  ?  ?  : "Looking for a Server"), servroom);
-			else
-
-			snprintf(detailstr, 60,  ? (server ? "Hosting a %s Server" : "In a %s Server") : "Looking for a Server"), servroom);
+			default: serverstr += "Unknown"; break;
 		}
+
+		snprintf(detailstr, 128, serverstr);
 
 		discordPresence.partyId	= server_context; // Thanks, whoever gave us Mumble support, for implementing the EXACT thing Discord wanted for this field!
 		discordPresence.partySize = D_NumPlayers(); // Players in server
 		discordPresence.partyMax = discordInfo.maxPlayers; // Max players
-
 		discordPresence.instance = 1; // Net instance
 	}
 	else
@@ -819,101 +828,107 @@ void DRPC_UpdatePresence(void)
 		memset(&discordInfo.whoCanInvite, 0, sizeof(discordInfo.whoCanInvite));
 	}
 
-	//// 	  STATUSES 		////
+	// Custom Statuses //
 	if (cv_discordshowonstatus.value != 8)
+		goto customStatus;
+
+	// Main Statuses //
+	// Image Text
+	if ((!Playing() || gamestate == GS_NULL || gamestate == GS_TIMEATTACK) || ((!Playing() || gamestate == GS_NULL || gamestate == GS_TIMEATTACK) && (cv_discordshowonstatus.value != 1 && cv_discordshowonstatus.value != 5)) || (cv_discordshowonstatus.value >= 2 && cv_discordshowonstatus.value != 5))
 	{
-		//// Status Pictures ////
-		if ((!Playing() || gamestate == GS_NULL || gamestate == GS_TIMEATTACK) || ((!Playing() || gamestate == GS_NULL || gamestate == GS_TIMEATTACK) && (cv_discordshowonstatus.value != 1 && cv_discordshowonstatus.value != 5)) || (cv_discordshowonstatus.value >= 2 && cv_discordshowonstatus.value != 5))
-		{
-			strcpy(imagestr, "misctitle");
-			strcpy(imagetxtstr,
-					// Allow Statuses
-					((!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 6) ?
-						((gamestate == GS_TIMEATTACK) ? "Time Attack" : "Title Screen") :
-					
-					// Show No Statuses
-					("Sonic Robo Blast 2")));
-			
-			(((!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 6) && !Playing()) ?
-				snprintf(statestr, 130,
-						// Game States
-						((gamestate == GS_TIMEATTACK) ? "In the Time Attack Menu" :
+		snprintf(imagestr, 128, "misctitle");
+		strcpy(imagetxtstr,
+				// Allow Statuses
+				((!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 6) ?
+					((gamestate == GS_TIMEATTACK) ? "Time Attack" : "Title Screen") :
+				
+				// Show No Statuses
+				("Sonic Robo Blast 2")));
+		
+		(((!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 6) && !Playing()) ?
+			snprintf(statestr, 130,
+					// Game States
+					((gamestate == GS_TIMEATTACK) ? "In the Time Attack Menu" :
 
-						// Demo States
-						((!demoplayback && !titledemo) ? "Main Menu" :
-						((demoplayback && !titledemo) ? "Watching Replays" :
-						((demoplayback && titledemo) ? "Watching A Demo" : "???"))))) : 0);
-		}
+					// Demo States
+					((!demoplayback && !titledemo) ? "Main Menu" :
+					((demoplayback && !titledemo) ? "Watching Replays" :
+					((demoplayback && titledemo) ? "Watching A Demo" : "???"))))) : 0);
+	}
 
-		//// Status Text ////
-		if (((Playing() && playeringame[consoleplayer] && !demoplayback) || cv_discordshowonstatus.value == 7))
+		// Status Text
+		if ((playeringame[consoleplayer] && !demoplayback) || cv_discordshowonstatus.value == 7)
 		{
-			//// Emblems ////
+			// Emblems
 			if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 4)
 			{
-				if ((!(netgame || splitscreen)) || (cv_discordshowonstatus.value))
-					snprintf((!netgame ? detailstr : statestr), 130, "%d/%d Emblems", M_CountEmblems(data), (numemblems + numextraemblems));
+				if (!(netgame || splitscreen) || cv_discordshowonstatus.value == 4)
+				{
+					snprintf((!netgame ? detailstr : statestr), 128,
+						"%d/%d Emblems", M_CountEmblems(data), (numemblems + numextraemblems));
+				}
+				DRPC_EmblemStatus(!netgame ? detailstr : statestr);
 			}
 				
-			//// Emeralds ////
-			if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 3)
+			// Emeralds
+			if ((!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 3) && !modeattacking)
 			{
-				if (!modeattacking)
+				for (i = 0; i < 7; i++)
 				{
 					// Emerald Math, Provided By Monster Iestyn and Uncapped Plus Fafabis
-					for (i = 0; i < 7; i++) {
-						if ((gametyperules & GTR_POWERSTONES && (players[consoleplayer].powers[pw_emeralds] & (1<<i))) || (!(gametyperules & GTR_POWERSTONES) && emeralds & (1<<i)))
-							emeraldCount += 1;
-					}
-
-					// Grammar
-					if (!cv_discordshowonstatus.value && !splitscreen)
-						strcpy(emeraldComma, ", ");
-					if (emeraldCount > 1)
-						strcpy(emeraldGrammar, "s");
-					if (emeraldCount == 7)
-						strcpy(allEmeralds, "All ");
-					
-					// Memes
-					if (cv_discordstatusmemes.value)
-					{
-						// Puncuation
-						if (!emeraldCount || emeraldCount == 3 || emeraldCount == 4)
-							strcpy(emeraldGrammar, (emeraldCount == 3 || emeraldCount == 4) ? "s;" : "s?");
-						
-						// Fun Fact: the subtitles in Shadow the Hedgehog emphasized "fourth", even though Jason Griffith emphasized "damn" in this sentence
-						if (emeraldCount == 3 || emeraldCount == 4)
-							strcpy(emeraldMeme, ((emeraldCount == 3) ? " Where's That DAMN FOURTH?" : " Found That DAMN FOURTH!"));
-						
-						// Goku Mode
-						if (emeraldCount == 7)
-							strcpy(emeraldMeme, " Currently In Goku Mode");
-					}
-						
-					// Apply Strings
-					strlcat((!cv_discordshowonstatus.value ? detailstr : statestr),
-							// No Emeralds
-							((cv_discordstatusmemes.value && ((!(gametyperules & GTR_POWERSTONES) && !emeraldCount) || (gametyperules & GTR_POWERSTONES && !all7matchemeralds && !emeraldCount))) ? 
-								va("%s%s%d EMERALDS?", emeraldComma, allEmeralds, emeraldCount) :
-									
-							// Seven Emeralds
-							(all7matchemeralds ? va("%s All 7 Emeralds", emeraldComma) :
-							((players[consoleplayer].powers[pw_super] ? (va("%s%s", emeraldComma, (cv_discordstatusmemes.value ? emeraldMeme : " Currently Super"))) :
-
-							// Some Emeralds
-							va("%s%s%d Emerald%s", emeraldComma, allEmeralds, emeraldCount, emeraldGrammar))))), 130);
+					if (gametyperules & GTR_POWERSTONES && (players[consoleplayer].powers[pw_emeralds] & 1<<i))
+						emeraldCount += 1;
+					else if (!(gametyperules & GTR_POWERSTONES) && emeralds & 1<<i)
+						emeraldCount += 1;
 				}
+
+				// Grammar
+				if (!cv_discordshowonstatus.value && !splitscreen)
+					strcpy(emeraldComma, ", ");
+				if (emeraldCount > 1)
+					strcpy(emeraldGrammar, "s");
+				if (emeraldCount == 7)
+					strcpy(allEmeralds, "All ");
+				
+				// Memes
+				if (cv_discordstatusmemes.value)
+				{
+					// Puncuation
+					if (!emeraldCount || emeraldCount == 3 || emeraldCount == 4)
+						strcpy(emeraldGrammar, (emeraldCount == 3 || emeraldCount == 4) ? "s;" : "s?");
+					
+					// Fun Fact: the subtitles in Shadow the Hedgehog emphasized "fourth", even though Jason Griffith emphasized "damn" in this sentence
+					if (emeraldCount == 3 || emeraldCount == 4)
+						strcpy(emeraldMeme, ((emeraldCount == 3) ? " Where's That DAMN FOURTH?" : " Found That DAMN FOURTH!"));
+					
+					// Goku Mode
+					if (emeraldCount == 7)
+						strcpy(emeraldMeme, " Currently In Goku Mode");
+				}
+					
+				// Apply Strings
+				strlcat((!cv_discordshowonstatus.value ? detailstr : statestr),
+						// No Emeralds
+						((cv_discordstatusmemes.value && ((!(gametyperules & GTR_POWERSTONES) && !emeraldCount) || (gametyperules & GTR_POWERSTONES && !all7matchemeralds && !emeraldCount))) ? 
+							va("%s%s%d EMERALDS?", emeraldComma, allEmeralds, emeraldCount) :
+								
+						// Seven Emeralds
+						(all7matchemeralds ? va("%s All 7 Emeralds", emeraldComma) :
+						((players[consoleplayer].powers[pw_super] ? (va("%s%s", emeraldComma, (cv_discordstatusmemes.value ? emeraldMeme : " Currently Super"))) :
+
+						// Some Emeralds
+						va("%s%s%d Emerald%s", emeraldComma, allEmeralds, emeraldCount, emeraldGrammar))))), 130);
 			}
 
-			//// Score ////
+			// Score
 			if (cv_discordshowonstatus.value == 2)
 				strlcat((!netgame ? detailstr : statestr), va("Current Score: %d", players[consoleplayer].score), 130);
 				
-			//// SRB2 Playtime ////
+			// SRB2 Playtime
 			if (cv_discordshowonstatus.value == 7)
 				strlcat(((Playing() && !netgame) ? detailstr : statestr), va("Total Playtime: %d Hours, %d Minutes, and %d Seconds", G_TicsToHours(data->totalplaytime), G_TicsToMinutes(data->totalplaytime, false), G_TicsToSeconds(data->totalplaytime)), 130);
 			
-			//// Tiny Details, Such as Complete Games, etc. ////
+			// Misc.
 			if (!splitscreen && !netgame)
 			{
 				if (Playing() && (cv_discordshowonstatus.value != 1 && cv_discordshowonstatus.value != 3 && cv_discordshowonstatus.value != 5 && cv_discordshowonstatus.value != 6))
@@ -1257,7 +1272,7 @@ void DRPC_UpdatePresence(void)
 	}
 	
 	////// 	  CUSTOM STATUSES 	 //////
-	if (cv_discordshowonstatus.value == 8)
+	goto customStatus:
 	{
 		// Error Out if the String is Less Than Two Letters Long //
 		// MAJOR STAR NOTE: please come back to this and flesh it out more lol //
@@ -1312,18 +1327,21 @@ void DRPC_UpdatePresence(void)
 	}
 
 	// We can finally push our new status! :) //
-	discordPresence.details			= detailstr;
-	discordPresence.state			= statestr;
+	goto pushPresence:
+	{
+		discordPresence.details			= detailstr;
+		discordPresence.state			= statestr;
 
-	discordPresence.smallImageKey	= simagestr;
-	discordPresence.smallImageText	= simagetxtstr;
+		discordPresence.smallImageKey	= simagestr;
+		discordPresence.smallImageText	= simagetxtstr;
 
-	discordPresence.largeImageKey	= imagestr;
-	discordPresence.largeImageText	= imagetxtstr;
-	
-	if (!joinSecretSet) // Flush the Request List, if it Exists and We Can't Join.
-		DRPC_EmptyRequests();
-	Discord_UpdatePresence(&discordPresence);
+		discordPresence.largeImageKey	= imagestr;
+		discordPresence.largeImageText	= imagetxtstr;
+		
+		if (!joinSecretSet) // Flush the Request List, if it Exists and We Can't Join.
+			DRPC_EmptyRequests();
+		Discord_UpdatePresence(&discordPresence);
+	}
 }
 
 /*--------------------------------------------------
