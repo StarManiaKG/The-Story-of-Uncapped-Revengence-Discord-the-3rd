@@ -10,16 +10,24 @@
 /// \brief TSoURDt3rd exclusive user and player functions
 
 #include "star_vars.h"
-#include "ss_cmds.h" // cv_watermuffling //
-#include "ss_main.h"
+
+#include "ss_cmds.h" // cv_watermuffling, cv_allowtypicaltimeover, & TSOURDT3RD_TIMELIMIT //
+#include "ss_main.h" // STAR_CONS_Printf() //
 #include "p_user.h"
 #include "s_sound.h"
 #include "../doomdef.h"
 #include "../g_game.h"
 #include "../s_sound.h"
 #include "../z_zone.h"
+//#include "../fastcmp.h"
+//#include "../v_video.h"
+//#include "../d_main.h"
 
 #include "../m_menu.h" // cv_bosspinchmusic //
+
+#ifdef HAVE_DISCORDSUPPORT
+#include "../discord/discord.h" // DRPC_UpdatePresence() //
+#endif
 
 // ------------------------ //
 //        Functions
@@ -34,15 +42,15 @@ void TSoURDt3rd_PlayerThink(player_t *player)
 	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer];
 	player = &players[displayplayer];
 
-	if (!TSoURDt3rd || !player || !player->mo)
-		return;
-
 	static float prev_musicspeed, prev_musicpitch;
 	static INT32 prev_musicvolume, prev_sfxvolume;
 
 	static boolean alreadyInWater;
 
-	// Water muffling //
+	if (!TSoURDt3rd || !player || !player->mo)
+		return;
+
+	// Water muffling
 	if (!TSoURDt3rd->jukebox.musicPlaying && cv_watermuffling.value)
 	{
 		if ((player->mo->eflags & MFE_UNDERWATER) && !alreadyInWater)
@@ -77,6 +85,106 @@ void TSoURDt3rd_PlayerThink(player_t *player)
 		}
 
 		alreadyInWater = (player->mo->eflags & MFE_UNDERWATER);
+	}
+}
+
+//
+// void TSoURDt3rd_P_Ticker(void)
+// General TSoURDt3rd gameplay ticker.
+//
+void TSoURDt3rd_P_Ticker(void)
+{
+	INT32 i, j;
+
+#ifdef HAVE_DISCORDSUPPORT
+	// All 7 Emeralds //
+	if (gametyperules & GTR_POWERSTONES)
+	{
+		UINT16 MAXTEAMS = 3;
+
+		UINT16 match_emeralds[MAXTEAMS];
+		static tic_t emerald_time;
+
+		if (G_GametypeHasTeams()) // If this gametype has teams, check every player on your team for emeralds.
+		{
+			for (i = 0, j = 1; j < MAXTEAMS; i++)
+			{
+				if (i >= MAXPLAYERS)
+				{
+					if (ALL7EMERALDS(match_emeralds[j]))
+					{
+						all7matchemeralds = true;
+						break;
+					}
+					match_emeralds[j++] = 0;
+					i = 0;
+				}
+				if (players[i].ctfteam == j)
+					match_emeralds[j] |= players[i].powers[pw_emeralds];
+			}
+		}
+		else if (ALL7EMERALDS(players[consoleplayer].powers[pw_emeralds]))
+			all7matchemeralds = true;
+
+		if (all7matchemeralds)
+		{
+			if (!emerald_time)
+				DRPC_UpdatePresence();
+			if (++emerald_time >= 20*TICRATE)
+			{
+				all7matchemeralds = false;
+				emerald_time = 0;
+				DRPC_UpdatePresence();
+			}
+		}
+	}
+#endif
+
+	for (i = 0, j = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || players[i].spectator)
+			continue;
+
+		if (!players[i].mo)
+			continue;
+
+		// Time over... //
+		if (!netgame && ((leveltime >= TSOURDT3RD_TIMELIMIT && cv_allowtypicaltimeover.value) || countdowntimeup))
+		{
+			TSoURDt3rdPlayers[i].timeOver = true;
+			P_DamageMobj(&players[i].mo, NULL, NULL, 1, DMG_INSTAKILL);
+		}
+
+		// Removed Sonic (real) //
+		if (TSoURDt3rd_InAprilFoolsMode())
+		{
+			if (!fastncmp(skins[players[i].skin].name, "sonic", 5))
+				continue;
+
+			for (j = 0; j < MAXSKINS; j++)
+			{
+				if (skins[j].name[0] != '\0' && R_SkinUsable(-1, j))
+					break;
+			}
+
+			if ((splitscreen && i == 1) && P_IsLocalPlayer(&players[i]))
+			{
+				STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "Your friend can't play as Sonic either, he's gone.\n");
+				CV_StealthSet(&cv_skin2, skins[1].name);
+			}
+			else if (P_IsLocalPlayer(&players[i]))
+			{
+				STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "You can't play as Sonic, he's dead.\n");
+				CV_StealthSet(&cv_skin, skins[1].name);
+			}
+
+			SetPlayerSkinByNum(i, j);
+			if (fastcmp(skins[j].name, "Sonic") && P_IsLocalPlayer(&players[i]))
+			{
+				STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "But no skin other than sonic found was found, so uh..............\n\tI guess you're now legally distinct Sonic then!\n");
+				players[i].skincolor = SKINCOLOR_WHITE;
+			}
+		}
 	}
 }
 

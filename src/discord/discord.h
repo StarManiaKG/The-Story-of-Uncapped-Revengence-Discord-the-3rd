@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
-// Copyright (C) 2018-2020 by Kart Krew.
+// Copyright (C) 2018-2024 by Kart Krew.
 // Copyright (C) 2020-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
@@ -31,16 +31,16 @@
 // length of IP strings
 #define IP_SIZE 21
 
-// Discord discriminators
+// Allows for SRB2 to use the discriminators of Discord usernames! (even though they removed them :p)
 #define DISCORD_DISCRIMINATORS
 
-extern size_t g_discord_skins;
-
 // ------------------------ //
-//         Commands
+//         Structs
 // ------------------------ //
 
-#if 0
+//#define DISCORD_STRUCT
+
+#ifdef DISCORD_STRUCT
 typedef struct discordInfo_s {
 #else
 extern struct discordInfo_s {
@@ -53,7 +53,11 @@ extern struct discordInfo_s {
 	UINT8 whoCanInvite;
 
 	INT16 serverRoom;
+#ifdef DISCORD_STRUCT
 } discordInfo_t;
+#else
+} discordInfo;
+#endif
 
 typedef struct discordRequest_s {
 	char *username; // Discord user name.
@@ -71,6 +75,23 @@ typedef struct discordRequest_s {
 } discordRequest_t;
 
 extern discordRequest_t *discordRequestList;
+
+// ------------------------ //
+//        Functions
+// ------------------------ //
+
+// ========
+// STATUSES
+// ========
+
+void DRPC_ScoreStatus(char **string);
+void DRPC_EmblemStatus(char **string);
+void DRPC_EmeraldStatus(char **string);
+void DRPC_PlaytimeStatus(char **string);
+
+// ====
+// MAIN
+// ====
 
 /*--------------------------------------------------
 	const char *DRPC_ReturnUsername(const DiscordUser *user);
@@ -119,6 +140,7 @@ void DRPC_UpdatePresence(void);
 --------------------------------------------------*/
 
 void DRPC_Shutdown(void);
+
 
 #endif // #if defined (HAVE_DISCORDRPC) || defined (HAVE_DISCORDGAMESDK)
 #endif // __DISCORD__

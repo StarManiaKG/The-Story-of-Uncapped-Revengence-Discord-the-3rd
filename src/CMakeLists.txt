@@ -145,13 +145,6 @@ endif()
 target_compile_features(SRB2SDL2 PRIVATE c_std_11 cxx_std_17)
 
 ### Configuration
-set(SRB2_CONFIG_HAVE_DISCORDRPC OFF CACHE BOOL
-	"Enable Discord rich presence support.")
-set(SRB2_CONFIG_HAVE_DISCORDGAMESDK OFF CACHE BOOL
-	"Enable Discord Game SDK support.")
-set(SRB2_CONFIG_HAVE_LIBAV OFF CACHE BOOL
-	"Enable TSoURDt3rd's MP4 support.")
-
 set(SRB2_CONFIG_HAVE_MIXERX OFF CACHE BOOL
 	"Enable advanced sound options With SDL Mixer X support.")
 
@@ -210,105 +203,6 @@ if("${SRB2_CONFIG_HWRENDER}")
 		endif()
 	endif()
 endif()
-
-## STAR STUFF ##
-add_subdirectory(STAR)
-add_subdirectory(libav)
-
-if(${SRB2_CONFIG_HAVE_DISCORDGAMESDK})
-	if (${SRB2_CONFIG_HAVE_DISCORDRPC})
-		message(WARNING "You can't compile SRB2 with both Discord's Game SDK and Discord's Rich Presence!")
-		set(SRB2_CONFIG_HAVE_DISCORDRPC OFF)
-	endif()
-
-	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
-		set(DISCORDGAMESDK_FOUND ON)
-		set(DISCORDGAMESDK_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/discord-game-sdk/include)
-		if(${SRB2_SYSTEM_BITS} EQUAL 64)
-			set(DISCORDGAMESDK_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/discord-game-sdk/x86_64")
-		else() # 32-bit
-			set(DISCORDGAMESDK_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/discord-game-sdk/x86")
-		endif()
-	else()
-		find_package(DiscordGameSDK)
-	endif()
-	if(${DISCORDGAMESDK_FOUND})
-		set(SRB2_HAVE_DISCORDGAMESDK ON)
-		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_DISCORDGAMESDK)
-		target_sources(SRB2SDL2 PRIVATE discord_gamesdk.c discord/stun.c)
-	else()
-		message(WARNING "You have specified that Discord's Game SDK is available but it was not found.")
-	endif()
-endif()
-
-if(${SRB2_CONFIG_HAVE_DISCORDRPC})
-	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
-		set(DISCORDRPC_FOUND ON)
-		set(DISCORDRPC_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/discord-rpc/win32-dynamic/include)
-		if(${SRB2_SYSTEM_BITS} EQUAL 64)
-			set(DISCORDRPC_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/discord-rpc/win64-dynamic/include)
-			set(DISCORDRPC_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/discord-rpc/win64-dynamic/lib -ldiscord-rpc")
-		else() # 32-bit
-			set(DISCORDRPC_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/discord-rpc/win32-dynamic/include)
-			set(DISCORDRPC_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/discord-rpc/win32-dynamic/lib -ldiscord-rpc")
-		endif()
-	else()
-		find_package(DiscordRPC)
-	endif()
-	if(${DISCORDRPC_FOUND})
-		set(SRB2_HAVE_DISCORDRPC ON)
-		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_DISCORDRPC)
-		target_compile_definitions(SRB2SDL2 PRIVATE -DUSE_STUN)
-		target_sources(SRB2SDL2 PRIVATE discord/discord.c discord/stun.c)
-	else()
-		message(WARNING "You have specified that Discord Rich Presence is available but it was not found.")
-	endif()
-endif()
-
-if(${SRB2_CONFIG_HAVE_LIBAV})
-	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
-		set(LIBAV_FOUND ON)
-		if(${SRB2_SYSTEM_BITS} EQUAL 64)
-			set(LIBAV_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/libav/x86_64-w64-mingw32/include)
-			set(LIBAV_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/libav/x86_64-w64-mingw32/lib -lm -lz -lvfw32 -lws2_32 -lbcrypt -luser32 -lavcodec -lavdevice -lavfilter -lavformat -lavresample -lavutil -lswscale")
-		else() # 32-bit
-			set(LIBAV_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/libav/i686-w64-mingw32/include)
-			set(LIBAV_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/libav/i686-w64-mingw32/lib -lm -lz -lvfw32 -lws2_32 -lbcrypt -luser32 -lavcodec -lavdevice -lavfilter -lavformat -lavresample -lavutil -lswscale")
-		endif()
-	else()
-		find_package(LibAV)
-	endif()
-	if(${LIBAV_FOUND})
-		set(SRB2_HAVE_LIBAV ON)
-		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_LIBAV)
-		target_sources(SRB2SDL2 PRIVATE libav/LIBAV_coders.c)
-	else()
-		message(WARNING "You have specified that LibAV is avaliable but it was not found.")
-	endif()
-endif()
-
-if(${SRB2_CONFIG_HAVE_MIXERX})
-	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
-		set(MIXERX_FOUND ON)
-		if(${SRB2_SYSTEM_BITS} EQUAL 64)
-			set(MIXERX_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/SDLMixerX/x86_64-w64-mingw32/include/SDL2)
-			set(MIXERX_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/SDLMixerX/x86_64-w64-mingw32/lib -lSDL2_mixer_ext")
-		else() # 32-bit
-			set(MIXERX_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/SDLMixerX/i686-w64-mingw32/include/SDL2)
-			set(MIXERX_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/SDLMixerX/i686-w64-mingw32/lib -lSDL2_mixer_ext")
-		endif()
-	else()
-		find_package(MIXERX)
-	endif()
-	if(${MIXERX_FOUND})
-		set(SRB2_HAVE_MIXERX ON)
-		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_MIXERX)
-	else()
-		message(WARNING "You have specified that SDL Mixer X is available but it was not found.")
-	endif()
-endif()
-
-## END OF STAR STUFF ##
 
 if(${SRB2_CONFIG_HAVE_OPENMPT})
 	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
@@ -574,3 +468,136 @@ endif()
 if(SRB2_CONFIG_ENABLE_CLANG_TIDY_CXX)
 	target_set_default_clang_tidy(SRB2SDL2 CXX "-*,clang-analyzer-*,modernize-*")
 endif()
+
+## // STAR STUFF // ##
+## 	Variables
+set(SRB2_HAVE_DISCORDSUPPORT OFF)
+
+## 	Commands
+set(SRB2_CONFIG_HAVE_DISCORDRPC OFF CACHE BOOL
+	"Enable Discord Rich Presence support.")
+set(SRB2_CONFIG_HAVE_DISCORDGAMESDK OFF CACHE BOOL
+	"Enable Discord Game SDK support.")
+
+set(SRB2_CONFIG_HAVE_LIBAV OFF CACHE BOOL
+	"Enable TSoURDt3rd's MP4 support.")
+
+## 	Directories
+add_subdirectory(STAR)
+add_subdirectory(STAR/libav)
+
+##	Libraries
+#	Discord Game SDK
+if(${SRB2_CONFIG_HAVE_DISCORDGAMESDK})
+	if (${SRB2_CONFIG_HAVE_DISCORDRPC})
+		message(WARNING "You can't compile SRB2 with both Discord's Game SDK and Discord's Rich Presence!")
+		set(SRB2_CONFIG_HAVE_DISCORDRPC OFF)
+	endif()
+
+	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
+		set(DISCORDGAMESDK_FOUND ON)
+		set(DISCORDGAMESDK_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/discord-game-sdk/include)
+
+		if(${SRB2_SYSTEM_BITS} EQUAL 64)
+			set(DISCORDGAMESDK_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/discord-game-sdk/x86_64")
+		else()
+			set(DISCORDGAMESDK_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/discord-game-sdk/x86")
+		endif()
+	else()
+		find_package(DiscordGameSDK)
+	endif()
+
+	if(${DISCORDGAMESDK_FOUND})
+		set(SRB2_HAVE_DISCORDGAMESDK ON)
+		set(SRB2_HAVE_DISCORDSUPPORT ON)
+
+		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_DISCORDGAMESDK -DUSE_STUN)
+		add_subdirectory(discord)
+	else()
+		message(WARNING "You have specified that Discord's Game SDK is available but it was not found.")
+	endif()
+endif()
+
+#	Discord Rich Presence
+if(${SRB2_CONFIG_HAVE_DISCORDRPC})
+	if (${SRB2_CONFIG_HAVE_DISCORDGAMESDK})
+		message(WARNING "You can't compile SRB2 with both Discord's Rich Presence SDK and Discord's Game SDK!")
+		set(SRB2_CONFIG_HAVE_DISCORDGAMESDK OFF)
+	endif()
+
+	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
+		set(DISCORDRPC_FOUND ON)
+		set(DISCORDRPC_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/discord-rpc/win32-dynamic/include)
+
+		if(${SRB2_SYSTEM_BITS} EQUAL 64)
+			set(DISCORDRPC_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/discord-rpc/win64-dynamic/include)
+			set(DISCORDRPC_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/discord-rpc/win64-dynamic/lib -ldiscord-rpc")
+		else()
+			set(DISCORDRPC_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/discord-rpc/win32-dynamic/include)
+			set(DISCORDRPC_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/discord-rpc/win32-dynamic/lib -ldiscord-rpc")
+		endif()
+	else()
+		find_package(DiscordRPC)
+	endif()
+
+	if(${DISCORDRPC_FOUND})
+		set(SRB2_HAVE_DISCORDRPC ON)
+		set(SRB2_HAVE_DISCORDSUPPORT ON)
+
+		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_DISCORDRPC -DUSE_STUN)
+		add_subdirectory(discord)
+	else()
+		message(WARNING "You have specified that Discord Rich Presence is available but it was not found.")
+	endif()
+endif()
+
+#	LibAV
+if(${SRB2_CONFIG_HAVE_LIBAV})
+	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
+		set(SRB2_LIBAV_FOUND ON)
+
+		if(${SRB2_SYSTEM_BITS} EQUAL 64)
+			set(LIBAV_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/libav/x86_64-w64-mingw32/include)
+			set(LIBAV_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/libav/x86_64-w64-mingw32/lib -lm -lz -lvfw32 -lws2_32 -lbcrypt -luser32 -lavcodec -lavdevice -lavfilter -lavformat -lavresample -lavutil -lswscale")
+		else()
+			set(LIBAV_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/libav/i686-w64-mingw32/include)
+			set(LIBAV_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/libav/i686-w64-mingw32/lib -lm -lz -lvfw32 -lws2_32 -lbcrypt -luser32 -lavcodec -lavdevice -lavfilter -lavformat -lavresample -lavutil -lswscale")
+		endif()
+	else()
+		find_package(LibAV)
+	endif()
+
+	if(${SRB2_LIBAV_FOUND})
+		set(SRB2_HAVE_LIBAV ON)
+		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_LIBAV)
+		target_sources(SRB2SDL2 PRIVATE libav/LIBAV_coders.c)
+	else()
+		message(WARNING "You have specified that LibAV is avaliable but it was not found.")
+	endif()
+endif()
+
+#	MixerX
+if(${SRB2_CONFIG_HAVE_MIXERX})
+	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
+		set(SRB2_MIXERX_FOUND ON)
+
+		if(${SRB2_SYSTEM_BITS} EQUAL 64)
+			set(MIXERX_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/SDLMixerX/x86_64-w64-mingw32/include/SDL2)
+			set(MIXERX_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/SDLMixerX/x86_64-w64-mingw32/lib -lSDL2_mixer_ext")
+		else()
+			set(MIXERX_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/SDLMixerX/i686-w64-mingw32/include/SDL2)
+			set(MIXERX_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/SDLMixerX/i686-w64-mingw32/lib -lSDL2_mixer_ext")
+		endif()
+	else()
+		find_package(MIXERX)
+	endif()
+
+	if(${SRB2_MIXERX_FOUND})
+		set(SRB2_HAVE_MIXERX ON)
+		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_MIXERX)
+	else()
+		message(WARNING "You have specified that SDL Mixer X is available but it was not found.")
+	endif()
+endif()
+
+## // END OF STAR STUFF // ##

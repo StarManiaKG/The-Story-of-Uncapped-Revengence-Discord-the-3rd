@@ -7,9 +7,11 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  LIBAV_coders.h
-/// \brief TSoURDt3rd's libav encoder and decoder, exposed to other scripts
+/// \brief Globalizes LibAV's encoding and decoding data
 
 #ifndef __LIBAV_CODERS__
 #define __LIBAV_CODERS__
+
+
 
 #endif // __LIBAV_CODERS__

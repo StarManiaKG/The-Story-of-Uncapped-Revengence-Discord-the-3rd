@@ -11,13 +11,15 @@
 
 #ifdef HAVE_DISCORDGAMESDK // HAVE_DISCORDGAMESDK
 
+#include "../doomdef.h" // large list of defs, mainly
+
 #include "discord_game_sdk.h"
 
-#include "../i_system.h"
 #include "discord_gamesdk.h"
 #include "discord.h"
 #include "stun.h"
-#include "../doomdef.h" // large list of defs, mainly
+
+#include "../i_system.h"
 #include "../d_clisrv.h"
 #include "../d_netcmd.h"
 #include "../i_net.h"

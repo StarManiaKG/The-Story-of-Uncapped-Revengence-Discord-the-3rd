@@ -7,20 +7,22 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  LIBAV_coders.c
-/// \brief Contains all the Info Portraying to
-///        TSoURDt3rd's LIBAV encoder and decoder.
+/// \brief Contains all LibAV encoding and decoding data
 
 #include <time.h>
 
-#include "../i_system.h"
-#include "../doomdef.h"
-#include "../byteptr.h"
-#include "../v_video.h"		// video variables
-#include "../z_zone.h"		// memory variables
-#include "LIBAV_coders.h"   // main variables
+#include "LIBAV_coders.h" // main variables
+
+#include "../../i_system.h"
+#include "../../doomdef.h"
+#include "../../byteptr.h"
+#include "../../v_video.h" // video variables
+#include "../../z_zone.h" // memory variables
 
 ///////////////////////////////////
 //		ABSOLUTELY ENRAGING 	 //
 //		 	FUNCTIONS		 	 //
 //				YAY				 //
 ///////////////////////////////////
+
+

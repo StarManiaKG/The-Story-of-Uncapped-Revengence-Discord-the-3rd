@@ -515,10 +515,6 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 	} else if (fastcmp(word, "autoloaded")) {
 		lua_pushboolean(L, autoloaded);
 		return 1;
-	// time over...
-	} else if (fastcmp(word, "ForceTimeOver")) {
-		lua_pushboolean(L, ForceTimeOver);
-		return 1;
 	
 	// SERVERS //
 	// server uses tsourdt3rd
@@ -611,17 +607,6 @@ int LUA_CheckGlobals(lua_State *L, const char *word)
 		stagefailed = luaL_checkboolean(L, 2);
 
 	// STAR STUFF YAY //
-	// main stuff //
-	// time over...
-	else if (fastcmp(word, "ForceTimeOver"))
-	{
-		if (netgame)
-			return luaL_error(L, "global variable ForceTimeOver can't be changed in netgames!");
-		else if (autoloaded)
-			return luaL_error(L, "global variable ForceTimeOver can't be changed after autoloading add-ons!");
-		ForceTimeOver = luaL_checkboolean(L, 2);
-	}
-
 	// sound effects //
 	// STAR //
 	// joining
@@ -630,7 +615,6 @@ int LUA_CheckGlobals(lua_State *L, const char *word)
 		sfxenum_t sound_id = luaL_checkinteger(L, 2);
 		if (sound_id >= NUMSFX)
 			return luaL_error(L, "sfx %d out of range (0 - %d)", sound_id, NUMSFX-1);
-
 		STAR_JoinSFX = (INT32)luaL_checkinteger(L, 2);
 	}
 
