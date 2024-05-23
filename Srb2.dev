@@ -3063,7 +3063,7 @@ OverrideBuildCmd=0
 BuildCmd=
 
 [Unit282]
-FileName=src\discord.c
+FileName=src\discord\discord.c
 CompileCpp=0
 Folder=DISCORD
 Compile=1
@@ -3073,7 +3073,7 @@ OverrideBuildCmd=0
 BuildCmd=
 
 [Unit283]
-FileName=src\discord.h
+FileName=src\discord\discord.h
 CompileCpp=0
 Folder=DISCORD
 Compile=1

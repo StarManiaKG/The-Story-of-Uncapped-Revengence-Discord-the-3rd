@@ -15,44 +15,49 @@
 
 #include <time.h>
 
-#include "doomdef.h"
+#include "../doomdef.h"
 
 #include "discord.h"
+#include "discord_cmds.h"
+#include "discord_statuses.h"
 #include "stun.h"
 
-#include "i_system.h"
-#include "d_clisrv.h"
-#include "d_netcmd.h"
-#include "i_net.h"
-#include "g_game.h"
-#include "p_tick.h"
-#include "m_menu.h" // gametype_cons_t and jukebox stuff
-#include "r_things.h" // skins
-#include "mserv.h" // msServerId
-#include "z_zone.h"
-#include "byteptr.h"
-#include "i_tcp.h" // current_port
+#include "../i_system.h"
+#include "../d_clisrv.h"
+#include "../d_netcmd.h"
+#include "../i_net.h"
+#include "../g_game.h"
+#include "../p_tick.h"
+#include "../m_menu.h" // gametype_cons_t and jukebox stuff
+#include "../r_things.h" // skins
+#include "../mserv.h" // msServerId
+#include "../z_zone.h"
+#include "../byteptr.h"
+#include "../i_tcp.h" // current_port
 
-#include "p_local.h" // all7matchemeralds
-#include "m_cond.h" // queries about emblems
-#include "v_video.h" // hud stuff, mainly
+#include "../p_local.h" // all7matchemeralds
+#include "../m_cond.h" // queries about emblems
+#include "../v_video.h" // hud stuff, mainly
 
-#include "w_wad.h" // numwadfiles
-#include "d_main.h" // extrawads
-#include "d_netfil.h" // nameonly
-#include "doomstat.h" // savemoddata
-#include "dehacked.h" // titlechanged
+#include "../w_wad.h" // numwadfiles
+#include "../d_main.h" // extrawads
+#include "../d_netfil.h" // nameonly
+#include "../doomstat.h" // savemoddata
+#include "../dehacked.h" // titlechanged
 
-#include "fastcmp.h" // fastcmp, helps with super stuff
+#include "../fastcmp.h" // fastcmp, helps with super stuff
 
-#include "STAR/star_vars.h" // TSoURDt3rd structure
+#include "../STAR/star_vars.h" // TSoURDt3rd structure
 
 // ------------------------ //
 //        Variables
 // ------------------------ //
 
+#if 0
 discordInfo_t *discordInfo = NULL;
-//struct discordInfo_s discordInfo;
+#else
+struct discordInfo_s discordInfo;
+#endif
 
 discordRequest_t *discordRequestList = NULL;
 
@@ -125,14 +130,12 @@ static char *DRPC_XORIPString(const char *input)
 
 const char *DRPC_ReturnUsername(const DiscordUser *user)
 {
-	const char extrainfo;
+	const char *extrainfo = 0;
 
 	if (user != NULL)
 	{
 		if (!cv_discordstreamer.value)
 			extrainfo = va("#%s (%s)", user->discriminator, user->userId);
-		else
-			extrainfo = 0;
 		sprintf(discord_username, "%s %s", user->username, extrainfo);
 	}
 	return discord_username;
@@ -731,7 +734,6 @@ void DRPC_UpdatePresence(void)
 #endif
 
 	INT32 i = 0;					// General Iterator
-	UINT8 emeraldCount = 0;			// Helps Me To Find The Emeralds
 
 	INT32 checkSkin = 0; 			// Checks Through The Consoleplayer's Skin
 	INT32 checkSuperSkin = 0;		// Checks Through The Consoleplayer's Super Skin
@@ -780,8 +782,6 @@ void DRPC_UpdatePresence(void)
 	// Servers //
 	if (netgame)
 	{
-		const char *serverstr;
-
 		if (DRPC_InvitesAreAllowed() == true)
 		{
 			const char *join;
@@ -797,24 +797,22 @@ void DRPC_UpdatePresence(void)
 		}
 
 		if (server)
-			serverstr = "Hosting ";
+			detailstr = "Hosting ";
 		else if (Playing() && !playeringame[consoleplayer])
-			serverstr = "Looking for ";
+			detailstr = "Looking for ";
 
 		switch (discordInfo.serverRoom)
 		{
-			case 33: serverstr += "Standard"; break;
-			case 28: serverstr += "Casual"; break;
-			case 38: serverstr += "Custom Gametype"; break;
-			case 31: serverstr += "OLDC"; break;
+			case 33: strlcat(detailstr, "Standard", 128); break;
+			case 28: strlcat(detailstr, "Casual", 128); break;
+			case 38: strlcat(detailstr, "Custom Gametype", 128); break;
+			case 31: strlcat(detailstr, "OLDC", 128); break;
 
-			case 0: serverstr += "Public"; break;
-			case -1: serverstr += "Private"; break;
+			case 0: strlcat(detailstr, "Public", 128); break;
+			case -1: strlcat(detailstr, "Private", 128); break;
 
-			default: serverstr += "Unknown"; break;
+			default: strlcat(detailstr, "Unknown", 128); break;
 		}
-
-		snprintf(detailstr, 128, serverstr);
 
 		discordPresence.partyId	= server_context; // Thanks, whoever gave us Mumble support, for implementing the EXACT thing Discord wanted for this field!
 		discordPresence.partySize = D_NumPlayers(); // Players in server
@@ -828,9 +826,35 @@ void DRPC_UpdatePresence(void)
 		memset(&discordInfo.whoCanInvite, 0, sizeof(discordInfo.whoCanInvite));
 	}
 
-	// Custom Statuses //
-	if (cv_discordshowonstatus.value != 8)
-		goto customStatus;
+	switch (cv_discordshowonstatus.value)
+	{
+		case 1:
+		case 2:
+		case 3:
+			DRPC_EmeraldStatus(!cv_discordshowonstatus.value ? detailstr : statestr);
+			break;
+
+		case 4:
+			DRPC_EmblemStatus(!netgame ? detailstr : statestr);
+			break;
+
+		case 5:
+		case 6:
+
+		case 7:
+			DRPC_PlaytimeStatus((Playing() && !netgame) ? detailstr : statestr);
+			break;
+
+		case 8:
+			goto customStatus;
+
+		default:
+		{
+			if (!(netgame || splitscreen))
+				DRPC_EmblemStatus(!netgame ? detailstr : statestr);
+			DRPC_EmeraldStatus(!cv_discordshowonstatus.value ? detailstr : statestr);
+		}
+	}
 
 	// Main Statuses //
 	// Image Text
@@ -856,87 +880,25 @@ void DRPC_UpdatePresence(void)
 					((demoplayback && titledemo) ? "Watching A Demo" : "???"))))) : 0);
 	}
 
-		// Status Text
-		if ((playeringame[consoleplayer] && !demoplayback) || cv_discordshowonstatus.value == 7)
-		{
-			// Emblems
-			if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 4)
-			{
-				if (!(netgame || splitscreen) || cv_discordshowonstatus.value == 4)
-				{
-					snprintf((!netgame ? detailstr : statestr), 128,
-						"%d/%d Emblems", M_CountEmblems(data), (numemblems + numextraemblems));
-				}
-				DRPC_EmblemStatus(!netgame ? detailstr : statestr);
-			}
-				
-			// Emeralds
-			if ((!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 3) && !modeattacking)
-			{
-				for (i = 0; i < 7; i++)
-				{
-					// Emerald Math, Provided By Monster Iestyn and Uncapped Plus Fafabis
-					if (gametyperules & GTR_POWERSTONES && (players[consoleplayer].powers[pw_emeralds] & 1<<i))
-						emeraldCount += 1;
-					else if (!(gametyperules & GTR_POWERSTONES) && emeralds & 1<<i)
-						emeraldCount += 1;
-				}
-
-				// Grammar
-				if (!cv_discordshowonstatus.value && !splitscreen)
-					strcpy(emeraldComma, ", ");
-				if (emeraldCount > 1)
-					strcpy(emeraldGrammar, "s");
-				if (emeraldCount == 7)
-					strcpy(allEmeralds, "All ");
-				
-				// Memes
-				if (cv_discordstatusmemes.value)
-				{
-					// Puncuation
-					if (!emeraldCount || emeraldCount == 3 || emeraldCount == 4)
-						strcpy(emeraldGrammar, (emeraldCount == 3 || emeraldCount == 4) ? "s;" : "s?");
-					
-					// Fun Fact: the subtitles in Shadow the Hedgehog emphasized "fourth", even though Jason Griffith emphasized "damn" in this sentence
-					if (emeraldCount == 3 || emeraldCount == 4)
-						strcpy(emeraldMeme, ((emeraldCount == 3) ? " Where's That DAMN FOURTH?" : " Found That DAMN FOURTH!"));
-					
-					// Goku Mode
-					if (emeraldCount == 7)
-						strcpy(emeraldMeme, " Currently In Goku Mode");
-				}
-					
-				// Apply Strings
-				strlcat((!cv_discordshowonstatus.value ? detailstr : statestr),
-						// No Emeralds
-						((cv_discordstatusmemes.value && ((!(gametyperules & GTR_POWERSTONES) && !emeraldCount) || (gametyperules & GTR_POWERSTONES && !all7matchemeralds && !emeraldCount))) ? 
-							va("%s%s%d EMERALDS?", emeraldComma, allEmeralds, emeraldCount) :
-								
-						// Seven Emeralds
-						(all7matchemeralds ? va("%s All 7 Emeralds", emeraldComma) :
-						((players[consoleplayer].powers[pw_super] ? (va("%s%s", emeraldComma, (cv_discordstatusmemes.value ? emeraldMeme : " Currently Super"))) :
-
-						// Some Emeralds
-						va("%s%s%d Emerald%s", emeraldComma, allEmeralds, emeraldCount, emeraldGrammar))))), 130);
-			}
-
-			// Score
-			if (cv_discordshowonstatus.value == 2)
-				strlcat((!netgame ? detailstr : statestr), va("Current Score: %d", players[consoleplayer].score), 130);
-				
-			// SRB2 Playtime
-			if (cv_discordshowonstatus.value == 7)
-				strlcat(((Playing() && !netgame) ? detailstr : statestr), va("Total Playtime: %d Hours, %d Minutes, and %d Seconds", G_TicsToHours(data->totalplaytime), G_TicsToMinutes(data->totalplaytime, false), G_TicsToSeconds(data->totalplaytime)), 130);
+	// Status Text
+	if ((playeringame[consoleplayer] && !demoplayback) || cv_discordshowonstatus.value == 7)
+	{
+		// Score
+		if (cv_discordshowonstatus.value == 2)
+			strlcat((!netgame ? detailstr : statestr), va("Current Score: %d", players[consoleplayer].score), 130);
 			
-			// Misc.
-			if (!splitscreen && !netgame)
-			{
-				if (Playing() && (cv_discordshowonstatus.value != 1 && cv_discordshowonstatus.value != 3 && cv_discordshowonstatus.value != 5 && cv_discordshowonstatus.value != 6))
-					strcpy(detailGrammar, ", ");
-				
-				if (gamecomplete) // You've Beaten the Game? You Get A Special Status Then!
-					strlcat(detailstr, va("%sHas Beaten the Game", detailGrammar), 128);
-			}
+		// SRB2 Playtime
+		if (cv_discordshowonstatus.value == 7)
+			
+		
+		// Misc.
+		if (!splitscreen && !netgame)
+		{
+			if (Playing() && (cv_discordshowonstatus.value != 1 && cv_discordshowonstatus.value != 3 && cv_discordshowonstatus.value != 5 && cv_discordshowonstatus.value != 6))
+				strcpy(detailGrammar, ", ");
+			
+			if (gamecomplete) // You've Beaten the Game? You Get A Special Status Then!
+				strlcat(detailstr, va("%sHas Beaten the Game", detailGrammar), 128);
 		}
 	}
 
@@ -1088,14 +1050,18 @@ void DRPC_UpdatePresence(void)
 			}
 
 			// Time //
+#if 0
 			if (Playing() && (playeringame[consoleplayer] || paused || menuactive))
+#else
+			if (gamestate == GS_LEVEL && Playing())
+#endif
 			{
 				const time_t currentTime = time(NULL);
 				const time_t mapTimeStart = currentTime - (leveltime / TICRATE);
 
 				discordPresence.startTimestamp = mapTimeStart;
 
-				if ((cv_timelimit.value && timelimitintics) && gametyperules & GTR_TIMELIMIT)
+				if (cv_timelimit.value && timelimitintics > 0 && (gametyperules & GTR_TIMELIMIT))
 				{
 					const time_t mapTimeEnd = mapTimeStart + ((timelimitintics + TICRATE) / TICRATE);
 					discordPresence.endTimestamp = mapTimeEnd;
@@ -1272,7 +1238,7 @@ void DRPC_UpdatePresence(void)
 	}
 	
 	////// 	  CUSTOM STATUSES 	 //////
-	goto customStatus:
+	customStatus:
 	{
 		// Error Out if the String is Less Than Two Letters Long //
 		// MAJOR STAR NOTE: please come back to this and flesh it out more lol //
@@ -1327,7 +1293,7 @@ void DRPC_UpdatePresence(void)
 	}
 
 	// We can finally push our new status! :) //
-	goto pushPresence:
+	pushPresence:
 	{
 		discordPresence.details			= detailstr;
 		discordPresence.state			= statestr;
@@ -1337,9 +1303,12 @@ void DRPC_UpdatePresence(void)
 
 		discordPresence.largeImageKey	= imagestr;
 		discordPresence.largeImageText	= imagetxtstr;
-		
-		if (!joinSecretSet) // Flush the Request List, if it Exists and We Can't Join.
+
+		if (joinSecretSet == false)
+		{
+			// Not able to join? Flush the request list, if it exists.
 			DRPC_EmptyRequests();
+		}
 		Discord_UpdatePresence(&discordPresence);
 	}
 }

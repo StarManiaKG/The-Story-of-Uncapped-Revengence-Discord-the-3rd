@@ -31,7 +31,7 @@
 #include "m_cheat.h"
 
 #ifdef HAVE_DISCORDRPC
-#include "discord.h" // DISCORD STUFF: present //
+#include "discord/discord.h" // DISCORD STUFF: present //
 #endif
 
 // STAR STUFF //

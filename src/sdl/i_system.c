@@ -215,7 +215,7 @@ static char returnWadPath[256];
 #endif
 
 #ifdef HAVE_DISCORDRPC
-#include "../discord.h" // present the presence //
+#include "../discord/discord.h" // present the presence //
 #endif
 
 #include "../STAR/star_vars.h" // TSoURDt3rd_GenerateFunnyCrashMessage(), TSOURDT3RDVERSIONSTRING, & TSOURDT3RDBYSTARMANIAKGSTRING //

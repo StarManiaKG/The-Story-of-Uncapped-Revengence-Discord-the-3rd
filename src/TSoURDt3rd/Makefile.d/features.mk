@@ -5,12 +5,12 @@
 ifdef HAVE_DISCORDRPC
 libs+=-ldiscord-rpc
 opts+=-DHAVE_DISCORDRPC -DUSE_STUN
-sources+=discord.c discord/stun.c
+sources+=discord/discord.c discord/stun.c
 endif
 
 ifdef HAVE_DISCORDGAMESDK
 opts+=-DHAVE_DISCORDGAMESDK -DUSE_STUN
-sources+=discord_gamesdk.c discord/stun.c
+sources+=discord/discord_gamesdk.c discord/stun.c
 endif
 
 ifdef HAVE_LIBAV

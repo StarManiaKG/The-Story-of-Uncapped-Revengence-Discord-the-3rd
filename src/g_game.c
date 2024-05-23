@@ -52,7 +52,7 @@
 #include "lua_hud.h"
 
 #ifdef HAVE_DISCORDRPC
-#include "discord.h" // DISCORD STUFF: rpc presence //
+#include "discord/discord.h" // DISCORD STUFF: rpc presence //
 #endif
 
 #ifdef HAVE_DISCORDGAMESDK
