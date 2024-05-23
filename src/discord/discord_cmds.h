@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
 // Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
-// Copyright (C) 2018-2020 by Kart Krew.
+// Copyright (C) 2018-2024 by Kart Krew.
 // Copyright (C) 2020-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
@@ -18,6 +18,10 @@
 #include "../command.h"
 
 #ifdef HAVE_DISCORDSUPPORT
+
+// ------------------------ //
+//        Variables
+// ------------------------ //
 
 extern consvar_t cv_discordrp, cv_discordstreamer;
 extern consvar_t cv_discordasks;

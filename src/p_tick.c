@@ -24,35 +24,17 @@
 #include "m_perfstats.h"
 #include "i_system.h" // I_GetPreciseTime
 #include "r_main.h"
-#include "r_fps.h"
 #include "i_video.h" // rendermode
 
 // Object place
 #include "m_cheat.h"
 
-#ifdef HAVE_DISCORDRPC
-#include "discord/discord.h" // DISCORD STUFF: present //
-#endif
-
-// STAR STUFF //
-#include "STAR/star_vars.h" // extra star variables
-#include "STAR/ss_cmds.h" // cv_allowtypicaltimeover & TSOURDT3RD_TIMELIMIT //
-#include "STAR/ss_main.h" // STAR_CONS_Printf() //
-#include "m_menu.h" // jukebox
-
-#include "fastcmp.h" // april fools stuff 1
-#include "v_video.h" // april fools stuff 2
-#include "d_main.h" // april fools stuff 3
-
-tic_t emeraldtime;
-
-boolean timeover;
-boolean ForceTimeOver;
-// END OF THAT //
-
 #ifdef PARANOIA
 #include "deh_tables.h" // MOBJTYPE_LIST
 #endif
+
+#include "STAR/star_vars.h" // TSoURDt3rd::jukebox //
+#include "STAR/p_user.h" // TSoURDt3rd_P_Ticker() //
 
 tic_t leveltime;
 
@@ -712,11 +694,6 @@ void P_Ticker(boolean run)
 {
 	INT32 i;
 
-	// STAR STUFF YAY //
-	INT32 noMoreSonic = 0;
-	INT32 imGonnaKillAllOfYou = 0;
-	// END OF STAR STUFF WEEEEEEE //
-
 	// Increment jointime and quittime even if paused
 	for (i = 0; i < MAXPLAYERS; i++)
 		if (playeringame[i])
@@ -858,11 +835,7 @@ void P_Ticker(boolean run)
 					continue;
 
 				if (multiplayer || netgame)
-					players[i].exiting = 0;
-
-				// DO STAR STUFF FIRST //
-				timeover = true;
-				// AND WE'RE DONE :) //
+					players[i].exiting = 0
 
 				P_DamageMobj(players[i].mo, NULL, NULL, 1, DMG_INSTAKILL);
 			}
@@ -897,74 +870,7 @@ void P_Ticker(boolean run)
 		if (modeattacking)
 			G_GhostTicker();
 
-#ifdef HAVE_DISCORDRPC
-		// DISCORD STUFFS //
-		if (gametyperules & GTR_POWERSTONES)
-		{
-			if (all7matchemeralds)
-				emeraldtime++;
-
-			if (emeraldtime == 20*TICRATE)
-			{
-				all7matchemeralds = false;
-				emeraldtime = 0;
-				DRPC_UpdatePresence();
-			}
-		}
-		// END THAT, NOW! //
-#endif
-
-		// DO STAR STUFF FOR KICKS //
-		// Sonic's Dead lol
-		if (TSoURDt3rd_InAprilFoolsMode())
-		{
-			if (!netgame)
-			{
-				while (noMoreSonic < MAXPLAYERS)
-				{
-					if (playeringame[noMoreSonic] && fastncmp(skins[players[noMoreSonic].skin].name, "sonic", 5))
-					{
-						SetPlayerSkinByNum(noMoreSonic, 1);
-						if (!noMoreSonic)
-						{
-							STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "You can't play as Sonic; He's Dead.\n");
-							CV_StealthSet(&cv_skin, skins[1].name);
-						}
-						else if (noMoreSonic == 1)
-							CV_StealthSet(&cv_skin2, skins[1].name);
-					}
-
-					noMoreSonic++;
-				}
-			}
-			else
-			{
-				if (fastncmp(skins[players[consoleplayer].skin].name, "sonic", 5))
-				{
-					STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "You can't play as Sonic; He's Dead.\n");
-					SetPlayerSkinByNum(consoleplayer, 1);
-					CV_StealthSet(&cv_skin, skins[1].name);
-				}
-			}
-		}
-
-		// Time Over...
-		if (((Playing() && leveltime >= TSOURDT3RD_TIMELIMIT && cv_allowtypicaltimeover.value) || (ForceTimeOver))
-			&& (!netgame))
-		{
-			timeover = true;
-			
-			while (imGonnaKillAllOfYou < MAXPLAYERS)
-			{
-				player_t* player = &players[imGonnaKillAllOfYou];
-
-				if (player->mo && (Playing() && playeringame[imGonnaKillAllOfYou]))
-					P_DamageMobj(player->mo, NULL, NULL, 1, DMG_INSTAKILL);
-
-				imGonnaKillAllOfYou++;
-			}
-		}
-		// END OF THAT STAR STUFF FOR KICKS //
+		TSoURDt3rd_P_Ticker(); // STAR STUFF: Don't forget to run our unique ticker too! //
 
 		LUA_HOOK(PostThinkFrame);
 	}

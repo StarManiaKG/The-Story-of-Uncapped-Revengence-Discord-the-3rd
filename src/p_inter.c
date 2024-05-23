@@ -29,19 +29,13 @@
 #include "v_video.h" // video flags for CEchos
 #include "f_finale.h"
 
-#ifdef HAVE_DISCORDRPC
-#include "discord/discord.h" // DISCORD STUFFSL present presence //
-#endif
-
 // STAR STUFF //
-#include "STAR/star_vars.h"
+#include "STAR/star_vars.h" // TSoURDt3rd::jukebox //
 #include "STAR/ss_cmds.h" // cv_storesavesinfolders //
 #include "STAR/ss_main.h" // SAVEGAMEFOLDER //
 #include "STAR/p_user.h" // TSoURDt3rd_P_DamageMobj() //
 
-#include "d_main.h"
-#include "deh_soc.h"
-#include "m_menu.h" // jukebox thingies
+#include "deh_soc.h" // file junk
 // END OF THAT //
 
 // CTF player names
@@ -290,8 +284,6 @@ void P_DoNightsScore(player_t *player)
 //
 // Checks if you have all 7 pw_emeralds, then turns you "super". =P
 //
-boolean all7matchemeralds; // STAR NOTE: needed for some discord texts
-
 void P_DoMatchSuper(player_t *player)
 {
 	UINT16 match_emeralds = player->powers[pw_emeralds];
@@ -310,10 +302,6 @@ void P_DoMatchSuper(player_t *player)
 	if (!ALL7EMERALDS(match_emeralds))
 		return;
 
-	// STAR STUFF: needed for some discord texts (let discord know we got all those chaos emeralds in match) //
-	all7matchemeralds = true;
-	// END THAT //
-
 	// Got 'em all? Turn "super"!
 	emeraldspawndelay = invulntics + 1;
 	player->powers[pw_emeralds] = 0;
@@ -321,7 +309,7 @@ void P_DoMatchSuper(player_t *player)
 	player->powers[pw_sneakers] = emeraldspawndelay;
 	if (P_IsLocalPlayer(player) && !player->powers[pw_super])
 	{
-		if (!TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying) // STAR NOTE: i was here lol
+		if (!TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying) // STAR NOTE: don't interrupt my music please :) //
 			S_StopMusic();
 		if (mariomode)
 			G_GhostAddColor(GHC_INVINCIBLE);
@@ -340,10 +328,6 @@ void P_DoMatchSuper(player_t *player)
 			if (playeringame[i] && players[i].ctfteam == player->ctfteam
 			&& players[i].powers[pw_emeralds] != 0)
 			{
-				// STAR STUFF //
-				all7matchemeralds = true; // let discord know our team helped us get all those chaos emeralds in match
-				// END THAT //
-
 				players[i].powers[pw_emeralds] = 0;
 				player->powers[pw_invulnerability] = invulntics + 1;
 				player->powers[pw_sneakers] = player->powers[pw_invulnerability];
@@ -358,11 +342,6 @@ void P_DoMatchSuper(player_t *player)
 					S_ChangeMusicInternal((mariomode) ? "_minv" : "_inv", false);
 				}
 			}
-
-
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence(); // DISCORD STUFFS: refresh presence //
-#endif
 }
 
 /** Takes action based on a ::MF_SPECIAL thing touched by a player.
@@ -704,6 +683,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 			tokenlist += special->health;
 
+
 			if (ALL7EMERALDS(emeralds)) // Got all 7
 			{
 				if (continuesInSession)
@@ -714,11 +694,14 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 						S_StartSound(NULL, sfx_s3kac);
 					else
 						S_StartSound(toucher, sfx_chchng);
+
+					P_GiveCoopLives(player, 1, true); // STAR STUFF: now, you should always give a life, since we're using this build! //
 				}
 				else
+				{
+					P_GiveCoopLives(player, 1, true); // if continues are disabled, a life is a reasonable substitute
 					S_StartSound(toucher, sfx_chchng);
-				
-				//P_GiveCoopLives(player, 1, true); // STAR NOTE: now, you should always give a life, since we're using this build!
+				}
 			}
 			else
 			{
@@ -2667,13 +2650,19 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 		if ((target->player->lives <= 1) && (netgame || multiplayer) && G_GametypeUsesCoopLives() && (cv_cooplives.value == 0))
 			;
-		else if ((!target->player->bot || target->player->bot == BOT_MPAI) && !target->player->spectator && ((target->player->lives != INFLIVES) || timeover) /* STAR NOTE: 04-14-2023; timeover */
+#if 0
+		else if ((!target->player->bot || target->player->bot == BOT_MPAI) && !target->player->spectator && ((target->player->lives != INFLIVES) || TSoURDt3rdPlayers[consoleplayer]->timeOver) /* STAR NOTE: 04-14-2023; timeover */
 		 && G_GametypeUsesLives())
+#else
+		else if ((!target->player->bot || target->player->bot == BOT_MPAI) && !target->player->spectator && (target->player->lives != INFLIVES)
+		 && G_GametypeUsesLives())
+#endif
 		{
 			if (!(target->player->pflags & PF_FINISHED))
 				target->player->lives -= 1; // Lose a life Tails 03-11-2000
 
-			if (target->player->lives <= 0 || timeover) // Tails 03-14-2000, /* STAR NOTE: 04-14-2023; timeover */
+			if (target->player->lives <= 0 // Tails 03-14-2000
+				|| TSoURDt3rdPlayers[consoleplayer]->timeOver) // STAR NOTE: Edited 05-23-2024 //
 			{
 				boolean gameovermus = false;
 				if ((netgame || multiplayer) && G_GametypeUsesCoopLives() && (cv_cooplives.value != 1))
@@ -2694,7 +2683,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 					gameovermus = true;
 
 				if (gameovermus) // Yousa dead now, Okieday? Tails 03-14-2000
-					S_ChangeMusicEx(gameoverMusic[cv_gameovermusic.value], 0, 0, 0, (2*MUSICRATE) - (MUSICRATE/25), 0); // 1.96 seconds (STAR NOTE: i was here too lol)
+					S_ChangeMusicEx(gameoverMusic[cv_gameovermusic.value], 0, 0, 0, (2*MUSICRATE) - (MUSICRATE/25), 0); // 1.96 seconds //* STAR NOTE: Edited; Now depends on gameoverMusic[] *//
 					//P_PlayJingle(target->player, JT_GOVER); // can't be used because incompatible with track fadeout
 
 				// STAR STUFF //
@@ -2711,10 +2700,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				}
 				// END THAT //
 
-				if ((!(netgame || multiplayer || demoplayback || demorecording || metalrecording || modeattacking)
-					|| (!(target->player->lives <= 0) && timeover && !(netgame || multiplayer || demoplayback || demorecording || metalrecording || modeattacking)))
-					
-					&& (numgameovers < maxgameovers))
+				if (!(netgame || multiplayer || demoplayback || demorecording || metalrecording || modeattacking) && numgameovers < maxgameovers)
 				{
 					numgameovers++;
 					if (!usedCheats && cursaveslot > 0)

@@ -9670,13 +9670,13 @@ static void P_DeathThink(player_t *player)
 	if (player->bot == BOT_2PAI || player->bot == BOT_2PHUMAN) // don't allow followbots to do any of the below, B_CheckRespawn does all they need for respawning already
 		goto notrealplayer;
 
-	// continue logic (STAR NOTE: contains timeover now lol)
+	// continue logic //* (STAR NOTE: contains timeover now lol) *//
 	if (!(netgame || multiplayer) && player->lives <= 0 && player == &players[consoleplayer]) //Extra players in SP can't be allowed to continue or end game
 	{
 		if (player->deadtimer > (3*TICRATE) && (cmd->buttons & BT_SPIN || cmd->buttons & BT_JUMP) && (!continuesInSession || player->continues > 0))
 			G_UseContinue();
-		else if ((!timeover && player->deadtimer >= gameovertics)
-			|| (timeover && ((!gameoverMusicTics[cv_gameovermusic.value] && player->deadtimer >= gameovertics)
+		else if ((!TSoURDt3rdPlayers[consoleplayer].timeOver && player->deadtimer >= gameovertics)
+			|| (TSoURDt3rdPlayers[consoleplayer].timeOver && ((!gameoverMusicTics[cv_gameovermusic.value] && player->deadtimer >= gameovertics)
 			|| (gameoverMusicTics[cv_gameovermusic.value] && player->deadtimer >= gameoverMusicTics[cv_gameovermusic.value]))))
 
 			G_UseContinue(); // Even if we don't have one this handles ending the game
@@ -9736,11 +9736,11 @@ static void P_DeathThink(player_t *player)
 				}
 			}
 
-			// Single player auto respawn (STAR NOTE: this includes timeover now too lol)
+			// Single player auto respawn //* STAR NOTE: this includes timeover now too lol *//
 			if (!(netgame || multiplayer)
-				&& ((!timeover && player->deadtimer > TICRATE<<1)
+				&& ((!TSoURDt3rdPlayers[consoleplayer].timeOver && player->deadtimer > TICRATE<<1)
 				
-				|| (timeover && ((!gameoverMusicTics[cv_gameovermusic.value] && player->deadtimer >= gameovertics)
+				|| (TSoURDt3rdPlayers[consoleplayer].timeOver && ((!gameoverMusicTics[cv_gameovermusic.value] && player->deadtimer >= gameovertics)
 				|| (gameoverMusicTics[cv_gameovermusic.value] && player->deadtimer >= gameoverMusicTics[cv_gameovermusic.value])))))
 
 				player->playerstate = PST_REBORN;

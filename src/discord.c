@@ -1200,7 +1200,7 @@ void DRPC_UpdatePresence(void)
 				// Lives //
 				if (!players[consoleplayer].spectator && gametyperules & GTR_LIVES && !(ultimatemode || modeattacking))
 					snprintf(lifeGrammar, 22, (!players[consoleplayer].lives ? ", Game Over..." : ((players[consoleplayer].lives == INFLIVES) || (!cv_cooplives.value && (netgame || multiplayer))) ? ", Has Infinite Lives" : (players[consoleplayer].lives == 1 ? ", %d Life Left" : ", %d Lives Left")), players[consoleplayer].lives);
-				else if (timeover)
+				else if (TSoURDt3rdPlayers[consoleplayer].timeOver)
 					strcpy(lifeGrammar, ", Time Over...");
 				
 				// Spectators //

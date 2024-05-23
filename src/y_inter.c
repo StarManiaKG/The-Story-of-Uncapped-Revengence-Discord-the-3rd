@@ -950,7 +950,7 @@ void Y_IntermissionDrawer(void)
 				V_DrawString(x+36, y, V_ALLOWLOWERCASE, data.competition.name[i]);
 
 				if ((players[data.competition.num[i]].pflags & PF_GAMETYPEOVER)
-					|| (timeover)) // STAR NOTE: time over rendering //
+					|| (TSoURDt3rdPlayers[consoleplayer].timeOver)) // STAR NOTE: time over rendering //
 
 					snprintf(sstrtime, sizeof sstrtime, "Time Over");
 				else if (players[data.competition.num[i]].lives <= 0)

@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
 // Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
-// Copyright (C) 2018-2020 by Kart Krew.
+// Copyright (C) 2018-2024 by Kart Krew.
 // Copyright (C) 2020-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
@@ -11,24 +11,49 @@
 /// \file  discord_statuses.c
 /// \brief Discord Rich Presence statuses
 
-#include "discord_statuses.h"
 #include "discord_cmds.h"
 #include "../doomstat.h"
 #include "../m_cond.h"
 #include "../g_game.h"
 
-#include "../STAR/star_vars.h" // all7matchemeralds
+#include "../STAR/star_vars.h" // TSoURDt3rd struct //
 
 // ------------------------ //
 //        Functions
 // ------------------------ //
 
-void DRPC_EmblemStatus(char **string)
+/*--------------------------------------------------
+	void DRPC_ScoreStatus(char **string)
+
+		Applies a Discord Rich Presence status, related to score amounts, to
+		the given string.
+--------------------------------------------------*/
+void DRPC_ScoreStatus(char **string)
 {
-	if (netgame || splitscreen)
-		snprintf(&string, 128, "%d/%d Emblems", M_CountEmblems(serverGamedata), (numemblems + numextraemblems));
+	if (!(playeringame[consoleplayer] && !demoplayback)
+		return;
+	strlcat(string, va("Current Score: %d", players[consoleplayer].score), 128);
 }
 
+/*--------------------------------------------------
+	void DRPC_EmblemStatus(char **string)
+
+		Applies a Discord Rich Presence status, related to emblems, to
+		the given string.
+--------------------------------------------------*/
+void DRPC_EmblemStatus(char **string)
+{
+	if (!(netgame || splitscreen))
+		return;
+	snprintf(&string, 128, "%d/%d Emblems", M_CountEmblems(serverGamedata), (numemblems + numextraemblems));
+}
+
+/*--------------------------------------------------
+	void DRPC_EmeraldStatus(char **string)
+
+		Applies a Discord Rich Presence status, related to how many
+		emeralds the user has, to the given string.
+--------------------------------------------------*/
 void DRPC_EmeraldStatus(char **string)
 {
 	UINT8 emeraldCount = 0; // Help me find the emouralds!
@@ -84,5 +109,6 @@ void DRPC_PlaytimeStatus(char **string)
 		va("Total Playtime: %d Hours, %d Minutes, and %d Seconds",
 			G_TicsToHours(serverGamedata->totalplaytime),
 			G_TicsToMinutes(serverGamedata->totalplaytime, false),
-			G_TicsToSeconds(serverGamedata->totalplaytime)), 128);
+			G_TicsToSeconds(serverGamedata->totalplaytime)),
+	128);
 }

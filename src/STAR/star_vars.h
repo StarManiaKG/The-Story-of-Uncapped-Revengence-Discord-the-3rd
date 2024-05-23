@@ -98,6 +98,8 @@ typedef struct TSoURDt3rd_s {
 	// Game Stuff
 	TSoURDt3rdLoadingScreen_t loadingScreens;
 
+	boolean timeOver;
+
 	// Server Stuff
 	boolean masterServerAddressChanged;
 
@@ -144,12 +146,8 @@ extern INT32 currenteggs;
 extern INT32 numMapEggs;
 
 // Game //
-// Time Over
-extern boolean timeover;
-extern boolean ForceTimeOver;
-
 // Discord
-extern boolean all7matchemeralds;
+extern boolean all7matchemeralds; // MARKED FOR REMOVAL //
 
 // Audio //
 // Game Over Music

@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
 // Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
-// Copyright (C) 2018-2020 by Kart Krew.
+// Copyright (C) 2018-2024 by Kart Krew.
 // Copyright (C) 2020-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
@@ -19,7 +19,6 @@
 
 #include "discord.h"
 #include "discord_cmds.h"
-#include "discord_statuses.h"
 #include "stun.h"
 
 #include "../i_system.h"
@@ -36,6 +35,7 @@
 #include "../i_tcp.h" // current_port
 
 #include "../p_local.h" // all7matchemeralds
+
 #include "../m_cond.h" // queries about emblems
 #include "../v_video.h" // hud stuff, mainly
 
@@ -53,15 +53,13 @@
 //        Variables
 // ------------------------ //
 
-#if 0
+#ifdef DISCORD_STRUCT
 discordInfo_t *discordInfo = NULL;
 #else
 struct discordInfo_s discordInfo;
 #endif
 
 discordRequest_t *discordRequestList = NULL;
-
-size_t g_discord_skins = 0;
 
 static char self_ip[IP_SIZE];
 
@@ -127,7 +125,6 @@ static char *DRPC_XORIPString(const char *input)
 	Return:-
 		Discord username string
 --------------------------------------------------*/
-
 const char *DRPC_ReturnUsername(const DiscordUser *user)
 {
 	const char *extrainfo = 0;
@@ -454,7 +451,7 @@ static const char *DRPC_GetServerIP(void)
 }
 
 /*--------------------------------------------------
-	void DRPC_EmptyRequests(void)
+	static void DRPC_EmptyRequests(void)
 
 		Empties the request list. Any existing requests
 		will get an ignore reply.
@@ -511,11 +508,6 @@ void DRPC_UpdatePresence(void)
 	
 	char stateGrammar[2+2] = "";
 	char stateType[10+9+5] = "";
-
-	char allEmeralds[1+2+2] = "";
-	char emeraldComma[1+2] = "";
-	char emeraldGrammar[1+1+1] = "";
-	char emeraldMeme[3+5+12+7] = "";
 
 	char lifeType[9+10+2+7] = "";
 	char lifeGrammar[9+10+2+3+4] = "";
@@ -779,6 +771,7 @@ void DRPC_UpdatePresence(void)
 		goto pushPresence;
 	}
 
+	/* MAIN RICH PRESENCE */
 	// Servers //
 	if (netgame)
 	{
@@ -797,9 +790,9 @@ void DRPC_UpdatePresence(void)
 		}
 
 		if (server)
-			detailstr = "Hosting ";
+			snprintf(detailstr, 128, "Hosting ");
 		else if (Playing() && !playeringame[consoleplayer])
-			detailstr = "Looking for ";
+			snprintf(detailstr, 128, "Looking for ");
 
 		switch (discordInfo.serverRoom)
 		{
@@ -826,23 +819,28 @@ void DRPC_UpdatePresence(void)
 		memset(&discordInfo.whoCanInvite, 0, sizeof(discordInfo.whoCanInvite));
 	}
 
+	// Statuses //
 	switch (cv_discordshowonstatus.value)
 	{
 		case 1:
+
 		case 2:
+			DRPC_ScoreStatus(!netgame ? &detailstr : &statestr)
+			break;
+
 		case 3:
-			DRPC_EmeraldStatus(!cv_discordshowonstatus.value ? detailstr : statestr);
+			DRPC_EmeraldStatus(!cv_discordshowonstatus.value ? &detailstr : &statestr);
 			break;
 
 		case 4:
-			DRPC_EmblemStatus(!netgame ? detailstr : statestr);
+			DRPC_EmblemStatus(!netgame ? &detailstr : &statestr);
 			break;
 
 		case 5:
 		case 6:
 
 		case 7:
-			DRPC_PlaytimeStatus((Playing() && !netgame) ? detailstr : statestr);
+			DRPC_PlaytimeStatus((Playing() && !netgame) ? &detailstr : &statestr);
 			break;
 
 		case 8:
@@ -851,8 +849,8 @@ void DRPC_UpdatePresence(void)
 		default:
 		{
 			if (!(netgame || splitscreen))
-				DRPC_EmblemStatus(!netgame ? detailstr : statestr);
-			DRPC_EmeraldStatus(!cv_discordshowonstatus.value ? detailstr : statestr);
+				DRPC_EmblemStatus(!netgame ? &detailstr : &statestr);
+			DRPC_EmeraldStatus(!cv_discordshowonstatus.value ? &detailstr : &statestr);
 		}
 	}
 
@@ -880,18 +878,9 @@ void DRPC_UpdatePresence(void)
 					((demoplayback && titledemo) ? "Watching A Demo" : "???"))))) : 0);
 	}
 
-	// Status Text
+	// Misc. Status Text
 	if ((playeringame[consoleplayer] && !demoplayback) || cv_discordshowonstatus.value == 7)
 	{
-		// Score
-		if (cv_discordshowonstatus.value == 2)
-			strlcat((!netgame ? detailstr : statestr), va("Current Score: %d", players[consoleplayer].score), 130);
-			
-		// SRB2 Playtime
-		if (cv_discordshowonstatus.value == 7)
-			
-		
-		// Misc.
 		if (!splitscreen && !netgame)
 		{
 			if (Playing() && (cv_discordshowonstatus.value != 1 && cv_discordshowonstatus.value != 3 && cv_discordshowonstatus.value != 5 && cv_discordshowonstatus.value != 6))
@@ -933,7 +922,7 @@ void DRPC_UpdatePresence(void)
 				// Lives //
 				if (!players[consoleplayer].spectator && gametyperules & GTR_LIVES && !(ultimatemode || modeattacking))
 					snprintf(lifeGrammar, 22, (!players[consoleplayer].lives ? ", Game Over..." : ((players[consoleplayer].lives == INFLIVES) || (!cv_cooplives.value && (netgame || multiplayer))) ? ", Has Infinite Lives" : (players[consoleplayer].lives == 1 ? ", %d Life Left" : ", %d Lives Left")), players[consoleplayer].lives);
-				else if (timeover)
+				else if (TSoURDt3rdPlayers[consoleplayer].timeOver)
 					strcpy(lifeGrammar, ", Time Over...");
 				
 				// Spectators //
