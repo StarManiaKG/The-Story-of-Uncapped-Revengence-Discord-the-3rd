@@ -94,7 +94,7 @@
 #include "lua_script.h"
 
 #ifdef HAVE_DISCORDRPC
-#include "discord.h" // DISCORD STUFFS: our stuff //
+#include "discord/discord.h" // DISCORD STUFFS: our stuff //
 #endif
 
 // Version numbers for netplay :upside_down_face:

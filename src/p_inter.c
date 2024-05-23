@@ -30,7 +30,7 @@
 #include "f_finale.h"
 
 #ifdef HAVE_DISCORDRPC
-#include "discord.h" // DISCORD STUFFSL present presence //
+#include "discord/discord.h" // DISCORD STUFFSL present presence //
 #endif
 
 // STAR STUFF //

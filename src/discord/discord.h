@@ -40,7 +40,11 @@ extern size_t g_discord_skins;
 //         Commands
 // ------------------------ //
 
+#if 0
 typedef struct discordInfo_s {
+#else
+extern struct discordInfo_s {
+#endif
 	boolean Initialized;
 	boolean Disconnected;
 	

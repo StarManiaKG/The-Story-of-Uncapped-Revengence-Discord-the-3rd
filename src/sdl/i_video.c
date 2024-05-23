@@ -87,7 +87,7 @@
 #endif
 
 #ifdef HAVE_DISCORDRPC
-#include "../discord.h" // DISCORD STUFF: discord //
+#include "../discord/discord.h" // DISCORD STUFF: discord //
 #endif
 
 // STAR STUFF //

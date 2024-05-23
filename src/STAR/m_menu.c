@@ -32,7 +32,7 @@
 #include "../r_main.h" // shadows //
 
 #ifdef HAVE_DISCORDRPC
-#include "../discord.h"
+#include "../discord/discord.h"
 #endif
 
 // ------------------------ //

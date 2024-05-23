@@ -58,7 +58,7 @@
 #endif
 
 #ifdef HAVE_DISCORDRPC
-#include "discord.h" // DISCORD STUFFS: include our stuff please //
+#include "discord/discord.h" // DISCORD STUFFS: include our stuff please //
 #endif
 
 // STAR STUFF //
