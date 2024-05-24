@@ -14,16 +14,13 @@
 #ifndef __DISCORD__
 #define __DISCORD__
 
-#if defined (HAVE_DISCORDRPC) || defined (HAVE_DISCORDGAMESDK)
+#ifdef HAVE_DISCORDSUPPORT
 
 #include "discord_rpc.h"
 
 // ------------------------ //
 //        Variables
 // ------------------------ //
-
-// Defines that we're compiling with discord support!
-#define HAVE_DISCORDSUPPORT
 
 // Please feel free to provide your own Discord app if you're making a new custom build :)
 #define DISCORD_APPID "1013126566236135516"
@@ -38,24 +35,35 @@
 //         Structs
 // ------------------------ //
 
+// Discord connection status
+typedef enum {
+	DRPC_NOTCONNECTED = 0,
+	DRPC_INITIALIZED,
+	DRPC_DISCONNECTED,
+	DRPC_CONNECTED
+} DRPC_Status_t;
+
 //#define DISCORD_STRUCT
 
 #ifdef DISCORD_STRUCT
 typedef struct discordInfo_s {
-#else
-extern struct discordInfo_s {
-#endif
-	boolean Initialized;
-	boolean Disconnected;
-	
+	DRPC_Status_t ConnectionStatus;
+
 	UINT8 maxPlayers;
 	boolean joinsAllowed;
 	UINT8 whoCanInvite;
 
 	INT16 serverRoom;
-#ifdef DISCORD_STRUCT
 } discordInfo_t;
 #else
+extern struct discordInfo_s {
+	DRPC_Status_t ConnectionStatus;
+
+	UINT8 maxPlayers;
+	boolean joinsAllowed;
+	UINT8 whoCanInvite;
+
+	INT16 serverRoom;
 } discordInfo;
 #endif
 
@@ -84,10 +92,10 @@ extern discordRequest_t *discordRequestList;
 // STATUSES
 // ========
 
-void DRPC_ScoreStatus(char **string);
-void DRPC_EmblemStatus(char **string);
-void DRPC_EmeraldStatus(char **string);
-void DRPC_PlaytimeStatus(char **string);
+void DRPC_ScoreStatus(char *string);
+void DRPC_EmblemStatus(char *string);
+void DRPC_EmeraldStatus(char *string);
+void DRPC_PlaytimeStatus(char *string);
 
 // ====
 // MAIN
@@ -142,5 +150,5 @@ void DRPC_UpdatePresence(void);
 void DRPC_Shutdown(void);
 
 
-#endif // #if defined (HAVE_DISCORDRPC) || defined (HAVE_DISCORDGAMESDK)
+#endif // HAVE_DISCORDSUPPORT
 #endif // __DISCORD__

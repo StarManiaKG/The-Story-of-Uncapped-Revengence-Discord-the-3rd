@@ -59,6 +59,7 @@
 
 #ifdef HAVE_DISCORDRPC
 #include "discord/discord.h" // DISCORD STUFFS: include our stuff please //
+#include "discord/discord_cmds.h" // DISCORD STUFF: cv_discord stuff //
 #endif
 
 // STAR STUFF //
@@ -5048,7 +5049,7 @@ static void Skin_OnChange(void)
 	{
 		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, M_GetText("You can't change your skin at the moment. Nice try, %s.\n"),
 #ifdef HAVE_DISCORDRPC
-			((discordInfo.Disconnected || !discordInfo.Initialized) ? (Playing() ? player_names[consoleplayer] : cv_playername.string) : discordInfo.sessionUsername)
+			(discordInfo.ConnectionStatus != DRPC_CONNECTED ? (Playing() ? player_names[consoleplayer] : cv_playername.string) : DRPC_ReturnUsername(NULL))
 #else
 			(Playing() ? player_names[consoleplayer] : cv_playername.string)
 #endif
@@ -5100,7 +5101,7 @@ static void Skin2_OnChange(void)
 	{
 		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, M_GetText("You can't change your skin at the moment. Nice try, %s's friend.\n"),
 #ifdef HAVE_DISCORDRPC
-			((discordInfo.Disconnected || !discordInfo.Initialized) ? (Playing() ? player_names[consoleplayer] : cv_playername.string) : discordInfo.sessionUsername)
+			(discordInfo.ConnectionStatus != DRPC_CONNECTED ? (Playing() ? player_names[consoleplayer] : cv_playername.string) : DRPC_ReturnUsername(NULL))
 #else
 			(Playing() ? player_names[consoleplayer] : cv_playername.string)
 #endif

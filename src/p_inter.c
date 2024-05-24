@@ -35,7 +35,8 @@
 #include "STAR/ss_main.h" // SAVEGAMEFOLDER //
 #include "STAR/p_user.h" // TSoURDt3rd_P_DamageMobj() //
 
-#include "deh_soc.h" // file junk
+#include "deh_soc.h" // file junk //
+#include "d_main.h" // TSoURDt3rd_useAsFileName //
 // END OF THAT //
 
 // CTF player names
@@ -2651,7 +2652,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		if ((target->player->lives <= 1) && (netgame || multiplayer) && G_GametypeUsesCoopLives() && (cv_cooplives.value == 0))
 			;
 #if 0
-		else if ((!target->player->bot || target->player->bot == BOT_MPAI) && !target->player->spectator && ((target->player->lives != INFLIVES) || TSoURDt3rdPlayers[consoleplayer]->timeOver) /* STAR NOTE: 04-14-2023; timeover */
+		else if ((!target->player->bot || target->player->bot == BOT_MPAI) && !target->player->spectator && ((target->player->lives != INFLIVES) || TSoURDt3rdPlayers[consoleplayer].timeOver) /* STAR NOTE: 04-14-2023; timeover */
 		 && G_GametypeUsesLives())
 #else
 		else if ((!target->player->bot || target->player->bot == BOT_MPAI) && !target->player->spectator && (target->player->lives != INFLIVES)
@@ -2662,7 +2663,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				target->player->lives -= 1; // Lose a life Tails 03-11-2000
 
 			if (target->player->lives <= 0 // Tails 03-14-2000
-				|| TSoURDt3rdPlayers[consoleplayer]->timeOver) // STAR NOTE: Edited 05-23-2024 //
+				|| TSoURDt3rdPlayers[consoleplayer].timeOver) // STAR NOTE: Edited 05-23-2024 //
 			{
 				boolean gameovermus = false;
 				if ((netgame || multiplayer) && G_GametypeUsesCoopLives() && (cv_cooplives.value != 1))

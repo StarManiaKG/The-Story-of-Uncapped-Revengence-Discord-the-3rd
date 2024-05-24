@@ -3083,7 +3083,7 @@ OverrideBuildCmd=0
 BuildCmd=
 
 [Unit284]
-FileName=src\discord_gamesdk.c
+FileName=src\discord\discord_gamesdk.c
 CompileCpp=0
 Folder=DISCORD
 Compile=1
@@ -3093,7 +3093,7 @@ OverrideBuildCmd=0
 BuildCmd=
 
 [Unit285]
-FileName=src\discord_gamesdk.h
+FileName=src\discord\discord_gamesdk.h
 CompileCpp=0
 Folder=DISCORD
 Compile=1
@@ -3123,7 +3123,7 @@ OverrideBuildCmd=0
 BuildCmd=
 
 [Unit288]
-FileName=src\libav\LIBAV_coders.c
+FileName=src\STAR\libav\LIBAV_coders.c
 CompileCpp=0
 Folder=LIBAV
 Compile=1
@@ -3133,7 +3133,7 @@ OverrideBuildCmd=0
 BuildCmd=
 
 [Unit289]
-FileName=src\libav\LIBAV_coders.h
+FileName=src\STAR\libav\LIBAV_coders.h
 CompileCpp=0
 Folder=LIBAV
 Compile=1

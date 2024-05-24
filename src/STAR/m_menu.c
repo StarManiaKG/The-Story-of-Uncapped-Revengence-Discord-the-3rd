@@ -367,8 +367,8 @@ void STAR_M_InitDynamicQuitMessages(void)
 	const char *discordname;
 
 #ifdef HAVE_DISCORDRPC
-	if (!discordInfo.Disconnected && discordInfo.Initialized)
-		discordname = discordInfo.sessionUsername;
+	if (discordInfo.ConnectionStatus == DRPC_CONNECTED)
+		discordname = DRPC_ReturnUsername(NULL);
 	else
 #endif
 		discordname = (Playing() ? player_names[consoleplayer] : cv_playername.string);

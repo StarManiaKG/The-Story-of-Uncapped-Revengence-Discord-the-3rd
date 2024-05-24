@@ -59,6 +59,7 @@
 
 #ifdef HAVE_DISCORDRPC
 #include "discord/discord.h" // DISCORD STUFF: Add our coolness! //
+#include "discord/discord_cmds.h" // DISCORD STUFF: cv_discord stuff //
 #endif
 
 // STAR STUFF //
