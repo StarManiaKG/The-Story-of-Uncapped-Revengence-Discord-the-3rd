@@ -470,9 +470,6 @@ if(SRB2_CONFIG_ENABLE_CLANG_TIDY_CXX)
 endif()
 
 ## // STAR STUFF // ##
-## 	Variables
-set(SRB2_HAVE_DISCORDSUPPORT OFF)
-
 ## 	Commands
 set(SRB2_CONFIG_HAVE_DISCORDRPC OFF CACHE BOOL
 	"Enable Discord Rich Presence support.")
@@ -509,9 +506,7 @@ if(${SRB2_CONFIG_HAVE_DISCORDGAMESDK})
 
 	if(${DISCORDGAMESDK_FOUND})
 		set(SRB2_HAVE_DISCORDGAMESDK ON)
-		set(SRB2_HAVE_DISCORDSUPPORT ON)
-
-		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_DISCORDGAMESDK -DUSE_STUN)
+		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_DISCORDGAMESDK -DUSE_STUN -DHAVE_DISCORDSUPPORT)
 		add_subdirectory(discord)
 	else()
 		message(WARNING "You have specified that Discord's Game SDK is available but it was not found.")
@@ -542,9 +537,7 @@ if(${SRB2_CONFIG_HAVE_DISCORDRPC})
 
 	if(${DISCORDRPC_FOUND})
 		set(SRB2_HAVE_DISCORDRPC ON)
-		set(SRB2_HAVE_DISCORDSUPPORT ON)
-
-		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_DISCORDRPC -DUSE_STUN)
+		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_DISCORDRPC -DUSE_STUN -DHAVE_DISCORDSUPPORT)
 		add_subdirectory(discord)
 	else()
 		message(WARNING "You have specified that Discord Rich Presence is available but it was not found.")

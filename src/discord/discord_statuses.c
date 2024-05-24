@@ -18,30 +18,32 @@
 
 #include "../STAR/star_vars.h" // TSoURDt3rd struct //
 
+#ifdef HAVE_DISCORDSUPPORT
+
 // ------------------------ //
 //        Functions
 // ------------------------ //
 
 /*--------------------------------------------------
-	void DRPC_ScoreStatus(char **string)
+	void DRPC_ScoreStatus(char *string)
 
 		Applies a Discord Rich Presence status, related to score amounts, to
 		the given string.
 --------------------------------------------------*/
-void DRPC_ScoreStatus(char **string)
+void DRPC_ScoreStatus(char *string)
 {
-	if (!(playeringame[consoleplayer] && !demoplayback)
+	if (!(playeringame[consoleplayer] && !demoplayback))
 		return;
 	strlcat(string, va("Current Score: %d", players[consoleplayer].score), 128);
 }
 
 /*--------------------------------------------------
-	void DRPC_EmblemStatus(char **string)
+	void DRPC_EmblemStatus(char *string)
 
 		Applies a Discord Rich Presence status, related to emblems, to
 		the given string.
 --------------------------------------------------*/
-void DRPC_EmblemStatus(char **string)
+void DRPC_EmblemStatus(char *string)
 {
 	if (!(netgame || splitscreen))
 		return;
@@ -49,12 +51,12 @@ void DRPC_EmblemStatus(char **string)
 }
 
 /*--------------------------------------------------
-	void DRPC_EmeraldStatus(char **string)
+	void DRPC_EmeraldStatus(char *string)
 
 		Applies a Discord Rich Presence status, related to how many
 		emeralds the user has, to the given string.
 --------------------------------------------------*/
-void DRPC_EmeraldStatus(char **string)
+void DRPC_EmeraldStatus(char *string)
 {
 	UINT8 emeraldCount = 0; // Help me find the emouralds!
 
@@ -103,7 +105,13 @@ void DRPC_EmeraldStatus(char **string)
 	}
 }
 
-void DRPC_PlaytimeStatus(char **string)
+/*--------------------------------------------------
+	void DRPC_PlaytimeStatus(char *string)
+
+		Applies a Discord Rich Presence status, related to SRB2 playtime, to
+		the given string.
+--------------------------------------------------*/
+void DRPC_PlaytimeStatus(char *string)
 {
 	strlcat(string,
 		va("Total Playtime: %d Hours, %d Minutes, and %d Seconds",
@@ -112,3 +120,5 @@ void DRPC_PlaytimeStatus(char **string)
 			G_TicsToSeconds(serverGamedata->totalplaytime)),
 	128);
 }
+
+#endif // HAVE_DISCORDSUPPORT

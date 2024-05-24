@@ -24,6 +24,7 @@
 #include "m_perfstats.h"
 #include "i_system.h" // I_GetPreciseTime
 #include "r_main.h"
+#include "r_fps.h"
 #include "i_video.h" // rendermode
 
 // Object place
@@ -835,7 +836,7 @@ void P_Ticker(boolean run)
 					continue;
 
 				if (multiplayer || netgame)
-					players[i].exiting = 0
+					players[i].exiting = 0;
 
 				P_DamageMobj(players[i].mo, NULL, NULL, 1, DMG_INSTAKILL);
 			}

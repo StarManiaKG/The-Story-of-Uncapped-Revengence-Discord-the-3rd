@@ -1754,16 +1754,6 @@ void D_SRB2Main(void)
 	G_LoadGameData(clientGamedata);
 	M_CopyGameData(serverGamedata, clientGamedata);
 
-#ifdef HAVE_DISCORDRPC
-	// DISCORD STUFFS: INITIALIZE //
-   	if (! dedicated)
-	{
-		CONS_Printf("DRPC_Init(): Initalizing Discord Rich Presence...\n");
-		DRPC_Init();
-	}
-	// INITIALIZED DISCORD AND STUFFS //
-#endif
-
 #if defined (__unix__) || defined (UNIXCOMMON) || defined (HAVE_SDL)
 	VID_PrepareModeList(); // Regenerate Modelist according to cv_fullscreen
 #endif
@@ -2016,6 +2006,15 @@ void D_SRB2Main(void)
 		F_StartIntro(); // Tails 03-03-2002
 
 	CON_ToggleOff();
+
+#ifdef HAVE_DISCORDSUPPORT
+	// DISCORD STUFFS: INITIALIZE //
+   	if (! dedicated)
+	{
+		DRPC_Init();
+	}
+	// INITIALIZED DISCORD AND STUFFS //
+#endif
 
 	if (dedicated && server)
 	{

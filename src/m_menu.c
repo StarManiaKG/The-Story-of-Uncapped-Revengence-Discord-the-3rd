@@ -85,6 +85,7 @@
 
 #ifdef HAVE_DISCORDRPC
 #include "discord/discord.h" // DISCORD STUFFS: included! //
+#include "discord/discord_cmds.h" // DISCORD STUFF: cv_discord stuff //
 #endif
 
 // STAR STUFF //
@@ -16018,15 +16019,16 @@ static void M_DrawDiscordMenu(void)
 {
 	M_DrawGenericScrollMenu();
 
-	// Render Some Basic Strings at The Bottom, and We're Done :) //
-	V_DrawCenteredString(BASEVIDWIDTH/2, 200,																																				// String Width and Height
-		((!discordInfo.Initialized || discordInfo.Disconnected) ? V_REDMAP : V_MENUCOLORMAP),																				// String Flags
-		((discordInfo.Initialized && discordInfo.Disconnected) ? "Disconnected" :																											// Disconnected String
-			((!discordInfo.Initialized) ? "Not Connected" :																																	// Not Connected String, Enabled the Other HUD Hook
-				(va("Connected to: %s", discordInfo.sessionUsername)))));																													// Connected, Shows the Player's Name
-
-	if (!discordInfo.Initialized)
-		V_DrawCenteredString(BASEVIDWIDTH/2, 210, V_REDMAP,	"Is Discord Open?");																											// String Width, Height, and the Other Half of the Not Connected String, Which Points Towards Discord Not Being Open
+	if (discordInfo.ConnectionStatus != DRPC_CONNECTED) // Dang! Discord isn't open!
+	{
+		if (discordInfo.ConnectionStatus == DRPC_DISCONNECTED)
+			V_DrawCenteredString(BASEVIDWIDTH/2, 200, V_REDMAP, "Disconnected");
+		else
+			V_DrawCenteredString(BASEVIDWIDTH/2, 200, V_REDMAP, "Not Connected");
+		V_DrawCenteredString(BASEVIDWIDTH/2, 210, V_REDMAP,	"Is Discord Open?");
+	}
+	else
+		V_DrawCenteredString(BASEVIDWIDTH/2, 210, V_MENUCOLORMAP, va("Connected to: %s", DRPC_ReturnUsername(NULL)));
 }
 
 // Discord Request Menus //

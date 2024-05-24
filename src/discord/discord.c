@@ -69,7 +69,7 @@ boolean devmode = false;
 boolean devmode = true;
 #endif
 
-static char discord_username[256];
+static char discord_username[128];
 
 // ------------------------ //
 //        Functions
@@ -152,9 +152,7 @@ const char *DRPC_ReturnUsername(const DiscordUser *user)
 static void DRPC_HandleReady(const DiscordUser *user)
 {
 	CONS_Printf("Discord: connected to %s\n", DRPC_ReturnUsername(user));
-
-	discordInfo.Disconnected = false;
-	discordInfo.Initialized	= true;
+	discordInfo.ConnectionStatus = DRPC_CONNECTED;
 }
 
 /*--------------------------------------------------
@@ -172,7 +170,7 @@ static void DRPC_HandleReady(const DiscordUser *user)
 static void DRPC_HandleDisconnect(int err, const char *msg)
 {
 	CONS_Printf("Discord: disconnected (%d: %s)\n", err, msg);
-	discordInfo.Disconnected = true;
+	discordInfo.ConnectionStatus = DRPC_DISCONNECTED;
 }
 
 /*--------------------------------------------------
@@ -386,6 +384,8 @@ void DRPC_Init(void)
 {
 	DiscordEventHandlers handlers;
 	memset(&handlers, 0, sizeof(handlers));
+
+	CONS_Printf("DRPC_Init(): Initalizing Discord Rich Presence...\n");
 
 	handlers.ready = DRPC_HandleReady;
 	handlers.disconnected = DRPC_HandleDisconnect;
