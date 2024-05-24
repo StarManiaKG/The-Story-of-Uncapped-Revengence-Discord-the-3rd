@@ -460,11 +460,11 @@ boolean AM_Responder(event_t *ev)
 	INT32 rc = false;
 
 	if ((devparm || cv_debug)					// only automap in Debug Tails 01-19-2001
-		|| (cv_automapoutsidedevmode.value)) 	// STAR NOTE 03/08/2021 OR SOMETHING: now you can have it whenever you want lol
+		|| cv_automapoutsidedevmode.value) 		// STAR NOTE: now you can automap whenever you want lol //
 	{
 		if (!automapactive)
 		{
-			if ((!cv_automapoutsidedevmode.value && ev->type == ev_keydown && ev->key == AM_TOGGLEKEY) || (cv_automapoutsidedevmode.value && ev->type == ev_keydown && ev->key == AM_TOGGLEKEY)) // STAR NOTE: i was here too lol
+			if ((!cv_automapoutsidedevmode.value && ev->type == ev_keydown && ev->key == AM_TOGGLEKEY) || (cv_automapoutsidedevmode.value && ev->type == ev_keydown && ev->key == AM_TOGGLEKEY)) // STAR NOTE: cv_automapoutsidedevmode too lol //
 			{
 				//faB: prevent alt-tab in win32 version to activate automap just before
 				//     minimizing the app; doesn't do any harm to the DOS version
@@ -631,7 +631,7 @@ static inline void AM_doFollowPlayer(void)
   */
 void AM_Ticker(void)
 {
-	if (!cv_automapoutsidedevmode.value && !cv_debug) // STAR NOTE: i was here lol
+	if (!cv_automapoutsidedevmode.value && !cv_debug) // STAR NOTE: cv_automapoutsidedevmode lol //
 		AM_Stop();
 
 	if (dedicated || !automapactive)

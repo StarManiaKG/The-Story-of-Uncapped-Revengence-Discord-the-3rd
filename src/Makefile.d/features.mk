@@ -5,7 +5,7 @@
 passthru_opts+=\
 	NONET NO_IPV6 NOHW NOMD5 NOPOSTPROCESSING\
 	MOBJCONSISTANCY PACKETDROP ZDEBUG\
-	HAVE_MINIUPNPC\
+	NOUPNP NOEXECINFO\
 
 # build with debugging information
 ifdef DEBUGMODE
@@ -18,11 +18,8 @@ opts+=-DHWRENDER
 sources+=$(call List,hardware/Sourcefile)
 endif
 
-ifndef NOASM
-ifndef NONX86
-sources+=tmap.nas tmap_mmx.nas
-opts+=-DUSEASM
-endif
+ifdef NONET
+NOCURL=1
 endif
 
 ifndef NOMD5
@@ -52,33 +49,16 @@ CURLCONFIG?=curl-config
 $(eval $(call Configure,CURL,$(CURLCONFIG)))
 opts+=-DHAVE_CURL
 endif
+
+ifndef NOUPNP
+MINIUPNPC_PKGCONFIG?=miniupnpc
+$(eval $(call Use_pkg_config,MINIUPNPC))
+HAVE_MINIUPNPC=1
+opts+=-DHAVE_MINIUPNPC
+endif
 endif
 
-ifdef HAVE_MINIUPNPC
-libs+=-lminiupnpc
-endif
-
-## STAR STUFF ##
-ifdef HAVE_DISCORDRPC
-libs+=-ldiscord-rpc
-CFLAGS+=-DHAVE_DISCORDRPC -DUSE_STUN
-opts+=-DHAVE_DISCORDRPC -DUSE_STUN
-sources+=discord.c stun.c
-endif
-
-ifdef HAVE_DISCORDGAMESDK
-CFLAGS+=-DHAVE_DISCORDGAMESDK -DUSE_STUN
-opts+=-DHAVE_DISCORDGAMESDK -DUSE_STUN
-sources+=discord_gamesdk.c stun.c
-endif
-
-ifdef HAVE_LIBAV
-libs+=-lm -lz -lavcodec -lavdevice -lavfilter -lavformat -lavresample -lavutil -lswscale
-CFLAGS+=-DHAVE_LIBAV
-opts+=-DHAVE_LIBAV
-sources+=$(call List,libav/Sourcefile)
-endif
-## END THIS PLEASE ##
+include TSoURDt3rd/Makefile.d/features.mk
 
 # (Valgrind is a memory debugger.)
 ifdef VALGRIND

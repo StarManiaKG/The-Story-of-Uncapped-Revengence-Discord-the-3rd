@@ -11,8 +11,18 @@
 
 #ifdef CMAKECONFIG
 
-#define SRB2_COMP_REVISION    "${SRB2_COMP_REVISION}"
-#define SRB2_COMP_BRANCH      "${SRB2_COMP_BRANCH}"
+#define SRB2_COMP_REVISION       "${SRB2_COMP_REVISION}"
+#define SRB2_COMP_BRANCH         "${SRB2_COMP_BRANCH}"
+#define SRB2_COMP_NOTE           "${SRB2_COMP_NOTE}"
+// This is done with configure_file instead of defines in order to avoid
+// recompiling the whole target whenever the working directory state changes
+#cmakedefine SRB2_COMP_UNCOMMITTED
+#ifdef SRB2_COMP_UNCOMMITTED
+#define COMPVERSION_UNCOMMITTED
+#endif
+
+#define CMAKE_BUILD_TYPE         "${CMAKE_BUILD_TYPE}"
+#cmakedefine01 SRB2_COMP_OPTIMIZED
 
 #endif
 
@@ -28,35 +38,50 @@
  * Last updated 2021 / 05 / 06 - v2.2.9 - patch.pk3 & zones.pk3
  * Last updated 2022 / 03 / 06 - v2.2.10 - main assets
  * Last updated 2023 / 05 / 02 - v2.2.11 - patch.pk3 & zones.pk3
- 
- * Last updated 2022 / 08 / 21 - TSOURDT3RD v2.2.10 - starmaniakg.pk3
- * Last updated 2023 / 02 / 05 - TSOURDT3RD v2.2.10 - made starmaniakg.pk3 (now renamed to tsourdt3rd.pk3) optional
- * Last updated 2023 / 02 / 06 - TSOURDT3RD v2.2.10 - updated assets directory
- * Last updated 2023 / 03 / 03 - TSOURDT3RD v2.2.10 - made tsourdt3rd.pk3 optional and added jukebox.pk3, with the latter being optional, and containing all of the jukebox music that you want
- * Last updated 2023 / 03 / 27 - TSOURDT3RD v2.2.10 - updated the hash for tsourdt3rd.pk3 again
- * Last updated 2023 / 03 / 31 - TSOURDT3RD v2.2.10 - added support for future april fools stuff
- * Last updated 2023 / 04 / 10 - TSOURDT3RD v2.2.10 - merged the april fools pk3 with the regular pk3
- * Last updated 2023 / 04 / 13 - TSOURDT3RD v2.2.10 - fixed the easter egg sprite and added tons of more fun stuff
- * Last updated 2023 / 04 / 21 - TSOURDT3RD v2.2.10 - dispenser going up
- * Last updated 2023 / 04 / 21 - TSOURDT3RD v2.2.10 - accidentally deleted the file and all my final changes, so i had to recreate them, but you're lucky though, the old egg hunt for dsz2 was going to be a bit of a hassle
- * Last updated 2023 / 04 / 26 - TSOURDT3RD v2.2.10 - made some changes to make the build more netgame-compatible
- * Last updated 2023 / 04 / 28 - TSOURDT3RD v2.2.10 - decided to split things up between 2 pk3s
- * Last updated 2023 / 05 / 06 - TSOURDT3RD v2.2.10 - removed md5 checking for tsourdt3rdextras.pk3
- * Last updated 2023 / 05 / 07 - TSOURDT3RD v2.2.10 - added a little graphic
- * Last updated 2023 / 05 / 08 - TSOURDT3RD v2.2.10 - removed that little graphic
- * Last updated 2023 / 05 / 13 - TSOURDT3RD v2.2.10 - removed the assets from the repository. thanks for the heads up in that one commit, bitten
- * Last updated 2023 / 05 / 24 - TSOURDT3RD v2.2.10 - worked a bit on readding corona support
- * Last updated 2023 / 08 / 01 - TSOURDT3RD v2.2.10 - added some loading screen graphics
- * Last updated 2023 / 08 / 02 - TSOURDT3RD v2.2.11 - updated things to 2.2.11
- * Last updated 2023 / 08 / 12 - TSOURDT3RD v2.2.11 - added some more loading scren graphics
+ * Last updated 2023 / 09 / 06 - v2.2.12 - patch.pk3
+ * Last updated 2023 / 09 / 09 - v2.2.13 - none
 */
 #define ASSET_HASH_SRB2_PK3   "ad911f29a28a18968ee5b2d11c2acb39"
 #define ASSET_HASH_ZONES_PK3  "1c8adf8d079ecb87d00081f158acf3c7"
 #define ASSET_HASH_PLAYER_DTA "2e7aaae8a6b1b77d90ffe7606ceadb6c"
 #ifdef USE_PATCH_DTA
-#define ASSET_HASH_PATCH_PK3  "2e69558bce3b9610624549a75e29e19b"
+#define ASSET_HASH_PATCH_PK3  "3c7b73f34af7e9a7bceb2d5260f76172"
 #endif
 
-#define ASSET_HASH_TSOURDT3RD_PK3 "befd3d7c5b1bb47936af5584b012b8ff"
+/*
+ * STAR STUFF!
+ * Featuring STAR MD5s! YAY!
+ * Last updated 2022 / 08 / 21 - TSOURDT3RD V2 (2.2.10) - starmaniakg.pk3
+ * Last updated 2023 / 02 / 05 - TSOURDT3RD V2 (2.2.10) - made starmaniakg.pk3 (now renamed to tsourdt3rd.pk3) optional
+ * Last updated 2023 / 02 / 06 - TSOURDT3RD V2 (2.2.10) - updated assets directory
+ * Last updated 2023 / 03 / 03 - TSOURDT3RD V2 (2.2.10) - made tsourdt3rd.pk3 optional and added jukebox.pk3, with the latter being optional, and containing all of the jukebox music that you want
+ * Last updated 2023 / 03 / 27 - TSOURDT3RD V2 (2.2.10) - updated the hash for tsourdt3rd.pk3 again
+ * Last updated 2023 / 03 / 31 - TSOURDT3RD V2 (2.2.10) - added support for future april fools stuff
+ * Last updated 2023 / 04 / 10 - TSOURDT3RD V2 (2.2.10) - merged the april fools pk3 with the regular pk3
+ * Last updated 2023 / 04 / 13 - TSOURDT3RD V2 (2.2.10) - fixed the easter egg sprite and added tons of more fun stuff
+ * Last updated 2023 / 04 / 21 - TSOURDT3RD V2 (2.2.10) - dispenser going up
+ * Last updated 2023 / 04 / 21 - TSOURDT3RD V2 (2.2.10) - accidentally deleted the file and all my final changes, so i had to recreate them, but you're lucky though, the old egg hunt for dsz2 was going to be a bit of a hassle
+ * Last updated 2023 / 04 / 26 - TSOURDT3RD V2 (2.2.10) - made some changes to make the build more netgame-compatible
+ * Last updated 2023 / 04 / 28 - TSOURDT3RD V2 (2.2.10) - decided to split things up between 2 pk3s
+ * Last updated 2023 / 05 / 06 - TSOURDT3RD V2 (2.2.10) - removed md5 checking for tsourdt3rdextras.pk3
+ * Last updated 2023 / 05 / 07 - TSOURDT3RD V2 (2.2.10) - added a little graphic
+ * Last updated 2023 / 05 / 08 - TSOURDT3RD V2 (2.2.10) - removed that little graphic
+ * Last updated 2023 / 05 / 13 - TSOURDT3RD V2 (2.2.10) - removed the assets from the repository. thanks for the heads up in that one commit, bitten
+ * Last updated 2023 / 05 / 24 - TSOURDT3RD V2 (2.2.10) - worked a bit on readding corona support
+ * Last updated 2023 / 08 / 01 - TSOURDT3RD V2 (2.2.10) - added some loading screen graphics
+ * 
+ * Last updated 2023 / 08 / 02 - TSOURDT3RD V3 (2.2.11) - updated things to 2.2.11
+ * Last updated 2023 / 08 / 12 - TSOURDT3RD V3 (2.2.11) - added some more loading scren graphics
+ * 
+ * Last updated 2023 / 11 / 07 - TSOURDT3RD V4 (2.2.13) - added absolutely nothing while initially porting
+ * Last updated 2023 / 11 / 23 - TSOURDT3RD V4 (2.2.13) - added a few more game over tracks
+ * Last updated 2023 / 11 / 24 - TSOURDT3RD V4 (2.2.13) - updated the palettes of the PURE FAT graphics, renamed a few of the game over tracks, and added the proper timing of tracks to the MUSICDEF file
+ * Last updated 2024 / 03 / 31 - TSOURDT3RD V4 (2.2.13) - shrunk the size of tsourdt3rd.pk3
+ * Last updated 2024 / 04 / 01 - TSOURDT3RD V4 (2.2.13) - added my new 'dynamic' 'freeslotting' system, and as a result, removed tsourdt3rd_extras.pk3
+ * Last updated 2024 / 04 / 03 - TSOURDT3RD V4 (2.2.13) - bomber barbara shrunk its own playtime somehow, so i had to go and fix that
+ * Last updated 2024 / 04 / 05 - TSOURDT3RD V4 (2.2.13) - coronas
+ * Last updated 2024 / 04 / 06 - TSOURDT3RD V4 (2.2.13) - coronas: electric boogaloo
+*/
+#define ASSET_HASH_TSOURDT3RD_PK3 "d9539ea49021221cc38209000a5d23ca"
 
 #endif

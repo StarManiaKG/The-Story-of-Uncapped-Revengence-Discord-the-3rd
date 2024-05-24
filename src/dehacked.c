@@ -14,7 +14,11 @@
 #include "m_cond.h"
 #include "deh_soc.h"
 #include "deh_tables.h"
-#include "s_sound.h" // STAR NOTE: S_StopMusic
+
+// STAR STUFF //
+#include "STAR/star_vars.h" // jukebox stuff
+#include "s_sound.h" // S_StopMusic
+// END THAT PLEASE //
 
 boolean deh_loaded = false;
 
@@ -184,7 +188,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 	deh_num_warning = 0;
 
 	// STAR STUFF //
-	if (jukeboxMusicPlaying && savemoddata && (introchanged || titlechanged))
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying && savemoddata && (introchanged || titlechanged))
 		S_StopMusic();
 	// END IT PLEASE //
 
@@ -581,13 +585,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 	} // end while
 
 	if (gamedataadded)
-	{
-		G_LoadGameData();
-
-		// STAR STUFF //
-		jukeboxUnlocked = false;
-		// MARKING STUFF IS FUN //
-	}
+		G_LoadGameData(clientGamedata);
 
 	if (gamestate == GS_TITLESCREEN)
 	{

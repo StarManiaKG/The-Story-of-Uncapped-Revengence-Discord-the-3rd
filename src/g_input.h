@@ -101,6 +101,14 @@ typedef enum
 	GC_CUSTOM1, // Lua scriptable
 	GC_CUSTOM2, // Lua scriptable
 	GC_CUSTOM3, // Lua scriptable
+	// STAR STUFF //
+	// Jukebox Controls
+	JB_OPENJUKEBOX,
+	JB_INCREASEMUSICSPEED,
+	JB_DECREASEMUSICSPEED,
+	JB_PLAYMOSTRECENTTRACK,
+	JB_STOPJUKEBOX,
+	// END THAT PLEASE //
 	NUM_GAMECONTROLS
 } gamecontrols_e;
 

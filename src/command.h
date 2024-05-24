@@ -177,6 +177,11 @@ extern CV_PossibleValue_t CV_OnOff[];
 extern CV_PossibleValue_t CV_YesNo[];
 extern CV_PossibleValue_t CV_Unsigned[];
 extern CV_PossibleValue_t CV_Natural[];
+extern CV_PossibleValue_t CV_TrueFalse[];
+
+// STAR STUFF //
+extern CV_PossibleValue_t CV_Ecstatic_YesNo[];
+// END THAT TOO PLEASE! //
 
 // Filter consvars by version
 extern consvar_t cv_execversion;

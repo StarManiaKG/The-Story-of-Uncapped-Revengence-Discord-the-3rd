@@ -1548,9 +1548,9 @@ static void HU_drawChatLog(INT32 offset)
 	// draw arrows to indicate that we can (or not) scroll.
 	// account for Y = -1 offset in tinyfont
 	if (chat_scroll > 0)
-		V_DrawThinString(chatx-8, ((justscrolledup) ? (chat_topy-1) : (chat_topy)) - 1, V_SNAPTOBOTTOM | V_SNAPTOLEFT | menuColor[cv_menucolor.value], "\x1A"); // up arrow
+		V_DrawThinString(chatx-8, ((justscrolledup) ? (chat_topy-1) : (chat_topy)) - 1, V_SNAPTOBOTTOM | V_SNAPTOLEFT | V_MENUCOLORMAP, "\x1A"); // up arrow
 	if (chat_scroll < chat_maxscroll)
-		V_DrawThinString(chatx-8, chat_bottomy-((justscrolleddown) ? 5 : 6) - 1, V_SNAPTOBOTTOM | V_SNAPTOLEFT | menuColor[cv_menucolor.value], "\x1B"); // down arrow
+		V_DrawThinString(chatx-8, chat_bottomy-((justscrolleddown) ? 5 : 6) - 1, V_SNAPTOBOTTOM | V_SNAPTOLEFT | V_MENUCOLORMAP, "\x1B"); // down arrow
 
 	justscrolleddown = false;
 	justscrolledup = false;
@@ -1926,13 +1926,13 @@ static void HU_DrawDemoInfo(void)
 	if (modeattacking == ATTACKING_NIGHTS)
 		h -= 12;
 
-	V_DrawString(4, h-24, menuColor[cv_menucolor.value]|V_ALLOWLOWERCASE, va(M_GetText("%s's replay"), player_names[0]));
+	V_DrawString(4, h-24, V_MENUCOLORMAP|V_ALLOWLOWERCASE, va(M_GetText("%s's replay"), player_names[0]));
 	if (modeattacking)
 	{
-		V_DrawString(4, h-16, menuColor[cv_menucolor.value]|V_MONOSPACE, "SCORE:");
+		V_DrawString(4, h-16, V_MENUCOLORMAP|V_MONOSPACE, "SCORE:");
 		V_DrawRightAlignedString(120, h-16, V_MONOSPACE, va("%d", hu_demoscore));
 
-		V_DrawString(4, h-8, menuColor[cv_menucolor.value]|V_MONOSPACE, "TIME:");
+		V_DrawString(4, h-8, V_MENUCOLORMAP|V_MONOSPACE, "TIME:");
 		if (hu_demotime != UINT32_MAX)
 			V_DrawRightAlignedString(120, h-8, V_MONOSPACE, va("%i:%02i.%02i",
 				G_TicsToMinutes(hu_demotime,true),
@@ -1943,7 +1943,7 @@ static void HU_DrawDemoInfo(void)
 
 		if (modeattacking == ATTACKING_RECORD)
 		{
-			V_DrawString(4, h, menuColor[cv_menucolor.value]|V_MONOSPACE, "RINGS:");
+			V_DrawString(4, h, V_MENUCOLORMAP|V_MONOSPACE, "RINGS:");
 			V_DrawRightAlignedString(120, h, V_MONOSPACE, va("%d", hu_demorings));
 		}
 	}
@@ -2022,10 +2022,10 @@ void HU_Drawer(void)
 		for (i = 0; i < (resynch_ticker / 16) % 4; i++)
 			strcat(resynch_text, ".");
 
-		V_DrawCenteredString(BASEVIDWIDTH/2, 180, menuColor[cv_menucolor.value] | V_ALLOWLOWERCASE, resynch_text);
+		V_DrawCenteredString(BASEVIDWIDTH/2, 180, V_MENUCOLORMAP | V_ALLOWLOWERCASE, resynch_text);
 	}
 
-	if (modeattacking && pausedelay > 0 && !pausebreakkey)
+	if (modeattacking && pausedelay > 0 && !(pausebreakkey || cv_instantretry.value))
 	{
 		INT32 strength = ((pausedelay - 1 - NEWTICRATE/2)*10)/(NEWTICRATE/3);
 		INT32 y = hudinfo[HUD_LIVES].y - 13;
@@ -2862,18 +2862,6 @@ static void HU_DrawRankings(void)
 			V_DrawCenteredString(256, 16, 0, va("%d", cv_pointlimit.value));
 		}
 	}
-	else if (gametyperankings[gametype] == GT_COOP)
-	{
-		INT32 totalscore = 0;
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (playeringame[i])
-				totalscore += players[i].score;
-		}
-
-		V_DrawCenteredString(256, 8, 0, "TOTAL SCORE");
-		V_DrawCenteredString(256, 16, 0, va("%u", totalscore));
-	}
 	else
 	{
 		if (circuitmap)
@@ -2994,9 +2982,9 @@ static void HU_DrawCoopOverlay(void)
 		V_DrawSmallScaledPatch(148, 172, 0, tokenicon);
 	}
 
-	if (LUA_HudEnabled(hud_tabemblems) && (!modifiedgame || savemoddata))
+	if (LUA_HudEnabled(hud_tabemblems))
 	{
-		V_DrawString(160, 144, 0, va("- %d/%d", M_CountEmblems(), numemblems+numextraemblems));
+		V_DrawString(160, 144, 0, va("- %d/%d", M_CountEmblems(clientGamedata), numemblems+numextraemblems));
 		V_DrawScaledPatch(128, 144 - emblemicon->height/4, 0, emblemicon);
 	}
 
@@ -3027,6 +3015,15 @@ static void HU_DrawNetplayCoopOverlay(void)
 	{
 		V_DrawString(168, 10, 0, va("- %d", token));
 		V_DrawSmallScaledPatch(148, 6, 0, tokenicon);
+	}
+
+	if (G_CoopGametype() && LUA_HudEnabled(hud_tabemblems))
+	{
+		V_DrawCenteredString(256, 14, 0, "/");
+		V_DrawString(256 + 4, 14, 0, va("%d", numemblems + numextraemblems));
+		V_DrawRightAlignedString(256 - 4, 14, 0, va("%d", M_CountEmblems(clientGamedata)));
+
+		V_DrawSmallScaledPatch(256 - (emblemicon->width / 4), 6, 0, emblemicon);
 	}
 
 	if (!LUA_HudEnabled(hud_coopemeralds))

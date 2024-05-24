@@ -121,11 +121,6 @@ extern boolean timedemo_quit;
 
 extern consvar_t cv_freedemocamera;
 
-// STAR STUFF //
-extern consvar_t cv_continues;
-extern consvar_t cv_movingplayersetup;
-// CUSTOM STAR STUFF OVER //
-
 typedef enum
 {
 	XD_NAMEANDCOLOR = 1,
@@ -152,9 +147,9 @@ typedef enum
 	XD_LUACMD,      // 22
 	XD_LUAVAR,      // 23
 	XD_LUAFILE,     // 24
-	// STAR STUFF //
-	XD_TSOURDT3RD,	// 25
-	// THIS MESS IS NOW OVER //
+
+	XD_TSOURDT3RD,	// STAR STUFF: 25 :P //
+
 	MAXNETXCMD
 } netxcmd_t;
 
@@ -209,6 +204,7 @@ void D_SendPlayerConfig(void);
 void Command_ExitGame_f(void);
 void Command_Retry_f(void);
 void D_GameTypeChanged(INT32 lastgametype); // not a real _OnChange function anymore
+void D_SendExitLevel(boolean cheat);
 void D_MapChange(INT32 pmapnum, INT32 pgametype, boolean pultmode, boolean presetplayers, INT32 pdelay, boolean pskipprecutscene, boolean pfromlevelselect);
 boolean IsPlayerAdmin(INT32 playernum);
 void SetAdminPlayer(INT32 playernum);

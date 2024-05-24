@@ -1,7 +1,6 @@
-// SONIC ROBO BLAST 2
+// SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// DISCORD GAME SDK BY STARMANIAKG(#4884)
-// Copyright (C) 2022-2023 by StarManiaKG.
+// Copyright (C) 2023-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -11,6 +10,9 @@
 /// \brief Discord Game SDK handling
 
 #ifdef HAVE_DISCORDGAMESDK // HAVE_DISCORDGAMESDK
+
+#include "discord_gamesdk.h"
+#include "discord/stun.h"
 
 #include "i_system.h"
 #include "d_clisrv.h"
@@ -24,9 +26,7 @@
 #include "m_cond.h" // queries about emblems
 #include "z_zone.h"
 #include "byteptr.h"
-#include "stun.h"
 #include "i_tcp.h" // current_port
-#include "discord_gamesdk.h" // discord, duh
 #include "doomdef.h" // large list of defs, mainly
 
 // Please feel free to provide your own Discord app if you're making a new custom build :)

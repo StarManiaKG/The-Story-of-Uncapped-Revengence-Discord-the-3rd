@@ -85,10 +85,12 @@
 
 // STAR STUFF //
 #include "STAR/star_vars.h"
-#include "deh_soc.h"
-#include "v_video.h"
-// END THAT //
+#include "STAR/ss_main.h" // eastermode, aprilfoolsmode, xmasmode //
 
+#include "STAR/parser.h"
+
+#include "deh_soc.h"
+// END THAT //
 
 typedef struct
 {
@@ -207,7 +209,7 @@ FILE *W_OpenWadFile(const char **filename, boolean useerrors)
 }
 
 // Look for all DEHACKED and Lua scripts inside a PK3 archive.
-static inline void W_LoadDehackedLumpsPK3(UINT16 wadnum, boolean mainfile)
+static void W_LoadDehackedLumpsPK3(UINT16 wadnum, boolean mainfile)
 {
 	UINT16 posStart, posEnd;
 
@@ -244,10 +246,30 @@ static inline void W_LoadDehackedLumpsPK3(UINT16 wadnum, boolean mainfile)
 			free(name);
 		}
 	}
+
+	// STAR STUFF //
+	static const char *STAR_DeHacked[] = {
+		"STAR/",
+		"TSoURDt3rd/",
+		NULL
+	};
+
+	for (INT32 i = 0; STAR_DeHacked[i]; i++)
+	{
+		posStart = W_CheckNumForFolderStartPK3(STAR_DeHacked[i], wadnum, 0);
+		if (posStart != INT16_MAX)
+		{
+			posEnd = W_CheckNumForFolderEndPK3(STAR_DeHacked[i], wadnum, posStart);
+			for(; posStart < posEnd; posStart++)
+				TSoURDt3rd_LoadLump(wadnum, posStart);
+			break;
+		}
+	}
+	// PLEASE CODE SOMETHING ELSE //
 }
 
 // search for all DEHACKED lump in all wads and load it
-static inline void W_LoadDehackedLumps(UINT16 wadnum, boolean mainfile)
+static void W_LoadDehackedLumps(UINT16 wadnum, boolean mainfile)
 {
 	UINT16 lump;
 
@@ -283,6 +305,13 @@ static inline void W_LoadDehackedLumps(UINT16 wadnum, boolean mainfile)
 				CONS_Printf(M_GetText("Loading object config from %s\n"), wadfiles[wadnum]->filename);
 				DEH_LoadDehackedLumpPwad(wadnum, lump, mainfile);
 			}
+
+			// STAR STUFF: Check for STAR lump //
+			else if (memcmp(lump_p->name,"STAR_",5)==0
+				|| memcmp(lump_p->name,"STAR",4)==0)
+
+				TSoURDt3rd_LoadLump(wadnum, lump);
+			// END THAT PLEASE //
 	}
 
 #ifdef SCANTHINGS
@@ -311,7 +340,7 @@ static inline void W_LoadDehackedLumps(UINT16 wadnum, boolean mainfile)
   * \param resblock resulting MD5 checksum
   * \return 0 if MD5 checksum was made, and is at resblock, 1 if error was found
   */
-static inline INT32 W_MakeFileMD5(const char *filename, void *resblock)
+static INT32 W_MakeFileMD5(const char *filename, void *resblock)
 {
 #ifdef NOMD5
 	(void)filename;
@@ -354,6 +383,11 @@ static restype_t ResourceFileDetect (const char* filename)
 		return RET_SOC;
 	if (!stricmp(&filename[strlen(filename) - 4], ".lua"))
 		return RET_LUA;
+
+	// STAR STUFF //
+	if (!stricmp(&filename[strlen(filename) - 5], ".star"))
+		return RET_STAR;
+	// END THAT PLEASE //
 
 	return RET_WAD;
 }
@@ -819,19 +853,6 @@ static UINT16 W_InitFileError (const char *filename, boolean exitworthy)
 	}
 	else
 		CONS_Printf(M_GetText("Errors occurred while loading %s; not added.\n"), filename);
-	
-	// STAR STUFF //
-	if (TSoURDt3rd_LoadExtras)
-	{
-		M_StartMessage(va("%c%s\x80\nWe weren't able to load tsourdt3rdextras.pk3\n\nEvents will not be started. \n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Couldn't Load tsourdt3rdextras.pk3"),NULL,MM_NOTHING);
-
-		aprilfoolsmode = false;
-		eastermode = false;
-		xmasmode = false;
-
-		TSoURDt3rd_LoadExtras = false;
-	}
-	// END THAT //
 
 	return INT16_MAX;
 }
@@ -944,6 +965,13 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 	case RET_WAD:
 		lumpinfo = ResGetLumpsWad(handle, &numlumps, filename);
 		break;
+
+	// STAR STUFF //
+	case RET_STAR:
+		lumpinfo = ResGetLumpsStandalone(handle, &numlumps, "STARMAIN");
+		break;
+	// HUH.... //
+
 	default:
 		CONS_Alert(CONS_ERROR, "Unsupported file format\n");
 	}
@@ -953,40 +981,6 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 		fclose(handle);
 		return W_InitFileError(filename, startup);
 	}
-
-	// STAR NOTE: I EDITED THIS lol //
-	if (important && !mainfile)
-	{
-		if (TSoURDt3rd_LoadExtras)
-		{
-			if (aprilfoolsmode || eastermode || xmasmode)
-			{
-				if (eastermode && (!netgame && !TSoURDt3rd_TouchyModifiedGame))
-				{
-					CV_StealthSetValue(&cv_alloweasteregghunt, 1);
-					AllowEasterEggHunt = true;
-
-					M_UpdateEasterStuff();
-				}
-
-				STAR_ReadExtraData();
-			}
-
-			TSoURDt3rd_LoadedExtras = true;
-			TSoURDt3rd_LoadExtras = false;
-		}
-
-		if (!TSoURDt3rd_TouchyModifiedGame)
-		{
-			//G_SetGameModified(true);
-			modifiedgame = true; // avoid savemoddata being set to false
-
-			TSoURDt3rd_TouchyModifiedGame = true;
-		}
-		else
-			TSoURDt3rd_NoMoreExtras = true;
-	}
-	// END THAT EDITED STUFF lol //
 
 	//
 	// link wad file to search files
@@ -1017,16 +1011,14 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 	// add the wadfile
 	//
 	CONS_Printf(M_GetText("Added file %s (%u lumps)\n"), filename, numlumps);
-	wadfiles = Z_Realloc(wadfiles, sizeof(wadfile_t) * (numwadfiles + 1), PU_STATIC, NULL);
+	wadfiles = Z_Realloc(wadfiles, sizeof(wadfile_t *) * (numwadfiles + 1), PU_STATIC, NULL);
 	wadfiles[numwadfiles] = wadfile;
 	numwadfiles++; // must come BEFORE W_LoadDehackedLumps, so any addfile called by COM_BufInsertText called by Lua doesn't overwrite what we just loaded
 
 	// Read shaders from file
 	W_ReadFileShaders(wadfile);
 
-	// STAR STUFF //
-	TSoURDt3rd_checkedExtraWads = false;
-	// AGAIN, AGAIN //
+	TSoURDt3rd_checkedExtraWads = false; // STAR STUFF: AGAIN, AGAIN! //
 
 	// TODO: HACK ALERT - Load Lua & SOC stuff right here. I feel like this should be out of this place, but... Let's stick with this for now.
 	switch (wadfile->type)
@@ -1044,6 +1036,13 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 	case RET_LUA:
 		LUA_LoadLump(numwadfiles - 1, 0, true);
 		break;
+
+	// STAR STUFF //
+	case RET_STAR:
+		TSoURDt3rd_LoadLump(numwadfiles - 1, 0);
+		break;
+	// DO THE FUNNINESS! //
+
 	default:
 		break;
 	}
@@ -1178,38 +1177,6 @@ UINT16 W_InitFolder(const char *path, boolean mainfile, boolean startup)
 		return W_InitFileError(path, startup);
 	}
 
-	// STAR NOTE: I DRASTICALLY EDITED THIS lol //
-	if (important && !mainfile)
-	{
-		if (TSoURDt3rd_LoadExtras)
-		{
-			if (aprilfoolsmode || eastermode || xmasmode)
-			{
-				if (eastermode && (!netgame && !TSoURDt3rd_TouchyModifiedGame))
-				{
-					CV_StealthSetValue(&cv_alloweasteregghunt, 1);
-					AllowEasterEggHunt = true;
-
-					M_UpdateEasterStuff();
-				}
-
-				STAR_ReadExtraData();
-			}
-
-			TSoURDt3rd_LoadedExtras = true;
-			TSoURDt3rd_LoadExtras = false;
-		}
-
-		if (!TSoURDt3rd_TouchyModifiedGame)
-		{
-			G_SetGameModified(true);
-			TSoURDt3rd_TouchyModifiedGame = true;
-		}
-		else
-			TSoURDt3rd_NoMoreExtras = true;
-	}
-	// END THAT DRASTICALLY EDITED STUFF lol //
-
 	wadfile = Z_Malloc(sizeof (*wadfile), PU_STATIC, NULL);
 	wadfile->filename = fn;
 	wadfile->path = fullpath;
@@ -1228,6 +1195,7 @@ UINT16 W_InitFolder(const char *path, boolean mainfile, boolean startup)
 	Z_Calloc(numlumps * sizeof (*wadfile->patchcache), PU_STATIC, &wadfile->patchcache);
 
 	CONS_Printf(M_GetText("Added folder %s (%u files, %u folders)\n"), fn, numlumps, foldercount);
+	wadfiles = Z_Realloc(wadfiles, sizeof(wadfile_t *) * (numwadfiles + 1), PU_STATIC, NULL);
 	wadfiles[numwadfiles] = wadfile;
 	numwadfiles++;
 
@@ -1235,15 +1203,16 @@ UINT16 W_InitFolder(const char *path, boolean mainfile, boolean startup)
 	W_LoadDehackedLumpsPK3(numwadfiles - 1, mainfile);
 	W_InvalidateLumpnumCache();
 
-	// STAR STUFF //
-	TSoURDt3rd_checkedExtraWads = false;
-	// AGAIN, AGAIN, AGAIN //
+	TSoURDt3rd_checkedExtraWads = false; // STAR STUFF: ok this is crazy //
 
 	return wadfile->numlumps;
 }
 
 /** Tries to load a series of files.
   * All files are wads unless they have an extension of ".soc" or ".lua".
+  *
+  * STAR NOTE
+  * 	And now also ".star" too.
   *
   * Each file is optional, but at least one file must be found or an error will
   * result. Lump names can appear multiple times. The name searcher looks
@@ -1583,24 +1552,6 @@ lumpnum_t W_GetNumForName(const char *name)
 
 	if (i == LUMPERROR)
 		I_Error("W_GetNumForName: %s not found!\n", name);
-
-	return i;
-}
-
-//
-// W_GetNumForMusicName
-//
-// Calls W_CheckNumForName, but does NOT bomb out if not found.
-// Geared towards checking for music files where the lump not
-// being found is not a call for a crash.
-//
-// STAR NOTE: Ported From SRB2 Persona lol
-//
-lumpnum_t W_GetNumForMusicName(const char *name)
-{
-	lumpnum_t i;
-
-	i = W_CheckNumForName(name);
 
 	return i;
 }
@@ -2056,7 +2007,7 @@ void *W_CacheLumpNumForce(lumpnum_t lumpnum, INT32 tag)
 // return false.
 //
 // no outside code uses the PWAD form, for now
-static inline boolean W_IsLumpCachedPWAD(UINT16 wad, UINT16 lump, void *ptr)
+static boolean W_IsLumpCachedPWAD(UINT16 wad, UINT16 lump, void *ptr)
 {
 	void *lcache;
 
@@ -2088,7 +2039,7 @@ boolean W_IsLumpCached(lumpnum_t lumpnum, void *ptr)
 // return false.
 //
 // no outside code uses the PWAD form, for now
-static inline boolean W_IsPatchCachedPWAD(UINT16 wad, UINT16 lump, void *ptr)
+static boolean W_IsPatchCachedPWAD(UINT16 wad, UINT16 lump, void *ptr)
 {
 	void *lcache;
 
@@ -2384,6 +2335,12 @@ static lumpchecklist_t folderblacklist[] =
 	{"Patches/", 8},
 	{"Flats/", 6},
 	{"Fades/", 6},
+
+	// STAR STUFF //
+	{"STAR/", 5},
+	{"TSoURDt3rd/", 11},
+	// HERE WE GO! //
+
 	{NULL, 0},
 };
 
@@ -2535,7 +2492,8 @@ static int W_VerifyFile(const char *filename, lumpchecklist_t *checklist,
 	{
 		// detect wad file by the absence of the other supported extensions
 		if (stricmp(&filename[strlen(filename) - 4], ".soc")
-		&& stricmp(&filename[strlen(filename) - 4], ".lua"))
+		&& stricmp(&filename[strlen(filename) - 4], ".lua")
+		&& stricmp(&filename[strlen(filename) - 5], ".star")) // STAR STUFF: LOAD MY CUSTOM STUFFS PLEASE //
 		{
 			goodfile = W_VerifyWAD(handle, checklist, status);
 		}
@@ -2652,11 +2610,11 @@ int W_VerifyNMUSlumps(const char *filename, boolean exit_on_error)
 		{"LTZZTEXT", 8}, // SRB2 Titlecard Text
 		{"LTACTBLU", 8}, // SRB2 Titlecard Icon
 		
-		{"PUREFAT", 7},  // Pure Fat Truck
+		{"PUREFAT", 7}, // Pure Fat Truck
 
 		{"BLANKLVL", 8}, // NO LEVEL ICONS?
 
-		{"CHAR", 4}, 	 // Character Select Screen Graphics
+		{"CHAR", 4}, // Character Select Screen Graphics
 		// NETGAME-COMPATIBLE, TOO //
 
 		{NULL, 0},

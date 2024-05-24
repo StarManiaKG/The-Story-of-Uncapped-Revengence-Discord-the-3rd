@@ -45,10 +45,14 @@
 #include "dehacked.h"
 #include "deh_soc.h"
 #include "deh_lua.h" // included due to some LUA_SetLuaAction hack smh
+// also used for LUA_UpdateSprName
 #include "deh_tables.h"
 
 // STAR STUFF //
 #include "STAR/star_vars.h"
+#include "STAR/ss_cmds.h" // cv_storesavesinfolders //
+#include "STAR/ss_main.h" // SAVEGAMEFOLDER //
+
 boolean TSoURDt3rd_LoadedGamedataAddon;
 // END THAT STUFF //
 
@@ -444,6 +448,8 @@ void readfreeslots(MYFILE *f)
 					strncpy(sprnames[i],word,4);
 					//sprnames[i][4] = 0;
 					used_spr[(i-SPR_FIRSTFREESLOT)/8] |= 1<<(i%8); // Okay, this sprite slot has been named now.
+					// Lua needs to update the value in _G if it exists
+					LUA_UpdateSprName(word, i);
 					break;
 				}
 			}
@@ -518,6 +524,8 @@ void readfreeslots(MYFILE *f)
 	} while (!myfeof(f)); // finish when the line is empty
 
 	Z_Free(s);
+
+	R_RefreshSprite2();
 }
 
 void readthing(MYFILE *f, INT32 num)
@@ -824,7 +832,7 @@ void readlight(MYFILE *f, INT32 num)
 			}
 			else if (fastcmp(word, "CORONACOLOR"))
 			{
-				lspr[num].corona_color = value;
+				lspr[num].corona_color = (UINT32)value;
 			}
 			else if (fastcmp(word, "CORONARADIUS"))
 			{
@@ -832,7 +840,7 @@ void readlight(MYFILE *f, INT32 num)
 			}
 			else if (fastcmp(word, "DYNAMICCOLOR"))
 			{
-				lspr[num].dynamic_color = value;
+				lspr[num].dynamic_color = (UINT32)value;
 			}
 			else if (fastcmp(word, "DYNAMICRADIUS"))
 			{
@@ -840,6 +848,16 @@ void readlight(MYFILE *f, INT32 num)
 
 				/// \note Update the sqrradius! unnecessary?
 				lspr[num].dynamic_sqrradius = fvalue * fvalue;
+			}
+			else if (fastcmp(word, "CORONAROUTINE"))
+			{
+				switch (value)
+				{
+					case 1: lspr[num].coronaroutine = LCR_SuperSonicLight; break;
+					case 0: lspr[num].coronaroutine = NULL; break;
+
+					default: deh_warning("Light %d: unknown routine '%d'", num, value); break;
+				}
 			}
 			else
 				deh_warning("Light %d: unknown word '%s'", num, word);
@@ -912,7 +930,7 @@ static void readspriteframe(MYFILE *f, spriteinfo_t *sprinfo, UINT8 frame)
 			else if (fastcmp(word, "YPIVOT"))
 				sprinfo->pivot[frame].y = value;
 			else if (fastcmp(word, "ROTAXIS"))
-				sprinfo->pivot[frame].rotaxis = value;
+				deh_warning("SpriteInfo: ROTAXIS is deprecated and will be removed.");
 			else
 			{
 				f->curpos = lastline;
@@ -992,14 +1010,22 @@ void readspriteinfo(MYFILE *f, INT32 num, boolean sprite2)
 			if (fastcmp(word, "LIGHTTYPE"))
 			{
 				if (sprite2)
-					deh_warning("Sprite2 %s: invalid word '%s'", spr2names[num], word);
-				else
 				{
-					INT32 oldvar;
-					for (oldvar = 0; t_lspr[num] != &lspr[oldvar]; oldvar++)
-						;
-					t_lspr[num] = &lspr[value];
+					deh_warning("Sprite2 %s: property '%s' is only available for sprites!", spr2names[num], word);
+					continue;
 				}
+
+				INT32 oldvar = 0;
+				while (t_lspr[num] != &lspr[oldvar])
+				{
+					if (oldvar > NUMSPRITES)
+					{
+						deh_warning("Sprite2 %s: invalid lighttype '%s'", spr2names[num], word2);
+						continue;
+					}
+					oldvar++;
+				}
+				t_lspr[num] = &lspr[value];
 			}
 			else
 #endif
@@ -2912,7 +2938,9 @@ static boolean GoodDataFileName(const char *s)
 	p = s + strlen(s) - strlen(tail);
 	if (p <= s) return false; // too short
 	if (!fasticmp(p, tail)) return false; // doesn't end in .dat
-	if (fasticmp(s, "gamedata.dat")) return false;
+
+	if (fasticmp(s, "gamedata.dat")) return false; // Don't overwrite default gamedata
+	if (fasticmp(s, "main.dat")) return false; // Don't overwrite default time attack replays
 
 	return true;
 }
@@ -3840,6 +3868,10 @@ void readmaincfg(MYFILE *f)
 			{
 				useContinues = (UINT8)(value || word2[0] == 'T' || word2[0] == 'Y');
 			}
+			else if (fastcmp(word, "SHAREEMBLEMS"))
+			{
+				shareEmblems = (UINT8)(value || word2[0] == 'T' || word2[0] == 'Y');
+			}
 
 			else if (fastcmp(word, "GAMEDATA"))
 			{
@@ -3864,7 +3896,7 @@ void readmaincfg(MYFILE *f)
 				}
 				// END THE EXTRA FUN STUFF //
 
-				G_SaveGameData();
+				G_SaveGameData(clientGamedata);
 				strlcpy(gamedatafilename, word2, sizeof (gamedatafilename));
 				strlwr(gamedatafilename);
 				savemoddata = true;
@@ -3877,7 +3909,7 @@ void readmaincfg(MYFILE *f)
 				strcpy(savegamename, timeattackfolder);
 				strlcat(savegamename, "%u.ssg", sizeof(savegamename));
 
-				// STAR NOTE: the rest of this is edited lol
+				// STAR STUFF: update savefile folders (some of this was previously here lol) //
 				if (!cv_storesavesinfolders.value)
 				{
 					strcpy(liveeventbackup, va("live%s.bkp", timeattackfolder));
@@ -3886,8 +3918,6 @@ void readmaincfg(MYFILE *f)
 					strcatbf(savegamename, srb2home, PATHSEP);
 					strcatbf(liveeventbackup, srb2home, PATHSEP);
 				}
-				
-				// MORE STAR STUFF //
 				else
 				{
 					TSoURDt3rd_LoadedGamedataAddon = true;
@@ -4126,6 +4156,13 @@ mobjtype_t get_mobjtype(const char *word)
 	for (i = 0; i < MT_FIRSTFREESLOT; i++)
 		if (fastcmp(word, MOBJTYPE_LIST[i]+3))
 			return i;
+
+	// STAR STUFF: scan for our unique mobjs please (SOC EDITION!) //
+	for (i = MT_LASTFREESLOT+1; i < NUMMOBJTYPES; i++)
+		if (fastcmp(word, MOBJTYPE_LIST[i]+3))
+			return i;
+	// HOPEFULLY WE FOUND THE MOBJ! //
+
 	deh_warning("Couldn't find mobjtype named 'MT_%s'",word);
 	return MT_NULL;
 }
@@ -4146,6 +4183,13 @@ statenum_t get_state(const char *word)
 	for (i = 0; i < S_FIRSTFREESLOT; i++)
 		if (fastcmp(word, STATE_LIST[i]+2))
 			return i;
+
+	// STAR STUFF: scan for our unique states please (SOC EDITION!) //
+	for (i = S_LASTFREESLOT+1; i < NUMSTATES; i++)
+		if (fastcmp(word, STATE_LIST[i]+2))
+			return i;
+	// HOPEFULLY WE FOUND THE STATE! //
+
 	deh_warning("Couldn't find state named 'S_%s'",word);
 	return S_NULL;
 }

@@ -108,6 +108,22 @@ FILE *fopenfile(const char*, const char*);
 
 //#define NOMD5
 
+// If you don't disable ALL debug first, you get ALL debug enabled
+#if !defined (NDEBUG)
+#ifndef PACKETDROP
+#define PACKETDROP
+#endif
+#ifndef PARANOIA
+#define PARANOIA
+#endif
+#ifndef RANGECHECK
+#define RANGECHECK
+#endif
+#ifndef ZDEBUG
+#define ZDEBUG
+#endif
+#endif
+
 // Uncheck this to compile debugging code
 //#define RANGECHECK
 //#ifndef PARANOIA
@@ -226,7 +242,7 @@ extern char logfilename[1024];
 // NOTE: it needs more than this to increase the number of players...
 
 #define MAXPLAYERS 32
-#define MAXSKINS 255 // STAR NOTE: i was here lol (also, if you want to set the limits back to vanilla's limits, set this to 32)
+#define MAXSKINS 255 // STAR NOTE: i was here lol (if you want to set the limits back to vanilla, set this to 32) //
 #define PLAYERSMASK (MAXPLAYERS-1)
 #define MAXPLAYERNAME 21
 
@@ -261,66 +277,111 @@ typedef enum
 	// Desaturated
 	SKINCOLOR_AETHER,
 	SKINCOLOR_SLATE,
+	SKINCOLOR_MOONSTONE,
 	SKINCOLOR_BLUEBELL,
 	SKINCOLOR_PINK,
+	SKINCOLOR_ROSEWOOD,
 	SKINCOLOR_YOGURT,
+	SKINCOLOR_LATTE,
 	SKINCOLOR_BROWN,
+	SKINCOLOR_BOULDER,
 	SKINCOLOR_BRONZE,
+	SKINCOLOR_SEPIA,
+	SKINCOLOR_ECRU,
 	SKINCOLOR_TAN,
 	SKINCOLOR_BEIGE,
+	SKINCOLOR_ROSEBUSH,
 	SKINCOLOR_MOSS,
 	SKINCOLOR_AZURE,
+	SKINCOLOR_EGGPLANT,
 	SKINCOLOR_LAVENDER,
 
 	// Viv's vivid colours (toast 21/07/17)
+	// Tweaks & additions (Lach, sphere, Alice, MotorRoach 26/10/22)
 	SKINCOLOR_RUBY,
+	SKINCOLOR_CHERRY,
 	SKINCOLOR_SALMON,
+	SKINCOLOR_PEPPER,
 	SKINCOLOR_RED,
 	SKINCOLOR_CRIMSON,
 	SKINCOLOR_FLAME,
+	SKINCOLOR_GARNET,
 	SKINCOLOR_KETCHUP,
 	SKINCOLOR_PEACHY,
 	SKINCOLOR_QUAIL,
+	SKINCOLOR_FOUNDATION,
 	SKINCOLOR_SUNSET,
 	SKINCOLOR_COPPER,
 	SKINCOLOR_APRICOT,
 	SKINCOLOR_ORANGE,
 	SKINCOLOR_RUST,
+	SKINCOLOR_TANGERINE,
+	SKINCOLOR_TOPAZ,
 	SKINCOLOR_GOLD,
 	SKINCOLOR_SANDY,
+	SKINCOLOR_GOLDENROD,
 	SKINCOLOR_YELLOW,
 	SKINCOLOR_OLIVE,
+	SKINCOLOR_PEAR,
+	SKINCOLOR_LEMON,
 	SKINCOLOR_LIME,
 	SKINCOLOR_PERIDOT,
 	SKINCOLOR_APPLE,
+	SKINCOLOR_HEADLIGHT,
+	SKINCOLOR_CHARTREUSE,
 	SKINCOLOR_GREEN,
 	SKINCOLOR_FOREST,
-	SKINCOLOR_EMERALD,
+	SKINCOLOR_SHAMROCK,
+	SKINCOLOR_JADE,
 	SKINCOLOR_MINT,
+	SKINCOLOR_MASTER,
+	SKINCOLOR_EMERALD,
 	SKINCOLOR_SEAFOAM,
+	SKINCOLOR_ISLAND,
+	SKINCOLOR_BOTTLE,
 	SKINCOLOR_AQUA,
 	SKINCOLOR_TEAL,
+	SKINCOLOR_OCEAN,
 	SKINCOLOR_WAVE,
 	SKINCOLOR_CYAN,
+	SKINCOLOR_TURQUOISE,
+	SKINCOLOR_AQUAMARINE,
 	SKINCOLOR_SKY,
+	SKINCOLOR_MARINE,
 	SKINCOLOR_CERULEAN,
+	SKINCOLOR_DREAM,
 	SKINCOLOR_ICY,
+	SKINCOLOR_DAYBREAK,
 	SKINCOLOR_SAPPHIRE, // sweet mother, i cannot weave – slender aphrodite has overcome me with longing for a girl
+	SKINCOLOR_ARCTIC,
 	SKINCOLOR_CORNFLOWER,
 	SKINCOLOR_BLUE,
 	SKINCOLOR_COBALT,
+	SKINCOLOR_MIDNIGHT,
+	SKINCOLOR_GALAXY,
 	SKINCOLOR_VAPOR,
 	SKINCOLOR_DUSK,
+	SKINCOLOR_MAJESTY,
 	SKINCOLOR_PASTEL,
 	SKINCOLOR_PURPLE,
+	SKINCOLOR_NOBLE,
+	SKINCOLOR_FUCHSIA,
 	SKINCOLOR_BUBBLEGUM,
+	SKINCOLOR_SIBERITE,
 	SKINCOLOR_MAGENTA,
 	SKINCOLOR_NEON,
 	SKINCOLOR_VIOLET,
+	SKINCOLOR_ROYAL,
 	SKINCOLOR_LILAC,
+	SKINCOLOR_MAUVE,
+	SKINCOLOR_EVENTIDE,
 	SKINCOLOR_PLUM,
 	SKINCOLOR_RASPBERRY,
+	SKINCOLOR_TAFFY,
 	SKINCOLOR_ROSY,
+	SKINCOLOR_FANCY,
+	SKINCOLOR_SANGRIA,
+	SKINCOLOR_VOLCANIC,
 
 	FIRSTSUPERCOLOR,
 
@@ -592,14 +653,22 @@ UINT32 quickncasehash (const char *p, size_t n)
 #define PUNCTUATION "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
 
 // Compile date and time and revision.
-extern const char *compdate, *comptime, *comprevision, *compbranch;
+extern const char
+	*compdate,
+	*comptime,
+	*comprevision,
+	*compbranch,
+	*compnote,
+	*comptype;
+extern int
+	compuncommitted,
+	compoptimized;
 
 // Disabled code and code under testing
 // None of these that are disabled in the normal build are guaranteed to work perfectly
 // Compile them at your own risk!
 
 ///	Allows the use of devmode in multiplayer. AKA "fishcake"
-// STAR NOTE: HI! THIS CAN CAUSE NETGAME RESYNCS, IF YOU ENABLE THE DEFINITION, OF COURSE, SO BE CAREFUL!
 //#define NETGAME_DEVMODE
 
 ///	Allows gravity changes in netgames, no questions asked.
@@ -669,24 +738,14 @@ extern const char *compdate, *comptime, *comprevision, *compbranch;
 #undef UPDATE_ALERT
 #endif
 
-// STAR STUFF YAY //
-// STAR NOTE: SOME OF THESE MAY ALSO BE UNSTABLE TOO
+/// Dynamic Lighting
+#define ALAM_LIGHTING
 
-// Enable Alam's Lighting, With Touch-ups by Star :p (Currently in Extreme Beta lol)
-//#define ALAM_LIGHTING
+#define DYLT_CORONAS // Coronas in dynlights
+#define SPDR_CORONAS // Coronas drawn with sprite draw
 
-// Enable More Debugging Features
-//#define _DEBUG
-//#define DEBUGFILE
-
-// Savefiles
-#define SAVEGAMEFOLDER "saves"
-extern char savegamefolder[256];
-
-// Events
-//#define APRIL_FOOLS			// enables april fools mode, but won't exist in the future, thanks to TSoURDt3rd_CheckTime
-
-// Extras
-//#define BLAME_SEV				// blames sev
+#if defined(DYLT_CORONAS) && defined(SPDR_CORONAS)
+#define CORONA_CHOICE
+#endif
 
 #endif // __DOOMDEF__
