@@ -17,8 +17,6 @@ sources+=win32/Srb2win.rc
 opts+=-DSTDC_HEADERS
 libs+=-ladvapi32 -lkernel32 -lmsvcrt -luser32
 
-nasm_format:=win32
-
 SDL?=1
 
 ifndef NOHW
@@ -35,13 +33,6 @@ libs+=-lws2_32
 endif
 endif
 
-ifndef NONET
-ifndef MINGW64 # miniupnc is broken with MINGW64
-opts+=-I../libs -DSTATIC_MINIUPNPC
-libs+=-L../libs/miniupnpc/mingw$(32) -lws2_32 -liphlpapi
-endif
-endif
-
 ifndef MINGW64
 32=32
 x86=x86
@@ -52,40 +43,7 @@ x86=x86_64
 i686=x86_64
 endif
 
-## STAR STUFF ##
-ifdef HAVE_DISCORDRPC
-ifdef MINGW64
-opts+=-I../libs/discord-rpc/win64-dynamic/include
-libs+=-L../libs/discord-rpc/win64-dynamic/lib
-else
-opts+=-I../libs/discord-rpc/win32-dynamic/include
-libs+=-L../libs/discord-rpc/win32-dynamic/lib
-endif
-libs+=-ldiscord-rpc
-endif
-
-ifdef HAVE_DISCORDGAMESDK
-opts+=-I../libs/discord-game-sdk/include
-ifdef MINGW64
-libs+=-L../libs/discord-game-sdk/x86_64
-else
-libs+=-L../libs/discord-game-sdk/x86
-endif
-#libs+=-ldiscord_gamesdk // this isn't exactly something you can compile :p
-endif
-
-ifdef HAVE_LIBAV
-ifdef MINGW64
-opts+=-I../libs/libav/x86_64-w64-mingw32/include
-libs+=-L../libs/libav/x86_64-w64-mingw32/lib
-else
-opts+=-I../libs/libav/i686-w64-mingw32/include
-libs+=-L../libs/libav/i686-w64-mingw32/lib
-endif
-libs+=-lvfw32 -lws2_32 -lbcrypt -luser32
-endif
-
-## END THIS PLEASE ##
+include TSoURDt3rd/Makefile.d/win32.mk
 
 mingw:=$(i686)-w64-mingw32
 
@@ -139,3 +97,8 @@ lib:=../libs/curl
 CURL_opts:=-I$(lib)/include
 CURL_libs:=-L$(lib)/lib$(32) -lcurl
 $(eval $(call _set,CURL))
+
+lib:=../libs/miniupnpc
+MINIUPNPC_opts:=-I$(lib)/include -DMINIUPNP_STATICLIB
+MINIUPNPC_libs:=-L$(lib)/mingw$(32) -lminiupnpc -lws2_32 -liphlpapi
+$(eval $(call _set,MINIUPNPC))

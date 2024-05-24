@@ -46,6 +46,10 @@
 
 // STAR STUFF //
 #include "STAR/star_vars.h"
+#include "STAR/ss_cmds.h" // cv_storesavesinfolders //
+#include "STAR/ss_main.h"
+#include "STAR/m_menu.h" // skullAnimCounter, MessageDef, & M_ShiftMessageQueueDown() //
+
 #include "deh_soc.h"
 // END THIS //
 
@@ -60,7 +64,7 @@ static INT32 timetonext; // Delay between screen changes
 static INT32 continuetime; // Short delay when continuing
 
 static tic_t animtimer; // Used for some animation timings
-static INT16 skullAnimCounter; // Prompts: Chevron animation
+//static INT16 skullAnimCounter; // Prompts: Chevron animation /* STAR NOTE: now externed in STAR/m_menu.h */
 
 static INT32 deplete;
 static tic_t stoptimer;
@@ -68,7 +72,6 @@ static tic_t stoptimer;
 static boolean keypressed = false;
 
 // (no longer) De-Demo'd Title Screen
-static INT32 menuanimtimer; // Title screen: background animation timing
 mobj_t *titlemapcameraref = NULL;
 
 // menu presentation state
@@ -80,6 +83,8 @@ INT32 curbgyspeed;
 boolean curbghide;
 boolean hidetitlemap;		// WARNING: set to false by M_SetupNextMenu and M_ClearMenus
 
+static fixed_t curbgx = 0;
+static fixed_t curbgy = 0;
 static UINT8  curDemo = 0;
 static UINT32 demoDelayLeft;
 static UINT32 demoIdleLeft;
@@ -228,7 +233,6 @@ static INT32 cutscene_writeptr = 0;
 static INT32 cutscene_textcount = 0;
 static INT32 cutscene_textspeed = 0;
 static UINT8 cutscene_boostspeed = 0;
-static tic_t cutscene_lasttextwrite = 0;
 
 // STJR Intro
 char stjrintro[9] = "STJRI000";
@@ -244,11 +248,6 @@ static UINT8 F_WriteText(void)
 {
 	INT32 numtowrite = 1;
 	const char *c;
-	tic_t ltw = I_GetTime();
-
-	if (cutscene_lasttextwrite == ltw)
-		return 1; // singletics prevention
-	cutscene_lasttextwrite = ltw;
 
 	if (cutscene_boostspeed)
 	{
@@ -307,7 +306,7 @@ static void F_NewCutscene(const char *basetext)
 	cutscene_basetext = basetext;
 	memset(cutscene_disptext,0,sizeof(cutscene_disptext));
 	cutscene_writeptr = cutscene_baseptr = 0;
-	cutscene_textspeed = 9;
+	cutscene_textspeed = 8;
 	cutscene_textcount = TICRATE/2;
 }
 
@@ -323,22 +322,22 @@ const char *introtext[NUMINTROSCENES];
 static tic_t introscenetime[NUMINTROSCENES] =
 {
 	5*TICRATE,	// STJr Presents
-	11*TICRATE + (TICRATE/2),	// Two months had passed since...
-	15*TICRATE + (TICRATE/2),	// As it was about to drain the rings...
-	14*TICRATE,					// What Sonic, Tails, and Knuckles...
-	18*TICRATE,					// About once every year, a strange...
-	19*TICRATE + (TICRATE/2),	// Curses! Eggman yelled. That ridiculous...
-	19*TICRATE + (TICRATE/4),	// It was only later that he had an idea...
-	10*TICRATE + (TICRATE/2),	// Before beginning his scheme, Eggman decided to give Sonic...
-	16*TICRATE,					// We're ready to fire in 15 seconds, the robot said...
-	16*TICRATE,					// Meanwhile, Sonic was tearing across the zones...
-	16*TICRATE + (TICRATE/2),	// Sonic knew he was getting closer to the city...
-	17*TICRATE,					// Greenflower City was gone...
-	 7*TICRATE,					// You're not quite as dead as we thought, huh?...
-	 8*TICRATE,					// We'll see... let's give you a quick warm up...
-	18*TICRATE + (TICRATE/2),	// Eggman took this as his cue and blasted off...
-	16*TICRATE,					// Easy! We go find Eggman and stop his...
-	25*TICRATE,					// I'm just finding what mission obje...
+	10*TICRATE + (TICRATE/2),		// Two months had passed since...
+	12*TICRATE + ((TICRATE/4) * 3),	// As it was about to drain the rings...
+	12*TICRATE + (TICRATE/2),		// What Sonic, Tails, and Knuckles...
+	16*TICRATE,						// About once every year, a strange...
+	20*TICRATE + (TICRATE/2),		// Curses! Eggman yelled. That ridiculous...
+	18*TICRATE + (TICRATE/4),		// It was only later that he had an idea...
+	9*TICRATE + (TICRATE/2),		// Before beginning his scheme, Eggman decided to give Sonic...
+	14*TICRATE,						// We're ready to fire in 15 seconds, the robot said...
+	16*TICRATE,						// Meanwhile, Sonic was tearing across the zones...
+	16*TICRATE + (TICRATE/2),		// Sonic knew he was getting closer to the city...
+	11*TICRATE + (TICRATE/2),		// Greenflower City was gone...
+	 8*TICRATE,						// You're not quite as dead as we thought, huh?...
+	 8*TICRATE,						// We'll see... let's give you a quick warm up...
+	18*TICRATE + (TICRATE/2),		// Eggman took this as his cue and blasted off...
+	15*TICRATE,						// Easy! We go find Eggman and stop his...
+	23*TICRATE,						// I'm just finding what mission obje...
 };
 
 // custom intros
@@ -666,8 +665,8 @@ void F_IntroDrawer(void)
 			}
 		}
 		
-		// STAR STUFF //
-		else // "Waaaaaaah" intro
+		// STAR STUFF: "Waaaaaaah" intro //
+		else
 		{
 			strncpy(stjrintro, "STJRI029", 9); // Move the Frames of the Graphic Along While The Pure Fat is Fattening, So The Graphic Is At It's Final Frame When Shown
 
@@ -1072,7 +1071,7 @@ void F_IntroTicker(void)
 	if (rendermode != render_none)
 	{
 		if ((intro_scenenum == 0 && intro_curtime == 2*TICRATE-19)
-			&& (!cv_stjrintro.value)) // STAR STUFF: STJr Presents
+			&& !cv_stjrintro.value) // STAR STUFF: STJr Presents //
 		{
 			S_ChangeMusicInternal("_stjr", false);
 
@@ -1153,6 +1152,20 @@ boolean F_IntroResponder(event_t *event)
 	if (keypressed)
 		return false;
 
+	// STAR STUFF: helps with M_StartMessage queueing stuff (found in m_menu.c by the way) //
+	if (menuactive)
+	{
+		if (MessageDef.menuitems[1].text != NULL)
+			M_ShiftMessageQueueDown();
+		else
+		{
+			M_ClearMenus(true);
+			S_StartSound(NULL, sfx_strpst);
+		}
+		return false;
+	}
+	// END THAT PLEASE //
+
 	keypressed = true;
 	return true;
 }
@@ -1185,12 +1198,14 @@ static const char *credits[] = {
 	"\"Golden\"",
 	"Vivian \"toaster\" Grannell",
 	"Julio \"Chaos Zero 64\" Guir",
+	"\"Hanicef\"",
 	"\"Hannu_Hanhi\"", // For many OpenGL performance improvements!
 	"Kepa \"Nev3r\" Iceta",
 	"Thomas \"Shadow Hog\" Igoe",
 	"Iestyn \"Monster Iestyn\" Jealous",
 	"\"Kaito Sinclaire\"",
 	"\"Kalaron\"", // Coded some of Sryder13's collection of OpenGL fixes, especially fog
+	"\"katsy\"",
 	"Ronald \"Furyhunter\" Kinard", // The SDL2 port
 	"\"Lat'\"", // SRB2-CHAT, the chat window from Kart
 	"\"LZA\"",
@@ -1213,6 +1228,7 @@ static const char *credits[] = {
 	"Ben \"Cue\" Woodford",
 	"Lachlan \"Lach\" Wright",
 	"Marco \"mazmazz\" Zafra",
+	"\"Zwip-Zwap Zapony\"",
 	"",
 	"\1Art",
 	"Victor \"VAdaPEGA\" Ara\x1Fjo", // Araújo -- sorry for our limited font! D:
@@ -1317,16 +1333,18 @@ static const char *credits[] = {
 	"\1TSoURDt3rd Team",
 	"StarManiaKG \"Star\" - Creator",
 	"Mini the Bunnyboy \"Talis\" - Co-Creator",
+	"Bitten2Up \"Bitten\" - Co-Creator",
 	"",
 	"\1TSoURDt3rd Extras",
-	"Speccy \"Supeki\" - Emotional Support, Ideas",
-	"\t\t(She Also Formed the Idea of This Menu)",
-	"OVAPico - Voluntary Tester, Ideas",
-	"The Gamer Gang - Voluntary Testers",
-	"\t\t(Provided Emotional Support and Ideas too)",
+	"Marilyn - Emotional Support, Ideas",
+	"\t\t(Also Formed the Idea of This Menu)",
+	"OVAPico & Other Gamer Gang GC Members",
+	"\t\t(Voluntary Testers, Ideas)",
+	"\t\t(Also Provided Emotional Support)",
 	"NARBluebear - Best Friend",
-	"\t\t(Also Provided Emotional Support and All)",
-	"\"Future\" Smiles \"The Fox\" - Emotional Support",
+	"\t\t(Provided Emotional Support)",
+	"\"Future\" Smiles \"The Fox\" - Best Friend",
+	"\t\t(Provided Emotional Support)",
 	"",
 	"\1In Loving Memory Of",
 	"MarioMario \"Sapphire\" - Creator",
@@ -1337,6 +1355,7 @@ static const char *credits[] = {
 	"FreeDoom Project", // Used some of the mancubus and rocket launcher sprites for Brak
 	"Kart Krew",
 	"Alex \"MistaED\" Fuller",
+	"Howard Drossin", // Virtual Sonic - Sonic & Knuckles Theme
 	"Pascal \"CodeImp\" vd Heiden", // Doom Builder developer
 	"Randi Heit (<!>)", // For their MSPaint <!> sprite that we nicked
 	"Simon \"sirjuddington\" Judd", // SLADE developer
@@ -1414,14 +1433,23 @@ void F_CreditDrawer(void)
 	UINT16 i;
 	INT16 zagpos = (timetonext - finalecount - animtimer) % 32;
 	fixed_t y = (80<<FRACBITS) - (animtimer<<FRACBITS>>1);
+	UINT8 colornum;
+	const UINT8 *colormap;
+
+	if (players[consoleplayer].skincolor)
+		colornum = players[consoleplayer].skincolor;
+	else
+		colornum = cv_playercolor.value;
+
+	colormap = R_GetTranslationColormap(TC_DEFAULT, colornum, GTC_CACHE);
 
 	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 
 	// Zig Zagz
-	V_DrawScaledPatch(-16,               zagpos,       V_SNAPTOLEFT,         W_CachePatchName("LTZIGZAG", PU_PATCH_LOWPRIORITY));
-	V_DrawScaledPatch(-16,               zagpos - 320, V_SNAPTOLEFT,         W_CachePatchName("LTZIGZAG", PU_PATCH_LOWPRIORITY));
-	V_DrawScaledPatch(BASEVIDWIDTH + 16, zagpos,       V_SNAPTORIGHT|V_FLIP, W_CachePatchName("LTZIGZAG", PU_PATCH_LOWPRIORITY));
-	V_DrawScaledPatch(BASEVIDWIDTH + 16, zagpos - 320, V_SNAPTORIGHT|V_FLIP, W_CachePatchName("LTZIGZAG", PU_PATCH_LOWPRIORITY));
+	V_DrawFixedPatch(-16*FRACUNIT, zagpos<<FRACBITS, FRACUNIT, V_SNAPTOLEFT, W_CachePatchName("LTZIGZAG", PU_PATCH_LOWPRIORITY), colormap);
+	V_DrawFixedPatch(-16*FRACUNIT, (zagpos - 320)<<FRACBITS, FRACUNIT, V_SNAPTOLEFT, W_CachePatchName("LTZIGZAG", PU_PATCH_LOWPRIORITY), colormap);
+	V_DrawFixedPatch((BASEVIDWIDTH + 16)*FRACUNIT, zagpos<<FRACBITS, FRACUNIT, V_SNAPTORIGHT|V_FLIP, W_CachePatchName("LTZIGZAG", PU_PATCH_LOWPRIORITY), colormap);
+	V_DrawFixedPatch((BASEVIDWIDTH + 16)*FRACUNIT, (zagpos - 320)<<FRACBITS, FRACUNIT, V_SNAPTORIGHT|V_FLIP, W_CachePatchName("LTZIGZAG", PU_PATCH_LOWPRIORITY), colormap);
 
 	// Draw background pictures first
 	for (i = 0; credits_pics[i].patch; i++)
@@ -1546,7 +1574,7 @@ boolean F_CreditResponder(event_t *event)
 			break;
 	}
 
-	if (!(timesBeaten) && !(netgame || multiplayer) && !cv_debug)
+	if (!(serverGamedata->timesBeaten) && !(netgame || multiplayer) && !cv_debug)
 		return false;
 
 	if (event->type != ev_keydown)
@@ -1708,27 +1736,19 @@ void F_GameEvaluationDrawer(void)
 #if 0 // the following looks like hot garbage the more unlockables we add, and we now have a lot of unlockables
 	if (finalecount >= 5*TICRATE)
 	{
+		INT32 startcoord = 32;
 		V_DrawString(8, 16, V_YELLOWMAP, "Unlocked:");
 
-		if (!(netgame) && (!modifiedgame || savemoddata))
+		for (i = 0; i < MAXUNLOCKABLES; i++)
 		{
-			INT32 startcoord = 32;
-
-			for (i = 0; i < MAXUNLOCKABLES; i++)
+			if (unlockables[i].conditionset && unlockables[i].conditionset < MAXCONDITIONSETS
+				&& unlockables[i].type && !unlockables[i].nocecho)
 			{
-				if (unlockables[i].conditionset && unlockables[i].conditionset < MAXCONDITIONSETS
-					&& unlockables[i].type && !unlockables[i].nocecho)
-				{
-					if (unlockables[i].unlocked)
-						V_DrawString(8, startcoord, 0, unlockables[i].name);
-					startcoord += 8;
-				}
+				if (clientGamedata->unlocked[i])
+					V_DrawString(8, startcoord, 0, unlockables[i].name);
+				startcoord += 8;
 			}
 		}
-		else if (netgame)
-			V_DrawString(8, 96, V_YELLOWMAP, "Multiplayer games\ncan't unlock\nextras!");
-		else
-			V_DrawString(8, 96, V_YELLOWMAP, "Modified games\ncan't unlock\nextras!");
 	}
 #endif
 
@@ -1783,29 +1803,38 @@ void F_GameEvaluationTicker(void)
 		sparklloop = 0;
 	}
 
-	if (finalecount == 5*TICRATE)
+	if (G_CoopGametype() && !stagefailed && finalecount == 5*TICRATE)
 	{
-		if (netgame || multiplayer) // modify this when we finally allow unlocking stuff in 2P
-		{
-			HU_SetCEchoFlags(V_YELLOWMAP|V_RETURN8);
-			HU_SetCEchoDuration(6);
-			HU_DoCEcho("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\Multiplayer games can't unlock extras!");
-			S_StartSound(NULL, sfx_s3k68);
-		}
-		else if (!modifiedgame || savemoddata)
-		{
-			++timesBeaten;
+		serverGamedata->timesBeaten++;
+		clientGamedata->timesBeaten++;
 
+		if (ALL7EMERALDS(emeralds))
+		{
+			serverGamedata->timesBeatenWithEmeralds++;
+			clientGamedata->timesBeatenWithEmeralds++;
+		}
+
+		if (ultimatemode)
+		{
+			serverGamedata->timesBeatenUltimate++;
+			clientGamedata->timesBeatenUltimate++;
+		}
+
+		M_SilentUpdateUnlockablesAndEmblems(serverGamedata);
+
+		if (M_UpdateUnlockablesAndExtraEmblems(clientGamedata))
+		{
+			S_StartSound(NULL, sfx_s3k68);
 			if (ALL7EMERALDS(emeralds))
-				++timesBeatenWithEmeralds;
+				++clientGamedata->timesBeatenWithEmeralds;
 
 			if (ultimatemode)
-				++timesBeatenUltimate;
+				++clientGamedata->timesBeatenUltimate;
 
-			if (M_UpdateUnlockablesAndExtraEmblems())
+			if (M_UpdateUnlockablesAndExtraEmblems(clientGamedata))
 				S_StartSound(NULL, sfx_s3k68);
 
-			// STAR STUFF //
+			// STAR STUFF: Update our Savefile Directory //
 			if (cv_storesavesinfolders.value)
 			{
 				I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER, srb2home), 0755);
@@ -1817,18 +1846,16 @@ void F_GameEvaluationTicker(void)
 				else
 					I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "%s", srb2home, timeattackfolder), 0755);
 			}
-			// END THAT //
-
-			G_SaveGameData();
+            // END THAT //
 		}
-		else
-		{
-			HU_SetCEchoFlags(V_YELLOWMAP|V_RETURN8);
-			HU_SetCEchoDuration(6);
-			HU_DoCEcho("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\Modified games can't unlock extras!");
-			S_StartSound(NULL, sfx_s3k68);
-		}
+			
+	    G_SaveGameData(clientGamedata);
 	}
+
+	// STAR STUFF: play finale music //
+	if (finalecount == 4*TICRATE)
+		S_ChangeMusicInternal(TSoURDt3rd_DetermineLevelMusic(), false);
+	// PLAY OUR COOL FINALE MUSIC! //
 }
 
 #undef SPARKLLOOPTIME
@@ -2341,7 +2368,7 @@ void F_EndingDrawer(void)
 			//colset(linkmap,  164, 165, 169); -- the ideal purple colour to represent a clicked in-game link, but not worth it just for a soundtest-controlled secret
 			V_DrawCenteredString(BASEVIDWIDTH/2, 8, V_ALLOWLOWERCASE|(trans<<V_ALPHASHIFT), str);
 			V_DrawCharacter(32, BASEVIDHEIGHT-16, '>'|(trans<<V_ALPHASHIFT), false);
-			V_DrawString(40, ((finalecount == STOPPINGPOINT-(20+TICRATE)) ? 1 : 0)+BASEVIDHEIGHT-16, ((timesBeaten || finalecount >= STOPPINGPOINT-TICRATE) ? V_PURPLEMAP : V_BLUEMAP)|(trans<<V_ALPHASHIFT), " [S] ===>");
+			V_DrawString(40, ((finalecount == STOPPINGPOINT-(20+TICRATE)) ? 1 : 0)+BASEVIDHEIGHT-16, ((serverGamedata->timesBeaten || finalecount >= STOPPINGPOINT-TICRATE) ? V_PURPLEMAP : V_BLUEMAP)|(trans<<V_ALPHASHIFT), " [S] ===>");
 		}
 
 		if (finalecount > STOPPINGPOINT-(20+(2*TICRATE)))
@@ -2378,7 +2405,7 @@ void F_StartGameEnd(void)
 	// In case menus are still up?!!
 	M_ClearMenus(true);
 
-	timetonext = TICRATE;
+	timetonext = 10*TICRATE; // STAR NOTE: i was also here lol //
 }
 
 //
@@ -2387,6 +2414,7 @@ void F_StartGameEnd(void)
 void F_GameEndDrawer(void)
 {
 	// this function does nothing
+	TSoURDt3rd_GameEnd(); // STAR STUFF: ....except this (WORLD 7 SUPER PAPER MARIO) //
 }
 
 //
@@ -2407,7 +2435,8 @@ void F_GameEndTicker(void)
 
 void F_InitMenuPresValues(void)
 {
-	menuanimtimer = 0;
+	curbgx = 0;
+	curbgy = 0;
 	prevMenuId = 0;
 	activeMenuId = MainDef.menuid;
 
@@ -2416,7 +2445,7 @@ void F_InitMenuPresValues(void)
 	curfadevalue = 16;
 	curbgcolor = -1;
 	curbgxspeed = (gamestate == GS_TIMEATTACK) ? 0 : titlescrollxspeed;
-	curbgyspeed = (gamestate == GS_TIMEATTACK) ? 22 : titlescrollyspeed;
+	curbgyspeed = (gamestate == GS_TIMEATTACK) ? 18 : titlescrollyspeed;
 	curbghide = (gamestate == GS_TIMEATTACK) ? false : true;
 
 	curhidepics = hidetitlepics;
@@ -2440,17 +2469,11 @@ void F_InitMenuPresValues(void)
 //
 // F_SkyScroll
 //
-void F_SkyScroll(INT32 scrollxspeed, INT32 scrollyspeed, const char *patchname)
+void F_SkyScroll(const char *patchname)
 {
-	INT32 xscrolled, x, xneg = (scrollxspeed > 0) - (scrollxspeed < 0), tilex;
-	INT32 yscrolled, y, yneg = (scrollyspeed > 0) - (scrollyspeed < 0), tiley;
-	boolean xispos = (scrollxspeed >= 0), yispos = (scrollyspeed >= 0);
+	INT32 x, basey = 0;
 	INT32 dupz = (vid.dupx < vid.dupy ? vid.dupx : vid.dupy);
-	INT16 patwidth, patheight;
-	INT32 pw, ph; // scaled by dupz
 	patch_t *pat;
-	INT32 i, j;
-	fixed_t fracmenuanimtimer, xscrolltimer, yscrolltimer;
 
 	if (rendermode == render_none)
 		return;
@@ -2461,43 +2484,34 @@ void F_SkyScroll(INT32 scrollxspeed, INT32 scrollyspeed, const char *patchname)
 		return;
 	}
 
-	if (!scrollxspeed && !scrollyspeed)
+	pat = W_CachePatchName(patchname, PU_PATCH_LOWPRIORITY);
+
+	if (!curbgxspeed && !curbgyspeed)
 	{
-		V_DrawPatchFill(W_CachePatchName(patchname, PU_PATCH_LOWPRIORITY));
+		V_DrawPatchFill(pat);
+		W_UnlockCachedPatch(pat);
 		return;
 	}
 
-	pat = W_CachePatchName(patchname, PU_PATCH_LOWPRIORITY);
+	// Modulo the background scrolling to prevent jumps from integer overflows
+	// We already load the background patch here, so we can modulo it here
+	// to avoid also having to load the patch in F_MenuPresTicker
+	curbgx %= pat->width  * 16;
+	curbgy %= pat->height * 16;
 
-	patwidth = pat->width;
-	patheight = pat->height;
-	pw = patwidth * dupz;
-	ph = patheight * dupz;
+	// Ooh, fancy frame interpolation
+	x     = ((curbgx*dupz) + FixedInt((rendertimefrac-FRACUNIT) * curbgxspeed*dupz)) / 16;
+	basey = ((curbgy*dupz) + FixedInt((rendertimefrac-FRACUNIT) * curbgyspeed*dupz)) / 16;
 
-	tilex = max(FixedCeil(FixedDiv(vid.width, pw)) >> FRACBITS, 1)+2; // one tile on both sides of center
-	tiley = max(FixedCeil(FixedDiv(vid.height, ph)) >> FRACBITS, 1)+2;
+	if (x     > 0) // Make sure that we don't leave the left or top sides empty
+		x     -= pat->width  * dupz;
+	if (basey > 0)
+		basey -= pat->height * dupz;
 
-	fracmenuanimtimer = (menuanimtimer * FRACUNIT) - (FRACUNIT - rendertimefrac);
-	xscrolltimer = ((fracmenuanimtimer*scrollxspeed)/16 + patwidth*xneg*FRACUNIT) % (patwidth * FRACUNIT);
-	yscrolltimer = ((fracmenuanimtimer*scrollyspeed)/16 + patheight*yneg*FRACUNIT) % (patheight * FRACUNIT);
-
-	// coordinate offsets
-	xscrolled = FixedInt(xscrolltimer * dupz);
-	yscrolled = FixedInt(yscrolltimer * dupz);
-
-	for (x = (xispos) ? -pw*(tilex-1)+pw : 0, i = 0;
-		i < tilex;
-		x += pw, i++)
+	for (; x < vid.width; x += pat->width * dupz)
 	{
-		for (y = (yispos) ? -ph*(tiley-1)+ph : 0, j = 0;
-			j < tiley;
-			y += ph, j++)
-		{
-			V_DrawScaledPatch(
-				(xispos) ? xscrolled - x : x + xscrolled,
-				(yispos) ? yscrolled - y : y + yscrolled,
-				V_NOSCALESTART, pat);
-		}
+		for (INT32 y = basey; y < vid.height; y += pat->height * dupz)
+			V_DrawScaledPatch(x, y, V_NOSCALESTART, pat);
 	}
 
 	W_UnlockCachedPatch(pat);
@@ -2820,7 +2834,7 @@ void F_TitleScreenDrawer(void)
 	if (curbgcolor >= 0)
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, curbgcolor);
 	else if (!curbghide || !titlemapinaction || gamestate == GS_WAITINGPLAYERS)
-		F_SkyScroll(curbgxspeed, curbgyspeed, curbgname);
+		F_SkyScroll(curbgname);
 
 	// Don't draw outside of the title screen, or if the patch isn't there.
 	if (gamestate != GS_TITLESCREEN && gamestate != GS_WAITINGPLAYERS)
@@ -3293,11 +3307,8 @@ void F_TitleScreenDrawer(void)
 				}
 			}
 
-			if ((finalecount >= SONICSTART)
-#ifdef APRIL_FOOLS
-				&& (!cv_ultimatemode.value) // STAR NOTE: i was here lol
-#endif
-			)
+			// STAR NOTE: no more sonic for april fools lol //
+			if ((finalecount >= SONICSTART) && !TSoURDt3rd_InAprilFoolsMode())
 			{
 				if (finalecount < SONICIDLE)
 				{
@@ -3468,11 +3479,8 @@ void F_TitleScreenDrawer(void)
 				// No Tails Front Layer Idle
 			}
 
-			if ((finalecount >= SONICSTART)
-#ifdef APRIL_FOOLS
-				&& (!cv_ultimatemode.value) // STAR NOTE: i was also here lol
-#endif
-			)
+			// STAR NOTE: no more sonic for april fools, electric boogalo //
+			if ((finalecount >= SONICSTART) && !TSoURDt3rd_InAprilFoolsMode())
 			{
 				if (finalecount < SONICIDLE)
 				{
@@ -3563,10 +3571,7 @@ void F_TitleScreenDrawer(void)
 			break;
 	}
 
-	// STAR STUFF LOL //
-	// Show the Jukebox
-	ST_drawJukebox();
-	// END OF STAR STUFF //
+	ST_drawJukebox(); // STAR STUFF: Show the jukebox! //
 
 luahook:
 	// The title drawer is sometimes called without first being started
@@ -3588,10 +3593,10 @@ luahook:
 
 // separate animation timer for backgrounds, since we also count
 // during GS_TIMEATTACK
-void F_MenuPresTicker(boolean run)
+void F_MenuPresTicker(void)
 {
-	if (run)
-		menuanimtimer++;
+	curbgx += curbgxspeed;
+	curbgy += curbgyspeed;
 }
 
 // (no longer) De-Demo'd Title Screen
@@ -3697,6 +3702,7 @@ void F_TitleScreenTicker(boolean run)
 		}
 
 		titledemo = true;
+		demofileoverride = DFILE_OVERRIDE_NONE;
 		G_DoPlayDemo(dname);
 	}
 }
@@ -3905,9 +3911,7 @@ void F_ContinueDrawer(void)
 	if (continuetime > ((3*TICRATE) - 10))
 		V_DrawFadeScreen(0, (continuetime - ((3*TICRATE) - 10)));
 
-	// STAR STUFF //
-	ST_drawJukebox();
-	// OOH, WHAT DOES THIS STAR STUFF DO? //
+	ST_drawJukebox(); // STAR STUFF: OOH, WHAT DOES THIS STUFF DO? //
 }
 
 void F_ContinueTicker(void)
@@ -4013,7 +4017,9 @@ boolean F_ContinueResponder(event_t *event)
 	keypressed = true;
 	imcontinuing = true;
 	S_StartSound(NULL, sfx_kc6b);
-	if (!jukeboxMusicPlaying) // STAR NOTE: hi, i was here again lol
+
+	// STAR NOTE: don't fade music if we're playing music in the jukebox :p //
+	if (!TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
 		I_FadeSong(0, MUSICRATE, &S_StopMusic);
 
 	return true;
@@ -4861,4 +4867,37 @@ void F_TextPromptTicker(void)
 		else
 			animtimer--;
 	}
+}
+
+// ================
+//  WAITINGPLAYERS
+// ================
+
+void F_StartWaitingPlayers(void)
+{
+	wipegamestate = GS_TITLESCREEN; // technically wiping from title screen
+	finalecount = 0;
+}
+
+void F_WaitingPlayersTicker(void)
+{
+	if (paused)
+		return;
+
+	finalecount++;
+
+	// dumb hack, only start the music on the 1st tick so if you instantly go into the map you aren't hearing a tic of music
+	if (finalecount == 2)
+		S_ChangeMusicInternal("_CHSEL", true);
+}
+
+void F_WaitingPlayersDrawer(void)
+{
+	const char *waittext1 = "You will join";
+	const char *waittext2 = "next level...";
+
+	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+
+	V_DrawCreditString((160 - (V_CreditStringWidth(waittext1)>>1))<<FRACBITS, 48<<FRACBITS, 0, waittext1);
+	V_DrawCreditString((160 - (V_CreditStringWidth(waittext2)>>1))<<FRACBITS, 64<<FRACBITS, 0, waittext2);
 }

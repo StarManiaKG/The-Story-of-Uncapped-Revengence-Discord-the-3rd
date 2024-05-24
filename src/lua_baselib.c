@@ -22,7 +22,6 @@
 #include "m_random.h"
 #include "s_sound.h"
 #include "g_game.h"
-#include "m_menu.h"
 #include "y_inter.h"
 #include "hu_stuff.h"	// HU_AddChatText
 #include "console.h"
@@ -39,14 +38,12 @@
 #include "taglist.h" // P_FindSpecialLineFromTag
 #include "lua_hook.h" // hook_cmd_running errors
 
+#include "STAR/star_vars.h" // STAR STUFF: TSoURDt3rd::jukebox, cv_luacanstopthejukebox, & TSoURDt3rd_InitializePlayer() //
+
 #define NOHUD if (hud_running)\
 return luaL_error(L, "HUD rendering code should not call this function!");\
 else if (hook_cmd_running)\
 return luaL_error(L, "CMD building code should not call this function!");
-
-// STAR STUFF YAY //
-boolean StopMusicCausedByLua;
-// END STAR STUFF YAY //
 
 boolean luaL_checkboolean(lua_State *L, int narg) {
 	luaL_checktype(L, narg, LUA_TBOOLEAN);
@@ -693,11 +690,12 @@ static int lib_pSpawnLockOn(lua_State *L)
 		return LUA_ErrInvalid(L, "player_t");
 	if (state >= NUMSTATES)
 		return luaL_error(L, "state %d out of range (0 - %d)", state, NUMSTATES-1);
-	if (P_IsLocalPlayer(player)) // Only display it on your own view.
+	if (P_IsLocalPlayer(player)) // Only display it on your own view. Don't display it for spectators
 	{
 		mobj_t *visual = P_SpawnMobj(lockon->x, lockon->y, lockon->z, MT_LOCKON); // positioning, flip handled in P_SceneryThinker
 		P_SetTarget(&visual->target, lockon);
 		visual->flags2 |= MF2_DONTDRAW;
+		visual->drawonlyforplayer = player; // Hide it from the other player in splitscreen, and yourself when spectating
 		P_SetMobjStateNF(visual, state);
 	}
 	return 0;
@@ -1082,7 +1080,8 @@ static int lib_pZMovement(lua_State *L)
 	if (!actor)
 		return LUA_ErrInvalid(L, "mobj_t");
 	lua_pushboolean(L, P_ZMovement(actor));
-	P_CheckPosition(actor, actor->x, actor->y);
+	if (!P_MobjWasRemoved(actor))
+		P_CheckPosition(actor, actor->x, actor->y);
 	P_SetTarget(&tmthing, ptmthing);
 	return 1;
 }
@@ -1110,7 +1109,8 @@ static int lib_pSceneryZMovement(lua_State *L)
 	if (!actor)
 		return LUA_ErrInvalid(L, "mobj_t");
 	lua_pushboolean(L, P_SceneryZMovement(actor));
-	P_CheckPosition(actor, actor->x, actor->y);
+	if (!P_MobjWasRemoved(actor))
+		P_CheckPosition(actor, actor->x, actor->y);
 	P_SetTarget(&tmthing, ptmthing);
 	return 1;
 }
@@ -2457,7 +2457,7 @@ static int lib_pFadeLight(lua_State *L)
 static int lib_pIsFlagAtBase(lua_State *L)
 {
 	mobjtype_t flag = luaL_checkinteger(L, 1);
-	NOHUD
+	//HUDSAFE
 	INLEVEL
 	if (flag >= NUMMOBJTYPES)
 		return luaL_error(L, "mobj type %d out of range (0 - %d)", flag, NUMMOBJTYPES-1);
@@ -2850,6 +2850,22 @@ static int lib_rTextureNumForName(lua_State *L)
 	return 1;
 }
 
+static int lib_rCheckTextureNameForNum(lua_State *L)
+{
+	INT32 num = (INT32)luaL_checkinteger(L, 1);
+	//HUDSAFE
+	lua_pushstring(L, R_CheckTextureNameForNum(num));
+	return 1;
+}
+
+static int lib_rTextureNameForNum(lua_State *L)
+{
+	INT32 num = (INT32)luaL_checkinteger(L, 1);
+	//HUDSAFE
+	lua_pushstring(L, R_TextureNameForNum(num));
+	return 1;
+}
+
 // R_DRAW
 ////////////
 static int lib_rGetColorByName(lua_State *L)
@@ -3027,11 +3043,66 @@ static int lib_sSpeedMusic(lua_State *L)
 		if (!player)
 			return LUA_ErrInvalid(L, "player_t");
 	}
-	if ((!player || P_IsLocalPlayer(player))
-		&& (!jukeboxMusicPlaying)) // STAR NOTE: i was here lol
 
+	// STAR STUFF: DON'T INTERUPT OUR MUSIC PLEASE :) //
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
+		return 0;
+	// DONE! //
+
+	if (!player || P_IsLocalPlayer(player))
 		S_SpeedMusic(speed);
 	return 0;
+}
+
+static int lib_sGetSpeedMusic(lua_State *L)
+{
+	player_t *player = NULL;
+	//NOHUD
+	if (!lua_isnone(L, 1) && lua_isuserdata(L, 1))
+	{
+		player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+	if (!player || P_IsLocalPlayer(player))
+		lua_pushinteger(L, S_GetSpeedMusic());
+	else
+		lua_pushnil(L);
+	return 1;
+}
+
+static int lib_sPitchMusic(lua_State *L)
+{
+	fixed_t fixedpitch = luaL_checkfixed(L, 1);
+	float pitch = FIXED_TO_FLOAT(fixedpitch);
+	player_t *player = NULL;
+	//NOHUD
+	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
+	{
+		player = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+	if (!player || P_IsLocalPlayer(player))
+		S_PitchMusic(pitch);
+	return 0;
+}
+
+static int lib_sGetPitchMusic(lua_State *L)
+{
+	player_t *player = NULL;
+	//NOHUD
+	if (!lua_isnone(L, 1) && lua_isuserdata(L, 1))
+	{
+		player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+	if (!player || P_IsLocalPlayer(player))
+		lua_pushinteger(L, S_GetPitchMusic());
+	else
+		lua_pushnil(L);
+	return 1;
 }
 
 static int lib_sStopMusic(lua_State *L)
@@ -3044,12 +3115,14 @@ static int lib_sStopMusic(lua_State *L)
 		if (!player)
 			return LUA_ErrInvalid(L, "player_t");
 	}
-	// STAR NOTE: i was also here lol
+
+	// STAR STUFF: STOP INTERUPTING OUR MUSIC PLEASE (if we allow it) //
+	if (cv_luacanstopthejukebox.value && TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
+		return 0;
+	// DONE AGAIN! //
+
 	if (!player || P_IsLocalPlayer(player))
-	{
-		StopMusicCausedByLua = true;
 		S_StopMusic();
-	}
 	return 0;
 }
 
@@ -3069,6 +3142,61 @@ static int lib_sSetInternalMusicVolume(lua_State *L)
 		S_SetInternalMusicVolume(volume);
 		lua_pushboolean(L, true);
 	}
+	else
+		lua_pushnil(L);
+	return 1;
+}
+
+static int lib_sGetInternalMusicVolume(lua_State *L)
+{
+	player_t *player = NULL;
+	//NOHUD
+	if (!lua_isnone(L, 1) && lua_isuserdata(L, 1))
+	{
+		player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+	if (!player || P_IsLocalPlayer(player))
+		lua_pushinteger(L, (UINT32)S_GetInternalMusicVolume());
+	else
+		lua_pushnil(L);
+	return 1;
+}
+
+static int lib_sSetInternalSfxVolume(lua_State *L)
+{
+	UINT32 sfxvolume = (UINT32)luaL_checkinteger(L, 1);
+	player_t *player = NULL;
+	//NOHUD
+	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
+	{
+		player = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+	if (!player || P_IsLocalPlayer(player))
+	{
+		S_SetInternalSfxVolume(sfxvolume);
+		lua_pushboolean(L, true);
+	}
+	else
+		lua_pushnil(L);
+	return 1;
+}
+
+static int lib_sGetInternalSfxVolume(lua_State *L)
+{
+	player_t *player = NULL;
+	//NOHUD
+	if (!lua_isnone(L, 1) && lua_isuserdata(L, 1))
+	{
+		player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+	if (!player || P_IsLocalPlayer(player))
+		lua_pushinteger(L, (UINT32)S_GetInternalSfxVolume());
 	else
 		lua_pushnil(L);
 	return 1;
@@ -3535,7 +3663,7 @@ static int lib_gAddGametype(lua_State *L)
 // Partly lifted from Got_AddPlayer
 static int lib_gAddPlayer(lua_State *L)
 {
-	INT16 i, newplayernum, botcount = 1;
+	INT16 i, newplayernum;
 	player_t *newplayer;
 	SINT8 skinnum = 0, bot;
 
@@ -3543,10 +3671,8 @@ static int lib_gAddPlayer(lua_State *L)
 	{
 		if (!playeringame[i])
 			break;
-
-		if (players[i].bot)
-			botcount++; // How many of us are there already?
 	}
+
 	if (i >= MAXPLAYERS)
 	{
 		lua_pushnil(L);
@@ -3559,6 +3685,9 @@ static int lib_gAddPlayer(lua_State *L)
 
 	playeringame[newplayernum] = true;
 	G_AddPlayer(newplayernum);
+
+	TSoURDt3rd_InitializePlayer(newplayernum); // add our new player to the roster :P //
+
 	newplayer = &players[newplayernum];
 
 	newplayer->jointime = 0;
@@ -3639,6 +3768,16 @@ static int lib_gRemovePlayer(lua_State *L)
 	return LUA_ErrInvalid(L, "player_t");
 }
 
+
+static int lib_gSetUsedCheats(lua_State *L)
+{
+	// Let large-scale level packs using Lua be able to add cheat commands.
+	boolean silent = lua_optboolean(L, 1);
+	//NOHUD
+	//INLEVEL
+	G_SetUsedCheats(silent);
+	return 0;
+}
 
 static int Lcheckmapnumber (lua_State *L, int idx, const char *fun)
 {
@@ -3807,7 +3946,7 @@ static int lib_gDoReborn(lua_State *L)
 }
 
 // Another Lua function that doesn't actually exist!
-// Sets nextmapoverride & skipstats without instantly ending the level, for instances where other sources should be exiting the level, like normal signposts.
+// Sets nextmapoverride, skipstats and nextgametype without instantly ending the level, for instances where other sources should be exiting the level, like normal signposts.
 static int lib_gSetCustomExitVars(lua_State *L)
 {
 	int n = lua_gettop(L); // Num arguments
@@ -3816,18 +3955,21 @@ static int lib_gSetCustomExitVars(lua_State *L)
 
 	// LUA EXTENSION: Custom exit like support
 	// Supported:
-	//	G_SetCustomExitVars();			[reset to defaults]
-	//	G_SetCustomExitVars(int)		[nextmap override only]
-	//	G_SetCustomExitVars(nil, int)	[skipstats only]
-	//	G_SetCustomExitVars(int, int)	[both of the above]
+	//	G_SetCustomExitVars();               [reset to defaults]
+	//	G_SetCustomExitVars(int)             [nextmap override only]
+	//	G_SetCustomExitVars(nil, int)        [skipstats only]
+	//	G_SetCustomExitVars(int, int)        [both of the above]
+	//	G_SetCustomExitVars(int, int, int)   [nextmapoverride, skipstats and nextgametype]
 
 	nextmapoverride = 0;
 	skipstats = 0;
+	nextgametype = -1;
 
 	if (n >= 1)
 	{
 		nextmapoverride = (INT16)luaL_optinteger(L, 1, 0);
 		skipstats = (INT16)luaL_optinteger(L, 2, 0);
+		nextgametype = (INT16)luaL_optinteger(L, 3, -1);
 	}
 
 	return 0;
@@ -4203,6 +4345,8 @@ static luaL_Reg lib[] = {
 	// r_data
 	{"R_CheckTextureNumForName",lib_rCheckTextureNumForName},
 	{"R_TextureNumForName",lib_rTextureNumForName},
+	{"R_CheckTextureNameForNum", lib_rCheckTextureNameForNum},
+	{"R_TextureNameForNum", lib_rTextureNameForNum},
 
 	// r_draw
 	{"R_GetColorByName", lib_rGetColorByName},
@@ -4216,8 +4360,14 @@ static luaL_Reg lib[] = {
 	{"S_StopSoundByID",lib_sStopSoundByID},
 	{"S_ChangeMusic",lib_sChangeMusic},
 	{"S_SpeedMusic",lib_sSpeedMusic},
+	{"S_GetSpeedMusic",lib_sGetSpeedMusic},
+	{"S_PitchMusic",lib_sPitchMusic},
+	{"S_GetPitchMusic",lib_sGetPitchMusic},
 	{"S_StopMusic",lib_sStopMusic},
 	{"S_SetInternalMusicVolume", lib_sSetInternalMusicVolume},
+	{"S_GetInternalMusicVolume", lib_sGetInternalMusicVolume},
+	{"S_SetInternalSfxVolume", lib_sSetInternalSfxVolume},
+	{"S_GetInternalSfxVolume", lib_sGetInternalSfxVolume},
 	{"S_StopFadingMusic",lib_sStopFadingMusic},
 	{"S_FadeMusic",lib_sFadeMusic},
 	{"S_FadeOutStopMusic",lib_sFadeOutStopMusic},
@@ -4242,6 +4392,7 @@ static luaL_Reg lib[] = {
 	{"G_AddGametype", lib_gAddGametype},
 	{"G_AddPlayer", lib_gAddPlayer},
 	{"G_RemovePlayer", lib_gRemovePlayer},
+	{"G_SetUsedCheats", lib_gSetUsedCheats},
 	{"G_BuildMapName",lib_gBuildMapName},
 	{"G_BuildMapTitle",lib_gBuildMapTitle},
 	{"G_FindMap",lib_gFindMap},

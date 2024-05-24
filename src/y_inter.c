@@ -45,7 +45,10 @@
 #endif
 
 // STAR STUFF //
-#include "STAR/star_vars.h"
+#include "STAR/star_vars.h" // TSoURDt3rd_DetermineLevelMusic() //
+#include "STAR/ss_cmds.h" // cv_storesavesinfolders //
+#include "STAR/ss_main.h" // SAVEGAMEFOLDER //
+
 #include "deh_soc.h"
 // END OF THAT //
 
@@ -947,7 +950,7 @@ void Y_IntermissionDrawer(void)
 				V_DrawString(x+36, y, V_ALLOWLOWERCASE, data.competition.name[i]);
 
 				if ((players[data.competition.num[i]].pflags & PF_GAMETYPEOVER)
-					|| (timeover)) // STAR NOTE: i was here lol
+					|| (TSoURDt3rdPlayers[consoleplayer].timeOver)) // STAR NOTE: time over rendering //
 
 					snprintf(sstrtime, sizeof sstrtime, "Time Over");
 				else if (players[data.competition.num[i]].lives <= 0)
@@ -978,12 +981,14 @@ void Y_IntermissionDrawer(void)
 		}
 	}
 
+	ST_drawJukebox(); // STAR STUFF: render the jukebox please //
+
 skiptallydrawer:
 	if (!LUA_HudEnabled(hud_intermissionmessages))
 		return;
 
 	if (timer)
-		V_DrawCenteredString(BASEVIDWIDTH/2, 188, V_YELLOWMAP,
+		V_DrawCenteredString(BASEVIDWIDTH/2, 188, V_MENUCOLORMAP,
 			va("start in %d seconds", timer/TICRATE));
 
 	// Make it obvious that scrambling is happening next round.
@@ -1019,8 +1024,7 @@ void Y_Ticker(void)
 	}
 	// END THAT //
 
-	LUA_HookBool(intertype == int_spec && stagefailed,
-			HOOK(IntermissionThinker));
+	LUA_HookBool(stagefailed, HOOK(IntermissionThinker));
 
 	intertic++;
 
@@ -1071,10 +1075,8 @@ void Y_Ticker(void)
 #endif
 			)
 				S_FadeOutStopMusic(mapheaderinfo[gamemap-1]->musinterfadeout);
-			else if (mapheaderinfo[gamemap-1]->musintername[0] && S_MusicExists(mapheaderinfo[gamemap-1]->musintername, !midi_disabled, !digital_disabled))
-				S_ChangeMusicInternal(mapheaderinfo[gamemap-1]->musintername, false); // don't loop it
 			else
-				S_ChangeMusicInternal("_clear", false); // don't loop it
+				S_ChangeMusicInternal(TSoURDt3rd_DetermineLevelMusic(), false); // don't loop it
 			tallydonetic = -1;
 		}
 
@@ -1113,12 +1115,14 @@ void Y_Ticker(void)
 			S_StartSound(NULL, (gottoken ? sfx_token : sfx_chchng)); // cha-ching!
 
 			// Update when done with tally
-			if ((!modifiedgame || savemoddata) && !(netgame || multiplayer) && !demoplayback)
+			if (!demoplayback)
 			{
-				if (M_UpdateUnlockablesAndExtraEmblems())
+				M_SilentUpdateUnlockablesAndEmblems(serverGamedata);
+
+				if (M_UpdateUnlockablesAndExtraEmblems(clientGamedata))
 					S_StartSound(NULL, sfx_s3k68);
 
-				G_SaveGameData();
+				G_SaveGameData(clientGamedata);
 			}
 		}
 		else if (!(intertic & 1))
@@ -1146,10 +1150,8 @@ void Y_Ticker(void)
 #endif
 			)
 				S_FadeOutStopMusic(mapheaderinfo[gamemap-1]->musinterfadeout);
-			else if (mapheaderinfo[gamemap-1]->musintername[0] && S_MusicExists(mapheaderinfo[gamemap-1]->musintername, !midi_disabled, !digital_disabled))
-				S_ChangeMusicInternal(mapheaderinfo[gamemap-1]->musintername, false); // don't loop it
 			else
-				S_ChangeMusicInternal("_clear", false); // don't loop it
+				S_ChangeMusicInternal(TSoURDt3rd_DetermineLevelMusic(), false); // don't loop it
 			tallydonetic = -1;
 		}
 
@@ -1249,12 +1251,14 @@ void Y_Ticker(void)
 			S_StartSound(NULL, (gottoken ? sfx_token : sfx_chchng)); // cha-ching!
 
 			// Update when done with tally
-			if ((!modifiedgame || savemoddata) && !(netgame || multiplayer) && !demoplayback)
+			if (!demoplayback)
 			{
-				if (M_UpdateUnlockablesAndExtraEmblems())
+				M_SilentUpdateUnlockablesAndEmblems(serverGamedata);
+
+				if (M_UpdateUnlockablesAndExtraEmblems(clientGamedata))
 					S_StartSound(NULL, sfx_s3k68);
 
-				G_SaveGameData();
+				G_SaveGameData(clientGamedata);
 			}
 		}
 		else if (!(intertic & 1))
@@ -1494,10 +1498,10 @@ void Y_StartIntermission(void)
 				if (players[consoleplayer].charflags & SF_SUPER)
 				{
 					strcpy(data.spec.passed3, "can now become");
-					snprintf(data.spec.passed4,
-						sizeof data.spec.passed4, "Super %s",
-						skins[players[consoleplayer].skin].realname);
-					data.spec.passed4[sizeof data.spec.passed4 - 1] = '\0';
+					if (strlen(skins[players[consoleplayer].skin].supername) > 20) //too long, use generic
+						strcpy(data.spec.passed4, "their super form");
+					else
+						strcpy(data.spec.passed4, skins[players[consoleplayer].skin].supername);
 				}
 			}
 			else
@@ -2061,7 +2065,7 @@ static void Y_AwardCoopBonuses(void)
 	y_bonus_t localbonuses[4];
 
 	// set score/total first
-	data.coop.total = 0;
+	data.coop.total = players[consoleplayer].recordscore;
 	data.coop.score = players[consoleplayer].score;
 	data.coop.gotperfbonus = -1;
 	memset(data.coop.bonuses, 0, sizeof(data.coop.bonuses));
@@ -2082,6 +2086,9 @@ static void Y_AwardCoopBonuses(void)
 			players[i].score += localbonuses[j].points;
 			if (players[i].score > MAXSCORE)
 				players[i].score = MAXSCORE;
+			players[i].recordscore += localbonuses[j].points;
+			if (players[i].recordscore > MAXSCORE)
+				players[i].recordscore = MAXSCORE;
 		}
 
 		ptlives = min(
@@ -2138,6 +2145,10 @@ static void Y_AwardSpecialStageBonus(void)
 		players[i].score += localbonuses[1].points;
 		if (players[i].score > MAXSCORE)
 			players[i].score = MAXSCORE;
+		players[i].recordscore += localbonuses[0].points;
+		players[i].recordscore += localbonuses[1].points;
+		if (players[i].recordscore > MAXSCORE)
+			players[i].recordscore = MAXSCORE;
 
 		// grant extra lives right away since tally is faked
 		ptlives = min(

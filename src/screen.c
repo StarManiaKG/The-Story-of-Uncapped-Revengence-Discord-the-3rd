@@ -44,13 +44,8 @@
 // SRB2Kart
 #include "r_fps.h" // R_GetFramerateCap
 
-// STAR STUFF //
-#include "m_menu.h" // fps coloring command
-// END THAT PLEASE //
-
-#if defined (USEASM) && !defined (NORUSEASM)//&& (!defined (_MSC_VER) || (_MSC_VER <= 1200))
-#define RUSEASM //MSC.NET can't patch itself
-#endif
+// TSoURDt3rd
+#include "STAR/ss_main.h" // TSoURDt3rd_SCR_SetPingHeight //
 
 // --------------------------------------------
 // assembly or c drawer routines for 8bpp/16bpp
@@ -74,6 +69,8 @@ static CV_PossibleValue_t scr_depth_cons_t[] = {{8, "8 bits"}, {16, "16 bits"}, 
 //added : 03-02-98: default screen mode, as loaded/saved in config
 consvar_t cv_scr_width = CVAR_INIT ("scr_width", "1280", CV_SAVE, CV_Unsigned, NULL);
 consvar_t cv_scr_height = CVAR_INIT ("scr_height", "800", CV_SAVE, CV_Unsigned, NULL);
+consvar_t cv_scr_width_w = CVAR_INIT ("scr_width_w", "640", CV_SAVE, CV_Unsigned, NULL);
+consvar_t cv_scr_height_w = CVAR_INIT ("scr_height_w", "400", CV_SAVE, CV_Unsigned, NULL);
 consvar_t cv_scr_depth = CVAR_INIT ("scr_depth", "16 bits", CV_SAVE, scr_depth_cons_t, NULL);
 
 consvar_t cv_renderview = CVAR_INIT ("renderview", "On", 0, CV_OnOff, NULL);
@@ -104,7 +101,6 @@ UINT8 *scr_borderpatch; // flat used to fill the reduced view borders set at ST_
 //  Short and Tall sky drawer, for the current color mode
 void (*walldrawerfunc)(void);
 
-boolean R_ASM = true;
 boolean R_486 = false;
 boolean R_586 = false;
 boolean R_MMX = false;
@@ -171,26 +167,6 @@ void SCR_SetDrawFuncs(void)
 		spanfuncs_npo2[SPANDRAWFUNC_WATER] = R_DrawWaterSpan_NPO2_8;
 		spanfuncs_npo2[SPANDRAWFUNC_TILTEDWATER] = R_DrawTiltedWaterSpan_NPO2_8;
 
-#ifdef RUSEASM
-		if (R_ASM)
-		{
-			if (R_MMX)
-			{
-				colfuncs[BASEDRAWFUNC] = R_DrawColumn_8_MMX;
-				//colfuncs[COLDRAWFUNC_SHADE] = R_DrawShadeColumn_8_ASM;
-				//colfuncs[COLDRAWFUNC_FUZZY] = R_DrawTranslucentColumn_8_ASM;
-				colfuncs[COLDRAWFUNC_TWOSMULTIPATCH] = R_Draw2sMultiPatchColumn_8_MMX;
-				spanfuncs[BASEDRAWFUNC] = R_DrawSpan_8_MMX;
-			}
-			else
-			{
-				colfuncs[BASEDRAWFUNC] = R_DrawColumn_8_ASM;
-				//colfuncs[COLDRAWFUNC_SHADE] = R_DrawShadeColumn_8_ASM;
-				//colfuncs[COLDRAWFUNC_FUZZY] = R_DrawTranslucentColumn_8_ASM;
-				colfuncs[COLDRAWFUNC_TWOSMULTIPATCH] = R_Draw2sMultiPatchColumn_8_ASM;
-			}
-		}
-#endif
 	}
 /*	else if (vid.bpp > 1)
 	{
@@ -273,8 +249,6 @@ void SCR_Startup(void)
 		CONS_Printf("CPU Info: 486: %i, 586: %i, MMX: %i, 3DNow: %i, MMXExt: %i, SSE2: %i\n", R_486, R_586, R_MMX, R_3DNow, R_MMXExt, R_SSE2);
 	}
 
-	if (M_CheckParm("-noASM"))
-		R_ASM = false;
 	if (M_CheckParm("-486"))
 		R_486 = true;
 	if (M_CheckParm("-586"))
@@ -321,6 +295,10 @@ void SCR_Recalc(void)
 	if (dedicated)
 		return;
 
+#ifdef ALAM_LIGHTING
+	R_Release_Corona();
+#endif
+
 	// bytes per pixel quick access
 	scr_bpp = vid.bpp;
 
@@ -344,6 +322,10 @@ void SCR_Recalc(void)
 	// vid.recalc lasts only for the next refresh...
 	con_recalc = true;
 	am_recalc = true;
+
+#ifdef ALAM_LIGHTING
+	R_Load_Corona();
+#endif
 
 #ifdef HWRENDER
 	// Shoot! The screen texture was flushed!
@@ -381,10 +363,16 @@ void SCR_CheckDefaultMode(void)
 	}
 	else
 	{
-		CONS_Printf(M_GetText("Default resolution: %d x %d (%d bits)\n"), cv_scr_width.value,
-			cv_scr_height.value, cv_scr_depth.value);
-		// see note above
-		setmodeneeded = VID_GetModeForSize(cv_scr_width.value, cv_scr_height.value) + 1;
+		CONS_Printf(M_GetText("Default resolution: %d x %d\n"), cv_scr_width.value, cv_scr_height.value);
+		CONS_Printf(M_GetText("Windowed resolution: %d x %d\n"), cv_scr_width_w.value, cv_scr_height_w.value);
+		CONS_Printf(M_GetText("Default bit depth: %d bits\n"), cv_scr_depth.value);
+		if (cv_fullscreen.value)
+			setmodeneeded = VID_GetModeForSize(cv_scr_width.value, cv_scr_height.value) + 1; // see note above
+		else
+			setmodeneeded = VID_GetModeForSize(cv_scr_width_w.value, cv_scr_height_w.value) + 1; // see note above
+
+		if (setmodeneeded <= 0)
+			CONS_Alert(CONS_WARNING, "Invalid resolution given, defaulting to base resolution\n");
 	}
 
 	if (cv_renderer.value != (signed)rendermode)
@@ -402,9 +390,8 @@ void SCR_CheckDefaultMode(void)
 // sets the modenum as the new default video mode to be saved in the config file
 void SCR_SetDefaultMode(void)
 {
-	// remember the default screen size
-	CV_SetValue(&cv_scr_width, vid.width);
-	CV_SetValue(&cv_scr_height, vid.height);
+	CV_SetValue(cv_fullscreen.value ? &cv_scr_width : &cv_scr_width_w, vid.width);
+	CV_SetValue(cv_fullscreen.value ? &cv_scr_height : &cv_scr_height_w, vid.height);
 }
 
 // Change fullscreen on/off according to cv_fullscreen
@@ -419,7 +406,16 @@ void SCR_ChangeFullscreen(void)
 	if (graphics_started)
 	{
 		VID_PrepareModeList();
-		setmodeneeded = VID_GetModeForSize(vid.width, vid.height) + 1;
+		if (cv_fullscreen.value)
+			setmodeneeded = VID_GetModeForSize(cv_scr_width.value, cv_scr_height.value) + 1;
+		else
+			setmodeneeded = VID_GetModeForSize(cv_scr_width_w.value, cv_scr_height_w.value) + 1;
+
+		if (setmodeneeded <= 0) // hacky safeguard
+		{
+			CONS_Alert(CONS_WARNING, "Invalid resolution given, defaulting to base resolution.\n");
+			setmodeneeded = VID_GetModeForSize(BASEVIDWIDTH, BASEVIDHEIGHT) + 1;
+		}
 	}
 	return;
 #endif
@@ -466,11 +462,11 @@ double averageFPS = 0.0f;
 #define USE_FPS_SAMPLES
 
 #ifdef USE_FPS_SAMPLES
-#define FPS_SAMPLE_RATE (0.05) // How often to update FPS samples, in seconds
+#define MAX_FRAME_TIME 0.05
 #define NUM_FPS_SAMPLES (16) // Number of samples to store
 
-static double fps_samples[NUM_FPS_SAMPLES];
-static double updateElapsed = 0.0;
+static double total_frame_time = 0.0;
+static int frame_index;
 #endif
 
 static boolean fps_init = false;
@@ -493,61 +489,18 @@ void SCR_CalculateFPS(void)
 	fps_enter = fps_finish;
 
 #ifdef USE_FPS_SAMPLES
-	updateElapsed += frameElapsed;
-
-	if (updateElapsed >= FPS_SAMPLE_RATE)
+	total_frame_time += frameElapsed;
+	if (frame_index++ >= NUM_FPS_SAMPLES || total_frame_time >= MAX_FRAME_TIME)
 	{
-		static int sampleIndex = 0;
-		int i;
-
-		fps_samples[sampleIndex] = frameElapsed;
-
-		sampleIndex++;
-		if (sampleIndex >= NUM_FPS_SAMPLES)
-			sampleIndex = 0;
-
-		averageFPS = 0.0;
-		for (i = 0; i < NUM_FPS_SAMPLES; i++)
-		{
-			averageFPS += fps_samples[i];
-		}
-
-		if (averageFPS > 0.0)
-		{
-			averageFPS = 1.0 / (averageFPS / NUM_FPS_SAMPLES);
-		}
-	}
-
-	while (updateElapsed >= FPS_SAMPLE_RATE)
-	{
-		updateElapsed -= FPS_SAMPLE_RATE;
+		averageFPS = 1.0 / (total_frame_time / frame_index);
+		total_frame_time = 0.0;
+		frame_index = 0;
 	}
 #else
 	// Direct, unsampled counter.
 	averageFPS = 1.0 / frameElapsed;
 #endif
 }
-
-// STAR STUFF //
-// Remember This From st_stuff.c? Yeah, I Reworked It!
-UINT16 positiveTicRateColor[16] = {
-	[0] = V_GREENMAP,
-	V_MAGENTAMAP,
-	V_YELLOWMAP,
-	V_BLUEMAP,
-	V_REDMAP,
-	V_GRAYMAP,
-	V_ORANGEMAP,
-	V_SKYMAP,
-	V_PURPLEMAP,
-	V_AQUAMAP,
-	V_PERIDOTMAP,
-	V_AZUREMAP,
-	V_BROWNMAP,
-	V_ROSYMAP,
-	V_INVERTMAP,
-};
-// BEP BEP //
 
 void SCR_DisplayTicRate(void)
 {
@@ -556,99 +509,43 @@ void SCR_DisplayTicRate(void)
 	UINT32 cap = R_GetFramerateCap();
 	double fps = round(averageFPS);
 
-	// STAR STUFF //
-	// TPS Specific
-	tic_t i;
-	tic_t ontic = I_GetTime();
-	tic_t totaltics = 0;
-	static tic_t lasttic;
-	static boolean ticsgraph[TICRATE];
-	INT32 tpscntcolor = 0;
-	// END THAT FOR NOW //
-
 	if (gamestate == GS_NULL)
 		return;
 
-	// FPS
-	if (cv_ticrate.value)
+	if (cap > 0)
 	{
+		if (fps <= cap / 2.0) ticcntcolor = V_REDMAP;
+		else if (fps <= cap * 0.90) ticcntcolor = V_YELLOWMAP;
+		else ticcntcolor = V_FPSCOLORMAP;
+	}
+	else
+	{
+		ticcntcolor = V_FPSCOLORMAP;
+	}
+
+	if (cv_ticrate.value == 2) // compact counter
+	{
+		V_DrawRightAlignedString(vid.width, h,
+			ticcntcolor|V_NOSCALESTART|V_USERHUDTRANS, va("%04.2f", averageFPS)); // use averageFPS directly
+	}
+	else if (cv_ticrate.value == 1) // full counter
+	{
+		const char *drawnstr;
+		INT32 width;
+
+		// The highest assignable cap is < 1000, so 3 characters is fine.
 		if (cap > 0)
-		{
-			if (fps <= cap / 2.0) ticcntcolor = V_REDMAP;
-			else if (fps <= cap * 0.90) ticcntcolor = V_YELLOWMAP;
-			else {
-				ticcntcolor = positiveTicRateColor[cv_fpscountercolor.value];
-			}
-		}
+			drawnstr = va("%3.0f/%3u", fps, cap);
 		else
-		{
-			ticcntcolor = positiveTicRateColor[cv_fpscountercolor.value];
-		}
+			drawnstr = va("%4.2f", averageFPS);
 
-		if (cv_ticrate.value == 2) // compact counter
-		{			
-			V_DrawRightAlignedString(vid.width, h,
-				ticcntcolor|V_NOSCALESTART|V_USERHUDTRANS, va("%04.2f", averageFPS)); // use averageFPS directly
-		}
-		else // full counter
-		{
-			const char *drawnstr;
-			INT32 width;
+		width = V_StringWidth(drawnstr, V_NOSCALESTART);
 
-			// The highest assignable cap is < 1000, so 3 characters is fine.
-			if (cap > 0)
-				drawnstr = va("%3.0f/%3u", fps, cap);
-			else
-				drawnstr = va("%4.2f", averageFPS);
-
-			width = V_StringWidth(drawnstr, V_NOSCALESTART);
-
-			V_DrawString(vid.width - ((7 * 8 * vid.dupx) + V_StringWidth("FPS: ", V_NOSCALESTART)), h,
-				menuColor[cv_menucolor.value]|V_NOSCALESTART|V_USERHUDTRANS, "FPS:");
-			V_DrawString(vid.width - width, h,
-				ticcntcolor|V_NOSCALESTART|V_USERHUDTRANS, drawnstr);
-		}
+		V_DrawString(vid.width - ((7 * 8 * vid.dupx) + V_StringWidth("FPS: ", V_NOSCALESTART)), h,
+			V_MENUCOLORMAP|V_NOSCALESTART|V_USERHUDTRANS, "FPS:");
+		V_DrawString(vid.width - width, h,
+			ticcntcolor|V_NOSCALESTART|V_USERHUDTRANS, drawnstr);
 	}
-
-	// STAR STUFF //
-	// TPS
-	if (cv_tpsrate.value)
-	{
-		for (i = lasttic + 1; i < TICRATE+lasttic && i < ontic; ++i)
-			ticsgraph[i % TICRATE] = false;
-		
-		ticsgraph[ontic % TICRATE] = true;
-
-		for (i = 0; i < TICRATE; ++i)
-			if (ticsgraph[i])
-				++totaltics;
-
-		if (totaltics <= TICRATE/2) tpscntcolor = V_REDMAP;
-		else if (totaltics <= TICRATE-8) tpscntcolor = V_YELLOWMAP;
-		else {
-			tpscntcolor = positiveTicRateColor[cv_tpscountercolor.value];
-		}
-
-		if (cv_tpsrate.value == 2) // compact counter
-			V_DrawRightAlignedString(vid.width, h-(8*vid.dupy),
-				tpscntcolor|V_NOSCALESTART|V_USERHUDTRANS, va("%02d", totaltics));
-		else // full counter
-		{
-			const char *drawntpsStr;
-			INT32 tpswidth;
-			
-			drawntpsStr = va("%02d/%02u", totaltics, TICRATE);
-			tpswidth = V_StringWidth(drawntpsStr, V_NOSCALESTART);
-
-			V_DrawString(vid.width - ((7 * 8 * vid.dupx) + V_StringWidth("TPS: ", V_NOSCALESTART)), h-(8*vid.dupy),
-				menuColor[cv_menucolor.value]|V_NOSCALESTART|V_USERHUDTRANS, "TPS:");
-			V_DrawString(vid.width - tpswidth, h-(8*vid.dupy),
-				tpscntcolor|V_NOSCALESTART|V_USERHUDTRANS, drawntpsStr);
-		}
-
-		lasttic = ontic;
-	}
-	// END THAT //
 }
 
 void SCR_DisplayLocalPing(void)
@@ -656,7 +553,7 @@ void SCR_DisplayLocalPing(void)
 	UINT32 ping = playerpingtable[consoleplayer];	// consoleplayer's ping is everyone's ping in a splitnetgame :P
 	if (cv_showping.value == 1 || (cv_showping.value == 2 && servermaxping && ping > servermaxping))	// only show 2 (warning) if our ping is at a bad level
 	{
-		INT32 dispy = (((cv_ticrate.value && cv_tpsrate.value) || cv_tpsrate.value) ? 171 : (cv_ticrate.value ? 180 : 189)); // STAR NOTE: i was here
+		INT32 dispy = TSoURDt3rd_SCR_SetPingHeight();
 		HU_drawPing(307, dispy, ping, true, V_SNAPTORIGHT | V_SNAPTOBOTTOM);
 	}
 }
@@ -741,7 +638,7 @@ void SCR_DisplayMarathonInfo(void)
 	{
 		entertic = I_GetTime();
 		if (gamecomplete)
-			flags |= menuColor[cv_menucolor.value]; // STAR NOTE: i was also here lol
+			flags |= V_MENUCOLORMAP;
 		else if (marathonmode & MA_INGAME)
 			; // see also G_Ticker
 		else if (marathonmode & MA_INIT)

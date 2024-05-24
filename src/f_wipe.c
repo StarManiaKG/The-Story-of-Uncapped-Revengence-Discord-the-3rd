@@ -621,6 +621,8 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu)
 			RenewHolePunch();
 		}
 		// END THAT PLEASE //
+
+		NetKeepAlive(); // Update the network so we don't cause timeouts
 	}
 
 	WipeInAction = false;

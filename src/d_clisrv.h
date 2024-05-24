@@ -45,7 +45,7 @@ therein, increment this number.
 // Networking and tick handling related.
 #define BACKUPTICS 1024
 #define CLIENTBACKUPTICS 32
-#define MAXTEXTCMD 264 // STAR NOTE: i was here lol (if you want to reset this, set it back to 256 :p)
+#define MAXTEXTCMD 256
 //
 // Packet structure
 //
@@ -80,6 +80,8 @@ typedef enum
 	PT_SENDINGLUAFILE, // Server telling a client Lua needs to open a file
 	PT_ASKLUAFILE,     // Client telling the server they don't have the file
 	PT_HASLUAFILE,     // Client telling the server they have the file
+
+	PT_BASICKEEPALIVE,// Keep the network alive during wipes, as tics aren't advanced and NetUpdate isn't called
 
 	// Add non-PT_CANFAIL packet types here to avoid breaking MS compatibility.
 
@@ -162,19 +164,20 @@ typedef struct
 
 	UINT8 gametype;
 	UINT8 modifiedgame;
+	UINT8 usedCheats;
 
 	char server_context[8]; // Unique context id, generated at server startup.
 
 	// STAR STUFF //
-	boolean tsourdt3rd;
+	UINT8 tsourdt3rd;
 	
 	UINT8 tsourdt3rdmajorversion;
 	UINT8 tsourdt3rdminorversion;
 	UINT8 tsourdt3rdsubversion;
 
-	// DISCORD COMPATIBILITY STUFF //
+	// DISCORD STUFFS //
 	UINT8 maxplayer;
-	boolean allownewplayer;
+	UINT8 allownewplayer;
 	UINT8 discordinvites;
 	// END THAT LARGE MESS //
 	// END THAT OTHER STUFF TOO //
@@ -217,6 +220,10 @@ typedef struct
 	UINT8 localplayers;
 	UINT8 mode;
 	char names[MAXSPLITSCREENPLAYERS][MAXPLAYERNAME];
+
+	// STAR STUFF //
+	UINT8 tsourdt3rd;
+	// END THAT PLEASE //
 } ATTRPACK clientconfig_pak;
 
 #define SV_DEDICATED    0x40 // server is dedicated
@@ -327,12 +334,12 @@ typedef struct
 		clientcmd_pak clientpak;            //         144 bytes
 		client2cmd_pak client2pak;          //         200 bytes
 		servertics_pak serverpak;           //      132495 bytes (more around 360, no?)
-		serverconfig_pak servercfg;         //         773 bytes
+		serverconfig_pak servercfg;         //         773 bytes // STAR NOTE: takes up a little bit more bits now //
 		UINT8 textcmd[MAXTEXTCMD+1];        //       66049 bytes (wut??? 64k??? More like 257 bytes...)
 		filetx_pak filetxpak;               //         139 bytes
 		fileack_pak fileack;
 		UINT8 filereceived;
-		clientconfig_pak clientcfg;         //         136 bytes
+		clientconfig_pak clientcfg;         //         136 bytes // STAR NOTE: takes up a little bit more bits now //
 		UINT8 md5sum[16];
 		serverinfo_pak serverinfo;          //        1024 bytes
 		serverrefuse_pak serverrefuse;      //       65025 bytes (somehow I feel like those values are garbage...)
@@ -417,6 +424,7 @@ extern tic_t servermaxping;
 extern consvar_t cv_netticbuffer, cv_allownewplayer, cv_joinnextround, cv_maxplayers, cv_joindelay, cv_rejointimeout;
 extern consvar_t cv_resynchattempts, cv_blamecfail;
 extern consvar_t cv_maxsend, cv_noticedownload, cv_downloadspeed;
+extern consvar_t cv_dedicatedidletime;
 
 // DISCORD STUFF: INVITATION EDITION //
 extern consvar_t cv_discordinvites;
@@ -434,6 +442,9 @@ void SendKick(UINT8 playernum, UINT8 msg);
 
 // Create any new ticcmds and broadcast to other players.
 void NetUpdate(void);
+
+// Maintain connections to nodes without timing them all out.
+void NetKeepAlive(void);
 
 void SV_StartSinglePlayerServer(void);
 boolean SV_SpawnServer(void);
@@ -487,11 +498,8 @@ extern boolean adminpasswordset;
 extern boolean hu_stopped;
 
 // STAR STUFF //
-// Expose Some Net Things for Extra STAR Stuff
 void RenewHolePunch(void);
-void PT_WillResendGamestate(void);
 
-// Expose Some Snake Things for Extra STAR Stuff
 #define SNAKE_SPEED 5
 
 #define SNAKE_NUM_BLOCKS_X 20

@@ -137,19 +137,21 @@ typedef enum
 	MN_SPECIAL,
 
 #ifdef HAVE_DISCORDRPC
-	MN_OP_DISCORD_RQ, // discord requests, for future notice
+	// DISCORD STUFF //
+	MN_OP_DISCORD_RQ,
 	MN_OP_DISCORD_OPT,
 	MN_OP_DISCORDCS_OUTPUT,
+	// SET AND READY! //
 #endif
 
-	// FUN STAR STUFF //
+	// STAR STUFF //
 	MN_TSOURDT3RD_README,
 	
 	MN_MP_EXTENDEDSERVERPROPERTIES,
 	
 	MN_OP_TSOURDT3RD,
-	
 	MN_OP_TSOURDT3RD_JUKEBOX,
+	MN_OP_TSOURDT3RD_JUKEBOXCONTROLS,
 	MN_OP_TSOURDT3RD_SNAKE,
 	// END OF THAT //
 
@@ -158,10 +160,6 @@ typedef enum
 #define MTREE2(a,b) (a | (b<<MENUBITS))
 #define MTREE3(a,b,c) MTREE2(a, MTREE2(b,c))
 #define MTREE4(a,b,c,d) MTREE2(a, MTREE3(b,c,d))
-
-// STAR STUFF: OLD MENU STUFF EDITION //
-#define MTREE5(a,b,c,d,e) MTREE2(a, MTREE4(b,c,d,e))
-// THAT'S IT LOL //
 
 typedef struct
 {
@@ -492,10 +490,8 @@ void Moviemode_option_Onchange(void);
 
 #ifdef HAVE_DISCORDRPC
 // DISCORD STUFFS //
-extern boolean discordMenuOpen;
 void Discord_option_Onchange(void);
-
-void M_RefreshPauseMenu(void);
+void M_RefreshDiscordRequestsOption(void);
 // END THE DISCORD //
 #endif
 
@@ -513,52 +509,50 @@ void M_MoveColorBefore(UINT16 color, UINT16 targ);
 void M_MoveColorAfter(UINT16 color, UINT16 targ);
 UINT16 M_GetColorBefore(UINT16 color);
 UINT16 M_GetColorAfter(UINT16 color);
+UINT16 M_GetColorIndex(UINT16 color);
+menucolor_t* M_GetColorFromIndex(UINT16 index);
 void M_InitPlayerSetupColors(void);
 void M_FreePlayerSetupColors(void);
 
-// STAR STUFF SUBISHUHFLUKJDJIPOKD //
-// main build menu stuff
-extern boolean AllowTypicalTimeOver;
-extern boolean AlwaysOverlayInvincibility, ShieldBlocksTransformation;
+//// STAR STUFF SUBISHUHFLUKJDJIPOKD ////
+// variables //
+// events
 extern boolean AllowEasterEggHunt, EnableEasterEggHuntBonuses;
 
-extern consvar_t cv_startupscreen, cv_stjrintro;
-extern consvar_t cv_isitcalledsingleplayer, cv_menucolor, cv_fpscountercolor, cv_tpscountercolor;
-extern consvar_t cv_allowtypicaltimeover, cv_pausegraphicstyle, cv_automapoutsidedevmode;
+// commands //
+// game
+extern consvar_t cv_startupscreen, cv_stjrintro, cv_quitscreen;
+extern consvar_t cv_isitcalledsingleplayer;
+extern consvar_t cv_pausegraphicstyle, cv_automapoutsidedevmode;
 
-#ifdef APRIL_FOOLS
-extern consvar_t cv_ultimatemode;
-#endif
-
-extern consvar_t cv_quitscreen;
-
+// audio
+extern consvar_t cv_bossmusic, cv_finalbossmusic, cv_truefinalbossmusic;
+extern consvar_t cv_bosspinchmusic, cv_postbossmusic;
+extern consvar_t cv_actclearmusic, cv_bossclearmusic;
 extern consvar_t cv_gameovermusic;
 extern consvar_t cv_defaultmaptrack;
 
-extern consvar_t cv_perfectsave, cv_perfectsavestripe1, cv_perfectsavestripe2, cv_perfectsavestripe3;
-extern consvar_t cv_shieldblockstransformation, cv_armageddonnukesuper, cv_alwaysoverlayinvuln;
-extern consvar_t cv_jukeboxhud, cv_luacanstopthejukebox, cv_jukeboxspeed;
+// players
+extern consvar_t cv_armageddonnukewhilesuper;
 
-extern consvar_t cv_alloweasteregghunt, cv_easteregghuntbonuses;
+// savefiles
+extern consvar_t cv_perfectsave, cv_perfectsavestripe1, cv_perfectsavestripe2, cv_perfectsavestripe3;
+
+// jukebox
+extern consvar_t cv_jukeboxspeed, cv_jukeboxhud, cv_luacanstopthejukebox;
+
+// misc. stuff
 extern consvar_t cv_windowtitletype, cv_customwindowtitle, cv_memesonwindowtitle;
 
-extern UINT16 menuColor[16];
-
-// jukebox stuff
-extern boolean jukeboxMusicPlaying;
-extern boolean jukeboxUnlocked;
-
-extern char jukeboxMusicName[22+12];
-extern char jukeboxMusicTrack[7];
-void M_ResetJukebox(void);
-void M_UpdateJukebox(void);
-
-// easter stuff
+// functions //
+// events
 void M_UpdateEasterStuff(void);
+void STAR_StoreDefaultMenuStrings(void);
 
-// extra stuff
-void STAR_SetProblematicCommandsForNetgames(void);
-void STAR_ResetProblematicCommandsAfterNetgames(void);
+// game
+void STAR_LoadingScreen_OnChange(void);
+void STAR_Shadow_OnChange(void);
+void STAR_UpdateNotice_OnChange(void);
 // END OF STAR STUFF SHUGDCUYSIGIUDIOHSBIDJ //
 
 // These defines make it a little easier to make menus

@@ -1,0 +1,12 @@
+prefix=C:/msys64/home/Drayt/Github/i686-w64-mingw
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: SDL2_mixer_ext
+Description: SDL Mixer X, a fork of SDL_mixer, a mixer library for Simple DirectMedia Layer
+Version: 2.7.0.0
+Requires: sdl2 >= 2.0.7
+Libs: -L${libdir} -lSDL2_mixer_ext
+Cflags: -I${includedir}/SDL2
+

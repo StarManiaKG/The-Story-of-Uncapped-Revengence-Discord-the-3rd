@@ -55,7 +55,7 @@ extern size_t numspritelumps, max_spritelumps;
 extern boolean udmf;
 
 extern size_t numsprites;
-extern spritedef_t *sprites;
+extern spritedef_t *sprites[NUMSPRITES+1]; // STAR NOTE: added NUMSPRITES here //
 
 extern size_t numvertexes;
 extern vertex_t *vertexes;

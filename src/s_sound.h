@@ -177,7 +177,14 @@ boolean S_MusicExists(const char *mname, boolean checkMIDI, boolean checkDigi);
 //
 
 // Set Speed of Music
-boolean S_SpeedMusic(float speed);
+void S_SpeedMusic(float speed); // StarManiaKG: was originally boolean, no longer needs to be //
+// Get Speed of Music
+float S_GetSpeedMusic(void);
+
+// Set Pitch of Music
+void S_PitchMusic(float pitch);
+// Get Pitch of Music
+float S_GetPitchMusic(void);
 
 // Music definitions
 typedef struct musicdef_s
@@ -295,6 +302,9 @@ void S_ResumeAudio(void);
 //
 
 void S_SetInternalMusicVolume(INT32 volume);
+INT32 S_GetInternalMusicVolume(void);
+void S_SetInternalSfxVolume(INT32 volume);
+INT32 S_GetInternalSfxVolume(void);
 void S_StopFadingMusic(void);
 boolean S_FadeMusicFromVolume(UINT8 target_volume, INT16 source_volume, UINT32 ms);
 #define S_FadeMusic(a, b) S_FadeMusicFromVolume(a, -1, b)
@@ -328,8 +338,5 @@ void S_StopSoundByNum(sfxenum_t sfxnum);
 #define S_StartAttackSound S_StartSound
 #define S_StartScreamSound S_StartSound
 #endif
-
-// STAR STUFF, FOR MUSIC, YOU KNOW //
-extern boolean StopMusicCausedByLua;
 
 #endif

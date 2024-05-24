@@ -1306,9 +1306,9 @@ void R_PrecacheLevel(void)
 		if (!spritepresent[i])
 			continue;
 
-		for (j = 0; j < sprites[i].numframes; j++)
+		for (j = 0; j < sprites[i]->numframes; j++)
 		{
-			sf = &sprites[i].spriteframes[j];
+			sf = &sprites[i]->spriteframes[j];
 #define cacheang(a) {\
 		lump = sf->lumppat[a];\
 		if (devparm)\

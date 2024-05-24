@@ -116,6 +116,9 @@ typedef enum restype
 	RET_WAD,
 	RET_SOC,
 	RET_LUA,
+
+	RET_STAR, // STAR STUFF: CODING CODING CODING //
+
 	RET_PK3,
 	RET_FOLDER,
 	RET_UNKNOWN,
@@ -183,7 +186,6 @@ UINT16 W_CheckNumForFolderEndPK3(const char *name, UINT16 wad, UINT16 startlump)
 
 lumpnum_t W_CheckNumForMap(const char *name);
 lumpnum_t W_CheckNumForName(const char *name);
-lumpnum_t W_GetNumForMusicName(const char *name); // STAR NOTE: Ported From SRB2 Persona lol
 lumpnum_t W_CheckNumForLongName(const char *name);
 lumpnum_t W_GetNumForName(const char *name); // like W_CheckNumForName but I_Error on LUMPERROR
 lumpnum_t W_GetNumForLongName(const char *name);

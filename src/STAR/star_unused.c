@@ -1,19 +1,27 @@
-// SONIC ROBO BLAST 2 - TSOURDT3RD EDITION
+// SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2023 by Star "Guy Who Named Another Script After Him" ManiaKG.
+// Copyright (C) 2023-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  star_functions.c
-/// \brief Contains all the Info Portraying to, at Least at This Point in Time,
-///        TSoURDt3rd's Unused Stuff
+/// \file  star_unused.c
+/// \brief Data portraying to, at least currently, TSoURDt3rd's unused Stuff
 
-// NUMBERS //
-//
+#include "../doomdef.h"
+#include "../w_wad.h"
+
+// ------------------------ //
+//        Functions
+// ------------------------ //
+
+// =======
+// NUMBERS
+// =======
+
 // INT32 **STAR_SplitNumber(INT32 NUMBER, boolean useINT16Format)
-// Splits Numbers Into Smaller Numbers, Depending on the Format Specified
+// Splits numbers Into smaller numbers, with size depending on 'useINT16Format'.
 //
 // Example of a Possible Return:
 //	NUMBER == 280, useINT16Format = false		=	Returned Number = 28, 0
@@ -70,3 +78,55 @@ INT32 **STAR_SplitNumber(INT32 NUMBER, boolean useINT16Format)
 	// Return Our Split Numbers (Which are Stored in a Table), and We're Done! //
 	return finalSplitNumbers;
 }
+
+// ====
+// WADS
+// ====
+
+//
+// W_GetNumForMusicName
+//
+// Calls W_CheckNumForName, but does NOT bomb out if not found.
+// Geared towards checking for music files where the lump not being found is not a call for a crash.
+//
+// Ported From SRB2 Persona lol
+//
+lumpnum_t W_GetNumForMusicName(const char *name)
+{
+	lumpnum_t i;
+
+	i = W_CheckNumForName(name);
+
+	return i;
+}
+
+// =====
+// MISC.
+// =====
+
+#if 0
+	if (textures[i]->hash == hash && !strncasecmp(textures[i]->name, name, 8))
+#endif
+
+#if 0
+#if 0
+#if 0
+	if (playernum == node)
+	{
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "node - %d, consoleplayer - %d\n", node, consoleplayer);
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "before: tsourdt3rdnode - %d\n", TSoURDt3rdPlayers[node].num);
+
+		TSoURDt3rdPlayers[node] = TSoURDt3rdPlayers[playernum];
+		M_Memcpy(&TSoURDt3rdPlayers[node], &TSoURDt3rdPlayers[playernum], sizeof(TSoURDt3rd_t));
+
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "after: tsourdt3rdnode - %d\n", TSoURDt3rdPlayers[node].num);
+	}
+	memset(&TSoURDt3rdPlayers[playernum], 0, sizeof (TSoURDt3rd_t));
+#else
+	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "ARCHIVING: node - %d, consoleplayer - %d\n", node, consoleplayer);
+	TSoURDt3rd_ClearPlayer(node);
+#endif
+#else
+	(void)node;
+#endif
+#endif

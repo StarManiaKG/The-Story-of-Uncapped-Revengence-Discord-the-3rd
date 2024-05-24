@@ -18,7 +18,7 @@ However, as time went on, I added my own custom features to SRB2's code, and eve
 With this build being continiously built, or in other words, a rolling release build, it usually gets built fairly regulary, and will eventually contain more and more features over time.
 
 The build and its executable files can be found in the provided ZIP file, with folder containing the assets, libraries, and files for each different version of TSoURDt3rd, all containing folders for different operating systems as well.
-(...Except for Mac Users, at least for now. You'll have to compile this build yourself. Sorry :p)
+- (...Except for Mac Users, at least for now. You'll have to compile this build yourself. Sorry :p)
 
 ## Branches
   - ```main``` - Holds all the current, stable, TSoURDt3RD code
@@ -31,25 +31,26 @@ The build and its executable files can be found in the provided ZIP file, with f
   - ```main-2.1.25``` - Holds all the current, stable, TSoURDt3RD 2.1.25 code
 
 ## Features
-  - Uncapped
+  - **Uncapped**
 	- Now In Vanilla SRB2, but was featured in this build early enough for me to call it a "New Feature"
 ***
-  - Uncapped (cont.)
+  - **Uncapped** ***(cont.)***
 	- (By Eidolon, Old Original Source Code found [here](https://git.do.srb2.org/ShaderWraith/SRB2/-/tree/uncappedrevengeance))
 
 <p align="center">
 	<img src="https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/uncapped.gif?raw=true" />
 </p>
 
-  - Discord Rich Presence
+***
+  - **Discord Rich Presence**
 	- Includes extended support for commands, options, custom characters, and even includes custom statuses.
 ***
-  - Discord Rich Presence (cont.)
+  - **Discord Rich Presence** ***(cont.)***
     - (Original Source Code by the Kart Krew and Fafabis, can be found [here](https://git.do.srb2.org/Fafabis/SRB2/-/tree/discord))
 	- (Extra Code Made by Me)
 ***
-  - Discord Rich Presence (cont.)
-    - Currently Supported Characters:
+  - **Discord Rich Presence** ***(cont.)***
+    - _Currently Supported Characters:_
       - Sonic, Super Sonic, Sonic & Tails
       - Tails
       - Knuckles
@@ -75,8 +76,8 @@ The build and its executable files can be found in the provided ZIP file, with f
 	  - Hexhog
       - Speccy
 ***
-  - Discord Rich Presence (cont.)
-    - Currently Supported Charatcer Portraits:
+  - **Discord Rich Presence** ***(cont.)***
+    - _Currently Supported Charatcer Portraits:_
       - CSS Portraits & Super CSS Portraits
       - Continue Sprite Portraits & Super Continue Sprite Portraits
       - Life Icon Portraits & Super Life Icon Portraits
@@ -85,41 +86,44 @@ The build and its executable files can be found in the provided ZIP file, with f
 	<img src="https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/discord.png?raw=true" />
 </p>
 
-  - Custom Build Options, directed towards Saves, Servers, and Extra Features
+***
+  - **Custom Build Options, directed towards Saves, Servers, and Extra Features**
     - (Holepunching Ported from SRB2 Kart by Me)
     - (Original Leavebug Fix Coded by flarn2006)
 ***
-  - Custom Build Options, directed towards Saves, Servers, and Extra Features (cont.)
-    - Here's a General Overview on the Other Extra Features this Build Offers:
-        - Legacy Features, such as
-          - Startup Screens
-          - Commands
-          - Graphics
-          - Holiday Events
-        - Game and Engine Modifying Features, such as
-          - Realistic Shadows
-          - Loading Screens
-        - Audio Features, such as
-          - Customizable Jingle Music
-          - Default Map Music, for Maps With No Music
-        - Savefile Features, such as
-          - Perfect Saves
-          - Continues
-          - The Ability to Store Savefiles in Folders
-        - Server Features, such as
-          - A Removed SOCK_SEND Error
-          - Holepunching
-          - The Ability to Change Your Character While Moving
-        - Miscellaneous Features, such as
-          - Extra Events and Event Features
-          - QoL Changes and Features
-          - Customizable and Dynamic Window Titles
+  - **Custom Build Options, directed towards Saves, Servers, and Extra Features** ***(cont.)***
+	- _Legacy Features, such as:_
+		- Startup Screens
+        - Commands
+        - Graphics
+        - Holiday Events
+    - _Game and Engine Modifying Features, such as:_
+        - Realistic Shadows
+        - Loading Screens
+    - _Audio Features, such as:_
+        - Customizable Jingle Music
+        - Default Map Music, for Maps With No Music
+	- _Savefile Features, such as:_
+        - Perfect Saves
+        - Continues
+        - The Ability to Store Savefiles in Folders
+    - _Server Features, such as:_
+        - A Removed SOCK_SEND Error
+        - Holepunching
+        - Changing Your Character While Moving
+    - _Miscellaneous Features, such as:_
+        - Events (Holiday Events, Celebration Events, etc.)
+        - QoL Changes and Features
+        - Customizable and Dynamic Window Titles
+		- Speeding Up More Music Formats
+		- Loading Folders From the Addons Menu
 
 <p align="center">
 	<img src="https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/tsourdt3rd.png?raw=true" />
 </p>
 
-  - Palette Rendering
+***
+  - **Palette Rendering**
     - (Software Palette in OpenGL)
     - (Made by Hannu Hanhi, source code found [here](https://git.do.srb2.org/Hannu_Hanhi/SRB2/-/tree/ogl-palette-rendering))
 
@@ -127,16 +131,17 @@ The build and its executable files can be found in the provided ZIP file, with f
 	<img src="https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/paletterendering.gif?raw=true" />
 </p>
 
-  - Autoloading Addons
+***
+  - **Autoloading Addons**
     - (Made by Me)
 ***
-  - Autoloading Addons (cont.)
+  - **Autoloading Addons** ***(cont.)***
     - Using Right Shift over an add-on or folder in the add-ons menu allows you to select add-ons or folders that will autoload when SRB2 first starts up.
     - This feature also allows you to bypass modifiedgame checks when the game first starts up, allowing you to play all the add-ons you want, in whatever savefiles or modes you want.
     - This feature also creates new savefiles for whenever autoloading is active, meaning that your normal savefiles are safe and secure.
 	  - Your gamedata is still used and intact, however.
 ***
-  - Autoloading Addons (cont.)
+  - **Autoloading Addons** ***(cont.)***
     - To stop certain, or all, addons from autoloading on startup, look at the ```autoload.cfg``` file, located in your SRB2 directory, and remove the add-ons and folder names there.
     - Autoloading add-ons still does affect netgames and the ability to join them, though. If you've loaded game-changig add-ons, you still need to relaunch with the base WADs loaded in other to join other netgames.
 
@@ -145,15 +150,16 @@ The build and its executable files can be found in the provided ZIP file, with f
 	<img src="https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/autoloading2.gif?raw=true" />
 </p>
 
-  - A Jukebox
+***
+  - **A Jukebox**
     - (Made by Me)
 ***
-  - A Jukebox (cont.)
+  - **A Jukebox** ***(cont.)***
     - Play any of your favorite songs, even during a game, all from the comfort of your own Jukebox.
     - (You need to have the Sound Test unlocked in order to use this feature.)
 ***
-  - A Jukebox (cont.)
-    - How To Add Custom Music to the Jukebox
+  - **A Jukebox** ***(cont.)***
+    - _How To Add Custom Music to the Jukebox:_
       - First, you need to have the ```jukebox.pk3``` file and your custom music on hand. Make sure your music is in the proper format.
       - Then, you need to add your music to the ```jukebox.pk3``` file.
       - Lastly, open the ```MUSICDEF``` file within ```jukebox.pk3``` and add your custom music to that file. If you need to, use some of the pre-existing lumps in the ```MUSICDEF``` file as an example on how to add your music to the file.
@@ -164,7 +170,7 @@ The build and its executable files can be found in the provided ZIP file, with f
 	<img src="https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/jukebox.gif?raw=true" />
 </p>
 
-  - ...And Even More Randomness!
+  - **...And Even More Randomness!**
 <p align="center">
 	<img src="https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/random/purefat.gif?raw=true" />
 	<img src="https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/random/cutie.png?raw=true" />
@@ -220,7 +226,7 @@ All of the following assets can be found in the current zip file of TSoURDt3rd, 
 - Also see [SRB2 Wiki/Source code compiling/Makefiles](http://wiki.srb2.org/wiki/Source_code_compiling/Makefiles), and [SRB2 Wiki/Source code compiling/CMake](http://wiki.srb2.org/wiki/Source_code_compiling/CMake), depending on the type of compiler you're using
 
 **ALTERNATIVES**
-- You can check out the releases page! These include console scripts and .exe files, both for Linux and Windows users, respectively. AppImage support will also come soon, but Wine also exists, so if you're into that type of thing, .exe files will work for you too I guess.
+- You can check out the releases page! These include console scripts and ```.exe``` files, both for Linux and Windows users, respectively. AppImage support will also come soon, but Wine also exists, so if you're into that type of thing, ```.exe``` files will work for you too I guess.
 - You can also Cross-Compile Between Different Operating Systems too!
 - You could ask a friend to do it for you too, since friends are the best after all.
 

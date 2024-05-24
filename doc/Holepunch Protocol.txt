@@ -1,5 +1,5 @@
              Bird's Hole Punching Protocol
-          Ported to Vanilla SRB2 By StarManiaKG
+          Ported to Base SRB2 By StarManiaKG
 
 
 Hole punch - a mechanism to bypass a firewall

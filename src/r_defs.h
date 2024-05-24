@@ -428,12 +428,12 @@ typedef struct sector_s
 	void *fadecolormapdata; // fade colormap thinker
 
 	// floor and ceiling texture offsets
-	fixed_t floor_xoffs, floor_yoffs;
-	fixed_t ceiling_xoffs, ceiling_yoffs;
+	fixed_t floorxoffset, flooryoffset;
+	fixed_t ceilingxoffset, ceilingyoffset;
 
 	// flat angle
-	angle_t floorpic_angle;
-	angle_t ceilingpic_angle;
+	angle_t floorangle;
+	angle_t ceilingangle;
 
 	INT32 heightsec; // other sector, or -1 if no other sector
 	INT32 camsec; // used for camera clipping
@@ -552,7 +552,6 @@ typedef struct line_s
 	size_t validcount; // if == validcount, already checked
 	polyobj_t *polyobj; // Belongs to a polyobject?
 
-	char *text; // a concatenation of all front and back texture names, for linedef specials that require a string.
 	INT16 callcount; // no. of calls left before triggering, for the "X calls" linedef specials, defaults to 0
 } line_t;
 
@@ -563,6 +562,10 @@ typedef struct
 
 	// add this to the calculated texture top
 	fixed_t rowoffset;
+
+	// per-texture offsets for UDMF
+	fixed_t offsetx_top, offsetx_mid, offsetx_bot;
+	fixed_t offsety_top, offsety_mid, offsety_bot;
 
 	// Texture indices.
 	// We do not maintain names here.
@@ -576,8 +579,6 @@ typedef struct
 
 	INT16 special; // the special of the linedef this side belongs to
 	INT16 repeatcnt; // # of times to repeat midtexture
-
-	char *text; // a concatenation of all top, bottom, and mid texture names, for linedef specials that require a string.
 
 	extracolormap_t *colormap_data; // storage for colormaps; not applied to sectors.
 } side_t;
@@ -633,23 +634,121 @@ typedef struct mprecipsecnode_s
 	boolean visited; // used in search algorithms
 } mprecipsecnode_t;
 
-// for now, only used in hardware mode
-// maybe later for software as well?
-// that's why it's moved here
+#ifdef ALAM_LIGHTING
+// =========================
+// Corona and Dynamic lights
+// =========================
+
+#define NUMLIGHTFREESLOTS 32 // Free light slots (for SOCs)
+
+typedef enum lightspritenum_s
+{
+	NOLIGHT = 0,
+
+	RINGSPARK_L,
+	SUPERSONIC_L, // Cool. =)
+	SUPERSPARK_L,
+	INVINCIBLE_L,
+	GREENSHIELD_L,
+	BLUESHIELD_L,
+	YELLOWSHIELD_L,
+	REDSHIELD_L,
+	BLACKSHIELD_L,
+	WHITESHIELD_L,
+	SMALLREDBALL_L,
+	RINGLIGHT_L,
+	GREENSMALL_L,
+	REDSMALL_L,
+	GREENSHINE_L,
+	ORANGESHINE_L,
+	PINKSHINE_L,
+	BLUESHINE_L,
+	REDSHINE_L,
+	LBLUESHINE_L,
+	GREYSHINE_L,
+	REDBALL_L,
+	GREENBALL_L,
+	BLUEBALL_L,
+	NIGHTSLIGHT_L,
+	JETLIGHT_L,
+	GOOPLIGHT_L,
+	STREETLIGHT_L,
+
+	// free slots for SOCs at run-time --------------------
+	FREESLOT0_L,
+	//
+	// ... 32 free lights here ...
+	//
+	LASTFREESLOT_L = (FREESLOT0_L+NUMLIGHTFREESLOTS-1),
+	// end of freeslots ---------------------------------------------
+
+	NUMLIGHTS
+} lightspritenum_t;
+
+// [WDJ] Sprite light sources bit defines.
+typedef enum
+{
+  	UNDEFINED_SPR	= 0x00, // actually just for testing
+
+	// Effect enables //
+  	CORONA_SPR		= 0x01,	// a light source which only emits a corona
+  	DYNLIGHT_SPR	= 0x02, // a light source which is only used for dynamic lighting
+
+	// Type field, can create a light source
+  	TYPE_FIELD_SPR	= 0xF0, // working type setting
+
+  	SPLT_unk      = 0x00, // phobiata, newmaps default, plain corona
+  	SPLT_rocket   = 0x10, // flicker
+  	SPLT_lamp     = 0x20,
+  	SPLT_fire     = 0x30, // slow flicker, torch
+	//MONSTER_SPR  = 0x40,
+	//AMMO_SPR     = 0x50,
+	//BONUS_SPR    = 0x60,
+  	SPLT_light    = 0xC0, // no fade
+  	SPLT_firefly  = 0xD0, // firefly flicker, un-synch
+  	SPLT_random   = 0xE0, // random LED, un-synch
+  	SPLT_pulse    = 0xF0, // slow pulsation, un-synch
+
+	// Effect combinations //
+  	LIGHT_SPR		= (DYNLIGHT_SPR|CORONA_SPR),
+	ROCKET_SPR		= (DYNLIGHT_SPR|CORONA_SPR|SPLT_rocket),
+} sprite_light_flags_e;
+  
+typedef enum
+{
+   	SLI_type_set= 0x02,  		// the type was set, probably by fragglescript
+   	SLI_corona_set= 0x04,		// the corona was set, only by fragglescript
+   	SLI_changed = 0x08,  		// the data was changed, probably by fragglescript
+} sprite_light_impl_flags_e;
+
+// Special sprite lighting. Optimized for Hardware, OpenGL.
 typedef struct light_s
 {
-	UINT16 type;          // light,... (cfr #define in hwr_light.c)
+    UINT16 type;			// sprite_light_e, used in hwr_light.c
 
-	float light_xoffset;
-	float light_yoffset;  // y offset to adjust corona's height
+    float light_xoffset;	// unused
+    float light_yoffset;	// y offset to adjust corona's height
 
-	UINT32 corona_color;   // color of the light for static lighting
-	float corona_radius;  // radius of the coronas
+	UINT32 corona_color;	// color of the light for static lighting
+    float corona_radius;	// radius of the coronas
 
-	UINT32 dynamic_color;  // color of the light for dynamic lighting
-	float dynamic_radius; // radius of the light ball
-	float dynamic_sqrradius; // radius^2 of the light ball
+    UINT32 dynamic_color;	// color of the light for dynamic lighting
+    float dynamic_radius;	// radius of the light ball
+
+	// implementation data, not in tables
+    float dynamic_sqrradius;// radius^2 of the light ball
+    UINT16 impl_flags;   	// implementation flags, sprite_light_impl_flags_e
+
+	// corona routine, allows the corona to be rendered under user-determined circumstances
+	boolean (*coronaroutine)(mobj_t *mobj);
 } light_t;
+
+extern float corona_size;
+extern UINT8 corona_alpha, corona_bright;
+
+light_t *Sprite_Corona_Light_lsp(int sprnum);
+UINT8 Sprite_Corona_Light_fade(light_t *lsp, float cz, int objid);
+#endif
 
 typedef struct lightmap_s
 {
@@ -761,12 +860,12 @@ typedef struct drawseg_s
 	// Pointers to lists for sprite clipping, all three adjusted so [x1] is first value.
 	INT16 *sprtopclip;
 	INT16 *sprbottomclip;
-	INT16 *maskedtexturecol;
+	fixed_t *maskedtexturecol;
 
 	struct visplane_s *ffloorplanes[MAXFFLOORS];
 	INT32 numffloorplanes;
 	struct ffloor_s *thicksides[MAXFFLOORS];
-	INT16 *thicksidecol;
+	fixed_t *thicksidecol;
 	INT32 numthicksides;
 	fixed_t frontscale[MAXVIDWIDTH];
 

@@ -33,7 +33,7 @@ typedef union
 typedef struct
 {
 	msg_header_t header;
-	char ip[16];
+	char ip[sizeof "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"];
 	char port[8];
 	char name[32];
 	INT32 room;
@@ -69,9 +69,7 @@ extern consvar_t cv_masterserver_update_rate;
 extern consvar_t cv_masterserver_timeout;
 extern consvar_t cv_masterserver_debug;
 extern consvar_t cv_masterserver_token;
-// HOLEPUNCHING STUFF //
-extern consvar_t cv_rendezvousserver;
-// FINALLY, IT'S OVER //
+extern consvar_t cv_rendezvousserver; // HOLEPUNCHING STUFF: holeing //
 
 // < 0 to not connect (usually -1) (offline mode)
 // == 0 to show all rooms, not a valid hosting room

@@ -99,33 +99,22 @@ typedef struct FVector
 //Hurdler: Transform (coords + angles)
 //BP: transform order : scale(rotation_x(rotation_y(translation(v))))
 
-// Kart features
-//#define USE_FTRANSFORM_ANGLEZ
-//#define USE_FTRANSFORM_MIRROR
-
 // Vanilla features
 #define USE_MODEL_NEXTFRAME
 
 typedef struct
 {
 	FLOAT       x,y,z;           // position
-#ifdef USE_FTRANSFORM_ANGLEZ
 	FLOAT       anglex,angley,anglez;   // aimingangle / viewangle
-#else
-	FLOAT       anglex,angley;   // aimingangle / viewangle
-#endif
 	FLOAT       scalex,scaley,scalez;
 	FLOAT       fovxangle, fovyangle;
 	UINT8       splitscreen;
 	boolean     flip;            // screenflip
 	boolean     roll;
-	SINT8       rollflip;
 	FLOAT       rollangle; // done to not override USE_FTRANSFORM_ANGLEZ
-	UINT8       rotaxis;
 	FLOAT       centerx, centery;
-#ifdef USE_FTRANSFORM_MIRROR
+	FLOAT       rollx, rollz;
 	boolean     mirror;          // SRB2Kart: Encore Mode
-#endif
 	boolean     shearing;        // 14042019
 	float       viewaiming;      // 17052019
 } FTransform;
@@ -145,7 +134,9 @@ typedef struct
 // The shader returned may be a base shader or a custom shader.
 enum
 {
-	SHADER_FLOOR,
+	SHADER_NONE = -1,
+
+	SHADER_FLOOR = 0,
 	SHADER_WALL,
 	SHADER_SPRITE,
 	SHADER_MODEL,
@@ -240,22 +231,17 @@ enum EPolyFlags
 	PF_RemoveYWrap      = 0x00010000,   // Forces clamp texture on Y
 	PF_ForceWrapX       = 0x00020000,   // Forces repeat texture on X
 	PF_ForceWrapY       = 0x00040000,   // Forces repeat texture on Y
-	PF_Ripple           = 0x00100000    // Water ripple effect. The current backend doesn't use it for anything.
-};
-
-
-enum ESurfFlags
-{
-	SF_DYNLIGHT         = 0x00000001,
+	PF_Ripple           = 0x00100000,   // Water ripple effect. The current backend doesn't use it for anything.
+	PF_WireFrame        = 0x00200000,   // Draws vertices as lines instead of triangles
 };
 
 enum ETextureFlags
 {
-	TF_WRAPX       = 0x00000001,        // wrap around X
-	TF_WRAPY       = 0x00000002,        // wrap around Y
-	TF_WRAPXY      = TF_WRAPY|TF_WRAPX, // very common so use alias is more easy
-	TF_CHROMAKEYED = 0x00000010,
-	TF_TRANSPARENT = 0x00000040,        // texture with some alpha == 0
+	TF_WRAPX       		= 0x00000001,        // wrap around X
+	TF_WRAPY       		= 0x00000002,        // wrap around Y
+	TF_WRAPXY      		= TF_WRAPY|TF_WRAPX, // very common so use alias is more easy
+	TF_CHROMAKEYED 		= 0x00000010,
+	TF_TRANSPARENT 		= 0x00000040,        // texture with some alpha == 0
 };
 
 struct FTextureInfo

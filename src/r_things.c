@@ -73,12 +73,39 @@ spriteinfo_t spriteinfo[NUMSPRITES];
 //
 
 // variables used to look up and range check thing_t sprites patches
-spritedef_t *sprites;
+spritedef_t *sprites[NUMSPRITES+1]; // STAR NOTE: added NUMSPRITES here //
 size_t numsprites;
 
 static spriteframe_t sprtemp[64];
 static size_t maxframe;
 static const char *spritename;
+
+//
+// Clipping against drawsegs optimization, from prboom-plus
+//
+// TODO: This should be done with proper subsector pass through
+// sprites which would ideally remove the need to do it at all.
+// Unfortunately, SRB2's drawing loop has lots of annoying
+// changes from Doom for portals, which make it hard to implement.
+
+typedef struct drawseg_xrange_item_s
+{
+	INT16 x1, x2;
+	drawseg_t *user;
+} drawseg_xrange_item_t;
+
+typedef struct drawsegs_xrange_s
+{
+	drawseg_xrange_item_t *items;
+	INT32 count;
+} drawsegs_xrange_t;
+
+#define DS_RANGES_COUNT 3
+static drawsegs_xrange_t drawsegs_xranges[DS_RANGES_COUNT];
+
+static drawseg_xrange_item_t *drawsegs_xrange;
+static size_t drawsegs_xrange_size = 0;
+static INT32 drawsegs_xrange_count = 0;
 
 // ==========================================================================
 //
@@ -476,7 +503,7 @@ void R_AddSpriteDefs(UINT16 wadnum)
 		if (sprnames[i][4] && wadnum >= (UINT16)sprnames[i][4])
 			continue;
 
-		if (R_AddSingleSpriteDef(sprnames[i], &sprites[i], wadnum, start, end))
+		if (R_AddSingleSpriteDef(sprnames[i], sprites[i], wadnum, start, end))
 		{
 #ifdef HWRENDER
 			if (rendermode == render_opengl)
@@ -497,7 +524,8 @@ void R_AddSpriteDefs(UINT16 wadnum)
 //
 // GAME FUNCTIONS
 //
-UINT32 visspritecount;
+UINT32 visspritecount, numvisiblesprites;
+
 static UINT32 clippedvissprites;
 static vissprite_t *visspritechunks[MAXVISSPRITES >> VISSPRITECHUNKBITS] = {NULL};
 
@@ -530,12 +558,19 @@ void R_InitSprites(void)
 	//
 	numsprites = 0;
 	for (i = 0; i < NUMSPRITES + 1; i++)
-		if (sprnames[i][0] != '\0') numsprites++;
+	{
+		// STAR NOTE: edited due to our 'dynamic' 'freeslotting' system //
+		if (sprnames[i][0] != '\0')
+		{
+			sprites[i] = Z_Calloc(sizeof (spritedef_t), PU_STATIC, NULL);
+			numsprites = i+1;
+		}
+	}
 
 	if (!numsprites)
 		I_Error("R_AddSpriteDefs: no sprites in namelist\n");
 
-	sprites = Z_Calloc(numsprites * sizeof (*sprites), PU_STATIC, NULL);
+	//sprites = Z_Calloc(numsprites * sizeof (*sprites), PU_STATIC, NULL);
 
 	// find sprites in each -file added pwad
 	for (i = 0; i < numwadfiles; i++)
@@ -571,7 +606,7 @@ void R_InitSprites(void)
 //
 void R_ClearSprites(void)
 {
-	visspritecount = clippedvissprites = 0;
+	visspritecount = numvisiblesprites = clippedvissprites = 0;
 }
 
 //
@@ -737,6 +772,713 @@ void R_DrawFlippedMaskedColumn(column_t *column)
 	dc_texturemid = basetexturemid;
 }
 
+#ifdef ALAM_LIGHTING
+
+// ==========================================================================
+//																	CORONAS
+// ==========================================================================
+
+static patch_t *corona_patch = NULL;
+static softwarepatch_t corona_sprlump;
+
+// One or the other.
+#ifdef ENABLE_DRAW_ALPHA
+#else
+#define ENABLE_COLORED_PATCH
+// [WDJ] Wad patches usable as corona.
+// It is easier to recolor during drawing than to pick one of each.
+// Only use patches that are likely to be round in every instance (teleport fog is often not round).
+// Corona alternatives list.
+const char *corona_name[] = {
+	"CORONAP", // patch version of corona, from legacy.wad
+	"FLAMM0",
+	"PLSEA0",
+  	NULL
+};
+#endif
+
+#ifdef ENABLE_COLORED_PATCH
+static size_t corona_patch_size;
+
+typedef struct
+{
+	RGBA_t corona_color;
+	patch_t *colored_patch; // Z_Malloc
+} corona_image_t;
+
+static corona_image_t corona_image[NUMLIGHTS];
+#endif
+
+#ifdef ENABLE_COLORED_PATCH
+// Also does release, after corona_patch_size is set.
+static void init_corona_data(void)
+{
+	for (INT32 i = 0; i < NUMLIGHTS; i++ )
+	{
+		if (corona_patch_size)
+		{
+			if (corona_image[i].colored_patch)
+				Z_Free(corona_image[i].colored_patch);
+		}
+		corona_image[i].corona_color.rgba = 0;
+		corona_image[i].colored_patch = NULL;
+	}
+}
+#endif
+
+#ifdef ENABLE_COLORED_PATCH
+#include "v_video.h"
+
+static void setup_colored_corona(corona_image_t *ccp, RGBA_t corona_color)
+{
+	UINT8	colormap[256];
+	patch_t	*pp;
+
+	// when draw alpha is intense cannot have faint color in corona image
+	INT32 alpha = (255 + corona_color.s.alpha) >> 1;
+	INT32 za = (255 - alpha);
+	INT32 c;
+
+	INT32 r, g, b;
+
+	// A temporary colormap; make a colormap that is mostly of the corona color
+	for (c = 0; c < 256; c++)
+	{
+		RGBA_t rc = pLocalPalette[dc_colormap[c]];
+		r = (corona_color.s.red * alpha + rc.s.red * za) >> 8;
+		g = (corona_color.s.green * alpha + rc.s.green * za) >> 8;
+		b = (corona_color.s.blue * alpha + rc.s.blue * za) >> 8;
+		colormap[c] = NearestColor( r, g, b );
+	}
+	
+	// Allocate a copy of the corona patch.
+	ccp->corona_color = corona_color;
+	if (ccp->colored_patch)
+		Z_Free(ccp->colored_patch);
+
+	pp = Z_Malloc(corona_patch_size, PU_STATIC, NULL);
+	ccp->colored_patch = pp;
+	memcpy(pp, corona_patch, corona_patch_size);
+
+	// Change the corona copy to the corona color.
+	for (c = 0; c < corona_patch->width; c++ )
+	{
+		column_t *cp = (column_t *)((UINT8 *)pp + pp->columnofs[c]);
+		while (cp->topdelta != 0xff) // end of posts
+		{
+			UINT8 *s = (UINT8 *)cp + 3;
+			INT32 count = cp->length;
+			while (count--)
+			{
+				*s = colormap[*s];
+				s++;
+			}
+
+			// next source post, adv by (length + 2 byte header + 2 extra bytes)
+			cp = (column_t *)((UINT8 *)cp + cp->length + 4);
+		}
+	}
+}
+
+static patch_t *get_colored_corona(int sprite_light_num)
+{
+	corona_image_t *cc = &corona_image[sprite_light_num];
+	UINT32 corona_color = t_lspr[sprite_light_num]->corona_color;
+
+	if (cc->corona_color.rgba != corona_color || cc->colored_patch == NULL)
+		setup_colored_corona(cc, V_GetColor(corona_color));
+
+	return cc->colored_patch;
+}
+#endif
+
+// Called by SCR_SetMode
+void R_Load_Corona(void)
+{
+#ifdef ENABLE_COLORED_PATCH
+	lumpnum_t lumpid = LUMPERROR;
+#endif
+
+#ifdef HWRENDER   
+	if (rendermode != render_soft)
+		return;
+#endif
+
+#ifdef ENABLE_DRAW_ALPHA
+	if (!corona_patch)
+	{
+		pic_t *corona_pic = (pic_t *)W_CachePicName("CORONA", PU_STATIC);
+		if (corona_pic)
+		{
+			// Z_Malloc; The corona pic is INTENSITY_ALPHA, bytepp=2, blank=0
+			corona_patch = (patch_t *)R_Create_Patch(corona_pic->width, corona_pic->height,
+				/*SRC*/    TM_row_image, & corona_pic->data[0], 2, 1, 0,
+				/*DEST*/   TM_patch, CPO_blank_trim, NULL);
+
+			Z_ChangeTag(corona_patch, PU_STATIC);
+			corona_patch->leftoffset += corona_pic->width/2;
+			corona_patch->topoffset += corona_pic->height/2;
+
+			// Don't need the corona pic_t anymore
+			Z_Free(corona_pic);
+			goto setup_corona;
+		}
+	}
+#endif
+
+#ifdef ENABLE_COLORED_PATCH
+	init_corona_data(); // must call at least once, before setting corona_patch_size
+
+	if (!corona_patch)
+	{
+		// Find first valid patch in corona_name list
+		const char **namep = &corona_name[0];
+		while (*namep)
+		{
+			lumpid = W_CheckNumForName(*namep);
+			if (lumpid != LUMPERROR)
+				goto setup_corona;
+			namep++;
+		}
+	}
+#endif
+   
+	setup_corona:
+	{
+#ifdef ENABLE_COLORED_PATCH
+		// Setup the corona support
+		corona_patch_size = W_LumpLength(lumpid);
+		corona_patch = W_CachePatchNum(lumpid, PU_STATIC);
+#endif
+
+		// The patch endian conversion is already done.
+		corona_sprlump.width = corona_patch->width << FRACBITS;
+		corona_sprlump.height = corona_patch->height << FRACBITS;
+		corona_sprlump.leftoffset = corona_patch->leftoffset << FRACBITS;
+		corona_sprlump.topoffset = corona_patch->topoffset << FRACBITS;
+	}
+}
+
+void R_Release_Corona(void)
+{
+#ifdef ENABLE_COLORED_PATCH
+	init_corona_data(); // does release too
+#endif
+
+	if (corona_patch)
+	{
+		Z_Free(corona_patch);
+		corona_patch = NULL;
+	}
+}
+
+// Propotional fade of corona from Z1 to Z2
+#define Z1 (250.0f)
+#define Z2 ((255.0f*8) + 250.0f)
+
+#ifdef SPDR_CORONAS
+// --------------------------------------------------------------------------
+// coronas lighting with the sprite
+// --------------------------------------------------------------------------
+
+// corona state
+fixed_t		corona_x0, corona_x1, corona_x2;
+fixed_t		corona_xscale, corona_yscale;
+float		corona_size;
+UINT8		corona_alpha;
+UINT8		corona_bright; // used by software draw to brighten active light sources
+UINT8		corona_index; // t_lspr index
+UINT8		corona_draw = 0; // 1 = before sprite, 2 = after sprite
+
+UINT8 spec_dist[ 16 ] = {
+	10,  // SPLT_unk
+	35,  // SPLT_rocket
+	20,  // SPLT_lamp
+	45,  // SPLT_fire
+	0, 0, 0, 0, 0, 0, 0, 0,
+	60,  // SPLT_light
+	30,  // SPLT_firefly
+	80,  // SPLT_random
+	80,  // SPLT_pulse
+};
+
+typedef enum
+{
+   FADE_FAR = 0x01,
+   FADE_NEAR = 0x02
+} sprite_corona_fade_e;
+   
+#define NUM_FIRE_PATTERN 64
+static UINT8 fire_pattern[NUM_FIRE_PATTERN];
+static UINT8 fire_pattern_tic[NUM_FIRE_PATTERN];
+
+#define NUM_RAND_PATTERN 32
+static UINT8 rand_pattern_cnt[NUM_RAND_PATTERN];
+static UINT8 rand_pattern_state[NUM_RAND_PATTERN];
+static UINT8 rand_pattern_tic[NUM_RAND_PATTERN];
+
+//
+//  sprnum : sprite number
+//
+//  Return: corona_index
+//  Return NULL when no draw.
+//
+light_t *Sprite_Corona_Light_lsp(INT32 sprnum)
+{
+	light_t *p_lspr = t_lspr[sprnum];
+	UINT8 li;
+
+	if (p_lspr == NULL)
+		return NULL;
+	li = p_lspr->type;
+
+	corona_index = li;
+	if (li == NOLIGHT)
+		return NULL;
+
+	return p_lspr;
+}
+
+//
+//  lsp : sprite light
+//  cz : distance to corona
+//
+//  Return: corona_alpha, corona_size
+//  Return 0 when no draw.
+//
+#include "m_random.h"
+
+UINT8 Sprite_Corona_Light_fade(light_t *p_lspr, float cz, int objid)
+{
+	float	relsize;
+	UINT16	type, cflags;
+	UINT8	fade;
+	UINT32	index, v;
+	UINT32	coronasizevalue = cv_coronasize.value;
+
+	// Objects which emit light.
+	type = p_lspr->impl_flags & TYPE_FIELD_SPR; // working type setting
+	cflags = p_lspr->type;
+	corona_alpha = p_lspr->corona_color;
+	corona_bright = 0;
+
+	// Update flagged by corona setting change, and fragglescript settings.
+	if (p_lspr->impl_flags & SLI_changed)
+	{
+		p_lspr->impl_flags &= ~SLI_changed;
+
+		// [WDJ] Fixes must be determined here because Phobiata and other wads,
+		// do not set all the dependent fields at one time.
+		// They never set some fields, like type, at all.
+		type = cflags & TYPE_FIELD_SPR; // table or fragglescript setting
+
+		// Old
+		if (cv_corona.value == 20)
+		{
+			// Revert the new tables to use only that flags that existed in Old.
+			cflags &= (CORONA_SPR|DYNLIGHT_SPR);
+			if (type != SPLT_rocket)
+			   type = ((cflags & DYNLIGHT_SPR) ? SPLT_lamp : SPLT_unk);
+		}
+		else
+	   
+		// We have no way of determining the intended version compatibility.  This limits
+		// the characteristics that we can check.
+		// Some older wads just used the existing corona without setting the type.
+		// The default type of some of the existing corona have changed to use the new
+		// corona types for ordinary wads, version 1.47.3.
+		if ((p_lspr->impl_flags & SLI_corona_set)  // set by fragglescript
+			&& (!(p_lspr->impl_flags & SLI_type_set) || (type == SPLT_unk)))
+		{
+			// Correct corona settings made by older wads, such as Phobiata, and newmaps.
+			// Has the old default type, or type was never set.
+#if 0
+			// In the original code, the alpha from the corona color was ignored,
+			// even though it was set in the tables.  Instead the draw code used 0xff.
+			if (!corona_alpha)
+				corona_alpha = p_lspr->corona_color.s.alpha = 0xff; // previous default
+#endif
+ 
+			// Refine some of the old wad settings, to use new capabilities correctly.
+			if (corona_alpha > 0xDF) // Check for Phobiata and newmaps problems.
+			{
+				// Default radius is 20 to 120.
+				// Phobiata flies have a radius of 7
+				if (p_lspr->corona_radius < 10.0f)
+					type = SPLT_light; // newmaps and phobiata firefly
+				else if (p_lspr->corona_radius < 80.0f)
+					type = SPLT_lamp; // torches
+			}
+		}
+
+		// update the working type
+		p_lspr->impl_flags = (p_lspr->impl_flags & ~TYPE_FIELD_SPR) | type;
+	}
+
+	if ((type == SPLT_unk) && !(cflags & CORONA_SPR))
+		goto no_corona;  // no corona set
+
+	if (corona_alpha < 3)
+		goto no_corona;  // too faint to see, effectively off
+
+	switch (cv_corona.value)
+	{
+		// Old
+		case 20:
+			corona_alpha = 0xff; // alpha settings were ignored
+			break;
+
+		// Bright
+		case 16:
+			corona_bright = 20; // brighten the default cases
+			corona_alpha = (((UINT8)corona_alpha * 3) + 255) >> 2; // +25%
+			break;
+
+		// Dim
+		case 14:
+			corona_alpha = ((UINT8)corona_alpha * 3) >> 2; // -25%
+			break;
+
+		// Special, Most
+		default:
+		{
+			if (cv_corona.value <= 2)
+			{
+				/*register*/ INT32 spec = spec_dist[type>>4];
+
+				if (p_lspr->impl_flags & SLI_corona_set) // set by wad
+					spec <<= 2;
+
+				// Most
+				if (cv_corona.value == 2)
+				{
+					// Must do this before any flicker modifications, or else they blink.
+					// ignore the dim corona
+					if (corona_alpha < 40)
+						goto no_corona;
+
+					// not close enough
+					if (corona_alpha + spec + Z1 < cz)
+						goto no_corona;
+				}
+				else
+				{
+					// not special enough
+					if ((spec < 33) && (cz > (Z1+Z2)/2))
+						goto no_corona;
+
+					// ignore the dim corona
+					if (corona_alpha < 20)
+						goto no_corona;
+				}
+			}
+			break;
+		}
+	}
+   
+	relsize = 1.0f;
+	fade = FADE_FAR | FADE_NEAR;
+   
+	// Each of these types has a corona.
+	switch (type)
+	{
+		// corona only
+		case SPLT_unk: // object corona
+			relsize = ((cz+60.0f)/100.0f);
+			break;
+
+		// flicker
+		case SPLT_rocket: // svary the alpha
+			relsize = ((cz+60.0f)/100.0f);
+			corona_alpha = 7 + (P_RandomByte()>>1);
+			corona_bright = 128;
+			break;
+
+		// lamp with a corona
+		case SPLT_lamp: // lamp corona
+			relsize = ((cz+120.0f)/950.0f);
+			corona_bright = 40;
+			break;
+
+		// slow flicker, torch
+		case SPLT_fire: // torches
+			relsize = ((cz+120.0f)/950.0f);
+			index = objid & (NUM_FIRE_PATTERN - 1); // obj dependent
+
+			if (fire_pattern_tic[index] != gametic)
+			{
+				fire_pattern_tic[index] = gametic;
+				if (P_RandomByte() > 35)
+				{
+					INT32 r = P_RandomByte();
+					r = ((r - 128) >> 3) + fire_pattern[index];
+
+					if (r > 50)
+						r = 40;
+					else if (r < -50)
+						r = -40;
+					fire_pattern[index] = r;
+				}
+			}
+
+			v = (UINT32)corona_alpha + (UINT32)fire_pattern[index];
+			if (v > 255)
+				v = 255;
+			if (v < 4)
+				v = 4;
+			corona_alpha = v;
+			corona_bright = 45;
+			break;
+
+		// no corona fade
+		case SPLT_light: // newmaps and phobiata firefly
+			relsize = ((cz+120.0f)/950.0f); // dimming with distance
+
+#if 0
+			// Fade corona partial to 0 when get too close
+			if ((cz < Z1) & (!(lsp->type & SPLGT_source)))
+				corona_alpha = (int)(((float)corona_alpha * corona_alpha + (255 - corona_alpha) * (corona_alpha * cz / Z1)) / 255.0f);
+#endif
+
+			// Version 1.42 had corona_alpha = 0xff
+			corona_bright = 132;
+			fade = FADE_FAR;
+			break;
+
+		// firefly blink, un-synch
+		case SPLT_firefly:
+			// lower 6 bits gives a repeat rate of 1.78 seconds
+			if (((gametic + objid) & 0x003F) < 0x20) // obj dependent phase
+				goto no_corona; // blink off
+
+			fade = FADE_FAR;
+			break;
+
+		// random LED, un-synch
+		case SPLT_random:
+			index = objid & (NUM_RAND_PATTERN-1); // obj dependent counter
+
+			if (rand_pattern_tic[index] != gametic)
+			{
+				rand_pattern_tic[index] = gametic;
+				if (rand_pattern_cnt[index] == 0)
+				{
+					rand_pattern_cnt[index] = P_RandomByte();
+					rand_pattern_state[index]++;
+				}
+				rand_pattern_cnt[index]--;
+			}
+			if (!((rand_pattern_state[index] & 1)))
+				goto no_corona; // off
+
+			corona_bright = 128;
+			fade = 0;
+			break;
+
+		// slow pulsation, un-synch
+		case SPLT_pulse:
+			index = (gametic + objid) & 0xFF; // obj dependent phase
+			index -= 128; // -128 to +127
+
+			// Make a positive parabola pulse, min does not quite reach 0.
+			/*register*/ float f = 1.0f - ((index*index) * 0.000055f);
+			relsize = f;
+			corona_alpha = corona_alpha * f;
+			corona_bright = 80;
+			fade = 0;
+			break;
+
+		default:
+			//CONS_Debug(DBG_RENDER, "Draw_Sprite_Corona_Light: unknown light type %x\n", type);
+			CONS_Alert(CONS_WARNING, "Draw_Sprite_Corona_Light: unknown light type %x\n", type);
+			goto no_corona;
+	}
+
+	if (cz > Z1 && (fade & FADE_FAR))
+		corona_alpha = (int)(corona_alpha * (Z2 - cz) / (Z2 - Z1)); // Proportional fade from Z1 to Z2
+	else if (fade & FADE_NEAR)
+		corona_alpha = (int)(corona_alpha * cz / Z1); // Fade to 0 when get too close
+
+	if (relsize > 1.0) 
+		relsize = 1.0;
+
+#ifdef HWRENDER
+	if (rendermode == render_opengl)
+		coronasizevalue = cv_glcoronasize.value;
+#endif	
+	corona_size = p_lspr->corona_radius * relsize * FIXED_TO_FLOAT(coronasizevalue);
+
+	return corona_alpha;
+
+	no_corona:
+	{
+		corona_alpha = 0;
+		return corona_alpha;
+	}
+}
+
+static void Sprite_Corona_Light_setup(vissprite_t *vis)
+{
+	fixed_t		tz;
+	float		cz, size;
+	light_t 	*p_lspr;
+
+	// Objects which emit light.
+	p_lspr = Sprite_Corona_Light_lsp(vis->mobj->sprite);
+	if (p_lspr == NULL)
+		goto no_corona;
+
+	if (!(p_lspr->type & (CORONA_SPR|TYPE_FIELD_SPR)))
+		goto no_corona;
+   
+	tz = FixedDiv(projectiony, vis->scale);
+	cz = FIXED_TO_FLOAT(tz);
+
+	// more realistique corona !
+	if (cz >= Z2)
+		goto no_corona;
+
+	// mobj dependent id
+	if (!(Sprite_Corona_Light_fade(p_lspr, cz, vis->mobj->type)))
+		goto no_corona;
+
+	// brighten the corona for software draw
+	if (corona_bright)
+		corona_alpha = ((((UINT8)corona_alpha * (255 - corona_bright)) + (255 * (UINT8)corona_bright)) >> 8);
+
+	size = corona_size / FIXED_TO_FLOAT(corona_sprlump.width);
+	corona_xscale = FLOAT_TO_FIXED(((double)vis->xscale * size));
+	corona_yscale = FLOAT_TO_FIXED(((double)vis->scale * size));
+
+	// Corona specific.
+	// Corona offsets are from center of drawn sprite.
+	// no flip on corona
+
+	// Position of the corona
+#if 1
+	fixed_t midx = (vis->x1 + vis->x2) << (FRACBITS-1);  // screen
+#else
+	// same as spr, but not stored in vissprite so must recalculate it
+	//fixed_t tr_x = vis->mobj->x - viewx;
+	//fixed_t tr_y = vis->mobj->y - viewy;
+	fixed_t tr_x = vis->mobj_x - viewx;
+	fixed_t tr_y = vis->mobj_y - viewy;
+	fixed_t tx = (FixedMul(tr_x,viewsin) - FixedMul(tr_y,viewcos));
+	fixed_t midx = centerxfrac + FixedMul(tx, vis->xscale);
+#endif
+	corona_x0 = corona_x1 = (midx - FixedMul(corona_sprlump.leftoffset, corona_xscale)) >>FRACBITS;
+	corona_x2 = ((midx + FixedMul(corona_sprlump.width - corona_sprlump.leftoffset, corona_xscale)) >>FRACBITS) - 1;
+
+	// off the right side
+	if (corona_x1 < 0) 
+		corona_x1 = 0;
+	if (corona_x1 > viewwidth)
+		goto no_corona;
+
+	// off the left side
+	if (corona_x2 >= viewwidth)
+		corona_x2 = viewwidth - 1;
+	if (corona_x2 < 0)
+		goto no_corona;
+
+	corona_draw = 2;
+
+	no_corona:
+	{
+		corona_draw = 0;
+		return;
+	}
+}
+
+static void Draw_Sprite_Corona_Light(vissprite_t * vis)
+{
+	int texturecolumn;
+
+	// Sprite has a corona, and coronas are enabled.
+	long dr_alpha = (((UINT8)corona_alpha * 7) + (2 * (16-7))) >> 4; // compensate for different HWR alpha 
+
+#ifdef ENABLE_DRAW_ALPHA
+	colfunc = alpha_colfunc;  // R_DrawAlphaColumn
+	patch_t *corona_cc_patch = corona_patch;
+
+	dr_color = t_lspr[vis->mobj->sprite]->corona_color;
+
+#ifndef ENABLE_DRAW8_USING_12
+	if (vid.drawmode == DRAW8PAL)
+		dr_color8 = NearestColor(dr_color.s.red, dr_color.s.green, dr_color.s.blue);
+#endif
+
+	dr_alpha_mode = cv_corona_draw_mode.value;
+	// alpha to dim the background through the corona   
+	dr_alpha_background = (cv_corona_draw_mode.value == 1? (255 - dr_alpha) : 240);
+#else
+	colfunc = colfuncs[COLDRAWFUNC_TRANS]; // R_DrawTranslucentColumn; translate certain pixels to white
+
+	// Get the corona patch specifically colored for this light.
+	patch_t *corona_cc_patch = get_colored_corona(corona_index);
+
+	// dc_colormap = & reg_colormaps[0];
+	transtables = 0;  // translucent dr_alpha
+	dc_transmap = R_GetTranslucencyTable(dr_alpha >> 4); // for draw8
+#endif
+   
+	fixed_t light_yoffset = (fixed_t)(t_lspr[vis->mobj->sprite]->light_yoffset * FRACUNIT); // float to fixed
+   
+#if 1
+	// [WDJ] This is the one that puts the center closest to where OpenGL puts it.
+	fixed_t g_midy = (vis->gz + vis->gzt)>>1; // mid of sprite
+#else
+	// Too high
+#if 0
+	fixed_t g_midy = vis->mobj->z + ((vis->gzt - vis->gz)>>1);
+#else
+	fixed_t g_midy = (vis->mobj->z + vis->gzt)>>1;  // mid of sprite
+#endif
+#endif
+
+	fixed_t g_cp = g_midy + light_yoffset - viewz;  // corona center point in vissprite scale
+	fixed_t tp_cp = FixedMul(g_cp, vis->scale) + FixedMul(corona_sprlump.topoffset, corona_yscale);
+	sprtopscreen = centeryfrac - tp_cp;
+	dc_texturemid = FixedDiv(tp_cp, corona_yscale);
+	spryscale = corona_yscale;
+	dc_iscale = FixedDiv(FRACUNIT, dc_yh); // y texture step
+	dc_texheight = 0; // no wrap repeat
+//	dc_texheight = corona_patch->height;
+   
+// not flipped so
+//  tex_x0 = 0
+//  tex_x_iscale = iscale
+//  fixed_t tex_x_iscale = (int)((double)vis->iscale*size);
+
+	fixed_t tex_x_iscale = FixedDiv(FRACUNIT, corona_xscale);
+	fixed_t texcol_frac = 0; // tex_x0, not flipped
+
+	if ((corona_x1 - corona_x0) > 0) // it was clipped
+		texcol_frac = tex_x_iscale * (corona_x1 - corona_x0);
+ 
+	for (dc_x = corona_x1; dc_x <= corona_x2; dc_x++, texcol_frac += tex_x_iscale)
+	{
+		texturecolumn = texcol_frac>>FRACBITS;
+
+#ifdef RANGECHECK
+		// [WDJ] Give msg and don't draw it
+		if (texturecolumn < 0 || texturecolumn >= corona_patch->width)
+		{
+			CONS_Debug(DBG_RENDER, "Sprite_Corona: bad texturecolumn\n");
+			CONS_Alert(CONS_WARNING, "Sprite_Corona: bad texturecolumn\n");
+			return;
+		}
+#endif
+
+		column_t *col_data = (column_t *)(((UINT8 *)corona_cc_patch) + corona_cc_patch->columnofs[texturecolumn]);
+		R_DrawMaskedColumn(col_data);
+	}
+
+	colfunc = colfuncs[BASEDRAWFUNC];
+}
+#endif
+#endif
+
 boolean R_SpriteIsFlashing(vissprite_t *vis)
 {
 	return (!(vis->cut & SC_PRECIP)
@@ -817,6 +1559,15 @@ static void R_DrawVisSprite(vissprite_t *vis)
 		if ((UINT64)overflow_test&0xFFFFFFFF80000000ULL) return; // ditto
 	}
 
+	// TODO This check should not be necessary. But Papersprites near to the camera will sometimes create invalid values
+	// for the vissprite's startfrac. This happens because they are not depth culled like other sprites.
+	// Someone who is more familiar with papersprites pls check and try to fix <3
+	if (vis->startfrac < 0 || vis->startfrac > (patch->width << FRACBITS))
+	{
+		// never draw vissprites with startfrac out of patch range
+		return;
+	}
+
 	colfunc = colfuncs[BASEDRAWFUNC]; // hack: this isn't resetting properly somewhere.
 	dc_colormap = vis->colormap;
 	dc_translation = R_GetSpriteTranslation(vis);
@@ -839,7 +1590,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 		colfunc = colfuncs[COLDRAWFUNC_TRANS];
 
 	// Hack: Use a special column function for drop shadows that bypasses
-	// invalid memory access crashes caused by R_ProjectDropShadow putting wrong values
+	// invalid memory access crashes caused by R_ProjectShadows putting wrong values
 	// in dc_texturemid and dc_iscale when the shadow is sloped.
 	if (vis->cut & SC_SHADOW)
 		colfunc = R_DrawDropShadowColumn_8;
@@ -860,7 +1611,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 	frac = vis->startfrac;
 	windowtop = windowbottom = sprbotscreen = INT32_MAX;
 
-	if (!(vis->cut & SC_PRECIP) && vis->mobj->skin && ((skin_t *)vis->mobj->skin)->flags & SF_HIRES)
+	if (vis->cut & SC_SHADOW && vis->mobj->skin && ((skin_t *)vis->mobj->skin)->flags & SF_HIRES)
 		this_scale = FixedMul(this_scale, ((skin_t *)vis->mobj->skin)->highresscale);
 	if (this_scale <= 0)
 		this_scale = 1;
@@ -870,10 +1621,10 @@ static void R_DrawVisSprite(vissprite_t *vis)
 		{
 			vis->scale = FixedMul(vis->scale, this_scale);
 			vis->scalestep = FixedMul(vis->scalestep, this_scale);
-			vis->xiscale = FixedDiv(vis->xiscale,this_scale);
+			vis->xiscale = FixedDiv(vis->xiscale, this_scale);
 			vis->cut |= SC_ISSCALED;
 		}
-		dc_texturemid = FixedDiv(dc_texturemid,this_scale);
+		dc_texturemid = FixedDiv(dc_texturemid, this_scale);
 	}
 
 	spryscale = vis->scale;
@@ -1157,7 +1908,7 @@ fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope)
 		R_InterpolateMobjState(thing, FRACUNIT, &interp);
 	}
 
-	halfHeight = interp.z + (thing->height >> 1);
+	halfHeight = interp.z + (interp.height >> 1);
 	floorz = P_GetFloorZ(thing, interp.subsector->sector, interp.x, interp.y, NULL);
 	ceilingz = P_GetCeilingZ(thing, interp.subsector->sector, interp.x, interp.y, NULL);
 
@@ -1221,8 +1972,8 @@ fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope)
 		}
 	}
 
-	if (isflipped ? (ceilingz < groundz - (!groundslope ? 0 : FixedMul(abs(groundslope->zdelta), thing->radius*3/2)))
-		: (floorz > groundz + (!groundslope ? 0 : FixedMul(abs(groundslope->zdelta), thing->radius*3/2))))
+	if (isflipped ? (ceilingz < groundz - (!groundslope ? 0 : FixedMul(abs(groundslope->zdelta), interp.radius*3/2)))
+		: (floorz > groundz + (!groundslope ? 0 : FixedMul(abs(groundslope->zdelta), interp.radius*3/2))))
 	{
 		groundz = isflipped ? ceilingz : floorz;
 		groundslope = NULL;
@@ -1265,15 +2016,17 @@ static void R_SkewShadowSprite(
 	//CONS_Printf("Shadow is sloped by %d %d\n", xslope, zslope);
 
 	if (viewz < groundz)
-		*shadowyscale += FixedMul(FixedMul(thing->radius*2 / spriteheight, scalemul), zslope);
+		*shadowyscale += FixedMul(FixedMul(interp.radius*2 / spriteheight, scalemul), zslope);
 	else
-		*shadowyscale -= FixedMul(FixedMul(thing->radius*2 / spriteheight, scalemul), zslope);
+		*shadowyscale -= FixedMul(FixedMul(interp.radius*2 / spriteheight, scalemul), zslope);
 
 	*shadowyscale = abs((*shadowyscale));
 	*shadowskew = xslope;
 }
 
-static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, fixed_t tx, fixed_t tz)
+/** STAR NOTE: i was here for realistic shadow stuff lol
+ 	(I.E: cv_shadow.value == 2, cv_allobjectshaveshadows, etc. :p) **/
+static void R_ProjectShadows(mobj_t *thing, vissprite_t *vis, fixed_t scale, fixed_t tx, fixed_t tz)
 {
 	vissprite_t *shadow;
 	patch_t *patch;
@@ -1318,23 +2071,20 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 			return;
 	}
 
-	floordiff = abs((isflipped ? thing->height : 0) + interp.z - groundz);
+	floordiff = abs((isflipped ? interp.height : 0) + interp.z - groundz);
 
 	trans = floordiff / (100*FRACUNIT) + 3;
 	if (trans >= 9) return;
 
 	scalemul = FixedMul(FRACUNIT - floordiff/640, scale);
 
-	// STAR STUFF //
-	//patch = (cv_shadow.value == 2 ? (vis->patch) : (W_CachePatchName("DSHADOW", PU_SPRITE))); // STAR NOTE: i was here lol
-	patch = W_CachePatchName("DSHADOW", PU_SPRITE);
-	// END THAT //
+	patch = (cv_shadow.value == 2 ? vis->patch : W_CachePatchName("DSHADOW", PU_SPRITE));
 
 	xscale = FixedDiv(projection, tz);
 	yscale = FixedDiv(projectiony, tz);
-	shadowxscale = FixedMul(thing->radius*2, scalemul);
-	shadowyscale = FixedMul(FixedMul(thing->radius*2, scalemul), FixedDiv(abs(groundz - viewz), tz));
-	shadowyscale = min(shadowyscale, shadowxscale) / patch->height;
+	shadowxscale = FixedMul(interp.radius*2, scalemul);
+	shadowyscale = FixedMul(FixedMul(interp.radius*2, scalemul*2), FixedDiv(abs(groundz - viewz), tz));
+	shadowyscale = (cv_shadow.value == 2 ? (min(shadowyscale, shadowxscale) / patch->height): patch->height);
 	shadowxscale /= patch->width;
 	shadowskew = 0;
 
@@ -1366,7 +2116,7 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	shadow->gy = interp.y;
 	shadow->gzt = (isflipped ? shadow->pzt : shadow->pz) + patch->height * shadowyscale / 2;
 	shadow->gz = shadow->gzt - patch->height * shadowyscale;
-	shadow->texturemid = FixedMul(interp.scale, FixedDiv(shadow->gzt - viewz, shadowyscale));
+	shadow->texturemid = FixedMul(interp.scale, FixedDiv(shadow->gzt - viewz, shadowyscale * (cv_shadow.value == 2 ? 1.15 : 1)));
 	if (thing->skin && ((skin_t *)thing->skin)->flags & SF_HIRES)
 		shadow->texturemid = FixedMul(shadow->texturemid, ((skin_t *)thing->skin)->highresscale);
 	shadow->scalestep = 0;
@@ -1428,6 +2178,105 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	objectsdrawn++;
 }
 
+static void R_ProjectBoundingBox(mobj_t *thing, vissprite_t *vis)
+{
+	fixed_t gx, gy;
+	fixed_t tx, tz;
+
+	vissprite_t *box;
+
+	if (!R_ThingBoundingBoxVisible(thing))
+	{
+		return;
+	}
+
+	// uncapped/interpolation
+	boolean interpolate = cv_renderhitboxinterpolation.value;
+	interpmobjstate_t interp = {0};
+
+	// do interpolation
+	if (R_UsingFrameInterpolation() && !paused && interpolate)
+	{
+		R_InterpolateMobjState(thing, rendertimefrac, &interp);
+	}
+	else
+	{
+		R_InterpolateMobjState(thing, FRACUNIT, &interp);
+	}
+
+	// 1--3
+	// |  |
+	// 0--2
+
+	// start in the (0) corner
+	gx = interp.x - interp.radius - viewx;
+	gy = interp.y - interp.radius - viewy;
+
+	tz = FixedMul(gx, viewcos) + FixedMul(gy, viewsin);
+
+	// thing is behind view plane?
+	// if parent vis is visible, ignore this
+	if (!vis && (tz < FixedMul(MINZ, interp.scale)))
+	{
+		return;
+	}
+
+	tx = FixedMul(gx, viewsin) - FixedMul(gy, viewcos);
+
+	// too far off the side?
+	if (!vis && abs(tx) > FixedMul(tz, fovtan)<<2)
+	{
+		return;
+	}
+
+	box = R_NewVisSprite();
+	box->mobj = thing;
+	box->mobjflags = thing->flags;
+	box->thingheight = interp.height;
+	box->cut = SC_BBOX;
+
+	box->gx = tx;
+	box->gy = tz;
+
+	box->scale  = 2 * FixedMul(interp.radius, viewsin);
+	box->xscale = 2 * FixedMul(interp.radius, viewcos);
+
+	box->pz = interp.z;
+	box->pzt = box->pz + box->thingheight;
+
+	box->gzt = box->pzt;
+	box->gz = box->pz;
+	box->texturemid = box->gzt - viewz;
+
+	if (vis)
+	{
+		box->x1 = vis->x1;
+		box->x2 = vis->x2;
+		box->szt = vis->szt;
+		box->sz = vis->sz;
+
+		box->sortscale = vis->sortscale; // link sorting to sprite
+		box->dispoffset = vis->dispoffset + 5;
+
+		box->cut |= SC_LINKDRAW;
+	}
+	else
+	{
+		fixed_t xscale = FixedDiv(projection, tz);
+		fixed_t yscale = FixedDiv(projectiony, tz);
+		fixed_t top = (centeryfrac - FixedMul(box->texturemid, yscale));
+
+		box->x1 = (centerxfrac + FixedMul(box->gx, xscale)) / FRACUNIT;
+		box->x2 = box->x1;
+
+		box->szt = top / FRACUNIT;
+		box->sz = (top + FixedMul(box->thingheight, yscale)) / FRACUNIT;
+
+		box->sortscale = yscale;
+		box->dispoffset = 0;
+	}
+}
+
 //
 // R_ProjectSprite
 // Generates a vissprite for a thing
@@ -1439,6 +2288,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	fixed_t tr_x, tr_y;
 	fixed_t tx, tz;
 	fixed_t xscale, yscale; //added : 02-02-98 : aaargll..if I were a math-guy!!!
+	fixed_t radius, height; // For drop shadows
 	fixed_t sortscale, sortsplat = 0;
 	fixed_t linkscale = 0;
 	fixed_t sort_x = 0, sort_y = 0, sort_z;
@@ -1481,7 +2331,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	fixed_t paperoffset = 0, paperdistance = 0;
 	angle_t centerangle = 0;
 
-	INT32 dispoffset = thing->info->dispoffset;
+	INT32 dispoffset = thing->dispoffset;
 
 	//SoM: 3/17/2000
 	fixed_t gz = 0, gzt = 0;
@@ -1497,6 +2347,7 @@ static void R_ProjectSprite(mobj_t *thing)
 #ifdef ROTSPRITE
 	patch_t *rotsprite = NULL;
 	INT32 rollangle = 0;
+	angle_t spriterotangle = 0;
 #endif
 
 	// uncapped/interpolation
@@ -1513,6 +2364,8 @@ static void R_ProjectSprite(mobj_t *thing)
 	}
 
 	this_scale = interp.scale;
+	radius = interp.radius; // For drop shadows
+	height = interp.height; // Ditto
 
 	// transform the origin point
 	tr_x = interp.x - viewx;
@@ -1553,7 +2406,7 @@ static void R_ProjectSprite(mobj_t *thing)
 			CONS_Alert(CONS_ERROR, M_GetText("R_ProjectSprite: invalid skins[\"%s\"].sprites[%sSPR2_%s] frame %s\n"), ((skin_t *)thing->skin)->name, ((thing->sprite2 & FF_SPR2SUPER) ? "FF_SPR2SUPER|": ""), spr2names[(thing->sprite2 & ~FF_SPR2SUPER)], sizeu5(frame));
 			thing->sprite = states[S_UNKNOWN].sprite;
 			thing->frame = states[S_UNKNOWN].frame;
-			sprdef = &sprites[thing->sprite];
+			sprdef = sprites[thing->sprite];
 #ifdef ROTSPRITE
 			sprinfo = &spriteinfo[thing->sprite];
 #endif
@@ -1562,7 +2415,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	}
 	else
 	{
-		sprdef = &sprites[thing->sprite];
+		sprdef = sprites[thing->sprite];
 #ifdef ROTSPRITE
 		sprinfo = &spriteinfo[thing->sprite];
 #endif
@@ -1578,7 +2431,7 @@ static void R_ProjectSprite(mobj_t *thing)
 			}
 			thing->sprite = states[S_UNKNOWN].sprite;
 			thing->frame = states[S_UNKNOWN].frame;
-			sprdef = &sprites[thing->sprite];
+			sprdef = sprites[thing->sprite];
 			sprinfo = &spriteinfo[thing->sprite];
 			frame = thing->frame&FF_FRAMEMASK;
 		}
@@ -1633,9 +2486,6 @@ static void R_ProjectSprite(mobj_t *thing)
 
 	I_Assert(lump < max_spritelumps);
 
-	if (thing->skin && ((skin_t *)thing->skin)->flags & SF_HIRES)
-		this_scale = FixedMul(this_scale, ((skin_t *)thing->skin)->highresscale);
-
 	spr_width = spritecachedinfo[lump].width;
 	spr_height = spritecachedinfo[lump].height;
 	spr_offset = spritecachedinfo[lump].offset;
@@ -1646,17 +2496,19 @@ static void R_ProjectSprite(mobj_t *thing)
 	patch = W_CachePatchNum(sprframe->lumppat[rot], PU_SPRITE);
 
 #ifdef ROTSPRITE
-	if (thing->rollangle
+	spriterotangle = R_SpriteRotationAngle(&interp);
+
+	if (spriterotangle != 0
 	&& !(splat && !(thing->renderflags & RF_NOSPLATROLLANGLE)))
 	{
 		if (papersprite && ang >= ANGLE_180)
 		{
 			// Makes Software act much more sane like OpenGL
-			rollangle = R_GetRollAngle(InvAngle(thing->rollangle));
+			rollangle = R_GetRollAngle(InvAngle(spriterotangle));
 		}
 		else
 		{
-			rollangle = R_GetRollAngle(thing->rollangle);
+			rollangle = R_GetRollAngle(spriterotangle);
 		}
 
 		rotsprite = Patch_GetRotatedSprite(sprframe, (thing->frame & FF_FRAMEMASK), rot, flip, false, sprinfo, rollangle);
@@ -1683,6 +2535,14 @@ static void R_ProjectSprite(mobj_t *thing)
 	// calculate edges of the shape
 	spritexscale = interp.spritexscale;
 	spriteyscale = interp.spriteyscale;
+
+	if (thing->skin && ((skin_t *)thing->skin)->flags & SF_HIRES)
+	{
+		fixed_t highresscale = ((skin_t *)thing->skin)->highresscale;
+		spritexscale = FixedMul(spritexscale, highresscale);
+		spriteyscale = FixedMul(spriteyscale, highresscale);
+	}
+
 	if (spritexscale < 1 || spriteyscale < 1)
 		return;
 
@@ -1850,6 +2710,8 @@ static void R_ProjectSprite(mobj_t *thing)
 		{
 			R_InterpolateMobjState(thing, FRACUNIT, &tracer_interp);
 		}
+		radius = tracer_interp.radius; // For drop shadows
+		height = tracer_interp.height; // Ditto
 
 		tr_x = (tracer_interp.x + sort_x) - viewx;
 		tr_y = (tracer_interp.y + sort_y) - viewy;
@@ -1941,7 +2803,7 @@ static void R_ProjectSprite(mobj_t *thing)
 				if (abs(groundz-viewz)/tz > 4)
 					return; // Prevent stretchy shadows and possible crashes
 
-				floordiff = abs((isflipped ? caster->height : 0) + casterinterp.z - groundz);
+				floordiff = abs((isflipped ? casterinterp.height : 0) + casterinterp.z - groundz);
 				trans += ((floordiff / (100*FRACUNIT)) + 3);
 				shadowscale = FixedMul(FRACUNIT - floordiff/640, casterinterp.scale);
 			}
@@ -1956,8 +2818,8 @@ static void R_ProjectSprite(mobj_t *thing)
 
 		if (shadowdraw)
 		{
-			spritexscale = FixedMul(thing->radius * 2, FixedMul(shadowscale, spritexscale));
-			spriteyscale = FixedMul(thing->radius * 2, FixedMul(shadowscale, spriteyscale));
+			spritexscale = FixedMul(radius * 2, FixedMul(shadowscale, spritexscale));
+			spriteyscale = FixedMul(radius * 2, FixedMul(shadowscale, spriteyscale));
 			spriteyscale = FixedMul(spriteyscale, FixedDiv(abs(groundz - viewz), tz));
 			spriteyscale = min(spriteyscale, spritexscale) / patch->height;
 			spritexscale /= patch->width;
@@ -1972,7 +2834,7 @@ static void R_ProjectSprite(mobj_t *thing)
 		{
 			R_SkewShadowSprite(thing, thing->standingslope, groundz, patch->height, shadowscale, &spriteyscale, &sheartan);
 
-			gzt = (isflipped ? (interp.z + thing->height) : interp.z) + patch->height * spriteyscale / 2;
+			gzt = (isflipped ? (interp.z + height) : interp.z) + patch->height * spriteyscale / 2;
 			gz = gzt - patch->height * spriteyscale;
 
 			cut |= SC_SHEAR;
@@ -1987,7 +2849,7 @@ static void R_ProjectSprite(mobj_t *thing)
 			// When vertical flipped, draw sprites from the top down, at least as far as offsets are concerned.
 			// sprite height - sprite topoffset is the proper inverse of the vertical offset, of course.
 			// remember gz and gzt should be seperated by sprite height, not thing height - thing height can be shorter than the sprite itself sometimes!
-			gz = interp.z + oldthing->height - FixedMul(spr_topoffset, FixedMul(spriteyscale, this_scale));
+			gz = interp.z + interp.height - FixedMul(spr_topoffset, FixedMul(spriteyscale, this_scale));
 			gzt = gz + FixedMul(spr_height, FixedMul(spriteyscale, this_scale));
 		}
 		else
@@ -2066,7 +2928,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	vis->gy = interp.y;
 	vis->gz = gz;
 	vis->gzt = gzt;
-	vis->thingheight = thing->height;
+	vis->thingheight = height;
 	vis->pz = interp.z;
 	vis->pzt = vis->pz + vis->thingheight;
 	vis->texturemid = FixedDiv(gzt - viewz, spriteyscale);
@@ -2186,8 +3048,10 @@ static void R_ProjectSprite(mobj_t *thing)
 	if (thing->subsector->sector->numlights && !(shadowdraw || splat))
 		R_SplitSprite(vis);
 
-	if (oldthing->shadowscale && cv_shadow.value)
-		R_ProjectDropShadow(oldthing, vis, oldthing->shadowscale, basetx, basetz);
+	if (cv_shadow.value &&((!cv_allobjectshaveshadows.value && oldthing->shadowscale) || cv_allobjectshaveshadows.value))
+		R_ProjectShadows(oldthing, vis, (cv_allobjectshaveshadows.value ? (oldthing->shadowscale ? oldthing->shadowscale : 1*FRACUNIT) : oldthing->shadowscale), basetx, basetz);
+
+	R_ProjectBoundingBox(oldthing, vis);
 
 	// Debug
 	++objectsdrawn;
@@ -2252,7 +3116,7 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 			thing->sprite);
 #endif
 
-	sprdef = &sprites[thing->sprite];
+	sprdef = sprites[thing->sprite];
 
 #ifdef RANGECHECK
 	if ((UINT8)(thing->frame&FF_FRAMEMASK) >= sprdef->numframes)
@@ -2414,8 +3278,26 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 	hoop_limit_dist = (fixed_t)(cv_drawdist_nights.value) << FRACBITS;
 	for (thing = sec->thinglist; thing; thing = thing->snext)
 	{
-		if (R_ThingVisibleWithinDist(thing, limit_dist, hoop_limit_dist))
-			R_ProjectSprite(thing);
+		if (R_ThingWithinDist(thing, limit_dist, hoop_limit_dist))
+		{
+			const INT32 oldobjectsdrawn = objectsdrawn;
+
+			if (R_ThingVisible(thing))
+			{
+				R_ProjectSprite(thing);
+			}
+
+			// I'm so smart :^)
+			if (objectsdrawn == oldobjectsdrawn)
+			{
+				/*
+				Object is invisible OR is off screen but
+				render its bbox even if the latter because
+				radius could be bigger than sprite.
+				*/
+				R_ProjectBoundingBox(thing, NULL);
+			}
+		}
 	}
 
 	// no, no infinite draw distance for precipitation. this option at zero is supposed to turn it off
@@ -2486,6 +3368,14 @@ static void R_SortVisSprites(vissprite_t* vsprsortedhead, UINT32 start, UINT32 e
 	// bundle linkdraw
 	for (ds = unsorted.prev; ds != &unsorted; ds = ds->prev)
 	{
+		// Remove this sprite if it was determined to not be visible
+		if (ds->cut & SC_NOTVISIBLE)
+		{
+			ds->next->prev = ds->prev;
+			ds->prev->next = ds->next;
+			continue;
+		}
+
 		if (!(ds->cut & SC_LINKDRAW))
 			continue;
 
@@ -2503,19 +3393,25 @@ static void R_SortVisSprites(vissprite_t* vsprsortedhead, UINT32 start, UINT32 e
 			if (dsfirst->cut & SC_SHADOW)
 				continue;
 
+			// don't connect to your bounding box!
+			if (dsfirst->cut & SC_BBOX)
+				continue;
+
 			// don't connect if it's not the tracer
 			if (dsfirst->mobj != ds->mobj)
 				continue;
 
 			// don't connect if the tracer's top is cut off, but lower than the link's top
-			if ((dsfirst->cut & SC_TOP)
-			&& dsfirst->szt > ds->szt)
+			if ((dsfirst->cut & SC_TOP) && dsfirst->szt > ds->szt)
 				continue;
 
 			// don't connect if the tracer's bottom is cut off, but higher than the link's bottom
-			if ((dsfirst->cut & SC_BOTTOM)
-			&& dsfirst->sz < ds->sz)
+			if ((dsfirst->cut & SC_BOTTOM) && dsfirst->sz < ds->sz)
 				continue;
+
+			// If the object isn't visible, then the bounding box isn't either
+			if (ds->cut & SC_BBOX && dsfirst->cut & SC_NOTVISIBLE)
+				ds->cut |= SC_NOTVISIBLE;
 
 			break;
 		}
@@ -2523,6 +3419,10 @@ static void R_SortVisSprites(vissprite_t* vsprsortedhead, UINT32 start, UINT32 e
 		// remove from chain
 		ds->next->prev = ds->prev;
 		ds->prev->next = ds->next;
+
+		if (ds->cut & SC_NOTVISIBLE)
+			continue;
+
 		linkedvissprites++;
 
 		if (dsfirst != &unsorted)
@@ -2574,12 +3474,15 @@ static void R_SortVisSprites(vissprite_t* vsprsortedhead, UINT32 start, UINT32 e
 				best = ds;
 			}
 		}
-		best->next->prev = best->prev;
-		best->prev->next = best->next;
-		best->next = vsprsortedhead;
-		best->prev = vsprsortedhead->prev;
-		vsprsortedhead->prev->next = best;
-		vsprsortedhead->prev = best;
+		if (best)
+		{
+			best->next->prev = best->prev;
+			best->prev->next = best->next;
+			best->next = vsprsortedhead;
+			best->prev = vsprsortedhead->prev;
+			vsprsortedhead->prev->next = best;
+			vsprsortedhead->prev = best;
+		}
 	}
 }
 
@@ -2943,10 +3846,35 @@ static void R_DrawSprite(vissprite_t *spr)
 	mfloorclip = spr->clipbot;
 	mceilingclip = spr->cliptop;
 
-	if (spr->cut & SC_SPLAT)
+#if 0
+#ifdef SPDR_CORONAS
+	// Draw corona before sprite, occlude
+	if (corona_draw == 1)
+		Draw_Sprite_Corona_Light(spr);
+#endif
+#endif
+
+	if (spr->cut & SC_BBOX)
+		R_DrawThingBoundingBox(spr);
+	else if (spr->cut & SC_SPLAT)
 		R_DrawFloorSplat(spr);
 	else
 		R_DrawVisSprite(spr);
+
+#if 0
+#if 1
+	// draw sprite, restricted x range
+	R_DrawVisSprite(vis, ((dbx1 > vis->x1) ? dbx1 : vis->x1),
+    				((dbx2 < vis->x2) ? dbx2 : vis->x2));
+#else
+	R_DrawVisSprite(vis, cx1, cx2);
+#endif
+#endif
+
+#ifdef SPDR_CORONAS
+	if (corona_draw == 2)
+		Draw_Sprite_Corona_Light(spr);
+#endif
 }
 
 // Special drawer for precipitation sprites Tails 08-18-2002
@@ -3008,9 +3936,47 @@ static void R_HeightSecClip(vissprite_t *spr, INT32 x1, INT32 x2)
 	}
 }
 
+static boolean R_CheckSpriteVisible(vissprite_t *spr, INT32 x1, INT32 x2)
+{
+	INT16 sz = spr->sz;
+	INT16 szt = spr->szt;
+
+	fixed_t texturemid = 0, yscale = 0, scalestep = spr->scalestep; // "= 0" pleases the compiler
+	INT32 height = 0;
+
+	if (scalestep)
+	{
+		height = spr->patch->height;
+		yscale = spr->scale;
+		scalestep = FixedMul(scalestep, spr->spriteyscale);
+
+		if (spr->thingscale != FRACUNIT)
+			texturemid = FixedDiv(spr->texturemid, max(spr->thingscale, 1));
+		else
+			texturemid = spr->texturemid;
+	}
+
+	for (INT32 x = x1; x <= x2; x++)
+	{
+		if (scalestep)
+		{
+			fixed_t top = centeryfrac - FixedMul(texturemid, yscale);
+			fixed_t bottom = top + (height * yscale);
+			szt = (INT16)(top >> FRACBITS);
+			sz = (INT16)(bottom >> FRACBITS);
+			yscale += scalestep;
+		}
+
+		if (spr->cliptop[x] < spr->clipbot[x] && sz > spr->cliptop[x] && szt < spr->clipbot[x])
+			return true;
+	}
+
+	return false;
+}
+
 // R_ClipVisSprite
 // Clips vissprites without drawing, so that portals can work. -Red
-void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, drawseg_t* dsstart, portal_t* portal)
+static void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, portal_t* portal)
 {
 	drawseg_t *ds;
 	INT32		x;
@@ -3030,21 +3996,23 @@ void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, drawseg_t* dsstart, p
 	// Pointer check was originally nonportable
 	// and buggy, by going past LEFT end of array:
 
-	//    for (ds = ds_p-1; ds >= drawsegs; ds--)    old buggy code
-	for (ds = ds_p; ds-- > dsstart;)
+	// e6y: optimization
+	if (drawsegs_xrange_size)
 	{
-		// determine if the drawseg obscures the sprite
-		if (ds->x1 > x2 ||
-			ds->x2 < x1 ||
-			(!ds->silhouette
-			 && !ds->maskedtexturecol))
-		{
-			// does not cover sprite
-			continue;
-		}
+		const drawseg_xrange_item_t *last = &drawsegs_xrange[drawsegs_xrange_count - 1];
+		drawseg_xrange_item_t *curr = &drawsegs_xrange[-1];
 
-		if (ds->portalpass != 66)
+		while (++curr <= last)
 		{
+			// determine if the drawseg obscures the sprite
+			if (curr->x1 > x2 || curr->x2 < x1)
+			{
+				// does not cover sprite
+				continue;
+			}
+
+			ds = curr->user;
+
 			if (ds->portalpass > 0 && ds->portalpass <= portalrender)
 				continue; // is a portal
 
@@ -3069,43 +4037,43 @@ void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, drawseg_t* dsstart, p
 				// seg is behind sprite
 				continue;
 			}
-		}
 
-		r1 = ds->x1 < x1 ? x1 : ds->x1;
-		r2 = ds->x2 > x2 ? x2 : ds->x2;
+			r1 = ds->x1 < x1 ? x1 : ds->x1;
+			r2 = ds->x2 > x2 ? x2 : ds->x2;
 
-		// clip this piece of the sprite
-		silhouette = ds->silhouette;
+			// clip this piece of the sprite
+			silhouette = ds->silhouette;
 
-		if (spr->gz >= ds->bsilheight)
-			silhouette &= ~SIL_BOTTOM;
+			if (spr->gz >= ds->bsilheight)
+				silhouette &= ~SIL_BOTTOM;
 
-		if (spr->gzt <= ds->tsilheight)
-			silhouette &= ~SIL_TOP;
+			if (spr->gzt <= ds->tsilheight)
+				silhouette &= ~SIL_TOP;
 
-		if (silhouette == SIL_BOTTOM)
-		{
-			// bottom sil
-			for (x = r1; x <= r2; x++)
-				if (spr->clipbot[x] == -2)
-					spr->clipbot[x] = ds->sprbottomclip[x];
-		}
-		else if (silhouette == SIL_TOP)
-		{
-			// top sil
-			for (x = r1; x <= r2; x++)
-				if (spr->cliptop[x] == -2)
-					spr->cliptop[x] = ds->sprtopclip[x];
-		}
-		else if (silhouette == (SIL_TOP|SIL_BOTTOM))
-		{
-			// both
-			for (x = r1; x <= r2; x++)
+			if (silhouette == SIL_BOTTOM)
 			{
-				if (spr->clipbot[x] == -2)
-					spr->clipbot[x] = ds->sprbottomclip[x];
-				if (spr->cliptop[x] == -2)
-					spr->cliptop[x] = ds->sprtopclip[x];
+				// bottom sil
+				for (x = r1; x <= r2; x++)
+					if (spr->clipbot[x] == -2)
+						spr->clipbot[x] = ds->sprbottomclip[x];
+			}
+			else if (silhouette == SIL_TOP)
+			{
+				// top sil
+				for (x = r1; x <= r2; x++)
+					if (spr->cliptop[x] == -2)
+						spr->cliptop[x] = ds->sprtopclip[x];
+			}
+			else if (silhouette == (SIL_TOP|SIL_BOTTOM))
+			{
+				// both
+				for (x = r1; x <= r2; x++)
+				{
+					if (spr->clipbot[x] == -2)
+						spr->clipbot[x] = ds->sprbottomclip[x];
+					if (spr->cliptop[x] == -2)
+						spr->cliptop[x] = ds->sprtopclip[x];
+				}
 			}
 		}
 	}
@@ -3149,8 +4117,7 @@ void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, drawseg_t* dsstart, p
 			spr->clipbot[x] = (INT16)viewheight;
 
 		if (spr->cliptop[x] == -2)
-			//Fab : 26-04-98: was -1, now clips against console bottom
-			spr->cliptop[x] = (INT16)con_clipviewtop;
+			spr->cliptop[x] = -1;
 	}
 
 	if (portal)
@@ -3175,16 +4142,145 @@ void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, drawseg_t* dsstart, p
 			spr->cliptop[x] = -1;
 		}
 	}
+
+	// Check if it'll be visible
+	// Not done for floorsprites.
+	if (cv_spriteclip.value && (spr->cut & SC_SPLAT) == 0)
+	{
+		if (!R_CheckSpriteVisible(spr, x1, x2))
+			spr->cut |= SC_NOTVISIBLE;
+	}
 }
 
 void R_ClipSprites(drawseg_t* dsstart, portal_t* portal)
 {
+	const size_t maxdrawsegs = ds_p - drawsegs;
+	const INT32 cx = viewwidth / 2;
+	drawseg_t* ds;
+	INT32 i;
+
+	// e6y
+	// Reducing of cache misses in the following R_DrawSprite()
+	// Makes sense for scenes with huge amount of drawsegs.
+	// ~12% of speed improvement on epic.wad map05
+	for (i = 0; i < DS_RANGES_COUNT; i++)
+	{
+		drawsegs_xranges[i].count = 0;
+	}
+
+	if (visspritecount - clippedvissprites <= 0)
+	{
+		return;
+	}
+
+	if (drawsegs_xrange_size < maxdrawsegs)
+	{
+		drawsegs_xrange_size = 2 * maxdrawsegs;
+
+		for (i = 0; i < DS_RANGES_COUNT; i++)
+		{
+			drawsegs_xranges[i].items = Z_Realloc(
+				drawsegs_xranges[i].items,
+				drawsegs_xrange_size * sizeof(drawsegs_xranges[i].items[0]),
+				PU_STATIC, NULL
+			);
+		}
+	}
+
+	for (ds = ds_p; ds-- > dsstart;)
+	{
+		if (ds->silhouette || ds->maskedtexturecol)
+		{
+			drawsegs_xranges[0].items[drawsegs_xranges[0].count].x1 = ds->x1;
+			drawsegs_xranges[0].items[drawsegs_xranges[0].count].x2 = ds->x2;
+			drawsegs_xranges[0].items[drawsegs_xranges[0].count].user = ds;
+
+			// e6y: ~13% of speed improvement on sunder.wad map10
+			if (ds->x1 < cx)
+			{
+				drawsegs_xranges[1].items[drawsegs_xranges[1].count] =
+					drawsegs_xranges[0].items[drawsegs_xranges[0].count];
+				drawsegs_xranges[1].count++;
+			}
+
+			if (ds->x2 >= cx)
+			{
+				drawsegs_xranges[2].items[drawsegs_xranges[2].count] =
+					drawsegs_xranges[0].items[drawsegs_xranges[0].count];
+				drawsegs_xranges[2].count++;
+			}
+
+			drawsegs_xranges[0].count++;
+		}
+	}
+
 	for (; clippedvissprites < visspritecount; clippedvissprites++)
 	{
 		vissprite_t *spr = R_GetVisSprite(clippedvissprites);
+
+		if (cv_spriteclip.value
+		&& (spr->szt > vid.height || spr->sz < 0)
+		&& !((spr->cut & SC_SPLAT) || spr->scalestep))
+		{
+			spr->cut |= SC_NOTVISIBLE;
+			continue;
+		}
+
+		if (spr->cut & SC_BBOX)
+		{
+			numvisiblesprites++;
+			continue;
+		}
+
 		INT32 x1 = (spr->cut & SC_SPLAT) ? 0 : spr->x1;
 		INT32 x2 = (spr->cut & SC_SPLAT) ? viewwidth : spr->x2;
-		R_ClipVisSprite(spr, x1, x2, dsstart, portal);
+
+		if (x2 < cx)
+		{
+			drawsegs_xrange = drawsegs_xranges[1].items;
+			drawsegs_xrange_count = drawsegs_xranges[1].count;
+		}
+		else if (x1 >= cx)
+		{
+			drawsegs_xrange = drawsegs_xranges[2].items;
+			drawsegs_xrange_count = drawsegs_xranges[2].count;
+		}
+		else
+		{
+			drawsegs_xrange = drawsegs_xranges[0].items;
+			drawsegs_xrange_count = drawsegs_xranges[0].count;
+		}
+
+		R_ClipVisSprite(spr, x1, x2, portal);
+
+		if ((spr->cut & SC_NOTVISIBLE) == 0)
+			numvisiblesprites++;
+
+#ifdef ALAM_LIGHTING
+#ifdef SPDR_CORONAS
+		corona_draw = 0;
+
+#if 0
+		// Exclude Split sprites that are cut on the bottom, so there
+		// is only one corona per object.
+		// Their position would be off too.
+		if (cv_corona.value && (!(spr->cut & SC_BOTTOM)))
+#else
+		// setup corona state
+		if (cv_corona.value)
+#endif
+		{
+			Sprite_Corona_Light_setup(spr); // set corona_draw
+			if (corona_draw) // Expand clipping to include corona draw
+			{
+				if (corona_x1 < x1)
+					x1 = corona_x1;
+				if (corona_x2 > x2)
+					x2 = corona_x2;
+			}
+		}
+#endif
+#endif
 	}
 }
 
@@ -3192,22 +4288,22 @@ void R_ClipSprites(drawseg_t* dsstart, portal_t* portal)
 boolean R_ThingVisible (mobj_t *thing)
 {
 	return (!(
-				thing->sprite == SPR_NULL ||
-				( thing->flags2 & (MF2_DONTDRAW) ) ||
-				(r_viewmobj && (thing == r_viewmobj || (r_viewmobj->player && r_viewmobj->player->followmobj == thing)))
+		(thing->sprite == SPR_NULL) || // Don't draw null-sprites
+		(thing->flags2 & MF2_DONTDRAW) || // Don't draw MF2_LINKDRAW objects
+		(thing->drawonlyforplayer && thing->drawonlyforplayer != viewplayer) || // Don't draw other players' personal objects
+		(r_viewmobj && (
+		  (r_viewmobj == thing) || // Don't draw first-person players or awayviewmobj objects
+		  (r_viewmobj->player && r_viewmobj->player->followmobj == thing) || // Don't draw first-person players' followmobj
+		  (r_viewmobj == thing->dontdrawforviewmobj) // Don't draw objects that are hidden for the current view
+		))
 	));
 }
 
-boolean R_ThingVisibleWithinDist (mobj_t *thing,
+boolean R_ThingWithinDist (mobj_t *thing,
 		fixed_t      limit_dist,
 		fixed_t hoop_limit_dist)
 {
-	fixed_t approx_dist;
-
-	if (! R_ThingVisible(thing))
-		return false;
-
-	approx_dist = P_AproxDistance(viewx-thing->x, viewy-thing->y);
+	const fixed_t approx_dist = P_AproxDistance(viewx-thing->x, viewy-thing->y);
 
 	if (thing->sprite == SPR_HOOP)
 	{

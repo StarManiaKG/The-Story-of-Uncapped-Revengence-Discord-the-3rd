@@ -34,6 +34,10 @@ Documentation available here.
 #define Blame( ... ) \
 	CONS_Printf("\x85" __VA_ARGS__)
 
+#define PROTO_ANY 0
+#define PROTO_V4 1
+#define PROTO_V6 2
+
 static void MasterServer_Debug_OnChange (void);
 
 consvar_t cv_masterserver_timeout = CVAR_INIT
@@ -58,12 +62,17 @@ consvar_t cv_masterserver_token = CVAR_INIT
 
 static int hms_started;
 
+static boolean hms_allow_ipv6;
+
 static char *hms_api;
 #ifdef HAVE_THREADS
 static I_mutex hms_api_mutex;
 #endif
 
 static char *hms_server_token;
+#ifndef NO_IPV6
+static char *hms_server_token_ipv6;
+#endif
 
 static char hms_useragent[512];
 
@@ -95,7 +104,7 @@ init_user_agent_once(void)
 {
 	if (hms_useragent[0] != '\0')
 		return;
-	
+
 	get_user_agent(hms_useragent, 512);
 }
 
@@ -125,7 +134,7 @@ HMS_on_read (char *s, size_t _1, size_t n, void *userdata)
 }
 
 static struct HMS_buffer *
-HMS_connect (const char *format, ...)
+HMS_connect (int proto, const char *format, ...)
 {
 	va_list ap;
 	CURL *curl;
@@ -135,8 +144,14 @@ HMS_connect (const char *format, ...)
 	size_t token_length;
 	struct HMS_buffer *buffer;
 
+#ifdef NO_IPV6
+	if (proto == PROTO_V6)
+		return NULL;
+#endif
+
 	if (! hms_started)
 	{
+		hms_allow_ipv6 = !M_CheckParm("-noipv6");
 		if (curl_global_init(CURL_GLOBAL_ALL) != 0)
 		{
 			Contact_error();
@@ -159,7 +174,7 @@ HMS_connect (const char *format, ...)
 		return NULL;
 	}
 
-	if (cv_masterserver_token.string[0])
+	if (cv_masterserver_token.string && cv_masterserver_token.string[0])
 	{
 		quack_token = curl_easy_escape(curl, cv_masterserver_token.string, 0);
 		token_length = ( sizeof "?token="-1 )+ strlen(quack_token);
@@ -216,7 +231,13 @@ HMS_connect (const char *format, ...)
 
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-	curl_easy_setopt(curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+
+#ifndef NO_IPV6
+	if (proto == PROTO_V6)
+		curl_easy_setopt(curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V6);
+	if (proto == PROTO_V4)
+#endif
+		curl_easy_setopt(curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
 
 	curl_easy_setopt(curl, CURLOPT_TIMEOUT, cv_masterserver_timeout.value);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, HMS_on_read);
@@ -304,7 +325,7 @@ HMS_fetch_rooms (int joining, int query_id)
 
 	(void)query_id;
 
-	hms = HMS_connect("rooms");
+	hms = HMS_connect(PROTO_ANY, "rooms");
 
 	if (! hms)
 		return 0;
@@ -404,7 +425,7 @@ HMS_register (void)
 
 	char *title;
 
-	hms = HMS_connect("rooms/%d/register", ms_RoomId);
+	hms = HMS_connect(PROTO_V4, "rooms/%d/register", ms_RoomId);
 
 	if (! hms)
 		return 0;
@@ -436,6 +457,27 @@ HMS_register (void)
 
 	HMS_end(hms);
 
+#ifndef NO_IPV6
+	if (!hms_allow_ipv6)
+		return ok;
+
+	hms = HMS_connect(PROTO_V6, "rooms/%d/register", ms_RoomId);
+
+	if (! hms)
+		return 0;
+
+	curl_easy_setopt(hms->curl, CURLOPT_POSTFIELDS, post);
+
+	ok = HMS_do(hms);
+
+	if (ok)
+	{
+		hms_server_token_ipv6 = strdup(strtok(hms->buffer, "\n"));
+	}
+
+	HMS_end(hms);
+#endif
+
 	return ok;
 }
 
@@ -445,7 +487,7 @@ HMS_unlist (void)
 	struct HMS_buffer *hms;
 	int ok;
 
-	hms = HMS_connect("servers/%s/unlist", hms_server_token);
+	hms = HMS_connect(PROTO_V4, "servers/%s/unlist", hms_server_token);
 
 	if (! hms)
 		return 0;
@@ -456,6 +498,23 @@ HMS_unlist (void)
 	HMS_end(hms);
 
 	free(hms_server_token);
+
+#ifndef NO_IPV6
+	if (hms_server_token_ipv6 && hms_allow_ipv6)
+	{
+		hms = HMS_connect(PROTO_V6, "servers/%s/unlist", hms_server_token_ipv6);
+
+		if (! hms)
+			return 0;
+
+		curl_easy_setopt(hms->curl, CURLOPT_CUSTOMREQUEST, "POST");
+
+		ok = HMS_do(hms);
+		HMS_end(hms);
+
+		free(hms_server_token_ipv6);
+	}
+#endif
 
 	return ok;
 }
@@ -470,7 +529,7 @@ HMS_update (void)
 
 	char *title;
 
-	hms = HMS_connect("servers/%s/update", hms_server_token);
+	hms = HMS_connect(PROTO_V4, "servers/%s/update", hms_server_token);
 
 	if (! hms)
 		return 0;
@@ -489,6 +548,21 @@ HMS_update (void)
 	ok = HMS_do(hms);
 	HMS_end(hms);
 
+#ifndef NO_IPV6
+	if (hms_server_token_ipv6 && hms_allow_ipv6)
+	{
+		hms = HMS_connect(PROTO_V6, "servers/%s/update", hms_server_token_ipv6);
+
+		if (! hms)
+			return ok;
+
+		curl_easy_setopt(hms->curl, CURLOPT_POSTFIELDS, post);
+
+		ok = HMS_do(hms);
+		HMS_end(hms);
+	}
+#endif
+
 	return ok;
 }
 
@@ -500,7 +574,7 @@ HMS_list_servers (void)
 	char *list;
 	char *p;
 
-	hms = HMS_connect("servers");
+	hms = HMS_connect(PROTO_ANY, "servers");
 
 	if (! hms)
 		return;
@@ -549,10 +623,10 @@ HMS_fetch_servers (msg_server_t *list, int room_number, int query_id)
 
 	if (room_number > 0)
 	{
-		hms = HMS_connect("rooms/%d/servers", room_number);
+		hms = HMS_connect(PROTO_ANY, "rooms/%d/servers", room_number);
 	}
 	else
-		hms = HMS_connect("servers");
+		hms = HMS_connect(PROTO_ANY, "servers");
 
 	if (! hms)
 		return NULL;
@@ -656,7 +730,7 @@ HMS_compare_mod_version (char *buffer, size_t buffer_size)
 	char *version;
 	char *version_name;
 
-	hms = HMS_connect("versions/%d", MODID);
+	hms = HMS_connect(PROTO_ANY, "versions/%d", MODID);
 
 	if (! hms)
 		return 0;

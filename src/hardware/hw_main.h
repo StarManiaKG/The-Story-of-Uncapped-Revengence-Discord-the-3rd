@@ -55,7 +55,6 @@ boolean HWR_Screenshot(const char *pathname);
 
 void HWR_AddCommands(void);
 void HWR_AddSessionCommands(void);
-void transform(float *cx, float *cy, float *cz);
 INT32 HWR_GetTextureUsed(void);
 void HWR_DoPostProcessor(player_t *player);
 void HWR_StartScreenWipe(void);
@@ -75,6 +74,9 @@ FBITFIELD HWR_SurfaceBlend(INT32 style, INT32 transtablenum, FSurfaceInfo *pSurf
 FBITFIELD HWR_TranstableToAlpha(INT32 transtablenum, FSurfaceInfo *pSurf);
 
 boolean HWR_ShouldUsePaletteRendering(void);
+boolean HWR_UseShader(void);
+
+void HWR_Transform(float *cx, float *cy, float *cz); // Needed for coronas
 
 extern CV_PossibleValue_t glanisotropicmode_cons_t[];
 
@@ -83,6 +85,9 @@ extern consvar_t cv_gldynamiclighting;
 extern consvar_t cv_glstaticlighting;
 extern consvar_t cv_glcoronas;
 extern consvar_t cv_glcoronasize;
+#ifdef CORONA_CHOICE
+extern consvar_t cv_glcorona_draw;
+#endif
 #endif
 
 extern consvar_t cv_glshaders, cv_glallowshaders;
@@ -110,7 +115,7 @@ extern float gl_viewwindowx, gl_basewindowcentery;
 // BP: big hack for a test in lighting ref : 1249753487AB
 extern fixed_t *hwbbox;
 extern FTransform atransform;
-
+extern float gl_viewsin, gl_viewcos;
 
 // Render stats
 extern ps_metric_t ps_hw_skyboxtime;

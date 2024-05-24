@@ -58,14 +58,14 @@
 #endif
 
 #ifdef HAVE_DISCORDRPC
-// DISCORD STUFF //
-#include "discord.h"
-// END THIS PLEASE //
+#include "discord/discord.h" // DISCORD STUFF: Add our coolness! //
+#include "discord/discord_cmds.h" // DISCORD STUFF: cv_discord stuff //
 #endif
 
 // STAR STUFF //
 #include "STAR/star_vars.h"
-// END THAT //
+#include "STAR/ss_main.h" // STAR_CONS_Printf() //
+// WE'RE DONE! //
 
 //
 // NETWORKING
@@ -129,6 +129,8 @@ UINT8 hu_redownloadinggamestate = 0;
 
 // true when a player is connecting or disconnecting so that the gameplay has stopped in its tracks
 boolean hu_stopped = false;
+
+consvar_t cv_dedicatedidletime = CVAR_INIT ("dedicatedidletime", "10", CV_SAVE, CV_Unsigned, NULL);
 
 UINT8 adminpassmd5[16];
 boolean adminpasswordset = false;
@@ -316,7 +318,7 @@ static void D_FreeTextcmd(tic_t tic)
 		{
 			textcmdplayer_t *textcmdplayer = textcmdtic->playercmds[i];
 
-			while (textcmdplayer > (textcmdplayer_t*)255) // STAR NOTE: LEAVEBUG HACK
+			while (textcmdplayer > (textcmdplayer_t*)255) // STAR NOTE: LEAVEBUG HACK //
 			{
 				textcmdplayer_t *tcpnext = textcmdplayer->next;
 				Z_Free(textcmdplayer);
@@ -337,7 +339,7 @@ static UINT8* D_GetExistingTextcmd(tic_t tic, INT32 playernum)
 
 	// STAR NOTE: THIS ENITRE BLOCK HAS BEEN EDITED WITH THE LEAVEBUG FIX //
 	// Do we have an entry for the tic? If so, look for player.
-	if (textcmdtic && textcmdtic->playercmds)
+	if (textcmdtic && textcmdtic->playercmds[playernum])
 	{
 		textcmdplayer_t *limit = (textcmdplayer_t*)255;
 		textcmdplayer_t *textcmdplayer = textcmdtic->playercmds[playernum & (TEXTCMD_HASH_SIZE - 1)];
@@ -1063,7 +1065,7 @@ static void CL_DrawConnectionStatusBox(void)
 {
 	M_DrawTextBox(BASEVIDWIDTH/2-128-8, BASEVIDHEIGHT-16-8, 32, 1);
 	if (cl_mode != CL_CONFIRMCONNECT)
-		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-16, menuColor[cv_menucolor.value], "Press ESC to abort");
+		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-16, V_MENUCOLORMAP, "Press ESC to abort");
 }
 
 //
@@ -1077,10 +1079,6 @@ static inline void CL_DrawConnectionStatus(void)
 
 	// Draw background fade
 	V_DrawFadeScreen(0xFF00, 16); // force default
-
-	// DO STAR STUFF //
-	STAR_SetProblematicCommandsForNetgames();
-	// DID STAR STUFF //
 
 	if (cl_mode != CL_DOWNLOADFILES && cl_mode != CL_LOADFILES)
 	{
@@ -1150,7 +1148,7 @@ static inline void CL_DrawConnectionStatus(void)
 				cltext = M_GetText("Connecting to server...");
 				break;
 		}
-		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-24, menuColor[cv_menucolor.value], cltext);
+		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-24, V_MENUCOLORMAP, cltext);
 	}
 	else
 	{
@@ -1160,7 +1158,7 @@ static inline void CL_DrawConnectionStatus(void)
 			INT32 loadcompletednum = 0;
 			INT32 i;
 
-			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-16, menuColor[cv_menucolor.value], "Press ESC to abort");
+			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-16, V_MENUCOLORMAP, "Press ESC to abort");
 
 			//ima just count files here
 			if (fileneeded)
@@ -1171,7 +1169,7 @@ static inline void CL_DrawConnectionStatus(void)
 			}
 
 			// Loading progress
-			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-24, menuColor[cv_menucolor.value], "Loading server addons...");
+			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-24, V_MENUCOLORMAP, "Loading server addons...");
 			totalfileslength = (INT32)((loadcompletednum/(double)(fileneedednum)) * 256);
 			M_DrawTextBox(BASEVIDWIDTH/2-128-8, BASEVIDHEIGHT-16-8, 32, 1);
 			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-16, 256, 8, 111);
@@ -1223,7 +1221,7 @@ static inline void CL_DrawConnectionStatus(void)
 				strncpy(tempname, filename, sizeof(tempname)-1);
 			}
 
-			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-24, menuColor[cv_menucolor.value],
+			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-24, V_MENUCOLORMAP,
 				va(M_GetText("Downloading \"%s\""), tempname));
 			V_DrawString(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-16, V_20TRANS|V_MONOSPACE,
 				va(" %4uK/%4uK",fileneeded[lastfilenum].currentsize>>10,file->totalsize>>10));
@@ -1236,7 +1234,7 @@ static inline void CL_DrawConnectionStatus(void)
 				Snake_Draw();
 
 			CL_DrawConnectionStatusBox();
-			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-24, menuColor[cv_menucolor.value],
+			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16-24, V_MENUCOLORMAP,
 				M_GetText("Waiting to download files..."));
 		}
 	}
@@ -1262,6 +1260,7 @@ static boolean CL_AskFileList(INT32 firstfile)
 static boolean CL_SendJoin(void)
 {
 	UINT8 localplayers = 1;
+	char const *player2name;
 	if (netgame)
 		CONS_Printf(M_GetText("Sending join request...\n"));
 	netbuffer->packettype = PT_CLIENTJOIN;
@@ -1278,18 +1277,25 @@ static boolean CL_SendJoin(void)
 	CleanupPlayerName(consoleplayer, cv_playername.zstring);
 	if (splitscreen)
 		CleanupPlayerName(1, cv_playername2.zstring);/* 1 is a HACK? oh no */
+	// Avoid empty string on bots to avoid softlocking in singleplayer
+	if (botingame)
+		player2name = strcmp(cv_playername.zstring, "Tails") == 0 ? "Tail" : "Tails";
+	else
+		player2name = cv_playername2.zstring;
 
 	strncpy(netbuffer->u.clientcfg.names[0], cv_playername.zstring, MAXPLAYERNAME);
-	strncpy(netbuffer->u.clientcfg.names[1], cv_playername2.zstring, MAXPLAYERNAME);
+	strncpy(netbuffer->u.clientcfg.names[1], player2name, MAXPLAYERNAME);
+
+	netbuffer->u.clientcfg.tsourdt3rd = tsourdt3rd; // STAR STUFF: set our variable right quick //
 
 	return HSendPacket(servernode, true, 0, sizeof (clientconfig_pak));
 }
 
 static INT32 FindRejoinerNum(SINT8 node)
 {
-	char strippednodeaddress[64];
+	char addressbuffer[64];
 	const char *nodeaddress;
-	char *port;
+	const char *strippednodeaddress;
 	INT32 i;
 
 	// Make sure there is no dead dress before proceeding to the stripping
@@ -1300,10 +1306,8 @@ static INT32 FindRejoinerNum(SINT8 node)
 		return -1;
 
 	// Strip the address of its port
-	strcpy(strippednodeaddress, nodeaddress);
-	port = strchr(strippednodeaddress, ':');
-	if (port)
-		*port = '\0';
+	strcpy(addressbuffer, nodeaddress);
+	strippednodeaddress = I_NetSplitAddress(addressbuffer, NULL);
 
 	// Check if any player matches the stripped address
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -1475,18 +1479,19 @@ static boolean SV_SendServerConfig(INT32 node)
 	netbuffer->u.servercfg.gamestate = (UINT8)gamestate;
 	netbuffer->u.servercfg.gametype = (UINT8)gametype;
 	netbuffer->u.servercfg.modifiedgame = (UINT8)modifiedgame;
+	netbuffer->u.servercfg.usedCheats = (UINT8)usedCheats;
 
 	// STAR STUFF YAY //
-	netbuffer->u.servercfg.tsourdt3rd = (boolean)tsourdt3rd;
+	netbuffer->u.servercfg.tsourdt3rd = (UINT8)tsourdt3rd;
 
-	netbuffer->u.servercfg.tsourdt3rdmajorversion = TSoURDt3rd_CurrentMajorVersion();
-	netbuffer->u.servercfg.tsourdt3rdminorversion = TSoURDt3rd_CurrentMinorVersion();
-	netbuffer->u.servercfg.tsourdt3rdsubversion = TSoURDt3rd_CurrentSubversion();
+	netbuffer->u.servercfg.tsourdt3rdmajorversion = (UINT8)TSoURDt3rd_CurrentMajorVersion();
+	netbuffer->u.servercfg.tsourdt3rdminorversion = (UINT8)TSoURDt3rd_CurrentMinorVersion();
+	netbuffer->u.servercfg.tsourdt3rdsubversion	= (UINT8)TSoURDt3rd_CurrentSubversion();
 
 	// DISCORD STUFF //
 	netbuffer->u.servercfg.maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
-	netbuffer->u.servercfg.allownewplayer = cv_allownewplayer.value;
-	netbuffer->u.servercfg.discordinvites = cv_discordinvites.value;
+	netbuffer->u.servercfg.allownewplayer = (UINT8)cv_allownewplayer.value;
+	netbuffer->u.servercfg.discordinvites = (UINT8)cv_discordinvites.value;
 	// END THAT PLEASE //
 	// END THE STAR STUFF TOO //
 
@@ -1754,7 +1759,6 @@ static void CL_ReloadReceivedSavegame(void)
 static void SendAskInfo(INT32 node)
 {
 	const tic_t asktime = I_GetTime();
-
 	// HOLEPUNCHING STUFF //
 	if (node != 0 && node != BROADCASTADDR &&
 			cv_rendezvousserver.string[0])
@@ -1762,7 +1766,6 @@ static void SendAskInfo(INT32 node)
 		I_NetRequestHolePunch(node);
 	}
 	// END THAT STUFF //
-
 	netbuffer->packettype = PT_ASKINFO;
 	netbuffer->u.askinfo.version = VERSION;
 	netbuffer->u.askinfo.time = (tic_t)LONG(asktime);
@@ -2049,25 +2052,6 @@ static boolean CL_FinishedFileList(void)
 		), NULL, MM_NOTHING);
 		return false;
 	}
-
-	// STAR STUFF //
-	else if (i == 5) // you've autoloaded some game changing mods
-	{
-		D_QuitNetGame();
-		CL_Reset();
-		D_StartTitle();
-		M_StartMessage(M_GetText(
-			"You've autoloaded some game changing mods.\n\n"
-			"To play on this server, remove your\n"
-			"autoload configuration file and restart SRB2.\n"
-			"Afterwards, SRB2 will automatically add\n"
-			"everything you need when you join.\n\n"
-			"Press ESC\n"
-		), NULL, MM_NOTHING);
-		return false;
-	}
-	// END OF THAT //
-
 	else if (i == 1)
 	{
 		if (serverisfull)
@@ -2085,6 +2069,25 @@ static boolean CL_FinishedFileList(void)
 		else
 			cl_mode = CL_LOADFILES;
 	}
+
+	// STAR STUFF: you've autoloaded some game changing mods //
+	else if (i == 5)
+	{
+		D_QuitNetGame();
+		CL_Reset();
+		D_StartTitle();
+		M_StartMessage(M_GetText(
+			"You've autoloaded some game changing mods.\n\n"
+			"To play on this server, remove your\n"
+			"autoload configuration file and restart SRB2.\n"
+			"Afterwards, SRB2 will automatically add\n"
+			"everything you need when you join.\n\n"
+			"Press ESC\n"
+		), NULL, MM_NOTHING);
+		return false;
+	}
+	// END OF THAT //
+
 	else
 	{
 		// must download something
@@ -2497,7 +2500,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 		{
 			if (!snake)
 			{
-				F_MenuPresTicker(true); // title sky
+				F_MenuPresTicker(); // title sky
 				F_TitleScreenTicker(true);
 				F_TitleScreenDrawer();
 			}
@@ -2612,6 +2615,8 @@ static void CL_ConnectToServer(void)
 	}
 	while (!(cl_mode == CL_CONNECTED && (client || (server && nodewaited <= pnumnodes))));
 
+	if (netgame)
+		F_StartWaitingPlayers();
 	DEBFILE(va("Synchronisation Finished\n"));
 
 	displayplayer = consoleplayer;
@@ -2745,7 +2750,6 @@ static void Command_ClearBans(void)
 static void Ban_Load_File(boolean warning)
 {
 	FILE *f;
-	size_t i;
 	const char *address, *mask;
 	char buffer[MAX_WADPATH];
 
@@ -2763,7 +2767,7 @@ static void Ban_Load_File(boolean warning)
 
 	Ban_Clear();
 
-	for (i=0; fgets(buffer, (int)sizeof(buffer), f); i++)
+	for (; fgets(buffer, (int)sizeof(buffer), f);)
 	{
 		address = strtok(buffer, " \t\r\n");
 		mask = strtok(NULL, " \t\r\n");
@@ -2793,13 +2797,13 @@ static void Command_connect(void)
 		return;
 	}
 
-	// STAR STUFF //
-	M_ClearMenus(true);
-	if (demoplayback && titledemo)
-		G_CheckDemoStatus();
-	
+	// STAR STUFF: allow us to join servers from anywhere at any time //
 	if (Playing() || titledemo)
 	{
+		M_ClearMenus(true);
+		if (demoplayback && titledemo)
+			G_CheckDemoStatus();
+
 		if (netgame)
 		{
 			D_QuitNetGame();
@@ -2882,6 +2886,8 @@ void CL_ClearPlayer(INT32 playernum)
 		P_RemoveMobj(players[playernum].mo);
 	memset(&players[playernum], 0, sizeof (player_t));
 	memset(playeraddress[playernum], 0, sizeof(*playeraddress));
+
+	//TSoURDt3rd_ClearPlayer(playernum); // STAR STUFF: Free this player from their prison. //
 }
 
 //
@@ -3525,55 +3531,16 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 	else
 		CL_RemovePlayer(pnum, kickreason);
 
-	// DISCORD STUFF //
-	S_StartSound(NULL, ((msg == KICK_MSG_PLAYER_QUIT) ? STAR_LeaveSFX : STAR_SynchFailureSFX));
-	// I LIKE YOUR FUNNY WORDS, MAGIC FUNCTION //
+	S_StartSound(NULL, ((msg == KICK_MSG_PLAYER_QUIT) ? STAR_LeaveSFX : STAR_SynchFailureSFX)); // DISCORD STUFF: I LIKE YOUR FUNNY SOUNDS, MAGIC FUNCTION //
 }
-
-// STAR STUFF //
-static void Tsourdt3rdPackets_OnChange(void)
-{
-	UINT8 buf[7];
-	UINT8 *p = buf;
-	
-	UINT8 currentmajorversion;
-	UINT8 currentminorversion;
-	UINT8 currentsubversion;
-
-	UINT8 maxplayer;
-
-	if (!server)
-		return;
-
-	currentmajorversion = TSoURDt3rd_CurrentMajorVersion();
-	currentminorversion = TSoURDt3rd_CurrentMinorVersion();
-	currentsubversion = TSoURDt3rd_CurrentSubversion();
-
-	maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
-
-	WRITEUINT8(p, tsourdt3rd);
-
-	WRITEUINT8(p, currentmajorversion);
-	WRITEUINT8(p, currentminorversion);
-	WRITEUINT8(p, currentsubversion);
-
-	// DISCORD STUFF //
-	WRITEUINT8(p, maxplayer);
-	WRITEUINT8(p, cv_allownewplayer.value);
-	WRITEUINT8(p, cv_discordinvites.value);
-	// YOU GET THE GIST //
-
-	SendNetXCmd(XD_TSOURDT3RD, &buf, 7);
-}
-// END THAT. LITERALLY //
 
 static CV_PossibleValue_t netticbuffer_cons_t[] = {{0, "MIN"}, {3, "MAX"}, {0, NULL}};
 consvar_t cv_netticbuffer = CVAR_INIT ("netticbuffer", "1", CV_SAVE, netticbuffer_cons_t, NULL);
 
-consvar_t cv_allownewplayer = CVAR_INIT ("allowjoin", "On", CV_SAVE|CV_NETVAR|CV_CALL|CV_ALLOWLUA, CV_OnOff, Tsourdt3rdPackets_OnChange);
+consvar_t cv_allownewplayer = CVAR_INIT ("allowjoin", "On", CV_SAVE|CV_NETVAR|CV_CALL|CV_ALLOWLUA, CV_OnOff, TSoURDt3rd_DiscordCommands_OnChange); // STAR NOTE: added TSoURDt3rd_DiscordCommands_OnChange //
 consvar_t cv_joinnextround = CVAR_INIT ("joinnextround", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL); /// \todo not done
 static CV_PossibleValue_t maxplayers_cons_t[] = {{2, "MIN"}, {32, "MAX"}, {0, NULL}};
-consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_SAVE|CV_NETVAR|CV_CALL|CV_ALLOWLUA, maxplayers_cons_t, Tsourdt3rdPackets_OnChange);
+consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_SAVE|CV_NETVAR|CV_CALL|CV_ALLOWLUA, maxplayers_cons_t, TSoURDt3rd_DiscordCommands_OnChange); // STAR NOTE: added TSoURDt3rd_DiscordCommands_OnChange //
 static CV_PossibleValue_t joindelay_cons_t[] = {{1, "MIN"}, {3600, "MAX"}, {0, "Off"}, {0, NULL}};
 consvar_t cv_joindelay = CVAR_INIT ("joindelay", "10", CV_SAVE|CV_NETVAR, joindelay_cons_t, NULL);
 static CV_PossibleValue_t rejointimeout_cons_t[] = {{1, "MIN"}, {60 * FRACUNIT, "MAX"}, {0, "Off"}, {0, NULL}};
@@ -3592,10 +3559,9 @@ consvar_t cv_noticedownload = CVAR_INIT ("noticedownload", "Off", CV_SAVE|CV_NET
 static CV_PossibleValue_t downloadspeed_cons_t[] = {{1, "MIN"}, {300, "MAX"}, {0, NULL}};
 consvar_t cv_downloadspeed = CVAR_INIT ("downloadspeed", "16", CV_SAVE|CV_NETVAR, downloadspeed_cons_t, NULL);
 
-// DISCORD STUFF //
-// Discord Invitses; Here for Dedicated Servers or Something for Some Reason idk
+// DISCORD STUFF: Discord Invites; Here for Dedicated Servers or Something for Some Reason idk //
 static CV_PossibleValue_t discordinvites_cons_t[] = {{0, "Server"}, {1, "Admins"}, {2, "Everyone"}, {0, NULL}};
-consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Everyone", CV_SAVE|CV_CALL, discordinvites_cons_t, Tsourdt3rdPackets_OnChange);
+consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Everyone", CV_SAVE|CV_CALL, discordinvites_cons_t, TSoURDt3rd_DiscordCommands_OnChange);
 // END THIS MESS //
 
 static void Got_AddPlayer(UINT8 **p, INT32 playernum);
@@ -3713,6 +3679,9 @@ void SV_ResetServer(void)
 
 	CV_RevertNetVars();
 
+	// Ensure synched when creating a new server
+	M_CopyGameData(serverGamedata, clientGamedata);
+
 	DEBFILE("\n-=-=-=-=-=-=-= Server Reset =-=-=-=-=-=-=-\n\n");
 }
 
@@ -3776,10 +3745,6 @@ void D_QuitNetGame(void)
 	D_CloseConnection();
 	ClearAdminPlayers();
 
-	// STAR STUFF ENGAGED //
-	STAR_ResetProblematicCommandsAfterNetgames();
-	// STAR STUFF DISENGAGED //
-
 	DEBFILE("===========================================================================\n"
 	        "                         Log finish\n"
 	        "===========================================================================\n");
@@ -3830,10 +3795,10 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 	// DO STAR STUFF //
 	if (automapactive)
 	{
-		CONS_Alert(CONS_NOTICE, "A new node has joined, closing the automap to prevent a crash...\n");
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "A new node has joined, closing the automap to prevent a crash...\n");
 		AM_Stop();
 	}
-	// END THAT //
+	// NOW GO CLEAR SOME PLAYERS RIGHT NOW! //
 
 	if (!rejoined)
 	{
@@ -3848,14 +3813,13 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 		if (server && I_GetNodeAddress)
 		{
+			char addressbuffer[64];
 			const char *address = I_GetNodeAddress(node);
-			char *port = NULL;
 			if (address) // MI: fix msvcrt.dll!_mbscat crash?
 			{
-				strcpy(playeraddress[newplayernum], address);
-				port = strchr(playeraddress[newplayernum], ':');
-				if (port)
-					*port = '\0';
+				strcpy(addressbuffer, address);
+				strcpy(playeraddress[newplayernum],
+						I_NetSplitAddress(addressbuffer, NULL));
 			}
 		}
 	}
@@ -3919,10 +3883,28 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 	{
 		char joinmsg[256];
 
-		// DISCORD STUFF YAY //
+		// STAR STUFF YAY //
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "ADDING USER: node - %d, consoleplayer - %d\n", node, consoleplayer);
+
+		if (node == mynode)
+		{
+			TSoURDt3rdPlayers[consoleplayer] = TSoURDt3rdPlayers[0];
+			M_Memcpy(&TSoURDt3rdPlayers[consoleplayer], &TSoURDt3rdPlayers[0], sizeof(TSoURDt3rd_t));
+
+			TSoURDt3rd_ClearPlayer(consoleplayer);
+			memset(&TSoURDt3rdPlayers[0], 0, sizeof(TSoURDt3rd_t));
+		}
+
 		if (node != mynode)
-			S_StartSound(NULL, STAR_JoinSFX);
-		// MEEP //
+		{
+			if (server)
+				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, (TSoURDt3rdPlayers[newplayernum].usingTSoURDt3rd ?
+					("Joining player is using TSoURDt3rd!\n") :
+					("Joining player doesn't seem to be using TSoURDt3rd, please be cautious of what you do!\n")));
+
+			S_StartSound(NULL, STAR_JoinSFX); // DISCORD STUFF: (technically star stuff too): plays sound when joining //
+		}
+		// END THAT PLEASE //
 
 		if (rejoined)
 			strcpy(joinmsg, M_GetText("\x82*%s has rejoined the game (player %d)"));
@@ -3948,7 +3930,11 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 		LUA_HookInt(newplayernum, HOOK(PlayerJoin));
 
 #ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
+	DRPC_UpdatePresence(); // DISCORD STUFF: Update! //
+#endif
+
+#ifdef HAVE_SDL
+	STAR_SetWindowTitle(); // STAR STUFF: Update the Title! //
 #endif
 }
 
@@ -4108,6 +4094,8 @@ static void SV_SendRefuse(INT32 node, const char *reason)
 	netbuffer->packettype = PT_SERVERREFUSE;
 	HSendPacket(node, true, 0, strlen(netbuffer->u.serverrefuse.reason) + 1);
 	Net_CloseConnection(node);
+
+	TSoURDt3rd_ClearPlayer(node); // STAR STUFF: clear our players, pretty please //
 }
 
 // used at txtcmds received to check packetsize bound
@@ -4232,6 +4220,51 @@ static void HandleConnect(SINT8 node)
 			}
 		}
 
+		// STAR STUFF //
+#if 0
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "ADDING FOR CONNECT: node - %d, consoleplayer - %d\n", node, consoleplayer);
+
+#if 0
+		TSoURDt3rdPlayers[consoleplayer] = TSoURDt3rdPlayers[0];
+		M_Memcpy(&TSoURDt3rdPlayers[consoleplayer], &TSoURDt3rdPlayers[9], sizeof(TSoURDt3rd_t));
+		memset(&TSoURDt3rdPlayers[0], 0, sizeof(TSoURDt3rd_t));
+
+#if 0
+		if (netbuffer->u.clientcfg.tsourdt3rd != 1)
+		{
+			if (TSoURDt3rdPlayers[node].usingTSoURDt3rd)
+				memset(&TSoURDt3rdPlayers[node], 0, sizeof(TSoURDt3rd_t));
+		}
+		else
+		{
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (playeringame[i] || nodeingame[i] || i == node || node == netbuffer->u.servercfg.clientnode)
+					continue;
+				memset(&TSoURDt3rdPlayers[i], 0, sizeof(TSoURDt3rd_t));
+			}
+		}
+#endif
+#endif
+#if 0
+#if 0
+		if ((SINT8)doomcom->remotenode == netbuffer->u.servercfg.clientnode)
+		{
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "ADDING: node - %d, consoleplayer - %d\n", node, consoleplayer);
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "before: tsourdt3rdnode - %d\n", TSoURDt3rdPlayers[node].num);
+
+			TSoURDt3rdPlayers[node] = TSoURDt3rdPlayers[consoleplayer];
+			M_Memcpy(&TSoURDt3rdPlayers[node], &TSoURDt3rdPlayers[consoleplayer], sizeof(TSoURDt3rd_t));
+
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "after: tsourdt3rdnode - %d\n", TSoURDt3rdPlayers[node].num);
+		}
+#else
+		TSoURDt3rd_ClearPlayer(node);
+#endif
+#endif
+#endif
+		// END THE STAR STUFF TOO //
+
 		// client authorised to join
 		nodewaiting[node] = (UINT8)(netbuffer->u.clientcfg.localplayers - playerpernode[node]);
 		if (!nodeingame[node])
@@ -4328,7 +4361,7 @@ static void HandleServerInfo(SINT8 node)
 }
 #endif
 
-void PT_WillResendGamestate(void)
+static void PT_WillResendGamestate(void)
 {
 #ifndef NONET
 	char tmpsave[256];
@@ -4496,31 +4529,36 @@ static void HandlePacketFromAwayNode(SINT8 node)
 				maketic = gametic = neededtic = (tic_t)LONG(netbuffer->u.servercfg.gametic);
 				G_SetGametype(netbuffer->u.servercfg.gametype);
 				modifiedgame = netbuffer->u.servercfg.modifiedgame;
+				if (netbuffer->u.servercfg.usedCheats)
+					G_SetUsedCheats(true);
 				memcpy(server_context, netbuffer->u.servercfg.server_context, 8);
 			}
 
-			// STAR STUFF //
-			TSoURDt3rdPlayers[node].serverUsesTSoURDt3rd = ((netbuffer->u.servercfg.tsourdt3rd > 1 || netbuffer->u.servercfg.tsourdt3rd < 0) ? 0 : 1);
-			
-			if (netgame && !server)
-				(TSoURDt3rdPlayers[node].serverUsesTSoURDt3rd ? 
-					(CONS_Printf("Server uses TSoURDt3rd, running features...\n")) :
-					(CONS_Printf("Server either doesn't use TSoURDt3rd or is using an outdated TSoURDt3rd, working around this...\n")));
+			// STAR STUFF: Check if the Server is Using TSoURDt3rd //
+			TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[node];
+			TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd = (netbuffer->u.servercfg.tsourdt3rd != 1 ? 0 : 1);
 
-			TSoURDt3rdPlayers[node].majorVersion 			= (TSoURDt3rdPlayers[node].serverUsesTSoURDt3rd ? netbuffer->u.servercfg.tsourdt3rdmajorversion : 0);
-			TSoURDt3rdPlayers[node].minorVersion 			= (TSoURDt3rdPlayers[node].serverUsesTSoURDt3rd ? netbuffer->u.servercfg.tsourdt3rdminorversion : 0);
-			TSoURDt3rdPlayers[node].subVersion 				= (TSoURDt3rdPlayers[node].serverUsesTSoURDt3rd ? netbuffer->u.servercfg.tsourdt3rdsubversion : 0);
+			// Print Some Little Strings
+			if (client)
+				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, (TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd ? 
+					("Server uses TSoURDt3rd, running features...\n") :
+					("Server either doesn't use TSoURDt3rd or is using an outdated TSoURDt3rd, working around this...\n")));
 
-			TSoURDt3rdPlayers[node].serverTSoURDt3rdVersion = STAR_CombineNumbers(3, TSoURDt3rdPlayers[node].majorVersion, TSoURDt3rdPlayers[node].minorVersion, TSoURDt3rdPlayers[node].subVersion);
+			// Set All Our Properties, and We're Done :)
+			TSoURDt3rd->serverPlayers.majorVersion = (TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd ? netbuffer->u.servercfg.tsourdt3rdmajorversion : 0);
+			TSoURDt3rd->serverPlayers.minorVersion = (TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd ? netbuffer->u.servercfg.tsourdt3rdminorversion : 0);
+			TSoURDt3rd->serverPlayers.subVersion = (TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd ? netbuffer->u.servercfg.tsourdt3rdsubversion : 0);
+
+			TSoURDt3rd->serverPlayers.serverTSoURDt3rdVersion = STAR_CombineNumbers(3, TSoURDt3rd->serverPlayers.majorVersion, TSoURDt3rd->serverPlayers.minorVersion, TSoURDt3rd->serverPlayers.subVersion);
 
 #ifdef HAVE_DISCORDRPC
 			// DISCORD STUFF //
-			discordInfo.maxPlayers 							= (TSoURDt3rdPlayers[node].serverUsesTSoURDt3rd ? netbuffer->u.servercfg.maxplayer : (UINT8)cv_maxplayers.value);
-			discordInfo.joinsAllowed 						= (TSoURDt3rdPlayers[node].serverUsesTSoURDt3rd ? netbuffer->u.servercfg.allownewplayer : (boolean)cv_allownewplayer.value);
-			discordInfo.whoCanInvite 						= (TSoURDt3rdPlayers[node].serverUsesTSoURDt3rd ? netbuffer->u.servercfg.discordinvites : (UINT8)cv_discordinvites.value);
+			discordInfo.maxPlayers = (TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd ? netbuffer->u.servercfg.maxplayer : (UINT8)cv_maxplayers.value);
+			discordInfo.joinsAllowed = (TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd ? netbuffer->u.servercfg.allownewplayer : (UINT8)cv_allownewplayer.value);
+			discordInfo.whoCanInvite = (TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd ? netbuffer->u.servercfg.discordinvites : (UINT8)cv_discordinvites.value);
 			// END OF THE DISCORD STUFF //
 #endif
-			// END OF THE ENTIRE STAR MESS TOO //
+			// END OF THE STAR STUFF TOO //
 
 			nodeingame[(UINT8)servernode] = true;
 			serverplayer = netbuffer->u.servercfg.serverplayer;
@@ -4628,6 +4666,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 		netconsole = 0;
 	else
 		netconsole = nodetoplayer[node];
+
 #ifdef PARANOIA
 	if (netconsole >= MAXPLAYERS)
 		I_Error("bad table nodetoplayer: node %d player %d", doomcom->remotenode, netconsole);
@@ -4666,21 +4705,32 @@ static void HandlePacketFromPlayer(SINT8 node)
 			// Update the nettics
 			nettics[node] = realend;
 
-			// Don't do anything for packets of type NODEKEEPALIVE?
-			if (netconsole == -1 || netbuffer->packettype == PT_NODEKEEPALIVE
-				|| netbuffer->packettype == PT_NODEKEEPALIVEMIS)
+			// This should probably still timeout though, as the node should always have a player 1 number
+			if (netconsole == -1)
 				break;
 
 			// As long as clients send valid ticcmds, the server can keep running, so reset the timeout
 			/// \todo Use a separate cvar for that kind of timeout?
 			freezetimeout[node] = I_GetTime() + connectiontimeout;
 
+			// Don't do anything for packets of type NODEKEEPALIVE?
+			// Sryder 2018/07/01: Update the freezetimeout still!
+			if (netbuffer->packettype == PT_NODEKEEPALIVE
+				|| netbuffer->packettype == PT_NODEKEEPALIVEMIS)
+				break;
+
+			// If we've alredy received a ticcmd for this tic, just submit it for the next one.
+			tic_t faketic = maketic;
+			if ((!!(netcmds[maketic % BACKUPTICS][netconsole].angleturn & TICCMD_RECEIVED))
+				&& (maketic - firstticstosend < BACKUPTICS - 1))
+				faketic++;
+
 			// Copy ticcmd
-			G_MoveTiccmd(&netcmds[maketic%BACKUPTICS][netconsole], &netbuffer->u.clientpak.cmd, 1);
+			G_MoveTiccmd(&netcmds[faketic%BACKUPTICS][netconsole], &netbuffer->u.clientpak.cmd, 1);
 
 			// Check ticcmd for "speed hacks"
-			if (netcmds[maketic%BACKUPTICS][netconsole].forwardmove > MAXPLMOVE || netcmds[maketic%BACKUPTICS][netconsole].forwardmove < -MAXPLMOVE
-				|| netcmds[maketic%BACKUPTICS][netconsole].sidemove > MAXPLMOVE || netcmds[maketic%BACKUPTICS][netconsole].sidemove < -MAXPLMOVE)
+			if (netcmds[faketic%BACKUPTICS][netconsole].forwardmove > MAXPLMOVE || netcmds[faketic%BACKUPTICS][netconsole].forwardmove < -MAXPLMOVE
+				|| netcmds[faketic%BACKUPTICS][netconsole].sidemove > MAXPLMOVE || netcmds[faketic%BACKUPTICS][netconsole].sidemove < -MAXPLMOVE)
 			{
 				CONS_Alert(CONS_WARNING, M_GetText("Illegal movement value received from node %d\n"), netconsole);
 				//D_Clearticcmd(k);
@@ -4692,8 +4742,9 @@ static void HandlePacketFromPlayer(SINT8 node)
 			// Splitscreen cmd
 			if ((netbuffer->packettype == PT_CLIENT2CMD || netbuffer->packettype == PT_CLIENT2MIS)
 				&& nodetoplayer2[node] >= 0)
-				G_MoveTiccmd(&netcmds[maketic%BACKUPTICS][(UINT8)nodetoplayer2[node]],
+				G_MoveTiccmd(&netcmds[faketic%BACKUPTICS][(UINT8)nodetoplayer2[node]],
 					&netbuffer->u.client2pak.cmd2, 1);
+
 
 			// Check player consistancy during the level
 			if (realstart <= gametic && realstart + BACKUPTICS - 1 > gametic && gamestate == GS_LEVEL
@@ -4730,6 +4781,21 @@ static void HandlePacketFromPlayer(SINT8 node)
 					break;
 				}
 			}
+			break;
+		case PT_BASICKEEPALIVE:
+			if (client)
+				break;
+
+			// This should probably still timeout though, as the node should always have a player 1 number
+			if (netconsole == -1)
+				break;
+
+			// If a client sends this it should mean they are done receiving the savegame
+			sendingsavegame[node] = false;
+
+			// As long as clients send keep alives, the server can keep running, so reset the timeout
+			/// \todo Use a separate cvar for that kind of timeout?
+			freezetimeout[node] = I_GetTime() + connectiontimeout;
 			break;
 		case PT_TEXTCMD2: // splitscreen special
 			netconsole = nodetoplayer2[node];
@@ -5157,39 +5223,66 @@ static INT16 Consistancy(void)
 	return (INT16)(ret & 0xFFFF);
 }
 
+// confusing, but this DOESN'T send PT_NODEKEEPALIVE, it sends PT_BASICKEEPALIVE
+// used during wipes to tell the server that a node is still connected
+static void CL_SendClientKeepAlive(void)
+{
+	netbuffer->packettype = PT_BASICKEEPALIVE;
+
+	HSendPacket(servernode, false, 0, 0);
+}
+
+static void SV_SendServerKeepAlive(void)
+{
+	INT32 n;
+
+	for (n = 1; n < MAXNETNODES; n++)
+	{
+		if (nodeingame[n])
+		{
+			netbuffer->packettype = PT_BASICKEEPALIVE;
+			HSendPacket(n, false, 0, 0);
+		}
+	}
+}
+
 // send the client packet to the server
 static void CL_SendClientCmd(void)
 {
 	size_t packetsize = 0;
+	boolean mis = false;
 
 	netbuffer->packettype = PT_CLIENTCMD;
 
 	if (cl_packetmissed)
-		netbuffer->packettype++;
+	{
+		netbuffer->packettype = PT_CLIENTMIS;
+		mis = true;
+	}
+
 	netbuffer->u.clientpak.resendfrom = (UINT8)(neededtic & UINT8_MAX);
 	netbuffer->u.clientpak.client_tic = (UINT8)(gametic & UINT8_MAX);
 
 	if (gamestate == GS_WAITINGPLAYERS)
 	{
 		// Send PT_NODEKEEPALIVE packet
-		netbuffer->packettype += 4;
+		netbuffer->packettype = (mis ? PT_NODEKEEPALIVEMIS : PT_NODEKEEPALIVE);
 		packetsize = sizeof (clientcmd_pak) - sizeof (ticcmd_t) - sizeof (INT16);
 		HSendPacket(servernode, false, 0, packetsize);
 	}
 	else if (gamestate != GS_NULL && (addedtogame || dedicated))
 	{
+		packetsize = sizeof (clientcmd_pak);
 		G_MoveTiccmd(&netbuffer->u.clientpak.cmd, &localcmds, 1);
 		netbuffer->u.clientpak.consistancy = SHORT(consistancy[gametic%BACKUPTICS]);
 
 		// Send a special packet with 2 cmd for splitscreen
 		if (splitscreen || botingame)
 		{
-			netbuffer->packettype += 2;
-			G_MoveTiccmd(&netbuffer->u.client2pak.cmd2, &localcmds2, 1);
+			netbuffer->packettype = (mis ? PT_CLIENT2MIS : PT_CLIENT2CMD);
 			packetsize = sizeof (client2cmd_pak);
+			G_MoveTiccmd(&netbuffer->u.client2pak.cmd2, &localcmds2, 1);
 		}
-		else
-			packetsize = sizeof (clientcmd_pak);
 
 		HSendPacket(servernode, false, 0, packetsize);
 	}
@@ -5200,7 +5293,7 @@ static void CL_SendClientCmd(void)
 		if (localtextcmd[0])
 		{
 			netbuffer->packettype = PT_TEXTCMD;
-			M_Memcpy(netbuffer->u.textcmd,localtextcmd, localtextcmd[0]+1);
+			M_Memcpy(netbuffer->u.textcmd, localtextcmd, localtextcmd[0]+1);
 			// All extra data have been sent
 			if (HSendPacket(servernode, true, 0, localtextcmd[0]+1)) // Send can fail...
 				localtextcmd[0] = 0;
@@ -5598,28 +5691,11 @@ void RenewHolePunch(void)
 }
 // END THAT PLEASE //
 
-void NetUpdate(void)
+static tic_t gametime = 0;
+
+static void UpdatePingTable(void)
 {
-	static tic_t gametime = 0;
-	static tic_t resptime = 0;
-	tic_t nowtime;
 	INT32 i;
-	INT32 realtics;
-
-	nowtime = I_GetTime();
-	realtics = nowtime - gametime;
-
-	if (realtics <= 0) // nothing new to update
-		return;
-	if (realtics > 5)
-	{
-		if (server)
-			realtics = 1;
-		else
-			realtics = 5;
-	}
-
-	gametime = nowtime;
 
 	if (server)
 	{
@@ -5631,11 +5707,160 @@ void NetUpdate(void)
 				realpingtable[i] += G_TicsToMilliseconds(GetLag(playernode[i]));
 		pingmeasurecount++;
 	}
+}
+
+// Handle timeouts to prevent definitive freezes from happenning
+static void HandleNodeTimeouts(void)
+{
+	INT32 i;
+
+	if (server)
+	{
+		for (i = 1; i < MAXNETNODES; i++)
+			if (nodeingame[i] && freezetimeout[i] < I_GetTime())
+				Net_ConnectionTimeout(i);
+
+		// In case the cvar value was lowered
+		if (joindelay)
+			joindelay = min(joindelay - 1, 3 * (tic_t)cv_joindelay.value * TICRATE);
+	}
+}
+
+// Keep the network alive while not advancing tics!
+void NetKeepAlive(void)
+{
+	tic_t nowtime;
+	INT32 realtics;
+
+	nowtime = I_GetTime();
+	realtics = nowtime - gametime;
+
+	// return if there's no time passed since the last call
+	if (realtics <= 0) // nothing new to update
+		return;
+
+	UpdatePingTable();
+
+	GetPackets();
+
+#ifdef MASTERSERVER
+	MasterClient_Ticker();
+#endif
+
+	if (client)
+	{
+		// send keep alive
+		CL_SendClientKeepAlive();
+		// No need to check for resynch because we aren't running any tics
+	}
+	else
+	{
+		SV_SendServerKeepAlive();
+	}
+
+	// No else because no tics are being run and we can't resynch during this
+
+	Net_AckTicker();
+	HandleNodeTimeouts();
+	FileSendTicker();
+}
+
+void NetUpdate(void)
+{
+	static tic_t resptime = 0;
+	tic_t nowtime;
+	INT32 i;
+	INT32 realtics;
+
+	nowtime = I_GetTime();
+	realtics = nowtime - gametime;
+
+	if (realtics <= 0) // nothing new to update
+		return;
+
+	if (realtics > 5)
+	{
+		if (server)
+			realtics = 1;
+		else
+			realtics = 5;
+	}
+
+	if (server && dedicated && gamestate == GS_LEVEL)
+	{
+		const tic_t dedicatedidletime = cv_dedicatedidletime.value * TICRATE;
+		static tic_t dedicatedidletimeprev = 0;
+		static tic_t dedicatedidle = 0;
+
+		if (dedicatedidletime > 0)
+		{
+			for (i = 1; i < MAXNETNODES; ++i)
+				if (nodeingame[i])
+				{
+					if (dedicatedidle >= dedicatedidletime)
+					{
+						CONS_Printf("DEDICATED: Awakening from idle (Node %d detected...)\n", i);
+						dedicatedidle = 0;
+					}
+					break;
+				}
+
+			if (i == MAXNETNODES)
+			{
+				if (leveltime == 2)
+				{
+					// On next tick...
+					dedicatedidle = dedicatedidletime-1;
+				}
+				else if (dedicatedidle >= dedicatedidletime)
+				{
+					if (D_GetExistingTextcmd(gametic, 0) || D_GetExistingTextcmd(gametic+1, 0))
+					{
+						CONS_Printf("DEDICATED: Awakening from idle (Netxcmd detected...)\n");
+						dedicatedidle = 0;
+					}
+					else
+					{
+						realtics = 0;
+					}
+				}
+				else if ((dedicatedidle += realtics) >= dedicatedidletime)
+				{
+					const char *idlereason = "at round start";
+					if (leveltime > 3)
+						idlereason = va("for %d seconds", dedicatedidle/TICRATE);
+
+					CONS_Printf("DEDICATED: No nodes %s, idling...\n", idlereason);
+					realtics = 0;
+					dedicatedidle = dedicatedidletime;
+				}
+			}
+		}
+		else
+		{
+			if (dedicatedidletimeprev > 0 && dedicatedidle >= dedicatedidletimeprev)
+			{
+				CONS_Printf("DEDICATED: Awakening from idle (Idle disabled...)\n");
+			}
+			dedicatedidle = 0;
+		}
+
+		dedicatedidletimeprev = dedicatedidletime;
+	}
+
+	gametime = nowtime;
+
+	UpdatePingTable();
 
 	if (client)
 		maketic = neededtic;
 
 	Local_Maketic(realtics); // make local tic, and call menu?
+	// STAR STUFF //
+	TSoURDt3rd_BuildTicCMD(0);
+	if (splitscreen || botingame)
+		TSoURDt3rd_BuildTicCMD(1);
+	// END ALL THE THINGIES //
 
 	if (server)
 		CL_SendClientCmd(); // send it
@@ -5669,24 +5894,25 @@ void NetUpdate(void)
 	}
 	else
 	{
-		if (!demoplayback)
+		if (!demoplayback && realtics > 0)
 		{
 			INT32 counts;
 
 			hu_redownloadinggamestate = false;
 
-			firstticstosend = gametic;
-			for (i = 0; i < MAXNETNODES; i++)
-				if (nodeingame[i] && nettics[i] < firstticstosend)
-				{
-					firstticstosend = nettics[i];
-
-					if (maketic + 1 >= nettics[i] + BACKUPTICS)
-						Net_ConnectionTimeout(i);
-				}
-
 			// Don't erase tics not acknowledged
 			counts = realtics;
+
+			firstticstosend = gametic;
+			for (i = 0; i < MAXNETNODES; i++)
+			{
+				if (!nodeingame[i])
+					continue;
+				if (nettics[i] < firstticstosend)
+					firstticstosend = nettics[i];
+				if (maketic + counts >= nettics[i] + (BACKUPTICS - TICRATE))
+					Net_ConnectionTimeout(i);
+			}
 
 			if (maketic + counts >= firstticstosend + BACKUPTICS)
 				counts = firstticstosend+BACKUPTICS-maketic-1;
@@ -5704,20 +5930,10 @@ void NetUpdate(void)
 	}
 
 	Net_AckTicker();
-
-	// Handle timeouts to prevent definitive freezes from happenning
-	if (server)
-	{
-		for (i = 1; i < MAXNETNODES; i++)
-			if (nodeingame[i] && freezetimeout[i] < I_GetTime())
-				Net_ConnectionTimeout(i);
-
-		// In case the cvar value was lowered
-		if (joindelay)
-			joindelay = min(joindelay - 1, 3 * (tic_t)cv_joindelay.value * TICRATE);
-	}
+	HandleNodeTimeouts();
 
 	nowtime /= NEWTICRATERATIO;
+
 	if (nowtime > resptime)
 	{
 		resptime = nowtime;

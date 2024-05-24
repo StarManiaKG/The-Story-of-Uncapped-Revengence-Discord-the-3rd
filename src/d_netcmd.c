@@ -49,9 +49,8 @@
 #include "m_anigif.h"
 #include "md5.h"
 #include "m_perfstats.h"
-#include "hardware/u_list.h" // TODO: this should be a standard utility class
+#include "u_list.h"
 
-// STAR NOTE: HI! THIS CAN CAUSE NETGAME RESYNCS, IF YOU ENABLE THE DEFINITION OF COURSE, SO BE CAREFUL!
 #ifdef NETGAME_DEVMODE
 #define CV_RESTRICT CV_NETVAR
 #else
@@ -59,23 +58,15 @@
 #endif
 
 #ifdef HAVE_DISCORDRPC
-// DISCORD STUFFS //
-#include "discord.h"
-// END THIS PLEASE //
+#include "discord/discord.h" // DISCORD STUFFS: include our stuff please //
+#include "discord/discord_cmds.h" // DISCORD STUFF: cv_discord stuff //
 #endif
 
-// STAR STUFF YAYA //
+// STAR STUFF //
 #include "STAR/star_vars.h"
-#include "doomstat.h" // useContinues
-
-// Functions
-static void STAR_UseContinues_OnChange(void);
-
-// Commands
-consvar_t cv_continues = CVAR_INIT ("continues", "Off", CV_SAVE|CV_CALL, CV_OnOff, STAR_UseContinues_OnChange);
-consvar_t cv_movingplayersetup = CVAR_INIT ("movingplayersetup", "Off", CV_SAVE, CV_OnOff, NULL);
-
-// END OF THAT MESS //
+#include "STAR/ss_cmds.h" // various vast TSoURDt3rd commands //
+#include "STAR/ss_main.h" // STAR_CONS_Printf() //
+// END OF THAT MESS, YAYA //
 
 // ------
 // protos
@@ -96,7 +87,7 @@ static void Got_RunSOCcmd(UINT8 **cp, INT32 playernum);
 static void Got_Teamchange(UINT8 **cp, INT32 playernum);
 static void Got_Clearscores(UINT8 **cp, INT32 playernum);
 // STAR STUFF //
-static void Got_Tsourdt3rdPackets(UINT8 **cp, INT32 playernum);
+static void Got_Tsourdt3rdStructures(UINT8 **cp, INT32 playernum);
 // END THAT //
 
 static void PointLimit_OnChange(void);
@@ -623,6 +614,7 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_joinnextround);
 	CV_RegisterVar(&cv_showjoinaddress);
 	CV_RegisterVar(&cv_blamecfail);
+	CV_RegisterVar(&cv_dedicatedidletime);
 #endif
 
 	COM_AddCommand("ping", Command_Ping_f, COM_LUA);
@@ -644,13 +636,16 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_dummyconsvar);
 
 	// STAR STUFF //
+	// Discord
 #ifdef USE_STUN
 	CV_RegisterVar(&cv_stunserver);
 #endif
-
 	CV_RegisterVar(&cv_discordinvites);
 
-	RegisterNetXCmd(XD_TSOURDT3RD, Got_Tsourdt3rdInfo);
+	// TSoURDt3rd
+	CV_RegisterVar(&cv_updatenotice);
+
+	RegisterNetXCmd(XD_TSOURDT3RD, Got_Tsourdt3rdStructures);
 	// END THIS PLEASE //
 }
 
@@ -809,6 +804,8 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_showfocuslost);
 	CV_RegisterVar(&cv_pauseifunfocused);
 
+	CV_RegisterVar(&cv_instantretry);
+
 	// g_input.c
 	CV_RegisterVar(&cv_sideaxis);
 	CV_RegisterVar(&cv_sideaxis2);
@@ -907,10 +904,15 @@ void D_RegisterClientCommands(void)
 	// screen.c
 	CV_RegisterVar(&cv_fullscreen);
 	CV_RegisterVar(&cv_renderview);
+	CV_RegisterVar(&cv_renderhitboxinterpolation);
+	CV_RegisterVar(&cv_renderhitboxgldepth);
+	CV_RegisterVar(&cv_renderhitbox);
 	CV_RegisterVar(&cv_renderer);
 	CV_RegisterVar(&cv_scr_depth);
 	CV_RegisterVar(&cv_scr_width);
 	CV_RegisterVar(&cv_scr_height);
+	CV_RegisterVar(&cv_scr_width_w);
+	CV_RegisterVar(&cv_scr_height_w);
 
 	CV_RegisterVar(&cv_soundtest);
 
@@ -929,6 +931,110 @@ void D_RegisterClientCommands(void)
 //	CV_RegisterVar(&cv_snapto);
 
 	CV_RegisterVar(&cv_freedemocamera);
+
+#ifdef HAVE_DISCORDRPC
+	// DISCORD STUFFS //
+	// Main Things
+	CV_RegisterVar(&cv_discordrp);
+	CV_RegisterVar(&cv_discordstreamer);
+	CV_RegisterVar(&cv_discordasks);
+	CV_RegisterVar(&cv_discordshowonstatus);
+	CV_RegisterVar(&cv_discordstatusmemes);
+	CV_RegisterVar(&cv_discordcharacterimagetype);
+	
+	// Custom Things
+	CV_RegisterVar(&cv_customdiscorddetails);
+	CV_RegisterVar(&cv_customdiscordstate);
+	CV_RegisterVar(&cv_customdiscordlargeimagetype);
+    CV_RegisterVar(&cv_customdiscordsmallimagetype);
+	CV_RegisterVar(&cv_customdiscordlargecharacterimage);
+	CV_RegisterVar(&cv_customdiscordsmallcharacterimage);
+	CV_RegisterVar(&cv_customdiscordlargesupercharacterimage);
+	CV_RegisterVar(&cv_customdiscordsmallsupercharacterimage);
+    CV_RegisterVar(&cv_customdiscordlargemapimage);
+    CV_RegisterVar(&cv_customdiscordsmallmapimage);
+    CV_RegisterVar(&cv_customdiscordlargemiscimage);
+    CV_RegisterVar(&cv_customdiscordsmallmiscimage);
+    CV_RegisterVar(&cv_customdiscordlargeimagetext);
+    CV_RegisterVar(&cv_customdiscordsmallimagetext);
+	// END OF THE DISCORD THINGS //
+#endif
+
+	// CUSTOM FUNNY STAR THINGS :) //
+	// Game
+	CV_RegisterVar(&cv_startupscreen);
+	CV_RegisterVar(&cv_stjrintro);
+
+	CV_RegisterVar(&cv_loadingscreen);
+	CV_RegisterVar(&cv_loadingscreenimage);
+
+	CV_RegisterVar(&cv_quitscreen);
+
+	CV_RegisterVar(&cv_isitcalledsingleplayer);
+
+	CV_RegisterVar(&cv_menucolor);
+
+	CV_RegisterVar(&cv_fpscountercolor);
+	CV_RegisterVar(&cv_tpsrate);
+	CV_RegisterVar(&cv_tpscountercolor);
+
+	CV_RegisterVar(&cv_allowtypicaltimeover);
+	CV_RegisterVar(&cv_pausegraphicstyle);
+	CV_RegisterVar(&cv_automapoutsidedevmode);
+
+	CV_RegisterVar(&cv_soniccd);
+
+	// Audio
+	CV_RegisterVar(&cv_watermuffling);
+
+	CV_RegisterVar(&cv_vapemode);
+
+	CV_RegisterVar(&cv_bossmusic);
+	CV_RegisterVar(&cv_finalbossmusic);
+	CV_RegisterVar(&cv_truefinalbossmusic);
+
+	CV_RegisterVar(&cv_bosspinchmusic);
+	CV_RegisterVar(&cv_postbossmusic);
+
+	CV_RegisterVar(&cv_actclearmusic);
+	CV_RegisterVar(&cv_bossclearmusic);
+
+	CV_RegisterVar(&cv_gameovermusic);
+
+	CV_RegisterVar(&cv_defaultmaptrack);
+
+	// Players
+	CV_RegisterVar(&cv_shieldblockstransformation);
+	CV_RegisterVar(&cv_armageddonnukewhilesuper);
+
+	CV_RegisterVar(&cv_alwaysoverlayinvuln);
+
+	// Savefiles
+	CV_RegisterVar(&cv_storesavesinfolders);
+
+	CV_RegisterVar(&cv_perfectsave);
+	CV_RegisterVar(&cv_perfectsavestripe1);
+	CV_RegisterVar(&cv_perfectsavestripe2);
+	CV_RegisterVar(&cv_perfectsavestripe3);
+
+	CV_RegisterVar(&cv_continues);
+
+	// Servers
+	CV_RegisterVar(&cv_movingplayersetup);
+
+	// Jukebox
+	CV_RegisterVar(&cv_jukeboxspeed);
+
+	CV_RegisterVar(&cv_jukeboxhud);
+
+	CV_RegisterVar(&cv_luacanstopthejukebox);
+
+	// Window Titles
+	CV_RegisterVar(&cv_windowtitletype);
+	CV_RegisterVar(&cv_customwindowtitle);
+	
+	CV_RegisterVar(&cv_memesonwindowtitle);
+	// THE STAR VARS ARE COMPLETE! //
 
 	// add cheat commands
 	COM_AddCommand("noclip", Command_CheatNoClip_f, COM_LUA);
@@ -958,96 +1064,6 @@ void D_RegisterClientCommands(void)
 #ifdef LUA_ALLOW_BYTECODE
 	COM_AddCommand("dumplua", Command_Dumplua_f, COM_LUA);
 #endif
-
-#ifdef HAVE_DISCORDRPC
-	// DISCORD THINGS //
-	// Main Things
-	CV_RegisterVar(&cv_discordrp);
-	CV_RegisterVar(&cv_discordstreamer);
-	CV_RegisterVar(&cv_discordasks);
-	CV_RegisterVar(&cv_discordshowonstatus);
-	CV_RegisterVar(&cv_discordstatusmemes);
-	CV_RegisterVar(&cv_discordcharacterimagetype);
-	
-	// Custom Things
-	CV_RegisterVar(&cv_customdiscorddetails);
-	CV_RegisterVar(&cv_customdiscordstate);
-	CV_RegisterVar(&cv_customdiscordlargeimagetype);
-    CV_RegisterVar(&cv_customdiscordsmallimagetype);
-	CV_RegisterVar(&cv_customdiscordlargecharacterimage);
-	CV_RegisterVar(&cv_customdiscordsmallcharacterimage);
-	CV_RegisterVar(&cv_customdiscordlargesupercharacterimage);
-	CV_RegisterVar(&cv_customdiscordsmallsupercharacterimage);
-    CV_RegisterVar(&cv_customdiscordlargemapimage);
-    CV_RegisterVar(&cv_customdiscordsmallmapimage);
-    CV_RegisterVar(&cv_customdiscordlargemiscimage);
-    CV_RegisterVar(&cv_customdiscordsmallmiscimage);
-    CV_RegisterVar(&cv_customdiscordlargeimagetext);
-    CV_RegisterVar(&cv_customdiscordsmallimagetext);
-	// END OF THE DISCORD THINGS //
-#endif
-
-	// CUSTOM FUNNY STAR THINGS :) //
-	CV_RegisterVar(&cv_startupscreen);
-	CV_RegisterVar(&cv_stjrintro);
-
-	CV_RegisterVar(&cv_loadingscreen);
-	CV_RegisterVar(&cv_loadingscreenimage);
-
-	CV_RegisterVar(&cv_isitcalledsingleplayer);
-	CV_RegisterVar(&cv_menucolor);
-
-	CV_RegisterVar(&cv_fpscountercolor);
-	CV_RegisterVar(&cv_tpsrate);
-	CV_RegisterVar(&cv_tpscountercolor);
-
-	CV_RegisterVar(&cv_allowtypicaltimeover);
-	CV_RegisterVar(&cv_pausegraphicstyle);
-	CV_RegisterVar(&cv_automapoutsidedevmode);
-
-	CV_RegisterVar(&cv_soniccd);
-#ifdef APRIL_FOOLS
-	CV_RegisterVar(&cv_ultimatemode);
-#endif
-
-	CV_RegisterVar(&cv_quitscreen);
-
-	CV_RegisterVar(&cv_tsourdt3rdupdatemessage);
-
-	CV_RegisterVar(&cv_gameovermusic);
-
-	CV_RegisterVar(&cv_defaultmaptrack);
-
-	CV_RegisterVar(&cv_shieldblockstransformation);
-	CV_RegisterVar(&cv_armageddonnukesuper);
-
-	CV_RegisterVar(&cv_alwaysoverlayinvuln);
-
-	CV_RegisterVar(&cv_storesavesinfolders);
-
-	CV_RegisterVar(&cv_perfectsave);
-	CV_RegisterVar(&cv_perfectsavestripe1);
-	CV_RegisterVar(&cv_perfectsavestripe2);
-	CV_RegisterVar(&cv_perfectsavestripe3);
-
-	CV_RegisterVar(&cv_continues);
-
-	CV_RegisterVar(&cv_movingplayersetup);
-
-	CV_RegisterVar(&cv_jukeboxhud);
-
-	CV_RegisterVar(&cv_luacanstopthejukebox);
-	
-	CV_RegisterVar(&cv_jukeboxspeed);
-
-	CV_RegisterVar(&cv_alloweasteregghunt);
-	CV_RegisterVar(&cv_easteregghuntbonuses);
-
-	CV_RegisterVar(&cv_windowtitletype);
-	CV_RegisterVar(&cv_customwindowtitle);
-	
-	CV_RegisterVar(&cv_memesonwindowtitle);
-	// THE STAR VARS ARE COMPLETE! //
 }
 
 /** Checks if a name (as received from another player) is okay.
@@ -1768,9 +1784,14 @@ static void Command_Playdemo_f(void)
 {
 	char name[256];
 
-	if (COM_Argc() != 2)
+	if (COM_Argc() < 2)
 	{
-		CONS_Printf(M_GetText("playdemo <demoname>: playback a demo\n"));
+		CONS_Printf("playdemo <demoname> [-addfiles / -force]:\n");
+		CONS_Printf(M_GetText(
+					"Play back a demo file. The full path from your SRB2 directory must be given.\n\n"
+
+					"* With \"-addfiles\", any required files are added from a list contained within the demo file.\n"
+					"* With \"-force\", the demo is played even if the necessary files have not been added.\n"));
 		return;
 	}
 
@@ -1791,6 +1812,16 @@ static void Command_Playdemo_f(void)
 	// dont add .lmp so internal game demos can be played
 
 	CONS_Printf(M_GetText("Playing back demo '%s'.\n"), name);
+
+	demofileoverride = DFILE_OVERRIDE_NONE;
+	if (strcmp(COM_Argv(2), "-addfiles") == 0)
+	{
+		demofileoverride = DFILE_OVERRIDE_LOAD;
+	}
+	else if (strcmp(COM_Argv(2), "-force") == 0)
+	{
+		demofileoverride = DFILE_OVERRIDE_SKIP;
+	}
 
 	// Internal if no extension, external if one exists
 	// If external, convert the file name to a path in SRB2's home directory
@@ -2012,8 +2043,8 @@ static void Command_Map_f(void)
 	size_t option_gametype;
 	const char *gametypename;
 	boolean newresetplayers;
-
-	boolean mustmodifygame;
+	boolean prevent_cheat;
+	boolean set_cheated;
 
 	INT32 newmapnum;
 
@@ -2034,21 +2065,34 @@ static void Command_Map_f(void)
 	option_gametype =   COM_CheckPartialParm("-g");
 	newresetplayers = ! COM_CheckParm("-noresetplayers");
 
-	mustmodifygame =
-		!( netgame     || multiplayer ) &&
-		(!modifiedgame || savemoddata );
+	prevent_cheat = !( usedCheats ) && !( option_force || cv_debug );
+	set_cheated = false;
 
-	if (mustmodifygame && !option_force)
+	if (!( netgame || multiplayer ))
 	{
-		/* May want to be more descriptive? */
-		CONS_Printf(M_GetText("Sorry, level change disabled in single player.\n"));
-		return;
+		if (prevent_cheat)
+		{
+			/* May want to be more descriptive? */
+			CONS_Printf(M_GetText("Cheats must be enabled to level change in single player.\n"));
+			return;
+		}
+		else
+		{
+			set_cheated = true;
+		}
 	}
 
-	if (!newresetplayers && !cv_debug)
+	if (!newresetplayers)
 	{
-		CONS_Printf(M_GetText("DEVMODE must be enabled.\n"));
-		return;
+		if (prevent_cheat)
+		{
+			CONS_Printf(M_GetText("Cheats must be enabled to use -noresetplayers.\n"));
+			return;
+		}
+		else
+		{
+			set_cheated = true;
+		}
 	}
 
 	if (option_gametype)
@@ -2056,7 +2100,7 @@ static void Command_Map_f(void)
 		if (!multiplayer)
 		{
 			CONS_Printf(M_GetText(
-						"You can't switch gametypes in single player!\n"));
+				"You can't switch gametypes in single player!\n"));
 			return;
 		}
 		else if (COM_Argc() < option_gametype + 2)/* no argument after? */
@@ -2069,7 +2113,9 @@ static void Command_Map_f(void)
 	}
 
 	if (!( first_option = COM_FirstOption() ))
+	{
 		first_option = COM_Argc();
+	}
 
 	if (first_option < 2)
 	{
@@ -2092,16 +2138,11 @@ static void Command_Map_f(void)
 		return;
 	}
 
-	if (mustmodifygame && option_force)
-	{
-		G_SetGameModified(false);
-	}
-
-	// DO STAR STUFF //
+	// STAR STUFF: clears the screen when loading into a level //
 	M_ClearMenus(true);
 	if (demoplayback && titledemo)
 		G_CheckDemoStatus();
-	// END OF STAR STUFF //
+	// END //
 
 	// new gametype value
 	// use current one by default
@@ -2144,15 +2185,13 @@ static void Command_Map_f(void)
 	}
 
 	// don't use a gametype the map doesn't support
-	if (cv_debug || option_force || cv_skipmapcheck.value)
-		fromlevelselect = false; // The player wants us to trek on anyway.  Do so.
 	// G_TOLFlag handles both multiplayer gametype and ignores it for !multiplayer
-	else
+	if (!(
+			mapheaderinfo[newmapnum-1] &&
+			mapheaderinfo[newmapnum-1]->typeoflevel & G_TOLFlag(newgametype)
+	))
 	{
-		if (!(
-					mapheaderinfo[newmapnum-1] &&
-					mapheaderinfo[newmapnum-1]->typeoflevel & G_TOLFlag(newgametype)
-		))
+		if (prevent_cheat && !cv_skipmapcheck.value)
 		{
 			CONS_Alert(CONS_WARNING, M_GetText("%s (%s) doesn't support %s mode!\n(Use -force to override)\n"), realmapname, G_BuildMapName(newmapnum),
 				(multiplayer ? gametype_cons_t[newgametype].strvalue : "Single Player"));
@@ -2162,23 +2201,33 @@ static void Command_Map_f(void)
 		}
 		else
 		{
-			fromlevelselect =
-				( netgame || multiplayer ) &&
-				newgametype == gametype    &&
-				gametypedefaultrules[newgametype] & GTR_CAMPAIGN;
+			// The player wants us to trek on anyway.  Do so.
+			fromlevelselect = false;
+			set_cheated = ((gametypedefaultrules[newgametype] & GTR_CAMPAIGN) == GTR_CAMPAIGN);
 		}
+	}
+	else
+	{
+		fromlevelselect =
+			( netgame || multiplayer ) &&
+			newgametype == gametype    &&
+			(gametypedefaultrules[newgametype] & GTR_CAMPAIGN);
 	}
 
 	// Prevent warping to locked levels
-	// ... unless you're in a dedicated server.  Yes, technically this means you can view any level by
-	// running a dedicated server and joining it yourself, but that's better than making dedicated server's
-	// lives hell.
-	if (!dedicated && M_MapLocked(newmapnum))
+	if (M_CampaignWarpIsCheat(newgametype, newmapnum, serverGamedata))
 	{
-		CONS_Alert(CONS_NOTICE, M_GetText("You need to unlock this level before you can warp to it!\n"));
-		Z_Free(realmapname);
-		Z_Free(mapname);
-		return;
+		if (prevent_cheat)
+		{
+			CONS_Alert(CONS_NOTICE, M_GetText("Cheats must be enabled to warp to a locked level!\n"));
+			Z_Free(realmapname);
+			Z_Free(mapname);
+			return;
+		}
+		else
+		{
+			set_cheated = true;
+		}
 	}
 
 	// Ultimate Mode only in SP via menu
@@ -2194,6 +2243,11 @@ static void Command_Map_f(void)
 		CV_SetValue(&cv_analog[0], tutorialanalog);
 	}
 	tutorialmode = false; // warping takes us out of tutorial mode
+
+	if (set_cheated && !usedCheats)
+	{
+		G_SetUsedCheats(false);
+	}
 
 	D_MapChange(newmapnum, newgametype, false, newresetplayers, 0, false, fromlevelselect);
 
@@ -2236,11 +2290,13 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 
 	lastgametype = gametype;
 	gametype = READUINT8(*cp);
-	G_SetGametype(gametype); // I fear putting that macro as an argument
 
 	if (gametype < 0 || gametype >= gametypecount)
 		gametype = lastgametype;
-	else if (gametype != lastgametype)
+	else
+		G_SetGametype(gametype);
+
+	if (gametype != lastgametype)
 		D_GameTypeChanged(lastgametype); // emulate consvar_t behavior for gametype
 
 	skipprecutscene = ((flags & (1<<2)) != 0);
@@ -2261,12 +2317,6 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 
 	if (demoplayback && !timingdemo)
 		precache = false;
-
-	if (resetplayer && !FLS)
-	{
-		emeralds = 0;
-		memset(&luabanks, 0, sizeof(luabanks));
-	}
 
 	if (modeattacking)
 	{
@@ -2314,7 +2364,7 @@ static void Command_Pause(void)
 
 	if (cv_pause.value || server || (IsPlayerAdmin(consoleplayer)))
 	{
-		if (modeattacking || !(gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) || (marathonmode && gamestate == GS_INTERMISSION))
+		if (modeattacking || !(gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_WAITINGPLAYERS) || (marathonmode && gamestate == GS_INTERMISSION))
 		{
 			CONS_Printf(M_GetText("You can't pause here.\n"));
 			return;
@@ -2477,7 +2527,7 @@ static void Got_Clearscores(UINT8 **cp, INT32 playernum)
 	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
-		players[i].score = 0;
+		players[i].score = players[i].recordscore = 0;
 
 	CONS_Printf(M_GetText("Scores have been reset by the server.\n"));
 }
@@ -3986,9 +4036,9 @@ static void Command_ListWADS_f(void)
   */
 static void Command_Version_f(void)
 {
-	// STAR NOTE: i was here :)
+	// STAR NOTE: i was here :) //
 #ifdef DEVELOP
-	CONS_Printf("Sonic Robo Blast 2; %s - %s-%s (%s %s) ", TSOURDT3RDVERSIONSTRING, compbranch, comprevision, compdate, comptime);
+	CONS_Printf("Sonic Robo Blast 2 %s; %s %s %s (%s %s) ", TSOURDT3RDVERSIONSTRING, compbranch, comprevision, compnote, compdate, comptime);
 #else
 	CONS_Printf("Sonic Robo Blast 2 %s; %s %s (%s %s %s %s) ", VERSIONSTRING, TSOURDT3RDVERSIONSTRING, TSOURDT3RDBYSTARMANIAKGSTRING, compdate, comptime, comprevision, compbranch);
 #endif
@@ -4011,7 +4061,7 @@ static void Command_Version_f(void)
 #elif defined(UNIXCOMMON)
 	CONS_Printf("Unix (Common) ");
 #else
-	CONS_Printf("Unknown/Other OS "); // STAR NOTE: STAR WAS HERE, HEHEHE
+	CONS_Printf("Unknown/Other OS ");
 #endif
 
 	// Bitness
@@ -4021,11 +4071,6 @@ static void Command_Version_f(void)
 		CONS_Printf("64-bit ");
 	else // 16-bit? 128-bit?
 		CONS_Printf("Bits Unknown ");
-
-	// No ASM?
-#ifdef NOASM
-	CONS_Printf("\x85" "NOASM " "\x80");
-#endif
 
 	// Debug build
 #ifdef _DEBUG
@@ -4079,7 +4124,7 @@ static void Command_Playintro_f(void)
 	if (dirmenu)
 		closefilemenu(true);
 
-	// STAR STUFF BEP //
+	// STAR STUFF: clears out the screen when looking at the intro //
 	M_ClearMenus(true);
 	if (demoplayback && titledemo)
 		G_CheckDemoStatus();
@@ -4101,15 +4146,9 @@ void ItemFinder_OnChange(void)
 	if (!cv_itemfinder.value)
 		return; // it's fine.
 
-	if (!M_SecretUnlocked(SECRET_ITEMFINDER))
+	if (!M_SecretUnlocked(SECRET_ITEMFINDER, clientGamedata))
 	{
 		CONS_Printf(M_GetText("You haven't earned this yet.\n"));
-		CV_StealthSetValue(&cv_itemfinder, 0);
-		return;
-	}
-	else if (netgame || multiplayer)
-	{
-		CONS_Printf(M_GetText("This only works in single player.\n"));
 		CV_StealthSetValue(&cv_itemfinder, 0);
 		return;
 	}
@@ -4404,9 +4443,6 @@ void D_GameTypeChanged(INT32 lastgametype)
 	else if (!multiplayer && !netgame)
 	{
 		G_SetGametype(GT_COOP);
-		// These shouldn't matter anymore
-		//CV_Set(&cv_itemrespawntime, cv_itemrespawntime.defaultvalue);
-		//CV_SetValue(&cv_itemrespawn, 0);
 	}
 
 	// reset timelimit and pointlimit in race/coop, prevent stupid cheats
@@ -4467,7 +4503,7 @@ void D_GameTypeChanged(INT32 lastgametype)
 
 static void Ringslinger_OnChange(void)
 {
-	if (!M_SecretUnlocked(SECRET_PANDORA) && !netgame && cv_ringslinger.value && !cv_debug)
+	if (!M_SecretUnlocked(SECRET_PANDORA, serverGamedata) && !netgame && cv_ringslinger.value && !cv_debug)
 	{
 		CONS_Printf(M_GetText("You haven't earned this yet.\n"));
 		CV_StealthSetValue(&cv_ringslinger, 0);
@@ -4475,12 +4511,12 @@ static void Ringslinger_OnChange(void)
 	}
 
 	if (cv_ringslinger.value) // Only if it's been turned on
-		G_SetGameModified(multiplayer);
+		G_SetUsedCheats(false);
 }
 
 static void Gravity_OnChange(void)
 {
-	if (!M_SecretUnlocked(SECRET_PANDORA) && !netgame && !cv_debug
+	if (!M_SecretUnlocked(SECRET_PANDORA, serverGamedata) && !netgame && !cv_debug
 		&& strcmp(cv_gravity.string, cv_gravity.defaultvalue))
 	{
 		CONS_Printf(M_GetText("You haven't earned this yet.\n"));
@@ -4496,7 +4532,7 @@ static void Gravity_OnChange(void)
 #endif
 
 	if (!CV_IsSetToDefault(&cv_gravity))
-		G_SetGameModified(multiplayer);
+		G_SetUsedCheats(false);
 	gravity = cv_gravity.value;
 }
 
@@ -4713,25 +4749,37 @@ static void Command_Mapmd5_f(void)
 		CONS_Printf(M_GetText("You must be in a level to use this.\n"));
 }
 
+void D_SendExitLevel(boolean cheat)
+{
+	UINT8 buf[8];
+	UINT8 *buf_p = buf;
+
+	WRITEUINT8(buf_p, cheat);
+
+	SendNetXCmd(XD_EXITLEVEL, &buf, buf_p - buf);
+}
+
 static void Command_ExitLevel_f(void)
 {
-	if (!(netgame || (multiplayer && gametype != GT_COOP)) && !cv_debug)
-		CONS_Printf(M_GetText("This only works in a netgame.\n"));
-	else if (!(server || (IsPlayerAdmin(consoleplayer))))
+	if (!(server || (IsPlayerAdmin(consoleplayer))))
 		CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
 	else if (( gamestate != GS_LEVEL && gamestate != GS_CREDITS ) || demoplayback)
 		CONS_Printf(M_GetText("You must be in a level to use this.\n"));
 	else
-		SendNetXCmd(XD_EXITLEVEL, NULL, 0);
+		D_SendExitLevel(true);
 }
 
 static void Got_ExitLevelcmd(UINT8 **cp, INT32 playernum)
 {
-	(void)cp;
+	boolean cheat = false;
+
+	cheat = (boolean)READUINT8(*cp);
 
 	// Ignore duplicate XD_EXITLEVEL commands.
 	if (gameaction == ga_completed)
+	{
 		return;
+	}
 
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
 	{
@@ -4739,6 +4787,11 @@ static void Got_ExitLevelcmd(UINT8 **cp, INT32 playernum)
 		if (server)
 			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
 		return;
+	}
+
+	if (G_CoopGametype() && cheat)
+	{
+		G_SetUsedCheats(false);
 	}
 
 	G_ExitLevel();
@@ -4777,6 +4830,7 @@ void Command_ExitGame_f(void)
 	botskin = 0;
 	cv_debug = 0;
 	emeralds = 0;
+	automapactive = false;
 	memset(&luabanks, 0, sizeof(luabanks));
 
 	if (dirmenu)
@@ -4812,7 +4866,7 @@ static void Fishcake_OnChange(void)
 	// so don't make modifiedgame always on!
 	if (cv_debug)
 	{
-		G_SetGameModified(multiplayer);
+		G_SetUsedCheats(false);
 	}
 
 	else if (cv_debug != cv_fishcake.value)
@@ -4829,17 +4883,17 @@ static void Fishcake_OnChange(void)
 static void Command_Isgamemodified_f(void)
 {
 	if (savemoddata)
-		CONS_Printf(M_GetText("modifiedgame is true, but you can save emblem and time data in this mod.\n"));
+		CONS_Printf(M_GetText("modifiedgame is true, but you can save time data in this mod.\n"));
 	else if (modifiedgame)
-		CONS_Printf(M_GetText("modifiedgame is true, extras will not be unlocked\n"));
+		CONS_Printf(M_GetText("modifiedgame is true, time data can't be saved\n"));
 	
-	// STAR STUFF YAY //
+	// STAR STUFF: autoloading mess //
 	else if (autoloaded)
-		CONS_Printf(M_GetText("modifiedgame is false, and extras can still be unlocked,\n but keep in mind that you have autoloaded game-changing add-ons.\n"));
-	// END STAR STUFF YAY //
+		CONS_Printf(M_GetText("modifiedgame is false, and time data can still be saved,\n but keep in mind that you have autoloaded at least one game-changing mod.\n"));
+	// CHECKS ARE NOW DONE! //
 
 	else
-		CONS_Printf(M_GetText("modifiedgame is false, you can unlock extras\n"));
+		CONS_Printf(M_GetText("modifiedgame is false, you can save time data\n"));
 }
 
 static void Command_Cheats_f(void)
@@ -4993,9 +5047,9 @@ static void Skin_OnChange(void)
 	// STAR NOTE: No Cheating in Race-Type Modes
 	if (gametyperules & GTR_RACE && (cv_movingplayersetup.value && P_PlayerMoving(consoleplayer)))
 	{
-		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment. Nice try, %s.\n"),
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, M_GetText("You can't change your skin at the moment. Nice try, %s.\n"),
 #ifdef HAVE_DISCORDRPC
-			((discordInfo.Disconnected || !discordInfo.Initialized) ? (Playing() ? player_names[consoleplayer] : cv_playername.string) : discordInfo.sessionUsername)
+			(discordInfo.ConnectionStatus != DRPC_CONNECTED ? (Playing() ? player_names[consoleplayer] : cv_playername.string) : DRPC_ReturnUsername(NULL))
 #else
 			(Playing() ? player_names[consoleplayer] : cv_playername.string)
 #endif
@@ -5005,16 +5059,14 @@ static void Skin_OnChange(void)
 	}
 
 	// STAR NOTE: i was here lol
-	if ((CanChangeSkin(consoleplayer))
-		&& (cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(consoleplayer))))
+	if (CanChangeSkin(consoleplayer) && STAR_CanPlayerMoveAndChangeSkin(consoleplayer))
 	{
 		SendNameAndColor();
 
-		if (cv_movingplayersetup.value && P_PlayerMoving(consoleplayer))
+		if (P_PlayerMoving(consoleplayer))
 		{
 			player_t *player = &players[consoleplayer];
-			if (player->mo && !(P_IsObjectOnGround(player->mo)))
-				P_ResetPlayer(player);
+			P_ResetPlayer(player);
 
 			if (netgame)
 				NetUpdate(); // update the player
@@ -5047,9 +5099,9 @@ static void Skin2_OnChange(void)
 	// STAR NOTE: No Cheating in Race-Type Modes 2
 	if (gametyperules & GTR_RACE && (cv_movingplayersetup.value && P_PlayerMoving(secondarydisplayplayer)))
 	{
-		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment. Nice try, %s's friend.\n"),
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, M_GetText("You can't change your skin at the moment. Nice try, %s's friend.\n"),
 #ifdef HAVE_DISCORDRPC
-			((discordInfo.Disconnected || !discordInfo.Initialized) ? (Playing() ? player_names[consoleplayer] : cv_playername.string) : discordInfo.sessionUsername)
+			(discordInfo.ConnectionStatus != DRPC_CONNECTED ? (Playing() ? player_names[consoleplayer] : cv_playername.string) : DRPC_ReturnUsername(NULL))
 #else
 			(Playing() ? player_names[consoleplayer] : cv_playername.string)
 #endif
@@ -5058,17 +5110,15 @@ static void Skin2_OnChange(void)
 		return;
 	}
 
-	// STAR NOTE: i was here 2
-	if ((CanChangeSkin(secondarydisplayplayer))
-		&& (cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(secondarydisplayplayer))))
+	// STAR NOTE: i was here lol 2
+	if (CanChangeSkin(secondarydisplayplayer) && STAR_CanPlayerMoveAndChangeSkin(secondarydisplayplayer))
 	{
 		SendNameAndColor2();
 
-		if (cv_movingplayersetup.value && P_PlayerMoving(secondarydisplayplayer))
+		if (P_PlayerMoving(secondarydisplayplayer))
 		{
-			player_t *player2 = &players[secondarydisplayplayer];
-			if (player2->mo && !(P_IsObjectOnGround(player2->mo)))
-				P_ResetPlayer(player2);
+			player_t *player = &players[secondarydisplayplayer];
+			P_ResetPlayer(player); // update the second player
 		}
 	}
 	else
@@ -5226,7 +5276,7 @@ static void BaseNumLaps_OnChange(void)
 }
 
 // STAR STUFF: ELECTRIC BOOGALO //
-static void Got_Tsourdt3rdPackets(UINT8 **cp, INT32 playernum)
+static void Got_Tsourdt3rdStructures(UINT8 **cp, INT32 playernum)
 {
 	// Protect Others Against a Hacked/Buggy Client //
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
@@ -5237,36 +5287,15 @@ static void Got_Tsourdt3rdPackets(UINT8 **cp, INT32 playernum)
 		return;
 	}
 
-	// Apply Info, and We're Done :) //
-	UINT8 serverUsesTSoURDt3rd				= (boolean)READUINT8(*cp);
-	TSoURDt3rdInfo.serverUsesTSoURDt3rd		= ((serverUsesTSoURDt3rd > 1 || serverUsesTSoURDt3rd < 0) ? 0 : 1);
-
-	TSoURDt3rdInfo.majorVersion 			= (TSoURDt3rdInfo.serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
-	TSoURDt3rdInfo.minorVersion 			= (TSoURDt3rdInfo.serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
-	TSoURDt3rdInfo.subVersion 				= (TSoURDt3rdInfo.serverUsesTSoURDt3rd ? READUINT8(*cp) : 0);
-
-	TSoURDt3rdInfo.serverTSoURDt3rdVersion 	= STAR_CombineNumbers(3, TSoURDt3rdInfo.majorVersion, TSoURDt3rdInfo.minorVersion, TSoURDt3rdInfo.subVersion);
-
-	// DISCORD STUFF //
+	// DISCORD STUFF: Apply Info, and We're Done :) //
 #ifdef HAVE_DISCORDRPC
-	discordInfo.maxPlayers 					= (TSoURDt3rdInfo.serverUsesTSoURDt3rd ? READUINT8(*cp) : (UINT8)cv_maxplayers.value);
-	discordInfo.joinsAllowed 				= (TSoURDt3rdInfo.serverUsesTSoURDt3rd ? (boolean)READUINT8(*cp) : (boolean)cv_allownewplayer.value);
-	discordInfo.whoCanInvite 				= (TSoURDt3rdInfo.serverUsesTSoURDt3rd ? READUINT8(*cp) : (UINT8)cv_discordinvites.value);
+	discordInfo.maxPlayers 		= (TSoURDt3rdPlayers[serverplayer].serverPlayers.serverUsesTSoURDt3rd ? READUINT8(*cp) : (UINT8)cv_maxplayers.value);
+	discordInfo.joinsAllowed 	= (TSoURDt3rdPlayers[serverplayer].serverPlayers.serverUsesTSoURDt3rd ? READUINT8(*cp) : (UINT8)cv_allownewplayer.value);
+	discordInfo.whoCanInvite 	= (TSoURDt3rdPlayers[serverplayer].serverPlayers.serverUsesTSoURDt3rd ? READUINT8(*cp) : (UINT8)cv_discordinvites.value);
 
 	DRPC_UpdatePresence();
 #else
-	(*cp) += 3; // Don't do anything with the information if we don't have Discord RPC support
+	(*cp) += 3; // STAR NOTE: Don't do anything with the information if we don't have Discord RPC support
 #endif
 	// END THAT DISCORD STUFF //
-}
-
-static void STAR_UseContinues_OnChange(void)
-{
-	if (Playing())
-		return;
-
-	if (!(netgame || multiplayer))
-		useContinues = cv_continues.value;
-	else
-		CONS_Printf(M_GetText("This only works in Singleplayer.\n"));
 }

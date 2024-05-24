@@ -70,6 +70,8 @@
 #include "filesrch.h" // refreshdirmenu
 #include "g_input.h" // tutorial mode control scheming
 #include "m_perfstats.h"
+#include "m_random.h"
+#include "command.h"
 
 #ifdef CMAKECONFIG
 #include "config.h"
@@ -89,13 +91,11 @@
 #include "hardware/hw3sound.h"
 #endif
 
-#ifdef HAVE_DISCORDRPC
-// DISCORD STUFFS //
-#include "discord.h"
-// END IT, WEEEEEEE //
-#endif
-
 #include "lua_script.h"
+
+#ifdef HAVE_DISCORDRPC
+#include "discord/discord.h" // DISCORD STUFFS: our stuff //
+#endif
 
 // Version numbers for netplay :upside_down_face:
 int    VERSION;
@@ -146,16 +146,19 @@ static char addonsdir[MAX_WADPATH];
 
 // STAR STUFF WEEEEE //
 #include "STAR/star_vars.h"
+#include "STAR/ss_main.h" // AUTOLOADCONFIGFILENAME, TSoURDt3rd_CheckTime(), STAR_CONS_Printf(), & TSoURDt3rd_CON_DrawStartupScreen() //
+
+#include "STAR/s_sound.h" // jukebox //
 
 // Discord Stuff
 INT32 extrawads;
 boolean TSoURDt3rd_checkedExtraWads;
 
-// STAR Stuff
-boolean TSoURDt3rd_TouchyModifiedGame;
-boolean TSoURDt3rd_LoadExtras;
-boolean TSoURDt3rd_LoadedExtras;
-boolean TSoURDt3rd_NoMoreExtras;
+// TSoURDt3rd Stuff
+boolean TSoURDt3rd_TouchyModifiedGame = false;
+boolean TSoURDt3rd_LoadExtras = true;
+boolean TSoURDt3rd_LoadedExtras = true;
+boolean TSoURDt3rd_NoMoreExtras = false;
 
 // Autoloading
 static addfilelist_t autoloadwadfiles;
@@ -164,15 +167,8 @@ boolean autoloading;
 boolean autoloaded;
 
 // Savefiles
-consvar_t cv_storesavesinfolders = CVAR_INIT ("storesavesinfolders", "Off", CV_SAVE|CV_CALL, CV_OnOff, STAR_SetSavefileProperties);
-
 boolean TSoURDt3rd_useAsFileName;
 char savegamefolder[256];
-
-// Events
-boolean aprilfoolsmode; 		// April Fools Event Setter
-boolean eastermode;				// Easter Event Setter
-boolean xmasmode, xmasoverride;	// Christmas Event Setter
 // END OF ALL THAT STAR STUFF //
 
 //
@@ -495,18 +491,19 @@ static void D_Display(void)
 
 		case GS_WAITINGPLAYERS:
 			// The clientconnect drawer is independent...
+			if (netgame)
+			{
+				// I don't think HOM from nothing drawing is independent...
+				F_WaitingPlayersDrawer();
+				HU_Erase();
+				HU_Drawer();
+			}
 		case GS_DEDICATEDSERVER:
 		case GS_NULL:
 			break;
 	}
 
-	// STAR STUFF //
-#ifdef APRIL_FOOLS
-	// Close the Game if We're on Ultimate Mode But We've Beaten the Game
-	if (cv_ultimatemode.value && (gamestate == (GS_ENDING|GS_CREDITS|GS_EVALUATION)))
-		I_Error("SIGSEGV - seventh sentinel (core dumped)");
-#endif
-	// WHY YOU DO BAD //
+	TSoURDt3rd_D_Display(); // STAR STUFF: run our display manager now :p //
 
 	// STUPID race condition...
 	if (wipegamestate == GS_INTRO && gamestate == GS_TITLESCREEN)
@@ -609,28 +606,24 @@ static void D_Display(void)
 		V_SetPalette(0);
 
 	// draw pause pic
-	// STAR NOTE: i was here lol
 	if (paused && cv_showhud.value && (!menuactive || netgame))
 	{
-		// Old-School
-		if (cv_pausegraphicstyle.value)
+		// STAR NOTE: cv_pausegraphicstyle edits are included here lol //
+		if (cv_pausegraphicstyle.value) // Old-School
 		{
 			INT32 py;
 			patch_t *patch;
-			if (automapactive)
-				py = 4;
-			else
-				py = viewwindowy + 4;
+			py = 4;
+			if (!automapactive)
+				py += viewwindowy;
 			patch = W_CachePatchName("M_PAUSE", PU_PATCH);
 			V_DrawScaledPatch(viewwindowx + (BASEVIDWIDTH - patch->width)/2, py, 0, patch);
 		}
-
-		// Default
-		else
+		else // Default
 		{
 			INT32 y = ((automapactive) ? (32) : (BASEVIDHEIGHT/2));
 			M_DrawTextBox((BASEVIDWIDTH/2) - (60), y - (16), 13, 2);
-			V_DrawCenteredString(BASEVIDWIDTH/2, y - (4), menuColor[cv_menucolor.value], "Game Paused");
+			V_DrawCenteredString(BASEVIDWIDTH/2, y - (4), V_MENUCOLORMAP, "Game Paused");
 		}
 	}
 
@@ -720,13 +713,13 @@ static void D_Display(void)
 			s[sizeof s - 1] = '\0';
 
 			snprintf(s, sizeof s - 1, "get %d b/s", getbps);
-			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-40, menuColor[cv_menucolor.value], s);
+			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-40, V_MENUCOLORMAP, s);
 			snprintf(s, sizeof s - 1, "send %d b/s", sendbps);
-			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-30, menuColor[cv_menucolor.value], s);
+			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-30, V_MENUCOLORMAP, s);
 			snprintf(s, sizeof s - 1, "GameMiss %.2f%%", gamelostpercent);
-			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-20, menuColor[cv_menucolor.value], s);
+			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-20, V_MENUCOLORMAP, s);
 			snprintf(s, sizeof s - 1, "SysMiss %.2f%%", lostpercent);
-			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-10, menuColor[cv_menucolor.value], s);
+			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-10, V_MENUCOLORMAP, s);
 		}
 
 		if (cv_perfstats.value)
@@ -797,17 +790,9 @@ void D_SRB2Loop(void)
 	because I_FinishUpdate was called afterward
 	*/
 	/* Smells like a hack... Don't fade Sonic's ass into the title screen. */
-	// STAR NOTE: i was here lol
 	if (gamestate != GS_TITLESCREEN)
 	{
-		static const char *gstartuplumpnumtype[] = {
-			"STARTUP",
-			"CONSBACK",
-			"BABYSONIC",
-			NULL
-		};
-
-		gstartuplumpnum = W_CheckNumForName(gstartuplumpnumtype[cv_startupscreen.value]);
+		gstartuplumpnum = W_CheckNumForName(TSoURDt3rd_CON_DrawStartupScreen());
 		if (gstartuplumpnum == LUMPERROR)
 			gstartuplumpnum = W_GetNumForName("MISSING");
 		V_DrawScaledPatch(0, 0, 0, W_CachePatchNum(gstartuplumpnum, PU_PATCH));
@@ -951,92 +936,56 @@ void D_SRB2Loop(void)
 		LUA_Step();
 
 #ifdef HAVE_DISCORDRPC
-		// DISCORD STUFFS //
+		// DISCORD STUFFS: constantly update the discord rich presence //
 		if (! dedicated)
+		{
+#ifdef DISCORD_DISABLE_IO_THREAD
+			Discord_UpdateConnection();
+#endif
 			Discord_RunCallbacks();
+		}
 		// END THIS PLEASE //
 #endif
 
 		//// STAR STUFF ////
-		// Do Event Stuff //
-#ifdef APRIL_FOOLS
-		// April Fools
-		if ((!modifiedgame || savemoddata) && (cv_ultimatemode.value))
-		{
-			CONS_Printf("You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nyour game has been set to modified.\n");
-			G_SetGameModified(false);
-		}
-#endif
-
-		// Easter
-		if (!eastermode && (cv_alloweasteregghunt.value || cv_easteregghuntbonuses.value || EnableEasterEggHuntBonuses))
-		{
-			CV_StealthSetValue(&cv_alloweasteregghunt, 0);
-			CV_StealthSetValue(&cv_easteregghuntbonuses, 0);
-
-			EnableEasterEggHuntBonuses = 0;
-		}
-		else if (eastermode)
-		{
-			if (currenteggs != TOTALEGGS && (cv_easteregghuntbonuses.value || EnableEasterEggHuntBonuses))
-			{
-				CV_StealthSetValue(&cv_easteregghuntbonuses, 0);
-				EnableEasterEggHuntBonuses = 0;
-			}
-			else if ((!modifiedgame || savemoddata) && (!TSoURDt3rd_NoMoreExtras) && (EnableEasterEggHuntBonuses))
-			{
-				CONS_Printf("You have the Easter Egg Hunt Bonus features enabled.\nTherefore, to prevent dumb things from happening,\nyour game has been set to modified.\n");
-				G_SetGameModified(false);
-
-				M_UpdateEasterStuff();
-			}
-		}
+		TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer];
 
 #ifdef HAVE_CURL
 		// Do Internet Stuff //
-		// Grab the Current TSoURDt3rd Version
-		if (!TSoURDt3rd->checkedVersion && cv_tsourdt3rdupdatemessage.value)
-		{
-			// STAR NOTE: If You're Planning on Using the Internet Functions, Use This Block as an Example :) //
-			// Make Some Variables
-			const char *API = "https://raw.githubusercontent.com/StarManiaKG/The-Story-of-Uncapped-Revengence-Discord-the-3rd/";
-			char URL[256];	strcpy(URL,	 va("%s/src/STAR/star_webinfo.h", compbranch));
-			char INFO[256]; strcpy(INFO, va("#define TSOURDT3RDVERSION \"%s\"", TSOURDT3RDVERSION));
-			
-			// Check the Version, And If They Don't Match the Branch's Version, Run the Block Below
-			CONS_Printf("STAR_FindStringOnWebsite() & STAR_ReturnStringFromWebsite(): Grabbing latest TSoURDt3rd version...\n");
-			
-			if (STAR_FindStringOnWebsite(API, URL, INFO, false) == 1)
-			{
-				char RETURNINFO[256] = "#define TSOURDT3RDVERSION";
-				char RETURNEDSTRING[256] = ""; strcpy(RETURNEDSTRING, STAR_ReturnStringFromWebsite(API, URL, RETURNINFO, false));
-
-				UINT32 internalVersionNumber = STAR_ConvertStringToCompressedNumber(RETURNEDSTRING, 0, 26, true);
-
-				UINT32 displayVersionNumber = STAR_ConvertStringToCompressedNumber(RETURNEDSTRING, 0, 26, false);
-				const char *displayVersionString = STAR_ConvertNumberToString(displayVersionNumber, 0, 0, true);
-
-				if (TSoURDt3rd_CurrentVersion() < internalVersionNumber)
-					(cv_tsourdt3rdupdatemessage.value == 1 ?
-						(M_StartMessage(va("%c%s\x80\nYou're using an outdated version of TSoURDt3rd.\n\nThe newest version is: %s\nYou're using version: %s\n\nCheck the SRB2 Message Board for the latest version!\n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Update TSoURDt3rd, Please", displayVersionString, TSOURDT3RDVERSION),NULL,MM_NOTHING)) :
-						(CONS_Alert(CONS_WARNING, "You're using an outdated version of TSoURDt3rd.\n\nThe newest version is: %s\nYou're using version: %s\n\nCheck the SRB2 Message Board for the latest version!\n", displayVersionString, TSOURDT3RDVERSION)));
-				else if (TSoURDt3rd_CurrentVersion() > internalVersionNumber)
-					(cv_tsourdt3rdupdatemessage.value == 1 ?
-						(M_StartMessage(va("%c%s\x80\nYou're using a version of TSoURDt3rd that hasn't even released yet.\n\nYou're probably a tester or coder,\nand in that case, hello!\n\nEnjoy messing around with the build!\n\n(Press any key to continue)\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "Hello, Tester/Coder!"),NULL,MM_NOTHING)) :
-						(CONS_Alert(CONS_NOTICE, "You're using a version of TSoURDt3rd that hasn't even released yet.\nYou're probably a tester or coder, and in that case, hello!\nEnjoy messing around with the build!\n")));
-			}
-			TSoURDt3rd->checkedVersion = true;
-		}
+		// Grab the Current TSoURDt3rd Version, if We Haven't Checked Before and the Function's Checks Allow it
+		TSoURDt3rd_FindCurrentVersion();
 #endif
 
-		// Do Extra Stuff //
-		// Lock-on the Extra PK3
-		if (TSoURDt3rd_LoadExtras)
+		// Do Jukebox Stuff //
+		// Whoa, Whoa, We Ran Out of Time (except again for keybind execution reasons)
+		if (TSoURDt3rd->jukebox.musicPlaying && TSoURDt3rd->jukebox.lastTrackPlayed)
 		{
-			if (aprilfoolsmode || eastermode || xmasmode)
-				M_StartMessage(va("%c%s\x80\nTSoURDt3rd is having a seasonal event!\n\nWould you like to load tsourdt3rdextras.pk3 to engage in it? \n\n(Press 'Y' or 'Enter' for 'Yes'; 'N' or any other key for 'No')\n", ('\x80' + (menuColor[cv_menucolor.value]|V_CHARCOLORSHIFT)), "A TSoURDt3rd Event is Occuring"),TSoURDt3rd_EventMessage,MM_YESNO);
+			fixed_t jb_stoppingtics = (fixed_t)(TSoURDt3rd->jukebox.lastTrackPlayed->stoppingtics) << FRACBITS;
+
+			if (jb_stoppingtics && TSoURDt3rd->jukebox.stoppingTics >= jb_stoppingtics)
+				M_ResetJukebox(true);
 			else
-				COM_BufAddText("addfile tsourdt3rdextras.pk3\n");
+			{
+				fixed_t work = 0, bpm = 0;
+				work = bpm = TSoURDt3rd->jukebox.lastTrackPlayed->bpm/S_GetSpeedMusic();
+
+				work = TSoURDt3rd->jukebox.stoppingTics;
+				work %= bpm;
+				if (TSoURDt3rd->jukebox.stoppingTics >= (FRACUNIT << (FRACBITS - 2))) // prevent overflow jump - takes about 15 minutes of loop on the same song to reach
+					TSoURDt3rd->jukebox.stoppingTics = work;
+				work = FixedDiv(work*180, bpm);
+
+				if (!(paused || P_AutoPause())) // prevents time from being added up while the game is paused
+					TSoURDt3rd->jukebox.stoppingTics += renderdeltatics*S_GetSpeedMusic();
+			}
+		}
+
+		// Do Extra Stuff //
+		static boolean sentMessage;
+		if ((eastermode || aprilfoolsmode || xmasmode) && !sentMessage)
+		{
+			M_StartMessage(va("%c%s\x80\nTSoURDt3rd is having a seasonal event!\n\n(Press any key to continue)\n", ('\x80' + (V_MENUCOLORMAP|V_CHARCOLORSHIFT)), "A TSoURDt3rd Event is Occuring"),NULL,MM_NOTHING);
+			sentMessage = true;
 		}
 
 		// Check What Extra Add-ons we Have Currently Loaded
@@ -1051,31 +1000,14 @@ void D_SRB2Loop(void)
 				nameonly(tempname = va("%s", wadfiles[i]->filename));
 				if ((strcmp(tempname, "music.dta") == 0)
 					|| (strcmp(tempname, "jukebox.pk3") == 0)
-					|| (strcmp(tempname, "patch_music.pk3") == 0)
-					|| (strcmp(tempname, "tsourdt3rdextras.pk3") == 0))
-				{
-					if (strcmp(tempname, "tsourdt3rdextras.pk3") == 0)
-					{
-						if (!TSoURDt3rd_LoadedExtras)
-						{
-							TSoURDt3rd_LoadedExtras = true;
-							TSoURDt3rd_TouchyModifiedGame = true;
-						}
-						M_UpdateEasterStuff();
-					}
-					
+					|| (strcmp(tempname, "patch_music.pk3") == 0))
+				{					
 					extrawads++;
 					continue;
 				}
 			}
 			TSoURDt3rd_checkedExtraWads = true;
-		}
-
-		// Do Server Stuff //
-		// Find Current Server Infractions
-		if ((Playing() && netgame) || dedicated)
-			STAR_FindServerInfractions();
-		
+		}		
 		//// THAT'S THE END :P ////
 
 		// Fully completed frame made.
@@ -1119,13 +1051,12 @@ void D_StartTitle(void)
 {
 	INT32 i;
 
-	// STAR STUFF YAY //
-	// Put a New Section Here Just so It Doesn't Reset My Fun lol
-	if (!jukeboxMusicPlaying)
-		S_StopMusic();
-	else if (jukeboxMusicPlaying && paused)
+	// STAR STUFF: Prevent My Fun Jukebox Music From Being Reset (YAY) //
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying && paused)
 		S_ResumeAudio();
+	else
 	// END THAT STUFF //
+	S_StopMusic();
 
 	if (netgame)
 	{
@@ -1183,7 +1114,10 @@ void D_StartTitle(void)
 	F_InitMenuPresValues();
 	F_StartTitleScreen();
 
-	currentMenu = &MainDef; // reset the current menu ID
+	// STAR STUFF: helps out with M_StartMessage queueing stuff (found in m_menu.c by the way) //
+	if (!menuactive)
+		currentMenu = &MainDef; // reset the current menu ID
+	// END THIS FOR ME PLEASE //
 
 	// Reset the palette
 	if (rendermode != render_none)
@@ -1250,33 +1184,26 @@ static void D_AddFolder(addfilelist_t *list, const char *file)
 }
 
 // STAR STUFF //
-static void D_AutoLoadAddons(addfilelist_t *list, const char *file)
+static void TSoURDt3rd_AutoLoadAddons(addfilelist_t *list, const char *file, INT32 fileType)
 {
 	char *newfile;
 	size_t index = 0;
-	INT32 fileType = STAR_DetectFileType(file);
 
 	REALLOC_FILE_LIST
 
 	newfile = malloc(strlen(file) + (fileType == 1 ? 2 : 1)); // Path delimiter + NULL terminator
 	if (!newfile)
-		I_Error("D_AutoLoadAddons: No more free memory to autoload file %s", file);
+		I_Error("TSoURDt3rd_AutoLoadAddons: No more free memory to autoload %s %s", (fileType == 1 ? "folder" : "file"), file);
 	autoloading = true;
-	TSoURDt3rd_useAsFileName = true;
 
-	if (!fileType)
-		CONS_Printf("D_AutoLoadAddons: File %s is unknown or invalid\n", file);
+	strcpy(newfile, file);
+	if (fileType == 1)
+		strcat(newfile, PATHSEP);
+
+	if (fileType <= 6)
+		list->files[index] = newfile;
 	else
-	{
-		strcpy(newfile, file);
-		if (fileType == 1)
-			strcat(newfile, PATHSEP);
-		
-		if (fileType <= 6)
-			list->files[index] = newfile;
-		else
-			COM_BufAddText(va("exec %s\n", newfile));
-	}
+		COM_BufAddText(va("exec %s\n", newfile));
 }
 
 static void TSoURDt3rd_FindAddonsToAutoload(void)
@@ -1286,17 +1213,17 @@ static void TSoURDt3rd_FindAddonsToAutoload(void)
 	const char *autoloadpath;
 
 	INT32 i;
-	char wadsToAutoload[256] = "", renameAutoloadStrings[256] = "";
+	char wadsToAutoload[256] = " ", renameAutoloadStrings[256] = " ";
 
 	// Check For the File //
 	autoloadpath = va("%s"PATHSEP"%s",srb2home,AUTOLOADCONFIGFILENAME);
 	autoloadconfigfile = fopen(autoloadpath, "r");
 
 	// If the File is Found, Run Our Main Things
-	CON_StopRefresh(); // Temporarily stop refreshing the screen for wad autoloading
-
 	if (autoloadconfigfile)
 	{
+		CON_StopRefresh(); // Temporarily stop refreshing the screen for wad autoloading
+
 		while (fgets(wadsToAutoload, sizeof wadsToAutoload, autoloadconfigfile) != NULL)
 		{
 			// Skip the Line if it's Empty or Commented Out
@@ -1333,19 +1260,21 @@ static void TSoURDt3rd_FindAddonsToAutoload(void)
 					wadsToAutoload[i] = '\0';
 			}
 
-			// Load the File, Even if it's Unknown/Invalid
-			D_AutoLoadAddons(&autoloadwadfiles, wadsToAutoload);
+			// Check the File Type, and if Valid, Load it
+			if (!STAR_DetectFileType(wadsToAutoload))
+				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, M_GetText("TSoURDt3rd_AutoLoadAddons: File %s is unknown or invalid.\n"), wadsToAutoload);
+			else
+				TSoURDt3rd_AutoLoadAddons(&autoloadwadfiles, wadsToAutoload, STAR_DetectFileType(wadsToAutoload));
 
 			// Empty All the Strings
 			for (i = 0; wadsToAutoload[i] != '\0'; i++)
 				wadsToAutoload[i] = '\0';
 		}
 
-		// Close the File, and We're Done :)
+		// Close the File, Refresh, and We're Done :)
 		fclose(autoloadconfigfile);
+		CON_StartRefresh(); // Restart the refresh!
 	}
-
-	CON_StartRefresh(); // Restart the refresh!
 }
 
 #undef REALLOC_FILE_LIST
@@ -1469,12 +1398,8 @@ static void IdentifyVersion(void)
 	D_AddFile(&startupwadfiles, va(pandf,srb2waddir, "patch.pk3"));
 #endif
 
-	// STAR: Add this custom build's fun stuff
+	// STAR STUFF: Add this custom build's fun stuff! //
 	D_AddFile(&startupwadfiles, va(pandf,srb2waddir, "tsourdt3rd.pk3"));
-
-	// STAR: Add this custom build's extra fun stuff, using lock-on technology
-	if (M_CheckParm("-tsourdt3rd_lockonextras"))
-		TSoURDt3rd_LoadExtras = true;
 
 #if !defined (HAVE_SDL) || defined (HAVE_MIXER)
 	{
@@ -1491,7 +1416,7 @@ static void IdentifyVersion(void)
 		MUSICTEST("music.dta")
 		//MUSICTEST("patch_music.pk3")
 
-		MUSICTEST("jukebox.pk3") // STAR: Add this build's custom music enjoyment system
+		MUSICTEST("jukebox.pk3") // STAR STUFF: CUSTOM MUSIC ENJOYMENT SYSTEM LOADED! //
 	}
 #endif
 }
@@ -1511,6 +1436,15 @@ D_ConvertVersionNumbers (void)
 #endif
 }
 
+static void Command_assert(void)
+{
+#if !defined(NDEBUG) || defined(PARANOIA)
+	CONS_Printf("Yes, assertions are enabled.\n");
+#else
+	CONS_Printf("No, assertions are NOT enabled.\n");
+#endif
+}
+
 //
 // D_SRB2Main
 //
@@ -1523,6 +1457,11 @@ void D_SRB2Main(void)
 
 	/* break the version string into version numbers, for netplay */
 	D_ConvertVersionNumbers();
+
+	if (!strcmp(compbranch, ""))
+	{
+		compbranch = "detached HEAD";
+	}
 
 	// Print GPL notice for our console users (Linux)
 	CONS_Printf(
@@ -1559,8 +1498,9 @@ void D_SRB2Main(void)
 	// Netgame URL special case: change working dir to EXE folder.
 	ChangeDirForUrlHandler();
 
-	// STAR STUFF: Check the Time on Our Computer //
-	TSoURDt3rd_CheckTime();
+	// STAR STUFF //
+	TSoURDt3rd_InitializePlayer(consoleplayer);	// Initialize the build's structures
+	TSoURDt3rd_CheckTime();						// Check our computer's time
 	// END THIS STUFF //
 
 	// identify the main IWAD file to use
@@ -1600,8 +1540,9 @@ void D_SRB2Main(void)
 		}
 		else
 		{
+			//** STAR NOTE: MAIN SAVEDATA STUFF IS NOW HANDLED IN STAR_SetSavefileProperties WITHIN star_functions.c! **//
+
 			// use user specific config file
-			// STAR NOTE: MAIN SAVEDATA STUFF IS NOW HANDLED IN STAR_SetSavefileProperties WITHIN star_functions.c! //
 #ifdef DEFAULTDIR
 			snprintf(srb2home, sizeof srb2home, "%s" PATHSEP DEFAULTDIR, userhome);
 			snprintf(downloaddir, sizeof downloaddir, "%s" PATHSEP "DOWNLOAD", srb2home);
@@ -1630,18 +1571,17 @@ void D_SRB2Main(void)
 	snprintf(addonsdir, sizeof addonsdir, "%s%s%s", srb2home, PATHSEP, "addons");
 	I_mkdir(addonsdir, 0755);
 
-	// rand() needs seeded regardless of password
-	srand((unsigned int)time(NULL));
-	rand();
-	rand();
-	rand();
+	// seed M_Random because it is necessary; seed P_Random for scripts that
+	// might want to use random numbers immediately at start
+	if (!M_RandomSeedFromOS())
+		M_RandomSeed((UINT32)time(NULL)); // less good but serviceable
+
+	P_SetRandSeed(M_RandomizedSeed());
 
 	if (M_CheckParm("-password") && M_IsNextParm())
 		D_SetPassword(M_GetNextParm());
 
-	// STAR STUFF: AUTOLOAD ADD-ONS //
-	TSoURDt3rd_FindAddonsToAutoload();
-	// END THOSE THINGS //
+	TSoURDt3rd_FindAddonsToAutoload(); // STAR STUFF: AUTOLOAD ADD-ONS //
 
 	// player setup menu colors must be initialized before
 	// any wad file is added, as they may contain colors themselves
@@ -1650,8 +1590,13 @@ void D_SRB2Main(void)
 	CONS_Printf("Z_Init(): Init zone memory allocation daemon. \n");
 	Z_Init();
 
+	clientGamedata = M_NewGameDataStruct();
+	serverGamedata = M_NewGameDataStruct();
+
 	// Do this up here so that WADs loaded through the command line can use ExecCfg
 	COM_Init();
+
+	COM_AddCommand("assert", Command_assert, COM_LUA);
 
 	// Add any files specified on the command line with
 	// "-file <file>" or "-folder <folder>" to the add-on list
@@ -1703,7 +1648,7 @@ void D_SRB2Main(void)
 	// Have to be done here before files are loaded
 	M_InitCharacterTables();
 
-	mainwads = 4; // doesn't include music.dta //* STAR NOTE: also doesn't include jukebox.pk3 *//
+	mainwads = 4; // doesn't include music.dta //** STAR NOTE: also doesn't include jukebox.pk3 **//
 #ifdef USE_PATCH_DTA
 	mainwads++;
 #endif
@@ -1713,7 +1658,7 @@ void D_SRB2Main(void)
 	W_InitMultipleFiles(&startupwadfiles);
 	D_CleanFile(&startupwadfiles);
 
-#ifndef DEVELOP // md5s last updated 03/15/23 (star)
+#ifndef DEVELOP // md5s last updated 04/06/24 (star)
 	// Check MD5s of autoloaded files //
 
 	// don't check music.dta because people like to modify it, and it doesn't matter if they do
@@ -1724,22 +1669,18 @@ void D_SRB2Main(void)
 	W_VerifyFileMD5(2, ASSET_HASH_PLAYER_DTA); 		// player.dta
 #ifdef USE_PATCH_DTA
 	W_VerifyFileMD5(3, ASSET_HASH_PATCH_PK3); 		// patch.pk3
-
-	// STAR STUFF //
-	W_VerifyFileMD5(4, ASSET_HASH_TSOURDT3RD_PK3);	// tsourdt3rd.pk3
+	W_VerifyFileMD5(4, ASSET_HASH_TSOURDT3RD_PK3);	// STAR STUFF: tsourdt3rd.pk3 //
 #else
-	W_VerifyFileMD5(3, ASSET_HASH_TSOURDT3RD_PK3); 	// tsourdt3rd.pk3
-	// 0011001101010 //
+	W_VerifyFileMD5(3, ASSET_HASH_TSOURDT3RD_PK3); 	// STAR STUFF: tsourdt3rd.pk3 //
 #endif
 #endif //ifndef DEVELOP
 
-	// STAR STUFF //
-	// Autoloading Wads
-	CON_StopRefresh(); // Temporarily stop refreshing the screen for wad autoloading
+	// STAR STUFF: Autoloading Wads //
+	//CON_StopRefresh(); // Temporarily stop refreshing the screen for wad autoloading
 
 	if (autoloadwadfiles.numfiles)
 	{
-		CONS_Printf("D_AutoLoadAddons(): Autoloading Addons...\n");
+		CONS_Printf("TSoURDt3rd_AutoLoadAddons(): Autoloading Addons...\n");
 		W_InitMultipleFiles(&autoloadwadfiles);
 		D_CleanFile(&autoloadwadfiles);
 
@@ -1750,10 +1691,10 @@ void D_SRB2Main(void)
 		}
 		autoloading = false;
 
-		M_UpdateJukebox();
+		S_PrepareSoundTest();
 	}
 
-	CON_StartRefresh(); // Restart the refresh!
+	//CON_StartRefresh(); // Restart the refresh!
 	// END OF THAT STUFF //
 
 	cht_Init();
@@ -1803,17 +1744,15 @@ void D_SRB2Main(void)
 	//--------------------------------------------------------- CONFIG.CFG
 	M_FirstLoadConfig(); // WARNING : this do a "COM_BufExecute()"
 
-	G_LoadGameData();
-
-#ifdef HAVE_DISCORDRPC
-	// DISCORD STUFFS: INITIALIZE //
-   	if (! dedicated)
+	if (M_CheckParm("-gamedata") && M_IsNextParm())
 	{
-		CONS_Printf("DRPC_Init(): Initalizing Discord Rich Presence...\n");
-		DRPC_Init();
+		// Moved from G_LoadGameData itself, as it would cause some crazy
+		// confusion issues when loading mods.
+		strlcpy(gamedatafilename, M_GetNextParm(), sizeof gamedatafilename);
 	}
-	// INITIALIZED DISCORD AND STUFFS //
-#endif
+
+	G_LoadGameData(clientGamedata);
+	M_CopyGameData(serverGamedata, clientGamedata);
 
 #if defined (__unix__) || defined (UNIXCOMMON) || defined (HAVE_SDL)
 	VID_PrepareModeList(); // Regenerate Modelist according to cv_fullscreen
@@ -1840,7 +1779,7 @@ void D_SRB2Main(void)
 		else
 		{
 			if (!M_CheckParm("-server"))
-				G_SetGameModified(true);
+				G_SetUsedCheats(true);
 			autostart = true;
 		}
 	}
@@ -2045,14 +1984,15 @@ void D_SRB2Main(void)
 			// Prevent warping to nonexistent levels
 			if (W_CheckNumForName(G_BuildMapName(pstartmap)) == LUMPERROR)
 				I_Error("Could not warp to %s (map not found)\n", G_BuildMapName(pstartmap));
-			// Prevent warping to locked levels
-			// ... unless you're in a dedicated server.  Yes, technically this means you can view any level by
-			// running a dedicated server and joining it yourself, but that's better than making dedicated server's
-			// lives hell.
-			else if (!dedicated && M_MapLocked(pstartmap))
-				I_Error("You need to unlock this level before you can warp to it!\n");
 			else
 			{
+				if (M_CampaignWarpIsCheat(gametype, pstartmap, serverGamedata))
+				{
+					// If you're warping via command line, you know what you're doing.
+					// No need to I_Error over this.
+					G_SetUsedCheats(false);
+				}
+
 				D_MapChange(pstartmap, gametype, ultimatemode, true, 0, false, false);
 			}
 		}
@@ -2066,6 +2006,15 @@ void D_SRB2Main(void)
 		F_StartIntro(); // Tails 03-03-2002
 
 	CON_ToggleOff();
+
+#ifdef HAVE_DISCORDSUPPORT
+	// DISCORD STUFFS: INITIALIZE //
+   	if (! dedicated)
+	{
+		DRPC_Init();
+	}
+	// INITIALIZED DISCORD AND STUFFS //
+#endif
 
 	if (dedicated && server)
 	{

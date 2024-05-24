@@ -61,19 +61,15 @@ static CV_PossibleValue_t masterserver_update_rate_cons_t[] = {
 	{0,NULL}
 };
 
-consvar_t cv_masterserver = CVAR_INIT ("masterserver", "https://mb.srb2.org/MS/0", CV_SAVE|CV_CALL, NULL, MasterServer_OnChange);
+consvar_t cv_masterserver = CVAR_INIT ("masterserver", "https://ds.ms.srb2.org/MS/0", CV_SAVE|CV_CALL, NULL, MasterServer_OnChange);
 consvar_t cv_servername = CVAR_INIT ("servername", "SRB2 server", CV_SAVE|CV_NETVAR|CV_CALL|CV_NOINIT|CV_ALLOWLUA, NULL, Update_parameters);
 
 consvar_t cv_masterserver_update_rate = CVAR_INIT ("masterserver_update_rate", "15", CV_SAVE|CV_CALL|CV_NOINIT, masterserver_update_rate_cons_t, Update_parameters);
 
-INT16 ms_RoomId = -1;
-
-// STAR STUFF //
+// HOLEPUNCHING STUFFS: rendezvous please //
 consvar_t cv_rendezvousserver = CVAR_INIT ("holepunchserver", "jart-dev.jameds.org", CV_SAVE, NULL, NULL);
 
-static CV_PossibleValue_t socksendlimit_t[] = {{1, "MIN"}, {10, "MAX"}, {0, NULL}};
-consvar_t cv_socksendlimit = CVAR_INIT("socksendlimit", "3", CV_SAVE, socksendlimit_t, NULL);
-// END THAT MESS //
+INT16 ms_RoomId = -1;
 
 #if defined (MASTERSERVER) && defined (HAVE_THREADS)
 int           ms_QueryId;
@@ -102,15 +98,12 @@ void AddMServCommands(void)
 	CV_RegisterVar(&cv_masterserver_timeout);
 	CV_RegisterVar(&cv_masterserver_debug);
 	CV_RegisterVar(&cv_masterserver_token);
-	// STAR STUFF //
-	CV_RegisterVar(&cv_rendezvousserver);
-	CV_RegisterVar(&cv_socksendlimit);
-	// BUP //
 	CV_RegisterVar(&cv_servername);
 #ifdef MASTERSERVER
 	COM_AddCommand("listserv", Command_Listserv_f, 0);
 	COM_AddCommand("masterserver_update", Update_parameters, COM_LUA); // allows people to updates manually in case you were delisted by accident
 #endif
+	CV_RegisterVar(&cv_rendezvousserver); // HOLEPUNCHING STUFFS: rendezvous //
 #endif
 }
 
@@ -551,6 +544,13 @@ static void MasterServer_OnChange(void)
 	if (
 			! cv_masterserver.changed &&
 			strcmp(cv_masterserver.string, "ms.srb2.org:28900") == 0
+	){
+		CV_StealthSet(&cv_masterserver, cv_masterserver.defaultvalue);
+	}
+
+	if (
+			! cv_masterserver.changed &&
+			strcmp(cv_masterserver.string, "https://mb.srb2.org/MS/0") == 0
 	){
 		CV_StealthSet(&cv_masterserver, cv_masterserver.defaultvalue);
 	}
