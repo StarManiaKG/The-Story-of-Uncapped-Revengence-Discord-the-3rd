@@ -19,9 +19,7 @@
 #include "../g_game.h"
 #include "../s_sound.h"
 #include "../z_zone.h"
-//#include "../fastcmp.h"
-//#include "../v_video.h"
-//#include "../d_main.h"
+#include "../fastcmp.h"
 
 #include "../m_menu.h" // cv_bosspinchmusic //
 
@@ -140,6 +138,7 @@ void TSoURDt3rd_P_Ticker(void)
 	}
 #endif
 
+    // Player ticker //
 	for (i = 0, j = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i] || players[i].spectator)
@@ -148,17 +147,19 @@ void TSoURDt3rd_P_Ticker(void)
 		if (!players[i].mo)
 			continue;
 
-		// Time over... //
+        player_t *player = &players[i];
+
+		// Time over...
 		if (!netgame && ((leveltime >= TSOURDT3RD_TIMELIMIT && cv_allowtypicaltimeover.value) || countdowntimeup))
 		{
 			TSoURDt3rdPlayers[i].timeOver = true;
-			P_DamageMobj(&players[i].mo, NULL, NULL, 1, DMG_INSTAKILL);
+			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_INSTAKILL);
 		}
 
-		// Removed Sonic (real) //
+		// Removed Sonic (real)
 		if (TSoURDt3rd_InAprilFoolsMode())
 		{
-			if (!fastncmp(skins[players[i].skin].name, "sonic", 5))
+			if (!fastncmp(skins[player->skin].name, "sonic", 5))
 				continue;
 
 			for (j = 0; j < MAXSKINS; j++)
@@ -167,22 +168,22 @@ void TSoURDt3rd_P_Ticker(void)
 					break;
 			}
 
-			if ((splitscreen && i == 1) && P_IsLocalPlayer(&players[i]))
+			if ((splitscreen && i == 1) && P_IsLocalPlayer(player))
 			{
 				STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "Your friend can't play as Sonic either, he's gone.\n");
 				CV_StealthSet(&cv_skin2, skins[1].name);
 			}
-			else if (P_IsLocalPlayer(&players[i]))
+			else if (P_IsLocalPlayer(player))
 			{
 				STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "You can't play as Sonic, he's dead.\n");
 				CV_StealthSet(&cv_skin, skins[1].name);
 			}
 
 			SetPlayerSkinByNum(i, j);
-			if (fastcmp(skins[j].name, "Sonic") && P_IsLocalPlayer(&players[i]))
+			if (fastcmp(skins[j].name, "Sonic") && P_IsLocalPlayer(player))
 			{
 				STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "But no skin other than sonic found was found, so uh..............\n\tI guess you're now legally distinct Sonic then!\n");
-				players[i].skincolor = SKINCOLOR_WHITE;
+				player->skincolor = SKINCOLOR_WHITE;
 			}
 		}
 	}
