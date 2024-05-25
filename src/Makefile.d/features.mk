@@ -58,8 +58,6 @@ opts+=-DHAVE_MINIUPNPC
 endif
 endif
 
-include TSoURDt3rd/Makefile.d/features.mk
-
 # (Valgrind is a memory debugger.)
 ifdef VALGRIND
 VALGRIND_PKGCONFIG?=valgrind
@@ -75,3 +73,7 @@ default_packages:=\
 
 $(foreach p,$(default_packages),\
 	$(eval $(call Check_pkg_config,$(p))))
+
+
+# // STAR STUFF: files and junk, yay! //
+include TSoURDt3rd/Makefile.d/features.mk
