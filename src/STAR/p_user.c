@@ -138,7 +138,7 @@ void TSoURDt3rd_P_Ticker(void)
 	}
 #endif
 
-    // Player ticker //
+    // Ticking //
 	for (i = 0, j = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i] || players[i].spectator)
@@ -162,28 +162,31 @@ void TSoURDt3rd_P_Ticker(void)
 			if (!fastncmp(skins[player->skin].name, "sonic", 5))
 				continue;
 
-			for (j = 0; j < MAXSKINS; j++)
+			for (j = MAXSKINS; j >= 1; j++)
 			{
 				if (skins[j].name[0] != '\0' && R_SkinUsable(-1, j))
 					break;
 			}
 
-			if ((splitscreen && i == 1) && P_IsLocalPlayer(player))
-			{
-				STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "Your friend can't play as Sonic either, he's gone.\n");
-				CV_StealthSet(&cv_skin2, skins[1].name);
-			}
-			else if (P_IsLocalPlayer(player))
-			{
-				STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "You can't play as Sonic, he's dead.\n");
-				CV_StealthSet(&cv_skin, skins[1].name);
-			}
-
 			SetPlayerSkinByNum(i, j);
-			if (fastcmp(skins[j].name, "Sonic") && P_IsLocalPlayer(player))
+			if (P_IsLocalPlayer(player))
 			{
-				STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "But no skin other than sonic found was found, so uh..............\n\tI guess you're now legally distinct Sonic then!\n");
-				player->skincolor = SKINCOLOR_WHITE;
+				if (splitscreen && i == 1)
+				{
+					STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "Your friend can't play as Sonic either, he's gone.\n");
+					CV_StealthSet(&cv_skin2, skins[j].name);
+				}
+				else
+				{
+					STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "You can't play as Sonic, he's dead.\n");
+					CV_StealthSet(&cv_skin, skins[j].name);
+				}
+
+				if (fastcmp(skins[j].name, "Sonic"))
+				{
+					STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "But no skin other than sonic found was found, so uh..............\n\tI guess you're now legally distinct Sonic then!\n");
+					player->skincolor = SKINCOLOR_WHITE;
+				}
 			}
 		}
 	}
@@ -195,6 +198,11 @@ void TSoURDt3rd_P_Ticker(void)
 //
 boolean TSoURDt3rd_P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype)
 {
+	(void)inflictor;
+	(void)source;
+	(void)damage;
+	(void)damagetype;
+
 	if (target)
 	{
 		INT32 pinchHealth = (target->info->damage ? target->info->damage : 3);
@@ -212,11 +220,6 @@ boolean TSoURDt3rd_P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *sourc
 			return true;
 		}
 	}
-
-	(void)inflictor;
-	(void)source;
-	(void)damage;
-	(void)damagetype;
 
 	return false;
 }
