@@ -17,6 +17,7 @@
 #ifdef HAVE_DISCORDSUPPORT
 
 #include "discord_rpc.h"
+#include "../doomdef.h"
 
 // ------------------------ //
 //        Variables
