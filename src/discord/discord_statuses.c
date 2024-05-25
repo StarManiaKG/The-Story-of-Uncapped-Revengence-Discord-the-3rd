@@ -47,7 +47,11 @@ void DRPC_EmblemStatus(char *string)
 {
 	if (!(netgame || splitscreen))
 		return;
-	snprintf(&string, 128, "%d/%d Emblems", M_CountEmblems(serverGamedata), (numemblems + numextraemblems));
+#if 0
+	snprintf(string, 128, "%d/%d Emblems", M_CountEmblems(serverGamedata), (numemblems + numextraemblems));
+#else
+	strlcat(string, va("%d/%d Emblems", M_CountEmblems(serverGamedata), (numemblems + numextraemblems)), 128);
+#endif
 }
 
 /*--------------------------------------------------

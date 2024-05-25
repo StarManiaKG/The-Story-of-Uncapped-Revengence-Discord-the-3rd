@@ -15,8 +15,6 @@
 
 #include <time.h>
 
-#include "../doomdef.h"
-
 #include "discord.h"
 #include "discord_cmds.h"
 #include "stun.h"
@@ -725,14 +723,11 @@ void DRPC_UpdatePresence(void)
 	};
 #endif
 
-	INT32 i = 0;					// General Iterator
-
 	INT32 checkSkin = 0; 			// Checks Through The Consoleplayer's Skin
 	INT32 checkSuperSkin = 0;		// Checks Through The Consoleplayer's Super Skin
 	INT32 checkSideSkin = 0; 		// Checks Through The Secondary Display Player's Skin
 	INT32 checkSuperSideSkin = 0;	// Checks Through The Secondary Display Player's Super Skin
 
-	gamedata_t *data = serverGamedata; // Proper Gamedata Pointer, Made by Bitten
 	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer]; // Obvious
 
 	/* FALLBACK/BASIC RICH PRESENCE
@@ -823,24 +818,28 @@ void DRPC_UpdatePresence(void)
 	switch (cv_discordshowonstatus.value)
 	{
 		case 1:
+			break;
 
 		case 2:
-			DRPC_ScoreStatus(!netgame ? &detailstr : &statestr)
+			DRPC_ScoreStatus(!netgame ? detailstr : statestr);
 			break;
 
 		case 3:
-			DRPC_EmeraldStatus(!cv_discordshowonstatus.value ? &detailstr : &statestr);
+			DRPC_EmeraldStatus(!cv_discordshowonstatus.value ? detailstr : statestr);
 			break;
 
 		case 4:
-			DRPC_EmblemStatus(!netgame ? &detailstr : &statestr);
+			DRPC_EmblemStatus(!netgame ? detailstr : statestr);
 			break;
 
 		case 5:
+			break;
+
 		case 6:
+			break;
 
 		case 7:
-			DRPC_PlaytimeStatus((Playing() && !netgame) ? &detailstr : &statestr);
+			DRPC_PlaytimeStatus((Playing() && !netgame) ? detailstr : statestr);
 			break;
 
 		case 8:
@@ -849,8 +848,8 @@ void DRPC_UpdatePresence(void)
 		default:
 		{
 			if (!(netgame || splitscreen))
-				DRPC_EmblemStatus(!netgame ? &detailstr : &statestr);
-			DRPC_EmeraldStatus(!cv_discordshowonstatus.value ? &detailstr : &statestr);
+				DRPC_EmblemStatus(!netgame ? detailstr : statestr);
+			DRPC_EmeraldStatus(!cv_discordshowonstatus.value ? detailstr : statestr);
 		}
 	}
 
