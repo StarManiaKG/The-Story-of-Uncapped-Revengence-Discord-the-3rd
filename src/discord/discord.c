@@ -789,7 +789,7 @@ void DRPC_UpdatePresence(void)
 		else if (Playing() && !playeringame[consoleplayer])
 			snprintf(detailstr, 128, "Looking for ");
 
-		switch (discordInfo.serverRoom)
+		switch (ms_RoomId) //(discordInfo.serverRoom)
 		{
 			case 33: strlcat(detailstr, "Standard", 128); break;
 			case 28: strlcat(detailstr, "Casual", 128); break;
@@ -817,6 +817,13 @@ void DRPC_UpdatePresence(void)
 	// Statuses //
 	switch (cv_discordshowonstatus.value)
 	{
+		case 0:
+		{
+			if (!(netgame || splitscreen))
+				DRPC_EmblemStatus(!netgame ? detailstr : statestr);
+			DRPC_EmeraldStatus(!cv_discordshowonstatus.value ? detailstr : statestr);
+		}
+
 		case 1:
 			break;
 
@@ -842,15 +849,9 @@ void DRPC_UpdatePresence(void)
 			DRPC_PlaytimeStatus((Playing() && !netgame) ? detailstr : statestr);
 			break;
 
-		case 8:
-			goto customStatus;
-
 		default:
-		{
-			if (!(netgame || splitscreen))
-				DRPC_EmblemStatus(!netgame ? detailstr : statestr);
-			DRPC_EmeraldStatus(!cv_discordshowonstatus.value ? detailstr : statestr);
-		}
+			//DRPC_CustomStatus(etailstr, statestr);
+			goto customStatus;
 	}
 
 	// Main Statuses //
@@ -1224,7 +1225,9 @@ void DRPC_UpdatePresence(void)
 			}
 		}
 	}
-	
+
+	goto pushPresence;
+
 	////// 	  CUSTOM STATUSES 	 //////
 	customStatus:
 	{
@@ -1320,10 +1323,10 @@ void DRPC_Shutdown(void)
 	DRPC_UpdatePresence();
 	DRPC_EmptyRequests();
 
+	Discord_RunCallbacks();
 #ifdef DISCORD_DISABLE_IO_THREAD
 	Discord_UpdateConnection();
 #endif
-	Discord_RunCallbacks();
 
 	Discord_ClearPresence();
 	Discord_Shutdown();
