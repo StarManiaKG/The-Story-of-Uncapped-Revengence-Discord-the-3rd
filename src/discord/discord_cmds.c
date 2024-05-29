@@ -13,6 +13,8 @@
 
 #include "discord_cmds.h"
 
+#include "../m_menu.h" // Discord_option_Onchange() //
+
 #ifdef HAVE_DISCORDSUPPORT
 
 // ------------------------ //
@@ -237,40 +239,40 @@ static CV_PossibleValue_t custom_miscimage_cons_t[] = {
 // DISCORD COMMANDS
 // ================
 
-consvar_t cv_discordrp = CVAR_INIT ("discordrp", "On", CV_SAVE|CV_CALL, CV_OnOff, Discord_option_Onchange);
-consvar_t cv_discordstreamer = CVAR_INIT ("discordstreamer", "Off", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdateUsername);
-consvar_t cv_discordasks = CVAR_INIT ("discordasks", "Yes", CV_SAVE|CV_CALL, CV_OnOff, Discord_option_Onchange);
-consvar_t cv_discordstatusmemes = CVAR_INIT ("discordstatusmemes", "Yes", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
-consvar_t cv_discordshowonstatus = CVAR_INIT ("discordshowonstatus", "Default", CV_SAVE|CV_CALL, statustype_cons_t, Discord_option_Onchange);
-consvar_t cv_discordcharacterimagetype = CVAR_INIT ("discordcharacterimagetype", "CS Portrait", CV_SAVE|CV_CALL, characterimagetype_cons_t, DRPC_UpdatePresence);
+consvar_t cv_discordrp = CVAR_INIT ("discordrp", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, Discord_option_Onchange);
+consvar_t cv_discordstreamer = CVAR_INIT ("discordstreamer", "Off", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_discordasks = CVAR_INIT ("discordasks", "Yes", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, Discord_option_Onchange);
+consvar_t cv_discordstatusmemes = CVAR_INIT ("discordstatusmemes", "Yes", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, DRPC_UpdatePresence);
+consvar_t cv_discordshowonstatus = CVAR_INIT ("discordshowonstatus", "Default", CV_SAVE|CV_CALL|CV_NOINIT, statustype_cons_t, Discord_option_Onchange);
+consvar_t cv_discordcharacterimagetype = CVAR_INIT ("discordcharacterimagetype", "CS Portrait", CV_SAVE|CV_CALL|CV_NOINIT, characterimagetype_cons_t, DRPC_UpdatePresence);
 
 // =======
 // CUSTOMS
 // =======
 
-consvar_t cv_customdiscorddetails = CVAR_INIT ("customdiscorddetails", "I'm Feeling Good!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
-consvar_t cv_customdiscordstate = CVAR_INIT ("customdiscordstate", "I'm Playing Sonic Robo Blast 2!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
+consvar_t cv_customdiscorddetails = CVAR_INIT ("customdiscorddetails", "I'm Feeling Good!", CV_SAVE|CV_CALL|CV_NOINIT, NULL, DRPC_UpdatePresence);
+consvar_t cv_customdiscordstate = CVAR_INIT ("customdiscordstate", "I'm Playing Sonic Robo Blast 2!", CV_SAVE|CV_CALL|CV_NOINIT, NULL, DRPC_UpdatePresence);
 
-consvar_t cv_customdiscordlargeimagetype = CVAR_INIT ("customdiscordlargeimagetype", "CS Portraits", CV_SAVE|CV_CALL, customimagetype_cons_t, Discord_option_Onchange);
-consvar_t cv_customdiscordsmallimagetype = CVAR_INIT ("customdiscordsmallimagetype", "Continue Sprites", CV_SAVE|CV_CALL, customimagetype_cons_t, Discord_option_Onchange);
+consvar_t cv_customdiscordlargeimagetype = CVAR_INIT ("customdiscordlargeimagetype", "CS Portraits", CV_SAVE|CV_CALL|CV_NOINIT, custom_imagetype_cons_t, Discord_option_Onchange);
+consvar_t cv_customdiscordsmallimagetype = CVAR_INIT ("customdiscordsmallimagetype", "Continue Sprites", CV_SAVE|CV_CALL|CV_NOINIT, custom_imagetype_cons_t, Discord_option_Onchange);
 
 // Custom Discord Status Images //
-consvar_t cv_customdiscordlargeimagetext = CVAR_INIT ("customdiscordlargeimagetext", "My Favorite Character!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
-consvar_t cv_customdiscordsmallimagetext = CVAR_INIT ("customdiscordsmallimagetext", "My Other Favorite Character!", CV_SAVE|CV_CALL, NULL, DRPC_UpdatePresence);
+consvar_t cv_customdiscordlargeimagetext = CVAR_INIT ("customdiscordlargeimagetext", "My Favorite Character!", CV_SAVE|CV_CALL|CV_NOINIT, NULL, DRPC_UpdatePresence);
+consvar_t cv_customdiscordsmallimagetext = CVAR_INIT ("customdiscordsmallimagetext", "My Other Favorite Character!", CV_SAVE|CV_CALL|CV_NOINIT, NULL, DRPC_UpdatePresence);
 
 // Characters
-consvar_t cv_customdiscordlargecharacterimage = CVAR_INIT ("customdiscordlargecharacterimage", "Sonic", CV_SAVE|CV_CALL, customcharacterimage_cons_t, DRPC_UpdatePresence);
-consvar_t cv_customdiscordsmallcharacterimage = CVAR_INIT ("customdiscordsmallcharacterimage", "Tails", CV_SAVE|CV_CALL, customcharacterimage_cons_t, DRPC_UpdatePresence);
+consvar_t cv_customdiscordlargecharacterimage = CVAR_INIT ("customdiscordlargecharacterimage", "Sonic", CV_SAVE|CV_CALL|CV_NOINIT, custom_characterimage_cons_t, DRPC_UpdatePresence);
+consvar_t cv_customdiscordsmallcharacterimage = CVAR_INIT ("customdiscordsmallcharacterimage", "Tails", CV_SAVE|CV_CALL|CV_NOINIT, custom_characterimage_cons_t, DRPC_UpdatePresence);
 
-consvar_t cv_customdiscordlargesupercharacterimage = CVAR_INIT ("customdiscordlargesupercharacterimage", "Sonic", CV_SAVE|CV_CALL, customsupercharacterimage_cons_t, DRPC_UpdatePresence);
-consvar_t cv_customdiscordsmallsupercharacterimage = CVAR_INIT ("customdiscordsmallsupercharacterimage", "Sonic", CV_SAVE|CV_CALL, customsupercharacterimage_cons_t, DRPC_UpdatePresence);
+consvar_t cv_customdiscordlargesupercharacterimage = CVAR_INIT ("customdiscordlargesupercharacterimage", "Sonic", CV_SAVE|CV_CALL|CV_NOINIT, custom_supercharacterimage_cons_t, DRPC_UpdatePresence);
+consvar_t cv_customdiscordsmallsupercharacterimage = CVAR_INIT ("customdiscordsmallsupercharacterimage", "Sonic", CV_SAVE|CV_CALL|CV_NOINIT, custom_supercharacterimage_cons_t, DRPC_UpdatePresence);
 
 // Maps
-consvar_t cv_customdiscordlargemapimage = CVAR_INIT ("customdiscordlargemapimage", "GFZ1", CV_SAVE|CV_CALL, custommapimage_cons_t, DRPC_UpdatePresence);
-consvar_t cv_customdiscordsmallmapimage = CVAR_INIT ("customdiscordsmallmapimage", "Custom", CV_SAVE|CV_CALL, custommapimage_cons_t, DRPC_UpdatePresence);
+consvar_t cv_customdiscordlargemapimage = CVAR_INIT ("customdiscordlargemapimage", "GFZ1", CV_SAVE|CV_CALL|CV_NOINIT, custom_mapimage_cons_t, DRPC_UpdatePresence);
+consvar_t cv_customdiscordsmallmapimage = CVAR_INIT ("customdiscordsmallmapimage", "Custom", CV_SAVE|CV_CALL|CV_NOINIT, custom_mapimage_cons_t, DRPC_UpdatePresence);
     
 // Miscellanious
-consvar_t cv_customdiscordlargemiscimage = CVAR_INIT ("customdiscordlargemiscimage", "Default", CV_SAVE|CV_CALL, custommiscimage_cons_t, DRPC_UpdatePresence);
-consvar_t cv_customdiscordsmallmiscimage = CVAR_INIT ("customdiscordsmallmiscimage", "Intro 1", CV_SAVE|CV_CALL, custommiscimage_cons_t, DRPC_UpdatePresence);
+consvar_t cv_customdiscordlargemiscimage = CVAR_INIT ("customdiscordlargemiscimage", "Default", CV_SAVE|CV_CALL|CV_NOINIT, custom_miscimage_cons_t, DRPC_UpdatePresence);
+consvar_t cv_customdiscordsmallmiscimage = CVAR_INIT ("customdiscordsmallmiscimage", "Intro 1", CV_SAVE|CV_CALL|CV_NOINIT, custom_miscimage_cons_t, DRPC_UpdatePresence);
 
 #endif // HAVE_DISCORDSUPPORT

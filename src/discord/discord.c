@@ -15,8 +15,6 @@
 
 #include <time.h>
 
-#include "../doomdef.h"
-
 #include "discord.h"
 #include "discord_cmds.h"
 #include "stun.h"
@@ -725,14 +723,11 @@ void DRPC_UpdatePresence(void)
 	};
 #endif
 
-	INT32 i = 0;					// General Iterator
-
 	INT32 checkSkin = 0; 			// Checks Through The Consoleplayer's Skin
 	INT32 checkSuperSkin = 0;		// Checks Through The Consoleplayer's Super Skin
 	INT32 checkSideSkin = 0; 		// Checks Through The Secondary Display Player's Skin
 	INT32 checkSuperSideSkin = 0;	// Checks Through The Secondary Display Player's Super Skin
 
-	gamedata_t *data = serverGamedata; // Proper Gamedata Pointer, Made by Bitten
 	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer]; // Obvious
 
 	/* FALLBACK/BASIC RICH PRESENCE
@@ -794,7 +789,7 @@ void DRPC_UpdatePresence(void)
 		else if (Playing() && !playeringame[consoleplayer])
 			snprintf(detailstr, 128, "Looking for ");
 
-		switch (discordInfo.serverRoom)
+		switch (ms_RoomId) //(discordInfo.serverRoom)
 		{
 			case 33: strlcat(detailstr, "Standard", 128); break;
 			case 28: strlcat(detailstr, "Casual", 128); break;
@@ -822,36 +817,41 @@ void DRPC_UpdatePresence(void)
 	// Statuses //
 	switch (cv_discordshowonstatus.value)
 	{
+		case 0:
+		{
+			if (!(netgame || splitscreen))
+				DRPC_EmblemStatus(!netgame ? detailstr : statestr);
+			DRPC_EmeraldStatus(!cv_discordshowonstatus.value ? detailstr : statestr);
+		}
+
 		case 1:
+			break;
 
 		case 2:
-			DRPC_ScoreStatus(!netgame ? &detailstr : &statestr)
+			DRPC_ScoreStatus(!netgame ? detailstr : statestr);
 			break;
 
 		case 3:
-			DRPC_EmeraldStatus(!cv_discordshowonstatus.value ? &detailstr : &statestr);
+			DRPC_EmeraldStatus(!cv_discordshowonstatus.value ? detailstr : statestr);
 			break;
 
 		case 4:
-			DRPC_EmblemStatus(!netgame ? &detailstr : &statestr);
+			DRPC_EmblemStatus(!netgame ? detailstr : statestr);
 			break;
 
 		case 5:
-		case 6:
-
-		case 7:
-			DRPC_PlaytimeStatus((Playing() && !netgame) ? &detailstr : &statestr);
 			break;
 
-		case 8:
-			goto customStatus;
+		case 6:
+			break;
+
+		case 7:
+			DRPC_PlaytimeStatus((Playing() && !netgame) ? detailstr : statestr);
+			break;
 
 		default:
-		{
-			if (!(netgame || splitscreen))
-				DRPC_EmblemStatus(!netgame ? &detailstr : &statestr);
-			DRPC_EmeraldStatus(!cv_discordshowonstatus.value ? &detailstr : &statestr);
-		}
+			//DRPC_CustomStatus(etailstr, statestr);
+			goto customStatus;
 	}
 
 	// Main Statuses //
@@ -1225,7 +1225,9 @@ void DRPC_UpdatePresence(void)
 			}
 		}
 	}
-	
+
+	goto pushPresence;
+
 	////// 	  CUSTOM STATUSES 	 //////
 	customStatus:
 	{
@@ -1321,10 +1323,10 @@ void DRPC_Shutdown(void)
 	DRPC_UpdatePresence();
 	DRPC_EmptyRequests();
 
+	Discord_RunCallbacks();
 #ifdef DISCORD_DISABLE_IO_THREAD
 	Discord_UpdateConnection();
 #endif
-	Discord_RunCallbacks();
 
 	Discord_ClearPresence();
 	Discord_Shutdown();

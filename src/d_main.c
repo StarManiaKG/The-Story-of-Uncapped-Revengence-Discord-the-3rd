@@ -936,15 +936,13 @@ void D_SRB2Loop(void)
 		LUA_Step();
 
 #ifdef HAVE_DISCORDRPC
-		// DISCORD STUFFS: constantly update the discord rich presence //
 		if (! dedicated)
 		{
+			Discord_RunCallbacks();
 #ifdef DISCORD_DISABLE_IO_THREAD
 			Discord_UpdateConnection();
 #endif
-			Discord_RunCallbacks();
 		}
-		// END THIS PLEASE //
 #endif
 
 		//// STAR STUFF ////
@@ -1844,11 +1842,6 @@ void D_SRB2Main(void)
 		if (!M_IsNextParm())
 			I_Error("usage: -room <room_id>\nCheck the Master Server's webpage for room ID numbers.\n");
 		ms_RoomId = atoi(M_GetNextParm());
-#ifdef HAVE_DISCORDRPC
-		// DISCORD STUFFS //
-		discordInfo.serverRoom = ms_RoomId;
-		// END THAT //
-#endif
 
 #ifdef UPDATE_ALERT
 		GetMODVersion_Console();
