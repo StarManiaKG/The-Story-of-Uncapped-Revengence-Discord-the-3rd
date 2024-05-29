@@ -90,6 +90,8 @@ void TSoURDt3rd_PlayerThink(player_t *player)
 // void TSoURDt3rd_P_Ticker(void)
 // General TSoURDt3rd gameplay ticker.
 //
+boolean all7matchemeralds = false; // MARKED FOR REMOVAL //
+
 void TSoURDt3rd_P_Ticker(void)
 {
 	INT32 i, j;

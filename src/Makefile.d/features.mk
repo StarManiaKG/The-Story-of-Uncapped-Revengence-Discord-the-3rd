@@ -75,5 +75,5 @@ $(foreach p,$(default_packages),\
 	$(eval $(call Check_pkg_config,$(p))))
 
 
-# // STAR STUFF: files and junk, yay! //
+# // STAR STUFF: cool features, files, and other junk! //
 include TSoURDt3rd/Makefile.d/features.mk

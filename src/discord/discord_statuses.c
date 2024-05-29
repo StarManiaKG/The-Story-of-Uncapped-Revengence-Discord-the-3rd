@@ -47,7 +47,11 @@ void DRPC_EmblemStatus(char *string)
 {
 	if (!(netgame || splitscreen))
 		return;
-	snprintf(&string, 128, "%d/%d Emblems", M_CountEmblems(serverGamedata), (numemblems + numextraemblems));
+#if 0
+	snprintf(string, 128, "%d/%d Emblems", M_CountEmblems(serverGamedata), (numemblems + numextraemblems));
+#else
+	strlcat(string, va("%d/%d Emblems", M_CountEmblems(serverGamedata), (numemblems + numextraemblems)), 128);
+#endif
 }
 
 /*--------------------------------------------------
@@ -119,6 +123,72 @@ void DRPC_PlaytimeStatus(char *string)
 			G_TicsToMinutes(serverGamedata->totalplaytime, false),
 			G_TicsToSeconds(serverGamedata->totalplaytime)),
 	128);
+}
+
+/*--------------------------------------------------
+	void DRPC_CustomStatus(char *detailstr, char *statestr)
+
+		Using the customizable custom discord status commands, this applies
+		a Discord Rich Presence status to the given string.
+--------------------------------------------------*/
+#include "../m_menu.h"
+void DRPC_CustomStatus(char *detailstr, char *statestr)
+{
+#if 1
+	(void)detailstr;
+	(void)statestr;
+#else
+	// Error Out if the String is Less Than Two Letters Long //
+	// MAJOR STAR NOTE: please come back to this and flesh it out more lol //
+	if (strlen(cv_customdiscorddetails.string) <= 2 || strlen(cv_customdiscordstate.string) <= 2 || strlen(cv_customdiscordsmallimagetext.string) <= 2 || strlen(cv_customdiscordlargeimagetext.string) <= 2)
+	{
+		STAR_M_StartMessage("Custom Discord RPC String Too Short", "Sorry, Discord RPC requires Strings to be longer than two characters.\n\nResetting strings with less than two letters back to defaults.\n\n(Press a key)\n",NULL,MM_NOTHING);
+		S_StartSound(NULL, sfx_skid);
+
+		if (strlen(cv_customdiscorddetails.string) <= 2)
+			CV_Set(&cv_customdiscorddetails, cv_customdiscorddetails.defaultvalue);
+		if (strlen(cv_customdiscordstate.string) <= 2)
+			CV_Set(&cv_customdiscordstate, cv_customdiscordstate.defaultvalue);
+
+		if (strlen(cv_customdiscordsmallimagetext.string) <= 2)
+			CV_Set(&cv_customdiscordsmallimagetext, cv_customdiscordsmallimagetext.defaultvalue);
+		if (strlen(cv_customdiscordlargeimagetext.string) <= 2)
+			CV_Set(&cv_customdiscordlargeimagetext, cv_customdiscordlargeimagetext.defaultvalue);
+	}
+
+	// Write the Heading Strings to Discord
+	if (strlen(cv_customdiscorddetails.string) > 2)
+		strcpy(detailstr, cv_customdiscorddetails.string);
+	if (strlen(cv_customdiscordstate.string) > 2)
+		strcpy(statestr, cv_customdiscordstate.string);
+
+	// Write The Images and Their Text to Discord //
+	// Small Images
+	if (cv_customdiscordsmallimagetype.value != 8)
+	{
+		strcpy(customSImage, va("%s%s", customStringType[cv_customdiscordsmallimagetype.value],
+			(cv_customdiscordsmallimagetype.value <= 2 ? supportedSkins[cv_customdiscordsmallcharacterimage.value] :
+			((cv_customdiscordsmallimagetype.value >= 3 && cv_customdiscordsmallimagetype.value <= 5) ? supportedSuperSkins[cv_customdiscordsmallsupercharacterimage.value] :
+			(cv_customdiscordsmallimagetype.value == 6 ? supportedMaps[cv_customdiscordsmallmapimage.value] :
+		supportedMiscs[cv_customdiscordsmallmiscimage.value])))));
+	
+		strcpy(simagestr, customSImage);
+		(strlen(cv_customdiscordsmallimagetext.string) > 2 ? strcpy(simagetxtstr, cv_customdiscordsmallimagetext.string) : 0);
+	}
+	
+	// Large Images
+	if (cv_customdiscordlargeimagetype.value != 8)
+	{
+		strcpy(customLImage, va("%s%s", customStringType[cv_customdiscordlargeimagetype.value],
+			(cv_customdiscordlargeimagetype.value <= 2 ? supportedSkins[cv_customdiscordlargecharacterimage.value] :
+			((cv_customdiscordlargeimagetype.value >= 3 && cv_customdiscordlargeimagetype.value <= 5) ? supportedSuperSkins[cv_customdiscordlargesupercharacterimage.value] :
+			(cv_customdiscordlargeimagetype.value == 6 ? supportedMaps[cv_customdiscordlargemapimage.value] :
+		supportedMiscs[cv_customdiscordlargemiscimage.value])))));
+
+		strcpy(imagestr, customLImage);
+		(strlen(cv_customdiscordlargeimagetext.string) > 2 ? strcpy(imagetxtstr, cv_customdiscordlargeimagetext.string) : 0);
+	}
+#endif
 }
 
 #endif // HAVE_DISCORDSUPPORT
