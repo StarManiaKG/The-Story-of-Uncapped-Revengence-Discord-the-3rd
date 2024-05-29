@@ -28,6 +28,15 @@
 #endif
 
 // ------------------------ //
+//        Variables
+// ------------------------ //
+
+static float prev_musicspeed, prev_musicpitch;
+static INT32 prev_musicvolume, prev_sfxvolume;
+
+#define TSOURDT3RD_MUFFLEINT (0.15f)
+
+// ------------------------ //
 //        Functions
 // ------------------------ //
 
@@ -40,9 +49,6 @@ void TSoURDt3rd_PlayerThink(player_t *player)
 	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer];
 	player = &players[displayplayer];
 
-	static float prev_musicspeed, prev_musicpitch;
-	static INT32 prev_musicvolume, prev_sfxvolume;
-
 	static boolean alreadyInWater;
 
 	if (!TSoURDt3rd || !player || !player->mo)
@@ -53,8 +59,8 @@ void TSoURDt3rd_PlayerThink(player_t *player)
 	{
 		if ((player->mo->eflags & MFE_UNDERWATER) && !alreadyInWater)
 		{
-			prev_musicspeed = S_GetSpeedMusic()-0.15f;
-			prev_musicpitch = S_GetPitchMusic()-0.15f;
+			prev_musicspeed = S_GetSpeedMusic()-TSOURDT3RD_MUFFLEINT;
+			prev_musicpitch = S_GetPitchMusic()-TSOURDT3RD_MUFFLEINT;
 
 			prev_musicvolume = S_GetInternalMusicVolume()/2;
 			prev_sfxvolume = S_GetInternalSfxVolume()/3;
@@ -73,8 +79,8 @@ void TSoURDt3rd_PlayerThink(player_t *player)
 		{
 			if (!TSoURDt3rd->jukebox.musicPlaying)
 			{
-				S_SpeedMusic(prev_musicspeed+0.15f);
-				S_PitchMusic(prev_musicpitch+0.15f);
+				S_SpeedMusic(prev_musicspeed+TSOURDT3RD_MUFFLEINT);
+				S_PitchMusic(prev_musicpitch+TSOURDT3RD_MUFFLEINT);
 			}
 
 			if (prev_musicvolume*2 >= S_GetInternalMusicVolume())
@@ -85,6 +91,8 @@ void TSoURDt3rd_PlayerThink(player_t *player)
 		alreadyInWater = (player->mo->eflags & MFE_UNDERWATER);
 	}
 }
+
+#undef TSOURDT3RD_MUFFLEINT
 
 //
 // void TSoURDt3rd_P_Ticker(void)
@@ -97,9 +105,8 @@ void TSoURDt3rd_P_Ticker(void)
 	INT32 i, j;
 
 #ifdef HAVE_DISCORDSUPPORT
-	// All 7 Emeralds //
 	if (gametyperules & GTR_POWERSTONES)
-	{
+	{	// All 7 Emeralds
 		UINT16 MAXTEAMS = 3;
 
 		UINT16 match_emeralds[MAXTEAMS];
@@ -140,7 +147,6 @@ void TSoURDt3rd_P_Ticker(void)
 	}
 #endif
 
-    // Ticking //
 	for (i = 0, j = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i] || players[i].spectator)
@@ -207,9 +213,8 @@ boolean TSoURDt3rd_P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *sourc
 
 	if (target)
 	{
-		INT32 pinchHealth = (target->info->damage ? target->info->damage : 3);
-
-		if (((target->flags & MF_BOSS) && target->health == pinchHealth) && cv_bosspinchmusic.value)
+		if (((target->flags & MF_BOSS) && target->health == (target->info->damage ? target->info->damage : 3))
+			&& cv_bosspinchmusic.value)
 		{
 			strncpy(mapmusname, TSoURDt3rd_DetermineLevelMusic(), 7);
 			mapmusname[6] = 0;
