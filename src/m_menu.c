@@ -3999,11 +3999,6 @@ void M_ChangeMenuMusic(const char *defaultmusname, boolean defaultmuslooping)
 {
 	menupresmusic_t defaultmusic;
 
-	// STAR STUFF: YAY //
-	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
-		return;
-	//		NO		//
-
 	if (!defaultmusname)
 		defaultmusname = "";
 
@@ -4011,6 +4006,15 @@ void M_ChangeMenuMusic(const char *defaultmusname, boolean defaultmuslooping)
 	defaultmusic.musname[6] = 0;
 	defaultmusic.mustrack = 0;
 	defaultmusic.muslooping = defaultmuslooping;
+
+	// STAR STUFF: KEEP PLAYING MY MUSIC PLEASE //
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
+	{
+		if (paused)
+			S_ResumeAudio();
+		return;
+	}
+	// YAY //
 
 	M_IterateMenuTree(MIT_ChangeMusic, &defaultmusic);
 }
@@ -4857,7 +4861,7 @@ void M_Drawer(void)
 		// ... but only in the MAIN MENU.  I'm a picky bastard.
 		if (currentMenu == &MainDef)
 		{
-			// STAR NOTE: i edited most of the y values here lol //
+			// STAR NOTE: shifted some y values in order to make version strings neater :) //
 			if (customversionstring[0] != '\0')
 			{
 				V_DrawThinString(vid.dupx, vid.height - 41*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT, "Mod version:");
@@ -5114,9 +5118,9 @@ void M_SetupNextMenu(menu_t *menudef)
 		}
 	}
 
-	M_ShiftMessageQueueDown(); // STAR STUFF: shift the message queue down //
-
 	hidetitlemap = false;
+
+	M_ShiftMessageQueueDown(); // STAR STUFF: shift the message queue down //
 }
 
 // Guess I'll put this here, idk
@@ -5216,8 +5220,6 @@ void M_Init(void)
 	quitmsg[QUIT3MSG4] = M_GetText("Every time you press 'Y', an\nSRB2 Developer cries...\n\n(Press 'Y' to quit)");
 	quitmsg[QUIT3MSG5] = M_GetText("You'll be back to play soon, though...\n......right?\n\n(Press 'Y' to quit)");
 	quitmsg[QUIT3MSG6] = M_GetText("Aww, is Egg Rock Zone too\ndifficult for you?\n\n(Press 'Y' to quit)");
-
-	STAR_M_InitQuitMessages(); //** STAR STUFF: My Quit Messages :) **//
 
 	/*
 	Well the menu sucks for forcing us to have an item set
@@ -7744,10 +7746,7 @@ static void M_LoadAddonsPatches(void)
 	addonsp[NUM_EXT+2] = W_CachePatchName("M_FLOAD", PU_PATCH);
 	addonsp[NUM_EXT+3] = W_CachePatchName("M_FSRCH", PU_PATCH);
 	addonsp[NUM_EXT+4] = W_CachePatchName("M_FSAVE", PU_PATCH);
-
-	// STAR STUFF //
-	addonsp[EXT_STAR] = W_CachePatchName("M_TSOURDT3RD"/*"M_FSTAR"*/, PU_PATCH);
-	// WHAT IS THIS? //
+	addonsp[EXT_STAR] = W_CachePatchName("M_FSTAR", PU_PATCH); // STAR STUFF: addon graphic :) //
 }
 
 static void M_Addons(INT32 choice)
@@ -8515,8 +8514,8 @@ static void M_PandorasBox(INT32 choice)
 		CV_StealthSetValue(&cv_dummylives, max(players[consoleplayer].lives, 1));
 	CV_StealthSetValue(&cv_dummycontinues, players[consoleplayer].continues);
 	SR_PandorasBox[3].status = (continuesInSession) ? (IT_STRING | IT_CVAR) : (IT_GRAYEDOUT);
-	SR_PandorasBox[5].status = (players[consoleplayer].charflags & SF_SUPER) ? (IT_GRAYEDOUT) : (IT_STRING | IT_CALL); // STAR NOTE: i was here; had to change the number //
-	SR_PandorasBox[6].status = (emeralds == ((EMERALD7)*2)-1) ? (IT_GRAYEDOUT) : (IT_STRING | IT_CALL); // STAR NOTE: i was also here; had to change the number here too //
+	SR_PandorasBox[5].status = (players[consoleplayer].charflags & SF_SUPER) ? (IT_GRAYEDOUT) : (IT_STRING | IT_CALL); // STAR NOTE: removed addons from pandora's box //
+	SR_PandorasBox[6].status = (emeralds == ((EMERALD7)*2)-1) ? (IT_GRAYEDOUT) : (IT_STRING | IT_CALL); // STAR NOTE: removed addons from pandora's box //
 	M_SetupNextMenu(&SR_PandoraDef);
 }
 
@@ -8670,7 +8669,7 @@ static void M_AllowSuper(INT32 choice)
 
 	players[consoleplayer].charflags |= SF_SUPER;
 	M_StartMessage(M_GetText("You are now capable of turning super.\nRemember to get all the emeralds!\n"),NULL,MM_NOTHING);
-	SR_PandorasBox[5].status = IT_GRAYEDOUT; // STAR NOTE: i was here, had to change the number here //
+	SR_PandorasBox[5].status = IT_GRAYEDOUT; // STAR NOTE: removed addons from pandora's box //
 
 	G_SetUsedCheats(false);
 }
@@ -8681,7 +8680,7 @@ static void M_GetAllEmeralds(INT32 choice)
 
 	emeralds = ((EMERALD7)*2)-1;
 	M_StartMessage(M_GetText("You now have all 7 emeralds.\nUse them wisely.\nWith great power comes great ring drain.\n"),NULL,MM_NOTHING);
-	SR_PandorasBox[6].status = IT_GRAYEDOUT; // STAR NOTE: i was here, had to change the number here too //
+	SR_PandorasBox[6].status = IT_GRAYEDOUT; // STAR NOTE: removed addons from pandora's box //
 
 	G_SetUsedCheats(false);
 }
@@ -9346,6 +9345,8 @@ static void M_SoundTest(INT32 choice)
 	if (!soundtestpage)
 		soundtestpage = 1;
 
+	M_ResetJukebox(true); // STAR STUFF: reset my jukebox please //
+
 	if (!S_PrepareSoundTest())
 	{
 		M_StartMessage(M_GetText("No selectable tracks found.\n"),NULL,MM_NOTHING);
@@ -9353,8 +9354,6 @@ static void M_SoundTest(INT32 choice)
 	}
 
 	M_CacheSoundTest();
-
-	M_ResetJukebox(false); // STAR STUFF: reset my jukebox please //
 
 	st_time = 0;
 
@@ -12371,10 +12370,6 @@ static void M_ModeAttackEndGame(INT32 choice)
 	G_SetGamestate(GS_TIMEATTACK);
 	modeattacking = ATTACKING_NONE;
 	M_ChangeMenuMusic("_title", true);
-	// STAR STUFF //
-	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying && paused)
-		S_ResumeAudio();
-	// KEEP PLAYING MY MUSIC PLEASE //
 	Nextmap_OnChange();
 }
 
@@ -15918,8 +15913,7 @@ static INT32 quitsounds[] =
 	sfx_s3k6a, // Inu 04-03-13
 	sfx_s3k73, // Inu 04-03-13
 	sfx_chchng, // Tails 11-09-99
-
-	sfx_cdpcm3 // STAR STUFF: 04-11-23
+	sfx_cdpcm3 //** STAR STUFF: 04-11-23 **//
 };
 
 void M_QuitResponse(INT32 ch)
@@ -15942,11 +15936,10 @@ void M_QuitResponse(INT32 ch)
 		ptime = I_GetTime() + NEWTICRATE*2; // Shortened the quit time, used to be 2 seconds Tails 03-26-2001
 		while (ptime > I_GetTime())
 		{
-			// STAR NOTE: HI! I EDITED THIS, lol //
+			// STAR NOTE: edited for custom quit graphic support :) //
 			V_DrawScaledPatch(0, 0, 0, W_CachePatchName(STAR_M_SelectQuitGraphic(), PU_PATCH));
 			if (cv_quitscreen.value)
 				V_DrawScaledPatch(0, 0, 0, W_CachePatchName("TGSNBS", PU_PATCH)); // this game should not be sold :p
-			// DONE! //
 			I_FinishUpdate(); // Update the screen with the image Tails 06-19-2001
 			I_Sleep(cv_sleep.value);
 			I_UpdateTime(cv_timescale.value);

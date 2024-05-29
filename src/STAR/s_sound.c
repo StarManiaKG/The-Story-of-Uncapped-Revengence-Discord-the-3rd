@@ -1,3 +1,13 @@
+// SONIC ROBO BLAST 2; TSOURDT3RD
+//-----------------------------------------------------------------------------
+// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+/// \file  s_sound.c
+/// \brief TSoURDt3rd's unique sound library
 
 #include "star_vars.h"
 #include "ss_main.h"
@@ -30,13 +40,10 @@ void M_ResetJukebox(boolean resetmusic)
 	memset(&TSoURDt3rd->jukebox.musicTrack, 0, sizeof(TSoURDt3rd->jukebox.musicTrack));
 	memset(&TSoURDt3rd->jukebox.musicName, 0, sizeof(TSoURDt3rd->jukebox.musicName));
 
-	if (soundtestdefs) // Prevents memory leaks :)
+	if (currentMenu == &OP_TSoURDt3rdJukeboxDef && currentMenu == &SR_SoundTestDef)
 	{
-		if (currentMenu != &OP_TSoURDt3rdJukeboxDef && currentMenu != &SR_SoundTestDef)
-		{
-			Z_Free(soundtestdefs);
-			soundtestdefs = NULL;
-		}
+		Z_Free(soundtestdefs);
+		soundtestdefs = NULL;
 	}
 
 	if (Playing() && resetmusic)

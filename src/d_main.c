@@ -1496,9 +1496,11 @@ void D_SRB2Main(void)
 	// Netgame URL special case: change working dir to EXE folder.
 	ChangeDirForUrlHandler();
 
-	// STAR STUFF //
-	TSoURDt3rd_InitializePlayer(consoleplayer);	// Initialize the build's structures
-	TSoURDt3rd_CheckTime();						// Check our computer's time
+	// STAR STUFF: Initialize our data! //
+	TSoURDt3rd_CheckTime(); // Check our computer's time
+	TSoURDt3rd_InitializePlayer(consoleplayer); // Initialize the build's structures
+
+	STAR_M_InitQuitMessages(); // My custom quit messages :)
 	// END THIS STUFF //
 
 	// identify the main IWAD file to use
