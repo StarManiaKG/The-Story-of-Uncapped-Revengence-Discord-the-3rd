@@ -125,10 +125,11 @@ static char *DRPC_XORIPString(const char *input)
 --------------------------------------------------*/
 const char *DRPC_ReturnUsername(const DiscordUser *user)
 {
-	const char *extrainfo = 0;
+	const char *extrainfo;
 
 	if (user != NULL)
 	{
+		memset(extrainfo, 0, sizeof(extrainfo))
 		if (!cv_discordstreamer.value)
 			extrainfo = va("#%s (%s)", user->discriminator, user->userId);
 		sprintf(discord_username, "%s %s", user->username, extrainfo);

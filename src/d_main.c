@@ -147,6 +147,7 @@ static char addonsdir[MAX_WADPATH];
 // STAR STUFF WEEEEE //
 #include "STAR/star_vars.h"
 #include "STAR/ss_main.h" // AUTOLOADCONFIGFILENAME, TSoURDt3rd_CheckTime(), STAR_CONS_Printf(), & TSoURDt3rd_CON_DrawStartupScreen() //
+#include "STAR/m_menu.h" // STAR_M_InitQuitMessages() //
 
 #include "STAR/s_sound.h" // jukebox //
 

@@ -21,6 +21,12 @@
 #ifdef HAVE_DISCORDSUPPORT
 
 // ------------------------ //
+//        Variables
+// ------------------------ //
+
+//#define 
+
+// ------------------------ //
 //        Functions
 // ------------------------ //
 
@@ -34,7 +40,7 @@ void DRPC_ScoreStatus(char *string)
 {
 	if (!(playeringame[consoleplayer] && !demoplayback))
 		return;
-	strlcat(string, va("Current Score: %d", players[consoleplayer].score), 128);
+	snprintf(string, 128, va("Current Score: %d", players[consoleplayer].score));
 }
 
 /*--------------------------------------------------
@@ -47,11 +53,11 @@ void DRPC_EmblemStatus(char *string)
 {
 	if (!(netgame || splitscreen))
 		return;
-#if 0
-	snprintf(string, 128, "%d/%d Emblems", M_CountEmblems(serverGamedata), (numemblems + numextraemblems));
-#else
-	strlcat(string, va("%d/%d Emblems", M_CountEmblems(serverGamedata), (numemblems + numextraemblems)), 128);
-#endif
+
+	if (string[0] == '\0')
+		snprintf(string, 128, "%d/%d Emblems", M_CountEmblems(serverGamedata), (numemblems + numextraemblems));
+	else
+		strlcat(string, va("%d/%d Emblems", M_CountEmblems(serverGamedata), (numemblems + numextraemblems)), 128);
 }
 
 /*--------------------------------------------------
@@ -62,45 +68,50 @@ void DRPC_EmblemStatus(char *string)
 --------------------------------------------------*/
 void DRPC_EmeraldStatus(char *string)
 {
-	UINT8 emeraldCount = 0; // Help me find the emouralds!
+	UINT16 emerald_type = (gametyperules & GTR_POWERSTONES ? players[consoleplayer].powers[pw_emeralds] : emeralds);
+	UINT8 emerald_count = 0; // Help me find the emouralds!
 
 	if (modeattacking)
 		return;
 
+	// Emerald math, provided by Monster Iestyn and Uncapped Plus' Fafabis :)
 	for (UINT8 i = 0; i < 7; i++)
 	{
-		// Emerald math, provided by Monster Iestyn and Uncapped Plus' Fafabis :)
-		if (gametyperules & GTR_POWERSTONES && (players[consoleplayer].powers[pw_emeralds] & 1<<i))
-			emeraldCount += 1;
-		else if (!(gametyperules & GTR_POWERSTONES) && emeralds & 1<<i)
-			emeraldCount += 1;
+		if (emerald_type & 1<<i)
+			emerald_count += 1;
 	}
 
 	if (!cv_discordshowonstatus.value && !splitscreen)
 		strlcat(string, ", ", 128);
-	if (emeraldCount == 7 || all7matchemeralds)
+	if (emerald_count == 7 || all7matchemeralds)
 		strlcat(string, "All ", 128);
 
-	strlcat(string, va("%d Emerald", emeraldCount), 128);
-	if (emeraldCount > 1)
-		strlcat(string, "s", 128);
+	strlcat(string, va("%d Emerald", emerald_count), 128);
+	if (emerald_count > 1)
+		//strlcat(string, "s", 128);
+		strlcat(string, "s; ", 128);
 
 	if (cv_discordstatusmemes.value)
 	{
-		if (emeraldCount == (3|4))
+		if (emerald_count == (3|4))
 		{
 			/* Fun Fact: The subtitles in Shadow the Hedgehog emphasized "fourth",
 				even though Jason Griffith emphasized "damn" in this sentence :p */
-			strlcat(string, "s; ", 128); 
-			strlcat(string, (emeraldCount == 3 ? "Where's That DAMN FOURTH?" : "Found That DAMN FOURTH!"), 128);
+			//strlcat(string, "s; ", 128); 
+			strlcat(string, (emerald_count == 3 ? "Where's That DAMN FOURTH?" : "Found That DAMN FOURTH!"), 128);
 		}
-		if (emeraldCount == 7 && players[consoleplayer].powers[pw_super]) // Goku Mode
+		if (emerald_count == 7 && players[consoleplayer].powers[pw_super]) // Goku Mode
 			strlcat(string, " Currently In Goku Mode", 128);
-		if (!emeraldCount) // Punctuation
-			strlcat(string, "s?", 128); 
-
-		if (!emeraldCount && (!(gametyperules & GTR_POWERSTONES) || (gametyperules & GTR_POWERSTONES && !all7matchemeralds)))
-			snprintf(string, 128, "NO EMERALDS?");
+		if (!emerald_count) // Punctuation
+		{
+			if ((!(gametyperules & GTR_POWERSTONES) || (gametyperules & GTR_POWERSTONES && !all7matchemeralds)))
+			{
+				snprintf(string, 128, "NO EMERALDS?");
+				return;
+			}
+			else
+				strlcat(string, "s?", 128);
+		}
 	}
 	else
 	{
@@ -117,12 +128,10 @@ void DRPC_EmeraldStatus(char *string)
 --------------------------------------------------*/
 void DRPC_PlaytimeStatus(char *string)
 {
-	strlcat(string,
-		va("Total Playtime: %d Hours, %d Minutes, and %d Seconds",
-			G_TicsToHours(serverGamedata->totalplaytime),
-			G_TicsToMinutes(serverGamedata->totalplaytime, false),
-			G_TicsToSeconds(serverGamedata->totalplaytime)),
-	128);
+	snprintf(string, 128, "Total Playtime: %d Hours, %d Minutes, and %d Seconds",
+		G_TicsToHours(serverGamedata->totalplaytime),
+		G_TicsToMinutes(serverGamedata->totalplaytime, false),
+		G_TicsToSeconds(serverGamedata->totalplaytime));
 }
 
 /*--------------------------------------------------

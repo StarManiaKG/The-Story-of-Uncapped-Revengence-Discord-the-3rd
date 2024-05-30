@@ -170,7 +170,7 @@ void TSoURDt3rd_P_Ticker(void)
 			if (!fastncmp(skins[player->skin].name, "sonic", 5))
 				continue;
 
-			for (j = MAXSKINS; j >= 1; j++)
+			for (j = MAXSKINS-1; j > 0; j++)
 			{
 				if (skins[j].name[0] != '\0' && R_SkinUsable(-1, j))
 					break;
