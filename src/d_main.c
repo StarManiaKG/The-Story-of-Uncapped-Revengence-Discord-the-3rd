@@ -609,18 +609,18 @@ static void D_Display(void)
 	// draw pause pic
 	if (paused && cv_showhud.value && (!menuactive || netgame))
 	{
-		// STAR NOTE: cv_pausegraphicstyle edits are included here lol //
-		if (cv_pausegraphicstyle.value) // Old-School
+		// STAR NOTE: cv_pausegraphicstyle-related changes are here lol //
+		if (cv_pausegraphicstyle.value) // Old-School pause style
 		{
 			INT32 py;
 			patch_t *patch;
 			py = 4;
 			if (!automapactive)
 				py += viewwindowy;
-			patch = W_CachePatchName("M_PAUSE", PU_PATCH);
+			patch = W_CachePatchName("M_LPAUSE", PU_PATCH);
 			V_DrawScaledPatch(viewwindowx + (BASEVIDWIDTH - patch->width)/2, py, 0, patch);
 		}
-		else // Default
+		else // Default pause style
 		{
 			INT32 y = ((automapactive) ? (32) : (BASEVIDHEIGHT/2));
 			M_DrawTextBox((BASEVIDWIDTH/2) - (60), y - (16), 13, 2);

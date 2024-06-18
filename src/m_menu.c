@@ -83,9 +83,9 @@
 #define FIXUPO0
 #endif
 
-#ifdef HAVE_DISCORDRPC
-#include "discord/discord.h" // DISCORD STUFFS: included! //
-#include "discord/discord_cmds.h" // DISCORD STUFF: cv_discord stuff //
+#ifdef HAVE_DISCORDSUPPORT
+#include "discord/discord.h"
+#include "discord/discord_menu.h"
 #endif
 
 // STAR STUFF //
@@ -94,7 +94,7 @@
 #include "STAR/ss_cmds.h" // various vast TSoURDt3rd commands and command functions //
 #include "STAR/ss_main.h" // AUTOLOADCONFIGFILENAME, SAVEGAMEFOLDER, & STAR_CONS_Printf() //
 
-#include "STAR/m_menu.h" // STAR_M_SelectQuitMessage() //
+#include "STAR/m_menu.h" // STAR_M_DrawQuitGraphic() //
 #include "STAR/s_sound.h"
 
 #include "deh_soc.h"
@@ -149,7 +149,7 @@ static patch_t *savselp[7];
 
 INT16 startmap; // Mario, NiGHTS, or just a plain old normal game?
 
-static INT16 itemOn = 1; // menu item skull is on, Hack by Tails 09-18-2002
+INT16 itemOn = 1; // menu item skull is on, Hack by Tails 09-18-2002 /* STAR NOTE: now externed in STAR/m_menu.h */
 INT16 skullAnimCounter = 10; // skull animation counter /* STAR NOTE: now externed in STAR/m_menu.h */
 
 static  boolean setupcontrols_secondaryplayer;
@@ -343,24 +343,6 @@ static void M_Addons(INT32 choice);
 static void M_AddonsOptions(INT32 choice);
 static patch_t *addonsp[NUM_EXT+5];
 
-#ifdef HAVE_DISCORDRPC
-// DISCORD STUFF //
-// main discord menu
-menu_t OP_CustomStatusOutputDef;
-
-static void M_DiscordOptions(INT32 choice);
-static void M_DrawDiscordMenu(void);
-
-// discord requests menu
-menu_t MISC_DiscordRequestsDef;
-
-static void M_DrawDiscordRequestsLetter(void);
-
-static void M_HandleDiscordRequests(INT32 choice);
-static void M_DrawDiscordRequests(void);
-// KIMOKAWAIII //
-#endif
-
 // STAR STUFF WEEEE //
 // main menu stuff
 menu_t OP_TSoURDt3rdReadMeDef;
@@ -382,7 +364,7 @@ static void M_TSoURDt3rdOptions(INT32 choice);
 static void M_DrawLevelPlatterHeader(INT32 y, const char *header, boolean headerhighlight, boolean allowlowercase);
 
 // Drawing functions
-static void M_DrawGenericMenu(void);
+//static void M_DrawGenericMenu(void); /* STAR NOTE: now externed in STAR/m_menu.h */
 //static void M_DrawGenericScrollMenu(void); /* STAR NOTE: now externed in STAR/m_menu.h */
 static void M_DrawCenteredMenu(void);
 static void M_DrawAddons(void);
@@ -750,11 +732,8 @@ menuitem_t MPauseMenu[] = /* STAR NOTE: now externed in STAR/m_menu.h */
 	{IT_STRING | IT_CALL,    NULL, "Emblem Hints...",           M_EmblemHints,         24},
 	{IT_STRING | IT_CALL,    NULL, "Switch Gametype/Level...",  M_MapChange,           32},
 
-#ifdef HAVE_DISCORDRPC
-	// DISCORD STUFFS //
-	{IT_STRING | IT_SUBMENU, NULL, "Ask To Join Requests...", 	&MISC_DiscordRequestsDef,
-																					   48},
-	// END THAT PLEASE //
+#ifdef HAVE_DISCORDSUPPORT
+	{IT_STRING | IT_CALL,	 "M_ICODIS", "Discord Requests...", M_DiscordRequests,	   48},
 #endif
 
 	{IT_STRING | IT_CALL,    NULL, "Continue",                  M_SelectableClearMenus,64},
@@ -780,8 +759,8 @@ typedef enum
 	mpause_hints,
 	mpause_switchmap,
 
-#ifdef HAVE_DISCORDRPC
-	mpause_discordrequests, // DISCORD STUFFS: requesting to spam your inbox please //
+#ifdef HAVE_DISCORDSUPPORT
+	mpause_discordrequests,
 #endif
 
 	mpause_continue,
@@ -1351,16 +1330,10 @@ static menuitem_t OP_MainMenu[] =
 
 	{IT_SUBMENU | IT_STRING, NULL, "Datum Options...",     &OP_DataOptionsDef, 100},
 
-	// STAR STUFF //
-#ifdef HAVE_DISCORDRPC
-	// DISCORD STUFFS //
-	{IT_CALL    | IT_STRING, NULL, "Mastadon Options...",  M_DiscordOptions,	120},
-	// OK NOW THAT STUFFS OUT THE WAY //
-	{IT_CALL    | IT_STRING, NULL, "Dumb Options...",	   M_TSoURDt3rdOptions, 130},
-#else
-	{IT_CALL    | IT_STRING, NULL, "Dumb Options...",      M_TSoURDt3rdOptions, 120},
+#ifdef HAVE_DISCORDSUPPORT
+	{IT_CALL 	| IT_STRING, NULL, "Mastadon Options...",  M_DiscordOptions,   120},
 #endif
-	// I GOTTA BELIEVE! //
+	{IT_CALL    | IT_STRING, NULL, "Dumb Options...",      M_TSoURDt3rdOptions,130}, // STAR STUFF: our menu! //
 
 #else
 
@@ -1375,16 +1348,10 @@ static menuitem_t OP_MainMenu[] =
 
 	{IT_SUBMENU | IT_STRING, NULL, "Data Options...",      &OP_DataOptionsDef, 100},
 
-	// STAR STUFF AGAIN //
-#ifdef HAVE_DISCORDRPC
-	// DISCORD STUFFS //
-	{IT_CALL    | IT_STRING, NULL, "Discord Options...",   M_DiscordOptions,	120},
-	// OK NOW THAT STUFFS OUT THE WAY AGAIN //
-	{IT_CALL    | IT_STRING, NULL, "TSoURDt3rd Options...",M_TSoURDt3rdOptions, 130},
-#else
-	{IT_CALL    | IT_STRING, NULL, "TSoURDt3rd Options...",M_TSoURDt3rdOptions, 120},
-	// I GOTTA BELIEVE! (again) //
+#ifdef HAVE_DISCORDSUPPORT
+	{IT_CALL 	| IT_STRING, NULL, "Discord Options...",   M_DiscordOptions,   120},
 #endif
+	{IT_CALL    | IT_STRING, NULL, "TSoURDt3rd Options...",M_TSoURDt3rdOptions,130}, // STAR STUFF: our menu! //
 #endif // APRIL_FOOLS
 };
 
@@ -2495,89 +2462,6 @@ static menuitem_t OP_MonitorToggleMenu[] =
 	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Eggman Box",        &cv_eggmanbox,    140},
 };
 
-#ifdef HAVE_DISCORDRPC
-// ================================ //
-// 		DISCORD OPTIONS YAY			//
-// ================================ //
-static menuitem_t MISC_DiscordRequestsMenu[] =
-{
-	{IT_KEYHANDLER|IT_NOTHING, NULL, "", M_HandleDiscordRequests, 0},
-};
-
-static menuitem_t OP_DiscordOptionsMenu[] =
-{
-	// Discord Thingies //
-	// Main Things
-	{IT_HEADER,							NULL, 	"Discord Rich Presence",		NULL,					 	  	        0},
-	{IT_STRING | IT_CVAR,				NULL, 		"Rich Presence",			&cv_discordrp,			 	  		    6},
-	{IT_STRING | IT_CVAR,				NULL, 		"Streamer Mode",			&cv_discordstreamer,	 	 		   11},
-
-	{IT_HEADER,							NULL,	"Main Rich Presence Settings",	NULL,					 	 		   20},
-	{IT_STRING | IT_CVAR,				NULL, 		"Ask To Join",				&cv_discordasks,		 	 		   26},
-	{IT_STRING | IT_CVAR,				NULL,  "Ask to Join Permissions",		&cv_discordinvites,		 	 		   31},
-
-	{IT_STRING | IT_CVAR,				NULL, 		"Show on Status",			&cv_discordshowonstatus, 	 	       41},
-	
-	{IT_HEADER,							NULL,	"Misc. Rich Presence Settings",	NULL,					 	 		   50},
-	{IT_STRING | IT_CVAR,				NULL, 		"Memes on Status",			&cv_discordstatusmemes,	 	 		   56},
-	{IT_STRING | IT_CVAR,				NULL, 		"Skin Image Type",			&cv_discordcharacterimagetype,		   61},
-
-	// Custom Things
-	{IT_HEADER,							NULL, "Custom Discord Status",			NULL,					 	 		   70},
-	{IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 		"Header",			        &cv_customdiscorddetails, 	 		   76},
-	{IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 		"State",			        &cv_customdiscordstate, 			   90},
-
-	{IT_STRING | IT_CVAR,		        NULL, 	"L. Image Type",				&cv_customdiscordlargeimagetype,      104},
-    {IT_STRING | IT_CVAR,		        NULL, 	"S. Image Type",				&cv_customdiscordsmallimagetype,      109},
-
-	{IT_STRING | IT_CVAR,		        NULL, 	"L. Image",						NULL, 								  119}, // Handled in discord_option_onchange
-	{IT_STRING | IT_CVAR,		        NULL, 	"S. Image",						NULL, 								  124}, // Also handled in discord_option_onchange
-
-    {IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 	"L. Image Text",				&cv_customdiscordlargeimagetext,      134},
-    {IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 	"S. Image Text",				&cv_customdiscordsmallimagetext,      148},
-
-    // Show Output Things
-	{IT_STRING | IT_SUBMENU,			NULL, 		"Show Output",				&OP_CustomStatusOutputDef,	          162},
-};
-
-static menuitem_t OP_CustomStatusOutputMenu[] =
-{
-	{IT_HEADER,		NULL,	"Custom Status Output",		NULL,	0},
-};
-
-enum
-{
-	// Main Things //
-	op_richpresenceheader = 3,
-
-	op_discordasks,
-	op_discordinvites,
-	op_discordshowonstatus,
-
-	op_discordmiscoptionsheader,
-	op_discordstatusmemes,	
-	op_discordcharacterimagetype,
-
-	// Custom Strings //
-	op_customstatusheader,
-	op_customdiscorddetails,
-	op_customdiscordstate,
-
-	// Custom Images //
-	op_customdiscordlargeimagetype,
-	op_customdiscordsmallimagetype,
-
-	op_customdiscordlargeimage,
-	op_customdiscordsmallimage,
-
-    op_customdiscordlargeimagetext,
-    op_customdiscordsmallimagetext,
-
-    // Output Things //
-	op_customstatusoutputdef,
-};
-#endif
-
 // ================================ //
 // STAR OPTIONS LETS GOOOOOOOOOOOOO //
 // ================================ //
@@ -3181,39 +3065,6 @@ menu_t OP_DataOptionsDef = DEFAULTMENUSTYLE(
 	MTREE2(MN_OP_MAIN, MN_OP_DATA),
 	"M_DATA", OP_DataOptionsMenu, &OP_MainDef, 60, 30);
 
-#ifdef HAVE_DISCORDRPC
-// DISCORD STUFFS //
-menu_t MISC_DiscordRequestsDef = {
-    MN_OP_DISCORD_RQ,
-	NULL,
-	sizeof (MISC_DiscordRequestsMenu)/sizeof (menuitem_t),
-	&MPauseDef,
-	MISC_DiscordRequestsMenu,
-	M_DrawDiscordRequests,
-	0, 0,
-	0,
-	NULL
-};
-
-menu_t OP_DiscordOptionsDef =
-{
-	MTREE2(MN_OP_MAIN, MN_OP_DISCORD_OPT),
-	"M_DISCORD",
-	sizeof (OP_DiscordOptionsMenu)/sizeof (menuitem_t),
-	&OP_MainDef,
-	OP_DiscordOptionsMenu,
-	M_DrawDiscordMenu,
-	30, 30,
-	0,
-	NULL
-};
-
-menu_t OP_CustomStatusOutputDef = DEFAULTMENUSTYLE(
-	MTREE3(MN_OP_MAIN, MN_OP_DISCORD_OPT, MN_OP_DISCORDCS_OUTPUT), 
-	"M_DISCORDOUTPUT", OP_CustomStatusOutputMenu, &OP_DiscordOptionsDef, 30, 30);
-// DID THIS, ENDED THAT //
-#endif
-
 menu_t OP_ScreenshotOptionsDef =
 {
 	MTREE3(MN_OP_MAIN, MN_OP_DATA, MN_OP_SCREENSHOTS),
@@ -3486,152 +3337,6 @@ void Moviemode_option_Onchange(void)
 	OP_ScreenshotOptionsMenu[op_movie_folder].status =
 		(cv_movie_option.value == 3 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 }
-
-#ifdef HAVE_DISCORDRPC
-void Discord_option_Onchange(void)
-{
-	//// Is Rich Presence Even On? ////
-	// Main //
-	OP_DiscordOptionsMenu[op_richpresenceheader].status =
-		(cv_discordrp.value ? IT_HEADER : IT_DISABLED);
-	
-	OP_DiscordOptionsMenu[op_discordasks].status =
-		(cv_discordrp.value ? IT_CVAR|IT_STRING : IT_DISABLED);
-	
-	OP_DiscordOptionsMenu[op_discordinvites].status =
-		(cv_discordrp.value ? IT_CVAR|IT_STRING : IT_DISABLED);
-	
-	// Misc. //
-	OP_DiscordOptionsMenu[op_discordmiscoptionsheader].status =
-		(cv_discordrp.value ? IT_HEADER : IT_DISABLED);
-
-	OP_DiscordOptionsMenu[op_discordstatusmemes].status =
-		(cv_discordrp.value ? IT_CVAR|IT_STRING : IT_DISABLED);
-	
-	OP_DiscordOptionsMenu[op_discordshowonstatus].status =
-		(cv_discordrp.value ? IT_CVAR|IT_STRING : IT_DISABLED);
-
-	// Custom Status //
-	OP_DiscordOptionsMenu[op_discordcharacterimagetype].status =
-		(cv_discordrp.value ? IT_CVAR|IT_STRING : IT_DISABLED);
-
-	OP_DiscordOptionsMenu[op_customstatusheader].status =
-		(cv_discordrp.value ? IT_HEADER : IT_DISABLED);
-
-	OP_DiscordOptionsMenu[op_customdiscorddetails].status =
-		(cv_discordrp.value ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
-	
-	OP_DiscordOptionsMenu[op_customdiscordstate].status =
-		(cv_discordrp.value ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
-
-    // Custom Images //
-	OP_DiscordOptionsMenu[op_customdiscordlargeimagetype].status =
-    		(cv_discordrp.value ? IT_CVAR|IT_STRING : IT_DISABLED);
-
-    OP_DiscordOptionsMenu[op_customdiscordsmallimagetype].status =
-    		(cv_discordrp.value ? IT_CVAR|IT_STRING : IT_DISABLED);
-
-	// Custom Image Item Actions
-    OP_DiscordOptionsMenu[op_customdiscordlargeimage].status =
-        	(cv_discordrp.value ? IT_CVAR|IT_STRING : IT_DISABLED);
-	OP_DiscordOptionsMenu[op_customdiscordlargeimage].itemaction =
-            // Characters
-			(cv_customdiscordlargeimagetype.value <= 2 ? &cv_customdiscordlargecharacterimage :
-			((cv_customdiscordlargeimagetype.value >= 3 && cv_customdiscordlargeimagetype.value <= 5) ? &cv_customdiscordlargesupercharacterimage :
-			
-			// Maps
-			(cv_customdiscordlargeimagetype.value == 6 ? &cv_customdiscordlargemapimage :
-			
-			// Misc
-			&cv_customdiscordlargemiscimage)));
-
-    OP_DiscordOptionsMenu[op_customdiscordsmallimage].status =
-        	(cv_discordrp.value ? IT_CVAR|IT_STRING : IT_DISABLED);
-	OP_DiscordOptionsMenu[op_customdiscordsmallimage].itemaction =
-			// Characters
-            (cv_customdiscordsmallimagetype.value <= 2 ? &cv_customdiscordsmallcharacterimage :
-			((cv_customdiscordsmallimagetype.value >= 3 && cv_customdiscordsmallimagetype.value <= 5) ? &cv_customdiscordsmallsupercharacterimage :
-			
-			// Maps
-			(cv_customdiscordsmallimagetype.value == 6 ? &cv_customdiscordsmallmapimage :
-		
-			// Misc
-			&cv_customdiscordsmallmiscimage)));
-	// End of Item Actions
-
-    OP_DiscordOptionsMenu[op_customdiscordlargeimagetext].status =
-    		(cv_discordrp.value ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
-
-    OP_DiscordOptionsMenu[op_customdiscordsmallimagetext].status =
-            (cv_discordrp.value ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
-
-    // Output Status //
-	OP_DiscordOptionsMenu[op_customstatusoutputdef].status = IT_DISABLED;
-		//(cv_discordrp.value ? IT_STRING|IT_SUBMENU : IT_DISABLED);
-
-	//// Our Rich Presence is On! ////
-	if (cv_discordrp.value)
-	{	
-		// Misc. Settings //
-		OP_DiscordOptionsMenu[op_discordinvites].status =
-			(cv_discordasks.value ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
-		
-		// Custom Statuses //
-		OP_DiscordOptionsMenu[op_customstatusheader].status =
-			(cv_discordshowonstatus.value == 8 ? IT_HEADER : IT_DISABLED);
-		
-		OP_DiscordOptionsMenu[op_customdiscorddetails].status =
-			(cv_discordshowonstatus.value == 8 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
-
-		OP_DiscordOptionsMenu[op_customdiscordstate].status =
-			(cv_discordshowonstatus.value == 8 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
-
-        // Custom Images //
-		OP_DiscordOptionsMenu[op_customdiscordlargeimagetype].status =
-            (cv_discordshowonstatus.value == 8 ? IT_CVAR|IT_STRING : IT_DISABLED);
-
-        OP_DiscordOptionsMenu[op_customdiscordsmallimagetype].status =
-            (cv_discordshowonstatus.value == 8 ? IT_CVAR|IT_STRING : IT_DISABLED);
-
-        OP_DiscordOptionsMenu[op_customdiscordlargeimage].status =
-            (cv_discordshowonstatus.value == 8 ? IT_CVAR|IT_STRING : IT_DISABLED);
-
-        OP_DiscordOptionsMenu[op_customdiscordsmallimage].status =
-            (cv_discordshowonstatus.value == 8 ? IT_CVAR|IT_STRING : IT_DISABLED);
-
-        OP_DiscordOptionsMenu[op_customdiscordlargeimagetext].status =
-            (cv_discordshowonstatus.value == 8 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
-
-        OP_DiscordOptionsMenu[op_customdiscordsmallimagetext].status =
-            (cv_discordshowonstatus.value == 8 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
-
-        // Output Status //
-		//OP_DiscordOptionsMenu[op_customstatusoutputdef].status =
-			//(cv_discordshowonstatus.value == 8 ? IT_STRING|IT_SUBMENU : IT_DISABLED);
-
-        //// Custom Discord Statuses ////
-        if (cv_discordshowonstatus.value == 8)
-        {
-            // Display Different Options Based on Image Type Chosen //
-            // Large Images
-        	OP_DiscordOptionsMenu[op_customdiscordlargeimage].status =
-                (cv_customdiscordlargeimagetype.value != 8 ? IT_CVAR|IT_STRING : IT_DISABLED);
-
-            OP_DiscordOptionsMenu[op_customdiscordlargeimagetext].status =
-                (cv_customdiscordlargeimagetype.value != 8 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
-
-            // Small Images
-        	OP_DiscordOptionsMenu[op_customdiscordsmallimage].status =
-                (cv_customdiscordsmallimagetype.value != 8 ? IT_CVAR|IT_STRING : IT_DISABLED);
-
-            OP_DiscordOptionsMenu[op_customdiscordsmallimagetext].status =
-                (cv_customdiscordsmallimagetype.value != 8 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
-		}
-    }
-
-	DRPC_UpdatePresence();
-}
-#endif
 
 //// STAR COMMAND STUFF YAY ////
 // Game //
@@ -4386,7 +4091,7 @@ static void M_ResetCvars(void)
 	}
 }
 
-static void M_NextOpt(void)
+void M_NextOpt(void) /* STAR NOTE: now externed in STAR/m_menu.h */
 {
 	INT16 oldItemOn = itemOn; // prevent infinite loop
 	do
@@ -4398,7 +4103,7 @@ static void M_NextOpt(void)
 	} while (oldItemOn != itemOn && ( (currentMenu->menuitems[itemOn].status & IT_TYPE) & IT_SPACE ));
 }
 
-static void M_PrevOpt(void)
+void M_PrevOpt(void) /* STAR NOTE: now externed in STAR/m_menu.h */
 {
 	INT16 oldItemOn = itemOn; // prevent infinite loop
 	do
@@ -4929,6 +4634,10 @@ void M_StartControlPanel(void)
 
 		currentMenu = &MainDef;
 		itemOn = singleplr;
+
+#ifdef HAVE_DISCORDSUPPORT
+		DRPC_UpdatePresence();
+#endif
 	}
 	else if (modeattacking)
 	{
@@ -4980,6 +4689,9 @@ void M_StartControlPanel(void)
 		MPauseMenu[mpause_switchmap].status = IT_DISABLED;
 		MPauseMenu[mpause_addons].status = IT_DISABLED;
 		MPauseMenu[mpause_scramble].status = IT_DISABLED;
+#ifdef HAVE_DISCORDSUPPORT
+		MPauseMenu[mpause_discordrequests].status = IT_DISABLED;
+#endif
 		MPauseMenu[mpause_psetupsplit].status = IT_DISABLED;
 		MPauseMenu[mpause_psetupsplit2].status = IT_DISABLED;
 		MPauseMenu[mpause_spectate].status = IT_DISABLED;
@@ -5010,13 +4722,6 @@ void M_StartControlPanel(void)
 			else // in this odd case, we still want something to be on the menu even if it's useless
 				MPauseMenu[mpause_spectate].status = IT_GRAYEDOUT;
 		}
-
-#ifdef HAVE_DISCORDRPC
-		// DISCORD STUFFS //
-		M_RefreshDiscordRequestsOption();
-		DRPC_UpdatePresence();
-		// ENDED THAT //
-#endif
 
 		MPauseMenu[mpause_hints].status = (M_SecretUnlocked(SECRET_EMBLEMHINTS, clientGamedata) && G_CoopGametype()) ? (IT_STRING | IT_CALL) : (IT_DISABLED);
 
@@ -5120,6 +4825,14 @@ void M_SetupNextMenu(menu_t *menudef)
 
 	hidetitlemap = false;
 
+#ifdef HAVE_DISCORDSUPPORT
+	if (!Playing() && menuactive)
+	{
+		// currentMenu changed during menus
+		DRPC_UpdatePresence();
+	}
+#endif
+
 	M_ShiftMessageQueueDown(); // STAR STUFF: shift the message queue down //
 }
 
@@ -5136,6 +4849,14 @@ void M_Ticker(void)
 {
 	// reset input trigger
 	noFurtherInput = false;
+
+#if 0
+	// STAR STUFF: come back later please //
+	if (currentMenu->tickroutine)
+	{
+		currentMenu->tickroutine();
+	}
+#endif
 
 	if (dedicated)
 		return;
@@ -5165,6 +4886,13 @@ void M_Ticker(void)
 		}
 	}
 	I_unlock_mutex(ms_ServerList_mutex);
+#endif
+
+#ifdef HAVE_DISCORDSUPPORT
+	if (currentMenu == &MISC_DiscordRequestsDef)
+		M_DiscordRequestTick();
+	else if (currentMenu == &OP_DiscordOptionsDef)
+		M_DiscordOptionsTicker();
 #endif
 }
 
@@ -5624,7 +5352,7 @@ static void M_DrawMenuTitle(void)
 	}
 }
 
-static void M_DrawGenericMenu(void)
+void M_DrawGenericMenu(void) /* STAR NOTE: now externed in STAR/m_menu.h */
 {
 	INT32 x, y, i, cursory = 0;
 
@@ -5865,7 +5593,7 @@ static void M_DrawControlsDefMenu(void)
 #define scrollareaheight 72
 
 // note that alphakey is multiplied by 2 for scrolling menus to allow greater usage in UINT8 range.
-void M_DrawGenericScrollMenu(void)
+void M_DrawGenericScrollMenu(void) /* STAR NOTE: now externed in STAR/m_menu.h */
 {
 	INT32 x, y, i, max, bottom, tempcentery, cursory = 0;
 
@@ -6152,12 +5880,6 @@ static void M_DrawPauseMenu(void)
 			}
 			V_DrawRightAlignedString(284, 44 + (i*8), V_MONOSPACE, emblem_text[i]);
 		}
-
-#ifdef HAVE_DISCORDRPC
-		// DISCORD STUFFS //
-		M_DrawDiscordRequestsLetter();
-		// END THAT PLEASE //
-#endif
 	}
 
 	M_DrawGenericMenu();
@@ -13273,12 +12995,6 @@ static void M_ChooseRoom(INT32 choice)
 
 	serverlistpage = 0;
 
-#ifdef HAVE_DISCORDRPC
-	// DISCORD STUFFS //
-	discordInfo.serverRoom = ms_RoomId;
-	// END THAT //
-#endif
-
 	/*
 	We were on the Multiplayer menu? That means that we must have been trying to
 	view the server browser, but we hadn't selected a room yet. So we need to go
@@ -13525,11 +13241,6 @@ void M_StartServerMenu(INT32 choice)
 	// END THIS //
 
 	ms_RoomId = -1;
-#ifdef HAVE_DISCORDRPC
-	// DISCORD STUFFS //
-	discordInfo.serverRoom = ms_RoomId;
-	// END THAT //
-#endif
 
 	levellistmode = LLM_CREATESERVER;
 	Newgametype_OnChange();
@@ -15116,7 +14827,7 @@ static void M_Setup2PControlsMenu(INT32 choice)
 #define controlheight 18
 
 // Draws the Customise Controls menu
-void M_DrawControl(void)
+void M_DrawControl(void) /* STAR NOTE: now externed in STAR/m_menu.h */
 {
 	char     tmp[50];
 	INT32    x, y, i, max, cursory = 0, iter;
@@ -15936,10 +15647,11 @@ void M_QuitResponse(INT32 ch)
 		ptime = I_GetTime() + NEWTICRATE*2; // Shortened the quit time, used to be 2 seconds Tails 03-26-2001
 		while (ptime > I_GetTime())
 		{
-			// STAR NOTE: edited for custom quit graphic support :) //
-			V_DrawScaledPatch(0, 0, 0, W_CachePatchName(STAR_M_SelectQuitGraphic(), PU_PATCH));
-			if (cv_quitscreen.value)
-				V_DrawScaledPatch(0, 0, 0, W_CachePatchName("TGSNBS", PU_PATCH)); // this game should not be sold :p
+#if 0
+			V_DrawScaledPatch(0, 0, 0, W_CachePatchName("GAMEQUIT", PU_PATCH));
+#else
+			STAR_M_DrawQuitGraphic();
+#endif
 			I_FinishUpdate(); // Update the screen with the image Tails 06-19-2001
 			I_Sleep(cv_sleep.value);
 			I_UpdateTime(cv_timescale.value);
@@ -15955,205 +15667,6 @@ static void M_QuitSRB2(INT32 choice)
 	(void)choice;
 	M_StartMessage(quitmsg[STAR_M_SelectQuitMessage()], M_QuitResponse, MM_YESNO);
 }
-
-#ifdef HAVE_DISCORDRPC
-//////////////////////////////
-//	DISCORD STUFFS WEEEEE	//
-//////////////////////////////
-
-//// Variables ////
-static const tic_t confirmLength = 3*TICRATE/4;
-static tic_t confirmDelay = 0;
-static boolean confirmAccept = false;
-
-//// Functions ////
-void M_RefreshDiscordRequestsOption(void)
-{
-	MPauseMenu[mpause_discordrequests].status = (discordRequestList != NULL ? IT_STRING|IT_SUBMENU : IT_GRAYEDOUT);
-}
-
-static void M_DrawDiscordRequestsLetter(void)
-{
-	const tic_t freq = TICRATE/2;
-
-	if (discordRequestList == NULL)
-		return;
-
-	if ((leveltime % freq) >= freq/2)
-		V_DrawFixedPatch(204 * FRACUNIT,
-			(currentMenu->y + MPauseMenu[mpause_discordrequests].alphaKey - 1) * FRACUNIT,
-			(FRACUNIT),
-			(0),
-			(W_CachePatchName("D_REQUE2", PU_CACHE)),
-			(NULL));
-}
-
-static void M_DrawDiscordSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean small)
-{
-	patch_t *stickerEnd = W_CachePatchName((small ? "D_STIKE2" : "D_STIKEN"), PU_CACHE);
-	INT32 height = (small ? 6 : 11);
-
-	V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, flags, stickerEnd, NULL);
-	V_DrawFill(x, y, width, height, 24|flags);
-	V_DrawFixedPatch((x + width)*FRACUNIT, y*FRACUNIT, FRACUNIT, flags|V_FLIP, stickerEnd, NULL);
-}
-
-//// Menus ////
-// Main Discord Menu //
-static void M_DiscordOptions(INT32 choice)
-{
-	(void)choice;
-
-	Discord_option_Onchange();
-	M_SetupNextMenu(&OP_DiscordOptionsDef);
-}
-
-static void M_DrawDiscordMenu(void)
-{
-	M_DrawGenericScrollMenu();
-
-	if (discordInfo.ConnectionStatus != DRPC_CONNECTED) // Dang! Discord isn't open!
-	{
-		if (discordInfo.ConnectionStatus == DRPC_DISCONNECTED)
-			V_DrawCenteredString(BASEVIDWIDTH/2, 200, V_REDMAP, "Disconnected");
-		else
-			V_DrawCenteredString(BASEVIDWIDTH/2, 200, V_REDMAP, "Not Connected");
-		V_DrawCenteredString(BASEVIDWIDTH/2, 210, V_REDMAP,	"Is Discord Open?");
-	}
-	else
-		V_DrawCenteredString(BASEVIDWIDTH/2, 210, V_MENUCOLORMAP, va("Connected to: %s", DRPC_ReturnUsername(NULL)));
-}
-
-// Discord Request Menus //
-static const char *M_GetDiscordName(discordRequest_t *r)
-{
-	if (r == NULL)
-		return "";
-
-	if (cv_discordstreamer.value)
-		return r->username;
-	return va("%s#%s", r->username, r->discriminator);
-}
-
-static void M_HandleDiscordRequests(INT32 choice)
-{
-	if (confirmDelay > 0)
-		return;
-
-	switch (choice)
-	{
-		case KEY_ENTER:
-			Discord_Respond(discordRequestList->userID, DISCORD_REPLY_YES);
-			confirmAccept = true;
-			confirmDelay = confirmLength;
-			S_StartSound(NULL, sfx_s3k63);
-			break;
-
-		case KEY_ESCAPE:
-			Discord_Respond(discordRequestList->userID, DISCORD_REPLY_NO);
-			confirmAccept = false;
-			confirmDelay = confirmLength;
-			S_StartSound(NULL, sfx_s3kb2);
-			break;
-	}
-}
-
-static void M_DrawDiscordRequests(void)
-{
-	discordRequest_t *curRequest = discordRequestList;
-	UINT8 *colormap;
-	patch_t *hand = NULL;
-	boolean removeRequest = false;
-
-	const char *wantText = "...would like to join!";
-	const char *controlText = "\x82" "ENTER" "\x80" " - Accept    " "\x82" "ESC" "\x80" " - Decline";
-
-	INT32 x = 100;
-	INT32 y = 133;
-
-	INT32 slide = 0;
-	INT32 maxYSlide = 18;
-
-	if (confirmDelay > 0)
-	{
-		if (confirmAccept == true)
-		{
-			colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GREEN, GTC_CACHE);
-			hand = W_CachePatchName("D_LAPH02", PU_CACHE);
-		}
-		else
-		{
-			colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_RED, GTC_CACHE);
-			hand = W_CachePatchName("D_LAPH03", PU_CACHE);
-		}
-
-		slide = confirmLength - confirmDelay;
-
-		confirmDelay--;
-
-		if (confirmDelay == 0)
-			removeRequest = true;
-	}
-	else
-	{
-		colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GREY, GTC_CACHE);
-	}
-
-	V_DrawFixedPatch(56*FRACUNIT, 150*FRACUNIT, FRACUNIT, 0, W_CachePatchName("D_LAPE01", PU_CACHE), colormap);
-
-	if (hand != NULL)
-	{
-		fixed_t handoffset = (4 - abs((signed)(skullAnimCounter - 4))) * FRACUNIT;
-		V_DrawFixedPatch(56*FRACUNIT, 150*FRACUNIT + handoffset, FRACUNIT, 0, hand, NULL);
-	}
-
-	M_DrawDiscordSticker(x + (slide * 32), y - 1, V_ThinStringWidth(M_GetDiscordName(curRequest), V_ALLOWLOWERCASE|V_6WIDTHSPACE), 0, false);
-	V_DrawThinString(x + (slide * 32), y, V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_MENUCOLORMAP, M_GetDiscordName(curRequest));
-
-	M_DrawDiscordSticker(x, y + 12, V_ThinStringWidth(wantText, V_ALLOWLOWERCASE|V_6WIDTHSPACE), 0, true);
-	V_DrawThinString(x, y + 10, V_ALLOWLOWERCASE|V_6WIDTHSPACE, wantText);
-
-	M_DrawDiscordSticker(x, y + 26, V_ThinStringWidth(controlText, V_ALLOWLOWERCASE|V_6WIDTHSPACE), 0, true);
-	V_DrawThinString(x, y + 24, V_ALLOWLOWERCASE|V_6WIDTHSPACE, controlText);
-
-	y -= 18;
-
-	while (curRequest->next != NULL)
-	{
-		INT32 ySlide = min(slide * 4, maxYSlide);
-
-		curRequest = curRequest->next;
-
-		M_DrawDiscordSticker(x, y - 1 + ySlide, V_ThinStringWidth(M_GetDiscordName(curRequest), V_ALLOWLOWERCASE|V_6WIDTHSPACE), 0, false);
-		V_DrawThinString(x, y + ySlide, V_ALLOWLOWERCASE|V_6WIDTHSPACE, M_GetDiscordName(curRequest));
-
-		y -= 12;
-		maxYSlide = 12;
-	}
-
-	if (removeRequest)
-	{
-		DRPC_RemoveRequest(discordRequestList);
-
-		if (discordRequestList == NULL)
-		{
-			// No other requests
-			MPauseMenu[mpause_discordrequests].status = IT_GRAYEDOUT;
-
-			if (currentMenu->prevMenu)
-			{
-				M_SetupNextMenu(currentMenu->prevMenu);
-				if (currentMenu == &MPauseDef)
-					itemOn = mpause_continue;
-			}
-			else
-				M_ClearMenus(true);
-
-			return;
-		}
-	}
-}
-#endif
 
 //////////////////////////
 //// STAR STUFF WEEEE ////
@@ -16200,32 +15713,36 @@ static void M_DrawTsourdt3rdReadMe(void)
 	static const char *TSoURDt3rd_credits[] = {
 		"\1TSoURDt3rd Team",
 		"StarManiaKG \"Star\" - Creator",
-		"Mini the Bunnyboy \"Talis\" - Co-Creator",
-		"Bitten2Up \"Bitten\" - Co-Creator",
+		"MarioMario \"Sapphire\" - Co-Creator",
+			"\t\t- In Loving Memory Of",
+		"Mini the Bunnyboy \"Talis\" - Co-Develtoper",
+		"Bitten2Up \"Bitten\" - Co-Develtoper",
 		"",
 		"\1TSoURDt3rd Extras",
 		"Marilyn - Emotional Support, Ideas",
-		"\t\t(Also formed the idea of this menu)",
+			"\t\t- Emotional support",
+			"\t\t- Ideas",
+			"\t\t- Tester",
 		"",
 		"OVAPico & Other Gamer Gang GC Members",
-		"\t\t(Voluntary testers, ideas)",
-		"\t\t(Also provided emotional support)",
+			"\t\t- Voluntary testers, ideas",
+			"\t\t- Emotional support",
 		"",
-		"NARBluebear - Best Friend",
-		"\t\t(Provided emotional support)",
+		"NARBluebear",
+			"\t\t- Best Friend",
+			"\t\t- Emotional support",
 		"",
-		"\"Future\" Smiles \"The Fox\" - Best Friend",
-		"\t\t(Provided emotional support)",
+		"\"Future\" Smiles \"The Fox\"",
+			"\t\t- Best Friend"
+			"\t\t- Emotional support",
 		"",
 		"Smash Studios",
-		"\t\t(Provided emotional support)",
-		"\t\t(Also helped improve coding skills)",
+			"\t\t- Emotional support",
+			"\t\t- Coding skill improvement",
 		"",
 		"Flashback Guy \"Flash\"",
-		"\t\t(World record holder of emblems)",
-		"",
-		"\1In Loving Memory Of",
-		"MarioMario \"Sapphire\" - Creator",
+			"\t\t- SRB2 emblem world record",
+			"\t\t- Ideas",
 		NULL
 	};
 

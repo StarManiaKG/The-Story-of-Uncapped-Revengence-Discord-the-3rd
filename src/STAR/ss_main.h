@@ -77,6 +77,8 @@ void TSoURDt3rd_D_Display(void);
 
 void STAR_M_StartMessage(const char *header, INT32 headerflags, const char *string, void *routine, menumessagetype_t itemtype);
 
+const char *TSoURDt3rd_ReturnUsername(void);
+
 // ======
 // EVENTS
 // ======

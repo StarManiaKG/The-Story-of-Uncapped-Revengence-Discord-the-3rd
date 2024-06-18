@@ -31,6 +31,10 @@
 #include "hardware/hw_md2.h"
 #endif
 
+#ifdef HAVE_DISCORDSUPPORT
+#include "discord/discord.h"
+#endif
+
 INT32 numskins = 0;
 skin_t skins[MAXSKINS];
 
@@ -383,6 +387,11 @@ static void SetSkin(player_t *player, INT32 skinnum)
 
 		P_SetPlayerMobjState(player->mo, player->mo->state-states); // Prevent visual errors when switching between skins with differing number of frames
 	}
+
+#ifdef HAVE_DISCORDSUPPORT
+	if (player - players == consoleplayer)
+		DRPC_UpdatePresence();
+#endif
 }
 
 // Gets the player to the first usuable skin in the game.

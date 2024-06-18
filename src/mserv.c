@@ -23,6 +23,10 @@
 #include "m_menu.h"
 #include "z_zone.h"
 
+#ifdef HAVE_DISCORDSUPPORT
+#include "discord/discord.h"
+#endif
+
 #ifdef MASTERSERVER
 
 static int     MSId;
@@ -559,5 +563,9 @@ static void MasterServer_OnChange(void)
 
 	if (Online())
 		RegisterServer();
+
+#ifdef HAVE_DISCORDSUPPORT
+	DRPC_UpdatePresence();
+#endif
 #endif/*MASTERSERVER*/
 }

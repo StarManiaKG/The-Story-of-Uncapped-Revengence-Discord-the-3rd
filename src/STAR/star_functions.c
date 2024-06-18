@@ -211,7 +211,8 @@ void TSoURDt3rd_InitializePlayer(INT32 playernum)
 	TSoURDt3rd->jukebox.Unlocked 						= false;
 	TSoURDt3rd->jukebox.lastTrackPlayed					= NULL;
 
-	M_ResetJukebox(false);
+	if (playernum == consoleplayer)
+		M_ResetJukebox(false);
 }
 
 //

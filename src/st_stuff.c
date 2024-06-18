@@ -144,8 +144,9 @@ static patch_t *fnshico;
 
 static boolean facefreed[MAXPLAYERS];
 
-#ifdef HAVE_DISCORDRPC
-static patch_t *envelope; // DISCORD STUFFS: Discord Rich Presence Requests
+#ifdef HAVE_DISCORDSUPPORT
+// Discord Rich Presence
+static patch_t *envelope;
 #endif
 
 // STAR STUFF: Easter //
@@ -380,8 +381,9 @@ void ST_LoadGraphics(void)
 	for (i = 0; i < 7; ++i)
 		ngradeletters[i] = W_CachePatchName(va("GRADE%d", i), PU_HUDGFX);
 
-#ifdef HAVE_DISCORDRPC
-	envelope = W_CachePatchName("D_REQUES", PU_HUDGFX); // DISCORD STUFFS: rich presence requests
+#ifdef HAVE_DISCORDSUPPORT
+	// Discord Rich Presence
+	envelope = W_CachePatchName("K_REQUES", PU_HUDGFX);
 #endif
 
 	// STAR STUFF: Easter Graphics //
@@ -2986,7 +2988,7 @@ static void ST_overlayDrawer(void)
 	ST_drawDebugInfo();
 }
 
-#ifdef HAVE_DISCORDRPC
+#ifdef HAVE_DISCORDSUPPORT
 void ST_AskToJoinEnvelope(void)
 {
 	const tic_t freq = TICRATE/2;

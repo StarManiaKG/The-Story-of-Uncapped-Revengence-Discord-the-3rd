@@ -3348,9 +3348,7 @@ void G_DoReborn(INT32 playernum)
 	}
 
 #ifdef HAVE_DISCORDRPC
-	// DISCORD STUFF //
 	DRPC_UpdatePresence();
-	// END THAT //
 #endif
 }
 
@@ -4390,10 +4388,6 @@ static void G_DoContinued(void)
 	D_MapChange(gamemap, gametype, ultimatemode, false, 0, false, false);
 
 	gameaction = ga_nothing;
-
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence(); // DISCORD STUFF: update rpc //
-#endif
 
 #ifdef HAVE_SDL
 	STAR_SetWindowTitle(); // STAR STUFF: do cool window title stuff //
@@ -5546,11 +5540,9 @@ INT32 G_FindMapByNameOrCode(const char *mapname, char **realmapnamep)
 void G_SetGamestate(gamestate_t newstate)
 {
 	gamestate = newstate;
-
 #ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence(); // DISCORD STUFFS: update presence again //
+	DRPC_UpdatePresence();
 #endif
-
 #ifdef HAVE_SDL
 	STAR_SetWindowTitle(); // STAR STUFF: constantly update our title please //
 #endif

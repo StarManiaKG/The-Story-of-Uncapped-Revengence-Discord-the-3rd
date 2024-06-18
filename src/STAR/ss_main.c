@@ -23,6 +23,10 @@
 #include "../i_video.h" // rendermode
 #include "../deh_soc.h" // TSoURDt3rd_LoadedGamedataAddon
 
+#ifdef HAVE_DISCORDSUPPORT
+#include "../discord/discord.h"
+#endif
+
 // ------------------------ //
 //        Variables
 // ------------------------ //
@@ -122,9 +126,9 @@ const char *TSoURDt3rd_CON_DrawStartupScreen(void)
 {
 	switch (cv_startupscreen.value)
 	{
-		case 1:		return "CONSBACK";
-		case 2:		return "BABYSONIC";
-		default:	return "STARTUP";
+		case 1: return "CONSBACK";
+		case 2: return "BABYSONIC";
+		default: return "STARTUP";
 	}
 }
 
@@ -142,7 +146,8 @@ void TSoURDt3rd_D_Display(void)
 			break;
 		}
 
-		default: break;	
+		default:
+			break;	
 	}
 }
 
@@ -157,15 +162,19 @@ void STAR_M_StartMessage(const char *header, INT32 headerflags, const char *stri
 		if (!headerflags)
 			headerflags = (V_MENUCOLORMAP|V_CHARCOLORSHIFT);
 		header = va("%c%s\x80\n", ('\x80' + headerflags), header);
+		string = va("%s%s", header, string);
 	}
-	else
-		header = 0;
 
-	M_StartMessage(
-		va("%s%s", header, string),
-		routine,
-		itemtype
-	);
+	M_StartMessage(string, routine, itemtype);
+}
+
+const char *TSoURDt3rd_ReturnUsername(void)
+{
+#ifdef HAVE_DISCORDRPC
+	if (discordInfo.ConnectionStatus == DRPC_CONNECTED)
+		return DRPC_ReturnUsername();
+#endif
+	return (Playing() ? player_names[consoleplayer] : cv_playername.string);
 }
 
 // ======
@@ -250,7 +259,8 @@ void TSoURDt3rd_CheckTime(void)
 			break;
 		}
 
-		default: break;
+		default:
+			break;
 	}
 }
 
@@ -406,15 +416,15 @@ void TSoURDt3rd_GameEnd(void)
 
 void TSoURDt3rd_SCR_DisplayTpsRate(void)
 {
+	static tic_t lasttic;
+	static boolean ticsgraph[TICRATE];
+
 	INT32 tpscntcolor = 0;
 	const INT32 h = vid.height-(8*vid.dupy);
 
 	tic_t i;
 	tic_t ontic = I_GetTime();
 	tic_t totaltics = 0;
-
-	static tic_t lasttic;
-	static boolean ticsgraph[TICRATE];
 
 	if (gamestate == GS_NULL)
 		return;

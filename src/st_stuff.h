@@ -26,8 +26,9 @@
 // Called by main loop.
 void ST_Ticker(boolean run);
 
-#ifdef HAVE_DISCORDRPC
-void ST_AskToJoinEnvelope(void); // DISCORD STUFFS: Called when you have Both Discord RPC and Discord Asks Enabled
+#ifdef HAVE_DISCORDSUPPORT
+// Called when you have Discord asks
+void ST_AskToJoinEnvelope(void);
 #endif
 
 // Called by main loop.

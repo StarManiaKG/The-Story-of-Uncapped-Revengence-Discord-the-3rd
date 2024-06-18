@@ -57,9 +57,9 @@
 #include "f_finale.h"
 #endif
 
-#ifdef HAVE_DISCORDRPC
-#include "discord/discord.h" // DISCORD STUFF: Add our coolness! //
-#include "discord/discord_cmds.h" // DISCORD STUFF: cv_discord stuff //
+#include "discord/discord_cmds.h" // Joinable_OnChange(), Got_DiscordInfo(), & cv_discord commands //
+#ifdef HAVE_DISCORDSUPPORT
+#include "discord/discord.h"
 #endif
 
 // STAR STUFF //
@@ -1481,19 +1481,16 @@ static boolean SV_SendServerConfig(INT32 node)
 	netbuffer->u.servercfg.modifiedgame = (UINT8)modifiedgame;
 	netbuffer->u.servercfg.usedCheats = (UINT8)usedCheats;
 
+	netbuffer->u.servercfg.maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
+	netbuffer->u.servercfg.allownewplayer = cv_allownewplayer.value;
+	netbuffer->u.servercfg.discordinvites = (boolean)cv_discordinvites.value;
+
 	// STAR STUFF YAY //
 	netbuffer->u.servercfg.tsourdt3rd = (UINT8)tsourdt3rd;
-
 	netbuffer->u.servercfg.tsourdt3rdmajorversion = (UINT8)TSoURDt3rd_CurrentMajorVersion();
 	netbuffer->u.servercfg.tsourdt3rdminorversion = (UINT8)TSoURDt3rd_CurrentMinorVersion();
 	netbuffer->u.servercfg.tsourdt3rdsubversion	= (UINT8)TSoURDt3rd_CurrentSubversion();
-
-	// DISCORD STUFF //
-	netbuffer->u.servercfg.maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
-	netbuffer->u.servercfg.allownewplayer = (UINT8)cv_allownewplayer.value;
-	netbuffer->u.servercfg.discordinvites = (UINT8)cv_discordinvites.value;
-	// END THAT PLEASE //
-	// END THE STAR STUFF TOO //
+	// END THE STAR STUFF //
 
 	memcpy(netbuffer->u.servercfg.server_context, server_context, 8);
 
@@ -3532,19 +3529,29 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 		CL_RemovePlayer(pnum, kickreason);
 
 	S_StartSound(NULL, ((msg == KICK_MSG_PLAYER_QUIT) ? STAR_LeaveSFX : STAR_SynchFailureSFX)); // DISCORD STUFF: I LIKE YOUR FUNNY SOUNDS, MAGIC FUNCTION //
+
+#ifdef HAVE_DISCORDRPC
+	DRPC_UpdatePresence();
+#endif
+#ifdef HAVE_SDL
+	STAR_SetWindowTitle(); // STAR STUFF: Update the Title! //
+#endif
 }
 
 static CV_PossibleValue_t netticbuffer_cons_t[] = {{0, "MIN"}, {3, "MAX"}, {0, NULL}};
 consvar_t cv_netticbuffer = CVAR_INIT ("netticbuffer", "1", CV_SAVE, netticbuffer_cons_t, NULL);
 
-consvar_t cv_allownewplayer = CVAR_INIT ("allowjoin", "On", CV_SAVE|CV_NETVAR|CV_CALL|CV_ALLOWLUA, CV_OnOff, TSoURDt3rd_DiscordCommands_OnChange); // STAR NOTE: added TSoURDt3rd_DiscordCommands_OnChange //
+consvar_t cv_allownewplayer = CVAR_INIT ("allowjoin", "On", CV_SAVE|CV_NETVAR|CV_CALL|CV_ALLOWLUA, CV_OnOff, Joinable_OnChange);
 consvar_t cv_joinnextround = CVAR_INIT ("joinnextround", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL); /// \todo not done
 static CV_PossibleValue_t maxplayers_cons_t[] = {{2, "MIN"}, {32, "MAX"}, {0, NULL}};
-consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_SAVE|CV_NETVAR|CV_CALL|CV_ALLOWLUA, maxplayers_cons_t, TSoURDt3rd_DiscordCommands_OnChange); // STAR NOTE: added TSoURDt3rd_DiscordCommands_OnChange //
+consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_SAVE|CV_NETVAR|CV_CALL|CV_ALLOWLUA, maxplayers_cons_t, Joinable_OnChange);
 static CV_PossibleValue_t joindelay_cons_t[] = {{1, "MIN"}, {3600, "MAX"}, {0, "Off"}, {0, NULL}};
 consvar_t cv_joindelay = CVAR_INIT ("joindelay", "10", CV_SAVE|CV_NETVAR, joindelay_cons_t, NULL);
 static CV_PossibleValue_t rejointimeout_cons_t[] = {{1, "MIN"}, {60 * FRACUNIT, "MAX"}, {0, "Off"}, {0, NULL}};
 consvar_t cv_rejointimeout = CVAR_INIT ("rejointimeout", "2", CV_SAVE|CV_NETVAR|CV_FLOAT, rejointimeout_cons_t, NULL);
+
+static CV_PossibleValue_t discordinvites_cons_t[] = {{0, "Admins Only"}, {1, "Everyone"}, {0, NULL}};
+consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Everyone", CV_SAVE|CV_CALL, discordinvites_cons_t, Joinable_OnChange);
 
 static CV_PossibleValue_t resynchattempts_cons_t[] = {{1, "MIN"}, {20, "MAX"}, {0, "No"}, {0, NULL}};
 consvar_t cv_resynchattempts = CVAR_INIT ("resynchattempts", "10", CV_SAVE|CV_NETVAR, resynchattempts_cons_t, NULL);
@@ -3558,11 +3565,6 @@ consvar_t cv_noticedownload = CVAR_INIT ("noticedownload", "Off", CV_SAVE|CV_NET
 // Speed of file downloading (in packets per tic)
 static CV_PossibleValue_t downloadspeed_cons_t[] = {{1, "MIN"}, {300, "MAX"}, {0, NULL}};
 consvar_t cv_downloadspeed = CVAR_INIT ("downloadspeed", "16", CV_SAVE|CV_NETVAR, downloadspeed_cons_t, NULL);
-
-// DISCORD STUFF: Discord Invites; Here for Dedicated Servers or Something for Some Reason idk //
-static CV_PossibleValue_t discordinvites_cons_t[] = {{0, "Server"}, {1, "Admins"}, {2, "Everyone"}, {0, NULL}};
-consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Everyone", CV_SAVE|CV_CALL, discordinvites_cons_t, TSoURDt3rd_DiscordCommands_OnChange);
-// END THIS MESS //
 
 static void Got_AddPlayer(UINT8 **p, INT32 playernum);
 
@@ -3930,9 +3932,8 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 		LUA_HookInt(newplayernum, HOOK(PlayerJoin));
 
 #ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence(); // DISCORD STUFF: Update! //
+	DRPC_UpdatePresence();
 #endif
-
 #ifdef HAVE_SDL
 	STAR_SetWindowTitle(); // STAR STUFF: Update the Title! //
 #endif
@@ -4220,8 +4221,8 @@ static void HandleConnect(SINT8 node)
 			}
 		}
 
-		// STAR STUFF //
 #if 0
+		// STAR STUFF //
 		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "ADDING FOR CONNECT: node - %d, consoleplayer - %d\n", node, consoleplayer);
 
 #if 0
@@ -4262,8 +4263,8 @@ static void HandleConnect(SINT8 node)
 		TSoURDt3rd_ClearPlayer(node);
 #endif
 #endif
-#endif
 		// END THE STAR STUFF TOO //
+#endif
 
 		// client authorised to join
 		nodewaiting[node] = (UINT8)(netbuffer->u.clientcfg.localplayers - playerpernode[node]);
@@ -4534,6 +4535,21 @@ static void HandlePacketFromAwayNode(SINT8 node)
 				memcpy(server_context, netbuffer->u.servercfg.server_context, 8);
 			}
 
+#ifdef HAVE_DISCORDSUPPORT
+			if (TSoURDt3rdPlayers[node].serverPlayers.serverUsesTSoURDt3rd)
+			{
+				discordInfo.maxPlayers = netbuffer->u.servercfg.maxplayer;
+				discordInfo.joinsAllowed = netbuffer->u.servercfg.allownewplayer;
+				discordInfo.everyoneCanInvite = netbuffer->u.servercfg.discordinvites;
+			}
+			else
+			{
+				discordInfo.maxPlayers = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
+				discordInfo.joinsAllowed = cv_allownewplayer.value;
+				discordInfo.everyoneCanInvite = (boolean)cv_discordinvites.value;
+			}
+#endif
+
 			// STAR STUFF: Check if the Server is Using TSoURDt3rd //
 			TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[node];
 			TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd = (netbuffer->u.servercfg.tsourdt3rd != 1 ? 0 : 1);
@@ -4550,15 +4566,7 @@ static void HandlePacketFromAwayNode(SINT8 node)
 			TSoURDt3rd->serverPlayers.subVersion = (TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd ? netbuffer->u.servercfg.tsourdt3rdsubversion : 0);
 
 			TSoURDt3rd->serverPlayers.serverTSoURDt3rdVersion = STAR_CombineNumbers(3, TSoURDt3rd->serverPlayers.majorVersion, TSoURDt3rd->serverPlayers.minorVersion, TSoURDt3rd->serverPlayers.subVersion);
-
-#ifdef HAVE_DISCORDRPC
-			// DISCORD STUFF //
-			discordInfo.maxPlayers = (TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd ? netbuffer->u.servercfg.maxplayer : (UINT8)cv_maxplayers.value);
-			discordInfo.joinsAllowed = (TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd ? netbuffer->u.servercfg.allownewplayer : (UINT8)cv_allownewplayer.value);
-			discordInfo.whoCanInvite = (TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd ? netbuffer->u.servercfg.discordinvites : (UINT8)cv_discordinvites.value);
-			// END OF THE DISCORD STUFF //
-#endif
-			// END OF THE STAR STUFF TOO //
+			// END OF OUR JUNK! //
 
 			nodeingame[(UINT8)servernode] = true;
 			serverplayer = netbuffer->u.servercfg.serverplayer;
@@ -5856,6 +5864,7 @@ void NetUpdate(void)
 		maketic = neededtic;
 
 	Local_Maketic(realtics); // make local tic, and call menu?
+
 	// STAR STUFF //
 	TSoURDt3rd_BuildTicCMD(0);
 	if (splitscreen || botingame)

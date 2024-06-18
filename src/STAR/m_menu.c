@@ -39,6 +39,8 @@
 //        Variables
 // ------------------------ //
 
+//tsourdt3rd_menus_t *TSoURDt3rd_currentMenu = &MainDef;
+
 INT16 MessageMenuDisplay[3][256]; // TO HACK
 
 menuitem_t defaultMenuTitles[256][256];
@@ -209,7 +211,7 @@ static menuitem_t OP_Tsourdt3rdSnakeMenu[] =
 
 menu_t OP_TSoURDt3rdOptionsDef = DEFAULTSCROLLMENUSTYLE(
 	MTREE2(MN_OP_MAIN, MN_OP_TSOURDT3RD),
-	"M_TSOURDT3RD", OP_Tsourdt3rdOptionsMenu, &OP_MainDef, 30, 30);
+	"M_TSOURD", OP_Tsourdt3rdOptionsMenu, &OP_MainDef, 30, 30);
 
 menu_t OP_TSoURDt3rdJukeboxDef =
 {
@@ -244,6 +246,61 @@ menu_t OP_TSoURDt3rdSnakeDef =
 // ------------------------ //
 //        Functions
 // ------------------------ //
+
+// =======
+// DRAWING
+// =======
+
+//
+// void K_drawButton(fixed_t x, fixed_t y, INT32 flags, patch_t *button[2], boolean pressed)
+// Draws a button graphic on the screen. Changes upon being pressed.
+//
+// Ported from Dr. Robotnik's Ring Racers!
+//
+void K_drawButton(fixed_t x, fixed_t y, INT32 flags, patch_t *button[2], boolean pressed)
+{
+	V_DrawFixedPatch(x, y, FRACUNIT, flags, button[(pressed == true) ? 1 : 0], NULL);
+}
+
+//
+// void K_drawButtonAnim(INT32 x, INT32 y, INT32 flags, patch_t *button[2], tic_t animtic)
+// Draws a button graphic on the screen, and animates it. Changes upon being pressed.
+//
+// Ported from Dr. Robotnik's Ring Racers!
+//
+void K_drawButtonAnim(INT32 x, INT32 y, INT32 flags, patch_t *button[2], tic_t animtic)
+{
+	const UINT8 anim_duration = 16;
+	const boolean anim = ((animtic % (anim_duration * 2)) < anim_duration);
+	K_drawButton(x << FRACBITS, y << FRACBITS, flags, button, anim);
+}
+
+//
+// void K_DrawSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isSmall)
+// Draws a sticker graphic on the HUD.
+//
+// Ported from Dr. Robotnik's Ring Racers!
+//
+void K_DrawSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isSmall)
+{
+	patch_t *stickerEnd;
+	INT32 height;
+
+	if (isSmall == true)
+	{
+		stickerEnd = (patch_t*)(W_CachePatchName("K_STIKE2", PU_CACHE));
+		height = 6;
+	}
+	else
+	{
+		stickerEnd = (patch_t*)(W_CachePatchName("K_STIKEN", PU_CACHE));
+		height = 11;
+	}
+
+	V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, flags, stickerEnd, NULL);
+	V_DrawFill(x, y, width, height, 24|flags);
+	V_DrawFixedPatch((x + width)*FRACUNIT, y*FRACUNIT, FRACUNIT, flags|V_FLIP, stickerEnd, NULL);
+}
 
 // ====
 // GAME
@@ -364,21 +421,13 @@ void STAR_M_InitQuitMessages(void)
 void STAR_M_InitDynamicQuitMessages(void)
 {
 	char *maptitle = G_BuildMapTitle(gamemap);
-	const char *discordname;
-
-#ifdef HAVE_DISCORDRPC
-	if (discordInfo.ConnectionStatus == DRPC_CONNECTED)
-		discordname = DRPC_ReturnUsername(NULL);
-	else
-#endif
-		discordname = (Playing() ? player_names[consoleplayer] : cv_playername.string);
 
 	if (Playing() && gamestate == GS_LEVEL)
 		quitmsg[TSOURDT3RD_QUITSMSG3] = va(M_GetText("Hehe, was \n%s\ntoo hard for you?\n\n(Press 'Y' to quit)"), maptitle);
 	else
 		quitmsg[TSOURDT3RD_QUITSMSG3] = M_GetText("Hehe, you couldn't even make\nit past the Title Screen,\ncould you, silly?\n\n(Press 'Y' to quit)");
 
-	quitmsg[TSOURDT3RD_QUITSMSG4] = va(M_GetText("Wait, %s!\nCome back! I need you!\n\n(Press 'Y' to quit)"), discordname);
+	quitmsg[TSOURDT3RD_QUITSMSG4] = va(M_GetText("Wait, %s!\nCome back! I need you!\n\n(Press 'Y' to quit)"), TSoURDt3rd_ReturnUsername());
 
 	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
 		quitmsg[TSOURDT3RD_QUITSMSG5] = va(M_GetText("Come back!\nFinish listening to\n%s!\n\n(Press 'Y' to quit)"), TSoURDt3rdPlayers[consoleplayer].jukebox.musicName);
@@ -397,20 +446,15 @@ INT32 STAR_M_SelectQuitMessage(void)
 	INT32 randomMessage = M_RandomKey(NUM_QUITMESSAGES); // Assign a quit message //
 	STAR_M_InitDynamicQuitMessages();
 
-	if (!TSoURDt3rd_InAprilFoolsMode()) // No April Fools messages when it's not April Fools! //
+	// No April Fools messages when it's not April Fools! //
+	if (!TSoURDt3rd_InAprilFoolsMode())
 	{
-		static INT32 aprilFools[] = {
-			[TSOURDT3RD_AF_QUITAMSG1] = TSOURDT3RD_AF_QUITAMSG1,
-			TSOURDT3RD_AF_QUITAMSG2,
-			TSOURDT3RD_AF_QUITAMSG3,
-			TSOURDT3RD_AF_QUITAMSG4
-		};
-
-		while (aprilFools[randomMessage])
+		while (randomMessage >= TSOURDT3RD_AF_QUITAMSG1 && randomMessage <= TSOURDT3RD_AF_QUITAMSG4)
 			randomMessage = M_RandomKey(NUM_QUITMESSAGES);
 	}
 
-	switch (randomMessage) // Choose a quit sound //
+	// Choose a quit sound //
+	switch (randomMessage)
 	{
 		case QUITMSG4: S_StartSound(NULL, sfx_adderr); break;
 		case QUITMSG5: S_StartSound(NULL, sfx_cgot); break;
@@ -440,19 +484,27 @@ INT32 STAR_M_SelectQuitMessage(void)
 }
 
 //
-// const char *STAR_M_SelectQuitGraphic(void)
-// Selects a quit graphic for us.
+// void STAR_M_DrawQuitGraphic(void)
+// Draws a quit graphic for us.
 //
-const char *STAR_M_SelectQuitGraphic(void)
+void STAR_M_DrawQuitGraphic(void)
 {
+	const char *quitgfx;
+
 	switch (cv_quitscreen.value)
 	{
-		case 1:		return "COLORQUIT";	// aseprite moment
-		case 2:		return "SMUGQUIT";	// funny aseprite moment
-		case 3:		return "KELQUIT";	// kel world aseprite moment
-		case 4:		return "SATRBQUIT";	// secret aseprite moment
-		default:	return "GAMEQUIT"; 	// Demo 3 Quit Screen Tails 06-16-2001
+		case 1: quitgfx = "SS_QCOLR"; break; // aseprite moment
+		case 2: quitgfx = "SS_QSMUG"; break; // funny aseprite moment
+		case 3: quitgfx = "SS_QKEL"; break; // kel world aseprite moment
+		case 4: quitgfx = "SS_QATRB"; break; // secret aseprite moment
+
+		default: // Demo 3 Quit Screen Tails 06-16-2001
+			V_DrawScaledPatch(0, 0, 0, W_CachePatchName("GAMEQUIT", PU_PATCH));
+			return;
 	}
+
+	V_DrawScaledPatch(0, 0, 0, W_CachePatchName(quitgfx, PU_PATCH));
+	V_DrawScaledPatch(0, 0, 0, W_CachePatchName("SS_QDISC", PU_PATCH)); // psst, disclaimer; this game should not be sold :p
 }
 
 // ================

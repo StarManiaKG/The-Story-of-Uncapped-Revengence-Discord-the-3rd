@@ -24,7 +24,7 @@
 #include "../m_menu.h" // cv_bosspinchmusic //
 
 #ifdef HAVE_DISCORDSUPPORT
-#include "../discord/discord.h" // DRPC_UpdatePresence() //
+#include "../discord/discord.h"
 #endif
 
 // ------------------------ //
