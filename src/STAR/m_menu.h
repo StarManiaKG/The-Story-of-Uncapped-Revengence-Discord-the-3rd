@@ -27,6 +27,8 @@ extern INT16 skullAnimCounter; // skull animation counter; Prompts: Chevron anim
 
 extern INT16 MessageMenuDisplay[3][256]; // TO HACK
 
+extern INT16 itemOn; // menu item skull is on, Hack by Tails 09-18-2002
+
 enum
 {
 	op_eventoptionsheader = 0,
@@ -144,6 +146,7 @@ extern menu_t OP_MainDef;
 extern menuitem_t MainMenu[];
 
 extern menuitem_t MPauseMenu[];
+extern menu_t MPauseDef;
 extern menuitem_t SPauseMenu[];
 
 extern menu_t MessageDef;
@@ -160,10 +163,23 @@ extern menuitem_t defaultMenuTitles[256][256];
 //        Functions
 // ------------------------ //
 
+// =======
+// DRAWING
+// =======
+
+void K_drawButton(fixed_t x, fixed_t y, INT32 flags, patch_t *button[2], boolean pressed);
+void K_drawButtonAnim(INT32 x, INT32 y, INT32 flags, patch_t *button[2], tic_t animtic);
+
+void K_DrawSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isSmall);
+
 // =====
 // MENUS
 // =====
 
+void M_NextOpt(void);
+void M_PrevOpt(void);
+
+void M_DrawGenericMenu(void);
 void M_DrawGenericScrollMenu(void);
 void M_DrawControl(void);
 
@@ -187,7 +203,7 @@ void STAR_M_InitQuitMessages(void);
 void STAR_M_InitDynamicQuitMessages(void);
 
 INT32 STAR_M_SelectQuitMessage(void);
-const char *STAR_M_SelectQuitGraphic(void);
+void STAR_M_DrawQuitGraphic(void);
 
 // =============
 // JUKEBOX MENUS

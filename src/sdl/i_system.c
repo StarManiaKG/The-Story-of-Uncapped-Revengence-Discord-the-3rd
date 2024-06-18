@@ -214,8 +214,8 @@ static char returnWadPath[256];
 #include "../byteptr.h"
 #endif
 
-#ifdef HAVE_DISCORDRPC
-#include "../discord/discord.h" // present the presence //
+#ifdef HAVE_DISCORDSUPPORT
+#include "../discord/discord.h"
 #endif
 
 #include "../STAR/star_vars.h" // TSoURDt3rd_GenerateFunnyCrashMessage(), TSOURDT3RDVERSIONSTRING, & TSOURDT3RDBYSTARMANIAKGSTRING //
@@ -2400,9 +2400,6 @@ void I_Quit(void)
 	if (quiting) goto death;
 	SDLforceUngrabMouse();
 	quiting = SDL_FALSE;
-#ifdef HAVE_DISCORDRPC
-	DRPC_Shutdown(); // DISCORD STUFFS: shut down please //
-#endif
 	M_SaveConfig(NULL); //save game config, cvars..
 #ifndef NONET
 	D_SaveBan(); // save the ban list
@@ -2415,6 +2412,10 @@ void I_Quit(void)
 		G_CheckDemoStatus();
 	if (metalrecording)
 		G_StopMetalRecording(false);
+
+#ifdef HAVE_DISCORDSUPPORT
+	DRPC_Shutdown();
+#endif
 
 	D_QuitNetGame();
 	CL_AbortDownloadResume();
@@ -2468,10 +2469,6 @@ void I_Error(const char *error, ...)
 {
 	va_list argptr;
 	char buffer[8192];
-
-#ifdef HAVE_DISCORDRPC
-	DRPC_Shutdown(); // DISCORD STUFFS: shut down discord please //
-#endif
 
 	// recursive error detecting
 	if (shutdowning)
@@ -2535,6 +2532,10 @@ void I_Error(const char *error, ...)
 		G_CheckDemoStatus();
 	if (metalrecording)
 		G_StopMetalRecording(false);
+
+#ifdef HAVE_DISCORDSUPPORT
+	DRPC_Shutdown();
+#endif
 
 	D_QuitNetGame();
 	CL_AbortDownloadResume();

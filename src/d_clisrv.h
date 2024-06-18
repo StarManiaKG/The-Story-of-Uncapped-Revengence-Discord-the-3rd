@@ -168,19 +168,17 @@ typedef struct
 
 	char server_context[8]; // Unique context id, generated at server startup.
 
+	// Discord info (always defined for net compatibility)
+	UINT8 maxplayer;
+	boolean allownewplayer;
+	boolean discordinvites;
+
 	// STAR STUFF //
 	UINT8 tsourdt3rd;
-	
 	UINT8 tsourdt3rdmajorversion;
 	UINT8 tsourdt3rdminorversion;
 	UINT8 tsourdt3rdsubversion;
-
-	// DISCORD STUFFS //
-	UINT8 maxplayer;
-	UINT8 allownewplayer;
-	UINT8 discordinvites;
-	// END THAT LARGE MESS //
-	// END THAT OTHER STUFF TOO //
+	// END THIS STUFF //
 } ATTRPACK serverconfig_pak;
 
 typedef struct
@@ -334,12 +332,12 @@ typedef struct
 		clientcmd_pak clientpak;            //         144 bytes
 		client2cmd_pak client2pak;          //         200 bytes
 		servertics_pak serverpak;           //      132495 bytes (more around 360, no?)
-		serverconfig_pak servercfg;         //         773 bytes // STAR NOTE: takes up a little bit more bits now //
+		serverconfig_pak servercfg;         //         773 bytes
 		UINT8 textcmd[MAXTEXTCMD+1];        //       66049 bytes (wut??? 64k??? More like 257 bytes...)
 		filetx_pak filetxpak;               //         139 bytes
 		fileack_pak fileack;
 		UINT8 filereceived;
-		clientconfig_pak clientcfg;         //         136 bytes // STAR NOTE: takes up a little bit more bits now //
+		clientconfig_pak clientcfg;         //         136 bytes
 		UINT8 md5sum[16];
 		serverinfo_pak serverinfo;          //        1024 bytes
 		serverrefuse_pak serverrefuse;      //       65025 bytes (somehow I feel like those values are garbage...)
@@ -350,6 +348,7 @@ typedef struct
 		INT32 filesneedednum;               //           4 bytes
 		filesneededconfig_pak filesneededcfg; //       ??? bytes
 		UINT32 pingtable[MAXPLAYERS+1];     //          68 bytes
+		//tsourdt3rd_pak tsourdt3rdpak;		// STAR STUFF //
 	} u; // This is needed to pack diff packet types data together
 } ATTRPACK doomdata_t;
 
@@ -370,9 +369,7 @@ extern INT32 mapchangepending;
 
 // Points inside doomcom
 extern doomdata_t *netbuffer;
-// DISCORD STUFF //
 extern consvar_t cv_stunserver;
-// END THAT //
 extern consvar_t cv_showjoinaddress;
 extern consvar_t cv_playbackspeed;
 
@@ -426,9 +423,7 @@ extern consvar_t cv_resynchattempts, cv_blamecfail;
 extern consvar_t cv_maxsend, cv_noticedownload, cv_downloadspeed;
 extern consvar_t cv_dedicatedidletime;
 
-// DISCORD STUFF: INVITATION EDITION //
 extern consvar_t cv_discordinvites;
-// PLEASE HELP ME //
 
 // Used in d_net, the only dependence
 tic_t ExpandTics(INT32 low, INT32 node);

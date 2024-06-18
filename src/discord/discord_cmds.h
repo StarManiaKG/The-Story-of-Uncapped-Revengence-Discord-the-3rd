@@ -17,12 +17,11 @@
 #include "discord.h"
 #include "../command.h"
 
-#ifdef HAVE_DISCORDSUPPORT
-
 // ------------------------ //
 //        Variables
 // ------------------------ //
 
+#ifdef HAVE_DISCORDSUPPORT
 extern consvar_t cv_discordrp, cv_discordstreamer;
 extern consvar_t cv_discordasks;
 extern consvar_t cv_discordshowonstatus, cv_discordstatusmemes, cv_discordcharacterimagetype;
@@ -34,6 +33,13 @@ extern consvar_t cv_customdiscordlargesupercharacterimage, cv_customdiscordsmall
 extern consvar_t cv_customdiscordlargemapimage, cv_customdiscordsmallmapimage;
 extern consvar_t cv_customdiscordlargemiscimage, cv_customdiscordsmallmiscimage;
 extern consvar_t cv_customdiscordlargeimagetext, cv_customdiscordsmallimagetext;
+#endif
 
-#endif // HAVE_DISCORDSUPPORT
+// ------------------------ //
+//        Functions
+// ------------------------ //
+
+void Joinable_OnChange(void);
+void Got_DiscordInfo(UINT8 **cp, INT32 playernum);
+
 #endif // __DISCORD_CMDS__

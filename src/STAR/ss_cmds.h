@@ -57,8 +57,6 @@ extern consvar_t cv_movingplayersetup;
 //        Functions
 // ------------------------ //
 
-void TSoURDt3rd_DiscordCommands_OnChange(void);
-
 // ====
 // GAME
 // ====

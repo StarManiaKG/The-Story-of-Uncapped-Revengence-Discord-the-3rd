@@ -86,8 +86,8 @@
 #include "ogl_sdl.h"
 #endif
 
-#ifdef HAVE_DISCORDRPC
-#include "../discord/discord.h" // DISCORD STUFF: discord //
+#ifdef HAVE_DISCORDSUPPORT
+#include "../discord/discord.h"
 #endif
 
 // STAR STUFF //
@@ -1255,6 +1255,11 @@ void I_FinishUpdate(void)
 	if (cv_closedcaptioning.value)
 		SCR_ClosedCaptions();
 
+#ifdef HAVE_DISCORDSUPPORT
+	if (discordRequestList != NULL)
+		ST_AskToJoinEnvelope();
+#endif
+
 	if (cv_ticrate.value)
 		SCR_DisplayTicRate();
 
@@ -1263,13 +1268,6 @@ void I_FinishUpdate(void)
 
 	if (cv_showping.value && netgame && consoleplayer != serverplayer)
 		SCR_DisplayLocalPing();
-
-#ifdef HAVE_DISCORDRPC
-	// DISCORD STUFF //
-	if (discordRequestList != NULL)
-		ST_AskToJoinEnvelope();
-	// END THAT PLEASE //
-#endif
 
 	if (rendermode == render_soft && screens[0])
 	{

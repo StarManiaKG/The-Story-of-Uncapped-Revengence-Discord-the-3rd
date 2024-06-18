@@ -128,20 +128,6 @@ static void TSoURDt3rd_InitClientCommands(void)
 }
 #endif
 
-void TSoURDt3rd_DiscordCommands_OnChange(void)
-{
-	UINT8 buf[3];
-
-	if (!server)
-		return;
-
-	buf[0] = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
-	buf[1] = (UINT8)cv_allownewplayer.value;
-	buf[2] = (UINT8)cv_discordinvites.value;
-
-	SendNetXCmd(XD_TSOURDT3RD, &buf, 3);
-}
-
 // ====
 // GAME
 // ====

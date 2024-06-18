@@ -1,4 +1,5 @@
 target_sources(SRB2SDL2 PRIVATE
+    ../discord/discord_cmds.c
     events/ss_easter.c
     events/ss_aprilfools.c
     ss_cmds.c

@@ -36,7 +36,7 @@
 //         Structs
 // ------------------------ //
 
-// Discord connection status
+// Discord Rich Presence connection status
 typedef enum {
 	DRPC_NOTCONNECTED = 0,
 	DRPC_INITIALIZED,
@@ -44,29 +44,13 @@ typedef enum {
 	DRPC_CONNECTED
 } DRPC_Status_t;
 
-//#define DISCORD_STRUCT
-
-#ifdef DISCORD_STRUCT
-typedef struct discordInfo_s {
-	DRPC_Status_t ConnectionStatus;
-
-	UINT8 maxPlayers;
-	boolean joinsAllowed;
-	UINT8 whoCanInvite;
-
-	INT16 serverRoom;
-} discordInfo_t;
-#else
 extern struct discordInfo_s {
-	DRPC_Status_t ConnectionStatus;
-
 	UINT8 maxPlayers;
 	boolean joinsAllowed;
-	UINT8 whoCanInvite;
+	boolean everyoneCanInvite;
 
-	INT16 serverRoom;
+	DRPC_Status_t ConnectionStatus;
 } discordInfo;
-#endif
 
 typedef struct discordRequest_s {
 	char *username; // Discord user name.
@@ -89,6 +73,28 @@ extern discordRequest_t *discordRequestList;
 //        Functions
 // ------------------------ //
 
+// =====
+// TOOLS
+// =====
+
+/*--------------------------------------------------
+	void DRPC_StringPrintf(char *main, const char *sep, size_t size, const char *string, ...)
+
+		Provides easier methods of concatenation when it
+		comes to applying Discord Rich Presence statuses to the given string.
+--------------------------------------------------*/
+void DRPC_StringPrintf(char *main, const char *sep, size_t size, const char *string, ...);
+
+
+/*--------------------------------------------------
+	void DRPC_ImagePrintf(char *string, size_t size, const char *sep, const char *image, ...)
+
+		Provides easier methods of applying images to
+		Discord Rich Presence statuses.
+--------------------------------------------------*/
+void DRPC_ImagePrintf(char *string, size_t size, const char *sep, const char *image, ...);
+
+
 // ========
 // STATUSES
 // ========
@@ -96,20 +102,24 @@ extern discordRequest_t *discordRequestList;
 void DRPC_ScoreStatus(char *string);
 void DRPC_EmblemStatus(char *string);
 void DRPC_EmeraldStatus(char *string);
+void DRPC_GamestateStatus(char *string, char *image, char *imagestr);
+void DRPC_CharacterStatus(char *string, char *charimg, char *s_charimg, char *charname, char *s_charname);
 void DRPC_PlaytimeStatus(char *string);
 void DRPC_CustomStatus(char *detailstr, char *statestr);
+
 
 // ====
 // MAIN
 // ====
 
 /*--------------------------------------------------
-	const char *DRPC_ReturnUsername(const DiscordUser *user);
+	char *DRPC_ReturnUsername(void);
 
 		Returns the Discord username of the user.
+		Properly accomdiates for streamer mode.
 --------------------------------------------------*/
 
-const char *DRPC_ReturnUsername(const DiscordUser *user);
+char *DRPC_ReturnUsername(void);
 
 
 /*--------------------------------------------------
