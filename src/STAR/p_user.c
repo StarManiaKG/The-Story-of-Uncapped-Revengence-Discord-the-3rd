@@ -19,7 +19,6 @@
 #include "../g_game.h"
 #include "../s_sound.h"
 #include "../z_zone.h"
-#include "../fastcmp.h"
 
 #include "../m_menu.h" // cv_bosspinchmusic //
 
@@ -55,7 +54,7 @@ void TSoURDt3rd_PlayerThink(player_t *player)
 		return;
 
 	// Water muffling
-	if (!TSoURDt3rd->jukebox.musicPlaying && cv_watermuffling.value)
+	if (!TSoURDt3rd->jukebox.curtrack && cv_watermuffling.value)
 	{
 		if ((player->mo->eflags & MFE_UNDERWATER) && !alreadyInWater)
 		{
@@ -65,11 +64,8 @@ void TSoURDt3rd_PlayerThink(player_t *player)
 			prev_musicvolume = S_GetInternalMusicVolume()/2;
 			prev_sfxvolume = S_GetInternalSfxVolume()/3;
 
-			if (!TSoURDt3rd->jukebox.musicPlaying)
-			{
-				S_SpeedMusic(prev_musicspeed);
-				S_PitchMusic(prev_musicpitch);
-			}
+			S_SpeedMusic(prev_musicspeed);
+			S_PitchMusic(prev_musicpitch);
 
 			if (S_GetInternalMusicVolume() >= prev_musicvolume)
 				S_SetInternalMusicVolume(prev_musicvolume);
@@ -77,11 +73,8 @@ void TSoURDt3rd_PlayerThink(player_t *player)
 		}
 		else if (!(player->mo->eflags & MFE_UNDERWATER) && alreadyInWater)
 		{
-			if (!TSoURDt3rd->jukebox.musicPlaying)
-			{
-				S_SpeedMusic(prev_musicspeed+TSOURDT3RD_MUFFLEINT);
-				S_PitchMusic(prev_musicpitch+TSOURDT3RD_MUFFLEINT);
-			}
+			S_SpeedMusic(prev_musicspeed+TSOURDT3RD_MUFFLEINT);
+			S_PitchMusic(prev_musicpitch+TSOURDT3RD_MUFFLEINT);
 
 			if (prev_musicvolume*2 >= S_GetInternalMusicVolume())
 				S_SetInternalMusicVolume(prev_musicvolume*2); 
@@ -167,7 +160,7 @@ void TSoURDt3rd_P_Ticker(void)
 		// Removed Sonic (real)
 		if (TSoURDt3rd_InAprilFoolsMode())
 		{
-			if (!fastncmp(skins[player->skin].name, "sonic", 5))
+			if (strstr(skins[player->skin].name, "sonic"))
 				continue;
 
 			for (j = MAXSKINS-1; j > 0; j++)
@@ -190,7 +183,7 @@ void TSoURDt3rd_P_Ticker(void)
 					CV_StealthSet(&cv_skin, skins[j].name);
 				}
 
-				if (fastcmp(skins[j].name, "Sonic"))
+				if (strstr(skins[j].name, "sonic") || strstr(skins[j].realname, "Sonic"))
 				{
 					STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "But no skin other than sonic found was found, so uh..............\n\tI guess you're now legally distinct Sonic then!\n");
 					player->skincolor = SKINCOLOR_WHITE;

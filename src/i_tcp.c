@@ -150,6 +150,8 @@ typedef union
 #include "i_time.h" // HOLEPUNCHING STUFFS: holepunch this please //
 #include "discord/stun.h" // STUN_got_response() //
 
+#include "STAR/drrr/kk_swap.h" // MSBF_LONG //
+
 // win32
 #ifdef USE_WINSOCK
 	// winsock stuff (in winsock a socket is not a file)
@@ -592,9 +594,10 @@ void Command_Numnodes(void)
 // HOLEPUNCHING STUFFS //
 /* See ../doc/Holepunch-Protocol.txt */
 
-static const INT32 hole_punch_magic = LONG (0x52eb11);
+static const INT32 hole_punch_magic = MSBF_LONG (0x52eb11);
 
 /* not one of the reserved "local" addresses */
+// https://github.com/jameds/holepunch/blob/master/holepunch.c#L75
 static boolean is_external_address(UINT32 p)
 {
 	UINT8 a = (p & 255);
@@ -620,9 +623,8 @@ static boolean is_external_address(UINT32 p)
 
 static boolean hole_punch(ssize_t c)
 {
-	if (cv_rendezvousserver.string[0] &&
-			c == 10 && holepunchpacket->magic == hole_punch_magic &&
-			is_external_address(ntohl(holepunchpacket->addr)))
+	if (c == 10 && holepunchpacket->magic == hole_punch_magic
+		&& is_external_address(ntohl(holepunchpacket->addr)))
 	{
 		mysockaddr_t addr;
 		addr.ip4.sin_family      = AF_INET;
@@ -642,7 +644,7 @@ static boolean hole_punch(ssize_t c)
 }
 
 // just a modified SOCK_NetMakeNodewPort lol
-static boolean SOCK_GetHolepunchAddr(struct sockaddr_in *sin, const char *address, const char *port)
+static boolean SOCK_GetHolepunchAddr(struct sockaddr_in *sin, const char *address, const char *port, boolean test)
 {
 	struct my_addrinfo *ai = NULL, *runp, hints;
 	int gaie;
@@ -666,6 +668,21 @@ static boolean SOCK_GetHolepunchAddr(struct sockaddr_in *sin, const char *addres
 
 	runp = ai;
 
+#if 0
+	if (test)
+	{
+		while (runp != NULL)
+		{
+			if (sendto(mysockets[0], NULL, 0, 0, runp->ai_addr, runp->ai_addrlen) == 0)
+				break;
+
+			runp = runp->ai_next;
+		}
+	}
+#else
+	(void)test;
+#endif
+
 	if (runp != NULL)
 		memcpy(sin, runp->ai_addr, runp->ai_addrlen);
 
@@ -688,7 +705,7 @@ static void rendezvous(int size)
 
 	if (tic != refreshtic)
 	{
-		if (SOCK_GetHolepunchAddr(&rzv.ip4, host, (port ? port : "7777")))
+		if (SOCK_GetHolepunchAddr(&rzv.ip4, host, (port ? port : "7777"), false))
 		{
 			refreshtic = tic;
 		}
@@ -698,7 +715,7 @@ static void rendezvous(int size)
 					cv_rendezvousserver.string);
 		}
 	}
-	
+
 	if (tic == refreshtic)
 	{
 		holepunchpacket->magic = hole_punch_magic;
@@ -743,15 +760,21 @@ static boolean SOCK_Get(void)
 			(void *)&fromaddress, &fromlen);
 		if (c != ERRSOCKET)
 		{
-			// STAR STUFF: HOLEPUNCHING AND STUN STUFFS //
 #ifdef USE_STUN
-			if (hole_punch(c) || STUN_got_response(doomcom->data, c))
+			// STUN STUFFS //
+			if (STUN_got_response(doomcom->data, c))
+			{
 				break;
-#else
-			if (hole_punch(c))
-				break;
+			}
+			// SPEACHLESS! //
 #endif
-			// SOCK HAS BEEN BROKEN! //
+
+			// HOLEPUNCHING STUFFS //
+			if (hole_punch(c))
+			{
+				break;
+			}
+			// YIPEE! //
 
 			// find remote node number
 			for (j = 1; j <= MAXNETNODES; j++) //include LAN

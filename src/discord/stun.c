@@ -1,6 +1,8 @@
-// SONIC ROBO BLAST 2 KART
+// SONIC ROBO BLAST 2; TSOURDT3RD
+// PORTED FROM DR.ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2020 by James R.
+// Copyright (C) 2020-2024 by James Robert Roman
+// Copyright (C) 2024 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -11,7 +13,7 @@
 
 /* https://tools.ietf.org/html/rfc5389 */
 
-#if defined (__linux__)
+#if defined (__linux__) || defined (__FreeBSD__)
 #include <sys/random.h>
 #elif defined (_WIN32)
 #define _CRT_RAND_S
@@ -26,6 +28,8 @@
 #include "../command.h"
 #include "../i_net.h"
 #include "stun.h"
+
+#include "../STAR/drrr/kk_swap.h" // MSBF_SHORT & MSBF_LONG //
 
 /* https://gist.github.com/zziuni/3741933 */
 /* I can only trust google to keep their shit up :y */
@@ -42,7 +46,7 @@ static stun_callback_t stun_callback;
 #define BIND_REQUEST  0x0001
 #define BIND_RESPONSE 0x0101
 
-static const UINT32 MAGIC_COOKIE = LONG (0x2112A442);
+static const UINT32 MAGIC_COOKIE = MSBF_LONG (0x2112A442);
 
 static char transaction_id[12];
 
@@ -109,7 +113,7 @@ STUN_bind (stun_callback_t callback)
 {
 	/* 6. STUN Message Structure */
 
-	const UINT16 type = SHORT (BIND_REQUEST);
+	const UINT16 type = MSBF_SHORT (BIND_REQUEST);
 
 	const SINT8 node = STUN_node();
 
@@ -150,8 +154,8 @@ static size_t
 STUN_parse_attribute (const char * const attribute)
 {
 	/* 15. STUN Attributes */
-	const UINT16 type   = SHORT (*(const UINT16 *)&attribute[0]);
-	const UINT16 length = SHORT (*(const UINT16 *)&attribute[2]);
+	const UINT16 type   = MSBF_SHORT (*(const UINT16 *)&attribute[0]);
+	const UINT16 length = MSBF_SHORT (*(const UINT16 *)&attribute[2]);
 
 	/* 15.2 XOR-MAPPED-ADDRESS */
 	if (
@@ -199,8 +203,8 @@ STUN_got_response
 			*(const UINT32 *)&buffer[4] == MAGIC_COOKIE &&
 			memcmp(&buffer[8], transaction_id, 12U) == 0
 	){
-		type   = SHORT (*(const UINT16 *)&buffer[0]);
-		length = SHORT (*(const UINT16 *)&buffer[2]);
+		type   = MSBF_SHORT (*(const UINT16 *)&buffer[0]);
+		length = MSBF_SHORT (*(const UINT16 *)&buffer[2]);
 
 		if (
 				(type >> 14)    == 0U &&

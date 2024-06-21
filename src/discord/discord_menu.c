@@ -45,35 +45,35 @@ static void M_DrawDiscordRequests(void);
 
 static menuitem_t OP_DiscordOptionsMenu[] =
 {
-	{IT_HEADER,							NULL, 	"Discord Rich Presence...",	NULL,					 	  	        0},
-	{IT_STRING | IT_CVAR,				NULL, 	"Rich Presence",			&cv_discordrp,			 	  		    6},
-	{IT_STRING | IT_CVAR,				NULL, 	"Streamer Mode",			&cv_discordstreamer,	 	 		   11},
+	{IT_HEADER,								NULL, 	"Discord Rich Presence...",	NULL,					 	  	        0},
+	{IT_STRING | IT_CVAR,					NULL, 	"Rich Presence",			&cv_discordrp,			 	  		    6},
+	{IT_STRING | IT_CVAR,					NULL, 	"Streamer Mode",			&cv_discordstreamer,	 	 		   11},
 
-	{IT_HEADER,							NULL,	"Rich Presence Settings",	NULL,					 	 		   20},
-	{IT_STRING | IT_CVAR,				NULL, 	"Allow Ask to Join",		&cv_discordasks,		 	 		   26},
-	{IT_STRING | IT_CVAR,				NULL,   "Allow Invites",			&cv_discordinvites,		 	 		   31},
+	{IT_HEADER,								NULL,	"Rich Presence Settings",	NULL,					 	 		   20},
+	{IT_STRING | IT_CVAR,					NULL, 	"Allow Ask to Join",		&cv_discordasks,		 	 		   26},
+	{IT_STRING | IT_CVAR,					NULL,   "Allow Invites",			&cv_discordinvites,		 	 		   31},
 
-	{IT_STRING | IT_CVAR,				NULL, 	"Show on Status",			&cv_discordshowonstatus, 	 	       41},
+	{IT_STRING | IT_CVAR,					NULL, 	"Show on Status",			&cv_discordshowonstatus, 	 	       41},
 	
-	{IT_HEADER,							NULL,	"Misc. Rich Presence Settings",
-																			NULL,					 	 		   50},
-	{IT_STRING | IT_CVAR,				NULL, 	"Memes on Status",			&cv_discordstatusmemes,	 	 		   56},
-	{IT_STRING | IT_CVAR,				NULL, 	"Skin Image Type",			&cv_discordcharacterimagetype,		   61},
+	{IT_HEADER,								NULL,	"Misc. Rich Presence Settings",
+																				NULL,					 	 		   50},
+	{IT_STRING | IT_CVAR,					NULL, 	"Memes on Status",			&cv_discordstatusmemes,	 	 		   56},
+	{IT_STRING | IT_CVAR,					NULL, 	"Skin Image Type",			&cv_discordcharacterimagetype,		   61},
 
-	{IT_HEADER,							NULL,   "Custom Discord Status",	NULL,					 	 		   70},
-	{IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 	"Header",			        &cv_customdiscorddetails, 	 		   76},
-	{IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 	"State",			        &cv_customdiscordstate, 			   90},
+	{IT_HEADER,								NULL,   "Custom Discord Status",	NULL,					 	 		   70},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,	NULL, 	"Header",			        &cv_customdiscorddetails, 	 		   76},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,	NULL, 	"State",			        &cv_customdiscordstate, 			   90},
 
-	{IT_STRING | IT_CVAR,		        NULL, 	"L. Image Type",			&cv_customdiscordlargeimagetype,      104},
-	{IT_STRING | IT_CVAR,		        NULL, 	"S. Image Type",			&cv_customdiscordsmallimagetype,      109},
+	{IT_STRING | IT_CVAR,		        	NULL, 	"L. Image Type",			&cv_customdiscordlargeimagetype,      104},
+	{IT_STRING | IT_CVAR,		        	NULL, 	"S. Image Type",			&cv_customdiscordsmallimagetype,      109},
 
-	{IT_STRING | IT_CVAR,		        NULL, 	"L. Image",					NULL, 								  119}, // Handled by discord_option_onchange //
-	{IT_STRING | IT_CVAR,		        NULL, 	"S. Image",					NULL, 								  124}, // Handled by discord_option_onchange //
+	{IT_STRING | IT_CVAR,		        	NULL, 	"L. Image",					NULL, 								  119}, // Handled by discord_option_onchange //
+	{IT_STRING | IT_CVAR,		        	NULL, 	"S. Image",					NULL, 								  124}, // Handled by discord_option_onchange //
 
-	{IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 	"L. Image Text",		    &cv_customdiscordlargeimagetext,      134},
-	{IT_STRING | IT_CVAR | IT_CV_STRING,NULL, 	"S. Image Text",			&cv_customdiscordsmallimagetext,      148},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,	NULL, 	"L. Image Text",		    &cv_customdiscordlargeimagetext,      134},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,	NULL, 	"S. Image Text",			&cv_customdiscordsmallimagetext,      148},
 
-	{IT_STRING | IT_SUBMENU,			NULL, 	"Show Output",				&OP_CustomStatusOutputDef,	          162},
+	{IT_STRING | IT_SUBMENU,				NULL, 	"Show Output",				&OP_CustomStatusOutputDef,	          162},
 };
 
 static menuitem_t OP_CustomStatusOutputMenu[] =

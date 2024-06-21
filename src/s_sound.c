@@ -2100,8 +2100,8 @@ boolean S_RecallMusic(UINT16 status, boolean fromfirst)
 		return false;
 	}
 
-	// STAR STUFF: We're Playing Music in the Jukebox, so Clear the Memory and Don't Do Anything //
-	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
+	// STAR STUFF: currently jukeboxing, so just clear memory and move on :p //
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack)
 	{
 		Z_Free(entry);
 		return false;
@@ -2308,8 +2308,8 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 	if (S_MusicDisabled())
 		return;
 
-	// STAR STUFF //
-	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
+	// STAR STUFF: resume jukebox music, if anything, else just move on... //
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack)
 	{
 		if (Playing() && playeringame[consoleplayer])
 			S_ResumeAudio();
@@ -2403,8 +2403,7 @@ void S_StopMusic(void)
 	}
 
 	// STAR STUFF: reset music stuffs //
-	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
-		M_ResetJukebox(false);
+	M_ResetJukebox(false);
 	TSoURDt3rd_ControlMusicEffects();
 	// I MUST LABEL EVERYTHING //
 }
@@ -2508,10 +2507,10 @@ void S_StopFadingMusic(void)
 
 boolean S_FadeMusicFromVolume(UINT8 target_volume, INT16 source_volume, UINT32 ms)
 {
-	// STAR STUFF LOL //
-	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
+	// STAR STUFF: don't fade if jukeboxing //
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack)
 		return false;
-	// END STAR STUFF LOL //
+	// COOL? COOL. //
 
 	if (source_volume < 0)
 		return I_FadeSong(target_volume, ms, NULL);
@@ -2521,10 +2520,10 @@ boolean S_FadeMusicFromVolume(UINT8 target_volume, INT16 source_volume, UINT32 m
 
 boolean S_FadeOutStopMusic(UINT32 ms)
 {
-	// MORE STAR STUFF //
-	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
+	// STAR STUFF: don't fade if jukeboxing //
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack)
 		return false;
-	// NO MORE STAR STUFF //
+	// CONTINUE. //
 
 	return I_FadeSong(0, ms, &S_StopMusic);
 }
@@ -2549,8 +2548,8 @@ void S_StartEx(boolean reset)
 		mapmusposition = mapheaderinfo[gamemap-1]->muspos;
 	}
 
-	// STAR STUFF YAY //
-	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
+	// STAR STUFF: don't start any music if we're jukeboxing, dude! //
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack)
 		return;
 	// TORTURE IS MY FAVORITE FORM OF PUNISHMENT, HOW DID YOU KNOW //
 
@@ -2598,20 +2597,19 @@ static void Command_Tunes_f(void)
 	}
 	else if (!strcasecmp(tunearg, "-default"))
 	{
-		// STAR NOTE: i was here lol
-		tunearg = TSoURDt3rd_DetermineLevelMusic();
+		tunearg = TSoURDt3rd_DetermineLevelMusic(); // STAR NOTE: i was here lol
 		track = mapheaderinfo[gamemap-1]->mustrack;
 	}
 
-	// STAR STUFF //
+	// STAR STUFF: minor tunes propaganda //
 	if (TSoURDt3rd_InAprilFoolsMode())
 	{
-		STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "Nice Try. Maybe there's a command you need to turn off, perhaps?\n");
+		STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "Nice try. Perhaps there's a command you need to turn off first?\n");
 		return;
 	}
-	else if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
+	else if (TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack)
 	{
-		STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Sorry, you can't use this command while playing music in the Jukebox.\n");
+		STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Sorry, you can't use this command while playing music.\n");
 		return;
 	}
 	// I MEAN, IT MAKES SENSE, RIGHT? //
@@ -2682,15 +2680,13 @@ static void Command_RestartAudio_f(void)
 	I_StartupSound();
 	I_InitMusic();
 
+	M_ResetJukebox(false); // STAR STUFF: fine, i'll let you stop it here... //
+
 	// These must be called or no sound and music until manually set.
 	I_SetSfxVolume(cv_soundvolume.value);
 	S_SetMusicVolume(cv_digmusicvolume.value, cv_midimusicvolume.value);
 	if (Playing()) // Gotta make sure the player is in a level
 		P_RestoreMusic(&players[consoleplayer]);
-	// STAR STUFF FOR REASONS I GUESS //
-	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
-		M_ResetJukebox(false);
-	// FINE, I'LL LET YOU STOP IT HERE... //
 }
 
 void GameSounds_OnChange(void)

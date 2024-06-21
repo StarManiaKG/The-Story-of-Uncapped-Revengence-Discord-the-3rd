@@ -148,6 +148,7 @@ extern menuitem_t MainMenu[];
 extern menuitem_t MPauseMenu[];
 extern menu_t MPauseDef;
 extern menuitem_t SPauseMenu[];
+extern menu_t SPauseDef;
 
 extern menu_t MessageDef;
 extern menuitem_t MessageMenu[256];

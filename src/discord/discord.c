@@ -825,8 +825,10 @@ void DRPC_UpdatePresence(void)
 	{
 		case 1:
 			DRPC_CharacterStatus(statestr, imagestr, simagestr, imagetxtstr, simagetxtstr);
-			DRPC_StringPrintf(detailstr, NULL, 128, imagetxtstr);
-			DRPC_StringPrintf(statestr, NULL, 128, simagetxtstr);
+			if (*imagetxtstr != '\0')
+				DRPC_StringPrintf(detailstr, NULL, 128, imagetxtstr);
+			if (*simagetxtstr != '\0')
+				DRPC_StringPrintf(statestr, NULL, 128, simagetxtstr);
 			goto pushPresence;
 
 		case 2:
@@ -859,7 +861,7 @@ void DRPC_UpdatePresence(void)
 
 		default:
 		{
-			DRPC_EmblemStatus(!netgame ? detailstr : statestr);
+			DRPC_EmblemStatus(detailstr);
 			DRPC_EmeraldStatus(!cv_discordshowonstatus.value ? detailstr : statestr);
 
 
@@ -912,7 +914,7 @@ void DRPC_UpdatePresence(void)
 	////// 	  STATUSES - ELECTRIC BOOGALO 	 //////
 	if (!cv_discordshowonstatus.value || cv_discordshowonstatus.value == 6)
 	{
-		if (((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) && Playing() && playeringame[consoleplayer]) || (paused || menuactive || TSoURDt3rd->jukebox.musicPlaying))
+		if (((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) && Playing() && playeringame[consoleplayer]) || (paused || menuactive || TSoURDt3rd->jukebox.curtrack))
 		{
 			//// Statuses That Only Appear In-Game ////
 			if (Playing())
@@ -964,13 +966,13 @@ void DRPC_UpdatePresence(void)
 
 			//// Statuses That Can Appear Whenever ////
 			// Tiny States, Such as Pausing, Scrolling Through Menus, etc. //
-			if (paused || menuactive || TSoURDt3rd->jukebox.musicPlaying)
+			if (paused || menuactive || TSoURDt3rd->jukebox.curtrack)
 			{
 				if (!cv_discordshowonstatus.value || (cv_discordshowonstatus.value == 6 && Playing()) || !Playing())
 					strcpy(stateGrammar, ", ");
 
 				snprintf(stateType, 27, (paused ? "%sCurrently Paused" : (menuactive ? "%sScrolling Through Menus" : "")), stateGrammar);
-				strlcat(stateType, (TSoURDt3rd->jukebox.musicPlaying ? va("%sPlaying '%s' in the Jukebox", stateGrammar, TSoURDt3rd->jukebox.musicName) : ""), 95);
+				strlcat(stateType, (TSoURDt3rd->jukebox.curtrack ? va("%sPlaying '%s' in the Jukebox", stateGrammar, TSoURDt3rd->jukebox.curtrack->title) : ""), 95);
 			}
 			
 			// Copy All Of Our Strings //

@@ -156,6 +156,8 @@ INT32 extrawads;
 boolean TSoURDt3rd_checkedExtraWads;
 
 // TSoURDt3rd Stuff
+boolean TSoURDt3rd_sentEventMessage = false;
+
 boolean TSoURDt3rd_TouchyModifiedGame = false;
 boolean TSoURDt3rd_LoadExtras = true;
 boolean TSoURDt3rd_LoadedExtras = true;
@@ -957,34 +959,37 @@ void D_SRB2Loop(void)
 
 		// Do Jukebox Stuff //
 		// Whoa, Whoa, We Ran Out of Time (except again for keybind execution reasons)
-		if (TSoURDt3rd->jukebox.musicPlaying && TSoURDt3rd->jukebox.lastTrackPlayed)
+		if (TSoURDt3rd->jukebox.curtrack)
 		{
-			fixed_t jb_stoppingtics = (fixed_t)(TSoURDt3rd->jukebox.lastTrackPlayed->stoppingtics) << FRACBITS;
+			static fixed_t jb_time;
+			fixed_t jb_stoppingtics = (fixed_t)(TSoURDt3rd->jukebox.curtrack->stoppingtics) << FRACBITS;
 
-			if (jb_stoppingtics && TSoURDt3rd->jukebox.stoppingTics >= jb_stoppingtics)
+			if (jb_stoppingtics && jb_time >= jb_stoppingtics)
+			{
 				M_ResetJukebox(true);
+				jb_time = 0;
+			}
 			else
 			{
 				fixed_t work = 0, bpm = 0;
-				work = bpm = TSoURDt3rd->jukebox.lastTrackPlayed->bpm/S_GetSpeedMusic();
+				work = bpm = TSoURDt3rd->jukebox.curtrack->bpm/S_GetSpeedMusic();
 
-				work = TSoURDt3rd->jukebox.stoppingTics;
+				work = jb_time;
 				work %= bpm;
-				if (TSoURDt3rd->jukebox.stoppingTics >= (FRACUNIT << (FRACBITS - 2))) // prevent overflow jump - takes about 15 minutes of loop on the same song to reach
-					TSoURDt3rd->jukebox.stoppingTics = work;
+				if (jb_time >= (FRACUNIT << (FRACBITS - 2))) // prevent overflow jump - takes about 15 minutes of loop on the same song to reach
+					jb_time = work;
 				work = FixedDiv(work*180, bpm);
 
 				if (!(paused || P_AutoPause())) // prevents time from being added up while the game is paused
-					TSoURDt3rd->jukebox.stoppingTics += renderdeltatics*S_GetSpeedMusic();
+					jb_time += renderdeltatics*S_GetSpeedMusic();
 			}
 		}
 
 		// Do Extra Stuff //
-		static boolean sentMessage;
-		if ((eastermode || aprilfoolsmode || xmasmode) && !sentMessage)
+		if ((eastermode || aprilfoolsmode || xmasmode) && !TSoURDt3rd_sentEventMessage)
 		{
 			M_StartMessage(va("%c%s\x80\nTSoURDt3rd is having a seasonal event!\n\n(Press any key to continue)\n", ('\x80' + (V_MENUCOLORMAP|V_CHARCOLORSHIFT)), "A TSoURDt3rd Event is Occuring"),NULL,MM_NOTHING);
-			sentMessage = true;
+			TSoURDt3rd_sentEventMessage = true;
 		}
 
 		// Check What Extra Add-ons we Have Currently Loaded
@@ -1050,12 +1055,16 @@ void D_StartTitle(void)
 {
 	INT32 i;
 
-	// STAR STUFF: Prevent My Fun Jukebox Music From Being Reset (YAY) //
-	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying && paused)
+#if 0
+	S_StopMusic();
+#else
+	// STAR STUFF: prevent fun jukebox music from being reset (YAY!) //
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack && paused)
 		S_ResumeAudio();
 	else
+		S_StopMusic();
 	// END THAT STUFF //
-	S_StopMusic();
+#endif
 
 	if (netgame)
 	{
@@ -1183,23 +1192,23 @@ static void D_AddFolder(addfilelist_t *list, const char *file)
 }
 
 // STAR STUFF //
-static void TSoURDt3rd_AutoLoadAddons(addfilelist_t *list, const char *file, INT32 fileType)
+static void TSoURDt3rd_AutoLoadAddons(addfilelist_t *list, const char *file, INT32 filetype)
 {
 	char *newfile;
 	size_t index = 0;
 
 	REALLOC_FILE_LIST
 
-	newfile = malloc(strlen(file) + (fileType == 1 ? 2 : 1)); // Path delimiter + NULL terminator
+	newfile = malloc(strlen(file) + (filetype == 1 ? 2 : 1)); // Path delimiter + NULL terminator
 	if (!newfile)
-		I_Error("TSoURDt3rd_AutoLoadAddons: No more free memory to autoload %s %s", (fileType == 1 ? "folder" : "file"), file);
+		I_Error("TSoURDt3rd_AutoLoadAddons: No more free memory to autoload %s %s", (filetype == 1 ? "folder" : "file"), file);
 	autoloading = true;
 
 	strcpy(newfile, file);
-	if (fileType == 1)
+	if (filetype == 1)
 		strcat(newfile, PATHSEP);
 
-	if (fileType <= 6)
+	if (filetype <= 6)
 		list->files[index] = newfile;
 	else
 		COM_BufAddText(va("exec %s\n", newfile));

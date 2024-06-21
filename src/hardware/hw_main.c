@@ -842,7 +842,7 @@ static void HWR_ProjectWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, FBITFIEL
 
 	// Hurdler: for better dynamic light in dark area, we should draw the light first and then the wall all that with the right blending func
 	// SRB2CBTODO: for 'real' dynamic light in dark area, we should draw the light first and then the wall with the right blending func
-	//HWD.pfnDrawPolygon(pSurf, wallVerts, 4, blendmode|PF_Modulated|PF_Occlude);
+	HWD.pfnDrawPolygon(pSurf, wallVerts, 4, blendmode|PF_Additive|PF_Modulated|PF_Occlude);
 #endif
 }
 
@@ -7375,7 +7375,7 @@ void HWR_RenderWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, FBITFIELD blend,
 
 	// Hurdler: for better dynamic light in dark area, we should draw the light first and then the wall all that with the right blending func
 	// SRB2CBTODO: for 'real' dynamic light in dark area, we should draw the light first and then the wall with the right blending func
-	//HWD.pfnDrawPolygon(pSurf, wallVerts, 4, blendmode|PF_Modulated|PF_Occlude);
+	HWD.pfnDrawPolygon(pSurf, wallVerts, 4, blendmode|PF_Additive|PF_Modulated|PF_Occlude);
 #endif
 }
 

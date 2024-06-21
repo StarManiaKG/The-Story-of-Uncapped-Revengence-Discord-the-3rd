@@ -1756,6 +1756,7 @@ static void CL_ReloadReceivedSavegame(void)
 static void SendAskInfo(INT32 node)
 {
 	const tic_t asktime = I_GetTime();
+
 	// HOLEPUNCHING STUFF //
 	if (node != 0 && node != BROADCASTADDR &&
 			cv_rendezvousserver.string[0])
@@ -1763,6 +1764,7 @@ static void SendAskInfo(INT32 node)
 		I_NetRequestHolePunch(node);
 	}
 	// END THAT STUFF //
+
 	netbuffer->packettype = PT_ASKINFO;
 	netbuffer->u.askinfo.version = VERSION;
 	netbuffer->u.askinfo.time = (tic_t)LONG(asktime);
@@ -5681,24 +5683,6 @@ static inline void PingUpdate(void)
 	pingmeasurecount = 1; //Reset count
 }
 
-// HOLEPUNCHING STUFFS //
-void RenewHolePunch(void)
-{
-	if (cv_rendezvousserver.string[0])
-	{
-		static time_t past;
-
-		const time_t now = time(NULL);
-
-		if ((now - past) > 20)
-		{
-			I_NetRegisterHolePunch();
-			past = now;
-		}
-	}
-}
-// END THAT PLEASE //
-
 static tic_t gametime = 0;
 
 static void UpdatePingTable(void)
@@ -5716,6 +5700,21 @@ static void UpdatePingTable(void)
 		pingmeasurecount++;
 	}
 }
+
+// HOLEPUNCHING STUFFS //
+static void RenewHolePunch(void)
+{
+	static time_t past;
+
+	const time_t now = time(NULL);
+
+	if ((now - past) > 20)
+	{
+		I_NetRegisterHolePunch();
+		past = now;
+	}
+}
+// END THAT PLEASE //
 
 // Handle timeouts to prevent definitive freezes from happenning
 static void HandleNodeTimeouts(void)
@@ -5754,6 +5753,13 @@ void NetKeepAlive(void)
 #ifdef MASTERSERVER
 	MasterClient_Ticker();
 #endif
+
+	// HOLEPUNCHING STUFFS //
+	if (netgame && serverrunning)
+	{
+		RenewHolePunch();
+	}
+	// PUNCH THAT HOLE! //
 
 	if (client)
 	{
@@ -5888,7 +5894,7 @@ void NetUpdate(void)
 	{
 		RenewHolePunch();
 	}
-	// END THAT PLEASE //
+	// PUNCH THAT, AND NOW END PLEASE //
 
 	if (client)
 	{

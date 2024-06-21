@@ -1,6 +1,8 @@
-// SONIC ROBO BLAST 2 KART
+// SONIC ROBO BLAST 2; TSOURDT3RD
+// PORTED FROM DR.ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2020 by James R.
+// Copyright (C) 2020-2024 by James Robert Roman
+// Copyright (C) 2024 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -9,12 +11,20 @@
 /// \file  stun.h
 /// \brief RFC 5389 client implementation to fetch external IP address.
 
-#ifndef SRB2_STUN_H
-#define SRB2_STUN_H
+#ifndef DRRR_STUN_H
+#define DRRR_STUN_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef void (*stun_callback_t)(UINT32 address);
 
 void    STUN_bind (stun_callback_t);
 boolean STUN_got_response (const char * const buffer, const size_t size);
 
-#endif/*SRB2_STUN_H*/
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
+#endif/*DRRR_STUN_H*/

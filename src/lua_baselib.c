@@ -3045,7 +3045,7 @@ static int lib_sSpeedMusic(lua_State *L)
 	}
 
 	// STAR STUFF: DON'T INTERUPT OUR MUSIC PLEASE :) //
-	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack)
 		return 0;
 	// DONE! //
 
@@ -3116,8 +3116,9 @@ static int lib_sStopMusic(lua_State *L)
 			return LUA_ErrInvalid(L, "player_t");
 	}
 
-	// STAR STUFF: STOP INTERUPTING OUR MUSIC PLEASE (if we allow it) //
-	if (cv_luacanstopthejukebox.value && TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
+	// STAR STUFF: stop interrupting jukebox music please (if enabled) //
+	// STAR NOTE/MAJOR STAR NOTE: MARKED FOR REMOVAL! //
+	if (cv_luacanstopthejukebox.value && TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack)
 		return 0;
 	// DONE AGAIN! //
 
