@@ -185,8 +185,7 @@ menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 
 static menuitem_t OP_Tsourdt3rdJukeboxMenu[] =
 {
-	{IT_KEYHANDLER | IT_STRING,
-							NULL,	"",								M_HandleTSoURDt3rdJukebox,	 0},
+	{IT_KEYHANDLER | IT_STRING, NULL,	"",		M_HandleTSoURDt3rdJukebox,	 0},
 };
 
 static menuitem_t OP_Tsourdt3rdJukeboxControlsMenu[] =
@@ -429,8 +428,8 @@ void STAR_M_InitDynamicQuitMessages(void)
 
 	quitmsg[TSOURDT3RD_QUITSMSG4] = va(M_GetText("Wait, %s!\nCome back! I need you!\n\n(Press 'Y' to quit)"), TSoURDt3rd_ReturnUsername());
 
-	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
-		quitmsg[TSOURDT3RD_QUITSMSG5] = va(M_GetText("Come back!\nFinish listening to\n%s!\n\n(Press 'Y' to quit)"), TSoURDt3rdPlayers[consoleplayer].jukebox.musicName);
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack)
+		quitmsg[TSOURDT3RD_QUITSMSG5] = va(M_GetText("Come back!\nFinish listening to\n%s!\n\n(Press 'Y' to quit)"), TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack->title);
 	else
 		quitmsg[TSOURDT3RD_QUITSMSG5] = M_GetText("Come back!\nYou have more jukebox music to play!\n\n(Press 'Y' to quit)");
 
@@ -597,8 +596,7 @@ boolean TSoURDt3rd_M_IsJukeboxUnlocked(TSoURDt3rdJukebox_t *TSoURDt3rdJukebox)
 
 	for (INT32 i = 0; i < MAXUNLOCKABLES; i++)
 	{
-		if ((unlockables[i].type == SECRET_SOUNDTEST)				// you need the sound test in order to use the jukebox
-			|| ((modifiedgame && !savemoddata) || (autoloaded)))	// for fairness sake
+		if ((unlockables[i].type == SECRET_SOUNDTEST) || (modifiedgame && !savemoddata) || autoloaded)
 		{
 			TSoURDt3rdJukebox->Unlocked = true;
 			return true;
@@ -622,6 +620,11 @@ void M_TSoURDt3rdJukebox(INT32 choice)
 	if (!soundtestpage)
 		soundtestpage = 1;
 
+	if (TSoURDt3rdJukebox->curtrack)
+		curplaying = TSoURDt3rdJukebox->curtrack;
+	else
+		M_ResetJukebox(true);
+
 	if (!TSoURDt3rd_M_IsJukeboxUnlocked(TSoURDt3rdJukebox))
 		return;
 	else if (!S_PrepareSoundTest())
@@ -631,8 +634,6 @@ void M_TSoURDt3rdJukebox(INT32 choice)
 	}
 
 	M_CacheSoundTest();
-	if (TSoURDt3rdJukebox->musicPlaying && TSoURDt3rdJukebox->lastTrackPlayed)
-		curplaying = TSoURDt3rdJukebox->lastTrackPlayed;
 
 	st_time = 0;
 
@@ -658,7 +659,7 @@ static void M_DrawTSoURDt3rdJukebox(void)
 
 	// let's handle the ticker first.
 	// STAR NOTE: there's a duplicate of the latter, non-sfx part of this ticker in d_main.c, where the D_SRB2Loop function is, just so you know :p
-	if (TSoURDt3rd->jukebox.musicPlaying)
+	if (TSoURDt3rd->jukebox.curtrack)
 	{
 		if (curplaying == &soundtestsfx)
 		{
@@ -750,11 +751,15 @@ static void M_DrawTSoURDt3rdJukebox(void)
 		x = 16;
 		V_DrawString(x, 10, 0, "NOW PLAYING:");
 
-		titl = (TSoURDt3rd->jukebox.musicPlaying ?
-				(curplaying->alttitle[0] ?
-					(va("%s - %s - ", TSoURDt3rd->jukebox.musicName, curplaying->alttitle)) :
-					(va("%s - ", TSoURDt3rd->jukebox.musicName))) :
-				("None - "));
+		if (TSoURDt3rd->jukebox.curtrack)
+		{
+			if (curplaying->alttitle[0])
+				titl = va("%s - %s - ", TSoURDt3rd->jukebox.curtrack->title, curplaying->alttitle);
+			else
+				titl = va("%s - ", TSoURDt3rd->jukebox.curtrack->title);
+		}
+		else
+			titl = "None - ";
 
 		i = V_LevelNameWidth(titl);
 
@@ -773,7 +778,7 @@ static void M_DrawTSoURDt3rdJukebox(void)
 			V_DrawLevelTitle(x, 22, 0, titl);
 		}
 
-		if (TSoURDt3rd->jukebox.musicPlaying)
+		if (TSoURDt3rd->jukebox.curtrack)
 			V_DrawRightAlignedThinString(BASEVIDWIDTH-16, 46, V_ALLOWLOWERCASE, curplaying->authors);
 	}
 
@@ -937,7 +942,7 @@ static void M_HandleTSoURDt3rdJukebox(INT32 choice)
 			}
 			break;
 		case KEY_BACKSPACE:
-			if (!TSoURDt3rd->jukebox.musicPlaying)
+			if (!TSoURDt3rd->jukebox.curtrack)
 			{
 				S_StartSound(NULL, sfx_lose);
 				break;
@@ -945,69 +950,62 @@ static void M_HandleTSoURDt3rdJukebox(INT32 choice)
 
 			S_StopSounds();
 			S_StopMusic();
+			M_ResetJukebox(true);
 			st_time = 0;
 
 			S_StartSound(NULL, sfx_skid);
 
 			cv_closedcaptioning.value = st_cc; // hack
 			cv_closedcaptioning.value = 1; // hack
-
-			M_ResetJukebox(true);
 			break;
 		case KEY_ESCAPE:
 			exitmenu = false;
 			break;
 
 		case KEY_RIGHTARROW:
-			if (soundtestdefs[st_sel]->allowed)
+			if (soundtestdefs[st_sel]->allowed && soundtestdefs[st_sel] == &soundtestsfx)
 			{
-				if (soundtestdefs[st_sel] == &soundtestsfx)
-				{
-					S_StopSounds();
-					S_StopMusic();
-					curplaying = soundtestdefs[st_sel];
-					st_time = 0;
-					CV_AddValue(&cv_soundtest, 1);
-				}
-				else
-				{
-					if (atof(cv_jukeboxspeed.string) >= 20.0f)
-						break;
-					S_StartSound(NULL, sfx_menu1);
-					CV_Set(&cv_jukeboxspeed, va("%f", atof(cv_jukeboxspeed.string)+(0.1f)));
-				}
+				S_StopSounds();
+				S_StopMusic();
+				curplaying = soundtestdefs[st_sel];
+				st_time = 0;
+				CV_AddValue(&cv_soundtest, 1);
+			}
+			else
+			{
+				if (atof(cv_jukeboxspeed.string) >= 20.0f)
+					break;
+				S_StartSound(NULL, sfx_menu1);
+				CV_Set(&cv_jukeboxspeed, va("%f", atof(cv_jukeboxspeed.string)+(0.1f)));
 			}
 			break;
 		case KEY_LEFTARROW:
-			if (soundtestdefs[st_sel]->allowed)
+			if (soundtestdefs[st_sel]->allowed && soundtestdefs[st_sel] == &soundtestsfx)
 			{
-				if (soundtestdefs[st_sel] == &soundtestsfx)
-				{
-					S_StopSounds();
-					S_StopMusic();
-					curplaying = soundtestdefs[st_sel];
-					st_time = 0;
-					CV_AddValue(&cv_soundtest, -1);
-				}
-				else
-				{
-					if (atof(cv_jukeboxspeed.string) < 0.1f)
-						break;
-					S_StartSound(NULL, sfx_menu1);
-					CV_Set(&cv_jukeboxspeed, va("%f", atof(cv_jukeboxspeed.string)-(0.1f)));
-				}
+				S_StopSounds();
+				S_StopMusic();
+				curplaying = soundtestdefs[st_sel];
+				st_time = 0;
+				CV_AddValue(&cv_soundtest, -1);
+			}
+			else
+			{
+				if (atof(cv_jukeboxspeed.string) < 0.1f)
+					break;
+				S_StartSound(NULL, sfx_menu1);
+				CV_Set(&cv_jukeboxspeed, va("%f", atof(cv_jukeboxspeed.string)-(0.1f)));
 			}
 			break;
 		case KEY_ENTER:
 			S_StopSounds();
 			S_StopMusic();
 			st_time = 0;
-
-			M_ResetJukebox(false);
-			
-			if (soundtestdefs[st_sel]->allowed && !TSoURDt3rd->jukebox.musicPlaying)
+			if (soundtestdefs[st_sel]->allowed)
 			{
+				if (TSoURDt3rd->jukebox.curtrack)
+					TSoURDt3rd->jukebox.prevtrack = TSoURDt3rd->jukebox.curtrack;
 				curplaying = soundtestdefs[st_sel];
+
 				if (curplaying == &soundtestsfx)
 				{
 					// S_StopMusic() -- is this necessary?
@@ -1016,24 +1014,25 @@ static void M_HandleTSoURDt3rdJukebox(INT32 choice)
 				}
 				else
 				{
-					strcpy(TSoURDt3rd->jukebox.musicName, (TSoURDt3rd_InAprilFoolsMode() ? "Get rickrolled lol" : curplaying->title));
-					strcpy(TSoURDt3rd->jukebox.musicTrack, (TSoURDt3rd_InAprilFoolsMode() ? "_hehe" : curplaying->name));
+					if (TSoURDt3rd_InAprilFoolsMode())
+					{
+						strcpy(curplaying->title, "Get rickrolled lol");
+						strcpy(curplaying->name, "_hehe");
+					}
 
-					S_ChangeMusicInternal(TSoURDt3rd->jukebox.musicTrack, !curplaying->stoppingtics);
-					STAR_CONS_Printf(STAR_CONS_JUKEBOX, M_GetText("Loaded track \x82%s\x80.\n"), TSoURDt3rd->jukebox.musicName);
+					S_ChangeMusicInternal(curplaying->name, !curplaying->stoppingtics);
+					STAR_CONS_Printf(STAR_CONS_JUKEBOX, M_GetText("Loaded track \x82%s\x80.\n"), curplaying->title);
 
-					TSoURDt3rd->jukebox.musicPlaying	= true;
-					TSoURDt3rd->jukebox.initHUD			= true;
-
-					TSoURDt3rd->jukebox.lastTrackPlayed	= curplaying;
-
+					TSoURDt3rd->jukebox.curtrack = curplaying;
+					TSoURDt3rd->jukebox.initHUD	= true;
 					TSoURDt3rd_ControlMusicEffects();
 				}
-
-				break;
 			}
 			else
+			{
+				curplaying = NULL;
 				S_StartSound(NULL, sfx_lose);
+			}
 			break;
 
 		default:
@@ -1045,10 +1044,11 @@ static void M_HandleTSoURDt3rdJukebox(INT32 choice)
 		Z_Free(soundtestdefs);
 		soundtestdefs = NULL;
 
-		if (!TSoURDt3rd->jukebox.musicPlaying && Playing())
-			M_ResetJukebox(true);
+		if (!TSoURDt3rd->jukebox.curtrack)
+			M_ResetJukebox(Playing());
 
 		cv_closedcaptioning.value = st_cc; // undo hack
+
 		if (currentMenu->prevMenu)
 			M_SetupNextMenu(currentMenu->prevMenu);
 		else

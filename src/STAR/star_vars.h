@@ -76,15 +76,10 @@ typedef struct TSoURDt3rdServers_s {
 // Jukebox //
 typedef struct TSoURDt3rdJukebox_s {
 	boolean Unlocked;
-
 	boolean initHUD;
-	boolean musicPlaying;
 
-	char musicName[34];
-	char musicTrack[7];
-
-	musicdef_t *lastTrackPlayed;
-	fixed_t stoppingTics;
+	musicdef_t *curtrack;
+	musicdef_t *prevtrack;
 } TSoURDt3rdJukebox_t;
 
 // Main //

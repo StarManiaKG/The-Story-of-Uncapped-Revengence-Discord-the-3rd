@@ -614,13 +614,6 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu)
 
 		if (moviemode)
 			M_SaveFrame();
-		
-		// HOLEPUNCHING STUFFS: RENEW THE HOLEPUNCH PLEASE //
-		if (netgame && serverrunning)
-		{
-			RenewHolePunch();
-		}
-		// END THAT PLEASE //
 
 		NetKeepAlive(); // Update the network so we don't cause timeouts
 	}

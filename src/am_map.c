@@ -25,10 +25,7 @@
 #include "hardware/hw_main.h"
 #endif
 
-// STAR STUFF //
-#include "STAR/star_vars.h" // small dumb stuff
-#include "m_menu.h" 		// cv_automapoutsidedevmode
-// END THAT STUFF //
+#include "m_menu.h" // STAR STUFF: cv_automapoutsidedevmode //
 
 // For use if I do walls with outsides/insides
 static const UINT8 REDS        = (8*16);
@@ -454,17 +451,18 @@ static void AM_setWindowPanning(void)
   *
   * \param ev Event to possibly respond to.
   * \return True if the automap responder ate the event.
+  * 
+  * STAR NOTE: edited for cv_automapoutsidedevmode support :)
   */
 boolean AM_Responder(event_t *ev)
 {
 	INT32 rc = false;
 
-	if ((devparm || cv_debug)					// only automap in Debug Tails 01-19-2001
-		|| cv_automapoutsidedevmode.value) 		// STAR NOTE: now you can automap whenever you want lol //
+	if (devparm || cv_debug || cv_automapoutsidedevmode.value) // only automap in Debug Tails 01-19-2001
 	{
 		if (!automapactive)
 		{
-			if ((!cv_automapoutsidedevmode.value && ev->type == ev_keydown && ev->key == AM_TOGGLEKEY) || (cv_automapoutsidedevmode.value && ev->type == ev_keydown && ev->key == AM_TOGGLEKEY)) // STAR NOTE: cv_automapoutsidedevmode too lol //
+			if (ev->type == ev_keydown && ev->key == AM_TOGGLEKEY)
 			{
 				//faB: prevent alt-tab in win32 version to activate automap just before
 				//     minimizing the app; doesn't do any harm to the DOS version
@@ -628,10 +626,12 @@ static inline void AM_doFollowPlayer(void)
 }
 
 /** Updates automap on a game tic, while the automap is enabled.
+  *
+  * STAR NOTE: also edited for cv_automapoutsidedevmode support :)
   */
 void AM_Ticker(void)
 {
-	if (!cv_automapoutsidedevmode.value && !cv_debug) // STAR NOTE: cv_automapoutsidedevmode lol //
+	if (!cv_debug && !cv_automapoutsidedevmode.value)
 		AM_Stop();
 
 	if (dedicated || !automapactive)
@@ -1077,10 +1077,12 @@ static inline void AM_drawPlayers(void)
 		return;
 	}
 
-	// multiplayer (how??)
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i] || players[i].spectator)
+			continue;
+
+		if (!players[i].mo)
 			continue;
 
 		p = &players[i];

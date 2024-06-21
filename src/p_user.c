@@ -45,8 +45,6 @@
 #include "m_cheat.h"
 // Thok camera snap (ctrl-f "chalupa")
 #include "g_input.h"
-// automap
-#include "am_map.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -57,12 +55,12 @@
 #include "hardware/hw_main.h"
 #endif
 
-#ifdef HAVE_DISCORDRPC
-#include "discord/discord.h" // DISCORD STUFFS: discord //
+#ifdef HAVE_DISCORDSUPPORT
+#include "discord/discord.h"
 #endif
 
 // STAR STUFF //
-#include "STAR/star_vars.h"
+#include "STAR/star_vars.h" // STAR_SetWindowTitle() //
 #include "STAR/ss_cmds.h" // cv_shieldblockstransformation //
 #include "STAR/ss_main.h" // STAR_CONS_Printf() //
 #include "STAR/p_user.h"
@@ -1356,17 +1354,8 @@ void P_GiveCoopLives(player_t *player, INT32 numlives, boolean sound)
 void P_DoSuperTransformation(player_t *player, boolean giverings)
 {
 	player->powers[pw_super] = 1;
-	if ((!(mapheaderinfo[gamemap-1]->levelflags & LF_NOSSMUSIC) && P_IsLocalPlayer(player))
-		&& (!TSoURDt3rd_InAprilFoolsMode())) // STAR NOTE: i was here lol
-
+	if (!(mapheaderinfo[gamemap-1]->levelflags & LF_NOSSMUSIC) && P_IsLocalPlayer(player))
 		P_PlayJingle(player, JT_SUPER);
-	
-#ifdef HAVE_SDL
-	// STAR STUFF //
-	if (cv_windowtitletype.value == 1)
-		STAR_SetWindowTitle();
-	// END MORE OF THIS STAR STUFF PLEASE //
-#endif
 
 	S_StartSound(NULL, sfx_supert); //let all players hear it -mattw_cfi
 
@@ -1529,10 +1518,14 @@ void P_PlayLivesJingle(player_t *player)
 	if (player && !P_IsLocalPlayer(player))
 		return;
 
+	// STAR STUFF: play a sound for lives when jukeboxing //
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack)
+		use1upSound = true;
+	// WE'RE PREPARED NOW! //
+
 	if (mariomode)
 		S_StartSound(NULL, sfx_marioa);
-	else if ((use1upSound || cv_1upsound.value)
-		|| (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)) // STAR NOTE: i was also here lol
+	else if (use1upSound || cv_1upsound.value)
 		S_StartSound(NULL, sfx_oneup);
 	else
 	{
@@ -1574,8 +1567,10 @@ void P_PlayJingleMusic(player_t *player, const char *musname, UINT16 musflags, b
 	if (gamestate == GS_LEVEL && player && !P_IsLocalPlayer(player))
 		return;
 
-	// STAR STUFF: don't play jingles if we got jukebox music
-	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
+	// STAR STUFF: don't play jingles if we got jukebox or april fools music //
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack)
+		return;
+	else if (TSoURDt3rd_InAprilFoolsMode())
 		return;
 	// DONE! //
 
@@ -1676,9 +1671,8 @@ void P_RestoreMusic(player_t *player)
 		return;
 
 	// Super
-	else if ((player->powers[pw_super] && !(mapheaderinfo[gamemap-1]->levelflags & LF_NOSSMUSIC)
+	else if (player->powers[pw_super] && !(mapheaderinfo[gamemap-1]->levelflags & LF_NOSSMUSIC)
 		&& !S_RecallMusic(JT_SUPER, false))
-		&& (!TSoURDt3rd_InAprilFoolsMode())) // STAR NOTE: i was here too :)
 		P_PlayJingle(player, JT_SUPER);
 
 	// Invulnerability
@@ -1697,11 +1691,8 @@ void P_RestoreMusic(player_t *player)
 		S_StartCaption(sfx_None, -1, player->powers[pw_sneakers]);
 		if (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC)
 		{
-			// STAR STUFF //
-			if (!TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
+			if (!TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack) // STAR STUFF: maybe don't speed music while jukeboxing please... //
 				S_SpeedMusic(1.4f);
-			// END THIS //
-
 			if (!S_RecallMusic(JT_MASTER, true))
 				S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
 		}
@@ -4336,10 +4327,8 @@ static void P_DoSuperStuff(player_t *player)
 			P_SpawnShieldOrb(player);
 
 #ifdef HAVE_SDL
-			// STAR STUFF //
 			if (cv_windowtitletype.value == 1)
 				STAR_SetWindowTitle();
-			// EEEEEEEEEEEEEEEEEE //
 #endif
 
 			// Restore color
@@ -4393,10 +4382,8 @@ static void P_DoSuperStuff(player_t *player)
 			player->powers[pw_super] = 0;
 
 #ifdef HAVE_SDL
-			// STAR STUFF //
 			if (cv_windowtitletype.value == 1)
 				STAR_SetWindowTitle();
-			// NOW GO END THAT STAR STUFF RIGHT NOW! //
 #endif
 
 			// Restore color
@@ -5181,7 +5168,7 @@ static boolean P_PlayerShieldThink(player_t *player, ticcmd_t *cmd, mobj_t *lock
 		}
 		if ((!(player->charflags & SF_NOSHIELDABILITY)) && (cmd->buttons & BT_SPIN && !LUA_HookPlayer(player, HOOK(ShieldSpecial)))) // Spin button effects
 		{
-			// STAR STUFF: Let the Player Transform While Carrying a Shield, if They Want //
+			// STAR STUFF: Let the player transform while carrying a shield, if enabled //
 			if (!cv_shieldblockstransformation.value && P_SuperReady(player))
 				return false;
 			// END THIS PLEASE //
@@ -9659,9 +9646,9 @@ static void P_DeathThink(player_t *player)
 	ticcmd_t *cmd = &player->cmd;
 	player->deltaviewheight = 0;
 
-	// STAR STUFF YAY //
+	// STAR STUFF: it's funnier this way //
 	if (TSoURDt3rd_InAprilFoolsMode() && ultimatemode && !netgame)
-		return; // it's funnier this way
+		return;
 	// END OF STAR STUFF YAY //
 
 	if (player->deadtimer < INT32_MAX)
@@ -10634,10 +10621,6 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 boolean P_SpectatorJoinGame(player_t *player)
 {
-	// STAR STUFF //
-	boolean discordReturnTrue = true;
-	// END OF THE CONVIENENCE //
-
 	if (!G_CoopGametype() && !cv_allowteamchange.value)
 	{
 		if (P_IsLocalPlayer(player))
@@ -10701,9 +10684,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 		else if (changeto == 2)
 			CONS_Printf(M_GetText("%s switched to the %c%s%c.\n"), player_names[player-players], '\x84', M_GetText("Blue team"), '\x80');
 
-		// STAR STUFF //
-		goto STAR_return; // no more player->mo, cannot continue.
-		// END THAT //
+		return true; // no more player->mo, cannot continue.
 	}
 	// Joining in game from firing.
 	else
@@ -10745,10 +10726,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 
 			if (!G_CoopGametype())
 				CONS_Printf(M_GetText("%s entered the game.\n"), player_names[player-players]);
-
-			// STAR STUFF, AGAIN //
-			goto STAR_return; // no more player->mo, cannot continue.
-			// END IT, AGAIN //
+			return true; // no more player->mo, cannot continue.
 		}
 		else
 		{
@@ -10756,28 +10734,8 @@ boolean P_SpectatorJoinGame(player_t *player)
 				CONS_Printf(M_GetText("You must wait until next round to enter the game.\n"));
 			player->powers[pw_flashing] += 2*TICRATE; //to prevent message spam.
 		}
-
-		// STAR STUFF, AGAIN AGAIN //
-		discordReturnTrue = false;
-		goto STAR_return; // return, but don't return true
-		// END THAT, AGAIN AGAIN //
 	}
 	return false;
-
-
-// STAR STUFF, ALMOST OVER //
-STAR_return:
-	if (automapactive)
-	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "A node has switched teams, closing the automap to prevent a crash...\n");
-		AM_Stop();
-	}
-
-#ifdef HAVE_DISCORDRPC
-	DRPC_UpdatePresence();
-#endif
-	return discordReturnTrue;
-// END THAT MESS, WE'RE FINALLY OVER //
 }
 
 // the below is first person only, if you're curious. check out P_CalcChasePostImg in p_mobj.c for chasecam
@@ -11998,6 +11956,9 @@ void P_PlayerThink(player_t *player)
 		if (P_SpectatorJoinGame(player))
 		{
 			LUA_HookPlayer(player, HOOK(PlayerThink));
+#ifdef HAVE_DISCORDSUPPORT
+			DRPC_UpdatePresence();
+#endif
 			return; // player->mo was removed.
 		}
 	}

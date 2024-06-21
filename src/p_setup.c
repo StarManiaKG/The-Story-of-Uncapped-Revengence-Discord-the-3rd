@@ -88,12 +88,7 @@
 
 #include "taglist.h"
 
-// STAR STUFF, FOR FUNNIES //
-#include "STAR/star_vars.h"
-#include "STAR/ss_main.h"
-
-#include "deh_soc.h"
-// END THE STAR STUFF, FOR FUNNIES //
+#include "STAR/ss_main.h" // TSoURDt3rd_LoadLevel() //
 
 //
 // Map MD5, calculated on level load.
@@ -7730,13 +7725,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	else
 		wipegamestate = FORCEWIPEOFF;
 	wipestyleflags = 0;
-
-	// HOLEPUNCHING STUFFS: PLEASE HELP ME EDITION //
-	if (netgame && serverrunning)
-	{
-		RenewHolePunch();
-	}
-	// END THAT PLEASE //
 
 	// Special stage & record attack retry fade to white
 	// This is handled BEFORE sounds are stopped.

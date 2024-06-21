@@ -30,15 +30,12 @@ void M_ResetJukebox(boolean resetmusic)
 
 	if (curplaying)
 	{
-		STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Resetting Jukebox...\n");
+		TSoURDt3rd->jukebox.prevtrack = TSoURDt3rd->jukebox.curtrack;
 		curplaying = NULL;
+		STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Jukebox reset.\n");
 	}
-	TSoURDt3rd->jukebox.musicPlaying = false;
+	TSoURDt3rd->jukebox.curtrack = NULL;
 	TSoURDt3rd->jukebox.initHUD = false;
-	TSoURDt3rd->jukebox.stoppingTics = 0;
-
-	memset(&TSoURDt3rd->jukebox.musicTrack, 0, sizeof(TSoURDt3rd->jukebox.musicTrack));
-	memset(&TSoURDt3rd->jukebox.musicName, 0, sizeof(TSoURDt3rd->jukebox.musicName));
 
 	if (currentMenu == &OP_TSoURDt3rdJukeboxDef && currentMenu == &SR_SoundTestDef)
 	{
@@ -46,7 +43,7 @@ void M_ResetJukebox(boolean resetmusic)
 		soundtestdefs = NULL;
 	}
 
-	if (Playing() && resetmusic)
+	if (resetmusic)
 	{
 		if (TSoURDt3rd_InAprilFoolsMode() || !players[consoleplayer].powers[pw_super])
 			S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);

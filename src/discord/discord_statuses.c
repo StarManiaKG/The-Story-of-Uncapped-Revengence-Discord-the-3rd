@@ -208,7 +208,6 @@ void DRPC_ImagePrintf(char *string, size_t size, const char *sep, const char *im
 	vsnprintf(txt, size, image, argptr);
 	va_end(argptr);
 
-	CONS_Printf("IMAGE IS %s_%s\n\n", sep, txt);
 	snprintf(string, size, "%s%s", sep, txt);
 }
 

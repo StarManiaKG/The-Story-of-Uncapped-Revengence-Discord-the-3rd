@@ -2705,7 +2705,7 @@ void ST_drawJukebox(void)
 	static INT32 jukeboxw	= 0;	// Stores the String Width of the Current Jukebox Track
 
 	// Hide the Jukebox HUD if Circumstances Have Been Met //
-	if (!cv_jukeboxhud.value || !TSoURDt3rd->jukebox.musicPlaying)
+	if (!cv_jukeboxhud.value || !TSoURDt3rd->jukebox.curtrack)
 	{
 		boxw = 320; strw = 335; tstrw = 320; sstrw = 360;
 		jukeboxw = 0;
@@ -2721,7 +2721,7 @@ void ST_drawJukebox(void)
 		while (tstrw > 21) tstrw -= 5;
 		while (sstrw > 61) sstrw -= 5;
 
-		jukeboxw = V_ThinStringWidth(va("PLAYING: %s", TSoURDt3rd->jukebox.musicName), V_SNAPTORIGHT|V_ALLOWLOWERCASE);
+		jukeboxw = V_ThinStringWidth(va("PLAYING: %s", TSoURDt3rd->jukebox.curtrack->title), V_SNAPTORIGHT|V_ALLOWLOWERCASE);
 		TSoURDt3rd->jukebox.initHUD = false;
 	}
 
@@ -2740,7 +2740,7 @@ void ST_drawJukebox(void)
 	// Track Title
 	V_DrawThinString(BASEVIDWIDTH-(tstrw+jukeboxw-(cv_jukeboxhud.value == 1 ? 10 : 0)), 60,
 		(V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP),
-		(va("PLAYING: %s", TSoURDt3rd->jukebox.musicName)));
+		(va("PLAYING: %s", TSoURDt3rd->jukebox.curtrack->title)));
 
 	// Render Some Extra Things, and We're Done :) //
 	if (cv_jukeboxhud.value == 2)
@@ -2748,7 +2748,7 @@ void ST_drawJukebox(void)
 		// Track
 		V_DrawThinString(BASEVIDWIDTH-sstrw, 80,
 			(V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP),
-			(va("TRACK: %s", TSoURDt3rd->jukebox.musicTrack)));
+			(va("TRACK: %s", TSoURDt3rd->jukebox.curtrack->name)));
 
 		// Track Speed
 		V_DrawThinString(BASEVIDWIDTH-sstrw, 90,

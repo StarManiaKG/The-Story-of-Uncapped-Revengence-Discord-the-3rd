@@ -3396,8 +3396,9 @@ static void STAR_JukeboxHUD_OnChange(void)
 
 static void STAR_JukeboxSpeed_OnChange(void)
 {
-	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
-		S_SpeedMusic(atof(cv_jukeboxspeed.string));
+	if (!TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack)
+		return;
+	S_SpeedMusic(atof(cv_jukeboxspeed.string));
 }
 
 // Extras //
@@ -3712,14 +3713,14 @@ void M_ChangeMenuMusic(const char *defaultmusname, boolean defaultmuslooping)
 	defaultmusic.mustrack = 0;
 	defaultmusic.muslooping = defaultmuslooping;
 
-	// STAR STUFF: KEEP PLAYING MY MUSIC PLEASE //
-	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
+	// STAR STUFF: keep playing jukebox music please //
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack)
 	{
 		if (paused)
 			S_ResumeAudio();
 		return;
 	}
-	// YAY //
+	// YAY! //
 
 	M_IterateMenuTree(MIT_ChangeMusic, &defaultmusic);
 }

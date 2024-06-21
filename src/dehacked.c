@@ -187,8 +187,8 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 
 	deh_num_warning = 0;
 
-	// STAR STUFF //
-	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying && savemoddata && (introchanged || titlechanged))
+	// STAR STUFF: reset music, since we might not have the jukebox unlocked anymore //
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack && savemoddata && (introchanged || titlechanged))
 		S_StopMusic();
 	// END IT PLEASE //
 

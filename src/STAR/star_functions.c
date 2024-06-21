@@ -209,8 +209,6 @@ void TSoURDt3rd_InitializePlayer(INT32 playernum)
 
 	// Jukebox //
 	TSoURDt3rd->jukebox.Unlocked 						= false;
-	TSoURDt3rd->jukebox.lastTrackPlayed					= NULL;
-
 	if (playernum == consoleplayer)
 		M_ResetJukebox(false);
 }
@@ -1037,6 +1035,7 @@ void TSoURDt3rd_BuildTicCMD(UINT8 player)
 	{
 		M_StartControlPanel();
 		M_TSoURDt3rdJukebox(0);
+		currentMenu->prevMenu = NULL;
 	}
 
 	// Increase the Music Speed if the Key was Pressed
@@ -1055,27 +1054,24 @@ void TSoURDt3rd_BuildTicCMD(UINT8 player)
 	if (playmostrecenttrackkey)
 	{
 		// Haven't Recently Played a Track
-		if (!TSoURDt3rdJukebox->lastTrackPlayed)
+		if (!TSoURDt3rdJukebox->prevtrack)
 			STAR_CONS_Printf(STAR_CONS_JUKEBOX, "You haven't recently played a track!\n");
 
 		// Already Have the Track Playing
-		else if (TSoURDt3rdJukebox->musicPlaying)
+		else if (TSoURDt3rdJukebox->curtrack)
 			STAR_CONS_Printf(STAR_CONS_JUKEBOX, "There's already a track playing!\n");
 
 		// Run Everything Normally, and We're Done :)
-		else if (!TSoURDt3rd_M_IsJukeboxUnlocked(TSoURDt3rdJukebox))
+		else if (TSoURDt3rd_M_IsJukeboxUnlocked(TSoURDt3rdJukebox))
 		{
 			M_TSoURDt3rdJukebox(0);
+			currentMenu->prevMenu = NULL;
 
-			strcpy(TSoURDt3rdJukebox->musicName, (TSoURDt3rd_InAprilFoolsMode() ? "Get rickrolled lol" : TSoURDt3rdJukebox->lastTrackPlayed->title));
-			strcpy(TSoURDt3rdJukebox->musicTrack, (TSoURDt3rd_InAprilFoolsMode() ? "_hehe" : TSoURDt3rdJukebox->lastTrackPlayed->name));
+			S_ChangeMusicInternal(TSoURDt3rd->jukebox.prevtrack->name, !TSoURDt3rd->jukebox.prevtrack->stoppingtics);
+			STAR_CONS_Printf(STAR_CONS_JUKEBOX, M_GetText("Loaded track \x82%s\x80.\n"), TSoURDt3rd->jukebox.prevtrack->title);
 
-			S_ChangeMusicInternal(TSoURDt3rdJukebox->musicTrack, !TSoURDt3rdJukebox->lastTrackPlayed->stoppingtics);
-			STAR_CONS_Printf(STAR_CONS_JUKEBOX, M_GetText("Loaded track \x82%s\x80.\n"), TSoURDt3rdJukebox->musicName);
-
-			TSoURDt3rdJukebox->musicPlaying			= true;
-			TSoURDt3rdJukebox->initHUD				= true;
-
+			TSoURDt3rd->jukebox.curtrack = TSoURDt3rd->jukebox.prevtrack;
+			TSoURDt3rd->jukebox.initHUD	= true;
 			TSoURDt3rd_ControlMusicEffects();
 		}
 	}
@@ -1083,7 +1079,7 @@ void TSoURDt3rd_BuildTicCMD(UINT8 player)
 	// Stop the Jukebox if the Key was Pressed
 	if (stopjukeboxkey)
 	{
-		if (!TSoURDt3rd->jukebox.musicPlaying)
+		if (!TSoURDt3rd->jukebox.curtrack)
 		{
 			STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Nothing is currently playing in the jukebox!\n");
 			S_StartSound(NULL, sfx_lose);
@@ -1126,7 +1122,7 @@ void TSoURDt3rd_ControlMusicEffects(void)
 		default:	speed = 1.0f;	pitch = 1.0f; break;
 	}
 
-	if (TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack)
 	{
 		speed = atof(cv_jukeboxspeed.string);
 		pitch = 1.0f;

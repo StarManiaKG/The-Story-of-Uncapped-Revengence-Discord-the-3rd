@@ -570,8 +570,7 @@ static inline void P_DoSpecialStageStuff(void)
 
 	if (sstimer < 15*TICRATE+6 && sstimer > 7 && (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC))
 	{
-		// STAR NOTE: you're interrupting my brooding >:| //
-		if (!TSoURDt3rdPlayers[consoleplayer].jukebox.musicPlaying)
+		if (!TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack) // STAR STUFF: you're interrupting my brooding >:| //
 			S_SpeedMusic(1.4f);
 	}
 

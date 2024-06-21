@@ -51,16 +51,16 @@
 
 #include "lua_hud.h"
 
-#ifdef HAVE_DISCORDRPC
-#include "discord/discord.h" // DISCORD STUFF: rpc presence //
-#endif
+#ifdef HAVE_DISCORDSUPPORT
+#include "discord/discord.h"
 
 #ifdef HAVE_DISCORDGAMESDK
-#include "discord_gamesdk.h" // DISCORD STUFF: gamesdk presence //
+#include "discord_gamesdk.h"
+#endif
 #endif
 
 // OTHER FUN STAR STUFF YAYAYSUHDUISHUIBHOUIHBDU()*FH*D(UIYVLBGUIYDG(UDOPBIYGD*OUFBHO(P))) //
-#include "STAR/star_vars.h" // variousness & TSoURDt3rd_DetermineLevelMusic() //
+#include "STAR/star_vars.h" // TSoURDt3rd Struct, STAR_SetWindowTitle(), & TSoURDt3rd_DetermineLevelMusic() //
 #include "STAR/ss_cmds.h" // cv_storesavesinfolders //
 #include "STAR/ss_main.h"
 
@@ -797,10 +797,8 @@ void G_SetGameModified(boolean silent)
 	if (modifiedgame && !savemoddata)
 		return;
 
-	// STAR STUFF: please don't scream misinformation in the console //
 	if (autoloading)
-		return;
-	// DONE! //
+		return; // STAR STUFF: currently autoloading, it's fine //
 
 	modifiedgame = true;
 	savemoddata = false;
@@ -3347,7 +3345,7 @@ void G_DoReborn(INT32 playernum)
 			G_ChangePlayerReferences(oldmo, players[playernum].mo);
 	}
 
-#ifdef HAVE_DISCORDRPC
+#ifdef HAVE_DISCORDSUPPORT
 	DRPC_UpdatePresence();
 #endif
 }
@@ -3398,10 +3396,8 @@ void G_AddPlayer(INT32 playernum)
 	if ((countplayers && !notexiting) || G_IsSpecialStage(gamemap))
 		P_DoPlayerExit(p);
 
-#ifdef HAVE_DISCORDRPC
-	// DISCORD STUFF //
+#ifdef HAVE_DISCORDSUPPORT
 	DRPC_UpdatePresence();
-	// END THAT //
 #endif
 }
 
@@ -4390,7 +4386,7 @@ static void G_DoContinued(void)
 	gameaction = ga_nothing;
 
 #ifdef HAVE_SDL
-	STAR_SetWindowTitle(); // STAR STUFF: do cool window title stuff //
+	STAR_SetWindowTitle();
 #endif
 }
 
@@ -5540,11 +5536,11 @@ INT32 G_FindMapByNameOrCode(const char *mapname, char **realmapnamep)
 void G_SetGamestate(gamestate_t newstate)
 {
 	gamestate = newstate;
-#ifdef HAVE_DISCORDRPC
+#ifdef HAVE_DISCORDSUPPORT
 	DRPC_UpdatePresence();
 #endif
 #ifdef HAVE_SDL
-	STAR_SetWindowTitle(); // STAR STUFF: constantly update our title please //
+	STAR_SetWindowTitle();
 #endif
 }
 
