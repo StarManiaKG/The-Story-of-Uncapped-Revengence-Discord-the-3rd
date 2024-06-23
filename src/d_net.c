@@ -82,13 +82,11 @@ const char *(*I_GetBanMask) (size_t ban) = NULL;
 boolean (*I_SetBanAddress) (const char *address, const char *mask) = NULL;
 boolean *bannednode = NULL;
 
-// HOLEPUNCHING STUFF //
-/// \brief hole punching packet, also points inside doomcom
+/// \brief HOLEPUNCHING STUFF: hole punching packet, also points inside doomcom
 holepunch_t *holepunchpacket = NULL;
 
 void (*I_NetRequestHolePunch)(INT32 node) = NULL;
 void (*I_NetRegisterHolePunch)(void) = NULL;
-// OK //
 
 
 // network stats
@@ -1352,9 +1350,7 @@ boolean D_CheckNetGame(void)
 		I_Error("Too many nodes (%d), max:%d", doomcom->numnodes, MAXNETNODES);
 
 	netbuffer = (doomdata_t *)(void *)&doomcom->data;
-
-	// HOLEPUNCHING STUFF: holes //
-	holepunchpacket = (holepunch_t *)(void *)&doomcom->data;
+	holepunchpacket = (holepunch_t *)(void *)&doomcom->data; // HOLEPUNCHING STUFF: hole initialization //
 
 #ifdef DEBUGFILE
 	if (M_CheckParm("-debugfile"))
