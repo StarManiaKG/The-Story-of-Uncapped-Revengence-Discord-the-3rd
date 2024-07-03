@@ -137,6 +137,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetName>$(ProjectName)_Debug</TargetName>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>$(SolutionDir)libs\libopenmpt\inc;$(SolutionDir)\libs\curl\include\;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>$(SolutionDir)libs\libopenmpt\inc;$(SolutionDir)\libs\curl\include\;$(IncludePath)</IncludePath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <ClCompile>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -165,7 +171,14 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)\libs\curl\include</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_DEBUG;HAVE_CURL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <Link />
+    <Link>
+      <AdditionalLibraryDirectories>$(SolutionDir)\libs\curl\lib32\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libopenmpt.lib;libcurl.dll.a;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -175,7 +188,37 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <DisableSpecificWarnings>4244;4267;4146;4003</DisableSpecificWarnings>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <PreprocessorDefinitions>NDEBUG;HAVE_CURL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)\libs\curl\include</AdditionalIncludeDirectories>
     </ClCompile>
+    <Link />
+    <Link>
+      <AdditionalLibraryDirectories>$(SolutionDir)\libs\curl\lib32\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libopenmpt.lib;libcurl.dll.a;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <PreprocessorDefinitions>_DEBUG;HAVE_CURL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4244;4267;4146</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(SolutionDir)\libs\curl\lib64\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libopenmpt.lib;libcurl.dll.a;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <DisableSpecificWarnings>4244;4267;4146;4003</DisableSpecificWarnings>
+      <PreprocessorDefinitions>NDEBUG;HAVE_CURL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(SolutionDir)\libs\curl\lib64\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libopenmpt.lib;libcurl.dll.a;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\libs\libpng-src\projects\visualc10\libpng.vcxproj">
@@ -259,6 +302,16 @@
     <ClInclude Include="..\hardware\hw_md2load.h" />
     <ClInclude Include="..\hardware\hw_md3load.h" />
     <ClInclude Include="..\hardware\hw_model.h" />
+    <ClInclude Include="..\STAR\m_menu.h" />
+    <ClInclude Include="..\STAR\parser.h" />
+    <ClInclude Include="..\STAR\p_saveg.h" />
+    <ClInclude Include="..\STAR\p_user.h" />
+    <ClInclude Include="..\STAR\ss_cmds.h" />
+    <ClInclude Include="..\STAR\ss_main.h" />
+    <ClInclude Include="..\STAR\star_vars.h" />
+    <ClInclude Include="..\STAR\star_webinfo.h" />
+    <ClInclude Include="..\STAR\s_sound.h" />
+    <ClInclude Include="..\STAR\v_video.h" />
     <ClInclude Include="..\u_list.h" />
     <ClInclude Include="..\hu_stuff.h" />
     <ClInclude Include="..\info.h" />
@@ -345,21 +398,6 @@
     <ClInclude Include="sdlmain.h" />
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="..\tmap.nas">
-      <FileType>Document</FileType>
-    </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
-    <CustomBuild Include="..\tmap_mmx.nas">
-      <FileType>Document</FileType>
-    </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
-    <CustomBuild Include="..\tmap_vc.nas">
-      <FileType>Document</FileType>
-    </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="..\asm_defs.inc" />
     <None Include="..\config.h.in" />
     <None Include="SDL_icon.xpm" />
@@ -382,6 +420,7 @@
     <ClCompile Include="..\blua\lmem.c" />
     <ClCompile Include="..\blua\lobject.c" />
     <ClCompile Include="..\blua\lopcodes.c" />
+    <ClCompile Include="..\blua\loslib.c" />
     <ClCompile Include="..\blua\lparser.c" />
     <ClCompile Include="..\blua\lstate.c" />
     <ClCompile Include="..\blua\lstring.c" />
@@ -423,7 +462,73 @@
     <ClCompile Include="..\hardware\hw_md2load.c" />
     <ClCompile Include="..\hardware\hw_md3load.c" />
     <ClCompile Include="..\hardware\hw_model.c" />
+    <ClCompile Include="..\hardware\hw_shaders.c" />
     <ClCompile Include="..\hardware\r_opengl\r_opengl.c" />
+    <ClCompile Include="..\r_bbox.c" />
+    <ClCompile Include="..\STAR\events\ss_aprilfools.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\STAR\events\ss_easter.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\STAR\m_menu.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\STAR\parsed.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\STAR\parser.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\STAR\p_saveg.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\STAR\p_user.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\STAR\ss_cmds.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\STAR\ss_main.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\STAR\star_functions.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\STAR\s_sound.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\u_list.c" />
     <ClCompile Include="..\hu_stuff.c" />
     <ClCompile Include="..\info.c" />
@@ -469,7 +574,6 @@
     <ClCompile Include="..\p_ceilng.c" />
     <ClCompile Include="..\p_enemy.c" />
     <ClCompile Include="..\p_floor.c" />
-    <ClCompile Include="..\p_haptic.c" />
     <ClCompile Include="..\p_inter.c" />
     <ClCompile Include="..\p_lights.c" />
     <ClCompile Include="..\p_map.c" />
@@ -533,14 +637,12 @@
     <ClCompile Include="..\w_wad.c" />
     <ClCompile Include="..\y_inter.c" />
     <ClCompile Include="..\z_zone.c" />
-    <ClCompile Include="..\STAR\star_function.c" />
     <ClCompile Include="dosstr.c" />
     <ClCompile Include="endtxt.c" />
     <ClCompile Include="hwsym_sdl.c" />
     <ClCompile Include="IMG_xpm.c">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="i_gamepad.c" />
     <ClCompile Include="i_main.c" />
     <ClCompile Include="i_net.c" />
     <ClCompile Include="i_system.c" />
