@@ -28,14 +28,16 @@ void M_ResetJukebox(boolean resetmusic)
 {
 	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer];
 
-	if (curplaying)
+	if (TSoURDt3rd->jukebox.curtrack)
 	{
+		STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Jukebox reset.\n");
 		TSoURDt3rd->jukebox.prevtrack = TSoURDt3rd->jukebox.curtrack;
 		curplaying = NULL;
-		STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Jukebox reset.\n");
 	}
 	TSoURDt3rd->jukebox.curtrack = NULL;
 	TSoURDt3rd->jukebox.initHUD = false;
+
+	TSoURDt3rd->jukebox.tics = 0;
 
 	if (currentMenu == &OP_TSoURDt3rdJukeboxDef && currentMenu == &SR_SoundTestDef)
 	{
@@ -45,10 +47,14 @@ void M_ResetJukebox(boolean resetmusic)
 
 	if (resetmusic)
 	{
-		if (TSoURDt3rd_InAprilFoolsMode() || !players[consoleplayer].powers[pw_super])
-			S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
-		else
+		if (playeringame[consoleplayer] && players[consoleplayer].powers[pw_super])
 			P_PlayJingle(&players[consoleplayer], JT_SUPER);
+		else
+		{
+			S_ChangeMusicEx(TSoURDt3rd_DetermineLevelMusic(), mapmusflags, true, mapmusposition, 0, 0);
+			if (!S_MusicPlaying() && playeringame[consoleplayer])
+				P_RestoreMusic(&players[consoleplayer]);
+		}
+		TSoURDt3rd_ControlMusicEffects();
 	}
-	TSoURDt3rd_ControlMusicEffects();
 }

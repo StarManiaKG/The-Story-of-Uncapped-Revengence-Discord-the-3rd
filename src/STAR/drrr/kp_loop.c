@@ -1,4 +1,5 @@
-// DR. ROBOTNIK'S RING RACERS
+// SONIC ROBO BLAST 2; TSOURDT3RD
+// PORTED FROM DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
 // Copyright (C) 2024 by James Robert Roman.
 // Copyright (C) 2024 by Kart Krew.
@@ -7,16 +8,16 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  p_loop.c
+/// \file  kp_loop.c
 /// \brief Sonic loop physics
 
-#include "doomdef.h"
-#include "d_player.h"
-#include "k_kart.h"
-#include "p_local.h"
-#include "p_setup.h"
-#include "p_slopes.h"
-#include "r_main.h"
+#include "../../doomdef.h"
+#include "../../d_player.h"
+//#include "k_kart.h"
+#include "../../p_local.h"
+#include "../../p_setup.h"
+#include "../../p_slopes.h"
+#include "../../r_main.h"
 
 static inline angle_t
 get_pitch (fixed_t revolution)
@@ -85,8 +86,10 @@ void P_ExitPlayerOrbit(player_t *player)
 				pitch + ANGLE_180, s->yaw);
 	}
 
+#if 0
 	// tiregrease gives less friction, extends momentum
 	K_SetTireGrease(player, 3*TICRATE);
+#endif
 
 	P_HaltPlayerOrbit(player);
 }
@@ -185,9 +188,11 @@ boolean P_PlayerOrbit(player_t *player)
 	if (player->speed < player->mo->scale)
 	{
 		P_HaltPlayerOrbit(player);
+#if 0
 		player->markedfordeath = true;
 		K_PlayPainSound(player->mo, NULL);
 		K_StumblePlayer(player);
+#endif
 
 		return false;
 	}

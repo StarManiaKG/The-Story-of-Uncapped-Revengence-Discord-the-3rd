@@ -1237,7 +1237,8 @@ light_t *t_lspr[NUMSPRITES] =
 	&lspr[NOLIGHT],
 
 	// STAR STUFF //
-	[SPR_EEGG] = &lspr[GREENSHINE_L],
+	[SPR_EEGG] =
+	&lspr[GREENSHINE_L],
 	&lspr[SUPERSONIC_L], // SPR_TF2D
 	// LIGHT TABLE SET! //
 };

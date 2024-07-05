@@ -20,7 +20,7 @@
 //        Variables
 // ------------------------ //
 
-#define APRIL_FOOLS // MARKED FOR REMOVAL //
+//#define APRIL_FOOLS // MARKED FOR REMOVAL //
 
 #define TSOURDT3RD_DEBUGGING /* Debugging */
 
@@ -66,6 +66,13 @@ extern boolean aprilfoolsmode;
 extern boolean eastermode;
 extern boolean xmasmode, xmasoverride;
 
+// An extra lock-on to the current gamestate system
+typedef enum
+{
+	STAR_GS_NULL = 0, // no star gamestate correspondant can be found...
+	STAR_GS_NIGHTSMENU, // GS_TIMEATTACK, but in the nights menu
+} star_gamestate_t;
+
 // ------------------------ //
 //        Functions
 // ------------------------ //
@@ -74,6 +81,8 @@ void STAR_CONS_Printf(star_messagetype_t starMessageType, const char *fmt, ...);
 const char *TSoURDt3rd_CON_DrawStartupScreen(void);
 
 void TSoURDt3rd_D_Display(void);
+
+void STAR_G_GamestateManager(star_gamestate_t star_gamestate);
 
 void STAR_M_StartMessage(const char *header, INT32 headerflags, const char *string, void *routine, menumessagetype_t itemtype);
 

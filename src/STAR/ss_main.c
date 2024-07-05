@@ -92,31 +92,39 @@ void STAR_CONS_Printf(star_messagetype_t starMessageType, const char *fmt, ...)
 	// That should be fine with you. (...Right?)
 	switch (starMessageType)
 	{
-		case STAR_CONS_TSOURDT3RD: CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd:")); break;
-		case STAR_CONS_TSOURDT3RD_NOTICE: CONS_Printf("\x83" "%s" "\x80 ", M_GetText("TSoURDt3rd:")); break;
-		case STAR_CONS_TSOURDT3RD_ALERT: CONS_Printf("\x85" "%s" "\x80 ", M_GetText("TSoURDt3rd:")); break;
+		case STAR_CONS_TSOURDT3RD:
+			CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd:"));
+			break;
+		case STAR_CONS_TSOURDT3RD_NOTICE:
+			CONS_Printf("\x83" "%s" "\x80 ", M_GetText("TSoURDt3rd:"));
+			break;
+		case STAR_CONS_TSOURDT3RD_ALERT:
+			CONS_Printf("\x85" "%s" "\x80 ", M_GetText("TSoURDt3rd:"));
+			break;
 
 		case STAR_CONS_TSOURDT3RD_DEBUG:
-		{
 #ifdef TSOURDT3RD_DEBUGGING
 			CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd Debugging:")); break;
 #else
+			free(txt);
 			return;
 #endif
-		}
 
-		case STAR_CONS_APRILFOOLS: CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd April Fools:")); break;
-		case STAR_CONS_EASTER: CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd Easter:")); break;
+		case STAR_CONS_APRILFOOLS:
+			CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd April Fools:"));
+			break;
+		case STAR_CONS_EASTER:
+			CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd Easter:"));
+			break;
 
-		case STAR_CONS_JUKEBOX: CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd Jukebox:")); break;
+		case STAR_CONS_JUKEBOX:
+			CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd Jukebox:"));
+			break;
 
 		default:
-		{
 			CONS_Printf("\x82STAR_CONS_Printf:\x80 You must specify a specific message type!\n");
 			free(txt);
-
 			return;
-		}
 	}
 
 	CONS_Printf("%s", txt);
@@ -140,15 +148,20 @@ void TSoURDt3rd_D_Display(void)
 		case GS_ENDING:
 		case GS_CREDITS:
 		case GS_EVALUATION:
-		{
 			if (TSoURDt3rd_InAprilFoolsMode())
 				I_Error("SIGSEGV - seventh sentinel (core dumped)");
 			break;
-		}
 
 		default:
 			break;	
 	}
+}
+
+void STAR_G_GamestateManager(star_gamestate_t star_gamestate)
+{
+	if (gamestate != GS_TIMEATTACK)
+		star_gamestate = STAR_GS_NULL;
+	TSoURDt3rdPlayers[consoleplayer].gamestate = star_gamestate;
 }
 
 //
@@ -164,13 +177,12 @@ void STAR_M_StartMessage(const char *header, INT32 headerflags, const char *stri
 		header = va("%c%s\x80\n", ('\x80' + headerflags), header);
 		string = va("%s%s", header, string);
 	}
-
 	M_StartMessage(string, routine, itemtype);
 }
 
 const char *TSoURDt3rd_ReturnUsername(void)
 {
-#ifdef HAVE_DISCORDRPC
+#ifdef HAVE_DISCORDSUPPORT
 	if (discordInfo.ConnectionStatus == DRPC_CONNECTED)
 		return DRPC_ReturnUsername();
 #endif

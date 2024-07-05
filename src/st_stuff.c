@@ -53,6 +53,9 @@
 #include "STAR/ss_main.h" // eastermode //
 
 #include "d_main.h" // autoloaded & autoloading //
+
+#include "STAR/drrr/khu_stuff.h"
+#include "STAR/drrr/kk_hud.h"
 // END OF THAT //
 
 UINT16 objectsdrawn = 0;
@@ -381,15 +384,18 @@ void ST_LoadGraphics(void)
 	for (i = 0; i < 7; ++i)
 		ngradeletters[i] = W_CachePatchName(va("GRADE%d", i), PU_HUDGFX);
 
-#ifdef HAVE_DISCORDSUPPORT
-	// Discord Rich Presence
-	envelope = W_CachePatchName("K_REQUES", PU_HUDGFX);
-#endif
+	// STAR STUFF: load our unique graphics! //
+	K_LoadKartHUDGraphics();
 
-	// STAR STUFF: Easter Graphics //
+	// easter
 	stageeggs = W_CachePatchName("STAGEEGS", PU_HUDGFX);
 	totaleggs = W_CachePatchName("TOTLEGS", PU_HUDGFX);
 	// GRAPHICS SORTED, YAY //
+
+#ifdef HAVE_DISCORDSUPPORT
+	// Discord Rich Presence
+	HU_UpdatePatch(&envelope, "K_REQUES");
+#endif
 }
 
 // made separate so that skins code can reload custom face graphics
@@ -3043,7 +3049,7 @@ void ST_Drawer(void)
 	//25/08/99: Hurdler: palette changes is done for all players,
 	//                   not only player1! That's why this part
 	//                   of code is moved somewhere else.
-	if (rendermode == render_soft || HWR_ShouldUsePaletteRendering()) // STAR NOTE: palette rendering //
+	if (rendermode == render_soft || HWR_ShouldUsePaletteRendering())
 #endif
 		if (rendermode != render_none) ST_doPaletteStuff();
 

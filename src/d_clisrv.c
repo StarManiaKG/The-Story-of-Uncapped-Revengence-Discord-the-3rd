@@ -65,6 +65,8 @@
 // STAR STUFF //
 #include "STAR/star_vars.h"
 #include "STAR/ss_main.h" // STAR_CONS_Printf() //
+
+#include "STAR/drrr/kg_input.h" // HandleGamepadDeviceEvents() //
 // WE'RE DONE! //
 
 //
@@ -2447,6 +2449,8 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 	{
 		I_OsPolling();
 
+		G_ResetAllDeviceResponding(); // STAR STUFF: KART: device (cap) //
+
 		if (cl_mode == CL_CONFIRMCONNECT)
 			D_ProcessEvents(); //needed for menu system to receive inputs
 		else
@@ -2458,6 +2462,8 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 				if (!Snake_Joy_Grabber(&events[eventtail]))
 #endif
 					G_MapEventsToControls(&events[eventtail]);
+
+				HandleGamepadDeviceEvents(&events[eventtail]); // STAR STUFF: DRRR: gamepad junk //
 			}
 		}
 
@@ -3532,11 +3538,11 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 
 	S_StartSound(NULL, ((msg == KICK_MSG_PLAYER_QUIT) ? STAR_LeaveSFX : STAR_SynchFailureSFX)); // DISCORD STUFF: I LIKE YOUR FUNNY SOUNDS, MAGIC FUNCTION //
 
-#ifdef HAVE_DISCORDRPC
+#ifdef HAVE_DISCORDSUPPORT
 	DRPC_UpdatePresence();
 #endif
 #ifdef HAVE_SDL
-	STAR_SetWindowTitle(); // STAR STUFF: Update the Title! //
+	STAR_SetWindowTitle();
 #endif
 }
 
@@ -3796,14 +3802,6 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 	rejoined = playeringame[newplayernum];
 
-	// DO STAR STUFF //
-	if (automapactive)
-	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "A new node has joined, closing the automap to prevent a crash...\n");
-		AM_Stop();
-	}
-	// NOW GO CLEAR SOME PLAYERS RIGHT NOW! //
-
 	if (!rejoined)
 	{
 		// Clear player before joining, lest some things get set incorrectly
@@ -3933,11 +3931,11 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 	if (!rejoined)
 		LUA_HookInt(newplayernum, HOOK(PlayerJoin));
 
-#ifdef HAVE_DISCORDRPC
+#ifdef HAVE_DISCORDSUPPORT
 	DRPC_UpdatePresence();
 #endif
 #ifdef HAVE_SDL
-	STAR_SetWindowTitle(); // STAR STUFF: Update the Title! //
+	STAR_SetWindowTitle();
 #endif
 }
 
@@ -4540,15 +4538,15 @@ static void HandlePacketFromAwayNode(SINT8 node)
 #ifdef HAVE_DISCORDSUPPORT
 			if (TSoURDt3rdPlayers[node].serverPlayers.serverUsesTSoURDt3rd)
 			{
-				discordInfo.maxPlayers = netbuffer->u.servercfg.maxplayer;
-				discordInfo.joinsAllowed = netbuffer->u.servercfg.allownewplayer;
-				discordInfo.everyoneCanInvite = netbuffer->u.servercfg.discordinvites;
+				discordInfo.serv.maxPlayers = netbuffer->u.servercfg.maxplayer;
+				discordInfo.serv.joinsAllowed = netbuffer->u.servercfg.allownewplayer;
+				discordInfo.serv.everyoneCanInvite = netbuffer->u.servercfg.discordinvites;
 			}
 			else
 			{
-				discordInfo.maxPlayers = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
-				discordInfo.joinsAllowed = cv_allownewplayer.value;
-				discordInfo.everyoneCanInvite = (boolean)cv_discordinvites.value;
+				discordInfo.serv.maxPlayers = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
+				discordInfo.serv.joinsAllowed = cv_allownewplayer.value;
+				discordInfo.serv.everyoneCanInvite = (boolean)cv_discordinvites.value;
 			}
 #endif
 

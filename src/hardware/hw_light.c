@@ -94,8 +94,6 @@ static void HWR_SetLight(void)
 
 		lightmappatchmipmap.width = 128;
 		lightmappatchmipmap.height = 128;
-		lightmappatch.mipmap->width = 128;
-		lightmappatch.mipmap->height = 128;
 		lightmappatch.mipmap->flags = 0; //TF_WRAPXY; // DEBUG: view the overdraw !
 		
 	}
@@ -110,12 +108,12 @@ static void HWR_SetLight(void)
 // --------------------------------------------------------------------------
 static float HWR_DistP2D(FOutVector *p1, FOutVector *p2, FVector *p3, FVector *inter)
 {
-	if (FLOAT_TO_FIXED(p1->z) == FLOAT_TO_FIXED(p2->z))
+	if (p1->z >= p2->z && p2->z <= p1->z)
 	{
 		inter->x = p3->x;
 		inter->z = p1->z;
 	}
-	else if (FLOAT_TO_FIXED(p1->x) == FLOAT_TO_FIXED(p2->x))
+	else if (p1->x >= p2->x && p2->x <= p1->x)
 	{
 		inter->x = p1->x;
 		inter->z = p3->z;
@@ -130,8 +128,7 @@ static float HWR_DistP2D(FOutVector *p1, FOutVector *p2, FVector *p3, FVector *i
 		inter->z = inter->x*pente + local;
 	}
 
-	return (p3->x - inter->x) * (p3->x - inter->x)
-		+ (p3->z - inter->z) * (p3->z - inter->z);
+	return (p3->x-inter->x)*(p3->x-inter->x) + (p3->z-inter->z)*(p3->z-inter->z);
 }
 
 // check if sphere (radius r) centred in p3 touch the bounding box defined by p1, p2
@@ -146,13 +143,11 @@ static boolean SphereTouchBBox3D(FOutVector *p1, FOutVector *p2, FVector *p3, fl
 		minx = maxx;
 		maxx = p1->x;
 	}
-
 	if (miny > maxy)
 	{
 		miny = maxy;
 		maxy = p2->y;
 	}
-
 	if (minz > maxz)
 	{
 		minz = maxz;
@@ -165,7 +160,6 @@ static boolean SphereTouchBBox3D(FOutVector *p1, FOutVector *p2, FVector *p3, fl
 	if (maxy + r < p3->y) return false;
 	if (minz - r > p3->z) return false;
 	if (maxz + r < p3->z) return false;
-
 	return true;
 }
 
@@ -367,8 +361,13 @@ void HWR_WallLighting(FOutVector *wlVerts)
 		light_pos = &dynlights->position[j];
 
 		// it's a real object which emits light
-		if (!dynlights->mo[j] || P_MobjWasRemoved(dynlights->mo[j]))
+		if (!dynlights->mo[j])
 			continue;
+		if (P_MobjWasRemoved(dynlights->mo[j]))
+		{
+			P_SetTarget(&dynlights->mo[j], NULL);
+			continue;
+		}
 		if (p_lspr->coronaroutine && !p_lspr->coronaroutine(dynlights->mo[j]))
 			continue;
 
@@ -471,8 +470,13 @@ void HWR_PlaneLighting(FOutVector *clVerts, int nrClipVerts)
 		light_pos = &dynlights->position[j];
 
 		// it's a real object which emits light
-		if (!dynlights->mo[j] || P_MobjWasRemoved(dynlights->mo[j]))
+		if (!dynlights->mo[j])
 			continue;
+		if (P_MobjWasRemoved(dynlights->mo[j]))
+		{
+			P_SetTarget(&dynlights->mo[j], NULL);
+			continue;
+		}
 		if (p_lspr->coronaroutine && !p_lspr->coronaroutine(dynlights->mo[j]))
 			continue;
 
@@ -528,7 +532,7 @@ void HWR_PlaneLighting(FOutVector *clVerts, int nrClipVerts)
 // --------------------------------------------------------------------------
 void HWR_DoCoronasLighting(FOutVector *outVerts, gl_vissprite_t *spr) 
 {
-	float			cx, cy, cz;
+	float           cx = 0.0f, cy = 0.0f, cz = 0.0f; // gravity center
 	float			size;
 	FSurfaceInfo	Surf;
 	FOutVector      light[4];
@@ -536,9 +540,6 @@ void HWR_DoCoronasLighting(FOutVector *outVerts, gl_vissprite_t *spr)
 
 	p_lspr = Sprite_Corona_Light_lsp(spr->mobj->sprite);
 	if (p_lspr == NULL || corona_lumpnum == LUMPERROR)
-		return;
-	
-	if (!spr->mobj || P_MobjWasRemoved(spr->mobj))
 		return;
 	if (p_lspr->coronaroutine && !p_lspr->coronaroutine(spr->mobj))
 		return;
@@ -562,19 +563,25 @@ void HWR_DoCoronasLighting(FOutVector *outVerts, gl_vissprite_t *spr)
 
 		size = corona_size * 2.0;
 
-#if 1
+#if 0
 		// compute position doing average
 		cx = (outVerts[0].x + outVerts[2].x) / 2.0;
 		cy = (outVerts[0].y + outVerts[2].y) / 2.0;
 #else
 		cx = 0.0f, cy = 0.0f; // gravity center
 		// compute position doing average
-		for (int i = 0; i < 4; i++)
+		for (UINT8 i = 0; i < 4; i++)
 		{
 			cx += outVerts[i].x;
 			cy += outVerts[i].y;
+#if 1
+			cz += outVerts[i].z;
+#endif
 		}
 		cx /= 4.0f;  cy /= 4.0f;
+#if 1
+		cz /= 4.0f;
+#endif
 #endif
 
 		// put light little forward of the sprite so there is no 
@@ -604,7 +611,9 @@ void HWR_DoCoronasLighting(FOutVector *outVerts, gl_vissprite_t *spr)
 		light[2].s = 1.0f;   light[2].t = 1.0f;
 		light[3].s = 0.0f;   light[3].t = 1.0f;
 
+#if 0
 		HWR_GetPic(corona_lumpnum); // TODO: use different coronas
+#endif
 
 		HWD.pfnDrawPolygon(&Surf, light, 4, PF_Modulated | PF_Additive | PF_Corona | PF_NoDepthTest);
 	}
@@ -635,8 +644,13 @@ void HWR_DL_Draw_Coronas(void)
 		if (!(p_lspr->type & CORONA_SPR))
 			continue;
 
-		if (!dynlights->mo[j] || P_MobjWasRemoved(dynlights->mo[j]))
+		if (!dynlights->mo[j])
 			continue;
+		if (P_MobjWasRemoved(dynlights->mo[j]))
+		{
+			P_SetTarget(&dynlights->mo[j], NULL);
+			continue;
+		}
 		if (p_lspr->coronaroutine && !p_lspr->coronaroutine(dynlights->mo[j]))
 			continue;
 
@@ -709,18 +723,6 @@ void HWR_DL_AddLightSprite(gl_vissprite_t *spr)
 	FVector		*light_pos;
 	light_t		*p_lspr;
 
-	// uncapped/interpolation
-	interpmobjstate_t interp = {0};
-
-	if (R_UsingFrameInterpolation() && !paused)
-	{
-		R_InterpolateMobjState(spr->mobj, rendertimefrac, &interp);
-	}
-	else
-	{
-		R_InterpolateMobjState(spr->mobj, FRACUNIT, &interp);
-	}
-
 	// Hurdler: moved here because it's better ;-)
 	if (!cv_gldynamiclighting.value)
 		return;
@@ -738,6 +740,18 @@ void HWR_DL_AddLightSprite(gl_vissprite_t *spr)
 		return;
 	}
 
+	// uncapped/interpolation
+	interpmobjstate_t interp = {0};
+
+	if (R_UsingFrameInterpolation() && !paused)
+	{
+		R_InterpolateMobjState(spr->mobj, rendertimefrac, &interp);
+	}
+	else
+	{
+		R_InterpolateMobjState(spr->mobj, FRACUNIT, &interp);
+	}
+
 	// check if sprite contains dynamic light
 	p_lspr = t_lspr[spr->mobj->sprite];
 	if (p_lspr->type == NOLIGHT)
@@ -752,7 +766,13 @@ void HWR_DL_AddLightSprite(gl_vissprite_t *spr)
 	// Create a dynamic light, and give the light a position.
 	light_pos = &dynlights->position[dynlights->nb];
 	light_pos->x = FIXED_TO_FLOAT(interp.x);
-	light_pos->y = FIXED_TO_FLOAT(interp.z) + FIXED_TO_FLOAT(interp.height>>1) + p_lspr->light_yoffset + P_MobjFlip(spr->mobj);
+	if (P_MobjFlip(spr->mobj))
+		light_pos->y = FIXED_TO_FLOAT(interp.z) + FIXED_TO_FLOAT(interp.height>>1) + p_lspr->light_yoffset;
+	else
+	{
+		light_pos->y = FIXED_TO_FLOAT(interp.z) + p_lspr->light_yoffset;
+		light_pos->y += FIXED_TO_FLOAT(P_MobjFlip(spr->mobj));
+	}
 	light_pos->z = FIXED_TO_FLOAT(interp.y);
 
 	dynlights->mo[dynlights->nb] = spr->mobj;
@@ -889,17 +909,14 @@ static void HWR_CheckSubsector(size_t num, fixed_t *bbox)
 		sub = &subsectors[num]; // subsector
 		for (lightnum = 0; lightnum < dynlights->nb; lightnum++)
 		{
-			// check bbox of the seg
 #if 0
+			// check bbox of the seg
 			if (!(CircleTouchBBox(&p1, &p2, &dynlights->position[lightnum], dynlights->p_lspr[lightnum]->dynamic_radius)))
 				continue;
 #else
 			(void)p1;
 			(void)p2;
 #endif
-
-			if (!dynlights->mo[lightnum] || P_MobjWasRemoved(dynlights->mo[lightnum]))
-				continue;
 
 			count = sub->numlines;          // how many linedefs
 			line = &segs[sub->firstline];   // first line seg
@@ -918,6 +935,10 @@ static void HWR_CheckSubsector(size_t num, fixed_t *bbox)
 // --------------------------------------------------------------------------
 static void HWR_AddMobjLights(mobj_t *thing)
 {
+	if (!(t_lspr[thing->sprite]->type == NOLIGHT)
+		|| !(t_lspr[thing->sprite]->type & CORONA_SPR))
+		return;
+
 	// uncapped/interpolation
 	interpmobjstate_t interp = {0};
 
@@ -930,22 +951,22 @@ static void HWR_AddMobjLights(mobj_t *thing)
 		R_InterpolateMobjState(thing, FRACUNIT, &interp);
 	}
 
-	if (!(t_lspr[thing->sprite]->type == NOLIGHT)
-		|| !(t_lspr[thing->sprite]->type & CORONA_SPR))
-		return;
-
 	// Sprite has a corona. Thereore, create a corona dynamic light.
 	FVector *light_pos = &dynlights->position[dynlights->nb];
 	light_pos->x = FIXED_TO_FLOAT(interp.x);
-	light_pos->y = FIXED_TO_FLOAT(interp.z) + t_lspr[thing->sprite]->light_yoffset + P_MobjFlip(thing);
+	if (P_MobjFlip(thing))
+		light_pos->y = FIXED_TO_FLOAT(interp.z) + FIXED_TO_FLOAT(interp.height>>1) + p_lspr->light_yoffset;
+	else
+	{
+		light_pos->y = FIXED_TO_FLOAT(interp.z) + t_lspr[thing->sprite]->light_yoffset;
+		light_pos->y += FIXED_TO_FLOAT(P_MobjFlip(thing));
+	}
 	light_pos->z = FIXED_TO_FLOAT(interp.y);
 
 	dynlights->p_lspr[dynlights->nb] = t_lspr[thing->sprite];
 
-#if 1
 	dynlights->mo[dynlights->nb] = spr->mobj;
 	P_SetTarget(&dynlights->mo[dynlights->nb], thing);
-#endif
 
 	if (dynlights->nb >= DL_MAX_LIGHT)
 		dynlights->nb = DL_MAX_LIGHT; // reuse last
