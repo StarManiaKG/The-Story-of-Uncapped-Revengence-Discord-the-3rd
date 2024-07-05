@@ -12,14 +12,12 @@
 /// \brief Discord Rich Presence statuses
 
 #include "discord_cmds.h"
-#include "../doomstat.h"
-#include "../m_cond.h"
+#include "../m_cond.h" // queries about emblems
 #include "../g_game.h"
 #include "../z_zone.h"
-#include "../p_tick.h"
-#include "../r_skins.h"
 
 #include "../STAR/star_vars.h" // TSoURDt3rd struct //
+#include "../STAR/ss_misc.h" // STAR_M_RemoveStringChars() //
 
 #ifdef HAVE_DISCORDSUPPORT
 
@@ -33,40 +31,53 @@ typedef struct
 	const char *duoname;
 	boolean super;
 	boolean superduo;
-	const char *superduoname;
 } DRPC_Chars_t;
 
+static const char *imageType[] = {
+	"char",
+	"cont",
+	"life",
+
+	"charsuper",
+	"contsuper",
+	"lifesuper",
+
+	"map",
+	"misc",
+	NULL
+};
+
 static DRPC_Chars_t supportedSkins[] = {
+	{"sonic",          "sonictails",   true,	true}, // Vanilla skins
+	{"tails",          NULL,  		  false,   false},
+	{"knuckles",       NULL,          false,   false},
+	{"amy",            NULL,          false,   false},
+	{"fang",           NULL,          false,   false},
+	{"metalsonic",     NULL,          false,   false},
+
+	{"adventuresonic", NULL,          false,   false}, // Custom skins
+	{"shadow",         NULL,          false,   false},
+	{"skip",           NULL,          false,   false},
+	{"jana",           NULL,          false,   false},
+	{"surge",          NULL,          false,   false},
+	{"cacee",          NULL,          false,   false},
+	{"milne",          NULL,          false,   false},
+	{"maimy",          NULL,          false,   false},
+	{"mario",          NULL,          false,   false},
+	{"luigi",          NULL,          false,   false},
+	{"blaze",          NULL,          false,   false},
+	{"marine",         NULL,          false,   false},
+	{"tailsdoll",      NULL,          false,   false},
+	{"metalknuckles",  NULL,          false,   false},
+	{"whisper",        NULL,          false,   false},
+
+	{"hexhog",         NULL,          false,   false}, // Skins I've made
+
+	{"smiles",         NULL,          false,   false}, // Friend's skins
+	{"speccy",         NULL,          false,   false},
+
+	{NULL,             NULL,          false,   false}, // DRPC CHARS END!
 	//"custom",		// ...Does ghost sonic count as a vanilla char? Maybe.
-	{"sonic",          "sonictails",   true,	true,     "supersonictails"}, // Vanilla skins
-	{"tails",          NULL,  		  false,   false,                  NULL},
-	{"knuckles",       NULL,          false,   false,                  NULL},
-	{"amy",            NULL,          false,   false,                  NULL},
-	{"fang",           NULL,          false,   false,                  NULL},
-	{"metalsonic",     NULL,          false,   false,                  NULL},
-
-	{"adventuresonic", NULL,          false,   false,                  NULL}, // Custom skins
-	{"shadow",         NULL,          false,   false,                  NULL},
-	{"skip",           NULL,          false,   false,                  NULL},
-	{"jana",           NULL,          false,   false,                  NULL},
-	{"surge",          NULL,          false,   false,                  NULL},
-	{"cacee",          NULL,          false,   false,                  NULL},
-	{"milne",          NULL,          false,   false,                  NULL},
-	{"maimy",          NULL,          false,   false,                  NULL},
-	{"mario",          NULL,          false,   false,                  NULL},
-	{"luigi",          NULL,          false,   false,                  NULL},
-	{"blaze",          NULL,          false,   false,                  NULL},
-	{"marine",         NULL,          false,   false,                  NULL},
-	{"tailsdoll",      NULL,          false,   false,                  NULL},
-	{"metalknuckles",  NULL,          false,   false,                  NULL},
-	{"whisper",        NULL,          false,   false,                  NULL},
-
-	{"hexhog",         NULL,          false,   false,                  NULL}, // My skins
-
-	{"smiles",         NULL,          false,   false,                  NULL}, // Friend's skins
-	{"speccy",         NULL,          false,   false,                  NULL},
-
-	{NULL,             NULL,          false,   false,                  NULL}, // DRPC CHARS END!
 };
 
 static const char *supportedMaps[] = {
@@ -123,7 +134,7 @@ static const char *supportedMaps[] = {
 	"72",
 	"73",
 
-	[280] = "f0", // Match, Team Match, H&S, & Tag Stages
+	[280] = "f0", // CTF Stages
 	"f1",
 	"f2",
 	"f3",
@@ -133,7 +144,7 @@ static const char *supportedMaps[] = {
 	"f7",
 	"f8",
 
-	[532] = "m0", // CTF Stages
+	[532] = "m0", // Match, Team Match, H&S, & Tag Stages
 	"m1",
 	"m2",
 	"m3",
@@ -148,8 +159,42 @@ static const char *supportedMaps[] = {
 
 	[1000] = "z0", // Tutorial Zone
 
-	[10000] = "custom", // Custom Map
+	[10000] = "custom",
+	NULL
+};
 
+static const char *supportedMiscs[] = {
+	"title",
+
+	"intro1",
+	"intro2",
+	"intro3",
+	"intro4",
+	"intro5",
+	"intro6",
+	"intro7",
+	"intro8",
+
+	"altsonicimage1",
+	"altsonicimage2",
+	"altsonicimage3",
+	"altsonicimage4",
+	"altsonicimage5",
+
+	"alttailsimage1",
+	"alttailsimage2",
+
+	"altknucklesimage1",
+	"altknucklesimage2",
+
+	"altamyimage1",
+
+	"altfangimage1",
+
+	"altmetalsonicimage1",
+	"altmetalsonicimage2",
+
+	"alteggmanimage1",
 	NULL
 };
 
@@ -175,6 +220,8 @@ void DRPC_StringPrintf(char *main, const char *sep, size_t size, const char *str
 	if ((sep && *sep != '\0') && (main && *main != '\0' && main[strlen(main)-1] != '\0'))
 		strlcat(main, sep, size); // Give up your children, seperate
 
+	if (!main)
+		return;
 	if (!string || *string == '\0')
 		return;
 
@@ -182,10 +229,10 @@ void DRPC_StringPrintf(char *main, const char *sep, size_t size, const char *str
 	vsnprintf(txt, size, string, argptr);
 	va_end(argptr);
 
-	if (!main || *main == '\0' || (main && main[strlen(main)-1] == '\0'))
-		snprintf(main, size, "%s", txt);
-	else
-		strlcat(main, txt, size);
+	if (*txt == '\0')
+		return;
+
+	strlcat(main, txt, size);
 }
 
 /*--------------------------------------------------
@@ -199,6 +246,8 @@ void DRPC_ImagePrintf(char *string, size_t size, const char *sep, const char *im
 	va_list argptr;
 	char txt[size];
 
+	if (!string)
+		return;
 	if (!sep || *sep == '\0')
 		return;
 	if (!image || *image == '\0')
@@ -208,12 +257,142 @@ void DRPC_ImagePrintf(char *string, size_t size, const char *sep, const char *im
 	vsnprintf(txt, size, image, argptr);
 	va_end(argptr);
 
+	if (*txt == '\0')
+		return;
+
 	snprintf(string, size, "%s%s", sep, txt);
 }
 
 // ========
 // STATUSES
 // ========
+
+/*--------------------------------------------------
+	void DRPC_GeneralStatus(char *string, char *image, char *imagestr)
+
+		Applies a Discord Rich Presence status, related to general details,
+		to the given string.
+--------------------------------------------------*/
+void DRPC_GeneralStatus(char *string, char *image, char *imagestr)
+{
+	DRPC_ImagePrintf(image, 128, "misc", "title");
+
+	if (Playing())
+		return;
+
+	if (gamestate == GS_TIMEATTACK)
+	{
+		if (TSoURDt3rdPlayers[consoleplayer].gamestate == STAR_GS_NIGHTSMENU)
+		{
+			DRPC_ImagePrintf(image, 128, "misc", "nights");
+			DRPC_StringPrintf(imagestr, NULL, 128, "NiGHTs Attack");
+			DRPC_StringPrintf(string, NULL, 128, "Menu: NiGHTs Attack");
+		}
+		else if (marathonmode)
+		{
+			DRPC_ImagePrintf(image, 128, "misc", "record");
+			DRPC_StringPrintf(imagestr, NULL, 128, "Marathon Mode");
+			DRPC_StringPrintf(string, NULL, 128, "Menu: Marathon Mode");
+		}
+		else
+		{
+			DRPC_ImagePrintf(image, 128, "misc", "record");
+			DRPC_StringPrintf(imagestr, NULL, 128, "Time Attack");
+			DRPC_StringPrintf(string, NULL, 128, "Menu: Time Attack");
+		}
+	}
+	else if (demoplayback || titledemo)
+	{
+		if (!titledemo)
+			DRPC_StringPrintf(string, NULL, 128, "Watching a Replay");
+		else
+			DRPC_StringPrintf(string, NULL, 128, "Watching a Demo");
+	}
+	else if (gamestate == GS_TITLESCREEN)
+	{
+		DRPC_StringPrintf(imagestr, NULL, 128, "Title Screen");
+		DRPC_StringPrintf(string, NULL, 128, "Title Screen");
+		if (menuactive)
+			DRPC_StringPrintf(string, " | ", 128, "Main Menu");
+	}
+	else if (gamestate == GS_NULL)
+	{
+		DRPC_ImagePrintf(image, 128, "misc", "missing");
+		DRPC_StringPrintf(imagestr, NULL, 128, "Sonic Robo Blast 2....?");
+		DRPC_StringPrintf(string, NULL, 128, "Loading... Loading... Loading???");
+	}
+}
+
+/*--------------------------------------------------
+	void DRPC_ExtendedStatus(char *string)
+
+		Applies a Discord Rich Presence status, related to extended status details,
+		to the given string.
+--------------------------------------------------*/
+void DRPC_ExtendedStatus(char *string)
+{
+	if (Playing())
+	{
+		if (ultimatemode)
+			DRPC_StringPrintf(string, NULL, 128, "Ultimate");
+		else if (splitscreen)
+			DRPC_StringPrintf(string, NULL, 128, "Splitscreen");
+
+		if (modeattacking)
+		{
+			if (maptol == TOL_NIGHTS || maptol == TOL_XMAS)
+				DRPC_StringPrintf(string, " ", 128, "NiGHTS Mode");
+			else
+				DRPC_StringPrintf(string, " ", 128, "Time Attack");
+		}
+		else
+		{
+			if (gametype == GT_COOP && !netgame)
+				DRPC_StringPrintf(string, " ", 128, "Singleplayer");
+			else
+				DRPC_StringPrintf(string, " ", 128, gametype_cons_t[gametype].strvalue);
+
+			if (!players[consoleplayer].spectator && gametyperules & GTR_LIVES)
+			{
+				if (!players[consoleplayer].lives)
+					DRPC_StringPrintf(string, " | ", 128, "Game Over...");
+				else if (players[consoleplayer].lives == INFLIVES || (!cv_cooplives.value && (netgame || multiplayer)))
+					DRPC_StringPrintf(string, " | ", 128, "∞ Lives");
+				else
+					DRPC_StringPrintf(string, " | ", 128, (players[consoleplayer].lives == 1 ? "%d Life" : "%d Lives"), players[consoleplayer].lives);
+			}
+			else if (TSoURDt3rdPlayers[consoleplayer].timeOver)
+				DRPC_StringPrintf(string, " | ", 128, "Time Over...");
+
+			if (players[consoleplayer].spectator && displayplayer == consoleplayer)
+			{
+				DRPC_StringPrintf(string, " | ", 128, "Spectat");
+				if (cv_discordstatusmemes.value)
+					DRPC_StringPrintf(string, "ing ", 128, "Air");
+				else
+					DRPC_StringPrintf(string, "or ", 128, "mode");
+			}
+			else if (displayplayer != consoleplayer)
+			{
+				if (cv_discordstatusmemes.value)
+					DRPC_StringPrintf(string, " | ", 128, "Stalking");
+				else
+					DRPC_StringPrintf(string, " | ", 128, "Spectating");
+				DRPC_StringPrintf(string, " ", 128, "'%s'", player_names[displayplayer]);
+			}
+		}
+
+		if (menuactive)
+			DRPC_StringPrintf(string, " | ", 128, "In Menu");
+		else if (paused)
+			DRPC_StringPrintf(string, " | ", 128, "Paused");
+		if (gamecomplete)
+			DRPC_StringPrintf(string, " | ", 128, "Game Complete!");
+	}
+
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack)
+		DRPC_StringPrintf(string, " | ", 128, "Jukebox: '%s'", TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack->title);
+}
 
 /*--------------------------------------------------
 	void DRPC_ScoreStatus(char *string)
@@ -224,11 +403,8 @@ void DRPC_ImagePrintf(char *string, size_t size, const char *sep, const char *im
 void DRPC_ScoreStatus(char *string)
 {
 	if (!(playeringame[consoleplayer] && !demoplayback))
-	{
-		DRPC_StringPrintf(string, " | ", 128, "Title Screen");
 		return;
-	}
-	DRPC_StringPrintf(string, "; ", 128, "Current Score: %d", players[consoleplayer].score);
+	DRPC_StringPrintf(string, " | ", 128, "Current Score: %d", players[consoleplayer].score);
 }
 
 /*--------------------------------------------------
@@ -239,8 +415,16 @@ void DRPC_ScoreStatus(char *string)
 --------------------------------------------------*/
 void DRPC_EmblemStatus(char *string)
 {
+	if (!(numemblems + numextraemblems))
+	{
+		DRPC_StringPrintf(string, " | ", 128, "No Emblems Available");
+		if (cv_discordstatusmemes.value)
+			DRPC_StringPrintf(string, " ", 128, "(Ha, NO EMBLEMS?)");
+		return;
+	}
+
 	DRPC_StringPrintf(string, " | ", 128, "%d/%d Emblems",
-		M_CountEmblems(serverGamedata),
+		M_CountEmblems(clientGamedata),
 		(numemblems + numextraemblems));
 }
 
@@ -252,28 +436,43 @@ void DRPC_EmblemStatus(char *string)
 --------------------------------------------------*/
 void DRPC_EmeraldStatus(char *string)
 {
+	UINT8 i;
+
 	UINT16 emerald_type = (gametyperules & GTR_POWERSTONES ? players[consoleplayer].powers[pw_emeralds] : emeralds);
 	UINT8 emerald_count = 0; // Help me find the emouralds!
 
-	DRPC_StringPrintf(string, " | ", 128, NULL);
-	if (modeattacking)
-		DRPC_StringPrintf(string, NULL, 128, "Time-Attacking; ");
-	else if (!Playing() && !titledemo && !demoplayback)
-		DRPC_StringPrintf(string, NULL, 128, "Title Screen; ");
-	else
-	{	// Emerald math, provided by Monster Iestyn and Uncapped Plus' Fafabis :)
-		for (UINT8 i = 0; i < 7; i++)
-		{
-			if ((gametyperules & GTR_POWERSTONES) && !all7matchemeralds)
-				break;
-			if (all7matchemeralds)
-			{
-				emerald_count = 7;
-				break;
-			}
+	UINT16 match_emeralds[3] = { 0, 0, 0 };
+	static tic_t emerald_time;
 
+	DRPC_StringPrintf(string, " | ", 128, NULL);
+
+	// Emerald math //
+	// Provided by Monster Iestyn and Uncapped Plus' Fafabis :)
+	if (!modeattacking)
+	{
+		for (i = 0; i < 7; i++)
+		{
 			if (emerald_type & 1<<i)
 				emerald_count++;
+		}
+
+		if (gametyperules & GTR_POWERSTONES)
+		{
+			if (G_GametypeHasTeams())
+			{
+				for (i = 0; i >= MAXPLAYERS; i++)
+				{
+					if (!playeringame[i] || players[i].spectator)
+						continue;
+					match_emeralds[players[consoleplayer].ctfteam] |= players[i].powers[pw_emeralds];
+				}
+			}
+
+			if (ALL7EMERALDS(match_emeralds[players[consoleplayer].ctfteam]) || ALL7EMERALDS(emerald_type))
+				emerald_time = 20*TICRATE;
+
+			if (--emerald_time > 0)
+				emerald_count = 7;
 		}
 	}
 
@@ -321,7 +520,7 @@ void DRPC_EmeraldStatus(char *string)
 			break;
 		}
 
-		default:
+		default: // Normal
 		{
 			if (!cv_discordstatusmemes.value)
 				return;
@@ -364,30 +563,32 @@ void DRPC_GamestateStatus(char *string, char *image, char *imagestr)
 		{
 			char *maptitle = NULL;
 
-			if (!G_BuildMapName(gamemap) || mapheaderinfo[gamemap-1]->menuflags & LF2_HIDEINMENU)
-			{
-				DRPC_ImagePrintf(image, 128, "misc", "missing");
-				DRPC_StringPrintf(imagestr, " | ", 128, "???");
-				break;
-			}
-
 			if (gamestate == GS_TITLESCREEN || gamemap == titlemap)
 			{
-				DRPC_ImagePrintf(image, 128, "misc", "title");
-				if (!(Playing() && playeringame[consoleplayer]))
-					DRPC_StringPrintf(imagestr, NULL, 128, "Title Screen");
-				else
+				if (Playing() && playeringame[consoleplayer])
+				{
+					DRPC_ImagePrintf(image, 128, "misc", "titlefake");
 					DRPC_StringPrintf(imagestr, NULL, 128, "Hey y'all, Star here! What is wrong with this user?");
+				}
+				else
+					DRPC_ImagePrintf(image, 128, "misc", "title");
 			}
 			else
 			{
+				if (!G_BuildMapName(gamemap) || mapheaderinfo[gamemap-1]->menuflags & LF2_HIDEINMENU)
+				{
+					DRPC_ImagePrintf(image, 128, "misc", "missing");
+					DRPC_StringPrintf(imagestr, " | ", 128, "???");
+					break;
+				}
+
 				if (supportedMaps[gamemap])
-					DRPC_ImagePrintf(image, 128, "map", supportedMaps[gamemap]);					
+					DRPC_ImagePrintf(image, 128, "map", supportedMaps[gamemap]);			
 				else
 					DRPC_ImagePrintf(image, 128, "map", "custom");
 
 				maptitle = G_BuildMapTitle(gamemap);
-				DRPC_StringPrintf(imagestr, NULL, 128, maptitle);
+				DRPC_StringPrintf(imagestr, " | ", 128, maptitle);
 				Z_Free(maptitle);
 			}
 
@@ -446,46 +647,35 @@ void DRPC_GamestateStatus(char *string, char *image, char *imagestr)
 		}
 
 		default:
-		{
-			DRPC_ImagePrintf(image, 128, "misc", "missing");
-			DRPC_StringPrintf(imagestr, NULL, 128, "Sonic Robo Blast 2....?");
-			DRPC_StringPrintf(string, " | ", 128, "Loading... Loading... Loading???");
 			break;
-		}
 	}
 }
 
 /*--------------------------------------------------
-	void DRPC_CharacterStatus(char *string, char *charimg, char *s_charimg, char *charname, char *s_charname)
+	void DRPC_CharacterStatus(char *charimg, char *charname, char *s_charimg, char *s_charname)
 
 		Applies a Discord Rich Presence status, related to levels, to
 		the given string.
 --------------------------------------------------*/
-void DRPC_CharacterStatus(char *string, char *charimg, char *s_charimg, char *charname, char *s_charname)
+void DRPC_CharacterStatus(char *charimg, char *charname, char *s_charimg, char *s_charname)
 {
 	DRPC_Chars_t *g_discord_mainChar = NULL;
-	static const char *imageType[] = { "char", "cont", "life" };
+
+	char *g_discord_fill_image = ((!charimg || *charimg == '\0') ? charimg : s_charimg);
+	char *g_discord_fill_string = ((!charname || *charname == '\0') ? charname : s_charname);
 
 	const char *player_skin[] = { NULL, NULL, NULL, NULL };
 	const char *player_skin_realname[] = { NULL, NULL, NULL, NULL };
 
-	char duo_skin[64];
+	char duo_skin[64] = "";
+	char super_duo_skin[64] = "";
 
-	boolean g_discord_fillstatus = (!charimg || *charimg == '\0');
 	size_t g_discord_skins = 0;
 	INT32 g_discord_players;
 	INT32 g_discord_player_slot = 0;
 
-	if (!Playing() || !playeringame[consoleplayer])
-	{
-		DRPC_StringPrintf(string, " | ", 128, "Not In-Game");
+	if ((!Playing() || !playeringame[consoleplayer] || players[consoleplayer].spectator) && !demoplayback)
 		return;
-	}
-	else if (players[consoleplayer].spectator)
-	{
-		DRPC_StringPrintf(string, " | ", 128, "Spectating");
-		return;
-	}
 
 	// Find character names and supported character images //
 	for (g_discord_players = consoleplayer; !player_skin[g_discord_player_slot]; g_discord_players++, g_discord_player_slot++)
@@ -529,48 +719,60 @@ void DRPC_CharacterStatus(char *string, char *charimg, char *s_charimg, char *ch
 				g_discord_mainChar = &supportedSkins[g_discord_skins]; // Allow for dynamic duos!
 			continue;
 		}
-		DRPC_ImagePrintf(duo_skin, 64, player_skin[0], player_skin[1]);
+		snprintf(duo_skin, 64, "%s%s", player_skin[0], player_skin[1]);
+		snprintf(duo_skin, 64, "super%s", g_discord_mainChar->duoname);
 
 		if (players[consoleplayer].powers[pw_super] || skin_copy)
 		{
 			if (g_discord_mainChar->super && !g_discord_mainChar->superduo)
 				*duo_skin = *duo_skin + 5; // removes super
-			else if (!strcmp(duo_skin, g_discord_mainChar->superduoname))
-				continue; // Allow for super duos!
+			else if (!strcmp(duo_skin, super_duo_skin))
+			{
+				// Allow for super duos!
+				snprintf(duo_skin, 64, "%s", super_duo_skin);
+				continue;
+			}
 		}
 
 		if (!strcmp(duo_skin, g_discord_mainChar->duoname))
 			continue; // Apply our regular dynamic duo!
 
-		g_discord_mainChar = NULL; // No duo found... 
+		g_discord_mainChar = NULL; // No duo found...
 	}
 
 	// Apply character images and names //
-	if (g_discord_mainChar && *duo_skin != '\0' && !splitscreen)
+	if (g_discord_mainChar && !splitscreen)
 	{
 		// Apply our duo image, plus others
-		if (g_discord_fillstatus && player_skin[2])
-			DRPC_ImagePrintf(s_charimg, 128, imageType[cv_discordcharacterimagetype.value], player_skin[2]);
-		DRPC_ImagePrintf((g_discord_fillstatus ? charimg : s_charimg), 128, imageType[cv_discordcharacterimagetype.value], duo_skin);
+		if ((g_discord_fill_image && *g_discord_fill_image != '\0') && player_skin[2])
+			DRPC_ImagePrintf(g_discord_fill_image, 128, imageType[cv_discordcharacterimagetype.value], player_skin[2]);
+		DRPC_ImagePrintf(g_discord_fill_image, 128, imageType[cv_discordcharacterimagetype.value], duo_skin);
 
-		DRPC_StringPrintf((g_discord_fillstatus ? charname : s_charname), NULL, 128, "Playing as: %s & %s", player_skin_realname[0], player_skin_realname[1]);
+		if (!demoplayback)
+			DRPC_StringPrintf(g_discord_fill_string, " | ", 128, "Playing as: %s & %s", player_skin_realname[0], player_skin_realname[1]);
+		else
+			DRPC_StringPrintf(g_discord_fill_string, " | ", 128, "Demo: %s & %s", player_skin_realname[0], player_skin_realname[1]);
 	}
 	else
 	{
 		// Apply our main images, plus others
-		if (g_discord_fillstatus && player_skin[1])
-			DRPC_ImagePrintf(s_charimg, 128, imageType[cv_discordcharacterimagetype.value], player_skin[1]);
-		DRPC_ImagePrintf((g_discord_fillstatus ? charimg : s_charimg), 128, imageType[cv_discordcharacterimagetype.value], player_skin[0]);
+		if ((g_discord_fill_image && *g_discord_fill_image != '\0') && player_skin[1])
+			DRPC_ImagePrintf(g_discord_fill_image, 128, imageType[cv_discordcharacterimagetype.value], player_skin[1]);
+		DRPC_ImagePrintf(g_discord_fill_image, 128, imageType[cv_discordcharacterimagetype.value], player_skin[0]);
 
-		DRPC_StringPrintf((g_discord_fillstatus ? charname : s_charname), NULL, 128, "Playing as: %s", player_skin_realname[0]);
+		if (!demoplayback)
+			DRPC_StringPrintf(g_discord_fill_string, " | ", 128, "Playing as: %s", player_skin_realname[0]);
+		else
+			DRPC_StringPrintf(g_discord_fill_string, " | ", 128, "Demo: %s", player_skin_realname[0]);
+
 		if (player_skin_realname[1])
-			DRPC_StringPrintf(s_charname, NULL, 128, " & %s", player_skin_realname[1]);
+			DRPC_StringPrintf((demoplayback ? g_discord_fill_string : s_charname), NULL, 128, " & %s", player_skin_realname[1]);
 	}
 
 	if (player_skin_realname[2])
-		DRPC_StringPrintf(s_charname, NULL, 128, " & %s", player_skin_realname[2]);
+		DRPC_StringPrintf((demoplayback ? g_discord_fill_string : s_charname), NULL, 128, " & %s", player_skin_realname[2]);
 	if (player_skin_realname[3])
-		DRPC_StringPrintf(s_charname, " + ", 128, "Others");
+		DRPC_StringPrintf((demoplayback ? g_discord_fill_string : s_charname), " + ", 128, "Others");
 }
 
 /*--------------------------------------------------
@@ -581,76 +783,89 @@ void DRPC_CharacterStatus(char *string, char *charimg, char *s_charimg, char *ch
 --------------------------------------------------*/
 void DRPC_PlaytimeStatus(char *string)
 {
-	DRPC_StringPrintf(string, NULL, 128, "Total Playtime: %d Hours, %d Minutes, and %d Seconds",
-		G_TicsToHours(serverGamedata->totalplaytime),
-		G_TicsToMinutes(serverGamedata->totalplaytime, false),
-		G_TicsToSeconds(serverGamedata->totalplaytime));
+	DRPC_StringPrintf(string, " | ", 128, "Total Playtime: %d Hours, %d Minutes, and %d Seconds",
+		G_TicsToHours(clientGamedata->totalplaytime),
+		G_TicsToMinutes(clientGamedata->totalplaytime, false),
+		G_TicsToSeconds(clientGamedata->totalplaytime));
 }
 
 /*--------------------------------------------------
-	void DRPC_CustomStatus(char *detailstr, char *statestr)
+	void DRPC_CustomStatus(char *detailstr, char *statestr, char *image, char *imagestr, char *s_image, char *s_imagestr)
 
 		Using the customizable custom discord status commands, this applies
 		a Discord Rich Presence status to the given string.
 --------------------------------------------------*/
-#include "../m_menu.h"
-void DRPC_CustomStatus(char *detailstr, char *statestr)
+void DRPC_CustomStatus(char *detailstr, char *statestr, char *image, char *imagestr, char *s_image, char *s_imagestr)
 {
-#if 1
-	(void)detailstr;
-	(void)statestr;
-#else
-	// Error Out if the String is Less Than Two Letters Long //
-	// MAJOR STAR NOTE: please come back to this and flesh it out more lol //
-	if (strlen(cv_customdiscorddetails.string) <= 2 || strlen(cv_customdiscordstate.string) <= 2 || strlen(cv_customdiscordsmallimagetext.string) <= 2 || strlen(cv_customdiscordlargeimagetext.string) <= 2)
+	const char *image_index[] = { NULL, NULL };
+
+	INT32 custom_cvartype_index[] = { cv_discordcustom_imagetype_large.value, cv_discordcustom_imagetype_small.value };
+	consvar_t *custom_cvar_index[2][4] = {
+		[0] = {
+			&cv_discordcustom_characterimage_large,
+			&cv_discordcustom_supercharacterimage_large,
+			&cv_discordcustom_mapimage_large,
+			&cv_discordcustom_miscimage_large,
+		},
+		[1] = {
+			&cv_discordcustom_characterimage_small,
+			&cv_discordcustom_supercharacterimage_small,
+			&cv_discordcustom_mapimage_small,
+			&cv_discordcustom_miscimage_small,
+		},
+	};
+
+	// Determine custom images //
+	for (UINT16 i = 0; !image_index[i]; i++)
 	{
-		STAR_M_StartMessage("Custom Discord RPC String Too Short", "Sorry, Discord RPC requires Strings to be longer than two characters.\n\nResetting strings with less than two letters back to defaults.\n\n(Press a key)\n",NULL,MM_NOTHING);
-		S_StartSound(NULL, sfx_skid);
+		switch (custom_cvartype_index[i])
+		{
+			case 0: // Non-Super
+			case 1:
+			case 2:
+			case 3: // Super
+			case 4:
+			case 5:
+				INT32 char_index = (custom_cvartype_index[i] > 2);
+				char discord_char_skin[128] = "";
 
-		if (strlen(cv_customdiscorddetails.string) <= 2)
-			CV_Set(&cv_customdiscorddetails, cv_customdiscorddetails.defaultvalue);
-		if (strlen(cv_customdiscordstate.string) <= 2)
-			CV_Set(&cv_customdiscordstate, cv_customdiscordstate.defaultvalue);
+				sprintf(discord_char_skin, "%s", custom_cvar_index[i][char_index]->string); // converts string to char pointer
+				strlwr(STAR_M_RemoveStringChars(discord_char_skin, " &")); // removes cases, spaces, and '&' sign
 
-		if (strlen(cv_customdiscordsmallimagetext.string) <= 2)
-			CV_Set(&cv_customdiscordsmallimagetext, cv_customdiscordsmallimagetext.defaultvalue);
-		if (strlen(cv_customdiscordlargeimagetext.string) <= 2)
-			CV_Set(&cv_customdiscordlargeimagetext, cv_customdiscordlargeimagetext.defaultvalue);
+				for (size_t s = 0; supportedSkins[s].name; s++)
+				{
+					if (supportedSkins[s].duoname && !strcmp(supportedSkins[s].duoname, discord_char_skin))
+					{
+						image_index[i] = supportedSkins[s].duoname;
+						break;
+					}
+					else if (!strcmp(supportedSkins[s].name, discord_char_skin))
+					{
+						image_index[i] = supportedSkins[s].name;
+						break;
+					}
+				}
+				break;
+
+			case 6:
+				image_index[i] = supportedMaps[custom_cvar_index[i][2]->value];
+				break;
+
+			case 7:
+				image_index[i] = supportedMiscs[custom_cvar_index[i][3]->value];
+				break;
+		}
 	}
 
-	// Write the Heading Strings to Discord
-	if (strlen(cv_customdiscorddetails.string) > 2)
-		strcpy(detailstr, cv_customdiscorddetails.string);
-	if (strlen(cv_customdiscordstate.string) > 2)
-		strcpy(statestr, cv_customdiscordstate.string);
+	// Push our custom status! :) //
+	DRPC_StringPrintf(detailstr, NULL, 128, cv_discordcustom_details.string);
+	DRPC_StringPrintf(statestr, NULL, 128, cv_discordcustom_state.string);
 
-	// Write The Images and Their Text to Discord //
-	// Small Images
-	if (cv_customdiscordsmallimagetype.value != 8)
-	{
-		strcpy(customSImage, va("%s%s", customStringType[cv_customdiscordsmallimagetype.value],
-			(cv_customdiscordsmallimagetype.value <= 2 ? supportedSkins[cv_customdiscordsmallcharacterimage.value] :
-			((cv_customdiscordsmallimagetype.value >= 3 && cv_customdiscordsmallimagetype.value <= 5) ? supportedSuperSkins[cv_customdiscordsmallsupercharacterimage.value] :
-			(cv_customdiscordsmallimagetype.value == 6 ? supportedMaps[cv_customdiscordsmallmapimage.value] :
-		supportedMiscs[cv_customdiscordsmallmiscimage.value])))));
-	
-		strcpy(simagestr, customSImage);
-		(strlen(cv_customdiscordsmallimagetext.string) > 2 ? strcpy(simagetxtstr, cv_customdiscordsmallimagetext.string) : 0);
-	}
-	
-	// Large Images
-	if (cv_customdiscordlargeimagetype.value != 8)
-	{
-		strcpy(customLImage, va("%s%s", customStringType[cv_customdiscordlargeimagetype.value],
-			(cv_customdiscordlargeimagetype.value <= 2 ? supportedSkins[cv_customdiscordlargecharacterimage.value] :
-			((cv_customdiscordlargeimagetype.value >= 3 && cv_customdiscordlargeimagetype.value <= 5) ? supportedSuperSkins[cv_customdiscordlargesupercharacterimage.value] :
-			(cv_customdiscordlargeimagetype.value == 6 ? supportedMaps[cv_customdiscordlargemapimage.value] :
-		supportedMiscs[cv_customdiscordlargemiscimage.value])))));
+	DRPC_ImagePrintf(image, 64, imageType[custom_cvartype_index[0]], image_index[0]);
+	DRPC_StringPrintf(imagestr, NULL, 128, cv_discordcustom_imagetext_large.string);
 
-		strcpy(imagestr, customLImage);
-		(strlen(cv_customdiscordlargeimagetext.string) > 2 ? strcpy(imagetxtstr, cv_customdiscordlargeimagetext.string) : 0);
-	}
-#endif
+	DRPC_ImagePrintf(s_image, 64, imageType[custom_cvartype_index[1]], image_index[1]);
+	DRPC_StringPrintf(s_imagestr, NULL, 128, cv_discordcustom_imagetext_small.string);
 }
 
 #endif // HAVE_DISCORDSUPPORT

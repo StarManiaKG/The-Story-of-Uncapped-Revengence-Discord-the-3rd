@@ -19,6 +19,7 @@ extern consvar_t cv_aprilfools_ultimatemode;
 // GAME
 // ====
 
+extern consvar_t cv_stjrintro;
 extern consvar_t cv_tpsrate;
 extern consvar_t cv_menucolor, cv_fpscountercolor, cv_tpscountercolor;
 extern consvar_t cv_storesavesinfolders;

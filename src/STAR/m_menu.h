@@ -145,6 +145,8 @@ extern UINT8 skyRoomMenuTranslations[MAXUNLOCKABLES];
 extern menu_t OP_MainDef;
 extern menuitem_t MainMenu[];
 
+extern menuitem_t SP_MainMenu[];
+
 extern menuitem_t MPauseMenu[];
 extern menu_t MPauseDef;
 extern menuitem_t SPauseMenu[];
@@ -159,10 +161,17 @@ extern menu_t OP_TSoURDt3rdOptionsDef, OP_TSoURDt3rdJukeboxDef, OP_Tsourdt3rdJuk
 extern menuitem_t OP_Tsourdt3rdOptionsMenu[];
 
 extern menuitem_t defaultMenuTitles[256][256];
+extern gtdesc_t defaultGametypeTitles[NUMGAMETYPES];
 
 // ------------------------ //
 //        Functions
 // ------------------------ //
+
+// ========
+// HANDLERS
+// ========
+
+void TSoURDt3rd_M_HandleTyping(INT32 choice, size_t cachelen, consvar_t *cvar, boolean (*closeroutine)(void), void (*abortroutine)(void));
 
 // =======
 // DRAWING
@@ -179,6 +188,8 @@ void K_DrawSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isSmall);
 
 void M_NextOpt(void);
 void M_PrevOpt(void);
+
+void M_GoBack(INT32 choice);
 
 void M_DrawGenericMenu(void);
 void M_DrawGenericScrollMenu(void);

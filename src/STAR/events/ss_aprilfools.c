@@ -23,72 +23,16 @@
 //        Variables
 // ------------------------ //
 
-enum
-{
-	singleplr = 0,
-	multiplr,
-	secrets,
-	addons,
-	options,
-	quitdoom,
-
-	tsourdt3rdreadme
-};
-
-enum
-{
-	mpause_addons = 0,
-	mpause_scramble,
-	mpause_hints,
-	mpause_switchmap,
-
-#ifdef HAVE_DISCORDRPC
-	mpause_discordrequests, // DISCORD STUFFS: requesting to spam your inbox please //
-#endif
-
-	mpause_continue,
-	mpause_psetupsplit,
-	mpause_psetupsplit2,
-	mpause_spectate,
-	mpause_entergame,
-	mpause_switchteam,
-	mpause_psetup,
-	mpause_options,
-
-	mpause_title,
-	mpause_quit
-};
-
-enum
-{
-	spause_addons = 0,
-
-	spause_pandora,
-	spause_hints,
-	spause_levelselect,
-
-	spause_continue,
-	spause_retry,
-	spause_options,
-
-	spause_title,
-	spause_quit
-};
-
 static void STAR_AprilFools_OnChange(void);
-
-// ------------------------ //
-//        Commands
-// ------------------------ //
-
 consvar_t cv_aprilfools_ultimatemode = CVAR_INIT ("aprilfools_ultimatemode", "Off", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, STAR_AprilFools_OnChange);
 
 // ------------------------ //
 //        Functions
 // ------------------------ //
 
+//
 // boolean TSoURDt3rd_InAprilFoolsMode(void)
-// Checks If TSoURDt3rd is in April Fools Mode, and Returns True if so
+// Returns whether or not TSoURDt3rd is in April Fools Mode.
 //
 boolean TSoURDt3rd_InAprilFoolsMode(void)
 {
@@ -97,78 +41,89 @@ boolean TSoURDt3rd_InAprilFoolsMode(void)
 
 static void STAR_AprilFools_ChangeMenus(void)
 {
+	INT32 menu = 1;
+
 	if (!aprilfoolsmode)
 		return;
 
 	if (menuactive)
+	{
+		M_ClearMenus(true);
 		D_StartTitle();
-	M_ClearMenus(true);
-
+	}
 	if (demoplayback && titledemo)
 		G_CheckDemoStatus();
 
-	OP_Tsourdt3rdOptionsMenu[op_isitcalledsingleplayer].status =
-		(!cv_aprilfools_ultimatemode.value ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
-
-	if (cv_aprilfools_ultimatemode.value)
+	if (!cv_aprilfools_ultimatemode.value)
 	{
-		// Main Menu //
-		MainMenu[singleplr].text				= "No Friends Mode";
-		MainMenu[multiplr].text					= "The Friend Zone";
-		MainMenu[secrets].text					= "More Stuff";
-		MainMenu[addons].text					= "Mods";
-		MainMenu[options].text					= "Settings";
-		MainMenu[quitdoom].text					= "EXIT TO DOS";
+		OP_Tsourdt3rdOptionsMenu[op_isitcalledsingleplayer].status = IT_CVAR|IT_STRING;
+		memmove(&gametypedesc, &defaultGametypeTitles, sizeof(gtdesc_t)); // Gametypes
 
-		MainMenu[tsourdt3rdreadme].text 		= "DOOM EASTER EGG THING!";
+		memmove(&MainMenu, &defaultMenuTitles[menu++], sizeof(menuitem_t)); // Main Menu
+		memmove(&SP_MainMenu, &defaultMenuTitles[menu++], sizeof(menuitem_t)); // SP Main Menu
+		memmove(&MPauseMenu, &defaultMenuTitles[menu++], sizeof(menuitem_t)); // MP Pause
+		memmove(&SPauseMenu, &defaultMenuTitles[menu++], sizeof(menuitem_t)); // SP Pause
 
-		// Multiplayer Pause Menu //
-		MPauseMenu[mpause_addons].text			= "Plugins...";
-		MPauseMenu[mpause_scramble].text		= "Scramble Groups...";
-		MPauseMenu[mpause_hints].text			= SPauseMenu[spause_hints].text;
-		MPauseMenu[mpause_switchmap].text		= "Can We Play Tag?";
-
-#ifdef HAVE_DISCORDRPC
-		MPauseMenu[mpause_discordrequests].text	= "Facebook Requests..."; // DISCORD STUFFS: set the request menu text please //
-#endif
-
-		MPauseMenu[mpause_continue].text		= "Keep Going";
-
-		MPauseMenu[mpause_psetupsplit].text		= "Pet 1 Setup";
-		MPauseMenu[mpause_psetupsplit2].text	= "Pet 2 Setup";
-
-		MPauseMenu[mpause_spectate].text		= "Watching From The Walls";
-		MPauseMenu[mpause_entergame].text		= "Enter Playground";
-		MPauseMenu[mpause_switchteam].text		= "Join Group...";
-		MPauseMenu[mpause_psetup].text			= "Customise Pet";
-
-		MPauseMenu[mpause_options].text			= MainMenu[options].text;
-
-		MPauseMenu[mpause_title].text			= "Leave Group";
-		MPauseMenu[mpause_quit].text			= MainMenu[quitdoom].text;
-
-		// Single Player Pause Menu //
-		SPauseMenu[spause_addons].text 			= "Mods";
-
-		SPauseMenu[spause_pandora].text			= "Enable Hacks";
-		SPauseMenu[spause_hints].text			= "where are the emblems help";
-		SPauseMenu[spause_levelselect].text		= "What Map??";
-
-		SPauseMenu[spause_continue].text		= "Keep Going";
-		SPauseMenu[spause_retry].text			= "Try Again";
-		SPauseMenu[spause_options].text			= "Settings";
-
-		SPauseMenu[spause_title].text			= "Bored Already";
-		SPauseMenu[spause_quit].text			= MainMenu[quitdoom].text;
-
+		STAR_StoreDefaultMenuStrings();
 		return;
 	}
 
-	memmove(&MainMenu, &defaultMenuTitles[1], sizeof(menuitem_t));		// Main Menu
-	memmove(&MPauseMenu, &defaultMenuTitles[2], sizeof(menuitem_t));	// Multiplayer Pause Menu
-	memmove(&SPauseMenu, &defaultMenuTitles[3], sizeof(menuitem_t));	// Single Player Pause Menu
+	// Gametypes //
+	strcpy(gametypedesc[0].notes, "Hang out with your friends!");
+	strcpy(gametypedesc[1].notes, "Challenge your friends in this epic coding competition!");
+	strcpy(gametypedesc[2].notes, "Mash the thok button until you find the exit sign.");
+	strcpy(gametypedesc[3].notes, "Use your thok to locate targets with a ping higher than yours and keep shooting them with rail rings until they ragequit!");
+	strcpy(gametypedesc[4].notes, "Join the team with the highest score and shoot in random directions until your team wins!");
+	strcpy(gametypedesc[5].notes, "Normally the IT guy is the one being chased, but for some reason it's the opposite in this gametype.");
+	strcpy(gametypedesc[6].notes, "Play PropHunt but without the ability to fuse with your environment!");
+	strcpy(gametypedesc[7].notes, "Join the team with the most points, steal the payload, find a safe spot to hide until your friends bring back your team's payload to the base, then rush to your base!");
 
-	STAR_StoreDefaultMenuStrings();
+	// Menus //
+	// Main Menu
+	MainMenu[0].text						= "No Friends Mode";
+	MainMenu[1].text						= "The Friend Zone";
+	MainMenu[2].text						= "More Stuff";
+	MainMenu[3].text						= "Mods";
+	MainMenu[4].text						= "Settings";
+	MainMenu[5].text						= "EXIT TO DOS";
+	MainMenu[6].text 						= "DOOM EASTER EGG THING!";
+	// SP Main Menu
+	SP_MainMenu[0].text						= "GO!!";
+	SP_MainMenu[1].text 					= "sonic runners";
+	SP_MainMenu[2].text 					= "good night mode";
+	SP_MainMenu[3].text						= "super mario run";
+	SP_MainMenu[4].text						= "how do i jump";
+	SP_MainMenu[5].text						= "are we there yet";
+	// MP Pause
+	MPauseMenu[0].text						= "Plugins...";
+	MPauseMenu[1].text						= "Scramble Groups...";
+	MPauseMenu[2].text						= SPauseMenu[2].text;
+	MPauseMenu[3].text						= "Can We Play Tag?";
+#ifdef HAVE_DISCORDSUPPORT
+	MPauseMenu[4].text						= "Facebook Requests...";
+#endif
+	MPauseMenu[5].text						= "Keep Going";
+	MPauseMenu[6].text						= "Pet 1 Setup";
+	MPauseMenu[7].text						= "Pet 2 Setup";
+	MPauseMenu[8].text						= "Watching From The Walls";
+	MPauseMenu[9].text						= "Enter Playground";
+	MPauseMenu[10].text						= "Join Group...";
+	MPauseMenu[11].text						= "Customise Pet";
+	MPauseMenu[12].text						= MainMenu[4].text;
+	MPauseMenu[13].text						= "Leave Group";
+	MPauseMenu[14].text						= MainMenu[5].text;
+	// SP Pause
+	SPauseMenu[0].text 						= "Mods";
+	SPauseMenu[1].text						= "Enable Hacks";
+	SPauseMenu[2].text						= "where are the emblems help";
+	SPauseMenu[3].text						= "What Map??";
+	SPauseMenu[4].text						= "Keep Going";
+	SPauseMenu[5].text						= "Try Again";
+	SPauseMenu[6].text						= "Settings";
+	SPauseMenu[7].text						= "Bored Already";
+	SPauseMenu[8].text						= MainMenu[5].text;
+
+	OP_Tsourdt3rdOptionsMenu[op_isitcalledsingleplayer].status = IT_GRAYEDOUT;
 }
 
 static void STAR_AprilFools_OnChange(void)

@@ -934,20 +934,26 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_discordstatusmemes);
 	CV_RegisterVar(&cv_discordcharacterimagetype);
 
-	CV_RegisterVar(&cv_customdiscorddetails);
-	CV_RegisterVar(&cv_customdiscordstate);
-	CV_RegisterVar(&cv_customdiscordlargeimagetype);
-    CV_RegisterVar(&cv_customdiscordsmallimagetype);
-	CV_RegisterVar(&cv_customdiscordlargecharacterimage);
-	CV_RegisterVar(&cv_customdiscordsmallcharacterimage);
-	CV_RegisterVar(&cv_customdiscordlargesupercharacterimage);
-	CV_RegisterVar(&cv_customdiscordsmallsupercharacterimage);
-    CV_RegisterVar(&cv_customdiscordlargemapimage);
-    CV_RegisterVar(&cv_customdiscordsmallmapimage);
-    CV_RegisterVar(&cv_customdiscordlargemiscimage);
-    CV_RegisterVar(&cv_customdiscordsmallmiscimage);
-    CV_RegisterVar(&cv_customdiscordlargeimagetext);
-    CV_RegisterVar(&cv_customdiscordsmallimagetext);
+	CV_RegisterVar(&cv_discordcustom_details);
+	CV_RegisterVar(&cv_discordcustom_state);
+
+	CV_RegisterVar(&cv_discordcustom_imagetype_large);
+    CV_RegisterVar(&cv_discordcustom_imagetype_small);
+
+	CV_RegisterVar(&cv_discordcustom_characterimage_large);
+	CV_RegisterVar(&cv_discordcustom_characterimage_small);
+
+	CV_RegisterVar(&cv_discordcustom_supercharacterimage_large);
+	CV_RegisterVar(&cv_discordcustom_supercharacterimage_small);
+
+    CV_RegisterVar(&cv_discordcustom_mapimage_large);
+    CV_RegisterVar(&cv_discordcustom_mapimage_small);
+
+    CV_RegisterVar(&cv_discordcustom_miscimage_large);
+    CV_RegisterVar(&cv_discordcustom_miscimage_small);
+
+    CV_RegisterVar(&cv_discordcustom_imagetext_large);
+    CV_RegisterVar(&cv_discordcustom_imagetext_small);
 #endif
 
 	// CUSTOM FUNNY STAR THINGS :) //

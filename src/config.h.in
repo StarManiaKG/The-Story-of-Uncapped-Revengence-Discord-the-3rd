@@ -85,7 +85,9 @@
  * Last updated 2024 / 04 / 06 - TSOURDT3RD V4 (2.2.13) - coronas: electric boogaloo
  * Last updated 2024 / 06 / 04 - TSOURDT3RD V4 (2.2.13) - minor file restructuring and some Kart Krew graphics were ported over
  * Last updated 2024 / 06 / 08 - TSOURDT3RD V4 (2.2.13) - renamed a tiny graphic
+ * Last updated 2024 / 06 / 25 - TSOURDT3RD V4 (2.2.13) - added some Kart Krew sounds for a cool menu system upgrade
+ * Last updated 2024 / 06 / 25 - TSOURDT3RD V4 (2.2.13) - organized the pk3 and deleted a no-longer-needed menu graphic
 */
-#define ASSET_HASH_TSOURDT3RD_PK3 "e148cb5e777ba69398958fa989371fc6"
+#define ASSET_HASH_TSOURDT3RD_PK3 "3dd79f2d6eb14fc93e055d0df09a61da"
 
 #endif

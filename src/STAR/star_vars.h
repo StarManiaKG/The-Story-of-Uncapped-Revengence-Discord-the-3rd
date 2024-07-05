@@ -9,9 +9,12 @@
 /// \file  star_vars.h
 /// \brief star variables, typically used when allowing lua support or just for making and doing dumb stuff
 
+/// \todo remove this entire file eventually, spread everything out :)
+
 #ifndef __STAR_VARS__
 #define __STAR_VARS__
 
+#include "ss_main.h" // main star varaibles
 #include "star_webinfo.h" // star variables
 
 #include "../command.h" // command variables
@@ -77,6 +80,7 @@ typedef struct TSoURDt3rdServers_s {
 typedef struct TSoURDt3rdJukebox_s {
 	boolean Unlocked;
 	boolean initHUD;
+	fixed_t tics;
 
 	musicdef_t *curtrack;
 	musicdef_t *prevtrack;
@@ -89,6 +93,8 @@ typedef struct TSoURDt3rd_s {
 	boolean checkedVersion;
 
 	INT32 num;
+
+	star_gamestate_t gamestate;
 
 	// Game Stuff
 	TSoURDt3rdLoadingScreen_t loadingScreens;
@@ -104,16 +110,7 @@ typedef struct TSoURDt3rd_s {
 	TSoURDt3rdJukebox_t jukebox;
 } TSoURDt3rd_t;
 
-// Inputs //
-typedef struct star_gamekey_s {
-	INT32 keyDown;
-
-	boolean pressed;
-	boolean tapReady;
-} star_gamekey_t;
-
 extern TSoURDt3rd_t TSoURDt3rdPlayers[MAXPLAYERS];
-extern star_gamekey_t STAR_GameKeyDown[1][NUM_GAMECONTROLS];
 
 extern TSoURDt3rdBossMusic_t bossMusic[];
 extern TSoURDt3rdFinalBossMusic_t finalBossMusic[];
@@ -141,9 +138,6 @@ extern INT32 currenteggs;
 extern INT32 numMapEggs;
 
 // Game //
-// Discord
-extern boolean all7matchemeralds; // MARKED FOR REMOVAL //
-
 // Audio //
 // Game Over Music
 extern const char gameoverMusic[9][7];
@@ -186,7 +180,6 @@ const char *STAR_SetWindowTitle(void);
 
 const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean coredumped);
 
-boolean STAR_Responder(UINT8 player, UINT8 input, boolean preventhold);
 void TSoURDt3rd_BuildTicCMD(UINT8 player);
 
 // Players //
