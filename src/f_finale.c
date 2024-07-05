@@ -635,7 +635,7 @@ void F_IntroDrawer(void)
 		// STAR STUFF: pure fat intro? do unique stuff for that instead! //
 		if (cv_stjrintro.value)
 		{
-			STAR_F_PureFatDrawer(stjrintro, background, (patch = NULL), intro_scenenum, finalecount, bgxoffs);
+			STAR_F_PureFatDrawer(stjrintro, background, (patch = NULL), intro_scenenum, bgxoffs);
 			return;
 		}
 		// MOVING ON! //

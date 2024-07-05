@@ -42,10 +42,10 @@ void STAR_F_StartIntro(tic_t *introtime)
 }
 
 //
-// void STAR_F_PureFatDrawer(char *stjrintro, patch_t *background, void *patch, INT32 intro_scenenum, INT32 finalecount, INT32 bgxoffs)
+// void STAR_F_PureFatDrawer(char *stjrintro, patch_t *background, void *patch, INT32 intro_scenenum, INT32 bgxoffs)
 // Draws the Pure Fat intro.
 //
-void STAR_F_PureFatDrawer(char *stjrintro, patch_t *background, void *patch, INT32 intro_scenenum, INT32 finalecount, INT32 bgxoffs)
+void STAR_F_PureFatDrawer(char *stjrintro, patch_t *background, void *patch, INT32 intro_scenenum, INT32 bgxoffs)
 {
 	if (intro_scenenum == 0)
 	{
