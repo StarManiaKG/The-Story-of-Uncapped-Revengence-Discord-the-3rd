@@ -214,11 +214,10 @@ static char returnWadPath[256];
 #include "../byteptr.h"
 #endif
 
-#ifdef HAVE_DISCORDSUPPORT
-#include "../discord/discord.h"
-#endif
+#include "../STAR/star_vars.h" // TSoURDt3rd_GenerateFunnyCrashMessage(), //
+								// TSOURDT3RDVERSIONSTRING, & TSOURDT3RDBYSTARMANIAKGSTRING //
 
-#include "../STAR/star_vars.h" // TSoURDt3rd_GenerateFunnyCrashMessage(), TSOURDT3RDVERSIONSTRING, & TSOURDT3RDBYSTARMANIAKGSTRING //
+#include "../STAR/drrr/kg_input.h" // HandleGamepadDeviceEvents() //
 
 /**	\brief	The JoyReset function
 
@@ -974,10 +973,15 @@ INT32 I_GetKey (void)
 	event_t *ev;
 	INT32 rc = 0;
 
+	G_ResetAllDeviceResponding();
+
 	// return the first keypress from the event queue
 	for (; eventtail != eventhead; eventtail = (eventtail+1)&(MAXEVENTS-1))
 	{
 		ev = &events[eventtail];
+
+		HandleGamepadDeviceEvents(ev);
+
 		if (ev->type == ev_keydown || ev->type == ev_console)
 		{
 			rc = ev->key;
@@ -1075,7 +1079,11 @@ void I_ShutdownJoystick(void)
 
 void I_GetJoystickEvents(void)
 {
+#if 0
 	static event_t event = {0,0,0,0,false};
+#else
+	static event_t event = {0,0,0,0,false,0}; // STAR STUFF: edited to add kart gamepad support //
+#endif
 	INT32 i = 0;
 	UINT64 joyhats = 0;
 #if 0
@@ -1345,7 +1353,11 @@ void I_ShutdownJoystick2(void)
 
 void I_GetJoystick2Events(void)
 {
+#if 0
 	static event_t event = {0,0,0,0,false};
+#else
+	static event_t event = {0,0,0,0,false,0}; // STAR STUFF: edited to add kart gamepad support //
+#endif
 	INT32 i = 0;
 	UINT64 joyhats = 0;
 #if 0
@@ -2413,10 +2425,6 @@ void I_Quit(void)
 	if (metalrecording)
 		G_StopMetalRecording(false);
 
-#ifdef HAVE_DISCORDSUPPORT
-	DRPC_Shutdown();
-#endif
-
 	D_QuitNetGame();
 	CL_AbortDownloadResume();
 	M_FreePlayerSetupColors();
@@ -2532,10 +2540,6 @@ void I_Error(const char *error, ...)
 		G_CheckDemoStatus();
 	if (metalrecording)
 		G_StopMetalRecording(false);
-
-#ifdef HAVE_DISCORDSUPPORT
-	DRPC_Shutdown();
-#endif
 
 	D_QuitNetGame();
 	CL_AbortDownloadResume();

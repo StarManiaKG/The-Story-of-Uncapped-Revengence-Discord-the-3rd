@@ -12,13 +12,12 @@
 /// \brief Discord Rich Presence commands and data functions
 
 #include "discord_cmds.h"
-
-#include "../STAR/star_vars.h" // TSoURDt3rd structure //
-
 #include "../doomstat.h"
 #include "../byteptr.h"
 #include "../g_game.h"
 #include "../d_netcmd.h"
+
+#include "../STAR/star_vars.h" // TSoURDt3rd structure //
 
 // ------------------------ //
 //        Variables
@@ -31,24 +30,25 @@
 // ===============
 
 static CV_PossibleValue_t statustype_cons_t[] = {
-	{0, "Default"},
+	{0, "Basic"},
+	{1, "Default"},
 
-	{1, "Only Characters"},
-	{2, "Only Score"},
-	{3, "Only Emeralds"},
-	{4, "Only Emblems"},
-	{5, "Only Gamestates"},
-	{6, "Only Statuses"},
-	{7, "Only Playtime"},
-	{8, "Custom"},
+	{2, "Only Characters"},
+	{3, "Only Score"},
+	{4, "Only Emeralds"},
+	{5, "Only Emblems"},
+	{6, "Only Gamestates"},
+	{7, "Only Statuses"},
+	{8, "Only Playtime"},
 
+	{9, "Custom"},
 	{0, NULL}
 };
 
 static CV_PossibleValue_t characterimagetype_cons_t[] = {
-	{0, "CS Portrait"},
-	{1, "Continue Sprite"},
-	{2, "Life Icon Sprite"},
+	{0, "CS Portraits"},
+	{1, "Continue Sprites"},
+	{2, "Life Icon Sprites"},
 	{0, NULL}
 };
 
@@ -57,9 +57,9 @@ static CV_PossibleValue_t custom_imagetype_cons_t[] = {
 	{1, "Continue Sprites"},
 	{2, "Life Icon Sprites"},
 
-	{3, "S. CS Portraits"},
-	{4, "S. Continue Sprites"},
-	{5, "S. Life Icon Sprites"},
+	{3, "Super C.S.S"},
+	{4, "Super C.S"},
+	{5, "Super L.I.S"},
 
 	{6, "Maps"},
 	{7, "Miscellaneous"},
@@ -69,36 +69,34 @@ static CV_PossibleValue_t custom_imagetype_cons_t[] = {
 };
 
 static CV_PossibleValue_t custom_characterimage_cons_t[] = {
-	{0, "Default"},	// ...Does ghost sonic count as a vanilla char? Maybe.
-	{1, "Sonic"},
+	{0, "Sonic"}, // Vanilla skins
+	{1, "Sonic & Tails"},
 	{2, "Tails"},
 	{3, "Knuckles"},
 	{4, "Amy"},
 	{5, "Fang"},
 	{6, "Metal Sonic"},
-	{7, "Sonic & Tails"}, // Bots, am I right?
 
-	{8, "Adventure Sonic"},
-	{9, "Shadow"},
-	{10, "Skip"},
-	{11, "Jana"},
-	{12, "Surge"},
-	{13, "Cacee"},
-	{14, "Milne"},
-	{15, "Maimy"},
-	{16, "Mario"},
-	{17, "Luigi"},
-	{18, "Blaze"},
-	{19, "Marine"},
-	{20, "Tails Doll"},
-	{21, "Metal Knuckles"},
-	{22, "Smiles"},
-	{23, "Whisper"},
+	{7, "Adventure Sonic"}, // Custom skins
+	{8, "Shadow"},
+	{9, "Skip"},
+	{10, "Jana"},
+	{11, "Surge"},
+	{12, "Cacee"},
+	{13, "Milne"},
+	{14, "Maimy"},
+	{15, "Mario"},
+	{16, "Luigi"},
+	{17, "Blaze"},
+	{18, "Marine"},
+	{19, "Tails Doll"},
+	{20, "Metal Knuckles"},
+	{21, "Smiles"},
+	{22, "Whisper"},
 
-	{24, "Hexhog"},
+	{23, "Hexhog"}, // Skins I've made
 
-	{25, "Speccy"},
-
+	{24, "Speccy"}, // Friend's skin
 	{0, NULL}
 };
 
@@ -138,23 +136,23 @@ static CV_PossibleValue_t custom_mapimage_cons_t[] = {
 	{26, "BCZ2"},
 	{27, "BCZ3"},
 
-	{30, "BS - FHZ"}, // Unlockable Extra Stages
-	{31, "BS - PTZ"},
-	{32, "BS - FFZ"},
-	{33, "BS - TLZ"},
+	{30, "EX - FHZ"}, // Unlockable Extra Stages
+	{31, "EX - PTZ"},
+	{32, "EX - FFZ"},
+	{33, "EX - TLZ"},
 
-	{40, "CS - HHZ"}, // Unlockable Advanced Stages
-	{41, "CS - AGZ"},
-	{42, "CS - ATZ"},
+	{40, "ADV - HHZ"}, // Unlockable Advanced Stages
+	{41, "ADV - AGZ"},
+	{42, "ADV - ATZ"},
 
-	{50, "SSS - FFZ"}, // NiGHTS Special Stages
-	{51, "SSS - TPZ"},
-	{52, "SSS - FCZ"},
-	{53, "SSS - CFZ"},
-	{54, "SSS - DWZ"},
-	{55, "SSS - MCZ"},
-	{56, "SSS - ESZ"},
-	{57, "SSS - BHZ"},
+	{50, "NiGHTS - FFZ"}, // NiGHTS Special Stages
+	{51, "NiGHTS - TPZ"},
+	{52, "NiGHTS - FCZ"},
+	{53, "NiGHTS - CFZ"},
+	{54, "NiGHTS - DWZ"},
+	{55, "NiGHTS - MCZ"},
+	{56, "NiGHTS - ESZ"},
+	{57, "NiGHTS - BHZ"},
 
 	{60, "MSS - 1"}, // Co-op Special Stages
 	{61, "MSS - 2"},
@@ -164,10 +162,10 @@ static CV_PossibleValue_t custom_mapimage_cons_t[] = {
 	{65, "MSS - 6"},
 	{66, "MSS - 7"},
 
-	{70, "NBS - CCZ"}, // Unlockable NiGHTS Stages
-	{71, "NBS - DHZ"},
-	{72, "NBS - APZ1"},
-	{73, "NBS - APZ2"},
+	{70, "NiGHTS - CCZ"}, // Unlockable NiGHTS Stages
+	{71, "NiGHTS - DHZ"},
+	{72, "NiGHTS - APZ1"},
+	{73, "NiGHTS - APZ2"},
 
 	{280, "CTF - LFZ"}, // CTF Stages
 	{281, "CTF - LPZ"},
@@ -179,59 +177,57 @@ static CV_PossibleValue_t custom_mapimage_cons_t[] = {
 	{287, "CTF - DFZ"},
 	{288, "CTF - NRZ"},
 
-	{532, "MATCH - JVZ"}, // Match, Team Match, H&S, & Tag Stages
-	{533, "MATCH - NFZ"},
-	{534, "MATCH - TPZ"},
-	{535, "MATCH - TCZ"},
-	{536, "MATCH - DTZ"},
-	{537, "MATCH - ICZ"},
-	{538, "MATCH - OHZ"},
-	{539, "MATCH - SFZ"},
-	{540, "MATCH - DBZ"},
-	{541, "MATCH - CSZ"},
-	{542, "MATCH - FCZ"},
-	{543, "MATCH - MMZ"},
+	{532, "RINGSLINGER - JVZ"}, // Match, Team Match, H&S, & Tag Stages
+	{533, "RINGSLINGER - NFZ"},
+	{534, "RINGSLINGER - TPZ"},
+	{535, "RINGSLINGER - TCZ"},
+	{536, "RINGSLINGER - DTZ"},
+	{537, "RINGSLINGER - ICZ"},
+	{538, "RINGSLINGER - OHZ"},
+	{539, "RINGSLINGER - SFZ"},
+	{540, "RINGSLINGER - DBZ"},
+	{541, "RINGSLINGER - CSZ"},
+	{542, "RINGSLINGER - FCZ"},
+	{543, "RINGSLINGER - MMZ"},
 
-	{1000, "Tutorial"}, // Tutorial Zone
-	
-	{10000, "Custom"},
+	{1000, "Tutorial Zone"}, // Tutorial Zone
 
+	{10000, "Custom Zone"},
 	{0, NULL}
 };
 
 static CV_PossibleValue_t custom_miscimage_cons_t[] = {
-	{0, "Default"},
+	{0, "Title Screen"},
 
-	{1, "Intro 1"},
-	{2, "Intro 2"},
-	{3, "Intro 3"},
-	{4, "Intro 4"},
-	{5, "Intro 5"},
-	{6, "Intro 6"},
-	{7, "Intro 7"},
-	{8, "Intro 8"},
+	{1, "Intro - 1"},
+	{2, "Intro - 2"},
+	{3, "Intro - 3"},
+	{4, "Intro - 4"},
+	{5, "Intro - 5"},
+	{6, "Intro - 6"},
+	{7, "Intro - 7"},
+	{8, "Intro - 8"},
 
-	{9, "Alt. Sonic Image 1"},
-	{10, "Alt. Sonic Image 2"},
-	{11, "Alt. Sonic Image 3"},
-	{12, "Alt. Sonic Image 4"},
-	{13, "Alt. Sonic Image 5"},
+	{9, "Sonic - 1"},
+	{10, "Sonic - 2"},
+	{11, "Sonic - 3"},
+	{12, "Sonic - 4"},
+	{13, "Sonic - 5"},
 
-	{14, "Alt. Tails Image 1"},
-	{15, "Alt. Tails Image 2"},
+	{14, "Tails - 1"},
+	{15, "Tails - 2"},
 
-	{16, "Alt. Knuckles Image 1"},
-	{17, "Alt. Knuckles Image 2"},
+	{16, "Knuckles - 1"},
+	{17, "Knuckles - 2"},
 
-	{18, "Alt. Amy Image 1"},
+	{18, "Amy"},
 
-	{19, "Alt. Fang Image 1"},
+	{19, "Fang"},
 
-	{20, "Alt. Metal Sonic Image 1"},
-	{21, "Alt. Metal Sonic Image 2"},
+	{20, "Metal Sonic - 1"},
+	{21, "Metal Sonic - 2"},
 
-	{22, "Alt. Eggman Image 1"},
-
+	{22, "Eggman"},
 	{0, NULL}
 };
 
@@ -244,33 +240,28 @@ consvar_t cv_discordstreamer = CVAR_INIT ("discordstreamer", "Off", CV_SAVE, CV_
 consvar_t cv_discordasks = CVAR_INIT ("discordasks", "Yes", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
 consvar_t cv_discordstatusmemes = CVAR_INIT ("discordstatusmemes", "Yes", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_discordshowonstatus = CVAR_INIT ("discordshowonstatus", "Default", CV_SAVE|CV_CALL, statustype_cons_t, DRPC_UpdatePresence);
-consvar_t cv_discordcharacterimagetype = CVAR_INIT ("discordcharacterimagetype", "CS Portrait", CV_SAVE, characterimagetype_cons_t, NULL);
+consvar_t cv_discordcharacterimagetype = CVAR_INIT ("discordcharacterimagetype", "CS Portraits", CV_SAVE, characterimagetype_cons_t, NULL);
 
+consvar_t cv_discordcustom_details = CVAR_INIT ("discordcustom_details", "Blasting these robots!", CV_SAVE, NULL, NULL);
+consvar_t cv_discordcustom_state = CVAR_INIT ("discordcustom_state", "Playing Sonic Robo Blast 2!", CV_SAVE, NULL, NULL);
 
-consvar_t cv_customdiscorddetails = CVAR_INIT ("customdiscorddetails", "I'm Feeling Good!", CV_SAVE, NULL, NULL);
-consvar_t cv_customdiscordstate = CVAR_INIT ("customdiscordstate", "I'm Playing Sonic Robo Blast 2!", CV_SAVE, NULL, NULL);
+consvar_t cv_discordcustom_imagetype_large = CVAR_INIT ("discordcustom_imagetype_large", "CS Portraits", CV_SAVE, custom_imagetype_cons_t, NULL);
+consvar_t cv_discordcustom_imagetype_small = CVAR_INIT ("discordcustom_imagetype_small", "Continue Sprites", CV_SAVE, custom_imagetype_cons_t, NULL);
 
-consvar_t cv_customdiscordlargeimagetype = CVAR_INIT ("customdiscordlargeimagetype", "CS Portraits", CV_SAVE, custom_imagetype_cons_t, NULL);
-consvar_t cv_customdiscordsmallimagetype = CVAR_INIT ("customdiscordsmallimagetype", "Continue Sprites", CV_SAVE, custom_imagetype_cons_t, NULL);
+consvar_t cv_discordcustom_imagetext_large = CVAR_INIT ("discordcustom_imagetext_large", "My favorite character!", CV_SAVE, NULL, NULL);
+consvar_t cv_discordcustom_imagetext_small = CVAR_INIT ("discordcustom_imagetext_small", "My other favorite character!", CV_SAVE, NULL, NULL);
 
-// Custom Discord Status Images //
-consvar_t cv_customdiscordlargeimagetext = CVAR_INIT ("customdiscordlargeimagetext", "My Favorite Character!", CV_SAVE, NULL, NULL);
-consvar_t cv_customdiscordsmallimagetext = CVAR_INIT ("customdiscordsmallimagetext", "My Other Favorite Character!", CV_SAVE, NULL, NULL);
+consvar_t cv_discordcustom_characterimage_large = CVAR_INIT ("discordcustom_characterimage_large", "Sonic", CV_SAVE, custom_characterimage_cons_t, NULL);
+consvar_t cv_discordcustom_characterimage_small = CVAR_INIT ("discordcustom_characterimage_small", "Tails", CV_SAVE, custom_characterimage_cons_t, NULL);
 
-// Characters
-consvar_t cv_customdiscordlargecharacterimage = CVAR_INIT ("customdiscordlargecharacterimage", "Sonic", CV_SAVE, custom_characterimage_cons_t, NULL);
-consvar_t cv_customdiscordsmallcharacterimage = CVAR_INIT ("customdiscordsmallcharacterimage", "Tails", CV_SAVE, custom_characterimage_cons_t, NULL);
+consvar_t cv_discordcustom_supercharacterimage_large = CVAR_INIT ("discordcustom_supercharacterimage_large", "Sonic", CV_SAVE, custom_supercharacterimage_cons_t, NULL);
+consvar_t cv_discordcustom_supercharacterimage_small = CVAR_INIT ("discordcustom_supercharacterimage_small", "Sonic", CV_SAVE, custom_supercharacterimage_cons_t, NULL);
 
-consvar_t cv_customdiscordlargesupercharacterimage = CVAR_INIT ("customdiscordlargesupercharacterimage", "Sonic", CV_SAVE, custom_supercharacterimage_cons_t, NULL);
-consvar_t cv_customdiscordsmallsupercharacterimage = CVAR_INIT ("customdiscordsmallsupercharacterimage", "Sonic", CV_SAVE, custom_supercharacterimage_cons_t, NULL);
+consvar_t cv_discordcustom_mapimage_large = CVAR_INIT ("discordcustom_mapimage_large", "GFZ1", CV_SAVE, custom_mapimage_cons_t, NULL);
+consvar_t cv_discordcustom_mapimage_small = CVAR_INIT ("discordcustom_mapimage_small", "Custom Zone", CV_SAVE, custom_mapimage_cons_t, NULL);
 
-// Maps
-consvar_t cv_customdiscordlargemapimage = CVAR_INIT ("customdiscordlargemapimage", "GFZ1", CV_SAVE, custom_mapimage_cons_t, NULL);
-consvar_t cv_customdiscordsmallmapimage = CVAR_INIT ("customdiscordsmallmapimage", "Custom", CV_SAVE, custom_mapimage_cons_t, NULL);
-	
-// Miscellanious
-consvar_t cv_customdiscordlargemiscimage = CVAR_INIT ("customdiscordlargemiscimage", "Default", CV_SAVE, custom_miscimage_cons_t, NULL);
-consvar_t cv_customdiscordsmallmiscimage = CVAR_INIT ("customdiscordsmallmiscimage", "Intro 1", CV_SAVE, custom_miscimage_cons_t, NULL);
+consvar_t cv_discordcustom_miscimage_large = CVAR_INIT ("discordcustom_miscimage_large", "Title Screen", CV_SAVE, custom_miscimage_cons_t, NULL);
+consvar_t cv_discordcustom_miscimage_small = CVAR_INIT ("discordcustom_miscimage_small", "Intro - 1", CV_SAVE, custom_miscimage_cons_t, NULL);
 
 #endif // HAVE_DISCORDSUPPORT
 
@@ -311,15 +302,15 @@ void Got_DiscordInfo(UINT8 **cp, INT32 playernum)
 #ifdef HAVE_DISCORDSUPPORT
 	if (TSoURDt3rdPlayers[serverplayer].serverPlayers.serverUsesTSoURDt3rd)
 	{
-		discordInfo.maxPlayers = READUINT8(*cp);
-		discordInfo.joinsAllowed = (boolean)READUINT8(*cp);
-		discordInfo.everyoneCanInvite = (boolean)READUINT8(*cp);
+		discordInfo.serv.maxPlayers = READUINT8(*cp);
+		discordInfo.serv.joinsAllowed = (boolean)READUINT8(*cp);
+		discordInfo.serv.everyoneCanInvite = (boolean)READUINT8(*cp);
 	}
 	else
 	{
-		discordInfo.maxPlayers = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
-		discordInfo.joinsAllowed = cv_allownewplayer.value;
-		discordInfo.everyoneCanInvite = (boolean)cv_discordinvites.value;
+		discordInfo.serv.maxPlayers = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
+		discordInfo.serv.joinsAllowed = cv_allownewplayer.value;
+		discordInfo.serv.everyoneCanInvite = (boolean)cv_discordinvites.value;
 		(*cp) += 3;
 	}
 

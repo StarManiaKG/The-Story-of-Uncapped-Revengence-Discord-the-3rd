@@ -1,4 +1,5 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
+// PORTED FROM DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
 // Copyright (C) 2024 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
@@ -9,11 +10,11 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  kk_swap.h
-/// \brief Extended endianess handling for TSoURDt3rd, from DRRR, swapping 16bit and 32bit
+/// \file  km_swap.h
+/// \brief Endianess handling, swapping 16bit and 32bit
 
-#ifndef __KK_SWAP__
-#define __KK_SWAP__
+#ifndef __KM_SWAP__
+#define __KM_SWAP__
 
 #include "../../endian.h"
 
@@ -68,4 +69,4 @@ extern "C" {
 } // extern "C"
 #endif
 
-#endif
+#endif // __KM_SWAP__

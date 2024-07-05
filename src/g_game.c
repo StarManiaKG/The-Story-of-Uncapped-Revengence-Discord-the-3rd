@@ -62,7 +62,7 @@
 // OTHER FUN STAR STUFF YAYAYSUHDUISHUIBHOUIHBDU()*FH*D(UIYVLBGUIYDG(UDOPBIYGD*OUFBHO(P))) //
 #include "STAR/star_vars.h" // TSoURDt3rd Struct, STAR_SetWindowTitle(), & TSoURDt3rd_DetermineLevelMusic() //
 #include "STAR/ss_cmds.h" // cv_storesavesinfolders //
-#include "STAR/ss_main.h"
+#include "STAR/ss_main.h" // STAR_G_GamestateManager() //
 
 #include "deh_soc.h"
 
@@ -1203,6 +1203,11 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	if (menuactive || CON_Ready() || chat_on)
 		mdx = mdy = mldy = 0;
+
+	// STAR STUFF: stop right here if we're in the menu please //
+	if (gamestate == GS_LEVEL && (menuactive || CON_Ready() || chat_on))
+		return; // our menu junk ate the cmd
+	// UH, THE DOG ATE THE MENU JUNK //
 
 	strafeisturn = controlstyle == CS_SIMPLE && ticcmd_centerviewdown[forplayer] &&
 		((cv_cam_lockedinput[forplayer].value && !ticcmd_ztargetfocus[forplayer]) || (player->pflags & PF_STARTDASH)) &&
@@ -5536,11 +5541,12 @@ INT32 G_FindMapByNameOrCode(const char *mapname, char **realmapnamep)
 void G_SetGamestate(gamestate_t newstate)
 {
 	gamestate = newstate;
-#ifdef HAVE_DISCORDSUPPORT
-	DRPC_UpdatePresence();
-#endif
+	STAR_G_GamestateManager(STAR_GS_NULL);
 #ifdef HAVE_SDL
 	STAR_SetWindowTitle();
+#endif
+#ifdef HAVE_DISCORDSUPPORT
+	DRPC_UpdatePresence();
 #endif
 }
 

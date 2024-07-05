@@ -98,6 +98,9 @@
 #include "STAR/s_sound.h"
 
 #include "deh_soc.h"
+
+#include "STAR/drrr/kg_input.h" // G_ResetAllDeviceGameKeyDown() //
+#include "STAR/drrr/km_menu.h" // menutyping & M_MenuTypingInput() //
 // END OF THAT //
 
 #define SKULLXOFF -32
@@ -176,7 +179,7 @@ static tic_t keydown = 0;
 // PROTOTYPES
 //
 
-static void M_GoBack(INT32 choice);
+//static void M_GoBack(INT32 choice); /* STAR NOTE: now externed in STAR/m_menu.h */
 static void M_StopMessage(INT32 choice);
 static boolean stopstopmessage = false;
 
@@ -522,9 +525,6 @@ consvar_t cv_dummyloadless = CVAR_INIT ("dummyloadless", "In-game", CV_HIDEN, lo
 static CV_PossibleValue_t startupscreen_t[] = {{0, "Default"}, {1, "Pre-2.2.6"}, {2, "Baby Sonic"}, {0, NULL}};
 consvar_t cv_startupscreen = CVAR_INIT ("startupscreen", "Default", CV_SAVE, startupscreen_t, NULL);
 
-static CV_PossibleValue_t stjrintro_t[] = {{0, "Default"}, {1, "Pure Fat"}, {0, NULL}};
-consvar_t cv_stjrintro = CVAR_INIT ("stjrintro", "Default", CV_SAVE, stjrintro_t, NULL);
-
 static CV_PossibleValue_t quitscreen_t[] = {
 	{0, "Default"},
 	{1, "Color"},
@@ -831,18 +831,6 @@ static menuitem_t MISC_ChangeTeamMenu[] =
 
 gtdesc_t gametypedesc[NUMGAMETYPES] =
 {
-#ifdef APRIL_FOOLS
-	{{ 54,  54}, "Hang out with your friends!"},
-	{{103, 103}, "Challenge your friends in this epic coding competition!"},
-	{{190, 190}, "Mash the thok button until you find the exit sign."},
-	{{ 66,  66}, "Use your thok to locate targets with a ping higher than yours and keep shooting them with rail rings until they ragequit!"},
-	{{153,  37}, "Join the team with the highest score and shoot in random directions until your team wins!"},
-	{{123, 123}, "Normally the IT guy is the one being chased, but for some reason it's the opposite in this gametype."},
-	{{150, 150}, "Play PropHunt but without the ability to fuse with your environment!"},
-	{{ 37, 153}, "Join the team with the most points, steal the payload, find a safe spot to hide until your friends bring back your team's payload to the base, then rush to your base!"},
-
-#else
-
 	{{ 54,  54}, "Play through the single-player campaign with your friends, teaming up to beat Dr Eggman's nefarious challenges!"},
 	{{103, 103}, "Speed your way through the main acts, competing in several different categories to see who's the best."},
 	{{190, 190}, "There's not much to it - zoom through the level faster than everyone else."},
@@ -851,7 +839,6 @@ gtdesc_t gametypedesc[NUMGAMETYPES] =
 	{{123, 123}, "Whoever's IT has to hunt down everyone else. If you get caught, you have to turn on your former friends!"},
 	{{150, 150}, "Try and find a good hiding place in these maps - we dare you."},
 	{{ 37, 153}, "Steal the flag from the enemy's base and bring it back to your own, but watch out - they could just as easily steal yours!"},
-#endif // APRIL_FOOLS
 };
 
 static menuitem_t MISC_ChangeLevelMenu[] =
@@ -942,23 +929,8 @@ static menuitem_t SR_EmblemHintMenu[] =
 // Prefix: SP_
 
 // Single Player Main
-static menuitem_t SP_MainMenu[] =
+menuitem_t SP_MainMenu[] = /* STAR NOTE: now externed in STAR/m_menu.h */
 {
-#ifdef APRIL_FOOLS
-	// Note: If changing the positions here, also change them in M_SinglePlayerMenu()
-	{IT_CALL | IT_STRING,                       NULL, "GO!!",    	   M_LoadGame,                 76},
-	{IT_SECRET,                                 NULL, "sonic runners",
-																	   M_TimeAttack,               84},
-	{IT_SECRET,                                 NULL, "good night mode",
-																	   M_NightsAttack,             92},
-	{IT_SECRET,                                 NULL, "super mario run",
-																	   M_Marathon,                100},
-	{IT_CALL | IT_STRING,                       NULL, "how do i jump", M_StartTutorial,           108},
-	{IT_CALL | IT_STRING | IT_CALL_NOTMODIFIED, NULL, "are we there yet",
-																	   M_Statistics,              116}
-
-#else
-
 	// Note: If changing the positions here, also change them in M_SinglePlayerMenu()
 	{IT_CALL | IT_STRING,	NULL, "Start Game",    M_LoadGame,                 76},
 	{IT_SECRET,				NULL, "Record Attack", M_TimeAttack,               84},
@@ -966,7 +938,6 @@ static menuitem_t SP_MainMenu[] =
 	{IT_SECRET,				NULL, "Marathon Run",  M_Marathon,                100},
 	{IT_CALL | IT_STRING,	NULL, "Tutorial",      M_StartTutorial,           108},
 	{IT_CALL | IT_STRING,	NULL, "Statistics",    M_Statistics,              116}
-#endif // APRIL_FOOLS
 };
 
 enum
@@ -1308,7 +1279,6 @@ static menuitem_t MP_PlayerSetupMenu[] =
 	{IT_KEYHANDLER, NULL, "", M_HandleSetupMultiPlayer, 0}, // skin
 	{IT_KEYHANDLER, NULL, "", M_HandleSetupMultiPlayer, 0}, // colour
 	{IT_KEYHANDLER, NULL, "", M_HandleSetupMultiPlayer, 0}, // default
-
 	{IT_KEYHANDLER, NULL, "", M_HandleSetupMultiPlayer, 0}, // STAR STUFF: reset to defaults //
 };
 
@@ -3959,7 +3929,7 @@ static void M_HandleMenuPresState(menu_t *newMenu)
 // BASIC MENU HANDLING
 // =========================================================================
 
-static void M_GoBack(INT32 choice)
+void M_GoBack(INT32 choice) /* STAR NOTE: now externed in STAR/m_menu.h */
 {
 	(void)choice;
 
@@ -4161,6 +4131,14 @@ boolean M_Responder(event_t *ev)
 	}
 	else if (menuactive)
 	{
+		// STAR STUFF: Lactozilla: Yikes. //
+		if (snake)
+		{
+			if (!Snake_Joy_Grabber(ev))
+				G_MapEventsToControls(ev);
+		}
+		// THANKS LACTO BY THE WAY //
+
 		if (ev->type == ev_keydown)
 		{
 			keydown++;
@@ -4600,7 +4578,20 @@ void M_Drawer(void)
 			V_DrawCenteredString(BASEVIDWIDTH/2, (BASEVIDHEIGHT/2) - (4), V_MENUCOLORMAP, "Focus Lost");
 	}
 
-#ifdef HAVE_DISCORDRPC
+	// STAR STUFF: cool kart menu ports! //
+#if 0
+	M_DrawMenuForeground();
+#endif
+
+	// Draw typing overlay when needed, above all other menu elements.
+	if (menutyping.active)
+		M_DrawMenuTyping();
+
+	// Draw message overlay when needed
+	M_DrawMenuMessage();
+	// DONE HERE! //
+
+#ifdef HAVE_DISCORDSUPPORT
 	DRPC_UpdatePresence();
 #endif
 }
@@ -4624,7 +4615,36 @@ void M_StartControlPanel(void)
 		return;
 	}
 
+	// STAR STUFF: DRRR: message menu //
+	if (gamestate == GS_TITLESCREEN)
+	{
+		if (menumessage.active)
+		{
+			if (!menumessage.closing && menumessage.fadetimer == 9)
+			{
+				// The following doesn't work with MM_YESNO.
+				// However, because there's no guarantee a profile
+				// is selected or controls set up to our liking,
+				// we can't call M_HandleMenuMessage.
+
+				DRRR_M_StopMessage(MA_NONE);
+			}
+
+			return;
+		}
+	}
+	// EMAIL MESSAGE SENT! //
+
 	menuactive = true;
+
+	// STAR STUFF: KART: reset menucmds //
+	G_ResetAllDeviceGameKeyDown();
+	memset(menucmd, 0, sizeof (menucmd));
+	for (INT32 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		menucmd[i].delay = MENUDELAYTIME;
+	}
+	// RESET! MOVING ON! //
 
 	if (!Playing())
 	{
@@ -4761,6 +4781,8 @@ void M_ClearMenus(boolean callexitmenufunc)
 	hidetitlemap = false;
 
 	I_UpdateMouseGrab();
+
+	M_AbortVirtualKeyboard(); // STAR STUFF: refresh cool menu junk //
 }
 
 //
@@ -4851,16 +4873,31 @@ void M_Ticker(void)
 	// reset input trigger
 	noFurtherInput = false;
 
+	if (dedicated)
+		return;
+
+	// STAR STUFF: cool kart ports //
+	for (INT32 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		if (menucmd[i].delay > 0)
+		{
+			menucmd[i].delay--;
+		}
+	}
+
+	if (menutyping.active)
+	{
+		// Typing for CV_IT_STRING
+		M_MenuTypingInput(-1);
+	}
+
 #if 0
-	// STAR STUFF: come back later please //
 	if (currentMenu->tickroutine)
 	{
 		currentMenu->tickroutine();
 	}
 #endif
-
-	if (dedicated)
-		return;
+	// COOL PORTS HAVE BEEN PORTED! //
 
 	if (--skullAnimCounter <= 0)
 		skullAnimCounter = 8;
@@ -4875,6 +4912,10 @@ void M_Ticker(void)
 
 	if (currentMenu == &OP_ScreenshotOptionsDef)
 		M_SetupScreenshotMenu();
+	// STAR STUFF: LACTOZILLA EDITION //
+	else if (snake)
+		Snake_Handle();
+	// THANKS AGAIN LACTO BY THE WAY //
 
 #if defined (MASTERSERVER) && defined (HAVE_THREADS)
 	I_lock_mutex(&ms_ServerList_mutex);
@@ -7469,6 +7510,7 @@ static void M_LoadAddonsPatches(void)
 	addonsp[NUM_EXT+2] = W_CachePatchName("M_FLOAD", PU_PATCH);
 	addonsp[NUM_EXT+3] = W_CachePatchName("M_FSRCH", PU_PATCH);
 	addonsp[NUM_EXT+4] = W_CachePatchName("M_FSAVE", PU_PATCH);
+
 	addonsp[EXT_STAR] = W_CachePatchName("M_FSTAR", PU_PATCH); // STAR STUFF: addon graphic :) //
 }
 
@@ -9068,7 +9110,7 @@ static void M_SoundTest(INT32 choice)
 	if (!soundtestpage)
 		soundtestpage = 1;
 
-	M_ResetJukebox(true); // STAR STUFF: reset my jukebox please //
+	M_ResetJukebox(false); // STAR STUFF: reset my jukebox please //
 
 	if (!S_PrepareSoundTest())
 	{
@@ -11761,6 +11803,8 @@ static void M_NightsAttack(INT32 choice)
 
 	ntssupersonic[0] = W_CachePatchName("NTSSONC1", PU_PATCH);
 	ntssupersonic[1] = W_CachePatchName("NTSSONC2", PU_PATCH);
+
+	STAR_G_GamestateManager(STAR_GS_NIGHTSMENU); // STAR STUFF: set gamestate please //
 
 	G_SetGamestate(GS_TIMEATTACK); // do this before M_SetupNextMenu so that menu meta state knows that we're switching
 	titlemapinaction = TITLEMAP_OFF; // Nope don't give us HOMs please
@@ -15692,15 +15736,25 @@ void M_UpdateEasterStuff(void)
 		OP_Tsourdt3rdOptionsMenu[op_easteregghuntbonuses].status = IT_GRAYEDOUT;
 }
 
-// April Fools
+//
+// void STAR_StoreDefaultMenuStrings(void)
+//
+// EVENT: April Fools
+// Stores the default menu title strings in the 'defaultMenuTitles' table.
+//
 void STAR_StoreDefaultMenuStrings(void)
 {
-	// Store the Default Menu Strings in the Menu Title Variable, and We're Done :) //
-	memset(defaultMenuTitles, 0, sizeof(defaultMenuTitles));		// Resets the Default Menu Title Table
+	INT32 menu = 1;
 
-	memcpy(&defaultMenuTitles[1], &MainMenu, sizeof(MainMenu));		// Main Menu
-	memcpy(&defaultMenuTitles[2], &MPauseMenu, sizeof(MPauseMenu));	// Multiplayer Pause Menu
-	memcpy(&defaultMenuTitles[3], &SPauseMenu, sizeof(SPauseMenu));	// Single Player Pause Menu
+	memset(defaultMenuTitles, 0, sizeof(defaultMenuTitles)); // Resets the default menu title table.
+	memset(defaultGametypeTitles, 0, sizeof(defaultGametypeTitles)); // Resets the default gametype title table.
+
+	memcpy(&defaultGametypeTitles, &gametypedesc, sizeof(gametypedesc)); // Gametypes
+
+	memcpy(&defaultMenuTitles[menu++], &MainMenu, sizeof(MainMenu)); // Main Menu
+	memcpy(&defaultMenuTitles[menu++], &SP_MainMenu, sizeof(SP_MainMenu)); // SP Main Menu
+	memcpy(&defaultMenuTitles[menu++], &MPauseMenu, sizeof(MPauseMenu)); // MP Pause
+	memcpy(&defaultMenuTitles[menu++], &SPauseMenu, sizeof(SPauseMenu)); // SP Pause
 }
 
 //// Menus ////
@@ -15771,9 +15825,13 @@ static void M_DrawTsourdt3rdReadMe(void)
 			break;
 	}
 
-	// Draw the Arrows
-	V_DrawCharacter(2, y+15, '\x1A' | ((readmeY < 12<<FRACBITS) ? V_MENUCOLORMAP : V_80TRANS) | V_SNAPTOLEFT, false);		// Up Arrow
-	V_DrawCharacter(2, y+180, '\x1B' | ((readmeY > -(28<<FRACBITS)) ? V_MENUCOLORMAP : V_80TRANS) | V_SNAPTOLEFT, false);	// Down Arrow
+	V_DrawCharacter(2, y+15,
+		'\x1A' | ((readmeY < 12<<FRACBITS) ? V_MENUCOLORMAP : V_80TRANS) | V_SNAPTOLEFT,
+		false); // Up Arrow
+
+	V_DrawCharacter(2, y+180,
+		'\x1B' | ((readmeY > -(28<<FRACBITS)) ? V_MENUCOLORMAP : V_80TRANS) | V_SNAPTOLEFT,
+		false); // Down Arrow
 }
 
 static void M_HandleTsourdt3rdReadMe(INT32 choice)
@@ -15873,10 +15931,6 @@ static void M_TSoURDt3rdOptions(INT32 choice)
 		(!(Playing() && playeringame[consoleplayer]) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
 
 	// Extra Options //
-	// Snake
-	OP_Tsourdt3rdOptionsMenu[op_snake].status =
-		(!Playing() ? IT_CALL|IT_STRING : IT_GRAYEDOUT);
-
 	// TF2
 	OP_Tsourdt3rdOptionsMenu[op_dispensergoingup].status =
 		(!netgame ? IT_CALL|IT_STRING : IT_GRAYEDOUT);

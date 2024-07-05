@@ -25,7 +25,10 @@
 // GAME
 // ====
 
-// Ported from Uncapped Plus, TPS is Back! (for some reason)
+static CV_PossibleValue_t stjrintro_t[] = {{0, "Default"}, {1, "Pure Fat"}, {0, NULL}};
+consvar_t cv_stjrintro = CVAR_INIT ("stjrintro", "Default", CV_SAVE, stjrintro_t, NULL);
+
+// Ported from Uncapped Plus, TPS is back (for some reason)!
 static CV_PossibleValue_t tpsrate_cons_t[] = {{0, "No"}, {1, "Full"}, {2, "Compact"}, {0, NULL}};
 consvar_t cv_tpsrate = CVAR_INIT ("showtps", "No", CV_SAVE|CV_CALL, tpsrate_cons_t, STAR_TPSRate_OnChange);
 

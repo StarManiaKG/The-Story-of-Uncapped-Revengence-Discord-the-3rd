@@ -20,6 +20,9 @@
 #include "ss_main.h"		// star variables 2
 #include "s_sound.h"		// star variables 3
 #include "m_menu.h"			// star variables 4
+#include "ss_inputs.h"		// star variables 5
+
+#include "drrr/km_menu.h"	// kart variables
 
 #include "../i_system.h"
 #include "../doomdef.h"
@@ -51,6 +54,10 @@
 #include "../sdl/sdlmain.h"	// sdl variables 2
 #endif
 
+#include "../hu_stuff.h"	// hud variables
+
+#include "../console.h"		// console variables
+
 //////////////////////////////////////
 //		ABSOLUTELY HILARIOUS	 	//
 //			STAR FUNCTIONS		 	//
@@ -67,7 +74,6 @@ static I_mutex hms_tsourdt3rd_api_mutex;
 
 //// STRUCTS ////
 TSoURDt3rd_t TSoURDt3rdPlayers[MAXPLAYERS];
-star_gamekey_t STAR_GameKeyDown[1][NUM_GAMECONTROLS];
 
 TSoURDt3rdBossMusic_t bossMusic[] = {
 	[1] = {"_s1b",	NULL, 		0},	// Sonic 1
@@ -186,6 +192,8 @@ void TSoURDt3rd_InitializePlayer(INT32 playernum)
 	TSoURDt3rd->checkedVersion							= ((playeringame[playernum] && players[playernum].bot) ? true : false);
 
 	TSoURDt3rd->num										= playernum+1;
+
+	TSoURDt3rd->gamestate								= STAR_GS_NULL;
 
 	// Game //
 	TSoURDt3rd->loadingScreens.loadCount 				= 0;
@@ -968,118 +976,100 @@ const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean coredum
 }
 
 //
-// boolean STAR_Responder(UINT8 player, UINT8 input, boolean preventhold)
-// Checks if the Given Key is Being Pressed
-// However, it Implements Checks For Good General Input Consistancy
-//
-boolean STAR_Responder(UINT8 player, UINT8 input, boolean preventhold)
-{
-	// Make the Variables //
-	STAR_GameKeyDown[player][input].pressed = (!player ?
-			(gamekeydown[gamecontrol[input][player]] || gamekeydown[gamecontrol[input][player]]) :
-			(gamekeydown[gamecontrolbis[input][player]] || gamekeydown[gamecontrolbis[input][player]]));
-
-	// Control Key Stuff //
-	// Reset Everything if Not Tapping
-	if (!STAR_GameKeyDown[player][input].pressed)
-	{
-		STAR_GameKeyDown[player][input].keyDown	= 0;
-		STAR_GameKeyDown[player][input].tapReady = false;
-	}
-
-	// Set Things While Tapping
-	else
-	{
-		if (STAR_GameKeyDown[player][input].tapReady)
-		{
-			STAR_GameKeyDown[player][input].pressed	= ((STAR_GameKeyDown[player][input].keyDown > TICRATE/2 && !preventhold) ? true : false);
-			STAR_GameKeyDown[player][input].keyDown++;
-		}
-		else
-			STAR_GameKeyDown[player][input].tapReady = STAR_GameKeyDown[player][input].pressed = true;
-	}
-
-	// Return, and We're Done :) //
-	return STAR_GameKeyDown[player][input].pressed;
-}
-
-//
 // void TSoURDt3rd_BuildTicCMD(UINT8 player)
 // Builds TSoURDt3rd's Custom Keybinds and Runs Their Functions
 //
 void TSoURDt3rd_BuildTicCMD(UINT8 player)
 {
-	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer];
-	TSoURDt3rdJukebox_t *TSoURDt3rdJukebox = &TSoURDt3rd->jukebox;
+	// Check for keys //
+	INT32 key_player = (!player ? consoleplayer : 1);
 
-	boolean openjukeboxkey;
-	boolean increasemusicspeedkey, decreasemusicspeedkey;
-	boolean playmostrecenttrackkey;
-	boolean stopjukeboxkey;
+	boolean jukebox_open = STAR_G_KeyPressed(player, JB_OPENJUKEBOX);
+	boolean jukebox_increasespeed = STAR_G_KeyHeld(player, JB_INCREASEMUSICSPEED);
+	boolean jukebox_decreasespeed = STAR_G_KeyHeld(player, JB_DECREASEMUSICSPEED);
+	boolean jukebox_recent_track = STAR_G_KeyPressed(player, JB_PLAYMOSTRECENTTRACK);
+	boolean jukebox_stop = STAR_G_KeyPressed(player, JB_STOPJUKEBOX);
 
-	// Give Variables Their Values //
-	// Jukebox
-	openjukeboxkey			= STAR_Responder(player, JB_OPENJUKEBOX, true);
+	TSoURDt3rdJukebox_t *TSoURDt3rdJukebox = &TSoURDt3rdPlayers[key_player].jukebox;
 
-	increasemusicspeedkey	= STAR_Responder(player, JB_INCREASEMUSICSPEED, false);
-	decreasemusicspeedkey	= STAR_Responder(player, JB_DECREASEMUSICSPEED, false);
+	if (demoplayback && titledemo)
+		return;
 
-	playmostrecenttrackkey	= STAR_Responder(player, JB_PLAYMOSTRECENTTRACK, true);
+	if (menutyping.active)
+		return;
 
-	stopjukeboxkey			= STAR_Responder(player, JB_STOPJUKEBOX, true);
+	if (CON_Ready() || chat_on)
+		return;
 
-	// Run the Main Inputs //
-	// Jukebox Inputs
-	// Open the Jukebox Menu if the Key was Pressed
-	if (openjukeboxkey)
+	if (player)
+		return; // don't run for bots right now please
+
+	// Manage keys //
+	if (jukebox_open)
 	{
+		// Shortcut to open the jukebox menu
 		M_StartControlPanel();
 		M_TSoURDt3rdJukebox(0);
 		currentMenu->prevMenu = NULL;
 	}
 
-	// Increase the Music Speed if the Key was Pressed
-	if (increasemusicspeedkey)
-		(atof(cv_jukeboxspeed.string) >= 20.0f ?
-			(STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Can't increase the speed any further!\n")) :
-			(CV_Set(&cv_jukeboxspeed, va("%f", atof(cv_jukeboxspeed.string)+(0.1f)))));
-
-	// Decrease the Music Speed if the Key was Pressed
-	if (decreasemusicspeedkey)
-		(atof(cv_jukeboxspeed.string) < 0.1f ?
-			(STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Can't decrease the speed any further!\n")) :
-			(CV_Set(&cv_jukeboxspeed, va("%f", atof(cv_jukeboxspeed.string)-(0.1f)))));
-
-	// Replay the Most Recent Jukebox Track if the Key was Pressed
-	if (playmostrecenttrackkey)
+	if (jukebox_increasespeed)
 	{
-		// Haven't Recently Played a Track
+		// Increase the speed of the jukebox track
+		if (atof(cv_jukeboxspeed.string) >= 20.0f)
+		{
+			STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Can't increase the speed any further!\n");
+			S_StartSound(NULL, sfx_skid);
+		}
+		else
+			CV_Set(&cv_jukeboxspeed, va("%f", atof(cv_jukeboxspeed.string)+(0.1f)));
+	}
+
+	if (jukebox_decreasespeed)
+	{
+		// Decrease the speed of the jukebox track
+		if (atof(cv_jukeboxspeed.string) < 0.1f)
+		{
+			STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Can't decrease the speed any further!\n");
+			S_StartSound(NULL, sfx_skid);
+		}
+		else
+			CV_Set(&cv_jukeboxspeed, va("%f", atof(cv_jukeboxspeed.string)-(0.1f)));
+	}
+
+	if (jukebox_recent_track)
+	{
+		// Replay the most recent jukebox track
 		if (!TSoURDt3rdJukebox->prevtrack)
+		{
 			STAR_CONS_Printf(STAR_CONS_JUKEBOX, "You haven't recently played a track!\n");
-
-		// Already Have the Track Playing
+			S_StartSound(NULL, sfx_lose);
+		}
 		else if (TSoURDt3rdJukebox->curtrack)
+		{
 			STAR_CONS_Printf(STAR_CONS_JUKEBOX, "There's already a track playing!\n");
-
-		// Run Everything Normally, and We're Done :)
+			S_StartSound(NULL, sfx_lose);
+		}
 		else if (TSoURDt3rd_M_IsJukeboxUnlocked(TSoURDt3rdJukebox))
 		{
-			M_TSoURDt3rdJukebox(0);
-			currentMenu->prevMenu = NULL;
+			S_ChangeMusicInternal(TSoURDt3rdJukebox->prevtrack->name, !TSoURDt3rdJukebox->prevtrack->stoppingtics);
+			STAR_CONS_Printf(STAR_CONS_JUKEBOX, M_GetText("Loaded track \x82%s\x80.\n"), TSoURDt3rdJukebox->prevtrack->title);
 
-			S_ChangeMusicInternal(TSoURDt3rd->jukebox.prevtrack->name, !TSoURDt3rd->jukebox.prevtrack->stoppingtics);
-			STAR_CONS_Printf(STAR_CONS_JUKEBOX, M_GetText("Loaded track \x82%s\x80.\n"), TSoURDt3rd->jukebox.prevtrack->title);
-
-			TSoURDt3rd->jukebox.curtrack = TSoURDt3rd->jukebox.prevtrack;
-			TSoURDt3rd->jukebox.initHUD	= true;
+			TSoURDt3rdJukebox->curtrack = TSoURDt3rdJukebox->prevtrack;
+			TSoURDt3rdJukebox->initHUD = true;
 			TSoURDt3rd_ControlMusicEffects();
+		}
+		else
+		{
+			STAR_M_StartMessage("TSoURDt3rd Jukebox",0,M_GetText("You haven't unlocked this yet!\nGo and unlock the sound test first!\n"),NULL,MM_NOTHING);
+			S_StartSound(NULL, sfx_lose);
 		}
 	}
 
-	// Stop the Jukebox if the Key was Pressed
-	if (stopjukeboxkey)
+	if (jukebox_stop)
 	{
-		if (!TSoURDt3rd->jukebox.curtrack)
+		// Stop and reset the jukebox
+		if (!TSoURDt3rdJukebox->curtrack)
 		{
 			STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Nothing is currently playing in the jukebox!\n");
 			S_StartSound(NULL, sfx_lose);
@@ -1088,10 +1078,8 @@ void TSoURDt3rd_BuildTicCMD(UINT8 player)
 		{
 			S_StopSounds();
 			S_StopMusic();
-
+			M_ResetJukebox(Playing());
 			S_StartSound(NULL, sfx_skid);
-
-			M_ResetJukebox(true);
 		}
 	}
 }
@@ -1358,8 +1346,8 @@ void STAR_SetSavefileProperties(void)
 	const char *homepath = userhome; // STAR: My Home
 #endif
 
+#if 0
 	// Before we Start, Ensure Some Things //
-#if 0	
 	if (netgame)
 	{
 		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "You can't change this while in a netgame.\n");

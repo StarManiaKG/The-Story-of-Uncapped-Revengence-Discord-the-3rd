@@ -29,7 +29,7 @@
 #include "../i_net.h"
 #include "stun.h"
 
-#include "../STAR/drrr/kk_swap.h" // MSBF_SHORT & MSBF_LONG //
+#include "../STAR/drrr/km_swap.h" // MSBF_SHORT & MSBF_LONG //
 
 /* https://gist.github.com/zziuni/3741933 */
 /* I can only trust google to keep their shit up :y */

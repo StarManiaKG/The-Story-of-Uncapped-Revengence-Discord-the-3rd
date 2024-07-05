@@ -51,6 +51,8 @@
 #include "lua_hudlib_drawlist.h"
 #include "lua_hook.h"
 
+#include "STAR/drrr/khu_stuff.h" // DRRR_HU_Init() //
+
 // coords are scaled
 #define HU_INPUTX 0
 #define HU_INPUTY 0
@@ -337,6 +339,8 @@ void HU_Init(void)
 
 	// set shift translation table
 	shiftxform = english_shiftxform;
+
+	DRRR_HU_Init(); // STAR STUFF: DRRR: Initialize graphics :) //
 
 	luahuddrawlist_scores = LUA_HUD_CreateDrawList();
 }

@@ -1,9 +1,11 @@
 target_sources(SRB2SDL2 PRIVATE
     ../discord/discord_cmds.c
-    events/ss_easter.c
-    events/ss_aprilfools.c
-    ss_cmds.c
     ss_main.c
+    ss_misc.c
+    ss_cmds.c
+    ss_inputs.c
+    ss_menufunc.c
+    ss_purefat.c
     star_functions.c
     m_menu.c
     p_user.c
@@ -11,4 +13,20 @@ target_sources(SRB2SDL2 PRIVATE
     parser.c
     parsed.c
     s_sound.c
+    drrr/sdl/ki_system.c
+    drrr/sdl/ki_video.c
+    drrr/k_console.c
+    drrr/k_font.c
+    drrr/kd_main.c
+    drrr/kg_game.c
+    drrr/kg_input.c
+    drrr/khu_stuff.c
+    drrr/kk_hud.c
+    drrr/km_menudraw.c
+    drrr/km_menufunc.c
+    drrr/kv_video.c
+    drrr/k_virtualkeyboard.c
+    drrr/menus/k_message-box.c
+    events/ss_easter.c
+    events/ss_aprilfools.c
 )

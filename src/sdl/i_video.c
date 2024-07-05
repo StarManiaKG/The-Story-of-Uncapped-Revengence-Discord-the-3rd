@@ -92,8 +92,11 @@
 
 // STAR STUFF //
 #include "../STAR/star_vars.h" // STAR_SetWindowTitle() //
+
 #include "../STAR/ss_cmds.h" // cv_tpsrate //
 #include "../STAR/ss_main.h" // TSoURDt3rd_SCR_DisplayTpsRate() //
+
+#include "../STAR/drrr/ki_system.h" // DRRR_I_GetEvent() //
 // END THAT STUFF //
 
 // maximum number of windowed modes (see windowedModes[][])
@@ -1122,6 +1125,8 @@ void I_GetEvent(void)
 	// In order to make wheels act like buttons, we have to set their state to Up.
 	// This is because wheel messages don't have an up/down state.
 	gamekeydown[KEY_MOUSEWHEELDOWN] = gamekeydown[KEY_MOUSEWHEELUP] = 0;
+
+	DRRR_I_GetEvent(evt); // STAR STUFF: DRRR: handle events please //
 }
 
 void I_StartupMouse(void)

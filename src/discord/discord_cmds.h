@@ -17,22 +17,22 @@
 #include "discord.h"
 #include "../command.h"
 
+#ifdef HAVE_DISCORDSUPPORT
 // ------------------------ //
 //        Variables
 // ------------------------ //
 
-#ifdef HAVE_DISCORDSUPPORT
 extern consvar_t cv_discordrp, cv_discordstreamer;
 extern consvar_t cv_discordasks;
 extern consvar_t cv_discordshowonstatus, cv_discordstatusmemes, cv_discordcharacterimagetype;
 
-extern consvar_t cv_customdiscorddetails, cv_customdiscordstate;
-extern consvar_t cv_customdiscordlargeimagetype, cv_customdiscordsmallimagetype;
-extern consvar_t cv_customdiscordlargecharacterimage, cv_customdiscordsmallcharacterimage;
-extern consvar_t cv_customdiscordlargesupercharacterimage, cv_customdiscordsmallsupercharacterimage;
-extern consvar_t cv_customdiscordlargemapimage, cv_customdiscordsmallmapimage;
-extern consvar_t cv_customdiscordlargemiscimage, cv_customdiscordsmallmiscimage;
-extern consvar_t cv_customdiscordlargeimagetext, cv_customdiscordsmallimagetext;
+extern consvar_t cv_discordcustom_details, cv_discordcustom_state;
+extern consvar_t cv_discordcustom_imagetype_large, cv_discordcustom_imagetype_small;
+extern consvar_t cv_discordcustom_characterimage_large, cv_discordcustom_characterimage_small;
+extern consvar_t cv_discordcustom_supercharacterimage_large, cv_discordcustom_supercharacterimage_small;
+extern consvar_t cv_discordcustom_mapimage_large, cv_discordcustom_mapimage_small;
+extern consvar_t cv_discordcustom_miscimage_large, cv_discordcustom_miscimage_small;
+extern consvar_t cv_discordcustom_imagetext_large, cv_discordcustom_imagetext_small;
 #endif
 
 // ------------------------ //

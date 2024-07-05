@@ -87,58 +87,60 @@ void TSoURDt3rd_PlayerThink(player_t *player)
 
 #undef TSOURDT3RD_MUFFLEINT
 
+#if 0
+// STAR NOTE: TODO: come back //
+#include "drrr/kg_input.h" // G_PlayerDeviceRumble() //
+
+static inline void P_DeviceRumbleTick(void)
+{
+	UINT8 i;
+
+	for (i = 0; i <= MAXPLAYERS; i++)
+	{
+		player_t *player = &players[i];
+
+		UINT16 low = 0;
+		UINT16 high = 0;
+
+		if (!P_IsLocalPlayer(player))
+			continue;
+
+		if (player->mo != NULL && !player->exiting)
+		{
+#if 0
+			if ((player->mo->eflags & MFE_DAMAGEHITLAG) && player->mo->hitlag)
+			{
+				low = high = 65536 / 2;
+			}
+			else if (player->sneakertimer > (sneakertime-(TICRATE/2)))
+			{
+				low = high = 65536 / (3+player->numsneakers);
+			}
+			else if (((player->boostpower < FRACUNIT) || (player->stairjank > 8))
+				&& P_IsObjectOnGround(player->mo) && player->speed != 0)
+			{
+				low = high = 65536 / 32;
+			}
+#else
+			if (player->powers[pw_sneakers])
+			{
+				low = high = 65536 / (3+player->powers[pw_sneakers]);
+			}
+#endif
+		}
+
+		G_PlayerDeviceRumble(i, low, high);
+	}
+}
+#endif
+
 //
 // void TSoURDt3rd_P_Ticker(void)
 // General TSoURDt3rd gameplay ticker.
 //
-boolean all7matchemeralds = false; // MARKED FOR REMOVAL //
-
 void TSoURDt3rd_P_Ticker(void)
 {
 	INT32 i, j;
-
-#ifdef HAVE_DISCORDSUPPORT
-	if (gametyperules & GTR_POWERSTONES)
-	{	// All 7 Emeralds
-		UINT16 MAXTEAMS = 3;
-
-		UINT16 match_emeralds[MAXTEAMS];
-		static tic_t emerald_time;
-
-		if (G_GametypeHasTeams()) // If this gametype has teams, check every player on your team for emeralds.
-		{
-			for (i = 0, j = 1; j < MAXTEAMS; i++)
-			{
-				if (i >= MAXPLAYERS)
-				{
-					if (ALL7EMERALDS(match_emeralds[j]))
-					{
-						all7matchemeralds = true;
-						break;
-					}
-					match_emeralds[j++] = 0;
-					i = 0;
-				}
-				if (players[i].ctfteam == j)
-					match_emeralds[j] |= players[i].powers[pw_emeralds];
-			}
-		}
-		else if (ALL7EMERALDS(players[consoleplayer].powers[pw_emeralds]))
-			all7matchemeralds = true;
-
-		if (all7matchemeralds)
-		{
-			if (!emerald_time)
-				DRPC_UpdatePresence();
-			if (++emerald_time >= 20*TICRATE)
-			{
-				all7matchemeralds = false;
-				emerald_time = 0;
-				DRPC_UpdatePresence();
-			}
-		}
-	}
-#endif
 
 	for (i = 0, j = 0; i < MAXPLAYERS; i++)
 	{
@@ -206,13 +208,17 @@ boolean TSoURDt3rd_P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *sourc
 
 	if (target)
 	{
-		if (((target->flags & MF_BOSS) && target->health == (target->info->damage ? target->info->damage : 3))
-			&& cv_bosspinchmusic.value)
+		if ((target->flags & MF_BOSS) && target->health <= (target->info->damage ? target->info->damage : 3))
 		{
+			if (cv_bosspinchmusic.value)
+				return false;
+
 			strncpy(mapmusname, TSoURDt3rd_DetermineLevelMusic(), 7);
 			mapmusname[6] = 0;
 
-			S_StopMusic();
+			if (TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack)
+				return false;
+
 			S_ChangeMusicEx(mapmusname, mapmusflags, true, TSoURDt3rd_PinchMusicPosition(), 0, 0);
 			if (TSoURDt3rd_SetPinchMusicSpeed())
 				S_SpeedMusic(1.1f);
