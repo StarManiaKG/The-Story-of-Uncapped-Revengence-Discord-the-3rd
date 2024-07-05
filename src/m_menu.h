@@ -136,12 +136,9 @@ typedef enum
 
 	MN_SPECIAL,
 
-#ifdef HAVE_DISCORDRPC
-	// DISCORD STUFF //
+#ifdef HAVE_DISCORDSUPPORT
 	MN_OP_DISCORD_RQ,
 	MN_OP_DISCORD_OPT,
-	MN_OP_DISCORDCS_OUTPUT,
-	// SET AND READY! //
 #endif
 
 	// STAR STUFF //
@@ -514,7 +511,7 @@ extern boolean AllowEasterEggHunt, EnableEasterEggHuntBonuses;
 
 // commands //
 // game
-extern consvar_t cv_startupscreen, cv_stjrintro, cv_quitscreen;
+extern consvar_t cv_startupscreen, cv_quitscreen;
 extern consvar_t cv_isitcalledsingleplayer;
 extern consvar_t cv_pausegraphicstyle, cv_automapoutsidedevmode;
 

@@ -31,48 +31,33 @@
 #include "../d_main.h" // autoloaded/autoloading //
 #include "../r_main.h" // shadows //
 
-#ifdef HAVE_DISCORDRPC
-#include "../discord/discord.h"
-#endif
-
 // ------------------------ //
 //        Variables
 // ------------------------ //
 
-//tsourdt3rd_menus_t *TSoURDt3rd_currentMenu = &MainDef;
+//tsourdt3rd_menus_t *tsourdt3rd_curmenu = &MainDef;
 
 INT16 MessageMenuDisplay[3][256]; // TO HACK
 
 menuitem_t defaultMenuTitles[256][256];
+gtdesc_t defaultGametypeTitles[NUMGAMETYPES];
 
-// ====
-// GAME
-// ====
+// =============
+// MENU HANDLERS
+// =============
 
-static void M_CheckForTSoURDt3rdUpdates(INT32 choice);
-
-// =======
-// JUKEBOX
-// =======
+static void TSoURDt3rd_M_CheckUpdates(INT32 choice);
 
 static void M_DrawTSoURDt3rdJukebox(void);
 static void M_HandleTSoURDt3rdJukebox(INT32 choice);
-
 static void M_TSoURDt3rdJukeboxControls(INT32 choice);
-
-// =====
-// SNAKE
-// =====
 
 static void STAR_InitializeSnakeMenu(INT32 choice);
 static void STAR_DrawSnakeMenu(void);
-static void STAR_HandleSnakeMenu(INT32 choice);
+static void STAR_HandleSnakeMenu(INT32 choice); // prevents unnecessary sounds from playing
+static boolean STAR_QuitSnakeMenu(void);
 
-// =====
-// MISC.
-// =====
-
-static void STAR_SpawnDispenser(INT32 choice);
+static void TSoURDt3rd_OBJ_SpawnDispenser(INT32 choice);
 
 // =====
 // MENUS
@@ -113,8 +98,7 @@ menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 	{IT_STRING | IT_CVAR,	NULL,	"Sonic CD Mode",				&cv_soniccd,	   	   	   151},
 
 	{IT_STRING | IT_CVAR,	NULL,	"TSoURDt3rd Update Notice",		&cv_updatenotice,		   161},
-	{IT_STRING | IT_CALL,	NULL,	"Check for Updates...",			M_CheckForTSoURDt3rdUpdates,
-																							   166},
+	{IT_STRING | IT_CALL,	NULL,	"Check for Updates...",			TSoURDt3rd_M_CheckUpdates, 166},
 
 	{IT_HEADER, 			NULL, 	"Audio Options", 				NULL, 					   175},
 	{IT_STRING | IT_CVAR,	NULL,	"Water Muffling",				&cv_watermuffling,	   	   181},
@@ -174,7 +158,8 @@ menuitem_t OP_Tsourdt3rdOptionsMenu[] =
 
 	{IT_HEADER, 			NULL, 	"Miscellanious Extras",     	NULL,					   439},
 	{IT_STRING | IT_CALL, 	NULL, 	"Play Snake",					STAR_InitializeSnakeMenu,  445},
-	{IT_STRING | IT_CALL,	NULL, 	"Dispenser Goin' Up",			STAR_SpawnDispenser,   	   450},
+	{IT_STRING | IT_CALL,	NULL, 	"Dispenser Goin' Up",			TSoURDt3rd_OBJ_SpawnDispenser,
+																							   450},
 
 	{IT_STRING | IT_CVAR, 	NULL,   "Window Title Type",    		&cv_windowtitletype,   	   460},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,
@@ -203,9 +188,10 @@ static menuitem_t OP_Tsourdt3rdJukeboxControlsMenu[] =
 	{IT_CALL | IT_STRING2,	NULL, 	"Stop Jukebox",					M_ChangeControl,		   JB_STOPJUKEBOX},
 };
 
+// Does next to nothing useful
 static menuitem_t OP_Tsourdt3rdSnakeMenu[] =
 {
-	{IT_KEYHANDLER | IT_STRING,		NULL,		"",		STAR_HandleSnakeMenu,		0},
+	{IT_KEYHANDLER | IT_NOTHING,	NULL,	"",		STAR_HandleSnakeMenu,	0},
 };
 
 menu_t OP_TSoURDt3rdOptionsDef = DEFAULTSCROLLMENUSTYLE(
@@ -239,7 +225,7 @@ menu_t OP_TSoURDt3rdSnakeDef =
 	STAR_DrawSnakeMenu,
 	60, 150,
 	0,
-	NULL
+	STAR_QuitSnakeMenu,
 };
 
 // ------------------------ //
@@ -305,7 +291,7 @@ void K_DrawSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isSmall)
 // GAME
 // ====
 
-static void M_CheckForTSoURDt3rdUpdates(INT32 choice)
+static void TSoURDt3rd_M_CheckUpdates(INT32 choice)
 {
 	(void)choice;
 	TSoURDt3rdPlayers[consoleplayer].checkedVersion = false;
@@ -328,7 +314,6 @@ void M_HandleMasterServerResetChoice(INT32 choice)
 		CV_Set(&cv_masterserver, cv_masterserver.defaultvalue);
 		S_StartSound(NULL, sfx_s221);
 	}
-
 	TSoURDt3rdPlayers[consoleplayer].masterServerAddressChanged = true;
 }
 
@@ -367,7 +352,6 @@ void M_ShiftMessageQueueDown(void)
 	{
 		memset(MessageMenu, 0, sizeof(MessageMenu));
 		memset(MessageMenuDisplay, 0, sizeof(MessageMenuDisplay));
-
 		return;
 	}
 
@@ -380,10 +364,10 @@ void M_ShiftMessageQueueDown(void)
 	}
 
 	// Update to the new message's position, play an alerting sound, and we're done :) //
-	MessageDef.x						= MessageMenuDisplay[0][0];
-	MessageDef.y						= MessageMenuDisplay[1][0];
+	MessageDef.x = MessageMenuDisplay[0][0];
+	MessageDef.y = MessageMenuDisplay[1][0];
 
-	MessageDef.lastOn					= MessageMenuDisplay[2][0];
+	MessageDef.lastOn = MessageMenuDisplay[2][0];
 
 	S_StartSound(NULL, sfx_zoom);
 }
@@ -401,9 +385,9 @@ void STAR_M_InitQuitMessages(void)
 	quitmsg[TSOURDT3RD_QUITSMSG1] = M_GetText("Every time you press 'Y',\nthe TSoURDt3rd Devs cry...\n\n(Press 'Y' to quit)");
 	quitmsg[TSOURDT3RD_QUITSMSG2] = M_GetText("Who do you think you are?\nItaly?\n\n(Press 'Y' to quit)");
 
-	quitmsg[TSOURDT3RD_QUITSMSG3] = M_GetText("Hehe, you couldn't even make\nit past the Title Screen,\ncould you, silly?\n\n(Press 'Y' to quit)"); // tmp string
-	quitmsg[TSOURDT3RD_QUITSMSG4] = M_GetText("Wait, <insert player name here>!\nCome back! I need you!\n\n(Press 'Y' to quit)"); // tmp string
-	quitmsg[TSOURDT3RD_QUITSMSG5] = M_GetText("Come back!\nYou have more jukebox music to play!\n\n(Press 'Y' to quit)"); // tmp string
+	quitmsg[TSOURDT3RD_QUITSMSG3] = M_GetText("Hehe, you couldn't even make\nit past the Title Screen,\ncould you, silly?\n\n(Press 'Y' to quit)"); // tmp, dynamically changed later
+	quitmsg[TSOURDT3RD_QUITSMSG4] = M_GetText("Wait, <insert player name here>!\nCome back! I need you!\n\n(Press 'Y' to quit)"); // tmp, dynamically changed later
+	quitmsg[TSOURDT3RD_QUITSMSG5] = M_GetText("Come back!\nYou have more jukebox music to play!\n\n(Press 'Y' to quit)"); // tmp, dynamically changed later
 
 	quitmsg[TSOURDT3RD_QUITSMSG6] = M_GetText("You know, I have to say\nsomething cool here in order to\nclose the game...\n\n(Press 'Y' to quit)");
 
@@ -463,7 +447,7 @@ INT32 STAR_M_SelectQuitMessage(void)
 
 		case QUIT2MSG3:
 		{
-			switch(M_RandomRange(0, 1))
+			switch (M_RandomKey(1))
 			{
 				case 1: S_StartSound(NULL, sfx_supert); break;
 				default: S_StartSound(NULL, sfx_cgot); break;
@@ -496,14 +480,15 @@ void STAR_M_DrawQuitGraphic(void)
 		case 2: quitgfx = "SS_QSMUG"; break; // funny aseprite moment
 		case 3: quitgfx = "SS_QKEL"; break; // kel world aseprite moment
 		case 4: quitgfx = "SS_QATRB"; break; // secret aseprite moment
-
-		default: // Demo 3 Quit Screen Tails 06-16-2001
-			V_DrawScaledPatch(0, 0, 0, W_CachePatchName("GAMEQUIT", PU_PATCH));
-			return;
+		default: quitgfx = "GAMEQUIT"; break; // Demo 3 Quit Screen Tails 06-16-2001
 	}
 
 	V_DrawScaledPatch(0, 0, 0, W_CachePatchName(quitgfx, PU_PATCH));
-	V_DrawScaledPatch(0, 0, 0, W_CachePatchName("SS_QDISC", PU_PATCH)); // psst, disclaimer; this game should not be sold :p
+	if (cv_quitscreen.value)
+	{
+		// psst, disclaimer; this game should not be sold :p
+		V_DrawScaledPatch(0, 0, 0, W_CachePatchName("SS_QDISC", PU_PATCH));
+	}
 }
 
 // ================
@@ -562,10 +547,6 @@ static void M_TSoURDt3rdOptions(INT32 choice)
 		(!(Playing() && playeringame[consoleplayer]) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
 
 	// Extra Options //
-	// Snake
-	OP_Tsourdt3rdOptionsMenu[op_snake].status =
-		(!Playing() ? IT_CALL|IT_STRING : IT_GRAYEDOUT);
-
 	// TF2
 	OP_Tsourdt3rdOptionsMenu[op_dispensergoingup].status =
 		(!netgame ? IT_CALL|IT_STRING : IT_GRAYEDOUT);
@@ -602,8 +583,6 @@ boolean TSoURDt3rd_M_IsJukeboxUnlocked(TSoURDt3rdJukebox_t *TSoURDt3rdJukebox)
 			return true;
 		}
 	}
-
-	M_StartMessage(M_GetText("You haven't unlocked the jukebox yet!\nGo and unlock the sound test first!\n"),NULL,MM_NOTHING);
 	return false;
 }
 
@@ -620,16 +599,17 @@ void M_TSoURDt3rdJukebox(INT32 choice)
 	if (!soundtestpage)
 		soundtestpage = 1;
 
-	if (TSoURDt3rdJukebox->curtrack)
-		curplaying = TSoURDt3rdJukebox->curtrack;
-	else
-		M_ResetJukebox(true);
+	if (!TSoURDt3rdJukebox->curtrack)
+		M_ResetJukebox(false);
 
 	if (!TSoURDt3rd_M_IsJukeboxUnlocked(TSoURDt3rdJukebox))
+	{
+		STAR_M_StartMessage("TSoURDt3rd Jukebox",0,M_GetText("You haven't unlocked this yet!\nGo and unlock the sound test first!\n"),NULL,MM_NOTHING);
 		return;
+	}
 	else if (!S_PrepareSoundTest())
 	{
-		M_StartMessage(M_GetText("No accessible tracks found in the jukebox.\n"),NULL,MM_NOTHING);
+		STAR_M_StartMessage("TSoURDt3rd Jukebox",0,M_GetText("No selectable tracks found.\n"),NULL,MM_NOTHING);
 		return;
 	}
 
@@ -661,7 +641,7 @@ static void M_DrawTSoURDt3rdJukebox(void)
 	// STAR NOTE: there's a duplicate of the latter, non-sfx part of this ticker in d_main.c, where the D_SRB2Loop function is, just so you know :p
 	if (TSoURDt3rd->jukebox.curtrack)
 	{
-		if (curplaying == &soundtestsfx)
+		if (TSoURDt3rd->jukebox.curtrack == &soundtestsfx)
 		{
 			if (cv_soundtest.value)
 			{
@@ -676,7 +656,7 @@ static void M_DrawTSoURDt3rdJukebox(void)
 		}
 		else
 		{
-			fixed_t stoppingtics = (fixed_t)(curplaying->stoppingtics) << FRACBITS;
+			fixed_t stoppingtics = (fixed_t)(TSoURDt3rd->jukebox.curtrack->stoppingtics) << FRACBITS;
 			if (stoppingtics && st_time >= stoppingtics)
 			{
 				M_ResetJukebox(true); // Whoa, Whoa, We Ran Out of Time
@@ -685,7 +665,7 @@ static void M_DrawTSoURDt3rdJukebox(void)
 			else
 			{
 				fixed_t work, bpm;
-				work = bpm = curplaying->bpm/S_GetSpeedMusic();
+				work = bpm = TSoURDt3rd->jukebox.curtrack->bpm/S_GetSpeedMusic();
 
 				angle_t ang;
 				//bpm = FixedDiv((60*TICRATE)<<FRACBITS, bpm); -- bake this in on load
@@ -753,8 +733,8 @@ static void M_DrawTSoURDt3rdJukebox(void)
 
 		if (TSoURDt3rd->jukebox.curtrack)
 		{
-			if (curplaying->alttitle[0])
-				titl = va("%s - %s - ", TSoURDt3rd->jukebox.curtrack->title, curplaying->alttitle);
+			if (TSoURDt3rd->jukebox.curtrack->alttitle[0])
+				titl = va("%s - %s - ", TSoURDt3rd->jukebox.curtrack->title, TSoURDt3rd->jukebox.curtrack->alttitle);
 			else
 				titl = va("%s - ", TSoURDt3rd->jukebox.curtrack->title);
 		}
@@ -779,7 +759,7 @@ static void M_DrawTSoURDt3rdJukebox(void)
 		}
 
 		if (TSoURDt3rd->jukebox.curtrack)
-			V_DrawRightAlignedThinString(BASEVIDWIDTH-16, 46, V_ALLOWLOWERCASE, curplaying->authors);
+			V_DrawRightAlignedThinString(BASEVIDWIDTH-16, 46, V_ALLOWLOWERCASE, TSoURDt3rd->jukebox.curtrack->authors);
 	}
 
 	V_DrawFill(165, 60, 140+15, 112, 159);
@@ -846,7 +826,7 @@ static void M_DrawTSoURDt3rdJukebox(void)
 						'\x1D' | V_MENUCOLORMAP, false);
 				}
 
-				if (curplaying == soundtestdefs[t])
+				if (TSoURDt3rd->jukebox.curtrack == soundtestdefs[t])
 				{
 					sfxstr = (cv_soundtest.value) ? S_sfx[cv_soundtest.value].name : "N/A";
 					i = V_StringWidth(sfxstr, 0);
@@ -861,7 +841,7 @@ static void M_DrawTSoURDt3rdJukebox(void)
 				else
 					V_DrawThinString(x, y, (t == st_sel ? V_MENUCOLORMAP : 0)|V_ALLOWLOWERCASE, soundtestdefs[t]->title);
 
-				if (curplaying == soundtestdefs[t])
+				if (TSoURDt3rd->jukebox.curtrack == soundtestdefs[t])
 				{
 					V_DrawFill(165+140-9+24, y-4, 8, 16, 150);
 					
@@ -950,7 +930,7 @@ static void M_HandleTSoURDt3rdJukebox(INT32 choice)
 
 			S_StopSounds();
 			S_StopMusic();
-			M_ResetJukebox(true);
+			M_ResetJukebox(false);
 			st_time = 0;
 
 			S_StartSound(NULL, sfx_skid);
@@ -1002,8 +982,7 @@ static void M_HandleTSoURDt3rdJukebox(INT32 choice)
 			st_time = 0;
 			if (soundtestdefs[st_sel]->allowed)
 			{
-				if (TSoURDt3rd->jukebox.curtrack)
-					TSoURDt3rd->jukebox.prevtrack = TSoURDt3rd->jukebox.curtrack;
+				M_ResetJukebox(false);
 				curplaying = soundtestdefs[st_sel];
 
 				if (curplaying == &soundtestsfx)
@@ -1063,8 +1042,8 @@ static void M_HandleTSoURDt3rdJukebox(INT32 choice)
 static void M_TSoURDt3rdJukeboxControls(INT32 choice)
 {
 	(void)choice;
-	setupcontrols = gamecontrol; // necessary in order to set controls, crashes otherwise
 
+	setupcontrols = gamecontrol; // necessary in order to set controls, crashes otherwise
 	M_SetupNextMenu(&OP_TSoURDt3rdJukeboxControlsDef);
 }
 
@@ -1087,83 +1066,61 @@ static void STAR_InitializeSnakeMenu(INT32 choice)
 
 static void STAR_DrawSnakeMenu(void)
 {
-	if (snake)
-		Snake_Draw();
-	V_DrawRightAlignedString(BASEVIDWIDTH-4, BASEVIDHEIGHT-12, V_ALLOWLOWERCASE, "\x86""Press ""\x82""ESC""\x86"" to quit.");
+	if (!snake)
+		return;
+
+	Snake_Draw();
+
+	// Draw background fade
+	if (snake->paused)
+	{
+		V_DrawFadeScreen(0xFF00, 16); // force default
+		F_TitleScreenDrawer();
+
+		if (!snake->time)
+			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2, V_MENUCOLORMAP, "PRESS ENTER TO START");
+		else
+			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2, V_MENUCOLORMAP, "PAUSED");
+	}
+
+	V_DrawRightAlignedString(
+		BASEVIDWIDTH-4,
+		BASEVIDHEIGHT-12,
+		V_ALLOWLOWERCASE,
+		"\x86""Press ""\x82""ESC""\x86"" to quit."
+	);
 }
 
 static void STAR_HandleSnakeMenu(INT32 choice)
 {
-	(void)choice;
-	tic_t nowtime, quittime, lasttime;
+	boolean exitmenu = false;
 
+	switch (choice)
+	{
+		case KEY_ESCAPE:
+			exitmenu = true;
+			break;
+		default:
+			break;
+	}
+
+	if (exitmenu)
+	{
+		if (currentMenu->prevMenu)
+			M_SetupNextMenu(currentMenu->prevMenu);
+		else
+			M_ClearMenus(true);
+	}
+}
+
+static boolean STAR_QuitSnakeMenu(void)
+{
 	if (snake)
 	{
-		// Remove Uncapped While They're Here //
-		nowtime = lasttime = I_GetTime();
-		quittime = nowtime + NEWTICRATE*2;
-
-		while (quittime > nowtime)
-		{
-			// Delay the Screen
-			while (!((nowtime = I_GetTime()) - lasttime))
-			{
-				I_Sleep(cv_sleep.value);
-				I_UpdateTime(cv_timescale.value);
-			}
-			lasttime = nowtime;
-
-			I_OsPolling();
-			I_UpdateNoBlit();
-
-			// do hacks
-			for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
-			{
-				if (!Snake_Joy_Grabber(&events[eventtail]))
-					G_MapEventsToControls(&events[eventtail]);
-			}
-
-			// Check Controls While Removing Uncapped
-			if (gamekeydown[KEY_ESCAPE] || gamekeydown[KEY_JOY1+1])
-			{
-				// Free the Memory
-				if (snake)
-				{
-					free(snake);
-					snake = NULL;
-				}
-
-				// Close the Menu
-				D_StartTitle();
-				memset(gamekeydown, 0, NUMKEYS);
-				return;
-			}	
-
-			if (snake)
-				Snake_Handle();
-
-			// Delay the Screen Even More
-#ifdef HAVE_THREADS
-			I_lock_mutex(&m_menu_mutex);
-#endif
-			M_Drawer(); // menu is drawn even on top of wipes
-#ifdef HAVE_THREADS
-			I_unlock_mutex(m_menu_mutex);
-#endif
-			// Update the Screen Again
-			I_UpdateNoVsync(); // page flip or blit buffer
-			I_FinishUpdate(); // Update the screen with the image Tails 06-19-2001
-
-			// Fix Some Small Things
-			if (moviemode) // make sure we save frames for the white hold too
-				M_SaveFrame();
-			S_UpdateSounds();
-			S_UpdateClosedCaptions();
-		}
+		free(snake);
+		snake = NULL;
 	}
-	
-	// Update the Screen AGAIN, and We're Done :)
-	I_UpdateNoVsync();
+	return true;
 }
 
 // =====
@@ -1171,22 +1128,23 @@ static void STAR_HandleSnakeMenu(INT32 choice)
 // =====
 
 //
-// static void STAR_SpawnDispenser(INT32 choice)
+// static void TSoURDt3rd_OBJ_SpawnDispenser(INT32 choice)
 // Spawns a TF2 Dispenser.
 //
-// Part of TSoURDt3rd's custom objects!
-//
-static void STAR_SpawnDispenser(INT32 choice)
+static void TSoURDt3rd_OBJ_SpawnDispenser(INT32 choice)
 {
 	(void)choice;
 
-	if (!(Playing() && playeringame[consoleplayer]) || netgame)
+	if (!Playing() || !playeringame[consoleplayer])
 	{
-		(!(Playing() && playeringame[consoleplayer]) ?
-			(CONS_Printf("You need to be in a game in order to spawn this.\n")) :
-
-			((Playing() && netgame) ? CONS_Printf("Sorry, you can't spawn this while in a netgame.\n") : 0));
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD, "You need to be in a game in order to spawn this.\n");
+		return;
 	}
-	else
-		SpawnTheDispenser = true;
+	else if (netgame)
+	{
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD, "Sorry, you can't spawn this while in a netgame.\n");
+		return;
+	}
+
+	SpawnTheDispenser = true;
 }

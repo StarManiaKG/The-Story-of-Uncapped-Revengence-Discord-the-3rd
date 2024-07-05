@@ -1211,8 +1211,7 @@ UINT16 W_InitFolder(const char *path, boolean mainfile, boolean startup)
 /** Tries to load a series of files.
   * All files are wads unless they have an extension of ".soc" or ".lua".
   *
-  * STAR NOTE
-  * 	And now also ".star" too.
+  * STAR NOTE: also '.star' files too :)
   *
   * Each file is optional, but at least one file must be found or an error will
   * result. Lump names can appear multiple times. The name searcher looks

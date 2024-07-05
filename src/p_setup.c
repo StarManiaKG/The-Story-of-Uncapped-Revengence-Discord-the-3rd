@@ -89,6 +89,7 @@
 #include "taglist.h"
 
 #include "STAR/ss_main.h" // TSoURDt3rd_LoadLevel() //
+#include "STAR/drrr/khu_stuff.h" // partadd_earliestfile //
 
 //
 // Map MD5, calculated on level load.
@@ -8097,6 +8098,15 @@ static boolean P_LoadAddon(UINT16 numlumps)
 		return false;
 	}
 
+	// STAR STUFF: DRRR: Init partadd. //
+	static SINT8 partadd_stage = -1;
+	if (partadd_stage != 0)
+	{
+		partadd_earliestfile = wadnum;
+	}
+	partadd_stage = 0;
+	// DONE! //
+
 	switch(wadfiles[wadnum]->type)
 	{
 	case RET_PK3:
@@ -8261,6 +8271,11 @@ static boolean P_LoadAddon(UINT16 numlumps)
 		if (server)
 			D_SendExitLevel(false);
 	}
+
+	// STAR STUFF: DRRR: reset our partadds //
+	partadd_stage = -1;
+	partadd_earliestfile = UINT16_MAX;
+	// NEEDED FOR GRAPHIC COMPATIBILITY! //
 
 	return true;
 }

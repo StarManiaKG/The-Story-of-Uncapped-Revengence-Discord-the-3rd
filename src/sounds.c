@@ -827,7 +827,14 @@ sfxinfo_t S_sfx[NUMSFX] =
   // initialized to NULL
 
   // STAR STUFF //
-  [sfx_tf2d] = {"tf2d",   false,  64, 0,                  -1, NULL, 0, -1, -1, LUMPERROR, "Dispenser Goin' Up."},
+  // Generic menu SFX
+  [sfx_tmxbup] = {
+   "tmxbup", false,  64, 0,                  -1, NULL, 0, -1, -1, LUMPERROR, "Deleting"
+  },
+  {"tmxbdn", false,  64, 0,                  -1, NULL, 0, -1, -1, LUMPERROR, "Typing"},
+
+  // Extras
+  {"tf2d",   false,  64, 0,                  -1, NULL, 0, -1, -1, LUMPERROR, "Dispenser Goin' Up."},
   // SOUNDS MADE! //
 };
 

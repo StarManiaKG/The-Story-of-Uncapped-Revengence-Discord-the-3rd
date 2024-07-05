@@ -3546,7 +3546,8 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_NAMECHECK",
 
 	// STAR STUFF //
-	[S_EEGG] = "S_EEGG",
+	[S_EEGG] =
+	"S_EEGG",
 	"TF2D",
 	// STATES MADE CONSTANT! //
 };
@@ -4327,7 +4328,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_RAY",
 
 	// STAR STUFF //
-	[MT_EASTEREGG] = "MT_EASTEREGG",
+	[MT_EASTEREGG] =
+	"MT_EASTEREGG",
 	"MT_TF2DISPENSER",
 	// MOBJS MADE CONSTANT! //
 };
@@ -4955,12 +4957,9 @@ const char *const MENUTYPES_LIST[] = {
 
 	"SPECIAL",
 
-#ifdef HAVE_DISCORDRPC
-	// DISCORD STUFF //
+#ifdef HAVE_DISCORDSUPPORT
 	"OP_DISCORD_RQ",
 	"OP_DISCORD_OPT",
-	"OP_DISCORDCS_OUTPUT",
-	// COOL! //
 #endif
 
 	// STAR STUFF //

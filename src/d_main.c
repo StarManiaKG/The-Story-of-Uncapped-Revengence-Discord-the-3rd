@@ -93,8 +93,8 @@
 
 #include "lua_script.h"
 
-#ifdef HAVE_DISCORDRPC
-#include "discord/discord.h" // DISCORD STUFFS: our stuff //
+#ifdef HAVE_DISCORDSUPPORT
+#include "discord/discord.h"
 #endif
 
 // Version numbers for netplay :upside_down_face:
@@ -150,6 +150,9 @@ static char addonsdir[MAX_WADPATH];
 #include "STAR/m_menu.h" // STAR_M_InitQuitMessages() //
 
 #include "STAR/s_sound.h" // jukebox //
+
+#include "STAR/drrr/kg_input.h" // HandleGamepadDeviceEvents() //
+#include "STAR/drrr/km_menu.h" // M_UpdateMenuCMD() //
 
 // Discord Stuff
 INT32 extrawads;
@@ -225,6 +228,8 @@ void D_ProcessEvents(void)
 
 		ev = &events[eventtail];
 
+		HandleGamepadDeviceEvents(ev); // STAR STUFF: KART: Assign gamepads please //
+
 		// Set mouse buttons early in case event is eaten later
 		if (ev->type == ev_keydown || ev->type == ev_keyup)
 		{
@@ -276,6 +281,11 @@ void D_ProcessEvents(void)
 			hooked = true;
 		}
 
+		// STAR STUFF: KART: update keys current state //
+		if (!snake)
+			G_MapEventsToControls(ev);
+		// DONE! //
+
 		// Menu input
 #ifdef HAVE_THREADS
 		I_lock_mutex(&m_menu_mutex);
@@ -320,6 +330,13 @@ void D_ProcessEvents(void)
 		G_SetMouseDeltas(mouse.rdx, mouse.rdy, 1);
 	if (mouse2.rdx || mouse2.rdy)
 		G_SetMouseDeltas(mouse2.rdx, mouse2.rdy, 2);
+
+	// STAR STUFF: KART: Update menu CMD //
+	for (int i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		M_UpdateMenuCMD(i, false);
+	}
+	// DONE! //
 }
 
 //
@@ -331,8 +348,8 @@ void D_ProcessEvents(void)
 // added comment : there is a wipe eatch change of the gamestate
 gamestate_t wipegamestate = GS_LEVEL;
 // -1: Default; 0-n: Wipe index; INT16_MAX: do not wipe
-INT16 wipetypepre = -1;
-INT16 wipetypepost = -1;
+INT16 wipetypepre = INT16_MAX;
+INT16 wipetypepost = INT16_MAX;
 
 static void D_Display(void)
 {
@@ -611,9 +628,15 @@ static void D_Display(void)
 	// draw pause pic
 	if (paused && cv_showhud.value && (!menuactive || netgame))
 	{
-		// STAR NOTE: cv_pausegraphicstyle-related changes are here lol //
-		if (cv_pausegraphicstyle.value) // Old-School pause style
+#if 0
+		INT32 y = ((automapactive) ? (32) : (BASEVIDHEIGHT/2));
+		M_DrawTextBox((BASEVIDWIDTH/2) - (60), y - (16), 13, 2);
+		V_DrawCenteredString(BASEVIDWIDTH/2, y - (4), V_MENUCOLORMAP, "Game Paused");
+#else
+		// STAR STUFF: cv_pausegraphicstyle-related changes lol //
+		if (cv_pausegraphicstyle.value)
 		{
+			// Old-School
 			INT32 py;
 			patch_t *patch;
 			py = 4;
@@ -622,12 +645,14 @@ static void D_Display(void)
 			patch = W_CachePatchName("M_LPAUSE", PU_PATCH);
 			V_DrawScaledPatch(viewwindowx + (BASEVIDWIDTH - patch->width)/2, py, 0, patch);
 		}
-		else // Default pause style
+		else
 		{
+			// Default
 			INT32 y = ((automapactive) ? (32) : (BASEVIDHEIGHT/2));
 			M_DrawTextBox((BASEVIDWIDTH/2) - (60), y - (16), 13, 2);
 			V_DrawCenteredString(BASEVIDWIDTH/2, y - (4), V_MENUCOLORMAP, "Game Paused");
 		}
+#endif
 	}
 
 	// vid size change is now finished if it was on...
@@ -786,6 +811,8 @@ void D_SRB2Loop(void)
 
 	// hack to start on a nice clear console screen.
 	COM_ImmedExecute("cls;version");
+	// hack to prevent white flash upon initial window resize
+	V_DrawFill(0,0,BASEVIDWIDTH,BASEVIDHEIGHT,31);
 
 	I_FinishUpdate(); // page flip or blit buffer
 	/*
@@ -950,6 +977,7 @@ void D_SRB2Loop(void)
 
 		//// STAR STUFF ////
 		TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer];
+		TSoURDt3rdJukebox_t *TSoURDt3rdJukebox = &TSoURDt3rd->jukebox;
 
 #ifdef HAVE_CURL
 		// Do Internet Stuff //
@@ -961,27 +989,23 @@ void D_SRB2Loop(void)
 		// Whoa, Whoa, We Ran Out of Time (except again for keybind execution reasons)
 		if (TSoURDt3rd->jukebox.curtrack)
 		{
-			static fixed_t jb_time;
-			fixed_t jb_stoppingtics = (fixed_t)(TSoURDt3rd->jukebox.curtrack->stoppingtics) << FRACBITS;
+			fixed_t jb_stoppingtics = (fixed_t)(TSoURDt3rdJukebox->curtrack->stoppingtics) << FRACBITS;
 
-			if (jb_stoppingtics && jb_time >= jb_stoppingtics)
-			{
+			if (jb_stoppingtics && TSoURDt3rdJukebox->tics >= jb_stoppingtics)
 				M_ResetJukebox(true);
-				jb_time = 0;
-			}
 			else
 			{
 				fixed_t work = 0, bpm = 0;
 				work = bpm = TSoURDt3rd->jukebox.curtrack->bpm/S_GetSpeedMusic();
 
-				work = jb_time;
+				work = TSoURDt3rdJukebox->tics;
 				work %= bpm;
-				if (jb_time >= (FRACUNIT << (FRACBITS - 2))) // prevent overflow jump - takes about 15 minutes of loop on the same song to reach
-					jb_time = work;
+				if (TSoURDt3rdJukebox->tics >= (FRACUNIT << (FRACBITS - 2))) // prevent overflow jump - takes about 15 minutes of loop on the same song to reach
+					TSoURDt3rdJukebox->tics = work;
 				work = FixedDiv(work*180, bpm);
 
 				if (!(paused || P_AutoPause())) // prevents time from being added up while the game is paused
-					jb_time += renderdeltatics*S_GetSpeedMusic();
+					TSoURDt3rdJukebox->tics += renderdeltatics*S_GetSpeedMusic();
 			}
 		}
 
@@ -1094,6 +1118,11 @@ void D_StartTitle(void)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 		CL_ClearPlayer(i);
+
+	// STAR STUFF: DRRR: clear cmd building stuff //
+	G_ResetAllDeviceGameKeyDown();
+	G_ResetAllDeviceResponding();
+	// PORTED, RESET, AND DONE! //
 
 	players[consoleplayer].availabilities = players[1].availabilities = R_GetSkinAvailabilities(); // players[1] is supposed to be for 2p
 
@@ -2013,12 +2042,10 @@ void D_SRB2Main(void)
 	CON_ToggleOff();
 
 #ifdef HAVE_DISCORDSUPPORT
-	// DISCORD STUFFS: INITIALIZE //
    	if (! dedicated)
 	{
 		DRPC_Init();
 	}
-	// INITIALIZED DISCORD AND STUFFS //
 #endif
 
 	if (dedicated && server)

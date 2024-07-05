@@ -150,7 +150,7 @@ typedef union
 #include "i_time.h" // HOLEPUNCHING STUFFS: holepunch this please //
 #include "discord/stun.h" // STUN_got_response() //
 
-#include "STAR/drrr/kk_swap.h" // MSBF_LONG //
+#include "STAR/drrr/km_swap.h" // MSBF_LONG //
 
 // win32
 #ifdef USE_WINSOCK

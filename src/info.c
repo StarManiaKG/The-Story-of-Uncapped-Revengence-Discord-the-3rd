@@ -524,7 +524,8 @@ char sprnames[NUMSPRITES + 1][5] =
 	"GWLR",
 
 	// STAR STUFF //
-	[SPR_EEGG] = "EEGG",
+	[SPR_EEGG] =
+	"EEGG",
 	"TF2D",
 	// SPRITES NAMED! //
 };
@@ -3993,7 +3994,9 @@ state_t states[NUMSTATES] =
 	{SPR_NULL, 0, 1, {NULL}, 0, 0, S_NULL}, // S_NAMECHECK
 
 	// STAR STUFF //
-	[S_EEGG] = {SPR_EEGG, 0, -1, {NULL}, 0, 0, S_NULL},
+	[S_EEGG] = {
+	 SPR_EEGG, 0, -1, {NULL}, 0, 0, S_NULL   // S_EEGG
+	},
 	{SPR_TF2D, 0, -1, {NULL}, 0, 0, S_NULL}, // S_TF2D
 	// STATES NAMED! //
 };

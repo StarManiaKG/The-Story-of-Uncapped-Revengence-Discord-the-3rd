@@ -19,6 +19,8 @@
 #include "d_net.h"
 #include "console.h"
 
+#include "STAR/drrr/kg_input.h" // DRRR_G_MapEventsToControls() //
+
 #define MAXMOUSESENSITIVITY 100 // sensitivity steps
 
 static CV_PossibleValue_t mousesens_cons_t[] = {{1, "MIN"}, {MAXMOUSESENSITIVITY, "MAX"}, {0, NULL}};
@@ -193,6 +195,8 @@ void G_MapEventsToControls(event_t *ev)
 		flag = G_CheckDoubleClick(gamekeydown[KEY_2JOY1+i], &joy2dclicks[i]);
 		gamekeydown[KEY_DBL2JOY1+i] = flag;
 	}
+
+	DRRR_G_MapEventsToControls(ev); // STAR STUFF: DRRR: cool input events //
 }
 
 //
@@ -598,6 +602,7 @@ static const char *gamecontrolname[NUM_GAMECONTROLS] =
 	"custom1",
 	"custom2",
 	"custom3",
+
 	// STAR STUFF //
 	"openjukebox",
 	"increasemusicspeed",
@@ -793,6 +798,8 @@ void G_DefineDefaultControls(void)
 		gamecontrolbisdefault[i][JB_STOPJUKEBOX 		][0] = 'k';
 		// WE'RE USING CONTROLS HERE //
 	}
+
+	DRRR_G_DefineDefaultControls(); // STAR STUFF: DRRR: assign menu reserved controls //
 }
 
 INT32 G_GetControlScheme(INT32 (*fromcontrols)[2], const INT32 *gclist, INT32 gclen)

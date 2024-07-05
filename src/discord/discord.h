@@ -26,6 +26,10 @@
 // Please feel free to provide your own Discord app if you're making a new custom build :)
 #define DISCORD_APPID "1013126566236135516"
 
+#ifdef DEVELOP
+#define DISCORD_SECRETIVE
+#endif
+
 // length of IP strings
 #define IP_SIZE 21
 
@@ -45,9 +49,12 @@ typedef enum {
 } DRPC_Status_t;
 
 extern struct discordInfo_s {
-	UINT8 maxPlayers;
-	boolean joinsAllowed;
-	boolean everyoneCanInvite;
+	union
+	{
+		UINT8 maxPlayers;
+		boolean joinsAllowed;
+		boolean everyoneCanInvite;
+	} serv;
 
 	DRPC_Status_t ConnectionStatus;
 } discordInfo;
@@ -99,13 +106,15 @@ void DRPC_ImagePrintf(char *string, size_t size, const char *sep, const char *im
 // STATUSES
 // ========
 
+void DRPC_GeneralStatus(char *string, char *image, char *imagestr);
+void DRPC_ExtendedStatus(char *string);
 void DRPC_ScoreStatus(char *string);
 void DRPC_EmblemStatus(char *string);
 void DRPC_EmeraldStatus(char *string);
 void DRPC_GamestateStatus(char *string, char *image, char *imagestr);
-void DRPC_CharacterStatus(char *string, char *charimg, char *s_charimg, char *charname, char *s_charname);
+void DRPC_CharacterStatus(char *charimg, char *charname, char *s_charimg, char *s_charname);
 void DRPC_PlaytimeStatus(char *string);
-void DRPC_CustomStatus(char *detailstr, char *statestr);
+void DRPC_CustomStatus(char *detailstr, char *statestr, char *image, char *imagestr, char *s_image, char *s_imagestr);
 
 
 // ====
@@ -150,16 +159,6 @@ void DRPC_Init(void);
 --------------------------------------------------*/
 
 void DRPC_UpdatePresence(void);
-
-
-/*--------------------------------------------------
-	void DRPC_Shutdown(void)
-
-		Clears everything related to Discord Rich Presence.
-		Only runs when the game closes or crashes.
---------------------------------------------------*/
-
-void DRPC_Shutdown(void);
 
 
 #endif // HAVE_DISCORDSUPPORT

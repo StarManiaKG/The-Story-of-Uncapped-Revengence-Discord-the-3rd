@@ -46,9 +46,12 @@
 
 // STAR STUFF //
 #include "STAR/star_vars.h"
-#include "STAR/ss_cmds.h" // cv_storesavesinfolders //
+#include "STAR/ss_cmds.h" // cv_stjrintro & cv_storesavesinfolders //
 #include "STAR/ss_main.h"
 #include "STAR/m_menu.h" // skullAnimCounter, MessageDef, & M_ShiftMessageQueueDown() //
+#include "STAR/ss_purefat.h"
+
+#include "STAR/drrr/km_menu.h" // messagemenu //
 
 #include "deh_soc.h"
 // END THIS //
@@ -321,7 +324,7 @@ const char *introtext[NUMINTROSCENES];
 
 static tic_t introscenetime[NUMINTROSCENES] =
 {
-	5*TICRATE,	// STJr Presents
+	6*TICRATE,	// STJr Presents
 	10*TICRATE + (TICRATE/2),		// Two months had passed since...
 	12*TICRATE + ((TICRATE/4) * 3),	// As it was about to drain the rings...
 	12*TICRATE + (TICRATE/2),		// What Sonic, Tails, and Knuckles...
@@ -348,12 +351,7 @@ void F_StartIntro(void)
 	S_StopMusic();
 	S_StopSounds();
 
-	// STAR STUFF //
-	if (!cv_stjrintro.value)
-		introscenetime[0] = 5*TICRATE;				   // STJr Presents
-	else
-		introscenetime[0] = (7*TICRATE + (TICRATE/2)); // Pure Fat
-	// STAR STUFF OVER //
+	STAR_F_StartIntro(introscenetime); // STAR STUFF: sets intro scene times for us //
 
 	if (introtoplay)
 	{
@@ -634,137 +632,45 @@ void F_IntroDrawer(void)
 	}
 	else if (intro_scenenum == 0) // The Scene/Wipe Before the Start of the Intro
 	{
-		if (!cv_stjrintro.value) // STAR NOTE: STJR Presents
+		// STAR STUFF: pure fat intro? do unique stuff for that instead! //
+		if (cv_stjrintro.value)
 		{
-			if (intro_curtime > 1 && intro_curtime < (INT32)introscenetime[intro_scenenum])
-			{
-				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
-
-				if (intro_curtime < TICRATE-5) // Make the text shine!
-				{
-					sprintf(stjrintro, "STJRI%03u", intro_curtime-1);
-				}
-				else if (intro_curtime >= TICRATE-6 && intro_curtime < 2*TICRATE-20) // Pause on black screen for just a second
-				{
-					return;
-				}
-				else if (intro_curtime == 2*TICRATE-19)
-				{
-					// Fade in the text
-					// The text fade out is automatically handled when switching to a new intro scene
-					strncpy(stjrintro, "STJRI029", 9);
-					background = W_CachePatchName(stjrintro, PU_PATCH_LOWPRIORITY);
-					V_DrawSmallScaledPatch(bgxoffs, 84, 0, background);
-				}
-
-				if (!WipeInAction) // Draw the patch if not in a wipe
-				{
-					background = W_CachePatchName(stjrintro, PU_PATCH_LOWPRIORITY);
-					V_DrawSmallScaledPatch(bgxoffs, 84, 0, background);
-				}
-			}
+			STAR_F_PureFatDrawer(stjrintro, background, (patch = NULL), intro_scenenum, bgxoffs);
+			return;
 		}
-		
-		// STAR STUFF: "Waaaaaaah" intro //
-		else
+		// MOVING ON! //
+
+		if (intro_curtime > 1 && intro_curtime < (INT32)introscenetime[intro_scenenum])
 		{
-			strncpy(stjrintro, "STJRI029", 9); // Move the Frames of the Graphic Along While The Pure Fat is Fattening, So The Graphic Is At It's Final Frame When Shown
+			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 
-			if (finalecount-TICRATE/2 < 4*TICRATE+23) {
-				// aspect is FRACUNIT/2 for 4:3 (source) resolutions, smaller for 16:10 (SRB2) resolutions
-				fixed_t aspect = (FRACUNIT + (FRACUNIT*4/3 - FRACUNIT*vid.width/vid.height)/2)>>1;
-				fixed_t x,y;
-				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 2);
-				if (finalecount < 30) { // Cry!
-					if (finalecount < 4)
-						S_StopMusic();
-					if (finalecount == 4)
-						S_ChangeMusicInternal("_pure", false);
-					x = (BASEVIDWIDTH<<FRACBITS)/2 - FixedMul(334<<FRACBITS, aspect)/2;
-					y = (BASEVIDHEIGHT<<FRACBITS)/2 - FixedMul(358<<FRACBITS, aspect)/2;
-					V_DrawSciencePatch(x, y, 0, (patch = W_CachePatchName("WAHH1", PU_PATCH)), aspect);
-					W_UnlockCachedPatch(patch);
-					if (finalecount > 6) {
-						V_DrawSciencePatch(x, y, 0, (patch = W_CachePatchName("WAHH2", PU_PATCH)), aspect);
-						W_UnlockCachedPatch(patch);
-					}
-					if (finalecount > 10) {
-						V_DrawSciencePatch(x, y, 0, (patch = W_CachePatchName("WAHH3", PU_PATCH)), aspect);
-						W_UnlockCachedPatch(patch);
-					}
-					if (finalecount > 14) {
-						V_DrawSciencePatch(x, y, 0, (patch = W_CachePatchName("WAHH4", PU_PATCH)), aspect);
-						W_UnlockCachedPatch(patch);
-					}
-				}
-				else if (finalecount-30 < 20) { // Big eggy
-					background = W_CachePatchName("FEEDIN", PU_PATCH);
-					x = (BASEVIDWIDTH<<FRACBITS)/2 - FixedMul(560<<FRACBITS, aspect)/2;
-					y = (BASEVIDHEIGHT<<FRACBITS) - FixedMul(477<<FRACBITS, aspect);
-					V_DrawSciencePatch(x, y, V_SNAPTOBOTTOM, background, aspect);
-				}
-				else if (finalecount-50 < 30) { // Zoom out
-					fixed_t scale = FixedDiv(aspect, FixedDiv((finalecount-50)<<FRACBITS, (15<<FRACBITS))+FRACUNIT);
-					background = W_CachePatchName("FEEDIN", PU_PATCH);
-					x = (BASEVIDWIDTH<<FRACBITS)/2 - FixedMul(560<<FRACBITS, aspect)/2 + (FixedMul(560<<FRACBITS, aspect) - FixedMul(560<<FRACBITS, scale));
-					y = (BASEVIDHEIGHT<<FRACBITS) - FixedMul(477<<FRACBITS, scale);
-					V_DrawSciencePatch(x, y, V_SNAPTOBOTTOM, background, scale);
-				}
-				else
-				{
-					{
-						// Draw tiny eggy
-						fixed_t scale = FixedMul(FRACUNIT/3, aspect);
-						background = W_CachePatchName("FEEDIN", PU_PATCH);
-						x = (BASEVIDWIDTH<<FRACBITS)/2 - FixedMul(560<<FRACBITS, aspect)/2 + (FixedMul(560<<FRACBITS, aspect) - FixedMul(560<<FRACBITS, scale));
-						y = (BASEVIDHEIGHT<<FRACBITS) - FixedMul(477<<FRACBITS, scale);
-						V_DrawSciencePatch(x, y, V_SNAPTOBOTTOM, background, scale);
-					}
-
-					if (finalecount-84 < 58) { // Pure Fat is driving up!
-						int ftime = (finalecount-84);
-						x = (-189*FRACUNIT) + (FixedMul((6<<FRACBITS)+FRACUNIT/3, ftime<<FRACBITS) - FixedMul((6<<FRACBITS)+FRACUNIT/3, FixedDiv(FixedMul(ftime<<FRACBITS, ftime<<FRACBITS), 120<<FRACBITS)));
-						y = (BASEVIDHEIGHT<<FRACBITS) - FixedMul(417<<FRACBITS, aspect);
-						// Draw the body
-						V_DrawSciencePatch(x, y, V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName("PUREFAT1", PU_PATCH)), aspect);
-						W_UnlockCachedPatch(patch);
-						// Draw the door
-						V_DrawSciencePatch(x+FixedMul(344<<FRACBITS, aspect), y+FixedMul(292<<FRACBITS, aspect), V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName("PUREFAT2", PU_PATCH)), aspect);
-						W_UnlockCachedPatch(patch);
-						// Draw the wheel
-						V_DrawSciencePatch(x+FixedMul(178<<FRACBITS, aspect), y+FixedMul(344<<FRACBITS, aspect), V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName(va("TYRE%02u",(abs(finalecount-144)/3)%16), PU_PATCH)), aspect);
-						W_UnlockCachedPatch(patch);
-						// Draw the wheel cover
-						V_DrawSciencePatch(x+FixedMul(88<<FRACBITS, aspect), y+FixedMul(238<<FRACBITS, aspect), V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName("PUREFAT3", PU_PATCH)), aspect);
-						W_UnlockCachedPatch(patch);
-					} else { // Pure Fat has stopped!
-						y = (BASEVIDHEIGHT<<FRACBITS) - FixedMul(417<<FRACBITS, aspect);
-						// Draw the body
-						V_DrawSciencePatch(0, y, V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName("PUREFAT1", PU_PATCH)), aspect);
-						W_UnlockCachedPatch(patch);
-						// Draw the wheel
-						V_DrawSciencePatch(FixedMul(178<<FRACBITS, aspect), y+FixedMul(344<<FRACBITS, aspect), V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName("TYRE00", PU_PATCH)), aspect);
-						W_UnlockCachedPatch(patch);
-						// Draw the wheel cover
-						V_DrawSciencePatch(FixedMul(88<<FRACBITS, aspect), y+FixedMul(238<<FRACBITS, aspect), V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName("PUREFAT3", PU_PATCH)), aspect);
-						W_UnlockCachedPatch(patch);
-						// Draw the door
-						if (finalecount-TICRATE/2 > 4*TICRATE) { // Door is being raised!
-							int ftime = (finalecount-TICRATE/2-4*TICRATE);
-							y -= FixedDiv((ftime*ftime)<<FRACBITS, 23<<FRACBITS);
-						}
-						V_DrawSciencePatch(FixedMul(344<<FRACBITS, aspect), y+FixedMul(292<<FRACBITS, aspect), V_SNAPTOLEFT|V_SNAPTOBOTTOM, (patch = W_CachePatchName("PUREFAT2", PU_PATCH)), aspect);
-						W_UnlockCachedPatch(patch);
-					}
-				}
+			if (intro_curtime > TICRATE-17 && intro_curtime < 2*TICRATE-22) // Make the text shine!
+			{
+				sprintf(stjrintro, "STJRI%03u", intro_curtime-19);
 			}
-			// END THAT //
+			else if (intro_curtime >= 2*TICRATE-23 && intro_curtime < 2*TICRATE-3) // Pause on black screen for just a second
+			{
+				return;
+			}
+			else if (intro_curtime == 2*TICRATE-2)
+			{
+				// Fade in the text
+				// The text fade out is automatically handled when switching to a new intro scene
+				strncpy(stjrintro, "STJRI029", 9);
+				background = W_CachePatchName(stjrintro, PU_PATCH_LOWPRIORITY);
+				V_DrawSmallScaledPatch(bgxoffs, 84, 0, background);
+			}
 
-			else
+			if (!WipeInAction) // Draw the patch if not in a wipe
 			{
 				background = W_CachePatchName(stjrintro, PU_PATCH_LOWPRIORITY);
 				V_DrawSmallScaledPatch(bgxoffs, 84, 0, background);
 			}
+		}
+		else
+		{
+			background = W_CachePatchName(stjrintro, PU_PATCH_LOWPRIORITY);
+			V_DrawSmallScaledPatch(bgxoffs, 84, 0, background);
 		}
 	}
 	else if (intro_scenenum == 10) // Sky Runner
@@ -1070,8 +976,15 @@ void F_IntroTicker(void)
 
 	if (rendermode != render_none)
 	{
-		if ((intro_scenenum == 0 && intro_curtime == 2*TICRATE-19)
-			&& !cv_stjrintro.value) // STAR STUFF: STJr Presents //
+		// STAR STUFF: set our custom pure fat wipe for us //
+		if (cv_stjrintro.value)
+		{
+			STAR_F_PureFatTicker(intro_scenenum, intro_curtime, animtimer);
+			return;
+		}
+		// WIPED AND PRESENTED! //
+
+		if (intro_scenenum == 0 && intro_curtime == 2*TICRATE-2)
 		{
 			S_ChangeMusicInternal("_stjr", false);
 
@@ -2405,7 +2318,11 @@ void F_StartGameEnd(void)
 	// In case menus are still up?!!
 	M_ClearMenus(true);
 
-	timetonext = 10*TICRATE; // STAR NOTE: i was also here lol //
+#if 0
+	timetonext = TICRATE;
+#else
+	timetonext = 10*TICRATE; // STAR NOTE: cool finale score calculation junk! //
+#endif
 }
 
 //
@@ -2414,6 +2331,7 @@ void F_StartGameEnd(void)
 void F_GameEndDrawer(void)
 {
 	// this function does nothing
+
 	TSoURDt3rd_GameEnd(); // STAR STUFF: ....except this (WORLD 7 SUPER PAPER MARIO) //
 }
 
@@ -3602,6 +3520,16 @@ void F_MenuPresTicker(void)
 // (no longer) De-Demo'd Title Screen
 void F_TitleScreenTicker(boolean run)
 {
+	// STAR STUFF: DRRR: message menu routine //
+	if (run)
+	{
+		if (menumessage.active)
+		{
+			M_MenuMessageTick();
+		}
+	}
+	// ROUTINE RUNNING! //
+
 	if (run)
 		finalecount++;
 
