@@ -5,7 +5,7 @@ target_sources(SRB2SDL2 PRIVATE
     ss_cmds.c
     ss_inputs.c
     ss_menufunc.c
-    ss_purefat.c
+    smkg_misc_purefat.c
     star_functions.c
     m_menu.c
     p_user.c
@@ -16,6 +16,7 @@ target_sources(SRB2SDL2 PRIVATE
     drrr/sdl/ki_system.c
     drrr/sdl/ki_video.c
     drrr/k_console.c
+    drrr/k_cvars.c
     drrr/k_font.c
     drrr/kd_main.c
     drrr/kg_game.c
@@ -29,4 +30,7 @@ target_sources(SRB2SDL2 PRIVATE
     drrr/menus/k_message-box.c
     events/ss_easter.c
     events/ss_aprilfools.c
+    padrefactor/sdl/smkg_pad_i_system.c
+    padrefactor/smkg_pad_d_main.c
+    padrefactor/smkg_pad_game.c
 )

@@ -152,6 +152,9 @@ boolean M_MenuExtraHeld(UINT8 pid);
 void M_ChangeCvarDirect(INT32 choice, consvar_t *cv);
 const char *M_QueryCvarAction(const char *replace, consvar_t *cvar);
 
+// For some menu highlights
+UINT16 M_GetCvPlayerColor(UINT8 pnum);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

@@ -6,11 +6,11 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  ss_purefat.h
+/// \file  smkg_misc_purefat.h
 /// \brief Pure Fat intro 2.2.7+ compatibility layer, global header
 
-#ifndef __SS_PUREFAT__
-#define __SS_PUREFAT__
+#ifndef __SMKG_MISC_PUREFAT__
+#define __SMKG_MISC_PUREFAT__
 
 #include "../doomstat.h"
 #include "../v_video.h"
@@ -24,4 +24,4 @@ void STAR_F_StartIntro(tic_t *introtime);
 void STAR_F_PureFatDrawer(char *stjrintro, patch_t *background, void *patch, INT32 intro_scenenum, INT32 bgxoffs);
 void STAR_F_PureFatTicker(INT32 intro_scenenum, INT32 intro_curtime, INT32 animtimer);
 
-#endif // __SS_PUREFAT__
+#endif // __SMKG_MISC_PUREFAT__

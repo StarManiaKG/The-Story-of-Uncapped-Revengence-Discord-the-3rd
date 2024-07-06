@@ -66,7 +66,7 @@
 #include "STAR/star_vars.h"
 #include "STAR/ss_main.h" // STAR_CONS_Printf() //
 
-#include "STAR/drrr/kg_input.h" // HandleGamepadDeviceEvents() //
+#include "STAR/padrefactor/smkg_pad_d_main.h" // STAR_GamepadR_D_ResetGamepadData() //
 // WE'RE DONE! //
 
 //
@@ -2449,8 +2449,6 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 	{
 		I_OsPolling();
 
-		G_ResetAllDeviceResponding(); // STAR STUFF: KART: device (cap) //
-
 		if (cl_mode == CL_CONFIRMCONNECT)
 			D_ProcessEvents(); //needed for menu system to receive inputs
 		else
@@ -2458,12 +2456,12 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 			// my hand has been forced and I am dearly sorry for this awful hack :vomit:
 			for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
 			{
+				STAR_GamepadR_D_ResetGamepadData(&events[eventtail]); // STAR STUFF: DRRR: gamepad junk //
+
 #ifndef NONET
 				if (!Snake_Joy_Grabber(&events[eventtail]))
 #endif
 					G_MapEventsToControls(&events[eventtail]);
-
-				HandleGamepadDeviceEvents(&events[eventtail]); // STAR STUFF: DRRR: gamepad junk //
 			}
 		}
 

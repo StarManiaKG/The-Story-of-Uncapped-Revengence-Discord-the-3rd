@@ -49,7 +49,7 @@
 #include "STAR/ss_cmds.h" // cv_stjrintro & cv_storesavesinfolders //
 #include "STAR/ss_main.h"
 #include "STAR/m_menu.h" // skullAnimCounter, MessageDef, & M_ShiftMessageQueueDown() //
-#include "STAR/ss_purefat.h"
+#include "STAR/smkg_misc_purefat.h"
 
 #include "STAR/drrr/km_menu.h" // messagemenu //
 

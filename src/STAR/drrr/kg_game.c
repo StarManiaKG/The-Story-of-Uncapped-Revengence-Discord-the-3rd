@@ -14,6 +14,7 @@
 /// \brief game loop functions, events handling
 
 #include "kg_game.h"
+#include "k_cvars.h"
 #include "kg_input.h"
 #include "ki_joy.h"
 #include "../../g_game.h"
@@ -57,12 +58,7 @@ static INT32 G_GetValueFromControlTable(INT32 deviceID, INT32 deadzone, INT32 *c
 
 INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 {
-#if 0
-	const INT32 deadzone = (JOYAXISRANGE * cv_deadzone[p].value) / FRACUNIT;
-#else
-	// STAR NOTE: SRB2 has different deadzone types, so just do the bare minimum here for now //
-	const INT32 deadzone = (JOYAXISRANGE * (p == 0 ? cv_deadzone.value : cv_deadzone2.value)) / FRACUNIT;
-#endif
+	const INT32 deadzone = (JOYAXISRANGE * cv_drrr_deadzone[p].value) / FRACUNIT;
 	const INT32 keyboard_player = G_GetPlayerForDevice(KEYBOARD_MOUSE_DEVICE);
 	const boolean in_menu = (menuPlayers > 0);
 	const boolean main_player = (p == 0);
@@ -178,7 +174,7 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 		if (bind_was_reachable == false)
 		{
 			// Still nothing bound after everything. Try default gamepad controls.
-			for (i = 0; i < num_gamecontrolschemes; i++)
+			for (i = 1; i < num_gamecontrolschemes; i++) // skip gcs_custom (0)
 			{
 				value = G_GetValueFromControlTable(deviceID, deadzone, &(gamecontroldefault[i][gc][0]));
 

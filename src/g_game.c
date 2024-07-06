@@ -66,6 +66,8 @@
 
 #include "deh_soc.h"
 
+#include "STAR/padrefactor/smkg_pad_game.h" // STAR_G_ApplyGamepads() //
+
 // Main Build
 boolean tsourdt3rd = true;
 
@@ -2127,6 +2129,8 @@ static boolean ViewpointSwitchResponder(event_t *ev)
 //
 boolean G_Responder(event_t *ev)
 {
+	STAR_G_ApplyGamepads(ev); // STAR STUFF: DRRR Gamepads: apply gamepad data please //
+
 	// any other key pops up menu if in demos
 	if (gameaction == ga_nothing && !singledemo &&
 		((demoplayback && !modeattacking && !titledemo) || gamestate == GS_TITLESCREEN))
@@ -2280,6 +2284,9 @@ boolean G_Responder(event_t *ev)
 
 		default:
 			break;
+
+		case ev_gamepad_axis: // STAR STUFF: DRRR: eat events //
+			return true; // STAR STUFF: DRRR: eat events //
 	}
 
 	return false;

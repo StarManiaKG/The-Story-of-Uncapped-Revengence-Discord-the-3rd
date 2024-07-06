@@ -17,6 +17,8 @@
 
 #include "drrr/km_menu.h"
 
+#include "drrr/kg_input.h" // G_GetDeviceGameKeyDownArray
+
 // ------------------------ //
 //        Functions
 // ------------------------ //
@@ -53,7 +55,7 @@ void TSoURDt3rd_M_HandleTyping(INT32 choice, size_t cachelen, consvar_t *cvar, b
 			default:
 				// If we're hovering over a IT_CV_STRING option, pressing A/X opens the typing submenu
 				if (M_MenuConfirmPressed(pid)
-#if 1
+#if 0
 				// STAR NOTE: improve DRRR input system, then remove :) //
 				|| choice == KEY_ENTER
 #endif

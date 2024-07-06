@@ -85,10 +85,7 @@ void M_SetMenuDelay(UINT8 i)
 
 void M_UpdateMenuCMD(UINT8 i, boolean bailrequired)
 {
-#if 1
 	UINT8 setup_numplayers = 1; // STAR NOTE: true setup_numplayers doesn't exist right now. try again later. //
-#endif
-
 	UINT8 mp = max(1, setup_numplayers);
 
 	menucmd[i].prev_dpad_ud = menucmd[i].dpad_ud;
