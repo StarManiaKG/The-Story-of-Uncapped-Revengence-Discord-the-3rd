@@ -968,7 +968,7 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 
 	// STAR STUFF //
 	case RET_STAR:
-		lumpinfo = ResGetLumpsStandalone(handle, &numlumps, "STARMAIN");
+		lumpinfo = ResGetLumpsStandalone(handle, &numlumps, "SS_MAIN");
 		break;
 	// HUH.... //
 

@@ -7788,7 +7788,8 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		// As oddly named as this is, this handles music only.
 		// We should be fine starting it here.
 		// Don't do this during titlemap, because the menu code handles music by itself.
-#if 0	// STAR NOTE: moved S_Start() code further down so TSoURDt3rd_LoadLevel() can work its magic :) //
+#if 0
+		// STAR NOTE: moved S_Start() code further down so TSoURDt3rd_LoadLevel() can work its magic :) //
 		if (!strnicmp(S_MusicName(),
 			(mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname, 7))
 			S_Start();

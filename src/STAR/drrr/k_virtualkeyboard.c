@@ -270,9 +270,6 @@ void M_MenuTypingInput(INT32 key)
 	if (!menutyping.active)
 		return;
 
-	if (CON_Ready() || chat_on)
-		return; // STAR NOTE: just in case... //
-
 	// Fade-in
 
 	if (menutyping.menutypingclose)
