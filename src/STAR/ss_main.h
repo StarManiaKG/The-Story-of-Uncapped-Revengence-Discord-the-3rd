@@ -34,6 +34,8 @@ extern char savegamefolder[256];
 //#define _DEBUG /* Debugging */
 //#define DEBUGFILE /* Debugging */
 
+#define TSOURDT3RD_DRRR_GAMEPAD_REFACTOR // pretty sure it works perfectly, but i don't wanna take chances //
+
 // ======
 // EVENTS
 // ======
