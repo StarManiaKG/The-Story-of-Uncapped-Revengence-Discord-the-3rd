@@ -513,7 +513,7 @@ extern boolean AllowEasterEggHunt, EnableEasterEggHuntBonuses;
 // game
 extern consvar_t cv_startupscreen, cv_quitscreen;
 extern consvar_t cv_isitcalledsingleplayer;
-extern consvar_t cv_pausegraphicstyle, cv_automapoutsidedevmode;
+extern consvar_t cv_pausegraphicstyle;
 
 // audio
 extern consvar_t cv_bossmusic, cv_finalbossmusic, cv_truefinalbossmusic;

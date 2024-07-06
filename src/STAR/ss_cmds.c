@@ -56,6 +56,8 @@ consvar_t cv_tpscountercolor = CVAR_INIT ("tpscountercolor", "Green", CV_SAVE, c
 static void STAR_TimeOver_OnChange(void);
 consvar_t cv_allowtypicaltimeover = CVAR_INIT ("allowtypicaltimeover", "No", CV_SAVE|CV_CALL, CV_YesNo, STAR_TimeOver_OnChange);
 
+consvar_t cv_automapoutsidedevmode = CVAR_INIT ("automapoutsidedevmode", "Off", CV_SAVE, CV_OnOff, NULL);
+
 consvar_t cv_soniccd = CVAR_INIT ("soniccd", "Off", CV_SAVE|CV_ALLOWLUA, CV_OnOff, NULL);
 
 // =====

@@ -535,12 +535,11 @@ static CV_PossibleValue_t quitscreen_t[] = {
 	{0, NULL}};
 consvar_t cv_quitscreen = CVAR_INIT ("quitscreen", "Default", CV_SAVE, quitscreen_t, NULL);
 
+static CV_PossibleValue_t CV_Ecstatic_YesNo[] = {{0, "No!"}, {1, "Yes!"}, {0, NULL}};
 consvar_t cv_isitcalledsingleplayer = CVAR_INIT ("isitcalledsingleplayer", "Yes!", CV_SAVE|CV_CALL, CV_Ecstatic_YesNo, STAR_IsItCalledSinglePlayer_OnChange);
 
 static CV_PossibleValue_t pausestyle_t[] = {{0, "Default"}, {1, "Old-School"}, {0, NULL}};
 consvar_t cv_pausegraphicstyle = CVAR_INIT ("pausegraphicstyle", "Default", CV_SAVE, pausestyle_t, NULL);
-
-consvar_t cv_automapoutsidedevmode = CVAR_INIT ("automapoutsidedevmode", "Off", CV_SAVE, CV_OnOff, NULL);
 
 // Audio //
 static CV_PossibleValue_t bossmusic_t[] = {

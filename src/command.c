@@ -78,10 +78,6 @@ CV_PossibleValue_t CV_Unsigned[] = {{0, "MIN"}, {999999999, "MAX"}, {0, NULL}};
 CV_PossibleValue_t CV_Natural[] = {{1, "MIN"}, {999999999, "MAX"}, {0, NULL}};
 CV_PossibleValue_t CV_TrueFalse[] = {{0, "False"}, {1, "True"}, {0, NULL}};
 
-// STAR STUFF //
-CV_PossibleValue_t CV_Ecstatic_YesNo[] = {{0, "No!"}, {1, "Yes!"}, {0, NULL}};
-// END THAT PLEASE! //
-
 // Filter consvars by EXECVERSION
 // First implementation is 26 (2.1.21), so earlier configs default at 25 (2.1.20)
 // Also set CV_HIDEN during runtime, after config is loaded

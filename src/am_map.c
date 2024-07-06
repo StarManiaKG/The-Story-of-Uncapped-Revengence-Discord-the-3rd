@@ -25,7 +25,7 @@
 #include "hardware/hw_main.h"
 #endif
 
-#include "m_menu.h" // STAR STUFF: cv_automapoutsidedevmode //
+#include "STAR/ss_cmds.h" // cv_automapoutsidedevmode //
 
 // For use if I do walls with outsides/insides
 static const UINT8 REDS        = (8*16);
