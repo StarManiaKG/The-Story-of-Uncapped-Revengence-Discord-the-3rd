@@ -9,7 +9,7 @@
 /// \file  smkg_pad_i_system.h
 /// \brief Gamepad refactor system specific interface stuff.
 
-#ifdef __SMKG_PAD_I_SYSTEM__
+#ifndef __SMKG_PAD_I_SYSTEM__
 #define __SMKG_PAD_I_SYSTEM__
 
 #include "../../d_event.h"

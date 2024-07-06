@@ -9,7 +9,7 @@
 /// \file  smkg_pad_g_game.h
 /// \brief Gamepad refactor game loop functions and event handling, global header
 
-#ifdef __SMKG_PAD_G_GAME__
+#ifndef __SMKG_PAD_G_GAME__
 #define __SMKG_PAD_G_GAME__
 
 #include "../../command.h"

@@ -9,7 +9,7 @@
 /// \file  smkg_pad_d_main.h
 /// \brief Gamepad refactror main program data
 
-#ifdef __SMKG_PAD_D_MAIN__
+#ifndef __SMKG_PAD_D_MAIN__
 #define __SMKG_PAD_D_MAIN__
 
 #include "../../d_event.h"
