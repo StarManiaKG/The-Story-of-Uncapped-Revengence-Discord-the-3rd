@@ -152,7 +152,7 @@ static char addonsdir[MAX_WADPATH];
 #include "STAR/s_sound.h" // jukebox //
 
 #include "STAR/drrr/kg_input.h" // HandleGamepadDeviceEvents() //
-#include "STAR/drrr/km_menu.h" // M_UpdateMenuCMD() //
+#include "STAR/padrefactor/smkg_pad_d_main.h" // gamepad refactor data //
 
 // Discord Stuff
 INT32 extrawads;
@@ -228,8 +228,6 @@ void D_ProcessEvents(void)
 
 		ev = &events[eventtail];
 
-		HandleGamepadDeviceEvents(ev); // STAR STUFF: KART: Assign gamepads please //
-
 		// Set mouse buttons early in case event is eaten later
 		if (ev->type == ev_keydown || ev->type == ev_keyup)
 		{
@@ -281,10 +279,7 @@ void D_ProcessEvents(void)
 			hooked = true;
 		}
 
-		// STAR STUFF: KART: update keys current state //
-		if (!snake)
-			G_MapEventsToControls(ev);
-		// DONE! //
+		STAR_GamepadR_D_ProcessEvents(ev); // STAR STUFF: DRRR Gamepads: process deez nuts in your mouth hahahaha //
 
 		// Menu input
 #ifdef HAVE_THREADS
@@ -331,12 +326,7 @@ void D_ProcessEvents(void)
 	if (mouse2.rdx || mouse2.rdy)
 		G_SetMouseDeltas(mouse2.rdx, mouse2.rdy, 2);
 
-	// STAR STUFF: KART: Update menu CMD //
-	for (int i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		M_UpdateMenuCMD(i, false);
-	}
-	// DONE! //
+	STAR_GamepadR_D_UpdateMenuControls(); // STAR STUFF: DRRR Gamepads: update menu cmds :) //
 }
 
 //
@@ -1119,10 +1109,7 @@ void D_StartTitle(void)
 	for (i = 0; i < MAXPLAYERS; i++)
 		CL_ClearPlayer(i);
 
-	// STAR STUFF: DRRR: clear cmd building stuff //
-	G_ResetAllDeviceGameKeyDown();
-	G_ResetAllDeviceResponding();
-	// PORTED, RESET, AND DONE! //
+	STAR_GamepadR_D_ResetGamepadData(NULL); // STAR STUFF: DRRR: clear cmd building stuff //
 
 	players[consoleplayer].availabilities = players[1].availabilities = R_GetSkinAvailabilities(); // players[1] is supposed to be for 2p
 

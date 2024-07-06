@@ -217,7 +217,7 @@ static char returnWadPath[256];
 #include "../STAR/star_vars.h" // TSoURDt3rd_GenerateFunnyCrashMessage(), //
 								// TSOURDT3RDVERSIONSTRING, & TSOURDT3RDBYSTARMANIAKGSTRING //
 
-#include "../STAR/drrr/kg_input.h" // HandleGamepadDeviceEvents() //
+#include "../STAR/padrefactor/smkg_pad_i_system.h" // STAR_I_GetGamepadKey() //
 
 /**	\brief	The JoyReset function
 
@@ -973,14 +973,10 @@ INT32 I_GetKey (void)
 	event_t *ev;
 	INT32 rc = 0;
 
-	G_ResetAllDeviceResponding();
-
 	// return the first keypress from the event queue
 	for (; eventtail != eventhead; eventtail = (eventtail+1)&(MAXEVENTS-1))
 	{
 		ev = &events[eventtail];
-
-		HandleGamepadDeviceEvents(ev);
 
 		if (ev->type == ev_keydown || ev->type == ev_console)
 		{
@@ -988,6 +984,8 @@ INT32 I_GetKey (void)
 			continue;
 		}
 	}
+
+	STAR_I_GetGamepadKey(); // STAR STUFF: DRRR Gamepads: get keys please //
 
 	return rc;
 }

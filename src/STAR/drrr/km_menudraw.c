@@ -23,10 +23,22 @@
 #include "../ss_inputs.h"
 
 static INT32 highlightflags;
-#if 0
-static INT32 recommendedflags;
-static INT32 warningflags;
-#endif
+
+UINT16 M_GetCvPlayerColor(UINT8 pnum)
+{
+	if (pnum >= MAXSPLITSCREENPLAYERS)
+		return SKINCOLOR_NONE;
+
+	UINT16 color = (pnum == consoleplayer ? cv_playercolor.value : cv_playercolor2.value);
+	if (color != SKINCOLOR_NONE)
+		return color;
+
+	INT32 skin = R_SkinAvailable((pnum == consoleplayer ? cv_skin.string : cv_skin2.string));
+	if (skin == -1)
+		return SKINCOLOR_NONE;
+
+	return skins[skin].prefcolor;
+}
 
 //
 // M_DrawMenuTooltips
@@ -36,7 +48,7 @@ static INT32 warningflags;
 void M_DrawMenuTooltips(void)
 {
 #if 0 // STAR NOTE: after adding tooltips, come back here :) //
-	if (currentMenu->menuitems[itemOn].tooltip != NULL)
+	if (tsourdt3rd_currentMenu->menuitems[itemOn].tooltip != NULL)
 	{
 		V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
 		V_DrawCenteredThinString(BASEVIDWIDTH/2, 12, 0, currentMenu->menuitems[itemOn].tooltip);

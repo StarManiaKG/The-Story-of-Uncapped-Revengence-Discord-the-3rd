@@ -30,6 +30,7 @@ typedef enum
 	// STAR STUFF: DRRR unique events //
 	ev_gamepad_device_added,
 	ev_gamepad_device_removed,
+	ev_gamepad_axis
 	// ADDED! //
 } evtype_t;
 

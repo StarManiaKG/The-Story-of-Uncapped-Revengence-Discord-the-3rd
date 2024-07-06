@@ -20,10 +20,7 @@
 extern "C" {
 #endif
 
-#ifdef HAVE_SDL
-#include "../../sdl/sdlmain.h"
-void DRRR_I_GetEvent(SDL_Event evt);
-#endif
+void DRRR_I_GetEvent(void);
 
 #ifdef __cplusplus
 } // extern "C"

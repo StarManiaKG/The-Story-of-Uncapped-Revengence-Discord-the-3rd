@@ -30,7 +30,7 @@ extern "C" {
 #define UNASSIGNED_DEVICE (-1)
 #define NO_BINDS_REACHABLE (-1)
 
-#define MAXINPUTMAPPING 1 //4 // STAR NOTE: srb2 has it at two lol //
+#define MAXINPUTMAPPING 2 //4 // STAR NOTE: srb2 has it at two lol //
 
 //
 // mouse and joystick buttons are handled as 'virtual' keys
@@ -70,10 +70,9 @@ INT32 G_GetDeviceForPlayer(INT32 player);
 /// Set the given player index's assigned device. If the device is in use by another player, that player is unassigned.
 void G_SetDeviceForPlayer(INT32 player, INT32 device);
 
-#if 1
-// STAR NOTE: NOT USED ANYWHERE ELSE FOR NOW //
+void G_SetPlayerGamepadIndicatorToPlayerColor(INT32 player);
+
 extern consvar_t cv_rumble[MAXSPLITSCREENPLAYERS];
-#endif
 
 void G_PlayerDeviceRumble(INT32 player, UINT16 low_strength, UINT16 high_strength);
 #if 1
@@ -95,11 +94,6 @@ void G_SetDeviceResponding(INT32 device, boolean responding);
 void G_ResetAllDeviceResponding(void);
 
 void HandleGamepadDeviceEvents(event_t *ev);
-
-boolean AutomaticControllerReassignmentIsAllowed(INT32 device);
-INT32 AssignDeviceToFirstUnassignedPlayer(INT32 device);
-
-void update_vkb_axis(INT32 axis);
 
 boolean G_KeyBindIsNecessary(INT32 gc);
 boolean G_KeyIsAvailable(INT32 key, INT32 deviceID);

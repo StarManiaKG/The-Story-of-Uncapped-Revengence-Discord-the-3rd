@@ -100,7 +100,7 @@
 #include "deh_soc.h"
 
 #include "STAR/drrr/kg_input.h" // G_ResetAllDeviceGameKeyDown() //
-#include "STAR/drrr/km_menu.h" // menutyping & M_MenuTypingInput() //
+#include "STAR/drrr/km_menu.h" // menutyping junk //
 // END OF THAT //
 
 #define SKULLXOFF -32

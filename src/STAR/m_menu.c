@@ -35,7 +35,7 @@
 //        Variables
 // ------------------------ //
 
-//tsourdt3rd_menus_t *tsourdt3rd_curmenu = &MainDef;
+//tsourdt3rd_menu_t *tsourdt3rd_currentMenu = &MainDef;
 
 INT16 MessageMenuDisplay[3][256]; // TO HACK
 

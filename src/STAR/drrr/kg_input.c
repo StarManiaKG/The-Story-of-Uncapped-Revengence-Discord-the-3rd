@@ -14,9 +14,11 @@
 ///        maps inputs to game controls (forward, spin, jump...)
 
 #include "k_doomdef.h"
+#include "k_cvars.h"
 #include "kg_input.h"
 #include "kg_game.h"
 #include "km_menu.h"
+#include "../../v_video.h"
 #include "../../z_zone.h"
 
 // two key codes (or virtual key) per game control
@@ -65,7 +67,7 @@ void G_UnregisterAvailableGamepad(INT32 device_id)
 	{
 		if (g_gamepad_device_ids[i] == device_id)
 		{
-			INT32 *old_gamekeydown = g_gamepad_gamekeydown[i];
+			int32_t *old_gamekeydown = g_gamepad_gamekeydown[i];
 			g_gamepad_device_ids[i] = g_gamepad_device_ids[g_available_gamepad_devices - 1];
 			g_gamepad_gamekeydown[i] = g_gamepad_gamekeydown[g_available_gamepad_devices - 1];
 			g_gamepad_responding[i] = g_gamepad_responding[g_available_gamepad_devices - 1];
@@ -164,6 +166,28 @@ void G_SetDeviceForPlayer(INT32 player, INT32 device)
 			}
 		}
 	}
+}
+
+void G_SetPlayerGamepadIndicatorToPlayerColor(INT32 player)
+{
+	INT32 device;
+	UINT16 skincolor;
+	byteColor_t byte_color;
+
+	I_Assert(player >= 0 && player < MAXSPLITSCREENPLAYERS);
+
+	device = G_GetDeviceForPlayer(player);
+
+	if (device <= 0)
+	{
+		return;
+	}
+
+	skincolor = M_GetCvPlayerColor(player);
+
+	byte_color = V_GetColor(skincolors[skincolor].ramp[8]).s;
+
+	I_SetGamepadIndicatorColor(device, byte_color.red, byte_color.green, byte_color.blue);
 }
 
 INT32* G_GetDeviceGameKeyDownArray(INT32 device)
@@ -266,14 +290,10 @@ void G_PlayerDeviceRumble(INT32 player, UINT16 low_strength, UINT16 high_strengt
 {
 	INT32 device_id;
 
-#if 0 // STAR NOTE: rumble is mandatory for now //
-	consvar_t cvrumble = (!player ? cv_rumble : cv_rumble2);
-
-	if (cvrumble.value == 0)
+	if (cv_rumble[player].value == 0)
 	{
 		return;
 	}
-#endif
 
 	device_id = G_GetDeviceForPlayer(player);
 
@@ -289,14 +309,10 @@ void G_PlayerDeviceRumbleTriggers(INT32 player, UINT16 left_strength, UINT16 rig
 {
 	INT32 device_id;
 
-#if 0 // STAR NOTE: rumble is mandatory for now //
-	consvar_t cvrumble = (!player ? cv_rumble : cv_rumble2);
-
-	if (cvrumble.value == 0)
+	if (cv_rumble[player].value == 0)
 	{
 		return;
 	}
-#endif
 
 	device_id = G_GetDeviceForPlayer(player);
 
@@ -339,7 +355,7 @@ void G_ResetAllDeviceRumbles(void)
 	}
 }
 
-boolean AutomaticControllerReassignmentIsAllowed(INT32 device)
+static boolean AutomaticControllerReassignmentIsAllowed(INT32 device)
 {
 	boolean device_is_gamepad = device > 0;
 	boolean device_is_unassigned = G_GetPlayerForDevice(device) == -1;
@@ -348,7 +364,7 @@ boolean AutomaticControllerReassignmentIsAllowed(INT32 device)
 	return device_is_gamepad && device_is_unassigned && gamestate_is_in_active_play;
 }
 
-INT32 AssignDeviceToFirstUnassignedPlayer(INT32 device)
+static INT32 AssignDeviceToFirstUnassignedPlayer(INT32 device)
 {
 	int i;
 
@@ -364,14 +380,224 @@ INT32 AssignDeviceToFirstUnassignedPlayer(INT32 device)
 	return -1;
 }
 
-void update_vkb_axis(INT32 axis)
+static void update_vkb_axis(INT32 axis)
 {
-#if 1
 	if (axis > JOYAXISRANGE/2)
-#else
-	if (axis)
-#endif
 		M_SwitchVirtualKeyboard(true);
+}
+
+//
+// Remaps the inputs to game controls.
+//
+// A game control can be triggered by one or more keys/buttons.
+//
+// Each key/mousebutton/joybutton triggers ONLY ONE game control.
+//
+// STAR NOTE: Features edits to allow for both TSoURDt3rd uniqueness and SRB2 compatibility.
+//
+void DRRR_G_MapEventsToControls(event_t *ev)
+{
+	INT32 i;
+	INT32 *DeviceGameKeyDownArray;
+
+	if (ev->device >= 0)
+	{
+		switch (ev->type)
+		{
+			case ev_keydown:
+			//case ev_keyup:
+			//case ev_mouse:
+			//case ev_joystick:
+			//case ev_joystick2:
+			//case ev_gamepad_axis:
+				G_SetDeviceResponding(ev->device, true);
+				break;
+
+			default:
+				break;
+		}
+	}
+	else
+	{
+		return;
+	}
+
+	DeviceGameKeyDownArray = G_GetDeviceGameKeyDownArray(ev->device);
+
+	if (!DeviceGameKeyDownArray)
+		return;
+
+	switch (ev->type)
+	{
+		case ev_keydown:
+			if (ev->key < NUMINPUTS)
+			{
+				M_MenuTypingInput(ev->key);
+
+#if 1
+				if (ev->x) // OS repeat? We handle that ourselves
+				{
+					CONS_Printf("STOP\n");
+					break;
+				}
+#endif
+
+				DeviceGameKeyDownArray[ev->key] = JOYAXISRANGE;
+
+				if (AutomaticControllerReassignmentIsAllowed(ev->device))
+				{
+					INT32 assigned = AssignDeviceToFirstUnassignedPlayer(ev->device);
+					if (assigned >= 0)
+					{
+						CONS_Alert(CONS_NOTICE, "TSoURDt3rd; DRRR Gamepads - Player %d device was reassigned\n", assigned + 1);
+					}
+				}
+			}
+#ifdef PARANOIA
+			else
+			{
+				CONS_Debug(DBG_GAMELOGIC, "TSoURDt3rd; DRRR Gamepads - Bad downkey input %d\n", ev->key);
+			}
+#endif
+			break;
+
+		case ev_keyup:
+			if (ev->key < NUMINPUTS)
+			{
+				DeviceGameKeyDownArray[ev->key] = 0;
+			}
+#ifdef PARANOIA
+			else
+			{
+				CONS_Debug(DBG_GAMELOGIC, "TSoURDt3rd; DRRR Gamepads - Bad upkey input %d\n", ev->key);
+			}
+#endif
+			break;
+
+#if 0
+		case ev_mouse: // buttons are virtual keys
+			// X axis
+			if (ev->x < 0)
+			{
+				// Left
+				DeviceGameKeyDownArray[KEY_MOUSEMOVE + 2] = abs(ev->x);
+				DeviceGameKeyDownArray[KEY_MOUSEMOVE + 3] = 0;
+			}
+			else
+			{
+				// Right
+				DeviceGameKeyDownArray[KEY_MOUSEMOVE + 2] = 0;
+				DeviceGameKeyDownArray[KEY_MOUSEMOVE + 3] = abs(ev->x);
+			}
+
+			// Y axis
+			if (ev->y < 0)
+			{
+				// Up
+				DeviceGameKeyDownArray[KEY_MOUSEMOVE] = abs(ev->y);
+				DeviceGameKeyDownArray[KEY_MOUSEMOVE + 1] = 0;
+			}
+			else
+			{
+				// Down
+				DeviceGameKeyDownArray[KEY_MOUSEMOVE] = 0;
+				DeviceGameKeyDownArray[KEY_MOUSEMOVE + 1] = abs(ev->y);
+			}
+			break;
+#endif
+
+		case ev_gamepad_axis: // buttons are virtual keys
+			if (ev->key >= JOYAXISSETS)
+			{
+#ifdef PARANOIA
+				CONS_Debug(DBG_GAMELOGIC, "TSoURDt3rd; DRRR Gamepads - Bad joystick axis event %d\n", ev->key);
+#endif
+				break;
+			}
+
+			i = ev->key;
+
+			if (i >= JOYANALOGS)
+			{
+				// The trigger axes are handled specially.
+				i -= JOYANALOGS;
+
+				if (AutomaticControllerReassignmentIsAllowed(ev->device)
+					&& (abs(ev->x) > JOYAXISRANGE/2 || abs(ev->y) > JOYAXISRANGE/2))
+				{
+					INT32 assigned = AssignDeviceToFirstUnassignedPlayer(ev->device);
+					if (assigned >= 0)
+					{
+						CONS_Alert(CONS_NOTICE, "TSoURDt3rd; DRRR Gamepads - Player %d device was reassigned\n", assigned + 1);
+					}
+				}
+
+				if (ev->x != INT32_MAX)
+				{
+					DeviceGameKeyDownArray[KEY_AXIS1 + (JOYANALOGS * 4) + (i * 2)] = max(0, ev->x);
+					update_vkb_axis(max(0, ev->x));
+				}
+
+				if (ev->y != INT32_MAX)
+				{
+					DeviceGameKeyDownArray[KEY_AXIS1 + (JOYANALOGS * 4) + (i * 2) + 1] = max(0, ev->y);
+					update_vkb_axis(max(0, ev->y));
+				}
+			}
+			else
+			{
+				// We used to only allow this assignment for triggers, but it caused some confusion in vote screen.
+				// In case of misebhaving devices, break glass.
+				if (AutomaticControllerReassignmentIsAllowed(ev->device)
+					&& (abs(ev->x) > JOYAXISRANGE/2 || abs(ev->y) > JOYAXISRANGE/2))
+				{
+					INT32 assigned = AssignDeviceToFirstUnassignedPlayer(ev->device);
+					if (assigned >= 0)
+					{
+						CONS_Alert(CONS_NOTICE, "TSoURDt3rd; DRRR Gamepads - Player %d device was reassigned\n", assigned + 1);
+					}
+				}
+
+				// Actual analog sticks
+				if (ev->x != INT32_MAX)
+				{
+					if (ev->x < 0)
+					{
+						// Left
+						DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4)] = abs(ev->x);
+						DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4) + 1] = 0;
+					}
+					else
+					{
+						// Right
+						DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4)] = 0;
+						DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4) + 1] = abs(ev->x);
+					}
+					update_vkb_axis(abs(ev->x));
+				}
+
+				if (ev->y != INT32_MAX)
+				{
+					if (ev->y < 0)
+					{
+						// Up
+						DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4) + 2] = abs(ev->y);
+						DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4) + 3] = 0;
+					}
+					else
+					{
+						// Down
+						DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4) + 2] = 0;
+						DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4) + 3] = abs(ev->y);
+					}
+					update_vkb_axis(abs(ev->y));
+				}
+			}
+			break;
+
+		default:
+			break;
+	}
 }
 
 // If keybind is necessary to navigate menus, it's on this list.
@@ -400,7 +626,7 @@ boolean G_KeyIsAvailable(INT32 key, INT32 deviceID)
 	boolean gamepad_key = false;
 
 	// Invalid key number.
-	if (key <= 0 || key >= NUMINPUTS)
+	if (key <= 0 || key >= DRRR_NUMINPUTS)
 	{
 		return false;
 	}
@@ -436,208 +662,7 @@ void DRRR_G_DefineDefaultControls(void)
 	menucontrolreserved[GC_JUMP       ][0] = KEY_ENTER;
 	menucontrolreserved[GC_FIRE       ][0] = KEY_BACKSPACE;
 	menucontrolreserved[GC_FIRENORMAL ][0] = KEY_ESCAPE;
-	//menucontrolreserved[gc_start][0] = KEY_ESCAPE; // Handled special
-}
-
-//
-// Remaps the inputs to game controls.
-//
-// A game control can be triggered by one or more keys/buttons.
-//
-// Each key/mousebutton/joybutton triggers ONLY ONE game control.
-//
-// Features edits to allow for both TSoURDt3rd uniqueness and SRB2 compatibility.
-//
-void DRRR_G_MapEventsToControls(event_t *ev)
-{
-	INT32 i;
-	INT32 *DeviceGameKeyDownArray;
-
-	if (ev->device >= 0)
-	{
-		switch (ev->type)
-		{
-			case ev_keydown:
-			//case ev_keyup:
-			//case ev_mouse:
-			//case ev_joystick:
-			//case ev_joystick2:
-				G_SetDeviceResponding(ev->device, true);
-				break;
-
-			default:
-				break;
-		}
-	}
-	else
-	{
-		return;
-	}
-
-	DeviceGameKeyDownArray = G_GetDeviceGameKeyDownArray(ev->device);
-
-	if (!DeviceGameKeyDownArray)
-		return;
-
-	switch (ev->type)
-	{
-		case ev_keydown:
-			if (ev->key < NUMINPUTS)
-			{
-				M_MenuTypingInput(ev->key);
-
 #if 0
-				if (ev->x) // OS repeat? We handle that ourselves
-				{
-					break;
-				}
+	menucontrolreserved[gamekeydown[KEY_ENTER]][0] = KEY_ESCAPE; // Handled special
 #endif
-
-				DeviceGameKeyDownArray[ev->key] = JOYAXISRANGE;
-
-				if (AutomaticControllerReassignmentIsAllowed(ev->device))
-				{
-					INT32 assigned = AssignDeviceToFirstUnassignedPlayer(ev->device);
-					if (assigned >= 0)
-					{
-						CONS_Alert(CONS_NOTICE, "DRRR - Player %d device was reassigned\n", assigned + 1);
-					}
-				}
-			}
-#ifdef PARANOIA
-			else
-			{
-				CONS_Debug(DBG_GAMELOGIC, "DRRR - Bad downkey input %d\n", ev->key);
-			}
-#endif
-			break;
-
-		case ev_keyup:
-			if (ev->key < NUMINPUTS)
-			{
-				DeviceGameKeyDownArray[ev->key] = 0;
-			}
-#ifdef PARANOIA
-			else
-			{
-				CONS_Debug(DBG_GAMELOGIC, "DRRR - Bad upkey input %d\n", ev->key);
-			}
-#endif
-			break;
-
-
-		case ev_joystick: // buttons are virtual keys
-		case ev_joystick2:
-			if (ev->key >= JOYAXISSETS)
-			{
-#ifdef PARANOIA
-				CONS_Debug(DBG_GAMELOGIC, "DRRR - Bad joystick axis event %d\n", ev->key);
-#endif
-				break;
-			}
-
-			i = ev->key;
-
-			if (i >= JOYANALOGS)
-			{
-				// The trigger axes are handled specially.
-				i -= JOYANALOGS;
-
-				if (AutomaticControllerReassignmentIsAllowed(ev->device)
-					&& (abs(ev->x) > JOYAXISRANGE/2 || abs(ev->y) > JOYAXISRANGE/2))
-				{
-					INT32 assigned = AssignDeviceToFirstUnassignedPlayer(ev->device);
-					if (assigned >= 0)
-					{
-						CONS_Alert(CONS_NOTICE, "DRRR - Player %d device was reassigned\n", assigned + 1);
-					}
-				}
-
-				if (ev->x != INT32_MAX)
-				{
-#if 0
-					DeviceGameKeyDownArray[KEY_AXIS1 + (JOYANALOGS * 4) + (i * 2)] = max(0, ev->x);
-#else
-					DeviceGameKeyDownArray[KEY_AXIS1 + (JOYANALOGS * 4) + (i * 2)] = ev->x;
-					DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4)] = ev->x;
-					DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4) + 1] = ev->x;
-#endif
-					update_vkb_axis(max(0, ev->x));				
-				}
-
-				if (ev->y != INT32_MAX)
-				{
-#if 0
-					DeviceGameKeyDownArray[KEY_AXIS1 + (JOYANALOGS * 4) + (i * 2) + 1] = max(0, ev->y);
-#else
-					DeviceGameKeyDownArray[KEY_AXIS1 + (JOYANALOGS * 4) + (i * 2) + 1] = ev->y;
-					DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4)] = ev->y;
-					DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4) + 1] = ev->y;
-#endif
-					update_vkb_axis(max(0, ev->y));
-				}
-			}
-			else
-			{
-				// We used to only allow this assignment for triggers, but it caused some confusion in vote screen.
-				// In case of misebhaving devices, break glass.
-				if (AutomaticControllerReassignmentIsAllowed(ev->device)
-					&& (abs(ev->x) > JOYAXISRANGE/2 || abs(ev->y) > JOYAXISRANGE/2))
-				{
-					INT32 assigned = AssignDeviceToFirstUnassignedPlayer(ev->device);
-					if (assigned >= 0)
-					{
-						CONS_Alert(CONS_NOTICE, "DRRR - Player %d device was reassigned\n", assigned + 1);
-					}
-				}
-
-				if (ev->x != INT32_MAX)
-				{
-#if 0
-					if (ev->x < 0)
-					{
-						// Left
-						DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4)] = abs(ev->x);
-						DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4) + 1] = 0;
-					}
-					else
-					{
-						// Right
-						DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4)] = 0;
-						DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4) + 1] = abs(ev->x);
-					}
-#else
-					DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4)] = ev->x;
-					DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4) + 1] = ev->x;
-#endif
-					update_vkb_axis(abs(ev->x));
-				}
-
-				if (ev->y != INT32_MAX)
-				{
-#if 0
-					if (ev->y < 0)
-					{
-						// Up
-						DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4) + 2] = abs(ev->y);
-						DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4) + 3] = 0;
-					}
-					else
-					{
-						// Down
-						DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4) + 2] = 0;
-						DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4) + 3] = abs(ev->y);
-					}
-#else
-					DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4)] = ev->y;
-					DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4) + 1] = ev->y;
-#endif
-					update_vkb_axis(abs(ev->y));
-				}
-			}
-			break;
-
-		default:
-			break;
-	}
 }

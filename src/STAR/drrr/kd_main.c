@@ -36,7 +36,7 @@ static void HandleGamepadDeviceAdded(event_t *ev)
 	G_RegisterAvailableGamepad(ev->device);
 	I_GetGamepadGuid(ev->device, guid, sizeof(guid));
 	I_GetGamepadName(ev->device, name, sizeof(name));
-	CONS_Alert(CONS_NOTICE, "DRRR - Gamepad device %d connected: %s (%s)\n", ev->device, name, guid);
+	CONS_Alert(CONS_NOTICE, "TSoURDt3rd; DRRR Gamepads - Gamepad device %d connected: %s (%s)\n", ev->device, name, guid);
 }
 
 static void HandleGamepadDeviceRemoved(event_t *ev)
@@ -44,7 +44,7 @@ static void HandleGamepadDeviceRemoved(event_t *ev)
 	int i = 0;
 	I_Assert(ev != NULL);
 	I_Assert(ev->type == ev_gamepad_device_removed);
-	CONS_Alert(CONS_NOTICE, "DRRR - Gamepad device %d disconnected\n", ev->device);
+	CONS_Alert(CONS_NOTICE, "TSoURDt3rd; DRRR Gamepads - Gamepad device %d disconnected\n", ev->device);
 
 	boolean playerinterrupted = false;
 

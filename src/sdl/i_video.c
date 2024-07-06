@@ -1125,8 +1125,6 @@ void I_GetEvent(void)
 	// In order to make wheels act like buttons, we have to set their state to Up.
 	// This is because wheel messages don't have an up/down state.
 	gamekeydown[KEY_MOUSEWHEELDOWN] = gamekeydown[KEY_MOUSEWHEELUP] = 0;
-
-	DRRR_I_GetEvent(evt); // STAR STUFF: DRRR: handle events please //
 }
 
 void I_StartupMouse(void)
@@ -1179,6 +1177,8 @@ void I_OsPolling(void)
 	if (mod & KMOD_LALT)     altdown |= 1;
 	if (mod & KMOD_RALT)     altdown |= 2;
 	if (mod & KMOD_CAPS) capslock = true;
+
+	DRRR_I_GetEvent(); // STAR NOTE: DRRR: get our unique events //
 }
 
 //

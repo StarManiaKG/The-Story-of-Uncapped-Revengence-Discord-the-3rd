@@ -66,6 +66,8 @@
 #include "STAR/star_vars.h" // STAR_SetWindowTitle() //
 #include "STAR/ss_cmds.h" // various vast TSoURDt3rd commands //
 #include "STAR/ss_main.h" // STAR_CONS_Printf() //
+
+#include "STAR/drrr/kg_input.h" // G_SetPlayerGamepadIndicatorToPlayerColor() //
 // END OF THAT MESS, YAYA //
 
 // ------
@@ -5128,6 +5130,8 @@ static void Color_OnChange(void)
 		}
 	}
 	lastgoodcolor = cv_playercolor.value;
+
+	G_SetPlayerGamepadIndicatorToPlayerColor(consoleplayer); // STAR STUFF: fun controller junk //
 }
 
 /** Sends a color change for the secondary splitscreen player, unless that
@@ -5158,6 +5162,8 @@ static void Color2_OnChange(void)
 		}
 	}
 	lastgoodcolor2 = cv_playercolor2.value;
+
+	G_SetPlayerGamepadIndicatorToPlayerColor(1); // STAR STUFF: fun controller junk (part 2) //
 }
 
 /** Displays the result of the chat being muted or unmuted.
