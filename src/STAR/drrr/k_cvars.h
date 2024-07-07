@@ -9,7 +9,7 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifdef __K_CVARS__
+#ifndef __K_CVARS__
 #define __K_CVARS__
 
 #include "../../doomstat.h"
