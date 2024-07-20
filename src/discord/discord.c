@@ -15,7 +15,6 @@
 
 #include <time.h>
 #include "discord.h"
-#include "discord_cmds.h"
 #include "stun.h"
 #include "../i_system.h"
 #include "../d_clisrv.h"

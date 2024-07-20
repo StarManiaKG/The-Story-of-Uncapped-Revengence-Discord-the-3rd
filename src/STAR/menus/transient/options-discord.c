@@ -1,28 +1,29 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
-// Copyright (C) 2018-2024 by Kart Krew.
+// Original Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
+// Original Copyright (C) 2018-2024 by Kart Krew.
 // Copyright (C) 2020-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  discord_menu.c
+/// \file  menus/transient/options-discord.c
 /// \brief Discord Rich Presence menu options
 
-#include "discord_menu.h"
-#include "discord_cmds.h"
-#include "discord.h"
-#include "../r_draw.h"
-#include "../z_zone.h"
-#include "../w_wad.h" // W_CachePatchName //
-
-#include "../STAR/m_menu.h"
-#include "../STAR/drrr/kk_hud.h"
-#include "../STAR/drrr/km_menu.h"
-
 #ifdef HAVE_DISCORDSUPPORT
+
+#include "../../../discord/discord.h"
+
+#include "../smkg_m_func.h"
+#include "../smkg_m_draw.h"
+
+#include "../../drrr/kk_hud.h"
+#include "../../drrr/k_menu.h"
+
+#include "../../../r_draw.h"
+#include "../../../z_zone.h"
+#include "../../../w_wad.h"
 
 // ------------------------ //
 //        Variables
@@ -30,19 +31,11 @@
 
 struct discordrequestmenu_s discordrequestmenu;
 
-// =====
-// MENUS
-// =====
-
 static void M_DrawDiscordMenu(void);
+static void M_DiscordOptionsTicker(void);
 
 static void M_DiscordRequestHandler(INT32 choice);
-static void M_DrawDiscordRequests(void);
-
-static void DISC_M_Header(INT32 choice);
-static void DISC_M_State(INT32 choice);
-static void DISC_M_LImageText(INT32 choice);
-static void DISC_M_SImageText(INT32 choice);
+static void M_DiscordRequestTick(void);
 
 static menuitem_t OP_DiscordOptionsMenu[] =
 {
@@ -60,22 +53,58 @@ static menuitem_t OP_DiscordOptionsMenu[] =
 	{IT_STRING | IT_CVAR,					NULL, 	"Skin Image Type",			&cv_discordcharacterimagetype,		   56},
 
 	{IT_HEADER,								NULL,   "Custom Status Settings",	NULL,					 	 		   65},
-	{IT_STRING | IT_KEYHANDLER,				NULL, 	"Edit Details...",			DISC_M_Header, 	 		   			   71},
-	{IT_STRING | IT_KEYHANDLER,				NULL, 	"Edit State...",			DISC_M_State, 	 		   			   76},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,	NULL, 	"Edit Details...",			&cv_discordcustom_details, 	 		   71},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,	NULL, 	"Edit State...",			&cv_discordcustom_state, 	 		   85},
 
-	{IT_STRING | IT_CVAR,		        	NULL, 	"Large Image Type",			&cv_discordcustom_imagetype_large,     86},
-	{IT_STRING | IT_CVAR,		        	NULL, 	"Small Image Type",			&cv_discordcustom_imagetype_small,     91},
+	{IT_STRING | IT_CVAR,		        	NULL, 	"Large Image Type",			&cv_discordcustom_imagetype_large,     99},
+	{IT_STRING | IT_CVAR,		        	NULL, 	"Small Image Type",			&cv_discordcustom_imagetype_small,    104},
 
-	{IT_STRING | IT_CVAR,		        	NULL, 	"Large Image",				NULL, 								  101}, // Handled by discord_option_onchange //
-	{IT_STRING | IT_CVAR,		        	NULL, 	"Small Image",				NULL, 								  106}, // Handled by discord_option_onchange //
+	{IT_STRING | IT_CVAR,		        	NULL, 	"Large Image",				NULL, 								  114}, // Handled by the menu ticker //
+	{IT_STRING | IT_CVAR,		        	NULL, 	"Small Image",				NULL, 								  119}, // Handled by the menu ticker //
 
-	{IT_STRING | IT_KEYHANDLER,				NULL, 	"Edit Large Image Text...", DISC_M_LImageText,      			  116},
-	{IT_STRING | IT_KEYHANDLER,				NULL, 	"Edit Small Image Text...",	DISC_M_SImageText,      			  121},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,	NULL, 	"Edit Large Image Text...", &cv_discordcustom_imagetext_large,    129},
+	{IT_STRING | IT_CVAR | IT_CV_STRING,	NULL, 	"Edit Small Image Text...",	&cv_discordcustom_imagetext_small,    143},
+
+	{IT_DISABLED,							NULL,	"",							NULL,								  153},
+};
+
+static tsourdt3rd_menuitems_t TSoURDt3rd_OP_DiscordOptionsMenu[] =
+{
+	{NULL, NULL, 0, 0},
+	{NULL, "Allow Discord to display game info on your status.", 0, 0},
+	{NULL, "Prevents the logging of some account information such as your tag in the console.", 0, 0},
+
+	{NULL, NULL, 0, 0},
+	{NULL, "Allow other people to request joining your game from Discord.", 0, 0},
+	{NULL, "Set who is allowed to generate Discord invites to your game.", 0, 0},
+
+	{NULL, "Set the type of data to show on your status.", 0, 0},
+	{NULL, "Allow memes on your status.", 0, 0},
+
+	{NULL, "The type of character image to show on your status.", 0, 0},
+
+	{NULL, NULL, 0, 0},
+	{NULL, "The custom detail to show on your status.", 128, 2},
+	{NULL, "The custom state to show on your status.", 128, 2},
+
+	{NULL, "The type of image (large) that should appear on your status.", 0, 0},
+	{NULL, "The type of image (small) that should appear on your status.", 0, 0},
+
+	{NULL, "The image (large) to show on your status.", 0, 0},
+	{NULL, "The image (small) to show on your status.", 0, 0},
+
+	{NULL, "The image text (large) to show on your status.", 128, 2},
+	{NULL, "The image text (small) to show on your status.", 128, 2},
 };
 
 static menuitem_t MISC_DiscordRequests[] =
 {
 	{IT_KEYHANDLER|IT_NOTHING, NULL, "", M_DiscordRequestHandler, 0},
+};
+
+static tsourdt3rd_menuitems_t TSoURDt3rd_MISC_DiscordRequests[] =
+{
+	{NULL, NULL, 0, 0},
 };
 
 menu_t OP_DiscordOptionsDef =
@@ -91,6 +120,19 @@ menu_t OP_DiscordOptionsDef =
 	NULL
 };
 
+tsourdt3rd_menu_t TSoURDt3rd_OP_DiscordOptionsDef = {
+	&OP_DiscordOptionsDef,
+	TSoURDt3rd_OP_DiscordOptionsMenu,
+	0,
+	0, 0,
+	NULL,
+	M_DiscordOptionsTicker,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+};
+
 menu_t MISC_DiscordRequestsDef = {
 	MN_OP_DISCORD_RQ,
 	NULL,
@@ -100,6 +142,19 @@ menu_t MISC_DiscordRequestsDef = {
 	M_DrawDiscordRequests,
 	0, 0,
 	0,
+	NULL
+};
+
+tsourdt3rd_menu_t TSoURDt3rd_MISC_DiscordRequestsDef = {
+	&MISC_DiscordRequestsDef,
+	TSoURDt3rd_MISC_DiscordRequests,
+	0,
+	0, 0,
+	NULL,
+	M_DiscordRequestTick,
+	NULL,
+	NULL,
+	NULL,
 	NULL
 };
 
@@ -136,12 +191,13 @@ enum
 // MAIN
 // ====
 
-void M_DiscordOptionsTicker(void)
+static void M_DiscordOptionsTicker(void)
 {
 	// Register options and menu data //
 	INT32 i, j;
 	INT32 menuflags;
 
+#ifndef DISCORD_SECRETIVE
 	INT32 custom_cvartype_index[] = { cv_discordcustom_imagetype_large.value, cv_discordcustom_imagetype_small.value };
 	consvar_t *custom_cvar_index[2][4] = {
 		[0] = {
@@ -157,9 +213,10 @@ void M_DiscordOptionsTicker(void)
 			&cv_discordcustom_miscimage_small,
 		},
 	};
+#endif
 
 	INT32 discord_menuitems[6][5] = {
-		[0] = { op_richpresence_settings },
+		[0] = { op_richpresence_settings, },
 		[1] = {
 			op_discordasks,
 			op_discordinvites,
@@ -168,7 +225,7 @@ void M_DiscordOptionsTicker(void)
 			op_discordcharacterimagetype,
 		},
 
-		[2] = { op_customstatus_settings },
+		[2] = { op_customstatus_settings, },
 		[3] = {
 			op_discordcustom_imagetype_large,
 			op_discordcustom_imagetype_small,
@@ -189,6 +246,8 @@ void M_DiscordOptionsTicker(void)
 	// Set option availability and actions //
 	for (i = 0, j = 0; i < 6; j++)
 	{
+		discord_itemactions = NULL;
+
 		switch (i)
 		{
 			case 1:
@@ -201,7 +260,6 @@ void M_DiscordOptionsTicker(void)
 			case 4:
 			case 5:
 				menuflags = IT_DISABLED;
-				discord_itemactions = NULL;
 				break;
 #else
 			case 2:
@@ -247,7 +305,7 @@ void M_DiscordOptionsTicker(void)
 			}
 
 			case 5:
-				menuflags = ((cv_discordrp.value && cv_discordshowonstatus.value == 9) ? IT_KEYHANDLER|IT_STRING : IT_DISABLED);
+				menuflags = ((cv_discordrp.value && cv_discordshowonstatus.value == 9) ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 				break;
 #endif
 
@@ -258,10 +316,7 @@ void M_DiscordOptionsTicker(void)
 
 		OP_DiscordOptionsMenu[discord_menuitems[i][j]].status = menuflags;
 		if (discord_itemactions)
-		{
 			OP_DiscordOptionsMenu[discord_menuitems[i][j]].itemaction = discord_itemactions;
-			discord_itemactions = NULL;
-		}
 
 		if (!discord_menuitems[i][j+1])
 		{
@@ -269,13 +324,27 @@ void M_DiscordOptionsTicker(void)
 			i++;
 		}
 	}
+
+	// Handle typing data //
+	if (menumessage.active)
+		return;
+
+	if (menutyping.menutypingclose && menutyping.menutypingfade == 1 && M_CheckVirtualStringLength())
+	{
+		S_StartSound(NULL, sfx_skid);
+		DRRR_M_StartMessage("String too short!",
+			"Sorry, Discord requires status strings to\nbe longer than two characters.\n\nPlease type a longer string.",
+			NULL,
+			MM_NOTHING,
+			NULL,
+			NULL
+		);
+	}
 }
 
 void M_DiscordOptions(INT32 choice)
 {
 	(void)choice;
-
-	M_DiscordOptionsTicker();
 	M_SetupNextMenu(&OP_DiscordOptionsDef);
 }
 
@@ -297,77 +366,11 @@ static void M_DrawDiscordMenu(void)
 	V_DrawCenteredThinString(BASEVIDWIDTH/2, BASEVIDHEIGHT-8, V_SNAPTOBOTTOM|V_ALLOWLOWERCASE|V_REDMAP, "Make sure Discord is open!");
 }
 
-static boolean DISC_TypingCloseRoutine(void)
-{
-	if (strlen(menutyping.cache) < 2)
-		return true;
-	return false;
-}
-
-static void DISC_TypingAbortRoutine(void)
-{
-	if (strlen(menutyping.cache) >= 2)
-		return;
-
-	STAR_M_StartMessage(
-		"String too short",
-		0,
-		"Sorry, Discord requires status strings to\nbe longer than two characters.\n\nPlease type a longer string.\n\n(Press a key)\n",
-		NULL,
-		MM_NOTHING
-	);
-	S_StartSound(NULL, sfx_skid);
-}
-
-static void DISC_M_Header(INT32 choice)
-{
-	TSoURDt3rd_M_HandleTyping(
-		choice,
-		128,
-		&cv_discordcustom_details,
-		DISC_TypingCloseRoutine,
-		DISC_TypingAbortRoutine
-	);
-}
-
-static void DISC_M_State(INT32 choice)
-{
-	TSoURDt3rd_M_HandleTyping(
-		choice,
-		128,
-		&cv_discordcustom_state,
-		DISC_TypingCloseRoutine,
-		DISC_TypingAbortRoutine
-	);
-}
-
-static void DISC_M_LImageText(INT32 choice)
-{
-	TSoURDt3rd_M_HandleTyping(
-		choice,
-		128,
-		&cv_discordcustom_imagetext_large,
-		DISC_TypingCloseRoutine,
-		DISC_TypingAbortRoutine
-	);
-}
-
-static void DISC_M_SImageText(INT32 choice)
-{
-	TSoURDt3rd_M_HandleTyping(
-		choice,
-		128,
-		&cv_discordcustom_imagetext_small,
-		DISC_TypingCloseRoutine,
-		DISC_TypingAbortRoutine
-	);
-}
-
 // ========
 // REQUESTS
 // ========
 
-static const char *M_GetDiscordName(discordRequest_t *r)
+const char *M_GetDiscordName(discordRequest_t *r)
 {
 	if (r == NULL)
 		return "";
@@ -381,10 +384,12 @@ void M_DiscordRequests(INT32 choice)
 
 	discordrequestmenu.confirmLength = confirmLength;
 	MISC_DiscordRequestsDef.prevMenu = currentMenu;
+
+	menutransition.enabled = true;
 	M_SetupNextMenu(&MISC_DiscordRequestsDef);
 }
 
-void M_DiscordRequestTick(void)
+static void M_DiscordRequestTick(void)
 {
 	discordrequestmenu.ticker++;
 
@@ -409,8 +414,9 @@ void M_DiscordRequestTick(void)
 
 			if (currentMenu->prevMenu)
 			{
+				menutransition.enabled = true;
 				M_SetupNextMenu(currentMenu->prevMenu);
-				itemOn = 5; // mpause_continue
+				tsourdt3rd_itemOn = 5; // mpause_continue
 			}
 			else
 				M_ClearMenus(true);
@@ -443,7 +449,7 @@ static void M_DiscordRequestHandler(INT32 choice)
 	}
 }
 
-static void M_DrawDiscordRequests(void)
+void M_DrawDiscordRequests(void)
 {
 	discordRequest_t *curRequest = discordRequestList;
 	UINT8 *colormap;
@@ -483,7 +489,7 @@ static void M_DrawDiscordRequests(void)
 
 	if (hand != NULL)
 	{
-		fixed_t handoffset = (4 - abs((signed)(skullAnimCounter - 4))) * FRACUNIT;
+		fixed_t handoffset = (4 - abs((signed)(tsourdt3rd_skullAnimCounter - 4))) * FRACUNIT;
 		V_DrawFixedPatch(56*FRACUNIT, 150*FRACUNIT + handoffset, FRACUNIT, 0, hand, NULL);
 	}
 

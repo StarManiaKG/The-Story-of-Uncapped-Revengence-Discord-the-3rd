@@ -48,10 +48,10 @@
 #include "STAR/star_vars.h"
 #include "STAR/ss_cmds.h" // cv_stjrintro & cv_storesavesinfolders //
 #include "STAR/ss_main.h"
-#include "STAR/m_menu.h" // skullAnimCounter, MessageDef, & M_ShiftMessageQueueDown() //
+#include "STAR/m_menu.h" // MessageDef, & M_ShiftMessageQueueDown() //
 #include "STAR/smkg_misc_purefat.h"
 
-#include "STAR/drrr/km_menu.h" // messagemenu //
+#include "STAR/menus/smkg_m_func.h" // STAR_M_MenuMessageTick() //
 
 #include "deh_soc.h"
 // END THIS //
@@ -67,7 +67,7 @@ static INT32 timetonext; // Delay between screen changes
 static INT32 continuetime; // Short delay when continuing
 
 static tic_t animtimer; // Used for some animation timings
-//static INT16 skullAnimCounter; // Prompts: Chevron animation /* STAR NOTE: now externed in STAR/m_menu.h */
+static INT16 skullAnimCounter; // Prompts: Chevron animation
 
 static INT32 deplete;
 static tic_t stoptimer;
@@ -2318,11 +2318,7 @@ void F_StartGameEnd(void)
 	// In case menus are still up?!!
 	M_ClearMenus(true);
 
-#if 0
 	timetonext = TICRATE;
-#else
-	timetonext = 10*TICRATE; // STAR NOTE: cool finale score calculation junk! //
-#endif
 }
 
 //
@@ -2331,8 +2327,7 @@ void F_StartGameEnd(void)
 void F_GameEndDrawer(void)
 {
 	// this function does nothing
-
-	TSoURDt3rd_GameEnd(); // STAR STUFF: ....except this (WORLD 7 SUPER PAPER MARIO) //
+	TSoURDt3rd_GameEnd(&timetonext); // STAR STUFF: ....except this (WORLD 7 SUPER PAPER MARIO) //
 }
 
 //
@@ -3520,15 +3515,7 @@ void F_MenuPresTicker(void)
 // (no longer) De-Demo'd Title Screen
 void F_TitleScreenTicker(boolean run)
 {
-	// STAR STUFF: DRRR: message menu routine //
-	if (run)
-	{
-		if (menumessage.active)
-		{
-			M_MenuMessageTick();
-		}
-	}
-	// ROUTINE RUNNING! //
+	STAR_M_MenuMessageTick(run); // STAR STUFF: DRRR: message menu routine //
 
 	if (run)
 		finalecount++;

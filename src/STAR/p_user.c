@@ -22,6 +22,8 @@
 
 #include "../m_menu.h" // cv_bosspinchmusic //
 
+#include "padrefactor/smkg_pad_i_sys.h" // TSoURDt3rd_I_CursedWindowMovement() //
+
 #ifdef HAVE_DISCORDSUPPORT
 #include "../discord/discord.h"
 #endif
@@ -152,16 +154,16 @@ void TSoURDt3rd_P_Ticker(void)
 
         player_t *player = &players[i];
 
-		// Time over...
 		if (!netgame && ((leveltime >= TSOURDT3RD_TIMELIMIT && cv_allowtypicaltimeover.value) || countdowntimeup))
 		{
+			// Time over...
 			TSoURDt3rdPlayers[i].timeOver = true;
 			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_INSTAKILL);
 		}
 
-		// Removed Sonic (real)
 		if (TSoURDt3rd_InAprilFoolsMode())
 		{
+			// Removed Sonic (real)
 			if (strstr(skins[player->skin].name, "sonic"))
 				continue;
 
@@ -193,6 +195,12 @@ void TSoURDt3rd_P_Ticker(void)
 			}
 		}
 	}
+
+	if (quake.time)
+	{
+		// Quaking
+		TSoURDt3rd_I_CursedWindowMovement(FixedInt(quake.x), FixedInt(quake.y));
+	}
 }
 
 //
@@ -208,9 +216,11 @@ boolean TSoURDt3rd_P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *sourc
 
 	if (target)
 	{
-		if ((target->flags & MF_BOSS) && target->health <= (target->info->damage ? target->info->damage : 3))
+		INT32 phealth = (target->info->damage ? target->info->damage : 3);
+
+		if ((target->flags & MF_BOSS) && target->health <= phealth)
 		{
-			if (cv_bosspinchmusic.value)
+			if (!cv_bosspinchmusic.value)
 				return false;
 
 			strncpy(mapmusname, TSoURDt3rd_DetermineLevelMusic(), 7);

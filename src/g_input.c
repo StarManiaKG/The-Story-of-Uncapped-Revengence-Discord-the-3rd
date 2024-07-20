@@ -19,7 +19,8 @@
 #include "d_net.h"
 #include "console.h"
 
-#include "STAR/drrr/kg_input.h" // DRRR_G_MapEventsToControls() //
+#include "STAR/smkg_g_inputs.h" // STAR_G_DefineDefaultControls() //
+#include "STAR/drrr/kg_input.h" // STAR_G_MapEventsToControls() //
 
 #define MAXMOUSESENSITIVITY 100 // sensitivity steps
 
@@ -114,6 +115,11 @@ void G_MapEventsToControls(event_t *ev)
 	INT32 i;
 	UINT8 flag;
 
+	// STAR STUFF: DRRR Menus: our cool event mapper exists too! //
+	if (STAR_G_MapEventsToControls(ev))
+		return;
+	// ONWARDS AND UPWARDS (or something) //
+
 	switch (ev->type)
 	{
 		case ev_keydown:
@@ -195,8 +201,6 @@ void G_MapEventsToControls(event_t *ev)
 		flag = G_CheckDoubleClick(gamekeydown[KEY_2JOY1+i], &joy2dclicks[i]);
 		gamekeydown[KEY_DBL2JOY1+i] = flag;
 	}
-
-	DRRR_G_MapEventsToControls(ev); // STAR STUFF: DRRR: cool input events //
 }
 
 //
@@ -750,14 +754,6 @@ void G_DefineDefaultControls(void)
 		gamecontroldefault[i][GC_RECORDGIF    ][0] = KEY_F9;
 		gamecontroldefault[i][GC_VIEWPOINTNEXT][0] = KEY_F12;
 
-		// STAR STUFF //
-		gamecontroldefault[i][JB_OPENJUKEBOX  		 ][0] = 'j';
-		gamecontroldefault[i][JB_INCREASEMUSICSPEED  ][0] = '=';
-		gamecontroldefault[i][JB_DECREASEMUSICSPEED  ][0] = '-';
-		gamecontroldefault[i][JB_PLAYMOSTRECENTTRACK ][0] = 'l';
-		gamecontroldefault[i][JB_STOPJUKEBOX 		 ][0] = 'k';
-		// WE'RE USING CONTROLS HERE //
-
 		// Gamepad controls -- same for both schemes
 		gamecontroldefault[i][GC_JUMP         ][1] = KEY_JOY1+0; // A
 		gamecontroldefault[i][GC_SPIN         ][1] = KEY_JOY1+2; // X
@@ -789,17 +785,9 @@ void G_DefineDefaultControls(void)
 		gamecontrolbisdefault[i][GC_VIEWPOINTNEXT][1] = KEY_2JOY1+9; // Right Stick
 		gamecontrolbisdefault[i][GC_TOSSFLAG     ][1] = KEY_2HAT1+0; // D-Pad Up
 		//gamecontrolbisdefault[i][GC_SCORES       ][1] = KEY_2HAT1+1; // D-Pad Down
-
-		// STAR STUFF //
-		gamecontrolbisdefault[i][JB_OPENJUKEBOX  		][0] = 'j';
-		gamecontrolbisdefault[i][JB_INCREASEMUSICSPEED  ][0] = '=';
-		gamecontrolbisdefault[i][JB_DECREASEMUSICSPEED  ][0] = '-';
-		gamecontrolbisdefault[i][JB_PLAYMOSTRECENTTRACK ][0] = 'l';
-		gamecontrolbisdefault[i][JB_STOPJUKEBOX 		][0] = 'k';
-		// WE'RE USING CONTROLS HERE //
 	}
 
-	DRRR_G_DefineDefaultControls(); // STAR STUFF: DRRR: assign menu reserved controls //
+	STAR_G_DefineDefaultControls(); // STAR STUFF: assign our default controls too! //
 }
 
 INT32 G_GetControlScheme(INT32 (*fromcontrols)[2], const INT32 *gclist, INT32 gclen)

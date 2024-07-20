@@ -15,6 +15,7 @@
 #include "../../doomstat.h"
 #include "../../command.h"
 
-extern consvar_t cv_drrr_deadzone[MAXSPLITSCREENPLAYERS];
+extern consvar_t cv_tsourdt3rd_drrr_deadzone[MAXSPLITSCREENPLAYERS];
+extern consvar_t cv_tsourdt3rd_drrr_debugvirtualkeyboard;
 
 #endif // __K_CVARS__

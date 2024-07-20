@@ -11,8 +11,8 @@
 /// \file  stun.h
 /// \brief RFC 5389 client implementation to fetch external IP address.
 
-#ifndef DRRR_STUN_H
-#define DRRR_STUN_H
+#ifndef STUN_H
+#define STUN_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,4 +27,4 @@ boolean STUN_got_response (const char * const buffer, const size_t size);
 } // extern "C"
 #endif
 
-#endif/*DRRR_STUN_H*/
+#endif/*STUN_H*/

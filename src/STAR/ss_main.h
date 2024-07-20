@@ -79,6 +79,8 @@ typedef enum
 //        Functions
 // ------------------------ //
 
+void TSoURDt3rd_Init(void);
+
 void STAR_CONS_Printf(star_messagetype_t starMessageType, const char *fmt, ...);
 const char *TSoURDt3rd_CON_DrawStartupScreen(void);
 
@@ -110,7 +112,7 @@ void TSoURDt3rd_LoadLevel(boolean reloadinggamestate);
 // SCENES
 // ======
 
-void TSoURDt3rd_GameEnd(void);
+void TSoURDt3rd_GameEnd(INT32 *timetonext);
 
 // ======
 // SCREEN

@@ -35,6 +35,8 @@
 #include "discord/discord.h"
 #endif
 
+#include "STAR/drrr/kg_input.h" // G_SetPlayerGamepadIndicatorToPlayerColor() //
+
 INT32 numskins = 0;
 skin_t skins[MAXSKINS];
 
@@ -392,6 +394,11 @@ static void SetSkin(player_t *player, INT32 skinnum)
 	if (player - players == consoleplayer)
 		DRPC_UpdatePresence();
 #endif
+
+	// STAR STUFF: fun controller junk //
+	if (P_IsLocalPlayer(player))
+		G_SetPlayerGamepadIndicatorToPlayerColor(player - players);
+	// JAAAAAAAAAAAAAAAAAAAAAAAAAAAA! //
 }
 
 // Gets the player to the first usuable skin in the game.

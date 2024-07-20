@@ -27,11 +27,6 @@ typedef enum
 	ev_joystick,
 	ev_mouse2,
 	ev_joystick2,
-	// STAR STUFF: DRRR unique events //
-	ev_gamepad_device_added,
-	ev_gamepad_device_removed,
-	ev_gamepad_axis
-	// ADDED! //
 } evtype_t;
 
 // Event structure.
@@ -42,7 +37,6 @@ typedef struct
 	INT32 x; // mouse/joystick x move
 	INT32 y; // mouse/joystick y move
 	boolean repeated; // key repeat
-	INT32 device; // STAR STUFF: DRRR: which device ID it belongs to (controller ID) //
 } event_t;
 
 //

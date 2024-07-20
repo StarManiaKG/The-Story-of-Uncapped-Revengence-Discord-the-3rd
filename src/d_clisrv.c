@@ -57,16 +57,13 @@
 #include "f_finale.h"
 #endif
 
-#include "discord/discord_cmds.h" // Joinable_OnChange(), Got_DiscordInfo(), & cv_discord commands //
-#ifdef HAVE_DISCORDSUPPORT
-#include "discord/discord.h"
-#endif
-
 // STAR STUFF //
+#include "discord/discord.h"
+
 #include "STAR/star_vars.h"
 #include "STAR/ss_main.h" // STAR_CONS_Printf() //
 
-#include "STAR/padrefactor/smkg_pad_d_main.h" // STAR_GamepadR_D_ResetGamepadData() //
+#include "STAR/padrefactor/smkg_padr_main.h"
 // WE'RE DONE! //
 
 //
@@ -2456,8 +2453,6 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 			// my hand has been forced and I am dearly sorry for this awful hack :vomit:
 			for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
 			{
-				STAR_GamepadR_D_ResetGamepadData(&events[eventtail]); // STAR STUFF: DRRR: gamepad junk //
-
 #ifndef NONET
 				if (!Snake_Joy_Grabber(&events[eventtail]))
 #endif
@@ -2807,7 +2802,7 @@ static void Command_connect(void)
 		if (demoplayback && titledemo)
 			G_CheckDemoStatus();
 
-		if (netgame)
+		if (netgame && Playing())
 		{
 			D_QuitNetGame();
 			CL_Reset();

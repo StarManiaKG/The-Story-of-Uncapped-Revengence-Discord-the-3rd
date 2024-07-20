@@ -3901,7 +3901,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		P_SetTarget(&target->target, source);
 	}
 
-	TSoURDt3rd_P_DamageMobj(target, inflictor, source, damage, damagetype);
+	TSoURDt3rd_P_DamageMobj(target, inflictor, source, damage, damagetype); // STAR STUFF: do our unique damage junk please //
 
 	return true;
 }

@@ -15,7 +15,7 @@
 #include "k_console.h"
 #include "../../hu_stuff.h"
 
-#include "../ss_inputs.h"
+#include "../smkg_g_inputs.h"
 
 INT32 CON_ShiftChar(INT32 ch)
 {

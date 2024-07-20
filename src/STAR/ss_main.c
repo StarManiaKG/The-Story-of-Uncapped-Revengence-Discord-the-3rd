@@ -12,7 +12,8 @@
 #include <time.h>
 
 #include "ss_main.h"
-#include "m_menu.h"
+#include "menus/smkg_m_func.h"
+
 #include "../f_finale.h"
 #include "../i_time.h"
 #include "../z_zone.h"
@@ -32,7 +33,6 @@
 // ------------------------ //
 
 static saveinfo_t* cursave = NULL;
-static INT32 endcount;
 
 #if 0
 typedef struct
@@ -61,6 +61,24 @@ boolean xmasmode = false, xmasoverride = false;
 // ------------------------ //
 //        Functions
 // ------------------------ //
+
+void TSoURDt3rd_Init(void)
+{
+	CONS_Printf("TSoURDt3rd_Init(): Initalizing TSoURDt3rd...\n");
+
+	TSoURDt3rd_CheckTime(); // Check our computer's time!
+	TSoURDt3rd_InitializePlayer(consoleplayer); // Initialize the build's player structures
+
+	STAR_M_InitQuitMessages(); // Add our custom quit messages :)
+
+	// Add our custom menu data :p
+	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_OP_TSoURDt3rdOptionsDef, &OP_TSoURDt3rdOptionsDef);
+
+#ifdef HAVE_DISCORDSUPPORT
+	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_OP_DiscordOptionsDef, &OP_DiscordOptionsDef);
+	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_MISC_DiscordRequestsDef, &MISC_DiscordRequestsDef);
+#endif	
+}
 
 //
 // void STAR_CONS_Printf(star_messagetype_t starMessageType, const char *fmt, ...)
@@ -378,23 +396,25 @@ void TSoURDt3rd_LoadLevel(boolean reloadinggamestate)
 // SCENES
 // ======
 
-void TSoURDt3rd_GameEnd(void)
+void TSoURDt3rd_GameEnd(INT32 *timetonext)
 {
+	static boolean init = false;
 	static INT32 headerScroll = BASEVIDWIDTH;
 
 	// draw a background so we don't have weird mirroring errors
 	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 
-	if (!endcount)
+	if (!init)
 	{
 		cursave = Z_Realloc(cursave, sizeof(saveinfo_t), PU_STATIC, NULL);
 		if (!cursave && cursaveslot)
 			I_Error("Insufficient memory to prepare final rank");
 
-		endcount++;
-		goto resetVariables;
+		*timetonext = 10*TICRATE;
+		headerScroll = BASEVIDWIDTH;
+		init = true;
 	}
-	else if (++endcount >= 10*TICRATE)
+	else if (--*timetonext <= 0)
 	{
 		if (cursave)
 		{
@@ -402,10 +422,11 @@ void TSoURDt3rd_GameEnd(void)
 			cursave = NULL;
 		}
 
-		goto resetVariables;
+		init = false;
+		headerScroll = BASEVIDWIDTH;
 	}
 
-	if (endcount <= 5*TICRATE)
+	if (headerScroll)
 		headerScroll--;
 
 	V_DrawCenteredString(((BASEVIDWIDTH/2)-headerScroll), 65, V_SNAPTOBOTTOM|V_MENUCOLORMAP, "Great Job!");
@@ -414,12 +435,6 @@ void TSoURDt3rd_GameEnd(void)
 	V_DrawCreditString((((BASEVIDWIDTH/2)-headerScroll))<<(FRACBITS-1), (BASEVIDHEIGHT-125)<<(FRACBITS-1), 0, cv_playername.string);
 
 	V_DrawCenteredString(BASEVIDWIDTH/2, 65, V_MENUCOLORMAP, va("%d", cursave[cursaveslot].lives));
-
-	resetVariables:
-	{
-		headerScroll = BASEVIDWIDTH;
-		return;
-	}
 }
 
 // ======

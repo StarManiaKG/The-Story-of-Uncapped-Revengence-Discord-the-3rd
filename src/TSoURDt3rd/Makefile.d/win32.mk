@@ -21,7 +21,6 @@ libs+=-L../libs/discord-game-sdk/x86_64
 else
 libs+=-L../libs/discord-game-sdk/x86
 endif
-#libs+=-ldiscord_gamesdk // this isn't exactly something you can compile :p
 endif
 
 ifdef HAVE_LIBAV

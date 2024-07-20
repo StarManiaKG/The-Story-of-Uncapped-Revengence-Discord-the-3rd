@@ -147,12 +147,11 @@ static char addonsdir[MAX_WADPATH];
 // STAR STUFF WEEEEE //
 #include "STAR/star_vars.h"
 #include "STAR/ss_main.h" // AUTOLOADCONFIGFILENAME, TSoURDt3rd_CheckTime(), STAR_CONS_Printf(), & TSoURDt3rd_CON_DrawStartupScreen() //
-#include "STAR/m_menu.h" // STAR_M_InitQuitMessages() //
 
 #include "STAR/s_sound.h" // jukebox //
 
-#include "STAR/drrr/kg_input.h" // HandleGamepadDeviceEvents() //
-#include "STAR/padrefactor/smkg_pad_d_main.h" // gamepad refactor data //
+#include "STAR/padrefactor/smkg_padr_main.h" // gamepad refactor data //
+#include "STAR/menus/smkg_m_func.h" // menu refactor data //
 
 // Discord Stuff
 INT32 extrawads;
@@ -279,12 +278,13 @@ void D_ProcessEvents(void)
 			hooked = true;
 		}
 
-		STAR_GamepadR_D_ProcessEvents(ev); // STAR STUFF: DRRR Gamepads: process deez nuts in your mouth hahahaha //
-
 		// Menu input
 #ifdef HAVE_THREADS
 		I_lock_mutex(&m_menu_mutex);
 #endif
+		if (STAR_M_Responder(ev))
+			continue; // STAR STUFF: Menu Revamp: process unique menu events (eated it :3) //
+
 		{
 			eaten = M_Responder(ev);
 		}
@@ -1109,7 +1109,7 @@ void D_StartTitle(void)
 	for (i = 0; i < MAXPLAYERS; i++)
 		CL_ClearPlayer(i);
 
-	STAR_GamepadR_D_ResetGamepadData(NULL); // STAR STUFF: DRRR: clear cmd building stuff //
+	STAR_GamepadR_D_UpdateMenuControls(); // STAR STUFF: DRRR Menus: rebuild menu cmds right quick //
 
 	players[consoleplayer].availabilities = players[1].availabilities = R_GetSkinAvailabilities(); // players[1] is supposed to be for 2p
 
@@ -1522,12 +1522,7 @@ void D_SRB2Main(void)
 	// Netgame URL special case: change working dir to EXE folder.
 	ChangeDirForUrlHandler();
 
-	// STAR STUFF: Initialize our data! //
-	TSoURDt3rd_CheckTime(); // Check our computer's time
-	TSoURDt3rd_InitializePlayer(consoleplayer); // Initialize the build's structures
-
-	STAR_M_InitQuitMessages(); // My custom quit messages :)
-	// END THIS STUFF //
+	TSoURDt3rd_Init(); // STAR STUFF: Initialize our data! //
 
 	// identify the main IWAD file to use
 	IdentifyVersion();
