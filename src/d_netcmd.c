@@ -57,12 +57,9 @@
 #define CV_RESTRICT 0
 #endif
 
-#include "discord/discord_cmds.h" // Joinable_OnChange(), Got_DiscordInfo(), & cv_discord commands //
-#ifdef HAVE_DISCORDSUPPORT
-#include "discord/discord.h"
-#endif
-
 // STAR STUFF //
+#include "discord/discord.h"
+
 #include "STAR/star_vars.h" // STAR_SetWindowTitle() //
 #include "STAR/ss_cmds.h" // various vast TSoURDt3rd commands //
 #include "STAR/ss_main.h" // STAR_CONS_Printf() //

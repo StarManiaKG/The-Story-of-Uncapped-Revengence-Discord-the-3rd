@@ -20,9 +20,10 @@
 #include "ss_main.h"		// star variables 2
 #include "s_sound.h"		// star variables 3
 #include "m_menu.h"			// star variables 4
-#include "ss_inputs.h"		// star variables 5
+#include "smkg_g_inputs.h"	// star variables 5
+#include "menus/smkg_m_func.h"	// star variables 6
 
-#include "drrr/km_menu.h"	// kart variables
+#include "drrr/k_menu.h"	// kart variables
 
 #include "../i_system.h"
 #include "../doomdef.h"
@@ -63,6 +64,7 @@
 //			STAR FUNCTIONS		 	//
 //				YAY				 	//
 //////////////////////////////////////
+
 //// VARIABLES ////
 #ifdef HAVE_CURL
 char *hms_tsourdt3rd_api;
@@ -995,22 +997,31 @@ void TSoURDt3rd_BuildTicCMD(UINT8 player)
 	if (demoplayback && titledemo)
 		return;
 
-	if (menutyping.active)
-		return;
-
-	if (CON_Ready() || chat_on)
-		return;
+	if (CON_Ready() || chat_on || menutyping.active)
+		return; // With our menu revamps, might be best to add this here...
 
 	if (player)
-		return; // don't run for bots right now please
+		return; // don't run for bots please
+
+	if (STAR_M_DoesMenuHaveKeyHandler())
+		return; // we may need to type or manually move, so calm down right quick
 
 	// Manage keys //
 	if (jukebox_open)
 	{
 		// Shortcut to open the jukebox menu
-		M_StartControlPanel();
+		if (currentMenu == &OP_TSoURDt3rdJukeboxDef)
+			return;
+
+		// Prevent the game from crashing when using the jukebox keybind :)
+		if (!menuactive)
+		{
+			OP_TSoURDt3rdJukeboxDef.prevMenu = NULL;
+			M_StartControlPanel();
+		}
+		else
+			OP_TSoURDt3rdJukeboxDef.prevMenu = currentMenu;
 		M_TSoURDt3rdJukebox(0);
-		currentMenu->prevMenu = NULL;
 	}
 
 	if (jukebox_increasespeed)
@@ -1158,15 +1169,16 @@ const char *TSoURDt3rd_DetermineLevelMusic(void)
 			if (!cv_actclearmusic.value || (cv_actclearmusic.value && !actClearMusic[cv_actclearmusic.value].actClear))
 				return (MUSICEXISTS(mapheaderinfo[gamemap-1]->musintername) ? mapheaderinfo[gamemap-1]->musintername : "_clear");
 
-			if (cv_bossclearmusic.value)
-			{
-				if (trueFinalBossMap && actClearMusic[cv_actclearmusic.value].trueFinalBossClear)
-					return actClearMusic[cv_actclearmusic.value].trueFinalBossClear;
-				else if (finalBossMap && actClearMusic[cv_actclearmusic.value].finalBossClear)
-					return actClearMusic[cv_actclearmusic.value].finalBossClear;
-				else if (bossMap && actClearMusic[cv_actclearmusic.value].bossClear)
-					return actClearMusic[cv_actclearmusic.value].bossClear;
-			}
+			if (!cv_bossclearmusic.value)
+				return actClearMusic[cv_actclearmusic.value].actClear;
+
+			if (trueFinalBossMap && actClearMusic[cv_actclearmusic.value].trueFinalBossClear)
+				return actClearMusic[cv_actclearmusic.value].trueFinalBossClear;
+			else if (finalBossMap && actClearMusic[cv_actclearmusic.value].finalBossClear)
+				return actClearMusic[cv_actclearmusic.value].finalBossClear;
+			else if (bossMap && actClearMusic[cv_actclearmusic.value].bossClear)
+				return actClearMusic[cv_actclearmusic.value].bossClear;
+
 			return actClearMusic[cv_actclearmusic.value].actClear;
 		}
 
@@ -1189,8 +1201,9 @@ const char *TSoURDt3rd_DetermineLevelMusic(void)
 		{
 			if ((mobj && mobj->health <= 0)
 				&& (cv_postbossmusic.value && MUSICEXISTS(mapheaderinfo[gamemap-1]->muspostbossname)))
-
+			{
 				return mapheaderinfo[gamemap-1]->muspostbossname;
+			}
 			else if (finalBossMap)
 			{
 				if (!cv_finalbossmusic.value)

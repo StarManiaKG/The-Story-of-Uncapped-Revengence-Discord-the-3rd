@@ -14,10 +14,15 @@
 #ifndef __DISCORD__
 #define __DISCORD__
 
+#include "../command.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef HAVE_DISCORDSUPPORT
 
-#include "discord_rpc.h"
-#include "../doomdef.h"
+#include <discord_rpc.h>
 
 // ------------------------ //
 //        Variables
@@ -35,10 +40,6 @@
 
 // Allows for SRB2 to use the discriminators of Discord usernames! (even though they removed them :p)
 #define DISCORD_DISCRIMINATORS
-
-// ------------------------ //
-//         Structs
-// ------------------------ //
 
 // Discord Rich Presence connection status
 typedef enum {
@@ -76,6 +77,20 @@ typedef struct discordRequest_s {
 
 extern discordRequest_t *discordRequestList;
 
+
+extern consvar_t cv_discordrp, cv_discordstreamer;
+extern consvar_t cv_discordasks;
+extern consvar_t cv_discordshowonstatus, cv_discordstatusmemes, cv_discordcharacterimagetype;
+
+extern consvar_t cv_discordcustom_details, cv_discordcustom_state;
+extern consvar_t cv_discordcustom_imagetype_large, cv_discordcustom_imagetype_small;
+extern consvar_t cv_discordcustom_characterimage_large, cv_discordcustom_characterimage_small;
+extern consvar_t cv_discordcustom_supercharacterimage_large, cv_discordcustom_supercharacterimage_small;
+extern consvar_t cv_discordcustom_mapimage_large, cv_discordcustom_mapimage_small;
+extern consvar_t cv_discordcustom_miscimage_large, cv_discordcustom_miscimage_small;
+extern consvar_t cv_discordcustom_imagetext_large, cv_discordcustom_imagetext_small;
+
+
 // ------------------------ //
 //        Functions
 // ------------------------ //
@@ -106,14 +121,92 @@ void DRPC_ImagePrintf(char *string, size_t size, const char *sep, const char *im
 // STATUSES
 // ========
 
+/*--------------------------------------------------
+	void DRPC_GeneralStatus(char *string, char *image, char *imagestr)
+
+		Applies a Discord Rich Presence status, related to general details,
+		to the given string.
+--------------------------------------------------*/
+
 void DRPC_GeneralStatus(char *string, char *image, char *imagestr);
+
+
+/*--------------------------------------------------
+	void DRPC_ExtendedStatus(char *string)
+
+		Applies a Discord Rich Presence status, related to extended status details,
+		to the given string.
+--------------------------------------------------*/
+
 void DRPC_ExtendedStatus(char *string);
+
+
+/*--------------------------------------------------
+	void DRPC_ScoreStatus(char *string)
+
+		Applies a Discord Rich Presence status, related to score amounts, to
+		the given string.
+--------------------------------------------------*/
+
 void DRPC_ScoreStatus(char *string);
+
+
+/*--------------------------------------------------
+	void DRPC_EmblemStatus(char *string)
+
+		Applies a Discord Rich Presence status, related to emblems, to
+		the given string.
+--------------------------------------------------*/
+
 void DRPC_EmblemStatus(char *string);
+
+/*--------------------------------------------------
+	void DRPC_EmeraldStatus(char *string)
+
+		Applies a Discord Rich Presence status, related to how many
+		emeralds the user has, to the given string.
+--------------------------------------------------*/
+
 void DRPC_EmeraldStatus(char *string);
+
+
+/*--------------------------------------------------
+	void DRPC_GamestateStatus(char *string, char *image, char *imagestr)
+
+		Applies a Discord Rich Presence status, related to gamestates, to
+		the given string.
+--------------------------------------------------*/
+
 void DRPC_GamestateStatus(char *string, char *image, char *imagestr);
+
+
+/*--------------------------------------------------
+	void DRPC_CharacterStatus(char *charimg, char *charname, char *s_charimg, char *s_charname)
+
+		Applies a Discord Rich Presence status, related to levels, to
+		the given string.
+--------------------------------------------------*/
+
 void DRPC_CharacterStatus(char *charimg, char *charname, char *s_charimg, char *s_charname);
+
+
+/*--------------------------------------------------
+	void DRPC_PlaytimeStatus(char *string)
+
+		Applies a Discord Rich Presence status, related to SRB2 playtime, to
+		the given string.
+--------------------------------------------------*/
+
 void DRPC_PlaytimeStatus(char *string);
+
+
+/*--------------------------------------------------
+	void DRPC_CustomStatus(char *detailstr, char *statestr, char *image, char *imagestr, char *s_image, char *s_imagestr)
+
+		Using the customizable custom discord status commands, this applies
+		a Discord Rich Presence status to the given string.
+--------------------------------------------------*/
+
 void DRPC_CustomStatus(char *detailstr, char *statestr, char *image, char *imagestr, char *s_image, char *s_imagestr);
 
 
@@ -162,4 +255,13 @@ void DRPC_UpdatePresence(void);
 
 
 #endif // HAVE_DISCORDSUPPORT
+
+void Joinable_OnChange(void);
+void Got_DiscordInfo(UINT8 **cp, INT32 playernum);
+
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
 #endif // __DISCORD__

@@ -6,14 +6,14 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  smkg_pad_i_system.h
-/// \brief Gamepad refactor system specific interface stuff.
+/// \file  smkg_padr_main.h
+/// \brief DRRR Gamepad refactor main program data
 
-#ifndef __SMKG_PAD_I_SYSTEM__
-#define __SMKG_PAD_I_SYSTEM__
+#ifndef __SMKG_PADR_MAIN__
+#define __SMKG_PADR_MAIN__
 
 #include "../../d_event.h"
 
-INT32 STAR_I_GetGamepadKey(void);
+void STAR_GamepadR_D_UpdateMenuControls(void);
 
-#endif // __SMKG_PAD_I_SYSTEM__
+#endif // __SMKG_PADR_MAIN__

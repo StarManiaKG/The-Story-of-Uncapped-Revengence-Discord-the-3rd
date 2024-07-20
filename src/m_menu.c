@@ -85,7 +85,6 @@
 
 #ifdef HAVE_DISCORDSUPPORT
 #include "discord/discord.h"
-#include "discord/discord_menu.h"
 #endif
 
 // STAR STUFF //
@@ -94,13 +93,14 @@
 #include "STAR/ss_cmds.h" // various vast TSoURDt3rd commands and command functions //
 #include "STAR/ss_main.h" // AUTOLOADCONFIGFILENAME, SAVEGAMEFOLDER, & STAR_CONS_Printf() //
 
-#include "STAR/m_menu.h" // STAR_M_DrawQuitGraphic() //
 #include "STAR/s_sound.h"
 
 #include "deh_soc.h"
 
-#include "STAR/drrr/kg_input.h" // G_ResetAllDeviceGameKeyDown() //
-#include "STAR/drrr/km_menu.h" // menutyping junk //
+#include "STAR/drrr/k_menu.h" // menutyping junk //
+
+#include "STAR/menus/smkg_m_func.h" // menu data junk & STAR_M_DrawQuitGraphic() //
+#include "STAR/menus/smkg_m_draw.h" // M_InitOptions() //
 // END OF THAT //
 
 #define SKULLXOFF -32
@@ -152,8 +152,8 @@ static patch_t *savselp[7];
 
 INT16 startmap; // Mario, NiGHTS, or just a plain old normal game?
 
-INT16 itemOn = 1; // menu item skull is on, Hack by Tails 09-18-2002 /* STAR NOTE: now externed in STAR/m_menu.h */
-INT16 skullAnimCounter = 10; // skull animation counter /* STAR NOTE: now externed in STAR/m_menu.h */
+static INT16 itemOn = 1; // menu item skull is on, Hack by Tails 09-18-2002
+static INT16 skullAnimCounter = 10; // skull animation counter
 
 static  boolean setupcontrols_secondaryplayer;
 INT32   (*setupcontrols)[2];  // pointer to the gamecontrols of the player being edited /* STAR NOTE: now externed in STAR/m_menu.h */
@@ -179,7 +179,7 @@ static tic_t keydown = 0;
 // PROTOTYPES
 //
 
-//static void M_GoBack(INT32 choice); /* STAR NOTE: now externed in STAR/m_menu.h */
+static void M_GoBack(INT32 choice);
 static void M_StopMessage(INT32 choice);
 static boolean stopstopmessage = false;
 
@@ -692,8 +692,6 @@ typedef enum
 	addons,
 	options,
 	quitdoom,
-
-	tsourdt3rdreadme // STAR STUFF: YAY! //
 } main_e;
 
 static menuitem_t MISC_AddonsMenu[] =
@@ -732,7 +730,7 @@ menuitem_t MPauseMenu[] = /* STAR NOTE: now externed in STAR/m_menu.h */
 	{IT_STRING | IT_CALL,    NULL, "Switch Gametype/Level...",  M_MapChange,           32},
 
 #ifdef HAVE_DISCORDSUPPORT
-	{IT_STRING | IT_CALL,	 "M_ICODIS", "Discord Requests...", M_DiscordRequests,	   48},
+	{IT_STRING | IT_CALL,	 NULL/*"M_ICODIS"*/, "Discord Requests...", M_DiscordRequests,	   48},
 #endif
 
 	{IT_STRING | IT_CALL,    NULL, "Continue",                  M_SelectableClearMenus,64},
@@ -3928,7 +3926,7 @@ static void M_HandleMenuPresState(menu_t *newMenu)
 // BASIC MENU HANDLING
 // =========================================================================
 
-void M_GoBack(INT32 choice) /* STAR NOTE: now externed in STAR/m_menu.h */
+static void M_GoBack(INT32 choice)
 {
 	(void)choice;
 
@@ -4061,7 +4059,7 @@ static void M_ResetCvars(void)
 	}
 }
 
-void M_NextOpt(void) /* STAR NOTE: now externed in STAR/m_menu.h */
+static void M_NextOpt(void)
 {
 	INT16 oldItemOn = itemOn; // prevent infinite loop
 	do
@@ -4073,7 +4071,7 @@ void M_NextOpt(void) /* STAR NOTE: now externed in STAR/m_menu.h */
 	} while (oldItemOn != itemOn && ( (currentMenu->menuitems[itemOn].status & IT_TYPE) & IT_SPACE ));
 }
 
-void M_PrevOpt(void) /* STAR NOTE: now externed in STAR/m_menu.h */
+static void M_PrevOpt(void)
 {
 	INT16 oldItemOn = itemOn; // prevent infinite loop
 	do
@@ -4130,14 +4128,6 @@ boolean M_Responder(event_t *ev)
 	}
 	else if (menuactive)
 	{
-		// STAR STUFF: Lactozilla: Yikes. //
-		if (snake)
-		{
-			if (!Snake_Joy_Grabber(ev))
-				G_MapEventsToControls(ev);
-		}
-		// THANKS LACTO BY THE WAY //
-
 		if (ev->type == ev_keydown)
 		{
 			keydown++;
@@ -4531,6 +4521,8 @@ void M_Drawer(void)
 	if (currentMenu == &MessageDef)
 		menuactive = true;
 
+	STAR_M_PreDrawer(); // STAR STUFF: render our pre-wipe and version //
+
 	if (menuactive)
 	{
 		// now that's more readable with a faded background (yeah like Quake...)
@@ -4544,28 +4536,24 @@ void M_Drawer(void)
 		// ... but only in the MAIN MENU.  I'm a picky bastard.
 		if (currentMenu == &MainDef)
 		{
-			// STAR NOTE: shifted some y values in order to make version strings neater :) //
 			if (customversionstring[0] != '\0')
 			{
-				V_DrawThinString(vid.dupx, vid.height - 41*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT, "Mod version:");
-				V_DrawThinString(vid.dupx, vid.height - 33*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, customversionstring);
+				V_DrawThinString(vid.dupx, vid.height - 17*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT, "Mod version:");
+				V_DrawThinString(vid.dupx, vid.height - 9*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, customversionstring);
 			}
 			else
 			{
-#ifdef DEVELOP 		// Development -- show revision / branch info
-				V_DrawThinString(vid.dupx, vid.height - 41*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, compbranch);
-				V_DrawThinString(vid.dupx, vid.height - 33*vid.dupy,  V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, comprevision);
-#else				// Regular build
-				V_DrawThinString(vid.dupx, vid.height - 33*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, va("%s", VERSIONSTRING));
+#ifdef DEVELOP // Development -- show revision / branch info
+				V_DrawThinString(vid.dupx, vid.height - 17*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, compbranch);
+				V_DrawThinString(vid.dupx, vid.height - 9*vid.dupy,  V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, comprevision);
+#else // Regular build
+				V_DrawThinString(vid.dupx, vid.height - 9*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, va("%s", VERSIONSTRING));
 #endif
 			}
-
-			// STAR STUFF: add more version text //
-			V_DrawThinString(vid.dupx, vid.height - 17*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, va("%s", TSOURDT3RDVERSIONSTRING));
-			V_DrawThinString(vid.dupx, vid.height - 9*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, va("%s", TSOURDT3RDBYSTARMANIAKGSTRING));
-			// THIS HURTS MAN //
 		}
 	}
+
+	STAR_M_PostDrawer(); // STAR STUFF: render extended menu data //
 
 	// focus lost notification goes on top of everything, even the former everything
 	if (window_notinfocus && cv_showfocuslost.value)
@@ -4576,23 +4564,6 @@ void M_Drawer(void)
 		else
 			V_DrawCenteredString(BASEVIDWIDTH/2, (BASEVIDHEIGHT/2) - (4), V_MENUCOLORMAP, "Focus Lost");
 	}
-
-	// STAR STUFF: cool kart menu ports! //
-#if 0
-	M_DrawMenuForeground();
-#endif
-
-	// Draw typing overlay when needed, above all other menu elements.
-	if (menutyping.active)
-		M_DrawMenuTyping();
-
-	// Draw message overlay when needed
-	M_DrawMenuMessage();
-	// DONE HERE! //
-
-#ifdef HAVE_DISCORDSUPPORT
-	DRPC_UpdatePresence();
-#endif
 }
 
 //
@@ -4614,36 +4585,12 @@ void M_StartControlPanel(void)
 		return;
 	}
 
-	// STAR STUFF: DRRR: message menu //
-	if (gamestate == GS_TITLESCREEN)
-	{
-		if (menumessage.active)
-		{
-			if (!menumessage.closing && menumessage.fadetimer == 9)
-			{
-				// The following doesn't work with MM_YESNO.
-				// However, because there's no guarantee a profile
-				// is selected or controls set up to our liking,
-				// we can't call M_HandleMenuMessage.
-
-				DRRR_M_StopMessage(MA_NONE);
-			}
-
-			return;
-		}
-	}
-	// EMAIL MESSAGE SENT! //
+	// STAR STUFF: DRRR Menus: run our junk first i guess :p //
+	if (STAR_M_StartControlPanel())
+		return;
+	// RUN AND DONE! //
 
 	menuactive = true;
-
-	// STAR STUFF: KART: reset menucmds //
-	G_ResetAllDeviceGameKeyDown();
-	memset(menucmd, 0, sizeof (menucmd));
-	for (INT32 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		menucmd[i].delay = MENUDELAYTIME;
-	}
-	// RESET! MOVING ON! //
 
 	if (!Playing())
 	{
@@ -4654,10 +4601,6 @@ void M_StartControlPanel(void)
 
 		currentMenu = &MainDef;
 		itemOn = singleplr;
-
-#ifdef HAVE_DISCORDSUPPORT
-		DRPC_UpdatePresence();
-#endif
 	}
 	else if (modeattacking)
 	{
@@ -4822,6 +4765,8 @@ void M_SetupNextMenu(menu_t *menudef)
 			return; // we can't quit this menu (also used to set parameter from the menu)
 	}
 
+	TSoURDt3rd_M_SetupNextMenu(menudef, menutransition.enabled); // STAR STUFF: manipulate menu data for me please :) //
+
 	M_HandleMenuPresState(menudef);
 
 	currentMenu = menudef;
@@ -4846,16 +4791,6 @@ void M_SetupNextMenu(menu_t *menudef)
 	}
 
 	hidetitlemap = false;
-
-#ifdef HAVE_DISCORDSUPPORT
-	if (!Playing() && menuactive)
-	{
-		// currentMenu changed during menus
-		DRPC_UpdatePresence();
-	}
-#endif
-
-	M_ShiftMessageQueueDown(); // STAR STUFF: shift the message queue down //
 }
 
 // Guess I'll put this here, idk
@@ -4875,29 +4810,6 @@ void M_Ticker(void)
 	if (dedicated)
 		return;
 
-	// STAR STUFF: cool kart ports //
-	for (INT32 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		if (menucmd[i].delay > 0)
-		{
-			menucmd[i].delay--;
-		}
-	}
-
-	if (menutyping.active)
-	{
-		// Typing for CV_IT_STRING
-		M_MenuTypingInput(-1);
-	}
-
-#if 0
-	if (currentMenu->tickroutine)
-	{
-		currentMenu->tickroutine();
-	}
-#endif
-	// COOL PORTS HAVE BEEN PORTED! //
-
 	if (--skullAnimCounter <= 0)
 		skullAnimCounter = 8;
 
@@ -4911,10 +4823,6 @@ void M_Ticker(void)
 
 	if (currentMenu == &OP_ScreenshotOptionsDef)
 		M_SetupScreenshotMenu();
-	// STAR STUFF: LACTOZILLA EDITION //
-	else if (snake)
-		Snake_Handle();
-	// THANKS AGAIN LACTO BY THE WAY //
 
 #if defined (MASTERSERVER) && defined (HAVE_THREADS)
 	I_lock_mutex(&ms_ServerList_mutex);
@@ -4929,12 +4837,7 @@ void M_Ticker(void)
 	I_unlock_mutex(ms_ServerList_mutex);
 #endif
 
-#ifdef HAVE_DISCORDSUPPORT
-	if (currentMenu == &MISC_DiscordRequestsDef)
-		M_DiscordRequestTick();
-	else if (currentMenu == &OP_DiscordOptionsDef)
-		M_DiscordOptionsTicker();
-#endif
+	STAR_M_Ticker(&itemOn, &noFurtherInput, skullAnimCounter); // STAR STUFF: send input availability to our other scripts :) //
 }
 
 //
@@ -5401,6 +5304,8 @@ void M_DrawGenericMenu(void) /* STAR NOTE: now externed in STAR/m_menu.h */
 	x = currentMenu->x;
 	y = currentMenu->y;
 
+	STAR_M_DrawMenuTooltips(); // STAR STUFF: draw tooltips //
+
 	// draw title (or big pic)
 	M_DrawMenuTitle();
 
@@ -5641,6 +5546,8 @@ void M_DrawGenericScrollMenu(void) /* STAR NOTE: now externed in STAR/m_menu.h *
 	// DRAW MENU
 	x = currentMenu->x;
 	y = currentMenu->y;
+
+	STAR_M_DrawMenuTooltips(); // STAR STUFF: draw tooltips //
 
 	if (currentMenu->menuitems[currentMenu->numitems-1].alphaKey < scrollareaheight)
 		tempcentery = currentMenu->y; // Not tall enough to scroll, but this thinker is used in case it becomes so
@@ -15668,7 +15575,41 @@ static INT32 quitsounds[] =
 	sfx_s3k6a, // Inu 04-03-13
 	sfx_s3k73, // Inu 04-03-13
 	sfx_chchng, // Tails 11-09-99
-	sfx_cdpcm3 //** STAR STUFF: 04-11-23 **//
+
+	//** STAR STUFF **//
+	// we're changing things up even further!
+	// going even further beyond!
+	sfx_cdpcm3, // 04-11-23
+
+	// srb2kart: you ain't seen nothing yet
+	sfx_kc2e,
+	sfx_kc2f,
+	sfx_cdfm01,
+	//sfx_ddash,
+	sfx_s3ka2,
+	sfx_s3k49,
+	//sfx_slip,
+	//sfx_tossed,
+	sfx_s3k7b,
+	//sfx_itrolf,
+	//sfx_itrole,
+	sfx_cdpcm9,
+	sfx_s3k4e,
+	sfx_s259,
+	sfx_3db06,
+	sfx_s3k3a,
+	//sfx_peel,
+	sfx_cdfm28,
+	sfx_s3k96,
+	sfx_s3kc0s,
+	sfx_cdfm39,
+	//sfx_hogbom,
+	sfx_kc5a,
+	sfx_kc46,
+	sfx_s3k92,
+	sfx_s3k42,
+	//sfx_kpogos,
+	//sfx_screec
 };
 
 void M_QuitResponse(INT32 ch)
@@ -15691,11 +15632,8 @@ void M_QuitResponse(INT32 ch)
 		ptime = I_GetTime() + NEWTICRATE*2; // Shortened the quit time, used to be 2 seconds Tails 03-26-2001
 		while (ptime > I_GetTime())
 		{
-#if 0
 			V_DrawScaledPatch(0, 0, 0, W_CachePatchName("GAMEQUIT", PU_PATCH));
-#else
-			STAR_M_DrawQuitGraphic();
-#endif
+			STAR_M_DrawQuitGraphic(); // STAR STUFF: just overlay our quit graphic if anything :p //
 			I_FinishUpdate(); // Update the screen with the image Tails 06-19-2001
 			I_Sleep(cv_sleep.value);
 			I_UpdateTime(cv_timescale.value);
@@ -15766,11 +15704,18 @@ static void M_DrawTsourdt3rdReadMe(void)
 
 	static const char *TSoURDt3rd_credits[] = {
 		"\1TSoURDt3rd Team",
-		"StarManiaKG \"Star\" - Creator",
-		"MarioMario \"Sapphire\" - Co-Creator",
+		"StarManiaKG \"Star\"",
+			"\t\t- Creator",
+		"",
+		"MarioMario \"Sapphire\"",
+			"\t\t- Co-Creator",
 			"\t\t- In Loving Memory Of",
-		"Mini the Bunnyboy \"Talis\" - Co-Develtoper",
-		"Bitten2Up \"Bitten\" - Co-Develtoper",
+		"",
+		"Mini the Bunnyboy \"Talis\""
+			"\t\t- Co-Develtoper",
+		"",
+		"Bitten2Up \"Bitten\"",
+			"\t\t- Co-Develtoper",
 		"",
 		"\1TSoURDt3rd Extras",
 		"Marilyn - Emotional Support, Ideas",
@@ -15943,7 +15888,7 @@ static void M_TSoURDt3rdOptions(INT32 choice)
 #endif
 
 	// Set up the Menu, and We're Done :) //
-	M_SetupNextMenu(&OP_TSoURDt3rdOptionsDef);
+	M_InitOptions(choice);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////

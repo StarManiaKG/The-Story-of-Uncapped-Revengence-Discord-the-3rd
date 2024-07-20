@@ -96,7 +96,7 @@
 #include "../STAR/ss_cmds.h" // cv_tpsrate //
 #include "../STAR/ss_main.h" // TSoURDt3rd_SCR_DisplayTpsRate() //
 
-#include "../STAR/drrr/ki_system.h" // DRRR_I_GetEvent() //
+#include "../STAR/padrefactor/smkg_pad_i_sys.h" // TSoURDt3rd_I_GetEvent() //
 // END THAT STUFF //
 
 // maximum number of windowed modes (see windowedModes[][])
@@ -1106,6 +1106,8 @@ void I_GetEvent(void)
 				I_Quit();
 				break;
 		}
+
+		TSoURDt3rd_I_GetEvent(&evt); // STAR STUFF: get our unique events too please :) //
 	}
 
 	// Send all relative mouse movement as one single mouse event.
@@ -1177,8 +1179,6 @@ void I_OsPolling(void)
 	if (mod & KMOD_LALT)     altdown |= 1;
 	if (mod & KMOD_RALT)     altdown |= 2;
 	if (mod & KMOD_CAPS) capslock = true;
-
-	DRRR_I_GetEvent(); // STAR NOTE: DRRR: get our unique events //
 }
 
 //

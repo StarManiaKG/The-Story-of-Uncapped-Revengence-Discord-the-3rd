@@ -6,16 +6,20 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  smkg_pad_g_game.h
-/// \brief Gamepad refactor game loop functions and event handling, global header
+/// \file  smkg_padr_main.c
+/// \brief DRRR Gamepad refactor main program data
 
-#ifndef __SMKG_PAD_G_GAME__
-#define __SMKG_PAD_G_GAME__
+#include "smkg_padr_main.h"
+#include "../menus/smkg_m_func.h"
 
-#include "../../command.h"
-#include "../drrr/ki_joy.h"
-#include "../../i_joy.h"
+#include "../../g_game.h"
 
-void STAR_G_ApplyGamepads(event_t *ev);
+// ------------------------ //
+//        Functions
+// ------------------------ //
 
-#endif // __SMKG_PAD_G_GAME__
+void STAR_GamepadR_D_UpdateMenuControls(void)
+{
+	for (INT32 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+		STAR_M_UpdateMenuCMD(i);
+}

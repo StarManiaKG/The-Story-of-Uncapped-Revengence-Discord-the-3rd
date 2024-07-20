@@ -16,13 +16,12 @@
 // 		"/tmp/rpcphotos/$(basename $f .dat).png"
 // done
 
-#if 1
 #include "../../doomstat.h"
 #include "../../r_draw.h"
 #include "../../r_skins.h"
 #include "../../v_video.h"
+#include "../../w_wad.h"
 #include "../../z_zone.h"
-#endif
 
 static void expo(size_t skin)
 {

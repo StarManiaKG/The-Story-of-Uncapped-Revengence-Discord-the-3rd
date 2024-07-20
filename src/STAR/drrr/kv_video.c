@@ -15,11 +15,10 @@
 ///        Functions to draw patches (by post) directly to screen.
 ///        Functions to blit a block to the screen.
 
-#include "../../doomdef.h"
-#include "../../v_video.h"
 #include "kv_video.h"
-#include "kv_draw.h"
 #include "k_font.h"
+#include "../../doomdef.h"
+#include "../../i_time.h"
 #include "../../z_zone.h"
 
 static inline fixed_t FixedCharacterDim(
@@ -399,9 +398,386 @@ static UINT8 V_GetButtonCodeWidth(UINT8 c)
 	return x;
 }
 
+INT32 V_DanceYOffset(INT32 counter)
+{
+	const INT32 duration = 16;
+	const INT32 step = (I_GetTime() + counter) % duration;
+
+	return abs(step - (duration / 2)) - (duration / 4);
+}
+
 static boolean V_CharacterValid(font_t *font, int c)
 {
 	return (c >= 0 && c < font->size && font->font[c] != NULL);
+}
+
+void DRRR_V_DrawStringScaled(
+		fixed_t    x,
+		fixed_t    y,
+		fixed_t      scale,
+		fixed_t spacescale,
+		fixed_t    lfscale,
+		INT32      flags,
+		const UINT8 *colormap,
+		int        fontno,
+		const char *s)
+{
+	INT32     hchw;/* half-width for centering */
+
+	INT32     dupx;
+	INT32     dupy;
+
+	fixed_t  right;
+	fixed_t    bot;
+
+	font_t   *font;
+
+	boolean uppercase;
+	boolean notcolored;
+
+	boolean   dance;
+	boolean nodanceoverride;
+	INT32     dancecounter;
+
+	fixed_t cx, cy;
+
+	fixed_t cxoff, cyoff;
+	fixed_t cw;
+
+	fixed_t   left;
+
+	int c;
+
+	uppercase  = ((flags & V_ALLOWLOWERCASE) != V_ALLOWLOWERCASE);
+	flags	&= ~(V_FLIP);/* These two (V_ALLOWLOWERCASE) share a bit. */
+
+	dance           = (flags & V_STRINGDANCE) != 0;
+	nodanceoverride = !dance;
+	dancecounter    = 0;
+
+	/* Some of these flags get overloaded in this function so
+	   don't pass them on. */
+	flags &= ~(V_PARAMMASK);
+
+	if (colormap == NULL)
+	{
+		colormap   =  V_GetStringColormap(( flags & V_CHARCOLORMASK ));
+	}
+
+	notcolored = !colormap;
+
+	font       = &fontv[fontno];
+
+	fontspec_t fontspec;
+
+	V_GetFontSpecification(fontno, flags, &fontspec);
+
+	hchw     = fontspec.chw >> 1;
+
+	fontspec.chw    <<= FRACBITS;
+	fontspec.spacew <<= FRACBITS;
+	fontspec.lfh    <<= FRACBITS;
+
+#define Mul( id, scale ) ( id = FixedMul (scale, id) )
+	Mul    (fontspec.chw,      scale);
+	Mul (fontspec.spacew,      scale);
+	Mul    (fontspec.lfh,      scale);
+
+	Mul (fontspec.spacew, spacescale);
+	Mul    (fontspec.lfh,    lfscale);
+#undef  Mul
+
+	if (( flags & V_NOSCALESTART ))
+	{
+		dupx      = vid.dupx;
+		dupy      = vid.dupy;
+
+		hchw     *=     dupx;
+
+		fontspec.chw      *=     dupx;
+		fontspec.spacew   *=     dupx;
+		fontspec.lfh      *=     dupy;
+
+		right     = vid.width;
+	}
+	else
+	{
+		dupx      = 1;
+		dupy      = 1;
+
+		right     = ( vid.width / vid.dupx );
+		if (!( flags & V_SNAPTOLEFT ))
+		{
+			left   = ( right - BASEVIDWIDTH )/ 2;/* left edge of drawable area */
+			right -= left;
+		}
+	}
+
+	right      <<=               FRACBITS;
+	bot          = vid.height << FRACBITS;
+
+	cx = x;
+	cy = y;
+	cyoff = 0;
+
+	for (; ( c = *s ); ++s, ++dancecounter)
+	{
+		switch (c)
+		{
+			case '\n':
+				cy += fontspec.lfh;
+				if (cy >= bot)
+					return;
+				cx  =   x;
+				break;
+			default:
+				if (( c & 0xF0 ) == 0x80)
+				{
+					if (notcolored)
+					{
+						colormap = V_GetStringColormap(
+								( ( c & 0x7f )<< V_CHARCOLORSHIFT )&
+								V_CHARCOLORMASK);
+					}
+					if (nodanceoverride)
+					{
+						dance = false;
+					}
+				}
+				else if (c == V_STRINGDANCE)
+				{
+					dance = true;
+				}
+				else if (cx < right)
+				{
+					if (uppercase)
+					{
+						c = toupper(c);
+					}
+					else if (V_CharacterValid(font, c - font->start) == false)
+					{
+						// Try the other case if it doesn't exist
+						if (c >= 'A' && c <= 'Z')
+						{
+							c = tolower(c);
+						}
+						else if (c >= 'a' && c <= 'z')
+						{
+							c = toupper(c);
+						}
+					}
+
+
+					if (dance)
+					{
+						cyoff = V_DanceYOffset(dancecounter) * FRACUNIT;
+					}
+
+#if 0
+					// STAR NOTE: no button prompts :) //
+					if (( c & 0xB0 ) & 0x80) // button prompts
+					{
+						struct BtConf
+						{
+							UINT8 x, y;
+							Draw::Button type;
+						};
+
+						auto bt_inst = [c]() -> std::optional<BtConf>
+						{
+							switch (c & 0x0F)
+							{
+							case 0x00: return {{0, 3, Draw::Button::up}};
+							case 0x01: return {{0, 3, Draw::Button::down}};
+							case 0x02: return {{0, 3, Draw::Button::right}};
+							case 0x03: return {{0, 3, Draw::Button::left}};
+
+							case 0x04: return {{0, 4, Draw::Button::dpad}};
+
+							case 0x07: return {{0, 2, Draw::Button::r}};
+							case 0x08: return {{0, 2, Draw::Button::l}};
+
+							case 0x09: return {{0, 1, Draw::Button::start}};
+
+							case 0x0A: return {{2, 1, Draw::Button::a}};
+							case 0x0B: return {{2, 1, Draw::Button::b}};
+							case 0x0C: return {{2, 1, Draw::Button::c}};
+
+							case 0x0D: return {{2, 1, Draw::Button::x}};
+							case 0x0E: return {{2, 1, Draw::Button::y}};
+							case 0x0F: return {{2, 1, Draw::Button::z}};
+
+							default: return {};
+							}
+						}();
+
+						if (bt_inst)
+						{
+							auto bt_translate_press = [c]() -> std::optional<bool>
+							{
+								switch (c & 0xB0)
+								{
+								default:
+								case 0x90: return true;
+								case 0xA0: return {};
+								case 0xB0: return false;
+								}
+							};
+
+							cw = V_GetButtonCodeWidth(c) * dupx;
+							cxoff = (*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
+							Draw(
+								FixedToFloat(cx + cxoff) - (bt_inst->x * dupx),
+								FixedToFloat(cy + cyoff) - ((bt_inst->y + fontspec.button_yofs) * dupy))
+								.flags(flags)
+								.small_button(bt_inst->type, bt_translate_press());
+							cx += cw;
+						}
+						break;
+					}
+#endif
+
+					c -= font->start;
+					if (V_CharacterValid(font, c) == true)
+					{
+						// Remove offsets from patch
+						fixed_t patchxofs = SHORT (font->font[c]->leftoffset) * dupx * scale;
+						cw = SHORT (font->font[c]->width) * dupx;
+						cxoff = (*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
+						V_DrawFixedPatch(cx + cxoff + patchxofs, cy + cyoff, scale,
+								flags, font->font[c], colormap);
+						cx += cw;
+					}
+					else
+						cx += fontspec.spacew;
+				}
+		}
+	}
+}
+
+fixed_t V_StringScaledWidth(
+		fixed_t      scale,
+		fixed_t spacescale,
+		fixed_t    lfscale,
+		INT32      flags,
+		int        fontno,
+		const char *s)
+{
+	INT32     hchw;/* half-width for centering */
+
+	INT32     dupx;
+
+	font_t   *font;
+
+	boolean uppercase;
+
+	fixed_t cx;
+	fixed_t right;
+
+	fixed_t cw;
+
+	int c;
+
+	fixed_t fullwidth = 0;
+
+	uppercase  = ((flags & V_ALLOWLOWERCASE) != V_ALLOWLOWERCASE);
+	flags	&= ~(V_FLIP);/* These two (V_ALLOWLOWERCASE) share a bit. */
+
+	font       = &fontv[fontno];
+
+	fontspec_t fontspec;
+
+	V_GetFontSpecification(fontno, flags, &fontspec);
+
+	hchw     = fontspec.chw >> 1;
+
+	fontspec.chw    <<= FRACBITS;
+	fontspec.spacew <<= FRACBITS;
+
+#define Mul( id, scale ) ( id = FixedMul (scale, id) )
+	Mul    (fontspec.chw,      scale);
+	Mul (fontspec.spacew,      scale);
+	Mul    (fontspec.lfh,      scale);
+
+	Mul (fontspec.spacew, spacescale);
+	Mul    (fontspec.lfh,    lfscale);
+#undef  Mul
+
+	if (( flags & V_NOSCALESTART ))
+	{
+		dupx      = vid.dupx;
+
+		hchw     *=     dupx;
+
+		fontspec.chw      *=     dupx;
+		fontspec.spacew   *=     dupx;
+		fontspec.lfh      *= vid.dupy;
+	}
+	else
+	{
+		dupx      = 1;
+	}
+
+	cx = 0;
+	right = 0;
+
+	for (; ( c = *s ); ++s)
+	{
+		switch (c)
+		{
+			case '\n':
+				cx  =   0;
+				break;
+			default:
+				if (( c & 0xF0 ) == 0x80 || c == V_STRINGDANCE)
+					continue;
+
+				if (( c & 0xB0 ) & 0x80)
+				{
+					cw = V_GetButtonCodeWidth(c) * dupx;
+					cx += cw * scale;
+					right = cx;
+					break;
+				}
+
+				if (uppercase)
+				{
+					c = toupper(c);
+				}
+				else if (V_CharacterValid(font, c - font->start) == false)
+				{
+					// Try the other case if it doesn't exist
+					if (c >= 'A' && c <= 'Z')
+					{
+						c = tolower(c);
+					}
+					else if (c >= 'a' && c <= 'z')
+					{
+						c = toupper(c);
+					}
+				}
+
+				c -= font->start;
+				if (V_CharacterValid(font, c) == true)
+				{
+					cw = SHORT (font->font[c]->width) * dupx;
+
+					// How bunched dims work is by incrementing cx slightly less than a full character width.
+					// This causes the next character to be drawn overlapping the previous.
+					// We need to count the full width to get the rightmost edge of the string though.
+					right = cx + (cw * scale);
+
+					(*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
+					cx += cw;
+				}
+				else
+					cx += fontspec.spacew;
+		}
+
+		fullwidth = max(right, max(cx, fullwidth));
+	}
+
+	return fullwidth;
 }
 
 // Modify a string to wordwrap at any given width.
@@ -573,4 +949,10 @@ char * V_ScaledWordWrap(
 	newstring[writer] = '\0';
 
 	return newstring;
+}
+
+void DRRR_V_DrawCenteredThinString(INT32 x, INT32 y, INT32 option, const char *string)
+{
+	x -= V_ThinStringWidth(string, option)/2;
+	V_DrawThinString(x, y, option, string);
 }

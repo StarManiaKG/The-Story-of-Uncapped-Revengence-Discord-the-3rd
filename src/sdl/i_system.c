@@ -217,8 +217,6 @@ static char returnWadPath[256];
 #include "../STAR/star_vars.h" // TSoURDt3rd_GenerateFunnyCrashMessage(), //
 								// TSOURDT3RDVERSIONSTRING, & TSOURDT3RDBYSTARMANIAKGSTRING //
 
-#include "../STAR/padrefactor/smkg_pad_i_system.h" // STAR_I_GetGamepadKey() //
-
 /**	\brief	The JoyReset function
 
 	\param	JoySet	Joystick info to reset
@@ -985,8 +983,6 @@ INT32 I_GetKey (void)
 		}
 	}
 
-	STAR_I_GetGamepadKey(); // STAR STUFF: DRRR Gamepads: get keys please //
-
 	return rc;
 }
 
@@ -1077,11 +1073,7 @@ void I_ShutdownJoystick(void)
 
 void I_GetJoystickEvents(void)
 {
-#if 0
 	static event_t event = {0,0,0,0,false};
-#else
-	static event_t event = {0,0,0,0,false,0}; // STAR STUFF: edited to add kart gamepad support //
-#endif
 	INT32 i = 0;
 	UINT64 joyhats = 0;
 #if 0
@@ -1351,11 +1343,7 @@ void I_ShutdownJoystick2(void)
 
 void I_GetJoystick2Events(void)
 {
-#if 0
 	static event_t event = {0,0,0,0,false};
-#else
-	static event_t event = {0,0,0,0,false,0}; // STAR STUFF: edited to add kart gamepad support //
-#endif
 	INT32 i = 0;
 	UINT64 joyhats = 0;
 #if 0

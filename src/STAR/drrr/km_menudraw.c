@@ -13,14 +13,16 @@
 /// \brief SRB2Kart's menu drawer functions
 
 #include "kg_input.h"
-#include "km_menu.h"
+#include "k_menu.h"
 #include "kk_hud.h"
 #include "km_swap.h"
-#include "../../v_video.h"
+#include "kv_video.h"
 #include "../../m_fixed.h"
+#include "../../w_wad.h"
+#include "../../z_zone.h"
 
-#include "../m_menu.h"
-#include "../ss_inputs.h"
+#include "../menus/smkg_m_draw.h"
+#include "../smkg_g_inputs.h"
 
 static INT32 highlightflags;
 
@@ -38,24 +40,6 @@ UINT16 M_GetCvPlayerColor(UINT8 pnum)
 		return SKINCOLOR_NONE;
 
 	return skins[skin].prefcolor;
-}
-
-//
-// M_DrawMenuTooltips
-//
-// Draw a banner across the top of the screen, with a description of the current option displayed
-//
-void M_DrawMenuTooltips(void)
-{
-#if 0 // STAR NOTE: after adding tooltips, come back here :) //
-	if (tsourdt3rd_currentMenu->menuitems[itemOn].tooltip != NULL)
-	{
-		V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
-		V_DrawCenteredThinString(BASEVIDWIDTH/2, 12, 0, currentMenu->menuitems[itemOn].tooltip);
-	}
-#else
-    return;
-#endif
 }
 
 static const char *M_MenuTypingCroppedString(void)
@@ -104,14 +88,14 @@ void M_DrawMenuTyping(void)
 	else
 		y += (9-menutyping.menutypingfade);
 
-	if (currentMenu->menuitems[itemOn].text)
+	if (currentMenu->menuitems[tsourdt3rd_itemOn].text)
 	{
-		V_DrawThinString(x + 5, y - 2, highlightflags, currentMenu->menuitems[itemOn].text);
+		V_DrawThinString(x + 5, y - 2, highlightflags|V_ALLOWLOWERCASE, currentMenu->menuitems[tsourdt3rd_itemOn].text);
 	}
 
-	M_DrawMenuTooltips();
+	STAR_M_DrawMenuTooltips();
 
-	//DRRR_M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
+	//M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
 	V_DrawFill(x + 5, y + 4 + 5, boxwidth - 8, 8+6, 159);
 
 	V_DrawFill(x + 4, y + 4 + 4, boxwidth - 6, 1, 121);
@@ -121,7 +105,7 @@ void M_DrawMenuTyping(void)
 	V_DrawFill(x + 5 + boxwidth - 8, y + 4 + 5, 1, 8+6, 121);
 
 	INT32 textwidth = M_DrawCaretString(x + 8, y + 12, V_ALLOWLOWERCASE, M_MenuTypingCroppedString());
-    if (skullAnimCounter < 4
+    if (tsourdt3rd_skullAnimCounter < 4
 		&& menutyping.menutypingclose == false
 		&& menutyping.menutypingfade == (menutyping.keyboardtyping ? 9 : 18))
 	{
@@ -274,11 +258,11 @@ void M_DrawMenuTyping(void)
 						}
 					}
 
-					V_DrawCenteredString(x + (width/2), y + 1 + arrowoffset, mflag, buf);
+					V_DrawCenteredString(x + (width/2), y + 1 + arrowoffset, mflag|V_ALLOWLOWERCASE, buf);
 				}
 				else
 				{
-					V_DrawCenteredThinString(x + (width/2), y + 1, mflag, buf);
+					V_DrawCenteredThinString(x + (width/2), y + 1, mflag|V_ALLOWLOWERCASE, buf);
 				}
 
 				x += width + 1;
@@ -301,19 +285,14 @@ void M_DrawMenuTyping(void)
 	// Some contextual stuff
 	if (menutyping.keyboardtyping)
 	{
-		V_DrawThinString(returnx, y, V_GRAYMAP,
+		V_DrawThinString(returnx, y, V_GRAYMAP|V_ALLOWLOWERCASE,
 			"Type using your keyboard. Press Enter to confirm & exit."
 			//"\nPress any button on your controller to use the Virtual Keyboard."
 		);
 	}
 	else
 	{
-#if 0
-		V_DrawThinString(returnx, y, V_GRAYMAP,
-#else
-		// STAR NOTE: works way better than the above //
-		V_DrawCenteredThinString(BASEVIDWIDTH/2, y, V_GRAYMAP,
-#endif
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, y, V_GRAYMAP|V_ALLOWLOWERCASE,
 			"Type using the Virtual Keyboard. Use the \'OK\' button to confirm & exit."
 			//"\nPress any keyboard key to type normally."
 		);
@@ -341,7 +320,7 @@ static void M_DrawMediocreKeyboardKey(const char *text, INT32 *workx, INT32 work
 	V_DrawFill((*workx)-1, worky, buttonwidth, 10, 16);
 	V_DrawString(
 		(*workx), worky + 1,
-		0, text
+		V_ALLOWLOWERCASE, text
 	);
 }
 
@@ -363,7 +342,7 @@ void M_DrawMenuMessage(void)
 
 	if (menumessage.header != NULL)
 	{
-		V_DrawThinString(x, y - 10, highlightflags, menumessage.header);
+		V_DrawThinString(x, y - 10, highlightflags|V_ALLOWLOWERCASE, menumessage.header);
 	}
 
 	if (menumessage.defaultstr)
@@ -371,7 +350,7 @@ void M_DrawMenuMessage(void)
 		INT32 workx = x + menumessage.x;
 		INT32 worky = y + menumessage.y;
 
-		boolean standardbuttons = (/*cv_currprofile.value != -1 || */G_GetNumAvailableGamepads());
+		boolean standardbuttons = (cv_usejoystick.value || cv_usejoystick2.value);
 
 		boolean push;
 
@@ -387,7 +366,7 @@ void M_DrawMenuMessage(void)
 		V_DrawThinString(
 			workx, worky + 1,
 			((push && (menumessage.closing & MENUMESSAGECLOSE))
-				? highlightflags : 0),
+				? highlightflags : 0)|V_ALLOWLOWERCASE,
 			menumessage.defaultstr
 		);
 
@@ -421,11 +400,11 @@ void M_DrawMenuMessage(void)
 			if (menumessage.closing)
 				push = !push;
 
-			workx -= V_ThinStringWidth(menumessage.confirmstr, 0);
+			workx -= V_ThinStringWidth(menumessage.confirmstr, V_ALLOWLOWERCASE);
 			V_DrawThinString(
 				workx, worky + 1,
 				((push && (menumessage.closing & MENUMESSAGECLOSE))
-					? highlightflags : 0),
+					? highlightflags : 0)|V_ALLOWLOWERCASE,
 				menumessage.confirmstr
 			);
 
@@ -490,7 +469,7 @@ void M_DrawMenuMessage(void)
 			}
 		}
 
-		V_DrawString((BASEVIDWIDTH - V_StringWidth(string, 0))/2, y, 0, string);
+		V_DrawString((BASEVIDWIDTH - V_StringWidth(string, 0))/2, y, V_ALLOWLOWERCASE, string);
 		y += 8;
 	}
 }
@@ -500,22 +479,6 @@ void M_DrawMenuMessage(void)
 // ==========================================================================
 
 #define MAXMSGLINELEN 256
-
-//
-//  Draw a textbox, like Quake does, because sometimes it's difficult
-//  to read the text with all the stuff in the background...
-//
-#if 0
-void DRRR_M_DrawTextBox(INT32 x, INT32 y, INT32 width, INT32 boxlines)
-#else
-// STAR NOTE: hasn't been used anywhere else yet :p //
-static void DRRR_M_DrawTextBox(INT32 x, INT32 y, INT32 width, INT32 boxlines)
-#endif
-{
-	// Solid color textbox.
-	V_DrawFill(x+5, y+5, width*8+6, boxlines*8+6, 159);
-	//V_DrawFill(x+8, y+8, width*8, boxlines*8, 31);
-}
 
 //
 // DRRR_M_DrawMessageMenu
@@ -534,7 +497,7 @@ void DRRR_M_DrawMessageMenu(void)
 	mlines = currentMenu->lastOn>>8;
 	max = (INT16)((UINT8)(currentMenu->lastOn & 0xFF)*8);
 
-	DRRR_M_DrawTextBox(currentMenu->x, y - 8, (max+7)>>3, mlines);
+	M_DrawTextBox(currentMenu->x, y - 8, (max+7)>>3, mlines);
 
 	while (*(msg+start))
 	{
@@ -576,11 +539,7 @@ void DRRR_M_DrawMessageMenu(void)
 			}
 		}
 
-#if 0
-		V_DrawMenuString((BASEVIDWIDTH - V_MenuStringWidth(string, 0))/2,y,0,string);
-#else
-		V_DrawThinString((BASEVIDWIDTH - V_ThinStringWidth(string, 0))/2,y,0,string);
-#endif
+		V_DrawThinString((BASEVIDWIDTH - V_ThinStringWidth(string, 0))/2,y,V_ALLOWLOWERCASE,string);
 		y += 8; //SHORT(hu_font[0]->height);
 	}
 }

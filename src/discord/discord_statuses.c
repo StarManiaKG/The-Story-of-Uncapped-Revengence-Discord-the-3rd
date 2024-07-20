@@ -11,15 +11,16 @@
 /// \file  discord_statuses.c
 /// \brief Discord Rich Presence statuses
 
-#include "discord_cmds.h"
+#ifdef HAVE_DISCORDSUPPORT
+
+#include "discord.h"
+
 #include "../m_cond.h" // queries about emblems
 #include "../g_game.h"
 #include "../z_zone.h"
 
 #include "../STAR/star_vars.h" // TSoURDt3rd struct //
 #include "../STAR/ss_misc.h" // STAR_M_RemoveStringChars() //
-
-#ifdef HAVE_DISCORDSUPPORT
 
 // ------------------------ //
 //        Variables
@@ -342,6 +343,8 @@ void DRPC_ExtendedStatus(char *string)
 		{
 			if (maptol == TOL_NIGHTS || maptol == TOL_XMAS)
 				DRPC_StringPrintf(string, " ", 128, "NiGHTS Mode");
+			else if (marathonmode)
+				DRPC_StringPrintf(string, " ", 128, "Marathon Mode");
 			else
 				DRPC_StringPrintf(string, " ", 128, "Time Attack");
 		}
@@ -441,15 +444,15 @@ void DRPC_EmeraldStatus(char *string)
 	UINT16 emerald_type = (gametyperules & GTR_POWERSTONES ? players[consoleplayer].powers[pw_emeralds] : emeralds);
 	UINT8 emerald_count = 0; // Help me find the emouralds!
 
-	UINT16 match_emeralds[3] = { 0, 0, 0 };
+	UINT16 match_emeralds[] = { [1] = 0, 0 };
 	static tic_t emerald_time;
 
 	DRPC_StringPrintf(string, " | ", 128, NULL);
 
 	// Emerald math //
-	// Provided by Monster Iestyn and Uncapped Plus' Fafabis :)
 	if (!modeattacking)
 	{
+		// Provided by Monster Iestyn and Uncapped Plus' Fafabis :)
 		for (i = 0; i < 7; i++)
 		{
 			if (emerald_type & 1<<i)

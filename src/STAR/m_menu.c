@@ -35,12 +35,49 @@
 //        Variables
 // ------------------------ //
 
-//tsourdt3rd_menu_t *tsourdt3rd_currentMenu = &MainDef;
+tsourdt3rd_menu_t *tsourdt3rd_currentMenu = NULL; // pointer to the current unique menu
 
 INT16 MessageMenuDisplay[3][256]; // TO HACK
 
 menuitem_t defaultMenuTitles[256][256];
 gtdesc_t defaultGametypeTitles[NUMGAMETYPES];
+
+static INT32 tsourdt3rd_quitsounds[] =
+{
+	// we're changing things up even further!
+	// going even further beyond!
+	sfx_cdpcm3, // 04-11-23
+
+	// srb2kart: you ain't seen nothing yet
+	sfx_kc2e,
+	sfx_kc2f,
+	sfx_cdfm01,
+	//sfx_ddash,
+	sfx_s3ka2,
+	sfx_s3k49,
+	//sfx_slip,
+	//sfx_tossed,
+	sfx_s3k7b,
+	//sfx_itrolf,
+	//sfx_itrole,
+	sfx_cdpcm9,
+	sfx_s3k4e,
+	sfx_s259,
+	sfx_3db06,
+	sfx_s3k3a,
+	//sfx_peel,
+	sfx_cdfm28,
+	sfx_s3k96,
+	sfx_s3kc0s,
+	sfx_cdfm39,
+	//sfx_hogbom,
+	sfx_kc5a,
+	sfx_kc46,
+	sfx_s3k92,
+	sfx_s3k42,
+	//sfx_kpogos,
+	//sfx_screec,
+};
 
 // =============
 // MENU HANDLERS
@@ -194,9 +231,33 @@ static menuitem_t OP_Tsourdt3rdSnakeMenu[] =
 	{IT_KEYHANDLER | IT_NOTHING,	NULL,	"",		STAR_HandleSnakeMenu,	0},
 };
 
-menu_t OP_TSoURDt3rdOptionsDef = DEFAULTSCROLLMENUSTYLE(
-	MTREE2(MN_OP_MAIN, MN_OP_TSOURDT3RD),
-	"M_TSOURD", OP_Tsourdt3rdOptionsMenu, &OP_MainDef, 30, 30);
+#include "menus/smkg_m_draw.h"
+menu_t OP_TSoURDt3rdOptionsDef =
+{
+	MTREE3(MN_OP_MAIN, MN_OP_TSOURDT3RD, MN_OP_TSOURDT3RD_JUKEBOX),
+	NULL,
+	sizeof (OP_TSoURDt3rdOptionsDef)/sizeof (menuitem_t),
+	&OP_MainDef,
+	OP_Tsourdt3rdOptionsMenu,
+	M_DrawTSoURDt3rdOptions,
+	60, 150,
+	0,
+	NULL
+};
+
+tsourdt3rd_menu_t TSoURDt3rd_OP_TSoURDt3rdOptionsDef = {
+	&OP_TSoURDt3rdOptionsDef,
+	NULL,
+	0,
+	0, 0, //1, 5,
+	M_DrawTSoURDt3rdOptions,
+	//M_DrawOptionsCogs,
+	M_OptionsTick,
+	NULL,
+	NULL,
+	M_OptionsInputs,
+	NULL,
+};
 
 menu_t OP_TSoURDt3rdJukeboxDef =
 {
@@ -410,10 +471,10 @@ void STAR_M_InitDynamicQuitMessages(void)
 	else
 		quitmsg[TSOURDT3RD_QUITSMSG3] = M_GetText("Hehe, you couldn't even make\nit past the Title Screen,\ncould you, silly?\n\n(Press 'Y' to quit)");
 
-	quitmsg[TSOURDT3RD_QUITSMSG4] = va(M_GetText("Wait, %s!\nCome back! I need you!\n\n(Press 'Y' to quit)"), TSoURDt3rd_ReturnUsername());
+	quitmsg[TSOURDT3RD_QUITSMSG4] = va(M_GetText("Wait, \x82%s\x80!\nCome back! I need you!\n\n(Press 'Y' to quit)"), TSoURDt3rd_ReturnUsername());
 
 	if (TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack)
-		quitmsg[TSOURDT3RD_QUITSMSG5] = va(M_GetText("Come back!\nFinish listening to\n%s!\n\n(Press 'Y' to quit)"), TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack->title);
+		quitmsg[TSOURDT3RD_QUITSMSG5] = va(M_GetText("Come back!\nFinish listening to\n\x82%s\x80!\n\n(Press 'Y' to quit)"), TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack->title);
 	else
 		quitmsg[TSOURDT3RD_QUITSMSG5] = M_GetText("Come back!\nYou have more jukebox music to play!\n\n(Press 'Y' to quit)");
 
@@ -426,41 +487,70 @@ void STAR_M_InitDynamicQuitMessages(void)
 //
 INT32 STAR_M_SelectQuitMessage(void)
 {
+	static INT32 NUM_TSOURDT3RDQUITSOUNDS = -1;
 	INT32 randomMessage = M_RandomKey(NUM_QUITMESSAGES); // Assign a quit message //
-	STAR_M_InitDynamicQuitMessages();
 
-	// No April Fools messages when it's not April Fools! //
+	STAR_M_InitDynamicQuitMessages();
 	if (!TSoURDt3rd_InAprilFoolsMode())
 	{
+		// No April Fools messages when it's not April Fools!
 		while (randomMessage >= TSOURDT3RD_AF_QUITAMSG1 && randomMessage <= TSOURDT3RD_AF_QUITAMSG4)
 			randomMessage = M_RandomKey(NUM_QUITMESSAGES);
 	}
 
 	// Choose a quit sound //
+	if (NUM_TSOURDT3RDQUITSOUNDS == -1)
+	{
+		for (NUM_TSOURDT3RDQUITSOUNDS = 0; tsourdt3rd_quitsounds[NUM_TSOURDT3RDQUITSOUNDS]; NUM_TSOURDT3RDQUITSOUNDS++)
+			continue;
+	}
+
 	switch (randomMessage)
 	{
-		case QUITMSG4: S_StartSound(NULL, sfx_adderr); break;
-		case QUITMSG5: S_StartSound(NULL, sfx_cgot); break;
+		case QUITMSG4:
+			S_StartSound(NULL, sfx_adderr);
+			break;
+		case QUITMSG5:
+			S_StartSound(NULL, sfx_cgot);
+			break;
 
 		case QUIT2MSG1:
-		case QUIT2MSG2: S_StartSound(NULL, sfx_pop); break;
+		case QUIT2MSG2:
+			S_StartSound(NULL, sfx_pop);
+			break;
 
 		case QUIT2MSG3:
 		{
 			switch (M_RandomKey(1))
 			{
-				case 1: S_StartSound(NULL, sfx_supert); break;
-				default: S_StartSound(NULL, sfx_cgot); break;
+				case 1:
+					S_StartSound(NULL, sfx_supert);
+					break;
+				default:
+					S_StartSound(NULL, sfx_cgot);
+					break;
 			}
 			break;
 		}
 
-		case QUIT2MSG4: S_StartSound(NULL, sfx_spin); break;
+		case QUIT2MSG4:
+			S_StartSound(NULL, sfx_spin);
+			break;
 
-		case QUIT2MSG5: S_StartSound(NULL, sfx_cdpcm0+M_RandomKey(9)); break;
+		case QUIT2MSG5:
+			S_StartSound(NULL, sfx_cdpcm0+M_RandomKey(9));
+			break;
 
-		case QUIT3MSG2: S_StartSound(NULL, sfx_supert); break;
-		case QUIT3MSG3: S_StartSound(NULL, sfx_s3k95); break;
+		case QUIT3MSG2:
+			S_StartSound(NULL, sfx_supert);
+			break;
+		case QUIT3MSG3:
+			S_StartSound(NULL, sfx_s3k95);
+			break;
+
+		default:
+			S_StartSound(NULL, tsourdt3rd_quitsounds[M_RandomKey(NUM_TSOURDT3RDQUITSOUNDS)]);
+			break;
 	}
 
 	return randomMessage; // Return our random message and we're done :) //
@@ -476,11 +566,21 @@ void STAR_M_DrawQuitGraphic(void)
 
 	switch (cv_quitscreen.value)
 	{
-		case 1: quitgfx = "SS_QCOLR"; break; // aseprite moment
-		case 2: quitgfx = "SS_QSMUG"; break; // funny aseprite moment
-		case 3: quitgfx = "SS_QKEL"; break; // kel world aseprite moment
-		case 4: quitgfx = "SS_QATRB"; break; // secret aseprite moment
-		default: quitgfx = "GAMEQUIT"; break; // Demo 3 Quit Screen Tails 06-16-2001
+		case 1: // aseprite moment
+			quitgfx = "SS_QCOLR";
+			break;
+		case 2: // funny aseprite moment
+			quitgfx = "SS_QSMUG";
+			break;
+		case 3: // kel world aseprite moment
+			quitgfx = "SS_QKEL";
+			break;
+		case 4: // secret aseprite moment
+			quitgfx = "SS_QATRB";
+			break;
+		default: // Demo 3 Quit Screen Tails 06-16-2001
+			quitgfx = "GAMEQUIT";
+			break;
 	}
 
 	V_DrawScaledPatch(0, 0, 0, W_CachePatchName(quitgfx, PU_PATCH));
@@ -599,9 +699,6 @@ void M_TSoURDt3rdJukebox(INT32 choice)
 	if (!soundtestpage)
 		soundtestpage = 1;
 
-	if (!TSoURDt3rdJukebox->curtrack)
-		M_ResetJukebox(false);
-
 	if (!TSoURDt3rd_M_IsJukeboxUnlocked(TSoURDt3rdJukebox))
 	{
 		STAR_M_StartMessage("TSoURDt3rd Jukebox",0,M_GetText("You haven't unlocked this yet!\nGo and unlock the sound test first!\n"),NULL,MM_NOTHING);
@@ -622,6 +719,7 @@ void M_TSoURDt3rdJukebox(INT32 choice)
 	st_cc = cv_closedcaptioning.value; // hack;
 	cv_closedcaptioning.value = 1; // hack
 
+	OP_TSoURDt3rdJukeboxDef.prevMenu = currentMenu; // Prevent the game from crashing when using the jukebox keybind :)
 	M_SetupNextMenu(&OP_TSoURDt3rdJukeboxDef);
 }
 
@@ -798,10 +896,10 @@ static void M_DrawTSoURDt3rdJukebox(void)
 		}
 
 		if (t != 0)
-			V_DrawString(165+140+4, 60+4 - (skullAnimCounter/5), V_MENUCOLORMAP, "\x1A");
+			V_DrawString(165+140+4, 60+4 - (tsourdt3rd_skullAnimCounter/5), V_MENUCOLORMAP, "\x1A");
 
 		if (b != numsoundtestdefs - 1)
-			V_DrawString(165+140+4, 60+112-12 + (skullAnimCounter/5), V_MENUCOLORMAP, "\x1B");
+			V_DrawString(165+140+4, 60+112-12 + (tsourdt3rd_skullAnimCounter/5), V_MENUCOLORMAP, "\x1B");
 
 		x = 169;
 		y = 64;
@@ -820,9 +918,9 @@ static void M_DrawTSoURDt3rdJukebox(void)
 				V_DrawString(x, y, (t == st_sel ? V_MENUCOLORMAP : 0), sfxstr);
 				if (t == st_sel)
 				{
-					V_DrawCharacter(x - 10 - (skullAnimCounter/5), y,
+					V_DrawCharacter(x - 10 - (tsourdt3rd_skullAnimCounter/5), y,
 						'\x1C' | V_MENUCOLORMAP, false);
-					V_DrawCharacter(x + 2 + V_StringWidth(sfxstr, 0) + (skullAnimCounter/5), y,
+					V_DrawCharacter(x + 2 + V_StringWidth(sfxstr, 0) + (tsourdt3rd_skullAnimCounter/5), y,
 						'\x1D' | V_MENUCOLORMAP, false);
 				}
 
@@ -1022,9 +1120,6 @@ static void M_HandleTSoURDt3rdJukebox(INT32 choice)
 	{
 		Z_Free(soundtestdefs);
 		soundtestdefs = NULL;
-
-		if (!TSoURDt3rd->jukebox.curtrack)
-			M_ResetJukebox(Playing());
 
 		cv_closedcaptioning.value = st_cc; // undo hack
 

@@ -53,10 +53,10 @@
 
 #ifdef HAVE_DISCORDSUPPORT
 #include "discord/discord.h"
+#endif
 
 #ifdef HAVE_DISCORDGAMESDK
-#include "discord_gamesdk.h"
-#endif
+#include "discord/discord_gamesdk.h"
 #endif
 
 // OTHER FUN STAR STUFF YAYAYSUHDUISHUIBHOUIHBDU()*FH*D(UIYVLBGUIYDG(UDOPBIYGD*OUFBHO(P))) //
@@ -66,7 +66,7 @@
 
 #include "deh_soc.h"
 
-#include "STAR/padrefactor/smkg_pad_game.h" // STAR_G_ApplyGamepads() //
+#include "STAR/drrr/kg_input.h" // STAR_G_BuildTiccmd() //
 
 // Main Build
 boolean tsourdt3rd = true;
@@ -1174,6 +1174,11 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	UINT8 forplayer = ssplayer-1;
 
+	// STAR STUFF: DRRR Menus: don't run the ticcmd if we're not in game, silly! //
+	if (STAR_G_BuildTiccmd(cmd, realtics, ssplayer))
+		return;
+	// UH, THE DOG ATE THE MENU JUNK //
+
 	if (ssplayer == 1)
 	{
 		chasecam = cv_chasecam.value;
@@ -1205,11 +1210,6 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	if (menuactive || CON_Ready() || chat_on)
 		mdx = mdy = mldy = 0;
-
-	// STAR STUFF: stop right here if we're in the menu please //
-	if (gamestate == GS_LEVEL && (menuactive || CON_Ready() || chat_on))
-		return; // our menu junk ate the cmd
-	// UH, THE DOG ATE THE MENU JUNK //
 
 	strafeisturn = controlstyle == CS_SIMPLE && ticcmd_centerviewdown[forplayer] &&
 		((cv_cam_lockedinput[forplayer].value && !ticcmd_ztargetfocus[forplayer]) || (player->pflags & PF_STARTDASH)) &&
@@ -2129,8 +2129,6 @@ static boolean ViewpointSwitchResponder(event_t *ev)
 //
 boolean G_Responder(event_t *ev)
 {
-	STAR_G_ApplyGamepads(ev); // STAR STUFF: DRRR Gamepads: apply gamepad data please //
-
 	// any other key pops up menu if in demos
 	if (gameaction == ga_nothing && !singledemo &&
 		((demoplayback && !modeattacking && !titledemo) || gamestate == GS_TITLESCREEN))
@@ -2284,9 +2282,6 @@ boolean G_Responder(event_t *ev)
 
 		default:
 			break;
-
-		case ev_gamepad_axis: // STAR STUFF: DRRR: eat events //
-			return true; // STAR STUFF: DRRR: eat events //
 	}
 
 	return false;

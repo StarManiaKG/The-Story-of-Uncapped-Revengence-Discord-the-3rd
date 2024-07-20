@@ -34,8 +34,10 @@
 #include "deh_tables.h" // MOBJTYPE_LIST
 #endif
 
+// STAR STUFF //
 #include "STAR/star_vars.h" // TSoURDt3rd::jukebox //
 #include "STAR/p_user.h" // TSoURDt3rd_P_Ticker() //
+// INCLUDED! //
 
 tic_t leveltime;
 

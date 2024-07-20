@@ -17,17 +17,22 @@
 #include "../m_menu.h"
 #include "../m_cond.h"
 
+#ifdef HAVE_DISCORDSUPPORT
+#include "../discord/discord.h"
+#endif
+
 // ------------------------ //
 //        Variables
 // ------------------------ //
 
-extern INT32 (*setupcontrols)[2]; // pointer to the gamecontrols of the player being edited
-
-extern INT16 skullAnimCounter; // skull animation counter; Prompts: Chevron animation
-
 extern INT16 MessageMenuDisplay[3][256]; // TO HACK
 
-extern INT16 itemOn; // menu item skull is on, Hack by Tails 09-18-2002
+extern INT16 tsourdt3rd_itemOn;
+extern INT16 tsourdt3rd_skullAnimCounter;
+
+extern INT32 (*setupcontrols)[2]; // pointer to the gamecontrols of the player being edited
+
+extern boolean tsourdt3rd_noFurtherInput;
 
 enum
 {
@@ -142,6 +147,44 @@ extern UINT8 skyRoomMenuTranslations[MAXUNLOCKABLES];
 
 #define MTREE5(a,b,c,d,e) MTREE2(a, MTREE4(b,c,d,e)) // just in case
 
+typedef enum
+{
+	MBF_UD_LR_FLIPPED		= 1,    // flip up-down and left-right axes
+	MBF_SOUNDLESS		 	= 1<<1, // do not play base menu sounds
+	MBF_NOLOOPENTRIES		= 1<<2, // do not loop STAR_M_NextOpt/STAR_M_PrevOpt
+	MBF_DRAWBGWHILEPLAYING	= 1<<3, // run backroutine() outside of GS_MENU
+} menubehaviourflags_t;
+
+typedef struct tsourdt3rd_menuitems_s
+{
+	const char *patch; // image of option used by K_MenuPreviews
+	const char *tooltip; // description of option used by K_MenuTooltips
+
+	// extra variables
+	INT32 mvar1;
+	INT32 mvar2;
+} tsourdt3rd_menuitems_t;
+
+typedef struct tsourdt3rd_menu_s
+{
+	menu_t                   *menu; // pointer to the current menu_t
+	tsourdt3rd_menuitems_t   *menuitems; // custom tsourdt3rd menu items
+
+	INT16                    behaviourflags;     // menubehaviourflags_t
+
+	INT16                    transitionID;       // only transition if IDs match
+	INT16          			 transitionTics;     // tics for transitions out
+
+	void                     (*drawroutine)(void); // draw routine
+	void                     (*tickroutine)(void); // ticker routine
+	void                     (*initroutine)(void); // called when starting a new menu
+	boolean                  (*quitroutine)(void); // called before quit a menu return true if we can
+	boolean		             (*inputroutine)(INT32); // if set, called every frame in the input handler. Returning true overwrites normal input handling.
+
+	struct tsourdt3rd_menu_s *nextmenu; // pointer to the next supported tsourdt3rd menu
+} tsourdt3rd_menu_t;
+extern tsourdt3rd_menu_t *tsourdt3rd_currentMenu;
+
 extern menu_t OP_MainDef;
 extern menuitem_t MainMenu[];
 
@@ -156,22 +199,27 @@ extern menu_t MessageDef;
 extern menuitem_t MessageMenu[256];
 
 extern menu_t SR_SoundTestDef;
-extern menu_t OP_TSoURDt3rdOptionsDef, OP_TSoURDt3rdJukeboxDef, OP_Tsourdt3rdJukeboxControlsDef;
 
+extern menu_t OP_TSoURDt3rdOptionsDef;
+extern tsourdt3rd_menu_t TSoURDt3rd_OP_TSoURDt3rdOptionsDef;
 extern menuitem_t OP_Tsourdt3rdOptionsMenu[];
+
+extern menu_t OP_TSoURDt3rdJukeboxDef, OP_Tsourdt3rdJukeboxControlsDef;
 
 extern menuitem_t defaultMenuTitles[256][256];
 extern gtdesc_t defaultGametypeTitles[NUMGAMETYPES];
 
+#ifdef HAVE_DISCORDSUPPORT
+extern menu_t OP_DiscordOptionsDef;
+extern tsourdt3rd_menu_t TSoURDt3rd_MISC_DiscordRequestsDef;
+
+extern menu_t MISC_DiscordRequestsDef;
+extern tsourdt3rd_menu_t TSoURDt3rd_OP_DiscordOptionsDef;
+#endif
+
 // ------------------------ //
 //        Functions
 // ------------------------ //
-
-// ========
-// HANDLERS
-// ========
-
-void TSoURDt3rd_M_HandleTyping(INT32 choice, size_t cachelen, consvar_t *cvar, boolean (*closeroutine)(void), void (*abortroutine)(void));
 
 // =======
 // DRAWING
@@ -185,11 +233,6 @@ void K_DrawSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isSmall);
 // =====
 // MENUS
 // =====
-
-void M_NextOpt(void);
-void M_PrevOpt(void);
-
-void M_GoBack(INT32 choice);
 
 void M_DrawGenericMenu(void);
 void M_DrawGenericScrollMenu(void);
@@ -207,6 +250,22 @@ void M_PreConnectMenuChoice(INT32 choice);
 void M_StartServerMenu(INT32 choice);
 void M_ConnectMenuModChecks(INT32 choice);
 
+#ifdef HAVE_DISCORDSUPPORT
+void M_DiscordOptions(INT32 choice);
+
+extern struct discordrequestmenu_s {
+	tic_t ticker;
+	tic_t confirmDelay;
+	tic_t confirmLength;
+	boolean confirmAccept;
+	boolean removeRequest;
+} discordrequestmenu;
+
+void M_DrawDiscordRequests(void);
+void M_DiscordRequests(INT32 choice);
+const char *M_GetDiscordName(discordRequest_t *r);
+#endif
+
 // ======
 // I QUIT
 // ======
@@ -222,6 +281,7 @@ void STAR_M_DrawQuitGraphic(void);
 // =============
 
 void M_CacheSoundTest(void);
+
 boolean TSoURDt3rd_M_IsJukeboxUnlocked(TSoURDt3rdJukebox_t *TSoURDt3rdJukebox);
 void M_TSoURDt3rdJukebox(INT32 choice);
 

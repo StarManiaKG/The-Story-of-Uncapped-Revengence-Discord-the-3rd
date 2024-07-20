@@ -11,19 +11,18 @@
 /// \file  discord_cmds.c
 /// \brief Discord Rich Presence commands and data functions
 
-#include "discord_cmds.h"
-#include "../doomstat.h"
-#include "../byteptr.h"
-#include "../g_game.h"
 #include "../d_netcmd.h"
-
+#include "../g_game.h"
+#include "../byteptr.h"
 #include "../STAR/star_vars.h" // TSoURDt3rd structure //
+
+#ifdef HAVE_DISCORDSUPPORT
+
+#include "discord.h"
 
 // ------------------------ //
 //        Variables
 // ------------------------ //
-
-#ifdef HAVE_DISCORDSUPPORT
 
 // ===============
 // POSSIBLE VALUES
@@ -235,6 +234,8 @@ static CV_PossibleValue_t custom_miscimage_cons_t[] = {
 // COMMANDS
 // ========
 
+static void DRPC_CheckStringLen(void);
+
 consvar_t cv_discordrp = CVAR_INIT ("discordrp", "On", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
 consvar_t cv_discordstreamer = CVAR_INIT ("discordstreamer", "Off", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_discordasks = CVAR_INIT ("discordasks", "Yes", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
@@ -242,14 +243,11 @@ consvar_t cv_discordstatusmemes = CVAR_INIT ("discordstatusmemes", "Yes", CV_SAV
 consvar_t cv_discordshowonstatus = CVAR_INIT ("discordshowonstatus", "Default", CV_SAVE|CV_CALL, statustype_cons_t, DRPC_UpdatePresence);
 consvar_t cv_discordcharacterimagetype = CVAR_INIT ("discordcharacterimagetype", "CS Portraits", CV_SAVE, characterimagetype_cons_t, NULL);
 
-consvar_t cv_discordcustom_details = CVAR_INIT ("discordcustom_details", "Blasting these robots!", CV_SAVE, NULL, NULL);
-consvar_t cv_discordcustom_state = CVAR_INIT ("discordcustom_state", "Playing Sonic Robo Blast 2!", CV_SAVE, NULL, NULL);
+consvar_t cv_discordcustom_details = CVAR_INIT ("discordcustom_details", "Blasting these robots!", CV_SAVE|CV_CALL, NULL, DRPC_CheckStringLen);
+consvar_t cv_discordcustom_state = CVAR_INIT ("discordcustom_state", "Playing Sonic Robo Blast 2!", CV_SAVE|CV_CALL, NULL, DRPC_CheckStringLen);
 
 consvar_t cv_discordcustom_imagetype_large = CVAR_INIT ("discordcustom_imagetype_large", "CS Portraits", CV_SAVE, custom_imagetype_cons_t, NULL);
 consvar_t cv_discordcustom_imagetype_small = CVAR_INIT ("discordcustom_imagetype_small", "Continue Sprites", CV_SAVE, custom_imagetype_cons_t, NULL);
-
-consvar_t cv_discordcustom_imagetext_large = CVAR_INIT ("discordcustom_imagetext_large", "My favorite character!", CV_SAVE, NULL, NULL);
-consvar_t cv_discordcustom_imagetext_small = CVAR_INIT ("discordcustom_imagetext_small", "My other favorite character!", CV_SAVE, NULL, NULL);
 
 consvar_t cv_discordcustom_characterimage_large = CVAR_INIT ("discordcustom_characterimage_large", "Sonic", CV_SAVE, custom_characterimage_cons_t, NULL);
 consvar_t cv_discordcustom_characterimage_small = CVAR_INIT ("discordcustom_characterimage_small", "Tails", CV_SAVE, custom_characterimage_cons_t, NULL);
@@ -263,11 +261,38 @@ consvar_t cv_discordcustom_mapimage_small = CVAR_INIT ("discordcustom_mapimage_s
 consvar_t cv_discordcustom_miscimage_large = CVAR_INIT ("discordcustom_miscimage_large", "Title Screen", CV_SAVE, custom_miscimage_cons_t, NULL);
 consvar_t cv_discordcustom_miscimage_small = CVAR_INIT ("discordcustom_miscimage_small", "Intro - 1", CV_SAVE, custom_miscimage_cons_t, NULL);
 
+consvar_t cv_discordcustom_imagetext_large = CVAR_INIT ("discordcustom_imagetext_large", "My favorite character!", CV_SAVE|CV_CALL, NULL, DRPC_CheckStringLen);
+consvar_t cv_discordcustom_imagetext_small = CVAR_INIT ("discordcustom_imagetext_small", "My other favorite character!", CV_SAVE|CV_CALL, NULL, DRPC_CheckStringLen);
+
 #endif // HAVE_DISCORDSUPPORT
 
 // ------------------------ //
 //        Functions
 // ------------------------ //
+
+#ifdef HAVE_DISCORDSUPPORT
+static void DRPC_CheckStringLen(void)
+{
+	consvar_t *custom_cvartyping_index[] = {
+		CV_FindVar("discordcustom_details"),
+		CV_FindVar("discordcustom_state"),
+		CV_FindVar("discordcustom_imagetext_large"),
+		CV_FindVar("discordcustom_imagetext_small"),
+		NULL
+	};
+
+	for (INT32 i = 0; custom_cvartyping_index[i]; i++)
+	{
+		if (!custom_cvartyping_index[i] || !CV_FindVar(custom_cvartyping_index[i]->name))
+			continue;
+		if (custom_cvartyping_index[i]->string == NULL || custom_cvartyping_index[i]->string[0] == '\0')
+			continue;
+
+		if (strlen(custom_cvartyping_index[i]->string) < 2)
+			CV_Set(custom_cvartyping_index[i], custom_cvartyping_index[i]->defaultvalue);
+	}
+}
+#endif
 
 void Joinable_OnChange(void)
 {
