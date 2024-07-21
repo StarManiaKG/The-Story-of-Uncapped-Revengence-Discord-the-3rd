@@ -34,7 +34,7 @@
 
 // STAR STUFF //
 #include "STAR/star_vars.h" // TSoURDt3rdPlayers::jukebox::curtrack & TSoURDt3rd_DetermineLevelMusic() //
-#include "STAR/ss_cmds.h" // cv_soniccd //
+#include "STAR/smkg-cvars.h" // cv_soniccd //
 // WEEEEEEEEE //
 
 boolean LUA_CallAction(enum actionnum actionnum, mobj_t *actor);

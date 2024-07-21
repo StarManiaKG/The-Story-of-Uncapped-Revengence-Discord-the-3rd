@@ -9,7 +9,7 @@
 /// \file  ss_aprilfools.c
 /// \brief April Fools event, related functions and data
 
-#include "../ss_cmds.h"
+#include "../smkg-cvars.h"
 #include "../ss_main.h"
 #include "../m_menu.h"
 #include "../s_sound.h"

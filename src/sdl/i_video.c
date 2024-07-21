@@ -93,10 +93,10 @@
 // STAR STUFF //
 #include "../STAR/star_vars.h" // STAR_SetWindowTitle() //
 
-#include "../STAR/ss_cmds.h" // cv_tpsrate //
+#include "../STAR/smkg-cvars.h" // cv_tpsrate //
 #include "../STAR/ss_main.h" // TSoURDt3rd_SCR_DisplayTpsRate() //
 
-#include "../STAR/padrefactor/smkg_pad_i_sys.h" // TSoURDt3rd_I_GetEvent() //
+#include "../STAR/smkg-i_sys.h" // TSoURDt3rd_I_GetEvent() //
 // END THAT STUFF //
 
 // maximum number of windowed modes (see windowedModes[][])

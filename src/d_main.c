@@ -150,7 +150,6 @@ static char addonsdir[MAX_WADPATH];
 
 #include "STAR/s_sound.h" // jukebox //
 
-#include "STAR/padrefactor/smkg_padr_main.h" // gamepad refactor data //
 #include "STAR/menus/smkg_m_func.h" // menu refactor data //
 
 // Discord Stuff
@@ -325,8 +324,6 @@ void D_ProcessEvents(void)
 		G_SetMouseDeltas(mouse.rdx, mouse.rdy, 1);
 	if (mouse2.rdx || mouse2.rdy)
 		G_SetMouseDeltas(mouse2.rdx, mouse2.rdy, 2);
-
-	STAR_GamepadR_D_UpdateMenuControls(); // STAR STUFF: DRRR Gamepads: update menu cmds :) //
 }
 
 //
@@ -1108,8 +1105,6 @@ void D_StartTitle(void)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 		CL_ClearPlayer(i);
-
-	STAR_GamepadR_D_UpdateMenuControls(); // STAR STUFF: DRRR Menus: rebuild menu cmds right quick //
 
 	players[consoleplayer].availabilities = players[1].availabilities = R_GetSkinAvailabilities(); // players[1] is supposed to be for 2p
 

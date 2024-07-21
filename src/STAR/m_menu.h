@@ -13,7 +13,7 @@
 #define __STAR_M_MENU__
 
 #include "star_vars.h"
-#include "ss_cmds.h"
+#include "smkg-cvars.h"
 #include "../m_menu.h"
 #include "../m_cond.h"
 
@@ -201,8 +201,8 @@ extern menuitem_t MessageMenu[256];
 extern menu_t SR_SoundTestDef;
 
 extern menu_t OP_TSoURDt3rdOptionsDef;
-extern tsourdt3rd_menu_t TSoURDt3rd_OP_TSoURDt3rdOptionsDef;
 extern menuitem_t OP_Tsourdt3rdOptionsMenu[];
+extern tsourdt3rd_menu_t TSoURDt3rd_OP_TSoURDt3rdOptionsDef;
 
 extern menu_t OP_TSoURDt3rdJukeboxDef, OP_Tsourdt3rdJukeboxControlsDef;
 
@@ -276,13 +276,21 @@ void STAR_M_InitDynamicQuitMessages(void);
 INT32 STAR_M_SelectQuitMessage(void);
 void STAR_M_DrawQuitGraphic(void);
 
-// =============
-// JUKEBOX MENUS
-// =============
+// =======
+// JUKEBOX
+// =======
 
 void M_CacheSoundTest(void);
 
 boolean TSoURDt3rd_M_IsJukeboxUnlocked(TSoURDt3rdJukebox_t *TSoURDt3rdJukebox);
-void M_TSoURDt3rdJukebox(INT32 choice);
+void TSoURDt3rd_Jukebox_InitMenu(INT32 choice);
+
+void TSoURDt3rd_Jukebox_InitControlsMenu(INT32 choice);
+
+// =====
+// SNAKE
+// =====
+
+void TSoURDt3rd_Snake_InitMenu(INT32 choice);
 
 #endif // __STAR_M_MENU__

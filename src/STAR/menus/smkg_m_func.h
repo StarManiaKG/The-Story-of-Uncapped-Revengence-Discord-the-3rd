@@ -25,8 +25,6 @@ boolean STAR_M_StartControlPanel(void);
 
 void STAR_M_GoBack(INT32 choice);
 
-void STAR_M_UpdateMenuCMD(UINT8 i);
-
 void STAR_M_ChangeCvarDirect(INT32 choice, consvar_t *cv);
 
 boolean STAR_M_NextOpt(void);

@@ -8,14 +8,14 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  menus/transient/drrr_virtual-keyboard.c
+/// \file  menus/transient/drrr-virtual-keyboard.c
 /// \brief Keyboard input
 
 #include "../smkg_m_func.h"
+#include "../../smkg-cvars.h"
 
 #include "../../drrr/k_menu.h"
 #include "../../drrr/k_console.h" // CON_ShiftChar
-#include "../../drrr/k_cvars.h"
 
 #include "../../../s_sound.h"
 #include "../../../i_system.h" // I_Clipboard funcs
@@ -446,5 +446,5 @@ void M_OpenVirtualKeyboard(size_t cachelen, vkb_query_fn_t queryfn, menu_t *dumm
 
 void M_SwitchVirtualKeyboard(boolean gamepad)
 {
-	menutyping.keyboardtyping = cv_tsourdt3rd_drrr_debugvirtualkeyboard.value ? false : !gamepad;
+	menutyping.keyboardtyping = cv_tsourdt3rd_drrr_debug_virtualkeyboard.value ? false : !gamepad;
 }

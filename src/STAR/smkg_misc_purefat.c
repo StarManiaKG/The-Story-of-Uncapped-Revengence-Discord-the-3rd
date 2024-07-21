@@ -10,7 +10,7 @@
 /// \brief Pure Fat intro 2.2.7+ compatibility layer
 
 #include "smkg_misc_purefat.h"
-#include "ss_cmds.h"
+#include "smkg-cvars.h"
 #include "../f_finale.h"
 #include "../s_sound.h"
 #include "../w_wad.h"

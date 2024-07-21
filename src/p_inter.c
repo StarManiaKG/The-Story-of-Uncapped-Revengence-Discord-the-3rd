@@ -31,7 +31,7 @@
 
 // STAR STUFF //
 #include "STAR/star_vars.h" // TSoURDt3rd::jukebox //
-#include "STAR/ss_cmds.h" // cv_storesavesinfolders //
+#include "STAR/smkg-cvars.h" // cv_storesavesinfolders //
 #include "STAR/ss_main.h" // SAVEGAMEFOLDER //
 #include "STAR/p_user.h" // TSoURDt3rd_P_DamageMobj() //
 

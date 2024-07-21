@@ -62,8 +62,6 @@
 
 #include "STAR/star_vars.h"
 #include "STAR/ss_main.h" // STAR_CONS_Printf() //
-
-#include "STAR/padrefactor/smkg_padr_main.h"
 // WE'RE DONE! //
 
 //
@@ -3886,8 +3884,11 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 			TSoURDt3rdPlayers[consoleplayer] = TSoURDt3rdPlayers[0];
 			M_Memcpy(&TSoURDt3rdPlayers[consoleplayer], &TSoURDt3rdPlayers[0], sizeof(TSoURDt3rd_t));
 
+#if 0
+			// STAR NOTE: MAJOR STAR TODO NOTE: come back here later after getting better internet doofus //
 			TSoURDt3rd_ClearPlayer(consoleplayer);
 			memset(&TSoURDt3rdPlayers[0], 0, sizeof(TSoURDt3rd_t));
+#endif
 		}
 
 		if (node != mynode)

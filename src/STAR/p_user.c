@@ -11,7 +11,9 @@
 
 #include "star_vars.h"
 
-#include "ss_cmds.h" // cv_watermuffling, cv_allowtypicaltimeover, & TSOURDT3RD_TIMELIMIT //
+#include "smkg-cvars.h" // cv_watermuffling, cv_allowtypicaltimeover, & TSOURDT3RD_TIMELIMIT //
+#include "smkg-i_sys.h" // TSoURDt3rd_I_CursedWindowMovement() //
+
 #include "ss_main.h" // STAR_CONS_Printf() //
 #include "p_user.h"
 #include "s_sound.h"
@@ -21,8 +23,6 @@
 #include "../z_zone.h"
 
 #include "../m_menu.h" // cv_bosspinchmusic //
-
-#include "padrefactor/smkg_pad_i_sys.h" // TSoURDt3rd_I_CursedWindowMovement() //
 
 #ifdef HAVE_DISCORDSUPPORT
 #include "../discord/discord.h"
@@ -34,6 +34,8 @@
 
 static float prev_musicspeed, prev_musicpitch;
 static INT32 prev_musicvolume, prev_sfxvolume;
+
+#define TSOURDT3RD_TIMELIMIT (20999) // one tic off so the timer doesn't display 10:00.00
 
 #define TSOURDT3RD_MUFFLEINT (0.15f)
 

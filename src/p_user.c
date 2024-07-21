@@ -61,7 +61,7 @@
 
 // STAR STUFF //
 #include "STAR/star_vars.h" // STAR_SetWindowTitle() //
-#include "STAR/ss_cmds.h" // cv_shieldblockstransformation //
+#include "STAR/smkg-cvars.h" // cv_shieldblockstransformation //
 #include "STAR/ss_main.h" // STAR_CONS_Printf() //
 #include "STAR/p_user.h"
 

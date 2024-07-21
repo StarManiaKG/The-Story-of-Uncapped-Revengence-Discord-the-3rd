@@ -12,7 +12,7 @@
 #ifndef __STAR_V_VIDEO__
 #define __STAR_V_VIDEO__
 
-#include "ss_cmds.h"
+#include "smkg-cvars.h"
 
 // ------------------------ //
 //        Variables

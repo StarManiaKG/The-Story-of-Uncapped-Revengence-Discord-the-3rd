@@ -511,7 +511,7 @@ extern boolean AllowEasterEggHunt, EnableEasterEggHuntBonuses;
 
 // commands //
 // game
-extern consvar_t cv_startupscreen, cv_quitscreen;
+extern consvar_t cv_quitscreen;
 extern consvar_t cv_isitcalledsingleplayer;
 extern consvar_t cv_pausegraphicstyle;
 

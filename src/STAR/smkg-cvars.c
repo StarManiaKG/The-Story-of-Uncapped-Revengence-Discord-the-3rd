@@ -6,12 +6,16 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  ss_cmds.c
+/// \file  smkg-cvars.c
 /// \brief TSoURDt3rd's command library
 
-#include "ss_cmds.h"
+#include "smkg-cvars.h"
+
 #include "ss_main.h"
 #include "m_menu.h"
+
+#include "drrr/kg_input.h"
+
 #include "../doomstat.h"
 #include "../m_menu.h"
 #include "../v_video.h"
@@ -25,14 +29,10 @@
 // GAME
 // ====
 
-static CV_PossibleValue_t stjrintro_t[] = {{0, "Default"}, {1, "Pure Fat"}, {0, NULL}};
-consvar_t cv_stjrintro = CVAR_INIT ("stjrintro", "Default", CV_SAVE, stjrintro_t, NULL);
-
-// Ported from Uncapped Plus, TPS is back (for some reason)!
-static CV_PossibleValue_t tpsrate_cons_t[] = {{0, "No"}, {1, "Full"}, {2, "Compact"}, {0, NULL}};
-consvar_t cv_tpsrate = CVAR_INIT ("showtps", "No", CV_SAVE|CV_CALL, tpsrate_cons_t, STAR_TPSRate_OnChange);
-
-static CV_PossibleValue_t color_cons_t[] = {
+static CV_PossibleValue_t tsourdt3rd_startupscreen_t[] = {{0, "Default"}, {1, "Pre-2.2.6"}, {2, "Baby Sonic"}, {0, NULL}};
+static CV_PossibleValue_t tsourdt3rd_stjrintro_t[] = {{0, "Default"}, {1, "Pure Fat"}, {0, NULL}};
+static CV_PossibleValue_t tsourdt3rd_tpsrate_cons_t[] = {{0, "No"}, {1, "Full"}, {2, "Compact"}, {0, NULL}};
+static CV_PossibleValue_t tsourdt3rd_vidcolor_cons_t[] = {
 	{V_MAGENTAMAP, "Magenta"},
 	{V_YELLOWMAP, "Yellow"},
 	{V_GREENMAP, "Green"},
@@ -49,16 +49,35 @@ static CV_PossibleValue_t color_cons_t[] = {
 	{V_ROSYMAP, "Rosy"},
 	{V_INVERTMAP, "Inverted"},
 	{0, NULL}};
-consvar_t cv_menucolor = CVAR_INIT ("menucolor", "Yellow", CV_SAVE, color_cons_t, NULL);
-consvar_t cv_fpscountercolor = CVAR_INIT ("fpscountercolor", "Green", CV_SAVE, color_cons_t, NULL);
-consvar_t cv_tpscountercolor = CVAR_INIT ("tpscountercolor", "Green", CV_SAVE, color_cons_t, NULL);
 
-static void STAR_TimeOver_OnChange(void);
-consvar_t cv_allowtypicaltimeover = CVAR_INIT ("allowtypicaltimeover", "No", CV_SAVE|CV_CALL, CV_YesNo, STAR_TimeOver_OnChange);
+static void G_TimeOver_OnChange(void);
 
+consvar_t cv_startupscreen = CVAR_INIT ("startupscreen", "Default", CV_SAVE, tsourdt3rd_startupscreen_t, NULL);
+consvar_t cv_stjrintro = CVAR_INIT ("stjrintro", "Default", CV_SAVE, tsourdt3rd_stjrintro_t, NULL);
+
+// Ported from Uncapped Plus, TPS is back (for some reason)!
+consvar_t cv_tpsrate = CVAR_INIT ("showtps", "No", CV_SAVE|CV_CALL, tsourdt3rd_tpsrate_cons_t, STAR_TPSRate_OnChange);
+
+consvar_t cv_menucolor = CVAR_INIT ("menucolor", "Yellow", CV_SAVE, tsourdt3rd_vidcolor_cons_t, NULL);
+consvar_t cv_fpscountercolor = CVAR_INIT ("fpscountercolor", "Green", CV_SAVE, tsourdt3rd_vidcolor_cons_t, NULL);
+consvar_t cv_tpscountercolor = CVAR_INIT ("tpscountercolor", "Green", CV_SAVE, tsourdt3rd_vidcolor_cons_t, NULL);
+
+consvar_t cv_allowtypicaltimeover = CVAR_INIT ("allowtypicaltimeover", "No", CV_SAVE|CV_CALL, CV_YesNo, G_TimeOver_OnChange);
 consvar_t cv_automapoutsidedevmode = CVAR_INIT ("automapoutsidedevmode", "Off", CV_SAVE, CV_OnOff, NULL);
 
 consvar_t cv_soniccd = CVAR_INIT ("soniccd", "Off", CV_SAVE|CV_ALLOWLUA, CV_OnOff, NULL);
+
+// ========
+// CONTROLS
+// ========
+
+static void C_PadRumble_OnChange(void);
+static void C_PadRumble2_OnChange(void);
+
+consvar_t cv_tsourdt3rd_drrr_rumble[2] = {
+	CVAR_INIT ("tsourdt3rd_drrr_rumble", "Off", CV_SAVE|CV_CALL, CV_OnOff, C_PadRumble_OnChange),
+	CVAR_INIT ("tsourdt3rd_drrr_rumble2", "Off", CV_SAVE|CV_CALL, CV_OnOff, C_PadRumble2_OnChange)
+};
 
 // =====
 // AUDIO
@@ -70,26 +89,33 @@ consvar_t cv_watermuffling = CVAR_INIT ("watermuffling", "Off", CV_SAVE|CV_ALLOW
 // PLAYERS
 // =======
 
-static void STAR_SuperWithShield_OnChange(void);
-consvar_t cv_shieldblockstransformation = CVAR_INIT ("shieldblockstransformation", "Off", CV_SAVE|CV_CALL, CV_OnOff, STAR_SuperWithShield_OnChange);
+static void P_SuperWithShield_OnChange(void);
 
-static void STAR_InvulnAndShield_OnChange(void);
-consvar_t cv_alwaysoverlayinvuln = CVAR_INIT ("alwaysoverlayinvincibility", "Off", CV_SAVE|CV_CALL, CV_OnOff, STAR_InvulnAndShield_OnChange);
+consvar_t cv_shieldblockstransformation = CVAR_INIT ("shieldblockstransformation", "Off", CV_SAVE|CV_CALL, CV_OnOff, P_SuperWithShield_OnChange);
+
+consvar_t cv_alwaysoverlayinvuln = CVAR_INIT ("alwaysoverlayinvincibility", "Off", CV_SAVE, CV_OnOff, NULL);
 
 // =========
 // SAVEFILES
 // =========
 
+static void SV_UseContinues_OnChange(void);
+
 consvar_t cv_storesavesinfolders = CVAR_INIT ("storesavesinfolders", "Off", CV_SAVE|CV_CALL, CV_OnOff, STAR_SetSavefileProperties);
 
-static void STAR_UseContinues_OnChange(void);
-consvar_t cv_continues = CVAR_INIT ("continues", "Off", CV_SAVE|CV_CALL, CV_OnOff, STAR_UseContinues_OnChange);
+consvar_t cv_continues = CVAR_INIT ("continues", "Off", CV_SAVE|CV_CALL, CV_OnOff, SV_UseContinues_OnChange);
 
 // =======
 // SERVERS
 // =======
 
 consvar_t cv_movingplayersetup = CVAR_INIT ("movingplayersetup", "Off", CV_SAVE, CV_OnOff, NULL);
+
+// =====
+// DEBUG
+// =====
+
+consvar_t cv_tsourdt3rd_drrr_debug_virtualkeyboard = CVAR_INIT ("tsourdt3rd_drrr_debug_virtualkeyboard", "Off", CV_SAVE, CV_OnOff, NULL);
 
 // ------------------------ //
 //        Functions
@@ -142,7 +168,7 @@ void STAR_TPSRate_OnChange(void)
 	OP_Tsourdt3rdOptionsMenu[op_tpscountercolor].status = (cv_tpsrate.value ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
 }
 
-static void STAR_TimeOver_OnChange(void)
+static void G_TimeOver_OnChange(void)
 {
 	if (!netgame)
 		return;
@@ -152,43 +178,48 @@ static void STAR_TimeOver_OnChange(void)
 	CV_StealthSetValue(&cv_allowtypicaltimeover, !cv_allowtypicaltimeover.value);
 }
 
+// ========
+// CONTROLS
+// ========
+
+static void C_PadRumble_OnChange(void)
+{
+	if (cv_tsourdt3rd_drrr_rumble[0].value == 0)
+		G_ResetPlayerDeviceRumble(0);
+}
+
+static void C_PadRumble2_OnChange(void)
+{
+	if (cv_tsourdt3rd_drrr_rumble[1].value == 0)
+		G_ResetPlayerDeviceRumble(1);
+}
+
 // =======
 // PLAYERS
 // =======
 
-static void STAR_SuperWithShield_OnChange(void)
+static void P_SuperWithShield_OnChange(void)
 {
 	if (!netgame)
 		return;
 
-	if (Playing())
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "Sorry, you can't change this while in a netgame.\n");
+	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "Sorry, you can't change this while in a netgame.\n");
 	CV_StealthSetValue(&cv_shieldblockstransformation, !cv_shieldblockstransformation.value);
-}
-
-static void STAR_InvulnAndShield_OnChange(void)
-{
-#if 0
-	if (players[consoleplayer].powers[pw_invulnerability] && ((players[consoleplayer].powers[pw_shield] & SH_NOSTACK) != SH_NONE))
-	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "Sorry, you can't change this while you have both invincibility and a shield.\n");
-		CV_StealthSetValue(&cv_alwaysoverlayinvuln, !cv_alwaysoverlayinvuln.value);
-	}
-#else
-	return;
-#endif
 }
 
 // =========
 // SAVEFILES
 // =========
 
-static void STAR_UseContinues_OnChange(void)
+static void SV_UseContinues_OnChange(void)
 {
-	if (Playing())
-		return;
-
 	if (netgame || multiplayer)
 		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "Please note that continues only work in Singleplayer.\n");
+	else if (Playing())
+	{
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "You can't set continues while you're playing.\n");
+		return;
+	}
+
 	useContinues = cv_continues.value;
 }

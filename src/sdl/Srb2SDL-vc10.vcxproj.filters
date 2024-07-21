@@ -550,7 +550,7 @@
     <ClInclude Include="..\STAR\v_video.h">
       <Filter>STAR</Filter>
     </ClInclude>
-    <ClInclude Include="..\STAR\ss_cmds.h">
+    <ClInclude Include="..\STAR\smkg-cvars.h">
       <Filter>STAR</Filter>
     </ClInclude>
     <ClInclude Include="..\STAR\ss_main.h">
@@ -1078,7 +1078,7 @@
     <ClCompile Include="..\STAR\s_sound.c">
       <Filter>STAR</Filter>
     </ClCompile>
-    <ClCompile Include="..\STAR\ss_cmds.c">
+    <ClCompile Include="..\STAR\smkg-cvars.c">
       <Filter>STAR</Filter>
     </ClCompile>
     <ClCompile Include="..\STAR\ss_main.c">
