@@ -2,7 +2,7 @@ target_sources(SRB2SDL2 PRIVATE
     ../discord/discord_cmds.c
     ss_main.c
     ss_misc.c
-    ss_cmds.c
+    smkg-cvars.c
     smkg_g_inputs.c
     smkg_misc_purefat.c
     star_functions.c
@@ -13,7 +13,6 @@ target_sources(SRB2SDL2 PRIVATE
     parsed.c
     s_sound.c
     drrr/k_console.c
-    drrr/k_cvars.c
     drrr/k_font.c
     drrr/kg_input.c
     drrr/khu_stuff.c
@@ -23,12 +22,13 @@ target_sources(SRB2SDL2 PRIVATE
     drrr/kv_video.c
     events/ss_easter.c
     events/ss_aprilfools.c
-    padrefactor/sdl/smkg_pad_i_sys.c
-    padrefactor/sdl/smkg_pad_i_vid.c
-    padrefactor/smkg_padr_main.c
+    sdl/smkg-i_vid.c
+    sdl/smkg-i_sys.c
+    sdl/pads/smkg_pad-i_sys.c
     menus/smkg_m_func.c
     menus/smkg_m_draw.c
-    menus/transient/options-discord.c
-    menus/transient/drrr_message-box.c
-    menus/transient/drrr_virtual-keyboard.c
+    menus/transient/smkg-options-discord.c
+    menus/transient/smkg-options-tsourdt3rd.c
+    menus/transient/drrr-message-box.c
+    menus/transient/drrr-virtual-keyboard.c
 )

@@ -17,7 +17,7 @@
 //
 //-----------------------------------------------------------------------------
 /// \file  smkg_pad_i_sys.c
-/// \brief SRB2 system stuff for SDL
+/// \brief TSoURDt3rd gamepad system stuff for SDL
 
 #ifdef _MSC_VER
 #pragma warning(disable : 4214 4244)
@@ -31,7 +31,7 @@
 #pragma warning(default : 4214 4244)
 #endif
 
-#include "../smkg_pad_i_sys.h"
+#include "../../smkg-i_sys.h"
 
 #include "../../drrr/kg_input.h"
 
@@ -42,14 +42,7 @@
 //        Functions
 // ------------------------ //
 
-void TSoURDt3rd_I_CursedWindowMovement(int xd, int yd)
-{
-	//if (cv_tsourdt3rd_windowquake.value)
-	//	return;
-	SDL_SetWindowPosition(window, window_x + xd, window_y + yd);
-}
-
-void TSoURDt3rd_GamepadR_I_SetGamepadPlayerIndex(INT32 device_id, INT32 player)
+void TSoURDt3rd_Pads_I_SetGamepadPlayerIndex(INT32 device_id, INT32 player)
 {
 #if !(SDL_VERSION_ATLEAST(2,0,12))
 	(void)device_id;
@@ -69,7 +62,7 @@ void TSoURDt3rd_GamepadR_I_SetGamepadPlayerIndex(INT32 device_id, INT32 player)
 	SDL_GameControllerSetPlayerIndex(controller, player);
 }
 
-void TSoURDt3rd_GamepadR_I_SetGamepadIndicatorColor(INT32 device_id, UINT8 red, UINT8 green, UINT8 blue)
+void TSoURDt3rd_Pads_I_SetGamepadIndicatorColor(INT32 device_id, UINT8 red, UINT8 green, UINT8 blue)
 {
 #if !(SDL_VERSION_ATLEAST(2,0,14))
 	(void)device_id;
@@ -90,7 +83,7 @@ void TSoURDt3rd_GamepadR_I_SetGamepadIndicatorColor(INT32 device_id, UINT8 red, 
 	SDL_GameControllerSetLED(controller, red, green, blue);
 }
 
-void TSoURDt3rd_GamepadR_I_GamepadRumble(INT32 device_id, UINT16 low_strength, UINT16 high_strength)
+void TSoURDt3rd_Pads_I_GamepadRumble(INT32 device_id, UINT16 low_strength, UINT16 high_strength)
 {
 #if !(SDL_VERSION_ATLEAST(2,0,9))
 	(void)device_id;
@@ -110,7 +103,7 @@ void TSoURDt3rd_GamepadR_I_GamepadRumble(INT32 device_id, UINT16 low_strength, U
 	SDL_GameControllerRumble(controller, low_strength, high_strength, 0);
 }
 
-void TSoURDt3rd_GamepadR_I_GamepadRumbleTriggers(INT32 device_id, UINT16 left_strength, UINT16 right_strength)
+void TSoURDt3rd_Pads_I_GamepadRumbleTriggers(INT32 device_id, UINT16 left_strength, UINT16 right_strength)
 {
 #if !(SDL_VERSION_ATLEAST(2,0,14))
 	(void)device_id;

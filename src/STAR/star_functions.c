@@ -1021,7 +1021,7 @@ void TSoURDt3rd_BuildTicCMD(UINT8 player)
 		}
 		else
 			OP_TSoURDt3rdJukeboxDef.prevMenu = currentMenu;
-		M_TSoURDt3rdJukebox(0);
+		TSoURDt3rd_Jukebox_InitMenu(0);
 	}
 
 	if (jukebox_increasespeed)

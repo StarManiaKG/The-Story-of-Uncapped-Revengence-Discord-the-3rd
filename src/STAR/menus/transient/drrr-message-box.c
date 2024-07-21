@@ -8,7 +8,7 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-// \file menus/transient/drrr_message-box.c
+// \file menus/transient/drrr-message-box.c
 // \brief MESSAGE BOX (aka: a hacked, cobbled together menu)
 
 #include "../../drrr/k_menu.h"

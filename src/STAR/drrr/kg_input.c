@@ -14,11 +14,11 @@
 ///        maps inputs to game controls (forward, spin, jump...)
 
 #include "k_doomdef.h"
-#include "k_cvars.h"
 #include "kg_input.h"
 #include "k_menu.h"
 
-#include "../padrefactor/smkg_pad_i_sys.h"
+#include "../smkg-cvars.h"
+#include "../smkg-i_sys.h"
 
 #include "../../console.h" // CONS_Ready() //
 #include "../../hu_stuff.h" // chat_on //
@@ -36,13 +36,13 @@ void G_SetDeviceForPlayer(INT32 player)
 
 	if (device < 0)
 	{
-		TSoURDt3rd_GamepadR_I_SetGamepadPlayerIndex(device, player);
+		TSoURDt3rd_Pads_I_SetGamepadPlayerIndex(device, player);
 		return;
 	}
 
-	TSoURDt3rd_GamepadR_I_SetGamepadPlayerIndex(device, -1);
-	TSoURDt3rd_GamepadR_I_GamepadRumble(device, 0, 0);
-	TSoURDt3rd_GamepadR_I_GamepadRumbleTriggers(device, 0, 0);
+	TSoURDt3rd_Pads_I_SetGamepadPlayerIndex(device, -1);
+	TSoURDt3rd_Pads_I_GamepadRumble(device, 0, 0);
+	TSoURDt3rd_Pads_I_GamepadRumbleTriggers(device, 0, 0);
 }
 
 void G_SetPlayerGamepadIndicatorToPlayerColor(INT32 player)
@@ -64,7 +64,7 @@ void G_SetPlayerGamepadIndicatorToPlayerColor(INT32 player)
 
 	byte_color = V_GetColor(skincolors[skincolor].ramp[8]).s;
 
-	TSoURDt3rd_GamepadR_I_SetGamepadIndicatorColor(device, byte_color.red, byte_color.green, byte_color.blue);
+	TSoURDt3rd_Pads_I_SetGamepadIndicatorColor(device, byte_color.red, byte_color.green, byte_color.blue);
 }
 
 void G_PlayerDeviceRumble(INT32 player, UINT16 low_strength, UINT16 high_strength)
@@ -83,7 +83,7 @@ void G_PlayerDeviceRumble(INT32 player, UINT16 low_strength, UINT16 high_strengt
 		return;
 	}
 
-	TSoURDt3rd_GamepadR_I_GamepadRumble(device_id, low_strength, high_strength);
+	TSoURDt3rd_Pads_I_GamepadRumble(device_id, low_strength, high_strength);
 }
 
 void G_PlayerDeviceRumbleTriggers(INT32 player, UINT16 left_strength, UINT16 right_strength)
@@ -102,7 +102,7 @@ void G_PlayerDeviceRumbleTriggers(INT32 player, UINT16 left_strength, UINT16 rig
 		return;
 	}
 
-	TSoURDt3rd_GamepadR_I_GamepadRumbleTriggers(device_id, left_strength, right_strength);
+	TSoURDt3rd_Pads_I_GamepadRumbleTriggers(device_id, left_strength, right_strength);
 }
 
 void G_ResetPlayerDeviceRumble(INT32 player)
@@ -116,17 +116,17 @@ void G_ResetPlayerDeviceRumble(INT32 player)
 		return;
 	}
 
-	TSoURDt3rd_GamepadR_I_GamepadRumble(device_id, 0, 0);
-	TSoURDt3rd_GamepadR_I_GamepadRumbleTriggers(device_id, 0, 0);
+	TSoURDt3rd_Pads_I_GamepadRumble(device_id, 0, 0);
+	TSoURDt3rd_Pads_I_GamepadRumbleTriggers(device_id, 0, 0);
 }
 
 void G_ResetAllDeviceRumbles(void)
 {
-	TSoURDt3rd_GamepadR_I_GamepadRumble(cv_usejoystick.value, 0, 0);
-	TSoURDt3rd_GamepadR_I_GamepadRumbleTriggers(cv_usejoystick.value, 0, 0);
+	TSoURDt3rd_Pads_I_GamepadRumble(cv_usejoystick.value, 0, 0);
+	TSoURDt3rd_Pads_I_GamepadRumbleTriggers(cv_usejoystick.value, 0, 0);
 
-	TSoURDt3rd_GamepadR_I_GamepadRumble(cv_usejoystick2.value, 0, 0);
-	TSoURDt3rd_GamepadR_I_GamepadRumbleTriggers(cv_usejoystick2.value, 0, 0);
+	TSoURDt3rd_Pads_I_GamepadRumble(cv_usejoystick2.value, 0, 0);
+	TSoURDt3rd_Pads_I_GamepadRumbleTriggers(cv_usejoystick2.value, 0, 0);
 }
 
 static void update_vkb_axis(INT32 axis)

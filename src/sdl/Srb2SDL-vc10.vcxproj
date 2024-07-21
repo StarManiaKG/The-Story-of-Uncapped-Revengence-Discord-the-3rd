@@ -306,7 +306,7 @@
     <ClInclude Include="..\STAR\parser.h" />
     <ClInclude Include="..\STAR\p_saveg.h" />
     <ClInclude Include="..\STAR\p_user.h" />
-    <ClInclude Include="..\STAR\ss_cmds.h" />
+    <ClInclude Include="..\STAR\smkg-cvars.h" />
     <ClInclude Include="..\STAR\ss_main.h" />
     <ClInclude Include="..\STAR\star_vars.h" />
     <ClInclude Include="..\STAR\star_webinfo.h" />
@@ -505,7 +505,7 @@
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\STAR\ss_cmds.c">
+    <ClCompile Include="..\STAR\smkg-cvars.c">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>

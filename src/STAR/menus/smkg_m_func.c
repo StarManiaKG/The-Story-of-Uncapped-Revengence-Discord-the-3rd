@@ -11,7 +11,6 @@
 
 #include "smkg_m_func.h"
 #include "smkg_m_draw.h"
-#include "../padrefactor/smkg_padr_main.h"
 
 #include "../drrr/k_menu.h"
 
@@ -151,6 +150,61 @@ void TSoURDt3rd_M_SetupNextMenu(menu_t *menudef, boolean notransition)
 }
 
 //
+// static void M_UpdateMenuCMD(UINT8 i)
+// Updates the menu buttons needed for unique menu movement.
+//
+static void M_UpdateMenuCMD(UINT8 i)
+{
+	INT32 p = i+1;
+
+	menucmd[i].prev_dpad_ud = menucmd[i].dpad_ud;
+	menucmd[i].prev_dpad_lr = menucmd[i].dpad_lr;
+
+	menucmd[i].dpad_ud = 0;
+	menucmd[i].dpad_lr = 0;
+
+	menucmd[i].buttonsHeld = menucmd[i].buttons;
+	menucmd[i].buttons = 0;
+
+	if (PLAYERINPUTDOWN(p, GC_SCREENSHOT)) { menucmd[i].buttons |= MBT_SCREENSHOT; }
+	if (PLAYERINPUTDOWN(p, GC_RECORDGIF)) { menucmd[i].buttons |= MBT_STARTMOVIE; }
+	//if (PLAYERINPUTDOWN(p, GC_RECORDLOSSLESS)) { menucmd[i].buttons |= MBT_STARTLOSSLESS; }
+
+	// Screenshot et al take priority
+	if (menucmd[i].buttons != 0)
+		return;
+
+	if (PLAYERINPUTDOWN(p, GC_FORWARD) || accurate_menuKey == KEY_UPARROW) { menucmd[i].dpad_ud--; }
+	if (PLAYERINPUTDOWN(p, GC_BACKWARD) || accurate_menuKey == KEY_DOWNARROW) { menucmd[i].dpad_ud++; }
+
+	if (PLAYERINPUTDOWN(p, GC_STRAFELEFT) || accurate_menuKey == KEY_LEFTARROW) { menucmd[i].dpad_lr--; }
+	if (PLAYERINPUTDOWN(p, GC_STRAFERIGHT) || accurate_menuKey == KEY_RIGHTARROW) { menucmd[i].dpad_lr++; }
+
+	if (accurate_menuKey == KEY_ENTER) { menucmd[i].buttons |= MBT_A; }
+	if (accurate_menuKey == KEY_ESCAPE) { menucmd[i].buttons |= MBT_B; }
+	if (accurate_menuKey == KEY_BACKSPACE) { menucmd[i].buttons |= MBT_C; }
+
+	if (PLAYERINPUTDOWN(p, GC_FIRENORMAL) || accurate_menuKey == KEY_LSHIFT) { menucmd[i].buttons |= MBT_X; }
+	if (PLAYERINPUTDOWN(p, GC_CUSTOM1)) { menucmd[i].buttons |= MBT_Y; }
+	if (PLAYERINPUTDOWN(p, GC_CUSTOM2)) { menucmd[i].buttons |= MBT_Z; }
+
+	if (PLAYERINPUTDOWN(p, GC_TURNLEFT)) { menucmd[i].buttons |= MBT_L; }
+	if (PLAYERINPUTDOWN(p, GC_TURNRIGHT)) { menucmd[i].buttons |= MBT_R; }
+
+	if (PLAYERINPUTDOWN(p, GC_TOSSFLAG)) { menucmd[i].buttons |= MBT_START; }	
+
+	if (menucmd[i].dpad_ud == 0 && menucmd[i].dpad_lr == 0 && menucmd[i].buttons == 0)
+	{
+		// Reset delay count with no buttons.
+		menucmd[i].delay = min(menucmd[i].delay, MENUMINDELAY);
+		menucmd[i].delayCount = 0;
+	}
+
+	if (joywait >= I_GetTime() || mousewait >= I_GetTime() || (menuKey > 0 && menuKey < NUMKEYS))
+		accurate_menuKey = -1;
+}
+
+//
 // boolean STAR_M_DoesMenuHaveKeyHandler(void)
 // Returns whether or not the current menu option has specific routines for keys.
 //
@@ -203,10 +257,10 @@ void STAR_M_RevampedMenuInputWrapper(INT32 *key)
 }
 
 //
-// static void STAR_M_SetAccurateMenuKey(INT32 *key, event_t *ev)
+// static void M_SetAccurateMenuKey(INT32 *key, event_t *ev)
 // Sets the accurate keys required for menu movement, generally by setting the inputs into specific keys.
 //
-static void STAR_M_SetAccurateMenuKey(INT32 *key, event_t *ev)
+static void M_SetAccurateMenuKey(INT32 *key, event_t *ev)
 {
 	static INT32 pjoyx = 0, pjoyy = 0;
 	static INT32 pmousex = 0, pmousey = 0;
@@ -214,7 +268,10 @@ static void STAR_M_SetAccurateMenuKey(INT32 *key, event_t *ev)
 
 	if (menuKey > 0 && menuKey < NUMKEYS)
 	{
-		*key = menuKey;
+		if (ev->type == ev_keydown)
+			*key = menuKey;
+		else
+			*key = -1;
 		return;
 	}
 
@@ -350,7 +407,7 @@ boolean STAR_M_Responder(event_t *ev)
 		return false;
 	}
 
-	if (menuactive || ((playeringame[consoleplayer] || Playing()) && gamestate != GS_LEVEL))
+	if (menuactive)
 		G_MapEventsToControls(ev); // update keys current state
 
 	if (ev->type == ev_keydown && ev->key > 0 && ev->key < NUMKEYS)
@@ -366,7 +423,7 @@ boolean STAR_M_Responder(event_t *ev)
 		return false;
 	}
 
-	STAR_M_SetAccurateMenuKey(&accurate_menuKey, ev);
+	M_SetAccurateMenuKey(&accurate_menuKey, ev);
 	return true;
 }
 
@@ -395,7 +452,6 @@ boolean STAR_M_StartControlPanel(void)
 				// However, because there's no guarantee a profile
 				// is selected or controls set up to our liking,
 				// we can't call M_HandleMenuMessage.
-
 				DRRR_M_StopMessage(MA_NONE);
 			}
 
@@ -431,64 +487,6 @@ void STAR_M_GoBack(INT32 choice)
 
 	if (!(behaviourflags & MBF_SOUNDLESS))
 		S_StartSound(NULL, sfx_s3k5b);
-}
-
-//
-// void STAR_M_UpdateMenuCMD(UINT8 i)
-// Updates the menu buttons needed for unique menu movement.
-//
-void STAR_M_UpdateMenuCMD(UINT8 i)
-{
-	INT32 p = i+1;
-
-	if (i > 1)
-		return;
-
-	menucmd[i].prev_dpad_ud = menucmd[i].dpad_ud;
-	menucmd[i].prev_dpad_lr = menucmd[i].dpad_lr;
-
-	menucmd[i].dpad_ud = 0;
-	menucmd[i].dpad_lr = 0;
-
-	menucmd[i].buttonsHeld = menucmd[i].buttons;
-	menucmd[i].buttons = 0;
-
-	if (PLAYERINPUTDOWN(p, GC_SCREENSHOT)) { menucmd[i].buttons |= MBT_SCREENSHOT; }
-	if (PLAYERINPUTDOWN(p, GC_RECORDGIF)) { menucmd[i].buttons |= MBT_STARTMOVIE; }
-	//if (PLAYERINPUTDOWN(p, GC_RECORDLOSSLESS)) { menucmd[i].buttons |= MBT_STARTLOSSLESS; }
-
-	// Screenshot et al take priority
-	if (menucmd[i].buttons != 0)
-		return;
-
-	if (PLAYERINPUTDOWN(p, GC_FORWARD) || accurate_menuKey == KEY_UPARROW) { menucmd[i].dpad_ud--; }
-	if (PLAYERINPUTDOWN(p, GC_BACKWARD) || accurate_menuKey == KEY_DOWNARROW) { menucmd[i].dpad_ud++; }
-
-	if (PLAYERINPUTDOWN(p, GC_STRAFELEFT) || accurate_menuKey == KEY_LEFTARROW) { menucmd[i].dpad_lr--; }
-	if (PLAYERINPUTDOWN(p, GC_STRAFERIGHT) || accurate_menuKey == KEY_RIGHTARROW) { menucmd[i].dpad_lr++; }
-
-	if (accurate_menuKey == KEY_ENTER) { menucmd[i].buttons |= MBT_A; }
-	if (accurate_menuKey == KEY_ESCAPE) { menucmd[i].buttons |= MBT_B; }
-	if (accurate_menuKey == KEY_BACKSPACE) { menucmd[i].buttons |= MBT_C; }
-
-	if (PLAYERINPUTDOWN(p, GC_FIRENORMAL) || accurate_menuKey == KEY_LSHIFT) { menucmd[i].buttons |= MBT_X; }
-	if (PLAYERINPUTDOWN(p, GC_CUSTOM1)) { menucmd[i].buttons |= MBT_Y; }
-	if (PLAYERINPUTDOWN(p, GC_CUSTOM2)) { menucmd[i].buttons |= MBT_Z; }
-
-	if (PLAYERINPUTDOWN(p, GC_TURNLEFT)) { menucmd[i].buttons |= MBT_L; }
-	if (PLAYERINPUTDOWN(p, GC_TURNRIGHT)) { menucmd[i].buttons |= MBT_R; }
-
-	if (PLAYERINPUTDOWN(p, GC_TOSSFLAG)) { menucmd[i].buttons |= MBT_START; }	
-
-	if (menucmd[i].dpad_ud == 0 && menucmd[i].dpad_lr == 0 && menucmd[i].buttons == 0)
-	{
-		// Reset delay count with no buttons.
-		menucmd[i].delay = min(menucmd[i].delay, MENUMINDELAY);
-		menucmd[i].delayCount = 0;
-	}
-
-	if (joywait >= I_GetTime() || mousewait >= I_GetTime() || (menuKey > 0 && menuKey < NUMKEYS))
-		accurate_menuKey = -1;
 }
 
 //
@@ -534,10 +532,10 @@ void STAR_M_ChangeCvarDirect(INT32 choice, consvar_t *cv)
 }
 
 //
-// static void STAR_M_ChangeCvar(INT32 choice)
+// static void M_ChangeCvar(INT32 choice)
 // Wrapper for STAR_M_ChangeCvarDirect().
 //
-static void STAR_M_ChangeCvar(INT32 choice)
+static void M_ChangeCvar(INT32 choice)
 {
 	consvar_t *cvar = currentMenu->menuitems[tsourdt3rd_itemOn].itemaction;
 	STAR_M_ChangeCvarDirect(choice, cvar);
@@ -622,12 +620,12 @@ boolean STAR_M_PrevOpt(void)
 }
 
 //
-// static void STAR_M_HandleMenuInput(void)
+// static void M_HandleMenuInput(void)
 // Handles our menu inputs.
 //
 // Ported from Dr.Robotnik's Ring Racers!
 //
-static void STAR_M_HandleMenuInput(void)
+static void M_HandleMenuInput(void)
 {
 	void (*routine)(INT32 choice); // for some casting problem
 	UINT8 pid = 0; // todo: Add ability for any splitscreen player to bring up the menu.
@@ -707,14 +705,14 @@ static void STAR_M_HandleMenuInput(void)
 				if (!(tsourdt3rd_currentMenu->behaviourflags & MBF_SOUNDLESS))
 					S_StartSound(NULL, sfx_s3k5b);
 
-				STAR_M_ChangeCvar(-1);
+				M_ChangeCvar(-1);
 				M_SetMenuDelay(pid);
 				return;
 			}
 		}
 		else
 		{
-			routine = STAR_M_ChangeCvar;
+			routine = M_ChangeCvar;
 		}
 	}
 
@@ -905,13 +903,16 @@ void STAR_M_Ticker(INT16 *item, boolean *input, INT16 skullAnimCounter)
 
 	if (tsourdt3rd_noFurtherInput == false)
 	{
-		STAR_M_HandleMenuInput();
+		M_HandleMenuInput();
 	}
 
 	if (tsourdt3rd_currentMenu == NULL)
 	{
 		return;
 	}
+
+	for (INT32 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+		M_UpdateMenuCMD(i);
 
 	if (tsourdt3rd_currentMenu->tickroutine)
 	{

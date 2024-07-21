@@ -7,7 +7,7 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file
-/// \brief Unique TSoURDt3rd routines for SDL
+/// \brief Unique TSoURDt3rd gamepad routines for SDL
 
 #ifdef _MSC_VER
 #pragma warning(disable : 4214 4244)
@@ -19,10 +19,11 @@
 #pragma warning(default : 4214 4244)
 #endif
 
-#include "../smkg_pad_i_sys.h"
+#include "../smkg-i_sys.h"
 
-#include "../../../i_system.h"
-#include "../../../screen.h"
+#include "../../lua_hook.h"
+#include "../../i_system.h"
+#include "../../screen.h"
 
 // ------------------------ //
 //        Variables
@@ -42,6 +43,12 @@ INT32 window_y = -1;
 //
 static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 {
+	if (cv_fullscreen.value)
+	{
+		window_x = evt.data1;
+		window_y = evt.data2;
+	}
+
 	switch (evt.event)
 	{
 		case SDL_WINDOWEVENT_MOVED:
@@ -49,12 +56,6 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 			window_y = evt.data2;
 			break;
 		default:
-			if (cv_fullscreen.value)
-			{
-				window_x = window_y = -1;
-				break;
-			}
-
 			if (window_x == -1 || window_y == -1)
 				SDL_GetWindowPosition(window, &window_x, &window_y);
 			break;
@@ -71,6 +72,11 @@ void TSoURDt3rd_I_GetEvent(SDL_Event *evt)
 	{
 		case SDL_WINDOWEVENT:
 			Impl_HandleWindowEvent(evt->window);
+			break;
+		case SDL_QUIT:
+			// Usually already done, but just making sure...
+			LUA_HookBool(true, HOOK(GameQuit));
+			I_Quit();
 			break;
 	}
 }

@@ -61,7 +61,7 @@
 
 // OTHER FUN STAR STUFF YAYAYSUHDUISHUIBHOUIHBDU()*FH*D(UIYVLBGUIYDG(UDOPBIYGD*OUFBHO(P))) //
 #include "STAR/star_vars.h" // TSoURDt3rd Struct, STAR_SetWindowTitle(), & TSoURDt3rd_DetermineLevelMusic() //
-#include "STAR/ss_cmds.h" // cv_storesavesinfolders //
+#include "STAR/smkg-cvars.h" // cv_storesavesinfolders //
 #include "STAR/ss_main.h" // STAR_G_GamestateManager() //
 
 #include "deh_soc.h"

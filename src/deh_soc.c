@@ -50,7 +50,7 @@
 
 // STAR STUFF //
 #include "STAR/star_vars.h"
-#include "STAR/ss_cmds.h" // cv_storesavesinfolders //
+#include "STAR/smkg-cvars.h" // cv_storesavesinfolders //
 #include "STAR/ss_main.h" // SAVEGAMEFOLDER //
 
 boolean TSoURDt3rd_LoadedGamedataAddon;

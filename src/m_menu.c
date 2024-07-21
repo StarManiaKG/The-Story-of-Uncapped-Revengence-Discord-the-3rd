@@ -90,7 +90,7 @@
 // STAR STUFF //
 #include "STAR/star_vars.h"
 
-#include "STAR/ss_cmds.h" // various vast TSoURDt3rd commands and command functions //
+#include "STAR/smkg-cvars.h" // various vast TSoURDt3rd commands and command functions //
 #include "STAR/ss_main.h" // AUTOLOADCONFIGFILENAME, SAVEGAMEFOLDER, & STAR_CONS_Printf() //
 
 #include "STAR/s_sound.h"
@@ -522,9 +522,6 @@ consvar_t cv_dummyloadless = CVAR_INIT ("dummyloadless", "In-game", CV_HIDEN, lo
 
 //// STAR COMMANDS AYYAYAYAYYAYA ////
 // Game Commands //
-static CV_PossibleValue_t startupscreen_t[] = {{0, "Default"}, {1, "Pre-2.2.6"}, {2, "Baby Sonic"}, {0, NULL}};
-consvar_t cv_startupscreen = CVAR_INIT ("startupscreen", "Default", CV_SAVE, startupscreen_t, NULL);
-
 static CV_PossibleValue_t quitscreen_t[] = {
 	{0, "Default"},
 	{1, "Color"},

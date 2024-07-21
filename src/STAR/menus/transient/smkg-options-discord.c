@@ -8,7 +8,7 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  menus/transient/options-discord.c
+/// \file  menus/transient/smkg-options-discord.c
 /// \brief Discord Rich Presence menu options
 
 #ifdef HAVE_DISCORDSUPPORT

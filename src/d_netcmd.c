@@ -61,7 +61,7 @@
 #include "discord/discord.h"
 
 #include "STAR/star_vars.h" // STAR_SetWindowTitle() //
-#include "STAR/ss_cmds.h" // various vast TSoURDt3rd commands //
+#include "STAR/smkg-cvars.h" // various vast TSoURDt3rd commands //
 #include "STAR/ss_main.h" // STAR_CONS_Printf() //
 
 #include "STAR/drrr/kg_input.h" // G_SetPlayerGamepadIndicatorToPlayerColor() //
