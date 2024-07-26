@@ -92,15 +92,14 @@
 
 #include "STAR/smkg-cvars.h" // various vast TSoURDt3rd commands and command functions //
 #include "STAR/ss_main.h" // AUTOLOADCONFIGFILENAME, SAVEGAMEFOLDER, & STAR_CONS_Printf() //
-
-#include "STAR/s_sound.h"
+#include "STAR/smkg-jukebox.h"
 
 #include "deh_soc.h"
 
 #include "STAR/drrr/k_menu.h" // menutyping junk //
 
-#include "STAR/menus/smkg_m_func.h" // menu data junk & STAR_M_DrawQuitGraphic() //
-#include "STAR/menus/smkg_m_draw.h" // M_InitOptions() //
+#include "STAR/menus/smkg_m_func.h"
+#include "STAR/menus/smkg_m_draw.h"
 // END OF THAT //
 
 #define SKULLXOFF -32
@@ -356,9 +355,6 @@ static void M_HandleTsourdt3rdReadMe(INT32 choice);
 static void STAR_InitializeExtendedServerPropertyMenu(INT32 choice);
 static void STAR_DrawExtendedServerPropertyMenu(void);
 static void STAR_HandleExtendedServerPropertyMenu(INT32 choice);
-
-// main build menu stuff
-static void M_TSoURDt3rdOptions(INT32 choice);
 // GOODBYE FOR NOW //
 
 #define addonmenusize 9 // number of items actually displayed in the addons menu view, formerly (2*numaddonsshown + 1)
@@ -439,12 +435,8 @@ static void STAR_IsItCalledSinglePlayer_OnChange(void);
 
 static void STAR_DefaultMapTrack_OnChange(void);
 
-static void STAR_PerfectSave_OnChange(void);
-
 static void STAR_JukeboxHUD_OnChange(void);
 static void STAR_JukeboxSpeed_OnChange(void);
-
-static void STAR_WindowTitleVars_OnChange(void);
 
 // ==========================================================================
 // CONSOLE VARIABLES AND THEIR POSSIBLE VALUES GO HERE.
@@ -625,14 +617,6 @@ consvar_t cv_defaultmaptrack = CVAR_INIT ("defaultmaptrack", "D_RUNNIN", CV_SAVE
 // Player //
 consvar_t cv_armageddonnukewhilesuper = CVAR_INIT ("armageddonnukewhilesuper", "Off", CV_SAVE, CV_OnOff, NULL);
 
-// Save //
-consvar_t cv_perfectsave = CVAR_INIT ("perfectsave", "On", CV_SAVE|CV_CALL, CV_OnOff, STAR_PerfectSave_OnChange);
-
-static CV_PossibleValue_t perfectsavestripe_t[] = {{0, "MIN"}, {255, "MAX"}, {0, NULL}};
-consvar_t cv_perfectsavestripe1 = CVAR_INIT ("perfectsavestripe1", "134", CV_SAVE, perfectsavestripe_t, NULL);
-consvar_t cv_perfectsavestripe2 = CVAR_INIT ("perfectsavestripe2", "201", CV_SAVE, perfectsavestripe_t, NULL);
-consvar_t cv_perfectsavestripe3 = CVAR_INIT ("perfectsavestripe3", "1", CV_SAVE, perfectsavestripe_t, NULL);
-
 // Jukebox //
 static CV_PossibleValue_t jukebox_hud_t[] = {{0, "Off"}, {1, "Minimalized"}, {2, "On"}, {0, NULL}};
 consvar_t cv_jukeboxhud = CVAR_INIT ("jukeboxhud", "On", CV_SAVE|CV_CALL, jukebox_hud_t, STAR_JukeboxHUD_OnChange);
@@ -645,10 +629,10 @@ consvar_t cv_jukeboxspeed = CVAR_INIT ("jukeboxspeed", "1.0", CV_SAVE|CV_CALL|CV
 // Extras //
 #ifdef HAVE_SDL
 static CV_PossibleValue_t windowtitle_t[] = {{0, "Default"}, {1, "Dynamic"}, {2, "Semi-Custom"}, {3, "Fully Custom"}, {0, NULL}};
-consvar_t cv_windowtitletype = CVAR_INIT ("windowtitletype", "Default", CV_SAVE|CV_CALL, windowtitle_t, STAR_WindowTitleVars_OnChange);
+consvar_t cv_windowtitletype = CVAR_INIT ("windowtitletype", "Default", CV_SAVE|CV_CALL, windowtitle_t, (void *)STAR_SetWindowTitle);
 
-consvar_t cv_customwindowtitle = CVAR_INIT ("customwindowtitle", "Currently Robo Blasting in", CV_SAVE|CV_CALL, NULL, STAR_WindowTitleVars_OnChange);
-consvar_t cv_memesonwindowtitle = CVAR_INIT ("memesonwindowtitle", "Yes", CV_SAVE|CV_CALL, CV_YesNo, STAR_WindowTitleVars_OnChange);
+consvar_t cv_customwindowtitle = CVAR_INIT ("customwindowtitle", "Currently Robo Blasting in", CV_SAVE|CV_CALL, NULL, (void *)STAR_SetWindowTitle);
+consvar_t cv_memesonwindowtitle = CVAR_INIT ("memesonwindowtitle", "Yes", CV_SAVE|CV_CALL, CV_YesNo, (void *)STAR_SetWindowTitle);
 #endif
 //// END OF STAR COMMANDS ////
 
@@ -3306,7 +3290,7 @@ void Moviemode_option_Onchange(void)
 // Game //
 static void STAR_IsItCalledSinglePlayer_OnChange(void)
 {
-	if (TSoURDt3rd_InAprilFoolsMode())
+	if (TSoURDt3rd_AprilFools_ModeEnabled())
 		return;
 
 	MainMenu[singleplr].text = (cv_isitcalledsingleplayer.value ? "Single  Player" : "1  Player");
@@ -3344,14 +3328,6 @@ static void STAR_DefaultMapTrack_OnChange(void)
 		DefaultMapTrack = cv_defaultmaptrack.value;
 }
 
-// Savefiles //
-static void STAR_PerfectSave_OnChange(void)
-{
-	for (INT32 i = op_perfectsave; i < op_continues; i++)
-		OP_Tsourdt3rdOptionsMenu[i].status =
-			((!(Playing() && playeringame[consoleplayer]) && cv_perfectsave.value) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
-}
-
 // Jukebox //
 static void STAR_JukeboxHUD_OnChange(void)
 {
@@ -3363,19 +3339,6 @@ static void STAR_JukeboxSpeed_OnChange(void)
 	if (!TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack)
 		return;
 	S_SpeedMusic(atof(cv_jukeboxspeed.string));
-}
-
-// Extras //
-// Window Titles
-static void STAR_WindowTitleVars_OnChange(void)
-{
-	OP_Tsourdt3rdOptionsMenu[op_customwindowtitle].status =
-		(cv_windowtitletype.value >= 2 ? IT_STRING|IT_CVAR|IT_CV_STRING : IT_GRAYEDOUT);
-
-	OP_Tsourdt3rdOptionsMenu[op_memesonwindowtitle].status =
-		(cv_windowtitletype.value == 1 ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
-
-	STAR_SetWindowTitle();
 }
 //// FINALLY, THE STAR COMMAND STUFF IS OVER! ////
 
@@ -3678,12 +3641,8 @@ void M_ChangeMenuMusic(const char *defaultmusname, boolean defaultmuslooping)
 	defaultmusic.muslooping = defaultmuslooping;
 
 	// STAR STUFF: keep playing jukebox music please //
-	if (TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack)
-	{
-		if (paused)
-			S_ResumeAudio();
+	if (!TSoURDt3rd_Jukebox_CanModifyMusic())
 		return;
-	}
 	// YAY! //
 
 	M_IterateMenuTree(MIT_ChangeMusic, &defaultmusic);
@@ -4342,10 +4301,7 @@ boolean M_Responder(event_t *ev)
 				if (stopstopmessage)
 					stopstopmessage = false;
 				else
-				{	// STAR NOTE: shift queue please :) //
-					if (MessageDef.menuitems[0].text == NULL)
-						M_StopMessage(0);
-				}
+					M_StopMessage(0);
 				noFurtherInput = true;
 				return true;
 			}
@@ -4361,8 +4317,6 @@ boolean M_Responder(event_t *ev)
 			{
 				void (*otherroutine)(event_t *sev) = currentMenu->menuitems[itemOn].itemaction;
 				otherroutine(ev); //Alam: what a hack
-
-				M_ShiftMessageQueueDown(); // STAR STUFF: SHIFT THAT QUEUE DOWN :) //
 			}
 			return true;
 		}
@@ -4762,7 +4716,7 @@ void M_SetupNextMenu(menu_t *menudef)
 			return; // we can't quit this menu (also used to set parameter from the menu)
 	}
 
-	TSoURDt3rd_M_SetupNextMenu(menudef, menutransition.enabled); // STAR STUFF: manipulate menu data for me please :) //
+	TSoURDt3rd_M_SetupNextMenu(menudef); // STAR STUFF: manipulate menu data for me please :) //
 
 	M_HandleMenuPresState(menudef);
 
@@ -7306,13 +7260,12 @@ static void M_StopMessage(INT32 choice)
 	(void)choice;
 
 	// STAR STUFF: shift message queue downwards //
-	if (MessageDef.menuitems[1].text != NULL)
+	if (MessageDef.menuitems[1].text != NULL && MessageDef.menuitems[1].text != NULL)
 	{
 		M_ShiftMessageQueueDown();
 		return;
 	}
-	else
-		S_StartSound(NULL, sfx_strpst);
+	S_StartSound(NULL, sfx_strpst);
 	// END THIS PLEASE //
 
 	if (menuactive)
@@ -8391,7 +8344,7 @@ static void M_LevelSelectWarp(INT32 choice)
 			G_LoadGame((UINT32)cursaveslot, startmap); // reload from SP save data: this is needed to keep score/lives/continues from reverting to defaults
 
 			// STAR STUFF: if we're in April Fools' ultimate mode, allow us to retain our data, but not save it //
-			if (TSoURDt3rd_InAprilFoolsMode())
+			if (TSoURDt3rd_AprilFools_ModeEnabled())
 			{
 				STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nthis savefile will not save until you turn this mode off.\n");
 				M_StartMessage(va("%c%s\x80\nYou have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nthis savefile will not save until you turn this mode off.\n(Press any key to continue.)\n", ('\x80' + (V_MENUCOLORMAP|V_CHARCOLORSHIFT)), "TSoURDt3rd Notice"),NULL,MM_NOTHING);
@@ -10070,7 +10023,7 @@ static void M_LoadSelect(INT32 choice)
 		G_LoadGame((UINT32)saveSlotSelected, 0);
 
 	// STAR STUFF: if in April Fools mode, and not loading a complete file, let's not save to this file please //
-	if ((TSoURDt3rd_InAprilFoolsMode() && saveSlotSelected > NOSAVESLOT) && !(savegameinfo[saveSlotSelected-1].gamemap & 8192))
+	if ((TSoURDt3rd_AprilFools_ModeEnabled() && saveSlotSelected > NOSAVESLOT) && !(savegameinfo[saveSlotSelected-1].gamemap & 8192))
 	{
 		STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nthis savefile will not save until you turn this mode off.\n");
 		M_StartMessage(va("%c%s\x80\nYou have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nthis savefile will not save until you turn this mode off.\n(Press any key to continue.)\n", ('\x80' + (V_MENUCOLORMAP|V_CHARCOLORSHIFT)), "TSoURDt3rd Notice"),NULL,MM_NOTHING);
@@ -15572,41 +15525,6 @@ static INT32 quitsounds[] =
 	sfx_s3k6a, // Inu 04-03-13
 	sfx_s3k73, // Inu 04-03-13
 	sfx_chchng, // Tails 11-09-99
-
-	//** STAR STUFF **//
-	// we're changing things up even further!
-	// going even further beyond!
-	sfx_cdpcm3, // 04-11-23
-
-	// srb2kart: you ain't seen nothing yet
-	sfx_kc2e,
-	sfx_kc2f,
-	sfx_cdfm01,
-	//sfx_ddash,
-	sfx_s3ka2,
-	sfx_s3k49,
-	//sfx_slip,
-	//sfx_tossed,
-	sfx_s3k7b,
-	//sfx_itrolf,
-	//sfx_itrole,
-	sfx_cdpcm9,
-	sfx_s3k4e,
-	sfx_s259,
-	sfx_3db06,
-	sfx_s3k3a,
-	//sfx_peel,
-	sfx_cdfm28,
-	sfx_s3k96,
-	sfx_s3kc0s,
-	sfx_cdfm39,
-	//sfx_hogbom,
-	sfx_kc5a,
-	sfx_kc46,
-	sfx_s3k92,
-	sfx_s3k42,
-	//sfx_kpogos,
-	//sfx_screec
 };
 
 void M_QuitResponse(INT32 ch)
@@ -15818,74 +15736,6 @@ static void M_HandleTsourdt3rdReadMe(INT32 choice)
 		else
 			M_ClearMenus(true);
 	}
-}
-
-// Main TSoURDt3rd Menu //
-static void M_TSoURDt3rdOptions(INT32 choice)
-{
-	(void)choice;
-
-	// Event Options //
-	// Main Option Header
-	OP_Tsourdt3rdOptionsMenu[op_eventoptionsheader].status =
-		((eastermode || aprilfoolsmode || xmasmode) ? IT_HEADER : IT_HEADER|IT_GRAYEDOUT);
-
-	// Easter
-	M_UpdateEasterStuff();
-
-	// April Fools
-	OP_Tsourdt3rdOptionsMenu[op_aprilfools].status =
-		(aprilfoolsmode ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
-
-	// Game Options //
-	STAR_LoadingScreen_OnChange();
-
-	OP_Tsourdt3rdOptionsMenu[op_fpscountercolor].status =
-		(cv_ticrate.value ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
-	STAR_TPSRate_OnChange();
-
-	STAR_Shadow_OnChange();
-
-	OP_Tsourdt3rdOptionsMenu[op_allowtypicaltimeover].status =
-		(!netgame ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
-
-	STAR_UpdateNotice_OnChange();
-
-	// Audio Options //
-	OP_Tsourdt3rdOptionsMenu[op_defaultmaptrack].status =
-		(!(Playing() && playeringame[consoleplayer]) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
-
-	// Player Options //
-	OP_Tsourdt3rdOptionsMenu[op_shieldblockstransformation].status =
-		(!netgame ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
-	
-	OP_Tsourdt3rdOptionsMenu[op_alwaysoverlayinvuln].status =
-		((players[consoleplayer].powers[pw_invulnerability] && (players[consoleplayer].powers[pw_shield] & SH_NOSTACK) != SH_NONE) ? IT_GRAYEDOUT : IT_CVAR|IT_STRING);
-
-	// Savegame Options //
-	OP_Tsourdt3rdOptionsMenu[op_storesavesinfolders].status =
-		(!netgame ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
-
-	STAR_PerfectSave_OnChange();
-
-	OP_Tsourdt3rdOptionsMenu[op_continues].status =
-		(!(Playing() && playeringame[consoleplayer]) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
-
-	// Extra Options //
-	// TF2
-	OP_Tsourdt3rdOptionsMenu[op_dispensergoingup].status =
-		(!netgame ? IT_CALL|IT_STRING : IT_GRAYEDOUT);
-
-	// Window Titles
-#ifdef HAVE_SDL
-	STAR_WindowTitleVars_OnChange();
-#else
-	for (INT32 i = op_windowtitletype; i < op_memesonwindowtitle; i++)
-		OP_Tsourdt3rdOptionsMenu[i].status = IT_GRAYEDOUT;	
-#endif
-
-	// Set up the Menu, and We're Done :) //
-	M_InitOptions(choice);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////

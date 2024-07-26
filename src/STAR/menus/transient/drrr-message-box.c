@@ -12,7 +12,7 @@
 // \brief MESSAGE BOX (aka: a hacked, cobbled together menu)
 
 #include "../../drrr/k_menu.h"
-#include "../../drrr/kv_video.h" // V_ScaledWordWrap, HU_FONT
+#include "../../drrr/kv_video.h" // DRRR_V_ScaledWordWrap, HU_FONT
 
 #include "../../../z_zone.h"
 
@@ -46,7 +46,7 @@ void DRRR_M_StartMessage(const char *header, const char *string, void (*routine)
 	const UINT8 pid = 0;
 	DEBFILE(string);
 
-	char *message = V_ScaledWordWrap(
+	char *message = DRRR_V_ScaledWordWrap(
 		(BASEVIDWIDTH - 8) << FRACBITS,
 		FRACUNIT, FRACUNIT, FRACUNIT,
 		V_ALLOWLOWERCASE,

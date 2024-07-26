@@ -307,11 +307,11 @@
     <ClInclude Include="..\STAR\p_saveg.h" />
     <ClInclude Include="..\STAR\p_user.h" />
     <ClInclude Include="..\STAR\smkg-cvars.h" />
+    <ClInclude Include="..\STAR\smkg-jukebox.h" />
+    <ClInclude Include="..\STAR\smkg-v_video.h" />
     <ClInclude Include="..\STAR\ss_main.h" />
     <ClInclude Include="..\STAR\star_vars.h" />
     <ClInclude Include="..\STAR\star_webinfo.h" />
-    <ClInclude Include="..\STAR\s_sound.h" />
-    <ClInclude Include="..\STAR\v_video.h" />
     <ClInclude Include="..\u_list.h" />
     <ClInclude Include="..\hu_stuff.h" />
     <ClInclude Include="..\info.h" />
@@ -465,7 +465,7 @@
     <ClCompile Include="..\hardware\hw_shaders.c" />
     <ClCompile Include="..\hardware\r_opengl\r_opengl.c" />
     <ClCompile Include="..\r_bbox.c" />
-    <ClCompile Include="..\STAR\events\ss_aprilfools.c">
+    <ClCompile Include="..\STAR\events\smkg-aprilfools.c">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
     </ClCompile>
@@ -511,6 +511,18 @@
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\STAR\smkg-jukebox.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\STAR\smkg-v_video.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\STAR\ss_main.c">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
@@ -518,12 +530,6 @@
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\STAR\star_functions.c">
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\STAR\s_sound.c">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>

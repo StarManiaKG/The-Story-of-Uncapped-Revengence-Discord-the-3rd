@@ -47,9 +47,9 @@
 // STAR STUFF //
 #include "STAR/star_vars.h"
 #include "STAR/smkg-cvars.h" // cv_stjrintro & cv_storesavesinfolders //
+#include "STAR/smkg-misc_purefat.h"
 #include "STAR/ss_main.h"
 #include "STAR/m_menu.h" // MessageDef, & M_ShiftMessageQueueDown() //
-#include "STAR/smkg_misc_purefat.h"
 
 #include "STAR/menus/smkg_m_func.h" // STAR_M_MenuMessageTick() //
 
@@ -3221,7 +3221,7 @@ void F_TitleScreenDrawer(void)
 			}
 
 			// STAR NOTE: no more sonic for april fools lol //
-			if ((finalecount >= SONICSTART) && !TSoURDt3rd_InAprilFoolsMode())
+			if ((finalecount >= SONICSTART) && !TSoURDt3rd_AprilFools_ModeEnabled())
 			{
 				if (finalecount < SONICIDLE)
 				{
@@ -3393,7 +3393,7 @@ void F_TitleScreenDrawer(void)
 			}
 
 			// STAR NOTE: no more sonic for april fools, electric boogalo //
-			if ((finalecount >= SONICSTART) && !TSoURDt3rd_InAprilFoolsMode())
+			if ((finalecount >= SONICSTART) && !TSoURDt3rd_AprilFools_ModeEnabled())
 			{
 				if (finalecount < SONICIDLE)
 				{

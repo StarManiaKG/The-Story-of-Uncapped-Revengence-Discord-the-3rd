@@ -1,5 +1,7 @@
 
 #include "p_saveg.h"
+#include "ss_main.h" // TSOURDT3RD_DEBUGGING //
+
 #include "../byteptr.h"
 #include "../doomstat.h"
 #include "../i_net.h"
@@ -7,7 +9,7 @@
 #include "../p_local.h"
 #include "../z_zone.h"
 
-#include "ss_main.h" // TSOURDT3RD_DEBUGGING //
+#include "../g_game.h" // player_names //
 
 static void Write(INT32 playernum, boolean archive)
 {
@@ -20,7 +22,7 @@ static void Write(INT32 playernum, boolean archive)
 		path = va("%s"PATHSEP"%s", srb2home, "STAR_bye.txt");
 	else
 		path = va("%s"PATHSEP"%s", srb2home, "STAR_hi.txt");
-	f = fopen(path, (!playernum ? "w+" : "a+"));
+	f = fopen(path, (playernum == 0 ? "w+" : "a+"));
 
 	fputs(va("CURRENT TIC: %d\n", gametic), f);
 	if (archive)
@@ -28,7 +30,7 @@ static void Write(INT32 playernum, boolean archive)
 	else
 		fputs("Type: RECEIVING!\n", f);
 
-	fputs(va("\nName: %s\n", cv_playername.string), f);
+	fputs(va("\nName: %s\n", player_names[playernum]), f);
 	fputs(va("Player: %d\n", playernum), f);
 
 	fputs(va("%d\n", TSoURDt3rd->checkedVersion), f);
@@ -67,17 +69,13 @@ void TSoURDt3rd_NetArchiveUsers(UINT8 *save_p, INT32 playernum)
 
 	WRITEUINT8(save_p, TSoURDt3rd->usingTSoURDt3rd);
 	WRITEUINT8(save_p, TSoURDt3rd->checkedVersion);
-
 	WRITEUINT8(save_p, TSoURDt3rd->num);
-
 	WRITEUINT8(save_p, TSoURDt3rd->masterServerAddressChanged);
 
 	WRITEUINT8(save_p, TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd);
-
 	WRITEUINT8(save_p, TSoURDt3rd->serverPlayers.majorVersion);
 	WRITEUINT8(save_p, TSoURDt3rd->serverPlayers.minorVersion);
 	WRITEUINT8(save_p, TSoURDt3rd->serverPlayers.subVersion);
-
 	WRITEUINT32(save_p, TSoURDt3rd->serverPlayers.serverTSoURDt3rdVersion);
 
 	Write(playernum, true);
@@ -89,17 +87,13 @@ void TSoURDt3rd_NetUnArchiveUsers(UINT8 *save_p, INT32 playernum)
 
 	TSoURDt3rd->usingTSoURDt3rd = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, false);
 	TSoURDt3rd->checkedVersion = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, true);
-
 	TSoURDt3rd->num = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, playernum+1);
-
 	TSoURDt3rd->masterServerAddressChanged = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, false);
 
 	TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, false);
-
 	TSoURDt3rd->serverPlayers.majorVersion = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, TSoURDt3rd_CurrentMajorVersion());
 	TSoURDt3rd->serverPlayers.minorVersion = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, TSoURDt3rd_CurrentMinorVersion());
 	TSoURDt3rd->serverPlayers.subVersion = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, TSoURDt3rd_CurrentSubversion());
-
 	TSoURDt3rd->serverPlayers.serverTSoURDt3rdVersion = TSOURDT3RD_READUINT32(save_p, TSoURDt3rd, TSoURDt3rd_CurrentVersion());
 
 	Write(playernum, false);

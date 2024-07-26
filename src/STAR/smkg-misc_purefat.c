@@ -6,11 +6,12 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  smkg_misc_purefat.c
+/// \file  smkg-misc_purefat.c
 /// \brief Pure Fat intro 2.2.7+ compatibility layer
 
-#include "smkg_misc_purefat.h"
+#include "smkg-misc_purefat.h"
 #include "smkg-cvars.h"
+
 #include "../f_finale.h"
 #include "../s_sound.h"
 #include "../w_wad.h"

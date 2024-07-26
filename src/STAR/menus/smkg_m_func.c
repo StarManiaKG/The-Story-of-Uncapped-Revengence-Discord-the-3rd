@@ -29,17 +29,6 @@
 //        Variables
 // ------------------------ //
 
-enum
-{
-	// Fade wipes
-	tsourdt3rd_wipe_menu_toblack,
-	TSOURDT3RD_NUMWIPEDEFS
-};
-
-UINT8 tsourdt3rd_wipedefs[TSOURDT3RD_NUMWIPEDEFS] = {
-	1  // tsourdt3rd_wipe_menu_toblack
-};
-
 INT16 tsourdt3rd_itemOn = 1; // menu item skull is on, Hack by Tails 09-18-2002
 INT16 tsourdt3rd_skullAnimCounter = 1; // skull animation counter
 struct menutransition_s menutransition; // Menu transition properties
@@ -77,13 +66,15 @@ void TSoURDt3rd_M_AddNewMenu(tsourdt3rd_menu_t *newmenu, menu_t *menup)
 };
 
 //
-// void TSoURDt3rd_M_SetupNextMenu(menu_t *menudef, boolean notransition)
+// void TSoURDt3rd_M_SetupNextMenu(menu_t *menudef)
 // Wrapper for M_SetupNextMenu, allowing for setting up unique TSoURDt3rd menu data.
 //
-void TSoURDt3rd_M_SetupNextMenu(menu_t *menudef, boolean notransition)
+void TSoURDt3rd_M_SetupNextMenu(menu_t *menudef)
 {
 	tsourdt3rd_menu_t *menus;
 	tsourdt3rd_menu_t *prevMenu = tsourdt3rd_currentMenu;
+
+	boolean notransition = menutransition.enabled;
 
 	for (menus = tsourdt3rd_allMenus; menus; menus = menus->nextmenu)
 	{
@@ -115,7 +106,6 @@ void TSoURDt3rd_M_SetupNextMenu(menu_t *menudef, boolean notransition)
 		else if (menuactive)
 		{
 			menuwipe = true;
-			M_FlipKartGamemodeMenu(false);
 			F_WipeStartScreen();
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 			F_WipeEndScreen();
@@ -407,8 +397,11 @@ boolean STAR_M_Responder(event_t *ev)
 		return false;
 	}
 
+#if 0
+	/// \todo make this work 
 	if (menuactive)
 		G_MapEventsToControls(ev); // update keys current state
+#endif
 
 	if (ev->type == ev_keydown && ev->key > 0 && ev->key < NUMKEYS)
 	{
@@ -581,7 +574,6 @@ boolean STAR_M_NextOpt(void)
 	} while (oldItemOn != tsourdt3rd_itemOn && (currentMenu->menuitems[tsourdt3rd_itemOn].status & IT_TYPE) == IT_SPACE);
 
 	//M_UpdateMenuBGImage(false);
-	M_FlipKartGamemodeMenu(true);
 
 	return true;
 }
@@ -614,7 +606,6 @@ boolean STAR_M_PrevOpt(void)
 	} while (oldItemOn != tsourdt3rd_itemOn && (currentMenu->menuitems[tsourdt3rd_itemOn].status & IT_TYPE) == IT_SPACE);
 
 	//M_UpdateMenuBGImage(false);
-	M_FlipKartGamemodeMenu(true);
 
 	return true;
 }
@@ -871,11 +862,6 @@ void STAR_M_Ticker(INT16 *item, boolean *input, INT16 skullAnimCounter)
 
 				menutransition.enabled = true;
 				M_SetupNextMenu(menutransition.endmenu->menu);
-			}
-			else
-			{
-				// Menu is done transitioning in
-				M_FlipKartGamemodeMenu(true);
 			}
 		}
 	}

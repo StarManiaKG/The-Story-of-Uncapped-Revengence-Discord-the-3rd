@@ -88,25 +88,17 @@ typedef struct TSoURDt3rdJukebox_s {
 
 // Main //
 typedef struct TSoURDt3rd_s {
-	// Main Stuff
 	boolean usingTSoURDt3rd;
 	boolean checkedVersion;
-
 	INT32 num;
-
 	star_gamestate_t gamestate;
-
-	// Game Stuff
-	TSoURDt3rdLoadingScreen_t loadingScreens;
-
-	boolean timeOver;
-
-	// Server Stuff
 	boolean masterServerAddressChanged;
+
+	TSoURDt3rdLoadingScreen_t loadingScreens;
+	boolean timeOver;
 
 	TSoURDt3rdServers_t serverPlayers;
 
-	// Jukebox Stuff
 	TSoURDt3rdJukebox_t jukebox;
 } TSoURDt3rd_t;
 

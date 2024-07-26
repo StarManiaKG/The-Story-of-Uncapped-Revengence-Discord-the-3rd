@@ -6,13 +6,14 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  s_sound.c
-/// \brief TSoURDt3rd's unique sound library
+/// \file  smkg-jukebox.c
+/// \brief TSoURDt3rd's cool and groovy sound features
 
 #include "star_vars.h"
 #include "ss_main.h"
-#include "s_sound.h"
+#include "smkg-jukebox.h"
 #include "m_menu.h"
+
 #include "../g_game.h"
 #include "../z_zone.h"
 
@@ -30,7 +31,8 @@ void M_ResetJukebox(boolean resetmusic)
 
 	if (TSoURDt3rd->jukebox.curtrack)
 	{
-		STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Jukebox reset.\n");
+		if (currentMenu != &OP_TSoURDt3rdJukeboxDef)
+			STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Jukebox reset.\n");
 		TSoURDt3rd->jukebox.prevtrack = TSoURDt3rd->jukebox.curtrack;
 		curplaying = NULL;
 	}
@@ -57,4 +59,20 @@ void M_ResetJukebox(boolean resetmusic)
 		}
 		TSoURDt3rd_ControlMusicEffects();
 	}
+}
+
+//
+// boolean TSoURDt3rd_Jukebox_CanModifyMusic(void)
+// Prevents your fun jukebox music from being forcibly
+//	reset or modified when you don't want it to be. (YAY!)
+//
+boolean TSoURDt3rd_Jukebox_CanModifyMusic(void)
+{
+	if (TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack)
+	{
+		if (paused)
+			S_ResumeAudio();
+		return false;
+	}
+	return true;
 }

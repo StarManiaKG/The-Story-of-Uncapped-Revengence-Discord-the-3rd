@@ -13,7 +13,7 @@
 // ======
 
 extern consvar_t cv_easter_allowegghunt, cv_easter_egghuntbonuses;
-extern consvar_t cv_aprilfools_ultimatemode;
+extern consvar_t cv_tsourdt3rd_aprilfools_ultimatemode;
 
 // ====
 // GAME
@@ -44,6 +44,8 @@ extern consvar_t cv_alwaysoverlayinvuln;
 // =========
 
 extern consvar_t cv_storesavesinfolders;
+extern consvar_t cv_perfectsave;
+extern consvar_t cv_perfectsavestripe1, cv_perfectsavestripe2, cv_perfectsavestripe3;
 extern consvar_t cv_continues;
 
 // =======

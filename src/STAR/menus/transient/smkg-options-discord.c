@@ -123,6 +123,7 @@ menu_t OP_DiscordOptionsDef =
 tsourdt3rd_menu_t TSoURDt3rd_OP_DiscordOptionsDef = {
 	&OP_DiscordOptionsDef,
 	TSoURDt3rd_OP_DiscordOptionsMenu,
+	0, 0,
 	0,
 	0, 0,
 	NULL,
@@ -148,6 +149,7 @@ menu_t MISC_DiscordRequestsDef = {
 tsourdt3rd_menu_t TSoURDt3rd_MISC_DiscordRequestsDef = {
 	&MISC_DiscordRequestsDef,
 	TSoURDt3rd_MISC_DiscordRequests,
+	0, 0,
 	0,
 	0, 0,
 	NULL,

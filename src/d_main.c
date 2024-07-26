@@ -146,11 +146,11 @@ static char addonsdir[MAX_WADPATH];
 
 // STAR STUFF WEEEEE //
 #include "STAR/star_vars.h"
-#include "STAR/ss_main.h" // AUTOLOADCONFIGFILENAME, TSoURDt3rd_CheckTime(), STAR_CONS_Printf(), & TSoURDt3rd_CON_DrawStartupScreen() //
+#include "STAR/ss_main.h" // AUTOLOADCONFIGFILENAME, TSoURDt3rd_Init(), STAR_CONS_Printf(), & TSoURDt3rd_CON_DrawStartupScreen() //
 
-#include "STAR/s_sound.h" // jukebox //
+#include "STAR/smkg-jukebox.h"
 
-#include "STAR/menus/smkg_m_func.h" // menu refactor data //
+#include "STAR/menus/smkg_m_func.h"
 
 // Discord Stuff
 INT32 extrawads;
@@ -1066,16 +1066,8 @@ void D_StartTitle(void)
 {
 	INT32 i;
 
-#if 0
-	S_StopMusic();
-#else
-	// STAR STUFF: prevent fun jukebox music from being reset (YAY!) //
-	if (TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack && paused)
-		S_ResumeAudio();
-	else
+	if (TSoURDt3rd_Jukebox_CanModifyMusic()) // STAR STUFF: why don't we check for jukebox music first? //
 		S_StopMusic();
-	// END THAT STUFF //
-#endif
 
 	if (netgame)
 	{

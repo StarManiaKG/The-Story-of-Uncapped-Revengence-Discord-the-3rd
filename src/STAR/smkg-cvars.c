@@ -25,6 +25,12 @@
 //        Variables
 // ------------------------ //
 
+// ======
+// EVENTS
+// ======
+
+consvar_t cv_tsourdt3rd_aprilfools_ultimatemode = CVAR_INIT ("tsourdt3rd_aprilfools_ultimatemode", "Off", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, TSoURD3rd_AprilFools_OnChange);
+
 // ====
 // GAME
 // ====
@@ -99,9 +105,16 @@ consvar_t cv_alwaysoverlayinvuln = CVAR_INIT ("alwaysoverlayinvincibility", "Off
 // SAVEFILES
 // =========
 
+static CV_PossibleValue_t perfectsavestripe_t[] = {{0, "MIN"}, {255, "MAX"}, {0, NULL}};
+
 static void SV_UseContinues_OnChange(void);
 
 consvar_t cv_storesavesinfolders = CVAR_INIT ("storesavesinfolders", "Off", CV_SAVE|CV_CALL, CV_OnOff, STAR_SetSavefileProperties);
+
+consvar_t cv_perfectsave = CVAR_INIT ("perfectsave", "On", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_perfectsavestripe1 = CVAR_INIT ("perfectsavestripe1", "134", CV_SAVE, perfectsavestripe_t, NULL);
+consvar_t cv_perfectsavestripe2 = CVAR_INIT ("perfectsavestripe2", "201", CV_SAVE, perfectsavestripe_t, NULL);
+consvar_t cv_perfectsavestripe3 = CVAR_INIT ("perfectsavestripe3", "1", CV_SAVE, perfectsavestripe_t, NULL);
 
 consvar_t cv_continues = CVAR_INIT ("continues", "Off", CV_SAVE|CV_CALL, CV_OnOff, SV_UseContinues_OnChange);
 
@@ -120,6 +133,7 @@ consvar_t cv_tsourdt3rd_drrr_debug_virtualkeyboard = CVAR_INIT ("tsourdt3rd_drrr
 // ------------------------ //
 //        Functions
 // ------------------------ //
+
 #if 0
 static void TSoURDt3rd_InitServerCommands(void)
 {

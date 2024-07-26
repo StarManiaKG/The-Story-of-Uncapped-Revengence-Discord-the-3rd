@@ -41,7 +41,7 @@ static INT32 S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, I
 // STAR STUFF //
 #include "STAR/star_vars.h" // tsourdt3rd stuff
 #include "STAR/ss_main.h" // STAR_CONS_Printf() //
-#include "STAR/s_sound.h" // M_ResetJukebox //
+#include "STAR/smkg-jukebox.h"
 
 #include "m_menu.h" // cv_defaultmaptrack //
 // END THAT PLEASE //
@@ -2602,7 +2602,7 @@ static void Command_Tunes_f(void)
 	}
 
 	// STAR STUFF: minor tunes propaganda //
-	if (TSoURDt3rd_InAprilFoolsMode())
+	if (TSoURDt3rd_AprilFools_ModeEnabled())
 	{
 		STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "Nice try. Perhaps there's a command you need to turn off first?\n");
 		return;
@@ -2680,13 +2680,13 @@ static void Command_RestartAudio_f(void)
 	I_StartupSound();
 	I_InitMusic();
 
-	M_ResetJukebox(false); // STAR STUFF: fine, i'll let you stop it here... //
-
 	// These must be called or no sound and music until manually set.
 	I_SetSfxVolume(cv_soundvolume.value);
 	S_SetMusicVolume(cv_digmusicvolume.value, cv_midimusicvolume.value);
 	if (Playing()) // Gotta make sure the player is in a level
 		P_RestoreMusic(&players[consoleplayer]);
+
+	M_ResetJukebox(false); // STAR STUFF: fine, i'll let you stop it here... //
 }
 
 void GameSounds_OnChange(void)

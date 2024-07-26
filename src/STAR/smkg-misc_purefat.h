@@ -6,7 +6,7 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  smkg_misc_purefat.h
+/// \file  smkg-misc_purefat.h
 /// \brief Pure Fat intro 2.2.7+ compatibility layer, global header
 
 #ifndef __SMKG_MISC_PUREFAT__

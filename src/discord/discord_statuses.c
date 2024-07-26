@@ -20,7 +20,7 @@
 #include "../z_zone.h"
 
 #include "../STAR/star_vars.h" // TSoURDt3rd struct //
-#include "../STAR/ss_misc.h" // STAR_M_RemoveStringChars() //
+#include "../STAR/smkg-misc.h" // STAR_M_RemoveStringChars() //
 
 // ------------------------ //
 //        Variables

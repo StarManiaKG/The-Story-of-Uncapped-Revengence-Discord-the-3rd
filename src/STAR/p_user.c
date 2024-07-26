@@ -16,7 +16,8 @@
 
 #include "ss_main.h" // STAR_CONS_Printf() //
 #include "p_user.h"
-#include "s_sound.h"
+#include "smkg-jukebox.h"
+
 #include "../doomdef.h"
 #include "../g_game.h"
 #include "../s_sound.h"
@@ -163,7 +164,7 @@ void TSoURDt3rd_P_Ticker(void)
 			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_INSTAKILL);
 		}
 
-		if (TSoURDt3rd_InAprilFoolsMode())
+		if (TSoURDt3rd_AprilFools_ModeEnabled())
 		{
 			// Removed Sonic (real)
 			if (strstr(skins[player->skin].name, "sonic"))
@@ -254,7 +255,7 @@ boolean TSoURDt3rd_P_SuperReady(player_t *player)
 	if (!player->rings)
 		return false;
 
-	if (TSoURDt3rd_InAprilFoolsMode())
+	if (TSoURDt3rd_AprilFools_ModeEnabled())
 		return true;
 	else if (TSoURDt3rd_Easter_AllEggsCollected() && ALL7EMERALDS(emeralds))
 		return true;

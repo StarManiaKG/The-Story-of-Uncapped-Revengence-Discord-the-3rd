@@ -43,12 +43,6 @@ INT32 window_y = -1;
 //
 static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 {
-	if (cv_fullscreen.value)
-	{
-		window_x = evt.data1;
-		window_y = evt.data2;
-	}
-
 	switch (evt.event)
 	{
 		case SDL_WINDOWEVENT_MOVED:
@@ -73,12 +67,7 @@ void TSoURDt3rd_I_GetEvent(SDL_Event *evt)
 		case SDL_WINDOWEVENT:
 			Impl_HandleWindowEvent(evt->window);
 			break;
-		case SDL_QUIT:
-			// Usually already done, but just making sure...
-			LUA_HookBool(true, HOOK(GameQuit));
-			I_Quit();
-			break;
 	}
 }
 
-#endif
+#endif // HAVE_SDL
