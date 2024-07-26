@@ -15,7 +15,7 @@
 #include "../m_menu.h" // tsourdt3rd_menu_t //
 
 void TSoURDt3rd_M_AddNewMenu(tsourdt3rd_menu_t *newmenu, menu_t *menup);
-void TSoURDt3rd_M_SetupNextMenu(menu_t *menudef, boolean notransition);
+void TSoURDt3rd_M_SetupNextMenu(menu_t *menudef);
 
 boolean STAR_M_DoesMenuHaveKeyHandler(void);
 

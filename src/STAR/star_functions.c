@@ -10,54 +10,54 @@
 /// \brief Contains all the Info Portraying to TSoURDt3rd's Variables and STAR Functions
 
 #ifdef HAVE_CURL
-#include <curl/curl.h>		// internet variables
-#include "../i_threads.h"	// multithreading variables
+#include <curl/curl.h>			// internet variables
+#include "../i_threads.h"		// multithreading variables
 #endif
 
 #include <signal.h>
 
-#include "star_vars.h" 		// star variables
-#include "ss_main.h"		// star variables 2
-#include "s_sound.h"		// star variables 3
-#include "m_menu.h"			// star variables 4
-#include "smkg_g_inputs.h"	// star variables 5
+#include "star_vars.h" 			// star variables
+#include "ss_main.h"			// star variables 2
+#include "smkg-jukebox.h"		// star variables 3
+#include "m_menu.h"				// star variables 4
+#include "smkg_g_inputs.h"		// star variables 5
 #include "menus/smkg_m_func.h"	// star variables 6
 
-#include "drrr/k_menu.h"	// kart variables
+#include "drrr/k_menu.h"		// kart variables
 
 #include "../i_system.h"
 #include "../doomdef.h"
 #include "../byteptr.h"
-#include "../m_misc.h" 		// extra file functions
-#include "../m_menu.h" 		// egg and command variables
-#include "../d_main.h" 		// event variables
-#include "../deh_soc.h"		// savefile variables
-#include "../keys.h"		// key variables
+#include "../m_misc.h" 			// extra file functions
+#include "../m_menu.h" 			// egg and command variables
+#include "../d_main.h" 			// event variables
+#include "../deh_soc.h"			// savefile variables
+#include "../keys.h"			// key variables
 
-#include "../v_video.h"		// video variables
-#include "../i_video.h"		// video variables 2
+#include "../v_video.h"			// video variables
+#include "../i_video.h"			// video variables 2
 
-#include "../filesrch.h"	// file variables
-#include "../r_skins.h"		// skin variables
-#include "../sounds.h"		// sound variables
-#include "../deh_tables.h"	// sprite/table variables
-#include "../m_random.h"	// m_random functions
-#include "../z_zone.h"		// memory variables
+#include "../filesrch.h"		// file variables
+#include "../r_skins.h"			// skin variables
+#include "../sounds.h"			// sound variables
+#include "../deh_tables.h"		// sprite/table variables
+#include "../m_random.h"		// m_random functions
+#include "../z_zone.h"			// memory variables
 
-#include "../i_net.h"		// net variables
+#include "../i_net.h"			// net variables
 
 #ifdef HAVE_CURL
-#include "../fastcmp.h"		// string variables
+#include "../fastcmp.h"			// string variables
 #endif
 
 #ifdef HAVE_SDL
-#include "SDL.h"			// sdl variables
-#include "../sdl/sdlmain.h"	// sdl variables 2
+#include "SDL.h"				// sdl variables
+#include "../sdl/sdlmain.h"		// sdl variables 2
 #endif
 
-#include "../hu_stuff.h"	// hud variables
+#include "../hu_stuff.h"		// hud variables
 
-#include "../console.h"		// console variables
+#include "../console.h"			// console variables
 
 //////////////////////////////////////
 //		ABSOLUTELY HILARIOUS	 	//
@@ -181,89 +181,6 @@ consvar_t cv_vapemode = CVAR_INIT ("vapemode", "Off", CV_SAVE|CV_CALL, vapemode_
 
 //// FUNCTIONS ////
 // GAME //
-//
-// void TSoURDt3rd_InitializePlayer(INT32 playernum)
-// Initializes TSoURDt3rd's Structures For the Given Player
-//
-void TSoURDt3rd_InitializePlayer(INT32 playernum)
-{
-	// Main //
-	TSoURDt3rd_t *TSoURDt3rd							= &TSoURDt3rdPlayers[playernum];
-
-	TSoURDt3rd->usingTSoURDt3rd							= true;
-	TSoURDt3rd->checkedVersion							= ((playeringame[playernum] && players[playernum].bot) ? true : false);
-
-	TSoURDt3rd->num										= playernum+1;
-
-	TSoURDt3rd->gamestate								= STAR_GS_NULL;
-
-	// Game //
-	TSoURDt3rd->loadingScreens.loadCount 				= 0;
-	TSoURDt3rd->loadingScreens.loadPercentage 			= 0;
-	TSoURDt3rd->loadingScreens.bspCount 				= 0;
-
-	TSoURDt3rd->loadingScreens.screenToUse 				= 0;
-
-	TSoURDt3rd->loadingScreens.loadComplete 			= false;
-
-	// Servers //
-	TSoURDt3rd->masterServerAddressChanged				= false;
-
-	TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd		= true;
-	
-	TSoURDt3rd->serverPlayers.majorVersion				= TSoURDt3rd_CurrentMajorVersion();
-	TSoURDt3rd->serverPlayers.minorVersion				= TSoURDt3rd_CurrentMinorVersion();
-	TSoURDt3rd->serverPlayers.subVersion				= TSoURDt3rd_CurrentSubversion();
-
-	TSoURDt3rd->serverPlayers.serverTSoURDt3rdVersion	= TSoURDt3rd_CurrentVersion();
-
-	// Jukebox //
-	TSoURDt3rd->jukebox.Unlocked 						= false;
-	if (playernum == consoleplayer)
-		M_ResetJukebox(false);
-}
-
-//
-// void TSoURDt3rd_ClearPlayer(INT32 playernum)
-// Fully Resets the TSoURDt3rd Player Table for Both Servers and the Local Client
-//
-void TSoURDt3rd_ClearPlayer(INT32 playernum)
-{
-#if 0
-	SINT8 node = (netgame ? (SINT8)doomcom->remotenode : playernum);
-	SINT8 mynode = ((netbuffer->u.servercfg.clientnode < MAXPLAYERS) ? (SINT8)netbuffer->u.servercfg.clientnode : consoleplayer);
-#else
-	INT32 node = playernum;
-	INT32 mynode = consoleplayer;
-#endif
-
-	for (INT32 i = 0; i < MAXPLAYERS; i++)
-	{
-		if (!TSoURDt3rdPlayers[i].num)
-			continue;
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "num %d = %d\n", i, TSoURDt3rdPlayers[i].num);
-	}
-
-	if (node == mynode)
-	{
-#if 0		
-		if (!memcmp(&TSoURDt3rdPlayers[node], &TSoURDt3rdPlayers[mynode], sizeof(TSoURDt3rd_t)))
-			return;
-#endif
-
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "before: tsourdt3rdnode - %d\n", TSoURDt3rdPlayers[node].num);
-
-		TSoURDt3rdPlayers[mynode] = TSoURDt3rdPlayers[node];
-		M_Memcpy(&TSoURDt3rdPlayers[mynode], &TSoURDt3rdPlayers[node], sizeof(TSoURDt3rd_t));
-
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "after: tsourdt3rdnode - %d\n", TSoURDt3rdPlayers[mynode].num);
-		return;
-	}
-
-	if ((!netgame) || (netgame && !playeringame[node]))
-		memset(&TSoURDt3rdPlayers[node], 0, sizeof(TSoURDt3rd_t));
-}
-
 //
 // void STAR_LoadingScreen(void)
 // Displays a Loading Screen
@@ -1158,7 +1075,7 @@ const char *TSoURDt3rd_DetermineLevelMusic(void)
 #endif
 
 	// Event music //
-	if (TSoURDt3rd_InAprilFoolsMode())
+	if (TSoURDt3rd_AprilFools_ModeEnabled())
 		return "_hehe";
 
 	// Gamestate-based music //

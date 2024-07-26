@@ -79,7 +79,7 @@ static inline fixed_t BunchedCharacterDim(
 	(void)chw;
 	(void)hchw;
 	(void)dupx;
-	(*cwp) = FixedMul((INT32)max(1, (*cwp) - 1) << FRACBITS, scale);
+	(*cwp) = FixedMul(max((INT32)1, (INT32)(*cwp) - 1) << FRACBITS, scale);
 	return 0;
 }
 
@@ -93,7 +93,7 @@ static inline fixed_t MenuCharacterDim(
 	(void)chw;
 	(void)hchw;
 	(void)dupx;
-	(*cwp) = FixedMul((INT32)max(1, (*cwp) - 2) << FRACBITS, scale);
+	(*cwp) = FixedMul(max((INT32)1, (INT32)(*cwp) - 2) << FRACBITS, scale);
 	return 0;
 }
 
@@ -107,7 +107,7 @@ static inline fixed_t GamemodeCharacterDim(
 	(void)chw;
 	(void)hchw;
 	(void)dupx;
-	(*cwp) = FixedMul((INT32)max(1, (*cwp) - 2) << FRACBITS, scale);
+	(*cwp) = FixedMul(max((INT32)1, (INT32)(*cwp) - 2) << FRACBITS, scale);
 	return 0;
 }
 
@@ -121,7 +121,7 @@ static inline fixed_t FileCharacterDim(
 	(void)chw;
 	(void)hchw;
 	(void)dupx;
-	(*cwp) = FixedMul((INT32)max(1, (*cwp) - 3) << FRACBITS, scale);
+	(*cwp) = FixedMul(max((INT32)1, (INT32)(*cwp) - 3) << FRACBITS, scale);
 	return 0;
 }
 
@@ -135,7 +135,7 @@ static inline fixed_t LSTitleCharacterDim(
 	(void)chw;
 	(void)hchw;
 	(void)dupx;
-	(*cwp) = FixedMul((INT32)max(1, (*cwp) - 4) << FRACBITS, scale);
+	(*cwp) = FixedMul(max((INT32)1, (INT32)(*cwp) - 4) << FRACBITS, scale);
 	return 0;
 }
 
@@ -655,7 +655,7 @@ void DRRR_V_DrawStringScaled(
 	}
 }
 
-fixed_t V_StringScaledWidth(
+fixed_t DRRR_V_StringScaledWidth(
 		fixed_t      scale,
 		fixed_t spacescale,
 		fixed_t    lfscale,
@@ -781,7 +781,7 @@ fixed_t V_StringScaledWidth(
 }
 
 // Modify a string to wordwrap at any given width.
-char * V_ScaledWordWrap(
+char * DRRR_V_ScaledWordWrap(
 		fixed_t          w,
 		fixed_t      scale,
 		fixed_t spacescale,

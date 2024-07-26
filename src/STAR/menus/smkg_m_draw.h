@@ -101,13 +101,6 @@ void STAR_M_PostDrawer(void);
 
 void STAR_M_DrawMenuTooltips(void);
 
-void M_DrawTSoURDt3rdOptions(void);
-void M_OptionsTick(void);
-void M_InitOptions(INT32 choice);
-boolean M_OptionsQuit(void);
-boolean M_OptionsInputs(INT32 choice);
-
-void M_DrawKartGamemodeMenu(void);
-void M_FlipKartGamemodeMenu(boolean slide);
+void STAR_M_DrawQuitGraphic(void);
 
 #endif // __SMKG_M_DRAW__

@@ -2883,7 +2883,7 @@ void CL_ClearPlayer(INT32 playernum)
 	memset(&players[playernum], 0, sizeof (player_t));
 	memset(playeraddress[playernum], 0, sizeof(*playeraddress));
 
-	//TSoURDt3rd_ClearPlayer(playernum); // STAR STUFF: Free this player from their prison. //
+	TSoURDt3rd_ClearPlayer(playernum); // STAR STUFF: Free this player from their prison. //
 }
 
 //
@@ -3876,32 +3876,6 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 	{
 		char joinmsg[256];
 
-		// STAR STUFF YAY //
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "ADDING USER: node - %d, consoleplayer - %d\n", node, consoleplayer);
-
-		if (node == mynode)
-		{
-			TSoURDt3rdPlayers[consoleplayer] = TSoURDt3rdPlayers[0];
-			M_Memcpy(&TSoURDt3rdPlayers[consoleplayer], &TSoURDt3rdPlayers[0], sizeof(TSoURDt3rd_t));
-
-#if 0
-			// STAR NOTE: MAJOR STAR TODO NOTE: come back here later after getting better internet doofus //
-			TSoURDt3rd_ClearPlayer(consoleplayer);
-			memset(&TSoURDt3rdPlayers[0], 0, sizeof(TSoURDt3rd_t));
-#endif
-		}
-
-		if (node != mynode)
-		{
-			if (server)
-				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, (TSoURDt3rdPlayers[newplayernum].usingTSoURDt3rd ?
-					("Joining player is using TSoURDt3rd!\n") :
-					("Joining player doesn't seem to be using TSoURDt3rd, please be cautious of what you do!\n")));
-
-			S_StartSound(NULL, STAR_JoinSFX); // DISCORD STUFF: (technically star stuff too): plays sound when joining //
-		}
-		// END THAT PLEASE //
-
 		if (rejoined)
 			strcpy(joinmsg, M_GetText("\x82*%s has rejoined the game (player %d)"));
 		else
@@ -3917,6 +3891,8 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 		}
 
 		HU_AddChatText(joinmsg, false);
+
+		TSoURDt3rd_MovePlayerStructure(node, newplayernum, mynode); // STAR STUFF: move player structure data for me please //
 	}
 
 	if (server && multiplayer && motd[0] != '\0')
@@ -4089,8 +4065,6 @@ static void SV_SendRefuse(INT32 node, const char *reason)
 	netbuffer->packettype = PT_SERVERREFUSE;
 	HSendPacket(node, true, 0, strlen(netbuffer->u.serverrefuse.reason) + 1);
 	Net_CloseConnection(node);
-
-	TSoURDt3rd_ClearPlayer(node); // STAR STUFF: clear our players, pretty please //
 }
 
 // used at txtcmds received to check packetsize bound
@@ -4214,51 +4188,6 @@ static void HandleConnect(SINT8 node)
 				return;
 			}
 		}
-
-#if 0
-		// STAR STUFF //
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "ADDING FOR CONNECT: node - %d, consoleplayer - %d\n", node, consoleplayer);
-
-#if 0
-		TSoURDt3rdPlayers[consoleplayer] = TSoURDt3rdPlayers[0];
-		M_Memcpy(&TSoURDt3rdPlayers[consoleplayer], &TSoURDt3rdPlayers[9], sizeof(TSoURDt3rd_t));
-		memset(&TSoURDt3rdPlayers[0], 0, sizeof(TSoURDt3rd_t));
-
-#if 0
-		if (netbuffer->u.clientcfg.tsourdt3rd != 1)
-		{
-			if (TSoURDt3rdPlayers[node].usingTSoURDt3rd)
-				memset(&TSoURDt3rdPlayers[node], 0, sizeof(TSoURDt3rd_t));
-		}
-		else
-		{
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (playeringame[i] || nodeingame[i] || i == node || node == netbuffer->u.servercfg.clientnode)
-					continue;
-				memset(&TSoURDt3rdPlayers[i], 0, sizeof(TSoURDt3rd_t));
-			}
-		}
-#endif
-#endif
-#if 0
-#if 0
-		if ((SINT8)doomcom->remotenode == netbuffer->u.servercfg.clientnode)
-		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "ADDING: node - %d, consoleplayer - %d\n", node, consoleplayer);
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "before: tsourdt3rdnode - %d\n", TSoURDt3rdPlayers[node].num);
-
-			TSoURDt3rdPlayers[node] = TSoURDt3rdPlayers[consoleplayer];
-			M_Memcpy(&TSoURDt3rdPlayers[node], &TSoURDt3rdPlayers[consoleplayer], sizeof(TSoURDt3rd_t));
-
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "after: tsourdt3rdnode - %d\n", TSoURDt3rdPlayers[node].num);
-		}
-#else
-		TSoURDt3rd_ClearPlayer(node);
-#endif
-#endif
-		// END THE STAR STUFF TOO //
-#endif
 
 		// client authorised to join
 		nodewaiting[node] = (UINT8)(netbuffer->u.clientcfg.localplayers - playerpernode[node]);
@@ -4529,38 +4458,7 @@ static void HandlePacketFromAwayNode(SINT8 node)
 				memcpy(server_context, netbuffer->u.servercfg.server_context, 8);
 			}
 
-#ifdef HAVE_DISCORDSUPPORT
-			if (TSoURDt3rdPlayers[node].serverPlayers.serverUsesTSoURDt3rd)
-			{
-				discordInfo.serv.maxPlayers = netbuffer->u.servercfg.maxplayer;
-				discordInfo.serv.joinsAllowed = netbuffer->u.servercfg.allownewplayer;
-				discordInfo.serv.everyoneCanInvite = netbuffer->u.servercfg.discordinvites;
-			}
-			else
-			{
-				discordInfo.serv.maxPlayers = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
-				discordInfo.serv.joinsAllowed = cv_allownewplayer.value;
-				discordInfo.serv.everyoneCanInvite = (boolean)cv_discordinvites.value;
-			}
-#endif
-
-			// STAR STUFF: Check if the Server is Using TSoURDt3rd //
-			TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[node];
-			TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd = (netbuffer->u.servercfg.tsourdt3rd != 1 ? 0 : 1);
-
-			// Print Some Little Strings
-			if (client)
-				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, (TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd ? 
-					("Server uses TSoURDt3rd, running features...\n") :
-					("Server either doesn't use TSoURDt3rd or is using an outdated TSoURDt3rd, working around this...\n")));
-
-			// Set All Our Properties, and We're Done :)
-			TSoURDt3rd->serverPlayers.majorVersion = (TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd ? netbuffer->u.servercfg.tsourdt3rdmajorversion : 0);
-			TSoURDt3rd->serverPlayers.minorVersion = (TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd ? netbuffer->u.servercfg.tsourdt3rdminorversion : 0);
-			TSoURDt3rd->serverPlayers.subVersion = (TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd ? netbuffer->u.servercfg.tsourdt3rdsubversion : 0);
-
-			TSoURDt3rd->serverPlayers.serverTSoURDt3rdVersion = STAR_CombineNumbers(3, TSoURDt3rd->serverPlayers.majorVersion, TSoURDt3rd->serverPlayers.minorVersion, TSoURDt3rd->serverPlayers.subVersion);
-			// END OF OUR JUNK! //
+			TSoURDt3rd_HandleCustomPackets(node); // STAR STUFF: handle our custom packet data please :) //
 
 			nodeingame[(UINT8)servernode] = true;
 			serverplayer = netbuffer->u.servercfg.serverplayer;

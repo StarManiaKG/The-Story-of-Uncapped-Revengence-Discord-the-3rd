@@ -11,7 +11,8 @@
 
 #include "ss_main.h"
 #include "m_menu.h"
-#include "s_sound.h"
+#include "smkg-jukebox.h"
+
 #include "../doomstat.h"
 #include "../d_clisrv.h"
 #include "../d_player.h"
@@ -44,9 +45,22 @@ gtdesc_t defaultGametypeTitles[NUMGAMETYPES];
 
 static INT32 tsourdt3rd_quitsounds[] =
 {
-	// we're changing things up even further!
-	// going even further beyond!
-	sfx_cdpcm3, // 04-11-23
+	// srb2: holy shit we're changing things up!
+	sfx_itemup, // Tails 11-09-99
+	sfx_jump, // Tails 11-09-99
+	sfx_skid, // Inu 04-03-13
+	sfx_spring, // Tails 11-09-99
+	sfx_pop,
+	sfx_spdpad, // Inu 04-03-13
+	sfx_wdjump, // Inu 04-03-13
+	sfx_mswarp, // Inu 04-03-13
+	sfx_splash, // Tails 11-09-99
+	sfx_floush, // Tails 11-09-99
+	sfx_gloop, // Tails 11-09-99
+	sfx_s3k66, // Inu 04-03-13
+	sfx_s3k6a, // Inu 04-03-13
+	sfx_s3k73, // Inu 04-03-13
+	sfx_chchng, // Tails 11-09-99
 
 	// srb2kart: you ain't seen nothing yet
 	sfx_kc2e,
@@ -77,6 +91,9 @@ static INT32 tsourdt3rd_quitsounds[] =
 	sfx_s3k42,
 	//sfx_kpogos,
 	//sfx_screec,
+
+	// tsourdt3rd: this is to go even further beyond!
+	sfx_cdpcm3, // Star 04-11-23
 };
 
 // =============
@@ -342,7 +359,7 @@ INT32 STAR_M_SelectQuitMessage(void)
 	INT32 randomMessage = M_RandomKey(NUM_QUITMESSAGES); // Assign a quit message //
 
 	STAR_M_InitDynamicQuitMessages();
-	if (!TSoURDt3rd_InAprilFoolsMode())
+	if (!TSoURDt3rd_AprilFools_ModeEnabled())
 	{
 		// No April Fools messages when it's not April Fools!
 		while (randomMessage >= TSOURDT3RD_AF_QUITAMSG1 && randomMessage <= TSOURDT3RD_AF_QUITAMSG4)
@@ -371,18 +388,8 @@ INT32 STAR_M_SelectQuitMessage(void)
 			break;
 
 		case QUIT2MSG3:
-		{
-			switch (M_RandomKey(1))
-			{
-				case 1:
-					S_StartSound(NULL, sfx_supert);
-					break;
-				default:
-					S_StartSound(NULL, sfx_cgot);
-					break;
-			}
+			S_StartSound(NULL, (M_RandomKey(1) ? sfx_supert : sfx_cgot));
 			break;
-		}
 
 		case QUIT2MSG4:
 			S_StartSound(NULL, sfx_spin);
@@ -406,112 +413,6 @@ INT32 STAR_M_SelectQuitMessage(void)
 
 	return randomMessage; // Return our random message and we're done :) //
 }
-
-//
-// void STAR_M_DrawQuitGraphic(void)
-// Draws a quit graphic for us.
-//
-void STAR_M_DrawQuitGraphic(void)
-{
-	const char *quitgfx;
-
-	switch (cv_quitscreen.value)
-	{
-		case 1: // aseprite moment
-			quitgfx = "SS_QCOLR";
-			break;
-		case 2: // funny aseprite moment
-			quitgfx = "SS_QSMUG";
-			break;
-		case 3: // kel world aseprite moment
-			quitgfx = "SS_QKEL";
-			break;
-		case 4: // secret aseprite moment
-			quitgfx = "SS_QATRB";
-			break;
-		default: // Demo 3 Quit Screen Tails 06-16-2001
-			quitgfx = "GAMEQUIT";
-			break;
-	}
-
-	V_DrawScaledPatch(0, 0, 0, W_CachePatchName(quitgfx, PU_PATCH));
-	if (cv_quitscreen.value)
-	{
-		// psst, disclaimer; this game should not be sold :p
-		V_DrawScaledPatch(0, 0, 0, W_CachePatchName("SS_QDISC", PU_PATCH));
-	}
-}
-
-// ================
-// TSOURDT3RD MENUS
-// ================
-
-#if 0
-static void M_TSoURDt3rdOptions(INT32 choice)
-{
-	(void)choice;
-
-	// Event Options //
-	// Main Option Header
-	OP_Tsourdt3rdOptionsMenu[op_eventoptionsheader].status =
-		((eastermode || aprilfoolsmode || xmasmode) ? IT_HEADER : IT_HEADER|IT_GRAYEDOUT);
-
-	// Easter
-	M_UpdateEasterStuff();
-
-	// April Fools
-	OP_Tsourdt3rdOptionsMenu[op_aprilfools].status =
-		(aprilfoolsmode ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
-
-	// Game Options //
-	STAR_LoadingScreen_OnChange();
-
-	OP_Tsourdt3rdOptionsMenu[op_fpscountercolor].status =
-		(cv_ticrate.value ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
-	STAR_TPSRate_OnChange();
-
-	STAR_Shadow_OnChange();
-
-	OP_Tsourdt3rdOptionsMenu[op_allowtypicaltimeover].status =
-		(!netgame ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
-
-	STAR_UpdateNotice_OnChange();
-
-	// Audio Options //
-	OP_Tsourdt3rdOptionsMenu[op_defaultmaptrack].status =
-		(!(Playing() && playeringame[consoleplayer]) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
-
-	// Player Options //
-	OP_Tsourdt3rdOptionsMenu[op_shieldblockstransformation].status =
-		(!netgame ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
-	
-	OP_Tsourdt3rdOptionsMenu[op_alwaysoverlayinvuln].status =
-		((players[consoleplayer].powers[pw_invulnerability] && (players[consoleplayer].powers[pw_shield] & SH_NOSTACK) != SH_NONE) ? IT_GRAYEDOUT : IT_CVAR|IT_STRING);
-
-	// Savegame Options //
-	OP_Tsourdt3rdOptionsMenu[op_storesavesinfolders].status =
-		(!netgame ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
-
-	STAR_PerfectSave_OnChange();
-
-	OP_Tsourdt3rdOptionsMenu[op_continues].status =
-		(!(Playing() && playeringame[consoleplayer]) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
-
-	// Extra Options //
-	// TF2
-	OP_Tsourdt3rdOptionsMenu[op_dispensergoingup].status =
-		(!netgame ? IT_CALL|IT_STRING : IT_GRAYEDOUT);
-
-#ifdef HAVE_SDL
-	STAR_WindowTitleVars_OnChange();
-#else
-	for (INT32 i = op_windowtitletype; i < op_memesonwindowtitle; i++)
-		OP_Tsourdt3rdOptionsMenu[i].status = IT_GRAYEDOUT;	
-#endif
-
-	M_SetupNextMenu(&OP_TSoURDt3rdOptionsDef);
-}
-#endif
 
 // =======
 // JUKEBOX
@@ -942,7 +843,7 @@ static void M_HandleTSoURDt3rdJukebox(INT32 choice)
 				}
 				else
 				{
-					if (TSoURDt3rd_InAprilFoolsMode())
+					if (TSoURDt3rd_AprilFools_ModeEnabled())
 					{
 						strcpy(curplaying->title, "Get rickrolled lol");
 						strcpy(curplaying->name, "_hehe");

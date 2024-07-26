@@ -1570,7 +1570,7 @@ void P_PlayJingleMusic(player_t *player, const char *musname, UINT16 musflags, b
 	// STAR STUFF: don't play jingles if we got jukebox or april fools music //
 	if (TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack)
 		return;
-	else if (TSoURDt3rd_InAprilFoolsMode())
+	else if (TSoURDt3rd_AprilFools_ModeEnabled())
 		return;
 	// DONE! //
 
@@ -5295,15 +5295,15 @@ static void P_DoJumpStuff(player_t *player, ticcmd_t *cmd)
 		
 		else if (((cmd->buttons & BT_SPIN))
 			// STAR STUFF //
-			|| ((TSoURDt3rd_InAprilFoolsMode() || (EnableEasterEggHuntBonuses && currenteggs == TOTALEGGS))
+			|| ((TSoURDt3rd_AprilFools_ModeEnabled() || (EnableEasterEggHuntBonuses && currenteggs == TOTALEGGS))
 				&& (cmd->buttons & BT_JUMP) && !netgame && !(players[consoleplayer].powers[pw_super])))
 			// END THAT MESS PLEASE //
 		{
 			if ((!(player->pflags & PF_SPINDOWN) && P_SuperReady(player))
-				|| ((TSoURDt3rd_InAprilFoolsMode() || (EnableEasterEggHuntBonuses && currenteggs == TOTALEGGS)) && !netgame && P_SuperReady(player))) // STAR NOTE: i was here, and it's a little messy lol
+				|| ((TSoURDt3rd_AprilFools_ModeEnabled() || (EnableEasterEggHuntBonuses && currenteggs == TOTALEGGS)) && !netgame && P_SuperReady(player))) // STAR NOTE: i was here, and it's a little messy lol
 			{
 				// SOME OF THIS IS STAR STUFF //
-				if ((TSoURDt3rd_InAprilFoolsMode() || (EnableEasterEggHuntBonuses && currenteggs == TOTALEGGS)) && !netgame)
+				if ((TSoURDt3rd_AprilFools_ModeEnabled() || (EnableEasterEggHuntBonuses && currenteggs == TOTALEGGS)) && !netgame)
 				{
 					if (gametyperules & GTR_POWERSTONES)
 					{
@@ -9647,7 +9647,7 @@ static void P_DeathThink(player_t *player)
 	player->deltaviewheight = 0;
 
 	// STAR STUFF: it's funnier this way //
-	if (TSoURDt3rd_InAprilFoolsMode() && ultimatemode && !netgame)
+	if (TSoURDt3rd_AprilFools_ModeEnabled() && ultimatemode && !netgame)
 		return;
 	// END OF STAR STUFF YAY //
 

@@ -134,19 +134,6 @@ void DRRR_HU_Init(void)
 
 		DIG  (3);
 
-#if 0
-		ADIM (KART);
-		PR   ("MKFNT");
-		REG;
-
-		ADIM (NUM);
-		PR   ("TMFNT");
-		REG;
-
-		PR   ("TMFNS");
-		REG;
-#endif
-
 		ADIM (LT);
 		PR   ("GAMEM");
 		REG;
@@ -157,16 +144,6 @@ void DRRR_HU_Init(void)
 
 		PR   ("TLWFN");
 		REG;
-
-#if 0
-		ADIM (NUM);
-		PR   ("OPPRF");
-		REG;
-
-		ADIM (NUM);
-		PR   ("PINGF");
-		REG;
-#endif
 
 #undef  REG
 #undef  DIG

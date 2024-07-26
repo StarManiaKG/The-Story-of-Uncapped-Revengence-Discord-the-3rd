@@ -525,9 +525,6 @@ extern consvar_t cv_defaultmaptrack;
 // players
 extern consvar_t cv_armageddonnukewhilesuper;
 
-// savefiles
-extern consvar_t cv_perfectsave, cv_perfectsavestripe1, cv_perfectsavestripe2, cv_perfectsavestripe3;
-
 // jukebox
 extern consvar_t cv_jukeboxspeed, cv_jukeboxhud, cv_luacanstopthejukebox;
 

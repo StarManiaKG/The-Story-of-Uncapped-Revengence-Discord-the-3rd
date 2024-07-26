@@ -88,7 +88,8 @@
  * Last updated 2024 / 06 / 25 - TSOURDT3RD V4 (2.2.13) - added some Kart Krew sounds for a cool menu system upgrade
  * Last updated 2024 / 06 / 25 - TSOURDT3RD V4 (2.2.13) - organized the pk3 and deleted a no-longer-needed menu graphic
  * Last updated 2024 / 07 / 08 - TSOURDT3RD V4 (2.2.13) - added graphic needed for DRRR tooltip support
+ * Last updated 2024 / 07 / 25 - TSOURDT3RD V4 (2.2.13) - added graphics needed for improved menus
 */
-#define ASSET_HASH_TSOURDT3RD_PK3 "c422522d667b0e283c80baece48e19ad"
+#define ASSET_HASH_TSOURDT3RD_PK3 "e62e7fb4bdc9b76be10dc2d762d3c900"
 
 #endif

@@ -6,13 +6,14 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  ss_aprilfools.c
-/// \brief April Fools event, related functions and data
+/// \file  smkg-aprilfools.c
+/// \brief April Fools event related functions and data
 
 #include "../smkg-cvars.h"
+#include "../smkg-jukebox.h"
 #include "../ss_main.h"
 #include "../m_menu.h"
-#include "../s_sound.h"
+
 #include "../../g_demo.h"
 #include "../../g_game.h" // playeringame[]
 #include "../../v_video.h"
@@ -20,26 +21,23 @@
 #include "../../d_main.h" // autoloaded/autoloading //
 
 // ------------------------ //
-//        Variables
-// ------------------------ //
-
-static void STAR_AprilFools_OnChange(void);
-consvar_t cv_aprilfools_ultimatemode = CVAR_INIT ("aprilfools_ultimatemode", "Off", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, STAR_AprilFools_OnChange);
-
-// ------------------------ //
 //        Functions
 // ------------------------ //
 
 //
-// boolean TSoURDt3rd_InAprilFoolsMode(void)
+// boolean TSoURDt3rd_AprilFools_ModeEnabled(void)
 // Returns whether or not TSoURDt3rd is in April Fools Mode.
 //
-boolean TSoURDt3rd_InAprilFoolsMode(void)
+boolean TSoURDt3rd_AprilFools_ModeEnabled(void)
 {
-	return (aprilfoolsmode && cv_aprilfools_ultimatemode.value);
+	return (aprilfoolsmode && cv_tsourdt3rd_aprilfools_ultimatemode.value);
 }
 
-static void STAR_AprilFools_ChangeMenus(void)
+//
+// void TSoURD3rd_AprilFools_OnChange(void)
+// Routine for the main April Fools command.
+//
+static void AprilFools_ChangeMenus(void)
 {
 	INT32 menu = 1;
 
@@ -54,7 +52,7 @@ static void STAR_AprilFools_ChangeMenus(void)
 	if (demoplayback && titledemo)
 		G_CheckDemoStatus();
 
-	if (!cv_aprilfools_ultimatemode.value)
+	if (!cv_tsourdt3rd_aprilfools_ultimatemode.value)
 	{
 		OP_Tsourdt3rdOptionsMenu[op_isitcalledsingleplayer].status = IT_CVAR|IT_STRING;
 		memmove(&gametypedesc, &defaultGametypeTitles, sizeof(gtdesc_t)); // Gametypes
@@ -126,15 +124,16 @@ static void STAR_AprilFools_ChangeMenus(void)
 	OP_Tsourdt3rdOptionsMenu[op_isitcalledsingleplayer].status = IT_GRAYEDOUT;
 }
 
-static void STAR_AprilFools_OnChange(void)
+void TSoURD3rd_AprilFools_OnChange(void)
 {
 	if (!aprilfoolsmode)
 		return;
-	STAR_AprilFools_ChangeMenus();
+
+	AprilFools_ChangeMenus();
 
 	if (Playing() || playeringame[consoleplayer])
 	{
-		if (TSoURDt3rd_InAprilFoolsMode() && cursaveslot > NOSAVESLOT && !netgame)
+		if (TSoURDt3rd_AprilFools_ModeEnabled() && cursaveslot > NOSAVESLOT && !netgame)
 		{
 			STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nthis savefile will not save until you turn this mode off.\n");
 			M_StartMessage(va("%c%s\x80\nYou have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nthis savefile will not save until you turn this mode off.\n(Press any key to continue.)\n", ('\x80' + (V_MENUCOLORMAP|V_CHARCOLORSHIFT)), "TSoURDt3rd Notice"),NULL,MM_NOTHING);

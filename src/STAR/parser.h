@@ -13,6 +13,7 @@
 #define __STAR_PARSER__
 
 #include "ss_main.h" // STAR_CONS_Printf() & STAR_M_StartMessage() //
+
 #include "../doomstat.h"
 #include "../i_system.h"
 #include "../doomdef.h"

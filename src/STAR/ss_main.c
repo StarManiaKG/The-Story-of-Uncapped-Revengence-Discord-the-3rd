@@ -166,7 +166,7 @@ void TSoURDt3rd_D_Display(void)
 		case GS_ENDING:
 		case GS_CREDITS:
 		case GS_EVALUATION:
-			if (TSoURDt3rd_InAprilFoolsMode())
+			if (TSoURDt3rd_AprilFools_ModeEnabled())
 				I_Error("SIGSEGV - seventh sentinel (core dumped)");
 			break;
 
@@ -267,7 +267,7 @@ void TSoURDt3rd_CheckTime(void)
 		{
 			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "TSoURDt3rd_CheckTime(): April Fools Mode Enabled!\n");
 
-			CV_RegisterVar(&cv_aprilfools_ultimatemode);
+			CV_RegisterVar(&cv_tsourdt3rd_aprilfools_ultimatemode);
 
 			aprilfoolsmode = true;
 			modifiedgame = false;

@@ -6,11 +6,11 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  star_unused.c
+/// \file  smkg-unused.c
 /// \brief Data portraying to, at least currently, TSoURDt3rd's unused Stuff
 
-#include "../doomdef.h"
-#include "../w_wad.h"
+#include "../../doomdef.h"
+#include "../../w_wad.h"
 
 // ------------------------ //
 //        Functions
@@ -20,6 +20,7 @@
 // NUMBERS
 // =======
 
+//
 // INT32 **STAR_SplitNumber(INT32 NUMBER, boolean useINT16Format)
 // Splits numbers Into smaller numbers, with size depending on 'useINT16Format'.
 //
@@ -27,6 +28,7 @@
 //	NUMBER == 280, useINT16Format = false		=	Returned Number = 28, 0
 //	NUMBER == 20000000, useINT16Format = true	=	Returned Number = 20, 00, 00, 00
 //
+
 INT32 **finalSplitNumbers;
 
 INT32 **STAR_SplitNumber(INT32 NUMBER, boolean useINT16Format)
@@ -84,7 +86,7 @@ INT32 **STAR_SplitNumber(INT32 NUMBER, boolean useINT16Format)
 // ====
 
 //
-// W_GetNumForMusicName
+// lumpnum_t W_GetNumForMusicName(const char *name)
 //
 // Calls W_CheckNumForName, but does NOT bomb out if not found.
 // Geared towards checking for music files where the lump not being found is not a call for a crash.
@@ -106,27 +108,4 @@ lumpnum_t W_GetNumForMusicName(const char *name)
 
 #if 0
 	if (textures[i]->hash == hash && !strncasecmp(textures[i]->name, name, 8))
-#endif
-
-#if 0
-#if 0
-#if 0
-	if (playernum == node)
-	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "node - %d, consoleplayer - %d\n", node, consoleplayer);
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "before: tsourdt3rdnode - %d\n", TSoURDt3rdPlayers[node].num);
-
-		TSoURDt3rdPlayers[node] = TSoURDt3rdPlayers[playernum];
-		M_Memcpy(&TSoURDt3rdPlayers[node], &TSoURDt3rdPlayers[playernum], sizeof(TSoURDt3rd_t));
-
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "after: tsourdt3rdnode - %d\n", TSoURDt3rdPlayers[node].num);
-	}
-	memset(&TSoURDt3rdPlayers[playernum], 0, sizeof (TSoURDt3rd_t));
-#else
-	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "ARCHIVING: node - %d, consoleplayer - %d\n", node, consoleplayer);
-	TSoURDt3rd_ClearPlayer(node);
-#endif
-#else
-	(void)node;
-#endif
 #endif

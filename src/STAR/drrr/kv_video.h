@@ -32,7 +32,7 @@ extern "C" {
 	V__DrawOneScaleString ((x)<<FRACBITS,(y)<<FRACBITS,scale,option,cm,font,string)
 
 #define V__IntegerStringWidth( scale,option,font,string ) \
-	(V_StringScaledWidth(scale,FRACUNIT,FRACUNIT,option,font,string) / FRACUNIT)
+	(DRRR_V_StringScaledWidth(scale,FRACUNIT,FRACUNIT,option,font,string) / FRACUNIT)
 
 INT32 V_DanceYOffset(INT32 counter);
 
@@ -48,7 +48,7 @@ void DRRR_V_DrawStringScaled(
 		int         font,
 		const char *text);
 
-fixed_t V_StringScaledWidth(
+fixed_t DRRR_V_StringScaledWidth(
 		fixed_t      scale,
 		fixed_t spacescale,
 		fixed_t    lfscale,
@@ -56,7 +56,7 @@ fixed_t V_StringScaledWidth(
 		int        fontno,
 		const char *s);
 
-char * V_ScaledWordWrap(
+char * DRRR_V_ScaledWordWrap(
 		fixed_t          w,
 		fixed_t      scale,
 		fixed_t spacescale,

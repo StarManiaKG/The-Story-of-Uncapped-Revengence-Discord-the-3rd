@@ -538,19 +538,19 @@
     <ClInclude Include="..\STAR\parser.h">
       <Filter>STAR</Filter>
     </ClInclude>
-    <ClInclude Include="..\STAR\s_sound.h">
-      <Filter>STAR</Filter>
-    </ClInclude>
     <ClInclude Include="..\STAR\star_vars.h">
       <Filter>STAR</Filter>
     </ClInclude>
     <ClInclude Include="..\STAR\star_webinfo.h">
       <Filter>STAR</Filter>
     </ClInclude>
-    <ClInclude Include="..\STAR\v_video.h">
+    <ClInclude Include="..\STAR\smkg-cvars.h">
       <Filter>STAR</Filter>
     </ClInclude>
-    <ClInclude Include="..\STAR\smkg-cvars.h">
+    <ClInclude Include="..\STAR\smkg-jukebox.h">
+      <Filter>STAR</Filter>
+    </ClInclude>
+    <ClInclude Include="..\STAR\smkg-v_video.h">
       <Filter>STAR</Filter>
     </ClInclude>
     <ClInclude Include="..\STAR\ss_main.h">
@@ -1075,10 +1075,13 @@
     <ClCompile Include="..\STAR\parser.c">
       <Filter>STAR</Filter>
     </ClCompile>
-    <ClCompile Include="..\STAR\s_sound.c">
+    <ClCompile Include="..\STAR\smkg-cvars.c">
       <Filter>STAR</Filter>
     </ClCompile>
-    <ClCompile Include="..\STAR\smkg-cvars.c">
+    <ClCompile Include="..\STAR\smkg-jukebox.c">
+      <Filter>STAR</Filter>
+    </ClCompile>
+    <ClCompile Include="..\STAR\smkg-v_video.c">
       <Filter>STAR</Filter>
     </ClCompile>
     <ClCompile Include="..\STAR\ss_main.c">
@@ -1087,17 +1090,17 @@
     <ClCompile Include="..\STAR\star_functions.c">
       <Filter>STAR</Filter>
     </ClCompile>
+    <ClCompile Include="..\STAR\events\smkg-aprilfools.c">
+      <Filter>STAR</Filter>
+    </ClCompile>
+    <ClCompile Include="..\STAR\events\ss_easter.c">
+      <Filter>STAR</Filter>
+    </ClCompile>
     <ClCompile Include="..\blua\loslib.c">
       <Filter>BLUA</Filter>
     </ClCompile>
     <ClCompile Include="..\r_bbox.c">
       <Filter>R_Rend</Filter>
-    </ClCompile>
-    <ClCompile Include="..\STAR\events\ss_aprilfools.c">
-      <Filter>STAR</Filter>
-    </ClCompile>
-    <ClCompile Include="..\STAR\events\ss_easter.c">
-      <Filter>STAR</Filter>
     </ClCompile>
     <ClCompile Include="..\hardware\hw_shaders.c">
       <Filter>Hw_Hardware</Filter>

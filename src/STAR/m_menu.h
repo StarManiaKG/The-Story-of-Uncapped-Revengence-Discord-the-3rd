@@ -78,6 +78,15 @@ enum
 	op_memesonwindowtitle
 };
 
+// Fade wipes
+enum
+{
+	tsourdt3rd_wipe_menu_toblack,
+	tsourdt3rd_wipe_menu_final,
+	TSOURDT3RD_NUMWIPEDEFS
+};
+extern UINT8 tsourdt3rd_wipedefs[TSOURDT3RD_NUMWIPEDEFS];
+
 // ================================================================
 // QUIT MESSAGES
 // 	Now externed, and are defined here instead, of inside m_menu.c!
@@ -167,13 +176,14 @@ typedef struct tsourdt3rd_menuitems_s
 
 typedef struct tsourdt3rd_menu_s
 {
-	menu_t                   *menu; // pointer to the current menu_t
-	tsourdt3rd_menuitems_t   *menuitems; // custom tsourdt3rd menu items
+	menu_t                   *menu;                // pointer to the current menu_t
+	tsourdt3rd_menuitems_t   *menuitems;           // custom tsourdt3rd menu items
 
-	INT16                    behaviourflags;     // menubehaviourflags_t
+	INT16                    extra1, extra2;	   // Can be whatever really! Options menu uses extra1 for bg colour.
+	INT16                    behaviourflags;       // menubehaviourflags_t
 
-	INT16                    transitionID;       // only transition if IDs match
-	INT16          			 transitionTics;     // tics for transitions out
+	INT16                    transitionID;         // only transition if IDs match
+	INT16          			 transitionTics;       // tics for transitions out
 
 	void                     (*drawroutine)(void); // draw routine
 	void                     (*tickroutine)(void); // ticker routine
@@ -221,6 +231,16 @@ extern tsourdt3rd_menu_t TSoURDt3rd_OP_DiscordOptionsDef;
 //        Functions
 // ------------------------ //
 
+fixed_t M_TimeFrac(tic_t tics, tic_t duration);
+fixed_t M_ReverseTimeFrac(tic_t tics, tic_t duration);
+fixed_t M_DueFrac(tic_t start, tic_t duration);
+
+// FIXME: C++ template
+#define M_EaseWithTransition(EasingFunc, N) \
+	(menutransition.tics != menutransition.dest ? EasingFunc(menutransition.in ?\
+		M_ReverseTimeFrac(menutransition.tics, menutransition.endmenu->transitionTics) :\
+		M_TimeFrac(menutransition.tics, menutransition.startmenu->transitionTics), 0, N) : 0)
+
 // =======
 // DRAWING
 // =======
@@ -266,6 +286,8 @@ void M_DiscordRequests(INT32 choice);
 const char *M_GetDiscordName(discordRequest_t *r);
 #endif
 
+void M_TSoURDt3rdOptions(INT32 choice);
+
 // ======
 // I QUIT
 // ======
@@ -274,7 +296,6 @@ void STAR_M_InitQuitMessages(void);
 void STAR_M_InitDynamicQuitMessages(void);
 
 INT32 STAR_M_SelectQuitMessage(void);
-void STAR_M_DrawQuitGraphic(void);
 
 // =======
 // JUKEBOX
