@@ -10,20 +10,25 @@
 /// \brief TSoURDt3rd's command library
 
 #include "smkg-cvars.h"
-
 #include "ss_main.h"
 #include "m_menu.h"
 
 #include "drrr/kg_input.h"
 
 #include "../doomstat.h"
+#include "../g_game.h"
 #include "../m_menu.h"
 #include "../v_video.h"
-#include "../g_game.h"
 
 // ------------------------ //
 //        Variables
 // ------------------------ //
+
+// ====
+// MAIN
+// ====
+
+consvar_t cv_tsourdt3rd_main_checkforupdatesonstartup = CVAR_INIT ("tsourdt3rd_main_checkforupdatesonstartup", "Yes", CV_SAVE, CV_YesNo, NULL);
 
 // ======
 // EVENTS
@@ -56,22 +61,18 @@ static CV_PossibleValue_t tsourdt3rd_vidcolor_cons_t[] = {
 	{V_INVERTMAP, "Inverted"},
 	{0, NULL}};
 
+static void G_IsItCalledSinglePlayer_OnChange(void);
 static void G_TimeOver_OnChange(void);
 
 consvar_t cv_startupscreen = CVAR_INIT ("startupscreen", "Default", CV_SAVE, tsourdt3rd_startupscreen_t, NULL);
 consvar_t cv_stjrintro = CVAR_INIT ("stjrintro", "Default", CV_SAVE, tsourdt3rd_stjrintro_t, NULL);
 
-// Ported from Uncapped Plus, TPS is back (for some reason)!
-consvar_t cv_tpsrate = CVAR_INIT ("showtps", "No", CV_SAVE|CV_CALL, tsourdt3rd_tpsrate_cons_t, STAR_TPSRate_OnChange);
-
-consvar_t cv_menucolor = CVAR_INIT ("menucolor", "Yellow", CV_SAVE, tsourdt3rd_vidcolor_cons_t, NULL);
-consvar_t cv_fpscountercolor = CVAR_INIT ("fpscountercolor", "Green", CV_SAVE, tsourdt3rd_vidcolor_cons_t, NULL);
-consvar_t cv_tpscountercolor = CVAR_INIT ("tpscountercolor", "Green", CV_SAVE, tsourdt3rd_vidcolor_cons_t, NULL);
+consvar_t cv_tsourdt3rd_game_isitcalledsingleplayer = CVAR_INIT ("tsourdt3rd_game_isitcalledsingleplayer", "Yes", CV_SAVE|CV_CALL, CV_YesNo, G_IsItCalledSinglePlayer_OnChange);
 
 consvar_t cv_allowtypicaltimeover = CVAR_INIT ("allowtypicaltimeover", "No", CV_SAVE|CV_CALL, CV_YesNo, G_TimeOver_OnChange);
 consvar_t cv_automapoutsidedevmode = CVAR_INIT ("automapoutsidedevmode", "Off", CV_SAVE, CV_OnOff, NULL);
 
-consvar_t cv_soniccd = CVAR_INIT ("soniccd", "Off", CV_SAVE|CV_ALLOWLUA, CV_OnOff, NULL);
+consvar_t cv_tsourdt3rd_game_soniccd = CVAR_INIT ("soniccd", "Off", CV_SAVE|CV_ALLOWLUA, CV_OnOff, NULL);
 
 // ========
 // CONTROLS
@@ -80,16 +81,27 @@ consvar_t cv_soniccd = CVAR_INIT ("soniccd", "Off", CV_SAVE|CV_ALLOWLUA, CV_OnOf
 static void C_PadRumble_OnChange(void);
 static void C_PadRumble2_OnChange(void);
 
-consvar_t cv_tsourdt3rd_drrr_rumble[2] = {
-	CVAR_INIT ("tsourdt3rd_drrr_rumble", "Off", CV_SAVE|CV_CALL, CV_OnOff, C_PadRumble_OnChange),
-	CVAR_INIT ("tsourdt3rd_drrr_rumble2", "Off", CV_SAVE|CV_CALL, CV_OnOff, C_PadRumble2_OnChange)
+consvar_t cv_tsourdt3rd_ctrl_drrr_rumble[2] = {
+	CVAR_INIT ("tsourdt3rd_drrr_ctrl_rumble", "Off", CV_SAVE|CV_CALL, CV_OnOff, C_PadRumble_OnChange),
+	CVAR_INIT ("tsourdt3rd_drrr_ctrl_rumble2", "Off", CV_SAVE|CV_CALL, CV_OnOff, C_PadRumble2_OnChange)
 };
+
+// =====
+// VIDEO
+// =====
+
+// Ported from Uncapped Plus, TPS is back (for some reason)!
+consvar_t cv_tsourdt3rd_video_showtps = CVAR_INIT ("tsourdt3rd_video_showtps", "No", CV_SAVE, tsourdt3rd_tpsrate_cons_t, NULL);
+
+consvar_t cv_menucolor = CVAR_INIT ("menucolor", "Yellow", CV_SAVE, tsourdt3rd_vidcolor_cons_t, NULL);
+consvar_t cv_fpscountercolor = CVAR_INIT ("fpscountercolor", "Green", CV_SAVE, tsourdt3rd_vidcolor_cons_t, NULL);
+consvar_t cv_tpscountercolor = CVAR_INIT ("tpscountercolor", "Green", CV_SAVE, tsourdt3rd_vidcolor_cons_t, NULL);
 
 // =====
 // AUDIO
 // =====
 
-consvar_t cv_watermuffling = CVAR_INIT ("watermuffling", "Off", CV_SAVE|CV_ALLOWLUA, CV_OnOff, NULL);
+consvar_t cv_tsourdt3rd_audio_watermuffling = CVAR_INIT ("tsourdt3rd_audio_watermuffling", "Off", CV_SAVE|CV_ALLOWLUA, CV_OnOff, NULL);
 
 // =======
 // PLAYERS
@@ -105,16 +117,16 @@ consvar_t cv_alwaysoverlayinvuln = CVAR_INIT ("alwaysoverlayinvincibility", "Off
 // SAVEFILES
 // =========
 
-static CV_PossibleValue_t perfectsavestripe_t[] = {{0, "MIN"}, {255, "MAX"}, {0, NULL}};
+static CV_PossibleValue_t tsourdt3rd_perfectsavestripe_t[] = {{0, "MIN"}, {255, "MAX"}, {0, NULL}};
 
 static void SV_UseContinues_OnChange(void);
 
-consvar_t cv_storesavesinfolders = CVAR_INIT ("storesavesinfolders", "Off", CV_SAVE|CV_CALL, CV_OnOff, STAR_SetSavefileProperties);
+consvar_t cv_tsourdt3rd_savefiles_storesavesinfolders = CVAR_INIT ("tsourdt3rd_savefiles_storesavesinfolders", "Off", CV_SAVE|CV_CALL, CV_OnOff, STAR_SetSavefileProperties);
 
-consvar_t cv_perfectsave = CVAR_INIT ("perfectsave", "On", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_perfectsavestripe1 = CVAR_INIT ("perfectsavestripe1", "134", CV_SAVE, perfectsavestripe_t, NULL);
-consvar_t cv_perfectsavestripe2 = CVAR_INIT ("perfectsavestripe2", "201", CV_SAVE, perfectsavestripe_t, NULL);
-consvar_t cv_perfectsavestripe3 = CVAR_INIT ("perfectsavestripe3", "1", CV_SAVE, perfectsavestripe_t, NULL);
+consvar_t cv_tsourdt3rd_savefiles_perfectsave = CVAR_INIT ("tsourdt3rd_savefiles_perfectsave", "On", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_tsourdt3rd_savefiles_perfectsavestripe1 = CVAR_INIT ("tsourdt3rd_savefiles_perfectsavestripe1", "134", CV_SAVE, tsourdt3rd_perfectsavestripe_t, NULL);
+consvar_t cv_tsourdt3rd_savefiles_perfectsavestripe2 = CVAR_INIT ("tsourdt3rd_savefiles_perfectsavestripe2", "201", CV_SAVE, tsourdt3rd_perfectsavestripe_t, NULL);
+consvar_t cv_tsourdt3rd_savefiles_perfectsavestripe3 = CVAR_INIT ("tsourdt3rd_savefiles_perfectsavestripe3", "1", CV_SAVE, tsourdt3rd_perfectsavestripe_t, NULL);
 
 consvar_t cv_continues = CVAR_INIT ("continues", "Off", CV_SAVE|CV_CALL, CV_OnOff, SV_UseContinues_OnChange);
 
@@ -122,24 +134,31 @@ consvar_t cv_continues = CVAR_INIT ("continues", "Off", CV_SAVE|CV_CALL, CV_OnOf
 // SERVERS
 // =======
 
+consvar_t cv_rendezvousserver = CVAR_INIT ("holepunchserver", "jart-dev.jameds.org", CV_SAVE, NULL, NULL);
+
 consvar_t cv_movingplayersetup = CVAR_INIT ("movingplayersetup", "Off", CV_SAVE, CV_OnOff, NULL);
 
 // =====
 // DEBUG
 // =====
 
-consvar_t cv_tsourdt3rd_drrr_debug_virtualkeyboard = CVAR_INIT ("tsourdt3rd_drrr_debug_virtualkeyboard", "Off", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_tsourdt3rd_debug_drrr_virtualkeyboard = CVAR_INIT ("tsourdt3rd_drrr_debug_virtualkeyboard", "Off", CV_SAVE, CV_OnOff, NULL);
 
 // ------------------------ //
 //        Functions
 // ------------------------ //
 
-#if 0
-static void TSoURDt3rd_InitServerCommands(void)
+//
+// void TSoURDt3rd_D_RegisterServerCommands(void)
+// Registers TSoURDt3rd's custom commands that should be used by dedicated server hosters.
+//
+void TSoURDt3rd_D_RegisterServerCommands(void)
 {
-
+	CV_RegisterVar(&cv_tsourdt3rd_main_checkforupdatesonstartup);
+	CV_RegisterVar(&cv_rendezvousserver);
 }
 
+#if 0
 static void TSoURDt3rd_InitClientCommands(void)
 {
 	// Game //
@@ -151,9 +170,9 @@ static void TSoURDt3rd_InitClientCommands(void)
 
 	CV_RegisterVar(&cv_quitscreen);
 
-	CV_RegisterVar(&cv_isitcalledsingleplayer);
+	CV_RegisterVar(&cv_tsourdt3rd_game_isitcalledsingleplayer);
 
-	CV_RegisterVar(&cv_tpsrate);
+	CV_RegisterVar(&cv_tsourdt3rd_video_showtps);
 
 	CV_RegisterVar(&cv_menucolor);
 	CV_RegisterVar(&cv_fpscountercolor);
@@ -163,7 +182,7 @@ static void TSoURDt3rd_InitClientCommands(void)
 	CV_RegisterVar(&cv_pausegraphicstyle);
 	CV_RegisterVar(&cv_automapoutsidedevmode);
 
-	CV_RegisterVar(&cv_soniccd);
+	CV_RegisterVar(&cv_tsourdt3rd_game_soniccd);
 
 	// Savefiles //
 	CV_RegisterVar(&cv_continues);
@@ -177,9 +196,13 @@ static void TSoURDt3rd_InitClientCommands(void)
 // GAME
 // ====
 
-void STAR_TPSRate_OnChange(void)
+static void G_IsItCalledSinglePlayer_OnChange(void)
 {
-	OP_Tsourdt3rdOptionsMenu[op_tpscountercolor].status = (cv_tpsrate.value ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+	if (TSoURDt3rd_AprilFools_ModeEnabled())
+		return;
+
+	MainMenu[0].text = (cv_tsourdt3rd_game_isitcalledsingleplayer.value ? "Single  Player" : "1  Player");
+	STAR_StoreDefaultMenuStrings();	// Stores All the Default Menu Strings Again
 }
 
 static void G_TimeOver_OnChange(void)
@@ -198,13 +221,13 @@ static void G_TimeOver_OnChange(void)
 
 static void C_PadRumble_OnChange(void)
 {
-	if (cv_tsourdt3rd_drrr_rumble[0].value == 0)
+	if (cv_tsourdt3rd_ctrl_drrr_rumble[0].value == 0)
 		G_ResetPlayerDeviceRumble(0);
 }
 
 static void C_PadRumble2_OnChange(void)
 {
-	if (cv_tsourdt3rd_drrr_rumble[1].value == 0)
+	if (cv_tsourdt3rd_ctrl_drrr_rumble[1].value == 0)
 		G_ResetPlayerDeviceRumble(1);
 }
 

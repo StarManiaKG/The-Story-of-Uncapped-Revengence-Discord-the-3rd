@@ -36,27 +36,26 @@
 #include "lua_script.h"
 #include "p_slopes.h"
 
-#include "STAR/p_saveg.h" // STAR STUFF: TSoURDt3rd_NetArchiveUsers() & TSoURDt3rd_NetUnArchiveUsers() //
+// TSoURDt3rd
+#include "STAR/smkg-p_saveg.h" // net archiving data //
 
 savedata_t savedata;
 UINT8 *save_p;
 
 // Block UINT32s to attempt to ensure that the correct data is
 // being sent and received
-#define ARCHIVEBLOCK_MISC     0x7FEEDEED
-#define ARCHIVEBLOCK_PLAYERS  0x7F448008
-#define ARCHIVEBLOCK_WORLD    0x7F8C08C0
-#define ARCHIVEBLOCK_POBJS    0x7F928546
-#define ARCHIVEBLOCK_THINKERS 0x7F37037C
-#define ARCHIVEBLOCK_SPECIALS 0x7F228378
-#define ARCHIVEBLOCK_EMBLEMS  0x7F4A5445
+#define ARCHIVEBLOCK_MISC       0x7FEEDEED
+#define ARCHIVEBLOCK_PLAYERS    0x7F448008
+#define ARCHIVEBLOCK_WORLD      0x7F8C08C0
+#define ARCHIVEBLOCK_POBJS      0x7F928546
+#define ARCHIVEBLOCK_THINKERS   0x7F37037C
+#define ARCHIVEBLOCK_SPECIALS   0x7F228378
+#define ARCHIVEBLOCK_EMBLEMS    0x7F4A5445
 
 // Note: This cannot be bigger
 // than an UINT16
 typedef enum
 {
-//	RFLAGPOINT = 0x01,
-//	BFLAGPOINT = 0x02,
 	CAPSULE    = 0x04,
 	AWAYVIEW   = 0x08,
 	FIRSTAXIS  = 0x10,
@@ -859,29 +858,30 @@ static void P_NetUnArchiveWaypoints(void)
 #define SD_DIFF3     0x80
 
 // diff3 flags
-#define SD_TAGLIST   0x01
-#define SD_COLORMAP  0x02
+#define SD_TAGLIST      0x01
+#define SD_COLORMAP     0x02
 #define SD_CRUMBLESTATE 0x04
-#define SD_FLOORLIGHT 0x08
-#define SD_CEILLIGHT 0x10
-#define SD_FLAG      0x20
-#define SD_SPECIALFLAG 0x40
-#define SD_DIFF4     0x80
+#define SD_FLOORLIGHT   0x08
+#define SD_CEILLIGHT    0x10
+#define SD_FLAG         0x20
+#define SD_SPECIALFLAG  0x40
+#define SD_DIFF4        0x80
 
-//diff4 flags
+// diff4 flags
 #define SD_DAMAGETYPE 0x01
 #define SD_TRIGGERTAG 0x02
-#define SD_TRIGGERER 0x04
-#define SD_GRAVITY   0x08
+#define SD_TRIGGERER  0x04
+#define SD_GRAVITY    0x08
 
-#define LD_FLAG     0x01
-#define LD_SPECIAL  0x02
-#define LD_CLLCOUNT 0x04
-#define LD_S1TEXOFF 0x08
-#define LD_S1TOPTEX 0x10
-#define LD_S1BOTTEX 0x20
-#define LD_S1MIDTEX 0x40
-#define LD_DIFF2    0x80
+// diff1 flags
+#define LD_FLAG          0x01
+#define LD_SPECIAL       0x02
+#define LD_CLLCOUNT      0x04
+#define LD_S1TEXOFF      0x08
+#define LD_S1TOPTEX      0x10
+#define LD_S1BOTTEX      0x20
+#define LD_S1MIDTEX      0x40
+#define LD_DIFF2         0x80
 
 // diff2 flags
 #define LD_S2TEXOFF      0x01
@@ -1479,7 +1479,6 @@ static void UnArchiveLines(void)
 		}
 		if (diff2 & LD_EXECUTORDELAY)
 			li->executordelay = READINT32(save_p);
-
 	}
 }
 

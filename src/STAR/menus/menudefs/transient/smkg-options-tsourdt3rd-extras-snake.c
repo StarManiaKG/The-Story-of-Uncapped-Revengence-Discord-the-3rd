@@ -1,0 +1,170 @@
+// SONIC ROBO BLAST 2; TSOURDT3RD
+//-----------------------------------------------------------------------------
+// Original Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
+// Original Copyright (C) 2018-2024 by Kart Krew.
+// Copyright (C) 2020-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+/// \file  menus/menudefs/transient/smkg-options-tsourdt3rd-extras-snake.c
+/// \brief TSoURDt3rd's freeplay snake minigame
+//          It does next to nothing useful, but it is fun to play.
+
+#include "../../../m_menu.h"
+
+#include "../../../drrr/k_menu.h"
+
+#include "../../../../snake.h"
+
+// ------------------------ //
+//        Variables
+// ------------------------ //
+
+enum bonustype_s {
+	BONUS_NONE = 0,
+	BONUS_SLOW,
+	BONUS_FAST,
+	BONUS_GHOST,
+	BONUS_NUKE,
+	BONUS_SCISSORS,
+	BONUS_REVERSE,
+	BONUS_EGGMAN,
+	NUM_BONUSES,
+};
+
+typedef struct fakesnake_s
+{
+	boolean paused;
+	boolean pausepressed;
+	tic_t time;
+	tic_t nextupdate;
+	boolean gameover;
+	UINT8 background;
+
+	UINT16 snakelength;
+	enum bonustype_s snakebonus;
+	tic_t snakebonustime;
+	UINT8 snakex[20 * 10];
+	UINT8 snakey[20 * 10];
+	UINT8 snakedir[20 * 10];
+
+	UINT8 applex;
+	UINT8 appley;
+
+	enum bonustype_s bonustype;
+	UINT8 bonusx;
+	UINT8 bonusy;
+
+	event_t *joyevents[MAXEVENTS];
+	UINT16 joyeventcount;
+} fakesnake_t;
+
+void *tsourdt3rd_snake = NULL;
+fakesnake_t *tsourdt3rd_real_snake = NULL;
+
+static void M_Sys_DrawSnake(void);
+static boolean M_Sys_HandleSnake(INT32 ch);
+static boolean M_Sys_QuitSnake(void);
+
+static menuitem_t TSoURDt3rd_OP_Extras_SnakeMenu[] =
+{
+	{IT_NOTHING, NULL, "", NULL, 0},
+};
+
+static tsourdt3rd_menuitems_t TSoURDt3rd_TM_OP_Extras_SnakeMenu[] =
+{
+	{NULL, "Hey! Listen!", 0, 0},
+};
+
+menu_t TSoURDt3rd_OP_Extras_SnakeDef =
+{
+	MTREE3(MN_OP_MAIN, MN_OP_TSOURDT3RD, MN_OP_TSOURDT3RD_SNAKE),
+	NULL,
+	sizeof (TSoURDt3rd_OP_Extras_SnakeMenu)/sizeof (menuitem_t),
+	&TSoURDt3rd_OP_ExtrasDef,
+	TSoURDt3rd_OP_Extras_SnakeMenu,
+	M_Sys_DrawSnake,
+	0, 0,
+	0,
+	M_Sys_QuitSnake
+};
+
+tsourdt3rd_menu_t TSoURDt3rd_TM_OP_Extras_SnakeDef = {
+	&TSoURDt3rd_OP_Extras_SnakeDef,
+	TSoURDt3rd_TM_OP_Extras_SnakeMenu,
+	0, 0,
+	0,
+	NULL,
+	0, 0,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	M_Sys_HandleSnake,
+	&TSoURDt3rd_TM_OP_ExtrasDef,
+	NULL
+};
+
+// ------------------------ //
+//        Functions
+// ------------------------ //
+
+static void M_Sys_DrawSnake(void)
+{
+	if (!tsourdt3rd_snake || !tsourdt3rd_real_snake)
+		return;
+	Snake_Draw(tsourdt3rd_snake);
+
+	// Draw background fade
+	if (tsourdt3rd_real_snake->paused)
+	{
+		V_DrawFadeScreen(0xFF00, 16);
+		F_TitleScreenDrawer();
+		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2, V_MENUCOLORMAP, "PAUSED");
+	}
+
+	// Draw quit text too obviously
+	V_DrawRightAlignedString(
+		BASEVIDWIDTH-4,
+		BASEVIDHEIGHT-12,
+		V_ALLOWLOWERCASE,
+		"\x86""Press ""\x82""ESC""\x86"" to quit."
+	);
+}
+
+static boolean M_Sys_HandleSnake(INT32 ch)
+{
+	const UINT8 pid = 0;
+	(void)ch;
+
+	if (!tsourdt3rd_snake)
+		Snake_Allocate(&tsourdt3rd_snake);
+
+	tsourdt3rd_real_snake = tsourdt3rd_snake;
+	Snake_Update(tsourdt3rd_snake);
+
+	if (M_MenuBackPressed(pid))
+	{
+		if (currentMenu->prevMenu)
+			M_SetupNextMenu(currentMenu->prevMenu);
+		else
+			M_ClearMenus(true);
+	}
+	else if (M_MenuConfirmPressed(pid))
+		tsourdt3rd_real_snake->paused = true;
+
+	memcpy(tsourdt3rd_snake, tsourdt3rd_real_snake, sizeof(fakesnake_t));
+	tsourdt3rd_snake = (void *)tsourdt3rd_real_snake;
+
+	return true;
+}
+
+static boolean M_Sys_QuitSnake(void)
+{
+	Snake_Free(&tsourdt3rd_snake);
+	tsourdt3rd_snake = NULL;
+	tsourdt3rd_real_snake = NULL;
+	return true;
+}

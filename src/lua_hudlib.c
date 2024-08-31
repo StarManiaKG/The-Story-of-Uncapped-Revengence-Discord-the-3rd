@@ -40,11 +40,13 @@ static const char *const hud_disable_options[] = {
 	"stagetitle",
 	"textspectator",
 	"crosshair",
+	"powerups",
 
 	"score",
 	"time",
 	"rings",
 	"lives",
+	"input",
 
 	"weaponrings",
 	"powerstones",
@@ -67,6 +69,10 @@ static const char *const hud_disable_options[] = {
 	"intermissionmessages",
 	"intermissionemeralds",
 	NULL};
+
+// you know, let's actually make sure that the table is synced.
+// because fuck knows how many times this has happened at this point. :v
+I_StaticAssert(sizeof(hud_disable_options) / sizeof(*hud_disable_options) == hud_MAX+1);
 
 enum hudinfo {
 	hudinfo_x = 0,
@@ -169,6 +175,7 @@ enum cameraf {
 	camera_x,
 	camera_y,
 	camera_z,
+	camera_reset,
 	camera_angle,
 	camera_subsector,
 	camera_floorz,
@@ -187,6 +194,7 @@ static const char *const camera_opt[] = {
 	"x",
 	"y",
 	"z",
+	"reset",
 	"angle",
 	"subsector",
 	"floorz",
@@ -341,6 +349,9 @@ static int camera_get(lua_State *L)
 	case camera_z:
 		lua_pushinteger(L, cam->z);
 		break;
+	case camera_reset:
+		lua_pushboolean(L, cam->reset);
+		break;
 	case camera_angle:
 		lua_pushinteger(L, cam->angle);
 		break;
@@ -387,6 +398,9 @@ static int camera_set(lua_State *L)
 	case camera_x:
 	case camera_y:
 		return luaL_error(L, LUA_QL("camera_t") " field " LUA_QS " should not be set directly. Use " LUA_QL("P_TryCameraMove") " or " LUA_QL("P_TeleportCameraMove") " instead.", camera_opt[field]);
+	case camera_reset:
+		cam->reset = luaL_checkboolean(L, 3);
+		break;
 	case camera_chase: {
 		INT32 chase = luaL_checkboolean(L, 3);
 		if (cam == &camera)
@@ -489,7 +503,7 @@ static int libd_getSpritePatch(lua_State *L)
 	if (i == SPR_PLAY) // Use getSprite2Patch instead!
 		return 0;
 
-	sprdef = sprites[i];
+	sprdef = &sprites[i];
 
 	// set frame number
 	frame = luaL_optinteger(L, 2, 0);
@@ -573,6 +587,7 @@ static int libd_getSprite2Patch(lua_State *L)
 			super = true;
 			j &= ~FF_SPR2SUPER; // remove flag so the next check doesn't fail
 		}
+
 		if (j >= free_spr2)
 			return 0;
 	}
@@ -1117,7 +1132,9 @@ static int libd_getColormap(lua_State *L)
 	INT32 skinnum = TC_DEFAULT;
 	skincolornum_t color = luaL_optinteger(L, 2, 0);
 	UINT8* colormap = NULL;
+
 	HUDONLY
+
 	if (lua_isnoneornil(L, 1))
 		; // defaults to TC_DEFAULT
 	else if (lua_type(L, 1) == LUA_TNUMBER) // skin number

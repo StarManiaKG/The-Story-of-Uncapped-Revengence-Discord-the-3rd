@@ -69,7 +69,6 @@ extern consvar_t cv_masterserver_update_rate;
 extern consvar_t cv_masterserver_timeout;
 extern consvar_t cv_masterserver_debug;
 extern consvar_t cv_masterserver_token;
-extern consvar_t cv_rendezvousserver; // HOLEPUNCHING STUFF: holeing //
 
 // < 0 to not connect (usually -1) (offline mode)
 // == 0 to show all rooms, not a valid hosting room

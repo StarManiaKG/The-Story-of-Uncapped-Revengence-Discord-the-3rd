@@ -699,8 +699,6 @@ extracolormap_t *R_ColormapForName(char *name)
 //
 static double deltas[256][3], map[256][3];
 
-static int RoundUp(double number);
-
 lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 {
 	double cmaskr, cmaskg, cmaskb, cdestr, cdestg, cdestb;
@@ -799,9 +797,9 @@ lighttable_t *R_CreateLightTable(extracolormap_t *extra_colormap)
 		{
 			for (i = 0; i < 256; i++)
 			{
-				*colormap_p = NearestColor((UINT8)RoundUp(map[i][0]),
-					(UINT8)RoundUp(map[i][1]),
-					(UINT8)RoundUp(map[i][2]));
+				*colormap_p = NearestColor((UINT8)M_RoundUp(map[i][0]),
+					(UINT8)M_RoundUp(map[i][1]),
+					(UINT8)M_RoundUp(map[i][2]));
 				colormap_p++;
 
 				if ((UINT32)p < fadestart)
@@ -1140,20 +1138,6 @@ UINT8 NearestPaletteColor(UINT8 r, UINT8 g, UINT8 b, RGBA_t *palette)
 	return (UINT8)bestcolor;
 }
 
-// Rounds off floating numbers and checks for 0 - 255 bounds
-static int RoundUp(double number)
-{
-	if (number > 255.0l)
-		return 255;
-	if (number < 0.0l)
-		return 0;
-
-	if ((int)number <= (int)(number - 0.5f))
-		return (int)number + 1;
-
-	return (int)number;
-}
-
 #ifdef EXTRACOLORMAPLUMPS
 const char *R_NameForColormap(extracolormap_t *extra_colormap)
 {
@@ -1306,9 +1290,9 @@ void R_PrecacheLevel(void)
 		if (!spritepresent[i])
 			continue;
 
-		for (j = 0; j < sprites[i]->numframes; j++)
+		for (j = 0; j < sprites[i].numframes; j++)
 		{
-			sf = &sprites[i]->spriteframes[j];
+			sf = &sprites[i].spriteframes[j];
 #define cacheang(a) {\
 		lump = sf->lumppat[a];\
 		if (devparm)\

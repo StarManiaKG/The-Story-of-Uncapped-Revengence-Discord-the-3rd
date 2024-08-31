@@ -3435,6 +3435,45 @@ static boolean PTR_LineIsBlocking(line_t *li)
 	return false;
 }
 
+// P_LineIsBlocking
+//
+// Determines if line would block mo's movement
+//
+boolean P_LineIsBlocking(mobj_t *mo, line_t *li)
+{
+	// one-sided linedefs are always solid to sliding movement.
+	if (!li->backsector)
+		return !P_PointOnLineSide(mo->x, mo->y, li);
+
+	if (!(mo->flags & MF_MISSILE))
+	{
+		if (li->flags & ML_IMPASSIBLE)
+			return true;
+
+		if ((mo->flags & (MF_ENEMY|MF_BOSS)) && li->flags & ML_BLOCKMONSTERS)
+			return true;
+	}
+
+	// set openrange, opentop, openbottom
+	P_LineOpening(li, mo);
+
+	if (openrange < mo->height)
+		return true; // doesn't fit
+
+	if (opentop - mo->z < mo->height)
+		return true; // mobj is too high
+
+	if (openbottom - mo->z > FixedMul(MAXSTEPMOVE, mo->scale))
+		return true; // too big a step up
+
+	if (mo->player
+		&& openrange < P_GetPlayerHeight(mo->player)
+		&& !P_PlayerCanEnterSpinGaps(mo->player))
+			return true; // nonspin character should not take this path
+
+	return false;
+}
+
 static void PTR_GlideClimbTraverse(line_t *li)
 {
 	line_t *checkline = li;

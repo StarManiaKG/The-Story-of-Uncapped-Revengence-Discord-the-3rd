@@ -159,25 +159,6 @@ extern const char *(*I_GetBanMask) (size_t ban);
 extern boolean (*I_SetBanAddress) (const char *address,const char *mask);
 extern boolean *bannednode;
 
-// HOLEPUNCHING STUFFS //
-typedef struct
-{
-	INT32 magic;
-	INT32 addr;
-	INT16 port;
-} ATTRPACK holepunch_t;
-
-extern holepunch_t *holepunchpacket;
-
-/**	\brief send a hole punching request
-*/
-extern void (*I_NetRequestHolePunch)(INT32 node);
-
-/**	\brief register this machine on the hole punching server
-*/
-extern void (*I_NetRegisterHolePunch)(void);
-// HOLES SHOULD NOW BE PUNCHED! //
-
 /// \brief Called by D_SRB2Main to be defined by extern network driver
 boolean I_InitNetwork(void);
 

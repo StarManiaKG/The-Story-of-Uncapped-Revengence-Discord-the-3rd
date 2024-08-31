@@ -44,8 +44,11 @@
 // SRB2Kart
 #include "r_fps.h" // R_GetFramerateCap
 
+#include "lua_hud.h" // LUA_HudEnabled
+
 // TSoURDt3rd
-#include "STAR/ss_main.h" // TSoURDt3rd_SCR_SetPingHeight //
+#include "STAR/smkg-st_hud.h" // TSoURDt3rd_SCR_SetPingHeight() //
+#include "STAR/lights/smkg-coronas.h" // TSoURDt3rd_R_Load_Corona() //
 
 // --------------------------------------------
 // assembly or c drawer routines for 8bpp/16bpp
@@ -72,8 +75,6 @@ consvar_t cv_scr_height = CVAR_INIT ("scr_height", "800", CV_SAVE, CV_Unsigned, 
 consvar_t cv_scr_width_w = CVAR_INIT ("scr_width_w", "640", CV_SAVE, CV_Unsigned, NULL);
 consvar_t cv_scr_height_w = CVAR_INIT ("scr_height_w", "400", CV_SAVE, CV_Unsigned, NULL);
 consvar_t cv_scr_depth = CVAR_INIT ("scr_depth", "16 bits", CV_SAVE, scr_depth_cons_t, NULL);
-
-consvar_t cv_renderview = CVAR_INIT ("renderview", "On", 0, CV_OnOff, NULL);
 
 CV_PossibleValue_t cv_renderer_t[] = {
 	{1, "Software"},
@@ -152,7 +153,6 @@ void SCR_SetDrawFuncs(void)
 		spanfuncs[SPANDRAWFUNC_FOG] = R_DrawFogSpan_8;
 		spanfuncs[SPANDRAWFUNC_TILTEDFOG] = R_DrawTiltedFogSpan_8;
 
-		// Lactozilla: Non-powers-of-two
 		spanfuncs_npo2[BASEDRAWFUNC] = R_DrawSpan_NPO2_8;
 		spanfuncs_npo2[SPANDRAWFUNC_TRANS] = R_DrawTranslucentSpan_NPO2_8;
 		spanfuncs_npo2[SPANDRAWFUNC_TILTED] = R_DrawTiltedSpan_NPO2_8;
@@ -166,26 +166,9 @@ void SCR_SetDrawFuncs(void)
 		spanfuncs_npo2[SPANDRAWFUNC_TILTEDTRANSSPRITE] = R_DrawTiltedTranslucentFloorSprite_NPO2_8;
 		spanfuncs_npo2[SPANDRAWFUNC_WATER] = R_DrawWaterSpan_NPO2_8;
 		spanfuncs_npo2[SPANDRAWFUNC_TILTEDWATER] = R_DrawTiltedWaterSpan_NPO2_8;
-
 	}
-/*	else if (vid.bpp > 1)
-	{
-		I_OutputMsg("using highcolor mode\n");
-		spanfunc = basespanfunc = R_DrawSpan_16;
-		transcolfunc = R_DrawTranslatedColumn_16;
-		transtransfunc = R_DrawTranslucentColumn_16; // No 16bit operation for this function
-
-		colfunc = basecolfunc = R_DrawColumn_16;
-		shadecolfunc = NULL; // detect error if used somewhere..
-		fuzzcolfunc = R_DrawTranslucentColumn_16;
-		walldrawerfunc = R_DrawWallColumn_16;
-	}*/
 	else
 		I_Error("unknown bytes per pixel mode %d\n", vid.bpp);
-/*
-	if (SCR_IsAspectCorrect(vid.width, vid.height))
-		CONS_Alert(CONS_WARNING, M_GetText("Resolution is not aspect-correct!\nUse a multiple of %dx%d\n"), BASEVIDWIDTH, BASEVIDHEIGHT);
-*/
 }
 
 void SCR_SetMode(void)
@@ -296,7 +279,7 @@ void SCR_Recalc(void)
 		return;
 
 #ifdef ALAM_LIGHTING
-	R_Release_Corona();
+	TSoURDt3rd_R_Release_Coronas();
 #endif
 
 	// bytes per pixel quick access
@@ -324,7 +307,7 @@ void SCR_Recalc(void)
 	am_recalc = true;
 
 #ifdef ALAM_LIGHTING
-	R_Load_Corona();
+	TSoURDt3rd_R_Load_Corona();
 #endif
 
 #ifdef HWRENDER
@@ -553,7 +536,11 @@ void SCR_DisplayLocalPing(void)
 	UINT32 ping = playerpingtable[consoleplayer];	// consoleplayer's ping is everyone's ping in a splitnetgame :P
 	if (cv_showping.value == 1 || (cv_showping.value == 2 && servermaxping && ping > servermaxping))	// only show 2 (warning) if our ping is at a bad level
 	{
+#if 0
+		INT32 dispy = cv_ticrate.value ? 180 : 189;
+#else
 		INT32 dispy = TSoURDt3rd_SCR_SetPingHeight();
+#endif
 		HU_drawPing(307, dispy, ping, true, V_SNAPTORIGHT | V_SNAPTOBOTTOM);
 	}
 }
@@ -563,7 +550,7 @@ void SCR_ClosedCaptions(void)
 {
 	UINT8 i;
 	boolean gamestopped = (paused || P_AutoPause());
-	INT32 basey = BASEVIDHEIGHT;
+	INT32 basey = BASEVIDHEIGHT - 20;
 
 	if (gamestate != wipegamestate)
 		return;
@@ -576,6 +563,7 @@ void SCR_ClosedCaptions(void)
 			basey -= 8;
 		else if ((modeattacking == ATTACKING_NIGHTS)
 		|| (!(maptol & TOL_NIGHTS)
+		&& LUA_HudEnabled(hud_powerups)
 		&& ((cv_powerupdisplay.value == 2) // "Always"
 		 || (cv_powerupdisplay.value == 1 && !camera.chase)))) // "First-person only"
 			basey -= 16;
@@ -583,7 +571,8 @@ void SCR_ClosedCaptions(void)
 
 	for (i = 0; i < NUMCAPTIONS; i++)
 	{
-		INT32 flags, y;
+		INT32 flags;
+		fixed_t y;
 		char dot;
 		boolean music;
 
@@ -596,14 +585,19 @@ void SCR_ClosedCaptions(void)
 			continue;
 
 		flags = V_SNAPTORIGHT|V_SNAPTOBOTTOM|V_ALLOWLOWERCASE;
-		y = basey-((i + 2)*10);
+		y = (basey-(i*10)) * FRACUNIT;
 
 		if (closedcaptions[i].b)
 		{
-			y -= closedcaptions[i].b * vid.dupy;
 			if (renderisnewtic)
-			{
 				closedcaptions[i].b--;
+
+			if (closedcaptions[i].b) // If the caption hasn't reached its final destination...
+			{
+				y -= closedcaptions[i].b * 4 * FRACUNIT; // ...move it per tic...
+				y += (rendertimefrac % FRACUNIT) * 4; // ...and interpolate it per frame
+				// We have to modulo it by FRACUNIT, so that it won't be a tic ahead with interpolation disabled
+				// Unlike everything else, captions are (intentionally) interpolated from T to T+1 instead of T-1 to T
 			}
 		}
 
@@ -617,7 +611,7 @@ void SCR_ClosedCaptions(void)
 		else
 			dot = ' ';
 
-		V_DrawRightAlignedString(BASEVIDWIDTH - 20, y, flags,
+		V_DrawRightAlignedStringAtFixed((BASEVIDWIDTH-20) * FRACUNIT, y, flags,
 			va("%c [%s]", dot, (closedcaptions[i].s->caption[0] ? closedcaptions[i].s->caption : closedcaptions[i].s->name)));
 	}
 }

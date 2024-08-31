@@ -8,7 +8,7 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  screen.h
-/// \brief Handles multiple resolutions, 8bpp/16bpp(highcolor) modes
+/// \brief Handles multiple resolutions
 
 #ifndef __SCREEN_H__
 #define __SCREEN_H__
@@ -29,10 +29,6 @@
 #else
 #define NUMSCREENS 5
 #endif
-
-// Size of statusbar.
-#define ST_HEIGHT 32
-#define ST_WIDTH 320
 
 // used now as a maximum video mode size for extra vesa modes.
 
@@ -200,8 +196,7 @@ extern INT32 scr_bpp;
 extern UINT8 *scr_borderpatch; // patch used to fill the view borders
 
 extern consvar_t cv_scr_width, cv_scr_height, cv_scr_width_w, cv_scr_height_w, cv_scr_depth, cv_fullscreen;
-extern consvar_t cv_renderview, cv_renderer;
-extern consvar_t cv_renderhitbox, cv_renderhitboxinterpolation, cv_renderhitboxgldepth;
+extern consvar_t cv_renderer;
 // wait for page flipping to end or not
 extern consvar_t cv_vidwait;
 extern consvar_t cv_timescale;

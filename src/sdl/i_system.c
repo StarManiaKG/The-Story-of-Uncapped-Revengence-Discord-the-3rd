@@ -214,8 +214,9 @@ static char returnWadPath[256];
 #include "../byteptr.h"
 #endif
 
-#include "../STAR/star_vars.h" // TSoURDt3rd_GenerateFunnyCrashMessage(), //
-								// TSOURDT3RDVERSIONSTRING, & TSOURDT3RDBYSTARMANIAKGSTRING //
+// TSoURDt3rd
+#include "../STAR/star_vars.h" // TSOURDT3RDVERSIONSTRING, & TSOURDT3RDBYSTARMANIAKGSTRING //
+#include "../STAR/smkg-i_sys.h" // TSoURDt3rd_I_ShowErrorMessageBox() //
 
 /**	\brief	The JoyReset function
 
@@ -407,7 +408,7 @@ static void I_ReportSignal(int num, int coredumped)
 		SDL_MESSAGEBOX_ERROR, /* .flags */
 		NULL, /* .window */
 		sigttl, /* .title */
-		va("%s\n\n%s %s", TSoURDt3rd_GenerateFunnyCrashMessage(num, coredumped), sigmsg, reportmsg), /* .message */
+		va("%s %s", sigmsg, reportmsg), /* .message */
 		SDL_arraysize(buttons), /* .numbuttons */
 		buttons, /* .buttons */
 		NULL /* .colorScheme */
@@ -415,7 +416,17 @@ static void I_ReportSignal(int num, int coredumped)
 
 	int buttonid;
 
+#if 0
 	SDL_ShowMessageBox(&messageboxdata, &buttonid);
+#else
+	TSoURDt3rd_I_ShowErrorMessageBox(
+		NULL,
+		&messageboxdata,
+		&buttonid,
+		num,
+		coredumped
+	); // STAR STUFF: display our funny error box please! //
+#endif
 
 #if SDL_VERSION_ATLEAST(2,0,14)
 	if (buttonid == 1)
@@ -2290,9 +2301,13 @@ ATTRNORETURN static FUNCNORETURN void newsignalhandler_Warn(const char *pr)
 	I_OutputMsg("%s\n", text);
 
 	if (!M_CheckParm("-dedicated"))
+#if 0
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
 			"Startup error",
 			text, NULL);
+#else
+		TSoURDt3rd_I_ShowErrorMessageBox(text, NULL, NULL, 0, false); // STAR STUFF: display our cool message box junk too! //
+#endif
 
 	I_ShutdownConsole();
 	exit(-1);
@@ -2497,9 +2512,13 @@ void I_Error(const char *error, ...)
 			// which should fail gracefully if it can't put a message box up
 			// on the target system
 			if (!M_CheckParm("-dedicated"))
+#if 0
 				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
 					"SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING" Recursive Error",
 					buffer, NULL);
+#else
+				TSoURDt3rd_I_ShowErrorMessageBox(buffer, NULL, NULL, 0, false); // STAR STUFF: display our cool message box junk too! //
+#endif
 
 			W_Shutdown();
 			exit(-1); // recursive errors detected
@@ -2542,9 +2561,13 @@ void I_Error(const char *error, ...)
 	// which should fail gracefully if it can't put a message box up
 	// on the target system
 	if (!M_CheckParm("-dedicated"))
+#if 0
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
 			"SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING" Error",
 			buffer, NULL);
+#else
+		TSoURDt3rd_I_ShowErrorMessageBox(buffer, NULL, NULL, 0, false); // STAR STUFF: display our cool message box junk too! //
+#endif
 	// Note that SDL_ShowSimpleMessageBox does *not* require SDL to be
 	// initialized at the time, so calling it after SDL_Quit() is
 	// perfectly okay! In addition, we do this on purpose so the
@@ -3209,5 +3232,24 @@ const CPUInfoFlags *I_CPUInfo(void)
 
 // note CPUAFFINITY code used to reside here
 void I_RegisterSysCommands(void) {}
+
+const char *I_GetSysName(void)
+{
+	return SDL_GetPlatform();
+}
+
+
+void I_SetTextInputMode(boolean active)
+{
+	if (active)
+		SDL_StartTextInput();
+	else
+		SDL_StopTextInput();
+}
+
+boolean I_GetTextInputMode(void)
+{
+	return SDL_IsTextInputActive();
+}
 
 #endif

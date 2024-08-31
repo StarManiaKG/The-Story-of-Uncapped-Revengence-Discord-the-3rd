@@ -37,6 +37,7 @@
 #include "f_finale.h"
 #include "m_cond.h"
 
+// TSoURDt3rd
 #include "STAR/smkg-cvars.h" // cv_alwaysoverlayinvuln //
 
 static CV_PossibleValue_t CV_BobSpeed[] = {{0, "MIN"}, {4*FRACUNIT, "MAX"}, {0, NULL}};
@@ -1081,9 +1082,8 @@ static fixed_t HighestOnLine(fixed_t radius, fixed_t x, fixed_t y, line_t *line,
 		);
 }
 
-fixed_t P_MobjFloorZ(mobj_t *mobj, sector_t *sector, sector_t *boundsec, fixed_t x, fixed_t y, line_t *line, boolean lowest, boolean perfect)
+fixed_t P_MobjFloorZ(sector_t *sector, sector_t *boundsec, fixed_t x, fixed_t y, fixed_t radius, line_t *line, boolean lowest, boolean perfect)
 {
-	I_Assert(mobj != NULL);
 	I_Assert(sector != NULL);
 
 	if (sector->f_slope) {
@@ -1092,14 +1092,14 @@ fixed_t P_MobjFloorZ(mobj_t *mobj, sector_t *sector, sector_t *boundsec, fixed_t
 
 		// Get the corner of the object that should be the highest on the slope
 		if (slope->d.x < 0)
-			testx = mobj->radius;
+			testx = radius;
 		else
-			testx = -mobj->radius;
+			testx = -radius;
 
 		if (slope->d.y < 0)
-			testy = mobj->radius;
+			testy = radius;
 		else
-			testy = -mobj->radius;
+			testy = -radius;
 
 		if ((slope->zdelta > 0) ^ !!(lowest)) {
 			testx = -testx;
@@ -1110,11 +1110,11 @@ fixed_t P_MobjFloorZ(mobj_t *mobj, sector_t *sector, sector_t *boundsec, fixed_t
 		testy += y;
 
 		// If the highest point is in the sector, then we have it easy! Just get the Z at that point
-		if (R_PointInSubsector(testx, testy)->sector == (boundsec ? boundsec : sector))
+		if (R_IsPointInSector(boundsec ? boundsec : sector, testx, testy))
 			return P_GetSlopeZAt(slope, testx, testy);
 
 		// If boundsec is set, we're looking for specials. In that case, iterate over every line in this sector to find the TRUE highest/lowest point
-		if (perfect) {
+		if (perfect && boundsec) {
 			size_t i;
 			line_t *ld;
 			fixed_t bbox[4];
@@ -1125,10 +1125,10 @@ fixed_t P_MobjFloorZ(mobj_t *mobj, sector_t *sector, sector_t *boundsec, fixed_t
 			else
 				finalheight = INT32_MIN;
 
-			bbox[BOXLEFT] = x-mobj->radius;
-			bbox[BOXRIGHT] = x+mobj->radius;
-			bbox[BOXTOP] = y+mobj->radius;
-			bbox[BOXBOTTOM] = y-mobj->radius;
+			bbox[BOXLEFT] = x-radius;
+			bbox[BOXRIGHT] = x+radius;
+			bbox[BOXTOP] = y+radius;
+			bbox[BOXBOTTOM] = y-radius;
 			for (i = 0; i < boundsec->linecount; i++) {
 				ld = boundsec->lines[i];
 
@@ -1140,9 +1140,9 @@ fixed_t P_MobjFloorZ(mobj_t *mobj, sector_t *sector, sector_t *boundsec, fixed_t
 					continue;
 
 				if (lowest)
-					finalheight = min(finalheight, HighestOnLine(mobj->radius, x, y, ld, slope, true));
+					finalheight = min(finalheight, HighestOnLine(radius, x, y, ld, slope, true));
 				else
-					finalheight = max(finalheight, HighestOnLine(mobj->radius, x, y, ld, slope, false));
+					finalheight = max(finalheight, HighestOnLine(radius, x, y, ld, slope, false));
 			}
 
 			return finalheight;
@@ -1153,14 +1153,13 @@ fixed_t P_MobjFloorZ(mobj_t *mobj, sector_t *sector, sector_t *boundsec, fixed_t
 		if (line == NULL)
 			return P_GetSlopeZAt(slope, x, y);
 
-		return HighestOnLine(mobj->radius, x, y, line, slope, lowest);
+		return HighestOnLine(radius, x, y, line, slope, lowest);
 	} else // Well, that makes it easy. Just get the floor height
 		return sector->floorheight;
 }
 
-fixed_t P_MobjCeilingZ(mobj_t *mobj, sector_t *sector, sector_t *boundsec, fixed_t x, fixed_t y, line_t *line, boolean lowest, boolean perfect)
+fixed_t P_MobjCeilingZ(sector_t *sector, sector_t *boundsec, fixed_t x, fixed_t y, fixed_t radius, line_t *line, boolean lowest, boolean perfect)
 {
-	I_Assert(mobj != NULL);
 	I_Assert(sector != NULL);
 
 	if (sector->c_slope) {
@@ -1169,14 +1168,14 @@ fixed_t P_MobjCeilingZ(mobj_t *mobj, sector_t *sector, sector_t *boundsec, fixed
 
 		// Get the corner of the object that should be the highest on the slope
 		if (slope->d.x < 0)
-			testx = mobj->radius;
+			testx = radius;
 		else
-			testx = -mobj->radius;
+			testx = -radius;
 
 		if (slope->d.y < 0)
-			testy = mobj->radius;
+			testy = radius;
 		else
-			testy = -mobj->radius;
+			testy = -radius;
 
 		if ((slope->zdelta > 0) ^ !!(lowest)) {
 			testx = -testx;
@@ -1187,11 +1186,11 @@ fixed_t P_MobjCeilingZ(mobj_t *mobj, sector_t *sector, sector_t *boundsec, fixed
 		testy += y;
 
 		// If the highest point is in the sector, then we have it easy! Just get the Z at that point
-		if (R_PointInSubsector(testx, testy)->sector == (boundsec ? boundsec : sector))
+		if (R_IsPointInSector(boundsec ? boundsec : sector, testx, testy))
 			return P_GetSlopeZAt(slope, testx, testy);
 
 		// If boundsec is set, we're looking for specials. In that case, iterate over every line in this sector to find the TRUE highest/lowest point
-		if (perfect) {
+		if (perfect && boundsec) {
 			size_t i;
 			line_t *ld;
 			fixed_t bbox[4];
@@ -1202,10 +1201,10 @@ fixed_t P_MobjCeilingZ(mobj_t *mobj, sector_t *sector, sector_t *boundsec, fixed
 			else
 				finalheight = INT32_MIN;
 
-			bbox[BOXLEFT] = x-mobj->radius;
-			bbox[BOXRIGHT] = x+mobj->radius;
-			bbox[BOXTOP] = y+mobj->radius;
-			bbox[BOXBOTTOM] = y-mobj->radius;
+			bbox[BOXLEFT] = x-radius;
+			bbox[BOXRIGHT] = x+radius;
+			bbox[BOXTOP] = y+radius;
+			bbox[BOXBOTTOM] = y-radius;
 			for (i = 0; i < boundsec->linecount; i++) {
 				ld = boundsec->lines[i];
 
@@ -1217,9 +1216,9 @@ fixed_t P_MobjCeilingZ(mobj_t *mobj, sector_t *sector, sector_t *boundsec, fixed
 					continue;
 
 				if (lowest)
-					finalheight = min(finalheight, HighestOnLine(mobj->radius, x, y, ld, slope, true));
+					finalheight = min(finalheight, HighestOnLine(radius, x, y, ld, slope, true));
 				else
-					finalheight = max(finalheight, HighestOnLine(mobj->radius, x, y, ld, slope, false));
+					finalheight = max(finalheight, HighestOnLine(radius, x, y, ld, slope, false));
 			}
 
 			return finalheight;
@@ -1230,165 +1229,11 @@ fixed_t P_MobjCeilingZ(mobj_t *mobj, sector_t *sector, sector_t *boundsec, fixed
 		if (line == NULL)
 			return P_GetSlopeZAt(slope, x, y);
 
-		return HighestOnLine(mobj->radius, x, y, line, slope, lowest);
+		return HighestOnLine(radius, x, y, line, slope, lowest);
 	} else // Well, that makes it easy. Just get the ceiling height
 		return sector->ceilingheight;
 }
 
-// Now do the same as all above, but for cameras because apparently cameras are special?
-fixed_t P_CameraFloorZ(camera_t *mobj, sector_t *sector, sector_t *boundsec, fixed_t x, fixed_t y, line_t *line, boolean lowest, boolean perfect)
-{
-	I_Assert(mobj != NULL);
-	I_Assert(sector != NULL);
-
-	if (sector->f_slope) {
-		fixed_t testx, testy;
-		pslope_t *slope = sector->f_slope;
-
-		// Get the corner of the object that should be the highest on the slope
-		if (slope->d.x < 0)
-			testx = mobj->radius;
-		else
-			testx = -mobj->radius;
-
-		if (slope->d.y < 0)
-			testy = mobj->radius;
-		else
-			testy = -mobj->radius;
-
-		if ((slope->zdelta > 0) ^ !!(lowest)) {
-			testx = -testx;
-			testy = -testy;
-		}
-
-		testx += x;
-		testy += y;
-
-		// If the highest point is in the sector, then we have it easy! Just get the Z at that point
-		if (R_PointInSubsector(testx, testy)->sector == (boundsec ? boundsec : sector))
-			return P_GetSlopeZAt(slope, testx, testy);
-
-		// If boundsec is set, we're looking for specials. In that case, iterate over every line in this sector to find the TRUE highest/lowest point
-		if (perfect) {
-			size_t i;
-			line_t *ld;
-			fixed_t bbox[4];
-			fixed_t finalheight;
-
-			if (lowest)
-				finalheight = INT32_MAX;
-			else
-				finalheight = INT32_MIN;
-
-			bbox[BOXLEFT] = x-mobj->radius;
-			bbox[BOXRIGHT] = x+mobj->radius;
-			bbox[BOXTOP] = y+mobj->radius;
-			bbox[BOXBOTTOM] = y-mobj->radius;
-			for (i = 0; i < boundsec->linecount; i++) {
-				ld = boundsec->lines[i];
-
-				if (bbox[BOXRIGHT] <= ld->bbox[BOXLEFT] || bbox[BOXLEFT] >= ld->bbox[BOXRIGHT]
-				|| bbox[BOXTOP] <= ld->bbox[BOXBOTTOM] || bbox[BOXBOTTOM] >= ld->bbox[BOXTOP])
-					continue;
-
-				if (P_BoxOnLineSide(bbox, ld) != -1)
-					continue;
-
-				if (lowest)
-					finalheight = min(finalheight, HighestOnLine(mobj->radius, x, y, ld, slope, true));
-				else
-					finalheight = max(finalheight, HighestOnLine(mobj->radius, x, y, ld, slope, false));
-			}
-
-			return finalheight;
-		}
-
-		// If we're just testing for base sector location (no collision line), just go for the center's spot...
-		// It'll get fixed when we test for collision anyway, and the final result can't be lower than this
-		if (line == NULL)
-			return P_GetSlopeZAt(slope, x, y);
-
-		return HighestOnLine(mobj->radius, x, y, line, slope, lowest);
-	} else // Well, that makes it easy. Just get the floor height
-		return sector->floorheight;
-}
-
-fixed_t P_CameraCeilingZ(camera_t *mobj, sector_t *sector, sector_t *boundsec, fixed_t x, fixed_t y, line_t *line, boolean lowest, boolean perfect)
-{
-	I_Assert(mobj != NULL);
-	I_Assert(sector != NULL);
-
-	if (sector->c_slope) {
-		fixed_t testx, testy;
-		pslope_t *slope = sector->c_slope;
-
-		// Get the corner of the object that should be the highest on the slope
-		if (slope->d.x < 0)
-			testx = mobj->radius;
-		else
-			testx = -mobj->radius;
-
-		if (slope->d.y < 0)
-			testy = mobj->radius;
-		else
-			testy = -mobj->radius;
-
-		if ((slope->zdelta > 0) ^ !!(lowest)) {
-			testx = -testx;
-			testy = -testy;
-		}
-
-		testx += x;
-		testy += y;
-
-		// If the highest point is in the sector, then we have it easy! Just get the Z at that point
-		if (R_PointInSubsector(testx, testy)->sector == (boundsec ? boundsec : sector))
-			return P_GetSlopeZAt(slope, testx, testy);
-
-		// If boundsec is set, we're looking for specials. In that case, iterate over every line in this sector to find the TRUE highest/lowest point
-		if (perfect) {
-			size_t i;
-			line_t *ld;
-			fixed_t bbox[4];
-			fixed_t finalheight;
-
-			if (lowest)
-				finalheight = INT32_MAX;
-			else
-				finalheight = INT32_MIN;
-
-			bbox[BOXLEFT] = x-mobj->radius;
-			bbox[BOXRIGHT] = x+mobj->radius;
-			bbox[BOXTOP] = y+mobj->radius;
-			bbox[BOXBOTTOM] = y-mobj->radius;
-			for (i = 0; i < boundsec->linecount; i++) {
-				ld = boundsec->lines[i];
-
-				if (bbox[BOXRIGHT] <= ld->bbox[BOXLEFT] || bbox[BOXLEFT] >= ld->bbox[BOXRIGHT]
-				|| bbox[BOXTOP] <= ld->bbox[BOXBOTTOM] || bbox[BOXBOTTOM] >= ld->bbox[BOXTOP])
-					continue;
-
-				if (P_BoxOnLineSide(bbox, ld) != -1)
-					continue;
-
-				if (lowest)
-					finalheight = min(finalheight, HighestOnLine(mobj->radius, x, y, ld, slope, true));
-				else
-					finalheight = max(finalheight, HighestOnLine(mobj->radius, x, y, ld, slope, false));
-			}
-
-			return finalheight;
-		}
-
-		// If we're just testing for base sector location (no collision line), just go for the center's spot...
-		// It'll get fixed when we test for collision anyway, and the final result can't be lower than this
-		if (line == NULL)
-			return P_GetSlopeZAt(slope, x, y);
-
-		return HighestOnLine(mobj->radius, x, y, line, slope, lowest);
-	} else // Well, that makes it easy. Just get the ceiling height
-		return sector->ceilingheight;
-}
 static void P_PlayerFlip(mobj_t *mo)
 {
 	if (!mo->player)
@@ -1780,14 +1625,15 @@ bustupdone:
 //
 // P_CheckSkyHit
 //
-static boolean P_CheckSkyHit(mobj_t *mo)
+boolean P_CheckSkyHit(mobj_t *mo, line_t *line)
 {
-	if (ceilingline && ceilingline->backsector
-		&& ceilingline->backsector->ceilingpic == skyflatnum
-		&& ceilingline->frontsector
-		&& ceilingline->frontsector->ceilingpic == skyflatnum
-		&& (mo->z >= ceilingline->frontsector->ceilingheight
-		|| mo->z >= ceilingline->backsector->ceilingheight))
+	if (line && (line->special == 41 ||
+		(line->backsector
+		&& line->backsector->ceilingpic == skyflatnum
+		&& line->frontsector
+		&& line->frontsector->ceilingpic == skyflatnum
+		&& (mo->z >= line->frontsector->ceilingheight
+		|| mo->z >= line->backsector->ceilingheight))))
 			return true;
 	return false;
 }
@@ -1894,7 +1740,7 @@ void P_XYMovement(mobj_t *mo)
 					mo->fuse += ((5 - mo->threshold) * TICRATE);
 
 				// Check for hit against sky here
-				if (P_CheckSkyHit(mo))
+				if (P_CheckSkyHit(mo, ceilingline))
 				{
 					// Hack to prevent missiles exploding
 					// against the sky.
@@ -1914,7 +1760,7 @@ void P_XYMovement(mobj_t *mo)
 			mo->flags &= ~MF_STICKY; //Don't check again!
 
 			// Check for hit against sky here
-			if (P_CheckSkyHit(mo))
+			if (P_CheckSkyHit(mo, ceilingline))
 			{
 				// Hack to prevent missiles exploding
 				// against the sky.
@@ -1973,7 +1819,7 @@ void P_XYMovement(mobj_t *mo)
 		else if (mo->flags & MF_MISSILE)
 		{
 			// explode a missile
-			if (P_CheckSkyHit(mo))
+			if (P_CheckSkyHit(mo, ceilingline))
 			{
 				// Hack to prevent missiles exploding
 				// against the sky.
@@ -10646,21 +10492,10 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	SINT8 sc = -1;
 	state_t *st;
 	mobj_t *mobj;
+	int status;
 
 	if (type == MT_NULL)
-	{
-#if 0
-#ifdef PARANOIA
-		I_Error("Tried to spawn MT_NULL\n");
-#endif
 		return NULL;
-#endif
-		// Hack: Some code assumes that P_SpawnMobj can never return NULL
-		// So replace MT_NULL with MT_RAY in the meantime
-		// Remove when dealt properly
-		CONS_Debug(DBG_GAMELOGIC, "Tried to spawn MT_NULL, using MT_RAY\n");
-		type = MT_RAY;
-	}
 
 	mobj = Z_Calloc(sizeof (*mobj), PU_LEVEL, NULL);
 
@@ -10754,9 +10589,32 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	// Set shadowscale here, before spawn hook so that Lua can change it
 	mobj->shadowscale = P_DefaultMobjShadowScale(mobj);
 
+	// A monitor can't respawn if we're not in multiplayer,
+	// or if we're in co-op and it's score or a 1up
+	if (mobj->flags & MF_MONITOR && (!(netgame || multiplayer)
+	|| (G_CoopGametype()
+		&& (mobj->type == MT_1UP_BOX
+		|| mobj->type == MT_SCORE1K_BOX
+		|| mobj->type == MT_SCORE10K_BOX)
+	)))
+		mobj->flags2 |= MF2_DONTRESPAWN;
+
+	if (type == MT_PLAYER)
+	{
+		// when spawning MT_PLAYER, set mobj->player before calling MobjSpawn hook to prevent P_RemoveMobj from succeeding on player mobj.
+		if (mobj->player)
+			mobj->player->mo = mobj;
+	}
+
+	// increment mobj reference, so we don't get a dangling reference in case MobjSpawn calls P_RemoveMobj
+	mobj->thinker.references++;
+
 	// DANGER! This can cause P_SpawnMobj to return NULL!
 	// Avoid using P_RemoveMobj on the newly created mobj in "MobjSpawn" Lua hooks!
-	if (LUA_HookMobj(mobj, MOBJ_HOOK(MobjSpawn)))
+	status = LUA_HookMobj(mobj, MOBJ_HOOK(MobjSpawn));
+	mobj->thinker.references--;
+
+	if (status)
 	{
 		if (P_MobjWasRemoved(mobj))
 			return NULL;
@@ -10778,6 +10636,9 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		case MT_BLACKEGGMAN:
 			{
 				mobj_t *spawn = P_SpawnMobj(mobj->x, mobj->z, mobj->z+mobj->height-16*FRACUNIT, MT_BLACKEGGMAN_HELPER);
+				if (P_MobjWasRemoved(spawn))
+					break;
+
 				spawn->destscale = mobj->scale;
 				P_SetScale(spawn, mobj->scale);
 				P_SetTarget(&spawn->target, mobj);
@@ -10793,6 +10654,9 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		case MT_EGGGUARD:
 			{
 				mobj_t *spawn = P_SpawnMobj(x, y, z, MT_EGGSHIELD);
+				if (P_MobjWasRemoved(spawn))
+					break;
+
 				spawn->destscale = mobj->scale;
 				P_SetScale(spawn, mobj->scale);
 				P_SetTarget(&mobj->tracer, spawn);
@@ -10808,6 +10672,9 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 				for (i = 0; i < mobj->info->damage; i++)
 				{
 					ball = P_SpawnMobj(x, y, z, mobj->info->painchance);
+					if (P_MobjWasRemoved(ball))
+						continue;
+
 					ball->destscale = mobj->scale;
 					P_SetScale(ball, mobj->scale);
 					P_SetTarget(&ball->target, mobj);
@@ -10827,6 +10694,9 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 				for (q = 0; q < mobj->info->painchance; q++)
 				{
 					ball = P_SpawnMobj(x, y, z, mobj->info->mass);
+					if (P_MobjWasRemoved(ball))
+						continue;
+
 					ball->destscale = mobj->scale;
 					P_SetScale(ball, mobj->scale);
 					P_SetTarget(&lastball->tracer, ball);
@@ -10838,18 +10708,24 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		case MT_CRUSHSTACEAN:
 			{
 				mobj_t *bigmeatyclaw = P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_CRUSHCLAW);
-				bigmeatyclaw->angle = mobj->angle + ((mobj->flags2 & MF2_AMBUSH) ? ANGLE_90 : ANGLE_270);;
-				P_SetTarget(&mobj->tracer, bigmeatyclaw);
-				P_SetTarget(&bigmeatyclaw->tracer, mobj);
+				if (!P_MobjWasRemoved(bigmeatyclaw))
+				{
+					bigmeatyclaw->angle = mobj->angle + ((mobj->flags2 & MF2_AMBUSH) ? ANGLE_90 : ANGLE_270);
+					P_SetTarget(&mobj->tracer, bigmeatyclaw);
+					P_SetTarget(&bigmeatyclaw->tracer, mobj);
+				}
 				mobj->reactiontime >>= 1;
 			}
 			break;
 		case MT_BANPYURA:
 			{
 				mobj_t *bigmeatyclaw = P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_BANPSPRING);
-				bigmeatyclaw->angle = mobj->angle + ((mobj->flags2 & MF2_AMBUSH) ? ANGLE_90 : ANGLE_270);;
-				P_SetTarget(&mobj->tracer, bigmeatyclaw);
-				P_SetTarget(&bigmeatyclaw->tracer, mobj);
+				if (!P_MobjWasRemoved(bigmeatyclaw))
+				{
+					bigmeatyclaw->angle = mobj->angle + ((mobj->flags2 & MF2_AMBUSH) ? ANGLE_90 : ANGLE_270);
+					P_SetTarget(&mobj->tracer, bigmeatyclaw);
+					P_SetTarget(&bigmeatyclaw->tracer, mobj);
+				}
 				mobj->reactiontime >>= 1;
 			}
 			break;
@@ -10864,6 +10740,9 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 				for (i = 0; i <= 16; i++) // probably should be < but staying authentic to the Lua version
 				{
 					cur = P_SpawnMobjFromMobj(mobj, 0, 0, 0, ((mobj->type == MT_WAVINGFLAG1) ? MT_WAVINGFLAGSEG1 : MT_WAVINGFLAGSEG2));;
+					if (P_MobjWasRemoved(cur))
+						continue;
+
 					P_SetTarget(&prev->tracer, cur);
 					cur->extravalue1 = i;
 					prev = cur;
@@ -10901,11 +10780,17 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			{
 				mobj_t *fire;
 				fire = P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_SPINBOBERT_FIRE1);
-				P_SetTarget(&fire->target, mobj);
-				P_SetTarget(&mobj->hnext, fire);
+				if (!P_MobjWasRemoved(fire))
+				{
+					P_SetTarget(&fire->target, mobj);
+					P_SetTarget(&mobj->hnext, fire);
+				}
 				fire = P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_SPINBOBERT_FIRE2);
-				P_SetTarget(&fire->target, mobj);
-				P_SetTarget(&mobj->hprev, fire);
+				if (!P_MobjWasRemoved(fire))
+				{
+					P_SetTarget(&fire->target, mobj);
+					P_SetTarget(&mobj->hprev, fire);
+				}
 			}
 			break;
 		case MT_REDRING: // Make MT_REDRING red by default
@@ -10922,8 +10807,8 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		case MT_EGGCAPSULE:
 			mobj->reactiontime = 0;
 			mobj->extravalue1 = mobj->cvmem =\
-			 mobj->cusval = mobj->movecount =\
-			 mobj->lastlook = mobj->extravalue2 = -1;
+			mobj->cusval = mobj->movecount =\
+			mobj->lastlook = mobj->extravalue2 = -1;
 			break;
 		case MT_REDTEAMRING:
 			mobj->color = skincolor_redteam;
@@ -10959,6 +10844,8 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		case MT_OILLAMP:
 			{
 				mobj_t* overlay = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_OVERLAY);
+				if (P_MobjWasRemoved(overlay))
+					break;
 				P_SetTarget(&overlay->target, mobj);
 				P_SetMobjState(overlay, S_OILLAMPFLARE);
 				break;
@@ -10968,13 +10855,19 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			mobj->flags2 |= MF2_INVERTAIMABLE;
 			break;
 		case MT_MINECARTEND:
-			P_SetTarget(&mobj->tracer, P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_MINECARTENDSOLID));
-			mobj->tracer->angle = mobj->angle + ANGLE_90;
+			{
+				mobj_t *mcsolid = P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_MINECARTENDSOLID);
+				if (P_MobjWasRemoved(mcsolid))
+					break;
+				P_SetTarget(&mobj->tracer, mcsolid);
+				mcsolid->angle = mobj->angle + ANGLE_90;
+			}
 			break;
 		case MT_TORCHFLOWER:
 			{
 				mobj_t *fire = P_SpawnMobjFromMobj(mobj, 0, 0, 46*FRACUNIT, MT_FLAME);
-				P_SetTarget(&mobj->target, fire);
+				if (!P_MobjWasRemoved(fire))
+					P_SetTarget(&mobj->target, fire);
 				break;
 			}
 		case MT_PYREFLY:
@@ -10983,10 +10876,16 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			mobj->fuse = 100;
 			break;
 		case MT_SIGN:
-			P_SetTarget(&mobj->tracer, P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_OVERLAY));
-			P_SetTarget(&mobj->tracer->target, mobj);
-			P_SetMobjState(mobj->tracer, S_SIGNBOARD);
-			mobj->tracer->movedir = ANGLE_90;
+			{
+				mobj_t *sign = P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_OVERLAY);
+				if (P_MobjWasRemoved(sign))
+					break;
+
+				P_SetTarget(&mobj->tracer, sign);
+				P_SetTarget(&sign->target, mobj);
+				P_SetMobjState(sign, S_SIGNBOARD);
+				sign->movedir = ANGLE_90;
+			}
 		default:
 			break;
 	}
@@ -11009,7 +10908,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		}
 	}
 
-	if (!(mobj->flags & MF_NOTHINK))
+	if (!(mobj->flags & MF_NOTHINK) || (titlemapinaction && mobj->type == MT_ALTVIEWMAN))
 		P_AddThinker(THINK_MOBJ, &mobj->thinker);
 
 	if (mobj->skin) // correct inadequecies above.
@@ -11592,8 +11491,6 @@ void P_SpawnPlayer(INT32 playernum)
 				// Spawn as a spectator,
 				// yes even in splitscreen mode
 				p->spectator = true;
-				if (playernum&1) p->skincolor = skincolor_redteam;
-				else             p->skincolor = skincolor_blueteam;
 
 				// but immediately send a team change packet.
 				NetPacket.packet.playernum = playernum;
@@ -11613,13 +11510,6 @@ void P_SpawnPlayer(INT32 playernum)
 		// Fix stupid non spectator spectators.
 		if (!p->spectator && !p->ctfteam)
 			p->spectator = true;
-
-		// Fix team colors.
-		// This code isn't being done right somewhere else. Oh well.
-		if (p->ctfteam == 1)
-			p->skincolor = skincolor_redteam;
-		else if (p->ctfteam == 2)
-			p->skincolor = skincolor_blueteam;
 	}
 
 	if ((netgame || multiplayer) && ((gametyperules & GTR_SPAWNINVUL) || leveltime) && !p->spectator && !(maptol & TOL_NIGHTS))
@@ -11631,7 +11521,7 @@ void P_SpawnPlayer(INT32 playernum)
 	mobj->angle = 0;
 
 	// set color translations for player sprites
-	mobj->color = p->skincolor;
+	mobj->color = P_GetPlayerColor(p);
 
 	// set 'spritedef' override in mobj for player skins.. (see ProjectSprite)
 	// (usefulness: when body mobj is detached from player (who respawns),
@@ -11677,10 +11567,13 @@ void P_SpawnPlayer(INT32 playernum)
 			if (p == players) // this is totally the wrong place to do this aaargh.
 			{
 				mobj_t *idya = P_SpawnMobjFromMobj(mobj, 0, 0, mobj->height, MT_GOTEMERALD);
-				idya->health = 0; // for identification
-				P_SetTarget(&idya->target, mobj);
-				P_SetMobjState(idya, mobjinfo[MT_GOTEMERALD].missilestate);
-				P_SetTarget(&mobj->tracer, idya);
+				if (!P_MobjWasRemoved(idya))
+				{
+					idya->health = 0; // for identification
+					P_SetTarget(&idya->target, mobj);
+					P_SetMobjState(idya, mobjinfo[MT_GOTEMERALD].missilestate);
+					P_SetTarget(&mobj->tracer, idya);
+				}
 			}
 		}
 		else if (sstimer)

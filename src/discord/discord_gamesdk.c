@@ -10,10 +10,9 @@
 /// \brief Discord Game SDK handling
 
 #ifdef HAVE_DISCORDGAMESDK // HAVE_DISCORDGAMESDK
+#include "discord_game_sdk.h"
 
 #include "../doomdef.h" // large list of defs, mainly
-
-#include "discord_game_sdk.h"
 
 #include "discord_gamesdk.h"
 #include "discord.h"

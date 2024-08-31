@@ -303,7 +303,7 @@
     <ClInclude Include="..\hardware\hw_md3load.h" />
     <ClInclude Include="..\hardware\hw_model.h" />
     <ClInclude Include="..\STAR\m_menu.h" />
-    <ClInclude Include="..\STAR\parser.h" />
+    <ClInclude Include="..\STAR\smkg-script.h" />
     <ClInclude Include="..\STAR\p_saveg.h" />
     <ClInclude Include="..\STAR\p_user.h" />
     <ClInclude Include="..\STAR\smkg-cvars.h" />
@@ -382,6 +382,7 @@
     <ClInclude Include="..\r_textures.h" />
     <ClInclude Include="..\r_things.h" />
     <ClInclude Include="..\screen.h" />
+    <ClInclude Include="..\snake.h" />
     <ClInclude Include="..\sounds.h" />
     <ClInclude Include="..\st_stuff.h" />
     <ClInclude Include="..\s_sound.h" />
@@ -469,7 +470,7 @@
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\STAR\events\ss_easter.c">
+    <ClCompile Include="..\STAR\events\smkg-easter.c">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
@@ -481,23 +482,17 @@
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\STAR\parsed.c">
+    <ClCompile Include="..\STAR\parser\parsed.c">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\STAR\parser.c">
+    <ClCompile Include="..\STAR\parser\parser.c">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\STAR\p_saveg.c">
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\STAR\p_user.c">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
@@ -517,11 +512,11 @@
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\STAR\smkg-v_video.c">
+    <ClCompile Include="..\STAR\smkg-p_saveg.c">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\STAR\ss_main.c">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>

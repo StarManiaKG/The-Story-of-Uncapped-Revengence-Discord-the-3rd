@@ -14,33 +14,17 @@
 
 #include "kg_input.h"
 #include "k_menu.h"
-#include "kk_hud.h"
-#include "km_swap.h"
-#include "kv_video.h"
+
 #include "../../m_fixed.h"
 #include "../../w_wad.h"
+#include "../../v_video.h"
 #include "../../z_zone.h"
 
-#include "../menus/smkg_m_draw.h"
+#include "../smkg-st_hud.h"
 #include "../smkg_g_inputs.h"
 
-static INT32 highlightflags;
-
-UINT16 M_GetCvPlayerColor(UINT8 pnum)
-{
-	if (pnum >= MAXSPLITSCREENPLAYERS)
-		return SKINCOLOR_NONE;
-
-	UINT16 color = (pnum == consoleplayer ? cv_playercolor.value : cv_playercolor2.value);
-	if (color != SKINCOLOR_NONE)
-		return color;
-
-	INT32 skin = R_SkinAvailable((pnum == consoleplayer ? cv_skin.string : cv_skin2.string));
-	if (skin == -1)
-		return SKINCOLOR_NONE;
-
-	return skins[skin].prefcolor;
-}
+#include "../menus/smkg_m_draw.h"
+#include "../netcode/drrr-m_swap.h"
 
 static const char *M_MenuTypingCroppedString(void)
 {
@@ -57,12 +41,6 @@ static const char *M_MenuTypingCroppedString(void)
 	return buf;
 }
 
-static INT32 M_DrawCaretString(INT32 x, INT32 y, INT32 flags, const char *string)
-{
-	V_DrawThinString(x, y, V_ALLOWLOWERCASE, string);
-	return V_ThinStringWidth(string, flags);
-}
-
 // Draws the typing submenu
 void M_DrawMenuTyping(void)
 {
@@ -76,8 +54,6 @@ void M_DrawMenuTyping(void)
 
 	V_DrawFadeScreen(31, (menutyping.menutypingfade+1)/2);
 
-    highlightflags = V_MENUCOLORMAP;
-
 	// Draw the string we're editing at the top.
 
 	const INT32 boxwidth = (8*(MAXSTRINGLENGTH + 1)) + 7;
@@ -90,10 +66,13 @@ void M_DrawMenuTyping(void)
 
 	if (currentMenu->menuitems[tsourdt3rd_itemOn].text)
 	{
-		V_DrawThinString(x + 5, y - 2, highlightflags|V_ALLOWLOWERCASE, currentMenu->menuitems[tsourdt3rd_itemOn].text);
+		V_DrawThinString(x + 5, y - 2, tsourdt3rd_highlightflags|V_ALLOWLOWERCASE, currentMenu->menuitems[tsourdt3rd_itemOn].text);
 	}
 
-	STAR_M_DrawMenuTooltips();
+	TSoURDt3rd_M_DrawMenuTooltips(
+		0, 0, V_SNAPTOTOP, NULL,
+		BASEVIDWIDTH/2, 15, true
+	);
 
 	//M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
 	V_DrawFill(x + 5, y + 4 + 5, boxwidth - 8, 8+6, 159);
@@ -104,7 +83,11 @@ void M_DrawMenuTyping(void)
 	V_DrawFill(x + 4, y + 4 + 5, 1, 8+6, 121);
 	V_DrawFill(x + 5 + boxwidth - 8, y + 4 + 5, 1, 8+6, 121);
 
-	INT32 textwidth = M_DrawCaretString(x + 8, y + 12, V_ALLOWLOWERCASE, M_MenuTypingCroppedString());
+	INT32 textwidth = TSoURDt3rd_M_DrawCaretString(
+		x + 8, y + 12, V_ALLOWLOWERCASE,
+		FRACUNIT, FRACUNIT,
+		M_MenuTypingCroppedString(), tny_font
+	);
     if (tsourdt3rd_skullAnimCounter < 4
 		&& menutyping.menutypingclose == false
 		&& menutyping.menutypingfade == (menutyping.keyboardtyping ? 9 : 18))
@@ -238,7 +221,7 @@ void M_DrawMenuTyping(void)
 						V_DrawFill(x,             y + 1, 1, BUTTONHEIGHT - 2, 121);
 						V_DrawFill(x + width - 1, y + 1, 1, BUTTONHEIGHT - 2, 121);
 
-						mflag |= highlightflags;
+						mflag |= tsourdt3rd_highlightflags;
 					}
 					else
 					{
@@ -292,14 +275,14 @@ void M_DrawMenuTyping(void)
 	}
 	else
 	{
-		V_DrawCenteredThinString(BASEVIDWIDTH/2, y, V_GRAYMAP|V_ALLOWLOWERCASE,
+		V_DrawThinString(returnx, y, V_GRAYMAP|V_ALLOWLOWERCASE,
 			"Type using the Virtual Keyboard. Use the \'OK\' button to confirm & exit."
 			//"\nPress any keyboard key to type normally."
 		);
 	}
 }
 
-static void M_DrawMediocreKeyboardKey(const char *text, INT32 *workx, INT32 worky, boolean push, boolean rightaligned)
+void TSoURDt3rd_M_DrawMediocreKeyboardKey(const char *text, INT32 *workx, INT32 worky, boolean push, boolean rightaligned)
 {
 	INT32 buttonwidth = V_StringWidth(text, 0) + 2;
 
@@ -325,7 +308,7 @@ static void M_DrawMediocreKeyboardKey(const char *text, INT32 *workx, INT32 work
 }
 
 // Draw the message popup submenu
-void M_DrawMenuMessage(void)
+void TSoURDt3rd_M_DrawMenuMessage(void)
 {
 	if (!menumessage.active)
 		return;
@@ -342,7 +325,7 @@ void M_DrawMenuMessage(void)
 
 	if (menumessage.header != NULL)
 	{
-		V_DrawThinString(x, y - 10, highlightflags|V_ALLOWLOWERCASE, menumessage.header);
+		V_DrawThinString(x, y - 10, tsourdt3rd_highlightflags|V_ALLOWLOWERCASE, menumessage.header);
 	}
 
 	if (menumessage.defaultstr)
@@ -366,7 +349,7 @@ void M_DrawMenuMessage(void)
 		V_DrawThinString(
 			workx, worky + 1,
 			((push && (menumessage.closing & MENUMESSAGECLOSE))
-				? highlightflags : 0)|V_ALLOWLOWERCASE,
+				? tsourdt3rd_highlightflags : 0)|V_ALLOWLOWERCASE,
 			menumessage.defaultstr
 		);
 
@@ -390,7 +373,7 @@ void M_DrawMenuMessage(void)
 		}
 		else
 		{
-			M_DrawMediocreKeyboardKey("ESC", &workx, worky, push, true);
+			TSoURDt3rd_M_DrawMediocreKeyboardKey("ESC", &workx, worky, push, true);
 		}
 
 		if (menumessage.confirmstr)
@@ -404,7 +387,7 @@ void M_DrawMenuMessage(void)
 			V_DrawThinString(
 				workx, worky + 1,
 				((push && (menumessage.closing & MENUMESSAGECLOSE))
-					? highlightflags : 0)|V_ALLOWLOWERCASE,
+					? tsourdt3rd_highlightflags : 0)|V_ALLOWLOWERCASE,
 				menumessage.confirmstr
 			);
 
@@ -422,7 +405,7 @@ void M_DrawMenuMessage(void)
 		}
 		else
 		{
-			M_DrawMediocreKeyboardKey("ENTER", &workx, worky, push, true);
+			TSoURDt3rd_M_DrawMediocreKeyboardKey("ENTER", &workx, worky, push, true);
 		}
 	}
 
@@ -440,7 +423,7 @@ void M_DrawMenuMessage(void)
 				memset(string, 0, MAXMENUMESSAGE);
 				if (i >= MAXMENUMESSAGE)
 				{
-					CONS_Printf("M_DrawMenuMessage: too long segment in %s\n", msg);
+					CONS_Printf("TSoURDt3rd_M_DrawMenuMessage: too long segment in %s\n", msg);
 					return;
 				}
 				else
@@ -459,7 +442,7 @@ void M_DrawMenuMessage(void)
 		{
 			if (i >= MAXMENUMESSAGE)
 			{
-				CONS_Printf("M_DrawMenuMessage: too long segment in %s\n", msg);
+				CONS_Printf("TSoURDt3rd_M_DrawMenuMessage: too long segment in %s\n", msg);
 				return;
 			}
 			else
@@ -474,72 +457,8 @@ void M_DrawMenuMessage(void)
 	}
 }
 
-// ==========================================================================
-// GENERIC MENUS
-// ==========================================================================
-
-#define MAXMSGLINELEN 256
-
-//
-// DRRR_M_DrawMessageMenu
-//
-// Generic message prompt
-//
-void DRRR_M_DrawMessageMenu(void)
+void TSoURDt3rd_M_DrawMenuMessageOnTitle(INT32 count)
 {
-	INT32 y = currentMenu->y;
-	size_t i, start = 0;
-	INT16 max;
-	char string[MAXMENUMESSAGE];
-	INT32 mlines;
-	const char *msg = currentMenu->menuitems[0].text;
-
-	mlines = currentMenu->lastOn>>8;
-	max = (INT16)((UINT8)(currentMenu->lastOn & 0xFF)*8);
-
-	M_DrawTextBox(currentMenu->x, y - 8, (max+7)>>3, mlines);
-
-	while (*(msg+start))
-	{
-		size_t len = strlen(msg+start);
-
-		for (i = 0; i < len; i++)
-		{
-			if (*(msg+start+i) == '\n')
-			{
-				memset(string, 0, MAXMENUMESSAGE);
-				if (i >= MAXMENUMESSAGE)
-				{
-					CONS_Printf("DRRR_M_DrawMessageMenu: too long segment in %s\n", msg);
-					return;
-				}
-				else
-				{
-					strncpy(string,msg+start, i);
-					string[i] = '\0';
-					start += i;
-					i = (size_t)-1; //added : 07-02-98 : damned!
-					start++;
-				}
-				break;
-			}
-		}
-
-		if (i == strlen(msg+start))
-		{
-			if (i >= MAXMENUMESSAGE)
-			{
-				CONS_Printf("DRRR_M_DrawMessageMenu: too long segment in %s\n", msg);
-				return;
-			}
-			else
-			{
-				strcpy(string, msg + start);
-				start += i;
-			}
-		}
-
-		V_DrawThinString((BASEVIDWIDTH - V_ThinStringWidth(string, 0))/2,y,V_ALLOWLOWERCASE,string);
-		y += 8; //SHORT(hu_font[0]->height);
-	}
+	if (count > 0)
+		TSoURDt3rd_M_DrawMenuMessage();
 }

@@ -465,6 +465,9 @@
     <ClInclude Include="..\v_video.h">
       <Filter>R_Rend</Filter>
     </ClInclude>
+    <ClInclude Include="..\snake.h">
+      <Filter>M_Misc</Filter>
+    </ClInclude>
     <ClInclude Include="..\sounds.h">
       <Filter>S_Sounds</Filter>
     </ClInclude>
@@ -535,7 +538,7 @@
     <ClInclude Include="..\STAR\p_user.h">
       <Filter>STAR</Filter>
     </ClInclude>
-    <ClInclude Include="..\STAR\parser.h">
+    <ClInclude Include="..\STAR\smkg-script.h">
       <Filter>STAR</Filter>
     </ClInclude>
     <ClInclude Include="..\STAR\star_vars.h">
@@ -1063,16 +1066,13 @@
     <ClCompile Include="..\STAR\m_menu.c">
       <Filter>STAR</Filter>
     </ClCompile>
-    <ClCompile Include="..\STAR\p_saveg.c">
-      <Filter>STAR</Filter>
-    </ClCompile>
     <ClCompile Include="..\STAR\p_user.c">
       <Filter>STAR</Filter>
     </ClCompile>
-    <ClCompile Include="..\STAR\parsed.c">
+    <ClCompile Include="..\STAR\parser\parsed.c">
       <Filter>STAR</Filter>
     </ClCompile>
-    <ClCompile Include="..\STAR\parser.c">
+    <ClCompile Include="..\STAR\parser\parser.c">
       <Filter>STAR</Filter>
     </ClCompile>
     <ClCompile Include="..\STAR\smkg-cvars.c">
@@ -1081,7 +1081,7 @@
     <ClCompile Include="..\STAR\smkg-jukebox.c">
       <Filter>STAR</Filter>
     </ClCompile>
-    <ClCompile Include="..\STAR\smkg-v_video.c">
+    <ClCompile Include="..\STAR\smkg-p_saveg.c">
       <Filter>STAR</Filter>
     </ClCompile>
     <ClCompile Include="..\STAR\ss_main.c">
@@ -1093,7 +1093,7 @@
     <ClCompile Include="..\STAR\events\smkg-aprilfools.c">
       <Filter>STAR</Filter>
     </ClCompile>
-    <ClCompile Include="..\STAR\events\ss_easter.c">
+    <ClCompile Include="..\STAR\events\smkg-easter.c">
       <Filter>STAR</Filter>
     </ClCompile>
     <ClCompile Include="..\blua\loslib.c">

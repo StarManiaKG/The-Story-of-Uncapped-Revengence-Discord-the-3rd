@@ -146,6 +146,7 @@ void P_ForceLocalAngle(player_t *player, angle_t angle);
 boolean P_PlayerFullbright(player_t *player);
 boolean P_PlayerCanEnterSpinGaps(player_t *player);
 boolean P_PlayerShouldUseSpinHeight(player_t *player);
+UINT16 P_GetPlayerColor(player_t *player);
 
 boolean P_IsObjectInGoop(mobj_t *mo);
 boolean P_IsObjectOnGround(mobj_t *mo);
@@ -203,6 +204,7 @@ void P_Earthquake(mobj_t *inflictor, mobj_t *source, fixed_t radius);
 boolean P_HomingAttack(mobj_t *source, mobj_t *enemy); /// \todo doesn't belong in p_user
 boolean P_SuperReady(player_t *player);
 void P_DoJump(player_t *player, boolean soundandstate);
+void P_DoSpinDashDust(player_t *player);
 #define P_AnalogMove(player) (P_ControlStyle(player) == CS_LMAOGALOG)
 boolean P_TransferToNextMare(player_t *player);
 UINT8 P_FindLowestMare(void);
@@ -212,6 +214,9 @@ boolean P_PlayerMoving(INT32 pnum);
 void P_SpawnThokMobj(player_t *player);
 void P_SpawnSpinMobj(player_t *player, mobjtype_t type);
 void P_Telekinesis(player_t *player, fixed_t thrust, fixed_t range);
+
+void P_DoTailsOverlay(player_t *player, mobj_t *tails);
+void P_DoMetalJetFume(player_t *player, mobj_t *fume);
 
 void P_PlayLivesJingle(player_t *player);
 #define P_PlayRinglossSound(s)	S_StartSound(s, (mariomode) ? sfx_mario8 : sfx_altow1 + P_RandomKey(4));
@@ -297,25 +302,24 @@ void P_RunOverlays(void);
 void P_HandleMinecartSegments(mobj_t *mobj);
 void P_MobjThinker(mobj_t *mobj);
 boolean P_RailThinker(mobj_t *mobj);
+boolean P_CheckSkyHit(mobj_t *mo, line_t *line);
 void P_PushableThinker(mobj_t *mobj);
 void P_SceneryThinker(mobj_t *mobj);
 
 
-fixed_t P_MobjFloorZ(mobj_t *mobj, sector_t *sector, sector_t *boundsec, fixed_t x, fixed_t y, line_t *line, boolean lowest, boolean perfect);
-fixed_t P_MobjCeilingZ(mobj_t *mobj, sector_t *sector, sector_t *boundsec, fixed_t x, fixed_t y, line_t *line, boolean lowest, boolean perfect);
-#define P_GetFloorZ(mobj, sector, x, y, line) P_MobjFloorZ(mobj, sector, NULL, x, y, line, false, false)
-#define P_GetCeilingZ(mobj, sector, x, y, line) P_MobjCeilingZ(mobj, sector, NULL, x, y, line, true, false)
-#define P_GetFOFTopZ(mobj, sector, fof, x, y, line) P_MobjCeilingZ(mobj, sectors + fof->secnum, sector, x, y, line, false, false)
-#define P_GetFOFBottomZ(mobj, sector, fof, x, y, line) P_MobjFloorZ(mobj, sectors + fof->secnum, sector, x, y, line, true, false)
-#define P_GetSpecialBottomZ(mobj, src, bound) P_MobjFloorZ(mobj, src, bound, mobj->x, mobj->y, NULL, src != bound, true)
-#define P_GetSpecialTopZ(mobj, src, bound) P_MobjCeilingZ(mobj, src, bound, mobj->x, mobj->y, NULL, src == bound, true)
+fixed_t P_MobjFloorZ(sector_t *sector, sector_t *boundsec, fixed_t x, fixed_t y, fixed_t radius, line_t *line, boolean lowest, boolean perfect);
+fixed_t P_MobjCeilingZ(sector_t *sector, sector_t *boundsec, fixed_t x, fixed_t y, fixed_t radius, line_t *line, boolean lowest, boolean perfect);
+#define P_GetFloorZ(mobj, sector, x, y, line) P_MobjFloorZ(sector, NULL, x, y, mobj->radius, line, false, false)
+#define P_GetCeilingZ(mobj, sector, x, y, line) P_MobjCeilingZ(sector, NULL, x, y, mobj->radius, line, true, false)
+#define P_GetFOFTopZ(mobj, sector, fof, x, y, line) P_MobjCeilingZ(sectors + fof->secnum, sector, x, y, mobj->radius, line, false, false)
+#define P_GetFOFBottomZ(mobj, sector, fof, x, y, line) P_MobjFloorZ(sectors + fof->secnum, sector, x, y, mobj->radius, line, true, false)
+#define P_GetSpecialBottomZ(mobj, src, bound) P_MobjFloorZ(src, bound, mobj->x, mobj->y, mobj->radius, NULL, src != bound, true)
+#define P_GetSpecialTopZ(mobj, src, bound) P_MobjCeilingZ(src, bound, mobj->x, mobj->y, mobj->radius, NULL, src == bound, true)
 
-fixed_t P_CameraFloorZ(camera_t *mobj, sector_t *sector, sector_t *boundsec, fixed_t x, fixed_t y, line_t *line, boolean lowest, boolean perfect);
-fixed_t P_CameraCeilingZ(camera_t *mobj, sector_t *sector, sector_t *boundsec, fixed_t x, fixed_t y, line_t *line, boolean lowest, boolean perfect);
-#define P_CameraGetFloorZ(mobj, sector, x, y, line) P_CameraFloorZ(mobj, sector, NULL, x, y, line, false, false)
-#define P_CameraGetCeilingZ(mobj, sector, x, y, line) P_CameraCeilingZ(mobj, sector, NULL, x, y, line, true, false)
-#define P_CameraGetFOFTopZ(mobj, sector, fof, x, y, line) P_CameraCeilingZ(mobj, sectors + fof->secnum, sector, x, y, line, false, false)
-#define P_CameraGetFOFBottomZ(mobj, sector, fof, x, y, line) P_CameraFloorZ(mobj, sectors + fof->secnum, sector, x, y, line, true, false)
+#define P_CameraGetFloorZ(mobj, sector, x, y, line) P_MobjFloorZ(sector, NULL, x, y, mobj->radius, line, false, false)
+#define P_CameraGetCeilingZ(mobj, sector, x, y, line) P_MobjCeilingZ(sector, NULL, x, y, mobj->radius, line, true, false)
+#define P_CameraGetFOFTopZ(mobj, sector, fof, x, y, line) P_MobjCeilingZ(sectors + fof->secnum, sector, x, y, mobj->radius, line, false, false)
+#define P_CameraGetFOFBottomZ(mobj, sector, fof, x, y, line) P_MobjFloorZ(sectors + fof->secnum, sector, x, y, mobj->radius, line, true, false)
 
 boolean P_InsideANonSolidFFloor(mobj_t *mobj, ffloor_t *rover);
 boolean P_CheckDeathPitCollide(mobj_t *mo);
@@ -417,6 +421,7 @@ boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff);
 boolean P_Move(mobj_t *actor, fixed_t speed);
 boolean P_SetOrigin(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z);
 boolean P_MoveOrigin(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z);
+boolean P_LineIsBlocking(mobj_t *mo, line_t *li);
 void P_SlideMove(mobj_t *mo);
 void P_BounceMove(mobj_t *mo);
 boolean P_CheckSight(mobj_t *t1, mobj_t *t2);
@@ -535,22 +540,9 @@ boolean P_SetMobjStateNF(mobj_t *mobj, statenum_t state);
 boolean P_CheckMissileSpawn(mobj_t *th);
 void P_Thrust(mobj_t *mo, angle_t angle, fixed_t move);
 void P_DoSuperTransformation(player_t *player, boolean giverings);
+void P_DoSuperDetransformation(player_t *player);
 void P_ExplodeMissile(mobj_t *mo);
 void P_CheckGravity(mobj_t *mo, boolean affect);
 void P_SetPitchRollFromSlope(mobj_t *mo, pslope_t *slope);
-
-#ifdef ALAM_LIGHTING
-//
-// CORONAS
-//
-boolean LCR_SuperSonicLight(mobj_t *mobj);
-
-extern consvar_t cv_corona;
-extern consvar_t cv_coronasize;
-extern consvar_t cv_corona_draw_mode;
-
-extern light_t lspr[NUMLIGHTS];
-extern light_t *t_lspr[NUMSPRITES];
-#endif
 
 #endif // __P_LOCAL__

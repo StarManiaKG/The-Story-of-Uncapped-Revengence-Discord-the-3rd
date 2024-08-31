@@ -59,15 +59,9 @@
 #include "discord/discord.h"
 #endif
 
-// STAR STUFF //
+// TSoURDt3rd
 #include "STAR/star_vars.h" // STAR_SetWindowTitle() //
-#include "STAR/smkg-cvars.h" // cv_shieldblockstransformation //
-#include "STAR/ss_main.h" // STAR_CONS_Printf() //
-#include "STAR/p_user.h"
-
-#include "m_menu.h"
-#include "d_main.h"
-// END OF THAT //
+#include "STAR/p_user.h" // TSoURDt3rd_P_SuperReady() //
 
 #if 0
 static void P_NukeAllPlayers(player_t *player);
@@ -1385,6 +1379,56 @@ void P_DoSuperTransformation(player_t *player, boolean giverings)
 	P_PlayerFlagBurst(player, false);
 }
 
+//
+// P_DoSuperDetransformation
+//
+// Detransform into regular Sonic!
+void P_DoSuperDetransformation(player_t *player)
+{
+	player->powers[pw_emeralds] = 0; // lost the power stones
+	P_SpawnGhostMobj(player->mo);
+
+	player->powers[pw_super] = 0;
+
+	// Restore color
+	if ((player->powers[pw_shield] & SH_STACK) == SH_FIREFLOWER)
+	{
+		player->mo->color = SKINCOLOR_WHITE;
+		G_GhostAddColor(GHC_FIREFLOWER);
+	}
+	else
+	{
+		player->mo->color = P_GetPlayerColor(player);
+		G_GhostAddColor(GHC_NORMAL);
+	}
+
+	if (!G_CoopGametype())
+		player->powers[pw_flashing] = flashingtics-1;
+
+	if (player->mo->sprite2 & FF_SPR2SUPER)
+		P_SetMobjState(player->mo, player->mo->state-states);
+
+	// Inform the netgame that the champion has fallen in the heat of battle.
+	if (!G_CoopGametype())
+	{
+		S_StartSound(NULL, sfx_s3k66); //let all players hear it.
+		HU_SetCEchoFlags(0);
+		HU_SetCEchoDuration(5);
+		HU_DoCEcho(va("%s\\is no longer super.\\\\\\\\", player_names[player-players]));
+	}
+
+	// Resume normal music if you're the console player
+	if (P_IsLocalPlayer(player))
+	{
+		music_stack_noposition = true; // HACK: Do not reposition next music
+		music_stack_fadeout = MUSICRATE/2; // HACK: Fade out current music
+	}
+	P_RestoreMusic(player);
+
+	// If you had a shield, restore its visual significance.
+	P_SpawnShieldOrb(player);
+}
+
 // Adds to the player's score
 void P_AddPlayerScore(player_t *player, UINT32 amount)
 {
@@ -1519,7 +1563,7 @@ void P_PlayLivesJingle(player_t *player)
 		return;
 
 	// STAR STUFF: play a sound for lives when jukeboxing //
-	if (TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack)
+	if (tsourdt3rd_global_jukebox->curtrack)
 		use1upSound = true;
 	// WE'RE PREPARED NOW! //
 
@@ -1568,7 +1612,7 @@ void P_PlayJingleMusic(player_t *player, const char *musname, UINT16 musflags, b
 		return;
 
 	// STAR STUFF: don't play jingles if we got jukebox or april fools music //
-	if (TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack)
+	if (tsourdt3rd_global_jukebox->curtrack)
 		return;
 	else if (TSoURDt3rd_AprilFools_ModeEnabled())
 		return;
@@ -1691,7 +1735,7 @@ void P_RestoreMusic(player_t *player)
 		S_StartCaption(sfx_None, -1, player->powers[pw_sneakers]);
 		if (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC)
 		{
-			if (!TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack) // STAR STUFF: maybe don't speed music while jukeboxing please... //
+			if (!tsourdt3rd_global_jukebox->curtrack) // STAR STUFF: maybe don't speed music while jukeboxing please... //
 				S_SpeedMusic(1.4f);
 			if (!S_RecallMusic(JT_MASTER, true))
 				S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
@@ -4435,15 +4479,14 @@ static void P_DoSuperStuff(player_t *player)
 boolean P_SuperReady(player_t *player)
 {
 	if (!player->powers[pw_super]
-	&& ((cv_shieldblockstransformation.value && !player->powers[pw_invulnerability]) || (!cv_shieldblockstransformation.value))
+	&& !player->powers[pw_invulnerability]
 	&& !player->powers[pw_tailsfly]
 	&& (player->charflags & SF_SUPER)
 	&& (player->pflags & PF_JUMPED)
-	&& ((!(player->powers[pw_shield] & SH_NOSTACK) && cv_shieldblockstransformation.value) || (!cv_shieldblockstransformation.value))
+	&& !(player->powers[pw_shield] & SH_NOSTACK)
 	&& !(maptol & TOL_NIGHTS)
 	&& ALL7EMERALDS(emeralds)
 	&& (player->rings >= 50))
-
 		return true;
 
 	// STAR STUFF: allow our custom properties to allow transformations :) //
@@ -4647,7 +4690,7 @@ void P_DoJump(player_t *player, boolean soundandstate)
 	}
 }
 
-static void P_DoSpinDashDust(player_t *player)
+void P_DoSpinDashDust(player_t *player)
 {
 	UINT32 i;
 	mobj_t *particle;
@@ -5168,11 +5211,6 @@ static boolean P_PlayerShieldThink(player_t *player, ticcmd_t *cmd, mobj_t *lock
 		}
 		if ((!(player->charflags & SF_NOSHIELDABILITY)) && (cmd->buttons & BT_SPIN && !LUA_HookPlayer(player, HOOK(ShieldSpecial)))) // Spin button effects
 		{
-			// STAR STUFF: Let the player transform while carrying a shield, if enabled //
-			if (!cv_shieldblockstransformation.value && P_SuperReady(player))
-				return false;
-			// END THIS PLEASE //
-
 			// Force stop
 			if ((player->powers[pw_shield] & ~(SH_FORCEHP|SH_STACK)) == SH_FORCE)
 			{
@@ -5292,38 +5330,14 @@ static void P_DoJumpStuff(player_t *player, ticcmd_t *cmd)
 			;
 		else if (P_PlayerShieldThink(player, cmd, lockonthok, visual))
 			;
-		
-		else if (((cmd->buttons & BT_SPIN))
-			// STAR STUFF //
-			|| ((TSoURDt3rd_AprilFools_ModeEnabled() || (EnableEasterEggHuntBonuses && currenteggs == TOTALEGGS))
-				&& (cmd->buttons & BT_JUMP) && !netgame && !(players[consoleplayer].powers[pw_super])))
-			// END THAT MESS PLEASE //
+		else if ((cmd->buttons & BT_SPIN))
 		{
-			if ((!(player->pflags & PF_SPINDOWN) && P_SuperReady(player))
-				|| ((TSoURDt3rd_AprilFools_ModeEnabled() || (EnableEasterEggHuntBonuses && currenteggs == TOTALEGGS)) && !netgame && P_SuperReady(player))) // STAR NOTE: i was here, and it's a little messy lol
+			if (!(player->pflags & PF_SPINDOWN) && P_SuperReady(player))
 			{
-				// SOME OF THIS IS STAR STUFF //
-				if ((TSoURDt3rd_AprilFools_ModeEnabled() || (EnableEasterEggHuntBonuses && currenteggs == TOTALEGGS)) && !netgame)
-				{
-					if (gametyperules & GTR_POWERSTONES)
-					{
-						if (players[consoleplayer].powers[pw_emeralds] != 127)
-							players[consoleplayer].powers[pw_emeralds] = ((EMERALD7)*2)-1;
-					}
-					else
-					{
-						if (emeralds != 127)
-							emeralds = ((EMERALD7)*2)-1;
-					}
-
-					if (!(player->charflags & SF_SUPER))
-						player->charflags += SF_SUPER;
-				}
-				// END THIS MESS TOO PLEASE //
-
-				P_DoSuperTransformation(player, false); // If you can turn super and aren't already, do it!
+				// If you can turn super and aren't already,
+				// and you don't have a shield, do it!
+				P_DoSuperTransformation(player, false);
 			}
-
 			else if (!LUA_HookPlayer(player, HOOK(JumpSpinSpecial)))
 				switch (player->charability)
 				{
@@ -8821,8 +8835,7 @@ void P_MovePlayer(player_t *player)
 		}
 	}
 
-#ifdef HWRENDER
-	if (rendermode == render_opengl && cv_fovchange.value)
+	if (cv_fovchange.value)
 	{
 		fixed_t speed;
 		const fixed_t runnyspeed = 20*FRACUNIT;
@@ -8842,7 +8855,6 @@ void P_MovePlayer(player_t *player)
 	}
 	else
 		player->fovadd = 0;
-#endif
 
 	// Look for blocks to bust up
 	// Because of BT_TOUCH, we should look for blocks constantly,
@@ -11300,7 +11312,7 @@ static void P_MinecartThink(player_t *player)
 }
 
 // Handle Tails' fluff
-static void P_DoTailsOverlay(player_t *player, mobj_t *tails)
+void P_DoTailsOverlay(player_t *player, mobj_t *tails)
 {
 	// init...
 	boolean smilesonground = P_IsObjectOnGround(player->mo);
@@ -11505,7 +11517,7 @@ static void P_DoTailsOverlay(player_t *player, mobj_t *tails)
 }
 
 // Metal Sonic's jet fume
-static void P_DoMetalJetFume(player_t *player, mobj_t *fume)
+void P_DoMetalJetFume(player_t *player, mobj_t *fume)
 {
 	static const UINT8 FUME_SKINCOLORS[] =
 	{
@@ -12525,7 +12537,7 @@ void P_PlayerThink(player_t *player)
 	}
 #undef dashmode
 
-	TSoURDt3rd_PlayerThink(player); // STAR STUFF: THE RUNNING OF OUR UNIQUE PLAYER STUFF! //
+	TSoURDt3rd_P_PlayerThink(); // STAR STUFF: THE RUNNING OF OUR UNIQUE PLAYER STUFF! //
 
 	LUA_HookPlayer(player, HOOK(PlayerThink));
 
@@ -13231,4 +13243,17 @@ boolean P_PlayerShouldUseSpinHeight(player_t *player)
 		|| ((player->charflags & (SF_DASHMODE|SF_MACHINE)) == (SF_DASHMODE|SF_MACHINE)
 			&& player->dashmode >= DASHMODE_THRESHOLD && player->mo->state-states == S_PLAY_DASH)
 		|| JUMPCURLED(player));
+}
+
+UINT16 P_GetPlayerColor(player_t *player)
+{
+	if (G_GametypeHasTeams() && player->ctfteam)
+	{
+		if (player->ctfteam == 1)
+			return skincolor_redteam;
+		else if (player->ctfteam == 2)
+			return skincolor_blueteam;
+	}
+
+	return player->skincolor;
 }

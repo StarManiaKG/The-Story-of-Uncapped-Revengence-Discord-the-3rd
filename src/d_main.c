@@ -93,10 +93,6 @@
 
 #include "lua_script.h"
 
-#ifdef HAVE_DISCORDSUPPORT
-#include "discord/discord.h"
-#endif
-
 // Version numbers for netplay :upside_down_face:
 int    VERSION;
 int SUBVERSION;
@@ -145,21 +141,19 @@ const char *pandf = "%s" PATHSEP "%s";
 static char addonsdir[MAX_WADPATH];
 
 // STAR STUFF WEEEEE //
+#ifdef HAVE_DISCORDSUPPORT
+#include "discord/discord.h"
+#endif
+
 #include "STAR/star_vars.h"
 #include "STAR/ss_main.h" // AUTOLOADCONFIGFILENAME, TSoURDt3rd_Init(), STAR_CONS_Printf(), & TSoURDt3rd_CON_DrawStartupScreen() //
 
+#include "STAR/smkg_g_inputs.h" // TSoURDt3rd_D_ProcessEvents() //
 #include "STAR/smkg-jukebox.h"
 
-#include "STAR/menus/smkg_m_func.h"
-
-// Discord Stuff
-INT32 extrawads;
-boolean TSoURDt3rd_checkedExtraWads;
+#include "STAR/menus/smkg_m_draw.h" // TSoURDt3rd_M_DrawPauseGraphic() //
 
 // TSoURDt3rd Stuff
-boolean TSoURDt3rd_sentEventMessage = false;
-
-boolean TSoURDt3rd_TouchyModifiedGame = false;
 boolean TSoURDt3rd_LoadExtras = true;
 boolean TSoURDt3rd_LoadedExtras = true;
 boolean TSoURDt3rd_NoMoreExtras = false;
@@ -227,19 +221,19 @@ void D_ProcessEvents(void)
 		ev = &events[eventtail];
 
 		// Set mouse buttons early in case event is eaten later
-		if (ev->type == ev_keydown || ev->type == ev_keyup)
+		if (ev->type == ev_keydown || ev->type == ev_keyup || ev->type == ev_text)
 		{
 			// Mouse buttons
 			if ((UINT32)(ev->key - KEY_MOUSE1) < MOUSEBUTTONS)
 			{
-				if (ev->type == ev_keydown)
+				if (ev->type == ev_keydown || ev->type == ev_text)
 					mouse.buttons |= 1 << (ev->key - KEY_MOUSE1);
 				else
 					mouse.buttons &= ~(1 << (ev->key - KEY_MOUSE1));
 			}
 			else if ((UINT32)(ev->key - KEY_2MOUSE1) < MOUSEBUTTONS)
 			{
-				if (ev->type == ev_keydown)
+				if (ev->type == ev_keydown || ev->type == ev_text)
 					mouse2.buttons |= 1 << (ev->key - KEY_2MOUSE1);
 				else
 					mouse2.buttons &= ~(1 << (ev->key - KEY_2MOUSE1));
@@ -281,9 +275,6 @@ void D_ProcessEvents(void)
 #ifdef HAVE_THREADS
 		I_lock_mutex(&m_menu_mutex);
 #endif
-		if (STAR_M_Responder(ev))
-			continue; // STAR STUFF: Menu Revamp: process unique menu events (eated it :3) //
-
 		{
 			eaten = M_Responder(ev);
 		}
@@ -324,6 +315,8 @@ void D_ProcessEvents(void)
 		G_SetMouseDeltas(mouse.rdx, mouse.rdy, 1);
 	if (mouse2.rdx || mouse2.rdy)
 		G_SetMouseDeltas(mouse2.rdx, mouse2.rdy, 2);
+
+	TSoURDt3rd_D_ProcessEvents(); // STAR STUFF: please process our events //
 }
 
 //
@@ -335,8 +328,8 @@ void D_ProcessEvents(void)
 // added comment : there is a wipe eatch change of the gamestate
 gamestate_t wipegamestate = GS_LEVEL;
 // -1: Default; 0-n: Wipe index; INT16_MAX: do not wipe
-INT16 wipetypepre = INT16_MAX;
-INT16 wipetypepost = INT16_MAX;
+INT16 wipetypepre = -1;
+INT16 wipetypepost = -1;
 
 static void D_Display(void)
 {
@@ -445,13 +438,11 @@ static void D_Display(void)
 		case GS_LEVEL:
 			if (!gametic)
 				break;
-			HU_Erase();
 			AM_Drawer();
 			break;
 
 		case GS_INTERMISSION:
 			Y_IntermissionDrawer();
-			HU_Erase();
 			HU_Drawer();
 			break;
 
@@ -466,13 +457,11 @@ static void D_Display(void)
 
 		case GS_ENDING:
 			F_EndingDrawer();
-			HU_Erase();
 			HU_Drawer();
 			break;
 
 		case GS_CUTSCENE:
 			F_CutsceneDrawer();
-			HU_Erase();
 			HU_Drawer();
 			break;
 
@@ -482,7 +471,6 @@ static void D_Display(void)
 
 		case GS_EVALUATION:
 			F_GameEvaluationDrawer();
-			HU_Erase();
 			HU_Drawer();
 			break;
 
@@ -492,7 +480,6 @@ static void D_Display(void)
 
 		case GS_CREDITS:
 			F_CreditDrawer();
-			HU_Erase();
 			HU_Drawer();
 			break;
 
@@ -502,15 +489,12 @@ static void D_Display(void)
 			{
 				// I don't think HOM from nothing drawing is independent...
 				F_WaitingPlayersDrawer();
-				HU_Erase();
 				HU_Drawer();
 			}
 		case GS_DEDICATEDSERVER:
 		case GS_NULL:
 			break;
 	}
-
-	TSoURDt3rd_D_Display(); // STAR STUFF: run our display manager now :p //
 
 	// STUPID race condition...
 	if (wipegamestate == GS_INTRO && gamestate == GS_TITLESCREEN)
@@ -616,29 +600,22 @@ static void D_Display(void)
 	if (paused && cv_showhud.value && (!menuactive || netgame))
 	{
 #if 0
+#if 0
+		INT32 py;
+		patch_t *patch;
+		if (automapactive)
+			py = 4;
+		else
+			py = viewwindowy + 4;
+		patch = W_CachePatchName("M_PAUSE", PU_PATCH);
+		V_DrawScaledPatch(viewwindowx + (BASEVIDWIDTH - patch->width)/2, py, 0, patch);
+#else
 		INT32 y = ((automapactive) ? (32) : (BASEVIDHEIGHT/2));
 		M_DrawTextBox((BASEVIDWIDTH/2) - (60), y - (16), 13, 2);
 		V_DrawCenteredString(BASEVIDWIDTH/2, y - (4), V_MENUCOLORMAP, "Game Paused");
+#endif
 #else
-		// STAR STUFF: cv_pausegraphicstyle-related changes lol //
-		if (cv_pausegraphicstyle.value)
-		{
-			// Old-School
-			INT32 py;
-			patch_t *patch;
-			py = 4;
-			if (!automapactive)
-				py += viewwindowy;
-			patch = W_CachePatchName("M_LPAUSE", PU_PATCH);
-			V_DrawScaledPatch(viewwindowx + (BASEVIDWIDTH - patch->width)/2, py, 0, patch);
-		}
-		else
-		{
-			// Default
-			INT32 y = ((automapactive) ? (32) : (BASEVIDHEIGHT/2));
-			M_DrawTextBox((BASEVIDWIDTH/2) - (60), y - (16), 13, 2);
-			V_DrawCenteredString(BASEVIDWIDTH/2, y - (4), V_MENUCOLORMAP, "Game Paused");
-		}
+		TSoURDt3rd_M_DrawPauseGraphic(); // STAR STUFF: draw the pause graphic for me please //
 #endif
 	}
 
@@ -728,13 +705,13 @@ static void D_Display(void)
 			s[sizeof s - 1] = '\0';
 
 			snprintf(s, sizeof s - 1, "get %d b/s", getbps);
-			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-40, V_MENUCOLORMAP, s);
+			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-40, V_YELLOWMAP, s);
 			snprintf(s, sizeof s - 1, "send %d b/s", sendbps);
-			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-30, V_MENUCOLORMAP, s);
+			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-30, V_YELLOWMAP, s);
 			snprintf(s, sizeof s - 1, "GameMiss %.2f%%", gamelostpercent);
-			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-20, V_MENUCOLORMAP, s);
+			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-20, V_YELLOWMAP, s);
 			snprintf(s, sizeof s - 1, "SysMiss %.2f%%", lostpercent);
-			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-ST_HEIGHT-10, V_MENUCOLORMAP, s);
+			V_DrawRightAlignedString(BASEVIDWIDTH, BASEVIDHEIGHT-10, V_YELLOWMAP, s);
 		}
 
 		if (cv_perfstats.value)
@@ -746,6 +723,8 @@ static void D_Display(void)
 		I_FinishUpdate(); // page flip or blit buffer
 		PS_STOP_TIMING(ps_swaptime);
 	}
+
+	TSoURDt3rd_D_Display(); // STAR STUFF: run our display manager now :p //
 }
 
 // =========================================================================
@@ -809,7 +788,11 @@ void D_SRB2Loop(void)
 	/* Smells like a hack... Don't fade Sonic's ass into the title screen. */
 	if (gamestate != GS_TITLESCREEN)
 	{
-		gstartuplumpnum = W_CheckNumForName(TSoURDt3rd_CON_DrawStartupScreen());
+#if 0
+		gstartuplumpnum = W_CheckNumForPatchName("STARTUP");
+#else
+		gstartuplumpnum = W_CheckNumForName(TSoURDt3rd_CON_DrawStartupScreen()); // STAR STUFF: hooray for graphic diversity! //
+#endif
 		if (gstartuplumpnum == LUMPERROR)
 			gstartuplumpnum = W_GetNumForName("MISSING");
 		V_DrawScaledPatch(0, 0, 0, W_CachePatchNum(gstartuplumpnum, PU_PATCH));
@@ -962,69 +945,6 @@ void D_SRB2Loop(void)
 		}
 #endif
 
-		//// STAR STUFF ////
-		TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer];
-		TSoURDt3rdJukebox_t *TSoURDt3rdJukebox = &TSoURDt3rd->jukebox;
-
-#ifdef HAVE_CURL
-		// Do Internet Stuff //
-		// Grab the Current TSoURDt3rd Version, if We Haven't Checked Before and the Function's Checks Allow it
-		TSoURDt3rd_FindCurrentVersion();
-#endif
-
-		// Do Jukebox Stuff //
-		// Whoa, Whoa, We Ran Out of Time (except again for keybind execution reasons)
-		if (TSoURDt3rd->jukebox.curtrack)
-		{
-			fixed_t jb_stoppingtics = (fixed_t)(TSoURDt3rdJukebox->curtrack->stoppingtics) << FRACBITS;
-
-			if (jb_stoppingtics && TSoURDt3rdJukebox->tics >= jb_stoppingtics)
-				M_ResetJukebox(true);
-			else
-			{
-				fixed_t work = 0, bpm = 0;
-				work = bpm = TSoURDt3rd->jukebox.curtrack->bpm/S_GetSpeedMusic();
-
-				work = TSoURDt3rdJukebox->tics;
-				work %= bpm;
-				if (TSoURDt3rdJukebox->tics >= (FRACUNIT << (FRACBITS - 2))) // prevent overflow jump - takes about 15 minutes of loop on the same song to reach
-					TSoURDt3rdJukebox->tics = work;
-				work = FixedDiv(work*180, bpm);
-
-				if (!(paused || P_AutoPause())) // prevents time from being added up while the game is paused
-					TSoURDt3rdJukebox->tics += renderdeltatics*S_GetSpeedMusic();
-			}
-		}
-
-		// Do Extra Stuff //
-		if ((eastermode || aprilfoolsmode || xmasmode) && !TSoURDt3rd_sentEventMessage)
-		{
-			M_StartMessage(va("%c%s\x80\nTSoURDt3rd is having a seasonal event!\n\n(Press any key to continue)\n", ('\x80' + (V_MENUCOLORMAP|V_CHARCOLORSHIFT)), "A TSoURDt3rd Event is Occuring"),NULL,MM_NOTHING);
-			TSoURDt3rd_sentEventMessage = true;
-		}
-
-		// Check What Extra Add-ons we Have Currently Loaded
-		if (!TSoURDt3rd_checkedExtraWads)
-		{
-			INT32 i = numwadfiles;
-			char *tempname;
-
-			extrawads = 0;
-			for (i--; i >= 1; i--)
-			{
-				nameonly(tempname = va("%s", wadfiles[i]->filename));
-				if ((strcmp(tempname, "music.dta") == 0)
-					|| (strcmp(tempname, "jukebox.pk3") == 0)
-					|| (strcmp(tempname, "patch_music.pk3") == 0))
-				{					
-					extrawads++;
-					continue;
-				}
-			}
-			TSoURDt3rd_checkedExtraWads = true;
-		}		
-		//// THAT'S THE END :P ////
-
 		// Fully completed frame made.
 		finishprecise = I_GetPreciseTime();
 		if (!singletics)
@@ -1066,8 +986,11 @@ void D_StartTitle(void)
 {
 	INT32 i;
 
-	if (TSoURDt3rd_Jukebox_CanModifyMusic()) // STAR STUFF: why don't we check for jukebox music first? //
-		S_StopMusic();
+#if 0
+	S_StopMusic();
+#else
+	TSoURDt3rd_Jukebox_CanModifyMusic(); // STAR STUFF: why don't we properly check for jukebox music instead? //
+#endif
 
 	if (netgame)
 	{
@@ -1108,6 +1031,7 @@ void D_StartTitle(void)
 	emeralds = 0;
 	memset(&luabanks, 0, sizeof(luabanks));
 	lastmaploaded = 0;
+	pickedchar = R_SkinAvailable(cv_skin.string);
 
 	// In case someone exits out at the same time they start a time attack run,
 	// reset modeattacking
@@ -1125,10 +1049,7 @@ void D_StartTitle(void)
 	F_InitMenuPresValues();
 	F_StartTitleScreen();
 
-	// STAR STUFF: helps out with M_StartMessage queueing stuff (found in m_menu.c by the way) //
-	if (!menuactive)
-		currentMenu = &MainDef; // reset the current menu ID
-	// END THIS FOR ME PLEASE //
+	currentMenu = &MainDef; // reset the current menu ID
 
 	// Reset the palette
 	if (rendermode != render_none)
@@ -1151,7 +1072,7 @@ void D_StartTitle(void)
 #define REALLOC_FILE_LIST \
 	if (list->files == NULL) \
 	{ \
-		list->files = calloc(sizeof(list->files), 2); \
+		list->files = calloc(2, sizeof(list->files)); \
 		list->numfiles = 1; \
 	} \
 	else \
@@ -1287,9 +1208,9 @@ static void TSoURDt3rd_FindAddonsToAutoload(void)
 		CON_StartRefresh(); // Restart the refresh!
 	}
 }
+// END THIS STAR STUFF //
 
 #undef REALLOC_FILE_LIST
-// END THIS STAR STUFF //
 
 static inline void D_CleanFile(addfilelist_t *list)
 {
@@ -1509,8 +1430,6 @@ void D_SRB2Main(void)
 	// Netgame URL special case: change working dir to EXE folder.
 	ChangeDirForUrlHandler();
 
-	TSoURDt3rd_Init(); // STAR STUFF: Initialize our data! //
-
 	// identify the main IWAD file to use
 	IdentifyVersion();
 
@@ -1531,6 +1450,10 @@ void D_SRB2Main(void)
 
 	if (devparm)
 		CONS_Printf(M_GetText("Development mode ON.\n"));
+
+	// default savegame
+	strcpy(savegamename, SAVEGAMENAME"%u.ssg");
+	strcpy(liveeventbackup, "live"SAVEGAMENAME".bkp"); // intentionally not ending with .ssg
 
 	{
 		const char *userhome = D_Home(); //Alam: path to home
@@ -1559,6 +1482,10 @@ void D_SRB2Main(void)
 			else
 				snprintf(configfile, sizeof configfile, "%s" PATHSEP CONFIGFILENAME, srb2home);
 
+			// can't use sprintf since there is %u in savegamename
+			strcatbf(savegamename, srb2home, PATHSEP);
+			strcatbf(liveeventbackup, srb2home, PATHSEP);
+
 			snprintf(luafiledir, sizeof luafiledir, "%s" PATHSEP "luafiles", srb2home);
 #else // DEFAULTDIR
 			snprintf(srb2home, sizeof srb2home, "%s", userhome);
@@ -1567,6 +1494,10 @@ void D_SRB2Main(void)
 				snprintf(configfile, sizeof configfile, "%s" PATHSEP "d"CONFIGFILENAME, userhome);
 			else
 				snprintf(configfile, sizeof configfile, "%s" PATHSEP CONFIGFILENAME, userhome);
+
+			// can't use sprintf since there is %u in savegamename
+			strcatbf(savegamename, userhome, PATHSEP);
+			strcatbf(liveeventbackup, userhome, PATHSEP);
 
 			snprintf(luafiledir, sizeof luafiledir, "%s" PATHSEP "luafiles", userhome);
 #endif // DEFAULTDIR
@@ -1600,6 +1531,8 @@ void D_SRB2Main(void)
 
 	clientGamedata = M_NewGameDataStruct();
 	serverGamedata = M_NewGameDataStruct();
+
+	TSoURDt3rd_Init(); // STAR STUFF: Initialize our data! //
 
 	// Do this up here so that WADs loaded through the command line can use ExecCfg
 	COM_Init();
@@ -1656,7 +1589,12 @@ void D_SRB2Main(void)
 	// Have to be done here before files are loaded
 	M_InitCharacterTables();
 
-	mainwads = 4; // doesn't include music.dta //** STAR NOTE: also doesn't include jukebox.pk3 **//
+#if 0
+	mainwads = 3; // doesn't include music.dta
+#else
+	// STAR NOTE: also doesn't include jukebox.pk3 //
+	mainwads = 4; // doesn't include music.dta
+#endif
 #ifdef USE_PATCH_DTA
 	mainwads++;
 #endif
@@ -1666,21 +1604,20 @@ void D_SRB2Main(void)
 	W_InitMultipleFiles(&startupwadfiles);
 	D_CleanFile(&startupwadfiles);
 
-#ifndef DEVELOP // md5s last updated 04/06/24 (star)
-	// Check MD5s of autoloaded files //
+#ifndef DEVELOP // md5s last updated 08/02/24 (star)
 
-	// don't check music.dta because people like to modify it, and it doesn't matter if they do
-	// ...except it does if they slip maps in there, and that's what W_VerifyNMUSlumps is for.
-
-	W_VerifyFileMD5(0, ASSET_HASH_SRB2_PK3); 		// srb2.pk3
-	W_VerifyFileMD5(1, ASSET_HASH_ZONES_PK3); 		// zones.pk3
-	W_VerifyFileMD5(2, ASSET_HASH_PLAYER_DTA); 		// player.dta
+	// Check MD5s of autoloaded files
+	W_VerifyFileMD5(0, ASSET_HASH_SRB2_PK3); // srb2.pk3
+	W_VerifyFileMD5(1, ASSET_HASH_ZONES_PK3); // zones.pk3
+	W_VerifyFileMD5(2, ASSET_HASH_PLAYER_DTA); // player.dta
 #ifdef USE_PATCH_DTA
-	W_VerifyFileMD5(3, ASSET_HASH_PATCH_PK3); 		// patch.pk3
+	W_VerifyFileMD5(3, ASSET_HASH_PATCH_PK3); // patch.pk3
 	W_VerifyFileMD5(4, ASSET_HASH_TSOURDT3RD_PK3);	// STAR STUFF: tsourdt3rd.pk3 //
 #else
 	W_VerifyFileMD5(3, ASSET_HASH_TSOURDT3RD_PK3); 	// STAR STUFF: tsourdt3rd.pk3 //
 #endif
+	// don't check music.dta because people like to modify it, and it doesn't matter if they do
+	// ...except it does if they slip maps in there, and that's what W_VerifyNMUSlumps is for.
 #endif //ifndef DEVELOP
 
 	// STAR STUFF: Autoloading Wads //
@@ -1698,8 +1635,6 @@ void D_SRB2Main(void)
 			modifiedgame = false;
 		}
 		autoloading = false;
-
-		S_PrepareSoundTest();
 	}
 
 	//CON_StartRefresh(); // Restart the refresh!
@@ -1762,9 +1697,7 @@ void D_SRB2Main(void)
 	G_LoadGameData(clientGamedata);
 	M_CopyGameData(serverGamedata, clientGamedata);
 
-#if defined (__unix__) || defined (UNIXCOMMON) || defined (HAVE_SDL)
 	VID_PrepareModeList(); // Regenerate Modelist according to cv_fullscreen
-#endif
 
 	// set user default mode or mode set at cmdline
 	SCR_CheckDefaultMode();
@@ -1786,7 +1719,7 @@ void D_SRB2Main(void)
 			I_Error("Cannot find a map remotely named '%s'\n", word);
 		else
 		{
-			if (!M_CheckParm("-server"))
+			if (!(M_CheckParm("-server") || dedicated))
 				G_SetUsedCheats(true);
 			autostart = true;
 		}
@@ -1862,6 +1795,9 @@ void D_SRB2Main(void)
 	CONS_Printf("D_CheckNetGame(): Checking network game status.\n");
 	if (D_CheckNetGame())
 		autostart = true;
+
+	if (!dedicated)
+		pickedchar = R_SkinAvailable(cv_defaultskin.string);
 
 	// check for a driver that wants intermission stats
 	// start the apropriate game based on parms
@@ -2097,17 +2033,21 @@ static boolean check_top_dir(const char **path, const char *top)
 	return true;
 }
 
-static int cmp_strlen_desc(const void *a, const void *b)
+static int cmp_strlen_desc(const void *A, const void *B)
 {
-	return ((int)strlen(*(const char*const*)b) - (int)strlen(*(const char*const*)a));
+	const char *pA = A;
+	const char *pB = B;
+	size_t As = strlen(pA);
+	size_t Bs = strlen(pB);
+	return ((int)Bs - (int)As);
 }
 
 boolean D_IsPathAllowed(const char *path)
 {
-	const char *paths[] = {
+	char *paths[] = {
 		srb2home,
 		srb2path,
-		cv_addons_folder.string
+		cv_addons_folder.zstring
 	};
 
 	const size_t n_paths = sizeof paths / sizeof *paths;

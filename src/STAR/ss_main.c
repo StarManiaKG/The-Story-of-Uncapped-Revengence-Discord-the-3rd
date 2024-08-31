@@ -12,7 +12,12 @@
 #include <time.h>
 
 #include "ss_main.h"
+#include "smkg-jukebox.h"
+#include "smkg-misc.h"
 #include "menus/smkg_m_func.h"
+#include "curl/smkg-curl.h"
+
+#include "drrr/k_menu.h" // menumessage //
 
 #include "../f_finale.h"
 #include "../i_time.h"
@@ -34,20 +39,6 @@
 
 static saveinfo_t* cursave = NULL;
 
-#if 0
-typedef struct
-{
-	char levelname[32];
-	UINT8 skinnum;
-	UINT8 botskin;
-	UINT8 numemeralds;
-	UINT8 numgameovers;
-	INT32 lives;
-	INT32 continuescore;
-	INT32 gamemap;
-} saveinfo_t;
-#endif
-
 // ======
 // EVENTS
 // ======
@@ -65,18 +56,28 @@ boolean xmasmode = false, xmasoverride = false;
 void TSoURDt3rd_Init(void)
 {
 	CONS_Printf("TSoURDt3rd_Init(): Initalizing TSoURDt3rd...\n");
+	TSoURDt3rd_FOL_CreateDirectory("TSoURDt3rd"PATHSEP"Test"PATHSEP"Run"PATHSEP"Test"PATHSEP"Real"PATHSEP"American"PATHSEP"HOOHOOWAAEFKDHIJDSJSISJDJNFFNYEAH!");
 
 	TSoURDt3rd_CheckTime(); // Check our computer's time!
 	TSoURDt3rd_InitializePlayer(consoleplayer); // Initialize the build's player structures
 
-	STAR_M_InitQuitMessages(); // Add our custom quit messages :)
-
 	// Add our custom menu data :p
-	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_OP_TSoURDt3rdOptionsDef, &OP_TSoURDt3rdOptionsDef);
+	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_TM_OP_MainMenuDef, &TSoURDt3rd_OP_MainMenuDef);
+	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_TM_OP_EventsDef, &TSoURDt3rd_OP_EventsDef);
+	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_TM_OP_GameDef, &TSoURDt3rd_OP_GameDef);
+	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_TM_OP_ControlsDef, &TSoURDt3rd_OP_ControlsDef);
+	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_TM_OP_VideoDef, &TSoURDt3rd_OP_VideoDef);
+	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_TM_OP_AudioDef, &TSoURDt3rd_OP_AudioDef);
+	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_TM_OP_PlayerDef, &TSoURDt3rd_OP_PlayerDef);
+	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_TM_OP_SavefileDef, &TSoURDt3rd_OP_SavefileDef);
+	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_TM_OP_ServerDef, &TSoURDt3rd_OP_ServerDef);
+	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_TM_OP_JukeboxDef, &TSoURDt3rd_OP_JukeboxDef);
+	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_TM_OP_ExtrasDef, &TSoURDt3rd_OP_ExtrasDef);
+	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_TM_OP_Extras_SnakeDef, &TSoURDt3rd_OP_Extras_SnakeDef);
 
 #ifdef HAVE_DISCORDSUPPORT
-	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_OP_DiscordOptionsDef, &OP_DiscordOptionsDef);
-	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_MISC_DiscordRequestsDef, &MISC_DiscordRequestsDef);
+	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_TM_OP_DiscordOptionsDef, &OP_DiscordOptionsDef);
+	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_TM_MISC_DiscordRequestsDef, &MISC_DiscordRequestsDef);
 #endif	
 }
 
@@ -106,8 +107,6 @@ void STAR_CONS_Printf(star_messagetype_t starMessageType, const char *fmt, ...)
 	vsprintf(txt, fmt, argptr);
 	va_end(argptr);
 
-	// Now, just like STJr, I am lazy and I feel like just letting CONS_Printf take care of things.
-	// That should be fine with you. (...Right?)
 	switch (starMessageType)
 	{
 		case STAR_CONS_TSOURDT3RD:
@@ -122,9 +121,9 @@ void STAR_CONS_Printf(star_messagetype_t starMessageType, const char *fmt, ...)
 
 		case STAR_CONS_TSOURDT3RD_DEBUG:
 #ifdef TSOURDT3RD_DEBUGGING
-			CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd Debugging:")); break;
+			CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd Debugging:"));
+			break;
 #else
-			free(txt);
 			return;
 #endif
 
@@ -141,10 +140,11 @@ void STAR_CONS_Printf(star_messagetype_t starMessageType, const char *fmt, ...)
 
 		default:
 			CONS_Printf("\x82STAR_CONS_Printf:\x80 You must specify a specific message type!\n");
-			free(txt);
 			return;
 	}
 
+	// Now, just like STJr, I am lazy and I feel like just letting CONS_Printf take care of things.
+	// That should be fine with you. (...Right?)
 	CONS_Printf("%s", txt);
 }
 
@@ -152,50 +152,53 @@ const char *TSoURDt3rd_CON_DrawStartupScreen(void)
 {
 	switch (cv_startupscreen.value)
 	{
-		case 1: return "CONSBACK";
-		case 2: return "BABYSONIC";
-		default: return "STARTUP";
+		case 1:
+			return "CONSBACK";
+		case 2:
+			return "BABYSONIC";
+		default:
+			return "STARTUP";
 	}
 }
 
 void TSoURDt3rd_D_Display(void)
 {
-	// 'Error out' if in April Fools' ultimate mode but have beaten the game //
+	static boolean sent_event_message = false;
+
+#ifdef HAVE_CURL
+	// Check for any updates to TSoURDt3rd.
+	TSoURDt3rd_Curl_FindUpdateRoutine();
+#endif
+
 	switch (gamestate)
 	{
 		case GS_ENDING:
 		case GS_CREDITS:
 		case GS_EVALUATION:
 			if (TSoURDt3rd_AprilFools_ModeEnabled())
-				I_Error("SIGSEGV - seventh sentinel (core dumped)");
-			break;
+			{
+				// Close the game if we're in April Fools' Ultimate Mode but just beat the game.
+				I_Error("Definitely caused by a SIGSEGV - seventh sentinel (core dumped)");
+			}
+			/* FALLTHRU */
 
 		default:
 			break;	
 	}
-}
 
-void STAR_G_GamestateManager(star_gamestate_t star_gamestate)
-{
-	if (gamestate != GS_TIMEATTACK)
-		star_gamestate = STAR_GS_NULL;
-	TSoURDt3rdPlayers[consoleplayer].gamestate = star_gamestate;
-}
-
-//
-// void STAR_M_StartMessage(const char *header, INT32 headerflags, const char *string, void *routine, menumessagetype_t itemtype)
-// M_StartMessage, but customized to show headers, add a little more flare, and easier accessibility.
-//
-void STAR_M_StartMessage(const char *header, INT32 headerflags, const char *string, void *routine, menumessagetype_t itemtype)
-{
-	if (header != NULL)
+	// Check for any events.
+	if (!menumessage.active && !sent_event_message && (eastermode || aprilfoolsmode || xmasmode))
 	{
-		if (!headerflags)
-			headerflags = (V_MENUCOLORMAP|V_CHARCOLORSHIFT);
-		header = va("%c%s\x80\n", ('\x80' + headerflags), header);
-		string = va("%s%s", header, string);
+		DRRR_M_StartMessage(
+			"A TSoURDt3rd Event is Occuring",
+			"We're having a seasonal event! Have fun!",
+			NULL,
+			MM_NOTHING,
+			NULL,
+			NULL
+		);
+		sent_event_message = true;
 	}
-	M_StartMessage(string, routine, itemtype);
 }
 
 const char *TSoURDt3rd_ReturnUsername(void)
@@ -204,7 +207,9 @@ const char *TSoURDt3rd_ReturnUsername(void)
 	if (discordInfo.ConnectionStatus == DRPC_CONNECTED)
 		return DRPC_ReturnUsername();
 #endif
-	return (Playing() ? player_names[consoleplayer] : cv_playername.string);
+	if (Playing())
+		return player_names[consoleplayer];
+	return cv_playername.string;
 }
 
 // ======
@@ -300,7 +305,7 @@ void TSoURDt3rd_CheckTime(void)
 
 //
 // mobj_t *TSoURDt3rd_BossInMap(void)
-// Scans the player's map for any bosses.
+// Scans the player's map for any bosses, and returns the first one found, if any.
 //
 mobj_t *TSoURDt3rd_BossInMap(void)
 {
@@ -334,17 +339,20 @@ void TSoURDt3rd_LoadLevel(boolean reloadinggamestate)
 
 	TSoURDt3rd->loadingScreens.loadCount = TSoURDt3rd->loadingScreens.loadPercentage = 0; // reset loading status
 	TSoURDt3rd->loadingScreens.bspCount = 0; // reset bsp count
+	TSoURDt3rd->loadingScreens.loadComplete = false; // reset loading finale
+
+#ifdef HAVE_SDL
+	STAR_SetWindowTitle();
+#endif
 
 	if (savemoddata)
 		TSoURDt3rd_LoadedGamedataAddon = true;
 	if (!netgame)
 		STAR_SetSavefileProperties();
-#ifdef HAVE_SDL
-	STAR_SetWindowTitle();
-#endif
 
 	if (!(reloadinggamestate || titlemapinaction))
 	{
+		// Display the loading screen...
 		if (rendermode != render_none)
 		{
 			if (cv_loadingscreen.value && TSoURDt3rd->loadingScreens.loadCount-- <= 0 && !TSoURDt3rd->loadingScreens.loadComplete)
@@ -357,12 +365,11 @@ void TSoURDt3rd_LoadLevel(boolean reloadinggamestate)
 
 				TSoURDt3rd->loadingScreens.loadCount = TSoURDt3rd->loadingScreens.loadPercentage = 0; // reset the loading status
 				TSoURDt3rd->loadingScreens.screenToUse = 0; // reset the loading screen to use
-
 				TSoURDt3rd->loadingScreens.loadComplete = true; // loading... load complete.
 			}
 		}
 
-		// Change music :)
+		// Change the music :)
 		if (strnicmp(S_MusicName(),
 			((mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : determinedMusic), 7))
 		{
@@ -381,13 +388,8 @@ void TSoURDt3rd_LoadLevel(boolean reloadinggamestate)
 				FixedDiv((F_GetWipeLength(wipedefs[wipe_level_toblack])-2)*NEWTICRATERATIO, NEWTICRATE), MUSICRATE));
 		}
 
-		/* PS: As mentioned in P_LoadLevel, while oddly named, S_Start() only handles music.
-			Starting it again here for our stuff should be fine, just don't do it during the titlemap :p */
-		if ((!strnicmp(S_MusicName(),
-			(mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname, 7))
-		|| (strnicmp(S_MusicName(),
-			((mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : determinedMusic), 7)))
-			S_Start();
+		// Set the music.
+		S_Start();
 	}
 }
 
@@ -395,6 +397,20 @@ void TSoURDt3rd_LoadLevel(boolean reloadinggamestate)
 // ======
 // SCENES
 // ======
+
+#if 0
+typedef struct
+{
+	char levelname[32];
+	UINT8 skinnum;
+	UINT8 botskin;
+	UINT8 numemeralds;
+	UINT8 numgameovers;
+	INT32 lives;
+	INT32 continuescore;
+	INT32 gamemap;
+} saveinfo_t;
+#endif
 
 void TSoURDt3rd_GameEnd(INT32 *timetonext)
 {
@@ -435,69 +451,4 @@ void TSoURDt3rd_GameEnd(INT32 *timetonext)
 	V_DrawCreditString((((BASEVIDWIDTH/2)-headerScroll))<<(FRACBITS-1), (BASEVIDHEIGHT-125)<<(FRACBITS-1), 0, cv_playername.string);
 
 	V_DrawCenteredString(BASEVIDWIDTH/2, 65, V_MENUCOLORMAP, va("%d", cursave[cursaveslot].lives));
-}
-
-// ======
-// SCREEN
-// ======
-
-void TSoURDt3rd_SCR_DisplayTpsRate(void)
-{
-	static tic_t lasttic;
-	static boolean ticsgraph[TICRATE];
-
-	INT32 tpscntcolor = 0;
-	const INT32 h = vid.height-(8*vid.dupy);
-
-	tic_t i;
-	tic_t ontic = I_GetTime();
-	tic_t totaltics = 0;
-
-	if (gamestate == GS_NULL)
-		return;
-
-	for (i = lasttic + 1; i < TICRATE+lasttic && i < ontic; ++i)
-		ticsgraph[i % TICRATE] = false;
-	ticsgraph[ontic % TICRATE] = true;
-
-	for (i = 0; i < TICRATE; ++i)
-		if (ticsgraph[i])
-			++totaltics;
-
-	if (totaltics <= TICRATE/2) tpscntcolor = V_REDMAP;
-	else if (totaltics <= TICRATE-8) tpscntcolor = V_YELLOWMAP;
-	else tpscntcolor = V_TPSCOLORMAP;
-
-	if (cv_tpsrate.value == 2) // compact counter
-		V_DrawRightAlignedString(vid.width, h-(8*vid.dupy),
-			tpscntcolor|V_NOSCALESTART|V_USERHUDTRANS, va("%02d", totaltics));
-	else if (cv_tpsrate.value == 1) // full counter
-	{
-		const char *drawntpsStr;
-		INT32 tpswidth;
-		
-		drawntpsStr = va("%02d/ %02u", totaltics, TICRATE);
-		tpswidth = V_StringWidth(drawntpsStr, V_NOSCALESTART);
-
-		V_DrawString(vid.width - ((7 * 8 * vid.dupx) + V_StringWidth("TPS: ", V_NOSCALESTART)), h-(8*vid.dupy),
-			V_MENUCOLORMAP|V_NOSCALESTART|V_USERHUDTRANS, "TPS:");
-		V_DrawString(vid.width - tpswidth, h-(8*vid.dupy),
-			tpscntcolor|V_NOSCALESTART|V_USERHUDTRANS, drawntpsStr);
-	}
-
-	lasttic = ontic;
-}
-
-INT32 TSoURDt3rd_SCR_SetPingHeight(void)
-{
-	INT32 pingy;
-
-	if ((cv_ticrate.value && cv_tpsrate.value) || cv_tpsrate.value)
-		pingy = 171;
-	else if (!cv_ticrate.value)
-		pingy = 189;
-	else
-		pingy = 180;
-
-	return pingy;
 }

@@ -29,7 +29,7 @@
 #include "../i_net.h"
 #include "stun.h"
 
-#include "../STAR/drrr/km_swap.h" // MSBF_SHORT & MSBF_LONG //
+#include "../STAR/netcode/drrr-m_swap.h" // DRRR swap data //
 
 /* https://gist.github.com/zziuni/3741933 */
 /* I can only trust google to keep their shit up :y */
@@ -86,7 +86,7 @@ STUN_node (void)
 	return node;
 }
 
-static void
+void
 csprng
 (
 		void * const buffer,

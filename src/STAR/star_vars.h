@@ -16,6 +16,7 @@
 
 #include "ss_main.h" // main star varaibles
 #include "star_webinfo.h" // star variables
+#include "smkg-jukebox.h" // tsourdt3rd_global_jukebox //
 
 #include "../command.h" // command variables
 #include "../g_input.h" // input variables
@@ -35,17 +36,6 @@
 #define TSOURDT3RDVERSIONSTRING "TSoURDt3rd v"TSOURDT3RDVERSION
 
 //// STRUCTS ////
-// Game //
-typedef struct TSoURDt3rdLoadingScreen_s {
-	size_t loadCount;
-	UINT8 loadPercentage;
-	INT32 bspCount;
-
-	INT32 screenToUse;
-
-	boolean loadComplete;
-} TSoURDt3rdLoadingScreen_t;
-
 // Audio //
 typedef struct TSoURDt3rdBossMusic_s {
 	const char *bossMusic;
@@ -68,38 +58,33 @@ typedef struct TSoURDt3rdDefaultMusicTracks_s {
 	const char *track;
 } TSoURDt3rdDefaultMusicTracks_t;
 
-// Servers
-typedef struct TSoURDt3rdServers_s {
-	boolean serverUsesTSoURDt3rd;
-
-	UINT8 majorVersion, minorVersion, subVersion;
-	UINT32 serverTSoURDt3rdVersion;
-} TSoURDt3rdServers_t;
-
-// Jukebox //
-typedef struct TSoURDt3rdJukebox_s {
-	boolean Unlocked;
-	boolean initHUD;
-	fixed_t tics;
-
-	musicdef_t *curtrack;
-	musicdef_t *prevtrack;
-} TSoURDt3rdJukebox_t;
-
 // Main //
 typedef struct TSoURDt3rd_s {
+	UINT8                     public_key[32]; // User authentication
+	UINT8                     secret_key[64];
+	char                      user_hash [18];
+
 	boolean usingTSoURDt3rd;
 	boolean checkedVersion;
-	INT32 num;
-	star_gamestate_t gamestate;
 	boolean masterServerAddressChanged;
 
-	TSoURDt3rdLoadingScreen_t loadingScreens;
 	boolean timeOver;
 
-	TSoURDt3rdServers_t serverPlayers;
+	union
+	{
+		size_t loadCount;
+		UINT8 loadPercentage;
+		INT32 bspCount;
+		INT32 screenToUse;
+		boolean loadComplete;
+	} loadingScreens;
 
-	TSoURDt3rdJukebox_t jukebox;
+	union
+	{
+		boolean serverUsesTSoURDt3rd;
+		UINT8 majorVersion, minorVersion, subVersion;
+		UINT32 serverTSoURDt3rdVersion;
+	} serverPlayers;
 } TSoURDt3rd_t;
 
 extern TSoURDt3rd_t TSoURDt3rdPlayers[MAXPLAYERS];
@@ -111,14 +96,9 @@ extern TSoURDt3rdDefaultMusicTracks_t defaultMusicTracks[];
 
 //// VARIABLES ////
 // TSoURDt3rd Stuff //
-extern boolean tsourdt3rd;
-
-extern boolean TSoURDt3rd_TouchyModifiedGame;
 extern boolean TSoURDt3rd_LoadExtras;
 extern boolean TSoURDt3rd_LoadedExtras;
 extern boolean TSoURDt3rd_NoMoreExtras;
-
-extern boolean TSoURDt3rd_checkedExtraWads;
 
 // Events //
 // Easter
@@ -150,7 +130,6 @@ extern boolean SpawnTheDispenser;
 //// COMMANDS ////
 // Game //
 extern consvar_t cv_loadingscreen, cv_loadingscreenimage;
-extern consvar_t cv_updatenotice;
 
 // Audio //
 extern consvar_t cv_vapemode;
@@ -161,6 +140,7 @@ void TSoURDt3rd_CheckTime(void);
 
 // Game //
 void TSoURDt3rd_InitializePlayer(INT32 playernum);
+
 void TSoURDt3rd_ClearPlayer(INT32 playernum);
 
 void STAR_LoadingScreen(void);
@@ -170,12 +150,7 @@ void STAR_RenameWindow(const char *title);
 const char *STAR_SetWindowTitle(void);
 #endif
 
-const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean coredumped);
-
 void TSoURDt3rd_BuildTicCMD(UINT8 player);
-
-// Players //
-boolean STAR_CanPlayerMoveAndChangeSkin(INT32 playernum);
 
 // Audio //
 void TSoURDt3rd_ControlMusicEffects(void);
@@ -184,10 +159,6 @@ const char *TSoURDt3rd_DetermineLevelMusic(void);
 UINT32 TSoURDt3rd_PinchMusicPosition(void);
 boolean TSoURDt3rd_SetPinchMusicSpeed(void);
 
-// Savedata //
-void STAR_WriteExtraData(void);
-void STAR_ReadExtraData(void);
-
 void STAR_SetSavefileProperties(void);
 
 // Files //
@@ -195,16 +166,6 @@ void TSoURDt3rd_TryToLoadTheExtras(void);
 
 INT32 STAR_DetectFileType(const char* filename);
 boolean STAR_DoesStringMatchHarcodedFileName(const char *string);
-
-// The World Wide Web //
-#ifdef HAVE_CURL
-void STAR_FindAPI(const char *API);
-
-INT32 STAR_FindStringOnWebsite(const char *API, char *URL, char *INFO, boolean verbose);
-char *STAR_ReturnStringFromWebsite(const char *API, char *URL, char *RETURNINFO, boolean verbose);
-
-void TSoURDt3rd_FindCurrentVersion(void);
-#endif
 
 // Servers //
 // Nobody came.

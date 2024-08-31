@@ -56,6 +56,8 @@ extern UINT8 titlemapinaction;
 extern UINT8 ultimatemode; // was sk_insane
 extern gameaction_t gameaction;
 
+extern INT32 pickedchar;
+
 extern boolean botingame;
 extern UINT8 botskin;
 extern UINT16 botcolor;

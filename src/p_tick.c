@@ -34,10 +34,9 @@
 #include "deh_tables.h" // MOBJTYPE_LIST
 #endif
 
-// STAR STUFF //
-#include "STAR/star_vars.h" // TSoURDt3rd::jukebox //
+// TSoURDt3rd
+#include "STAR/smkg-jukebox.h" // tsourdt3rd_global_jukebox //
 #include "STAR/p_user.h" // TSoURDt3rd_P_Ticker() //
-// INCLUDED! //
 
 tic_t leveltime;
 
@@ -229,21 +228,22 @@ void P_AddThinker(const thinklistnum_t n, thinker_t *thinker)
 #ifdef PARANOIA
 static const char *MobjTypeName(const mobj_t *mobj)
 {
+	mobjtype_t type;
 	actionf_p1 p1 = mobj->thinker.function.acp1;
 
 	if (p1 == (actionf_p1)P_MobjThinker)
-	{
-		return MOBJTYPE_LIST[mobj->type];
-	}
-	else if (p1 == (actionf_p1)P_RemoveThinkerDelayed)
-	{
-		if (mobj->thinker.debug_mobjtype != MT_NULL)
-		{
-			return MOBJTYPE_LIST[mobj->thinker.debug_mobjtype];
-		}
-	}
+		type = mobj->type;
+	else if (p1 == (actionf_p1)P_RemoveThinkerDelayed && mobj->thinker.debug_mobjtype != MT_NULL)
+		type = mobj->thinker.debug_mobjtype;
+	else
+		return "<Not a mobj>";
 
-	return "<Not a mobj>";
+	if (type < 0 || type >= NUMMOBJTYPES || (type >= MT_FIRSTFREESLOT && !FREE_MOBJS[type - MT_FIRSTFREESLOT]))
+		return "<Invalid mobj type>";
+	else if (type >= MT_FIRSTFREESLOT)
+		return FREE_MOBJS[type - MT_FIRSTFREESLOT]; // This doesn't include "MT_"...
+	else
+		return MOBJTYPE_LIST[type];
 }
 
 static const char *MobjThinkerName(const mobj_t *mobj)
@@ -556,6 +556,12 @@ void P_DoTeamscrambling(void)
 		CV_SetValue(&cv_teamscramble, 0);
 }
 
+
+//
+// P_DoSpecialStageStuff()
+//
+// For old-style (non-NiGHTS) special stages
+//
 static inline void P_DoSpecialStageStuff(void)
 {
 	boolean stillalive = false;
@@ -570,11 +576,17 @@ static inline void P_DoSpecialStageStuff(void)
 		players[i].powers[pw_underwater] = players[i].powers[pw_spacetime] = 0;
 	}
 
+#if 0
+	//if (sstimer < 15*TICRATE+6 && sstimer > 7 && (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC))
+		//S_SpeedMusic(1.4f);
+#else
+	// STAR STUFF: do cool music speeding junk :) //
 	if (sstimer < 15*TICRATE+6 && sstimer > 7 && (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC))
 	{
-		if (!TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack) // STAR STUFF: you're interrupting my brooding >:| //
+		if (!tsourdt3rd_global_jukebox->curtrack) // STAR STUFF: you're interrupting my brooding >:| //
 			S_SpeedMusic(1.4f);
 	}
+#endif
 
 	if (sstimer && !objectplacing)
 	{
@@ -596,7 +608,15 @@ static inline void P_DoSpecialStageStuff(void)
 				if (--players[i].nightstime > 6)
 				{
 					if (P_IsLocalPlayer(&players[i]) && oldnightstime > 10*TICRATE && players[i].nightstime <= 10*TICRATE)
-						S_ChangeMusicInternal("_drown", false);
+					{
+						if (mapheaderinfo[gamemap-1]->levelflags & LF_MIXNIGHTSCOUNTDOWN)
+						{
+							S_FadeMusic(0, 10*MUSICRATE);
+							S_StartSound(NULL, sfx_timeup); // that creepy "out of time" music from NiGHTS.
+						}
+						else
+							S_ChangeMusicInternal("_drown", false);
+					}
 					stillalive = true;
 				}
 				else if (!players[i].exiting)
@@ -764,7 +784,9 @@ void P_Ticker(boolean run)
 		ps_lua_mobjhooks.value.i = 0;
 		ps_checkposition_calls.value.i = 0;
 
-		LUA_HOOK(PreThinkFrame);
+		PS_START_TIMING(ps_lua_prethinkframe_time);
+		LUA_HookPreThinkFrame();
+		PS_STOP_TIMING(ps_lua_prethinkframe_time);
 
 		PS_START_TIMING(ps_playerthink_time);
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -838,7 +860,6 @@ void P_Ticker(boolean run)
 
 				if (multiplayer || netgame)
 					players[i].exiting = 0;
-
 				P_DamageMobj(players[i].mo, NULL, NULL, 1, DMG_INSTAKILL);
 			}
 		}
@@ -850,18 +871,9 @@ void P_Ticker(boolean run)
 			countdown2--;
 
 		if (quake.time)
-		{
-			fixed_t ir = quake.intensity>>1;
-			/// \todo Calculate distance from epicenter if set and modulate the intensity accordingly based on radius.
-			quake.x = M_RandomRange(-ir,ir);
-			quake.y = M_RandomRange(-ir,ir);
-			quake.z = M_RandomRange(-ir,ir);
 			--quake.time;
-		}
-		else
-			quake.x = quake.y = quake.z = 0;
 
-		if (metalplayback)
+		if (!P_MobjWasRemoved(metalplayback))
 			G_ReadMetalTic(metalplayback);
 		if (metalrecording)
 			G_WriteMetalTic(players[consoleplayer].mo);
@@ -874,7 +886,9 @@ void P_Ticker(boolean run)
 
 		TSoURDt3rd_P_Ticker(); // STAR STUFF: Don't forget to run our unique ticker too! //
 
-		LUA_HOOK(PostThinkFrame);
+		PS_START_TIMING(ps_lua_postthinkframe_time);
+		LUA_HookPostThinkFrame();
+		PS_STOP_TIMING(ps_lua_postthinkframe_time);
 	}
 
 	if (run)

@@ -15,14 +15,18 @@
 #include "../drrr/kg_input.h"
 #include "../m_menu.h"
 
+#include "../../hu_stuff.h"
+
 typedef struct menu_anim_s
 {
 	tic_t start;
 	INT16 dist;
 } menu_anim_t;
 
-#define M_OPTIONS_OFSTIME 5
 // Keep track of some options properties
+#define M_OPTIONS_OFSTIME 5
+#define M_OPTIONS_BINDBEN_QUICK 106
+
 extern struct optionsmenu_s {
 
 	tic_t ticker;			// How long the menu's been open for
@@ -45,8 +49,9 @@ extern struct optionsmenu_s {
 	SINT8 profilen;				// # of the selected profile.
 
 	boolean resetprofile;		// After going back from the edit menu, this tells the profile select menu to kill the profile data after the transition.
-	//profile_t *profile;			// Pointer to the profile we're editing
+	void *profile;			    // Pointer to the profile we're editing
 
+	INT32 tempcontrols[NUM_GAMECONTROLS][2];
 	// Temporary buffer where we're gonna store game controls.
 	// This is only applied to the profile when you exit out of the controls menu.
 
@@ -54,19 +59,11 @@ extern struct optionsmenu_s {
 	INT16 bindtimer;			// Timer until binding is cancelled (5s)
 	UINT16 bindben;				// Hold right timer
 	UINT8 bindben_swallow;		// (bool) control is about to be cleared; (int) swallow/pose animation timer
-
-	INT16 trycontroller;		// Starts at 3*TICRATE, holding B lowers this, when at 0, cancel controller try mode.
+	INT32 bindinputs[2];        // Set while binding
 
 	// Used for horrible axis shenanigans
 	INT32 lastkey;
 	tic_t keyheldfor;
-
-	// controller coords...
-	// Works the same as (t)opt
-	INT16 contx;
-	INT16 conty;
-	INT16 tcontx;
-	INT16 tconty;
 
 	// for video mode testing:
 	INT32 vidm_testingmode;
@@ -85,22 +82,31 @@ extern struct optionsmenu_s {
 	tic_t fade;
 } optionsmenu;
 
-extern struct menutransition_s {
-	INT16 tics;
-	INT16 dest;
-	tsourdt3rd_menu_t *startmenu;
-	tsourdt3rd_menu_t *endmenu;
-	boolean in;
-	boolean enabled;
-} menutransition;
-
 extern boolean menuwipe;
 
-void STAR_M_PreDrawer(void);
-void STAR_M_PostDrawer(void);
+void TSoURDt3rd_M_PreDrawer(void);
+void TSoURDt3rd_M_PostDrawer(void);
 
-void STAR_M_DrawMenuTooltips(void);
+INT32 TSoURDt3rd_M_DrawCaretString
+(
+	INT32 x, INT32 y,
+	INT32 flags,
+	fixed_t pscale, fixed_t vscale,
+	const char *string, fontdef_t font
+);
 
+void TSoURDt3rd_M_DrawMenuTooltips
+(
+	fixed_t box_x, fixed_t box_y, INT32 box_flags, UINT8 *box_color,
+	fixed_t string_x, fixed_t string_y, boolean string_centered
+);
+
+void TSoURDt3rd_M_DrawOptionsMovingButton(void);
+
+void TSoURDt3rd_M_DrawPauseGraphic(void);
 void STAR_M_DrawQuitGraphic(void);
+
+// For some menu highlights
+UINT16 TSoURDt3rd_M_GetCvPlayerColor(UINT8 pnum);
 
 #endif // __SMKG_M_DRAW__

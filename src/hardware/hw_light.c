@@ -26,6 +26,8 @@
 #include "../p_local.h"
 #include "../r_fps.h"
 
+#include "../STAR/lights/smkg-coronas.h"
+
 //=============================================================================
 //                                                                      DEFINES
 //=============================================================================
@@ -658,7 +660,7 @@ void HWR_DL_Draw_Coronas(void)
 		cx = light_pos->x;
 		cy = light_pos->y;
 		cz = light_pos->z;
-		HWR_Transform(&cx, &cy, &cz);
+		transform(&cx, &cy, &cz);
 
 		// more realistique corona !
 		if (cz >= Z2)

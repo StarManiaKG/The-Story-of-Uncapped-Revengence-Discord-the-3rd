@@ -14,8 +14,10 @@
 
 #include "star_vars.h"
 #include "smkg-cvars.h"
+
 #include "../m_menu.h"
 #include "../m_cond.h"
+#include "../v_video.h"
 
 #ifdef HAVE_DISCORDSUPPORT
 #include "../discord/discord.h"
@@ -25,58 +27,9 @@
 //        Variables
 // ------------------------ //
 
-extern INT16 MessageMenuDisplay[3][256]; // TO HACK
-
 extern INT16 tsourdt3rd_itemOn;
 extern INT16 tsourdt3rd_skullAnimCounter;
-
-extern INT32 (*setupcontrols)[2]; // pointer to the gamecontrols of the player being edited
-
 extern boolean tsourdt3rd_noFurtherInput;
-
-enum
-{
-	op_eventoptionsheader = 0,
-	op_alloweasteregghunt,
-	op_easteregghuntbonuses,
-
-	op_aprilfools,
-
-	op_loadingscreenimage = 8,
-
-	op_isitcalledsingleplayer = 10,
-
-	op_fpscountercolor = 13,
-	op_tpscountercolor,
-
-	op_shadowsrotate = 17,
-
-	op_allowtypicaltimeover,
-
-	op_checkfortsourdt3rdupdates = 23,
-	
-	op_defaultmaptrack = 35,
-
-	op_shieldblockstransformation = 37,
-
-	op_alwaysoverlayinvuln = 39,
-
-	op_storesavesinfolders = 41,
-
-	op_perfectsave,
-	op_perfectsavestripe1,
-	op_perfectsavestripe2,
-	op_perfectsavestripe3,
-
-	op_continues,
-
-	op_snake = 59,
-	op_dispensergoingup,
-
-	op_windowtitletype,
-	op_customwindowtitle,
-	op_memesonwindowtitle
-};
 
 // Fade wipes
 enum
@@ -87,74 +40,16 @@ enum
 };
 extern UINT8 tsourdt3rd_wipedefs[TSOURDT3RD_NUMWIPEDEFS];
 
-// ================================================================
-// QUIT MESSAGES
-// 	Now externed, and are defined here instead, of inside m_menu.c!
-// ================================================================
-
-typedef enum
-{
-	QUITMSG = 0,
-	QUITMSG1,
-	QUITMSG2,
-	QUITMSG3,
-	QUITMSG4,
-	QUITMSG5,
-	QUITMSG6,
-	QUITMSG7,
-
-	QUIT2MSG,
-	QUIT2MSG1,
-	QUIT2MSG2,
-	QUIT2MSG3,
-	QUIT2MSG4,
-	QUIT2MSG5,
-	QUIT2MSG6,
-
-	QUIT3MSG,
-	QUIT3MSG1,
-	QUIT3MSG2,
-	QUIT3MSG3,
-	QUIT3MSG4,
-	QUIT3MSG5,
-	QUIT3MSG6,
-
-	TSOURDT3RD_QUITSMSG1,
-	TSOURDT3RD_QUITSMSG2,
-	TSOURDT3RD_QUITSMSG3,
-	TSOURDT3RD_QUITSMSG4,
-	TSOURDT3RD_QUITSMSG5,
-	TSOURDT3RD_QUITSMSG6,
-
-	TSOURDT3RD_AF_QUITAMSG1,
-	TSOURDT3RD_AF_QUITAMSG2,
-	TSOURDT3RD_AF_QUITAMSG3,
-	TSOURDT3RD_AF_QUITAMSG4,
-
-	NUM_QUITMESSAGES
-} text_enum;
-
-extern const char *quitmsg[NUM_QUITMESSAGES];
-
-// =======
-// JUKEBOX
-// =======
-
-extern musicdef_t *curplaying;
-
-extern fixed_t st_time;
-extern INT32 st_sel, st_cc;
-
-extern patch_t* st_radio[9];
-extern patch_t* st_launchpad[4];
-
-extern UINT8 skyRoomMenuTranslations[MAXUNLOCKABLES];
+// Snake
+extern void *tsourdt3rd_snake;
 
 // =====
 // MENUS
 // =====
 
 #define MTREE5(a,b,c,d,e) MTREE2(a, MTREE4(b,c,d,e)) // just in case
+
+#define AUTOLOADSTRING "Press \x83Right-Shift\x80 to mark addons to Autoload!"
 
 typedef enum
 {
@@ -169,31 +64,53 @@ typedef struct tsourdt3rd_menuitems_s
 	const char *patch; // image of option used by K_MenuPreviews
 	const char *tooltip; // description of option used by K_MenuTooltips
 
-	// extra variables
-	INT32 mvar1;
+	INT32 mvar1; // extra variables
 	INT32 mvar2;
 } tsourdt3rd_menuitems_t;
 
 typedef struct tsourdt3rd_menu_s
 {
-	menu_t                   *menu;                // pointer to the current menu_t
-	tsourdt3rd_menuitems_t   *menuitems;           // custom tsourdt3rd menu items
+	menu_t                   *menu;               // pointer to the current menu_t
+	tsourdt3rd_menuitems_t   *menuitems;          // custom tsourdt3rd menu items
 
-	INT16                    extra1, extra2;	   // Can be whatever really! Options menu uses extra1 for bg colour.
-	INT16                    behaviourflags;       // menubehaviourflags_t
+	INT16                     extra1, extra2;	  // Can be whatever really! Options menu uses extra1 for bg colour.
+	INT16                     behaviourflags;     // menubehaviourflags_t
+	const char               *music;              // Track to play in TSoURDt3rd_M_PlayMenuJam. NULL for default, "." to stop
 
-	INT16                    transitionID;         // only transition if IDs match
-	INT16          			 transitionTics;       // tics for transitions out
+	INT16                     transitionID;       // only transition if IDs match
+	INT16          			  transitionTics;     // tics for transitions out
 
-	void                     (*drawroutine)(void); // draw routine
-	void                     (*tickroutine)(void); // ticker routine
-	void                     (*initroutine)(void); // called when starting a new menu
-	boolean                  (*quitroutine)(void); // called before quit a menu return true if we can
-	boolean		             (*inputroutine)(INT32); // if set, called every frame in the input handler. Returning true overwrites normal input handling.
+	void                    (*drawroutine)(void); // draw routine
+	void                    (*tickroutine)(void); // ticker routine
+	void                    (*initroutine)(void); // called when starting a new menu
+	boolean                 (*quitroutine)(void); // called before quit a menu return true if we can
+	boolean		            (*inputroutine)(INT32); // if set, called every frame in the input handler. Returning true overwrites normal input handling.
 
-	struct tsourdt3rd_menu_s *nextmenu; // pointer to the next supported tsourdt3rd menu
+	struct tsourdt3rd_menu_s *prev_menu; // pointer to the last accessed tsourdt3rd menu
+	struct tsourdt3rd_menu_s *next_menu; // pointer to the next supported tsourdt3rd menu
 } tsourdt3rd_menu_t;
+
+// FIXME: C++ template
+#define M_EaseWithTransition(EasingFunc, N) \
+	(menutransition.tics != menutransition.dest ? EasingFunc(menutransition.in ?\
+		M_ReverseTimeFrac(menutransition.tics, menutransition.endmenu->transitionTics) :\
+		M_TimeFrac(menutransition.tics, menutransition.startmenu->transitionTics), 0, N) : 0)
+
+extern struct menutransition_s {
+	INT16 tics;
+	INT16 dest;
+	tsourdt3rd_menu_t *startmenu;
+	tsourdt3rd_menu_t *endmenu;
+	boolean in;
+	boolean transitions_enabled;
+} menutransition;
+
+// SMKG-M_MENUDEF.C
 extern tsourdt3rd_menu_t *tsourdt3rd_currentMenu;
+
+#if 1
+extern menuitem_t defaultMenuTitles[256][256];
+extern gtdesc_t defaultGametypeTitles[NUMGAMETYPES];
 
 extern menu_t OP_MainDef;
 extern menuitem_t MainMenu[];
@@ -204,28 +121,62 @@ extern menuitem_t MPauseMenu[];
 extern menu_t MPauseDef;
 extern menuitem_t SPauseMenu[];
 extern menu_t SPauseDef;
-
-extern menu_t MessageDef;
-extern menuitem_t MessageMenu[256];
-
-extern menu_t SR_SoundTestDef;
-
-extern menu_t OP_TSoURDt3rdOptionsDef;
-extern menuitem_t OP_Tsourdt3rdOptionsMenu[];
-extern tsourdt3rd_menu_t TSoURDt3rd_OP_TSoURDt3rdOptionsDef;
-
-extern menu_t OP_TSoURDt3rdJukeboxDef, OP_Tsourdt3rdJukeboxControlsDef;
-
-extern menuitem_t defaultMenuTitles[256][256];
-extern gtdesc_t defaultGametypeTitles[NUMGAMETYPES];
+#endif
 
 #ifdef HAVE_DISCORDSUPPORT
 extern menu_t OP_DiscordOptionsDef;
-extern tsourdt3rd_menu_t TSoURDt3rd_MISC_DiscordRequestsDef;
+extern tsourdt3rd_menu_t TSoURDt3rd_TM_MISC_DiscordRequestsDef;
 
 extern menu_t MISC_DiscordRequestsDef;
-extern tsourdt3rd_menu_t TSoURDt3rd_OP_DiscordOptionsDef;
+extern tsourdt3rd_menu_t TSoURDt3rd_TM_OP_DiscordOptionsDef;
 #endif
+
+extern menu_t TSoURDt3rd_OP_MainMenuDef;
+extern tsourdt3rd_menu_t TSoURDt3rd_TM_OP_MainMenuDef;
+
+extern menu_t TSoURDt3rd_OP_EventsDef;
+extern tsourdt3rd_menu_t TSoURDt3rd_TM_OP_EventsDef;
+
+extern menu_t TSoURDt3rd_OP_GameDef;
+extern tsourdt3rd_menu_t TSoURDt3rd_TM_OP_GameDef;
+
+extern menu_t TSoURDt3rd_OP_ControlsDef;
+extern tsourdt3rd_menu_t TSoURDt3rd_TM_OP_ControlsDef;
+
+extern menu_t TSoURDt3rd_OP_VideoDef;
+extern tsourdt3rd_menu_t TSoURDt3rd_TM_OP_VideoDef;
+
+extern menu_t TSoURDt3rd_OP_AudioDef;
+extern tsourdt3rd_menu_t TSoURDt3rd_TM_OP_AudioDef;
+
+extern menu_t TSoURDt3rd_OP_SavefileDef;
+extern tsourdt3rd_menu_t TSoURDt3rd_TM_OP_SavefileDef;
+
+extern menu_t TSoURDt3rd_OP_PlayerDef;
+extern tsourdt3rd_menu_t TSoURDt3rd_TM_OP_PlayerDef;
+
+extern menu_t TSoURDt3rd_OP_ServerDef;
+extern tsourdt3rd_menu_t TSoURDt3rd_TM_OP_ServerDef;
+
+extern menu_t TSoURDt3rd_OP_JukeboxDef;
+extern tsourdt3rd_menu_t TSoURDt3rd_TM_OP_JukeboxDef;
+
+extern menu_t OP_TSoURDt3rdJukeboxDef, OP_Tsourdt3rdJukeboxControlsDef;
+
+extern menu_t TSoURDt3rd_OP_ExtrasDef;
+extern menuitem_t TSoURDt3rd_OP_ExtrasMenu[];
+extern tsourdt3rd_menu_t TSoURDt3rd_TM_OP_ExtrasDef;
+
+extern menu_t TSoURDt3rd_OP_Extras_SnakeDef;
+extern tsourdt3rd_menu_t TSoURDt3rd_TM_OP_Extras_SnakeDef;
+
+// SMKG-M_MENUDRAW.C
+// flags for text highlights
+#define tsourdt3rd_highlightflags V_MENUCOLORMAP
+#define tsourdt3rd_recommendedflags V_GREENMAP
+#define tsourdt3rd_warningflags V_ORANGEMAP
+
+#define TSOURDT3RD_M_ALTCOLOR V_ORANGEMAP
 
 // ------------------------ //
 //        Functions
@@ -235,11 +186,7 @@ fixed_t M_TimeFrac(tic_t tics, tic_t duration);
 fixed_t M_ReverseTimeFrac(tic_t tics, tic_t duration);
 fixed_t M_DueFrac(tic_t start, tic_t duration);
 
-// FIXME: C++ template
-#define M_EaseWithTransition(EasingFunc, N) \
-	(menutransition.tics != menutransition.dest ? EasingFunc(menutransition.in ?\
-		M_ReverseTimeFrac(menutransition.tics, menutransition.endmenu->transitionTics) :\
-		M_TimeFrac(menutransition.tics, menutransition.startmenu->transitionTics), 0, N) : 0)
+void TSoURDt3rd_M_UpdateItemOn(void);
 
 // =======
 // DRAWING
@@ -250,17 +197,12 @@ void K_drawButtonAnim(INT32 x, INT32 y, INT32 flags, patch_t *button[2], tic_t a
 
 void K_DrawSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isSmall);
 
+void TSoURDt3rd_M_DrawGenericOptions(void);
+void TSoURDt3rd_M_DrawMediocreKeyboardKey(const char *text, INT32 *workx, INT32 worky, boolean push, boolean rightaligned);
+
 // =====
 // MENUS
 // =====
-
-void M_DrawGenericMenu(void);
-void M_DrawGenericScrollMenu(void);
-void M_DrawControl(void);
-
-void M_ChangeControl(INT32 choice);
-
-void M_ShiftMessageQueueDown(void);
 
 void M_HandleMasterServerResetChoice(INT32 choice);
 
@@ -269,6 +211,19 @@ void M_PreConnectMenuChoice(INT32 choice);
 
 void M_StartServerMenu(INT32 choice);
 void M_ConnectMenuModChecks(INT32 choice);
+
+void TSoURDt3rd_M_DrawColorResetOption
+(
+	INT32 x, INT32 *y, INT32 *cursory,
+	player_t *setupm_player,
+	consvar_t *setupm_cvdefaultskin, consvar_t *setupm_cvdefaultcolor, menucolor_t *setupm_fakecolor
+);
+void TSoURDt3rd_M_HandleColorResetOption
+(
+	player_t *setupm_player,
+	INT32 *setupm_fakeskin, consvar_t *setupm_cvdefaultskin,
+	consvar_t *setupm_cvdefaultcolor, menucolor_t *setupm_fakecolor
+);
 
 #ifdef HAVE_DISCORDSUPPORT
 void M_DiscordOptions(INT32 choice);
@@ -286,32 +241,15 @@ void M_DiscordRequests(INT32 choice);
 const char *M_GetDiscordName(discordRequest_t *r);
 #endif
 
-void M_TSoURDt3rdOptions(INT32 choice);
-
-// ======
-// I QUIT
-// ======
-
-void STAR_M_InitQuitMessages(void);
-void STAR_M_InitDynamicQuitMessages(void);
-
-INT32 STAR_M_SelectQuitMessage(void);
+void TSoURDt3rd_M_InitOptionsMenu(INT32 choice);
+void TSoURDt3rd_M_DrawOptions(void);
+void TSoURDt3rd_M_OptionsTick(void);
+boolean TSoURDt3rd_M_OptionsInputs(INT32 ch);
 
 // =======
 // JUKEBOX
 // =======
 
-void M_CacheSoundTest(void);
-
-boolean TSoURDt3rd_M_IsJukeboxUnlocked(TSoURDt3rdJukebox_t *TSoURDt3rdJukebox);
 void TSoURDt3rd_Jukebox_InitMenu(INT32 choice);
-
-void TSoURDt3rd_Jukebox_InitControlsMenu(INT32 choice);
-
-// =====
-// SNAKE
-// =====
-
-void TSoURDt3rd_Snake_InitMenu(INT32 choice);
 
 #endif // __STAR_M_MENU__

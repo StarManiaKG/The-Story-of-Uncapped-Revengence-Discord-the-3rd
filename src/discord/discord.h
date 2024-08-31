@@ -100,7 +100,7 @@ extern consvar_t cv_discordcustom_imagetext_large, cv_discordcustom_imagetext_sm
 // =====
 
 /*--------------------------------------------------
-	void DRPC_StringPrintf(char *main, const char *sep, size_t size, const char *string, ...)
+	void DRPC_StringPrintf(char *main, const char *sep, size_t size, const char *string, ...);
 
 		Provides easier methods of concatenation when it
 		comes to applying Discord Rich Presence statuses to the given string.
@@ -109,7 +109,7 @@ void DRPC_StringPrintf(char *main, const char *sep, size_t size, const char *str
 
 
 /*--------------------------------------------------
-	void DRPC_ImagePrintf(char *string, size_t size, const char *sep, const char *image, ...)
+	void DRPC_ImagePrintf(char *string, size_t size, const char *sep, const char *image, ...);
 
 		Provides easier methods of applying images to
 		Discord Rich Presence statuses.
@@ -122,7 +122,7 @@ void DRPC_ImagePrintf(char *string, size_t size, const char *sep, const char *im
 // ========
 
 /*--------------------------------------------------
-	void DRPC_GeneralStatus(char *string, char *image, char *imagestr)
+	void DRPC_GeneralStatus(char *string, char *image, char *imagestr);
 
 		Applies a Discord Rich Presence status, related to general details,
 		to the given string.
@@ -132,7 +132,7 @@ void DRPC_GeneralStatus(char *string, char *image, char *imagestr);
 
 
 /*--------------------------------------------------
-	void DRPC_ExtendedStatus(char *string)
+	void DRPC_ExtendedStatus(char *string);
 
 		Applies a Discord Rich Presence status, related to extended status details,
 		to the given string.
@@ -142,7 +142,7 @@ void DRPC_ExtendedStatus(char *string);
 
 
 /*--------------------------------------------------
-	void DRPC_ScoreStatus(char *string)
+	void DRPC_ScoreStatus(char *string);
 
 		Applies a Discord Rich Presence status, related to score amounts, to
 		the given string.
@@ -152,7 +152,7 @@ void DRPC_ScoreStatus(char *string);
 
 
 /*--------------------------------------------------
-	void DRPC_EmblemStatus(char *string)
+	void DRPC_EmblemStatus(char *string);
 
 		Applies a Discord Rich Presence status, related to emblems, to
 		the given string.
@@ -161,7 +161,7 @@ void DRPC_ScoreStatus(char *string);
 void DRPC_EmblemStatus(char *string);
 
 /*--------------------------------------------------
-	void DRPC_EmeraldStatus(char *string)
+	void DRPC_EmeraldStatus(char *string);
 
 		Applies a Discord Rich Presence status, related to how many
 		emeralds the user has, to the given string.
@@ -171,7 +171,7 @@ void DRPC_EmeraldStatus(char *string);
 
 
 /*--------------------------------------------------
-	void DRPC_GamestateStatus(char *string, char *image, char *imagestr)
+	void DRPC_GamestateStatus(char *string, char *image, char *imagestr);
 
 		Applies a Discord Rich Presence status, related to gamestates, to
 		the given string.
@@ -181,7 +181,7 @@ void DRPC_GamestateStatus(char *string, char *image, char *imagestr);
 
 
 /*--------------------------------------------------
-	void DRPC_CharacterStatus(char *charimg, char *charname, char *s_charimg, char *s_charname)
+	void DRPC_CharacterStatus(char *charimg, char *charname, char *s_charimg, char *s_charname);
 
 		Applies a Discord Rich Presence status, related to levels, to
 		the given string.
@@ -191,7 +191,7 @@ void DRPC_CharacterStatus(char *charimg, char *charname, char *s_charimg, char *
 
 
 /*--------------------------------------------------
-	void DRPC_PlaytimeStatus(char *string)
+	void DRPC_PlaytimeStatus(char *string);
 
 		Applies a Discord Rich Presence status, related to SRB2 playtime, to
 		the given string.
@@ -201,7 +201,7 @@ void DRPC_PlaytimeStatus(char *string);
 
 
 /*--------------------------------------------------
-	void DRPC_CustomStatus(char *detailstr, char *statestr, char *image, char *imagestr, char *s_image, char *s_imagestr)
+	void DRPC_CustomStatus(char *detailstr, char *statestr, char *image, char *imagestr, char *s_image, char *s_imagestr);
 
 		Using the customizable custom discord status commands, this applies
 		a Discord Rich Presence status to the given string.
@@ -256,7 +256,22 @@ void DRPC_UpdatePresence(void);
 
 #endif // HAVE_DISCORDSUPPORT
 
+/*--------------------------------------------------
+	void Joinable_OnChange(void)
+
+		Grabs Discord presence info and packets in netgames.
+--------------------------------------------------*/
+
 void Joinable_OnChange(void);
+
+
+/*--------------------------------------------------
+	void Got_DiscordInfo(void)
+
+		Updates Discord presence info based on packets
+		received from servers.
+--------------------------------------------------*/
+
 void Got_DiscordInfo(UINT8 **cp, INT32 playernum);
 
 

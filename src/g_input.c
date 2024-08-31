@@ -20,7 +20,7 @@
 #include "console.h"
 
 #include "STAR/smkg_g_inputs.h" // STAR_G_DefineDefaultControls() //
-#include "STAR/drrr/kg_input.h" // STAR_G_MapEventsToControls() //
+#include "STAR/drrr/kg_input.h" // TSoURDt3rd_G_MapEventsToControls() //
 
 #define MAXMOUSESENSITIVITY 100 // sensitivity steps
 
@@ -116,7 +116,7 @@ void G_MapEventsToControls(event_t *ev)
 	UINT8 flag;
 
 	// STAR STUFF: DRRR Menus: our cool event mapper exists too! //
-	if (STAR_G_MapEventsToControls(ev))
+	if (TSoURDt3rd_G_MapEventsToControls(ev))
 		return;
 	// ONWARDS AND UPWARDS (or something) //
 

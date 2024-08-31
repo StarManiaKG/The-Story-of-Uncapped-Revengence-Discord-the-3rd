@@ -136,12 +136,12 @@ typedef enum
 
 	MN_SPECIAL,
 
+	// STAR STUFF //
 #ifdef HAVE_DISCORDSUPPORT
 	MN_OP_DISCORD_RQ,
 	MN_OP_DISCORD_OPT,
 #endif
 
-	// STAR STUFF //
 	MN_TSOURDT3RD_README,
 	
 	MN_MP_EXTENDEDSERVERPROPERTIES,
@@ -392,8 +392,6 @@ typedef struct
 	patch_t *charpic;
 	UINT8 prev;
 	UINT8 next;
-
-	// new character select
 	char displayname[SKINNAMESIZE+1];
 	SINT8 skinnum[2];
 	UINT16 oppositecolor;
@@ -512,7 +510,6 @@ extern boolean AllowEasterEggHunt, EnableEasterEggHuntBonuses;
 // commands //
 // game
 extern consvar_t cv_quitscreen;
-extern consvar_t cv_isitcalledsingleplayer;
 extern consvar_t cv_pausegraphicstyle;
 
 // audio
@@ -532,14 +529,7 @@ extern consvar_t cv_jukeboxspeed, cv_jukeboxhud, cv_luacanstopthejukebox;
 extern consvar_t cv_windowtitletype, cv_customwindowtitle, cv_memesonwindowtitle;
 
 // functions //
-// events
-void M_UpdateEasterStuff(void);
 void STAR_StoreDefaultMenuStrings(void);
-
-// game
-void STAR_LoadingScreen_OnChange(void);
-void STAR_Shadow_OnChange(void);
-void STAR_UpdateNotice_OnChange(void);
 // END OF STAR STUFF SHUGDCUYSIGIUDIOHSBIDJ //
 
 // These defines make it a little easier to make menus

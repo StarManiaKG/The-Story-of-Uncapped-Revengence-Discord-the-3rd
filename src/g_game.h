@@ -71,7 +71,7 @@ typedef enum {
 #define P_ControlStyle(player) ((((player)->pflags & PF_ANALOGMODE) ? CS_LMAOGALOG : 0) | (((player)->pflags & PF_DIRECTIONCHAR) ? CS_STANDARD : 0))
 
 extern consvar_t cv_autobrake, cv_autobrake2;
-extern consvar_t cv_sideaxis,cv_turnaxis,cv_moveaxis,cv_lookaxis,cv_jumpaxis,cv_spinaxis,cv_fireaxis,cv_firenaxis,cv_deadzone,cv_digitaldeadzone;
+extern consvar_t cv_sideaxis, cv_turnaxis, cv_moveaxis, cv_lookaxis, cv_jumpaxis, cv_spinaxis, cv_fireaxis, cv_firenaxis, cv_deadzone, cv_digitaldeadzone;
 extern consvar_t cv_sideaxis2,cv_turnaxis2,cv_moveaxis2,cv_lookaxis2,cv_jumpaxis2,cv_spinaxis2,cv_fireaxis2,cv_firenaxis2,cv_deadzone2,cv_digitaldeadzone2;
 extern consvar_t cv_ghost_bestscore, cv_ghost_besttime, cv_ghost_bestrings, cv_ghost_last, cv_ghost_guest;
 
@@ -176,8 +176,7 @@ void G_SpawnPlayer(INT32 playernum);
 
 // Can be called by the startup code or M_Responder.
 // A normal game starts at map 1, but a warp test can start elsewhere
-void G_DeferedInitNew(boolean pultmode, const char *mapname, INT32 pickedchar,
-	boolean SSSG, boolean FLS);
+void G_DeferedInitNew(boolean pultmode, const char *mapname, INT32 character, boolean SSSG, boolean FLS);
 void G_DoLoadLevel(boolean resetplayer);
 void G_StartTitleCard(void);
 void G_PreLevelTitleCard(void);

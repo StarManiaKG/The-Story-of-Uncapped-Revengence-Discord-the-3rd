@@ -121,16 +121,10 @@ typedef union
 } mysockaddr_t;
 
 	#ifdef HAVE_MINIUPNPC
-	#ifdef MINIUPNP_STATICLIB
-		#include "miniwget.h"
-		#include "miniupnpc.h"
-		#include "upnpcommands.h"
-	#else
-		#include "miniupnpc/miniwget.h"
-		#include "miniupnpc/miniupnpc.h"
-		#include "miniupnpc/upnpcommands.h"
-	#endif
-		static boolean UPNP_support = true;
+	#include "miniupnpc/miniwget.h"
+	#include "miniupnpc/miniupnpc.h"
+	#include "miniupnpc/upnpcommands.h"
+	static boolean UPNP_support = true;
 	#endif // HAVE_MINIUPNC
 
 #endif // !NONET
@@ -147,12 +141,8 @@ typedef union
 
 #include "doomstat.h"
 
-#ifdef USE_STUN
-#include "discord/stun.h" // STUN_got_response() //
-#endif
-
-#include "STAR/drrr/km_swap.h" // MSBF_LONG //
-#include "i_time.h" // needed for holepunching //
+// TSoURDt3rd
+#include "STAR/netcode/smkg-net.h" // various bits of netcode data //
 
 // win32
 #ifdef USE_WINSOCK
@@ -284,6 +274,7 @@ static const char* inet_ntopA(short af, const void *cp, char *buf, socklen_t len
 #ifdef HAVE_MINIUPNPC // based on old XChat patch
 static void I_ShutdownUPnP(void);
 static void I_InitUPnP(void);
+static I_mutex upnp_mutex;
 static struct UPNPUrls urls;
 static struct IGDdatas data;
 static char lanaddr[64];
@@ -308,6 +299,7 @@ init_upnpc_once(struct upnpdata *upnpuserdata)
 	if (upnpuserdata->upnpc_started != 0)
 		return;
 
+	I_lock_mutex(&upnp_mutex);
 	const char * const deviceTypes[] = {
 		"urn:schemas-upnp-org:device:InternetGatewayDevice:2",
 		"urn:schemas-upnp-org:device:InternetGatewayDevice:1",
@@ -361,6 +353,7 @@ init_upnpc_once(struct upnpdata *upnpuserdata)
 	{
 		I_OutputMsg(M_GetText("No UPnP devices discovered\n"));
 	}
+	I_unlock_mutex(upnp_mutex);
 	upnpuserdata->upnpc_started =1;
 }
 
@@ -368,24 +361,30 @@ static inline void I_UPnP_add(const char * addr, const char *port, const char * 
 {
 	if (!urls.controlURL || urls.controlURL[0] == '\0')
 		return;
+	I_lock_mutex(&upnp_mutex);
 	if (addr == NULL)
 		addr = lanaddr;
 	UPNP_AddPortMapping(urls.controlURL, data.first.servicetype,
 	                    port, port, addr, "SRB2; TSoURDt3rd", servicetype, NULL, NULL);
+	I_unlock_mutex(upnp_mutex);
 }
 
 static inline void I_UPnP_rem(const char *port, const char * servicetype)
 {
 	if (!urls.controlURL || urls.controlURL[0] == '\0')
 		return;
+	I_lock_mutex(&upnp_mutex);
 	UPNP_DeletePortMapping(urls.controlURL, data.first.servicetype,
 	                       port, servicetype, NULL);
+	I_unlock_mutex(upnp_mutex);
 }
 
 static void I_ShutdownUPnP(void)
 {
 	I_UPnP_rem(serverport_name, "UDP");
+	I_lock_mutex(&upnp_mutex);
 	FreeUPNPUrls(&urls);
+	I_unlock_mutex(upnp_mutex);
 }
 #endif
 
@@ -597,158 +596,6 @@ void Command_Numnodes(void)
 #endif
 
 #ifndef NONET
-// HOLEPUNCHING STUFFS //
-/* See ../doc/Holepunch-Protocol.txt */
-
-static const INT32 hole_punch_magic = MSBF_LONG (0x52eb11);
-
-/* not one of the reserved "local" addresses */
-// https://github.com/jameds/holepunch/blob/master/holepunch.c#L75
-static boolean is_external_address(UINT32 p)
-{
-	UINT8 a = (p & 255);
-	UINT8 b = ((p >> 8) & 255);
-
-	if (p == (UINT32)~0)/* 255.255.255.255 */
-		return 0;
-
-	switch (a)
-	{
-		case 0:
-		case 10:
-		case 127:
-			return false;
-		case 172:
-			return (b & ~15) != 16;/* 16 - 31 */
-		case 192:
-			return b != 168;
-		default:
-			return true;
-	}
-}
-
-static boolean hole_punch(ssize_t c)
-{
-	if (c == 10 && holepunchpacket->magic == hole_punch_magic
-		&& is_external_address(ntohl(holepunchpacket->addr)))
-	{
-		mysockaddr_t addr;
-		addr.ip4.sin_family      = AF_INET;
-		addr.ip4.sin_addr.s_addr = holepunchpacket->addr;
-		addr.ip4.sin_port        = holepunchpacket->port;
-		sendto(mysockets[0], NULL, 0, 0, &addr.any, sizeof addr.ip4);
-
-		CONS_Debug(DBG_NETPLAY,
-				"hole punching request from %s\n", SOCK_AddrToStr(&addr));
-
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-// just a modified SOCK_NetMakeNodewPort lol
-static boolean SOCK_GetHolepunchAddr(struct sockaddr_in *sin, const char *address, const char *port, boolean test)
-{
-	struct my_addrinfo *ai = NULL, *runp, hints;
-	int gaie;
-
-	if (!port || !port[0])
-		port = DEFAULTPORT;
-
-	memset (&hints, 0x00, sizeof (hints));
-	hints.ai_flags = 0;
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_DGRAM;
-	hints.ai_protocol = IPPROTO_UDP;
-
-	gaie = I_getaddrinfo(address, port, &hints, &ai);
-
-	if (gaie != 0)
-	{
-		I_freeaddrinfo(ai);
-		return false;
-	}
-
-	runp = ai;
-
-#if 0
-	if (test)
-	{
-		while (runp != NULL)
-		{
-			if (sendto(mysockets[0], NULL, 0, 0, runp->ai_addr, runp->ai_addrlen) == 0)
-				break;
-
-			runp = runp->ai_next;
-		}
-	}
-#else
-	(void)test;
-#endif
-
-	if (runp != NULL)
-		memcpy(sin, runp->ai_addr, runp->ai_addrlen);
-
-	I_freeaddrinfo(ai);
-
-	return (runp != NULL);
-}
-
-static void rendezvous(int size)
-{
-	char *addrs = strdup(cv_rendezvousserver.string);
-
-	char *host = strtok(addrs, ":");
-	char *port = strtok(NULL,  ":");
-
-	static mysockaddr_t rzv;
-	static tic_t refreshtic = (tic_t)-1;
-
-	tic_t tic = I_GetTime();
-
-	if (tic != refreshtic)
-	{
-		if (SOCK_GetHolepunchAddr(&rzv.ip4, host, (port ? port : "7777"), false))
-		{
-			refreshtic = tic;
-		}
-		else
-		{
-			CONS_Alert(CONS_ERROR, "Failed to contact rendezvous server (%s).\n",
-					cv_rendezvousserver.string);
-		}
-	}
-
-	if (tic == refreshtic)
-	{
-		holepunchpacket->magic = hole_punch_magic;
-		sendto(mysockets[0], doomcom->data, size, 0, &rzv.any, sizeof rzv.ip4);
-	}
-
-	free(addrs);
-}
-
-static void SOCK_RequestHolePunch(INT32 node)
-{
-	mysockaddr_t * addr = &clientaddress[node];
-
-	holepunchpacket->addr = addr->ip4.sin_addr.s_addr;
-	holepunchpacket->port = addr->ip4.sin_port;
-
-	CONS_Debug(DBG_NETPLAY,
-			"requesting hole punch to node %s\n", SOCK_AddrToStr(addr));
-
-	rendezvous(10);
-}
-
-static void SOCK_RegisterHolePunch(void)
-{
-	rendezvous(4);
-}
-// I NEED A HOLEPUNCHER //
 
 // Returns true if a packet was received from a new node, false in all other cases
 static boolean SOCK_Get(void)
@@ -766,19 +613,8 @@ static boolean SOCK_Get(void)
 			(void *)&fromaddress, &fromlen);
 		if (c != ERRSOCKET)
 		{
-#ifdef USE_STUN
-			if (STUN_got_response(doomcom->data, c))
-			{
+			if (TSoURDt3rd_SOCK_Get(doomcom, c, clientaddress, mysockets)) // STAR STUFF: check our sock packets please //
 				break;
-			}
-#endif
-
-			// HOLEPUNCHING STUFFS //
-			if (hole_punch(c))
-			{
-				break;
-			}
-			// YIPEE! //
 
 			// find remote node number
 			for (j = 1; j <= MAXNETNODES; j++) //include LAN
@@ -1342,10 +1178,10 @@ boolean I_InitTcpDriver(void)
 	{
 		I_AddExitFunc(I_ShutdownTcpDriver);
 #ifdef HAVE_MINIUPNPC
-		if (M_CheckParm("-noUPnP"))
-			UPNP_support = false;
-		else
+		if (M_CheckParm("-useUPnP"))
 			I_InitUPnP();
+		else
+			UPNP_support = false;
 #endif
 	}
 	return init_tcp_driver;
@@ -1461,10 +1297,7 @@ static boolean SOCK_OpenSocket(void)
 	I_NetCanGet = SOCK_CanGet;
 #endif
 
-	// HOLEPUNCHING STUFFS //
-	I_NetRequestHolePunch = SOCK_RequestHolePunch;
-	I_NetRegisterHolePunch = SOCK_RegisterHolePunch;
-	// FUNNY. REALLY FUNNY. //
+	TSoURDt3rd_SOCK_OpenSocket(); // STAR STUFF: now open our sockets too! //
 
 	// build the socket but close it first
 	SOCK_CloseSocket();

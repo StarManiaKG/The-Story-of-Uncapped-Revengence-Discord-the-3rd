@@ -44,17 +44,16 @@
 #include "lua_hud.h"
 #include "lua_hook.h"
 
-// STAR STUFF //
+// TSoURDt3rd
 #include "STAR/star_vars.h"
-#include "STAR/smkg-cvars.h" // cv_stjrintro & cv_storesavesinfolders //
+#include "STAR/smkg-cvars.h" // cv_stjrintro & cv_tsourdt3rd_savefiles_storesavesinfolders //
 #include "STAR/smkg-misc_purefat.h"
+#include "STAR/smkg-jukebox.h"
 #include "STAR/ss_main.h"
-#include "STAR/m_menu.h" // MessageDef, & M_ShiftMessageQueueDown() //
 
+#include "STAR/drrr/k_menu.h" // TSoURDt3rd_M_DrawMenuMessageOnTitle() //
 #include "STAR/menus/smkg_m_func.h" // STAR_M_MenuMessageTick() //
-
 #include "deh_soc.h"
-// END THIS //
 
 // Stage of animation:
 // 0 = text, 1 = art screen
@@ -1065,20 +1064,6 @@ boolean F_IntroResponder(event_t *event)
 	if (keypressed)
 		return false;
 
-	// STAR STUFF: helps with M_StartMessage queueing stuff (found in m_menu.c by the way) //
-	if (menuactive)
-	{
-		if (MessageDef.menuitems[1].text != NULL)
-			M_ShiftMessageQueueDown();
-		else
-		{
-			M_ClearMenus(true);
-			S_StartSound(NULL, sfx_strpst);
-		}
-		return false;
-	}
-	// END THAT PLEASE //
-
 	keypressed = true;
 	return true;
 }
@@ -1748,7 +1733,7 @@ void F_GameEvaluationTicker(void)
 				S_StartSound(NULL, sfx_s3k68);
 
 			// STAR STUFF: Update our Savefile Directory //
-			if (cv_storesavesinfolders.value)
+			if (cv_tsourdt3rd_savefiles_storesavesinfolders.value)
 			{
 				I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER, srb2home), 0755);
 				if (TSoURDt3rd_useAsFileName)
@@ -3484,7 +3469,7 @@ void F_TitleScreenDrawer(void)
 			break;
 	}
 
-	ST_drawJukebox(); // STAR STUFF: Show the jukebox! //
+	TSoURDt3rd_Jukebox_ST_drawJukebox(); // STAR STUFF: Show the jukebox! //
 
 luahook:
 	// The title drawer is sometimes called without first being started
@@ -3502,6 +3487,8 @@ luahook:
 		LUA_HUDHOOK(title, luahuddrawlist_title);
 	}
 	LUA_HUD_DrawList(luahuddrawlist_title);
+
+	TSoURDt3rd_M_DrawMenuMessageOnTitle(finalecount); // STAR STUFF: don't forget to draw menu messages! //
 }
 
 // separate animation timer for backgrounds, since we also count
@@ -3826,7 +3813,7 @@ void F_ContinueDrawer(void)
 	if (continuetime > ((3*TICRATE) - 10))
 		V_DrawFadeScreen(0, (continuetime - ((3*TICRATE) - 10)));
 
-	ST_drawJukebox(); // STAR STUFF: OOH, WHAT DOES THIS STUFF DO? //
+	TSoURDt3rd_Jukebox_ST_drawJukebox(); // STAR STUFF: OOH, WHAT DOES THIS STUFF DO? //
 }
 
 void F_ContinueTicker(void)
@@ -3934,7 +3921,7 @@ boolean F_ContinueResponder(event_t *event)
 	S_StartSound(NULL, sfx_kc6b);
 
 	// STAR NOTE: don't fade music if we're playing music in the jukebox :p //
-	if (!TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack)
+	if (!tsourdt3rd_global_jukebox->playing)
 		I_FadeSong(0, MUSICRATE, &S_StopMusic);
 
 	return true;

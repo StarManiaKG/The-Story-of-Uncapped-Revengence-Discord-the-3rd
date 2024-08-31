@@ -26,11 +26,6 @@
 // Called by main loop.
 void ST_Ticker(boolean run);
 
-#ifdef HAVE_DISCORDSUPPORT
-// Called when you have Discord asks
-void ST_AskToJoinEnvelope(void);
-#endif
-
 // Called by main loop.
 void ST_Drawer(void);
 
@@ -47,7 +42,7 @@ void ST_UnloadGraphics(void);
 void ST_LoadGraphics(void);
 
 // face load graphics, called when skin changes
-void ST_LoadFaceGraphics(INT32 playernum);
+void ST_LoadFaceGraphics(INT32 skinnum);
 void ST_ReloadSkinFaceGraphics(void);
 
 void ST_doPaletteStuff(void);
@@ -81,8 +76,8 @@ extern patch_t *sboscore;
 extern patch_t *sbotime;
 extern patch_t *sbocolon;
 extern patch_t *sboperiod;
-extern patch_t *faceprefix[MAXSKINS]; // face status patches
-extern patch_t *superprefix[MAXSKINS]; // super face status patches
+extern patch_t **faceprefix; // face status patches
+extern patch_t **superprefix; // super face status patches
 extern patch_t *livesback;
 extern patch_t *stlivex;
 extern patch_t *ngradeletters[7];
@@ -97,6 +92,7 @@ typedef struct
 typedef enum
 {
 	HUD_LIVES,
+	HUD_INPUT,
 
 	HUD_RINGS,
 	HUD_RINGSNUM,
@@ -131,12 +127,5 @@ extern UINT16 objectsdrawn;
 
 #define NUMLINKCOLORS 12
 extern skincolornum_t linkColor[3][NUMLINKCOLORS];
-
-// STAR STUFF LOL //
-// Jukebox
-void ST_drawJukebox(void);
-
-// Easter
-void ST_drawEggs(void);
 
 #endif

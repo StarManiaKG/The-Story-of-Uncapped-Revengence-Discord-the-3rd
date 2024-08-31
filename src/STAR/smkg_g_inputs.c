@@ -7,9 +7,20 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  smkg_g_inputs.c
-/// \brief handle unique TSoURDt3rd mouse/keyboard/joystick inputs, etc.
+/// \brief Handle unique TSoURDt3rd mouse/keyboard/joystick inputs, etc.
 
 #include "smkg_g_inputs.h"
+#include "menus/smkg_m_func.h"
+
+#include "drrr/k_menu.h"
+
+#include "../console.h"
+#include "../d_net.h"
+#include "../g_game.h"
+#include "../hu_stuff.h"
+#include "../i_joy.h"
+#include "../m_menu.h"
+#include "../snake.h"
 
 // ------------------------ //
 //        Variables
@@ -30,7 +41,7 @@ void STAR_G_KeyResponder(UINT8 player, UINT8 key)
 	star_gamekey_t *game_key = &STAR_GameKey[player][key];
 	INT32 (*urGameControl)[2] = (player == 0 ? gamecontrol : gamecontrolbis);
 
-	// Check game inputs //
+	// Check game inputs.
 	for (INT32 i = 0; gamekeydown[urGameControl[key][i]]; i++)
 	{
 		if (!gamekeydown[urGameControl[key][i]])
@@ -38,21 +49,21 @@ void STAR_G_KeyResponder(UINT8 player, UINT8 key)
 			game_key->pressed = false;
 			continue;
 		}
+
 		game_key->pressed = true;
 		break;
 	}
 
-	// Manage keys //
 	if (!game_key->pressed)
 	{
-		// Reset everything if not tapping
+		// Reset everything if not tapping.
 		game_key->keyDown = 0;
 		game_key->tapReady = false;
 		game_key->held = false;
 		return;
 	}
 
-	// Keydown protection
+	// Keydown protection.
 	if (game_key->tapReady)
 	{
 		game_key->held = (game_key->keyDown > TICRATE/2);
@@ -116,4 +127,91 @@ void STAR_G_DefineDefaultControls(void)
 		gamecontrolbisdefault[i][JB_PLAYMOSTRECENTTRACK][0] = 'l';
 		gamecontrolbisdefault[i][JB_STOPJUKEBOX        ][0] = 'k';
 	}
+}
+
+//
+// void TSoURDt3rd_D_ProcessEvents(void)
+// Processes our unique key and pad events too!
+//
+void TSoURDt3rd_D_ProcessEvents(void)
+{
+	for (INT32 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		TSoURDt3rd_M_UpdateMenuCMD(i);
+	}
+}
+
+//
+// boolean TSoURDt3rd_G_MapEventsToControls(event_t *ev)
+//
+// A lock-on function to G_MapEventsToControls(), featuring edits to allow for
+//	both TSoURDt3rd uniqueness and SRB2 compatibility.
+// Returns true if it shouldn't run the main event mapper, false otherwise.
+//
+static void update_vkb_axis(INT32 axis)
+{
+	if (axis > JOYAXISRANGE/2)
+		M_SwitchVirtualKeyboard(true);
+}
+
+boolean TSoURDt3rd_G_MapEventsToControls(event_t *ev)
+{
+	INT32 i;
+
+	if (tsourdt3rd_snake && Snake_JoyGrabber(tsourdt3rd_snake, ev))
+		return true;
+
+	switch (ev->type)
+	{
+		case ev_keydown:
+			if (ev->key < NUMINPUTS)
+				M_MenuTypingInput(ev->key);
+			break;
+
+		case ev_joystick:
+		case ev_joystick2: // buttons are virtual keys
+			i = ev->key;
+			if (i >= JOYAXISSET)
+				break;
+
+			if (i >= 2) // 2 sets of analog stick axes, with positive and negative each
+			{
+				if (ev->x != INT32_MAX)
+					update_vkb_axis(max(0, ev->x));
+
+				if (ev->y != INT32_MAX)
+					update_vkb_axis(max(0, ev->y));
+			}
+			else
+			{
+				// Actual analog sticks
+				if (ev->x != INT32_MAX)
+					update_vkb_axis(abs(ev->x));
+
+				if (ev->y != INT32_MAX)
+					update_vkb_axis(abs(ev->y));
+			}
+			break;
+
+		default:
+			break;
+	}
+
+	return false;
+}
+
+//
+// boolean TSoURDt3rd_G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
+//
+// A lock-on function to G_BuildTiccmd(), featuring edits to allow for
+//	both TSoURDt3rd uniqueness and SRB2 compatibility.
+// Returns true if it shouldn't run the main ticcmd builder, false otherwise.
+//
+boolean TSoURDt3rd_G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
+{
+	(void)cmd;
+	(void)realtics;
+	(void)ssplayer;
+
+	return (menuactive || CON_Ready() || chat_on || titlemapinaction);
 }

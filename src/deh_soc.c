@@ -48,13 +48,13 @@
 // also used for LUA_UpdateSprName
 #include "deh_tables.h"
 
-// STAR STUFF //
+// TSoURDt3rd
 #include "STAR/star_vars.h"
-#include "STAR/smkg-cvars.h" // cv_storesavesinfolders //
+#include "STAR/smkg-cvars.h" // cv_tsourdt3rd_savefiles_storesavesinfolders //
 #include "STAR/ss_main.h" // SAVEGAMEFOLDER //
 
+#include "STAR/lights/smkg-coronas.h" // corona data //
 boolean TSoURDt3rd_LoadedGamedataAddon;
-// END THAT STUFF //
 
 // Loops through every constant and operation in word and performs its calculations, returning the final value.
 fixed_t get_number(const char *word)
@@ -202,7 +202,7 @@ static boolean findFreeSlot(INT32 *num)
 	while (*num < MAXSKINS && (description[*num].used))
 		*num = *num+1;
 
-	// No more free slots. :(
+	// No more free slots.
 	if (*num >= MAXSKINS)
 		return false;
 
@@ -214,7 +214,7 @@ static boolean findFreeSlot(INT32 *num)
 	description[*num].tagtextcolor = SKINCOLOR_NONE;
 	description[*num].tagoutlinecolor = SKINCOLOR_NONE;
 
-	// Found one! ^_^
+	// Found one!
 	return (description[*num].used = true);
 }
 
@@ -319,7 +319,6 @@ void readPlayer(MYFILE *f, INT32 num)
 				SLOTFOUND
 				strncpy(description[num].picname, word2, 8);
 			}
-			// new character select
 			else if (fastcmp(word, "DISPLAYNAME"))
 			{
 				SLOTFOUND
@@ -929,6 +928,7 @@ static void readspriteframe(MYFILE *f, spriteinfo_t *sprinfo, UINT8 frame)
 				sprinfo->pivot[frame].x = value;
 			else if (fastcmp(word, "YPIVOT"))
 				sprinfo->pivot[frame].y = value;
+			// TODO: 2.3: Delete
 			else if (fastcmp(word, "ROTAXIS"))
 				deh_warning("SpriteInfo: ROTAXIS is deprecated and will be removed.");
 			else
@@ -1009,6 +1009,17 @@ void readspriteinfo(MYFILE *f, INT32 num, boolean sprite2)
 
 			if (fastcmp(word, "LIGHTTYPE"))
 			{
+#if 0
+				if (sprite2)
+					deh_warning("Sprite2 %s: invalid word '%s'", spr2names[num], word);
+				else
+				{
+					INT32 oldvar;
+					for (oldvar = 0; t_lspr[num] != &lspr[oldvar]; oldvar++)
+						;
+					t_lspr[num] = &lspr[value];
+				}
+#else
 				if (sprite2)
 				{
 					deh_warning("Sprite2 %s: property '%s' is only available for sprites!", spr2names[num], word);
@@ -1026,6 +1037,7 @@ void readspriteinfo(MYFILE *f, INT32 num, boolean sprite2)
 					oldvar++;
 				}
 				t_lspr[num] = &lspr[value];
+#endif
 			}
 			else
 #endif
@@ -1155,7 +1167,6 @@ void readsprite2(MYFILE *f, INT32 num)
 	Z_Free(s);
 }
 
-// copypasted from readPlayer :]
 void readgametype(MYFILE *f, char *gtname)
 {
 	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
@@ -1643,6 +1654,7 @@ void readlevelheader(MYFILE *f, INT32 num)
 						sizeof(mapheaderinfo[num-1]->musname), va("Level header %d: music", num));
 				}
 			}
+			// TODO: 2.3: Delete
 			else if (fastcmp(word, "MUSICSLOT"))
 				deh_warning("Level header %d: MusicSlot parameter is deprecated and will be removed.\nUse \"Music\" instead.", num);
 			else if (fastcmp(word, "MUSICTRACK"))
@@ -3883,7 +3895,7 @@ void readmaincfg(MYFILE *f)
 					I_Error("Maincfg: bad data file name '%s'\n", word2);
 
 				// STAR STUFF: EXTRA EDITION //
-				if (cv_storesavesinfolders.value)
+				if (cv_tsourdt3rd_savefiles_storesavesinfolders.value)
 				{
 					I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER, srb2home), 0755);
 					if (TSoURDt3rd_useAsFileName)
@@ -3909,8 +3921,15 @@ void readmaincfg(MYFILE *f)
 				strcpy(savegamename, timeattackfolder);
 				strlcat(savegamename, "%u.ssg", sizeof(savegamename));
 
+#if 0
+				// can't use sprintf since there is %u in savegamename
+				strcatbf(savegamename, srb2home, PATHSEP);
+
+				strcpy(liveeventbackup, va("live%s.bkp", timeattackfolder));
+				strcatbf(liveeventbackup, srb2home, PATHSEP);
+#else
 				// STAR STUFF: update savefile folders (some of this was previously here lol) //
-				if (!cv_storesavesinfolders.value)
+				if (!cv_tsourdt3rd_savefiles_storesavesinfolders.value)
 				{
 					strcpy(liveeventbackup, va("live%s.bkp", timeattackfolder));
 
@@ -3923,6 +3942,7 @@ void readmaincfg(MYFILE *f)
 					TSoURDt3rd_LoadedGamedataAddon = true;
 					STAR_SetSavefileProperties();
 				}
+#endif
 				// END THAT //
 
 				gamedataadded = true;
