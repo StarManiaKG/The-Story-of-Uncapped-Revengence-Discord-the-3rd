@@ -53,7 +53,7 @@
  * STAR STUFF!
  * Featuring STAR MD5s! YAY!
  *  
- * Last updated 2022 / 08 / 21 - TSOURDT3RD V2 (2.2.10) - starmaniakg.pk3
+ * Last updated 2022 / 08 / 21 - TSOURDT3RD V2 (2.2.10) - created starmaniakg.pk3
  * Last updated 2023 / 02 / 05 - TSOURDT3RD V2 (2.2.10) - made starmaniakg.pk3 (now renamed to tsourdt3rd.pk3) optional
  * Last updated 2023 / 02 / 06 - TSOURDT3RD V2 (2.2.10) - updated assets directory
  * Last updated 2023 / 03 / 03 - TSOURDT3RD V2 (2.2.10) - made tsourdt3rd.pk3 optional and added jukebox.pk3, with the latter being optional, and containing all of the jukebox music that you want
@@ -75,12 +75,12 @@
  * Last updated 2023 / 08 / 02 - TSOURDT3RD V3 (2.2.11) - updated things to 2.2.11
  * Last updated 2023 / 08 / 12 - TSOURDT3RD V3 (2.2.11) - added some more loading scren graphics
  * 
- * Last updated 2023 / 11 / 07 - TSOURDT3RD V4 (2.2.13) - added absolutely nothing while initially porting
+ * Last updated 2023 / 11 / 07 - TSOURDT3RD V4 (2.2.13) - added absolutely nothing while initially porting to 2.2.13
  * Last updated 2023 / 11 / 23 - TSOURDT3RD V4 (2.2.13) - added a few more game over tracks
  * Last updated 2023 / 11 / 24 - TSOURDT3RD V4 (2.2.13) - updated the palettes of the PURE FAT graphics, renamed a few of the game over tracks, and added the proper timing of tracks to the MUSICDEF file
  * Last updated 2024 / 03 / 31 - TSOURDT3RD V4 (2.2.13) - shrunk the size of tsourdt3rd.pk3
  * Last updated 2024 / 04 / 01 - TSOURDT3RD V4 (2.2.13) - added my new 'dynamic' 'freeslotting' system, and as a result, removed tsourdt3rd_extras.pk3
- * Last updated 2024 / 04 / 03 - TSOURDT3RD V4 (2.2.13) - bomber barbara shrunk its own playtime somehow, so i had to go and fix that
+ * Last updated 2024 / 04 / 03 - TSOURDT3RD V4 (2.2.13) - Bomber Barbara shrunk its own playtime somehow, so i had to go and fix that
  * Last updated 2024 / 04 / 05 - TSOURDT3RD V4 (2.2.13) - coronas
  * Last updated 2024 / 04 / 06 - TSOURDT3RD V4 (2.2.13) - coronas: electric boogaloo
  * Last updated 2024 / 06 / 04 - TSOURDT3RD V4 (2.2.13) - minor file restructuring and some Kart Krew graphics were ported over
@@ -89,7 +89,10 @@
  * Last updated 2024 / 06 / 25 - TSOURDT3RD V4 (2.2.13) - organized the pk3 and deleted a no-longer-needed menu graphic
  * Last updated 2024 / 07 / 08 - TSOURDT3RD V4 (2.2.13) - added graphic needed for DRRR tooltip support
  * Last updated 2024 / 07 / 25 - TSOURDT3RD V4 (2.2.13) - added graphics needed for improved menus
+ * Last updated 2024 / 07 / 26 - TSOURDT3RD V4 (2.2.13) - updated the names of some graphics
+ * Last updated 2024 / 07 / 29 - TSOURDT3RD V4 (2.2.13) - added the fire flower graphic from 2.2.14
+ * Last updated 2024 / 08 / 02 - TSOURDT3RD V4 (2.2.13) - renamed the legacy pause graphic back to 'M_PAUSE'
 */
-#define ASSET_HASH_TSOURDT3RD_PK3 "e62e7fb4bdc9b76be10dc2d762d3c900"
+#define ASSET_HASH_TSOURDT3RD_PK3 "08ea497ead515557fe1e78664b63aebe"
 
 #endif

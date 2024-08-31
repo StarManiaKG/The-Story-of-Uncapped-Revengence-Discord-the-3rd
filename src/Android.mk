@@ -61,6 +61,7 @@ LOCAL_SRC_FILES :=      am_map.c \
                         r_things.c \
                         s_sound.c \
                         screen.c \
+                        snake.c \
                         sounds.c \
                         st_stuff.c \
                         string.c \

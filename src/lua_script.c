@@ -490,7 +490,7 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 	// MAIN //
 	// global tsourdt3rd variable
 	} else if (fastcmp(word, "tsourdt3rd")) {
-		lua_pushboolean(L, tsourdt3rd);
+		lua_pushboolean(L, true);
 		return 1;
 	// short tsourdt3rd version string
 	} else if (fastcmp(word, "TSOURDT3RDVERSION")) {

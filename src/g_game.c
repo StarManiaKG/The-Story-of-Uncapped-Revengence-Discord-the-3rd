@@ -61,15 +61,12 @@
 
 // OTHER FUN STAR STUFF YAYAYSUHDUISHUIBHOUIHBDU()*FH*D(UIYVLBGUIYDG(UDOPBIYGD*OUFBHO(P))) //
 #include "STAR/star_vars.h" // TSoURDt3rd Struct, STAR_SetWindowTitle(), & TSoURDt3rd_DetermineLevelMusic() //
-#include "STAR/smkg-cvars.h" // cv_storesavesinfolders //
-#include "STAR/ss_main.h" // STAR_G_GamestateManager() //
+#include "STAR/smkg-cvars.h" // cv_tsourdt3rd_savefiles_storesavesinfolders //
+#include "STAR/smkg-p_saveg.h" // savedata functions //
 
 #include "deh_soc.h"
 
-#include "STAR/drrr/kg_input.h" // STAR_G_BuildTiccmd() //
-
-// Main Build
-boolean tsourdt3rd = true;
+#include "STAR/smkg_g_inputs.h" // TSoURDt3rd_G_BuildTiccmd() //
 
 // Sound Effects
 INT32 STAR_JoinSFX = sfx_kc48;
@@ -86,6 +83,8 @@ INT32 foundeggs = 0;
 gameaction_t gameaction;
 gamestate_t gamestate = GS_NULL;
 UINT8 ultimatemode = false;
+
+INT32 pickedchar;
 
 boolean botingame;
 UINT8 botskin;
@@ -826,9 +825,6 @@ void G_SetUsedCheats(boolean silent)
 		CONS_Alert(CONS_NOTICE, M_GetText("Game must be restarted to save progress.\n"));
 
 	// STAR STUFF YAY //
-	S_PrepareSoundTest();
-	M_UpdateEasterStuff();
-
 	if (autoloading)
 	{
 		TSoURDt3rd_useAsFileName = true;
@@ -1175,7 +1171,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	UINT8 forplayer = ssplayer-1;
 
 	// STAR STUFF: DRRR Menus: don't run the ticcmd if we're not in game, silly! //
-	if (STAR_G_BuildTiccmd(cmd, realtics, ssplayer))
+	if (TSoURDt3rd_G_BuildTiccmd(cmd, realtics, ssplayer))
 		return;
 	// UH, THE DOG ATE THE MENU JUNK //
 
@@ -4036,7 +4032,7 @@ static boolean CanSaveLevel(INT32 mapnum)
 static void G_HandleSaveLevel(void)
 {
 	// STAR STUFF //
-	if (cv_storesavesinfolders.value)
+	if (cv_tsourdt3rd_savefiles_storesavesinfolders.value)
 	{
 		I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER, srb2home), 0755);
 		if (TSoURDt3rd_useAsFileName)
@@ -4367,7 +4363,7 @@ static void G_DoContinued(void)
 	token = 0;
 
 	// STAR STUFF //
-	if (cv_storesavesinfolders.value)
+	if (cv_tsourdt3rd_savefiles_storesavesinfolders.value)
 	{
 		I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER, srb2home), 0755);
 		if (TSoURDt3rd_useAsFileName)
@@ -4675,7 +4671,7 @@ void G_LoadGameData(gamedata_t *data)
 	M_SilentUpdateUnlockablesAndEmblems(data);
 	M_SilentUpdateSkinAvailabilites();
 
-	STAR_ReadExtraData(); // STAR STUFF: STEAL SAVEFILE DATA //
+	TSoURDt3rd_PSav_ReadExtraData(); // STAR STUFF: STEAL SAVEFILE DATA //
 
 	return;
 
@@ -4713,7 +4709,7 @@ void G_SaveGameData(gamedata_t *data)
 		return;
 	}
 
-	STAR_WriteExtraData(); // STAR STUFF: VIVA LA AUTOLOADING //
+	TSoURDt3rd_PSav_WriteExtraData(); // STAR STUFF: VIVA LA AUTOLOADING //
 
 	if (usedCheats)
 	{
@@ -5098,9 +5094,9 @@ cleanup:
 // Can be called by the startup code or the menu task,
 // consoleplayer, displayplayer, playeringame[] should be set.
 //
-void G_DeferedInitNew(boolean pultmode, const char *mapname, INT32 pickedchar, boolean SSSG, boolean FLS)
+void G_DeferedInitNew(boolean pultmode, const char *mapname, INT32 character, boolean SSSG, boolean FLS)
 {
-	UINT16 color = skins[pickedchar].prefcolor;
+	pickedchar = character;
 	paused = false;
 
 	if (demoplayback)
@@ -5121,10 +5117,7 @@ void G_DeferedInitNew(boolean pultmode, const char *mapname, INT32 pickedchar, b
 		SplitScreen_OnChange();
 	}
 
-	color = skins[pickedchar].prefcolor;
-	SetPlayerSkinByNum(consoleplayer, pickedchar);
-	CV_StealthSet(&cv_skin, skins[pickedchar].name);
-	CV_StealthSetValue(&cv_playercolor, color);
+	SetPlayerSkinByNum(consoleplayer, character);
 
 	if (mapname)
 		D_MapChange(M_MapNumber(mapname[3], mapname[4]), gametype, pultmode, true, 1, false, FLS);
@@ -5543,7 +5536,6 @@ INT32 G_FindMapByNameOrCode(const char *mapname, char **realmapnamep)
 void G_SetGamestate(gamestate_t newstate)
 {
 	gamestate = newstate;
-	STAR_G_GamestateManager(STAR_GS_NULL);
 #ifdef HAVE_SDL
 	STAR_SetWindowTitle();
 #endif

@@ -43,6 +43,9 @@
 #include "hardware/hw_drv.h"
 #endif
 
+// TSoURDt3rd
+#include "STAR/lights/smkg-coronas.h" // corona data //
+
 #define MINZ (FRACUNIT*4)
 #define BASEYCENTER (BASEVIDHEIGHT/2)
 
@@ -73,7 +76,7 @@ spriteinfo_t spriteinfo[NUMSPRITES];
 //
 
 // variables used to look up and range check thing_t sprites patches
-spritedef_t *sprites[NUMSPRITES+1]; // STAR NOTE: added NUMSPRITES here //
+spritedef_t *sprites;
 size_t numsprites;
 
 static spriteframe_t sprtemp[64];
@@ -494,7 +497,6 @@ void R_AddSpriteDefs(UINT16 wadnum)
 		return;
 	}
 
-
 	//
 	// scan through lumps, for each sprite, find all the sprite frames
 	//
@@ -503,7 +505,7 @@ void R_AddSpriteDefs(UINT16 wadnum)
 		if (sprnames[i][4] && wadnum >= (UINT16)sprnames[i][4])
 			continue;
 
-		if (R_AddSingleSpriteDef(sprnames[i], sprites[i], wadnum, start, end))
+		if (R_AddSingleSpriteDef(sprnames[i], &sprites[i], wadnum, start, end))
 		{
 #ifdef HWRENDER
 			if (rendermode == render_opengl)
@@ -558,19 +560,12 @@ void R_InitSprites(void)
 	//
 	numsprites = 0;
 	for (i = 0; i < NUMSPRITES + 1; i++)
-	{
-		// STAR NOTE: edited due to our 'dynamic' 'freeslotting' system //
-		if (sprnames[i][0] != '\0')
-		{
-			sprites[i] = Z_Calloc(sizeof (spritedef_t), PU_STATIC, NULL);
-			numsprites = i+1;
-		}
-	}
+		if (sprnames[i][0] != '\0') numsprites++;
 
 	if (!numsprites)
 		I_Error("R_AddSpriteDefs: no sprites in namelist\n");
 
-	//sprites = Z_Calloc(numsprites * sizeof (*sprites), PU_STATIC, NULL);
+	sprites = Z_Calloc(numsprites * sizeof (*sprites), PU_STATIC, NULL);
 
 	// find sprites in each -file added pwad
 	for (i = 0; i < numwadfiles; i++)
@@ -772,713 +767,6 @@ void R_DrawFlippedMaskedColumn(column_t *column)
 	dc_texturemid = basetexturemid;
 }
 
-#ifdef ALAM_LIGHTING
-
-// ==========================================================================
-//																	CORONAS
-// ==========================================================================
-
-static patch_t *corona_patch = NULL;
-static softwarepatch_t corona_sprlump;
-
-// One or the other.
-#ifdef ENABLE_DRAW_ALPHA
-#else
-#define ENABLE_COLORED_PATCH
-// [WDJ] Wad patches usable as corona.
-// It is easier to recolor during drawing than to pick one of each.
-// Only use patches that are likely to be round in every instance (teleport fog is often not round).
-// Corona alternatives list.
-const char *corona_name[] = {
-	"CORONAP", // patch version of corona, from legacy.wad
-	"FLAMM0",
-	"PLSEA0",
-  	NULL
-};
-#endif
-
-#ifdef ENABLE_COLORED_PATCH
-static size_t corona_patch_size;
-
-typedef struct
-{
-	RGBA_t corona_color;
-	patch_t *colored_patch; // Z_Malloc
-} corona_image_t;
-
-static corona_image_t corona_image[NUMLIGHTS];
-#endif
-
-#ifdef ENABLE_COLORED_PATCH
-// Also does release, after corona_patch_size is set.
-static void init_corona_data(void)
-{
-	for (INT32 i = 0; i < NUMLIGHTS; i++ )
-	{
-		if (corona_patch_size)
-		{
-			if (corona_image[i].colored_patch)
-				Z_Free(corona_image[i].colored_patch);
-		}
-		corona_image[i].corona_color.rgba = 0;
-		corona_image[i].colored_patch = NULL;
-	}
-}
-#endif
-
-#ifdef ENABLE_COLORED_PATCH
-#include "v_video.h"
-
-static void setup_colored_corona(corona_image_t *ccp, RGBA_t corona_color)
-{
-	UINT8	colormap[256];
-	patch_t	*pp;
-
-	// when draw alpha is intense cannot have faint color in corona image
-	INT32 alpha = (255 + corona_color.s.alpha) >> 1;
-	INT32 za = (255 - alpha);
-	INT32 c;
-
-	INT32 r, g, b;
-
-	// A temporary colormap; make a colormap that is mostly of the corona color
-	for (c = 0; c < 256; c++)
-	{
-		RGBA_t rc = pLocalPalette[dc_colormap[c]];
-		r = (corona_color.s.red * alpha + rc.s.red * za) >> 8;
-		g = (corona_color.s.green * alpha + rc.s.green * za) >> 8;
-		b = (corona_color.s.blue * alpha + rc.s.blue * za) >> 8;
-		colormap[c] = NearestColor( r, g, b );
-	}
-	
-	// Allocate a copy of the corona patch.
-	ccp->corona_color = corona_color;
-	if (ccp->colored_patch)
-		Z_Free(ccp->colored_patch);
-
-	pp = Z_Malloc(corona_patch_size, PU_STATIC, NULL);
-	ccp->colored_patch = pp;
-	memcpy(pp, corona_patch, corona_patch_size);
-
-	// Change the corona copy to the corona color.
-	for (c = 0; c < corona_patch->width; c++ )
-	{
-		column_t *cp = (column_t *)((UINT8 *)pp + pp->columnofs[c]);
-		while (cp->topdelta != 0xff) // end of posts
-		{
-			UINT8 *s = (UINT8 *)cp + 3;
-			INT32 count = cp->length;
-			while (count--)
-			{
-				*s = colormap[*s];
-				s++;
-			}
-
-			// next source post, adv by (length + 2 byte header + 2 extra bytes)
-			cp = (column_t *)((UINT8 *)cp + cp->length + 4);
-		}
-	}
-}
-
-static patch_t *get_colored_corona(int sprite_light_num)
-{
-	corona_image_t *cc = &corona_image[sprite_light_num];
-	UINT32 corona_color = t_lspr[sprite_light_num]->corona_color;
-
-	if (cc->corona_color.rgba != corona_color || cc->colored_patch == NULL)
-		setup_colored_corona(cc, V_GetColor(corona_color));
-
-	return cc->colored_patch;
-}
-#endif
-
-// Called by SCR_SetMode
-void R_Load_Corona(void)
-{
-#ifdef ENABLE_COLORED_PATCH
-	lumpnum_t lumpid = LUMPERROR;
-#endif
-
-#ifdef HWRENDER   
-	if (rendermode != render_soft)
-		return;
-#endif
-
-#ifdef ENABLE_DRAW_ALPHA
-	if (!corona_patch)
-	{
-		pic_t *corona_pic = (pic_t *)W_CachePicName("CORONA", PU_STATIC);
-		if (corona_pic)
-		{
-			// Z_Malloc; The corona pic is INTENSITY_ALPHA, bytepp=2, blank=0
-			corona_patch = (patch_t *)R_Create_Patch(corona_pic->width, corona_pic->height,
-				/*SRC*/    TM_row_image, & corona_pic->data[0], 2, 1, 0,
-				/*DEST*/   TM_patch, CPO_blank_trim, NULL);
-
-			Z_ChangeTag(corona_patch, PU_STATIC);
-			corona_patch->leftoffset += corona_pic->width/2;
-			corona_patch->topoffset += corona_pic->height/2;
-
-			// Don't need the corona pic_t anymore
-			Z_Free(corona_pic);
-			goto setup_corona;
-		}
-	}
-#endif
-
-#ifdef ENABLE_COLORED_PATCH
-	init_corona_data(); // must call at least once, before setting corona_patch_size
-
-	if (!corona_patch)
-	{
-		// Find first valid patch in corona_name list
-		const char **namep = &corona_name[0];
-		while (*namep)
-		{
-			lumpid = W_CheckNumForName(*namep);
-			if (lumpid != LUMPERROR)
-				goto setup_corona;
-			namep++;
-		}
-	}
-#endif
-   
-	setup_corona:
-	{
-#ifdef ENABLE_COLORED_PATCH
-		// Setup the corona support
-		corona_patch_size = W_LumpLength(lumpid);
-		corona_patch = W_CachePatchNum(lumpid, PU_STATIC);
-#endif
-
-		// The patch endian conversion is already done.
-		corona_sprlump.width = corona_patch->width << FRACBITS;
-		corona_sprlump.height = corona_patch->height << FRACBITS;
-		corona_sprlump.leftoffset = corona_patch->leftoffset << FRACBITS;
-		corona_sprlump.topoffset = corona_patch->topoffset << FRACBITS;
-	}
-}
-
-void R_Release_Corona(void)
-{
-#ifdef ENABLE_COLORED_PATCH
-	init_corona_data(); // does release too
-#endif
-
-	if (corona_patch)
-	{
-		Z_Free(corona_patch);
-		corona_patch = NULL;
-	}
-}
-
-// Propotional fade of corona from Z1 to Z2
-#define Z1 (250.0f)
-#define Z2 ((255.0f*8) + 250.0f)
-
-#ifdef SPDR_CORONAS
-// --------------------------------------------------------------------------
-// coronas lighting with the sprite
-// --------------------------------------------------------------------------
-
-// corona state
-fixed_t		corona_x0, corona_x1, corona_x2;
-fixed_t		corona_xscale, corona_yscale;
-float		corona_size;
-UINT8		corona_alpha;
-UINT8		corona_bright; // used by software draw to brighten active light sources
-UINT8		corona_index; // t_lspr index
-UINT8		corona_draw = 0; // 1 = before sprite, 2 = after sprite
-
-UINT8 spec_dist[ 16 ] = {
-	10,  // SPLT_unk
-	35,  // SPLT_rocket
-	20,  // SPLT_lamp
-	45,  // SPLT_fire
-	0, 0, 0, 0, 0, 0, 0, 0,
-	60,  // SPLT_light
-	30,  // SPLT_firefly
-	80,  // SPLT_random
-	80,  // SPLT_pulse
-};
-
-typedef enum
-{
-   FADE_FAR = 0x01,
-   FADE_NEAR = 0x02
-} sprite_corona_fade_e;
-   
-#define NUM_FIRE_PATTERN 64
-static UINT8 fire_pattern[NUM_FIRE_PATTERN];
-static UINT8 fire_pattern_tic[NUM_FIRE_PATTERN];
-
-#define NUM_RAND_PATTERN 32
-static UINT8 rand_pattern_cnt[NUM_RAND_PATTERN];
-static UINT8 rand_pattern_state[NUM_RAND_PATTERN];
-static UINT8 rand_pattern_tic[NUM_RAND_PATTERN];
-
-//
-//  sprnum : sprite number
-//
-//  Return: corona_index
-//  Return NULL when no draw.
-//
-light_t *Sprite_Corona_Light_lsp(INT32 sprnum)
-{
-	light_t *p_lspr = t_lspr[sprnum];
-	UINT8 li;
-
-	if (p_lspr == NULL)
-		return NULL;
-	li = p_lspr->type;
-
-	corona_index = li;
-	if (li == NOLIGHT)
-		return NULL;
-
-	return p_lspr;
-}
-
-//
-//  lsp : sprite light
-//  cz : distance to corona
-//
-//  Return: corona_alpha, corona_size
-//  Return 0 when no draw.
-//
-#include "m_random.h"
-
-UINT8 Sprite_Corona_Light_fade(light_t *p_lspr, float cz, int objid)
-{
-	float	relsize;
-	UINT16	type, cflags;
-	UINT8	fade;
-	UINT32	index, v;
-	UINT32	coronasizevalue = cv_coronasize.value;
-
-	// Objects which emit light.
-	type = p_lspr->impl_flags & TYPE_FIELD_SPR; // working type setting
-	cflags = p_lspr->type;
-	corona_alpha = p_lspr->corona_color;
-	corona_bright = 0;
-
-	// Update flagged by corona setting change, and fragglescript settings.
-	if (p_lspr->impl_flags & SLI_changed)
-	{
-		p_lspr->impl_flags &= ~SLI_changed;
-
-		// [WDJ] Fixes must be determined here because Phobiata and other wads,
-		// do not set all the dependent fields at one time.
-		// They never set some fields, like type, at all.
-		type = cflags & TYPE_FIELD_SPR; // table or fragglescript setting
-
-		// Old
-		if (cv_corona.value == 20)
-		{
-			// Revert the new tables to use only that flags that existed in Old.
-			cflags &= (CORONA_SPR|DYNLIGHT_SPR);
-			if (type != SPLT_rocket)
-			   type = ((cflags & DYNLIGHT_SPR) ? SPLT_lamp : SPLT_unk);
-		}
-		else
-	   
-		// We have no way of determining the intended version compatibility.  This limits
-		// the characteristics that we can check.
-		// Some older wads just used the existing corona without setting the type.
-		// The default type of some of the existing corona have changed to use the new
-		// corona types for ordinary wads, version 1.47.3.
-		if ((p_lspr->impl_flags & SLI_corona_set)  // set by fragglescript
-			&& (!(p_lspr->impl_flags & SLI_type_set) || (type == SPLT_unk)))
-		{
-			// Correct corona settings made by older wads, such as Phobiata, and newmaps.
-			// Has the old default type, or type was never set.
-#if 0
-			// In the original code, the alpha from the corona color was ignored,
-			// even though it was set in the tables.  Instead the draw code used 0xff.
-			if (!corona_alpha)
-				corona_alpha = p_lspr->corona_color.s.alpha = 0xff; // previous default
-#endif
- 
-			// Refine some of the old wad settings, to use new capabilities correctly.
-			if (corona_alpha > 0xDF) // Check for Phobiata and newmaps problems.
-			{
-				// Default radius is 20 to 120.
-				// Phobiata flies have a radius of 7
-				if (p_lspr->corona_radius < 10.0f)
-					type = SPLT_light; // newmaps and phobiata firefly
-				else if (p_lspr->corona_radius < 80.0f)
-					type = SPLT_lamp; // torches
-			}
-		}
-
-		// update the working type
-		p_lspr->impl_flags = (p_lspr->impl_flags & ~TYPE_FIELD_SPR) | type;
-	}
-
-	if ((type == SPLT_unk) && !(cflags & CORONA_SPR))
-		goto no_corona;  // no corona set
-
-	if (corona_alpha < 3)
-		goto no_corona;  // too faint to see, effectively off
-
-	switch (cv_corona.value)
-	{
-		// Old
-		case 20:
-			corona_alpha = 0xff; // alpha settings were ignored
-			break;
-
-		// Bright
-		case 16:
-			corona_bright = 20; // brighten the default cases
-			corona_alpha = (((UINT8)corona_alpha * 3) + 255) >> 2; // +25%
-			break;
-
-		// Dim
-		case 14:
-			corona_alpha = ((UINT8)corona_alpha * 3) >> 2; // -25%
-			break;
-
-		// Special, Most
-		default:
-		{
-			if (cv_corona.value <= 2)
-			{
-				/*register*/ INT32 spec = spec_dist[type>>4];
-
-				if (p_lspr->impl_flags & SLI_corona_set) // set by wad
-					spec <<= 2;
-
-				// Most
-				if (cv_corona.value == 2)
-				{
-					// Must do this before any flicker modifications, or else they blink.
-					// ignore the dim corona
-					if (corona_alpha < 40)
-						goto no_corona;
-
-					// not close enough
-					if (corona_alpha + spec + Z1 < cz)
-						goto no_corona;
-				}
-				else
-				{
-					// not special enough
-					if ((spec < 33) && (cz > (Z1+Z2)/2))
-						goto no_corona;
-
-					// ignore the dim corona
-					if (corona_alpha < 20)
-						goto no_corona;
-				}
-			}
-			break;
-		}
-	}
-   
-	relsize = 1.0f;
-	fade = FADE_FAR | FADE_NEAR;
-   
-	// Each of these types has a corona.
-	switch (type)
-	{
-		// corona only
-		case SPLT_unk: // object corona
-			relsize = ((cz+60.0f)/100.0f);
-			break;
-
-		// flicker
-		case SPLT_rocket: // svary the alpha
-			relsize = ((cz+60.0f)/100.0f);
-			corona_alpha = 7 + (P_RandomByte()>>1);
-			corona_bright = 128;
-			break;
-
-		// lamp with a corona
-		case SPLT_lamp: // lamp corona
-			relsize = ((cz+120.0f)/950.0f);
-			corona_bright = 40;
-			break;
-
-		// slow flicker, torch
-		case SPLT_fire: // torches
-			relsize = ((cz+120.0f)/950.0f);
-			index = objid & (NUM_FIRE_PATTERN - 1); // obj dependent
-
-			if (fire_pattern_tic[index] != gametic)
-			{
-				fire_pattern_tic[index] = gametic;
-				if (P_RandomByte() > 35)
-				{
-					INT32 r = P_RandomByte();
-					r = ((r - 128) >> 3) + fire_pattern[index];
-
-					if (r > 50)
-						r = 40;
-					else if (r < -50)
-						r = -40;
-					fire_pattern[index] = r;
-				}
-			}
-
-			v = (UINT32)corona_alpha + (UINT32)fire_pattern[index];
-			if (v > 255)
-				v = 255;
-			if (v < 4)
-				v = 4;
-			corona_alpha = v;
-			corona_bright = 45;
-			break;
-
-		// no corona fade
-		case SPLT_light: // newmaps and phobiata firefly
-			relsize = ((cz+120.0f)/950.0f); // dimming with distance
-
-#if 0
-			// Fade corona partial to 0 when get too close
-			if ((cz < Z1) & (!(lsp->type & SPLGT_source)))
-				corona_alpha = (int)(((float)corona_alpha * corona_alpha + (255 - corona_alpha) * (corona_alpha * cz / Z1)) / 255.0f);
-#endif
-
-			// Version 1.42 had corona_alpha = 0xff
-			corona_bright = 132;
-			fade = FADE_FAR;
-			break;
-
-		// firefly blink, un-synch
-		case SPLT_firefly:
-			// lower 6 bits gives a repeat rate of 1.78 seconds
-			if (((gametic + objid) & 0x003F) < 0x20) // obj dependent phase
-				goto no_corona; // blink off
-
-			fade = FADE_FAR;
-			break;
-
-		// random LED, un-synch
-		case SPLT_random:
-			index = objid & (NUM_RAND_PATTERN-1); // obj dependent counter
-
-			if (rand_pattern_tic[index] != gametic)
-			{
-				rand_pattern_tic[index] = gametic;
-				if (rand_pattern_cnt[index] == 0)
-				{
-					rand_pattern_cnt[index] = P_RandomByte();
-					rand_pattern_state[index]++;
-				}
-				rand_pattern_cnt[index]--;
-			}
-			if (!((rand_pattern_state[index] & 1)))
-				goto no_corona; // off
-
-			corona_bright = 128;
-			fade = 0;
-			break;
-
-		// slow pulsation, un-synch
-		case SPLT_pulse:
-			index = (gametic + objid) & 0xFF; // obj dependent phase
-			index -= 128; // -128 to +127
-
-			// Make a positive parabola pulse, min does not quite reach 0.
-			/*register*/ float f = 1.0f - ((index*index) * 0.000055f);
-			relsize = f;
-			corona_alpha = corona_alpha * f;
-			corona_bright = 80;
-			fade = 0;
-			break;
-
-		default:
-			//CONS_Debug(DBG_RENDER, "Draw_Sprite_Corona_Light: unknown light type %x\n", type);
-			CONS_Alert(CONS_WARNING, "Draw_Sprite_Corona_Light: unknown light type %x\n", type);
-			goto no_corona;
-	}
-
-	if (cz > Z1 && (fade & FADE_FAR))
-		corona_alpha = (int)(corona_alpha * (Z2 - cz) / (Z2 - Z1)); // Proportional fade from Z1 to Z2
-	else if (fade & FADE_NEAR)
-		corona_alpha = (int)(corona_alpha * cz / Z1); // Fade to 0 when get too close
-
-	if (relsize > 1.0) 
-		relsize = 1.0;
-
-#ifdef HWRENDER
-	if (rendermode == render_opengl)
-		coronasizevalue = cv_glcoronasize.value;
-#endif	
-	corona_size = p_lspr->corona_radius * relsize * FIXED_TO_FLOAT(coronasizevalue);
-
-	return corona_alpha;
-
-	no_corona:
-	{
-		corona_alpha = 0;
-		return corona_alpha;
-	}
-}
-
-static void Sprite_Corona_Light_setup(vissprite_t *vis)
-{
-	fixed_t		tz;
-	float		cz, size;
-	light_t 	*p_lspr;
-
-	// Objects which emit light.
-	p_lspr = Sprite_Corona_Light_lsp(vis->mobj->sprite);
-	if (p_lspr == NULL)
-		goto no_corona;
-
-	if (!(p_lspr->type & (CORONA_SPR|TYPE_FIELD_SPR)))
-		goto no_corona;
-   
-	tz = FixedDiv(projectiony, vis->scale);
-	cz = FIXED_TO_FLOAT(tz);
-
-	// more realistique corona !
-	if (cz >= Z2)
-		goto no_corona;
-
-	// mobj dependent id
-	if (!(Sprite_Corona_Light_fade(p_lspr, cz, vis->mobj->type)))
-		goto no_corona;
-
-	// brighten the corona for software draw
-	if (corona_bright)
-		corona_alpha = ((((UINT8)corona_alpha * (255 - corona_bright)) + (255 * (UINT8)corona_bright)) >> 8);
-
-	size = corona_size / FIXED_TO_FLOAT(corona_sprlump.width);
-	corona_xscale = FLOAT_TO_FIXED(((double)vis->xscale * size));
-	corona_yscale = FLOAT_TO_FIXED(((double)vis->scale * size));
-
-	// Corona specific.
-	// Corona offsets are from center of drawn sprite.
-	// no flip on corona
-
-	// Position of the corona
-#if 1
-	fixed_t midx = (vis->x1 + vis->x2) << (FRACBITS-1);  // screen
-#else
-	// same as spr, but not stored in vissprite so must recalculate it
-	//fixed_t tr_x = vis->mobj->x - viewx;
-	//fixed_t tr_y = vis->mobj->y - viewy;
-	fixed_t tr_x = vis->mobj_x - viewx;
-	fixed_t tr_y = vis->mobj_y - viewy;
-	fixed_t tx = (FixedMul(tr_x,viewsin) - FixedMul(tr_y,viewcos));
-	fixed_t midx = centerxfrac + FixedMul(tx, vis->xscale);
-#endif
-	corona_x0 = corona_x1 = (midx - FixedMul(corona_sprlump.leftoffset, corona_xscale)) >>FRACBITS;
-	corona_x2 = ((midx + FixedMul(corona_sprlump.width - corona_sprlump.leftoffset, corona_xscale)) >>FRACBITS) - 1;
-
-	// off the right side
-	if (corona_x1 < 0) 
-		corona_x1 = 0;
-	if (corona_x1 > viewwidth)
-		goto no_corona;
-
-	// off the left side
-	if (corona_x2 >= viewwidth)
-		corona_x2 = viewwidth - 1;
-	if (corona_x2 < 0)
-		goto no_corona;
-
-	corona_draw = 2;
-
-	no_corona:
-	{
-		corona_draw = 0;
-		return;
-	}
-}
-
-static void Draw_Sprite_Corona_Light(vissprite_t * vis)
-{
-	int texturecolumn;
-
-	// Sprite has a corona, and coronas are enabled.
-	long dr_alpha = (((UINT8)corona_alpha * 7) + (2 * (16-7))) >> 4; // compensate for different HWR alpha 
-
-#ifdef ENABLE_DRAW_ALPHA
-	colfunc = alpha_colfunc;  // R_DrawAlphaColumn
-	patch_t *corona_cc_patch = corona_patch;
-
-	dr_color = t_lspr[vis->mobj->sprite]->corona_color;
-
-#ifndef ENABLE_DRAW8_USING_12
-	if (vid.drawmode == DRAW8PAL)
-		dr_color8 = NearestColor(dr_color.s.red, dr_color.s.green, dr_color.s.blue);
-#endif
-
-	dr_alpha_mode = cv_corona_draw_mode.value;
-	// alpha to dim the background through the corona   
-	dr_alpha_background = (cv_corona_draw_mode.value == 1? (255 - dr_alpha) : 240);
-#else
-	colfunc = colfuncs[COLDRAWFUNC_TRANS]; // R_DrawTranslucentColumn; translate certain pixels to white
-
-	// Get the corona patch specifically colored for this light.
-	patch_t *corona_cc_patch = get_colored_corona(corona_index);
-
-	// dc_colormap = & reg_colormaps[0];
-	transtables = 0;  // translucent dr_alpha
-	dc_transmap = R_GetTranslucencyTable(dr_alpha >> 4); // for draw8
-#endif
-   
-	fixed_t light_yoffset = (fixed_t)(t_lspr[vis->mobj->sprite]->light_yoffset * FRACUNIT); // float to fixed
-   
-#if 1
-	// [WDJ] This is the one that puts the center closest to where OpenGL puts it.
-	fixed_t g_midy = (vis->gz + vis->gzt)>>1; // mid of sprite
-#else
-	// Too high
-#if 0
-	fixed_t g_midy = vis->mobj->z + ((vis->gzt - vis->gz)>>1);
-#else
-	fixed_t g_midy = (vis->mobj->z + vis->gzt)>>1;  // mid of sprite
-#endif
-#endif
-
-	fixed_t g_cp = g_midy + light_yoffset - viewz;  // corona center point in vissprite scale
-	fixed_t tp_cp = FixedMul(g_cp, vis->scale) + FixedMul(corona_sprlump.topoffset, corona_yscale);
-	sprtopscreen = centeryfrac - tp_cp;
-	dc_texturemid = FixedDiv(tp_cp, corona_yscale);
-	spryscale = corona_yscale;
-	dc_iscale = FixedDiv(FRACUNIT, dc_yh); // y texture step
-	dc_texheight = 0; // no wrap repeat
-//	dc_texheight = corona_patch->height;
-   
-// not flipped so
-//  tex_x0 = 0
-//  tex_x_iscale = iscale
-//  fixed_t tex_x_iscale = (int)((double)vis->iscale*size);
-
-	fixed_t tex_x_iscale = FixedDiv(FRACUNIT, corona_xscale);
-	fixed_t texcol_frac = 0; // tex_x0, not flipped
-
-	if ((corona_x1 - corona_x0) > 0) // it was clipped
-		texcol_frac = tex_x_iscale * (corona_x1 - corona_x0);
- 
-	for (dc_x = corona_x1; dc_x <= corona_x2; dc_x++, texcol_frac += tex_x_iscale)
-	{
-		texturecolumn = texcol_frac>>FRACBITS;
-
-#ifdef RANGECHECK
-		// [WDJ] Give msg and don't draw it
-		if (texturecolumn < 0 || texturecolumn >= corona_patch->width)
-		{
-			CONS_Debug(DBG_RENDER, "Sprite_Corona: bad texturecolumn\n");
-			CONS_Alert(CONS_WARNING, "Sprite_Corona: bad texturecolumn\n");
-			return;
-		}
-#endif
-
-		column_t *col_data = (column_t *)(((UINT8 *)corona_cc_patch) + corona_cc_patch->columnofs[texturecolumn]);
-		R_DrawMaskedColumn(col_data);
-	}
-
-	colfunc = colfuncs[BASEDRAWFUNC];
-}
-#endif
-#endif
-
 boolean R_SpriteIsFlashing(vissprite_t *vis)
 {
 	return (!(vis->cut & SC_PRECIP)
@@ -1590,7 +878,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 		colfunc = colfuncs[COLDRAWFUNC_TRANS];
 
 	// Hack: Use a special column function for drop shadows that bypasses
-	// invalid memory access crashes caused by R_ProjectShadows putting wrong values
+	// invalid memory access crashes caused by R_ProjectDropShadow putting wrong values
 	// in dc_texturemid and dc_iscale when the shadow is sloped.
 	if (vis->cut & SC_SHADOW)
 		colfunc = R_DrawDropShadowColumn_8;
@@ -1769,7 +1057,6 @@ static void R_DrawPrecipitationVisSprite(vissprite_t *vis)
 
 	if (vis->x1 < 0)
 		vis->x1 = 0;
-
 	if (vis->x2 >= vid.width)
 		vis->x2 = vid.width-1;
 
@@ -2026,14 +1313,15 @@ static void R_SkewShadowSprite(
 
 /** STAR NOTE: i was here for realistic shadow stuff lol
  	(I.E: cv_shadow.value == 2, cv_allobjectshaveshadows, etc. :p) **/
-static void R_ProjectShadows(mobj_t *thing, vissprite_t *vis, fixed_t scale, fixed_t tx, fixed_t tz)
+static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, fixed_t tx, fixed_t tz)
 {
 	vissprite_t *shadow;
 	patch_t *patch;
 	fixed_t xscale, yscale, shadowxscale, shadowyscale, shadowskew, x1, x2;
 	INT32 heightsec, phs;
 	INT32 light = 0;
-	fixed_t scalemul; UINT8 trans;
+	fixed_t scalemul;
+	UINT8 trans;
 	fixed_t floordiff;
 	fixed_t groundz;
 	pslope_t *groundslope;
@@ -2078,13 +1366,23 @@ static void R_ProjectShadows(mobj_t *thing, vissprite_t *vis, fixed_t scale, fix
 
 	scalemul = FixedMul(FRACUNIT - floordiff/640, scale);
 
+#if 0
+	patch = W_CachePatchName("DSHADOW", PU_SPRITE);
+#else
+	// STAR NOTE: needed, come back and fix later //
 	patch = (cv_shadow.value == 2 ? vis->patch : W_CachePatchName("DSHADOW", PU_SPRITE));
-
+#endif
 	xscale = FixedDiv(projection, tz);
 	yscale = FixedDiv(projectiony, tz);
 	shadowxscale = FixedMul(interp.radius*2, scalemul);
+#if 0
+	shadowyscale = FixedMul(FixedMul(interp.radius*2, scalemul), FixedDiv(abs(groundz - viewz), tz));
+	shadowyscale = min(shadowyscale, shadowxscale) / patch->height;
+#else
+	// STAR NOTE: needed, come back and fix later //
 	shadowyscale = FixedMul(FixedMul(interp.radius*2, scalemul*2), FixedDiv(abs(groundz - viewz), tz));
 	shadowyscale = (cv_shadow.value == 2 ? (min(shadowyscale, shadowxscale) / patch->height): patch->height);
+#endif
 	shadowxscale /= patch->width;
 	shadowskew = 0;
 
@@ -2116,7 +1414,12 @@ static void R_ProjectShadows(mobj_t *thing, vissprite_t *vis, fixed_t scale, fix
 	shadow->gy = interp.y;
 	shadow->gzt = (isflipped ? shadow->pzt : shadow->pz) + patch->height * shadowyscale / 2;
 	shadow->gz = shadow->gzt - patch->height * shadowyscale;
+#if 0
+	shadow->texturemid = FixedMul(interp.scale, FixedDiv(shadow->gzt - viewz, shadowyscale));
+#else
+	// STAR NOTE: needed for our unique shadows, come back and fix later :) //
 	shadow->texturemid = FixedMul(interp.scale, FixedDiv(shadow->gzt - viewz, shadowyscale * (cv_shadow.value == 2 ? 1.15 : 1)));
+#endif
 	if (thing->skin && ((skin_t *)thing->skin)->flags & SF_HIRES)
 		shadow->texturemid = FixedMul(shadow->texturemid, ((skin_t *)thing->skin)->highresscale);
 	shadow->scalestep = 0;
@@ -2364,6 +1667,10 @@ static void R_ProjectSprite(mobj_t *thing)
 	}
 
 	this_scale = interp.scale;
+
+	if (this_scale < 1)
+		return;
+
 	radius = interp.radius; // For drop shadows
 	height = interp.height; // Ditto
 
@@ -2390,10 +1697,10 @@ static void R_ProjectSprite(mobj_t *thing)
 	// decide which patch to use for sprite relative to player
 #ifdef RANGECHECK
 	if ((size_t)(thing->sprite) >= numsprites)
-		I_Error("R_ProjectSprite: invalid sprite number %d ", thing->sprite);
+		I_Error("R_ProjectSprite: invalid sprite number %d", thing->sprite);
 #endif
 
-	frame = thing->frame&FF_FRAMEMASK;
+	frame = thing->frame & FF_FRAMEMASK;
 
 	//Fab : 02-08-98: 'skin' override spritedef currently used for skin
 	if (thing->skin && thing->sprite == SPR_PLAY)
@@ -2402,11 +1709,13 @@ static void R_ProjectSprite(mobj_t *thing)
 #ifdef ROTSPRITE
 		sprinfo = &((skin_t *)thing->skin)->sprinfo[thing->sprite2];
 #endif
-		if (frame >= sprdef->numframes) {
+
+		if (frame >= sprdef->numframes)
+		{
 			CONS_Alert(CONS_ERROR, M_GetText("R_ProjectSprite: invalid skins[\"%s\"].sprites[%sSPR2_%s] frame %s\n"), ((skin_t *)thing->skin)->name, ((thing->sprite2 & FF_SPR2SUPER) ? "FF_SPR2SUPER|": ""), spr2names[(thing->sprite2 & ~FF_SPR2SUPER)], sizeu5(frame));
 			thing->sprite = states[S_UNKNOWN].sprite;
 			thing->frame = states[S_UNKNOWN].frame;
-			sprdef = sprites[thing->sprite];
+			sprdef = &sprites[thing->sprite];
 #ifdef ROTSPRITE
 			sprinfo = &spriteinfo[thing->sprite];
 #endif
@@ -2415,7 +1724,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	}
 	else
 	{
-		sprdef = sprites[thing->sprite];
+		sprdef = &sprites[thing->sprite];
 #ifdef ROTSPRITE
 		sprinfo = &spriteinfo[thing->sprite];
 #endif
@@ -2431,7 +1740,7 @@ static void R_ProjectSprite(mobj_t *thing)
 			}
 			thing->sprite = states[S_UNKNOWN].sprite;
 			thing->frame = states[S_UNKNOWN].frame;
-			sprdef = sprites[thing->sprite];
+			sprdef = &sprites[thing->sprite];
 			sprinfo = &spriteinfo[thing->sprite];
 			frame = thing->frame&FF_FRAMEMASK;
 		}
@@ -3048,8 +2357,14 @@ static void R_ProjectSprite(mobj_t *thing)
 	if (thing->subsector->sector->numlights && !(shadowdraw || splat))
 		R_SplitSprite(vis);
 
+#if 0
+	if (oldthing->shadowscale && cv_shadow.value)
+		R_ProjectDropShadow(oldthing, vis, oldthing->shadowscale, basetx, basetz);
+#else
+	// STAR NOTE: for our shadows, but may want to come back here later and touch this up! //
 	if (cv_shadow.value &&((!cv_allobjectshaveshadows.value && oldthing->shadowscale) || cv_allobjectshaveshadows.value))
-		R_ProjectShadows(oldthing, vis, (cv_allobjectshaveshadows.value ? (oldthing->shadowscale ? oldthing->shadowscale : 1*FRACUNIT) : oldthing->shadowscale), basetx, basetz);
+		R_ProjectDropShadow(oldthing, vis, (cv_allobjectshaveshadows.value ? (oldthing->shadowscale ? oldthing->shadowscale : 1*FRACUNIT) : oldthing->shadowscale), basetx, basetz);
+#endif
 
 	R_ProjectBoundingBox(oldthing, vis);
 
@@ -3116,7 +2431,7 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 			thing->sprite);
 #endif
 
-	sprdef = sprites[thing->sprite];
+	sprdef = &sprites[thing->sprite];
 
 #ifdef RANGECHECK
 	if ((UINT8)(thing->frame&FF_FRAMEMASK) >= sprdef->numframes)
@@ -3838,21 +3153,10 @@ void R_InitDrawNodes(void)
 //
 // R_DrawSprite
 //
-//Fab : 26-04-98:
-// NOTE : uses con_clipviewtop, so that when console is on,
-//        don't draw the part of sprites hidden under the console
 static void R_DrawSprite(vissprite_t *spr)
 {
 	mfloorclip = spr->clipbot;
 	mceilingclip = spr->cliptop;
-
-#if 0
-#ifdef SPDR_CORONAS
-	// Draw corona before sprite, occlude
-	if (corona_draw == 1)
-		Draw_Sprite_Corona_Light(spr);
-#endif
-#endif
 
 	if (spr->cut & SC_BBOX)
 		R_DrawThingBoundingBox(spr);
@@ -3861,20 +3165,7 @@ static void R_DrawSprite(vissprite_t *spr)
 	else
 		R_DrawVisSprite(spr);
 
-#if 0
-#if 1
-	// draw sprite, restricted x range
-	R_DrawVisSprite(vis, ((dbx1 > vis->x1) ? dbx1 : vis->x1),
-    				((dbx2 < vis->x2) ? dbx2 : vis->x2));
-#else
-	R_DrawVisSprite(vis, cx1, cx2);
-#endif
-#endif
-
-#ifdef SPDR_CORONAS
-	if (corona_draw == 2)
-		Draw_Sprite_Corona_Light(spr);
-#endif
+	TSoURDt3rd_R_DrawSoftwareCoronas(spr);
 }
 
 // Special drawer for precipitation sprites Tails 08-18-2002
@@ -4031,9 +3322,6 @@ static void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, portal_t* port
 				(lowscale < spr->sortscale &&
 				 !R_PointOnSegSide (spr->gx, spr->gy, ds->curline)))
 			{
-				// masked mid texture?
-				/*if (ds->maskedtexturecol)
-					R_RenderMaskedSegRange (ds, r1, r2);*/
 				// seg is behind sprite
 				continue;
 			}
@@ -4256,31 +3544,7 @@ void R_ClipSprites(drawseg_t* dsstart, portal_t* portal)
 		if ((spr->cut & SC_NOTVISIBLE) == 0)
 			numvisiblesprites++;
 
-#ifdef ALAM_LIGHTING
-#ifdef SPDR_CORONAS
-		corona_draw = 0;
-
-#if 0
-		// Exclude Split sprites that are cut on the bottom, so there
-		// is only one corona per object.
-		// Their position would be off too.
-		if (cv_corona.value && (!(spr->cut & SC_BOTTOM)))
-#else
-		// setup corona state
-		if (cv_corona.value)
-#endif
-		{
-			Sprite_Corona_Light_setup(spr); // set corona_draw
-			if (corona_draw) // Expand clipping to include corona draw
-			{
-				if (corona_x1 < x1)
-					x1 = corona_x1;
-				if (corona_x2 > x2)
-					x2 = corona_x2;
-			}
-		}
-#endif
-#endif
+		TSoURDt3rd_R_RenderSoftwareCoronas(spr, x1, x2);
 	}
 }
 
@@ -4291,7 +3555,7 @@ boolean R_ThingVisible (mobj_t *thing)
 		(thing->sprite == SPR_NULL) || // Don't draw null-sprites
 		(thing->flags2 & MF2_DONTDRAW) || // Don't draw MF2_LINKDRAW objects
 		(thing->drawonlyforplayer && thing->drawonlyforplayer != viewplayer) || // Don't draw other players' personal objects
-		(r_viewmobj && (
+		(!P_MobjWasRemoved(r_viewmobj) && (
 		  (r_viewmobj == thing) || // Don't draw first-person players or awayviewmobj objects
 		  (r_viewmobj->player && r_viewmobj->player->followmobj == thing) || // Don't draw first-person players' followmobj
 		  (r_viewmobj == thing->dontdrawforviewmobj) // Don't draw objects that are hidden for the current view

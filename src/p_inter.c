@@ -30,10 +30,10 @@
 #include "f_finale.h"
 
 // STAR STUFF //
-#include "STAR/star_vars.h" // TSoURDt3rd::jukebox //
-#include "STAR/smkg-cvars.h" // cv_storesavesinfolders //
+#include "STAR/smkg-cvars.h" // cv_tsourdt3rd_savefiles_storesavesinfolders //
 #include "STAR/ss_main.h" // SAVEGAMEFOLDER //
 #include "STAR/p_user.h" // TSoURDt3rd_P_DamageMobj() //
+#include "STAR/star_vars.h" // tsourdt3rd_global_jukebox, TSoURDt3rd_t, && gameovermusic //
 
 #include "deh_soc.h" // file junk //
 #include "d_main.h" // TSoURDt3rd_useAsFileName //
@@ -310,7 +310,7 @@ void P_DoMatchSuper(player_t *player)
 	player->powers[pw_sneakers] = emeraldspawndelay;
 	if (P_IsLocalPlayer(player) && !player->powers[pw_super])
 	{
-		if (!TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack) // STAR STUFF: don't interrupt my music please :) //
+		if (!tsourdt3rd_global_jukebox->curtrack) // STAR STUFF: don't interrupt my music please :) //
 			S_StopMusic();
 		if (mariomode)
 			G_GhostAddColor(GHC_INVINCIBLE);
@@ -334,7 +334,7 @@ void P_DoMatchSuper(player_t *player)
 				player->powers[pw_sneakers] = player->powers[pw_invulnerability];
 				if (P_IsLocalPlayer(player) && !player->powers[pw_super])
 				{
-					if (!TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack) // STAR STUFF: don't interrupt my music here either please :) //
+					if (!tsourdt3rd_global_jukebox->curtrack) // STAR STUFF: don't interrupt my music here either please :) //
 						S_StopMusic();
 					if (mariomode)
 						G_GhostAddColor(GHC_INVINCIBLE);
@@ -2688,7 +2688,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 					//P_PlayJingle(target->player, JT_GOVER); // can't be used because incompatible with track fadeout
 
 				// STAR STUFF //
-				if (cv_storesavesinfolders.value)
+				if (cv_tsourdt3rd_savefiles_storesavesinfolders.value)
 				{
 					I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER, srb2home), 0755);
 					if (TSoURDt3rd_useAsFileName)

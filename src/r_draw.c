@@ -18,7 +18,6 @@
 #include "doomdef.h"
 #include "doomstat.h"
 #include "r_local.h"
-#include "st_stuff.h" // need ST_HEIGHT
 #include "i_video.h"
 #include "v_video.h"
 #include "m_misc.h"

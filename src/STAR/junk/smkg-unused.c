@@ -102,10 +102,88 @@ lumpnum_t W_GetNumForMusicName(const char *name)
 	return i;
 }
 
+// =======
+// CONSOLE
+// =======
+
+static const char *CON_LoadingStrings[LOADED_ALLDONE+1] =
+{
+	"Init zone memory...", //LOADED_ZINIT
+	"Init game timing...", //LOADED_ISTARTUPTIMER
+	"Loading main assets...", //LOADED_IWAD
+	"Loading add-ons...", //LOADED_PWAD
+	"Init graphics subsystem...", //LOADED_ISTARTUPGRAPHICS
+	"Cache fonts...", //LOADED_HUINIT
+	"Load settings...", //LOADED_CONFIG
+	"Cache textures...", //LOADED_INITTEXTUREDATA
+	"Cache sprites...", //LOADED_INITSPIRTES
+	"Load characters...", //LOADED_INITSKINS
+	"Init rendering daemon...", //LOADED_RINIT
+	"Init audio subsystem...", //LOADED_SINITSFXCHANNELS
+	"Cache HUD...", //LOADED_STINIT
+	"Init ACSVM...", //LOADED_ACSINIT
+	"Check game status...", //LOADED_DCHECKNETGAME
+	"Now starting..."
+}; // see also con_loadprogress_t in console.h
+
+//
+// Error handling for the loading bar, to ensure it doesn't skip any steps.
+//
+void CON_SetLoadingProgress(con_loadprogress_t newStep)
+{
+	const con_loadprogress_t expectedStep = con_startup_loadprogress + 1;
+
+	if (newStep != expectedStep)
+	{
+		I_Error("Something is wrong with the loading bar! (got %d, expected %d)\n", newStep, expectedStep);
+		return;
+	}
+
+	con_startup_loadprogress = newStep;
+
+	if (con_startup_loadprogress <= LOADED_ALLDONE)
+		CONS_Printf("LOADING UPDATE - %s\n", CON_LoadingStrings[con_startup_loadprogress]);
+
+	if (con_startup_loadprogress < LOADED_ISTARTUPGRAPHICS) // rendering not possible?
+		return;
+	CON_DrawLoadBar(); // here we display the console text
+	I_OsPolling();
+	I_UpdateNoBlit();
+	I_FinishUpdate(); // page flip or blit buffer
+}
+
+//
+// Draws a simple white fill at the bottom of startup for load progress
+//
+void CON_DrawLoadBar(void)
+{
+	const INT16 barheight = 2;
+	INT16 barwidth = 0;
+
+	Lock_state();
+
+	if (!con_started || !graphics_started)
+	{
+		Unlock_state();
+		return;
+	}
+
+	CON_DrawBackpic();
+
+	barwidth = (BASEVIDWIDTH * con_startup_loadprogress) / LOADED_ALLDONE;
+	V_DrawFill(0, BASEVIDHEIGHT - barheight, barwidth, barheight, 0);
+
+	if (con_startup_loadprogress <= LOADED_ALLDONE)
+	{
+		V_DrawString(4, BASEVIDHEIGHT - (barheight + 8 + 4), V_FORCEUPPERCASE, CON_LoadingStrings[con_startup_loadprogress]);
+	}
+
+	Unlock_state();
+}
+
 // =====
 // MISC.
 // =====
 
-#if 0
-	if (textures[i]->hash == hash && !strncasecmp(textures[i]->name, name, 8))
-#endif
+// Easy Texture Finder
+if (textures[i]->hash == hash && !strncasecmp(textures[i]->name, name, 8))

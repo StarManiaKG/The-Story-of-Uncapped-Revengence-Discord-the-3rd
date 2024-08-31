@@ -39,6 +39,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	m_misc.c
 	m_perfstats.c
 	m_random.c
+	m_tokenizer.c
 	m_queue.c
 	info.c
 	p_ceilng.c
@@ -89,6 +90,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	lzf.c
 	b_bot.c
 	u_list.c
+	snake.c
 	lua_script.c
 	lua_baselib.c
 	lua_mathlib.c
@@ -136,18 +138,18 @@ add_dependencies(SRB2SDL2 _SRB2_reconf)
 
 if("${CMAKE_COMPILER_IS_GNUCC}" AND "${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
 	target_link_options(SRB2SDL2 PRIVATE "-Wl,--disable-dynamicbase")
-	if(NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}" AND NOT "${SRB2_CONFIG_SHARED_INTERNAL_LIBRARIES}")
+	if("${SRB2_CONFIG_STATIC_STDLIB}")
 		# On MinGW with internal libraries, link the standard library statically
 		target_link_options(SRB2SDL2 PRIVATE "-static")
+	endif()
+	if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+		target_link_options(SRB2SDL2 PRIVATE "-Wl,--large-address-aware")
 	endif()
 endif()
 
 target_compile_features(SRB2SDL2 PRIVATE c_std_11 cxx_std_17)
 
 ### Configuration
-set(SRB2_CONFIG_HAVE_MIXERX OFF CACHE BOOL
-	"Enable advanced sound options With SDL Mixer X support.")
-
 set(SRB2_CONFIG_DEV_BUILD OFF CACHE BOOL
 	"Compile a development build of SRB2.")
 
@@ -156,6 +158,10 @@ add_subdirectory(blua)
 # OS macros
 if (UNIX)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DUNIXCOMMON)
+endif()
+
+if (BSD MATCHES "FreeBSD")
+	target_compile_definitions(SRB2SDL2 PRIVATE -DFREEBSD)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCC)
@@ -173,19 +179,16 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
 	target_compile_definitions(SRB2SDL2 PRIVATE -DMACOSX)
 endif()
 
-target_link_libraries(SRB2SDL2 PRIVATE gme)
-target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_GME)
-if(NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}")
-	# this sucks but gme doesn't use modern cmake to delineate public headers
-	target_include_directories(SRB2SDL2 PRIVATE "${libgme_SOURCE_DIR}")
+if("${SRB2_CONFIG_USE_GME}")
+	target_link_libraries(SRB2SDL2 PRIVATE gme)
+	target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_GME)
+	if(NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}")
+		# this sucks but gme doesn't use modern cmake to delineate public headers
+		target_include_directories(SRB2SDL2 PRIVATE "${libgme_SOURCE_DIR}")
+	endif()
 endif()
 
-target_link_libraries(SRB2SDL2 PRIVATE openmpt)
-target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_OPENMPT)
-
-target_link_libraries(SRB2SDL2 PRIVATE ZLIB::ZLIB PNG::PNG CURL::libcurl)
-target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_ZLIB -DHAVE_PNG -DHAVE_CURL -D_LARGEFILE64_SOURCE)
-target_sources(SRB2SDL2 PRIVATE apng.c)
+target_compile_definitions(SRB2SDL2 PRIVATE -D_LARGEFILE64_SOURCE)
 
 set(SRB2_HAVE_THREADS ON)
 target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_THREADS)
@@ -201,26 +204,6 @@ if("${SRB2_CONFIG_HWRENDER}")
 		else()
 			message(WARNING "You have specified static opengl but opengl was not found. Not setting HWRENDER.")
 		endif()
-	endif()
-endif()
-
-if(${SRB2_CONFIG_HAVE_OPENMPT})
-	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
-		set(OPENMPT_FOUND ON)
-		set(OPENMPT_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/libopenmpt/inc)
-        if(${SRB2_SYSTEM_BITS} EQUAL 64)
-			set(OPENMPT_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/libopenmpt/lib/x86_64/mingw -lopenmpt")
-		else() # 32-bit
-			set(OPENMPT_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/libopenmpt/lib/x86/mingw -lopenmpt")
-		endif()
-	else()
-		find_package(OPENMPT)
-	endif()
-	if(${OPENMPT_FOUND})
-		set(SRB2_HAVE_OPENMPT ON)
-		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_OPENMPT)
-	else()
-		message(WARNING "You have specified that OpenMPT is available but it was not found.")
 	endif()
 endif()
 
@@ -263,6 +246,7 @@ target_compile_options(SRB2SDL2 PRIVATE
 	# This is a direct translation from versions.mk
 	$<$<AND:$<COMPILE_LANGUAGE:C>,$<C_COMPILER_ID:GNU>>:
 		-Wall
+		-Wextra
 		-Wno-trigraphs
 		-W # Was controlled by RELAXWARNINGS
 		-Wfloat-equal
@@ -281,6 +265,7 @@ target_compile_options(SRB2SDL2 PRIVATE
 		-Winline
 		-Wformat-y2k
 		-Wformat-security
+		-fwrapv
 
 		$<$<VERSION_LESS:$<C_COMPILER_VERSION>,2.9.5>:
 			-Wno-div-by-zero
@@ -329,11 +314,7 @@ target_compile_options(SRB2SDL2 PRIVATE
 
 		$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,8.1.0>:
 			-Wno-error=format-overflow
-			-Wno-error=stringop-truncation
-			-Wno-error=stringop-overflow
 			-Wno-format-overflow
-			-Wno-stringop-truncation
-			-Wno-stringop-overflow
 			-Wno-error=multistatement-macros
 		>
 
@@ -346,10 +327,13 @@ target_compile_options(SRB2SDL2 PRIVATE
 	$<$<AND:$<COMPILE_LANGUAGE:C>,$<OR:$<C_COMPILER_ID:AppleClang>,$<C_COMPILER_ID:Clang>>>:
 		-Wall
 		-Wno-absolute-value
+		-Wextra
 		-Wno-trigraphs
+		-Wconditional-uninitialized
 		-Wno-error=non-literal-null-conversion
 		-Wno-error=constant-conversion
 		-Wno-error=unused-but-set-variable
+		-fwrapv
 	>
 
 	# C, MSVC
@@ -362,6 +346,9 @@ target_compile_options(SRB2SDL2 PRIVATE
 	# C++, GNU, Clang and Apple Clang
 	$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<OR:$<C_COMPILER_ID:GNU>,$<C_COMPILER_ID:AppleClang>,$<C_COMPILER_ID:Clang>>>:
 		-Wall
+		-Wextra
+		-Wno-trigraphs
+		-Wconditional-uninitialized
 	>
 
 	# C++, MSVC
@@ -417,8 +404,66 @@ if(SRB2_CONFIG_PROFILEMODE AND "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
 endif()
 
 add_subdirectory(sdl)
-if(SRB2_CONFIG_ENABLE_TESTS)
-	add_subdirectory(tests)
+
+if(TARGET ZLIB::ZLIB)
+	target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_ZLIB)
+	message(STATUS "Zlib Found")
+else()
+	message(STATUS "No Zlib Found")
+endif()
+
+if(TARGET PNG::PNG)
+	target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_PNG)
+	target_sources(SRB2SDL2 PRIVATE apng.c ${libapng_HEADER})
+	target_include_directories(SRB2SDL2 PRIVATE ${libapng_INCLUDE_DIRS} ${libpng_BINARY_DIR})
+	#message(STATUS "libpng inc DIRS at ${libapng_INCLUDE_DIRS}")
+	#message(STATUS "libpng bin DIRS at ${libpng_BINARY_DIR}")
+	#message(STATUS "png.h at ${libapng_HEADER}")
+	message(STATUS "libpng Found")
+else()
+	message(STATUS "No libpng Found")
+endif()
+
+if(TARGET PNG::PNG AND TARGET ZLIB::ZLIB)
+#libpng links zlib too?
+target_link_libraries(SRB2SDL2 PRIVATE PNG::PNG)
+endif()
+
+if(NOT TARGET PNG::PNG AND TARGET ZLIB::ZLIB)
+#got no libpng? we need zlib
+target_link_libraries(SRB2SDL2 PRIVATE ZLIB::ZLIB)
+endif()
+
+if(TARGET gme::gme)
+	target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_GME)
+	target_link_libraries(SRB2SDL2 PRIVATE gme::gme)
+	message(STATUS "libgme Found")
+else()
+	message(STATUS "No libgme Found")
+endif()
+
+if(TARGET libopenmpt::libopenmpt)
+	target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_OPENMPT)
+	target_link_libraries(SRB2SDL2 PRIVATE libopenmpt::libopenmpt)
+	message(STATUS "libopenmpt Found")
+else()
+	message(STATUS "No libopenmpt Found")
+endif()
+
+if(TARGET CURL::libcurl)
+	target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_CURL)
+	target_link_libraries(SRB2SDL2 PRIVATE CURL::libcurl)
+	message(STATUS "libcurl Found")
+else()
+	message(STATUS "No libcurl Found")
+endif()
+
+if(TARGET miniupnpc::miniupnpc)
+	target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_MINIUPNPC)
+	target_link_libraries(SRB2SDL2 PRIVATE miniupnpc::miniupnpc)
+	message(STATUS "miniupnpc Found")
+else()
+	message(STATUS "No miniupnpc Found")
 endif()
 
 # strip debug symbols into separate file when using gcc.
@@ -470,127 +515,6 @@ if(SRB2_CONFIG_ENABLE_CLANG_TIDY_CXX)
 endif()
 
 ## // STAR STUFF // ##
-## 	Commands
-set(SRB2_CONFIG_HAVE_DISCORDRPC OFF CACHE BOOL
-	"Enable Discord Rich Presence support.")
-set(SRB2_CONFIG_HAVE_DISCORDGAMESDK OFF CACHE BOOL
-	"Enable Discord Game SDK support.")
-
-set(SRB2_CONFIG_HAVE_LIBAV OFF CACHE BOOL
-	"Enable TSoURDt3rd's MP4 support.")
-
-## 	Directories
+add_subdirectory(discord)
 add_subdirectory(STAR)
-add_subdirectory(STAR/libav)
-
-##	Libraries
-#	Discord Game SDK
-if(${SRB2_CONFIG_HAVE_DISCORDGAMESDK})
-	if (${SRB2_CONFIG_HAVE_DISCORDRPC})
-		message(WARNING "You can't compile SRB2 with both Discord's Game SDK and Discord's Rich Presence!")
-		set(SRB2_CONFIG_HAVE_DISCORDRPC OFF)
-	endif()
-
-	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
-		set(DISCORDGAMESDK_FOUND ON)
-		set(DISCORDGAMESDK_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/discord-game-sdk/include)
-
-		if(${SRB2_SYSTEM_BITS} EQUAL 64)
-			set(DISCORDGAMESDK_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/discord-game-sdk/x86_64")
-		else()
-			set(DISCORDGAMESDK_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/discord-game-sdk/x86")
-		endif()
-	else()
-		find_package(DiscordGameSDK)
-	endif()
-
-	if(${DISCORDGAMESDK_FOUND})
-		set(SRB2_HAVE_DISCORDGAMESDK ON)
-		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_DISCORDGAMESDK -DUSE_STUN -DHAVE_DISCORDSUPPORT)
-		add_subdirectory(discord)
-	else()
-		message(WARNING "You have specified that Discord's Game SDK is available but it was not found.")
-	endif()
-endif()
-
-#	Discord Rich Presence
-if(${SRB2_CONFIG_HAVE_DISCORDRPC})
-	if (${SRB2_CONFIG_HAVE_DISCORDGAMESDK})
-		message(WARNING "You can't compile SRB2 with both Discord's Rich Presence SDK and Discord's Game SDK!")
-		set(SRB2_CONFIG_HAVE_DISCORDGAMESDK OFF)
-	endif()
-
-	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
-		set(DISCORDRPC_FOUND ON)
-		set(DISCORDRPC_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/discord-rpc/win32-dynamic/include)
-
-		if(${SRB2_SYSTEM_BITS} EQUAL 64)
-			set(DISCORDRPC_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/discord-rpc/win64-dynamic/include)
-			set(DISCORDRPC_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/discord-rpc/win64-dynamic/lib -ldiscord-rpc")
-		else()
-			set(DISCORDRPC_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/discord-rpc/win32-dynamic/include)
-			set(DISCORDRPC_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/discord-rpc/win32-dynamic/lib -ldiscord-rpc")
-		endif()
-	else()
-		find_package(DiscordRPC)
-	endif()
-
-	if(${DISCORDRPC_FOUND})
-		set(SRB2_HAVE_DISCORDRPC ON)
-		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_DISCORDRPC -DUSE_STUN -DHAVE_DISCORDSUPPORT)
-		add_subdirectory(discord)
-	else()
-		message(WARNING "You have specified that Discord Rich Presence is available but it was not found.")
-	endif()
-endif()
-
-#	LibAV
-if(${SRB2_CONFIG_HAVE_LIBAV})
-	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
-		set(SRB2_LIBAV_FOUND ON)
-
-		if(${SRB2_SYSTEM_BITS} EQUAL 64)
-			set(LIBAV_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/libav/x86_64-w64-mingw32/include)
-			set(LIBAV_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/libav/x86_64-w64-mingw32/lib -lm -lz -lvfw32 -lws2_32 -lbcrypt -luser32 -lavcodec -lavdevice -lavfilter -lavformat -lavresample -lavutil -lswscale")
-		else()
-			set(LIBAV_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/libav/i686-w64-mingw32/include)
-			set(LIBAV_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/libav/i686-w64-mingw32/lib -lm -lz -lvfw32 -lws2_32 -lbcrypt -luser32 -lavcodec -lavdevice -lavfilter -lavformat -lavresample -lavutil -lswscale")
-		endif()
-	else()
-		find_package(LibAV)
-	endif()
-
-	if(${SRB2_LIBAV_FOUND})
-		set(SRB2_HAVE_LIBAV ON)
-		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_LIBAV)
-		target_sources(SRB2SDL2 PRIVATE libav/LIBAV_coders.c)
-	else()
-		message(WARNING "You have specified that LibAV is avaliable but it was not found.")
-	endif()
-endif()
-
-#	MixerX
-if(${SRB2_CONFIG_HAVE_MIXERX})
-	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
-		set(SRB2_MIXERX_FOUND ON)
-
-		if(${SRB2_SYSTEM_BITS} EQUAL 64)
-			set(MIXERX_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/SDLMixerX/x86_64-w64-mingw32/include/SDL2)
-			set(MIXERX_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/SDLMixerX/x86_64-w64-mingw32/lib -lSDL2_mixer_ext")
-		else()
-			set(MIXERX_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/SDLMixerX/i686-w64-mingw32/include/SDL2)
-			set(MIXERX_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/SDLMixerX/i686-w64-mingw32/lib -lSDL2_mixer_ext")
-		endif()
-	else()
-		find_package(MIXERX)
-	endif()
-
-	if(${SRB2_MIXERX_FOUND})
-		set(SRB2_HAVE_MIXERX ON)
-		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_MIXERX)
-	else()
-		message(WARNING "You have specified that SDL Mixer X is available but it was not found.")
-	endif()
-endif()
-
 ## // END OF STAR STUFF // ##

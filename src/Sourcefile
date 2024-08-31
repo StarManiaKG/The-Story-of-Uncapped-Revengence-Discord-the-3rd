@@ -33,6 +33,7 @@ m_menu.c
 m_misc.c
 m_perfstats.c
 m_random.c
+m_tokenizer.c
 m_queue.c
 info.c
 p_ceilng.c
@@ -83,6 +84,7 @@ i_tcp.c
 lzf.c
 b_bot.c
 u_list.c
+snake.c
 lua_script.c
 lua_baselib.c
 lua_mathlib.c

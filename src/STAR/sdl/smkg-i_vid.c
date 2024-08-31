@@ -13,17 +13,24 @@
 #pragma warning(disable : 4214 4244)
 #endif
 
-#ifdef HAVE_SDL
 #ifdef _MSC_VER
 #include <windows.h>
 #pragma warning(default : 4214 4244)
 #endif
 
 #include "../smkg-i_sys.h"
+#include "../smkg-cvars.h"
+#include "../smkg-st_hud.h"
+
+#include "../drrr/kg_input.h"
 
 #include "../../lua_hook.h"
 #include "../../i_system.h"
 #include "../../screen.h"
+
+#ifdef HAVE_DISCORDSUPPORT
+#include "../../discord/discord.h"
+#endif
 
 // ------------------------ //
 //        Variables
@@ -37,11 +44,8 @@ INT32 window_y = -1;
 //        Function
 // ------------------------ //
 
-//
-// static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
-// Routine for handling TSoURDt3rd window events.
-//
-static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
+#ifdef HAVE_SDL
+static void Impl_TSoURDt3rd_HandleWindowEvent(SDL_WindowEvent evt)
 {
 	switch (evt.event)
 	{
@@ -52,6 +56,10 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 		default:
 			if (window_x == -1 || window_y == -1)
 				SDL_GetWindowPosition(window, &window_x, &window_y);
+
+			if (cv_fullscreen.value)
+				window_x = window_y = -1;
+
 			break;
 	}
 }
@@ -65,9 +73,24 @@ void TSoURDt3rd_I_GetEvent(SDL_Event *evt)
 	switch (evt->type)
 	{
 		case SDL_WINDOWEVENT:
-			Impl_HandleWindowEvent(evt->window);
+			Impl_TSoURDt3rd_HandleWindowEvent(evt->window);
 			break;
 	}
 }
 
 #endif // HAVE_SDL
+
+//
+// void TSoURDt3rd_I_FinishUpdate(void)
+// Updates the contents of the screen.
+//
+void TSoURDt3rd_I_FinishUpdate(void)
+{
+#ifdef HAVE_DISCORDSUPPORT
+	if (discordRequestList != NULL)
+		TSoURDt3rd_ST_AskToJoinEnvelope();
+#endif
+
+	if (cv_tsourdt3rd_video_showtps.value)
+		TSoURDt3rd_SCR_DisplayTpsRate();
+}

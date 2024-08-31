@@ -57,9 +57,6 @@ void D_StartTitle(void);
 #endif //__D_MAIN__
 
 // STAR STUFF //
-// Discord Stuff
-extern INT32 extrawads;                 // Star: Using Extra Optional Wads
-
 // Autoloading
 extern boolean autoloading;             // Star: Autoloading Wads
 extern boolean autoloaded;              // Star: Have We Autoloaded Any Game-Changing Mods?

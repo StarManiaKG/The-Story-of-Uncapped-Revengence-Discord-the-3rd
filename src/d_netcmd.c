@@ -57,15 +57,15 @@
 #define CV_RESTRICT 0
 #endif
 
-// STAR STUFF //
-#include "discord/discord.h"
+// TSoURDt3rd
+#include "discord/discord.h" // discord netgame data //
 
 #include "STAR/star_vars.h" // STAR_SetWindowTitle() //
 #include "STAR/smkg-cvars.h" // various vast TSoURDt3rd commands //
 #include "STAR/ss_main.h" // STAR_CONS_Printf() //
+#include "STAR/p_user.h" // TSoURDt3rd_P_MovingPlayerSetup() //
 
 #include "STAR/drrr/kg_input.h" // G_SetPlayerGamepadIndicatorToPlayerColor() //
-// END OF THAT MESS, YAYA //
 
 // ------
 // protos
@@ -116,6 +116,9 @@ static void Color_OnChange(void);
 static void Color2_OnChange(void);
 static void DummyConsvar_OnChange(void);
 static void SoundTest_OnChange(void);
+
+static boolean Skin_CanChange(const char *valstr);
+static boolean Skin2_CanChange(const char *valstr);
 
 #ifdef NETGAME_DEVMODE
 static void Fishcake_OnChange(void);
@@ -213,6 +216,7 @@ static CV_PossibleValue_t matchboxes_cons_t[] = {{0, "Normal"}, {1, "Mystery"}, 
 static CV_PossibleValue_t chances_cons_t[] = {{0, "MIN"}, {9, "MAX"}, {0, NULL}};
 static CV_PossibleValue_t pause_cons_t[] = {{0, "Server"}, {1, "All"}, {0, NULL}};
 
+consvar_t cv_showinput = CVAR_INIT ("showinput", "Off", CV_ALLOWLUA, CV_OnOff, NULL);
 consvar_t cv_showinputjoy = CVAR_INIT ("showinputjoy", "Off", CV_ALLOWLUA, CV_OnOff, NULL);
 
 #ifdef NETGAME_DEVMODE
@@ -242,8 +246,8 @@ UINT16 lastgoodcolor = SKINCOLOR_BLUE, lastgoodcolor2 = SKINCOLOR_BLUE;
 consvar_t cv_playercolor = CVAR_INIT ("color", "Blue", CV_CALL|CV_NOINIT|CV_ALLOWLUA, Color_cons_t, Color_OnChange);
 consvar_t cv_playercolor2 = CVAR_INIT ("color2", "Orange", CV_CALL|CV_NOINIT|CV_ALLOWLUA, Color_cons_t, Color2_OnChange);
 // player's skin, saved for commodity, when using a favorite skins wad..
-consvar_t cv_skin = CVAR_INIT ("skin", DEFAULTSKIN, CV_CALL|CV_NOINIT|CV_ALLOWLUA, NULL, Skin_OnChange);
-consvar_t cv_skin2 = CVAR_INIT ("skin2", DEFAULTSKIN2, CV_CALL|CV_NOINIT|CV_ALLOWLUA, NULL, Skin2_OnChange);
+consvar_t cv_skin = CVAR_INIT_WITH_CALLBACKS ("skin", DEFAULTSKIN, CV_CALL|CV_NOINIT|CV_ALLOWLUA, NULL, Skin_OnChange, Skin_CanChange);
+consvar_t cv_skin2 = CVAR_INIT_WITH_CALLBACKS ("skin2", DEFAULTSKIN2, CV_CALL|CV_NOINIT|CV_ALLOWLUA, NULL, Skin2_OnChange, Skin2_CanChange);
 
 // saved versions of the above six
 consvar_t cv_defaultplayercolor = CVAR_INIT ("defaultcolor", "Blue", CV_SAVE, Color_cons_t, NULL);
@@ -386,7 +390,7 @@ consvar_t cv_mute = CVAR_INIT ("mute", "Off", CV_NETVAR|CV_CALL|CV_ALLOWLUA, CV_
 consvar_t cv_sleep = CVAR_INIT ("cpusleep", "1", CV_SAVE, sleeping_cons_t, NULL);
 
 static CV_PossibleValue_t perfstats_cons_t[] = {
-	{0, "Off"}, {1, "Rendering"}, {2, "Logic"}, {3, "ThinkFrame"}, {0, NULL}};
+	{0, "Off"}, {1, "Rendering"}, {2, "Logic"}, {3, "ThinkFrame"}, {4, "PreThinkFrame"}, {5, "PostThinkFrame"}, {0, NULL}};
 consvar_t cv_perfstats = CVAR_INIT ("perfstats", "Off", CV_CALL, perfstats_cons_t, PS_PerfStats_OnChange);
 static CV_PossibleValue_t ps_samplesize_cons_t[] = {
 	{1, "MIN"}, {1000, "MAX"}, {0, NULL}};
@@ -396,6 +400,9 @@ static CV_PossibleValue_t ps_descriptor_cons_t[] = {
 consvar_t cv_ps_descriptor = CVAR_INIT ("ps_descriptor", "Average", 0, ps_descriptor_cons_t, NULL);
 
 consvar_t cv_freedemocamera = CVAR_INIT("freedemocamera", "Off", CV_SAVE, CV_OnOff, NULL);
+
+// NOTE: this should be in hw_main.c, but we can't put it there as it breaks dedicated build
+consvar_t cv_glallowshaders = CVAR_INIT ("gr_allowcustomshaders", "On", CV_NETVAR, CV_OnOff, NULL);
 
 char timedemo_name[256];
 boolean timedemo_csv;
@@ -639,7 +646,7 @@ void D_RegisterServerCommands(void)
 
 	CV_RegisterVar(&cv_dummyconsvar);
 
-	CV_RegisterVar(&cv_updatenotice); // STAR STUFF: TSoURDt3rd funness! //
+	TSoURDt3rd_D_RegisterServerCommands(); // STAR STUFF: register our cool server commands please! //
 }
 
 // =========================================================================
@@ -742,6 +749,7 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_timetic);
 	CV_RegisterVar(&cv_powerupdisplay);
 	CV_RegisterVar(&cv_itemfinder);
+	CV_RegisterVar(&cv_showinput);
 	CV_RegisterVar(&cv_showinputjoy);
 
 	// time attack ghost options are also saved to config
@@ -965,22 +973,26 @@ void D_RegisterClientCommands(void)
 
 	CV_RegisterVar(&cv_quitscreen);
 
-	CV_RegisterVar(&cv_isitcalledsingleplayer);
+	CV_RegisterVar(&cv_tsourdt3rd_game_isitcalledsingleplayer);
 
 	CV_RegisterVar(&cv_menucolor);
 
 	CV_RegisterVar(&cv_fpscountercolor);
-	CV_RegisterVar(&cv_tpsrate);
+	CV_RegisterVar(&cv_tsourdt3rd_video_showtps);
 	CV_RegisterVar(&cv_tpscountercolor);
 
 	CV_RegisterVar(&cv_allowtypicaltimeover);
 	CV_RegisterVar(&cv_pausegraphicstyle);
 	CV_RegisterVar(&cv_automapoutsidedevmode);
 
-	CV_RegisterVar(&cv_soniccd);
+	CV_RegisterVar(&cv_tsourdt3rd_game_soniccd);
+
+	// Controls
+	CV_RegisterVar(&cv_tsourdt3rd_ctrl_drrr_rumble[0]);
+	CV_RegisterVar(&cv_tsourdt3rd_ctrl_drrr_rumble[1]);
 
 	// Audio
-	CV_RegisterVar(&cv_watermuffling);
+	CV_RegisterVar(&cv_tsourdt3rd_audio_watermuffling);
 
 	CV_RegisterVar(&cv_vapemode);
 
@@ -1005,12 +1017,12 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_alwaysoverlayinvuln);
 
 	// Savefiles
-	CV_RegisterVar(&cv_storesavesinfolders);
+	CV_RegisterVar(&cv_tsourdt3rd_savefiles_storesavesinfolders);
 
-	CV_RegisterVar(&cv_perfectsave);
-	CV_RegisterVar(&cv_perfectsavestripe1);
-	CV_RegisterVar(&cv_perfectsavestripe2);
-	CV_RegisterVar(&cv_perfectsavestripe3);
+	CV_RegisterVar(&cv_tsourdt3rd_savefiles_perfectsave);
+	CV_RegisterVar(&cv_tsourdt3rd_savefiles_perfectsavestripe1);
+	CV_RegisterVar(&cv_tsourdt3rd_savefiles_perfectsavestripe2);
+	CV_RegisterVar(&cv_tsourdt3rd_savefiles_perfectsavestripe3);
 
 	CV_RegisterVar(&cv_continues);
 
@@ -1029,6 +1041,9 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_customwindowtitle);
 	
 	CV_RegisterVar(&cv_memesonwindowtitle);
+
+	// Debugging
+	CV_RegisterVar(&cv_tsourdt3rd_debug_drrr_virtualkeyboard);
 	// THE STAR VARS ARE COMPLETE! //
 
 	// add cheat commands
@@ -1353,23 +1368,39 @@ static void ForceAllSkins(INT32 forcedskin)
 
 static INT32 snacpending = 0, snac2pending = 0, chmappending = 0;
 
+static void SetSkinLocal(INT32 playernum, INT32 skinnum)
+{
+	if (metalrecording && playernum == consoleplayer)
+	{
+		// Starring Metal Sonic as themselves, obviously.
+		SetPlayerSkinByNum(playernum, 5);
+		return;
+	}
+
+	if (skinnum != -1 && R_SkinUsable(playernum, skinnum))
+		SetPlayerSkinByNum(playernum, skinnum);
+	else
+		SetPlayerSkinByNum(playernum, GetPlayerDefaultSkin(playernum));
+}
+
+static void SetColorLocal(INT32 playernum, UINT16 color)
+{
+	players[playernum].skincolor = color;
+
+	if (players[playernum].mo && !players[playernum].powers[pw_dye])
+		players[playernum].mo->color = P_GetPlayerColor(&players[playernum]);
+
+	G_SetPlayerGamepadIndicatorToPlayerColor(playernum); // STAR STUFF: fun controller light junk //
+}
+
 // name, color, or skin has changed
 //
 static void SendNameAndColor(void)
 {
-	char buf[MAXPLAYERNAME+6];
+	char buf[MAXPLAYERNAME+7];
 	char *p;
 
 	p = buf;
-
-	// normal player colors
-	if (G_GametypeHasTeams())
-	{
-		if (players[consoleplayer].ctfteam == 1 && cv_playercolor.value != skincolor_redteam)
-			CV_StealthSetValue(&cv_playercolor, skincolor_redteam);
-		else if (players[consoleplayer].ctfteam == 2 && cv_playercolor.value != skincolor_blueteam)
-			CV_StealthSetValue(&cv_playercolor, skincolor_blueteam);
-	}
 
 	// don't allow inaccessible colors
 	if (!skincolors[cv_playercolor.value].accessible)
@@ -1401,50 +1432,15 @@ static void SendNameAndColor(void)
 	// If you're not in a netgame, merely update the skin, color, and name.
 	if (!netgame)
 	{
-		INT32 foundskin;
-
 		CleanupPlayerName(consoleplayer, cv_playername.zstring);
 		strcpy(player_names[consoleplayer], cv_playername.zstring);
 
-		players[consoleplayer].skincolor = cv_playercolor.value;
+		SetColorLocal(consoleplayer, cv_playercolor.value);
 
-		if (players[consoleplayer].mo && !players[consoleplayer].powers[pw_dye])
-			players[consoleplayer].mo->color = players[consoleplayer].skincolor;
-
-		if (metalrecording)
-		{ // Starring Metal Sonic as themselves, obviously.
-			SetPlayerSkinByNum(consoleplayer, 5);
-			CV_StealthSet(&cv_skin, skins[5].name);
-		}
-		else if ((foundskin = R_SkinAvailable(cv_skin.string)) != -1 && R_SkinUsable(consoleplayer, foundskin))
-		{
-			//boolean notsame;
-
-			cv_skin.value = foundskin;
-
-			//notsame = (cv_skin.value != players[consoleplayer].skin);
-
-			SetPlayerSkin(consoleplayer, cv_skin.string);
-			CV_StealthSet(&cv_skin, skins[cv_skin.value].name);
-
-			/*if (notsame)
-			{
-				CV_StealthSetValue(&cv_playercolor, skins[cv_skin.value].prefcolor);
-
-				players[consoleplayer].skincolor = cv_playercolor.value % numskincolors;
-
-				if (players[consoleplayer].mo)
-					players[consoleplayer].mo->color = (UINT16)players[consoleplayer].skincolor;
-			}*/
-		}
+		if (splitscreen || (!pickedchar && stricmp(cv_skin.string, skins[consoleplayer].name) != 0))
+			SetSkinLocal(consoleplayer, R_SkinAvailable(cv_skin.string));
 		else
-		{
-			cv_skin.value = players[consoleplayer].skin;
-			CV_StealthSet(&cv_skin, skins[players[consoleplayer].skin].name);
-			// will always be same as current
-			SetPlayerSkin(consoleplayer, cv_skin.string);
-		}
-
+			SetSkinLocal(consoleplayer, pickedchar);
 		return;
 	}
 
@@ -1460,10 +1456,6 @@ static void SendNameAndColor(void)
 		CV_StealthSet(&cv_playername, player_names[consoleplayer]);
 	else // Cleanup name if changing it
 		CleanupPlayerName(consoleplayer, cv_playername.zstring);
-
-	// Don't change skin if the server doesn't want you to.
-	if (!CanChangeSkin(consoleplayer))
-		CV_StealthSet(&cv_skin, skins[players[consoleplayer].skin].name);
 
 	// check if player has the skin loaded (cv_skin may have
 	// the name of a skin that was available in the previous game)
@@ -1496,16 +1488,6 @@ static void SendNameAndColor2(void)
 	else // HACK
 		secondplaya = 1;
 
-	// normal player colors
-	if (G_GametypeHasTeams())
-	{
-		if (players[secondplaya].ctfteam == 1 && cv_playercolor2.value != skincolor_redteam)
-			CV_StealthSetValue(&cv_playercolor2, skincolor_redteam);
-		else if (players[secondplaya].ctfteam == 2 && cv_playercolor2.value != skincolor_blueteam)
-			CV_StealthSetValue(&cv_playercolor2, skincolor_blueteam);
-	}
-
-	// don't allow inaccessible colors
 	if (!skincolors[cv_playercolor2.value].accessible)
 	{
 		if (players[secondplaya].skincolor && skincolors[players[secondplaya].skincolor].accessible)
@@ -1527,63 +1509,24 @@ static void SendNameAndColor2(void)
 	if (!Playing())
 		return;
 
-	// If you're not in a netgame, merely update the skin, color, and name.
 	if (botingame)
 	{
-		players[secondplaya].skincolor = botcolor;
-		if (players[secondplaya].mo && !players[secondplaya].powers[pw_dye])
-			players[secondplaya].mo->color = players[secondplaya].skincolor;
-
+		SetColorLocal(secondplaya, botcolor);
 		SetPlayerSkinByNum(secondplaya, botskin-1);
 		return;
 	}
 	else if (!netgame)
 	{
-		INT32 foundskin;
-
+		// If you're not in a netgame, merely update the skin, color, and name.
 		CleanupPlayerName(secondplaya, cv_playername2.zstring);
 		strcpy(player_names[secondplaya], cv_playername2.zstring);
 
-		// don't use secondarydisplayplayer: the second player must be 1
-		players[secondplaya].skincolor = cv_playercolor2.value;
-		if (players[secondplaya].mo && !players[secondplaya].powers[pw_dye])
-			players[secondplaya].mo->color = players[secondplaya].skincolor;
+		SetColorLocal(secondplaya, cv_playercolor2.value);
 
-		if (cv_forceskin.value >= 0 && (netgame || multiplayer)) // Server wants everyone to use the same player
-		{
-			const INT32 forcedskin = cv_forceskin.value;
-
-			SetPlayerSkinByNum(secondplaya, forcedskin);
-			CV_StealthSet(&cv_skin2, skins[forcedskin].name);
-		}
-		else if ((foundskin = R_SkinAvailable(cv_skin2.string)) != -1 && R_SkinUsable(secondplaya, foundskin))
-		{
-			//boolean notsame;
-
-			cv_skin2.value = foundskin;
-
-			//notsame = (cv_skin2.value != players[secondplaya].skin);
-
-			SetPlayerSkin(secondplaya, cv_skin2.string);
-			CV_StealthSet(&cv_skin2, skins[cv_skin2.value].name);
-
-			/*if (notsame)
-			{
-				CV_StealthSetValue(&cv_playercolor2, skins[players[secondplaya].skin].prefcolor);
-
-				players[secondplaya].skincolor = cv_playercolor2.value % numskincolors;
-
-				if (players[secondplaya].mo)
-					players[secondplaya].mo->color = players[secondplaya].skincolor;
-			}*/
-		}
+		if (cv_forceskin.value >= 0)
+			SetSkinLocal(secondplaya, cv_forceskin.value);
 		else
-		{
-			cv_skin2.value = players[secondplaya].skin;
-			CV_StealthSet(&cv_skin2, skins[players[secondplaya].skin].name);
-			// will always be same as current
-			SetPlayerSkin(secondplaya, cv_skin2.string);
-		}
+			SetSkinLocal(secondplaya, R_SkinAvailable(cv_skin2.string));
 		return;
 	}
 
@@ -4035,18 +3978,7 @@ static void Command_Version_f(void)
 #endif
 
 	// OS
-	// Would be nice to use SDL_GetPlatform for this
-#if defined (_WIN32) || defined (_WIN64)
-	CONS_Printf("Windows ");
-#elif defined(__linux__)
-	CONS_Printf("Linux ");
-#elif defined(MACOSX)
-	CONS_Printf("macOS ");
-#elif defined(UNIXCOMMON)
-	CONS_Printf("Unix (Common) ");
-#else
-	CONS_Printf("Unknown/Other OS ");
-#endif
+	CONS_Printf("%s ", I_GetSysName());
 
 	// Bitness
 	if (sizeof(void*) == 4)
@@ -5009,49 +4941,77 @@ static void Name2_OnChange(void)
 		SendNameAndColor2();
 }
 
+static boolean Skin_CanChange(const char *valstr)
+{
+	(void)valstr;
+
+	if (!Playing())
+		return true; // do whatever you want
+
+	if (!(multiplayer || netgame)) // In single player.
+		return true;
+
+	// STAR STUFF: let us move and change skins and junk //
+	if (TSoURDt3rd_P_MovingPlayerSetup(consoleplayer))
+		return true;
+	// DONE! //
+
+	if (CanChangeSkin(consoleplayer) && !P_PlayerMoving(consoleplayer))
+		return true;
+	else
+	{
+		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));
+		return false;
+	}
+}
+
+static boolean Skin2_CanChange(const char *valstr)
+{
+	(void)valstr;
+
+	if (!Playing() || !splitscreen)
+		return true; // do whatever you want
+
+	// STAR STUFF: let the other player move and change skins and junk too //
+	if (TSoURDt3rd_P_MovingPlayerSetup(secondarydisplayplayer))
+		return true;
+	// DONE! //
+
+	if (CanChangeSkin(secondarydisplayplayer) && !P_PlayerMoving(secondarydisplayplayer))
+		return true;
+	else
+	{
+		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));
+		return false;
+	}
+}
+
 /** Sends a skin change for the console player, unless that player is moving.
   * \sa cv_skin, Skin2_OnChange, Color_OnChange
   * \author Graue <graue@oceanbase.org>
   */
 static void Skin_OnChange(void)
 {
+	pickedchar = R_SkinAvailable(cv_skin.string);
+
 	if (!Playing())
-		return; // do whatever you want
+		return;
 
-	if (!(cv_debug || devparm) && !(multiplayer || netgame) // In single player.
+	if (!(multiplayer || netgame)) // In single player.
+	{
+		if (!(cv_debug || devparm)
 		&& (gamestate != GS_WAITINGPLAYERS)) // allows command line -warp x +skin y
-	{
-		CV_StealthSet(&cv_skin, skins[players[consoleplayer].skin].name);
-		return;
-	}
-
-	// STAR NOTE: No Cheating in Race-Type Modes
-	if (gametyperules & GTR_RACE && (cv_movingplayersetup.value && P_PlayerMoving(consoleplayer)))
-	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, M_GetText("You can't change your skin at the moment. Nice try, %s.\n"), TSoURDt3rd_ReturnUsername());
-		CV_StealthSet(&cv_skin, skins[players[consoleplayer].skin].name);
-		return;
-	}
-
-	// STAR NOTE: i was here lol
-	if (CanChangeSkin(consoleplayer) && STAR_CanPlayerMoveAndChangeSkin(consoleplayer))
-	{
-		SendNameAndColor();
-
-		if (P_PlayerMoving(consoleplayer))
 		{
-			player_t *player = &players[consoleplayer];
-			P_ResetPlayer(player);
-
-			if (netgame)
-				NetUpdate(); // update the player
+			CV_StealthSet(&cv_skin, skins[players[consoleplayer].skin].name);
+			return;
 		}
+
+		// Just do it here if devmode is enabled
+		SetSkinLocal(consoleplayer, R_SkinAvailable(cv_skin.string));
+		return;
 	}
-	else
-	{
-		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));
-		CV_StealthSet(&cv_skin, skins[players[consoleplayer].skin].name);
-	}
+
+	SendNameAndColor();
 
 #ifdef HAVE_SDL
 	if (cv_windowtitletype.value == 1)
@@ -5067,32 +5027,9 @@ static void Skin_OnChange(void)
 static void Skin2_OnChange(void)
 {
 	if (!Playing() || !splitscreen)
-		return; // do whatever you want
-
-	// STAR NOTE: No Cheating in Race-Type Modes 2
-	if (gametyperules & GTR_RACE && (cv_movingplayersetup.value && P_PlayerMoving(secondarydisplayplayer)))
-	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, M_GetText("You can't change your skin at the moment. Nice try, %s's friend.\n"), TSoURDt3rd_ReturnUsername());
-		CV_StealthSet(&cv_skin2, skins[players[secondarydisplayplayer].skin].name);
 		return;
-	}
 
-	// STAR NOTE: i was here lol 2
-	if (CanChangeSkin(secondarydisplayplayer) && STAR_CanPlayerMoveAndChangeSkin(secondarydisplayplayer))
-	{
-		SendNameAndColor2();
-
-		if (P_PlayerMoving(secondarydisplayplayer))
-		{
-			player_t *player = &players[secondarydisplayplayer];
-			P_ResetPlayer(player); // update the second player
-		}
-	}
-	else
-	{
-		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));
-		CV_StealthSet(&cv_skin2, skins[players[secondarydisplayplayer].skin].name);
-	}
+	SendNameAndColor2();
 }
 
 /** Sends a color change for the console player, unless that player is moving.
@@ -5101,21 +5038,27 @@ static void Skin2_OnChange(void)
   */
 static void Color_OnChange(void)
 {
-	if (!Playing()) {
+	if (!Playing())
+	{
 		if (!cv_playercolor.value || !skincolors[cv_playercolor.value].accessible)
 			CV_StealthSetValue(&cv_playercolor, lastgoodcolor);
 	}
 	else
 	{
-		if (!(cv_debug || devparm) && !(multiplayer || netgame)) // In single player.
+		if (!(multiplayer || netgame)) // In single player.
 		{
-			CV_StealthSet(&cv_skin, skins[players[consoleplayer].skin].name);
+			// Just do it here if devmode is enabled
+			if (cv_debug || devparm)
+				SetColorLocal(consoleplayer, cv_playercolor.value);
 			return;
 		}
 
-		// STAR NOTE: i was here :)
-		if ((cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(consoleplayer)))
-			&& (skincolors[players[consoleplayer].skincolor].accessible == true))	
+#if 0
+		if (!P_PlayerMoving(consoleplayer) && skincolors[players[consoleplayer].skincolor].accessible == true)
+#else
+		// STAR STUFF: let me take over from here //
+		if (TSoURDt3rd_P_MovingPlayerSetup(consoleplayer) && skincolors[players[consoleplayer].skincolor].accessible == true)
+#endif
 		{
 			// Color change menu scrolling fix is no longer necessary
 			SendNameAndColor();
@@ -5128,7 +5071,7 @@ static void Color_OnChange(void)
 	}
 	lastgoodcolor = cv_playercolor.value;
 
-	G_SetPlayerGamepadIndicatorToPlayerColor(consoleplayer); // STAR STUFF: fun controller junk //
+	G_SetPlayerGamepadIndicatorToPlayerColor(0); // STAR STUFF: does fun controller light junk //
 }
 
 /** Sends a color change for the secondary splitscreen player, unless that
@@ -5145,9 +5088,12 @@ static void Color2_OnChange(void)
 	}
 	else
 	{
-		// STAR NOTE: i was here 2 :)
-		if ((cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(secondarydisplayplayer)))
-			&& (skincolors[players[secondarydisplayplayer].skincolor].accessible == true))
+#if 0
+		if (!P_PlayerMoving(secondarydisplayplayer) && skincolors[players[secondarydisplayplayer].skincolor].accessible == true)
+#else
+		// STAR STUFF: let me take over from here too //
+		if (TSoURDt3rd_P_MovingPlayerSetup(secondarydisplayplayer) && skincolors[players[secondarydisplayplayer].skincolor].accessible == true)
+#endif
 		{
 			// Color change menu scrolling fix is no longer necessary
 			SendNameAndColor2();
@@ -5160,7 +5106,7 @@ static void Color2_OnChange(void)
 	}
 	lastgoodcolor2 = cv_playercolor2.value;
 
-	G_SetPlayerGamepadIndicatorToPlayerColor(1); // STAR STUFF: fun controller junk (part 2) //
+	G_SetPlayerGamepadIndicatorToPlayerColor(1); // STAR STUFF: our fun splitscreen controller junk //
 }
 
 /** Displays the result of the chat being muted or unmuted.

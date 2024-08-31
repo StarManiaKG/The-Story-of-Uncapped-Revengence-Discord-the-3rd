@@ -1601,7 +1601,7 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		if (spr->mobj->skin && spr->mobj->sprite == SPR_PLAY)
 			sprdef = &((skin_t *)spr->mobj->skin)->sprites[spr->mobj->sprite2];
 		else
-			sprdef = sprites[spr->mobj->sprite];
+			sprdef = &sprites[spr->mobj->sprite];
 
 		sprframe = &sprdef->spriteframes[spr->mobj->frame & FF_FRAMEMASK];
 

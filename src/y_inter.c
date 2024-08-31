@@ -46,7 +46,8 @@
 
 // STAR STUFF //
 #include "STAR/star_vars.h" // TSoURDt3rd_DetermineLevelMusic() //
-#include "STAR/smkg-cvars.h" // cv_storesavesinfolders //
+#include "STAR/smkg-cvars.h" // cv_tsourdt3rd_savefiles_storesavesinfolders //
+#include "STAR/smkg-jukebox.h"
 #include "STAR/ss_main.h" // SAVEGAMEFOLDER //
 
 #include "deh_soc.h"
@@ -981,7 +982,7 @@ void Y_IntermissionDrawer(void)
 		}
 	}
 
-	ST_drawJukebox(); // STAR STUFF: render the jukebox please //
+	TSoURDt3rd_Jukebox_ST_drawJukebox(); // STAR STUFF: render the jukebox please //
 
 skiptallydrawer:
 	if (!LUA_HudEnabled(hud_intermissionmessages))
@@ -1011,7 +1012,7 @@ void Y_Ticker(void)
 		return;
 
 	// STAR STUFF //
-	if (cv_storesavesinfolders.value)
+	if (cv_tsourdt3rd_savefiles_storesavesinfolders.value)
 	{
 		I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER, srb2home), 0755);
 		if (TSoURDt3rd_useAsFileName)

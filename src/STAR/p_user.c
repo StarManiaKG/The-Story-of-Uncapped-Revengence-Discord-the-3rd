@@ -11,7 +11,7 @@
 
 #include "star_vars.h"
 
-#include "smkg-cvars.h" // cv_watermuffling, cv_allowtypicaltimeover, & TSOURDT3RD_TIMELIMIT //
+#include "smkg-cvars.h" // cv_tsourdt3rd_audio_watermuffling, cv_allowtypicaltimeover, & TSOURDT3RD_TIMELIMIT //
 #include "smkg-i_sys.h" // TSoURDt3rd_I_CursedWindowMovement() //
 
 #include "ss_main.h" // STAR_CONS_Printf() //
@@ -45,23 +45,38 @@ static INT32 prev_musicvolume, prev_sfxvolume;
 // ------------------------ //
 
 //
-// void TSoURDt3rd_PlayerThink(player_t *player)
+// boolean TSoURDt3rd_P_MovingPlayerSetup(INT32 playernum)
+//
+// Checks if the player is allowed to move and change their skin at the same time.
+// Returns true if so, false otherwise.
+//
+boolean TSoURDt3rd_P_MovingPlayerSetup(INT32 playernum)
+{
+	if (!CanChangeSkin(playernum))
+		return false;
+	if ((gametyperules & GTR_RACE) && P_PlayerMoving(playernum))
+		return false;
+	return (cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(playernum)));
+}
+
+//
+// void TSoURDt3rd_P_PlayerThink(void)
 // Controls many new features that TSoURDt3rd allows for its players.
 //
-void TSoURDt3rd_PlayerThink(player_t *player)
+void TSoURDt3rd_P_PlayerThink(void)
 {
-	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer];
-	player = &players[displayplayer];
-
+	player_t *splayer = &players[displayplayer];
+	mobj_t *smo = NULL;
 	static boolean alreadyInWater;
 
-	if (!TSoURDt3rd || !player || !player->mo)
+	if (!tsourdt3rd_global_jukebox || !splayer)
 		return;
+	smo = splayer->mo;
 
 	// Water muffling
-	if (!TSoURDt3rd->jukebox.curtrack && cv_watermuffling.value)
+	if (!tsourdt3rd_global_jukebox->curtrack && cv_tsourdt3rd_audio_watermuffling.value)
 	{
-		if ((player->mo->eflags & MFE_UNDERWATER) && !alreadyInWater)
+		if ((smo->eflags & MFE_UNDERWATER) && !alreadyInWater)
 		{
 			prev_musicspeed = S_GetSpeedMusic()-TSOURDT3RD_MUFFLEINT;
 			prev_musicpitch = S_GetPitchMusic()-TSOURDT3RD_MUFFLEINT;
@@ -76,7 +91,7 @@ void TSoURDt3rd_PlayerThink(player_t *player)
 				S_SetInternalMusicVolume(prev_musicvolume);
 			S_SetInternalSfxVolume(prev_sfxvolume);
 		}
-		else if (!(player->mo->eflags & MFE_UNDERWATER) && alreadyInWater)
+		else if (!(smo->eflags & MFE_UNDERWATER) && alreadyInWater)
 		{
 			S_SpeedMusic(prev_musicspeed+TSOURDT3RD_MUFFLEINT);
 			S_PitchMusic(prev_musicpitch+TSOURDT3RD_MUFFLEINT);
@@ -86,15 +101,15 @@ void TSoURDt3rd_PlayerThink(player_t *player)
 			S_SetInternalSfxVolume(prev_sfxvolume*3);
 		}
 
-		alreadyInWater = (player->mo->eflags & MFE_UNDERWATER);
+		alreadyInWater = (smo->eflags & MFE_UNDERWATER);
 	}
 }
 
 #undef TSOURDT3RD_MUFFLEINT
 
-#if 0
+#if 1
 // STAR NOTE: TODO: come back //
-#include "drrr/kg_input.h" // G_PlayerDeviceRumble() //
+#include "drrr/kg_input.h" // TSoURDt3rd_Pads_G_PlayerDeviceRumble() //
 
 static inline void P_DeviceRumbleTick(void)
 {
@@ -103,7 +118,6 @@ static inline void P_DeviceRumbleTick(void)
 	for (i = 0; i <= MAXPLAYERS; i++)
 	{
 		player_t *player = &players[i];
-
 		UINT16 low = 0;
 		UINT16 high = 0;
 
@@ -129,12 +143,20 @@ static inline void P_DeviceRumbleTick(void)
 #else
 			if (player->powers[pw_sneakers])
 			{
-				low = high = 65536 / (3+player->powers[pw_sneakers]);
+				low = high += FRACUNIT * (3+player->powers[pw_sneakers]);
+			}
+			if (player->mo->state-states == S_PLAY_PAIN || player->mo->state-states == S_PLAY_DEAD)
+			{
+				low = high += FRACUNIT / 6;
+			}
+			if ((player->pflags & PF_GLIDING) && (player->mo->eflags & MFE_JUSTHITFLOOR))
+			{
+				low = high += FRACUNIT / 32;
 			}
 #endif
 		}
 
-		G_PlayerDeviceRumble(i, low, high);
+		TSoURDt3rd_Pads_G_PlayerDeviceRumble(player, low, high);
 	}
 }
 #endif
@@ -145,9 +167,9 @@ static inline void P_DeviceRumbleTick(void)
 //
 void TSoURDt3rd_P_Ticker(void)
 {
-	INT32 i, j;
+	INT32 i, skin;
 
-	for (i = 0, j = 0; i < MAXPLAYERS; i++)
+	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i] || players[i].spectator)
 			continue;
@@ -170,27 +192,27 @@ void TSoURDt3rd_P_Ticker(void)
 			if (strstr(skins[player->skin].name, "sonic"))
 				continue;
 
-			for (j = MAXSKINS-1; j > 0; j++)
+			for (skin = MAXSKINS-1; skin > 0; skin++)
 			{
-				if (skins[j].name[0] != '\0' && R_SkinUsable(-1, j))
+				if (skins[skin].name[0] != '\0' && R_SkinUsable(-1, skin))
 					break;
 			}
 
-			SetPlayerSkinByNum(i, j);
+			SetPlayerSkinByNum(i, skin);
 			if (P_IsLocalPlayer(player))
 			{
 				if (splitscreen && i == 1)
 				{
 					STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "Your friend can't play as Sonic either, he's gone.\n");
-					CV_StealthSet(&cv_skin2, skins[j].name);
+					CV_StealthSet(&cv_skin2, skins[skin].name);
 				}
 				else
 				{
 					STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "You can't play as Sonic, he's dead.\n");
-					CV_StealthSet(&cv_skin, skins[j].name);
+					CV_StealthSet(&cv_skin, skins[skin].name);
 				}
 
-				if (strstr(skins[j].name, "sonic") || strstr(skins[j].realname, "Sonic"))
+				if (strstr(skins[skin].name, "sonic") || strstr(skins[skin].realname, "Sonic"))
 				{
 					STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "But no skin other than sonic found was found, so uh..............\n\tI guess you're now legally distinct Sonic then!\n");
 					player->skincolor = SKINCOLOR_WHITE;
@@ -199,10 +221,16 @@ void TSoURDt3rd_P_Ticker(void)
 		}
 	}
 
+	// Quaking
 	if (quake.time)
 	{
-		// Quaking
 		TSoURDt3rd_I_CursedWindowMovement(FixedInt(quake.x), FixedInt(quake.y));
+	}
+
+	// Apply rumble to local players
+	if (!demoplayback)
+	{
+		P_DeviceRumbleTick();
 	}
 }
 
@@ -229,7 +257,7 @@ boolean TSoURDt3rd_P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *sourc
 			strncpy(mapmusname, TSoURDt3rd_DetermineLevelMusic(), 7);
 			mapmusname[6] = 0;
 
-			if (TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack)
+			if (tsourdt3rd_global_jukebox->curtrack)
 				return false;
 
 			S_ChangeMusicEx(mapmusname, mapmusflags, true, TSoURDt3rd_PinchMusicPosition(), 0, 0);
@@ -249,15 +277,36 @@ boolean TSoURDt3rd_P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *sourc
 //
 boolean TSoURDt3rd_P_SuperReady(player_t *player)
 {
-	if (player->powers[pw_super])
-		return false;
-
-	if (!player->rings)
-		return false;
-
 	if (TSoURDt3rd_AprilFools_ModeEnabled())
 		return true;
-	else if (TSoURDt3rd_Easter_AllEggsCollected() && ALL7EMERALDS(emeralds))
+	else if (TSoURDt3rd_Easter_AllEggsCollected() && EnableEasterEggHuntBonuses && ALL7EMERALDS(emeralds) && !netgame)
+	{
+		if (gametyperules & GTR_POWERSTONES)
+		{
+			if (players[consoleplayer].powers[pw_emeralds] != 127)
+				players[consoleplayer].powers[pw_emeralds] = ((EMERALD7)*2)-1;
+		}
+		else
+		{
+			if (emeralds != 127)
+				emeralds = ((EMERALD7)*2)-1;
+		}
+
+		if (!(player->charflags & SF_SUPER))
+			player->charflags += SF_SUPER;
+
+		return true;
+	}
+
+	if (!player->powers[pw_super]
+	&& ((cv_shieldblockstransformation.value && !player->powers[pw_invulnerability]) || (!cv_shieldblockstransformation.value))
+	&& !player->powers[pw_tailsfly]
+	&& (player->charflags & SF_SUPER)
+	&& (player->pflags & PF_JUMPED)
+	&& ((!(player->powers[pw_shield] & SH_NOSTACK) && cv_shieldblockstransformation.value) || (!cv_shieldblockstransformation.value))
+	&& !(maptol & TOL_NIGHTS)
+	&& ALL7EMERALDS(emeralds)
+	&& (player->rings >= 50))
 		return true;
 
 	return false;

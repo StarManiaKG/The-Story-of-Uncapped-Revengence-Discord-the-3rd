@@ -12,6 +12,7 @@
 #ifndef __SMKG_G_INPUTS__
 #define __SMKG_G_INPUTS__
 
+#include "../d_ticcmd.h"
 #include "../g_input.h"
 
 // ------------------------ //
@@ -36,5 +37,10 @@ boolean STAR_G_KeyPressed(UINT8 player, UINT8 key);
 boolean STAR_G_KeyHeld(UINT8 player, UINT8 key);
 
 void STAR_G_DefineDefaultControls(void);
+
+void TSoURDt3rd_D_ProcessEvents(void);
+
+boolean TSoURDt3rd_G_MapEventsToControls(event_t *ev);
+boolean TSoURDt3rd_G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer);
 
 #endif // __SMKG_G_INPUTS__

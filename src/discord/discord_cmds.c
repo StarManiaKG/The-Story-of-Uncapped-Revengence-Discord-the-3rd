@@ -11,14 +11,15 @@
 /// \file  discord_cmds.c
 /// \brief Discord Rich Presence commands and data functions
 
+#include "discord.h"
+
+#include "../STAR/star_vars.h" // TSoURDt3rd structure //
+
 #include "../d_netcmd.h"
 #include "../g_game.h"
 #include "../byteptr.h"
-#include "../STAR/star_vars.h" // TSoURDt3rd structure //
 
 #ifdef HAVE_DISCORDSUPPORT
-
-#include "discord.h"
 
 // ------------------------ //
 //        Variables
@@ -271,6 +272,12 @@ consvar_t cv_discordcustom_imagetext_small = CVAR_INIT ("discordcustom_imagetext
 // ------------------------ //
 
 #ifdef HAVE_DISCORDSUPPORT
+/*--------------------------------------------------
+	static void DRPC_CheckStringLen(void)
+
+		Checks the discord custom text strings at game startup, to
+		ensure that the strings have a long enough length.
+--------------------------------------------------*/
 static void DRPC_CheckStringLen(void)
 {
 	consvar_t *custom_cvartyping_index[] = {
@@ -285,7 +292,7 @@ static void DRPC_CheckStringLen(void)
 	{
 		if (!custom_cvartyping_index[i] || !CV_FindVar(custom_cvartyping_index[i]->name))
 			continue;
-		if (custom_cvartyping_index[i]->string == NULL || custom_cvartyping_index[i]->string[0] == '\0')
+		if (!custom_cvartyping_index[i]->string || *custom_cvartyping_index[i]->string == '\0')
 			continue;
 
 		if (strlen(custom_cvartyping_index[i]->string) < 2)
@@ -294,6 +301,11 @@ static void DRPC_CheckStringLen(void)
 }
 #endif
 
+/*--------------------------------------------------
+	void Joinable_OnChange(void)
+
+		Grabs Discord presence info and packets in netgames.
+--------------------------------------------------*/
 void Joinable_OnChange(void)
 {
 	UINT8 buf[3];
@@ -312,6 +324,12 @@ void Joinable_OnChange(void)
 	SendNetXCmd(XD_DISCORD, &buf, 3);
 }
 
+/*--------------------------------------------------
+	void Got_DiscordInfo(void)
+
+		Updates Discord presence info based on packets
+		received from servers.
+--------------------------------------------------*/
 void Got_DiscordInfo(UINT8 **cp, INT32 playernum)
 {
 	if (playernum != serverplayer /*&& !IsPlayerAdmin(playernum)*/)

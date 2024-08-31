@@ -27,6 +27,9 @@
 #include "win_dbg.h"
 #include "../m_argv.h" //print the parameter in the log
 
+// TSoURDt3rd
+#include "../STAR/star_vars.h" // TSOURDT3RDVERSIONSTRING //
+
 LPTOP_LEVEL_EXCEPTION_FILTER prevExceptionFilter = NULL;
 
 #ifdef BUGTRAP

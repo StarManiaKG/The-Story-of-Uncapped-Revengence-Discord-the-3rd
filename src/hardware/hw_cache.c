@@ -274,7 +274,6 @@ static void HWR_DrawFlippedColumnInCache(const column_t *patchcol, UINT8 *block,
 	}
 }
 
-
 // Simplified patch caching function
 // for use by sprites and other patches that are not part of a wall texture
 // no alpha or flipping should be present since we do not want non-texture graphics to have them
@@ -385,14 +384,6 @@ static void HWR_DrawTexturePatchInCache(GLMipmap_t *mipmap,
 
 	col = x * pblockwidth / texture->width;
 	ncols = ((x2 - x) * pblockwidth) / texture->width;
-
-/*
-	CONS_Debug(DBG_RENDER, "patch %dx%d texture %dx%d block %dx%d\n",
-															width, height,
-															texture->width,          texture->height,
-															pblockwidth,             pblockheight);
-	CONS_Debug(DBG_RENDER, "      col %d ncols %d x %d\n", col, ncols, x);
-*/
 
 	// source advance
 	xfrac = 0;
@@ -773,7 +764,7 @@ void HWR_LoadMapTextures(size_t pnumtextures)
 	gl_textures = calloc(gl_numtextures, sizeof(*gl_textures));
 	gl_flats = calloc(gl_numtextures, sizeof(*gl_flats));
 
-	if ((gl_textures == NULL) || (gl_flats == NULL))
+	if (gl_textures == NULL || gl_flats == NULL)
 		I_Error("HWR_LoadMapTextures: ran out of memory for OpenGL textures");
 
 	gl_maptexturesloaded = true;
@@ -809,7 +800,7 @@ GLMapTexture_t *HWR_GetTexture(INT32 tex)
 	return grtex;
 }
 
-static void HWR_CacheFlat(GLMipmap_t *grMipmap, lumpnum_t flatlumpnum)
+static void HWR_CacheRawFlat(GLMipmap_t *grMipmap, lumpnum_t flatlumpnum)
 {
 	size_t size = W_LumpLength(flatlumpnum);
 	UINT16 pflatsize = R_GetFlatSize(size);
@@ -857,7 +848,7 @@ void HWR_GetRawFlat(lumpnum_t flatlumpnum)
 	patch = HWR_GetCachedGLPatch(flatlumpnum);
 	grmip = ((GLPatch_t *)Patch_AllocateHardwarePatch(patch))->mipmap;
 	if (!grmip->downloaded && !grmip->data)
-		HWR_CacheFlat(grmip, flatlumpnum);
+		HWR_CacheRawFlat(grmip, flatlumpnum);
 
 	// If hardware does not have the texture, then call pfnSetTexture to upload it
 	if (!grmip->downloaded)

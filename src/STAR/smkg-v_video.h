@@ -30,10 +30,4 @@
 #define V_FPSCOLORMAP  (cv_fpscountercolor.value)
 #define V_TPSCOLORMAP  (cv_tpscountercolor.value)
 
-// ------------------------ //
-//        Functions
-// ------------------------ //
-
-void TSoURDt3rd_V_DrawLevelTitleAtFixed(fixed_t x, fixed_t y, INT32 option, const char *string);
-
 #endif // __SMKG_V_VIDEO__

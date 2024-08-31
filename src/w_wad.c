@@ -83,14 +83,13 @@
 #define O_BINARY 0
 #endif
 
-// STAR STUFF //
+// TSoURDt3rd
 #include "STAR/star_vars.h"
 #include "STAR/ss_main.h" // eastermode, aprilfoolsmode, xmasmode //
 
-#include "STAR/parser.h"
+#include "STAR/parser/smkg-script.h"
 
 #include "deh_soc.h"
-// END THAT //
 
 typedef struct
 {
@@ -1018,8 +1017,6 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 	// Read shaders from file
 	W_ReadFileShaders(wadfile);
 
-	TSoURDt3rd_checkedExtraWads = false; // STAR STUFF: AGAIN, AGAIN! //
-
 	// TODO: HACK ALERT - Load Lua & SOC stuff right here. I feel like this should be out of this place, but... Let's stick with this for now.
 	switch (wadfile->type)
 	{
@@ -1202,8 +1199,6 @@ UINT16 W_InitFolder(const char *path, boolean mainfile, boolean startup)
 	W_ReadFileShaders(wadfile);
 	W_LoadDehackedLumpsPK3(numwadfiles - 1, mainfile);
 	W_InvalidateLumpnumCache();
-
-	TSoURDt3rd_checkedExtraWads = false; // STAR STUFF: ok this is crazy //
 
 	return wadfile->numlumps;
 }

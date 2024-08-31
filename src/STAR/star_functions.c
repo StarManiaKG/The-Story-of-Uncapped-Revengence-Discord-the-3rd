@@ -9,21 +9,17 @@
 /// \file  star_functions.c
 /// \brief Contains all the Info Portraying to TSoURDt3rd's Variables and STAR Functions
 
-#ifdef HAVE_CURL
-#include <curl/curl.h>			// internet variables
-#include "../i_threads.h"		// multithreading variables
-#endif
-
-#include <signal.h>
-
 #include "star_vars.h" 			// star variables
 #include "ss_main.h"			// star variables 2
 #include "smkg-jukebox.h"		// star variables 3
 #include "m_menu.h"				// star variables 4
 #include "smkg_g_inputs.h"		// star variables 5
-#include "menus/smkg_m_func.h"	// star variables 6
+#include "menus/smkg_m_draw.h"	// star variables 6
+#include "menus/smkg_m_func.h"	// star variables 7
+#include "smkg-p_saveg.h"		// star variables 8
+#include "smkg-misc.h"          // star variables 9
 
-#include "drrr/k_menu.h"		// kart variables
+#include "drrr/k_menu.h"		// kart krew drrr variables
 
 #include "../i_system.h"
 #include "../doomdef.h"
@@ -46,10 +42,6 @@
 
 #include "../i_net.h"			// net variables
 
-#ifdef HAVE_CURL
-#include "../fastcmp.h"			// string variables
-#endif
-
 #ifdef HAVE_SDL
 #include "SDL.h"				// sdl variables
 #include "../sdl/sdlmain.h"		// sdl variables 2
@@ -64,15 +56,6 @@
 //			STAR FUNCTIONS		 	//
 //				YAY				 	//
 //////////////////////////////////////
-
-//// VARIABLES ////
-#ifdef HAVE_CURL
-char *hms_tsourdt3rd_api;
-
-#ifdef HAVE_THREADS
-static I_mutex hms_tsourdt3rd_api_mutex;
-#endif
-#endif
 
 //// STRUCTS ////
 TSoURDt3rd_t TSoURDt3rdPlayers[MAXPLAYERS];
@@ -137,7 +120,7 @@ TSoURDt3rdBossMusic_t *curBossMusic = NULL;
 TSoURDt3rdFinalBossMusic_t *curFinaleBossMusic = NULL;
 
 //// COMMANDS ////
-consvar_t cv_loadingscreen = CVAR_INIT ("loadingscreen", "Off", CV_SAVE|CV_CALL, CV_OnOff, STAR_LoadingScreen_OnChange);
+consvar_t cv_loadingscreen = CVAR_INIT ("loadingscreen", "Off", CV_SAVE, CV_OnOff, NULL);
 
 static CV_PossibleValue_t loadingscreenbackground_t[] = {
 	{0, "None"},
@@ -172,9 +155,6 @@ static CV_PossibleValue_t loadingscreenbackground_t[] = {
 	{0, NULL}};
 
 consvar_t cv_loadingscreenimage = CVAR_INIT ("loadingscreenimage", "Intermission", CV_SAVE, loadingscreenbackground_t, NULL);
-
-static CV_PossibleValue_t tsourdt3rdupdatemessage_t[] = {{0, "Off"}, {1, "Screen"}, {2, "Console"}, {0, NULL}};
-consvar_t cv_updatenotice = CVAR_INIT ("tsourdt3rdupdatenotice", "Screen", CV_SAVE|CV_CALL, tsourdt3rdupdatemessage_t, STAR_UpdateNotice_OnChange);
 
 static CV_PossibleValue_t vapemode_t[] = {{0, "Off"}, {1, "TSoURDt3rd"}, {2, "Sonic Mania Plus"}, {0, NULL}};
 consvar_t cv_vapemode = CVAR_INIT ("vapemode", "Off", CV_SAVE|CV_CALL, vapemode_t, TSoURDt3rd_ControlMusicEffects);
@@ -688,228 +668,20 @@ generalgametitles:
 #endif
 
 //
-// const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean coredumped)
-// Generates a Funny Crash Message Everytime TSoURDt3rd Crashes
-//
-const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean coredumped)
-{
-	// Make Variables //
-	const char *jokemsg;
-	char underscoremsg[256] = "";
-
-	size_t i;
-	size_t tabend;
-	size_t current, total;
-
-	// Creates a Random Seed, Generally Needed For Situations Where SRB2 Wasn't Able to Fully Start Up //
-	if (!M_RandomSeedFromOS())
-		M_RandomSeed((UINT32)time(NULL));
-	P_SetRandSeed(M_RandomizedSeed());
-
-	// Come up With a Random Funny Joke //
-	switch (M_RandomRange(0, 10))
-	{
-		// Static //
-		default: jokemsg = "Uh..."; break;
-		case 1: jokemsg = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAH!"; break;
-		case 2: jokemsg = "This will make the TSoURDt3rd Devs sad..."; break;
-		case 3: jokemsg = "This will make STJr sad..."; break;
-		case 4: jokemsg = "Sonic, what did you do this time?"; break;
-
-		// References //
-		// Sonic Adventure
-		case 5:
-		{
-			switch (M_RandomRange(0, 1))
-			{
-				case 1: jokemsg = "Watch out, you're gonna crash! AAAAH!"; break;
-				default: jokemsg = "OH NO!"; break;
-			}
-			break;
-		}
-
-		// Grand Theft Auto
-		case 6:
-		{
-			switch (M_RandomRange(0, 1))
-			{
-				case 1: jokemsg = "All you had to do, was not crash the game, Sonic!"; break;
-				default: jokemsg = "All we had to do, was follow the dang train, CJ!"; break;
-			}
-			break;
-		}
-
-		// Baldi's Basics
-		case 7: jokemsg = "OOPS! You messed up!"; break;
-
-		// Sonic Rush
-		case 8:
-		{
-			switch (M_RandomRange(0, 3))
-			{
-				case 1: jokemsg = "Should we try this again?"; break;
-				case 2: jokemsg = "Never get on my bad side!"; break;
-
-				case 3: jokemsg = "Feeling hounded and surrounded!"; break;
-				default: jokemsg = "Step by step."; break;
-			}
-			break;
-		}
-
-		// Parappa the Rapper
-		case 9:
-		{
-			switch (M_RandomRange(0, 3))
-			{
-				case 1:
-				{
-					switch (M_RandomRange(0, 6))
-					{
-						case 1: jokemsg = "I gotta, I gotta... No! I can't believe..."; break;
-						case 2: jokemsg = "Remember, you gotta believe!"; break;
-
-						case 3: jokemsg = "TSoURDt3rd cut a few corners but we didn't think it would be this bad..."; break;
-						case 4: jokemsg = "No cutting corners!"; break;
-
-						case 5: jokemsg = "Oops!"; break;
-						case 6: jokemsg = "Uh oh!"; break;
-
-						default: jokemsg = "\t\t\tTRY AGAIN!!\n\n\t\t(X) YES\t\t      (O) NO\t\t\t\t"; break;
-					}
-					break;
-				}
-
-				case 2:
-				{
-					switch (M_RandomRange(0, 12))
-					{
-						case 1: jokemsg = "Coding, TSoURDt3rd, it's all in the mind."; break;
-
-						case 2: jokemsg = "Alright, we're here, just playing TSoURDt3rd, I want you to show me if you can get far."; break;
-						case 3: jokemsg = "Whoa ho ho ho, stop TSoURDt3rd!\nWe got an emergency, can't you see?"; break;
-
-						case 4: jokemsg = "TSoURDt3rd is all you need!"; break;
-						case 5: jokemsg = "All you ever need is to be nice and friendly!"; break;
-
-						case 6: jokemsg = "Every single day, stress comes in every way."; break;
-						case 7: jokemsg = "Seafood cake comes just like the riddle."; break;
-						case 8: jokemsg = "TSoURDt3rd comes just like the riddle."; break;
-
-						case 9: jokemsg = "Nuh uh, nuh uh, no way!"; break;
-
-						case 10: jokemsg = "Whatcha gonna do, when they come?"; break;
-						case 11: jokemsg = "I gotta redeem!\nI gotta relieve!\nI gotta receive!\nI GOTTA BELIEVE!"; break;
-						case 12: jokemsg = "Breakin' out was the name of the game for me, you, you, You, and YOU!"; break;
-						default: jokemsg = "Somebody say ho! Say ho ho! Say ho ho ho! Now scream!\nEverybody say ho! Say ho ho! Say ho ho ho! Now scream!"; break;
-					}
-					break;
-				}
-
-				case 3:
-				{
-					switch (M_RandomRange(0, 6))
-					{
-						case 1: jokemsg = "Again."; break;
-						case 2: jokemsg = "You gotta do it again!"; break;
-						case 3: jokemsg = "Uh uh, uh uh, come on, let's do this all over again."; break;
-						case 4: jokemsg = "Peep! Peep! (TRY AGAIN!!)"; break;
-						case 5: jokemsg = "Maybe next time..."; break;
-						case 6: jokemsg = "O, oh, I didn't think you'd do THIS bad!"; break;
-						default: jokemsg = "U rappin' AWFUL!"; break;
-					}
-					break;
-				}
-		
-				default:
-				{
-					switch (M_RandomRange(0, 3))
-					{
-						case 1: jokemsg = "TSoURDt3rd's Devs are codin' AWFUL!"; break;
-						case 2: jokemsg = "We're crashin' AWFUL!"; break;
-						case 3: jokemsg = "U playin' COOL!"; break;
-						default: jokemsg = "I shouldn't cut corners.\nYou shouldn't cut corners.\nTSoURDt3rd Devs and STJr shouldn't cut corners."; break;
-					}
-					break;
-				}
-			}
-			break;
-		}
-
-		// SRB2
-		case 10:
-		{
-			switch (M_RandomRange(0, 2))
-			{
-				// STJr Members
-				case 1: jokemsg = (crashnum == SIGSEGV ? (coredumped ? "SIGSEGV - seventh sentinel (core dumped)" : "SIGSEGV - seventh sentinel") : "...Huh. This is awkward..."); break;
-
-				// Zone Builder
-				case 2:
-				{
-					switch (M_RandomRange(0, 2))
-					{
-						case 1: jokemsg = "I'll miss you, you know."; break;
-						case 2: jokemsg = "GAME OVER!"; break;
-						default: jokemsg = "You were always my favorite user."; break;
-					}
-					break;
-				}
-
-				// Bugs
-				default: jokemsg = "The Leader of the Chaotix would be very disappointed in you."; break;
-			}
-			break;
-		}
-	}
-
-	// Underscore our Funny Crash Message, Return it, and We're Done :) //
-	for (i = current = total = 0; jokemsg[current] != '\0'; i++, current++)
-	{
-		// Run Special Operations //
-		// Tabs
-		if (jokemsg[current] == '\t')
-			for (tabend = i+8; i < tabend; i++) underscoremsg[i] = '_';
-		// New Lines
-		else if (jokemsg[current] == '\n')
-			i = 0;
-
-		// Uppercase Letters
-		else if ((isupper(jokemsg[current]) && !isupper(jokemsg[current+1]))
-			&& (jokemsg[current+1] != ' ')
-			&& (jokemsg[current+1] != '\t')
-			&& (jokemsg[current+1] != '\n'))
-		{
-			underscoremsg[i] = '_';
-			i++;
-		}
-
-		// Add an Underscore and Continue //
-		if (total <= i)
-		{
-			underscoremsg[i] = '_';
-			total = i;
-		}
-	}
-
-	return va("%s\n%s", jokemsg, underscoremsg);
-}
-
-//
 // void TSoURDt3rd_BuildTicCMD(UINT8 player)
 // Builds TSoURDt3rd's Custom Keybinds and Runs Their Functions
 //
 void TSoURDt3rd_BuildTicCMD(UINT8 player)
 {
 	// Check for keys //
-	INT32 key_player = (!player ? consoleplayer : 1);
-
 	boolean jukebox_open = STAR_G_KeyPressed(player, JB_OPENJUKEBOX);
 	boolean jukebox_increasespeed = STAR_G_KeyHeld(player, JB_INCREASEMUSICSPEED);
 	boolean jukebox_decreasespeed = STAR_G_KeyHeld(player, JB_DECREASEMUSICSPEED);
 	boolean jukebox_recent_track = STAR_G_KeyPressed(player, JB_PLAYMOSTRECENTTRACK);
 	boolean jukebox_stop = STAR_G_KeyPressed(player, JB_STOPJUKEBOX);
 
-	TSoURDt3rdJukebox_t *TSoURDt3rdJukebox = &TSoURDt3rdPlayers[key_player].jukebox;
+	if (!tsourdt3rd_global_jukebox)
+		return;
 
 	if (demoplayback && titledemo)
 		return;
@@ -917,16 +689,31 @@ void TSoURDt3rd_BuildTicCMD(UINT8 player)
 	if (CON_Ready() || chat_on || menutyping.active)
 		return; // With our menu revamps, might be best to add this here...
 
-	if (player)
+	if (player != consoleplayer)
 		return; // don't run for bots please
 
 	if (STAR_M_DoesMenuHaveKeyHandler())
 		return; // we may need to type or manually move, so calm down right quick
 
+	if (optionsmenu.bindtimer)
+		return; // we're binding inputs right now, so please don't
+
 	// Manage keys //
 	if (jukebox_open)
 	{
 		// Shortcut to open the jukebox menu
+#if 1
+#if 0
+#if 1
+		if (Playing())
+			M_StartControlPanel();
+#endif
+		TSoURDt3rd_Jukebox_InitMenu(0);
+#if 1
+		// Prevent the game from crashing when using the jukebox keybind :)
+		currentMenu->prevMenu = NULL;
+#endif
+#else
 		if (currentMenu == &OP_TSoURDt3rdJukeboxDef)
 			return;
 
@@ -939,12 +726,18 @@ void TSoURDt3rd_BuildTicCMD(UINT8 player)
 		else
 			OP_TSoURDt3rdJukeboxDef.prevMenu = currentMenu;
 		TSoURDt3rd_Jukebox_InitMenu(0);
+#endif
+#else
+		M_StartControlPanel();
+		currentMenu = &OP_TSoURDt3rdJukeboxDef;
+		currentMenu->lastOn = 0;
+#endif
 	}
 
 	if (jukebox_increasespeed)
 	{
 		// Increase the speed of the jukebox track
-		if (atof(cv_jukeboxspeed.string) >= 20.0f)
+		if (atof(cv_jukeboxspeed.string) > 20.0f)
 		{
 			STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Can't increase the speed any further!\n");
 			S_StartSound(NULL, sfx_skid);
@@ -968,28 +761,37 @@ void TSoURDt3rd_BuildTicCMD(UINT8 player)
 	if (jukebox_recent_track)
 	{
 		// Replay the most recent jukebox track
-		if (!TSoURDt3rdJukebox->prevtrack)
+		if (!tsourdt3rd_global_jukebox->prevtrack || (tsourdt3rd_global_jukebox->prevtrack && *tsourdt3rd_global_jukebox->prevtrack->name == '\0'))
 		{
 			STAR_CONS_Printf(STAR_CONS_JUKEBOX, "You haven't recently played a track!\n");
 			S_StartSound(NULL, sfx_lose);
 		}
-		else if (TSoURDt3rdJukebox->curtrack)
+		else if (tsourdt3rd_global_jukebox->curtrack)
 		{
 			STAR_CONS_Printf(STAR_CONS_JUKEBOX, "There's already a track playing!\n");
 			S_StartSound(NULL, sfx_lose);
 		}
-		else if (TSoURDt3rd_M_IsJukeboxUnlocked(TSoURDt3rdJukebox))
+		else if (TSoURDt3rd_Jukebox_Unlocked())
 		{
-			S_ChangeMusicInternal(TSoURDt3rdJukebox->prevtrack->name, !TSoURDt3rdJukebox->prevtrack->stoppingtics);
-			STAR_CONS_Printf(STAR_CONS_JUKEBOX, M_GetText("Loaded track \x82%s\x80.\n"), TSoURDt3rdJukebox->prevtrack->title);
+			S_ChangeMusicInternal(tsourdt3rd_global_jukebox->prevtrack->name, !tsourdt3rd_global_jukebox->prevtrack->stoppingtics);
+			STAR_CONS_Printf(STAR_CONS_JUKEBOX, M_GetText("Loaded track \x82%s\x80.\n"), tsourdt3rd_global_jukebox->prevtrack->title);
 
-			TSoURDt3rdJukebox->curtrack = TSoURDt3rdJukebox->prevtrack;
-			TSoURDt3rdJukebox->initHUD = true;
+			tsourdt3rd_global_jukebox->curtrack = tsourdt3rd_global_jukebox->prevtrack;
+			tsourdt3rd_global_jukebox->initHUD = false;
+			tsourdt3rd_global_jukebox->playing = true;
+
 			TSoURDt3rd_ControlMusicEffects();
 		}
 		else
 		{
-			STAR_M_StartMessage("TSoURDt3rd Jukebox",0,M_GetText("You haven't unlocked this yet!\nGo and unlock the sound test first!\n"),NULL,MM_NOTHING);
+			DRRR_M_StartMessage(
+				"TSoURDt3rd Jukebox",
+				M_GetText("You haven't unlocked this yet!\nGo and unlock the sound test first!\n"),
+				NULL,
+				MM_NOTHING,
+				NULL,
+				NULL
+			);
 			S_StartSound(NULL, sfx_lose);
 		}
 	}
@@ -997,7 +799,7 @@ void TSoURDt3rd_BuildTicCMD(UINT8 player)
 	if (jukebox_stop)
 	{
 		// Stop and reset the jukebox
-		if (!TSoURDt3rdJukebox->curtrack)
+		if (!tsourdt3rd_global_jukebox->curtrack)
 		{
 			STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Nothing is currently playing in the jukebox!\n");
 			S_StartSound(NULL, sfx_lose);
@@ -1006,20 +808,11 @@ void TSoURDt3rd_BuildTicCMD(UINT8 player)
 		{
 			S_StopSounds();
 			S_StopMusic();
-			M_ResetJukebox(Playing());
+
 			S_StartSound(NULL, sfx_skid);
+			TSoURDt3rd_Jukebox_RefreshLevelMusic();
 		}
 	}
-}
-
-// PLAYERS //
-//
-// boolean STAR_CanPlayerMoveAndChangeSkin(INT32 playernum)
-// Checks if the Player is Allowed to Both Move and Change Their Skin, Returns True if They Can
-//
-boolean STAR_CanPlayerMoveAndChangeSkin(INT32 playernum)
-{
-	return (cv_movingplayersetup.value || (!cv_movingplayersetup.value && !P_PlayerMoving(playernum)));
 }
 
 // AUDIO //
@@ -1029,23 +822,28 @@ boolean STAR_CanPlayerMoveAndChangeSkin(INT32 playernum)
 //
 void TSoURDt3rd_ControlMusicEffects(void)
 {
-	float speed, pitch;
+	if (tsourdt3rd_global_jukebox->playing)
+	{
+		S_SpeedMusic(atof(cv_jukeboxspeed.string));
+		S_PitchMusic(1.0f);
+		return;
+	}
 
 	switch (cv_vapemode.value)
 	{
-		case 1:		speed = 0.9f;	pitch = 0.9f; break;
-		case 2:		speed = 0.75f;	pitch = 0.5f; break;
-		default:	speed = 1.0f;	pitch = 1.0f; break;
+		case 1:
+			S_SpeedMusic(0.9f);
+			S_PitchMusic(0.9f);
+			break;
+		case 2:
+			S_SpeedMusic(0.75f);
+			S_PitchMusic(0.5f);
+			break;
+		default:
+			S_SpeedMusic(1.0f);
+			S_PitchMusic(1.0f);
+			break;
 	}
-
-	if (TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack)
-	{
-		speed = atof(cv_jukeboxspeed.string);
-		pitch = 1.0f;
-	}
-
-	S_SpeedMusic(speed);
-	S_PitchMusic(pitch);
 }
 
 //
@@ -1069,11 +867,6 @@ const char *TSoURDt3rd_DetermineLevelMusic(void)
 	boolean trueFinalBossMap = (finalBossMap && allEmeralds);
 
 	// Conflicting music //
-#if 0
-	if (strnicmp(TSoURDt3rd_DetermineLevelMusic(), S_MusicName(), 7))
-		return mapmusname;
-#endif
-
 	// Event music //
 	if (TSoURDt3rd_AprilFools_ModeEnabled())
 		return "_hehe";
@@ -1167,13 +960,26 @@ const char *TSoURDt3rd_DetermineLevelMusic(void)
 	}	
 
 	// Made it here? Play the map's default track, and we're done :) //
+	if (gamestate == GS_TITLESCREEN || titlemapinaction)
+	{
+		if (MUSICEXISTS(mapheaderinfo[gamemap-1]->musname))
+			return mapheaderinfo[gamemap-1]->musname;
+		if (MUSICEXISTS("_title"))
+			return "_title";
+		return mapmusname;
+	}
+
 	if (RESETMUSIC || strnicmp(S_MusicName(),
 		((mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname), 7))
 		return ((mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname);
 	else
 		return mapheaderinfo[gamemap-1]->musname;
 
-	//return ((!mapmusname[0] || !strnicmp(mapmusname, S_MusicName(), 7)) ? mapheaderinfo[gamemap-1]->musname : mapmusname);
+#if 0
+	if (strnicmp(TSoURDt3rd_DetermineLevelMusic(), S_MusicName(), 7))
+		return mapmusname;
+#endif
+	return ((!mapmusname[0] || !strnicmp(mapmusname, S_MusicName(), 7)) ? mapheaderinfo[gamemap-1]->musname : mapmusname);
 }
 
 UINT32 TSoURDt3rd_PinchMusicPosition(void)
@@ -1197,91 +1003,17 @@ boolean TSoURDt3rd_SetPinchMusicSpeed(void)
 
 // SAVEDATA //
 //
-// void STAR_WriteExtraData(void)
-// Writes Extra Gamedata to tsourdt3rd.dat
-//
-void STAR_WriteExtraData(void)
-{
-    // Initialize Some Variables //
-    FILE *tsourdt3rdgamedata;
-	const char *path;
-
-    // Run Some Checks //
-	if ((!eastermode)
-		|| (!AllowEasterEggHunt)
-		|| (netgame)
-		|| (TSoURDt3rd_NoMoreExtras)
-		|| (autoloaded))
-
-		return;
-
-    // Open The File //
-	path = va("%s"PATHSEP"%s", srb2home, "tsourdt3rd.dat");
-	tsourdt3rdgamedata = fopen(path, "w+");
-
-	// Write To The File //
-	// Easter Eggs
-	putw(currenteggs, tsourdt3rdgamedata);
-	putw(foundeggs, tsourdt3rdgamedata);
-
-	// Close The File //
-    fclose(tsourdt3rdgamedata);
-}
-
-//
-// void STAR_ReadExtraData(void)
-// Reads the Info Written to tsourdt3rd.dat
-//
-void STAR_ReadExtraData(void)
-{
-    // Initialize Some Variables //
-    FILE *tsourdt3rdgamedata;
-	const char *path;
-
-	TSoURDt3rdPlayers[consoleplayer].jukebox.Unlocked = false;
-
-	// Find The File //
-	path = va("%s"PATHSEP"%s", srb2home, "tsourdt3rd.dat");
-    tsourdt3rdgamedata = fopen(path, "r");
-
-	// Run Some Checks //
-	if ((!tsourdt3rdgamedata)
-		|| (!eastermode)
-		|| (!AllowEasterEggHunt)
-		|| (netgame)
-		|| (TSoURDt3rd_NoMoreExtras)
-		|| (autoloaded))
-
-		return;
-	
-	// Read Things Within The File //
-	// Easter Eggs
-	currenteggs = getw(tsourdt3rdgamedata);
-	foundeggs = getw(tsourdt3rdgamedata);
-
-    // Close the File //
-    fclose(tsourdt3rdgamedata);
-}
-
-//
 // void STAR_SetSavefileProperties(void)
 // Sets the Current Savefile Name and Position
 //
 void STAR_SetSavefileProperties(void)
 {
-#ifdef DEFAULTDIR
-	char homepath[256] = "."; // STAR: My Home
-	memcpy(homepath, srb2home, sizeof(srb2home));
-#else
-	const char *homepath = userhome; // STAR: My Home
-#endif
-
 #if 0
 	// Before we Start, Ensure Some Things //
 	if (netgame)
 	{
 		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "You can't change this while in a netgame.\n");
-		CV_StealthSetValue(&cv_storesavesinfolders, !cv_storesavesinfolders.value);
+		CV_StealthSetValue(&cv_tsourdt3rd_savefiles_storesavesinfolders, !cv_tsourdt3rd_savefiles_storesavesinfolders.value);
 
 		return;
 	}
@@ -1293,16 +1025,16 @@ void STAR_SetSavefileProperties(void)
 	memset(savegamefolder, 0, sizeof(savegamefolder));
 
 	// Make the Folder //
-	if (cv_storesavesinfolders.value)
+	if (cv_tsourdt3rd_savefiles_storesavesinfolders.value)
 	{
-		I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER, homepath), 0755);
+		I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER, TSoURDt3rd_FOL_ReturnHomepath()), 0755);
 		if (TSoURDt3rd_useAsFileName)
 		{
-			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd", homepath), 0755);
-			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd" PATHSEP "%s", homepath, timeattackfolder), 0755);
+			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd", TSoURDt3rd_FOL_ReturnHomepath()), 0755);
+			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd" PATHSEP "%s", TSoURDt3rd_FOL_ReturnHomepath(), timeattackfolder), 0755);
 		}
 		else
-			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "%s", homepath, timeattackfolder), 0755);
+			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "%s", TSoURDt3rd_FOL_ReturnHomepath(), timeattackfolder), 0755);
 	}
 
 	// Store our Folder Name in a Variable //
@@ -1325,15 +1057,15 @@ void STAR_SetSavefileProperties(void)
 
 	// Merge the Variables Together, and We're Done :) //
 	// NOTE: can't use sprintf since there is %u in savegamename
-	if (!cv_storesavesinfolders.value)
+	if (!cv_tsourdt3rd_savefiles_storesavesinfolders.value)
 	{
-		strcatbf(savegamename, homepath, PATHSEP);
-		strcatbf(liveeventbackup, homepath, PATHSEP);
+		strcatbf(savegamename, TSoURDt3rd_FOL_ReturnHomepath(), PATHSEP);
+		strcatbf(liveeventbackup, TSoURDt3rd_FOL_ReturnHomepath(), PATHSEP);
 	}
 	else
 	{
-		strcatbf(savegamename, homepath, va(PATHSEP"%s"PATHSEP, savegamefolder));
-		strcatbf(liveeventbackup, homepath, va(PATHSEP"%s"PATHSEP, savegamefolder));
+		strcatbf(savegamename, TSoURDt3rd_FOL_ReturnHomepath(), va(PATHSEP"%s"PATHSEP, savegamefolder));
+		strcatbf(liveeventbackup, TSoURDt3rd_FOL_ReturnHomepath(), va(PATHSEP"%s"PATHSEP, savegamefolder));
 	}
 }
 
@@ -1353,16 +1085,14 @@ void TSoURDt3rd_TryToLoadTheExtras(void)
 	if (eastermode || aprilfoolsmode || xmasmode)
 	{
 		// Easter Specific Stuff
-		if (eastermode && (!netgame && !TSoURDt3rd_TouchyModifiedGame))
+		if (eastermode && !netgame)
 		{
 			CV_StealthSetValue(&cv_easter_allowegghunt, 1);
 			AllowEasterEggHunt = true;
-
-			M_UpdateEasterStuff();
 		}
 
 		// General Stuff
-		STAR_ReadExtraData();
+		TSoURDt3rd_PSav_ReadExtraData();
 	}
 
 	// Set Our Variables, and We're Done :) //
@@ -1453,357 +1183,6 @@ boolean STAR_DoesStringMatchHarcodedFileName(const char *string)
 	// The String Given Doesn't Match the Name of a Hardcoded File? Return False Then. //
 	return false;
 }
-
-// THE WORLD WIDE WEB //
-#ifdef HAVE_CURL
-//
-// static void STAR_SetAPI(char *API)
-// Sets the Website API to Use
-//
-static void STAR_SetAPI(char *API)
-{
-#ifdef HAVE_THREADS
-	I_lock_mutex(&hms_tsourdt3rd_api_mutex);
-#endif
-	{
-		free(hms_tsourdt3rd_api);
-		hms_tsourdt3rd_api = API;
-	}
-#ifdef HAVE_THREADS
-	I_unlock_mutex(hms_tsourdt3rd_api_mutex);
-#endif
-}
-
-//
-// void STAR_FindAPI(const char *API)
-// Finds the Specified Website API
-//
-void STAR_FindAPI(const char *API)
-{
-#ifdef HAVE_THREADS
-	I_spawn_thread(
-			"grab-tsourdt3rd-stuff",
-			(I_thread_fn)STAR_SetAPI,
-			strdup(API)
-	);
-#else
-	STAR_SetAPI(strdup(API));
-#endif
-}
-
-//
-// INT32 STAR_FindStringOnWebsite(const char *API, char *URL, char *INFO, boolean verbose)
-// Tries to Find Info From the Given Website, Returns 2 if it Does
-//
-// 0 - Couldn't Even Access the Website Info in the First Place.
-// 1 - Accessed the Website, but Didn't Find the String.
-// 2 - Found the String on the Website!
-//
-INT32 STAR_FindStringOnWebsite(const char *API, char *URL, char *INFO, boolean verbose)
-{
-	// Make Variables //
-	CURL *curl, *sidecurl;
-	CURLcode res;
-
-	FILE *webinfo;
-	const char *webinfofilelocation;
-
-	char finalURL[256];
-	char finalINFO[256];
-
-	// Create the File //
-	webinfofilelocation = va("%s"PATHSEP"%s", srb2home, "tsourdt3rd_grabbedwebsiteinfo.html");
-	webinfo = fopen(webinfofilelocation, "w+");
-
-	// Find the API //
-	while (hms_tsourdt3rd_api == NULL) STAR_FindAPI(API);
-	curl = curl_easy_init(); sidecurl = curl_easy_init();
-
-	// Print Words //
-	if (verbose)
-		CONS_Printf("STAR_FindStringOnWebsite(): Attempting to grab string %s from website %s using provided api %s...\n", INFO, URL, API);
-
-	// Do Our Website Stuffs //
-	if (curl && sidecurl)
-	{
-		// Combine the Website Strings
-		snprintf(finalURL, 256, "%s%s", API, URL);
-
-		// Check if the Website Actually Exists
-		curl_easy_setopt(sidecurl, CURLOPT_URL, finalURL);
-		curl_easy_setopt(sidecurl, CURLOPT_NOBODY, 1);
-
-		res = curl_easy_perform(sidecurl);
-		if (res != CURLE_OK)
-		{
-			CONS_Printf("STAR_FindStringOnWebsite() - Failed to check if website was valid.\n");	
-
-			fclose(webinfo);
-
-			remove(webinfofilelocation);
-			curl_easy_cleanup(sidecurl);
-
-			return 0;
-		}
-		curl_easy_cleanup(sidecurl);
-		
-		// Grab the Actual Info and Write it to a File
-		curl_easy_setopt(curl, CURLOPT_URL, finalURL);
-		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
-		curl_easy_setopt(curl, CURLOPT_WRITEDATA, webinfo);
-
-		// Use CURL, Check if Everything Went Through, and Then Perform our Actions
-		res = curl_easy_perform(curl);
-		if (res != CURLE_OK)
-		{
-			CONS_Printf("STAR_FindStringOnWebsite() - curl_easy_perform(): Failed to grab website info.\n");	
-
-			fclose(webinfo);
-
-			remove(webinfofilelocation);
-			curl_easy_cleanup(curl);
-
-			return 0;
-		}
-
-		// Read Strings
-		else
-		{
-			// Check if the File is Empty
-			fseek(webinfo, 0, SEEK_END);
-			if (ftell(webinfo) == 0)
-			{
-				CONS_Printf("STAR_FindStringOnWebsite() - Failed to grab website info.\n");	
-
-				fclose(webinfo);
-
-				remove(webinfofilelocation);
-				curl_easy_cleanup(curl);
-
-				return 0;
-			}
-
-			// File Isn't Empty, so Actually Set the File Position
-			fseek(webinfo, 0, SEEK_SET);
-
-			// Grab the Website Info
-			while (fgets(finalINFO, sizeof finalINFO, webinfo) != NULL)
-			{
-				// We've Found the String, so Close the File, Remove it, Clean up, and We're Done :)
-				if (fastcmp(finalINFO, INFO))
-				{
-					if (verbose)
-						CONS_Printf("STAR_FindStringOnWebsite(): Found the info!\n");
-					fclose(webinfo);
-
-					remove(webinfofilelocation);
-					curl_easy_cleanup(curl);
-
-					return 2;
-				}
-			}
-		}
-	}
-
-	// We Failed Somewhere, but we Still Have to Close the File and End Curl //
-	fclose(webinfo);
-		
-	remove(webinfofilelocation);
-	curl_easy_cleanup(curl);
-	return 1;
-}
-
-//
-// char *STAR_ReturnStringFromWebsite(const char *API, char *URL, char *RETURNINFO, boolean verbose)
-// Tries to Find the Given Info From the Given Website, Returns the String if it Does
-//
-char finalRETURNINFO[256] = " ";
-
-char *STAR_ReturnStringFromWebsite(const char *API, char *URL, char *RETURNINFO, boolean verbose)
-{
-	// Make Variables //
-	CURL *curl, *sidecurl;
-	CURLcode res;
-
-	FILE *webinfo;
-	const char *webinfofilelocation;
-
-	char finalURL[256];
-	INT32 i;
-
-	// Reset the Main Variable //
-#if 0	
-	memset(finalRETURNINFO, 0, sizeof(finalRETURNINFO));
-#else
-	for (i = 0; finalRETURNINFO[i] != '\0'; i++) finalRETURNINFO[i] = '\0';
-#endif
-	strcpy(finalRETURNINFO, " ");
-
-	// Create the File //
-	webinfofilelocation = va("%s"PATHSEP"%s", srb2home, "tsourdt3rd_grabbedwebsiteinfo.html");
-	webinfo = fopen(webinfofilelocation, "w+");
-
-	// Find the API //
-	while (hms_tsourdt3rd_api == NULL) STAR_FindAPI(API);
-	curl = curl_easy_init(); sidecurl = curl_easy_init();
-
-	// Print Words //
-	if (verbose)
-		CONS_Printf("STAR_ReturnStringFromWebsite(): Attempting to return string %s from website %s using provided api %s...\n", RETURNINFO, URL, API);
-
-	// Do Our Website Stuffs //
-	if (curl && sidecurl)
-	{
-		// Combine the Website Strings
-		snprintf(finalURL, 256, "%s%s", API, URL);
-
-		// Check if the Website Actually Exists
-		curl_easy_setopt(sidecurl, CURLOPT_URL, finalURL);
-		curl_easy_setopt(sidecurl, CURLOPT_NOBODY, 1);
-
-		res = curl_easy_perform(sidecurl);
-		if (res != CURLE_OK)
-		{
-			CONS_Printf("STAR_ReturnStringFromWebsite() - Failed to check if website was valid.\n");	
-
-			fclose(webinfo);
-
-			remove(webinfofilelocation);
-			curl_easy_cleanup(sidecurl);
-
-			return finalRETURNINFO;
-		}
-		curl_easy_cleanup(sidecurl);
-
-		// Grab the Actual Info and Write it to a File
-		curl_easy_setopt(curl, CURLOPT_URL, finalURL);
-		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
-		curl_easy_setopt(curl, CURLOPT_WRITEDATA, webinfo);
-
-		// Use CURL, Check if Everything Went Through, and Then Perform our Actions
-		res = curl_easy_perform(curl);
-		if (res != CURLE_OK)
-		{
-			CONS_Printf("STAR_ReturnStringFromWebsite() - curl_easy_perform(): Failed to grab website info.\n");	
-
-			fclose(webinfo);
-
-			remove(webinfofilelocation);
-			curl_easy_cleanup(curl);
-
-			return finalRETURNINFO;
-		}
-
-		// Read Strings
-		else
-		{
-			// Check if the File is Empty
-			fseek(webinfo, 0, SEEK_END);
-			if (ftell(webinfo) == 0)
-			{
-				CONS_Printf("STAR_ReturnStringFromWebsite() - Failed to grab website info.\n");	
-
-				fclose(webinfo);
-
-				remove(webinfofilelocation);
-				curl_easy_cleanup(curl);
-
-				return finalRETURNINFO;
-			}
-
-			// File Isn't Empty, so Actually Set the File Position
-			fseek(webinfo, 0, SEEK_SET);
-
-			// Find the String in the File
-			while (fgets(finalRETURNINFO, sizeof finalRETURNINFO, webinfo) != NULL)
-			{
-				// We've Found the String, so Close the File, Remove it, Clean up Curl, Clean up the String and Return it, and We're Done :)
-				if (fastncmp(finalRETURNINFO, RETURNINFO, sizeof(RETURNINFO)))
-				{
-					if (verbose)
-						CONS_Printf("STAR_ReturnStringFromWebsite(): Found the info!\n");
-					fclose(webinfo);
-
-					remove(webinfofilelocation);
-					curl_easy_cleanup(curl);
-
-					for (i = 0; finalRETURNINFO[i] != '\0'; i++)
-					{
-						if (finalRETURNINFO[i] == '\n')
-							finalRETURNINFO[i] = '\0';
-					}
-
-					return finalRETURNINFO;
-				}
-			}
-		}
-	}
-
-	// We Failed Somewhere, but we Still Have to Close the File and End Curl //
-	fclose(webinfo);
-
-	remove(webinfofilelocation);
-	curl_easy_cleanup(curl);
-	return finalRETURNINFO;
-}
-
-//
-// void TSoURDt3rd_FindCurrentVersion(void)
-// Finds the Current Version of TSoURDt3rd From the Github Repository
-//
-void TSoURDt3rd_FindCurrentVersion(void)
-{
-	// Make Some Variables //
-	// (Hey You! If You're Planning on Using the Internet Functions, Use This Block as an Example :))
-	const char *API = "https://raw.githubusercontent.com/StarManiaKG/The-Story-of-Uncapped-Revengence-Discord-the-3rd/";
-	char URL[256];	strcpy(URL,	 va("%s/src/STAR/star_webinfo.h", compbranch));
-	char INFO[256]; strcpy(INFO, va("#define TSOURDT3RDVERSION \"%s\"", TSOURDT3RDVERSION));
-
-	char RETURNINFO[256] = "#define TSOURDT3RDVERSION";
-	char RETURNEDSTRING[256] = "";
-
-	UINT32 internalVersionNumber;
-
-	UINT32 displayVersionNumber;
-	const char *displayVersionString;
-
-	// Run Some Checks //
-	if ((gamestate == GS_NULL)									// Have we Even Initialized the Game? If not, Don't Run This.
-		|| (TSoURDt3rdPlayers[consoleplayer].checkedVersion)	// Have we Already Checked the Version? If so, Don't Run This Again.
-		|| (!cv_updatenotice.value))							// Do we Allow Screen or Console Messages? If not, Don't Run This.
-
-		return;
-
-	// Run the Main Code //
-	// Check the Version, And If They Don't Match the Branch's Version, Run the Block Below
-	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD, "Checking for updates...\n");
-
-	if (STAR_FindStringOnWebsite(API, URL, INFO, false) == 1)
-	{
-		strcpy(RETURNEDSTRING, STAR_ReturnStringFromWebsite(API, URL, RETURNINFO, false));
-
-		internalVersionNumber = STAR_ConvertStringToCompressedNumber(RETURNEDSTRING, 0, 26, true);
-
-		displayVersionNumber = STAR_ConvertStringToCompressedNumber(RETURNEDSTRING, 0, 26, false);
-		displayVersionString = STAR_ConvertNumberToString(displayVersionNumber, 0, 0, true);
-
-		if (TSoURDt3rd_CurrentVersion() < internalVersionNumber)
-			((cv_updatenotice.value == 1 && !dedicated) ?
-				(STAR_M_StartMessage("Update TSoURDt3rd, Please", 0, va("You're using an outdated version of TSoURDt3rd.\n\nThe newest version is: %s\nYou're using version: %s\n\nCheck the SRB2 Message Board for the latest version!\n\n(Press any key to continue)\n", displayVersionString, TSOURDT3RDVERSION), NULL,MM_NOTHING)) :
-				(STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "You're using an outdated version of TSoURDt3rd.\n\nThe newest version is: %s\nYou're using version: %s\n\nCheck the SRB2 Message Board for the latest version!\n", displayVersionString, TSOURDT3RDVERSION)));
-		else if (TSoURDt3rd_CurrentVersion() > internalVersionNumber)
-			((cv_updatenotice.value == 1 && !dedicated) ?
-				(STAR_M_StartMessage("Hello TSoURDt3rd Tester/Coder!", 0, va("You're using a version of TSoURDt3rd that hasn't even released yet.\n\nYou're probably a tester or coder,\nand in that case, hello!\n\nEnjoy messing around with the build!\n\n(Press any key to continue)\n"),NULL,MM_NOTHING)) :
-				(STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "You're using a version of TSoURDt3rd that hasn't even released yet.\nYou're probably a tester or coder, and in that case, hello!\nEnjoy messing around with the build!\n")));
-	}
-
-	TSoURDt3rdPlayers[consoleplayer].checkedVersion = true;
-	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "Checked for updates!\n");
-}
-#endif // HAVE_CURL
-
-// SERVERS //
-// Nobody came.
 
 // MISCELLANIOUS //
 //

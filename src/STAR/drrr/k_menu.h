@@ -82,7 +82,8 @@ void DRRR_M_StartMessage(const char *header, const char *string, void (*routine)
 boolean M_MenuMessageTick(void);
 void M_HandleMenuMessage(void);
 void DRRR_M_StopMessage(INT32 choice);
-void M_DrawMenuMessage(void);
+void TSoURDt3rd_M_DrawMenuMessage(void);
+void TSoURDt3rd_M_DrawMenuMessageOnTitle(INT32 count);
 
 #define MENUDELAYTIME 7
 #define MENUMINDELAY 2
@@ -124,12 +125,10 @@ extern menucmd_t menucmd[MAXSPLITSCREENPLAYERS];
 void M_DrawMenuTyping(void);
 
 void M_OpenVirtualKeyboard(size_t cachelen, vkb_query_fn_t queryfn, menu_t *dummymenu);
-boolean M_CheckVirtualStringLength(void);
+boolean TSoURDt3rd_M_VirtualStringMeetsLength(void);
 void M_AbortVirtualKeyboard(void);
 void M_MenuTypingInput(INT32 key);
 void M_SwitchVirtualKeyboard(boolean gamepad);
-
-void DRRR_M_DrawMessageMenu(void);
 
 void M_SetMenuDelay(UINT8 i);
 
@@ -142,9 +141,6 @@ boolean M_MenuBackPressed(UINT8 pid);
 boolean M_MenuBackHeld(UINT8 pid);
 boolean M_MenuExtraPressed(UINT8 pid);
 boolean M_MenuExtraHeld(UINT8 pid);
-
-// For some menu highlights
-UINT16 M_GetCvPlayerColor(UINT8 pnum);
 
 #ifdef __cplusplus
 } // extern "C"

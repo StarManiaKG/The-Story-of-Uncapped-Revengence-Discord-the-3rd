@@ -15,12 +15,14 @@
 
 #include "discord.h"
 
+#include "../STAR/star_vars.h" // TSoURDt3rd struct //
+#include "../STAR/smkg-misc.h" // STAR_M_RemoveStringChars() //
+#include "../STAR/smkg-jukebox.h" // tsourdt3rd_global_jukebox //
+#include "../STAR/menus/smkg_m_func.h" // queries about level list modes //
+
 #include "../m_cond.h" // queries about emblems
 #include "../g_game.h"
 #include "../z_zone.h"
-
-#include "../STAR/star_vars.h" // TSoURDt3rd struct //
-#include "../STAR/smkg-misc.h" // STAR_M_RemoveStringChars() //
 
 // ------------------------ //
 //        Variables
@@ -283,7 +285,7 @@ void DRPC_GeneralStatus(char *string, char *image, char *imagestr)
 
 	if (gamestate == GS_TIMEATTACK)
 	{
-		if (TSoURDt3rdPlayers[consoleplayer].gamestate == STAR_GS_NIGHTSMENU)
+		if (tsourdt3rd_levellistmode == TSOURDT3RD_LLM_NIGHTSATTACK)
 		{
 			DRPC_ImagePrintf(image, 128, "misc", "nights");
 			DRPC_StringPrintf(imagestr, NULL, 128, "NiGHTs Attack");
@@ -393,8 +395,8 @@ void DRPC_ExtendedStatus(char *string)
 			DRPC_StringPrintf(string, " | ", 128, "Game Complete!");
 	}
 
-	if (TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack)
-		DRPC_StringPrintf(string, " | ", 128, "Jukebox: '%s'", TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack->title);
+	if (tsourdt3rd_global_jukebox->curtrack)
+		DRPC_StringPrintf(string, " | ", 128, "Jukebox: '%s'", tsourdt3rd_global_jukebox->curtrack->title);
 }
 
 /*--------------------------------------------------

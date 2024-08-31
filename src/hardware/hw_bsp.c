@@ -24,12 +24,8 @@
 #include "../w_wad.h"
 #include "../p_setup.h" // levelfadecol
 
-// STAR STUFF //
-#include "../STAR/star_vars.h"
-
-#include "../d_main.h"
-#include "../m_random.h"
-// END THIS PLEASE //
+// TSoURDt3rd
+#include "../STAR/star_vars.h" // revamped loading screen data //
 
 // --------------------------------------------------------------------------
 // This is global data for planes rendering
@@ -581,6 +577,36 @@ static inline void SearchDivline(node_t *bsp, fdivline_t *divline)
 	divline->dy = FIXED_TO_FLOAT(bsp->dy);
 }
 
+#ifdef HWR_LOADING_SCREEN
+//Hurdler: implement a loading status
+static size_t ls_count = 0;
+static UINT8 ls_percent = 0;
+
+static void loading_status(void)
+{
+	char s[16];
+	int x, y;
+
+	I_OsPolling();
+	CON_Drawer();
+	sprintf(s, "%d%%", (++ls_percent)<<1);
+	x = BASEVIDWIDTH/2;
+	y = BASEVIDHEIGHT/2;
+	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31); // Black background to match fade in effect
+	//V_DrawPatchFill(W_CachePatchName("SRB2BACK",PU_CACHE)); // SRB2 background, ehhh too bright.
+	M_DrawTextBox(x-58, y-8, 13, 1);
+	V_DrawString(x-50, y, V_YELLOWMAP, "Loading...");
+	V_DrawRightAlignedString(x+50, y, V_YELLOWMAP, s);
+
+	// Is this really necessary at this point..?
+	V_DrawCenteredString(BASEVIDWIDTH/2, 40, V_YELLOWMAP, "OPENGL MODE IS INCOMPLETE AND MAY");
+	V_DrawCenteredString(BASEVIDWIDTH/2, 50, V_YELLOWMAP, "NOT DISPLAY SOME SURFACES.");
+	V_DrawCenteredString(BASEVIDWIDTH/2, 70, V_YELLOWMAP, "USE AT SONIC'S RISK.");
+
+	I_UpdateNoVsync();
+}
+#endif
+
 // poly : the convex polygon that encloses all child subsectors
 static void WalkBSPNode(INT32 bspnum, poly_t *poly, UINT16 *leafnode, fixed_t *bbox)
 {
@@ -620,13 +646,22 @@ static void WalkBSPNode(INT32 bspnum, poly_t *poly, UINT16 *leafnode, fixed_t *b
 		{
 			HWR_SubsecPoly(bspnum & ~NF_SUBSECTOR, poly);
 
-			// Hurdler: implement a loading status
-			// STAR NOTE: i was here lol
+			//Hurdler: implement a loading status
+#ifdef HWR_LOADING_SCREEN
+			if (ls_count-- <= 0)
+			{
+				ls_count = numsubsectors/50;
+				loading_status();
+			}
+#else
+			// STAR STUFF: do revamped loading screen junk //
 			if (cv_loadingscreen.value && TSoURDt3rdPlayers[consoleplayer].loadingScreens.loadCount-- <= 0)
 			{
 				TSoURDt3rdPlayers[consoleplayer].loadingScreens.loadCount = numsubsectors/50;
 				STAR_LoadingScreen();
 			}
+			// DONE! //
+#endif
 		}
 		M_ClearBox(bbox);
 		poly = extrasubsectors[bspnum & ~NF_SUBSECTOR].planepoly;
@@ -809,15 +844,20 @@ static INT32 SolveTProblem(void)
 		return 0;
 
 	CONS_Debug(DBG_RENDER, "Solving T-joins. This may take a while. Please wait...\n");
-
-	// STAR NOTE: i was here lol
+#ifdef HWR_LOADING_SCREEN
+	CON_Drawer(); //let the user know what we are doing
+	I_FinishUpdate(); // page flip or blit buffer
+#else
+	// STAR STUFF: do even more revamped loading screen junk //
 	if (cv_loadingscreen.value)
 	{
-		//CON_Drawer(); // console shouldn't appear while in a loading screen, honestly
+		CON_Drawer(); // console shouldn't appear while in a loading screen, honestly
 		I_FinishUpdate(); // page flip or blit buffer
 
 		TSoURDt3rdPlayers[consoleplayer].loadingScreens.screenToUse = 0; // reset the loading screen to use
 	}
+	// DONE! //
+#endif
 
 	numsplitpoly = 0;
 
@@ -940,16 +980,22 @@ void HWR_CreatePlanePolygons(INT32 bspnum)
 	fixed_t rootbbox[4];
 
 	CONS_Debug(DBG_RENDER, "Creating polygons, please wait...\n");
-
-	// STAR NOTE: i was here lol
+#ifdef HWR_LOADING_SCREEN
+	ls_count = ls_percent = 0; // reset the loading status
+	CON_Drawer(); //let the user know what we are doing
+	I_FinishUpdate(); // page flip or blit buffer
+#else
+	// STAR STUFF: do finale revamped loading screen junk //
 	if (cv_loadingscreen.value)
 	{
 		TSoURDt3rdPlayers[consoleplayer].loadingScreens.loadCount = TSoURDt3rdPlayers[consoleplayer].loadingScreens.loadPercentage = 0; // reset the loading status
 		TSoURDt3rdPlayers[consoleplayer].loadingScreens.screenToUse = 0; // reset the loading screen to use
 
-		//CON_Drawer(); // console shouldn't appear while in a loading screen, honestly
+		CON_Drawer(); // console shouldn't appear while in a loading screen, honestly
 		I_FinishUpdate(); // page flip or blit buffer
 	}
+	// GREAT JOB! //
+#endif
 
 	HWR_ClearPolys();
 

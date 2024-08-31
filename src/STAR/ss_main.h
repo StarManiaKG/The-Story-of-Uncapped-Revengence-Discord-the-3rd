@@ -15,13 +15,11 @@
 #include "../doomtype.h"
 #include "../p_mobj.h"
 #include "../m_menu.h"
-
+#include "../s_sound.h"
 
 // ------------------------ //
 //        Variables
 // ------------------------ //
-
-//#define APRIL_FOOLS // MARKED FOR REMOVAL //
 
 #define TSOURDT3RD_DEBUGGING /* Debugging */
 
@@ -34,15 +32,6 @@ extern char savegamefolder[256];
 
 //#define _DEBUG /* Debugging */
 //#define DEBUGFILE /* Debugging */
-
-#define TSOURDT3RD_DRRR_GAMEPAD_REFACTOR // pretty sure it works perfectly, but i don't wanna take chances //
-
-// An extra lock-on to the current gamestate system
-typedef enum
-{
-	STAR_GS_NULL = 0, // no star gamestate correspondant can be found...
-	STAR_GS_NIGHTSMENU, // GS_TIMEATTACK, but in the nights menu
-} star_gamestate_t;
 
 // ======
 // EVENTS
@@ -76,6 +65,8 @@ extern boolean aprilfoolsmode;
 extern boolean eastermode;
 extern boolean xmasmode, xmasoverride;
 
+extern musicdef_t tsourdt3rd_aprilfools_def;
+
 // ------------------------ //
 //        Functions
 // ------------------------ //
@@ -87,10 +78,6 @@ const char *TSoURDt3rd_CON_DrawStartupScreen(void);
 
 void TSoURDt3rd_D_Display(void);
 
-void STAR_G_GamestateManager(star_gamestate_t star_gamestate);
-
-void STAR_M_StartMessage(const char *header, INT32 headerflags, const char *string, void *routine, menumessagetype_t itemtype);
-
 const char *TSoURDt3rd_ReturnUsername(void);
 
 // ======
@@ -101,13 +88,6 @@ boolean TSoURDt3rd_Easter_AllEggsCollected(void);
 
 boolean TSoURDt3rd_AprilFools_ModeEnabled(void);
 void TSoURD3rd_AprilFools_OnChange(void);
-
-// =======
-// SERVERS
-// =======
-
-void TSoURDt3rd_MovePlayerStructure(INT32 node, INT32 newplayernode, INT32 prevnode);
-void TSoURDt3rd_HandleCustomPackets(INT32 node);
 
 // ======
 // LEVELS
@@ -122,12 +102,5 @@ void TSoURDt3rd_LoadLevel(boolean reloadinggamestate);
 // ======
 
 void TSoURDt3rd_GameEnd(INT32 *timetonext);
-
-// ======
-// SCREEN
-// ======
-
-void TSoURDt3rd_SCR_DisplayTpsRate(void);
-INT32 TSoURDt3rd_SCR_SetPingHeight(void);
 
 #endif // __SS_MAIN__

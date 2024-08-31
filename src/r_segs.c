@@ -24,7 +24,6 @@
 #include "m_misc.h"
 #include "p_local.h" // Camera...
 #include "p_slopes.h"
-#include "console.h" // con_clipviewtop
 #include "taglist.h"
 
 // OPTIMIZE: closed two sided lines as single sided
@@ -523,8 +522,6 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 	sector_t        tempsec;
 	INT32             templight;
 	INT32             i, p;
-	fixed_t         bottombounds = viewheight << FRACBITS;
-	fixed_t         topbounds = (con_clipviewtop - 1) << FRACBITS;
 	fixed_t         offsetvalue = 0;
 	lightlist_t     *light;
 	r_lightlist_t   *rlight;
@@ -836,7 +833,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 		bottom_frac += bottom_step;
 
 		// SoM: If column is out of range, why bother with it??
-		if (windowbottom < topbounds || windowtop > bottombounds)
+		if (windowbottom < 0 || windowtop > (viewheight << FRACBITS))
 		{
 			if (dc_numlights)
 			{
@@ -1533,6 +1530,35 @@ static void R_AllocTextureColumnTables(size_t range)
 		if (ds->thicksidecol + ds->x1 >= oldtable && ds->thicksidecol + ds->x1 <= oldlast)
 			ds->thicksidecol = (ds->thicksidecol - oldtable) + texturecolumntable;
 	}
+}
+
+//
+// R_ScaleFromGlobalAngle
+// Returns the texture mapping scale for the current line (horizontal span)
+//  at the given angle.
+// rw_distance must be calculated first.
+//
+// killough 5/2/98: reformatted, cleaned up
+//
+// note: THIS IS USED ONLY FOR WALLS!
+static fixed_t R_ScaleFromGlobalAngle(angle_t visangle)
+{
+	angle_t anglea = ANGLE_90 + (visangle-viewangle);
+	angle_t angleb = ANGLE_90 + (visangle-rw_normalangle);
+	fixed_t den = FixedMul(rw_distance, FINESINE(anglea>>ANGLETOFINESHIFT));
+	// proff 11/06/98: Changed for high-res
+	fixed_t num = FixedMul(projectiony, FINESINE(angleb>>ANGLETOFINESHIFT));
+
+	if (den > num>>16)
+	{
+		num = FixedDiv(num, den);
+		if (num > 64*FRACUNIT)
+			return 64*FRACUNIT;
+		if (num < 256)
+			return 256;
+		return num;
+	}
+	return 64*FRACUNIT;
 }
 
 //

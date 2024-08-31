@@ -88,8 +88,8 @@
 
 #include "taglist.h"
 
+// TSoURDt3rd
 #include "STAR/ss_main.h" // TSoURDt3rd_LoadLevel() //
-#include "STAR/drrr/khu_stuff.h" // partadd_earliestfile //
 
 //
 // Map MD5, calculated on level load.
@@ -1556,6 +1556,12 @@ static boolean TextmapCount(size_t size)
 	numvertexes = 0;
 	numsectors = 0;
 
+	if(!tkn)
+	{
+		CONS_Alert(CONS_ERROR, "No text in lump!\n");
+		return true;
+	}
+
 	// Look for namespace at the beginning.
 	if (!fastcmp(tkn, "namespace"))
 	{
@@ -1680,7 +1686,7 @@ static void ParseTextmapSectorParameter(UINT32 i, const char *param, const char 
 			if ((id = strchr(id, ' ')))
 				id++;
 		}
-	}	
+	}
 	else if (fastcmp(param, "xpanningfloor"))
 		sectors[i].floorxoffset = FLOAT_TO_FIXED(atof(val));
 	else if (fastcmp(param, "ypanningfloor"))
@@ -2155,6 +2161,60 @@ typedef struct
 	mapthing_t *angleanchor;
 } sectorspecialthings_t;
 
+static void P_WriteTextmap_Things(FILE *f, const mapthing_t *wmapthings)
+{
+	size_t i, j;
+	mtag_t firsttag;
+
+	// Actual writing
+	for (i = 0; i < nummapthings; i++)
+	{
+		fprintf(f, "thing // %s\n", sizeu1(i));
+		fprintf(f, "{\n");
+		firsttag = Tag_FGet(&wmapthings[i].tags);
+		if (firsttag != 0)
+			fprintf(f, "id = %d;\n", firsttag);
+		if (wmapthings[i].tags.count > 1)
+		{
+			fprintf(f, "moreids = \"");
+			for (j = 1; j < wmapthings[i].tags.count; j++)
+			{
+				if (j > 1)
+					fprintf(f, " ");
+				fprintf(f, "%d", wmapthings[i].tags.tags[j]);
+			}
+			fprintf(f, "\";\n");
+		}
+		fprintf(f, "x = %d;\n", wmapthings[i].x);
+		fprintf(f, "y = %d;\n", wmapthings[i].y);
+		if (wmapthings[i].z != 0)
+			fprintf(f, "height = %d;\n", wmapthings[i].z);
+		fprintf(f, "angle = %d;\n", wmapthings[i].angle);
+		if (wmapthings[i].pitch != 0)
+			fprintf(f, "pitch = %d;\n", wmapthings[i].pitch);
+		if (wmapthings[i].roll != 0)
+			fprintf(f, "roll = %d;\n", wmapthings[i].roll);
+		if (wmapthings[i].type != 0)
+			fprintf(f, "type = %d;\n", wmapthings[i].type);
+		if (wmapthings[i].spritexscale != FRACUNIT)
+			fprintf(f, "scalex = %f;\n", FIXED_TO_FLOAT(wmapthings[i].spritexscale));
+		if (wmapthings[i].spriteyscale != FRACUNIT)
+			fprintf(f, "scaley = %f;\n", FIXED_TO_FLOAT(wmapthings[i].spriteyscale));
+		if (wmapthings[i].scale != FRACUNIT)
+			fprintf(f, "mobjscale = %f;\n", FIXED_TO_FLOAT(wmapthings[i].scale));
+		if (wmapthings[i].options & MTF_OBJECTFLIP)
+			fprintf(f, "flip = true;\n");
+		for (j = 0; j < NUMMAPTHINGARGS; j++)
+			if (wmapthings[i].args[j] != 0)
+				fprintf(f, "arg%s = %d;\n", sizeu1(j), wmapthings[i].args[j]);
+		for (j = 0; j < NUMMAPTHINGSTRINGARGS; j++)
+			if (mapthings[i].stringargs[j])
+				fprintf(f, "stringarg%s = \"%s\";\n", sizeu1(j), mapthings[i].stringargs[j]);
+		fprintf(f, "}\n");
+		fprintf(f, "\n");
+	}
+}
+
 static void P_WriteTextmap(void)
 {
 	size_t i, j;
@@ -2422,52 +2482,7 @@ static void P_WriteTextmap(void)
 	}
 
 	fprintf(f, "namespace = \"srb2\";\n");
-	for (i = 0; i < nummapthings; i++)
-	{
-		fprintf(f, "thing // %s\n", sizeu1(i));
-		fprintf(f, "{\n");
-		firsttag = Tag_FGet(&wmapthings[i].tags);
-		if (firsttag != 0)
-			fprintf(f, "id = %d;\n", firsttag);
-		if (wmapthings[i].tags.count > 1)
-		{
-			fprintf(f, "moreids = \"");
-			for (j = 1; j < wmapthings[i].tags.count; j++)
-			{
-				if (j > 1)
-					fprintf(f, " ");
-				fprintf(f, "%d", wmapthings[i].tags.tags[j]);
-			}
-			fprintf(f, "\";\n");
-		}
-		fprintf(f, "x = %d;\n", wmapthings[i].x);
-		fprintf(f, "y = %d;\n", wmapthings[i].y);
-		if (wmapthings[i].z != 0)
-			fprintf(f, "height = %d;\n", wmapthings[i].z);
-		fprintf(f, "angle = %d;\n", wmapthings[i].angle);
-		if (wmapthings[i].pitch != 0)
-			fprintf(f, "pitch = %d;\n", wmapthings[i].pitch);
-		if (wmapthings[i].roll != 0)
-			fprintf(f, "roll = %d;\n", wmapthings[i].roll);
-		if (wmapthings[i].type != 0)
-			fprintf(f, "type = %d;\n", wmapthings[i].type);
-		if (wmapthings[i].spritexscale != FRACUNIT)
-			fprintf(f, "scalex = %f;\n", FIXED_TO_FLOAT(wmapthings[i].spritexscale));
-		if (wmapthings[i].spriteyscale != FRACUNIT)
-			fprintf(f, "scaley = %f;\n", FIXED_TO_FLOAT(wmapthings[i].spriteyscale));
-		if (wmapthings[i].scale != FRACUNIT)
-			fprintf(f, "mobjscale = %f;\n", FIXED_TO_FLOAT(wmapthings[i].scale));
-		if (wmapthings[i].options & MTF_OBJECTFLIP)
-			fprintf(f, "flip = true;\n");
-		for (j = 0; j < NUMMAPTHINGARGS; j++)
-			if (wmapthings[i].args[j] != 0)
-				fprintf(f, "arg%s = %d;\n", sizeu1(j), wmapthings[i].args[j]);
-		for (j = 0; j < NUMMAPTHINGSTRINGARGS; j++)
-			if (mapthings[i].stringargs[j])
-				fprintf(f, "stringarg%s = \"%s\";\n", sizeu1(j), mapthings[i].stringargs[j]);
-		fprintf(f, "}\n");
-		fprintf(f, "\n");
-	}
+	P_WriteTextmap_Things(f, wmapthings);
 
 	for (i = 0; i < numvertexes; i++)
 	{
@@ -2658,7 +2673,7 @@ static void P_WriteTextmap(void)
 			fprintf(f, "rotationfloor = %f;\n", FIXED_TO_FLOAT(AngleFixed(wsectors[i].floorangle)));
 		if (wsectors[i].ceilingangle != 0)
 			fprintf(f, "rotationceiling = %f;\n", FIXED_TO_FLOAT(AngleFixed(wsectors[i].ceilingangle)));
-        if (wsectors[i].extra_colormap)
+		if (wsectors[i].extra_colormap)
 		{
 			INT32 lightcolor = P_RGBAToColor(wsectors[i].extra_colormap->rgba);
 			UINT8 lightalpha = R_GetRgbaA(wsectors[i].extra_colormap->rgba);
@@ -2929,13 +2944,13 @@ static void P_LoadTextmap(void)
 		}
 
 		if (textmap_planefloor.defined == (PD_A|PD_B|PD_C|PD_D))
-        {
+		{
 			sc->f_slope = MakeViaEquationConstants(textmap_planefloor.a, textmap_planefloor.b, textmap_planefloor.c, textmap_planefloor.d);
 			sc->hasslope = true;
-        }
+		}
 
 		if (textmap_planeceiling.defined == (PD_A|PD_B|PD_C|PD_D))
-        {
+		{
 			sc->c_slope = MakeViaEquationConstants(textmap_planeceiling.a, textmap_planeceiling.b, textmap_planeceiling.c, textmap_planeceiling.d);
 			sc->hasslope = true;
         }
@@ -3091,7 +3106,12 @@ static boolean P_LoadMapData(const virtres_t *virt)
 	if (udmf) // Count how many entries for each type we got in textmap.
 	{
 		virtlump_t *textmap = vres_Find(virt, "TEXTMAP");
-		M_TokenizerOpen((char *)textmap->data);
+		if (textmap->size == 0)
+		{
+			CONS_Alert(CONS_ERROR, "Emtpy TEXTMAP Lump!\n");
+			return false;
+		}
+		M_TokenizerOpen((char *)textmap->data, textmap->size);
 		if (!TextmapCount(textmap->size))
 		{
 			M_TokenizerClose();
@@ -7785,14 +7805,11 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			I_UpdateNoVsync();
 		}
 
+#if 0	// STAR STUFF: moved S_Start() into TSoURDt3rd_LoadLevel(), so we can work magic :) //
 		// As oddly named as this is, this handles music only.
 		// We should be fine starting it here.
 		// Don't do this during titlemap, because the menu code handles music by itself.
-#if 0
-		// STAR NOTE: moved S_Start() code further down so TSoURDt3rd_LoadLevel() can work its magic :) //
-		if (!strnicmp(S_MusicName(),
-			(mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname, 7))
-			S_Start();
+		S_Start();
 #endif
 	}
 
@@ -8099,15 +8116,6 @@ static boolean P_LoadAddon(UINT16 numlumps)
 		return false;
 	}
 
-	// STAR STUFF: DRRR: Init partadd. //
-	static SINT8 partadd_stage = -1;
-	if (partadd_stage != 0)
-	{
-		partadd_earliestfile = wadnum;
-	}
-	partadd_stage = 0;
-	// DONE! //
-
 	switch(wadfiles[wadnum]->type)
 	{
 	case RET_PK3:
@@ -8272,11 +8280,6 @@ static boolean P_LoadAddon(UINT16 numlumps)
 		if (server)
 			D_SendExitLevel(false);
 	}
-
-	// STAR STUFF: DRRR: reset our partadds //
-	partadd_stage = -1;
-	partadd_earliestfile = UINT16_MAX;
-	// NEEDED FOR GRAPHIC COMPATIBILITY! //
 
 	return true;
 }

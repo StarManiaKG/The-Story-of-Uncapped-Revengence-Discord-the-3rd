@@ -32,10 +32,9 @@
 #include "hardware/hw3sound.h"
 #endif
 
-// STAR STUFF //
+// TSoURDt3rd
 #include "STAR/star_vars.h" // TSoURDt3rdPlayers::jukebox::curtrack & TSoURDt3rd_DetermineLevelMusic() //
-#include "STAR/smkg-cvars.h" // cv_soniccd //
-// WEEEEEEEEE //
+#include "STAR/smkg-cvars.h" // cv_tsourdt3rd_game_soniccd //
 
 boolean LUA_CallAction(enum actionnum actionnum, mobj_t *actor);
 
@@ -4419,7 +4418,7 @@ void A_SuperSneakers(mobj_t *actor)
 	{
 		if (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC)
 		{
-			if (!TSoURDt3rdPlayers[consoleplayer].jukebox.curtrack) // STAR STUFF: stop interrupting the jukebox session please //
+			if (!tsourdt3rd_global_jukebox->curtrack) // STAR STUFF: stop interrupting the jukebox session please //
 				S_SpeedMusic(1.4f);
 		}
 		else
@@ -11826,7 +11825,11 @@ mobj_t *P_InternalFlickySpawn(mobj_t *actor, mobjtype_t flickytype, fixed_t momz
 		else
 		{
 			INT32 prandom = P_RandomKey(mapheaderinfo[gamemap-1]->numFlickies);
-			flickytype = (cv_soniccd.value ? MT_SEED : mapheaderinfo[gamemap-1]->flickies[prandom]);
+#if 0
+			flickytype = mapheaderinfo[gamemap-1]->flickies[prandom];
+#else
+			flickytype = (cv_tsourdt3rd_game_soniccd.value ? MT_SEED : mapheaderinfo[gamemap-1]->flickies[prandom]);
+#endif
 		}
 	}
 
