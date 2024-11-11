@@ -169,12 +169,12 @@ typedef struct
 	boolean allownewplayer;
 	boolean discordinvites;
 
-	// STAR STUFF //
+	// TSoURDt3rd
 	UINT8 tsourdt3rd;
 	UINT8 tsourdt3rdmajorversion;
 	UINT8 tsourdt3rdminorversion;
 	UINT8 tsourdt3rdsubversion;
-	// END THIS STUFF //
+	UINT8 tsourdt3rdfullversion;
 } ATTRPACK serverconfig_pak;
 
 typedef struct
@@ -215,9 +215,8 @@ typedef struct
 	UINT8 mode;
 	char names[MAXSPLITSCREENPLAYERS][MAXPLAYERNAME];
 
-	// STAR STUFF //
+	// TSoURDt3rd
 	UINT8 tsourdt3rd;
-	// END THAT PLEASE //
 } ATTRPACK clientconfig_pak;
 
 #define SV_DEDICATED    0x40 // server is dedicated
@@ -344,7 +343,6 @@ typedef struct
 		INT32 filesneedednum;               //           4 bytes
 		filesneededconfig_pak filesneededcfg; //       ??? bytes
 		UINT32 pingtable[MAXPLAYERS+1];     //          68 bytes
-		//tsourdt3rd_pak tsourdt3rdpak;		// STAR STUFF //
 	} u; // This is needed to pack diff packet types data together
 } ATTRPACK doomdata_t;
 
@@ -463,11 +461,9 @@ boolean TryRunTics(tic_t realtic);
 /*boolean AddLmpExtradata(UINT8 **demo_p, INT32 playernum);
 void ReadLmpExtraData(UINT8 **demo_pointer, INT32 playernum);*/
 
-#ifndef NONET
 // translate a playername in a player number return -1 if not found and
 // print a error message in the console
 SINT8 nametonum(const char *name);
-#endif
 
 extern char motd[254], server_context[8];
 extern UINT8 playernode[MAXPLAYERS];

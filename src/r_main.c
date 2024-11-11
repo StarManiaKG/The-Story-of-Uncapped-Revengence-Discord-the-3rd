@@ -41,7 +41,8 @@
 #include "hardware/hw_main.h"
 #endif
 
-#include "STAR/lights/smkg-coronas.h" // TSoURDt3rd_R_Load_Corona() and various other corona data //
+// TSoURDt3rd
+#include "STAR/lights/smkg-coronas.h" // TSoURDt3rd_R_Load_Corona() and other pieces of corona data //
 
 // Fineangles in the SCREENWIDTH wide window.
 #define FIELDOFVIEW 2048
@@ -149,19 +150,7 @@ consvar_t cv_chasecam2 = CVAR_INIT ("chasecam2", "On", CV_CALL, CV_OnOff, ChaseC
 consvar_t cv_flipcam = CVAR_INIT ("flipcam", "No", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, FlipCam_OnChange);
 consvar_t cv_flipcam2 = CVAR_INIT ("flipcam2", "No", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, FlipCam2_OnChange);
 
-#if 0
 consvar_t cv_shadow = CVAR_INIT ("shadow", "On", CV_SAVE, CV_OnOff, NULL);
-#else
-// STAR NOTE: i was here lol
-static CV_PossibleValue_t shadow_cons_t[] = {{0, "Off"}, {1, "Drop"}, {2, "Realistic"}, {0, NULL}};
-consvar_t cv_shadow = CVAR_INIT ("shadow", "Drop", CV_SAVE, shadow_cons_t, NULL);
-
-// STAR STUFF //
-consvar_t cv_allobjectshaveshadows = CVAR_INIT ("allobjectshaveshadows", "No", CV_SAVE, CV_YesNo, NULL);
-static CV_PossibleValue_t shadowposition_cons_t[] = {{0, "Object's Front"}, {1, "Camera"}, {2, "Static"}, {0, NULL}};
-consvar_t cv_shadowposition = CVAR_INIT ("shadowposition", "Object's Front", CV_SAVE, shadowposition_cons_t, NULL);
-// END THIS //
-#endif
 consvar_t cv_skybox = CVAR_INIT ("skybox", "On", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_allowmlook = CVAR_INIT ("allowmlook", "Yes", CV_NETVAR|CV_ALLOWLUA, CV_YesNo, NULL);
 consvar_t cv_showhud = CVAR_INIT ("showhud", "Yes", CV_CALL|CV_ALLOWLUA,  CV_YesNo, R_SetViewSize);
@@ -1648,12 +1637,6 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_chasecam2);
 
 	CV_RegisterVar(&cv_shadow);
-#if 1
-	// STAR STUFF //
-	CV_RegisterVar(&cv_allobjectshaveshadows);
-	CV_RegisterVar(&cv_shadowposition);
-	// END THAT //
-#endif
 	CV_RegisterVar(&cv_skybox);
 	CV_RegisterVar(&cv_ffloorclip);
 	CV_RegisterVar(&cv_spriteclip);

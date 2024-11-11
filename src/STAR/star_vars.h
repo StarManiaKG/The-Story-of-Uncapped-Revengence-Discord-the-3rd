@@ -35,6 +35,12 @@
 #endif
 #define TSOURDT3RDVERSIONSTRING "TSoURDt3rd v"TSOURDT3RDVERSION
 
+// Crypto/RRID primitives
+#define PUBKEYLENGTH 32 // Enforced by Monocypher EdDSA
+#define PRIVKEYLENGTH 64 // Enforced by Monocypher EdDSA
+#define SIGNATURELENGTH 64 // Enforced by Monocypher EdDSA
+#define CHALLENGELENGTH 64 // Servers verify client identity by giving them messages to sign. How long are these messages?
+
 //// STRUCTS ////
 // Audio //
 typedef struct TSoURDt3rdBossMusic_s {
@@ -60,33 +66,16 @@ typedef struct TSoURDt3rdDefaultMusicTracks_s {
 
 // Main //
 typedef struct TSoURDt3rd_s {
-	UINT8                     public_key[32]; // User authentication
-	UINT8                     secret_key[64];
-	char                      user_hash [18];
-
+	uint8_t public_key[PUBKEYLENGTH]; // TSoURDt3rd authentication
+	uint8_t secret_key[PRIVKEYLENGTH];
+	char    user_hash[18];
 	boolean usingTSoURDt3rd;
-	boolean checkedVersion;
-	boolean masterServerAddressChanged;
-
-	boolean timeOver;
-
-	union
-	{
-		size_t loadCount;
-		UINT8 loadPercentage;
-		INT32 bspCount;
-		INT32 screenToUse;
-		boolean loadComplete;
-	} loadingScreens;
-
-	union
-	{
-		boolean serverUsesTSoURDt3rd;
-		UINT8 majorVersion, minorVersion, subVersion;
-		UINT32 serverTSoURDt3rdVersion;
-	} serverPlayers;
+	boolean server_usingTSoURDt3rd;
+	SINT8   server_majorVersion;
+	SINT8   server_minorVersion;
+	SINT8   server_subVersion;
+	UINT8   server_TSoURDt3rdVersion;
 } TSoURDt3rd_t;
-
 extern TSoURDt3rd_t TSoURDt3rdPlayers[MAXPLAYERS];
 
 extern TSoURDt3rdBossMusic_t bossMusic[];
@@ -95,11 +84,6 @@ extern TSoURDt3rdFinalBossMusic_t finalBossMusic[];
 extern TSoURDt3rdDefaultMusicTracks_t defaultMusicTracks[];
 
 //// VARIABLES ////
-// TSoURDt3rd Stuff //
-extern boolean TSoURDt3rd_LoadExtras;
-extern boolean TSoURDt3rd_LoadedExtras;
-extern boolean TSoURDt3rd_NoMoreExtras;
-
 // Events //
 // Easter
 extern INT32 TOTALEGGS;
@@ -113,7 +97,7 @@ extern INT32 numMapEggs;
 // Audio //
 // Game Over Music
 extern const char gameoverMusic[9][7];
-extern const INT32 gameoverMusicTics[9];
+extern INT32 gameoverMusicTics[9];
 
 // Star SFX
 extern INT32 STAR_JoinSFX;
@@ -123,16 +107,12 @@ extern INT32 STAR_SynchFailureSFX;
 // Discord SFX
 extern INT32 DISCORD_RequestSFX;
 
+// Servers //
+extern INT32 STAR_ServerToExtend;
+
 // Extras //
 // TF2
 extern boolean SpawnTheDispenser;
-
-//// COMMANDS ////
-// Game //
-extern consvar_t cv_loadingscreen, cv_loadingscreenimage;
-
-// Audio //
-extern consvar_t cv_vapemode;
 
 //// FUNCTIONS ////
 // Events //
@@ -145,12 +125,11 @@ void TSoURDt3rd_ClearPlayer(INT32 playernum);
 
 void STAR_LoadingScreen(void);
 
+// SDL //
 #ifdef HAVE_SDL
 void STAR_RenameWindow(const char *title);
-const char *STAR_SetWindowTitle(void);
 #endif
-
-void TSoURDt3rd_BuildTicCMD(UINT8 player);
+const char *STAR_SetWindowTitle(void);
 
 // Audio //
 void TSoURDt3rd_ControlMusicEffects(void);
@@ -159,11 +138,7 @@ const char *TSoURDt3rd_DetermineLevelMusic(void);
 UINT32 TSoURDt3rd_PinchMusicPosition(void);
 boolean TSoURDt3rd_SetPinchMusicSpeed(void);
 
-void STAR_SetSavefileProperties(void);
-
 // Files //
-void TSoURDt3rd_TryToLoadTheExtras(void);
-
 INT32 STAR_DetectFileType(const char* filename);
 boolean STAR_DoesStringMatchHarcodedFileName(const char *string);
 
@@ -172,14 +147,11 @@ boolean STAR_DoesStringMatchHarcodedFileName(const char *string);
 
 // Miscellanious //
 UINT32 TSoURDt3rd_CurrentVersion(void);
-
 UINT8 TSoURDt3rd_CurrentMajorVersion(void);
 UINT8 TSoURDt3rd_CurrentMinorVersion(void);
 UINT8 TSoURDt3rd_CurrentSubversion(void);
 
 INT32 STAR_ConvertStringToCompressedNumber(char *STRING, INT32 startIFrom, INT32 startJFrom, boolean turnIntoVersionNumber);
-char *STAR_ConvertNumberToString(INT32 NUMBER, INT32 startIFrom, INT32 startJFrom, boolean turnIntoVersionString);
-INT32 STAR_ConvertNumberToStringAndBack(INT32 NUMBER, INT32 startI1From, INT32 startJ1From, INT32 startI2From, INT32 startJ2From, boolean turnIntoVersionString, boolean turnIntoVersionNumber);
 
 INT32 STAR_CombineNumbers(INT32 ARGS, INT32 FIRSTNUM, ...);
 

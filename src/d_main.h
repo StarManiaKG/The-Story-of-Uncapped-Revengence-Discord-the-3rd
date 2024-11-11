@@ -60,6 +60,3 @@ void D_StartTitle(void);
 // Autoloading
 extern boolean autoloading;             // Star: Autoloading Wads
 extern boolean autoloaded;              // Star: Have We Autoloaded Any Game-Changing Mods?
-
-// Savefiles
-extern boolean TSoURDt3rd_useAsFileName;

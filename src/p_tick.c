@@ -844,6 +844,8 @@ void P_Ticker(boolean run)
 	if (G_GametypeHasTeams())
 		P_DoCTFStuff();
 
+	TSoURDt3rd_P_Ticker(run); // STAR STUFF: Don't forget to run our unique ticker too! //
+
 	if (run)
 	{
 		if (countdowntimer && G_PlatformGametype() && ((gametyperules & GTR_CAMPAIGN) || leveltime >= 4*TICRATE) && !stoppedclock && --countdowntimer <= 0)
@@ -883,8 +885,6 @@ void P_Ticker(boolean run)
 			G_ConsGhostTic();
 		if (modeattacking)
 			G_GhostTicker();
-
-		TSoURDt3rd_P_Ticker(); // STAR STUFF: Don't forget to run our unique ticker too! //
 
 		PS_START_TIMING(ps_lua_postthinkframe_time);
 		LUA_HookPostThinkFrame();

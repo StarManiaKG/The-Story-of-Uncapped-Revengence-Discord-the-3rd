@@ -50,7 +50,11 @@
 #endif
 
 #ifdef HAVE_MIXERX
+#ifdef _WIN32
 #include "SDL_mixer_ext.h"
+#else
+#include <SDL2/SDL_mixer_ext.h>
+#endif
 #else
 #include "SDL_mixer.h"
 #endif
@@ -126,14 +130,8 @@ static int result;
 #endif
 
 #ifdef HAVE_MIXERX
-//
-// Timdity Handlers (By StarManiaKG) //
-// (You can tell which is Timidity based :p)
-//
-#if defined(__WIN32__)
+#ifdef _WIN32
 #define TIMIDITY_CFG "sf2/timidity"
-#elif defined(__OS2__)
-#define TIMIDITY_CFG "/@unixroot/etc/timidity"
 #else
 #define TIMIDITY_CFG "/etc/timidity"
 #endif
@@ -711,12 +709,14 @@ void I_SetSfxVolume(UINT8 volume)
 
 static UINT32 get_real_volume(UINT8 volume)
 {
-#if defined (HAVE_MIXERX) && (_WIN32)
+#ifdef HAVE_MIXERX
+#ifdef _WIN32
 #if !SDL_MIXER_VERSION_ATLEAST(2,6,0) // StarManiaKG: recent SDL_Mixer_X builds fix whatever issue was here, apparently :p //
 	if (I_SongType() == MU_MID)
 		// HACK: Until we stop using native MIDI,
 		// disable volume changes
 		return ((UINT32)31*128/31); // volume = 31
+#endif
 #endif
 #endif
 
@@ -1610,13 +1610,15 @@ void I_SetMusicVolume(UINT8 volume)
 	if (!I_SongPlaying())
 		return;
 
-#if defined (HAVE_MIXERX) && (_WIN32)
+#ifdef HAVE_MIXERX
+#ifdef _WIN32
 #if !SDL_MIXER_VERSION_ATLEAST(2,6,0) // StarManiaKG: recent SDL_Mixer_X builds fix whatever issue was here, apparently :p //
 	if (I_SongType() == MU_MID)
 		// HACK: Until we stop using native MIDI,
 		// disable volume changes
 		music_volume = 31;
 	else
+#endif
 #endif
 #endif
 		music_volume = volume;

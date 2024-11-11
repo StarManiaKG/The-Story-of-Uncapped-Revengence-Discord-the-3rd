@@ -9,24 +9,33 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 // \file menus/menudefs/transient/drrr-message-box.c
-// \brief MESSAGE BOX (aka: a hacked, cobbled together menu)
+// \brief MESSAGE BOX (aka: a hacked, cobbled together menu) (but one way better than Vanilla SRB2s')
 
-#include "../../../drrr/k_menu.h"
+#include "../../smkg-m_sys.h" // menuwipe & menumessage //
+#include "../../../smkg-st_hud.h" // kp_buttons //
 
 #include "../../../../v_video.h"
 #include "../../../../z_zone.h"
 
-#include "../../../menus/smkg_m_draw.h" // menuwipe //
+// ------------------------ //
+//        Variables
+// ------------------------ //
 
 // message prompt struct
 struct menumessage_s menumessage;
 
+// ------------------------ //
+//        Functions
+// ------------------------ //
+
 //
-// M_StringHeight
+// M_Sys_StringHeight
 //
 // Find string height from hu_font chars
 //
-static inline size_t M_StringHeight(const char *string)
+// Ported from M_StringHeight() in Dr.Robotnik's Ring Racers!
+//
+static inline size_t M_Sys_StringHeight(const char *string)
 {
 	size_t h = 16, i, len = strlen(string);
 
@@ -41,7 +50,7 @@ static inline size_t M_StringHeight(const char *string)
 }
 
 // default message handler
-void DRRR_M_StartMessage(const char *header, const char *string, void (*routine)(INT32), menumessagetype_t itemtype, const char *confirmstr, const char *defaultstr)
+void TSoURDt3rd_M_StartMessage(const char *header, const char *string, void (*routine)(INT32), menumessagetype_t itemtype, const char *confirmstr, const char *defaultstr)
 {
 	const UINT8 pid = 0;
 	DEBFILE(string);
@@ -96,12 +105,12 @@ void DRRR_M_StartMessage(const char *header, const char *string, void (*routine)
 	// oogh my god this was replaced in 2023
 
 	menumessage.x = (8 * MAXSTRINGLENGTH) - 1;
-	menumessage.y = M_StringHeight(menumessage.message);
+	menumessage.y = M_Sys_StringHeight(menumessage.message);
 
-	M_SetMenuDelay(pid);	// Set menu delay to avoid setting off any of the handlers.
+	TSoURDt3rd_M_SetMenuDelay(pid);	// Set menu delay to avoid setting off any of the handlers.
 }
 
-void DRRR_M_StopMessage(INT32 choice)
+void TSoURDt3rd_M_StopMessage(INT32 choice)
 {
 	if (!menumessage.active || menumessage.closing)
 		return;
@@ -122,10 +131,10 @@ void DRRR_M_StopMessage(INT32 choice)
 	menumessage.closing |= ((2*MENUMESSAGECLOSE) - 1);
 #endif
 
-	M_SetMenuDelay(pid);
+	TSoURDt3rd_M_SetMenuDelay(pid);
 }
 
-boolean M_MenuMessageTick(void)
+boolean TSoURDt3rd_M_MenuMessageTick(void)
 {
 	if (menuwipe)
 		return false;
@@ -168,14 +177,14 @@ boolean M_MenuMessageTick(void)
 }
 
 // regular handler for MM_NOTHING and MM_YESNO
-void M_HandleMenuMessage(void)
+void TSoURDt3rd_M_HandleMenuMessage(void)
 {
-	if (!M_MenuMessageTick())
+	if (!TSoURDt3rd_M_MenuMessageTick())
 		return;
 
 	const UINT8 pid = 0;
-	boolean btok = M_MenuConfirmPressed(pid);
-	boolean btnok = M_MenuBackPressed(pid);
+	boolean btok = TSoURDt3rd_M_MenuConfirmPressed(pid);
+	boolean btnok = TSoURDt3rd_M_MenuBackPressed(pid);
 
 	switch (menumessage.flags)
 	{
@@ -183,18 +192,174 @@ void M_HandleMenuMessage(void)
 		case MM_YESNO:
 		{
 			if (btok)
-				DRRR_M_StopMessage(MA_YES);
+				TSoURDt3rd_M_StopMessage(MA_YES);
 			else if (btnok)
-				DRRR_M_StopMessage(MA_NO);
+				TSoURDt3rd_M_StopMessage(MA_NO);
 
 			break;
 		}
 		default:
 		{
 			if (btok || btnok)
-				DRRR_M_StopMessage(MA_NONE);
+				TSoURDt3rd_M_StopMessage(MA_NONE);
 
 			break;
 		}
 	}
+}
+
+// Draw the message popup submenu
+void TSoURDt3rd_M_DrawMenuMessage(void)
+{
+	if (!menumessage.active)
+		return;
+
+	INT32 x = (BASEVIDWIDTH - menumessage.x)/2;
+	INT32 y = (BASEVIDHEIGHT - menumessage.y)/2 + floor(pow(2, (double)(9 - menumessage.fadetimer)));
+	size_t i, start = 0;
+	char string[MAXMENUMESSAGE];
+	const char *msg = menumessage.message;
+
+	V_DrawFadeScreen(31, menumessage.fadetimer);
+
+	V_DrawFill(0, y, BASEVIDWIDTH, menumessage.y, 159);
+
+	if (menumessage.header != NULL)
+	{
+		V_DrawThinString(x, y - 10, tsourdt3rd_highlightflags|V_ALLOWLOWERCASE, menumessage.header);
+	}
+
+	if (menumessage.defaultstr)
+	{
+		INT32 workx = x + menumessage.x;
+		INT32 worky = y + menumessage.y;
+
+		boolean standardbuttons = (cv_usejoystick.value || cv_usejoystick2.value);
+
+		boolean push;
+
+		if (menumessage.closing)
+			push = (menumessage.answer != MA_YES);
+		else
+		{
+			const UINT8 anim_duration = 16;
+			push = ((menumessage.timer % (anim_duration * 2)) < anim_duration);
+		}
+
+		workx -= V_ThinStringWidth(menumessage.defaultstr, 0);
+		V_DrawThinString(
+			workx, worky + 1,
+			((push && (menumessage.closing & MENUMESSAGECLOSE))
+				? tsourdt3rd_highlightflags : 0)|V_ALLOWLOWERCASE,
+			menumessage.defaultstr
+		);
+
+		workx -= 2;
+
+		if (standardbuttons)
+		{
+			workx -= SHORT(kp_button_x[1][0]->width);
+			K_drawButton(
+				workx * FRACUNIT, worky * FRACUNIT,
+				0, kp_button_x[1],
+				push
+			);
+
+			workx -= SHORT(kp_button_b[1][0]->width);
+			K_drawButton(
+				workx * FRACUNIT, worky * FRACUNIT,
+				0, kp_button_b[1],
+				push
+			);
+		}
+		else
+		{
+			TSoURDt3rd_M_DrawMediocreKeyboardKey("ESC", &workx, worky, push, true);
+		}
+
+		if (menumessage.confirmstr)
+		{
+			workx -= 12;
+
+			if (menumessage.closing)
+				push = !push;
+
+			workx -= V_ThinStringWidth(menumessage.confirmstr, V_ALLOWLOWERCASE);
+			V_DrawThinString(
+				workx, worky + 1,
+				((push && (menumessage.closing & MENUMESSAGECLOSE))
+					? tsourdt3rd_highlightflags : 0)|V_ALLOWLOWERCASE,
+				menumessage.confirmstr
+			);
+
+			workx -= 2;
+		}
+
+		if (standardbuttons)
+		{
+			workx -= SHORT(kp_button_a[1][0]->width);
+			K_drawButton(
+				workx * FRACUNIT, worky * FRACUNIT,
+				0, kp_button_a[1],
+				push
+			);
+		}
+		else
+		{
+			TSoURDt3rd_M_DrawMediocreKeyboardKey("ENTER", &workx, worky, push, true);
+		}
+	}
+
+	x -= 4;
+	y += 4;
+
+	while (*(msg+start))
+	{
+		size_t len = strlen(msg+start);
+
+		for (i = 0; i < len; i++)
+		{
+			if (*(msg+start+i) == '\n')
+			{
+				memset(string, 0, MAXMENUMESSAGE);
+				if (i >= MAXMENUMESSAGE)
+				{
+					CONS_Printf("TSoURDt3rd_M_DrawMenuMessage: too long segment in %s\n", msg);
+					return;
+				}
+				else
+				{
+					strncpy(string,msg+start, i);
+					string[i] = '\0';
+					start += i;
+					i = (size_t)-1; //added : 07-02-98 : damned!
+					start++;
+				}
+				break;
+			}
+		}
+
+		if (i == strlen(msg+start))
+		{
+			if (i >= MAXMENUMESSAGE)
+			{
+				CONS_Printf("TSoURDt3rd_M_DrawMenuMessage: too long segment in %s\n", msg);
+				return;
+			}
+			else
+			{
+				strcpy(string, msg + start);
+				start += i;
+			}
+		}
+
+		V_DrawString((BASEVIDWIDTH - V_StringWidth(string, 0))/2, y, V_ALLOWLOWERCASE, string);
+		y += 8;
+	}
+}
+
+void TSoURDt3rd_M_DrawMenuMessageOnTitle(INT32 count)
+{
+	if (count > 0)
+		TSoURDt3rd_M_DrawMenuMessage();
 }

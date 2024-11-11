@@ -79,17 +79,13 @@
 #include "console.h"
 #endif
 
+// TSoURDt3rd
+#include "STAR/core/smkg-p_setup.h" // TSoURDt3rd_P_LoadAddon() //
+
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif
 
-// TSoURDt3rd
-#include "STAR/star_vars.h"
-#include "STAR/ss_main.h" // eastermode, aprilfoolsmode, xmasmode //
-
-#include "STAR/parser/smkg-script.h"
-
-#include "deh_soc.h"
 
 typedef struct
 {
@@ -245,26 +241,6 @@ static void W_LoadDehackedLumpsPK3(UINT16 wadnum, boolean mainfile)
 			free(name);
 		}
 	}
-
-	// STAR STUFF //
-	static const char *STAR_DeHacked[] = {
-		"STAR/",
-		"TSoURDt3rd/",
-		NULL
-	};
-
-	for (INT32 i = 0; STAR_DeHacked[i]; i++)
-	{
-		posStart = W_CheckNumForFolderStartPK3(STAR_DeHacked[i], wadnum, 0);
-		if (posStart != INT16_MAX)
-		{
-			posEnd = W_CheckNumForFolderEndPK3(STAR_DeHacked[i], wadnum, posStart);
-			for(; posStart < posEnd; posStart++)
-				TSoURDt3rd_LoadLump(wadnum, posStart);
-			break;
-		}
-	}
-	// PLEASE CODE SOMETHING ELSE //
 }
 
 // search for all DEHACKED lump in all wads and load it
@@ -304,13 +280,6 @@ static void W_LoadDehackedLumps(UINT16 wadnum, boolean mainfile)
 				CONS_Printf(M_GetText("Loading object config from %s\n"), wadfiles[wadnum]->filename);
 				DEH_LoadDehackedLumpPwad(wadnum, lump, mainfile);
 			}
-
-			// STAR STUFF: Check for STAR lump //
-			else if (memcmp(lump_p->name,"STAR_",5)==0
-				|| memcmp(lump_p->name,"STAR",4)==0)
-
-				TSoURDt3rd_LoadLump(wadnum, lump);
-			// END THAT PLEASE //
 	}
 
 #ifdef SCANTHINGS
@@ -382,11 +351,6 @@ static restype_t ResourceFileDetect (const char* filename)
 		return RET_SOC;
 	if (!stricmp(&filename[strlen(filename) - 4], ".lua"))
 		return RET_LUA;
-
-	// STAR STUFF //
-	if (!stricmp(&filename[strlen(filename) - 5], ".star"))
-		return RET_STAR;
-	// END THAT PLEASE //
 
 	return RET_WAD;
 }
@@ -852,7 +816,6 @@ static UINT16 W_InitFileError (const char *filename, boolean exitworthy)
 	}
 	else
 		CONS_Printf(M_GetText("Errors occurred while loading %s; not added.\n"), filename);
-
 	return INT16_MAX;
 }
 
@@ -964,13 +927,6 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 	case RET_WAD:
 		lumpinfo = ResGetLumpsWad(handle, &numlumps, filename);
 		break;
-
-	// STAR STUFF //
-	case RET_STAR:
-		lumpinfo = ResGetLumpsStandalone(handle, &numlumps, "SS_MAIN");
-		break;
-	// HUH.... //
-
 	default:
 		CONS_Alert(CONS_ERROR, "Unsupported file format\n");
 	}
@@ -979,6 +935,12 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 	{
 		fclose(handle);
 		return W_InitFileError(filename, startup);
+	}
+
+	if (important && !mainfile)
+	{
+		//G_SetGameModified(true);
+		modifiedgame = true; // avoid savemoddata being set to false
 	}
 
 	//
@@ -1033,17 +995,11 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 	case RET_LUA:
 		LUA_LoadLump(numwadfiles - 1, 0, true);
 		break;
-
-	// STAR STUFF //
-	case RET_STAR:
-		TSoURDt3rd_LoadLump(numwadfiles - 1, 0);
-		break;
-	// DO THE FUNNINESS! //
-
 	default:
 		break;
 	}
 
+	TSoURDt3rd_P_LoadAddon(numwadfiles - 1, wadfile->numlumps); // STAR STUFF: Don't forget to load our cool stuff too! //
 	W_InvalidateLumpnumCache();
 	return wadfile->numlumps;
 }
@@ -1174,6 +1130,9 @@ UINT16 W_InitFolder(const char *path, boolean mainfile, boolean startup)
 		return W_InitFileError(path, startup);
 	}
 
+	if (important && !mainfile)
+		G_SetGameModified(true);
+
 	wadfile = Z_Malloc(sizeof (*wadfile), PU_STATIC, NULL);
 	wadfile->filename = fn;
 	wadfile->path = fullpath;
@@ -1198,6 +1157,7 @@ UINT16 W_InitFolder(const char *path, boolean mainfile, boolean startup)
 
 	W_ReadFileShaders(wadfile);
 	W_LoadDehackedLumpsPK3(numwadfiles - 1, mainfile);
+	TSoURDt3rd_P_LoadAddon(numwadfiles - 1, wadfile->numlumps); // STAR STUFF: Don't forget to load our cool stuff too! //
 	W_InvalidateLumpnumCache();
 
 	return wadfile->numlumps;
@@ -1205,8 +1165,6 @@ UINT16 W_InitFolder(const char *path, boolean mainfile, boolean startup)
 
 /** Tries to load a series of files.
   * All files are wads unless they have an extension of ".soc" or ".lua".
-  *
-  * STAR NOTE: also '.star' files too :)
   *
   * Each file is optional, but at least one file must be found or an error will
   * result. Lump names can appear multiple times. The name searcher looks
@@ -2329,12 +2287,6 @@ static lumpchecklist_t folderblacklist[] =
 	{"Patches/", 8},
 	{"Flats/", 6},
 	{"Fades/", 6},
-
-	// STAR STUFF //
-	{"STAR/", 5},
-	{"TSoURDt3rd/", 11},
-	// HERE WE GO! //
-
 	{NULL, 0},
 };
 
@@ -2486,8 +2438,7 @@ static int W_VerifyFile(const char *filename, lumpchecklist_t *checklist,
 	{
 		// detect wad file by the absence of the other supported extensions
 		if (stricmp(&filename[strlen(filename) - 4], ".soc")
-		&& stricmp(&filename[strlen(filename) - 4], ".lua")
-		&& stricmp(&filename[strlen(filename) - 5], ".star")) // STAR STUFF: LOAD MY CUSTOM STUFFS PLEASE //
+		&& stricmp(&filename[strlen(filename) - 4], ".lua"))
 		{
 			goodfile = W_VerifyWAD(handle, checklist, status);
 		}
@@ -2609,6 +2560,10 @@ int W_VerifyNMUSlumps(const char *filename, boolean exit_on_error)
 		{"BLANKLVL", 8}, // NO LEVEL ICONS?
 
 		{"CHAR", 4}, // Character Select Screen Graphics
+
+		{"JUKEDEF", 7}, // Jukebox definitions
+		{"WINDEF", 6}, // Window title definitions
+		{"EXMUSDEF", 8}, // Extended music definitions
 		// NETGAME-COMPATIBLE, TOO //
 
 		{NULL, 0},

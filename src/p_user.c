@@ -60,6 +60,7 @@
 #endif
 
 // TSoURDt3rd
+#include "STAR/smkg-cvars.h" // cv_tsourdt3rd_sdl_windowtitle stuff & cv_tsourdt3rd_audio_gameover //
 #include "STAR/star_vars.h" // STAR_SetWindowTitle() //
 #include "STAR/p_user.h" // TSoURDt3rd_P_SuperReady() //
 
@@ -1584,7 +1585,7 @@ void P_PlayLivesJingle(player_t *player)
 void P_PlayJingle(player_t *player, jingletype_t jingletype)
 {
 	// STAR STUFF //
-	strcpy(jingleinfo[JT_GOVER].musname, gameoverMusic[cv_gameovermusic.value]);
+	strcpy(jingleinfo[JT_GOVER].musname, gameoverMusic[cv_tsourdt3rd_audio_gameover.value]);
 	// END OF THAT //
 
 	const char *musname = jingleinfo[jingletype].musname;
@@ -4371,7 +4372,7 @@ static void P_DoSuperStuff(player_t *player)
 			P_SpawnShieldOrb(player);
 
 #ifdef HAVE_SDL
-			if (cv_windowtitletype.value == 1)
+			if (cv_tsourdt3rd_game_sdl_windowtitle_type.value == 1)
 				STAR_SetWindowTitle();
 #endif
 
@@ -4426,7 +4427,7 @@ static void P_DoSuperStuff(player_t *player)
 			player->powers[pw_super] = 0;
 
 #ifdef HAVE_SDL
-			if (cv_windowtitletype.value == 1)
+			if (cv_tsourdt3rd_game_sdl_windowtitle_type.value == 1)
 				STAR_SetWindowTitle();
 #endif
 
@@ -5182,7 +5183,7 @@ static boolean P_PlayerShieldThink(player_t *player, ticcmd_t *cmd, mobj_t *lock
 {
 	mobj_t *lockonshield = NULL;
 
-	if ((player->powers[pw_shield] & SH_NOSTACK) && (!player->powers[pw_super] || (player->powers[pw_super] && cv_armageddonnukewhilesuper.value && (player->powers[pw_shield] & SH_NOSTACK) == SH_ARMAGEDDON)) && !(player->pflags & PF_SPINDOWN) // STAR NOTE: i was here by the way
+	if ((player->powers[pw_shield] & SH_NOSTACK) && (!player->powers[pw_super] || (player->powers[pw_super] && cv_tsourdt3rd_players_nukewhilesuper.value && (player->powers[pw_shield] & SH_NOSTACK) == SH_ARMAGEDDON)) && !(player->pflags & PF_SPINDOWN) // STAR NOTE: i was here by the way
 		&& ((!(player->pflags & PF_THOKKED) || (((player->powers[pw_shield] & SH_NOSTACK) == SH_BUBBLEWRAP || (player->powers[pw_shield] & SH_NOSTACK) == SH_ATTRACT) && player->secondjump == UINT8_MAX) ))) // thokked is optional if you're bubblewrapped / 3dblasted
 	{
 		if ((player->powers[pw_shield] & SH_NOSTACK) == SH_ATTRACT && !(player->charflags & SF_NOSHIELDABILITY))
@@ -9630,27 +9631,6 @@ void P_RestoreMultiMusic(player_t *player)
 // Decrease POV height to floor height.
 //
 
-// STAR STUFF //
-const char gameoverMusic[9][7] = {
-	[0] = "_gover",
-	
-	"_govr1",
-	"_govcd",
-	"_govr3",
-	"_govrr",
-	"_govrm",
-	
-	"_govrs",
-	"_govrc",
-	"_govry"
-};
-
-const INT32 gameoverMusicTics[9] = {
-	[1] = 15*TICRATE,
-	[7] = 6*TICRATE
-};
-// END OF THAT //
-
 static void P_DeathThink(player_t *player)
 {
 	INT32 j = MAXPLAYERS;
@@ -9658,26 +9638,23 @@ static void P_DeathThink(player_t *player)
 	ticcmd_t *cmd = &player->cmd;
 	player->deltaviewheight = 0;
 
-	// STAR STUFF: it's funnier this way //
-	if (TSoURDt3rd_AprilFools_ModeEnabled() && ultimatemode && !netgame)
-		return;
-	// END OF STAR STUFF YAY //
-
 	if (player->deadtimer < INT32_MAX)
 		player->deadtimer++;
 
 	if (player->bot == BOT_2PAI || player->bot == BOT_2PHUMAN) // don't allow followbots to do any of the below, B_CheckRespawn does all they need for respawning already
 		goto notrealplayer;
 
-	// continue logic //* (STAR NOTE: contains timeover now lol) *//
+	// STAR STUFF: we have a cool death thinker too, you know... //
+	if (TSoURDt3rd_P_DeathThink(player))
+		return;
+	// SEE? LOOK HOW WELL WE'RE DOING! //
+
+	// continue logic
 	if (!(netgame || multiplayer) && player->lives <= 0 && player == &players[consoleplayer]) //Extra players in SP can't be allowed to continue or end game
 	{
 		if (player->deadtimer > (3*TICRATE) && (cmd->buttons & BT_SPIN || cmd->buttons & BT_JUMP) && (!continuesInSession || player->continues > 0))
 			G_UseContinue();
-		else if ((!TSoURDt3rdPlayers[consoleplayer].timeOver && player->deadtimer >= gameovertics)
-			|| (TSoURDt3rdPlayers[consoleplayer].timeOver && ((!gameoverMusicTics[cv_gameovermusic.value] && player->deadtimer >= gameovertics)
-			|| (gameoverMusicTics[cv_gameovermusic.value] && player->deadtimer >= gameoverMusicTics[cv_gameovermusic.value]))))
-
+		else if (player->deadtimer >= gameovertics)
 			G_UseContinue(); // Even if we don't have one this handles ending the game
 	}
 
@@ -9735,13 +9712,8 @@ static void P_DeathThink(player_t *player)
 				}
 			}
 
-			// Single player auto respawn //* STAR NOTE: this includes timeover now too lol *//
-			if (!(netgame || multiplayer)
-				&& ((!TSoURDt3rdPlayers[consoleplayer].timeOver && player->deadtimer > TICRATE<<1)
-				
-				|| (TSoURDt3rdPlayers[consoleplayer].timeOver && ((!gameoverMusicTics[cv_gameovermusic.value] && player->deadtimer >= gameovertics)
-				|| (gameoverMusicTics[cv_gameovermusic.value] && player->deadtimer >= gameoverMusicTics[cv_gameovermusic.value])))))
-
+			// Single player auto respawn
+			if (!(netgame || multiplayer) && player->deadtimer > TICRATE<<1)
 				player->playerstate = PST_REBORN;
 		}
 	}
@@ -12537,7 +12509,7 @@ void P_PlayerThink(player_t *player)
 	}
 #undef dashmode
 
-	TSoURDt3rd_P_PlayerThink(); // STAR STUFF: THE RUNNING OF OUR UNIQUE PLAYER STUFF! //
+	TSoURDt3rd_P_PlayerThink(player); // STAR STUFF: THE RUNNING OF OUR UNIQUE PLAYER STUFF! //
 
 	LUA_HookPlayer(player, HOOK(PlayerThink));
 

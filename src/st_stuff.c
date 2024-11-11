@@ -2750,7 +2750,7 @@ static void ST_overlayDrawer(void)
 		&& (netgame || multiplayer)
 		&& (cv_cooplives.value == 0))
 	;
-	else if ((G_GametypeUsesLives() || ((gametyperules & (GTR_RACE|GTR_LIVES)) == GTR_RACE)) && (stplyr->lives <= 0 || TSoURDt3rdPlayers[consoleplayer].timeOver) && !(hu_showscores && (netgame || multiplayer)))
+	else if ((G_GametypeUsesLives() || ((gametyperules & (GTR_RACE|GTR_LIVES)) == GTR_RACE)) && (stplyr->lives <= 0 || tsourdt3rd[consoleplayer].levels.time_over) && !(hu_showscores && (netgame || multiplayer)))
 	{
 		INT32 i = MAXPLAYERS;
 		INT32 deadtimer = stplyr->spectator ? TICRATE : (stplyr->deadtimer-(TICRATE<<1));
@@ -2777,7 +2777,7 @@ static void ST_overlayDrawer(void)
 			INT32 lvlttlx = min(6*deadtimer, BASEVIDWIDTH/2);
 			UINT32 flags = V_PERPLAYER|(stplyr->spectator ? V_HUDTRANSHALF : V_HUDTRANS);
 
-			V_DrawScaledPatch(lvlttlx - 8, BASEVIDHEIGHT/2, flags, ((countdown == 1 || TSoURDt3rdPlayers[consoleplayer].timeOver) ? slidtime : slidgame));
+			V_DrawScaledPatch(lvlttlx - 8, BASEVIDHEIGHT/2, flags, ((countdown == 1 || tsourdt3rd[consoleplayer].levels.time_over) ? slidtime : slidgame));
 			V_DrawScaledPatch(BASEVIDWIDTH + 8 - lvlttlx, BASEVIDHEIGHT/2, flags, slidover);
 		}
 	}

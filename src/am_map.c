@@ -25,7 +25,8 @@
 #include "hardware/hw_main.h"
 #endif
 
-#include "STAR/smkg-cvars.h" // cv_automapoutsidedevmode //
+// TSoURDt3rd
+#include "STAR/smkg-cvars.h" // cv_tsourdt3rd_debug_automapanywhere //
 
 // For use if I do walls with outsides/insides
 static const UINT8 REDS        = (8*16);
@@ -452,13 +453,13 @@ static void AM_setWindowPanning(void)
   * \param ev Event to possibly respond to.
   * \return True if the automap responder ate the event.
   * 
-  * STAR NOTE: edited for cv_automapoutsidedevmode support :)
+  * STAR NOTE: edited for cv_tsourdt3rd_debug_automapanywhere support :)
   */
 boolean AM_Responder(event_t *ev)
 {
 	INT32 rc = false;
 
-	if (devparm || cv_debug || cv_automapoutsidedevmode.value) // only automap in Debug Tails 01-19-2001
+	if (devparm || cv_debug || cv_tsourdt3rd_debug_automapanywhere.value) // only automap in Debug Tails 01-19-2001
 	{
 		if (!automapactive)
 		{
@@ -627,11 +628,11 @@ static inline void AM_doFollowPlayer(void)
 
 /** Updates automap on a game tic, while the automap is enabled.
   *
-  * STAR NOTE: also edited for cv_automapoutsidedevmode support :)
+  * STAR NOTE: also edited for cv_tsourdt3rd_debug_automapanywhere support :)
   */
 void AM_Ticker(void)
 {
-	if (!cv_debug && !cv_automapoutsidedevmode.value)
+	if (!cv_debug && !cv_tsourdt3rd_debug_automapanywhere.value)
 		AM_Stop();
 
 	if (dedicated || !automapactive)

@@ -12,7 +12,6 @@
 /// \file  km_menudraw.c
 /// \brief SRB2Kart's menu drawer functions
 
-#include "kg_input.h"
 #include "k_menu.h"
 
 #include "../../m_fixed.h"
@@ -20,10 +19,9 @@
 #include "../../v_video.h"
 #include "../../z_zone.h"
 
-#include "../smkg-st_hud.h"
 #include "../smkg_g_inputs.h"
 
-#include "../menus/smkg_m_draw.h"
+#include "../menus/smkg-m_sys.h"
 #include "../netcode/drrr-m_swap.h"
 
 static const char *M_MenuTypingCroppedString(void)
@@ -70,8 +68,8 @@ void M_DrawMenuTyping(void)
 	}
 
 	TSoURDt3rd_M_DrawMenuTooltips(
-		0, 0, V_SNAPTOTOP, NULL,
-		BASEVIDWIDTH/2, 15, true
+		0, 0, 0, NULL, false,
+		BASEVIDWIDTH/2, 13, 0, true
 	);
 
 	//M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
@@ -153,7 +151,7 @@ void M_DrawMenuTyping(void)
 					buf[0] = '\x1C'; // left arrow
 					buf[1] = '\0';
 
-					if (canmodifycol && M_MenuBackHeld(pid))
+					if (canmodifycol && TSoURDt3rd_M_MenuBackHeld(pid))
 					{
 						col -= 4;
 						canmodifycol = false;
@@ -170,7 +168,7 @@ void M_DrawMenuTyping(void)
 						col = 22;
 					}
 
-					if (canmodifycol && M_MenuExtraHeld(pid))
+					if (canmodifycol && TSoURDt3rd_M_MenuExtraHeld(pid))
 					{
 						col -= 4;
 						canmodifycol = false;
@@ -207,7 +205,7 @@ void M_DrawMenuTyping(void)
 				{
 					if (tempkeyboardx == j && menutyping.keyboardy == i)
 					{
-						if (canmodifycol && M_MenuConfirmHeld(pid))
+						if (canmodifycol && TSoURDt3rd_M_MenuConfirmHeld(pid))
 						{
 							col -= 4;
 							canmodifycol = false;
@@ -305,160 +303,4 @@ void TSoURDt3rd_M_DrawMediocreKeyboardKey(const char *text, INT32 *workx, INT32 
 		(*workx), worky + 1,
 		V_ALLOWLOWERCASE, text
 	);
-}
-
-// Draw the message popup submenu
-void TSoURDt3rd_M_DrawMenuMessage(void)
-{
-	if (!menumessage.active)
-		return;
-
-	INT32 x = (BASEVIDWIDTH - menumessage.x)/2;
-	INT32 y = (BASEVIDHEIGHT - menumessage.y)/2 + floor(pow(2, (double)(9 - menumessage.fadetimer)));
-	size_t i, start = 0;
-	char string[MAXMENUMESSAGE];
-	const char *msg = menumessage.message;
-
-	V_DrawFadeScreen(31, menumessage.fadetimer);
-
-	V_DrawFill(0, y, BASEVIDWIDTH, menumessage.y, 159);
-
-	if (menumessage.header != NULL)
-	{
-		V_DrawThinString(x, y - 10, tsourdt3rd_highlightflags|V_ALLOWLOWERCASE, menumessage.header);
-	}
-
-	if (menumessage.defaultstr)
-	{
-		INT32 workx = x + menumessage.x;
-		INT32 worky = y + menumessage.y;
-
-		boolean standardbuttons = (cv_usejoystick.value || cv_usejoystick2.value);
-
-		boolean push;
-
-		if (menumessage.closing)
-			push = (menumessage.answer != MA_YES);
-		else
-		{
-			const UINT8 anim_duration = 16;
-			push = ((menumessage.timer % (anim_duration * 2)) < anim_duration);
-		}
-
-		workx -= V_ThinStringWidth(menumessage.defaultstr, 0);
-		V_DrawThinString(
-			workx, worky + 1,
-			((push && (menumessage.closing & MENUMESSAGECLOSE))
-				? tsourdt3rd_highlightflags : 0)|V_ALLOWLOWERCASE,
-			menumessage.defaultstr
-		);
-
-		workx -= 2;
-
-		if (standardbuttons)
-		{
-			workx -= SHORT(kp_button_x[1][0]->width);
-			K_drawButton(
-				workx * FRACUNIT, worky * FRACUNIT,
-				0, kp_button_x[1],
-				push
-			);
-
-			workx -= SHORT(kp_button_b[1][0]->width);
-			K_drawButton(
-				workx * FRACUNIT, worky * FRACUNIT,
-				0, kp_button_b[1],
-				push
-			);
-		}
-		else
-		{
-			TSoURDt3rd_M_DrawMediocreKeyboardKey("ESC", &workx, worky, push, true);
-		}
-
-		if (menumessage.confirmstr)
-		{
-			workx -= 12;
-
-			if (menumessage.closing)
-				push = !push;
-
-			workx -= V_ThinStringWidth(menumessage.confirmstr, V_ALLOWLOWERCASE);
-			V_DrawThinString(
-				workx, worky + 1,
-				((push && (menumessage.closing & MENUMESSAGECLOSE))
-					? tsourdt3rd_highlightflags : 0)|V_ALLOWLOWERCASE,
-				menumessage.confirmstr
-			);
-
-			workx -= 2;
-		}
-
-		if (standardbuttons)
-		{
-			workx -= SHORT(kp_button_a[1][0]->width);
-			K_drawButton(
-				workx * FRACUNIT, worky * FRACUNIT,
-				0, kp_button_a[1],
-				push
-			);
-		}
-		else
-		{
-			TSoURDt3rd_M_DrawMediocreKeyboardKey("ENTER", &workx, worky, push, true);
-		}
-	}
-
-	x -= 4;
-	y += 4;
-
-	while (*(msg+start))
-	{
-		size_t len = strlen(msg+start);
-
-		for (i = 0; i < len; i++)
-		{
-			if (*(msg+start+i) == '\n')
-			{
-				memset(string, 0, MAXMENUMESSAGE);
-				if (i >= MAXMENUMESSAGE)
-				{
-					CONS_Printf("TSoURDt3rd_M_DrawMenuMessage: too long segment in %s\n", msg);
-					return;
-				}
-				else
-				{
-					strncpy(string,msg+start, i);
-					string[i] = '\0';
-					start += i;
-					i = (size_t)-1; //added : 07-02-98 : damned!
-					start++;
-				}
-				break;
-			}
-		}
-
-		if (i == strlen(msg+start))
-		{
-			if (i >= MAXMENUMESSAGE)
-			{
-				CONS_Printf("TSoURDt3rd_M_DrawMenuMessage: too long segment in %s\n", msg);
-				return;
-			}
-			else
-			{
-				strcpy(string, msg + start);
-				start += i;
-			}
-		}
-
-		V_DrawString((BASEVIDWIDTH - V_StringWidth(string, 0))/2, y, V_ALLOWLOWERCASE, string);
-		y += 8;
-	}
-}
-
-void TSoURDt3rd_M_DrawMenuMessageOnTitle(INT32 count)
-{
-	if (count > 0)
-		TSoURDt3rd_M_DrawMenuMessage();
 }

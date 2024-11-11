@@ -23,9 +23,8 @@
 #include "z_zone.h" // Check R_Prep3DFloors
 #include "taglist.h"
 
-// STAR STUFF //
-#include "STAR/star_vars.h"
-// LOADING... LOAD COMPLETE. //
+// TSoURDt3rd
+#include "STAR/ss_main.h" // tsourdt3rd_loadingscreen //
 
 seg_t *curline;
 side_t *sidedef;
@@ -1282,9 +1281,7 @@ void R_RenderBSPNode(INT32 bspnum)
 		bspnum = bsp->children[side^1];
 	}
 
-	// STAR STUFF //
-	TSoURDt3rdPlayers[consoleplayer].loadingScreens.bspCount = bspnum;
-	// SHE'S ON THE BORDER, NOW! //
+	tsourdt3rd_loadingscreen.bspCount = bspnum; // STAR STUFF: we're on the border, NOW! //
 
 	// PORTAL CULLING
 	if (portalcullsector) {

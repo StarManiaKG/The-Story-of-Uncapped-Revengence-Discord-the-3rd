@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
-// Copyright (C) 2020-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -36,11 +36,9 @@ void STAR_G_KeyResponder(UINT8 player, UINT8 key);
 boolean STAR_G_KeyPressed(UINT8 player, UINT8 key);
 boolean STAR_G_KeyHeld(UINT8 player, UINT8 key);
 
-void STAR_G_DefineDefaultControls(void);
-
 void TSoURDt3rd_D_ProcessEvents(void);
 
 boolean TSoURDt3rd_G_MapEventsToControls(event_t *ev);
-boolean TSoURDt3rd_G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer);
+void TSoURDt3rd_G_DefineDefaultControls(void);
 
 #endif // __SMKG_G_INPUTS__

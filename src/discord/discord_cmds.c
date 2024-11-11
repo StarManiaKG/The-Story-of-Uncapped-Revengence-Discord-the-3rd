@@ -46,20 +46,20 @@ static CV_PossibleValue_t statustype_cons_t[] = {
 };
 
 static CV_PossibleValue_t characterimagetype_cons_t[] = {
-	{0, "CS Portraits"},
+	{0, "C.S.S Portraits"},
 	{1, "Continue Sprites"},
 	{2, "Life Icon Sprites"},
 	{0, NULL}
 };
 
 static CV_PossibleValue_t custom_imagetype_cons_t[] = {
-	{0, "CS Portraits"},
+	{0, "C.S.S Portraits"},
 	{1, "Continue Sprites"},
 	{2, "Life Icon Sprites"},
 
 	{3, "Super C.S.S"},
-	{4, "Super C.S"},
-	{5, "Super L.I.S"},
+	{4, "Super Continue Sprites"},
+	{5, "Super Life Icon Sprites"},
 
 	{6, "Maps"},
 	{7, "Miscellaneous"},
@@ -242,12 +242,12 @@ consvar_t cv_discordstreamer = CVAR_INIT ("discordstreamer", "Off", CV_SAVE, CV_
 consvar_t cv_discordasks = CVAR_INIT ("discordasks", "Yes", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
 consvar_t cv_discordstatusmemes = CVAR_INIT ("discordstatusmemes", "Yes", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_discordshowonstatus = CVAR_INIT ("discordshowonstatus", "Default", CV_SAVE|CV_CALL, statustype_cons_t, DRPC_UpdatePresence);
-consvar_t cv_discordcharacterimagetype = CVAR_INIT ("discordcharacterimagetype", "CS Portraits", CV_SAVE, characterimagetype_cons_t, NULL);
+consvar_t cv_discordcharacterimagetype = CVAR_INIT ("discordcharacterimagetype", "C.S.S Portraits", CV_SAVE, characterimagetype_cons_t, NULL);
 
 consvar_t cv_discordcustom_details = CVAR_INIT ("discordcustom_details", "Blasting these robots!", CV_SAVE|CV_CALL, NULL, DRPC_CheckStringLen);
 consvar_t cv_discordcustom_state = CVAR_INIT ("discordcustom_state", "Playing Sonic Robo Blast 2!", CV_SAVE|CV_CALL, NULL, DRPC_CheckStringLen);
 
-consvar_t cv_discordcustom_imagetype_large = CVAR_INIT ("discordcustom_imagetype_large", "CS Portraits", CV_SAVE, custom_imagetype_cons_t, NULL);
+consvar_t cv_discordcustom_imagetype_large = CVAR_INIT ("discordcustom_imagetype_large", "C.S.S Portraits", CV_SAVE, custom_imagetype_cons_t, NULL);
 consvar_t cv_discordcustom_imagetype_small = CVAR_INIT ("discordcustom_imagetype_small", "Continue Sprites", CV_SAVE, custom_imagetype_cons_t, NULL);
 
 consvar_t cv_discordcustom_characterimage_large = CVAR_INIT ("discordcustom_characterimage_large", "Sonic", CV_SAVE, custom_characterimage_cons_t, NULL);
@@ -302,11 +302,11 @@ static void DRPC_CheckStringLen(void)
 #endif
 
 /*--------------------------------------------------
-	void Joinable_OnChange(void)
+	void TSoURDt3rd_D_Joinable_OnChange(void)
 
 		Grabs Discord presence info and packets in netgames.
 --------------------------------------------------*/
-void Joinable_OnChange(void)
+void TSoURDt3rd_D_Joinable_OnChange(void)
 {
 	UINT8 buf[3];
 	UINT8 *p = buf;
@@ -325,12 +325,12 @@ void Joinable_OnChange(void)
 }
 
 /*--------------------------------------------------
-	void Got_DiscordInfo(void)
+	void TSoURDt3rd_D_Got_DiscordInfo(void)
 
 		Updates Discord presence info based on packets
 		received from servers.
 --------------------------------------------------*/
-void Got_DiscordInfo(UINT8 **cp, INT32 playernum)
+void TSoURDt3rd_D_Got_DiscordInfo(UINT8 **cp, INT32 playernum)
 {
 	if (playernum != serverplayer /*&& !IsPlayerAdmin(playernum)*/)
 	{
@@ -341,24 +341,24 @@ void Got_DiscordInfo(UINT8 **cp, INT32 playernum)
 		return;
 	}
 
-	// Don't do anything with the information if we don't have Discord RP support
 #ifdef HAVE_DISCORDSUPPORT
-	if (TSoURDt3rdPlayers[serverplayer].serverPlayers.serverUsesTSoURDt3rd)
+	// Implement our data as we see fit
+	if (TSoURDt3rdPlayers[serverplayer].server_usingTSoURDt3rd)
 	{
-		discordInfo.serv.maxPlayers = READUINT8(*cp);
-		discordInfo.serv.joinsAllowed = (boolean)READUINT8(*cp);
-		discordInfo.serv.everyoneCanInvite = (boolean)READUINT8(*cp);
+		discordInfo.maxPlayers = READUINT8(*cp);
+		discordInfo.joinsAllowed = (boolean)READUINT8(*cp);
+		discordInfo.everyoneCanInvite = (boolean)READUINT8(*cp);
 	}
 	else
 	{
-		discordInfo.serv.maxPlayers = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
-		discordInfo.serv.joinsAllowed = cv_allownewplayer.value;
-		discordInfo.serv.everyoneCanInvite = (boolean)cv_discordinvites.value;
+		discordInfo.maxPlayers = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
+		discordInfo.joinsAllowed = cv_allownewplayer.value;
+		discordInfo.everyoneCanInvite = (boolean)cv_discordinvites.value;
 		(*cp) += 3;
 	}
-
 	DRPC_UpdatePresence();
 #else
+	// Don't do anything with the information if we don't have Discord RP support
 	(*cp) += 3;
 #endif
 }

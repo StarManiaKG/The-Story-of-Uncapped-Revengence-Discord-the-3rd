@@ -19,8 +19,8 @@
 #include "d_net.h"
 #include "console.h"
 
-#include "STAR/smkg_g_inputs.h" // STAR_G_DefineDefaultControls() //
-#include "STAR/drrr/kg_input.h" // TSoURDt3rd_G_MapEventsToControls() //
+// TSoURDt3rd
+#include "STAR/smkg_g_inputs.h" // TSoURDt3rd_G_DefineDefaultControls() & TSoURDt3rd_G_MapEventsToControls() //
 
 #define MAXMOUSESENSITIVITY 100 // sensitivity steps
 
@@ -787,7 +787,7 @@ void G_DefineDefaultControls(void)
 		//gamecontrolbisdefault[i][GC_SCORES       ][1] = KEY_2HAT1+1; // D-Pad Down
 	}
 
-	STAR_G_DefineDefaultControls(); // STAR STUFF: assign our default controls too! //
+	TSoURDt3rd_G_DefineDefaultControls(); // STAR STUFF: assign our default controls too! //
 }
 
 INT32 G_GetControlScheme(INT32 (*fromcontrols)[2], const INT32 *gclist, INT32 gclen)

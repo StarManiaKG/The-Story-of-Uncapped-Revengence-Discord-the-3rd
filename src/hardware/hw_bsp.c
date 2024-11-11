@@ -25,7 +25,9 @@
 #include "../p_setup.h" // levelfadecol
 
 // TSoURDt3rd
-#include "../STAR/star_vars.h" // revamped loading screen data //
+#include "../STAR/smkg-cvars.h" // cv_tsourdt3rd_game_loadingscreen vars //
+#include "../STAR/ss_main.h" // tsourdt3rd_loadingscreen //
+#include "../STAR/star_vars.h" // STAR_LoadingScreen() //
 
 // --------------------------------------------------------------------------
 // This is global data for planes rendering
@@ -655,9 +657,9 @@ static void WalkBSPNode(INT32 bspnum, poly_t *poly, UINT16 *leafnode, fixed_t *b
 			}
 #else
 			// STAR STUFF: do revamped loading screen junk //
-			if (cv_loadingscreen.value && TSoURDt3rdPlayers[consoleplayer].loadingScreens.loadCount-- <= 0)
+			if (cv_tsourdt3rd_game_loadingscreen.value && tsourdt3rd_loadingscreen.loadCount-- <= 0)
 			{
-				TSoURDt3rdPlayers[consoleplayer].loadingScreens.loadCount = numsubsectors/50;
+				tsourdt3rd_loadingscreen.loadCount = numsubsectors/50;
 				STAR_LoadingScreen();
 			}
 			// DONE! //
@@ -849,12 +851,11 @@ static INT32 SolveTProblem(void)
 	I_FinishUpdate(); // page flip or blit buffer
 #else
 	// STAR STUFF: do even more revamped loading screen junk //
-	if (cv_loadingscreen.value)
+	if (cv_tsourdt3rd_game_loadingscreen.value)
 	{
 		CON_Drawer(); // console shouldn't appear while in a loading screen, honestly
 		I_FinishUpdate(); // page flip or blit buffer
-
-		TSoURDt3rdPlayers[consoleplayer].loadingScreens.screenToUse = 0; // reset the loading screen to use
+		tsourdt3rd_loadingscreen.screenToUse = 0; // reset the loading screen to use
 	}
 	// DONE! //
 #endif
@@ -986,11 +987,10 @@ void HWR_CreatePlanePolygons(INT32 bspnum)
 	I_FinishUpdate(); // page flip or blit buffer
 #else
 	// STAR STUFF: do finale revamped loading screen junk //
-	if (cv_loadingscreen.value)
+	if (cv_tsourdt3rd_game_loadingscreen.value)
 	{
-		TSoURDt3rdPlayers[consoleplayer].loadingScreens.loadCount = TSoURDt3rdPlayers[consoleplayer].loadingScreens.loadPercentage = 0; // reset the loading status
-		TSoURDt3rdPlayers[consoleplayer].loadingScreens.screenToUse = 0; // reset the loading screen to use
-
+		tsourdt3rd_loadingscreen.loadCount = tsourdt3rd_loadingscreen.loadPercentage = 0; // reset the loading status
+		tsourdt3rd_loadingscreen.screenToUse = 0; // reset the loading screen to use
 		CON_Drawer(); // console shouldn't appear while in a loading screen, honestly
 		I_FinishUpdate(); // page flip or blit buffer
 	}

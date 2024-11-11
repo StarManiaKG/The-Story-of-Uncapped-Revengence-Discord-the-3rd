@@ -31,11 +31,11 @@
 #include "hardware/hw_md2.h"
 #endif
 
+// TSoURDt3rd
 #ifdef HAVE_DISCORDSUPPORT
 #include "discord/discord.h"
 #endif
-
-#include "STAR/drrr/kg_input.h" // G_SetPlayerGamepadIndicatorToPlayerColor() //
+#include "STAR/core/smkg-p_pads.h" // TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor() //
 
 INT32 numskins = 0;
 skin_t skins[MAXSKINS];
@@ -154,6 +154,8 @@ static void Sk_SetDefaultValue(skin_t *skin)
 	skin->highresscale = FRACUNIT;
 	skin->contspeed = 17;
 	skin->contangle = 0;
+
+	skin->natkcolor = SKINCOLOR_NONE;
 
 	for (i = 0; i < sfx_skinsoundslot0; i++)
 		if (S_sfx[i].skinsound != -1)
@@ -394,11 +396,7 @@ static void SetSkin(player_t *player, INT32 skinnum)
 	if (player - players == consoleplayer)
 		DRPC_UpdatePresence();
 #endif
-
-	// STAR STUFF: fun controller junk //
-	if (P_IsLocalPlayer(player))
-		G_SetPlayerGamepadIndicatorToPlayerColor(player - players);
-	// JAAAAAAAAAAAAAAAAAAAAAAAAAAAA! //
+	TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor(player - players); // STAR STUFF: fun controller junk //
 }
 
 // Gets the player to the first usuable skin in the game.
@@ -648,6 +646,9 @@ static boolean R_ProcessPatchableFields(skin_t *skin, char *stoken, char *value)
 	GETFLAG(CANBUSTWALLS)
 	GETFLAG(NOSHIELDABILITY)
 #undef GETFLAG
+
+	else if (!stricmp(stoken, "natkcolor"))
+		skin->natkcolor = R_GetColorByName(value); // SKINCOLOR_NONE is allowed here
 
 	else // let's check if it's a sound, otherwise error out
 	{

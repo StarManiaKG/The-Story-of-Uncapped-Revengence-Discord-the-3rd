@@ -27,7 +27,7 @@
 //
 void STAR_F_StartIntro(tic_t *introtime)
 {
-	switch (cv_stjrintro.value)
+	switch (cv_tsourdt3rd_game_startup_intro.value)
 	{
 		case 0: // 'STJr Presents' Intro
 			introtime[0] = 6*TICRATE;

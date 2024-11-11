@@ -41,9 +41,9 @@ static INT32 S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, I
 // STAR STUFF //
 #include "STAR/star_vars.h" // tsourdt3rd stuff + defaultMusicTracks //
 #include "STAR/ss_main.h" // STAR_CONS_Printf() //
-#include "STAR/smkg-jukebox.h" // TSoURDt3rd::jukebox && TSoURDt3rd_Jukebox_CanModifyMusic //
-
-#include "m_menu.h" // cv_defaultmaptrack //
+#include "STAR/smkg-cvars.h" // cv_tsourdt3rd_audio_defaultmaptrack //
+#include "STAR/smkg-jukebox.h" // TSoURDt3rd::jukebox //
+#include "STAR/core/smkg-s_audio.h" // TSoURDt3rd_S_CanModifyMusic() //
 // END THAT PLEASE //
 
 CV_PossibleValue_t soundvolume_cons_t[] = {{0, "MIN"}, {31, "MAX"}, {0, NULL}};
@@ -2181,11 +2181,11 @@ static boolean S_LoadMusic(const char *mname)
 		CONS_Alert(CONS_ERROR, "Music %.6s could not be loaded: lump not found!\n", mname);
 		
 		// STAR STUFF //
-		if (cv_defaultmaptrack.value)
+		if (cv_tsourdt3rd_audio_defaultmaptrack.value)
 		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "Playing default map track %s as requested by cv_defaultmaptrack...\n", cv_defaultmaptrack.string);
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "Playing default map track %s as requested by your audio settings...\n", cv_tsourdt3rd_audio_defaultmaptrack.string);
 
-			mlumpnum = S_GetMusicLumpNum(defaultMusicTracks[cv_defaultmaptrack.value].track);
+			mlumpnum = S_GetMusicLumpNum(defaultMusicTracks[cv_tsourdt3rd_audio_defaultmaptrack.value].track);
 			if (mlumpnum == LUMPERROR)
 			{
 				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "Music %.6s could not be loaded: lump not found!\n", mname);
@@ -2309,7 +2309,7 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 		return;
 
 	// STAR STUFF: control jukebox music please //
-	if (!TSoURDt3rd_Jukebox_CanModifyMusic())
+	if (!TSoURDt3rd_S_CanModifyMusic(NULL))
 		return;
 	// CONTROL OUR MUSIC, PLEASE! //
 
@@ -2542,7 +2542,7 @@ void S_StartEx(boolean reset)
 	}
 
 	// STAR STUFF: don't start any music if we're jukeboxing, dude! //
-	if (tsourdt3rd_global_jukebox->curtrack)
+	if (!TSoURDt3rd_S_CanModifyMusic(NULL))
 		return;
 	// TORTURE IS MY FAVORITE FORM OF PUNISHMENT, HOW DID YOU KNOW //
 
@@ -2635,7 +2635,7 @@ static void Command_Tunes_f(void)
 	else
 	{
 		float speed;
-		switch (cv_vapemode.value)
+		switch (cv_tsourdt3rd_audio_vapemode.value)
 		{
 			case 1:	speed = 0.9f;	break;
 			case 2:	speed = 0.75f;	break;
@@ -2653,7 +2653,7 @@ static void Command_Tunes_f(void)
 	else
 	{
 		float pitch;
-		switch (cv_vapemode.value)
+		switch (cv_tsourdt3rd_audio_vapemode.value)
 		{
 			case 1:	pitch = 0.9f; break;
 			case 2:	pitch = 0.5f; break;

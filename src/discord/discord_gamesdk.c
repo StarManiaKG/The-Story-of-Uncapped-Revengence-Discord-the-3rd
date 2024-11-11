@@ -16,7 +16,7 @@
 
 #include "discord_gamesdk.h"
 #include "discord.h"
-#include "stun.h"
+#include "../STAR/stun/stun.h"
 
 #include "../i_system.h"
 #include "../d_clisrv.h"

@@ -73,7 +73,13 @@
         }
       ]
     },
-    "zlib"
+    "zlib",
+
+    "discord-rpc",
+    {
+      "name": "discord-game-sdk",
+      "platform": "(((x64 & (windows | osx | linux)) | (x86 & windows) | (arm64 & osx)) & !uwp & !static)"
+    }
   ],
   "overrides": [
     {

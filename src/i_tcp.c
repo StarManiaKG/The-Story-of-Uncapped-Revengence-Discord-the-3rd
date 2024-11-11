@@ -37,14 +37,8 @@
 #endif
 
 #include "doomdef.h"
+#include "z_zone.h"
 
-#if defined (NOMD5) && !defined (NONET)
-	//#define NONET
-#endif
-
-#ifdef NONET
-#undef HAVE_MINIUPNPC
-#else
 #ifdef USE_WINSOCK1
 	#include <winsock.h>
 #else
@@ -94,6 +88,10 @@
 	#undef EHOSTUNREACH
 	#endif
 	#define EHOSTUNREACH WSAEHOSTUNREACH
+	#ifdef ENETUNREACH
+	#undef ENETUNREACH
+	#endif
+	#define ENETUNREACH WSAENETUNREACH
 	#ifndef IOC_VENDOR
 	#define IOC_VENDOR 0x18000000
 	#endif
@@ -127,9 +125,6 @@ typedef union
 	static boolean UPNP_support = true;
 	#endif // HAVE_MINIUPNC
 
-#endif // !NONET
-
-#define MAXBANS 100
 
 #include "i_system.h"
 #include "i_net.h"
@@ -155,7 +150,7 @@ typedef union
 #define SELECTTEST
 #define DEFAULTPORT "5029"
 
-#if defined (USE_WINSOCK) && !defined (NONET)
+#ifdef USE_WINSOCK
 	typedef SOCKET SOCKET_TYPE;
 	#define ERRSOCKET (SOCKET_ERROR)
 #else
@@ -167,7 +162,6 @@ typedef union
 	#define ERRSOCKET (-1)
 #endif
 
-#ifndef NONET
 #define IPV6_MULTICAST_ADDRESS "ff15::57e1:1a12"
 
 // define socklen_t in DOS/Windows if it is not already defined
@@ -182,9 +176,8 @@ static mysockaddr_t clientaddress[MAXNETNODES+1];
 static mysockaddr_t broadcastaddress[MAXNETNODES+1];
 static size_t broadcastaddresses = 0;
 static boolean nodeconnected[MAXNETNODES+1];
-static mysockaddr_t banned[MAXBANS];
-static UINT8 bannedmask[MAXBANS];
-#endif
+static mysockaddr_t *banned;
+static UINT8 *bannedmask;
 
 static size_t numbans = 0;
 static boolean SOCK_bannednode[MAXNETNODES+1]; /// \note do we really need the +1?
@@ -193,7 +186,6 @@ static boolean init_tcp_driver = false;
 static const char *serverport_name = DEFAULTPORT;
 static const char *clientport_name;/* any port */
 
-#ifndef NONET
 #ifdef USE_WINSOCK
 // stupid microsoft makes things complicated
 static char *get_WSAErrorStr(int e)
@@ -437,47 +429,33 @@ static const char *SOCK_AddrToStr(mysockaddr_t *sk)
 #endif
 	return s;
 }
-#endif
 
 static const char *SOCK_GetNodeAddress(INT32 node)
 {
 	if (node == 0)
 		return "self";
-#ifdef NONET
-	return NULL;
-#else
 	if (!nodeconnected[node])
 		return NULL;
 	return SOCK_AddrToStr(&clientaddress[node]);
-#endif
 }
 
 static const char *SOCK_GetBanAddress(size_t ban)
 {
 	if (ban >= numbans)
 		return NULL;
-#ifdef NONET
-	return NULL;
-#else
 	return SOCK_AddrToStr(&banned[ban]);
-#endif
 }
 
 static const char *SOCK_GetBanMask(size_t ban)
 {
-#ifdef NONET
-	(void)ban;
-#else
 	static char s[16]; //255.255.255.255 netmask? no, just CDIR for only
 	if (ban >= numbans)
 		return NULL;
 	if (sprintf(s,"%d",bannedmask[ban]) > 0)
 		return s;
-#endif
 	return NULL;
 }
 
-#ifndef NONET
 #ifdef HAVE_IPV6
 static boolean SOCK_cmpipv6(mysockaddr_t *a, mysockaddr_t *b, UINT8 mask)
 {
@@ -593,9 +571,6 @@ void Command_Numnodes(void)
 				connected, ingame);
 }
 #endif
-#endif
-
-#ifndef NONET
 
 // Returns true if a packet was received from a new node, false in all other cases
 static boolean SOCK_Get(void)
@@ -662,10 +637,8 @@ static boolean SOCK_Get(void)
 	doomcom->remotenode = -1; // no packet
 	return false;
 }
-#endif
 
 // check if we can send (do not go over the buffer)
-#ifndef NONET
 
 static fd_set masterset;
 
@@ -714,9 +687,7 @@ static boolean SOCK_CanGet(void)
 	return false;
 }
 #endif
-#endif
 
-#ifndef NONET
 static inline ssize_t SOCK_SendToAddr(SOCKET_TYPE socket, mysockaddr_t *sockaddr)
 {
 	socklen_t d4 = (socklen_t)sizeof(struct sockaddr_in);
@@ -724,7 +695,6 @@ static inline ssize_t SOCK_SendToAddr(SOCKET_TYPE socket, mysockaddr_t *sockaddr
 	socklen_t d6 = (socklen_t)sizeof(struct sockaddr_in6);
 #endif
 	socklen_t d, da = (socklen_t)sizeof(mysockaddr_t);
-	ssize_t status;
 
 	switch (sockaddr->any.sa_family)
 	{
@@ -735,13 +705,10 @@ static inline ssize_t SOCK_SendToAddr(SOCKET_TYPE socket, mysockaddr_t *sockaddr
 		default:       d = da; break;
 	}
 
-	status = sendto(socket, (char *)&doomcom->data, doomcom->datalength, 0, &sockaddr->any, d);
-	if (status == -1)
-	{
-		CONS_Alert(CONS_WARNING, "Unable to send packet to %s: %s\n", SOCK_AddrToStr(sockaddr), strerror(errno));
-	}
-	return status;
+	return sendto(socket, (char *)&doomcom->data, doomcom->datalength, 0, &sockaddr->any, d);
 }
+
+#define ALLOWEDERROR(x) ((x) == ECONNREFUSED || (x) == EWOULDBLOCK || (x) == EHOSTUNREACH || (x) == ENETUNREACH)
 
 static void SOCK_Send(void)
 {
@@ -757,19 +724,25 @@ static void SOCK_Send(void)
 			for (size_t j = 0; j < broadcastaddresses; j++)
 			{
 				if (myfamily[i] == broadcastaddress[j].any.sa_family)
-					SOCK_SendToAddr(mysockets[i], &broadcastaddress[j]);
+				{
+					c = SOCK_SendToAddr(mysockets[i], &broadcastaddress[j]);
+					if (c == ERRSOCKET && !ALLOWEDERROR(errno))
+						break;
+				}
 			}
 		}
-		return;
 	}
 	else if (nodesocket[doomcom->remotenode] == (SOCKET_TYPE)ERRSOCKET)
 	{
 		for (size_t i = 0; i < mysocketses; i++)
 		{
 			if (myfamily[i] == clientaddress[doomcom->remotenode].any.sa_family)
-				SOCK_SendToAddr(mysockets[i], &clientaddress[doomcom->remotenode]);
+			{
+				c = SOCK_SendToAddr(mysockets[i], &clientaddress[doomcom->remotenode]);
+				if (c == ERRSOCKET && !ALLOWEDERROR(errno))
+					break;
+			}
 		}
-		return;
 	}
 	else
 	{
@@ -779,14 +752,14 @@ static void SOCK_Send(void)
 	if (c == ERRSOCKET)
 	{
 		int e = errno; // save error code so it can't be modified later
-		if (e != ECONNREFUSED && e != EWOULDBLOCK && e != EHOSTUNREACH)
+		if (!ALLOWEDERROR(e))
 			I_Error("SOCK_Send, error sending to node %d (%s) #%u: %s", doomcom->remotenode,
 				SOCK_GetNodeAddress(doomcom->remotenode), e, strerror(e));
 	}
 }
-#endif
 
-#ifndef NONET
+#undef ALLOWEDERROR
+
 static void SOCK_FreeNodenum(INT32 numnode)
 {
 	// can't disconnect from self :)
@@ -801,12 +774,10 @@ static void SOCK_FreeNodenum(INT32 numnode)
 	// put invalid address
 	memset(&clientaddress[numnode], 0, sizeof (clientaddress[numnode]));
 }
-#endif
 
 //
 // UDPsocket
 //
-#ifndef NONET
 
 // allocate a socket
 static SOCKET_TYPE UDP_Bind(int family, struct sockaddr *addr, socklen_t addrlen)
@@ -1112,12 +1083,10 @@ static boolean UDP_Socket(void)
 
 	return true;
 }
-#endif
 
 boolean I_InitTcpDriver(void)
 {
 	boolean tcp_was_up = init_tcp_driver;
-#ifndef NONET
 	if (!init_tcp_driver)
 	{
 #ifdef USE_WINSOCK
@@ -1172,7 +1141,6 @@ boolean I_InitTcpDriver(void)
 #endif
 		init_tcp_driver = true;
 	}
-#endif
 
 	if (!tcp_was_up && init_tcp_driver)
 	{
@@ -1187,7 +1155,6 @@ boolean I_InitTcpDriver(void)
 	return init_tcp_driver;
 }
 
-#ifndef NONET
 static void SOCK_CloseSocket(void)
 {
 	for (size_t i=0; i < MAXNETNODES+1; i++)
@@ -1201,11 +1168,9 @@ static void SOCK_CloseSocket(void)
 		mysockets[i] = ERRSOCKET;
 	}
 }
-#endif
 
 void I_ShutdownTcpDriver(void)
 {
-#ifndef NONET
 	SOCK_CloseSocket();
 
 	CONS_Printf("I_ShutdownTcpDriver: ");
@@ -1215,10 +1180,8 @@ void I_ShutdownTcpDriver(void)
 #endif
 	CONS_Printf("shut down\n");
 	init_tcp_driver = false;
-#endif
 }
 
-#ifndef NONET
 static SINT8 SOCK_NetMakeNodewPort(const char *address, const char *port)
 {
 	SINT8 newnode = -1;
@@ -1274,11 +1237,9 @@ static SINT8 SOCK_NetMakeNodewPort(const char *address, const char *port)
 	I_freeaddrinfo(ai);
 	return newnode;
 }
-#endif
 
 static boolean SOCK_OpenSocket(void)
 {
-#ifndef NONET
 	memset(clientaddress, 0, sizeof (clientaddress));
 
 	nodeconnected[0] = true; // always connected to self
@@ -1302,21 +1263,15 @@ static boolean SOCK_OpenSocket(void)
 	// build the socket but close it first
 	SOCK_CloseSocket();
 	return UDP_Socket();
-#else
-	return false;
-#endif
 }
 
 static boolean SOCK_Ban(INT32 node)
 {
 	if (node > MAXNETNODES)
 		return false;
-#ifdef NONET
-	return false;
-#else
-	if (numbans == MAXBANS)
-		return false;
 
+	banned = Z_Realloc(banned, sizeof(*banned) * (numbans+1), PU_STATIC, NULL);
+	bannedmask = Z_Realloc(bannedmask, sizeof(*bannedmask) * (numbans+1), PU_STATIC, NULL);
 	M_Memcpy(&banned[numbans], &clientaddress[node], sizeof (mysockaddr_t));
 	if (banned[numbans].any.sa_family == AF_INET)
 	{
@@ -1332,20 +1287,14 @@ static boolean SOCK_Ban(INT32 node)
 #endif
 	numbans++;
 	return true;
-#endif
 }
 
 static boolean SOCK_SetBanAddress(const char *address, const char *mask)
 {
-#ifdef NONET
-	(void)address;
-	(void)mask;
-	return false;
-#else
 	struct my_addrinfo *ai, *runp, hints;
 	int gaie;
 
-	if (numbans == MAXBANS || !address)
+	if (!address)
 		return false;
 
 	memset(&hints, 0x00, sizeof(hints));
@@ -1360,8 +1309,10 @@ static boolean SOCK_SetBanAddress(const char *address, const char *mask)
 
 	runp = ai;
 
-	while(runp != NULL && numbans != MAXBANS)
+	while(runp != NULL)
 	{
+		banned = Z_Realloc(banned, sizeof(*banned) * (numbans+1), PU_STATIC, NULL);
+		bannedmask = Z_Realloc(bannedmask, sizeof(*bannedmask) * (numbans+1), PU_STATIC, NULL);
 		memcpy(&banned[numbans], runp->ai_addr, runp->ai_addrlen);
 
 		if (mask)
@@ -1386,12 +1337,15 @@ static boolean SOCK_SetBanAddress(const char *address, const char *mask)
 	I_freeaddrinfo(ai);
 
 	return true;
-#endif
 }
 
 static void SOCK_ClearBans(void)
 {
 	numbans = 0;
+	Z_Free(banned);
+	banned = NULL;
+	Z_Free(bannedmask);
+	bannedmask = NULL;
 }
 
 boolean I_InitTcpNetwork(void)

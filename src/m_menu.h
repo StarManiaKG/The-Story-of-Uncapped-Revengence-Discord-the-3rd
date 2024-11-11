@@ -74,7 +74,7 @@ typedef enum
 	MN_MP_SERVER,
 	MN_MP_CONNECT,
 	MN_MP_ROOM,
-	MN_MP_PLAYERSETUP, // MP_PlayerSetupDef shared with SPLITSCREEN if #defined NONET
+	MN_MP_PLAYERSETUP,
 	MN_MP_SERVER_OPTIONS,
 
 	// Options
@@ -393,9 +393,9 @@ typedef struct
 	UINT8 prev;
 	UINT8 next;
 	char displayname[SKINNAMESIZE+1];
-	SINT8 skinnum[2];
+	INT16 skinnum[2];
 	UINT16 oppositecolor;
-	char nametag[8];
+	char nametag[8+1];
 	patch_t *namepic;
 	UINT16 tagtextcolor;
 	UINT16 tagoutlinecolor;
@@ -501,36 +501,6 @@ UINT16 M_GetColorIndex(UINT16 color);
 menucolor_t* M_GetColorFromIndex(UINT16 index);
 void M_InitPlayerSetupColors(void);
 void M_FreePlayerSetupColors(void);
-
-//// STAR STUFF SUBISHUHFLUKJDJIPOKD ////
-// variables //
-// events
-extern boolean AllowEasterEggHunt, EnableEasterEggHuntBonuses;
-
-// commands //
-// game
-extern consvar_t cv_quitscreen;
-extern consvar_t cv_pausegraphicstyle;
-
-// audio
-extern consvar_t cv_bossmusic, cv_finalbossmusic, cv_truefinalbossmusic;
-extern consvar_t cv_bosspinchmusic, cv_postbossmusic;
-extern consvar_t cv_actclearmusic, cv_bossclearmusic;
-extern consvar_t cv_gameovermusic;
-extern consvar_t cv_defaultmaptrack;
-
-// players
-extern consvar_t cv_armageddonnukewhilesuper;
-
-// jukebox
-extern consvar_t cv_jukeboxspeed, cv_jukeboxhud, cv_luacanstopthejukebox;
-
-// misc. stuff
-extern consvar_t cv_windowtitletype, cv_customwindowtitle, cv_memesonwindowtitle;
-
-// functions //
-void STAR_StoreDefaultMenuStrings(void);
-// END OF STAR STUFF SHUGDCUYSIGIUDIOHSBIDJ //
 
 // These defines make it a little easier to make menus
 #define DEFAULTMENUSTYLE(id, header, source, prev, x, y)\

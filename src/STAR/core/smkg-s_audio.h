@@ -1,19 +1,16 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
-// PORTED FROM DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Kart Krew.
-// Copyright (C) 2020 by Sonic Team Junior.
-// Copyright (C) 2000 by DooM Legacy Team.
+// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  k_console.h
-/// \brief Console drawing and input
+/// \file  smkg-s_audio.h
+/// \brief Globalizes TSoURDt3rd's sound library data
 
-#ifndef __K_CONSOLE_H__
-#define __K_CONSOLE_H__
+#ifndef __SMKG_S_AUDIO__
+#define __SMKG_S_AUDIO__
 
 #include "../../doomstat.h"
 
@@ -21,10 +18,14 @@
 extern "C" {
 #endif
 
-INT32 CON_ShiftChar(INT32 ch);
+// ------------------------ //
+//        Functions
+// ------------------------ //
+
+boolean TSoURDt3rd_S_CanModifyMusic(char *menu_mus_origin);
 
 #ifdef __cplusplus
 } // extern "C"
 #endif
 
-#endif // __K_CONSOLE_H__
+#endif // __SMKG_S_AUDIO__

@@ -44,6 +44,7 @@
 #endif
 
 // TSoURDt3rd
+#include "STAR/smkg-cvars.h" // cv_tsourdt3rd_game_shadows commands //
 #include "STAR/lights/smkg-coronas.h" // corona data //
 
 #define MINZ (FRACUNIT*4)
@@ -1312,7 +1313,7 @@ static void R_SkewShadowSprite(
 }
 
 /** STAR NOTE: i was here for realistic shadow stuff lol
- 	(I.E: cv_shadow.value == 2, cv_allobjectshaveshadows, etc. :p) **/
+ 	(I.E: cv_tsourdt3rd_game_shadows_realistic, cv_tsourdt3rd_game_shadows_forallobjects, etc. :p) **/
 static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, fixed_t tx, fixed_t tz)
 {
 	vissprite_t *shadow;
@@ -1370,7 +1371,7 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	patch = W_CachePatchName("DSHADOW", PU_SPRITE);
 #else
 	// STAR NOTE: needed, come back and fix later //
-	patch = (cv_shadow.value == 2 ? vis->patch : W_CachePatchName("DSHADOW", PU_SPRITE));
+	patch = (cv_tsourdt3rd_game_shadows_realistic.value ? vis->patch : W_CachePatchName("DSHADOW", PU_SPRITE));
 #endif
 	xscale = FixedDiv(projection, tz);
 	yscale = FixedDiv(projectiony, tz);
@@ -1381,7 +1382,7 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 #else
 	// STAR NOTE: needed, come back and fix later //
 	shadowyscale = FixedMul(FixedMul(interp.radius*2, scalemul*2), FixedDiv(abs(groundz - viewz), tz));
-	shadowyscale = (cv_shadow.value == 2 ? (min(shadowyscale, shadowxscale) / patch->height): patch->height);
+	shadowyscale = (cv_tsourdt3rd_game_shadows_realistic.value ? (min(shadowyscale, shadowxscale) / patch->height): patch->height);
 #endif
 	shadowxscale /= patch->width;
 	shadowskew = 0;
@@ -1418,7 +1419,7 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	shadow->texturemid = FixedMul(interp.scale, FixedDiv(shadow->gzt - viewz, shadowyscale));
 #else
 	// STAR NOTE: needed for our unique shadows, come back and fix later :) //
-	shadow->texturemid = FixedMul(interp.scale, FixedDiv(shadow->gzt - viewz, shadowyscale * (cv_shadow.value == 2 ? 1.15 : 1)));
+	shadow->texturemid = FixedMul(interp.scale, FixedDiv(shadow->gzt - viewz, shadowyscale * (cv_tsourdt3rd_game_shadows_realistic.value ? 1.15 : 1)));
 #endif
 	if (thing->skin && ((skin_t *)thing->skin)->flags & SF_HIRES)
 		shadow->texturemid = FixedMul(shadow->texturemid, ((skin_t *)thing->skin)->highresscale);
@@ -2361,9 +2362,14 @@ static void R_ProjectSprite(mobj_t *thing)
 	if (oldthing->shadowscale && cv_shadow.value)
 		R_ProjectDropShadow(oldthing, vis, oldthing->shadowscale, basetx, basetz);
 #else
-	// STAR NOTE: for our shadows, but may want to come back here later and touch this up! //
-	if (cv_shadow.value &&((!cv_allobjectshaveshadows.value && oldthing->shadowscale) || cv_allobjectshaveshadows.value))
-		R_ProjectDropShadow(oldthing, vis, (cv_allobjectshaveshadows.value ? (oldthing->shadowscale ? oldthing->shadowscale : 1*FRACUNIT) : oldthing->shadowscale), basetx, basetz);
+	if ((oldthing->shadowscale || cv_tsourdt3rd_game_shadows_forallobjects.value) && cv_shadow.value)
+		R_ProjectDropShadow(oldthing, vis,
+			(cv_tsourdt3rd_game_shadows_forallobjects.value ?
+				(oldthing->shadowscale ? oldthing->shadowscale : 1*FRACUNIT) :
+				oldthing->shadowscale),
+			basetx,
+			basetz
+		);
 #endif
 
 	R_ProjectBoundingBox(oldthing, vis);

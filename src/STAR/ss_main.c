@@ -14,10 +14,8 @@
 #include "ss_main.h"
 #include "smkg-jukebox.h"
 #include "smkg-misc.h"
-#include "menus/smkg_m_func.h"
+#include "menus/smkg-m_sys.h" // menumessage //
 #include "curl/smkg-curl.h"
-
-#include "drrr/k_menu.h" // menumessage //
 
 #include "../f_finale.h"
 #include "../i_time.h"
@@ -26,28 +24,31 @@
 #include "../v_video.h"
 #include "../p_local.h"
 #include "../m_argv.h"
-#include "../i_video.h" // rendermode
-#include "../deh_soc.h" // TSoURDt3rd_LoadedGamedataAddon
+#include "../g_game.h" // player_names
 
 #ifdef HAVE_DISCORDSUPPORT
 #include "../discord/discord.h"
+#endif
+
+#ifdef HAVE_SDL
+#include "smkg-i_sys.h" // TSoURDt3rd_I_Pads_InitControllers() //
 #endif
 
 // ------------------------ //
 //        Variables
 // ------------------------ //
 
+tsourdt3rd_t tsourdt3rd[MAXPLAYERS];
+struct tsourdt3rd_local_s tsourdt3rd_local;
+
+tsourdt3rd_timedEvent_t tsourdt3rd_currentEvent = TSOURDT3RD_EVENT_NONE;
+struct tsourdt3rd_loadingscreen_s tsourdt3rd_loadingscreen;
+
 static saveinfo_t* cursave = NULL;
 
-// ======
-// EVENTS
-// ======
-
-tsourdt3rdevent_t TSoURDt3rd_CurrentEvent = 0;
-
-boolean aprilfoolsmode = false;
-boolean eastermode = false;
-boolean xmasmode = false, xmasoverride = false;
+INT32 STAR_ServerToExtend = 0;
+INT32 DefaultMapTrack = 0;
+boolean SpawnTheDispenser = false;
 
 // ------------------------ //
 //        Functions
@@ -56,33 +57,31 @@ boolean xmasmode = false, xmasoverride = false;
 void TSoURDt3rd_Init(void)
 {
 	CONS_Printf("TSoURDt3rd_Init(): Initalizing TSoURDt3rd...\n");
-	TSoURDt3rd_FOL_CreateDirectory("TSoURDt3rd"PATHSEP"Test"PATHSEP"Run"PATHSEP"Test"PATHSEP"Real"PATHSEP"American"PATHSEP"HOOHOOWAAEFKDHIJDSJSISJDJNFFNYEAH!");
+	TSoURDt3rd_FOL_CreateDirectory("TSoURDt3rd");
 
 	TSoURDt3rd_CheckTime(); // Check our computer's time!
-	TSoURDt3rd_InitializePlayer(consoleplayer); // Initialize the build's player structures
+#ifdef HAVE_SDL
+	TSoURDt3rd_I_Pads_InitControllers(); // Initialize our cool controller system!
+#endif
+	TSoURDt3rd_InitializePlayer(consoleplayer); // Initialize the build's player structures!
 
-	// Add our custom menu data :p
-	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_TM_OP_MainMenuDef, &TSoURDt3rd_OP_MainMenuDef);
-	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_TM_OP_EventsDef, &TSoURDt3rd_OP_EventsDef);
-	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_TM_OP_GameDef, &TSoURDt3rd_OP_GameDef);
-	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_TM_OP_ControlsDef, &TSoURDt3rd_OP_ControlsDef);
-	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_TM_OP_VideoDef, &TSoURDt3rd_OP_VideoDef);
-	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_TM_OP_AudioDef, &TSoURDt3rd_OP_AudioDef);
-	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_TM_OP_PlayerDef, &TSoURDt3rd_OP_PlayerDef);
-	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_TM_OP_SavefileDef, &TSoURDt3rd_OP_SavefileDef);
-	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_TM_OP_ServerDef, &TSoURDt3rd_OP_ServerDef);
-	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_TM_OP_JukeboxDef, &TSoURDt3rd_OP_JukeboxDef);
-	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_TM_OP_ExtrasDef, &TSoURDt3rd_OP_ExtrasDef);
-	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_TM_OP_Extras_SnakeDef, &TSoURDt3rd_OP_Extras_SnakeDef);
+	// Initialize Jukebox data
+	if (!(tsourdt3rd_jukebox_available_pages = Z_Malloc(TSOURDT3RD_MAX_JUKEBOX_PAGES * sizeof(tsourdt3rd_jukebox_pages_t *), PU_STATIC, NULL)))
+		I_Error("TSoURDt3rd_Init(): could not allocate jukebox memory.");
+	tsourdt3rd_jukebox_available_pages[0] = &tsourdt3rd_jukeboxpage_mainpage;
 
-#ifdef HAVE_DISCORDSUPPORT
-	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_TM_OP_DiscordOptionsDef, &OP_DiscordOptionsDef);
-	TSoURDt3rd_M_AddNewMenu(&TSoURDt3rd_TM_MISC_DiscordRequestsDef, &MISC_DiscordRequestsDef);
-#endif	
+	tsourdt3rd_global_jukebox = Z_Calloc(sizeof(tsourdt3rd_jukebox_t), PU_STATIC, NULL);
+	if (tsourdt3rd_global_jukebox == NULL)
+		I_Error("TSoURDt3rd_Init(): could not allocate jukebox memory.");
+
+	tsourdt3rd_global_jukebox->hud_box_w = 320;
+	tsourdt3rd_global_jukebox->hud_string_w = 335;
+	tsourdt3rd_global_jukebox->hud_track_w = 320;
+	tsourdt3rd_global_jukebox->hud_speed_w = 360;
 }
 
 //
-// void STAR_CONS_Printf(star_messagetype_t starMessageType, const char *fmt, ...)
+// void STAR_CONS_Printf(tsourdt3rd_messagetype_t starMessageType, const char *fmt, ...)
 // A function specifically dedicated towards printing out certain TSoURDt3rd and STAR stuff in the console!
 //
 // starMessageType Parameters:
@@ -95,7 +94,7 @@ void TSoURDt3rd_Init(void)
 //		STAR_CONS_EASTER			- CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd Easter:")) + ...
 //		STAR_CONS_JUKEBOX			- CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd Jukebox:")) + ...
 //
-void STAR_CONS_Printf(star_messagetype_t starMessageType, const char *fmt, ...)
+void STAR_CONS_Printf(tsourdt3rd_messagetype_t starMessageType, const char *fmt, ...)
 {
 	va_list argptr;
 	static char *txt = NULL;
@@ -150,7 +149,7 @@ void STAR_CONS_Printf(star_messagetype_t starMessageType, const char *fmt, ...)
 
 const char *TSoURDt3rd_CON_DrawStartupScreen(void)
 {
-	switch (cv_startupscreen.value)
+	switch (cv_tsourdt3rd_game_startup_image.value)
 	{
 		case 1:
 			return "CONSBACK";
@@ -181,15 +180,14 @@ void TSoURDt3rd_D_Display(void)
 				I_Error("Definitely caused by a SIGSEGV - seventh sentinel (core dumped)");
 			}
 			/* FALLTHRU */
-
 		default:
-			break;	
+			break;
 	}
 
 	// Check for any events.
-	if (!menumessage.active && !sent_event_message && (eastermode || aprilfoolsmode || xmasmode))
+	if (!menumessage.active && !sent_event_message && tsourdt3rd_currentEvent)
 	{
-		DRRR_M_StartMessage(
+		TSoURDt3rd_M_StartMessage(
 			"A TSoURDt3rd Event is Occuring",
 			"We're having a seasonal event! Have fun!",
 			NULL,
@@ -237,65 +235,38 @@ void TSoURDt3rd_CheckTime(void)
 	if (((tptr && tptr->tm_mon == 3)
 		|| (M_CheckParm("-easter")))
 			&& !M_CheckParm("-noeaster"))
-		TSoURDt3rd_CurrentEvent = TSOURDT3RD_EASTER;
+		tsourdt3rd_currentEvent |= TSOURDT3RD_EVENT_EASTER;
 
 	// April Fools
 	else if (((tptr && tptr->tm_mon == 3 && (tptr->tm_mday >= 1 && tptr->tm_mday <= 3))
 		|| (M_CheckParm("-aprilfools")))
 			&& !M_CheckParm("-noaprilfools"))
-		TSoURDt3rd_CurrentEvent = TSOURDT3RD_APRILFOOLS;
+		tsourdt3rd_currentEvent |= TSOURDT3RD_EVENT_APRILFOOLS;
 
 	// Christmas Eve to New Years
-	else if (((tptr && (tptr->tm_mon == 11 && tptr->tm_mday >= 24))
+	else if (((tptr && (tptr->tm_mon == 12 && tptr->tm_mday >= 24))
 		|| (M_CheckParm("-xmas")))
 			&& !M_CheckParm("-noxmas"))
-		TSoURDt3rd_CurrentEvent = TSOURDT3RD_CHRISTMAS;
+		tsourdt3rd_currentEvent |= TSOURDT3RD_EVENT_CHRISTMAS;
 
-	switch (TSoURDt3rd_CurrentEvent)
+	if (tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_EASTER)
 	{
-		case TSOURDT3RD_EASTER:
-		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "TSoURDt3rd_CheckTime(): Easter Mode Enabled!\n");
-
-			CV_RegisterVar(&cv_easter_allowegghunt);
-			CV_RegisterVar(&cv_easter_egghuntbonuses);
-
-			eastermode = true;
-			modifiedgame = false;
-
-			TSoURDt3rd_LoadExtras = true;
-
-			break;
-		}
-
-		case TSOURDT3RD_APRILFOOLS:
-		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "TSoURDt3rd_CheckTime(): April Fools Mode Enabled!\n");
-
-			CV_RegisterVar(&cv_tsourdt3rd_aprilfools_ultimatemode);
-
-			aprilfoolsmode = true;
-			modifiedgame = false;
-			STAR_StoreDefaultMenuStrings();
-
-			TSoURDt3rd_LoadExtras = true;
-			break;
-		}
-
-		case TSOURDT3RD_CHRISTMAS:
-		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "TSoURDt3rd_CheckTime(): Christmas Mode Enabled!\n");
-
-			xmasmode = true;
-			xmasoverride = true;
-			modifiedgame = false;
-
-			TSoURDt3rd_LoadExtras = true;
-			break;
-		}
-
-		default:
-			break;
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "TSoURDt3rd_CheckTime(): Easter Mode Enabled!\n");
+		CV_RegisterVar(&cv_tsourdt3rd_easter_egghunt_allowed);
+		CV_RegisterVar(&cv_tsourdt3rd_easter_egghunt_bonuses);
+		modifiedgame = false;
+	}
+	if (tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_APRILFOOLS)
+	{
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "TSoURDt3rd_CheckTime(): April Fools Mode Enabled!\n");
+		CV_RegisterVar(&cv_tsourdt3rd_aprilfools_ultimatemode);
+		TSoURDt3rd_AprilFools_StoreDefaultMenuStrings();
+		modifiedgame = false;
+	}
+	if (tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_CHRISTMAS)
+	{
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "TSoURDt3rd_CheckTime(): Christmas Mode Enabled!\n");
+		modifiedgame = false;
 	}
 }
 
@@ -326,71 +297,6 @@ mobj_t *TSoURDt3rd_BossInMap(void)
 		return (mobj_t *)th;
 	}
 	return NULL;
-}
-
-//
-// void TSoURDt3rd_LoadLevel(boolean reloadinggamestate)
-// Loads various bits of level data, exclusively for TSoURDt3rd.
-//
-void TSoURDt3rd_LoadLevel(boolean reloadinggamestate)
-{
-	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer];
-	const char *determinedMusic = TSoURDt3rd_DetermineLevelMusic();
-
-	TSoURDt3rd->loadingScreens.loadCount = TSoURDt3rd->loadingScreens.loadPercentage = 0; // reset loading status
-	TSoURDt3rd->loadingScreens.bspCount = 0; // reset bsp count
-	TSoURDt3rd->loadingScreens.loadComplete = false; // reset loading finale
-
-#ifdef HAVE_SDL
-	STAR_SetWindowTitle();
-#endif
-
-	if (savemoddata)
-		TSoURDt3rd_LoadedGamedataAddon = true;
-	if (!netgame)
-		STAR_SetSavefileProperties();
-
-	if (!(reloadinggamestate || titlemapinaction))
-	{
-		// Display the loading screen...
-		if (rendermode != render_none)
-		{
-			if (cv_loadingscreen.value && TSoURDt3rd->loadingScreens.loadCount-- <= 0 && !TSoURDt3rd->loadingScreens.loadComplete)
-			{
-				while (TSoURDt3rd->loadingScreens.bspCount != 1 && (((TSoURDt3rd->loadingScreens.loadPercentage)<<1) < 100) && rendermode == render_soft)
-				{
-					TSoURDt3rd->loadingScreens.loadCount = numsubsectors/50;
-					STAR_LoadingScreen();
-				}
-
-				TSoURDt3rd->loadingScreens.loadCount = TSoURDt3rd->loadingScreens.loadPercentage = 0; // reset the loading status
-				TSoURDt3rd->loadingScreens.screenToUse = 0; // reset the loading screen to use
-				TSoURDt3rd->loadingScreens.loadComplete = true; // loading... load complete.
-			}
-		}
-
-		// Change the music :)
-		if (strnicmp(S_MusicName(),
-			((mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : determinedMusic), 7))
-		{
-			strncpy(mapmusname, determinedMusic, 7);
-
-			mapmusname[6] = 0;
-			mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
-			mapmusposition = mapheaderinfo[gamemap-1]->muspos;
-		}
-
-		// Fade music, by the way.
-		if (RESETMUSIC || strnicmp(S_MusicName(),
-			(mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname, 7))
-		{
-			S_FadeMusic(0, FixedMul(
-				FixedDiv((F_GetWipeLength(wipedefs[wipe_level_toblack])-2)*NEWTICRATERATIO, NEWTICRATE), MUSICRATE));
-		}
-
-		// Set the music.
-		S_Start();
-	}
 }
 
 
@@ -430,19 +336,20 @@ void TSoURDt3rd_GameEnd(INT32 *timetonext)
 		headerScroll = BASEVIDWIDTH;
 		init = true;
 	}
-	else if (--*timetonext <= 0)
+
+	if (--*timetonext <= 0)
 	{
 		if (cursave)
 		{
 			Z_Free(cursave);
 			cursave = NULL;
 		}
-
 		init = false;
 		headerScroll = BASEVIDWIDTH;
+		return;
 	}
 
-	if (headerScroll)
+	if (*timetonext <= 3*TICRATE/2)
 		headerScroll--;
 
 	V_DrawCenteredString(((BASEVIDWIDTH/2)-headerScroll), 65, V_SNAPTOBOTTOM|V_MENUCOLORMAP, "Great Job!");

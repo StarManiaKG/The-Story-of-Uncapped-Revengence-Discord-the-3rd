@@ -85,9 +85,4 @@ void clear_emblems(void);
 void clear_unlockables(void);
 void clear_levels(void);
 void clear_conditionsets(void);
-
-// STAR STUFF //
-extern boolean TSoURDt3rd_LoadedGamedataAddon;
-// END THAT //
-
 #endif

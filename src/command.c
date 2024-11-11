@@ -36,6 +36,9 @@
 #include "r_data.h" // Color_cons_t
 #include "d_main.h" // D_IsPathAllowed
 
+// TSoURDt3rd
+#include "STAR/smkg-cvars.h" // TSoURDt3rd_CV_CheckForOldCommands() //
+
 //========
 // protos.
 //========
@@ -672,6 +675,11 @@ static void COM_ExecuteString(char *ptext)
 			return;
 		}
 	}
+
+	// STAR STUFF: CHECK FOR OUR OLD COMMANDS, FOR PORTING REASONS //
+	if (TSoURDt3rd_CV_CheckForOldCommands())
+		return;
+	// CHECKED AND PORTED (probably)! //
 
 	// check cvars
 	// Hurdler: added at Ebola's request ;)

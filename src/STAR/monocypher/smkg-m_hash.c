@@ -6,13 +6,10 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  smkg-hasher.c
-/// \brief TSoURDt3rd's hashing routines, supported by monocrypt
+/// \file  smkg-m_hash.c
+/// \brief TSoURDt3rd's hashing routines, supported by monocypher
 
-#include "smkg-hasher.h"
-#include "monocypher.h"
-
-#include "../../discord/stun.h"
+#include "smkg-m_hash.h"
 
 // ------------------------ //
 //        Functions

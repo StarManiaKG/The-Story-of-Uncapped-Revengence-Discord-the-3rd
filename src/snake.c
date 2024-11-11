@@ -580,6 +580,11 @@ void Snake_Free(void **opaque)
 // I'm screaming the hack is clean - ashi
 boolean Snake_JoyGrabber(void *opaque, event_t *ev)
 {
+	// MAJOR STAR NOTE: yeah why //
+	if (opaque == NULL)
+		return false;
+	// ????????????????????????? //
+
 	snake_t *snake = opaque;
 
 	if (ev->type == ev_joystick  && ev->key == 0)

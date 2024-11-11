@@ -38,6 +38,10 @@ extern "C" {
 // length of IP strings
 #define IP_SIZE 21
 
+// length of Discord Presence strings
+#define DISCORD_PRESENCE_STRING_SIZE 128
+#define DISCORD_PRESENCE_IMAGE_STRING_SIZE 64
+
 // Allows for SRB2 to use the discriminators of Discord usernames! (even though they removed them :p)
 #define DISCORD_DISCRIMINATORS
 
@@ -50,13 +54,9 @@ typedef enum {
 } DRPC_Status_t;
 
 extern struct discordInfo_s {
-	union
-	{
-		UINT8 maxPlayers;
-		boolean joinsAllowed;
-		boolean everyoneCanInvite;
-	} serv;
-
+	UINT8 maxPlayers;
+	boolean joinsAllowed;
+	boolean everyoneCanInvite;
 	DRPC_Status_t ConnectionStatus;
 } discordInfo;
 
@@ -64,7 +64,7 @@ typedef struct discordRequest_s {
 	char *username; // Discord user name.
 	char *discriminator; // Discord discriminator (The little hashtag thing after the username). Separated for a "hide discriminators" cvar.
 	char *userID; // The ID of the Discord user, gets used with Discord_Respond()
-	
+
 	// HAHAHA, no.
 	// *Maybe* if it was only PNG I would boot up curl just to get AND convert this to Doom GFX,
 	// but it can *also* be a JEPG, WebP, or GIF :)
@@ -78,17 +78,26 @@ typedef struct discordRequest_s {
 extern discordRequest_t *discordRequestList;
 
 
-extern consvar_t cv_discordrp, cv_discordstreamer;
+extern consvar_t cv_discordrp;
+extern consvar_t cv_discordstreamer;
 extern consvar_t cv_discordasks;
-extern consvar_t cv_discordshowonstatus, cv_discordstatusmemes, cv_discordcharacterimagetype;
-
-extern consvar_t cv_discordcustom_details, cv_discordcustom_state;
-extern consvar_t cv_discordcustom_imagetype_large, cv_discordcustom_imagetype_small;
-extern consvar_t cv_discordcustom_characterimage_large, cv_discordcustom_characterimage_small;
-extern consvar_t cv_discordcustom_supercharacterimage_large, cv_discordcustom_supercharacterimage_small;
-extern consvar_t cv_discordcustom_mapimage_large, cv_discordcustom_mapimage_small;
-extern consvar_t cv_discordcustom_miscimage_large, cv_discordcustom_miscimage_small;
-extern consvar_t cv_discordcustom_imagetext_large, cv_discordcustom_imagetext_small;
+extern consvar_t cv_discordshowonstatus;
+extern consvar_t cv_discordstatusmemes;
+extern consvar_t cv_discordcharacterimagetype;
+extern consvar_t cv_discordcustom_details;
+extern consvar_t cv_discordcustom_state;
+extern consvar_t cv_discordcustom_imagetype_large;
+extern consvar_t cv_discordcustom_imagetype_small;
+extern consvar_t cv_discordcustom_characterimage_large;
+extern consvar_t cv_discordcustom_characterimage_small;
+extern consvar_t cv_discordcustom_supercharacterimage_large;
+extern consvar_t cv_discordcustom_supercharacterimage_small;
+extern consvar_t cv_discordcustom_mapimage_large;
+extern consvar_t cv_discordcustom_mapimage_small;
+extern consvar_t cv_discordcustom_miscimage_large;
+extern consvar_t cv_discordcustom_miscimage_small;
+extern consvar_t cv_discordcustom_imagetext_large;
+extern consvar_t cv_discordcustom_imagetext_small;
 
 
 // ------------------------ //
@@ -100,21 +109,21 @@ extern consvar_t cv_discordcustom_imagetext_large, cv_discordcustom_imagetext_sm
 // =====
 
 /*--------------------------------------------------
-	void DRPC_StringPrintf(char *main, const char *sep, size_t size, const char *string, ...);
+	void DRPC_StringPrintf(char *main, const char *sep, const char *string, ...);
 
 		Provides easier methods of concatenation when it
 		comes to applying Discord Rich Presence statuses to the given string.
 --------------------------------------------------*/
-void DRPC_StringPrintf(char *main, const char *sep, size_t size, const char *string, ...);
+void DRPC_StringPrintf(char *main, const char *sep, const char *string, ...);
 
 
 /*--------------------------------------------------
-	void DRPC_ImagePrintf(char *string, size_t size, const char *sep, const char *image, ...);
+	void DRPC_ImagePrintf(char *string, const char *sep, const char *image, ...);
 
 		Provides easier methods of applying images to
 		Discord Rich Presence statuses.
 --------------------------------------------------*/
-void DRPC_ImagePrintf(char *string, size_t size, const char *sep, const char *image, ...);
+void DRPC_ImagePrintf(char *string, const char *sep, const char *image, ...);
 
 
 // ========
@@ -257,22 +266,22 @@ void DRPC_UpdatePresence(void);
 #endif // HAVE_DISCORDSUPPORT
 
 /*--------------------------------------------------
-	void Joinable_OnChange(void)
+	void TSoURDt3rd_D_Joinable_OnChange(void)
 
 		Grabs Discord presence info and packets in netgames.
 --------------------------------------------------*/
 
-void Joinable_OnChange(void);
+void TSoURDt3rd_D_Joinable_OnChange(void);
 
 
 /*--------------------------------------------------
-	void Got_DiscordInfo(void)
+	void TSoURDt3rd_D_Got_DiscordInfo(void)
 
 		Updates Discord presence info based on packets
 		received from servers.
 --------------------------------------------------*/
 
-void Got_DiscordInfo(UINT8 **cp, INT32 playernum);
+void TSoURDt3rd_D_Got_DiscordInfo(UINT8 **cp, INT32 playernum);
 
 
 #ifdef __cplusplus

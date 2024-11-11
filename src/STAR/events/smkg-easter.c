@@ -12,7 +12,7 @@
 #include "../ss_main.h"
 #include "../star_vars.h"
 #include "../smkg-st_hud.h"
-#include "../m_menu.h"
+#include "../menus/smkg-m_sys.h"
 
 #include "../../d_main.h" // autoloaded //
 #include "../../g_game.h" // playeringame[] //
@@ -24,19 +24,20 @@
 //        Variables
 // ------------------------ //
 
-INT32 currenteggs;
-INT32 collectedmapeggs;
-INT32 numMapEggs;
+INT32 currenteggs = 0;
+INT32 collectedmapeggs = 0;
+INT32 numMapEggs = 0;
+INT32 TOTALEGGS = 0;
+INT32 foundeggs = 0;
+
+boolean AllowEasterEggHunt = true;
+boolean EnableEasterEggHuntBonuses = false;
 
 static void STAR_Easter_EggHunt_OnChange(void);
 static void STAR_Easter_EnableEggHuntBonuses_OnChange(void);
 
-// ------------------------ //
-//        Commands
-// ------------------------ //
-
-consvar_t cv_easter_allowegghunt = CVAR_INIT ("easter_allowegghunt", "No", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, STAR_Easter_EggHunt_OnChange);
-consvar_t cv_easter_egghuntbonuses = CVAR_INIT ("easter_egghuntbonuses", "Off", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, STAR_Easter_EnableEggHuntBonuses_OnChange);
+consvar_t cv_tsourdt3rd_easter_egghunt_allowed = CVAR_INIT ("tsourdt3rd_easter_egghunt_allowed", "No", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, STAR_Easter_EggHunt_OnChange);
+consvar_t cv_tsourdt3rd_easter_egghunt_bonuses = CVAR_INIT ("tsourdt3rd_easter_egghunt_bonuses", "Off", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, STAR_Easter_EnableEggHuntBonuses_OnChange);
 
 // ------------------------ //
 //        Functions
@@ -49,31 +50,31 @@ boolean TSoURDt3rd_Easter_AllEggsCollected(void)
 
 static void STAR_Easter_EggHunt_OnChange(void)
 {
-	if (!eastermode)
+	if (!(tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_EASTER))
 		return;
 
-	if ((Playing() && playeringame[consoleplayer]) || netgame || (TSoURDt3rd_NoMoreExtras || autoloaded) || currenteggs == TOTALEGGS)
+	if ((Playing() && playeringame[consoleplayer]) || netgame || ((autoloaded || ((modifiedgame || usedCheats) && savemoddata))) || currenteggs == TOTALEGGS)
 	{
-		if (TSoURDt3rd_NoMoreExtras || autoloaded)
+		if ((autoloaded || ((modifiedgame || usedCheats) && savemoddata)))
 			CONS_Printf("Sorry, you'll need to restart your game in order to set this again.\n");
 		else if ((Playing() || gamestate == GS_TITLESCREEN || menuactive) && currenteggs == TOTALEGGS)
 			CONS_Printf("You already have all of the eggs!\n");
 		else if (Playing() && netgame)
 			CONS_Printf("Sorry, you can't change this while in a game or netgame.\n");
 
-		CV_StealthSetValue(&cv_easter_allowegghunt, !cv_easter_allowegghunt.value);
+		CV_StealthSetValue(&cv_tsourdt3rd_easter_egghunt_allowed, !cv_tsourdt3rd_easter_egghunt_allowed.value);
 		return;
 	}
 }
 
 static void STAR_Easter_EnableEggHuntBonuses_OnChange(void)
 {
-	if (eastermode)
+	if ((tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_EASTER))
 		return;
 
-	if ((netgame || currenteggs != TOTALEGGS) || (TSoURDt3rd_NoMoreExtras || autoloaded))
+	if ((netgame || currenteggs != TOTALEGGS) || ((autoloaded || ((modifiedgame || usedCheats) && savemoddata))))
 	{
-		((TSoURDt3rd_NoMoreExtras || autoloaded) ?
+		(((autoloaded || ((modifiedgame || usedCheats) && savemoddata))) ?
 			(CONS_Printf("Sorry, you'll need to restart your game in order to set this again.\n")) :
 
 			(((Playing() || gamestate == GS_TITLESCREEN || menuactive) && currenteggs != TOTALEGGS) ?
@@ -82,10 +83,10 @@ static void STAR_Easter_EnableEggHuntBonuses_OnChange(void)
 			((Playing() && netgame) ?
 				(CONS_Printf("Sorry, you can't change this while in a netgame.\n")) : 0)));
 
-		CV_StealthSetValue(&cv_easter_egghuntbonuses, !cv_easter_egghuntbonuses.value);
+		CV_StealthSetValue(&cv_tsourdt3rd_easter_egghunt_bonuses, !cv_tsourdt3rd_easter_egghunt_bonuses.value);
 	}
 	else
-		EnableEasterEggHuntBonuses = cv_easter_egghuntbonuses.value;
+		EnableEasterEggHuntBonuses = cv_tsourdt3rd_easter_egghunt_bonuses.value;
 }
 
 //
@@ -100,9 +101,8 @@ void TSoURDt3rd_Easter_ST_drawEggs(void)
 	// Run Some Checks
 	if (!Playing() 										// We Need to Play, Jesse
 		|| (netgame || multiplayer)						// You Can't Manipulate Your Friends for This Egg Hunt
-		|| (!eastermode)								// We Shouldn't Even Show This If It's Not Easter
-		|| (TSoURDt3rd_NoMoreExtras)					// No Cheating
-		|| (autoloaded)									// No Cheating: Electric Boogalo
+		|| (!(tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_EASTER))								// We Shouldn't Even Show This If It's Not Easter
+		|| ((autoloaded || ((modifiedgame || usedCheats) && savemoddata)))		// No Cheating
 		|| (!AllowEasterEggHunt)						// Hooray for Consent
 		
 		|| (F_GetPromptHideHud(hudinfo[HUD_RINGS].y))	// If Rings are Hidden, So Are the Eggs

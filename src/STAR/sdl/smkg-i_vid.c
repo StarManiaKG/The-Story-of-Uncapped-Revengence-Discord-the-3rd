@@ -19,14 +19,12 @@
 #endif
 
 #include "../smkg-i_sys.h"
+#include "../core/smkg-p_pads.h"
 #include "../smkg-cvars.h"
 #include "../smkg-st_hud.h"
+#include "../star_vars.h" // STAR_CONS_Printf() //
 
-#include "../drrr/kg_input.h"
-
-#include "../../lua_hook.h"
 #include "../../i_system.h"
-#include "../../screen.h"
 
 #ifdef HAVE_DISCORDSUPPORT
 #include "../../discord/discord.h"
@@ -45,22 +43,157 @@ INT32 window_y = -1;
 // ------------------------ //
 
 #ifdef HAVE_SDL
+// Returns the name of a controller from its index
+static const char *Impl_TSoURDt3rd_Pads_GetName(INT32 joyindex)
+{
+	const char *gamec_tempname = SDL_GameControllerNameForIndex(joyindex-1);
+
+	if (SDL_WasInit(TSOURDT3RD_GAMEPAD_INIT_FLAGS) != TSOURDT3RD_GAMEPAD_INIT_FLAGS)
+		return NULL;
+	if (gamec_tempname)
+		return gamec_tempname;
+	return I_GetJoyName(joyindex);
+}
+
 static void Impl_TSoURDt3rd_HandleWindowEvent(SDL_WindowEvent evt)
 {
+	static SDL_bool mousefocus = SDL_TRUE;
+	static SDL_bool kbfocus = SDL_TRUE;
+
 	switch (evt.event)
 	{
+		case SDL_WINDOWEVENT_ENTER:
+			mousefocus = SDL_TRUE;
+			break;
+		case SDL_WINDOWEVENT_LEAVE:
+			mousefocus = SDL_FALSE;
+			break;
+		case SDL_WINDOWEVENT_FOCUS_GAINED:
+			kbfocus = SDL_TRUE;
+			mousefocus = SDL_TRUE;
+			break;
+		case SDL_WINDOWEVENT_FOCUS_LOST:
+			kbfocus = SDL_FALSE;
+			mousefocus = SDL_FALSE;
+			break;
 		case SDL_WINDOWEVENT_MOVED:
+		case SDL_WINDOWEVENT_MAXIMIZED:
+		case SDL_WINDOWEVENT_RESIZED:
+    	case SDL_WINDOWEVENT_SIZE_CHANGED:
 			window_x = evt.data1;
 			window_y = evt.data2;
 			break;
 		default:
+			if (cv_fullscreen.value)
+			{
+				window_x = window_y = -1;
+				break;
+			}
 			if (window_x == -1 || window_y == -1)
 				SDL_GetWindowPosition(window, &window_x, &window_y);
-
-			if (cv_fullscreen.value)
-				window_x = window_y = -1;
-
 			break;
+	}
+
+	if (mousefocus && kbfocus)
+	{
+		TSoURDt3rd_P_Pads_PauseDeviceRumble(NULL, false, false);
+	}
+	else if (!mousefocus && !kbfocus)
+	{
+		TSoURDt3rd_P_Pads_PauseDeviceRumble(NULL, P_AutoPause(), P_AutoPause());
+	}
+}
+
+static void Impl_TSoURDt3rd_Pads_Added(void)
+{
+	// The game is always interested in controller events, even if they aren't internally assigned to a player.
+	// Thus, we *always* open SDL controllers as they become available, to begin receiving their events.
+
+	for (UINT8 user = 0; user < TSOURDT3RD_NUM_GAMEPADS; user++)
+	{
+		TSoURDt3rd_ControllerInfo *controller_data = &tsourdt3rd_controllers[user];
+		INT32 device_id = (tsourdt3rd_joystick_index[user]->value - 1);
+
+		SDL_GameController *controller = SDL_GameControllerOpen(device_id);
+		SDL_Joystick *joystick = SDL_GameControllerGetJoystick(controller);
+
+		boolean controller_rumble_supported, controller_trigger_rumble_supported;
+		boolean joystick_rumble_supported, joystick_trigger_rumble_supported;
+
+		if (controller == NULL)// || joystick == NULL)
+		{
+			// ...Aw, dang it.
+			continue;
+		}
+		if (controller_data->game_device != NULL || controller_data->joy_device != NULL || controller_data->active)
+		{
+			continue;
+		}
+
+		controller_rumble_supported = (SDL_GameControllerHasRumble(controller) == SDL_TRUE);
+		controller_trigger_rumble_supported = (SDL_GameControllerHasRumbleTriggers(controller) == SDL_TRUE);
+		joystick_rumble_supported = (SDL_JoystickHasRumble(joystick) == SDL_TRUE);
+		joystick_trigger_rumble_supported = (SDL_JoystickHasRumbleTriggers(joystick) == SDL_TRUE);
+
+		controller_data->active = true;
+		controller_data->game_device = controller;
+		controller_data->joy_device = joystick;
+		controller_data->id = device_id;
+		controller_data->real_id = (device_id + 1);
+		controller_data->name = Impl_TSoURDt3rd_Pads_GetName(controller_data->real_id);
+		controller_data->rumble.supported = (controller_rumble_supported || joystick_rumble_supported);
+		controller_data->trigger_rumble.supported = (controller_trigger_rumble_supported || joystick_trigger_rumble_supported);
+
+		if (controller_data->game_device)
+		{
+			SDL_GameControllerSetPlayerIndex(controller_data->game_device, user);
+		}
+		if (controller_data->joy_device)
+		{
+			SDL_JoystickSetPlayerIndex(controller_data->joy_device, user);
+		}
+
+		TSoURDt3rd_P_Pads_ResetDeviceRumble(user);
+		TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor(user);
+
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "Gamepad device (%s) has been added for Player %d.\n",
+			controller_data->name,
+			controller_data->real_id
+		);
+	}
+}
+
+static void Impl_TSoURDt3rd_Pads_Removed(void)
+{
+	for (UINT8 i = 0; i < TSOURDT3RD_NUM_GAMEPADS; i++)
+	{
+		TSoURDt3rd_ControllerInfo *controller_data = &tsourdt3rd_controllers[i];
+
+		if (controller_data->game_device == NULL || controller_data->joy_device == NULL || !controller_data->active)
+		{
+			continue;
+		}
+		if (SDL_GameControllerGetAttached(controller_data->game_device))
+		{
+			// The controller is still connected, dude!
+			continue;
+		}
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "Gamepad device (%s) has been removed for Player %d.\n",
+			controller_data->name,
+			controller_data->real_id
+		);
+
+		SDL_GameControllerOpen(controller_data->id);
+		TSoURDt3rd_I_Pads_SetIndicatorColor(i, 0, 0, 255);
+		TSoURDt3rd_P_Pads_ResetDeviceRumble(i);
+		SDL_GameControllerClose(controller_data->game_device);
+
+		controller_data->active = false;
+		controller_data->game_device = NULL;
+		controller_data->joy_device = NULL;
+		controller_data->id = -1;
+		controller_data->real_id = 0;
+		controller_data->name = NULL;
 	}
 }
 
@@ -75,9 +208,16 @@ void TSoURDt3rd_I_GetEvent(SDL_Event *evt)
 		case SDL_WINDOWEVENT:
 			Impl_TSoURDt3rd_HandleWindowEvent(evt->window);
 			break;
+		case SDL_JOYDEVICEADDED:
+		case SDL_CONTROLLERDEVICEADDED:
+			Impl_TSoURDt3rd_Pads_Added();
+			break;
+		case SDL_JOYDEVICEREMOVED:
+		case SDL_CONTROLLERDEVICEREMOVED:
+			Impl_TSoURDt3rd_Pads_Removed();
+			break;
 	}
 }
-
 #endif // HAVE_SDL
 
 //
