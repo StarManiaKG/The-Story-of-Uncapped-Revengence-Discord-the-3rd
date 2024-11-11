@@ -41,10 +41,11 @@ void TSoURDt3rd_Curl_FindStringWithinURL(
 	int        *SITE_RETURNCODE
 )
 {
-	CURL *curl = NULL;
+	CURL *curl;
 	CURLcode res;
 
 	char *found_data = NULL;
+	char *current_string = NULL;
 	const char *err_msg = NULL;
 
 	// Initialize curl
@@ -54,10 +55,16 @@ void TSoURDt3rd_Curl_FindStringWithinURL(
 		err_msg = "Couldn't initialize curl.";
 		goto quit;
 	}
+	if (!SITE_DATA_FILE)
+	{
+		err_msg = "Invalid file given.";
+		goto quit;
+	}
 
 	// Access the website and its data
 	curl_easy_setopt(curl, CURLOPT_URL, SITE_URL);
 	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5);
 
 #ifndef NO_IPV6
 	curl_easy_setopt(curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V6);
@@ -67,6 +74,7 @@ void TSoURDt3rd_Curl_FindStringWithinURL(
 
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, SITE_DATA_FILE);
+	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5);
 
 	res = curl_easy_perform(curl);
 	if (res != CURLE_OK)
@@ -84,17 +92,20 @@ void TSoURDt3rd_Curl_FindStringWithinURL(
 	rewind(SITE_DATA_FILE);
 
 	found_data = Z_Malloc(256, PU_STATIC, NULL);
-	while (fgets(found_data, 256, SITE_DATA_FILE))
+	while (found_data != NULL)
 	{
-		if (!found_data)
+		fgets(found_data, 256, SITE_DATA_FILE);
+
+		if (!found_data || *found_data == '\0')
 			break;
+		current_string = strstr(found_data, SITE_STRING);
 
-		if (!strstr(found_data, SITE_STRING))
-			continue;
-
-		(*SITE_RETURNCODE) = TSOURDT3RD_CURL_DATAFOUND;
-
-		goto quit;
+		if (current_string != NULL && *current_string != '\0')
+		{
+			(*SITE_RETURNCODE) = TSOURDT3RD_CURL_DATAFOUND;
+			found_data = current_string;
+			goto quit;
+		}
 	}
 
 	// We failed to find the string if we made it here, so just close...
@@ -115,8 +126,7 @@ void TSoURDt3rd_Curl_FindStringWithinURL(
 			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "TSoURDt3rd_Curl_FindStringWithinURL(): %s\n", err_msg);
 
 		(*SITE_RETURN_STRING) = found_data;
-		if (found_data)
-			Z_Free(found_data);
+		Z_Free(found_data);
 	}
 }
 

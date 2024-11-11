@@ -6,20 +6,27 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  smkg-hasher.h
-/// \brief TSoURDt3rd's hashing routines, global header
+/// \file  smkg-p_setup.h
+/// \brief Globalizes TSoURDt3rd's unique WAD I/O and map setup routines
+
+#ifndef __SMKG_S_PSETUP__
+#define __SMKG_S_PSETUP__
 
 #include "../../doomstat.h"
 
-// ------------------------ //
-//        Variables
-// ------------------------ //
-
-// Crypto/RRID primitives
-#define PUBKEYLENGTH 32 // Enforced by Monocypher EdDSA
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // ------------------------ //
 //        Functions
 // ------------------------ //
 
-char *TSoURDt3rd_Hash_GenerateFromID(const unsigned char *bin, boolean brief);
+boolean TSoURDt3rd_P_LoadAddon(INT32 wadnum, INT32 numlumps);
+void TSoURDt3rd_P_LoadLevel(boolean reloadinggamestate);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
+#endif // __SMKG_S_PSETUP__

@@ -514,6 +514,7 @@ if(SRB2_CONFIG_ENABLE_CLANG_TIDY_CXX)
 	target_set_default_clang_tidy(SRB2SDL2 CXX "-*,clang-analyzer-*,modernize-*")
 endif()
 
+
 ## // STAR STUFF // ##
 add_subdirectory(discord)
 add_subdirectory(STAR)

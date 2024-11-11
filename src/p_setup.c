@@ -89,7 +89,7 @@
 #include "taglist.h"
 
 // TSoURDt3rd
-#include "STAR/ss_main.h" // TSoURDt3rd_LoadLevel() //
+#include "STAR/core/smkg-p_setup.h" // TSoURDt3rd_P_LoadLevel() //
 
 //
 // Map MD5, calculated on level load.
@@ -7805,7 +7805,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			I_UpdateNoVsync();
 		}
 
-#if 0	// STAR STUFF: moved S_Start() into TSoURDt3rd_LoadLevel(), so we can work magic :) //
+#if 0	// STAR STUFF: moved S_Start() into TSoURDt3rd_P_LoadLevel(), so we can work magic :) //
 		// As oddly named as this is, this handles music only.
 		// We should be fine starting it here.
 		// Don't do this during titlemap, because the menu code handles music by itself.
@@ -7938,7 +7938,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	P_MapEnd(); // tmthing is no longer needed from this point onwards
 
-	TSoURDt3rd_LoadLevel(reloadinggamestate); // STAR STUFF: loads cool level data //
+	TSoURDt3rd_P_LoadLevel(reloadinggamestate); // STAR STUFF: loads cool level data //
 
 	// Took me 3 hours to figure out why my progression kept on getting overwritten with the titlemap...
 	if (!titlemapinaction)

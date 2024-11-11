@@ -119,11 +119,6 @@ extern consvar_t cv_chasecam, cv_chasecam2;
 extern consvar_t cv_flipcam, cv_flipcam2;
 
 extern consvar_t cv_shadow;
-#if 1
-// STAR STUFF: NEEDED! //
-// STAR NOTE/MAJOR STAR TODO NOTE: move somewhere else please :) //
-extern consvar_t cv_allobjectshaveshadows, cv_shadowposition; // STAR STUFF: custom shadow stuff yay //
-#endif
 extern consvar_t cv_translucency;
 extern consvar_t cv_drawdist, cv_drawdist_nights, cv_drawdist_precip;
 extern consvar_t cv_fov, cv_fovchange;

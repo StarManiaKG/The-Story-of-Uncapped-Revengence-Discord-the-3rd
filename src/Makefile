@@ -62,7 +62,6 @@
 #
 # Netplay incompatible
 # --------------------
-# NONET=1 - Disable online capability.
 # NOMD5=1 - Disable MD5 checksum (validation tool).
 # NOPOSTPROCESSING=1 - ?
 # MOBJCONSISTANCY=1 - ??

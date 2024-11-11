@@ -14,8 +14,7 @@
 #include "../../smkg_m_func.h"
 #include "../../../smkg-cvars.h"
 
-#include "../../../drrr/k_menu.h"
-#include "../../../drrr/k_console.h" // CON_ShiftChar
+#include "../../../drrr/k_menu.h" // menutyping //
 
 #include "../../../../s_sound.h"
 #include "../../../../i_system.h" // I_Clipboard funcs
@@ -51,6 +50,42 @@ typedef enum
 	CVCPM_CUT,
 	CVCPM_PASTE
 } cvarcopypastemode_t;
+
+static INT32 CON_ShiftChar(INT32 ch)
+{
+	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z'))
+	{
+		// Standard Latin-script uppercase translation
+		if (shiftdown ^ capslock)
+			ch = shiftxform[ch];
+	}
+	else if (ch >= KEY_KEYPAD7 && ch <= KEY_KPADDEL)
+	{
+		// Numpad keycodes mapped to printable equivalent
+		const char keypad_translation[] =
+		{
+			'7','8','9','-',
+			'4','5','6','+',
+			'1','2','3',
+			'0','.'
+		};
+
+		ch = keypad_translation[ch - KEY_KEYPAD7];
+	}
+	else if (ch == KEY_KPADSLASH)
+	{
+		// Ditto, but non-contiguous keycode
+		ch = '/';
+	}
+	else
+	{
+		// QWERTY keycode translation
+		if (shiftdown)
+			ch = shiftxform[ch];
+	}
+
+	return ch;
+}
 
 static boolean M_ChangeStringCvar(INT32 choice)
 {
@@ -180,19 +215,16 @@ static boolean M_ChangeStringCvar(INT32 choice)
 // Determine if cache is past string length based on mvar2
 boolean TSoURDt3rd_M_VirtualStringMeetsLength(void)
 {
-	size_t len;
-	size_t mvar = MAXSTRINGLENGTH;
+	size_t len, min_len = 0;
 
 	if (!menutyping.active)
 		return false;
 
-	len = strlen(menutyping.cache);
+	len = strlen(menutyping.cache); 
 	if (tsourdt3rd_currentMenu != NULL && tsourdt3rd_currentMenu->menuitems[tsourdt3rd_itemOn].mvar2)
-		mvar = tsourdt3rd_currentMenu->menuitems[tsourdt3rd_itemOn].mvar2;
+		min_len = tsourdt3rd_currentMenu->menuitems[tsourdt3rd_itemOn].mvar2;
 
-	if (len >= mvar)
-		return true;
-	return false;
+	return (len >= min_len);
 }
 
 static void M_ToggleVirtualShift(void)
@@ -279,7 +311,7 @@ void M_MenuTypingInput(INT32 key)
 			{
 				M_CloseVirtualKeyboard();
 
-				M_SetMenuDelay(pid);
+				TSoURDt3rd_M_SetMenuDelay(pid);
 				S_StartSound(NULL, sfx_s3k5b);
 
 				return;
@@ -307,7 +339,7 @@ void M_MenuTypingInput(INT32 key)
 			if (menutyping.keyboardy > 4)
 				menutyping.keyboardy = 0;
 
-			M_SetMenuDelay(pid);
+			TSoURDt3rd_M_SetMenuDelay(pid);
 			S_StartSound(NULL, sfx_s3k5b);
 		}
 		else if (menucmd[pid].dpad_ud < 0) // up
@@ -316,7 +348,7 @@ void M_MenuTypingInput(INT32 key)
 			if (menutyping.keyboardy < 0)
 				menutyping.keyboardy = 4;
 
-			M_SetMenuDelay(pid);
+			TSoURDt3rd_M_SetMenuDelay(pid);
 			S_StartSound(NULL, sfx_s3k5b);
 		}
 		else if (menucmd[pid].dpad_lr > 0)	// right
@@ -332,7 +364,7 @@ void M_MenuTypingInput(INT32 key)
 			}
 			while (virtualKeyboard[menutyping.keyboardy][menutyping.keyboardx] == 1);
 
-			M_SetMenuDelay(pid);
+			TSoURDt3rd_M_SetMenuDelay(pid);
 			S_StartSound(NULL, sfx_s3k5b);
 		}
 		else if (menucmd[pid].dpad_lr < 0)	// left
@@ -353,34 +385,34 @@ void M_MenuTypingInput(INT32 key)
 				menutyping.keyboardx = NUMVIRTUALKEYSINROW-1;
 			}
 
-			M_SetMenuDelay(pid);
+			TSoURDt3rd_M_SetMenuDelay(pid);
 			S_StartSound(NULL, sfx_s3k5b);
 		}
-		else if (M_MenuButtonPressed(pid, MBT_START))
+		else if (TSoURDt3rd_M_MenuButtonPressed(pid, MBT_START))
 		{
 			// Shortcut for close menu.
 			M_CloseVirtualKeyboard();
 
-			M_SetMenuDelay(pid);
+			TSoURDt3rd_M_SetMenuDelay(pid);
 			S_StartSound(NULL, sfx_s3k5b);
 		}
-		else if (M_MenuBackPressed(pid))
+		else if (TSoURDt3rd_M_MenuBackPressed(pid))
 		{
 			// Shortcut for backspace.
 			M_ChangeStringCvar(KEY_BACKSPACE);
 
-			M_SetMenuDelay(pid);
+			TSoURDt3rd_M_SetMenuDelay(pid);
 			S_StartSound(NULL, sfx_s3k5b);
 		}
-		else if (M_MenuExtraPressed(pid))
+		else if (TSoURDt3rd_M_MenuExtraPressed(pid))
 		{
 			// Shortcut for shift/caps lock.
 			M_ToggleVirtualShift();
 
-			M_SetMenuDelay(pid);
+			TSoURDt3rd_M_SetMenuDelay(pid);
 			S_StartSound(NULL, sfx_s3k5b);
 		}
-		else if (M_MenuConfirmPressed(pid))
+		else if (TSoURDt3rd_M_MenuConfirmPressed(pid))
 		{
 			// Add the character. First though, check what we're pressing....
 			INT32 tempkeyboardx = menutyping.keyboardx;
@@ -408,7 +440,7 @@ void M_MenuTypingInput(INT32 key)
 					menutyping.keyboardshift = false;			// undo shift if it had been pressed
 				}
 
-				M_SetMenuDelay(pid);
+				TSoURDt3rd_M_SetMenuDelay(pid);
 				S_StartSound(NULL, sfx_s3k5b);
 			}
 		}

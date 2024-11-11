@@ -59,13 +59,10 @@
 
 // TSoURDt3rd
 #include "discord/discord.h" // discord netgame data //
-
 #include "STAR/star_vars.h" // STAR_SetWindowTitle() //
-#include "STAR/smkg-cvars.h" // various vast TSoURDt3rd commands //
-#include "STAR/ss_main.h" // STAR_CONS_Printf() //
+#include "STAR/smkg-cvars.h" // cv_tsourdt3rd_game_sdl_windowtitle_type //
 #include "STAR/p_user.h" // TSoURDt3rd_P_MovingPlayerSetup() //
-
-#include "STAR/drrr/kg_input.h" // G_SetPlayerGamepadIndicatorToPlayerColor() //
+#include "STAR/core/smkg-p_pads.h" // TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor() //
 
 // ------
 // protos
@@ -444,8 +441,8 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"LUAVAR",
 	"LUAFILE",
 
-	// SRB2Kart
-	"DISCORD" // XD_DISCORD
+	// TSoURDt3rd
+	"DISCORD" // SRB2Kart: XD_DISCORD
 };
 
 // =========================================================================
@@ -614,23 +611,15 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_maxsend);
 	CV_RegisterVar(&cv_noticedownload);
 	CV_RegisterVar(&cv_downloadspeed);
-#ifndef NONET
 	CV_RegisterVar(&cv_allownewplayer);
 	CV_RegisterVar(&cv_joinnextround);
 	CV_RegisterVar(&cv_showjoinaddress);
 	CV_RegisterVar(&cv_blamecfail);
 	CV_RegisterVar(&cv_dedicatedidletime);
-#endif
 
 	COM_AddCommand("ping", Command_Ping_f, COM_LUA);
 	CV_RegisterVar(&cv_nettimeout);
 	CV_RegisterVar(&cv_jointimeout);
-
-#ifdef USE_STUN
-	CV_RegisterVar(&cv_stunserver);
-#endif
-	CV_RegisterVar(&cv_discordinvites);
-	RegisterNetXCmd(XD_DISCORD, Got_DiscordInfo);
 
 	CV_RegisterVar(&cv_skipmapcheck);
 	CV_RegisterVar(&cv_sleep);
@@ -933,119 +922,6 @@ void D_RegisterClientCommands(void)
 
 	CV_RegisterVar(&cv_freedemocamera);
 
-#ifdef HAVE_DISCORDSUPPORT
-	CV_RegisterVar(&cv_discordrp);
-	CV_RegisterVar(&cv_discordstreamer);
-	CV_RegisterVar(&cv_discordasks);
-	CV_RegisterVar(&cv_discordshowonstatus);
-	CV_RegisterVar(&cv_discordstatusmemes);
-	CV_RegisterVar(&cv_discordcharacterimagetype);
-
-	CV_RegisterVar(&cv_discordcustom_details);
-	CV_RegisterVar(&cv_discordcustom_state);
-
-	CV_RegisterVar(&cv_discordcustom_imagetype_large);
-    CV_RegisterVar(&cv_discordcustom_imagetype_small);
-
-	CV_RegisterVar(&cv_discordcustom_characterimage_large);
-	CV_RegisterVar(&cv_discordcustom_characterimage_small);
-
-	CV_RegisterVar(&cv_discordcustom_supercharacterimage_large);
-	CV_RegisterVar(&cv_discordcustom_supercharacterimage_small);
-
-    CV_RegisterVar(&cv_discordcustom_mapimage_large);
-    CV_RegisterVar(&cv_discordcustom_mapimage_small);
-
-    CV_RegisterVar(&cv_discordcustom_miscimage_large);
-    CV_RegisterVar(&cv_discordcustom_miscimage_small);
-
-    CV_RegisterVar(&cv_discordcustom_imagetext_large);
-    CV_RegisterVar(&cv_discordcustom_imagetext_small);
-#endif
-
-	// CUSTOM FUNNY STAR THINGS :) //
-	// Game
-	CV_RegisterVar(&cv_startupscreen);
-	CV_RegisterVar(&cv_stjrintro);
-
-	CV_RegisterVar(&cv_loadingscreen);
-	CV_RegisterVar(&cv_loadingscreenimage);
-
-	CV_RegisterVar(&cv_quitscreen);
-
-	CV_RegisterVar(&cv_tsourdt3rd_game_isitcalledsingleplayer);
-
-	CV_RegisterVar(&cv_menucolor);
-
-	CV_RegisterVar(&cv_fpscountercolor);
-	CV_RegisterVar(&cv_tsourdt3rd_video_showtps);
-	CV_RegisterVar(&cv_tpscountercolor);
-
-	CV_RegisterVar(&cv_allowtypicaltimeover);
-	CV_RegisterVar(&cv_pausegraphicstyle);
-	CV_RegisterVar(&cv_automapoutsidedevmode);
-
-	CV_RegisterVar(&cv_tsourdt3rd_game_soniccd);
-
-	// Controls
-	CV_RegisterVar(&cv_tsourdt3rd_ctrl_drrr_rumble[0]);
-	CV_RegisterVar(&cv_tsourdt3rd_ctrl_drrr_rumble[1]);
-
-	// Audio
-	CV_RegisterVar(&cv_tsourdt3rd_audio_watermuffling);
-
-	CV_RegisterVar(&cv_vapemode);
-
-	CV_RegisterVar(&cv_bossmusic);
-	CV_RegisterVar(&cv_finalbossmusic);
-	CV_RegisterVar(&cv_truefinalbossmusic);
-
-	CV_RegisterVar(&cv_bosspinchmusic);
-	CV_RegisterVar(&cv_postbossmusic);
-
-	CV_RegisterVar(&cv_actclearmusic);
-	CV_RegisterVar(&cv_bossclearmusic);
-
-	CV_RegisterVar(&cv_gameovermusic);
-
-	CV_RegisterVar(&cv_defaultmaptrack);
-
-	// Players
-	CV_RegisterVar(&cv_shieldblockstransformation);
-	CV_RegisterVar(&cv_armageddonnukewhilesuper);
-
-	CV_RegisterVar(&cv_alwaysoverlayinvuln);
-
-	// Savefiles
-	CV_RegisterVar(&cv_tsourdt3rd_savefiles_storesavesinfolders);
-
-	CV_RegisterVar(&cv_tsourdt3rd_savefiles_perfectsave);
-	CV_RegisterVar(&cv_tsourdt3rd_savefiles_perfectsavestripe1);
-	CV_RegisterVar(&cv_tsourdt3rd_savefiles_perfectsavestripe2);
-	CV_RegisterVar(&cv_tsourdt3rd_savefiles_perfectsavestripe3);
-
-	CV_RegisterVar(&cv_continues);
-
-	// Servers
-	CV_RegisterVar(&cv_movingplayersetup);
-
-	// Jukebox
-	CV_RegisterVar(&cv_jukeboxspeed);
-
-	CV_RegisterVar(&cv_jukeboxhud);
-
-	CV_RegisterVar(&cv_luacanstopthejukebox);
-
-	// Window Titles
-	CV_RegisterVar(&cv_windowtitletype);
-	CV_RegisterVar(&cv_customwindowtitle);
-	
-	CV_RegisterVar(&cv_memesonwindowtitle);
-
-	// Debugging
-	CV_RegisterVar(&cv_tsourdt3rd_debug_drrr_virtualkeyboard);
-	// THE STAR VARS ARE COMPLETE! //
-
 	// add cheat commands
 	COM_AddCommand("noclip", Command_CheatNoClip_f, COM_LUA);
 	COM_AddCommand("god", Command_CheatGod_f, COM_LUA);
@@ -1074,6 +950,8 @@ void D_RegisterClientCommands(void)
 #ifdef LUA_ALLOW_BYTECODE
 	COM_AddCommand("dumplua", Command_Dumplua_f, COM_LUA);
 #endif
+
+	TSoURDt3rd_D_RegisterClientCommands(); // STAR STUFF: register our other cool commands please! //
 }
 
 /** Checks if a name (as received from another player) is okay.
@@ -1390,7 +1268,7 @@ static void SetColorLocal(INT32 playernum, UINT16 color)
 	if (players[playernum].mo && !players[playernum].powers[pw_dye])
 		players[playernum].mo->color = P_GetPlayerColor(&players[playernum]);
 
-	G_SetPlayerGamepadIndicatorToPlayerColor(playernum); // STAR STUFF: fun controller light junk //
+	TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor(playernum); // STAR STUFF: fun controller light junk //
 }
 
 // name, color, or skin has changed
@@ -2348,6 +2226,8 @@ static void Got_Pause(UINT8 **cp, INT32 playernum)
 	}
 
 	I_UpdateMouseGrab();
+
+	TSoURDt3rd_P_Pads_PauseDeviceRumble(NULL, paused, paused); // STAR STUFF: pause rumbling please //
 }
 
 // Command for stuck characters in netgames, griefing, etc.
@@ -3009,17 +2889,6 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 		if (displayplayer != consoleplayer) // You're already viewing yourself. No big deal.
 			LUA_HookViewpointSwitch(&players[consoleplayer], &players[consoleplayer], true);
 		displayplayer = consoleplayer;
-	}
-
-	if (G_GametypeHasTeams())
-	{
-		if (NetPacket.packet.newteam)
-		{
-			if (playernum == consoleplayer) //CTF and Team Match colors.
-				CV_SetValue(&cv_playercolor, NetPacket.packet.newteam + 5);
-			else if (playernum == secondarydisplayplayer)
-				CV_SetValue(&cv_playercolor2, NetPacket.packet.newteam + 5);
-		}
 	}
 
 	// In tag, check to see if you still have a game.
@@ -4802,7 +4671,7 @@ static void Command_Isgamemodified_f(void)
 	else if (modifiedgame)
 		CONS_Printf(M_GetText("modifiedgame is true, time data can't be saved\n"));
 	// STAR STUFF: autoloading mess //
-	else if (autoloaded)
+	else if (autoloading || autoloaded)
 		CONS_Printf(M_GetText("modifiedgame is false, and time data can still be saved,\n but keep in mind that you have autoloaded at least one game-changing mod.\n"));
 	// CHECKS ARE NOW DONE! //
 	else
@@ -4909,11 +4778,16 @@ static void ForceSkin_OnChange(void)
 		return;
 
 	if (cv_forceskin.value < 0)
+	{
 		CONS_Printf("The server has lifted the forced skin restrictions.\n");
+		if (Playing())
+			D_SendPlayerConfig();
+	}
 	else
 	{
 		CONS_Printf("The server is restricting all players to skin \"%s\".\n",skins[cv_forceskin.value].name);
-		ForceAllSkins(cv_forceskin.value);
+		if (Playing())
+			ForceAllSkins(cv_forceskin.value);
 	}
 }
 
@@ -5014,7 +4888,7 @@ static void Skin_OnChange(void)
 	SendNameAndColor();
 
 #ifdef HAVE_SDL
-	if (cv_windowtitletype.value == 1)
+	if (cv_tsourdt3rd_game_sdl_windowtitle_type.value == 1)
 		STAR_SetWindowTitle();
 #endif
 }
@@ -5071,7 +4945,7 @@ static void Color_OnChange(void)
 	}
 	lastgoodcolor = cv_playercolor.value;
 
-	G_SetPlayerGamepadIndicatorToPlayerColor(0); // STAR STUFF: does fun controller light junk //
+	TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor(0); // STAR STUFF: does fun controller light junk //
 }
 
 /** Sends a color change for the secondary splitscreen player, unless that
@@ -5106,7 +4980,7 @@ static void Color2_OnChange(void)
 	}
 	lastgoodcolor2 = cv_playercolor2.value;
 
-	G_SetPlayerGamepadIndicatorToPlayerColor(1); // STAR STUFF: our fun splitscreen controller junk //
+	TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor(1); // STAR STUFF: our fun splitscreen controller junk //
 }
 
 /** Displays the result of the chat being muted or unmuted.

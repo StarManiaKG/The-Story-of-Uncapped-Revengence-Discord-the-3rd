@@ -92,7 +92,8 @@
  * Last updated 2024 / 07 / 26 - TSOURDT3RD V4 (2.2.13) - updated the names of some graphics
  * Last updated 2024 / 07 / 29 - TSOURDT3RD V4 (2.2.13) - added the fire flower graphic from 2.2.14
  * Last updated 2024 / 08 / 02 - TSOURDT3RD V4 (2.2.13) - renamed the legacy pause graphic back to 'M_PAUSE'
+ * Last updated 2024 / 10 / 20 - TSOURDT3RD V4 (2.2.13) - the 'M_DISC' and 'M_TSOURD' graphics are now unused
 */
-#define ASSET_HASH_TSOURDT3RD_PK3 "08ea497ead515557fe1e78664b63aebe"
+#define ASSET_HASH_TSOURDT3RD_PK3 "031bf973c83ff2d999be72a986bb68d2"
 
 #endif

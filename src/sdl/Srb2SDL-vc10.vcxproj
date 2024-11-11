@@ -137,12 +137,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetName>$(ProjectName)_Debug</TargetName>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(SolutionDir)libs\libopenmpt\inc;$(SolutionDir)\libs\curl\include\;$(IncludePath)</IncludePath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(SolutionDir)libs\libopenmpt\inc;$(SolutionDir)\libs\curl\include\;$(IncludePath)</IncludePath>
-  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <ClCompile>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -171,13 +165,21 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)\libs\curl\include</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_DEBUG;HAVE_CURL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HAVE_CURL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\libs\curl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
-    <Link />
+    <CustomBuild>
+      <Command />
+    </CustomBuild>
+    <CustomBuild>
+      <Message />
+    </CustomBuild>
+    <CustomBuild>
+      <Outputs />
+    </CustomBuild>
     <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)\libs\curl\lib32\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libopenmpt.lib;libcurl.dll.a;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libcurl.dll.a;libz32.a;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\libs\zlib\win32;..\..\libs\curl\lib32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -188,36 +190,50 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <DisableSpecificWarnings>4244;4267;4146;4003</DisableSpecificWarnings>
+      <PreprocessorDefinitions>HAVE_CURL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\libs\curl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>false</TreatWarningAsError>
-      <PreprocessorDefinitions>NDEBUG;HAVE_CURL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\libs\curl\include</AdditionalIncludeDirectories>
     </ClCompile>
-    <Link />
+    <CustomBuild>
+      <Command />
+    </CustomBuild>
+    <CustomBuild>
+      <Message />
+    </CustomBuild>
+    <CustomBuild>
+      <Outputs />
+    </CustomBuild>
     <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)\libs\curl\lib32\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libopenmpt.lib;libcurl.dll.a;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libcurl.dll.a;libz32.a;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\libs\zlib\win32;..\..\libs\curl\lib32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <TreatWarningAsError>false</TreatWarningAsError>
-      <PreprocessorDefinitions>_DEBUG;HAVE_CURL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
       <DisableSpecificWarnings>4244;4267;4146</DisableSpecificWarnings>
+      <PreprocessorDefinitions>HAVE_CURL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\libs\curl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalModuleDependencies>..\libs\curl\lib64;%(AdditionalModuleDependencies)</AdditionalModuleDependencies>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)\libs\curl\lib64\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libopenmpt.lib;libcurl.dll.a;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libcurl.a;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\libs\curl\lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <TreatWarningAsError>false</TreatWarningAsError>
-      <DisableSpecificWarnings>4244;4267;4146;4003</DisableSpecificWarnings>
-      <PreprocessorDefinitions>NDEBUG;HAVE_CURL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HAVE_CURL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)\libs\curl\lib64\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libopenmpt.lib;libcurl.dll.a;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libcurl.a;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\libs\curl\lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -302,8 +318,8 @@
     <ClInclude Include="..\hardware\hw_md2load.h" />
     <ClInclude Include="..\hardware\hw_md3load.h" />
     <ClInclude Include="..\hardware\hw_model.h" />
-    <ClInclude Include="..\STAR\m_menu.h" />
-    <ClInclude Include="..\STAR\smkg-script.h" />
+    <ClInclude Include="..\STAR\menus\smkg-m_sys.h" />
+    <ClInclude Include="..\STAR\parser\smkg-ps_main.h" />
     <ClInclude Include="..\STAR\p_saveg.h" />
     <ClInclude Include="..\STAR\p_user.h" />
     <ClInclude Include="..\STAR\smkg-cvars.h" />
@@ -346,12 +362,12 @@
     <ClInclude Include="..\m_fixed.h" />
     <ClInclude Include="..\m_menu.h" />
     <ClInclude Include="..\m_misc.h" />
+    <ClInclude Include="..\m_tokenizer.h" />
     <ClInclude Include="..\m_perfstats.h" />
     <ClInclude Include="..\m_queue.h" />
     <ClInclude Include="..\m_random.h" />
     <ClInclude Include="..\m_swap.h" />
     <ClInclude Include="..\p5prof.h" />
-    <ClInclude Include="..\p_haptic.h" />
     <ClInclude Include="..\p_local.h" />
     <ClInclude Include="..\p_maputl.h" />
     <ClInclude Include="..\p_mobj.h" />
@@ -397,6 +413,21 @@
     <ClInclude Include="i_ttf.h" />
     <ClInclude Include="ogl_sdl.h" />
     <ClInclude Include="sdlmain.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\tmap.nas">
+      <FileType>Document</FileType>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\tmap_mmx.nas">
+      <FileType>Document</FileType>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\tmap_vc.nas">
+      <FileType>Document</FileType>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\asm_defs.inc" />
@@ -467,69 +498,15 @@
     <ClCompile Include="..\hardware\r_opengl\r_opengl.c" />
     <ClCompile Include="..\r_bbox.c" />
     <ClCompile Include="..\STAR\events\smkg-aprilfools.c">
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
-    </ClCompile>
     <ClCompile Include="..\STAR\events\smkg-easter.c">
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
-    </ClCompile>
     <ClCompile Include="..\STAR\m_menu.c">
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\STAR\parser\parsed.c">
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\STAR\parser\parser.c">
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
-    </ClCompile>
+    <ClCompile Include="..\STAR\parser\smkg-ps_main.c">
     <ClCompile Include="..\STAR\p_user.c">
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
-    </ClCompile>
     <ClCompile Include="..\STAR\smkg-cvars.c">
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
-    </ClCompile>
     <ClCompile Include="..\STAR\smkg-jukebox.c">
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
-    </ClCompile>
     <ClCompile Include="..\STAR\smkg-p_saveg.c">
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
-    </ClCompile>
     <ClCompile Include="..\STAR\ss_main.c">
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
-    </ClCompile>
     <ClCompile Include="..\STAR\star_functions.c">
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\starobjs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\starobjs\</ObjectFileName>
-    </ClCompile>
     <ClCompile Include="..\u_list.c" />
     <ClCompile Include="..\hu_stuff.c" />
     <ClCompile Include="..\info.c" />
@@ -569,6 +546,7 @@
     <ClCompile Include="..\m_fixed.c" />
     <ClCompile Include="..\m_menu.c" />
     <ClCompile Include="..\m_misc.c" />
+    <ClCompile Include="..\m_tokenizer.c" />
     <ClCompile Include="..\m_perfstats.c" />
     <ClCompile Include="..\m_queue.c" />
     <ClCompile Include="..\m_random.c" />
@@ -615,6 +593,7 @@
     <ClCompile Include="..\r_textures.c" />
     <ClCompile Include="..\r_things.c" />
     <ClCompile Include="..\screen.c" />
+    <ClCompile Include="..\snake.c" />
     <ClCompile Include="..\sounds.c" />
     <ClCompile Include="..\string.c" />
     <ClCompile Include="..\st_stuff.c" />

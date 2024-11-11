@@ -45,15 +45,11 @@
 #include "lua_hook.h"
 
 // TSoURDt3rd
-#include "STAR/star_vars.h"
-#include "STAR/smkg-cvars.h" // cv_stjrintro & cv_tsourdt3rd_savefiles_storesavesinfolders //
+#include "STAR/smkg-cvars.h" // cv_tsourdt3rd_game_startup_intro & cv_tsourdt3rd_savefiles_storesavesinfolders //
 #include "STAR/smkg-misc_purefat.h"
-#include "STAR/smkg-jukebox.h"
-#include "STAR/ss_main.h"
-
-#include "STAR/drrr/k_menu.h" // TSoURDt3rd_M_DrawMenuMessageOnTitle() //
-#include "STAR/menus/smkg_m_func.h" // STAR_M_MenuMessageTick() //
-#include "deh_soc.h"
+#include "STAR/menus/smkg-m_sys.h"	// TSoURDt3rd_M_OverwriteIntroResponder() //
+									// TSoURDt3rd_M_DrawMenuMessageOnTitle() //
+									// TSoURDt3rd_M_MenuMessageShouldTick()  // 
 
 // Stage of animation:
 // 0 = text, 1 = art screen
@@ -632,7 +628,7 @@ void F_IntroDrawer(void)
 	else if (intro_scenenum == 0) // The Scene/Wipe Before the Start of the Intro
 	{
 		// STAR STUFF: pure fat intro? do unique stuff for that instead! //
-		if (cv_stjrintro.value)
+		if (cv_tsourdt3rd_game_startup_intro.value)
 		{
 			STAR_F_PureFatDrawer(stjrintro, background, (patch = NULL), intro_scenenum, bgxoffs);
 			return;
@@ -976,7 +972,7 @@ void F_IntroTicker(void)
 	if (rendermode != render_none)
 	{
 		// STAR STUFF: set our custom pure fat wipe for us //
-		if (cv_stjrintro.value)
+		if (cv_tsourdt3rd_game_startup_intro.value)
 		{
 			STAR_F_PureFatTicker(intro_scenenum, intro_curtime, animtimer);
 			return;
@@ -1063,6 +1059,11 @@ boolean F_IntroResponder(event_t *event)
 
 	if (keypressed)
 		return false;
+
+	// STAR STUFF: CHECK FOR ANY EVENTS WE SHOULD PRIORITIZE //
+	if (TSoURDt3rd_M_OverwriteIntroResponder(event))
+		return false;
+	// OVERWRITED. //
 
 	keypressed = true;
 	return true;
@@ -1731,20 +1732,6 @@ void F_GameEvaluationTicker(void)
 
 			if (M_UpdateUnlockablesAndExtraEmblems(clientGamedata))
 				S_StartSound(NULL, sfx_s3k68);
-
-			// STAR STUFF: Update our Savefile Directory //
-			if (cv_tsourdt3rd_savefiles_storesavesinfolders.value)
-			{
-				I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER, srb2home), 0755);
-				if (TSoURDt3rd_useAsFileName)
-				{
-					I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd", srb2home), 0755);
-					I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd" PATHSEP "%s", srb2home, timeattackfolder), 0755);
-				}
-				else
-					I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "%s", srb2home, timeattackfolder), 0755);
-			}
-            // END THAT //
 		}
 			
 	    G_SaveGameData(clientGamedata);
@@ -3502,7 +3489,7 @@ void F_MenuPresTicker(void)
 // (no longer) De-Demo'd Title Screen
 void F_TitleScreenTicker(boolean run)
 {
-	STAR_M_MenuMessageTick(run); // STAR STUFF: DRRR: message menu routine //
+	TSoURDt3rd_M_MenuMessageShouldTick(run); // STAR STUFF: DRRR: message menu routine //
 
 	if (run)
 		finalecount++;

@@ -33,105 +33,203 @@
 #include <time.h>
 
 #include "../smkg-i_sys.h"
+#include "../core/smkg-p_pads.h"
+#include "../smkg-cvars.h"
 #include "../star_vars.h"
 
-#include "../drrr/kg_input.h"
-
 #include "../../d_event.h"
+#include "../../d_main.h" // srb2path & srb2home
 #include "../../m_argv.h"
 #include "../../m_random.h"
+
+// ------------------------ //
+//        Variables
+// ------------------------ //
+
+#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
+#define UNIXBACKTRACE
+#endif
+
+static boolean gamepad_rumble_disabled = false;
+static boolean gamepad_trigger_rumble_disabled = false;
+
+// Converts duration in tics to milliseconds
+#define TICS_TO_MS(tics) ((INT32)(tics * (1000.0f/TICRATE)))
 
 // ------------------------ //
 //        Functions
 // ------------------------ //
 
-// ====
-// PADS
-// ====
-
-void TSoURDt3rd_Pads_I_SetGamepadPlayerIndex(INT32 device_id, INT32 player)
+//
+// void TSoURDt3rd_I_Pads_InitControllers(void)
+// Sets up our lock-on input system for SDL Game Controllers!
+//
+void TSoURDt3rd_I_Pads_InitControllers(void)
 {
-#if !(SDL_VERSION_ATLEAST(2,0,12))
-	(void)device_id;
-	(void)player;
-	return;
-#endif
+	// Upon initialization, the gamecontroller subsystem will automatically dispatch
+	// controller device added events for controllers connected before initialization.
+	char dbpath[1024];
 
-	I_Assert(device_id > 0); // Gamepad devices are always ID 1 or higher
-	I_Assert(player >= 0 && player < MAXSPLITSCREENPLAYERS);
+	for (UINT8 i = 0; i < TSOURDT3RD_NUM_GAMEPADS; i++)
+	{
+		TSoURDt3rd_ControllerInfo *controller_data = &tsourdt3rd_controllers[i];
+		controller_data->active = false;
+		controller_data->game_device = NULL;
+		controller_data->joy_device = NULL;
+		controller_data->id = -1;
+		controller_data->real_id = 0;
+		controller_data->name = NULL;
+	}
 
-	SDL_Joystick *controller = SDL_JoystickFromInstanceID(device_id - 1);
-	if (controller == NULL)
+	if (M_CheckParm("-nojoy") || M_CheckParm("-tsourdt3rd_nogamepadrefactor"))
+		return;
+
+	sprintf(dbpath, "%s" PATHSEP "gamecontrollerdb.txt", srb2path);
+	SDL_GameControllerAddMappingsFromFile(dbpath);
+	sprintf(dbpath, "%s" PATHSEP "gamecontrollerdb_user.txt", srb2home);
+	SDL_GameControllerAddMappingsFromFile(dbpath);
+
+	if (SDL_WasInit(TSOURDT3RD_GAMEPAD_INIT_FLAGS))
 	{
 		return;
 	}
 
-	SDL_JoystickSetPlayerIndex(controller, player);
+	if (M_CheckParm("-noxinput"))
+		SDL_SetHintWithPriority("SDL_XINPUT_ENABLED", "0", SDL_HINT_OVERRIDE);
+	if (M_CheckParm("-nohidapi"))
+		SDL_SetHintWithPriority("SDL_JOYSTICK_HIDAPI", "0", SDL_HINT_OVERRIDE);
+
+	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD, "TSoURDt3rd_I_Pads_InitControllers()...\n");
+
+	if (SDL_InitSubSystem(TSOURDT3RD_GAMEPAD_INIT_FLAGS) == -1)
+	{
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD, M_GetText("Couldn't initialize game controllers: %s\n"), SDL_GetError());
+		return;
+	}
+
+	gamepad_rumble_disabled = M_CheckParm("-tsourdt3rd_gamepads_norumble");
+	gamepad_trigger_rumble_disabled = M_CheckParm("-tsourdt3rd_gamepads_notriggerrumble");
 }
 
-void TSoURDt3rd_Pads_I_SetGamepadIndicatorColor(INT32 device_id, UINT8 red, UINT8 green, UINT8 blue)
+void TSoURDt3rd_I_Pads_SetIndicatorColor(INT32 device_id, UINT8 red, UINT8 green, UINT8 blue)
 {
 #if !(SDL_VERSION_ATLEAST(2,0,14))
 	(void)device_id;
 	(void)red;
 	(void)green;
 	(void)blue;
-	return;
-#endif
+#else
+	TSoURDt3rd_ControllerInfo *controller_data = &tsourdt3rd_controllers[device_id];
 
-	SDL_Joystick *controller = SDL_JoystickFromInstanceID(device_id - 1);
-	if (controller == NULL)
+	if (controller_data == NULL || controller_data->active == false || controller_data->id < 0)
 	{
 		return;
 	}
 
-	SDL_JoystickSetLED(controller, red, green, blue);
+	if (controller_data->game_device)
+		SDL_GameControllerSetLED(controller_data->game_device, red, green, blue);
+	else if (controller_data->joy_device)
+		SDL_JoystickSetLED(controller_data->joy_device, red, green, blue);
+#endif
 }
 
-void TSoURDt3rd_Pads_I_GamepadRumble(INT32 device_id, fixed_t low_strength, fixed_t high_strength)
+void TSoURDt3rd_I_Pads_Rumble(INT32 device_id, fixed_t low_strength, fixed_t high_strength, tic_t duration_tics)
 {
 #if !(SDL_VERSION_ATLEAST(2,0,9))
 	(void)device_id;
 	(void)low_strength;
 	(void)high_strength;
-	return;
-#endif
+	(void)duration;
+#else
+	TSoURDt3rd_ControllerInfo *controller_data = &tsourdt3rd_controllers[device_id];
 
 	UINT16 small_magnitude = max(0, min(low_strength, UINT16_MAX));
 	UINT16 large_magnitude = max(0, min(high_strength, UINT16_MAX));
+	UINT16 duration = min(TICS_TO_MS(duration_tics), UINT16_MAX);
 
-	I_Assert(device_id > 0); // Gamepad devices are always ID 1 or higher
-
-	SDL_Joystick *controller = SDL_JoystickFromInstanceID(device_id - 1);
-	if (controller == NULL)
+	if (gamepad_rumble_disabled == true)
+	{
+		return;
+	}
+	if (controller_data == NULL || controller_data->active == false || controller_data->id < 0)
+	{
+		return;
+	}
+	if (!controller_data->rumble.supported || controller_data->rumble.paused)
+	{
+		return;
+	}
+	if (cv_tsourdt3rd_drrr_controls_rumble[device_id].value == 0)
 	{
 		return;
 	}
 
-	SDL_JoystickRumble(controller, small_magnitude, large_magnitude, 0);
+	controller_data->rumble.small_magnitude = small_magnitude;
+	controller_data->rumble.large_magnitude = large_magnitude;
+	controller_data->rumble.duration = duration;
+
+#if 0
+	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "Starting rumble effect for controller %d:\n", controller_data->id);
+	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "* - Small motor magnitude: %f\n", controller_data->rumble.small_magnitude / 65535.0f);
+	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "* - Large motor magnitude: %f\n", controller_data->rumble.large_magnitude / 65535.0f);
+	if (!duration)
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "Duration: forever\n");
+	else
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "Duration: %dms\n", controller_data->rumble.duration);
+#endif
+
+	if (controller_data->game_device)
+		SDL_GameControllerRumble(controller_data->game_device, controller_data->rumble.small_magnitude, controller_data->rumble.large_magnitude, controller_data->rumble.duration);
+	else if (controller_data->joy_device)
+		SDL_JoystickRumble(controller_data->joy_device, controller_data->rumble.small_magnitude, controller_data->rumble.large_magnitude, controller_data->rumble.duration);
+#endif
 }
 
-void TSoURDt3rd_Pads_I_GamepadRumbleTriggers(INT32 device_id, fixed_t left_strength, fixed_t right_strength)
+void TSoURDt3rd_I_Pads_RumbleTriggers(INT32 device_id, fixed_t left_strength, fixed_t right_strength, tic_t duration_tics)
 {
 #if !(SDL_VERSION_ATLEAST(2,0,14))
 	(void)device_id;
 	(void)left_strength;
 	(void)right_strength;
-	return;
-#endif
+#else
+	TSoURDt3rd_ControllerInfo *controller_data = &tsourdt3rd_controllers[device_id];
 
 	UINT16 left_magnitude = max(0, min(left_strength, UINT16_MAX));
 	UINT16 right_magnitude = max(0, min(right_strength, UINT16_MAX));
+	UINT16 duration = min(TICS_TO_MS(duration_tics), UINT16_MAX);
 
-	I_Assert(device_id > 0); // Gamepad devices are always ID 1 or higher
-
-	SDL_Joystick *controller = SDL_JoystickFromInstanceID(device_id - 1);
-	if (controller == NULL)
+	if (gamepad_trigger_rumble_disabled == true)
+	{
+		return;
+	}
+	if (controller_data == NULL || controller_data->active == false || controller_data->id < 0)
+	{
+		return;
+	}
+	if (!controller_data->trigger_rumble.supported || controller_data->rumble.paused)
 	{
 		return;
 	}
 
-	SDL_JoystickRumbleTriggers(controller, left_magnitude, right_magnitude, 0);
+	controller_data->trigger_rumble.right_magnitude = left_magnitude;
+	controller_data->trigger_rumble.left_magnitude = right_magnitude;
+	controller_data->trigger_rumble.duration = duration;
+
+#if 0
+	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "Starting rumble effect for controller %d:\n", controller_data->id);
+	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "* - Left trigger motor magnitude: %f\n", controller_data->trigger_rumble.left_magnitude / 65535.0f);
+	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "* - Right trigger motor magnitude: %f\n", controller_data->trigger_rumble.right_magnitude / 65535.0f);
+	if (!controller_data->trigger_rumble.duration)
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "Duration: forever\n");
+	else
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "Duration: %dms\n", controller_data->trigger_rumble.duration);
+#endif
+
+	if (controller_data->game_device)
+		SDL_GameControllerRumbleTriggers(controller_data->game_device, controller_data->trigger_rumble.left_magnitude, controller_data->trigger_rumble.right_magnitude, controller_data->trigger_rumble.duration);
+	else if (controller_data->joy_device)
+		SDL_JoystickRumbleTriggers(controller_data->joy_device, controller_data->trigger_rumble.left_magnitude, controller_data->trigger_rumble.right_magnitude, controller_data->trigger_rumble.duration);
+#endif
 }
 
 // =======
@@ -140,8 +238,8 @@ void TSoURDt3rd_Pads_I_GamepadRumbleTriggers(INT32 device_id, fixed_t left_stren
 
 void TSoURDt3rd_I_CursedWindowMovement(int xd, int yd)
 {
-	//if (cv_tsourdt3rd_video_windowquake.value)
-	//	return;
+	if (!cv_tsourdt3rd_video_sdl_window_shaking.value)
+		return;
 	SDL_SetWindowPosition(window, window_x + xd, window_y + yd);
 }
 
@@ -356,28 +454,22 @@ static const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean 
 // Displays an error box popup when the game crashes,
 //	telling the user to check logfiiles for the reason as to why.
 //
-// Inspired by I_ShowErrorMessageBox() from DRRR!
+// Inspired by I_ShowErrorMessageBox() from Dr.Robotnik's Ring Racers!
 //
 void TSoURDt3rd_I_ShowErrorMessageBox(const char *messagefordevelopers, const SDL_MessageBoxData *messageboxdata, int *buttonid, int num, boolean coredumped)
 {
-	const char *dumptype = "", *logtype = "uh oh, one wasn't made!?", *err_msg = "";
+	static const char *crash_reason_header = "\n\nCRASH REASON:\n";;
+	static char underscoremsg[24];
 	static char finalmessage[2048];
 
-#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
-	dumptype = "crash-log.txt (very important!) and";
-#elif defined (_WIN32)
-	dumptype = ".rpt crash dump (very important!) and";
-#endif
-
-#ifdef LOGMESSAGES
-	if (logfilename[0])
-		logtype = logfilename;
-#endif
-
 	if (messagefordevelopers)
-		err_msg = "\nCrash Reason:\n";
-	else
-		messagefordevelopers = "";
+	{
+		size_t underscore_interval = 0;
+		while (underscore_interval < (sizeof(crash_reason_header)*2)+3)
+			underscoremsg[underscore_interval++] = '_';
+		underscoremsg[underscore_interval++] = '\n';
+		underscoremsg[underscore_interval++] = '\n';
+	}
 
 	snprintf(
 		finalmessage,
@@ -396,11 +488,23 @@ void TSoURDt3rd_I_ShowErrorMessageBox(const char *messagefordevelopers, const SD
 			"\n"
 			"See you next game!\n"
 			"%s"
+			"%s"
 			"%s",
 		TSoURDt3rd_GenerateFunnyCrashMessage(num, coredumped),
 		SRB2VERSION, TSOURDT3RDVERSIONSTRING, TSOURDT3RDBYSTARMANIAKGSTRING,
-		dumptype, logtype,
-		err_msg, messagefordevelopers
+#if defined (UNIXBACKTRACE)
+		"crash-log.txt"
+#elif defined (_WIN32)
+		".rpt crash dump"
+#endif
+			" (very important!) and",
+#ifdef LOGMESSAGES
+		logfilename[0] ? logfilename :
+#endif
+			"uh oh, one wasn't made!?",
+		crash_reason_header,
+		underscoremsg,
+		(messagefordevelopers ? messagefordevelopers : "")
 	);
 
 	// Just in case SDL_MessageBoxData is NULL
@@ -429,6 +533,17 @@ void TSoURDt3rd_I_ShowErrorMessageBox(const char *messagefordevelopers, const SD
 	if (!messageboxdata && *buttonid == 1)
 		SDL_OpenURL("https://www.srb2.org/discord");
 #endif
+}
+
+//
+// void TSoURDt3rd_I_ShutdownSystem(void)
+// Some exclusive TSoURDt3rd things to run when shutting down SRB2.
+//
+void TSoURDt3rd_I_ShutdownSystem(void)
+{
+	for (UINT8 i = 0; i < TSOURDT3RD_NUM_GAMEPADS; i++)
+		TSoURDt3rd_I_Pads_SetIndicatorColor(i, 0, 0, 255);
+	TSoURDt3rd_P_Pads_ResetDeviceRumble(-1);
 }
 
 #endif // HAVE_SDL

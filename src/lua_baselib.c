@@ -22,7 +22,6 @@
 #include "m_random.h"
 #include "s_sound.h"
 #include "g_game.h"
-#include "m_menu.h"
 #include "y_inter.h"
 #include "hu_stuff.h"	// HU_AddChatText
 #include "console.h"
@@ -40,7 +39,7 @@
 #include "lua_hook.h" // hook_cmd_running errors
 
 // TSoURDt3rd
-#include "STAR/star_vars.h" // tsourdt3rd_global_jukebox, cv_luacanstopthejukebox, & TSoURDt3rd_InitializePlayer() //
+#include "STAR/star_vars.h" // tsourdt3rd_global_jukebox & TSoURDt3rd_InitializePlayer() //
 
 #define NOHUD if (hud_running)\
 return luaL_error(L, "HUD rendering code should not call this function!");\
@@ -3233,7 +3232,7 @@ static int lib_sSpeedMusic(lua_State *L)
 	}
 
 	// STAR STUFF: DON'T INTERUPT OUR MUSIC PLEASE :) //
-	if (tsourdt3rd_global_jukebox->curtrack)
+	if (tsourdt3rd_global_jukebox->playing)
 		return 0;
 	// DONE! //
 
@@ -3303,12 +3302,6 @@ static int lib_sStopMusic(lua_State *L)
 		if (!player)
 			return LUA_ErrInvalid(L, "player_t");
 	}
-
-	// STAR STUFF: stop interrupting jukebox music please (if enabled) //
-	// STAR NOTE/MAJOR STAR NOTE: MARKED FOR REMOVAL! //
-	if (cv_luacanstopthejukebox.value && tsourdt3rd_global_jukebox->curtrack)
-		return 0;
-	// DONE AGAIN! //
 
 	if (!player || P_IsLocalPlayer(player))
 		S_StopMusic();

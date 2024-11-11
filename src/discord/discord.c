@@ -15,7 +15,8 @@
 
 #include <time.h>
 #include "discord.h"
-#include "stun.h"
+#include "../STAR/stun/stun.h"
+#include "../STAR/star_vars.h" // DISCORD_RequestSFX //
 #include "../i_system.h"
 #include "../d_clisrv.h"
 #include "../d_netcmd.h"
@@ -25,7 +26,6 @@
 #include "../z_zone.h"
 #include "../byteptr.h"
 #include "../i_tcp.h" // current_port
-#include "../STAR/star_vars.h" // DISCORD_RequestSFX //
 
 // ------------------------ //
 //        Variables
@@ -91,12 +91,6 @@ char *DRPC_ReturnUsername(void)
 		Simple XOR encryption/decryption. Not complex or
 		very secretive because we aren't sending anything
 		that isn't easily accessible via our Master Server anyway.
-
-	Input Arguments:-
-		input - Struct that will be used to make an XOR IP String.
-	
-	Return:-
-		XOR IP String
 --------------------------------------------------*/
 static char *DRPC_XORIPString(const char *input)
 {
@@ -114,7 +108,9 @@ static char *DRPC_XORIPString(const char *input)
 		xorinput = input[i] ^ xor[i];
 
 		if (xorinput < 32 || xorinput > 126)
+		{
 			xorinput = input[i];
+		}
 
 		output[i] = xorinput;
 	}
@@ -137,7 +133,7 @@ static char *DRPC_XORIPString(const char *input)
 --------------------------------------------------*/
 static void DRPC_HandleReady(const DiscordUser *user)
 {
-	snprintf(discord_username, 128, "%s#%s (%s)", user->username, user->discriminator, user->userId);
+	snprintf(discord_username, DISCORD_PRESENCE_STRING_SIZE, "%s#%s (%s)", user->username, user->discriminator, user->userId);
 	CONS_Printf("Discord: connected to %s\n", DRPC_ReturnUsername());
 	discordInfo.ConnectionStatus = DRPC_CONNECTED;
 }
@@ -194,9 +190,9 @@ static void DRPC_HandleJoin(const char *secret)
 {
 	char *ip = DRPC_XORIPString(secret);
 	CONS_Printf("Connecting to %s via Discord\n", ip);
-	M_ClearMenus(true); // Don't have menus open during connection screen
+	M_ClearMenus(true); //Don't have menus open during connection screen
 	if (demoplayback && titledemo)
-		G_CheckDemoStatus(); // Stop the title demo, so that the connect command doesn't error if a demo is playing
+		G_CheckDemoStatus(); //Stop the title demo, so that the connect command doesn't error if a demo is playing
 	COM_BufAddText(va("connect \"%s\"\n", ip));
 	free(ip);
 }
@@ -227,9 +223,9 @@ static boolean DRPC_InvitesAreAllowed(void)
 		return false;
 	}
 
-	if (discordInfo.serv.joinsAllowed == true)
+	if (discordInfo.joinsAllowed == true)
 	{
-		if (discordInfo.serv.everyoneCanInvite == true)
+		if (discordInfo.everyoneCanInvite == true)
 		{
 			// Everyone's allowed!
 			return true;
@@ -365,11 +361,13 @@ void DRPC_RemoveRequest(discordRequest_t *removeRequest)
 void DRPC_Init(void)
 {
 	DiscordEventHandlers handlers;
-	memset(&handlers, 0, sizeof(handlers));
 
-	discordInfo.ConnectionStatus = DRPC_INITIALIZED;
-
+	if (dedicated)
+		return;
 	CONS_Printf("DRPC_Init(): Initalizing Discord Rich Presence...\n");
+
+	memset(&handlers, 0, sizeof(handlers));
+	discordInfo.ConnectionStatus = DRPC_INITIALIZED;
 
 	handlers.ready = DRPC_HandleReady;
 	handlers.disconnected = DRPC_HandleDisconnect;
@@ -409,7 +407,7 @@ static void DRPC_GotServerIP(UINT32 address)
 --------------------------------------------------*/
 static const char *DRPC_GetServerIP(void)
 {
-	const char *address; 
+	const char *address;
 
 	// If you're connected
 	if (I_GetNodeAddress && (address = I_GetNodeAddress(servernode)) != NULL)
@@ -462,37 +460,31 @@ void DRPC_UpdatePresence(void)
 	DiscordRichPresence discordPresence;
 	memset(&discordPresence, 0, sizeof(discordPresence));
 
-	char detailstr[128] = "";
-	char statestr[128] = "";
+	char detailstr[DISCORD_PRESENCE_STRING_SIZE] = "";
+	char statestr[DISCORD_PRESENCE_STRING_SIZE] = "";
 
-	char imagestr[64] = "";
-	char imagetxtstr[128] = "";
+	char imagestr[DISCORD_PRESENCE_IMAGE_STRING_SIZE] = "";
+	char imagetxtstr[DISCORD_PRESENCE_STRING_SIZE] = "";
 
-	char s_imagestr[64] = "";
-	char s_imagetxtstr[128] = "";
+	char s_imagestr[DISCORD_PRESENCE_IMAGE_STRING_SIZE] = "";
+	char s_imagetxtstr[DISCORD_PRESENCE_STRING_SIZE] = "";
 
 	if (dedicated)
 	{
 		return;
 	}
 
-	if (discordInfo.ConnectionStatus != DRPC_CONNECTED)
-	{
-		// Discord isn't connected, so why bother?
-		return;
-	}
-
-	// Statuses //
-	// Discord RPC off
 	if (!cv_discordrp.value)
 	{
 		// User doesn't want to show their game information, so update with empty presence.
+		// Alternatively, they also may not be connected too, so why bother?
 		// This just shows that they're playing SRB2Kart. (If that's too much, then they should disable game activity :V)
 		DRPC_EmptyRequests();
 		Discord_UpdatePresence(&discordPresence);
 		return;
 	}
 
+	// Statuses //
 	// Servers
 	if (netgame)
 	{
@@ -503,14 +495,13 @@ void DRPC_UpdatePresence(void)
 			// Grab the host's IP for joining.
 			if ((join = DRPC_GetServerIP()) != NULL)
 			{
-#ifdef DISCORD_SECRETIVE
+#ifndef DISCORD_SECRETIVE
 				clientJoinSecret = DRPC_XORIPString(join);
 				discordPresence.joinSecret = clientJoinSecret;
-				joinSecretSet = true;
 #else
 				discordPresence.joinSecret = DRPC_XORIPString(join);
-				joinSecretSet = true;
 #endif
+				joinSecretSet = true;
 			}
 			else
 			{
@@ -518,47 +509,46 @@ void DRPC_UpdatePresence(void)
 			}
 		}
 
-#ifdef DISCORD_SECRETIVE
-		{
-#else
-		discordPresence.partyId	= server_context; // Thanks, whoever gave us Mumble support, for implementing the EXACT thing Discord wanted for this field!
-
+#ifndef DISCORD_SECRETIVE
 		if (cv_discordshowonstatus.value != 9) // Custom statuses don't get this, thanks
 		{
 			if (Playing() && !playeringame[consoleplayer])
-				DRPC_StringPrintf(detailstr, NULL, 128, "Looking for Server");
+				DRPC_StringPrintf(detailstr, NULL, "Looking for Server");
 			else
 			{
 				if (server)
-					DRPC_StringPrintf(detailstr, NULL, 128, "Hosting ");
+					DRPC_StringPrintf(detailstr, NULL, "Hosting ");
 				switch (ms_RoomId)
 				{
-					case 33: DRPC_StringPrintf(detailstr, NULL, 128, "Standard"); break;
-					case 28: DRPC_StringPrintf(detailstr, NULL, 128, "Casual"); break;
-					case 38: DRPC_StringPrintf(detailstr, NULL, 128, "Custom Gametype"); break;
-					case 31: DRPC_StringPrintf(detailstr, NULL, 128, "OLDC"); break;
-
-					case 0: DRPC_StringPrintf(detailstr, NULL, 128, "Public"); break;
-					case -1: DRPC_StringPrintf(detailstr, NULL, 128, "Private"); break;
-
-					default: DRPC_StringPrintf(detailstr, NULL, 128, "Unknown"); break;
+					case 33: DRPC_StringPrintf(detailstr, NULL, "Standard"); break;
+					case 28: DRPC_StringPrintf(detailstr, NULL, "Casual"); break;
+					case 38: DRPC_StringPrintf(detailstr, NULL, "Custom Gametype"); break;
+					case 31: DRPC_StringPrintf(detailstr, NULL, "OLDC"); break;
+					case 0: DRPC_StringPrintf(detailstr, NULL, "Public"); break;
+					case -1: DRPC_StringPrintf(detailstr, NULL, "Private"); break;
+					default: DRPC_StringPrintf(detailstr, NULL, "Unknown"); break;
 				}
 			}
+		}
 #endif
 
-			discordPresence.partySize = D_NumPlayers(); // Players in server
-			discordPresence.partyMax = discordInfo.serv.maxPlayers; // Max players
-		}
+		discordPresence.partyId	= server_context; // Thanks, whoever gave us Mumble support, for implementing the EXACT thing Discord wanted for this field!
+		discordPresence.partySize = D_NumPlayers(); // Players in server
+		discordPresence.partyMax = discordInfo.maxPlayers; // Max players
 	}
 	else
-		memset(&discordInfo.serv, 0, sizeof(discordInfo.serv));
+	{
+		discordInfo.maxPlayers = 0;
+		discordInfo.joinsAllowed = false;
+		discordInfo.everyoneCanInvite = true;
+	}
 
 #ifdef DISCORD_SECRETIVE
 	// Minimum Status
-	DRPC_StringPrintf(detailstr, " | ", 128, "Developing a Masterpiece");
-	DRPC_StringPrintf(statestr, " | ", 128, "Keep your Eyes Peeled!");
-	DRPC_ImagePrintf(imagestr, 128, "map", "custom");
-	DRPC_StringPrintf(imagetxtstr, NULL, 128, "Hey! No Peeking!");
+	DRPC_StringPrintf(detailstr, " | ", "Developing a Masterpiece");
+	DRPC_StringPrintf(statestr, " | ", "Keep your Eyes Peeled!");
+	DRPC_ImagePrintf(imagestr, "map", "custom");
+	DRPC_StringPrintf(imagetxtstr, NULL, "Hey! No Peeking!");
 #else
 	// Main
 	switch (cv_discordshowonstatus.value)
@@ -575,9 +565,9 @@ void DRPC_UpdatePresence(void)
 		case 2:
 			DRPC_CharacterStatus(imagestr, imagetxtstr, s_imagestr, s_imagetxtstr);
 			if (*imagetxtstr != '\0')
-				DRPC_StringPrintf(detailstr, NULL, 128, imagetxtstr);
+				DRPC_StringPrintf(detailstr, NULL, imagetxtstr);
 			if (*s_imagetxtstr != '\0')
-				DRPC_StringPrintf(statestr, NULL, 128, s_imagetxtstr);
+				DRPC_StringPrintf(statestr, NULL, s_imagetxtstr);
 			DRPC_GeneralStatus(statestr, (*imagestr == '\0' ? imagestr : NULL), (*imagestr == '\0' ? imagetxtstr : NULL));
 			break;
 
@@ -598,7 +588,7 @@ void DRPC_UpdatePresence(void)
 
 		case 6:
 			DRPC_GamestateStatus(detailstr, imagestr, imagetxtstr);
-			DRPC_StringPrintf(detailstr, NULL, 128, imagetxtstr);
+			DRPC_StringPrintf(detailstr, NULL, imagetxtstr);
 			DRPC_GeneralStatus(statestr, imagestr, imagetxtstr);
 			break;
 
@@ -617,15 +607,15 @@ void DRPC_UpdatePresence(void)
 			break;
 
 		default: // Basic
-			DRPC_StringPrintf(detailstr, NULL, 128, "In-Game");
+			DRPC_StringPrintf(detailstr, "; ", "In-Game");
 			if (paused)
-				DRPC_StringPrintf(statestr, NULL, 128, "Paused");
+				DRPC_StringPrintf(statestr, NULL, "Paused");
 			else if (menuactive || !Playing())
-				DRPC_StringPrintf(statestr, NULL, 128, "In a Menu");
+				DRPC_StringPrintf(statestr, NULL, "In a Menu");
 			else
-				DRPC_StringPrintf(statestr, NULL, 128, "Active");
-			DRPC_StringPrintf(imagestr, NULL, 128, "misctitle");
-			DRPC_StringPrintf(imagetxtstr, NULL, 128, "Sonic Robo Blast 2");
+				DRPC_StringPrintf(statestr, NULL, "Active");
+			DRPC_StringPrintf(imagestr, NULL, "misctitle");
+			DRPC_StringPrintf(imagetxtstr, NULL, "Sonic Robo Blast 2");
 			break;
 	}
 
@@ -660,8 +650,8 @@ void DRPC_UpdatePresence(void)
 		// Not able to join? Flush the request list, if it exists.
 		DRPC_EmptyRequests();
 	}
-	Discord_UpdatePresence(&discordPresence);
 
+	Discord_UpdatePresence(&discordPresence);
 	free(clientJoinSecret);
 }
 

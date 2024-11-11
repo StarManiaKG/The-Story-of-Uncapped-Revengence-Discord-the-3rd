@@ -12,12 +12,11 @@
 #include "star_vars.h" 			// star variables
 #include "ss_main.h"			// star variables 2
 #include "smkg-jukebox.h"		// star variables 3
-#include "m_menu.h"				// star variables 4
-#include "smkg_g_inputs.h"		// star variables 5
-#include "menus/smkg_m_draw.h"	// star variables 6
-#include "menus/smkg_m_func.h"	// star variables 7
-#include "smkg-p_saveg.h"		// star variables 8
-#include "smkg-misc.h"          // star variables 9
+#include "smkg_g_inputs.h"		// star variables 4
+#include "menus/smkg-m_sys.h"	// star variables 5
+#include "menus/smkg_m_func.h"	// star variables 6
+#include "smkg-p_saveg.h"		// star variables 7
+#include "smkg-misc.h"          // star variables 8
 
 #include "drrr/k_menu.h"		// kart krew drrr variables
 
@@ -119,46 +118,6 @@ TSoURDt3rdDefaultMusicTracks_t defaultMusicTracks[] = {
 TSoURDt3rdBossMusic_t *curBossMusic = NULL;
 TSoURDt3rdFinalBossMusic_t *curFinaleBossMusic = NULL;
 
-//// COMMANDS ////
-consvar_t cv_loadingscreen = CVAR_INIT ("loadingscreen", "Off", CV_SAVE, CV_OnOff, NULL);
-
-static CV_PossibleValue_t loadingscreenbackground_t[] = {
-	{0, "None"},
-
-	{1, "Dynamic"},
-
-	{2, "Intermission"},
-	{3, "Retro"},
-
-	{4, "Greenflower"},
-	{5, "Techno Hill"},
-	{6, "Deep Sea"},
-	{7, "Castle"},
-	{8, "Arid Canyon"},
-	{9, "Red Volcano"},
-	{10, "Egg Rock"},
-	{11, "Black Core"},
-
-	{12, "Frozen Hill"},
-	{13, "Pipe Tower"},
-	{14, "Fortress"},
-	{15, "Retro Techno"},
-
-	{16, "Halloween"},
-	{17, "Aerial"},
-	{18, "Temple"},
-
-	{19, "NiGHTs"},
-	{20, "Black Hole"},
-
-	{21, "Random"},
-	{0, NULL}};
-
-consvar_t cv_loadingscreenimage = CVAR_INIT ("loadingscreenimage", "Intermission", CV_SAVE, loadingscreenbackground_t, NULL);
-
-static CV_PossibleValue_t vapemode_t[] = {{0, "Off"}, {1, "TSoURDt3rd"}, {2, "Sonic Mania Plus"}, {0, NULL}};
-consvar_t cv_vapemode = CVAR_INIT ("vapemode", "Off", CV_SAVE|CV_CALL, vapemode_t, TSoURDt3rd_ControlMusicEffects);
-
 //// FUNCTIONS ////
 // GAME //
 //
@@ -168,8 +127,6 @@ consvar_t cv_vapemode = CVAR_INIT ("vapemode", "Off", CV_SAVE|CV_CALL, vapemode_
 void STAR_LoadingScreen(void)
 {
 	// Make Variables //
-	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[consoleplayer];
-
 	char s[16];
 	INT32 x, y;
 
@@ -204,23 +161,23 @@ void STAR_LoadingScreen(void)
 	I_OsPolling();
 	//CON_Drawer(); // console shouldn't appear while in a loading screen, honestly
 
-	sprintf(s, "%d%%", (++TSoURDt3rd->loadingScreens.loadPercentage)<<1);
+	sprintf(s, "%d%%", (++tsourdt3rd_loadingscreen.loadPercentage)<<1);
 	x = BASEVIDWIDTH/2;
 	y = BASEVIDHEIGHT/2;
 	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31); // Black background to match fade in effect
 
 	// Set Our Loading Screen //
-	if (cv_loadingscreenimage.value)
+	if (cv_tsourdt3rd_game_loadingscreen_image.value)
 	{
 		// Dynamic
-		if (cv_loadingscreenimage.value == 1)
+		if (cv_tsourdt3rd_game_loadingscreen_image.value == 1)
 		{
 			// In-Game
 			if (Playing())
 			{
 				// Modified-Game Images
 				if (autoloaded || savemoddata || modifiedgame)
-					TSoURDt3rd->loadingScreens.screenToUse = 3;
+					tsourdt3rd_loadingscreen.screenToUse = 3;
 
 				// Vanilla/Unmodified-Game Images
 				else
@@ -230,60 +187,60 @@ void STAR_LoadingScreen(void)
 						// GFZ
 						case 1:
 						case 2:
-						case 3: TSoURDt3rd->loadingScreens.screenToUse = 4; break;
+						case 3: tsourdt3rd_loadingscreen.screenToUse = 4; break;
 						
 						// THZ
 						case 4:
 						case 5:
-						case 6: TSoURDt3rd->loadingScreens.screenToUse = 5; break;
+						case 6: tsourdt3rd_loadingscreen.screenToUse = 5; break;
 			
 						// DSZ
 						case 7:
 						case 8:
-						case 9: TSoURDt3rd->loadingScreens.screenToUse = 6; break;
+						case 9: tsourdt3rd_loadingscreen.screenToUse = 6; break;
 
 						// CEZ
 						case 10:
 						case 11:
-						case 12: TSoURDt3rd->loadingScreens.screenToUse = 7; break;
+						case 12: tsourdt3rd_loadingscreen.screenToUse = 7; break;
 
 						// ACZ
 						case 13:
 						case 14:
-						case 15: TSoURDt3rd->loadingScreens.screenToUse = 8; break;
+						case 15: tsourdt3rd_loadingscreen.screenToUse = 8; break;
 
 						// RVZ
-						case 16: TSoURDt3rd->loadingScreens.screenToUse = 9; break;
+						case 16: tsourdt3rd_loadingscreen.screenToUse = 9; break;
 
 						// ERZ
 						case 22:
-						case 23: TSoURDt3rd->loadingScreens.screenToUse = 10; break;
+						case 23: tsourdt3rd_loadingscreen.screenToUse = 10; break;
 
 						// BCZ
 						case 25:
 						case 26:
-						case 27: TSoURDt3rd->loadingScreens.screenToUse = 11; break;
+						case 27: tsourdt3rd_loadingscreen.screenToUse = 11; break;
 
 						// FHZ
-						case 30: TSoURDt3rd->loadingScreens.screenToUse = 12; break;
+						case 30: tsourdt3rd_loadingscreen.screenToUse = 12; break;
 
 						// PTZ
-						case 31: TSoURDt3rd->loadingScreens.screenToUse = 13; break;
+						case 31: tsourdt3rd_loadingscreen.screenToUse = 13; break;
 
 						// FFZ
-						case 32: TSoURDt3rd->loadingScreens.screenToUse = 14; break;
+						case 32: tsourdt3rd_loadingscreen.screenToUse = 14; break;
 			
 						// TLZ
-						case 33: TSoURDt3rd->loadingScreens.screenToUse = 15; break;
+						case 33: tsourdt3rd_loadingscreen.screenToUse = 15; break;
 
 						// HHZ
-						case 40: TSoURDt3rd->loadingScreens.screenToUse = 16; break;
+						case 40: tsourdt3rd_loadingscreen.screenToUse = 16; break;
 
 						// AGZ
-						case 41: TSoURDt3rd->loadingScreens.screenToUse = 17; break;
+						case 41: tsourdt3rd_loadingscreen.screenToUse = 17; break;
 
 						// ATZ
-						case 42: TSoURDt3rd->loadingScreens.screenToUse = 18; break;
+						case 42: tsourdt3rd_loadingscreen.screenToUse = 18; break;
 
 						// All Special Stages
 						case 50:
@@ -305,10 +262,10 @@ void STAR_LoadingScreen(void)
 						case 70:
 						case 71:
 						case 72:
-						case 73: TSoURDt3rd->loadingScreens.screenToUse = 19; break;
+						case 73: tsourdt3rd_loadingscreen.screenToUse = 19; break;
 
 						// BHZ
-						case 57: TSoURDt3rd->loadingScreens.screenToUse = 20; break;
+						case 57: tsourdt3rd_loadingscreen.screenToUse = 20; break;
 
 						// CTF, Match, and Custom Maps
 						case 280:
@@ -334,23 +291,23 @@ void STAR_LoadingScreen(void)
 						case 542:
 						case 543:
 
-						default: TSoURDt3rd->loadingScreens.screenToUse = 3; break;
+						default: tsourdt3rd_loadingscreen.screenToUse = 3; break;
 					}
 				}
 			}
 
 			// Not In-Game
 			else
-				TSoURDt3rd->loadingScreens.screenToUse = 2;
+				tsourdt3rd_loadingscreen.screenToUse = 2;
 		}
 
 		// Random
-		else if (cv_loadingscreenimage.value == 21 && !TSoURDt3rd->loadingScreens.screenToUse)
-			TSoURDt3rd->loadingScreens.screenToUse = M_RandomRange(2, 20);
+		else if (cv_tsourdt3rd_game_loadingscreen_image.value == 21 && !tsourdt3rd_loadingscreen.screenToUse)
+			tsourdt3rd_loadingscreen.screenToUse = M_RandomRange(2, 20);
 
 		// Finally, Apply the Image, and We're Good Here :) //
 		V_DrawPatchFill(W_CachePatchName(
-			(loadingscreenlumpnumtype[(cv_loadingscreenimage.value == 1 || cv_loadingscreenimage.value == 21) ? TSoURDt3rd->loadingScreens.screenToUse : cv_loadingscreenimage.value]),
+			(loadingscreenlumpnumtype[(cv_tsourdt3rd_game_loadingscreen_image.value == 1 || cv_tsourdt3rd_game_loadingscreen_image.value == 21) ? tsourdt3rd_loadingscreen.screenToUse : cv_tsourdt3rd_game_loadingscreen_image.value]),
 			(PU_CACHE)));
 	}
 
@@ -373,6 +330,7 @@ void STAR_RenameWindow(const char *title)
 		return;
 	SDL_SetWindowTitle(window, title);
 }
+#endif
 
 //
 // const char *STAR_SetWindowTitle(void)
@@ -388,14 +346,14 @@ const char *STAR_SetWindowTitle(void)
 
 	// Configure the Window Title //
 	// Default Title
-	if (!cv_windowtitletype.value)
+	if (!cv_tsourdt3rd_game_sdl_windowtitle_type.value)
 		windowtitle = ("SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING);
 
 	// Others
 	else
 	{
 		// Dynamic Titles
-		if (cv_windowtitletype.value == 1)
+		if (cv_tsourdt3rd_game_sdl_windowtitle_type.value == 1)
 		{
 			// Main Window Titles
 			// Map Specific
@@ -413,13 +371,13 @@ const char *STAR_SetWindowTitle(void)
 				switch (gamemap)
 				{
 					// GFZ
-					case 1: case 2: dynamictitle = (cv_memesonwindowtitle.value ? "Where ARE the Green Flowers in" : "The Green Beginning -"); break;
+					case 1: case 2: dynamictitle = (cv_tsourdt3rd_game_sdl_windowtitle_memes.value ? "Where ARE the Green Flowers in" : "The Green Beginning -"); break;
 
 					// THZ
 					case 4:
 					case 5:
 					{
-						if (cv_memesonwindowtitle.value)
+						if (cv_tsourdt3rd_game_sdl_windowtitle_memes.value)
 						{
 							if (randomTitleTable[1][0] == '\0')
 							{
@@ -442,36 +400,36 @@ const char *STAR_SetWindowTitle(void)
 					case 7: case 8: dynamictitle = ((fastncmp(skins[players[consoleplayer].skin].name, "sonic", 5)) ? ("Ugh, I Hate Water in") : ("Swimming Around in")); break;
 
 					// CEZ
-					case 10: case 11: dynamictitle = (cv_memesonwindowtitle.value ? "How Did Eggman Manage to Build This Castle so Fast in" : "Such a Large Castle in"); break;
+					case 10: case 11: dynamictitle = (cv_tsourdt3rd_game_sdl_windowtitle_memes.value ? "How Did Eggman Manage to Build This Castle so Fast in" : "Such a Large Castle in"); break;
 
 					// ACZ
-					case 13: case 14: dynamictitle = (cv_memesonwindowtitle.value ? "Playing Through Grand Canyon Zone in" : "Why is There So Much TNT in"); break;
+					case 13: case 14: dynamictitle = (cv_tsourdt3rd_game_sdl_windowtitle_memes.value ? "Playing Through Grand Canyon Zone in" : "Why is There So Much TNT in"); break;
 
 					// Fang
-					case 15: dynamictitle = (cv_memesonwindowtitle.value ? "There is a Jerboa With a Popgun in" : "We're on a Train in"); break;
+					case 15: dynamictitle = (cv_tsourdt3rd_game_sdl_windowtitle_memes.value ? "There is a Jerboa With a Popgun in" : "We're on a Train in"); break;
 
 					// RVZ
-					case 16: dynamictitle = (cv_memesonwindowtitle.value ? "Where is the Blue Volcano in" : "Too Much Lava in"); break;
+					case 16: dynamictitle = (cv_tsourdt3rd_game_sdl_windowtitle_memes.value ? "Where is the Blue Volcano in" : "Too Much Lava in"); break;
 
 					// ERZ
-					case 22: case 23: dynamictitle = (cv_memesonwindowtitle.value ? "Robotnik has Too Many Rocks in" : "Be Careful Not to Fall Into Space in"); break;
+					case 22: case 23: dynamictitle = (cv_tsourdt3rd_game_sdl_windowtitle_memes.value ? "Robotnik has Too Many Rocks in" : "Be Careful Not to Fall Into Space in"); break;
 
 					// Metal Sonic
-					case 25: case 26: dynamictitle = (cv_memesonwindowtitle.value ? "STRRANGE, ISN'T IT? -" : "Beating a Doppelgänger Hedgehog Robot in"); break;
+					case 25: case 26: dynamictitle = (cv_tsourdt3rd_game_sdl_windowtitle_memes.value ? "STRRANGE, ISN'T IT? -" : "Beating a Doppelgänger Hedgehog Robot in"); break;
 
 					// Bosses
-					case 3: case 6: case 9: case 12: dynamictitle = (cv_memesonwindowtitle.value ? "He is the Eggman, With the Master Plan -" : "Fighting a Giant Talking Egg in"); break;
+					case 3: case 6: case 9: case 12: dynamictitle = (cv_tsourdt3rd_game_sdl_windowtitle_memes.value ? "He is the Eggman, With the Master Plan -" : "Fighting a Giant Talking Egg in"); break;
 
 					// Black Eggman (Yes, Technically Brak's Name is Black Eggman)
-					case 27: dynamictitle = (cv_memesonwindowtitle.value ? "No Way Guys, the Cyberdemon is in" : "Fighting the Final Boss in"); break;
+					case 27: dynamictitle = (cv_tsourdt3rd_game_sdl_windowtitle_memes.value ? "No Way Guys, the Cyberdemon is in" : "Fighting the Final Boss in"); break;
 
 					// FHZ
-					case 30: dynamictitle = (cv_memesonwindowtitle.value ? "Use the 'Destroy All Enemies' Cheat in" : "Be Careful Not to Slip in"); break;
+					case 30: dynamictitle = (cv_tsourdt3rd_game_sdl_windowtitle_memes.value ? "Use the 'Destroy All Enemies' Cheat in" : "Be Careful Not to Slip in"); break;
 
 					// PTZ
 					case 31:
 					{
-						if (cv_memesonwindowtitle.value)
+						if (cv_tsourdt3rd_game_sdl_windowtitle_memes.value)
 						{
 							if (randomTitleTable[2][0] == '\0')
 							{
@@ -497,12 +455,12 @@ const char *STAR_SetWindowTitle(void)
 					case 33: dynamictitle = "So Much Prehistoric Technology in"; break;
 
 					// HHZ
-					case 40: dynamictitle = (cv_memesonwindowtitle.value ? "No Way Guys, Cacodemons Are Also in" : "The Final Boss in"); break;
+					case 40: dynamictitle = (cv_tsourdt3rd_game_sdl_windowtitle_memes.value ? "No Way Guys, Cacodemons Are Also in" : "The Final Boss in"); break;
 
 					// AGZ
 					case 41:
 					{
-						if (cv_memesonwindowtitle.value)
+						if (cv_tsourdt3rd_game_sdl_windowtitle_memes.value)
 						{
 							if (randomTitleTable[3][0] == '\0')
 							{
@@ -540,7 +498,7 @@ const char *STAR_SetWindowTitle(void)
 					case 66: dynamictitle = "Trying to Get All Those Chaos Emeralds in"; break;
 
 					// Special Stage 4
-					case 53: case 63: dynamictitle = (cv_memesonwindowtitle.value ? "Trying to Get That DAMN FOURTH Chaos Emerald in" : "Trying to Get All Those Chaos Emeralds in"); break;
+					case 53: case 63: dynamictitle = (cv_tsourdt3rd_game_sdl_windowtitle_memes.value ? "Trying to Get That DAMN FOURTH Chaos Emerald in" : "Trying to Get All Those Chaos Emeralds in"); break;
 
 					// BHZ
 					case 57: dynamictitle = "The True Final Boss in"; break;
@@ -549,7 +507,7 @@ const char *STAR_SetWindowTitle(void)
 					case 70:
 					case 71:
 					case 72:
-					case 73: dynamictitle = (cv_memesonwindowtitle.value ? "Playing the Extra Special Stages For no Reason in" : "Playing the Extra Special Stages in"); break;
+					case 73: dynamictitle = (cv_tsourdt3rd_game_sdl_windowtitle_memes.value ? "Playing the Extra Special Stages For no Reason in" : "Playing the Extra Special Stages in"); break;
 
 					// CTF Maps
 					case 280:
@@ -560,7 +518,7 @@ const char *STAR_SetWindowTitle(void)
 					case 285:
 					case 286:
 					case 287:
-					case 288: dynamictitle = (cv_memesonwindowtitle.value ? "Playing Zandronum in" : "Capturing Flags in"); break;
+					case 288: dynamictitle = (cv_tsourdt3rd_game_sdl_windowtitle_memes.value ? "Playing Zandronum in" : "Capturing Flags in"); break;
 
 					// Match Maps
 					case 532:
@@ -576,7 +534,7 @@ const char *STAR_SetWindowTitle(void)
 					case 542:
 					case 543:
 					{
-						if (cv_memesonwindowtitle.value)
+						if (cv_tsourdt3rd_game_sdl_windowtitle_memes.value)
 						{
 							if (randomTitleTable[4][0] == '\0')
 							{
@@ -606,12 +564,12 @@ const char *STAR_SetWindowTitle(void)
 				case GS_INTRO: dynamictitle = "Introduction -"; break;
 				case GS_CUTSCENE: dynamictitle = "Watching a Cutscene in"; break;
 				case GS_CONTINUING: dynamictitle = "Continue? -"; break;
-				case GS_INTERMISSION: dynamictitle = (cv_memesonwindowtitle.value ? "End of Chapter! -" : (!mapheaderinfo[gamemap-1]->actnum ? (va("%s Got Through the Act! -", skins[players[consoleplayer].skin].realname)) : (va("%s Got Through Act %d! -", skins[players[consoleplayer].skin].realname, mapheaderinfo[gamemap-1]->actnum)))); break;
+				case GS_INTERMISSION: dynamictitle = (cv_tsourdt3rd_game_sdl_windowtitle_memes.value ? "End of Chapter! -" : (!mapheaderinfo[gamemap-1]->actnum ? (va("%s Got Through the Act! -", skins[players[consoleplayer].skin].realname)) : (va("%s Got Through Act %d! -", skins[players[consoleplayer].skin].realname, mapheaderinfo[gamemap-1]->actnum)))); break;
 
 				case GS_CREDITS:
 				case GS_ENDING:
 				case GS_EVALUATION:
-				case GS_GAMEEND: dynamictitle = (cv_memesonwindowtitle.value ? "Did You Get All Those Chaos Emeralds? -" : "The End of"); break;
+				case GS_GAMEEND: dynamictitle = (cv_tsourdt3rd_game_sdl_windowtitle_memes.value ? "Did You Get All Those Chaos Emeralds? -" : "The End of"); break;
 
 				default:
 				{
@@ -629,12 +587,12 @@ const char *STAR_SetWindowTitle(void)
 		}
 
 		// Semi-Custom Titles
-		else if (cv_windowtitletype.value == 2)
-			windowtitle = va("%s SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING, cv_customwindowtitle.string);
+		else if (cv_tsourdt3rd_game_sdl_windowtitle_type.value == 2)
+			windowtitle = va("%s SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING, cv_tsourdt3rd_game_sdl_windowtitle_custom.string);
 
 		// Fully Custom Titles
 		else
-			windowtitle = cv_customwindowtitle.string;
+			windowtitle = cv_tsourdt3rd_game_sdl_windowtitle_custom.string;
 	}
 
 	// Set the Window Title, Return it, and We're Done :) //
@@ -649,7 +607,7 @@ generalgametitles:
 
 	// Super Character Window Title
 	else if (players[consoleplayer].powers[pw_super])
-		dynamictitle = (cv_memesonwindowtitle.value ? "Playing as Goku in" : "Got All Those Chaos Emeralds in");
+		dynamictitle = (cv_tsourdt3rd_game_sdl_windowtitle_memes.value ? "Playing as Goku in" : "Got All Those Chaos Emeralds in");
 
 	// Player is Learning How to Play SRB2
 	else if (tutorialmode)
@@ -657,162 +615,13 @@ generalgametitles:
 
 	// Player is on a Custom Map
 	else
-		dynamictitle = va("%s as %s Through %s %s -", (cv_memesonwindowtitle.value ? "D_RUNNIN" : "Running"), skins[players[consoleplayer].skin].realname, mapheaderinfo[gamemap-1]->lvlttl, ((mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE) ? "" : "Zone"));
+		dynamictitle = va("%s as %s Through %s %s -", (cv_tsourdt3rd_game_sdl_windowtitle_memes.value ? "D_RUNNIN" : "Running"), skins[players[consoleplayer].skin].realname, mapheaderinfo[gamemap-1]->lvlttl, ((mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE) ? "" : "Zone"));
 
 	// Now That We've Set Our Things, Let's Return our Window Title, and We're Done :)
 	windowtitle = va("%s SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING, dynamictitle);
 
 	STAR_RenameWindow(windowtitle);
 	return windowtitle;
-}
-#endif
-
-//
-// void TSoURDt3rd_BuildTicCMD(UINT8 player)
-// Builds TSoURDt3rd's Custom Keybinds and Runs Their Functions
-//
-void TSoURDt3rd_BuildTicCMD(UINT8 player)
-{
-	// Check for keys //
-	boolean jukebox_open = STAR_G_KeyPressed(player, JB_OPENJUKEBOX);
-	boolean jukebox_increasespeed = STAR_G_KeyHeld(player, JB_INCREASEMUSICSPEED);
-	boolean jukebox_decreasespeed = STAR_G_KeyHeld(player, JB_DECREASEMUSICSPEED);
-	boolean jukebox_recent_track = STAR_G_KeyPressed(player, JB_PLAYMOSTRECENTTRACK);
-	boolean jukebox_stop = STAR_G_KeyPressed(player, JB_STOPJUKEBOX);
-
-	if (!tsourdt3rd_global_jukebox)
-		return;
-
-	if (demoplayback && titledemo)
-		return;
-
-	if (CON_Ready() || chat_on || menutyping.active)
-		return; // With our menu revamps, might be best to add this here...
-
-	if (player != consoleplayer)
-		return; // don't run for bots please
-
-	if (STAR_M_DoesMenuHaveKeyHandler())
-		return; // we may need to type or manually move, so calm down right quick
-
-	if (optionsmenu.bindtimer)
-		return; // we're binding inputs right now, so please don't
-
-	// Manage keys //
-	if (jukebox_open)
-	{
-		// Shortcut to open the jukebox menu
-#if 1
-#if 0
-#if 1
-		if (Playing())
-			M_StartControlPanel();
-#endif
-		TSoURDt3rd_Jukebox_InitMenu(0);
-#if 1
-		// Prevent the game from crashing when using the jukebox keybind :)
-		currentMenu->prevMenu = NULL;
-#endif
-#else
-		if (currentMenu == &OP_TSoURDt3rdJukeboxDef)
-			return;
-
-		// Prevent the game from crashing when using the jukebox keybind :)
-		if (!menuactive)
-		{
-			OP_TSoURDt3rdJukeboxDef.prevMenu = NULL;
-			M_StartControlPanel();
-		}
-		else
-			OP_TSoURDt3rdJukeboxDef.prevMenu = currentMenu;
-		TSoURDt3rd_Jukebox_InitMenu(0);
-#endif
-#else
-		M_StartControlPanel();
-		currentMenu = &OP_TSoURDt3rdJukeboxDef;
-		currentMenu->lastOn = 0;
-#endif
-	}
-
-	if (jukebox_increasespeed)
-	{
-		// Increase the speed of the jukebox track
-		if (atof(cv_jukeboxspeed.string) > 20.0f)
-		{
-			STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Can't increase the speed any further!\n");
-			S_StartSound(NULL, sfx_skid);
-		}
-		else
-			CV_Set(&cv_jukeboxspeed, va("%f", atof(cv_jukeboxspeed.string)+(0.1f)));
-	}
-
-	if (jukebox_decreasespeed)
-	{
-		// Decrease the speed of the jukebox track
-		if (atof(cv_jukeboxspeed.string) < 0.1f)
-		{
-			STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Can't decrease the speed any further!\n");
-			S_StartSound(NULL, sfx_skid);
-		}
-		else
-			CV_Set(&cv_jukeboxspeed, va("%f", atof(cv_jukeboxspeed.string)-(0.1f)));
-	}
-
-	if (jukebox_recent_track)
-	{
-		// Replay the most recent jukebox track
-		if (!tsourdt3rd_global_jukebox->prevtrack || (tsourdt3rd_global_jukebox->prevtrack && *tsourdt3rd_global_jukebox->prevtrack->name == '\0'))
-		{
-			STAR_CONS_Printf(STAR_CONS_JUKEBOX, "You haven't recently played a track!\n");
-			S_StartSound(NULL, sfx_lose);
-		}
-		else if (tsourdt3rd_global_jukebox->curtrack)
-		{
-			STAR_CONS_Printf(STAR_CONS_JUKEBOX, "There's already a track playing!\n");
-			S_StartSound(NULL, sfx_lose);
-		}
-		else if (TSoURDt3rd_Jukebox_Unlocked())
-		{
-			S_ChangeMusicInternal(tsourdt3rd_global_jukebox->prevtrack->name, !tsourdt3rd_global_jukebox->prevtrack->stoppingtics);
-			STAR_CONS_Printf(STAR_CONS_JUKEBOX, M_GetText("Loaded track \x82%s\x80.\n"), tsourdt3rd_global_jukebox->prevtrack->title);
-
-			tsourdt3rd_global_jukebox->curtrack = tsourdt3rd_global_jukebox->prevtrack;
-			tsourdt3rd_global_jukebox->initHUD = false;
-			tsourdt3rd_global_jukebox->playing = true;
-
-			TSoURDt3rd_ControlMusicEffects();
-		}
-		else
-		{
-			DRRR_M_StartMessage(
-				"TSoURDt3rd Jukebox",
-				M_GetText("You haven't unlocked this yet!\nGo and unlock the sound test first!\n"),
-				NULL,
-				MM_NOTHING,
-				NULL,
-				NULL
-			);
-			S_StartSound(NULL, sfx_lose);
-		}
-	}
-
-	if (jukebox_stop)
-	{
-		// Stop and reset the jukebox
-		if (!tsourdt3rd_global_jukebox->curtrack)
-		{
-			STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Nothing is currently playing in the jukebox!\n");
-			S_StartSound(NULL, sfx_lose);
-		}
-		else
-		{
-			S_StopSounds();
-			S_StopMusic();
-
-			S_StartSound(NULL, sfx_skid);
-			TSoURDt3rd_Jukebox_RefreshLevelMusic();
-		}
-	}
 }
 
 // AUDIO //
@@ -822,14 +631,14 @@ void TSoURDt3rd_BuildTicCMD(UINT8 player)
 //
 void TSoURDt3rd_ControlMusicEffects(void)
 {
-	if (tsourdt3rd_global_jukebox->playing)
+	if (tsourdt3rd_global_jukebox->curtrack || tsourdt3rd_global_jukebox->playing)
 	{
-		S_SpeedMusic(atof(cv_jukeboxspeed.string));
+		S_SpeedMusic(atof(cv_tsourdt3rd_jukebox_speed.string));
 		S_PitchMusic(1.0f);
 		return;
 	}
 
-	switch (cv_vapemode.value)
+	switch (cv_tsourdt3rd_audio_vapemode.value)
 	{
 		case 1:
 			S_SpeedMusic(0.9f);
@@ -856,7 +665,7 @@ const char *TSoURDt3rd_DetermineLevelMusic(void)
 {
 	mobj_t *mobj = TSoURDt3rd_BossInMap();
 
-	boolean pinchPhase = ((mobj && mobj->health <= (mobj->info->damage ? mobj->info->damage : 3)) && cv_bosspinchmusic.value);
+	boolean pinchPhase = ((mobj && mobj->health <= (mobj->info->damage ? mobj->info->damage : 3)) && cv_tsourdt3rd_audio_bosses_pinch.value);
 	boolean allEmeralds = (emeralds == 127);
 
 	boolean bossMap = (mobj && (mapheaderinfo[gamemap-1]->bonustype == 1 || (mapheaderinfo[gamemap-1]->levelflags & LF_WARNINGTITLE))); // Boss BonusType or Warning Title
@@ -876,32 +685,32 @@ const char *TSoURDt3rd_DetermineLevelMusic(void)
 	{
 		case GS_INTERMISSION:
 		{
-			if (!cv_actclearmusic.value || (cv_actclearmusic.value && !actClearMusic[cv_actclearmusic.value].actClear))
+			if (!cv_tsourdt3rd_audio_clearing_act.value || (cv_tsourdt3rd_audio_clearing_act.value && !actClearMusic[cv_tsourdt3rd_audio_clearing_act.value].actClear))
 				return (MUSICEXISTS(mapheaderinfo[gamemap-1]->musintername) ? mapheaderinfo[gamemap-1]->musintername : "_clear");
 
-			if (!cv_bossclearmusic.value)
-				return actClearMusic[cv_actclearmusic.value].actClear;
+			if (!cv_tsourdt3rd_audio_clearing_boss.value)
+				return actClearMusic[cv_tsourdt3rd_audio_clearing_act.value].actClear;
 
-			if (trueFinalBossMap && actClearMusic[cv_actclearmusic.value].trueFinalBossClear)
-				return actClearMusic[cv_actclearmusic.value].trueFinalBossClear;
-			else if (finalBossMap && actClearMusic[cv_actclearmusic.value].finalBossClear)
-				return actClearMusic[cv_actclearmusic.value].finalBossClear;
-			else if (bossMap && actClearMusic[cv_actclearmusic.value].bossClear)
-				return actClearMusic[cv_actclearmusic.value].bossClear;
+			if (trueFinalBossMap && actClearMusic[cv_tsourdt3rd_audio_clearing_act.value].trueFinalBossClear)
+				return actClearMusic[cv_tsourdt3rd_audio_clearing_act.value].trueFinalBossClear;
+			else if (finalBossMap && actClearMusic[cv_tsourdt3rd_audio_clearing_act.value].finalBossClear)
+				return actClearMusic[cv_tsourdt3rd_audio_clearing_act.value].finalBossClear;
+			else if (bossMap && actClearMusic[cv_tsourdt3rd_audio_clearing_act.value].bossClear)
+				return actClearMusic[cv_tsourdt3rd_audio_clearing_act.value].bossClear;
 
-			return actClearMusic[cv_actclearmusic.value].actClear;
+			return actClearMusic[cv_tsourdt3rd_audio_clearing_act.value].actClear;
 		}
 
 		case GS_EVALUATION:
 		case GS_GAMEEND:
 		{
-			if (!cv_actclearmusic.value)
+			if (!cv_tsourdt3rd_audio_clearing_act.value)
 				break;
 
-			if (allEmeralds && actClearMusic[cv_actclearmusic.value].trueFinalBossClear)
-				return actClearMusic[cv_actclearmusic.value].trueFinalBossClear;
-			else if (actClearMusic[cv_actclearmusic.value].finalBossClear)
-				return actClearMusic[cv_actclearmusic.value].finalBossClear;
+			if (allEmeralds && actClearMusic[cv_tsourdt3rd_audio_clearing_act.value].trueFinalBossClear)
+				return actClearMusic[cv_tsourdt3rd_audio_clearing_act.value].trueFinalBossClear;
+			else if (actClearMusic[cv_tsourdt3rd_audio_clearing_act.value].finalBossClear)
+				return actClearMusic[cv_tsourdt3rd_audio_clearing_act.value].finalBossClear;
 
 			break;
 		}
@@ -910,49 +719,49 @@ const char *TSoURDt3rd_DetermineLevelMusic(void)
 		default:
 		{
 			if ((mobj && mobj->health <= 0)
-				&& (cv_postbossmusic.value && MUSICEXISTS(mapheaderinfo[gamemap-1]->muspostbossname)))
+				&& (cv_tsourdt3rd_audio_bosses_postboss.value && MUSICEXISTS(mapheaderinfo[gamemap-1]->muspostbossname)))
 			{
 				return mapheaderinfo[gamemap-1]->muspostbossname;
 			}
 			else if (finalBossMap)
 			{
-				if (!cv_finalbossmusic.value)
+				if (!cv_tsourdt3rd_audio_bosses_finalboss.value)
 					break;
 
 				if (pinchPhase)
 				{
-					curFinaleBossMusic = &finalBossMusic[cv_finalbossmusic.value];
+					curFinaleBossMusic = &finalBossMusic[cv_tsourdt3rd_audio_bosses_finalboss.value];
 
-					if ((trueFinalBossMap && cv_truefinalbossmusic.value)
-						&& finalBossMusic[cv_finalbossmusic.value].trueFinalBossPinchMusic)
+					if ((trueFinalBossMap && cv_tsourdt3rd_audio_bosses_truefinalboss.value)
+						&& finalBossMusic[cv_tsourdt3rd_audio_bosses_finalboss.value].trueFinalBossPinchMusic)
 
-						return finalBossMusic[cv_finalbossmusic.value].trueFinalBossPinchMusic;
-					else if (finalBossMusic[cv_finalbossmusic.value].finalBossPinchMusic)
-						return finalBossMusic[cv_finalbossmusic.value].finalBossPinchMusic;
+						return finalBossMusic[cv_tsourdt3rd_audio_bosses_finalboss.value].trueFinalBossPinchMusic;
+					else if (finalBossMusic[cv_tsourdt3rd_audio_bosses_finalboss.value].finalBossPinchMusic)
+						return finalBossMusic[cv_tsourdt3rd_audio_bosses_finalboss.value].finalBossPinchMusic;
 				}
 
-				if ((trueFinalBossMap && cv_truefinalbossmusic.value)
-					&& finalBossMusic[cv_finalbossmusic.value].trueFinalBossMusic)
+				if ((trueFinalBossMap && cv_tsourdt3rd_audio_bosses_truefinalboss.value)
+					&& finalBossMusic[cv_tsourdt3rd_audio_bosses_finalboss.value].trueFinalBossMusic)
 
-					return finalBossMusic[cv_finalbossmusic.value].trueFinalBossMusic;
-				else if (finalBossMusic[cv_finalbossmusic.value].finalBossMusic)
-					return finalBossMusic[cv_finalbossmusic.value].finalBossMusic;
+					return finalBossMusic[cv_tsourdt3rd_audio_bosses_finalboss.value].trueFinalBossMusic;
+				else if (finalBossMusic[cv_tsourdt3rd_audio_bosses_finalboss.value].finalBossMusic)
+					return finalBossMusic[cv_tsourdt3rd_audio_bosses_finalboss.value].finalBossMusic;
 			}
 			else if (bossMap)
 			{
-				if (!cv_bossmusic.value)
+				if (!cv_tsourdt3rd_audio_bosses_bossmusic.value)
 					break;
 
 				if (pinchPhase)
 				{
-					curBossMusic = &bossMusic[cv_bossmusic.value];
+					curBossMusic = &bossMusic[cv_tsourdt3rd_audio_bosses_bossmusic.value];
 
-					if (bossMusic[cv_bossmusic.value].bossPinchMusic)
-						return bossMusic[cv_bossmusic.value].bossPinchMusic;
+					if (bossMusic[cv_tsourdt3rd_audio_bosses_bossmusic.value].bossPinchMusic)
+						return bossMusic[cv_tsourdt3rd_audio_bosses_bossmusic.value].bossPinchMusic;
 				}
 
-				if (bossMusic[cv_bossmusic.value].bossMusic)
-					return bossMusic[cv_bossmusic.value].bossMusic;
+				if (bossMusic[cv_tsourdt3rd_audio_bosses_bossmusic.value].bossMusic)
+					return bossMusic[cv_tsourdt3rd_audio_bosses_bossmusic.value].bossMusic;
 			}
 
 			break;
@@ -1001,104 +810,7 @@ boolean TSoURDt3rd_SetPinchMusicSpeed(void)
 
 #undef MUSICEXISTS
 
-// SAVEDATA //
-//
-// void STAR_SetSavefileProperties(void)
-// Sets the Current Savefile Name and Position
-//
-void STAR_SetSavefileProperties(void)
-{
-#if 0
-	// Before we Start, Ensure Some Things //
-	if (netgame)
-	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "You can't change this while in a netgame.\n");
-		CV_StealthSetValue(&cv_tsourdt3rd_savefiles_storesavesinfolders, !cv_tsourdt3rd_savefiles_storesavesinfolders.value);
-
-		return;
-	}
-#endif
-
-	// Erase the Strings, Just in Case //
-	memset(savegamename, 0, sizeof(savegamename));
-	memset(liveeventbackup, 0, sizeof(liveeventbackup));
-	memset(savegamefolder, 0, sizeof(savegamefolder));
-
-	// Make the Folder //
-	if (cv_tsourdt3rd_savefiles_storesavesinfolders.value)
-	{
-		I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER, TSoURDt3rd_FOL_ReturnHomepath()), 0755);
-		if (TSoURDt3rd_useAsFileName)
-		{
-			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd", TSoURDt3rd_FOL_ReturnHomepath()), 0755);
-			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd" PATHSEP "%s", TSoURDt3rd_FOL_ReturnHomepath(), timeattackfolder), 0755);
-		}
-		else
-			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "%s", TSoURDt3rd_FOL_ReturnHomepath(), timeattackfolder), 0755);
-	}
-
-	// Store our Folder Name in a Variable //
-	strcpy(savegamefolder, va(SAVEGAMEFOLDER PATHSEP "%s%s",
-		(TSoURDt3rd_useAsFileName ? ("TSoURDt3rd"PATHSEP) : ("")), timeattackfolder));
-
-	// Store our Savefile Names in a Variable //
-	if (!TSoURDt3rd_LoadedGamedataAddon)
-	{
-		strcpy(savegamename, (TSoURDt3rd_useAsFileName ? ("tsourdt3rd_"SAVEGAMENAME"%u.ssg") : (SAVEGAMENAME"%u.ssg")));
-		strcpy(liveeventbackup, va("%slive"SAVEGAMENAME".bkp", (TSoURDt3rd_useAsFileName ? ("tsourdt3rd_") : ("")))); // intentionally not ending with .ssg
-	}
-	else
-	{
-		strcpy(savegamename,  va("%s%s", (TSoURDt3rd_useAsFileName ? ("tsourdt3rd_") : ("")), timeattackfolder));
-		strlcat(savegamename, "%u.ssg", sizeof(savegamename));
-
-		strcpy(liveeventbackup, va("%slive%s.bkp", (TSoURDt3rd_useAsFileName ? ("tsourdt3rd_") : ("")), timeattackfolder));
-	}
-
-	// Merge the Variables Together, and We're Done :) //
-	// NOTE: can't use sprintf since there is %u in savegamename
-	if (!cv_tsourdt3rd_savefiles_storesavesinfolders.value)
-	{
-		strcatbf(savegamename, TSoURDt3rd_FOL_ReturnHomepath(), PATHSEP);
-		strcatbf(liveeventbackup, TSoURDt3rd_FOL_ReturnHomepath(), PATHSEP);
-	}
-	else
-	{
-		strcatbf(savegamename, TSoURDt3rd_FOL_ReturnHomepath(), va(PATHSEP"%s"PATHSEP, savegamefolder));
-		strcatbf(liveeventbackup, TSoURDt3rd_FOL_ReturnHomepath(), va(PATHSEP"%s"PATHSEP, savegamefolder));
-	}
-}
-
 // FILES //
-//
-// void TSoURDt3rd_TryToLoadTheExtras(void)
-// Tries to Load Extras, Usually Stuff From tsourdt3rdextras.pk3
-//
-void TSoURDt3rd_TryToLoadTheExtras(void)
-{
-	// Run Some Checks First //
-	// Are we Being Requested to Load tsourdt3rdextras.pk3? If not, Don't Run This.
-	if (!TSoURDt3rd_LoadExtras)
-		return;
-
-	// Run the Main Code Now //
-	if (eastermode || aprilfoolsmode || xmasmode)
-	{
-		// Easter Specific Stuff
-		if (eastermode && !netgame)
-		{
-			CV_StealthSetValue(&cv_easter_allowegghunt, 1);
-			AllowEasterEggHunt = true;
-		}
-
-		// General Stuff
-		TSoURDt3rd_PSav_ReadExtraData();
-	}
-
-	// Set Our Variables, and We're Done :) //
-	TSoURDt3rd_LoadedExtras = true;
-	TSoURDt3rd_LoadExtras = false;
-}
 
 //
 // INT32 STAR_DetectFileType(const char* filename)
@@ -1116,10 +828,8 @@ void TSoURDt3rd_TryToLoadTheExtras(void)
 //	5 - LUA
 //	6 - SOC
 //
-//	7 - STAR
-//
-//	8 - CFG
-//	9 - TXT
+//	7 - CFG
+//	8 - TXT
 //
 INT32 STAR_DetectFileType(const char* filename)
 {
@@ -1141,13 +851,10 @@ INT32 STAR_DetectFileType(const char* filename)
 		else if (!stricmp(&filename[strlen(filename) - 4], ".soc"))
 			return 6;
 
-		else if (!stricmp(&filename[strlen(filename) - 5], ".star"))
-			return 7;
-
 		else if (!stricmp(&filename[strlen(filename) - 4], ".cfg"))
-			return 8;
+			return 7;
 		else if (!stricmp(&filename[strlen(filename) - 4], ".txt"))
-			return 9;
+			return 8;
 	}
 
 	return 0;
@@ -1326,55 +1033,6 @@ INT32 STAR_ConvertStringToCompressedNumber(char *STRING, INT32 startIFrom, INT32
 						(STAR_CombineNumbers(3, atoi(convertedString), 0, 0))) :
 					(atoi(convertedString)));
 	return finalNumber;
-}
-
-//
-// char *STAR_ConvertNumberToString(INT32 NUMBER, INT32 startIFrom, INT32 startJFrom, boolean turnIntoVersionString)
-// Converts Strings to Compressed Numbers
-//
-// Example of a Possible Return:
-//	NUMBER == 280, turnIntoVersionString = true		=	Returned String = '2.8.0'
-//	NUMBER == 271, turnIntoVersionString = false	=	Returned String = '271'
-//
-char finalNumberString[256] = "";
-
-char *STAR_ConvertNumberToString(INT32 NUMBER, INT32 startIFrom, INT32 startJFrom, boolean turnIntoVersionString)
-{
-	// Make Variables //
-	INT32 i = startIFrom, j = startJFrom;
-	char convertedNumberString[256] = ""; sprintf(convertedNumberString, "%d", NUMBER);
-
-	// Initialize the Main String, and Iterate Through Our Two Strings //
-	if (turnIntoVersionString)
-	{
-		while (convertedNumberString[j] != '\0')
-		{
-			finalNumberString[i] = convertedNumberString[j];
-			i++; j++;
-
-			if (convertedNumberString[j] != '\0') // Prevents an Extra Dot From Being Added at the End
-			{
-				finalNumberString[i] = '.';
-				i++;
-			}
-		}
-	}
-	else
-		strcpy(finalNumberString, convertedNumberString);
-
-	// Return Our Converted String and We're Done! //
-	return finalNumberString;
-}
-
-//
-// INT32 STAR_ConvertNumberToStringAndBack(INT32 NUMBER, INT32 startI1From, INT32 startJ1From, INT32 startI2From, INT32 startJ2From, boolean turnIntoVersionString, boolean turnIntoVersionNumber)
-// Converts Numbers to Strings, and Then Converts Them Back to Numbers
-//
-INT32 STAR_ConvertNumberToStringAndBack(INT32 NUMBER, INT32 startI1From, INT32 startJ1From, INT32 startI2From, INT32 startJ2From, boolean turnIntoVersionString, boolean turnIntoVersionNumber)
-{
-	// Return The Number, and We're Done :) //
-	char numberString[256] = ""; strcpy(numberString, STAR_ConvertNumberToString(NUMBER, startI1From, startJ1From, turnIntoVersionString));
-	return STAR_ConvertStringToCompressedNumber(numberString, startI2From, startJ2From, turnIntoVersionNumber);
 }
 
 //

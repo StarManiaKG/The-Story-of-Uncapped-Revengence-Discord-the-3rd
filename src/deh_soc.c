@@ -49,12 +49,8 @@
 #include "deh_tables.h"
 
 // TSoURDt3rd
-#include "STAR/star_vars.h"
-#include "STAR/smkg-cvars.h" // cv_tsourdt3rd_savefiles_storesavesinfolders //
-#include "STAR/ss_main.h" // SAVEGAMEFOLDER //
-
+#include "STAR/smkg-misc.h" // TSoURDt3rd_FIL_CreateSavefileProperly() //
 #include "STAR/lights/smkg-coronas.h" // corona data //
-boolean TSoURDt3rd_LoadedGamedataAddon;
 
 // Loops through every constant and operation in word and performs its calculations, returning the final value.
 fixed_t get_number(const char *word)
@@ -831,7 +827,7 @@ void readlight(MYFILE *f, INT32 num)
 			}
 			else if (fastcmp(word, "CORONACOLOR"))
 			{
-				lspr[num].corona_color = (UINT32)value;
+				lspr[num].corona_color = value;
 			}
 			else if (fastcmp(word, "CORONARADIUS"))
 			{
@@ -839,7 +835,7 @@ void readlight(MYFILE *f, INT32 num)
 			}
 			else if (fastcmp(word, "DYNAMICCOLOR"))
 			{
-				lspr[num].dynamic_color = (UINT32)value;
+				lspr[num].dynamic_color = value;
 			}
 			else if (fastcmp(word, "DYNAMICRADIUS"))
 			{
@@ -848,6 +844,7 @@ void readlight(MYFILE *f, INT32 num)
 				/// \note Update the sqrradius! unnecessary?
 				lspr[num].dynamic_sqrradius = fvalue * fvalue;
 			}
+			// STAR STUFF: coronas //
 			else if (fastcmp(word, "CORONAROUTINE"))
 			{
 				switch (value)
@@ -858,6 +855,7 @@ void readlight(MYFILE *f, INT32 num)
 					default: deh_warning("Light %d: unknown routine '%d'", num, value); break;
 				}
 			}
+			// OK //
 			else
 				deh_warning("Light %d: unknown word '%s'", num, word);
 		}
@@ -1020,6 +1018,7 @@ void readspriteinfo(MYFILE *f, INT32 num, boolean sprite2)
 					t_lspr[num] = &lspr[value];
 				}
 #else
+				// STAR STUFF: uh mine now :) //
 				if (sprite2)
 				{
 					deh_warning("Sprite2 %s: property '%s' is only available for sprites!", spr2names[num], word);
@@ -2807,7 +2806,7 @@ void readframe(MYFILE *f, INT32 num)
 				size_t z;
 				boolean found = false;
 				size_t actionlen = strlen(word2) + 1;
-				char *actiontocompare = calloc(actionlen, 1);
+				char *actiontocompare = calloc(1, actionlen);
 
 				strcpy(actiontocompare, word2);
 				strupr(actiontocompare);
@@ -3894,20 +3893,6 @@ void readmaincfg(MYFILE *f)
 				if (!GoodDataFileName(word2))
 					I_Error("Maincfg: bad data file name '%s'\n", word2);
 
-				// STAR STUFF: EXTRA EDITION //
-				if (cv_tsourdt3rd_savefiles_storesavesinfolders.value)
-				{
-					I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER, srb2home), 0755);
-					if (TSoURDt3rd_useAsFileName)
-					{
-						I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd", srb2home), 0755);
-						I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd" PATHSEP "%s", srb2home, timeattackfolder), 0755);
-					}
-					else
-						I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "%s", srb2home, timeattackfolder), 0755);
-				}
-				// END THE EXTRA FUN STUFF //
-
 				G_SaveGameData(clientGamedata);
 				strlcpy(gamedatafilename, word2, sizeof (gamedatafilename));
 				strlwr(gamedatafilename);
@@ -3920,30 +3905,13 @@ void readmaincfg(MYFILE *f)
 
 				strcpy(savegamename, timeattackfolder);
 				strlcat(savegamename, "%u.ssg", sizeof(savegamename));
-
-#if 0
 				// can't use sprintf since there is %u in savegamename
 				strcatbf(savegamename, srb2home, PATHSEP);
 
 				strcpy(liveeventbackup, va("live%s.bkp", timeattackfolder));
 				strcatbf(liveeventbackup, srb2home, PATHSEP);
-#else
-				// STAR STUFF: update savefile folders (some of this was previously here lol) //
-				if (!cv_tsourdt3rd_savefiles_storesavesinfolders.value)
-				{
-					strcpy(liveeventbackup, va("live%s.bkp", timeattackfolder));
 
-					// can't use sprintf since there is %u in savegamename
-					strcatbf(savegamename, srb2home, PATHSEP);
-					strcatbf(liveeventbackup, srb2home, PATHSEP);
-				}
-				else
-				{
-					TSoURDt3rd_LoadedGamedataAddon = true;
-					STAR_SetSavefileProperties();
-				}
-#endif
-				// END THAT //
+				TSoURDt3rd_FIL_CreateSavefileProperly(); // STAR STUFF: update savefile folders //
 
 				gamedataadded = true;
 				titlechanged = true;

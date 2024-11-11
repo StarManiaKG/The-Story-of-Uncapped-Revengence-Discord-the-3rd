@@ -12,7 +12,7 @@
 #include "smkg_g_inputs.h"
 #include "menus/smkg_m_func.h"
 
-#include "drrr/k_menu.h"
+#include "drrr/k_menu.h" // menutyping junk //
 
 #include "../console.h"
 #include "../d_net.h"
@@ -42,7 +42,7 @@ void STAR_G_KeyResponder(UINT8 player, UINT8 key)
 	INT32 (*urGameControl)[2] = (player == 0 ? gamecontrol : gamecontrolbis);
 
 	// Check game inputs.
-	for (INT32 i = 0; gamekeydown[urGameControl[key][i]]; i++)
+	for (INT32 i = 0; i < 2; i++)
 	{
 		if (!gamekeydown[urGameControl[key][i]])
 		{
@@ -106,30 +106,6 @@ boolean STAR_G_KeyHeld(UINT8 player, UINT8 key)
 }
 
 //
-// void STAR_G_DefineDefaultControls(void)
-// Defines the default controls for some unique TSoURDt3rd inputs.
-//
-void STAR_G_DefineDefaultControls(void)
-{
-	INT32 i;
-
-	for (i = 1; i < num_gamecontrolschemes; i++) // skip gcs_custom (0)
-	{
-		gamecontroldefault[i][JB_OPENJUKEBOX        ][0] = 'j';
-		gamecontroldefault[i][JB_INCREASEMUSICSPEED ][0] = '=';
-		gamecontroldefault[i][JB_DECREASEMUSICSPEED ][0] = '-';
-		gamecontroldefault[i][JB_PLAYMOSTRECENTTRACK][0] = 'l';
-		gamecontroldefault[i][JB_STOPJUKEBOX        ][0] = 'k';
-
-		gamecontrolbisdefault[i][JB_OPENJUKEBOX        ][0] = 'j';
-		gamecontrolbisdefault[i][JB_INCREASEMUSICSPEED ][0] = '=';
-		gamecontrolbisdefault[i][JB_DECREASEMUSICSPEED ][0] = '-';
-		gamecontrolbisdefault[i][JB_PLAYMOSTRECENTTRACK][0] = 'l';
-		gamecontrolbisdefault[i][JB_STOPJUKEBOX        ][0] = 'k';
-	}
-}
-
-//
 // void TSoURDt3rd_D_ProcessEvents(void)
 // Processes our unique key and pad events too!
 //
@@ -158,7 +134,7 @@ boolean TSoURDt3rd_G_MapEventsToControls(event_t *ev)
 {
 	INT32 i;
 
-	if (tsourdt3rd_snake && Snake_JoyGrabber(tsourdt3rd_snake, ev))
+	if (Snake_JoyGrabber(tsourdt3rd_snake, ev))
 		return true;
 
 	switch (ev->type)
@@ -201,17 +177,22 @@ boolean TSoURDt3rd_G_MapEventsToControls(event_t *ev)
 }
 
 //
-// boolean TSoURDt3rd_G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
+// void TSoURDt3rd_G_DefineDefaultControls(void)
+// Defines the default controls for some unique TSoURDt3rd inputs.
 //
-// A lock-on function to G_BuildTiccmd(), featuring edits to allow for
-//	both TSoURDt3rd uniqueness and SRB2 compatibility.
-// Returns true if it shouldn't run the main ticcmd builder, false otherwise.
-//
-boolean TSoURDt3rd_G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
+void TSoURDt3rd_G_DefineDefaultControls(void)
 {
-	(void)cmd;
-	(void)realtics;
-	(void)ssplayer;
-
-	return (menuactive || CON_Ready() || chat_on || titlemapinaction);
+	for (INT32 i = 1; i < num_gamecontrolschemes; i++) // skip gcs_custom (0)
+	{
+		gamecontroldefault   [i][JB_OPENJUKEBOX        ][0] = 'j';
+		gamecontroldefault   [i][JB_INCREASEMUSICSPEED ][0] = '=';
+		gamecontroldefault   [i][JB_DECREASEMUSICSPEED ][0] = '-';
+		gamecontroldefault   [i][JB_PLAYMOSTRECENTTRACK][0] = 'l';
+		gamecontroldefault   [i][JB_STOPJUKEBOX        ][0] = 'k';
+		gamecontrolbisdefault[i][JB_OPENJUKEBOX        ][0] = 'j';
+		gamecontrolbisdefault[i][JB_INCREASEMUSICSPEED ][0] = '=';
+		gamecontrolbisdefault[i][JB_DECREASEMUSICSPEED ][0] = '-';
+		gamecontrolbisdefault[i][JB_PLAYMOSTRECENTTRACK][0] = 'l';
+		gamecontrolbisdefault[i][JB_STOPJUKEBOX        ][0] = 'k';
+	}
 }

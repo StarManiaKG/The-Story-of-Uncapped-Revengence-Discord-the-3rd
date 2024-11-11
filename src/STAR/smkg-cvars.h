@@ -1,82 +1,112 @@
+// SONIC ROBO BLAST 2; TSOURDT3RD
+//-----------------------------------------------------------------------------
+// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+/// \file  smkg-cvars.h
+/// \brief TSoURDt3rd's command library
 
 #ifndef __SMKG_CVARS__
 #define __SMKG_CVARS__
 
 #include "../command.h"
+#include "../d_net.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // ------------------------ //
 //        Variables
 // ------------------------ //
 
-// ====
-// MAIN
-// ====
-
-extern consvar_t cv_tsourdt3rd_main_checkforupdatesonstartup;
-
-// ======
-// EVENTS
-// ======
-
-extern consvar_t cv_easter_allowegghunt, cv_easter_egghuntbonuses;
+// Events //
+extern consvar_t cv_tsourdt3rd_easter_egghunt_allowed;
+extern consvar_t cv_tsourdt3rd_easter_egghunt_bonuses;
 extern consvar_t cv_tsourdt3rd_aprilfools_ultimatemode;
 
-// ====
-// GAME
-// ====
+// Main //
+extern consvar_t cv_tsourdt3rd_main_checkforupdatesonstartup;
 
-extern consvar_t cv_startupscreen, cv_stjrintro;
-extern consvar_t cv_tsourdt3rd_game_isitcalledsingleplayer;
-extern consvar_t cv_allowtypicaltimeover;
-extern consvar_t cv_automapoutsidedevmode;
+// Game //
+extern consvar_t cv_tsourdt3rd_game_sdl_windowtitle_type;
+extern consvar_t cv_tsourdt3rd_game_sdl_windowtitle_custom;
+extern consvar_t cv_tsourdt3rd_game_sdl_windowtitle_memes;
+extern consvar_t cv_tsourdt3rd_game_startup_image;
+extern consvar_t cv_tsourdt3rd_game_startup_intro;
+extern consvar_t cv_tsourdt3rd_game_loadingscreen;
+extern consvar_t cv_tsourdt3rd_game_loadingscreen_image;
+extern consvar_t cv_tsourdt3rd_game_pausescreen;
+extern consvar_t cv_tsourdt3rd_game_quitscreen;
+extern consvar_t cv_tsourdt3rd_game_allowtimeover;
+extern consvar_t cv_tsourdt3rd_game_shadows_realistic;
+extern consvar_t cv_tsourdt3rd_game_shadows_forallobjects;
+extern consvar_t cv_tsourdt3rd_game_shadows_positioning;
 extern consvar_t cv_tsourdt3rd_game_soniccd;
+extern consvar_t cv_tsourdt3rd_game_isitcalledsingleplayer;
 
-// =====
-// VIDEO
-// =====
+// Controls //
+extern consvar_t cv_tsourdt3rd_drrr_controls_rumble[MAXSPLITSCREENPLAYERS];
 
-extern consvar_t cv_tsourdt3rd_video_showtps;
-extern consvar_t cv_menucolor, cv_fpscountercolor, cv_tpscountercolor;
+// Video //
+extern consvar_t cv_tsourdt3rd_video_sdl_window_shaking;
+extern consvar_t cv_tsourdt3rd_video_showtps; // Ported from Uncapped Plus, TPS is back (for some reason)!
+extern consvar_t cv_tsourdt3rd_video_coloring_menus;
+extern consvar_t cv_tsourdt3rd_video_coloring_fpsrate;
+extern consvar_t cv_tsourdt3rd_video_coloring_tpsrate;
 
-// =====
-// AUDIO
-// =====
-
+// Audio //
 extern consvar_t cv_tsourdt3rd_audio_watermuffling;
+extern consvar_t cv_tsourdt3rd_audio_vapemode;
+extern consvar_t cv_tsourdt3rd_audio_defaultmaptrack;
+extern consvar_t cv_tsourdt3rd_audio_bosses_bossmusic;
+extern consvar_t cv_tsourdt3rd_audio_bosses_finalboss;
+extern consvar_t cv_tsourdt3rd_audio_bosses_truefinalboss;
+extern consvar_t cv_tsourdt3rd_audio_bosses_pinch;
+extern consvar_t cv_tsourdt3rd_audio_bosses_postboss;
+extern consvar_t cv_tsourdt3rd_audio_clearing_act;
+extern consvar_t cv_tsourdt3rd_audio_clearing_boss;
+extern consvar_t cv_tsourdt3rd_audio_gameover;
 
-// =======
-// PLAYERS
-// =======
+// Players //
+extern consvar_t cv_tsourdt3rd_players_shieldblockstransformation;
+extern consvar_t cv_tsourdt3rd_players_nukewhilesuper;
+extern consvar_t cv_tsourdt3rd_players_setupwhilemoving;
+extern consvar_t cv_tsourdt3rd_players_alwaysoverlayinvulnsparks;
 
-extern consvar_t cv_shieldblockstransformation;
-extern consvar_t cv_alwaysoverlayinvuln;
-
-// =========
-// SAVEFILES
-// =========
-
+// Savefiles //
+extern consvar_t cv_tsourdt3rd_savefiles_limitedcontinues;
 extern consvar_t cv_tsourdt3rd_savefiles_storesavesinfolders;
 extern consvar_t cv_tsourdt3rd_savefiles_perfectsave;
-extern consvar_t cv_tsourdt3rd_savefiles_perfectsavestripe1, cv_tsourdt3rd_savefiles_perfectsavestripe2, cv_tsourdt3rd_savefiles_perfectsavestripe3;
-extern consvar_t cv_continues;
+extern consvar_t cv_tsourdt3rd_savefiles_perfectsave_stripe1;
+extern consvar_t cv_tsourdt3rd_savefiles_perfectsave_stripe2;
+extern consvar_t cv_tsourdt3rd_savefiles_perfectsave_stripe3;
 
-// =======
-// SERVERS
-// =======
+// Servers //
+extern consvar_t cv_tsourdt3rd_servers_holepunchrendezvous;
 
-extern consvar_t cv_rendezvousserver;
-extern consvar_t cv_movingplayersetup;
+// Jukebox //
+extern consvar_t cv_tsourdt3rd_jukebox_hud;
+extern consvar_t cv_tsourdt3rd_jukebox_speed;
 
-// =====
-// DEBUG
-// =====
-
+// Debug //
 extern consvar_t cv_tsourdt3rd_debug_drrr_virtualkeyboard;
+extern consvar_t cv_tsourdt3rd_debug_automapanywhere;
 
 // ------------------------ //
 //        Functions
 // ------------------------ //
 
 void TSoURDt3rd_D_RegisterServerCommands(void);
+void TSoURDt3rd_D_RegisterClientCommands(void);
+
+boolean TSoURDt3rd_CV_CheckForOldCommands(void);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif // __SMKG_CVARS__

@@ -1,40 +1,40 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Original Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
-// Original Copyright (C) 2018-2024 by Kart Krew.
 // Copyright (C) 2020-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  menus/menudefs/smkg-options-extras.c
+/// \file  menus/menudefs/smkg-options-tsourdt3rd-extras.c
 /// \brief TSoURDt3rd's unique extra options
 
-#include "../../m_menu.h"
+#include "../smkg-m_sys.h"
 
 // ------------------------ //
 //        Variables
 // ------------------------ //
 
-static void OBJ_SpawnTF2Dispenser(INT32 choice);
+static void M_Sys_SpawnTF2Dispenser(INT32 choice);
 
 menuitem_t TSoURDt3rd_OP_ExtrasMenu[] =
 {
+	{IT_STRING | IT_CALL, NULL, "Jukebox",
+		TSoURDt3rd_M_InitJukebox, 0},
 	{IT_STRING | IT_SUBMENU, NULL, "Play Snake",
 		&TSoURDt3rd_OP_Extras_SnakeDef, 0},
 	{IT_STRING | IT_CALL, NULL, "Dispenser Goin' Up",
-		OBJ_SpawnTF2Dispenser, 0},
+		M_Sys_SpawnTF2Dispenser, 0},
 };
 
-static tsourdt3rd_menuitems_t TSoURDt3rd_TM_OP_GameMenu[] =
+tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_ExtrasMenu[] =
 {
-	{NULL, "Play a quick match of snake, why don'cha?", 0, 0},
-	{NULL, "Spawn a TF2 dispenser.", 0, 0},
+	{NULL, "Enter the Jukebox to broaden up your gameplay experience!", {NULL}, 0, 0},
+	{NULL, "Play a quick match of snake, why don'cha?", { .submenu = &TSoURDt3rd_TM_OP_Extras_SnakeDef }, 0, 0},
+	{NULL, "Spawn a TF2 dispenser.", {NULL}, 0, 0},
 };
 
-menu_t TSoURDt3rd_OP_ExtrasDef =
-{
+menu_t TSoURDt3rd_OP_ExtrasDef = {
 	MTREE3(MN_OP_MAIN, MN_OP_TSOURDT3RD, MN_OP_TSOURDT3RD),
 	NULL,
 	sizeof (TSoURDt3rd_OP_ExtrasMenu)/sizeof (menuitem_t),
@@ -47,26 +47,24 @@ menu_t TSoURDt3rd_OP_ExtrasDef =
 };
 
 tsourdt3rd_menu_t TSoURDt3rd_TM_OP_ExtrasDef = {
-	&TSoURDt3rd_OP_MainMenuDef,
-	TSoURDt3rd_TM_OP_GameMenu,
+	TSoURDt3rd_TM_OP_ExtrasMenu,
 	0, 0,
 	0,
 	NULL,
-	2, 5,
+	0, 0,
 	NULL,
 	TSoURDt3rd_M_OptionsTick,
 	NULL,
 	NULL,
 	TSoURDt3rd_M_OptionsInputs,
-	&TSoURDt3rd_TM_OP_MainMenuDef,
-	NULL
+	&TSoURDt3rd_TM_OP_MainMenuDef
 };
 
 // ------------------------ //
 //        Functions
 // ------------------------ //
 
-static void OBJ_SpawnTF2Dispenser(INT32 choice)
+static void M_Sys_SpawnTF2Dispenser(INT32 choice)
 {
 	(void)choice;
 

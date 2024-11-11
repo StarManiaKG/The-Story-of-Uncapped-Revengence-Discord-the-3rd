@@ -144,29 +144,15 @@ static char addonsdir[MAX_WADPATH];
 #ifdef HAVE_DISCORDSUPPORT
 #include "discord/discord.h"
 #endif
-
 #include "STAR/star_vars.h"
 #include "STAR/ss_main.h" // AUTOLOADCONFIGFILENAME, TSoURDt3rd_Init(), STAR_CONS_Printf(), & TSoURDt3rd_CON_DrawStartupScreen() //
-
 #include "STAR/smkg_g_inputs.h" // TSoURDt3rd_D_ProcessEvents() //
-#include "STAR/smkg-jukebox.h"
+#include "STAR/core/smkg-s_audio.h" // TSoURDt3rd_S_CanModifyMusic() //
+#include "STAR/menus/smkg-m_sys.h" // TSoURDt3rd_M_DrawPauseGraphic() //
 
-#include "STAR/menus/smkg_m_draw.h" // TSoURDt3rd_M_DrawPauseGraphic() //
-
-// TSoURDt3rd Stuff
-boolean TSoURDt3rd_LoadExtras = true;
-boolean TSoURDt3rd_LoadedExtras = true;
-boolean TSoURDt3rd_NoMoreExtras = false;
-
-// Autoloading
 static addfilelist_t autoloadwadfiles;
-
 boolean autoloading;
 boolean autoloaded;
-
-// Savefiles
-boolean TSoURDt3rd_useAsFileName;
-char savegamefolder[256];
 // END OF ALL THAT STAR STUFF //
 
 //
@@ -213,6 +199,8 @@ void D_ProcessEvents(void)
 	G_SetMouseDeltas(0, 0, 2);
 	mouse.buttons &= ~(MB_SCROLLUP|MB_SCROLLDOWN);
 	mouse2.buttons &= ~(MB_SCROLLUP|MB_SCROLLDOWN);
+
+	TSoURDt3rd_D_ProcessEvents(); // STAR STUFF: PLEASE process our events //
 
 	for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
 	{
@@ -316,7 +304,7 @@ void D_ProcessEvents(void)
 	if (mouse2.rdx || mouse2.rdy)
 		G_SetMouseDeltas(mouse2.rdx, mouse2.rdy, 2);
 
-	TSoURDt3rd_D_ProcessEvents(); // STAR STUFF: please process our events //
+	TSoURDt3rd_D_ProcessEvents(); // STAR STUFF: PLEASE process our events //
 }
 
 //
@@ -777,8 +765,6 @@ void D_SRB2Loop(void)
 
 	// hack to start on a nice clear console screen.
 	COM_ImmedExecute("cls;version");
-	// hack to prevent white flash upon initial window resize
-	V_DrawFill(0,0,BASEVIDWIDTH,BASEVIDHEIGHT,31);
 
 	I_FinishUpdate(); // page flip or blit buffer
 	/*
@@ -989,7 +975,7 @@ void D_StartTitle(void)
 #if 0
 	S_StopMusic();
 #else
-	TSoURDt3rd_Jukebox_CanModifyMusic(); // STAR STUFF: why don't we properly check for jukebox music instead? //
+	TSoURDt3rd_S_CanModifyMusic(NULL); // STAR STUFF: why don't we properly check for jukebox music instead? //
 #endif
 
 	if (netgame)
@@ -1398,7 +1384,7 @@ void D_SRB2Main(void)
 	// Print GPL notice for our console users (Linux)
 	CONS_Printf(
 	"\n\nSonic Robo Blast 2\n"
-	"Copyright (C) 1998-2023 by Sonic Team Junior\n\n"
+	"Copyright (C) 1998-2024 by Sonic Team Junior\n\n"
 	"This program comes with ABSOLUTELY NO WARRANTY.\n\n"
 	"This is free software, and you are welcome to redistribute it\n"
 	"and/or modify it under the terms of the GNU General Public License\n"
@@ -1471,8 +1457,6 @@ void D_SRB2Main(void)
 		}
 		else
 		{
-			//** STAR NOTE: MAIN SAVEDATA STUFF IS NOW HANDLED IN STAR_SetSavefileProperties WITHIN star_functions.c! **//
-
 			// use user specific config file
 #ifdef DEFAULTDIR
 			snprintf(srb2home, sizeof srb2home, "%s" PATHSEP DEFAULTDIR, userhome);
@@ -1529,10 +1513,10 @@ void D_SRB2Main(void)
 	CONS_Printf("Z_Init(): Init zone memory allocation daemon. \n");
 	Z_Init();
 
+	TSoURDt3rd_Init(); // STAR STUFF: Initialize our data! //
+
 	clientGamedata = M_NewGameDataStruct();
 	serverGamedata = M_NewGameDataStruct();
-
-	TSoURDt3rd_Init(); // STAR STUFF: Initialize our data! //
 
 	// Do this up here so that WADs loaded through the command line can use ExecCfg
 	COM_Init();
@@ -1589,13 +1573,13 @@ void D_SRB2Main(void)
 	// Have to be done here before files are loaded
 	M_InitCharacterTables();
 
-#if 0
 	mainwads = 3; // doesn't include music.dta
-#else
-	// STAR NOTE: also doesn't include jukebox.pk3 //
-	mainwads = 4; // doesn't include music.dta
-#endif
 #ifdef USE_PATCH_DTA
+	mainwads++;
+#endif
+
+#if 1
+	// STAR NOTE: TSoURDt3rd also doesn't include jukebox.pk3 //
 	mainwads++;
 #endif
 
@@ -1628,13 +1612,11 @@ void D_SRB2Main(void)
 		CONS_Printf("TSoURDt3rd_AutoLoadAddons(): Autoloading Addons...\n");
 		W_InitMultipleFiles(&autoloadwadfiles);
 		D_CleanFile(&autoloadwadfiles);
-
-		if (modifiedgame)
-		{
+		if (modifiedgame || savemoddata || usedCheats)
 			autoloaded = true;
-			modifiedgame = false;
-		}
+		modifiedgame = false;
 		autoloading = false;
+		usedCheats = false;
 	}
 
 	//CON_StartRefresh(); // Restart the refresh!
@@ -1947,10 +1929,7 @@ void D_SRB2Main(void)
 	CON_ToggleOff();
 
 #ifdef HAVE_DISCORDSUPPORT
-   	if (! dedicated)
-	{
-		DRPC_Init();
-	}
+	DRPC_Init();
 #endif
 
 	if (dedicated && server)

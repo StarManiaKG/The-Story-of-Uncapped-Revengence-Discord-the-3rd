@@ -17,6 +17,6 @@
 //  This info is needed by TSoURDt3rd's curl functions, found in curl/smkg-curl_routines.c.    //
 // =========================================================================================== //
 
-#define TSOURDT3RDVERSION "4.0"
+#define TSOURDT3RDVERSION "4.0.0"
 
 #endif // __STAR_WEBINFO__

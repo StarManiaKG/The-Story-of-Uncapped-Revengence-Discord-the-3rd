@@ -12,9 +12,7 @@
 #include "../smkg-cvars.h"
 #include "../smkg-jukebox.h"
 #include "../ss_main.h"
-#include "../m_menu.h"
-
-#include "../drrr/k_menu.h"
+#include "../menus/smkg-m_sys.h" // menumessage //
 
 #include "../../d_main.h" // D_StartTitle
 #include "../../g_demo.h"
@@ -39,6 +37,9 @@ musicdef_t tsourdt3rd_aprilfools_def = {
 	NULL
 };
 
+static menuitem_t defaultMenuTitles[256][256];
+static gtdesc_t defaultGametypeTitles[NUMGAMETYPES];
+
 #if 0
 OP_SoftwareLightingMenu
 	{IT_STRING | IT_CVAR,	NULL,	"Coronavirus",		&cv_corona,				0},
@@ -47,10 +48,8 @@ OP_SoftwareLightingMenu
 
 MP_SplitServerMenu
 	{IT_STRING|IT_CALL,              NULL, "Can We Play Tag?", 		   M_MapChange,         100},
-#ifdef NONET // In order to keep player setup accessible.
 	{IT_STRING|IT_CALL,              NULL, "Pet 1 setup...",           M_SetupMultiPlayer,  110},
 	{IT_STRING|IT_CALL,              NULL, "Pet 2 setup...",           M_SetupMultiPlayer2, 120},
-#endif
 	{IT_STRING|IT_CALL,              NULL, "More Settings...",         M_ServerOptions,     130},
 	{IT_WHITESTRING|IT_CALL,         NULL, "GO!!!",                    M_StartServer,       140},
 
@@ -96,9 +95,9 @@ OP_MainMenu
 	{IT_CALL    | IT_STRING, NULL, "Server Options...",    M_ServerOptions,     80},
 	{IT_SUBMENU | IT_STRING, NULL, "Datum Options...",     &OP_DataOptionsDef, 100},
 #ifdef HAVE_DISCORDSUPPORT
-	{IT_CALL 	| IT_STRING, NULL, "Mastadon Options...",  M_DiscordOptions,   120},
+	{IT_CALL 	| IT_STRING, NULL, "Mastadon Options...",  TSoURDt3rd_M_InitDiscordOptions,   120},
 #endif
-	{IT_CALL    | IT_STRING, NULL, "Dumb Options...",      TSoURDt3rd_M_InitOptionsMenu,130}, // STAR STUFF: our menu! //
+	{IT_CALL    | IT_STRING, NULL, "Dumb Options...",      TSoURDt3rd_M_InitMainOptions,130}, // STAR STUFF: our menu! //
 
 OP_P1ControlsMenu
 	{IT_CALL    | IT_STRING, NULL, "Button Configuration...", M_Setup1PControlsMenu, 10},
@@ -484,7 +483,23 @@ OP_ScreenshotOptionsMenu
 //
 boolean TSoURDt3rd_AprilFools_ModeEnabled(void)
 {
-	return (aprilfoolsmode && cv_tsourdt3rd_aprilfools_ultimatemode.value);
+	return ((tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_APRILFOOLS) && cv_tsourdt3rd_aprilfools_ultimatemode.value);
+}
+
+//
+// void TSoURDt3rd_AprilFools_StoreDefaultMenuStrings(void)
+// Stores the default menu title strings in the 'defaultMenuTitles' table.
+//
+void TSoURDt3rd_AprilFools_StoreDefaultMenuStrings(void)
+{
+	INT32 menu = 1;
+	memset(defaultMenuTitles, 0, sizeof(defaultMenuTitles)); // Resets the default menu title table.
+	memset(defaultGametypeTitles, 0, sizeof(defaultGametypeTitles)); // Resets the default gametype title table.
+	memcpy(&defaultGametypeTitles, &gametypedesc, sizeof(gametypedesc)); // Gametypes
+	memcpy(&defaultMenuTitles[menu++], &MainMenu, sizeof(menuitem_t)); // Main Menu
+	memcpy(&defaultMenuTitles[menu++], &SP_MainMenu, sizeof(menuitem_t)); // SP Main Menu
+	memcpy(&defaultMenuTitles[menu++], &MPauseMenu, sizeof(menuitem_t)); // MP Pause
+	memcpy(&defaultMenuTitles[menu++], &SPauseMenu, sizeof(menuitem_t)); // SP Pause
 }
 
 //
@@ -495,7 +510,7 @@ static void AprilFools_ChangeMenus(void)
 {
 	INT32 menu = 1;
 
-	if (!aprilfoolsmode)
+	if (!(tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_APRILFOOLS))
 		return;
 
 	if (menuactive)
@@ -509,13 +524,11 @@ static void AprilFools_ChangeMenus(void)
 	if (!cv_tsourdt3rd_aprilfools_ultimatemode.value)
 	{
 		memmove(&gametypedesc, &defaultGametypeTitles, sizeof(gtdesc_t)); // Gametypes
-
 		memmove(&MainMenu, &defaultMenuTitles[menu++], sizeof(menuitem_t)); // Main Menu
 		memmove(&SP_MainMenu, &defaultMenuTitles[menu++], sizeof(menuitem_t)); // SP Main Menu
 		memmove(&MPauseMenu, &defaultMenuTitles[menu++], sizeof(menuitem_t)); // MP Pause
 		memmove(&SPauseMenu, &defaultMenuTitles[menu++], sizeof(menuitem_t)); // SP Pause
-
-		STAR_StoreDefaultMenuStrings();
+		TSoURDt3rd_AprilFools_StoreDefaultMenuStrings();
 		return;
 	}
 
@@ -579,7 +592,7 @@ void TSoURD3rd_AprilFools_OnChange(void)
 {
 	TSoURDt3rd_t *tsourdt3rd_user = &TSoURDt3rdPlayers[consoleplayer];
 
-	if (!tsourdt3rd_user || !aprilfoolsmode)
+	if (!tsourdt3rd_user || tsourdt3rd_currentEvent != TSOURDT3RD_EVENT_APRILFOOLS)
 		return;
 
 	AprilFools_ChangeMenus();
@@ -589,7 +602,7 @@ void TSoURD3rd_AprilFools_OnChange(void)
 	if (TSoURDt3rd_AprilFools_ModeEnabled() && cursaveslot > NOSAVESLOT && !netgame)
 	{
 		STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nthis savefile will not save until you turn this mode off.\n");
-		DRRR_M_StartMessage
+		TSoURDt3rd_M_StartMessage
 		(
 			"Important TSoURDt3rd Notice",
 			"You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nthis savefile will not save until you turn this mode off.",

@@ -22,18 +22,25 @@ extern "C" {
 //        Variables
 // ------------------------ //
 
+// PAGES
+#define TSOURDT3RD_MAX_JUKEBOX_PAGES 64
+
 typedef struct tsourdt3rd_jukebox_pages_s {
-	char                               page_name[64];
+	INT32                              id;
+	char                               page_name[38];
+	struct tsourdt3rd_jukebox_pages_s *prev;
 	struct tsourdt3rd_jukebox_pages_s *next;
 } tsourdt3rd_jukebox_pages_t;
 
-extern tsourdt3rd_jukebox_pages_t   tsourdt3rd_jukeboxpage_soundtestpage;
+extern tsourdt3rd_jukebox_pages_t   tsourdt3rd_jukeboxpage_mainpage;
 extern tsourdt3rd_jukebox_pages_t  *tsourdt3rd_jukeboxpages_start;
 extern tsourdt3rd_jukebox_pages_t **tsourdt3rd_jukebox_available_pages;
+extern INT32 tsourdt3rd_jukebox_numpages;
 
+// DEFS
 typedef struct tsourdt3rd_jukeboxdef_s {
 	musicdef_t                     *linked_musicdef;
-	UINT8                          *supported_pages;
+	tsourdt3rd_jukebox_pages_t     *supported_pages;
 	struct tsourdt3rd_jukeboxdef_s *next;
 } tsourdt3rd_jukeboxdef_t;
 
@@ -41,20 +48,19 @@ extern tsourdt3rd_jukeboxdef_t   jukebox_def_soundtestsfx;
 extern tsourdt3rd_jukeboxdef_t  *jukebox_def_start; // Pointer to the initial jukebox def
 extern tsourdt3rd_jukeboxdef_t **tsourdt3rd_jukebox_defs; // Jukebox definition pointer that can point towards any defintion desired, if valid.
 
+// MAIN
 typedef struct tsourdt3rd_jukebox_s {
-	boolean     Unlocked; // General data
+	boolean     unlocked; // General data
 	boolean     playing;
-	boolean     initHUD;
 
-	INT32       jukebox_selection; // Menu data
-	fixed_t     jukebox_tics;
+	boolean     hud_initialized; // HUD data
+	INT32       hud_box_w;
+	INT32       hud_string_w;
+	INT32       hud_track_w;
+	INT32       hud_speed_w;
 
-	UINT8      *jukebox_frames; // Patch data
-	fixed_t     jukebox_hscale;
-	fixed_t     jukebox_vscale;
-	fixed_t     jukebox_bouncing;
-
-	musicdef_t *curtrack; // Track data
+	fixed_t     track_tics; // Track data
+	musicdef_t *curtrack;
 	musicdef_t *prevtrack;
 } tsourdt3rd_jukebox_t;
 
@@ -70,8 +76,6 @@ boolean TSoURDt3rd_Jukebox_PrepareDefs(void);
 
 void TSoURDt3rd_Jukebox_Reset(void);
 void TSoURDt3rd_Jukebox_RefreshLevelMusic(void);
-
-boolean TSoURDt3rd_Jukebox_CanModifyMusic(void);
 
 void TSoURDt3rd_Jukebox_ST_drawJukebox(void);
 

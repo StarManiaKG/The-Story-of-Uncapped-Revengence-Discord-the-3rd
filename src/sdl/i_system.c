@@ -216,7 +216,7 @@ static char returnWadPath[256];
 
 // TSoURDt3rd
 #include "../STAR/star_vars.h" // TSOURDT3RDVERSIONSTRING, & TSOURDT3RDBYSTARMANIAKGSTRING //
-#include "../STAR/smkg-i_sys.h" // TSoURDt3rd_I_ShowErrorMessageBox() //
+#include "../STAR/smkg-i_sys.h" // TSoURDt3rd_I_ShowErrorMessageBox() & TSoURDt3rd_I_ShutdownSystem() //
 
 /**	\brief	The JoyReset function
 
@@ -2414,9 +2414,7 @@ void I_Quit(void)
 	SDLforceUngrabMouse();
 	quiting = SDL_FALSE;
 	M_SaveConfig(NULL); //save game config, cvars..
-#ifndef NONET
 	D_SaveBan(); // save the ban list
-#endif
 	G_SaveGameData(clientGamedata); // Tails 12-08-2002
 	//added:16-02-98: when recording a demo, should exit using 'q' key,
 	//        but sometimes we forget and use 'F10'.. so save here too.
@@ -2425,6 +2423,8 @@ void I_Quit(void)
 		G_CheckDemoStatus();
 	if (metalrecording)
 		G_StopMetalRecording(false);
+
+	TSoURDt3rd_I_ShutdownSystem(); // STAR STUFF: Run our cool stuff too please...//
 
 	D_QuitNetGame();
 	CL_AbortDownloadResume();
@@ -2535,9 +2535,7 @@ void I_Error(const char *error, ...)
 	// ---
 
 	M_SaveConfig(NULL); // save game config, cvars..
-#ifndef NONET
 	D_SaveBan(); // save the ban list
-#endif
 	G_SaveGameData(clientGamedata); // Tails 12-08-2002
 
 	// Shutdown. Here might be other errors.
@@ -2545,6 +2543,8 @@ void I_Error(const char *error, ...)
 		G_CheckDemoStatus();
 	if (metalrecording)
 		G_StopMetalRecording(false);
+
+	TSoURDt3rd_I_ShutdownSystem(); // STAR STUFF: Run our cool stuff too please...//
 
 	D_QuitNetGame();
 	CL_AbortDownloadResume();

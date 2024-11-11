@@ -25,9 +25,6 @@
 
 #define AUTOLOADCONFIGFILENAME "autoload.cfg"
 
-#define SAVEGAMEFOLDER "saves"
-extern char savegamefolder[256];
-
 //#define ALAM_LIGHTING /* EXTREME BETA: Enable Alam's Lighting, With Touch-ups by Star */
 
 //#define _DEBUG /* Debugging */
@@ -37,35 +34,52 @@ extern char savegamefolder[256];
 // EVENTS
 // ======
 
+typedef struct tsourdt3rd_s
+{
+	struct
+	{
+		boolean time_over;
+	} levels;
+} tsourdt3rd_t;
+extern tsourdt3rd_t tsourdt3rd[MAXPLAYERS];
+
+extern struct tsourdt3rd_local_s
+{
+	boolean checked_version;
+	boolean ms_address_changed;
+} tsourdt3rd_local;
+
+typedef enum
+{
+	TSOURDT3RD_EVENT_NONE       = 0,
+	TSOURDT3RD_EVENT_EASTER     = 1<<1,
+	TSOURDT3RD_EVENT_APRILFOOLS = 1<<2,
+	TSOURDT3RD_EVENT_CHRISTMAS  = 1<<3
+} tsourdt3rd_timedEvent_t;
+
+extern tsourdt3rd_timedEvent_t tsourdt3rd_currentEvent;
+extern boolean AllowEasterEggHunt, EnableEasterEggHuntBonuses;
+extern musicdef_t tsourdt3rd_aprilfools_def;
+
+extern struct tsourdt3rd_loadingscreen_s
+{
+	size_t loadCount;
+	UINT8 loadPercentage;
+	INT32 bspCount;
+	INT32 screenToUse;
+	boolean loadComplete;
+} tsourdt3rd_loadingscreen;
+
 typedef enum
 {
 	STAR_CONS_TSOURDT3RD = 1,
 	STAR_CONS_TSOURDT3RD_NOTICE,
 	STAR_CONS_TSOURDT3RD_ALERT,
-
 	STAR_CONS_TSOURDT3RD_DEBUG,
-
 	STAR_CONS_APRILFOOLS,
 	STAR_CONS_EASTER,
-
 	STAR_CONS_JUKEBOX
-} star_messagetype_t;
-
-typedef enum
-{
-	TSOURDT3RD_EASTER = 1,
-	TSOURDT3RD_APRILFOOLS,
-	TSOURDT3RD_CHRISTMAS
-} tsourdt3rdevent_t;
-
-extern tsourdt3rdevent_t TSoURDt3rd_CurrentEvent;
-
-// here for compatibility reasons (for the meantime) //
-extern boolean aprilfoolsmode;
-extern boolean eastermode;
-extern boolean xmasmode, xmasoverride;
-
-extern musicdef_t tsourdt3rd_aprilfools_def;
+} tsourdt3rd_messagetype_t;
 
 // ------------------------ //
 //        Functions
@@ -73,7 +87,7 @@ extern musicdef_t tsourdt3rd_aprilfools_def;
 
 void TSoURDt3rd_Init(void);
 
-void STAR_CONS_Printf(star_messagetype_t starMessageType, const char *fmt, ...);
+void STAR_CONS_Printf(tsourdt3rd_messagetype_t starMessageType, const char *fmt, ...);
 const char *TSoURDt3rd_CON_DrawStartupScreen(void);
 
 void TSoURDt3rd_D_Display(void);
@@ -88,14 +102,13 @@ boolean TSoURDt3rd_Easter_AllEggsCollected(void);
 
 boolean TSoURDt3rd_AprilFools_ModeEnabled(void);
 void TSoURD3rd_AprilFools_OnChange(void);
+void TSoURDt3rd_AprilFools_StoreDefaultMenuStrings(void);
 
 // ======
 // LEVELS
 // ======
 
 mobj_t *TSoURDt3rd_BossInMap(void);
-
-void TSoURDt3rd_LoadLevel(boolean reloadinggamestate);
 
 // ======
 // SCENES

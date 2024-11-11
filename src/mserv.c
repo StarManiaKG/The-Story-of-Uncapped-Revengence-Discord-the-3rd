@@ -49,9 +49,7 @@ static I_cond  MSCond;
 #  define Unlock_state()
 #endif/*HAVE_THREADS*/
 
-#ifndef NONET
 static void Command_Listserv_f(void);
-#endif
 
 #endif/*MASTERSERVER*/
 
@@ -95,7 +93,6 @@ msg_rooms_t room_list[NUM_LIST_ROOMS+1]; // +1 for easy test
   */
 void AddMServCommands(void)
 {
-#ifndef NONET
 	CV_RegisterVar(&cv_masterserver);
 	CV_RegisterVar(&cv_masterserver_update_rate);
 	CV_RegisterVar(&cv_masterserver_timeout);
@@ -105,7 +102,6 @@ void AddMServCommands(void)
 #ifdef MASTERSERVER
 	COM_AddCommand("listserv", Command_Listserv_f, 0);
 	COM_AddCommand("masterserver_update", Update_parameters, COM_LUA); // allows people to updates manually in case you were delisted by accident
-#endif
 #endif
 }
 
@@ -195,7 +191,6 @@ void GetMODVersion_Console(void)
 }
 #endif
 
-#ifndef NONET
 /** Gets a list of game servers. Called from console.
   */
 static void Command_Listserv_f(void)
@@ -206,7 +201,6 @@ static void Command_Listserv_f(void)
 		HMS_list_servers();
 	}
 }
-#endif
 
 static void
 Finish_registration (void)

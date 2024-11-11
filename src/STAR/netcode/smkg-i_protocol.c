@@ -1,7 +1,5 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Original Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
-// Original Copyright (C) 2018-2024 by Kart Krew.
 // Copyright (C) 2020-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
@@ -77,7 +75,7 @@ typedef union
 #include "../../i_time.h"
 
 #ifdef USE_STUN
-#include "../../discord/stun.h" // STUN_got_response() //
+#include "../stun/stun.h" // STUN_got_response() //
 #endif
 
 // ------------------------ //
@@ -214,7 +212,9 @@ static boolean hole_punch(ssize_t c)
 
 //
 // static boolean SOCK_GetHolepunchAddr(struct sockaddr_in *sin, const char *address, const char *port, boolean test)
-// A routine made to resemble SOCK_NetMakeNodewPort from DRRR, in order to get holepunching addresses.
+//
+// A routine made to resemble SOCK_NetMakeNodewPort from Dr.Robotnik's Ring Racers,
+// 	in order to get holepunching addresses.
 //
 static boolean SOCK_GetHolepunchAddr(struct sockaddr_in *sin, const char *address, const char *port, boolean test)
 {
@@ -261,11 +261,11 @@ static boolean SOCK_GetHolepunchAddr(struct sockaddr_in *sin, const char *addres
 
 //
 // static void rendezvous(int size)
-// Contacts the server provided by 'cv_rendezvousserver'.
+// Contacts the server provided by 'cv_tsourdt3rd_servers_holepunchrendezvous'.
 //
 static void rendezvous(int size)
 {
-	char *addrs = strdup(cv_rendezvousserver.string);
+	char *addrs = strdup(cv_tsourdt3rd_servers_holepunchrendezvous.string);
 
 	char *host = strtok(addrs, ":");
 	char *port = strtok(NULL,  ":");
@@ -284,7 +284,7 @@ static void rendezvous(int size)
 		else
 		{
 			CONS_Alert(CONS_ERROR, "Failed to contact rendezvous server (%s).\n",
-					cv_rendezvousserver.string);
+					cv_tsourdt3rd_servers_holepunchrendezvous.string);
 		}
 	}
 
@@ -305,8 +305,8 @@ static void rendezvous(int size)
 //
 boolean TSoURDt3rd_SOCK_Get(doomcom_t *doomcom_p, ssize_t c, void *addresstable, void *sockets)
 {
-	memcpy(mysockets, (SOCKET_TYPE *)sockets, sizeof(sockets));
-	memcpy(clientaddress, (mysockaddr_t *)addresstable, sizeof(addresstable));
+	if (c <= 0)
+		return false;
 
 #ifdef USE_STUN
 	if (STUN_got_response(doomcom_p->data, c))
@@ -316,6 +316,9 @@ boolean TSoURDt3rd_SOCK_Get(doomcom_t *doomcom_p, ssize_t c, void *addresstable,
 #else
 	(void)doomcom_p;
 #endif
+
+	memcpy(mysockets, (SOCKET_TYPE *)sockets, sizeof(sockets));
+	memcpy(clientaddress, (mysockaddr_t *)addresstable, sizeof(addresstable));
 
 	if (hole_punch(c))
 	{

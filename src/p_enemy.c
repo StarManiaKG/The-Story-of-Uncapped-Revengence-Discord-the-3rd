@@ -33,7 +33,7 @@
 #endif
 
 // TSoURDt3rd
-#include "STAR/star_vars.h" // TSoURDt3rdPlayers::jukebox::curtrack & TSoURDt3rd_DetermineLevelMusic() //
+#include "STAR/star_vars.h" // tsourdt3rd_global_jukebox & TSoURDt3rd_DetermineLevelMusic() //
 #include "STAR/smkg-cvars.h" // cv_tsourdt3rd_game_soniccd //
 
 boolean LUA_CallAction(enum actionnum actionnum, mobj_t *actor);

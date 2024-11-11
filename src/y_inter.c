@@ -44,14 +44,9 @@
 #include "hardware/hw_main.h"
 #endif
 
-// STAR STUFF //
+// TSoURDt3rd
 #include "STAR/star_vars.h" // TSoURDt3rd_DetermineLevelMusic() //
-#include "STAR/smkg-cvars.h" // cv_tsourdt3rd_savefiles_storesavesinfolders //
 #include "STAR/smkg-jukebox.h"
-#include "STAR/ss_main.h" // SAVEGAMEFOLDER //
-
-#include "deh_soc.h"
-// END OF THAT //
 
 typedef struct
 {
@@ -950,9 +945,7 @@ void Y_IntermissionDrawer(void)
 				// already constrained to 8 characters
 				V_DrawString(x+36, y, V_ALLOWLOWERCASE, data.competition.name[i]);
 
-				if ((players[data.competition.num[i]].pflags & PF_GAMETYPEOVER)
-					|| (TSoURDt3rdPlayers[consoleplayer].timeOver)) // STAR NOTE: time over rendering //
-
+				if (players[data.competition.num[i]].pflags & PF_GAMETYPEOVER || tsourdt3rd[consoleplayer].levels.time_over) // STAR NOTE: time over rendering //
 					snprintf(sstrtime, sizeof sstrtime, "Time Over");
 				else if (players[data.competition.num[i]].lives <= 0)
 					snprintf(sstrtime, sizeof sstrtime, "Game Over");
@@ -1010,20 +1003,6 @@ void Y_Ticker(void)
 	// Check for pause or menu up in single player
 	if (paused || P_AutoPause())
 		return;
-
-	// STAR STUFF //
-	if (cv_tsourdt3rd_savefiles_storesavesinfolders.value)
-	{
-		I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER, srb2home), 0755);
-		if (TSoURDt3rd_useAsFileName)
-		{
-			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd", srb2home), 0755);
-			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd" PATHSEP "%s", srb2home, timeattackfolder), 0755);
-		}
-		else
-			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "%s", srb2home, timeattackfolder), 0755);
-	}
-	// END THAT //
 
 	LUA_HookBool(stagefailed, HOOK(IntermissionThinker));
 

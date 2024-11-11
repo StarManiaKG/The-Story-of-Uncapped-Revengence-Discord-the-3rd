@@ -29,15 +29,9 @@
 #include "v_video.h" // video flags for CEchos
 #include "f_finale.h"
 
-// STAR STUFF //
-#include "STAR/smkg-cvars.h" // cv_tsourdt3rd_savefiles_storesavesinfolders //
-#include "STAR/ss_main.h" // SAVEGAMEFOLDER //
-#include "STAR/p_user.h" // TSoURDt3rd_P_DamageMobj() //
-#include "STAR/star_vars.h" // tsourdt3rd_global_jukebox, TSoURDt3rd_t, && gameovermusic //
-
-#include "deh_soc.h" // file junk //
-#include "d_main.h" // TSoURDt3rd_useAsFileName //
-// END OF THAT //
+// TSoURDt3rd
+#include "STAR/p_user.h" // TSoURDt3rd_P_DamageMobj() & TSoURDt3rd_P_KillMobj() //
+#include "STAR/star_vars.h" // tsourdt3rd_global_jukebox //
 
 // CTF player names
 #define CTFTEAMCODE(pl) pl->ctfteam ? (pl->ctfteam == 1 ? "\x85" : "\x84") : ""
@@ -310,7 +304,7 @@ void P_DoMatchSuper(player_t *player)
 	player->powers[pw_sneakers] = emeraldspawndelay;
 	if (P_IsLocalPlayer(player) && !player->powers[pw_super])
 	{
-		if (!tsourdt3rd_global_jukebox->curtrack) // STAR STUFF: don't interrupt my music please :) //
+		if (!tsourdt3rd_global_jukebox->playing) // STAR STUFF: don't interrupt my music please :) //
 			S_StopMusic();
 		if (mariomode)
 			G_GhostAddColor(GHC_INVINCIBLE);
@@ -334,7 +328,7 @@ void P_DoMatchSuper(player_t *player)
 				player->powers[pw_sneakers] = player->powers[pw_invulnerability];
 				if (P_IsLocalPlayer(player) && !player->powers[pw_super])
 				{
-					if (!tsourdt3rd_global_jukebox->curtrack) // STAR STUFF: don't interrupt my music here either please :) //
+					if (!tsourdt3rd_global_jukebox->playing) // STAR STUFF: don't interrupt my music here either please :) //
 						S_StopMusic();
 					if (mariomode)
 						G_GhostAddColor(GHC_INVINCIBLE);
@@ -2651,19 +2645,13 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 		if ((target->player->lives <= 1) && (netgame || multiplayer) && G_GametypeUsesCoopLives() && (cv_cooplives.value == 0))
 			;
-#if 0
-		else if ((!target->player->bot || target->player->bot == BOT_MPAI) && !target->player->spectator && ((target->player->lives != INFLIVES) || TSoURDt3rdPlayers[consoleplayer].timeOver) /* STAR NOTE: 04-14-2023; timeover */
-		 && G_GametypeUsesLives())
-#else
 		else if ((!target->player->bot || target->player->bot == BOT_MPAI) && !target->player->spectator && (target->player->lives != INFLIVES)
 		 && G_GametypeUsesLives())
-#endif
 		{
 			if (!(target->player->pflags & PF_FINISHED))
 				target->player->lives -= 1; // Lose a life Tails 03-11-2000
 
-			if (target->player->lives <= 0 // Tails 03-14-2000
-				|| TSoURDt3rdPlayers[consoleplayer].timeOver) // STAR NOTE: Edited 05-23-2024 //
+			if (target->player->lives <= 0) // Tails 03-14-2000
 			{
 				boolean gameovermus = false;
 				if ((netgame || multiplayer) && G_GametypeUsesCoopLives() && (cv_cooplives.value != 1))
@@ -2684,22 +2672,8 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 					gameovermus = true;
 
 				if (gameovermus) // Yousa dead now, Okieday? Tails 03-14-2000
-					S_ChangeMusicEx(gameoverMusic[cv_gameovermusic.value], 0, 0, 0, (2*MUSICRATE) - (MUSICRATE/25), 0); // 1.96 seconds //* STAR NOTE: Edited; Now depends on gameoverMusic[] *//
+					S_ChangeMusicEx("_gover", 0, 0, 0, (2*MUSICRATE) - (MUSICRATE/25), 0); // 1.96 seconds
 					//P_PlayJingle(target->player, JT_GOVER); // can't be used because incompatible with track fadeout
-
-				// STAR STUFF //
-				if (cv_tsourdt3rd_savefiles_storesavesinfolders.value)
-				{
-					I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER, srb2home), 0755);
-					if (TSoURDt3rd_useAsFileName)
-					{
-						I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd", srb2home), 0755);
-						I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd" PATHSEP "%s", srb2home, timeattackfolder), 0755);
-					}
-					else
-						I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "%s", srb2home, timeattackfolder), 0755);
-				}
-				// END THAT //
 
 				if (!(netgame || multiplayer || demoplayback || demorecording || metalrecording || modeattacking) && numgameovers < maxgameovers)
 				{
@@ -3107,6 +3081,8 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 	/** \note For player, the above is redundant because of P_SetMobjState (target, S_PLAY_DIE1)
 	   in P_DamageMobj()
 	   Graue 12-22-2003 */
+
+	TSoURDt3rd_P_KillMobj(target, inflictor, source, damagetype); // STAR STUFF: do our unique killing junk please //
 }
 
 static void P_NiGHTSDamage(mobj_t *target, mobj_t *source)

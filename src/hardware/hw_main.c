@@ -2736,7 +2736,7 @@ static void HWR_LinkDrawHackFinish(void)
 static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
 #else
 /** STAR NOTE: i was here for realistic shadow stuff lol
- 	(I.E: cv_shadow.value == 2, cv_allobjectshaveshadows, etc. :p) **/
+ 	(I.E: cv_tsourdt3rd_game_shadows_realistic, cv_tsourdt3rd_game_shadows_forallobjects, etc. :p) **/
 static void HWR_DrawDropShadow(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale)
 #endif
 {
@@ -2797,7 +2797,7 @@ static void HWR_DrawDropShadow(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale
 	if (alpha >= 255) return;
 	alpha = 255 - alpha;
 
-	if (cv_shadow.value == 2)
+	if (cv_tsourdt3rd_game_shadows_realistic.value)
 		gpatch = spr->gpatch;
 	else
 		gpatch = (patch_t *)W_CachePatchName("DSHADOW", PU_SPRITE);
@@ -2828,7 +2828,7 @@ static void HWR_DrawDropShadow(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale
 	shadowVerts[0].z = shadowVerts[3].z = fy + offset;
 
 	// Realistic shadows :)
-	if (cv_shadow.value == 2)
+	if (cv_tsourdt3rd_game_shadows_realistic.value)
 	{
 		shadowVerts[0].x = shadowVerts[3].x = spr->x1;
 		shadowVerts[2].x = shadowVerts[1].x = spr->x2;
@@ -2896,9 +2896,9 @@ static void HWR_DrawDropShadow(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale
 		float oldy = shadowVerts[i].z;
 
 		// Cool realistic shadow positions
-		if (cv_shadow.value != 2 || cv_shadowposition.value)
+		if (!cv_tsourdt3rd_game_shadows_realistic.value || cv_tsourdt3rd_game_shadows_positioning.value)
 		{
-			if (cv_shadowposition.value == 1)
+			if (cv_tsourdt3rd_game_shadows_positioning.value == 1)
 			{
 				shadowVerts[i].x = fx + ((oldx - fx) * gl_viewcos) - ((oldy - fy) * gl_viewsin);
 				shadowVerts[i].z = fy + ((oldx - fx) * gl_viewsin) + ((oldy - fy) * gl_viewcos);
@@ -2932,7 +2932,7 @@ static void HWR_DrawDropShadow(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale
 	shadowVerts[0].t = shadowVerts[1].t = ((GLPatch_t *)gpatch->hardware)->max_t;
 
 	// Flip realistic shadows please
-	if (cv_shadow.value == 2)
+	if (cv_tsourdt3rd_game_shadows_realistic.value)
 	{
 		if (spr->flip)
 		{
@@ -2984,7 +2984,7 @@ static void HWR_DrawDropShadow(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale
 		blendmode |= PF_ColorMapped;
 	}
 
-	if (cv_shadow.value == 2)
+	if (cv_tsourdt3rd_game_shadows_realistic.value)
 	{
 		// Set realistic shadow colors, so cool!
 		sSurf.PolyColor.s.red = 0x00;
@@ -4489,15 +4489,17 @@ static void HWR_DrawSprites(void)
 		else
 		{
 			/** STAR NOTE: i was here for realistic shadow stuff lol
- 				(I.E: cv_shadow.value == 2, cv_allobjectshaveshadows, etc. :p) **/
+ 				(I.E: cv_tsourdt3rd_game_shadows_realistic, cv_tsourdt3rd_game_shadows_forallobjects, etc. :p) **/
 
-			if (spr->mobj && ((!cv_allobjectshaveshadows.value && spr->mobj->shadowscale) || cv_allobjectshaveshadows.value))
+			if (spr->mobj && (spr->mobj->shadowscale || cv_tsourdt3rd_game_shadows_forallobjects.value))
 			{
-				if ((cv_shadow.value == 1 && !skipshadow) || cv_shadow.value == 2)
+				if (cv_shadow.value && (!skipshadow || cv_tsourdt3rd_game_shadows_realistic.value))
 #if 0
 					HWR_DrawDropShadow(spr->mobj, spr->mobj->shadowscale);
 #else
-					HWR_DrawDropShadow(spr, spr->mobj, (cv_allobjectshaveshadows.value ? (spr->mobj->shadowscale ? spr->mobj->shadowscale : 1*FRACUNIT) : spr->mobj->shadowscale));
+					HWR_DrawDropShadow(spr, spr->mobj,
+						(spr->mobj->shadowscale ? spr->mobj->shadowscale : 1*FRACUNIT)
+					);
 #endif
 			}
 
@@ -4508,18 +4510,16 @@ static void HWR_DrawSprites(void)
 				// the linkdraw sprite because the linkdraw sprite does not modify the z-buffer.
 				// The !skipshadow check is there in case there are multiple linkdraw sprites connected
 				// to the same tracer, so the tracer's shadow only gets drawn once.
-				if ((!cv_allobjectshaveshadows.value && spr->mobj->tracer->shadowscale) || cv_allobjectshaveshadows.value)
+				if (spr->mobj->tracer->shadowscale || cv_tsourdt3rd_game_shadows_forallobjects.value)
 				{
-#if 0
 					if (cv_shadow.value && !skipshadow && spr->dispoffset < 0)
-#else
-					if (cv_shadow.value && !skipshadow)
-#endif
 					{
 #if 0
 						HWR_DrawDropShadow(spr->mobj->tracer, spr->mobj->tracer->shadowscale);
 #else
-						HWR_DrawDropShadow(spr, spr->mobj->tracer, (cv_allobjectshaveshadows.value ? (spr->mobj->tracer->shadowscale ? spr->mobj->tracer->shadowscale : 1*FRACUNIT) : spr->mobj->tracer->shadowscale));
+						HWR_DrawDropShadow(spr, spr->mobj->tracer,
+							(spr->mobj->tracer->shadowscale ? spr->mobj->tracer->shadowscale : 1*FRACUNIT)
+						);
 #endif
 						skipshadow = true;
 					}

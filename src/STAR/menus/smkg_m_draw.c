@@ -6,14 +6,12 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  smkg_m_draw.c
+/// \file  smkg-m_draw.c
 /// \brief Unique TSoURDt3rd menu drawing routines
 
 #include "smkg_m_func.h"
-#include "smkg_m_draw.h"
-#include "../m_menu.h"
 
-#include "../drrr/k_menu.h"
+#include "../drrr/k_menu.h" // menutyping //
 
 #include "../../am_map.h"
 #include "../../console.h"
@@ -31,6 +29,7 @@
 // ------------------------ //
 
 UINT8 tsourdt3rd_wipedefs[TSOURDT3RD_NUMWIPEDEFS] = {
+	99, // tsourdt3rd_wipe_init_tsourdt3rd_menu_toblack
 	1,  // tsourdt3rd_wipe_menu_toblack
 	1,  // tsourdt3rd_wipe_menu_final
 };
@@ -64,21 +63,21 @@ UINT16 TSoURDt3rd_M_GetCvPlayerColor(UINT8 pnum)
 	return skins[skin].prefcolor;
 }
 
-fixed_t M_TimeFrac(tic_t tics, tic_t duration)
+fixed_t TSoURDt3rd_M_TimeFrac(tic_t tics, tic_t duration)
 {
 	return tics < duration ? (tics * FRACUNIT + rendertimefrac) / duration : FRACUNIT;
 }
 
-fixed_t M_ReverseTimeFrac(tic_t tics, tic_t duration)
+fixed_t TSoURDt3rd_M_ReverseTimeFrac(tic_t tics, tic_t duration)
 {
-	return FRACUNIT - M_TimeFrac(duration - tics, duration);
+	return FRACUNIT - TSoURDt3rd_M_TimeFrac(duration - tics, duration);
 }
 
-fixed_t M_DueFrac(tic_t start, tic_t duration)
+fixed_t TSoURDt3rd_M_DueFrac(tic_t start, tic_t duration)
 {
 	tic_t t = I_GetTime();
 	tic_t n = t - start;
-	return M_TimeFrac(min(n, duration), duration);
+	return TSoURDt3rd_M_TimeFrac(min(n, duration), duration);
 }
 
 INT32 TSoURDt3rd_M_DrawCaretString
@@ -153,65 +152,7 @@ void TSoURDt3rd_M_PreDrawer(void)
 	if (menuwipe)
 		F_WipeStartScreen();
 
-	if (tsourdt3rd_global_jukebox && tsourdt3rd_global_jukebox->playing)
-	{
-		tsourdt3rd_global_jukebox->jukebox_hscale = FRACUNIT/2;
-		tsourdt3rd_global_jukebox->jukebox_vscale = FRACUNIT/2;
-		tsourdt3rd_global_jukebox->jukebox_bouncing = 0;
-
-		if (tsourdt3rd_global_jukebox->curtrack == &soundtestsfx)
-		{
-			if (cv_soundtest.value)
-			{
-				tsourdt3rd_global_jukebox->jukebox_frames[1] = (2 - (tsourdt3rd_global_jukebox->jukebox_tics >> FRACBITS));
-				tsourdt3rd_global_jukebox->jukebox_frames[2] = ((cv_soundtest.value - 1) % 9);
-				tsourdt3rd_global_jukebox->jukebox_frames[3] += (((cv_soundtest.value - 1) / 9) % (FIRSTSUPERCOLOR - tsourdt3rd_global_jukebox->jukebox_frames[3]));
-
-				if (tsourdt3rd_global_jukebox->jukebox_tics < (2 << FRACBITS))
-					tsourdt3rd_global_jukebox->jukebox_tics += renderdeltatics;
-				if (tsourdt3rd_global_jukebox->jukebox_tics >= (2 << FRACBITS))
-					tsourdt3rd_global_jukebox->jukebox_tics = 2 << FRACBITS;
-			}
-		}
-		else
-		{
-			fixed_t stoppingtics = (fixed_t)(tsourdt3rd_global_jukebox->curtrack->stoppingtics) << FRACBITS;
-
-			if (stoppingtics && tsourdt3rd_global_jukebox->jukebox_tics >= stoppingtics)
-			{
-				// Whoa, Whoa, We Ran Out of Time
-				TSoURDt3rd_Jukebox_Reset();
-				TSoURDt3rd_Jukebox_RefreshLevelMusic();
-			}
-			else
-			{
-				fixed_t work, bpm;
-				angle_t ang;
-
-				work = bpm = tsourdt3rd_global_jukebox->curtrack->bpm / S_GetSpeedMusic();
-				//bpm = FixedDiv((60*TICRATE)<<FRACBITS, bpm); -- bake this in on load
-
-				work = tsourdt3rd_global_jukebox->jukebox_tics;
-				work %= bpm;
-
-				if (tsourdt3rd_global_jukebox->jukebox_tics >= (FRACUNIT << (FRACBITS - 2))) // prevent overflow jump - takes about 15 minutes of loop on the same song to reach
-					tsourdt3rd_global_jukebox->jukebox_tics = work;
-
-				work = FixedDiv(work*180, bpm);
-				tsourdt3rd_global_jukebox->jukebox_frames[0] = 8-(work/(20<<FRACBITS));
-				if (tsourdt3rd_global_jukebox->jukebox_frames[0] > 8) // VERY small likelihood for the above calculation to wrap, but it turns out it IS possible lmao
-					tsourdt3rd_global_jukebox->jukebox_frames[0] = 0;
-
-				ang = (FixedAngle(work)>>ANGLETOFINESHIFT) & FINEMASK;
-				tsourdt3rd_global_jukebox->jukebox_bouncing = (FINESINE(ang) - FRACUNIT/2);
-				tsourdt3rd_global_jukebox->jukebox_hscale -= tsourdt3rd_global_jukebox->jukebox_bouncing/16;
-				tsourdt3rd_global_jukebox->jukebox_vscale += tsourdt3rd_global_jukebox->jukebox_bouncing/16;
-
-				if (!(paused || P_AutoPause())) // prevents time from being added up while the game is paused
-					tsourdt3rd_global_jukebox->jukebox_tics += renderdeltatics * S_GetSpeedMusic();
-			}
-		}
-	}
+	TSoURDt3rd_M_JukeboxTicker();
 }
 
 //
@@ -226,19 +167,21 @@ void TSoURDt3rd_M_PostDrawer(void)
 			tsourdt3rd_currentMenu->drawroutine(); // call current menu Draw routine
 
 		// Draw version down in corner
-		V_DrawThinString(vid.dupx, vid.height - 41*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, TSOURDT3RDVERSIONSTRING);
-		V_DrawThinString(vid.dupx, vid.height - 33*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, TSOURDT3RDBYSTARMANIAKGSTRING);	
-	}
+		// ...but still only in the MAIN MENU.
+		// It looks out of place anywhere else, and gets in the way.
+		if (currentMenu == &MainDef)
+		{
+			V_DrawThinString(vid.dupx, vid.height - 41*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, TSOURDT3RDVERSIONSTRING);
+			V_DrawThinString(vid.dupx, vid.height - 33*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, TSOURDT3RDBYSTARMANIAKGSTRING);
+		}
 
-	if (menuactive || Playing())
-	{
 		// Draw typing overlay when needed, above all other menu elements.
 		if (menutyping.active)
 			M_DrawMenuTyping();
-
-		// Draw message overlay when needed
-		TSoURDt3rd_M_DrawMenuMessage();
 	}
+
+	// Draw message overlay when needed
+	TSoURDt3rd_M_DrawMenuMessage();
 
 	if (menuwipe)
 	{
@@ -251,22 +194,22 @@ void TSoURDt3rd_M_PostDrawer(void)
 //
 // void TSoURDt3rd_M_DrawMenuTooltips
 // (
-//	 fixed_t box_x, fixed_t box_y, INT32 box_flags, UINT8 *box_color,
-//	 fixed_t string_x, fixed_t string_y, boolean string_centered
+//	 fixed_t box_x, fixed_t box_y, INT32 box_flags, UINT8 *box_color, boolean box_vflip,
+//	 fixed_t string_x, fixed_t string_y, INT32 string_flags, boolean string_centered
 // )
 //
 // Draw a banner across the top of the screen, with a description of the current option displayed.
 //
-// Inspired by M_DrawMenuTooltips() from DRRR!
+// Inspired by M_DrawMenuTooltips() from Dr.Robotnik's Ring Racers!
 //
 void TSoURDt3rd_M_DrawMenuTooltips
 (
-	fixed_t box_x, fixed_t box_y, INT32 box_flags, UINT8 *box_color,
-	fixed_t string_x, fixed_t string_y, boolean string_centered
+	fixed_t box_x, fixed_t box_y, INT32 box_flags, UINT8 *box_color, boolean box_vflip,
+	fixed_t string_x, fixed_t string_y, INT32 string_flags, boolean string_centered
 )
 {
-	tsourdt3rd_menuitems_t *item;
-	INT32 string_flags = V_SNAPTOTOP|V_ALLOWLOWERCASE|V_MENUCOLORMAP;
+	tsourdt3rd_menuitem_t *item = NULL;
+	patch_t *box_patch = W_CachePatchName("MENUHINT", PU_CACHE);
 
 	if (tsourdt3rd_currentMenu == NULL || tsourdt3rd_currentMenu->menuitems == NULL)
 		return;
@@ -274,10 +217,15 @@ void TSoURDt3rd_M_DrawMenuTooltips
 
 	if (item != NULL && item->tooltip != NULL)
 	{
-		if (V_ThinStringWidth(item->tooltip, string_flags) > BASEVIDWIDTH)
-			string_flags |= V_OLDSPACING;
+		if (box_flags <= 0)
+			box_flags |= V_SNAPTOTOP;
+		if (box_vflip)
+			box_patch = W_CachePatchName("VMNUHINT", PU_CACHE);
 
-		V_DrawMappedPatch(box_x, box_y, box_flags, W_CachePatchName("MENUHINT", PU_CACHE), box_color);
+		if (string_flags <= 0)
+			string_flags |= V_SNAPTOTOP|V_ALLOWLOWERCASE|V_MENUCOLORMAP;
+
+		V_DrawMappedPatch(box_x, box_y, box_flags, box_patch, box_color);
 		if (string_centered)
 			V_DrawCenteredThinString(string_x, string_y, string_flags, item->tooltip);
 		else
@@ -288,11 +236,11 @@ void TSoURDt3rd_M_DrawMenuTooltips
 //
 // void TSoURDt3rd_M_DrawPauseGraphic(void)
 // Draws a pause graphic on the screen when the game is paused,
-//	determined by cv_pausegraphicstyle.
+//	determined by cv_tsourdt3rd_game_pausescreen.
 //
 void TSoURDt3rd_M_DrawPauseGraphic(void)
 {
-	switch (cv_pausegraphicstyle.value)
+	switch (cv_tsourdt3rd_game_pausescreen.value)
 	{
 		case 1: // Legacy
 			INT32 py;
@@ -303,7 +251,6 @@ void TSoURDt3rd_M_DrawPauseGraphic(void)
 			patch = W_CachePatchName("M_PAUSE", PU_PATCH);
 			V_DrawScaledPatch(viewwindowx + (BASEVIDWIDTH - patch->width)/2, py, 0, patch);
 			break;
-
 		default: // Default
 			INT32 y = ((automapactive) ? (32) : (BASEVIDHEIGHT/2));
 			M_DrawTextBox((BASEVIDWIDTH/2) - (60), y - (16), 13, 2);
@@ -313,76 +260,37 @@ void TSoURDt3rd_M_DrawPauseGraphic(void)
 }
 
 //
-// void STAR_M_DrawQuitGraphic(void)
+// void TSoURDt3rd_M_DrawQuitGraphic(void)
 // Draws a quit graphic for us.
 //
-void STAR_M_DrawQuitGraphic(void)
+void TSoURDt3rd_M_DrawQuitGraphic(void)
 {
-	const char *quitgfx;
-
-	switch (cv_quitscreen.value)
+	switch (cv_tsourdt3rd_game_quitscreen.value)
 	{
 		case 1: // aseprite moment
-			quitgfx = "SS_QCOLR";
+			V_DrawScaledPatch(0, 0, 0, W_CachePatchName("SS_QCOLR", PU_PATCH));
 			break;
-		case 2: // funny aseprite moment
-			quitgfx = "SS_QSMUG";
+		case 2: // funny aseprite moments #5
+			V_DrawScaledPatch(0, 0, 0, W_CachePatchName("SS_QSMUG", PU_PATCH));
 			break;
 		case 3: // kel world aseprite moment
-			quitgfx = "SS_QKEL";
+			V_DrawScaledPatch(0, 0, 0, W_CachePatchName("SS_QKEL", PU_PATCH));
 			break;
 		case 4: // secret aseprite moment
-			quitgfx = "SS_QATRB";
+			V_DrawScaledPatch(0, 0, 0, W_CachePatchName("SS_QATRB", PU_PATCH));
 			break;
 		default: // Demo 3 Quit Screen Tails 06-16-2001
-			quitgfx = "GAMEQUIT";
-			break;
+			V_DrawScaledPatch(0, 0, 0, W_CachePatchName("GAMEQUIT", PU_PATCH));
+			return;
 	}
 
-	V_DrawScaledPatch(0, 0, 0, W_CachePatchName(quitgfx, PU_PATCH));
-	if (cv_quitscreen.value)
-	{
-		// psst, disclaimer; this game should not be sold :p
-		V_DrawScaledPatch(0, 0, 0, W_CachePatchName("SS_QDISC", PU_PATCH));
-	}
+	// psst, disclaimer; this game should not be sold :p
+	V_DrawScaledPatch(0, 0, 0, W_CachePatchName("SS_QDISC", PU_PATCH));
 }
 
 // ==========================================================================
 // GENERIC MENUS
 // ==========================================================================
-
-static void M_DrawMenuTitle(void)
-{
-	if (currentMenu->menutitlepic)
-	{
-		patch_t *p = W_CachePatchName(currentMenu->menutitlepic, PU_PATCH);
-
-		if (p->height > 24) // title is larger than normal
-		{
-			INT32 xtitle = (BASEVIDWIDTH - (p->width/2))/2;
-			INT32 ytitle = (30 - (p->height/2))/2;
-
-			if (xtitle < 0)
-				xtitle = 0;
-			if (ytitle < 0)
-				ytitle = 0;
-
-			V_DrawSmallScaledPatch(xtitle, ytitle, 0, p);
-		}
-		else
-		{
-			INT32 xtitle = (BASEVIDWIDTH - p->width)/2;
-			INT32 ytitle = (30 - p->height)/2;
-
-			if (xtitle < 0)
-				xtitle = 0;
-			if (ytitle < 0)
-				ytitle = 0;
-
-			V_DrawScaledPatch(xtitle, ytitle, 0, p);
-		}
-	}
-}
 
 //
 // void TSoURDt3rd_M_DrawGenericOptions(void)
@@ -423,14 +331,27 @@ void TSoURDt3rd_M_DrawOptionsMovingButton(void)
 {
 	patch_t *butt = W_CachePatchName("OPT_BUTT", PU_CACHE);
 	UINT8 *c = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_EMERALD, GTC_CACHE);
-	fixed_t t = M_DueFrac(optionsmenu.topt_start, M_OPTIONS_OFSTIME);
-	fixed_t z = Easing_OutSine(M_DueFrac(optionsmenu.offset.start, M_OPTIONS_OFSTIME), optionsmenu.offset.dist * FRACUNIT, 0);
+	fixed_t t = TSoURDt3rd_M_DueFrac(optionsmenu.topt_start, M_OPTIONS_OFSTIME);
+	fixed_t z = Easing_OutSine(TSoURDt3rd_M_DueFrac(optionsmenu.offset.start, M_OPTIONS_OFSTIME), optionsmenu.offset.dist * FRACUNIT, 0);
 	fixed_t tx = Easing_OutQuad(t, optionsmenu.optx * FRACUNIT, optionsmenu.toptx * FRACUNIT) + z;
 	fixed_t ty = Easing_OutQuad(t, optionsmenu.opty * FRACUNIT, optionsmenu.topty * FRACUNIT) + z;
+	const char *s = NULL;
 
 	V_DrawFixedPatch(tx, ty, FRACUNIT, 0, butt, c);
 
-	const char *s = currentMenu->prevMenu->menuitems[currentMenu->prevMenu->lastOn].text;
+	if (currentMenu)
+	{
+#ifdef HAVE_DISCORDSUPPORT
+		if (currentMenu == &DISCORD_OP_MainDef)
+			s = "Discord Options";
+		else
+#endif
+		if (currentMenu == &TSoURDt3rd_OP_Extras_JukeboxDef)
+			s = TSoURDt3rd_OP_ExtrasDef.menuitems[0].text;
+		else
+			s = TSoURDt3rd_OP_MainMenuDef.menuitems[TSoURDt3rd_OP_MainMenuDef.lastOn].text;
+	}
+
 	fixed_t w = V_FontStringWidth(
 		s,
 		0,
@@ -457,11 +378,10 @@ void TSoURDt3rd_M_DrawGenericOptions(void)
 	fixed_t boxt = 0;
 
 	TSoURDt3rd_M_DrawMenuTooltips(
-		0, 0, V_SNAPTOTOP, NULL,
-		BASEVIDWIDTH/2, 13, true
+		0, 0, 0, NULL, false,
+		BASEVIDWIDTH/2, 13, 0, true
 	);
 	TSoURDt3rd_M_DrawOptionsMovingButton();
-	M_DrawMenuTitle();
 
 	for (i = tsourdt3rd_itemOn; i >= 0; --i)
 	{
@@ -515,7 +435,7 @@ box_found:
 
 					boxy = y;
 
-					boxt = optionsmenu.box.dist == expand ? M_DueFrac(optionsmenu.box.start, 5) : FRACUNIT;
+					boxt = optionsmenu.box.dist == expand ? TSoURDt3rd_M_DueFrac(optionsmenu.box.start, 5) : FRACUNIT;
 					opening = boxt < FRACUNIT;
 				}
 				break;
@@ -575,7 +495,7 @@ box_found:
 					if (opening)
 						y += LINEHEIGHT;
 					else
-						V_DrawFill(x+5, y+5, MAXSTRINGLENGTH*8+6, 9+6, 159);
+						V_DrawFill(x+5, y+5, MAXSTRINGLENGTH*7+6, 9+6, 159);
 				}
 
 				if (opening)

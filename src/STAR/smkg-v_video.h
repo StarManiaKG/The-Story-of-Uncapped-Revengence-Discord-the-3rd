@@ -26,8 +26,8 @@
 //		But this time, I've reworked it even more!
 // ===================================================================
 
-#define V_MENUCOLORMAP (cv_menucolor.value)
-#define V_FPSCOLORMAP  (cv_fpscountercolor.value)
-#define V_TPSCOLORMAP  (cv_tpscountercolor.value)
+#define V_MENUCOLORMAP (cv_tsourdt3rd_video_coloring_menus.value)
+#define V_FPSCOLORMAP  (cv_tsourdt3rd_video_coloring_fpsrate.value)
+#define V_TPSCOLORMAP  (cv_tsourdt3rd_video_coloring_tpsrate.value)
 
 #endif // __SMKG_V_VIDEO__

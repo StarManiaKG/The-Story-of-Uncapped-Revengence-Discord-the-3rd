@@ -22,13 +22,7 @@
 
 #include "../g_game.h" // player_names //
 
-// ------------------------ //
-//        Variables
-// ------------------------ //
-
-#if 1
 #define WRITETOFILE
-#endif
 
 // ------------------------ //
 //        Functions
@@ -57,12 +51,8 @@ static void Write(INT32 playernum, boolean archive)
 	fputs(va("Player: %d\n", playernum), f);
 
 	fputs(TSoURDt3rd->user_hash, f);
-	fputs(va("%d\n", TSoURDt3rd->checkedVersion), f);
 	fputs(va("%d\n", TSoURDt3rd->usingTSoURDt3rd), f);
-
-	fputs(va("%d\n", TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd), f);
-	fputs(va("%d\n", TSoURDt3rd->serverPlayers.serverTSoURDt3rdVersion), f);
-
+	fputs(va("%d\n", TSoURDt3rd->server_usingTSoURDt3rd), f);
 	fclose(f);
 #else
 	(void)playernum;
@@ -71,16 +61,16 @@ static void Write(INT32 playernum, boolean archive)
 #endif
 }
 
-UINT8 TSOURDT3RD_READUINT8(UINT8 *save_p, TSoURDt3rd_t *TSoURDt3rd, UINT8 fallback)
+UINT8 TSOURDT3RD_READUINT8(UINT8 *save_p, TSoURDt3rd_t *tsourdt3rd_user, UINT8 fallback)
 {
-	if (!TSoURDt3rd || !TSoURDt3rd->usingTSoURDt3rd || !netbuffer->u.servercfg.tsourdt3rd)
+	if (!tsourdt3rd_user || !tsourdt3rd_user->usingTSoURDt3rd || !netbuffer->u.servercfg.tsourdt3rd)
 	    return fallback;
 	return READUINT8(save_p);
 }
 
-UINT32 TSOURDT3RD_READUINT32(UINT8 *save_p, TSoURDt3rd_t *TSoURDt3rd, UINT32 fallback)
+UINT32 TSOURDT3RD_READUINT32(UINT8 *save_p, TSoURDt3rd_t *tsourdt3rd_user, UINT32 fallback)
 {
-	if (!TSoURDt3rd || !TSoURDt3rd->usingTSoURDt3rd || !netbuffer->u.servercfg.tsourdt3rd)
+	if (!tsourdt3rd_user || !tsourdt3rd_user->usingTSoURDt3rd || !netbuffer->u.servercfg.tsourdt3rd)
 	    return fallback;
 	return READUINT32(save_p);
 }
@@ -91,14 +81,11 @@ void TSoURDt3rd_NetArchiveUsers(UINT8 *save_p, INT32 playernum)
 
 	WRITESTRING(save_p, TSoURDt3rd->user_hash);
 	WRITEUINT8(save_p, TSoURDt3rd->usingTSoURDt3rd);
-	WRITEUINT8(save_p, TSoURDt3rd->checkedVersion);
-	WRITEUINT8(save_p, TSoURDt3rd->masterServerAddressChanged);
-
-	WRITEUINT8(save_p, TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd);
-	WRITEUINT8(save_p, TSoURDt3rd->serverPlayers.majorVersion);
-	WRITEUINT8(save_p, TSoURDt3rd->serverPlayers.minorVersion);
-	WRITEUINT8(save_p, TSoURDt3rd->serverPlayers.subVersion);
-	WRITEUINT32(save_p, TSoURDt3rd->serverPlayers.serverTSoURDt3rdVersion);
+	WRITEUINT8(save_p, TSoURDt3rd->server_usingTSoURDt3rd);
+	WRITEUINT8(save_p, TSoURDt3rd->server_majorVersion);
+	WRITEUINT8(save_p, TSoURDt3rd->server_minorVersion);
+	WRITEUINT8(save_p, TSoURDt3rd->server_subVersion);
+	WRITEUINT8(save_p, TSoURDt3rd->server_TSoURDt3rdVersion);
 
 #ifdef WRITETOFILE
 	Write(playernum, true);
@@ -116,14 +103,11 @@ void TSoURDt3rd_NetUnArchiveUsers(UINT8 *save_p, INT32 playernum)
 		READSTRING(save_p, TSoURDt3rd->user_hash);
 #endif
 	TSoURDt3rd->usingTSoURDt3rd = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, false);
-	TSoURDt3rd->checkedVersion = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, true);
-	TSoURDt3rd->masterServerAddressChanged = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, false);
-
-	TSoURDt3rd->serverPlayers.serverUsesTSoURDt3rd = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, false);
-	TSoURDt3rd->serverPlayers.majorVersion = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, TSoURDt3rd_CurrentMajorVersion());
-	TSoURDt3rd->serverPlayers.minorVersion = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, TSoURDt3rd_CurrentMinorVersion());
-	TSoURDt3rd->serverPlayers.subVersion = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, TSoURDt3rd_CurrentSubversion());
-	TSoURDt3rd->serverPlayers.serverTSoURDt3rdVersion = TSOURDT3RD_READUINT32(save_p, TSoURDt3rd, TSoURDt3rd_CurrentVersion());
+	TSoURDt3rd->server_usingTSoURDt3rd = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, false);
+	TSoURDt3rd->server_majorVersion = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, TSoURDt3rd_CurrentMajorVersion());
+	TSoURDt3rd->server_minorVersion = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, TSoURDt3rd_CurrentMinorVersion());
+	TSoURDt3rd->server_subVersion = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, TSoURDt3rd_CurrentSubversion());
+	TSoURDt3rd->server_TSoURDt3rdVersion = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, TSoURDt3rd_CurrentVersion());
 
 #ifdef WRITETOFILE
 	Write(playernum, false);
@@ -136,12 +120,13 @@ void TSoURDt3rd_NetUnArchiveUsers(UINT8 *save_p, INT32 playernum)
 //
 void TSoURDt3rd_PSav_WriteExtraData(void)
 {
-    FILE *tsourdt3rdgamedata = TSoURDt3rd_FIL_CreateFile("TSoURDt3rd", "tsourdt3rd.dat", "w+");
+    FILE *tsourdt3rdgamedata = TSoURDt3rd_FIL_AccessFile("TSoURDt3rd", "tsourdt3rd.dat", "w+");
+
+	TSoURDt3rd_FOL_UpdateSavefileDirectory();
 
 	if (!tsourdt3rdgamedata
-		|| (!eastermode|| !AllowEasterEggHunt)
-		|| (netgame || autoloaded)
-		|| (TSoURDt3rd_NoMoreExtras))
+		|| (!(tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_EASTER)|| !AllowEasterEggHunt)
+		|| (netgame || autoloaded))
 		return;
 
 	// Write To The File //
@@ -159,20 +144,12 @@ void TSoURDt3rd_PSav_WriteExtraData(void)
 //
 void TSoURDt3rd_PSav_ReadExtraData(void)
 {
-    FILE *tsourdt3rdgamedata;
-	const char *path;
-
-#if 0
-	tsourdt3rd_global_jukebox->Unlocked = false;
-#endif
-
-	path = va("%s"PATHSEP"%s", srb2home, "tsourdt3rd.dat");
-    tsourdt3rdgamedata = fopen(path, "r");
+    FILE *tsourdt3rdgamedata = TSoURDt3rd_FIL_AccessFile("TSoURDt3rd", "tsourdt3rd.dat", "w+");
+	TSoURDt3rd_FOL_UpdateSavefileDirectory();
 
 	if (!tsourdt3rdgamedata
-		|| (!eastermode|| !AllowEasterEggHunt)
-		|| (netgame || autoloaded)
-		|| (TSoURDt3rd_NoMoreExtras))
+		|| (!(tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_EASTER)|| !AllowEasterEggHunt)
+		|| (netgame || autoloaded))
 		return;
 	
 	// Read Things Within The File //

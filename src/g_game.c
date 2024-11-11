@@ -51,34 +51,16 @@
 
 #include "lua_hud.h"
 
+// TSoURDt3rd
 #ifdef HAVE_DISCORDSUPPORT
 #include "discord/discord.h"
 #endif
-
 #ifdef HAVE_DISCORDGAMESDK
 #include "discord/discord_gamesdk.h"
 #endif
-
-// OTHER FUN STAR STUFF YAYAYSUHDUISHUIBHOUIHBDU()*FH*D(UIYVLBGUIYDG(UDOPBIYGD*OUFBHO(P))) //
 #include "STAR/star_vars.h" // TSoURDt3rd Struct, STAR_SetWindowTitle(), & TSoURDt3rd_DetermineLevelMusic() //
-#include "STAR/smkg-cvars.h" // cv_tsourdt3rd_savefiles_storesavesinfolders //
+#include "STAR/smkg-misc.h" // TSoURDt3rd_FOL_UpdateSavefileDirectory() //
 #include "STAR/smkg-p_saveg.h" // savedata functions //
-
-#include "deh_soc.h"
-
-#include "STAR/smkg_g_inputs.h" // TSoURDt3rd_G_BuildTiccmd() //
-
-// Sound Effects
-INT32 STAR_JoinSFX = sfx_kc48;
-INT32 STAR_LeaveSFX = sfx_kc52;
-INT32 STAR_SynchFailureSFX = sfx_kc46;
-
-INT32 DISCORD_RequestSFX = sfx_kc5d;
-
-// Easter
-INT32 TOTALEGGS = 0;
-INT32 foundeggs = 0;
-// END OF THAT STAR STUFF //
 
 gameaction_t gameaction;
 gamestate_t gamestate = GS_NULL;
@@ -798,8 +780,10 @@ void G_SetGameModified(boolean silent)
 	if (modifiedgame && !savemoddata)
 		return;
 
+	// STAR STUFF: currently autoloading, it's fine //
 	if (autoloading)
-		return; // STAR STUFF: currently autoloading, it's fine //
+		return;
+	// ...PROBABLY... //
 
 	modifiedgame = true;
 	savemoddata = false;
@@ -823,14 +807,6 @@ void G_SetUsedCheats(boolean silent)
 
 	if (!silent)
 		CONS_Alert(CONS_NOTICE, M_GetText("Game must be restarted to save progress.\n"));
-
-	// STAR STUFF YAY //
-	if (autoloading)
-	{
-		TSoURDt3rd_useAsFileName = true;
-		usedCheats = false;
-	}
-	// END OF THAT //
 
 	// If in record attack recording, cancel it.
 	if (modeattacking)
@@ -1169,11 +1145,6 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	boolean centerviewdown = false;
 
 	UINT8 forplayer = ssplayer-1;
-
-	// STAR STUFF: DRRR Menus: don't run the ticcmd if we're not in game, silly! //
-	if (TSoURDt3rd_G_BuildTiccmd(cmd, realtics, ssplayer))
-		return;
-	// UH, THE DOG ATE THE MENU JUNK //
 
 	if (ssplayer == 1)
 	{
@@ -2824,7 +2795,11 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	{
 		if (mapmusflags & MUSIC_RELOADRESET)
 		{
+#if 0
+			strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname, 7);
+#else
 			strncpy(mapmusname, TSoURDt3rd_DetermineLevelMusic(), 7);
+#endif
 			mapmusname[6] = 0;
 			mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
 			mapmusposition = mapheaderinfo[gamemap-1]->muspos;
@@ -4031,20 +4006,6 @@ static boolean CanSaveLevel(INT32 mapnum)
 
 static void G_HandleSaveLevel(void)
 {
-	// STAR STUFF //
-	if (cv_tsourdt3rd_savefiles_storesavesinfolders.value)
-	{
-		I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER, srb2home), 0755);
-		if (TSoURDt3rd_useAsFileName)
-		{
-			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd", srb2home), 0755);
-			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd" PATHSEP "%s", srb2home, timeattackfolder), 0755);
-		}
-		else
-			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "%s", srb2home, timeattackfolder), 0755);
-	}
-	// END THAT, AND NOW DO EVERYTHING ELSE //
-
 	// Update records & emblems
 	G_UpdateAllVisited();
 
@@ -4361,20 +4322,6 @@ static void G_DoContinued(void)
 	// Allow tokens to come back
 	tokenlist = 0;
 	token = 0;
-
-	// STAR STUFF //
-	if (cv_tsourdt3rd_savefiles_storesavesinfolders.value)
-	{
-		I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER, srb2home), 0755);
-		if (TSoURDt3rd_useAsFileName)
-		{
-			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd", srb2home), 0755);
-			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "TSoURDt3rd" PATHSEP "%s", srb2home, timeattackfolder), 0755);
-		}
-		else
-			I_mkdir(va("%s" PATHSEP SAVEGAMEFOLDER PATHSEP "%s", srb2home, timeattackfolder), 0755);
-	}
-	// END THAT, NOW DO THE NEXT THING //
 
 	if (!(netgame || multiplayer || demoplayback || demorecording || metalrecording || modeattacking) && !usedCheats && cursaveslot > 0)
 	{
@@ -4919,6 +4866,8 @@ void G_SaveGame(UINT32 slot, INT16 mapnum)
 	char savename[256] = "";
 	const char *backup;
 
+	TSoURDt3rd_FOL_UpdateSavefileDirectory(); // STAR STUFF: Update the save directory before we do any of this... //
+
 	if (marathonmode)
 		strcpy(savename, liveeventbackup);
 	else
@@ -4974,6 +4923,8 @@ void G_SaveGameOver(UINT32 slot, boolean modifylives)
 	char vcheck[VERSIONSIZE];
 	char savename[255];
 	const char *backup;
+
+	TSoURDt3rd_FOL_UpdateSavefileDirectory(); // STAR STUFF: Update the save directory before we do any of this... //
 
 	if (marathonmode)
 		strcpy(savename, liveeventbackup);
@@ -5536,6 +5487,7 @@ INT32 G_FindMapByNameOrCode(const char *mapname, char **realmapnamep)
 void G_SetGamestate(gamestate_t newstate)
 {
 	gamestate = newstate;
+
 #ifdef HAVE_SDL
 	STAR_SetWindowTitle();
 #endif

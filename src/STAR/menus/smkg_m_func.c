@@ -10,10 +10,10 @@
 /// \brief Unique TSoURDt3rd menu routines and structures
 
 #include "smkg_m_func.h"
-#include "smkg_m_draw.h"
 #include "../smkg-jukebox.h"
+#include "../smkg_g_inputs.h"
 
-#include "../drrr/k_menu.h"
+#include "../drrr/k_menu.h" // menutyping junk //
 
 #include "../../console.h"
 #include "../../d_main.h"
@@ -22,7 +22,6 @@
 #include "../../i_system.h"
 #include "../../m_random.h"
 #include "../../m_misc.h"
-#include "../../snake.h"
 #include "../../v_video.h"
 #include "../../z_zone.h"
 
@@ -136,11 +135,13 @@ static INT32 tsourdt3rd_quitsounds[] =
 const char *tsourdt3rd_quitmsgs[NUM_TSOURDT3RD_QUITMESSAGES];
 
 INT16 tsourdt3rd_itemOn = 1; // menu item skull is on, Hack by Tails 09-18-2002
+INT16 *vanilla_itemOn;
+
 INT16 tsourdt3rd_skullAnimCounter = 1; // skull animation counter
 struct menutransition_s menutransition; // Menu transition properties
 
 INT32 menuKey = -1; // keyboard key pressed for menu
-static gamecontrols_e gameKey = GC_NULL; // game key pressed for menu
+INT32 gameKey = GC_NULL; // game key pressed for menu
 
 // finish wipes between screens
 boolean menuwipe = false;
@@ -150,10 +151,10 @@ boolean menuwipe = false;
 boolean tsourdt3rd_noFurtherInput = false;
 
 // List mode types for different menus
-tsourdt3rd_levellist_mode_t tsourdt3rd_levellistmode = TSOURDT3RD_LLM_NONE;
+tsourdt3rd_levellist_mode_t tsourdt3rd_levellistmode = TSOURDT3RD_LLM_CREATESERVER;
 
-// lock-on technology for menus, allowing for unique menu features
-static tsourdt3rd_menu_t *tsourdt3rd_allMenus = NULL;
+// Menu controller
+menucmd_t menucmd[MAXSPLITSCREENPLAYERS];
 
 // ------------------------ //
 //        Functions
@@ -163,14 +164,13 @@ static tsourdt3rd_menu_t *tsourdt3rd_allMenus = NULL;
 // void TSoURDt3rd_M_InitQuitMessages(const char **msg_table)
 //
 // Adds vanilla quit messages into our quit message table, while
-//	also making space for our unique quit messages too
+//	also making space for our unique quit messages too.
 //
 void TSoURDt3rd_M_InitQuitMessages(const char **msg_table)
 {
 	// Add vanilla quit messages here please
 	if (!msg_table)
 		return;
-
 	for (INT32 i = QUITMSG; msg_table[i]; i++)
 		tsourdt3rd_quitmsgs[i] = msg_table[i];
 
@@ -204,7 +204,7 @@ static void M_ReinitializeDynamicQuitMessages(void)
 
 	tsourdt3rd_quitmsgs[TSOURDT3RD_DYN_QUITSMSG2] = va(M_GetText("Wait, \x82%s\x80!\nCome back! I need you!\n\n(Press 'Y' to quit)"), TSoURDt3rd_ReturnUsername());
 
-	if (tsourdt3rd_global_jukebox->curtrack)
+	if (tsourdt3rd_global_jukebox->playing)
 		tsourdt3rd_quitmsgs[TSOURDT3RD_DYN_QUITSMSG3] = va(M_GetText("Come back!\nFinish listening to\n\x82%s\x80!\n\n(Press 'Y' to quit)"), tsourdt3rd_global_jukebox->curtrack->title);
 	else
 		tsourdt3rd_quitmsgs[TSOURDT3RD_DYN_QUITSMSG3] = M_GetText("Come back!\nYou have more jukebox music to play!\n\n(Press 'Y' to quit)");
@@ -233,7 +233,7 @@ const char *TSoURDt3rd_M_GenerateQuitMessage(void)
 	// One act of kindness has far-reaching consequences for so many
 	// people. It's a week until christmas as I'm writing this --
 	// for those who read this, what act of kindness can you bring
-	// to others? ~toast 181223 (Ported from DRRR by StarManiaKG, 060824)
+	// to others? ~toast 181223 (Ported from Dr.Robotnik's Ring Racers, by StarManiaKG, 060824)
 	switch (randomMessage)
 	{
 		case QUITMSG4:
@@ -271,57 +271,128 @@ const char *TSoURDt3rd_M_GenerateQuitMessage(void)
 			break;
 	}
 
-	// Return our random message and we're done :)
 	return tsourdt3rd_quitmsgs[randomMessage];
 }
 
 //
-// void TSoURDt3rd_M_AddNewMenu(tsourdt3rd_menu_t *newmenu, menu_t *menup)
-// Adds unique TSoURDt3rd menu data, based on the new data and existing menu given.
+// void TSoURDt3rd_M_MenuMessageShouldTick(boolean run)
+// Handles menu message ticking in certain situations.
 //
-void TSoURDt3rd_M_AddNewMenu(tsourdt3rd_menu_t *newmenu, menu_t *menup)
+// Ported using some code from Dr.Robotnik's Ring Racers!
+//
+void TSoURDt3rd_M_MenuMessageShouldTick(boolean run)
 {
-	if (!newmenu || !menup)
+	if (!run || !menumessage.active)
 		return;
-
-	newmenu->menu = menup;
-	newmenu->next_menu = tsourdt3rd_allMenus;
-	tsourdt3rd_allMenus = newmenu;
-};
+	TSoURDt3rd_M_MenuMessageTick();
+}
 
 //
-// void TSoURDt3rd_M_SetupNextMenu(menu_t *menudef)
+// boolean TSoURDt3rd_M_OverwriteIntroResponder(event_t *event)
+// If returned true, prevents the intro from eating inputs until after the current situation is handled.
+//
+boolean TSoURDt3rd_M_OverwriteIntroResponder(event_t *event)
+{
+	if (menumessage.active && !menuactive && !Playing())
+	{
+		TSoURDt3rd_M_Responder(&menuKey, event);
+		TSoURDt3rd_M_HandleMenuMessage();
+		return true;
+	}
+	return false;
+}
+
+//
+// void TSoURDt3rd_M_SetMenuDelay(UINT8 i)
+// Sets a menu delay, where the menu can't be moved for a certain amount of time.
+//
+void TSoURDt3rd_M_SetMenuDelay(UINT8 i)
+{
+	menucmd[i].delayCount++;
+	if (menucmd[i].delayCount < 1)
+	{
+		// Shouldn't happen, but for safety.
+		menucmd[i].delayCount = 1;
+	}
+
+	menucmd[i].delay = (MENUDELAYTIME - min(MENUDELAYTIME - 1, menucmd[i].delayCount));
+	if (menucmd[i].delay < MENUMINDELAY)
+	{
+		menucmd[i].delay = MENUMINDELAY;
+	}
+}
+
+//
+// Returns true if we press the button specified
+//
+boolean TSoURDt3rd_M_MenuButtonPressed(UINT8 pid, UINT32 bt)
+{
+	if (menucmd[pid].buttonsHeld & bt)
+	{
+		return false;
+	}
+
+	return !!(menucmd[pid].buttons & bt);
+}
+boolean TSoURDt3rd_M_MenuButtonHeld(UINT8 pid, UINT32 bt)
+{
+	return !!(menucmd[pid].buttons & bt);
+}
+
+//
+// Returns true if we press the confirmation button
+//
+boolean TSoURDt3rd_M_MenuConfirmPressed(UINT8 pid)
+{
+	 return TSoURDt3rd_M_MenuButtonPressed(pid, MBT_A);
+}
+boolean TSoURDt3rd_M_MenuConfirmHeld(UINT8 pid)
+{
+	 return TSoURDt3rd_M_MenuButtonHeld(pid, MBT_A);
+}
+
+//
+// Returns true if we press the Cancel button
+//
+boolean TSoURDt3rd_M_MenuBackPressed(UINT8 pid)
+{
+	 return (TSoURDt3rd_M_MenuButtonPressed(pid, MBT_B) || TSoURDt3rd_M_MenuButtonPressed(pid, MBT_X));
+}
+boolean TSoURDt3rd_M_MenuBackHeld(UINT8 pid)
+{
+	 return (TSoURDt3rd_M_MenuButtonHeld(pid, MBT_B) || TSoURDt3rd_M_MenuButtonHeld(pid, MBT_X));
+}
+
+//
+// Returns true if we press the tertiary option button (C)
+//
+boolean TSoURDt3rd_M_MenuExtraPressed(UINT8 pid)
+{
+	 return TSoURDt3rd_M_MenuButtonPressed(pid, MBT_C);
+}
+boolean TSoURDt3rd_M_MenuExtraHeld(UINT8 pid)
+{
+	 return TSoURDt3rd_M_MenuButtonHeld(pid, MBT_C);
+}
+
+//
+// void TSoURDt3rd_M_SetupNextMenu(tsourdt3rd_menu_t *tsourdt3rd_menudef, menu_t *menudef, boolean notransition)
 //
 // Wrapper for M_SetupNextMenu, allowing for setting up unique TSoURDt3rd menu data,
-//	with some features taken from DRRR!
+//	with some features taken from Dr.Robotnik's Ring Racers!
 //
-void TSoURDt3rd_M_SetupNextMenu(menu_t *menudef)
+void TSoURDt3rd_M_SetupNextMenu(tsourdt3rd_menu_t *tsourdt3rd_menudef, menu_t *menudef, boolean notransition)
 {
-	tsourdt3rd_menu_t *new_menu = tsourdt3rd_allMenus;
-
-	if (menudef == NULL)
-		return;
-
-	while (new_menu)
+	if (tsourdt3rd_currentMenu != NULL && tsourdt3rd_menudef != NULL && menudef != NULL)
 	{
-		if (new_menu->menu == NULL)
-			continue;
-		if (new_menu->menu == menudef)
-			break;
-		new_menu = new_menu->next_menu;
-	}
-	gameKey = GC_NULL; // prevents weird double-tapping junk from happening
-
-	if (tsourdt3rd_currentMenu && new_menu)
-	{
-#if 0
-		if (!menutransition.transitions_enabled)
+		if (!notransition)
 		{
-			if (tsourdt3rd_currentMenu->transitionID == new_menu->transitionID
+			if (tsourdt3rd_currentMenu->transitionID == tsourdt3rd_menudef->transitionID
 				&& tsourdt3rd_currentMenu->transitionTics)
 			{
 				menutransition.startmenu = tsourdt3rd_currentMenu;
-				menutransition.endmenu = new_menu;
+				menutransition.endmenu = tsourdt3rd_menudef;
+				menutransition.vanilla_endmenu = menudef;
 
 				menutransition.tics = 0;
 				menutransition.dest = tsourdt3rd_currentMenu->transitionTics;
@@ -337,27 +408,67 @@ void TSoURDt3rd_M_SetupNextMenu(menu_t *menudef)
 				F_RunWipe(tsourdt3rd_wipedefs[tsourdt3rd_wipe_menu_toblack], false);
 			}
 		}
-#endif
+	}
 
+	if (tsourdt3rd_currentMenu != NULL)
+	{
 		if (tsourdt3rd_currentMenu->quitroutine)
 		{
 			// If you're going from a menu to itself, why are you running the quitroutine? You're not quitting it! -SH
-			if (currentMenu != menudef && !tsourdt3rd_currentMenu->quitroutine())
+			if (tsourdt3rd_currentMenu != tsourdt3rd_menudef && !tsourdt3rd_currentMenu->quitroutine())
 				return; // we can't quit this menu (also used to set parameter from the menu)
-		}
-
-		if (new_menu->initroutine != NULL)
-		{
-			// Moving to a new menu, reinitialize.
-			new_menu->initroutine();
 		}
 	}
 
-	tsourdt3rd_currentMenu = new_menu;
-	tsourdt3rd_itemOn = menudef->lastOn;
+	if (tsourdt3rd_menudef != NULL)
+	{
+		if (tsourdt3rd_menudef->initroutine != NULL)
+		{
+			// Moving to a new menu, reinitialize.
+			tsourdt3rd_menudef->initroutine();
+		}
 
-	//M_UpdateMenuBGImage(false);
-	TSoURDt3rd_M_PlayMenuJam();
+		if (tsourdt3rd_currentMenu == NULL)
+		{
+			// We're on a Vanilla Menu, so let's set some delay stuff right quick...
+			const UINT8 pid = 0;
+			TSoURDt3rd_M_SetMenuDelay(pid);
+		}
+	}
+
+	tsourdt3rd_currentMenu = tsourdt3rd_menudef;
+
+	if (menudef != NULL)
+	{
+		tsourdt3rd_itemOn = menudef->lastOn;
+		(*vanilla_itemOn) = tsourdt3rd_itemOn;
+
+		if (tsourdt3rd_itemOn >= menudef->numitems)
+		{
+			// in case of...
+			tsourdt3rd_itemOn = menudef->numitems - 1;
+		}
+
+		if (((menudef->menuitems[tsourdt3rd_itemOn].status & IT_TYPE) & IT_SPACE))
+		{
+			// the curent item can be disabled,
+			// so this code will go until an enabled item is found
+			for (INT16 i = 0; i < menudef->numitems; i++)
+			{
+				if (!((menudef->menuitems[i].status & IT_TYPE) & IT_SPACE))
+				{
+					tsourdt3rd_itemOn = i;
+					break;
+				}
+			}
+		}
+
+		M_SetupNextMenu(menudef);
+		//M_UpdateMenuBGImage(false);
+		TSoURDt3rd_M_PlayMenuJam();
+	}
+	else
+		M_ClearMenus(true);
 
 #ifdef HAVE_DISCORDSUPPORT
 	if (menuactive && !Playing())
@@ -370,10 +481,14 @@ void TSoURDt3rd_M_SetupNextMenu(menu_t *menudef)
 
 //
 // void TSoURDt3rd_M_UpdateMenuCMD(UINT8 i)
-// Updates the menu buttons needed for unique menu movement.
+// Updates the menu buttons needed for unique menu movement and routines.
 //
 void TSoURDt3rd_M_UpdateMenuCMD(UINT8 i)
 {
+	INT32 thisGameKey = gameKey;
+
+	gameKey = GC_NULL;
+
 	menucmd[i].prev_dpad_ud = menucmd[i].dpad_ud;
 	menucmd[i].prev_dpad_lr = menucmd[i].dpad_lr;
 
@@ -383,32 +498,98 @@ void TSoURDt3rd_M_UpdateMenuCMD(UINT8 i)
 	menucmd[i].buttonsHeld = menucmd[i].buttons;
 	menucmd[i].buttons = 0;
 
-	if (gameKey == GC_SCREENSHOT) { menucmd[i].buttons |= MBT_SCREENSHOT; }
-	if (gameKey == GC_RECORDGIF) { menucmd[i].buttons |= MBT_STARTMOVIE; }
-	//if (gameKey == GC_RECORDLOSSLESS) { menucmd[i].buttons |= MBT_STARTLOSSLESS; }
+	if (thisGameKey == GC_SCREENSHOT) { menucmd[i].buttons |= MBT_SCREENSHOT; }
+	if (thisGameKey == GC_RECORDGIF) { menucmd[i].buttons |= MBT_STARTMOVIE; }
+	//if (thisGameKey == GC_RECORDLOSSLESS) { menucmd[i].buttons |= MBT_STARTLOSSLESS; }
+
+	if (thisGameKey == JB_OPENJUKEBOX || STAR_G_KeyPressed(0, JB_OPENJUKEBOX))
+	{
+		// A shortcut to open the Jukebox menu.
+		TSoURDt3rd_M_InitJukebox(0);
+	}
+	if (thisGameKey == JB_INCREASEMUSICSPEED || STAR_G_KeyPressed(0, JB_INCREASEMUSICSPEED))
+	{
+		// Increase the speed of the jukebox track
+		TSoURDt3rd_M_ChangeCvarDirect(-1, (1)*(1.0f/16.0f), &cv_tsourdt3rd_jukebox_speed);
+	}
+	if (thisGameKey == JB_DECREASEMUSICSPEED || STAR_G_KeyPressed(0, JB_DECREASEMUSICSPEED))
+	{
+		// Decrease the speed of the jukebox track
+		TSoURDt3rd_M_ChangeCvarDirect(-1, (-1)*(1.0f/16.0f), &cv_tsourdt3rd_jukebox_speed);
+	}
+	if (thisGameKey == JB_PLAYMOSTRECENTTRACK || STAR_G_KeyPressed(0, JB_PLAYMOSTRECENTTRACK))
+	{
+		// Replay the most recent jukebox track
+		if (!tsourdt3rd_global_jukebox->prevtrack)
+		{
+			STAR_CONS_Printf(STAR_CONS_JUKEBOX, "You haven't recently played a track!\n");
+			S_StartSound(NULL, sfx_lose);
+		}
+		else if (tsourdt3rd_global_jukebox->playing)
+		{
+			STAR_CONS_Printf(STAR_CONS_JUKEBOX, "There's already a track playing!\n");
+			S_StartSound(NULL, sfx_lose);
+		}
+		else if (!TSoURDt3rd_Jukebox_Unlocked())
+		{
+			TSoURDt3rd_M_StartMessage(
+				"TSoURDt3rd Jukebox",
+				M_GetText("You haven't unlocked this yet!\nGo and unlock the sound test first!\n"),
+				NULL,
+				MM_NOTHING,
+				NULL,
+				NULL
+			);
+			S_StartSound(NULL, sfx_lose);
+		}
+		else
+		{
+			tsourdt3rd_global_jukebox->curtrack = tsourdt3rd_global_jukebox->prevtrack;
+			S_ChangeMusicInternal(tsourdt3rd_global_jukebox->prevtrack->name, !tsourdt3rd_global_jukebox->prevtrack->stoppingtics);
+			STAR_CONS_Printf(STAR_CONS_JUKEBOX, M_GetText("Loaded track \x82%s\x80.\n"), tsourdt3rd_global_jukebox->prevtrack->title);
+			tsourdt3rd_global_jukebox->playing = true;
+			TSoURDt3rd_ControlMusicEffects();
+		}
+	}
+	if (thisGameKey == JB_STOPJUKEBOX || STAR_G_KeyPressed(0, JB_STOPJUKEBOX))
+	{
+		// Stop and reset the jukebox
+		if (!tsourdt3rd_global_jukebox->curtrack)
+		{
+			STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Nothing is currently playing in the jukebox!\n");
+			S_StartSound(NULL, sfx_lose);
+		}
+		else
+		{
+			S_StopSounds();
+			S_StopMusic();
+			S_StartSound(NULL, sfx_skid);
+			TSoURDt3rd_Jukebox_RefreshLevelMusic();
+		}
+	}
 
 	// Screenshot et al take priority
 	if (menucmd[i].buttons != 0)
 		return;
 
-	if (gameKey == GC_FORWARD) { menucmd[i].dpad_ud--; }
-	if (gameKey == GC_BACKWARD) { menucmd[i].dpad_ud++; }
+	if (thisGameKey == GC_FORWARD) { menucmd[i].dpad_ud--; }
+	if (thisGameKey == GC_BACKWARD) { menucmd[i].dpad_ud++; }
 
-	if (gameKey == GC_STRAFELEFT || gameKey == GC_TURNLEFT) { menucmd[i].dpad_lr--; }
-	if (gameKey == GC_STRAFERIGHT || gameKey == GC_TURNRIGHT) { menucmd[i].dpad_lr++; }
+	if (thisGameKey == GC_STRAFELEFT || thisGameKey == GC_TURNLEFT) { menucmd[i].dpad_lr--; }
+	if (thisGameKey == GC_STRAFERIGHT || thisGameKey == GC_TURNRIGHT) { menucmd[i].dpad_lr++; }
 
-	if (gameKey == GC_JUMP) { menucmd[i].buttons |= MBT_A; }
-	if (gameKey == GC_SPIN) { menucmd[i].buttons |= MBT_B; }
-	if (gameKey == GC_FIRE) { menucmd[i].buttons |= MBT_C; }
+	if (thisGameKey == GC_JUMP) { menucmd[i].buttons |= MBT_A; }
+	if (thisGameKey == GC_SPIN) { menucmd[i].buttons |= MBT_B; }
+	if (thisGameKey == GC_FIRE) { menucmd[i].buttons |= MBT_C; }
 
-	if (gameKey == GC_FIRENORMAL) { menucmd[i].buttons |= MBT_X; }
-	if (gameKey == GC_CUSTOM1) { menucmd[i].buttons |= MBT_Y; }
-	if (gameKey == GC_CUSTOM2) { menucmd[i].buttons |= MBT_Z; }
+	if (thisGameKey == GC_FIRENORMAL) { menucmd[i].buttons |= MBT_X; }
+	if (thisGameKey == GC_CUSTOM1) { menucmd[i].buttons |= MBT_Y; }
+	if (thisGameKey == GC_CUSTOM2) { menucmd[i].buttons |= MBT_Z; }
 
-	if (gameKey == GC_LOOKUP) { menucmd[i].buttons |= MBT_L; }
-	if (gameKey == GC_LOOKDOWN) { menucmd[i].buttons |= MBT_R; }
+	if (thisGameKey == GC_LOOKUP) { menucmd[i].buttons |= MBT_L; }
+	if (thisGameKey == GC_LOOKDOWN) { menucmd[i].buttons |= MBT_R; }
 
-	if (gameKey == GC_TOSSFLAG) { menucmd[i].buttons |= MBT_START; }	
+	if (thisGameKey == GC_TOSSFLAG) { menucmd[i].buttons |= MBT_START; }
 
 	if (menucmd[i].dpad_ud == 0 && menucmd[i].dpad_lr == 0 && menucmd[i].buttons == 0)
 	{
@@ -443,164 +624,214 @@ INT32 STAR_M_DoesMenuHaveKeyHandler(void)
 }
 
 //
-// boolean STAR_M_Responder(INT32 *ch, event_t *ev)
-// Unique menu input responder for TSoURDt3rd menus.
+// boolean TSoURDt3rd_M_Responder(INT32 *ch, event_t *ev)
+// Extended menu input responder for SRB2 and TSoURDt3rd menus.
 //
-boolean STAR_M_Responder(INT32 *ch, event_t *ev)
+boolean TSoURDt3rd_M_Responder(INT32 *ch, event_t *ev)
 {
-	INT32 key, main_key_table[] = {
+	const UINT8 pid = 0;
+	INT32 key, key_table[] = {
 		KEY_UPARROW,
 		KEY_DOWNARROW,
 		KEY_LEFTARROW,
 		KEY_RIGHTARROW,
 		KEY_ENTER,
-		KEY_ESCAPE
+		KEY_ESCAPE,
+		KEY_NULL
 	};
-	INT32 key_to_choice = (*ch);
-
-	gamecontrols_e gc, gc_table[] = {
+	INT32 gc = 0, gc_table[] = {
 		GC_SCREENSHOT,
 		GC_RECORDGIF,
-
 		GC_FORWARD,
 		GC_BACKWARD,
 		GC_STRAFELEFT, GC_TURNLEFT,
 		GC_STRAFERIGHT, GC_TURNRIGHT,
 		GC_JUMP,
 		GC_SPIN, GC_SYSTEMMENU,
-
 		GC_FIRENORMAL,
-		GC_CUSTOM1,
-		GC_CUSTOM2,
-
+		GC_CUSTOM1, GC_CUSTOM2,
 		GC_LOOKUP,
 		GC_LOOKDOWN,
-
 		GC_TOSSFLAG,
+		JB_OPENJUKEBOX,
+		JB_INCREASEMUSICSPEED,
+		JB_DECREASEMUSICSPEED,
+		JB_PLAYMOSTRECENTTRACK,
+		JB_STOPJUKEBOX,
 		GC_NULL
 	};
+	boolean in_event_eatable_situation = (menutyping.active || titlemapinaction || (menuactive && !menucmd[pid].delay));
 
-#if 1
-	/// \todo make this work perfectly
-	if (menutyping.active || (titlemapinaction && tsourdt3rd_levellistmode == -1) || (Playing() && (!netgame && !multiplayer)))
+	if (optionsmenu.bindtimer || tsourdt3rd_snake)
 	{
 		// update keys current state
 		G_MapEventsToControls(ev);
+		if (optionsmenu.bindtimer)
+		{
+			// For control mapping, we take the WHOLE EVENT for convenience.
+			TSoURDt3rd_M_Controls_MapProfileControl(ev);
+			memset(gamekeydown, 0, sizeof(gamekeydown)); // Reset the keys so the game doesn't bug out.
+			return true;
+		}
 	}
-#endif
 
-	key_to_choice = (*ch);
-	if (ev->type == ev_keydown && ev->key > 0 && ev->key < NUMKEYS)
+	// Emulate and convert menu inputs, please.
+	if (ev->type == ev_keydown && ev->key > 0)
 	{
 		// Record keyboard presses
 		menuKey = ev->key;
-	}
 
-	// For control mapping, we take the WHOLE EVENT for convenience.
-	if (optionsmenu.bindtimer)
-	{
-		TSoURDt3rd_M_Controls_MapProfileControl(ev);
-		return true;
-	}
-
-	// Translate menu keys, or in-game keys too, to work in our menus
-	switch (key_to_choice)
-	{
-		case KEY_UPARROW:
-			gameKey = GC_FORWARD;
-			break;
-		case KEY_DOWNARROW:
-			gameKey = GC_BACKWARD;
-			break;
-		case KEY_LEFTARROW:
-			gameKey = GC_STRAFELEFT;
-			break;
-		case KEY_RIGHTARROW:
-			gameKey = GC_STRAFERIGHT;
-			break;
-		case KEY_ENTER:
-			gameKey = GC_JUMP;
-			break;
-		case KEY_ESCAPE:
-			gameKey = GC_SPIN;
-			break;
-
-		default:
+		// Translate menu keys and in-game keys to work in our menus
+		switch (menuKey)
 		{
-			for (gc = 0; gc_table[gc]; gc++)
-				if (PLAYERINPUTDOWN(1, gc_table[gc]))
-					break;
+			case KEY_UPARROW:
+			case KEY_HAT1:
+				gameKey = GC_FORWARD;
+				break;
+			case KEY_DOWNARROW:
+			case KEY_HAT1 + 1:
+				gameKey = GC_BACKWARD;
+				break;
+			case KEY_LEFTARROW:
+			case KEY_HAT1 + 2:
+				gameKey = GC_STRAFELEFT;
+				break;
+			case KEY_RIGHTARROW:
+			case KEY_HAT1 + 3:
+				gameKey = GC_STRAFERIGHT;
+				break;
+			case KEY_ENTER:
+			case KEY_MOUSE1:
+			case KEY_JOY1:
+				gameKey = GC_JUMP;
+				break;
+			case KEY_ESCAPE:
+			case KEY_MOUSE1 + 1:
+			case KEY_JOY1 + 1:
+				gameKey = GC_SPIN;
+				break;
+			case KEY_BACKSPACE:
+			case KEY_JOY1 + 2:
+				gameKey = GC_FIRE;
+				break;
+			case KEY_JOY1 + 3:
+				menuKey = 'n';
+				gameKey = GC_FIRENORMAL;
+				break;
+			default:
+			{
+				if (in_event_eatable_situation)
+				{
+					// update keys current state
+					G_MapEventsToControls(ev);
+				}
 
-			gameKey = gc_table[gc];
-			break;
+				while (gc_table[gc])
+				{
+					if (PLAYERINPUTDOWN(pid+1, gc_table[gc]))
+						break;
+					gc++;
+				}
+
+				gameKey = gc_table[gc];
+				if (in_event_eatable_situation)
+				{
+					// Reset keys used, so the game doesn't freak out.
+					memset(gamekeydown, 0, sizeof(gamekeydown));
+				}
+				break;
+			}
 		}
 	}
-
-	CONS_Printf("gamekey is %d, menukey is %d, other key is %d\n", gameKey, menuKey, key_to_choice);
-	if (tsourdt3rd_currentMenu == NULL)
+	else if ((ev->type == ev_joystick && ev->key == 0) || ev->type == ev_mouse)
 	{
-		// We're not in our unique menu system!
-		// Why run anything else unique then?
-		// Let's just clean up some things and move on...
+		menuKey = (*ch);
 
-		// if we're about to start typing,
-		// ignore ev_keydown events if the key maps to a character, since
-		// the ev_text event will follow immediately after in that case.
-		if (I_GetTextInputMode() && ev->type == ev_keydown)
+		// Translate controller keys to work in our menus
+		switch (menuKey)
 		{
-			if (key_to_choice >= 32 && key_to_choice <= 127)
-				return false;
-		}
-
-		// Translate our unique menu controls to vanilla menus too!
-		for (key = 0; main_key_table[key]; key++)
-		{
-			if (key_to_choice == -1)
+			case KEY_UPARROW:
+				gameKey = GC_FORWARD;
 				break;
-			if (main_key_table[key] == key_to_choice)
-				return false;
-		}
-
-		switch (gameKey)
-		{
-			case GC_FORWARD:
-				key_to_choice = KEY_UPARROW;
+			case KEY_DOWNARROW:
+				gameKey = GC_BACKWARD;
 				break;
-			case GC_BACKWARD:
-				key_to_choice = KEY_DOWNARROW;
+			case KEY_LEFTARROW:
+				gameKey = GC_STRAFELEFT;
 				break;
-			case GC_STRAFELEFT:
-			case GC_TURNLEFT:
-				key_to_choice = KEY_LEFTARROW;
-				break;
-			case GC_STRAFERIGHT:
-			case GC_TURNRIGHT:
-				key_to_choice = KEY_RIGHTARROW;
-				break;
-			case GC_JUMP:
-				key_to_choice = KEY_ENTER;
-				break;
-			case GC_SPIN:
-			case GC_SYSTEMMENU:
-				key_to_choice = KEY_ESCAPE;
+			case KEY_RIGHTARROW:
+				gameKey = GC_STRAFERIGHT;
 				break;
 			default:
 				break;
 		}
-		CONS_Printf("key_to_choice is %d\n", key_to_choice);
-		(*ch) = key_to_choice;
+	}
+
+	if (tsourdt3rd_currentMenu == NULL)
+	{
+		// We're not in our unique menu system!
+		// But, we can still provide some cool features!
+
+		if (menuKey <= 0 || (*ch) <= 0)
+		{
+			// We have no inputs! Why continue?
+			return false;
+		}
+
+		if (I_GetTextInputMode())
+		{
+			// Since we're about to start typing,
+			// ignore ev_keydown events and just quit right now.
+			if (*ch >= 32 && *ch <= 127)
+				return false;
+		}
+
+		// Translate our unique menu controls to vanilla menus too!
+		for (key = 0; key_table[key]; key++)
+			if (key_table[key] == *ch)
+				return false;
+
+		if (menuactive)
+		{
+			switch (gameKey)
+			{
+				case GC_FORWARD:
+					(*ch) = KEY_UPARROW;
+					break;
+				case GC_BACKWARD:
+					(*ch) = KEY_DOWNARROW;
+					break;
+				case GC_STRAFELEFT:
+				case GC_TURNLEFT:
+					(*ch) = KEY_LEFTARROW;
+					break;
+				case GC_STRAFERIGHT:
+				case GC_TURNRIGHT:
+					(*ch) = KEY_RIGHTARROW;
+					break;
+				case GC_JUMP:
+					(*ch) = KEY_ENTER;
+					break;
+				case GC_SPIN:
+				case GC_SYSTEMMENU:
+					(*ch) = KEY_ESCAPE;
+					break;
+				default:
+					break;
+			}
+		}
 
 		return false;
 	}
 
-	return (I_GetTextInputMode() || gameKey);
+	return (I_GetTextInputMode() || (gameKey != GC_NULL));
 }
 
 //
 // void TSoURDt3rd_M_PlayMenuJam(void)
 // Plays menu music.
 //
-// Inspired by M_PlayMenuJam from DRRR!
+// Inspired by M_PlayMenuJam from Dr.Robotnik's Ring Racers!
 //
 void TSoURDt3rd_M_PlayMenuJam(void)
 {
@@ -625,25 +856,27 @@ void TSoURDt3rd_M_PlayMenuJam(void)
 			return;
 		}
 
-		if (strcmp(refMenu->music, S_MusicName()))
+		if (strnicmp(refMenu->music, S_MusicName(), 7))
 			M_ChangeMenuMusic(refMenu->music, true);
 		return;
 	}
 
-	if (!strcmp("_inter", S_MusicName()))
+	if (!strnicmp("_inter", S_MusicName(), 7))
 		return;
 	M_ChangeMenuMusic("_inter", true);
 }
 
 //
-// boolean STAR_M_StartControlPanel(void)
+// boolean TSoURDt3rd_M_StartControlPanel(void)
 //
 // Runs our unique control panel data.
 // Returns true if it needs to restrict usage
 //	of the regular control panel, false otherwise.
 //
-boolean STAR_M_StartControlPanel(void)
+boolean TSoURDt3rd_M_StartControlPanel(void)
 {
+	const UINT8 pid = 0;
+
 	memset(menucmd, 0, sizeof (menucmd));
 	for (INT32 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
@@ -659,10 +892,9 @@ boolean STAR_M_StartControlPanel(void)
 				// The following doesn't work with MM_YESNO.
 				// However, because there's no guarantee a profile
 				// is selected or controls set up to our liking,
-				// we can't call M_HandleMenuMessage.
-				DRRR_M_StopMessage(MA_NONE);
+				// we can't call TSoURDt3rd_M_HandleMenuMessage.
+				TSoURDt3rd_M_StopMessage(MA_NONE);
 			}
-
 			return true;
 		}
 	}
@@ -675,6 +907,7 @@ boolean STAR_M_StartControlPanel(void)
 	}
 #endif
 
+	TSoURDt3rd_M_SetMenuDelay(pid);
 	return false;
 }
 
@@ -684,14 +917,18 @@ boolean STAR_M_StartControlPanel(void)
 //
 void TSoURDt3rd_M_ClearMenus(boolean callexitmenufunc)
 {
+	const UINT8 pid = 0;
+
 	if (!menuactive)
 		return;
 
-	if (tsourdt3rd_currentMenu && tsourdt3rd_currentMenu->quitroutine && callexitmenufunc && !tsourdt3rd_currentMenu->quitroutine())
+	if (tsourdt3rd_currentMenu != NULL && tsourdt3rd_currentMenu->quitroutine && callexitmenufunc && !tsourdt3rd_currentMenu->quitroutine())
 		return; // we can't quit this menu (also used to set parameter from the menu)
 
 	M_AbortVirtualKeyboard();
 	menumessage.active = false;
+
+	TSoURDt3rd_M_SetMenuDelay(pid);
 }
 
 //
@@ -700,24 +937,36 @@ void TSoURDt3rd_M_ClearMenus(boolean callexitmenufunc)
 //
 void STAR_M_GoBack(INT32 choice)
 {
-	const INT16 behaviourflags = tsourdt3rd_currentMenu->behaviourflags;
+	INT16 behaviourflags = 0;
+	tsourdt3rd_menu_t *next_tsourdt3rd_menu = NULL;
+	menu_t *next_menu = NULL;
+
 	(void)choice;
-
 	tsourdt3rd_noFurtherInput = true;
-	currentMenu->lastOn = tsourdt3rd_itemOn;
 
-	if (currentMenu->prevMenu)
-		M_SetupNextMenu(currentMenu->prevMenu);
+	if (tsourdt3rd_currentMenu != NULL)
+	{
+		behaviourflags = tsourdt3rd_currentMenu->behaviourflags;
+		if (tsourdt3rd_currentMenu->prev_menu != NULL)
+			next_tsourdt3rd_menu = tsourdt3rd_currentMenu->prev_menu;
+	}
+	if (currentMenu != NULL)
+	{
+		currentMenu->lastOn = tsourdt3rd_itemOn;
+		if (currentMenu->prevMenu != NULL)
+			next_menu = currentMenu->prevMenu;
+	}
+	TSoURDt3rd_M_SetupNextMenu(next_tsourdt3rd_menu, next_menu, false);
 
 	if (!(behaviourflags & MBF_SOUNDLESS))
 		S_StartSound(NULL, sfx_s3k5b);
 }
 
 //
-// void STAR_M_ChangeCvarDirect(INT32 choice, consvar_t *cv)
-// Directly changes the values of a given cvar, based on the choice.
+// void TSoURDt3rd_M_ChangeCvar(INT32 choice, consvar_t *cv)
+// Changes the values of a given cvar, based on the choice.
 //
-void STAR_M_ChangeCvarDirect(INT32 choice, consvar_t *cv)
+void TSoURDt3rd_M_ChangeCvar(INT32 choice, consvar_t *cv)
 {
 	// Backspace sets values to default value
 	if (choice == -1)
@@ -758,19 +1007,30 @@ void STAR_M_ChangeCvarDirect(INT32 choice, consvar_t *cv)
 }
 
 //
-// static void M_ChangeCvar(INT32 choice)
-// Wrapper for STAR_M_ChangeCvarDirect().
+// void TSoURDt3rd_M_ChangeCvarDirect(INT32 amount, float amount_f, consvar_t *cv)
 //
+// Directly changes the values of a given cvar, based on the amount given,
+//	and the flags of 'cv'.
+//
+void TSoURDt3rd_M_ChangeCvarDirect(INT32 amount, float amount_f, consvar_t *cv)
+{
+	if (cv->flags & CV_FLOAT)
+	{
+		char s[20];
+		float n = FIXED_TO_FLOAT(cv->value)+(amount_f);
+		sprintf(s, "%ld%s", (long)n, M_Ftrim(n));
+		CV_Set(cv, s);
+	}
+	else
+		CV_AddValue(cv, amount);
+}
+
 static void M_ChangeCvar(INT32 choice)
 {
 	consvar_t *cvar = currentMenu->menuitems[tsourdt3rd_itemOn].itemaction;
-	STAR_M_ChangeCvarDirect(choice, cvar);
+	TSoURDt3rd_M_ChangeCvar(choice, cvar);
 }
 
-//
-// static const char *M_QueryCvarAction(const char *replace)
-// General virtual keyboard caching system.
-//
 static const char *M_QueryCvarAction(const char *replace)
 {
 	consvar_t *cvar = (consvar_t *)currentMenu->menuitems[tsourdt3rd_itemOn].itemaction;
@@ -857,7 +1117,7 @@ boolean STAR_M_PrevOpt(void)
 
 //
 // static void M_HandleMenuInput(void)
-// Handles our menu inputs.
+// Handles our TSoURDt3rd exclusive menu inputs.
 //
 // Ported from Dr.Robotnik's Ring Racers!
 //
@@ -878,7 +1138,7 @@ static void M_HandleMenuInput(void)
 
 	if (menumessage.active)
 	{
-		M_HandleMenuMessage();
+		TSoURDt3rd_M_HandleMenuMessage();
 		return;
 	}
 
@@ -908,7 +1168,16 @@ static void M_HandleMenuInput(void)
 		}
 	}
 
-	routine = currentMenu->menuitems[tsourdt3rd_itemOn].itemaction;
+	routine = tsourdt3rd_currentMenu->menuitems[tsourdt3rd_itemOn].itemaction.routine;
+	if (routine == NULL)
+		routine = currentMenu->menuitems[tsourdt3rd_itemOn].itemaction;
+
+	// Handle menuitems which need a specific key handling
+	if (routine && (currentMenu->menuitems[tsourdt3rd_itemOn].status & IT_TYPE) == IT_KEYHANDLER)
+	{
+		routine(-1);
+		return;
+	}
 
 	// BP: one of the more big hack i have never made
 	if (routine && (currentMenu->menuitems[tsourdt3rd_itemOn].status & IT_TYPE) == IT_CVAR)
@@ -919,7 +1188,7 @@ static void M_HandleMenuInput(void)
 			routine = NULL;
 
 			// If we're hovering over a IT_CV_STRING option, pressing A/X opens the typing submenu
-			if (M_MenuConfirmPressed(pid))
+			if (TSoURDt3rd_M_MenuConfirmPressed(pid))
 			{
 				// If we entered this menu by pressing a menu Key, default to keyboard typing, otherwise use controller.
 				M_OpenVirtualKeyboard(
@@ -932,13 +1201,13 @@ static void M_HandleMenuInput(void)
 				);
 				return;
 			}
-			else if (M_MenuExtraPressed(pid))
+			else if (TSoURDt3rd_M_MenuExtraPressed(pid))
 			{
 				if (!(tsourdt3rd_currentMenu->behaviourflags & MBF_SOUNDLESS))
 					S_StartSound(NULL, sfx_s3k5b);
 
 				M_ChangeCvar(-1);
-				M_SetMenuDelay(pid);
+				TSoURDt3rd_M_SetMenuDelay(pid);
 				return;
 			}
 		}
@@ -965,14 +1234,14 @@ static void M_HandleMenuInput(void)
 	{
 		if (STAR_M_NextOpt() && !(tsourdt3rd_currentMenu->behaviourflags & MBF_SOUNDLESS))
 			S_StartSound(NULL, sfx_s3k5b);
-		M_SetMenuDelay(pid);
+		TSoURDt3rd_M_SetMenuDelay(pid);
 		return;
 	}
 	else if (ud < 0)
 	{
 		if (STAR_M_PrevOpt() && !(tsourdt3rd_currentMenu->behaviourflags & MBF_SOUNDLESS))
 			S_StartSound(NULL, sfx_s3k5b);
-		M_SetMenuDelay(pid);
+		TSoURDt3rd_M_SetMenuDelay(pid);
 		return;
 	}
 	else if (lr < 0)
@@ -983,7 +1252,7 @@ static void M_HandleMenuInput(void)
 			if (!(tsourdt3rd_currentMenu->behaviourflags & MBF_SOUNDLESS))
 				S_StartSound(NULL, sfx_s3k5b);
 			routine(0);
-			M_SetMenuDelay(pid);
+			TSoURDt3rd_M_SetMenuDelay(pid);
 		}
 		return;
 	}
@@ -995,11 +1264,11 @@ static void M_HandleMenuInput(void)
 			if (!(tsourdt3rd_currentMenu->behaviourflags & MBF_SOUNDLESS))
 				S_StartSound(NULL, sfx_s3k5b);
 			routine(1);
-			M_SetMenuDelay(pid);
+			TSoURDt3rd_M_SetMenuDelay(pid);
 		}
 		return;
 	}
-	else if (M_MenuConfirmPressed(pid) /*|| M_MenuButtonPressed(pid, MBT_START)*/)
+	else if (TSoURDt3rd_M_MenuConfirmPressed(pid) /*|| TSoURDt3rd_M_MenuButtonPressed(pid, MBT_START)*/)
 	{
 		tsourdt3rd_noFurtherInput = true;
 		currentMenu->lastOn = tsourdt3rd_itemOn;
@@ -1015,7 +1284,7 @@ static void M_HandleMenuInput(void)
 			{
 				if (((currentMenu->menuitems[tsourdt3rd_itemOn].status & IT_CALLTYPE) & IT_CALL_NOTMODIFIED) && usedCheats)
 				{
-					DRRR_M_StartMessage("TSoURDt3rd; Modified Game", M_GetText("This cannot be done with complex addons\nor in a cheated game."), NULL, MM_NOTHING, NULL, NULL);
+					TSoURDt3rd_M_StartMessage("TSoURDt3rd; Modified Game", M_GetText("This cannot be done with complex addons\nor in a cheated game."), NULL, MM_NOTHING, NULL, NULL);
 					return;
 				}
 			}
@@ -1031,18 +1300,35 @@ static void M_HandleMenuInput(void)
 					break;
 				case IT_SUBMENU:
 					currentMenu->lastOn = tsourdt3rd_itemOn;
-					M_SetupNextMenu((menu_t *)currentMenu->menuitems[tsourdt3rd_itemOn].itemaction);
+					TSoURDt3rd_M_SetupNextMenu(
+						(tsourdt3rd_menu_t *)tsourdt3rd_currentMenu->menuitems[tsourdt3rd_itemOn].itemaction.routine,
+						(menu_t *)currentMenu->menuitems[tsourdt3rd_itemOn].itemaction,
+						false
+					);
 					break;
 			}
 		}
 
-		M_SetMenuDelay(pid);
+		TSoURDt3rd_M_SetMenuDelay(pid);
 		return;
 	}
-	else if (M_MenuBackPressed(pid))
+	else if (TSoURDt3rd_M_MenuBackPressed(pid))
 	{
 		STAR_M_GoBack(0);
-		M_SetMenuDelay(pid);
+		TSoURDt3rd_M_SetMenuDelay(pid);
+		return;
+	}
+	else if (TSoURDt3rd_M_MenuExtraPressed(pid))
+	{
+		if (routine && ((currentMenu->menuitems[tsourdt3rd_itemOn].status & IT_TYPE) == IT_ARROWS
+			|| (currentMenu->menuitems[tsourdt3rd_itemOn].status & IT_TYPE) == IT_CVAR))
+		{
+			if (!(tsourdt3rd_currentMenu->behaviourflags & MBF_SOUNDLESS))
+				S_StartSound(NULL, sfx_s3k5b);
+
+			routine(-1);
+			TSoURDt3rd_M_SetMenuDelay(pid);
+		}
 		return;
 	}
 
@@ -1057,28 +1343,30 @@ static void M_HandleMenuInput(void)
 //
 void STAR_M_Ticker(INT16 *item, boolean *input, INT16 skullAnimCounter, INT32 levellistmode)
 {
-	INT16 ms = 0, menu_statuses[] = {
-		IT_DISPLAY,
-		IT_TYPE,
-		-1
-	};
-	INT16 mt = 0, menu_types[2][3] = {
-		[0] = {
-			IT_SPACE,
-			-1
-		},
-		[1] = {
-			IT_HEADERTEXT,
-			-1
-		}
-	};
-
+	vanilla_itemOn = item;
 	tsourdt3rd_noFurtherInput = *input;
 	tsourdt3rd_skullAnimCounter = skullAnimCounter;
 	tsourdt3rd_levellistmode = (tsourdt3rd_levellist_mode_t)levellistmode;
 
+	for (INT32 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		if (menucmd[i].delay > 0)
+		{
+			menucmd[i].delay--;
+		}
+	}
+
 	if (!menuactive)
+	{
+		// We're not in our unique menu system, so what's the point?
+		tsourdt3rd_noFurtherInput = false;
+		if (menumessage.active)
+		{
+			TSoURDt3rd_M_MenuMessageShouldTick(gamestate == GS_INTRO);
+			TSoURDt3rd_M_HandleMenuMessage();
+		}
 		return;
+	}
 
 	if (menutransition.tics != 0 || menutransition.dest != 0)
 	{
@@ -1093,8 +1381,6 @@ void STAR_M_Ticker(INT16 *item, boolean *input, INT16 skullAnimCounter, INT32 le
 		// If dest is zero, we're mid-transition and want to end it
 		if (menutransition.tics == menutransition.dest)
 		{
-			menutransition.transitions_enabled = true;
-
 			if (tsourdt3rd_currentMenu != menutransition.endmenu)
 			{
 				if (menutransition.startmenu->transitionID == menutransition.endmenu->transitionID
@@ -1107,6 +1393,7 @@ void STAR_M_Ticker(INT16 *item, boolean *input, INT16 skullAnimCounter, INT32 le
 				else if (menuactive)
 				{
 					memset(&menutransition, 0, sizeof(menutransition));
+
 					menuwipe = true;
 					F_WipeStartScreen();
 					V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
@@ -1114,7 +1401,7 @@ void STAR_M_Ticker(INT16 *item, boolean *input, INT16 skullAnimCounter, INT32 le
 					F_RunWipe(tsourdt3rd_wipedefs[tsourdt3rd_wipe_menu_toblack], false);
 				}
 
-				TSoURDt3rd_M_SetupNextMenu(menutransition.endmenu->menu);
+				TSoURDt3rd_M_SetupNextMenu(menutransition.endmenu, menutransition.vanilla_endmenu, true);
 			}
 		}
 	}
@@ -1132,14 +1419,6 @@ void STAR_M_Ticker(INT16 *item, boolean *input, INT16 skullAnimCounter, INT32 le
 		}
 	}
 
-	for (INT32 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		if (menucmd[i].delay > 0)
-		{
-			menucmd[i].delay--;
-		}
-	}
-
 	if (tsourdt3rd_noFurtherInput == false)
 	{
 		M_HandleMenuInput();
@@ -1147,52 +1426,26 @@ void STAR_M_Ticker(INT16 *item, boolean *input, INT16 skullAnimCounter, INT32 le
 
 	if (tsourdt3rd_currentMenu == NULL)
 	{
+		// We're not in our unique menu system!
+#ifdef HAVE_DISCORDSUPPORT
+		if (discordRequestList)
+		{
+			// Show discord requests menu option if any requests are pending
+			MPauseMenu[4].status = IT_STRING | IT_CALL; // mpause_discordrequests
+			if (currentMenu == &MPauseDef && (skullAnimCounter % 4))
+				V_DrawScaledPatch(currentMenu->x, currentMenu->menuitems[4].alphaKey, 0, W_CachePatchName("ICODIS", PU_CACHE));
+		}
+#endif
+
+		tsourdt3rd_itemOn = (*vanilla_itemOn);
 		return;
 	}
-
-#if 0
-	// The curent item can be disabled,
-	// so this code will scroll through the menu,
-	// until an enabled item can be found
-	while (menu_statuses[ms] != -1)
-	{
-		if (menu_types[ms][mt] == -1)
-		{
-			ms++;
-			mt = 0;
-		}
-
-		if ((currentMenu->menuitems[tsourdt3rd_itemOn].status & menu_statuses[ms]) & menu_types[ms][mt++])
-		{
-			ms = mt = 0;
-			tsourdt3rd_itemOn++;
-			continue;
-		}
-	}
-#endif
 
 	if (tsourdt3rd_currentMenu->tickroutine)
 	{
 		tsourdt3rd_currentMenu->tickroutine();
 	}
 
-	*item = tsourdt3rd_itemOn;
+	vanilla_itemOn = &tsourdt3rd_itemOn;
 	*input = tsourdt3rd_noFurtherInput;
-}
-
-//
-// void STAR_M_MenuMessageTick(boolean run)
-// Handles menu message ticking in certain situations.
-//
-// Ported from Dr.Robotnik's Ring Racers!
-//
-void STAR_M_MenuMessageTick(boolean run)
-{
-	if (run)
-	{
-		if (menumessage.active)
-		{
-			M_MenuMessageTick();
-		}
-	}
 }
