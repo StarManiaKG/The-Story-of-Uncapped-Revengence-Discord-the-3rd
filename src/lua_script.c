@@ -40,7 +40,7 @@
 #include "hu_stuff.h"
 
 // TSoURDt3rd
-#include "STAR/lua/smkg-lu_main.h" // TSoURDt3rd_LUA_PushGlobalVariables() & TSoURDt3rd_LUA_SetGlobalVariables() //
+#include "STAR/lua/smkg-lu_main.h" // Various libraries, TSoURDt3rd_LUA_PushGlobalVariables(), & TSoURDt3rd_LUA_SetGlobalVariables() //
 
 lua_State *gL = NULL;
 
@@ -63,6 +63,8 @@ static lua_CFunction liblist[] = {
 	LUA_BlockmapLib, // blockmap stuff
 	LUA_HudLib, // HUD stuff
 	LUA_InputLib, // inputs
+	// TSoURDt3rd
+	TSoURDt3rd_LUA_BaseLib,
 	NULL
 };
 
@@ -449,6 +451,11 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 // See the above.
 int LUA_CheckGlobals(lua_State *L, const char *word)
 {
+	// STAR STUFF YAY //
+	if (TSoURDt3rd_LUA_SetGlobalVariables(L, word))
+		return 1;
+	// DONE! //
+
 	if (fastcmp(word, "redscore"))
 		redscore = (UINT32)luaL_checkinteger(L, 2);
 	else if (fastcmp(word, "bluescore"))
@@ -493,12 +500,6 @@ int LUA_CheckGlobals(lua_State *L, const char *word)
 		mapmusflags = (UINT16)luaL_checkinteger(L, 2);
 	else if (fastcmp(word, "stagefailed"))
 		stagefailed = luaL_checkboolean(L, 2);
-
-	// STAR STUFF YAY //
-	else if (TSoURDt3rd_LUA_SetGlobalVariables(L, word))
-		return 1;
-	// DONE! //
-
 	else
 		return 0;
 

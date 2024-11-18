@@ -208,7 +208,7 @@ void TSoURDt3rd_FOL_UpdateSavefileDirectory(void)
 	if (!cv_tsourdt3rd_savefiles_storesavesinfolders.value)
 		return;
 
-	if (autoloading || autoloaded)
+	if (tsourdt3rd_local.autoloading_mods || tsourdt3rd_local.autoloaded_mods)
 		sprintf(savefile_directory, SAVEGAMEFOLDER PATHSEP "%s" PATHSEP "%s", "TSoURDt3rd", timeattackfolder);
 	else
 		sprintf(savefile_directory, SAVEGAMEFOLDER PATHSEP "%s", timeattackfolder);
@@ -226,11 +226,16 @@ void TSoURDt3rd_FOL_UpdateSavefileDirectory(void)
 //
 FILE *TSoURDt3rd_FIL_AccessFile(const char *directory, const char *filename, const char *mode)
 {
-	char full_path[256];
 	FILE *handle;
+	char full_path[256];
 
-	sprintf(full_path, "%s" PATHSEP "%s" PATHSEP "%s", TSoURDt3rd_FOL_ReturnHomepath(), directory, filename);
-	TSoURDt3rd_FOL_CreateDirectory(directory);
+	if (directory != NULL && *directory != '\0')
+	{
+		sprintf(full_path, "%s" PATHSEP "%s" PATHSEP "%s", TSoURDt3rd_FOL_ReturnHomepath(), directory, filename);
+		TSoURDt3rd_FOL_CreateDirectory(directory);
+	}
+	else
+		sprintf(full_path, "%s" PATHSEP "%s", TSoURDt3rd_FOL_ReturnHomepath(), filename);
 
 	handle = fopen(full_path, mode);
 	if (handle == NULL)
@@ -246,6 +251,21 @@ FILE *TSoURDt3rd_FIL_AccessFile(const char *directory, const char *filename, con
 }
 
 //
+// boolean TSoURDt3rd_FIL_RenameFile(const char *old_name, const char *new_name)
+//
+// Renames the file specified. Can also be used to move files to new directories.
+// Returns true if it renamed the file, false otherwise.
+//
+boolean TSoURDt3rd_FIL_RenameFile(const char *old_name, const char *new_name)
+{
+	char old_path[256], new_path[256];
+
+	sprintf(old_path, "%s" PATHSEP "%s", TSoURDt3rd_FOL_ReturnHomepath(), old_name);
+	sprintf(new_path, "%s" PATHSEP "%s", TSoURDt3rd_FOL_ReturnHomepath(), new_name);
+	return (!rename(old_name, new_name));
+}
+
+//
 // boolean TSoURDt3rd_FIL_RemoveFile(const char *directory, const char *filename)
 //
 // Removes a file in the path specified.
@@ -256,10 +276,7 @@ boolean TSoURDt3rd_FIL_RemoveFile(const char *directory, const char *filename)
 	char full_path[256];
 
 	sprintf(full_path, "%s" PATHSEP "%s" PATHSEP "%s", TSoURDt3rd_FOL_ReturnHomepath(), directory, filename);
-	if (!remove(full_path))
-		return true;
-
-	return false;
+	return (!remove(full_path));
 }
 
 //
@@ -278,7 +295,7 @@ void TSoURDt3rd_FIL_CreateSavefileProperly(void)
 	TSoURDt3rd_FOL_UpdateSavefileDirectory();
 
 	strcpy(tsourdt3rd_savefiles_folder, va(SAVEGAMEFOLDER PATHSEP "%s%s",
-		((autoloading || autoloaded) ? ("TSoURDt3rd"PATHSEP) : ("")), timeattackfolder));
+		((tsourdt3rd_local.autoloading_mods || tsourdt3rd_local.autoloaded_mods) ? ("TSoURDt3rd"PATHSEP) : ("")), timeattackfolder));
 
 	if (!cv_tsourdt3rd_savefiles_storesavesinfolders.value)
 	{
@@ -291,14 +308,14 @@ void TSoURDt3rd_FIL_CreateSavefileProperly(void)
 
 	if (!savemoddata)
 	{
-		strcpy(savegamename, ((autoloading || autoloaded) ? ("tsourdt3rd_"SAVEGAMENAME"%u.ssg") : (SAVEGAMENAME"%u.ssg")));
-		strcpy(liveeventbackup, va("%slive"SAVEGAMENAME".bkp", ((autoloading || autoloaded) ? ("tsourdt3rd_") : ("")))); // intentionally not ending with .ssg
+		strcpy(savegamename, ((tsourdt3rd_local.autoloading_mods || tsourdt3rd_local.autoloaded_mods) ? ("tsourdt3rd_"SAVEGAMENAME"%u.ssg") : (SAVEGAMENAME"%u.ssg")));
+		strcpy(liveeventbackup, va("%slive"SAVEGAMENAME".bkp", ((tsourdt3rd_local.autoloading_mods || tsourdt3rd_local.autoloaded_mods) ? ("tsourdt3rd_") : ("")))); // intentionally not ending with .ssg
 	}
 	else
 	{
-		strcpy(savegamename,  va("%s%s", ((autoloading || autoloaded) ? ("tsourdt3rd_") : ("")), timeattackfolder));
+		strcpy(savegamename,  va("%s%s", ((tsourdt3rd_local.autoloading_mods || tsourdt3rd_local.autoloaded_mods) ? ("tsourdt3rd_") : ("")), timeattackfolder));
 		strlcat(savegamename, "%u.ssg", sizeof(savegamename));
-		strcpy(liveeventbackup, va("%slive%s.bkp", ((autoloading || autoloaded) ? ("tsourdt3rd_") : ("")), timeattackfolder));
+		strcpy(liveeventbackup, va("%slive%s.bkp", ((tsourdt3rd_local.autoloading_mods || tsourdt3rd_local.autoloaded_mods) ? ("tsourdt3rd_") : ("")), timeattackfolder));
 	}
 
 	// NOTE: can't use sprintf since there is %u in savegamename

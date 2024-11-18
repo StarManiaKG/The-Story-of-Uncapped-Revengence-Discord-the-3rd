@@ -21,7 +21,7 @@
 //        Variables
 // ------------------------ //
 
-#define TSOURDT3RD_DEBUGGING /* Debugging */
+//#define TSOURDT3RD_DEBUGGING /* Debugging */
 
 #define AUTOLOADCONFIGFILENAME "autoload.cfg"
 
@@ -47,6 +47,8 @@ extern struct tsourdt3rd_local_s
 {
 	boolean checked_version;
 	boolean ms_address_changed;
+	boolean autoloading_mods;
+	boolean autoloaded_mods;
 } tsourdt3rd_local;
 
 typedef enum

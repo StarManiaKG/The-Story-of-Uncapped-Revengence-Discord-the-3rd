@@ -93,7 +93,8 @@
  * Last updated 2024 / 07 / 29 - TSOURDT3RD V4 (2.2.13) - added the fire flower graphic from 2.2.14
  * Last updated 2024 / 08 / 02 - TSOURDT3RD V4 (2.2.13) - renamed the legacy pause graphic back to 'M_PAUSE'
  * Last updated 2024 / 10 / 20 - TSOURDT3RD V4 (2.2.13) - the 'M_DISC' and 'M_TSOURD' graphics are now unused
+ * Last updated 2024 / 11 / 17 - TSOURDT3RD V4 (2.2.13) - added a JUKEDEF lump, added more music lumps to the MUSICDEF lump, and organized some things
 */
-#define ASSET_HASH_TSOURDT3RD_PK3 "031bf973c83ff2d999be72a986bb68d2"
+#define ASSET_HASH_TSOURDT3RD_PK3 "0533a82d32fb4700d37cad776ebc3bd5"
 
 #endif

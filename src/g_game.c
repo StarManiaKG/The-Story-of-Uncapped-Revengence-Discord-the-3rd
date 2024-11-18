@@ -781,7 +781,7 @@ void G_SetGameModified(boolean silent)
 		return;
 
 	// STAR STUFF: currently autoloading, it's fine //
-	if (autoloading)
+	if (tsourdt3rd_local.autoloading_mods)
 		return;
 	// ...PROBABLY... //
 
@@ -3377,6 +3377,7 @@ void G_AddPlayer(INT32 playernum)
 #ifdef HAVE_DISCORDSUPPORT
 	DRPC_UpdatePresence();
 #endif
+	TSoURDt3rd_InitializePlayer(playernum); // STAR STUFF: add our new player to the roster :P //
 }
 
 boolean G_EnoughPlayersFinished(void)

@@ -56,7 +56,9 @@ boolean SpawnTheDispenser = false;
 
 void TSoURDt3rd_Init(void)
 {
-	CONS_Printf("TSoURDt3rd_Init(): Initalizing TSoURDt3rd...\n");
+	memset(&tsourdt3rd_local, 0, sizeof(tsourdt3rd_local));
+
+	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD, "TSoURDt3rd_Init(): Initalizing TSoURDt3rd...\n");
 	TSoURDt3rd_FOL_CreateDirectory("TSoURDt3rd");
 
 	TSoURDt3rd_CheckTime(); // Check our computer's time!
@@ -320,11 +322,19 @@ typedef struct
 
 void TSoURDt3rd_GameEnd(INT32 *timetonext)
 {
+#if 1
+	(void)(*timetonext);
+	(void)cursave;
+	return;
+#else
 	static boolean init = false;
 	static INT32 headerScroll = BASEVIDWIDTH;
 
 	// draw a background so we don't have weird mirroring errors
 	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+
+	if (netgame)
+		return;
 
 	if (!init)
 	{
@@ -332,7 +342,7 @@ void TSoURDt3rd_GameEnd(INT32 *timetonext)
 		if (!cursave && cursaveslot)
 			I_Error("Insufficient memory to prepare final rank");
 
-		*timetonext = 10*TICRATE;
+		(*timetonext) = 10*TICRATE;
 		headerScroll = BASEVIDWIDTH;
 		init = true;
 	}
@@ -358,4 +368,5 @@ void TSoURDt3rd_GameEnd(INT32 *timetonext)
 	V_DrawCreditString((((BASEVIDWIDTH/2)-headerScroll))<<(FRACBITS-1), (BASEVIDHEIGHT-125)<<(FRACBITS-1), 0, cv_playername.string);
 
 	V_DrawCenteredString(BASEVIDWIDTH/2, 65, V_MENUCOLORMAP, va("%d", cursave[cursaveslot].lives));
+#endif
 }

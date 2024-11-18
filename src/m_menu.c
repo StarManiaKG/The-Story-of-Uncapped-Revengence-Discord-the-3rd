@@ -11910,7 +11910,7 @@ void M_ConnectMenuModChecks(INT32 choice)
 
 	// STAR STUFF //
 	// Autoloading
-	else if (autoloaded)
+	else if (tsourdt3rd_local.autoloaded_mods)
 	{
 		M_StartMessage(M_GetText("You have autoloaded game-changing add-ons.\nYou won't be able to join netgames!\n\nTo play online, restart the game\nand don't load any add-ons.\nSRB2 will automatically add\neverything you need when you join.\n\n(Press a key)\n"),M_ConnectMenu,MM_EVENTHANDLER);
 		return;
@@ -12788,20 +12788,6 @@ static void M_DrawSetupMultiPlayerMenu(void)
 		scale = FixedDiv(scale, skins[setupm_fakeskin].shieldscale);
 
 #define chary (y+64)
-
-	if (renderisnewtic)
-	{
-		LUA_HUD_ClearDrawList(luahuddrawlist_playersetup);
-		multi_override = LUA_HookCharacterHUD
-		(
-			HUD_HOOK(playersetup), luahuddrawlist_playersetup, setupm_player,
-			x << FRACBITS, chary << FRACBITS, scale,
-			setupm_fakeskin, multi_spr2, multi_frame, 1, setupm_fakecolor->color,
-			(multi_tics >> FRACBITS) + 1, multi_paused
-		);
-	}
-
-	LUA_HUD_DrawList(luahuddrawlist_playersetup);
 
 	if (multi_override == true)
 		goto colordraw;

@@ -10,7 +10,7 @@
 /// \brief TSoURDt3rd remastered coronas, global header
 
 #ifdef ALAM_LIGHTING
-#define NUMLIGHTFREESLOTS 32 // Free light slots (for SOCs)
+#define NUMLIGHTFREESLOTS 64 // Free light slots (for SOCs)
 
 typedef enum lightspritenum_s
 {
@@ -44,6 +44,8 @@ typedef enum lightspritenum_s
 	JETLIGHT_L,
 	GOOPLIGHT_L,
 	STREETLIGHT_L,
+	EMERALD_L,
+	GENERIC_MOBJLIGHT_L,
 
 	// free slots for SOCs at run-time --------------------
 	FREESLOT0_L,
@@ -76,9 +78,13 @@ typedef struct light_s
 
 	// corona routine, allows the corona to be rendered under user-determined circumstances
 	boolean (*coronaroutine)(mobj_t *mobj);
+	boolean (*corona_coloring_routine)(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *alpha, boolean dynamic);
 } light_t;
 
 extern light_t lspr[NUMLIGHTS];
 extern light_t *t_lspr[NUMSPRITES];
 
+#ifdef HWRENDER
+void HWR_Transform(float *cx, float *cy, float *cz);
+#endif
 #endif

@@ -126,7 +126,7 @@ void TSoURDt3rd_PSav_WriteExtraData(void)
 
 	if (!tsourdt3rdgamedata
 		|| (!(tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_EASTER)|| !AllowEasterEggHunt)
-		|| (netgame || autoloaded))
+		|| (netgame || tsourdt3rd_local.autoloaded_mods))
 		return;
 
 	// Write To The File //
@@ -149,7 +149,7 @@ void TSoURDt3rd_PSav_ReadExtraData(void)
 
 	if (!tsourdt3rdgamedata
 		|| (!(tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_EASTER)|| !AllowEasterEggHunt)
-		|| (netgame || autoloaded))
+		|| (netgame || tsourdt3rd_local.autoloaded_mods))
 		return;
 	
 	// Read Things Within The File //

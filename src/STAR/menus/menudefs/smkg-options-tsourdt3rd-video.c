@@ -109,6 +109,6 @@ static void M_Sys_VideoTicker(void)
 		TSoURDt3rd_OP_GameMenu[i].status = IT_DISABLED;
 #endif
 
-	TSoURDt3rd_OP_VideoMenu[op_flair_fpscolor].status = (cv_ticrate.value ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
-	TSoURDt3rd_OP_VideoMenu[op_flair_tpscolor].status = (cv_tsourdt3rd_video_showtps.value ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+	TSoURDt3rd_OP_VideoMenu[op_video_flair_fpscolor].status = (cv_ticrate.value ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+	TSoURDt3rd_OP_VideoMenu[op_video_flair_tpscolor].status = (cv_tsourdt3rd_video_showtps.value ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
 }

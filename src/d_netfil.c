@@ -52,6 +52,9 @@
 
 #include <errno.h>
 
+// TSoURDt3rd
+#include "STAR/ss_main.h" // tsourdt3rd_local //
+
 // Prototypes
 static boolean AddFileToSendQueue(INT32 node, UINT8 fileid);
 
@@ -448,7 +451,7 @@ INT32 CL_CheckFiles(void)
 	boolean downloadrequired = false;
 
 	// STAR STUFF: \return 5: you've autoloaded mods //
-	if (autoloaded)
+	if (tsourdt3rd_local.autoloaded_mods)
 		return 5;
 	// Prevents cheating, desyncing, and other dumbness in netgames :p //
 

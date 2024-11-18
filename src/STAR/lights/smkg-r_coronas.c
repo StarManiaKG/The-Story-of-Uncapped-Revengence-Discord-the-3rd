@@ -102,7 +102,7 @@ static void setup_colored_corona(corona_image_t *ccp, RGBA_t corona_color)
 		b = (corona_color.s.blue * alpha + rc.s.blue * za) >> 8;
 		colormap[c] = NearestColor( r, g, b );
 	}
-	
+
 	// Allocate a copy of the corona patch.
 	ccp->corona_color = corona_color;
 	if (ccp->colored_patch)
@@ -135,10 +135,10 @@ static void setup_colored_corona(corona_image_t *ccp, RGBA_t corona_color)
 static patch_t *get_colored_corona(int sprite_light_num)
 {
 	corona_image_t *cc = &corona_image[sprite_light_num];
-	UINT32 corona_color = t_lspr[sprite_light_num]->corona_color;
+	RGBA_t corona_color = V_GetColor(lspr[sprite_light_num].corona_color);
 
-	if (cc->corona_color.rgba != corona_color || cc->colored_patch == NULL)
-		setup_colored_corona(cc, V_GetColor(corona_color));
+	if (cc->corona_color.rgba != corona_color.rgba || cc->colored_patch == NULL)
+		setup_colored_corona(cc, corona_color);
 
 	return cc->colored_patch;
 }
@@ -151,7 +151,7 @@ void TSoURDt3rd_R_Load_Corona(void)
 	lumpnum_t lumpid = LUMPERROR;
 #endif
 
-#ifdef HWRENDER   
+#ifdef HWRENDER
 	if (rendermode != render_soft)
 		return;
 #endif
@@ -194,7 +194,7 @@ void TSoURDt3rd_R_Load_Corona(void)
 		}
 	}
 #endif
-   
+
 	setup_corona:
 	{
 #ifdef ENABLE_COLORED_PATCH
@@ -259,7 +259,7 @@ typedef enum
    FADE_FAR = 0x01,
    FADE_NEAR = 0x02
 } sprite_corona_fade_e;
-   
+
 #define NUM_FIRE_PATTERN 64
 static UINT8 fire_pattern[NUM_FIRE_PATTERN];
 static UINT8 fire_pattern_tic[NUM_FIRE_PATTERN];
@@ -292,24 +292,24 @@ light_t *Sprite_Corona_Light_lsp(INT32 sprnum)
 }
 
 //
-//  lsp : sprite light
+//  p_lspr : sprite light
 //  cz : distance to corona
 //
 //  Return: corona_alpha, corona_size
 //  Return 0 when no draw.
 //
-UINT8 Sprite_Corona_Light_fade(light_t *p_lspr, float cz, int objid)
+UINT8 Sprite_Corona_Light_fade(light_t *p_lspr, float cz, mobj_t *mobj)
 {
-	float	relsize;
-	UINT16	type, cflags;
-	UINT8	fade;
-	UINT32	index, v;
-	UINT32	coronasizevalue = cv_coronasize.value;
+	float relsize;
+	UINT16 type, cflags;
+	UINT8 fade;
+	UINT32 index, v;
 
 	// Objects which emit light.
 	type = p_lspr->impl_flags & TYPE_FIELD_SPR; // working type setting
 	cflags = p_lspr->type;
-	corona_alpha = p_lspr->corona_color;
+	if (p_lspr->corona_coloring_routine == NULL || !p_lspr->corona_coloring_routine(mobj, NULL, &corona_alpha, false))
+		corona_alpha = V_GetColor(p_lspr->corona_color).s.alpha;
 	corona_bright = 0;
 
 	// Update flagged by corona setting change, and fragglescript settings.
@@ -325,13 +325,19 @@ UINT8 Sprite_Corona_Light_fade(light_t *p_lspr, float cz, int objid)
 		// Old
 		if (cv_corona.value == 20)
 		{
-			// Revert the new tables to use only that flags that existed in Old.
+			// Revert the new tables to use
+			// only that flags that existed in Old.
 			cflags &= (CORONA_SPR|DYNLIGHT_SPR);
 			if (type != SPLT_rocket)
-			   type = ((cflags & DYNLIGHT_SPR) ? SPLT_lamp : SPLT_unk);
+			{
+			   if (cflags & DYNLIGHT_SPR)
+				  type = SPLT_lamp;  // closest to old SPLGT_light
+			   else
+				  type = SPLT_unk;  // corona only
+			}
 		}
 		else
-	   
+
 		// We have no way of determining the intended version compatibility.  This limits
 		// the characteristics that we can check.
 		// Some older wads just used the existing corona without setting the type.
@@ -345,62 +351,60 @@ UINT8 Sprite_Corona_Light_fade(light_t *p_lspr, float cz, int objid)
 #if 0
 			// In the original code, the alpha from the corona color was ignored,
 			// even though it was set in the tables.  Instead the draw code used 0xff.
-			if (!corona_alpha)
-				corona_alpha = p_lspr->corona_color.s.alpha = 0xff; // previous default
+			if (corona_alpha == 0)
+			{
+				// previous default
+				if (p_lspr->corona_coloring_routine == NULL || !p_lspr->corona_coloring_routine(mobj, NULL, &corona_alpha, false))
+					corona_alpha = V_GetColor(p_lspr->corona_color).s.alpha = 0xff;
+				else
+					corona_alpha = 0xff;
+			}
 #endif
- 
+
 			// Refine some of the old wad settings, to use new capabilities correctly.
-			if (corona_alpha > 0xDF) // Check for Phobiata and newmaps problems.
+			// Check for Phobiata and newmaps problems.
+			if (corona_alpha > 0xDF)
 			{
 				// Default radius is 20 to 120.
 				// Phobiata flies have a radius of 7
 				if (p_lspr->corona_radius < 10.0f)
-					type = SPLT_light; // newmaps and phobiata firefly
+				{
+					// newmaps and phobiata firefly
+					type = SPLT_light;
+				}
 				else if (p_lspr->corona_radius < 80.0f)
-					type = SPLT_lamp; // torches
+				{
+					// torches
+					type = SPLT_lamp;
+				}
 			}
 		}
-
 		// update the working type
 		p_lspr->impl_flags = (p_lspr->impl_flags & ~TYPE_FIELD_SPR) | type;
 	}
 
-	if ((type == SPLT_unk) && !(cflags & CORONA_SPR))
-		goto no_corona;  // no corona set
-
-	if (corona_alpha < 3)
-		goto no_corona;  // too faint to see, effectively off
-
 	switch (cv_corona.value)
 	{
-		// Old
-		case 20:
+		case 20: // Old
 			corona_alpha = 0xff; // alpha settings were ignored
 			break;
-
-		// Bright
-		case 16:
+		case 16: // Bright
 			corona_bright = 20; // brighten the default cases
 			corona_alpha = (((UINT8)corona_alpha * 3) + 255) >> 2; // +25%
 			break;
-
-		// Dim
-		case 14:
+		case 14: // Dim
 			corona_alpha = ((UINT8)corona_alpha * 3) >> 2; // -25%
 			break;
-
-		// Special, Most
-		default:
+		default: // Special, Most
 		{
 			if (cv_corona.value <= 2)
 			{
-				/*register*/ INT32 spec = spec_dist[type>>4];
+				INT32 spec = spec_dist[type>>4];
 
 				if (p_lspr->impl_flags & SLI_corona_set) // set by wad
 					spec <<= 2;
 
-				// Most
-				if (cv_corona.value == 2)
+				if (cv_corona.value == 2) // Most
 				{
 					// Must do this before any flicker modifications, or else they blink.
 					// ignore the dim corona
@@ -425,36 +429,32 @@ UINT8 Sprite_Corona_Light_fade(light_t *p_lspr, float cz, int objid)
 			break;
 		}
 	}
-   
+
 	relsize = 1.0f;
 	fade = FADE_FAR | FADE_NEAR;
-   
+
 	// Each of these types has a corona.
 	switch (type)
 	{
-		// corona only
-		case SPLT_unk: // object corona
+		case SPLT_unk: // corona only
+			// object corona
 			relsize = ((cz+60.0f)/100.0f);
 			break;
-
-		// flicker
-		case SPLT_rocket: // svary the alpha
+		case SPLT_rocket: // flicker
+			// svary the alpha
 			relsize = ((cz+60.0f)/100.0f);
-			corona_alpha = 7 + (P_RandomByte()>>1);
+			corona_alpha = (UINT8)((M_RandomByte()>>1)&0xff);
 			corona_bright = 128;
 			break;
-
-		// lamp with a corona
-		case SPLT_lamp: // lamp corona
+		case SPLT_lamp:  // lamp with a corona
+			// lamp corona
 			relsize = ((cz+120.0f)/950.0f);
 			corona_bright = 40;
 			break;
-
-		// slow flicker, torch
-		case SPLT_fire: // torches
+		case SPLT_fire: // slow flicker, torch
+			// torches
 			relsize = ((cz+120.0f)/950.0f);
-			index = objid & (NUM_FIRE_PATTERN - 1); // obj dependent
-
+			index = (mobj->type & (NUM_FIRE_PATTERN - 1)); // obj dependent
 			if (fire_pattern_tic[index] != gametic)
 			{
 				fire_pattern_tic[index] = gametic;
@@ -462,7 +462,6 @@ UINT8 Sprite_Corona_Light_fade(light_t *p_lspr, float cz, int objid)
 				{
 					INT32 r = P_RandomByte();
 					r = ((r - 128) >> 3) + fire_pattern[index];
-
 					if (r > 50)
 						r = 40;
 					else if (r < -50)
@@ -470,8 +469,7 @@ UINT8 Sprite_Corona_Light_fade(light_t *p_lspr, float cz, int objid)
 					fire_pattern[index] = r;
 				}
 			}
-
-			v = (UINT32)corona_alpha + (UINT32)fire_pattern[index];
+			v = (UINT32)(corona_alpha + fire_pattern[index]);
 			if (v > 255)
 				v = 255;
 			if (v < 4)
@@ -479,35 +477,28 @@ UINT8 Sprite_Corona_Light_fade(light_t *p_lspr, float cz, int objid)
 			corona_alpha = v;
 			corona_bright = 45;
 			break;
-
-		// no corona fade
-		case SPLT_light: // newmaps and phobiata firefly
+		case SPLT_light: // no corona fade
+			// newmaps and phobiata firefly
 			relsize = ((cz+120.0f)/950.0f); // dimming with distance
-
 #if 0
-			// Fade corona partial to 0 when get too close
-			if ((cz < Z1) & (!(lsp->type & SPLGT_source)))
-				corona_alpha = (int)(((float)corona_alpha * corona_alpha + (255 - corona_alpha) * (corona_alpha * cz / Z1)) / 255.0f);
+			if ((cz < Z1) & ((p_lspr->type & SPLGT_source) == 0))
+			{
+				// Fade corona partial to 0 when get too close
+				corona_alpha = (UINT8)((atof(corona_alpha) * corona_alpha + (255 - corona_alpha) * (corona_alpha * cz / Z1)) / 255.0f);
+			}
 #endif
-
 			// Version 1.42 had corona_alpha = 0xff
 			corona_bright = 132;
 			fade = FADE_FAR;
 			break;
-
-		// firefly blink, un-synch
-		case SPLT_firefly:
+		case SPLT_firefly: // firefly blink, un-synch
 			// lower 6 bits gives a repeat rate of 1.78 seconds
-			if (((gametic + objid) & 0x003F) < 0x20) // obj dependent phase
+			if (((gametic + mobj->type) & 0x003F) < 0x20) // obj dependent phase
 				goto no_corona; // blink off
-
 			fade = FADE_FAR;
 			break;
-
-		// random LED, un-synch
-		case SPLT_random:
-			index = objid & (NUM_RAND_PATTERN-1); // obj dependent counter
-
+		case SPLT_random: // random LED, un-synch
+			index = (mobj->type & (NUM_RAND_PATTERN-1)); // obj dependent counter
 			if (rand_pattern_tic[index] != gametic)
 			{
 				rand_pattern_tic[index] = gametic;
@@ -518,26 +509,21 @@ UINT8 Sprite_Corona_Light_fade(light_t *p_lspr, float cz, int objid)
 				}
 				rand_pattern_cnt[index]--;
 			}
-			if (!((rand_pattern_state[index] & 1)))
+			if ((rand_pattern_state[index] & 1) == 0)
 				goto no_corona; // off
-
 			corona_bright = 128;
 			fade = 0;
 			break;
-
-		// slow pulsation, un-synch
-		case SPLT_pulse:
-			index = (gametic + objid) & 0xFF; // obj dependent phase
+		case SPLT_pulse: // slow pulsation, un-synch
+			index = ((gametic + mobj->type) & 0xFF); // obj dependent phase
 			index -= 128; // -128 to +127
-
 			// Make a positive parabola pulse, min does not quite reach 0.
-			/*register*/ float f = 1.0f - ((index*index) * 0.000055f);
+			float f = 1.0f - ((index*index) * 0.000055f);
 			relsize = f;
 			corona_alpha = corona_alpha * f;
 			corona_bright = 80;
 			fade = 0;
 			break;
-
 		default:
 			//CONS_Debug(DBG_RENDER, "Draw_Sprite_Corona_Light: unknown light type %x\n", type);
 			CONS_Alert(CONS_WARNING, "Draw_Sprite_Corona_Light: unknown light type %x\n", type);
@@ -545,19 +531,25 @@ UINT8 Sprite_Corona_Light_fade(light_t *p_lspr, float cz, int objid)
 	}
 
 	if (cz > Z1 && (fade & FADE_FAR))
-		corona_alpha = (int)(corona_alpha * (Z2 - cz) / (Z2 - Z1)); // Proportional fade from Z1 to Z2
+	{
+		// Proportional fade from Z1 to Z2
+		corona_alpha = (int)(corona_alpha * (Z2 - cz) / (Z2 - Z1));
+	}
 	else if (fade & FADE_NEAR)
-		corona_alpha = (int)(corona_alpha * cz / Z1); // Fade to 0 when get too close
+	{
+		// Fade to 0 when get too close
+		corona_alpha = (int)(corona_alpha * cz / Z1);
+	}
 
-	if (relsize > 1.0) 
+	if (relsize > 1.0)
 		relsize = 1.0;
 
 #ifdef HWRENDER
 	if (rendermode == render_opengl)
-		coronasizevalue = cv_glcoronasize.value;
-#endif	
-	corona_size = p_lspr->corona_radius * relsize * FIXED_TO_FLOAT(coronasizevalue);
-
+		corona_size = p_lspr->corona_radius * relsize * FIXED_TO_FLOAT(cv_glcoronasize.value);
+	else
+#endif
+		corona_size = p_lspr->corona_radius * relsize * FIXED_TO_FLOAT(cv_coronasize.value);
 	return corona_alpha;
 
 	no_corona:
@@ -580,7 +572,7 @@ static void Sprite_Corona_Light_setup(vissprite_t *vis)
 
 	if (!(p_lspr->type & (CORONA_SPR|TYPE_FIELD_SPR)))
 		goto no_corona;
-   
+
 	tz = FixedDiv(projectiony, vis->scale);
 	cz = FIXED_TO_FLOAT(tz);
 
@@ -589,7 +581,7 @@ static void Sprite_Corona_Light_setup(vissprite_t *vis)
 		goto no_corona;
 
 	// mobj dependent id
-	if (!(Sprite_Corona_Light_fade(p_lspr, cz, vis->mobj->type)))
+	if (!(Sprite_Corona_Light_fade(p_lspr, cz, vis->mobj)))
 		goto no_corona;
 
 	// brighten the corona for software draw
@@ -620,7 +612,7 @@ static void Sprite_Corona_Light_setup(vissprite_t *vis)
 	corona_x2 = ((midx + FixedMul(corona_sprlump.width - corona_sprlump.leftoffset, corona_xscale)) >>FRACBITS) - 1;
 
 	// off the right side
-	if (corona_x1 < 0) 
+	if (corona_x1 < 0)
 		corona_x1 = 0;
 	if (corona_x1 > viewwidth)
 		goto no_corona;
@@ -645,7 +637,7 @@ static void Draw_Sprite_Corona_Light(vissprite_t * vis)
 	int texturecolumn;
 
 	// Sprite has a corona, and coronas are enabled.
-	long dr_alpha = (((UINT8)corona_alpha * 7) + (2 * (16-7))) >> 4; // compensate for different HWR alpha 
+	long dr_alpha = (((UINT8)corona_alpha * 7) + (2 * (16-7))) >> 4; // compensate for different HWR alpha
 
 #ifdef ENABLE_DRAW_ALPHA
 	colfunc = alpha_colfunc;  // R_DrawAlphaColumn
@@ -659,7 +651,7 @@ static void Draw_Sprite_Corona_Light(vissprite_t * vis)
 #endif
 
 	dr_alpha_mode = cv_corona_draw_mode.value;
-	// alpha to dim the background through the corona   
+	// alpha to dim the background through the corona
 	dr_alpha_background = (cv_corona_draw_mode.value == 1? (255 - dr_alpha) : 240);
 #else
 	colfunc = colfuncs[COLDRAWFUNC_TRANS]; // R_DrawTranslucentColumn; translate certain pixels to white
@@ -671,9 +663,9 @@ static void Draw_Sprite_Corona_Light(vissprite_t * vis)
 	transtables = 0;  // translucent dr_alpha
 	dc_transmap = R_GetTranslucencyTable(dr_alpha >> 4); // for draw8
 #endif
-   
+
 	fixed_t light_yoffset = (fixed_t)(t_lspr[vis->mobj->sprite]->light_yoffset * FRACUNIT); // float to fixed
-   
+
 #if 1
 	// [WDJ] This is the one that puts the center closest to where OpenGL puts it.
 	fixed_t g_midy = (vis->gz + vis->gzt)>>1; // mid of sprite
@@ -694,7 +686,7 @@ static void Draw_Sprite_Corona_Light(vissprite_t * vis)
 	dc_iscale = FixedDiv(FRACUNIT, dc_yh); // y texture step
 	dc_texheight = 0; // no wrap repeat
 //	dc_texheight = corona_patch->height;
-   
+
 // not flipped so
 //  tex_x0 = 0
 //  tex_x_iscale = iscale
@@ -705,7 +697,7 @@ static void Draw_Sprite_Corona_Light(vissprite_t * vis)
 
 	if ((corona_x1 - corona_x0) > 0) // it was clipped
 		texcol_frac = tex_x_iscale * (corona_x1 - corona_x0);
- 
+
 	for (dc_x = corona_x1; dc_x <= corona_x2; dc_x++, texcol_frac += tex_x_iscale)
 	{
 		texturecolumn = texcol_frac>>FRACBITS;

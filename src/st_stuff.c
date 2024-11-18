@@ -49,7 +49,7 @@
 #include "r_fps.h"
 
 // TSoURDt3rd
-#include "STAR/star_vars.h" // TSoURDt3rd::timeover //
+#include "STAR/star_vars.h" // tsourdt3rd[consoleplayer] & TSoURDt3rd_Jukebox_ST_drawJukebox() //
 #include "STAR/smkg-st_hud.h"
 
 UINT16 objectsdrawn = 0;
@@ -143,7 +143,9 @@ static patch_t *fireflower;
 hudinfo_t hudinfo[NUMHUDITEMS] =
 {
 	{  16, 176, V_SNAPTOLEFT|V_SNAPTOBOTTOM}, // HUD_LIVES
+#if 0
 	{  16, 152, V_SNAPTOLEFT|V_SNAPTOBOTTOM}, // HUD_INPUT
+#endif
 
 	{  16,  42, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_RINGS
 	{  96,  42, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_RINGSNUM
@@ -169,6 +171,11 @@ hudinfo_t hudinfo[NUMHUDITEMS] =
 	{ 152, 168, 0}, // HUD_HUNTPICS
 
 	{ 288, 176, V_SNAPTORIGHT|V_SNAPTOBOTTOM}, // HUD_POWERUPS
+#if 1
+	// STAR NOTE/MAJOR STAR NOTE: HERE UNTIL 2.2.14 //
+	{  16, 152, V_SNAPTOLEFT|V_SNAPTOBOTTOM}, // HUD_INPUT
+	// KJIOUFHUHBDUJJKDJIDOJJNDIJ //
+#endif
 };
 
 static huddrawlist_h luahuddrawlist_game[2];

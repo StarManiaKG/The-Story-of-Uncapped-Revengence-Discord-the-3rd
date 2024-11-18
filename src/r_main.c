@@ -134,8 +134,6 @@ static CV_PossibleValue_t translucenthud_cons_t[] = {{0, "MIN"}, {10, "MAX"}, {0
 static CV_PossibleValue_t maxportals_cons_t[] = {{0, "MIN"}, {12, "MAX"}, {0, NULL}}; // lmao rendering 32 portals, you're a card
 static CV_PossibleValue_t homremoval_cons_t[] = {{0, "No"}, {1, "Yes"}, {2, "Flash"}, {0, NULL}};
 
-static void R_SetFov(fixed_t playerfov);
-
 static void Fov_OnChange(void);
 static void ChaseCam_OnChange(void);
 static void ChaseCam2_OnChange(void);
@@ -250,7 +248,7 @@ static void FlipCam2_OnChange(void)
 //
 // killough 5/2/98: reformatted
 //
-INT32 R_PointOnSide(fixed_t x, fixed_t y, node_t *restrict node)
+INT32 R_PointOnSide(fixed_t x, fixed_t y, node_t *node)
 {
 	if (!node->dx)
 		return x <= node->x ? node->dy > 0 : node->dy < 0;
@@ -262,10 +260,9 @@ INT32 R_PointOnSide(fixed_t x, fixed_t y, node_t *restrict node)
 	fixed_t dy = (y >> 1) - (node->y >> 1);
 
 	// Try to quickly decide by looking at sign bits.
-	// also use a mask to avoid branch prediction
-	INT32 mask = (node->dy ^ node->dx ^ dx ^ dy) >> 31;
-	return (mask & ((node->dy ^ dx) < 0)) |  // (left is negative)
-		(~mask & (FixedMul(dy, node->dx>>FRACBITS) >= FixedMul(node->dy>>FRACBITS, dx)));
+	if ((node->dy ^ node->dx ^ dx ^ dy) < 0)
+		return (node->dy ^ dx) < 0;  // (left is negative)
+	return FixedMul(dy, node->dx>>FRACBITS) >= FixedMul(node->dy>>FRACBITS, dx);
 }
 
 // killough 5/2/98: reformatted
@@ -356,7 +353,7 @@ angle_t R_PointToAngle2(fixed_t pviewx, fixed_t pviewy, fixed_t x, fixed_t y)
 fixed_t R_PointToDist2(fixed_t px2, fixed_t py2, fixed_t px1, fixed_t py1)
 {
 	angle_t angle;
-	ufixed_t dx, dy, dist;
+	fixed_t dx, dy, dist;
 
 	dx = abs(px1 - px2);
 	dy = abs(py1 - py2);
@@ -386,26 +383,27 @@ fixed_t R_PointToDist(fixed_t x, fixed_t y)
 	return R_PointToDist2(viewx, viewy, x, y);
 }
 
-line_t *R_GetFFloorLine(const line_t *line, const ffloor_t *pfloor, const sector_t *sector)
+angle_t R_PointToAngleEx(INT32 x2, INT32 y2, INT32 x1, INT32 y1)
 {
-	if (pfloor->master->flags & ML_TFERLINE)
+	INT64 dx = x1-x2;
+	INT64 dy = y1-y2;
+	if (dx < INT32_MIN || dx > INT32_MAX || dy < INT32_MIN || dy > INT32_MAX)
 	{
-		size_t linenum = min((size_t)(line - sector->lines[0]), pfloor->master->frontsector->linecount);
-		return pfloor->master->frontsector->lines[0] + linenum;
+		x1 = (int)(dx / 2 + x2);
+		y1 = (int)(dy / 2 + y2);
 	}
-	else
-		return pfloor->master;
-}
-
-side_t *R_GetFFloorSide(const line_t *line, const ffloor_t *pfloor, const sector_t *sector)
-{
-	if (pfloor->master->flags & ML_TFERLINE)
-	{
-		line_t *newline = R_GetFFloorLine(line, pfloor, sector);
-		return &sides[newline->sidenum[0]];
-	}
-	else
-		return &sides[pfloor->master->sidenum[0]];
+	return (y1 -= y2, (x1 -= x2) || y1) ?
+	x1 >= 0 ?
+	y1 >= 0 ?
+		(x1 > y1) ? tantoangle[SlopeDivEx(y1,x1)] :                            // octant 0
+		ANGLE_90-tantoangle[SlopeDivEx(x1,y1)] :                               // octant 1
+		x1 > (y1 = -y1) ? 0-tantoangle[SlopeDivEx(y1,x1)] :                    // octant 8
+		ANGLE_270+tantoangle[SlopeDivEx(x1,y1)] :                              // octant 7
+		y1 >= 0 ? (x1 = -x1) > y1 ? ANGLE_180-tantoangle[SlopeDivEx(y1,x1)] :  // octant 3
+		ANGLE_90 + tantoangle[SlopeDivEx(x1,y1)] :                             // octant 2
+		(x1 = -x1) > (y1 = -y1) ? ANGLE_180+tantoangle[SlopeDivEx(y1,x1)] :    // octant 4
+		ANGLE_270-tantoangle[SlopeDivEx(x1,y1)] :                              // octant 5
+		0;
 }
 
 //
@@ -870,10 +868,12 @@ void R_SetViewSize(void)
 //
 void R_ExecuteSetViewSize(void)
 {
+	fixed_t dy;
 	INT32 i;
 	INT32 j;
 	INT32 level;
 	INT32 startmapl;
+	angle_t fov;
 
 	setsizeneeded = false;
 
@@ -896,13 +896,46 @@ void R_ExecuteSetViewSize(void)
 	centerxfrac = centerx<<FRACBITS;
 	centeryfrac = centery<<FRACBITS;
 
-	R_SetFov(cv_fov.value);
+	fov = FixedAngle(cv_fov.value/2) + ANGLE_90;
+	fovtan = FixedMul(FINETANGENT(fov >> ANGLETOFINESHIFT), viewmorph.zoomneeded);
+	if (splitscreen == 1) // Splitscreen FOV should be adjusted to maintain expected vertical view
+		fovtan = 17*fovtan/10;
+
+	projection = projectiony = FixedDiv(centerxfrac, fovtan);
 
 	R_InitViewBuffer(scaledviewwidth, viewheight);
+
+	R_InitTextureMapping();
 
 	// thing clipping
 	for (i = 0; i < viewwidth; i++)
 		screenheightarray[i] = (INT16)viewheight;
+
+	// setup sky scaling
+	R_SetSkyScale();
+
+	// planes
+	if (rendermode == render_soft)
+	{
+		// this is only used for planes rendering in software mode
+		j = viewheight*16;
+		for (i = 0; i < j; i++)
+		{
+			dy = (i - viewheight*8)<<FRACBITS;
+			dy = FixedMul(abs(dy), fovtan);
+			yslopetab[i] = FixedDiv(centerx*FRACUNIT, dy);
+		}
+
+		if (ds_su)
+			Z_Free(ds_su);
+		if (ds_sv)
+			Z_Free(ds_sv);
+		if (ds_sz)
+			Z_Free(ds_sz);
+
+		ds_su = ds_sv = ds_sz = NULL;
+		ds_sup = ds_svp = ds_szp = NULL;
+	}
 
 	memset(scalelight, 0xFF, sizeof(scalelight));
 
@@ -931,36 +964,6 @@ void R_ExecuteSetViewSize(void)
 #endif
 
 	am_recalc = true;
-}
-
-fixed_t R_GetPlayerFov(player_t *player)
-{
-	fixed_t fov = cv_fov.value + player->fovadd;
-	return max(MINFOV*FRACUNIT, min(fov, MAXFOV*FRACUNIT));
-}
-
-static void R_SetFov(fixed_t playerfov)
-{
-	angle_t fov = FixedAngle(playerfov/2) + ANGLE_90;
-	fovtan = FixedMul(FINETANGENT(fov >> ANGLETOFINESHIFT), viewmorph.zoomneeded);
-	if (splitscreen == 1) // Splitscreen FOV should be adjusted to maintain expected vertical view
-		fovtan = 17*fovtan/10;
-
-	// this is only used for planes rendering in software mode
-	INT32 j = viewheight*16;
-	for (INT32 i = 0; i < j; i++)
-	{
-		fixed_t dy = (i - viewheight*8)<<FRACBITS;
-		dy = FixedMul(abs(dy), fovtan);
-		yslopetab[i] = FixedDiv(centerx*FRACUNIT, dy);
-	}
-
-	projection = projectiony = FixedDiv(centerxfrac, fovtan);
-
-	R_InitTextureMapping();
-
-	// setup sky scaling
-	R_SetSkyScale();
 }
 
 //
@@ -1100,7 +1103,7 @@ void R_SetupFrame(player_t *player)
 	camera_t *thiscam;
 	boolean chasecam = R_ViewpointHasChasecam(player);
 	boolean ispaused = paused || P_AutoPause();
-	
+
 	if (splitscreen && player == &players[secondarydisplayplayer] && player != &players[consoleplayer])
 		thiscam = &camera2;
 	else
@@ -1476,8 +1479,6 @@ static void Mask_Post (maskcount_t* m)
 // I mean, there is a win16lock() or something that lasts all the rendering,
 // so maybe we should release screen lock before each netupdate below..?
 
-static fixed_t viewfov[2];
-
 void R_RenderPlayerView(player_t *player)
 {
 	INT32			nummasks	= 1;
@@ -1489,19 +1490,6 @@ void R_RenderPlayerView(player_t *player)
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31); // No HOM effect!
 		else //'development' HOM removal -- makes it blindingly obvious if HOM is spotted.
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 32+(timeinmap&15));
-	}
-
-	fixed_t fov = R_GetPlayerFov(player);
-
-	if (player == &players[displayplayer] && viewfov[0] != fov)
-	{
-		viewfov[0] = fov;
-		R_SetFov(fov);
-	}
-	else if (player == &players[secondarydisplayplayer] && viewfov[1] != fov)
-	{
-		viewfov[1] = fov;
-		R_SetFov(fov);
 	}
 
 	R_SetupFrame(player);
@@ -1680,11 +1668,4 @@ void R_RegisterEngineStuff(void)
 
 	// Frame interpolation/uncapped
 	CV_RegisterVar(&cv_fpscap);
-
-#ifdef ALAM_LIGHTING
-	// Coronas
-    CV_RegisterVar(&cv_corona);
-    CV_RegisterVar(&cv_coronasize);
-    CV_RegisterVar(&cv_corona_draw_mode);
-#endif
 }

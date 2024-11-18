@@ -10,7 +10,6 @@
 /// \brief TSoURDt3rd's event menu options
 
 #include "../smkg-m_sys.h"
-#include "../../../d_main.h" // autoloaded //
 
 // ------------------------ //
 //        Variables
@@ -83,7 +82,7 @@ static void M_Sys_EventTicker(void)
 
 	TSoURDt3rd_M_OptionsTick();
 
-	if (netgame || ((modifiedgame || usedCheats) && savemoddata) || autoloaded)
+	if (netgame || ((modifiedgame || usedCheats) && savemoddata) || tsourdt3rd_local.autoloaded_mods)
 	{
 		if (currenteggs != TOTALEGGS)
 		{

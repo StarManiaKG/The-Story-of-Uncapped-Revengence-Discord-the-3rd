@@ -851,7 +851,15 @@ void readlight(MYFILE *f, INT32 num)
 				{
 					case 1: lspr[num].coronaroutine = LCR_SuperSonicLight; break;
 					case 0: lspr[num].coronaroutine = NULL; break;
-
+					default: deh_warning("Light %d: unknown routine '%d'", num, value); break;
+				}
+			}
+			else if (fastcmp(word, "CORONACOLORINGROUTINE"))
+			{
+				switch (value)
+				{
+					case 1: lspr[num].corona_coloring_routine = LCR_ObjectColorToCoronaLight; break;
+					case 0: lspr[num].corona_coloring_routine = NULL; break;
 					default: deh_warning("Light %d: unknown routine '%d'", num, value); break;
 				}
 			}

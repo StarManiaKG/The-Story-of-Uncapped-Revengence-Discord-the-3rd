@@ -44,6 +44,7 @@ boolean TSoURDt3rd_FOL_CreateDirectory(const char *cpath);
 void TSoURDt3rd_FOL_UpdateSavefileDirectory(void);
 
 FILE *TSoURDt3rd_FIL_AccessFile(const char *directory, const char *filename, const char *mode);
+boolean TSoURDt3rd_FIL_RenameFile(const char *old_name, const char *new_name);
 boolean TSoURDt3rd_FIL_RemoveFile(const char *directory, const char *filename);
 void TSoURDt3rd_FIL_CreateSavefileProperly(void);
 

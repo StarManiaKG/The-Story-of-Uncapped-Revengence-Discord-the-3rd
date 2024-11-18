@@ -14,7 +14,6 @@
 #include "smkg-jukebox.h"
 #include "menus/smkg-m_sys.h"
 
-#include "../d_main.h" // autoloaded //
 #include "../g_game.h"
 #include "../i_video.h"
 #include "../v_video.h"
@@ -51,7 +50,7 @@ boolean TSoURDt3rd_Jukebox_Unlocked(void)
 {
 	for (INT32 i = 0; i < MAXUNLOCKABLES; i++)
 	{
-		if ((unlockables[i].type == SECRET_SOUNDTEST) || (modifiedgame && !savemoddata) || autoloaded)
+		if ((unlockables[i].type == SECRET_SOUNDTEST) || (modifiedgame && !savemoddata) || tsourdt3rd_local.autoloaded_mods)
 		{
 			tsourdt3rd_global_jukebox->unlocked = true;
 			break;

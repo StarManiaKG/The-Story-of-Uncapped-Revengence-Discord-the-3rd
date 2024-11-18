@@ -6566,8 +6566,14 @@ static boolean P_ShieldLook(mobj_t *thing, shieldtype_t shield)
 {
 	if (!thing->target || thing->target->health <= 0 || !thing->target->player
 		|| (thing->target->player->powers[pw_shield] & SH_NOSTACK) == SH_NONE || thing->target->player->powers[pw_super]
+#if 0
+		|| thing->target->player->powers[pw_invulnerability] > 1)
+#else
+		// STAR STUFF: FUN STUFF! //
 		|| ((thing->target->player->powers[pw_invulnerability] > 1)
 			&& (!cv_tsourdt3rd_players_alwaysoverlayinvulnsparks.value)))
+		// OK //
+#endif
 	{
 		P_RemoveMobj(thing);
 		return false;
@@ -6655,8 +6661,14 @@ static boolean P_AddShield(mobj_t *thing)
 
 	if (!thing->target || thing->target->health <= 0 || !thing->target->player
 		|| (thing->target->player->powers[pw_shield] & SH_NOSTACK) == SH_NONE || thing->target->player->powers[pw_super]
+#if 0
+		|| thing->target->player->powers[pw_invulnerability] > 1)
+#else
+		// STAR STUFF: FUN STUFF! //
 		|| ((thing->target->player->powers[pw_invulnerability] > 1)
 			&& (!cv_tsourdt3rd_players_alwaysoverlayinvulnsparks.value)))
+		// OK //
+#endif
 	{
 		P_RemoveMobj(thing);
 		return false;

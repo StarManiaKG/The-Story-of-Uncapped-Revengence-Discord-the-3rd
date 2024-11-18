@@ -6,13 +6,11 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  smkg-lu_main.h
-/// \brief TSoURDt3rd's extended BLua library
+/// \file  smkg-d_main.h
+/// \brief TSoURDt3rd's main program data, globalized
 
-#ifndef __SMKG_LU_MAIN__
-#define __SMKG_LU_MAIN__
-
-#include "../../lua_script.h"
+#ifndef __SMKG_D_MAIN__
+#define __SMKG_D_MAIN__
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,13 +20,10 @@ extern "C" {
 //        Functions
 // ------------------------ //
 
-int TSoURDt3rd_LUA_BaseLib(lua_State *L);
-
-INT32 TSoURDt3rd_LUA_PushGlobalVariables(lua_State *L, const char *word);
-boolean TSoURDt3rd_LUA_SetGlobalVariables(lua_State *L, const char *word);
+void TSoURDt3rd_D_AutoLoadAddons(void);
 
 #ifdef __cplusplus
 } // extern "C"
 #endif
 
-#endif // __SMKG_LU_MAIN__
+#endif // __SMKG_D_MAIN__

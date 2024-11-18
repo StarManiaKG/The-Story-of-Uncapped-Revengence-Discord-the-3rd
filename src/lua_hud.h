@@ -19,13 +19,17 @@ enum hud {
 	hud_stagetitle = 0,
 	hud_textspectator,
 	hud_crosshair,
+#if 0
 	hud_powerups,
+#endif
 	// Singleplayer / Co-op
 	hud_score,
 	hud_time,
 	hud_rings,
 	hud_lives,
+#if 0
 	hud_input,
+#endif
 	// Match / CTF / Tag / Ringslinger
 	hud_weaponrings,
 	hud_powerstones,
@@ -47,6 +51,12 @@ enum hud {
 	hud_intermissiontitletext,
 	hud_intermissionmessages,
 	hud_intermissionemeralds,
+#if 1
+	// STAR NOTE/MAJOR STAR NOTE: HERE UNTIL 2.2.14 //
+	hud_powerups,
+	hud_input,
+	// WHAT'S THE TEXTURE LIKE, KNUCKLES? //
+#endif
 	hud_MAX
 };
 
