@@ -23,6 +23,7 @@
 #include "m_menu.h"
 #include "z_zone.h"
 
+// TSoURDt3rd
 #ifdef HAVE_DISCORDSUPPORT
 #include "discord/discord.h"
 #endif
