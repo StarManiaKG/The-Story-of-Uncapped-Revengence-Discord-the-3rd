@@ -84,7 +84,7 @@ static void Impl_TSoURDt3rd_HandleWindowEvent(SDL_WindowEvent evt)
 			break;
 		case SDL_WINDOWEVENT_LEAVE:
 			mousefocus = SDL_FALSE;
-			window_x = window_y = -1;
+			SDL_GetWindowPosition(window, &window_x, &window_y);
 			break;
 		case SDL_WINDOWEVENT_FOCUS_GAINED:
 			kbfocus = SDL_TRUE;
@@ -93,7 +93,7 @@ static void Impl_TSoURDt3rd_HandleWindowEvent(SDL_WindowEvent evt)
 		case SDL_WINDOWEVENT_FOCUS_LOST:
 			kbfocus = SDL_FALSE;
 			mousefocus = SDL_FALSE;
-			window_x = window_y = -1;
+			SDL_GetWindowPosition(window, &window_x, &window_y);
 			break;
 		case SDL_WINDOWEVENT_MOVED:
 		case SDL_WINDOWEVENT_MAXIMIZED:

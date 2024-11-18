@@ -91,20 +91,21 @@ The build and its executable files can be found in the provided ZIP file, with f
     - (Holepunching Ported from SRB2 Kart by Me)
     - (Original Leavebug Fix Coded by flarn2006)
 ***
-  - **Custom Build Options, directed towards Saves, Servers, and Extra Features** ***(cont.)***
+  - **General Feature Overview:**
 	- _Legacy Features, such as:_
 		- Startup Screens
         - Commands
         - Graphics
         - Holiday Events
+        - Coronas and Dynamic Lighting
     - _Game and Engine Modifying Features, such as:_
-        - Realistic Shadows
-        - Loading Screens
+        - Realistic shadows
+        - Loading screens
     - _Audio Features, such as:_
-        - Customizable Jingle Music
-        - Default Map Music, for Maps With No Music
+        - Customizable level and jingle music
+        - Default map music, for maps with no music
 	- _Savefile Features, such as:_
-        - Perfect Saves
+        - Perfect Saves (Savefile coloring)
         - Continues
         - The Ability to Store Savefiles in Folders
     - _Server Features, such as:_
@@ -119,7 +120,7 @@ The build and its executable files can be found in the provided ZIP file, with f
 		- Loading Folders From the Addons Menu
 
 <p align="center">
-	<img src="https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/tsourdt3rd.png?raw=true" />
+	<img src="https://github.com/StarManiaKG/The-Story-Of-Uncapped-Revengence-Discord-the-3rd/blob/main/assets/images/tsourdt3rd.gif?raw=true" />
 </p>
 
 ***

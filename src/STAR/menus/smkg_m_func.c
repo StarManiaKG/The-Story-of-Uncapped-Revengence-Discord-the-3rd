@@ -456,37 +456,38 @@ void TSoURDt3rd_M_SetupNextMenu(tsourdt3rd_menu_t *tsourdt3rd_menudef, menu_t *m
 
 	tsourdt3rd_currentMenu = tsourdt3rd_menudef;
 
-	if (menudef != NULL)
+	if (menudef == NULL)
 	{
-		tsourdt3rd_itemOn = menudef->lastOn;
-		(*vanilla_itemOn) = tsourdt3rd_itemOn;
+		M_ClearMenus(true);
+		return;
+	}
 
-		if (tsourdt3rd_itemOn >= menudef->numitems)
-		{
-			// in case of...
-			tsourdt3rd_itemOn = menudef->numitems - 1;
-		}
+	tsourdt3rd_itemOn = menudef->lastOn;
+	(*vanilla_itemOn) = tsourdt3rd_itemOn;
 
-		if (((menudef->menuitems[tsourdt3rd_itemOn].status & IT_TYPE) & IT_SPACE))
+	if (tsourdt3rd_itemOn >= menudef->numitems)
+	{
+		// in case of...
+		tsourdt3rd_itemOn = menudef->numitems - 1;
+	}
+
+	if (((menudef->menuitems[tsourdt3rd_itemOn].status & IT_TYPE) & IT_SPACE))
+	{
+		// the curent item can be disabled,
+		// so this code will go until an enabled item is found
+		for (INT16 i = 0; i < menudef->numitems; i++)
 		{
-			// the curent item can be disabled,
-			// so this code will go until an enabled item is found
-			for (INT16 i = 0; i < menudef->numitems; i++)
+			if (!((menudef->menuitems[i].status & IT_TYPE) & IT_SPACE))
 			{
-				if (!((menudef->menuitems[i].status & IT_TYPE) & IT_SPACE))
-				{
-					tsourdt3rd_itemOn = i;
-					break;
-				}
+				tsourdt3rd_itemOn = i;
+				break;
 			}
 		}
-
-		M_SetupNextMenu(menudef);
-		//M_UpdateMenuBGImage(false);
-		TSoURDt3rd_M_PlayMenuJam();
 	}
-	else
-		M_ClearMenus(true);
+
+	M_SetupNextMenu(menudef);
+	//M_UpdateMenuBGImage(false);
+	TSoURDt3rd_M_PlayMenuJam();
 
 #ifdef HAVE_DISCORDSUPPORT
 	if (menuactive && !Playing())
