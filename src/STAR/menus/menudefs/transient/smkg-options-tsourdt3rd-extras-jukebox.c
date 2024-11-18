@@ -11,6 +11,7 @@
 
 #include "../../smkg_m_func.h"
 
+#include "../../../../g_demo.h"
 #include "../../../../r_draw.h"
 #include "../../../../r_main.h"
 #include "../../../../z_zone.h"
@@ -760,7 +761,15 @@ static boolean M_Sys_HandleJukebox(INT32 choice)
 void TSoURDt3rd_M_InitJukebox(INT32 choice)
 {
 	if (currentMenu == &TSoURDt3rd_OP_Extras_JukeboxDef)
+	{
+		// Please don't go to the same menu twice.
 		return;
+	}
+	else if (gamestate == GS_NULL || gamestate == GS_INTRO || demoplayback)
+	{
+		// Let's be in a regular state before we access the Jukebox, mmk?
+		return;
+	}
 
 	if (menuactive == false)
 	{

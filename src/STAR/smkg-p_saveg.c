@@ -20,17 +20,17 @@
 #include "../p_local.h"
 #include "../z_zone.h"
 
-#include "../g_game.h" // player_names //
-
-#define WRITETOFILE
+//#define WRITETOFILE
 
 // ------------------------ //
 //        Functions
 // ------------------------ //
 
+#ifdef WRITETOFILE
+#include "../g_game.h" // player_names //
+
 static void Write(INT32 playernum, boolean archive)
 {
-#ifdef TSOURDT3RD_DEBUGGING
 	FILE *f;
 	const char *path;
 	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[playernum];
@@ -54,12 +54,8 @@ static void Write(INT32 playernum, boolean archive)
 	fputs(va("%d\n", TSoURDt3rd->usingTSoURDt3rd), f);
 	fputs(va("%d\n", TSoURDt3rd->server_usingTSoURDt3rd), f);
 	fclose(f);
-#else
-	(void)playernum;
-	(void)archive;
-	return;
-#endif
 }
+#endif
 
 UINT8 TSOURDT3RD_READUINT8(UINT8 *save_p, TSoURDt3rd_t *tsourdt3rd_user, UINT8 fallback)
 {

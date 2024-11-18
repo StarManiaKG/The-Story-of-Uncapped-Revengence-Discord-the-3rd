@@ -30,7 +30,7 @@ static float watermuffling_music_speed, watermuffling_music_pitch;
 static INT32 watermuffling_music_volume, watermuffling_sfx_volume;
 #define TSOURDT3RD_MUFFLEINT (0.15f)
 
-#define TSOURDT3RD_TIMELIMIT (20999) // one tic off so the timer doesn't display 10:00.00
+#define TSOURDT3RD_TIMELIMIT (21004) // one tic off so the timer doesn't display 10:00.00
 
 const char gameoverMusic[9][7] = {
 	[0] = "_gover",
@@ -100,6 +100,12 @@ boolean TSoURDt3rd_P_DeathThink(player_t *player)
 		return true;
 	}
 
+	if (!P_IsLocalPlayer(player))
+	{
+		// Sorry, gotta be using TSoURDt3rd or something.
+		return false;
+	}
+
 	if (no_netgame && player->lives <= 0 && player == &players[consoleplayer] && player->deadtimer >= gameovertics) // Extra players in SP can't be allowed to continue or end game
 	{
 		// Continue Logic - Even if we don't have one this handles ending the game
@@ -137,39 +143,51 @@ boolean TSoURDt3rd_P_DeathThink(player_t *player)
 //
 void TSoURDt3rd_P_PlayerThink(player_t *player)
 {
+	player_t *display_player = &players[displayplayer]; 
 	(void)player;
 
-	if (players[displayplayer].mo)
+	if (display_player != NULL && display_player->mo != NULL)
 	{
 		// Water muffling
-		mobj_t *muf_mobj = players[displayplayer].mo;
 		if (!tsourdt3rd_global_jukebox->playing && cv_tsourdt3rd_audio_watermuffling.value)
 		{
-			if ((muf_mobj->eflags & MFE_UNDERWATER) && !watermuffling_alreadyineffect)
+			if ((display_player->mo->eflags & MFE_UNDERWATER) && !watermuffling_alreadyineffect)
 			{
 				watermuffling_music_speed = (S_GetSpeedMusic() - TSOURDT3RD_MUFFLEINT);
 				watermuffling_music_pitch = (S_GetPitchMusic() - TSOURDT3RD_MUFFLEINT);
 
-				watermuffling_music_volume = (S_GetInternalMusicVolume() / 2);
+				if (S_GetInternalMusicVolume() > 0)
+					watermuffling_music_volume = (S_GetInternalMusicVolume() / 2);
+				if (S_GetInternalSfxVolume() > 0)
 				watermuffling_sfx_volume = (S_GetInternalSfxVolume() / 3);
+
+				if (watermuffling_music_volume < 1)
+					watermuffling_music_volume = 1;
 
 				S_SpeedMusic(watermuffling_music_speed);
 				S_PitchMusic(watermuffling_music_pitch);
 
-				if (S_GetInternalMusicVolume() >= watermuffling_music_volume)
-					S_SetInternalMusicVolume(watermuffling_music_volume);
+				S_SetInternalMusicVolume(watermuffling_music_volume);
 				S_SetInternalSfxVolume(watermuffling_sfx_volume);
 			}
-			else if (!(muf_mobj->eflags & MFE_UNDERWATER) && watermuffling_alreadyineffect)
+			else if (!(display_player->mo->eflags & MFE_UNDERWATER) && watermuffling_alreadyineffect)
 			{
-				S_SpeedMusic(watermuffling_music_speed + TSOURDT3RD_MUFFLEINT);
-				S_PitchMusic(watermuffling_music_pitch + TSOURDT3RD_MUFFLEINT);
+				watermuffling_music_speed += TSOURDT3RD_MUFFLEINT;
+				watermuffling_music_pitch += TSOURDT3RD_MUFFLEINT;
 
-				if (watermuffling_music_volume*2 >= S_GetInternalMusicVolume())
-					S_SetInternalMusicVolume(watermuffling_music_volume*2);
-				S_SetInternalSfxVolume(watermuffling_sfx_volume*3);
+				watermuffling_music_volume *= 2;
+				watermuffling_sfx_volume *= 3;
+
+				if (watermuffling_music_volume > 100)
+					watermuffling_music_volume = 100;
+
+				S_SpeedMusic(watermuffling_music_speed);
+				S_PitchMusic(watermuffling_music_pitch);
+
+				S_SetInternalMusicVolume(watermuffling_music_volume);
+				S_SetInternalSfxVolume(watermuffling_sfx_volume);
 			}
-			watermuffling_alreadyineffect = (muf_mobj->eflags & MFE_UNDERWATER);
+			watermuffling_alreadyineffect = (display_player->mo->eflags & MFE_UNDERWATER);
 		}
 	}
 }

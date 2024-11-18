@@ -39,27 +39,12 @@
 #include "lua_hook.h" // hook_cmd_running errors
 
 // TSoURDt3rd
-#include "STAR/star_vars.h" // tsourdt3rd_global_jukebox & TSoURDt3rd_InitializePlayer() //
+#include "STAR/smkg-jukebox.h" // tsourdt3rd_global_jukebox //
 
 #define NOHUD if (hud_running)\
 return luaL_error(L, "HUD rendering code should not call this function!");\
 else if (hook_cmd_running)\
 return luaL_error(L, "CMD building code should not call this function!");
-
-#define NOSPAWNNULL if (type >= NUMMOBJTYPES)\
-return luaL_error(L, "mobj type %d out of range (0 - %d)", type, NUMMOBJTYPES-1);\
-else if (type == MT_NULL)\
-{\
-	if (!nospawnnull_seen) {\
-		nospawnnull_seen = true;\
-		CONS_Alert(CONS_WARNING,"Spawning an \"MT_NULL\" mobj is deprecated and will be removed.\nUse \"MT_RAY\" instead.\n");\
-	}\
-type = MT_RAY;\
-}
-static boolean nospawnnull_seen = false; // TODO: 2.3: Delete
-// TODO: 2.3: Use the below NOSPAWNNULL define instead. P_SpawnMobj used to say "if MT_NULL, use MT_RAY instead", so the above define maintains Lua script compatibility until v2.3
-/*#define NOSPAWNNULL if (type <= MT_NULL || type >= NUMMOBJTYPES)\
-return luaL_error(L, "mobj type %d out of range (1 - %d)", type, NUMMOBJTYPES-1);*/
 
 boolean luaL_checkboolean(lua_State *L, int narg) {
 	luaL_checktype(L, narg, LUA_TBOOLEAN);
@@ -186,9 +171,8 @@ static const struct {
 	{META_SKIN,         "skin_t"},
 	{META_POWERS,       "player_t.powers"},
 	{META_SOUNDSID,     "skin_t.soundsid"},
-
-	{META_SKINSPRITES,       "skin_t.sprites"},
-	{META_SKINSPRITESLIST,   "skin_t.sprites[]"},
+	{META_SKINSPRITES,  "skin_t.sprites"},
+	{META_SKINSPRITESLIST,  "skin_t.sprites[]"},
 
 	{META_VERTEX,       "vertex_t"},
 	{META_LINE,         "line_t"},
@@ -654,7 +638,8 @@ static int lib_pSpawnMobj(lua_State *L)
 	mobjtype_t type = luaL_checkinteger(L, 4);
 	NOHUD
 	INLEVEL
-	NOSPAWNNULL
+	if (type >= NUMMOBJTYPES)
+		return luaL_error(L, "mobj type %d out of range (0 - %d)", type, NUMMOBJTYPES-1);
 	LUA_PushUserdata(L, P_SpawnMobj(x, y, z, type), META_MOBJ);
 	return 1;
 }
@@ -668,9 +653,10 @@ static int lib_pSpawnMobjFromMobj(lua_State *L)
 	mobjtype_t type = luaL_checkinteger(L, 5);
 	NOHUD
 	INLEVEL
-	NOSPAWNNULL
 	if (!actor)
 		return LUA_ErrInvalid(L, "mobj_t");
+	if (type >= NUMMOBJTYPES)
+		return luaL_error(L, "mobj type %d out of range (0 - %d)", type, NUMMOBJTYPES-1);
 	LUA_PushUserdata(L, P_SpawnMobjFromMobj(actor, x, y, z, type), META_MOBJ);
 	return 1;
 }
@@ -733,9 +719,10 @@ static int lib_pSpawnMissile(lua_State *L)
 	mobjtype_t type = luaL_checkinteger(L, 3);
 	NOHUD
 	INLEVEL
-	NOSPAWNNULL
 	if (!source || !dest)
 		return LUA_ErrInvalid(L, "mobj_t");
+	if (type >= NUMMOBJTYPES)
+		return luaL_error(L, "mobj type %d out of range (0 - %d)", type, NUMMOBJTYPES-1);
 	LUA_PushUserdata(L, P_SpawnMissile(source, dest, type), META_MOBJ);
 	return 1;
 }
@@ -750,9 +737,10 @@ static int lib_pSpawnXYZMissile(lua_State *L)
 	fixed_t z = luaL_checkfixed(L, 6);
 	NOHUD
 	INLEVEL
-	NOSPAWNNULL
 	if (!source || !dest)
 		return LUA_ErrInvalid(L, "mobj_t");
+	if (type >= NUMMOBJTYPES)
+		return luaL_error(L, "mobj type %d out of range (0 - %d)", type, NUMMOBJTYPES-1);
 	LUA_PushUserdata(L, P_SpawnXYZMissile(source, dest, type, x, y, z), META_MOBJ);
 	return 1;
 }
@@ -769,9 +757,10 @@ static int lib_pSpawnPointMissile(lua_State *L)
 	fixed_t z = luaL_checkfixed(L, 8);
 	NOHUD
 	INLEVEL
-	NOSPAWNNULL
 	if (!source)
 		return LUA_ErrInvalid(L, "mobj_t");
+	if (type >= NUMMOBJTYPES)
+		return luaL_error(L, "mobj type %d out of range (0 - %d)", type, NUMMOBJTYPES-1);
 	LUA_PushUserdata(L, P_SpawnPointMissile(source, xa, ya, za, type, x, y, z), META_MOBJ);
 	return 1;
 }
@@ -786,9 +775,10 @@ static int lib_pSpawnAlteredDirectionMissile(lua_State *L)
 	INT32 shiftingAngle = (INT32)luaL_checkinteger(L, 5);
 	NOHUD
 	INLEVEL
-	NOSPAWNNULL
 	if (!source)
 		return LUA_ErrInvalid(L, "mobj_t");
+	if (type >= NUMMOBJTYPES)
+		return luaL_error(L, "mobj type %d out of range (0 - %d)", type, NUMMOBJTYPES-1);
 	LUA_PushUserdata(L, P_SpawnAlteredDirectionMissile(source, type, x, y, z, shiftingAngle), META_MOBJ);
 	return 1;
 }
@@ -816,9 +806,10 @@ static int lib_pSPMAngle(lua_State *L)
 	UINT32 flags2 = (UINT32)luaL_optinteger(L, 5, 0);
 	NOHUD
 	INLEVEL
-	NOSPAWNNULL
 	if (!source)
 		return LUA_ErrInvalid(L, "mobj_t");
+	if (type >= NUMMOBJTYPES)
+		return luaL_error(L, "mobj type %d out of range (0 - %d)", type, NUMMOBJTYPES-1);
 	LUA_PushUserdata(L, P_SPMAngle(source, type, angle, allowaim, flags2), META_MOBJ);
 	return 1;
 }
@@ -830,9 +821,10 @@ static int lib_pSpawnPlayerMissile(lua_State *L)
 	UINT32 flags2 = (UINT32)luaL_optinteger(L, 3, 0);
 	NOHUD
 	INLEVEL
-	NOSPAWNNULL
 	if (!source)
 		return LUA_ErrInvalid(L, "mobj_t");
+	if (type >= NUMMOBJTYPES)
+		return luaL_error(L, "mobj type %d out of range (0 - %d)", type, NUMMOBJTYPES-1);
 	LUA_PushUserdata(L, P_SpawnPlayerMissile(source, type, flags2), META_MOBJ);
 	return 1;
 }
@@ -863,7 +855,8 @@ static int lib_pWeaponOrPanel(lua_State *L)
 {
 	mobjtype_t type = luaL_checkinteger(L, 1);
 	//HUDSAFE
-	NOSPAWNNULL
+	if (type >= NUMMOBJTYPES)
+		return luaL_error(L, "mobj type %d out of range (0 - %d)", type, NUMMOBJTYPES-1);
 	lua_pushboolean(L, P_WeaponOrPanel(type));
 	return 1;
 }
@@ -906,7 +899,8 @@ static int lib_pSpawnParaloop(lua_State *L)
 	boolean spawncenter = lua_optboolean(L, 9);
 	NOHUD
 	INLEVEL
-	NOSPAWNNULL
+	if (type >= NUMMOBJTYPES)
+		return luaL_error(L, "mobj type %d out of range (0 - %d)", type, NUMMOBJTYPES-1);
 	if (nstate >= NUMSTATES)
 		return luaL_error(L, "state %d out of range (0 - %d)", nstate, NUMSTATES-1);
 	P_SpawnParaloop(x, y, z, radius, number, type, nstate, rotangle, spawncenter);
@@ -1776,9 +1770,10 @@ static int lib_pSpawnSpinMobj(lua_State *L)
 	mobjtype_t type = luaL_checkinteger(L, 2);
 	NOHUD
 	INLEVEL
-	NOSPAWNNULL
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
+	if (type >= NUMMOBJTYPES)
+		return luaL_error(L, "mobj type %d out of range (0 - %d)", type, NUMMOBJTYPES-1);
 	P_SpawnSpinMobj(player, type);
 	return 0;
 }
@@ -2641,11 +2636,12 @@ static int lib_pFadeLight(lua_State *L)
 
 static int lib_pIsFlagAtBase(lua_State *L)
 {
-	mobjtype_t type = luaL_checkinteger(L, 1);
+	mobjtype_t flag = luaL_checkinteger(L, 1);
 	//HUDSAFE
 	INLEVEL
-	NOSPAWNNULL
-	lua_pushboolean(L, P_IsFlagAtBase(type));
+	if (flag >= NUMMOBJTYPES)
+		return luaL_error(L, "mobj type %d out of range (0 - %d)", flag, NUMMOBJTYPES-1);
+	lua_pushboolean(L, P_IsFlagAtBase(flag));
 	return 1;
 }
 
@@ -3241,57 +3237,6 @@ static int lib_sSpeedMusic(lua_State *L)
 	return 0;
 }
 
-static int lib_sGetSpeedMusic(lua_State *L)
-{
-	player_t *player = NULL;
-	//NOHUD
-	if (!lua_isnone(L, 1) && lua_isuserdata(L, 1))
-	{
-		player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-		if (!player)
-			return LUA_ErrInvalid(L, "player_t");
-	}
-	if (!player || P_IsLocalPlayer(player))
-		lua_pushinteger(L, S_GetSpeedMusic());
-	else
-		lua_pushnil(L);
-	return 1;
-}
-
-static int lib_sPitchMusic(lua_State *L)
-{
-	fixed_t fixedpitch = luaL_checkfixed(L, 1);
-	float pitch = FIXED_TO_FLOAT(fixedpitch);
-	player_t *player = NULL;
-	//NOHUD
-	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
-	{
-		player = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
-		if (!player)
-			return LUA_ErrInvalid(L, "player_t");
-	}
-	if (!player || P_IsLocalPlayer(player))
-		S_PitchMusic(pitch);
-	return 0;
-}
-
-static int lib_sGetPitchMusic(lua_State *L)
-{
-	player_t *player = NULL;
-	//NOHUD
-	if (!lua_isnone(L, 1) && lua_isuserdata(L, 1))
-	{
-		player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-		if (!player)
-			return LUA_ErrInvalid(L, "player_t");
-	}
-	if (!player || P_IsLocalPlayer(player))
-		lua_pushinteger(L, S_GetPitchMusic());
-	else
-		lua_pushnil(L);
-	return 1;
-}
-
 static int lib_sStopMusic(lua_State *L)
 {
 	player_t *player = NULL;
@@ -3302,7 +3247,6 @@ static int lib_sStopMusic(lua_State *L)
 		if (!player)
 			return LUA_ErrInvalid(L, "player_t");
 	}
-
 	if (!player || P_IsLocalPlayer(player))
 		S_StopMusic();
 	return 0;
@@ -3324,61 +3268,6 @@ static int lib_sSetInternalMusicVolume(lua_State *L)
 		S_SetInternalMusicVolume(volume);
 		lua_pushboolean(L, true);
 	}
-	else
-		lua_pushnil(L);
-	return 1;
-}
-
-static int lib_sGetInternalMusicVolume(lua_State *L)
-{
-	player_t *player = NULL;
-	//NOHUD
-	if (!lua_isnone(L, 1) && lua_isuserdata(L, 1))
-	{
-		player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-		if (!player)
-			return LUA_ErrInvalid(L, "player_t");
-	}
-	if (!player || P_IsLocalPlayer(player))
-		lua_pushinteger(L, (UINT32)S_GetInternalMusicVolume());
-	else
-		lua_pushnil(L);
-	return 1;
-}
-
-static int lib_sSetInternalSfxVolume(lua_State *L)
-{
-	UINT32 sfxvolume = (UINT32)luaL_checkinteger(L, 1);
-	player_t *player = NULL;
-	//NOHUD
-	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
-	{
-		player = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
-		if (!player)
-			return LUA_ErrInvalid(L, "player_t");
-	}
-	if (!player || P_IsLocalPlayer(player))
-	{
-		S_SetInternalSfxVolume(sfxvolume);
-		lua_pushboolean(L, true);
-	}
-	else
-		lua_pushnil(L);
-	return 1;
-}
-
-static int lib_sGetInternalSfxVolume(lua_State *L)
-{
-	player_t *player = NULL;
-	//NOHUD
-	if (!lua_isnone(L, 1) && lua_isuserdata(L, 1))
-	{
-		player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-		if (!player)
-			return LUA_ErrInvalid(L, "player_t");
-	}
-	if (!player || P_IsLocalPlayer(player))
-		lua_pushinteger(L, (UINT32)S_GetInternalSfxVolume());
 	else
 		lua_pushnil(L);
 	return 1;
@@ -3867,9 +3756,6 @@ static int lib_gAddPlayer(lua_State *L)
 
 	playeringame[newplayernum] = true;
 	G_AddPlayer(newplayernum);
-
-	TSoURDt3rd_InitializePlayer(newplayernum); // STAR STUFF: add our new player to the roster :P //
-
 	newplayer = &players[newplayernum];
 
 	newplayer->jointime = 0;
@@ -4320,7 +4206,9 @@ static luaL_Reg lib[] = {
 	{"userdataMetatable", lib_userdataMetatable},
 	{"IsPlayerAdmin", lib_isPlayerAdmin},
 	{"reserveLuabanks", lib_reserveLuabanks},
+#if 0
 	{"tofixed", lib_tofixed},
+#endif
 
 	// m_menu
 	{"M_MoveColorAfter",lib_pMoveColorAfter},
@@ -4384,7 +4272,9 @@ static luaL_Reg lib[] = {
 	{"P_CreateFloorSpriteSlope",lib_pCreateFloorSpriteSlope},
 	{"P_RemoveFloorSpriteSlope",lib_pRemoveFloorSpriteSlope},
 	{"P_RailThinker",lib_pRailThinker},
+#if 0
 	{"P_CheckSkyHit",lib_pCheckSkyHit},
+#endif
 	{"P_XYMovement",lib_pXYMovement},
 	{"P_RingXYMovement",lib_pRingXYMovement},
 	{"P_SceneryXYMovement",lib_pSceneryXYMovement},
@@ -4411,14 +4301,18 @@ static luaL_Reg lib[] = {
 	{"P_InQuicksand",lib_pInQuicksand},
 	{"P_InJumpFlipSector",lib_pInJumpFlipSector},
 	{"P_SetObjectMomZ",lib_pSetObjectMomZ},
+#if 0
 	{"P_IsLocalPlayer",lib_pIsLocalPlayer},
+#endif
 	{"P_PlayJingle",lib_pPlayJingle},
 	{"P_PlayJingleMusic",lib_pPlayJingleMusic},
 	{"P_RestoreMusic",lib_pRestoreMusic},
 	{"P_SpawnShieldOrb",lib_pSpawnShieldOrb},
 	{"P_SpawnGhostMobj",lib_pSpawnGhostMobj},
 	{"P_GivePlayerRings",lib_pGivePlayerRings},
+#if 0
 	{"P_GivePlayerSpheres",lib_pGivePlayerSpheres},
+#endif
 	{"P_GivePlayerLives",lib_pGivePlayerLives},
 	{"P_GiveCoopLives",lib_pGiveCoopLives},
 	{"P_ResetScore",lib_pResetScore},
@@ -4431,23 +4325,31 @@ static luaL_Reg lib[] = {
 	{"P_DoPlayerFinish",lib_pDoPlayerFinish},
 	{"P_DoPlayerExit",lib_pDoPlayerExit},
 	{"P_InstaThrust",lib_pInstaThrust},
+#if 0
 	{"P_InstaThrustEvenIn2D",lib_pInstaThrustEvenIn2D},
+#endif
 	{"P_ReturnThrustX",lib_pReturnThrustX},
 	{"P_ReturnThrustY",lib_pReturnThrustY},
 	{"P_LookForEnemies",lib_pLookForEnemies},
 	{"P_NukeEnemies",lib_pNukeEnemies},
 	{"P_Earthquake",lib_pEarthquake},
 	{"P_HomingAttack",lib_pHomingAttack},
+#if 0
 	{"P_ResetCamera",lib_pResetCamera},
+#endif
 	{"P_SuperReady",lib_pSuperReady},
 	{"P_DoJump",lib_pDoJump},
+#if 0
 	{"P_DoSpinDashDust",lib_pDoSpinDashDust},
+#endif
 	{"P_SpawnThokMobj",lib_pSpawnThokMobj},
 	{"P_SpawnSpinMobj",lib_pSpawnSpinMobj},
 	{"P_Telekinesis",lib_pTelekinesis},
 	{"P_SwitchShield",lib_pSwitchShield},
+#if 0
 	{"P_DoTailsOverlay",lib_pDoTailsOverlay},
 	{"P_DoMetalJetFume",lib_pDoMetalJetFume},
+#endif
 	{"P_PlayerCanEnterSpinGaps",lib_pPlayerCanEnterSpinGaps},
 	{"P_PlayerShouldUseSpinHeight",lib_pPlayerShouldUseSpinHeight},
 
@@ -4458,7 +4360,9 @@ static luaL_Reg lib[] = {
 	{"P_TeleportMove",lib_pTeleportMove},
 	{"P_SetOrigin",lib_pSetOrigin},
 	{"P_MoveOrigin",lib_pMoveOrigin},
+#if 0
 	{"P_LineIsBlocking",lib_pLineIsBlocking},
+#endif
 	{"P_SlideMove",lib_pSlideMove},
 	{"P_BounceMove",lib_pBounceMove},
 	{"P_CheckSight", lib_pCheckSight},
@@ -4467,7 +4371,9 @@ static luaL_Reg lib[] = {
 	{"P_FloorzAtPos",lib_pFloorzAtPos},
 	{"P_CeilingzAtPos",lib_pCeilingzAtPos},
 	{"P_DoSpring",lib_pDoSpring},
+#if 0
 	{"P_TouchSpecialThing",lib_pTouchSpecialThing},
+#endif
 	{"P_TryCameraMove", lib_pTryCameraMove},
 	{"P_TeleportCameraMove", lib_pTeleportCameraMove},
 
@@ -4493,7 +4399,9 @@ static luaL_Reg lib[] = {
 	{"P_Thrust",lib_pThrust},
 	{"P_SetMobjStateNF",lib_pSetMobjStateNF},
 	{"P_DoSuperTransformation",lib_pDoSuperTransformation},
+#if 0
 	{"P_DoSuperDetransformation",lib_pDoSuperDetransformation},
+#endif
 	{"P_ExplodeMissile",lib_pExplodeMissile},
 	{"P_MobjTouchingSectorSpecial",lib_pMobjTouchingSectorSpecial},
 	{"P_ThingOnSpecial3DFloor",lib_pThingOnSpecial3DFloor},
@@ -4556,14 +4464,8 @@ static luaL_Reg lib[] = {
 	{"S_StopSoundByID",lib_sStopSoundByID},
 	{"S_ChangeMusic",lib_sChangeMusic},
 	{"S_SpeedMusic",lib_sSpeedMusic},
-	{"S_GetSpeedMusic",lib_sGetSpeedMusic},
-	{"S_PitchMusic",lib_sPitchMusic},
-	{"S_GetPitchMusic",lib_sGetPitchMusic},
 	{"S_StopMusic",lib_sStopMusic},
 	{"S_SetInternalMusicVolume", lib_sSetInternalMusicVolume},
-	{"S_GetInternalMusicVolume", lib_sGetInternalMusicVolume},
-	{"S_SetInternalSfxVolume", lib_sSetInternalSfxVolume},
-	{"S_GetInternalSfxVolume", lib_sGetInternalSfxVolume},
 	{"S_StopFadingMusic",lib_sStopFadingMusic},
 	{"S_FadeMusic",lib_sFadeMusic},
 	{"S_FadeOutStopMusic",lib_sFadeOutStopMusic},
@@ -4616,6 +4518,23 @@ static luaL_Reg lib[] = {
 
 	{"getTimeMicros",lib_getTimeMicros},
 
+#if 1
+	// STAR NOTE: remove for 2.2.14 //
+	{"tofixed", lib_tofixed},
+	{"P_CheckSkyHit",lib_pCheckSkyHit},
+	{"P_InstaThrustEvenIn2D",lib_pInstaThrustEvenIn2D},
+	{"P_IsLocalPlayer",lib_pIsLocalPlayer},
+	{"P_GivePlayerSpheres",lib_pGivePlayerSpheres},
+	{"P_InstaThrustEvenIn2D",lib_pInstaThrustEvenIn2D},
+	{"P_ResetCamera",lib_pResetCamera},
+	{"P_DoSpinDashDust",lib_pDoSpinDashDust},
+	{"P_DoTailsOverlay",lib_pDoTailsOverlay},
+	{"P_DoMetalJetFume",lib_pDoMetalJetFume},
+	{"P_LineIsBlocking",lib_pLineIsBlocking},
+	{"P_TouchSpecialThing",lib_pTouchSpecialThing},
+	{"P_DoSuperDetransformation",lib_pDoSuperDetransformation},
+	// GOOD? GOOD. //
+#endif
 	{NULL, NULL}
 };
 
