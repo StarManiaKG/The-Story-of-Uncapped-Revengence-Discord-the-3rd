@@ -13,6 +13,7 @@ target_sources(SRB2SDL2 PRIVATE
 	star_functions.c
 	m_menu.c
 	p_user.c
+	core/smkg-d_main.c
 	core/smkg-p_pads.c
 	core/smkg-p_setup.c
 	core/smkg-s_audio.c
@@ -23,6 +24,8 @@ target_sources(SRB2SDL2 PRIVATE
 	events/smkg-aprilfools.c
 	lights/smkg-lights.c
 	lights/smkg-r_coronas.c
+	lights/smkg-hw_coronas.c
+	lua/smkg-lu_base.c
 	lua/smkg-lu_script.c
 	menus/smkg_m_func.c
 	menus/smkg_m_draw.c

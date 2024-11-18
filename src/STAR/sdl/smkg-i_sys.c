@@ -238,8 +238,15 @@ void TSoURDt3rd_I_Pads_RumbleTriggers(INT32 device_id, fixed_t left_strength, fi
 
 void TSoURDt3rd_I_CursedWindowMovement(int xd, int yd)
 {
-	if (!cv_tsourdt3rd_video_sdl_window_shaking.value)
+	if (!cv_tsourdt3rd_video_sdl_window_shaking.value || cv_fullscreen.value || (window_x == -1 || window_y == -1))
+	{
+		SDL_SetWindowPosition(window,
+			SDL_WINDOWPOS_CENTERED_DISPLAY(SDL_GetWindowDisplayIndex(window)),
+			SDL_WINDOWPOS_CENTERED_DISPLAY(SDL_GetWindowDisplayIndex(window))
+		);
+		SDL_GetWindowPosition(window, &window_x, &window_y);
 		return;
+	}
 	SDL_SetWindowPosition(window, window_x + xd, window_y + yd);
 }
 
@@ -458,14 +465,16 @@ static const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean 
 //
 void TSoURDt3rd_I_ShowErrorMessageBox(const char *messagefordevelopers, const SDL_MessageBoxData *messageboxdata, int *buttonid, int num, boolean coredumped)
 {
-	static const char *crash_reason_header = "\n\nCRASH REASON:\n";;
+	static char crash_reason_header[20];
 	static char underscoremsg[24];
 	static char finalmessage[2048];
+	static size_t underscore_interval = 0;
 
+	memset(crash_reason_header, 0, sizeof(crash_reason_header));
 	if (messagefordevelopers)
 	{
-		size_t underscore_interval = 0;
-		while (underscore_interval < (sizeof(crash_reason_header)*2)+3)
+		snprintf(crash_reason_header, sizeof(crash_reason_header), "\n\nCRASH REASON:\n");
+		while (underscore_interval < strlen(crash_reason_header))
 			underscoremsg[underscore_interval++] = '_';
 		underscoremsg[underscore_interval++] = '\n';
 		underscoremsg[underscore_interval++] = '\n';
@@ -512,7 +521,6 @@ void TSoURDt3rd_I_ShowErrorMessageBox(const char *messagefordevelopers, const SD
 		{ SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 0,		"OK" },
 		{ 										0, 1,  "Discord" },
 	};
-
 	const SDL_MessageBoxData tsourdt3rd_messageboxdata = {
 		(messageboxdata ? messageboxdata->flags : SDL_MESSAGEBOX_ERROR),
 		(messageboxdata ? messageboxdata->window : NULL),
@@ -523,14 +531,15 @@ void TSoURDt3rd_I_ShowErrorMessageBox(const char *messagefordevelopers, const SD
 		(messageboxdata ? messageboxdata->buttons : tsourdt3rd_buttons),
 		(messageboxdata ? messageboxdata->colorScheme : NULL),
 	};
+	int tsourdt3rd_buttonid = (buttonid != NULL ? (*buttonid) : 0);
 
 	// Implement message box with SDL_ShowMessageBox,
 	// which should fail gracefully if it can't put a message box up
 	// on the target system
-	SDL_ShowMessageBox(&tsourdt3rd_messageboxdata, buttonid);
+	SDL_ShowMessageBox(&tsourdt3rd_messageboxdata, &tsourdt3rd_buttonid);
 
 #if SDL_VERSION_ATLEAST(2,0,14)
-	if (!messageboxdata && *buttonid == 1)
+	if (tsourdt3rd_buttonid == 1)
 		SDL_OpenURL("https://www.srb2.org/discord");
 #endif
 }

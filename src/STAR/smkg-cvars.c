@@ -14,6 +14,7 @@
 #include "ss_main.h"
 #include "star_vars.h" // STAR_SetWindowTitle() //
 #include "core/smkg-p_pads.h" // TSoURDt3rd_P_Pads_ResetDeviceRumble() //
+#include "lights/smkg-coronas.h"
 #include "menus/smkg-m_sys.h" // menu definitions //
 
 #include "../discord/discord.h" // TSoURDt3rd_D_Got_DiscordInfo() //
@@ -446,6 +447,13 @@ void TSoURDt3rd_D_RegisterClientCommands(void)
 	// Debugging //
 	CV_RegisterVar(&cv_tsourdt3rd_debug_drrr_virtualkeyboard);
 	CV_RegisterVar(&cv_tsourdt3rd_debug_automapanywhere);
+
+#ifdef ALAM_LIGHTING
+	// Coronas //
+    CV_RegisterVar(&cv_corona);
+    CV_RegisterVar(&cv_coronasize);
+    CV_RegisterVar(&cv_corona_draw_mode);
+#endif
 }
 
 boolean TSoURDt3rd_CV_CheckForOldCommands(void)

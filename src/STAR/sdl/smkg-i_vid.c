@@ -55,6 +55,23 @@ static const char *Impl_TSoURDt3rd_Pads_GetName(INT32 joyindex)
 	return I_GetJoyName(joyindex);
 }
 
+//
+// URL-Parsing Junk
+//
+boolean TSoURDt3rd_I_CanOpenURL(void)
+{
+#if (SDL_VERSION_ATLEAST(2, 0, 14))
+	return true;
+#else
+	return false;
+#endif
+}
+void TSoURDt3rd_I_OpenURL(const char *data)
+{
+	if (TSoURDt3rd_I_CanOpenURL())
+		SDL_OpenURL(data);
+}
+
 static void Impl_TSoURDt3rd_HandleWindowEvent(SDL_WindowEvent evt)
 {
 	static SDL_bool mousefocus = SDL_TRUE;
@@ -67,6 +84,7 @@ static void Impl_TSoURDt3rd_HandleWindowEvent(SDL_WindowEvent evt)
 			break;
 		case SDL_WINDOWEVENT_LEAVE:
 			mousefocus = SDL_FALSE;
+			window_x = window_y = -1;
 			break;
 		case SDL_WINDOWEVENT_FOCUS_GAINED:
 			kbfocus = SDL_TRUE;
@@ -75,22 +93,14 @@ static void Impl_TSoURDt3rd_HandleWindowEvent(SDL_WindowEvent evt)
 		case SDL_WINDOWEVENT_FOCUS_LOST:
 			kbfocus = SDL_FALSE;
 			mousefocus = SDL_FALSE;
+			window_x = window_y = -1;
 			break;
 		case SDL_WINDOWEVENT_MOVED:
 		case SDL_WINDOWEVENT_MAXIMIZED:
-		case SDL_WINDOWEVENT_RESIZED:
-    	case SDL_WINDOWEVENT_SIZE_CHANGED:
 			window_x = evt.data1;
 			window_y = evt.data2;
 			break;
 		default:
-			if (cv_fullscreen.value)
-			{
-				window_x = window_y = -1;
-				break;
-			}
-			if (window_x == -1 || window_y == -1)
-				SDL_GetWindowPosition(window, &window_x, &window_y);
 			break;
 	}
 

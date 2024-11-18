@@ -576,17 +576,16 @@ static inline void P_DoSpecialStageStuff(void)
 		players[i].powers[pw_underwater] = players[i].powers[pw_spacetime] = 0;
 	}
 
-#if 0
 	//if (sstimer < 15*TICRATE+6 && sstimer > 7 && (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC))
 		//S_SpeedMusic(1.4f);
-#else
+
 	// STAR STUFF: do cool music speeding junk :) //
 	if (sstimer < 15*TICRATE+6 && sstimer > 7 && (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC))
 	{
-		if (!tsourdt3rd_global_jukebox->curtrack) // STAR STUFF: you're interrupting my brooding >:| //
+		if (!tsourdt3rd_global_jukebox->curtrack) // you're interrupting my brooding >:| //
 			S_SpeedMusic(1.4f);
 	}
-#endif
+	// DONE! //
 
 	if (sstimer && !objectplacing)
 	{
@@ -784,9 +783,7 @@ void P_Ticker(boolean run)
 		ps_lua_mobjhooks.value.i = 0;
 		ps_checkposition_calls.value.i = 0;
 
-		PS_START_TIMING(ps_lua_prethinkframe_time);
-		LUA_HookPreThinkFrame();
-		PS_STOP_TIMING(ps_lua_prethinkframe_time);
+		LUA_HOOK(PreThinkFrame);
 
 		PS_START_TIMING(ps_playerthink_time);
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -886,9 +883,7 @@ void P_Ticker(boolean run)
 		if (modeattacking)
 			G_GhostTicker();
 
-		PS_START_TIMING(ps_lua_postthinkframe_time);
-		LUA_HookPostThinkFrame();
-		PS_STOP_TIMING(ps_lua_postthinkframe_time);
+		LUA_HOOK(PostThinkFrame);
 	}
 
 	if (run)

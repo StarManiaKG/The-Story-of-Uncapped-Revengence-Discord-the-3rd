@@ -14,7 +14,6 @@
 #include "../smkg-st_hud.h"
 #include "../menus/smkg-m_sys.h"
 
-#include "../../d_main.h" // autoloaded //
 #include "../../g_game.h" // playeringame[] //
 #include "../../lua_hud.h"
 #include "../../st_stuff.h"
@@ -53,9 +52,9 @@ static void STAR_Easter_EggHunt_OnChange(void)
 	if (!(tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_EASTER))
 		return;
 
-	if ((Playing() && playeringame[consoleplayer]) || netgame || ((autoloaded || ((modifiedgame || usedCheats) && savemoddata))) || currenteggs == TOTALEGGS)
+	if ((Playing() && playeringame[consoleplayer]) || netgame || ((tsourdt3rd_local.autoloaded_mods || ((modifiedgame || usedCheats) && savemoddata))) || currenteggs == TOTALEGGS)
 	{
-		if ((autoloaded || ((modifiedgame || usedCheats) && savemoddata)))
+		if ((tsourdt3rd_local.autoloaded_mods || ((modifiedgame || usedCheats) && savemoddata)))
 			CONS_Printf("Sorry, you'll need to restart your game in order to set this again.\n");
 		else if ((Playing() || gamestate == GS_TITLESCREEN || menuactive) && currenteggs == TOTALEGGS)
 			CONS_Printf("You already have all of the eggs!\n");
@@ -72,9 +71,9 @@ static void STAR_Easter_EnableEggHuntBonuses_OnChange(void)
 	if ((tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_EASTER))
 		return;
 
-	if ((netgame || currenteggs != TOTALEGGS) || ((autoloaded || ((modifiedgame || usedCheats) && savemoddata))))
+	if ((netgame || currenteggs != TOTALEGGS) || ((tsourdt3rd_local.autoloaded_mods || ((modifiedgame || usedCheats) && savemoddata))))
 	{
-		(((autoloaded || ((modifiedgame || usedCheats) && savemoddata))) ?
+		(((tsourdt3rd_local.autoloaded_mods || ((modifiedgame || usedCheats) && savemoddata))) ?
 			(CONS_Printf("Sorry, you'll need to restart your game in order to set this again.\n")) :
 
 			(((Playing() || gamestate == GS_TITLESCREEN || menuactive) && currenteggs != TOTALEGGS) ?
@@ -102,7 +101,7 @@ void TSoURDt3rd_Easter_ST_drawEggs(void)
 	if (!Playing() 										// We Need to Play, Jesse
 		|| (netgame || multiplayer)						// You Can't Manipulate Your Friends for This Egg Hunt
 		|| (!(tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_EASTER))								// We Shouldn't Even Show This If It's Not Easter
-		|| ((autoloaded || ((modifiedgame || usedCheats) && savemoddata)))		// No Cheating
+		|| ((tsourdt3rd_local.autoloaded_mods || ((modifiedgame || usedCheats) && savemoddata)))		// No Cheating
 		|| (!AllowEasterEggHunt)						// Hooray for Consent
 		
 		|| (F_GetPromptHideHud(hudinfo[HUD_RINGS].y))	// If Rings are Hidden, So Are the Eggs

@@ -55,8 +55,3 @@ void D_AdvanceDemo(void);
 void D_StartTitle(void);
 
 #endif //__D_MAIN__
-
-// STAR STUFF //
-// Autoloading
-extern boolean autoloading;             // Star: Autoloading Wads
-extern boolean autoloaded;              // Star: Have We Autoloaded Any Game-Changing Mods?

@@ -15,8 +15,6 @@
 
 #include "../../lua_libs.h"
 
-#include "../../d_main.h" // autoloaded //
-
 // ------------------------ //
 //        Variables
 // ------------------------ //
@@ -137,11 +135,11 @@ INT32 TSoURDt3rd_LUA_PushGlobalVariables(lua_State *L, const char *word)
 			lua_pushboolean(L, tsourdt3rd_currentEvent);
 			return 1;
 		case tsourdt3rd_files_nomore_extras:
-			lua_pushboolean(L, ((autoloaded || ((modifiedgame || usedCheats) && savemoddata))));
+			lua_pushboolean(L, ((tsourdt3rd_local.autoloaded_mods || ((modifiedgame || usedCheats) && savemoddata))));
 			return 1;
 
 		case tsourdt3rd_mods_autoloaded:
-			lua_pushboolean(L, autoloaded);
+			lua_pushboolean(L, tsourdt3rd_local.autoloaded_mods);
 			return 1;
 
 		case tsourdt3rd_server_usingbuild_DEPRE:
@@ -217,11 +215,11 @@ boolean TSoURDt3rd_LUA_SetGlobalVariables(lua_State *L, const char *word)
 
 		case tsourdt3rd_extras_spawntf2dispenser:
 		{
-			if ((autoloaded || ((modifiedgame || usedCheats) && savemoddata)))
+			if ((tsourdt3rd_local.autoloaded_mods || ((modifiedgame || usedCheats) && savemoddata)))
 				return luaL_error(L, "global variable SpawnTheDispenser can't be used while the game is modified!");
 			if (netgame)
 				return luaL_error(L, "global variable SpawnTheDispenser can't be changed in netgames!");
-			if (autoloaded)
+			if (tsourdt3rd_local.autoloaded_mods)
 				return luaL_error(L, "global variable SpawnTheDispenser can't be changed after autoloading add-ons!");
 			SpawnTheDispenser = luaL_checkboolean(L, 2);
 			break;
@@ -235,13 +233,13 @@ boolean TSoURDt3rd_LUA_SetGlobalVariables(lua_State *L, const char *word)
 		case tsourdt3rd_events_eggs_current:
 		case tsourdt3rd_events_eggs_numonmap:
 		{
-			if ((autoloaded || ((modifiedgame || usedCheats) && savemoddata)))
+			if ((tsourdt3rd_local.autoloaded_mods || ((modifiedgame || usedCheats) && savemoddata)))
 				return luaL_error(L, "global variable %s can't be used while the game is modified!", tsourdt3rd_blua_global_terms_opt[word_to_table_val]);
 			if (!(tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_EASTER))
 				return luaL_error(L, "global variable %s is unless easter mode is enabled!", tsourdt3rd_blua_global_terms_opt[word_to_table_val]);
 			if (netgame)
 				return luaL_error(L, "global variable %s can't be changed in netgames!", tsourdt3rd_blua_global_terms_opt[word_to_table_val]);
-			if (autoloaded)
+			if (tsourdt3rd_local.autoloaded_mods)
 				return luaL_error(L, "global variable %s can't be changed after autoloading add-ons!", tsourdt3rd_blua_global_terms_opt[word_to_table_val]);
 
 			switch (word_to_table_val) // AGAIN!

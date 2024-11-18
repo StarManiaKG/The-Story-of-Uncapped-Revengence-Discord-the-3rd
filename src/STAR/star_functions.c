@@ -64,7 +64,7 @@ TSoURDt3rdBossMusic_t bossMusic[] = {
 	{"_scdb", 		NULL, 		0},	// Sonic CD
 	{"_s2b", 		NULL, 		0},	// Sonic 2
 	{"_s3b1", 		NULL, 		0},	// Sonic 3
-	{"_&kb1", 		NULL, 		0},	// & Knuckles
+	{"_&kb", 		NULL, 		0},	// & Knuckles
 	{"_s3kb", 		NULL, 		0},	// Sonic 3 & Knuckles
 
 	{"_a2b", 	 "_a2bp", 		0},	// Sonic Advance 2 - R
@@ -176,7 +176,7 @@ void STAR_LoadingScreen(void)
 			if (Playing())
 			{
 				// Modified-Game Images
-				if (autoloaded || savemoddata || modifiedgame)
+				if (tsourdt3rd_local.autoloaded_mods || savemoddata || modifiedgame)
 					tsourdt3rd_loadingscreen.screenToUse = 3;
 
 				// Vanilla/Unmodified-Game Images
@@ -360,7 +360,7 @@ const char *STAR_SetWindowTitle(void)
 			if (Playing())
 			{
 				// General Game Titles
-				if ((autoloaded || savemoddata || modifiedgame)
+				if ((tsourdt3rd_local.autoloaded_mods || savemoddata || modifiedgame)
 					|| (gamemap == titlemap)
 					|| (players[consoleplayer].powers[pw_super])
 					|| (tutorialmode))

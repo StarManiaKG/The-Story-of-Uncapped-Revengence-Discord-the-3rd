@@ -92,7 +92,9 @@ typedef struct
 typedef enum
 {
 	HUD_LIVES,
+#if 0
 	HUD_INPUT,
+#endif
 
 	HUD_RINGS,
 	HUD_RINGSNUM,
@@ -118,6 +120,11 @@ typedef enum
 	HUD_HUNTPICS,
 	HUD_POWERUPS,
 
+#if 1
+	// STAR NOTE/MAJOR STAR NOTE: HERE UNTIL 2.2.14 //
+	HUD_INPUT,
+	// GOT THAT? //
+#endif
 	NUMHUDITEMS
 } hudnum_t;
 

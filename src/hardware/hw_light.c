@@ -26,6 +26,7 @@
 #include "../p_local.h"
 #include "../r_fps.h"
 
+// TSoURDt3rd
 #include "../STAR/lights/smkg-coronas.h"
 
 //=============================================================================
@@ -66,9 +67,8 @@ static dynlights_t view_dynlights[2]; // 2 players in splitscreen mode
 static dynlights_t *dynlights = &view_dynlights[0];
 #endif
 
-static GLMipmap_t lightmappatchmipmap;
-static GLPatch_t lightmappatch = { .mipmap = &lightmappatchmipmap };
-
+static patch_t *lightmap_patch;
+static GLPatch_t *lightmap_gl_patch;
 static lumpnum_t corona_lumpnum = LUMPERROR;
 
 //=============================================================================
@@ -80,31 +80,37 @@ static lumpnum_t corona_lumpnum = LUMPERROR;
 // -----------------+
 static void HWR_SetLight(void)
 {
-	if (!lightmappatch.mipmap->downloaded && !lightmappatch.mipmap->data)
-	{
-		UINT16 *data = Z_Malloc(128*128*sizeof(UINT16), PU_HWRCACHE, &lightmappatch.mipmap->data);
+	int i, j;
 
-		for (int i = 0; i < 128; i++)
+	if (!lightmap_gl_patch->mipmap->downloaded && !lightmap_gl_patch->mipmap->data)
+	{
+		UINT16 *data = Z_Malloc(129*128*sizeof(UINT16), PU_HWRCACHE, lightmap_gl_patch->mipmap->data);
+
+		for (i = 0; i < 128; i++)
 		{
-			for (int j = 0; j < 128; j++)
+			for (j = 0; j < 128; j++)
 			{
 				int pos = ((i-64)*(i-64))+((j-64)*(j-64));
-				data[i*128+j] = ((pos <= 63*63) ? (((UINT8)(255-(4*sqrt(pos)))) << 8 | 0xff) : 0);
+				if (pos <= 63*63)
+					data[i*128+j] = (UINT16)(((UINT8)(255-(4*(float)sqrt((float)pos)))) << 8 | 0xff);
+				else
+					data[i*128+j] = 0;
 			}
 		}
-		lightmappatch.mipmap->format = GL_TEXFMT_ALPHA_INTENSITY_88;
+		lightmap_gl_patch->mipmap->format = GL_TEXFMT_ALPHA_INTENSITY_88;
 
-		lightmappatchmipmap.width = 128;
-		lightmappatchmipmap.height = 128;
-		lightmappatch.mipmap->flags = 0; //TF_WRAPXY; // DEBUG: view the overdraw !
-		
+		lightmap_patch->width = 128;
+		lightmap_patch->height = 128;
+		lightmap_gl_patch->mipmap->width = 128;
+		lightmap_gl_patch->mipmap->height = 128;
+		lightmap_gl_patch->mipmap->flags = 0; //TF_WRAPXY; // DEBUG: view the overdraw !
 	}
-	HWD.pfnSetTexture(lightmappatch.mipmap);
-	HWR_UnlockCachedPatch(&lightmappatch); // The system-memory data can be purged now.
+	HWD.pfnSetTexture(lightmap_gl_patch->mipmap);
+	Z_ChangeTag(lightmap_gl_patch->mipmap->data, PU_HWRCACHE_UNLOCKED); // The system-memory data can be purged now.
 }
 
 // --------------------------------------------------------------------------
-// calcul la projection d'un point sur une droite (determin�e par deux 
+// calcul la projection d'un point sur une droite (determin�e par deux
 // points) et ensuite calcul la distance (au carr�) de ce point au point
 // project� sur cette droite
 // --------------------------------------------------------------------------
@@ -274,7 +280,7 @@ void HWR_WallShading(FOutVector *wlVerts)
 		fixed_t xvalue = FIXED_TO_FLOAT(dynlights->mo[j]->x);
 		fixed_t yvalue = FIXED_TO_FLOAT(dynlights->mo[j]->y);
 		fixed_t zvalue = FIXED_TO_FLOAT(dynlights->mo[j]->z);
-		
+
 		// check bounding box first
 		if (!(SphereTouchBBox3D(&wlVerts[2], &wlVerts[0], &SHADOW_POS(j), DS_RADIUS(j))))
 			continue;
@@ -289,7 +295,7 @@ void HWR_WallShading(FOutVector *wlVerts)
 		dist_p2d = HWR_DistP2D(&wlVerts[2], &wlVerts[0], &SHADOW_POS(j), &inter);
 		if (dist_p2d >= DS_SQRRADIUS(j))
 			continue;
-		
+
 		d[0] = (float)sqrt((wlVerts[0].x-inter.x)*(wlVerts[0].x-inter.x)
 						   + (wlVerts[0].z-inter.z)*(wlVerts[0].z-inter.z));
 		d[1] = (float)sqrt((wlVerts[2].x-inter.x)*(wlVerts[2].x-inter.x)
@@ -308,28 +314,28 @@ void HWR_WallShading(FOutVector *wlVerts)
 			d[0] = -d[0]; // if yes, the left distcance must be negative for texcoord
 		}
 		d[2] = d[1]; d[3] = d[0];
-		
+
 		s = 0.5f / DS_RADIUS(j);
-		
+
 		// SRB2CBTODO: Cut out a disk shape of texture to cast on the wall
 		for (i = 0; i < 4; i++)
 		{
 			wlVerts[i].s = (float)(0.5f + d[i]*s);
 			wlVerts[i].t = (float)(0.5f + (wlVerts[i].y-SHADOW_POS(j).y)*s*1.2f);
 		}
-		
+
 		//HWR_SetShadowTexture(dynshadows->p_sspr[j]->spr);
-		
+
 		//Surf.PolyColor.rgba = LONG(dynshadows->p_sspr[j]->dynamic_color);
-		// The normal color of a shadow   
+		// The normal color of a shadow
 		Surf.PolyColor.s.red = 0x00;
 		Surf.PolyColor.s.blue = 0x00;
 		Surf.PolyColor.s.green = 0x00;
-		
+
 		Surf.PolyColor.s.alpha = (byte)((1-dist_p2d/DS_SQRRADIUS(j))*Surf.PolyColor.s.alpha);
-		
+
 		GL_DrawPolygon (&Surf, wlVerts, 4, PF_Modulated|PF_Decal|PF_Translucent, 0);
-		
+
 	} // end for (j = 0; j < dynshadows->nb; j++)
 }
 #endif
@@ -351,13 +357,14 @@ void HWR_WallLighting(FOutVector *wlVerts)
 	FVector         *light_pos;
 	FVector         inter;
 	float           dist_p2d, d[4], s;
+	int             i, j;
 
 #ifdef DYN_LIGHT_VERTEX
 	memcpy(dlv, wlVerts, sizeof(FOutVector)* 4);
 #endif
-	
+
 	// dynlights->nb == 0 if cv_gldynamiclighting.value is not set
-	for (int j = 0; j < dynlights->nb; j++)
+	for (j = 0; j < dynlights->nb; j++)
 	{
 		p_lspr = dynlights->p_lspr[j];
 		light_pos = &dynlights->position[j];
@@ -365,7 +372,7 @@ void HWR_WallLighting(FOutVector *wlVerts)
 		// it's a real object which emits light
 		if (!dynlights->mo[j])
 			continue;
-		if (P_MobjWasRemoved(dynlights->mo[j]))
+		if (P_MobjWasRemoved(dynlights->mo[j]) || !dynlights->mo[j]->state)
 		{
 			P_SetTarget(&dynlights->mo[j], NULL);
 			continue;
@@ -374,9 +381,8 @@ void HWR_WallLighting(FOutVector *wlVerts)
 			continue;
 
 		// check bounding box first
-		if (!(SphereTouchBBox3D(&wlVerts[2], &wlVerts[0], light_pos, p_lspr->dynamic_radius)))
+		if (!SphereTouchBBox3D(&wlVerts[2], &wlVerts[0], light_pos, p_lspr->dynamic_radius))
 			continue;
-
 		d[0] = wlVerts[2].x - wlVerts[0].x;
 		d[1] = wlVerts[2].z - wlVerts[0].z;
 		d[2] = light_pos->x - wlVerts[0].x;
@@ -393,7 +399,7 @@ void HWR_WallLighting(FOutVector *wlVerts)
 
 		d[0] = (float)sqrt((wlVerts[0].x-inter.x)*(wlVerts[0].x-inter.x)
 							+ (wlVerts[0].z-inter.z)*(wlVerts[0].z-inter.z));
-        d[1] = (float)sqrt((wlVerts[2].x-inter.x)*(wlVerts[2].x-inter.x)
+		d[1] = (float)sqrt((wlVerts[2].x-inter.x)*(wlVerts[2].x-inter.x)
 							+ (wlVerts[2].z-inter.z)*(wlVerts[2].z-inter.z));
 		//dAB = sqrtf((wlVerts[0].x-wlVerts[2].x)*(wlVerts[0].x-wlVerts[2].x)+(wlVerts[0].z-wlVerts[2].z)*(wlVerts[0].z-wlVerts[2].z));
 		//if ((d[0] < dAB) && (d[1] < dAB)) // test if the intersection is on the wall
@@ -409,13 +415,14 @@ void HWR_WallLighting(FOutVector *wlVerts)
 			d[0] = -d[0]; // if yes, the left distance must be negative for texcoord
 		}
 		d[2] = d[1]; d[3] = d[0];
+
 #ifdef DL_HIGH_QUALITY
 		s = 0.5f / p_lspr->dynamic_radius;
 #else
 		s = 0.5f / sqrt(p_lspr->dynamic_sqrradius - dist_p2d);
 #endif
 
-		for (int i = 0; i < 4; i++)
+		for (i = 0; i < 4; i++)
 		{
 #ifdef DYN_LIGHT_VERTEX
 			dlv[i].s = (float)(0.5f + d[i]*s);
@@ -428,7 +435,8 @@ void HWR_WallLighting(FOutVector *wlVerts)
 
 		HWR_SetLight();
 
-		Surf.PolyColor.rgba = LONG(dynlights->p_lspr[j]->dynamic_color);
+		if (p_lspr->corona_coloring_routine == NULL || !p_lspr->corona_coloring_routine(dynlights->mo[j], &Surf.PolyColor, NULL, true))
+			Surf.PolyColor.rgba = LONG(p_lspr->dynamic_color);
 #ifdef DL_HIGH_QUALITY
 		Surf.PolyColor.s.alpha *= (1-dist_p2d/p_lspr->dynamic_sqrradius);
 #endif
@@ -437,7 +445,9 @@ void HWR_WallLighting(FOutVector *wlVerts)
 		if (!dynlights->mo[j]->state || dynlights->mo[j]->state->nextstate == S_NULL)
 			Surf.PolyColor.s.alpha *= (float)dynlights->mo[j]->tics/(float)dynlights->mo[j]->state->tics;
 
+#if 0
 		HWR_GetPic(corona_lumpnum); // TODO: use different coronas
+#endif
 
 #ifdef DYN_LIGHT_VERTEX
 		HWD.pfnDrawPolygon(&Surf, dlv, 4, LIGHTMAPFLAGS);
@@ -453,11 +463,12 @@ void HWR_WallLighting(FOutVector *wlVerts)
 // --------------------------------------------------------------------------
 void HWR_PlaneLighting(FOutVector *clVerts, int nrClipVerts)
 {
-	FSurfaceInfo	Surf;
-	light_t     	*p_lspr; // dynlights sprite light
-	FVector         *light_pos;
+	FSurfaceInfo	       Surf;
+	light_t     	    *p_lspr; // dynlights sprite light
+	FVector          *light_pos;
 	float           dist_p2d, s;
-	FOutVector     	p1,p2;
+	FOutVector     	      p1,p2;
+	int                    i, j;
 
 	p1.z = FIXED_TO_FLOAT(hwbbox[BOXTOP   ]);
 	p1.x = FIXED_TO_FLOAT(hwbbox[BOXLEFT  ]);
@@ -466,7 +477,7 @@ void HWR_PlaneLighting(FOutVector *clVerts, int nrClipVerts)
 	p2.y = clVerts[0].y;
 	p1.y = clVerts[0].y;
 
-	for (int j = 0; j < dynlights->nb; j++)
+	for (j = 0; j < dynlights->nb; j++)
 	{
 		p_lspr = dynlights->p_lspr[j];
 		light_pos = &dynlights->position[j];
@@ -474,7 +485,7 @@ void HWR_PlaneLighting(FOutVector *clVerts, int nrClipVerts)
 		// it's a real object which emits light
 		if (!dynlights->mo[j])
 			continue;
-		if (P_MobjWasRemoved(dynlights->mo[j]))
+		if (P_MobjWasRemoved(dynlights->mo[j]) || !dynlights->mo[j]->state)
 		{
 			P_SetTarget(&dynlights->mo[j], NULL);
 			continue;
@@ -483,7 +494,7 @@ void HWR_PlaneLighting(FOutVector *clVerts, int nrClipVerts)
 			continue;
 
 		// BP: The kickass Optimization: check if light touch bounding box
-		if (!(SphereTouchBBox3D(&p1, &p2, light_pos, p_lspr->dynamic_radius)))
+		if (!SphereTouchBBox3D(&p1, &p2, light_pos, p_lspr->dynamic_radius))
 			continue;
 
 		// backface cull
@@ -503,7 +514,8 @@ void HWR_PlaneLighting(FOutVector *clVerts, int nrClipVerts)
 #else
 		s = 0.5f / sqrt(p_lspr->dynamic_sqrradius - dist_p2d);
 #endif
-		for (int i = 0; i < nrClipVerts; i++)
+
+		for (i = 0; i < nrClipVerts; i++)
 		{
 			clVerts[i].s = 0.5f + (clVerts[i].x - light_pos->x)*s;
 			clVerts[i].t = 0.5f + (clVerts[i].z - light_pos->z)*s*1.2f;
@@ -511,7 +523,9 @@ void HWR_PlaneLighting(FOutVector *clVerts, int nrClipVerts)
 
 		HWR_SetLight();
 
-		Surf.PolyColor.rgba = LONG(dynlights->p_lspr[j]->dynamic_color);
+		if (p_lspr->corona_coloring_routine == NULL || !p_lspr->corona_coloring_routine(dynlights->mo[j], &Surf.PolyColor, NULL, true))
+			Surf.PolyColor.rgba = LONG(p_lspr->dynamic_color);
+
 #ifdef DL_HIGH_QUALITY
 		// dist_p2d < lsp->dynamic_sqrradius
 		Surf.PolyColor.s.alpha *= (1 - dist_p2d/p_lspr->dynamic_sqrradius);
@@ -521,18 +535,19 @@ void HWR_PlaneLighting(FOutVector *clVerts, int nrClipVerts)
 		if (!dynlights->mo[j]->state || dynlights->mo[j]->state->nextstate == S_NULL)
 			Surf.PolyColor.s.alpha *= (float)dynlights->mo[j]->tics/(float)dynlights->mo[j]->state->tics;
 
+#if 0
 		HWR_GetPic(corona_lumpnum); // TODO: use different coronas
+#endif
 
 		HWD.pfnDrawPolygon(&Surf, clVerts, nrClipVerts, LIGHTMAPFLAGS);
 	} // end for (j = 0; j < dynlights->nb; j++)
 }
 
-
 #ifdef SPDR_CORONAS
 // --------------------------------------------------------------------------
 // coronas lighting with the sprite
 // --------------------------------------------------------------------------
-void HWR_DoCoronasLighting(FOutVector *outVerts, gl_vissprite_t *spr) 
+void HWR_DoCoronasLighting(FOutVector *outVerts, gl_vissprite_t *spr)
 {
 	float           cx = 0.0f, cy = 0.0f, cz = 0.0f; // gravity center
 	float			size;
@@ -556,14 +571,14 @@ void HWR_DoCoronasLighting(FOutVector *outVerts, gl_vissprite_t *spr)
 			return;
 
 		// mobj dependent light selector
-		if (!(Sprite_Corona_Light_fade(p_lspr, cz, spr->mobj->sprite)))
+		if (!Sprite_Corona_Light_fade(p_lspr, cz, spr->mobj))
 			return;
 
 		// Sprite has a corona, and coronas are enabled.
-		Surf.PolyColor.rgba = p_lspr->corona_color;
-		Surf.PolyColor.s.alpha = corona_alpha;
-
 		size = corona_size * 2.0;
+		if (p_lspr->corona_coloring_routine == NULL || !p_lspr->corona_coloring_routine(spr->mobj, &Surf.PolyColor, NULL, false))
+			Surf.PolyColor.rgba = p_lspr->corona_color;
+		Surf.PolyColor.s.alpha = corona_alpha;
 
 #if 0
 		// compute position doing average
@@ -586,7 +601,7 @@ void HWR_DoCoronasLighting(FOutVector *outVerts, gl_vissprite_t *spr)
 #endif
 #endif
 
-		// put light little forward of the sprite so there is no 
+		// put light little forward of the sprite so there is no
 		// z-blocking or z-fighting
 		if (cz > 0.5f) // correction for side drift due to cz change
 		{
@@ -598,15 +613,15 @@ void HWR_DoCoronasLighting(FOutVector *outVerts, gl_vissprite_t *spr)
 		cz -= 8.0f;  // larger causes more side-to-side drift
 
 		// Bp; je comprend pas, ou est la rotation haut/bas ?
-		//     tu ajoute un offset a y mais si la tu la reguarde de haut 
+		//     tu ajoute un offset a y mais si la tu la reguarde de haut
 		//     sa devrais pas marcher ... comprend pas :(
 		//     (...) bon je croit que j'ai comprit il est tout pourit le code ?
 		//           car comme l'offset est minime sa ce voit pas !
 		cy += p_lspr->light_yoffset;
 		light[0].x = light[3].x = cx - size;
 		light[1].x = light[2].x = cx + size;
-		light[0].y = light[1].y = cy - (size*1.33f); 
-		light[2].y = light[3].y = cy + (size*1.33f); 
+		light[0].y = light[1].y = cy - (size*1.33f);
+		light[2].y = light[3].y = cy + (size*1.33f);
 		light[0].z = light[1].z = light[2].z = light[3].z = cz;
 		light[0].s = 0.0f;   light[0].t = 0.0f;
 		light[1].s = 1.0f;   light[1].t = 0.0f;
@@ -617,7 +632,16 @@ void HWR_DoCoronasLighting(FOutVector *outVerts, gl_vissprite_t *spr)
 		HWR_GetPic(corona_lumpnum); // TODO: use different coronas
 #endif
 
+#if 1
+		if (spr->mobj->type == MT_PLAYER)
+			HWD.pfnDrawPolygon(&Surf, light, 4, PF_Modulated | PF_Additive | PF_NoDepthTest);
+		else
+			HWD.pfnDrawPolygon(&Surf, light, 4, PF_Modulated | PF_Additive);
+#else
+		// STAR NOTE: FUN FACT: did you know that PF_Corona not only makes the coronas appear through walls,
+		//	but also lags everything out too?
 		HWD.pfnDrawPolygon(&Surf, light, 4, PF_Modulated | PF_Additive | PF_Corona | PF_NoDepthTest);
+#endif
 	}
 }
 #endif
@@ -626,54 +650,79 @@ void HWR_DoCoronasLighting(FOutVector *outVerts, gl_vissprite_t *spr)
 // Draw coronas from dynamic light list
 void HWR_DL_Draw_Coronas(void)
 {
-	float           size;
-	FSurfaceInfo	Surf;
-	FOutVector      light[4];
-	FVector			*light_pos;
+	int                      j;
+	float                 size;
+	FSurfaceInfo          Surf;
+	FOutVector        light[4];
+	FVector         *light_pos;
 	float           cx, cy, cz;
-	light_t   		*p_lspr;
+	light_t            *p_lspr;
 
-	if (dynlights->nb <= 0 || corona_lumpnum == LUMPERROR)
+	if (!cv_glcoronas.value || dynlights->nb <= 0 || corona_lumpnum == LUMPERROR)
 		return;
 	HWR_GetPic(corona_lumpnum); // TODO: use different coronas
 
-	for (int j = 0; j < dynlights->nb; j++)
+	for (j = 0; j < dynlights->nb; j++)
 	{
 		p_lspr = dynlights->p_lspr[j];
 		light_pos = &dynlights->position[j];
 
 		// it's a real object which emits light
-		if (!(p_lspr->type & CORONA_SPR))
-			continue;
-
 		if (!dynlights->mo[j])
 			continue;
-		if (P_MobjWasRemoved(dynlights->mo[j]))
+		if (P_MobjWasRemoved(dynlights->mo[j]) || !dynlights->mo[j]->state)
 		{
 			P_SetTarget(&dynlights->mo[j], NULL);
 			continue;
 		}
+		if (!(p_lspr->type & CORONA_SPR))
+			continue;
 		if (p_lspr->coronaroutine && !p_lspr->coronaroutine(dynlights->mo[j]))
 			continue;
 
-		// gravity center
+		// transform light positions
 		cx = light_pos->x;
 		cy = light_pos->y;
-		cz = light_pos->z;
-		transform(&cx, &cy, &cz);
+		cz = light_pos->z; // gravity center
+		HWR_Transform(&cx, &cy, &cz);
 
 		// more realistique corona !
 		if (cz >= Z2)
 			continue;
 
-		Surf.PolyColor.rgba = p_lspr->corona_color;
-		if (!(Sprite_Corona_Light_fade(p_lspr, cz, j)))
-			return;
+		// mobj dependent light selector
+		if (!Sprite_Corona_Light_fade(p_lspr, cz, dynlights->mo[j]))
+			continue;
 
+		// Sprite has a corona, and coronas are enabled.
 		size = corona_size * 2.0;
+		if (p_lspr->corona_coloring_routine == NULL || !p_lspr->corona_coloring_routine(dynlights->mo[j], &Surf.PolyColor, NULL, false))
+			Surf.PolyColor.rgba = p_lspr->corona_color;
 		Surf.PolyColor.s.alpha = corona_alpha;
 
-		// put light little forward the sprite so there is no 
+#if 0
+		// put light little forward the sprite so there is no
+		// z-buffer problem (coplanar polygons)
+		// BP: use PF_Decal do not help :(
+		cz = cz - 5.0f;
+
+		light[0].x = cx-size;  light[0].z = cz;
+		light[0].y = cy-size*1.33f;
+		light[0].s = 0.0f;   light[0].t = 0.0f;
+
+		light[1].x = cx+size;  light[1].z = cz;
+		light[1].y = cy-size*1.33f;
+		light[1].s = 1.0f;   light[1].t = 0.0f;
+
+		light[2].x = cx+size;  light[2].z = cz;
+		light[2].y = cy+size*1.33f;
+		light[2].s = 1.0f;   light[2].t = 1.0f;
+
+		light[3].x = cx-size;  light[3].z = cz;
+		light[3].y = cy+size*1.33f;
+		light[3].s = 0.0f;   light[3].t = 1.0f;
+#else
+		// put light little forward the sprite so there is no
 		// z-buffer problem (coplanaire polygons)
 		// BP: use PF_Decal do not help :(
 		if (cz > 0.5f) // correction for side drift due to cz change
@@ -681,19 +730,32 @@ void HWR_DL_Draw_Coronas(void)
 		   cx += cx * ((-3.8f) / cz);
 		   cy += cy * ((-3.8f) / cz);
 		}
-		cz = cz - 5.0f; 
+		cz = cz - 5.0f;
 
 		light[0].x = light[3].x = cx - size;
 		light[1].x = light[2].x = cx + size;
-		light[0].y = light[1].y = cy - (size*1.33f); 
-		light[2].y = light[3].y = cy + (size*1.33f); 
+		light[0].y = light[1].y = cy - (size*1.33f);
+		light[2].y = light[3].y = cy + (size*1.33f);
 		light[0].z = light[1].z = light[2].z = light[3].z = cz;
 		light[0].s = 0.0f;   light[0].t = 0.0f;
 		light[1].s = 1.0f;   light[1].t = 0.0f;
 		light[2].s = 1.0f;   light[2].t = 1.0f;
 		light[3].s = 0.0f;   light[3].t = 1.0f;
+#endif
 
-		HWD.pfnDrawPolygon(&Surf, light, 4, PF_Modulated | PF_Additive | PF_NoDepthTest | PF_Corona);
+#if 0
+		// STAR NOTE: FUN FACT: did you know that PF_Corona not only makes the coronas appear through walls,
+		//	but also lags everything out too?
+		if (dynlights->mo[j]->type == MT_PLAYER)
+			HWD.pfnDrawPolygon(&Surf, light, 4, PF_Modulated | PF_Additive | PF_NoDepthTest | PF_Corona);
+		else
+			HWD.pfnDrawPolygon(&Surf, light, 4, PF_Modulated | PF_Additive | PF_Corona);
+#else
+		if (dynlights->mo[j]->type == MT_PLAYER)
+			HWD.pfnDrawPolygon(&Surf, light, 4, PF_Modulated | PF_Additive | PF_NoDepthTest);
+		else
+			HWD.pfnDrawPolygon(&Surf, light, 4, PF_Modulated | PF_Additive);
+#endif
 	}
 }
 #endif
@@ -704,7 +766,7 @@ void HWR_DL_Draw_Coronas(void)
 // --------------------------------------------------------------------------
 void HWR_Reset_Lights(void)
 {
-	dynlights->nb = 0;
+	memset(dynlights, 0, sizeof(dynlights_t));
 }
 
 // --------------------------------------------------------------------------
@@ -738,7 +800,7 @@ void HWR_DL_AddLightSprite(gl_vissprite_t *spr)
 
 	if (dynlights->nb >= DL_MAX_LIGHT)
 	{
-		CONS_Alert(CONS_WARNING, "maxlights reached !!!\n");
+		//CONS_Alert(CONS_WARNING, "maxlights reached !!!\n"); // STAR_CONS_Printf
 		return;
 	}
 
@@ -761,13 +823,14 @@ void HWR_DL_AddLightSprite(gl_vissprite_t *spr)
 
 	// check for the proper light type
 	if (!(p_lspr->type & DYNLIGHT_SPR))
-		return;	
+		return;
 	if (((p_lspr->type & (LIGHT_SPR|CORONA_SPR|ROCKET_SPR)) != LIGHT_SPR) || cv_glstaticlighting.value)
 		return;
 
 	// Create a dynamic light, and give the light a position.
 	light_pos = &dynlights->position[dynlights->nb];
 	light_pos->x = FIXED_TO_FLOAT(interp.x);
+#if 0
 	if (P_MobjFlip(spr->mobj))
 		light_pos->y = FIXED_TO_FLOAT(interp.z) + FIXED_TO_FLOAT(interp.height>>1) + p_lspr->light_yoffset;
 	else
@@ -775,6 +838,17 @@ void HWR_DL_AddLightSprite(gl_vissprite_t *spr)
 		light_pos->y = FIXED_TO_FLOAT(interp.z) + p_lspr->light_yoffset;
 		light_pos->y += FIXED_TO_FLOAT(P_MobjFlip(spr->mobj));
 	}
+#else
+#if 0
+	if (spr->mobj->eflags & MFE_VERTICALFLIP)
+		light_pos->y = FIXED_TO_FLOAT(interp.z) + FIXED_TO_FLOAT(interp.height) + FIXED_TO_FLOAT(p_lspr->light_yoffset);
+	else
+		light_pos->y = FIXED_TO_FLOAT(interp.z);
+#else
+	//light_pos->y = FIXED_TO_FLOAT(interp.z) + FIXED_TO_FLOAT(interp.height) + FIXED_TO_FLOAT(p_lspr->light_yoffset);
+	light_pos->y = FIXED_TO_FLOAT(interp.z) + FIXED_TO_FLOAT(interp.height>>1)+ p_lspr->light_yoffset;
+#endif
+#endif
 	light_pos->z = FIXED_TO_FLOAT(interp.y);
 
 	dynlights->mo[dynlights->nb] = spr->mobj;
@@ -787,16 +861,21 @@ void HWR_DL_AddLightSprite(gl_vissprite_t *spr)
 
 void HWR_Init_Light(void)
 {
-	static patch_t *coronapatch;
+	size_t i;
 
-	coronapatch = (patch_t *)W_CachePatchName("CORONA", PU_CACHE);
-	if (!(coronapatch && ((GLPatch_t *)coronapatch->hardware)->mipmap->format)) return;
+	// Make sure the corona graphic exists
+	lightmap_patch = (patch_t *)W_CachePatchName("CORONA", PU_CACHE);
+	lightmap_gl_patch = (GLPatch_t *)lightmap_patch->hardware;
+	if (!(lightmap_patch && lightmap_gl_patch->mipmap->format)) return;
 
 	// precalculate sqr radius
-	for (size_t i = 0; i < NUMLIGHTS; i++)
-		lspr[i].dynamic_sqrradius = lspr[i].dynamic_radius*lspr[i].dynamic_radius;
+	for (i = 0; i < NUMLIGHTS; i++)
+	{
+		light_t *p_lspr = &lspr[i];
+		p_lspr->dynamic_sqrradius = p_lspr->dynamic_radius * p_lspr->dynamic_radius;
+	}
 
-	lightmappatch.mipmap->downloaded = false;
+	lightmap_gl_patch->mipmap->downloaded = false;
 	corona_lumpnum = W_GetNumForName("CORONA");
 }
 
@@ -886,7 +965,7 @@ static void HWR_AddLightMapForLine(int lightnum, seg_t *line)
 	p2.x = FIXED_TO_FLOAT(lgl_curline->v2->x);
 
 	// check bbox of the seg
-//	if (!(CircleTouchBBox(&p1, &p2, &dynlights->position[lightnum], dynlights->p_lspr[lightnum]->dynamic_radius)))
+//	if (!(CircleTouchBBox(&p1, &p2, &dynlights->position[lightnum], p_lspr[lightnum]->dynamic_radius)))
 //		return;
 
 	HWR_Create_WallLightmaps(&p1, &p2, lightnum, line);
@@ -913,7 +992,7 @@ static void HWR_CheckSubsector(size_t num, fixed_t *bbox)
 		{
 #if 0
 			// check bbox of the seg
-			if (!(CircleTouchBBox(&p1, &p2, &dynlights->position[lightnum], dynlights->p_lspr[lightnum]->dynamic_radius)))
+			if (!(CircleTouchBBox(&p1, &p2, &dynlights->position[lightnum], p_lspr[lightnum]->dynamic_radius)))
 				continue;
 #else
 			(void)p1;
@@ -965,7 +1044,7 @@ static void HWR_AddMobjLights(mobj_t *thing)
 	}
 	light_pos->z = FIXED_TO_FLOAT(interp.y);
 
-	dynlights->p_lspr[dynlights->nb] = t_lspr[thing->sprite];
+	p_lspr[dynlights->nb] = t_lspr[thing->sprite];
 
 	dynlights->mo[dynlights->nb] = spr->mobj;
 	P_SetTarget(&dynlights->mo[dynlights->nb], thing);
@@ -977,7 +1056,7 @@ static void HWR_AddMobjLights(mobj_t *thing)
 }
 
 //
-// Hurdler: The goal of this function is to walk through all the bsp starting on the top. 
+// Hurdler: The goal of this function is to walk through all the bsp starting on the top.
 //         We need to do that to know all the lights in the map and all the walls
 //
 static void HWR_ComputeLightMapsInBSPNode(int bspnum, fixed_t *bbox)
@@ -1014,7 +1093,7 @@ void HWR_Create_StaticLightmaps(void)
 	HWR_Reset_Lights();
 
 	// First: Searching for lights
-	// BP: if i was you, I will make it in create mobj since mobj can be create 
+	// BP: if i was you, I will make it in create mobj since mobj can be create
 	//     at runtime now with fragle scipt
 	HWR_SearchLightsInMobjs();
 	CONS_Printf("%d lights found\n", dynlights->nb);
@@ -1042,11 +1121,11 @@ void HWR_Create_StaticLightmaps(void)
 		 car c'est pas focement au mileux de plus il peut en y avoir plusieur (chandelier)
   - changer la comparaison pour l'affichage des coronas (+ un epsilon)
 	BP: non non j'ai trouver mieux :) : lord du AddSprite tu rajoute aussi la coronas
-		dans la sprite list ! avec un z de epsilon (attention au ZCLIP_PLANE) et donc on 
+		dans la sprite list ! avec un z de epsilon (attention au ZCLIP_PLANE) et donc on
 		l'affiche en dernier histoir qu'il puisse etre cacher par d'autre sprite :)
-		Bon fait metre pas mal de code special dans hwr_project sprite mais sa vaux le 
+		Bon fait metre pas mal de code special dans hwr_project sprite mais sa vaux le
 		coup
-  - gerer dynamic et static : retenir le nombre de lightstatic et clearer toute les 
+  - gerer dynamic et static : retenir le nombre de lightstatic et clearer toute les
 		light>lightstatic (les dynamique) et les lightmap correspondant dans les segs
 		puit refaire une passe avec le code si dessus mais rien que pour les dynamiques
 		(tres petite modification)

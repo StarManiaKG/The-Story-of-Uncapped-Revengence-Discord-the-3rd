@@ -40,13 +40,17 @@ static const char *const hud_disable_options[] = {
 	"stagetitle",
 	"textspectator",
 	"crosshair",
+#if 0
 	"powerups",
+#endif
 
 	"score",
 	"time",
 	"rings",
 	"lives",
+#if 0
 	"input",
+#endif
 
 	"weaponrings",
 	"powerstones",
@@ -68,6 +72,11 @@ static const char *const hud_disable_options[] = {
 	"intermissiontitletext",
 	"intermissionmessages",
 	"intermissionemeralds",
+#if 1
+	// MAJOR STAR NOTE/STAR NOTE: remove for 2.2.14 //
+	"powerups",
+	"input",
+#endif
 	NULL};
 
 // you know, let's actually make sure that the table is synced.

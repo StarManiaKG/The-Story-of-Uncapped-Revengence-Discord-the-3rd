@@ -1225,22 +1225,10 @@ UINT8 CanChangeSkin(INT32 playernum)
 
 static void ForceAllSkins(INT32 forcedskin)
 {
-	INT32 i;
-	for (i = 0; i < MAXPLAYERS; ++i)
+	for (INT32 i = 0; i < MAXPLAYERS; ++i)
 	{
-		if (!playeringame[i])
-			continue;
-
-		SetPlayerSkinByNum(i, forcedskin);
-
-		// If it's me (or my brother), set appropriate skin value in cv_skin/cv_skin2
-		if (!dedicated) // But don't do this for dedicated servers, of course.
-		{
-			if (i == consoleplayer)
-				CV_StealthSet(&cv_skin, skins[forcedskin].name);
-			else if (i == secondarydisplayplayer)
-				CV_StealthSet(&cv_skin2, skins[forcedskin].name);
-		}
+		if (playeringame[i])
+			SetPlayerSkinByNum(i, forcedskin);
 	}
 }
 
@@ -1448,7 +1436,7 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 	// set color
 	p->skincolor = color % numskincolors;
 	if (p->mo)
-		p->mo->color = (UINT16)p->skincolor;
+		p->mo->color = P_GetPlayerColor(p);
 
 	// normal player colors
 	if (server && (p != &players[consoleplayer] && p != &players[secondarydisplayplayer]))
@@ -2131,7 +2119,6 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	{
 		SetPlayerSkinByNum(0, cv_chooseskin.value-1);
 		players[0].skincolor = skins[players[0].skin].prefcolor;
-		CV_StealthSetValue(&cv_playercolor, players[0].skincolor);
 	}
 
 	mapnumber = M_MapNumber(mapname[3], mapname[4]);
@@ -4671,7 +4658,7 @@ static void Command_Isgamemodified_f(void)
 	else if (modifiedgame)
 		CONS_Printf(M_GetText("modifiedgame is true, time data can't be saved\n"));
 	// STAR STUFF: autoloading mess //
-	else if (autoloading || autoloaded)
+	else if (tsourdt3rd_local.autoloading_mods || tsourdt3rd_local.autoloaded_mods)
 		CONS_Printf(M_GetText("modifiedgame is false, and time data can still be saved,\n but keep in mind that you have autoloaded at least one game-changing mod.\n"));
 	// CHECKS ARE NOW DONE! //
 	else
@@ -4801,7 +4788,6 @@ static void Name_OnChange(void)
 	}
 	else
 		SendNameAndColor();
-
 }
 
 static void Name2_OnChange(void)

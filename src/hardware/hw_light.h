@@ -19,7 +19,7 @@
 #ifdef ALAM_LIGHTING
 #define NEWCORONAS
 
-#define DL_MAX_LIGHT 255 // maximum number of lights (extra lights are ignored)
+#define DL_MAX_LIGHT UINT16_MAX //255 // maximum number of lights (extra lights are ignored)
 
 void HWR_Init_Light(void);
 void HWR_DynamicShadowing(FOutVector *clVerts, int nrClipVerts);
@@ -42,7 +42,7 @@ void HWR_Create_StaticLightmaps(void);
 
 typedef struct
 {
-	UINT8 nb; // number of dynamic lights
+	UINT16 nb; // number of dynamic lights
 	light_t *p_lspr[DL_MAX_LIGHT];
 	FVector position[DL_MAX_LIGHT]; // actually maximum DL_MAX_LIGHT lights
 	mobj_t *mo[DL_MAX_LIGHT];

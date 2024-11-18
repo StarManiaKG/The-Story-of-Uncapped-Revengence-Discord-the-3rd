@@ -93,6 +93,16 @@
 
 #include "lua_script.h"
 
+// TSoURDt3rd
+#ifdef HAVE_DISCORDSUPPORT
+#include "discord/discord.h"
+#endif
+#include "STAR/ss_main.h" // TSoURDt3rd_Init() & TSoURDt3rd_CON_DrawStartupScreen() //
+#include "STAR/smkg_g_inputs.h" // TSoURDt3rd_D_ProcessEvents() //
+#include "STAR/core/smkg-d_main.h" // TSoURDt3rd_D_AutoLoadAddons() //
+#include "STAR/core/smkg-s_audio.h" // TSoURDt3rd_S_CanModifyMusic() //
+#include "STAR/menus/smkg-m_sys.h" // TSoURDt3rd_M_DrawPauseGraphic() //
+
 // Version numbers for netplay :upside_down_face:
 int    VERSION;
 int SUBVERSION;
@@ -139,21 +149,6 @@ char srb2path[256] = ".";
 boolean usehome = true;
 const char *pandf = "%s" PATHSEP "%s";
 static char addonsdir[MAX_WADPATH];
-
-// STAR STUFF WEEEEE //
-#ifdef HAVE_DISCORDSUPPORT
-#include "discord/discord.h"
-#endif
-#include "STAR/star_vars.h"
-#include "STAR/ss_main.h" // AUTOLOADCONFIGFILENAME, TSoURDt3rd_Init(), STAR_CONS_Printf(), & TSoURDt3rd_CON_DrawStartupScreen() //
-#include "STAR/smkg_g_inputs.h" // TSoURDt3rd_D_ProcessEvents() //
-#include "STAR/core/smkg-s_audio.h" // TSoURDt3rd_S_CanModifyMusic() //
-#include "STAR/menus/smkg-m_sys.h" // TSoURDt3rd_M_DrawPauseGraphic() //
-
-static addfilelist_t autoloadwadfiles;
-boolean autoloading;
-boolean autoloaded;
-// END OF ALL THAT STAR STUFF //
 
 //
 // EVENT HANDLING
@@ -1101,101 +1096,6 @@ static void D_AddFolder(addfilelist_t *list, const char *file)
 	list->files[index] = newfile;
 }
 
-// STAR STUFF //
-static void TSoURDt3rd_AutoLoadAddons(addfilelist_t *list, const char *file, INT32 filetype)
-{
-	char *newfile;
-	size_t index = 0;
-
-	REALLOC_FILE_LIST
-
-	newfile = malloc(strlen(file) + (filetype == 1 ? 2 : 1)); // Path delimiter + NULL terminator
-	if (!newfile)
-		I_Error("TSoURDt3rd_AutoLoadAddons: No more free memory to autoload %s %s", (filetype == 1 ? "folder" : "file"), file);
-	autoloading = true;
-
-	strcpy(newfile, file);
-	if (filetype == 1)
-		strcat(newfile, PATHSEP);
-
-	if (filetype <= 6)
-		list->files[index] = newfile;
-	else
-		COM_BufAddText(va("exec %s\n", newfile));
-}
-
-static void TSoURDt3rd_FindAddonsToAutoload(void)
-{
-	// Make Variables //
-	FILE *autoloadconfigfile;
-	const char *autoloadpath;
-
-	INT32 i;
-	char wadsToAutoload[256] = " ", renameAutoloadStrings[256] = " ";
-
-	// Check For the File //
-	autoloadpath = va("%s"PATHSEP"%s",srb2home,AUTOLOADCONFIGFILENAME);
-	autoloadconfigfile = fopen(autoloadpath, "r");
-
-	// If the File is Found, Run Our Main Things
-	if (autoloadconfigfile)
-	{
-		CON_StopRefresh(); // Temporarily stop refreshing the screen for wad autoloading
-
-		while (fgets(wadsToAutoload, sizeof wadsToAutoload, autoloadconfigfile) != NULL)
-		{
-			// Skip the Line if it's Empty or Commented Out
-			if ((wadsToAutoload[1] == '\0' || wadsToAutoload[1] == '\n')
-				|| (wadsToAutoload[0] == '#'))
-
-				continue;
-			
-			// If the Line is Outdated, Clear and Update Them to the Current Autoloading Format
-			else if (fastncmp(wadsToAutoload, "addfile ", 8) || fastncmp(wadsToAutoload, "addfolder ", 10))
-			{
-				i = (fastncmp(wadsToAutoload, "addfile ", 8) ? 8 : 10);
-				INT32 j = 0, k = 0;
-
-				while (wadsToAutoload[i] != '\0' && wadsToAutoload[i] != '\n')
-				{
-					renameAutoloadStrings[j] = wadsToAutoload[i];
-					i++, j++;
-				}
-				for (i = 0; wadsToAutoload[i]; i++) wadsToAutoload[i] = '\0';
-				while (renameAutoloadStrings[k] != '\0' && renameAutoloadStrings[k] != '\n')
-				{
-					wadsToAutoload[k] = renameAutoloadStrings[k];
-					renameAutoloadStrings[k] = '\0';
-
-					k++;
-				}		
-			}
-
-			// Remove Any Empty or Skipped Lines
-			for (i = 0; wadsToAutoload[i] != '\0'; i++)
-			{
-				if (wadsToAutoload[i] == '\n')
-					wadsToAutoload[i] = '\0';
-			}
-
-			// Check the File Type, and if Valid, Load it
-			if (!STAR_DetectFileType(wadsToAutoload))
-				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, M_GetText("TSoURDt3rd_AutoLoadAddons: File %s is unknown or invalid.\n"), wadsToAutoload);
-			else
-				TSoURDt3rd_AutoLoadAddons(&autoloadwadfiles, wadsToAutoload, STAR_DetectFileType(wadsToAutoload));
-
-			// Empty All the Strings
-			for (i = 0; wadsToAutoload[i] != '\0'; i++)
-				wadsToAutoload[i] = '\0';
-		}
-
-		// Close the File, Refresh, and We're Done :)
-		fclose(autoloadconfigfile);
-		CON_StartRefresh(); // Restart the refresh!
-	}
-}
-// END THIS STAR STUFF //
-
 #undef REALLOC_FILE_LIST
 
 static inline void D_CleanFile(addfilelist_t *list)
@@ -1504,8 +1404,6 @@ void D_SRB2Main(void)
 	if (M_CheckParm("-password") && M_IsNextParm())
 		D_SetPassword(M_GetNextParm());
 
-	TSoURDt3rd_FindAddonsToAutoload(); // STAR STUFF: AUTOLOAD ADD-ONS //
-
 	// player setup menu colors must be initialized before
 	// any wad file is added, as they may contain colors themselves
 	M_InitPlayerSetupColors();
@@ -1604,23 +1502,7 @@ void D_SRB2Main(void)
 	// ...except it does if they slip maps in there, and that's what W_VerifyNMUSlumps is for.
 #endif //ifndef DEVELOP
 
-	// STAR STUFF: Autoloading Wads //
-	//CON_StopRefresh(); // Temporarily stop refreshing the screen for wad autoloading
-
-	if (autoloadwadfiles.numfiles)
-	{
-		CONS_Printf("TSoURDt3rd_AutoLoadAddons(): Autoloading Addons...\n");
-		W_InitMultipleFiles(&autoloadwadfiles);
-		D_CleanFile(&autoloadwadfiles);
-		if (modifiedgame || savemoddata || usedCheats)
-			autoloaded = true;
-		modifiedgame = false;
-		autoloading = false;
-		usedCheats = false;
-	}
-
-	//CON_StartRefresh(); // Restart the refresh!
-	// END OF THAT STUFF //
+	TSoURDt3rd_D_AutoLoadAddons(); // STAR STUFF: autoload our addons please //
 
 	cht_Init();
 

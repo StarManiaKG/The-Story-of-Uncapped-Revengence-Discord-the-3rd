@@ -55,11 +55,10 @@
 #include "hardware/hw_main.h"
 #endif
 
+// TSoURDt3rd
 #ifdef HAVE_DISCORDSUPPORT
 #include "discord/discord.h"
 #endif
-
-// TSoURDt3rd
 #include "STAR/smkg-cvars.h" // cv_tsourdt3rd_sdl_windowtitle stuff & cv_tsourdt3rd_audio_gameover //
 #include "STAR/star_vars.h" // STAR_SetWindowTitle() //
 #include "STAR/p_user.h" // TSoURDt3rd_P_SuperReady() //
@@ -1380,56 +1379,6 @@ void P_DoSuperTransformation(player_t *player, boolean giverings)
 	P_PlayerFlagBurst(player, false);
 }
 
-//
-// P_DoSuperDetransformation
-//
-// Detransform into regular Sonic!
-void P_DoSuperDetransformation(player_t *player)
-{
-	player->powers[pw_emeralds] = 0; // lost the power stones
-	P_SpawnGhostMobj(player->mo);
-
-	player->powers[pw_super] = 0;
-
-	// Restore color
-	if ((player->powers[pw_shield] & SH_STACK) == SH_FIREFLOWER)
-	{
-		player->mo->color = SKINCOLOR_WHITE;
-		G_GhostAddColor(GHC_FIREFLOWER);
-	}
-	else
-	{
-		player->mo->color = P_GetPlayerColor(player);
-		G_GhostAddColor(GHC_NORMAL);
-	}
-
-	if (!G_CoopGametype())
-		player->powers[pw_flashing] = flashingtics-1;
-
-	if (player->mo->sprite2 & FF_SPR2SUPER)
-		P_SetMobjState(player->mo, player->mo->state-states);
-
-	// Inform the netgame that the champion has fallen in the heat of battle.
-	if (!G_CoopGametype())
-	{
-		S_StartSound(NULL, sfx_s3k66); //let all players hear it.
-		HU_SetCEchoFlags(0);
-		HU_SetCEchoDuration(5);
-		HU_DoCEcho(va("%s\\is no longer super.\\\\\\\\", player_names[player-players]));
-	}
-
-	// Resume normal music if you're the console player
-	if (P_IsLocalPlayer(player))
-	{
-		music_stack_noposition = true; // HACK: Do not reposition next music
-		music_stack_fadeout = MUSICRATE/2; // HACK: Fade out current music
-	}
-	P_RestoreMusic(player);
-
-	// If you had a shield, restore its visual significance.
-	P_SpawnShieldOrb(player);
-}
-
 // Adds to the player's score
 void P_AddPlayerScore(player_t *player, UINT32 amount)
 {
@@ -1564,7 +1513,7 @@ void P_PlayLivesJingle(player_t *player)
 		return;
 
 	// STAR STUFF: play a sound for lives when jukeboxing //
-	if (tsourdt3rd_global_jukebox->curtrack)
+	if (tsourdt3rd_global_jukebox->playing)
 		use1upSound = true;
 	// WE'RE PREPARED NOW! //
 
@@ -1613,9 +1562,9 @@ void P_PlayJingleMusic(player_t *player, const char *musname, UINT16 musflags, b
 		return;
 
 	// STAR STUFF: don't play jingles if we got jukebox or april fools music //
-	if (tsourdt3rd_global_jukebox->curtrack)
+	if (tsourdt3rd_global_jukebox->playing)
 		return;
-	else if (TSoURDt3rd_AprilFools_ModeEnabled())
+	if (TSoURDt3rd_AprilFools_ModeEnabled())
 		return;
 	// DONE! //
 
@@ -1707,6 +1656,11 @@ void P_RestoreMusic(player_t *player)
 {
 	if (!P_IsLocalPlayer(player)) // Only applies to a local player
 		return;
+
+#if 0
+	// STAR STUFF: sorry, but no. //
+	S_SpeedMusic(1.0f);
+#endif
 
 	// Jingles have a priority in this order, so follow it
 	// and as a default case, go down the music stack.
@@ -5183,7 +5137,12 @@ static boolean P_PlayerShieldThink(player_t *player, ticcmd_t *cmd, mobj_t *lock
 {
 	mobj_t *lockonshield = NULL;
 
-	if ((player->powers[pw_shield] & SH_NOSTACK) && (!player->powers[pw_super] || (player->powers[pw_super] && cv_tsourdt3rd_players_nukewhilesuper.value && (player->powers[pw_shield] & SH_NOSTACK) == SH_ARMAGEDDON)) && !(player->pflags & PF_SPINDOWN) // STAR NOTE: i was here by the way
+#if 0
+	if ((player->powers[pw_shield] & SH_NOSTACK) && !player->powers[pw_super] && !(player->pflags & PF_SPINDOWN)
+#else
+	// STAR NOTE: i was here by the way //
+	if ((player->powers[pw_shield] & SH_NOSTACK) && (!player->powers[pw_super] || (player->powers[pw_super] && cv_tsourdt3rd_players_nukewhilesuper.value && (player->powers[pw_shield] & SH_NOSTACK) == SH_ARMAGEDDON)) && !(player->pflags & PF_SPINDOWN)
+#endif
 		&& ((!(player->pflags & PF_THOKKED) || (((player->powers[pw_shield] & SH_NOSTACK) == SH_BUBBLEWRAP || (player->powers[pw_shield] & SH_NOSTACK) == SH_ATTRACT) && player->secondjump == UINT8_MAX) ))) // thokked is optional if you're bubblewrapped / 3dblasted
 	{
 		if ((player->powers[pw_shield] & SH_NOSTACK) == SH_ATTRACT && !(player->charflags & SF_NOSHIELDABILITY))

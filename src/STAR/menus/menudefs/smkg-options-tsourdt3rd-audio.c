@@ -159,7 +159,7 @@ TSoURDt3rdBossMusic_t bossMusic[] = {
 	{"_scdb", 		NULL, 		0},	// Sonic CD
 	{"_s2b", 		NULL, 		0},	// Sonic 2
 	{"_s3b1", 		NULL, 		0},	// Sonic 3
-	{"_&kb1", 		NULL, 		0},	// & Knuckles
+	{"_&kb", 		NULL, 		0},	// & Knuckles
 	{"_s3kb", 		NULL, 		0},	// Sonic 3 & Knuckles
 
 	{"_a2b", 	 "_a2bp", 		0},	// Sonic Advance 2 - R

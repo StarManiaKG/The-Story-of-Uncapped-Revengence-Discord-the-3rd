@@ -11,6 +11,14 @@
 
 #include <time.h>
 
+#if defined (__linux__) || defined (__FreeBSD__)
+#include <sys/random.h>
+#elif defined (_WIN32)
+#define _CRT_RAND_S
+#elif defined (__APPLE__)
+#include <CommonCrypto/CommonRandom.h>
+#endif
+
 #include "smkg-net.h"
 
 #include "../smkg-cvars.h"
@@ -97,8 +105,6 @@ void TSoURDt3rd_InitializePlayer(INT32 playernum)
 	tsourdt3rd_user->server_TSoURDt3rdVersion				= TSoURDt3rd_CurrentVersion();
 
 	tsourdt3rd_struct_user->levels.time_over = false;
-
-	memset(&tsourdt3rd_local, 0, sizeof(tsourdt3rd_local));
 
 	tsourdt3rd_loadingscreen.loadCount      = 0;
 	tsourdt3rd_loadingscreen.loadPercentage = 0;

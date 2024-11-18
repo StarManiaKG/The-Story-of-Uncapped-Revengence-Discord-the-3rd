@@ -1,8 +1,6 @@
-// SONIC ROBO BLAST 2
+// SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 1993-1996 by id Software, Inc.
-// Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2023 by Sonic Team Junior.
+// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -93,6 +91,8 @@ boolean TSoURDt3rd_P_LoadAddon(INT32 wadnum, INT32 numlumps)
 				}
 				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "Reading '\x82%s\x80' (from wad '\x82%s\x80')\n", lump_p->name, script->wad->filename);
 				TSoURDt3rd_STARParser_Read(script, text, lumpLength, TSoURDt3rd_STARParser_JukeDefs);
+				Z_Free(tsourdt3rd_jukebox_defs);
+				tsourdt3rd_jukebox_defs = NULL;
 				break;
 			default:
 				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "Parser for lump '%s' doesn't exist yet!\n", tsourdt3rd_lump_term_opt[lump_found]);

@@ -333,8 +333,8 @@ enum
 	op_video_sdl_header,
 	op_video_sdl_window_shaking,
 
-	op_flair_fpscolor = 9,
-	op_flair_tpscolor
+	op_video_flair_fpscolor = 9,
+	op_video_flair_tpscolor
 };
 
 extern menu_t TSoURDt3rd_OP_AudioDef;
@@ -373,11 +373,10 @@ extern menu_t TSoURDt3rd_OP_ExtrasDef;
 extern menuitem_t TSoURDt3rd_OP_ExtrasMenu[];
 extern tsourdt3rd_menu_t TSoURDt3rd_TM_OP_ExtrasDef;
 extern tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_ExtrasMenu[];
-
-extern menu_t TSoURDt3rd_OP_DebugDef;
-extern menuitem_t TSoURDt3rd_OP_DebugMenu[];
-extern tsourdt3rd_menu_t TSoURDt3rd_TM_OP_DebugDef;
-extern tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_DebugMenu[];
+enum
+{
+	op_extras_jukebox = 1
+};
 
 extern menu_t TSoURDt3rd_OP_Extras_SnakeDef;
 extern menuitem_t TSoURDt3rd_OP_Extras_SnakeMenu[];
@@ -388,6 +387,11 @@ extern menu_t TSoURDt3rd_OP_Extras_JukeboxDef;
 extern menuitem_t TSoURDt3rd_OP_Extras_JukeboxMenu[];
 extern tsourdt3rd_menu_t TSoURDt3rd_TM_OP_Extras_JukeboxDef;
 extern tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_Extras_JukeboxMenu[];
+
+extern menu_t TSoURDt3rd_OP_DebugDef;
+extern menuitem_t TSoURDt3rd_OP_DebugMenu[];
+extern tsourdt3rd_menu_t TSoURDt3rd_TM_OP_DebugDef;
+extern tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_DebugMenu[];
 
 // =============
 // SMKG-M_DRAW.C

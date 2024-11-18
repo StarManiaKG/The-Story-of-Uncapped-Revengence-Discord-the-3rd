@@ -64,6 +64,15 @@ typedef enum
 	TSOURDT3RD_QUITSMSG1 = NUM_VANILLA_QUITMESSAGES,
 	TSOURDT3RD_QUITSMSG2,
 	TSOURDT3RD_QUITSMSG3,
+	TSOURDT3RD_QUITSMSG4,
+
+	TSOURDT3RD_QUITFBGMSG1,
+	TSOURDT3RD_QUITFBGMSG2,
+	TSOURDT3RD_QUITFBGMSG3,
+	TSOURDT3RD_QUITFBGMSG4,
+	TSOURDT3RD_QUITFBGMSG5,
+	TSOURDT3RD_QUITFBGMSG6,
+	TSOURDT3RD_QUITFBGMSG7,
 
 	TSOURDT3RD_AF_QUITMSG_START,
 	TSOURDT3RD_AF_QUITMSG1 = TSOURDT3RD_AF_QUITMSG_START,
@@ -178,6 +187,15 @@ void TSoURDt3rd_M_InitQuitMessages(const char **msg_table)
 	tsourdt3rd_quitmsgs[TSOURDT3RD_QUITSMSG1] = M_GetText("Every time you press 'Y',\nthe TSoURDt3rd Devs cry...\n\n(Press 'Y' to quit)");
 	tsourdt3rd_quitmsgs[TSOURDT3RD_QUITSMSG2] = M_GetText("Who do you think you are?\nItaly?\n\n(Press 'Y' to quit)");
 	tsourdt3rd_quitmsgs[TSOURDT3RD_QUITSMSG3] = M_GetText("You know, I have to say\nsomething cool here in order to\nclose the game...\n\n(Press 'Y' to quit)");
+	tsourdt3rd_quitmsgs[TSOURDT3RD_QUITSMSG4] = M_GetText("There's always modding.\n\n(Press 'Y' to quit)");
+
+	tsourdt3rd_quitmsgs[TSOURDT3RD_QUITFBGMSG1] = M_GetText("Someone's getting ticked off with Black Hole Zone.\n\n(Press 'Y' to quit)");
+	tsourdt3rd_quitmsgs[TSOURDT3RD_QUITFBGMSG2] = M_GetText("Come on, you're SO close to getting that emblem!\n\n(Press 'Y' to quit)");
+	tsourdt3rd_quitmsgs[TSOURDT3RD_QUITFBGMSG3] = M_GetText("Oh sweet, you're finally going to touch grass?\n\n(Press 'Y' to quit)");
+	tsourdt3rd_quitmsgs[TSOURDT3RD_QUITFBGMSG4] = M_GetText("Sonic never made it back after the Black Rock incident.\n\n(Press 'Y' to quit)");
+	tsourdt3rd_quitmsgs[TSOURDT3RD_QUITFBGMSG5] = M_GetText("Don't let this make you forget\nthe fact that Mr. Krabs sold\nSpongeBob's soul for 62 cents.\n\n(Press 'Y' to quit)");
+	tsourdt3rd_quitmsgs[TSOURDT3RD_QUITFBGMSG6] = M_GetText("Here me out:\nWhat if you used Tails?\n\n(Press 'Y' to quit)");
+	tsourdt3rd_quitmsgs[TSOURDT3RD_QUITFBGMSG7] = M_GetText("I guess this isn't happenin'.\n\n(Press 'Y' to quit)");
 
 	tsourdt3rd_quitmsgs[TSOURDT3RD_AF_QUITMSG1] = M_GetText("Aww, was April Fools\ntoo much for you to handle?\n\n(Press 'Y' to quit)");
 	tsourdt3rd_quitmsgs[TSOURDT3RD_AF_QUITMSG2] = M_GetText("Happy April Fools!\n\n(Press 'Y' to quit)");
@@ -505,7 +523,7 @@ void TSoURDt3rd_M_UpdateMenuCMD(UINT8 i)
 	if (thisGameKey == JB_OPENJUKEBOX || STAR_G_KeyPressed(0, JB_OPENJUKEBOX))
 	{
 		// A shortcut to open the Jukebox menu.
-		TSoURDt3rd_M_InitJukebox(0);
+		TSoURDt3rd_M_InitJukebox(op_extras_jukebox);
 	}
 	if (thisGameKey == JB_INCREASEMUSICSPEED || STAR_G_KeyPressed(0, JB_INCREASEMUSICSPEED))
 	{

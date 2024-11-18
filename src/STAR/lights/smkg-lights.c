@@ -1,5 +1,7 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
+// Original Copyright (C) 1998-2000 by DooM Legacy Team.
+// Original Copyright (C) 1999-2023 by Sonic Team Junior.
 // Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
@@ -12,15 +14,86 @@
 #include "smkg-lights.h"
 #include "smkg-coronas.h"
 
+#include "../../v_video.h"
+
 #ifdef ALAM_LIGHTING
-// ---------------------------------------- //
-//        			Coronas
-// ---------------------------------------- //
+
+// ------------------------ //
+//        Functions
+// ------------------------ //
 
 boolean LCR_SuperSonicLight(mobj_t *mobj)
 {
-	if (!mobj || mobj->sprite != SPR_PLAY || (!mobj->player || !mobj->player->powers[pw_super]))
+	return (mobj && mobj->player && mobj->sprite == SPR_PLAY && mobj->player->powers[pw_super]);
+}
+
+boolean LCR_ObjectColorToCoronaLight(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *alpha, boolean dynamic)
+{
+	RGBA_t new_color;
+
+	if (mobj == NULL)
 		return false;
+	new_color = V_GetColor(skincolors[mobj->color].ramp[8]);
+
+	if (rgba_table != NULL)
+	{
+		if (dynamic)
+			rgba_table->rgba = LONG(new_color.rgba);
+		else
+			rgba_table->rgba = new_color.rgba;
+	}
+
+	if (alpha != NULL)
+		(*alpha) = new_color.s.alpha;
+
+	return true;
+}
+
+boolean LCR_EmeraldLight(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *alpha, boolean dynamic)
+{
+	light_t *light_to_use = NULL;
+
+	if (mobj == NULL)
+		return false;
+
+	switch (mobj->type)
+	{
+		case MT_EMERALD1:
+			light_to_use = &lspr[GREENSHINE_L];
+			break;
+		case MT_EMERALD2:
+			light_to_use = &lspr[PINKSHINE_L];
+			break;
+		case MT_EMERALD3:
+			light_to_use = &lspr[BLUESHINE_L];
+			break;
+		case MT_EMERALD4:
+			light_to_use = &lspr[LBLUESHINE_L];
+			break;
+		case MT_EMERALD5:
+			light_to_use = &lspr[ORANGESHINE_L];
+			break;
+		case MT_EMERALD6:
+			light_to_use = &lspr[REDSHINE_L];
+			break;
+		case MT_EMERALD7:
+			light_to_use = &lspr[GREYSHINE_L];
+			break;
+		default:
+			return false;
+	}
+
+	if (rgba_table != NULL)
+	{
+		if (dynamic)
+			rgba_table->rgba = LONG(light_to_use->dynamic_color);
+		else
+			rgba_table->rgba = light_to_use->corona_color;
+	}
+
+	if (alpha != NULL)
+		(*alpha) = V_GetColor(skincolors[(dynamic ? light_to_use->dynamic_color : light_to_use->corona_color)].ramp[8]).s.alpha;
+
 	return true;
 }
 
@@ -32,115 +105,120 @@ static void CV_corona_OnChange(void)
 }
 
 static CV_PossibleValue_t corona_cons_t[] = {{0, "Off"}, {1, "Special"}, {2, "Most"}, {14, "Dim"}, {15, "All"}, {16, "Bright"}, {20, "Old"}, {0, NULL}};
-consvar_t cv_corona = CVAR_INIT ("corona", "All", CV_SAVE|CV_CALL, corona_cons_t, CV_corona_OnChange);
-consvar_t cv_coronasize = CVAR_INIT ("coronasize", "1", CV_SAVE|CV_FLOAT, NULL, NULL);
+consvar_t cv_corona = CVAR_INIT ("tsourdt3rd_vid_coronas", "All", CV_SAVE|CV_CALL, corona_cons_t, CV_corona_OnChange);
+consvar_t cv_coronasize = CVAR_INIT ("tsourdt3rd_vid_coronas_size", "1", CV_SAVE|CV_FLOAT, NULL, NULL);
 
 static CV_PossibleValue_t corona_draw_mode_cons_t[] = {{0, "Blend"}, {1, "Blend_BG"}, {2, "Additive"}, {3, "Additive_BG"}, {4, "Add_Limit"}, {0, NULL}};
-consvar_t cv_corona_draw_mode = CVAR_INIT ("corona_draw_mode", "2", CV_SAVE, corona_draw_mode_cons_t, NULL);
+consvar_t cv_corona_draw_mode = CVAR_INIT ("tsourdt3rd_vid_coronas_drawmode", "Additive", CV_SAVE, corona_draw_mode_cons_t, NULL);
 
 //Hurdler: now we can change those values via FS :)
 // RGBA( r, g, b, a )
 // Indexed by lightspritenum_s
 light_t lspr[NUMLIGHTS] =
-{	// type       		offset x,   y  		coronas color,	c_radius,	light color,	l_radius, 	sqr radius computed at init		coronaroutine
+{	// type       		offset x,   y  		coronas color,	c_radius,	light color,	l_radius, 	sqr radius computed at init, impl_flags,		coronaroutine, corona_coloring_routine
 	// default
-	{UNDEFINED_SPR,		0.0f,		0.0f, 	0x00000000,		60.0f,		0x00000000,		100.0f,		0.0f, 0,						NULL},
+	{UNDEFINED_SPR,		0.0f,		0.0f, 	0x00000000,		60.0f,		0x00000000,		100.0f,		0.0f, 0,					NULL, NULL},
 
 	// weapons
 	// RINGSPARK_L
-	{LIGHT_SPR,      	0.0f,   	0.0f, 	0x0000e0ff,  	16.0f, 		0x0000e0ff,  	 32.0f, 	0.0f, 0,						NULL}, // Tails 09-08-2002
+	{LIGHT_SPR,      	0.0f,   	0.0f, 	0x0000e0ff,  	16.0f, 		0x0000e0ff,  	 32.0f, 	0.0f, 0,					NULL, NULL}, // Tails 09-08-2002
 	// SUPERSONIC_L
-	{/*DYNLIGHT_SPR*/LIGHT_SPR,   	0.0f,   	0.0f, 	0xff00e0ff,  	32.0f, 		0xff00e0ff, 	128.0f, 	0.0f, 0,			LCR_SuperSonicLight}, // Tails 09-08-2002
+	{/*DYNLIGHT_SPR*/LIGHT_SPR,   	0.0f,   	0.0f, 	0xff00e0ff,  	32.0f, 		0xff00e0ff, 	128.0f, 	0.0f, 0,			LCR_SuperSonicLight, LCR_ObjectColorToCoronaLight}, // Tails 09-08-2002
 	// SUPERSPARK_L
-	{LIGHT_SPR,      	0.0f,   	0.0f, 	0xe0ffffff,   	 8.0f, 		0xe0ffffff,  	 64.0f, 	0.0f, 0,						NULL},
+	{LIGHT_SPR,      	0.0f,   	0.0f, 	0xe0ffffff,   	 8.0f, 		0xe0ffffff,  	 64.0f, 	0.0f, 0,					NULL, NULL},
 	// INVINCIBLE_L
-	{DYNLIGHT_SPR,   	0.0f,   	0.0f, 	0x10ffaaaa,  	16.0f, 		0x10ffaaaa, 	128.0f, 	0.0f, 0,						NULL},
+	{DYNLIGHT_SPR,   	0.0f,   	0.0f, 	0x10ffaaaa,  	16.0f, 		0x10ffaaaa, 	128.0f, 	0.0f, 0,					NULL, NULL},
 	// GREENSHIELD_L
-	{DYNLIGHT_SPR,		0.0f,		0.0f,	0x602b7337,		32.0f,		0x602b7337,		128.0f,		0.0f, 0,						NULL},
+	{DYNLIGHT_SPR,		0.0f,		0.0f,	0x602b7337,		32.0f,		0x602b7337,		128.0f,		0.0f, 0,					NULL, NULL},
 	// BLUESHIELD_L
-	{DYNLIGHT_SPR,		0.0f,		0.0f,	0x60cb0000,		32.0f,		0x60cb0000,		128.0f,		0.0f, 0,						NULL},
+	{DYNLIGHT_SPR,		0.0f,		0.0f,	0x60cb0000,		32.0f,		0x60cb0000,		128.0f,		0.0f, 0,					NULL, NULL},
 
 	// tall lights
 	// YELLOWSHIELD_L
-	{DYNLIGHT_SPR,   0.0f,   0.0f, 0x601f7baf,  32.0f, 0x601f7baf, 128.0f, 0.0f, 0,						NULL},
+	{DYNLIGHT_SPR,   0.0f,   0.0f, 0x601f7baf,  32.0f, 0x601f7baf, 128.0f, 0.0f, 0,					NULL, NULL},
 
 	// REDSHIELD_L
-	{DYNLIGHT_SPR,   0.0f,   0.0f, 0x600000cb,  32.0f, 0x600000cb, 128.0f, 0.0f, 0,						NULL},
+	{DYNLIGHT_SPR,   0.0f,   0.0f, 0x600000cb,  32.0f, 0x600000cb, 128.0f, 0.0f, 0,				NULL, NULL},
 
 	// BLACKSHIELD_L // Black light? lol
-	{DYNLIGHT_SPR,   0.0f,   0.0f, 0x60010101,  32.0f, 0x60ff00ff, 128.0f, 0.0f, 0,						NULL},
+	{DYNLIGHT_SPR,   0.0f,   0.0f, 0x60010101,  32.0f, 0x60ff00ff, 128.0f, 0.0f, 0,				NULL, NULL},
 
 	// WHITESHIELD_L
-	{DYNLIGHT_SPR,   0.0f,   0.0f, 0x60ffffff,  32.0f, 0x60ffffff, 128.0f, 0.0f, 0,						NULL},
+	{DYNLIGHT_SPR,   0.0f,   0.0f, 0x60ffffff,  32.0f, 0x60ffffff, 128.0f, 0.0f, 0,				NULL, NULL},
 
 	// SMALLREDBALL_L
-	{DYNLIGHT_SPR,   0.0f,   0.0f, 0x606060f0,   0.0f, 0x302070ff,  32.0f, 0.0f, 0,						NULL},
+	{DYNLIGHT_SPR,   0.0f,   0.0f, 0x606060f0,   0.0f, 0x302070ff,  32.0f, 0.0f, 0,				NULL, NULL},
 
 	// small lights
 	// RINGLIGHT_L
-	{DYNLIGHT_SPR,   0.0f,   0.0f, 0x60b0f0f0,   0.0f, 0x30b0f0f0, 100.0f, 0.0f, 0,						NULL},
+	{DYNLIGHT_SPR,   0.0f,   0.0f, 0x60b0f0f0,   0.0f, 0x30b0f0f0, 100.0f, 0.0f, 0,				NULL, NULL},
 	// GREENSMALL_L
-	{    LIGHT_SPR,   0.0f,  14.0f, 0x6070ff70,  60.0f, 0x4070ff70, 100.0f, 0.0f, 0,						NULL},
+	{    LIGHT_SPR,   0.0f,  14.0f, 0x6070ff70,  60.0f, 0x4070ff70, 100.0f, 0.0f, 0,					NULL, NULL},
 	// REDSMALL_L
-	{    LIGHT_SPR,   0.0f,  14.0f, 0x705070ff,  60.0f, 0x405070ff, 100.0f, 0.0f, 0,						NULL},
+	{    LIGHT_SPR,   0.0f,  14.0f, 0x705070ff,  60.0f, 0x405070ff, 100.0f, 0.0f, 0,					NULL, NULL},
 
 	// type       offset x,   y  coronas color, c_size,light color,l_radius, sqr radius computed at init
 	// GREENSHINE_L
-	{    LIGHT_SPR,   0.0f,   0.0f, 0xff00ff00,  64.0f, 0xff00ff00, 256.0f, 0.0f, 0,						NULL},
+	{    LIGHT_SPR,   0.0f,   0.0f, 0xff00ff00,  64.0f, 0xff00ff00, 256.0f, 0.0f, 0,					NULL, NULL},
 	// ORANGESHINE_L
-	{    LIGHT_SPR,   0.0f,   0.0f, 0xff0080ff,  64.0f, 0xff0080ff, 256.0f, 0.0f, 0,						NULL},
+	{    LIGHT_SPR,   0.0f,   0.0f, 0xff0080ff,  64.0f, 0xff0080ff, 256.0f, 0.0f, 0,					NULL, NULL},
 	// PINKSHINE_L
-	{    LIGHT_SPR,   0.0f,   0.0f, 0xffe080ff,  64.0f, 0xffe080ff, 256.0f, 0.0f, 0,						NULL},
+	{    LIGHT_SPR,   0.0f,   0.0f, 0xffe080ff,  64.0f, 0xffe080ff, 256.0f, 0.0f, 0,					NULL, NULL},
 	// BLUESHINE_L
-	{    LIGHT_SPR,   0.0f,   0.0f, 0xffff0000,  64.0f, 0xffff0000, 256.0f, 0.0f, 0,						NULL},
+	{    LIGHT_SPR,   0.0f,   0.0f, 0xffff0000,  64.0f, 0xffff0000, 256.0f, 0.0f, 0,					NULL, NULL},
 	// REDSHINE_L
-	{    LIGHT_SPR,   0.0f,   0.0f, 0xff0000ff,  64.0f, 0xff0000ff, 256.0f, 0.0f, 0,						NULL},
+	{    LIGHT_SPR,   0.0f,   0.0f, 0xff0000ff,  64.0f, 0xff0000ff, 256.0f, 0.0f, 0,					NULL, NULL},
 	// LBLUESHINE_L
-	{    LIGHT_SPR,   0.0f,   0.0f, 0xffff8080,  64.0f, 0xffff8080, 256.0f, 0.0f, 0,						NULL},
+	{    LIGHT_SPR,   0.0f,   0.0f, 0xffff8080,  64.0f, 0xffff8080, 256.0f, 0.0f, 0,					NULL, NULL},
 	// GREYSHINE_L
-	{    LIGHT_SPR,   0.0f,   0.0f, 0xffe0e0e0,  64.0f, 0xffe0e0e0, 256.0f, 0.0f, 0,						NULL},
+	{    LIGHT_SPR,   0.0f,   0.0f, 0xffe0e0e0,  64.0f, 0xffe0e0e0, 256.0f, 0.0f, 0,					NULL, NULL},
 
 	// monsters
 	// REDBALL_L
-	{DYNLIGHT_SPR,	0.0f,	0.0f, 0x606060ff,   0.0f, 0x606060ff, 100.0f, 0.0f, 0,						NULL},
+	{DYNLIGHT_SPR,	0.0f,	0.0f, 0x606060ff,   0.0f, 0x606060ff, 100.0f, 0.0f, 0,				NULL, NULL},
 	// GREENBALL_L
-	{DYNLIGHT_SPR,	0.0f,	0.0f,	0x6060ff60, 120.0f, 0x6060ff60, 100.0f, 0.0f, 0,						NULL},
+	{DYNLIGHT_SPR,	0.0f,	0.0f,	0x6060ff60, 120.0f, 0x6060ff60, 100.0f, 0.0f, 0,					NULL, NULL},
 	// BLUEBALL_L
-	{DYNLIGHT_SPR,	0.0f,	0.0f,	0x60ff6060, 120.0f, 0x60ff6060, 100.0f, 0.0f, 0,						NULL},
+	{DYNLIGHT_SPR,	0.0f,	0.0f,	0x60ff6060, 120.0f, 0x60ff6060, 100.0f, 0.0f, 0,					NULL, NULL},
 
 	// misc.
 	// NIGHTSLIGHT_L
-	{    LIGHT_SPR,   0.0f,   6.0f, 0x60ffffff,  16.0f, 0x30ffffff,  32.0f, 0.0f, 0,						NULL},
+	{    LIGHT_SPR,   0.0f,   6.0f, 0x60ffffff,  16.0f, 0x30ffffff,  32.0f, 0.0f, 0,					NULL, NULL},
 
 	// JETLIGHT_L
-	{DYNLIGHT_SPR,   0.0f,   6.0f, 0x60ffaaaa,  16.0f, 0x30ffaaaa,  64.0f, 0.0f, 0,						NULL},
+	{DYNLIGHT_SPR,   0.0f,   6.0f, 0x60ffaaaa,  16.0f, 0x30ffaaaa,  64.0f, 0.0f, 0,				NULL, NULL},
 
 	// GOOPLIGHT_L
-	{DYNLIGHT_SPR,   0.0f,   6.0f, 0x60ff00ff,  16.0f, 0x30ff00ff,  32.0f, 0.0f, 0,						NULL},
+	{DYNLIGHT_SPR,   0.0f,   6.0f, 0x60ff00ff,  16.0f, 0x30ff00ff,  32.0f, 0.0f, 0,					NULL, NULL},
 
 	// STREETLIGHT_L
-	{ LIGHT_SPR,      0.0f,   0.0f, 0xe0ffffff,  64.0f, 0xe0ffffff, 384.0f, 0.0f, 0,						NULL},
+	{ LIGHT_SPR,      0.0f,   0.0f, 0xe0ffffff,  64.0f, 0xe0ffffff, 384.0f, 0.0f, 0,						NULL, NULL},
 
+	// EMERALD_L
+	{LIGHT_SPR,   0.0f,  14.0f, 0x6070ff70,  60.0f, 0x4070ff70, 100.0f, 0.0f, 0,						NULL, LCR_EmeraldLight},
+
+	// GENERIC_MOBJLIGHT_L
+	{LIGHT_SPR,      0.0f,   0.0f, 0xe0ffffff,  64.0f, 0xe0ffffff, 384.0f, 0.0f, 0,						NULL, LCR_ObjectColorToCoronaLight},
 
 	// weapons
 	// LT_PLASMA
 //    { DYNLIGHT_SPR,  0.0f,   0.0f, 0x60ff7750,  24.0f, 0x20f77760,  80.0f },
-	/*{ DYNLIGHT_SPR,  0, 0, {RGBA(0x50,0x77,0xff,0x60)},  24.0f, {RGBA(0x60,0x77,0xf7,0x20)},  80.0f },
+	/*{ DYNLIGHT_SPR,  0, {RGBA(0x50,0x77,0xff,0x60)},  24.0f, {RGBA(0x60,0x77,0xf7,0x20)},  80.0f },
 	// LT_PLASMAEXP
 //    { DYNLIGHT_SPR,  0.0f,   0.0f, 0x60ff7750,  24.0f, 0x40f77760, 120.0f },
-	{ DYNLIGHT_SPR,  0, 0, {RGBA(0x50,0x77,0xff,0x60)},  24.0f, {RGBA(0x60,0x77,0xf7,0x40)}, 120.0f },
+	{ DYNLIGHT_SPR,  0, {RGBA(0x50,0x77,0xff,0x60)},  24.0f, {RGBA(0x60,0x77,0xf7,0x40)}, 120.0f },
 	// LT_ROCKET
 //    { ROCKET_SPR,   0,   0, 0x606060f0,  20, 0x4020f7f7, 120 },
-	{ ROCKET_SPR,   0, 0, {RGBA(0xf0,0x60,0x60,0x60)},  20.0f, {RGBA(0xf7,0xf7,0x20,0x40)}, 120.0f },
+	{ ROCKET_SPR,   0, {RGBA(0xf0,0x60,0x60,0x60)},  20.0f, {RGBA(0xf7,0xf7,0x20,0x40)}, 120.0f },
 	// LT_ROCKETEXP
 //    { DYNLIGHT_SPR,  0,   0, 0x606060f0,  20, 0x6020f7f7, 200 },
-	{ DYNLIGHT_SPR,  0, 0, {RGBA(0xf0,0x60,0x60,0x60)},  20.0f, {RGBA(0xf7,0xf7,0x20,0x60)}, 200.0f },
+	{ DYNLIGHT_SPR,  0, {RGBA(0xf0,0x60,0x60,0x60)},  20.0f, {RGBA(0xf7,0xf7,0x20,0x60)}, 200.0f },
 	// LT_BFG
 //    { DYNLIGHT_SPR,  0,   0, 0x6077f777, 120, 0x8060f060, 200 },
-	{ DYNLIGHT_SPR,  0, 0, {RGBA(0x77,0xf7,0x77,0x60)}, 120.0f, {RGBA(0x60,0xf0,0x60,0x80)}, 200.0f },
+	{ DYNLIGHT_SPR,  0, {RGBA(0x77,0xf7,0x77,0x60)}, 120.0f, {RGBA(0x60,0xf0,0x60,0x80)}, 200.0f },
 	// LT_BFGEXP
 //    { DYNLIGHT_SPR,  0,   0, 0x6077f777, 120, 0x6060f060, 400 },
-	{ DYNLIGHT_SPR,  0, 0, {RGBA(0x77,0xf7,0x77,0x60)}, 120.0f, {RGBA(0x60,0xf0,0x60,0x60)}, 400.0f },
+	{ DYNLIGHT_SPR,  0, {RGBA(0x77,0xf7,0x77,0x60)}, 120.0f, {RGBA(0x60,0xf0,0x60,0x60)}, 400.0f },
 
 	// tall lights
 	// LT_BLUETALL
@@ -191,37 +269,37 @@ light_t lspr[NUMLIGHTS] =
 //    { LIGHT_SPR,    0,  30, 0x60b0f0f0,  60, 0x30b0f0f0, 100 },
 //    { LIGHT_SPR,    0,30, {RGBA(0xf0,0xf0,0xb0,0x60)},  60.0f, {RGBA(0xf0,0xf0,0xb0,0x30)}, 100.0f },
 	{ DYNLIGHT_SPR|CORONA_SPR|SPLT_fire,    0,30, {RGBA(0xf0,0xf0,0xb0,0x60)},  60.0f, {RGBA(0xf0,0xf0,0xb0,0x30)}, 100.0f },
-	
+
 	// monsters
 	// LT_REDBALL
 //    { DYNLIGHT_SPR,   0,   0, 0x606060f0,   0, 0x302070ff, 100 },
-	{ DYNLIGHT_SPR,   0, 0, {RGBA(0xf0,0x60,0x60,0x60)},   0.0f, {RGBA(0xff,0x70,0x20,0x30)}, 100.0f },
+	{ DYNLIGHT_SPR,   0, {RGBA(0xf0,0x60,0x60,0x60)},   0.0f, {RGBA(0xff,0x70,0x20,0x30)}, 100.0f },
 	// LT_GREENBALL
 //    { DYNLIGHT_SPR,   0,   0, 0x6077f777, 120, 0x3060f060, 100 },
-	{ DYNLIGHT_SPR,   0, 0, {RGBA(0x77,0xf7,0x77,0x60)}, 120, {RGBA(0x60,0xf0,0x60,0x30)}, 100.0f },
+	{ DYNLIGHT_SPR,   0, {RGBA(0x77,0xf7,0x77,0x60)}, 120, {RGBA(0x60,0xf0,0x60,0x30)}, 100.0f },
 	// LT_ROCKET2
 //    { DYNLIGHT_SPR,   0,   0, 0x606060f0,  20, 0x4020f7f7, 120 },
-	{ DYNLIGHT_SPR,   0, 0, {RGBA(0xf0,0x60,0x60,0x60)},  20.0f, {RGBA(0xf7,0xf7,0x20,0x40)}, 120.0f },
+	{ DYNLIGHT_SPR,   0, {RGBA(0xf0,0x60,0x60,0x60)},  20.0f, {RGBA(0xf7,0xf7,0x20,0x40)}, 120.0f },
 
 	// weapons
 	// LT_FX03
 //    { DYNLIGHT_SPR,   0,   0, 0x6077ff50,  24, 0x2077f760,  80 },
-	{ DYNLIGHT_SPR,   0, 0, {RGBA(0x50,0xff,0x77,0x60)},  24.0f, {RGBA(0x60,0xf7,0x77,0x20)},  80.0f },
+	{ DYNLIGHT_SPR,   0, {RGBA(0x50,0xff,0x77,0x60)},  24.0f, {RGBA(0x60,0xf7,0x77,0x20)},  80.0f },
 	// LT_FX17
 //    { DYNLIGHT_SPR,   0,   0, 0x60ff7750,  24, 0x40f77760,  80 },
-	{ DYNLIGHT_SPR,   0, 0, {RGBA(0x50,0x77,0xff,0x60)},  24.0f, {RGBA(0x60,0x77,0xf7,0x40)},  80.0f },
+	{ DYNLIGHT_SPR,   0, {RGBA(0x50,0x77,0xff,0x60)},  24.0f, {RGBA(0x60,0x77,0xf7,0x40)},  80.0f },
 	// LT_FX00
 //    { DYNLIGHT_SPR,   0,   0, 0x602020ff,  24, 0x302020f7,  80 },
-	{ DYNLIGHT_SPR,   0, 0, {RGBA(0xff,0x20,0x20,0x60)},  24.0f, {RGBA(0xf7,0x20,0x20,0x30)},  80.0f },
+	{ DYNLIGHT_SPR,   0, {RGBA(0xff,0x20,0x20,0x60)},  24.0f, {RGBA(0xf7,0x20,0x20,0x30)},  80.0f },
 	// LT_FX08
 //    { ROCKET_SPR,    0,   0, 0x606060f0,  20, 0x4020c0f7, 120 },
-	{ ROCKET_SPR,    0, 0, {RGBA(0xf0,0x60,0x60,0x60)},  20.0f, {RGBA(0xf7,0xc0,0x20,0x40)}, 120.0f },
+	{ ROCKET_SPR,    0, {RGBA(0xf0,0x60,0x60,0x60)},  20.0f, {RGBA(0xf7,0xc0,0x20,0x40)}, 120.0f },
 	// LT_FX04
 //    { ROCKET_SPR,    0,   0, 0x606060f0,  20, 0x2020c0f7, 120 },
-	{ ROCKET_SPR,    0, 0, {RGBA(0xf0,0x60,0x60,0x60)},  20.0f, {RGBA(0xf7,0xc0,0x20,0x20)}, 120.0f },
+	{ ROCKET_SPR,    0, {RGBA(0xf0,0x60,0x60,0x60)},  20.0f, {RGBA(0xf7,0xc0,0x20,0x20)}, 120.0f },
 	// LT_FX02
 //    { ROCKET_SPR,    0,   0, 0x606060f0,  20, 0x1720f7f7, 120 },
-	{ ROCKET_SPR,    0, 0, {RGBA(0xf0,0x60,0x60,0x60)},  20.0f, {RGBA(0xf7,0xf7,0x20,0x17)}, 120.0f },
+	{ ROCKET_SPR,    0, {RGBA(0xf0,0x60,0x60,0x60)},  20.0f, {RGBA(0xf7,0xf7,0x20,0x17)}, 120.0f },
 
 	//lights
 	// LT_WTRH
@@ -239,15 +317,17 @@ light_t lspr[NUMLIGHTS] =
 	{ DYNLIGHT_SPR|CORONA_SPR|SPLT_fire,   0,27, {RGBA(0xf0,0x60,0x60,0x60)},  60.0f, {RGBA(0xf7,0xa0,0x20,0x40)}, 100.0f },*/
 };
 
+#endif
+
 // sprite light indirection
 // Indexed according to lightspritenum_s
 light_t *t_lspr[NUMSPRITES] =
 {
-	&lspr[NOLIGHT],     // SPR_NULL
-	&lspr[NOLIGHT],     // SPR_UNKN
+	&lspr[NOLIGHT],					// SPR_NULL
+	&lspr[NOLIGHT],					// SPR_UNKN
 
-	&lspr[/*NOLIGHT*/STREETLIGHT_L],     // SPR_THOK
-	&lspr[SUPERSONIC_L],// SPR_PLAY
+	&lspr[GENERIC_MOBJLIGHT_L],		// SPR_THOK
+	&lspr[SUPERSONIC_L],			// SPR_PLAY
 
 	// Enemies
 	&lspr[NOLIGHT],     // SPR_POSS
@@ -292,70 +372,69 @@ light_t *t_lspr[NUMSPRITES] =
 	&lspr[/*JETLIGHT_L*/STREETLIGHT_L],     // SPR_JETF // Boss jet fumes
 
 	// Boss 1, (Greenflower)
-	&lspr[NOLIGHT],     // SPR_EGGM
-	&lspr[NOLIGHT],     // SPR_EGLZ
+	&lspr[NOLIGHT],     	// SPR_EGGM
+	&lspr[NOLIGHT],     	// SPR_EGLZ
 
 	// Boss 2, (Techno Hill)
-	&lspr[NOLIGHT],     // SPR_EGGN
-	&lspr[NOLIGHT],     // SPR_TANK
-	&lspr[NOLIGHT],     // SPR_GOOP
+	&lspr[NOLIGHT],     	// SPR_EGGN
+	&lspr[NOLIGHT],     	// SPR_TANK
+	&lspr[NOLIGHT],     	// SPR_GOOP
 
 	// Boss 3 (Deep Sea)
-	&lspr[NOLIGHT],     // SPR_EGGO
-	&lspr[NOLIGHT],     // SPR_SEBH
-	&lspr[NOLIGHT],     // SPR_FAKE
-	&lspr[LBLUESHINE_L],// SPR_SHCK
+	&lspr[NOLIGHT],     	// SPR_EGGO
+	&lspr[NOLIGHT],     	// SPR_SEBH
+	&lspr[NOLIGHT],     	// SPR_FAKE
+	&lspr[LBLUESHINE_L],	// SPR_SHCK
 
 	// Boss 4 (Castle Eggman)
-	&lspr[NOLIGHT],     // SPR_EGGP
-	&lspr[REDBALL_L],   // SPR_EFIR
-	&lspr[NOLIGHT],     // SPR_EGR1
+	&lspr[NOLIGHT],     	// SPR_EGGP
+	&lspr[REDBALL_L],   	// SPR_EFIR
+	&lspr[NOLIGHT],     	// SPR_EGR1
 
 	// Boss 5 (Arid Canyon)
-	&lspr[NOLIGHT],      // SPR_FANG // replaces EGGQ
-	&lspr[NOLIGHT],      // SPR_BRKN
-	&lspr[NOLIGHT],      // SPR_WHAT
-	&lspr[INVINCIBLE_L], // SPR_VWRE
-	&lspr[INVINCIBLE_L], // SPR_PROJ
-	&lspr[NOLIGHT],      // SPR_FBOM
-	&lspr[NOLIGHT],      // SPR_FSGN
-	&lspr[/*REDBALL_L*/REDSHINE_L],    // SPR_BARX // bomb explosion (also used by barrel)
-	&lspr[NOLIGHT],      // SPR_BARD // bomb dust (also used by barrel)
+	&lspr[NOLIGHT],      	// SPR_FANG // replaces EGGQ
+	&lspr[NOLIGHT],      	// SPR_BRKN
+	&lspr[NOLIGHT],      	// SPR_WHAT
+	&lspr[INVINCIBLE_L], 	// SPR_VWRE
+	&lspr[INVINCIBLE_L], 	// SPR_PROJ
+	&lspr[NOLIGHT],      	// SPR_FBOM
+	&lspr[NOLIGHT],      	// SPR_FSGN
+	&lspr[REDSHINE_L],    	// SPR_BARX // bomb explosion (also used by barrel)
+	&lspr[NOLIGHT],      	// SPR_BARD // bomb dust (also used by barrel)
 
 	// Boss 6 (Red Volcano)
-	&lspr[NOLIGHT],     // SPR_EEGR
+	&lspr[NOLIGHT],     	// SPR_EEGR
 
 	// Boss 7 (Dark City)
-	&lspr[NOLIGHT],     // SPR_BRAK
-	&lspr[NOLIGHT],     // SPR_BGOO
-	&lspr[NOLIGHT],     // SPR_BMSL
+	&lspr[NOLIGHT],     	// SPR_BRAK
+	&lspr[NOLIGHT],     	// SPR_BGOO
+	&lspr[NOLIGHT],     	// SPR_BMSL
 
 	// Boss 8 (Egg Rock)
-	&lspr[NOLIGHT],     // SPR_EGGT
-
-	&lspr[NOLIGHT], //SPR_RCKT
-	&lspr[NOLIGHT], //SPR_ELEC
-	&lspr[NOLIGHT], //SPR_TARG
-	&lspr[NOLIGHT], //SPR_NPLM
-	&lspr[NOLIGHT], //SPR_MNPL
+	&lspr[NOLIGHT],    	 	// SPR_EGGT
+	&lspr[NOLIGHT], 		//SPR_RCKT
+	&lspr[NOLIGHT], 		//SPR_ELEC
+	&lspr[NOLIGHT], 		//SPR_TARG
+	&lspr[NOLIGHT], 		//SPR_NPLM
+	&lspr[NOLIGHT], 		//SPR_MNPL
 
 	// Metal Sonic
-	&lspr[/*NOLIGHT*/BLUESHINE_L],     // SPR_METL
-	&lspr[/*NOLIGHT*//*GOOPLIGHT_L*/PINKSHINE_L],     // SPR_MSCF
-	&lspr[/*NOLIGHT*//*GOOPLIGHT_L*/PINKSHINE_L],     // SPR_MSCB
+	&lspr[GENERIC_MOBJLIGHT_L],	// SPR_METL
+	&lspr[PINKSHINE_L],			// SPR_MSCF
+	&lspr[PINKSHINE_L],			// SPR_MSCB
 
 	// Collectible Items
-	&lspr[/*NOLIGHT*/RINGSPARK_L],     // SPR_RING
-	&lspr[NOLIGHT],     // SPR_TRNG
-	&lspr[ORANGESHINE_L],// SPR_TOKE
-	&lspr[REDBALL_L],   // SPR_RFLG
-	&lspr[BLUEBALL_L],  // SPR_BFLG
-	&lspr[NOLIGHT],     // SPR_SPHR
-	&lspr[NOLIGHT],     // SPR_NCHP
-	&lspr[NOLIGHT],     // SPR_NSTR
-	&lspr[/*NOLIGHT*/LIGHT_SPR],     // SPR_EMBM
-	&lspr[BLUESHINE_L], // SPR_CEMG
-	&lspr[GREENSHINE_L],// SPR_SHRD
+	&lspr[RINGSPARK_L],     // SPR_RING
+	&lspr[NOLIGHT],     	// SPR_TRNG
+	&lspr[ORANGESHINE_L],	// SPR_TOKE
+	&lspr[REDBALL_L],   	// SPR_RFLG
+	&lspr[BLUEBALL_L],  	// SPR_BFLG
+	&lspr[NOLIGHT],     	// SPR_SPHR
+	&lspr[NOLIGHT],     	// SPR_NCHP
+	&lspr[NOLIGHT],     	// SPR_NSTR
+	&lspr[EMERALD_L],   	// SPR_EMBM
+	&lspr[EMERALD_L], 	    // SPR_CEMG
+	&lspr[GREENSHINE_L],	// SPR_SHRD
 
 	// Interactive Objects
 	&lspr[NOLIGHT],     // SPR_BBLS
@@ -856,4 +935,3 @@ light_t *t_lspr[NUMSPRITES] =
 	&lspr[SUPERSONIC_L], // SPR_TF2D
 	// LIGHT TABLE SET! //
 };
-#endif

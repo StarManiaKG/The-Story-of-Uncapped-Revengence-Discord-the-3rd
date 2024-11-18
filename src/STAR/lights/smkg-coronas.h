@@ -64,8 +64,11 @@ extern UINT8 corona_alpha, corona_bright;
 
 boolean LCR_SuperSonicLight(mobj_t *mobj);
 
+boolean LCR_ObjectColorToCoronaLight(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *alpha, boolean dynamic);
+boolean LCR_EmeraldLight(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *alpha, boolean dynamic);
+
 light_t *Sprite_Corona_Light_lsp(int sprnum);
-UINT8 Sprite_Corona_Light_fade(light_t *lsp, float cz, int objid);
+UINT8 Sprite_Corona_Light_fade(light_t *lsp, float cz, mobj_t *mobj);
 
 void TSoURDt3rd_R_RenderSoftwareCoronas(vissprite_t *spr, INT32 x1, INT32 x2);
 void TSoURDt3rd_R_DrawSoftwareCoronas(vissprite_t *spr);
