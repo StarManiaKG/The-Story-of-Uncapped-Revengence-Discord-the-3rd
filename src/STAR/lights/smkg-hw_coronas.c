@@ -11,9 +11,12 @@
 /// \file hw_main.c
 /// \brief hardware renderer, using the standard HardWareRender driver DLL for SRB2
 
+#include "../../doomdef.h"
+
 #ifdef HWRENDER
 
 #include "smkg-lights.h"
+#include "smkg-coronas.h"
 
 #include "../../g_game.h"
 #include "../../r_main.h"

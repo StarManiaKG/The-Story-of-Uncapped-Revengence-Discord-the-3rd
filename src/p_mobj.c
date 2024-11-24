@@ -10504,10 +10504,21 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	SINT8 sc = -1;
 	state_t *st;
 	mobj_t *mobj;
-	int status;
 
 	if (type == MT_NULL)
+	{
+#if 0
+#ifdef PARANOIA
+		I_Error("Tried to spawn MT_NULL\n");
+#endif
 		return NULL;
+#endif
+		// Hack: Some code assumes that P_SpawnMobj can never return NULL
+		// So replace MT_NULL with MT_RAY in the meantime
+		// Remove when dealt properly
+		CONS_Debug(DBG_GAMELOGIC, "Tried to spawn MT_NULL, using MT_RAY\n");
+		type = MT_RAY;
+	}
 
 	mobj = Z_Calloc(sizeof (*mobj), PU_LEVEL, NULL);
 
@@ -10601,32 +10612,9 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	// Set shadowscale here, before spawn hook so that Lua can change it
 	mobj->shadowscale = P_DefaultMobjShadowScale(mobj);
 
-	// A monitor can't respawn if we're not in multiplayer,
-	// or if we're in co-op and it's score or a 1up
-	if (mobj->flags & MF_MONITOR && (!(netgame || multiplayer)
-	|| (G_CoopGametype()
-		&& (mobj->type == MT_1UP_BOX
-		|| mobj->type == MT_SCORE1K_BOX
-		|| mobj->type == MT_SCORE10K_BOX)
-	)))
-		mobj->flags2 |= MF2_DONTRESPAWN;
-
-	if (type == MT_PLAYER)
-	{
-		// when spawning MT_PLAYER, set mobj->player before calling MobjSpawn hook to prevent P_RemoveMobj from succeeding on player mobj.
-		if (mobj->player)
-			mobj->player->mo = mobj;
-	}
-
-	// increment mobj reference, so we don't get a dangling reference in case MobjSpawn calls P_RemoveMobj
-	mobj->thinker.references++;
-
 	// DANGER! This can cause P_SpawnMobj to return NULL!
 	// Avoid using P_RemoveMobj on the newly created mobj in "MobjSpawn" Lua hooks!
-	status = LUA_HookMobj(mobj, MOBJ_HOOK(MobjSpawn));
-	mobj->thinker.references--;
-
-	if (status)
+	if (LUA_HookMobj(mobj, MOBJ_HOOK(MobjSpawn)))
 	{
 		if (P_MobjWasRemoved(mobj))
 			return NULL;

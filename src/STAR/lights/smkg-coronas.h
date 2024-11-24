@@ -1,5 +1,7 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
+// Original Copyright (C) 1998-2000 by DooM Legacy Team.
+// Original Copyright (C) 1999-2023 by Sonic Team Junior.
 // Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
@@ -9,15 +11,17 @@
 /// \file  smkg-coronas.h
 /// \brief TSoURDt3rd remastered coronas extended data
 
-#ifndef __SMKG_R_CORONAS__
-#define __SMKG_R_CORONAS__
+#ifndef __SMKG_CORONAS__
+#define __SMKG_CORONAS__
+
+#include "../../doomdef.h"
+
+#ifdef ALAM_LIGHTING
 
 #include "../../command.h"
 #include "../../p_mobj.h"
 #include "../../r_defs.h"
 #include "../../r_things.h"
-
-#ifdef ALAM_LIGHTING
 
 // [WDJ] Sprite light sources bit defines.
 typedef enum
@@ -47,7 +51,7 @@ typedef enum
   	LIGHT_SPR		= (DYNLIGHT_SPR|CORONA_SPR),
 	ROCKET_SPR		= (DYNLIGHT_SPR|CORONA_SPR|SPLT_rocket),
 } sprite_light_flags_e;
-  
+
 typedef enum
 {
    	SLI_type_set= 0x02,  		// the type was set, probably by fragglescript
@@ -55,17 +59,13 @@ typedef enum
    	SLI_changed = 0x08,  		// the data was changed, probably by fragglescript
 } sprite_light_impl_flags_e;
 
-extern consvar_t cv_corona;
-extern consvar_t cv_coronasize;
-extern consvar_t cv_corona_draw_mode;
-
 extern float corona_size;
 extern UINT8 corona_alpha, corona_bright;
 
 boolean LCR_SuperSonicLight(mobj_t *mobj);
 
-boolean LCR_ObjectColorToCoronaLight(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *alpha, boolean dynamic);
-boolean LCR_EmeraldLight(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *alpha, boolean dynamic);
+boolean LCR_ObjectColorToCoronaLight(mobj_t *mobj, RGBA_t *rgba_table, boolean alpha, boolean dynamic);
+boolean LCR_EmeraldLight(mobj_t *mobj, RGBA_t *rgba_table, boolean alpha, boolean dynamic);
 
 light_t *Sprite_Corona_Light_lsp(int sprnum);
 UINT8 Sprite_Corona_Light_fade(light_t *lsp, float cz, mobj_t *mobj);
@@ -76,5 +76,9 @@ void TSoURDt3rd_R_DrawSoftwareCoronas(vissprite_t *spr);
 void TSoURDt3rd_R_Load_Corona(void);
 void TSoURDt3rd_R_Release_Coronas(void);
 
+#ifdef HWRENDER
+void HWR_Transform(float *cx, float *cy, float *cz);
+#endif
+
 #endif // ALAM_LIGHTING
-#endif // __SMKG_R_CORONAS__
+#endif // __SMKG_CORONAS__

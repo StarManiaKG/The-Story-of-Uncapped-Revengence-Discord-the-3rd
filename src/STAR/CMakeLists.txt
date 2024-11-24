@@ -19,7 +19,6 @@ target_sources(SRB2SDL2 PRIVATE
 	core/smkg-s_audio.c
 	curl/smkg-curl.c
 	curl/smkg-curl_routines.c
-	drrr/km_menudraw.c
 	events/smkg-easter.c
 	events/smkg-aprilfools.c
 	lights/smkg-lights.c
@@ -29,6 +28,7 @@ target_sources(SRB2SDL2 PRIVATE
 	lua/smkg-lu_script.c
 	menus/smkg_m_func.c
 	menus/smkg_m_draw.c
+	menus/menudefs/smkg-addons-menu.c
 	menus/menudefs/smkg-multi-playersetup.c
 	menus/menudefs/smkg-options-discord.c
 	menus/menudefs/smkg-options-tsourdt3rd.c
@@ -36,6 +36,7 @@ target_sources(SRB2SDL2 PRIVATE
 	menus/menudefs/smkg-options-tsourdt3rd-game.c
 	menus/menudefs/smkg-options-tsourdt3rd-controls.c
 	menus/menudefs/smkg-options-tsourdt3rd-video.c
+	menus/menudefs/smkg-options-tsourdt3rd-video-lighting.c
 	menus/menudefs/smkg-options-tsourdt3rd-audio.c
 	menus/menudefs/smkg-options-tsourdt3rd-players.c
 	menus/menudefs/smkg-options-tsourdt3rd-savedata.c

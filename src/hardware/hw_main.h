@@ -80,9 +80,6 @@ extern consvar_t cv_gldynamiclighting;
 extern consvar_t cv_glstaticlighting;
 extern consvar_t cv_glcoronas;
 extern consvar_t cv_glcoronasize;
-#ifdef CORONA_CHOICE
-extern consvar_t cv_glcorona_draw;
-#endif
 #endif
 
 extern consvar_t cv_glshaders, cv_glallowshaders;

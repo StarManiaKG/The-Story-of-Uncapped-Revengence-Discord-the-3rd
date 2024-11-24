@@ -11,7 +11,6 @@
 
 #include "smkg-p_saveg.h"
 #include "smkg-misc.h"
-#include "ss_main.h" // TSOURDT3RD_DEBUGGING //
 
 #include "../byteptr.h"
 #include "../doomstat.h"

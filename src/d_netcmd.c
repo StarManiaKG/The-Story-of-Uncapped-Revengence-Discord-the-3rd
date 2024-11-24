@@ -3695,11 +3695,11 @@ static void Got_RequestAddfoldercmd(UINT8 **cp, INT32 playernum)
 
 static void Got_Addfilecmd(UINT8 **cp, INT32 playernum)
 {
-	char filename[241];
+	char filename[MAX_WADPATH+1];
 	filestatus_t ncs = FS_NOTCHECKED;
 	UINT8 md5sum[16];
 
-	READSTRINGN(*cp, filename, 240);
+	READSTRINGN(*cp, filename, MAX_WADPATH);
 	READMEM(*cp, md5sum, 16);
 
 	if (playernum != serverplayer)
@@ -4658,7 +4658,7 @@ static void Command_Isgamemodified_f(void)
 	else if (modifiedgame)
 		CONS_Printf(M_GetText("modifiedgame is true, time data can't be saved\n"));
 	// STAR STUFF: autoloading mess //
-	else if (tsourdt3rd_local.autoloading_mods || tsourdt3rd_local.autoloaded_mods)
+	else if (tsourdt3rd_local.autoloaded_mods)
 		CONS_Printf(M_GetText("modifiedgame is false, and time data can still be saved,\n but keep in mind that you have autoloaded at least one game-changing mod.\n"));
 	// CHECKS ARE NOW DONE! //
 	else

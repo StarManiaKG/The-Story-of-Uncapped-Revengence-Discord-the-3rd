@@ -1,5 +1,7 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
+// Original Copyright (C) 1998-2000 by DooM Legacy Team.
+// Original Copyright (C) 1999-2023 by Sonic Team Junior.
 // Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
@@ -9,9 +11,15 @@
 /// \file  smkg-r_coronas.c
 /// \brief TSoURDt3rd remastered coronas, software edition
 
+#include "../../doomdef.h"
+
+#ifdef ALAM_LIGHTING
+
 #include "smkg-coronas.h"
+#include "../smkg-cvars.h"
 
 #include "../../i_video.h"
+#include "../../m_random.h"
 #include "../../r_draw.h"
 #include "../../r_main.h"
 #include "../../v_video.h"
@@ -21,12 +29,6 @@
 #ifdef HWRENDER
 #include "../../hardware/hw_main.h"
 #endif
-
-#ifdef SPDR_CORONAS
-#include "../../m_random.h"
-#endif
-
-#ifdef ALAM_LIGHTING
 
 // ==========================================================================
 //																	CORONAS
@@ -228,7 +230,6 @@ void TSoURDt3rd_R_Release_Coronas(void)
 #define Z1 (250.0f)
 #define Z2 ((255.0f*8) + 250.0f)
 
-#ifdef SPDR_CORONAS
 // --------------------------------------------------------------------------
 // coronas lighting with the sprite
 // --------------------------------------------------------------------------
@@ -308,9 +309,20 @@ UINT8 Sprite_Corona_Light_fade(light_t *p_lspr, float cz, mobj_t *mobj)
 	// Objects which emit light.
 	type = p_lspr->impl_flags & TYPE_FIELD_SPR; // working type setting
 	cflags = p_lspr->type;
-	if (p_lspr->corona_coloring_routine == NULL || !p_lspr->corona_coloring_routine(mobj, NULL, &corona_alpha, false))
+	if (p_lspr->corona_coloring_routine == NULL || !p_lspr->corona_coloring_routine(mobj, NULL, true, false))
 		corona_alpha = V_GetColor(p_lspr->corona_color).s.alpha;
 	corona_bright = 0;
+
+#ifndef STAR_LIGHTING
+#ifdef HWRENDER
+	if (cv_glcoronas.changed)
+	{
+		// Force light setup, without another test.
+		for (int i = 0; i < NUMLIGHTS; i++)
+			t_lspr[i]->impl_flags |= SLI_changed;
+	}
+#endif
+#endif
 
 	// Update flagged by corona setting change, and fragglescript settings.
 	if (p_lspr->impl_flags & SLI_changed)
@@ -322,8 +334,9 @@ UINT8 Sprite_Corona_Light_fade(light_t *p_lspr, float cz, mobj_t *mobj)
 		// They never set some fields, like type, at all.
 		type = cflags & TYPE_FIELD_SPR; // table or fragglescript setting
 
+#ifdef STAR_LIGHTING
 		// Old
-		if (cv_corona.value == 20)
+		if (cv_tsourdt3rd_video_lighting_coronas.value == 6)
 		{
 			// Revert the new tables to use
 			// only that flags that existed in Old.
@@ -337,6 +350,7 @@ UINT8 Sprite_Corona_Light_fade(light_t *p_lspr, float cz, mobj_t *mobj)
 			}
 		}
 		else
+#endif
 
 		// We have no way of determining the intended version compatibility.  This limits
 		// the characteristics that we can check.
@@ -354,7 +368,7 @@ UINT8 Sprite_Corona_Light_fade(light_t *p_lspr, float cz, mobj_t *mobj)
 			if (corona_alpha == 0)
 			{
 				// previous default
-				if (p_lspr->corona_coloring_routine == NULL || !p_lspr->corona_coloring_routine(mobj, NULL, &corona_alpha, false))
+				if (p_lspr->corona_coloring_routine == NULL || !p_lspr->corona_coloring_routine(mobj, NULL, true, false))
 					corona_alpha = V_GetColor(p_lspr->corona_color).s.alpha = 0xff;
 				else
 					corona_alpha = 0xff;
@@ -383,28 +397,29 @@ UINT8 Sprite_Corona_Light_fade(light_t *p_lspr, float cz, mobj_t *mobj)
 		p_lspr->impl_flags = (p_lspr->impl_flags & ~TYPE_FIELD_SPR) | type;
 	}
 
-	switch (cv_corona.value)
+#ifdef STAR_LIGHTING
+	switch (cv_tsourdt3rd_video_lighting_coronas.value)
 	{
-		case 20: // Old
+		case 6: // Old
 			corona_alpha = 0xff; // alpha settings were ignored
 			break;
-		case 16: // Bright
+		case 5: // Bright
 			corona_bright = 20; // brighten the default cases
 			corona_alpha = (((UINT8)corona_alpha * 3) + 255) >> 2; // +25%
 			break;
-		case 14: // Dim
+		case 4: // Dim
 			corona_alpha = ((UINT8)corona_alpha * 3) >> 2; // -25%
 			break;
 		default: // Special, Most
 		{
-			if (cv_corona.value <= 2)
+			if (cv_tsourdt3rd_video_lighting_coronas.value <= 2)
 			{
 				INT32 spec = spec_dist[type>>4];
 
 				if (p_lspr->impl_flags & SLI_corona_set) // set by wad
 					spec <<= 2;
 
-				if (cv_corona.value == 2) // Most
+				if (cv_tsourdt3rd_video_lighting_coronas.value == 2) // Most
 				{
 					// Must do this before any flicker modifications, or else they blink.
 					// ignore the dim corona
@@ -429,6 +444,7 @@ UINT8 Sprite_Corona_Light_fade(light_t *p_lspr, float cz, mobj_t *mobj)
 			break;
 		}
 	}
+#endif
 
 	relsize = 1.0f;
 	fade = FADE_FAR | FADE_NEAR;
@@ -544,12 +560,15 @@ UINT8 Sprite_Corona_Light_fade(light_t *p_lspr, float cz, mobj_t *mobj)
 	if (relsize > 1.0)
 		relsize = 1.0;
 
+#ifndef STAR_LIGHTING
 #ifdef HWRENDER
-	if (rendermode == render_opengl)
-		corona_size = p_lspr->corona_radius * relsize * FIXED_TO_FLOAT(cv_glcoronasize.value);
-	else
+	corona_size = p_lspr->corona_radius * relsize * FIXED_TO_FLOAT(cv_glcoronasize.value);
+#else
+	corona_size = p_lspr->corona_radius * relsize;
 #endif
-		corona_size = p_lspr->corona_radius * relsize * FIXED_TO_FLOAT(cv_coronasize.value);
+#else
+	corona_size = p_lspr->corona_radius * relsize * FIXED_TO_FLOAT(cv_tsourdt3rd_video_lighting_coronas_size.value);
+#endif
 	return corona_alpha;
 
 	no_corona:
@@ -650,9 +669,15 @@ static void Draw_Sprite_Corona_Light(vissprite_t * vis)
 		dr_color8 = NearestColor(dr_color.s.red, dr_color.s.green, dr_color.s.blue);
 #endif
 
-	dr_alpha_mode = cv_corona_draw_mode.value;
+#ifdef STAR_LIGHTING
+	dr_alpha_mode = cv_tsourdt3rd_video_lighting_coronas_drawingmode.value;
 	// alpha to dim the background through the corona
-	dr_alpha_background = (cv_corona_draw_mode.value == 1? (255 - dr_alpha) : 240);
+	dr_alpha_background = (cv_tsourdt3rd_video_lighting_coronas_drawingmode.value == 1 ? (255 - dr_alpha) : 240);
+#else
+	dr_alpha_mode = 2;
+	// alpha to dim the background through the corona
+	dr_alpha_background = 240;
+#endif
 #else
 	colfunc = colfuncs[COLDRAWFUNC_TRANS]; // R_DrawTranslucentColumn; translate certain pixels to white
 
@@ -718,43 +743,50 @@ static void Draw_Sprite_Corona_Light(vissprite_t * vis)
 
 	colfunc = colfuncs[BASEDRAWFUNC];
 }
-#endif
 
 void TSoURDt3rd_R_RenderSoftwareCoronas(vissprite_t *spr, INT32 x1, INT32 x2)
 {
-#ifdef SPDR_CORONAS
-		corona_draw = 0;
+	corona_draw = 0;
 
 #if 0
-		// Exclude Split sprites that are cut on the bottom, so there
-		// is only one corona per object.
-		// Their position would be off too.
-		if (cv_corona.value && (!(spr->cut & SC_BOTTOM)))
+	// Exclude Split sprites that are cut on the bottom, so there
+	// is only one corona per object.
+	// Their position would be off too.
+#ifdef STAR_LIGHTING
+	if (cv_tsourdt3rd_video_lighting_coronas.value && (!(spr->cut & SC_BOTTOM)))
 #else
-		// setup corona state
-		if (cv_corona.value)
+	if (cv_glcoronas.value && (!(spr->cut & SC_BOTTOM)))
 #endif
+#else
+	// setup corona state
+#ifdef STAR_LIGHTING
+	if (cv_tsourdt3rd_video_lighting_coronas.value)
+#else
+#ifdef HWRENDER
+	if (cv_glcoronas.value)
+#else
+	return;
+#endif
+#endif
+#endif
+	{
+		Sprite_Corona_Light_setup(spr); // set corona_draw
+		if (corona_draw) // Expand clipping to include corona draw
 		{
-			Sprite_Corona_Light_setup(spr); // set corona_draw
-			if (corona_draw) // Expand clipping to include corona draw
-			{
-				if (corona_x1 < x1)
-					x1 = corona_x1;
-				if (corona_x2 > x2)
-					x2 = corona_x2;
-			}
+			if (corona_x1 < x1)
+				x1 = corona_x1;
+			if (corona_x2 > x2)
+				x2 = corona_x2;
 		}
-#endif
+	}
 }
 
 void TSoURDt3rd_R_DrawSoftwareCoronas(vissprite_t *spr)
 {
-#if 0
-#ifdef SPDR_CORONAS
+#if 1
 	// Draw corona before sprite, occlude
 	if (corona_draw == 1)
 		Draw_Sprite_Corona_Light(spr);
-#endif
 #endif
 
 #if 0
@@ -767,10 +799,8 @@ void TSoURDt3rd_R_DrawSoftwareCoronas(vissprite_t *spr)
 #endif
 #endif
 
-#ifdef SPDR_CORONAS
 	if (corona_draw == 2)
 		Draw_Sprite_Corona_Light(spr);
-#endif
 }
 
 #endif // ALAM_LIGHTING

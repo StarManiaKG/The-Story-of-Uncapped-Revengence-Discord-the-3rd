@@ -4418,8 +4418,10 @@ void A_SuperSneakers(mobj_t *actor)
 	{
 		if (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC)
 		{
-			if (!tsourdt3rd_global_jukebox->curtrack) // STAR STUFF: stop interrupting the jukebox session please //
+			// STAR STUFF: stop interrupting the jukebox session please //
+			if (!tsourdt3rd_global_jukebox->playing)
 				S_SpeedMusic(1.4f);
+			// THANKS, LOVE YOU :) //
 		}
 		else
 			P_PlayJingle(player, JT_SHOES);

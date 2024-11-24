@@ -743,11 +743,4 @@ extern int
 /// Dynamic Lighting
 #define ALAM_LIGHTING
 
-#define DYLT_CORONAS // Coronas in dynlights
-#define SPDR_CORONAS // Coronas drawn with sprite draw
-
-#if defined(DYLT_CORONAS) && defined(SPDR_CORONAS)
-#define CORONA_CHOICE
-#endif
-
 #endif // __DOOMDEF__

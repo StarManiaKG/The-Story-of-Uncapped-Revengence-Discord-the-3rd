@@ -87,6 +87,28 @@ static CV_PossibleValue_t tsourdt3rd_video_coloring_cons_t[] = {
 	{V_ROSYMAP, "Rosy"},
 	{V_INVERTMAP, "Inverted"},
 	{0, NULL}};
+#ifdef STAR_LIGHTING
+static CV_PossibleValue_t tsourdt3rd_video_lighting_coronas_cons_t[] = {
+	{0, "Off"},
+	{1, "Special"},
+	{2, "Most"},
+	{3, "Dim"},
+	{4, "All"},
+	{5, "Bright"},
+	{6, "Old"},
+	{0, NULL}};
+static CV_PossibleValue_t tsourdt3rd_video_lighting_coronas_lightingtype_cons_t[] = {
+	{0, "Static"},
+	{1, "Dynamic"},
+	{0, NULL}};
+static CV_PossibleValue_t tsourdt3rd_video_lighting_coronas_drawingmode_cons_t[] = {
+	{0, "Blend"},
+	{1, "Blend_BG"},
+	{2, "Additive"},
+	{3, "Additive_BG"},
+	{4, "Add_Limit"},
+	{0, NULL}};
+#endif
 
 static CV_PossibleValue_t tsourdt3rd_audio_vapemode_cons_t[] = {{0, "Off"}, {1, "TSoURDt3rd"}, {2, "Sonic Mania Plus"}, {0, NULL}};
 static CV_PossibleValue_t tsourdt3rd_audio_defaultmaptrack_cons_t[] = {{0, "None"}, {1, "GFZ1"}, {2, "D_RUNNIN"}, {0, NULL}};
@@ -152,6 +174,10 @@ static void G_IsItCalledSinglePlayer_OnChange(void);
 
 static void C_PadRumble_OnChange(void);
 
+#ifdef STAR_LIGHTING
+static void V_Coronas_OnChange(void);
+#endif
+
 static void P_SuperWithShield_OnChange(void);
 
 static void SV_UseContinues_OnChange(void);
@@ -188,6 +214,12 @@ consvar_t cv_tsourdt3rd_video_showtps = CVAR_INIT ("tsourdt3rd_video_showtps", "
 consvar_t cv_tsourdt3rd_video_coloring_menus = CVAR_INIT ("tsourdt3rd_video_coloring_menus", "Yellow", CV_SAVE, tsourdt3rd_video_coloring_cons_t, NULL);
 consvar_t cv_tsourdt3rd_video_coloring_fpsrate = CVAR_INIT ("tsourdt3rd_video_coloring_fpsrate", "Green", CV_SAVE, tsourdt3rd_video_coloring_cons_t, NULL);
 consvar_t cv_tsourdt3rd_video_coloring_tpsrate = CVAR_INIT ("tsourdt3rd_video_coloring_tpsrate", "Green", CV_SAVE, tsourdt3rd_video_coloring_cons_t, NULL);
+#ifdef STAR_LIGHTING
+consvar_t cv_tsourdt3rd_video_lighting_coronas = CVAR_INIT ("tsourdt3rd_video_lighting_coronas", "All", CV_SAVE|CV_CALL, tsourdt3rd_video_lighting_coronas_cons_t, V_Coronas_OnChange);
+consvar_t cv_tsourdt3rd_video_lighting_coronas_size = CVAR_INIT ("tsourdt3rd_video_lighting_coronas_size", "1", CV_SAVE|CV_FLOAT, 0, NULL);
+consvar_t cv_tsourdt3rd_video_lighting_coronas_lightingtype = CVAR_INIT ("tsourdt3rd_video_lighting_coronas_lightingtype", "Dynamic", CV_SAVE, tsourdt3rd_video_lighting_coronas_lightingtype_cons_t, NULL);
+consvar_t cv_tsourdt3rd_video_lighting_coronas_drawingmode = CVAR_INIT ("tsourdt3rd_video_lighting_coronas_drawingmode", "Additive", CV_SAVE, tsourdt3rd_video_lighting_coronas_drawingmode_cons_t, NULL);
+#endif
 
 consvar_t cv_tsourdt3rd_audio_watermuffling = CVAR_INIT ("tsourdt3rd_audio_watermuffling", "Off", CV_SAVE|CV_ALLOWLUA, CV_OnOff, NULL);
 consvar_t cv_tsourdt3rd_audio_vapemode = CVAR_INIT ("tsourdt3rd_audio_vapemode", "Off", CV_SAVE|CV_CALL, tsourdt3rd_audio_vapemode_cons_t, TSoURDt3rd_ControlMusicEffects);
@@ -412,6 +444,12 @@ void TSoURDt3rd_D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_tsourdt3rd_video_coloring_menus);
 	CV_RegisterVar(&cv_tsourdt3rd_video_coloring_fpsrate);
 	CV_RegisterVar(&cv_tsourdt3rd_video_coloring_tpsrate);
+#ifdef STAR_LIGHTING
+	CV_RegisterVar(&cv_tsourdt3rd_video_lighting_coronas);
+	CV_RegisterVar(&cv_tsourdt3rd_video_lighting_coronas_size);
+	CV_RegisterVar(&cv_tsourdt3rd_video_lighting_coronas_lightingtype);
+	CV_RegisterVar(&cv_tsourdt3rd_video_lighting_coronas_drawingmode);
+#endif
 
 	// Audio //
 	CV_RegisterVar(&cv_tsourdt3rd_audio_watermuffling);
@@ -447,13 +485,6 @@ void TSoURDt3rd_D_RegisterClientCommands(void)
 	// Debugging //
 	CV_RegisterVar(&cv_tsourdt3rd_debug_drrr_virtualkeyboard);
 	CV_RegisterVar(&cv_tsourdt3rd_debug_automapanywhere);
-
-#ifdef ALAM_LIGHTING
-	// Coronas //
-    CV_RegisterVar(&cv_corona);
-    CV_RegisterVar(&cv_coronasize);
-    CV_RegisterVar(&cv_corona_draw_mode);
-#endif
 }
 
 boolean TSoURDt3rd_CV_CheckForOldCommands(void)
@@ -710,6 +741,15 @@ static void C_PadRumble_OnChange(void)
 		if (cv_tsourdt3rd_drrr_controls_rumble[i].value == 0)
 			TSoURDt3rd_P_Pads_ResetDeviceRumble(i);
 }
+
+#ifdef STAR_LIGHTING
+static void V_Coronas_OnChange(void)
+{
+	// Force light setup, without another test.
+	for (int i = 0; i < NUMLIGHTS; i++)
+		t_lspr[i]->impl_flags |= SLI_changed;
+}
+#endif
 
 static void P_SuperWithShield_OnChange(void)
 {

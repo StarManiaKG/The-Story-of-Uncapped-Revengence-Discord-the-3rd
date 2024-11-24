@@ -10,9 +10,7 @@
 /// \brief Handle unique TSoURDt3rd mouse/keyboard/joystick inputs, etc.
 
 #include "smkg_g_inputs.h"
-#include "menus/smkg_m_func.h"
-
-#include "drrr/k_menu.h" // menutyping junk //
+#include "menus/smkg-m_sys.h" // menutyping junk //
 
 #include "../console.h"
 #include "../d_net.h"
@@ -127,7 +125,7 @@ void TSoURDt3rd_D_ProcessEvents(void)
 static void update_vkb_axis(INT32 axis)
 {
 	if (axis > JOYAXISRANGE/2)
-		M_SwitchVirtualKeyboard(true);
+		TSoURDt3rd_M_SwitchVirtualKeyboard(true);
 }
 
 boolean TSoURDt3rd_G_MapEventsToControls(event_t *ev)
@@ -141,7 +139,7 @@ boolean TSoURDt3rd_G_MapEventsToControls(event_t *ev)
 	{
 		case ev_keydown:
 			if (ev->key < NUMINPUTS)
-				M_MenuTypingInput(ev->key);
+				TSoURDt3rd_M_MenuTypingInput(ev->key);
 			break;
 
 		case ev_joystick:

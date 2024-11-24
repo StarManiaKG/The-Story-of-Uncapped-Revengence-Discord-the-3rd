@@ -28,6 +28,7 @@
 
 // TSoURDt3rd
 #include "../STAR/lights/smkg-coronas.h"
+#include "../STAR/smkg-cvars.h"
 
 //=============================================================================
 //                                                                      DEFINES
@@ -62,10 +63,8 @@
 //=============================================================================
 
 // Select by view, using indirection into view_dynlights.
-#ifdef ALAM_LIGHTING
 static dynlights_t view_dynlights[2]; // 2 players in splitscreen mode
 static dynlights_t *dynlights = &view_dynlights[0];
-#endif
 
 static patch_t *lightmap_patch;
 static GLPatch_t *lightmap_gl_patch;
@@ -183,7 +182,15 @@ void HWR_SpriteLighting(FOutVector *wlVerts) // SRB2CBTODO: Support sprites to b
 	light_t     	*p_lspr; // dynlights sprite light
 	FVector         *light_pos;
 
-	// dynlights->nb == 0 if cv_gldynamiclighting.value is not set
+#ifndef STAR_LIGHTING
+	if (!cv_glcoronas.value || !cv_glstaticlighting.value)
+		return;
+#else
+	if (!cv_tsourdt3rd_video_lighting_coronas.value || cv_tsourdt3rd_video_lighting_coronas_lightingtype.value)
+		return;
+#endif
+
+	// dynlights->nb == 0 if dynamic lighting is off
 	for (int j = 0; j < dynlights->nb; j++)
 	{
 		p_lspr = dynlights->p_lspr[j];
@@ -192,7 +199,7 @@ void HWR_SpriteLighting(FOutVector *wlVerts) // SRB2CBTODO: Support sprites to b
 		// it's a real object which emits light
 		if (!dynlights->mo[j] || P_MobjWasRemoved(dynlights->mo[j]))
 			continue;
-		if (p_lspr->coronaroutine && !p_lspr->coronaroutine(dynlights->mo[j]))
+		if (p_lspr->corona_rendering_routine && !p_lspr->corona_rendering_routine(dynlights->mo[j]))
 			continue;
 
 		// check bounding box first
@@ -270,7 +277,7 @@ static void HWR_SetShadowTexture(gl_vissprite_t *spr)
 
 void HWR_WallShading(FOutVector *wlVerts)
 {
-	// dynlights->nb == 0 if cv_gldynamiclighting.value is not set
+	// dynlights->nb == 0 if dynamic lighting is off
 	for (int j = 0; j < dynlights->nb; j++)
 	{
 		FVector         inter;
@@ -363,7 +370,7 @@ void HWR_WallLighting(FOutVector *wlVerts)
 	memcpy(dlv, wlVerts, sizeof(FOutVector)* 4);
 #endif
 
-	// dynlights->nb == 0 if cv_gldynamiclighting.value is not set
+	// dynlights->nb == 0 if dynamic lighting is off
 	for (j = 0; j < dynlights->nb; j++)
 	{
 		p_lspr = dynlights->p_lspr[j];
@@ -377,7 +384,7 @@ void HWR_WallLighting(FOutVector *wlVerts)
 			P_SetTarget(&dynlights->mo[j], NULL);
 			continue;
 		}
-		if (p_lspr->coronaroutine && !p_lspr->coronaroutine(dynlights->mo[j]))
+		if (p_lspr->corona_rendering_routine && !p_lspr->corona_rendering_routine(dynlights->mo[j]))
 			continue;
 
 		// check bounding box first
@@ -435,7 +442,7 @@ void HWR_WallLighting(FOutVector *wlVerts)
 
 		HWR_SetLight();
 
-		if (p_lspr->corona_coloring_routine == NULL || !p_lspr->corona_coloring_routine(dynlights->mo[j], &Surf.PolyColor, NULL, true))
+		if (p_lspr->corona_coloring_routine == NULL || !p_lspr->corona_coloring_routine(dynlights->mo[j], &Surf.PolyColor, false, true))
 			Surf.PolyColor.rgba = LONG(p_lspr->dynamic_color);
 #ifdef DL_HIGH_QUALITY
 		Surf.PolyColor.s.alpha *= (1-dist_p2d/p_lspr->dynamic_sqrradius);
@@ -490,7 +497,7 @@ void HWR_PlaneLighting(FOutVector *clVerts, int nrClipVerts)
 			P_SetTarget(&dynlights->mo[j], NULL);
 			continue;
 		}
-		if (p_lspr->coronaroutine && !p_lspr->coronaroutine(dynlights->mo[j]))
+		if (p_lspr->corona_rendering_routine && !p_lspr->corona_rendering_routine(dynlights->mo[j]))
 			continue;
 
 		// BP: The kickass Optimization: check if light touch bounding box
@@ -523,7 +530,7 @@ void HWR_PlaneLighting(FOutVector *clVerts, int nrClipVerts)
 
 		HWR_SetLight();
 
-		if (p_lspr->corona_coloring_routine == NULL || !p_lspr->corona_coloring_routine(dynlights->mo[j], &Surf.PolyColor, NULL, true))
+		if (p_lspr->corona_coloring_routine == NULL || !p_lspr->corona_coloring_routine(dynlights->mo[j], &Surf.PolyColor, false, true))
 			Surf.PolyColor.rgba = LONG(p_lspr->dynamic_color);
 
 #ifdef DL_HIGH_QUALITY
@@ -543,7 +550,6 @@ void HWR_PlaneLighting(FOutVector *clVerts, int nrClipVerts)
 	} // end for (j = 0; j < dynlights->nb; j++)
 }
 
-#ifdef SPDR_CORONAS
 // --------------------------------------------------------------------------
 // coronas lighting with the sprite
 // --------------------------------------------------------------------------
@@ -555,10 +561,18 @@ void HWR_DoCoronasLighting(FOutVector *outVerts, gl_vissprite_t *spr)
 	FOutVector      light[4];
 	light_t   		*p_lspr;
 
+#ifndef STAR_LIGHTING
+	if (!cv_glcoronas.value || !cv_glstaticlighting.value)
+		return;
+#else
+	if (!cv_tsourdt3rd_video_lighting_coronas.value || cv_tsourdt3rd_video_lighting_coronas_lightingtype.value)
+		return;
+#endif
+
 	p_lspr = Sprite_Corona_Light_lsp(spr->mobj->sprite);
 	if (p_lspr == NULL || corona_lumpnum == LUMPERROR)
 		return;
-	if (p_lspr->coronaroutine && !p_lspr->coronaroutine(spr->mobj))
+	if (p_lspr->corona_rendering_routine && !p_lspr->corona_rendering_routine(spr->mobj))
 		return;
 
 	// Objects which emit light.
@@ -576,7 +590,7 @@ void HWR_DoCoronasLighting(FOutVector *outVerts, gl_vissprite_t *spr)
 
 		// Sprite has a corona, and coronas are enabled.
 		size = corona_size * 2.0;
-		if (p_lspr->corona_coloring_routine == NULL || !p_lspr->corona_coloring_routine(spr->mobj, &Surf.PolyColor, NULL, false))
+		if (p_lspr->corona_coloring_routine == NULL || !p_lspr->corona_coloring_routine(spr->mobj, &Surf.PolyColor, false, false))
 			Surf.PolyColor.rgba = p_lspr->corona_color;
 		Surf.PolyColor.s.alpha = corona_alpha;
 
@@ -644,9 +658,7 @@ void HWR_DoCoronasLighting(FOutVector *outVerts, gl_vissprite_t *spr)
 #endif
 	}
 }
-#endif
 
-#ifdef DYLT_CORONAS
 // Draw coronas from dynamic light list
 void HWR_DL_Draw_Coronas(void)
 {
@@ -658,7 +670,15 @@ void HWR_DL_Draw_Coronas(void)
 	float           cx, cy, cz;
 	light_t            *p_lspr;
 
-	if (!cv_glcoronas.value || dynlights->nb <= 0 || corona_lumpnum == LUMPERROR)
+#ifndef STAR_LIGHTING
+	if (!cv_glcoronas.value || !cv_gldynamiclighting.value)
+		return;
+#else
+	if (!cv_tsourdt3rd_video_lighting_coronas.value || !cv_tsourdt3rd_video_lighting_coronas_lightingtype.value)
+		return;
+#endif
+
+	if (dynlights->nb <= 0 || corona_lumpnum == LUMPERROR)
 		return;
 	HWR_GetPic(corona_lumpnum); // TODO: use different coronas
 
@@ -677,7 +697,7 @@ void HWR_DL_Draw_Coronas(void)
 		}
 		if (!(p_lspr->type & CORONA_SPR))
 			continue;
-		if (p_lspr->coronaroutine && !p_lspr->coronaroutine(dynlights->mo[j]))
+		if (p_lspr->corona_rendering_routine && !p_lspr->corona_rendering_routine(dynlights->mo[j]))
 			continue;
 
 		// transform light positions
@@ -696,7 +716,7 @@ void HWR_DL_Draw_Coronas(void)
 
 		// Sprite has a corona, and coronas are enabled.
 		size = corona_size * 2.0;
-		if (p_lspr->corona_coloring_routine == NULL || !p_lspr->corona_coloring_routine(dynlights->mo[j], &Surf.PolyColor, NULL, false))
+		if (p_lspr->corona_coloring_routine == NULL || !p_lspr->corona_coloring_routine(dynlights->mo[j], &Surf.PolyColor, false, false))
 			Surf.PolyColor.rgba = p_lspr->corona_color;
 		Surf.PolyColor.s.alpha = corona_alpha;
 
@@ -758,7 +778,6 @@ void HWR_DL_Draw_Coronas(void)
 #endif
 	}
 }
-#endif
 
 // --------------------------------------------------------------------------
 // Remove all the dynamic lights at each frame
@@ -788,8 +807,13 @@ void HWR_DL_AddLightSprite(gl_vissprite_t *spr)
 	light_t		*p_lspr;
 
 	// Hurdler: moved here because it's better ;-)
-	if (!cv_gldynamiclighting.value)
+#ifndef STAR_LIGHTING
+	if (!cv_glcoronas.value)
 		return;
+#else
+	if (!cv_tsourdt3rd_video_lighting_coronas.value)
+		return;
+#endif
 
 	if (!spr->mobj)
 #ifdef PARANOIA
@@ -824,8 +848,15 @@ void HWR_DL_AddLightSprite(gl_vissprite_t *spr)
 	// check for the proper light type
 	if (!(p_lspr->type & DYNLIGHT_SPR))
 		return;
-	if (((p_lspr->type & (LIGHT_SPR|CORONA_SPR|ROCKET_SPR)) != LIGHT_SPR) || cv_glstaticlighting.value)
+	if ((p_lspr->type & (LIGHT_SPR|CORONA_SPR|ROCKET_SPR)) != LIGHT_SPR)
 		return;
+#ifndef STAR_LIGHTING
+	if (cv_glstaticlighting.value)
+		return;
+#else
+	if (!cv_tsourdt3rd_video_lighting_coronas_lightingtype.value)
+		return;
+#endif
 
 	// Create a dynamic light, and give the light a position.
 	light_pos = &dynlights->position[dynlights->nb];
@@ -883,8 +914,13 @@ void HWR_DynamicShadowing(FOutVector *clVerts, int nrClipVerts)
 {
 	FSurfaceInfo Surf;
 
-	if (!cv_gldynamiclighting.value)
+#ifndef STAR_LIGHTING
+	if (!cv_glcoronas.value || !cv_glstaticlighting.value)
 		return;
+#else
+	if (!cv_tsourdt3rd_video_lighting_coronas.value || cv_tsourdt3rd_video_lighting_coronas_lightingtype.value)
+		return;
+#endif
 
 	for (int i = 0; i < nrClipVerts; i++)
 	{

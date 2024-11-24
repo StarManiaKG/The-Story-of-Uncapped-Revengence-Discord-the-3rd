@@ -49,7 +49,7 @@
 #include "STAR/smkg-misc_purefat.h"
 #include "STAR/menus/smkg-m_sys.h"	// TSoURDt3rd_M_OverwriteIntroResponder() //
 									// TSoURDt3rd_M_DrawMenuMessageOnTitle() //
-									// TSoURDt3rd_M_MenuMessageShouldTick()  // 
+									// TSoURDt3rd_M_MenuMessageShouldTick()  //
 
 // Stage of animation:
 // 0 = text, 1 = art screen
@@ -1051,6 +1051,11 @@ boolean F_IntroResponder(event_t *event)
 			break;
 	}
 
+	// STAR STUFF: CHECK FOR ANY EVENTS WE SHOULD PRIORITIZE //
+	if (TSoURDt3rd_M_OverwriteIntroResponder(event))
+		return false;
+	// OVERWRITED. //
+
 	if (event->type != ev_keydown && key != 301)
 		return false;
 
@@ -1059,11 +1064,6 @@ boolean F_IntroResponder(event_t *event)
 
 	if (keypressed)
 		return false;
-
-	// STAR STUFF: CHECK FOR ANY EVENTS WE SHOULD PRIORITIZE //
-	if (TSoURDt3rd_M_OverwriteIntroResponder(event))
-		return false;
-	// OVERWRITED. //
 
 	keypressed = true;
 	return true;
@@ -1228,25 +1228,6 @@ static const char *credits[] = {
 	"Samuel \"Prime 2.0\" Peters",
 	"Colin \"Sonict\" Pfaff",
 	"Bill \"Tets\" Reed",
-	"",
-	"\1TSoURDt3rd Team",
-	"StarManiaKG \"Star\" - Creator",
-	"Mini the Bunnyboy \"Talis\" - Co-Creator",
-	"Bitten2Up \"Bitten\" - Co-Creator",
-	"",
-	"\1TSoURDt3rd Extras",
-	"Marilyn - Emotional Support, Ideas",
-	"\t\t(Also Formed the Idea of This Menu)",
-	"OVAPico & Other Gamer Gang GC Members",
-	"\t\t(Voluntary Testers, Ideas)",
-	"\t\t(Also Provided Emotional Support)",
-	"NARBluebear - Best Friend",
-	"\t\t(Provided Emotional Support)",
-	"\"Future\" Smiles \"The Fox\" - Best Friend",
-	"\t\t(Provided Emotional Support)",
-	"",
-	"\1In Loving Memory Of",
-	"MarioMario \"Sapphire\" - Creator",
 	"",
 	"\1Special Thanks",
 	"id Software",

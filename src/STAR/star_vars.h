@@ -139,7 +139,6 @@ UINT32 TSoURDt3rd_PinchMusicPosition(void);
 boolean TSoURDt3rd_SetPinchMusicSpeed(void);
 
 // Files //
-INT32 STAR_DetectFileType(const char* filename);
 boolean STAR_DoesStringMatchHarcodedFileName(const char *string);
 
 // Servers //

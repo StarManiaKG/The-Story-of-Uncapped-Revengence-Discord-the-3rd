@@ -18,7 +18,7 @@
 #include "../STAR/star_vars.h" // TSoURDt3rd struct //
 #include "../STAR/smkg-misc.h" // TSoURDt3rd_M_RemoveStringChars() //
 #include "../STAR/smkg-jukebox.h" // tsourdt3rd_global_jukebox //
-#include "../STAR/menus/smkg_m_func.h" // queries about level list modes //
+#include "../STAR/menus/smkg-m_sys.h" // queries about level list modes //
 
 #include "../m_cond.h" // queries about emblems
 #include "../g_game.h"
@@ -389,7 +389,7 @@ void DRPC_ExtendedStatus(char *string)
 			DRPC_StringPrintf(string, " | ", "Game Complete!");
 	}
 
-	if (tsourdt3rd_global_jukebox->curtrack)
+	if (tsourdt3rd_global_jukebox->playing)
 		DRPC_StringPrintf(string, " | ", "Jukebox: '%s'", tsourdt3rd_global_jukebox->curtrack->title);
 }
 

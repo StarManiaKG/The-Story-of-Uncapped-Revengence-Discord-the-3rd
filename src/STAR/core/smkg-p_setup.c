@@ -17,7 +17,10 @@
 #include "../ss_main.h" // tsourdt3rd_loadingscreen //
 #include "../star_vars.h" // STAR_LoadingScreen() //
 
+#include "../../f_finale.h"
 #include "../../i_video.h" // rendermode
+#include "../../p_local.h"
+#include "../../r_state.h" // level data
 #include "../../z_zone.h"
 
 // ------------------------ //
@@ -86,10 +89,10 @@ boolean TSoURDt3rd_P_LoadAddon(INT32 wadnum, INT32 numlumps)
 				S_LoadMusicDefs(numwadfiles-1);
 				if (!TSoURDt3rd_Jukebox_PrepareDefs())
 				{
-					STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "Failed to prepare Jukebox, not reading '\x82%s\x80'!\n", lump_p->name);
+					STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "Failed to prepare Jukebox, not reading \x82\"%s\"\x80!\n", lump_p->name);
 					break;
 				}
-				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "Reading '\x82%s\x80' (from wad '\x82%s\x80')\n", lump_p->name, script->wad->filename);
+				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "Reading \x82\"%s\"\x80 (from wad \x82\"%s\"\x80)\n", lump_p->name, script->wad->filename);
 				TSoURDt3rd_STARParser_Read(script, text, lumpLength, TSoURDt3rd_STARParser_JukeDefs);
 				Z_Free(tsourdt3rd_jukebox_defs);
 				tsourdt3rd_jukebox_defs = NULL;

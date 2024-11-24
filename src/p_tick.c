@@ -582,7 +582,7 @@ static inline void P_DoSpecialStageStuff(void)
 	// STAR STUFF: do cool music speeding junk :) //
 	if (sstimer < 15*TICRATE+6 && sstimer > 7 && (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC))
 	{
-		if (!tsourdt3rd_global_jukebox->curtrack) // you're interrupting my brooding >:| //
+		if (!tsourdt3rd_global_jukebox->playing) // you're interrupting my brooding >:| //
 			S_SpeedMusic(1.4f);
 	}
 	// DONE! //

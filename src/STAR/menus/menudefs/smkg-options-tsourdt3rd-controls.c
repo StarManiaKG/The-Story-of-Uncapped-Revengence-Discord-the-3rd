@@ -9,7 +9,7 @@
 /// \file  menus/menudefs/smkg-options-tsourdt3rd-controls.c
 /// \brief TSoURDt3rd's control menu options
 
-#include "../smkg_m_func.h"
+#include "../smkg-m_sys.h"
 #include "../../../z_zone.h"
 
 // ------------------------ //
@@ -371,7 +371,7 @@ static void M_ProfileControlSaveResponse(INT32 choice)
 		// Revert changes
 		memcpy(optionsmenu.tempcontrols, gamecontrol, sizeof(gamecontrol));
 	}
-	STAR_M_GoBack(0);
+	TSoURDt3rd_M_GoBack(0);
 }
 
 static void M_Sys_ProfileControlsConfirm(INT32 choice)
@@ -379,7 +379,7 @@ static void M_Sys_ProfileControlsConfirm(INT32 choice)
 	if (!memcmp(gamecontrol, optionsmenu.tempcontrols, sizeof(optionsmenu.tempcontrols)))
 	{
 		// no change
-		STAR_M_GoBack(0);
+		TSoURDt3rd_M_GoBack(0);
 		return;
 	}
 

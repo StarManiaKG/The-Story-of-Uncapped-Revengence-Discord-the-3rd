@@ -169,7 +169,11 @@ void TSoURDt3rd_Jukebox_Reset(void)
 	tsourdt3rd_global_jukebox->curtrack = NULL;
 
 	TSoURDt3rd_ControlMusicEffects();
-	STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Jukebox reset.\n");
+	if (!tsourdt3rd_jukebox_inmenu)
+	{
+		// Ok, let's try NOT to overload the console, please.
+		STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Jukebox reset.\n");
+	}
 }
 
 //

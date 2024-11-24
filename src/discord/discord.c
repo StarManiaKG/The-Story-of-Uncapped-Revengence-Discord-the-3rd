@@ -22,6 +22,7 @@
 #include "../d_netcmd.h"
 #include "../i_net.h"
 #include "../g_game.h"
+#include "../m_menu.h"
 #include "../mserv.h" // msServerId
 #include "../z_zone.h"
 #include "../byteptr.h"

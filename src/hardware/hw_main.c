@@ -3609,14 +3609,7 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 		HWR_LinkDrawHackAdd(wallVerts, spr);
 
 #ifdef ALAM_LIGHTING
-#ifdef SPDR_CORONAS
-#ifdef CORONA_CHOICE
-    if (cv_corona.value && (cv_glcorona_draw.value == 1 || cv_glcorona_draw.value == 3))
-#else
-    if (cv_corona.value)
-#endif
-		HWR_DoCoronasLighting(wallVerts, spr); // draw a corona if this sprite contain light(s)
-#endif
+	HWR_DoCoronasLighting(wallVerts, spr); // draw a corona if this sprite contain light(s)
 #endif
 }
 
@@ -3980,17 +3973,9 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 			HWR_LinkDrawHackAdd(wallVerts, spr);
 
 #ifdef ALAM_LIGHTING
-#ifdef SPDR_CORONAS
-#ifdef CORONA_CHOICE
-    	if (cv_corona.value && (cv_glcorona_draw.value == 1 || cv_glcorona_draw.value == 3))
-#else
-   		if (cv_corona.value)
-#endif
-		{	// draw a corona if this sprite contain light(s)
-			HWR_SpriteLighting(wallVerts); // SRB2CBTODO: !
-			HWR_DoCoronasLighting(wallVerts, spr);
-		}
-#endif
+		// draw a corona if this sprite contain light(s)
+		HWR_SpriteLighting(wallVerts); // SRB2CBTODO: !
+		HWR_DoCoronasLighting(wallVerts, spr);
 #endif
 	}
 }
@@ -6058,16 +6043,8 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	HWD.pfnUnSetShader();
 
 #ifdef ALAM_LIGHTING
-#ifdef DYLT_CORONAS
-#ifdef CORONA_CHOICE
-	if (cv_corona.value && cv_glcorona_draw.value == 2)
-#else
-    if (cv_corona.value)
-#endif
-    {	// Hurdler: they must be drawn before translucent planes, what about gl fog?
-		HWR_DL_Draw_Coronas();
-	}
-#endif
+	// Hurdler: they must be drawn before translucent planes, what about gl fog?
+	HWR_DL_Draw_Coronas();
 #endif
 
 	HWR_DoPostProcessor(player);
@@ -6181,15 +6158,6 @@ consvar_t cv_gldynamiclighting = CVAR_INIT ("gr_dynamiclighting", "On", CV_SAVE,
 consvar_t cv_glstaticlighting  = CVAR_INIT ("gr_staticlighting", "On", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_glcoronas = CVAR_INIT ("gr_coronas", "On", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_glcoronasize = CVAR_INIT ("gr_coronasize", "1", CV_SAVE|CV_FLOAT, 0, NULL);
-#ifdef CORONA_CHOICE
-CV_PossibleValue_t glcorona_draw_cons_t[] = {
-	{0, "Off"},
-	{1, "Sprite"},
-	{2, "Dyn"},
-	{3, "Auto"},
-	{0, NULL}};
-consvar_t cv_glcorona_draw = CVAR_INIT ("gl_corona_draw", "Auto", CV_SAVE, glcorona_draw_cons_t, NULL);
-#endif
 #endif
 
 consvar_t cv_glmodels = CVAR_INIT ("gr_models", "Off", CV_SAVE, CV_OnOff, NULL);
@@ -6274,9 +6242,6 @@ void HWR_AddCommands(void)
 	CV_RegisterVar(&cv_gldynamiclighting);
 	CV_RegisterVar(&cv_glcoronasize);
 	CV_RegisterVar(&cv_glcoronas);
-#ifdef CORONA_CHOICE
-	CV_RegisterVar(&cv_glcorona_draw);
-#endif
 #endif
 
 	CV_RegisterVar(&cv_glmodellighting);

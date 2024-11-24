@@ -12,6 +12,8 @@
 #ifndef __SMKG_CVARS__
 #define __SMKG_CVARS__
 
+#include "smkg-defs.h"
+
 #include "../command.h"
 #include "../d_net.h"
 
@@ -57,6 +59,12 @@ extern consvar_t cv_tsourdt3rd_video_showtps; // Ported from Uncapped Plus, TPS 
 extern consvar_t cv_tsourdt3rd_video_coloring_menus;
 extern consvar_t cv_tsourdt3rd_video_coloring_fpsrate;
 extern consvar_t cv_tsourdt3rd_video_coloring_tpsrate;
+#ifdef STAR_LIGHTING
+extern consvar_t cv_tsourdt3rd_video_lighting_coronas;
+extern consvar_t cv_tsourdt3rd_video_lighting_coronas_size;
+extern consvar_t cv_tsourdt3rd_video_lighting_coronas_lightingtype;
+extern consvar_t cv_tsourdt3rd_video_lighting_coronas_drawingmode;
+#endif
 
 // Audio //
 extern consvar_t cv_tsourdt3rd_audio_watermuffling;

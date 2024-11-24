@@ -12,27 +12,12 @@
 #ifndef __SS_MAIN__
 #define __SS_MAIN__
 
-#include "../doomtype.h"
 #include "../p_mobj.h"
-#include "../m_menu.h"
 #include "../s_sound.h"
 
 // ------------------------ //
 //        Variables
 // ------------------------ //
-
-//#define TSOURDT3RD_DEBUGGING /* Debugging */
-
-#define AUTOLOADCONFIGFILENAME "autoload.cfg"
-
-//#define ALAM_LIGHTING /* EXTREME BETA: Enable Alam's Lighting, With Touch-ups by Star */
-
-//#define _DEBUG /* Debugging */
-//#define DEBUGFILE /* Debugging */
-
-// ======
-// EVENTS
-// ======
 
 typedef struct tsourdt3rd_s
 {

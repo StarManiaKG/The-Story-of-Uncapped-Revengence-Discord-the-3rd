@@ -845,12 +845,12 @@ void readlight(MYFILE *f, INT32 num)
 				lspr[num].dynamic_sqrradius = fvalue * fvalue;
 			}
 			// STAR STUFF: coronas //
-			else if (fastcmp(word, "CORONAROUTINE"))
+			else if (fastcmp(word, "CORONAROUTINE") || fastcmp(word, "CORONARENDERINGROUTINE"))
 			{
 				switch (value)
 				{
-					case 1: lspr[num].coronaroutine = LCR_SuperSonicLight; break;
-					case 0: lspr[num].coronaroutine = NULL; break;
+					case 1: lspr[num].corona_rendering_routine = LCR_SuperSonicLight; break;
+					case 0: lspr[num].corona_rendering_routine = NULL; break;
 					default: deh_warning("Light %d: unknown routine '%d'", num, value); break;
 				}
 			}

@@ -10,7 +10,6 @@
 /// \brief TSoURDt3rd's unique main menu options
 
 #include "../smkg-m_sys.h"
-#include "../smkg_m_func.h"
 #include "../../smkg-cvars.h"
 
 #include "../../../i_time.h"
@@ -303,7 +302,7 @@ boolean TSoURDt3rd_M_OptionsInputs(INT32 ch)
 		TSoURDt3rd_M_SetMenuDelay(pid);
 		optionsmenu.offset.dist = 48;
 
-		STAR_M_NextOpt();
+		TSoURDt3rd_M_NextOpt();
 		S_StartSound(NULL, sfx_s3k5b);
 
 		if (tsourdt3rd_itemOn == 0)
@@ -317,7 +316,7 @@ boolean TSoURDt3rd_M_OptionsInputs(INT32 ch)
 		TSoURDt3rd_M_SetMenuDelay(pid);
 		optionsmenu.offset.dist = -48;
 
-		STAR_M_PrevOpt();
+		TSoURDt3rd_M_PrevOpt();
 		S_StartSound(NULL, sfx_s3k5b);
 
 		if (tsourdt3rd_itemOn == currentMenu->numitems-1)
