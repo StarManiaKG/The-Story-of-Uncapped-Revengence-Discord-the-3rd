@@ -27,7 +27,7 @@ menuitem_t TSoURDt3rd_OP_ExtrasMenu[] =
 	{IT_STRING | IT_CALL, NULL, "Mods",
 		M_Sys_OpenGitlabModsURL, 0},
 	{IT_STRING | IT_CALL, NULL, "Jukebox",
-		TSoURDt3rd_M_InitJukebox, 0},
+		TSoURDt3rd_M_Jukebox_Init, 0},
 	{IT_STRING | IT_SUBMENU, NULL, "Play Snake",
 		&TSoURDt3rd_OP_Extras_SnakeDef, 0},
 	{IT_STRING | IT_CALL, NULL, "Dispenser Goin' Up",

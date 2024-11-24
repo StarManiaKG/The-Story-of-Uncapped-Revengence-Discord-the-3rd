@@ -9,7 +9,7 @@
 /// \file  menus/menudefs/transient/smkg-options-tsourdt3rd-extras-jukebox.c
 /// \brief TSoURDt3rd's full interactive Jukebox menu
 
-#include "../../smkg_m_func.h"
+#include "../../smkg-m_sys.h"
 
 #include "../../../../g_demo.h"
 #include "../../../../r_draw.h"
@@ -26,7 +26,20 @@ static UINT8 tsourdt3rd_skyRoomMenuTranslations[MAXUNLOCKABLES];
 static boolean jb_draw_options = false;
 
 static boolean jb_draw_controls_tip = false;
-static tic_t jb_controls_ticker = false;
+static tic_t jb_controls_ticker = 0;
+static INT32 jb_controls_trans = 0;
+static INT32 jb_controls_trans_table[] = {
+	[30*TICRATE] = V_10TRANS,
+	[31*TICRATE] = V_20TRANS,
+	[32*TICRATE] = V_30TRANS,
+	[33*TICRATE] = V_40TRANS,
+	[34*TICRATE] = V_TRANSLUCENT,
+	[35*TICRATE] = V_60TRANS,
+	[36*TICRATE] = V_70TRANS,
+	[37*TICRATE] = V_80TRANS,
+	[38*TICRATE] = V_90TRANS,
+	[39*TICRATE] = -1,
+};
 
 static tsourdt3rd_jukebox_pages_t *jb_page = NULL;
 static tsourdt3rd_jukeboxdef_t **tsourdt3rd_cur_page_jukebox_defs = NULL;
@@ -41,6 +54,7 @@ static angle_t jb_ang;
 
 static menu_t *last_menu_reference = NULL;
 static tsourdt3rd_menu_t *last_tsourdt3rd_menu_reference = NULL;
+boolean tsourdt3rd_jukebox_inmenu = false;
 
 static void M_Sys_DrawJukebox(void);
 static void M_Sys_InitJukebox(void);
@@ -230,7 +244,7 @@ static void M_Sys_SetupNewJukeboxPage(void)
 	Z_Free(tsourdt3rd_cur_page_jukebox_defs);
 	tsourdt3rd_cur_page_jukebox_defs = NULL;
 	if (!(tsourdt3rd_cur_page_jukebox_defs = Z_Malloc(numsoundtestdefs * sizeof(tsourdt3rd_jukeboxdef_t *), PU_STATIC, NULL)))
-		I_Error("TSoURDt3rd_M_InitJukebox(): could not allocate jukebox defs.");
+		I_Error("TSoURDt3rd_M_Jukebox_Init(): could not allocate jukebox defs.");
 
 	for (cur_juke_def_pos = 0; cur_juke_def_pos < numsoundtestdefs; cur_juke_def_pos++)
 	{
@@ -273,20 +287,6 @@ static void M_Sys_DrawJukebox(void)
 	INT32 x, y, i;
 	fixed_t hscale = FRACUNIT/2, vscale = FRACUNIT/2, bounce = 0;
 	UINT8 frame[4] = {0, 0, -1, SKINCOLOR_RUBY};
-
-	static INT32 jb_controls_trans = 0;
-	static INT32 jb_controls_trans_table[] = {
-		[30*TICRATE] = V_10TRANS,
-		[31*TICRATE] = V_20TRANS,
-		[32*TICRATE] = V_30TRANS,
-		[33*TICRATE] = V_40TRANS,
-		[34*TICRATE] = V_TRANSLUCENT,
-		[35*TICRATE] = V_60TRANS,
-		[36*TICRATE] = V_70TRANS,
-		[37*TICRATE] = V_80TRANS,
-		[38*TICRATE] = V_90TRANS,
-		[39*TICRATE] = -1,
-	};
 
 	if (jb_draw_options)
 	{
@@ -514,6 +514,7 @@ static void M_Sys_DrawJukebox(void)
 		{
 			if (jb_controls_trans_table[jb_controls_ticker])
 				jb_controls_trans = jb_controls_trans_table[jb_controls_ticker];
+			V_DrawFill(165-142, 60+28, 139, 50, 0|jb_controls_trans);
 			V_DrawThinString(165-96, 60+33, jb_controls_trans|V_YELLOWMAP, "CONTROLS");
 			V_DrawThinString(165-134, 60+41, jb_controls_trans|V_MENUCOLORMAP|V_ALLOWLOWERCASE, "Page Up/Up: Scroll Up");
 			V_DrawThinString(165-134, 60+49, jb_controls_trans|V_MENUCOLORMAP|V_ALLOWLOWERCASE, "Page Down/Down: Scroll Down");
@@ -530,7 +531,7 @@ static void M_Sys_DrawJukebox(void)
 	}
 }
 
-void TSoURDt3rd_M_JukeboxTicker(void)
+void TSoURDt3rd_M_Jukebox_Ticker(void)
 {
 	fixed_t stoppingtics;
 
@@ -617,6 +618,8 @@ static void M_Sys_InitJukebox(void)
 
 	jb_cc = cv_closedcaptioning.value; // hack;
 	cv_closedcaptioning.value = 1; // hack
+
+	TSoURDt3rd_M_ResetOptions();
 }
 
 static boolean M_Sys_HandleJukebox(INT32 choice)
@@ -686,7 +689,7 @@ static boolean M_Sys_HandleJukebox(INT32 choice)
 	}
 	else if (TSoURDt3rd_M_MenuExtraPressed(pid))
 	{
-		if (!tsourdt3rd_global_jukebox->curtrack)
+		if (!tsourdt3rd_global_jukebox->playing)
 		{
 			S_StartSound(NULL, sfx_lose);
 			return true;
@@ -724,11 +727,16 @@ static boolean M_Sys_HandleJukebox(INT32 choice)
 			return true;
 		}
 
-		tsourdt3rd_global_jukebox->prevtrack = cur_juke_def->linked_musicdef;
-		tsourdt3rd_global_jukebox->curtrack = cur_juke_def->linked_musicdef;
-
-		if (TSoURDt3rd_AprilFools_ModeEnabled())
+		if (!TSoURDt3rd_AprilFools_ModeEnabled())
+		{
+			tsourdt3rd_global_jukebox->prevtrack = cur_juke_def->linked_musicdef;
+			tsourdt3rd_global_jukebox->curtrack = cur_juke_def->linked_musicdef;
+		}
+		else
+		{
 			tsourdt3rd_global_jukebox->curtrack = &tsourdt3rd_aprilfools_def;
+			tsourdt3rd_global_jukebox->prevtrack = tsourdt3rd_global_jukebox->curtrack;
+		}
 
 		S_ChangeMusicInternal(
 			tsourdt3rd_global_jukebox->curtrack->name,
@@ -752,26 +760,33 @@ static boolean M_Sys_HandleJukebox(INT32 choice)
 		jb_page_playable_tracks = 0;
 		TSoURDt3rd_M_SetupNextMenu(last_tsourdt3rd_menu_reference, last_menu_reference, false);
 		TSoURDt3rd_M_SetMenuDelay(pid);
+
+		jb_draw_controls_tip = false;
+		jb_controls_trans = 0;
+		jb_controls_ticker = 0;
+		tsourdt3rd_jukebox_inmenu = false;
 		return true;
 	}
 
 	return false;
 }
 
-void TSoURDt3rd_M_InitJukebox(INT32 choice)
+void TSoURDt3rd_M_Jukebox_Init(INT32 choice)
 {
-	if (currentMenu == &TSoURDt3rd_OP_Extras_JukeboxDef)
+	boolean in_menu = menuactive;
+
+	if (currentMenu == &TSoURDt3rd_OP_Extras_JukeboxDef && in_menu)
 	{
 		// Please don't go to the same menu twice.
 		return;
 	}
-	else if (gamestate == GS_NULL || gamestate == GS_INTRO || demoplayback)
+	else if (TSoURDt3rd_M_DoesMenuHaveKeyHandler() > 0)
 	{
-		// Let's be in a regular state before we access the Jukebox, mmk?
+		// Let's not be doing or reading something potentially important before we access the Jukebox, mmk?
 		return;
 	}
 
-	if (menuactive == false)
+	if (in_menu == false)
 	{
 		// We should probably make sure that the menu is opened first...
 		M_StartControlPanel();
@@ -783,8 +798,16 @@ void TSoURDt3rd_M_InitJukebox(INT32 choice)
 	skyRoomMenu_ul = tsourdt3rd_skyRoomMenuTranslations[choice-1];
 
 	// When using the jukebox keybind, this prevents the game from crashing!
-	last_tsourdt3rd_menu_reference = tsourdt3rd_currentMenu;
-	last_menu_reference = currentMenu;
+	if (in_menu)
+	{
+		last_tsourdt3rd_menu_reference = tsourdt3rd_currentMenu;
+		last_menu_reference = currentMenu;
+	}
+	else
+	{
+		last_tsourdt3rd_menu_reference = NULL;
+		last_menu_reference = NULL;
+	}
 
 	if (last_tsourdt3rd_menu_reference != NULL)
 		TSoURDt3rd_TM_OP_Extras_JukeboxDef.music = last_tsourdt3rd_menu_reference->music;
@@ -795,4 +818,6 @@ void TSoURDt3rd_M_InitJukebox(INT32 choice)
 
 	optionsmenu.ticker = 0;
 	TSoURDt3rd_M_OptionsTick();
+
+	tsourdt3rd_jukebox_inmenu = true;
 }

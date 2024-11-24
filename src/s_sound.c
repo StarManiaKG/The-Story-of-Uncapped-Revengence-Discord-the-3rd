@@ -2101,7 +2101,7 @@ boolean S_RecallMusic(UINT16 status, boolean fromfirst)
 	}
 
 	// STAR STUFF: currently jukeboxing, so just clear memory and move on :p //
-	if (tsourdt3rd_global_jukebox->curtrack)
+	if (tsourdt3rd_global_jukebox->playing)
 	{
 		Z_Free(entry);
 		return false;
@@ -2600,7 +2600,7 @@ static void Command_Tunes_f(void)
 		STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "Nice try. Perhaps there's a command you need to turn off first?\n");
 		return;
 	}
-	else if (tsourdt3rd_global_jukebox->curtrack)
+	else if (tsourdt3rd_global_jukebox->playing)
 	{
 		STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Sorry, you can't use this command while playing music.\n");
 		return;

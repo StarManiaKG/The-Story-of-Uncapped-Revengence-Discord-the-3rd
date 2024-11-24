@@ -531,17 +531,19 @@ void TSoURDt3rd_I_ShowErrorMessageBox(const char *messagefordevelopers, const SD
 		(messageboxdata ? messageboxdata->buttons : tsourdt3rd_buttons),
 		(messageboxdata ? messageboxdata->colorScheme : NULL),
 	};
-	int tsourdt3rd_buttonid = (buttonid != NULL ? (*buttonid) : 0);
+	int tsourdt3rd_buttonid;
 
 	// Implement message box with SDL_ShowMessageBox,
 	// which should fail gracefully if it can't put a message box up
 	// on the target system
-	SDL_ShowMessageBox(&tsourdt3rd_messageboxdata, &tsourdt3rd_buttonid);
-
-#if SDL_VERSION_ATLEAST(2,0,14)
-	if (tsourdt3rd_buttonid == 1)
-		SDL_OpenURL("https://www.srb2.org/discord");
-#endif
+	if (buttonid == NULL)
+	{
+		SDL_ShowMessageBox(&tsourdt3rd_messageboxdata, &tsourdt3rd_buttonid);
+		if (tsourdt3rd_buttonid == 1)
+			TSoURDt3rd_I_OpenURL("https://www.srb2.org/discord");
+	}
+	else
+		SDL_ShowMessageBox(&tsourdt3rd_messageboxdata, buttonid);
 }
 
 //

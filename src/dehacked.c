@@ -187,7 +187,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 	deh_num_warning = 0;
 
 	// STAR STUFF: reset music, since we might not have the jukebox unlocked anymore //
-	if (tsourdt3rd_global_jukebox->curtrack && savemoddata && (introchanged || titlechanged))
+	if (tsourdt3rd_global_jukebox->playing && savemoddata && (introchanged || titlechanged))
 		S_StopMusic();
 	// END IT PLEASE //
 

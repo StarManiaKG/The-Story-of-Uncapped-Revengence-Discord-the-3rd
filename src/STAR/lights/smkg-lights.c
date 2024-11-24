@@ -12,11 +12,11 @@
 /// \brief TSoURDt3rd remastered coronas
 
 #include "smkg-lights.h"
-#include "smkg-coronas.h"
-
-#include "../../v_video.h"
 
 #ifdef ALAM_LIGHTING
+
+#include "smkg-coronas.h"
+#include "../../v_video.h"
 
 // ------------------------ //
 //        Functions
@@ -27,7 +27,7 @@ boolean LCR_SuperSonicLight(mobj_t *mobj)
 	return (mobj && mobj->player && mobj->sprite == SPR_PLAY && mobj->player->powers[pw_super]);
 }
 
-boolean LCR_ObjectColorToCoronaLight(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *alpha, boolean dynamic)
+boolean LCR_ObjectColorToCoronaLight(mobj_t *mobj, RGBA_t *rgba_table, boolean alpha, boolean dynamic)
 {
 	RGBA_t new_color;
 
@@ -43,13 +43,13 @@ boolean LCR_ObjectColorToCoronaLight(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *al
 			rgba_table->rgba = new_color.rgba;
 	}
 
-	if (alpha != NULL)
-		(*alpha) = new_color.s.alpha;
+	if (alpha)
+		corona_alpha = new_color.s.alpha;
 
 	return true;
 }
 
-boolean LCR_EmeraldLight(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *alpha, boolean dynamic)
+boolean LCR_EmeraldLight(mobj_t *mobj, RGBA_t *rgba_table, boolean alpha, boolean dynamic)
 {
 	light_t *light_to_use = NULL;
 
@@ -83,6 +83,9 @@ boolean LCR_EmeraldLight(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *alpha, boolean
 			return false;
 	}
 
+	if (light_to_use == NULL)
+		return false;
+
 	if (rgba_table != NULL)
 	{
 		if (dynamic)
@@ -91,31 +94,22 @@ boolean LCR_EmeraldLight(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *alpha, boolean
 			rgba_table->rgba = light_to_use->corona_color;
 	}
 
-	if (alpha != NULL)
-		(*alpha) = V_GetColor(skincolors[(dynamic ? light_to_use->dynamic_color : light_to_use->corona_color)].ramp[8]).s.alpha;
+	if (alpha)
+	{
+		if (dynamic)
+			corona_alpha = V_GetColor(skincolors[light_to_use->dynamic_color].ramp[8]).s.alpha;
+		else
+			corona_alpha = V_GetColor(skincolors[light_to_use->corona_color].ramp[8]).s.alpha;
+	}
 
 	return true;
 }
-
-// Force light setup, without another test.
-static void CV_corona_OnChange(void)
-{
-	for (int i = 0; i < NUMLIGHTS; i++)
-		t_lspr[i]->impl_flags |= SLI_changed;
-}
-
-static CV_PossibleValue_t corona_cons_t[] = {{0, "Off"}, {1, "Special"}, {2, "Most"}, {14, "Dim"}, {15, "All"}, {16, "Bright"}, {20, "Old"}, {0, NULL}};
-consvar_t cv_corona = CVAR_INIT ("tsourdt3rd_vid_coronas", "All", CV_SAVE|CV_CALL, corona_cons_t, CV_corona_OnChange);
-consvar_t cv_coronasize = CVAR_INIT ("tsourdt3rd_vid_coronas_size", "1", CV_SAVE|CV_FLOAT, NULL, NULL);
-
-static CV_PossibleValue_t corona_draw_mode_cons_t[] = {{0, "Blend"}, {1, "Blend_BG"}, {2, "Additive"}, {3, "Additive_BG"}, {4, "Add_Limit"}, {0, NULL}};
-consvar_t cv_corona_draw_mode = CVAR_INIT ("tsourdt3rd_vid_coronas_drawmode", "Additive", CV_SAVE, corona_draw_mode_cons_t, NULL);
 
 //Hurdler: now we can change those values via FS :)
 // RGBA( r, g, b, a )
 // Indexed by lightspritenum_s
 light_t lspr[NUMLIGHTS] =
-{	// type       		offset x,   y  		coronas color,	c_radius,	light color,	l_radius, 	sqr radius computed at init, impl_flags,		coronaroutine, corona_coloring_routine
+{	// type       		offset x,   y  		coronas color,	c_radius,	light color,	l_radius, 	sqr radius computed at init, impl_flags,		corona_rendering_routine, corona_coloring_routine
 	// default
 	{UNDEFINED_SPR,		0.0f,		0.0f, 	0x00000000,		60.0f,		0x00000000,		100.0f,		0.0f, 0,					NULL, NULL},
 

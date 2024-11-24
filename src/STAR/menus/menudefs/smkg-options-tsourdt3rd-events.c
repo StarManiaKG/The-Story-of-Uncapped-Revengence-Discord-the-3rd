@@ -53,7 +53,7 @@ menu_t TSoURDt3rd_OP_EventsDef =
 	&TSoURDt3rd_OP_MainMenuDef,
 	TSoURDt3rd_OP_EventsMenu,
 	TSoURDt3rd_M_DrawGenericOptions,
-	0, 0,
+	48, 64,
 	0,
 	NULL
 };
@@ -66,7 +66,7 @@ tsourdt3rd_menu_t TSoURDt3rd_TM_OP_EventsDef = {
 	2, 5,
 	NULL,
 	M_Sys_EventTicker,
-	NULL,
+	M_Sys_EventTicker,
 	NULL,
 	NULL,
 	&TSoURDt3rd_TM_OP_MainMenuDef
@@ -100,12 +100,11 @@ static void M_Sys_EventTicker(void)
 
 	if (!(tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_EASTER))
 	{
-		for (i = op_easter; i <= op_easter_bonuses; i++)
+		for (i = op_easter_egghunt; i <= op_easter_bonuses; i++)
 			TSoURDt3rd_OP_EventsMenu[i].status = IT_GRAYEDOUT;
 	}
 	else
 	{
-		TSoURDt3rd_OP_EventsMenu[op_easter].status = IT_HEADER;
 		for (i = op_easter_egghunt; i <= op_easter_bonuses; i++)
 			TSoURDt3rd_OP_EventsMenu[i].status = IT_CVAR|IT_STRING;
 	}

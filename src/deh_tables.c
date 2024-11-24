@@ -5835,8 +5835,29 @@ struct int_const_s const INT_CONST[] = {
 void DEH_TableCheck(void)
 {
 #if defined(_DEBUG) || defined(PARANOIA)
+#if 0
 	const size_t dehstates = sizeof(STATE_LIST)/sizeof(const char*);
 	const size_t dehmobjs  = sizeof(MOBJTYPE_LIST)/sizeof(const char*);
+#else
+	// STAR STUFF: manage dehacked tables //
+	size_t dehstates = 0;
+	size_t dehmobjs = 0;
+	INT32 i;
+
+	for (i = 0; i < S_FIRSTFREESLOT; i++)
+	{
+		if (!STATE_LIST[i])
+			continue;
+		dehstates++;
+	}
+	for (i = 0; i < MT_FIRSTFREESLOT; i++)
+	{
+		if (!MOBJTYPE_LIST[i])
+			continue;
+		dehmobjs++;
+	}
+#endif
+
 	const size_t dehpowers = sizeof(POWERS_LIST)/sizeof(const char*);
 	const size_t dehcolors = sizeof(COLOR_ENUMS)/sizeof(const char*);
 

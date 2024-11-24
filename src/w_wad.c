@@ -1000,6 +1000,7 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 	}
 
 	TSoURDt3rd_P_LoadAddon(numwadfiles - 1, wadfile->numlumps); // STAR STUFF: Don't forget to load our cool stuff too! //
+
 	W_InvalidateLumpnumCache();
 	return wadfile->numlumps;
 }
@@ -1155,9 +1156,10 @@ UINT16 W_InitFolder(const char *path, boolean mainfile, boolean startup)
 	wadfiles[numwadfiles] = wadfile;
 	numwadfiles++;
 
+	TSoURDt3rd_P_LoadAddon(numwadfiles - 1, wadfile->numlumps); // STAR STUFF: Don't forget to load our cool stuff too! //
+
 	W_ReadFileShaders(wadfile);
 	W_LoadDehackedLumpsPK3(numwadfiles - 1, mainfile);
-	TSoURDt3rd_P_LoadAddon(numwadfiles - 1, wadfile->numlumps); // STAR STUFF: Don't forget to load our cool stuff too! //
 	W_InvalidateLumpnumCache();
 
 	return wadfile->numlumps;

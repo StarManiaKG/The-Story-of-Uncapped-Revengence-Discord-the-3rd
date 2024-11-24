@@ -14,10 +14,8 @@
 #ifdef HAVE_DISCORDSUPPORT
 #include "../../../discord/discord.h"
 
-#include "../smkg_m_func.h"
+#include "../smkg-m_sys.h"
 #include "../../smkg-st_hud.h"
-
-#include "../../drrr/k_menu.h" // menutyping //
 
 #include "../../../r_draw.h"
 #include "../../../z_zone.h"
@@ -218,7 +216,7 @@ tsourdt3rd_menu_t DISCORD_TM_MISC_RequestsDef = {
 //        Functions
 // ------------------------ //
 
-void TSoURDt3rd_M_InitDiscordOptions(INT32 choice)
+void TSoURDt3rd_M_DiscordOptions_Init(INT32 choice)
 {
 	(void)choice;
 
@@ -427,7 +425,7 @@ static const char *M_Sys_GetDiscordName(discordRequest_t *r)
 	return DRPC_ReturnUsername();
 }
 
-void TSoURDt3rd_M_InitDiscordRequests(INT32 choice)
+void TSoURDt3rd_M_DiscordRequests_Init(INT32 choice)
 {
 	static const tic_t confirmLength = 3*TICRATE/4;
 	(void)choice;

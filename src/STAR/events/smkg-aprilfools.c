@@ -41,11 +41,6 @@ static menuitem_t defaultMenuTitles[256][256];
 static gtdesc_t defaultGametypeTitles[NUMGAMETYPES];
 
 #if 0
-OP_SoftwareLightingMenu
-	{IT_STRING | IT_CVAR,	NULL,	"Coronavirus",		&cv_corona,				0},
-	{IT_STRING | IT_CVAR,	NULL,	"Coronavirus Population",	&cv_coronasize,10},
-	{IT_STRING | IT_CVAR,	NULL,	"Coronavirus Drawing",&cv_corona_draw_mode,20},
-
 MP_SplitServerMenu
 	{IT_STRING|IT_CALL,              NULL, "Can We Play Tag?", 		   M_MapChange,         100},
 	{IT_STRING|IT_CALL,              NULL, "Pet 1 setup...",           M_SetupMultiPlayer,  110},
@@ -95,7 +90,7 @@ OP_MainMenu
 	{IT_CALL    | IT_STRING, NULL, "Server Options...",    M_ServerOptions,     80},
 	{IT_SUBMENU | IT_STRING, NULL, "Datum Options...",     &OP_DataOptionsDef, 100},
 #ifdef HAVE_DISCORDSUPPORT
-	{IT_CALL 	| IT_STRING, NULL, "Mastadon Options...",  TSoURDt3rd_M_InitDiscordOptions,   120},
+	{IT_CALL 	| IT_STRING, NULL, "Mastadon Options...",  TSoURDt3rd_M_DiscordOptions_Init,   120},
 #endif
 	{IT_CALL    | IT_STRING, NULL, "Dumb Options...",      TSoURDt3rd_M_InitMainOptions,130}, // STAR STUFF: our menu! //
 
@@ -405,13 +400,6 @@ OP_OpenGLOptionsMenu
 	{IT_STRING|IT_CVAR,         NULL, "Make big screen",     &cv_fullscreen,          164},
 #endif
 
-OP_OpenGLLightingMenu
-	{IT_STRING|IT_CVAR, NULL, "Coronavirus",      &cv_glcoronas,          0},
-	{IT_STRING|IT_CVAR, NULL, "Coronavirus population", &cv_glcoronasize,10},
-	{IT_STRING|IT_CVAR, NULL, "Moving lighting",  &cv_gldynamiclighting, 20},
-	{IT_STRING|IT_CVAR, NULL, "Lazy lighting",    &cv_glstaticlighting,  30},
-	{IT_STRING|IT_CVAR, NULL, "Coronavirus drawing", &cv_glcorona_draw,50},
-
 OP_SoundOptionsMenu
 	{IT_HEADER, NULL, "Game Noise", NULL, 0},
 	{IT_STRING | IT_CVAR,  NULL,  "Noise", &cv_gamesounds, 6},
@@ -492,14 +480,13 @@ boolean TSoURDt3rd_AprilFools_ModeEnabled(void)
 //
 void TSoURDt3rd_AprilFools_StoreDefaultMenuStrings(void)
 {
-	INT32 menu = 1;
 	memset(defaultMenuTitles, 0, sizeof(defaultMenuTitles)); // Resets the default menu title table.
 	memset(defaultGametypeTitles, 0, sizeof(defaultGametypeTitles)); // Resets the default gametype title table.
-	memcpy(&defaultGametypeTitles, &gametypedesc, sizeof(gametypedesc)); // Gametypes
-	memcpy(&defaultMenuTitles[menu++], &MainMenu, sizeof(menuitem_t)); // Main Menu
-	memcpy(&defaultMenuTitles[menu++], &SP_MainMenu, sizeof(menuitem_t)); // SP Main Menu
-	memcpy(&defaultMenuTitles[menu++], &MPauseMenu, sizeof(menuitem_t)); // MP Pause
-	memcpy(&defaultMenuTitles[menu++], &SPauseMenu, sizeof(menuitem_t)); // SP Pause
+	memcpy(&defaultGametypeTitles, &gametypedesc, sizeof(defaultGametypeTitles)); // Gametypes
+	memcpy(&defaultMenuTitles[0], &MainMenu, sizeof(defaultMenuTitles[0])); // Main Menu
+	memcpy(&defaultMenuTitles[1], &SP_MainMenu, sizeof(defaultMenuTitles[1])); // SP Main Menu
+	memcpy(&defaultMenuTitles[2], &MPauseMenu, sizeof(defaultMenuTitles[2])); // MP Pause
+	memcpy(&defaultMenuTitles[3], &SPauseMenu, sizeof(defaultMenuTitles[3])); // SP Pause
 }
 
 //
@@ -508,7 +495,11 @@ void TSoURDt3rd_AprilFools_StoreDefaultMenuStrings(void)
 //
 static void AprilFools_ChangeMenus(void)
 {
-	INT32 menu = 1;
+	if (tsourdt3rd_aprilfools_def.bpm == 0)
+	{
+		// Manually set the BPM, since doing otherwise can either cause SIGFPE crashes or fast radio bouncing
+		tsourdt3rd_aprilfools_def.bpm = FixedDiv((60*TICRATE)<<FRACBITS, FLOAT_TO_FIXED(10));
+	}
 
 	if (!(tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_APRILFOOLS))
 		return;
@@ -516,18 +507,19 @@ static void AprilFools_ChangeMenus(void)
 	if (menuactive)
 	{
 		M_ClearMenus(true);
-		D_StartTitle();
+		if (!Playing())
+			D_StartTitle();
 	}
 	if (demoplayback && titledemo)
 		G_CheckDemoStatus();
 
 	if (!cv_tsourdt3rd_aprilfools_ultimatemode.value)
 	{
-		memmove(&gametypedesc, &defaultGametypeTitles, sizeof(gtdesc_t)); // Gametypes
-		memmove(&MainMenu, &defaultMenuTitles[menu++], sizeof(menuitem_t)); // Main Menu
-		memmove(&SP_MainMenu, &defaultMenuTitles[menu++], sizeof(menuitem_t)); // SP Main Menu
-		memmove(&MPauseMenu, &defaultMenuTitles[menu++], sizeof(menuitem_t)); // MP Pause
-		memmove(&SPauseMenu, &defaultMenuTitles[menu++], sizeof(menuitem_t)); // SP Pause
+		memmove(&gametypedesc, &defaultGametypeTitles, sizeof(gtdesc_t *)); // Gametypes
+		memmove(&MainMenu, &defaultMenuTitles[0], sizeof(defaultMenuTitles[0])); // Main Menu
+		memmove(&SP_MainMenu, &defaultMenuTitles[1], sizeof(defaultMenuTitles[1])); // SP Main Menu
+		memmove(&MPauseMenu, &defaultMenuTitles[2], sizeof(defaultMenuTitles[2])); // MP Pause
+		memmove(&SPauseMenu, &defaultMenuTitles[3], sizeof(defaultMenuTitles[3])); // SP Pause
 		TSoURDt3rd_AprilFools_StoreDefaultMenuStrings();
 		return;
 	}
@@ -602,8 +594,7 @@ void TSoURD3rd_AprilFools_OnChange(void)
 	if (TSoURDt3rd_AprilFools_ModeEnabled() && cursaveslot > NOSAVESLOT && !netgame)
 	{
 		STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nthis savefile will not save until you turn this mode off.\n");
-		TSoURDt3rd_M_StartMessage
-		(
+		TSoURDt3rd_M_StartMessage(
 			"Important TSoURDt3rd Notice",
 			"You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nthis savefile will not save until you turn this mode off.",
 			NULL,
@@ -614,7 +605,7 @@ void TSoURD3rd_AprilFools_OnChange(void)
 		cursaveslot = NOSAVESLOT;
 	}
 
-	TSoURDt3rd_Jukebox_Reset();
+	S_StopMusic();
 	strncpy(mapmusname, TSoURDt3rd_DetermineLevelMusic(), 7);
 
 	mapmusname[6] = 0;

@@ -1745,7 +1745,7 @@ void P_RestoreMusic(player_t *player)
 		S_StartCaption(sfx_None, -1, player->powers[pw_sneakers]);
 		if (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC)
 		{
-			if (!tsourdt3rd_global_jukebox->curtrack) // STAR STUFF: maybe don't speed music while jukeboxing please... //
+			if (!tsourdt3rd_global_jukebox->playing) // STAR STUFF: maybe don't speed music while jukeboxing please... //
 				S_SpeedMusic(1.4f);
 			if (!S_RecallMusic(JT_MASTER, true))
 				S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);

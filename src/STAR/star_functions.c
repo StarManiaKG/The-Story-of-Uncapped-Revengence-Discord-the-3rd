@@ -14,11 +14,9 @@
 #include "smkg-jukebox.h"		// star variables 3
 #include "smkg_g_inputs.h"		// star variables 4
 #include "menus/smkg-m_sys.h"	// star variables 5
-#include "menus/smkg_m_func.h"	// star variables 6
-#include "smkg-p_saveg.h"		// star variables 7
-#include "smkg-misc.h"          // star variables 8
-
-#include "drrr/k_menu.h"		// kart krew drrr variables
+#include "smkg-p_saveg.h"		// star variables 6
+#include "smkg-misc.h"          // star variables 7
+#include "smkg-defs.h"			// star variables 8
 
 #include "../i_system.h"
 #include "../doomdef.h"
@@ -811,54 +809,6 @@ boolean TSoURDt3rd_SetPinchMusicSpeed(void)
 #undef MUSICEXISTS
 
 // FILES //
-
-//
-// INT32 STAR_DetectFileType(const char* filename)
-// Detects the Specific File Type of the File Given
-//
-// Possible Returns:
-//	0 - Unsupported/Unknown
-//
-// 	1 - Folder
-//
-// 	2 - WAD
-// 	3 - PK3
-//	4 - KART (if USE_KART enabled)
-//
-//	5 - LUA
-//	6 - SOC
-//
-//	7 - CFG
-//	8 - TXT
-//
-INT32 STAR_DetectFileType(const char* filename)
-{
-	if (pathisdirectory(filename) == 1)
-		return 1;
-	else
-	{
-		if (!stricmp(&filename[strlen(filename) - 4], ".wad"))
-			return 2;
-		else if (!stricmp(&filename[strlen(filename) - 4], ".pk3"))
-			return 3;
-#ifdef USE_KART
-		else if (!stricmp(&filename[strlen(filename) - 5], ".kart"))
-			return 4;
-#endif
-
-		else if (!stricmp(&filename[strlen(filename) - 4], ".lua"))
-			return 5;
-		else if (!stricmp(&filename[strlen(filename) - 4], ".soc"))
-			return 6;
-
-		else if (!stricmp(&filename[strlen(filename) - 4], ".cfg"))
-			return 7;
-		else if (!stricmp(&filename[strlen(filename) - 4], ".txt"))
-			return 8;
-	}
-
-	return 0;
-}
 
 //
 // boolean STAR_DoesStringMatchHarcodedFileName(const char *string)

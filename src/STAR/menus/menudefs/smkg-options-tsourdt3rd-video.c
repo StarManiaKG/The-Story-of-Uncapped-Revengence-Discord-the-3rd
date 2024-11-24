@@ -46,6 +46,15 @@ menuitem_t TSoURDt3rd_OP_VideoMenu[] =
 			&cv_tsourdt3rd_video_coloring_fpsrate, 0},
 		{IT_STRING | IT_CVAR, NULL, "TPS Counter Color",
 			&cv_tsourdt3rd_video_coloring_tpsrate, 0},
+
+	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL,
+		NULL, 0},
+
+#ifdef STAR_LIGHTING
+	{IT_HEADER, NULL, "Advanced", NULL, 0},
+		{IT_STRING | IT_CALL, NULL, "Lighting...",
+			TSoURDt3rd_M_CoronaLighting_Init, 0},
+#endif
 };
 
 tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_VideoMenu[] =
@@ -67,6 +76,13 @@ tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_VideoMenu[] =
 
 		{NULL, "Changes the color of the FPS counter.", {NULL}, 0, 0},
 		{NULL, "Changes the color of the TPS counter.", {NULL}, 0, 0},
+
+	{NULL, NULL, {NULL}, 0, 0},
+
+#ifdef STAR_LIGHTING
+	{NULL, NULL, {NULL}, 0, 0},
+		{NULL, "Customize TSoURDt3rd's lighting effects.", { NULL }, 0, 0},
+#endif
 };
 
 menu_t TSoURDt3rd_OP_VideoDef =

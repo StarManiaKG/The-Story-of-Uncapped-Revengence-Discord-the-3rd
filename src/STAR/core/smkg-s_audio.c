@@ -11,7 +11,7 @@
 
 #include "smkg-s_audio.h"
 #include "../smkg-jukebox.h"
-#include "../menus/smkg_m_func.h"
+#include "../menus/smkg-m_sys.h"
 
 // ------------------------ //
 //        Functions

@@ -64,7 +64,7 @@ static void TSoURDt3rd_Jukebox_CreatePages(const char *new_page_name)
 		JukeboxDEF_STRLCPY(cmp_page_name, new_page_name, 64);
 		if (!stricmp(juke_page->page_name, cmp_page_name))
 		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "JUKEBOXDEF: Page '\x82%s\x80' already exists! I'm not creating a new page\nwith the same exact name as another!\n", new_page_name);
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "JUKEBOXDEF: Page \x82\"%s\"\x80 already exists! I'm not creating a new page\nwith the same exact name as another!\n", new_page_name);
 			break;
 		}
 		juke_page_prev = juke_page;
@@ -84,7 +84,7 @@ static void TSoURDt3rd_Jukebox_CreatePages(const char *new_page_name)
 			juke_page_prev->next = juke_page;
 		}
 
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "JUKEBOXDEF: Created Page '\x82%s\x80'!\n", juke_page->page_name);
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "JUKEBOXDEF: Created Page \x82\"%s\"\x80!\n", juke_page->page_name);
 	}
 
 	(*tsourdt3rd_jukebox_available_pages) = juke_page;
@@ -105,7 +105,7 @@ static void TSoURDt3rd_Jukebox_SetSupportedPages(tsourdt3rd_jukebox_pages_t **su
 	}
 	if (all_jukebox_pages == NULL)
 	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "JUKEBOXDEF: Page '\x82%s\x80' doesn't exist! Did you create it beforehand?\n", page_name);
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "JUKEBOXDEF: Page \x82\"%s\"\x80 doesn't exist! Did you create it beforehand?\n", page_name);
 		return;
 	}
 
@@ -113,7 +113,7 @@ static void TSoURDt3rd_Jukebox_SetSupportedPages(tsourdt3rd_jukebox_pages_t **su
 	{
 		if (!stricmp(new_page->page_name, page_name))
 		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "JUKEBOXDEF: Lump '\x82%s\x80' could already be found on Page '\x82%s\x80'!\n", supported_lump, page_name);
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "JUKEBOXDEF: Lump \x82\"%s\"\x80 could already be found on Page \x82\"%s\"\x80!\n", supported_lump, page_name);
 			break;
 		}
 		new_page_prev = new_page;
@@ -134,7 +134,7 @@ static void TSoURDt3rd_Jukebox_SetSupportedPages(tsourdt3rd_jukebox_pages_t **su
 			new_page_prev->next = new_page;
 		}
 
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "JUKEBOXDEF: Lump '\x82%s\x80' can now be found on Page '\x82%s\x80'!\n", supported_lump, page_name);
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "JUKEBOXDEF: Lump \x82\"%s\"\x80 can now be found on Page \x82\"%s\"\x80!\n", supported_lump, page_name);
 	}
 
 	(*supported_page_p) = new_page;
@@ -180,7 +180,7 @@ boolean TSoURDt3rd_STARParser_JukeDefs(tsourdt3rd_starparser_t *script)
 				{
 					if (!stricmp(jukedef->linked_musicdef->name, lump))
 					{
-						STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "JUKEBOXDEF: Found pre-existing music definition for Lump '\x82%s\x80'!\n", lump);
+						STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "JUKEBOXDEF: Found pre-existing music definition for Lump \x82\"%s\"\x80!\n", lump);
 						break;
 					}
 					jukedef = jukedef->next;
@@ -188,7 +188,7 @@ boolean TSoURDt3rd_STARParser_JukeDefs(tsourdt3rd_starparser_t *script)
 				if (jukedef == NULL)
 				{
 					// We couldn't find the lump, so let's just return...
-					TSoURDt3rd_STARParser_Error(va("JUKEBOXDEF: Lump '\x82%s\x80' must already have a MUSICDEF!", lump), script, TSOURDT3RD_STARPARSER_ERROR_LINE);
+					TSoURDt3rd_STARParser_Error(va("JUKEBOXDEF: Lump \x82\"%s\"\x80 must already have a MUSICDEF!", lump), script, TSOURDT3RD_STARPARSER_ERROR_LINE);
 					break;
 				}
 
@@ -253,7 +253,7 @@ boolean TSoURDt3rd_STARParser_JukeDefs(tsourdt3rd_starparser_t *script)
 		}
 
 		default:
-			TSoURDt3rd_STARParser_Error(va("JUKEBOXDEF: Invalid field '\x82%s\x80'.", script->tkn), script, TSOURDT3RD_STARPARSER_ERROR_FULL);
+			TSoURDt3rd_STARParser_Error(va("JUKEBOXDEF: Invalid field \x82\"%s\"\x80.", script->tkn), script, TSOURDT3RD_STARPARSER_ERROR_FULL);
 			break;
 	}
 

@@ -12,6 +12,7 @@
 #include <time.h>
 
 #include "ss_main.h"
+#include "smkg-defs.h"
 #include "smkg-jukebox.h"
 #include "smkg-misc.h"
 #include "menus/smkg-m_sys.h" // menumessage //
@@ -56,7 +57,7 @@ boolean SpawnTheDispenser = false;
 
 void TSoURDt3rd_Init(void)
 {
-	memset(&tsourdt3rd_local, 0, sizeof(tsourdt3rd_local));
+	memset(&tsourdt3rd_local, 0, sizeof(struct tsourdt3rd_local_s));
 
 	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD, "TSoURDt3rd_Init(): Initalizing TSoURDt3rd...\n");
 	TSoURDt3rd_FOL_CreateDirectory("TSoURDt3rd");

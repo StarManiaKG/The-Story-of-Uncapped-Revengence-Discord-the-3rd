@@ -9,9 +9,7 @@
 /// \file  smkg-m_draw.c
 /// \brief Unique TSoURDt3rd menu drawing routines
 
-#include "smkg_m_func.h"
-
-#include "../drrr/k_menu.h" // menutyping //
+#include "smkg-m_sys.h"
 
 #include "../../am_map.h"
 #include "../../console.h"
@@ -152,7 +150,7 @@ void TSoURDt3rd_M_PreDrawer(void)
 	if (menuwipe)
 		F_WipeStartScreen();
 
-	TSoURDt3rd_M_JukeboxTicker();
+	TSoURDt3rd_M_Jukebox_Ticker();
 }
 
 //
@@ -177,7 +175,7 @@ void TSoURDt3rd_M_PostDrawer(void)
 
 		// Draw typing overlay when needed, above all other menu elements.
 		if (menutyping.active)
-			M_DrawMenuTyping();
+			TSoURDt3rd_M_DrawMenuTyping();
 	}
 
 	// Draw message overlay when needed
@@ -233,6 +231,31 @@ void TSoURDt3rd_M_DrawMenuTooltips
 	}
 }
 
+void TSoURDt3rd_M_DrawMediocreKeyboardKey(const char *text, INT32 *workx, INT32 worky, boolean push, boolean rightaligned)
+{
+	INT32 buttonwidth = V_StringWidth(text, 0) + 2;
+
+	if (rightaligned)
+	{
+		(*workx) -= buttonwidth;
+	}
+
+	if (push)
+	{
+		worky += 2;
+	}
+	else
+	{
+		V_DrawFill((*workx)-1, worky+10, buttonwidth, 2, 24);
+	}
+
+	V_DrawFill((*workx)-1, worky, buttonwidth, 10, 16);
+	V_DrawString(
+		(*workx), worky + 1,
+		V_ALLOWLOWERCASE, text
+	);
+}
+
 //
 // void TSoURDt3rd_M_DrawPauseGraphic(void)
 // Draws a pause graphic on the screen when the game is paused,
@@ -240,21 +263,24 @@ void TSoURDt3rd_M_DrawMenuTooltips
 //
 void TSoURDt3rd_M_DrawPauseGraphic(void)
 {
+	INT32 py;
+	patch_t *patch = W_CachePatchName("M_PAUSE", PU_PATCH);
+
 	switch (cv_tsourdt3rd_game_pausescreen.value)
 	{
 		case 1: // Legacy
-			INT32 py;
-			patch_t *patch;
 			py = 4;
 			if (!automapactive)
 				py += viewwindowy;
-			patch = W_CachePatchName("M_PAUSE", PU_PATCH);
 			V_DrawScaledPatch(viewwindowx + (BASEVIDWIDTH - patch->width)/2, py, 0, patch);
 			break;
 		default: // Default
-			INT32 y = ((automapactive) ? (32) : (BASEVIDHEIGHT/2));
-			M_DrawTextBox((BASEVIDWIDTH/2) - (60), y - (16), 13, 2);
-			V_DrawCenteredString(BASEVIDWIDTH/2, y - (4), V_MENUCOLORMAP, "Game Paused");
+			if (!automapactive)
+				py = BASEVIDHEIGHT/2;
+			else
+				py = 32;
+			M_DrawTextBox((BASEVIDWIDTH/2) - (60), py - (16), 13, 2);
+			V_DrawCenteredString(BASEVIDWIDTH/2, py - (4), V_MENUCOLORMAP, "Game Paused");
 			break;
 	}
 }
@@ -347,7 +373,11 @@ void TSoURDt3rd_M_DrawOptionsMovingButton(void)
 		else
 #endif
 		if (currentMenu == &TSoURDt3rd_OP_Extras_JukeboxDef)
-			s = TSoURDt3rd_OP_ExtrasDef.menuitems[0].text;
+			s = TSoURDt3rd_OP_ExtrasDef.menuitems[op_extras_jukebox].text;
+#ifdef STAR_LIGHTING
+		else if (currentMenu == &TSoURDt3rd_OP_Video_LightingDef)
+			s = "Lighting Options";
+#endif
 		else
 			s = TSoURDt3rd_OP_MainMenuDef.menuitems[TSoURDt3rd_OP_MainMenuDef.lastOn].text;
 	}

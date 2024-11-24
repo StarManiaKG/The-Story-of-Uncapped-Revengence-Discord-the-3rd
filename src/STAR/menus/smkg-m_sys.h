@@ -7,11 +7,12 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  smkg-m_sys.h
-/// \brief Globalizes all of TSoURDt3rd's cool menu data, plus a little more
+/// \brief Unique TSoURDt3rd menu routines, structures, and cool data globalizer
 
-#ifndef __STAR_M_MENU__
-#define __STAR_M_MENU__
+#ifndef __SMKG_M_SYS__
+#define __SMKG_M_SYS__
 
+#include "../smkg-defs.h"
 #include "../star_vars.h"
 #include "../smkg-cvars.h"
 
@@ -46,6 +47,7 @@ extern "C" {
 extern INT16 tsourdt3rd_itemOn;
 extern INT16 tsourdt3rd_skullAnimCounter;
 extern boolean tsourdt3rd_noFurtherInput;
+extern boolean tsourdt3rd_jukebox_inmenu;
 
 enum
 {
@@ -67,7 +69,7 @@ typedef enum
 {
 	MBF_UD_LR_FLIPPED		= 1,    // flip up-down and left-right axes
 	MBF_SOUNDLESS		 	= 1<<1, // do not play base menu sounds
-	MBF_NOLOOPENTRIES		= 1<<2, // do not loop STAR_M_NextOpt/STAR_M_PrevOpt
+	MBF_NOLOOPENTRIES		= 1<<2, // do not loop TSoURDt3rd_M_NextOpt/TSoURDt3rd_M_PrevOpt
 	MBF_DRAWBGWHILEPLAYING	= 1<<3, // run backroutine() outside of GS_MENU
 } menubehaviourflags_t;
 
@@ -144,6 +146,30 @@ extern struct menumessage_s
 	const char *confirmstr;
 } menumessage;
 
+#define NUMVIRTUALKEYSINROW (10+2) // 1-9, 0, and a right-side gutter of two keys' width
+extern INT16 virtualKeyboard[5][NUMVIRTUALKEYSINROW];
+extern INT16 shift_virtualKeyboard[5][NUMVIRTUALKEYSINROW];
+
+typedef const char *(*vkb_query_fn_t)(const char *replace);
+extern struct menutyping_s
+{
+	boolean active;				// Active
+	boolean menutypingclose;	// Closing
+	boolean keyboardtyping;		// If true, all keystrokes are treated as typing (ignores MBT_A etc). This is unset if you try moving the cursor on the virtual keyboard or use your controller
+	SINT8 menutypingfade;		// fade in and out
+
+	SINT8 keyboardx;
+	SINT8 keyboardy;
+	boolean keyboardcapslock;
+	boolean keyboardshift;
+
+	vkb_query_fn_t queryfn; // callback on open and close
+	menu_t *dummymenu;
+	size_t cachelen;
+	char *cache; // cached string
+} menutyping;
+// While typing, we'll have a fade strongly darken the screen to overlay the typing menu instead
+
 #define MENUDELAYTIME 7
 #define MENUMINDELAY 2
 
@@ -180,15 +206,43 @@ typedef struct menucmd_s
 } menucmd_t;
 extern menucmd_t menucmd[MAXSPLITSCREENPLAYERS];
 
+typedef enum
+{
+	TSOURDT3RD_LLM_CREATESERVER,
+	TSOURDT3D_LLM_LEVELSELECT,
+	TSOURDT3RD_LLM_RECORDATTACK,
+	TSOURDT3RD_LLM_NIGHTSATTACK
+} tsourdt3rd_levellist_mode_t;
+extern tsourdt3rd_levellist_mode_t tsourdt3rd_levellistmode;
+
 // ------------------------ //
 //        Functions
 // ------------------------ //
 
+void TSoURDt3rd_M_InitQuitMessages(const char **msg_table);
+const char *TSoURDt3rd_M_GenerateQuitMessage(void);
+
+boolean TSoURDt3rd_M_StartControlPanel(void);
+boolean TSoURDt3rd_M_Responder(INT32 *ch, event_t *ev);
+void TSoURDt3rd_M_Ticker(INT16 *item, boolean *input, INT16 skullAnimCounter, INT32 levellistmode);
+
+void TSoURDt3rd_M_SetupNextMenu(tsourdt3rd_menu_t *tsourdt3rd_menudef, menu_t *menudef, boolean notransition);
+void TSoURDt3rd_M_ClearMenus(boolean callexitmenufunc);
+
+void TSoURDt3rd_M_GoBack(INT32 choice);
+boolean TSoURDt3rd_M_NextOpt(void);
+boolean TSoURDt3rd_M_PrevOpt(void);
+void TSoURDt3rd_M_UpdateItemOn(void);
+INT32 TSoURDt3rd_M_DoesMenuHaveKeyHandler(void);
+
+void TSoURDt3rd_M_ChangeCvar(INT32 choice, consvar_t *cv);
+void TSoURDt3rd_M_ChangeCvarDirect(INT32 amount, float amount_f, consvar_t *cv);
+
+void TSoURDt3rd_M_PlayMenuJam(void);
+
 fixed_t TSoURDt3rd_M_TimeFrac(tic_t tics, tic_t duration);
 fixed_t TSoURDt3rd_M_ReverseTimeFrac(tic_t tics, tic_t duration);
 fixed_t TSoURDt3rd_M_DueFrac(tic_t start, tic_t duration);
-
-void TSoURDt3rd_M_UpdateItemOn(void);
 
 void TSoURDt3rd_M_StartMessage(const char *header, const char *string, void (*routine)(INT32), menumessagetype_t itemtype, const char *confirmstr, const char *defaultstr);
 boolean TSoURDt3rd_M_MenuMessageTick(void);
@@ -198,6 +252,12 @@ void TSoURDt3rd_M_StopMessage(INT32 choice);
 void TSoURDt3rd_M_DrawMenuMessage(void);
 void TSoURDt3rd_M_DrawMenuMessageOnTitle(INT32 count);
 boolean TSoURDt3rd_M_OverwriteIntroResponder(event_t *event);
+
+void TSoURDt3rd_M_OpenVirtualKeyboard(size_t cachelen, vkb_query_fn_t queryfn, menu_t *dummymenu);
+boolean TSoURDt3rd_M_VirtualStringMeetsLength(void);
+void TSoURDt3rd_M_AbortVirtualKeyboard(void);
+void TSoURDt3rd_M_MenuTypingInput(INT32 key);
+void TSoURDt3rd_M_SwitchVirtualKeyboard(boolean gamepad);
 
 void TSoURDt3rd_M_SetMenuDelay(UINT8 i);
 
@@ -210,6 +270,8 @@ boolean TSoURDt3rd_M_MenuBackPressed(UINT8 pid);
 boolean TSoURDt3rd_M_MenuBackHeld(UINT8 pid);
 boolean TSoURDt3rd_M_MenuExtraPressed(UINT8 pid);
 boolean TSoURDt3rd_M_MenuExtraHeld(UINT8 pid);
+
+void TSoURDt3rd_M_UpdateMenuCMD(UINT8 i);
 
 // =============
 // SMKG-M_DEFS.C
@@ -336,6 +398,13 @@ enum
 	op_video_flair_fpscolor = 9,
 	op_video_flair_tpscolor
 };
+
+#ifdef STAR_LIGHTING
+extern menu_t TSoURDt3rd_OP_Video_LightingDef;
+extern menuitem_t TSoURDt3rd_OP_Video_LightingMenu[];
+extern tsourdt3rd_menu_t TSoURDt3rd_TM_OP_Video_LightingDef;
+extern tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_Video_LightingMenu[];
+#endif
 
 extern menu_t TSoURDt3rd_OP_AudioDef;
 extern menuitem_t TSoURDt3rd_OP_AudioMenu[];
@@ -493,6 +562,8 @@ void K_drawButtonAnim(INT32 x, INT32 y, INT32 flags, patch_t *button[2], tic_t a
 
 void K_DrawSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isSmall);
 
+void TSoURDt3rd_M_DrawMenuTyping(void);
+
 void TSoURDt3rd_M_DrawPauseGraphic(void);
 void TSoURDt3rd_M_DrawQuitGraphic(void);
 
@@ -519,6 +590,17 @@ void TSoURDt3rd_M_DrawMenuTooltips
 // For some menu highlights
 UINT16 TSoURDt3rd_M_GetCvPlayerColor(UINT8 pnum);
 
+void TSoURDt3rd_M_DrawColorResetOption
+(
+	INT32 x, INT32 *y, INT32 *cursory,
+	player_t *setupm_player,
+	INT32 setupm_fakeskin, consvar_t *setupm_cvdefaultskin,
+	consvar_t *setupm_cvdefaultcolor, menucolor_t *setupm_fakecolor
+);
+
+void TSoURDt3rd_M_DrawOptions(void);
+void TSoURDt3rd_M_DrawOptionsMovingButton(void);
+
 // =============
 // SMKG-M_FUNC.C
 // =============
@@ -535,23 +617,12 @@ extern void *tsourdt3rd_snake;
 //        Functions
 // ------------------------ //
 
-// Server Setup Menu
 void M_HandleMasterServerResetChoice(INT32 choice);
-
 void M_PreStartServerMenuChoice(INT32 choice);
 void M_PreConnectMenuChoice(INT32 choice);
-
 void M_StartServerMenu(INT32 choice);
 void M_ConnectMenuModChecks(INT32 choice);
 
-// Player Setup Menu
-void TSoURDt3rd_M_DrawColorResetOption
-(
-	INT32 x, INT32 *y, INT32 *cursory,
-	player_t *setupm_player,
-	INT32 setupm_fakeskin, consvar_t *setupm_cvdefaultskin,
-	consvar_t *setupm_cvdefaultcolor, menucolor_t *setupm_fakecolor
-);
 void TSoURDt3rd_M_HandleColorResetOption
 (
 	player_t *setupm_player,
@@ -560,14 +631,12 @@ void TSoURDt3rd_M_HandleColorResetOption
 	void (*after_routine)(void)
 );
 
-#ifdef HAVE_DISCORDSUPPORT
-void TSoURDt3rd_M_InitDiscordOptions(INT32 choice);
-void TSoURDt3rd_M_InitDiscordRequests(INT32 choice);
-#endif
+void TSoURDt3rd_M_HandleAddonsMenu(INT32 choice);
 
-// TSoURDt3rd Options
-void TSoURDt3rd_M_DrawOptions(void);
-void TSoURDt3rd_M_DrawOptionsMovingButton(void);
+#ifdef HAVE_DISCORDSUPPORT
+void TSoURDt3rd_M_DiscordOptions_Init(INT32 choice);
+void TSoURDt3rd_M_DiscordRequests_Init(INT32 choice);
+#endif
 
 void TSoURDt3rd_M_InitMainOptions(INT32 choice);
 void TSoURDt3rd_M_OptionsTick(void);
@@ -575,12 +644,17 @@ boolean TSoURDt3rd_M_OptionsInputs(INT32 ch);
 boolean TSoURDt3rd_M_OptionsQuit(void);
 void TSoURDt3rd_M_ResetOptions(void);
 
-// TSoURDt3rd Jukebox
-void TSoURDt3rd_M_InitJukebox(INT32 choice);
-void TSoURDt3rd_M_JukeboxTicker(void);
+void TSoURDt3rd_M_Controls_MapProfileControl(event_t *ev);
+
+#ifdef STAR_LIGHTING
+void TSoURDt3rd_M_CoronaLighting_Init(void);
+#endif
+
+void TSoURDt3rd_M_Jukebox_Init(INT32 choice);
+void TSoURDt3rd_M_Jukebox_Ticker(void);
 
 #ifdef __cplusplus
 } // extern "C"
 #endif
 
-#endif // __STAR_M_MENU__
+#endif // __SMKG_M_SYS__

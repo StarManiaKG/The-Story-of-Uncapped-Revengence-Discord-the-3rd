@@ -25,6 +25,7 @@
 #include "../star_vars.h" // STAR_CONS_Printf() //
 
 #include "../../i_system.h"
+#include "../../p_local.h"
 
 #ifdef HAVE_DISCORDSUPPORT
 #include "../../discord/discord.h"

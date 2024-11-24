@@ -20,6 +20,8 @@
 #include "star_vars.h" // TSoURDt3rd_DetermineLevelMusic() //
 
 #include "../g_game.h"
+#include "../p_local.h"
+#include "../r_skins.h"
 
 // ------------------------ //
 //        Variables
@@ -235,33 +237,36 @@ void TSoURDt3rd_P_Ticker(boolean run)
 			}
 
 			// Removed Sonic (real)
-			if (TSoURDt3rd_AprilFools_ModeEnabled() && strstr(skins[player->skin].name, "sonic"))
+			if (TSoURDt3rd_AprilFools_ModeEnabled() && P_IsLocalPlayer(player) && strstr(skins[player->skin].name, "sonic"))
 			{
-				for (skin = MAXSKINS-1; skin > 0; skin++)
+				for (skin = 0; skin < MAXSKINS; skin++)
 				{
-					if (skins[skin].name[0] != '\0' && R_SkinUsable(-1, skin))
+					if (skins[skin].name[0] == '\0')
+						continue;
+					if (strstr(skins[skin].name, "sonic"))
+						continue;
+					if (R_SkinUsable(-1, skin))
+					{
+						SetPlayerSkinByNum(i, skin);
 						break;
+					}
 				}
 
-				SetPlayerSkinByNum(i, skin);
-				if (P_IsLocalPlayer(player))
+				if (splitscreen && i == 1)
 				{
-					if (splitscreen && i == 1)
-					{
-						STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "Your friend can't play as Sonic either, he's gone.\n");
-						CV_StealthSet(&cv_skin2, skins[skin].name);
-					}
-					else
-					{
-						STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "You can't play as Sonic, he's dead.\n");
-						CV_StealthSet(&cv_skin, skins[skin].name);
-					}
+					STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "Your friend can't play as Sonic either, he's gone.\n");
+					CV_StealthSet(&cv_skin2, skins[skin].name);
+				}
+				else
+				{
+					STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "You can't play as Sonic, he's dead.\n");
+					CV_StealthSet(&cv_skin, skins[skin].name);
+				}
 
-					if (strstr(skins[skin].name, "sonic") || strstr(skins[skin].realname, "Sonic"))
-					{
-						STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "But no skin other than sonic found was found, so uh..............\n\tI guess you're now legally distinct Sonic then!\n");
-						player->skincolor = SKINCOLOR_WHITE;
-					}
+				if (strstr(skins[skin].name, "sonic") || strstr(skins[skin].realname, "Sonic"))
+				{
+					STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "But no skin other than sonic found was found, so uh..............\n\tI guess you're now legally distinct Sonic then!\n");
+					player->skincolor = SKINCOLOR_WHITE;
 				}
 			}
 
@@ -364,9 +369,9 @@ void TSoURDt3rd_P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UI
 //
 boolean TSoURDt3rd_P_SuperReady(player_t *player)
 {
-	if (TSoURDt3rd_AprilFools_ModeEnabled())
-		return true;
-	else if (TSoURDt3rd_Easter_AllEggsCollected() && EnableEasterEggHuntBonuses && ALL7EMERALDS(emeralds) && !netgame)
+	if (!netgame &&
+		(TSoURDt3rd_AprilFools_ModeEnabled()
+		|| (TSoURDt3rd_Easter_AllEggsCollected() && EnableEasterEggHuntBonuses && ALL7EMERALDS(emeralds))))
 	{
 		if (gametyperules & GTR_POWERSTONES)
 		{

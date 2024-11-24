@@ -17,8 +17,6 @@
 #include "hw_defs.h"
 
 #ifdef ALAM_LIGHTING
-#define NEWCORONAS
-
 #define DL_MAX_LIGHT UINT16_MAX //255 // maximum number of lights (extra lights are ignored)
 
 void HWR_Init_Light(void);
@@ -29,14 +27,10 @@ void HWR_WallLighting(FOutVector *wlVerts);
 void HWR_Reset_Lights(void);
 void HWR_Set_Lights(UINT8 viewnumber);
 
-#ifdef DYLT_CORONAS
 void HWR_DL_Draw_Coronas(void);
 void HWR_DL_AddLightSprite(gl_vissprite_t *spr);
-#endif
 
-#ifdef SPDR_CORONAS
 void HWR_DoCoronasLighting(FOutVector *outVerts, gl_vissprite_t *spr);
-#endif
 
 void HWR_Create_StaticLightmaps(void);
 
