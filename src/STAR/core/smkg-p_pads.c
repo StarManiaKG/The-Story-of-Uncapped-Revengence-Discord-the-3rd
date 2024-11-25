@@ -72,6 +72,23 @@ INT16 TSoURDt3rd_P_Pads_GetPadIndex(player_t *player)
 	return -1;
 }
 
+void TSoURDt3rd_P_Pads_SetIndicatorColor(INT32 player, UINT8 red, UINT8 green, UINT8 blue)
+{
+	INT32 device_id = TSoURDt3rd_P_Pads_GetPadIndex(&players[player]);
+
+	if (player == -1)
+	{
+		// Change the lights of all controllers
+		for (UINT8 i = 0; i < TSOURDT3RD_NUM_GAMEPADS; i++)
+			TSoURDt3rd_I_Pads_SetIndicatorColor(i, red, green, blue);
+	}
+	else if (device_id >= 0)
+	{
+		// Change the lights of one controller
+		TSoURDt3rd_I_Pads_SetIndicatorColor(device_id, red, green, blue);
+	}
+}
+
 void TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor(INT32 player)
 {
 	INT32 device_id = TSoURDt3rd_P_Pads_GetPadIndex(&players[player]);

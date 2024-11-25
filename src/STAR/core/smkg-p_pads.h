@@ -71,6 +71,7 @@ extern consvar_t *tsourdt3rd_joystick_index[TSOURDT3RD_NUM_GAMEPADS];
 
 INT16 TSoURDt3rd_P_Pads_GetPadIndex(player_t *player);
 
+void TSoURDt3rd_P_Pads_SetIndicatorColor(INT32 player, UINT8 red, UINT8 green, UINT8 blue);
 void TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor(INT32 player);
 
 void TSoURDt3rd_P_Pads_PlayerDeviceRumble(player_t *player, fixed_t low_strength, fixed_t high_strength, tic_t duration_tics);
