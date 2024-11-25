@@ -365,13 +365,6 @@ static void M_Addons(INT32 choice);
 static void M_AddonsOptions(INT32 choice);
 static patch_t *addonsp[NUM_EXT+5];
 
-// STAR STUFF WEEEE //
-// main menu stuff
-menu_t OP_TSoURDt3rdReadMeDef;
-static void M_DrawTsourdt3rdReadMe(void);
-static void M_HandleTsourdt3rdReadMe(INT32 choice);
-// GOODBYE FOR NOW //
-
 #define addonmenusize 9 // number of items actually displayed in the addons menu view, formerly (2*numaddonsshown + 1)
 #define numaddonsshown 4 // number of items to each side of the currently selected item, unless at top/bottom ends of directory
 
@@ -531,9 +524,6 @@ menuitem_t MainMenu[] =
 	{IT_CALL   |IT_STRING, NULL, "Addons",      M_Addons,               100},
 	{IT_STRING|IT_CALL,    NULL, "Options",     M_Options,              108},
 	{IT_STRING|IT_CALL,    NULL, "Quit  Game",  M_QuitSRB2,             116},
-
-	// STAR STUFF: READ ME? MORE LIKE AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA //
-	{IT_STRING|IT_SUBMENU, NULL, "READ ME!",	&OP_TSoURDt3rdReadMeDef,132},
 };
 
 typedef enum
@@ -1732,32 +1722,12 @@ static menuitem_t OP_MonitorToggleMenu[] =
 	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Eggman Box",        &cv_eggmanbox,    140},
 };
 
-// ================================ //
-// STAR OPTIONS LETS GOOOOOOOOOOOOO //
-// ================================ //
-
-// README Menu
-static menuitem_t OP_Tsourdt3rdReadMeMenu[] =
-{
-	{IT_KEYHANDLER | IT_STRING,
-							NULL, 	"", 						M_HandleTsourdt3rdReadMe,	0},
-};
-
-// ======================================= //
-// END OF STAR OPTIONS LETS GOOOOOOOOOOOOO //
-// ======================================= //
-
 // ==========================================================================
 // ALL MENU DEFINITIONS GO HERE
 // ==========================================================================
 
 // Main Menu and related
-#if 0
 menu_t MainDef = CENTERMENUSTYLE(MN_MAIN, NULL, MainMenu, NULL, 72);
-#else
-// STAR STUFF: had to change the number value from 72 to 56 for the readme screen :) //
-menu_t MainDef = CENTERMENUSTYLE(MN_MAIN, NULL, MainMenu, NULL, 56);
-#endif
 
 menu_t MISC_AddonsDef =
 {
@@ -2335,26 +2305,6 @@ menu_t OP_AddonsOptionsDef = DEFAULTMENUSTYLE(
 menu_t OP_EraseDataDef = DEFAULTMENUSTYLE(
 	MTREE3(MN_OP_MAIN, MN_OP_DATA, MN_OP_ERASEDATA),
 	"M_DATA", OP_EraseDataMenu, &OP_DataOptionsDef, 60, 30);
-
-// ================== //
-// 	 STAR STUFF LOL	  //
-// ================== //
-// read me stuff
-menu_t OP_TSoURDt3rdReadMeDef =
-{
-	MN_TSOURDT3RD_README,
-	NULL,
-	sizeof (OP_Tsourdt3rdReadMeMenu)/sizeof (menuitem_t),
-	&MainDef,
-	OP_Tsourdt3rdReadMeMenu,
-	M_DrawTsourdt3rdReadMe,
-	30, 30,
-	0,
-	NULL
-};
-// ========================== //
-// 	 END OF STAR STUFF LOL	  //
-// ========================== //
 
 // ==========================================================================
 // CVAR ONCHANGE EVENTS GO HERE
@@ -6750,97 +6700,6 @@ static void M_AddonExec(INT32 ch)
 	COM_BufAddText(va("exec \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
 }
 
-////////////////
-// STAR STUFF //
-////////////////
-//
-// static void M_AddonAutoLoad(INT32 ch);
-// exports certain mods to autoload.cfg, which allows TSoURDt3rd to autoload those given files
-//
-static void M_AddonAutoLoad(INT32 ch)
-{
-	// initalize these variables //
-	const char *path;
-	FILE *autoloadconfigfile;
-
-	// check our controls //
-	if (ch != 'y' && ch != KEY_ENTER && ch != KEY_RSHIFT)
-	{
-		S_StartSound(NULL, sfx_adderr);
-		return;
-	}
-	
-	// first, find the file //
-	path = va("%s"PATHSEP"%s", srb2home, AUTOLOADCONFIGFILENAME);
-	autoloadconfigfile = fopen(path, "a");
-
-	// then, execute the addon and store it in our autoload.cfg //
-	switch (dirmenu[dir_on[menudepthleft]][DIR_TYPE])
-	{
-	    case EXT_FOLDER:
-	        if (!(refreshdirmenu & REFRESHDIR_MAX))
-        	{
-				CONS_Printf("Added the \x82\"%s%s\"\x80 folder to the autoload configuration list.\n", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING);
-                fprintf(autoloadconfigfile, "%s%s\n", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING);
-                  
-			    S_StartSound(NULL, sfx_spdpad);
-            }
-            else
-            {
-                M_StartMessage(va("%c%s\x80\nToo many add-ons are loaded! \nYou need to restart the game to autoload more folders. \nYou can still autoload console scripts though. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
-                S_StartSound(NULL, sfx_lose);
-            }
-            break;
-		case EXT_TXT:
-		case EXT_CFG:
-			CONS_Printf("Added the \x82%s\x80 console script to the autoload configuration list.\n", dirmenu[dir_on[menudepthleft]]+DIR_STRING);
-			fprintf(autoloadconfigfile, "%s\n", dirmenu[dir_on[menudepthleft]]+DIR_STRING);
-				
-			S_StartSound(NULL, sfx_spdpad);
-			break;
-		case EXT_LUA:
-		case EXT_SOC:
-		case EXT_WAD:
-#ifdef USE_KART
-		case EXT_KART:
-#endif
-		case EXT_PK3:
-		default:
-			if (!(refreshdirmenu & REFRESHDIR_MAX))
-			{
-				CONS_Printf("Added \x82%s\x80 to the autoload configuration list.\n", dirmenu[dir_on[menudepthleft]]+DIR_STRING);
-				fprintf(autoloadconfigfile, "%s\n", dirmenu[dir_on[menudepthleft]]+DIR_STRING);
-				
-				S_StartSound(NULL, sfx_spdpad);
-			}
-			else
-			{
-				M_StartMessage(va("%c%s\x80\nToo many add-ons are loaded! \nYou need to restart the game to autoload more add-ons and folders. \nYou can still autoload console scripts though. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
-				S_StartSound(NULL, sfx_lose);
-			}
-			break;
-	}
-	
-	// lastly, do some last things and close the autoload config file //
-	fclose(autoloadconfigfile);
-}
-
-//
-// static void M_FolderExec(INT32 ch);
-// loads folders as addons
-//
-static void M_FolderExec(INT32 ch)
-{
-	if (ch != 'y' && ch != KEY_ENTER)
-		return;
-
-	S_StartSound(NULL, sfx_strpst);
-	COM_BufAddText(va("addfolder \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
-}
-///////////////////////
-// END OF STAR STUFF //
-///////////////////////
-
 #define len menusearch[0]
 static boolean M_ChangeStringAddons(INT32 choice)
 {
@@ -6898,6 +6757,8 @@ static void M_HandleAddons(INT32 choice)
 		searchfilemenu(tempname);
 #endif
 	}
+
+	TSoURDt3rd_M_HandleAddonsMenu(choice); // STAR STUFF: cool addon stuff //
 
 	switch (choice)
 	{
@@ -7005,135 +6866,6 @@ static void M_HandleAddons(INT32 choice)
 					refreshdirmenu |= REFRESHDIR_NORMAL;
 			}
 			break;
-
-		// STAR STUFF //
-		// Autoloading Files
-		case KEY_LEFTARROW:
-			{
-				boolean refresh = true;
-				if (!dirmenu[dir_on[menudepthleft]])
-					S_StartSound(NULL, sfx_lose);
-				else
-				{
-					switch (dirmenu[dir_on[menudepthleft]][DIR_TYPE])
-					{
-						case EXT_FOLDER:
-							if (!menudepthleft)
-							{
-								M_StartMessage(va("%c%s%s\x80\nThis folder is too deep to navigate to!\nWho in their right mind has folders this deep anyway? \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath(), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
-								S_StartSound(NULL, sfx_lose);
-								menupath[menupathindex[menudepthleft]] = 0;
-							}
-							else
-							{
-								if (!preparefilemenu(false))
-								{
-									S_StartSound(NULL, sfx_adderr);
-									M_StartMessage(va("%c%s%s\x80\nThis folder is empty. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath(), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
-									menupath[menupathindex[++menudepthleft]] = 0;
-								}
-								else
-									M_StartMessage(va("%c%s\x80\nDo you want to Autoload this folder?\nThis folder will bypass most modifiedgame checks.\nBare in mind that the file structure for\nfolders should be similar to the structure\nof a PK3. \n\n(Press 'Y' to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),M_AddonAutoLoad,MM_YESNO);
-								refresh = false;
-							}
-							break;
-						case EXT_UP:
-							S_StartSound(NULL, sfx_lose);
-							M_StartMessage(va("%c%s%s\x80\nNice try. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath(), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
-							break;
-						case EXT_TXT:
-						case EXT_CFG:
-							if (STAR_DoesStringMatchHarcodedFileName(dirmenu[dir_on[menudepthleft]]+DIR_STRING))
-							{	
-								M_StartMessage(va("%c%s\x80\nYou can't Autoload SRB2's base files, silly!\n They're already autoloaded on startup! \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
-								S_StartSound(NULL, sfx_lose);
-							}
-							else
-								M_StartMessage(va("%c%s\x80\nYou're trying to Autoload a console script.\nIgnore this warning anyways? \n\n(Press 'Y' to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),M_AddonAutoLoad,MM_YESNO);
-							break;
-						case EXT_LUA:
-						case EXT_SOC:
-						case EXT_WAD:
-#ifdef USE_KART
-						case EXT_KART:
-#endif
-						case EXT_PK3:
-							M_StartMessage(va("%c%s\x80\nMark this add-on To Autoload on the game's startup?\n\nThis add-on will bypass most modifiedgame checks. \n\n(Press 'Y' to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),M_AddonAutoLoad,MM_YESNO);
-							break;
-						default:
-							if (STAR_DoesStringMatchHarcodedFileName(dirmenu[dir_on[menudepthleft]]+DIR_STRING))
-							{	
-								M_StartMessage(va("%c%s\x80\nYou can't Autoload SRB2's base files, silly!\n They're already autoloaded on startup! \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
-								S_StartSound(NULL, sfx_lose);
-							}
-							else
-								M_StartMessage(va("%c%s\x80\nIt may be dangerous to Autoload this file.\nBut, you're the boss, and I'm just the program.\nProceed anyways? \n\n(Press 'Y' to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),M_AddonAutoLoad,MM_YESNO);
-							break;
-					}
-				}
-				if (refresh)
-					refreshdirmenu |= REFRESHDIR_NORMAL;
-			}
-			break;
-		
-		// Loading Folders
-		case KEY_RIGHTARROW:
-			{
-				boolean refresh = true;
-				if (!dirmenu[dir_on[menudepthleft]])
-					S_StartSound(NULL, sfx_lose);
-				else
-				{
-					switch (dirmenu[dir_on[menudepthleft]][DIR_TYPE])
-					{
-						case EXT_FOLDER:
-							if (!menudepthleft)
-							{
-								M_StartMessage(va("%c%s%s\x80\nThis folder is too deep to navigate to! \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath(), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
-								S_StartSound(NULL, sfx_lose);
-								menupath[menupathindex[menudepthleft]] = 0;
-							}
-							else
-							{
-								if (!preparefilemenu(false))
-								{
-									S_StartSound(NULL, sfx_adderr);
-									M_StartMessage(va("%c%s%s\x80\nThis folder is empty. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath(), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
-									menupath[menupathindex[++menudepthleft]] = 0;
-								}
-								else
-									M_StartMessage(va("%c%s\x80\nDo you want to load this folder?\nBare in mind that the file structure for\nfolders should be similar to the structure\nof a PK3. \n\n(Press 'Y' to confirm)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),M_FolderExec,MM_YESNO);
-								refresh = false;
-							}
-							break;
-						case EXT_UP:
-							S_StartSound(NULL, sfx_lose);
-							M_StartMessage(va("%c%s%s\x80\nYou can only use this keybind to load folders. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath(), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
-							break;
-						case EXT_TXT:
-						case EXT_CFG:
-							S_StartSound(NULL, sfx_lose);
-							M_StartMessage(va("%c%s\x80\nYou can only use this keybind to load folders. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
-							break;
-						case EXT_LUA:
-						case EXT_SOC:
-						case EXT_WAD:
-#ifdef USE_KART
-						case EXT_KART:
-#endif
-						case EXT_PK3:
-							M_StartMessage(va("%c%s\x80\nYou can only use this keybind to load folders. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
-							break;
-						default:
-							M_StartMessage(va("%c%s\x80\nYou can only use this keybind to load folders. \n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),NULL,MM_NOTHING);
-							break;
-					}
-				}
-				if (refresh)
-					refreshdirmenu |= REFRESHDIR_NORMAL;
-			}
-			break;
-		// END OF STAR STUFF //
 
 		case KEY_ESCAPE:
 			exitmenu = true;
@@ -14678,151 +14410,3 @@ static void M_QuitSRB2(INT32 choice)
 	M_StartMessage(TSoURDt3rd_M_GenerateQuitMessage(), M_QuitResponse, MM_YESNO);
 #endif
 }
-
-//////////////////////////
-//// STAR STUFF WEEEE ////
-//////////////////////////
-
-//// Variables ////
-
-fixed_t readmeY = 15<<FRACBITS;
-
-fixed_t high_readmeY = 12<<FRACBITS;
-fixed_t low_readmeY = -(130<<FRACBITS);
-
-//// Functions ////
-
-//// Menus ////
-
-// README Menu //
-static void M_DrawTsourdt3rdReadMe(void)
-{
-	// Make Variables //
-	UINT16 i;
-	fixed_t y = readmeY;
-
-	static const char *TSoURDt3rd_credits[] = {
-		"\1TSoURDt3rd Team",
-		"StarManiaKG \"Star\"",
-			"\t\t- Creator",
-		"",
-		"MarioMario \"Sapphire\"",
-			"\t\t- Co-Creator",
-			"\t\t- In Loving Memory Of",
-		"",
-		"Mini the Bunnyboy \"Talis\""
-			"\t\t- Co-Develtoper",
-		"",
-		"Bitten2Up \"Bitten\"",
-			"\t\t- Co-Develtoper",
-		"",
-		"\1TSoURDt3rd Extras",
-		"Marilyn - Emotional Support, Ideas",
-			"\t\t- Emotional support",
-			"\t\t- Ideas",
-			"\t\t- Tester",
-		"",
-		"OVAPico & Other Gamer Gang GC Members",
-			"\t\t- Voluntary testers, ideas",
-			"\t\t- Emotional support",
-		"",
-		"NARBluebear",
-			"\t\t- Best Friend",
-			"\t\t- Emotional support",
-		"",
-		"\"Future\" Smiles \"The Fox\"",
-			"\t\t- Best Friend"
-			"\t\t- Emotional support",
-		"",
-		"Smash Studios",
-			"\t\t- Emotional support",
-			"\t\t- Coding skill improvement",
-		"",
-		"Flashback Guy \"Flash\"",
-			"\t\t- SRB2 emblem world record",
-			"\t\t- Ideas",
-		"",
-		"Sling",
-			"\t\t- Emotional support",
-			"\t\t- Voluntary tester, ideas",
-		NULL
-	};
-
-	// Draw the Screen and We're Done :) //
-	// Fade the Screen
-	V_DrawFadeScreen(0xFF00, 16);
-
-	// Draw the Strings
-	for (i = 0; TSoURDt3rd_credits[i]; i++)
-	{
-		switch(TSoURDt3rd_credits[i][0])
-		{
-			case 1:
-				V_DrawCreditString((160 - (V_CreditStringWidth(&TSoURDt3rd_credits[i][1])>>1))<<FRACBITS, y, 0, &TSoURDt3rd_credits[i][1]);
-				y += 24<<FRACBITS;
-				break;
-
-			default:
-				V_DrawStringAtFixed(26<<FRACBITS, y, V_ALLOWLOWERCASE, TSoURDt3rd_credits[i]);
-				y += 8<<FRACBITS;
-				break;
-		}
-		if (FixedMul(y, vid.dupy) > vid.height)
-			break;
-	}
-
-	V_DrawCharacter(2, y+15,
-		'\x1A' | ((readmeY <= high_readmeY) ? V_MENUCOLORMAP : V_80TRANS) | V_SNAPTOLEFT,
-		false); // Up Arrow
-
-	V_DrawCharacter(2, y+180,
-		'\x1B' | ((readmeY >= low_readmeY) ? V_MENUCOLORMAP : V_80TRANS) | V_SNAPTOLEFT,
-		false); // Down Arrow
-}
-
-static void M_HandleTsourdt3rdReadMe(INT32 choice)
-{
-	// Make our Variables //
-	boolean exitmenu = false;
-
-	// Handle the Menu //
-	switch (choice)
-	{
-		case KEY_UPARROW:
-		{
-			if (readmeY <= high_readmeY)
-			{
-				readmeY += 8<<FRACBITS;
-				S_StartSound(NULL, sfx_menu1);
-			}
-			break;
-		}
-		case KEY_DOWNARROW:
-		{
-			if (readmeY >= low_readmeY)
-			{
-				readmeY -= 8<<FRACBITS;
-				S_StartSound(NULL, sfx_menu1);
-			}
-			break;
-		}
-		case KEY_ESCAPE:
-			exitmenu = true;
-			break;
-	}
-
-	// Close the Menu //
-	if (exitmenu)
-	{
-		readmeY = 12<<FRACBITS;
-
-		if (currentMenu->prevMenu)
-			M_SetupNextMenu(currentMenu->prevMenu);
-		else
-			M_ClearMenus(true);
-	}
-}
-
-////////////////////////////////////////////////////////////////////////////////////
-//// SOMETIMES YOU HAVE TO DO THINGS YOU DON'T ALWAYS LIKE FOR THE GREATER GOOD ////
-////////////////////////////////////////////////////////////////////////////////////

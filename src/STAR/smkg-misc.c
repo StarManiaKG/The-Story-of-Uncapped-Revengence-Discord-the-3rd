@@ -112,7 +112,7 @@ INT32 TSoURDt3rd_M_FindWordInTermTable(const char *const *term_table, const char
 const char *TSoURDt3rd_FOL_ReturnHomepath(void)
 {
 #ifdef DEFAULTDIR
-	return (usehome ? srb2home : srb2path);
+	return srb2home;
 #else
 	return userhome;
 #endif
@@ -288,9 +288,12 @@ void TSoURDt3rd_FIL_CreateSavefileProperly(void)
 	if (netgame)
 		return;
 
+#if 0
 	memset(savegamename, 0, sizeof(savegamename));
 	memset(liveeventbackup, 0, sizeof(liveeventbackup));
-	memset(tsourdt3rd_savefiles_folder, 0, sizeof(tsourdt3rd_savefiles_folder));
+#endif
+	if (*tsourdt3rd_savefiles_folder == '\0')
+		memset(tsourdt3rd_savefiles_folder, 0, sizeof(tsourdt3rd_savefiles_folder));
 
 	TSoURDt3rd_FOL_UpdateSavefileDirectory();
 

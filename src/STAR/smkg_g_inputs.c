@@ -185,11 +185,15 @@ void TSoURDt3rd_G_DefineDefaultControls(void)
 		gamecontroldefault   [i][JB_OPENJUKEBOX        ][0] = 'j';
 		gamecontroldefault   [i][JB_INCREASEMUSICSPEED ][0] = '=';
 		gamecontroldefault   [i][JB_DECREASEMUSICSPEED ][0] = '-';
+		gamecontroldefault   [i][JB_INCREASEMUSICPITCH ][0] = ']';
+		gamecontroldefault   [i][JB_DECREASEMUSICPITCH ][0] = '[';
 		gamecontroldefault   [i][JB_PLAYMOSTRECENTTRACK][0] = 'l';
 		gamecontroldefault   [i][JB_STOPJUKEBOX        ][0] = 'k';
 		gamecontrolbisdefault[i][JB_OPENJUKEBOX        ][0] = 'j';
 		gamecontrolbisdefault[i][JB_INCREASEMUSICSPEED ][0] = '=';
 		gamecontrolbisdefault[i][JB_DECREASEMUSICSPEED ][0] = '-';
+		gamecontrolbisdefault[i][JB_INCREASEMUSICPITCH ][0] = ']';
+		gamecontrolbisdefault[i][JB_DECREASEMUSICPITCH ][0] = '[';
 		gamecontrolbisdefault[i][JB_PLAYMOSTRECENTTRACK][0] = 'l';
 		gamecontrolbisdefault[i][JB_STOPJUKEBOX        ][0] = 'k';
 	}

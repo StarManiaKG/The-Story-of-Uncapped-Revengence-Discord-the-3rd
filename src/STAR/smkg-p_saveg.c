@@ -34,6 +34,9 @@ static void Write(INT32 playernum, boolean archive)
 	const char *path;
 	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[playernum];
 
+	if (!TSoURDt3rd)
+		return;
+
 	if (archive)
 		path = va("%s"PATHSEP"%s", srb2home, "STAR_bye.txt");
 	else
@@ -59,20 +62,23 @@ static void Write(INT32 playernum, boolean archive)
 UINT8 TSOURDT3RD_READUINT8(UINT8 *save_p, TSoURDt3rd_t *tsourdt3rd_user, UINT8 fallback)
 {
 	if (!tsourdt3rd_user || !tsourdt3rd_user->usingTSoURDt3rd || !netbuffer->u.servercfg.tsourdt3rd)
-	    return fallback;
+		return fallback;
 	return READUINT8(save_p);
 }
 
 UINT32 TSOURDT3RD_READUINT32(UINT8 *save_p, TSoURDt3rd_t *tsourdt3rd_user, UINT32 fallback)
 {
 	if (!tsourdt3rd_user || !tsourdt3rd_user->usingTSoURDt3rd || !netbuffer->u.servercfg.tsourdt3rd)
-	    return fallback;
+		return fallback;
 	return READUINT32(save_p);
 }
 
 void TSoURDt3rd_NetArchiveUsers(UINT8 *save_p, INT32 playernum)
 {
 	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[playernum];
+
+	if (!TSoURDt3rd)
+		return;
 
 	WRITESTRING(save_p, TSoURDt3rd->user_hash);
 	WRITEUINT8(save_p, TSoURDt3rd->usingTSoURDt3rd);
@@ -91,12 +97,13 @@ void TSoURDt3rd_NetUnArchiveUsers(UINT8 *save_p, INT32 playernum)
 {
 	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[playernum];
 
-#if 1
-	if (!TSoURDt3rd || !TSoURDt3rd->usingTSoURDt3rd || !netbuffer->u.servercfg.tsourdt3rd)
+	if (!TSoURDt3rd)
+		return;
+
+	if (!TSoURDt3rd->usingTSoURDt3rd || !netbuffer->u.servercfg.tsourdt3rd)
 		TSoURDt3rd->user_hash[0] = '\0';
 	else
 		READSTRING(save_p, TSoURDt3rd->user_hash);
-#endif
 	TSoURDt3rd->usingTSoURDt3rd = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, false);
 	TSoURDt3rd->server_usingTSoURDt3rd = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, false);
 	TSoURDt3rd->server_majorVersion = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, TSoURDt3rd_CurrentMajorVersion());
@@ -115,22 +122,36 @@ void TSoURDt3rd_NetUnArchiveUsers(UINT8 *save_p, INT32 playernum)
 //
 void TSoURDt3rd_PSav_WriteExtraData(void)
 {
-    FILE *tsourdt3rdgamedata = TSoURDt3rd_FIL_AccessFile("TSoURDt3rd", "tsourdt3rd.dat", "w+");
+	FILE *tsourdt3rd_gamedata = NULL;
+
+	tsourdt3rd_gamedata = TSoURDt3rd_FIL_AccessFile(NULL, "tsourdt3rd.dat", "r");
+	if (tsourdt3rd_gamedata != NULL)
+	{
+		// Let's move this old file to a new directory!
+		fclose(tsourdt3rd_gamedata);
+		TSoURDt3rd_FIL_RenameFile("tsourdt3rd.dat", "TSoURDt3rd" PATHSEP "tsourdt3rd.dat");
+	}
+	tsourdt3rd_gamedata = TSoURDt3rd_FIL_AccessFile("TSoURDt3rd", "tsourdt3rd.dat", "w+");
 
 	TSoURDt3rd_FOL_UpdateSavefileDirectory();
 
-	if (!tsourdt3rdgamedata
-		|| (!(tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_EASTER)|| !AllowEasterEggHunt)
+	if (tsourdt3rd_gamedata == NULL)
+	{
+		// Uh-oh! We couldn't find the actual gamedata file!
+		return;
+	}
+
+	if ((!(tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_EASTER)|| !AllowEasterEggHunt)
 		|| (netgame || tsourdt3rd_local.autoloaded_mods))
 		return;
 
 	// Write To The File //
 	// Easter Eggs
-	putw(currenteggs, tsourdt3rdgamedata);
-	putw(foundeggs, tsourdt3rdgamedata);
+	putw(currenteggs, tsourdt3rd_gamedata);
+	putw(foundeggs, tsourdt3rd_gamedata);
 
 	// Close The File //
-    fclose(tsourdt3rdgamedata);
+	fclose(tsourdt3rd_gamedata);
 }
 
 //
@@ -139,19 +160,34 @@ void TSoURDt3rd_PSav_WriteExtraData(void)
 //
 void TSoURDt3rd_PSav_ReadExtraData(void)
 {
-    FILE *tsourdt3rdgamedata = TSoURDt3rd_FIL_AccessFile("TSoURDt3rd", "tsourdt3rd.dat", "w+");
+	FILE *tsourdt3rd_gamedata = NULL;
+
+	tsourdt3rd_gamedata = TSoURDt3rd_FIL_AccessFile(NULL, "tsourdt3rd.dat", "r");
+	if (tsourdt3rd_gamedata != NULL)
+	{
+		// Let's move this old file to a new directory!
+		fclose(tsourdt3rd_gamedata);
+		TSoURDt3rd_FIL_RenameFile("tsourdt3rd.dat", "TSoURDt3rd" PATHSEP "tsourdt3rd.dat");
+	}
+	tsourdt3rd_gamedata = TSoURDt3rd_FIL_AccessFile("TSoURDt3rd", "tsourdt3rd.dat", "w+");
+
 	TSoURDt3rd_FOL_UpdateSavefileDirectory();
 
-	if (!tsourdt3rdgamedata
-		|| (!(tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_EASTER)|| !AllowEasterEggHunt)
+	if (tsourdt3rd_gamedata == NULL)
+	{
+		// Uh-oh! We couldn't find the actual gamedata file!
+		return;
+	}
+
+	if ((!(tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_EASTER)|| !AllowEasterEggHunt)
 		|| (netgame || tsourdt3rd_local.autoloaded_mods))
 		return;
-	
+
 	// Read Things Within The File //
 	// Easter Eggs
-	currenteggs = getw(tsourdt3rdgamedata);
-	foundeggs = getw(tsourdt3rdgamedata);
+	currenteggs = getw(tsourdt3rd_gamedata);
+	foundeggs = getw(tsourdt3rd_gamedata);
 
-    // Close the File //
-    fclose(tsourdt3rdgamedata);
+	// Close the File //
+	fclose(tsourdt3rd_gamedata);
 }

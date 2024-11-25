@@ -94,7 +94,8 @@
  * Last updated 2024 / 08 / 02 - TSOURDT3RD V4 (2.2.13) - renamed the legacy pause graphic back to 'M_PAUSE'
  * Last updated 2024 / 10 / 20 - TSOURDT3RD V4 (2.2.13) - the 'M_DISC' and 'M_TSOURD' graphics are now unused
  * Last updated 2024 / 11 / 17 - TSOURDT3RD V4 (2.2.13) - added a JUKEDEF lump, added more music lumps to the MUSICDEF lump, and organized some things
+ * Last updated 2024 / 11 / 24 - TSOURDT3RD V4 (2.2.13) - renamed some lumps to properly fit their structures and all
 */
-#define ASSET_HASH_TSOURDT3RD_PK3 "0533a82d32fb4700d37cad776ebc3bd5"
+#define ASSET_HASH_TSOURDT3RD_PK3 "64e79d2ca4b2039fc48ea548803dca2d"
 
 #endif

@@ -332,6 +332,7 @@ extern tsourdt3rd_menu_t TSoURDt3rd_TM_OP_MainMenuDef;
 extern tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_MainMenu[];
 enum
 {
+	op_main_readmemenu,
 	op_main_eventsmenu,
 	op_main_gamemenu,
 	op_main_controlsmenu,
@@ -340,9 +341,14 @@ enum
 	op_main_playermenu,
 	op_main_savedatamenu,
 	op_main_servermenu,
-	op_main_jukeboxmenu,
-	op_main_extrasmenu
+	op_main_extrasmenu,
+	op_main_debuggingmenu
 };
+
+extern menu_t TSoURDt3rd_OP_ReadMEDef;
+extern menuitem_t TSoURDt3rd_OP_ReadMEMenu[];
+extern tsourdt3rd_menu_t TSoURDt3rd_TM_OP_ReadMEDef;
+extern tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_ReadMEMenu[];
 
 extern menu_t TSoURDt3rd_OP_EventsDef;
 extern menuitem_t TSoURDt3rd_OP_EventsMenu[];
@@ -456,6 +462,11 @@ extern menu_t TSoURDt3rd_OP_Extras_JukeboxDef;
 extern menuitem_t TSoURDt3rd_OP_Extras_JukeboxMenu[];
 extern tsourdt3rd_menu_t TSoURDt3rd_TM_OP_Extras_JukeboxDef;
 extern tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_Extras_JukeboxMenu[];
+enum
+{
+	op_music_speed = 2,
+	op_music_pitch
+};
 
 extern menu_t TSoURDt3rd_OP_DebugDef;
 extern menuitem_t TSoURDt3rd_OP_DebugMenu[];
@@ -609,7 +620,7 @@ void TSoURDt3rd_M_DrawOptionsMovingButton(void);
 //        Variables
 // ------------------------ //
 
-#define AUTOLOADSTRING "Press \x83Right-Shift\x80 to mark addons to Autoload!"
+#define AUTOLOADSTRING "Press \x83Left-Arrow\x80 to mark addons to Autoload!"
 
 extern void *tsourdt3rd_snake;
 

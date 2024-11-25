@@ -573,12 +573,34 @@ void TSoURDt3rd_M_UpdateMenuCMD(UINT8 i)
 		if (thisGameKey == JB_INCREASEMUSICSPEED || STAR_G_KeyPressed(0, JB_INCREASEMUSICSPEED))
 		{
 			// Increase the speed of the jukebox track
-			TSoURDt3rd_M_ChangeCvarDirect(-1, (1)*(1.0f/16.0f), &cv_tsourdt3rd_jukebox_speed);
+			if (S_GetSpeedMusic() > 0.0f)
+				TSoURDt3rd_M_ChangeCvarDirect(-1, (1)*(1.0f/16.0f), &cv_tsourdt3rd_jukebox_speed);
+			else
+				S_StartSound(NULL, sfx_lose);
 		}
 		if (thisGameKey == JB_DECREASEMUSICSPEED || STAR_G_KeyPressed(0, JB_DECREASEMUSICSPEED))
 		{
 			// Decrease the speed of the jukebox track
-			TSoURDt3rd_M_ChangeCvarDirect(-1, (-1)*(1.0f/16.0f), &cv_tsourdt3rd_jukebox_speed);
+			if (S_GetSpeedMusic() > 0.0f)
+				TSoURDt3rd_M_ChangeCvarDirect(-1, (-1)*(1.0f/16.0f), &cv_tsourdt3rd_jukebox_speed);
+			else
+				S_StartSound(NULL, sfx_lose);
+		}
+		if (thisGameKey == JB_INCREASEMUSICPITCH || STAR_G_KeyPressed(0, JB_INCREASEMUSICPITCH))
+		{
+			// Increase the pitch of the jukebox track
+			if (S_GetPitchMusic() > 0.0f)
+				TSoURDt3rd_M_ChangeCvarDirect(-1, (1)*(1.0f/16.0f), &cv_tsourdt3rd_jukebox_pitch);
+			else
+				S_StartSound(NULL, sfx_lose);
+		}
+		if (thisGameKey == JB_DECREASEMUSICPITCH || STAR_G_KeyPressed(0, JB_DECREASEMUSICPITCH))
+		{
+			// Decrease the pitch of the jukebox track
+			if (S_GetPitchMusic() > 0.0f)
+				TSoURDt3rd_M_ChangeCvarDirect(-1, (-1)*(1.0f/16.0f), &cv_tsourdt3rd_jukebox_pitch);
+			else
+				S_StartSound(NULL, sfx_lose);
 		}
 		if (thisGameKey == JB_PLAYMOSTRECENTTRACK || STAR_G_KeyPressed(0, JB_PLAYMOSTRECENTTRACK))
 		{
@@ -684,22 +706,28 @@ boolean TSoURDt3rd_M_Responder(INT32 *ch, event_t *ev)
 	INT32 gc = 0, gc_table[] = {
 		GC_SCREENSHOT,
 		GC_RECORDGIF,
+
 		GC_FORWARD,
 		GC_BACKWARD,
 		GC_STRAFELEFT, GC_TURNLEFT,
 		GC_STRAFERIGHT, GC_TURNRIGHT,
 		GC_JUMP,
 		GC_SPIN, GC_SYSTEMMENU,
+
 		GC_FIRENORMAL,
 		GC_CUSTOM1, GC_CUSTOM2,
 		GC_LOOKUP,
 		GC_LOOKDOWN,
 		GC_TOSSFLAG,
+
 		JB_OPENJUKEBOX,
 		JB_INCREASEMUSICSPEED,
 		JB_DECREASEMUSICSPEED,
+		JB_INCREASEMUSICPITCH,
+		JB_DECREASEMUSICPITCH,
 		JB_PLAYMOSTRECENTTRACK,
 		JB_STOPJUKEBOX,
+
 		GC_NULL
 	};
 	boolean in_event_eatable_situation = (menutyping.active || titlemapinaction || (menuactive && !menucmd[pid].delay) || tsourdt3rd_snake || optionsmenu.bindtimer);

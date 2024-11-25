@@ -32,6 +32,7 @@ target_sources(SRB2SDL2 PRIVATE
 	menus/menudefs/smkg-multi-playersetup.c
 	menus/menudefs/smkg-options-discord.c
 	menus/menudefs/smkg-options-tsourdt3rd.c
+	menus/menudefs/smkg-options-tsourdt3rd-readme.c
 	menus/menudefs/smkg-options-tsourdt3rd-events.c
 	menus/menudefs/smkg-options-tsourdt3rd-game.c
 	menus/menudefs/smkg-options-tsourdt3rd-controls.c

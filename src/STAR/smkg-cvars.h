@@ -99,6 +99,7 @@ extern consvar_t cv_tsourdt3rd_servers_holepunchrendezvous;
 // Jukebox //
 extern consvar_t cv_tsourdt3rd_jukebox_hud;
 extern consvar_t cv_tsourdt3rd_jukebox_speed;
+extern consvar_t cv_tsourdt3rd_jukebox_pitch;
 
 // Debug //
 extern consvar_t cv_tsourdt3rd_debug_drrr_virtualkeyboard;

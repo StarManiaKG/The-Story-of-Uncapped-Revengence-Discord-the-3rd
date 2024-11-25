@@ -33,6 +33,8 @@ static void M_Sys_LoadExtrasMenu(INT32 choice);
 
 menuitem_t TSoURDt3rd_OP_MainMenu[] =
 {
+	{IT_STRING | IT_SUBMENU, NULL, "Read ME!",
+		&TSoURDt3rd_OP_ReadMEDef, 0},
 	{IT_STRING | IT_CALL, NULL, "Event Options",
 		M_Sys_LoadEventsMenu, 0},
 	{IT_STRING | IT_SUBMENU, NULL, "Game Options",
@@ -57,6 +59,7 @@ menuitem_t TSoURDt3rd_OP_MainMenu[] =
 
 tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_MainMenu[] =
 {
+	{NULL, "Hey, check this out!", { .submenu = &TSoURDt3rd_TM_OP_ReadMEDef }, 0, 0},
 	{NULL, "Access TSoURDt3rd's fun events!", { NULL }, 0, 0},
 	{NULL, "Change up TSoURDt3rd's engine with cool gameplay options!", { .submenu = &TSoURDt3rd_TM_OP_GameDef }, 0, 0},
 	{NULL, "Set keybinds for TSoURDt3rd's features!", {NULL}, 0, 0},

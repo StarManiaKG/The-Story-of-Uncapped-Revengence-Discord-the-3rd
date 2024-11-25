@@ -632,7 +632,7 @@ void TSoURDt3rd_ControlMusicEffects(void)
 	if (tsourdt3rd_global_jukebox->curtrack || tsourdt3rd_global_jukebox->playing)
 	{
 		S_SpeedMusic(atof(cv_tsourdt3rd_jukebox_speed.string));
-		S_PitchMusic(1.0f);
+		S_PitchMusic(atof(cv_tsourdt3rd_jukebox_pitch.string));
 		return;
 	}
 
