@@ -33,6 +33,10 @@ menuitem_t TSoURDt3rd_OP_ControlsMenu[] =
 			M_Sys_SetControl, 0},
 		{IT_CONTROL, NULL, "Music Speed - Decrease",
 			M_Sys_SetControl, 0},
+		{IT_CONTROL, NULL, "Music Pitch - Increase",
+			M_Sys_SetControl, 0},
+		{IT_CONTROL, NULL, "Music Pitch - Decrease",
+			M_Sys_SetControl, 0},
 		{IT_CONTROL, NULL, "Replay Recent Track",
 			M_Sys_SetControl, 0},
 
@@ -54,6 +58,8 @@ tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_ControlsMenu[] =
 		{NULL, "Edit the Jukebox controls for your ease-of-use!", {NULL}, JB_STOPJUKEBOX, 0},
 		{NULL, "Edit the Jukebox controls for your ease-of-use!", {NULL}, JB_INCREASEMUSICSPEED, 0},
 		{NULL, "Edit the Jukebox controls for your ease-of-use!", {NULL}, JB_DECREASEMUSICSPEED, 0},
+		{NULL, "Edit the Jukebox controls for your ease-of-use!", {NULL}, JB_INCREASEMUSICPITCH, 0},
+		{NULL, "Edit the Jukebox controls for your ease-of-use!", {NULL}, JB_DECREASEMUSICPITCH, 0},
 		{NULL, "Edit the Jukebox controls for your ease-of-use!", {NULL}, JB_PLAYMOSTRECENTTRACK, 0},
 
 	{NULL, NULL, {NULL}, 0, 0},

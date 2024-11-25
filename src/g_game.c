@@ -4657,8 +4657,6 @@ void G_SaveGameData(gamedata_t *data)
 		return;
 	}
 
-	TSoURDt3rd_PSav_WriteExtraData(); // STAR STUFF: VIVA LA AUTOLOADING //
-
 	if (usedCheats)
 	{
 		free(savebuffer);
@@ -4757,6 +4755,8 @@ void G_SaveGameData(gamedata_t *data)
 	FIL_WriteFile(va(pandf, srb2home, gamedatafilename), savebuffer, length);
 	free(savebuffer);
 	save_p = savebuffer = NULL;
+
+	TSoURDt3rd_PSav_WriteExtraData(); // STAR STUFF: VIVA LA AUTOLOADING //
 }
 
 #define VERSIONSIZE 16

@@ -244,7 +244,7 @@ void TSoURDt3rd_Jukebox_ST_drawJukebox(void)
 	// The Box
 	V_DrawFillConsoleMap(
 		(BASEVIDWIDTH - (tsourdt3rd_global_jukebox->hud_box_w + jukebox_w)), 45,
-		130+jukebox_w, (cv_tsourdt3rd_jukebox_hud.value == 1 ? 25 : 55),
+		130+jukebox_w, (cv_tsourdt3rd_jukebox_hud.value == 1 ? 25 : 65),
 		V_SNAPTORIGHT|V_HUDTRANSHALF
 	);
 
@@ -279,5 +279,12 @@ void TSoURDt3rd_Jukebox_ST_drawJukebox(void)
 		BASEVIDWIDTH + tsourdt3rd_global_jukebox->hud_speed_w, 90,
 		V_SNAPTORIGHT|V_YELLOWMAP,
 		va("SPEED: %.4s", cv_tsourdt3rd_jukebox_speed.string)
+	);
+
+	// Track Pitch
+	V_DrawThinString(
+		BASEVIDWIDTH + tsourdt3rd_global_jukebox->hud_speed_w, 100,
+		V_SNAPTORIGHT|V_YELLOWMAP,
+		va("Pitch: %.4s", cv_tsourdt3rd_jukebox_pitch.string)
 	);
 }

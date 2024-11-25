@@ -167,7 +167,7 @@ static CV_PossibleValue_t tsourdt3rd_audio_gameover_cons_t[] = {{0, "Game's Defa
 static CV_PossibleValue_t tsourdt3rd_savefiles_perfectsavestripe_cons_t[] = {{0, "MIN"}, {255, "MAX"}, {0, NULL}};
 
 static CV_PossibleValue_t tsourdt3rd_jukebox_hud_cons_t[] = {{0, "Off"}, {1, "Minimalized"}, {2, "On"}, {0, NULL}};
-static CV_PossibleValue_t tsourdt3rd_jukebox_speed_cons_t[] = {{0.1*FRACUNIT, "MIN"}, {20*FRACUNIT, "MAX"}, {0, NULL}};
+static CV_PossibleValue_t tsourdt3rd_jukebox_modifier_cons_t[] = {{0.1*FRACUNIT, "MIN"}, {20*FRACUNIT, "MAX"}, {0, NULL}};
 
 static void G_TimeOver_OnChange(void);
 static void G_IsItCalledSinglePlayer_OnChange(void);
@@ -183,6 +183,7 @@ static void P_SuperWithShield_OnChange(void);
 static void SV_UseContinues_OnChange(void);
 
 static void JB_Speed_OnChange(void);
+static void JB_Pitch_OnChange(void);
 
 consvar_t cv_tsourdt3rd_aprilfools_ultimatemode = CVAR_INIT ("tsourdt3rd_aprilfools_ultimatemode", "Off", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, TSoURD3rd_AprilFools_OnChange);
 
@@ -215,7 +216,7 @@ consvar_t cv_tsourdt3rd_video_coloring_menus = CVAR_INIT ("tsourdt3rd_video_colo
 consvar_t cv_tsourdt3rd_video_coloring_fpsrate = CVAR_INIT ("tsourdt3rd_video_coloring_fpsrate", "Green", CV_SAVE, tsourdt3rd_video_coloring_cons_t, NULL);
 consvar_t cv_tsourdt3rd_video_coloring_tpsrate = CVAR_INIT ("tsourdt3rd_video_coloring_tpsrate", "Green", CV_SAVE, tsourdt3rd_video_coloring_cons_t, NULL);
 #ifdef STAR_LIGHTING
-consvar_t cv_tsourdt3rd_video_lighting_coronas = CVAR_INIT ("tsourdt3rd_video_lighting_coronas", "All", CV_SAVE|CV_CALL, tsourdt3rd_video_lighting_coronas_cons_t, V_Coronas_OnChange);
+consvar_t cv_tsourdt3rd_video_lighting_coronas = CVAR_INIT ("tsourdt3rd_video_lighting_coronas", "Off", CV_SAVE|CV_CALL, tsourdt3rd_video_lighting_coronas_cons_t, V_Coronas_OnChange);
 consvar_t cv_tsourdt3rd_video_lighting_coronas_size = CVAR_INIT ("tsourdt3rd_video_lighting_coronas_size", "1", CV_SAVE|CV_FLOAT, 0, NULL);
 consvar_t cv_tsourdt3rd_video_lighting_coronas_lightingtype = CVAR_INIT ("tsourdt3rd_video_lighting_coronas_lightingtype", "Dynamic", CV_SAVE, tsourdt3rd_video_lighting_coronas_lightingtype_cons_t, NULL);
 consvar_t cv_tsourdt3rd_video_lighting_coronas_drawingmode = CVAR_INIT ("tsourdt3rd_video_lighting_coronas_drawingmode", "Additive", CV_SAVE, tsourdt3rd_video_lighting_coronas_drawingmode_cons_t, NULL);
@@ -248,7 +249,8 @@ consvar_t cv_tsourdt3rd_savefiles_perfectsave_stripe3 = CVAR_INIT ("tsourdt3rd_s
 consvar_t cv_tsourdt3rd_servers_holepunchrendezvous = CVAR_INIT ("tsourdt3rd_servers_holepunchrendezvous", "jart-dev.jameds.org", CV_SAVE, NULL, NULL);
 
 consvar_t cv_tsourdt3rd_jukebox_hud = CVAR_INIT ("tsourdt3rd_jukebox_hud", "On", CV_SAVE, tsourdt3rd_jukebox_hud_cons_t, NULL);
-consvar_t cv_tsourdt3rd_jukebox_speed = CVAR_INIT ("tsourdt3rd_jukebox_speed", "1", CV_FLOAT|CV_SAVE|CV_CALL, tsourdt3rd_jukebox_speed_cons_t, JB_Speed_OnChange);
+consvar_t cv_tsourdt3rd_jukebox_speed = CVAR_INIT ("tsourdt3rd_jukebox_speed", "1", CV_FLOAT|CV_SAVE|CV_CALL, tsourdt3rd_jukebox_modifier_cons_t, JB_Speed_OnChange);
+consvar_t cv_tsourdt3rd_jukebox_pitch = CVAR_INIT ("tsourdt3rd_jukebox_pitch", "1", CV_FLOAT|CV_SAVE|CV_CALL, tsourdt3rd_jukebox_modifier_cons_t, JB_Pitch_OnChange);
 
 consvar_t cv_tsourdt3rd_debug_drrr_virtualkeyboard = CVAR_INIT ("tsourdt3rd_drrr_debug_virtualkeyboard", "Off", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_tsourdt3rd_debug_automapanywhere = CVAR_INIT ("tsourdt3rd_debug_automapanywhere", "Off", CV_SAVE, CV_OnOff, NULL);
@@ -481,6 +483,7 @@ void TSoURDt3rd_D_RegisterClientCommands(void)
 	// Jukebox //
 	CV_RegisterVar(&cv_tsourdt3rd_jukebox_hud);
 	CV_RegisterVar(&cv_tsourdt3rd_jukebox_speed);
+	CV_RegisterVar(&cv_tsourdt3rd_jukebox_pitch);
 
 	// Debugging //
 	CV_RegisterVar(&cv_tsourdt3rd_debug_drrr_virtualkeyboard);
@@ -770,4 +773,11 @@ static void JB_Speed_OnChange(void)
 	if (!tsourdt3rd_global_jukebox || !tsourdt3rd_global_jukebox->playing)
 		return;
 	S_SpeedMusic(atof(cv_tsourdt3rd_jukebox_speed.string));
+}
+
+static void JB_Pitch_OnChange(void)
+{
+	if (!tsourdt3rd_global_jukebox || !tsourdt3rd_global_jukebox->playing)
+		return;
+	S_PitchMusic(atof(cv_tsourdt3rd_jukebox_pitch.string));
 }

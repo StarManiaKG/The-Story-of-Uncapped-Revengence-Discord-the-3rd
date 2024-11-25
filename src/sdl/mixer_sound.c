@@ -716,6 +716,7 @@ static UINT32 get_real_volume(UINT8 volume)
 		// HACK: Until we stop using native MIDI,
 		// disable volume changes
 		return ((UINT32)31*128/31); // volume = 31
+	else
 #endif
 #endif
 #endif
@@ -993,14 +994,11 @@ float I_GetSongSpeed(void)
 {
 #ifdef HAVE_MIXERX
 	if (music)
-	{
-		if (Mix_GetMusicTempo(music) >= 0)
-			return Mix_GetMusicTempo(music);
 #if (SDL_MIXER_VERSION_ATLEAST(2,6,0))
-		else if (Mix_GetMusicSpeed(music) >= 0)
-			return Mix_GetMusicSpeed(music);
+		return Mix_GetMusicSpeed(music);
+#else
+		return Mix_GetMusicTempo(music);
 #endif
-	}
 #endif
 
 	return music_speed;
@@ -1063,10 +1061,7 @@ float I_GetSongPitch(void)
 {
 #ifdef HAVE_MIXERX
 	if (music)
-	{
-		if (Mix_GetMusicPitch(music) >= 0)
-			return Mix_GetMusicPitch(music);
-	}
+		return Mix_GetMusicPitch(music);
 #endif
 
 	return music_pitch;
