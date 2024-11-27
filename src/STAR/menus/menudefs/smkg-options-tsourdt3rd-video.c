@@ -93,7 +93,7 @@ menu_t TSoURDt3rd_OP_VideoDef =
 	&TSoURDt3rd_OP_MainMenuDef,
 	TSoURDt3rd_OP_VideoMenu,
 	TSoURDt3rd_M_DrawGenericOptions,
-	48, 76,
+	48, 72,
 	0,
 	NULL
 };

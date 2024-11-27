@@ -3679,11 +3679,6 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 	if (!spr->mobj->subsector)
 		return;
 
-#ifdef ALAM_LIGHTING
-    // dynamic lighting
-	HWR_DL_AddLightSprite(spr);
-#endif
-
 	if (spr->mobj->subsector->sector->numlights && !splat)
 	{
 		HWR_SplitSprite(spr);
@@ -4534,6 +4529,11 @@ static void HWR_DrawSprites(void)
 			{
 				skipshadow = false;
 			}
+
+#ifdef ALAM_LIGHTING
+			// dynamic lighting
+			HWR_DL_AddLightSprite(spr);
+#endif
 
 			if (spr->mobj && spr->mobj->skin && spr->mobj->sprite == SPR_PLAY)
 			{

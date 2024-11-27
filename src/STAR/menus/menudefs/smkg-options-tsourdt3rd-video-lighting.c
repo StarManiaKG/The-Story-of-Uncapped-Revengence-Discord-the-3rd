@@ -54,7 +54,7 @@ menu_t TSoURDt3rd_OP_Video_LightingDef =
 	&TSoURDt3rd_OP_Video_LightingDef,
 	TSoURDt3rd_OP_Video_LightingMenu,
 	TSoURDt3rd_M_DrawGenericOptions,
-	48, 76,
+	36, 72,
 	0,
 	NULL
 };

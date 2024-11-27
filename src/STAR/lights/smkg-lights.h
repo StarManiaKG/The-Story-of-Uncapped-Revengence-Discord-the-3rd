@@ -53,6 +53,8 @@ typedef enum lightspritenum_s
 	JETLIGHT_L,
 	GOOPLIGHT_L,
 	STREETLIGHT_L,
+	ROCKET_L,
+	ROCKETEXP_L,
 	EMERALD_L,
 	GENERIC_MOBJLIGHT_L,
 
@@ -85,7 +87,7 @@ typedef struct light_s
 	UINT16       impl_flags; // implementation flags, sprite_light_impl_flags_e
 
 	boolean (*corona_rendering_routine)(mobj_t *mobj); // corona rendering routine, returns true if things shouldn't be rendered
-	boolean (*corona_coloring_routine)(mobj_t *mobj, RGBA_t *rgba_table, boolean alpha, boolean dynamic); // corona coloring routine, returns true if the coder should handle coloring on their own
+	boolean (*corona_coloring_routine)(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *alpha, boolean dynamic); // corona coloring routine, returns true if the coder should handle coloring on their own
 } light_t;
 
 extern light_t lspr[NUMLIGHTS];

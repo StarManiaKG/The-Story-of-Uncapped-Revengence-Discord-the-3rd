@@ -145,7 +145,7 @@ boolean TSoURDt3rd_P_DeathThink(player_t *player)
 //
 void TSoURDt3rd_P_PlayerThink(player_t *player)
 {
-	player_t *display_player = &players[displayplayer]; 
+	player_t *display_player = &players[displayplayer];
 	(void)player;
 
 	if (display_player != NULL && display_player->mo != NULL)
@@ -331,6 +331,8 @@ boolean TSoURDt3rd_P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *sourc
 //
 void TSoURDt3rd_P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damagetype)
 {
+	INT32 i;
+
 	(void)source;
 	(void)damagetype;
 
@@ -340,12 +342,30 @@ void TSoURDt3rd_P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UI
 
 		if (t_player)
 		{
+			boolean gameovermus = false;
+
 			if ((tsourdt3rd[consoleplayer].levels.time_over || t_player->lives <= 0) && G_GametypeUsesLives())
 			{
-				// Yousa dead now, Okieday? - Tails 03-14-2000 (With changes from StarManiaKG in 2024)
-				S_ChangeMusicEx(gameoverMusic[cv_tsourdt3rd_audio_gameover.value], 0, 0, 0, (2*MUSICRATE) - (MUSICRATE/25), 0);
+				if ((netgame || multiplayer) && G_GametypeUsesCoopLives() && (cv_cooplives.value != 1))
+				{
+					for (i = 0; i < MAXPLAYERS; i++)
+					{
+						if (!playeringame[i])
+							continue;
 
-				// Kinda hack but gets the job done
+						if (players[i].lives > 0)
+							break;
+					}
+					if (i == MAXPLAYERS)
+						gameovermus = true;
+				}
+				else if (P_IsLocalPlayer(t_player))
+					gameovermus = true;
+
+				if (gameovermus) // Yousa dead now, Okieday? Tails 03-14-2000 - (With changes from StarManiaKG in 2024)
+					S_ChangeMusicEx(gameoverMusic[cv_tsourdt3rd_audio_gameover.value], 0, 0, 0, (2*MUSICRATE) - (MUSICRATE/25), 0);
+
+				// Kinda hacky but gets the job done
 				if ((tsourdt3rd[consoleplayer].levels.time_over && t_player->lives <= 0) && (!(netgame || multiplayer || demoplayback || demorecording || metalrecording || modeattacking) && numgameovers < maxgameovers))
 				{
 					numgameovers++;

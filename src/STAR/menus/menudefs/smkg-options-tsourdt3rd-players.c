@@ -54,7 +54,7 @@ menu_t TSoURDt3rd_OP_PlayerDef =
 	&TSoURDt3rd_OP_MainMenuDef,
 	TSoURDt3rd_OP_PlayerMenu,
 	TSoURDt3rd_M_DrawGenericOptions,
-	24, 76,
+	24, 72,
 	0,
 	NULL
 };

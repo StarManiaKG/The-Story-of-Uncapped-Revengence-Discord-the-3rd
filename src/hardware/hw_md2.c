@@ -1453,11 +1453,6 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 			}
 		}
 
-#ifdef ALAM_LIGHTING
-		// dynamic lighting
-		HWR_DL_AddLightSprite(spr);
-#endif
-
 		//HWD.pfnSetBlend(blend); // This seems to actually break translucency?
 		//Hurdler: arf, I don't like that implementation at all... too much crappy
 
