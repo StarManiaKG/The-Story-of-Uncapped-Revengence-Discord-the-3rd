@@ -350,9 +350,10 @@ INT32 TSoURDt3rd_M_DoesMenuHaveKeyHandler(void)
 	else if (menumessage.active)
 		return 5;
 
-	if (!curmenuitem)
+	if (!curmenuitem || !menuactive)
 		return -1;
-	else if ((curmenuitem->status & IT_CVARTYPE) == IT_CV_STRING)
+
+	if ((curmenuitem->status & IT_CVARTYPE) == IT_CV_STRING)
 		return 1;
 	else if (curmenuitem->status == IT_MSGHANDLER)
 		return 2;

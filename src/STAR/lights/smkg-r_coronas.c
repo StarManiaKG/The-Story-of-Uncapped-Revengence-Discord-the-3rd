@@ -309,7 +309,7 @@ UINT8 Sprite_Corona_Light_fade(light_t *p_lspr, float cz, mobj_t *mobj)
 	// Objects which emit light.
 	type = p_lspr->impl_flags & TYPE_FIELD_SPR; // working type setting
 	cflags = p_lspr->type;
-	if (p_lspr->corona_coloring_routine == NULL || !p_lspr->corona_coloring_routine(mobj, NULL, true, false))
+	if (p_lspr->corona_coloring_routine == NULL || !p_lspr->corona_coloring_routine(mobj, NULL, &corona_alpha, false))
 		corona_alpha = V_GetColor(p_lspr->corona_color).s.alpha;
 	corona_bright = 0;
 
@@ -368,7 +368,7 @@ UINT8 Sprite_Corona_Light_fade(light_t *p_lspr, float cz, mobj_t *mobj)
 			if (corona_alpha == 0)
 			{
 				// previous default
-				if (p_lspr->corona_coloring_routine == NULL || !p_lspr->corona_coloring_routine(mobj, NULL, true, false))
+				if (p_lspr->corona_coloring_routine == NULL || !p_lspr->corona_coloring_routine(mobj, NULL, &corona_alpha, false))
 					corona_alpha = V_GetColor(p_lspr->corona_color).s.alpha = 0xff;
 				else
 					corona_alpha = 0xff;
