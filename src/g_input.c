@@ -613,6 +613,8 @@ static const char *gamecontrolname[NUM_GAMECONTROLS] =
 	"decreasemusicspeed",
 	"playmostrecenttrack",
 	"stopjukebox",
+	"increasemusicpitch",
+	"decreasemusicpitch",
 	// END THE UNIQUE STAR CONTROLS PLEASE //
 };
 
