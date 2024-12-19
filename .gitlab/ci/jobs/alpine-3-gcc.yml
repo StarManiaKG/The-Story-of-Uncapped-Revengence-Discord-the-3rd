@@ -50,7 +50,7 @@ Alpine 3 GCC:
     - - |
           # apk_common
           echo -e "\e[0Ksection_start:`date +%s`:apk_common[collapsed=true]\r\e[0KInstalling common packages"
-      - apk add make git ccache nasm
+      - apk add make git ccache
       - |
           # apk_common
           echo -e "\e[0Ksection_end:`date +%s`:apk_common\r\e[0K"

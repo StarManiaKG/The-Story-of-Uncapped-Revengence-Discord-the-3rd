@@ -321,9 +321,6 @@
 		1E44AF950B67CF1300BAD059 /* string.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = string.c; path = ../../string.c; sourceTree = SOURCE_ROOT; };
 		1E44AF990B67CF2E00BAD059 /* tables.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = tables.c; path = ../../tables.c; sourceTree = SOURCE_ROOT; };
 		1E44AF9A0B67CF2E00BAD059 /* tables.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = tables.h; path = ../../tables.h; sourceTree = SOURCE_ROOT; };
-		1E44AF9D0B67CF3D00BAD059 /* tmap.nas */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text; name = tmap.nas; path = ../../tmap.nas; sourceTree = SOURCE_ROOT; };
-		1E44AF9F0B67CF4900BAD059 /* tmap_mmx.nas */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text; name = tmap_mmx.nas; path = ../../tmap_mmx.nas; sourceTree = SOURCE_ROOT; };
-		1E44AFA00B67CF4900BAD059 /* tmap_vc.nas */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text; name = tmap_vc.nas; path = ../../tmap_vc.nas; sourceTree = SOURCE_ROOT; };
 		1E44AFA30B67CF5D00BAD059 /* v_video.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = v_video.c; path = ../../v_video.c; sourceTree = SOURCE_ROOT; };
 		1E44AFA40B67CF5D00BAD059 /* v_video.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = v_video.h; path = ../../v_video.h; sourceTree = SOURCE_ROOT; };
 		1E44AFA70B67CF6400BAD059 /* w_wad.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = w_wad.c; path = ../../w_wad.c; sourceTree = SOURCE_ROOT; };
@@ -545,18 +542,6 @@
 				1E44AE730B67CC2B00BAD059 /* hws_data.h */,
 			);
 			name = Hw_Hardware;
-			sourceTree = "<group>";
-		};
-		1E44AE890B67CC4E00BAD059 /* A_Asm */ = {
-			isa = PBXGroup;
-			children = (
-				67B2071C1180FA8200E93654 /* vid_copy.s */,
-				1E44AE8A0B67CC6000BAD059 /* asm_defs.inc */,
-				1E44AF9D0B67CF3D00BAD059 /* tmap.nas */,
-				1E44AF9F0B67CF4900BAD059 /* tmap_mmx.nas */,
-				1E44AFA00B67CF4900BAD059 /* tmap_vc.nas */,
-			);
-			name = A_Asm;
 			sourceTree = "<group>";
 		};
 		1E44AE8C0B67CC6500BAD059 /* D_Doom */ = {

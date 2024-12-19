@@ -1972,26 +1972,6 @@ HW3SOUND for 3D hardware sound  support
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/tables.h" />
-		<Unit filename="src/tmap.nas">
-			<Option target="Debug Mingw/SDL" />
-			<Option target="Release Mingw/SDL" />
-			<Option target="Debug Mingw/DirectX" />
-			<Option target="Release Mingw/DirectX" />
-			<Option target="Debug Mingw64/SDL" />
-			<Option target="Release Mingw64/SDL" />
-			<Option target="Debug Mingw64/DirectX" />
-			<Option target="Release Mingw64/DirectX" />
-		</Unit>
-		<Unit filename="src/tmap_mmx.nas">
-			<Option target="Debug Mingw/SDL" />
-			<Option target="Release Mingw/SDL" />
-			<Option target="Debug Mingw/DirectX" />
-			<Option target="Release Mingw/DirectX" />
-			<Option target="Debug Mingw64/SDL" />
-			<Option target="Release Mingw64/SDL" />
-			<Option target="Debug Mingw64/DirectX" />
-			<Option target="Release Mingw64/DirectX" />
-		</Unit>
 		<Unit filename="src/v_video.c">
 			<Option compilerVar="CC" />
 		</Unit>

@@ -561,17 +561,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="..\tmap.nas">
-      <Filter>A_Asm</Filter>
-    </CustomBuild>
-    <CustomBuild Include="..\tmap_mmx.nas">
-      <Filter>A_Asm</Filter>
-    </CustomBuild>
-    <CustomBuild Include="..\tmap_vc.nas">
-      <Filter>A_Asm</Filter>
-    </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="..\asm_defs.inc">
       <Filter>A_Asm</Filter>
     </None>

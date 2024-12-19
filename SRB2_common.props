@@ -28,11 +28,6 @@
     <Link>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
-    <CustomBuild>
-      <Command>nasm -g -o $(IntDir)%(Filename).obj -f win32 "%(FullPath)"</Command>
-      <Message>Compiling %(Filename).nas with NASM...</Message>
-      <Outputs>$(IntDir)%(Filename).obj;%(Outputs)</Outputs>
-    </CustomBuild>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(PlatformTarget)'!='x86'">
     <CustomBuild>

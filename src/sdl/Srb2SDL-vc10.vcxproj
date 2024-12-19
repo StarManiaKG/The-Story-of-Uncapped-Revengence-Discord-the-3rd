@@ -415,22 +415,6 @@
     <ClInclude Include="sdlmain.h" />
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="..\tmap.nas">
-      <FileType>Document</FileType>
-    </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
-    <CustomBuild Include="..\tmap_mmx.nas">
-      <FileType>Document</FileType>
-    </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
-    <CustomBuild Include="..\tmap_vc.nas">
-      <FileType>Document</FileType>
-    </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\asm_defs.inc" />
     <None Include="..\config.h.in" />
     <None Include="SDL_icon.xpm" />
   </ItemGroup>
