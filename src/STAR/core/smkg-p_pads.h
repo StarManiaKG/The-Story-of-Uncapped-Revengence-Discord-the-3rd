@@ -1,9 +1,9 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Original Copyright (C) 2024 by Kart Krew.
-// Original Copyright (C) 2020 by Sonic Team Junior.
-// Original Copyright (C) 2000 by DooM Legacy Team.
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2020 by Sonic Team Junior.
+// Copyright (C) 2000 by DooM Legacy Team.
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -37,13 +37,16 @@ extern "C" {
 typedef struct TSoURDt3rd_ControllerInfo_s
 {
 #ifdef HAVE_SDL
+	// SDL
 	SDL_Joystick *joy_device;
 	SDL_GameController *game_device;
 #endif
+	// Main
 	boolean active;
 	INT16 id;
 	INT16 real_id;
 	const char *name;
+	// Rumbling
 	struct
 	{
 		boolean supported;

@@ -58,7 +58,7 @@
 #endif
 
 // TSoURDt3rd
-#include "discord/discord.h" // discord netgame data //
+#include "discord/discord.h" // Discord Routines & Netgame Data //
 #include "STAR/star_vars.h" // STAR_SetWindowTitle() //
 #include "STAR/smkg-cvars.h" // cv_tsourdt3rd_game_sdl_windowtitle_type //
 #include "STAR/p_user.h" // TSoURDt3rd_P_MovingPlayerSetup() //
@@ -2137,7 +2137,7 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	demo_start = true;
 
 #ifdef HAVE_DISCORDSUPPORT
-	DRPC_UpdatePresence();
+	DISC_UpdatePresence();
 #endif
 }
 
@@ -2883,7 +2883,7 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 		P_CheckSurvivors();
 
 #ifdef HAVE_DISCORDSUPPORT
-	DRPC_UpdatePresence();
+	DISC_UpdatePresence();
 #endif
 }
 
@@ -3823,7 +3823,7 @@ static void Command_Version_f(void)
 #ifdef DEVELOP
 	CONS_Printf("Sonic Robo Blast 2 %s; %s %s %s (%s %s) ", TSOURDT3RDVERSIONSTRING, compbranch, comprevision, compnote, compdate, comptime);
 #else
-	CONS_Printf("Sonic Robo Blast 2 %s; %s %s (%s %s %s %s) ", VERSIONSTRING, TSOURDT3RDVERSIONSTRING, TSOURDT3RDBYSTARMANIAKGSTRING, compdate, comptime, comprevision, compbranch);
+	CONS_Printf("Sonic Robo Blast 2 %s; %s (%s %s %s %s) ", VERSIONSTRING, TSOURDT3RDVERSIONSTRING, compdate, comptime, comprevision, compbranch);
 #endif
 
 	// Base library
@@ -4133,7 +4133,7 @@ static void TimeLimit_OnChange(void)
 
 #ifdef HAVE_DISCORDSUPPORT
 	if (gamestate == GS_LEVEL)
-		DRPC_UpdatePresence();
+		DISC_UpdatePresence();
 #endif
 }
 

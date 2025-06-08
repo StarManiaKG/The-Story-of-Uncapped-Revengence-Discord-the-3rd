@@ -394,9 +394,12 @@ static void SetSkin(player_t *player, INT32 skinnum)
 
 #ifdef HAVE_DISCORDSUPPORT
 	if (player - players == consoleplayer)
-		DRPC_UpdatePresence();
+		DISC_UpdatePresence();
 #endif
-	TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor(player - players); // STAR STUFF: fun controller junk //
+#if 1
+	// STAR STUFF: fun controller junk //
+	TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor(player - players);
+#endif
 }
 
 // Gets the player to the first usuable skin in the game.

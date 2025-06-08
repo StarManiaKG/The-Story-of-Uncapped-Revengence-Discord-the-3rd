@@ -43,7 +43,6 @@ enum tsourdt3rd_blua_global_terms_e
 	tsourdt3rd_sounds_discord_requests,
 	tsourdt3rd_extras_spawntf2dispenser
 };
-
 static const char *const tsourdt3rd_blua_global_terms_opt[] = {
 	"eastermode",
 	"AllowEasterEggHunt",

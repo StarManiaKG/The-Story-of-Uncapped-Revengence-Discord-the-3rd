@@ -17,6 +17,17 @@
 // ------------------------ //
 
 //
+// void TSoURDt3rd_STARParser_STRLCPY(char *p, const char *s, size_t n)
+// Copies a given string, parses underscores as spaces, and returns the new string when done.
+//
+void TSoURDt3rd_STARParser_STRLCPY(char *p, const char *s, size_t n)
+{
+	strlcpy(p, s, n);
+	while ((p = strchr(p, '_')))
+		*p++ = ' '; // turn _ into spaces.
+}
+
+//
 // INT32 TSoURDt3rd_STARParser_CheckForBrackets(tsourdt3rd_starparser_t *script)
 // Checks for any brackets within STARParser tokens.
 //

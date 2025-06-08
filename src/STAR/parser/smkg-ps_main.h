@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -27,10 +27,10 @@ extern "C" {
 
 typedef struct tsourdt3rd_starparser_s
 {
+	wadfile_t   *wad; // the data of the wad we're looking at
 	tokenizer_t *tokenizer; // script tokenizer
 	const char  *tkn; // current token
 	const char  *val; // current value of token, if needed
-	wadfile_t   *wad; // the data of the wad we're looking at
 } tsourdt3rd_starparser_t;
 
 typedef enum
@@ -50,6 +50,8 @@ typedef enum
 } tsourdt3rd_starparser_bracket_type_t;
 
 extern INT32 tsourdt3rd_starparser_lump_loading;
+extern INT32 tsourdt3rd_starparser_num_errored_lumps;
+
 extern INT32 tsourdt3rd_starparser_num_brackets;
 extern INT32 tsourdt3rd_starparser_num_errors;
 
@@ -58,8 +60,11 @@ extern INT32 tsourdt3rd_starparser_num_errors;
 // ------------------------ //
 
 void TSoURDt3rd_STARParser_Read(tsourdt3rd_starparser_t *script, char *text, size_t lumpLength, boolean (*parserfunc)(tsourdt3rd_starparser_t *));
-boolean TSoURDt3rd_STARParser_JukeDefs(tsourdt3rd_starparser_t *script);
 
+boolean TSoURDt3rd_STARParser_JUKEDEF(tsourdt3rd_starparser_t *script);
+boolean TSoURDt3rd_STARParser_EXMUSDEF(tsourdt3rd_starparser_t *script);
+
+void TSoURDt3rd_STARParser_STRLCPY(char *p, const char *s, size_t n);
 INT32 TSoURDt3rd_STARParser_CheckForBrackets(tsourdt3rd_starparser_t *script);
 INT32 TSoURDt3rd_STARParser_ValidTableTerm(tsourdt3rd_starparser_t *script, const char *const *term_table, boolean enforce_brackets);
 void TSoURDt3rd_STARParser_Error(const char *err, tsourdt3rd_starparser_t *script, tsourdt3rd_starparser_errortype_t verboseness);

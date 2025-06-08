@@ -342,7 +342,6 @@ static const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean 
 					}
 					break;
 				}
-
 				case 2:
 				{
 					switch (rand() % 13)
@@ -368,7 +367,6 @@ static const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean 
 					}
 					break;
 				}
-
 				case 3:
 				{
 					switch (rand() % 7)
@@ -383,7 +381,6 @@ static const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean 
 					}
 					break;
 				}
-		
 				default:
 				{
 					switch (rand() % 4)
@@ -402,7 +399,7 @@ static const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean 
 		// SRB2
 		case 10:
 		{
-			switch (rand() % 3)
+			switch (rand() % 5)
 			{
 				// STJr Members
 				case 1: jokemsg = (crashnum == SIGSEGV ? (coredumped ? "SIGSEGV - seventh sentinel (core dumped)" : "SIGSEGV - seventh sentinel") : "...Huh. This is awkward..."); break;
@@ -418,6 +415,10 @@ static const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean 
 					}
 					break;
 				}
+
+				// References to past versions
+				case 3: jokemsg = "Did you get all those Chaos Emeralds?"; break;
+				case 4: jokemsg = "All your rings are belong to us!"; break;
 
 				// References to game bugs
 				default: jokemsg = "The Leader of the Chaotix would be very disappointed in you."; break;
@@ -485,32 +486,35 @@ void TSoURDt3rd_I_ShowErrorMessageBox(const char *messagefordevelopers, const SD
 		sizeof(finalmessage),
 			"%s\n"
 			"\n"
-			"\"SRB2 %s; %s %s\" has encountered an unrecoverable error and needs to close.\n"
-			"This is (usually) not your fault, but we encourage you to report it to the creator.\n"
+			"\"SRB2 %s; %s\" has encountered an unrecoverable error and needs to close.\n"
+			"This is (usually) not your fault, but we encourage you to report it to the creator, StarManiaKG!\n"
 			"This should be done alongside your %s log file (%s).\n"
 			"\n"
-			"The information in the log file is generally useful for developers, like StarManiaKG, and maybe even STJr.\n"
-			"Developers tend to screw up, especially those working for free, so please be nice to them!\n"
+			"The information in the log file is generally useful for developers, like this mod's creator, and maybe even STJr too.\n"
+			"Developers can screw up, and we literally work for free, and some of us aren't even adults, so try to be nice and considerate!\n"
 			"The information may also be useful for server hosts and add-on creators too.\n"
 			"\n"
-			"Visit the SRB2 Discord below, or reach out to StarManiaKG on Discord, if you have any info regarding this crash.\n"
+			"To share any info regarding this crash, there are several things you can do:\n"
+			"\t- Visit the SRB2 Discord, using the button below.\n"
+			"\t- Reach out to StarManiaKG on Discord, by sending them a message.\n"
+			"\t- Visit TSoURDt3rd's message board post, using the button below.\n"
 			"\n"
 			"See you next game!\n"
 			"%s"
 			"%s"
 			"%s",
 		TSoURDt3rd_GenerateFunnyCrashMessage(num, coredumped),
-		SRB2VERSION, TSOURDT3RDVERSIONSTRING, TSOURDT3RDBYSTARMANIAKGSTRING,
+		SRB2VERSION, TSOURDT3RDVERSIONSTRING,
 #if defined (UNIXBACKTRACE)
 		"crash-log.txt"
 #elif defined (_WIN32)
 		".rpt crash dump"
 #endif
-			" (very important!) and",
+		" (very important!) and",
 #ifdef LOGMESSAGES
 		logfilename[0] ? logfilename :
 #endif
-			"uh oh, one wasn't made!?",
+		"uh oh, one wasn't made!?",
 		crash_reason_header,
 		underscoremsg,
 		(messagefordevelopers ? messagefordevelopers : "")
@@ -518,32 +522,41 @@ void TSoURDt3rd_I_ShowErrorMessageBox(const char *messagefordevelopers, const SD
 
 	// Just in case SDL_MessageBoxData is NULL
 	const SDL_MessageBoxButtonData tsourdt3rd_buttons[] = {
-		{ SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 0,		"OK" },
-		{ 										0, 1,  "Discord" },
+		{ SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 0,		      "OK" },
+		{ 										0, 1,        "Discord" },
+		{ 										0, 2,  "Message Board" },
 	};
 	const SDL_MessageBoxData tsourdt3rd_messageboxdata = {
 		(messageboxdata ? messageboxdata->flags : SDL_MESSAGEBOX_ERROR),
 		(messageboxdata ? messageboxdata->window : NULL),
 		(messageboxdata ? messageboxdata->title :
-			("SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING" Recursive Error")),
+			("SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" Recursive Error")),
 		finalmessage,
 		SDL_arraysize(tsourdt3rd_buttons),
-		(messageboxdata ? messageboxdata->buttons : tsourdt3rd_buttons),
+		tsourdt3rd_buttons,
 		(messageboxdata ? messageboxdata->colorScheme : NULL),
 	};
-	int tsourdt3rd_buttonid;
+	int tsourdt3rd_buttonid = (buttonid != NULL ? (*buttonid) : 0);
 
 	// Implement message box with SDL_ShowMessageBox,
 	// which should fail gracefully if it can't put a message box up
 	// on the target system
-	if (buttonid == NULL)
+	SDL_ShowMessageBox(&tsourdt3rd_messageboxdata, &tsourdt3rd_buttonid);
+	switch (tsourdt3rd_buttonid)
 	{
-		SDL_ShowMessageBox(&tsourdt3rd_messageboxdata, &tsourdt3rd_buttonid);
-		if (tsourdt3rd_buttonid == 1)
-			TSoURDt3rd_I_OpenURL("https://www.srb2.org/discord");
+		case 1:
+			if (buttonid == NULL)
+			{
+				// We can't rely on the base error handler for this one!
+				TSoURDt3rd_I_OpenURL("https://www.srb2.org/discord");
+			}
+			break;
+		case 2:
+			TSoURDt3rd_I_OpenURL("https://mb.srb2.org/addons/the-story-of-uncapped-revengence-discord-the-3rd.4932/");
+			break;
+		default:
+			break;
 	}
-	else
-		SDL_ShowMessageBox(&tsourdt3rd_messageboxdata, buttonid);
 }
 
 //

@@ -1,16 +1,17 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2020-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2020-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  menus/menudefs/smkg-options-tsourdt3rd-extras.c
-/// \brief TSoURDt3rd's unique extra options
+/// \brief TSoURDt3rd's unique extra menu options and routines
 
 #include "../smkg-m_sys.h"
 #include "../../smkg-i_sys.h"
+
 #include "../../../i_system.h" // I_ClipboardCopy()
 
 // ------------------------ //
@@ -74,14 +75,14 @@ tsourdt3rd_menu_t TSoURDt3rd_TM_OP_ExtrasDef = {
 
 static void M_Sys_OpenGitlabModsURL_Select(INT32 choice)
 {
-	if (choice != MA_YES)
-		return;
+	if (choice != MA_YES) return;
 	TSoURDt3rd_I_OpenURL(gitlab_mods_url);
 }
 
 static void M_Sys_OpenGitlabModsURL(INT32 choice)
 {
 	(void)choice;
+
 	sprintf(gitlab_mods_url, "https://git.do.srb2.org/StarManiaKG/tsourdt3rd-assets/-/tree/%s/extras?ref_type=heads", compbranch);
 
 	if (TSoURDt3rd_I_CanOpenURL())
@@ -122,5 +123,7 @@ static void M_Sys_SpawnTF2Dispenser(INT32 choice)
 		return;
 	}
 
+	// Lua for the win!
+	//// \todo lua for the loss
 	SpawnTheDispenser = true;
 }

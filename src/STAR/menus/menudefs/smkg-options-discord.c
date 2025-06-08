@@ -1,15 +1,15 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Original Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
-// Original Copyright (C) 2018-2024 by Kart Krew.
-// Copyright (C) 2020-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
+// Copyright (C) 2018-2024 by Kart Krew.
+// Copyright (C) 2020-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  menus/menudefs/smkg-options-discord.c
-/// \brief Discord Rich Presence menu options
+/// \brief Discord integration menu options
 
 #ifdef HAVE_DISCORDSUPPORT
 #include "../../../discord/discord.h"
@@ -126,13 +126,13 @@ tsourdt3rd_menuitem_t DISCORD_TM_OP_MainMenu[] =
 	{NULL, NULL, {NULL}, 0, 0},
 
 	{NULL, NULL, {NULL}, 0, 0},
-		{NULL, "The custom detail to show on your status.", {NULL}, 128, 2},
-		{NULL, "The custom state to show on your status.", {NULL}, 128, 2},
+		{NULL, "The custom detail to show on your status.", {NULL}, DISC_STATUS_IMAGE_STRING_SIZE, DISC_STATUS_MIN_STRING_SIZE},
+		{NULL, "The custom state to show on your status.", {NULL}, DISC_STATUS_IMAGE_STRING_SIZE, DISC_STATUS_MIN_STRING_SIZE},
 
 	{NULL, NULL, {NULL}, 0, 0},
 
 	{NULL, NULL, {NULL}, 0, 0},
-		{NULL, "The image text (large) to show on your status.", {NULL}, 128, 2},
+		{NULL, "The image text (large) to show on your status.", {NULL}, DISC_STATUS_IMAGE_STRING_SIZE, DISC_STATUS_MIN_STRING_SIZE},
 
 		{NULL, NULL, {NULL}, 0, 0},
 
@@ -142,7 +142,7 @@ tsourdt3rd_menuitem_t DISCORD_TM_OP_MainMenu[] =
 	{NULL, NULL, {NULL}, 0, 0},
 
 	{NULL, NULL, {NULL}, 0, 0},
-		{NULL, "The image text (small) to show on your status.", {NULL}, 128, 2},
+		{NULL, "The image text (small) to show on your status.", {NULL}, DISC_STATUS_IMAGE_STRING_SIZE, DISC_STATUS_MIN_STRING_SIZE},
 
 		{NULL, NULL, {NULL}, 0, 0},
 
@@ -226,19 +226,22 @@ void TSoURDt3rd_M_DiscordOptions_Init(INT32 choice)
 
 static void M_Sys_DrawDiscordMenu(void)
 {
-	if (discordInfo.ConnectionStatus == DRPC_CONNECTED)
+	INT32 flags = V_SNAPTOBOTTOM;
+
+	if (discordInfo.ConnectionStatus & DISC_CONNECTED)
 	{
 		// Discord's open, so let's print our username!
-		V_DrawCenteredThinString(BASEVIDWIDTH/2, BASEVIDHEIGHT-8, V_SNAPTOBOTTOM|V_ALLOWLOWERCASE|V_MENUCOLORMAP, va("Connected to: %s", DRPC_ReturnUsername()));
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, BASEVIDHEIGHT-8, flags|V_ALLOWLOWERCASE|V_MENUCOLORMAP, va("Connected to: %s", DISC_ReturnUsername()));
 		return;
 	}
 
 	// Dang! Discord isn't open!
-	if (discordInfo.ConnectionStatus == DRPC_DISCONNECTED)
-		V_DrawCenteredThinString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16, V_SNAPTOBOTTOM|V_REDMAP, "Disconnected");
+	flags |= V_REDMAP;
+	if (discordInfo.ConnectionStatus & DISC_DISCONNECTED)
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16, flags, "Disconnected!");
 	else
-		V_DrawCenteredThinString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16, V_SNAPTOBOTTOM|V_REDMAP, "Not Connected");
-	V_DrawCenteredThinString(BASEVIDWIDTH/2, BASEVIDHEIGHT-8, V_SNAPTOBOTTOM|V_ALLOWLOWERCASE|V_REDMAP, "Make sure Discord is open!");
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16, flags, "Not Connected!");
+	V_DrawCenteredThinString(BASEVIDWIDTH/2, BASEVIDHEIGHT-8, flags|V_ALLOWLOWERCASE, "Make sure Discord is open!");
 }
 
 static void M_Sys_DiscordOptionsTicker(void)
@@ -313,7 +316,7 @@ static void M_Sys_DiscordOptionsTicker(void)
 	};
 
 	TSoURDt3rd_M_OptionsTick(); // Tick throughout the entire menu
-	DRPC_UpdatePresence(); // Update DRPC info
+	DISC_UpdatePresence(); // Update DRPC info
 
 	// Set option availability and actions
 	while (discord_menuitems[i][0] != -2)
@@ -420,9 +423,8 @@ static void M_Sys_DiscordOptionsTicker(void)
 
 static const char *M_Sys_GetDiscordName(discordRequest_t *r)
 {
-	if (r == NULL)
-		return "";
-	return DRPC_ReturnUsername();
+	if (r == NULL) return "";
+	return DISC_ReturnUsername();
 }
 
 void TSoURDt3rd_M_DiscordRequests_Init(INT32 choice)
@@ -479,17 +481,17 @@ static void M_Sys_DrawDiscordRequests(void)
 		V_DrawFixedPatch(56*FRACUNIT, 150*FRACUNIT + handoffset, FRACUNIT, 0, hand, NULL);
 	}
 
-	K_DrawSticker(x + (slide * 32), y - 2, V_ThinStringWidth(M_Sys_GetDiscordName(curRequest), 0), 0, false);
-	V_DrawThinString(x + (slide * 32), y - 1, V_YELLOWMAP, M_Sys_GetDiscordName(curRequest));
+	K_DrawSticker(x + (slide * 32), y - 2, V_ThinStringWidth(M_Sys_GetDiscordName(curRequest), V_ALLOWLOWERCASE), 0, false);
+	V_DrawThinString(x + (slide * 32), y - 1, V_YELLOWMAP|V_ALLOWLOWERCASE, M_Sys_GetDiscordName(curRequest));
 
-	K_DrawSticker(x, y + 12, V_ThinStringWidth(wantText, 0), 0, true);
-	V_DrawThinString(x, y + 10, 0, wantText);
+	K_DrawSticker(x, y + 12, V_ThinStringWidth(wantText, V_ALLOWLOWERCASE), 0, true);
+	V_DrawThinString(x, y + 10, V_ALLOWLOWERCASE, wantText);
 
 	INT32 confirmButtonWidth = SHORT(kp_button_a[1][0]->width);
 	INT32 declineButtonWidth = SHORT(kp_button_b[1][0]->width);
 	INT32 altDeclineButtonWidth = SHORT(kp_button_x[1][0]->width);
-	INT32 acceptTextWidth =  V_ThinStringWidth(acceptText, 0);
-	INT32 declineTextWidth = V_ThinStringWidth(declineText, 0);
+	INT32 acceptTextWidth =  V_ThinStringWidth(acceptText, V_ALLOWLOWERCASE);
+	INT32 declineTextWidth = V_ThinStringWidth(declineText, V_ALLOWLOWERCASE);
 	INT32 stickerWidth = (confirmButtonWidth + declineButtonWidth + altDeclineButtonWidth + acceptTextWidth + declineTextWidth);
 
 	K_DrawSticker(x, y + 26, stickerWidth, 0, true);
@@ -497,7 +499,7 @@ static void M_Sys_DrawDiscordRequests(void)
 
 	INT32 xoffs = confirmButtonWidth;
 
-	V_DrawThinString((x + xoffs), y + 24, 0, acceptText);
+	V_DrawThinString((x + xoffs), y + 24, V_ALLOWLOWERCASE, acceptText);
 	xoffs += acceptTextWidth;
 
 	K_drawButtonAnim((x + xoffs), y + 22, V_SNAPTORIGHT, kp_button_b[1], discordrequestmenu.ticker);
@@ -506,7 +508,7 @@ static void M_Sys_DrawDiscordRequests(void)
 	K_drawButtonAnim((x + xoffs), y + 22, V_SNAPTORIGHT, kp_button_x[1], discordrequestmenu.ticker);
 	xoffs += altDeclineButtonWidth;
 
-	V_DrawThinString((x + xoffs), y + 24, 0, declineText);
+	V_DrawThinString((x + xoffs), y + 24, V_ALLOWLOWERCASE, declineText);
 
 	y -= 18;
 
@@ -518,8 +520,8 @@ static void M_Sys_DrawDiscordRequests(void)
 
 		const char *discordname = M_Sys_GetDiscordName(curRequest);
 
-		K_DrawSticker(x, y - 1 + ySlide, V_ThinStringWidth(discordname, 0), 0, false);
-		V_DrawThinString(x, y + ySlide, 0, discordname);
+		K_DrawSticker(x, y - 1 + ySlide, V_ThinStringWidth(discordname, V_ALLOWLOWERCASE), 0, false);
+		V_DrawThinString(x, y + ySlide, V_ALLOWLOWERCASE, discordname);
 
 		y -= 12;
 		maxYSlide = 12;
@@ -542,7 +544,9 @@ static void M_Sys_DiscordRequestTick(void)
 
 	if (discordrequestmenu.removeRequest == true)
 	{
-		DRPC_RemoveRequest(discordRequestList);
+#ifdef HAVE_DISCORDRPC
+		DISC_RemoveRequest(discordRequestList);
+#endif
 
 		if (discordRequestList == NULL)
 		{
@@ -572,14 +576,18 @@ static void M_Sys_DiscordRequestHandler(INT32 choice)
 
 	if (TSoURDt3rd_M_MenuConfirmPressed(pid))
 	{
+#ifdef HAVE_DISCORDRPC
 		Discord_Respond(discordRequestList->userID, DISCORD_REPLY_YES);
+#endif
 		discordrequestmenu.confirmAccept = true;
 		discordrequestmenu.confirmDelay = discordrequestmenu.confirmLength;
 		S_StartSound(NULL, sfx_s3k63);
 	}
 	else if (TSoURDt3rd_M_MenuBackPressed(pid))
 	{
+#ifdef HAVE_DISCORDRPC
 		Discord_Respond(discordRequestList->userID, DISCORD_REPLY_NO);
+#endif
 		discordrequestmenu.confirmAccept = false;
 		discordrequestmenu.confirmDelay = discordrequestmenu.confirmLength;
 		S_StartSound(NULL, sfx_s3kb2);

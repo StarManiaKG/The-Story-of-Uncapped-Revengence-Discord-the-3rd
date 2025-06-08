@@ -37,6 +37,7 @@ extern char tsourdt3rd_savefiles_folder[256];
 
 char *TSoURDt3rd_M_RemoveStringChars(char *string, const char *c);
 INT32 TSoURDt3rd_M_FindWordInTermTable(const char *const *term_table, const char *word, INT32 search_types);
+char *TSoURDt3rd_M_WriteVariedLengthString(char *string, boolean decatenate);
 
 const char *TSoURDt3rd_FOL_ReturnHomepath(void);
 boolean TSoURDt3rd_FOL_DirectoryExists(const char *directory);

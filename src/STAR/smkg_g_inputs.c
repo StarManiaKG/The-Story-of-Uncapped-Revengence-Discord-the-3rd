@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -42,14 +42,9 @@ void STAR_G_KeyResponder(UINT8 player, UINT8 key)
 	// Check game inputs.
 	for (INT32 i = 0; i < 2; i++)
 	{
-		if (!gamekeydown[urGameControl[key][i]])
-		{
-			game_key->pressed = false;
-			continue;
-		}
-
-		game_key->pressed = true;
-		break;
+		game_key->pressed = gamekeydown[urGameControl[key][i]];
+		if (game_key->pressed)
+			break;
 	}
 
 	if (!game_key->pressed)
@@ -189,6 +184,7 @@ void TSoURDt3rd_G_DefineDefaultControls(void)
 		gamecontroldefault   [i][JB_DECREASEMUSICPITCH ][0] = '[';
 		gamecontroldefault   [i][JB_PLAYMOSTRECENTTRACK][0] = 'l';
 		gamecontroldefault   [i][JB_STOPJUKEBOX        ][0] = 'k';
+
 		gamecontrolbisdefault[i][JB_OPENJUKEBOX        ][0] = 'j';
 		gamecontrolbisdefault[i][JB_INCREASEMUSICSPEED ][0] = '=';
 		gamecontrolbisdefault[i][JB_DECREASEMUSICSPEED ][0] = '-';

@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2020-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2020-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -15,7 +15,6 @@
 //        Variables
 // ------------------------ //
 
-static boolean checked_readme_text = false;
 static fixed_t cur_readme_y = 12<<FRACBITS;
 static fixed_t min_readme_y = 12<<FRACBITS;
 static fixed_t max_readme_y = -(24<<FRACBITS); // set when the menu first loads
@@ -114,6 +113,8 @@ tsourdt3rd_menu_t TSoURDt3rd_TM_OP_ReadMEDef = {
 
 static void M_Sys_InitReadME(void)
 {
+	static boolean checked_readme_text = false;
+
 	if (checked_readme_text)
 	{
 		// We've already done everything necessary.
@@ -144,17 +145,10 @@ static void M_Sys_DrawReadME(void)
 	fixed_t y = cur_readme_y;
 	INT32 up_flags = 0, down_flags = 0;
 
-	V_DrawFadeScreen(0xFF00, 16); // I wanted a cool fade effect here
+	V_DrawFadeScreen(0xFF00, 16); // I wanted a cool fade effect here!
 
-	if (cur_readme_y < min_readme_y)
-		up_flags |= V_MENUCOLORMAP;
-	else
-		up_flags |= V_80TRANS;
-
-	if (cur_readme_y > max_readme_y)
-		down_flags |= V_MENUCOLORMAP;
-	else
-		down_flags |= V_80TRANS;
+	up_flags |= ((cur_readme_y < min_readme_y) ? V_MENUCOLORMAP : V_80TRANS);
+	down_flags |= ((cur_readme_y > min_readme_y) ? V_MENUCOLORMAP : V_80TRANS);
 
 	for (UINT16 i = 0; TSoURDt3rd_credits[i]; i++)
 	{

@@ -598,7 +598,8 @@ static void D_Display(void)
 		V_DrawCenteredString(BASEVIDWIDTH/2, y - (4), V_MENUCOLORMAP, "Game Paused");
 #endif
 #else
-		TSoURDt3rd_M_DrawPauseGraphic(); // STAR STUFF: draw the pause graphic for me please //
+		// STAR STUFF: draw the pause graphic for me please //
+		TSoURDt3rd_M_DrawPauseGraphic();
 #endif
 	}
 
@@ -706,8 +707,6 @@ static void D_Display(void)
 		I_FinishUpdate(); // page flip or blit buffer
 		PS_STOP_TIMING(ps_swaptime);
 	}
-
-	TSoURDt3rd_D_Display(); // STAR STUFF: run our display manager now :p //
 }
 
 // =========================================================================
@@ -772,7 +771,8 @@ void D_SRB2Loop(void)
 #if 0
 		gstartuplumpnum = W_CheckNumForPatchName("STARTUP");
 #else
-		gstartuplumpnum = W_CheckNumForName(TSoURDt3rd_CON_DrawStartupScreen()); // STAR STUFF: hooray for graphic diversity! //
+		// STAR STUFF: hooray for graphic diversity! //
+		gstartuplumpnum = W_CheckNumForName(TSoURDt3rd_CON_DrawStartupScreen());
 #endif
 		if (gstartuplumpnum == LUMPERROR)
 			gstartuplumpnum = W_GetNumForName("MISSING");
@@ -879,7 +879,7 @@ void D_SRB2Loop(void)
 
 			renderdeltatics = FLOAT_TO_FIXED(deltatics);
 
-			if (!(paused || P_AutoPause()) && deltatics < 1.0 && !hu_stopped)
+			if (!(paused /*|| P_AutoPause()*/) && deltatics < 1.0 && !hu_stopped)
 			{
 				rendertimefrac = g_time.timefrac;
 			}
@@ -916,14 +916,9 @@ void D_SRB2Loop(void)
 
 		LUA_Step();
 
-#ifdef HAVE_DISCORDRPC
-		if (! dedicated)
-		{
-			Discord_RunCallbacks();
-#ifdef DISCORD_DISABLE_IO_THREAD
-			Discord_UpdateConnection();
-#endif
-		}
+#if 1
+		// STAR STUFF: run our game loop manager now :p //
+		TSoURDt3rd_D_Loop(&interp);
 #endif
 
 		// Fully completed frame made.
@@ -1811,7 +1806,7 @@ void D_SRB2Main(void)
 	CON_ToggleOff();
 
 #ifdef HAVE_DISCORDSUPPORT
-	DRPC_Init();
+	DISC_Init();
 #endif
 
 	if (dedicated && server)

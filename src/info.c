@@ -21853,9 +21853,11 @@ void P_PatchInfoTables(void)
 #endif
 	}
 
+#if 1
 	/* STAR STUFF: Doing our stuff can cause weird mess to happen.
  		Therefore, let's just set 'i' to NUMSPRITES, please, and we're done! :) */
 	i = NUMSPRITES;
+#endif
 
 	sprnames[i][0] = '\0'; // i == NUMSPRITES
 	memset(&states[S_FIRSTFREESLOT], 0, sizeof (state_t) * NUMSTATEFREESLOTS);

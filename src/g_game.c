@@ -55,12 +55,9 @@
 #ifdef HAVE_DISCORDSUPPORT
 #include "discord/discord.h"
 #endif
-#ifdef HAVE_DISCORDGAMESDK
-#include "discord/discord_gamesdk.h"
-#endif
 #include "STAR/star_vars.h" // TSoURDt3rd Struct, STAR_SetWindowTitle(), & TSoURDt3rd_DetermineLevelMusic() //
 #include "STAR/smkg-misc.h" // TSoURDt3rd_FOL_UpdateSavefileDirectory() //
-#include "STAR/smkg-p_saveg.h" // savedata functions //
+#include "STAR/smkg-p_saveg.h" // Savedata Handling //
 
 gameaction_t gameaction;
 gamestate_t gamestate = GS_NULL;
@@ -3324,7 +3321,7 @@ void G_DoReborn(INT32 playernum)
 	}
 
 #ifdef HAVE_DISCORDSUPPORT
-	DRPC_UpdatePresence();
+	DISC_UpdatePresence();
 #endif
 }
 
@@ -3375,9 +3372,12 @@ void G_AddPlayer(INT32 playernum)
 		P_DoPlayerExit(p);
 
 #ifdef HAVE_DISCORDSUPPORT
-	DRPC_UpdatePresence();
+	DISC_UpdatePresence();
 #endif
-	TSoURDt3rd_InitializePlayer(playernum); // STAR STUFF: add our new player to the roster :P //
+#if 1
+	// STAR STUFF: add our new player to the roster :P //
+	TSoURDt3rd_InitializePlayer(playernum);
+#endif
 }
 
 boolean G_EnoughPlayersFinished(void)
@@ -5493,7 +5493,7 @@ void G_SetGamestate(gamestate_t newstate)
 	STAR_SetWindowTitle();
 #endif
 #ifdef HAVE_DISCORDSUPPORT
-	DRPC_UpdatePresence();
+	DISC_UpdatePresence();
 #endif
 }
 

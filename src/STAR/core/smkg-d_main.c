@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2020-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2020-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -24,6 +24,10 @@
 
 static addfilelist_t autoload_startupwadfiles;
 
+// ------------------------ //
+//        Functions
+// ------------------------ //
+
 #define REALLOC_FILE_LIST \
 	if (list->files == NULL) \
 	{ \
@@ -37,10 +41,6 @@ static addfilelist_t autoload_startupwadfiles;
 		if (list->files == NULL) \
 			I_Error("%s: No more free memory to add file %s", __FUNCTION__, file); \
 	}
-
-// ------------------------ //
-//        Functions
-// ------------------------ //
 
 //
 // static void D_AddAddonsToAutoLoad(addfilelist_t *list, const char *file)

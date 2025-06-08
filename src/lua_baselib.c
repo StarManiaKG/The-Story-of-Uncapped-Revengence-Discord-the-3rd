@@ -39,7 +39,7 @@
 #include "lua_hook.h" // hook_cmd_running errors
 
 // TSoURDt3rd
-#include "STAR/smkg-jukebox.h" // tsourdt3rd_global_jukebox //
+#include "STAR/smkg-jukebox.h" // TSoURDt3rd_Jukebox_IsPlaying() //
 
 #define NOHUD if (hud_running)\
 return luaL_error(L, "HUD rendering code should not call this function!");\
@@ -3228,7 +3228,7 @@ static int lib_sSpeedMusic(lua_State *L)
 	}
 
 	// STAR STUFF: DON'T INTERUPT OUR MUSIC PLEASE :) //
-	if (tsourdt3rd_global_jukebox->playing)
+	if (TSoURDt3rd_Jukebox_IsPlaying())
 		return 0;
 	// DONE! //
 
@@ -4535,6 +4535,7 @@ static luaL_Reg lib[] = {
 	{"P_DoSuperDetransformation",lib_pDoSuperDetransformation},
 	// GOOD? GOOD. //
 #endif
+
 	{NULL, NULL}
 };
 

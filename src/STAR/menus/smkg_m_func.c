@@ -222,7 +222,7 @@ static void M_ReinitializeDynamicQuitMessages(void)
 
 	tsourdt3rd_quitmsgs[TSOURDT3RD_DYN_QUITSMSG2] = va(M_GetText("Wait, \x82%s\x80!\nCome back! I need you!\n\n(Press 'Y' to quit)"), TSoURDt3rd_ReturnUsername());
 
-	if (tsourdt3rd_global_jukebox->playing)
+	if (TSoURDt3rd_Jukebox_IsPlaying())
 		tsourdt3rd_quitmsgs[TSOURDT3RD_DYN_QUITSMSG3] = va(M_GetText("Come back!\nFinish listening to\n\x82%s\x80!\n\n(Press 'Y' to quit)"), tsourdt3rd_global_jukebox->curtrack->title);
 	else
 		tsourdt3rd_quitmsgs[TSOURDT3RD_DYN_QUITSMSG3] = M_GetText("Come back!\nYou have more jukebox music to play!\n\n(Press 'Y' to quit)");
@@ -564,7 +564,7 @@ void TSoURDt3rd_M_UpdateMenuCMD(UINT8 i)
 	if (thisGameKey == GC_RECORDGIF) { menucmd[i].buttons |= MBT_STARTMOVIE; }
 	//if (thisGameKey == GC_RECORDLOSSLESS) { menucmd[i].buttons |= MBT_STARTLOSSLESS; }
 
-	if (TSoURDt3rd_M_DoesMenuHaveKeyHandler() == -1)
+	if (TSoURDt3rd_M_DoesMenuHaveKeyHandler() == -1 && tsourdt3rd_global_jukebox)
 	{
 		if (thisGameKey == JB_OPENJUKEBOX || STAR_G_KeyPressed(0, JB_OPENJUKEBOX))
 		{
@@ -590,59 +590,28 @@ void TSoURDt3rd_M_UpdateMenuCMD(UINT8 i)
 		if (thisGameKey == JB_INCREASEMUSICPITCH || STAR_G_KeyPressed(0, JB_INCREASEMUSICPITCH))
 		{
 			// Increase the pitch of the jukebox track
-			if (S_GetPitchMusic() > 0.0f)
-				TSoURDt3rd_M_ChangeCvarDirect(-1, (1)*(1.0f/16.0f), &cv_tsourdt3rd_jukebox_pitch);
-			else
+			if (TSoURDt3rd_Jukebox_IsPlaying() && (S_GetPitchMusic() < 0.0f))
 				S_StartSound(NULL, sfx_lose);
+			else
+				TSoURDt3rd_M_ChangeCvarDirect(-1, (1)*(1.0f/16.0f), &cv_tsourdt3rd_jukebox_pitch);
 		}
 		if (thisGameKey == JB_DECREASEMUSICPITCH || STAR_G_KeyPressed(0, JB_DECREASEMUSICPITCH))
 		{
 			// Decrease the pitch of the jukebox track
-			if (S_GetPitchMusic() > 0.0f)
-				TSoURDt3rd_M_ChangeCvarDirect(-1, (-1)*(1.0f/16.0f), &cv_tsourdt3rd_jukebox_pitch);
-			else
+			if (TSoURDt3rd_Jukebox_IsPlaying() && (S_GetPitchMusic() < 0.0f))
 				S_StartSound(NULL, sfx_lose);
+			else
+				TSoURDt3rd_M_ChangeCvarDirect(-1, (-1)*(1.0f/16.0f), &cv_tsourdt3rd_jukebox_pitch);
 		}
 		if (thisGameKey == JB_PLAYMOSTRECENTTRACK || STAR_G_KeyPressed(0, JB_PLAYMOSTRECENTTRACK))
 		{
 			// Replay the most recent jukebox track
-			if (!tsourdt3rd_global_jukebox->prevtrack)
-			{
-				STAR_CONS_Printf(STAR_CONS_JUKEBOX, "You haven't recently played a track!\n");
-				S_StartSound(NULL, sfx_lose);
-			}
-			else if (tsourdt3rd_global_jukebox->playing)
-			{
-				STAR_CONS_Printf(STAR_CONS_JUKEBOX, "There's already a track playing!\n");
-				S_StartSound(NULL, sfx_lose);
-			}
-			else if (!TSoURDt3rd_Jukebox_Unlocked())
-			{
-				TSoURDt3rd_M_StartMessage(
-					"TSoURDt3rd Jukebox",
-					M_GetText("You haven't unlocked this yet!\nGo and unlock the sound test first!\n"),
-					NULL,
-					MM_NOTHING,
-					NULL,
-					NULL
-				);
-				S_StartSound(NULL, sfx_lose);
-			}
-			else
-			{
-				if (TSoURDt3rd_AprilFools_ModeEnabled())
-					tsourdt3rd_global_jukebox->prevtrack = &tsourdt3rd_aprilfools_def;
-				tsourdt3rd_global_jukebox->curtrack = tsourdt3rd_global_jukebox->prevtrack;
-				S_ChangeMusicInternal(tsourdt3rd_global_jukebox->prevtrack->name, !tsourdt3rd_global_jukebox->prevtrack->stoppingtics);
-				STAR_CONS_Printf(STAR_CONS_JUKEBOX, M_GetText("Loaded track \x82%s\x80.\n"), tsourdt3rd_global_jukebox->prevtrack->title);
-				tsourdt3rd_global_jukebox->playing = true;
-				TSoURDt3rd_ControlMusicEffects();
-			}
+			TSoURDt3rd_Jukebox_Play(NULL);
 		}
 		if (thisGameKey == JB_STOPJUKEBOX || STAR_G_KeyPressed(0, JB_STOPJUKEBOX))
 		{
 			// Stop and reset the jukebox
-			if (!tsourdt3rd_global_jukebox->playing)
+			if (!TSoURDt3rd_Jukebox_IsPlaying())
 			{
 				STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Nothing is currently playing in the jukebox!\n");
 				S_StartSound(NULL, sfx_lose);
@@ -758,18 +727,22 @@ boolean TSoURDt3rd_M_Responder(INT32 *ch, event_t *ev)
 		{
 			case KEY_UPARROW:
 			case KEY_HAT1:
+			case KEY_JOY1 + 11:
 				gameKey = GC_FORWARD;
 				break;
 			case KEY_DOWNARROW:
 			case KEY_HAT1 + 1:
+			case KEY_JOY1 + 12:
 				gameKey = GC_BACKWARD;
 				break;
 			case KEY_LEFTARROW:
 			case KEY_HAT1 + 2:
+			case KEY_JOY1 + 13:
 				gameKey = GC_STRAFELEFT;
 				break;
 			case KEY_RIGHTARROW:
 			case KEY_HAT1 + 3:
+			case KEY_JOY1 + 14:
 				gameKey = GC_STRAFERIGHT;
 				break;
 			case KEY_ENTER:
@@ -907,7 +880,7 @@ void TSoURDt3rd_M_PlayMenuJam(void)
 	tsourdt3rd_menu_t *refMenu = (menuactive ? tsourdt3rd_currentMenu : tsourdt3rd_currentMenu->prev_menu);
 	const boolean profilemode = (optionsmenu.profilemenu && !optionsmenu.resetprofilemenu);
 
-	if (tsourdt3rd_currentMenu == NULL || tsourdt3rd_global_jukebox->playing)
+	if (tsourdt3rd_currentMenu == NULL || TSoURDt3rd_Jukebox_IsPlaying())
 		return;
 
 	if (!profilemode && Playing())
@@ -1102,12 +1075,16 @@ void TSoURDt3rd_M_ChangeCvarDirect(INT32 amount, float amount_f, consvar_t *cv)
 static void M_ChangeCvar(INT32 choice)
 {
 	consvar_t *cvar = currentMenu->menuitems[tsourdt3rd_itemOn].itemaction;
+	if (cvar == NULL)
+		cvar = tsourdt3rd_currentMenu->menuitems[tsourdt3rd_itemOn].itemaction.cvar;
 	TSoURDt3rd_M_ChangeCvar(choice, cvar);
 }
 
 static const char *M_QueryCvarAction(const char *replace)
 {
 	consvar_t *cvar = (consvar_t *)currentMenu->menuitems[tsourdt3rd_itemOn].itemaction;
+	if (cvar == NULL)
+		cvar = tsourdt3rd_currentMenu->menuitems[tsourdt3rd_itemOn].itemaction.cvar;
 	if (replace)
 		CV_Set(cvar, replace);
 	return cvar->string;

@@ -3889,7 +3889,7 @@ boolean F_ContinueResponder(event_t *event)
 	S_StartSound(NULL, sfx_kc6b);
 
 	// STAR NOTE: don't fade music if we're playing music in the jukebox :p //
-	if (!tsourdt3rd_global_jukebox->playing)
+	if (!TSoURDt3rd_Jukebox_IsPlaying())
 		I_FadeSong(0, MUSICRATE, &S_StopMusic);
 
 	return true;

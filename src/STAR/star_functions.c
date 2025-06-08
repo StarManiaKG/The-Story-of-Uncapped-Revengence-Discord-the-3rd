@@ -32,7 +32,6 @@
 
 #include "../filesrch.h"		// file variables
 #include "../r_skins.h"			// skin variables
-#include "../sounds.h"			// sound variables
 #include "../deh_tables.h"		// sprite/table variables
 #include "../m_random.h"		// m_random functions
 #include "../z_zone.h"			// memory variables
@@ -57,65 +56,6 @@
 //// STRUCTS ////
 TSoURDt3rd_t TSoURDt3rdPlayers[MAXPLAYERS];
 
-TSoURDt3rdBossMusic_t bossMusic[] = {
-	[1] = {"_s1b",	NULL, 		0},	// Sonic 1
-	{"_scdb", 		NULL, 		0},	// Sonic CD
-	{"_s2b", 		NULL, 		0},	// Sonic 2
-	{"_s3b1", 		NULL, 		0},	// Sonic 3
-	{"_&kb", 		NULL, 		0},	// & Knuckles
-	{"_s3kb", 		NULL, 		0},	// Sonic 3 & Knuckles
-
-	{"_a2b", 	 "_a2bp", 		0},	// Sonic Advance 2 - R
-	{"_a27b", 	"_a27bp", 		0},	// Sonic Advance 2 - Z7
-	{"_a3b", 	 "_a3bp", 		0},	// Sonic Advance 3 - R
-	{"_a37b", 	"_a37bp", 		0},	// Sonic Advance 3 - Z7
-	{"_rms", 	 "_rmsp", 		0},	// Sonic Rush - MS
-	{"_rvn", 	 "_rvnp", 		0},	// Sonic Rush - VN
-	{"_rab", 	 	NULL,	 5500},	// Rush Adventure - R
-	{"_ra7b", 	 	NULL, 		0},	// Rush Adventure - Z7
-
-	{"_smrd", 		NULL, 		0},	// Sonic Mania: RD
-	{"_smhp", 		NULL, 		0},	// Sonic Mania: HP
-	{"_smhbh", 		NULL, 		0}	// Sonic Mania: HBH
-};
-
-TSoURDt3rdFinalBossMusic_t finalBossMusic[] = {
-	[1] = {"_s1fb",	NULL,	   	  NULL,		   NULL},	// Sonic 1
-	{"_scdfb",	  	NULL,		  NULL,    	   NULL},	// Sonic CD
-	{"_s2fb",	  	NULL,	   	  NULL,    	   NULL},	// Sonic 2
-	{"_s3kfb",	  	NULL,	   "_&kdz",	 	   NULL},	// Sonic 3&K
-
-	{"_a2fb",	"_a2fbp",	"	_a253",    	   NULL},	// Sonic Advance 2
-	{"_a3fb",   "_a3fbp",  	   "_a3eb",    "_a3ebp"},	// Sonic Advance 3
-	{"_rbb", 	 "_rbbp",      "_rwib",    "_rwibp"},	// Sonic Rush
-	{"_rafb", 	"_rafbp",      "_radc",    "_radcp"},	// Rush Adventure
-
-	{"_smri",	  	NULL,	   "_smer",    "_smerp"}	// Sonic Mania
-};
-
-static TSoURDt3rdActClearMusic_t actClearMusic[] = {
-	[1] = {"_s12ac",NULL,	  	NULL, 	   	   NULL},	// Sonic 1&2
-	{"_scdac", 	   	NULL,	  	NULL,		   NULL},	// Sonic CD
-	{"_s3kac",	   	NULL,    "_s3fc",		"_&kfc"},	// Sonic 3&K
-
-	{"_a2ac",	 "_a2bc",	"_a2fbc",	   "_a2tfb"},	// Sonic Advance 2
-	{"_a3ac",	 "_a3bc",	"_a3fbc",	   "_a3tfb"},	// Sonic Advance 3
-	{"_rac",	  "_rbc",    "_rfbc",      "_rtfbc"},	// Sonic Rush
-	{"_raac",	 "_rabc",   "_rafbc",      "_ratfb"},	// Rush Adventure
-
-	{"_smac",	   	NULL,	  	NULL,		   NULL},	// Sonic Mania
-
-	{"_btsac",	   	NULL, 	  	NULL,		   NULL}	// Sonic BTS (Before the Sequel)
-};
-
-TSoURDt3rdDefaultMusicTracks_t defaultMusicTracks[] = {
-	[1] = {"gfz1"},	// GFZ1
-	{"_runin"}		// DooM Wad Anthem
-};
-
-TSoURDt3rdBossMusic_t *curBossMusic = NULL;
-TSoURDt3rdFinalBossMusic_t *curFinaleBossMusic = NULL;
-
 //// FUNCTIONS ////
 // GAME //
 //
@@ -131,7 +71,7 @@ void STAR_LoadingScreen(void)
 	static const char *loadingscreenlumpnumtype[] = {
 		[2] = "SRB2BACK",	// SRB2 Titlecard Background
 		"DFTL",
-		
+
 		"GFZL",
 		"THZL",
 		"DSZL",
@@ -186,12 +126,12 @@ void STAR_LoadingScreen(void)
 						case 1:
 						case 2:
 						case 3: tsourdt3rd_loadingscreen.screenToUse = 4; break;
-						
+
 						// THZ
 						case 4:
 						case 5:
 						case 6: tsourdt3rd_loadingscreen.screenToUse = 5; break;
-			
+
 						// DSZ
 						case 7:
 						case 8:
@@ -227,7 +167,7 @@ void STAR_LoadingScreen(void)
 
 						// FFZ
 						case 32: tsourdt3rd_loadingscreen.screenToUse = 14; break;
-			
+
 						// TLZ
 						case 33: tsourdt3rd_loadingscreen.screenToUse = 15; break;
 
@@ -345,7 +285,7 @@ const char *STAR_SetWindowTitle(void)
 	// Configure the Window Title //
 	// Default Title
 	if (!cv_tsourdt3rd_game_sdl_windowtitle_type.value)
-		windowtitle = ("SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING);
+		windowtitle = ("SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING);
 
 	// Others
 	else
@@ -573,20 +513,20 @@ const char *STAR_SetWindowTitle(void)
 				{
 					if (gamestate == GS_NULL || (gamestate == GS_TITLESCREEN || titlemapinaction))
 					{
-						STAR_RenameWindow("SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING);
-						return ("SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING);
+						STAR_RenameWindow("SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING);
+						return ("SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING);
 					}
 
 					break;
 				}
 			}
 
-			windowtitle = va("%s SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING, dynamictitle);
+			windowtitle = va("%s SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING, dynamictitle);
 		}
 
 		// Semi-Custom Titles
 		else if (cv_tsourdt3rd_game_sdl_windowtitle_type.value == 2)
-			windowtitle = va("%s SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING, cv_tsourdt3rd_game_sdl_windowtitle_custom.string);
+			windowtitle = va("%s SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING, cv_tsourdt3rd_game_sdl_windowtitle_custom.string);
 
 		// Fully Custom Titles
 		else
@@ -616,197 +556,11 @@ generalgametitles:
 		dynamictitle = va("%s as %s Through %s %s -", (cv_tsourdt3rd_game_sdl_windowtitle_memes.value ? "D_RUNNIN" : "Running"), skins[players[consoleplayer].skin].realname, mapheaderinfo[gamemap-1]->lvlttl, ((mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE) ? "" : "Zone"));
 
 	// Now That We've Set Our Things, Let's Return our Window Title, and We're Done :)
-	windowtitle = va("%s SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING, dynamictitle);
+	windowtitle = va("%s SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING, dynamictitle);
 
 	STAR_RenameWindow(windowtitle);
 	return windowtitle;
 }
-
-// AUDIO //
-//
-// void TSoURDt3rd_ControlMusicEffects(void)
-// Controls the Effects of the Currently Playing Music, Based on Factors like Vape Mode
-//
-void TSoURDt3rd_ControlMusicEffects(void)
-{
-	if (tsourdt3rd_global_jukebox->curtrack || tsourdt3rd_global_jukebox->playing)
-	{
-		S_SpeedMusic(atof(cv_tsourdt3rd_jukebox_speed.string));
-		S_PitchMusic(atof(cv_tsourdt3rd_jukebox_pitch.string));
-		return;
-	}
-
-	switch (cv_tsourdt3rd_audio_vapemode.value)
-	{
-		case 1:
-			S_SpeedMusic(0.9f);
-			S_PitchMusic(0.9f);
-			break;
-		case 2:
-			S_SpeedMusic(0.75f);
-			S_PitchMusic(0.5f);
-			break;
-		default:
-			S_SpeedMusic(1.0f);
-			S_PitchMusic(1.0f);
-			break;
-	}
-}
-
-//
-// const char *TSoURDt3rd_DetermineLevelMusic(void)
-// Determines and Returns What Music Should be Played on the Current Stage
-//
-#define MUSICEXISTS(music) (music && S_MusicExists(music, !midi_disabled, !digital_disabled))
-
-const char *TSoURDt3rd_DetermineLevelMusic(void)
-{
-	mobj_t *mobj = TSoURDt3rd_BossInMap();
-
-	boolean pinchPhase = ((mobj && mobj->health <= (mobj->info->damage ? mobj->info->damage : 3)) && cv_tsourdt3rd_audio_bosses_pinch.value);
-	boolean allEmeralds = (emeralds == 127);
-
-	boolean bossMap = (mobj && (mapheaderinfo[gamemap-1]->bonustype == 1 || (mapheaderinfo[gamemap-1]->levelflags & LF_WARNINGTITLE))); // Boss BonusType or Warning Title
-	boolean finalBossMap = (mobj && ((mapheaderinfo[gamemap-1]->bonustype == 2 || mapheaderinfo[gamemap-1]->typeoflevel & TOL_ERZ3 || (mapheaderinfo[gamemap-1]->levelflags & LF_WARNINGTITLE)) // ERZ3 BonusType, ERZ3 TypeOfLevel, or Warning Title
-		&& ((mapheaderinfo[gamemap-1]->nextlevel == 1101) // Evaluation
-			|| (mapheaderinfo[gamemap-1]->nextlevel == 1102) // Credits
-			|| (mapheaderinfo[gamemap-1]->nextlevel == 1103)))); // Ending
-	boolean trueFinalBossMap = (finalBossMap && allEmeralds);
-
-	// Conflicting music //
-	// Event music //
-	if (TSoURDt3rd_AprilFools_ModeEnabled())
-		return "_hehe";
-
-	// Gamestate-based music //
-	switch (gamestate)
-	{
-		case GS_INTERMISSION:
-		{
-			if (!cv_tsourdt3rd_audio_clearing_act.value || (cv_tsourdt3rd_audio_clearing_act.value && !actClearMusic[cv_tsourdt3rd_audio_clearing_act.value].actClear))
-				return (MUSICEXISTS(mapheaderinfo[gamemap-1]->musintername) ? mapheaderinfo[gamemap-1]->musintername : "_clear");
-
-			if (!cv_tsourdt3rd_audio_clearing_boss.value)
-				return actClearMusic[cv_tsourdt3rd_audio_clearing_act.value].actClear;
-
-			if (trueFinalBossMap && actClearMusic[cv_tsourdt3rd_audio_clearing_act.value].trueFinalBossClear)
-				return actClearMusic[cv_tsourdt3rd_audio_clearing_act.value].trueFinalBossClear;
-			else if (finalBossMap && actClearMusic[cv_tsourdt3rd_audio_clearing_act.value].finalBossClear)
-				return actClearMusic[cv_tsourdt3rd_audio_clearing_act.value].finalBossClear;
-			else if (bossMap && actClearMusic[cv_tsourdt3rd_audio_clearing_act.value].bossClear)
-				return actClearMusic[cv_tsourdt3rd_audio_clearing_act.value].bossClear;
-
-			return actClearMusic[cv_tsourdt3rd_audio_clearing_act.value].actClear;
-		}
-
-		case GS_EVALUATION:
-		case GS_GAMEEND:
-		{
-			if (!cv_tsourdt3rd_audio_clearing_act.value)
-				break;
-
-			if (allEmeralds && actClearMusic[cv_tsourdt3rd_audio_clearing_act.value].trueFinalBossClear)
-				return actClearMusic[cv_tsourdt3rd_audio_clearing_act.value].trueFinalBossClear;
-			else if (actClearMusic[cv_tsourdt3rd_audio_clearing_act.value].finalBossClear)
-				return actClearMusic[cv_tsourdt3rd_audio_clearing_act.value].finalBossClear;
-
-			break;
-		}
-
-		case GS_LEVEL:
-		default:
-		{
-			if ((mobj && mobj->health <= 0)
-				&& (cv_tsourdt3rd_audio_bosses_postboss.value && MUSICEXISTS(mapheaderinfo[gamemap-1]->muspostbossname)))
-			{
-				return mapheaderinfo[gamemap-1]->muspostbossname;
-			}
-			else if (finalBossMap)
-			{
-				if (!cv_tsourdt3rd_audio_bosses_finalboss.value)
-					break;
-
-				if (pinchPhase)
-				{
-					curFinaleBossMusic = &finalBossMusic[cv_tsourdt3rd_audio_bosses_finalboss.value];
-
-					if ((trueFinalBossMap && cv_tsourdt3rd_audio_bosses_truefinalboss.value)
-						&& finalBossMusic[cv_tsourdt3rd_audio_bosses_finalboss.value].trueFinalBossPinchMusic)
-
-						return finalBossMusic[cv_tsourdt3rd_audio_bosses_finalboss.value].trueFinalBossPinchMusic;
-					else if (finalBossMusic[cv_tsourdt3rd_audio_bosses_finalboss.value].finalBossPinchMusic)
-						return finalBossMusic[cv_tsourdt3rd_audio_bosses_finalboss.value].finalBossPinchMusic;
-				}
-
-				if ((trueFinalBossMap && cv_tsourdt3rd_audio_bosses_truefinalboss.value)
-					&& finalBossMusic[cv_tsourdt3rd_audio_bosses_finalboss.value].trueFinalBossMusic)
-
-					return finalBossMusic[cv_tsourdt3rd_audio_bosses_finalboss.value].trueFinalBossMusic;
-				else if (finalBossMusic[cv_tsourdt3rd_audio_bosses_finalboss.value].finalBossMusic)
-					return finalBossMusic[cv_tsourdt3rd_audio_bosses_finalboss.value].finalBossMusic;
-			}
-			else if (bossMap)
-			{
-				if (!cv_tsourdt3rd_audio_bosses_bossmusic.value)
-					break;
-
-				if (pinchPhase)
-				{
-					curBossMusic = &bossMusic[cv_tsourdt3rd_audio_bosses_bossmusic.value];
-
-					if (bossMusic[cv_tsourdt3rd_audio_bosses_bossmusic.value].bossPinchMusic)
-						return bossMusic[cv_tsourdt3rd_audio_bosses_bossmusic.value].bossPinchMusic;
-				}
-
-				if (bossMusic[cv_tsourdt3rd_audio_bosses_bossmusic.value].bossMusic)
-					return bossMusic[cv_tsourdt3rd_audio_bosses_bossmusic.value].bossMusic;
-			}
-
-			break;
-		}
-	}	
-
-	// Made it here? Play the map's default track, and we're done :) //
-	if (gamestate == GS_TITLESCREEN || titlemapinaction)
-	{
-		if (MUSICEXISTS(mapheaderinfo[gamemap-1]->musname))
-			return mapheaderinfo[gamemap-1]->musname;
-		if (MUSICEXISTS("_title"))
-			return "_title";
-		return mapmusname;
-	}
-
-	if (RESETMUSIC || strnicmp(S_MusicName(),
-		((mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname), 7))
-		return ((mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname);
-	else
-		return mapheaderinfo[gamemap-1]->musname;
-
-#if 0
-	if (strnicmp(TSoURDt3rd_DetermineLevelMusic(), S_MusicName(), 7))
-		return mapmusname;
-#endif
-	return ((!mapmusname[0] || !strnicmp(mapmusname, S_MusicName(), 7)) ? mapheaderinfo[gamemap-1]->musname : mapmusname);
-}
-
-UINT32 TSoURDt3rd_PinchMusicPosition(void)
-{
-	if (!curBossMusic || !curBossMusic->pinchMusicPos)
-		return mapmusposition;
-	return curBossMusic->pinchMusicPos;
-}
-
-boolean TSoURDt3rd_SetPinchMusicSpeed(void)
-{
-	if (curBossMusic && !curBossMusic->bossPinchMusic)
-		return true;
-	if (curFinaleBossMusic && !curFinaleBossMusic->finalBossPinchMusic && !curFinaleBossMusic->trueFinalBossPinchMusic)
-		return true;
-	return false;
-}
-
-
-#undef MUSICEXISTS
 
 // FILES //
 
@@ -978,7 +732,7 @@ INT32 STAR_ConvertStringToCompressedNumber(char *STRING, INT32 startIFrom, INT32
 
 	// Add an Extra Digit or Two if Our String Has Less Than 2 Digits, Else Return Our Compressed Number, and We're Done! //
 	finalNumber = ((turnIntoVersionNumber && strlen(convertedString) <= 2) ?
-					(strlen(convertedString) == 2 ? 
+					(strlen(convertedString) == 2 ?
 						(STAR_CombineNumbers(2, atoi(convertedString), 0)) :
 						(STAR_CombineNumbers(3, atoi(convertedString), 0, 0))) :
 					(atoi(convertedString)));

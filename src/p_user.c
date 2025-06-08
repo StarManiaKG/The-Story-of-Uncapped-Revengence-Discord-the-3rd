@@ -1568,7 +1568,7 @@ void P_PlayLivesJingle(player_t *player)
 		return;
 
 	// STAR STUFF: play a sound for lives when jukeboxing //
-	if (tsourdt3rd_global_jukebox->playing)
+	if (TSoURDt3rd_Jukebox_IsPlaying())
 		use1upSound = true;
 	// WE'RE PREPARED NOW! //
 
@@ -1617,7 +1617,7 @@ void P_PlayJingleMusic(player_t *player, const char *musname, UINT16 musflags, b
 		return;
 
 	// STAR STUFF: don't play jingles if we got jukebox or april fools music //
-	if (tsourdt3rd_global_jukebox->playing)
+	if (TSoURDt3rd_Jukebox_IsPlaying())
 		return;
 	if (TSoURDt3rd_AprilFools_ModeEnabled())
 		return;
@@ -1745,7 +1745,7 @@ void P_RestoreMusic(player_t *player)
 		S_StartCaption(sfx_None, -1, player->powers[pw_sneakers]);
 		if (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC)
 		{
-			if (!tsourdt3rd_global_jukebox->playing) // STAR STUFF: maybe don't speed music while jukeboxing please... //
+			if (!TSoURDt3rd_Jukebox_IsPlaying()) // STAR STUFF: maybe don't speed music while jukeboxing please... //
 				S_SpeedMusic(1.4f);
 			if (!S_RecallMusic(JT_MASTER, true))
 				S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
@@ -11955,7 +11955,7 @@ void P_PlayerThink(player_t *player)
 		{
 			LUA_HookPlayer(player, HOOK(PlayerThink));
 #ifdef HAVE_DISCORDSUPPORT
-			DRPC_UpdatePresence();
+			DISC_UpdatePresence();
 #endif
 			return; // player->mo was removed.
 		}

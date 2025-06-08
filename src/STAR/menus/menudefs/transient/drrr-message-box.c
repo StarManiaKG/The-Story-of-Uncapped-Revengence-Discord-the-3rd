@@ -246,7 +246,7 @@ void TSoURDt3rd_M_DrawMenuMessage(void)
 			push = ((menumessage.timer % (anim_duration * 2)) < anim_duration);
 		}
 
-		workx -= V_ThinStringWidth(menumessage.defaultstr, 0);
+		workx -= V_ThinStringWidth(menumessage.defaultstr, V_ALLOWLOWERCASE);
 		V_DrawThinString(
 			workx, worky + 1,
 			((push && (menumessage.closing & MENUMESSAGECLOSE))
@@ -353,7 +353,7 @@ void TSoURDt3rd_M_DrawMenuMessage(void)
 			}
 		}
 
-		V_DrawString((BASEVIDWIDTH - V_StringWidth(string, 0))/2, y, V_ALLOWLOWERCASE, string);
+		V_DrawString((BASEVIDWIDTH - V_StringWidth(string, V_ALLOWLOWERCASE))/2, y, V_ALLOWLOWERCASE, string);
 		y += 8;
 	}
 }

@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2020-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2020-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -25,8 +25,8 @@ menuitem_t TSoURDt3rd_OP_GameMenu[] =
 {
 	{IT_STRING | IT_CALL, NULL, "Check for Updates...",
 		G_CheckForTSoURDt3rdUpdates, 0},
-	{IT_STRING | IT_CVAR, NULL,	"Check For Updates On Startup",
-		&cv_tsourdt3rd_main_checkforupdatesonstartup, 0},
+	{IT_STRING | IT_CVAR, NULL,	"Automatic Update Checking",
+		&cv_tsourdt3rd_main_checkforupdatesautomatically, 0},
 
 	{IT_SPACE, NULL, NULL,
 		NULL, 0},
@@ -111,7 +111,7 @@ menuitem_t TSoURDt3rd_OP_GameMenu[] =
 tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_GameMenu[] =
 {
 	{NULL, "Check for any updates to TSoURDt3rd.", {NULL}, 0, 0},
-	{NULL, "Should TSoURDt3rd check for updates when starting?", {NULL}, 0, 0},
+	{NULL, "Should TSoURDt3rd automatically check for updates?", {NULL}, 0, 0},
 
 	{NULL, NULL, {NULL}, 0, 0},
 
@@ -174,7 +174,7 @@ menu_t TSoURDt3rd_OP_GameDef =
 	&TSoURDt3rd_OP_MainMenuDef,
 	TSoURDt3rd_OP_GameMenu,
 	TSoURDt3rd_M_DrawGenericOptions,
-	36, 64,
+	24, 64,
 	0,
 	NULL
 };
@@ -232,5 +232,5 @@ static void G_CheckForTSoURDt3rdUpdates(INT32 choice)
 	(void)choice;
 
 	tsourdt3rd_local.checked_version = false;
-	TSoURDt3rd_Curl_FindUpdateRoutine();
+	TSoURDt3rd_CurlRoutine_FindUpdates();
 }

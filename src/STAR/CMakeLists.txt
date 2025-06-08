@@ -1,6 +1,3 @@
-add_subdirectory(monocypher)
-add_subdirectory(libav)
-
 target_sources(SRB2SDL2 PRIVATE
 	ss_main.c
 	smkg-cvars.c
@@ -16,7 +13,9 @@ target_sources(SRB2SDL2 PRIVATE
 	core/smkg-d_main.c
 	core/smkg-p_pads.c
 	core/smkg-p_setup.c
+	core/smkg-r_main.c
 	core/smkg-s_audio.c
+	core/smkg-s_exmusic.c
 	curl/smkg-curl.c
 	curl/smkg-curl_routines.c
 	events/smkg-easter.c
@@ -39,6 +38,7 @@ target_sources(SRB2SDL2 PRIVATE
 	menus/menudefs/smkg-options-tsourdt3rd-video.c
 	menus/menudefs/smkg-options-tsourdt3rd-video-lighting.c
 	menus/menudefs/smkg-options-tsourdt3rd-audio.c
+	menus/menudefs/smkg-options-tsourdt3rd-audio-exmusic.c
 	menus/menudefs/smkg-options-tsourdt3rd-players.c
 	menus/menudefs/smkg-options-tsourdt3rd-savedata.c
 	menus/menudefs/smkg-options-tsourdt3rd-server.c
@@ -48,16 +48,18 @@ target_sources(SRB2SDL2 PRIVATE
 	menus/menudefs/transient/drrr-virtual-keyboard.c
 	menus/menudefs/transient/smkg-options-tsourdt3rd-extras-jukebox.c
 	menus/menudefs/transient/smkg-options-tsourdt3rd-extras-snake.c
-	monocypher/smkg-m_hash.c
 	netcode/smkg-d_clisrv.c
 	netcode/smkg-i_protocol.c
 	parser/smkg-ps_main.c
 	parser/smkg-ps_tools.c
 	parser/defs/smkg-ps_def_jukedef.c
+	parser/defs/smkg-ps_def_exmusdef.c
 	sdl/smkg-i_vid.c
 	sdl/smkg-i_sys.c
 	stun/stun.c
-	stun/stun.h
 )
+
+add_subdirectory(monocypher)
+add_subdirectory(libav)
 
 target_compile_definitions(SRB2SDL2 PRIVATE -DUSE_STUN)

@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2023 by Sonic Team Junior.
+// Copyright (C) 1999-2024 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -38,13 +38,11 @@
 static INT32 S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 *vol, INT32 *sep, INT32 *pitch, sfxinfo_t *sfxinfo);
 #endif
 
-// STAR STUFF //
-#include "STAR/star_vars.h" // tsourdt3rd stuff + defaultMusicTracks //
+// TSoURDt3rd
 #include "STAR/ss_main.h" // STAR_CONS_Printf() //
-#include "STAR/smkg-cvars.h" // cv_tsourdt3rd_audio_defaultmaptrack //
 #include "STAR/smkg-jukebox.h" // TSoURDt3rd::jukebox //
+#include "STAR/core/smkg-s_exmusic.h" // TSoURDt3rd_EXMusic_PlayDefaultMapTrack() //
 #include "STAR/core/smkg-s_audio.h" // TSoURDt3rd_S_CanModifyMusic() //
-// END THAT PLEASE //
 
 CV_PossibleValue_t soundvolume_cons_t[] = {{0, "MIN"}, {31, "MAX"}, {0, NULL}};
 static void SetChannelsNum(void);
@@ -525,7 +523,7 @@ void S_StartCaption(sfxenum_t sfx_id, INT32 cnum, UINT16 lifespan)
 	closedcaptions[set].c = ((cnum == -1) ? NULL : &channels[cnum]);
 	closedcaptions[set].s = sfx;
 	closedcaptions[set].t = lifespan;
-	closedcaptions[set].b = 2; // bob
+	closedcaptions[set].b = 3; // bob
 }
 
 void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
@@ -1939,7 +1937,7 @@ static void S_AddMusicStackEntry(const char *mname, UINT16 mflags, boolean loopi
 	if (!music_stacks)
 	{
 		music_stacks = Z_Calloc(sizeof (*mst), PU_MUSIC, NULL);
-		strncpy(music_stacks->musname, (status == JT_MASTER ? mname : (S_CheckQueue() ? queue_name : mapmusname)), 7);
+		strncpy(music_stacks->musname, (status == JT_MASTER ? mname : (S_CheckQueue() ? queue_name : mapmusname)), sizeof(music_stacks->musname)-1);
 		music_stacks->musflags = (status == JT_MASTER ? mflags : (S_CheckQueue() ? queue_flags : mapmusflags));
 		music_stacks->looping = (status == JT_MASTER ? looping : (S_CheckQueue() ? queue_looping : true));
 		music_stacks->position = (status == JT_MASTER ? position : (S_CheckQueue() ? queue_position : S_GetMusicPosition()));
@@ -2062,7 +2060,7 @@ boolean S_RecallMusic(UINT16 status, boolean fromfirst)
 	if (result)
 	{
 		*entry = *result;
-		strncpy(entry->musname, result->musname, 7);
+		memcpy(entry->musname, result->musname, sizeof(entry->musname));
 	}
 
 	// no result, just grab mapmusname
@@ -2101,7 +2099,7 @@ boolean S_RecallMusic(UINT16 status, boolean fromfirst)
 	}
 
 	// STAR STUFF: currently jukeboxing, so just clear memory and move on :p //
-	if (tsourdt3rd_global_jukebox->playing)
+	if (TSoURDt3rd_Jukebox_IsPlaying())
 	{
 		Z_Free(entry);
 		return false;
@@ -2176,26 +2174,12 @@ static boolean S_LoadMusic(const char *mname)
 
 	mlumpnum = S_GetMusicLumpNum(mname);
 
+	TSoURDt3rd_EXMusic_PlayDefaultMapTrack(&mname, &mlumpnum); // STAR STUFF: play some temporary music... //
+
 	if (mlumpnum == LUMPERROR)
 	{
 		CONS_Alert(CONS_ERROR, "Music %.6s could not be loaded: lump not found!\n", mname);
-		
-		// STAR STUFF //
-		if (cv_tsourdt3rd_audio_defaultmaptrack.value)
-		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "Playing default map track %s as requested by your audio settings...\n", cv_tsourdt3rd_audio_defaultmaptrack.string);
-
-			mlumpnum = S_GetMusicLumpNum(defaultMusicTracks[cv_tsourdt3rd_audio_defaultmaptrack.value].track);
-			if (mlumpnum == LUMPERROR)
-			{
-				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "Music %.6s could not be loaded: lump not found!\n", mname);
-				return false;
-			}
-		}
-		else
-		// END OF STAR STUFF //
-
-		return false;		
+		return false;
 	}
 
 	// load & register it
@@ -2313,10 +2297,10 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 		return;
 	// CONTROL OUR MUSIC, PLEASE! //
 
-	strncpy(newmusic, mmusic, 7);
+	strncpy(newmusic, mmusic, sizeof(newmusic)-1);
+	newmusic[6] = 0;
 	if (LUA_HookMusicChange(music_name, &hook_param))
 		return;
-	newmusic[6] = 0;
 
 	// No Music (empty string)
 	if (newmusic[0] == 0)
@@ -2368,7 +2352,7 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 		I_FadeSong(100, 500, NULL);
 	}
 
-	TSoURDt3rd_ControlMusicEffects(); // STAR STUFF: Set the effects again, just to be sure.... //
+	TSoURDt3rd_S_ControlMusicEffects(NULL, NULL); // STAR STUFF: Set the effects again, just to be sure.... //
 }
 
 void S_StopMusic(void)
@@ -2379,6 +2363,8 @@ void S_StopMusic(void)
 	if (I_SongPaused())
 		I_ResumeSong();
 
+	S_SpeedMusic(1.0f);
+	S_PitchMusic(1.0f);
 	I_StopSong();
 	S_UnloadMusic(); // for now, stopping also means you unload the song
 
@@ -2501,7 +2487,7 @@ void S_StopFadingMusic(void)
 boolean S_FadeMusicFromVolume(UINT8 target_volume, INT16 source_volume, UINT32 ms)
 {
 	// STAR STUFF: don't fade if jukeboxing //
-	if (tsourdt3rd_global_jukebox->playing)
+	if (TSoURDt3rd_Jukebox_IsPlaying())
 		return false;
 	// COOL? COOL. //
 
@@ -2514,7 +2500,7 @@ boolean S_FadeMusicFromVolume(UINT8 target_volume, INT16 source_volume, UINT32 m
 boolean S_FadeOutStopMusic(UINT32 ms)
 {
 	// STAR STUFF: don't fade if jukeboxing //
-	if (tsourdt3rd_global_jukebox->playing)
+	if (TSoURDt3rd_Jukebox_IsPlaying())
 		return false;
 	// CONTINUE. //
 
@@ -2532,10 +2518,14 @@ boolean S_FadeOutStopMusic(UINT32 ms)
 //
 void S_StartEx(boolean reset)
 {
-	// STAR NOTE: i was here lol
 	if (mapmusflags & MUSIC_RELOADRESET)
 	{
+#if 0
+		strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname, 7);
+#else
+		// STAR STUFF: I'm outta here! I like my music better! //
 		strncpy(mapmusname, TSoURDt3rd_DetermineLevelMusic(), 7);
+#endif
 		mapmusname[6] = 0;
 		mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
 		mapmusposition = mapheaderinfo[gamemap-1]->muspos;
@@ -2544,7 +2534,7 @@ void S_StartEx(boolean reset)
 	// STAR STUFF: don't start any music if we're jukeboxing, dude! //
 	if (!TSoURDt3rd_S_CanModifyMusic(NULL))
 		return;
-	// TORTURE IS MY FAVORITE FORM OF PUNISHMENT, HOW DID YOU KNOW //
+	// TORTURE IS MY FAVORITE FORM OF PUNISHMENT, HOW DID YOU KNOW? //
 
 	if (RESETMUSIC || reset)
 		S_StopMusic();
@@ -2590,22 +2580,15 @@ static void Command_Tunes_f(void)
 	}
 	else if (!strcasecmp(tunearg, "-default"))
 	{
-		tunearg = TSoURDt3rd_DetermineLevelMusic(); // STAR NOTE: i was here lol
+#if 0
+		tunearg = mapheaderinfo[gamemap-1]->musname;
+#else
+		tunearg = TSoURDt3rd_DetermineLevelMusic(); // STAR STUFF: user defined music! //
+#endif
 		track = mapheaderinfo[gamemap-1]->mustrack;
 	}
 
-	// STAR STUFF: minor tunes propaganda //
-	if (TSoURDt3rd_AprilFools_ModeEnabled())
-	{
-		STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "Nice try. Perhaps there's a command you need to turn off first?\n");
-		return;
-	}
-	else if (tsourdt3rd_global_jukebox->playing)
-	{
-		STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Sorry, you can't use this command while playing music.\n");
-		return;
-	}
-	// I MEAN, IT MAKES SENSE, RIGHT? //
+	TSoURDt3rd_S_TunesAreCancelled(); // STAR STUFF: minor tunes propaganda //
 
 	if (strlen(tunearg) > 6) // This is automatic -- just show the error just in case
 		CONS_Alert(CONS_NOTICE, M_GetText("Music name too long - truncated to six characters.\n"));
@@ -2616,9 +2599,11 @@ static void Command_Tunes_f(void)
 	strncpy(mapmusname, tunearg, 7);
 	mapmusname[6] = 0;
 
-	// STAR NOTE: i was here lol
-	if (argc > 5)
-		position = (UINT32)atoi(COM_Argv(5));
+#if 0
+	// STAR NOTE: we can handle this ourselves, thank you :) //
+	if (argc > 4)
+		position = (UINT32)atoi(COM_Argv(4));
+#endif
 
 	mapmusflags = (track & MUSIC_TRACKMASK);
 	mapmusposition = position;
@@ -2631,37 +2616,8 @@ static void Command_Tunes_f(void)
 		if (speed > 0.0f)
 			S_SpeedMusic(speed);
 	}
-	// STAR STUFF //
-	else
-	{
-		float speed;
-		switch (cv_tsourdt3rd_audio_vapemode.value)
-		{
-			case 1:	speed = 0.9f;	break;
-			case 2:	speed = 0.75f;	break;
-			default:speed = 1.0f;	break;
-		}
-		S_SpeedMusic(speed);
-	}
 
-	if (argc > 4)
-	{
-		float pitch = (float)atof(COM_Argv(4));
-		if (pitch > 0.0f)
-			S_PitchMusic(pitch);
-	}
-	else
-	{
-		float pitch;
-		switch (cv_tsourdt3rd_audio_vapemode.value)
-		{
-			case 1:	pitch = 0.9f; break;
-			case 2:	pitch = 0.5f; break;
-			default:pitch = 1.0f; break;
-		}
-		S_PitchMusic(pitch);
-	}
-	// LEMONADE PITCHER //
+	TSoURDt3rd_S_ControlMusicEffects(&argc, &position); // STAR STUFF: do some overriding? //
 }
 
 static void Command_RestartAudio_f(void)
@@ -2674,6 +2630,7 @@ static void Command_RestartAudio_f(void)
 	I_InitMusic();
 
 	// These must be called or no sound and music until manually set.
+
 	I_SetSfxVolume(cv_soundvolume.value);
 	S_SetMusicVolume(cv_digmusicvolume.value, cv_midimusicvolume.value);
 	if (Playing()) // Gotta make sure the player is in a level
@@ -2772,8 +2729,11 @@ void GameMIDIMusic_OnChange(void)
 void MusicPref_OnChange(void)
 {
 	if (M_CheckParm("-nomusic") || M_CheckParm("-noaudio") ||
-		M_CheckParm("-nomidimusic") || M_CheckParm("-nodigmusic") ||
-		!sound_started) // STAR NOTE: i was here lol
+		M_CheckParm("-nomidimusic") || M_CheckParm("-nodigmusic"))
+		return;
+
+	// StarManiaKG: i'd rather not see thousands of sound errors on startup, thanks //
+	if (!sound_started)
 		return;
 
 	if (Playing())

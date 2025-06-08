@@ -215,7 +215,7 @@ static char returnWadPath[256];
 #endif
 
 // TSoURDt3rd
-#include "../STAR/star_vars.h" // TSOURDT3RDVERSIONSTRING, & TSOURDT3RDBYSTARMANIAKGSTRING //
+#include "../STAR/star_vars.h" // TSOURDT3RDVERSIONSTRING //
 #include "../STAR/smkg-i_sys.h" // TSoURDt3rd_I_ShowErrorMessageBox() & TSoURDt3rd_I_ShutdownSystem() //
 
 /**	\brief	The JoyReset function
@@ -768,7 +768,11 @@ static void I_StartupConsole(void)
 
 	if (gotConsole)
 	{
-		SetConsoleTitleA("SRB2 - "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING" - Console");
+#if 0
+		SetConsoleTitleA("SRB2 - Console");
+#else
+		SetConsoleTitleA("SRB2 - "TSOURDT3RDVERSIONSTRING" - Console");
+#endif
 		consolevent = SDL_TRUE;
 	}
 
@@ -1784,7 +1788,11 @@ void I_UpdateMumble(const mobj_t *mobj, const listener_t listener)
 		return;
 
 	if(mumble->uiVersion != 2) {
-		wcsncpy(mumble->name, L"SRB2 "VERSIONSTRINGW"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING, 256);
+#if 0
+		wcsncpy(mumble->name, L"SRB2 "VERSIONSTRINGW, 256);
+#else
+		wcsncpy(mumble->name, L"SRB2 "VERSIONSTRINGW"; "TSOURDT3RDVERSIONSTRING, 256);
+#endif
 		wcsncpy(mumble->description, L"Sonic Robo Blast 2; TSoURDt3rd with integrated Mumble Link support.", 2048);
 		mumble->uiVersion = 2;
 	}
@@ -2514,7 +2522,7 @@ void I_Error(const char *error, ...)
 			if (!M_CheckParm("-dedicated"))
 #if 0
 				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-					"SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING" Recursive Error",
+					"SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" Recursive Error",
 					buffer, NULL);
 #else
 				TSoURDt3rd_I_ShowErrorMessageBox(buffer, NULL, NULL, 0, false); // STAR STUFF: display our cool message box junk too! //
@@ -2563,7 +2571,7 @@ void I_Error(const char *error, ...)
 	if (!M_CheckParm("-dedicated"))
 #if 0
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-			"SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" "TSOURDT3RDBYSTARMANIAKGSTRING" Error",
+			"SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" Error",
 			buffer, NULL);
 #else
 		TSoURDt3rd_I_ShowErrorMessageBox(buffer, NULL, NULL, 0, false); // STAR STUFF: display our cool message box junk too! //

@@ -16,8 +16,7 @@
 #include "deh_tables.h"
 
 // TSoURDt3rd
-#include "STAR/smkg-jukebox.h" // tsourdt3rd_global_jukebox //
-#include "s_sound.h" // S_StopMusic() //
+#include "STAR/smkg-jukebox.h" // TSoURDt3rd_Jukebox_IsPlaying() //
 
 boolean deh_loaded = false;
 
@@ -187,7 +186,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 	deh_num_warning = 0;
 
 	// STAR STUFF: reset music, since we might not have the jukebox unlocked anymore //
-	if (tsourdt3rd_global_jukebox->playing && savemoddata && (introchanged || titlechanged))
+	if (TSoURDt3rd_Jukebox_IsPlaying() && savemoddata && (introchanged || titlechanged))
 		S_StopMusic();
 	// END IT PLEASE //
 

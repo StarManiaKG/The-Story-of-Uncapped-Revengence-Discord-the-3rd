@@ -102,7 +102,7 @@ typedef off_t off64_t;
 #endif
 
 // TSoURDt3rd
-#include "STAR/star_vars.h" // TSOURDT3RDVERSIONSTRING & TSOURDT3RDBYSTARMANIAKGSTRING //
+#include "STAR/star_vars.h" // TSOURDT3RDVERSIONSTRING //
 
 static CV_PossibleValue_t screenshot_cons_t[] = {{0, "Default"}, {1, "HOME"}, {2, "SRB2"}, {3, "CUSTOM"}, {0, NULL}};
 consvar_t cv_screenshot_option = CVAR_INIT ("screenshot_option", "Default", CV_SAVE|CV_CALL, screenshot_cons_t, Screenshot_option_Onchange);
@@ -802,7 +802,7 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 	char Movietxt[] = "SRB2 Movie";
 #else
 	// STAR STUFF: edited to seperate our screenshots from Vanilla's //
-	char titletxt[] = "Sonic Robo Blast 2 " VERSIONSTRING "; " TSOURDT3RDVERSIONSTRING " " TSOURDT3RDBYSTARMANIAKGSTRING;
+	char titletxt[] = "Sonic Robo Blast 2 " VERSIONSTRING "; " TSOURDT3RDVERSIONSTRING;
 	png_charp playertxt =  cv_playername.zstring;
 	char desctxt[] = "SRB2; TSoURDt3rd Screenshot";
 	char Movietxt[] = "SRB2; TSoURDt3rd Movie";

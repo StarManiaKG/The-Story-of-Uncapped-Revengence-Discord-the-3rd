@@ -2,14 +2,14 @@
 //-----------------------------------------------------------------------------
 // Original Copyright (C) 1998-2000 by DooM Legacy Team.
 // Original Copyright (C) 1999-2023 by Sonic Team Junior.
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  smkg-lights.c
-/// \brief TSoURDt3rd remastered coronas
+/// \brief TSoURDt3rd's dynamic light data
 
 #include "smkg-lights.h"
 

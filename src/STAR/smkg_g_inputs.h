@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -25,6 +25,7 @@ typedef struct star_gamekey_s {
 	boolean pressed;
 	boolean held;
 } star_gamekey_t;
+
 extern star_gamekey_t STAR_GameKey[1][NUM_GAMECONTROLS];
 
 // ------------------------ //

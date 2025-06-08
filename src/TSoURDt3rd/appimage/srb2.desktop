@@ -1,11 +1,11 @@
 #!/usr/bin/env xdg-open
 [Desktop Entry]
 Categories=Game;
-Comment=heheheha
-Exec="\\$HOME/SRB2.AppImage"
-Icon="\\$HOME/.icons/srb2.png"
+Comment=A custom build of Sonic Robo Blast 2, a Sonic the Hedgehog fangame based on Doom-Legacy.
+Exec="\\$HOME/SRB2_TSoURDt3rd.AppImage"
+Icon="\\$HOME/.icons/tsourdt3rd.png"
 MimeType=
-Name=Sonic Robo Blast 2
+Name=Sonic Robo Blast 2; TSoURDt3rd
 Path=
 StartupNotify=true
 Terminal=false

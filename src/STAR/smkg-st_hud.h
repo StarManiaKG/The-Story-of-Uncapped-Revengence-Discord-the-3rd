@@ -1,19 +1,35 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  smkg-st_hud.h
-/// \brief TSoURDt3rd cool HUD data, global header
+/// \brief Globalizes TSoURDt3rd's cool HUD data
+
+#ifndef __SMKG_ST_HUD__
+#define __SMKG_ST_HUD__
 
 #include "../st_stuff.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // ------------------------ //
 //        Variables
 // ------------------------ //
+
+typedef struct tsourdt3rd_trackingResult_s
+{
+	fixed_t x, y;
+	fixed_t scale;
+	boolean onScreen;
+	INT32 angle, pitch;
+	fixed_t fov;
+} tsourdt3rd_trackingResult_t;
 
 extern patch_t *tsourdt3rd_easter_leveleggs;
 extern patch_t *tsourdt3rd_easter_totaleggs;
@@ -35,5 +51,15 @@ void TSoURDt3rd_Easter_ST_drawEggs(void);
 void TSoURDt3rd_ST_AskToJoinEnvelope(void);
 #endif
 
-void TSoURDt3rd_SCR_DisplayTpsRate(void);
+void TSoURDt3rd_SCR_CalculateTPSRate(void);
+void TSoURDt3rd_SCR_DisplayTPSRate(void);
+
 INT32 TSoURDt3rd_SCR_SetPingHeight(void);
+
+void TSoURDt3rd_ST_ObjectTracking(player_t *player, tsourdt3rd_trackingResult_t *result, const vector3_t *point, boolean object_reverse);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
+#endif // __SMKG_ST_HUD__

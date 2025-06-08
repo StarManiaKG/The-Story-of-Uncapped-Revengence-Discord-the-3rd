@@ -35,7 +35,7 @@
 #endif
 
 // TSoURDt3rd
-#include "STAR/smkg-jukebox.h" // tsourdt3rd_global_jukebox //
+#include "STAR/smkg-jukebox.h" // TSoURDt3rd_Jukebox_IsPlaying() //
 #include "STAR/p_user.h" // TSoURDt3rd_P_Ticker() //
 
 tic_t leveltime;
@@ -576,16 +576,18 @@ static inline void P_DoSpecialStageStuff(void)
 		players[i].powers[pw_underwater] = players[i].powers[pw_spacetime] = 0;
 	}
 
+#if 0
 	//if (sstimer < 15*TICRATE+6 && sstimer > 7 && (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC))
 		//S_SpeedMusic(1.4f);
-
+#else
 	// STAR STUFF: do cool music speeding junk :) //
 	if (sstimer < 15*TICRATE+6 && sstimer > 7 && (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC))
 	{
-		if (!tsourdt3rd_global_jukebox->playing) // you're interrupting my brooding >:| //
+		if (!TSoURDt3rd_Jukebox_IsPlaying()) // you're interrupting my brooding >:| //
 			S_SpeedMusic(1.4f);
 	}
 	// DONE! //
+#endif
 
 	if (sstimer && !objectplacing)
 	{

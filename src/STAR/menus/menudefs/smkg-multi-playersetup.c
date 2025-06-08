@@ -19,8 +19,7 @@
 // ------------------------ //
 
 //
-// void TSoURDt3rd_M_DrawColorResetOption
-// (
+// void TSoURDt3rd_M_DrawColorResetOption(
 //	 INT32 x, INT32 *y, *INT32 *cursory,
 //	 player_t *setupm_player,
 //	 INT32 setupm_fakeskin, consvar_t *setupm_cvdefaultskin,
@@ -29,8 +28,7 @@
 //
 // Draws the 'Reset to Defaults' option in the Player Setup menu.
 //
-void TSoURDt3rd_M_DrawColorResetOption
-(
+void TSoURDt3rd_M_DrawColorResetOption(
 	INT32 x, INT32 *y, INT32 *cursory,
 	player_t *setupm_player,
 	INT32 setupm_fakeskin, consvar_t *setupm_cvdefaultskin,
@@ -57,8 +55,7 @@ void TSoURDt3rd_M_DrawColorResetOption
 }
 
 //
-// void TSoURDt3rd_M_HandleColorResetOption
-// (
+// void TSoURDt3rd_M_HandleColorResetOption(
 //	 player_t *setupm_player,
 //	 INT32 *setupm_fakeskin, consvar_t *setupm_cvdefaultskin,
 //	 consvar_t *setupm_cvdefaultcolor, menucolor_t *setupm_fakecolor,
@@ -67,8 +64,7 @@ void TSoURDt3rd_M_DrawColorResetOption
 //
 // Handles choices for the 'Reset to Defaults' option in the Player Setup menu.
 //
-void TSoURDt3rd_M_HandleColorResetOption
-(
+void TSoURDt3rd_M_HandleColorResetOption(
 	player_t *setupm_player,
 	INT32 *setupm_fakeskin, consvar_t *setupm_cvdefaultskin,
 	consvar_t *setupm_cvdefaultcolor, menucolor_t *setupm_fakecolor,

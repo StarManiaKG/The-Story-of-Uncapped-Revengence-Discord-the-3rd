@@ -448,12 +448,11 @@ static void AM_setWindowPanning(void)
 		m_paninc.x = 0;
 }
 
+// STAR NOTE: edited for cv_tsourdt3rd_debug_automapanywhere support :) //
 /** Responds to user inputs in automap mode.
   *
   * \param ev Event to possibly respond to.
-  * \return True if the automap responder ate the event.
-  * 
-  * STAR NOTE: edited for cv_tsourdt3rd_debug_automapanywhere support :)
+  * \return True if the automap responder ate the event.=
   */
 boolean AM_Responder(event_t *ev)
 {
@@ -626,9 +625,8 @@ static inline void AM_doFollowPlayer(void)
 	}
 }
 
+// STAR NOTE: also edited for cv_tsourdt3rd_debug_automapanywhere support :) //
 /** Updates automap on a game tic, while the automap is enabled.
-  *
-  * STAR NOTE: also edited for cv_tsourdt3rd_debug_automapanywhere support :)
   */
 void AM_Ticker(void)
 {

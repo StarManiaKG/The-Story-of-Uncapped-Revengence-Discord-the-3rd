@@ -1,13 +1,13 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  smkg-jukebox.h
-/// \brief Globalizes TSoURDt3rd's unique sound library
+/// \brief Globalizes TSoURDt3rd's portable jammin' Jukebox
 
 #ifndef __SMKG_JUKEBOX__
 #define __SMKG_JUKEBOX__
@@ -23,11 +23,12 @@ extern "C" {
 // ------------------------ //
 
 // PAGES
-#define TSOURDT3RD_MAX_JUKEBOX_PAGES 64
+#define TSOURDT3RD_JUKEBOX_MAX_PAGES 64
+#define TSOURDT3RD_JUKEBOX_MAX_PAGE_NAME 64
 
 typedef struct tsourdt3rd_jukebox_pages_s {
 	INT32                              id;
-	char                               page_name[38];
+	char                               page_name[TSOURDT3RD_JUKEBOX_MAX_PAGE_NAME];
 	struct tsourdt3rd_jukebox_pages_s *prev;
 	struct tsourdt3rd_jukebox_pages_s *next;
 } tsourdt3rd_jukebox_pages_t;
@@ -50,16 +51,18 @@ extern tsourdt3rd_jukeboxdef_t **tsourdt3rd_jukebox_defs; // Jukebox definition 
 
 // MAIN
 typedef struct tsourdt3rd_jukebox_s {
-	boolean     unlocked; // General data
+	// General data
+	boolean     unlocked;
 	boolean     playing;
-
-	boolean     hud_initialized; // HUD data
+	boolean     in_menu;
+	// HUD data
+	boolean     hud_initialized;
 	INT32       hud_box_w;
 	INT32       hud_string_w;
 	INT32       hud_track_w;
 	INT32       hud_speed_w;
-
-	fixed_t     track_tics; // Track data
+	// Track data
+	fixed_t     track_tics;
 	musicdef_t *curtrack;
 	musicdef_t *prevtrack;
 } tsourdt3rd_jukebox_t;
@@ -70,12 +73,14 @@ extern tsourdt3rd_jukebox_t *tsourdt3rd_global_jukebox;
 //        Functions
 // ------------------------ //
 
+void TSoURDt3rd_Jukebox_Init(void);
 boolean TSoURDt3rd_Jukebox_Unlocked(void);
 
 boolean TSoURDt3rd_Jukebox_PrepareDefs(void);
 
+void TSoURDt3rd_Jukebox_Play(musicdef_t *play_def);
+boolean TSoURDt3rd_Jukebox_IsPlaying(void);
 void TSoURDt3rd_Jukebox_Reset(void);
-void TSoURDt3rd_Jukebox_RefreshLevelMusic(void);
 
 void TSoURDt3rd_Jukebox_ST_drawJukebox(void);
 

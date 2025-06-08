@@ -102,7 +102,38 @@ INT32 TSoURDt3rd_M_FindWordInTermTable(const char *const *term_table, const char
 			return word_to_table_val;
 		word_to_table_val++;
 	}
-	return (word_to_table_val = -1);
+
+	word_to_table_val = -1;
+	return word_to_table_val;
+}
+
+//
+// char *TSoURDt3rd_M_WriteVariedLengthString(char *string, boolean decatenate)
+// Returns a string with a varied length, one that can fit TSoURDt3rd_M_StartMessage().
+//
+char *TSoURDt3rd_M_WriteVariedLengthString(char *string, boolean decatenate)
+{
+	UINT32 len;
+	const UINT32 len_to_decentate = 54;
+	static char header[1024];
+
+	strlcpy(header, string, 1024);
+	if (decatenate == false)
+	{
+		// We've done everything we needed to.
+		return header;
+	}
+
+	len = strlen(header);
+	if (len > len_to_decentate)
+	{
+		len = len-len_to_decentate;
+		header[len] = header[len+1] = header[len+2] = '.';
+	}
+	else
+		len = 0;
+
+	return header+len;
 }
 
 //

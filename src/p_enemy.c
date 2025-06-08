@@ -33,7 +33,7 @@
 #endif
 
 // TSoURDt3rd
-#include "STAR/star_vars.h" // tsourdt3rd_global_jukebox & TSoURDt3rd_DetermineLevelMusic() //
+#include "STAR/star_vars.h" // TSoURDt3rd_Jukebox_IsPlaying() & TSoURDt3rd_DetermineLevelMusic() //
 #include "STAR/smkg-cvars.h" // cv_tsourdt3rd_game_soniccd //
 
 boolean LUA_CallAction(enum actionnum actionnum, mobj_t *actor);
@@ -4419,7 +4419,7 @@ void A_SuperSneakers(mobj_t *actor)
 		if (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC)
 		{
 			// STAR STUFF: stop interrupting the jukebox session please //
-			if (!tsourdt3rd_global_jukebox->playing)
+			if (!TSoURDt3rd_Jukebox_IsPlaying())
 				S_SpeedMusic(1.4f);
 			// THANKS, LOVE YOU :) //
 		}

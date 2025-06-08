@@ -42,17 +42,28 @@ void TSoURDt3rd_Curl_FindUpdateRoutine(void)
 	char version_url[256];
 	UINT32 version_number = 0;
 
-	const char *header_string = NULL;
-	char message_string[256];
+	static boolean sent_event_message = false;
+	static const char *header_string = NULL;
+	static char message_string[256];
 	INT32 message_type = 0;
 
-	if (!menuactive && !cv_tsourdt3rd_main_checkforupdatesonstartup.value)
+	if (!cv_tsourdt3rd_main_checkforupdatesautomatically.value && !tsourdt3rd_local.checked_version)
 	{
-		tsourdt3rd_local.checked_version = true;
+		// No point in running this if we have the setting disabled.
 		return;
 	}
-	else if (tsourdt3rd_local.checked_version)
+	if (tsourdt3rd_local.checked_version)
+	{
+		if (!dedicated && !menumessage.active && !sent_event_message && tsourdt3rd_local.checked_version)
+		{
+			// We use some checks to screen the message up here, as it could get skipped out by another message otherwise
+			TSoURDt3rd_M_StartMessage(header_string, message_string, NULL, MM_NOTHING, NULL, NULL);
+			sent_event_message = true;
+			tsourdt3rd_local.checked_version = true;
+		}
 		return;
+	}
+	sent_event_message = false;
 
 	if (!dedicated)
 	{
@@ -121,9 +132,7 @@ void TSoURDt3rd_Curl_FindUpdateRoutine(void)
 
 			break;
 		}
-
 		default:
-		{
 			header_string = "Failed to check for updates!";
 			sprintf(message_string,
 				"Couldn't properly check for updates.\n"
@@ -136,13 +145,9 @@ void TSoURDt3rd_Curl_FindUpdateRoutine(void)
 			);
 			message_type = STAR_CONS_TSOURDT3RD_ALERT;
 			break;
-		}
 	}
 
 	STAR_CONS_Printf(message_type, "%s\n", message_string);
-	if (!dedicated)
-		TSoURDt3rd_M_StartMessage(header_string, message_string, NULL, MM_NOTHING, NULL, NULL);
-
 	Z_Free(return_version);
 
 	TSoURDt3rd_FIL_RemoveFile("TSoURDt3rd", "tsourdt3rd_data.txt");

@@ -10,7 +10,7 @@
 /// \brief Unique TSoURDt3rd WAD I/O and map setup routines
 
 #include "smkg-p_setup.h"
-
+#include "../menus/smkg-m_sys.h"
 #include "../parser/smkg-ps_main.h"
 #include "../smkg-misc.h" // TSoURDt3rd_M_FindWordInTermTable() //
 #include "../smkg-cvars.h" // cv_tsourdt3rd_game_loadingscreen vars //
@@ -30,13 +30,10 @@
 enum tsourdt3rd_lump_term_e
 {
 	tsourdt3rd_lump_jukedef,
-	tsourdt3rd_lump_windef,
 	tsourdt3rd_lump_exmusdef,
 };
-
 static const char *const tsourdt3rd_lump_term_opt[] = {
 	"JUKEDEF",
-	"WINDEF",
 	"EXMUSDEF",
 	NULL
 };
@@ -62,12 +59,21 @@ boolean TSoURDt3rd_P_LoadAddon(INT32 wadnum, INT32 numlumps)
 	char *text = NULL;
 
 	tsourdt3rd_starparser_lump_loading = 0;
-	tsourdt3rd_starparser_num_brackets = 0;
-	tsourdt3rd_starparser_num_errors = 0;
+	tsourdt3rd_starparser_num_errored_lumps = 0;
 
-	script->wad = wad;
-	if (wad == NULL || script->wad == NULL)
+	if (script == NULL || wad == NULL)
+	{
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "TSoURDt3rd_P_LoadAddon(): Couldn't setup extra lump parser, existing!\n");
+		if (script)
+		{
+			Z_Free(script);
+			script = NULL;
+		}
 		return false;
+	}
+	script->wad = wad;
+	script->tokenizer = NULL;
+	script->tkn = script->val = NULL;
 
 	for (i = 0; i < numlumps; i++, lump_p++)
 	{
@@ -76,6 +82,12 @@ boolean TSoURDt3rd_P_LoadAddon(INT32 wadnum, INT32 numlumps)
 		if (lump_found < 0)
 			continue;
 
+		tsourdt3rd_starparser_lump_loading++; // turn on loading flag
+		tsourdt3rd_starparser_num_brackets = 0;
+		tsourdt3rd_starparser_num_errors = 0;
+
+		S_LoadMusicDefs(wadnum);
+
 		lumpData = (char *)W_CacheLumpNumPwad(wadnum, i, PU_STATIC);
 		lumpLength = W_LumpLengthPwad(wadnum, i);
 		text = (char *)Z_Malloc((lumpLength + 1), PU_STATIC, NULL);
@@ -83,19 +95,31 @@ boolean TSoURDt3rd_P_LoadAddon(INT32 wadnum, INT32 numlumps)
 		memmove(text, lumpData, lumpLength);
 		text[lumpLength] = '\0';
 
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "Reading \x82\"%s\"\x80 (from wad \x82\"%s\"\x80)\n", lump_p->name, script->wad->filename);
 		switch (lump_found)
 		{
 			case tsourdt3rd_lump_jukedef:
-				S_LoadMusicDefs(numwadfiles-1);
-				if (!TSoURDt3rd_Jukebox_PrepareDefs())
+				if (tsourdt3rd_global_jukebox == NULL)
 				{
-					STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "Failed to prepare Jukebox, not reading \x82\"%s\"\x80!\n", lump_p->name);
+					STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "The Jukebox wasn't initialized, so not reading \x82\"%s\"\x80!\n", lump_p->name);
 					break;
 				}
-				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "Reading \x82\"%s\"\x80 (from wad \x82\"%s\"\x80)\n", lump_p->name, script->wad->filename);
-				TSoURDt3rd_STARParser_Read(script, text, lumpLength, TSoURDt3rd_STARParser_JukeDefs);
-				Z_Free(tsourdt3rd_jukebox_defs);
-				tsourdt3rd_jukebox_defs = NULL;
+				else if (!TSoURDt3rd_Jukebox_PrepareDefs())
+				{
+					STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "Failed to prepare Jukebox, so not reading \x82\"%s\"\x80!\n", lump_p->name);
+					break;
+				}
+				TSoURDt3rd_STARParser_Read(script, text, lumpLength, TSoURDt3rd_STARParser_JUKEDEF);
+				if (tsourdt3rd_global_jukebox->in_menu == false)
+				{
+					Z_Free(tsourdt3rd_jukebox_defs);
+					tsourdt3rd_jukebox_defs = NULL;
+				}
+				break;
+			case tsourdt3rd_lump_exmusdef:
+				S_InitMusicDefs(); // Just in case we're doing this while the game's initializing...
+				TSoURDt3rd_STARParser_Read(script, text, lumpLength, TSoURDt3rd_STARParser_EXMUSDEF);
+				numsoundtestdefs = 0;
 				break;
 			default:
 				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "Parser for lump '%s' doesn't exist yet!\n", tsourdt3rd_lump_term_opt[lump_found]);
@@ -104,9 +128,63 @@ boolean TSoURDt3rd_P_LoadAddon(INT32 wadnum, INT32 numlumps)
 
 		Z_Free(lumpData);
 		Z_Free((void *)text);
+
+		if (script->tokenizer != NULL)
+		{
+			Tokenizer_Close(script->tokenizer);
+			script->tokenizer = NULL;
+		}
+
+		// Now check for errors.
+		if (tsourdt3rd_starparser_num_brackets != 0)
+		{
+			// Brackets
+			if (tsourdt3rd_starparser_num_brackets > 0)
+				TSoURDt3rd_STARParser_Error("Some brackets are not properly enclosed!", script, TSOURDT3RD_STARPARSER_ERROR_LUMP);
+			else if (tsourdt3rd_starparser_num_brackets < 0)
+				TSoURDt3rd_STARParser_Error("Bracket enclosure '}' has been misplaced somewhere!", script, TSOURDT3RD_STARPARSER_ERROR_LUMP);
+		}
+		if (tsourdt3rd_starparser_num_errors)
+			tsourdt3rd_starparser_num_errored_lumps++;
+
+		tsourdt3rd_starparser_lump_loading--; // turn off loading flag
 	}
 
+	// Have we run into any errors?
+	if (tsourdt3rd_starparser_num_errored_lumps > 1)
+	{
+		TSoURDt3rd_M_StartMessage(
+			TSoURDt3rd_M_WriteVariedLengthString(wad->filename, true),
+			va("%d of the lumps you've loaded\nhave encountered errors!\nCheck the logs for more information.\n", tsourdt3rd_starparser_num_errored_lumps),
+			NULL,
+			MM_NOTHING,
+			NULL,
+			NULL
+		);
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, va("%d of the lumps you've loaded have encountered errors! Check the logs for more information.\n", tsourdt3rd_starparser_num_errored_lumps));
+		S_StartSound(NULL, sfx_skid);
+	}
+	else if (tsourdt3rd_starparser_num_errors)
+	{
+		TSoURDt3rd_M_StartMessage(
+			TSoURDt3rd_M_WriteVariedLengthString(wad->filename, true),
+			va("Stumbled upon\n%d parser error(s)\nwithin this lump!\n", tsourdt3rd_starparser_num_errors),
+			NULL,
+			MM_NOTHING,
+			NULL,
+			NULL
+		);
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, va("Stumbled upon %d parser error(s) within this lump!\n", tsourdt3rd_starparser_num_errors));
+		S_StartSound(NULL, sfx_skid);
+	}
+
+	tsourdt3rd_starparser_lump_loading = 0;
+	tsourdt3rd_starparser_num_errored_lumps = 0;
+	tsourdt3rd_starparser_num_brackets = 0;
+	tsourdt3rd_starparser_num_errors = 0;
+
 	Z_Free(script);
+	script = NULL;
 	return true;
 }
 

@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2020-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2020-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -8,7 +8,7 @@
 //-----------------------------------------------------------------------------
 /// \file  menus/menudefs/transient/smkg-options-tsourdt3rd-extras-snake.c
 /// \brief TSoURDt3rd's freeplay snake minigame
-//          It does next to nothing useful, but it is fun to play.
+//          Doesn't do anything useful, but is fun to play.
 
 #include "../../smkg-m_sys.h"
 #include "../../../../snake.h"
@@ -21,7 +21,7 @@
 // Technically it's only used to check one thing but I've come so far now,
 // so I may as well just leave it all here for the future.
 
-enum fake_bonustype_s {
+enum FAKEbonustype_s {
 	BONUS_NONE = 0,
 	BONUS_SLOW,
 	BONUS_FAST,
@@ -33,7 +33,7 @@ enum fake_bonustype_s {
 	NUM_BONUSES,
 };
 
-typedef struct fakesnake_s
+typedef struct FAKEsnake_s
 {
 	boolean paused;
 	boolean pausepressed;
@@ -43,7 +43,7 @@ typedef struct fakesnake_s
 	UINT8 background;
 
 	UINT16 snakelength;
-	enum fake_bonustype_s snakebonus;
+	enum FAKEbonustype_s snakebonus;
 	tic_t snakebonustime;
 	UINT8 snakex[20 * 10];
 	UINT8 snakey[20 * 10];
@@ -52,16 +52,16 @@ typedef struct fakesnake_s
 	UINT8 applex;
 	UINT8 appley;
 
-	enum fake_bonustype_s bonustype;
+	enum FAKEbonustype_s bonustype;
 	UINT8 bonusx;
 	UINT8 bonusy;
 
 	event_t *joyevents[MAXEVENTS];
 	UINT16 joyeventcount;
-} fakesnake_t;
+} FAKEsnake_t;
 
 void *tsourdt3rd_snake = NULL;
-fakesnake_t *tsourdt3rd_real_snake = NULL;
+FAKEsnake_t *tsourdt3rd_real_snake = NULL;
 
 static void M_Sys_DrawSnake(void);
 static void M_Sys_SnakeTicker(void);
@@ -135,8 +135,8 @@ static void M_Sys_DrawSnake(void)
 
 static void M_Sys_SnakeTicker(void)
 {
-	tsourdt3rd_real_snake = (fakesnake_t *)tsourdt3rd_snake;
-	memcpy(tsourdt3rd_real_snake, tsourdt3rd_snake, sizeof(fakesnake_t));
+	tsourdt3rd_real_snake = (FAKEsnake_t *)tsourdt3rd_snake;
+	memcpy(tsourdt3rd_real_snake, tsourdt3rd_snake, sizeof(FAKEsnake_t));
 	Snake_Update(tsourdt3rd_snake);
 }
 

@@ -1,16 +1,16 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Original Copyright (C) 2024 by Kart Krew.
-// Original Copyright (C) 2020 by Sonic Team Junior.
-// Original Copyright (C) 2000 by DooM Legacy Team.
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2020 by Sonic Team Junior.
+// Copyright (C) 2000 by DooM Legacy Team.
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  smkg-p_pads.c
-/// \brief Contains TSoURDt3rd's controller routines
+/// \brief TSoURDt3rd's controller routines
 
 #include "smkg-p_pads.h"
 
@@ -205,6 +205,7 @@ void TSoURDt3rd_P_Pads_ResetDeviceRumble(INT32 player)
 void TSoURDt3rd_P_Pads_PadRumbleThink(mobj_t *origin, mobj_t *target)
 {
 	player_t *player;
+
 	fixed_t low = 0;
 	fixed_t high = 0;
 	tic_t duration_tics = 0;
@@ -215,61 +216,11 @@ void TSoURDt3rd_P_Pads_PadRumbleThink(mobj_t *origin, mobj_t *target)
 	if (demoplayback)
 		return;
 
-	if (origin == NULL)
+	if (origin == NULL || origin->player == NULL)
 		return;
 	player = origin->player;
 
-	if (!P_IsLocalPlayer(player) || player->exiting)
-		return;
-	sneaker_vibration = player->powers[pw_sneakers];
-
-	if (sneaker_vibration > 0)
-	{
-		if (sneaker_vibration > 30)
-			sneaker_vibration = 30;
-		low = high += ((FRACUNIT / 3) * sneaker_vibration);
-		duration_tics = player->powers[pw_sneakers];
-	}
-
-	if (P_PlayerInPain(player))
-	{
-		if (player->powers[pw_super])
-			low = high += (FRACUNIT / 3);
-		else
-			low = high += (FRACUNIT / 5);
-		duration_tics = (TICRATE / 3);
-	}
-	else if (origin->health <= 0 && player->deadtimer <= 0)
-	{
-		if (player->powers[pw_super])
-			low = high += (FRACUNIT / 2);
-		else
-			low = high += (FRACUNIT / 4);
-		duration_tics = TICRATE;
-	}
-
-	if (player->mo->eflags & MFE_JUSTHITFLOOR)
-	{
-		if ((player->pflags & PF_GLIDING) || (player->pflags & PF_BOUNCING) || (player->powers[pw_strong] & STR_TWINSPIN))
-		{
-			low = high += (FRACUNIT / 4);
-			duration_tics = (TICRATE / 4);
-		}
-		else if (player->pflags & PF_DRILLING)
-		{
-			low = high += (FRACUNIT / 5);
-			duration_tics = (TICRATE / 7);
-		}
-	}
-	else if (P_IsObjectOnGround(origin) && !(player->mo->eflags & MFE_ONGROUND))
-	{
-		if (player->pflags & PF_DRILLING)
-		{
-			low = high += (FRACUNIT / 6);
-			duration_tics = 0;
-		}
-	}
-
+	// World Effects //
 	if (quake.time)
 	{
 		low += quake.x;
@@ -277,43 +228,97 @@ void TSoURDt3rd_P_Pads_PadRumbleThink(mobj_t *origin, mobj_t *target)
 		duration_tics = quake.time;
 	}
 
-	if ((player->pflags & PF_THOKKED) && !used_ability)
+	// Player Effects //
+	if (P_IsLocalPlayer(player) && !player->exiting)
 	{
-		switch (player->charability)
+		sneaker_vibration = player->powers[pw_sneakers];
+
+		if (sneaker_vibration > 0)
 		{
-			case CA_THOK:
-			case CA_HOMINGTHOK:
-			case CA_JUMPTHOK:
+			if (sneaker_vibration > 30)
+				sneaker_vibration = 30;
+			low = high += ((FRACUNIT / 3) * sneaker_vibration);
+			duration_tics = player->powers[pw_sneakers];
+		}
+
+		if (P_PlayerInPain(player))
+		{
+			if (player->powers[pw_super])
 				low = high += (FRACUNIT / 3);
-				break;
-			case CA_DOUBLEJUMP:
-				low = high += (FRACUNIT / 7);
-				break;
-			case CA_TELEKINESIS:
+			else
+				low = high += (FRACUNIT / 5);
+			duration_tics = (TICRATE / 3);
+		}
+		else if (origin->health <= 0 && player->deadtimer <= 0)
+		{
+			if (player->powers[pw_super])
+				low = high += (FRACUNIT / 2);
+			else
+				low = high += (FRACUNIT / 4);
+			duration_tics = TICRATE;
+		}
+
+		if (origin->eflags & MFE_JUSTHITFLOOR)
+		{
+			if ((player->pflags & PF_GLIDING) || (player->pflags & PF_BOUNCING) || (player->powers[pw_strong] & STR_TWINSPIN))
+			{
+				low = high += (FRACUNIT / 4);
+				duration_tics = (TICRATE / 4);
+			}
+			else if (player->pflags & PF_DRILLING)
+			{
+				low = high += (FRACUNIT / 5);
+				duration_tics = (TICRATE / 7);
+			}
+		}
+		else if (P_IsObjectOnGround(origin) && !(origin->eflags & MFE_ONGROUND))
+		{
+			if (player->pflags & PF_DRILLING)
+			{
 				low = high += (FRACUNIT / 6);
-				break;
-			default:
-				break;
+				duration_tics = 0;
+			}
 		}
-		duration_tics = (TICRATE / 5);
-		used_ability = true;
-	}
-	else if (!(player->pflags & PF_THOKKED))
-		used_ability = false;
 
-	if (target)
-	{
-		if ((target->flags & MF_ENEMY) || (target->flags & MF_BOSS) || (target->flags & MF_MONITOR))
+		if ((player->pflags & PF_THOKKED) && !used_ability)
 		{
-			low = high += (FRACUNIT / 5);
+			switch (player->charability)
+			{
+				case CA_THOK:
+				case CA_HOMINGTHOK:
+				case CA_JUMPTHOK:
+					low = high += (FRACUNIT / 3);
+					break;
+				case CA_DOUBLEJUMP:
+					low = high += (FRACUNIT / 7);
+					break;
+				case CA_TELEKINESIS:
+					low = high += (FRACUNIT / 6);
+					break;
+				default:
+					break;
+			}
 			duration_tics = (TICRATE / 5);
+			used_ability = true;
 		}
-		if (target->flags & MF_SPECIAL)
+		else if (!(player->pflags & PF_THOKKED))
+			used_ability = false;
+
+		if (target)
 		{
-			low = high += (FRACUNIT / 7);
-			duration_tics = (TICRATE / 4);
+			if ((target->flags & MF_ENEMY) || (target->flags & MF_BOSS) || (target->flags & MF_MONITOR))
+			{
+				low = high += (FRACUNIT / 5);
+				duration_tics = (TICRATE / 5);
+			}
+			if (target->flags & MF_SPECIAL)
+			{
+				low = high += (FRACUNIT / 7);
+				duration_tics = (TICRATE / 4);
+			}
 		}
 	}
 
+	// Rumble the pad! //
 	TSoURDt3rd_P_Pads_PlayerDeviceRumble(player, low, high, duration_tics);
 }

@@ -92,7 +92,7 @@ OP_MainMenu
 #ifdef HAVE_DISCORDSUPPORT
 	{IT_CALL 	| IT_STRING, NULL, "Mastadon Options...",  TSoURDt3rd_M_DiscordOptions_Init,   120},
 #endif
-	{IT_CALL    | IT_STRING, NULL, "Dumb Options...",      TSoURDt3rd_M_InitMainOptions,130}, // STAR STUFF: our menu! //
+	{IT_CALL    | IT_STRING, NULL, "Dumb Options...",      TSoURDt3rd_M_Main_InitOptions,130}, // STAR STUFF: our menu! //
 
 OP_P1ControlsMenu
 	{IT_CALL    | IT_STRING, NULL, "Button Configuration...", M_Setup1PControlsMenu, 10},

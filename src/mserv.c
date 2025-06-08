@@ -567,7 +567,7 @@ static void MasterServer_OnChange(void)
 		RegisterServer();
 
 #ifdef HAVE_DISCORDSUPPORT
-	DRPC_UpdatePresence();
+	DISC_UpdatePresence();
 #endif
 #endif/*MASTERSERVER*/
 }

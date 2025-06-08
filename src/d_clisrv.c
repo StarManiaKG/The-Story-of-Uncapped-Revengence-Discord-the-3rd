@@ -2955,7 +2955,7 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 	S_StartSound(NULL, ((msg == KICK_MSG_PLAYER_QUIT) ? STAR_LeaveSFX : STAR_SynchFailureSFX)); // DISCORD STUFF: I LIKE YOUR FUNNY SOUNDS, MAGIC FUNCTION //
 
 #ifdef HAVE_DISCORDSUPPORT
-	DRPC_UpdatePresence();
+	DISC_UpdatePresence();
 #endif
 #ifdef HAVE_SDL
 	STAR_SetWindowTitle();
@@ -3323,7 +3323,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 		LUA_HookInt(newplayernum, HOOK(PlayerJoin));
 
 #ifdef HAVE_DISCORDSUPPORT
-	DRPC_UpdatePresence();
+	DISC_UpdatePresence();
 #endif
 #ifdef HAVE_SDL
 	STAR_SetWindowTitle();

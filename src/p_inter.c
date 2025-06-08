@@ -31,7 +31,7 @@
 
 // TSoURDt3rd
 #include "STAR/p_user.h" // TSoURDt3rd_P_DamageMobj() & TSoURDt3rd_P_KillMobj() //
-#include "STAR/star_vars.h" // tsourdt3rd_global_jukebox //
+#include "STAR/star_vars.h" // TSoURDt3rd_Jukebox_IsPlaying() //
 
 // CTF player names
 #define CTFTEAMCODE(pl) pl->ctfteam ? (pl->ctfteam == 1 ? "\x85" : "\x84") : ""
@@ -304,7 +304,7 @@ void P_DoMatchSuper(player_t *player)
 	player->powers[pw_sneakers] = emeraldspawndelay;
 	if (P_IsLocalPlayer(player) && !player->powers[pw_super])
 	{
-		if (!tsourdt3rd_global_jukebox->playing) // STAR STUFF: don't interrupt my music please :) //
+		if (!TSoURDt3rd_Jukebox_IsPlaying()) // STAR STUFF: don't interrupt my music please :) //
 			S_StopMusic();
 		if (mariomode)
 			G_GhostAddColor(GHC_INVINCIBLE);
@@ -328,7 +328,7 @@ void P_DoMatchSuper(player_t *player)
 				player->powers[pw_sneakers] = player->powers[pw_invulnerability];
 				if (P_IsLocalPlayer(player) && !player->powers[pw_super])
 				{
-					if (!tsourdt3rd_global_jukebox->playing) // STAR STUFF: don't interrupt my music here either please :) //
+					if (!TSoURDt3rd_Jukebox_IsPlaying()) // STAR STUFF: don't interrupt my music here either please :) //
 						S_StopMusic();
 					if (mariomode)
 						G_GhostAddColor(GHC_INVINCIBLE);

@@ -34,6 +34,16 @@ extern struct tsourdt3rd_local_s
 	boolean ms_address_changed;
 	boolean autoloading_mods;
 	boolean autoloaded_mods;
+	struct
+	{
+		boolean apply_effect;
+		boolean disable_effect;
+		boolean in_effect;
+		float   prev_music_speed, prev_music_pitch;
+		INT32   prev_music_volume, prev_sfx_volume;
+		float   music_speed, music_pitch;
+		INT32   music_volume, sfx_volume;
+	} water_muffling;
 } tsourdt3rd_local;
 
 typedef enum

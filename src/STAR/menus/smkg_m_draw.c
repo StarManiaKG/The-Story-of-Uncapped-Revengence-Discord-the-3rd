@@ -170,7 +170,7 @@ void TSoURDt3rd_M_PostDrawer(void)
 		if (currentMenu == &MainDef)
 		{
 			V_DrawThinString(vid.dupx, vid.height - 41*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, TSOURDT3RDVERSIONSTRING);
-			V_DrawThinString(vid.dupx, vid.height - 33*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, TSOURDT3RDBYSTARMANIAKGSTRING);
+			V_DrawThinString(vid.dupx, vid.height - 33*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, "(By StarManiaKG!)");
 		}
 
 		// Draw typing overlay when needed, above all other menu elements.
@@ -233,7 +233,7 @@ void TSoURDt3rd_M_DrawMenuTooltips
 
 void TSoURDt3rd_M_DrawMediocreKeyboardKey(const char *text, INT32 *workx, INT32 worky, boolean push, boolean rightaligned)
 {
-	INT32 buttonwidth = V_StringWidth(text, 0) + 2;
+	INT32 buttonwidth = V_StringWidth(text, V_ALLOWLOWERCASE) + 2;
 
 	if (rightaligned)
 	{
@@ -348,7 +348,7 @@ static void M_DrawLinkArrow(INT32 x, INT32 y, INT32 i)
 		x + (i == tsourdt3rd_itemOn ? 1 + tsourdt3rd_skullAnimCounter/5 : 0),
 		y - 1,
 		// Use color of first character in text label
-		i == tsourdt3rd_itemOn ? tsourdt3rd_highlightflags : (((max(ch, 0x80) - 0x80) & 15) << V_CHARCOLORSHIFT),
+		i == tsourdt3rd_itemOn ? tsourdt3rd_highlightflags : (((max(ch, 0x80) - 0x80) & 15) << V_CHARCOLORSHIFT)|V_ALLOWLOWERCASE,
 		"\x1D"
 	);
 }
@@ -384,13 +384,13 @@ void TSoURDt3rd_M_DrawOptionsMovingButton(void)
 
 	fixed_t w = V_FontStringWidth(
 		s,
-		0,
+		V_ALLOWLOWERCASE,
 		lt_font
 	);
 	V_DrawFontStringAtFixed(
 		tx - 3*FRACUNIT - ((w/2)<<FRACBITS),
 		ty - 16*FRACUNIT,
-		0,
+		V_ALLOWLOWERCASE,
 		FRACUNIT,
 		FRACUNIT,
 		s,
@@ -556,6 +556,8 @@ box_found:
 					case IT_CVAR:
 					{
 						consvar_t *cv = (consvar_t *)currentMenu->menuitems[i].itemaction;
+						if (cv == NULL)
+							cv = tsourdt3rd_currentMenu->menuitems[i].itemaction.cvar;
 						switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
 						{
 							case IT_CV_SLIDER:
@@ -603,7 +605,30 @@ box_found:
 							{
 								boolean isDefault = CV_IsSetToDefault(cv);
 
-								w = V_StringWidth(cv->string, 0);
+								w = V_StringWidth(cv->string, V_ALLOWLOWERCASE);
+
+								if (tsourdt3rd_currentMenu->extra2 && ((INT16)strlen(cv->string) >= tsourdt3rd_currentMenu->extra2))
+								{
+									w = V_ThinStringWidth(cv->string, V_ALLOWLOWERCASE);
+
+									V_DrawThinString(BASEVIDWIDTH - x - w, y,
+										(!isDefault ? tsourdt3rd_warningflags : tsourdt3rd_highlightflags)|V_ALLOWLOWERCASE, cv->string);
+
+									if (i == tsourdt3rd_itemOn)
+									{
+										V_DrawThinString(BASEVIDWIDTH - x - 10 - w - (tsourdt3rd_skullAnimCounter/5), y - 1,
+												tsourdt3rd_highlightflags|V_ALLOWLOWERCASE, "\x1C"); // left arrow
+										V_DrawThinString(BASEVIDWIDTH - x + 2 + (tsourdt3rd_skullAnimCounter/5), y - 1,
+												tsourdt3rd_highlightflags|V_ALLOWLOWERCASE, "\x1D"); // right arrow
+									}
+
+									if (!isDefault)
+									{
+										V_DrawThinString(BASEVIDWIDTH - x + (i == tsourdt3rd_itemOn ? 13 : 5), y - 2, tsourdt3rd_warningflags|V_ALLOWLOWERCASE, ".");
+									}
+									break;
+								}
+
 								V_DrawString(BASEVIDWIDTH - x - w, y,
 									(!isDefault ? tsourdt3rd_warningflags : tsourdt3rd_highlightflags)|V_ALLOWLOWERCASE, cv->string);
 

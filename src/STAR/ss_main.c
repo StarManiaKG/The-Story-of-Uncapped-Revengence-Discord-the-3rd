@@ -9,14 +9,17 @@
 /// \file  ss_main.c
 /// \brief Contains all of TSoURDt3rd's main necessary info and structures
 
+/// \todo only keep main bios stuff here
+
 #include <time.h>
 
 #include "ss_main.h"
 #include "smkg-defs.h"
 #include "smkg-jukebox.h"
 #include "smkg-misc.h"
-#include "menus/smkg-m_sys.h" // menumessage //
+#include "core/smkg-s_exmusic.h"
 #include "curl/smkg-curl.h"
+#include "menus/smkg-m_sys.h" // menumessage //
 
 #include "../f_finale.h"
 #include "../i_time.h"
@@ -63,24 +66,14 @@ void TSoURDt3rd_Init(void)
 	TSoURDt3rd_FOL_CreateDirectory("TSoURDt3rd");
 
 	TSoURDt3rd_CheckTime(); // Check our computer's time!
+
 #ifdef HAVE_SDL
 	TSoURDt3rd_I_Pads_InitControllers(); // Initialize our cool controller system!
 #endif
+
+	TSoURDt3rd_Jukebox_Init(); // Initialize Jukebox data
+	TSoURDt3rd_S_EXMusic_Init(); // Initialize EXMusic data
 	TSoURDt3rd_InitializePlayer(consoleplayer); // Initialize the build's player structures!
-
-	// Initialize Jukebox data
-	if (!(tsourdt3rd_jukebox_available_pages = Z_Malloc(TSOURDT3RD_MAX_JUKEBOX_PAGES * sizeof(tsourdt3rd_jukebox_pages_t *), PU_STATIC, NULL)))
-		I_Error("TSoURDt3rd_Init(): could not allocate jukebox memory.");
-	tsourdt3rd_jukebox_available_pages[0] = &tsourdt3rd_jukeboxpage_mainpage;
-
-	tsourdt3rd_global_jukebox = Z_Calloc(sizeof(tsourdt3rd_jukebox_t), PU_STATIC, NULL);
-	if (tsourdt3rd_global_jukebox == NULL)
-		I_Error("TSoURDt3rd_Init(): could not allocate jukebox memory.");
-
-	tsourdt3rd_global_jukebox->hud_box_w = 320;
-	tsourdt3rd_global_jukebox->hud_string_w = 335;
-	tsourdt3rd_global_jukebox->hud_track_w = 320;
-	tsourdt3rd_global_jukebox->hud_speed_w = 360;
 }
 
 //
@@ -88,8 +81,7 @@ void TSoURDt3rd_Init(void)
 // A function specifically dedicated towards printing out certain TSoURDt3rd and STAR stuff in the console!
 //
 // starMessageType Parameters:
-//		0/NULL						- Doesn't Add Anything Extra, Therefore Returns the Function Entirely.
-//
+//		default						- Doesn't do anything extra, just prints to the console.
 //		STAR_CONS_TSOURDT3RD		- CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd:")) + ...
 //		STAR_CONS_TSOURDT3RD_NOTICE	- CONS_Printf("\x83" "%s" "\x80 ", M_GetText("TSoURDt3rd:")) + ...
 //		STAR_CONS_TSOURDT3RD_ALERT	- CONS_Printf("\x85" "%s" "\x80 ", M_GetText("TSoURDt3rd:")) + ...
@@ -120,7 +112,6 @@ void STAR_CONS_Printf(tsourdt3rd_messagetype_t starMessageType, const char *fmt,
 		case STAR_CONS_TSOURDT3RD_ALERT:
 			CONS_Printf("\x85" "%s" "\x80 ", M_GetText("TSoURDt3rd:"));
 			break;
-
 		case STAR_CONS_TSOURDT3RD_DEBUG:
 #ifdef TSOURDT3RD_DEBUGGING
 			CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd Debugging:"));
@@ -128,21 +119,17 @@ void STAR_CONS_Printf(tsourdt3rd_messagetype_t starMessageType, const char *fmt,
 #else
 			return;
 #endif
-
 		case STAR_CONS_APRILFOOLS:
 			CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd April Fools:"));
 			break;
 		case STAR_CONS_EASTER:
 			CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd Easter:"));
 			break;
-
 		case STAR_CONS_JUKEBOX:
 			CONS_Printf("\x82" "%s" "\x80 ", M_GetText("TSoURDt3rd Jukebox:"));
 			break;
-
 		default:
-			CONS_Printf("\x82STAR_CONS_Printf:\x80 You must specify a specific message type!\n");
-			return;
+			break;
 	}
 
 	// Now, just like STJr, I am lazy and I feel like just letting CONS_Printf take care of things.
@@ -169,7 +156,7 @@ void TSoURDt3rd_D_Display(void)
 
 #ifdef HAVE_CURL
 	// Check for any updates to TSoURDt3rd.
-	TSoURDt3rd_Curl_FindUpdateRoutine();
+	TSoURDt3rd_CurlRoutine_FindUpdates();
 #endif
 
 	switch (gamestate)
@@ -294,7 +281,7 @@ mobj_t *TSoURDt3rd_BossInMap(void)
 		mobj_t *mobj = (mobj_t *)th;
 		if (mobj == NULL || P_MobjWasRemoved(mobj))
 			continue;
-		if (!(mobj->flags & MF_BOSS))
+		if (!(mobj->flags & MF_BOSS) && (mobj->type != MT_METALSONIC_RACE))
 			continue;
 
 		return (mobj_t *)th;

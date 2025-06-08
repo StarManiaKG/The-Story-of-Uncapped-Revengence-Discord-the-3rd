@@ -791,6 +791,10 @@ void readlight(MYFILE *f, INT32 num)
 	INT32 value;
 	float fvalue;
 
+	// STAR STUFF: it's cool to let them know! //
+	CONS_Printf("readlight: Editing light number %d...\n", num);
+	// WE'VE LET THEM KNOW! //
+
 	do
 	{
 		if (myfgets(s, MAXLINELEN, f))
@@ -827,7 +831,7 @@ void readlight(MYFILE *f, INT32 num)
 			}
 			else if (fastcmp(word, "CORONACOLOR"))
 			{
-				lspr[num].corona_color = value;
+				lspr[num].corona_color = (UINT32)value;
 			}
 			else if (fastcmp(word, "CORONARADIUS"))
 			{
@@ -835,7 +839,7 @@ void readlight(MYFILE *f, INT32 num)
 			}
 			else if (fastcmp(word, "DYNAMICCOLOR"))
 			{
-				lspr[num].dynamic_color = value;
+				lspr[num].dynamic_color = (UINT32)value;
 			}
 			else if (fastcmp(word, "DYNAMICRADIUS"))
 			{
@@ -844,23 +848,33 @@ void readlight(MYFILE *f, INT32 num)
 				/// \note Update the sqrradius! unnecessary?
 				lspr[num].dynamic_sqrradius = fvalue * fvalue;
 			}
-			// STAR STUFF: coronas //
+			// STAR STUFF: ultimate coronas //
 			else if (fastcmp(word, "CORONAROUTINE") || fastcmp(word, "CORONARENDERINGROUTINE"))
 			{
 				switch (value)
 				{
-					case 1: lspr[num].corona_rendering_routine = LCR_SuperSonicLight; break;
-					case 0: lspr[num].corona_rendering_routine = NULL; break;
-					default: deh_warning("Light %d: unknown routine '%d'", num, value); break;
+					case 1:
+						lspr[num].corona_rendering_routine = LCR_SuperSonicLight;
+						break;
+					default:
+						lspr[num].corona_rendering_routine = NULL;
+						if (value < 0)
+							deh_warning("Light %d: unknown rendering routine '%d'", num, value);
+						break;
 				}
 			}
 			else if (fastcmp(word, "CORONACOLORINGROUTINE"))
 			{
 				switch (value)
 				{
-					case 1: lspr[num].corona_coloring_routine = LCR_ObjectColorToCoronaLight; break;
-					case 0: lspr[num].corona_coloring_routine = NULL; break;
-					default: deh_warning("Light %d: unknown routine '%d'", num, value); break;
+					case 1:
+						lspr[num].corona_coloring_routine = LCR_ObjectColorToCoronaLight;
+						break;
+					default:
+						lspr[num].corona_coloring_routine = NULL;
+						if (value < 0)
+							deh_warning("Light %d: unknown coloring routine '%d'", num, value);
+						break;
 				}
 			}
 			// OK //
@@ -1026,7 +1040,7 @@ void readspriteinfo(MYFILE *f, INT32 num, boolean sprite2)
 					t_lspr[num] = &lspr[value];
 				}
 #else
-				// STAR STUFF: uh mine now :) //
+				// STAR STUFF: ultimate coronas 2 //
 				if (sprite2)
 				{
 					deh_warning("Sprite2 %s: property '%s' is only available for sprites!", spr2names[num], word);
@@ -1044,6 +1058,7 @@ void readspriteinfo(MYFILE *f, INT32 num, boolean sprite2)
 					oldvar++;
 				}
 				t_lspr[num] = &lspr[value];
+				// DONE! //
 #endif
 			}
 			else

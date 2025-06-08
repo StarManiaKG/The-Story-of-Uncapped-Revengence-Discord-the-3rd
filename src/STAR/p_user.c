@@ -151,7 +151,7 @@ void TSoURDt3rd_P_PlayerThink(player_t *player)
 	if (display_player != NULL && display_player->mo != NULL)
 	{
 		// Water muffling
-		if (!tsourdt3rd_global_jukebox->playing && cv_tsourdt3rd_audio_watermuffling.value)
+		if (!TSoURDt3rd_Jukebox_IsPlaying() && cv_tsourdt3rd_audio_watermuffling.value)
 		{
 			if ((display_player->mo->eflags & MFE_UNDERWATER) && !watermuffling_alreadyineffect)
 			{
@@ -313,7 +313,7 @@ boolean TSoURDt3rd_P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *sourc
 			strncpy(mapmusname, TSoURDt3rd_DetermineLevelMusic(), 7);
 			mapmusname[6] = 0;
 
-			if (tsourdt3rd_global_jukebox->playing)
+			if (TSoURDt3rd_Jukebox_IsPlaying())
 				return false;
 
 			S_ChangeMusicEx(mapmusname, mapmusflags, true, TSoURDt3rd_PinchMusicPosition(), 0, 0);

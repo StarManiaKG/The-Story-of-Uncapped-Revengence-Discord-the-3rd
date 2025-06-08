@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -23,6 +23,8 @@
 // ------------------------ //
 //        Variables
 // ------------------------ //
+
+struct optionsmenu_s optionsmenu;
 
 static void M_Sys_OptionsMenuGoto(tsourdt3rd_menu_t *tsourdt3rd_assignment, menu_t *assignment);
 static void M_Sys_LoadEventsMenu(INT32 choice);
@@ -99,17 +101,15 @@ tsourdt3rd_menu_t TSoURDt3rd_TM_OP_MainMenuDef = {
 	NULL
 };
 
-struct optionsmenu_s optionsmenu;
-
 // ------------------------ //
 //        Functions
 // ------------------------ //
 
 //
-// void TSoURDt3rd_M_InitMainOptions(INT32 choice)
+// void TSoURDt3rd_M_Main_InitOptions(INT32 choice)
 // Initializes TSoURDt3rd's main menu options.
 //
-void TSoURDt3rd_M_InitMainOptions(INT32 choice)
+void TSoURDt3rd_M_Main_InitOptions(INT32 choice)
 {
 	(void)choice;
 
@@ -134,7 +134,7 @@ void TSoURDt3rd_M_DrawOptions(void)
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
 		fixed_t py, px;
-		INT32 tflag = 0;
+		INT32 tflag = V_ALLOWLOWERCASE;
 
 		if ((currentMenu->menuitems[i].status & IT_DISPLAY) == IT_GRAYPATCH)
 		{
@@ -437,4 +437,5 @@ static void M_Sys_LoadExtrasMenu(INT32 choice)
 
 	TSoURDt3rd_M_ResetOptions();
 	M_Sys_OptionsMenuGoto(&TSoURDt3rd_TM_OP_ExtrasDef, &TSoURDt3rd_OP_ExtrasDef);
+	TSoURDt3rd_OP_MainMenuDef.lastOn = op_main_extrasmenu;
 }

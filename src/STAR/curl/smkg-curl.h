@@ -37,6 +37,6 @@ void TSoURDt3rd_Curl_FindStringWithinURL(
 	int        *SITE_RETURNCODE
 );
 
-void TSoURDt3rd_Curl_FindUpdateRoutine(void);
+void TSoURDt3rd_CurlRoutine_FindUpdates(void);
 
 #endif // __SMKG_CURL__

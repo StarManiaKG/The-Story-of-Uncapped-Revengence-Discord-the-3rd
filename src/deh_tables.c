@@ -31,7 +31,7 @@
 char *FREE_STATES[NUMSTATEFREESLOTS];
 char *FREE_MOBJS[NUMMOBJFREESLOTS];
 char *FREE_SKINCOLORS[NUMCOLORFREESLOTS];
-UINT8 used_spr[(NUMSPRITEFREESLOTS / 8) + 1]; // Bitwise flag for sprite freeslot in use! I would use ceil() here if I could, but it only saves 1 byte of memory anyway.
+bitarray_t used_spr[BIT_ARRAY_SIZE(NUMSPRITEFREESLOTS)]; // Sprite freeslots in use
 
 const char NIGHTSGRADE_LIST[] = {
 	'F', // GRADE_F
@@ -4860,7 +4860,13 @@ const char *const HUDITEMS_LIST[] = {
 	"TIMELEFTNUM",
 	"TIMEUP",
 	"HUNTPICS",
+#if 0
 	"POWERUPS"
+#else
+	"POWERUPS",
+	// STAR STUFF: uh remove when 2.2.14 versino os redy //
+	"INPUT",
+#endif
 };
 
 const char *const MENUTYPES_LIST[] = {
@@ -5817,6 +5823,10 @@ struct int_const_s const INT_CONST[] = {
 	{"MB_BUTTON8",MB_BUTTON8},
 	{"MB_SCROLLUP",MB_SCROLLUP},
 	{"MB_SCROLLDOWN",MB_SCROLLDOWN},
+
+	// screen.h constants
+	{"BASEVIDWIDTH",BASEVIDWIDTH},
+	{"BASEVIDHEIGHT",BASEVIDHEIGHT},
 
 	// STAR STUFF //
 	// Controls: Jukebox

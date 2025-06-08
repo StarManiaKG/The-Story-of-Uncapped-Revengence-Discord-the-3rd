@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -33,7 +33,7 @@ extern "C" {
 // =============
 
 // ------------------------ //
-//        Variables
+//          Macros
 // ------------------------ //
 
 #define MTREE5(a,b,c,d,e) MTREE2(a, MTREE4(b,c,d,e)) // just in case
@@ -44,10 +44,13 @@ extern "C" {
 		TSoURDt3rd_M_ReverseTimeFrac(menutransition.tics, menutransition.endmenu->transitionTics) :\
 		TSoURDt3rd_M_TimeFrac(menutransition.tics, menutransition.startmenu->transitionTics), 0, N) : 0)
 
+// ------------------------ //
+//        Variables
+// ------------------------ //
+
 extern INT16 tsourdt3rd_itemOn;
 extern INT16 tsourdt3rd_skullAnimCounter;
 extern boolean tsourdt3rd_noFurtherInput;
-extern boolean tsourdt3rd_jukebox_inmenu;
 
 enum
 {
@@ -73,7 +76,7 @@ typedef enum
 	MBF_DRAWBGWHILEPLAYING	= 1<<3, // run backroutine() outside of GS_MENU
 } menubehaviourflags_t;
 
-typedef struct tsourdt3rd_menuitems_s
+typedef struct tsourdt3rd_menuitem_s
 {
 	const char *patch; // image of option used by K_MenuPreviews
 	const char *tooltip; // description of option used by TSoURDt3rd_M_DrawMenuTooltips
@@ -167,8 +170,7 @@ extern struct menutyping_s
 	menu_t *dummymenu;
 	size_t cachelen;
 	char *cache; // cached string
-} menutyping;
-// While typing, we'll have a fade strongly darken the screen to overlay the typing menu instead
+} menutyping; // While typing, we'll have a fade strongly darken the screen to overlay the typing menu instead
 
 #define MENUDELAYTIME 7
 #define MENUMINDELAY 2
@@ -402,7 +404,10 @@ enum
 	op_video_sdl_window_shaking,
 
 	op_video_flair_fpscolor = 9,
-	op_video_flair_tpscolor
+	op_video_flair_fpsfont,
+
+	op_video_flair_tpscolor = 12,
+	op_video_flair_tpsfont
 };
 
 #ifdef STAR_LIGHTING
@@ -416,9 +421,21 @@ extern menu_t TSoURDt3rd_OP_AudioDef;
 extern menuitem_t TSoURDt3rd_OP_AudioMenu[];
 extern tsourdt3rd_menu_t TSoURDt3rd_TM_OP_AudioDef;
 extern tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_AudioMenu[];
+
+extern menu_t TSoURDt3rd_OP_Audio_EXMusicDef;
+extern menuitem_t TSoURDt3rd_OP_Audio_EXMusicMenu[];
+extern tsourdt3rd_menu_t TSoURDt3rd_TM_OP_Audio_EXMusicDef;
+extern tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_Audio_EXMusicMenu[];
 enum
 {
-	op_audio_levels = 7
+	op_levels_start = 0,
+	op_levels_end = 3,
+
+	op_bosses_start,
+	op_bosses_end = 15,
+
+	op_intermission_start,
+	op_intermission_end = 20
 };
 
 extern menu_t TSoURDt3rd_OP_SavedataDef;
@@ -598,19 +615,18 @@ void TSoURDt3rd_M_DrawMenuTooltips
 	fixed_t string_x, fixed_t string_y, INT32 string_flags, boolean string_centered
 );
 
-// For some menu highlights
-UINT16 TSoURDt3rd_M_GetCvPlayerColor(UINT8 pnum);
+void TSoURDt3rd_M_DrawOptions(void);
+void TSoURDt3rd_M_DrawOptionsMovingButton(void);
 
-void TSoURDt3rd_M_DrawColorResetOption
-(
+void TSoURDt3rd_M_DrawColorResetOption(
 	INT32 x, INT32 *y, INT32 *cursory,
 	player_t *setupm_player,
 	INT32 setupm_fakeskin, consvar_t *setupm_cvdefaultskin,
 	consvar_t *setupm_cvdefaultcolor, menucolor_t *setupm_fakecolor
 );
 
-void TSoURDt3rd_M_DrawOptions(void);
-void TSoURDt3rd_M_DrawOptionsMovingButton(void);
+// For some menu highlights
+UINT16 TSoURDt3rd_M_GetCvPlayerColor(UINT8 pnum);
 
 // =============
 // SMKG-M_FUNC.C
@@ -634,14 +650,6 @@ void M_PreConnectMenuChoice(INT32 choice);
 void M_StartServerMenu(INT32 choice);
 void M_ConnectMenuModChecks(INT32 choice);
 
-void TSoURDt3rd_M_HandleColorResetOption
-(
-	player_t *setupm_player,
-	INT32 *setupm_fakeskin, consvar_t *setupm_cvdefaultskin,
-	consvar_t *setupm_cvdefaultcolor, menucolor_t *setupm_fakecolor,
-	void (*after_routine)(void)
-);
-
 void TSoURDt3rd_M_HandleAddonsMenu(INT32 choice);
 
 #ifdef HAVE_DISCORDSUPPORT
@@ -649,7 +657,7 @@ void TSoURDt3rd_M_DiscordOptions_Init(INT32 choice);
 void TSoURDt3rd_M_DiscordRequests_Init(INT32 choice);
 #endif
 
-void TSoURDt3rd_M_InitMainOptions(INT32 choice);
+void TSoURDt3rd_M_Main_InitOptions(INT32 choice);
 void TSoURDt3rd_M_OptionsTick(void);
 boolean TSoURDt3rd_M_OptionsInputs(INT32 ch);
 boolean TSoURDt3rd_M_OptionsQuit(void);
@@ -661,8 +669,17 @@ void TSoURDt3rd_M_Controls_MapProfileControl(event_t *ev);
 void TSoURDt3rd_M_CoronaLighting_Init(void);
 #endif
 
+void TSoURDt3rd_M_EXMusic_LoadMenu(INT32 choice);
+
 void TSoURDt3rd_M_Jukebox_Init(INT32 choice);
 void TSoURDt3rd_M_Jukebox_Ticker(void);
+
+void TSoURDt3rd_M_HandleColorResetOption(
+	player_t *setupm_player,
+	INT32 *setupm_fakeskin, consvar_t *setupm_cvdefaultskin,
+	consvar_t *setupm_cvdefaultcolor, menucolor_t *setupm_fakecolor,
+	void (*after_routine)(void)
+);
 
 #ifdef __cplusplus
 } // extern "C"

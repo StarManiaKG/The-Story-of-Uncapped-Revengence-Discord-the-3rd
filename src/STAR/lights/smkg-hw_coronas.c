@@ -57,8 +57,8 @@ void HWR_Transform(float *cx, float *cy, float *cz)
 			continue;
 
 		// POV: FOV
-		const float fpov = FIXED_TO_FLOAT(cv_fov.value+player->fovadd);
-		if (cv_glshearing.value == 1 || (cv_glshearing.value == 2 && R_IsViewpointThirdPerson(&players[displayplayer], false)))
+		const float fpov = FIXED_TO_FLOAT(cv_fov.value + player->fovadd);
+		if (cv_glshearing.value == 1 || (cv_glshearing.value == 2 && R_IsViewpointThirdPerson(player, false)))
 		{
 			tr_viewx = FIXED_TO_FLOAT(viewx);
 			tr_viewy = FIXED_TO_FLOAT(viewy);

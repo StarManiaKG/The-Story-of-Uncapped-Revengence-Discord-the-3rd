@@ -51,12 +51,14 @@ enum hud {
 	hud_intermissiontitletext,
 	hud_intermissionmessages,
 	hud_intermissionemeralds,
+
 #if 1
 	// STAR NOTE/MAJOR STAR NOTE: HERE UNTIL 2.2.14 //
 	hud_powerups,
 	hud_input,
 	// WHAT'S THE TEXTURE LIKE, KNUCKLES? //
 #endif
+
 	hud_MAX
 };
 

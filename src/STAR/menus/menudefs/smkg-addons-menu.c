@@ -20,35 +20,6 @@
 // ------------------------ //
 
 //
-// static char *M_Sys_GetFullAddonPath(boolean decatenate)
-// Lists the full directory of our currently selected addon.
-//
-static char *M_Sys_GetFullAddonPath(boolean decatenate)
-{
-	UINT32 len;
-	const UINT32 len_to_decentate = 54;
-	static char header[1024];
-
-	strlcpy(header, va("%s%s", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING), 1024);
-	if (decatenate == false)
-	{
-		// We've done everything we needed to.
-		return header;
-	}
-
-	len = strlen(header);
-	if (len > len_to_decentate)
-	{
-		len = len-len_to_decentate;
-		header[len] = header[len+1] = header[len+2] = '.';
-	}
-	else
-		len = 0;
-
-	return header+len;
-}
-
-//
 // static void M_Sys_ConfigExec(INT32 choice);
 // Executes data within config/txt files.
 //
@@ -128,8 +99,9 @@ static void M_Sys_LoadAddon(INT32 choice)
 //
 static void M_Sys_AutoLoadAddons(INT32 choice)
 {
-	const char *addon_name = dirmenu[dir_on[menudepthleft]]+DIR_STRING;
 	FILE *autoload_config = NULL;
+	const char *addon_name = dirmenu[dir_on[menudepthleft]]+DIR_STRING;
+	char *addon_path = va("%s%s", menupath, addon_name);
 
 	autoload_config = TSoURDt3rd_FIL_AccessFile(NULL, AUTOLOADCONFIGFILENAME, "r");
 	if (autoload_config != NULL)
@@ -156,7 +128,7 @@ static void M_Sys_AutoLoadAddons(INT32 choice)
 	switch (dirmenu[dir_on[menudepthleft]][DIR_TYPE])
 	{
 		case EXT_FOLDER:
-			fprintf(autoload_config, "%s\n", M_Sys_GetFullAddonPath(false));
+			fprintf(autoload_config, "%s\n", TSoURDt3rd_M_WriteVariedLengthString(addon_path, false));
 			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "Added folder \x82\"%s\"\x80 to the autoload configuration list.\n", addon_name);
 			break;
 		case EXT_TXT:
@@ -182,7 +154,7 @@ static void M_Sys_AutoLoadAddons(INT32 choice)
 	if (!(refreshdirmenu & REFRESHDIR_MAX))
 	{
 		TSoURDt3rd_M_StartMessage(
-			M_Sys_GetFullAddonPath(true),
+			TSoURDt3rd_M_WriteVariedLengthString(addon_path, true),
 			M_GetText(
 				"Autoloading was successful!\n"
 				"Keep in mind that the effects of\nautoloading this addon won't happen\nuntil you \x82restart TSoURDt3rd\x80.\n\n"
@@ -204,7 +176,8 @@ static void M_Sys_AutoLoadAddons(INT32 choice)
 void TSoURDt3rd_M_HandleAddonsMenu(INT32 choice)
 {
 	const char *addon_name = dirmenu[dir_on[menudepthleft]]+DIR_STRING;
-	char *path = M_Sys_GetFullAddonPath(true);
+	char *addon_path = va("%s%s", menupath, addon_name);
+	char *path = TSoURDt3rd_M_WriteVariedLengthString(addon_path, true);
 	boolean refresh = true;
 
 	if (!dirmenu || !dirmenu[dir_on[menudepthleft]])

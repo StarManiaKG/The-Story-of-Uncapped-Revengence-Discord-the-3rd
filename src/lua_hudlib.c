@@ -72,11 +72,14 @@ static const char *const hud_disable_options[] = {
 	"intermissiontitletext",
 	"intermissionmessages",
 	"intermissionemeralds",
+
 #if 1
 	// MAJOR STAR NOTE/STAR NOTE: remove for 2.2.14 //
 	"powerups",
 	"input",
+	// ROUGH....... (real rough) //
 #endif
+
 	NULL};
 
 // you know, let's actually make sure that the table is synced.

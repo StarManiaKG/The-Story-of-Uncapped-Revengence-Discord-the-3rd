@@ -1,8 +1,0 @@
-{
-    "files.associations": {
-        "*.lua": "lua",
-        "y_inter.h": "c",
-        "am_map.h": "c",
-        "command.h": "c"
-    }
-}

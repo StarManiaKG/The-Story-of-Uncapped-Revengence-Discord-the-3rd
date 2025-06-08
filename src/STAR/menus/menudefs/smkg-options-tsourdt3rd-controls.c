@@ -159,12 +159,12 @@ static void M_Sys_DrawControls(void)
 		{
 			case IT_HEADERTEXT:
 				V_DrawFill(0, y+18, 124, 1, 0);	// underline
-				V_DrawString(x, y+8, 0, currentMenu->menuitems[i].text);
+				V_DrawString(x, y+8, V_ALLOWLOWERCASE, currentMenu->menuitems[i].text);
 				y += spacing;
 				break;
 
 			case IT_STRING:
-				V_DrawThinString(x, y+2, (i == tsourdt3rd_itemOn ? tsourdt3rd_highlightflags : 0), currentMenu->menuitems[i].text);
+				V_DrawThinString(x, y+2, (i == tsourdt3rd_itemOn ? tsourdt3rd_highlightflags : 0)|V_ALLOWLOWERCASE, currentMenu->menuitems[i].text);
 				y += spacing;
 				break;
 
@@ -175,22 +175,22 @@ static void M_Sys_DrawControls(void)
 				if (currentMenu->menuitems[i].patch)
 				{
 					V_DrawScaledPatch(x-4, y+1, 0, W_CachePatchName(currentMenu->menuitems[i].patch, PU_CACHE));
-					V_DrawThinString(x+12, y+2, (i == tsourdt3rd_itemOn ? tsourdt3rd_highlightflags : 0), currentMenu->menuitems[i].text);
+					V_DrawThinString(x+12, y+2, (i == tsourdt3rd_itemOn ? tsourdt3rd_highlightflags : 0)|V_ALLOWLOWERCASE, currentMenu->menuitems[i].text);
 					drawnpatch = true;
 				}
 				else
-					V_DrawThinString(x, y+2, (i == tsourdt3rd_itemOn ? tsourdt3rd_highlightflags : 0), currentMenu->menuitems[i].text);
+					V_DrawThinString(x, y+2, (i == tsourdt3rd_itemOn ? tsourdt3rd_highlightflags : 0)|V_ALLOWLOWERCASE, currentMenu->menuitems[i].text);
 
 				if (currentMenu->menuitems[i].status & IT_CVAR)	// not the proper way to check but this menu only has normal onoff cvars.
 				{
 					consvar_t *cv = (consvar_t *)tsourdt3rd_currentMenu->menuitems[i].itemaction.cvar;
-					INT32 w = V_StringWidth(cv->string, 0);
+					INT32 w = V_StringWidth(cv->string, V_ALLOWLOWERCASE);
 
-					V_DrawString(x + 12, y + 13, ((cv->flags & CV_CHEAT) && !CV_IsSetToDefault(cv) ? tsourdt3rd_warningflags : tsourdt3rd_highlightflags), cv->string);
+					V_DrawString(x + 12, y + 13, ((cv->flags & CV_CHEAT) && !CV_IsSetToDefault(cv) ? tsourdt3rd_warningflags : tsourdt3rd_highlightflags)|V_ALLOWLOWERCASE, cv->string);
 					if (i == tsourdt3rd_itemOn)
 					{
-						V_DrawString(x - (tsourdt3rd_skullAnimCounter/5), y+12, tsourdt3rd_highlightflags, "\x1C"); // left arrow
-						V_DrawString(x + 12 + w + 2 + (tsourdt3rd_skullAnimCounter/5) , y+13, tsourdt3rd_highlightflags, "\x1D"); // right arrow
+						V_DrawString(x - (tsourdt3rd_skullAnimCounter/5), y+12, tsourdt3rd_highlightflags|V_ALLOWLOWERCASE, "\x1C"); // left arrow
+						V_DrawString(x + 12 + w + 2 + (tsourdt3rd_skullAnimCounter/5) , y+13, tsourdt3rd_highlightflags|V_ALLOWLOWERCASE, "\x1D"); // right arrow
 					}
 				}
 				else if (currentMenu->menuitems[i].status & IT_CONTROL)
@@ -322,8 +322,8 @@ static void M_Sys_DrawControls(void)
 
 		M_DrawTextBox((BASEVIDWIDTH/2) - (120), ypos - 12, 30, 8);
 
-		V_DrawCenteredThinString(BASEVIDWIDTH/2, ypos, V_GRAYMAP, "Hold and release inputs for control");
-		V_DrawCenteredThinString(BASEVIDWIDTH/2, ypos + 10, V_GRAYMAP, va("\"%s\"", currentMenu->menuitems[tsourdt3rd_itemOn].text));
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, ypos, V_GRAYMAP|V_ALLOWLOWERCASE, "Hold and release inputs for");
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, ypos + 10, V_GRAYMAP|V_ALLOWLOWERCASE, va("\"%s\"", currentMenu->menuitems[tsourdt3rd_itemOn].text));
 
 		if (optionsmenu.bindtimer > 0)
 		{

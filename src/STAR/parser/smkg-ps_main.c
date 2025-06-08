@@ -20,6 +20,8 @@
 // ------------------------ //
 
 INT32 tsourdt3rd_starparser_lump_loading = 0; // are we loading lumps?
+INT32 tsourdt3rd_starparser_num_errored_lumps = 0; // how many lumps, that we've loaded so far, have come across errors?
+
 INT32 tsourdt3rd_starparser_num_brackets = 0; // are we checking for our proper brackets?
 INT32 tsourdt3rd_starparser_num_errors = 0; // have we stumbled upon a parser error?
 
@@ -36,8 +38,7 @@ void TSoURDt3rd_STARParser_Read(tsourdt3rd_starparser_t *script, char *text, siz
 	script->tokenizer = Tokenizer_Open(text, lumpLength, 2);
 
 	if (!script->tokenizer)
-		goto close_lump;
-	tsourdt3rd_starparser_lump_loading++; // turn on loading flag
+		return;
 
 	script->tkn = script->tokenizer->get(script->tokenizer, 0);
 	script->val = script->tokenizer->get(script->tokenizer, 1);
@@ -45,12 +46,12 @@ void TSoURDt3rd_STARParser_Read(tsourdt3rd_starparser_t *script, char *text, siz
 	if (stricmp(script->tkn, "TSoURDt3rd"))
 	{
 		TSoURDt3rd_STARParser_Error("No script namespace provided!", script, TSOURDT3RD_STARPARSER_ERROR_LUMP);
-		goto close_lump;
+		return;
 	}
 	if (TSoURDt3rd_STARParser_CheckForBrackets(script) != TSOURDT3RD_STARPARSER_BRAK_OPEN)
 	{
 		TSoURDt3rd_STARParser_Error("No script initializing bracket!", script, TSOURDT3RD_STARPARSER_ERROR_LUMP);
-		goto close_lump;
+		return;
 	}
 
 	while (script->tkn != NULL)
@@ -84,35 +85,5 @@ void TSoURDt3rd_STARParser_Read(tsourdt3rd_starparser_t *script, char *text, siz
 			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "Successfully parsed the lump! Exiting...\n");
 			break;
 		}
-	}
-
-	// Oooops! You have to put the brackets and terms, in the correct place.
-	if (tsourdt3rd_starparser_num_brackets > 0)
-		TSoURDt3rd_STARParser_Error("Some brackets are not properly enclosed!", script, TSOURDT3RD_STARPARSER_ERROR_LUMP);
-	else if (tsourdt3rd_starparser_num_brackets < 0)
-		TSoURDt3rd_STARParser_Error("Bracket enclosure '}' has been misplaced somewhere!", script, TSOURDT3RD_STARPARSER_ERROR_LUMP);
-
-	// Uh-oh! Error!
-	if (tsourdt3rd_starparser_num_errors > 0)
-	{
-		TSoURDt3rd_M_StartMessage(
-			wadfiles[numwadfiles-1]->filename,
-			va("Stumbled upon\n%d parser error(s)\nwithin this lump!\n", tsourdt3rd_starparser_num_errors),
-			NULL,
-			MM_NOTHING,
-			NULL,
-			NULL
-		);
-		S_StartSound(NULL, sfx_skid);
-	}
-
-	goto close_lump;
-
-	close_lump:
-	{
-		if (script->tokenizer)
-			Tokenizer_Close(script->tokenizer);
-		tsourdt3rd_starparser_num_errors = 0;
-		tsourdt3rd_starparser_lump_loading--; // turn off loading flag
 	}
 }

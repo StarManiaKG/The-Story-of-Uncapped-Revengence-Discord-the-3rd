@@ -32,7 +32,7 @@ The build and its executable files can be found in the provided ZIP file, with f
 
 ## Features
   - **Uncapped**
-	- Now In Vanilla SRB2, but was featured in this build early enough for me to call it a "New Feature"
+	- (Now In Vanilla SRB2, but was featured in this build early enough for me to call it a "New Feature")
 ***
   - **Uncapped** ***(cont.)***
 	- (By Eidolon, Old Original Source Code found [here](https://git.do.srb2.org/ShaderWraith/SRB2/-/tree/uncappedrevengeance))
@@ -125,7 +125,8 @@ The build and its executable files can be found in the provided ZIP file, with f
 
 ***
   - **Palette Rendering**
-    - (Software Palette in OpenGL)
+    - Software Palette in OpenGL
+    - (Now In Vanilla SRB2, but was featured in this build early enough for me to call it a "New Feature")
     - (Made by Hannu Hanhi, source code found [here](https://git.do.srb2.org/Hannu_Hanhi/SRB2/-/tree/ogl-palette-rendering))
 
 <p align="center">
