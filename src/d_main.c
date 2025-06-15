@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2023 by Sonic Team Junior.
+// Copyright (C) 1999-2025 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -34,7 +34,7 @@
 #include "doomdef.h"
 #include "am_map.h"
 #include "console.h"
-#include "d_net.h"
+#include "netcode/d_net.h"
 #include "f_finale.h"
 #include "g_game.h"
 #include "hu_stuff.h"
@@ -50,17 +50,18 @@
 #include "p_saveg.h"
 #include "r_main.h"
 #include "r_local.h"
+#include "r_translation.h"
 #include "s_sound.h"
 #include "st_stuff.h"
 #include "v_video.h"
 #include "w_wad.h"
 #include "z_zone.h"
 #include "d_main.h"
-#include "d_netfil.h"
+#include "netcode/d_netfil.h"
 #include "m_cheat.h"
 #include "y_inter.h"
 #include "p_local.h" // chasecam
-#include "mserv.h" // ms_RoomId
+#include "netcode/mserv.h" // ms_RoomId
 #include "m_misc.h" // screenshot functionality
 #include "deh_tables.h" // Dehacked list test
 #include "m_cond.h" // condition initialization
@@ -195,7 +196,10 @@ void D_ProcessEvents(void)
 	mouse.buttons &= ~(MB_SCROLLUP|MB_SCROLLDOWN);
 	mouse2.buttons &= ~(MB_SCROLLUP|MB_SCROLLDOWN);
 
-	TSoURDt3rd_D_ProcessEvents(); // STAR STUFF: PLEASE process our events //
+#if 1
+	// STAR STUFF: PLEASE process [the 7] events //
+	TSoURDt3rd_D_ProcessEvents();
+#endif
 
 	for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
 	{
@@ -237,6 +241,9 @@ void D_ProcessEvents(void)
 					break;
 			}
 		}
+
+		if (CON_PreResponder(ev))
+			continue;
 
 		// Screenshots over everything so that they can be taken anywhere.
 		if (M_ScreenshotResponder(ev))
@@ -299,7 +306,10 @@ void D_ProcessEvents(void)
 	if (mouse2.rdx || mouse2.rdy)
 		G_SetMouseDeltas(mouse2.rdx, mouse2.rdy, 2);
 
-	TSoURDt3rd_D_ProcessEvents(); // STAR STUFF: PLEASE process our events //
+#if 0
+	// STAR STUFF: PLEASE process [the 7] events //
+	TSoURDt3rd_D_ProcessEvents();
+#endif
 }
 
 //
@@ -486,11 +496,21 @@ static void D_Display(void)
 	{
 		wipegamestate = gamestate;
 
-		// clean up border stuff
-		// see if the border needs to be initially drawn
 		if (gamestate == GS_LEVEL || (gamestate == GS_TITLESCREEN && titlemapinaction && curbghide && (!hidetitlemap)))
 		{
 			// draw the view directly
+			if (cv_debug)
+			{
+				r_renderwalls = cv_renderwalls.value;
+				r_renderfloors = cv_renderfloors.value;
+				r_renderthings = cv_renderthings.value;
+			}
+			else
+			{
+				r_renderwalls = true;
+				r_renderfloors = true;
+				r_renderthings = true;
+			}
 
 			if (!automapactive && !dedicated && cv_renderview.value)
 			{
@@ -512,23 +532,21 @@ static void D_Display(void)
 				// render the second screen
 				if (splitscreen && players[secondarydisplayplayer].mo)
 				{
-	#ifdef HWRENDER
-					if (rendermode != render_soft)
+					viewwindowy = vid.height / 2;
+
+#ifdef HWRENDER
+					if (rendermode == render_opengl)
 						HWR_RenderPlayerView(1, &players[secondarydisplayplayer]);
 					else
-	#endif
+#endif
 					if (rendermode != render_none)
 					{
-						viewwindowy = vid.height / 2;
-						M_Memcpy(ylookup, ylookup2, viewheight*sizeof (ylookup[0]));
-
 						topleft = screens[0] + viewwindowy*vid.width + viewwindowx;
 
 						R_RenderPlayerView(&players[secondarydisplayplayer]);
-
-						viewwindowy = 0;
-						M_Memcpy(ylookup, ylookup1, viewheight*sizeof (ylookup[0]));
 					}
+
+					viewwindowy = 0;
 				}
 
 				// Image postprocessing effect
@@ -583,7 +601,6 @@ static void D_Display(void)
 	if (paused && cv_showhud.value && (!menuactive || netgame))
 	{
 #if 0
-#if 0
 		INT32 py;
 		patch_t *patch;
 		if (automapactive)
@@ -593,13 +610,14 @@ static void D_Display(void)
 		patch = W_CachePatchName("M_PAUSE", PU_PATCH);
 		V_DrawScaledPatch(viewwindowx + (BASEVIDWIDTH - patch->width)/2, py, 0, patch);
 #else
+#if 0
 		INT32 y = ((automapactive) ? (32) : (BASEVIDHEIGHT/2));
 		M_DrawTextBox((BASEVIDWIDTH/2) - (60), y - (16), 13, 2);
 		V_DrawCenteredString(BASEVIDWIDTH/2, y - (4), V_MENUCOLORMAP, "Game Paused");
-#endif
 #else
 		// STAR STUFF: draw the pause graphic for me please //
 		TSoURDt3rd_M_DrawPauseGraphic();
+#endif
 #endif
 	}
 
@@ -772,10 +790,10 @@ void D_SRB2Loop(void)
 		gstartuplumpnum = W_CheckNumForPatchName("STARTUP");
 #else
 		// STAR STUFF: hooray for graphic diversity! //
-		gstartuplumpnum = W_CheckNumForName(TSoURDt3rd_CON_DrawStartupScreen());
+		gstartuplumpnum = W_GetNumForPatchName(TSoURDt3rd_CON_DrawStartupScreen());
 #endif
 		if (gstartuplumpnum == LUMPERROR)
-			gstartuplumpnum = W_GetNumForName("MISSING");
+			gstartuplumpnum = W_GetNumForPatchName("MISSING");
 		V_DrawScaledPatch(0, 0, 0, W_CachePatchNum(gstartuplumpnum, PU_PATCH));
 	}
 
@@ -879,7 +897,7 @@ void D_SRB2Loop(void)
 
 			renderdeltatics = FLOAT_TO_FIXED(deltatics);
 
-			if (!(paused /*|| P_AutoPause()*/) && deltatics < 1.0 && !hu_stopped)
+			if (!(paused || P_AutoPause()) && deltatics < 1.0 && !hu_stopped)
 			{
 				rendertimefrac = g_time.timefrac;
 			}
@@ -893,6 +911,11 @@ void D_SRB2Loop(void)
 			renderdeltatics = realtics * FRACUNIT;
 			rendertimefrac = FRACUNIT;
 		}
+
+#if 1
+		// STAR STUFF: build any other frames we want before running the display... //
+		TSoURDt3rd_D_BuildFrame();
+#endif
 
 		if (interp || doDisplay)
 		{
@@ -917,8 +940,8 @@ void D_SRB2Loop(void)
 		LUA_Step();
 
 #if 1
-		// STAR STUFF: run our game loop manager now :p //
-		TSoURDt3rd_D_Loop(&interp);
+		// STAR STUFF: run our extra game loop routines now :p //
+		TSoURDt3rd_D_Loop();
 #endif
 
 		// Fully completed frame made.
@@ -965,7 +988,8 @@ void D_StartTitle(void)
 #if 0
 	S_StopMusic();
 #else
-	TSoURDt3rd_S_CanModifyMusic(NULL); // STAR STUFF: why don't we properly check for jukebox music instead? //
+	// STAR STUFF: why don't we properly check for jukebox music instead? //
+	TSoURDt3rd_S_CanModifyMusic(NULL);
 #endif
 
 	if (netgame)
@@ -1203,16 +1227,18 @@ static void IdentifyVersion(void)
 	// Add the maps
 	D_AddFile(&startupwadfiles, va(pandf,srb2waddir, "zones.pk3"));
 
-	// Add the players
-	D_AddFile(&startupwadfiles, va(pandf,srb2waddir, "player.dta"));
+	// Add the characters
+	D_AddFile(&startupwadfiles, va(pandf,srb2waddir, "characters.pk3"));
 
 #ifdef USE_PATCH_DTA
 	// Add our crappy patches to fix our bugs
 	D_AddFile(&startupwadfiles, va(pandf,srb2waddir, "patch.pk3"));
 #endif
 
+#if 1
 	// STAR STUFF: Add this custom build's fun stuff! //
 	D_AddFile(&startupwadfiles, va(pandf,srb2waddir, "tsourdt3rd.pk3"));
+#endif
 
 #if !defined (HAVE_SDL) || defined (HAVE_MIXER)
 	{
@@ -1226,10 +1252,13 @@ static void IdentifyVersion(void)
 				I_Error("File "str" has been modified with non-music/sound lumps"); \
 		}
 
-		MUSICTEST("music.dta")
+		MUSICTEST("music.pk3")
 		//MUSICTEST("patch_music.pk3")
 
-		MUSICTEST("jukebox.pk3") // STAR STUFF: CUSTOM MUSIC ENJOYMENT SYSTEM LOADED! //
+#if 1
+		// STAR STUFF: CUSTOM MUSIC ENJOYMENT SYSTEM LOADED! //
+		MUSICTEST("jukebox.pk3")
+#endif
 	}
 #endif
 }
@@ -1279,7 +1308,7 @@ void D_SRB2Main(void)
 	// Print GPL notice for our console users (Linux)
 	CONS_Printf(
 	"\n\nSonic Robo Blast 2\n"
-	"Copyright (C) 1998-2024 by Sonic Team Junior\n\n"
+	"Copyright (C) 1998-2025 by Sonic Team Junior\n\n"
 	"This program comes with ABSOLUTELY NO WARRANTY.\n\n"
 	"This is free software, and you are welcome to redistribute it\n"
 	"and/or modify it under the terms of the GNU General Public License\n"
@@ -1325,7 +1354,7 @@ void D_SRB2Main(void)
 #endif
 
 	// for dedicated server
-#if !defined (_WINDOWS) //already check in win_main.c
+#if !defined (_WINDOWS) && !defined (DEDICATED) //already check in win_main.c
 	dedicated = M_CheckParm("-dedicated") != 0;
 #endif
 
@@ -1406,7 +1435,10 @@ void D_SRB2Main(void)
 	CONS_Printf("Z_Init(): Init zone memory allocation daemon. \n");
 	Z_Init();
 
-	TSoURDt3rd_Init(); // STAR STUFF: Initialize our data! //
+#if 1
+	// STAR STUFF: Initialize our data! //
+	TSoURDt3rd_Init();
+#endif
 
 	clientGamedata = M_NewGameDataStruct();
 	serverGamedata = M_NewGameDataStruct();
@@ -1462,11 +1494,7 @@ void D_SRB2Main(void)
 	// Make backups of some SOCcable tables.
 	P_BackupTables();
 
-	// Setup character tables
-	// Have to be done here before files are loaded
-	M_InitCharacterTables();
-
-	mainwads = 3; // doesn't include music.dta
+	mainwads = 3; // doesn't include music.pk3
 #ifdef USE_PATCH_DTA
 	mainwads++;
 #endif
@@ -1481,23 +1509,31 @@ void D_SRB2Main(void)
 	W_InitMultipleFiles(&startupwadfiles);
 	D_CleanFile(&startupwadfiles);
 
-#ifndef DEVELOP // md5s last updated 08/02/24 (star)
+#ifndef DEVELOP // md5s last updated 22/02/20 (ddmmyy)
 
 	// Check MD5s of autoloaded files
 	W_VerifyFileMD5(0, ASSET_HASH_SRB2_PK3); // srb2.pk3
 	W_VerifyFileMD5(1, ASSET_HASH_ZONES_PK3); // zones.pk3
-	W_VerifyFileMD5(2, ASSET_HASH_PLAYER_DTA); // player.dta
+	W_VerifyFileMD5(2, ASSET_HASH_CHARACTERS_PK3); // characters.pk3
 #ifdef USE_PATCH_DTA
 	W_VerifyFileMD5(3, ASSET_HASH_PATCH_PK3); // patch.pk3
-	W_VerifyFileMD5(4, ASSET_HASH_TSOURDT3RD_PK3);	// STAR STUFF: tsourdt3rd.pk3 //
-#else
-	W_VerifyFileMD5(3, ASSET_HASH_TSOURDT3RD_PK3); 	// STAR STUFF: tsourdt3rd.pk3 //
 #endif
-	// don't check music.dta because people like to modify it, and it doesn't matter if they do
+#if 1
+	// STAR STUFF: our assets now! //
+	#ifdef USE_PATCH_DTA
+		W_VerifyFileMD5(4, ASSET_HASH_TSOURDT3RD_PK3); // tsourdt3rd.pk3 //
+	#else
+		W_VerifyFileMD5(3, ASSET_HASH_TSOURDT3RD_PK3); // tsourdt3rd.pk3 //
+	#endif
+#endif
+	// don't check music.pk3 because people like to modify it, and it doesn't matter if they do
 	// ...except it does if they slip maps in there, and that's what W_VerifyNMUSlumps is for.
 #endif //ifndef DEVELOP
 
-	TSoURDt3rd_D_AutoLoadAddons(); // STAR STUFF: autoload our addons please //
+#if 1
+	// STAR STUFF: autoload our addons please //
+	TSoURDt3rd_D_AutoLoadAddons();
+#endif
 
 	cht_Init();
 
@@ -1517,6 +1553,8 @@ void D_SRB2Main(void)
 	//--------------------------------------------------------- CONSOLE
 	// setup loading screen
 	SCR_Startup();
+
+	PaletteRemap_Init();
 
 	HU_Init();
 
@@ -1643,7 +1681,7 @@ void D_SRB2Main(void)
 	{
 		if (!M_IsNextParm())
 			I_Error("usage: -room <room_id>\nCheck the Master Server's webpage for room ID numbers.\n");
-		ms_RoomId = atoi(M_GetNextParm());
+		CV_SetValue(&cv_masterserver_room_id, atoi(M_GetNextParm()));
 
 #ifdef UPDATE_ALERT
 		GetMODVersion_Console();
@@ -1806,6 +1844,7 @@ void D_SRB2Main(void)
 	CON_ToggleOff();
 
 #ifdef HAVE_DISCORDSUPPORT
+	/// STAR NOTE: \todo uh move into unique TSoURDt3rd_D_Main function //
 	DISC_Init();
 #endif
 

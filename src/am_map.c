@@ -448,17 +448,22 @@ static void AM_setWindowPanning(void)
 		m_paninc.x = 0;
 }
 
-// STAR NOTE: edited for cv_tsourdt3rd_debug_automapanywhere support :) //
+// ** STAR NOTE: edited for cv_tsourdt3rd_debug_automapanywhere support :) ** //
+
 /** Responds to user inputs in automap mode.
   *
   * \param ev Event to possibly respond to.
-  * \return True if the automap responder ate the event.=
+  * \return True if the automap responder ate the event.
   */
 boolean AM_Responder(event_t *ev)
 {
 	INT32 rc = false;
 
+#if 0
+	if (devparm || cv_debug) // only automap in Debug Tails 01-19-2001
+#else
 	if (devparm || cv_debug || cv_tsourdt3rd_debug_automapanywhere.value) // only automap in Debug Tails 01-19-2001
+#endif
 	{
 		if (!automapactive)
 		{
@@ -625,12 +630,17 @@ static inline void AM_doFollowPlayer(void)
 	}
 }
 
-// STAR NOTE: also edited for cv_tsourdt3rd_debug_automapanywhere support :) //
+// ** STAR NOTE: also edited for cv_tsourdt3rd_debug_automapanywhere support :) ** //
+
 /** Updates automap on a game tic, while the automap is enabled.
   */
 void AM_Ticker(void)
 {
+#if 0
+	if (!cv_debug)if (!cv_debug && !cv_tsourdt3rd_debug_automapanywhere.value)
+#else
 	if (!cv_debug && !cv_tsourdt3rd_debug_automapanywhere.value)
+#endif
 		AM_Stop();
 
 	if (dedicated || !automapactive)

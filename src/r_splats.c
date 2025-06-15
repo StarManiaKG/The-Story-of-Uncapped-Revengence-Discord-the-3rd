@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2023 by Sonic Team Junior.
+// Copyright (C) 1999-2024 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -53,7 +53,7 @@ static void rasterize_segment_tex(INT32 x1, INT32 y1, INT32 x2, INT32 y2, INT32 
 
 			if (dir == 0)
 			{
-				for (;;)
+				for (; count > 0; count--)
 				{
 					rastertab[y1].maxx = xs;
 					rastertab[y1].tx2 = xe;
@@ -62,13 +62,11 @@ static void rasterize_segment_tex(INT32 x1, INT32 y1, INT32 x2, INT32 y2, INT32 
 					xs += dx0;
 					xe += dx1;
 					y1++;
-
-					if (count-- < 1) break;
 				}
 			}
 			else
 			{
-				for (;;)
+				for (; count > 0; count--)
 				{
 					rastertab[y1].maxx = xs;
 					rastertab[y1].tx2 = tc;
@@ -77,8 +75,6 @@ static void rasterize_segment_tex(INT32 x1, INT32 y1, INT32 x2, INT32 y2, INT32 
 					xs += dx0;
 					xe += dx1;
 					y1++;
-
-					if (count-- < 1) break;
 				}
 			}
 		}
@@ -95,7 +91,7 @@ static void rasterize_segment_tex(INT32 x1, INT32 y1, INT32 x2, INT32 y2, INT32 
 
 			if (dir == 0)
 			{
-				for (;;)
+				for (; count > 0; count--)
 				{
 					rastertab[y2].minx = xs;
 					rastertab[y2].tx1 = xe;
@@ -104,13 +100,11 @@ static void rasterize_segment_tex(INT32 x1, INT32 y1, INT32 x2, INT32 y2, INT32 
 					xs += dx0;
 					xe += dx1;
 					y2++;
-
-					if (count-- < 1) break;
 				}
 			}
 			else
 			{
-				for (;;)
+				for (; count > 0; count--)
 				{
 					rastertab[y2].minx = xs;
 					rastertab[y2].tx1 = tc;
@@ -119,8 +113,6 @@ static void rasterize_segment_tex(INT32 x1, INT32 y1, INT32 x2, INT32 y2, INT32 
 					xs += dx0;
 					xe += dx1;
 					y2++;
-
-					if (count-- < 1) break;
 				}
 			}
 		}
@@ -369,7 +361,7 @@ static void R_RasterizeFloorSplat(floorsplat_t *pSplat, vector2_t *verts, visspr
 	ds_flatwidth = pSplat->width;
 	ds_flatheight = pSplat->height;
 
-	ds_powersoftwo = ds_solidcolor = false;
+	ds_powersoftwo = ds_solidcolor = ds_fog = false;
 
 	if (R_CheckSolidColorFlat())
 		ds_solidcolor = true;
@@ -381,9 +373,7 @@ static void R_RasterizeFloorSplat(floorsplat_t *pSplat, vector2_t *verts, visspr
 
 	if (pSplat->slope)
 	{
-		R_SetTiltedSpan(0);
-		R_SetScaledSlopePlane(pSplat->slope, vis->viewpoint.x, vis->viewpoint.y, vis->viewpoint.z, pSplat->xscale, pSplat->yscale, -pSplat->verts[0].x, pSplat->verts[0].y, vis->viewpoint.angle, pSplat->angle);
-		R_CalculateSlopeVectors();
+		R_SetScaledSlopePlane(pSplat->slope, vis->viewpoint.x, vis->viewpoint.y, vis->viewpoint.z, (INT64)pSplat->xscale, (INT64)pSplat->yscale, -pSplat->verts[0].x, pSplat->verts[0].y, vis->viewpoint.angle, pSplat->angle);
 	}
 	else if (!ds_solidcolor)
 	{
@@ -391,8 +381,6 @@ static void R_RasterizeFloorSplat(floorsplat_t *pSplat, vector2_t *verts, visspr
 
 		if (pSplat->angle)
 		{
-			memset(cachedheight, 0, sizeof(cachedheight));
-
 			// Add the view offset, rotated by the plane angle.
 			fixed_t a = -pSplat->verts[0].x + vis->viewpoint.x;
 			fixed_t b = -pSplat->verts[0].y + vis->viewpoint.y;
@@ -408,7 +396,7 @@ static void R_RasterizeFloorSplat(floorsplat_t *pSplat, vector2_t *verts, visspr
 	}
 
 	ds_colormap = vis->colormap;
-	ds_translation = R_GetSpriteTranslation(vis);
+	ds_translation = R_GetTranslationForThing(vis->mobj, vis->color, vis->translation);
 	if (ds_translation == NULL)
 		ds_translation = colormaps;
 
@@ -547,29 +535,18 @@ static void R_RasterizeFloorSplat(floorsplat_t *pSplat, vector2_t *verts, visspr
 			angle_t planecos = FINECOSINE(angle);
 			angle_t planesin = FINESINE(angle);
 
-			if (planeheight != cachedheight[y])
+			// [RH] Notice that I dumped the caching scheme used by Doom.
+			// It did not offer any appreciable speedup.
+			distance = FixedMul(planeheight, yslope[y]);
+			span = abs(centery - y);
+
+			if (span) // Don't divide by zero
 			{
-				cachedheight[y] = planeheight;
-				distance = cacheddistance[y] = FixedMul(planeheight, yslope[y]);
-				span = abs(centery - y);
-
-				if (span) // Don't divide by zero
-				{
-					xstep = FixedMul(planesin, planeheight) / span;
-					ystep = FixedMul(planecos, planeheight) / span;
-				}
-				else
-					xstep = ystep = FRACUNIT;
-
-				cachedxstep[y] = xstep;
-				cachedystep[y] = ystep;
+				xstep = FixedMul(planesin, planeheight) / span;
+				ystep = FixedMul(planecos, planeheight) / span;
 			}
 			else
-			{
-				distance = cacheddistance[y];
-				xstep = cachedxstep[y];
-				ystep = cachedystep[y];
-			}
+				xstep = ystep = FRACUNIT;
 
 			ds_xstep = FixedDiv(xstep, pSplat->xscale);
 			ds_ystep = FixedDiv(ystep, pSplat->yscale);
@@ -586,9 +563,6 @@ static void R_RasterizeFloorSplat(floorsplat_t *pSplat, vector2_t *verts, visspr
 		rastertab[y].minx = INT32_MAX;
 		rastertab[y].maxx = INT32_MIN;
 	}
-
-	if (!ds_solidcolor && pSplat->angle && !pSplat->slope)
-		memset(cachedheight, 0, sizeof(cachedheight));
 }
 
 static void prepare_rastertab(void)

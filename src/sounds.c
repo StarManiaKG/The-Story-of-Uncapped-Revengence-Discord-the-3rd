@@ -826,16 +826,15 @@ sfxinfo_t S_sfx[NUMSFX] =
   // skin sounds free slots to add sounds at run time (Boris HACK!!!)
   // initialized to NULL
 
+#if 1
   // STAR STUFF //
   // Generic menu SFX
-  [sfx_tmxbup] = {
-   "tmxbup", false,  64, 0,                  -1, NULL, 0, -1, -1, LUMPERROR, "Deleting"
-  },
+  [sfx_tmxbup] = {"tmxbup", false,  64, 0,                  -1, NULL, 0, -1, -1, LUMPERROR, "Deleting"},
   {"tmxbdn", false,  64, 0,                  -1, NULL, 0, -1, -1, LUMPERROR, "Typing"},
 
   // Extras
   {"tf2d",   false,  64, 0,                  -1, NULL, 0, -1, -1, LUMPERROR, "Dispenser Goin' Up."},
-  // SOUNDS MADE! //
+#endif
 };
 
 char freeslotnames[sfx_freeslot0 + NUMSFXFREESLOTS + NUMSKINSFXSLOTS][7];
@@ -851,21 +850,21 @@ void S_InitRuntimeSounds (void)
 	{
 		value = (i+1) - sfx_freeslot0;
 
-    // STAR NOTE: edited to allow for more sounds, with minor preservations //
-    if (value < 10)
+		if (value < 10)
 			sprintf(soundname, "fre00%d", value);
 		else if (value < 100)
 			sprintf(soundname, "fre0%d", value);
 		else if (value < 1000)
 			sprintf(soundname, "fre%d", value);
-#if 1
+#if 0
+    else
+			sprintf(soundname, "fr%d", value);
+#else
+    // STAR NOTE: edited to allow for more sounds, with minor preservations //
     else if (value < 10000)
 			sprintf(soundname, "fr%d", value);
 		else
 			sprintf(soundname, "f%d", value);
-#else
-    else
-			sprintf(soundname, "fr%d", value);
 #endif
 
 		strcpy(freeslotnames[value-1], soundname);

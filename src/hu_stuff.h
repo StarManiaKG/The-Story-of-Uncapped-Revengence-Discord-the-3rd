@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2023 by Sonic Team Junior.
+// Copyright (C) 1999-2024 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -70,14 +70,17 @@ typedef struct
 #else
 #define OLDCHAT (cv_consolechat.value == 1 || dedicated || vid.width < 640 || splitscreen)
 #endif
-#define CHAT_MUTE (cv_mute.value && !(server || IsPlayerAdmin(consoleplayer)))	// this still allows to open the chat but not to type. That's used for scrolling and whatnot.
-#define OLD_MUTE (OLDCHAT && cv_mute.value && !(server || IsPlayerAdmin(consoleplayer)))	// this is used to prevent oldchat from opening when muted.
+#define CHAT_MUTE ((cv_mute.value || players[consoleplayer].muted) && !(server || IsPlayerAdmin(consoleplayer)))	// this still allows to open the chat but not to type. That's used for scrolling and whatnot.
+#define OLD_MUTE (OLDCHAT && (cv_mute.value || players[consoleplayer].muted) && !(server || IsPlayerAdmin(consoleplayer)))	// this is used to prevent oldchat from opening when muted.
 
 // some functions
 void HU_AddChatText(const char *text, boolean playsound);
 
 // set true when entering a chat message
 extern boolean chat_on;
+
+extern UINT8 spam_tokens[MAXPLAYERS];
+extern tic_t spam_tics[MAXPLAYERS];
 
 extern patch_t *emeraldpics[3][8];
 extern patch_t *rflagico;

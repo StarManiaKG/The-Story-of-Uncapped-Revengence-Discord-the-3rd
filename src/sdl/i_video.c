@@ -91,7 +91,7 @@
 #include "../STAR/smkg-i_sys.h" // TSoURDt3rd_I_GetEvent() //
 
 // maximum number of windowed modes (see windowedModes[][])
-#define MAXWINMODES (18)
+#define MAXWINMODES (21)
 
 /**	\brief
 */
@@ -103,8 +103,6 @@ static char vidModeName[33][32]; // allow 33 different modes
 
 rendermode_t rendermode = render_soft;
 rendermode_t chosenrendermode = render_none; // set by command line arguments
-
-boolean highcolor = false;
 
 static void VidWaitChanged(void);
 
@@ -163,7 +161,9 @@ static INT32 windowedModes[MAXWINMODES][2] =
 	{1920,1080}, // 1.66
 	{1680,1050}, // 1.60,5.25
 	{1600,1200}, // 1.33
+	{1600,1000}, // 1.60,5.00
 	{1600, 900}, // 1.66
+	{1536, 864}, // 1.66,4.80
 	{1366, 768}, // 1.66
 	{1440, 900}, // 1.60,4.50
 	{1280,1024}, // 1.33?
@@ -172,6 +172,7 @@ static INT32 windowedModes[MAXWINMODES][2] =
 	{1280, 720}, // 1.66
 	{1152, 864}, // 1.33,3.60
 	{1024, 768}, // 1.33,3.20
+	{ 960, 600}, // 1.60,3.00
 	{ 800, 600}, // 1.33,2.50
 	{ 640, 480}, // 1.33,2.00
 	{ 640, 400}, // 1.60,2.00
@@ -1123,7 +1124,10 @@ void I_GetEvent(void)
 				break;
 		}
 
-		TSoURDt3rd_I_GetEvent(&evt); // STAR STUFF: get our unique events too please :) //
+#if 1
+		// STAR STUFF: get our unique events too please :) //
+		TSoURDt3rd_I_GetEvent(&evt);
+#endif
 	}
 
 	// Send all relative mouse movement as one single mouse event.
@@ -1282,7 +1286,10 @@ void I_FinishUpdate(void)
 	if (cv_showping.value && netgame && consoleplayer != serverplayer)
 		SCR_DisplayLocalPing();
 
-	TSoURDt3rd_I_FinishUpdate(); // STAR STUFF: update screen please :p //
+#if 1
+	// STAR STUFF: update screen please :p //
+	TSoURDt3rd_I_FinishUpdate();
+#endif
 
 	if (rendermode == render_soft && screens[0])
 	{
@@ -1653,6 +1660,7 @@ static SDL_bool Impl_CreateWindow(SDL_bool fullscreen)
 	window = SDL_CreateWindow("SRB2 "VERSIONSTRING, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 			realwidth, realheight, flags);
 #else
+	// STAR STUFF: i like my window title better! //
 	window = SDL_CreateWindow(STAR_SetWindowTitle(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 			realwidth, realheight, flags);
 #endif
@@ -1869,6 +1877,9 @@ void I_StartupGraphics(void)
 	if (mousegrabok && !disable_mouse)
 		SDLdoGrabMouse();
 
+	// disable text input right off the bat, since we don't need it at the start.
+	I_SetTextInputMode(textinputmodeenabledbylua);
+
 	graphics_started = true;
 }
 
@@ -1916,6 +1927,7 @@ void VID_StartupOpenGL(void)
 
 		HWD.pfnSetPaletteLookup = hwSym("SetPaletteLookup",NULL);
 		HWD.pfnCreateLightTable = hwSym("CreateLightTable",NULL);
+		HWD.pfnUpdateLightTable = hwSym("UpdateLightTable",NULL);
 		HWD.pfnClearLightTables = hwSym("ClearLightTables",NULL);
 		HWD.pfnSetScreenPalette = hwSym("SetScreenPalette",NULL);
 
@@ -1960,8 +1972,6 @@ void I_ShutdownGraphics(void)
 	I_OutputMsg("shut down\n");
 
 #ifdef HWRENDER
-	if (GLUhandle)
-		hwClose(GLUhandle);
 	if (sdlglcontext)
 	{
 		SDL_GL_DeleteContext(sdlglcontext);

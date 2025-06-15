@@ -1,14 +1,14 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2023 by Sonic Team Junior.
+// Copyright (C) 1999-2024 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  screen.c
-/// \brief Handles multiple resolutions, 8bpp/16bpp(highcolor) modes
+/// \brief Handles multiple resolutions
 
 #include "doomdef.h"
 #include "doomstat.h"
@@ -27,7 +27,7 @@
 #include "hu_stuff.h"
 #include "z_zone.h"
 #include "d_main.h"
-#include "d_clisrv.h"
+#include "netcode/d_clisrv.h"
 #include "f_finale.h"
 #include "y_inter.h" // usebuffer
 #include "i_sound.h" // closed captions
@@ -95,27 +95,15 @@ consvar_t cv_fullscreen = CVAR_INIT ("fullscreen", "Yes", CV_SAVE|CV_CALL, CV_Ye
 // =========================================================================
 
 INT32 scr_bpp; // current video mode bytes per pixel
-UINT8 *scr_borderpatch; // flat used to fill the reduced view borders set at ST_Init()
 
 // =========================================================================
-
-//  Short and Tall sky drawer, for the current color mode
-void (*walldrawerfunc)(void);
-
-boolean R_486 = false;
-boolean R_586 = false;
-boolean R_MMX = false;
-boolean R_SSE = false;
-boolean R_3DNow = false;
-boolean R_MMXExt = false;
-boolean R_SSE2 = false;
 
 void SCR_SetDrawFuncs(void)
 {
 	//
-	//  setup the right draw routines for either 8bpp or 16bpp
+	//  setup the right draw routines
 	//
-	if (true)//vid.bpp == 1) //Always run in 8bpp. todo: remove all 16bpp code?
+	if (vid.bpp == 1) //Always run in 8bpp.
 	{
 		colfuncs[BASEDRAWFUNC] = R_DrawColumn_8;
 		spanfuncs[BASEDRAWFUNC] = R_DrawSpan_8;
@@ -128,6 +116,8 @@ void SCR_SetDrawFuncs(void)
 		colfuncs[COLDRAWFUNC_SHADE] = R_DrawShadeColumn_8;
 		colfuncs[COLDRAWFUNC_SHADOWED] = R_DrawColumnShadowed_8;
 		colfuncs[COLDRAWFUNC_TRANSTRANS] = R_DrawTranslatedTranslucentColumn_8;
+		colfuncs[COLDRAWFUNC_CLAMPED] = R_DrawColumnClamped_8;
+		colfuncs[COLDRAWFUNC_CLAMPEDTRANS] = R_DrawTranslucentColumnClamped_8;
 		colfuncs[COLDRAWFUNC_TWOSMULTIPATCH] = R_Draw2sMultiPatchColumn_8;
 		colfuncs[COLDRAWFUNC_TWOSMULTIPATCHTRANS] = R_Draw2sMultiPatchTranslucentColumn_8;
 		colfuncs[COLDRAWFUNC_FOG] = R_DrawFogColumn_8;
@@ -138,6 +128,7 @@ void SCR_SetDrawFuncs(void)
 		spanfuncs[SPANDRAWFUNC_SPLAT] = R_DrawSplat_8;
 		spanfuncs[SPANDRAWFUNC_TRANSSPLAT] = R_DrawTranslucentSplat_8;
 		spanfuncs[SPANDRAWFUNC_TILTEDSPLAT] = R_DrawTiltedSplat_8;
+		spanfuncs[SPANDRAWFUNC_TILTEDTRANSSPLAT] = R_DrawTiltedTranslucentSplat_8;
 		spanfuncs[SPANDRAWFUNC_SPRITE] = R_DrawFloorSprite_8;
 		spanfuncs[SPANDRAWFUNC_TRANSSPRITE] = R_DrawTranslucentFloorSprite_8;
 		spanfuncs[SPANDRAWFUNC_TILTEDSPRITE] = R_DrawTiltedFloorSprite_8;
@@ -160,6 +151,7 @@ void SCR_SetDrawFuncs(void)
 		spanfuncs_npo2[SPANDRAWFUNC_SPLAT] = R_DrawSplat_NPO2_8;
 		spanfuncs_npo2[SPANDRAWFUNC_TRANSSPLAT] = R_DrawTranslucentSplat_NPO2_8;
 		spanfuncs_npo2[SPANDRAWFUNC_TILTEDSPLAT] = R_DrawTiltedSplat_NPO2_8;
+		spanfuncs_npo2[SPANDRAWFUNC_TILTEDTRANSSPLAT] = R_DrawTiltedTranslucentSplat_NPO2_8;
 		spanfuncs_npo2[SPANDRAWFUNC_SPRITE] = R_DrawFloorSprite_NPO2_8;
 		spanfuncs_npo2[SPANDRAWFUNC_TRANSSPRITE] = R_DrawTranslucentFloorSprite_NPO2_8;
 		spanfuncs_npo2[SPANDRAWFUNC_TILTEDSPRITE] = R_DrawTiltedFloorSprite_NPO2_8;
@@ -211,48 +203,6 @@ void SCR_SetMode(void)
 //
 void SCR_Startup(void)
 {
-	const CPUInfoFlags *RCpuInfo = I_CPUInfo();
-	if (!M_CheckParm("-NOCPUID") && RCpuInfo)
-	{
-#if defined (__i386__) || defined (_M_IX86) || defined (__WATCOMC__)
-		R_486 = true;
-#endif
-		if (RCpuInfo->RDTSC)
-			R_586 = true;
-		if (RCpuInfo->MMX)
-			R_MMX = true;
-		if (RCpuInfo->AMD3DNow)
-			R_3DNow = true;
-		if (RCpuInfo->MMXExt)
-			R_MMXExt = true;
-		if (RCpuInfo->SSE)
-			R_SSE = true;
-		if (RCpuInfo->SSE2)
-			R_SSE2 = true;
-		CONS_Printf("CPU Info: 486: %i, 586: %i, MMX: %i, 3DNow: %i, MMXExt: %i, SSE2: %i\n", R_486, R_586, R_MMX, R_3DNow, R_MMXExt, R_SSE2);
-	}
-
-	if (M_CheckParm("-486"))
-		R_486 = true;
-	if (M_CheckParm("-586"))
-		R_586 = true;
-	if (M_CheckParm("-MMX"))
-		R_MMX = true;
-	if (M_CheckParm("-3DNow"))
-		R_3DNow = true;
-	if (M_CheckParm("-MMXExt"))
-		R_MMXExt = true;
-
-	if (M_CheckParm("-SSE"))
-		R_SSE = true;
-	if (M_CheckParm("-noSSE"))
-		R_SSE = false;
-
-	if (M_CheckParm("-SSE2"))
-		R_SSE2 = true;
-
-	M_SetupMemcpy();
-
 	if (dedicated)
 	{
 		V_Init();
@@ -279,6 +229,7 @@ void SCR_Recalc(void)
 		return;
 
 #ifdef ALAM_LIGHTING
+	// STAR STUFF: you're free [coronas]!
 	TSoURDt3rd_R_Release_Coronas();
 #endif
 
@@ -307,6 +258,7 @@ void SCR_Recalc(void)
 	am_recalc = true;
 
 #ifdef ALAM_LIGHTING
+	// STAR STUFF: calling all coronas once again...
 	TSoURDt3rd_R_Load_Corona();
 #endif
 
@@ -488,7 +440,7 @@ void SCR_CalculateFPS(void)
 void SCR_DisplayTicRate(void)
 {
 	INT32 ticcntcolor = 0;
-	const INT32 h = vid.height-(8*vid.dupy);
+	const INT32 h = vid.height-(8*vid.dup);
 	UINT32 cap = R_GetFramerateCap();
 	double fps = round(averageFPS);
 
@@ -524,7 +476,7 @@ void SCR_DisplayTicRate(void)
 
 		width = V_StringWidth(drawnstr, V_NOSCALESTART);
 
-		V_DrawString(vid.width - ((7 * 8 * vid.dupx) + V_StringWidth("FPS: ", V_NOSCALESTART)), h,
+		V_DrawString(vid.width - ((7 * 8 * vid.dup) + V_StringWidth("FPS: ", V_NOSCALESTART)), h,
 			V_MENUCOLORMAP|V_NOSCALESTART|V_USERHUDTRANS, "FPS:");
 		V_DrawString(vid.width - width, h,
 			ticcntcolor|V_NOSCALESTART|V_USERHUDTRANS, drawnstr);
@@ -539,7 +491,7 @@ void SCR_DisplayLocalPing(void)
 		INT32 dispy = cv_ticrate.value ? 180 : 189;
 #if 1
 		// STAR NOTE: my code reigns supreme! //
-		dispy = TSoURDt3rd_SCR_SetPingHeight();
+		TSoURDt3rd_SCR_SetPingHeight(&dispy);
 #endif
 		HU_drawPing(307, dispy, ping, true, V_SNAPTORIGHT | V_SNAPTOBOTTOM);
 	}
@@ -561,11 +513,9 @@ void SCR_ClosedCaptions(void)
 			basey -= 42;
 		else if (splitscreen)
 			basey -= 8;
-		else if ((modeattacking == ATTACKING_NIGHTS)
-		|| (!(maptol & TOL_NIGHTS)
-		&& LUA_HudEnabled(hud_powerups)
+		else if (LUA_HudEnabled(hud_powerups)
 		&& ((cv_powerupdisplay.value == 2) // "Always"
-		 || (cv_powerupdisplay.value == 1 && !camera.chase)))) // "First-person only"
+		 || (cv_powerupdisplay.value == 1 && !camera.chase))) // "First-person only"
 			basey -= 16;
 	}
 
@@ -644,9 +594,9 @@ void SCR_DisplayMarathonInfo(void)
 #define PRIMEV1 13
 #define PRIMEV2 17 // I can't believe it! I'm on TV!
 		antisplice[0] += (entertic - oldentertics)*PRIMEV2;
-		antisplice[0] %= PRIMEV1*((vid.width/vid.dupx)+1);
+		antisplice[0] %= PRIMEV1*((vid.width/vid.dup)+1);
 		antisplice[1] += (entertic - oldentertics)*PRIMEV1;
-		antisplice[1] %= PRIMEV1*((vid.width/vid.dupx)+1);
+		antisplice[1] %= PRIMEV1*((vid.width/vid.dup)+1);
 		str = va("%i:%02i:%02i.%02i",
 			G_TicsToHours(marathontime),
 			G_TicsToMinutes(marathontime, false),

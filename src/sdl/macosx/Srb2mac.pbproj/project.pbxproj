@@ -844,42 +844,42 @@
 			fileEncoding = 30;
 			isa = PBXFileReference;
 			name = d_net.c;
-			path = ../../d_net.c;
+			path = ../../netcode/d_net.c;
 			refType = 2;
 		};
 		8417771A085A0FCE000C01D8 = {
 			fileEncoding = 30;
 			isa = PBXFileReference;
 			name = d_net.h;
-			path = ../../d_net.h;
+			path = ../../netcode/d_net.h;
 			refType = 2;
 		};
 		8417771B085A0FCE000C01D8 = {
 			fileEncoding = 30;
 			isa = PBXFileReference;
 			name = d_netcmd.c;
-			path = ../../d_netcmd.c;
+			path = ../../netcode/d_netcmd.c;
 			refType = 2;
 		};
 		8417771C085A0FCE000C01D8 = {
 			fileEncoding = 30;
 			isa = PBXFileReference;
 			name = d_netcmd.h;
-			path = ../../d_netcmd.h;
+			path = ../../netcode/d_netcmd.h;
 			refType = 2;
 		};
 		8417771D085A0FCE000C01D8 = {
 			fileEncoding = 30;
 			isa = PBXFileReference;
 			name = d_netfil.c;
-			path = ../../d_netfil.c;
+			path = ../../netcode/d_netfil.c;
 			refType = 2;
 		};
 		8417771E085A0FCE000C01D8 = {
 			fileEncoding = 30;
 			isa = PBXFileReference;
 			name = d_netfil.h;
-			path = ../../d_netfil.h;
+			path = ../../netcode/d_netfil.h;
 			refType = 2;
 		};
 		8417771F085A0FCE000C01D8 = {
@@ -1201,7 +1201,7 @@
 			fileEncoding = 30;
 			isa = PBXFileReference;
 			name = i_net.c;
-			path = ../i_net.c;
+			path = ../netcode/i_net.c;
 			refType = 2;
 		};
 		84177751085A1097000C01D8 = {
@@ -1801,7 +1801,7 @@
 			fileEncoding = 30;
 			isa = PBXFileReference;
 			name = i_net.h;
-			path = ../../i_net.h;
+			path = ../../netcode/i_net.h;
 			refType = 2;
 		};
 		841777A8085A1200000C01D8 = {
@@ -2133,7 +2133,7 @@
 				INSTALL_PATH = "$(HOME)/Applications";
 				JAVA_COMPILER_DEBUGGING_SYMBOLS = NO;
 				OPTIMIZATION_CFLAGS = "-O2";
-				OTHER_CFLAGS = "-DMAC_ALERT -DUNIXCOMMON -DSDLMAIN -DHAVE_MIXER -DHAVE_PNG -D_BIG_ENDIAN -DSTDC_HEADERS -DSDL -Wall -Winline -fno-strict-aliasing";
+				OTHER_CFLAGS = "-DMAC_ALERT -DUNIXCOMMON -DSDLMAIN -DHAVE_MIXER -DHAVE_PNG -D_BIG_ENDIAN -DSTDC_HEADERS -DSDL -Wall -Winline -fno-strict-aliasing -fwrapv";
 				OTHER_REZFLAGS = "";
 				PREBINDING = NO;
 				PRODUCT_NAME = Srb2;

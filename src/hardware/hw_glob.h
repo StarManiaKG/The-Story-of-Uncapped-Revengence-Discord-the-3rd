@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2023 by Sonic Team Junior.
+// Copyright (C) 1999-2024 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -20,6 +20,9 @@
 
 // the original aspect ratio of Doom graphics isn't square
 #define ORIGINAL_ASPECT (320.0f/200.0f)
+
+// Uncomment this to enable the OpenGL loading screen
+//#define HWR_LOADING_SCREEN
 
 // -----------
 // structures
@@ -71,8 +74,6 @@ typedef struct gl_vissprite_s
 	float spritexscale, spriteyscale;
 	float spritexoffset, spriteyoffset;
 
-	skincolornum_t color;
-
 	UINT32 renderflags;
 	UINT8 rotateflags;
 
@@ -107,6 +108,7 @@ void HWR_FreeExtraSubsectors(void);
 // hw_cache.c
 // --------
 RGBA_t *HWR_GetTexturePalette(void);
+
 void HWR_InitMapTextures(void);
 void HWR_LoadMapTextures(size_t pnumtextures);
 void HWR_FreeMapTextures(void);
@@ -117,10 +119,9 @@ patch_t *HWR_GetCachedGLPatch(lumpnum_t lumpnum);
 void HWR_GetPatch(patch_t *patch);
 void HWR_GetMappedPatch(patch_t *patch, const UINT8 *colormap);
 void HWR_GetFadeMask(lumpnum_t fademasklumpnum);
-patch_t *HWR_GetPic(lumpnum_t lumpnum);
 
-GLMapTexture_t *HWR_GetTexture(INT32 tex);
-void HWR_GetLevelFlat(levelflat_t *levelflat);
+GLMapTexture_t *HWR_GetTexture(INT32 tex, boolean chromakeyed);
+void HWR_GetLevelFlat(levelflat_t *levelflat, boolean chromakeyed);
 void HWR_GetRawFlat(lumpnum_t flatlumpnum);
 
 void HWR_FreeTexture(patch_t *patch);
@@ -132,9 +133,11 @@ void HWR_UnlockCachedPatch(GLPatch_t *gpatch);
 
 void HWR_SetPalette(RGBA_t *palette);
 void HWR_SetMapPalette(void);
-UINT32 HWR_CreateLightTable(UINT8 *lighttable);
+UINT32 HWR_CreateLightTable(UINT8 *lighttable, RGBA_t *hw_lighttable);
+void HWR_UpdateLightTable(UINT32 id, UINT8 *lighttable, RGBA_t *hw_lighttable);
 UINT32 HWR_GetLightTableID(extracolormap_t *colormap);
 void HWR_ClearLightTables(void);
+
 
 // --------
 // hw_draw.c

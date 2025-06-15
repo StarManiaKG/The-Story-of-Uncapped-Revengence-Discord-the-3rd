@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2023 by Sonic Team Junior.
+// Copyright (C) 1999-2024 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -506,8 +506,8 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 	UINT32 blendmode = ((scrn & V_BLENDMASK) >> V_BLENDSHIFT);
 
 	fixed_t col, ofs, colfrac, rowfrac, fdup, vdup;
-	INT32 dupx, dupy;
-	const column_t *column;
+	INT32 dup;
+	column_t *column;
 	UINT8 *desttop, *dest, *deststart, *destend;
 	const UINT8 *source, *deststop;
 	fixed_t pwidth; // patch width
@@ -556,30 +556,23 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 		patchdrawfunc = (v_translevel) ? transmappedpdraw : mappedpdraw;
 	}
 
-	dupx = vid.dupx;
-	dupy = vid.dupy;
-	if (scrn & V_SCALEPATCHMASK) switch ((scrn & V_SCALEPATCHMASK) >> V_SCALEPATCHSHIFT)
+	dup = vid.dup;
+	if (scrn & V_SCALEPATCHMASK) switch (scrn & V_SCALEPATCHMASK)
 	{
-		case 1: // V_NOSCALEPATCH
-			dupx = dupy = 1;
+		case V_NOSCALEPATCH:
+			dup = 1;
 			break;
-		case 2: // V_SMALLSCALEPATCH
-			dupx = vid.smalldupx;
-			dupy = vid.smalldupy;
+		case V_SMALLSCALEPATCH:
+			dup = vid.smalldup;
 			break;
-		case 3: // V_MEDSCALEPATCH
-			dupx = vid.meddupx;
-			dupy = vid.meddupy;
-			break;
-		default:
+		case V_MEDSCALEPATCH:
+			dup = vid.meddup;
 			break;
 	}
 
-	// only use one dup, to avoid stretching (har har)
-	dupx = dupy = (dupx < dupy ? dupx : dupy);
-	fdup = vdup = FixedMul(dupx<<FRACBITS, pscale);
+	fdup = vdup = pscale * dup;
 	if (vscale != pscale)
-		vdup = FixedMul(dupx<<FRACBITS, vscale);
+		vdup = vscale * dup;
 	colfrac = FixedDiv(FRACUNIT, fdup);
 	rowfrac = FixedDiv(FRACUNIT, vdup);
 
@@ -685,8 +678,8 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 	}
 	else
 	{
-		x = FixedMul(x,dupx<<FRACBITS);
-		y = FixedMul(y,dupy<<FRACBITS);
+		x *= dup;
+		y *= dup;
 		x >>= FRACBITS;
 		y >>= FRACBITS;
 
@@ -694,40 +687,40 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 		if (!(scrn & V_SCALEPATCHMASK))
 		{
 			// if it's meant to cover the whole screen, black out the rest (ONLY IF TOP LEFT ISN'T TRANSPARENT)
-			if (x == 0 && patch->width == BASEVIDWIDTH && y == 0 && patch->height == BASEVIDHEIGHT)
+			if (!v_translevel && x == 0 && patch->width == BASEVIDWIDTH && y == 0 && patch->height == BASEVIDHEIGHT)
 			{
-				column = (const column_t *)((const UINT8 *)(patch->columns) + (patch->columnofs[0]));
-				if (!column->topdelta)
+				column = &patch->columns[0];
+				if (column->num_posts && !column->posts[0].topdelta)
 				{
-					source = (const UINT8 *)(column) + 3;
+					source = column->pixels;
 					V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, source[0]);
 				}
 			}
 
-			if (vid.width != BASEVIDWIDTH * dupx)
+			if (vid.width != BASEVIDWIDTH * dup)
 			{
-				// dupx adjustments pretend that screen width is BASEVIDWIDTH * dupx,
+				// dup adjustments pretend that screen width is BASEVIDWIDTH * dup,
 				// so center this imaginary screen
 				if (scrn & V_SNAPTORIGHT)
-					x += (vid.width - (BASEVIDWIDTH * dupx));
+					x += (vid.width - (BASEVIDWIDTH * dup));
 				else if (!(scrn & V_SNAPTOLEFT))
-					x += (vid.width - (BASEVIDWIDTH * dupx)) / 2;
+					x += (vid.width - (BASEVIDWIDTH * dup)) / 2;
 				if (perplayershuffle & 4)
-					x -= (vid.width - (BASEVIDWIDTH * dupx)) / 4;
+					x -= (vid.width - (BASEVIDWIDTH * dup)) / 4;
 				else if (perplayershuffle & 8)
-					x += (vid.width - (BASEVIDWIDTH * dupx)) / 4;
+					x += (vid.width - (BASEVIDWIDTH * dup)) / 4;
 			}
-			if (vid.height != BASEVIDHEIGHT * dupy)
+			if (vid.height != BASEVIDHEIGHT * dup)
 			{
 				// same thing here
 				if (scrn & V_SNAPTOBOTTOM)
-					y += (vid.height - (BASEVIDHEIGHT * dupy));
+					y += (vid.height - (BASEVIDHEIGHT * dup));
 				else if (!(scrn & V_SNAPTOTOP))
-					y += (vid.height - (BASEVIDHEIGHT * dupy)) / 2;
+					y += (vid.height - (BASEVIDHEIGHT * dup)) / 2;
 				if (perplayershuffle & 1)
-					y -= (vid.height - (BASEVIDHEIGHT * dupy)) / 4;
+					y -= (vid.height - (BASEVIDHEIGHT * dup)) / 4;
 				else if (perplayershuffle & 2)
-					y += (vid.height - (BASEVIDHEIGHT * dupy)) / 4;
+					y += (vid.height - (BASEVIDHEIGHT * dup)) / 4;
 			}
 		}
 
@@ -738,18 +731,17 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 	{
 		pwidth = patch->width<<FRACBITS;
 		pwidth = FixedMul(pwidth, pscale);
-		pwidth = FixedMul(pwidth, dupx<<FRACBITS);
+		pwidth *= dup;
 		pwidth >>= FRACBITS;
 	}
 	else
-		pwidth = patch->width * dupx;
+		pwidth = patch->width * dup;
 
 	deststart = desttop;
 	destend = desttop + pwidth;
 
 	for (col = 0; (col>>FRACBITS) < patch->width; col += colfrac, ++offx, desttop++)
 	{
-		INT32 topdelta, prevdelta = -1;
 		if (scrn & V_FLIP) // offx is measured from right edge instead of left
 		{
 			if (x+pwidth-offx < 0) // don't draw off the left of the screen (WRAP PREVENTION)
@@ -765,27 +757,23 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 				break;
 		}
 
-		column = (const column_t *)((const UINT8 *)(patch->columns) + (patch->columnofs[col>>FRACBITS]));
+		column = &patch->columns[col>>FRACBITS];
 
-		while (column->topdelta != 0xff)
+		for (unsigned i = 0; i < column->num_posts; i++)
 		{
-			topdelta = column->topdelta;
-			if (topdelta <= prevdelta)
-				topdelta += prevdelta;
-			prevdelta = topdelta;
-			source = (const UINT8 *)(column) + 3;
+			post_t *post = &column->posts[i];
+			source = column->pixels + post->data_offset;
 			dest = desttop;
 			if (scrn & V_FLIP)
 				dest = deststart + (destend - desttop);
-			dest += FixedInt(FixedMul(topdelta<<FRACBITS,vdup))*vid.width;
+			dest += FixedInt(FixedMul(post->topdelta<<FRACBITS,vdup))*vid.width;
 
-			for (ofs = 0; dest < deststop && (ofs>>FRACBITS) < column->length; ofs += rowfrac)
+			for (ofs = 0; dest < deststop && (size_t)(ofs>>FRACBITS) < post->length; ofs += rowfrac)
 			{
 				if (dest >= screens[scrn&V_PARAMMASK]) // don't draw off the top of the screen (CRASH PREVENTION)
 					*dest = patchdrawfunc(dest, source, ofs);
 				dest += vid.width;
 			}
-			column = (const column_t *)((const UINT8 *)column + column->length + 4);
 		}
 	}
 }
@@ -799,8 +787,8 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, IN
 	// boolean flip = false;
 
 	fixed_t col, ofs, colfrac, rowfrac, fdup, vdup;
-	INT32 dupx, dupy;
-	const column_t *column;
+	INT32 dup;
+	column_t *column;
 	UINT8 *desttop, *dest;
 	const UINT8 *source, *deststop;
 
@@ -847,28 +835,23 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, IN
 		patchdrawfunc = (v_translevel) ? transmappedpdraw : mappedpdraw;
 	}
 
-	dupx = vid.dupx;
-	dupy = vid.dupy;
-	if (scrn & V_SCALEPATCHMASK) switch ((scrn & V_SCALEPATCHMASK) >> V_SCALEPATCHSHIFT)
+	dup = vid.dup;
+	if (scrn & V_SCALEPATCHMASK) switch (scrn & V_SCALEPATCHMASK)
 	{
-		case 1: // V_NOSCALEPATCH
-			dupx = dupy = 1;
+		case V_NOSCALEPATCH:
+			dup = 1;
 			break;
-		case 2: // V_SMALLSCALEPATCH
-			dupx = vid.smalldupx;
-			dupy = vid.smalldupy;
+		case V_SMALLSCALEPATCH:
+			dup = vid.smalldup;
 			break;
-		case 3: // V_MEDSCALEPATCH
-			dupx = vid.meddupx;
-			dupy = vid.meddupy;
-			break;
-		default:
+		case V_MEDSCALEPATCH:
+			dup = vid.meddup;
 			break;
 	}
 
-	fdup = vdup = pscale * dupx;
+	fdup = vdup = pscale * dup;
 	if (vscale != pscale)
-		vdup = vscale * dupx;
+		vdup = vscale * dup;
 	colfrac = FixedDiv(FRACUNIT, fdup);
 	rowfrac = FixedDiv(FRACUNIT, vdup);
 
@@ -960,8 +943,8 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, IN
 	}
 	else
 	{
-		x *= dupx;
-		y *= dupy;
+		x *= dup;
+		y *= dup;
 		x >>= FRACBITS;
 		y >>= FRACBITS;
 
@@ -971,30 +954,30 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, IN
 			// if it's meant to cover the whole screen, black out the rest
 			// no the patch is cropped do not do this ever
 
-			if (vid.width != BASEVIDWIDTH * dupx)
+			if (vid.width != BASEVIDWIDTH * dup)
 			{
-				// dupx adjustments pretend that screen width is BASEVIDWIDTH * dupx,
+				// dup adjustments pretend that screen width is BASEVIDWIDTH * dup,
 				// so center this imaginary screen
 				if (scrn & V_SNAPTORIGHT)
-					x += (vid.width - (BASEVIDWIDTH * dupx));
+					x += (vid.width - (BASEVIDWIDTH * dup));
 				else if (!(scrn & V_SNAPTOLEFT))
-					x += (vid.width - (BASEVIDWIDTH * dupx)) / 2;
+					x += (vid.width - (BASEVIDWIDTH * dup)) / 2;
 				if (perplayershuffle & 4)
-					x -= (vid.width - (BASEVIDWIDTH * dupx)) / 4;
+					x -= (vid.width - (BASEVIDWIDTH * dup)) / 4;
 				else if (perplayershuffle & 8)
-					x += (vid.width - (BASEVIDWIDTH * dupx)) / 4;
+					x += (vid.width - (BASEVIDWIDTH * dup)) / 4;
 			}
-			if (vid.height != BASEVIDHEIGHT * dupy)
+			if (vid.height != BASEVIDHEIGHT * dup)
 			{
 				// same thing here
 				if (scrn & V_SNAPTOBOTTOM)
-					y += (vid.height - (BASEVIDHEIGHT * dupy));
+					y += (vid.height - (BASEVIDHEIGHT * dup));
 				else if (!(scrn & V_SNAPTOTOP))
-					y += (vid.height - (BASEVIDHEIGHT * dupy)) / 2;
+					y += (vid.height - (BASEVIDHEIGHT * dup)) / 2;
 				if (perplayershuffle & 1)
-					y -= (vid.height - (BASEVIDHEIGHT * dupy)) / 4;
+					y -= (vid.height - (BASEVIDHEIGHT * dup)) / 4;
 				else if (perplayershuffle & 2)
-					y += (vid.height - (BASEVIDHEIGHT * dupy)) / 4;
+					y += (vid.height - (BASEVIDHEIGHT * dup)) / 4;
 			}
 		}
 
@@ -1034,21 +1017,18 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, IN
 
 	for (col = sx; (col>>FRACBITS) < patch->width && (col - sx) < w; col += colfrac, ++x, desttop++)
 	{
-		INT32 topdelta, prevdelta = -1;
 		if (x < 0) // don't draw off the left of the screen (WRAP PREVENTION)
 			continue;
 		if (x >= vid.width) // don't draw off the right of the screen (WRAP PREVENTION)
 			break;
 
-		column = (const column_t *)((const UINT8 *)(patch->columns) + (patch->columnofs[col>>FRACBITS]));
+		column = &patch->columns[col>>FRACBITS];
 
-		while (column->topdelta != 0xff)
+		for (unsigned i = 0; i < column->num_posts; i++)
 		{
-			topdelta = column->topdelta;
-			if (topdelta <= prevdelta)
-				topdelta += prevdelta;
-			prevdelta = topdelta;
-			source = (const UINT8 *)(column) + 3;
+			post_t *post = &column->posts[i];
+			INT32 topdelta = post->topdelta;
+			source = column->pixels + post->data_offset;
 			dest = desttop;
 			if ((topdelta<<FRACBITS)-sy > 0)
 			{
@@ -1058,13 +1038,12 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, IN
 			else
 				ofs = sy-(topdelta<<FRACBITS);
 
-			for (; dest < deststop && (ofs>>FRACBITS) < column->length && ((ofs - sy) + (topdelta<<FRACBITS)) < h; ofs += rowfrac)
+			for (; dest < deststop && (size_t)(ofs>>FRACBITS) < post->length && ((ofs - sy) + (topdelta<<FRACBITS)) < h; ofs += rowfrac)
 			{
 				if (dest >= screens[scrn&V_PARAMMASK]) // don't draw off the top of the screen (CRASH PREVENTION)
 					*dest = patchdrawfunc(dest, source, ofs);
 				dest += vid.width;
 			}
-			column = (const column_t *)((const UINT8 *)column + column->length + 4);
 		}
 	}
 }
@@ -1075,9 +1054,9 @@ void V_DrawCroppedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, IN
 //
 void V_DrawContinueIcon(INT32 x, INT32 y, INT32 flags, INT32 skinnum, UINT16 skincolor)
 {
-	if (skinnum >= 0 && skinnum < numskins && skins[skinnum].sprites[SPR2_XTRA].numframes > XTRA_CONTINUE)
+	if (skinnum >= 0 && skinnum < numskins && skins[skinnum]->sprites[SPR2_XTRA].numframes > XTRA_CONTINUE)
 	{
-		spritedef_t *sprdef = &skins[skinnum].sprites[SPR2_XTRA];
+		spritedef_t *sprdef = &skins[skinnum]->sprites[SPR2_XTRA];
 		spriteframe_t *sprframe = &sprdef->spriteframes[XTRA_CONTINUE];
 		patch_t *patch = W_CachePatchNum(sprframe->lumppat[0], PU_PATCH);
 		const UINT8 *colormap = R_GetTranslationColormap(skinnum, skincolor, GTC_CACHE);
@@ -1158,7 +1137,7 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 	}
 #endif
 
-	
+
 
 	if (splitscreen && (c & V_PERPLAYER))
 	{
@@ -1236,36 +1215,36 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 			return;
 		}
 
-		x *= vid.dupx;
-		y *= vid.dupy;
-		w *= vid.dupx;
-		h *= vid.dupy;
+		x *= vid.dup;
+		y *= vid.dup;
+		w *= vid.dup;
+		h *= vid.dup;
 
 		// Center it if necessary
-		if (vid.width != BASEVIDWIDTH * vid.dupx)
+		if (vid.width != BASEVIDWIDTH * vid.dup)
 		{
-			// dup adjustments pretend that screen width is BASEVIDWIDTH * dupx,
+			// dup adjustments pretend that screen width is BASEVIDWIDTH * dup,
 			// so center this imaginary screen
 			if (c & V_SNAPTORIGHT)
-				x += (vid.width - (BASEVIDWIDTH * vid.dupx));
+				x += (vid.width - (BASEVIDWIDTH * vid.dup));
 			else if (!(c & V_SNAPTOLEFT))
-				x += (vid.width - (BASEVIDWIDTH * vid.dupx)) / 2;
+				x += (vid.width - (BASEVIDWIDTH * vid.dup)) / 2;
 			if (perplayershuffle & 4)
-				x -= (vid.width - (BASEVIDWIDTH * vid.dupx)) / 4;
+				x -= (vid.width - (BASEVIDWIDTH * vid.dup)) / 4;
 			else if (perplayershuffle & 8)
-				x += (vid.width - (BASEVIDWIDTH * vid.dupx)) / 4;
+				x += (vid.width - (BASEVIDWIDTH * vid.dup)) / 4;
 		}
-		if (vid.height != BASEVIDHEIGHT * vid.dupy)
+		if (vid.height != BASEVIDHEIGHT * vid.dup)
 		{
 			// same thing here
 			if (c & V_SNAPTOBOTTOM)
-				y += (vid.height - (BASEVIDHEIGHT * vid.dupy));
+				y += (vid.height - (BASEVIDHEIGHT * vid.dup));
 			else if (!(c & V_SNAPTOTOP))
-				y += (vid.height - (BASEVIDHEIGHT * vid.dupy)) / 2;
+				y += (vid.height - (BASEVIDHEIGHT * vid.dup)) / 2;
 			if (perplayershuffle & 1)
-				y -= (vid.height - (BASEVIDHEIGHT * vid.dupy)) / 4;
+				y -= (vid.height - (BASEVIDHEIGHT * vid.dup)) / 4;
 			else if (perplayershuffle & 2)
-				y += (vid.height - (BASEVIDHEIGHT * vid.dupy)) / 4;
+				y += (vid.height - (BASEVIDHEIGHT * vid.dup)) / 4;
 		}
 	}
 
@@ -1453,36 +1432,36 @@ void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 
 	if (!(c & V_NOSCALESTART))
 	{
-		x *= vid.dupx;
-		y *= vid.dupy;
-		w *= vid.dupx;
-		h *= vid.dupy;
+		x *= vid.dup;
+		y *= vid.dup;
+		w *= vid.dup;
+		h *= vid.dup;
 
 		// Center it if necessary
-		if (vid.width != BASEVIDWIDTH * vid.dupx)
+		if (vid.width != BASEVIDWIDTH * vid.dup)
 		{
-			// dup adjustments pretend that screen width is BASEVIDWIDTH * dupx,
+			// dup adjustments pretend that screen width is BASEVIDWIDTH * dup,
 			// so center this imaginary screen
 			if (c & V_SNAPTORIGHT)
-				x += (vid.width - (BASEVIDWIDTH * vid.dupx));
+				x += (vid.width - (BASEVIDWIDTH * vid.dup));
 			else if (!(c & V_SNAPTOLEFT))
-				x += (vid.width - (BASEVIDWIDTH * vid.dupx)) / 2;
+				x += (vid.width - (BASEVIDWIDTH * vid.dup)) / 2;
 			if (perplayershuffle & 4)
-				x -= (vid.width - (BASEVIDWIDTH * vid.dupx)) / 4;
+				x -= (vid.width - (BASEVIDWIDTH * vid.dup)) / 4;
 			else if (perplayershuffle & 8)
-				x += (vid.width - (BASEVIDWIDTH * vid.dupx)) / 4;
+				x += (vid.width - (BASEVIDWIDTH * vid.dup)) / 4;
 		}
-		if (vid.height != BASEVIDHEIGHT * vid.dupy)
+		if (vid.height != BASEVIDHEIGHT * vid.dup)
 		{
 			// same thing here
 			if (c & V_SNAPTOBOTTOM)
-				y += (vid.height - (BASEVIDHEIGHT * vid.dupy));
+				y += (vid.height - (BASEVIDHEIGHT * vid.dup));
 			else if (!(c & V_SNAPTOTOP))
-				y += (vid.height - (BASEVIDHEIGHT * vid.dupy)) / 2;
+				y += (vid.height - (BASEVIDHEIGHT * vid.dup)) / 2;
 			if (perplayershuffle & 1)
-				y -= (vid.height - (BASEVIDHEIGHT * vid.dupy)) / 4;
+				y -= (vid.height - (BASEVIDHEIGHT * vid.dup)) / 4;
 			else if (perplayershuffle & 2)
-				y += (vid.height - (BASEVIDHEIGHT * vid.dupy)) / 4;
+				y += (vid.height - (BASEVIDHEIGHT * vid.dup)) / 4;
 		}
 	}
 
@@ -1635,36 +1614,36 @@ void V_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c, UINT16 color, U
 
 	if (!(c & V_NOSCALESTART))
 	{
-		x *= vid.dupx;
-		y *= vid.dupy;
-		w *= vid.dupx;
-		h *= vid.dupy;
+		x *= vid.dup;
+		y *= vid.dup;
+		w *= vid.dup;
+		h *= vid.dup;
 
 		// Center it if necessary
-		if (vid.width != BASEVIDWIDTH * vid.dupx)
+		if (vid.width != BASEVIDWIDTH * vid.dup)
 		{
-			// dup adjustments pretend that screen width is BASEVIDWIDTH * dupx,
+			// dup adjustments pretend that screen width is BASEVIDWIDTH * dup,
 			// so center this imaginary screen
 			if (c & V_SNAPTORIGHT)
-				x += (vid.width - (BASEVIDWIDTH * vid.dupx));
+				x += (vid.width - (BASEVIDWIDTH * vid.dup));
 			else if (!(c & V_SNAPTOLEFT))
-				x += (vid.width - (BASEVIDWIDTH * vid.dupx)) / 2;
+				x += (vid.width - (BASEVIDWIDTH * vid.dup)) / 2;
 			if (perplayershuffle & 4)
-				x -= (vid.width - (BASEVIDWIDTH * vid.dupx)) / 4;
+				x -= (vid.width - (BASEVIDWIDTH * vid.dup)) / 4;
 			else if (perplayershuffle & 8)
-				x += (vid.width - (BASEVIDWIDTH * vid.dupx)) / 4;
+				x += (vid.width - (BASEVIDWIDTH * vid.dup)) / 4;
 		}
-		if (vid.height != BASEVIDHEIGHT * vid.dupy)
+		if (vid.height != BASEVIDHEIGHT * vid.dup)
 		{
 			// same thing here
 			if (c & V_SNAPTOBOTTOM)
-				y += (vid.height - (BASEVIDHEIGHT * vid.dupy));
+				y += (vid.height - (BASEVIDHEIGHT * vid.dup));
 			else if (!(c & V_SNAPTOTOP))
-				y += (vid.height - (BASEVIDHEIGHT * vid.dupy)) / 2;
+				y += (vid.height - (BASEVIDHEIGHT * vid.dup)) / 2;
 			if (perplayershuffle & 1)
-				y -= (vid.height - (BASEVIDHEIGHT * vid.dupy)) / 4;
+				y -= (vid.height - (BASEVIDHEIGHT * vid.dup)) / 4;
 			else if (perplayershuffle & 2)
-				y += (vid.height - (BASEVIDHEIGHT * vid.dupy)) / 4;
+				y += (vid.height - (BASEVIDHEIGHT * vid.dup)) / 4;
 		}
 	}
 
@@ -1729,27 +1708,27 @@ void V_DrawFlatFill(INT32 x, INT32 y, INT32 w, INT32 h, lumpnum_t flatnum)
 
 	flat = W_CacheLumpNum(flatnum, PU_CACHE);
 
-	dest = screens[0] + y*vid.dupy*vid.width + x*vid.dupx;
+	dest = screens[0] + y*vid.dup*vid.width + x*vid.dup;
 	deststop = screens[0] + vid.rowbytes * vid.height;
 
 	// from V_DrawScaledPatch
-	if (vid.width != BASEVIDWIDTH * vid.dupx)
+	if (vid.width != BASEVIDWIDTH * vid.dup)
 	{
 		// dup adjustments pretend that screen width is BASEVIDWIDTH * dup,
 		// so center this imaginary screen
-		dest += (vid.width - (BASEVIDWIDTH * vid.dupx)) / 2;
+		dest += (vid.width - (BASEVIDWIDTH * vid.dup)) / 2;
 	}
-	if (vid.height != BASEVIDHEIGHT * vid.dupy)
+	if (vid.height != BASEVIDHEIGHT * vid.dup)
 	{
 		// same thing here
-		dest += (vid.height - (BASEVIDHEIGHT * vid.dupy)) * vid.width / 2;
+		dest += (vid.height - (BASEVIDHEIGHT * vid.dup)) * vid.width / 2;
 	}
 
-	w *= vid.dupx;
-	h *= vid.dupy;
+	w *= vid.dup;
+	h *= vid.dup;
 
-	dx = FixedDiv(FRACUNIT, vid.dupx<<(FRACBITS-2));
-	dy = FixedDiv(FRACUNIT, vid.dupy<<(FRACBITS-2));
+	dx = FixedDiv(FRACUNIT, vid.dup<<(FRACBITS-2));
+	dy = FixedDiv(FRACUNIT, vid.dup<<(FRACBITS-2));
 
 	yfrac = 0;
 	for (v = 0; v < h; v++, dest += vid.width)
@@ -1772,7 +1751,7 @@ void V_DrawFlatFill(INT32 x, INT32 y, INT32 w, INT32 h, lumpnum_t flatnum)
 //
 void V_DrawPatchFill(patch_t *pat)
 {
-	INT32 x, y, pw = pat->width * vid.dupx, ph = pat->height * vid.dupy;
+	INT32 x, y, pw = pat->width * vid.dup, ph = pat->height * vid.dup;
 
 	for (x = 0; x < vid.width; x += pw)
 	{
@@ -1848,11 +1827,11 @@ void V_DrawPromptBack(INT32 boxheight, INT32 color)
 			boxheight = -boxheight;
 		else // 4 lines of space plus gaps between and some leeway
 			boxheight = ((boxheight * 4) + (boxheight/2)*5);
-		V_DrawFill((BASEVIDWIDTH-(vid.width/vid.dupx))/2, BASEVIDHEIGHT-boxheight, (vid.width/vid.dupx),boxheight, (color-256)|V_SNAPTOBOTTOM);
+		V_DrawFill((BASEVIDWIDTH-(vid.width/vid.dup))/2, BASEVIDHEIGHT-boxheight, (vid.width/vid.dup),boxheight, (color-256)|V_SNAPTOBOTTOM);
 		return;
 	}
 
-	boxheight *= vid.dupy;
+	boxheight *= vid.dup;
 
 	if (color == INT32_MAX)
 		color = cons_backcolor.value;
@@ -1974,7 +1953,7 @@ char *V_FontWordWrap(INT32 x, INT32 w, INT32 option, fixed_t scale, const char *
 	INT32 spacewidth = font.spacewidth, charwidth = 0;
 
 	slen = strlen(string);
-	
+
 	if (w == 0)
 		w = BASEVIDWIDTH;
 	w -= x;
@@ -2055,21 +2034,21 @@ void V_DrawFontStringAtFixed(fixed_t x, fixed_t y, INT32 option, fixed_t pscale,
 
 	if (option & V_NOSCALESTART)
 	{
-		dupx = vid.dupx<<FRACBITS;
-		dupy = vid.dupy<<FRACBITS;
+		dupx = vid.dup<<FRACBITS;
+		dupy = vid.dup<<FRACBITS;
 		scrwidth = vid.width;
 	}
 	else
 	{
 		dupx = pscale;
 		dupy = vscale;
-		scrwidth = FixedDiv(vid.width<<FRACBITS, vid.dupx);
+		scrwidth = FixedDiv(vid.width<<FRACBITS, vid.dup);
 		left = (scrwidth - (BASEVIDWIDTH << FRACBITS))/2;
 		scrwidth -= left;
 	}
 
 	if (option & V_NOSCALEPATCH)
-		scrwidth *= vid.dupx;
+		scrwidth *= vid.dup;
 
 	switch (option & V_SPACINGMASK) // TODO: 2.3: drop support for these crusty flags
 	{
@@ -2152,7 +2131,7 @@ void V_DrawAlignedFontStringAtFixed(fixed_t x, fixed_t y, INT32 option, fixed_t 
 				lx = x - (V_FontStringWidth(line, option, font)*pscale);
 				break;
 		}
-		
+
 		V_DrawFontStringAtFixed(lx, ly, option, pscale, vscale, line, font);
 
 		ly += FixedMul(((option & V_RETURN8) ? 8 : font.linespacing)<<FRACBITS, vscale);
@@ -2168,7 +2147,7 @@ void V_DrawTallNum(INT32 x, INT32 y, INT32 flags, INT32 num)
 	boolean neg;
 
 	if (flags & (V_NOSCALESTART|V_NOSCALEPATCH))
-		w *= vid.dupx;
+		w *= vid.dup;
 
 	if ((neg = num < 0))
 		num = -num;
@@ -2193,7 +2172,7 @@ void V_DrawPaddedTallNum(INT32 x, INT32 y, INT32 flags, INT32 num, INT32 digits)
 	INT32 w = tallnum[0]->width;
 
 	if (flags & (V_NOSCALESTART|V_NOSCALEPATCH))
-		w *= vid.dupx;
+		w *= vid.dup;
 
 	if (num < 0)
 		num = -num;
@@ -2245,7 +2224,7 @@ INT16 V_LevelActNumWidth(UINT8 num)
 static void V_DrawNameTagLine(INT32 x, INT32 y, INT32 option, fixed_t scale, UINT8 *basecolormap, UINT8 *outlinecolormap, const char *string)
 {
 	fixed_t cx, cy, w;
-	INT32 c, dupx, dupy, scrwidth, left = 0;
+	INT32 c, dup, scrwidth, left = 0;
 	const char *ch = string;
 
 	if (option & V_CENTERNAMETAG)
@@ -2257,20 +2236,19 @@ static void V_DrawNameTagLine(INT32 x, INT32 y, INT32 option, fixed_t scale, UIN
 
 	if (option & V_NOSCALESTART)
 	{
-		dupx = vid.dupx;
-		dupy = vid.dupy;
+		dup = vid.dup;
 		scrwidth = vid.width;
 	}
 	else
 	{
-		dupx = dupy = 1;
-		scrwidth = vid.width/vid.dupx;
+		dup = 1;
+		scrwidth = vid.width/vid.dup;
 		left = (scrwidth - BASEVIDWIDTH)/2;
 		scrwidth -= left;
 	}
 
 	if (option & V_NOSCALEPATCH)
-		scrwidth *= vid.dupx;
+		scrwidth *= vid.dup;
 
 	for (;;ch++)
 	{
@@ -2279,18 +2257,18 @@ static void V_DrawNameTagLine(INT32 x, INT32 y, INT32 option, fixed_t scale, UIN
 		if (*ch == '\n')
 		{
 			cx = x<<FRACBITS;
-			cy += FixedMul((ntb_font.linespacing * dupy)*FRACUNIT, scale);
+			cy += FixedMul((ntb_font.linespacing * dup)*FRACUNIT, scale);
 			continue;
 		}
 
 		c = toupper(*ch) - FONTSTART;
 		if (c < 0 || c >= FONTSIZE || !ntb_font.chars[c] || !nto_font.chars[c])
 		{
-			cx += FixedMul((ntb_font.spacewidth * dupx)*FRACUNIT, scale);
+			cx += FixedMul((ntb_font.spacewidth * dup)*FRACUNIT, scale);
 			continue;
 		}
 
-		w = FixedMul(((ntb_font.chars[c]->width)+ntb_font.kerning * dupx) * FRACUNIT, scale);
+		w = FixedMul(((ntb_font.chars[c]->width)+ntb_font.kerning * dup) * FRACUNIT, scale);
 
 		if (FixedInt(cx) > scrwidth)
 			continue;
@@ -2444,7 +2422,7 @@ INT32 V_FontStringWidth(const char *string, INT32 option, fontdef_t font)
 			if (wline < w) wline = w;
 			w = 0;
 			continue;
-		}	
+		}
 		if (string[i] & 0x80)
 			continue;
 
@@ -2457,7 +2435,7 @@ INT32 V_FontStringWidth(const char *string, INT32 option, fontdef_t font)
 	w = max(wline, w);
 
 	if (option & (V_NOSCALESTART|V_NOSCALEPATCH))
-		w *= vid.dupx;
+		w *= vid.dup;
 
 	return w;
 }
@@ -2477,7 +2455,7 @@ INT32 V_FontStringHeight(const char *string, INT32 option, fontdef_t font)
 			{
 				result += (option & V_RETURN8) ? 8 : font.linespacing;
 				h = 0;
-			}	
+			}
 			continue;
 		}
 
@@ -2647,7 +2625,7 @@ Unoptimized version
 			{
 				// Shift this row of pixels to the right by 2
 				tmpscr[y*vid.width] = srcscr[y*vid.width];
-				M_Memcpy(&tmpscr[y*vid.width+vid.dupx], &srcscr[y*vid.width], vid.width-vid.dupx);
+				M_Memcpy(&tmpscr[y*vid.width+vid.dup], &srcscr[y*vid.width], vid.width-vid.dup);
 			}
 			else
 				M_Memcpy(&tmpscr[y*vid.width], &srcscr[y*vid.width], vid.width);
@@ -2748,31 +2726,23 @@ void V_Recalc(void)
 {
 	// scale 1,2,3 times in x and y the patches for the menus and overlays...
 	// calculated once and for all, used by routines in v_video.c and v_draw.c
-	vid.dupx = vid.width / BASEVIDWIDTH;
-	vid.dupy = vid.height / BASEVIDHEIGHT;
-	vid.dupx = vid.dupy = (vid.dupx < vid.dupy ? vid.dupx : vid.dupy);
-	vid.fdupx = FixedDiv(vid.width*FRACUNIT, BASEVIDWIDTH*FRACUNIT);
-	vid.fdupy = FixedDiv(vid.height*FRACUNIT, BASEVIDHEIGHT*FRACUNIT);
 
-#ifdef HWRENDER
-	//if (rendermode != render_opengl && rendermode != render_none) // This was just placing it incorrectly at non aspect correct resolutions in opengl
-	// 13/11/18:
-	// The above is no longer necessary, since we want OpenGL to be just like software now
-	// -- Monster Iestyn
-#endif
-		vid.fdupx = vid.fdupy = (vid.fdupx < vid.fdupy ? vid.fdupx : vid.fdupy);
+	// Set dup based on width or height, whichever is less
+	if (((vid.width*FRACUNIT) / BASEVIDWIDTH) < ((vid.height*FRACUNIT) / BASEVIDHEIGHT))
+	{
+		vid.dup = vid.width / BASEVIDWIDTH;
+		vid.fdup = (vid.width*FRACUNIT) / BASEVIDWIDTH;
+	}
+	else
+	{
+		vid.dup = vid.height / BASEVIDHEIGHT;
+		vid.fdup = (vid.height*FRACUNIT) / BASEVIDHEIGHT;
+	}
 
-	vid.meddupx = (UINT8)(vid.dupx >> 1) + 1;
-	vid.meddupy = (UINT8)(vid.dupy >> 1) + 1;
+	vid.meddup = (UINT8)(vid.dup >> 1) + 1;
+	vid.smalldup = (UINT8)(vid.dup / 3) + 1;
 #ifdef HWRENDER
-	vid.fmeddupx = vid.meddupx*FRACUNIT;
-	vid.fmeddupy = vid.meddupy*FRACUNIT;
-#endif
-
-	vid.smalldupx = (UINT8)(vid.dupx / 3) + 1;
-	vid.smalldupy = (UINT8)(vid.dupy / 3) + 1;
-#ifdef HWRENDER
-	vid.fsmalldupx = vid.smalldupx*FRACUNIT;
-	vid.fsmalldupy = vid.smalldupy*FRACUNIT;
+	vid.fmeddup = vid.meddup*FRACUNIT;
+	vid.fsmalldup = vid.smalldup*FRACUNIT;
 #endif
 }

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="A_Asm">
@@ -55,7 +55,7 @@
     <Filter Include="SDLApp">
       <UniqueIdentifier>{3ae8d323-3eeb-47ab-8c28-b891616db1b4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="STAR">
+    <Filter Include="TSoURDt3rd">
       <UniqueIdentifier>{e5bb4cac-c749-4c5b-80be-03fb44d50f51}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -159,22 +159,10 @@
     <ClInclude Include="..\doomtype.h">
       <Filter>D_Doom</Filter>
     </ClInclude>
-    <ClInclude Include="..\d_clisrv.h">
-      <Filter>D_Doom</Filter>
-    </ClInclude>
     <ClInclude Include="..\d_event.h">
       <Filter>D_Doom</Filter>
     </ClInclude>
     <ClInclude Include="..\d_main.h">
-      <Filter>D_Doom</Filter>
-    </ClInclude>
-    <ClInclude Include="..\d_net.h">
-      <Filter>D_Doom</Filter>
-    </ClInclude>
-    <ClInclude Include="..\d_netcmd.h">
-      <Filter>D_Doom</Filter>
-    </ClInclude>
-    <ClInclude Include="..\d_netfil.h">
       <Filter>D_Doom</Filter>
     </ClInclude>
     <ClInclude Include="..\d_player.h">
@@ -279,9 +267,6 @@
     <ClInclude Include="..\filesrch.h">
       <Filter>I_Interface</Filter>
     </ClInclude>
-    <ClInclude Include="..\i_addrinfo.h">
-      <Filter>I_Interface</Filter>
-    </ClInclude>
     <ClInclude Include="..\i_joy.h">
       <Filter>I_Interface</Filter>
     </ClInclude>
@@ -304,12 +289,6 @@
       <Filter>I_Interface</Filter>
     </ClInclude>
     <ClInclude Include="..\keys.h">
-      <Filter>I_Interface</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mserv.h">
-      <Filter>I_Interface</Filter>
-    </ClInclude>
-    <ClInclude Include="..\http-mserv.h">
       <Filter>I_Interface</Filter>
     </ClInclude>
     <ClInclude Include="..\lua_hook.h">
@@ -369,11 +348,59 @@
     <ClInclude Include="..\m_queue.h">
       <Filter>M_Misc</Filter>
     </ClInclude>
+    <ClInclude Include="..\m_vector.h">
+      <Filter>M_Misc</Filter>
+    </ClInclude>
     <ClInclude Include="..\m_random.h">
       <Filter>M_Misc</Filter>
     </ClInclude>
     <ClInclude Include="..\m_swap.h">
       <Filter>M_Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\netcode\client_connection.h">
+      <Filter>D_Doom</Filter>
+    </ClInclude>
+    <ClInclude Include="..\netcode\commands.h">
+      <Filter>D_Doom</Filter>
+    </ClInclude>
+    <ClInclude Include="..\netcode\d_clisrv.h">
+      <Filter>D_Doom</Filter>
+    </ClInclude>
+    <ClInclude Include="..\netcode\d_net.h">
+      <Filter>D_Doom</Filter>
+    </ClInclude>
+    <ClInclude Include="..\netcode\d_netcmd.h">
+      <Filter>D_Doom</Filter>
+    </ClInclude>
+    <ClInclude Include="..\netcode\d_netfil.h">
+      <Filter>D_Doom</Filter>
+    </ClInclude>
+    <ClInclude Include="..\netcode\gamestate.h">
+      <Filter>D_Doom</Filter>
+    </ClInclude>
+    <ClInclude Include="..\netcode\i_addrinfo.h">
+      <Filter>I_Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\netcode\i_net.h">
+      <Filter>I_Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\netcode\i_tcp.h">
+      <Filter>I_Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\netcode\mserv.h">
+      <Filter>I_Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\netcode\net_command.h">
+      <Filter>D_Doom</Filter>
+    </ClInclude>
+    <ClInclude Include="..\netcode\protocol.h">
+      <Filter>D_Doom</Filter>
+    </ClInclude>
+    <ClInclude Include="..\netcode\server_connection.h">
+      <Filter>D_Doom</Filter>
+    </ClInclude>
+    <ClInclude Include="..\netcode\tic_command.h">
+      <Filter>D_Doom</Filter>
     </ClInclude>
     <ClInclude Include="..\comptime.h">
       <Filter>O_Other</Filter>
@@ -513,6 +540,9 @@
     <ClInclude Include="..\r_textures.h">
       <Filter>R_Rend</Filter>
     </ClInclude>
+    <ClInclude Include="..\r_translation.h">
+      <Filter>R_Rend</Filter>
+    </ClInclude>
     <ClInclude Include="..\r_portal.h">
       <Filter>R_Rend</Filter>
     </ClInclude>
@@ -527,37 +557,43 @@
     </ClInclude>
     <ClInclude Include="..\m_easing.h">
       <Filter>M_Misc</Filter>
-    <ClInclude Include="..\u_list.h" />
     </ClInclude>
+    <ClInclude Include="..\d_clisrv.h" />
+    <ClInclude Include="..\d_net.h" />
+    <ClInclude Include="..\d_netcmd.h" />
+    <ClInclude Include="..\d_netfil.h" />
+    <ClInclude Include="..\u_list.h" />
+    <ClInclude Include="..\mserv.h" />
+    <ClInclude Include="..\http-mserv.h" />
     <ClInclude Include="..\STAR\menus\smkg-m_sys.h">
-      <Filter>STAR</Filter>
+      <Filter>TSoURDt3rd</Filter>
     </ClInclude>
     <ClInclude Include="..\STAR\p_saveg.h">
-      <Filter>STAR</Filter>
+      <Filter>TSoURDt3rd</Filter>
     </ClInclude>
     <ClInclude Include="..\STAR\p_user.h">
-      <Filter>STAR</Filter>
+      <Filter>TSoURDt3rd</Filter>
     </ClInclude>
     <ClInclude Include="..\STAR\parser\smkg-ps_main.h">
-      <Filter>STAR</Filter>
+      <Filter>TSoURDt3rd</Filter>
     </ClInclude>
     <ClInclude Include="..\STAR\star_vars.h">
-      <Filter>STAR</Filter>
+      <Filter>TSoURDt3rd</Filter>
     </ClInclude>
     <ClInclude Include="..\STAR\star_webinfo.h">
-      <Filter>STAR</Filter>
+      <Filter>TSoURDt3rd</Filter>
     </ClInclude>
     <ClInclude Include="..\STAR\smkg-cvars.h">
-      <Filter>STAR</Filter>
+      <Filter>TSoURDt3rd</Filter>
     </ClInclude>
     <ClInclude Include="..\STAR\smkg-jukebox.h">
-      <Filter>STAR</Filter>
+      <Filter>TSoURDt3rd</Filter>
     </ClInclude>
     <ClInclude Include="..\STAR\smkg-v_video.h">
-      <Filter>STAR</Filter>
+      <Filter>TSoURDt3rd</Filter>
     </ClInclude>
     <ClInclude Include="..\STAR\ss_main.h">
-      <Filter>STAR</Filter>
+      <Filter>TSoURDt3rd</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -599,6 +635,9 @@
       <Filter>BLUA</Filter>
     </ClCompile>
     <ClCompile Include="..\blua\ldebug.c">
+      <Filter>BLUA</Filter>
+    </ClCompile>
+    <ClCompile Include="..\blua\ldblib.c">
       <Filter>BLUA</Filter>
     </ClCompile>
     <ClCompile Include="..\blua\ldo.c">
@@ -673,19 +712,7 @@
     <ClCompile Include="..\deh_tables.c">
       <Filter>D_Doom</Filter>
     </ClCompile>
-    <ClCompile Include="..\d_clisrv.c">
-      <Filter>D_Doom</Filter>
-    </ClCompile>
     <ClCompile Include="..\d_main.c">
-      <Filter>D_Doom</Filter>
-    </ClCompile>
-    <ClCompile Include="..\d_net.c">
-      <Filter>D_Doom</Filter>
-    </ClCompile>
-    <ClCompile Include="..\d_netcmd.c">
-      <Filter>D_Doom</Filter>
-    </ClCompile>
-    <ClCompile Include="..\d_netfil.c">
       <Filter>D_Doom</Filter>
     </ClCompile>
     <ClCompile Include="..\z_zone.c">
@@ -763,19 +790,10 @@
     <ClCompile Include="..\hardware\hw_shaders.c">
       <Filter>Hw_Hardware</Filter>
     </ClCompile>
+    <ClCompile Include="..\hardware\u_list.c">
+      <Filter>Hw_Hardware</Filter>
+    </ClCompile>
     <ClCompile Include="..\filesrch.c">
-      <Filter>I_Interface</Filter>
-    </ClCompile>
-    <ClCompile Include="..\i_addrinfo.c">
-      <Filter>I_Interface</Filter>
-    </ClCompile>
-    <ClCompile Include="..\i_tcp.c">
-      <Filter>I_Interface</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mserv.c">
-      <Filter>I_Interface</Filter>
-    </ClCompile>
-    <ClCompile Include="..\http-mserv.c">
       <Filter>I_Interface</Filter>
     </ClCompile>
     <ClCompile Include="..\lua_baselib.c">
@@ -797,6 +815,9 @@
       <Filter>LUA</Filter>
     </ClCompile>
     <ClCompile Include="..\lua_inputlib.c">
+      <Filter>LUA</Filter>
+    </ClCompile>
+	<ClCompile Include="..\lua_interceptlib.c">
       <Filter>LUA</Filter>
     </ClCompile>
     <ClCompile Include="..\lua_maplib.c">
@@ -865,8 +886,53 @@
     <ClCompile Include="..\m_queue.c">
       <Filter>M_Misc</Filter>
     </ClCompile>
+    <ClCompile Include="..\m_vector.c">
+      <Filter>M_Misc</Filter>
+    </ClCompile>
     <ClCompile Include="..\m_random.c">
       <Filter>M_Misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\netcode\client_connection.c">
+      <Filter>D_Doom</Filter>
+    </ClCompile>
+    <ClCompile Include="..\netcode\commands.c">
+      <Filter>D_Doom</Filter>
+    </ClCompile>
+    <ClCompile Include="..\netcode\d_clisrv.c">
+      <Filter>D_Doom</Filter>
+    </ClCompile>
+    <ClCompile Include="..\netcode\d_net.c">
+      <Filter>D_Doom</Filter>
+    </ClCompile>
+    <ClCompile Include="..\netcode\d_netcmd.c">
+      <Filter>D_Doom</Filter>
+    </ClCompile>
+    <ClCompile Include="..\netcode\d_netfil.c">
+      <Filter>D_Doom</Filter>
+    </ClCompile>
+    <ClCompile Include="..\netcode\gamestate.c">
+      <Filter>D_Doom</Filter>
+    </ClCompile>
+    <ClCompile Include="..\netcode\http-mserv.c">
+      <Filter>I_Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\netcode\i_addrinfo.c">
+      <Filter>I_Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\netcode\i_tcp.c">
+      <Filter>I_Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\netcode\mserv.c">
+      <Filter>I_Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\netcode\net_command.c">
+      <Filter>D_Doom</Filter>
+    </ClCompile>
+    <ClCompile Include="..\netcode\server_connection.c">
+      <Filter>D_Doom</Filter>
+    </ClCompile>
+    <ClCompile Include="..\netcode\tic_command.c">
+      <Filter>D_Doom</Filter>
     </ClCompile>
     <ClCompile Include="..\string.c">
       <Filter>M_Misc</Filter>
@@ -953,9 +1019,6 @@
       <Filter>R_Rend</Filter>
     </ClCompile>
     <ClCompile Include="..\r_draw.c">
-      <Filter>R_Rend</Filter>
-    </ClCompile>
-    <ClCompile Include="..\r_draw16.c">
       <Filter>R_Rend</Filter>
     </ClCompile>
     <ClCompile Include="..\r_draw8.c">
@@ -1067,6 +1130,9 @@
     <ClCompile Include="..\r_textures.c">
       <Filter>R_Rend</Filter>
     </ClCompile>
+    <ClCompile Include="..\r_translation.c">
+      <Filter>R_Rend</Filter>
+    </ClCompile>
     <ClCompile Include="..\r_portal.c">
       <Filter>R_Rend</Filter>
     </ClCompile>
@@ -1083,44 +1149,47 @@
       <Filter>M_Misc</Filter>
     </ClCompile>
     <ClCompile Include="..\u_list.c" />
-    <ClCompile Include="..\STAR\m_menu.c">
-      <Filter>STAR</Filter>
-    </ClCompile>
-    <ClCompile Include="..\STAR\p_user.c">
-      <Filter>STAR</Filter>
-    </ClCompile>
-    <ClCompile Include="..\STAR\parser\parsed.c">
-      <Filter>STAR</Filter>
-    </ClCompile>
-    <ClCompile Include="..\STAR\parser\parser.c">
-      <Filter>STAR</Filter>
-    </ClCompile>
-    <ClCompile Include="..\STAR\smkg-cvars.c">
-      <Filter>STAR</Filter>
-    </ClCompile>
-    <ClCompile Include="..\STAR\smkg-jukebox.c">
-      <Filter>STAR</Filter>
-    </ClCompile>
-    <ClCompile Include="..\STAR\smkg-p_saveg.c">
-      <Filter>STAR</Filter>
-    </ClCompile>
-    <ClCompile Include="..\STAR\ss_main.c">
-      <Filter>STAR</Filter>
-    </ClCompile>
-    <ClCompile Include="..\STAR\star_functions.c">
-      <Filter>STAR</Filter>
-    </ClCompile>
-    <ClCompile Include="..\STAR\events\smkg-aprilfools.c">
-      <Filter>STAR</Filter>
-    </ClCompile>
-    <ClCompile Include="..\STAR\events\smkg-easter.c">
-      <Filter>STAR</Filter>
-    </ClCompile>
     <ClCompile Include="..\blua\loslib.c">
       <Filter>BLUA</Filter>
     </ClCompile>
+    <ClCompile Include="..\lua_colorlib.c">
+      <Filter>LUA</Filter>
+    </ClCompile>
     <ClCompile Include="..\r_bbox.c">
       <Filter>R_Rend</Filter>
+    </ClCompile>
+    <ClCompile Include="..\STAR\m_menu.c">
+      <Filter>TSoURDt3rd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\STAR\p_user.c">
+      <Filter>TSoURDt3rd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\STAR\parser\parsed.c">
+      <Filter>TSoURDt3rd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\STAR\parser\parser.c">
+      <Filter>TSoURDt3rd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\STAR\smkg-cvars.c">
+      <Filter>TSoURDt3rd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\STAR\smkg-jukebox.c">
+      <Filter>TSoURDt3rd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\STAR\smkg-p_saveg.c">
+      <Filter>TSoURDt3rd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\STAR\ss_main.c">
+      <Filter>TSoURDt3rd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\STAR\star_functions.c">
+      <Filter>TSoURDt3rd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\STAR\events\smkg-aprilfools.c">
+      <Filter>TSoURDt3rd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\STAR\events\smkg-easter.c">
+      <Filter>TSoURDt3rd</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

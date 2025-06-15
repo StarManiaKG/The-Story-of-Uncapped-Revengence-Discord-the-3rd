@@ -18,14 +18,15 @@ Documentation available here.
 #include <curl/curl.h>
 #endif
 
-#include "doomdef.h"
+#include "../doomdef.h"
 #include "d_clisrv.h"
-#include "command.h"
-#include "m_argv.h"
-#include "m_menu.h"
+#include "client_connection.h"
+#include "../command.h"
+#include "../m_argv.h"
+#include "../m_menu.h"
 #include "mserv.h"
 #include "i_tcp.h"/* for current_port */
-#include "i_threads.h"
+#include "../i_threads.h"
 
 /* reasonable default I guess?? */
 #define DEFAULT_BUFFER_SIZE (4096)
@@ -33,6 +34,10 @@ Documentation available here.
 /* I just stop myself from making macros anymore. */
 #define Blame( ... ) \
 	CONS_Printf("\x85" __VA_ARGS__)
+
+#define PROTO_ANY 0
+#define PROTO_V4 1
+#define PROTO_V6 2
 
 static void MasterServer_Debug_OnChange (void);
 
@@ -58,12 +63,21 @@ consvar_t cv_masterserver_token = CVAR_INIT
 
 static int hms_started;
 
+static boolean hms_args_checked;
+#ifndef NO_IPV6
+static boolean hms_allow_ipv6;
+#endif
+static boolean hms_allow_ipv4;
+
 static char *hms_api;
 #ifdef HAVE_THREADS
 static I_mutex hms_api_mutex;
 #endif
 
 static char *hms_server_token;
+#ifndef NO_IPV6
+static char *hms_server_token_ipv6;
+#endif
 
 static char hms_useragent[512];
 
@@ -95,7 +109,7 @@ init_user_agent_once(void)
 {
 	if (hms_useragent[0] != '\0')
 		return;
-	
+
 	get_user_agent(hms_useragent, 512);
 }
 
@@ -124,8 +138,20 @@ HMS_on_read (char *s, size_t _1, size_t n, void *userdata)
 	return n;
 }
 
-static struct HMS_buffer *
-HMS_connect (const char *format, ...)
+static void HMS_check_args_once(void)
+{
+	if (hms_args_checked)
+		return;
+
+#ifndef NO_IPV6
+	hms_allow_ipv6 = !M_CheckParm("-noipv6");
+#endif
+	hms_allow_ipv4 = !M_CheckParm("-noipv4");
+	hms_args_checked = true;
+}
+
+FUNCDEBUG static struct HMS_buffer *
+HMS_connect (int proto, const char *format, ...)
 {
 	va_list ap;
 	CURL *curl;
@@ -134,6 +160,11 @@ HMS_connect (const char *format, ...)
 	size_t seek;
 	size_t token_length;
 	struct HMS_buffer *buffer;
+
+#ifdef NO_IPV6
+	if (proto == PROTO_V6)
+		return NULL;
+#endif
 
 	if (! hms_started)
 	{
@@ -209,18 +240,27 @@ HMS_connect (const char *format, ...)
 		curl_easy_setopt(curl, CURLOPT_STDERR, logstream);
 	}
 
-	if (M_CheckParm("-bindaddr") && M_IsNextParm())
-	{
-		curl_easy_setopt(curl, CURLOPT_INTERFACE, M_GetNextParm());
-	}
-
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
 #ifndef NO_IPV6
-	if (M_CheckParm("-noipv6"))
+	if (proto == PROTO_V6 || (proto == PROTO_ANY && !hms_allow_ipv4))
+	{
+		curl_easy_setopt(curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V6);
+		if (M_CheckParm("-bindaddr6") && M_IsNextParm())
+		{
+			curl_easy_setopt(curl, CURLOPT_INTERFACE, M_GetNextParm());
+		}
+	}
+	if (proto == PROTO_V4 || (proto == PROTO_ANY && !hms_allow_ipv6))
 #endif
+	{
 		curl_easy_setopt(curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+		if (M_CheckParm("-bindaddr") && M_IsNextParm())
+		{
+			curl_easy_setopt(curl, CURLOPT_INTERFACE, M_GetNextParm());
+		}
+	}
 
 	curl_easy_setopt(curl, CURLOPT_TIMEOUT, cv_masterserver_timeout.value);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, HMS_on_read);
@@ -308,7 +348,9 @@ HMS_fetch_rooms (int joining, int query_id)
 
 	(void)query_id;
 
-	hms = HMS_connect("rooms");
+	HMS_check_args_once();
+
+	hms = HMS_connect(PROTO_ANY, "rooms");
 
 	if (! hms)
 		return 0;
@@ -402,18 +444,15 @@ int
 HMS_register (void)
 {
 	struct HMS_buffer *hms;
-	int ok;
+	int ok = 0;
 
 	char post[256];
 
 	char *title;
 
-	hms = HMS_connect("rooms/%d/register", ms_RoomId);
+	HMS_check_args_once();
 
-	if (! hms)
-		return 0;
-
-	title = curl_easy_escape(hms->curl, cv_servername.string, 0);
+	title = curl_easy_escape(NULL, cv_servername.string, 0);
 
 	snprintf(post, sizeof post,
 			"port=%d&"
@@ -429,16 +468,45 @@ HMS_register (void)
 
 	curl_free(title);
 
+	if (hms_allow_ipv4)
+	{
+		hms = HMS_connect(PROTO_V4, "rooms/%d/register", cv_masterserver_room_id.value);
+
+		if (! hms)
+			return 0;
+
+		curl_easy_setopt(hms->curl, CURLOPT_POSTFIELDS, post);
+
+		ok = HMS_do(hms);
+
+		if (ok)
+		{
+			hms_server_token = strdup(strtok(hms->buffer, "\n"));
+		}
+
+		HMS_end(hms);
+	}
+
+#ifndef NO_IPV6
+	if (!hms_allow_ipv6)
+		return ok;
+
+	hms = HMS_connect(PROTO_V6, "rooms/%d/register", cv_masterserver_room_id.value);
+
+	if (! hms)
+		return 0;
+
 	curl_easy_setopt(hms->curl, CURLOPT_POSTFIELDS, post);
 
 	ok = HMS_do(hms);
 
 	if (ok)
 	{
-		hms_server_token = strdup(strtok(hms->buffer, "\n"));
+		hms_server_token_ipv6 = strdup(strtok(hms->buffer, "\n"));
 	}
 
 	HMS_end(hms);
+#endif
 
 	return ok;
 }
@@ -447,19 +515,43 @@ int
 HMS_unlist (void)
 {
 	struct HMS_buffer *hms;
-	int ok;
+	int ok = 0;
 
-	hms = HMS_connect("servers/%s/unlist", hms_server_token);
+	HMS_check_args_once();
 
-	if (! hms)
-		return 0;
+	if (hms_server_token && hms_allow_ipv4)
+	{
+		hms = HMS_connect(PROTO_V4, "servers/%s/unlist", hms_server_token);
 
-	curl_easy_setopt(hms->curl, CURLOPT_CUSTOMREQUEST, "POST");
+		if (! hms)
+			return 0;
 
-	ok = HMS_do(hms);
-	HMS_end(hms);
+		curl_easy_setopt(hms->curl, CURLOPT_POST, 1);
+		curl_easy_setopt(hms->curl, CURLOPT_POSTFIELDSIZE, 0);
 
-	free(hms_server_token);
+		ok = HMS_do(hms);
+		HMS_end(hms);
+
+		free(hms_server_token);
+	}
+
+#ifndef NO_IPV6
+	if (hms_server_token_ipv6 && hms_allow_ipv6)
+	{
+		hms = HMS_connect(PROTO_V6, "servers/%s/unlist", hms_server_token_ipv6);
+
+		if (! hms)
+			return 0;
+
+		curl_easy_setopt(hms->curl, CURLOPT_POST, 1);
+		curl_easy_setopt(hms->curl, CURLOPT_POSTFIELDSIZE, 0);
+
+		ok = HMS_do(hms);
+		HMS_end(hms);
+
+		free(hms_server_token_ipv6);
+	}
+#endif
 
 	return ok;
 }
@@ -468,18 +560,14 @@ int
 HMS_update (void)
 {
 	struct HMS_buffer *hms;
-	int ok;
+	int ok = 0;
 
 	char post[256];
 
 	char *title;
 
-	hms = HMS_connect("servers/%s/update", hms_server_token);
-
-	if (! hms)
-		return 0;
-
-	title = curl_easy_escape(hms->curl, cv_servername.string, 0);
+	HMS_check_args_once();
+	title = curl_easy_escape(NULL, cv_servername.string, 0);
 
 	snprintf(post, sizeof post,
 			"title=%s",
@@ -488,10 +576,33 @@ HMS_update (void)
 
 	curl_free(title);
 
-	curl_easy_setopt(hms->curl, CURLOPT_POSTFIELDS, post);
+	if (hms_server_token && hms_allow_ipv4)
+	{
+		hms = HMS_connect(PROTO_V4, "servers/%s/update", hms_server_token);
 
-	ok = HMS_do(hms);
-	HMS_end(hms);
+		if (! hms)
+			return 0;
+
+		curl_easy_setopt(hms->curl, CURLOPT_POSTFIELDS, post);
+
+		ok = HMS_do(hms);
+		HMS_end(hms);
+	}
+
+#ifndef NO_IPV6
+	if (hms_server_token_ipv6 && hms_allow_ipv6)
+	{
+		hms = HMS_connect(PROTO_V6, "servers/%s/update", hms_server_token_ipv6);
+
+		if (! hms)
+			return ok;
+
+		curl_easy_setopt(hms->curl, CURLOPT_POSTFIELDS, post);
+
+		ok = HMS_do(hms);
+		HMS_end(hms);
+	}
+#endif
 
 	return ok;
 }
@@ -504,7 +615,9 @@ HMS_list_servers (void)
 	char *list;
 	char *p;
 
-	hms = HMS_connect("servers");
+	HMS_check_args_once();
+
+	hms = HMS_connect(PROTO_ANY, "servers");
 
 	if (! hms)
 		return;
@@ -549,14 +662,16 @@ HMS_fetch_servers (msg_server_t *list, int room_number, int query_id)
 
 	int i;
 
+	HMS_check_args_once();
+
 	(void)query_id;
 
 	if (room_number > 0)
 	{
-		hms = HMS_connect("rooms/%d/servers", room_number);
+		hms = HMS_connect(PROTO_ANY, "rooms/%d/servers", room_number);
 	}
 	else
-		hms = HMS_connect("servers");
+		hms = HMS_connect(PROTO_ANY, "servers");
 
 	if (! hms)
 		return NULL;
@@ -660,7 +775,9 @@ HMS_compare_mod_version (char *buffer, size_t buffer_size)
 	char *version;
 	char *version_name;
 
-	hms = HMS_connect("versions/%d", MODID);
+	HMS_check_args_once();
+
+	hms = HMS_connect(PROTO_ANY, "versions/%d", MODID);
 
 	if (! hms)
 		return 0;

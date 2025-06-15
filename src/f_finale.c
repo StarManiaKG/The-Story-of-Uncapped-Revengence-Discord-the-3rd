@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2023 by Sonic Team Junior.
+// Copyright (C) 1999-2024 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -14,7 +14,7 @@
 #include "doomdef.h"
 #include "doomstat.h"
 #include "d_main.h"
-#include "d_netcmd.h"
+#include "netcode/d_netcmd.h"
 #include "f_finale.h"
 #include "g_game.h"
 #include "hu_stuff.h"
@@ -44,12 +44,11 @@
 #include "lua_hud.h"
 #include "lua_hook.h"
 
+
 // TSoURDt3rd
 #include "STAR/smkg-cvars.h" // cv_tsourdt3rd_game_startup_intro & cv_tsourdt3rd_savefiles_storesavesinfolders //
-#include "STAR/smkg-misc_purefat.h"
-#include "STAR/menus/smkg-m_sys.h"	// TSoURDt3rd_M_OverwriteIntroResponder() //
-									// TSoURDt3rd_M_DrawMenuMessageOnTitle() //
-									// TSoURDt3rd_M_MenuMessageShouldTick()  //
+#include "STAR/menus/smkg-m_sys.h"
+#include "STAR/misc/smkg-m_intro.h"
 
 // Stage of animation:
 // 0 = text, 1 = art screen
@@ -236,6 +235,7 @@ static UINT8 cutscene_boostspeed = 0;
 char stjrintro[9] = "STJRI000";
 
 static huddrawlist_h luahuddrawlist_title;
+static huddrawlist_h luahuddrawlist_continue[2];
 
 //
 // This alters the text string cutscene_disptext.
@@ -319,23 +319,23 @@ const char *introtext[NUMINTROSCENES];
 
 static tic_t introscenetime[NUMINTROSCENES] =
 {
-	6*TICRATE,	// STJr Presents
-	10*TICRATE + (TICRATE/2),		// Two months had passed since...
+	5*TICRATE,	// STJr Presents
+	10*TICRATE + (TICRATE/2),	// Two months had passed since...
 	12*TICRATE + ((TICRATE/4) * 3),	// As it was about to drain the rings...
-	12*TICRATE + (TICRATE/2),		// What Sonic, Tails, and Knuckles...
-	16*TICRATE,						// About once every year, a strange...
-	20*TICRATE + (TICRATE/2),		// Curses! Eggman yelled. That ridiculous...
-	18*TICRATE + (TICRATE/4),		// It was only later that he had an idea...
-	9*TICRATE + (TICRATE/2),		// Before beginning his scheme, Eggman decided to give Sonic...
-	14*TICRATE,						// We're ready to fire in 15 seconds, the robot said...
-	16*TICRATE,						// Meanwhile, Sonic was tearing across the zones...
-	16*TICRATE + (TICRATE/2),		// Sonic knew he was getting closer to the city...
-	11*TICRATE + (TICRATE/2),		// Greenflower City was gone...
-	 8*TICRATE,						// You're not quite as dead as we thought, huh?...
-	 8*TICRATE,						// We'll see... let's give you a quick warm up...
-	18*TICRATE + (TICRATE/2),		// Eggman took this as his cue and blasted off...
-	15*TICRATE,						// Easy! We go find Eggman and stop his...
-	23*TICRATE,						// I'm just finding what mission obje...
+	12*TICRATE + (TICRATE/4),					// What Sonic, Tails, and Knuckles...
+	16*TICRATE,					// About once every year, a strange...
+	20*TICRATE + (TICRATE/2),	// Curses! Eggman yelled. That ridiculous...
+	18*TICRATE + (TICRATE/4),	// It was only later that he had an idea...
+	9*TICRATE + (TICRATE/2),	// Before beginning his scheme, Eggman decided to give Sonic...
+	14*TICRATE,					// We're ready to fire in 15 seconds, the robot said...
+	14*TICRATE + (TICRATE/2),	// Meanwhile, Sonic was tearing across the zones...
+	16*TICRATE + (TICRATE/2),	// Sonic knew he was getting closer to the city...
+	11*TICRATE + (TICRATE/2),	// Greenflower City was gone...
+	 8*TICRATE,					// You're not quite as dead as we thought, huh?...
+	 8*TICRATE,					// We'll see... let's give you a quick warm up...
+	18*TICRATE + (TICRATE/2),	// Eggman took this as his cue and blasted off...
+	15*TICRATE,					// Easy! We go find Eggman and stop his...
+	23*TICRATE,					// I'm just finding what mission obje...
 };
 
 // custom intros
@@ -346,7 +346,10 @@ void F_StartIntro(void)
 	S_StopMusic();
 	S_StopSounds();
 
-	STAR_F_StartIntro(introscenetime); // STAR STUFF: sets intro scene times for us //
+#if 1
+	// STAR STUFF: sets intro scene times for us //
+	STAR_F_StartIntro(introscenetime);
+#endif
 
 	if (introtoplay)
 	{
@@ -618,6 +621,16 @@ void F_IntroDrawer(void)
 
 	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 
+#if 1
+	// STAR STUFF: pure fat intro? do unique stuff for that instead! //
+	if (cv_tsourdt3rd_game_startup_intro.value)
+	{
+		boolean leave_func = STAR_F_PureFatDrawer(stjrintro, background, (patch = NULL), intro_scenenum, bgxoffs);
+		if (leave_func)
+			return;
+	}
+#endif
+
 	if (background)
 	{
 		if (highres)
@@ -625,29 +638,21 @@ void F_IntroDrawer(void)
 		else
 			V_DrawScaledPatch(bgxoffs, 0, 0, background);
 	}
-	else if (intro_scenenum == 0) // The Scene/Wipe Before the Start of the Intro
+	else if (intro_scenenum == 0) // STJr presents
 	{
-		// STAR STUFF: pure fat intro? do unique stuff for that instead! //
-		if (cv_tsourdt3rd_game_startup_intro.value)
-		{
-			STAR_F_PureFatDrawer(stjrintro, background, (patch = NULL), intro_scenenum, bgxoffs);
-			return;
-		}
-		// MOVING ON! //
-
 		if (intro_curtime > 1 && intro_curtime < (INT32)introscenetime[intro_scenenum])
 		{
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 
-			if (intro_curtime > TICRATE-17 && intro_curtime < 2*TICRATE-22) // Make the text shine!
+			if (intro_curtime < TICRATE-5) // Make the text shine!
 			{
-				sprintf(stjrintro, "STJRI%03u", intro_curtime-19);
+				sprintf(stjrintro, "STJRI%03u", intro_curtime-1);
 			}
-			else if (intro_curtime >= 2*TICRATE-23 && intro_curtime < 2*TICRATE-3) // Pause on black screen for just a second
+			else if (intro_curtime >= TICRATE-6 && intro_curtime < 2*TICRATE-20) // Pause on black screen for just a second
 			{
 				return;
 			}
-			else if (intro_curtime == 2*TICRATE-2)
+			else if (intro_curtime == 2*TICRATE-19)
 			{
 				// Fade in the text
 				// The text fade out is automatically handled when switching to a new intro scene
@@ -661,11 +666,6 @@ void F_IntroDrawer(void)
 				background = W_CachePatchName(stjrintro, PU_PATCH_LOWPRIORITY);
 				V_DrawSmallScaledPatch(bgxoffs, 84, 0, background);
 			}
-		}
-		else
-		{
-			background = W_CachePatchName(stjrintro, PU_PATCH_LOWPRIORITY);
-			V_DrawSmallScaledPatch(bgxoffs, 84, 0, background);
 		}
 	}
 	else if (intro_scenenum == 10) // Sky Runner
@@ -876,6 +876,16 @@ void F_IntroTicker(void)
 	if (keypressed)
 		keypressed = false;
 
+#if 1
+	// STAR STUFF: set our custom pure fat wipe for us //
+	if (cv_tsourdt3rd_game_startup_intro.value)
+	{
+		boolean leave_func = STAR_F_PureFatTicker(intro_scenenum, intro_curtime, animtimer, timetonext);
+		if (leave_func)
+			return;
+	}
+#endif
+
 	wipestyleflags = WSF_CROSSFADE;
 
 	if (timetonext <= 0)
@@ -971,15 +981,7 @@ void F_IntroTicker(void)
 
 	if (rendermode != render_none)
 	{
-		// STAR STUFF: set our custom pure fat wipe for us //
-		if (cv_tsourdt3rd_game_startup_intro.value)
-		{
-			STAR_F_PureFatTicker(intro_scenenum, intro_curtime, animtimer);
-			return;
-		}
-		// WIPED AND PRESENTED! //
-
-		if (intro_scenenum == 0 && intro_curtime == 2*TICRATE-2)
+		if (intro_scenenum == 0 && intro_curtime == 2*TICRATE-19)
 		{
 			S_ChangeMusicInternal("_stjr", false);
 
@@ -1051,10 +1053,11 @@ boolean F_IntroResponder(event_t *event)
 			break;
 	}
 
+#if 1
 	// STAR STUFF: CHECK FOR ANY EVENTS WE SHOULD PRIORITIZE //
 	if (TSoURDt3rd_M_OverwriteIntroResponder(event))
 		return false;
-	// OVERWRITED. //
+#endif
 
 	if (event->type != ev_keydown && key != 301)
 		return false;
@@ -1099,12 +1102,12 @@ static const char *credits[] = {
 	"Julio \"Chaos Zero 64\" Guir",
 	"\"Hanicef\"",
 	"\"Hannu_Hanhi\"", // For many OpenGL performance improvements!
+	"\"hazepastel\"",
 	"Kepa \"Nev3r\" Iceta",
 	"Thomas \"Shadow Hog\" Igoe",
 	"Iestyn \"Monster Iestyn\" Jealous",
 	"\"Kaito Sinclaire\"",
 	"\"Kalaron\"", // Coded some of Sryder13's collection of OpenGL fixes, especially fog
-	"\"katsy\"",
 	"Ronald \"Furyhunter\" Kinard", // The SDL2 port
 	"\"Lat'\"", // SRB2-CHAT, the chat window from Kart
 	"\"LZA\"",
@@ -1114,6 +1117,7 @@ static const char *credits[] = {
 	"Louis-Antoine \"LJ Sonic\" de Moulins", // de Rochefort doesn't quite fit on the screen sorry lol
 	"John \"JTE\" Muniz",
 	"Colin \"Sonict\" Pfaff",
+	"\"Radicalicious\"",
 	"James \"james\" Robert Roman",
 	"Sean \"Sryder13\" Ryder",
 	"Ehab \"Wolfy\" Saeed",
@@ -1137,7 +1141,8 @@ static const char *credits[] = {
 	"\"ChrispyPixels\"",
 	"Paul \"Boinciel\" Clempson",
 	"Sally \"TehRealSalt\" Cochenour",
-	"\"Dave Lite\"",
+	"\"DaJumpJump\"", // New Ringslinger graphics (2.2.14)
+	"\"DeltaSanic\"",
 	"Desmond \"Blade\" DesJardins",
 	"Sherman \"CoatRack\" DesJardins",
 	"\"DirkTheHusky\"",
@@ -1153,6 +1158,7 @@ static const char *credits[] = {
 	"Alice \"Alacroix\" de Lemos",
 	"Logan \"Hyperchaotix\" McCloud",
 	"Alexander \"DrTapeworm\" Moench-Ford",
+    "\"orbitalviolet\"", // summit showdown hehehehe (aka Evertone)
 	"Andrew \"Senku Niola\" Moran",
 	"\"MotorRoach\"",
 	"Phillip \"TelosTurntable\" Robinson",
@@ -1161,6 +1167,7 @@ static const char *credits[] = {
 	"David \"Instant Sonic\" Spencer Jr.",
 	"\"SSNTails\"",
 	"Daniel \"Inazuma\" Trinh",
+	"Samuel \"Spectorious\" Tuttle",
 	"\"VelocitOni\"",
 	"Jarrett \"JEV3\" Voight",
 	"",
@@ -1169,6 +1176,7 @@ static const char *credits[] = {
 	"Victor \"VAdaPEGA\" Ara\x1Fjo", // Araújo
 	"Malcolm \"RedXVI\" Brown",
 	"Dave \"DemonTomatoDave\" Bulmer",
+	"Dan Cidoni", // aka Krabs
 	"Paul \"Boinciel\" Clempson",
 	"\"Cyan Helkaraxe\"",
 	"Claire \"clairebun\" Ellis",
@@ -1187,24 +1195,30 @@ static const char *credits[] = {
 	"Colette \"fickleheart\" Bordelon",
 	"Hank \"FuriousFox\" Brannock",
 	"Matthew \"Fawfulfan\" Chapman",
+	"Dan Cidoni", // aka Krabs
 	"Paul \"Boinciel\" Clempson",
 	"Sally \"TehRealSalt\" Cochenour",
 	"Desmond \"Blade\" DesJardins",
 	"Sherman \"CoatRack\" DesJardins",
 	"Ben \"Mystic\" Geyer",
 	"Nathan \"Jazz\" Giroux",
+	"\"GomaTheMascar\"",
 	"Vivian \"toaster\" Grannell",
 	"James \"SeventhSentinel\" Hall",
 	"Kepa \"Nev3r\" Iceta",
 	"Thomas \"Shadow Hog\" Igoe",
+	"Mujamel \"MK\" Khan",
 	"\"Kaito Sinclaire\"",
 	"Alexander \"DrTapeworm\" Moench-Ford",
+	"\"Radicalicious\"",
 	"\"Revan\"",
 	"Anna \"QueenDelta\" Sandlin",
 	"Wessel \"sphere\" Smit",
 	"\"SSNTails\"",
+	"Aaron \"Othius\" Stojkov",
 	"Rob Tisdell",
 	"\"Torgo\"",
+	"Samuel \"Spectorious\" Tuttle",
 	"Jarrett \"JEV3\" Voight",
 	"Johnny \"Sonikku\" Wallbank",
 	"Marco \"mazmazz\" Zafra",
@@ -1316,6 +1330,9 @@ void F_CreditDrawer(void)
 	UINT8 colornum;
 	const UINT8 *colormap;
 
+	// compensation for y on non-green resolutions, used to prevent text from disappearing before reaching the top
+	UINT16 compy = (vid.height - (BASEVIDHEIGHT * vid.dup)) / 2;
+
 	if (players[consoleplayer].skincolor)
 		colornum = players[consoleplayer].skincolor;
 	else
@@ -1347,22 +1364,22 @@ void F_CreditDrawer(void)
 			y += 80<<FRACBITS;
 			break;
 		case 1:
-			if (y>>FRACBITS > -20)
+			if (y>>FRACBITS > -20-compy)
 				V_DrawCreditString((160 - (V_CreditStringWidth(&credits[i][1])>>1))<<FRACBITS, y, 0, &credits[i][1]);
 			y += 30<<FRACBITS;
 			break;
 		case 2:
-			if (y>>FRACBITS > -10)
+			if (y>>FRACBITS > -10-compy)
 				V_DrawStringAtFixed((BASEVIDWIDTH-V_StringWidth(&credits[i][1], V_ALLOWLOWERCASE|V_YELLOWMAP))<<FRACBITS>>1, y, V_ALLOWLOWERCASE|V_YELLOWMAP, &credits[i][1]);
 			y += 12<<FRACBITS;
 			break;
 		default:
-			if (y>>FRACBITS > -10)
+			if (y>>FRACBITS > -10-compy)
 				V_DrawStringAtFixed(32<<FRACBITS, y, V_ALLOWLOWERCASE, credits[i]);
 			y += 12<<FRACBITS;
 			break;
 		}
-		if (FixedMul(y,vid.dupy) > vid.height)
+		if (FixedMul(y,vid.dup) > vid.height)
 			break;
 	}
 }
@@ -1397,7 +1414,7 @@ void F_CreditTicker(void)
 			case 1: y += 30<<FRACBITS; break;
 			default: y += 12<<FRACBITS; break;
 		}
-		if (FixedMul(y,vid.dupy) > vid.height)
+		if (FixedMul(y,vid.dup) > vid.height)
 			break;
 	}
 
@@ -1638,9 +1655,9 @@ void F_GameEvaluationDrawer(void)
 		rtatext = (marathonmode & MA_INGAME) ? "In-game timer" : "RTA timer";
 		cuttext = (marathonmode & MA_NOCUTSCENES) ? "" : " w/ cutscenes";
 		if (botskin)
-			endingtext = va("%s & %s, %s%s", skins[players[consoleplayer].skin].realname, skins[botskin-1].realname, rtatext, cuttext);
+			endingtext = va("%s & %s, %s%s", skins[players[consoleplayer].skin]->realname, skins[botskin-1]->realname, rtatext, cuttext);
 		else
-			endingtext = va("%s, %s%s", skins[players[consoleplayer].skin].realname, rtatext, cuttext);
+			endingtext = va("%s, %s%s", skins[players[consoleplayer].skin]->realname, rtatext, cuttext);
 		V_DrawCenteredString(BASEVIDWIDTH/2, 182, V_SNAPTOBOTTOM|(ultimatemode ? V_REDMAP : V_YELLOWMAP), endingtext);
 	}
 }
@@ -1703,25 +1720,16 @@ void F_GameEvaluationTicker(void)
 		M_SilentUpdateUnlockablesAndEmblems(serverGamedata);
 
 		if (M_UpdateUnlockablesAndExtraEmblems(clientGamedata))
-		{
 			S_StartSound(NULL, sfx_s3k68);
-			if (ALL7EMERALDS(emeralds))
-				++clientGamedata->timesBeatenWithEmeralds;
 
-			if (ultimatemode)
-				++clientGamedata->timesBeatenUltimate;
-
-			if (M_UpdateUnlockablesAndExtraEmblems(clientGamedata))
-				S_StartSound(NULL, sfx_s3k68);
-		}
-			
-	    G_SaveGameData(clientGamedata);
+		G_SaveGameData(clientGamedata);
 	}
 
-	// STAR STUFF: play finale music //
+#if 1
+	// STAR STUFF: play our cool finale music! //
 	if (finalecount == 4*TICRATE)
 		S_ChangeMusicInternal(TSoURDt3rd_DetermineLevelMusic(), false);
-	// PLAY OUR COOL FINALE MUSIC! //
+#endif
 }
 
 #undef SPARKLLOOPTIME
@@ -1769,9 +1777,9 @@ static void F_CacheEnding(void)
 		UINT8 skinnum = players[consoleplayer].skin;
 		spritedef_t *sprdef;
 		spriteframe_t *sprframe;
-		if (skins[skinnum].sprites[SPR2_XTRA].numframes > (XTRA_ENDING+2))
+		if (skins[skinnum]->sprites[SPR2_XTRA].numframes > (XTRA_ENDING+2))
 		{
-			sprdef = &skins[skinnum].sprites[SPR2_XTRA];
+			sprdef = &skins[skinnum]->sprites[SPR2_XTRA];
 			// character head, skin specific
 			sprframe = &sprdef->spriteframes[XTRA_ENDING];
 			endfwrk[0] = W_CachePatchNum(sprframe->lumppat[0], PU_PATCH_LOWPRIORITY);
@@ -2132,7 +2140,7 @@ void F_EndingDrawer(void)
 		if (goodending && finalecount >= TICRATE && finalecount < INFLECTIONPOINT)
 		{
 			INT32 workingtime = finalecount - TICRATE;
-			fixed_t radius = ((vid.width/vid.dupx)*(INFLECTIONPOINT - TICRATE - workingtime))/(INFLECTIONPOINT - TICRATE);
+			fixed_t radius = ((vid.width/vid.dup)*(INFLECTIONPOINT - TICRATE - workingtime))/(INFLECTIONPOINT - TICRATE);
 			angle_t fa;
 			INT32 eemeralds_cur[4];
 			char patchname[7] = "CEMGx0";
@@ -2217,7 +2225,7 @@ void F_EndingDrawer(void)
 		boolean donttouch = false;
 		const char *str;
 		if (goodending)
-			str = va("[S] %s: Engage.", skins[players[consoleplayer].skin].realname);
+			str = va("[S] %s: Engage.", skins[players[consoleplayer].skin]->realname);
 		else
 			str = "[S] Eggman: Abscond.";
 
@@ -2280,7 +2288,11 @@ void F_StartGameEnd(void)
 void F_GameEndDrawer(void)
 {
 	// this function does nothing
-	TSoURDt3rd_GameEnd(&timetonext); // STAR STUFF: ....except this (WORLD 7 SUPER PAPER MARIO) //
+
+#if 1
+	// STAR STUFF: ....except this (WORLD 7 SUPER PAPER MARIO) //
+	TSoURDt3rd_GameEnd(&timetonext);
+#endif
 }
 
 //
@@ -2338,7 +2350,6 @@ void F_InitMenuPresValues(void)
 void F_SkyScroll(const char *patchname)
 {
 	INT32 x, basey = 0;
-	INT32 dupz = (vid.dupx < vid.dupy ? vid.dupx : vid.dupy);
 	patch_t *pat;
 
 	if (rendermode == render_none)
@@ -2366,17 +2377,17 @@ void F_SkyScroll(const char *patchname)
 	curbgy %= pat->height * 16;
 
 	// Ooh, fancy frame interpolation
-	x     = ((curbgx*dupz) + FixedInt((rendertimefrac-FRACUNIT) * curbgxspeed*dupz)) / 16;
-	basey = ((curbgy*dupz) + FixedInt((rendertimefrac-FRACUNIT) * curbgyspeed*dupz)) / 16;
+	x     = ((curbgx*vid.dup) + FixedInt((rendertimefrac-FRACUNIT) * curbgxspeed*vid.dup)) / 16;
+	basey = ((curbgy*vid.dup) + FixedInt((rendertimefrac-FRACUNIT) * curbgyspeed*vid.dup)) / 16;
 
 	if (x     > 0) // Make sure that we don't leave the left or top sides empty
-		x     -= pat->width  * dupz;
+		x     -= pat->width  * vid.dup;
 	if (basey > 0)
-		basey -= pat->height * dupz;
+		basey -= pat->height * vid.dup;
 
-	for (; x < vid.width; x += pat->width * dupz)
+	for (; x < vid.width; x += pat->width * vid.dup)
 	{
-		for (INT32 y = basey; y < vid.height; y += pat->height * dupz)
+		for (INT32 y = basey; y < vid.height; y += pat->height * vid.dup)
 			V_DrawScaledPatch(x, y, V_NOSCALESTART, pat);
 	}
 
@@ -2384,7 +2395,7 @@ void F_SkyScroll(const char *patchname)
 }
 
 #define LOADTTGFX(arr, name, maxf) \
-lumpnum = W_CheckNumForName(name); \
+lumpnum = W_CheckNumForPatchName(name); \
 if (lumpnum != LUMPERROR) \
 { \
 	arr[0] = W_CachePatchName(name, PU_PATCH_LOWPRIORITY); \
@@ -2398,7 +2409,7 @@ else if (strlen(name) <= 6) \
 	{ \
 		sprintf(&lumpname[cnt], "%.2hu", (UINT16)(i+1)); \
 		lumpname[8] = 0; \
-		lumpnum = W_CheckNumForName(lumpname); \
+		lumpnum = W_CheckNumForPatchName(lumpname); \
 		if (lumpnum != LUMPERROR) \
 			arr[i] = W_CachePatchName(lumpname, PU_PATCH_LOWPRIORITY); \
 		else \
@@ -2654,7 +2665,7 @@ static void F_LoadAlacroixGraphics(SINT8 newttscale)
 
 static void F_FigureActiveTtScale(void)
 {
-	SINT8 newttscale = max(1, min(6, vid.dupx));
+	SINT8 newttscale = max(1, min(6, vid.dup));
 	SINT8 oldttscale = activettscale;
 
 	if (newttscale == testttscale)
@@ -2692,6 +2703,12 @@ void F_TitleScreenDrawer(void)
 	fixed_t sc = FRACUNIT / max(1, curttscale);
 	INT32 whitefade = 0;
 	UINT8 *whitecol[2] = {NULL, NULL};
+
+#if 1
+	// STAR STUFF: don't forget to draw menu messages! //
+	/// \todo either remove or keep idk
+	TSoURDt3rd_M_DrawMenuMessageOnTitle(finalecount);
+#endif
 
 	if (modeattacking)
 		return; // We likely came here from retrying. Don't do a damn thing.
@@ -3173,8 +3190,12 @@ void F_TitleScreenDrawer(void)
 				}
 			}
 
+#if 0
+			if (finalecount >= SONICSTART)
+#else
 			// STAR NOTE: no more sonic for april fools lol //
 			if ((finalecount >= SONICSTART) && !TSoURDt3rd_AprilFools_ModeEnabled())
+#endif
 			{
 				if (finalecount < SONICIDLE)
 				{
@@ -3345,8 +3366,12 @@ void F_TitleScreenDrawer(void)
 				// No Tails Front Layer Idle
 			}
 
-			// STAR NOTE: no more sonic for april fools, electric boogalo //
+#if 0
+			if (finalecount >= SONICSTART)
+#else
+			// STAR NOTE: no more sonic for april fools lol //
 			if ((finalecount >= SONICSTART) && !TSoURDt3rd_AprilFools_ModeEnabled())
+#endif
 			{
 				if (finalecount < SONICIDLE)
 				{
@@ -3437,7 +3462,11 @@ void F_TitleScreenDrawer(void)
 			break;
 	}
 
-	TSoURDt3rd_Jukebox_ST_drawJukebox(); // STAR STUFF: Show the jukebox! //
+#if 0
+	// STAR STUFF: don't forget to draw menu messages! //
+	/// \todo either remove or keep idk
+	TSoURDt3rd_M_DrawMenuMessageOnTitle(finalecount);
+#endif
 
 luahook:
 	// The title drawer is sometimes called without first being started
@@ -3455,8 +3484,6 @@ luahook:
 		LUA_HUDHOOK(title, luahuddrawlist_title);
 	}
 	LUA_HUD_DrawList(luahuddrawlist_title);
-
-	TSoURDt3rd_M_DrawMenuMessageOnTitle(finalecount); // STAR STUFF: don't forget to draw menu messages! //
 }
 
 // separate animation timer for backgrounds, since we also count
@@ -3470,7 +3497,11 @@ void F_MenuPresTicker(void)
 // (no longer) De-Demo'd Title Screen
 void F_TitleScreenTicker(boolean run)
 {
-	TSoURDt3rd_M_MenuMessageShouldTick(run); // STAR STUFF: DRRR: message menu routine //
+#if 1
+	// STAR STUFF: DRRR: message menu routine //
+	/// \todo maybe move somewhere else?
+	TSoURDt3rd_M_MenuMessageShouldTick(run);
+#endif
 
 	if (run)
 		finalecount++;
@@ -3491,7 +3522,7 @@ void F_TitleScreenTicker(boolean run)
 		{
 			for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 			{
-				if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
+				if (th->removing)
 					continue;
 
 				mo2 = (mobj_t *)th;
@@ -3587,11 +3618,16 @@ void F_TitleDemoTicker(void)
 // ==========
 
 static skin_t *contskins[2];
-static UINT8 cont_spr2[2][6];
+static UINT16 cont_spr2[2][6];
 static UINT8 *contcolormaps[2];
+static player_t *contPlayers[2];
+static skincolornum_t contColors[2]; // it's possible to change your skincolor in the continue screen, so this is for Lua to identify the skincolor that was used to cache the colormap
+static boolean contOverrides[2];
 
 void F_StartContinue(void)
 {
+	UINT8 i;
+
 	I_Assert(!netgame && !multiplayer);
 
 	if (continuesInSession && players[consoleplayer].continues <= 0)
@@ -3614,9 +3650,12 @@ void F_StartContinue(void)
 	S_ChangeMusicInternal("_conti", false);
 	S_StopSounds();
 
-	contskins[0] = &skins[players[consoleplayer].skin];
+	contPlayers[0] = &players[consoleplayer];
+	contskins[0] = skins[players[consoleplayer].skin];
+
 	cont_spr2[0][0] = P_GetSkinSprite2(contskins[0], SPR2_CNT1, NULL);
 	cont_spr2[0][2] = contskins[0]->contangle & 7;
+	contColors[0] = players[consoleplayer].skincolor;
 	contcolormaps[0] = R_GetTranslationColormap(players[consoleplayer].skin, players[consoleplayer].skincolor, GTC_CACHE);
 	cont_spr2[0][4] = contskins[0]->sprites[cont_spr2[0][0]].numframes;
 	cont_spr2[0][5] = max(1, contskins[0]->contspeed);
@@ -3630,9 +3669,12 @@ void F_StartContinue(void)
 		else // HACK
 			secondplaya = 1;
 
-		contskins[1] = &skins[players[secondplaya].skin];
+		contPlayers[1] = &players[secondplaya];
+		contskins[1] = skins[players[secondplaya].skin];
+
 		cont_spr2[1][0] = P_GetSkinSprite2(contskins[1], SPR2_CNT4, NULL);
 		cont_spr2[1][2] = (contskins[1]->contangle >> 3) & 7;
+		contColors[1] = players[secondplaya].skincolor;
 		contcolormaps[1] = R_GetTranslationColormap(players[secondplaya].skin, players[secondplaya].skincolor, GTC_CACHE);
 		cont_spr2[1][4] = contskins[1]->sprites[cont_spr2[1][0]].numframes;
 		if (cont_spr2[1][0] == SPR2_CNT4)
@@ -3652,6 +3694,58 @@ void F_StartContinue(void)
 
 	timetonext = (11*TICRATE)+11;
 	continuetime = 0;
+
+	// allocate and/or clear Lua continue screen draw lists
+	for (i = 0; i < 2; i++)
+	{
+		if (!LUA_HUD_IsDrawListValid(luahuddrawlist_continue[i]))
+		{
+			LUA_HUD_DestroyDrawList(luahuddrawlist_continue[i]);
+			luahuddrawlist_continue[i] = LUA_HUD_CreateDrawList();
+		}
+		LUA_HUD_ClearDrawList(luahuddrawlist_continue[i]);
+		contOverrides[i] = false;
+	}
+}
+
+static void F_DestroyContinueDrawLists(void)
+{
+	UINT8 i;
+	for (i = 0; i < 2; i++)
+	{
+		LUA_HUD_DestroyDrawList(luahuddrawlist_continue[i]);
+		luahuddrawlist_continue[i] = NULL;
+		contOverrides[i] = false;
+	}
+}
+
+static void F_DrawContinueCharacter(INT32 dx, INT32 dy, UINT8 n)
+{
+	spritedef_t *sprdef;
+	spriteframe_t *sprframe;
+	patch_t *patch;
+
+	if (renderisnewtic)
+	{
+		LUA_HUD_ClearDrawList(luahuddrawlist_continue[n]);
+		contOverrides[n] = LUA_HookCharacterHUD
+		(
+			HUD_HOOK(continue), luahuddrawlist_continue[n], contPlayers[n],
+			dx, dy, contskins[n]->highresscale,
+			(INT32)(contskins[n]->skinnum), cont_spr2[n][0], cont_spr2[n][1], cont_spr2[n][2] + 1, contColors[n], // add 1 to rotation to convert internal angle numbers (0-7) to WAD editor angle numbers (1-8)
+			imcontinuing ? continuetime : timetonext, imcontinuing
+		);
+	}
+
+	LUA_HUD_DrawList(luahuddrawlist_continue[n]);
+
+	if (contOverrides[n] == true)
+		return;
+
+	sprdef = &contskins[n]->sprites[cont_spr2[n][0]];
+	sprframe = &sprdef->spriteframes[cont_spr2[n][1]];
+	patch = W_CachePatchNum(sprframe->lumppat[cont_spr2[n][2]], PU_PATCH_LOWPRIORITY);
+	V_DrawFixedPatch((dx), (dy), contskins[n]->highresscale, (sprframe->flip & (1<<cont_spr2[n][2])) ? V_FLIP : 0, patch, contcolormaps[n]);
 }
 
 //
@@ -3660,8 +3754,6 @@ void F_StartContinue(void)
 //
 void F_ContinueDrawer(void)
 {
-	spritedef_t *sprdef;
-	spriteframe_t *sprframe;
 	patch_t *patch;
 	INT32 i, x = (BASEVIDWIDTH>>1), ncontinues = players[consoleplayer].continues;
 	char numbuf[9] = "CONTNUM*";
@@ -3706,7 +3798,7 @@ void F_ContinueDrawer(void)
 	else if (ncontinues > 10)
 	{
 		if (!(continuetime & 1) || continuetime > 17)
-			V_DrawContinueIcon(x, 68, 0, players[consoleplayer].skin, players[consoleplayer].skincolor);
+			V_DrawContinueIcon(x, 68, 0, contskins[0]->skinnum, contColors[0]);
 		V_DrawScaledPatch(x+12, 66, 0, stlivex);
 		V_DrawRightAlignedString(x+38, 64, 0,
 			va("%d",(imcontinuing ? ncontinues-1 : ncontinues)));
@@ -3720,7 +3812,7 @@ void F_ContinueDrawer(void)
 		{
 			if (i == (ncontinues/2) && ((continuetime & 1) || continuetime > 17))
 				continue;
-			V_DrawContinueIcon(x - (i*30), 68, 0, players[consoleplayer].skin, players[consoleplayer].skincolor);
+			V_DrawContinueIcon(x - (i*30), 68, 0, contskins[0]->skinnum, contColors[0]);
 		}
 		x = BASEVIDWIDTH>>1;
 	}
@@ -3760,28 +3852,17 @@ void F_ContinueDrawer(void)
 	else if (lift[0] > TICRATE+5)
 		lift[0] = TICRATE+5;
 
-#define drawchar(dx, dy, n)	{\
-								sprdef = &contskins[n]->sprites[cont_spr2[n][0]];\
-								sprframe = &sprdef->spriteframes[cont_spr2[n][1]];\
-								patch = W_CachePatchNum(sprframe->lumppat[cont_spr2[n][2]], PU_PATCH_LOWPRIORITY);\
-								V_DrawFixedPatch((dx), (dy), contskins[n]->highresscale, (sprframe->flip & (1<<cont_spr2[n][2])) ? V_FLIP : 0, patch, contcolormaps[n]);\
-							}
-
 	if (offsy < 0)
-		drawchar((BASEVIDWIDTH<<(FRACBITS-1))-offsx, ((140-lift[0])<<FRACBITS)-offsy, 0);
+		F_DrawContinueCharacter((BASEVIDWIDTH<<(FRACBITS-1))-offsx, ((140-lift[0])<<FRACBITS)-offsy, 0);
 	if (contskins[1])
-		drawchar((BASEVIDWIDTH<<(FRACBITS-1))+offsx, ((140-lift[1])<<FRACBITS)+offsy, 1);
+		F_DrawContinueCharacter((BASEVIDWIDTH<<(FRACBITS-1))+offsx, ((140-lift[1])<<FRACBITS)+offsy, 1);
 	if (offsy >= 0)
-		drawchar((BASEVIDWIDTH<<(FRACBITS-1))-offsx, ((140-lift[0])<<FRACBITS)-offsy, 0);
-
-#undef drawchar
+		F_DrawContinueCharacter((BASEVIDWIDTH<<(FRACBITS-1))-offsx, ((140-lift[0])<<FRACBITS)-offsy, 0);
 
 	if (timetonext > (11*TICRATE))
 		V_DrawFadeScreen(31, timetonext-(11*TICRATE));
 	if (continuetime > ((3*TICRATE) - 10))
 		V_DrawFadeScreen(0, (continuetime - ((3*TICRATE) - 10)));
-
-	TSoURDt3rd_Jukebox_ST_drawJukebox(); // STAR STUFF: OOH, WHAT DOES THIS STUFF DO? //
 }
 
 void F_ContinueTicker(void)
@@ -3792,6 +3873,7 @@ void F_ContinueTicker(void)
 		{
 			if (!(--timetonext))
 			{
+				F_DestroyContinueDrawLists();
 				Command_ExitGame_f();
 				return;
 			}
@@ -3801,6 +3883,7 @@ void F_ContinueTicker(void)
 	{
 		if (++continuetime == 3*TICRATE)
 		{
+			F_DestroyContinueDrawLists();
 			G_Continue();
 			return;
 		}
@@ -3887,10 +3970,7 @@ boolean F_ContinueResponder(event_t *event)
 	keypressed = true;
 	imcontinuing = true;
 	S_StartSound(NULL, sfx_kc6b);
-
-	// STAR NOTE: don't fade music if we're playing music in the jukebox :p //
-	if (!TSoURDt3rd_Jukebox_IsPlaying())
-		I_FadeSong(0, MUSICRATE, &S_StopMusic);
+	I_FadeSong(0, MUSICRATE, &S_StopMusic);
 
 	return true;
 }
@@ -4123,7 +4203,7 @@ static void F_GetPageTextGeometry(UINT8 *pagelines, boolean *rightside, INT32 *b
 	// reuse:
 	// cutnum -> promptnum
 	// scenenum -> pagenum
-	lumpnum_t iconlump = W_CheckNumForName(textprompts[cutnum]->page[scenenum].iconname);
+	lumpnum_t iconlump = W_CheckNumForPatchName(textprompts[cutnum]->page[scenenum].iconname);
 
 	*pagelines = textprompts[cutnum]->page[scenenum].lines ? textprompts[cutnum]->page[scenenum].lines : 4;
 	*rightside = (iconlump != LUMPERROR && textprompts[cutnum]->page[scenenum].rightside);
@@ -4159,7 +4239,7 @@ static fixed_t F_GetPromptHideHudBound(void)
 	F_GetPageTextGeometry(&pagelines, &rightside, &boxh, &texth, &texty, &namey, &chevrony, &textx, &textr);
 
 	// calc boxheight (see V_DrawPromptBack)
-	boxh *= vid.dupy;
+	boxh *= vid.dup;
 	boxh = (boxh * 4) + (boxh/2)*5; // 4 lines of space plus gaps between and some leeway
 
 	// return a coordinate to check
@@ -4449,11 +4529,10 @@ void F_GetPromptPageByNamedTag(const char *tag, INT32 *promptnum, INT32 *pagenum
 	if (!tag || !tag[0])
 		return;
 
-	strncpy(suffixedtag, tag, 33);
-	suffixedtag[32] = 0;
+	strncpy(suffixedtag, tag, sizeof(suffixedtag)-1);
 
 	if (tutorialmode)
-		suffixed = F_GetTextPromptTutorialTag(suffixedtag, 33);
+		suffixed = F_GetTextPromptTutorialTag(suffixedtag, sizeof(suffixedtag)-1);
 
 	for (*promptnum = 0 + tutorialpromptnum; *promptnum < MAX_PROMPTS; (*promptnum)++)
 	{
@@ -4516,7 +4595,7 @@ void F_TextPromptDrawer(void)
 	if (!promptactive)
 		return;
 
-	iconlump = W_CheckNumForName(textprompts[cutnum]->page[scenenum].iconname);
+	iconlump = W_CheckNumForPatchName(textprompts[cutnum]->page[scenenum].iconname);
 	F_GetPageTextGeometry(&pagelines, &rightside, &boxh, &texth, &texty, &namey, &chevrony, &textx, &textr);
 
 	// Draw gfx first
@@ -4586,10 +4665,10 @@ void F_TextPromptDrawer(void)
 		players[j].powers[pw_nocontrol] = 1;\
 		if (players[j].mo)\
 		{\
-			if (players[j].mo->state == states+S_PLAY_STND && players[j].mo->tics != -1)\
+			if (P_IsPlayerInState(&players[j], S_PLAY_STND) && players[j].mo->tics != -1)\
 				players[j].mo->tics++;\
-			else if (players[j].mo->state == states+S_PLAY_WAIT)\
-				P_SetPlayerMobjState(players[j].mo, S_PLAY_STND);\
+			else if (P_IsPlayerInState(&players[j], S_PLAY_WAIT))\
+				P_SetMobjState(players[j].mo, S_PLAY_STND);\
 		}\
 	}
 

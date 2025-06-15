@@ -39,10 +39,13 @@ static INT32 S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, I
 #endif
 
 // TSoURDt3rd
-#include "STAR/ss_main.h" // STAR_CONS_Printf() //
-#include "STAR/smkg-jukebox.h" // TSoURDt3rd::jukebox //
-#include "STAR/core/smkg-s_exmusic.h" // TSoURDt3rd_EXMusic_PlayDefaultMapTrack() //
+#if 1
+// MARKED FOR REMOVAL
+#include "STAR/star_vars.h" // TSoURDt3rd_DetermineLevelMusic() //
+#endif
+#include "STAR/smkg-jukebox.h"
 #include "STAR/core/smkg-s_audio.h" // TSoURDt3rd_S_CanModifyMusic() //
+#include "STAR/core/smkg-s_exmusic.h" // TSoURDt3rd_EXMusic_PlayDefaultMapTrack() //
 
 CV_PossibleValue_t soundvolume_cons_t[] = {{0, "MIN"}, {31, "MAX"}, {0, NULL}};
 static void SetChannelsNum(void);
@@ -171,7 +174,7 @@ static INT32 numofchannels = 0;
 
 caption_t closedcaptions[NUMCAPTIONS];
 
-// allow the grabbing of internal volumes
+// StarManiaKG: allow the grabbing of internal volumes
 INT32 internal_volume = min(max(100, 0), 100);
 INT32 internal_sfx_volume = 0;
 
@@ -2098,13 +2101,15 @@ boolean S_RecallMusic(UINT16 status, boolean fromfirst)
 		return false;
 	}
 
+#if 0
 	// STAR STUFF: currently jukeboxing, so just clear memory and move on :p //
+	/// \todd STAR TODO NOTE MAJOR STAR TODO NOTE idk can i remove this
 	if (TSoURDt3rd_Jukebox_IsPlaying())
 	{
 		Z_Free(entry);
 		return false;
 	}
-	// END THAT STUFF //
+#endif
 
 	if (strncmp(entry->musname, S_MusicName(), 7) || // don't restart music if we're already playing it
 		(midipref != currentmidi && S_PrefAvailable(midipref, entry->musname))) // but do if the user's preference has changed
@@ -2174,7 +2179,10 @@ static boolean S_LoadMusic(const char *mname)
 
 	mlumpnum = S_GetMusicLumpNum(mname);
 
-	TSoURDt3rd_EXMusic_PlayDefaultMapTrack(&mname, &mlumpnum); // STAR STUFF: play some temporary music... //
+#if 1
+	// STAR STUFF: play some fallback music for this map... //
+	TSoURDt3rd_EXMusic_PlayDefaultMapTrack(&mname, &mlumpnum);
+#endif
 
 	if (mlumpnum == LUMPERROR)
 	{
@@ -2292,10 +2300,11 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 	if (S_MusicDisabled())
 		return;
 
-	// STAR STUFF: control jukebox music please //
+#if 1
+	// STAR STUFF: jukebox has priority //
 	if (!TSoURDt3rd_S_CanModifyMusic(NULL))
 		return;
-	// CONTROL OUR MUSIC, PLEASE! //
+#endif
 
 	strncpy(newmusic, mmusic, sizeof(newmusic)-1);
 	newmusic[6] = 0;
@@ -2352,7 +2361,10 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 		I_FadeSong(100, 500, NULL);
 	}
 
-	TSoURDt3rd_S_ControlMusicEffects(NULL, NULL); // STAR STUFF: Set the effects again, just to be sure.... //
+#if 1
+	// STAR STUFF: Set the effects again, just to be sure.... //
+	TSoURDt3rd_S_ControlMusicEffects(NULL, NULL);
+#endif
 }
 
 void S_StopMusic(void)
@@ -2367,6 +2379,11 @@ void S_StopMusic(void)
 	S_PitchMusic(1.0f);
 	I_StopSong();
 	S_UnloadMusic(); // for now, stopping also means you unload the song
+
+#if 1
+	// STAR STUFF: reset music stuffs //
+	TSoURDt3rd_Jukebox_Reset();
+#endif
 
 	if (cv_closedcaptioning.value)
 	{
@@ -2383,8 +2400,6 @@ void S_StopMusic(void)
 				closedcaptions[0].t = CAPTIONFADETICS;
 		}
 	}
-
-	TSoURDt3rd_Jukebox_Reset(); // STAR STUFF: reset music stuffs //
 }
 
 //
@@ -2486,11 +2501,11 @@ void S_StopFadingMusic(void)
 
 boolean S_FadeMusicFromVolume(UINT8 target_volume, INT16 source_volume, UINT32 ms)
 {
-	// STAR STUFF: don't fade if jukeboxing //
+#if 1
+	// STAR STUFF: don't fade if jukeboxing please //
 	if (TSoURDt3rd_Jukebox_IsPlaying())
 		return false;
-	// COOL? COOL. //
-
+#endif
 	if (source_volume < 0)
 		return I_FadeSong(target_volume, ms, NULL);
 	else
@@ -2499,11 +2514,11 @@ boolean S_FadeMusicFromVolume(UINT8 target_volume, INT16 source_volume, UINT32 m
 
 boolean S_FadeOutStopMusic(UINT32 ms)
 {
-	// STAR STUFF: don't fade if jukeboxing //
+#if 1
+	// STAR STUFF: don't fade if jukeboxing please //
 	if (TSoURDt3rd_Jukebox_IsPlaying())
 		return false;
-	// CONTINUE. //
-
+#endif
 	return I_FadeSong(0, ms, &S_StopMusic);
 }
 
@@ -2531,10 +2546,11 @@ void S_StartEx(boolean reset)
 		mapmusposition = mapheaderinfo[gamemap-1]->muspos;
 	}
 
+#if 1
 	// STAR STUFF: don't start any music if we're jukeboxing, dude! //
 	if (!TSoURDt3rd_S_CanModifyMusic(NULL))
 		return;
-	// TORTURE IS MY FAVORITE FORM OF PUNISHMENT, HOW DID YOU KNOW? //
+#endif
 
 	if (RESETMUSIC || reset)
 		S_StopMusic();
@@ -2588,7 +2604,10 @@ static void Command_Tunes_f(void)
 		track = mapheaderinfo[gamemap-1]->mustrack;
 	}
 
-	TSoURDt3rd_S_TunesAreCancelled(); // STAR STUFF: minor tunes propaganda //
+#if 1
+	// STAR STUFF: minor tunes propaganda //
+	TSoURDt3rd_S_TunesAreCancelled();
+#endif
 
 	if (strlen(tunearg) > 6) // This is automatic -- just show the error just in case
 		CONS_Alert(CONS_NOTICE, M_GetText("Music name too long - truncated to six characters.\n"));
@@ -2617,7 +2636,10 @@ static void Command_Tunes_f(void)
 			S_SpeedMusic(speed);
 	}
 
-	TSoURDt3rd_S_ControlMusicEffects(&argc, &position); // STAR STUFF: do some overriding? //
+#if 1
+	// STAR STUFF: do some overriding? //
+	TSoURDt3rd_S_ControlMusicEffects(&argc, &position);
+#endif
 }
 
 static void Command_RestartAudio_f(void)

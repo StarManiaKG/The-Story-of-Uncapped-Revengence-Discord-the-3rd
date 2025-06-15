@@ -17,7 +17,11 @@ sources+=win32/Srb2win.rc
 opts+=-DSTDC_HEADERS
 libs+=-ladvapi32 -lkernel32 -lmsvcrt -luser32
 
+ifndef DEDICATED
+ifndef DUMMY
 SDL?=1
+endif
+endif
 
 ifndef NOHW
 opts+=-DUSE_WGL_SWAP
@@ -42,8 +46,6 @@ else
 x86=x86_64
 i686=x86_64
 endif
-
-include TSoURDt3rd/Makefile.d/win32.mk
 
 mingw:=$(i686)-w64-mingw32
 

@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2023 by Sonic Team Junior.
+// Copyright (C) 1999-2024 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -16,6 +16,7 @@
 
 // Some more or less basic data types we depend on.
 #include "m_fixed.h"
+#include "m_vector.h"
 
 // We rely on the thinker data struct to handle sound origins in sectors.
 #include "d_think.h"
@@ -56,8 +57,13 @@ typedef struct
 // Could even use more than 32 levels.
 typedef UINT8 lighttable_t;
 
+#define NUM_PALETTE_ENTRIES 256
+#define DEFAULT_STARTTRANSCOLOR 96
+
 #define CMF_FADEFULLBRIGHTSPRITES  1
 #define CMF_FOG 4
+
+#define TEXTURE_255_IS_TRANSPARENT
 
 // ExtraColormap type. Use for extra_colormaps from now on.
 typedef struct extracolormap_s
@@ -73,8 +79,11 @@ typedef struct extracolormap_s
 	lighttable_t *colormap;
 
 #ifdef HWRENDER
-	// The id of the hardware lighttable. Zero means it does not exist yet.
-	UINT32 gl_lighttable_id;
+	struct {
+		UINT32 id; // The id of the hardware lighttable. Zero means it does not exist yet.
+		RGBA_t *data; // The texture data of the hardware lighttable.
+		boolean needs_update; // If the colormap changed recently or not.
+	} gl_lighttable;
 #endif
 
 #ifdef EXTRACOLORMAPLUMPS
@@ -216,6 +225,33 @@ typedef enum
 	BT_STRONG,
 } busttype_e;
 
+typedef enum
+{
+	SECPORTAL_LINE,    // Works similar to a line portal
+	SECPORTAL_SKYBOX,  // Uses the skybox object as the reference view
+	SECPORTAL_PLANE,   // Eternity Engine's plane portal type
+	SECPORTAL_HORIZON, // Eternity Engine's horizon portal type
+	SECPORTAL_OBJECT,  // Uses an object as the reference view
+	SECPORTAL_FLOOR,   // Uses a sector as the reference view; the view height is aligned with the sector's floor
+	SECPORTAL_CEILING, // Uses a sector as the reference view; the view height is aligned with the sector's ceiling
+	SECPORTAL_NONE = 0xFF
+} secportaltype_e;
+
+typedef struct sectorportal_s
+{
+	secportaltype_e type;
+	union {
+		struct {
+			struct line_s *start;
+			struct line_s *dest;
+		} line;
+		struct sector_s *sector;
+		struct mobj_s *mobj;
+	};
+	struct sector_s *target;
+	boolean ceiling;
+} sectorportal_t;
+
 typedef struct ffloor_s
 {
 	fixed_t *topheight;
@@ -223,12 +259,16 @@ typedef struct ffloor_s
 	INT16 *toplightlevel;
 	fixed_t *topxoffs;
 	fixed_t *topyoffs;
+	fixed_t *topxscale;
+	fixed_t *topyscale;
 	angle_t *topangle;
 
 	fixed_t *bottomheight;
 	INT32 *bottompic;
 	fixed_t *bottomxoffs;
 	fixed_t *bottomyoffs;
+	fixed_t *bottomxscale;
+	fixed_t *bottomyscale;
 	angle_t *bottomangle;
 
 	// Pointers to pointers. Yup.
@@ -320,6 +360,13 @@ typedef struct pslope_s
 	angle_t zangle;		/// Precomputed angle of the plane going up from the ground (not measured in degrees).
 	angle_t xydirection;/// Precomputed angle of the normal's projection on the XY plane.
 
+	dvector3_t dorigin;
+	dvector3_t dnormdir;
+
+	double dzdelta;
+
+	boolean moved;
+
 	UINT8 flags; // Slope options
 } pslope_t;
 
@@ -365,6 +412,8 @@ typedef enum
 	SSF_ROPEHANG = 1<<18,
 	SSF_JUMPFLIP = 1<<19,
 	SSF_GRAVITYOVERRIDE = 1<<20, // combine with MSF_GRAVITYFLIP
+	SSF_NOPHYSICSFLOOR = 1<<21,
+	SSF_NOPHYSICSCEILING = 1<<22,
 } sectorspecialflags_t;
 
 typedef enum
@@ -434,6 +483,10 @@ typedef struct sector_s
 	fixed_t floorxoffset, flooryoffset;
 	fixed_t ceilingxoffset, ceilingyoffset;
 
+	// floor and ceiling texture scale
+	fixed_t floorxscale, flooryscale;
+	fixed_t ceilingxscale, ceilingyscale;
+
 	// flat angle
 	angle_t floorangle;
 	angle_t ceilingangle;
@@ -502,6 +555,10 @@ typedef struct sector_s
 
 	// colormap structure
 	extracolormap_t *spawn_extra_colormap;
+
+	// portals
+	UINT32 portal_floor;
+	UINT32 portal_ceiling;
 } sector_t;
 
 //
@@ -515,10 +572,14 @@ typedef enum
 	ST_NEGATIVE
 } slopetype_t;
 
-#define HORIZONSPECIAL 41
+#define SPECIAL_HORIZON_LINE 41
+
+#define SPECIAL_SECTOR_SETPORTAL 6
 
 #define NUMLINEARGS 10
 #define NUMLINESTRINGARGS 2
+
+#define NO_SIDEDEF 0xFFFFFFFF
 
 typedef struct line_s
 {
@@ -537,7 +598,7 @@ typedef struct line_s
 	char *stringargs[NUMLINESTRINGARGS];
 
 	// Visual appearance: sidedefs.
-	UINT16 sidenum[2]; // sidenum[1] will be 0xffff if one-sided
+	UINT32 sidenum[2]; // sidenum[1] will be NO_SIDEDEF if one-sided
 	fixed_t alpha; // translucency
 	UINT8 blendmode; // blendmode
 	INT32 executordelay;
@@ -556,6 +617,10 @@ typedef struct line_s
 	polyobj_t *polyobj; // Belongs to a polyobject?
 
 	INT16 callcount; // no. of calls left before triggering, for the "X calls" linedef specials, defaults to 0
+
+	UINT32 secportal; // transferred sector portal
+
+	struct pslope_s *midtexslope;
 } line_t;
 
 typedef struct
@@ -567,8 +632,16 @@ typedef struct
 	fixed_t rowoffset;
 
 	// per-texture offsets for UDMF
-	fixed_t offsetx_top, offsetx_mid, offsetx_bot;
-	fixed_t offsety_top, offsety_mid, offsety_bot;
+	fixed_t offsetx_top, offsetx_mid, offsetx_bottom;
+	fixed_t offsety_top, offsety_mid, offsety_bottom;
+
+	fixed_t scalex_top, scalex_mid, scalex_bottom;
+	fixed_t scaley_top, scaley_mid, scaley_bottom;
+
+	// per-wall lighting for UDMF
+	// TODO: implement per-texture lighting
+	INT16 light, light_top, light_mid, light_bottom;
+	boolean lightabsolute, lightabsolute_top, lightabsolute_mid, lightabsolute_bottom;
 
 	// Texture indices.
 	// We do not maintain names here.
@@ -637,6 +710,28 @@ typedef struct mprecipsecnode_s
 	boolean visited; // used in search algorithms
 } mprecipsecnode_t;
 
+#if 0
+// STAR NOTE: we have our own definition... //
+
+// for now, only used in hardware mode
+// maybe later for software as well?
+// that's why it's moved here
+typedef struct light_s
+{
+	UINT16 type;          // light,... (cfr #define in hwr_light.c)
+
+	float light_xoffset;
+	float light_yoffset;  // y offset to adjust corona's height
+
+	UINT32 corona_color;   // color of the light for static lighting
+	float corona_radius;  // radius of the coronas
+
+	UINT32 dynamic_color;  // color of the light for dynamic lighting
+	float dynamic_radius; // radius of the light ball
+	float dynamic_sqrradius; // radius^2 of the light ball
+} light_t;
+#endif
+
 typedef struct lightmap_s
 {
 	float s[2], t[2];
@@ -676,9 +771,6 @@ typedef struct seg_s
 	lightmap_t *lightmaps; // for static lightmap
 #endif
 
-	// Why slow things down by calculating lightlists for every thick side?
-	size_t numlights;
-	r_lightlist_t *rlights;
 	polyobj_t *polyseg;
 	boolean dontrenderme;
 	boolean glseg;
@@ -709,14 +801,26 @@ typedef struct
 {
 	UINT8 topdelta; // -1 is the last post in a column
 	UINT8 length;   // length data bytes follows
-} ATTRPACK post_t;
+} ATTRPACK doompost_t;
 
 #if defined(_MSC_VER)
 #pragma pack()
 #endif
 
-// column_t is a list of 0 or more post_t, (UINT8)-1 terminated
-typedef post_t column_t;
+typedef struct
+{
+	unsigned topdelta;
+	unsigned length;
+	size_t data_offset;
+} post_t;
+
+// column_t is a list of 0 or more post_t
+typedef struct
+{
+	unsigned num_posts;
+	post_t *posts;
+	UINT8 *pixels;
+} column_t;
 
 //
 // OTHER TYPES
@@ -744,10 +848,14 @@ typedef struct drawseg_s
 	fixed_t bsilheight; // do not clip sprites above this
 	fixed_t tsilheight; // do not clip sprites below this
 
+	fixed_t offsetx;
+
 	// Pointers to lists for sprite clipping, all three adjusted so [x1] is first value.
 	INT16 *sprtopclip;
 	INT16 *sprbottomclip;
 	fixed_t *maskedtexturecol;
+	fixed_t *maskedtextureheight; // For handling sloped midtextures
+	fixed_t *invscale;
 
 	struct visplane_s *ffloorplanes[MAXFFLOORS];
 	INT32 numffloorplanes;
@@ -758,19 +866,8 @@ typedef struct drawseg_s
 
 	UINT8 portalpass; // if > 0 and <= portalrender, do not affect sprite clipping
 
-	fixed_t maskedtextureheight[MAXVIDWIDTH]; // For handling sloped midtextures
-
 	vertex_t leftpos, rightpos; // Used for rendering FOF walls with slopes
 } drawseg_t;
-
-typedef enum
-{
-	PALETTE         = 0,  // 1 byte is the index in the doom palette (as usual)
-	INTENSITY       = 1,  // 1 byte intensity
-	INTENSITY_ALPHA = 2,  // 2 byte: alpha then intensity
-	RGB24           = 3,  // 24 bit rgb
-	RGBA32          = 4,  // 32 bit rgba
-} pic_mode_t;
 
 #ifdef ROTSPRITE
 typedef struct
@@ -790,8 +887,9 @@ typedef struct
 	INT16 width, height;
 	INT16 leftoffset, topoffset;
 
-	INT32 *columnofs; // Column offsets. This is relative to patch->columns
-	UINT8 *columns; // Software column data
+	UINT8 *pixels;
+	column_t *columns;
+	post_t *posts;
 
 	void *hardware; // OpenGL patch, allocated whenever necessary
 	void *flats[4]; // The patch as flats
@@ -815,6 +913,20 @@ typedef struct
 	// the [0] is &columnofs[width]
 } ATTRPACK softwarepatch_t;
 
+#if 1
+// STAR NOTE: i respect the hustle!
+// However, I kinda need this for my coronas!
+// So....... it's staying for now :p
+
+typedef enum
+{
+	PALETTE         = 0,  // 1 byte is the index in the doom palette (as usual)
+	INTENSITY       = 1,  // 1 byte intensity
+	INTENSITY_ALPHA = 2,  // 2 byte: alpha then intensity
+	RGB24           = 3,  // 24 bit rgb
+	RGBA32          = 4,  // 32 bit rgba
+} pic_mode_t;
+
 #ifdef _MSC_VER
 #pragma warning(disable :  4200)
 #endif
@@ -833,6 +945,8 @@ typedef struct
 
 #ifdef _MSC_VER
 #pragma warning(default : 4200)
+#endif
+
 #endif
 
 #if defined(_MSC_VER)
@@ -912,9 +1026,11 @@ typedef struct
 	UINT16 flip;
 
 #ifdef ROTSPRITE
-	rotsprite_t *rotated[2][16]; // Rotated patches
+	rotsprite_t *rotated[16]; // Rotated patches
 #endif
 } spriteframe_t;
+
+#define MAXFRAMENUM 256
 
 //
 // A sprite definition:  a number of animation frames.

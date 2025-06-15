@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2023 by Sonic Team Junior.
+// Copyright (C) 1999-2024 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -34,6 +34,7 @@
 #include "m_menu.h"
 #include "filesrch.h"
 #include "m_misc.h"
+#include "lua_libs.h"
 
 #ifdef _WINDOWS
 #include "win32/win_main.h"
@@ -43,6 +44,7 @@
 #include "hardware/hw_main.h"
 #endif
 
+// TSoURDt3rd
 #include "STAR/ss_main.h" // TSoURDt3rd_CON_DrawStartupScreen() //
 
 #define MAXHUDLINES 20
@@ -568,13 +570,13 @@ static void CON_RecalcSize(void)
 		con_scalefactor = 1;
 		break;
 	case V_SMALLSCALEPATCH:
-		con_scalefactor = vid.smalldupx;
+		con_scalefactor = vid.smalldup;
 		break;
 	case V_MEDSCALEPATCH:
-		con_scalefactor = vid.meddupx;
+		con_scalefactor = vid.meddup;
 		break;
 	default:	// Full scaling
-		con_scalefactor = vid.dupx;
+		con_scalefactor = vid.dup;
 		break;
 	}
 
@@ -692,7 +694,7 @@ static void CON_MoveConsole(void)
 	}
 
 	// Not instant - Increment fracmovement fractionally
-	fracmovement += FixedMul(cons_speed.value*vid.fdupy, renderdeltatics);
+	fracmovement += FixedMul(cons_speed.value*vid.fdup, renderdeltatics);
 
 	if (con_curlines < con_destlines) // Move the console downwards
 	{
@@ -920,6 +922,22 @@ static void CON_InputDelChar(void)
 // ----
 //
 
+//
+// Same as CON_Responder, but is process before everything else, so it cannot be blocked.
+//
+boolean CON_PreResponder(event_t *ev)
+{
+	if (ev->type == ev_keydown && shiftdown == 1 && ev->key == KEY_ESCAPE)
+	{
+		I_SetTextInputMode(con_destlines == 0 ? true : textinputmodeenabledbylua); // inverse, since this is changed next tic.
+		consoletoggle = true;
+		return true;
+	}
+
+	return false;
+}
+
+//
 // Handles console key input
 //
 boolean CON_Responder(event_t *ev)
@@ -956,7 +974,10 @@ boolean CON_Responder(event_t *ev)
 
 		if ((key == gamecontrol[GC_CONSOLE][0] || key == gamecontrol[GC_CONSOLE][1]) && !shiftdown)
 		{
-			I_SetTextInputMode(con_destlines == 0); // inverse, since this is changed next tic.
+			if (con_destlines == 0 && I_GetTextInputMode())
+				return false; // some other component is holding keyboard input, don't hijack it!
+
+			I_SetTextInputMode(con_destlines == 0 ? true : textinputmodeenabledbylua); // inverse, since this is changed next tic.
 			consoletoggle = true;
 			return true;
 		}
@@ -976,7 +997,7 @@ boolean CON_Responder(event_t *ev)
 		// escape key toggle off console
 		if (key == KEY_ESCAPE)
 		{
-			I_SetTextInputMode(false);
+			I_SetTextInputMode(textinputmodeenabledbylua);
 			consoletoggle = true;
 			return true;
 		}
@@ -1731,33 +1752,33 @@ static void CON_DrawBackpic(void)
 	// Get the lumpnum for CONSBACK, STARTUP (Only during game startup) or fallback into MISSING.
 	if (con_startup)
 #if 0
-		piclump = W_CheckNumForName("STARTUP");
+		piclump = W_CheckNumForPatchName("STARTUP");
 #else
 		// STAR STUFF: set our custom console pictures instead please //
-		piclump = W_CheckNumForName(TSoURDt3rd_CON_DrawStartupScreen());
+		piclump = W_CheckNumForPatchName(TSoURDt3rd_CON_DrawStartupScreen());
 #endif
 	else
-		piclump = W_CheckNumForName("CONSBACK");
+		piclump = W_CheckNumForPatchName("CONSBACK");
 
 	if (piclump == LUMPERROR)
-		piclump = W_GetNumForName("MISSING");
+		piclump = W_GetNumForPatchName("MISSING");
 
 	// Cache the patch.
 	con_backpic = W_CachePatchNum(piclump, PU_PATCH);
 
 	// Center the backpic, and draw a vertically cropped patch.
-	w = con_backpic->width * vid.dupx;
+	w = con_backpic->width * vid.dup;
 	x = (vid.width / 2) - (w / 2);
-	h = con_curlines/vid.dupy;
+	h = con_curlines/vid.dup;
 
 	// If the patch doesn't fill the entire screen,
 	// then fill the sides with a solid color.
 	if (x > 0)
 	{
-		column_t *column = (column_t *)((UINT8 *)(con_backpic->columns) + (con_backpic->columnofs[0]));
-		if (!column->topdelta)
+		column_t *column = &con_backpic->columns[0];
+		if (column->num_posts && !column->posts[0].topdelta)
 		{
-			UINT8 *source = (UINT8 *)(column) + 3;
+			UINT8 *source = column->pixels;
 			INT32 color = (source[0] | V_NOSCALESTART);
 			// left side
 			V_DrawFill(0, 0, x, con_curlines, color);

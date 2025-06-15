@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2023 by Sonic Team Junior.
+// Copyright (C) 1999-2024 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -16,8 +16,10 @@
 #include "g_input.h"
 #include "keys.h"
 #include "hu_stuff.h" // need HUFONT start & end
-#include "d_net.h"
+#include "netcode/d_net.h"
 #include "console.h"
+#include "lua_script.h"
+#include "lua_libs.h"
 
 // TSoURDt3rd
 #include "STAR/smkg_g_inputs.h" // TSoURDt3rd_G_DefineDefaultControls() & TSoURDt3rd_G_MapEventsToControls() //
@@ -115,16 +117,20 @@ void G_MapEventsToControls(event_t *ev)
 	INT32 i;
 	UINT8 flag;
 
+#if 1
 	// STAR STUFF: DRRR Menus: our cool event mapper exists too! //
 	if (TSoURDt3rd_G_MapEventsToControls(ev))
 		return;
-	// ONWARDS AND UPWARDS (or something) //
+#endif
 
 	switch (ev->type)
 	{
 		case ev_keydown:
 			if (ev->key < NUMINPUTS)
-				gamekeydown[ev->key] = 1;
+			{
+				if (!ignoregameinputs)
+					gamekeydown[ev->key] = 1;
+			}
 #ifdef PARANOIA
 			else
 			{
@@ -152,7 +158,7 @@ void G_MapEventsToControls(event_t *ev)
 
 		case ev_joystick: // buttons are virtual keys
 			i = ev->key;
-			if (i >= JOYAXISSET || menuactive || CON_Ready() || chat_on)
+			if (i >= JOYAXISSET || menuactive || CON_Ready() || chat_on || ignoregameinputs)
 				break;
 			if (ev->x != INT32_MAX) joyxmove[i] = ev->x;
 			if (ev->y != INT32_MAX) joyymove[i] = ev->y;
@@ -160,7 +166,7 @@ void G_MapEventsToControls(event_t *ev)
 
 		case ev_joystick2: // buttons are virtual keys
 			i = ev->key;
-			if (i >= JOYAXISSET || menuactive || CON_Ready() || chat_on)
+			if (i >= JOYAXISSET || menuactive || CON_Ready() || chat_on || ignoregameinputs)
 				break;
 			if (ev->x != INT32_MAX) joy2xmove[i] = ev->x;
 			if (ev->y != INT32_MAX) joy2ymove[i] = ev->y;
@@ -606,7 +612,7 @@ static const char *gamecontrolname[NUM_GAMECONTROLS] =
 	"custom1",
 	"custom2",
 	"custom3",
-
+#if 1
 	// STAR STUFF //
 	"openjukebox",
 	"increasemusicspeed",
@@ -615,7 +621,7 @@ static const char *gamecontrolname[NUM_GAMECONTROLS] =
 	"stopjukebox",
 	"increasemusicpitch",
 	"decreasemusicpitch",
-	// END THE UNIQUE STAR CONTROLS PLEASE //
+#endif
 };
 
 #define NUMKEYNAMES (sizeof (keynames)/sizeof (keyname_t))
@@ -789,7 +795,10 @@ void G_DefineDefaultControls(void)
 		//gamecontrolbisdefault[i][GC_SCORES       ][1] = KEY_2HAT1+1; // D-Pad Down
 	}
 
-	TSoURDt3rd_G_DefineDefaultControls(); // STAR STUFF: assign our default controls too! //
+#if 1
+	// STAR STUFF: assign our default controls too! //
+	TSoURDt3rd_G_DefineDefaultControls();
+#endif
 }
 
 INT32 G_GetControlScheme(INT32 (*fromcontrols)[2], const INT32 *gclist, INT32 gclen)
@@ -1017,7 +1026,7 @@ static void setcontrol(INT32 (*gc)[2])
 	INT32 player = ((void*)gc == (void*)&gamecontrolbis ? 1 : 0);
 	boolean nestedoverride = false;
 
-	// Update me for 2.3
+	// TODO: 2.3: Delete the "use" alias
 	namectrl = (stricmp(COM_Argv(1), "use")) ? COM_Argv(1) : "spin";
 
 	for (numctrl = 0; numctrl < NUM_GAMECONTROLS && stricmp(namectrl, gamecontrolname[numctrl]);

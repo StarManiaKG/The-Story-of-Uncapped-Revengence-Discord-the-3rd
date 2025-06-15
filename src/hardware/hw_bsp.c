@@ -662,7 +662,6 @@ static void WalkBSPNode(INT32 bspnum, poly_t *poly, UINT16 *leafnode, fixed_t *b
 				tsourdt3rd_loadingscreen.loadCount = numsubsectors/50;
 				STAR_LoadingScreen();
 			}
-			// DONE! //
 #endif
 		}
 		M_ClearBox(bbox);
@@ -857,7 +856,6 @@ static INT32 SolveTProblem(void)
 		I_FinishUpdate(); // page flip or blit buffer
 		tsourdt3rd_loadingscreen.screenToUse = 0; // reset the loading screen to use
 	}
-	// DONE! //
 #endif
 
 	numsplitpoly = 0;
@@ -994,7 +992,6 @@ void HWR_CreatePlanePolygons(INT32 bspnum)
 		CON_Drawer(); // console shouldn't appear while in a loading screen, honestly
 		I_FinishUpdate(); // page flip or blit buffer
 	}
-	// GREAT JOB! //
 #endif
 
 	HWR_ClearPolys();

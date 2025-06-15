@@ -226,7 +226,7 @@ static void MidiSoundfontPath_Onchange(void)
 	if (Mix_GetMidiPlayer() != MIDI_Fluidsynth || (I_SongType() != MU_NONE && I_SongType() != MU_MID_EX))
 		return;
 
-	if (stricmp(Mix_GetSoundFonts(), cv_midisoundfontpath.string))
+	if (!Mix_GetSoundFonts() || stricmp(Mix_GetSoundFonts(), cv_midisoundfontpath.string))
 	{
 		char *miditoken;
 		char *source = strdup(cv_midisoundfontpath.string);
@@ -254,7 +254,7 @@ static void MidiSoundfontPath_Onchange(void)
 		if (proceed)
 		{
 			if (!Mix_SetSoundFonts(cv_midisoundfontpath.string))
-				CONS_Alert(CONS_ERROR, "Sound font error: %s", Mix_GetError());
+				CONS_Alert(CONS_ERROR, "Sound font error: %s\n", Mix_GetError());
 			else
 				S_StartEx(true);
 		}
@@ -263,7 +263,18 @@ static void MidiSoundfontPath_Onchange(void)
 
 // make sure that s_sound.c does not already verify these
 // which happens when: defined(HAVE_MIXERX) && !defined(HAVE_MIXER)
-static CV_PossibleValue_t midiplayer_cons_t[] = {{MIDI_OPNMIDI, "OPNMIDI"}, {MIDI_Fluidsynth, "Fluidsynth"}, {MIDI_Timidity, "Timidity"}, {MIDI_Native, "Native"}, {0, NULL}};
+static CV_PossibleValue_t midiplayer_cons_t[] = {
+	{MIDI_ADLMIDI,    "ADLMIDI"},
+	{MIDI_OPNMIDI,    "OPNMIDI"},
+	{MIDI_Timidity,   "Timidity"},
+	{MIDI_Fluidsynth, "Fluidsynth"},
+#if SDL_MIXER_VERSION_ATLEAST(2,6,0)
+	{MIDI_EDMIDI,     "EDMIDI"},
+#endif
+	{MIDI_Native,     "Native"},
+	{MIDI_ANY,        "Any"},
+	{0,               NULL}
+};
 consvar_t cv_midiplayer = CVAR_INIT ("midiplayer", "OPNMIDI" /*MIDI_OPNMIDI*/, CV_CALL|CV_NOINIT|CV_SAVE, midiplayer_cons_t, Midiplayer_Onchange);
 consvar_t cv_midisoundfontpath = CVAR_INIT ("midisoundfont", "sf2/8bitsf.SF2", CV_CALL|CV_NOINIT|CV_SAVE, NULL, MidiSoundfontPath_Onchange);
 consvar_t cv_miditimiditypath = CVAR_INIT ("midisoundbank", TIMIDITY_CFG, CV_CALL|CV_NOINIT|CV_SAVE, NULL, I_ControlTimidityCFG);
@@ -709,9 +720,8 @@ void I_SetSfxVolume(UINT8 volume)
 
 static UINT32 get_real_volume(UINT8 volume)
 {
-#ifdef HAVE_MIXERX
 #ifdef _WIN32
-#if !SDL_MIXER_VERSION_ATLEAST(2,6,0) // StarManiaKG: recent SDL_Mixer_X builds fix whatever issue was here, apparently :p //
+#if defined(HAVE_MIXERX) && !SDL_MIXER_VERSION_ATLEAST(2,6,0) // StarManiaKG: recent SDL_Mixer_X builds fix whatever issue was here, apparently :p //
 	if (I_SongType() == MU_MID)
 		// HACK: Until we stop using native MIDI,
 		// disable volume changes
@@ -719,8 +729,6 @@ static UINT32 get_real_volume(UINT8 volume)
 	else
 #endif
 #endif
-#endif
-
 		// convert volume to mixer's 128 scale
 		// then apply internal_volume as a percentage
 		return ((UINT32)volume*128/31) * (UINT32)internal_volume / 100;
@@ -833,8 +841,8 @@ static void mix_gme(void *udata, Uint8 *stream, int len)
 		music_volume = 18;
 
 	// apply volume to stream
-	for (i = 0, p = (short *)stream; i < len/2; i++, p++)
-		*p = ((INT32)*p) * (music_volume*internal_volume/100)*2 / 40;
+	for (i = 0, p = (short *)stream; i < len / 2; i++, p++)
+		*p = ((INT32)*p) * music_volume * internal_volume / 100 / 20;
 }
 #endif
 
@@ -857,8 +865,8 @@ static void mix_openmpt(void *udata, Uint8 *stream, int len)
 		music_volume = 18;
 
 	// apply volume to stream
-	for (i = 0, p = (short *)stream; i < len/2; i++, p++)
-		*p = ((INT32)*p) * (music_volume*internal_volume/100)*2 / 40;
+	for (i = 0, p = (short *)stream; i < len / 2; i++, p++)
+		*p = ((INT32)*p) * music_volume * internal_volume / 100 / 20;
 }
 #endif
 
@@ -934,8 +942,7 @@ boolean I_SongPaused(void)
 void I_SetSongSpeed(float speed) // StarManiaKG: was originally boolean, no longer needs to be //
 {
 	if (speed > 250.0f)
-		speed = 250.0f; //limit speed up to 250x
-	music_speed = speed;
+		music_speed = speed = 250.0f; //limit speed up to 250x
 
 #ifdef HAVE_GME
 	if (gme)
@@ -1000,7 +1007,6 @@ float I_GetSongSpeed(void)
 		return Mix_GetMusicTempo(music);
 #endif
 #endif
-
 	return music_speed;
 }
 
@@ -1063,7 +1069,6 @@ float I_GetSongPitch(void)
 	if (music)
 		return Mix_GetMusicPitch(music);
 #endif
-
 	return music_pitch;
 }
 
@@ -1119,6 +1124,7 @@ UINT32 I_GetSongLength(void)
 #else
 		double xlength = Mix_GetMusicTotalTime(music);
 #endif
+
 		if (xlength >= 0)
 			return (UINT32)(xlength*1000);
 #endif
@@ -1605,15 +1611,13 @@ void I_SetMusicVolume(UINT8 volume)
 	if (!I_SongPlaying())
 		return;
 
-#ifdef HAVE_MIXERX
 #ifdef _WIN32
-#if !SDL_MIXER_VERSION_ATLEAST(2,6,0) // StarManiaKG: recent SDL_Mixer_X builds fix whatever issue was here, apparently :p //
+#if defined(HAVE_MIXERX) && !SDL_MIXER_VERSION_ATLEAST(2,6,0) // StarManiaKG: recent SDL_Mixer_X builds fix whatever issue was here, apparently :p //
 	if (I_SongType() == MU_MID)
 		// HACK: Until we stop using native MIDI,
 		// disable volume changes
 		music_volume = 31;
 	else
-#endif
 #endif
 #endif
 		music_volume = volume;

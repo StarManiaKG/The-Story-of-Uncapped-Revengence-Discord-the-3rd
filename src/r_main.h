@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2023 by Sonic Team Junior.
+// Copyright (C) 1999-2024 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -77,7 +77,6 @@ INT32 R_PointOnSegSide(fixed_t x, fixed_t y, seg_t *line);
 angle_t R_PointToAngle(fixed_t x, fixed_t y);
 angle_t R_PointToAngle64(INT64 x, INT64 y);
 angle_t R_PointToAngle2(fixed_t px2, fixed_t py2, fixed_t px1, fixed_t py1);
-angle_t R_PointToAngleEx(INT32 x2, INT32 y2, INT32 x1, INT32 y1);
 fixed_t R_PointToDist(fixed_t x, fixed_t y);
 fixed_t R_PointToDist2(fixed_t px2, fixed_t py2, fixed_t px1, fixed_t py1);
 
@@ -123,11 +122,15 @@ extern consvar_t cv_shadow;
 extern consvar_t cv_translucency;
 extern consvar_t cv_drawdist, cv_drawdist_nights, cv_drawdist_precip;
 extern consvar_t cv_fov, cv_fovchange;
-extern consvar_t cv_tailspickup;
 extern consvar_t cv_skybox;
 extern consvar_t cv_renderview;
 extern consvar_t cv_renderhitbox, cv_renderhitboxinterpolation, cv_renderhitboxgldepth;
+extern consvar_t cv_renderwalls, cv_renderfloors, cv_renderthings;
 extern consvar_t cv_ffloorclip, cv_spriteclip;
+
+extern boolean r_renderwalls;
+extern boolean r_renderfloors;
+extern boolean r_renderthings;
 
 // Called by startup code.
 void R_Init(void);
@@ -141,6 +144,8 @@ void R_SetViewSize(void);
 
 // do it (sometimes explicitly called)
 void R_ExecuteSetViewSize(void);
+
+fixed_t R_GetPlayerFov(player_t *player);
 
 void R_SetupFrame(player_t *player);
 void R_SkyboxFrame(player_t *player);

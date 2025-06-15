@@ -6,10 +6,6 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	config.h.in
 	string.c
 	d_main.c
-	d_clisrv.c
-	d_net.c
-	d_netfil.c
-	d_netcmd.c
 	dehacked.c
 	deh_soc.c
 	deh_lua.c
@@ -41,6 +37,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	m_random.c
 	m_tokenizer.c
 	m_queue.c
+	m_vector.c
 	info.c
 	p_ceilng.c
 	p_enemy.c
@@ -73,6 +70,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	r_things.c
 	r_bbox.c
 	r_textures.c
+	r_translation.c
 	r_patch.c
 	r_patchrotation.c
 	r_picformats.c
@@ -84,9 +82,6 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	sounds.c
 	w_wad.c
 	filesrch.c
-	mserv.c
-	http-mserv.c
-	i_tcp.c
 	lzf.c
 	b_bot.c
 	u_list.c
@@ -107,7 +102,9 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	lua_blockmaplib.c
 	lua_hudlib.c
 	lua_hudlib_drawlist.c
+	lua_colorlib.c
 	lua_inputlib.c
+	lua_interceptlib.c
 )
 
 # This updates the modification time for comptime.c at the
@@ -154,6 +151,12 @@ set(SRB2_CONFIG_DEV_BUILD OFF CACHE BOOL
 	"Compile a development build of SRB2.")
 
 add_subdirectory(blua)
+add_subdirectory(netcode)
+
+## // STAR STUFF: NEW DIRECTORIES! // ##
+add_subdirectory(discord)
+add_subdirectory(STAR)
+## // END OF STAR STUFF // ##
 
 # OS macros
 if (UNIX)
@@ -173,6 +176,11 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
 	if(${SRB2_SYSTEM_BITS} EQUAL 64)
 		target_compile_definitions(SRB2SDL2 PRIVATE -DLINUX64)
 	endif()
+endif()
+
+if("${CMAKE_SYSTEM_NAME}" MATCHES "Haiku")
+	target_compile_definitions(SRB2SDL2 PRIVATE -DNOEXECINFO)
+	target_link_libraries(SRB2SDL2 PRIVATE network)
 endif()
 
 if("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
@@ -232,9 +240,12 @@ endif()
 
 # Compatibility flag with later versions of GCC
 # We should really fix our code to not need this
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-	if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|x64|amd64|AMD64|em64t|EM64T)")
-		target_compile_options(SRB2SDL2 PRIVATE -mno-ms-bitfields)
+if (NOT SRB2_CONFIG_FORCE_NO_MS_BITFIELDS)
+	if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+		check_cxx_compiler_flag("-mno-ms-bitfields" HAS_NO_MS_BITFIELDS)
+		if(HAS_NO_MS_BITFIELDS)
+			target_compile_options(SRB2SDL2 PRIVATE -mno-ms-bitfields)
+		endif()
 	endif()
 endif()
 
@@ -459,8 +470,13 @@ else()
 endif()
 
 if(TARGET miniupnpc::miniupnpc)
-	target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_MINIUPNPC)
-	target_link_libraries(SRB2SDL2 PRIVATE miniupnpc::miniupnpc)
+	if("${VCPKG_TARGET_TRIPLET}" MATCHES "-mingw-static$")
+		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_MINIUPNPC -DMINIUPNP_STATICLIB)
+		target_link_libraries(SRB2SDL2 PRIVATE miniupnpc::miniupnpc -liphlpapi)
+	else()
+		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_MINIUPNPC)
+		target_link_libraries(SRB2SDL2 PRIVATE miniupnpc::miniupnpc)
+	endif()
 	message(STATUS "miniupnpc Found")
 else()
 	message(STATUS "No miniupnpc Found")
@@ -513,9 +529,3 @@ endif()
 if(SRB2_CONFIG_ENABLE_CLANG_TIDY_CXX)
 	target_set_default_clang_tidy(SRB2SDL2 CXX "-*,clang-analyzer-*,modernize-*")
 endif()
-
-
-## // STAR STUFF // ##
-add_subdirectory(discord)
-add_subdirectory(STAR)
-## // END OF STAR STUFF // ##

@@ -23,6 +23,7 @@ boolean deh_loaded = false;
 boolean gamedataadded = false;
 boolean titlechanged = false;
 boolean introchanged = false;
+boolean bootmapchanged = false;
 
 static int dbg_line;
 static INT32 deh_num_warning = 0;
@@ -172,6 +173,20 @@ static void ignorelines(MYFILE *f)
 	Z_Free(s);
 }
 
+void ignorelinesuntilhash(MYFILE *f)
+{
+	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
+	do
+	{
+		if (myfgets(s, MAXLINELEN, f))
+		{
+			if (s[0] == '#')
+				break;
+		}
+	} while (!myfeof(f));
+	Z_Free(s);
+}
+
 static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 {
 	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
@@ -181,16 +196,20 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 	INT32 i;
 
 	if (!deh_loaded)
+	{
 		initfreeslots();
+		deh_loaded = true;
+	}
 
 	deh_num_warning = 0;
 
+#if 1
 	// STAR STUFF: reset music, since we might not have the jukebox unlocked anymore //
 	if (TSoURDt3rd_Jukebox_IsPlaying() && savemoddata && (introchanged || titlechanged))
 		S_StopMusic();
-	// END IT PLEASE //
+#endif
 
-	gamedataadded = titlechanged = introchanged = false;
+	gamedataadded = titlechanged = introchanged = bootmapchanged = false;
 
 	// it doesn't test the version of SRB2 and version of dehacked file
 	dbg_line = -1; // start at -1 so the first line is 0.
@@ -234,13 +253,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 				i = 0;
 			if (fastcmp(word, "CHARACTER"))
 			{
-				if (i >= 0 && i < 32)
-					readPlayer(f, i);
-				else
-				{
-					deh_warning("Character %d out of range (0 - 31)", i);
-					ignorelines(f);
-				}
+				readPlayer(f, i);
 				continue;
 			}
 			else if (fastcmp(word, "EMBLEM"))
@@ -587,7 +600,12 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 
 	if (gamestate == GS_TITLESCREEN)
 	{
-		if (introchanged)
+		if (bootmapchanged && bootmap)
+		{
+			menuactive = false;
+			D_MapChange(bootmap, gametype, ultimatemode, true, 0, false, false);
+		}
+		else if (introchanged)
 		{
 			menuactive = false;
 			I_UpdateMouseGrab();
@@ -605,14 +623,10 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 	if (deh_num_warning)
 	{
 		CONS_Printf(M_GetText("%d warning%s in the SOC lump\n"), deh_num_warning, deh_num_warning == 1 ? "" : "s");
-		if (devparm) {
+		if (devparm)
 			I_Error("%s%s",va(M_GetText("%d warning%s in the SOC lump\n"), deh_num_warning, deh_num_warning == 1 ? "" : "s"), M_GetText("See log.txt for details.\n"));
-			//while (!I_GetKey())
-				//I_OsPolling();
-		}
 	}
 
-	deh_loaded = true;
 	Z_Free(s);
 }
 

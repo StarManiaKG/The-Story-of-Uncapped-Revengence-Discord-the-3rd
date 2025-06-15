@@ -12,7 +12,7 @@
 #include "m_perfstats.h"
 #include "v_video.h"
 #include "i_video.h"
-#include "d_netcmd.h"
+#include "netcode/d_netcmd.h"
 #include "r_main.h"
 #include "i_system.h"
 #include "z_zone.h"
@@ -127,8 +127,8 @@ perfstatrow_t commoncounter_rows[] = {
 };
 
 perfstatrow_t interpolation_rows[] = {
-	{"intpfrc", "Interp frac: ", &ps_interp_frac, PS_TIME},
-	{"intplag", "Interp lag:  ", &ps_interp_lag, PS_TIME},
+	{"intpfrc", "Interp frac: ", &ps_interp_frac, 0}, // PS_TIME is not applicable here, as it is meant for I_GetPreciseTime
+	{"intplag", "Interp lag:  ", &ps_interp_lag, 0},
 	{0}
 };
 
@@ -453,7 +453,7 @@ static int PS_DrawPerfRows(int x, int y, int color, perfstatrow_t *rows)
 	return draw_y;
 }
 
-static void PS_UpdateMetricHistory(ps_metric_t *metric, boolean time_metric, boolean frame_metric, boolean set_user)
+static void PS_UpdateMetricHistory(ps_metric_t *metric, boolean time_metric, boolean frame_metric)
 {
 	int index = frame_metric ? ps_frame_index : ps_tick_index;
 
@@ -461,7 +461,7 @@ static void PS_UpdateMetricHistory(ps_metric_t *metric, boolean time_metric, boo
 	{
 		// allocate history table
 		int value_size = time_metric ? sizeof(precise_t) : sizeof(INT32);
-		void** memory_user = set_user ? &metric->history : NULL;
+		void** memory_user = &metric->history;
 
 		metric->history = Z_Calloc(value_size * cv_ps_samplesize.value, PU_PERFSTATS,
 				memory_user);
@@ -491,7 +491,7 @@ static void PS_UpdateRowHistories(perfstatrow_t *rows, boolean frame_metric)
 	for (row = rows; row->lores_label; row++)
 	{
 		if (PS_IsRowValid(row))
-			PS_UpdateMetricHistory(row->metric, !!(row->flags & PS_TIME), frame_metric, true);
+			PS_UpdateMetricHistory(row->metric, !!(row->flags & PS_TIME), frame_metric);
 	}
 }
 
@@ -584,7 +584,7 @@ static void PS_CountThinkers(void)
 		for (thinker = thlist[i].next; thinker != &thlist[i]; thinker = thinker->next)
 		{
 			ps_thinkercount.value.i++;
-			if (thinker->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
+			if (thinker->removing)
 				ps_removecount.value.i++;
 			else if (i == THINK_POLYOBJ)
 				ps_polythcount.value.i++;
@@ -649,17 +649,17 @@ void PS_UpdateTickStats(void)
 			if (cv_perfstats.value == 3)
 			{
 				for (i = 0; i < thinkframe_hooks_length; i++)
-					PS_UpdateMetricHistory(&thinkframe_hooks[i].time_taken, true, false, false);
+					PS_UpdateMetricHistory(&thinkframe_hooks[i].time_taken, true, false);
 			}
 			else if (cv_perfstats.value == 4)
 			{
 				for (i = 0; i < prethinkframe_hooks_length; i++)
-					PS_UpdateMetricHistory(&prethinkframe_hooks[i].time_taken, true, false, false);
+					PS_UpdateMetricHistory(&prethinkframe_hooks[i].time_taken, true, false);
 			}
 			else if (cv_perfstats.value == 5)
 			{
 				for (i = 0; i < postthinkframe_hooks_length; i++)
-					PS_UpdateMetricHistory(&postthinkframe_hooks[i].time_taken, true, false, false);
+					PS_UpdateMetricHistory(&postthinkframe_hooks[i].time_taken, true, false);
 			}
 		}
 		if (cv_perfstats.value)
@@ -727,7 +727,7 @@ static void PS_DrawRenderStats(void)
 
 	PS_DrawDescriptorHeader();
 
-	y = PS_DrawPerfRows(20, 10, V_MENUCOLORMAP, rendertime_rows);
+	y = PS_DrawPerfRows(20, 10, V_YELLOWMAP, rendertime_rows);
 
 	PS_DrawPerfRows(20, y + half_row, V_GRAYMAP, gamelogicbrief_row);
 
@@ -763,7 +763,7 @@ static void PS_DrawGameLogicStats(void)
 
 	PS_DrawDescriptorHeader();
 
-	PS_DrawPerfRows(20, 10, V_MENUCOLORMAP, gamelogic_rows);
+	PS_DrawPerfRows(20, 10, V_YELLOWMAP, gamelogic_rows);
 
 	x = hires ? 115 : 90;
 	PS_DrawPerfRows(x, 10, V_BLUEMAP, thinkercount_rows);
@@ -835,7 +835,7 @@ if (y > 192) \
 				V_DrawSmallString(x, y, V_MONOSPACE | V_ALLOWLOWERCASE | V_GRAYMAP, s);
 				NEXT_ROW()
 			}
-			text_color = V_MENUCOLORMAP;
+			text_color = V_YELLOWMAP;
 		}
 		else
 		{
@@ -896,8 +896,8 @@ void M_DrawPerfStats(void)
 			// Low resolutions can't really use V_DrawSmallString that is used by thinkframe stats.
 			// A low-res version using V_DrawThinString could be implemented,
 			// but it would have much less space for information.
-			V_DrawThinString(80, 92, V_MONOSPACE | V_ALLOWLOWERCASE | V_MENUCOLORMAP, "Lua Perfstats is not available");
-			V_DrawThinString(80, 100, V_MONOSPACE | V_ALLOWLOWERCASE | V_MENUCOLORMAP, "for resolutions below 640x400.");
+			V_DrawThinString(80, 92, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, "Lua Perfstats is not available");
+			V_DrawThinString(80, 100, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, "for resolutions below 640x400.");
 			return;
 		}
 		if (cv_perfstats.value == 3)

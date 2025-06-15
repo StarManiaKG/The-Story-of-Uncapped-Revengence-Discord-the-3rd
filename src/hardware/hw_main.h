@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2023 by Sonic Team Junior.
+// Copyright (C) 1999-2024 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -35,7 +35,6 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player);
 void HWR_RenderPlayerView(INT32 viewnumber, player_t *player);
 void HWR_ClearSkyDome(void);
 void HWR_BuildSkyDome(void);
-void HWR_DrawViewBorder(INT32 clearlines);
 void HWR_DrawFlatFill(INT32 x, INT32 y, INT32 w, INT32 h, lumpnum_t flatlumpnum);
 void HWR_SetViewSize(void);
 void HWR_DrawStretchyFixedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, INT32 option, const UINT8 *colormap);

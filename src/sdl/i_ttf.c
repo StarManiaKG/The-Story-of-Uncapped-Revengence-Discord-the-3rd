@@ -21,7 +21,7 @@
 #include "SDL_ttf.h"
 #include "../doomdef.h"
 #include "../doomstat.h"
-#include "../d_netfil.h"
+#include "../netcode/d_netfil.h"
 #include "../filesrch.h"
 #include "i_ttf.h"
 
@@ -29,9 +29,9 @@
 #if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
 #define FONTSEARCHPATH1 "/usr/share/fonts"
 #define FONTSEARCHPATH2 "/usr/local/share/fonts"
-#define FONTSEARCHPATH3 "/usr/games/SRB2-2.2.10"
-#define FONTSEARCHPATH4 "/usr/local/games/SRB2-2.2.10"
-#define FONTSEARCHPATH5 "/usr/local/share/games/SRB2-2.2.10"
+#define FONTSEARCHPATH3 "/usr/games/SRB2"
+#define FONTSEARCHPATH4 "/usr/local/games/SRB2"
+#define FONTSEARCHPATH5 "/usr/local/share/games/SRB2"
 #else
 #define FONTSEARCHPATH1 "."
 #endif

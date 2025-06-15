@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2023 by Sonic Team Junior.
+// Copyright (C) 1999-2024 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -49,7 +49,7 @@
 #include "r_fps.h"
 
 // TSoURDt3rd
-#include "STAR/star_vars.h" // tsourdt3rd[consoleplayer] & TSoURDt3rd_Jukebox_ST_drawJukebox() //
+#include "STAR/star_vars.h" // tsourdt3rd[consoleplayer] //
 #include "STAR/smkg-st_hud.h"
 
 UINT16 objectsdrawn = 0;
@@ -143,9 +143,7 @@ static patch_t *fireflower;
 hudinfo_t hudinfo[NUMHUDITEMS] =
 {
 	{  16, 176, V_SNAPTOLEFT|V_SNAPTOBOTTOM}, // HUD_LIVES
-#if 0
 	{  16, 152, V_SNAPTOLEFT|V_SNAPTOBOTTOM}, // HUD_INPUT
-#endif
 
 	{  16,  42, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_RINGS
 	{  96,  42, V_SNAPTOLEFT|V_SNAPTOTOP}, // HUD_RINGSNUM
@@ -171,11 +169,6 @@ hudinfo_t hudinfo[NUMHUDITEMS] =
 	{ 152, 168, 0}, // HUD_HUNTPICS
 
 	{ 288, 176, V_SNAPTORIGHT|V_SNAPTOBOTTOM}, // HUD_POWERUPS
-#if 1
-	// STAR NOTE/MAJOR STAR NOTE: HERE UNTIL 2.2.14 //
-	{  16, 152, V_SNAPTOLEFT|V_SNAPTOBOTTOM}, // HUD_INPUT
-	// KJIOUFHUHBDUJJKDJIDOJJNDIJ //
-#endif
 };
 
 static huddrawlist_h luahuddrawlist_game[2];
@@ -264,10 +257,6 @@ void ST_UnloadGraphics(void)
 void ST_LoadGraphics(void)
 {
 	int i;
-
-	// SRB2 border patch
-	// st_borderpatchnum = W_GetNumForName("GFZFLR01");
-	// scr_borderpatch = W_CacheLumpNum(st_borderpatchnum, PU_HUDGFX);
 
 	// the original Doom uses 'STF' as base name for all face graphics
 	// Graue 04-08-2004: face/name graphics are now indexed by skins
@@ -377,21 +366,25 @@ void ST_LoadGraphics(void)
 	for (i = 0; i < 7; ++i)
 		ngradeletters[i] = W_CachePatchName(va("GRADE%d", i), PU_HUDGFX);
 
+#if 1
+	// STAR STUFF: self-explantory, loads all our unique graphics! //
 	TSoURDt3rd_ST_LoadGraphics();
+#endif
 }
 
 // made separate so that skins code can reload custom face graphics
 void ST_LoadFaceGraphics(INT32 skinnum)
 {
-	if (skins[skinnum].sprites[SPR2_XTRA].numframes > XTRA_LIFEPIC)
+	if (skins[skinnum]->sprites[SPR2_XTRA].numframes > XTRA_LIFEPIC)
 	{
-		spritedef_t *sprdef = &skins[skinnum].sprites[SPR2_XTRA];
+		spritedef_t *sprdef = &skins[skinnum]->sprites[SPR2_XTRA];
 		spriteframe_t *sprframe = &sprdef->spriteframes[XTRA_LIFEPIC];
 		faceprefix[skinnum] = W_CachePatchNum(sprframe->lumppat[0], PU_HUDGFX);
 
-		if (skins[skinnum].sprites[(SPR2_XTRA|FF_SPR2SUPER)].numframes > XTRA_LIFEPIC)
+		spritedef_t *super_sprdef = P_GetSkinSpritedef(skins[skinnum], SPR2_XTRA|SPR2F_SUPER);
+		if (super_sprdef->numframes > XTRA_LIFEPIC)
 		{
-			sprdef = &skins[skinnum].sprites[SPR2_XTRA|FF_SPR2SUPER];
+			sprdef = super_sprdef;
 			sprframe = &sprdef->spriteframes[0];
 			superprefix[skinnum] = W_CachePatchNum(sprframe->lumppat[0], PU_HUDGFX);
 		}
@@ -532,10 +525,10 @@ static void ST_drawDebugInfo(void)
 
 #define VFLAGS V_MONOSPACE|V_SNAPTOTOP|V_SNAPTORIGHT
 
-	if ((moviemode == MM_GIF && cv_gif_downscale.value) || vid.dupx == 1)
+	if ((moviemode == MM_GIF && cv_gif_downscale.value) || vid.dup == 1)
 	{
 		textscale = FRACUNIT;
-		lowh = ((vid.height/vid.dupy) - 16);
+		lowh = ((vid.height/vid.dup) - 16);
 	}
 	else
 	{
@@ -1016,14 +1009,14 @@ static void ST_drawLivesArea(void)
 
 	// name
 	v_colmap |= (V_HUDTRANS|hudinfo[HUD_LIVES].f|V_PERPLAYER);
-	if (strlen(skins[stplyr->skin].hudname) <= 5)
-		V_DrawRightAlignedString(hudinfo[HUD_LIVES].x+58, hudinfo[HUD_LIVES].y, v_colmap, skins[stplyr->skin].hudname);
-	else if (V_StringWidth(skins[stplyr->skin].hudname, v_colmap) <= 48)
-		V_DrawString(hudinfo[HUD_LIVES].x+18, hudinfo[HUD_LIVES].y, v_colmap, skins[stplyr->skin].hudname);
-	else if (V_ThinStringWidth(skins[stplyr->skin].hudname, v_colmap) <= 40)
-		V_DrawRightAlignedThinString(hudinfo[HUD_LIVES].x+58, hudinfo[HUD_LIVES].y, v_colmap, skins[stplyr->skin].hudname);
+	if (strlen(skins[stplyr->skin]->hudname) <= 5)
+		V_DrawRightAlignedString(hudinfo[HUD_LIVES].x+58, hudinfo[HUD_LIVES].y, v_colmap, skins[stplyr->skin]->hudname);
+	else if (V_StringWidth(skins[stplyr->skin]->hudname, v_colmap) <= 48)
+		V_DrawString(hudinfo[HUD_LIVES].x+18, hudinfo[HUD_LIVES].y, v_colmap, skins[stplyr->skin]->hudname);
+	else if (V_ThinStringWidth(skins[stplyr->skin]->hudname, v_colmap) <= 40)
+		V_DrawRightAlignedThinString(hudinfo[HUD_LIVES].x+58, hudinfo[HUD_LIVES].y, v_colmap, skins[stplyr->skin]->hudname);
 	else
-		V_DrawThinString(hudinfo[HUD_LIVES].x+18, hudinfo[HUD_LIVES].y, v_colmap, skins[stplyr->skin].hudname);
+		V_DrawThinString(hudinfo[HUD_LIVES].x+18, hudinfo[HUD_LIVES].y, v_colmap, skins[stplyr->skin]->hudname);
 
 	// Power Stones collected
 	if (G_RingSlingerGametype() && LUA_HudEnabled(hud_powerstones))
@@ -1051,11 +1044,15 @@ static void ST_drawLivesArea(void)
 
 static void ST_drawInput(void)
 {
-	const INT32 accent = V_SNAPTOLEFT|V_SNAPTOBOTTOM|(stplyr->skincolor ? skincolors[stplyr->skincolor].ramp[4] : 0);
+	UINT16 color = P_GetPlayerColor(stplyr);
+	const INT32 accent = V_SNAPTOLEFT|V_SNAPTOBOTTOM|(color ? skincolors[color].ramp[4] : 0);
 	INT32 col;
 	UINT8 offs;
 
 	INT32 x = hudinfo[HUD_INPUT].x, y = hudinfo[HUD_INPUT].y;
+
+	if (hu_showscores)
+		return;
 
 	if (stplyr->powers[pw_carry] == CR_NIGHTSMODE)
 		y += 8;
@@ -1188,8 +1185,8 @@ static void ST_drawInput(void)
 	V_DrawFill(x+16+(xoffs), y+(yoffs)-offs, 10, 10, col);\
 	V_DrawCharacter(x+16+1+(xoffs), y+1+(yoffs)-offs, hudinfo[HUD_INPUT].f|symb, false)
 
-	drawbutt( 4,-3, BT_JUMP,   'J' );
-	drawbutt(15,-3, BT_SPIN,   'S' );
+	drawbutt( 4,-3, BT_JUMP, 'J');
+	drawbutt(15,-3, BT_SPIN, 'S');
 
 	V_DrawFill(x+16+4, y+8, 21, 10, hudinfo[HUD_INPUT].f|20); // sundial backing
 	if (stplyr->mo)
@@ -1265,8 +1262,10 @@ static void ST_drawInput(void)
 		}
 	}
 	if (!demosynced) // should always be last, so it doesn't push anything else around
-		V_DrawThinString(x, y, hudinfo[HUD_INPUT].f|((leveltime & 4) ? V_MENUCOLORMAP : V_REDMAP), "BAD DEMO!!");
+		V_DrawThinString(x, y, hudinfo[HUD_INPUT].f|((leveltime & 4) ? V_YELLOWMAP : V_REDMAP), "BAD DEMO!!");
 }
+
+static boolean lt_active = false;
 
 static patch_t *lt_patches[3];
 static INT32 lt_scroll = 0;
@@ -1287,7 +1286,7 @@ static void ST_cacheLevelTitle(void)
 	lumpnum_t patlumpnum = LUMPERROR; \
 	if (mapheaderinfo[gamemap-1]->custom[0] != '\0') \
 	{ \
-		patlumpnum = W_CheckNumForName(mapheaderinfo[gamemap-1]->custom); \
+		patlumpnum = W_CheckNumForPatchName(mapheaderinfo[gamemap-1]->custom); \
 		if (patlumpnum != LUMPERROR) \
 			lt_patches[idx] = (patch_t *)W_CachePatchNum(patlumpnum, PU_HUDGFX); \
 	} \
@@ -1316,6 +1315,7 @@ void ST_startTitleCard(void)
 	ST_cacheLevelTitle();
 
 	// initialize HUD variables
+	lt_active = true;
 	lt_ticker = lt_exitticker = lt_lasttic = 0;
 	lt_endtime = 2*TICRATE + (10*NEWTICRATERATIO);
 	lt_scroll = BASEVIDWIDTH * FRACUNIT;
@@ -1324,21 +1324,11 @@ void ST_startTitleCard(void)
 }
 
 //
-// What happens before drawing the title card.
-// Which is just setting the HUD translucency.
+// Stops the title card.
 //
-void ST_preDrawTitleCard(void)
+void ST_stopTitleCard(void)
 {
-	if (!G_IsTitleCardAvailable())
-		return;
-
-	if (lt_ticker >= (lt_endtime + TICRATE))
-		return;
-
-	if (!lt_exitticker)
-		st_translucency = 0;
-	else
-		st_translucency = max(0, min((INT32)lt_exitticker-4, cv_translucenthud.value));
+	lt_active = false;
 }
 
 //
@@ -1347,47 +1337,43 @@ void ST_preDrawTitleCard(void)
 //
 void ST_runTitleCard(void)
 {
-	boolean run = !(paused || P_AutoPause());
-
-	if (!G_IsTitleCardAvailable())
+	if (!lt_active || ((paused || P_AutoPause()) && lt_ticker >= PRELEVELTIME))
 		return;
 
-	if (lt_ticker >= (lt_endtime + TICRATE))
-		return;
-
-	if (run || (lt_ticker < PRELEVELTIME))
+	if (!lt_exitticker)
 	{
-		// tick
-		lt_ticker++;
-		if (lt_ticker >= lt_endtime)
-			lt_exitticker++;
-
-		// scroll to screen (level title)
-		if (!lt_exitticker)
-		{
-			if (abs(lt_scroll) > FRACUNIT)
-				lt_scroll -= (lt_scroll>>2);
-			else
-				lt_scroll = 0;
-		}
-		// scroll away from screen (level title)
+		if (abs(lt_scroll) > FRACUNIT)
+			lt_scroll -= (lt_scroll>>2);
 		else
+			lt_scroll = 0;
+
+		if (abs(lt_zigzag) > FRACUNIT)
+			lt_zigzag -= (lt_zigzag>>2);
+		else
+			lt_zigzag = 0;
+	}
+	else
+	{
+		lt_mom -= FRACUNIT*6;
+
+		if (lt_scroll > -BASEVIDWIDTH * FRACUNIT * 2)
 		{
-			lt_mom -= FRACUNIT*6;
 			lt_scroll += lt_mom;
 		}
 
-		// scroll to screen (zigzag)
-		if (!lt_exitticker)
+		if (lt_zigzag > -(lt_patches[1]->width)*FRACUNIT)
 		{
-			if (abs(lt_zigzag) > FRACUNIT)
-				lt_zigzag -= (lt_zigzag>>2);
-			else
-				lt_zigzag = 0;
-		}
-		// scroll away from screen (zigzag)
-		else
 			lt_zigzag += lt_mom;
+		}
+	}
+
+	lt_ticker++;
+	lt_exitticker = max((signed)lt_ticker - (signed)lt_endtime, 0);
+
+	if (lt_ticker >= (lt_endtime + TICRATE))
+	{
+		lt_active = false;
+		return;
 	}
 }
 
@@ -1413,9 +1399,6 @@ void ST_drawTitleCard(void)
 		colornum = cv_playercolor.value;
 
 	colormap = R_GetTranslationColormap(TC_DEFAULT, colornum, GTC_CACHE);
-
-	if (!G_IsTitleCardAvailable())
-		return;
 
 	if (!LUA_HudEnabled(hud_stagetitle))
 		goto luahook;
@@ -1497,13 +1480,14 @@ void ST_preLevelTitleCardDrawer(void)
 //
 void ST_drawWipeTitleCard(void)
 {
+	if (!lt_active)
+		return;
+
 	stplyr = &players[consoleplayer];
-	ST_preDrawTitleCard();
 	ST_drawTitleCard();
 	if (splitscreen)
 	{
 		stplyr = &players[secondarydisplayplayer];
-		ST_preDrawTitleCard();
 		ST_drawTitleCard();
 	}
 }
@@ -1768,7 +1752,7 @@ static void ST_drawNightsRecords(void)
 
 	switch (stplyr->textvar)
 	{
-		case 1: // A "Bonus Time Start" by any other name...
+		case NTV_BONUSTIMESTART: // A "Bonus Time Start" by any other name...
 		{
 			V_DrawCenteredString(BASEVIDWIDTH/2, 52, V_GREENMAP|aflag, M_GetText("GET TO THE GOAL!"));
 			V_DrawCenteredString(BASEVIDWIDTH/2, 60,            aflag, M_GetText("SCORE MULTIPLIER START!"));
@@ -1783,8 +1767,8 @@ static void ST_drawNightsRecords(void)
 			}
 			break;
 		}
-		case 2: // Get n Spheres
-		case 3: // Get n more Spheres
+		case NTV_GETSPHERES: // Get n Spheres
+		case NTV_GETMORESPHERES: // Get n more Spheres
 		{
 			if (!stplyr->capsule)
 				return;
@@ -1792,15 +1776,17 @@ static void ST_drawNightsRecords(void)
 			// Yes, this string is an abomination.
 			V_DrawCenteredString(BASEVIDWIDTH/2, 60, aflag,
 								 va(M_GetText("\x80GET\x82 %d\x80 %s%s%s!"), stplyr->capsule->health,
-									(stplyr->textvar == 3) ? M_GetText("MORE ") : "",
+									(stplyr->textvar == NTV_GETMORESPHERES) ? M_GetText("MORE ") : "",
 									(G_IsSpecialStage(gamemap)) ? "SPHERE" : "CHIP",
 									(stplyr->capsule->health > 1) ? "S" : ""));
 			break;
 		}
-		case 4: // End Bonus
+		case NTV_BONUSTIMEEND: // End Bonus
 		{
+			V_DrawString(BASEVIDWIDTH/2 - 48, 132, V_YELLOWMAP|aflag, "TIME:");
 			V_DrawString(BASEVIDWIDTH/2 - 48, 140, V_YELLOWMAP|aflag, (G_IsSpecialStage(gamemap)) ? "SPHERES:" : "CHIPS:");
 			V_DrawString(BASEVIDWIDTH/2 - 48, 148, V_YELLOWMAP|aflag, "BONUS:");
+			V_DrawRightAlignedString(BASEVIDWIDTH/2 + 48, 132, aflag, va("%i:%02i.%02i", G_TicsToMinutes(stplyr->lastmaretime,true), G_TicsToSeconds(stplyr->lastmaretime), G_TicsToCentiseconds(stplyr->lastmaretime)));
 			V_DrawRightAlignedString(BASEVIDWIDTH/2 + 48, 140, aflag, va("%d", stplyr->finishedspheres));
 			V_DrawRightAlignedString(BASEVIDWIDTH/2 + 48, 148, aflag, va("%d", stplyr->finishedspheres * 50));
 			ST_DrawNightsOverlayNum((BASEVIDWIDTH/2 + 48)<<FRACBITS, 160<<FRACBITS, FRACUNIT, aflag, stplyr->lastmarescore, nightsnum, SKINCOLOR_AZURE);
@@ -1930,7 +1916,7 @@ static void ST_drawNiGHTSHUD(void)
 	// Link drawing
 	if (!oldspecialstage
 	// Don't display when the score is showing (it popping up for a split second when exiting a map is intentional)
-	&& !(stplyr->texttimer && stplyr->textvar == 4)
+	&& !(stplyr->texttimer && stplyr->textvar == NTV_BONUSTIMEEND)
 	&& LUA_HudEnabled(hud_nightslink)
 	&& ((cv_debug & DBG_NIGHTSBASIC) || stplyr->linkcount > 1)) // When debugging, show "0 Link".
 	{
@@ -2089,24 +2075,25 @@ static void ST_drawNiGHTSHUD(void)
 	if (!stplyr->exiting && !oldspecialstage && LUA_HudEnabled(hud_nightsscore))
 		ST_DrawNightsOverlayNum(304<<FRACBITS, 14<<FRACBITS, FRACUNIT, V_PERPLAYER|V_SNAPTOTOP|V_SNAPTORIGHT, stplyr->marescore, nightsnum, SKINCOLOR_AZURE);
 
-	// TODO give this its own section for Lua
+	// TODO: give this its own section for Lua
+	// TODO: on multi-mare maps, show time & grade for each completed mare
 	if (!stplyr->exiting && LUA_HudEnabled(hud_nightsscore))
 	{
 		if (modeattacking == ATTACKING_NIGHTS)
 		{
 			INT32 maretime = max(stplyr->realtime - stplyr->marebegunat, 0);
 
-#define VFLAGS V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_PERPLAYER|V_HUDTRANS
-			V_DrawScaledPatch(BASEVIDWIDTH-22, BASEVIDHEIGHT-20, VFLAGS, W_CachePatchName("NGRTIMER", PU_HUDGFX));
-			V_DrawPaddedTallNum(BASEVIDWIDTH-22, BASEVIDHEIGHT-20, VFLAGS, G_TicsToCentiseconds(maretime), 2);
-			V_DrawScaledPatch(BASEVIDWIDTH-46, BASEVIDHEIGHT-20, VFLAGS, sboperiod);
+#define VFLAGS V_SNAPTOTOP|V_SNAPTORIGHT|V_PERPLAYER|V_HUDTRANS
+			V_DrawScaledPatch(BASEVIDWIDTH-16, 40, VFLAGS, W_CachePatchName("NGRTIMER", PU_HUDGFX));
+			V_DrawPaddedTallNum(BASEVIDWIDTH-16, 40, VFLAGS, G_TicsToCentiseconds(maretime), 2);
+			V_DrawScaledPatch(BASEVIDWIDTH-40, 40, VFLAGS, sboperiod);
 			if (maretime < 60*TICRATE)
-				V_DrawTallNum(BASEVIDWIDTH-46, BASEVIDHEIGHT-20, VFLAGS, G_TicsToSeconds(maretime));
+				V_DrawTallNum(BASEVIDWIDTH-40, 40, VFLAGS, G_TicsToSeconds(maretime));
 			else
 			{
-				V_DrawPaddedTallNum(BASEVIDWIDTH-46, BASEVIDHEIGHT-20, VFLAGS, G_TicsToSeconds(maretime), 2);
-				V_DrawScaledPatch(BASEVIDWIDTH-70, BASEVIDHEIGHT-20, VFLAGS, sbocolon);
-				V_DrawTallNum(BASEVIDWIDTH-70, BASEVIDHEIGHT-20, VFLAGS, G_TicsToMinutes(maretime, true));
+				V_DrawPaddedTallNum(BASEVIDWIDTH-40, 40, VFLAGS, G_TicsToSeconds(maretime), 2);
+				V_DrawScaledPatch(BASEVIDWIDTH-64, 40, VFLAGS, sbocolon);
+				V_DrawTallNum(BASEVIDWIDTH-64, 40, VFLAGS, G_TicsToMinutes(maretime, true));
 			}
 #undef VFLAGS
 		}
@@ -2156,7 +2143,7 @@ static void ST_drawNiGHTSHUD(void)
 
 		// Show exact time in debug
 		if (cv_debug & DBG_NIGHTSBASIC)
-			V_DrawString(160 + numbersize + 8, 24, V_SNAPTOTOP|((realnightstime < 10) ? V_REDMAP : V_MENUCOLORMAP), va("%02d", G_TicsToCentiseconds(stplyr->nightstime)));
+			V_DrawString(160 + numbersize + 8, 24, V_SNAPTOTOP|((realnightstime < 10) ? V_REDMAP : V_YELLOWMAP), va("%02d", G_TicsToCentiseconds(stplyr->nightstime)));
 	}
 
 	if (oldspecialstage && LUA_HudEnabled(hud_nightsrecords))
@@ -2676,7 +2663,7 @@ static boolean ST_doItemFinderIconsAndSound(void)
 	// Scan thinkers to find emblem mobj with these ids
 	for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 	{
-		if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
+		if (th->removing)
 			continue;
 
 		mo2 = (mobj_t *)th;
@@ -2712,24 +2699,14 @@ static boolean ST_doItemFinderIconsAndSound(void)
 	return true;
 }
 
+static boolean drawstagetitle = false;
+
 //
 // Draw the status bar overlay, customisable: the user chooses which
 // kind of information to overlay
 //
 static void ST_overlayDrawer(void)
 {
-	// Decide whether to draw the stage title or not
-	boolean stagetitle = false;
-
-	// Check for a valid level title
-	// If the HUD is enabled
-	// And, if Lua is running, if the HUD library has the stage title enabled
-	if (G_IsTitleCardAvailable() && *mapheaderinfo[gamemap-1]->lvlttl != '\0' && !(hu_showscores && (netgame || multiplayer)))
-	{
-		stagetitle = true;
-		ST_preDrawTitleCard();
-	}
-
 	// hu_showscores = auto hide score/time/rings when tab rankings are shown
 	if (!(hu_showscores && (netgame || multiplayer)))
 	{
@@ -2745,10 +2722,13 @@ static void ST_overlayDrawer(void)
 			if (LUA_HudEnabled(hud_rings))
 				ST_drawRings();
 
-			TSoURDt3rd_Easter_ST_drawEggs(); // STAR STUFF: Render easter hud please :) //
-
 			if (!modeattacking && LUA_HudEnabled(hud_lives))
 				ST_drawLivesArea();
+
+#if 1
+			// STAR STUFF: Render easter hud please :) //
+			TSoURDt3rd_Easter_ST_drawEggs();
+#endif
 		}
 	}
 
@@ -2757,7 +2737,12 @@ static void ST_overlayDrawer(void)
 		&& (netgame || multiplayer)
 		&& (cv_cooplives.value == 0))
 	;
+#if 0
+	else if ((G_GametypeUsesLives() || ((gametyperules & (GTR_RACE|GTR_LIVES)) == GTR_RACE)) && stplyr->lives <= 0 && !(hu_showscores && (netgame || multiplayer)))
+#else
+	// STAR STUFF: time over //
 	else if ((G_GametypeUsesLives() || ((gametyperules & (GTR_RACE|GTR_LIVES)) == GTR_RACE)) && (stplyr->lives <= 0 || tsourdt3rd[consoleplayer].levels.time_over) && !(hu_showscores && (netgame || multiplayer)))
+#endif
 	{
 		INT32 i = MAXPLAYERS;
 		INT32 deadtimer = stplyr->spectator ? TICRATE : (stplyr->deadtimer-(TICRATE<<1));
@@ -2784,7 +2769,12 @@ static void ST_overlayDrawer(void)
 			INT32 lvlttlx = min(6*deadtimer, BASEVIDWIDTH/2);
 			UINT32 flags = V_PERPLAYER|(stplyr->spectator ? V_HUDTRANSHALF : V_HUDTRANS);
 
+#if 0
+			V_DrawScaledPatch(lvlttlx - 8, BASEVIDHEIGHT/2, flags, (countdown == 1 ? slidtime : slidgame));
+#else
+			// STAR STUFF: time over //
 			V_DrawScaledPatch(lvlttlx - 8, BASEVIDHEIGHT/2, flags, ((countdown == 1 || tsourdt3rd[consoleplayer].levels.time_over) ? slidtime : slidgame));
+#endif
 			V_DrawScaledPatch(BASEVIDWIDTH + 8 - lvlttlx, BASEVIDHEIGHT/2, flags, slidover);
 		}
 	}
@@ -2854,7 +2844,7 @@ static void ST_overlayDrawer(void)
 		}
 		else if (cv_powerupdisplay.value == 2 && LUA_HudEnabled(hud_powerups))
 			ST_drawPowerupHUD();  // same as it ever was...
-		
+
 	}
 	else if (!(netgame || multiplayer) && cv_powerupdisplay.value == 2 && LUA_HudEnabled(hud_powerups))
 		ST_drawPowerupHUD(); // same as it ever was...
@@ -2871,7 +2861,7 @@ static void ST_overlayDrawer(void)
 	}
 
 	// draw level title Tails
-	if (stagetitle && (!WipeInAction) && (!WipeStageTitle))
+	if (drawstagetitle && !WipeInAction && !WipeStageTitle)
 		ST_drawTitleCard();
 
 	if (!hu_showscores && (netgame || multiplayer) && LUA_HudEnabled(hud_textspectator))
@@ -2879,8 +2869,6 @@ static void ST_overlayDrawer(void)
 
 	if ((cv_showinput.value && !players[displayplayer].spectator) || (modeattacking && !(demoplayback && hu_showscores)))
 		ST_drawInput();
-
-	TSoURDt3rd_Jukebox_ST_drawJukebox(); // STAR STUFF: Render the jukebox's HUD //
 
 	ST_drawDebugInfo();
 }
@@ -2944,7 +2932,22 @@ void ST_Drawer(void)
 		}
 	}
 
-	st_translucency = cv_translucenthud.value;
+	// Decide whether to draw the stage title or not
+	if (lt_active)
+	{
+		drawstagetitle = !(hu_showscores && (netgame || multiplayer));
+
+		if (!lt_exitticker)
+			st_translucency = 0;
+		else
+			st_translucency = max(0, min((INT32)lt_exitticker-4, cv_translucenthud.value));
+	}
+	else
+	{
+		st_translucency = cv_translucenthud.value;
+
+		drawstagetitle = false;
+	}
 
 	if (st_overlay)
 	{

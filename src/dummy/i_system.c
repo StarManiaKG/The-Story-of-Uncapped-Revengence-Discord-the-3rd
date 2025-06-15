@@ -20,6 +20,11 @@ void I_Sleep(UINT32 ms)
 	(void)ms;
 }
 
+void I_SleepDuration(precise_t duration)
+{
+	(void)duration;
+}
+
 precise_t I_GetPreciseTime(void)
 {
 	return 0;

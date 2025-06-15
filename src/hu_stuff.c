@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2023 by Sonic Team Junior.
+// Copyright (C) 1999-2024 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -19,7 +19,9 @@
 #include "m_cond.h" // emblems
 #include "m_misc.h" // word jumping
 
-#include "d_clisrv.h"
+#include "netcode/d_clisrv.h"
+#include "netcode/net_command.h"
+#include "netcode/gamestate.h"
 
 #include "g_game.h"
 #include "g_input.h"
@@ -50,6 +52,7 @@
 #include "lua_hud.h"
 #include "lua_hudlib_drawlist.h"
 #include "lua_hook.h"
+#include "lua_libs.h"
 
 // coords are scaled
 #define HU_INPUTX 0
@@ -202,7 +205,7 @@ void HU_LoadGraphics(void)
 	HU_SetFontProperties(&hu_font,   0,  4,  8, 12);
 	HU_SetFontProperties(&tny_font,  0,  2,  4, 12);
 	HU_SetFontProperties(&cred_font, 0, 16, 16, 16);
-	HU_SetFontProperties(&lt_font,   0, 16, 20, 20);
+	HU_SetFontProperties(&lt_font,   0, 16, 20, 16);
 	HU_SetFontProperties(&ntb_font,  2,  4, 20, 21);
 	HU_SetFontProperties(&nto_font,  0,  4, 20, 21);
 
@@ -270,7 +273,7 @@ void HU_LoadFontCharacters(fontdef_t *font, const char *prefix)
 		for (i = 0; i < FONTSIZE; i++, j++)
 		{
 			sprintf(buffer, "%.5s%.3d", prefix, j);
-			if (W_CheckNumForName(buffer) == LUMPERROR)
+			if (W_CheckNumForPatchName(buffer) == LUMPERROR)
 				font->chars[i] = NULL;
 			else
 				font->chars[i] = (patch_t *)W_CachePatchName(buffer, PU_HUDGFX);
@@ -393,8 +396,11 @@ void HU_AddChatText(const char *text, boolean playsound)
 
 	if (OLDCHAT) // if we're using oldchat, print directly in console
 		CONS_Printf("%s\n", text);
-	else			// if we aren't, still save the message to log.txt
-		CON_LogMessage(va("%s\n", text));
+	else			// if we aren't, still save the message to log.txt	
+	{
+		CON_LogMessage(text);
+		CON_LogMessage("\n"); // Add newline. Don't use va for that, since `text` might be refering to va's buffer itself
+	}
 }
 
 /** Runs a say command, sending an ::XD_SAY message.
@@ -427,9 +433,12 @@ static void DoSayCommand(SINT8 target, size_t usedargs, UINT8 flags)
 	numwords = COM_Argc() - usedargs;
 	I_Assert(numwords > 0);
 
-	if (CHAT_MUTE) // TODO: Per Player mute.
+	if (CHAT_MUTE)
 	{
-		HU_AddChatText(va("%s>ERROR: The chat is muted. You can't say anything.", "\x85"), false);
+		if (cv_mute.value)
+			HU_AddChatText(va("%s>ERROR: The chat is muted. You can't say anything.", "\x85"), false);
+		else
+			HU_AddChatText(va("%s>ERROR: You have been muted. You can't say anything.", "\x85"), false);
 		return;
 	}
 
@@ -582,7 +591,47 @@ static void Command_CSay_f(void)
 	DoSayCommand(0, 1, HU_CSAY);
 }
 
-static tic_t stop_spamming[MAXPLAYERS];
+UINT8 spam_tokens[MAXPLAYERS] = { 1 }; // fill the buffer with 1 so the motd can be sent.
+tic_t spam_tics[MAXPLAYERS];
+
+static const char *GetChatColorFromSkinColor(INT32 skincolor)
+{
+	const char *textcolor = NULL;
+	UINT16 chatcolor = skincolors[skincolor].chatcolor;
+	if (!chatcolor || chatcolor%0x1000 || chatcolor>V_INVERTMAP)
+		textcolor = "\x80";
+	else if (chatcolor == V_MAGENTAMAP)
+		textcolor = "\x81";
+	else if (chatcolor == V_YELLOWMAP)
+		textcolor = "\x82";
+	else if (chatcolor == V_GREENMAP)
+		textcolor = "\x83";
+	else if (chatcolor == V_BLUEMAP)
+		textcolor = "\x84";
+	else if (chatcolor == V_REDMAP)
+		textcolor = "\x85";
+	else if (chatcolor == V_GRAYMAP)
+		textcolor = "\x86";
+	else if (chatcolor == V_ORANGEMAP)
+		textcolor = "\x87";
+	else if (chatcolor == V_SKYMAP)
+		textcolor = "\x88";
+	else if (chatcolor == V_PURPLEMAP)
+		textcolor = "\x89";
+	else if (chatcolor == V_AQUAMAP)
+		textcolor = "\x8a";
+	else if (chatcolor == V_PERIDOTMAP)
+		textcolor = "\x8b";
+	else if (chatcolor == V_AZUREMAP)
+		textcolor = "\x8c";
+	else if (chatcolor == V_BROWNMAP)
+		textcolor = "\x8d";
+	else if (chatcolor == V_ROSYMAP)
+		textcolor = "\x8e";
+	else if (chatcolor == V_INVERTMAP)
+		textcolor = "\x8f";
+	return textcolor;
+}
 
 /** Receives a message, processing an ::XD_SAY command.
   * \sa DoSayCommand
@@ -593,6 +642,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 	SINT8 target;
 	UINT8 flags;
 	const char *dispname;
+	char buf[HU_MAXMSGLEN + 1];
 	char *msg;
 	boolean action = false;
 	char *ptr;
@@ -602,12 +652,12 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 
 	target = READSINT8(*p);
 	flags = READUINT8(*p);
-	msg = (char *)*p;
-	SKIPSTRINGL(*p, HU_MAXMSGLEN + 1);
+	msg = buf;
+	READSTRINGL(*p, msg, HU_MAXMSGLEN + 1);
 
-	if ((cv_mute.value || flags & (HU_CSAY|HU_SERVER_SAY)) && playernum != serverplayer && !(IsPlayerAdmin(playernum)))
+	if ((cv_mute.value || players[playernum].muted || flags & (HU_CSAY|HU_SERVER_SAY)) && playernum != serverplayer && !(IsPlayerAdmin(playernum)))
 	{
-		CONS_Alert(CONS_WARNING, cv_mute.value ?
+		CONS_Alert(CONS_WARNING, (cv_mute.value || players[playernum].muted) ?
 			M_GetText("Illegal say command received from %s while muted\n") : M_GetText("Illegal csay command received from non-admin %s\n"),
 			player_names[playernum]);
 		if (server)
@@ -634,22 +684,20 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 	// before we do anything, let's verify the guy isn't spamming, get this easier on us.
 
 	//if (stop_spamming[playernum] != 0 && cv_chatspamprotection.value && !(flags & HU_CSAY))
-	if (stop_spamming[playernum] != 0 && consoleplayer != playernum && cv_chatspamprotection.value && !(flags & HU_CSAY))
+	if (spam_tokens[playernum] <= 0 && cv_chatspamprotection.value && !(flags & HU_CSAY))
 	{
 		CONS_Debug(DBG_NETPLAY,"Received SAY cmd too quickly from Player %d (%s), assuming as spam and blocking message.\n", playernum+1, player_names[playernum]);
-		stop_spamming[playernum] = 4;
+		spam_tics[playernum] = 0;
 		spam_eatmsg = 1;
 	}
 	else
-		stop_spamming[playernum] = 4; // you can hold off for 4 tics, can you?
-
-	// run the lua hook even if we were supposed to eat the msg, netgame consistency goes first.
-
-	if (LUA_HookPlayerMsg(playernum, target, flags, msg))
-		return;
+		spam_tokens[playernum] -= 1;
 
 	if (spam_eatmsg)
 		return; // don't proceed if we were supposed to eat the message.
+
+	if (LUA_HookPlayerMsg(playernum, target, flags, msg))
+		return;
 
 	// If it's a CSAY, just CECHO and be done with it.
 	if (flags & HU_CSAY)
@@ -705,51 +753,27 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 		{
 			if (players[playernum].ctfteam == 1) // red
 			{
-				cstart = "\x85";
-				textcolor = "\x85";
+				cstart = textcolor = GetChatColorFromSkinColor(skincolor_redteam);
 			}
 			else // blue
 			{
-				cstart = "\x84";
-				textcolor = "\x84";
+				cstart = textcolor = GetChatColorFromSkinColor(skincolor_blueteam);
 			}
 		}
 		else
         {
-			UINT16 chatcolor = skincolors[players[playernum].skincolor].chatcolor;
-
-			if (!chatcolor || chatcolor%0x1000 || chatcolor>V_INVERTMAP)
-				cstart = "\x80";
-			else if (chatcolor == V_MAGENTAMAP)
-				cstart = "\x81";
-			else if (chatcolor == V_YELLOWMAP)
-				cstart = "\x82";
-			else if (chatcolor == V_GREENMAP)
-				cstart = "\x83";
-			else if (chatcolor == V_BLUEMAP)
-				cstart = "\x84";
-			else if (chatcolor == V_REDMAP)
-				cstart = "\x85";
-			else if (chatcolor == V_GRAYMAP)
-				cstart = "\x86";
-			else if (chatcolor == V_ORANGEMAP)
-				cstart = "\x87";
-			else if (chatcolor == V_SKYMAP)
-				cstart = "\x88";
-			else if (chatcolor == V_PURPLEMAP)
-				cstart = "\x89";
-			else if (chatcolor == V_AQUAMAP)
-				cstart = "\x8a";
-			else if (chatcolor == V_PERIDOTMAP)
-				cstart = "\x8b";
-			else if (chatcolor == V_AZUREMAP)
-				cstart = "\x8c";
-			else if (chatcolor == V_BROWNMAP)
-				cstart = "\x8d";
-			else if (chatcolor == V_ROSYMAP)
-				cstart = "\x8e";
-			else if (chatcolor == V_INVERTMAP)
-				cstart = "\x8f";
+			cstart = GetChatColorFromSkinColor(players[playernum].skincolor);
+			if (G_GametypeHasTeams())
+			{
+				if (players[playernum].ctfteam == 1) // red
+				{
+					cstart = GetChatColorFromSkinColor(skincolor_redteam);
+				}
+				else // blue
+				{
+					cstart = GetChatColorFromSkinColor(skincolor_blueteam);
+				}
+			}
         }
 		prefix = cstart;
 
@@ -823,6 +847,25 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 //
 void HU_Ticker(void)
 {
+	// do this server-side, too
+	if (netgame)
+	{
+		size_t i = 0;
+
+		// handle spam while we're at it:
+		for(; (i<MAXPLAYERS); i++)
+		{
+			if (spam_tokens[i] < (tic_t)cv_chatspamburst.value)
+			{
+				if (++spam_tics[i] >= (tic_t)cv_chatspamspeed.value)
+				{
+					spam_tokens[i]++;
+					spam_tics[i] = 0;
+				}
+			}
+		}
+	}
+
 	if (dedicated)
 		return;
 
@@ -844,13 +887,6 @@ void HU_Ticker(void)
 	if (netgame)
 	{
 		size_t i = 0;
-
-		// handle spam while we're at it:
-		for(; (i<MAXPLAYERS); i++)
-		{
-			if (stop_spamming[i] > 0)
-				stop_spamming[i]--;
-		}
 
 		// handle chat timers
 		for (i=0; (i<chat_nummsg_min); i++)
@@ -911,7 +947,10 @@ static void HU_sendChatMessage(void)
 	// last minute mute check
 	if (CHAT_MUTE)
 	{
-		HU_AddChatText(va("%s>ERROR: The chat is muted. You can't say anything.", "\x85"), false);
+		if (cv_mute.value)
+			HU_AddChatText(va("%s>ERROR: The chat is muted. You can't say anything.", "\x85"), false);
+		else
+			HU_AddChatText(va("%s>ERROR: You have been muted. You can't say anything.", "\x85"), false);
 		return;
 	}
 
@@ -978,7 +1017,7 @@ static void HU_sendChatMessage(void)
 void HU_clearChatChars(void)
 {
 	memset(w_chat, '\0', sizeof(w_chat));
-	I_SetTextInputMode(false);
+	I_SetTextInputMode(textinputmodeenabledbylua);
 	chat_on = false;
 	c_input = 0;
 
@@ -1115,7 +1154,7 @@ boolean HU_Responder(event_t *ev)
 			if (!CHAT_MUTE)
 				HU_sendChatMessage();
 
-			I_SetTextInputMode(false);
+			I_SetTextInputMode(textinputmodeenabledbylua);
 			chat_on = false;
 			c_input = 0; // reset input cursor
 			chat_scrollmedown = true; // you hit enter, so you might wanna autoscroll to see what you just sent. :)
@@ -1126,7 +1165,7 @@ boolean HU_Responder(event_t *ev)
 			|| c == gamecontrol[GC_TEAMKEY][0] || c == gamecontrol[GC_TEAMKEY][1])
 			&& c >= KEY_MOUSE1)) // If it's not a keyboard key, then the chat button is used as a toggle.
 		{
-			I_SetTextInputMode(false);
+			I_SetTextInputMode(textinputmodeenabledbylua);
 			chat_on = false;
 			c_input = 0; // reset input cursor
 			I_UpdateMouseGrab();
@@ -1197,27 +1236,36 @@ static void HU_drawMiniChat(void)
 	INT32 charwidth = 4, charheight = 6;
 	INT32 boxw = cv_chatwidth.value;
 	INT32 dx = 0, dy = 0;
+	boolean prev_linereturn = false;
 
 	if (!chat_nummsg_min)
 		return; // needless to say it's useless to do anything if we don't have anything to draw.
 
 	for (size_t i = chat_nummsg_min; i > 0; i--)
 	{
-		char *msg = V_ChatWordWrap(chatx, boxw-charwidth, V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_ALLOWLOWERCASE, chat_mini[i-1]);
+		char *msg = V_ChatWordWrap(0, boxw-charwidth-2, V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_ALLOWLOWERCASE|V_MONOSPACE, chat_mini[i-1]);
 		for(size_t j = 0; msg[j]; j++) // iterate through msg
 		{
 			if (msg[j] == '\n') // get back down.
 			{
-				chatheight += charheight;
-				dx = 0;
+				if (!prev_linereturn)
+				{
+					chatheight += charheight;
+					dx = 0;
+				}
+				prev_linereturn = true;
 			}
 			else if (msg[j] >= FONTSTART)
 			{
+				prev_linereturn = false;
+
 				dx += charwidth;
-				if (dx >= boxw)
+
+				if (dx >= boxw-charwidth-2)
 				{
 					dx = 0;
 					chatheight += charheight;
+					prev_linereturn = true;
 				}
 			}
 		}
@@ -1229,35 +1277,43 @@ static void HU_drawMiniChat(void)
 	}
 
 	y = chaty - (chatheight + charheight);
+	prev_linereturn = false;
 
 	for (size_t i = 0; i < chat_nummsg_min; i++) // iterate through our hot messages
 	{
 		INT32 timer = ((cv_chattime.value*TICRATE)-chat_timers[i]) - cv_chattime.value*TICRATE+9; // see below...
 		INT32 transflag = (timer >= 0 && timer <= 9) ? (timer*V_10TRANS) : 0; // you can make bad jokes out of this one.
-		char *msg = V_ChatWordWrap(chatx, boxw-charwidth, V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_ALLOWLOWERCASE, chat_mini[i]); // get the current message, and word wrap it.
+		char *msg = V_ChatWordWrap(0, boxw-charwidth-2, V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_ALLOWLOWERCASE|V_MONOSPACE, chat_mini[i]); // get the current message, and word wrap it.
 		UINT8 *colormap = NULL;
 
 		for(size_t j = 0; msg[j]; j++) // iterate through msg
 		{
 			if (msg[j] == '\n') // get back down.
 			{
-				dy += charheight;
-				dx = 0;
+				if (!prev_linereturn)
+				{
+					dy += charheight;
+					dx = 0;
+				}
+				prev_linereturn = true;
 			}
 			else if (msg[j] & 0x80) // get colormap
 				colormap = V_GetStringColormap(((msg[j] & 0x7f) << V_CHARCOLORSHIFT) & V_CHARCOLORMASK);
 			else if (msg[j] >= FONTSTART)
 			{
+				prev_linereturn = false;
+
 				if (cv_chatbacktint.value) // on request of wolfy
 					V_DrawFillConsoleMap(x + dx + 2, y+dy, charwidth, charheight, 239|V_SNAPTOBOTTOM|V_SNAPTOLEFT);
 
-				V_DrawChatCharacter(x + dx + 2, y+dy, msg[j] |V_SNAPTOBOTTOM|V_SNAPTOLEFT|transflag, true, colormap);
-
+				V_DrawChatCharacter(x + dx + 2, y+dy, msg[j] |V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_MONOSPACE|transflag, true, colormap);
 				dx += charwidth;
-				if (dx >= boxw)
+
+				if (dx >= boxw-charwidth-2)
 				{
 					dx = 0;
 					dy += charheight;
+					prev_linereturn = true;
 				}
 			}
 		}
@@ -1282,6 +1338,7 @@ static void HU_drawChatLog(INT32 offset)
 	UINT32 i = 0;
 	INT32 chat_topy, chat_bottomy;
 	boolean atbottom = false;
+	boolean prev_linereturn = false;
 
 	// make sure that our scroll position isn't "illegal";
 	if (chat_scroll > chat_maxscroll)
@@ -1314,27 +1371,38 @@ static void HU_drawChatLog(INT32 offset)
 
 	for (i=0; i<chat_nummsg_log; i++) // iterate through our chatlog
 	{
-		char *msg = V_ChatWordWrap(chatx, boxw-charwidth, V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_ALLOWLOWERCASE, chat_log[i]); // get the current message, and word wrap it.
+		char *msg = V_ChatWordWrap(0, boxw-charwidth-2, V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_ALLOWLOWERCASE|V_MONOSPACE, chat_log[i]); // get the current message, and word wrap it.
 		UINT8 *colormap = NULL;
 		for(size_t j = 0; msg[j]; j++) // iterate through msg
 		{
 			if (msg[j] == '\n') // get back down.
 			{
-				dy += charheight;
-				dx = 0;
+				if (!prev_linereturn)
+				{
+					dy += charheight;
+					dx = 0;
+				}
+				prev_linereturn = true;
 			}
 			else if (msg[j] & 0x80) // get colormap
 				colormap = V_GetStringColormap(((msg[j] & 0x7f) << V_CHARCOLORSHIFT) & V_CHARCOLORMASK);
-			else if (msg[j] >= FONTSTART)
+			else
 			{
-				if ((y+dy+2 >= chat_topy) && (y+dy < (chat_bottomy)))
-					V_DrawChatCharacter(x + dx + 2, y+dy+2, msg[j] |V_SNAPTOBOTTOM|V_SNAPTOLEFT, true, colormap);
+				prev_linereturn = false;
 
-				dx += charwidth;
-				if (dx >= boxw-charwidth-2 && i<chat_nummsg_log) // end of message shouldn't count, nor should invisible characters!!!!
+				if (msg[j] >= FONTSTART)
+				{
+					if ((y+dy+2 >= chat_topy) && (y+dy < (chat_bottomy)))
+						V_DrawChatCharacter(x + dx + 2, y+dy+2, msg[j] |V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_MONOSPACE, true, colormap);
+
+					dx += charwidth;
+				}
+
+				if (dx >= boxw-charwidth-2 && i < chat_nummsg_log) // end of message shouldn't count, nor should invisible characters!!!!
 				{
 					dx = 0;
 					dy += charheight;
+					prev_linereturn = true;
 				}
 			}
 		}
@@ -1381,7 +1449,6 @@ static void HU_DrawChat(void)
 	INT32 cflag = 0;
 	const char *ntalk = "Say: ", *ttalk = "Team: ";
 	const char *talk = ntalk;
-	const char *mute = "Chat has been muted.";
 
 #ifdef NETSPLITSCREEN
 	if (splitscreen)
@@ -1400,7 +1467,10 @@ static void HU_DrawChat(void)
 
 	if (CHAT_MUTE)
 	{
-		talk = mute;
+		if (cv_mute.value)
+			talk = "Chat has been muted.";
+		else
+			talk = "You have been muted.";
 		typelines = 1;
 		cflag = V_GRAYMAP; // set text in gray if chat is muted.
 	}
@@ -1489,9 +1559,9 @@ static void HU_DrawChat(void)
 				else if ((n == 1) && !(w_chat[3] == '0') && (!((i == 1) || ((i >= 10) && (i <= 19)))))
 					continue;
 				else if ((n == 2) && !(w_chat[3] == '0') && (!((i == 2) || ((i >= 20) && (i <= 29)))))
-					continue; 
+					continue;
 				else if ((n == 3) && !(w_chat[3] == '0') && (!((i == 3) || ((i >= 30) && (i <= 31)))))
-					continue; 
+					continue;
 				else	// general case.
 					if (i != n) continue;
 			}
@@ -1782,7 +1852,7 @@ void HU_Drawer(void)
 //                   IN-LEVEL MULTIPLAYER RANKINGS
 //======================================================================
 
-#define supercheckdef (!(players[tab[i].num].charflags & SF_NOSUPERSPRITES) && ((players[tab[i].num].powers[pw_super] && players[tab[i].num].mo && (players[tab[i].num].mo->state < &states[S_PLAY_SUPER_TRANS1] || players[tab[i].num].mo->state >= &states[S_PLAY_SUPER_TRANS6])) || (players[tab[i].num].powers[pw_carry] == CR_NIGHTSMODE && skins[players[tab[i].num].skin].flags & SF_SUPER)))
+#define supercheckdef (!(players[tab[i].num].charflags & SF_NOSUPERSPRITES) && ((players[tab[i].num].powers[pw_super] && players[tab[i].num].mo && (players[tab[i].num].mo->state < &states[S_PLAY_SUPER_TRANS1] || players[tab[i].num].mo->state >= &states[S_PLAY_SUPER_TRANS6])) || (players[tab[i].num].powers[pw_carry] == CR_NIGHTSMODE && skins[players[tab[i].num].skin]->flags & SF_SUPER)))
 #define greycheckdef (players[tab[i].num].spectator || players[tab[i].num].playerstate == PST_DEAD || (G_IsSpecialStage(gamemap) && players[tab[i].num].exiting))
 
 //
@@ -2446,13 +2516,13 @@ static inline void HU_DrawSpectatorTicker(void)
 		if (playeringame[i] && players[i].spectator)
 			totallength += (signed)strlen(player_names[i]) * 8 + 16;
 
-	length -= (leveltime % (totallength + (vid.width / vid.dupx)));
-	length += (vid.width / vid.dupx);
+	length -= (leveltime % (totallength + (vid.width / vid.dup)));
+	length += (vid.width / vid.dup);
 
 	for (i = 0; i < MAXPLAYERS; i++)
 		if (playeringame[i] && players[i].spectator)
 		{
-			if (length >= -((signed)strlen(player_names[i]) * 8 + 16) && length <= (vid.width / vid.dupx))
+			if (length >= -((signed)strlen(player_names[i]) * 8 + 16) && length <= (vid.width / vid.dup))
 				V_DrawString(length, height + 8, V_TRANSLUCENT|V_ALLOWLOWERCASE|V_SNAPTOLEFT, player_names[i]);
 
 			length += (signed)strlen(player_names[i]) * 8 + 16;

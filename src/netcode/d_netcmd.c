@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2023 by Sonic Team Junior.
+// Copyright (C) 1999-2024 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -12,44 +12,46 @@
 ///        commands are executed through the command buffer
 ///	       like console commands, other miscellaneous commands (at the end)
 
-#include "doomdef.h"
+#include "../doomdef.h"
 
-#include "console.h"
-#include "command.h"
-#include "i_time.h"
-#include "i_system.h"
-#include "g_game.h"
-#include "hu_stuff.h"
-#include "g_input.h"
-#include "m_menu.h"
-#include "r_local.h"
-#include "r_skins.h"
-#include "p_local.h"
-#include "p_setup.h"
-#include "s_sound.h"
-#include "i_sound.h"
-#include "m_misc.h"
-#include "am_map.h"
-#include "byteptr.h"
+#include "../console.h"
+#include "../command.h"
+#include "../i_time.h"
+#include "../i_system.h"
+#include "../g_game.h"
+#include "../hu_stuff.h"
+#include "../g_input.h"
+#include "../m_menu.h"
+#include "../r_local.h"
+#include "../r_skins.h"
+#include "../p_local.h"
+#include "../p_setup.h"
+#include "../s_sound.h"
+#include "../i_sound.h"
+#include "../m_misc.h"
+#include "../am_map.h"
+#include "../byteptr.h"
 #include "d_netfil.h"
-#include "p_spec.h"
-#include "m_cheat.h"
+#include "../p_spec.h"
+#include "../m_cheat.h"
 #include "d_clisrv.h"
+#include "server_connection.h"
+#include "net_command.h"
 #include "d_net.h"
-#include "v_video.h"
-#include "d_main.h"
-#include "m_random.h"
-#include "f_finale.h"
-#include "filesrch.h"
+#include "../v_video.h"
+#include "../d_main.h"
+#include "../m_random.h"
+#include "../f_finale.h"
+#include "../filesrch.h"
 #include "mserv.h"
-#include "z_zone.h"
-#include "lua_script.h"
-#include "lua_hook.h"
-#include "m_cond.h"
-#include "m_anigif.h"
-#include "md5.h"
-#include "m_perfstats.h"
-#include "u_list.h"
+#include "../z_zone.h"
+#include "../lua_script.h"
+#include "../lua_hook.h"
+#include "../m_cond.h"
+#include "../m_anigif.h"
+#include "../md5.h"
+#include "../m_perfstats.h"
+#include "../u_list.h"
 
 #ifdef NETGAME_DEVMODE
 #define CV_RESTRICT CV_NETVAR
@@ -58,11 +60,13 @@
 #endif
 
 // TSoURDt3rd
-#include "discord/discord.h" // Discord Routines & Netgame Data //
-#include "STAR/star_vars.h" // STAR_SetWindowTitle() //
-#include "STAR/smkg-cvars.h" // cv_tsourdt3rd_game_sdl_windowtitle_type //
-#include "STAR/p_user.h" // TSoURDt3rd_P_MovingPlayerSetup() //
-#include "STAR/core/smkg-p_pads.h" // TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor() //
+#ifdef HAVE_DISCORDSUPPORT
+#include "../discord/discord.h" // Discord Routines //
+#endif
+#include "../STAR/star_vars.h" // STAR_SetWindowTitle() //
+#include "../STAR/smkg-cvars.h" // cv_tsourdt3rd_game_sdl_windowtitle_type //
+#include "../STAR/p_user.h" // TSoURDt3rd_P_MovingPlayerSetup() //
+#include "../STAR/core/smkg-p_pads.h" // TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor() //
 
 // ------
 // protos
@@ -154,10 +158,15 @@ static void Command_Teamchange_f(void);
 static void Command_Teamchange2_f(void);
 static void Command_ServerTeamChange_f(void);
 
+static void Command_MutePlayer_f(void);
+static void Command_UnmutePlayer_f(void);
+static void Got_MutePlayer(UINT8 **cp, INT32 playernum);
+
 static void Command_Clearscores_f(void);
 
 // Remote Administration
 static void Command_Changepassword_f(void);
+static void Command_Clearpassword_f(void);
 static void Command_Login_f(void);
 static void Got_Verification(UINT8 **cp, INT32 playernum);
 static void Got_Removal(UINT8 **cp, INT32 playernum);
@@ -320,7 +329,7 @@ consvar_t cv_overtime = CVAR_INIT ("overtime", "Yes", CV_SAVE|CV_NETVAR|CV_ALLOW
 consvar_t cv_rollingdemos = CVAR_INIT ("rollingdemos", "On", CV_SAVE, CV_OnOff, NULL);
 
 static CV_PossibleValue_t timetic_cons_t[] = {{0, "Classic"}, {1, "Centiseconds"}, {2, "Mania"}, {3, "Tics"}, {0, NULL}};
-consvar_t cv_timetic = CVAR_INIT ("timerres", "Classic", CV_SAVE, timetic_cons_t, NULL);
+consvar_t cv_timetic = CVAR_INIT ("timerres", "Mania", CV_SAVE, timetic_cons_t, NULL);
 
 static CV_PossibleValue_t powerupdisplay_cons_t[] = {{0, "Never"}, {1, "First-person only"}, {2, "Always"}, {0, NULL}};
 consvar_t cv_powerupdisplay = CVAR_INIT ("powerupdisplay", "First-person only", CV_SAVE, powerupdisplay_cons_t, NULL);
@@ -372,10 +381,10 @@ static CV_PossibleValue_t cooplives_cons_t[] = {{0, "Infinite"}, {1, "Per-player
 consvar_t cv_cooplives = CVAR_INIT ("cooplives", "Avoid Game Over", CV_SAVE|CV_NETVAR|CV_CALL|CV_CHEAT|CV_ALLOWLUA, cooplives_cons_t, CoopLives_OnChange);
 
 static CV_PossibleValue_t advancemap_cons_t[] = {{0, "Off"}, {1, "Next"}, {2, "Random"}, {0, NULL}};
-consvar_t cv_advancemap = CVAR_INIT ("advancemap", "Next", CV_SAVE|CV_NETVAR|CV_ALLOWLUA, advancemap_cons_t, NULL);
+consvar_t cv_advancemap = CVAR_INIT ("advancemap", "Random", CV_SAVE|CV_NETVAR|CV_ALLOWLUA, advancemap_cons_t, NULL);
 
 static CV_PossibleValue_t playersforexit_cons_t[] = {{0, "One"}, {1, "1/4"}, {2, "Half"}, {3, "3/4"}, {4, "All"}, {0, NULL}};
-consvar_t cv_playersforexit = CVAR_INIT ("playersforexit", "All", CV_SAVE|CV_NETVAR|CV_ALLOWLUA, playersforexit_cons_t, NULL);
+consvar_t cv_playersforexit = CVAR_INIT ("playersforexit", "3/4", CV_SAVE|CV_NETVAR|CV_ALLOWLUA, playersforexit_cons_t, NULL);
 
 consvar_t cv_exitmove = CVAR_INIT ("exitmove", "On", CV_SAVE|CV_NETVAR|CV_CALL|CV_ALLOWLUA, CV_OnOff, ExitMove_OnChange);
 
@@ -391,7 +400,7 @@ static CV_PossibleValue_t perfstats_cons_t[] = {
 consvar_t cv_perfstats = CVAR_INIT ("perfstats", "Off", CV_CALL, perfstats_cons_t, PS_PerfStats_OnChange);
 static CV_PossibleValue_t ps_samplesize_cons_t[] = {
 	{1, "MIN"}, {1000, "MAX"}, {0, NULL}};
-consvar_t cv_ps_samplesize = CVAR_INIT ("ps_samplesize", "1", CV_CALL, ps_samplesize_cons_t, PS_SampleSize_OnChange);
+consvar_t cv_ps_samplesize = CVAR_INIT ("ps_samplesize", "175", CV_CALL, ps_samplesize_cons_t, PS_SampleSize_OnChange);
 static CV_PossibleValue_t ps_descriptor_cons_t[] = {
 	{1, "Average"}, {2, "SD"}, {3, "Minimum"}, {4, "Maximum"}, {0, NULL}};
 consvar_t cv_ps_descriptor = CVAR_INIT ("ps_descriptor", "Average", 0, ps_descriptor_cons_t, NULL);
@@ -440,9 +449,11 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"LUACMD",
 	"LUAVAR",
 	"LUAFILE",
-
-	// TSoURDt3rd
-	"DISCORD" // SRB2Kart: XD_DISCORD
+#if 1
+	// STAR STUFF: TSoURDt3rd NetXCMDs //
+	// Ring Racers
+	"DISCORD"
+#endif
 };
 
 // =========================================================================
@@ -482,6 +493,7 @@ void D_RegisterServerCommands(void)
 
 	// Remote Administration
 	COM_AddCommand("password", Command_Changepassword_f, COM_LUA);
+	COM_AddCommand("clearpassword", Command_Clearpassword_f, COM_LUA);
 	COM_AddCommand("login", Command_Login_f, COM_LUA); // useful in dedicated to kick off remote admin
 	COM_AddCommand("promote", Command_Verify_f, COM_LUA);
 	RegisterNetXCmd(XD_VERIFIED, Got_Verification);
@@ -493,6 +505,10 @@ void D_RegisterServerCommands(void)
 
 	RegisterNetXCmd(XD_TEAMCHANGE, Got_Teamchange);
 	COM_AddCommand("serverchangeteam", Command_ServerTeamChange_f, COM_LUA);
+
+	RegisterNetXCmd(XD_MUTEPLAYER, Got_MutePlayer);
+	COM_AddCommand("muteplayer", Command_MutePlayer_f, COM_LUA);
+	COM_AddCommand("unmuteplayer", Command_UnmutePlayer_f, COM_LUA);
 
 	RegisterNetXCmd(XD_CLEARSCORES, Got_Clearscores);
 	COM_AddCommand("clearscores", Command_Clearscores_f, COM_LUA);
@@ -535,6 +551,8 @@ void D_RegisterServerCommands(void)
 
 	// for master server connection
 	AddMServCommands();
+
+	CV_RegisterVar(&cv_glallowshaders);
 
 	// p_mobj.c
 	CV_RegisterVar(&cv_itemrespawntime);
@@ -612,10 +630,12 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_noticedownload);
 	CV_RegisterVar(&cv_downloadspeed);
 	CV_RegisterVar(&cv_allownewplayer);
-	CV_RegisterVar(&cv_joinnextround);
 	CV_RegisterVar(&cv_showjoinaddress);
 	CV_RegisterVar(&cv_blamecfail);
 	CV_RegisterVar(&cv_dedicatedidletime);
+	CV_RegisterVar(&cv_idletime);
+	CV_RegisterVar(&cv_idleaction);
+	CV_RegisterVar(&cv_httpsource);
 
 	COM_AddCommand("ping", Command_Ping_f, COM_LUA);
 	CV_RegisterVar(&cv_nettimeout);
@@ -635,7 +655,14 @@ void D_RegisterServerCommands(void)
 
 	CV_RegisterVar(&cv_dummyconsvar);
 
-	TSoURDt3rd_D_RegisterServerCommands(); // STAR STUFF: register our cool server commands please! //
+	CV_RegisterVar(&cv_chatspamprotection);
+	CV_RegisterVar(&cv_chatspamspeed);
+	CV_RegisterVar(&cv_chatspamburst);
+
+#if 1
+	// STAR STUFF: register our cool server commands please! //
+	TSoURDt3rd_D_RegisterServerCommands();
+#endif
 }
 
 // =========================================================================
@@ -664,6 +691,13 @@ void D_RegisterClientCommands(void)
 	for (i = 0; i < MAXPLAYERS; i++)
 		sprintf(player_names[i], "Player %d", 1 + i);
 
+	CV_RegisterVar(&cv_gravity);
+	CV_RegisterVar(&cv_tailspickup);
+	CV_RegisterVar(&cv_allowmlook);
+	CV_RegisterVar(&cv_flipcam);
+	CV_RegisterVar(&cv_flipcam2);
+	CV_RegisterVar(&cv_movebob);
+
 	if (dedicated)
 		return;
 
@@ -677,6 +711,7 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("timedemo", Command_Timedemo_f, 0);
 	COM_AddCommand("stopdemo", Command_Stopdemo_f, COM_LUA);
 	COM_AddCommand("playintro", Command_Playintro_f, COM_LUA);
+	CV_RegisterVar(&cv_resyncdemo);
 
 	COM_AddCommand("resetcamera", Command_ResetCamera_f, COM_LUA);
 
@@ -780,7 +815,6 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_chatheight);
 	CV_RegisterVar(&cv_chatwidth);
 	CV_RegisterVar(&cv_chattime);
-	CV_RegisterVar(&cv_chatspamprotection);
 	CV_RegisterVar(&cv_chatbacktint);
 	CV_RegisterVar(&cv_consolechat);
 	CV_RegisterVar(&cv_chatnotifications);
@@ -893,10 +927,6 @@ void D_RegisterClientCommands(void)
 
 	// screen.c
 	CV_RegisterVar(&cv_fullscreen);
-	CV_RegisterVar(&cv_renderview);
-	CV_RegisterVar(&cv_renderhitboxinterpolation);
-	CV_RegisterVar(&cv_renderhitboxgldepth);
-	CV_RegisterVar(&cv_renderhitbox);
 	CV_RegisterVar(&cv_renderer);
 	CV_RegisterVar(&cv_scr_depth);
 	CV_RegisterVar(&cv_scr_width);
@@ -912,13 +942,11 @@ void D_RegisterClientCommands(void)
 
 	// ingame object placing
 	COM_AddCommand("objectplace", Command_ObjectPlace_f, COM_LUA);
-	//COM_AddCommand("writethings", Command_Writethings_f);
+	COM_AddCommand("writethings", Command_Writethings_f, COM_LUA);
 	CV_RegisterVar(&cv_speed);
 	CV_RegisterVar(&cv_opflags);
 	CV_RegisterVar(&cv_ophoopflags);
 	CV_RegisterVar(&cv_mapthingnum);
-//	CV_RegisterVar(&cv_grid);
-//	CV_RegisterVar(&cv_snapto);
 
 	CV_RegisterVar(&cv_freedemocamera);
 
@@ -951,7 +979,10 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("dumplua", Command_Dumplua_f, COM_LUA);
 #endif
 
-	TSoURDt3rd_D_RegisterClientCommands(); // STAR STUFF: register our other cool commands please! //
+#if 1
+	// STAR STUFF: register our other cool commands please! //
+	TSoURDt3rd_D_RegisterClientCommands();
+#endif
 }
 
 /** Checks if a name (as received from another player) is okay.
@@ -1256,7 +1287,10 @@ static void SetColorLocal(INT32 playernum, UINT16 color)
 	if (players[playernum].mo && !players[playernum].powers[pw_dye])
 		players[playernum].mo->color = P_GetPlayerColor(&players[playernum]);
 
-	TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor(playernum); // STAR STUFF: fun controller light junk //
+#if 1
+	// STAR STUFF: fun controller light junk //
+	TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor(playernum);
+#endif
 }
 
 // name, color, or skin has changed
@@ -1275,8 +1309,8 @@ static void SendNameAndColor(void)
 			CV_StealthSetValue(&cv_playercolor, players[consoleplayer].skincolor);
 		else if (skincolors[atoi(cv_playercolor.defaultvalue)].accessible)
 			CV_StealthSet(&cv_playercolor, cv_playercolor.defaultvalue);
-		else if (skins[players[consoleplayer].skin].prefcolor && skincolors[skins[players[consoleplayer].skin].prefcolor].accessible)
-			CV_StealthSetValue(&cv_playercolor, skins[players[consoleplayer].skin].prefcolor);
+		else if (skins[players[consoleplayer].skin]->prefcolor && skincolors[skins[players[consoleplayer].skin]->prefcolor].accessible)
+			CV_StealthSetValue(&cv_playercolor, skins[players[consoleplayer].skin]->prefcolor);
 		else {
 			UINT16 i = 0;
 			while (i<numskincolors && !skincolors[i].accessible) i++;
@@ -1286,7 +1320,7 @@ static void SendNameAndColor(void)
 
 	if (!strcmp(cv_playername.string, player_names[consoleplayer])
 	&& cv_playercolor.value == players[consoleplayer].skincolor
-	&& !strcmp(cv_skin.string, skins[players[consoleplayer].skin].name))
+	&& !strcmp(cv_skin.string, skins[players[consoleplayer].skin]->name))
 		return;
 
 	players[consoleplayer].availabilities = R_GetSkinAvailabilities();
@@ -1303,7 +1337,7 @@ static void SendNameAndColor(void)
 
 		SetColorLocal(consoleplayer, cv_playercolor.value);
 
-		if (splitscreen || (!pickedchar && stricmp(cv_skin.string, skins[consoleplayer].name) != 0))
+		if (splitscreen || (!pickedchar && stricmp(cv_skin.string, skins[consoleplayer]->name) != 0))
 			SetSkinLocal(consoleplayer, R_SkinAvailable(cv_skin.string));
 		else
 			SetSkinLocal(consoleplayer, pickedchar);
@@ -1318,7 +1352,7 @@ static void SendNameAndColor(void)
 		CV_StealthSet(&cv_playername, player_names[consoleplayer]);
 		HU_AddChatText("\x85*You must wait to change your name again", false);
 	}
-	else if (cv_mute.value && !(server || IsPlayerAdmin(consoleplayer)))
+	else if ((cv_mute.value || players[consoleplayer].muted) && !(server || IsPlayerAdmin(consoleplayer)))
 		CV_StealthSet(&cv_playername, player_names[consoleplayer]);
 	else // Cleanup name if changing it
 		CleanupPlayerName(consoleplayer, cv_playername.zstring);
@@ -1329,7 +1363,7 @@ static void SendNameAndColor(void)
 	if ((cv_skin.value < 0) || !R_SkinUsable(consoleplayer, cv_skin.value))
 	{
 		INT32 defaultSkinNum = GetPlayerDefaultSkin(consoleplayer);
-		CV_StealthSet(&cv_skin, skins[defaultSkinNum].name);
+		CV_StealthSet(&cv_skin, skins[defaultSkinNum]->name);
 		cv_skin.value = defaultSkinNum;
 	}
 
@@ -1360,8 +1394,8 @@ static void SendNameAndColor2(void)
 			CV_StealthSetValue(&cv_playercolor2, players[secondplaya].skincolor);
 		else if (skincolors[atoi(cv_playercolor2.defaultvalue)].accessible)
 			CV_StealthSet(&cv_playercolor, cv_playercolor2.defaultvalue);
-		else if (skins[players[secondplaya].skin].prefcolor && skincolors[skins[players[secondplaya].skin].prefcolor].accessible)
-			CV_StealthSetValue(&cv_playercolor2, skins[players[secondplaya].skin].prefcolor);
+		else if (skins[players[secondplaya].skin]->prefcolor && skincolors[skins[players[secondplaya].skin]->prefcolor].accessible)
+			CV_StealthSetValue(&cv_playercolor2, skins[players[secondplaya].skin]->prefcolor);
 		else {
 			UINT16 i = 0;
 			while (i<numskincolors && !skincolors[i].accessible) i++;
@@ -1445,15 +1479,6 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 		UINT32 unlockShift = 0;
 		UINT32 i;
 
-		// team colors
-		if (G_GametypeHasTeams())
-		{
-			if (p->ctfteam == 1 && p->skincolor != skincolor_redteam)
-				kick = true;
-			else if (p->ctfteam == 2 && p->skincolor != skincolor_blueteam)
-				kick = true;
-		}
-
 		// don't allow inaccessible colors
 		if (skincolors[p->skincolor].accessible == false)
 			kick = true;
@@ -1494,16 +1519,9 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 	}
 
 	// set skin
-	if (cv_forceskin.value >= 0 && (netgame || multiplayer)) // Server wants everyone to use the same player
-	{
-		const INT32 forcedskin = cv_forceskin.value;
+	INT32 forcedskin = R_GetForcedSkin(playernum);
+	if (forcedskin != -1 && (netgame || multiplayer)) // Server wants everyone to use the same player (or the level is forcing one.)
 		SetPlayerSkinByNum(playernum, forcedskin);
-
-		if (playernum == consoleplayer)
-			CV_StealthSet(&cv_skin, skins[forcedskin].name);
-		else if (playernum == secondarydisplayplayer)
-			CV_StealthSet(&cv_skin2, skins[forcedskin].name);
-	}
 	else
 		SetPlayerSkinByNum(playernum, skin);
 }
@@ -1779,8 +1797,7 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pultmode, boolean rese
 		// reset players if there is a new one
 		if (!IsPlayerAdmin(consoleplayer))
 		{
-			if (SV_SpawnServer())
-				buf[0] &= ~(1<<1);
+			SV_SpawnServer();
 			if (!Playing()) // you failed to start a server somehow, so cancel the map change
 				return;
 		}
@@ -1858,7 +1875,7 @@ static void Command_Map_f(void)
 		return;
 	}
 
-	option_force    =   COM_CheckPartialParm("-f");
+	option_force    =   COM_CheckPartialParm("-f") || (cv_debug || devparm);
 	option_gametype =   COM_CheckPartialParm("-g");
 	newresetplayers = ! COM_CheckParm("-noresetplayers");
 
@@ -1935,11 +1952,12 @@ static void Command_Map_f(void)
 		return;
 	}
 
+#if 1
 	// STAR STUFF: clears the screen when loading into a level //
 	M_ClearMenus(true);
 	if (demoplayback && titledemo)
 		G_CheckDemoStatus();
-	// END //
+#endif
 
 	// new gametype value
 	// use current one by default
@@ -2118,7 +2136,7 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	if (modeattacking)
 	{
 		SetPlayerSkinByNum(0, cv_chooseskin.value-1);
-		players[0].skincolor = skins[players[0].skin].prefcolor;
+		players[0].skincolor = skins[players[0].skin]->prefcolor;
 	}
 
 	mapnumber = M_MapNumber(mapname[3], mapname[4]);
@@ -2214,7 +2232,10 @@ static void Got_Pause(UINT8 **cp, INT32 playernum)
 
 	I_UpdateMouseGrab();
 
-	TSoURDt3rd_P_Pads_PauseDeviceRumble(NULL, paused, paused); // STAR STUFF: pause rumbling please //
+#if 1
+	// STAR STUFF: pause rumbling please //
+	TSoURDt3rd_P_Pads_PauseDeviceRumble(NULL, paused, paused);
+#endif
 }
 
 // Command for stuck characters in netgames, griefing, etc.
@@ -2522,6 +2543,91 @@ static void Command_Teamchange2_f(void)
 	SendNetXCmd2(XD_TEAMCHANGE, &usvalue, sizeof(usvalue));
 }
 
+static void MutePlayer(boolean mute)
+{
+	UINT8 data[2];
+	if (!(server || (IsPlayerAdmin(consoleplayer))))
+	{
+		CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
+		return;
+	}
+
+	if (COM_Argc() < 2)
+	{
+		CONS_Printf(M_GetText("muteplayer <playername/playernum>: mute a player\n"));
+		return;
+	}
+
+	data[0] = nametonum(COM_Argv(1));
+	if (data[0] >= MAXPLAYERS || !playeringame[data[0]])
+	{
+		CONS_Alert(CONS_NOTICE, M_GetText("There is no player %u!\n"), (unsigned int)data[0]);
+		return;
+	}
+
+	if (players[data[0]].muted && mute)
+	{
+		CONS_Printf(M_GetText("%s is already muted!\n"), player_names[data[0]]);
+		return;
+	}
+	else if (!players[data[0]].muted && !mute)
+	{
+		CONS_Printf(M_GetText("%s is not muted!\n"), player_names[data[0]]);
+		return;
+	}
+
+	data[1] = mute;
+	SendNetXCmd(XD_MUTEPLAYER, &data, sizeof(data));
+}
+
+static void Command_MutePlayer_f(void)
+{
+	MutePlayer(true);
+}
+
+static void Command_UnmutePlayer_f(void)
+{
+	MutePlayer(false);
+}
+
+static void Got_MutePlayer(UINT8 **cp, INT32 playernum)
+{
+	UINT8 player = READUINT8(*cp);
+	UINT8 muted = READUINT8(*cp);
+	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
+	{
+		CONS_Alert(CONS_WARNING, M_GetText("Illegal mute received from player %s\n"), player_names[playernum]);
+		if (server)
+			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+		return;
+	}
+
+	if (player >= MAXPLAYERS || !playeringame[player])
+	{
+		CONS_Alert(CONS_WARNING, M_GetText("Illegal mute received from player %s\n"), player_names[playernum]);
+		if (server)
+			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
+		return;
+	}
+
+	if (!players[player].muted && muted)
+	{
+		if (player == consoleplayer)
+			CONS_Printf(M_GetText("You have been muted.\n"));
+		else
+			CONS_Printf(M_GetText("%s has been muted.\n"), player_names[player]);
+	}
+	else if (players[player].muted && !muted)
+	{
+		if (player == consoleplayer)
+			CONS_Printf(M_GetText("You are no longer muted.\n"));
+		else
+			CONS_Printf(M_GetText("%s is no longer muted.\n"), player_names[player]);
+	}
+
+	players[player].muted = muted;
+}
+
 static void Command_ServerTeamChange_f(void)
 {
 	changeteam_union NetPacket;
@@ -2541,11 +2647,11 @@ static void Command_ServerTeamChange_f(void)
 	if (COM_Argc() < 3)
 	{
 		if (G_TagGametype())
-			CONS_Printf(M_GetText("serverchangeteam <playernum> <team>: switch player to a new team (%s)\n"), "it, notit, playing, or spectator");
+			CONS_Printf(M_GetText("serverchangeteam <playername/playernum> <team>: switch player to a new team (%s)\n"), "it, notit, playing, or spectator");
 		else if (G_GametypeHasTeams())
-			CONS_Printf(M_GetText("serverchangeteam <playernum> <team>: switch player to a new team (%s)\n"), "red, blue or spectator");
+			CONS_Printf(M_GetText("serverchangeteam <playername/playernum> <team>: switch player to a new team (%s)\n"), "red, blue or spectator");
 		else if (G_GametypeHasSpectators())
-			CONS_Printf(M_GetText("serverchangeteam <playernum> <team>: switch player to a new team (%s)\n"), "spectator or playing");
+			CONS_Printf(M_GetText("serverchangeteam <playername/playernum> <team>: switch player to a new team (%s)\n"), "spectator or playing");
 		else
 			CONS_Alert(CONS_NOTICE, M_GetText("This command cannot be used in this gametype.\n"));
 		return;
@@ -2593,19 +2699,19 @@ static void Command_ServerTeamChange_f(void)
 	if (error)
 	{
 		if (G_TagGametype())
-			CONS_Printf(M_GetText("serverchangeteam <playernum> <team>: switch player to a new team (%s)\n"), "it, notit, playing, or spectator");
+			CONS_Printf(M_GetText("serverchangeteam <playername/playernum> <team>: switch player to a new team (%s)\n"), "it, notit, playing, or spectator");
 		else if (G_GametypeHasTeams())
-			CONS_Printf(M_GetText("serverchangeteam <playernum> <team>: switch player to a new team (%s)\n"), "red, blue or spectator");
+			CONS_Printf(M_GetText("serverchangeteam <playername/playernum> <team>: switch player to a new team (%s)\n"), "red, blue or spectator");
 		else if (G_GametypeHasSpectators())
-			CONS_Printf(M_GetText("serverchangeteam <playernum> <team>: switch player to a new team (%s)\n"), "spectator or playing");
+			CONS_Printf(M_GetText("serverchangeteam <playername/playernum> <team>: switch player to a new team (%s)\n"), "spectator or playing");
 		return;
 	}
 
-	NetPacket.packet.playernum = atoi(COM_Argv(1));
+	NetPacket.packet.playernum = nametonum(COM_Argv(1));
 
-	if (!playeringame[NetPacket.packet.playernum])
+	if (NetPacket.packet.playernum == -1 || !playeringame[NetPacket.packet.playernum])
 	{
-		CONS_Alert(CONS_NOTICE, M_GetText("There is no player %d!\n"), NetPacket.packet.playernum);
+		CONS_Alert(CONS_NOTICE, M_GetText("There is no player %s!\n"), COM_Argv(1));
 		return;
 	}
 
@@ -2895,8 +3001,15 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 
 void D_SetPassword(const char *pw)
 {
-	D_MD5PasswordPass((const UINT8 *)pw, strlen(pw), BASESALT, &adminpassmd5);
-	adminpasswordset = true;
+	adminpassmd5 = Z_Realloc(adminpassmd5, sizeof(*adminpassmd5) * ++adminpasscount, PU_STATIC, NULL);
+	D_MD5PasswordPass((const UINT8 *)pw, strlen(pw), BASESALT, &adminpassmd5[adminpasscount-1]);
+}
+
+void D_ClearPassword(void)
+{
+	Z_Free(adminpassmd5);
+	adminpassmd5 = NULL;
+	adminpasscount = 0;
 }
 
 // Remote Administration
@@ -2914,12 +3027,30 @@ static void Command_Changepassword_f(void)
 
 	if (COM_Argc() != 2)
 	{
-		CONS_Printf(M_GetText("password <password>: change remote admin password\n"));
+		CONS_Printf(M_GetText("password <password>: add remote admin password\n"));
 		return;
 	}
 
 	D_SetPassword(COM_Argv(1));
-	CONS_Printf(M_GetText("Password set.\n"));
+	CONS_Printf(M_GetText("Password added.\n"));
+#endif
+}
+
+// Remote Administration
+static void Command_Clearpassword_f(void)
+{
+#ifdef NOMD5
+	// If we have no MD5 support then completely disable XD_LOGIN responses for security.
+	CONS_Alert(CONS_NOTICE, "Remote administration commands are not supported in this build.\n");
+#else
+	if (client) // cannot change remotely
+	{
+		CONS_Printf(M_GetText("Only the server can use this.\n"));
+		return;
+	}
+
+	D_ClearPassword();
+	CONS_Printf(M_GetText("Passwords cleared.\n"));
 #endif
 }
 
@@ -3023,13 +3154,16 @@ static void Command_Verify_f(void)
 
 	if (COM_Argc() != 2)
 	{
-		CONS_Printf(M_GetText("promote <playernum>: give admin privileges to a player\n"));
+		CONS_Printf(M_GetText("promote <playername/playernum>: give admin privileges to a player\n"));
 		return;
 	}
 
-	strlcpy(buf, COM_Argv(1), sizeof (buf));
-
-	playernum = atoi(buf);
+	playernum = nametonum(COM_Argv(1));
+	if (playernum == -1)
+	{
+		CONS_Alert(CONS_NOTICE, M_GetText("There is no player %s!\n"), COM_Argv(1));
+		return;
+	}
 
 	temp = buf;
 
@@ -3073,13 +3207,16 @@ static void Command_RemoveAdmin_f(void)
 
 	if (COM_Argc() != 2)
 	{
-		CONS_Printf(M_GetText("demote <playernum>: remove admin privileges from a player\n"));
+		CONS_Printf(M_GetText("demote <playername/playernum>: remove admin privileges from a player\n"));
 		return;
 	}
 
-	strlcpy(buf, COM_Argv(1), sizeof(buf));
-
-	playernum = atoi(buf);
+	playernum = nametonum(COM_Argv(1));
+	if (playernum == -1)
+	{
+		CONS_Alert(CONS_NOTICE, M_GetText("There is no player %s!\n"), COM_Argv(1));
+		return;
+	}
 
 	temp = buf;
 
@@ -3819,11 +3956,19 @@ static void Command_ListWADS_f(void)
   */
 static void Command_Version_f(void)
 {
+#if 0
+#ifdef DEVELOP
+	CONS_Printf("Sonic Robo Blast 2 %s %s %s (%s %s) ", compbranch, comprevision, compnote, compdate, comptime);
+#else
+	CONS_Printf("Sonic Robo Blast 2 %s (%s %s %s %s) ", VERSIONSTRING, compdate, comptime, comprevision, compbranch);
+#endif
+#else
 	// STAR NOTE: i was here :) //
 #ifdef DEVELOP
 	CONS_Printf("Sonic Robo Blast 2 %s; %s %s %s (%s %s) ", TSOURDT3RDVERSIONSTRING, compbranch, comprevision, compnote, compdate, comptime);
 #else
 	CONS_Printf("Sonic Robo Blast 2 %s; %s (%s %s %s %s) ", VERSIONSTRING, TSOURDT3RDVERSIONSTRING, compdate, comptime, comprevision, compbranch);
+#endif
 #endif
 
 	// Base library
@@ -3896,11 +4041,12 @@ static void Command_Playintro_f(void)
 	if (dirmenu)
 		closefilemenu(true);
 
+#if 1
 	// STAR STUFF: clears out the screen when looking at the intro //
 	M_ClearMenus(true);
 	if (demoplayback && titledemo)
 		G_CheckDemoStatus();
-	// ADDING STUFF FOR CONVENIENCE IS FUN //
+#endif
 
 	F_StartIntro();
 }
@@ -4086,7 +4232,7 @@ static void ExitMove_OnChange(void)
 				if (players[i].mo->target && players[i].mo->target->type == MT_SIGN)
 					P_SetTarget(&players[i].mo->target, NULL);
 
-				if (players[i].pflags & PF_FINISHED)
+				if (players[i].pflags & PF_FINISHED && !(players[i].exiting))
 					P_GiveFinishFlags(&players[i]);
 			}
 
@@ -4177,9 +4323,9 @@ void D_GameTypeChanged(INT32 lastgametype)
 			case GT_TEAMMATCH:
 				if (!cv_timelimit.changed && !cv_pointlimit.changed) // user hasn't changed limits
 				{
-					// default settings for match: timelimit 10 mins, no pointlimit
+					// default settings for match: timelimit 7 mins, no pointlimit
 					CV_SetValue(&cv_pointlimit, 0);
-					CV_SetValue(&cv_timelimit, 10);
+					CV_SetValue(&cv_timelimit, 7);
 				}
 				if (!cv_itemrespawntime.changed)
 					CV_Set(&cv_itemrespawntime, cv_itemrespawntime.defaultvalue); // respawn normally
@@ -4188,9 +4334,9 @@ void D_GameTypeChanged(INT32 lastgametype)
 			case GT_HIDEANDSEEK:
 				if (!cv_timelimit.changed && !cv_pointlimit.changed) // user hasn't changed limits
 				{
-					// default settings for tag: 5 mins, no pointlimit
+					// default settings for tag: 7 mins, no pointlimit
 					// Note that tag mode also uses an alternate timing mechanism in tandem with timelimit.
-					CV_SetValue(&cv_timelimit, 5);
+					CV_SetValue(&cv_timelimit, 7);
 					CV_SetValue(&cv_pointlimit, 0);
 				}
 				if (!cv_itemrespawntime.changed)
@@ -4199,8 +4345,8 @@ void D_GameTypeChanged(INT32 lastgametype)
 			case GT_CTF:
 				if (!cv_timelimit.changed && !cv_pointlimit.changed) // user hasn't changed limits
 				{
-					// default settings for CTF: no timelimit, pointlimit 5
-					CV_SetValue(&cv_timelimit, 0);
+					// default settings for CTF: 15 mins, pointlimit 5
+					CV_SetValue(&cv_timelimit, 15);
 					CV_SetValue(&cv_pointlimit, 5);
 				}
 				if (!cv_itemrespawntime.changed)
@@ -4520,37 +4666,62 @@ static void Command_Mapmd5_f(void)
 		CONS_Printf(M_GetText("You must be in a level to use this.\n"));
 }
 
-void D_SendExitLevel(boolean cheat)
-{
-	UINT8 buf[8];
-	UINT8 *buf_p = buf;
-
-	WRITEUINT8(buf_p, cheat);
-
-	SendNetXCmd(XD_EXITLEVEL, &buf, buf_p - buf);
-}
-
 static void Command_ExitLevel_f(void)
 {
 	if (!(server || (IsPlayerAdmin(consoleplayer))))
 		CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
 	else if (( gamestate != GS_LEVEL && gamestate != GS_CREDITS ) || demoplayback)
 		CONS_Printf(M_GetText("You must be in a level to use this.\n"));
+	else if (usedCheats)
+		SendNetXCmd(XD_EXITLEVEL, NULL, 0); // Does it matter if it's a cheat if we've used one already?
+	else if (!(splitscreen || multiplayer || cv_debug))
+		CONS_Printf(M_GetText("Cheats must be enabled to force a level exit in single player.\n"));
 	else
-		D_SendExitLevel(true);
+	{
+		if (G_IsSpecialStage(gamemap) // If you wanna give up that emerald then go right ahead!
+			|| gamestate == GS_CREDITS) // Somebody hasn't heard of the credits skip button...
+		{
+			SendNetXCmd(XD_EXITLEVEL, NULL, 0);
+			return;
+		}
+
+		// Allow exiting without cheating if at least one player beat the level
+		// Consistent with just setting playersforexit to one
+		if (splitscreen || multiplayer)
+		{
+			INT32 i;
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (!playeringame[i] || players[i].spectator || players[i].bot)
+					continue;
+				if (players[i].quittime > 30 * TICRATE)
+					continue;
+				if (players[i].lives <= 0)
+					continue;
+
+				if ((players[i].pflags & PF_FINISHED) || players[i].exiting)
+				{
+					SendNetXCmd(XD_EXITLEVEL, NULL, 0);
+					return;
+				}
+			}
+		}
+
+		// Only consider it a cheat if we're not allowed to go to the next map
+		if (M_CampaignWarpIsCheat(gametype, G_GetNextMap(true, true) + 1, serverGamedata))
+			CONS_Alert(CONS_NOTICE, M_GetText("Cheats must be enabled to force exit to a locked level!\n"));
+		else
+			SendNetXCmd(XD_EXITLEVEL, NULL, 0);
+	}
 }
 
 static void Got_ExitLevelcmd(UINT8 **cp, INT32 playernum)
 {
-	boolean cheat = false;
-
-	cheat = (boolean)READUINT8(*cp);
+	(void)cp;
 
 	// Ignore duplicate XD_EXITLEVEL commands.
 	if (gameaction == ga_completed)
-	{
 		return;
-	}
 
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
 	{
@@ -4558,11 +4729,6 @@ static void Got_ExitLevelcmd(UINT8 **cp, INT32 playernum)
 		if (server)
 			SendKick(playernum, KICK_MSG_CON_FAIL | KICK_MSG_KEEP_BODY);
 		return;
-	}
-
-	if (G_CoopGametype() && cheat)
-	{
-		G_SetUsedCheats(false);
 	}
 
 	G_ExitLevel();
@@ -4657,10 +4823,11 @@ static void Command_Isgamemodified_f(void)
 		CONS_Printf(M_GetText("modifiedgame is true, but you can save time data in this mod.\n"));
 	else if (modifiedgame)
 		CONS_Printf(M_GetText("modifiedgame is true, time data can't be saved\n"));
+#if 1
 	// STAR STUFF: autoloading mess //
 	else if (tsourdt3rd_local.autoloaded_mods)
 		CONS_Printf(M_GetText("modifiedgame is false, and time data can still be saved,\n but keep in mind that you have autoloaded at least one game-changing mod.\n"));
-	// CHECKS ARE NOW DONE! //
+#endif
 	else
 		CONS_Printf(M_GetText("modifiedgame is false, you can save time data\n"));
 }
@@ -4675,15 +4842,28 @@ static void Command_Cheats_f(void)
 			CV_ResetCheatNetVars();
 		return;
 	}
+	else if (COM_CheckParm("on"))
+	{
+		if (!(server || (IsPlayerAdmin(consoleplayer))))
+			CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
+		else
+			G_SetUsedCheats(false);
+		return;
+	}
+
+	if (usedCheats)
+		CONS_Printf(M_GetText("Cheats are enabled, the game cannot be saved.\n"));
+	else
+		CONS_Printf(M_GetText("Cheats are disabled, the game can be saved.\n"));
 
 	if (CV_CheatsEnabled())
 	{
-		CONS_Printf(M_GetText("At least one CHEAT-marked variable has been changed -- Cheats are enabled.\n"));
+		CONS_Printf(M_GetText("At least one CHEAT-marked variable has been changed.\n"));
 		if (server || (IsPlayerAdmin(consoleplayer)))
 			CONS_Printf(M_GetText("Type CHEATS OFF to reset all cheat variables to default.\n"));
 	}
 	else
-		CONS_Printf(M_GetText("No CHEAT-marked variables are changed -- Cheats are disabled.\n"));
+		CONS_Printf(M_GetText("No CHEAT-marked variables are changed.\n"));
 }
 
 #ifdef _DEBUG
@@ -4692,12 +4872,11 @@ static void Command_Togglemodified_f(void)
 	modifiedgame = !modifiedgame;
 }
 
-extern UINT8 *save_p;
 static void Command_Archivetest_f(void)
 {
-	UINT8 *buf;
 	UINT32 i, wrote;
 	thinker_t *th;
+	save_t savebuffer;
 	if (gamestate != GS_LEVEL)
 	{
 		CONS_Printf("This command only works in-game, you dummy.\n");
@@ -4711,28 +4890,29 @@ static void Command_Archivetest_f(void)
 			((mobj_t *)th)->mobjnum = i++;
 
 	// allocate buffer
-	buf = save_p = ZZ_Alloc(1024);
+	savebuffer.size = 1024;
+	savebuffer.buf = malloc(savebuffer.size);
+	savebuffer.pos = 0;
 
 	// test archive
 	CONS_Printf("LUA_Archive...\n");
-	LUA_Archive();
-	WRITEUINT8(save_p, 0x7F);
-	wrote = (UINT32)(save_p-buf);
+	LUA_Archive(&savebuffer);
+	P_WriteUINT8(&savebuffer, 0x7F);
+	wrote = savebuffer.pos;
 
 	// clear Lua state, so we can really see what happens!
 	CONS_Printf("Clearing state!\n");
 	LUA_ClearExtVars();
 
 	// test unarchive
-	save_p = buf;
 	CONS_Printf("LUA_UnArchive...\n");
-	LUA_UnArchive();
-	i = READUINT8(save_p);
-	if (i != 0x7F || wrote != (UINT32)(save_p-buf))
-		CONS_Printf("Savegame corrupted. (write %u, read %u)\n", wrote, (UINT32)(save_p-buf));
+	LUA_UnArchive(&savebuffer);
+	i = P_ReadUINT8(&savebuffer);
+	if (i != 0x7F || wrote != (UINT32)(savebuffer.pos))
+		CONS_Printf("Savegame corrupted. (write %u, read %u)\n", wrote, (UINT32)(savebuffer.pos));
 
 	// free buffer
-	Z_Free(buf);
+	free(savebuffer.buf);
 	CONS_Printf("Done. No crash.\n");
 }
 #endif
@@ -4772,7 +4952,7 @@ static void ForceSkin_OnChange(void)
 	}
 	else
 	{
-		CONS_Printf("The server is restricting all players to skin \"%s\".\n",skins[cv_forceskin.value].name);
+		CONS_Printf("The server is restricting all players to skin \"%s\".\n",skins[cv_forceskin.value]->name);
 		if (Playing())
 			ForceAllSkins(cv_forceskin.value);
 	}
@@ -4781,7 +4961,7 @@ static void ForceSkin_OnChange(void)
 //Allows the player's name to be changed if cv_mute is off.
 static void Name_OnChange(void)
 {
-	if (cv_mute.value && !(server || IsPlayerAdmin(consoleplayer)))
+	if ((cv_mute.value || players[consoleplayer].muted) && !(server || IsPlayerAdmin(consoleplayer)))
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("You may not change your name when chat is muted.\n"));
 		CV_StealthSet(&cv_playername, player_names[consoleplayer]);
@@ -4792,7 +4972,7 @@ static void Name_OnChange(void)
 
 static void Name2_OnChange(void)
 {
-	if (cv_mute.value) //Secondary player can't be admin.
+	if (cv_mute.value || players[consoleplayer].muted) //Secondary player can't be admin.
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("You may not change your name when chat is muted.\n"));
 		CV_StealthSet(&cv_playername2, player_names[secondarydisplayplayer]);
@@ -4803,18 +4983,21 @@ static void Name2_OnChange(void)
 
 static boolean Skin_CanChange(const char *valstr)
 {
-	(void)valstr;
-
 	if (!Playing())
 		return true; // do whatever you want
+
+	// You already are that skin.
+	if (stricmp(skins[players[consoleplayer].skin]->name, valstr) == 0)
+		return false;
 
 	if (!(multiplayer || netgame)) // In single player.
 		return true;
 
+#if 1
 	// STAR STUFF: let us move and change skins and junk //
 	if (TSoURDt3rd_P_MovingPlayerSetup(consoleplayer))
 		return true;
-	// DONE! //
+#endif
 
 	if (CanChangeSkin(consoleplayer) && !P_PlayerMoving(consoleplayer))
 		return true;
@@ -4827,15 +5010,18 @@ static boolean Skin_CanChange(const char *valstr)
 
 static boolean Skin2_CanChange(const char *valstr)
 {
-	(void)valstr;
-
 	if (!Playing() || !splitscreen)
 		return true; // do whatever you want
 
+	// You already are that skin.
+	if (stricmp(skins[players[secondarydisplayplayer].skin]->name, valstr) == 0)
+		return false;
+
+#if 1
 	// STAR STUFF: let the other player move and change skins and junk too //
 	if (TSoURDt3rd_P_MovingPlayerSetup(secondarydisplayplayer))
 		return true;
-	// DONE! //
+#endif
 
 	if (CanChangeSkin(secondarydisplayplayer) && !P_PlayerMoving(secondarydisplayplayer))
 		return true;
@@ -4862,7 +5048,7 @@ static void Skin_OnChange(void)
 		if (!(cv_debug || devparm)
 		&& (gamestate != GS_WAITINGPLAYERS)) // allows command line -warp x +skin y
 		{
-			CV_StealthSet(&cv_skin, skins[players[consoleplayer].skin].name);
+			CV_StealthSet(&cv_skin, skins[players[consoleplayer].skin]->name);
 			return;
 		}
 
@@ -4931,7 +5117,10 @@ static void Color_OnChange(void)
 	}
 	lastgoodcolor = cv_playercolor.value;
 
-	TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor(0); // STAR STUFF: does fun controller light junk //
+#if 1
+	// STAR STUFF: does fun controller light junk //
+	TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor(0);
+#endif
 }
 
 /** Sends a color change for the secondary splitscreen player, unless that
@@ -4966,7 +5155,10 @@ static void Color2_OnChange(void)
 	}
 	lastgoodcolor2 = cv_playercolor2.value;
 
-	TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor(1); // STAR STUFF: our fun splitscreen controller junk //
+#if 1
+	// STAR STUFF: our fun splitscreen controller junk //
+	TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor(1);
+#endif
 }
 
 /** Displays the result of the chat being muted or unmuted.

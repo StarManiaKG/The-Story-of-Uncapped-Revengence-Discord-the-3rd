@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|ARM">
@@ -318,20 +318,9 @@
     <ClInclude Include="..\hardware\hw_md2load.h" />
     <ClInclude Include="..\hardware\hw_md3load.h" />
     <ClInclude Include="..\hardware\hw_model.h" />
-    <ClInclude Include="..\STAR\menus\smkg-m_sys.h" />
-    <ClInclude Include="..\STAR\parser\smkg-ps_main.h" />
-    <ClInclude Include="..\STAR\p_saveg.h" />
-    <ClInclude Include="..\STAR\p_user.h" />
-    <ClInclude Include="..\STAR\smkg-cvars.h" />
-    <ClInclude Include="..\STAR\smkg-jukebox.h" />
-    <ClInclude Include="..\STAR\smkg-v_video.h" />
-    <ClInclude Include="..\STAR\ss_main.h" />
-    <ClInclude Include="..\STAR\star_vars.h" />
-    <ClInclude Include="..\STAR\star_webinfo.h" />
     <ClInclude Include="..\u_list.h" />
     <ClInclude Include="..\hu_stuff.h" />
     <ClInclude Include="..\info.h" />
-    <ClInclude Include="..\i_addrinfo.h" />
     <ClInclude Include="..\i_joy.h" />
     <ClInclude Include="..\i_net.h" />
     <ClInclude Include="..\i_sound.h" />
@@ -365,8 +354,24 @@
     <ClInclude Include="..\m_tokenizer.h" />
     <ClInclude Include="..\m_perfstats.h" />
     <ClInclude Include="..\m_queue.h" />
+    <ClInclude Include="..\m_vector.h" />
     <ClInclude Include="..\m_random.h" />
     <ClInclude Include="..\m_swap.h" />
+    <ClInclude Include="..\netcode\client_connection.h" />
+    <ClInclude Include="..\netcode\commands.h" />
+    <ClInclude Include="..\netcode\d_clisrv.h" />
+    <ClInclude Include="..\netcode\d_net.h" />
+    <ClInclude Include="..\netcode\d_netcmd.h" />
+    <ClInclude Include="..\netcode\d_netfil.h" />
+    <ClInclude Include="..\netcode\gamestate.h" />
+    <ClInclude Include="..\netcode\i_addrinfo.h" />
+    <ClInclude Include="..\netcode\i_net.h" />
+    <ClInclude Include="..\netcode\i_tcp.h" />
+    <ClInclude Include="..\netcode\mserv.h" />
+    <ClInclude Include="..\netcode\net_command.h" />
+    <ClInclude Include="..\netcode\protocol.h" />
+    <ClInclude Include="..\netcode\server_connection.h" />
+    <ClInclude Include="..\netcode\tic_command.h" />
     <ClInclude Include="..\p5prof.h" />
     <ClInclude Include="..\p_local.h" />
     <ClInclude Include="..\p_maputl.h" />
@@ -397,6 +402,7 @@
     <ClInclude Include="..\r_state.h" />
     <ClInclude Include="..\r_textures.h" />
     <ClInclude Include="..\r_things.h" />
+    <ClInclude Include="..\r_translation.h" />
     <ClInclude Include="..\screen.h" />
     <ClInclude Include="..\snake.h" />
     <ClInclude Include="..\sounds.h" />
@@ -413,6 +419,16 @@
     <ClInclude Include="i_ttf.h" />
     <ClInclude Include="ogl_sdl.h" />
     <ClInclude Include="sdlmain.h" />
+    <ClInclude Include="..\STAR\menus\smkg-m_sys.h" />
+    <ClInclude Include="..\STAR\parser\smkg-ps_main.h" />
+    <ClInclude Include="..\STAR\p_saveg.h" />
+    <ClInclude Include="..\STAR\p_user.h" />
+    <ClInclude Include="..\STAR\smkg-cvars.h" />
+    <ClInclude Include="..\STAR\smkg-jukebox.h" />
+    <ClInclude Include="..\STAR\smkg-v_video.h" />
+    <ClInclude Include="..\STAR\ss_main.h" />
+    <ClInclude Include="..\STAR\star_vars.h" />
+    <ClInclude Include="..\STAR\star_webinfo.h" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\tmap.nas">
@@ -441,6 +457,7 @@
     <ClCompile Include="..\blua\lauxlib.c" />
     <ClCompile Include="..\blua\lbaselib.c" />
     <ClCompile Include="..\blua\lcode.c" />
+    <ClCompile Include="..\blua\ldblib.c" />
     <ClCompile Include="..\blua\ldebug.c" />
     <ClCompile Include="..\blua\ldo.c" />
     <ClCompile Include="..\blua\ldump.c" />
@@ -471,11 +488,7 @@
     <ClCompile Include="..\deh_soc.c" />
     <ClCompile Include="..\deh_lua.c" />
     <ClCompile Include="..\deh_tables.c" />
-    <ClCompile Include="..\d_clisrv.c" />
     <ClCompile Include="..\d_main.c" />
-    <ClCompile Include="..\d_net.c" />
-    <ClCompile Include="..\d_netcmd.c" />
-    <ClCompile Include="..\d_netfil.c" />
     <ClCompile Include="..\filesrch.c" />
     <ClCompile Include="..\f_finale.c" />
     <ClCompile Include="..\f_wipe.c" />
@@ -496,24 +509,11 @@
     <ClCompile Include="..\hardware\hw_model.c" />
     <ClCompile Include="..\hardware\hw_shaders.c" />
     <ClCompile Include="..\hardware\r_opengl\r_opengl.c" />
+    <ClCompile Include="..\lua_colorlib.c" />
     <ClCompile Include="..\r_bbox.c" />
-    <ClCompile Include="..\STAR\events\smkg-aprilfools.c">
-    <ClCompile Include="..\STAR\events\smkg-easter.c">
-    <ClCompile Include="..\STAR\m_menu.c">
-    <ClCompile Include="..\STAR\parser\smkg-ps_main.c">
-    <ClCompile Include="..\STAR\p_user.c">
-    <ClCompile Include="..\STAR\smkg-cvars.c">
-    <ClCompile Include="..\STAR\smkg-jukebox.c">
-    <ClCompile Include="..\STAR\smkg-p_saveg.c">
-    <ClCompile Include="..\STAR\ss_main.c">
-    <ClCompile Include="..\STAR\star_functions.c">
     <ClCompile Include="..\u_list.c" />
     <ClCompile Include="..\hu_stuff.c" />
     <ClCompile Include="..\info.c" />
-    <ClCompile Include="..\i_addrinfo.c">
-      <ExcludedFromBuild>true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="..\i_tcp.c" />
     <ClCompile Include="..\i_time.c" />
     <ClCompile Include="..\lua_baselib.c" />
     <ClCompile Include="..\lua_blockmaplib.c" />
@@ -523,6 +523,7 @@
     <ClCompile Include="..\lua_hudlib_drawlist.c" />
     <ClCompile Include="..\lua_infolib.c" />
     <ClCompile Include="..\lua_inputlib.c" />
+	<ClCompile Include="..\lua_interceptlib.c" />
     <ClCompile Include="..\lua_maplib.c" />
     <ClCompile Include="..\lua_mathlib.c" />
     <ClCompile Include="..\lua_mobjlib.c" />
@@ -534,8 +535,6 @@
     <ClCompile Include="..\lua_thinkerlib.c" />
     <ClCompile Include="..\lzf.c" />
     <ClCompile Include="..\md5.c" />
-    <ClCompile Include="..\mserv.c" />
-    <ClCompile Include="..\http-mserv.c" />
     <ClCompile Include="..\m_aatree.c" />
     <ClCompile Include="..\m_anigif.c" />
     <ClCompile Include="..\m_argv.c" />
@@ -549,7 +548,24 @@
     <ClCompile Include="..\m_tokenizer.c" />
     <ClCompile Include="..\m_perfstats.c" />
     <ClCompile Include="..\m_queue.c" />
+    <ClCompile Include="..\m_vector.c" />
     <ClCompile Include="..\m_random.c" />
+    <ClCompile Include="..\netcode\client_connection.c" />
+    <ClCompile Include="..\netcode\commands.c" />
+    <ClCompile Include="..\netcode\d_clisrv.c" />
+    <ClCompile Include="..\netcode\d_net.c" />
+    <ClCompile Include="..\netcode\d_netcmd.c" />
+    <ClCompile Include="..\netcode\d_netfil.c" />
+    <ClCompile Include="..\netcode\gamestate.c" />
+    <ClCompile Include="..\netcode\http-mserv.c" />
+    <ClCompile Include="..\netcode\i_addrinfo.c">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\netcode\i_tcp.c" />
+    <ClCompile Include="..\netcode\mserv.c" />
+    <ClCompile Include="..\netcode\net_command.c" />
+    <ClCompile Include="..\netcode\server_connection.c" />
+    <ClCompile Include="..\netcode\tic_command.c" />
     <ClCompile Include="..\p_ceilng.c" />
     <ClCompile Include="..\p_enemy.c" />
     <ClCompile Include="..\p_floor.c" />
@@ -570,9 +586,6 @@
     <ClCompile Include="..\r_bsp.c" />
     <ClCompile Include="..\r_data.c" />
     <ClCompile Include="..\r_draw.c" />
-    <ClCompile Include="..\r_draw16.c">
-      <ExcludedFromBuild>true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="..\r_draw8.c">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
@@ -592,6 +605,7 @@
     <ClCompile Include="..\r_splats.c" />
     <ClCompile Include="..\r_textures.c" />
     <ClCompile Include="..\r_things.c" />
+    <ClCompile Include="..\r_translation.c" />
     <ClCompile Include="..\screen.c" />
     <ClCompile Include="..\snake.c" />
     <ClCompile Include="..\sounds.c" />
@@ -632,6 +646,16 @@
     <ClCompile Include="ogl_sdl.c" />
     <ClCompile Include="SDL_main\SDL_windows_main.c" />
     <ClCompile Include="sdl_sound.c" />
+    <ClCompile Include="..\STAR\events\smkg-aprilfools.c">
+    <ClCompile Include="..\STAR\events\smkg-easter.c">
+    <ClCompile Include="..\STAR\m_menu.c">
+    <ClCompile Include="..\STAR\parser\smkg-ps_main.c">
+    <ClCompile Include="..\STAR\p_user.c">
+    <ClCompile Include="..\STAR\smkg-cvars.c">
+    <ClCompile Include="..\STAR\smkg-jukebox.c">
+    <ClCompile Include="..\STAR\smkg-p_saveg.c">
+    <ClCompile Include="..\STAR\ss_main.c">
+    <ClCompile Include="..\STAR\star_functions.c">
   </ItemGroup>
   <ItemGroup>
     <Image Include="Srb2SDL.ico" />
