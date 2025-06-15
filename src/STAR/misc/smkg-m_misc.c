@@ -6,7 +6,7 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  smkg-misc.c
+/// \file  smkg-m_misc.c
 /// \brief Commonly used manipulation routines
 
 #include <stdio.h>
@@ -21,14 +21,14 @@
 #define	S_ISDIR(m)	(((m) & S_IFMT) == S_IFDIR)
 #endif
 
-#include "smkg-misc.h"
-#include "smkg-cvars.h"
-#include "ss_main.h"
+#include "smkg-m_misc.h"
+#include "../smkg-cvars.h"
+#include "../ss_main.h"
 
-#include "../d_main.h"
-#include "../g_game.h"
-#include "../i_system.h"
-#include "../m_misc.h"
+#include "../../d_main.h"
+#include "../../g_game.h"
+#include "../../i_system.h"
+#include "../../m_misc.h"
 
 // ------------------------ //
 //        Variables
@@ -108,17 +108,17 @@ INT32 TSoURDt3rd_M_FindWordInTermTable(const char *const *term_table, const char
 }
 
 //
-// char *TSoURDt3rd_M_WriteVariedLengthString(char *string, boolean decatenate)
-// Returns a string with a varied length, one that can fit TSoURDt3rd_M_StartMessage().
+// char *TSoURDt3rd_M_WriteVariedLengthString(char *string, boolean decate)
+// Returns a string with a varied length.
 //
-char *TSoURDt3rd_M_WriteVariedLengthString(char *string, boolean decatenate)
+char *TSoURDt3rd_M_WriteVariedLengthString(char *string, UINT32 decate_len, boolean decate)
 {
 	UINT32 len;
-	const UINT32 len_to_decentate = 54;
+	const UINT32 len_to_decentate = decate_len;
 	static char header[1024];
 
 	strlcpy(header, string, 1024);
-	if (decatenate == false)
+	if (decate == false)
 	{
 		// We've done everything we needed to.
 		return header;
@@ -127,7 +127,7 @@ char *TSoURDt3rd_M_WriteVariedLengthString(char *string, boolean decatenate)
 	len = strlen(header);
 	if (len > len_to_decentate)
 	{
-		len = len-len_to_decentate;
+		len = (len - len_to_decentate);
 		header[len] = header[len+1] = header[len+2] = '.';
 	}
 	else
@@ -319,6 +319,7 @@ void TSoURDt3rd_FIL_CreateSavefileProperly(void)
 	if (netgame)
 		return;
 
+	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "CREATING SAVEFILE\n");
 #if 0
 	memset(savegamename, 0, sizeof(savegamename));
 	memset(liveeventbackup, 0, sizeof(liveeventbackup));

@@ -1,18 +1,18 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  smkg-misc.h
-/// \brief Commonly used manipulation routines, globally initalized
+/// \file  smkg-m_misc.h
+/// \brief Commonly used manipulation routines, globalized
 
-#ifndef __SMKG_MISC__
-#define __SMKG_MISC__
+#ifndef __SMKG_M_MISC__
+#define __SMKG_M_MISC__
 
-#include "../doomstat.h"
+#include "../../doomstat.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,7 +37,7 @@ extern char tsourdt3rd_savefiles_folder[256];
 
 char *TSoURDt3rd_M_RemoveStringChars(char *string, const char *c);
 INT32 TSoURDt3rd_M_FindWordInTermTable(const char *const *term_table, const char *word, INT32 search_types);
-char *TSoURDt3rd_M_WriteVariedLengthString(char *string, boolean decatenate);
+char *TSoURDt3rd_M_WriteVariedLengthString(char *string, UINT32 decate_len, boolean decate);
 
 const char *TSoURDt3rd_FOL_ReturnHomepath(void);
 boolean TSoURDt3rd_FOL_DirectoryExists(const char *directory);
@@ -53,4 +53,4 @@ void TSoURDt3rd_FIL_CreateSavefileProperly(void);
 } // extern "C"
 #endif
 
-#endif // __SMKG_MISC__
+#endif // __SMKG_M_MISC__

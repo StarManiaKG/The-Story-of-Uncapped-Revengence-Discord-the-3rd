@@ -6,47 +6,24 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  smkg-misc_purefat.c
-/// \brief Pure Fat intro 2.2.7+ compatibility layer
+/// \file  smkg-intros-purefat.c
+/// \brief Pure Fat intro (from SRB2 versions pre-2.2.7)
 
-#include "smkg-misc_purefat.h"
-#include "smkg-cvars.h"
+#include "../smkg-m_intro.h"
 
-#include "../f_finale.h"
-#include "../s_sound.h"
-#include "../w_wad.h"
-#include "../z_zone.h"
+#include "../../../s_sound.h"
+#include "../../../w_wad.h"
+#include "../../../z_zone.h"
 
 // ------------------------ //
 //        Functions
 // ------------------------ //
 
 //
-// void STAR_F_StartIntro(tic_t *introtime)
-// Sets intro times for Pure Fat intro compatibility.
-//
-void STAR_F_StartIntro(tic_t *introtime)
-{
-	switch (cv_tsourdt3rd_game_startup_intro.value)
-	{
-		case 0: // 'STJr Presents' Intro
-			introtime[0] = 6*TICRATE;
-			break;
-
-		case 1: // 'Pure Fat' Intro
-			introtime[0] = (7*TICRATE + (TICRATE/2));
-			break;
-
-		default:
-			break;
-	}
-}
-
-//
-// void STAR_F_PureFatDrawer(char *stjrintro, patch_t *background, void *patch, INT32 intro_scenenum, INT32 bgxoffs)
+// boolean STAR_F_PureFatDrawer(char *stjrintro, patch_t *background, void *patch, INT32 intro_scenenum, INT32 bgxoffs)
 // Draws the Pure Fat intro.
 //
-void STAR_F_PureFatDrawer(char *stjrintro, patch_t *background, void *patch, INT32 intro_scenenum, INT32 bgxoffs)
+boolean STAR_F_PureFatDrawer(char *stjrintro, patch_t *background, void *patch, INT32 intro_scenenum, INT32 bgxoffs)
 {
 	if (intro_scenenum == 0)
 	{
@@ -145,15 +122,19 @@ void STAR_F_PureFatDrawer(char *stjrintro, patch_t *background, void *patch, INT
 			background = W_CachePatchName(stjrintro, PU_PATCH_LOWPRIORITY);
 			V_DrawSmallScaledPatch(bgxoffs, 84, 0, background);
 		}
+		return true;
 	}
+	return false;
 }
 
 //
-// void STAR_F_PureFatTicker(INT32 intro_scenenum, INT32 intro_curtime, INT32 animtimer)
+// boolean STAR_F_PureFatTicker(INT32 intro_scenenum, INT32 intro_curtime, INT32 animtimer, INT32 next_time)
 // Tick routine for the Pure Fat intro.
 //
-void STAR_F_PureFatTicker(INT32 intro_scenenum, INT32 intro_curtime, INT32 animtimer)
+boolean STAR_F_PureFatTicker(INT32 intro_scenenum, INT32 intro_curtime, INT32 animtimer, INT32 next_time)
 {
+	INT32 wuh = intro_curtime;
+
 	if ((intro_scenenum == 5 && intro_curtime == 5*TICRATE)
 		|| (intro_scenenum == 7 && intro_curtime == 6*TICRATE)
 		//|| (intro_scenenum == 11 && intro_curtime == 7*TICRATE)
@@ -170,4 +151,7 @@ void STAR_F_PureFatTicker(INT32 intro_scenenum, INT32 intro_curtime, INT32 animt
 
 	if (animtimer)
 		animtimer--;
+
+	wuh = (7*TICRATE + (TICRATE/2)) - next_time;
+	return (intro_scenenum == 0 && (wuh < ((7*TICRATE + (TICRATE/2)))));
 }
