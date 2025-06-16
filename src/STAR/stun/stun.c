@@ -26,9 +26,9 @@
 #include "../netcode/drrr-m_swap.h" // MSBF_SHORT & MSBF_LONG //
 
 #include "../../doomdef.h"
-#include "../../d_clisrv.h"
 #include "../../command.h"
-#include "../../i_net.h"
+#include "../../netcode/d_clisrv.h"
+#include "../../netcode/i_net.h"
 #include "stun.h"
 
 /* https://gist.github.com/zziuni/3741933 */

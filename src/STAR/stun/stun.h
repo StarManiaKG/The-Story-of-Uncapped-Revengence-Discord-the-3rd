@@ -20,6 +20,8 @@ extern "C" {
 
 typedef void (*stun_callback_t)(UINT32 address);
 
+extern consvar_t cv_stunserver;
+
 void    csprng (void * const buffer, const size_t size);
 
 void    STUN_bind (stun_callback_t);
