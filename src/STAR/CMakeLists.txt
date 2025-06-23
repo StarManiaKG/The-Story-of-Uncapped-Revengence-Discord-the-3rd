@@ -2,8 +2,6 @@ target_sources(SRB2SDL2 PRIVATE
 	ss_main.c
 	smkg-cvars.c
 	smkg_g_inputs.c
-	smkg-misc.c
-	smkg-misc_purefat.c
 	smkg-jukebox.c
 	smkg-p_saveg.c
 	smkg-st_hud.c
@@ -25,9 +23,10 @@ target_sources(SRB2SDL2 PRIVATE
 	lights/smkg-hw_coronas.c
 	lua/smkg-lu_base.c
 	lua/smkg-lu_script.c
-	menus/smkg_m_func.c
-	menus/smkg_m_draw.c
-	menus/menudefs/smkg-addons-menu.c
+	menus/smkg-m_func.c
+	menus/smkg-m_draw.c
+	menus/menudefs/smkg-addons.c
+	menus/menudefs/smkg-multi-connection.c
 	menus/menudefs/smkg-multi-playersetup.c
 	menus/menudefs/smkg-options-discord.c
 	menus/menudefs/smkg-options-tsourdt3rd.c
@@ -48,6 +47,9 @@ target_sources(SRB2SDL2 PRIVATE
 	menus/menudefs/transient/drrr-virtual-keyboard.c
 	menus/menudefs/transient/smkg-options-tsourdt3rd-extras-jukebox.c
 	menus/menudefs/transient/smkg-options-tsourdt3rd-extras-snake.c
+	misc/smkg-m_misc.c
+	misc/smkg-m_intro.c
+	misc/introdefs/smkg-intros-purefat.c
 	netcode/smkg-d_clisrv.c
 	netcode/smkg-i_protocol.c
 	parser/smkg-ps_main.c
