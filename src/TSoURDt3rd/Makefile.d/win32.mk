@@ -1,37 +1,36 @@
-#
-# Mingw, if you still don't know, that's Win32/Win64
-# Except now it also includes cool TSoURDt3rd stuff too :)
-#
+##
+## Mingw, if you still don't know, that's Win32/Win64
+## Except now it also includes cool TSoURDt3rd stuff too :)
+##
+## Copyright 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
+##
+## Library configuration flags:
+## Everything here is an override.
+##
+## DISCORD_RPC_CFLAGS=, DISCORD_RPC_LDFLAGS=
+## DISCORD_GAME_SDK_CFLAGS=, DISCORD_GAME_SDK_LDFLAGS=
+## LIBAV_CFLAGS=, LIBAV_LDFLAGS=
 
-ifdef DISCORD_RPC
-  ifdef MINGW64
-    opts+=-I../libs/discord-rpc/win64-dynamic/include
-    libs+=-L../libs/discord-rpc/win64-dynamic/lib
-  else
-    opts+=-I../libs/discord-rpc/win32-dynamic/include
-    libs+=-L../libs/discord-rpc/win32-dynamic/lib
-  endif
-  libs+=-ldiscord-rpc
+ifdef HAVE_DISCORDRPC
+  lib:=../libs/discord-rpc/win$(32)-dynamic
+  DISCORD_RPC_opts:=-I$(lib)/include
+  DISCORD_RPC_libs:=-L$(lib)/lib
+  $(eval $(call _set,DISCORD_RPC))
+  $(eval $(call Propogate_flags,DISCORD_RPC))
 endif
 
-ifdef DISCORD_GAMESDK
-  opts+=-I../libs/discord_game_sdk/include
-  ifdef MINGW64
-    libs+=-L../libs/discord_game_sdk/x86_64
-  else
-    libs+=-L../libs/discord_game_sdk/x86
-  endif
-  libs+=-ldiscord_game_sdk
+ifdef HAVE_DISCORDGAMESDK
+  lib:=../libs/discord_game_sdk
+  DISCORD_GAME_SDK_opts:=-I$(lib)/include
+  DISCORD_GAME_SDK_libs:=-L$(lib)/$(x86)
+  $(eval $(call _set,DISCORD_GAME_SDK))
+  $(eval $(call Propogate_flags,DISCORD_GAME_SDK))
 endif
 
 ifdef HAVE_LIBAV
-  ifdef MINGW64
-    opts+=-I../libs/libav/x86_64-w64-mingw32/include
-    libs+=-L../libs/libav/x86_64-w64-mingw32/lib
-  else
-    opts+=-I../libs/libav/i686-w64-mingw32/include
-    libs+=-L../libs/libav/i686-w64-mingw32/lib
-  endif
-  libs+=-lvfw32 -lws2_32 -lbcrypt -luser32
-  libs+=-lm -lz -lavcodec -lavdevice -lavfilter -lavformat -lavresample -lavutil -lswscale
+  lib:=../libs/libav/$(x86)-w64-mingw32
+  LIBAV_opts:=-I$(lib)/include
+  LIBAV_libs:=-L$(lib)/lib
+  $(eval $(call _set,LIBAV))
+  $(eval $(call Propogate_flags,LIBAV))
 endif
