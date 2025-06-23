@@ -409,7 +409,7 @@ void Command_connect(void)
 	// STAR STUFF: allow us to join servers from anywhere at any time //
 	if (Playing() || titledemo)
 	{
-		M_ClearMenus(true);
+		//M_ClearMenus(true);
 		if (demoplayback && titledemo)
 			G_CheckDemoStatus();
 
