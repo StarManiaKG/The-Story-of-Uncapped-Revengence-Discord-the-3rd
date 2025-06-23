@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -10,6 +10,7 @@
 /// \brief TSoURDt3rd's control menu options
 
 #include "../smkg-m_sys.h"
+
 #include "../../../z_zone.h"
 
 // ------------------------ //
@@ -301,7 +302,7 @@ static void M_Sys_DrawControls(void)
 			12, ypos, V_ALLOWLOWERCASE|V_SNAPTOBOTTOM|V_MENUCOLORMAP, false
 		);
 
-		ypos -= (vid.dupy+4)*4;
+		ypos -= (vid.dup+4)*4;
 		xpos = (cv_usejoystick.value ?
 			M_Sys_DrawProfileLegend(xpos, ypos, "Clear", "BKSP/Fire/Y/Joy3") :
 			M_Sys_DrawProfileLegend(xpos, ypos, "Clear", "BKSP/Fire"));
@@ -514,6 +515,7 @@ static void M_Sys_SetControl(INT32 ch)
 // Map the event to the profile.
 void TSoURDt3rd_M_Controls_MapProfileControl(event_t *ev)
 {
+	const UINT8 pid = 0;
 	boolean noinput = true;
 	INT32 controln = 0;
 
@@ -568,7 +570,7 @@ void TSoURDt3rd_M_Controls_MapProfileControl(event_t *ev)
 		optionsmenu.bindtimer = 0;
 
 		// Set menu delay regardless of what we're doing to avoid stupid stuff.
-		TSoURDt3rd_M_SetMenuDelay(0);
+		TSoURDt3rd_M_SetMenuDelay(pid);
 	}
 	else
 		optionsmenu.bindtimer = -1; // prevent skip countdown

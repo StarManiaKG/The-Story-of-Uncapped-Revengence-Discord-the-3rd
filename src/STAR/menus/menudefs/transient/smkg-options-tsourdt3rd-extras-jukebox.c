@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2020-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2020-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -58,9 +58,6 @@ static fixed_t jb_hscale = FRACUNIT/2;
 static fixed_t jb_vscale = FRACUNIT/2;
 static fixed_t jb_bounce = 0;
 
-static menu_t *last_menu_reference = NULL;
-static tsourdt3rd_menu_t *last_tsourdt3rd_menu_reference = NULL;
-
 static void M_Sys_DrawJukebox(void);
 static void M_Sys_InitJukebox(void);
 static boolean M_Sys_HandleJukebox(INT32 choice);
@@ -111,7 +108,7 @@ tsourdt3rd_menu_t TSoURDt3rd_TM_OP_Extras_JukeboxDef = {
 	NULL,
 	NULL,
 	M_Sys_InitJukebox,
-	NULL,
+	TSoURDt3rd_M_Jukebox_Quit,
 	M_Sys_HandleJukebox,
 	&TSoURDt3rd_TM_OP_ExtrasDef
 };
@@ -348,9 +345,9 @@ static void M_Sys_DrawJukebox(void)
 		}
 	}
 
-	y = (BASEVIDWIDTH-(vid.width/vid.dupx))/2;
+	y = (BASEVIDWIDTH-(vid.width/vid.dup))/2;
 
-	V_DrawFill(y, 20, (vid.width/vid.dupx)+12, 24, 159);
+	V_DrawFill(y, 20, (vid.width/vid.dup)+12, 24, 159);
 	{
 		static fixed_t jb_scroll = -FRACUNIT;
 		const char* titl;
@@ -546,6 +543,246 @@ static void M_Sys_DrawJukebox(void)
 	}
 }
 
+static void M_Sys_InitJukebox(void)
+{
+	soundtestpage = (UINT8)(unlockables[skyRoomMenu_ul].variable);
+	if (!soundtestpage)
+		soundtestpage = 1;
+
+	if (jb_page == NULL)
+		jb_page = tsourdt3rd_jukeboxpages_start;
+
+	if (!TSoURDt3rd_Jukebox_Unlocked())
+	{
+		TSoURDt3rd_M_StartMessage(
+			"TSoURDt3rd Jukebox",
+			M_GetText("You haven't unlocked this yet!\nGo and unlock the sound test first!\n"),
+			NULL,
+			MM_NOTHING,
+			NULL,
+			NULL
+		);
+		return;
+	}
+	else if (!TSoURDt3rd_Jukebox_PrepareDefs())
+	{
+		TSoURDt3rd_M_StartMessage(
+			"TSoURDt3rd Jukebox",
+			M_GetText("No selectable tracks found.\n"),
+			NULL,
+			MM_NOTHING,
+			NULL,
+			NULL
+		);
+		return;
+	}
+	else if (!M_Sys_SetupNewJukeboxPage())
+	{
+		TSoURDt3rd_M_StartMessage(
+			"TSoURDt3rd Jukebox",
+			M_GetText("No jukebox pages found.\n"),
+			NULL,
+			MM_NOTHING,
+			NULL,
+			NULL
+		);
+		return;
+	}
+
+	M_Sys_CacheJukebox();
+
+	jb_cc = cv_closedcaptioning.value; // hack;
+	cv_closedcaptioning.value = 1; // hack
+
+	TSoURDt3rd_M_ResetOptions();
+}
+
+static boolean M_Sys_HandleJukebox(INT32 choice)
+{
+	const UINT8 pid = 0;
+	tsourdt3rd_jukeboxdef_t *cur_juke_def = tsourdt3rd_cur_page_jukebox_defs[jb_sel];
+
+	if (jb_draw_options)
+	{
+		if (TSoURDt3rd_M_MenuBackPressed(pid))
+		{
+			jb_draw_options = false;
+			TSoURDt3rd_M_SetMenuDelay(pid);
+			return true;
+		}
+		return false;
+	}
+
+	if (jb_handle_sfx)
+	{
+		if (menucmd[pid].dpad_lr < 0 || menucmd[pid].dpad_lr > 0) // left & right
+		{
+			tsourdt3rd_global_jukebox->track_tics = 0;
+			S_StopSounds();
+			S_StopMusic();
+			CV_AddValue(&cv_soundtest, ((menucmd[pid].dpad_lr > 0) ? 1 : -1)); // right, or left otherwise
+			TSoURDt3rd_M_SetMenuDelay(pid);
+		}
+		else if (TSoURDt3rd_M_MenuConfirmPressed(pid))
+		{
+			// S_StopMusic() -- is this necessary?
+			if (cv_soundtest.value)
+				S_StartSound(NULL, cv_soundtest.value);
+			tsourdt3rd_global_jukebox->track_tics = 0;
+		}
+		else if (TSoURDt3rd_M_MenuBackPressed(pid))
+		{
+			jb_handle_sfx = false;
+			jb_draw_controls_tip = false;
+			S_StopSounds();
+			S_StopMusic();
+			TSoURDt3rd_M_SetMenuDelay(pid);
+		}
+		return true;
+	}
+
+	switch (choice)
+	{
+		case KEY_PGUP:
+		case KEY_PGDN:
+			M_Sys_FindNewJukeboxTrack(choice);
+			cv_closedcaptioning.value = jb_cc; // hack
+			S_StartSound(NULL, sfx_menu1);
+			cv_closedcaptioning.value = 1; // hack
+			return true;
+		case KEY_TAB:
+			jb_draw_options = true;
+			return true;
+		default:
+			break;
+	}
+
+	if (menucmd[pid].dpad_ud > 0 || menucmd[pid].dpad_ud < 0) // down & up
+	{
+		{
+			cv_closedcaptioning.value = jb_cc; // hack
+			if (M_Sys_FindNewJukeboxTrack(menucmd[pid].dpad_ud)) // up = -1; +1 otherwise
+				S_StartSound(NULL, sfx_menu1);
+			else
+				S_StartSound(NULL, sfx_adderr);
+			cv_closedcaptioning.value = 1; // hack
+		}
+		TSoURDt3rd_M_SetMenuDelay(pid);
+		return true;
+	}
+	else if (menucmd[pid].dpad_lr < 0 || menucmd[pid].dpad_lr > 0) // left & right
+	{
+		if (cur_juke_def->linked_musicdef->allowed)
+		{
+			cv_closedcaptioning.value = jb_cc; // hack
+			if (M_Sys_FindNewJukeboxPage(menucmd[pid].dpad_lr < 0)) // left = -1; +1 otherwise
+				S_StartSound(NULL, sfx_menu1);
+			else
+				S_StartSound(NULL, sfx_adderr);
+			cv_closedcaptioning.value = 1; // hack
+		}
+		TSoURDt3rd_M_SetMenuDelay(pid);
+		return true;
+	}
+	else if (TSoURDt3rd_M_MenuExtraPressed(pid))
+	{
+		if (!TSoURDt3rd_Jukebox_IsPlaying())
+		{
+			S_StartSound(NULL, sfx_lose);
+			return true;
+		}
+
+		S_StopSounds();
+		S_StopMusic();
+
+		cv_closedcaptioning.value = jb_cc; // hack
+		S_StartSound(NULL, sfx_skid);
+		cv_closedcaptioning.value = 1; // hack
+
+		TSoURDt3rd_M_SetMenuDelay(pid);
+		return true;
+	}
+	else if (TSoURDt3rd_M_MenuConfirmPressed(pid))
+	{
+		S_StopSounds();
+		S_StopMusic();
+
+		TSoURDt3rd_M_SetMenuDelay(pid);
+
+		if (!cur_juke_def->linked_musicdef->allowed)
+		{
+			S_StartSound(NULL, sfx_lose);
+			TSoURDt3rd_S_RefreshMusic();
+			return true;
+		}
+
+		if (cur_juke_def == &jukebox_def_soundtestsfx)
+		{
+			jb_controls_trans = 0;
+			jb_controls_ticker = 0;
+			jb_draw_controls_tip = true;
+			jb_handle_sfx = true;
+			return true;
+		}
+
+		TSoURDt3rd_Jukebox_Play(cur_juke_def->linked_musicdef);
+		return true;
+	}
+	else if (TSoURDt3rd_M_MenuBackPressed(pid))
+	{
+		TSoURDt3rd_M_SetupNextMenu(tsourdt3rd_prevMenu, vanilla_prevMenu, false);
+		TSoURDt3rd_M_SetMenuDelay(pid);
+		return true;
+	}
+
+	return false;
+}
+
+void TSoURDt3rd_M_Jukebox_Init(INT32 choice)
+{
+	if (tsourdt3rd_global_jukebox == NULL || tsourdt3rd_jukebox_available_pages == NULL)
+	{
+		// Jukebox definition thing is NULL, so don't go any further.
+		TSoURDt3rd_M_StartMessage(
+			"TSoURDt3rd Jukebox",
+			M_GetText("The data needed for the jukebox wasn't initialized.\n"),
+			NULL,
+			MM_NOTHING,
+			NULL,
+			NULL
+		);
+		S_StartSound(NULL, sfx_lose);
+		return;
+	}
+	else if (currentMenu == &TSoURDt3rd_OP_Extras_JukeboxDef)
+	{
+		// Please don't go to the same menu twice.
+		return;
+	}
+	else if (TSoURDt3rd_M_DoesMenuHaveKeyHandler() > 0)
+	{
+		// Let's not be doing or reading something potentially important before we access the Jukebox, mmk?
+		return;
+	}
+
+	memset(tsourdt3rd_skyRoomMenuTranslations, 0, sizeof(tsourdt3rd_skyRoomMenuTranslations));
+	M_Sys_UpdateUnlocks(tsourdt3rd_skyRoomMenuTranslations);
+	skyRoomMenu_ul = tsourdt3rd_skyRoomMenuTranslations[choice-1];
+
+	// When using the jukebox keybind, this prevents the game from crashing!
+	if (tsourdt3rd_prevMenu != NULL)
+		TSoURDt3rd_TM_OP_Extras_JukeboxDef.music = tsourdt3rd_prevMenu->music;
+
+	TSoURDt3rd_M_SetupNextMenu(&TSoURDt3rd_TM_OP_Extras_JukeboxDef, &TSoURDt3rd_OP_Extras_JukeboxDef, false);
+	if (vanilla_prevMenu == &TSoURDt3rd_OP_Extras_JukeboxDef)
+		TSoURDt3rd_OP_Extras_JukeboxDef.lastOn = 0;
+
+	optionsmenu.ticker = 0;
+	TSoURDt3rd_M_OptionsTick();
+
+	tsourdt3rd_global_jukebox->in_menu = true;
+}
+
 void TSoURDt3rd_M_Jukebox_Ticker(void)
 {
 	const UINT8 frame[4] = {0, 0, -1, SKINCOLOR_RUBY};
@@ -615,275 +852,21 @@ void TSoURDt3rd_M_Jukebox_Ticker(void)
 		tsourdt3rd_global_jukebox->track_tics += renderdeltatics * ((S_GetSpeedMusic() > 0.0f) ? S_GetSpeedMusic() : 1.0f);
 }
 
-static void M_Sys_InitJukebox(void)
+boolean TSoURDt3rd_M_Jukebox_Quit(void)
 {
-	soundtestpage = (UINT8)(unlockables[skyRoomMenu_ul].variable);
-	if (!soundtestpage)
-		soundtestpage = 1;
+	Z_Free(tsourdt3rd_jukebox_defs);
+	tsourdt3rd_jukebox_defs = NULL;
 
-	if (jb_page == NULL)
-		jb_page = tsourdt3rd_jukeboxpages_start;
+	Z_Free(tsourdt3rd_cur_page_jukebox_defs);
+	tsourdt3rd_cur_page_jukebox_defs = NULL;
 
-	if (!TSoURDt3rd_Jukebox_Unlocked())
-	{
-		TSoURDt3rd_M_StartMessage(
-			"TSoURDt3rd Jukebox",
-			M_GetText("You haven't unlocked this yet!\nGo and unlock the sound test first!\n"),
-			NULL,
-			MM_NOTHING,
-			NULL,
-			NULL
-		);
-		return;
-	}
-	else if (!TSoURDt3rd_Jukebox_PrepareDefs())
-	{
-		TSoURDt3rd_M_StartMessage(
-			"TSoURDt3rd Jukebox",
-			M_GetText("No selectable tracks found.\n"),
-			NULL,
-			MM_NOTHING,
-			NULL,
-			NULL
-		);
-		return;
-	}
-	else if (!M_Sys_SetupNewJukeboxPage())
-	{
-		TSoURDt3rd_M_StartMessage(
-			"TSoURDt3rd Jukebox",
-			M_GetText("No jukebox pages found.\n"),
-			NULL,
-			MM_NOTHING,
-			NULL,
-			NULL
-		);
-		return;
-	}
+	cv_closedcaptioning.value = jb_cc; // undo hack
 
-	M_Sys_CacheJukebox();
+	jb_page_playable_tracks = 0;
+	jb_draw_controls_tip = false;
+	jb_controls_trans = 0;
+	jb_controls_ticker = 0;
 
-	jb_cc = cv_closedcaptioning.value; // hack;
-	cv_closedcaptioning.value = 1; // hack
-
-	TSoURDt3rd_M_ResetOptions();
-}
-
-static boolean M_Sys_HandleJukebox(INT32 choice)
-{
-	tsourdt3rd_jukeboxdef_t *cur_juke_def = tsourdt3rd_cur_page_jukebox_defs[jb_sel];
-	const UINT8 pid = 0;
-
-	if (jb_draw_options)
-	{
-		if (TSoURDt3rd_M_MenuBackPressed(pid))
-		{
-			jb_draw_options = false;
-			TSoURDt3rd_M_SetMenuDelay(pid);
-			return true;
-		}
-		return false;
-	}
-
-	if (jb_handle_sfx)
-	{
-		if (menucmd[pid].dpad_lr < 0 || menucmd[pid].dpad_lr > 0) // left & right
-		{
-			tsourdt3rd_global_jukebox->track_tics = 0;
-			S_StopSounds();
-			S_StopMusic();
-			CV_AddValue(&cv_soundtest, ((menucmd[pid].dpad_lr > 0) ? 1 : -1)); // right, or left otherwise
-		}
-		else if (TSoURDt3rd_M_MenuConfirmPressed(pid))
-		{
-			// S_StopMusic() -- is this necessary?
-			if (cv_soundtest.value)
-				S_StartSound(NULL, cv_soundtest.value);
-			tsourdt3rd_global_jukebox->track_tics = 0;
-		}
-		else if (TSoURDt3rd_M_MenuBackPressed(pid))
-		{
-			jb_handle_sfx = false;
-			jb_draw_controls_tip = false;
-			S_StopSounds();
-			S_StopMusic();
-			TSoURDt3rd_M_SetMenuDelay(pid);
-		}
-		return true;
-	}
-
-	switch (choice)
-	{
-		case KEY_PGUP:
-		case KEY_PGDN:
-		{
-			M_Sys_FindNewJukeboxTrack(choice);
-			cv_closedcaptioning.value = jb_cc; // hack
-			S_StartSound(NULL, sfx_menu1);
-			cv_closedcaptioning.value = 1; // hack
-			return true;
-		}
-		case KEY_TAB:
-			jb_draw_options = true;
-			return true;
-		default:
-			break;
-	}
-
-	if (menucmd[pid].dpad_ud > 0 || menucmd[pid].dpad_ud < 0) // down & up
-	{
-		cv_closedcaptioning.value = jb_cc; // hack
-		if (M_Sys_FindNewJukeboxTrack(menucmd[pid].dpad_ud)) // up = -1; +1 otherwise
-			S_StartSound(NULL, sfx_menu1);
-		else
-			S_StartSound(NULL, sfx_adderr);
-		cv_closedcaptioning.value = 1; // hack
-		return true;
-	}
-	else if (menucmd[pid].dpad_lr < 0 || menucmd[pid].dpad_lr > 0) // left & right
-	{
-		if (cur_juke_def->linked_musicdef->allowed)
-		{
-			cv_closedcaptioning.value = jb_cc; // hack
-			if (M_Sys_FindNewJukeboxPage(menucmd[pid].dpad_lr < 0)) // left = -1; +1 otherwise
-				S_StartSound(NULL, sfx_menu1);
-			else
-				S_StartSound(NULL, sfx_adderr);
-			cv_closedcaptioning.value = 1; // hack
-			TSoURDt3rd_M_SetMenuDelay(pid);
-		}
-		return true;
-	}
-	else if (TSoURDt3rd_M_MenuExtraPressed(pid))
-	{
-		if (!TSoURDt3rd_Jukebox_IsPlaying())
-		{
-			S_StartSound(NULL, sfx_lose);
-			return true;
-		}
-
-		S_StopSounds();
-		S_StopMusic();
-
-		cv_closedcaptioning.value = jb_cc; // hack
-		S_StartSound(NULL, sfx_skid);
-		cv_closedcaptioning.value = 1; // hack
-
-		TSoURDt3rd_M_SetMenuDelay(pid);
-		return true;
-	}
-	else if (TSoURDt3rd_M_MenuConfirmPressed(pid))
-	{
-		S_StopSounds();
-		S_StopMusic();
-
-		TSoURDt3rd_M_SetMenuDelay(pid);
-
-		if (!cur_juke_def->linked_musicdef->allowed)
-		{
-			S_StartSound(NULL, sfx_lose);
-			TSoURDt3rd_S_RefreshMusic();
-			return true;
-		}
-
-		if (cur_juke_def == &jukebox_def_soundtestsfx)
-		{
-			jb_handle_sfx = true;
-			jb_draw_controls_tip = true;
-			jb_controls_trans = 0;
-			jb_controls_ticker = 0;
-			return true;
-		}
-
-		TSoURDt3rd_Jukebox_Play(cur_juke_def->linked_musicdef);
-		TSoURDt3rd_M_SetMenuDelay(pid);
-		return true;
-	}
-	else if (TSoURDt3rd_M_MenuBackPressed(pid))
-	{
-		Z_Free(tsourdt3rd_jukebox_defs);
-		tsourdt3rd_jukebox_defs = NULL;
-
-		Z_Free(tsourdt3rd_cur_page_jukebox_defs);
-		tsourdt3rd_cur_page_jukebox_defs = NULL;
-
-		cv_closedcaptioning.value = jb_cc; // undo hack
-
-		jb_page_playable_tracks = 0;
-		TSoURDt3rd_M_SetupNextMenu(last_tsourdt3rd_menu_reference, last_menu_reference, false);
-		TSoURDt3rd_M_SetMenuDelay(pid);
-
-		jb_draw_controls_tip = false;
-		jb_controls_trans = 0;
-		jb_controls_ticker = 0;
-		tsourdt3rd_global_jukebox->in_menu = false;
-		return true;
-	}
-
-	return false;
-}
-
-void TSoURDt3rd_M_Jukebox_Init(INT32 choice)
-{
-	boolean in_menu = menuactive;
-
-	if (tsourdt3rd_global_jukebox == NULL || tsourdt3rd_jukebox_available_pages == NULL)
-	{
-		// Jukebox definition thing is NULL, so don't go any further.
-		TSoURDt3rd_M_StartMessage(
-			"TSoURDt3rd Jukebox",
-			M_GetText("The data needed for the jukebox wasn't initialized.\n"),
-			NULL,
-			MM_NOTHING,
-			NULL,
-			NULL
-		);
-		S_StartSound(NULL, sfx_lose);
-		return;
-	}
-	else if (currentMenu == &TSoURDt3rd_OP_Extras_JukeboxDef && in_menu)
-	{
-		// Please don't go to the same menu twice.
-		return;
-	}
-	else if (TSoURDt3rd_M_DoesMenuHaveKeyHandler() > 0)
-	{
-		// Let's not be doing or reading something potentially important before we access the Jukebox, mmk?
-		return;
-	}
-
-	if (in_menu == false)
-	{
-		// We should probably make sure that the menu is opened first...
-		M_StartControlPanel();
-		tsourdt3rd_itemOn = currentMenu->lastOn;
-	}
-
-	memset(tsourdt3rd_skyRoomMenuTranslations, 0, sizeof(tsourdt3rd_skyRoomMenuTranslations));
-	M_Sys_UpdateUnlocks(tsourdt3rd_skyRoomMenuTranslations);
-	skyRoomMenu_ul = tsourdt3rd_skyRoomMenuTranslations[choice-1];
-
-	// When using the jukebox keybind, this prevents the game from crashing!
-	if (in_menu)
-	{
-		last_tsourdt3rd_menu_reference = tsourdt3rd_currentMenu;
-		last_menu_reference = currentMenu;
-	}
-	else
-	{
-		last_tsourdt3rd_menu_reference = NULL;
-		last_menu_reference = NULL;
-	}
-
-	if (last_tsourdt3rd_menu_reference != NULL)
-		TSoURDt3rd_TM_OP_Extras_JukeboxDef.music = last_tsourdt3rd_menu_reference->music;
-
-	TSoURDt3rd_M_SetupNextMenu(&TSoURDt3rd_TM_OP_Extras_JukeboxDef, &TSoURDt3rd_OP_Extras_JukeboxDef, false);
-	if (last_menu_reference == &TSoURDt3rd_OP_Extras_JukeboxDef)
-		TSoURDt3rd_OP_Extras_JukeboxDef.lastOn = 0;
-
-	optionsmenu.ticker = 0;
-	TSoURDt3rd_M_OptionsTick();
-
-	tsourdt3rd_global_jukebox->in_menu = true;
+	tsourdt3rd_global_jukebox->in_menu = false;
+	return true;
 }

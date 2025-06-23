@@ -119,6 +119,7 @@ extern struct menutransition_s {
 
 #define MAXMENUMESSAGE 256
 #define MENUMESSAGECLOSE 2
+#define MENUMESSAGEHEADERLEN 54
 
 typedef enum
 {
@@ -224,6 +225,10 @@ extern tsourdt3rd_levellist_mode_t tsourdt3rd_levellistmode;
 void TSoURDt3rd_M_InitQuitMessages(const char **msg_table);
 const char *TSoURDt3rd_M_GenerateQuitMessage(void);
 
+fixed_t TSoURDt3rd_M_TimeFrac(tic_t tics, tic_t duration);
+fixed_t TSoURDt3rd_M_ReverseTimeFrac(tic_t tics, tic_t duration);
+fixed_t TSoURDt3rd_M_DueFrac(tic_t start, tic_t duration);
+
 boolean TSoURDt3rd_M_StartControlPanel(void);
 boolean TSoURDt3rd_M_Responder(INT32 *ch, event_t *ev);
 void TSoURDt3rd_M_Ticker(INT16 *item, boolean *input, INT16 skullAnimCounter, INT32 levellistmode);
@@ -241,10 +246,6 @@ void TSoURDt3rd_M_ChangeCvar(INT32 choice, consvar_t *cv);
 void TSoURDt3rd_M_ChangeCvarDirect(INT32 amount, float amount_f, consvar_t *cv);
 
 void TSoURDt3rd_M_PlayMenuJam(void);
-
-fixed_t TSoURDt3rd_M_TimeFrac(tic_t tics, tic_t duration);
-fixed_t TSoURDt3rd_M_ReverseTimeFrac(tic_t tics, tic_t duration);
-fixed_t TSoURDt3rd_M_DueFrac(tic_t start, tic_t duration);
 
 void TSoURDt3rd_M_StartMessage(const char *header, const char *string, void (*routine)(INT32), menumessagetype_t itemtype, const char *confirmstr, const char *defaultstr);
 boolean TSoURDt3rd_M_MenuMessageTick(void);
@@ -280,6 +281,9 @@ void TSoURDt3rd_M_UpdateMenuCMD(UINT8 i);
 // =============
 
 extern tsourdt3rd_menu_t *tsourdt3rd_currentMenu;
+
+extern menu_t *vanilla_prevMenu;
+extern tsourdt3rd_menu_t *tsourdt3rd_prevMenu;
 
 #if 1
 extern menu_t OP_MainDef;
@@ -585,32 +589,29 @@ extern struct optionsmenu_s {
 //        Functions
 // ------------------------ //
 
-void K_drawButton(fixed_t x, fixed_t y, INT32 flags, patch_t *button[2], boolean pressed);
-void K_drawButtonAnim(INT32 x, INT32 y, INT32 flags, patch_t *button[2], tic_t animtic);
-
-void K_DrawSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isSmall);
+void TSoURDt3rd_MK_DrawButton(fixed_t x, fixed_t y, INT32 flags, patch_t *button[2], boolean pressed);
+void TSoURDt3rd_MK_DrawButtonAnim(INT32 x, INT32 y, INT32 flags, patch_t *button[2], tic_t animtic);
+void TSoURDt3rd_MK_DrawSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isSmall);
 
 void TSoURDt3rd_M_DrawMenuTyping(void);
 
 void TSoURDt3rd_M_DrawPauseGraphic(void);
 void TSoURDt3rd_M_DrawQuitGraphic(void);
 
-void TSoURDt3rd_M_PreDrawer(void);
+void TSoURDt3rd_M_PreDrawer(boolean *wipe);
 void TSoURDt3rd_M_PostDrawer(void);
 
 void TSoURDt3rd_M_DrawGenericOptions(void);
 void TSoURDt3rd_M_DrawMediocreKeyboardKey(const char *text, INT32 *workx, INT32 worky, boolean push, boolean rightaligned);
 
-INT32 TSoURDt3rd_M_DrawCaretString
-(
+INT32 TSoURDt3rd_M_DrawCaretString(
 	INT32 x, INT32 y,
 	INT32 flags,
 	fixed_t pscale, fixed_t vscale,
 	const char *string, fontdef_t font
 );
 
-void TSoURDt3rd_M_DrawMenuTooltips
-(
+void TSoURDt3rd_M_DrawMenuTooltips(
 	fixed_t box_x, fixed_t box_y, INT32 box_flags, UINT8 *box_color, boolean box_patch,
 	fixed_t string_x, fixed_t string_y, INT32 string_flags, boolean string_centered
 );
@@ -644,11 +645,41 @@ extern void *tsourdt3rd_snake;
 //        Functions
 // ------------------------ //
 
-void M_HandleMasterServerResetChoice(INT32 choice);
-void M_PreStartServerMenuChoice(INT32 choice);
-void M_PreConnectMenuChoice(INT32 choice);
-void M_StartServerMenu(INT32 choice);
-void M_ConnectMenuModChecks(INT32 choice);
+void TSoURDt3rd_M_HandleMasterServerResetChoice(INT32 choice);
+#define TSoURDt3rd_M_NetgameChecks(strict) \
+	if (tsourdt3rd_local.autoloaded_mods && strict) \
+	{ \
+		TSoURDt3rd_M_StartMessage( \
+			"Multiplayer Menu Check Failed!", \
+			M_GetText( \
+				"You have autoloaded game-changing add-ons.\n \
+				You won't be able to join netgames!\n\n \
+				To play online, restart the game\nand don't load any add-ons.\n \
+				SRB2 will automatically add\neverything you need when you join.\n" \
+			), \
+			M_ConnectMenu, \
+			MM_EVENTHANDLER, \
+			NULL, \
+			NULL \
+		); \
+		return; \
+	} \
+	\
+	if (!CV_IsSetToDefault(&cv_masterserver) && !tsourdt3rd_local.ms_address_changed) \
+	{ \
+		TSoURDt3rd_M_StartMessage( \
+			"Server Search Alert", \
+			M_GetText( \
+				"Hey! Just a heads up that uou've changed the default Server Browser address.\n\n \
+				You won't be able to see games from the official Server Browser.\n \
+				If you don't know what you're doing, this probably isn't what you want.\n" \
+			), \
+			TSoURDt3rd_M_HandleMasterServerResetChoice, \
+			MM_YESNO, \
+			"Fix this and continue.", \
+			"Continue anyway." \
+		); \
+	}
 
 void TSoURDt3rd_M_HandleAddonsMenu(INT32 choice);
 
@@ -673,6 +704,7 @@ void TSoURDt3rd_M_EXMusic_LoadMenu(INT32 choice);
 
 void TSoURDt3rd_M_Jukebox_Init(INT32 choice);
 void TSoURDt3rd_M_Jukebox_Ticker(void);
+boolean TSoURDt3rd_M_Jukebox_Quit(void);
 
 void TSoURDt3rd_M_HandleColorResetOption(
 	player_t *setupm_player,

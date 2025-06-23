@@ -3,6 +3,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 2024 by Vivian "toastergrl" Grannell.
 // Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -50,19 +51,19 @@ static inline size_t M_Sys_StringHeight(const char *string)
 }
 
 // default message handler
+// (...For Ring Racers at least)
 void TSoURDt3rd_M_StartMessage(const char *header, const char *string, void (*routine)(INT32), menumessagetype_t itemtype, const char *confirmstr, const char *defaultstr)
 {
 	const UINT8 pid = 0;
-	DEBFILE(string);
-
 	char *message = V_WordWrap(
 		0, (BASEVIDWIDTH - 8),
 		V_ALLOWLOWERCASE,
 		string
 	);
 
-	strncpy(menumessage.message, message, MAXMENUMESSAGE);
+	DEBFILE(string);
 
+	strncpy(menumessage.message, message, MAXMENUMESSAGE-1);
 	Z_Free(message);
 
 	menumessage.header = header;
@@ -172,19 +173,18 @@ boolean TSoURDt3rd_M_MenuMessageTick(void)
 	}
 
 	menumessage.timer++;
-
 	return true;
 }
 
 // regular handler for MM_NOTHING and MM_YESNO
 void TSoURDt3rd_M_HandleMenuMessage(void)
 {
-	if (!TSoURDt3rd_M_MenuMessageTick())
-		return;
-
 	const UINT8 pid = 0;
 	boolean btok = TSoURDt3rd_M_MenuConfirmPressed(pid);
 	boolean btnok = TSoURDt3rd_M_MenuBackPressed(pid);
+
+	if (!TSoURDt3rd_M_MenuMessageTick())
+		return;
 
 	switch (menumessage.flags)
 	{
@@ -195,14 +195,12 @@ void TSoURDt3rd_M_HandleMenuMessage(void)
 				TSoURDt3rd_M_StopMessage(MA_YES);
 			else if (btnok)
 				TSoURDt3rd_M_StopMessage(MA_NO);
-
 			break;
 		}
 		default:
 		{
 			if (btok || btnok)
 				TSoURDt3rd_M_StopMessage(MA_NONE);
-
 			break;
 		}
 	}
@@ -211,17 +209,18 @@ void TSoURDt3rd_M_HandleMenuMessage(void)
 // Draw the message popup submenu
 void TSoURDt3rd_M_DrawMenuMessage(void)
 {
-	if (!menumessage.active)
-		return;
-
-	INT32 x = (BASEVIDWIDTH - menumessage.x)/2;
-	INT32 y = (BASEVIDHEIGHT - menumessage.y)/2 + floor(pow(2, (double)(9 - menumessage.fadetimer)));
+	INT32 x, y;
 	size_t i, start = 0;
 	char string[MAXMENUMESSAGE];
-	const char *msg = menumessage.message;
+	const char *msg = NULL;
+
+	if (!menumessage.active)
+		return;
+	x = (BASEVIDWIDTH - menumessage.x)/2;
+	y = (BASEVIDHEIGHT - menumessage.y)/2 + floor(pow(2, (double)(9 - menumessage.fadetimer)));
+	msg = menumessage.message;
 
 	V_DrawFadeScreen(31, menumessage.fadetimer);
-
 	V_DrawFill(0, y, BASEVIDWIDTH, menumessage.y, 159);
 
 	if (menumessage.header != NULL)
@@ -235,7 +234,6 @@ void TSoURDt3rd_M_DrawMenuMessage(void)
 		INT32 worky = y + menumessage.y;
 
 		boolean standardbuttons = (cv_usejoystick.value || cv_usejoystick2.value);
-
 		boolean push;
 
 		if (menumessage.closing)
@@ -259,14 +257,14 @@ void TSoURDt3rd_M_DrawMenuMessage(void)
 		if (standardbuttons)
 		{
 			workx -= SHORT(kp_button_x[1][0]->width);
-			K_drawButton(
+			TSoURDt3rd_MK_DrawButton(
 				workx * FRACUNIT, worky * FRACUNIT,
 				0, kp_button_x[1],
 				push
 			);
 
 			workx -= SHORT(kp_button_b[1][0]->width);
-			K_drawButton(
+			TSoURDt3rd_MK_DrawButton(
 				workx * FRACUNIT, worky * FRACUNIT,
 				0, kp_button_b[1],
 				push
@@ -298,7 +296,7 @@ void TSoURDt3rd_M_DrawMenuMessage(void)
 		if (standardbuttons)
 		{
 			workx -= SHORT(kp_button_a[1][0]->width);
-			K_drawButton(
+			TSoURDt3rd_MK_DrawButton(
 				workx * FRACUNIT, worky * FRACUNIT,
 				0, kp_button_a[1],
 				push

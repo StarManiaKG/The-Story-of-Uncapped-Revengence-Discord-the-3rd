@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2020-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2020-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -10,6 +10,8 @@
 /// \brief TSoURDt3rd's player menu options
 
 #include "../smkg-m_sys.h"
+
+#include "../../../netcode/d_netfil.h"
 
 // ------------------------ //
 //        Variables

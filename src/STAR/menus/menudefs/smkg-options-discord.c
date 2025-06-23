@@ -271,9 +271,9 @@ static void M_Sys_DiscordOptionsTicker(void)
 			NULL
 		},
 	};
+	consvar_t *discord_itemactions = NULL;
 #endif
 
-	consvar_t *discord_itemactions = NULL;
 	static INT32 discord_menuitems[7][6] = {
 		[0] = {
 			op_drpcs_header,
@@ -321,29 +321,29 @@ static void M_Sys_DiscordOptionsTicker(void)
 	// Set option availability and actions
 	while (discord_menuitems[i][0] != -2)
 	{
+
+#ifdef DISCORD_SECRETIVE
 		switch (i)
 		{
-#ifdef DISCORD_SECRETIVE
 			default:
 				menuflags = IT_DISABLED;
 				break;
+		}
 #else
+		switch (i)
+		{
 			default:
 				menuflags = (cv_discordrp.value ? IT_HEADER : IT_DISABLED);
 				break;
-
 			case 1:
 				menuflags = (cv_discordrp.value ? IT_CVAR|IT_STRING : IT_DISABLED);
 				break;
-
 			case 2:
 				menuflags = ((cv_discordrp.value && cv_discordshowonstatus.value == 9) ? IT_HEADER : IT_DISABLED);
 				break;
-
 			case 3:
 				menuflags = ((cv_discordrp.value && cv_discordshowonstatus.value == 9) ? IT_CVAR|IT_STRING : IT_DISABLED);
 				break;
-
 			case 4:
 			{
 				menuflags = ((cv_discordrp.value && cv_discordshowonstatus.value == 9) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
@@ -352,44 +352,34 @@ static void M_Sys_DiscordOptionsTicker(void)
 					discord_itemactions = NULL;
 					break;
 				}
-
 				switch (custom_cvartype_index[j])
 				{
-					case 0:
-					case 1:
-					case 2:
+					case 0: case 1: case 2:
 						discord_itemactions = custom_cvar_index[j][0];
 						break;
-
-					case 3:
-					case 4:
-					case 5:
+					case 3: case 4: case 5:
 						discord_itemactions = custom_cvar_index[j][1];
 						break;
-
 					case 6:
 						discord_itemactions = custom_cvar_index[j][2];
 						break;
-
 					case 7:
 						discord_itemactions = custom_cvar_index[j][3];
 						break;
-
 					default:
 						menuflags = IT_GRAYEDOUT;
 						discord_itemactions = NULL;
 						break;
 				}
-
 				DISCORD_OP_MainMenu[discord_menuitems[i][j]].itemaction = discord_itemactions;
 				break;
 			}
-
 			case 5:
 				menuflags = ((cv_discordrp.value && cv_discordshowonstatus.value == 9) ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 				break;
-#endif
 		}
+		discord_itemactions = NULL;
+#endif
 
 		DISCORD_OP_MainMenu[discord_menuitems[i][j]].status = menuflags;
 
@@ -398,7 +388,6 @@ static void M_Sys_DiscordOptionsTicker(void)
 			j = 0;
 			i++;
 		}
-		discord_itemactions = NULL;
 	}
 
 	// Handle typing data
@@ -421,7 +410,7 @@ static void M_Sys_DiscordOptionsTicker(void)
 // REQUESTS
 // ========
 
-static const char *M_Sys_GetDiscordName(discordRequest_t *r)
+static const char *M_Sys_GetDiscordName(DISC_Request_t *r)
 {
 	if (r == NULL) return "";
 	return DISC_ReturnUsername();
@@ -430,6 +419,7 @@ static const char *M_Sys_GetDiscordName(discordRequest_t *r)
 void TSoURDt3rd_M_DiscordRequests_Init(INT32 choice)
 {
 	static const tic_t confirmLength = 3*TICRATE/4;
+
 	(void)choice;
 
 	discordrequestmenu.confirmLength = confirmLength;
@@ -439,7 +429,7 @@ void TSoURDt3rd_M_DiscordRequests_Init(INT32 choice)
 
 static void M_Sys_DrawDiscordRequests(void)
 {
-	discordRequest_t *curRequest = discordRequestList;
+	DISC_Request_t *curRequest = discordRequestList;
 	UINT8 *colormap;
 	patch_t *hand = NULL;
 
@@ -481,10 +471,10 @@ static void M_Sys_DrawDiscordRequests(void)
 		V_DrawFixedPatch(56*FRACUNIT, 150*FRACUNIT + handoffset, FRACUNIT, 0, hand, NULL);
 	}
 
-	K_DrawSticker(x + (slide * 32), y - 2, V_ThinStringWidth(M_Sys_GetDiscordName(curRequest), V_ALLOWLOWERCASE), 0, false);
+	TSoURDt3rd_MK_DrawSticker(x + (slide * 32), y - 2, V_ThinStringWidth(M_Sys_GetDiscordName(curRequest), V_ALLOWLOWERCASE), 0, false);
 	V_DrawThinString(x + (slide * 32), y - 1, V_YELLOWMAP|V_ALLOWLOWERCASE, M_Sys_GetDiscordName(curRequest));
 
-	K_DrawSticker(x, y + 12, V_ThinStringWidth(wantText, V_ALLOWLOWERCASE), 0, true);
+	TSoURDt3rd_MK_DrawSticker(x, y + 12, V_ThinStringWidth(wantText, V_ALLOWLOWERCASE), 0, true);
 	V_DrawThinString(x, y + 10, V_ALLOWLOWERCASE, wantText);
 
 	INT32 confirmButtonWidth = SHORT(kp_button_a[1][0]->width);
@@ -494,18 +484,18 @@ static void M_Sys_DrawDiscordRequests(void)
 	INT32 declineTextWidth = V_ThinStringWidth(declineText, V_ALLOWLOWERCASE);
 	INT32 stickerWidth = (confirmButtonWidth + declineButtonWidth + altDeclineButtonWidth + acceptTextWidth + declineTextWidth);
 
-	K_DrawSticker(x, y + 26, stickerWidth, 0, true);
-	K_drawButtonAnim(x, y + 22, V_SNAPTORIGHT, kp_button_a[1], discordrequestmenu.ticker);
+	TSoURDt3rd_MK_DrawSticker(x, y + 26, stickerWidth, 0, true);
+	TSoURDt3rd_MK_DrawButtonAnim(x, y + 22, V_SNAPTORIGHT, kp_button_a[1], discordrequestmenu.ticker);
 
 	INT32 xoffs = confirmButtonWidth;
 
 	V_DrawThinString((x + xoffs), y + 24, V_ALLOWLOWERCASE, acceptText);
 	xoffs += acceptTextWidth;
 
-	K_drawButtonAnim((x + xoffs), y + 22, V_SNAPTORIGHT, kp_button_b[1], discordrequestmenu.ticker);
+	TSoURDt3rd_MK_DrawButtonAnim((x + xoffs), y + 22, V_SNAPTORIGHT, kp_button_b[1], discordrequestmenu.ticker);
 	xoffs += declineButtonWidth;
 
-	K_drawButtonAnim((x + xoffs), y + 22, V_SNAPTORIGHT, kp_button_x[1], discordrequestmenu.ticker);
+	TSoURDt3rd_MK_DrawButtonAnim((x + xoffs), y + 22, V_SNAPTORIGHT, kp_button_x[1], discordrequestmenu.ticker);
 	xoffs += altDeclineButtonWidth;
 
 	V_DrawThinString((x + xoffs), y + 24, V_ALLOWLOWERCASE, declineText);
@@ -520,7 +510,7 @@ static void M_Sys_DrawDiscordRequests(void)
 
 		const char *discordname = M_Sys_GetDiscordName(curRequest);
 
-		K_DrawSticker(x, y - 1 + ySlide, V_ThinStringWidth(discordname, V_ALLOWLOWERCASE), 0, false);
+		TSoURDt3rd_MK_DrawSticker(x, y - 1 + ySlide, V_ThinStringWidth(discordname, V_ALLOWLOWERCASE), 0, false);
 		V_DrawThinString(x, y + ySlide, V_ALLOWLOWERCASE, discordname);
 
 		y -= 12;
@@ -544,9 +534,7 @@ static void M_Sys_DiscordRequestTick(void)
 
 	if (discordrequestmenu.removeRequest == true)
 	{
-#ifdef HAVE_DISCORDRPC
 		DISC_RemoveRequest(discordRequestList);
-#endif
 
 		if (discordRequestList == NULL)
 		{
@@ -569,6 +557,9 @@ static void M_Sys_DiscordRequestTick(void)
 static void M_Sys_DiscordRequestHandler(INT32 choice)
 {
 	const UINT8 pid = 0;
+	DISC_RequestReply_t response;
+	INT32 response_sound = 0;
+
 	(void)choice;
 
 	if (discordrequestmenu.confirmDelay > 0)
@@ -576,22 +567,21 @@ static void M_Sys_DiscordRequestHandler(INT32 choice)
 
 	if (TSoURDt3rd_M_MenuConfirmPressed(pid))
 	{
-#ifdef HAVE_DISCORDRPC
-		Discord_Respond(discordRequestList->userID, DISCORD_REPLY_YES);
-#endif
-		discordrequestmenu.confirmAccept = true;
-		discordrequestmenu.confirmDelay = discordrequestmenu.confirmLength;
-		S_StartSound(NULL, sfx_s3k63);
+		response = DISC_REQUEST_REPLY_YES;
+		response_sound = sfx_s3k63;
 	}
 	else if (TSoURDt3rd_M_MenuBackPressed(pid))
 	{
-#ifdef HAVE_DISCORDRPC
-		Discord_Respond(discordRequestList->userID, DISCORD_REPLY_NO);
-#endif
-		discordrequestmenu.confirmAccept = false;
-		discordrequestmenu.confirmDelay = discordrequestmenu.confirmLength;
-		S_StartSound(NULL, sfx_s3kb2);
+		response = DISC_REQUEST_REPLY_NO;
+		response_sound = sfx_s3kb2;
 	}
+	else
+		return;
+
+	DISC_Respond(discordRequestList->userID, response);
+	discordrequestmenu.confirmAccept = (boolean)response;
+	discordrequestmenu.confirmDelay = discordrequestmenu.confirmLength;
+	S_StartSound(NULL, response_sound);
 }
 
 #endif // HAVE_DISCORDSUPPORT

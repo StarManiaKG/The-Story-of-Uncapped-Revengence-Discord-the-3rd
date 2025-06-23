@@ -1,8 +1,8 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Original Copyright (C) 1998-2000 by DooM Legacy Team.
-// Original Copyright (C) 1999-2023 by Sonic Team Junior.
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 1998-2000 by DooM Legacy Team.
+// Copyright (C) 1999-2023 by Sonic Team Junior.
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -20,9 +20,6 @@
 // ------------------------ //
 //        Variables
 // ------------------------ //
-
-static menu_t *last_menu_reference = NULL;
-static tsourdt3rd_menu_t *last_tsourdt3rd_menu_reference = NULL;
 
 static boolean M_Sys_HandleLighting(INT32 choice);
 
@@ -80,11 +77,12 @@ tsourdt3rd_menu_t TSoURDt3rd_TM_OP_Video_LightingDef = {
 static boolean M_Sys_HandleLighting(INT32 choice)
 {
 	const UINT8 pid = 0;
+
 	(void)choice;
 
 	if (TSoURDt3rd_M_MenuBackPressed(pid))
 	{
-		TSoURDt3rd_M_SetupNextMenu(last_tsourdt3rd_menu_reference, last_menu_reference, false);
+		TSoURDt3rd_M_SetupNextMenu(tsourdt3rd_prevMenu, vanilla_prevMenu, false);
 		TSoURDt3rd_M_SetMenuDelay(pid);
 		return true;
 	}
@@ -93,17 +91,13 @@ static boolean M_Sys_HandleLighting(INT32 choice)
 
 void TSoURDt3rd_M_CoronaLighting_Init(void)
 {
-	// Let's prevent the game from sending us to the wrong menu, shall we?
-	last_tsourdt3rd_menu_reference = tsourdt3rd_currentMenu;
-	last_menu_reference = currentMenu;
-
-	if (last_tsourdt3rd_menu_reference != NULL)
-		TSoURDt3rd_TM_OP_Video_LightingDef.music = last_tsourdt3rd_menu_reference->music;
+	if (tsourdt3rd_prevMenu != NULL)
+		TSoURDt3rd_TM_OP_Video_LightingDef.music = tsourdt3rd_prevMenu->music;
 	else
 		TSoURDt3rd_M_ResetOptions();
 
 	TSoURDt3rd_M_SetupNextMenu(&TSoURDt3rd_TM_OP_Video_LightingDef, &TSoURDt3rd_OP_Video_LightingDef, false);
-	if (last_menu_reference == &TSoURDt3rd_OP_Video_LightingDef)
+	if (vanilla_prevMenu == &TSoURDt3rd_OP_Video_LightingDef)
 		TSoURDt3rd_OP_Video_LightingDef.lastOn = 0;
 
 	optionsmenu.ticker = 0;

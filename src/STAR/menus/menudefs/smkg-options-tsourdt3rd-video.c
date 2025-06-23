@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2020-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2020-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -44,8 +44,16 @@ menuitem_t TSoURDt3rd_OP_VideoMenu[] =
 
 		{IT_STRING | IT_CVAR, NULL, "FPS Counter Color",
 			&cv_tsourdt3rd_video_coloring_fpsrate, 0},
+		{IT_STRING | IT_CVAR, NULL, "FPS Counter Font",
+			&cv_tsourdt3rd_video_font_fps, 0},
+
+		{IT_SPACE, NULL, NULL,
+			NULL, 0},
+
 		{IT_STRING | IT_CVAR, NULL, "TPS Counter Color",
 			&cv_tsourdt3rd_video_coloring_tpsrate, 0},
+		{IT_STRING | IT_CVAR, NULL, "TPS Counter Font",
+			&cv_tsourdt3rd_video_font_tps, 0},
 
 	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL,
 		NULL, 0},
@@ -75,13 +83,18 @@ tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_VideoMenu[] =
 		{NULL, NULL, {NULL}, 0, 0},
 
 		{NULL, "Changes the color of the FPS counter.", {NULL}, 0, 0},
+		{NULL, "Changes the font of the FPS counter.", {NULL}, 0, 0},
+
+		{NULL, NULL, {NULL}, 0, 0},
+
 		{NULL, "Changes the color of the TPS counter.", {NULL}, 0, 0},
+		{NULL, "Changes the font of the TPS counter.", {NULL}, 0, 0},
 
 	{NULL, NULL, {NULL}, 0, 0},
 
 #ifdef STAR_LIGHTING
 	{NULL, NULL, {NULL}, 0, 0},
-		{NULL, "Customize TSoURDt3rd's lighting effects.", { NULL }, 0, 0},
+		{NULL, "Browse TSoURDt3rd's lighting effects.", { NULL }, 0, 0},
 #endif
 };
 
@@ -126,5 +139,8 @@ static void M_Sys_VideoTicker(void)
 #endif
 
 	TSoURDt3rd_OP_VideoMenu[op_video_flair_fpscolor].status = (cv_ticrate.value ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+	TSoURDt3rd_OP_VideoMenu[op_video_flair_fpsfont].status = (cv_ticrate.value ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+
 	TSoURDt3rd_OP_VideoMenu[op_video_flair_tpscolor].status = (cv_tsourdt3rd_video_showtps.value ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+	TSoURDt3rd_OP_VideoMenu[op_video_flair_tpsfont].status = (cv_tsourdt3rd_video_showtps.value ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
 }

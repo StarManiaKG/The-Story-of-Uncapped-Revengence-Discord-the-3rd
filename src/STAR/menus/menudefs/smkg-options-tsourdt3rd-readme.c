@@ -133,10 +133,11 @@ static void M_Sys_InitReadME(void)
 				max_readme_y -= 4<<FRACBITS;
 				break;
 		}
-		if (FixedMul(max_readme_y, vid.dupy) > vid.height)
+		if (FixedMul(max_readme_y, vid.dup) > vid.height)
 			break;
 	}
 
+	// Mark scroll height as done!
 	checked_readme_text = true;
 }
 
@@ -163,7 +164,7 @@ static void M_Sys_DrawReadME(void)
 				y += 8<<FRACBITS;
 				break;
 		}
-		if (FixedMul(y, vid.dupy) > vid.height)
+		if (FixedMul(y, vid.dup) > vid.height)
 			break;
 	}
 
