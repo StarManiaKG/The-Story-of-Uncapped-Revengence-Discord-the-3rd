@@ -6,7 +6,6 @@ target_sources(SRB2SDL2 PRIVATE
 	smkg-p_saveg.c
 	smkg-st_hud.c
 	star_functions.c
-	m_menu.c
 	p_user.c
 	core/smkg-d_main.c
 	core/smkg-p_pads.c
