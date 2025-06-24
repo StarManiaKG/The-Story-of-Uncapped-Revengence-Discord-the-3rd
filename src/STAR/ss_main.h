@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -34,6 +34,7 @@ extern struct tsourdt3rd_local_s
 	boolean ms_address_changed;
 	boolean autoloading_mods;
 	boolean autoloaded_mods;
+
 	struct
 	{
 		boolean apply_effect;
@@ -86,8 +87,6 @@ void TSoURDt3rd_Init(void);
 
 void STAR_CONS_Printf(tsourdt3rd_messagetype_t starMessageType, const char *fmt, ...);
 const char *TSoURDt3rd_CON_DrawStartupScreen(void);
-
-void TSoURDt3rd_D_Display(void);
 
 const char *TSoURDt3rd_ReturnUsername(void);
 

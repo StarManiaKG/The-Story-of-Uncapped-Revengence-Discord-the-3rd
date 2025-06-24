@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -9,17 +9,17 @@
 /// \file  ss_main.c
 /// \brief Contains all of TSoURDt3rd's main necessary info and structures
 
-/// \todo only keep main bios stuff here
+/// \todo 1. rename file, 2. only keep main bios stuff here
+/// \todo alternatively: move and bomb
 
 #include <time.h>
 
 #include "ss_main.h"
+#include "star_vars.h"
 #include "smkg-defs.h"
 #include "smkg-jukebox.h"
-#include "smkg-misc.h"
 #include "core/smkg-s_exmusic.h"
-#include "curl/smkg-curl.h"
-#include "menus/smkg-m_sys.h" // menumessage //
+#include "misc/smkg-m_misc.h"
 
 #include "../f_finale.h"
 #include "../i_time.h"
@@ -29,6 +29,7 @@
 #include "../p_local.h"
 #include "../m_argv.h"
 #include "../g_game.h" // player_names
+#include "../m_menu.h" // saveinfo_t
 
 #ifdef HAVE_DISCORDSUPPORT
 #include "../discord/discord.h"
@@ -61,6 +62,7 @@ boolean SpawnTheDispenser = false;
 void TSoURDt3rd_Init(void)
 {
 	memset(&tsourdt3rd_local, 0, sizeof(struct tsourdt3rd_local_s));
+	STAR_CONS_Printf(0, "\n");
 
 	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD, "TSoURDt3rd_Init(): Initalizing TSoURDt3rd...\n");
 	TSoURDt3rd_FOL_CreateDirectory("TSoURDt3rd");
@@ -74,6 +76,8 @@ void TSoURDt3rd_Init(void)
 	TSoURDt3rd_Jukebox_Init(); // Initialize Jukebox data
 	TSoURDt3rd_S_EXMusic_Init(); // Initialize EXMusic data
 	TSoURDt3rd_InitializePlayer(consoleplayer); // Initialize the build's player structures!
+
+	STAR_CONS_Printf(0, "\n");
 }
 
 //
@@ -150,50 +154,11 @@ const char *TSoURDt3rd_CON_DrawStartupScreen(void)
 	}
 }
 
-void TSoURDt3rd_D_Display(void)
-{
-	static boolean sent_event_message = false;
-
-#ifdef HAVE_CURL
-	// Check for any updates to TSoURDt3rd.
-	TSoURDt3rd_CurlRoutine_FindUpdates();
-#endif
-
-	switch (gamestate)
-	{
-		case GS_ENDING:
-		case GS_CREDITS:
-		case GS_EVALUATION:
-			if (TSoURDt3rd_AprilFools_ModeEnabled())
-			{
-				// Close the game if we're in April Fools' Ultimate Mode but just beat the game.
-				I_Error("Definitely caused by a SIGSEGV - seventh sentinel (core dumped)");
-			}
-			/* FALLTHRU */
-		default:
-			break;
-	}
-
-	// Check for any events.
-	if (!menumessage.active && !sent_event_message && tsourdt3rd_currentEvent)
-	{
-		TSoURDt3rd_M_StartMessage(
-			"A TSoURDt3rd Event is Occuring",
-			"We're having a seasonal event! Have fun!",
-			NULL,
-			MM_NOTHING,
-			NULL,
-			NULL
-		);
-		sent_event_message = true;
-	}
-}
-
 const char *TSoURDt3rd_ReturnUsername(void)
 {
 #ifdef HAVE_DISCORDSUPPORT
-	if (discordInfo.ConnectionStatus == DRPC_CONNECTED)
-		return DRPC_ReturnUsername();
+	if (discordInfo.ConnectionStatus & DISC_CONNECTED)
+		return DISC_ReturnUsername();
 #endif
 	if (Playing())
 		return player_names[consoleplayer];
@@ -208,8 +173,6 @@ const char *TSoURDt3rd_ReturnUsername(void)
 // void TSoURDt3rd_CheckTime(void)
 // Handles checking the current time on the user's computer.
 // Helps with starting events and the sort.
-//
-// Ported from Kart!
 //
 void TSoURDt3rd_CheckTime(void)
 {
@@ -239,25 +202,27 @@ void TSoURDt3rd_CheckTime(void)
 			&& !M_CheckParm("-noxmas"))
 		tsourdt3rd_currentEvent |= TSOURDT3RD_EVENT_CHRISTMAS;
 
+	if (!tsourdt3rd_currentEvent)
+		return;
+
 	if (tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_EASTER)
 	{
 		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "TSoURDt3rd_CheckTime(): Easter Mode Enabled!\n");
 		CV_RegisterVar(&cv_tsourdt3rd_easter_egghunt_allowed);
 		CV_RegisterVar(&cv_tsourdt3rd_easter_egghunt_bonuses);
-		modifiedgame = false;
 	}
 	if (tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_APRILFOOLS)
 	{
 		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "TSoURDt3rd_CheckTime(): April Fools Mode Enabled!\n");
 		CV_RegisterVar(&cv_tsourdt3rd_aprilfools_ultimatemode);
 		TSoURDt3rd_AprilFools_StoreDefaultMenuStrings();
-		modifiedgame = false;
 	}
 	if (tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_CHRISTMAS)
 	{
 		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "TSoURDt3rd_CheckTime(): Christmas Mode Enabled!\n");
-		modifiedgame = false;
 	}
+
+	modifiedgame = false;
 }
 
 // ======
@@ -294,6 +259,8 @@ mobj_t *TSoURDt3rd_BossInMap(void)
 // SCENES
 // ======
 
+//#define NEW_GAME_END_SCENE
+
 #if 0
 typedef struct
 {
@@ -310,7 +277,7 @@ typedef struct
 
 void TSoURDt3rd_GameEnd(INT32 *timetonext)
 {
-#if 1
+#ifndef NEW_GAME_END_SCENE
 	(void)(*timetonext);
 	(void)cursave;
 	return;
