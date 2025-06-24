@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2023-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2023-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -15,8 +15,8 @@
 #include "smkg-curl.h"
 #include "../smkg-cvars.h"
 #include "../star_vars.h"
-#include "../smkg-misc.h"
 #include "../menus/smkg-m_sys.h" // menumessage //
+#include "../misc/smkg-m_misc.h"
 
 #include "../../d_main.h"
 #include "../../g_game.h"
@@ -30,10 +30,10 @@
 // ------------------------ //
 
 //
-// void TSoURDt3rd_Curl_FindUpdateRoutine(void)
+// void TSoURDt3rd_CurlRoutine_FindUpdates(void)
 // Finds the current version of TSoURDt3rd from the Github Repository.
 //
-void TSoURDt3rd_Curl_FindUpdateRoutine(void)
+void TSoURDt3rd_CurlRoutine_FindUpdates(void)
 {
 	char *return_info = NULL;
 	char *return_version = NULL;
@@ -42,28 +42,21 @@ void TSoURDt3rd_Curl_FindUpdateRoutine(void)
 	char version_url[256];
 	UINT32 version_number = 0;
 
-	static boolean sent_event_message = false;
+	static boolean send_event_message = false;
 	static const char *header_string = NULL;
 	static char message_string[256];
 	INT32 message_type = 0;
 
-	if (!cv_tsourdt3rd_main_checkforupdatesautomatically.value && !tsourdt3rd_local.checked_version)
-	{
-		// No point in running this if we have the setting disabled.
-		return;
-	}
 	if (tsourdt3rd_local.checked_version)
 	{
-		if (!dedicated && !menumessage.active && !sent_event_message && tsourdt3rd_local.checked_version)
+		if (!dedicated && !menumessage.active && send_event_message)
 		{
 			// We use some checks to screen the message up here, as it could get skipped out by another message otherwise
 			TSoURDt3rd_M_StartMessage(header_string, message_string, NULL, MM_NOTHING, NULL, NULL);
-			sent_event_message = true;
-			tsourdt3rd_local.checked_version = true;
+			send_event_message = false;
 		}
 		return;
 	}
-	sent_event_message = false;
 
 	if (!dedicated)
 	{
@@ -110,6 +103,7 @@ void TSoURDt3rd_Curl_FindUpdateRoutine(void)
 					"Check the SRB2 Message Board for the latest version!",
 				return_version, TSOURDT3RDVERSION);
 				message_type = STAR_CONS_TSOURDT3RD_ALERT;
+				send_event_message = true;
 			}
 			else if (TSoURDt3rd_CurrentVersion() > version_number)
 			{
@@ -122,6 +116,7 @@ void TSoURDt3rd_Curl_FindUpdateRoutine(void)
 					"Enjoy messing around with the build!"
 				);
 				message_type = STAR_CONS_TSOURDT3RD_ALERT;
+				send_event_message = true;
 			}
 			else
 			{
@@ -129,7 +124,6 @@ void TSoURDt3rd_Curl_FindUpdateRoutine(void)
 				sprintf(message_string, "Your TSoURDt3rd Executable is up-to-date! Have fun!");
 				message_type = STAR_CONS_TSOURDT3RD_NOTICE;
 			}
-
 			break;
 		}
 		default:
@@ -147,10 +141,11 @@ void TSoURDt3rd_Curl_FindUpdateRoutine(void)
 			break;
 	}
 
+	TSoURDt3rd_FIL_RemoveFile("TSoURDt3rd", "tsourdt3rd_data.txt");
+
 	STAR_CONS_Printf(message_type, "%s\n", message_string);
 	Z_Free(return_version);
 
-	TSoURDt3rd_FIL_RemoveFile("TSoURDt3rd", "tsourdt3rd_data.txt");
 	tsourdt3rd_local.checked_version = true;
 }
 

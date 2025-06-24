@@ -25,8 +25,8 @@ menuitem_t TSoURDt3rd_OP_GameMenu[] =
 {
 	{IT_STRING | IT_CALL, NULL, "Check for Updates...",
 		G_CheckForTSoURDt3rdUpdates, 0},
-	{IT_STRING | IT_CVAR, NULL,	"Automatic Update Checking",
-		&cv_tsourdt3rd_main_checkforupdatesautomatically, 0},
+	{IT_STRING | IT_CVAR, NULL,	"Automatic Update Checking on Startup",
+		&cv_tsourdt3rd_main_checkforupdatesonstartup, 0},
 
 	{IT_SPACE, NULL, NULL,
 		NULL, 0},
