@@ -196,11 +196,6 @@ void D_ProcessEvents(void)
 	mouse.buttons &= ~(MB_SCROLLUP|MB_SCROLLDOWN);
 	mouse2.buttons &= ~(MB_SCROLLUP|MB_SCROLLDOWN);
 
-#if 1
-	// STAR STUFF: PLEASE process [the 7] events //
-	TSoURDt3rd_D_ProcessEvents();
-#endif
-
 	for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
 	{
 		boolean hooked = false;
@@ -306,7 +301,7 @@ void D_ProcessEvents(void)
 	if (mouse2.rdx || mouse2.rdy)
 		G_SetMouseDeltas(mouse2.rdx, mouse2.rdy, 2);
 
-#if 0
+#if 1
 	// STAR STUFF: PLEASE process [the 7] events //
 	TSoURDt3rd_D_ProcessEvents();
 #endif
