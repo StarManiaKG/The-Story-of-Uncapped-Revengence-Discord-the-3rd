@@ -284,19 +284,9 @@ static void M_Sys_FindNewEXMusicTrack(boolean decrease)
 	while (exmusic_cur_def)
 	{
 		if (decrease)
-		{
-			if (exmusic_cur_def->prev == NULL)
-				exmusic_cur_def = exmusic_data[exmusic_series_size];
-			else
-				exmusic_cur_def = exmusic_cur_def->prev;
-		}
+			exmusic_cur_def = ((exmusic_cur_def->prev == NULL) ? exmusic_data[exmusic_series_size] : exmusic_cur_def->prev);
 		else
-		{
-			if (exmusic_cur_def->next == NULL)
-				exmusic_cur_def = exmusic_data[0];
-			else
-				exmusic_cur_def = exmusic_cur_def->next;
-		}
+			exmusic_cur_def = ((exmusic_cur_def->next == NULL) ? exmusic_data[0] : exmusic_cur_def->next);
 
 		if (exmusic_cur_def == NULL || exmusic_cur_def == exmusic_def)
 		{

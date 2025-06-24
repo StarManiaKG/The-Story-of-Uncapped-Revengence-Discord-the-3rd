@@ -43,9 +43,9 @@ static INT32 S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, I
 // MARKED FOR REMOVAL
 #include "STAR/star_vars.h" // TSoURDt3rd_DetermineLevelMusic() //
 #endif
-#include "STAR/smkg-jukebox.h"
 #include "STAR/core/smkg-s_audio.h" // TSoURDt3rd_S_CanModifyMusic() //
-#include "STAR/core/smkg-s_exmusic.h" // TSoURDt3rd_EXMusic_PlayDefaultMapTrack() //
+#include "STAR/core/smkg-s_jukebox.h"
+#include "STAR/core/smkg-s_exmusic.h" // TSoURDt3rd_EXMusic_DefaultMapTrack_Play() //
 
 CV_PossibleValue_t soundvolume_cons_t[] = {{0, "MIN"}, {31, "MAX"}, {0, NULL}};
 static void SetChannelsNum(void);
@@ -2181,7 +2181,7 @@ static boolean S_LoadMusic(const char *mname)
 
 #if 1
 	// STAR STUFF: play some fallback music for this map... //
-	TSoURDt3rd_EXMusic_PlayDefaultMapTrack(&mname, &mlumpnum);
+	TSoURDt3rd_EXMusic_DefaultMapTrack_Play(&mname, &mlumpnum);
 #endif
 
 	if (mlumpnum == LUMPERROR)

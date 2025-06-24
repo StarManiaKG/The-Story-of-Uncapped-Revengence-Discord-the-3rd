@@ -46,7 +46,7 @@
 
 // TSoURDt3rd
 #include "STAR/star_vars.h" // TSoURDt3rd_DetermineLevelMusic() //
-#include "STAR/smkg-jukebox.h"
+#include "STAR/core/smkg-s_jukebox.h"
 
 typedef struct
 {

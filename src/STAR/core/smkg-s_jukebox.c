@@ -6,17 +6,17 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  smkg-jukebox.c
+/// \file  smkg-s_jukebox.c
 /// \brief TSoURDt3rd's portable jammin' Jukebox
 
-#include "smkg-jukebox.h"
-#include "core/smkg-s_audio.h"
-#include "menus/smkg-m_sys.h"
+#include "smkg-s_jukebox.h"
+#include "smkg-s_audio.h"
+#include "../menus/smkg-m_sys.h"
 
-#include "../g_game.h"
-#include "../i_video.h"
-#include "../v_video.h"
-#include "../z_zone.h"
+#include "../../g_game.h"
+#include "../../i_video.h"
+#include "../../v_video.h"
+#include "../../z_zone.h"
 
 // ------------------------ //
 //        Variables

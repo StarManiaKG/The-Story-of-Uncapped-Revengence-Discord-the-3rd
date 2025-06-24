@@ -2,7 +2,6 @@ target_sources(SRB2SDL2 PRIVATE
 	ss_main.c
 	smkg-cvars.c
 	smkg_g_inputs.c
-	smkg-jukebox.c
 	smkg-p_saveg.c
 	smkg-st_hud.c
 	star_functions.c
@@ -12,6 +11,7 @@ target_sources(SRB2SDL2 PRIVATE
 	core/smkg-p_setup.c
 	core/smkg-r_main.c
 	core/smkg-s_audio.c
+	core/smkg-s_jukebox.c
 	core/smkg-s_exmusic.c
 	curl/smkg-curl.c
 	curl/smkg-curl_routines.c

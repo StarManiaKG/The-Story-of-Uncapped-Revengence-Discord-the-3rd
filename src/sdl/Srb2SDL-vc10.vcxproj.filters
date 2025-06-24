@@ -586,7 +586,7 @@
     <ClInclude Include="..\STAR\smkg-cvars.h">
       <Filter>TSoURDt3rd</Filter>
     </ClInclude>
-    <ClInclude Include="..\STAR\smkg-jukebox.h">
+    <ClInclude Include="..\STAR\core\smkg-s_jukebox.h">
       <Filter>TSoURDt3rd</Filter>
     </ClInclude>
     <ClInclude Include="..\STAR\smkg-v_video.h">
@@ -1164,7 +1164,7 @@
     <ClCompile Include="..\STAR\smkg-cvars.c">
       <Filter>TSoURDt3rd</Filter>
     </ClCompile>
-    <ClCompile Include="..\STAR\smkg-jukebox.c">
+    <ClCompile Include="..\STAR\core\smkg-s_jukebox.c">
       <Filter>TSoURDt3rd</Filter>
     </ClCompile>
     <ClCompile Include="..\STAR\smkg-p_saveg.c">

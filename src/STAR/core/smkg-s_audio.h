@@ -41,10 +41,10 @@ extern "C" {
 	do { \
 		TSOURDT3RD_CHECK_FOR_MUSIC_TYPE(type); \
 		valid_track = _Generic((type), \
-			char             * : TSoURDt3rd_S_FindName, \
-			const char       * : TSoURDt3rd_S_FindName, \
-			musicdef_t       * : TSoURDt3rd_S_DefExists, \
-			const musicdef_t * : TSoURDt3rd_S_DefExists \
+			char             * : TSoURDt3rd_S_MusicNameExists, \
+			const char       * : TSoURDt3rd_S_MusicNameExists, \
+			musicdef_t       * : TSoURDt3rd_S_MusicDefExists, \
+			const musicdef_t * : TSoURDt3rd_S_MusicDefExists \
 		)(type, ##__VA_ARGS__); \
 	} while(0); \
 	if (valid_track == true) \
@@ -71,8 +71,8 @@ extern "C" {
 //        Functions
 // ------------------------ //
 
-boolean TSoURDt3rd_S_DefExists(musicdef_t *def);
-boolean TSoURDt3rd_S_FindName(const char *music);
+boolean TSoURDt3rd_S_MusicDefExists(musicdef_t *def);
+boolean TSoURDt3rd_S_MusicNameExists(const char *music);
 
 boolean TSoURDt3rd_S_CanModifyMusic(char *menu_mus_origin);
 void TSoURDt3rd_S_ControlMusicEffects(const size_t *argc, UINT32 *position);

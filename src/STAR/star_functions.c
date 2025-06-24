@@ -11,43 +11,43 @@
 
 /// \todo burn
 
-#include "star_vars.h" 			// star variables
-#include "ss_main.h"			// star variables 2
-#include "smkg-jukebox.h"		// star variables 3
-#include "smkg_g_inputs.h"		// star variables 4
-#include "smkg-p_saveg.h"		// star variables 6
-#include "smkg-defs.h"			// star variables 8
-#include "menus/smkg-m_sys.h"	// star variables 5
-#include "misc/smkg-m_misc.h"     // star variables 7
+#include "star_vars.h" 				// star variables
+#include "ss_main.h"				// star variables 2
+#include "core/smkg-s_jukebox.h"	// star variables 3
+#include "smkg_g_inputs.h"			// star variables 4
+#include "smkg-p_saveg.h"			// star variables 6
+#include "smkg-defs.h"				// star variables 8
+#include "menus/smkg-m_sys.h"		// star variables 5
+#include "misc/smkg-m_misc.h"    	// star variables 7
 
 #include "../i_system.h"
 #include "../doomdef.h"
 #include "../byteptr.h"
-#include "../m_misc.h" 			// extra file functions
-#include "../m_menu.h" 			// egg and command variables
-#include "../d_main.h" 			// event variables
-#include "../deh_soc.h"			// savefile variables
-#include "../keys.h"			// key variables
+#include "../m_misc.h" 				// extra file functions
+#include "../m_menu.h" 				// egg and command variables
+#include "../d_main.h" 				// event variables
+#include "../deh_soc.h"				// savefile variables
+#include "../keys.h"				// key variables
 
-#include "../v_video.h"			// video variables
-#include "../i_video.h"			// video variables 2
+#include "../v_video.h"				// video variables
+#include "../i_video.h"				// video variables 2
 
-#include "../filesrch.h"		// file variables
-#include "../r_skins.h"			// skin variables
-#include "../deh_tables.h"		// sprite/table variables
-#include "../m_random.h"		// m_random functions
-#include "../z_zone.h"			// memory variables
+#include "../filesrch.h"			// file variables
+#include "../r_skins.h"				// skin variables
+#include "../deh_tables.h"			// sprite/table variables
+#include "../m_random.h"			// m_random functions
+#include "../z_zone.h"				// memory variables
 
-#include "../netcode/i_net.h"	// net variables
+#include "../netcode/i_net.h"		// net variables
 
 #ifdef HAVE_SDL
-#include "SDL.h"				// sdl variables
-#include "../sdl/sdlmain.h"		// sdl variables 2
+#include "SDL.h"					// sdl variables
+#include "../sdl/sdlmain.h"			// sdl variables 2
 #endif
 
-#include "../hu_stuff.h"		// hud variables
+#include "../hu_stuff.h"			// hud variables
 
-#include "../console.h"			// console variables
+#include "../console.h"				// console variables
 
 //////////////////////////////////////
 //		ABSOLUTELY HILARIOUS	 	//

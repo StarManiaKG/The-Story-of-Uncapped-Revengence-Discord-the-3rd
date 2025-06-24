@@ -424,7 +424,7 @@
     <ClInclude Include="..\STAR\p_saveg.h" />
     <ClInclude Include="..\STAR\p_user.h" />
     <ClInclude Include="..\STAR\smkg-cvars.h" />
-    <ClInclude Include="..\STAR\smkg-jukebox.h" />
+    <ClInclude Include="..\STAR\core\smkg-s_jukebox.h" />
     <ClInclude Include="..\STAR\smkg-v_video.h" />
     <ClInclude Include="..\STAR\ss_main.h" />
     <ClInclude Include="..\STAR\star_vars.h" />
@@ -653,7 +653,7 @@
     <ClCompile Include="..\STAR\parser\smkg-ps_main.c">
     <ClCompile Include="..\STAR\p_user.c">
     <ClCompile Include="..\STAR\smkg-cvars.c">
-    <ClCompile Include="..\STAR\smkg-jukebox.c">
+    <ClCompile Include="..\STAR\core\smkg-s_jukebox.c">
     <ClCompile Include="..\STAR\smkg-p_saveg.c">
     <ClCompile Include="..\STAR\ss_main.c">
     <ClCompile Include="..\STAR\star_functions.c">

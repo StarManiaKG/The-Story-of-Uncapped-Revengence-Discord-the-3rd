@@ -37,8 +37,8 @@
 #endif
 
 // TSoURDt3rd
-#include "STAR/smkg-jukebox.h" // TSoURDt3rd_Jukebox_IsPlaying() //
 #include "STAR/p_user.h" // TSoURDt3rd_P_Ticker() //
+#include "STAR/core/smkg-s_jukebox.h" // TSoURDt3rd_Jukebox_IsPlaying() //
 
 tic_t leveltime;
 

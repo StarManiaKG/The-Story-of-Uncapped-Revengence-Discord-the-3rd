@@ -40,7 +40,7 @@
 #include "lua_hook.h" // hook_cmd_running errors
 
 // TSoURDt3rd
-#include "STAR/smkg-jukebox.h" // TSoURDt3rd_Jukebox_IsPlaying() //
+#include "STAR/core/smkg-s_jukebox.h" // TSoURDt3rd_Jukebox_IsPlaying() //
 
 #define NOHUD if (hud_running)\
 return luaL_error(L, "HUD rendering code should not call this function!");\

@@ -10,7 +10,7 @@
 /// \brief STARParser data for JUKEDEF lumps
 
 #include "../smkg-ps_main.h"
-#include "../../smkg-jukebox.h"
+#include "../../core/smkg-s_jukebox.h"
 #include "../../star_vars.h"
 
 #include "../../../z_zone.h"

@@ -17,7 +17,7 @@
 #include "ss_main.h"
 #include "star_vars.h"
 #include "smkg-defs.h"
-#include "smkg-jukebox.h"
+#include "core/smkg-s_jukebox.h"
 #include "core/smkg-s_exmusic.h"
 #include "misc/smkg-m_misc.h"
 

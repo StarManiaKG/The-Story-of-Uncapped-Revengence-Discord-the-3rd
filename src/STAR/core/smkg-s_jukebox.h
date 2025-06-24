@@ -6,13 +6,13 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  smkg-jukebox.h
+/// \file  smkg-s_jukebox.h
 /// \brief Globalizes TSoURDt3rd's portable jammin' Jukebox
 
-#ifndef __SMKG_JUKEBOX__
-#define __SMKG_JUKEBOX__
+#ifndef __SMKG_S_JUKEBOX__
+#define __SMKG_S_JUKEBOX__
 
-#include "../s_sound.h"
+#include "../../s_sound.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -88,4 +88,4 @@ void TSoURDt3rd_Jukebox_ST_drawJukebox(void);
 } // extern "C"
 #endif
 
-#endif // __SMKG_JUKEBOX__
+#endif // __SMKG_S_JUKEBOX__

@@ -16,7 +16,7 @@
 #include "deh_tables.h"
 
 // TSoURDt3rd
-#include "STAR/smkg-jukebox.h" // TSoURDt3rd_Jukebox_IsPlaying() //
+#include "STAR/core/smkg-s_jukebox.h" // TSoURDt3rd_Jukebox_IsPlaying() //
 
 boolean deh_loaded = false;
 

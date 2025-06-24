@@ -10,7 +10,7 @@
 /// \brief TSoURDt3rd's cool and groovy jukebox features
 
 #include "smkg-s_audio.h"
-#include "../smkg-jukebox.h"
+#include "../core/smkg-s_jukebox.h"
 #include "../menus/smkg-m_sys.h"
 
 #include "../../g_game.h"
@@ -23,17 +23,15 @@
 // Music validation routines
 //
 #define MUSIC_EXISTS(music) \
-	if (*music == '\0') \
-		return false; \
+	if (*music == '\0') return false; \
 	return (S_MusicExists(music, !midi_disabled, !digital_disabled));
 
-boolean TSoURDt3rd_S_DefExists(musicdef_t *def)
+boolean TSoURDt3rd_S_MusicDefExists(musicdef_t *def)
 {
-	if (def == NULL)
-		return false;
+	if (def == NULL) return false;
 	MUSIC_EXISTS(def->name);
 }
-boolean TSoURDt3rd_S_FindName(const char *music)
+boolean TSoURDt3rd_S_MusicNameExists(const char *music)
 {
 	MUSIC_EXISTS(music);
 }
@@ -95,10 +93,8 @@ void TSoURDt3rd_S_ControlMusicEffects(const size_t *argc, UINT32 *position)
 		}
 	}
 
-	if (new_music_speed > 0.0f)
-		S_SpeedMusic(new_music_speed);
-	if (new_music_pitch > 0.0f)
-		S_PitchMusic(new_music_pitch);
+	if (new_music_speed > 0.0f) S_SpeedMusic(new_music_speed);
+	if (new_music_pitch > 0.0f) S_PitchMusic(new_music_pitch);
 }
 
 //
@@ -108,14 +104,13 @@ void TSoURDt3rd_S_ControlMusicEffects(const size_t *argc, UINT32 *position)
 void TSoURDt3rd_S_RefreshMusic(void)
 {
 	player_t *player = &players[consoleplayer];
+	boolean loop = (Playing() || player->playerstate != PST_DEAD);
 
 	if (TSoURDt3rd_Jukebox_IsPlaying())
 	{
 		// No.
 		return;
 	}
-
-	S_ChangeMusicEx(TSoURDt3rd_DetermineLevelMusic(), mapmusflags, true, mapmusposition, 0, 0);
 
 	if (player)
 	{
@@ -129,5 +124,11 @@ void TSoURDt3rd_S_RefreshMusic(void)
 			else
 				P_RestoreMusic(player);
 		}
+	}
+
+	if (!S_MusicPlaying())
+	{
+		// Last resort...
+		S_ChangeMusicEx(TSoURDt3rd_DetermineLevelMusic(), mapmusflags, loop, mapmusposition, 0, 0);
 	}
 }
