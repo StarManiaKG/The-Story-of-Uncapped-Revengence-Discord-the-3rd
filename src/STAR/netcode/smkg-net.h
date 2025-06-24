@@ -16,7 +16,7 @@
 #ifndef __SMKG_NET__
 #define __SMKG_NET__
 
-#include "../../i_net.h"
+#include "../../netcode/i_net.h"
 
 // ------------------------ //
 //        Variables
