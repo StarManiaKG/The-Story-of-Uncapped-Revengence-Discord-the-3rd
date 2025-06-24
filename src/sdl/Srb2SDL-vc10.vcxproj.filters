@@ -1158,16 +1158,7 @@
     <ClCompile Include="..\r_bbox.c">
       <Filter>R_Rend</Filter>
     </ClCompile>
-    <ClCompile Include="..\STAR\m_menu.c">
-      <Filter>TSoURDt3rd</Filter>
-    </ClCompile>
     <ClCompile Include="..\STAR\p_user.c">
-      <Filter>TSoURDt3rd</Filter>
-    </ClCompile>
-    <ClCompile Include="..\STAR\parser\parsed.c">
-      <Filter>TSoURDt3rd</Filter>
-    </ClCompile>
-    <ClCompile Include="..\STAR\parser\parser.c">
       <Filter>TSoURDt3rd</Filter>
     </ClCompile>
     <ClCompile Include="..\STAR\smkg-cvars.c">
@@ -1189,6 +1180,18 @@
       <Filter>TSoURDt3rd</Filter>
     </ClCompile>
     <ClCompile Include="..\STAR\events\smkg-easter.c">
+      <Filter>TSoURDt3rd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\STAR\menus\smkg-m_draw.c">
+      <Filter>TSoURDt3rd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\STAR\menus\smkg-m_func.c">
+      <Filter>TSoURDt3rd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\STAR\parser\smkg-ps_main.c">
+      <Filter>TSoURDt3rd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\STAR\parser\smkg-ps_tools.c">
       <Filter>TSoURDt3rd</Filter>
     </ClCompile>
   </ItemGroup>

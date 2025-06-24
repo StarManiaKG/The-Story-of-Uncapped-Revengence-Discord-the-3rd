@@ -648,7 +648,8 @@
     <ClCompile Include="sdl_sound.c" />
     <ClCompile Include="..\STAR\events\smkg-aprilfools.c">
     <ClCompile Include="..\STAR\events\smkg-easter.c">
-    <ClCompile Include="..\STAR\m_menu.c">
+    <ClCompile Include="..\STAR\menus\smkg-m_draw.c">
+    <ClCompile Include="..\STAR\menus\smkg-m_func.c">
     <ClCompile Include="..\STAR\parser\smkg-ps_main.c">
     <ClCompile Include="..\STAR\p_user.c">
     <ClCompile Include="..\STAR\smkg-cvars.c">
