@@ -9,14 +9,16 @@
 /// \file  star_functions.c
 /// \brief Contains all the Info Portraying to TSoURDt3rd's Variables and STAR Functions
 
+/// \todo burn
+
 #include "star_vars.h" 			// star variables
 #include "ss_main.h"			// star variables 2
 #include "smkg-jukebox.h"		// star variables 3
 #include "smkg_g_inputs.h"		// star variables 4
-#include "menus/smkg-m_sys.h"	// star variables 5
 #include "smkg-p_saveg.h"		// star variables 6
-#include "smkg-misc.h"          // star variables 7
 #include "smkg-defs.h"			// star variables 8
+#include "menus/smkg-m_sys.h"	// star variables 5
+#include "misc/smkg-m_misc.h"     // star variables 7
 
 #include "../i_system.h"
 #include "../doomdef.h"
@@ -36,7 +38,7 @@
 #include "../m_random.h"		// m_random functions
 #include "../z_zone.h"			// memory variables
 
-#include "../i_net.h"			// net variables
+#include "../netcode/i_net.h"	// net variables
 
 #ifdef HAVE_SDL
 #include "SDL.h"				// sdl variables
@@ -335,7 +337,7 @@ const char *STAR_SetWindowTitle(void)
 					}
 
 					// DSZ
-					case 7: case 8: dynamictitle = ((fastncmp(skins[players[consoleplayer].skin].name, "sonic", 5)) ? ("Ugh, I Hate Water in") : ("Swimming Around in")); break;
+					case 7: case 8: dynamictitle = ((fastncmp(skins[players[consoleplayer].skin]->name, "sonic", 5)) ? ("Ugh, I Hate Water in") : ("Swimming Around in")); break;
 
 					// CEZ
 					case 10: case 11: dynamictitle = (cv_tsourdt3rd_game_sdl_windowtitle_memes.value ? "How Did Eggman Manage to Build This Castle so Fast in" : "Such a Large Castle in"); break;
@@ -502,7 +504,7 @@ const char *STAR_SetWindowTitle(void)
 				case GS_INTRO: dynamictitle = "Introduction -"; break;
 				case GS_CUTSCENE: dynamictitle = "Watching a Cutscene in"; break;
 				case GS_CONTINUING: dynamictitle = "Continue? -"; break;
-				case GS_INTERMISSION: dynamictitle = (cv_tsourdt3rd_game_sdl_windowtitle_memes.value ? "End of Chapter! -" : (!mapheaderinfo[gamemap-1]->actnum ? (va("%s Got Through the Act! -", skins[players[consoleplayer].skin].realname)) : (va("%s Got Through Act %d! -", skins[players[consoleplayer].skin].realname, mapheaderinfo[gamemap-1]->actnum)))); break;
+				case GS_INTERMISSION: dynamictitle = (cv_tsourdt3rd_game_sdl_windowtitle_memes.value ? "End of Chapter! -" : (!mapheaderinfo[gamemap-1]->actnum ? (va("%s Got Through the Act! -", skins[players[consoleplayer].skin]->realname)) : (va("%s Got Through Act %d! -", skins[players[consoleplayer].skin]->realname, mapheaderinfo[gamemap-1]->actnum)))); break;
 
 				case GS_CREDITS:
 				case GS_ENDING:
@@ -553,46 +555,13 @@ generalgametitles:
 
 	// Player is on a Custom Map
 	else
-		dynamictitle = va("%s as %s Through %s %s -", (cv_tsourdt3rd_game_sdl_windowtitle_memes.value ? "D_RUNNIN" : "Running"), skins[players[consoleplayer].skin].realname, mapheaderinfo[gamemap-1]->lvlttl, ((mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE) ? "" : "Zone"));
+		dynamictitle = va("%s as %s Through %s %s -", (cv_tsourdt3rd_game_sdl_windowtitle_memes.value ? "D_RUNNIN" : "Running"), skins[players[consoleplayer].skin]->realname, mapheaderinfo[gamemap-1]->lvlttl, ((mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE) ? "" : "Zone"));
 
 	// Now That We've Set Our Things, Let's Return our Window Title, and We're Done :)
 	windowtitle = va("%s SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING, dynamictitle);
 
 	STAR_RenameWindow(windowtitle);
 	return windowtitle;
-}
-
-// FILES //
-
-//
-// boolean STAR_DoesStringMatchHarcodedFileName(const char *string)
-// Detects if the String Given Matches the Name of a Hardcoded File, and Returns True if it Does
-//
-boolean STAR_DoesStringMatchHarcodedFileName(const char *string)
-{
-	// Does the String Given Match the Name of a Hardcoded File? If so, Return True. //
-	if ((strcmp(string, CONFIGFILENAME) == 0)
-		|| (strcmp(string, AUTOLOADCONFIGFILENAME) == 0)
-
-		|| (strcmp(string, "adedserv.cfg") == 0)
-		|| (strcmp(string, "autoexec.cfg") == 0)
-
-		|| (strcmp(string, "srb2.pk3") == 0)
-		|| (strcmp(string, "zones.pk3") == 0)
-		|| (strcmp(string, "player.dta") == 0)
-		|| (strcmp(string, "music.dta") == 0)
-
-#ifdef USE_PATCH_DTA
-		|| (strcmp(string, "patch.pk3") == 0)
-#endif
-
-		|| (strcmp(string, "tsourdt3rd.pk3") == 0)
-		|| (strcmp(string, "jukebox.pk3") == 0))
-
-		return true;
-
-	// The String Given Doesn't Match the Name of a Hardcoded File? Return False Then. //
-	return false;
 }
 
 // MISCELLANIOUS //
