@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
 //
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -19,11 +19,8 @@
 /// \file  smkg-i_sys.c
 /// \brief TSoURDt3rd main system stuff for SDL
 
-#ifdef _MSC_VER
-#pragma warning(disable : 4214 4244)
-#endif
-
 #ifdef HAVE_SDL
+
 #ifdef _MSC_VER
 #include <windows.h>
 #pragma warning(default : 4214 4244)
@@ -50,11 +47,18 @@
 #define UNIXBACKTRACE
 #endif
 
+static const char *gamecontrollerdb_paths[] = {
+	"",
+	(PATHSEP "data" PATHSEP),
+	(PATHSEP "TSoURDt3rd" PATHSEP),
+	(PATHSEP "TSoURDt3rd" PATHSEP "data" PATHSEP),
+	NULL
+};
+static INT32 found_gamecontrollerdb_path = false;
+static INT32 found_gamecontrollerdb_user_path = false;
+
 static boolean gamepad_rumble_disabled = false;
 static boolean gamepad_trigger_rumble_disabled = false;
-
-// Converts duration in tics to milliseconds
-#define TICS_TO_MS(tics) ((INT32)(tics * (1000.0f/TICRATE)))
 
 // ------------------------ //
 //        Functions
@@ -66,11 +70,10 @@ static boolean gamepad_trigger_rumble_disabled = false;
 //
 void TSoURDt3rd_I_Pads_InitControllers(void)
 {
-	// Upon initialization, the gamecontroller subsystem will automatically dispatch
-	// controller device added events for controllers connected before initialization.
 	char dbpath[1024];
+	UINT8 i;
 
-	for (UINT8 i = 0; i < TSOURDT3RD_NUM_GAMEPADS; i++)
+	for (i = 0; i < TSOURDT3RD_NUM_GAMEPADS; i++)
 	{
 		TSoURDt3rd_ControllerInfo *controller_data = &tsourdt3rd_controllers[i];
 		controller_data->active = false;
@@ -84,31 +87,61 @@ void TSoURDt3rd_I_Pads_InitControllers(void)
 	if (M_CheckParm("-nojoy") || M_CheckParm("-tsourdt3rd_nogamepadrefactor"))
 		return;
 
-	sprintf(dbpath, "%s" PATHSEP "gamecontrollerdb.txt", srb2path);
-	SDL_GameControllerAddMappingsFromFile(dbpath);
-	sprintf(dbpath, "%s" PATHSEP "gamecontrollerdb_user.txt", srb2home);
-	SDL_GameControllerAddMappingsFromFile(dbpath);
+	for (i = 0; gamecontrollerdb_paths[i] != NULL; i++)
+	{
+		sprintf(dbpath, "%s" PATHSEP "%s" "gamecontrollerdb.txt", srb2path, gamecontrollerdb_paths[i]);
+		found_gamecontrollerdb_path = SDL_GameControllerAddMappingsFromFile(dbpath);
+		if (found_gamecontrollerdb_path)
+			break;
+	}
+	for (i = 0; gamecontrollerdb_paths[i] != NULL; i++)
+	{
+		sprintf(dbpath, "%s" PATHSEP "%s" "gamecontrollerdb_user.txt", srb2home, gamecontrollerdb_paths[i]);
+		found_gamecontrollerdb_user_path = SDL_GameControllerAddMappingsFromFile(dbpath);
+		if (found_gamecontrollerdb_user_path)
+			break;
+	}
+
+	if (found_gamecontrollerdb_path < 0)
+	{
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG,
+			M_GetText("TSoURDt3rd_I_Pads_InitControllers() - Couldn't initialize game controller data in game path.\n")
+		);
+	}
+	if (found_gamecontrollerdb_user_path < 0)
+	{
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG,
+			M_GetText("TSoURDt3rd_I_Pads_InitControllers() - Couldn't initialize game controller data in user path.\n")
+		);
+	}
 
 	if (SDL_WasInit(TSOURDT3RD_GAMEPAD_INIT_FLAGS))
 	{
+		// Game controller already initialized, don't do it again!
 		return;
 	}
+
+	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD, "TSoURDt3rd_I_Pads_InitControllers()...\n");
 
 	if (M_CheckParm("-noxinput"))
 		SDL_SetHintWithPriority("SDL_XINPUT_ENABLED", "0", SDL_HINT_OVERRIDE);
 	if (M_CheckParm("-nohidapi"))
 		SDL_SetHintWithPriority("SDL_JOYSTICK_HIDAPI", "0", SDL_HINT_OVERRIDE);
 
-	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD, "TSoURDt3rd_I_Pads_InitControllers()...\n");
-
 	if (SDL_InitSubSystem(TSOURDT3RD_GAMEPAD_INIT_FLAGS) == -1)
 	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD, M_GetText("Couldn't initialize game controllers: %s\n"), SDL_GetError());
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD,
+			M_GetText("TSoURDt3rd_I_Pads_InitControllers() - Couldn't initialize game controllers: %s\n"),
+			SDL_GetError()
+		);
 		return;
 	}
 
 	gamepad_rumble_disabled = M_CheckParm("-tsourdt3rd_gamepads_norumble");
 	gamepad_trigger_rumble_disabled = M_CheckParm("-tsourdt3rd_gamepads_notriggerrumble");
+
+	// Upon initialization, the gamecontroller subsystem will automatically dispatch
+	// controller device added events for controllers connected before initialization.
 }
 
 void TSoURDt3rd_I_Pads_SetIndicatorColor(INT32 device_id, UINT8 red, UINT8 green, UINT8 blue)
@@ -256,13 +289,12 @@ void TSoURDt3rd_I_CursedWindowMovement(int xd, int yd)
 //
 static const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean coredumped)
 {
-	// Make Variables //
-	const char *jokemsg;
-	char underscoremsg[256] = "";
+	static const char *jokemsg;
+	char underscoremsg[256];
 	size_t i, tabend, current;
 
-	// We have to run these checks first because any
-	// P_Rand or M_Rand functions may not have been initialized yet.
+	// If we crashed too early, the P_Rand or M_Rand functions may not have been initialized yet.
+	// So, just in case, let's initialize them!
 	if (P_GetRandSeed() == P_GetInitSeed())
 	{
 		if (!M_RandomSeedFromOS())
@@ -428,6 +460,7 @@ static const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean 
 	}
 
 	// Underscore our Funny Crash Message, Return it, and We're Done :) //
+	memset(underscoremsg, 0, sizeof(underscoremsg));
 	for (i = current = 0; jokemsg[current]; i++, current++)
 	{
 		// Run Special Operations //
@@ -441,7 +474,7 @@ static const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean 
 #if 0
 		else if ((isupper(jokemsg[current]) && !isupper(jokemsg[current+1]))
 #else
-		else if ((isupper(jokemsg[current]))// && !isupper(jokemsg[current+1]))
+		else if ((isupper(jokemsg[current]))
 #endif
 			&& (jokemsg[current+1] != ' ')
 			&& (jokemsg[current+1] != '\t')
@@ -565,6 +598,8 @@ void TSoURDt3rd_I_ShowErrorMessageBox(const char *messagefordevelopers, const SD
 //
 void TSoURDt3rd_I_ShutdownSystem(void)
 {
+	I_OutputMsg("TSoURDt3rd_I_ShutdownSystem() - Shutting down TSoURDt3rd...\n");
+
 	for (UINT8 i = 0; i < TSOURDT3RD_NUM_GAMEPADS; i++)
 		TSoURDt3rd_I_Pads_SetIndicatorColor(i, 0, 0, 255);
 	TSoURDt3rd_P_Pads_ResetDeviceRumble(-1);
