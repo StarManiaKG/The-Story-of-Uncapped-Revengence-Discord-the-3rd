@@ -10,8 +10,8 @@
 /// \brief April Fools event related functions and data
 
 #include "../smkg-cvars.h"
-#include "../smkg-jukebox.h"
 #include "../ss_main.h"
+#include "../core/smkg-s_jukebox.h"
 #include "../menus/smkg-m_sys.h" // menumessage //
 
 #include "../../d_main.h" // D_StartTitle

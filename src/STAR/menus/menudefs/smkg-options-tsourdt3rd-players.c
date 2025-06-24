@@ -17,7 +17,7 @@
 
 menuitem_t TSoURDt3rd_OP_PlayerMenu[] =
 {
-	{IT_HEADER, NULL, "General", NULL, 0},
+	{IT_HEADER, NULL, "Shields", NULL, 0},
 		{IT_STRING | IT_CVAR, NULL, "Shield Blocks Transformation",
 			&cv_tsourdt3rd_players_shieldblockstransformation, 0},
 		{IT_STRING | IT_CVAR, NULL, "Armageddon Nuke While Super",
