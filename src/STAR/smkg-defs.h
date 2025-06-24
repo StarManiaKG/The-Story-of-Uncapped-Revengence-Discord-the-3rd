@@ -22,16 +22,23 @@ extern "C" {
 //        Variables
 // ------------------------ //
 
-//#define TSOURDT3RD_DEBUGGING /* Debugging */
-
 #define AUTOLOADCONFIGFILENAME "autoload.cfg"
 
+#define TSOURDT3RD_DEBUGGING /* Debugging */
+//#define _DEBUG /* Debugging */
+//#define DEBUGFILE /* Debugging */
+
+// Converts duration in tics to milliseconds
+#define TICS_TO_MS(tics) ((INT32)(tics * (1000.0f/TICRATE)))
+
+/// Dynamic Lighting
+#define ALAM_LIGHTING
 #ifdef ALAM_LIGHTING
 #define STAR_LIGHTING /* EXTREME BETA: Fix up ALAM_LIGHTING thanks to touch-ups by Star */
 #endif
 
-//#define _DEBUG /* Debugging */
-//#define DEBUGFILE /* Debugging */
+// We already use our own loading screen system, soo....
+#undef HWR_LOADING_SCREEN
 
 #ifdef __cplusplus
 } // extern "C"
