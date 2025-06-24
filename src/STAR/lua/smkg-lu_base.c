@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2022-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2022-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -230,6 +230,7 @@ static luaL_Reg tsourdt3d_base_lib[] = {
 	{"S_GetInternalMusicVolume", lib_sGetInternalMusicVolume},
 	{"S_SetInternalSfxVolume", lib_sSetInternalSfxVolume},
 	{"S_GetInternalSfxVolume", lib_sGetInternalSfxVolume},
+
 	{NULL, NULL} // FINISHED!
 };
 

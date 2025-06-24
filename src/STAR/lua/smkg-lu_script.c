@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -10,8 +10,8 @@
 /// \brief TSoURDt3rd's Lua scripting basics (no this is not a tutorial)
 
 #include "smkg-lu_main.h"
-#include "../smkg-misc.h" // TSoURDt3rd_M_FindWordInTermTable() //
 #include "../star_vars.h" // tsourdt3rd struct //
+#include "../misc/smkg-m_misc.h" // TSoURDt3rd_M_FindWordInTermTable() //
 
 #include "../../lua_libs.h"
 
@@ -42,8 +42,7 @@ enum tsourdt3rd_blua_global_terms_e
 	tsourdt3rd_sounds_synchfailure,
 	tsourdt3rd_sounds_discord_requests,
 	tsourdt3rd_extras_spawntf2dispenser
-};
-static const char *const tsourdt3rd_blua_global_terms_opt[] = {
+}; static const char *const tsourdt3rd_blua_global_terms_opt[] = {
 	"eastermode",
 	"AllowEasterEggHunt",
 	"EnableEasterEggHuntBonuses",
