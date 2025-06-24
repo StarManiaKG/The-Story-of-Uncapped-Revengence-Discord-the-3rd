@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -14,15 +14,17 @@
 
 #include "star_vars.h"
 
+#include "../p_saveg.h"
+
 // ------------------------ //
 //        Functions
 // ------------------------ //
 
-UINT8 TSOURDT3RD_READUINT8(UINT8 *save_p, TSoURDt3rd_t *tsourdt3rd_user, UINT8 fallback);
-UINT32 TSOURDT3RD_READUINT32(UINT8 *save_p, TSoURDt3rd_t *tsourdt3rd_user, UINT32 fallback);
+UINT8 TSOURDT3RD_READUINT8(save_t *save_p, TSoURDt3rd_t *tsourdt3rd_user, UINT8 fallback);
+UINT32 TSOURDT3RD_READUINT32(save_t *save_p, TSoURDt3rd_t *tsourdt3rd_user, UINT32 fallback);
 
-void TSoURDt3rd_NetArchiveUsers(UINT8 *save_p, INT32 playernum);
-void TSoURDt3rd_NetUnArchiveUsers(UINT8 *save_p, INT32 playernum);
+void TSoURDt3rd_P_NetArchiveUsers(save_t *save_p);
+void TSoURDt3rd_P_NetUnArchiveUsers(save_t *save_p);
 
 void TSoURDt3rd_PSav_WriteExtraData(void);
 void TSoURDt3rd_PSav_ReadExtraData(void);

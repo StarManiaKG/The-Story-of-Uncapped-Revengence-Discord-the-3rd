@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -10,20 +10,32 @@
 /// \brief TSoURDt3rd's custom savegame code
 
 #include "smkg-p_saveg.h"
-#include "smkg-misc.h"
+#include "misc/smkg-m_misc.h"
 
 #include "../byteptr.h"
 #include "../doomstat.h"
-#include "../i_net.h"
 #include "../d_main.h"
+#include "../g_game.h"
 #include "../p_local.h"
 #include "../z_zone.h"
 
-//#define WRITETOFILE
+#include "../netcode/i_net.h"
 
 // ------------------------ //
 //        Functions
 // ------------------------ //
+
+//#define WRITETOFILE
+
+#define TSOURDT3RD_ARCHIVEBLOCK_USERS 0x7FA5C508
+
+// ------------------------ //
+//        Functions
+// ------------------------ //
+
+// -------------------------------
+// Data Reading Routines
+// -------------------------------
 
 #ifdef WRITETOFILE
 #include "../g_game.h" // player_names //
@@ -59,62 +71,93 @@ static void Write(INT32 playernum, boolean archive)
 }
 #endif
 
-UINT8 TSOURDT3RD_READUINT8(UINT8 *save_p, TSoURDt3rd_t *tsourdt3rd_user, UINT8 fallback)
+UINT8 TSOURDT3RD_READUINT8(save_t *save_p, TSoURDt3rd_t *tsourdt3rd_user, UINT8 fallback)
 {
 	if (!tsourdt3rd_user || !tsourdt3rd_user->usingTSoURDt3rd || !netbuffer->u.servercfg.tsourdt3rd)
 		return fallback;
-	return READUINT8(save_p);
+	return P_ReadUINT8(save_p);
 }
 
-UINT32 TSOURDT3RD_READUINT32(UINT8 *save_p, TSoURDt3rd_t *tsourdt3rd_user, UINT32 fallback)
+UINT32 TSOURDT3RD_READUINT32(save_t *save_p, TSoURDt3rd_t *tsourdt3rd_user, UINT32 fallback)
 {
 	if (!tsourdt3rd_user || !tsourdt3rd_user->usingTSoURDt3rd || !netbuffer->u.servercfg.tsourdt3rd)
 		return fallback;
-	return READUINT32(save_p);
+	return P_ReadUINT32(save_p);
 }
 
-void TSoURDt3rd_NetArchiveUsers(UINT8 *save_p, INT32 playernum)
+// -------------------------------
+// Archival Routines
+// -------------------------------
+
+void TSoURDt3rd_P_NetArchiveUsers(save_t *save_p)
 {
-	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[playernum];
+	UINT32 i;
 
-	if (!TSoURDt3rd)
-		return;
+	P_WriteUINT32(save_p, TSOURDT3RD_ARCHIVEBLOCK_USERS);
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i])
+			continue;
 
-	WRITESTRING(save_p, TSoURDt3rd->user_hash);
-	WRITEUINT8(save_p, TSoURDt3rd->usingTSoURDt3rd);
-	WRITEUINT8(save_p, TSoURDt3rd->server_usingTSoURDt3rd);
-	WRITEUINT8(save_p, TSoURDt3rd->server_majorVersion);
-	WRITEUINT8(save_p, TSoURDt3rd->server_minorVersion);
-	WRITEUINT8(save_p, TSoURDt3rd->server_subVersion);
-	WRITEUINT8(save_p, TSoURDt3rd->server_TSoURDt3rdVersion);
+		P_WriteString(save_p, TSoURDt3rdPlayers[i].user_hash);
+		P_WriteUINT8(save_p, TSoURDt3rdPlayers[i].usingTSoURDt3rd);
+		P_WriteUINT8(save_p, TSoURDt3rdPlayers[i].server_usingTSoURDt3rd);
+		P_WriteUINT8(save_p, TSoURDt3rdPlayers[i].server_majorVersion);
+		P_WriteUINT8(save_p, TSoURDt3rdPlayers[i].server_minorVersion);
+		P_WriteUINT8(save_p, TSoURDt3rdPlayers[i].server_subVersion);
+		P_WriteUINT8(save_p, TSoURDt3rdPlayers[i].server_TSoURDt3rdVersion);
 
 #ifdef WRITETOFILE
-	Write(playernum, true);
+		Write(playernum, true);
 #endif
+	}
 }
 
-void TSoURDt3rd_NetUnArchiveUsers(UINT8 *save_p, INT32 playernum)
+// -------------------------------
+// Unarchival Routines
+// -------------------------------
+
+void TSoURDt3rd_P_NetUnArchiveUsers(save_t *save_p)
 {
-	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[playernum];
+	UINT32 i;
 
-	if (!TSoURDt3rd)
-		return;
+	if (P_ReadUINT32(save_p) != TSOURDT3RD_ARCHIVEBLOCK_USERS)
+	{
+		// No TSoURDt3rd data exists...
+		// Eh. That's fine.
+#if 0
+		I_Error("Bad $$$.sav at archive block TSoURDt3rd");
+#endif
+	}
 
-	if (!TSoURDt3rd->usingTSoURDt3rd || !netbuffer->u.servercfg.tsourdt3rd)
-		TSoURDt3rd->user_hash[0] = '\0';
-	else
-		READSTRING(save_p, TSoURDt3rd->user_hash);
-	TSoURDt3rd->usingTSoURDt3rd = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, false);
-	TSoURDt3rd->server_usingTSoURDt3rd = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, false);
-	TSoURDt3rd->server_majorVersion = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, TSoURDt3rd_CurrentMajorVersion());
-	TSoURDt3rd->server_minorVersion = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, TSoURDt3rd_CurrentMinorVersion());
-	TSoURDt3rd->server_subVersion = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, TSoURDt3rd_CurrentSubversion());
-	TSoURDt3rd->server_TSoURDt3rdVersion = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, TSoURDt3rd_CurrentVersion());
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[i];
+
+		if (!playeringame[i])
+			continue;
+
+		if (!TSoURDt3rdPlayers[i].usingTSoURDt3rd || !netbuffer->u.servercfg.tsourdt3rd)
+			TSoURDt3rdPlayers[i].user_hash[0] = '\0';
+		else
+			P_ReadString(save_p, TSoURDt3rdPlayers[i].user_hash);
+
+		TSoURDt3rdPlayers[i].usingTSoURDt3rd = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, false);
+		TSoURDt3rdPlayers[i].server_usingTSoURDt3rd = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, false);
+		TSoURDt3rdPlayers[i].server_majorVersion = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, TSoURDt3rd_CurrentMajorVersion());
+		TSoURDt3rdPlayers[i].server_minorVersion = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, TSoURDt3rd_CurrentMinorVersion());
+		TSoURDt3rdPlayers[i].server_subVersion = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, TSoURDt3rd_CurrentSubversion());
+		TSoURDt3rdPlayers[i].server_TSoURDt3rdVersion = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, TSoURDt3rd_CurrentVersion());
 
 #ifdef WRITETOFILE
-	Write(playernum, false);
+		Write(playernum, false);
 #endif
+	}
 }
+
+// -------------------------------
+// Savedata Routines
+// -------------------------------
 
 //
 // void TSoURDt3rd_PSav_WriteExtraData(void)
