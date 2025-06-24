@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2023-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2023-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -325,3 +325,339 @@ static void STAR_HandleExtendedServerPropertyMenu(INT32 choice)
 			M_ClearMenus(false);	
 	}
 }
+
+// =============
+// SCREEN BORDER
+// =============
+
+UINT8 *scr_borderpatch; // flat used to fill the reduced view borders set at ST_Init()
+
+/**	\brief viewborder patches lump numbers
+*/
+lumpnum_t viewborderlump[8];
+
+/**	\brief Store the lumpnumber of the viewborder patches
+*/
+
+void R_InitViewBorder(void)
+{
+	viewborderlump[BRDR_T] = W_GetNumForName("brdr_t");
+	viewborderlump[BRDR_B] = W_GetNumForName("brdr_b");
+	viewborderlump[BRDR_L] = W_GetNumForName("brdr_l");
+	viewborderlump[BRDR_R] = W_GetNumForName("brdr_r");
+	viewborderlump[BRDR_TL] = W_GetNumForName("brdr_tl");
+	viewborderlump[BRDR_BL] = W_GetNumForName("brdr_bl");
+	viewborderlump[BRDR_TR] = W_GetNumForName("brdr_tr");
+	viewborderlump[BRDR_BR] = W_GetNumForName("brdr_br");
+}
+
+#if 0
+/**	\brief R_FillBackScreen
+
+	Fills the back screen with a pattern for variable screen sizes
+	Also draws a beveled edge.
+*/
+void R_FillBackScreen(void)
+{
+	UINT8 *src, *dest;
+	patch_t *patch;
+	INT32 x, y, step, boff;
+
+	// quickfix, don't cache lumps in both modes
+	if (rendermode != render_soft)
+		return;
+
+	// draw pattern around the status bar too (when hires),
+	// so return only when in full-screen without status bar.
+	if (scaledviewwidth == vid.width && viewheight == vid.height)
+		return;
+
+	src = scr_borderpatch;
+	dest = screens[1];
+
+	for (y = 0; y < vid.height; y++)
+	{
+		for (x = 0; x < vid.width/128; x++)
+		{
+			M_Memcpy (dest, src+((y&127)<<7), 128);
+			dest += 128;
+		}
+
+		if (vid.width&127)
+		{
+			M_Memcpy(dest, src+((y&127)<<7), vid.width&127);
+			dest += (vid.width&127);
+		}
+	}
+
+	// don't draw the borders when viewwidth is full vid.width.
+	if (scaledviewwidth == vid.width)
+		return;
+
+	step = 8;
+	boff = 8;
+
+	patch = W_CacheLumpNum(viewborderlump[BRDR_T], PU_CACHE);
+	for (x = 0; x < scaledviewwidth; x += step)
+		V_DrawPatch(viewwindowx + x, viewwindowy - boff, 1, patch);
+
+	patch = W_CacheLumpNum(viewborderlump[BRDR_B], PU_CACHE);
+	for (x = 0; x < scaledviewwidth; x += step)
+		V_DrawPatch(viewwindowx + x, viewwindowy + viewheight, 1, patch);
+
+	patch = W_CacheLumpNum(viewborderlump[BRDR_L], PU_CACHE);
+	for (y = 0; y < viewheight; y += step)
+		V_DrawPatch(viewwindowx - boff, viewwindowy + y, 1, patch);
+
+	patch = W_CacheLumpNum(viewborderlump[BRDR_R],PU_CACHE);
+	for (y = 0; y < viewheight; y += step)
+		V_DrawPatch(viewwindowx + scaledviewwidth, viewwindowy + y, 1,
+			patch);
+
+	// Draw beveled corners.
+	V_DrawPatch(viewwindowx - boff, viewwindowy - boff, 1,
+		W_CacheLumpNum(viewborderlump[BRDR_TL], PU_CACHE));
+	V_DrawPatch(viewwindowx + scaledviewwidth, viewwindowy - boff, 1,
+		W_CacheLumpNum(viewborderlump[BRDR_TR], PU_CACHE));
+	V_DrawPatch(viewwindowx - boff, viewwindowy + viewheight, 1,
+		W_CacheLumpNum(viewborderlump[BRDR_BL], PU_CACHE));
+	V_DrawPatch(viewwindowx + scaledviewwidth, viewwindowy + viewheight, 1,
+		W_CacheLumpNum(viewborderlump[BRDR_BR], PU_CACHE));
+}
+#endif
+
+// ==========================================================================
+//                                                             R_DRAW.C STUFF
+// ==========================================================================
+
+// ------------------
+// HWR_DrawViewBorder
+// Fill the space around the view window with a Doom flat texture, draw the
+// beveled edges.
+// 'clearlines' is useful to clear the heads up messages, when the view
+// window is reduced, it doesn't refresh all the view borders.
+// ------------------
+void HWR_DrawViewBorder(INT32 clearlines)
+{
+	INT32 x, y;
+	INT32 top, side;
+	INT32 baseviewwidth, baseviewheight;
+	INT32 basewindowx, basewindowy;
+	patch_t *patch;
+
+	if (!clearlines)
+		clearlines = BASEVIDHEIGHT; // refresh all
+
+	// calc view size based on original game resolution
+	baseviewwidth =  FixedInt(FixedDiv(FLOAT_TO_FIXED(viewwidth), vid.fdup)); //(cv_viewsize.value * BASEVIDWIDTH/10)&~7;
+	baseviewheight = FixedInt(FixedDiv(FLOAT_TO_FIXED(viewheight), vid.fdup));
+	top = FixedInt(FixedDiv(FLOAT_TO_FIXED(viewwindowy), vid.fdup));
+	side = FixedInt(FixedDiv(FLOAT_TO_FIXED(viewwindowx), vid.fdup));
+
+	// top
+	HWR_DrawFlatFill(0, 0,
+		BASEVIDWIDTH, (top < clearlines ? top : clearlines),
+		st_borderpatchnum);
+
+	// left
+	if (top < clearlines)
+		HWR_DrawFlatFill(0, top, side,
+			(clearlines-top < baseviewheight ? clearlines-top : baseviewheight),
+			st_borderpatchnum);
+
+	// right
+	if (top < clearlines)
+		HWR_DrawFlatFill(side + baseviewwidth, top, side,
+			(clearlines-top < baseviewheight ? clearlines-top : baseviewheight),
+			st_borderpatchnum);
+
+	// bottom
+	if (top + baseviewheight < clearlines)
+		HWR_DrawFlatFill(0, top + baseviewheight,
+			BASEVIDWIDTH, BASEVIDHEIGHT, st_borderpatchnum);
+
+	//
+	// draw the view borders
+	//
+
+	basewindowx = (BASEVIDWIDTH - baseviewwidth)>>1;
+	if (baseviewwidth == BASEVIDWIDTH)
+		basewindowy = 0;
+	else
+		basewindowy = top;
+
+	// top edge
+	if (clearlines > basewindowy - 8)
+	{
+		patch = W_CachePatchNum(viewborderlump[BRDR_T], PU_PATCH);
+		for (x = 0; x < baseviewwidth; x += 8)
+			HWR_DrawStretchyFixedPatch(patch, ((basewindowx + x)<<FRACBITS), ((basewindowy - 8)<<FRACBITS),
+				FRACUNIT, FRACUNIT,
+				0, NULL);
+	}
+
+	// bottom edge
+	if (clearlines > basewindowy + baseviewheight)
+	{
+		patch = W_CachePatchNum(viewborderlump[BRDR_B], PU_PATCH);
+		for (x = 0; x < baseviewwidth; x += 8)
+			HWR_DrawStretchyFixedPatch(patch, ((basewindowx + x)<<FRACBITS), ((basewindowy + baseviewheight)<<FRACBITS),
+				FRACUNIT, FRACUNIT,
+				0, NULL);
+	}
+
+	// left edge
+	if (clearlines > basewindowy)
+	{
+		patch = W_CachePatchNum(viewborderlump[BRDR_L], PU_PATCH);
+		for (y = 0; y < baseviewheight && basewindowy + y < clearlines;
+			y += 8)
+		{
+			HWR_DrawStretchyFixedPatch(patch, ((basewindowx - 8)<<FRACBITS), ((basewindowy + y)<<FRACBITS),
+				FRACUNIT, FRACUNIT,
+				0, NULL);
+		}
+	}
+
+	// right edge
+	if (clearlines > basewindowy)
+	{
+		patch = W_CachePatchNum(viewborderlump[BRDR_R], PU_PATCH);
+		for (y = 0; y < baseviewheight && basewindowy+y < clearlines;
+			y += 8)
+		{
+			HWR_DrawStretchyFixedPatch(patch, ((basewindowx + baseviewwidth)<<FRACBITS), ((basewindowy + y)<<FRACBITS),
+				FRACUNIT, FRACUNIT,
+				0, NULL);
+		}
+	}
+
+	// Draw beveled corners.
+	if (clearlines > basewindowy - 8)
+		HWR_DrawStretchyFixedPatch(W_CachePatchNum(viewborderlump[BRDR_TL],
+				PU_PATCH),
+			((basewindowx - 8)<<FRACBITS), ((basewindowy - 8)<<FRACBITS), FRACUNIT, FRACUNIT, 0, NULL);
+
+	if (clearlines > basewindowy - 8)
+		HWR_DrawStretchyFixedPatch(W_CachePatchNum(viewborderlump[BRDR_TR],
+				PU_PATCH),
+			((basewindowx + baseviewwidth)<<FRACBITS), ((basewindowy - 8)<<FRACBITS), FRACUNIT, FRACUNIT, 0, NULL);
+
+	if (clearlines > basewindowy+baseviewheight)
+		HWR_DrawStretchyFixedPatch(W_CachePatchNum(viewborderlump[BRDR_BL],
+				PU_PATCH),
+			((basewindowx - 8)<<FRACBITS), ((basewindowy + baseviewheight)<<FRACBITS), FRACUNIT, FRACUNIT, 0, NULL);
+
+	if (clearlines > basewindowy + baseviewheight)
+		HWR_DrawStretchyFixedPatch(W_CachePatchNum(viewborderlump[BRDR_BR],
+				PU_PATCH),
+			((basewindowx + baseviewwidth)<<FRACBITS),
+			((basewindowy + baseviewheight)<<FRACBITS), FRACUNIT, FRACUNIT, 0, NULL);
+}
+
+void R_Init(void)
+{
+	//I_OutputMsg("\nR_InitViewBorder");
+	R_InitViewBorder();
+}
+
+// SRB2 border patch
+	// st_borderpatchnum = W_GetNumForName("GFZFLR01");
+	// scr_borderpatch = W_CacheLumpNum(st_borderpatchnum, PU_HUDGFX);
+
+/// \brief Top border
+#define BRDR_T 0
+/// \brief Bottom border
+#define BRDR_B 1
+/// \brief Left border
+#define BRDR_L 2
+/// \brief Right border
+#define BRDR_R 3
+/// \brief Topleft border
+#define BRDR_TL 4
+/// \brief Topright border
+#define BRDR_TR 5
+/// \brief Bottomleft border
+#define BRDR_BL 6
+/// \brief Bottomright border
+#define BRDR_BR 7
+
+extern lumpnum_t viewborderlump[8];
+
+#if 0
+/**	\brief The R_DrawViewBorder
+
+  Draws the border around the view
+	for different size windows?
+*/
+void R_DrawViewBorder(void)
+{
+	INT32 top, side, ofs;
+
+	if (rendermode == render_none)
+		return;
+#ifdef HWRENDER
+	if (rendermode != render_soft)
+	{
+		HWR_DrawViewBorder(0);
+		return;
+	}
+	else
+#endif
+
+#ifdef DEBUG
+	fprintf(stderr,"RDVB: vidwidth %d vidheight %d scaledviewwidth %d viewheight %d\n",
+		vid.width, vid.height, scaledviewwidth, viewheight);
+#endif
+
+	if (scaledviewwidth == vid.width)
+		return;
+
+	top = (vid.height - viewheight)>>1;
+	side = (vid.width - scaledviewwidth)>>1;
+
+	// copy top and one line of left side
+	R_VideoErase(0, top*vid.width+side);
+
+	// copy one line of right side and bottom
+	ofs = (viewheight+top)*vid.width - side;
+	R_VideoErase(ofs, top*vid.width + side);
+
+	// copy sides using wraparound
+	ofs = top*vid.width + vid.width-side;
+	side <<= 1;
+
+    // simpler using our VID_Blit routine
+	VID_BlitLinearScreen(screens[1] + ofs, screens[0] + ofs, side, viewheight - 1,
+		vid.width, vid.width);
+}
+#endif
+
+void ST_LoadGraphics(void)
+{
+	int i;
+
+	// SRB2 border patch
+	// st_borderpatchnum = W_GetNumForName("GFZFLR01");
+	// scr_borderpatch = W_CacheLumpNum(st_borderpatchnum, PU_HUDGFX);
+}
+
+// ========
+// HARDWARE
+// ========
+
+static const INT32 picmode2GR[] =
+{
+	GL_TEXFMT_P_8,                // PALETTE
+	0,                            // INTENSITY          (unsupported yet)
+	GL_TEXFMT_ALPHA_INTENSITY_88, // INTENSITY_ALPHA    (corona use this)
+	0,                            // RGB24              (unsupported yet)
+	GL_TEXFMT_RGBA,               // RGBA32             (opengl only)
+};
+
+// =====
+// SKINS
+// =====
+
+skins = Z_Realloc(skins, sizeof(skin_t*) * (numskins + 1), PU_STATIC, NULL);
+skin = skins[numskins] = Z_Calloc(sizeof(skin_t), PU_STATIC, NULL);
