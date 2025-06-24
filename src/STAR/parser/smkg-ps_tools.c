@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -10,7 +10,7 @@
 /// \brief Contains helpful STARScript parsing routines
 
 #include "smkg-ps_main.h"
-#include "../smkg-misc.h"
+#include "../misc/smkg-m_misc.h"
 
 // ------------------------ //
 //        Functions
