@@ -1,8 +1,8 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 // PORTED FROM DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Original Copyright (C) 2024 by James Robert Roman
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG
+// Copyright (C) 2024 by James Robert Roman
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -25,14 +25,15 @@
 
 static void expo(size_t skin)
 {
-	lumpnum_t lumpnum = skins[skin].sprites[SPR2_XTRA].spriteframes[0].lumppat[0];
-	patch_t *pat = W_CacheSoftwarePatchNum(lumpnum, PU_STATIC);
-	FILE *fp = fopen(va("/tmp/rpcphotos/%s.dat", skins[skin].name), "w");
+	lumpnum_t lumpnum = skins[skin]->sprites[SPR2_XTRA].spriteframes[0].lumppat[0];
+	patch_t *pat = W_CachePatchNum(lumpnum, PU_STATIC);
+	FILE *fp = fopen(va("/tmp/rpcphotos/%s.dat", skins[skin]->name), "w");
 	int w = pat->width;
 	int h = pat->height;
 	int size = w * h * 3;
 	UINT8 *bitmap = calloc(1, size);
-	const UINT8 *colormap = R_GetTranslationColormap(TC_DEFAULT, skins[skin].prefcolor, GTC_CACHE);
+	const UINT8 *colormap = R_GetTranslationColormap(TC_DEFAULT, skins[skin]->prefcolor, GTC_CACHE);
+
 	for (int i = 0; i < w * h; ++i)
 	{
 		UINT8 *p = Picture_GetPatchPixel(pat, PICFMT_PATCH, i % w, i / h, 0);
@@ -44,6 +45,7 @@ static void expo(size_t skin)
 			bitmap[i * 3 + 2] = col.blue;
 		}
 	}
+
 	fwrite(bitmap, 1, size, fp);
 	fclose(fp);
 	free(bitmap);
