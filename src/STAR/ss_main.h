@@ -12,6 +12,8 @@
 #ifndef __SS_MAIN__
 #define __SS_MAIN__
 
+#include "core/smkg-p_setup.h"
+
 #include "../p_mobj.h"
 #include "../s_sound.h"
 
@@ -24,16 +26,28 @@ typedef struct tsourdt3rd_s
 	struct
 	{
 		boolean time_over;
-	} levels;
+	} game;
 } tsourdt3rd_t;
 extern tsourdt3rd_t tsourdt3rd[MAXPLAYERS];
 
 extern struct tsourdt3rd_local_s
 {
-	boolean checked_version;
 	boolean ms_address_changed;
 	boolean autoloading_mods;
 	boolean autoloaded_mods;
+
+#ifdef HAVE_CURL
+	struct
+	{
+		boolean checked_version;
+	} curl;
+#endif
+
+	struct
+	{
+		tsourdt3rd_world_scenarios_t scenario;
+		tsourdt3rd_world_scenarios_types_t scenario_types;
+	} world;
 
 	struct
 	{

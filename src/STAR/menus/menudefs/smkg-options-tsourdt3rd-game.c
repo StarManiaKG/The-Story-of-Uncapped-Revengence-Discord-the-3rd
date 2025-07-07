@@ -28,7 +28,7 @@ menuitem_t TSoURDt3rd_OP_GameMenu[] =
 {
 	{IT_STRING | IT_CALL, NULL, "Check for Updates...",
 		G_CheckForTSoURDt3rdUpdates, 0},
-	{IT_STRING | IT_CVAR, NULL,	"Automatic Update Checking on Startup",
+	{IT_STRING | IT_CVAR, NULL,	"Check for Updates on Startup",
 		&cv_tsourdt3rd_main_checkforupdatesonstartup, 0},
 
 	{IT_SPACE, NULL, NULL,
@@ -234,7 +234,7 @@ static void G_CheckForTSoURDt3rdUpdates(INT32 choice)
 {
 	(void)choice;
 #ifdef HAVE_CURL
-	tsourdt3rd_local.checked_version = false;
+	tsourdt3rd_local.curl.checked_version = false;
 	TSoURDt3rd_CurlRoutine_FindUpdates();
 #endif
 }

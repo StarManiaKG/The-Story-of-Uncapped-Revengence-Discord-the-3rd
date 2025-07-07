@@ -48,7 +48,7 @@ void TSoURDt3rd_CurlRoutine_FindUpdates(void)
 	static char message_string[256];
 	INT32 message_type = 0;
 
-	if (tsourdt3rd_local.checked_version)
+	if (tsourdt3rd_local.curl.checked_version)
 	{
 		if (!dedicated && !menumessage.active && send_event_message)
 		{
@@ -147,7 +147,7 @@ void TSoURDt3rd_CurlRoutine_FindUpdates(void)
 	STAR_CONS_Printf(message_type, "%s\n", message_string);
 	Z_Free(return_version);
 
-	tsourdt3rd_local.checked_version = true;
+	tsourdt3rd_local.curl.checked_version = true;
 }
 
 #endif // HAVE_CURL
