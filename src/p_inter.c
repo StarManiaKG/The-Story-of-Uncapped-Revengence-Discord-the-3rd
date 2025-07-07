@@ -32,7 +32,7 @@
 
 // TSoURDt3rd
 #include "STAR/p_user.h" // TSoURDt3rd_P_DamageMobj() & TSoURDt3rd_P_KillMobj() //
-#include "STAR/star_vars.h" // TSoURDt3rd_Jukebox_IsPlaying() //
+#include "STAR/core/smkg-s_jukebox.h" // TSoURDt3rd_Jukebox_IsPlaying() //
 
 // CTF player names
 #define CTFTEAMCODE(pl) pl->ctfteam ? (pl->ctfteam == 1 ? "\x85" : "\x84") : ""

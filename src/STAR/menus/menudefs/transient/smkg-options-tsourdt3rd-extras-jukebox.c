@@ -10,6 +10,7 @@
 /// \brief TSoURDt3rd's full interactive Jukebox menu
 
 #include "../../smkg-m_sys.h"
+#include "../../../core/smkg-s_jukebox.h"
 #include "../../../core/smkg-s_audio.h"
 
 #include "../../../../g_demo.h"
@@ -182,8 +183,7 @@ static boolean M_Sys_TrackIsOnPage(tsourdt3rd_jukeboxdef_t *jukedef)
 
 	while (cur_juke_page)
 	{
-		if (!stricmp(cur_juke_page->page_name, jb_page->page_name))
-			return true;
+		if (!stricmp(cur_juke_page->page_name, jb_page->page_name)) return true;
 		cur_juke_page = cur_juke_page->next;
 	}
 	return false;
@@ -270,14 +270,21 @@ static boolean M_Sys_SetupNewJukeboxPage(void)
 
 static boolean M_Sys_FindNewJukeboxPage(boolean decrease)
 {
-	size_t all_juke_pages = sizeof(tsourdt3rd_jukebox_available_pages)/sizeof(tsourdt3rd_jukebox_pages_t);
+	size_t all_juke_pages;
 
-	if (tsourdt3rd_jukebox_numpages <= 0)
+	if (tsourdt3rd_jukebox_available_pages == NULL)
+	{
+		// Luckily, a fallback exists!
+		jb_page = &tsourdt3rd_jukeboxpage_mainpage;
+		return false;
+	}
+	else if (tsourdt3rd_jukebox_numpages <= 0)
 	{
 		// We don't really *need* to find another page.
-		return true;
+		return false;
 	}
 
+	all_juke_pages = sizeof(tsourdt3rd_jukebox_available_pages)/sizeof(tsourdt3rd_jukebox_pages_t);
 	if (decrease)
 	{
 		if (jb_page->prev == NULL)
@@ -294,9 +301,7 @@ static boolean M_Sys_FindNewJukeboxPage(boolean decrease)
 	}
 
 	jb_sel = 0;
-	if (!M_Sys_SetupNewJukeboxPage())
-		return false;
-	return true;
+	return (M_Sys_SetupNewJukeboxPage());
 }
 
 static void M_Sys_DrawJukebox(void)
@@ -740,7 +745,7 @@ static boolean M_Sys_HandleJukebox(INT32 choice)
 
 void TSoURDt3rd_M_Jukebox_Init(INT32 choice)
 {
-	if (tsourdt3rd_global_jukebox == NULL || tsourdt3rd_jukebox_available_pages == NULL)
+	if (tsourdt3rd_global_jukebox == NULL)
 	{
 		// Jukebox definition thing is NULL, so don't go any further.
 		TSoURDt3rd_M_StartMessage(

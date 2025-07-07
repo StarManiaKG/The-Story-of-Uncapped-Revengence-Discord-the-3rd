@@ -41,10 +41,18 @@ enum star_jukebox_lump_term_e
 //        Functions
 // ------------------------ //
 
-static void TSoURDt3rd_JUKEDEF_CreatePages(char *page_name)
+static INT32 TSoURDt3rd_JUKEDEF_CreatePages(char *page_name)
 {
 	tsourdt3rd_jukebox_pages_t *juke_page_prev = NULL;
 	tsourdt3rd_jukebox_pages_t *juke_page = tsourdt3rd_jukeboxpages_start;
+	INT32 return_with = 0;
+
+	if (tsourdt3rd_jukebox_available_pages == NULL)
+	{
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "JUKEDEF: Jukebox page system wasn't initialized, not creating page!\n");
+		return_with = -1;
+		goto end_function;
+	}
 
 	while (juke_page)
 	{
@@ -79,6 +87,7 @@ static void TSoURDt3rd_JUKEDEF_CreatePages(char *page_name)
 	}
 
 	(*tsourdt3rd_jukebox_available_pages) = juke_page;
+	return_with = 1;
 	goto end_function;
 
 end_function:
@@ -88,21 +97,29 @@ end_function:
 		free(page_name);
 		page_name = NULL;
 	}
-	return;
-}
+	return return_with;
 }
 
-static void TSoURDt3rd_JUKEDEF_SetSupportedPages(tsourdt3rd_jukebox_pages_t **supported_page_p, char *supported_lump, char *page_name)
+}
+
+static INT32 TSoURDt3rd_JUKEDEF_SetSupportedPages(tsourdt3rd_jukebox_pages_t **supported_page_p, char *supported_lump, char *page_name)
 {
 	tsourdt3rd_jukebox_pages_t *all_jukebox_pages = tsourdt3rd_jukeboxpages_start;
 	tsourdt3rd_jukebox_pages_t *new_page_prev = NULL;
 	tsourdt3rd_jukebox_pages_t *new_page = (*supported_page_p);
 	INT32 new_page_pos = 0;
+	INT32 return_with = 0;
+
+	if (tsourdt3rd_jukebox_available_pages == NULL)
+	{
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "JUKEDEF: Jukebox page system wasn't initialized, not setting track to page!\n");
+		return_with = -1;
+		goto end_function;
+	}
 
 	while (all_jukebox_pages)
 	{
-		if (!strnicmp(all_jukebox_pages->page_name, page_name, TSOURDT3RD_JUKEBOX_MAX_PAGE_NAME))
-			break;
+		if (!strnicmp(all_jukebox_pages->page_name, page_name, TSOURDT3RD_JUKEBOX_MAX_PAGE_NAME)) break;
 		all_jukebox_pages = all_jukebox_pages->next;
 	}
 	if (all_jukebox_pages == NULL)
@@ -140,6 +157,7 @@ static void TSoURDt3rd_JUKEDEF_SetSupportedPages(tsourdt3rd_jukebox_pages_t **su
 	}
 
 	(*supported_page_p) = new_page;
+	return_with = 1;
 	goto end_function;
 
 end_function:
@@ -149,28 +167,29 @@ end_function:
 		free(page_name);
 		page_name = NULL;
 	}
-	return;
+	return return_with;
 }
+
 }
 
 boolean TSoURDt3rd_STARParser_JUKEDEF(tsourdt3rd_starparser_t *script)
 {
-	tsourdt3rd_jukeboxdef_t *jukedef = NULL;
-	tsourdt3rd_jukebox_pages_t *new_supported_page = NULL;
-
-	char *lump_name = NULL;
-	char *page_name = NULL;
-
 	switch (TSoURDt3rd_STARParser_ValidTableTerm(script, star_jukebox_term_opt, true))
 	{
 		case star_jukebox_pagetitles:
 		{
 			while (script->tkn != NULL)
 			{
-				page_name = malloc(TSOURDT3RD_JUKEBOX_MAX_PAGE_NAME);
+				char *page_name = malloc(TSOURDT3RD_JUKEBOX_MAX_PAGE_NAME);
 
 				TSoURDt3rd_STARParser_STRLCPY(page_name, script->tkn, TSOURDT3RD_JUKEBOX_MAX_PAGE_NAME);
-				TSoURDt3rd_JUKEDEF_CreatePages(page_name);
+				INT32 page_created = TSoURDt3rd_JUKEDEF_CreatePages(page_name);
+
+				if (page_created == -1)
+				{
+					TSoURDt3rd_STARParser_Error("JUKEDEF: Quitting.", script, TSOURDT3RD_STARPARSER_ERROR_LUMP);
+					return true;
+				}
 
 				if (!strcmp(script->val, ","))
 				{
@@ -191,8 +210,8 @@ boolean TSoURDt3rd_STARParser_JUKEDEF(tsourdt3rd_starparser_t *script)
 		{
 			while (script->tkn != NULL)
 			{
-				jukedef = jukebox_def_start;
-				lump_name = strdup(script->tkn);
+				tsourdt3rd_jukeboxdef_t *jukedef = jukebox_def_start;
+				char *lump_name = strdup(script->tkn);
 
 				// Check if this new lump has a pre-existing definition...
 				while (jukedef)
@@ -230,11 +249,17 @@ boolean TSoURDt3rd_STARParser_JUKEDEF(tsourdt3rd_starparser_t *script)
 
 						while (script->val != NULL)
 						{
-							new_supported_page = jukedef->supported_pages;
-							page_name = malloc(TSOURDT3RD_JUKEBOX_MAX_PAGE_NAME);
+							tsourdt3rd_jukebox_pages_t *new_supported_page = jukedef->supported_pages;
+							char *page_name = malloc(TSOURDT3RD_JUKEBOX_MAX_PAGE_NAME);
 
 							TSoURDt3rd_STARParser_STRLCPY(page_name, script->val, TSOURDT3RD_JUKEBOX_MAX_PAGE_NAME);
-							TSoURDt3rd_JUKEDEF_SetSupportedPages(&new_supported_page, lump_name, page_name);
+							INT32 set_supported_page = TSoURDt3rd_JUKEDEF_SetSupportedPages(&new_supported_page, lump_name, page_name);
+
+							if (set_supported_page == -1)
+							{
+								TSoURDt3rd_STARParser_Error("JUKEDEF: Quitting.", script, TSOURDT3RD_STARPARSER_ERROR_LUMP);
+								break;
+							}
 
 							script->val = script->tokenizer->get(script->tokenizer, 1);
 							if (!strcmp(script->val, ":"))

@@ -34,8 +34,9 @@
 #endif
 
 // TSoURDt3rd
-#include "STAR/star_vars.h" // TSoURDt3rd_Jukebox_IsPlaying() & TSoURDt3rd_DetermineLevelMusic() //
+#include "STAR/star_vars.h" // TSoURDt3rd_DetermineLevelMusic() //
 #include "STAR/smkg-cvars.h" // cv_tsourdt3rd_game_soniccd //
+#include "STAR/core/smkg-s_jukebox.h" // TSoURDt3rd_Jukebox_IsPlaying() //
 
 boolean LUA_CallAction(enum actionnum actionnum, mobj_t *actor);
 

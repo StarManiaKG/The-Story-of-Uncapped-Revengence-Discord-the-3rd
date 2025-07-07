@@ -10,6 +10,7 @@
 /// \brief TSoURDt3rd's portable jammin' Jukebox
 
 #include "smkg-s_jukebox.h"
+
 #include "smkg-s_audio.h"
 #include "../menus/smkg-m_sys.h"
 
@@ -55,21 +56,26 @@ void TSoURDt3rd_Jukebox_Init(void)
 	}
 
 	tsourdt3rd_global_jukebox = Z_Calloc(sizeof(tsourdt3rd_jukebox_t), PU_STATIC, NULL);
-
-	if ((tsourdt3rd_jukebox_available_pages = Z_Malloc(TSOURDT3RD_JUKEBOX_MAX_PAGES * sizeof(tsourdt3rd_jukebox_pages_t *), PU_STATIC, NULL)))
-		tsourdt3rd_jukebox_available_pages[0] = &tsourdt3rd_jukeboxpage_mainpage;
-	else
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "TSoURDt3rd_Jukebox_Init(): Could not allocate jukebox pages.\n");
-
-	if (tsourdt3rd_global_jukebox != NULL)
+	if (tsourdt3rd_global_jukebox == NULL)
 	{
-		tsourdt3rd_global_jukebox->hud_box_w = 320;
-		tsourdt3rd_global_jukebox->hud_string_w = 335;
-		tsourdt3rd_global_jukebox->hud_track_w = 320;
-		tsourdt3rd_global_jukebox->hud_speed_w = 360;
-	}
-	else
+		// Let's leave now before we cause some crashes...
 		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "TSoURDt3rd_Jukebox_Init(): Could not allocate jukebox memory.\n");
+		return;
+	}
+
+	tsourdt3rd_jukebox_available_pages = Z_Malloc(TSOURDT3RD_JUKEBOX_MAX_PAGES * sizeof(tsourdt3rd_jukebox_pages_t *), PU_STATIC, NULL);
+	if (tsourdt3rd_jukebox_available_pages == NULL)
+	{
+		// We should also leave here too, in order to prevent future crashes...
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "TSoURDt3rd_Jukebox_Init(): Could not allocate memory for jukebox pages.\n");
+		return;
+	}
+	tsourdt3rd_jukebox_available_pages[0] = &tsourdt3rd_jukeboxpage_mainpage;
+
+	tsourdt3rd_global_jukebox->hud_box_w = 320;
+	tsourdt3rd_global_jukebox->hud_string_w = 335;
+	tsourdt3rd_global_jukebox->hud_track_w = 320;
+	tsourdt3rd_global_jukebox->hud_speed_w = 360;
 }
 
 //
@@ -107,8 +113,7 @@ static void TSoURDt3rd_Jukebox_LoadDefs(musicdef_t *def, tsourdt3rd_jukeboxdef_t
 
 	while (jukedef)
 	{
-		if (jukedef->linked_musicdef == def)
-			break;
+		if (jukedef->linked_musicdef == def) break;
 		jukedef_prev = jukedef;
 		jukedef = jukedef->next;
 	}
@@ -124,8 +129,7 @@ static void TSoURDt3rd_Jukebox_LoadDefs(musicdef_t *def, tsourdt3rd_jukeboxdef_t
 		jukedef->supported_pages[0].prev = NULL;
 		jukedef->supported_pages[0].next = NULL;
 
-		if (jukedef_prev != NULL)
-			jukedef_prev->next = jukedef;
+		if (jukedef_prev != NULL) jukedef_prev->next = jukedef;
 		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "TSoURDt3rd_Jukebox_LoadDefs: Added song '%s'\n", jukedef->linked_musicdef->name);
 	}
 
@@ -193,7 +197,7 @@ boolean TSoURDt3rd_Jukebox_PrepareDefs(void)
 //
 void TSoURDt3rd_Jukebox_Play(musicdef_t *play_def)
 {
-	if (tsourdt3rd_global_jukebox == NULL || tsourdt3rd_jukebox_available_pages == NULL)
+	if (tsourdt3rd_global_jukebox == NULL)
 	{
 		// Jukebox definition thing is NULL, so don't go any further.
 		TSoURDt3rd_M_StartMessage(
@@ -264,8 +268,7 @@ void TSoURDt3rd_Jukebox_Play(musicdef_t *play_def)
 //
 boolean TSoURDt3rd_Jukebox_IsPlaying(void)
 {
-	if (tsourdt3rd_global_jukebox == NULL)
-		return false;
+	if (tsourdt3rd_global_jukebox == NULL) return false;
 	return (tsourdt3rd_global_jukebox->curtrack && tsourdt3rd_global_jukebox->playing);
 }
 
@@ -279,6 +282,7 @@ void TSoURDt3rd_Jukebox_Reset(void)
 {
 	if (!TSoURDt3rd_Jukebox_IsPlaying())
 		return;
+
 	tsourdt3rd_global_jukebox->playing = false;
 
 	tsourdt3rd_global_jukebox->hud_initialized = false;
