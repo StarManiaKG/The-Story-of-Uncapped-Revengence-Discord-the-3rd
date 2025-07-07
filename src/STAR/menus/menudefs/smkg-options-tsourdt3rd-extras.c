@@ -10,6 +10,7 @@
 /// \brief TSoURDt3rd's unique extra menu options and routines
 
 #include "../smkg-m_sys.h"
+
 #include "../../smkg-i_sys.h"
 
 #include "../../../i_system.h" // I_ClipboardCopy()

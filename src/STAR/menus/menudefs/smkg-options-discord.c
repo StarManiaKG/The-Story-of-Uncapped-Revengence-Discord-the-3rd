@@ -13,8 +13,8 @@
 
 #ifdef HAVE_DISCORDSUPPORT
 #include "../../../discord/discord.h"
-
 #include "../smkg-m_sys.h"
+
 #include "../../smkg-st_hud.h"
 
 #include "../../../r_draw.h"

@@ -16,6 +16,7 @@
 #include "../star_vars.h"
 #include "../smkg-cvars.h"
 
+#include "../../g_input.h"
 #include "../../m_menu.h"
 #include "../../m_cond.h"
 #include "../../v_video.h"

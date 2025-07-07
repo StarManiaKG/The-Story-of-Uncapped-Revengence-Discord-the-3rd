@@ -10,6 +10,7 @@
 /// \brief Extended data for the addons menu.
 
 #include "../smkg-m_sys.h"
+
 #include "../../misc/smkg-m_misc.h"
 
 #include "../../../d_main.h"

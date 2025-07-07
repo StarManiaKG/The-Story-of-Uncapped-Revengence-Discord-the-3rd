@@ -13,6 +13,7 @@
 // \brief MESSAGE BOX (aka: a hacked, cobbled together menu) (but one way better than Vanilla SRB2s')
 
 #include "../../smkg-m_sys.h" // menuwipe & menumessage //
+
 #include "../../../smkg-st_hud.h" // kp_buttons //
 
 #include "../../../../v_video.h"
