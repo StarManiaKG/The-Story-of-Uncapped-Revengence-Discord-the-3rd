@@ -87,6 +87,8 @@ void TSoURDt3rd_I_Pads_InitControllers(void)
 	if (M_CheckParm("-nojoy") || M_CheckParm("-tsourdt3rd_nogamepadrefactor"))
 		return;
 
+	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD, "TSoURDt3rd_I_Pads_InitControllers()...\n");
+
 	for (i = 0; gamecontrollerdb_paths[i] != NULL; i++)
 	{
 		sprintf(dbpath, "%s" PATHSEP "%s" "gamecontrollerdb.txt", srb2path, gamecontrollerdb_paths[i]);
@@ -120,8 +122,6 @@ void TSoURDt3rd_I_Pads_InitControllers(void)
 		// Game controller already initialized, don't do it again!
 		return;
 	}
-
-	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD, "TSoURDt3rd_I_Pads_InitControllers()...\n");
 
 	if (M_CheckParm("-noxinput"))
 		SDL_SetHintWithPriority("SDL_XINPUT_ENABLED", "0", SDL_HINT_OVERRIDE);

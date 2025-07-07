@@ -6,6 +6,9 @@
 ## MAIN ##
 opts+=-DUSE_STUN
 sources+=$(call List,STAR/Sourcefile)
+ifndef NOCURL
+sources+=$(call List,STAR/curl/Sourcefile)
+endif
 sources+=$(call List,STAR/monocypher/Sourcefile)
 
 ## LIBS ##

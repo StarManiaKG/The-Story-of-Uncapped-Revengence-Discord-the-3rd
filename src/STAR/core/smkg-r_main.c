@@ -13,7 +13,7 @@
 /// \file  smkg-r_main.c
 /// \brief TSoURDt3rd's additional rendering loop routines and structures
 
-#include "../../m_fixed.h"
+#include "smkg-r_main.h"
 
 // Same as rendertimefrac but not suspended when the game is paused
 // Ported from Dr.Robotnik's Ring Racers!
