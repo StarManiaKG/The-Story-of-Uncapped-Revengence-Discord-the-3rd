@@ -13,8 +13,10 @@ target_sources(SRB2SDL2 PRIVATE
 	core/smkg-s_audio.c
 	core/smkg-s_jukebox.c
 	core/smkg-s_exmusic.c
-	curl/smkg-curl.c
-	curl/smkg-curl_routines.c
+	core/exmusic_types/smkg-defaultmaptracks.c
+	core/exmusic_types/smkg-gameover.c
+	core/exmusic_types/smkg-bosses.c
+	core/exmusic_types/smkg-intermission.c
 	events/smkg-easter.c
 	events/smkg-aprilfools.c
 	lights/smkg-lights.c
@@ -60,6 +62,7 @@ target_sources(SRB2SDL2 PRIVATE
 	stun/stun.c
 )
 
+add_subdirectory(curl)
 add_subdirectory(monocypher)
 add_subdirectory(libav)
 
