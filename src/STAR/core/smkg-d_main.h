@@ -23,7 +23,9 @@ extern "C" {
 // ------------------------ //
 
 void TSoURDt3rd_D_AutoLoadAddons(void);
-void TSoURDt3rd_D_Loop(boolean *interp);
+
+void TSoURDt3rd_D_BuildFrame(void);
+void TSoURDt3rd_D_Loop(void);
 
 #ifdef __cplusplus
 } // extern "C"

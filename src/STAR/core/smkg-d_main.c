@@ -10,13 +10,20 @@
 /// \brief TSoURDt3rd's main program data
 
 #include "smkg-d_main.h"
-#include "../smkg-defs.h"
-#include "../smkg-misc.h" // TSoURDt3rd_FIL_AccessFile() //
+
+#include "smkg-r_main.h"
 #include "../star_vars.h"
+#include "../menus/smkg-m_sys.h" // menumessage //
+#include "../misc/smkg-m_misc.h" // TSoURDt3rd_FIL_AccessFile() //
 
 #include "../../console.h"
 #include "../../filesrch.h"
+#include "../../i_time.h"
 #include "../../w_wad.h"
+
+#ifdef HAVE_CURL
+#include "../curl/smkg-curl.h"
+#endif
 
 // ------------------------ //
 //        Variables
@@ -150,4 +157,76 @@ void TSoURDt3rd_D_AutoLoadAddons(void)
 	free(wad_tkn);
 	fclose(autoload_config);
 	tsourdt3rd_local.autoloading_mods = false;
+}
+
+// =========================================================================
+// TSoURDt3rd_D_Loop
+// =========================================================================
+
+//
+// Frame building routines and data for TSoURDt3rd
+//
+void TSoURDt3rd_D_BuildFrame(void)
+{
+	boolean interp = (R_UsingFrameInterpolation() && !dedicated);
+
+	if (interp)
+	{
+		rendertimefrac_unpaused = g_time.timefrac;
+	}
+	else
+	{
+		rendertimefrac_unpaused = FRACUNIT;
+	}
+}
+
+void TSoURDt3rd_D_Loop(void)
+{
+	static boolean check_for_updates = false;
+	static boolean sent_event_message = false;
+
+#ifndef HAVE_CURL
+	(void)check_for_updates;
+#else
+	// Check for any updates to TSoURDt3rd (on startup).
+	if (check_for_updates == false && cv_tsourdt3rd_main_checkforupdatesonstartup.value)
+		TSoURDt3rd_CurlRoutine_FindUpdates();
+	check_for_updates = true;
+#endif
+
+#ifdef HAVE_DISCORDSUPPORT
+	if (!dedicated)
+	{
+		// Run any Discord activity callbacks for us, please.
+		DISC_RunCallbacks();
+	}
+#endif
+
+	switch (gamestate)
+	{
+		case GS_ENDING:
+		case GS_CREDITS:
+		case GS_EVALUATION:
+			if (TSoURDt3rd_AprilFools_ModeEnabled())
+			{
+				// -- Close the game if we're in April Fools' Ultimate Mode but just beat the game :p
+				I_Error("Definitely caused by a SIGSEGV - seventh sentinel (core dumped)");
+			}
+			/* FALLTHRU */
+		default:
+			break;
+	}
+
+	if (!menumessage.active && !sent_event_message && tsourdt3rd_currentEvent)
+	{
+		TSoURDt3rd_M_StartMessage(
+			"A TSoURDt3rd Event is Occuring",
+			"We're having a seasonal event! Have fun!",
+			NULL,
+			MM_NOTHING,
+			NULL,
+			NULL
+		);
+		sent_event_message = true;
+	}
 }
