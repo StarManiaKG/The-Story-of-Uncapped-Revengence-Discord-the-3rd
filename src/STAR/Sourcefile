@@ -12,8 +12,10 @@ core/smkg-r_main.c
 core/smkg-s_audio.c
 core/smkg-s_jukebox.c
 core/smkg-s_exmusic.c
-curl/smkg-curl.c
-curl/smkg-curl_routines.c
+core/exmusic_types/smkg-defaultmaptracks.c
+core/exmusic_types/smkg-gameover.c
+core/exmusic_types/smkg-bosses.c
+core/exmusic_types/smkg-intermission.c
 events/smkg-easter.c
 events/smkg-aprilfools.c
 lights/smkg-lights.c
