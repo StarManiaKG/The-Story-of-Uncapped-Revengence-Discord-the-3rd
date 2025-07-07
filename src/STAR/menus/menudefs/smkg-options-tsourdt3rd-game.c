@@ -10,9 +10,12 @@
 /// \brief TSoURDt3rd's gameplay menu options
 
 #include "../smkg-m_sys.h"
-#include "../../curl/smkg-curl.h"
 
 #include "../../../r_main.h"
+
+#ifdef HAVE_CURL
+#include "../../curl/smkg-curl.h"
+#endif
 
 // ------------------------ //
 //        Variables
@@ -163,7 +166,7 @@ tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_GameMenu[] =
 	{NULL, NULL, {NULL}, 0, 0},
 
 	{NULL, NULL, {NULL}, 0, 0},
-		{NULL, "How should '1-Player' be referred to as?", {NULL}, 0, 0},
+		{NULL, "How should the '1-Player' mode option be referred to as?", {NULL}, 0, 0},
 };
 
 menu_t TSoURDt3rd_OP_GameDef =
@@ -230,7 +233,8 @@ static void M_Sys_GameTicker(void)
 static void G_CheckForTSoURDt3rdUpdates(INT32 choice)
 {
 	(void)choice;
-
+#ifdef HAVE_CURL
 	tsourdt3rd_local.checked_version = false;
 	TSoURDt3rd_CurlRoutine_FindUpdates();
+#endif
 }

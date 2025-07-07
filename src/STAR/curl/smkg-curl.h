@@ -14,6 +14,8 @@
 
 #include "../../doomstat.h"
 
+#ifdef HAVE_CURL
+
 // ------------------------ //
 //        Variables
 // ------------------------ //
@@ -38,5 +40,7 @@ void TSoURDt3rd_Curl_FindStringWithinURL(
 );
 
 void TSoURDt3rd_CurlRoutine_FindUpdates(void);
+
+#endif // HAVE_CURL
 
 #endif // __SMKG_CURL__
