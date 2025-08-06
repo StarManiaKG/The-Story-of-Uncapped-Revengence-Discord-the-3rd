@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2020-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2020-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -10,12 +10,15 @@
 /// \brief TSoURDt3rd's command library
 
 #include "smkg-cvars.h"
-#include "smkg-misc.h" // TSoURDt3rd_M_FindWordInTermTable() //
 #include "ss_main.h"
 #include "star_vars.h" // STAR_SetWindowTitle() //
 #include "core/smkg-p_pads.h" // TSoURDt3rd_P_Pads_ResetDeviceRumble() //
+#include "core/smkg-s_audio.h" // TSoURDt3rd_S_ControlMusicEffects() //
+#include "core/smkg-s_exmusic.h"
+#include "core/smkg-s_jukebox.h" // TSoURDt3rd_Jukebox_IsPlaying() //
 #include "lights/smkg-coronas.h"
 #include "menus/smkg-m_sys.h" // menu definitions //
+#include "misc/smkg-m_misc.h" // TSoURDt3rd_M_FindWordInTermTable() //
 
 #include "../discord/discord.h" // TSoURDt3rd_D_Got_DiscordInfo() //
 
@@ -24,7 +27,14 @@
 #include "../fastcmp.h"
 #include "../g_game.h"
 #include "../m_menu.h"
+#include "../r_main.h"
 #include "../v_video.h"
+
+#include "../netcode/net_command.h" // RegisterNetXCmd
+
+#ifdef USE_STUN
+#include "stun/stun.h"
+#endif
 
 // ------------------------ //
 //        Variables
@@ -87,6 +97,8 @@ static CV_PossibleValue_t tsourdt3rd_video_coloring_cons_t[] = {
 	{V_ROSYMAP, "Rosy"},
 	{V_INVERTMAP, "Inverted"},
 	{0, NULL}};
+/// \todo add and make it work
+static CV_PossibleValue_t tsourdt3rd_video_font_cons_t[] = {{0, "Normal"}, {1, "Thin"}, {0, NULL}};
 #ifdef STAR_LIGHTING
 static CV_PossibleValue_t tsourdt3rd_video_lighting_coronas_cons_t[] = {
 	{0, "Off"},
@@ -111,65 +123,14 @@ static CV_PossibleValue_t tsourdt3rd_video_lighting_coronas_drawingmode_cons_t[]
 #endif
 
 static CV_PossibleValue_t tsourdt3rd_audio_vapemode_cons_t[] = {{0, "Off"}, {1, "TSoURDt3rd"}, {2, "Sonic Mania Plus"}, {0, NULL}};
-static CV_PossibleValue_t tsourdt3rd_audio_defaultmaptrack_cons_t[] = {{0, "None"}, {1, "GFZ1"}, {2, "D_RUNNIN"}, {0, NULL}};
-static CV_PossibleValue_t tsourdt3rd_audio_bosses_regular_cons_t[] = {{0, "Map's Default"},
-	{1, "Sonic 1"},
-	{2, "Sonic CD"},
-	{3, "Sonic 2"},
-	{4, "Sonic 3"},
-	{5, "& Knuckles"},
-	{6, "Sonic 3 & Knuckles"},
-	{7, "Sonic Advance 2 - R"},
-	{8, "Sonic Advance 2 - Z7"},
-	{9, "Sonic Advance 3 - R"},
-	{10, "Sonic Advance 3 - Z7"},
-	{11, "Sonic Rush - MS"},
-	{12, "Sonic Rush - VN"},
-	{13, "Rush Adventure - R"},
-	{14, "Rush Adventure - Z7"},
-	{15, "Sonic Mania: RD"},
-	{16, "Sonic Mania: HP"},
-	{17, "Sonic Mania: HBH"},
-	{0, NULL}};
-static CV_PossibleValue_t tsourdt3rd_audio_bosses_final_cons_t[] = {{0, "Map's Default"},
-	{1, "Sonic 1"},
-	{2, "Sonic CD"},
-	{3, "Sonic 2"},
-	{4, "Sonic 3&K"},
-	{5, "Sonic Advance 2"},
-	{6, "Sonic Advance 3"},
-	{7, "Sonic Rush"},
-	{8, "Rush Adventure"},
-	{9, "Sonic Mania"},
-	{0, NULL}};
-static CV_PossibleValue_t tsourdt3rd_audio_clearing_act_cons_t[] = {{0, "Map's Default"},
-	{1, "Sonic 1&2"},
-	{2, "Sonic CD"},
-	{3, "Sonic 3&K"},
-	{4, "Sonic Advance 2"},
-	{5, "Sonic Advance 3"},
-	{6, "Sonic Rush"},
-	{7, "Rush Adventure"},
-	{8, "Sonic Mania"},
-	{9, "Sonic BTS"},
-	{0, NULL}};
-static CV_PossibleValue_t tsourdt3rd_audio_gameover_cons_t[] = {{0, "Game's Default"},
-	{1, "Sonic 1&2"},
-	{2, "Sonic CD"},
-	{3, "Sonic 3&K"},
-	{4, "Sonic Rush"},
-	{5, "Sonic Mania"},
-	{6, "Sammy"},
-	{7, "Child"},
-	{8, "Yeah!"},
-	{0, NULL}};
 
 static CV_PossibleValue_t tsourdt3rd_savefiles_perfectsavestripe_cons_t[] = {{0, "MIN"}, {255, "MAX"}, {0, NULL}};
 
 static CV_PossibleValue_t tsourdt3rd_jukebox_hud_cons_t[] = {{0, "Off"}, {1, "Minimalized"}, {2, "On"}, {0, NULL}};
 static CV_PossibleValue_t tsourdt3rd_jukebox_modifier_cons_t[] = {{0.1*FRACUNIT, "MIN"}, {20*FRACUNIT, "MAX"}, {0, NULL}};
 
-static void G_TimeOver_OnChange(void);
+static boolean G_TimeOver_OnChange(const char *valstr);
+static boolean G_RealisticShadows_OnChange(const char *valstr);
 static void G_IsItCalledSinglePlayer_OnChange(void);
 
 static void C_PadRumble_OnChange(void);
@@ -178,7 +139,9 @@ static void C_PadRumble_OnChange(void);
 static void V_Coronas_OnChange(void);
 #endif
 
-static void P_SuperWithShield_OnChange(void);
+static void A_VapeMode_OnChange(void);
+
+static boolean P_SuperWithShield_OnChange(const char *valstr);
 
 static void SV_UseContinues_OnChange(void);
 
@@ -198,8 +161,8 @@ consvar_t cv_tsourdt3rd_game_loadingscreen = CVAR_INIT ("tsourdt3rd_game_loading
 consvar_t cv_tsourdt3rd_game_loadingscreen_image = CVAR_INIT ("tsourdt3rd_game_loadingscreen_image", "Intermission", CV_SAVE, tsourdt3rd_game_loadingscreen_image_cons_t, NULL);
 consvar_t cv_tsourdt3rd_game_pausescreen = CVAR_INIT ("tsourdt3rd_game_pausescreen", "Default", CV_SAVE, tsourdt3rd_game_pausescreen_cons_t, NULL);
 consvar_t cv_tsourdt3rd_game_quitscreen = CVAR_INIT ("tsourdt3rd_game_quitscreen", "Default", CV_SAVE, tsourdt3rd_game_quitscreen_cons_t, NULL);
-consvar_t cv_tsourdt3rd_game_allowtimeover = CVAR_INIT ("tsourdt3rd_game_allowtimeover", "No", CV_SAVE|CV_CALL, CV_YesNo, G_TimeOver_OnChange);
-consvar_t cv_tsourdt3rd_game_shadows_realistic = CVAR_INIT ("tsourdt3rd_game_shadows_realistic", "No", CV_SAVE, CV_YesNo, NULL);
+consvar_t cv_tsourdt3rd_game_allowtimeover = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_game_allowtimeover", "No", CV_SAVE|CV_CALL, CV_YesNo, NULL, G_TimeOver_OnChange);
+consvar_t cv_tsourdt3rd_game_shadows_realistic = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_game_shadows_realistic", "Off", CV_SAVE|CV_CALL, CV_OnOff, NULL, G_RealisticShadows_OnChange);
 consvar_t cv_tsourdt3rd_game_shadows_forallobjects = CVAR_INIT ("tsourdt3rd_game_shadows_forallobjects", "No", CV_SAVE, CV_YesNo, NULL);
 consvar_t cv_tsourdt3rd_game_shadows_positioning = CVAR_INIT ("tsourdt3rd_game_shadows_positioning", "Object's Front", CV_SAVE, tsourdt3rd_game_shadowposition_cons_t, NULL);
 consvar_t cv_tsourdt3rd_game_soniccd = CVAR_INIT ("soniccd", "Off", CV_SAVE|CV_ALLOWLUA, CV_OnOff, NULL);
@@ -214,7 +177,11 @@ consvar_t cv_tsourdt3rd_video_sdl_window_shaking = CVAR_INIT ("tsourdt3rd_video_
 consvar_t cv_tsourdt3rd_video_showtps = CVAR_INIT ("tsourdt3rd_video_showtps", "No", CV_SAVE, tsourdt3rd_video_tpsrate_cons_t, NULL); // Ported from Uncapped Plus, TPS is back (for some reason)!
 consvar_t cv_tsourdt3rd_video_coloring_menus = CVAR_INIT ("tsourdt3rd_video_coloring_menus", "Yellow", CV_SAVE, tsourdt3rd_video_coloring_cons_t, NULL);
 consvar_t cv_tsourdt3rd_video_coloring_fpsrate = CVAR_INIT ("tsourdt3rd_video_coloring_fpsrate", "Green", CV_SAVE, tsourdt3rd_video_coloring_cons_t, NULL);
+/// \todo add and make it work
+consvar_t cv_tsourdt3rd_video_font_fps = CVAR_INIT ("tsourdt3rd_video_font_fps", "Normal", CV_SAVE, tsourdt3rd_video_font_cons_t, NULL); // Credit to SRB2Classic, Jisk, LuigiBuddd, etc. for the idea
 consvar_t cv_tsourdt3rd_video_coloring_tpsrate = CVAR_INIT ("tsourdt3rd_video_coloring_tpsrate", "Green", CV_SAVE, tsourdt3rd_video_coloring_cons_t, NULL);
+/// \todo add and make it work
+consvar_t cv_tsourdt3rd_video_font_tps = CVAR_INIT ("tsourdt3rd_video_font_tps", "Normal", CV_SAVE, tsourdt3rd_video_font_cons_t, NULL); // Credit to SRB2Classic, Jisk, LuigiBuddd, etc. for the idea
 #ifdef STAR_LIGHTING
 consvar_t cv_tsourdt3rd_video_lighting_coronas = CVAR_INIT ("tsourdt3rd_video_lighting_coronas", "Off", CV_SAVE|CV_CALL, tsourdt3rd_video_lighting_coronas_cons_t, V_Coronas_OnChange);
 consvar_t cv_tsourdt3rd_video_lighting_coronas_size = CVAR_INIT ("tsourdt3rd_video_lighting_coronas_size", "1", CV_SAVE|CV_FLOAT, 0, NULL);
@@ -223,18 +190,38 @@ consvar_t cv_tsourdt3rd_video_lighting_coronas_drawingmode = CVAR_INIT ("tsourdt
 #endif
 
 consvar_t cv_tsourdt3rd_audio_watermuffling = CVAR_INIT ("tsourdt3rd_audio_watermuffling", "Off", CV_SAVE|CV_ALLOWLUA, CV_OnOff, NULL);
-consvar_t cv_tsourdt3rd_audio_vapemode = CVAR_INIT ("tsourdt3rd_audio_vapemode", "Off", CV_SAVE|CV_CALL, tsourdt3rd_audio_vapemode_cons_t, TSoURDt3rd_ControlMusicEffects);
-consvar_t cv_tsourdt3rd_audio_defaultmaptrack = CVAR_INIT ("tsourdt3rd_audio_defaultmaptrack", "D_RUNNIN", CV_SAVE, tsourdt3rd_audio_defaultmaptrack_cons_t, NULL);
-consvar_t cv_tsourdt3rd_audio_bosses_bossmusic = CVAR_INIT ("tsourdt3rd_audio_bosses_regularboss", "Map's Default", CV_SAVE, tsourdt3rd_audio_bosses_regular_cons_t, NULL);
-consvar_t cv_tsourdt3rd_audio_bosses_finalboss = CVAR_INIT ("tsourdt3rd_audio_bosses_finalboss", "Map's Default", CV_SAVE, tsourdt3rd_audio_bosses_final_cons_t, NULL);
-consvar_t cv_tsourdt3rd_audio_bosses_truefinalboss = CVAR_INIT ("tsourdt3rd_audio_bosses_truefinalboss", "On", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_tsourdt3rd_audio_bosses_pinch = CVAR_INIT ("tsourdt3rd_audio_bosses_pinch", "On", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_tsourdt3rd_audio_vapemode = CVAR_INIT ("tsourdt3rd_audio_vapemode", "Off", CV_SAVE|CV_CALL, tsourdt3rd_audio_vapemode_cons_t, A_VapeMode_OnChange);
 consvar_t cv_tsourdt3rd_audio_bosses_postboss = CVAR_INIT ("tsourdt3rd_audio_bosses_postboss", "On", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_tsourdt3rd_audio_clearing_act = CVAR_INIT ("tsourdt3rd_audio_clearing_act", "Map's Default", CV_SAVE, tsourdt3rd_audio_clearing_act_cons_t, NULL);
-consvar_t cv_tsourdt3rd_audio_clearing_boss = CVAR_INIT ("cv_tsourdt3rd_audio_clearing_boss", "On", CV_SAVE, CV_OnOff, NULL);
+#if 1
+// MARKED FOR REMOVAL
+/// \todo so remove it
+static CV_PossibleValue_t tsourdt3rd_audio_gameover_cons_t[] = {{0, "Game's Default"},
+	{1, "Sonic 1&2"},
+	{2, "Sonic CD"},
+	{3, "Sonic 3&K"},
+	{4, "Sonic Rush"},
+	{5, "Sonic Mania"},
+	{6, "Sammy"},
+	{7, "Child"},
+	{8, "Yeah!"},
+	{0, NULL}};
 consvar_t cv_tsourdt3rd_audio_gameover = CVAR_INIT ("tsourdt3rd_audio_gameover", "Game's Default", CV_SAVE, tsourdt3rd_audio_gameover_cons_t, NULL);
+#endif
+consvar_t cv_tsourdt3rd_audio_exmusic_defaultmaptrack = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_audio_exmusic_defaultmaptrack", "Default", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate);
+consvar_t cv_tsourdt3rd_audio_exmusic_bosses = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_audio_exmusic_bosses", "Default", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate);
+consvar_t cv_tsourdt3rd_audio_exmusic_bosspinch = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_audio_exmusic_bosspinch", "Default", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate);
+consvar_t cv_tsourdt3rd_audio_exmusic_finalbosses = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_audio_exmusic_finalbosses", "Default", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate);
+consvar_t cv_tsourdt3rd_audio_exmusic_finalbosspinch = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_audio_exmusic_finalbosspinch", "Default", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate);
+consvar_t cv_tsourdt3rd_audio_exmusic_truefinalbosses = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_audio_exmusic_truefinalbosses", "Default", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate);
+consvar_t cv_tsourdt3rd_audio_exmusic_truefinalbosspinch = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_audio_exmusic_truefinalbosspinch", "Default", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate);
+consvar_t cv_tsourdt3rd_audio_exmusic_racebosses = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_audio_exmusic_racebosses", "Default", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate);
+consvar_t cv_tsourdt3rd_audio_exmusic_intermission = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_audio_exmusic_intermission", "Default", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate);
+consvar_t cv_tsourdt3rd_audio_exmusic_intermission_bosses = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_audio_exmusic_intermission_bosses", "Default", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate);
+consvar_t cv_tsourdt3rd_audio_exmusic_intermission_finalbosses = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_audio_exmusic_intermission_finalbosses", "Default", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate);
+consvar_t cv_tsourdt3rd_audio_exmusic_intermission_truefinalbosses = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_audio_exmusic_intermission_truefinalbosses", "Default", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate);
+consvar_t cv_tsourdt3rd_audio_exmusic_gameover = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_audio_exmusic_gameover", "Default", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate);
 
-consvar_t cv_tsourdt3rd_players_shieldblockstransformation = CVAR_INIT ("tsourdt3rd_players_shieldblockstransformation", "Off", CV_SAVE|CV_CALL, CV_OnOff, P_SuperWithShield_OnChange);
+consvar_t cv_tsourdt3rd_players_shieldblockstransformation = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_players_shieldblockstransformation", "Off", CV_SAVE|CV_CALL, CV_OnOff, NULL, P_SuperWithShield_OnChange);
 consvar_t cv_tsourdt3rd_players_nukewhilesuper = CVAR_INIT ("tsourdt3rd_players_nukewhilesuper", "Off", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_tsourdt3rd_players_setupwhilemoving = CVAR_INIT ("tsourdt3rd_players_setupwhilemoving", "Off", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_tsourdt3rd_players_alwaysoverlayinvulnsparks = CVAR_INIT ("tsourdt3rd_players_tsourdt3rd_players_alwaysoverlayinvulnsparkssparks", "Off", CV_SAVE, CV_OnOff, NULL);
@@ -258,6 +245,7 @@ consvar_t cv_tsourdt3rd_debug_automapanywhere = CVAR_INIT ("tsourdt3rd_debug_aut
 enum tsourdt3rd_old_cvars_e
 {
 #ifdef HAVE_DISCORDSUPPORT
+	// Discord
 	discordcustom_details,
 	discordcustom_state,
 	discordcustom_imagetype_large,
@@ -273,8 +261,10 @@ enum tsourdt3rd_old_cvars_e
 	discordcustom_imagetext_large,
 	discordcustom_imagetext_small,
 #endif
+	// Events
 	tsourdt3rd_easter_egghunt_allowed,
 	tsourdt3rd_easter_egghunt_bonuses,
+	// Game
 	tsourdt3rd_game_sdl_windowtitle_type,
 	tsourdt3rd_game_sdl_windowtitle_custom,
 	tsourdt3rd_game_sdl_windowtitle_memes,
@@ -287,30 +277,35 @@ enum tsourdt3rd_old_cvars_e
 	tsourdt3rd_game_allowtimeover,
 	tsourdt3rd_game_shadows_positioning,
 	tsourdt3rd_game_isitcalledsingleplayer,
+	// Video
 	tsourdt3rd_video_showtps,
 	tsourdt3rd_video_coloring_menus,
 	tsourdt3rd_video_coloring_fpsrate,
 	tsourdt3rd_video_coloring_tpsrate,
-	tsourdt3rd_audio_defaultmaptrack,
+	// Audio
 	tsourdt3rd_audio_gameover,
+	// Players
 	tsourdt3rd_players_shieldblockstransformation,
 	tsourdt3rd_players_nukewhilesuper,
 	tsourdt3rd_players_setupwhilemoving,
 	tsourdt3rd_players_alwaysoverlayinvulnsparks,
+	// Savefiles
 	tsourdt3rd_savefiles_limitedcontinues,
 	tsourdt3rd_savefiles_storesavesinfolders,
 	tsourdt3rd_savefiles_perfectsave,
 	tsourdt3rd_savefiles_perfectsave_stripe1,
 	tsourdt3rd_savefiles_perfectsave_stripe2,
 	tsourdt3rd_savefiles_perfectsave_stripe3,
+	// Servers
 	tsourdt3rd_servers_holepunchrendezvous,
+	// Jukebox
 	tsourdt3rd_jukebox_hud,
 	tsourdt3rd_jukebox_speed,
+	// Debug
 	tsourdt3rd_debug_automapanywhere,
-};
-
-static const char *const tsourdt3rd_old_cvars_opt[] = {
+}; static const char *const tsourdt3rd_old_cvars_opt[] = {
 #ifdef HAVE_DISCORDSUPPORT
+	// Discord
 	"customdiscorddetails",
 	"customdiscordstate",
 	"customdiscordlargeimagetype",
@@ -326,8 +321,10 @@ static const char *const tsourdt3rd_old_cvars_opt[] = {
 	"customdiscordlargeimagetext",
 	"customdiscordsmallimagetext",
 #endif
+	// Events
 	"alloweasteregghunt",
 	"easteregghuntbonuses",
+	// Game
 	"windowtitletype",
 	"customwindowtitle",
 	"memesonwindowtitle",
@@ -340,26 +337,83 @@ static const char *const tsourdt3rd_old_cvars_opt[] = {
 	"allowtypicaltimeover",
 	"realisticshadowscanrotate",
 	"isitcalledsingleplayer",
+	// Video
 	"showtps",
 	"menucolor",
 	"fpscountercolor",
 	"tpscountercolor",
-	"defaultmaptrack",
+	// Audio
 	"gameovermusic",
+	// Players
 	"shieldblockstransformation",
 	"armageddonnukesuper",
 	"movingplayersetup",
 	"alwaysoverlayinvincibility",
+	// Savefiles
 	"continues",
 	"storesavesinfolders",
 	"perfectsave",
 	"perfectsavestripe1",
 	"perfectsavestripe2",
 	"perfectsavestripe3",
+	// Servers
 	"holepunchserver",
+	// Jukebox
 	"jukeboxhud",
 	"jukeboxspeed",
+	// Debug
 	"automapoutsidedevmode",
+	NULL
+}; static consvar_t *old_to_new_vars[] = {
+#ifdef HAVE_DISCORDSUPPORT
+	&cv_discordcustom_details,
+	&cv_discordcustom_state,
+	&cv_discordcustom_imagetype_large,
+	&cv_discordcustom_imagetype_small,
+	&cv_discordcustom_characterimage_large,
+	&cv_discordcustom_characterimage_small,
+	&cv_discordcustom_supercharacterimage_large,
+	&cv_discordcustom_supercharacterimage_small,
+	&cv_discordcustom_mapimage_large,
+	&cv_discordcustom_mapimage_small,
+	&cv_discordcustom_miscimage_large,
+	&cv_discordcustom_miscimage_small,
+	&cv_discordcustom_imagetext_large,
+	&cv_discordcustom_imagetext_small,
+#endif
+	&cv_tsourdt3rd_easter_egghunt_allowed,
+	&cv_tsourdt3rd_easter_egghunt_bonuses,
+	&cv_tsourdt3rd_game_sdl_windowtitle_type,
+	&cv_tsourdt3rd_game_sdl_windowtitle_custom,
+	&cv_tsourdt3rd_game_sdl_windowtitle_memes,
+	&cv_tsourdt3rd_game_startup_image,
+	&cv_tsourdt3rd_game_startup_intro,
+	&cv_tsourdt3rd_game_loadingscreen,
+	&cv_tsourdt3rd_game_loadingscreen_image,
+	&cv_tsourdt3rd_game_pausescreen,
+	&cv_tsourdt3rd_game_quitscreen,
+	&cv_tsourdt3rd_game_allowtimeover,
+	&cv_tsourdt3rd_game_shadows_positioning,
+	&cv_tsourdt3rd_game_isitcalledsingleplayer,
+	&cv_tsourdt3rd_video_showtps,
+	&cv_tsourdt3rd_video_coloring_menus,
+	&cv_tsourdt3rd_video_coloring_fpsrate,
+	&cv_tsourdt3rd_video_coloring_tpsrate,
+	&cv_tsourdt3rd_audio_gameover,
+	&cv_tsourdt3rd_players_shieldblockstransformation,
+	&cv_tsourdt3rd_players_nukewhilesuper,
+	&cv_tsourdt3rd_players_setupwhilemoving,
+	&cv_tsourdt3rd_players_alwaysoverlayinvulnsparks,
+	&cv_tsourdt3rd_savefiles_limitedcontinues,
+	&cv_tsourdt3rd_savefiles_storesavesinfolders,
+	&cv_tsourdt3rd_savefiles_perfectsave,
+	&cv_tsourdt3rd_savefiles_perfectsave_stripe1,
+	&cv_tsourdt3rd_savefiles_perfectsave_stripe2,
+	&cv_tsourdt3rd_savefiles_perfectsave_stripe3,
+	&cv_tsourdt3rd_servers_holepunchrendezvous,
+	&cv_tsourdt3rd_jukebox_hud,
+	&cv_tsourdt3rd_jukebox_speed,
+	&cv_tsourdt3rd_debug_automapanywhere,
 	NULL
 };
 
@@ -373,17 +427,17 @@ static const char *const tsourdt3rd_old_cvars_opt[] = {
 //
 void TSoURDt3rd_D_RegisterServerCommands(void)
 {
-	// Discord
+	// Discord //
 #ifdef USE_STUN
 	CV_RegisterVar(&cv_stunserver);
 #endif
 	CV_RegisterVar(&cv_discordinvites);
 	RegisterNetXCmd(XD_DISCORD, TSoURDt3rd_D_Got_DiscordInfo);
 
-	// Main
+	// Main //
 	CV_RegisterVar(&cv_tsourdt3rd_main_checkforupdatesonstartup);
 
-	// Server
+	// Server //
 	CV_RegisterVar(&cv_tsourdt3rd_servers_holepunchrendezvous);
 }
 
@@ -445,8 +499,11 @@ void TSoURDt3rd_D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_tsourdt3rd_video_showtps);
 	CV_RegisterVar(&cv_tsourdt3rd_video_coloring_menus);
 	CV_RegisterVar(&cv_tsourdt3rd_video_coloring_fpsrate);
+	CV_RegisterVar(&cv_tsourdt3rd_video_font_fps);
 	CV_RegisterVar(&cv_tsourdt3rd_video_coloring_tpsrate);
+	CV_RegisterVar(&cv_tsourdt3rd_video_font_tps);
 #ifdef STAR_LIGHTING
+	// -- Lighting
 	CV_RegisterVar(&cv_tsourdt3rd_video_lighting_coronas);
 	CV_RegisterVar(&cv_tsourdt3rd_video_lighting_coronas_size);
 	CV_RegisterVar(&cv_tsourdt3rd_video_lighting_coronas_lightingtype);
@@ -456,15 +513,21 @@ void TSoURDt3rd_D_RegisterClientCommands(void)
 	// Audio //
 	CV_RegisterVar(&cv_tsourdt3rd_audio_watermuffling);
 	CV_RegisterVar(&cv_tsourdt3rd_audio_vapemode);
-	CV_RegisterVar(&cv_tsourdt3rd_audio_defaultmaptrack);
-	CV_RegisterVar(&cv_tsourdt3rd_audio_bosses_bossmusic);
-	CV_RegisterVar(&cv_tsourdt3rd_audio_bosses_finalboss);
-	CV_RegisterVar(&cv_tsourdt3rd_audio_bosses_truefinalboss);
-	CV_RegisterVar(&cv_tsourdt3rd_audio_bosses_pinch);
 	CV_RegisterVar(&cv_tsourdt3rd_audio_bosses_postboss);
-	CV_RegisterVar(&cv_tsourdt3rd_audio_clearing_act);
-	CV_RegisterVar(&cv_tsourdt3rd_audio_clearing_boss);
-	CV_RegisterVar(&cv_tsourdt3rd_audio_gameover);
+	// -- EXMusic
+	CV_RegisterVar(&cv_tsourdt3rd_audio_exmusic_defaultmaptrack);
+	CV_RegisterVar(&cv_tsourdt3rd_audio_exmusic_bosses);
+	CV_RegisterVar(&cv_tsourdt3rd_audio_exmusic_bosspinch);
+	CV_RegisterVar(&cv_tsourdt3rd_audio_exmusic_finalbosses);
+	CV_RegisterVar(&cv_tsourdt3rd_audio_exmusic_finalbosspinch);
+	CV_RegisterVar(&cv_tsourdt3rd_audio_exmusic_truefinalbosses);
+	CV_RegisterVar(&cv_tsourdt3rd_audio_exmusic_truefinalbosspinch);
+	CV_RegisterVar(&cv_tsourdt3rd_audio_exmusic_racebosses);
+	CV_RegisterVar(&cv_tsourdt3rd_audio_exmusic_intermission);
+	CV_RegisterVar(&cv_tsourdt3rd_audio_exmusic_intermission_bosses);
+	CV_RegisterVar(&cv_tsourdt3rd_audio_exmusic_intermission_finalbosses);
+	CV_RegisterVar(&cv_tsourdt3rd_audio_exmusic_intermission_truefinalbosses);
+	CV_RegisterVar(&cv_tsourdt3rd_audio_exmusic_gameover);
 
 	// Players //
 	CV_RegisterVar(&cv_tsourdt3rd_players_shieldblockstransformation);
@@ -495,61 +558,7 @@ boolean TSoURDt3rd_CV_CheckForOldCommands(void)
 	INT32 word_to_table_val;
 	const char *command;
 	const char *cv_value;
-
 	consvar_t *cvar;
-	static consvar_t *old_to_new_vars[] = {
-#ifdef HAVE_DISCORDSUPPORT
-		&cv_discordcustom_details,
-		&cv_discordcustom_state,
-		&cv_discordcustom_imagetype_large,
-		&cv_discordcustom_imagetype_small,
-		&cv_discordcustom_characterimage_large,
-		&cv_discordcustom_characterimage_small,
-		&cv_discordcustom_supercharacterimage_large,
-		&cv_discordcustom_supercharacterimage_small,
-		&cv_discordcustom_mapimage_large,
-		&cv_discordcustom_mapimage_small,
-		&cv_discordcustom_miscimage_large,
-		&cv_discordcustom_miscimage_small,
-		&cv_discordcustom_imagetext_large,
-		&cv_discordcustom_imagetext_small,
-#endif
-		&cv_tsourdt3rd_easter_egghunt_allowed,
-		&cv_tsourdt3rd_easter_egghunt_bonuses,
-		&cv_tsourdt3rd_game_sdl_windowtitle_type,
-		&cv_tsourdt3rd_game_sdl_windowtitle_custom,
-		&cv_tsourdt3rd_game_sdl_windowtitle_memes,
-		&cv_tsourdt3rd_game_startup_image,
-		&cv_tsourdt3rd_game_startup_intro,
-		&cv_tsourdt3rd_game_loadingscreen,
-		&cv_tsourdt3rd_game_loadingscreen_image,
-		&cv_tsourdt3rd_game_pausescreen,
-		&cv_tsourdt3rd_game_quitscreen,
-		&cv_tsourdt3rd_game_allowtimeover,
-		&cv_tsourdt3rd_game_shadows_positioning,
-		&cv_tsourdt3rd_game_isitcalledsingleplayer,
-		&cv_tsourdt3rd_video_showtps,
-		&cv_tsourdt3rd_video_coloring_menus,
-		&cv_tsourdt3rd_video_coloring_fpsrate,
-		&cv_tsourdt3rd_video_coloring_tpsrate,
-		&cv_tsourdt3rd_audio_defaultmaptrack,
-		&cv_tsourdt3rd_audio_gameover,
-		&cv_tsourdt3rd_players_shieldblockstransformation,
-		&cv_tsourdt3rd_players_nukewhilesuper,
-		&cv_tsourdt3rd_players_setupwhilemoving,
-		&cv_tsourdt3rd_players_alwaysoverlayinvulnsparks,
-		&cv_tsourdt3rd_savefiles_limitedcontinues,
-		&cv_tsourdt3rd_savefiles_storesavesinfolders,
-		&cv_tsourdt3rd_savefiles_perfectsave,
-		&cv_tsourdt3rd_savefiles_perfectsave_stripe1,
-		&cv_tsourdt3rd_savefiles_perfectsave_stripe2,
-		&cv_tsourdt3rd_savefiles_perfectsave_stripe3,
-		&cv_tsourdt3rd_servers_holepunchrendezvous,
-		&cv_tsourdt3rd_jukebox_hud,
-		&cv_tsourdt3rd_jukebox_speed,
-		&cv_tsourdt3rd_debug_automapanywhere,
-		NULL
-	};
 
 	// Check if the command doesn't already exist...
 	command = COM_Argv(0);
@@ -558,13 +567,13 @@ boolean TSoURDt3rd_CV_CheckForOldCommands(void)
 
 	// Check if the command matches a version of an old TSoURDt3rd command...
 	if (con_destlines || dedicated)
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, M_GetText("Checking if command '%s' matches old TSoURDt3rd commands...\n"), command);
-	word_to_table_val = TSoURDt3rd_M_FindWordInTermTable(tsourdt3rd_old_cvars_opt, command, TSOURDT3RD_TERMTABLESEARCH_NORM);
+		STAR_CONS_Printf(STAR_CONS_DEBUG, M_GetText("Checking if command '%s' matches old TSoURDt3rd commands...\n"), command);
 
+	word_to_table_val = TSoURDt3rd_M_FindWordInTermTable(tsourdt3rd_old_cvars_opt, command, TSOURDT3RD_TERMTABLESEARCH_NORM);
 	if (word_to_table_val < 0)
 	{
 		if (con_destlines || dedicated)
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, M_GetText("Command '%s' doesn't match old TSoURDt3rd command! Skipping...\n"), command);
+			STAR_CONS_Printf(STAR_CONS_DEBUG, M_GetText("Command '%s' doesn't match old TSoURDt3rd command! Skipping...\n"), command);
 		return false;
 	}
 
@@ -573,7 +582,7 @@ boolean TSoURDt3rd_CV_CheckForOldCommands(void)
 	cv_value = COM_Argv(1);
 
 	if (con_destlines || dedicated)
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, M_GetText("Command '%s' matches old TSoURDt3rd command! Proceeding to work our magic...\n"), command);
+		STAR_CONS_Printf(STAR_CONS_DEBUG, M_GetText("Command '%s' matches old TSoURDt3rd command! Proceeding to work our magic...\n"), command);
 	if (cv_value == NULL || *cv_value == '\0')
 	{
 		// perform a variable print or set
@@ -595,13 +604,10 @@ boolean TSoURDt3rd_CV_CheckForOldCommands(void)
 			else if (!stricmp(cv_value, "S. Life Icon Sprites") || !stricmp(cv_value, "Super L.I.S"))
 				cv_value = "Super Life Icon Sprites";
 			break;
-
 		case discordcustom_characterimage_large:
 		case discordcustom_characterimage_small:
-			if (!stricmp(cv_value, "Default"))
-				cv_value = "Sonic";
+			if (!stricmp(cv_value, "Default")) cv_value = "Sonic";
 			break;
-
 		case discordcustom_mapimage_large:
 		case discordcustom_mapimage_small:
 		{
@@ -642,7 +648,6 @@ boolean TSoURDt3rd_CV_CheckForOldCommands(void)
 			cv_value = va("%s%s", map_image_table_new[found_matching_map], cpy_cv_value);
 			break;
 		}
-
 		case discordcustom_miscimage_large:
 		case discordcustom_miscimage_small:
 		{
@@ -683,8 +688,7 @@ boolean TSoURDt3rd_CV_CheckForOldCommands(void)
 		case tsourdt3rd_video_coloring_menus:
 		case tsourdt3rd_video_coloring_fpsrate:
 		case tsourdt3rd_video_coloring_tpsrate:
-			if (!stricmp(cv_value, "Default"))
-				cv_value = "Yellow";
+			if (!stricmp(cv_value, "Default")) cv_value = "Yellow";
 			break;
 
 		case tsourdt3rd_game_shadows_positioning:
@@ -693,7 +697,6 @@ boolean TSoURDt3rd_CV_CheckForOldCommands(void)
 			else if (!stricmp(cv_value, "No"))
 				cv_value = "Static";
 			break;
-
 		case tsourdt3rd_game_isitcalledsingleplayer:
 			if (!stricmp(cv_value, "Yes!"))
 				cv_value = "Yes";
@@ -702,13 +705,11 @@ boolean TSoURDt3rd_CV_CheckForOldCommands(void)
 			break;
 
 		case tsourdt3rd_audio_gameover:
-			if (!stricmp(cv_value, "Default"))
-				cv_value = "Game's Default";
+			if (!stricmp(cv_value, "Default")) cv_value = "Game's Default";
 			break;
 
 		case tsourdt3rd_jukebox_hud:
-			if (!stricmp(cv_value, "No"))
-				cv_value = "On";
+			if (!stricmp(cv_value, "No")) cv_value = "On";
 			break;
 
 		default:
@@ -719,23 +720,35 @@ boolean TSoURDt3rd_CV_CheckForOldCommands(void)
 	return true;
 }
 
-static void G_TimeOver_OnChange(void)
+static boolean G_TimeOver_OnChange(const char *valstr)
 {
-	if (!netgame)
-		return;
+	(void)valstr;
+	if (netgame)
+	{
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "You can't change command 'cv_tsourdt3rd_game_allowtimeover' while in a netgame.\n");
+		//CV_StealthSetValue(&cv_tsourdt3rd_game_allowtimeover, !cv_tsourdt3rd_game_allowtimeover.value);
+		return false;
+	}
+	return true;
+}
 
-	if (Playing())
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "Sorry, you can't change this while in a netgame.\n");
-	CV_StealthSetValue(&cv_tsourdt3rd_game_allowtimeover, !cv_tsourdt3rd_game_allowtimeover.value);
+static boolean G_RealisticShadows_OnChange(const char *valstr)
+{
+	(void)valstr;
+	if (!cv_shadow.value)
+	{
+		//STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "You can't change command 'cv_tsourdt3rd_game_shadows_realistic' without enabling command 'cv_shadow'.\n");
+		//CV_StealthSetValue(&cv_tsourdt3rd_game_shadows_realistic, !cv_tsourdt3rd_game_shadows_realistic.value);
+		return false;
+	}
+	return true;
 }
 
 static void G_IsItCalledSinglePlayer_OnChange(void)
 {
-	if (TSoURDt3rd_AprilFools_ModeEnabled())
-		return;
-
+	if (TSoURDt3rd_AprilFools_ModeEnabled()) return;
 	MainMenu[0].text = (cv_tsourdt3rd_game_isitcalledsingleplayer.value ? "Single  Player" : "1  Player");
-	TSoURDt3rd_AprilFools_StoreDefaultMenuStrings();	// Stores All the Default Menu Strings Again
+	TSoURDt3rd_AprilFools_StoreDefaultMenuStrings(); // Stores All the Default Menu Strings Again
 }
 
 static void C_PadRumble_OnChange(void)
@@ -754,30 +767,30 @@ static void V_Coronas_OnChange(void)
 }
 #endif
 
-static void P_SuperWithShield_OnChange(void)
-{
-	if (!netgame)
-		return;
+static void A_VapeMode_OnChange(void) { TSoURDt3rd_S_ControlMusicEffects(NULL, NULL); }
 
-	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "Sorry, you can't change this while in a netgame.\n");
-	CV_StealthSetValue(&cv_tsourdt3rd_players_shieldblockstransformation, !cv_tsourdt3rd_players_shieldblockstransformation.value);
+static boolean P_SuperWithShield_OnChange(const char *valstr)
+{
+	(void)valstr;
+	if (netgame)
+	{
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "You can't change command 'cv_tsourdt3rd_players_shieldblockstransformation' while in a netgame.\n");
+		//CV_StealthSetValue(&cv_tsourdt3rd_players_shieldblockstransformation, !cv_tsourdt3rd_players_shieldblockstransformation.value);
+		return false;
+	}
+	return true;
 }
 
-static void SV_UseContinues_OnChange(void)
-{
-	useContinues = cv_tsourdt3rd_savefiles_limitedcontinues.value;
-}
+static void SV_UseContinues_OnChange(void) { useContinues = cv_tsourdt3rd_savefiles_limitedcontinues.value; }
 
 static void JB_Speed_OnChange(void)
 {
-	if (!tsourdt3rd_global_jukebox || !tsourdt3rd_global_jukebox->playing)
-		return;
+	if (!TSoURDt3rd_Jukebox_IsPlaying()) return;
 	S_SpeedMusic(atof(cv_tsourdt3rd_jukebox_speed.string));
 }
 
 static void JB_Pitch_OnChange(void)
 {
-	if (!tsourdt3rd_global_jukebox || !tsourdt3rd_global_jukebox->playing)
-		return;
+	if (!TSoURDt3rd_Jukebox_IsPlaying()) return;
 	S_PitchMusic(atof(cv_tsourdt3rd_jukebox_pitch.string));
 }

@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -15,7 +15,7 @@
 #include "smkg-defs.h"
 
 #include "../command.h"
-#include "../d_net.h"
+#include "../netcode/d_net.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -56,9 +56,7 @@ extern consvar_t cv_tsourdt3rd_drrr_controls_rumble[MAXSPLITSCREENPLAYERS];
 // Video //
 extern consvar_t cv_tsourdt3rd_video_sdl_window_shaking;
 extern consvar_t cv_tsourdt3rd_video_showtps; // Ported from Uncapped Plus, TPS is back (for some reason)!
-extern consvar_t cv_tsourdt3rd_video_coloring_menus;
-extern consvar_t cv_tsourdt3rd_video_coloring_fpsrate;
-extern consvar_t cv_tsourdt3rd_video_coloring_tpsrate;
+extern consvar_t cv_tsourdt3rd_video_font_fps, cv_tsourdt3rd_video_font_tps; // Credit to SRB2Classic, Jisk, LuigiBuddd, etc. for the idea
 #ifdef STAR_LIGHTING
 extern consvar_t cv_tsourdt3rd_video_lighting_coronas;
 extern consvar_t cv_tsourdt3rd_video_lighting_coronas_size;
@@ -69,15 +67,11 @@ extern consvar_t cv_tsourdt3rd_video_lighting_coronas_drawingmode;
 // Audio //
 extern consvar_t cv_tsourdt3rd_audio_watermuffling;
 extern consvar_t cv_tsourdt3rd_audio_vapemode;
-extern consvar_t cv_tsourdt3rd_audio_defaultmaptrack;
-extern consvar_t cv_tsourdt3rd_audio_bosses_bossmusic;
-extern consvar_t cv_tsourdt3rd_audio_bosses_finalboss;
-extern consvar_t cv_tsourdt3rd_audio_bosses_truefinalboss;
-extern consvar_t cv_tsourdt3rd_audio_bosses_pinch;
 extern consvar_t cv_tsourdt3rd_audio_bosses_postboss;
-extern consvar_t cv_tsourdt3rd_audio_clearing_act;
-extern consvar_t cv_tsourdt3rd_audio_clearing_boss;
+#if 1
+// MARKED FOR REMOVAL
 extern consvar_t cv_tsourdt3rd_audio_gameover;
+#endif
 
 // Players //
 extern consvar_t cv_tsourdt3rd_players_shieldblockstransformation;
