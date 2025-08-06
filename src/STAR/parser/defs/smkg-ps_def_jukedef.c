@@ -49,7 +49,7 @@ static INT32 TSoURDt3rd_JUKEDEF_CreatePages(char *page_name)
 
 	if (tsourdt3rd_jukebox_available_pages == NULL)
 	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "JUKEDEF: Jukebox page system wasn't initialized, not creating page!\n");
+		STAR_CONS_Printf(STAR_CONS_DEBUG, "JUKEDEF: Jukebox page system wasn't initialized, not creating page!\n");
 		return_with = -1;
 		goto end_function;
 	}
@@ -58,12 +58,12 @@ static INT32 TSoURDt3rd_JUKEDEF_CreatePages(char *page_name)
 	{
 		if (juke_page->id >= TSOURDT3RD_JUKEBOX_MAX_PAGES)
 		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "JUKEDEF: Max pages exceeded, not adding page \x82\"%s\"\x80!\n", page_name);
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "JUKEDEF: Max pages exceeded, not adding page \x82\"%s\"\x80!\n", page_name);
 			goto end_function;
 		}
 		else if (!strnicmp(juke_page->page_name, page_name, TSOURDT3RD_JUKEBOX_MAX_PAGE_NAME))
 		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "JUKEDEF: Page \x82\"%s\"\x80 already exists! I'm not creating a new page\nwith the same exact name as another!\n", page_name);
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "JUKEDEF: Page \x82\"%s\"\x80 already exists! I'm not creating a new page\nwith the same exact name as another!\n", page_name);
 			goto end_function;
 		}
 		juke_page_prev = juke_page;
@@ -83,7 +83,7 @@ static INT32 TSoURDt3rd_JUKEDEF_CreatePages(char *page_name)
 			juke_page_prev->next = juke_page;
 		}
 
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "JUKEDEF: Created page \x82\"%s\"\x80!\n", juke_page->page_name);
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE, "JUKEDEF: Created page \x82\"%s\"\x80!\n", juke_page->page_name);
 	}
 
 	(*tsourdt3rd_jukebox_available_pages) = juke_page;
@@ -112,7 +112,7 @@ static INT32 TSoURDt3rd_JUKEDEF_SetSupportedPages(tsourdt3rd_jukebox_pages_t **s
 
 	if (tsourdt3rd_jukebox_available_pages == NULL)
 	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "JUKEDEF: Jukebox page system wasn't initialized, not setting track to page!\n");
+		STAR_CONS_Printf(STAR_CONS_DEBUG, "JUKEDEF: Jukebox page system wasn't initialized, not setting track to page!\n");
 		return_with = -1;
 		goto end_function;
 	}
@@ -124,7 +124,7 @@ static INT32 TSoURDt3rd_JUKEDEF_SetSupportedPages(tsourdt3rd_jukebox_pages_t **s
 	}
 	if (all_jukebox_pages == NULL)
 	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "JUKEDEF: Page \x82\"%s\"\x80 doesn't exist! Did you create it beforehand?\n", page_name);
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "JUKEDEF: Page \x82\"%s\"\x80 doesn't exist! Did you create it beforehand?\n", page_name);
 		goto end_function;
 	}
 
@@ -132,7 +132,7 @@ static INT32 TSoURDt3rd_JUKEDEF_SetSupportedPages(tsourdt3rd_jukebox_pages_t **s
 	{
 		if (!strnicmp(new_page->page_name, page_name, TSOURDT3RD_JUKEBOX_MAX_PAGE_NAME))
 		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "JUKEDEF: Lump \x82\"%s\"\x80 could already be found on page \x82\"%s\"\x80!\n", supported_lump, page_name);
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "JUKEDEF: Lump \x82\"%s\"\x80 could already be found on page \x82\"%s\"\x80!\n", supported_lump, page_name);
 			goto end_function;
 		}
 		new_page_prev = new_page;
@@ -153,7 +153,7 @@ static INT32 TSoURDt3rd_JUKEDEF_SetSupportedPages(tsourdt3rd_jukebox_pages_t **s
 			new_page_prev->next = new_page;
 		}
 
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "JUKEDEF: Lump \x82\"%s\"\x80 can now be found on page \x82\"%s\"\x80!\n", supported_lump, page_name);
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE, "JUKEDEF: Lump \x82\"%s\"\x80 can now be found on page \x82\"%s\"\x80!\n", supported_lump, page_name);
 	}
 
 	(*supported_page_p) = new_page;
@@ -218,7 +218,7 @@ boolean TSoURDt3rd_STARParser_JUKEDEF(tsourdt3rd_starparser_t *script)
 				{
 					if (!strnicmp(jukedef->linked_musicdef->name, lump_name, 7))
 					{
-						STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "JUKEDEF: Found pre-existing music definition for Lump \x82\"%s\"\x80!\n", lump_name);
+						STAR_CONS_Printf(STAR_CONS_DEBUG, "JUKEDEF: Found pre-existing music definition for Lump \x82\"%s\"\x80!\n", lump_name);
 						break;
 					}
 					jukedef = jukedef->next;

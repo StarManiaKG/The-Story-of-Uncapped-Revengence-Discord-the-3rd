@@ -10,7 +10,6 @@
 /// \brief Unique TSoURDt3rd menu drawing routines
 
 #include "smkg-m_sys.h"
-#include "../core/smkg-r_main.h"
 
 #include "../../am_map.h"
 #include "../../console.h"
@@ -18,9 +17,9 @@
 #include "../../i_time.h"
 #include "../../m_easing.h"
 #include "../../r_main.h"
-#include "../../w_wad.h"
 #include "../../r_draw.h"
 #include "../../v_video.h"
+#include "../../w_wad.h"
 #include "../../z_zone.h"
 
 // ------------------------ //
