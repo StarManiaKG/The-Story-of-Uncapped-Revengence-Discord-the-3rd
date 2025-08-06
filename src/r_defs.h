@@ -559,6 +559,8 @@ typedef struct sector_s
 	// portals
 	UINT32 portal_floor;
 	UINT32 portal_ceiling;
+
+	struct customargs_s* customargs;
 } sector_t;
 
 //
@@ -621,6 +623,7 @@ typedef struct line_s
 	UINT32 secportal; // transferred sector portal
 
 	struct pslope_s *midtexslope;
+	struct customargs_s *customargs;
 } line_t;
 
 typedef struct
@@ -657,6 +660,7 @@ typedef struct
 	INT16 repeatcnt; // # of times to repeat midtexture
 
 	extracolormap_t *colormap_data; // storage for colormaps; not applied to sectors.
+	struct customargs_s* customargs;
 } side_t;
 
 //
@@ -912,42 +916,6 @@ typedef struct
 	INT32 columnofs[8];     // only [width] used
 	// the [0] is &columnofs[width]
 } ATTRPACK softwarepatch_t;
-
-#if 1
-// STAR NOTE: i respect the hustle!
-// However, I kinda need this for my coronas!
-// So....... it's staying for now :p
-
-typedef enum
-{
-	PALETTE         = 0,  // 1 byte is the index in the doom palette (as usual)
-	INTENSITY       = 1,  // 1 byte intensity
-	INTENSITY_ALPHA = 2,  // 2 byte: alpha then intensity
-	RGB24           = 3,  // 24 bit rgb
-	RGBA32          = 4,  // 32 bit rgba
-} pic_mode_t;
-
-#ifdef _MSC_VER
-#pragma warning(disable :  4200)
-#endif
-
-// a pic is an unmasked block of pixels, stored in horizontal way
-typedef struct
-{
-	INT16 width;
-	UINT8 zero;       // set to 0 allow autodetection of pic_t
-	                 // mode instead of patch or raw
-	UINT8 mode;       // see pic_mode_t above
-	INT16 height;
-	INT16 reserved1; // set to 0
-	UINT8 data[0];
-} ATTRPACK pic_t;
-
-#ifdef _MSC_VER
-#pragma warning(default : 4200)
-#endif
-
-#endif
 
 #if defined(_MSC_VER)
 #pragma pack()

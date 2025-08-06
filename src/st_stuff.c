@@ -2156,8 +2156,8 @@ static void ST_drawNiGHTSHUD(void)
 				aflag |= (9 - 9*drawtime/(TICRATE/2)) << V_ALPHASHIFT;
 			// This one, not quite as much so.
 			V_DrawCenteredString(BASEVIDWIDTH/2, 60, aflag,
-		                     va(M_GetText("\x80GET\x82 %d\x80 SPHERE%s!"), ssspheres,
-		                        (ssspheres > 1) ? "S" : ""));
+							 va(M_GetText("\x80GET\x82 %d\x80 SPHERE%s!"), ssspheres,
+								(ssspheres > 1) ? "S" : ""));
 		}
 	}
 	else
@@ -2725,10 +2725,8 @@ static void ST_overlayDrawer(void)
 			if (!modeattacking && LUA_HudEnabled(hud_lives))
 				ST_drawLivesArea();
 
-#if 1
 			// STAR STUFF: Render easter hud please :) //
 			TSoURDt3rd_Easter_ST_drawEggs();
-#endif
 		}
 	}
 
@@ -2737,12 +2735,7 @@ static void ST_overlayDrawer(void)
 		&& (netgame || multiplayer)
 		&& (cv_cooplives.value == 0))
 	;
-#if 0
-	else if ((G_GametypeUsesLives() || ((gametyperules & (GTR_RACE|GTR_LIVES)) == GTR_RACE)) && stplyr->lives <= 0 && !(hu_showscores && (netgame || multiplayer)))
-#else
-	// STAR STUFF: time over //
-	else if ((G_GametypeUsesLives() || ((gametyperules & (GTR_RACE|GTR_LIVES)) == GTR_RACE)) && (stplyr->lives <= 0 || tsourdt3rd[consoleplayer].levels.time_over) && !(hu_showscores && (netgame || multiplayer)))
-#endif
+	else if ((G_GametypeUsesLives() || ((gametyperules & (GTR_RACE|GTR_LIVES)) == GTR_RACE)) && (stplyr->lives <= 0 || tsourdt3rd[consoleplayer].game.time_over) && !(hu_showscores && (netgame || multiplayer)))
 	{
 		INT32 i = MAXPLAYERS;
 		INT32 deadtimer = stplyr->spectator ? TICRATE : (stplyr->deadtimer-(TICRATE<<1));
@@ -2769,12 +2762,7 @@ static void ST_overlayDrawer(void)
 			INT32 lvlttlx = min(6*deadtimer, BASEVIDWIDTH/2);
 			UINT32 flags = V_PERPLAYER|(stplyr->spectator ? V_HUDTRANSHALF : V_HUDTRANS);
 
-#if 0
-			V_DrawScaledPatch(lvlttlx - 8, BASEVIDHEIGHT/2, flags, (countdown == 1 ? slidtime : slidgame));
-#else
-			// STAR STUFF: time over //
-			V_DrawScaledPatch(lvlttlx - 8, BASEVIDHEIGHT/2, flags, ((countdown == 1 || tsourdt3rd[consoleplayer].levels.time_over) ? slidtime : slidgame));
-#endif
+			V_DrawScaledPatch(lvlttlx - 8, BASEVIDHEIGHT/2, flags, ((countdown == 1 || tsourdt3rd[consoleplayer].game.time_over) ? slidtime : slidgame));
 			V_DrawScaledPatch(BASEVIDWIDTH + 8 - lvlttlx, BASEVIDHEIGHT/2, flags, slidover);
 		}
 	}

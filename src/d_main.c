@@ -301,10 +301,7 @@ void D_ProcessEvents(void)
 	if (mouse2.rdx || mouse2.rdy)
 		G_SetMouseDeltas(mouse2.rdx, mouse2.rdy, 2);
 
-#if 1
-	// STAR STUFF: PLEASE process [the 7] events //
-	TSoURDt3rd_D_ProcessEvents();
-#endif
+	TSoURDt3rd_D_ProcessEvents(); // STAR STUFF: PLEASE process [the 7] events //
 }
 
 //
@@ -390,7 +387,7 @@ static void D_Display(void)
 		{
 			// Fade to black first
 			if ((wipegamestate == (gamestate_t)FORCEWIPE ||
-			        (wipegamestate != (gamestate_t)FORCEWIPEOFF
+					(wipegamestate != (gamestate_t)FORCEWIPEOFF
 						&& !(gamestate == GS_LEVEL || (gamestate == GS_TITLESCREEN && titlemapinaction)))
 					) // fades to black on its own timing, always
 			 && wipetypepre != UINT8_MAX)
@@ -509,7 +506,7 @@ static void D_Display(void)
 
 			if (!automapactive && !dedicated && cv_renderview.value)
 			{
-				R_ApplyLevelInterpolators(R_UsingFrameInterpolation() ? rendertimefrac : FRACUNIT);
+				R_ApplyLevelInterpolators(rendertimefrac_unpaused);
 				PS_START_TIMING(ps_rendercalltime);
 				if (players[displayplayer].mo || players[displayplayer].playerstate == PST_DEAD)
 				{
@@ -594,27 +591,7 @@ static void D_Display(void)
 
 	// draw pause pic
 	if (paused && cv_showhud.value && (!menuactive || netgame))
-	{
-#if 0
-		INT32 py;
-		patch_t *patch;
-		if (automapactive)
-			py = 4;
-		else
-			py = viewwindowy + 4;
-		patch = W_CachePatchName("M_PAUSE", PU_PATCH);
-		V_DrawScaledPatch(viewwindowx + (BASEVIDWIDTH - patch->width)/2, py, 0, patch);
-#else
-#if 0
-		INT32 y = ((automapactive) ? (32) : (BASEVIDHEIGHT/2));
-		M_DrawTextBox((BASEVIDWIDTH/2) - (60), y - (16), 13, 2);
-		V_DrawCenteredString(BASEVIDWIDTH/2, y - (4), V_MENUCOLORMAP, "Game Paused");
-#else
-		// STAR STUFF: draw the pause graphic for me please //
 		TSoURDt3rd_M_DrawPauseGraphic();
-#endif
-#endif
-	}
 
 	// vid size change is now finished if it was on...
 	vid.recalc = 0;
@@ -900,17 +877,17 @@ void D_SRB2Loop(void)
 			{
 				rendertimefrac = FRACUNIT;
 			}
+
+			rendertimefrac_onlypaused = (paused ? FRACUNIT : g_time.timefrac);
+			rendertimefrac_unpaused = g_time.timefrac;
 		}
 		else
 		{
 			renderdeltatics = realtics * FRACUNIT;
 			rendertimefrac = FRACUNIT;
+			rendertimefrac_unpaused = FRACUNIT;
+			rendertimefrac_onlypaused = FRACUNIT;
 		}
-
-#if 1
-		// STAR STUFF: build any other frames we want before running the display... //
-		TSoURDt3rd_D_BuildFrame();
-#endif
 
 		if (interp || doDisplay)
 		{
@@ -934,10 +911,7 @@ void D_SRB2Loop(void)
 
 		LUA_Step();
 
-#if 1
-		// STAR STUFF: run our extra game loop routines now :p //
-		TSoURDt3rd_D_Loop();
-#endif
+		TSoURDt3rd_D_Loop(); // STAR STUFF: run our extra game loop routines now :p //
 
 		// Fully completed frame made.
 		finishprecise = I_GetPreciseTime();
@@ -1430,10 +1404,8 @@ void D_SRB2Main(void)
 	CONS_Printf("Z_Init(): Init zone memory allocation daemon. \n");
 	Z_Init();
 
-#if 1
 	// STAR STUFF: Initialize our data! //
 	TSoURDt3rd_Init();
-#endif
 
 	clientGamedata = M_NewGameDataStruct();
 	serverGamedata = M_NewGameDataStruct();
@@ -1839,8 +1811,10 @@ void D_SRB2Main(void)
 	CON_ToggleOff();
 
 #ifdef HAVE_DISCORDSUPPORT
-	/// STAR NOTE: \todo uh move into unique TSoURDt3rd_D_Main function //
-	DISC_Init();
+	if (! dedicated)
+	{
+		DISC_Init();
+	}
 #endif
 
 	if (dedicated && server)

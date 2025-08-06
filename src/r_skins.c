@@ -499,14 +499,11 @@ static void SetSkin(player_t *player, INT32 skinnum)
 		P_SetMobjState(player->mo, player->mo->state-states); // Prevent visual errors when switching between skins with differing number of frames
 	}
 
+	TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor(player - players);
+
 #ifdef HAVE_DISCORDSUPPORT
 	if (player - players == consoleplayer)
 		DISC_UpdatePresence();
-#endif
-
-#if 1
-	// STAR STUFF: fun controller junk //
-	TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor(player - players);
 #endif
 }
 

@@ -19,9 +19,6 @@
 #include "r_defs.h"
 #include "hu_stuff.h" //font arrays
 
-// TSoURDt3rd
-#include "STAR/smkg-v_video.h" // custom video data //
-
 //
 // VIDEO
 //
@@ -36,6 +33,10 @@ cv_globalgamma, cv_globalsaturation,
 cv_rhue, cv_yhue, cv_ghue, cv_chue, cv_bhue, cv_mhue,
 cv_rgamma, cv_ygamma, cv_ggamma, cv_cgamma, cv_bgamma, cv_mgamma,
 cv_rsaturation, cv_ysaturation, cv_gsaturation, cv_csaturation, cv_bsaturation, cv_msaturation;
+
+extern consvar_t cv_tsourdt3rd_video_coloring_menus,
+	cv_tsourdt3rd_video_coloring_fpsrate,
+	cv_tsourdt3rd_video_coloring_tpsrate;
 
 // Allocates buffer screens, call before R_Init.
 void V_Init(void);
@@ -112,6 +113,18 @@ void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue);
 #define V_BROWNMAP           0x0000D000
 #define V_ROSYMAP            0x0000E000
 #define V_INVERTMAP          0x0000F000
+
+// ===================================================================
+// DYNAMIC VIDEO COLORS
+//
+// 	Remember this from some previous TSoURDt3rd commits of st_stuff.c?
+// 		Yeah, I reworked it! Just like I said I would!
+//		But this time, I've reworked it even more!
+// ===================================================================
+
+#define V_MENUCOLORMAP (cv_tsourdt3rd_video_coloring_menus.value)
+#define V_FPSCOLORMAP  (cv_tsourdt3rd_video_coloring_fpsrate.value)
+#define V_TPSCOLORMAP  (cv_tsourdt3rd_video_coloring_tpsrate.value)
 
 // use bits 17-20 for alpha transparency
 #define V_ALPHASHIFT         16

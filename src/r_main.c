@@ -42,6 +42,9 @@
 #endif
 
 // TSoURDt3rd
+#ifdef HAVE_SDL
+#include "STAR/smkg-i_sys.h" // TSoURDt3rd_I_CursedWindowMovement() //
+#endif
 #include "STAR/lights/smkg-coronas.h" // TSoURDt3rd_R_Load_Corona() and other pieces of corona data //
 
 // Fineangles in the SCREENWIDTH wide window.
@@ -75,6 +78,8 @@ boolean r_renderthings;
 
 fixed_t rendertimefrac;
 fixed_t renderdeltatics;
+fixed_t rendertimefrac_unpaused;
+fixed_t rendertimefrac_onlypaused;
 boolean renderisnewtic;
 
 //
@@ -1179,6 +1184,9 @@ void R_SetupFrame(player_t *player)
 		quake.x = M_RandomRange(-ir,ir);
 		quake.y = M_RandomRange(-ir,ir);
 		quake.z = M_RandomRange(-ir,ir);
+#ifdef HAVE_SDL
+		TSoURDt3rd_I_CursedWindowMovement(FixedInt(quake.x), FixedInt(quake.y));
+#endif
 	}
 	else if (!ispaused)
 		quake.x = quake.y = quake.z = 0;
@@ -1215,7 +1223,7 @@ void R_SetupFrame(player_t *player)
 	// newview->sin = FINESINE(viewangle>>ANGLETOFINESHIFT);
 	// newview->cos = FINECOSINE(viewangle>>ANGLETOFINESHIFT);
 
-	R_InterpolateView(R_UsingFrameInterpolation() ? rendertimefrac : FRACUNIT);
+	R_InterpolateView(rendertimefrac_unpaused);
 }
 
 void R_SkyboxFrame(player_t *player)
@@ -1359,7 +1367,7 @@ void R_SkyboxFrame(player_t *player)
 	// newview->sin = FINESINE(viewangle>>ANGLETOFINESHIFT);
 	// newview->cos = FINECOSINE(viewangle>>ANGLETOFINESHIFT);
 
-	R_InterpolateView(R_UsingFrameInterpolation() ? rendertimefrac : FRACUNIT);
+	R_InterpolateView(rendertimefrac_unpaused);
 }
 
 boolean R_ViewpointHasChasecam(player_t *player)

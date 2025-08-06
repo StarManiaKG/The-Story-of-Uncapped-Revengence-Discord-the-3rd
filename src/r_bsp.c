@@ -25,6 +25,9 @@
 
 // TSoURDt3rd
 #include "STAR/ss_main.h" // TSoURDt3rd's loading screens (tsourdt3rd_loadingscreen) //
+#ifdef ALAM_LIGHTING
+#include "hardware/hw_light.h"
+#endif
 
 seg_t *curline;
 side_t *sidedef;
@@ -1351,9 +1354,9 @@ void R_RenderBSPNode(INT32 bspnum)
 		bspnum = bsp->children[side^1];
 	}
 
-#if 1
-	// STAR STUFF: we're on the border, NOW! //
-	tsourdt3rd_loadingscreen.bspCount = bspnum;
+	tsourdt3rd_loadingscreen.bspCount = bspnum; // STAR STUFF: we're on the border, NOW! //
+#ifdef ALAM_LIGHTING
+	HWR_DL_CreateStaticLightmaps(bspnum);
 #endif
 
 	// PORTAL CULLING
