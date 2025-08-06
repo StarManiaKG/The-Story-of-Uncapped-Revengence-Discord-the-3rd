@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
 // Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
-// Copyright (C) 2018-2025 by Kart Krew.
+// Copyright (C) 2018-2024 by Kart Krew.
 // Copyright (C) 2020-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
@@ -9,15 +9,24 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  discord_cmds.c
-/// \brief Discord status net structures
+/// \brief Discord integration - net structures
 
 #include "discord.h"
 
+#include "../byteptr.h"
+#include "../g_game.h"
+
+#include "../netcode/net_command.h"
+#include "../netcode/server_connection.h"
+
 #include "../STAR/star_vars.h" // TSoURDt3rd structure //
 
-#include "../d_netcmd.h"
-#include "../g_game.h"
-#include "../byteptr.h"
+// ------------------------ //
+//        Variables
+// ------------------------ //
+
+static CV_PossibleValue_t discordinvites_cons_t[] = {{0, "Admins Only"}, {1, "Everyone"}, {0, NULL}};
+consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Everyone", CV_SAVE|CV_CALL, discordinvites_cons_t, TSoURDt3rd_D_Joinable_OnChange);
 
 // ------------------------ //
 //        Functions
@@ -63,18 +72,19 @@ void TSoURDt3rd_D_Got_DiscordInfo(UINT8 **cp, INT32 playernum)
 	}
 
 #ifdef HAVE_DISCORDSUPPORT
-	// Implement our data as we see fit
+	// Implement our data if the server uses TSoURDt3rd.
+	// Otherwise, just discard it.
 	if (TSoURDt3rdPlayers[serverplayer].server_usingTSoURDt3rd)
 	{
-		discordInfo.maxPlayers = READUINT8(*cp);
-		discordInfo.joinsAllowed = (boolean)READUINT8(*cp);
-		discordInfo.everyoneCanInvite = (boolean)READUINT8(*cp);
+		discordInfo.net.maxPlayers = READUINT8(*cp);
+		discordInfo.net.joinsAllowed = (boolean)READUINT8(*cp);
+		discordInfo.net.everyoneCanInvite = (boolean)READUINT8(*cp);
 	}
 	else
 	{
-		discordInfo.maxPlayers = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
-		discordInfo.joinsAllowed = cv_allownewplayer.value;
-		discordInfo.everyoneCanInvite = (boolean)cv_discordinvites.value;
+		discordInfo.net.maxPlayers = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
+		discordInfo.net.joinsAllowed = cv_allownewplayer.value;
+		discordInfo.net.everyoneCanInvite = (boolean)cv_discordinvites.value;
 		(*cp) += 3;
 	}
 	DISC_UpdatePresence();

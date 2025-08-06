@@ -126,13 +126,13 @@ tsourdt3rd_menuitem_t DISCORD_TM_OP_MainMenu[] =
 	{NULL, NULL, {NULL}, 0, 0},
 
 	{NULL, NULL, {NULL}, 0, 0},
-		{NULL, "The custom detail to show on your status.", {NULL}, DISC_STATUS_IMAGE_STRING_SIZE, DISC_STATUS_MIN_STRING_SIZE},
-		{NULL, "The custom state to show on your status.", {NULL}, DISC_STATUS_IMAGE_STRING_SIZE, DISC_STATUS_MIN_STRING_SIZE},
+		{NULL, "The custom detail to show on your status.", {NULL}, DISC_STATUS_MAX_IMAGE_STRING_SIZE, DISC_STATUS_MIN_STRING_SIZE},
+		{NULL, "The custom state to show on your status.", {NULL}, DISC_STATUS_MAX_IMAGE_STRING_SIZE, DISC_STATUS_MIN_STRING_SIZE},
 
 	{NULL, NULL, {NULL}, 0, 0},
 
 	{NULL, NULL, {NULL}, 0, 0},
-		{NULL, "The image text (large) to show on your status.", {NULL}, DISC_STATUS_IMAGE_STRING_SIZE, DISC_STATUS_MIN_STRING_SIZE},
+		{NULL, "The image text (large) to show on your status.", {NULL}, DISC_STATUS_MAX_IMAGE_STRING_SIZE, DISC_STATUS_MIN_STRING_SIZE},
 
 		{NULL, NULL, {NULL}, 0, 0},
 
@@ -142,7 +142,7 @@ tsourdt3rd_menuitem_t DISCORD_TM_OP_MainMenu[] =
 	{NULL, NULL, {NULL}, 0, 0},
 
 	{NULL, NULL, {NULL}, 0, 0},
-		{NULL, "The image text (small) to show on your status.", {NULL}, DISC_STATUS_IMAGE_STRING_SIZE, DISC_STATUS_MIN_STRING_SIZE},
+		{NULL, "The image text (small) to show on your status.", {NULL}, DISC_STATUS_MAX_IMAGE_STRING_SIZE, DISC_STATUS_MIN_STRING_SIZE},
 
 		{NULL, NULL, {NULL}, 0, 0},
 
@@ -226,22 +226,33 @@ void TSoURDt3rd_M_DiscordOptions_Init(INT32 choice)
 
 static void M_Sys_DrawDiscordMenu(void)
 {
-	INT32 flags = V_SNAPTOBOTTOM;
+	INT32 x = BASEVIDWIDTH/2, y = BASEVIDHEIGHT-8;
+	INT32 flags = V_SNAPTOBOTTOM|V_ALLOWLOWERCASE;
+	const char *string = NULL;
 
-	if (discordInfo.ConnectionStatus & DISC_CONNECTED)
+	if (discordInfo.connectionStatus == DISC_CONNECTED)
 	{
 		// Discord's open, so let's print our username!
-		V_DrawCenteredThinString(BASEVIDWIDTH/2, BASEVIDHEIGHT-8, flags|V_ALLOWLOWERCASE|V_MENUCOLORMAP, va("Connected to: %s", DISC_ReturnUsername()));
-		return;
+		const char *username = DISC_ReturnUsername();
+		if (username == NULL)
+		{
+			flags |= V_YELLOWMAP;
+			string = "User potentially still not connected to Discord?";
+		}
+		else
+		{
+			flags |= V_MENUCOLORMAP;
+			string = va("Connected to: %s", username);
+		}
+		V_DrawCenteredThinString(x, y, flags, string);
 	}
-
-	// Dang! Discord isn't open!
-	flags |= V_REDMAP;
-	if (discordInfo.ConnectionStatus & DISC_DISCONNECTED)
-		V_DrawCenteredThinString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16, flags, "Disconnected!");
 	else
-		V_DrawCenteredThinString(BASEVIDWIDTH/2, BASEVIDHEIGHT-16, flags, "Not Connected!");
-	V_DrawCenteredThinString(BASEVIDWIDTH/2, BASEVIDHEIGHT-8, flags|V_ALLOWLOWERCASE, "Make sure Discord is open!");
+	{
+		// Dang, Discord isn't open!
+		string = ((discordInfo.connectionStatus == DISC_DISCONNECTED) ? "Disconnected!" : "Not Connected!");
+		V_DrawCenteredThinString(x, y-8, flags|V_REDMAP, string);
+		V_DrawCenteredThinString(x, y, flags|V_REDMAP, "Make sure Discord is open!");
+	}
 }
 
 static void M_Sys_DiscordOptionsTicker(void)
@@ -388,21 +399,6 @@ static void M_Sys_DiscordOptionsTicker(void)
 			j = 0;
 			i++;
 		}
-	}
-
-	// Handle typing data
-	if (!menumessage.active && menutyping.menutypingclose && menutyping.menutypingfade == 1
-	&& !TSoURDt3rd_M_VirtualStringMeetsLength())
-	{
-		S_StartSound(NULL, sfx_skid);
-		TSoURDt3rd_M_StartMessage(
-			"String too short!",
-			"Sorry, Discord requires status strings to\nbe longer than two characters.\n\nPlease type a longer string.",
-			NULL,
-			MM_NOTHING,
-			NULL,
-			NULL
-		);
 	}
 }
 

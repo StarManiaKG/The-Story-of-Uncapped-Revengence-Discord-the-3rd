@@ -1,6 +1,6 @@
 include(LibFindMacros)
 
-libfind_pkg_check_modules(DiscordGameSDK_PKGCONF DiscordGameSDK)
+libfind_pkg_check_modules(DiscordGameSDK_PKGCONF discord_game_sdk)
 
 find_path(DiscordGameSDK_INCLUDE_DIR
 	NAMES discord_game_sdk.h
@@ -12,9 +12,7 @@ find_path(DiscordGameSDK_INCLUDE_DIR
 )
 
 find_library(DiscordGameSDK_LIBRARY
-	NAMES
-		discord_game_sdk
-		discord_game_sdk.so
+	NAMES discord_game_sdk
 	PATHS
 		${DiscordGameSDK_PKGCONF_LIBRARY_DIRS}
 		"/usr/lib"
@@ -36,4 +34,4 @@ if(DiscordGameSDK_FOUND AND NOT TARGET DiscordGameSDK)
 	add_library(DiscordGameSDK::DiscordGameSDK ALIAS DiscordGameSDK)
 endif()
 
-mark_as_advanced(DiscordGameSDK_LIBRARY DiscordGameSDK_INCLUDE_DIR)
+#mark_as_advanced(DiscordGameSDK_LIBRARY DiscordGameSDK_INCLUDE_DIR)

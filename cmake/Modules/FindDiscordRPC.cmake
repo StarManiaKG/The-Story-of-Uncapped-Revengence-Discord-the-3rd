@@ -1,13 +1,11 @@
 include(LibFindMacros)
 
-libfind_pkg_check_modules(DiscordRPC_PKGCONF DiscordRPC)
+libfind_pkg_check_modules(DiscordRPC_PKGCONF discord-rpc)
 
 find_path(DiscordRPC_INCLUDE_DIR
-	NAMES
-		discord_rpc.h
-		discord_register.h
+	NAMES discord_rpc.h
 	PATHS
-		${DISCORDRPC_PKGCONF_INCLUDE_DIRS}
+		${DiscordRPC_PKGCONF_INCLUDE_DIRS}
 		"${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include"
 		"/usr/include"
 		"/usr/local/include"
@@ -16,14 +14,13 @@ find_path(DiscordRPC_INCLUDE_DIR
 find_library(DiscordRPC_LIBRARY
 	NAMES discord-rpc
 	PATHS
-		${DISCORDRPC_PKGCONF_LIBRARY_DIRS}
+		${DiscordRPC_PKGCONF_LIBRARY_DIRS}
 		"/usr/lib"
 		"/usr/local/lib"
 )
 
 include(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(DiscordRPC
-    REQUIRED_VARS DiscordRPC_LIBRARY DiscordRPC_INCLUDE_DIR)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(DiscordRPC REQUIRED_VARS DiscordRPC_LIBRARY DiscordRPC_INCLUDE_DIR)
 
 if(DiscordRPC_FOUND AND NOT TARGET DiscordRPC)
 	add_library(DiscordRPC UNKNOWN IMPORTED)
@@ -36,4 +33,4 @@ if(DiscordRPC_FOUND AND NOT TARGET DiscordRPC)
 	add_library(DiscordRPC::DiscordRPC ALIAS DiscordRPC)
 endif()
 
-mark_as_advanced(DiscordRPC_LIBRARY DiscordRPC_INCLUDE_DIR)
+#mark_as_advanced(DiscordRPC_LIBRARY DiscordRPC_INCLUDE_DIR)

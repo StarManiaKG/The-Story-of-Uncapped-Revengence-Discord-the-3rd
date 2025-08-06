@@ -331,10 +331,6 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 	if (!rejoined)
 		LUA_HookInt(newplayernum, HOOK(PlayerJoin));
 
-#ifdef HAVE_DISCORDSUPPORT
-	DISC_UpdatePresence();
-#endif
-
 #if 1
 	// STAR STUFF: move player structure data for me please //
 	TSoURDt3rd_MovePlayerStructure(node, newplayernum, mynode);
@@ -342,6 +338,10 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 #ifdef HAVE_SDL
 	STAR_SetWindowTitle();
+#endif
+
+#ifdef HAVE_DISCORDSUPPORT
+	DISC_UpdatePresence();
 #endif
 }
 
@@ -576,7 +576,6 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 #endif
 
 #if 1
-
 #ifdef HAVE_SDL
 	STAR_SetWindowTitle();
 #endif

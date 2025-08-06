@@ -2822,6 +2822,10 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	if (p->mare == 255)
 		p->mare = 0;
+
+#ifdef HAVE_DISCORDSUPPORT
+	DISC_UpdatePresence();
+#endif
 }
 
 //
@@ -3375,13 +3379,13 @@ void G_AddPlayer(INT32 playernum)
 	if ((countplayers && !notexiting) || G_IsSpecialStage(gamemap))
 		P_DoPlayerExit(p, false);
 
-#ifdef HAVE_DISCORDSUPPORT
-	DISC_UpdatePresence();
-#endif
-
 #if 1
 	// STAR STUFF: add our new player to the roster :P //
 	TSoURDt3rd_InitializePlayer(playernum);
+#endif
+
+#ifdef HAVE_DISCORDSUPPORT
+	DISC_UpdatePresence();
 #endif
 }
 

@@ -1,18 +1,20 @@
-// SONIC ROBO BLAST 2
+// SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
 // Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
 // Copyright (C) 2018-2024 by Kart Krew.
-// Copyright (C) 2020-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2020-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  discord.h
-/// \brief Globalizes Discord Rich Presence data
+/// \brief Discord integration structures, routines, and data
 
 #ifndef __DISCORD__
 #define __DISCORD__
+
+#include <time.h>
 
 #include "../command.h"
 
@@ -22,48 +24,60 @@ extern "C" {
 
 #ifdef HAVE_DISCORDSUPPORT
 
-#include <discord_rpc.h>
 
 // ------------------------ //
 //        Variables
 // ------------------------ //
 
-// Please feel free to provide your own Discord app if you're making a new custom build :)
-#define DISCORD_APPID "1013126566236135516"
 
 #ifdef DEVELOP
 #define DISCORD_SECRETIVE
 #endif
 
-// length of IP strings
-#define IP_SIZE 21
-
-// length of Discord Presence strings
-#define DISCORD_PRESENCE_STRING_SIZE 128
-#define DISCORD_PRESENCE_IMAGE_STRING_SIZE 64
+// Please feel free to provide your own Discord app if you're making a new custom build :)
+#define DISCORD_APPID			1013126566236135516
+#define DISCORD_APPID_STRING	"1013126566236135516" // direct copy of the above in a string format
 
 // Allows for SRB2 to use the discriminators of Discord usernames! (even though they removed them :p)
 #define DISCORD_DISCRIMINATORS
 
-// Discord Rich Presence connection status
+// length of IP strings
+#define DISCORD_IP_SIZE 21
+
+// length of Discord Presence strings
+#define DISC_STATUS_MAX_STRING_SIZE 128
+#define DISC_STATUS_MAX_IMAGE_STRING_SIZE 64
+#define DISC_STATUS_MIN_STRING_SIZE 2
+
+
+// Discord client info
 typedef enum {
-	DRPC_NOTCONNECTED = 0,
-	DRPC_INITIALIZED,
-	DRPC_DISCONNECTED,
-	DRPC_CONNECTED
-} DRPC_Status_t;
+	DISC_NOTCONNECTED	= 0,
+	DISC_DISCONNECTED	= 1>>0,
+	DISC_CONNECTED		= 1>>1,
+} DISC_ConnectionStatus_t;
 
 extern struct discordInfo_s {
-	UINT8 maxPlayers;
-	boolean joinsAllowed;
-	boolean everyoneCanInvite;
-	DRPC_Status_t ConnectionStatus;
+	DISC_ConnectionStatus_t connectionStatus;
+	struct {
+		UINT8 maxPlayers;
+		boolean joinsAllowed;
+		boolean everyoneCanInvite;
+	} net;
 } discordInfo;
+
+
+// Discord request info
+typedef enum {
+	DISC_REQUEST_REPLY_NO = 0,
+	DISC_REQUEST_REPLY_YES,
+	DISC_REQUEST_REPLY_IGNORE
+} DISC_RequestReply_t;
 
 typedef struct discordRequest_s {
 	char *username; // Discord user name.
 	char *discriminator; // Discord discriminator (The little hashtag thing after the username). Separated for a "hide discriminators" cvar.
-	char *userID; // The ID of the Discord user, gets used with Discord_Respond()
+	char *userID; // The ID of the Discord user, gets used with DISC_Respond()
 
 	// HAHAHA, no.
 	// *Maybe* if it was only PNG I would boot up curl just to get AND convert this to Doom GFX,
@@ -73,17 +87,19 @@ typedef struct discordRequest_s {
 
 	struct discordRequest_s *next; // Next request in the list.
 	struct discordRequest_s *prev; // Previous request in the list. Not used normally, but just in case something funky happens, this should repair the list.
-} discordRequest_t;
+} DISC_Request_t;
 
-extern discordRequest_t *discordRequestList;
+extern DISC_Request_t *discordRequestList;
 
 
+// COMMANDS
 extern consvar_t cv_discordrp;
 extern consvar_t cv_discordstreamer;
 extern consvar_t cv_discordasks;
 extern consvar_t cv_discordshowonstatus;
 extern consvar_t cv_discordstatusmemes;
 extern consvar_t cv_discordcharacterimagetype;
+
 extern consvar_t cv_discordcustom_details;
 extern consvar_t cv_discordcustom_state;
 extern consvar_t cv_discordcustom_imagetype_large;
@@ -100,6 +116,11 @@ extern consvar_t cv_discordcustom_imagetext_large;
 extern consvar_t cv_discordcustom_imagetext_small;
 
 
+// MISC
+extern char discord_integration_type[DISC_STATUS_MAX_STRING_SIZE];
+extern char discord_fullusername[DISC_STATUS_MAX_STRING_SIZE];
+
+
 // ------------------------ //
 //        Functions
 // ------------------------ //
@@ -108,162 +129,365 @@ extern consvar_t cv_discordcustom_imagetext_small;
 // TOOLS
 // =====
 
+
 /*--------------------------------------------------
-	void DRPC_StringPrintf(char *main, const char *sep, const char *string, ...);
+	void DISC_StatusPrintf(boolean is_image, char *main, const char *sep, const char *string, ...)
 
 		Provides easier methods of concatenation when it
-		comes to applying Discord Rich Presence statuses to the given string.
+		comes to applying game info to our user's
+		Discord status.
 --------------------------------------------------*/
-void DRPC_StringPrintf(char *main, const char *sep, const char *string, ...);
 
-
-/*--------------------------------------------------
-	void DRPC_ImagePrintf(char *string, const char *sep, const char *image, ...);
-
-		Provides easier methods of applying images to
-		Discord Rich Presence statuses.
---------------------------------------------------*/
-void DRPC_ImagePrintf(char *string, const char *sep, const char *image, ...);
+void DISC_StatusPrintf(boolean is_image, char *main, const char *sep, const char *string, ...);
 
 
 // ========
 // STATUSES
 // ========
 
-/*--------------------------------------------------
-	void DRPC_GeneralStatus(char *string, char *image, char *imagestr);
 
-		Applies a Discord Rich Presence status, related to general details,
-		to the given string.
+/*--------------------------------------------------
+	void DISC_BasicStatus(char *string, char *image, char *imagestr)
+
+		Applies basic Discord status info to the given strings.
 --------------------------------------------------*/
 
-void DRPC_GeneralStatus(char *string, char *image, char *imagestr);
+void DISC_BasicStatus(char *string, char *image, char *imagestr);
 
 
 /*--------------------------------------------------
-	void DRPC_ExtendedStatus(char *string);
+	void DISC_PlayerStatus(char *string)
 
-		Applies a Discord Rich Presence status, related to extended status details,
-		to the given string.
+		Applies more advanced Discord status info to the given string.
 --------------------------------------------------*/
 
-void DRPC_ExtendedStatus(char *string);
+void DISC_PlayerStatus(char *string);
 
 
 /*--------------------------------------------------
-	void DRPC_ScoreStatus(char *string);
+	void DISC_ScoreStatus(char *string)
 
-		Applies a Discord Rich Presence status, related to score amounts, to
-		the given string.
+		Applies the user's current score to the given string.
 --------------------------------------------------*/
 
-void DRPC_ScoreStatus(char *string);
+void DISC_ScoreStatus(char *string);
 
 
 /*--------------------------------------------------
-	void DRPC_EmblemStatus(char *string);
+	void DISC_EmblemStatus(char *string)
 
-		Applies a Discord Rich Presence status, related to emblems, to
-		the given string.
+		Applies the user's current emblem info to the given string.
 --------------------------------------------------*/
 
-void DRPC_EmblemStatus(char *string);
+void DISC_EmblemStatus(char *string);
+
 
 /*--------------------------------------------------
-	void DRPC_EmeraldStatus(char *string);
+	void DISC_EmeraldStatus(char *string)
 
-		Applies a Discord Rich Presence status, related to how many
-		emeralds the user has, to the given string.
+		Applies the user's current emerald info to the given string.
 --------------------------------------------------*/
 
-void DRPC_EmeraldStatus(char *string);
+void DISC_EmeraldStatus(char *string);
 
 
 /*--------------------------------------------------
-	void DRPC_GamestateStatus(char *string, char *image, char *imagestr);
+	void DISC_GamestateStatus(char *string, char *image, char *imagestr)
 
-		Applies a Discord Rich Presence status, related to gamestates, to
-		the given string.
+		Applies the game's gamestate info to the given strings.
 --------------------------------------------------*/
 
-void DRPC_GamestateStatus(char *string, char *image, char *imagestr);
+void DISC_GamestateStatus(char *string, char *image, char *imagestr);
 
 
 /*--------------------------------------------------
-	void DRPC_CharacterStatus(char *charimg, char *charname, char *s_charimg, char *s_charname);
+	void DISC_CharacterStatus(char *image, char *imagestr, char *s_image, char *s_imagestr)
 
-		Applies a Discord Rich Presence status, related to levels, to
-		the given string.
+		Applies the user's skin info to the given strings.
 --------------------------------------------------*/
 
-void DRPC_CharacterStatus(char *charimg, char *charname, char *s_charimg, char *s_charname);
+void DISC_CharacterStatus(char *image, char *imagestr, char *s_image, char *s_imagestr);
 
 
 /*--------------------------------------------------
-	void DRPC_PlaytimeStatus(char *string);
+	void DISC_PlaytimeStatus(char *string)
 
-		Applies a Discord Rich Presence status, related to SRB2 playtime, to
-		the given string.
+		Applies the user's playtime info to the given string.
 --------------------------------------------------*/
 
-void DRPC_PlaytimeStatus(char *string);
+void DISC_PlaytimeStatus(char *string);
 
 
 /*--------------------------------------------------
-	void DRPC_CustomStatus(char *detailstr, char *statestr, char *image, char *imagestr, char *s_image, char *s_imagestr);
+	void DISC_CustomStatus(char *detailstr, char *statestr, char *image, char *imagestr, char *s_image, char *s_imagestr)
 
-		Using the customizable custom discord status commands, this applies
-		a Discord Rich Presence status to the given string.
+		Using the customizable custom Discord status commands, this applies
+		a user-defined status to the currently connected user.
 --------------------------------------------------*/
 
-void DRPC_CustomStatus(char *detailstr, char *statestr, char *image, char *imagestr, char *s_image, char *s_imagestr);
+void DISC_CustomStatus(char *detailstr, char *statestr, char *image, char *imagestr, char *s_image, char *s_imagestr);
 
 
-// ====
-// MAIN
-// ====
+// ========
+// HANDLERS
+// ========
+
 
 /*--------------------------------------------------
-	char *DRPC_ReturnUsername(void);
+	void DISC_SetConnectionStatus(DISC_ConnectionStatus_t status)
+
+		Sets the connection status for our currently connected user.
+--------------------------------------------------*/
+
+void DISC_SetConnectionStatus(DISC_ConnectionStatus_t status);
+
+
+/*--------------------------------------------------
+	char *DISC_HideUsername(char *input)
+
+		Handle usernames while cv_discordstreamer is activated.
+		(The loss of discriminators is still a dumbass regression
+		that I will never forgive the Discord developers for.)
+--------------------------------------------------*/
+
+char *DISC_HideUsername(char *input);
+
+
+/*--------------------------------------------------
+	char *DISC_ReturnUsername(void)
 
 		Returns the Discord username of the user.
 		Properly accomdiates for streamer mode.
+
+	Input Arguments:-
+		None
+
+	Return:-
+		Discord Username String
 --------------------------------------------------*/
 
-char *DRPC_ReturnUsername(void);
+char *DISC_ReturnUsername(void);
 
 
 /*--------------------------------------------------
-	void DRPC_RemoveRequest(void);
+	char *DISC_XORIPString(const char *input)
 
-		Removes an invite from the list.
+		Simple XOR encryption/decryption. Not complex or
+		very secretive because we aren't sending anything
+		that isn't easily accessible via our Master Server anyway.
 --------------------------------------------------*/
 
-void DRPC_RemoveRequest(discordRequest_t *removeRequest);
+char *DISC_XORIPString(const char *input);
 
 
 /*--------------------------------------------------
-	void DRPC_Init(void);
+	const char *DRPC_GetServerIP(void)
 
-		Initalizes Discord Rich Presence by linking the Application ID
+		Retrieves the IP address of the server that you're
+		connected to. Will attempt to use stun for getting your
+		own IP address, if it's not yours.
+--------------------------------------------------*/
+
+const char *DRPC_GetServerIP(void);
+
+
+/*--------------------------------------------------
+	void DRPC_GotServerIP(UINT32 address)
+
+		Callback triggered by successful STUN response.
+
+	Input Arguments:-
+		address - IPv4 address of this machine, in network byte order.
+
+	Return:-
+		None
+--------------------------------------------------*/
+
+void DRPC_GotServerIP(UINT32 address);
+
+
+/*--------------------------------------------------
+	void DISC_HandleInitializing(const char *integration_type)
+
+		Handles various Discord data intended for when our current integration
+		is initializing.
+--------------------------------------------------*/
+
+void DISC_HandleInitializing(const char *integration_type);
+
+
+/*--------------------------------------------------
+	void DISC_HandleConnected(const char *username, const char *discriminator, const char *userId)
+
+		Handles various Discord data intended for when a user
+		connects to our current integration.
+--------------------------------------------------*/
+
+void DISC_HandleConnected(const char *username, const char *discriminator, const char *userId);
+
+
+/*--------------------------------------------------
+	void DISC_HandleDisconnected(INT32 err, const char *msg)
+
+		Handles various Discord data intended for when a user
+		disconnects to our current integration.
+--------------------------------------------------*/
+
+void DISC_HandleDisconnected(INT32 err, const char *msg);
+
+
+/*--------------------------------------------------
+	void DISC_HandleError(INT32 err, const char *msg)
+
+		Handles various Discord data intended for when a user
+		disconnects to our current integration.
+--------------------------------------------------*/
+
+void DISC_HandleError(INT32 err, const char *msg);
+
+
+/*--------------------------------------------------
+	void DISC_HandleJoining(const char *join_secret)
+
+		Handles various Discord data intended for when the user
+		joins a server using the 'Ask to Join' feature.
+--------------------------------------------------*/
+
+void DISC_HandleJoining(const char *join_secret);
+
+
+/*--------------------------------------------------
+	void DISC_HandleQuitting(void)
+
+		Handles various Discord data intended for when the game
+		is closed.
+--------------------------------------------------*/
+
+void DISC_HandleQuitting(void);
+
+
+/*--------------------------------------------------
+	void DISC_EmptyRequests(void)
+
+		Empties the request list. Any existing requests
+		will get an ignore reply.
+--------------------------------------------------*/
+
+void DISC_EmptyRequests(void);
+
+
+// ===============
+// ACTIVITY STATUS
+// ===============
+
+
+/*--------------------------------------------------
+	boolean DISC_InvitesAllowed(void)
+
+		Determines whenever or not invites or
+		ask to join requests are allowed.
+
+	Input Arguments:-
+		None
+
+	Return:-
+		true if invites are allowed, false otherwise.
+--------------------------------------------------*/
+
+boolean DISC_InvitesAllowed(void);
+
+
+/*--------------------------------------------------
+	void DISC_SetActivityStatus(
+		char *details, char *state,
+		char *image, char *imagetxt,
+		char *s_image, char *s_imagetxt,
+		time_t *timestamp_start, time_t *timestamp_end,
+		char **clientJoinSecret,
+		char **partyID, int *partySize, int *partyMax
+	)
+
+		Sets the activity status info for our currently connected user.
+--------------------------------------------------*/
+
+void DISC_SetActivityStatus(
+	char *details, char *state,
+	char *image, char *imagetxt,
+	char *s_image, char *s_imagetxt,
+	time_t *timestamp_start, time_t *timestamp_end,
+	char **clientJoinSecret,
+	char **partyID, int *partySize, int *partyMax
+);
+
+
+// =========
+// CALLBACKS
+// =========
+
+
+/*--------------------------------------------------
+	void DISC_Init(void)
+
+		Initalizes Discord support by linking the Application ID
 		and setting the callback functions.
 --------------------------------------------------*/
 
-void DRPC_Init(void);
+void DISC_Init(void);
 
 
 /*--------------------------------------------------
-	void DRPC_UpdatePresence(void);
+	void DISC_UpdatePresence(void)
 
-		Updates what is displayed by Rich Presence on the user's profile.
+		Updates what is displayed by Discord on the user's profile.
 		Should be called whenever something that is displayed is
 		changed in-game.
 --------------------------------------------------*/
 
-void DRPC_UpdatePresence(void);
+void DISC_UpdatePresence(void);
+
+
+/*--------------------------------------------------
+	void DISC_RunCallbacks(void)
+
+		Alerts Discord to check for errors, run some functions,
+		and begin updating the user's presence.
+--------------------------------------------------*/
+
+void DISC_RunCallbacks(void);
+
+
+/*--------------------------------------------------
+	void DISC_Respond(const char *userID, DISC_RequestReply_t response)
+
+		Response handler for Discord requests.
+--------------------------------------------------*/
+
+void DISC_Respond(const char *userID, DISC_RequestReply_t response);
+
+
+/*--------------------------------------------------
+	void DISC_RemoveRequest(void)
+
+		Removes an invite from the list.
+--------------------------------------------------*/
+
+void DISC_RemoveRequest(DISC_Request_t *removeRequest);
+
+
+/*--------------------------------------------------
+	void DISC_Quit(void)
+
+		Handles freeing Discord whenever the game exits.
+--------------------------------------------------*/
+
+void DISC_Quit(void);
 
 
 #endif // HAVE_DISCORDSUPPORT
+
+
+extern consvar_t cv_discordinvites;
+
 
 /*--------------------------------------------------
 	void TSoURDt3rd_D_Joinable_OnChange(void)
@@ -287,5 +511,6 @@ void TSoURDt3rd_D_Got_DiscordInfo(UINT8 **cp, INT32 playernum);
 #ifdef __cplusplus
 } // extern "C"
 #endif
+
 
 #endif // __DISCORD__

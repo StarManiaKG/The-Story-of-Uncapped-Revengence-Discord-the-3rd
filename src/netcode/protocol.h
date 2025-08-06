@@ -153,14 +153,14 @@ typedef struct
 	// Discord info (always defined for net compatibility)
 	UINT8 maxplayer;
 	boolean allownewplayer;
-	boolean discordinvites;
+	boolean discord_invites;
 
 	// TSoURDt3rd
 	UINT8 tsourdt3rd;
-	UINT8 tsourdt3rdmajorversion;
-	UINT8 tsourdt3rdminorversion;
-	UINT8 tsourdt3rdsubversion;
-	UINT8 tsourdt3rdfullversion;
+	UINT8 tsourdt3rd_majorversion;
+	UINT8 tsourdt3rd_minorversion;
+	UINT8 tsourdt3rd_subversion;
+	UINT8 tsourdt3rd_fullversion;
 #endif
 } ATTRPACK serverconfig_pak;
 
