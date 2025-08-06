@@ -629,19 +629,6 @@ static menuitem_t SPauseMenu[] =
 menuitem_t SPauseMenu[] =
 #endif
 {
-#if 0
-	// Pandora's Box will be shifted up if both options are available
-	{IT_CALL | IT_STRING,    NULL, "Pandora's Box...",     M_PandorasBox,         16},
-	{IT_CALL | IT_STRING,    NULL, "Emblem Hints...",      M_EmblemHints,         24},
-	{IT_CALL | IT_STRING,    NULL, "Level Select...",      M_PauseLevelSelect,    32},
-
-	{IT_CALL | IT_STRING,    NULL, "Continue",             M_SelectableClearMenus,48},
-	{IT_CALL | IT_STRING,    NULL, "Retry",                M_Retry,               56},
-	{IT_CALL | IT_STRING,    NULL, "Options",              M_Options,             64},
-
-	{IT_CALL | IT_STRING,    NULL, "Return to Title",      M_EndGame,             80},
-	{IT_CALL | IT_STRING,    NULL, "Quit Game",            M_QuitSRB2,            88},
-#else
 	// STAR STUFF: let me load addons without pandora's box please //
 	{IT_STRING | IT_CALL,    NULL, "Add-ons",  			   M_Addons,           	   8},
 
@@ -656,18 +643,12 @@ menuitem_t SPauseMenu[] =
 
 	{IT_CALL | IT_STRING,    NULL, "Return to Title",      M_EndGame,             88},
 	{IT_CALL | IT_STRING,    NULL, "Quit Game",            M_QuitSRB2,            96},
-#endif
 };
 
 typedef enum
 {
-#if 0
-	spause_pandora = 0,
-#else
-	// STAR STUFF: YOU SHOULD BE ABLE TO LOAD ADDONS WHENEVER YOU WANT (:p) //
-	spause_addons = 0,
+	spause_addons = 0, // STAR STUFF: YOU SHOULD BE ABLE TO LOAD ADDONS WHENEVER YOU WANT (:p) //
 	spause_pandora,
-#endif
 	spause_hints,
 	spause_levelselect,
 
@@ -1110,10 +1091,8 @@ static menuitem_t OP_MainMenu[] =
 	{IT_CALL 	| IT_STRING, NULL, "Discord Options...",   TSoURDt3rd_M_DiscordOptions_Init,   120},
 #endif
 
-#if 1
 	// STAR STUFF: our menu! //
 	{IT_CALL    | IT_STRING, NULL, "TSoURDt3rd Options...",TSoURDt3rd_M_Main_InitOptions,      130},
-#endif
 };
 
 static menuitem_t OP_P1ControlsMenu[] =
@@ -2725,6 +2704,12 @@ static boolean MIT_ChangeMusic(UINT32 menutype, INT32 level, INT32 *retval, void
 	if (!menutype) // if there's nothing in this level, do nothing
 		return false;
 
+	if (!TSoURDt3rd_S_CanModifyMusic(defaultmusic->musname))
+	{
+		// STAR STUFF: keep playing jukebox music please //
+		return false;
+	}
+
 	if (menupres[menutype].musname[0])
 	{
 		S_ChangeMusic(menupres[menutype].musname, menupres[menutype].mustrack, menupres[menutype].muslooping);
@@ -2839,12 +2824,6 @@ void M_ChangeMenuMusic(const char *defaultmusname, boolean defaultmuslooping)
 	defaultmusic.musname[6] = 0;
 	defaultmusic.mustrack = 0;
 	defaultmusic.muslooping = defaultmuslooping;
-
-#if 1
-	// STAR STUFF: keep playing jukebox music please //
-	if (!TSoURDt3rd_S_CanModifyMusic(defaultmusic.musname))
-		return;
-#endif
 
 	M_IterateMenuTree(MIT_ChangeMusic, &defaultmusic);
 }
@@ -3396,11 +3375,9 @@ boolean M_Responder(event_t *ev)
 	else if (ev->type == ev_keydown) // Preserve event for other responders
 		ch = ev->key;
 
-#if 1
 	// STAR STUFF: process unique menu events //
 	if (TSoURDt3rd_M_Responder(&ch, ev))
 		return true;
-#endif
 
 	if (ch == -1)
 		return false;
@@ -3748,18 +3725,16 @@ void M_StartControlPanel(void)
 		return;
 	}
 
+	// STAR STUFF: run our junk too i guess :p //
+	if (TSoURDt3rd_M_StartControlPanel())
+		return;
+
 	// intro might call this repeatedly
 	if (menuactive)
 	{
 		CON_ToggleOff(); // move away console
 		return;
 	}
-
-#if 1
-	// STAR STUFF: run our junk too i guess :p //
-	if (TSoURDt3rd_M_StartControlPanel())
-		return;
-#endif
 
 	menuactive = true;
 
@@ -3902,15 +3877,12 @@ void M_ClearMenus(boolean callexitmenufunc)
 	// Save the config file. I'm sick of crashing the game later and losing all my changes!
 	COM_BufAddText(va("saveconfig \"%s\" -silent\n", configfile));
 
-#if 1
-	// STAR STUFF: clear the screen of weird stuff please //
-	TSoURDt3rd_M_ClearMenus(callexitmenufunc);
-#endif
-
 	if (currentMenu == &MessageDef) // Oh sod off!
 		currentMenu = &MainDef; // Not like it matters
 	menuactive = false;
 	hidetitlemap = false;
+
+	TSoURDt3rd_M_ClearMenus(callexitmenufunc); // STAR STUFF: clear the screen of weird stuff please //
 
 	I_UpdateMouseGrab();
 	I_SetTextInputMode(textinputmodeenabledbylua);
@@ -4012,10 +3984,8 @@ void M_Ticker(void)
 	if (currentMenu == &OP_ScreenshotOptionsDef)
 		M_SetupScreenshotMenu();
 
-#if 1
 	// STAR STUFF: send input availability to our other unique menu system :) //
 	TSoURDt3rd_M_Ticker(&itemOn, &noFurtherInput, skullAnimCounter, levellistmode);
-#endif
 
 #if defined (MASTERSERVER) && defined (HAVE_THREADS)
 	if (!netgame)
@@ -7161,7 +7131,7 @@ static void M_LevelSelectWarp(INT32 choice)
 			/// \todo see the above
 			if (TSoURDt3rd_AprilFools_ModeEnabled())
 			{
-				STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nthis savefile will not save until you turn this mode off.\n");
+				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_APRILFOOLS, "You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nthis savefile will not save until you turn this mode off.\n");
 				M_StartMessage(va("%c%s\x80\nYou have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nthis savefile will not save until you turn this mode off.\n(Press any key to continue.)\n", ('\x80' + (V_MENUCOLORMAP|V_CHARCOLORSHIFT)), "TSoURDt3rd Notice"),NULL,MM_NOTHING);
 
 				cursaveslot = NOSAVESLOT;
@@ -8762,7 +8732,7 @@ skiplife:
 			if (!useContinues)
 			{
 				INT32 workingscorenum = savegameinfo[savetodraw].continuescore;
-				char workingscorestr[11] = " 000000000\0";
+				char workingscorestr[11] = "000000000\0";
 				SINT8 j = 9;
 				// Change the above two lines if MAXSCORE ever changes from 8 digits long.
 				workingscorestr[0] = '\x86'; // done here instead of in initialiser 'cuz compiler complains
@@ -8874,7 +8844,7 @@ static void M_LoadSelect(INT32 choice)
 	/// \todo see above
 	if ((TSoURDt3rd_AprilFools_ModeEnabled() && saveSlotSelected > NOSAVESLOT) && !(savegameinfo[saveSlotSelected-1].gamemap & 8192))
 	{
-		STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nthis savefile will not save until you turn this mode off.\n");
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_APRILFOOLS, "You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nthis savefile will not save until you turn this mode off.\n");
 		M_StartMessage(va("%c%s\x80\nYou have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nthis savefile will not save until you turn this mode off.\n(Press any key to continue.)\n", ('\x80' + (V_MENUCOLORMAP|V_CHARCOLORSHIFT)), "TSoURDt3rd Notice"),NULL,MM_NOTHING);
 
 		cursaveslot = NOSAVESLOT;
@@ -11660,10 +11630,7 @@ static void M_ConnectMenuModChecks(INT32 choice)
 		return;
 	}
 
-#if 1
-	// STAR STUFF: maybe check for some things before loading the connect menu? //
 	TSoURDt3rd_M_NetgameChecks(true)
-#endif
 
 	M_ConnectMenu(-1);
 }
@@ -11902,18 +11869,10 @@ static void M_ServerOptions(INT32 choice)
 	M_SetupNextMenu(&OP_ServerOptionsDef);
 }
 
-#if 0
 static void M_StartServerMenu(INT32 choice)
-#else
-// STAR NOTE: externed in smkg-m_sys.h //
-void M_StartServerMenu(INT32 choice)
-#endif
 {
 	(void)choice;
-#if 1
-	// STAR STUFF: Check for any additional stuff before starting the server menu! //
 	TSoURDt3rd_M_NetgameChecks(false)
-#endif
 	CV_SetValue(&cv_masterserver_room_id, -1);
 	levellistmode = LLM_CREATESERVER;
 	Newgametype_OnChange();
@@ -14444,11 +14403,7 @@ void M_QuitResponse(INT32 ch)
 		ptime = I_GetTime() + NEWTICRATE*2; // Shortened the quit time, used to be 2 seconds Tails 03-26-2001
 		while (ptime > I_GetTime())
 		{
-			V_DrawScaledPatch(0, 0, 0, W_CachePatchName("GAMEQUIT", PU_PATCH)); // Demo 3 Quit Screen Tails 06-16-2001
-#if 1
-			// STAR STUFF: just overlay our quit graphic if anything :p //
-			TSoURDt3rd_M_DrawQuitGraphic();
-#endif
+			TSoURDt3rd_M_DrawQuitGraphic(); // STAR STUFF: just overlay our quit graphic if anything :p //
 			V_DrawCenteredString(2+(V_StringWidth(QuitScreenMessages[0], V_ALLOWLOWERCASE)/2), 4, V_ALLOWLOWERCASE, QuitScreenMessages[0]);
 			V_DrawCenteredString(160, 166, V_ALLOWLOWERCASE|V_REDMAP, QuitScreenMessages[1]);
 			V_DrawCenteredString(160, 176, V_ALLOWLOWERCASE, QuitScreenMessages[2]);
@@ -14465,10 +14420,6 @@ static void M_QuitSRB2(INT32 choice)
 	// We pick index 0 which is language sensitive, or one at random,
 	// between 1 and maximum number.
 	(void)choice;
-#if 0
-	M_StartMessage(quitmsg[M_RandomKey(NUM_QUITMESSAGES)], M_QuitResponse, MM_YESNO);
-#else
-	// STAR STUFF: our unique quit messages reign supreme! //
+	// STAR NOTE: our unique quit messages reign supreme! //
 	M_StartMessage(TSoURDt3rd_M_GenerateQuitMessage(), M_QuitResponse, MM_YESNO);
-#endif
 }
