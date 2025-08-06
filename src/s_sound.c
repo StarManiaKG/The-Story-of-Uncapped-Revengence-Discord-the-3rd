@@ -2272,7 +2272,8 @@ static boolean S_CheckQueue(void)
 
 static void S_ClearQueue(void)
 {
-	queue_name[0] = queue_flags = queue_looping = queue_position = queue_fadeinms = 0;
+	queue_name[0] = queue_flags = queue_position = queue_fadeinms = 0;
+	queue_looping = false;
 }
 
 static void S_ChangeMusicToQueue(void)
@@ -2300,11 +2301,11 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 	if (S_MusicDisabled())
 		return;
 
-#if 1
-	// STAR STUFF: jukebox has priority //
 	if (!TSoURDt3rd_S_CanModifyMusic(NULL))
+	{
+		// STAR STUFF: jukebox has priority //
 		return;
-#endif
+	}
 
 	strncpy(newmusic, mmusic, sizeof(newmusic)-1);
 	newmusic[6] = 0;
@@ -2380,10 +2381,7 @@ void S_StopMusic(void)
 	I_StopSong();
 	S_UnloadMusic(); // for now, stopping also means you unload the song
 
-#if 1
-	// STAR STUFF: reset music stuffs //
-	TSoURDt3rd_Jukebox_Reset();
-#endif
+	TSoURDt3rd_Jukebox_Reset(); // STAR STUFF: reset music stuffs //
 
 	if (cv_closedcaptioning.value)
 	{
@@ -2467,7 +2465,7 @@ void S_SetInternalMusicVolume(INT32 volume)
 
 INT32 S_GetInternalMusicVolume(void)
 {
-    return internal_volume;
+	return internal_volume;
 }
 
 void S_SetInternalSfxVolume(INT32 volume)
@@ -2491,7 +2489,7 @@ INT32 S_GetInternalSfxVolume(void)
 {
 	if (!internal_sfx_volume && cv_soundvolume.value)
 		internal_sfx_volume = cv_soundvolume.value;
-    return internal_sfx_volume;
+	return internal_sfx_volume;
 }
 
 void S_StopFadingMusic(void)
@@ -2514,11 +2512,11 @@ boolean S_FadeMusicFromVolume(UINT8 target_volume, INT16 source_volume, UINT32 m
 
 boolean S_FadeOutStopMusic(UINT32 ms)
 {
-#if 1
-	// STAR STUFF: don't fade if jukeboxing please //
 	if (TSoURDt3rd_Jukebox_IsPlaying())
+	{
+		// STAR STUFF: don't fade if jukeboxing please //
 		return false;
-#endif
+	}
 	return I_FadeSong(0, ms, &S_StopMusic);
 }
 

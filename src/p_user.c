@@ -65,6 +65,7 @@
 #include "STAR/smkg-cvars.h" // cv_tsourdt3rd_sdl_windowtitle stuff & cv_tsourdt3rd_audio_gameover //
 #include "STAR/star_vars.h" // STAR_SetWindowTitle() //
 #include "STAR/p_user.h" // TSoURDt3rd_P_SuperReady() //
+#include "STAR/core/smkg-s_jukebox.h" // TSoURDt3rd_Jukebox_IsPlaying() //
 
 #if 0
 static void P_NukeAllPlayers(player_t *player);
@@ -1424,6 +1425,14 @@ void P_DoSuperTransformation(player_t *player, boolean giverings)
 	}
 
 	P_PlayerFlagBurst(player, false);
+
+#ifdef HAVE_SDL
+	if (cv_tsourdt3rd_game_sdl_windowtitle_type.value == 1)
+		STAR_SetWindowTitle();
+#endif
+#ifdef HAVE_DISCORDSUPPORT
+	DISC_UpdatePresence();
+#endif
 }
 
 //
@@ -1478,6 +1487,9 @@ void P_DoSuperDetransformation(player_t *player)
 #ifdef HAVE_SDL
 	if (cv_tsourdt3rd_game_sdl_windowtitle_type.value == 1)
 		STAR_SetWindowTitle();
+#endif
+#ifdef HAVE_DISCORDSUPPORT
+	DISC_UpdatePresence();
 #endif
 }
 
@@ -4480,11 +4492,6 @@ static void P_DoSuperStuff(player_t *player)
 			P_RestoreMusic(player);
 			P_SpawnShieldOrb(player);
 
-#ifdef HAVE_SDL
-			if (cv_tsourdt3rd_game_sdl_windowtitle_type.value == 1)
-				STAR_SetWindowTitle();
-#endif
-
 			// Restore color
 			if ((player->powers[pw_shield] & SH_STACK) == SH_FIREFLOWER)
 			{
@@ -4503,6 +4510,14 @@ static void P_DoSuperStuff(player_t *player)
 				HU_SetCEchoDuration(5);
 				HU_DoCEcho(va("%s\\is no longer super.\\\\\\\\", player_names[player-players]));
 			}
+
+#ifdef HAVE_SDL
+			if (cv_tsourdt3rd_game_sdl_windowtitle_type.value == 1)
+				STAR_SetWindowTitle();
+#endif
+#ifdef HAVE_DISCORDSUPPORT
+			DISC_UpdatePresence();
+#endif
 			return;
 		}
 
@@ -5261,12 +5276,11 @@ static boolean P_PlayerShieldThink(player_t *player, ticcmd_t *cmd, mobj_t *lock
 {
 	mobj_t *lockonshield = NULL;
 
-#if 0
+	// STAR NOTE: run our own shield checker first before continuing! //
+	if (TSoURDt3rd_P_PlayerShieldThink(player, cmd, lockonthok, visual))
+		return (player->pflags & PF_SHIELDABILITY);
+
 	if ((player->powers[pw_shield] & SH_NOSTACK) && !player->powers[pw_super] && !(player->pflags & PF_SPINDOWN)
-#else
-	// STAR NOTE: cv_tsourdt3rd_players_nukewhilesuper //
-	if ((player->powers[pw_shield] & SH_NOSTACK) && (!player->powers[pw_super] || (player->powers[pw_super] && cv_tsourdt3rd_players_nukewhilesuper.value && (player->powers[pw_shield] & SH_NOSTACK) == SH_ARMAGEDDON)) && !(player->pflags & PF_SPINDOWN)
-#endif
 		&& ((!(player->pflags & PF_THOKKED) || (((player->powers[pw_shield] & SH_NOSTACK) == SH_BUBBLEWRAP || (player->powers[pw_shield] & SH_NOSTACK) == SH_ATTRACT) && player->secondjump == UINT8_MAX) ))) // thokked is optional if you're bubblewrapped / 3dblasted
 	{
 		if ((player->powers[pw_shield] & SH_NOSTACK) == SH_ATTRACT && !(player->charflags & SF_NOSHIELDABILITY))
@@ -12134,9 +12148,6 @@ void P_PlayerThink(player_t *player)
 		if (P_SpectatorJoinGame(player))
 		{
 			LUA_HookPlayer(player, HOOK(PlayerThink));
-#ifdef HAVE_DISCORDSUPPORT
-			DISC_UpdatePresence();
-#endif
 			return; // player->mo was removed.
 		}
 	}

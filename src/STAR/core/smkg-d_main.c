@@ -11,7 +11,6 @@
 
 #include "smkg-d_main.h"
 
-#include "smkg-r_main.h"
 #include "../star_vars.h"
 #include "../menus/smkg-m_sys.h" // menumessage //
 #include "../misc/smkg-m_misc.h" // TSoURDt3rd_FIL_AccessFile() //
@@ -164,22 +163,8 @@ void TSoURDt3rd_D_AutoLoadAddons(void)
 // =========================================================================
 
 //
-// Frame building routines and data for TSoURDt3rd
+// Frame building routine for TSoURDt3rd
 //
-void TSoURDt3rd_D_BuildFrame(void)
-{
-	boolean interp = (R_UsingFrameInterpolation() && !dedicated);
-
-	if (interp)
-	{
-		rendertimefrac_unpaused = g_time.timefrac;
-	}
-	else
-	{
-		rendertimefrac_unpaused = FRACUNIT;
-	}
-}
-
 void TSoURDt3rd_D_Loop(void)
 {
 	static boolean check_for_updates = false;

@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -23,15 +23,18 @@
 
 #include "../smkg-cvars.h"
 #include "../star_vars.h"
-#include "../smkg-jukebox.h"
+#include "../core/smkg-s_jukebox.h"
 #include "../monocypher/smkg-m_hash.h"
 
 #include "../../g_game.h"
 #include "../../z_zone.h"
 
+#include "../../netcode/server_connection.h"
+
 #ifdef USE_STUN
 #include "../stun/stun.h"
 #endif
+
 #ifdef HAVE_DISCORDSUPPORT
 #include "../../discord/discord.h"
 #endif
@@ -90,27 +93,29 @@ void TSoURDt3rd_InitializePlayer(INT32 playernum)
 	TSoURDt3rd_t *tsourdt3rd_user = &TSoURDt3rdPlayers[playernum];
 	tsourdt3rd_t *tsourdt3rd_struct_user = &tsourdt3rd[playernum];
 	static UINT8 seed[32];
-
 	D_Hash_Seed(seed);
-	memset(tsourdt3rd_user->secret_key, 0, sizeof(tsourdt3rd_user->secret_key));
-	memset(tsourdt3rd_user->public_key, 0, sizeof(tsourdt3rd_user->public_key));
-	crypto_eddsa_key_pair(tsourdt3rd_user->secret_key, tsourdt3rd_user->public_key, seed);
-	strcpy(tsourdt3rd_user->user_hash, TSoURDt3rd_Hash_GenerateFromID(tsourdt3rd_user->secret_key, true));
-
-	tsourdt3rd_user->usingTSoURDt3rd						= true;
-	tsourdt3rd_user->server_usingTSoURDt3rd					= true;
-	tsourdt3rd_user->server_majorVersion					= TSoURDt3rd_CurrentMajorVersion();
-	tsourdt3rd_user->server_minorVersion					= TSoURDt3rd_CurrentMinorVersion();
-	tsourdt3rd_user->server_subVersion						= TSoURDt3rd_CurrentSubversion();
-	tsourdt3rd_user->server_TSoURDt3rdVersion				= TSoURDt3rd_CurrentVersion();
-
-	tsourdt3rd_struct_user->levels.time_over = false;
-
-	tsourdt3rd_loadingscreen.loadCount      = 0;
-	tsourdt3rd_loadingscreen.loadPercentage = 0;
-	tsourdt3rd_loadingscreen.bspCount       = 0;
-	tsourdt3rd_loadingscreen.screenToUse    = 0;
-	tsourdt3rd_loadingscreen.loadComplete   = false;
+	{
+		memset(tsourdt3rd_user->secret_key, 0, sizeof(tsourdt3rd_user->secret_key));
+		memset(tsourdt3rd_user->public_key, 0, sizeof(tsourdt3rd_user->public_key));
+		crypto_eddsa_key_pair(tsourdt3rd_user->secret_key, tsourdt3rd_user->public_key, seed);
+		strcpy(tsourdt3rd_user->user_hash, TSoURDt3rd_Hash_GenerateFromID(tsourdt3rd_user->secret_key, true));
+		tsourdt3rd_user->usingTSoURDt3rd			= true;
+		tsourdt3rd_user->server_usingTSoURDt3rd		= true;
+		tsourdt3rd_user->server_majorVersion		= TSoURDt3rd_CurrentMajorVersion();
+		tsourdt3rd_user->server_minorVersion		= TSoURDt3rd_CurrentMinorVersion();
+		tsourdt3rd_user->server_subVersion			= TSoURDt3rd_CurrentSubversion();
+		tsourdt3rd_user->server_TSoURDt3rdVersion	= TSoURDt3rd_CurrentVersion();
+	}
+	{
+		tsourdt3rd_struct_user->game.time_over = false;
+	}
+	{
+		tsourdt3rd_loadingscreen.loadCount      = 0;
+		tsourdt3rd_loadingscreen.loadPercentage = 0;
+		tsourdt3rd_loadingscreen.bspCount       = 0;
+		tsourdt3rd_loadingscreen.screenToUse    = 0;
+		tsourdt3rd_loadingscreen.loadComplete   = false;
+	}
 }
 
 //
@@ -119,10 +124,11 @@ void TSoURDt3rd_InitializePlayer(INT32 playernum)
 //
 void TSoURDt3rd_ClearPlayer(INT32 playernum)
 {
-	TSoURDt3rd_t *tsourdt3rd_prevuser = &TSoURDt3rdPlayers[playernum];
 	TSoURDt3rd_t *tsourdt3rd_user = &TSoURDt3rdPlayers[consoleplayer];
-	tsourdt3rd_t *tsourdt3rd_struct_prevuser = &tsourdt3rd[playernum];
+	TSoURDt3rd_t *tsourdt3rd_prevuser = &TSoURDt3rdPlayers[playernum];
+
 	tsourdt3rd_t *tsourdt3rd_struct_user = &tsourdt3rd[consoleplayer];
+	tsourdt3rd_t *tsourdt3rd_struct_prevuser = &tsourdt3rd[playernum];
 
 	if (!playernum && !consoleplayer)
 		return;
@@ -152,7 +158,7 @@ void TSoURDt3rd_MovePlayerStructure(INT32 node, INT32 newplayernode, INT32 prevn
 
 	if (node == prevnode)
 	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "moving player structure %d to %d\n", prevnode, consoleplayer);
+		STAR_CONS_Printf(STAR_CONS_DEBUG, "moving player structure %d to %d\n", prevnode, consoleplayer);
 		tsourdt3rd_user = &TSoURDt3rdPlayers[0];
 		tsourdt3rd_struct_user = &tsourdt3rd_struct_user[0];
 		memcpy(tsourdt3rd_user, &TSoURDt3rdPlayers[0], sizeof(TSoURDt3rd_t));
@@ -164,9 +170,9 @@ void TSoURDt3rd_MovePlayerStructure(INT32 node, INT32 newplayernode, INT32 prevn
 		if (server)
 		{
 			if (netbuffer->u.clientcfg.tsourdt3rd)
-				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "Joining player is using TSoURDt3rd!\n");
+				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE, "Joining player is using TSoURDt3rd!\n");
 			else
-				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "Joining player doesn't seem to be using TSoURDt3rd!\nPlease be cautious of what you do!\n");
+				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE, "Joining player doesn't seem to be using TSoURDt3rd!\nPlease be cautious of what you do!\n");
 		}
 		S_StartSound(NULL, STAR_JoinSFX);
 	}
@@ -175,38 +181,37 @@ void TSoURDt3rd_MovePlayerStructure(INT32 node, INT32 newplayernode, INT32 prevn
 void TSoURDt3rd_HandleCustomPackets(INT32 node)
 {
 	TSoURDt3rd_t *tsourdt3rd_user = &TSoURDt3rdPlayers[node];
+	const char *server_text = NULL;
 
 #ifdef HAVE_DISCORDSUPPORT
 	if (tsourdt3rd_user->server_usingTSoURDt3rd)
 	{
-		discordInfo.maxPlayers = netbuffer->u.servercfg.maxplayer;
-		discordInfo.joinsAllowed = netbuffer->u.servercfg.allownewplayer;
-		discordInfo.everyoneCanInvite = netbuffer->u.servercfg.discordinvites;
+		discordInfo.net.maxPlayers = netbuffer->u.servercfg.maxplayer;
+		discordInfo.net.joinsAllowed = netbuffer->u.servercfg.allownewplayer;
+		discordInfo.net.everyoneCanInvite = netbuffer->u.servercfg.discord_invites;
 	}
 	else
 	{
-		discordInfo.maxPlayers = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
-		discordInfo.joinsAllowed = cv_allownewplayer.value;
-		discordInfo.everyoneCanInvite = (boolean)cv_discordinvites.value;
+		discordInfo.net.maxPlayers = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
+		discordInfo.net.joinsAllowed = cv_allownewplayer.value;
+		discordInfo.net.everyoneCanInvite = (boolean)cv_discordinvites.value;
 	}
 #endif
 
 	tsourdt3rd_user->server_usingTSoURDt3rd = (netbuffer->u.servercfg.tsourdt3rd != 1 ? 0 : 1);
 	if (tsourdt3rd_user->server_usingTSoURDt3rd)
 	{
-		tsourdt3rd_user->server_majorVersion = netbuffer->u.servercfg.tsourdt3rdmajorversion;
-		tsourdt3rd_user->server_minorVersion = netbuffer->u.servercfg.tsourdt3rdminorversion;
-		tsourdt3rd_user->server_subVersion = netbuffer->u.servercfg.tsourdt3rdsubversion;
-		tsourdt3rd_user->server_TSoURDt3rdVersion = netbuffer->u.servercfg.tsourdt3rdfullversion;
+		server_text = "Server uses TSoURDt3rd, running features!\n";
+		tsourdt3rd_user->server_majorVersion = netbuffer->u.servercfg.tsourdt3rd_majorversion;
+		tsourdt3rd_user->server_minorVersion = netbuffer->u.servercfg.tsourdt3rd_minorversion;
+		tsourdt3rd_user->server_subVersion = netbuffer->u.servercfg.tsourdt3rd_subversion;
+		tsourdt3rd_user->server_TSoURDt3rdVersion = netbuffer->u.servercfg.tsourdt3rd_fullversion;
 	}
+	else
+		server_text = "Can't find working serverside TSoURDt3rd! Proceeding to work around this...\n";
 
 	if (client)
-	{
-		if (tsourdt3rd_user->server_usingTSoURDt3rd)
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "Server uses TSoURDt3rd, running features!\n");
-		else
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "Can't find working serverside TSoURDt3rd! Proceeding to work around this...\n");
-	}
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE, server_text);
 }
 
 void TSoURDt3rd_D_AskForHolepunch(INT32 node)
@@ -225,7 +230,6 @@ void TSoURDt3rd_D_AskForHolepunch(INT32 node)
 void TSoURDt3rd_D_RenewHolePunch(void)
 {
 	static time_t past;
-
 	const time_t now = time(NULL);
 
 	if (netgame && serverrunning)

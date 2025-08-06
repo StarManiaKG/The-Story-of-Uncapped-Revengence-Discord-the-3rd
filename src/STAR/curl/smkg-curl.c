@@ -123,7 +123,7 @@ void TSoURDt3rd_Curl_FindStringWithinURL(
 			fclose(SITE_DATA_FILE);
 
 		if (err_msg != NULL)
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "TSoURDt3rd_Curl_FindStringWithinURL(): %s\n", err_msg);
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "TSoURDt3rd_Curl_FindStringWithinURL(): %s\n", err_msg);
 
 		(*SITE_RETURN_STRING) = found_data;
 		Z_Free(found_data);

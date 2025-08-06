@@ -677,10 +677,11 @@ static void COM_ExecuteString(char *ptext)
 		}
 	}
 
-	// STAR STUFF: CHECK FOR OUR OLD COMMANDS, FOR PORTING REASONS //
 	if (TSoURDt3rd_CV_CheckForOldCommands())
+	{
+		// STAR STUFF: CHECK FOR OUR OLD COMMANDS INSTEAD, FOR PORTING REASONS //
 		return;
-	// CHECKED AND PORTED (probably)! //
+	}
 
 	// check cvars
 	// Hurdler: added at Ebola's request ;)

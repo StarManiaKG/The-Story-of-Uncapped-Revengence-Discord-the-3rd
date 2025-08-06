@@ -51,7 +51,7 @@ void TSoURDt3rd_Jukebox_Init(void)
 	if (dedicated)
 	{
 		// Dude, you're in a dedicated server! You don't need this!
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "TSoURDt3rd_Jukebox_Init(): Dedicated mode active, not intializing jukebox.\n");
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "TSoURDt3rd_Jukebox_Init(): Dedicated mode active, not intializing jukebox.\n");
 		return;
 	}
 
@@ -59,7 +59,7 @@ void TSoURDt3rd_Jukebox_Init(void)
 	if (tsourdt3rd_global_jukebox == NULL)
 	{
 		// Let's leave now before we cause some crashes...
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "TSoURDt3rd_Jukebox_Init(): Could not allocate jukebox memory.\n");
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "TSoURDt3rd_Jukebox_Init(): Could not allocate jukebox memory.\n");
 		return;
 	}
 
@@ -67,7 +67,7 @@ void TSoURDt3rd_Jukebox_Init(void)
 	if (tsourdt3rd_jukebox_available_pages == NULL)
 	{
 		// We should also leave here too, in order to prevent future crashes...
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "TSoURDt3rd_Jukebox_Init(): Could not allocate memory for jukebox pages.\n");
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "TSoURDt3rd_Jukebox_Init(): Could not allocate memory for jukebox pages.\n");
 		return;
 	}
 	tsourdt3rd_jukebox_available_pages[0] = &tsourdt3rd_jukeboxpage_mainpage;
@@ -130,7 +130,7 @@ static void TSoURDt3rd_Jukebox_LoadDefs(musicdef_t *def, tsourdt3rd_jukeboxdef_t
 		jukedef->supported_pages[0].next = NULL;
 
 		if (jukedef_prev != NULL) jukedef_prev->next = jukedef;
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "TSoURDt3rd_Jukebox_LoadDefs: Added song '%s'\n", jukedef->linked_musicdef->name);
+		STAR_CONS_Printf(STAR_CONS_DEBUG, "TSoURDt3rd_Jukebox_LoadDefs: Added song '%s'\n", jukedef->linked_musicdef->name);
 	}
 
 	(*jukedefp) = jukedef;
@@ -170,7 +170,7 @@ boolean TSoURDt3rd_Jukebox_PrepareDefs(void)
 	}
 	if (!(tsourdt3rd_jukebox_defs = Z_Malloc(numsoundtestdefs * sizeof(tsourdt3rd_jukeboxdef_t *), PU_STATIC, NULL)))
 	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "TSoURDt3rd_Jukebox_PrepareDefs(): could not allocate jukebox defs.");
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "TSoURDt3rd_Jukebox_PrepareDefs(): could not allocate jukebox defs.");
 		return false;
 	}
 
@@ -228,7 +228,7 @@ void TSoURDt3rd_Jukebox_Play(musicdef_t *play_def)
 	else if (TSoURDt3rd_Jukebox_IsPlaying())
 	{
 		// We shouldn't interrupt ourself!
-		STAR_CONS_Printf(STAR_CONS_JUKEBOX, "There's already a track playing!\n");
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_JUKEBOX, "There's already a track playing!\n");
 		S_StartSound(NULL, sfx_lose);
 		return;
 	}
@@ -239,7 +239,7 @@ void TSoURDt3rd_Jukebox_Play(musicdef_t *play_def)
 		{
 			if (!tsourdt3rd_global_jukebox->prevtrack)
 			{
-				STAR_CONS_Printf(STAR_CONS_JUKEBOX, "You haven't recently played a track!\n");
+				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_JUKEBOX, "You haven't recently played a track!\n");
 				S_StartSound(NULL, sfx_lose);
 				return;
 			}
@@ -259,7 +259,7 @@ void TSoURDt3rd_Jukebox_Play(musicdef_t *play_def)
 	tsourdt3rd_global_jukebox->playing = true;
 
 	TSoURDt3rd_S_ControlMusicEffects(NULL, NULL);
-	STAR_CONS_Printf(STAR_CONS_JUKEBOX, M_GetText("Loaded track \x82%s\x80.\n"), tsourdt3rd_global_jukebox->curtrack->title);
+	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_JUKEBOX, M_GetText("Loaded track \x82%s\x80.\n"), tsourdt3rd_global_jukebox->curtrack->title);
 }
 
 //
@@ -300,7 +300,7 @@ void TSoURDt3rd_Jukebox_Reset(void)
 	if (!tsourdt3rd_global_jukebox->in_menu)
 	{
 		// Ok, let's try NOT to overload the console, please.
-		STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Jukebox reset.\n");
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_JUKEBOX, "Jukebox reset.\n");
 	}
 }
 

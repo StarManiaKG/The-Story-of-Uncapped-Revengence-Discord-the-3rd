@@ -270,18 +270,15 @@ static boolean SV_SendServerConfig(INT32 node)
 
 	memcpy(netbuffer->u.servercfg.server_context, server_context, 8);
 
-#if 1
 	// STAR STUFF: send our cool net stuff too! //
 	netbuffer->u.servercfg.maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
 	netbuffer->u.servercfg.allownewplayer = cv_allownewplayer.value;
 	netbuffer->u.servercfg.discord_invites = (boolean)cv_discordinvites.value;
-
 	netbuffer->u.servercfg.tsourdt3rd = true;
 	netbuffer->u.servercfg.tsourdt3rd_majorversion = (UINT8)TSoURDt3rd_CurrentMajorVersion();
 	netbuffer->u.servercfg.tsourdt3rd_minorversion = (UINT8)TSoURDt3rd_CurrentMinorVersion();
 	netbuffer->u.servercfg.tsourdt3rd_subversion = (UINT8)TSoURDt3rd_CurrentSubversion();
 	netbuffer->u.servercfg.tsourdt3rd_fullversion = (UINT8)TSoURDt3rd_CurrentVersion();
-#endif
 
 	{
 		const size_t len = sizeof (serverconfig_pak);

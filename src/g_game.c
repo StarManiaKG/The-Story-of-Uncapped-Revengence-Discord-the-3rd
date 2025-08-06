@@ -3379,10 +3379,7 @@ void G_AddPlayer(INT32 playernum)
 	if ((countplayers && !notexiting) || G_IsSpecialStage(gamemap))
 		P_DoPlayerExit(p, false);
 
-#if 1
-	// STAR STUFF: add our new player to the roster :P //
-	TSoURDt3rd_InitializePlayer(playernum);
-#endif
+	TSoURDt3rd_InitializePlayer(playernum); // STAR STUFF: add our new player to the roster :P //
 
 #ifdef HAVE_DISCORDSUPPORT
 	DISC_UpdatePresence();
@@ -5523,8 +5520,7 @@ void G_SetGamestate(gamestate_t newstate)
 {
 	gamestate = newstate;
 #ifdef HAVE_SDL
-	// STAR STUFF: my cool window title (part 2)! //
-	STAR_SetWindowTitle();
+	STAR_SetWindowTitle(); // STAR STUFF: my cool window title (part 2)! //
 #endif
 #ifdef HAVE_DISCORDSUPPORT
 	DISC_UpdatePresence();

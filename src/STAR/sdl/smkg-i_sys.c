@@ -54,8 +54,8 @@ static const char *gamecontrollerdb_paths[] = {
 	(PATHSEP "TSoURDt3rd" PATHSEP "data" PATHSEP),
 	NULL
 };
-static INT32 found_gamecontrollerdb_path = false;
-static INT32 found_gamecontrollerdb_user_path = false;
+static boolean found_gamecontrollerdb_path = false;
+static boolean found_gamecontrollerdb_user_path = false;
 
 static boolean gamepad_rumble_disabled = false;
 static boolean gamepad_trigger_rumble_disabled = false;
@@ -83,39 +83,32 @@ void TSoURDt3rd_I_Pads_InitControllers(void)
 		controller_data->real_id = 0;
 		controller_data->name = NULL;
 	}
-
 	if (M_CheckParm("-nojoy") || M_CheckParm("-tsourdt3rd_nogamepadrefactor"))
 		return;
-
 	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD, "TSoURDt3rd_I_Pads_InitControllers()...\n");
 
 	for (i = 0; gamecontrollerdb_paths[i] != NULL; i++)
 	{
 		sprintf(dbpath, "%s" PATHSEP "%s" "gamecontrollerdb.txt", srb2path, gamecontrollerdb_paths[i]);
-		found_gamecontrollerdb_path = SDL_GameControllerAddMappingsFromFile(dbpath);
-		if (found_gamecontrollerdb_path)
+		if (SDL_GameControllerAddMappingsFromFile(dbpath))
+		{
+			STAR_CONS_Printf(STAR_CONS_DEBUG, M_GetText("TSoURDt3rd_I_Pads_InitControllers() - Initialized game controller data in game path!\n"));
+			found_gamecontrollerdb_path = true;
 			break;
+		}
 	}
 	for (i = 0; gamecontrollerdb_paths[i] != NULL; i++)
 	{
 		sprintf(dbpath, "%s" PATHSEP "%s" "gamecontrollerdb_user.txt", srb2home, gamecontrollerdb_paths[i]);
-		found_gamecontrollerdb_user_path = SDL_GameControllerAddMappingsFromFile(dbpath);
-		if (found_gamecontrollerdb_user_path)
+		if (SDL_GameControllerAddMappingsFromFile(dbpath))
+		{
+			STAR_CONS_Printf(STAR_CONS_DEBUG, M_GetText("TSoURDt3rd_I_Pads_InitControllers() - Initialized game controller data in user path!\n"));
+			found_gamecontrollerdb_user_path = true;
 			break;
+		}
 	}
-
-	if (found_gamecontrollerdb_path < 0)
-	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG,
-			M_GetText("TSoURDt3rd_I_Pads_InitControllers() - Couldn't initialize game controller data in game path.\n")
-		);
-	}
-	if (found_gamecontrollerdb_user_path < 0)
-	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG,
-			M_GetText("TSoURDt3rd_I_Pads_InitControllers() - Couldn't initialize game controller data in user path.\n")
-		);
-	}
+	if (found_gamecontrollerdb_path == false && found_gamecontrollerdb_user_path == false)
+		STAR_CONS_Printf(STAR_CONS_DEBUG, M_GetText("TSoURDt3rd_I_Pads_InitControllers() - Couldn't initialize game controller data in either game path or user path!\n"));
 
 	if (SDL_WasInit(TSOURDT3RD_GAMEPAD_INIT_FLAGS))
 	{
@@ -202,13 +195,13 @@ void TSoURDt3rd_I_Pads_Rumble(INT32 device_id, fixed_t low_strength, fixed_t hig
 	controller_data->rumble.duration = duration;
 
 #if 0
-	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "Starting rumble effect for controller %d:\n", controller_data->id);
-	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "* - Small motor magnitude: %f\n", controller_data->rumble.small_magnitude / 65535.0f);
-	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "* - Large motor magnitude: %f\n", controller_data->rumble.large_magnitude / 65535.0f);
+	STAR_CONS_Printf(STAR_CONS_DEBUG, "Starting rumble effect for controller %d:\n", controller_data->id);
+	STAR_CONS_Printf(STAR_CONS_DEBUG, "* - Small motor magnitude: %f\n", controller_data->rumble.small_magnitude / 65535.0f);
+	STAR_CONS_Printf(STAR_CONS_DEBUG, "* - Large motor magnitude: %f\n", controller_data->rumble.large_magnitude / 65535.0f);
 	if (!duration)
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "Duration: forever\n");
+		STAR_CONS_Printf(STAR_CONS_DEBUG, "Duration: forever\n");
 	else
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "Duration: %dms\n", controller_data->rumble.duration);
+		STAR_CONS_Printf(STAR_CONS_DEBUG, "Duration: %dms\n", controller_data->rumble.duration);
 #endif
 
 	if (controller_data->game_device)
@@ -249,13 +242,13 @@ void TSoURDt3rd_I_Pads_RumbleTriggers(INT32 device_id, fixed_t left_strength, fi
 	controller_data->trigger_rumble.duration = duration;
 
 #if 0
-	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "Starting rumble effect for controller %d:\n", controller_data->id);
-	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "* - Left trigger motor magnitude: %f\n", controller_data->trigger_rumble.left_magnitude / 65535.0f);
-	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "* - Right trigger motor magnitude: %f\n", controller_data->trigger_rumble.right_magnitude / 65535.0f);
+	STAR_CONS_Printf(STAR_CONS_DEBUG, "Starting rumble effect for controller %d:\n", controller_data->id);
+	STAR_CONS_Printf(STAR_CONS_DEBUG, "* - Left trigger motor magnitude: %f\n", controller_data->trigger_rumble.left_magnitude / 65535.0f);
+	STAR_CONS_Printf(STAR_CONS_DEBUG, "* - Right trigger motor magnitude: %f\n", controller_data->trigger_rumble.right_magnitude / 65535.0f);
 	if (!controller_data->trigger_rumble.duration)
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "Duration: forever\n");
+		STAR_CONS_Printf(STAR_CONS_DEBUG, "Duration: forever\n");
 	else
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "Duration: %dms\n", controller_data->trigger_rumble.duration);
+		STAR_CONS_Printf(STAR_CONS_DEBUG, "Duration: %dms\n", controller_data->trigger_rumble.duration);
 #endif
 
 	if (controller_data->game_device)

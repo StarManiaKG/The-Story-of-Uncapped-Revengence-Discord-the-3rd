@@ -161,12 +161,12 @@ static void M_Sys_AutoLoadAddons(INT32 choice)
 	{
 		case EXT_FOLDER:
 			fprintf(autoload_config, "%s\n", TSoURDt3rd_M_WriteVariedLengthString(addon_path, MENUMESSAGEHEADERLEN, false));
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "Added folder \x82\"%s\"\x80 to the autoload configuration list.\n", addon_name);
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE, "Added folder \x82\"%s\"\x80 to the autoload configuration list.\n", addon_name);
 			break;
 		case EXT_TXT:
 		case EXT_CFG:
 			fprintf(autoload_config, "%s\n", addon_name);
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "Added console script \x82\"%s\"\x80 to the autoload configuration list.\n", addon_name);
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE, "Added console script \x82\"%s\"\x80 to the autoload configuration list.\n", addon_name);
 			break;
 		case EXT_LUA:
 		case EXT_SOC:
@@ -177,7 +177,7 @@ static void M_Sys_AutoLoadAddons(INT32 choice)
 		case EXT_PK3:
 		default:
 			fprintf(autoload_config, "%s\n", addon_name);
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "Added addon \x82\"%s\"\x80 to the autoload configuration list.\n", addon_name);
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE, "Added addon \x82\"%s\"\x80 to the autoload configuration list.\n", addon_name);
 			break;
 	}
 

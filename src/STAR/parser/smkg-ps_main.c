@@ -19,10 +19,9 @@
 // ------------------------ //
 
 INT32 tsourdt3rd_starparser_lump_loading = 0; // are we loading lumps?
-INT32 tsourdt3rd_starparser_num_errored_lumps = 0; // how many lumps, that we've loaded so far, have come across errors?
-
 INT32 tsourdt3rd_starparser_num_brackets = 0; // are we checking for our proper brackets?
 INT32 tsourdt3rd_starparser_num_errors = 0; // have we stumbled upon a parser error?
+INT32 tsourdt3rd_starparser_num_errored_lumps = 0; // how many lumps, that we've loaded so far, have come across errors?
 
 // ------------------------ //
 //        Functions
@@ -58,30 +57,37 @@ void TSoURDt3rd_STARParser_Read(tsourdt3rd_starparser_t *script, char *text, siz
 		TSoURDt3rd_STARParser_CheckForBrackets(script);
 		if (tsourdt3rd_starparser_num_errors)
 		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "Oops! Error(s?) found!\n");
+			STAR_CONS_Printf(STAR_CONS_DEBUG, "Oops! Error(s?) found!\n");
 			break;
 		}
 		else if (tsourdt3rd_starparser_num_brackets <= 0)
 		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "Successfully parsed the lump! Exiting...\n");
+			STAR_CONS_Printf(STAR_CONS_DEBUG, "Successfully parsed the lump! Exiting...\n");
 			break;
 		}
 
-		if (parserfunc)
-			parserfunc(script);
+		boolean failed = parserfunc(script);
+		if (!failed)
+		{
+			script->tkn = script->tokenizer->get(script->tokenizer, 0);
+			script->val = script->tokenizer->get(script->tokenizer, 1);
+			TSoURDt3rd_STARParser_CheckForBrackets(script);
+		}
 
-		script->tkn = script->tokenizer->get(script->tokenizer, 0);
-		script->val = script->tokenizer->get(script->tokenizer, 1);
-
-		TSoURDt3rd_STARParser_CheckForBrackets(script);
 		if (tsourdt3rd_starparser_num_errors)
 		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "Oops! Error(s?) found!\n");
+			STAR_CONS_Printf(STAR_CONS_DEBUG, "Oops! Error(s?) found!\n");
 			break;
 		}
 		else if (tsourdt3rd_starparser_num_brackets <= 0)
 		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "Successfully parsed the lump! Exiting...\n");
+			STAR_CONS_Printf(STAR_CONS_DEBUG, "Successfully parsed the lump! Exiting...\n");
+			break;
+		}
+
+		if (failed)
+		{
+			STAR_CONS_Printf(STAR_CONS_DEBUG, "Failed to parse lump! Exiting...\n");
 			break;
 		}
 	}

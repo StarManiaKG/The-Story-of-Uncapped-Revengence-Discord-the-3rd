@@ -50,10 +50,9 @@ typedef enum
 } tsourdt3rd_starparser_bracket_type_t;
 
 extern INT32 tsourdt3rd_starparser_lump_loading;
-extern INT32 tsourdt3rd_starparser_num_errored_lumps;
-
 extern INT32 tsourdt3rd_starparser_num_brackets;
 extern INT32 tsourdt3rd_starparser_num_errors;
+extern INT32 tsourdt3rd_starparser_num_errored_lumps;
 
 // ------------------------ //
 //        Functions

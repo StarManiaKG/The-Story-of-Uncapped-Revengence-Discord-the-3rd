@@ -254,7 +254,7 @@ static boolean M_Sys_SetupNewJukeboxPage(void)
 
 	if (!(tsourdt3rd_cur_page_jukebox_defs = Z_Malloc(numsoundtestdefs * sizeof(tsourdt3rd_jukeboxdef_t *), PU_STATIC, NULL)))
 	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "M_Sys_SetupNewJukeboxPage(): could not allocate jukebox defs.\n");
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "M_Sys_SetupNewJukeboxPage(): could not allocate jukebox defs.\n");
 		return false;
 	}
 

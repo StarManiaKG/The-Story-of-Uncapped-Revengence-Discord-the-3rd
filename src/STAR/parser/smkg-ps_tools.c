@@ -88,20 +88,17 @@ INT32 TSoURDt3rd_STARParser_ValidTableTerm(tsourdt3rd_starparser_t *script, cons
 
 	if (!script)
 		return -1;
-
 	script->tkn = script->tokenizer->get(script->tokenizer, 0);
 	script->val = script->tokenizer->get(script->tokenizer, 1);
 
 	if (!script->tkn || !script->val)
 		return -1;
-
 	table_index = TSoURDt3rd_M_FindWordInTermTable(term_table, script->tkn, TSOURDT3RD_TERMTABLESEARCH_NORM);
 
 	if (enforce_brackets)
 	{
 		if (TSoURDt3rd_STARParser_CheckForBrackets(script) != TSOURDT3RD_STARPARSER_BRAK_OPEN)
 			return -1;
-
 		script->tkn = script->tokenizer->get(script->tokenizer, 0);
 		script->val = script->tokenizer->get(script->tokenizer, 1);
 	}
@@ -118,13 +115,13 @@ void TSoURDt3rd_STARParser_Error(const char *err, tsourdt3rd_starparser_t *scrip
 	switch (verboseness)
 	{
 		case TSOURDT3RD_STARPARSER_ERROR_FULL:
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "%s (in lump %s, line %d)\n", err, script->wad->filename, script->tokenizer->line);
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "%s (in lump %s, line %d)\n", err, script->wad->filename, script->tokenizer->line);
 			break;
 		case TSOURDT3RD_STARPARSER_ERROR_LUMP:
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "%s (in lump %s)\n", err, script->wad->filename);
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "%s (in lump %s)\n", err, script->wad->filename);
 			break;
 		default:
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "%s (near terms (%s,%s))\n", err, script->tkn, script->val);
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "%s (near terms (%s,%s))\n", err, script->tkn, script->val);
 			break;
 	}
 }

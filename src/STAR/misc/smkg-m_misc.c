@@ -175,20 +175,23 @@ boolean TSoURDt3rd_FOL_DirectoryExists(const char *directory)
 //
 boolean TSoURDt3rd_FOL_CreateDirectory(const char *cpath)
 {
+	const char *home_path = TSoURDt3rd_FOL_ReturnHomepath();
 	char *cur_path = NULL;
 	INT32 i = 0, j;
 
 	if (!cpath || *cpath == '\0')
 		return false;
 
-	if (strstr(cpath, TSoURDt3rd_FOL_ReturnHomepath()))
+	if (strstr(cpath, home_path))
 	{
 		// Cuts out the home directory, just in case you manually specified it...
-		cpath += strlen(TSoURDt3rd_FOL_ReturnHomepath())+1;
+		cpath += strlen(home_path)+1;
 	}
 
 	cur_path = malloc(8192);
-	strcpy(cur_path, TSoURDt3rd_FOL_ReturnHomepath());
+	if (cur_path == NULL)
+		return false;
+	strcpy(cur_path, home_path);
 	j = strlen(cur_path);
 
 	cur_path[j++] = PATHSEP[0];
@@ -210,7 +213,7 @@ boolean TSoURDt3rd_FOL_CreateDirectory(const char *cpath)
 
 		if (!TSoURDt3rd_FOL_DirectoryExists(cur_path))
 		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "Directory '%s' doesn't exist, creating it...\n", cur_path);
+			STAR_CONS_Printf(STAR_CONS_DEBUG, "Directory '%s' doesn't exist, creating it...\n", cur_path);
 			I_mkdir(cur_path, 0755);
 		}
 
@@ -222,7 +225,7 @@ boolean TSoURDt3rd_FOL_CreateDirectory(const char *cpath)
 			cur_path[j++] = PATHSEP[1];
 	}
 
-	free(cur_path);
+	if (cur_path) free(cur_path);
 	return true;
 }
 
@@ -319,7 +322,7 @@ void TSoURDt3rd_FIL_CreateSavefileProperly(void)
 	if (netgame)
 		return;
 
-	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "CREATING SAVEFILE\n");
+	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "CREATING SAVEFILE\n");
 #if 0
 	memset(savegamename, 0, sizeof(savegamename));
 	memset(liveeventbackup, 0, sizeof(liveeventbackup));

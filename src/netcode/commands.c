@@ -26,6 +26,7 @@
 #include "../doomstat.h"
 #include "../doomdef.h"
 #include "../r_local.h"
+#include "../m_menu.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -399,17 +400,10 @@ void Command_connect(void)
 		return;
 	}
 
-#if 0
+	// StarManiaKG: allow us to join servers from anywhere at any time //
 	if (Playing() || titledemo)
 	{
-		CONS_Printf(M_GetText("You cannot connect while in a game. End this game first.\n"));
-		return;
-	}
-#else
-	// STAR STUFF: allow us to join servers from anywhere at any time //
-	if (Playing() || titledemo)
-	{
-		//M_ClearMenus(true);
+		M_ClearMenus(true);
 		if (demoplayback && titledemo)
 			G_CheckDemoStatus();
 
@@ -421,7 +415,6 @@ void Command_connect(void)
 
 		D_StartTitle();
 	}
-#endif
 
 	server = false;
 /*
@@ -439,11 +432,6 @@ void Command_connect(void)
 		if (netgame && !stricmp(COM_Argv(1), "node"))
 		{
 			servernode = (SINT8)atoi(COM_Argv(2));
-		}
-		else if (netgame)
-		{
-			CONS_Printf(M_GetText("You cannot connect while in a game. End this game first.\n"));
-			return;
 		}
 		else if (I_NetOpenSocket)
 		{

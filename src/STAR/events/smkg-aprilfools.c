@@ -132,7 +132,7 @@ OP_ChangeControlsMenu
 	{IT_HEADER, NULL, "Too Meta", NULL, 0},
 	{IT_SPACE, NULL, NULL, NULL, 0}, // padding
 	{IT_CALL | IT_STRING2, NULL, "Playground Status",
-    M_ChangeControl, GC_SCORES      },
+	M_ChangeControl, GC_SCORES      },
 	{IT_CALL | IT_STRING2, NULL, "Pause / Run Retry", M_ChangeControl, GC_PAUSE      },
 	{IT_CALL | IT_STRING2, NULL, "Photo",            M_ChangeControl, GC_SCREENSHOT },
 	{IT_CALL | IT_STRING2, NULL, "Export Slideshow",  M_ChangeControl, GC_RECORDGIF  },
@@ -201,22 +201,22 @@ OP_MouseOptionsMenu
 	{IT_STRING | IT_CVAR, NULL, "Rat Move",       &cv_mousemove,        50},
 	{IT_STRING | IT_CVAR, NULL, "Invert Y Axis",     &cv_invertmouse,      60},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-	                      NULL, "Rat X Sensitivity",    &cv_mousesens,        70},
+						  NULL, "Rat X Sensitivity",    &cv_mousesens,        70},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-	                      NULL, "Rat Y Sensitivity",    &cv_mouseysens,        80},
+						  NULL, "Rat Y Sensitivity",    &cv_mouseysens,        80},
 
 OP_Mouse2OptionsMenu
 	{IT_STRING | IT_CVAR, NULL, "Use Rat 2",      &cv_usemouse2,        10},
 	{IT_STRING | IT_CVAR, NULL, "Second Mouse Serial Port",
-	                                                &cv_mouse2port,       20},
+													&cv_mouse2port,       20},
 	{IT_STRING | IT_CVAR, NULL, "First-Person MouseLook", &cv_alwaysfreelook2,  30},
 	{IT_STRING | IT_CVAR, NULL, "Third-Person MouseLook", &cv_chasefreelook2,  40},
 	{IT_STRING | IT_CVAR, NULL, "Rat Move",       &cv_mousemove2,       50},
 	{IT_STRING | IT_CVAR, NULL, "Invert Y Axis",     &cv_invertmouse2,     60},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-	                      NULL, "Mouse X Sensitivity",    &cv_mousesens2,       70},
+						  NULL, "Mouse X Sensitivity",    &cv_mousesens2,       70},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-	                      NULL, "Mouse Y Sensitivity",    &cv_mouseysens2,      80},
+						  NULL, "Mouse Y Sensitivity",    &cv_mouseysens2,      80},
 
 OP_CameraOptionsMenu
 	{IT_HEADER,            NULL, "General Toggles", NULL, 0},
@@ -313,7 +313,7 @@ OP_VideoOptionsMenu
 	{IT_HEADER, NULL, "Hedgehog Useful Details", NULL, 55},
 	{IT_STRING | IT_CVAR, NULL, "Show HUD",                  &cv_showhud,          61},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-	                      NULL, "HUD Transparency",          &cv_translucenthud,   66},
+						  NULL, "HUD Transparency",          &cv_translucenthud,   66},
 	{IT_STRING | IT_CVAR, NULL, "Score/Time/Rings",          &cv_timetic,          71},
 	{IT_STRING | IT_CVAR, NULL, "Show Powerups",             &cv_powerupdisplay,   76},
 	{IT_STRING | IT_CVAR, NULL, "Show my lag",		&cv_showping,			81}, // shows ping next to framerate if we want to.
@@ -593,7 +593,7 @@ void TSoURD3rd_AprilFools_OnChange(void)
 
 	if (TSoURDt3rd_AprilFools_ModeEnabled() && cursaveslot > NOSAVESLOT && !netgame)
 	{
-		STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nthis savefile will not save until you turn this mode off.\n");
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_APRILFOOLS, "You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nthis savefile will not save until you turn this mode off.\n");
 		TSoURDt3rd_M_StartMessage(
 			"Important TSoURDt3rd Notice",
 			"You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nthis savefile will not save until you turn this mode off.",

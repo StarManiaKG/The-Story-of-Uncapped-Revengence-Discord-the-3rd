@@ -38,12 +38,12 @@ extern "C" {
 #define TSoURDt3rd_S_TunesAreCancelled() { \
 	if (TSoURDt3rd_AprilFools_ModeEnabled()) \
 	{ \
-		STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "Nice try. Perhaps there's a command you need to turn off first?\n"); \
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_APRILFOOLS, "Nice try. Perhaps there's a command you need to turn off first?\n"); \
 		return; \
 	} \
 	else if (TSoURDt3rd_Jukebox_IsPlaying()) \
 	{ \
-		STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Sorry, you can't use this command while playing music.\n"); \
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_JUKEBOX, "Sorry, you can't use this command while playing music.\n"); \
 		return; \
 	} \
 }

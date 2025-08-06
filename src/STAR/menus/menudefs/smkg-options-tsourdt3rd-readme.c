@@ -15,10 +15,6 @@
 //        Variables
 // ------------------------ //
 
-static fixed_t cur_readme_y = 12<<FRACBITS;
-static fixed_t min_readme_y = 12<<FRACBITS;
-static fixed_t max_readme_y = -(24<<FRACBITS); // set when the menu first loads
-
 static const char *TSoURDt3rd_credits[] = {
 	"\1TSoURDt3rd Team",
 	"StarManiaKG \"Star\"",
@@ -65,6 +61,9 @@ static const char *TSoURDt3rd_credits[] = {
 		"\t\t- Voluntary tester, ideas",
 	NULL
 };
+static fixed_t cur_readme_y = 12<<FRACBITS;
+static fixed_t min_readme_y = 12<<FRACBITS;
+static fixed_t max_readme_y = -(24<<FRACBITS); // base value; modified when the menu first loads
 
 static void M_Sys_InitReadME(void);
 static void M_Sys_DrawReadME(void);

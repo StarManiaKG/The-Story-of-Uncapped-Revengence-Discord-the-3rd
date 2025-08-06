@@ -102,6 +102,7 @@ typedef off_t off64_t;
 #endif
 
 // TSoURDt3rd
+#include "STAR/smkg-defs.h"
 #include "STAR/star_vars.h" // TSOURDT3RDVERSIONSTRING //
 
 static CV_PossibleValue_t screenshot_cons_t[] = {{0, "Default"}, {1, "HOME"}, {2, "SRB2"}, {3, "CUSTOM"}, {0, NULL}};
@@ -795,18 +796,10 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 	char keytxt[SRB2PNGTXT][12] = {
 	"Title", "Description", "Playername", "Mapnum", "Mapname",
 	"Location", "Interface", "Render Mode", "Revision", "Build Date", "Build Time"};
-#if 0
-	char titletxt[] = "Sonic Robo Blast 2 " VERSIONSTRING;
+	char titletxt[] = SRB2APPLICATION_FULLNAME " " VERSIONSTRING " - " TSOURDT3RDVERSIONSTRING;
 	png_charp playertxt =  cv_playername.zstring;
-	char desctxt[] = "SRB2 Screenshot";
-	char Movietxt[] = "SRB2 Movie";
-#else
-	// STAR STUFF: edited to seperate our screenshots from Vanilla's //
-	char titletxt[] = "Sonic Robo Blast 2 " VERSIONSTRING "; " TSOURDT3RDVERSIONSTRING;
-	png_charp playertxt =  cv_playername.zstring;
-	char desctxt[] = "SRB2; TSoURDt3rd Screenshot";
-	char Movietxt[] = "SRB2; TSoURDt3rd Movie";
-#endif
+	char desctxt[] = TSOURDT3RD_SRB2_APP_SHORT" Screenshot";
+	char Movietxt[] = TSOURDT3RD_SRB2_APP_SHORT" Movie";
 	size_t i;
 	char interfacetxt[] =
 #ifdef HAVE_SDL

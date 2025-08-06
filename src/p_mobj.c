@@ -41,6 +41,7 @@
 
 // TSoURDt3rd
 #include "STAR/smkg-cvars.h" // cv_tsourdt3rd_players_alwaysoverlayinvulnsparks //
+#include "STAR/p_user.h" // TSoURDt3rd_P_ControlShieldOverlay //
 
 static CV_PossibleValue_t CV_BobSpeed[] = {{0, "MIN"}, {4*FRACUNIT, "MAX"}, {0, NULL}};
 consvar_t cv_movebob = CVAR_INIT ("movebob", "0.25", CV_FLOAT|CV_SAVE, CV_BobSpeed, NULL);
@@ -1501,8 +1502,8 @@ static void P_XYFriction(mobj_t *mo, fixed_t oldx, fixed_t oldy)
 			}
 		}
 		else if (abs(player->rmomx) < FixedMul(STOPSPEED, mo->scale)
-		    && abs(player->rmomy) < FixedMul(STOPSPEED, mo->scale)
-		    && (!(player->cmd.forwardmove && !(twodlevel || mo->flags2 & MF2_TWOD)) && !player->cmd.sidemove && !(player->pflags & PF_SPINNING))
+			&& abs(player->rmomy) < FixedMul(STOPSPEED, mo->scale)
+			&& (!(player->cmd.forwardmove && !(twodlevel || mo->flags2 & MF2_TWOD)) && !player->cmd.sidemove && !(player->pflags & PF_SPINNING))
 			&& !(player->mo->standingslope && (!(player->mo->standingslope->flags & SL_NOPHYSICS)) && (abs(player->mo->standingslope->zdelta) >= FRACUNIT/2)))
 		{
 			// if in a walking frame, stop moving
@@ -2034,7 +2035,7 @@ void P_AdjustMobjFloorZ_FFloors(mobj_t *mo, sector_t *sector, UINT8 motype)
 			;
 		else if (!( // if it's not either of the following...
 				(rover->fofflags & (FOF_BLOCKPLAYER|FOF_MARIO) && mo->player) // ...solid to players? (mario blocks are always solid from beneath to players)
-			    || (rover->fofflags & FOF_BLOCKOTHERS && !mo->player) // ...solid to others?
+				|| (rover->fofflags & FOF_BLOCKOTHERS && !mo->player) // ...solid to others?
 				)) // ...don't take it into account.
 			continue;
 		if (rover->fofflags & FOF_QUICKSAND)
@@ -3146,8 +3147,8 @@ void P_MobjCheckWater(mobj_t *mobj)
 			boolean electric = !!(p->powers[pw_shield] & SH_PROTECTELECTRIC);
 			if (electric || ((p->powers[pw_shield] & SH_PROTECTFIRE) && !(p->powers[pw_shield] & SH_PROTECTWATER) && !(mobj->eflags & MFE_TOUCHLAVA)))
 			{ // Water removes electric and non-water fire shields...
-			    if (electric)
-				    P_FlashPal(p, PAL_WHITE, 1);
+				if (electric)
+					P_FlashPal(p, PAL_WHITE, 1);
 
 				p->powers[pw_shield] = p->powers[pw_shield] & SH_STACK;
 			}
@@ -6338,8 +6339,8 @@ void P_Attract(mobj_t *source, mobj_t *dest, boolean nightsgrab) // Home in on y
 
 	// Instead of just unsetting NOCLIP like an idiot, let's check the distance to our target.
 	ndist = P_AproxDistance(P_AproxDistance(tx - (source->x+source->momx),
-	                                        ty - (source->y+source->momy)),
-	                                        tz - (source->z+source->momz));
+											ty - (source->y+source->momy)),
+											tz - (source->z+source->momz));
 
 	if (ndist > dist) // gone past our target
 	{
@@ -6591,15 +6592,12 @@ cont:
 
 static boolean P_ShieldLook(mobj_t *thing, shieldtype_t shield)
 {
-	if (!thing->target || thing->target->health <= 0 || !thing->target->player
-		|| (thing->target->player->powers[pw_shield] & SH_NOSTACK) == SH_NONE || thing->target->player->powers[pw_super]
-#if 0
-		|| thing->target->player->powers[pw_invulnerability] > 1)
-#else
-		// STAR STUFF: FUN STUFF! //
-		|| ((thing->target->player->powers[pw_invulnerability] > 1)
-			&& (!cv_tsourdt3rd_players_alwaysoverlayinvulnsparks.value)))
-#endif
+	if (!thing->target || thing->target->health <= 0 || !thing->target->player)
+	{
+		P_RemoveMobj(thing);
+		return false;
+	}
+	if (TSoURDt3rd_P_ControlShieldOverlay(thing))
 	{
 		P_RemoveMobj(thing);
 		return false;
@@ -6715,15 +6713,12 @@ static boolean P_AddShield(mobj_t *thing)
 {
 	shieldtype_t shield = thing->threshold;
 
-	if (!thing->target || thing->target->health <= 0 || !thing->target->player
-		|| (thing->target->player->powers[pw_shield] & SH_NOSTACK) == SH_NONE || thing->target->player->powers[pw_super]
-#if 0
-		|| thing->target->player->powers[pw_invulnerability] > 1)
-#else
-		// STAR STUFF: FUN STUFF! //
-		|| ((thing->target->player->powers[pw_invulnerability] > 1)
-			&& (!cv_tsourdt3rd_players_alwaysoverlayinvulnsparks.value)))
-#endif
+	if (!thing->target || thing->target->health <= 0 || !thing->target->player)
+	{
+		P_RemoveMobj(thing);
+		return false;
+	}
+	if (TSoURDt3rd_P_ControlShieldOverlay(thing))
 	{
 		P_RemoveMobj(thing);
 		return false;
@@ -11655,7 +11650,7 @@ void P_SpawnPlayer(INT32 playernum)
 	if ((netgame || multiplayer) && ((gametyperules & GTR_SPAWNINVUL) || leveltime) && !p->spectator && !(maptol & TOL_NIGHTS))
 		p->powers[pw_flashing] = flashingtics-1; // Babysitting deterrent
 
-    // MT_PLAYER cannot be removed, so this shouldn't be able to return NULL.
+	// MT_PLAYER cannot be removed, so this shouldn't be able to return NULL.
 	mobj = P_SpawnMobj(0, 0, 0, MT_PLAYER, p);
 	I_Assert(mobj != NULL);
 
@@ -12038,8 +12033,8 @@ static boolean P_SpawnNonMobjMapThing(mapthing_t *mthing)
 		return true;
 	}
 	else if (mthing->type == 750 // Slope vertex point (formerly chaos spawn)
-		     || (mthing->type >= 600 && mthing->type <= 611) // Special placement patterns
-		     || mthing->type == 1713) // Hoops
+			 || (mthing->type >= 600 && mthing->type <= 611) // Special placement patterns
+			 || mthing->type == 1713) // Hoops
 		return true; // These are handled elsewhere.
 	else if (mthing->type == mobjinfo[MT_EMERHUNT].doomednum)
 	{

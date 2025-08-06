@@ -575,14 +575,12 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 	DISC_UpdatePresence();
 #endif
 
-#if 1
 #ifdef HAVE_SDL
 	STAR_SetWindowTitle();
 #endif
 
 	// STAR STUFF: I LIKE YOUR FUNNY SOUNDS, MAGIC FUNCTION //
 	S_StartSound(NULL, ((msg == KICK_MSG_PLAYER_QUIT) ? STAR_LeaveSFX : STAR_SynchFailureSFX));
-#endif
 }
 
 // If in a special stage, redistribute the player's

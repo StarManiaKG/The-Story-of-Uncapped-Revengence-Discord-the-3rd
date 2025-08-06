@@ -223,6 +223,7 @@ static char returnWadPath[256];
 #endif
 
 // TSoURDt3rd
+#include "../STAR/smkg-defs.h" // TSOURDT3RD_SRB2_APP_FULL //
 #include "../STAR/star_vars.h" // TSOURDT3RDVERSIONSTRING //
 #include "../STAR/smkg-i_sys.h" // TSoURDt3rd_I_ShowErrorMessageBox() & TSoURDt3rd_I_ShutdownSystem() //
 
@@ -1815,13 +1816,8 @@ void I_UpdateMumble(const mobj_t *mobj, const listener_t listener)
 		return;
 
 	if(mumble->uiVersion != 2) {
-		wcsncpy(mumble->name, L"SRB2 "VERSIONSTRINGW, 256);
-		wcsncpy(mumble->description, L"Sonic Robo Blast 2 with integrated Mumble Link support.", 2048);
-#if 1
-		// STAR STUFF: tsourdt3rd takeover - mumble edition //
-		wcsncpy(mumble->name, L"SRB2 "VERSIONSTRINGW"; "TSOURDT3RDVERSIONSTRING, 256);
-		wcsncpy(mumble->description, L"Sonic Robo Blast 2; TSoURDt3rd with integrated Mumble Link support.", 2048);
-#endif
+		wcsncpy(mumble->name, L""SRB2APPLICATION" "VERSIONSTRINGW" - "TSOURDT3RDVERSIONSTRING, 256);
+		wcsncpy(mumble->description, L"\""TSOURDT3RD_SRB2_APP_FULL"\" with integrated Mumble Link support.", 2048);
 		mumble->uiVersion = 2;
 	}
 	mumble->uiTick++;

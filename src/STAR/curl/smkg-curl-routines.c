@@ -103,7 +103,7 @@ void TSoURDt3rd_CurlRoutine_FindUpdates(void)
 					"You're using version: \x82%s\x80\n\n"
 					"Check the SRB2 Message Board for the latest version!",
 				return_version, TSOURDT3RDVERSION);
-				message_type = STAR_CONS_TSOURDT3RD_ALERT;
+				message_type = STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR;
 				send_event_message = true;
 			}
 			else if (TSoURDt3rd_CurrentVersion() > version_number)
@@ -116,14 +116,14 @@ void TSoURDt3rd_CurlRoutine_FindUpdates(void)
 					"\nand in that case, hello!\n\n"
 					"Enjoy messing around with the build!"
 				);
-				message_type = STAR_CONS_TSOURDT3RD_ALERT;
+				message_type = STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR;
 				send_event_message = true;
 			}
 			else
 			{
 				header_string = "No updates found!";
 				sprintf(message_string, "Your TSoURDt3rd Executable is up-to-date! Have fun!");
-				message_type = STAR_CONS_TSOURDT3RD_NOTICE;
+				message_type = STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE;
 			}
 			break;
 		}
@@ -138,7 +138,7 @@ void TSoURDt3rd_CurlRoutine_FindUpdates(void)
 				"under the 'TSoURDt3rd Options' menu.\n"
 				"You'll find the option to retry there."
 			);
-			message_type = STAR_CONS_TSOURDT3RD_ALERT;
+			message_type = STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR;
 			break;
 	}
 

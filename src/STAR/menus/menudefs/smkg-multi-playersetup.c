@@ -89,13 +89,13 @@ void TSoURDt3rd_M_HandleColorResetOption(
 	if (!skin_changed && !color_changed)
 	{
 		// Everything's default here, let's just leave...
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "Your skin and color are already set to the defaults!\n");
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "Your skin and color are already set to the defaults!\n");
 		return;
 	}
 	if (!reset_allowed)
 	{
 		// Player is probably moving, and since the option for that isn't allowed for them, well...
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "Your skin can't be reset right now!\n");
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE, "Your skin can't be reset right now!\n");
 		S_StartSound(NULL, sfx_skid);
 		return;
 	}
@@ -106,7 +106,7 @@ void TSoURDt3rd_M_HandleColorResetOption(
 		(*setupm_fakeskin) = R_SkinAvailable(setupm_cvdefaultskin->string);
 		if (setupm_player->mo && R_SkinAvailable(skin->name) != setupm_cvdefaultskin->value)
 			setupm_player->mo->skin = (skin_t *)&skins[*setupm_fakeskin];
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "Your skin has been reset to the default!\n");
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE, "Your skin has been reset to the default!\n");
 	}
 
 	// Now set our color... //
@@ -116,12 +116,12 @@ void TSoURDt3rd_M_HandleColorResetOption(
 		{
 			full_success = false;
 			setupm_fakecolor->color = (setupm_player->ctfteam == 1 ? skincolor_redteam : skincolor_blueteam);
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "Your color can't be reset right now!\n");
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE, "Your color can't be reset right now!\n");
 		}
 		else
 		{
 			setupm_fakecolor->color = setupm_cvdefaultcolor->value;
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "Your color has been reset to the default!\n");
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE, "Your color has been reset to the default!\n");
 		}
 	}
 
