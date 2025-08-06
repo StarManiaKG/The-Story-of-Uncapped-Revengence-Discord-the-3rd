@@ -26,6 +26,69 @@
 
 struct discordrequestmenu_s discordrequestmenu;
 
+static INT32 discord_menuitems[7][6] = {
+	[0] = {
+		op_drpcs_header,
+		-1
+	},
+	[1] = {
+		op_drpcs_asks,
+		op_drpcs_invites,
+		op_drpcs_showonstatus,
+		op_drpcs_statusmemes,
+		op_drpcs_charimgtype,
+		-1
+	},
+	[2] = {
+		op_cps_header,
+		op_cpli_header,
+		op_cpls_header,
+		-1
+	},
+	[3] = {
+		op_cpli_largeimgtype,
+		op_cpls_smallimgtype,
+		-1
+	},
+	[4] = {
+		op_cpli_largeimg,
+		op_cpls_smallimg,
+		-1
+	},
+	[5] = {
+		op_cps_details,
+		op_cps_state,
+		op_cpli_largeimgtext,
+		op_cpls_smallimgtext,
+		-1
+	},
+	[6] = {
+		-2
+	}
+};
+
+static consvar_t *custom_cvartype_index[] = {
+	&cv_discordcustom_imagetype_large,
+	&cv_discordcustom_imagetype_small,
+	NULL
+};
+static consvar_t *custom_cvar_index[2][5] = {
+	[0] = {
+		&cv_discordcustom_characterimage_large,
+		&cv_discordcustom_supercharacterimage_large,
+		&cv_discordcustom_mapimage_large,
+		&cv_discordcustom_miscimage_large,
+		NULL
+	},
+	[1] = {
+		&cv_discordcustom_characterimage_small,
+		&cv_discordcustom_supercharacterimage_small,
+		&cv_discordcustom_mapimage_small,
+		&cv_discordcustom_miscimage_small,
+		NULL
+	},
+};
+
 static void M_Sys_DrawDiscordMenu(void);
 static void M_Sys_DiscordOptionsTicker(void);
 
@@ -234,7 +297,7 @@ static void M_Sys_DrawDiscordMenu(void)
 	{
 		// Discord's open, so let's print our username!
 		const char *username = DISC_ReturnUsername();
-		if (username == NULL)
+		if (username == NULL || *username == '\0')
 		{
 			flags |= V_YELLOWMAP;
 			string = "User potentially still not connected to Discord?";
@@ -259,81 +322,18 @@ static void M_Sys_DiscordOptionsTicker(void)
 {
 	INT32 i = 0, j = 0;
 	INT32 menuflags;
-
-#ifndef DISCORD_SECRETIVE
-	INT32 custom_cvartype_index[] = {
-		cv_discordcustom_imagetype_large.value,
-		cv_discordcustom_imagetype_small.value,
-		-1
-	};
-	static consvar_t *custom_cvar_index[2][5] = {
-		[0] = {
-			&cv_discordcustom_characterimage_large,
-			&cv_discordcustom_supercharacterimage_large,
-			&cv_discordcustom_mapimage_large,
-			&cv_discordcustom_miscimage_large,
-			NULL
-		},
-		[1] = {
-			&cv_discordcustom_characterimage_small,
-			&cv_discordcustom_supercharacterimage_small,
-			&cv_discordcustom_mapimage_small,
-			&cv_discordcustom_miscimage_small,
-			NULL
-		},
-	};
 	consvar_t *discord_itemactions = NULL;
-#endif
-
-	static INT32 discord_menuitems[7][6] = {
-		[0] = {
-			op_drpcs_header,
-			-1
-		},
-		[1] = {
-			op_drpcs_asks,
-			op_drpcs_invites,
-			op_drpcs_showonstatus,
-			op_drpcs_statusmemes,
-			op_drpcs_charimgtype,
-			-1
-		},
-		[2] = {
-			op_cps_header,
-			op_cpli_header,
-			op_cpls_header,
-			-1
-		},
-		[3] = {
-			op_cpli_largeimgtype,
-			op_cpls_smallimgtype,
-			-1
-		},
-		[4] = {
-			op_cpli_largeimg,
-			op_cpls_smallimg,
-			-1
-		},
-		[5] = {
-			op_cps_details,
-			op_cps_state,
-			op_cpli_largeimgtext,
-			op_cpls_smallimgtext,
-			-1
-		},
-		[6] = {
-			-2
-		}
-	};
+	boolean failed = false;
 
 	TSoURDt3rd_M_OptionsTick(); // Tick throughout the entire menu
-	DISC_UpdatePresence(); // Update DRPC info
 
 	// Set option availability and actions
 	while (discord_menuitems[i][0] != -2)
 	{
-
 #ifdef DISCORD_SECRETIVE
+		(void)custom_cvartype_index;
+		(void)custom_cvar_index;
+		(void)discord_itemactions;
 		switch (i)
 		{
 			default:
@@ -356,35 +356,41 @@ static void M_Sys_DiscordOptionsTicker(void)
 				menuflags = ((cv_discordrp.value && cv_discordshowonstatus.value == 9) ? IT_CVAR|IT_STRING : IT_DISABLED);
 				break;
 			case 4:
-			{
+				failed = false;
 				menuflags = ((cv_discordrp.value && cv_discordshowonstatus.value == 9) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
-				if (menuflags == IT_GRAYEDOUT)
+				if (custom_cvartype_index[j] == NULL || menuflags == IT_GRAYEDOUT)
 				{
-					discord_itemactions = NULL;
-					break;
+					// Dang it! Oh well, failsafe time!
+					failed = true;
 				}
-				switch (custom_cvartype_index[j])
+				else
 				{
-					case 0: case 1: case 2:
-						discord_itemactions = custom_cvar_index[j][0];
-						break;
-					case 3: case 4: case 5:
-						discord_itemactions = custom_cvar_index[j][1];
-						break;
-					case 6:
-						discord_itemactions = custom_cvar_index[j][2];
-						break;
-					case 7:
-						discord_itemactions = custom_cvar_index[j][3];
-						break;
-					default:
-						menuflags = IT_GRAYEDOUT;
-						discord_itemactions = NULL;
-						break;
+					switch (custom_cvartype_index[j]->value)
+					{
+						case 0: case 1: case 2:
+							discord_itemactions = custom_cvar_index[j][0];
+							break;
+						case 3: case 4: case 5:
+							discord_itemactions = custom_cvar_index[j][1];
+							break;
+						case 6:
+							discord_itemactions = custom_cvar_index[j][2];
+							break;
+						case 7:
+							discord_itemactions = custom_cvar_index[j][3];
+							break;
+						default:
+							failed = true;
+							break;
+					}
+				}
+				if (failed)
+				{
+					menuflags = IT_GRAYEDOUT;
+					discord_itemactions = NULL;
 				}
 				DISCORD_OP_MainMenu[discord_menuitems[i][j]].itemaction = discord_itemactions;
 				break;
-			}
 			case 5:
 				menuflags = ((cv_discordrp.value && cv_discordshowonstatus.value == 9) ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 				break;
