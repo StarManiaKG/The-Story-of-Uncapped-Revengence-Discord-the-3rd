@@ -185,6 +185,28 @@ sources+=\
 	$(call List,blua/Sourcefile)\
 	$(call List,netcode/Sourcefile)\
 
+sources+=discord/discord_net.c
+ifdef DISCORD_SUPPORTED
+  sources+=$(call List,discord/Sourcefile)
+  ifdef HAVE_DISCORDRPC
+    sources+=$(call List,discord/rpc/Sourcefile)
+  endif
+  ifdef HAVE_DISCORDGAMESDK
+    sources+=$(call List,discord/gamesdk/Sourcefile)
+  endif
+endif
+
+sources+=\
+    $(call List,STAR/Sourcefile)\
+	$(call List,STAR/monocypher/Sourcefile)\
+
+ifndef NOCURL
+sources+=$(call List,STAR/curl/Sourcefile)
+endif
+ifdef HAVE_LIBAV
+sources+=$(call List,STAR/libav/Sourcefile)
+endif
+
 depends:=$(basename $(filter %.c %.s,$(sources)))
 objects:=$(basename $(filter %.c %.s %.nas,$(sources)))
 
@@ -211,7 +233,7 @@ bin:=../bin
 endif
 
 # default EXENAME (usually set by platform)
-EXENAME?=srb2
+EXENAME?=srb2tsourdt3rd
 DBGNAME?=$(EXENAME).debug
 
 exe:=$(bin)/$(EXENAME)

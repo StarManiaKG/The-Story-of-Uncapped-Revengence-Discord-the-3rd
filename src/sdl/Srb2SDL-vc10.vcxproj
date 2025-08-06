@@ -425,7 +425,6 @@
     <ClInclude Include="..\STAR\p_user.h" />
     <ClInclude Include="..\STAR\smkg-cvars.h" />
     <ClInclude Include="..\STAR\core\smkg-s_jukebox.h" />
-    <ClInclude Include="..\STAR\smkg-v_video.h" />
     <ClInclude Include="..\STAR\ss_main.h" />
     <ClInclude Include="..\STAR\star_vars.h" />
     <ClInclude Include="..\STAR\star_webinfo.h" />

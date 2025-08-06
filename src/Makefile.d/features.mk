@@ -65,5 +65,56 @@ default_packages:=\
 $(foreach p,$(default_packages),\
 	$(eval $(call Check_pkg_config,$(p))))
 
-# // STAR STUFF: cool features, files, and other junk! // #
-include TSoURDt3rd/Makefile.d/features.mk
+
+##
+## Unique feature flags for TSoURDt3rd
+## Copyright 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
+##
+
+opts+=-DUSE_STUN
+
+ifdef HAVE_DISCORDRPC
+  ifndef HAVE_DISCORDGAMESDK
+    opts+=-DHAVE_DISCORDRPC -DHAVE_DISCORDSUPPORT
+    libs+=-ldiscord-rpc
+    DISCORD_SUPPORTED:=1
+  else
+    $(error \
+      You can't have your cake and eat it too!\
+      Choose either Discord RPC or Discord Game SDK!)
+  endif
+endif
+
+ifdef HAVE_DISCORDGAMESDK
+  ifndef HAVE_DISCORDRPC
+    opts+=-DHAVE_DISCORDGAMESDK -DHAVE_DISCORDSUPPORT
+    libs+=-ldiscord_game_sdk
+    DISCORD_SUPPORTED:=1
+  else
+    $(error \
+      You can't have your cake and eat it too!\
+      Choose either Discord Game SDK or Discord RPC!)
+  endif
+endif
+
+ifdef HAVE_LIBAV
+  #libav_default_packages:=\
+	#  LIBAVCODEC\
+	#  LIBAVDEVICE\
+  #  LIBAVFILTER\
+  #  LIBAVFORMAT\
+  #  LIBAVRESAMPLE\
+  #  LIBAVUTIL\
+  #  LIBSWSCALE\
+
+  opts+=-DHAVE_LIBAV
+
+  #libs+=-lvfw32 -lws2_32 -lbcrypt -luser32
+  #libs+=-lm -lz -lavcodec -lavdevice -lavfilter -lavformat -lavresample -lavutil -lswscale
+
+  #libs+=-lvfw32 -lbcrypt
+  #libs+=-lm -lavcodec -lavdevice -lavfilter -lavformat -lavresample -lavutil -lswscale
+
+  #$(foreach libav_p,$(libav_default_packages),\
+	#  $(eval $(call Check_pkg_config,$(libav_p))))
+endif

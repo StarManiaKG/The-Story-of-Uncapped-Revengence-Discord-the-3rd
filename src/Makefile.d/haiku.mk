@@ -14,9 +14,9 @@ endif
 NOEXECINFO=1
 
 ifeq (${SDL},1)
-EXENAME?=srb2haiku
+EXENAME?=srb2tsourdt3rd_haiku
 else ifeq (${DEDICATED},1)
-EXENAME?=srb2haikud
+EXENAME?=srb2tsourdt3rd_haiku_dedicated
 endif
 
 ifndef NONET

@@ -20,11 +20,11 @@ endif
 endif
 
 ifeq (${SDL},1)
-EXENAME?=lsdl2srb2
+EXENAME?=srb2tsourdt3rd_linux
 endif
 
 ifeq (${DEDICATED},1)
-EXENAME?=lsrb2d
+EXENAME?=srb2tsourdt3rd_linux_dedicated
 endif
 
 # In common usage.

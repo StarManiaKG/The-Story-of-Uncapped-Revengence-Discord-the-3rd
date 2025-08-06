@@ -9,7 +9,6 @@ target_sources(SRB2SDL2 PRIVATE
 	core/smkg-d_main.c
 	core/smkg-p_pads.c
 	core/smkg-p_setup.c
-	core/smkg-r_main.c
 	core/smkg-s_audio.c
 	core/smkg-s_jukebox.c
 	core/smkg-s_exmusic.c
@@ -62,8 +61,11 @@ target_sources(SRB2SDL2 PRIVATE
 	stun/stun.c
 )
 
-add_subdirectory(curl)
 add_subdirectory(monocypher)
-add_subdirectory(libav)
 
-target_compile_definitions(SRB2SDL2 PRIVATE -DUSE_STUN)
+if (TARGET CURL::libcurl)
+	add_subdirectory(curl)
+endif()
+if (TARGET LibAV)
+	add_subdirectory(libav)
+endif()

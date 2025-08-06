@@ -589,9 +589,6 @@
     <ClInclude Include="..\STAR\core\smkg-s_jukebox.h">
       <Filter>TSoURDt3rd</Filter>
     </ClInclude>
-    <ClInclude Include="..\STAR\smkg-v_video.h">
-      <Filter>TSoURDt3rd</Filter>
-    </ClInclude>
     <ClInclude Include="..\STAR\ss_main.h">
       <Filter>TSoURDt3rd</Filter>
     </ClInclude>

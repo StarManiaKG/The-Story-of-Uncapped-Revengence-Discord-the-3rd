@@ -1,17 +1,17 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
-  "name": "srb2",
+  "name": "tsourdt3rd",
   "version": "1.0.0",
   "builtin-baseline": "c823fd3e57035b10d970a96da2796a2db55e5df5",
   "dependencies": [
     "curl",
     {
       "name": "libgme",
-      "platform": "!(windows & mingw) & !native"
+      "platform": "!windows & !native"
     },
     {
       "name": "libopenmpt",
-      "platform": "!(windows & mingw)"
+      "platform": "!windows"
     },
     "libpng",
     "miniupnpc",
@@ -25,51 +25,50 @@
         },
         {
           "name": "libflac",
-          "platform": "!(windows & mingw & !static)"
+          "platform": "!windows | static"
         },
         {
           "name": "libgme",
-          "platform": "!(windows & mingw) & !native"
+          "platform": "!windows & !native"
         },
         {
           "name": "libmodplug",
-          "platform": "!(windows & mingw)"
+          "platform": "!windows"
         },
         {
           "name": "libopnmidi",
-          "platform": "!(windows & mingw)"
+          "platform": "!windows"
         },
         {
           "name": "libvorbis",
-          "platform": "!(windows & mingw & !static)"
+          "platform": "!windows | static"
         },
         {
           "name": "libxmp",
-          "platform": "!(windows & mingw)"
+          "platform": "!windows"
         },
         {
           "name": "mpg123",
-          "platform": "!(windows & mingw)"
+          "platform": "!windows"
         },
         {
           "name": "nativemidi",
-          "platform": "!(windows & mingw)"
+          "platform": "!windows"
         },
         {
-          "name": "opusfile",
-          "platform": "!(windows & mingw)"
+          "name": "opusfile"
         },
         {
           "name": "pxtone",
-          "platform": "!(windows & mingw)"
+          "platform": "!windows"
         },
         {
           "name": "timidity",
-          "platform": "!(windows & mingw)"
+          "platform": "!windows"
         },
         {
           "name": "wavpack",
-          "platform": "!(windows & mingw)"
+          "platform": "!windows"
         }
       ]
     },

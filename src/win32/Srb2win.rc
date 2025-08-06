@@ -94,15 +94,15 @@ BEGIN
         BLOCK "04090000"
         BEGIN
             VALUE "Comments", "Visit our web site at www.srb2.org for news and updates!\0"
-            VALUE "CompanyName", "Sonic Team Junior\0"
-            VALUE "FileDescription", "Sonic Robo Blast 2; TSoURDt3rd\0"
+            VALUE "CompanyName", "StarManiaKG, Sonic Team Junior\0"
+            VALUE "FileDescription", "Sonic Robo Blast 2 - TSoURDt3rd\0"
             VALUE "FileVersion", VERSIONSTRING_RC
-            VALUE "InternalName", "srb2_tsourdt3rd\0"
+            VALUE "InternalName", "srb2tsourdt3rd\0"
             VALUE "LegalCopyright", "Copyright 1998-2025 by Sonic Team Junior\0"
             VALUE "LegalTrademarks", "Sonic the Hedgehog and related characters are trademarks of Sega.\0"
-            VALUE "OriginalFilename", "srb2win_tsourdt3rd.exe\0"
+            VALUE "OriginalFilename", "srb2tsourdt3rd_win.exe\0"
             VALUE "PrivateBuild", "\0"
-            VALUE "ProductName", "Sonic Robo Blast 2; TSoURDt3rd\0"
+            VALUE "ProductName", "Sonic Robo Blast 2 - TSoURDt3rd\0"
             VALUE "ProductVersion", VERSIONSTRING_RC
             VALUE "SpecialBuild", "\0"
         END

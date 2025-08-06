@@ -13,31 +13,31 @@
 			"name": "__develop",
 			"hidden": true,
 			"cacheVariables": {
-				"CMAKE_C_FLAGS_RELWITHDEBINFO": "-DNDEBUG",
-				"CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-DNDEBUG",
 				"SRB2_CONFIG_DEV_BUILD": "ON",
-				"CMAKE_BUILD_TYPE": "RelWithDebInfo"
+				"CMAKE_BUILD_TYPE": "RelWithDebInfo",
+				"CMAKE_C_FLAGS_RELWITHDEBINFO": "-DNDEBUG",
+				"CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-DNDEBUG"
 			}
 		},
 		{
 			"name": "__release",
 			"hidden": true,
 			"cacheVariables": {
-				"CMAKE_C_FLAGS_RELWITHDEBINFO": "-DNDEBUG",
-				"CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-DNDEBUG",
 				"SRB2_CONFIG_DEV_BUILD": "OFF",
-				"CMAKE_BUILD_TYPE": "RelWithDebInfo"
+				"CMAKE_BUILD_TYPE": "RelWithDebInfo",
+				"CMAKE_C_FLAGS_RELWITHDEBINFO": "-DNDEBUG",
+				"CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-DNDEBUG"
 			}
 		},
 		{
 			"name": "__testers",
 			"hidden": true,
 			"cacheVariables": {
-				"CMAKE_C_FLAGS_RELWITHDEBINFO": "-DNDEBUG",
-				"CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-DNDEBUG",
 				"SRB2_CONFIG_DEV_BUILD": "ON",
+				"SRB2_CONFIG_TESTERS": "ON",
 				"CMAKE_BUILD_TYPE": "RelWithDebInfo",
-				"SRB2_CONFIG_TESTERS": "ON"
+				"CMAKE_C_FLAGS_RELWITHDEBINFO": "-DNDEBUG",
+				"CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-DNDEBUG"
 			}
 		},
 		{

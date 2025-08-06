@@ -8,6 +8,7 @@ endif()
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 include(CMakeDependentOption)
+include(CheckCXXCompilerFlag)
 
 file(STRINGS src/version.h SRB2_VERSION)
 string(REGEX MATCH "[0-9]+\\.[0-9.]+" SRB2_VERSION ${SRB2_VERSION})
@@ -75,6 +76,12 @@ option(SRB2_CONFIG_ZDEBUG "Compile with ZDEBUG defined." OFF)
 # SRB2_CONFIG_PROFILEMODE is probably superceded by some CMake setting.
 option(SRB2_CONFIG_PROFILEMODE "Compile for profiling (GCC only)." OFF)
 set(SRB2_CONFIG_ASSET_DIRECTORY "" CACHE PATH "Path to directory that contains all asset files for the installer. If set, assets will be part of installation and cpack.")
+# TSoURDt3rd's Discord integration support
+option(TSOURDT3RD_CONFIG_ENABLE_DISCORDRPC "TSoURDt3rd: Enable Discord Rich Presence support." ON)
+option(TSOURDT3RD_CONFIG_ENABLE_DISCORDGAMESDK "TSoURDt3rd: Enable Discord Game SDK support." ON)
+set(TSOURDT3RD_CONFIG_HAVE_DISCORDSUPPORT OFF)
+# TSoURDt3rd's LIBAV support
+option(TSOURDT3RD_CONFIG_HAVE_LIBAV "TSoURDt3rd: Enable MP4 support (beta, unsupported as of now)." OFF)
 
 # Dependencies
 add_subdirectory(thirdparty)
@@ -96,7 +103,9 @@ if("${SRB2_CONFIG_USE_GME}")
 	find_package(libgme QUIET)
 endif()
 find_package(miniupnpc QUIET)
-
+#find_package(DiscordRPC QUIET)
+#find_package(DiscordGameSDK QUIET)
+find_package(LibAV QUIET)
 
 if(${PROJECT_SOURCE_DIR} MATCHES ${PROJECT_BINARY_DIR})
 	message(FATAL_ERROR "In-source builds will bring you a world of pain. Please make a separate directory to invoke CMake from.")

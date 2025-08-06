@@ -2,18 +2,12 @@
 # Mingw, if you don't know, that's Win32/Win64
 #
 
-ifndef MINGW64
-EXENAME?=srb2win.exe
-else
-EXENAME?=srb2win64.exe
-endif
-
 # disable dynamicbase if under msys2
 ifdef MSYSTEM
 libs+=-Wl,--disable-dynamicbase
 endif
 
-sources+=win32/Srb2win.rc
+sources+=win32/Srb2win.rc win32/win_dbg.c
 opts+=-DSTDC_HEADERS
 libs+=-ladvapi32 -lkernel32 -lmsvcrt -luser32
 
@@ -47,6 +41,7 @@ x86=x86_64
 i686=x86_64
 endif
 
+EXENAME?=srb2tsourdt3rd_win$(32).exe
 mingw:=$(i686)-w64-mingw32
 
 define _set =
@@ -104,3 +99,50 @@ lib:=../libs/miniupnpc
 MINIUPNPC_opts:=-I$(lib)/include -DMINIUPNP_STATICLIB
 MINIUPNPC_libs:=-L$(lib)/mingw$(32) -lminiupnpc -lws2_32 -liphlpapi
 $(eval $(call _set,MINIUPNPC))
+
+##
+## Mingw, if you still don't know, that's Win32/Win64
+## Except now it also includes cool TSoURDt3rd stuff too :)
+##
+## Copyright 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
+##
+## Library configuration flags:
+## Everything here is an override.
+##
+## DISCORD_RPC_CFLAGS=, DISCORD_RPC_LDFLAGS=
+## DISCORD_GAME_SDK_CFLAGS=, DISCORD_GAME_SDK_LDFLAGS=
+## LIBAV_CFLAGS=, LIBAV_LDFLAGS=
+
+#lib:=../libs/BugTrap
+#BUGTRAP_opts+=-I$(lib) -DBUGTRAP
+#ifndef MINGW64
+#BUGTRAP_libs+=-L$(lib) -lBugTrap
+#else
+#BUGTRAP_libs+=-L$(lib) -lBugTrap-x64
+#endif
+#$(eval $(call _set,BUGTRAP))
+#$(eval $(call Propogate_flags,BUGTRAP))
+
+ifdef HAVE_DISCORDRPC
+  lib:=../libs/discord-rpc/win$(32)-dynamic
+  DISCORD_RPC_opts:=-I$(lib)/include
+  DISCORD_RPC_libs:=-L$(lib)/lib
+  $(eval $(call _set,DISCORD_RPC))
+  $(eval $(call Propogate_flags,DISCORD_RPC))
+endif
+
+ifdef HAVE_DISCORDGAMESDK
+  lib:=../libs/discord_game_sdk
+  DISCORD_GAME_SDK_opts:=-I$(lib)/include
+  DISCORD_GAME_SDK_libs:=-L$(lib)/$(x86)
+  $(eval $(call _set,DISCORD_GAME_SDK))
+  $(eval $(call Propogate_flags,DISCORD_GAME_SDK))
+endif
+
+ifdef HAVE_LIBAV
+  lib:=../libs/libav/$(x86)-w64-mingw32
+  LIBAV_opts:=-I$(lib)/include
+  LIBAV_libs:=-L$(lib)/lib
+  $(eval $(call _set,LIBAV))
+  $(eval $(call Propogate_flags,LIBAV))
+endif
