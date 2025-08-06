@@ -82,24 +82,29 @@ extern struct tsourdt3rd_loadingscreen_s
 	boolean loadComplete;
 } tsourdt3rd_loadingscreen;
 
-typedef enum
-{
-	STAR_CONS_TSOURDT3RD = 1,
-	STAR_CONS_TSOURDT3RD_NOTICE,
-	STAR_CONS_TSOURDT3RD_ALERT,
-	STAR_CONS_TSOURDT3RD_DEBUG,
-	STAR_CONS_APRILFOOLS,
-	STAR_CONS_EASTER,
-	STAR_CONS_JUKEBOX
-} tsourdt3rd_messagetype_t;
-
 // ------------------------ //
 //        Functions
 // ------------------------ //
 
 void TSoURDt3rd_Init(void);
 
-void STAR_CONS_Printf(tsourdt3rd_messagetype_t starMessageType, const char *fmt, ...);
+#define STAR_CONS_NONE              0x0001
+#define STAR_CONS_TSOURDT3RD        0x0002
+#define STAR_CONS_DISCORD           0x0004
+
+#define STAR_CONS_NOTICE            0x0008
+#define STAR_CONS_ERROR             0x0010
+#define STAR_CONS_WARNING           0x0020
+#define STAR_CONS_COLORWHOLELINE    0x0040
+
+#define STAR_CONS_APRILFOOLS        0x0080
+#define STAR_CONS_EASTER            0x0100
+#define STAR_CONS_JUKEBOX           0x0200
+
+#define STAR_CONS_DEBUG             0x0400
+
+void STAR_CONS_Printf(INT32 message_type, const char *fmt, ...);
+
 const char *TSoURDt3rd_CON_DrawStartupScreen(void);
 
 const char *TSoURDt3rd_ReturnUsername(void);
