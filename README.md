@@ -88,7 +88,7 @@ The build and its executable files can be found in the provided ZIP file, with f
 
 ***
   - **Custom Build Options, directed towards Saves, Servers, and Extra Features**
-    - (Holepunching Ported from SRB2 Kart by Me)
+    - (Holepunching Ported from SRB2Kart by Me)
     - (Original Leavebug Fix Coded by flarn2006)
 ***
   - **General Feature Overview:**
@@ -184,7 +184,7 @@ The build and its executable files can be found in the provided ZIP file, with f
 </p>
 
 **WIP FEATURES (MOST LIKELY CAN BE FOUND ON OTHER BRANCHES)**
-  - Discord's Game SDK (it compiles fine, but nothing's there yet :P)
+  - Discord's Game SDK integration
   - Android Support (currently at the extremely bare minimum :P)
   - ...And Even Some Annoyances!
 
