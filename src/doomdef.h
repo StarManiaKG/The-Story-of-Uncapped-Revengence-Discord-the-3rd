@@ -141,6 +141,7 @@ extern char logfilename[1024];
 
 /* A mod name to further distinguish versions. */
 #define SRB2APPLICATION "SRB2"
+#define SRB2APPLICATION_FULLNAME "Sonic Robo Blast 2"
 
 //#define DEVELOP // Disable this for release builds to remove excessive cheat commands and enable MD5 checking and stuff, all in one go. :3
 #ifdef DEVELOP
@@ -736,5 +737,7 @@ extern int
 #else
 #undef UPDATE_ALERT
 #endif
+
+//#define _DEBUG /* Debugging */
 
 #endif // __DOOMDEF__

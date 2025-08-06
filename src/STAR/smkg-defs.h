@@ -22,9 +22,13 @@ extern "C" {
 //        Variables
 // ------------------------ //
 
+#define TSOURDT3RD_APP				"TSoURDt3rd"
+#define TSOURDT3RD_SRB2_APP_SHORT	SRB2APPLICATION"-TSoURDt3rd"
+#define TSOURDT3RD_SRB2_APP_FULL	SRB2APPLICATION_FULLNAME" - "TSOURDT3RD_APP
+
 #define AUTOLOADCONFIGFILENAME "autoload.cfg"
 
-#define TSOURDT3RD_DEBUGGING /* Debugging */
+//#define TSOURDT3RD_DEBUGGING /* Debugging */
 //#define _DEBUG /* Debugging */
 //#define DEBUGFILE /* Debugging */
 
