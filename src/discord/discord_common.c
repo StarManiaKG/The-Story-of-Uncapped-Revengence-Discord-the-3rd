@@ -28,6 +28,7 @@
 #include "../netcode/i_tcp.h" // current_port
 #include "../netcode/mserv.h" // ms_RoomId
 
+#include "../STAR/smkg-defs.h" // TSOURDT3RD_APP_FULL_NAME //
 #include "../STAR/ss_main.h" // STAR_CONS_Printf() //
 #include "../STAR/stun/stun.h"
 
@@ -340,12 +341,12 @@ void DISC_SetActivityStatus(
 #ifdef DISCORD_SECRETIVE
 	// Main - Set a bare minimum status...
 	// This way, we can use the invite feature in-dev, but not have snoopers seeing any potential secrets! :P
-	DISC_StatusPrintf(false, details, " | ", "Developing a Masterpiece");
-	DISC_StatusPrintf(false, state, " | ", "Keep your eyes peeled!");
-	DISC_StatusPrintf(true, image, "misc", "missing");
-		DISC_StatusPrintf(false, imagetxt, NULL, "Hey! No peeking!");
+	DISC_StatusPrintf(false, details, " | ", TSOURDT3RD_APP_FULL_NAME" - Development EXE");
+	DISC_StatusPrintf(false, state, " | ", "Developing a Masterpiece!");
+	DISC_StatusPrintf(true, image, "misc", "develop");
+		DISC_StatusPrintf(false, imagetxt, NULL, "Keep your eyes peeled!");
 	DISC_StatusPrintf(true, s_image, "map", "custom");
-		DISC_StatusPrintf(false, s_imagetxt, NULL, "Hey! No peeking!");
+		DISC_StatusPrintf(false, s_imagetxt, NULL, "Hey, no peeking!");
 #else
 	// Main - Custom status enabled? This basically overrides everything, sorry :p
 	if (cv_discordshowonstatus.value == 9)

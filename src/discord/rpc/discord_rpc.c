@@ -314,10 +314,9 @@ void DISC_RemoveRequest(DISC_Request_t *removeRequest)
 --------------------------------------------------*/
 void DISC_Quit(void)
 {
-	DISC_HandleQuitting();
 	Discord_ClearPresence();
 	Discord_Shutdown();
-	I_OutputMsg("DISC_Quit(): Closing Discord Rich Presence...\n");
+	DISC_HandleQuitting();
 }
 
 #endif // HAVE_DISCORDRPC

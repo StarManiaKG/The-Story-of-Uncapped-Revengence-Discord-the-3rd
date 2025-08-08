@@ -13,6 +13,16 @@
 
 #include <discord_game_sdk.h>
 
+#include <stdint.h>
+#include <stdio.h>
+#include <assert.h>
+#ifdef _WIN32
+	#include <Windows.h>
+#else
+	#include <unistd.h>
+	#include <string.h>
+#endif
+
 #include "../discord.h"
 
 #include "../../m_menu.h"
@@ -365,9 +375,9 @@ void DISC_RemoveRequest(DISC_Request_t *removeRequest)
 --------------------------------------------------*/
 void DISC_Quit(void)
 {
-	DISC_HandleQuitting();
 	DGSDK.core->destroy(DGSDK.core);
 	memset(&DGSDK, 0, sizeof(DGSDK));
+	DISC_HandleQuitting();
 }
 
 #endif //HAVE_DISCORDGAMESDK
