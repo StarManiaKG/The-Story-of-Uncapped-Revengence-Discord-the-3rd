@@ -29,7 +29,7 @@
 # Asset File Parameters
 : ${ASSET_ARCHIVE_PATH:=https://github.com/mazmazz/SRB2/releases/download/SRB2_assets_220/SRB2-v220-assets.7z}
 : ${ASSET_ARCHIVE_OPTIONAL_PATH:=https://github.com/mazmazz/SRB2/releases/download/SRB2_assets_220/SRB2-v220-optional-assets.7z}
-: ${ASSET_FILES_HASHED:=srb2.pk3 zones.pk3 player.dta tsourdt3rd.pk3} #patch.pk3} # POST v2.2 NOTE: Don't forget to uncomment and add patch.pk3!
+: ${ASSET_FILES_HASHED:=srb2.pk3 zones.pk3 player.dta tsourdt3rd.pk3} # POST v2.2 NOTE: Don't forget to add patch.pk3!
 : ${ASSET_FILES_DOCS:=README.txt LICENSE.txt LICENSE-3RD-PARTY.txt README-SDL.txt}
 : ${ASSET_FILES_OPTIONAL_GET:=0}
 
@@ -50,7 +50,7 @@
 : ${DPL_SSH_KEY_PASSPHRASE}     # Decodes the private key file.
 
 # Package Parameters
-: ${PACKAGE_NAME:=srb2}
+: ${PACKAGE_NAME:=srb2tsourdt3rd}
 : ${PACKAGE_VERSION:=2.2.0}
 : ${PACKAGE_SUBVERSION}         # Highly recommended to set this to reflect the distro series target (e.g., ~18.04bionic)
 : ${PACKAGE_REVISION}           # Defaults to UTC timestamp
@@ -58,18 +58,18 @@
 : ${PACKAGE_LINK_PATH:=/usr/games}
 : ${PACKAGE_DISTRO:=trusty}
 : ${PACKAGE_URGENCY:=high}
-: ${PACKAGE_NAME_EMAIL:=Sonic Team Junior <stjr@srb2.org>}
+: ${PACKAGE_NAME_EMAIL:=StarManiaKG and Sonic Team Junior <stjr@srb2.org>}
 : ${PACKAGE_GROUP_NAME_EMAIL:=Sonic Team Junior <stjr@srb2.org>}
 : ${PACKAGE_WEBSITE:=<http://www.srb2.org>}
 
 : ${PACKAGE_ASSET_MINVERSION:=2.1.26}  # Number this the version BEFORE the actual required version, because we do a > check
 : ${PACKAGE_ASSET_MAXVERSION:=2.2.1}  # Number this the version AFTER the actual required version, because we do a < check
 
-: ${PROGRAM_NAME:=Sonic Robo Blast 2}
+: ${PROGRAM_NAME:=Sonic Robo Blast 2 - TSoURDt3rd}
 : ${PROGRAM_VENDOR:=Sonic Team Junior}
 : ${PROGRAM_VERSION:=2.2.0}
 : ${PROGRAM_DESCRIPTION:=A free 3D Sonic the Hedgehog fangame closely inspired by the original Sonic games on the Sega Genesis.}
-: ${PROGRAM_FILENAME:=srb2}
+: ${PROGRAM_FILENAME:=srb2tsourdt3rd}
 
 : ${DPL_PGP_KEY_PRIVATE}        # Base64-encoded private key file. Used to sign Debian packages
 : ${DPL_PGP_KEY_PASSPHRASE}     # Decodes the private key file.

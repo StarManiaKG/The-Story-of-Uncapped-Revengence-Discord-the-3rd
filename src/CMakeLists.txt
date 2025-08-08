@@ -144,7 +144,7 @@ if("${CMAKE_COMPILER_IS_GNUCC}" AND "${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
 	endif()
 endif()
 
-target_compile_features(SRB2SDL2 PRIVATE c_std_11 cxx_std_17)
+target_compile_features(SRB2SDL2 PRIVATE c_std_23 cxx_std_17)
 
 ### Configuration
 set(SRB2_CONFIG_DEV_BUILD OFF CACHE BOOL
@@ -192,9 +192,6 @@ if("${SRB2_CONFIG_USE_GME}")
 endif()
 
 target_compile_definitions(SRB2SDL2 PRIVATE -D_LARGEFILE64_SOURCE)
-
-set(SRB2_HAVE_THREADS ON)
-target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_THREADS)
 
 if("${SRB2_CONFIG_HWRENDER}")
 	target_compile_definitions(SRB2SDL2 PRIVATE -DHWRENDER)
@@ -479,6 +476,41 @@ else()
 	message(STATUS "No miniupnpc Found")
 endif()
 
+##  TSoURDt3rd ##
+
+# -- Discord
+if(TARGET DiscordRPC)
+	set(TSOURDT3RD_CONFIG_HAVE_DISCORDSUPPORT ON)
+	target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_DISCORDSUPPORT -DHAVE_DISCORDRPC)
+	target_link_libraries(SRB2SDL2 PRIVATE discord-rpc)
+	message(STATUS "TSoURDt3rd: Using DiscordRPC as Discord layer")
+else()
+	set(TSOURDT3RD_CONFIG_ENABLE_DISCORDRPC OFF)
+	message(STATUS "TSoURDt3rd: No DiscordRPC found")
+endif()
+if(TARGET DiscordGameSDK)
+	set(TSOURDT3RD_CONFIG_HAVE_DISCORDSUPPORT ON)
+	target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_DISCORDSUPPORT -DHAVE_DISCORDGAMESDK)
+	target_link_libraries(SRB2SDL2 PRIVATE DiscordGameSDK::DiscordGameSDK)
+	message(STATUS "TSoURDt3rd: Using DiscordGameSDK as Discord layer")
+else()
+	set(TSOURDT3RD_CONFIG_ENABLE_DISCORDGAMESDK OFF)
+	message(STATUS "TSoURDt3rd: No DiscordGameSDK found")
+endif()
+if(${TSOURDT3RD_CONFIG_ENABLE_DISCORDGAMESDK} AND ${TSOURDT3RD_CONFIG_ENABLE_DISCORDRPC})
+	message(FATAL_ERROR "TSoURDt3rd: Can't compile with both Discord's Rich Presence and Discord's Game SDK!")
+endif()
+add_subdirectory(discord)
+
+# --LibAV
+if(TARGET LibAV)
+	target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_LIBAV)
+	#target_include_directories(SRB2SDL2 PRIVATE ${LibAV_INCLUDE_DIRS})
+	target_link_libraries(SRB2SDL2 PRIVATE LibAV::LibAV)
+endif()
+
+add_subdirectory(STAR)
+
 # strip debug symbols into separate file when using gcc.
 # to be consistent with Makefile, don't generate for OS X.
 if((CMAKE_COMPILER_IS_GNUCC) AND NOT ("${CMAKE_SYSTEM_NAME}" MATCHES Darwin))
@@ -526,36 +558,3 @@ endif()
 if(SRB2_CONFIG_ENABLE_CLANG_TIDY_CXX)
 	target_set_default_clang_tidy(SRB2SDL2 CXX "-*,clang-analyzer-*,modernize-*")
 endif()
-
-# // TSoURDt3rd // #
-
-if(TARGET DiscordRPC)
-	set(TSOURDT3RD_CONFIG_HAVE_DISCORDSUPPORT ON)
-	target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_DISCORDSUPPORT -DHAVE_DISCORDRPC)
-	target_link_libraries(SRB2SDL2 PRIVATE discord-rpc)
-	message(STATUS "TSoURDt3rd: Using DiscordRPC as Discord layer")
-else()
-	set(TSOURDT3RD_CONFIG_ENABLE_DISCORDRPC OFF)
-	message(STATUS "TSoURDt3rd: No DiscordRPC found")
-endif()
-if(TARGET DiscordGameSDK)
-	set(TSOURDT3RD_CONFIG_HAVE_DISCORDSUPPORT ON)
-	target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_DISCORDSUPPORT -DHAVE_DISCORDGAMESDK)
-	target_link_libraries(SRB2SDL2 PRIVATE DiscordGameSDK::DiscordGameSDK)
-	message(STATUS "TSoURDt3rd: Using DiscordGameSDK as Discord layer")
-else()
-	set(TSOURDT3RD_CONFIG_ENABLE_DISCORDGAMESDK OFF)
-	message(STATUS "TSoURDt3rd: No DiscordGameSDK found")
-endif()
-if(${TSOURDT3RD_CONFIG_ENABLE_DISCORDGAMESDK} AND ${TSOURDT3RD_CONFIG_ENABLE_DISCORDRPC})
-	message(FATAL_ERROR "TSoURDt3rd: Can't compile with both Discord's Rich Presence and Discord's Game SDK!")
-endif()
-add_subdirectory(discord)
-
-if(TARGET LibAV)
-	target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_LIBAV)
-	#target_include_directories(SRB2SDL2 PRIVATE ${LibAV_INCLUDE_DIRS})
-	target_link_libraries(SRB2SDL2 PRIVATE LibAV::LibAV)
-endif()
-
-add_subdirectory(STAR)

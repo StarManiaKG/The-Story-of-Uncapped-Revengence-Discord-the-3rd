@@ -73,14 +73,17 @@ option(SRB2_CONFIG_MOBJCONSISTANCY "Compile with MOBJCONSISTANCY defined." OFF)
 option(SRB2_CONFIG_PACKETDROP "Compile with PACKETDROP defined." OFF)
 option(SRB2_CONFIG_EXECINFO "Enable stack trace dump support." ON)
 option(SRB2_CONFIG_ZDEBUG "Compile with ZDEBUG defined." OFF)
+option(SRB2_CONFIG_FORCE_NO_MS_BITFIELDS "Compile without -mno-ms-bitfields compiler flag" OFF)
 # SRB2_CONFIG_PROFILEMODE is probably superceded by some CMake setting.
 option(SRB2_CONFIG_PROFILEMODE "Compile for profiling (GCC only)." OFF)
 set(SRB2_CONFIG_ASSET_DIRECTORY "" CACHE PATH "Path to directory that contains all asset files for the installer. If set, assets will be part of installation and cpack.")
-# TSoURDt3rd's Discord integration support
+
+## TSoURDt3rd ##
+# -- Discord integration support
 option(TSOURDT3RD_CONFIG_ENABLE_DISCORDRPC "TSoURDt3rd: Enable Discord Rich Presence support." ON)
 option(TSOURDT3RD_CONFIG_ENABLE_DISCORDGAMESDK "TSoURDt3rd: Enable Discord Game SDK support." ON)
 set(TSOURDT3RD_CONFIG_HAVE_DISCORDSUPPORT OFF)
-# TSoURDt3rd's LIBAV support
+# -- LIBAV support
 option(TSOURDT3RD_CONFIG_HAVE_LIBAV "TSoURDt3rd: Enable MP4 support (beta, unsupported as of now)." OFF)
 
 # Dependencies
@@ -103,8 +106,10 @@ if("${SRB2_CONFIG_USE_GME}")
 	find_package(libgme QUIET)
 endif()
 find_package(miniupnpc QUIET)
-#find_package(DiscordRPC QUIET)
-#find_package(DiscordGameSDK QUIET)
+
+## TSoURDt3rd ##
+find_package(DiscordRPC QUIET)
+find_package(DiscordGameSDK QUIET)
 find_package(LibAV QUIET)
 
 if(${PROJECT_SOURCE_DIR} MATCHES ${PROJECT_BINARY_DIR})

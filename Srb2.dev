@@ -5,7 +5,7 @@ Ver=3
 IsCpp=0
 Type=0
 UnitCount=279
-Folders=B_Bot,BLUA,D_Doom,F_Frame,G_Game,H_Hud,Hw_Hardware,Hw_Hardware/r_opengl,I_Interface,I_Interface/Dummy,I_Interface/SDL,I_Interface/Win32,LUA,M_Misc,P_Play,R_Rend,S_Sounds,W_Wad,DISCORD,LIBAV,STAR
+Folders=B_Bot,BLUA,D_Doom,F_Frame,G_Game,H_Hud,Hw_Hardware,Hw_Hardware/r_opengl,I_Interface,I_Interface/Dummy,I_Interface/SDL,I_Interface/Win32,LUA,M_Misc,P_Play,R_Rend,S_Sounds,W_Wad
 CommandLine=
 CompilerSettings=00000000000100000111e1
 PchHead=-1
@@ -3034,26 +3034,6 @@ BuildCmd=
 
 [Unit279]
 FileName=src\lua_hud.h
-CompileCpp=0
-Folder=LUA
-Compile=1
-Link=1
-Priority=1000
-OverrideBuildCmd=0
-BuildCmd=
-
-[Unit280]
-FileName=src\lua_hudlib_drawlist.c
-CompileCpp=0
-Folder=LUA
-Compile=1
-Link=1
-Priority=1000
-OverrideBuildCmd=0
-BuildCmd=
-
-[Unit281]
-FileName=src\lua_hudlib_drawlist.h
 CompileCpp=0
 Folder=LUA
 Compile=1

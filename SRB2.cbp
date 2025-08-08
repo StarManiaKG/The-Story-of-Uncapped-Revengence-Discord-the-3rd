@@ -1563,10 +1563,6 @@ HW3SOUND for 3D hardware sound  support
 		<Unit filename="src/lua_hudlib.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="src/lua_hudlib_drawlist.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src/lua_hudlib_drawlist.h" />
 		<Unit filename="src/lua_infolib.c">
 			<Option compilerVar="CC" />
 		</Unit>
