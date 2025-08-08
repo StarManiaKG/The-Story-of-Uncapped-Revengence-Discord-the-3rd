@@ -593,7 +593,7 @@ void TSoURD3rd_AprilFools_OnChange(void)
 
 	if (TSoURDt3rd_AprilFools_ModeEnabled() && cursaveslot > NOSAVESLOT && !netgame)
 	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_APRILFOOLS, "You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nthis savefile will not save until you turn this mode off.\n");
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_APRILFOOLS|STAR_CONS_WARNING, "You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nthis savefile will not save until you turn this mode off.\n");
 		TSoURDt3rd_M_StartMessage(
 			"Important TSoURDt3rd Notice",
 			"You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nthis savefile will not save until you turn this mode off.",
