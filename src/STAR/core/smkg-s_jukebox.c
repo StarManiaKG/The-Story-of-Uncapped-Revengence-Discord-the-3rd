@@ -228,7 +228,7 @@ void TSoURDt3rd_Jukebox_Play(musicdef_t *play_def)
 	else if (TSoURDt3rd_Jukebox_IsPlaying())
 	{
 		// We shouldn't interrupt ourself!
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_JUKEBOX, "There's already a track playing!\n");
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_JUKEBOX|STAR_CONS_WARNING, "There's already a track playing!\n");
 		S_StartSound(NULL, sfx_lose);
 		return;
 	}
@@ -239,7 +239,7 @@ void TSoURDt3rd_Jukebox_Play(musicdef_t *play_def)
 		{
 			if (!tsourdt3rd_global_jukebox->prevtrack)
 			{
-				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_JUKEBOX, "You haven't recently played a track!\n");
+				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_JUKEBOX|STAR_CONS_WARNING, "You haven't recently played a track!\n");
 				S_StartSound(NULL, sfx_lose);
 				return;
 			}
@@ -259,7 +259,7 @@ void TSoURDt3rd_Jukebox_Play(musicdef_t *play_def)
 	tsourdt3rd_global_jukebox->playing = true;
 
 	TSoURDt3rd_S_ControlMusicEffects(NULL, NULL);
-	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_JUKEBOX, M_GetText("Loaded track \x82%s\x80.\n"), tsourdt3rd_global_jukebox->curtrack->title);
+	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_JUKEBOX|STAR_CONS_NOTICE, M_GetText("Loaded track \x82%s\x80.\n"), tsourdt3rd_global_jukebox->curtrack->title);
 }
 
 //
@@ -300,7 +300,7 @@ void TSoURDt3rd_Jukebox_Reset(void)
 	if (!tsourdt3rd_global_jukebox->in_menu)
 	{
 		// Ok, let's try NOT to overload the console, please.
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_JUKEBOX, "Jukebox reset.\n");
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_JUKEBOX|STAR_CONS_NOTICE, "Jukebox reset.\n");
 	}
 }
 
