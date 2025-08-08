@@ -355,7 +355,7 @@ static inline void I_UPnP_add(const char * addr, const char *port, const char * 
 	if (addr == NULL)
 		addr = lanaddr;
 	UPNP_AddPortMapping(urls.controlURL, data.first.servicetype,
-	                    port, port, addr, "SRB2; TSoURDt3rd", servicetype, NULL, NULL);
+	                    port, port, addr, "SRB2 - TSoURDt3rd", servicetype, NULL, NULL);
 	I_unlock_mutex(upnp_mutex);
 }
 
