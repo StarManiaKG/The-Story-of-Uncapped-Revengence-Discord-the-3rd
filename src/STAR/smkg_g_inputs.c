@@ -13,12 +13,13 @@
 #include "menus/smkg-m_sys.h" // menutyping junk //
 
 #include "../console.h"
-#include "../d_net.h"
 #include "../g_game.h"
 #include "../hu_stuff.h"
 #include "../i_joy.h"
 #include "../m_menu.h"
 #include "../snake.h"
+
+#include "../netcode/d_net.h"
 
 // ------------------------ //
 //        Variables
@@ -43,13 +44,11 @@ void STAR_G_KeyResponder(UINT8 player, UINT8 key)
 	for (INT32 i = 0; i < 2; i++)
 	{
 		game_key->pressed = gamekeydown[urGameControl[key][i]];
-		if (game_key->pressed)
-			break;
+		if (game_key->pressed) break;
 	}
-
 	if (!game_key->pressed)
 	{
-		// Reset everything if not tapping.
+		// -- Reset everything if not tapping.
 		game_key->keyDown = 0;
 		game_key->tapReady = false;
 		game_key->held = false;
@@ -76,12 +75,9 @@ void STAR_G_KeyResponder(UINT8 player, UINT8 key)
 //
 boolean STAR_G_KeyPressed(UINT8 player, UINT8 key)
 {
-	star_gamekey_t *game_key;
-
 	STAR_G_KeyResponder(player, key);
-	game_key = &STAR_GameKey[player][key];
-
-	return (!game_key->held && game_key->pressed);
+	const star_gamekey_t *game_key = &STAR_GameKey[player][key];
+	return (game_key->pressed && !game_key->held);
 }
 
 //
@@ -90,11 +86,8 @@ boolean STAR_G_KeyPressed(UINT8 player, UINT8 key)
 //
 boolean STAR_G_KeyHeld(UINT8 player, UINT8 key)
 {
-	star_gamekey_t *game_key;
-
 	STAR_G_KeyResponder(player, key);
-	game_key = &STAR_GameKey[player][key];
-
+	const star_gamekey_t *game_key = &STAR_GameKey[player][key];
 	return (game_key->pressed || game_key->held);
 }
 

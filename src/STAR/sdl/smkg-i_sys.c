@@ -264,16 +264,23 @@ void TSoURDt3rd_I_Pads_RumbleTriggers(INT32 device_id, fixed_t left_strength, fi
 
 void TSoURDt3rd_I_CursedWindowMovement(int xd, int yd)
 {
+	SDL_SetWindowPosition(window, window_x + xd, window_y + yd);
+}
+
+void TSoURDt3rd_I_QuakeWindow(int xd, int yd)
+{
 	if (!cv_tsourdt3rd_video_sdl_window_shaking.value || cv_fullscreen.value || (window_x == -1 || window_y == -1))
 	{
+#if 0
 		SDL_SetWindowPosition(window,
 			SDL_WINDOWPOS_CENTERED_DISPLAY(SDL_GetWindowDisplayIndex(window)),
 			SDL_WINDOWPOS_CENTERED_DISPLAY(SDL_GetWindowDisplayIndex(window))
 		);
+#endif
 		SDL_GetWindowPosition(window, &window_x, &window_y);
 		return;
 	}
-	SDL_SetWindowPosition(window, window_x + xd, window_y + yd);
+	TSoURDt3rd_I_CursedWindowMovement(xd, yd);
 }
 
 //
@@ -521,9 +528,9 @@ void TSoURDt3rd_I_ShowErrorMessageBox(const char *messagefordevelopers, const SD
 			"The information may also be useful for server hosts and add-on creators too.\n"
 			"\n"
 			"To share any info regarding this crash, there are several things you can do:\n"
-			"\t- Visit the SRB2 Discord, using the button below.\n"
-			"\t- Reach out to StarManiaKG on Discord, by sending them a message.\n"
-			"\t- Visit TSoURDt3rd's message board post, using the button below.\n"
+			" - Visit the SRB2 Discord, using the button below.\n"
+			" - Reach out to StarManiaKG on Discord, by sending them a message.\n"
+			" - Visit TSoURDt3rd's message board post, using the button below.\n"
 			"\n"
 			"See you next game!\n"
 			"%s"

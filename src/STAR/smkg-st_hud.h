@@ -51,10 +51,10 @@ void TSoURDt3rd_Easter_ST_drawEggs(void);
 void TSoURDt3rd_ST_AskToJoinEnvelope(void);
 #endif
 
-void TSoURDt3rd_SCR_CalculateTPSRate(void);
-void TSoURDt3rd_SCR_DisplayTPSRate(void);
+void TSoURDt3rd_SCR_CalculateTPS(void);
+void TSoURDt3rd_SCR_DisplayTPS(void);
 
-INT32 TSoURDt3rd_SCR_SetPingHeight(void);
+INT32 TSoURDt3rd_SCR_SetPingHeight(INT32 *y);
 
 void TSoURDt3rd_ST_ObjectTracking(player_t *player, tsourdt3rd_trackingResult_t *result, const vector3_t *point, boolean object_reverse);
 

@@ -44,6 +44,7 @@ void TSoURDt3rd_I_Pads_Rumble(INT32 device_id, fixed_t low_strength, fixed_t hig
 void TSoURDt3rd_I_Pads_RumbleTriggers(INT32 device_id, fixed_t left_strength, fixed_t right_strength, tic_t duration_tics);
 
 void TSoURDt3rd_I_CursedWindowMovement(int xd, int yd);
+void TSoURDt3rd_I_QuakeWindow(int xd, int yd);
 
 boolean TSoURDt3rd_I_CanOpenURL(void);
 void TSoURDt3rd_I_OpenURL(const char *data);

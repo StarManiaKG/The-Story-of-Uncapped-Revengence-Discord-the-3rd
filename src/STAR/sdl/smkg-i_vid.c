@@ -1,17 +1,13 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file
-/// \brief Unique TSoURDt3rd gamepad routines for SDL
-
-#ifdef _MSC_VER
-#pragma warning(disable : 4214 4244)
-#endif
+/// \brief Unique TSoURDt3rd device routines for SDL
 
 #ifdef _MSC_VER
 #include <windows.h>
@@ -19,10 +15,13 @@
 #endif
 
 #include "../smkg-i_sys.h"
-#include "../core/smkg-p_pads.h"
+
 #include "../smkg-cvars.h"
 #include "../smkg-st_hud.h"
 #include "../star_vars.h" // STAR_CONS_Printf() //
+#include "../core/smkg-p_pads.h"
+#include "../core/smkg-s_jukebox.h"
+#include "../menus/smkg-m_sys.h"
 
 #include "../../i_system.h"
 #include "../../p_local.h"
@@ -73,33 +72,44 @@ void TSoURDt3rd_I_OpenURL(const char *data)
 		SDL_OpenURL(data);
 }
 
+// ====================================
+// EVENTS
+// ====================================
+
 static void Impl_TSoURDt3rd_HandleWindowEvent(SDL_WindowEvent evt)
 {
 	static SDL_bool mousefocus = SDL_TRUE;
 	static SDL_bool kbfocus = SDL_TRUE;
+	SDL_bool get_window_pos = SDL_FALSE;
 
 	switch (evt.event)
 	{
 		case SDL_WINDOWEVENT_ENTER:
 			mousefocus = SDL_TRUE;
+			get_window_pos = SDL_TRUE;
 			break;
 		case SDL_WINDOWEVENT_LEAVE:
 			mousefocus = SDL_FALSE;
-			SDL_GetWindowPosition(window, &window_x, &window_y);
+			get_window_pos = SDL_TRUE;
 			break;
 		case SDL_WINDOWEVENT_FOCUS_GAINED:
 			kbfocus = SDL_TRUE;
 			mousefocus = SDL_TRUE;
+			get_window_pos = SDL_TRUE;
 			break;
 		case SDL_WINDOWEVENT_FOCUS_LOST:
 			kbfocus = SDL_FALSE;
 			mousefocus = SDL_FALSE;
-			SDL_GetWindowPosition(window, &window_x, &window_y);
+			get_window_pos = SDL_TRUE;
 			break;
 		case SDL_WINDOWEVENT_MOVED:
 		case SDL_WINDOWEVENT_MAXIMIZED:
 			window_x = evt.data1;
 			window_y = evt.data2;
+			break;
+		case SDL_WINDOWEVENT_RESIZED:
+		case SDL_WINDOWEVENT_RESTORED:
+			get_window_pos = SDL_TRUE;
 			break;
 		default:
 			break;
@@ -113,6 +123,15 @@ static void Impl_TSoURDt3rd_HandleWindowEvent(SDL_WindowEvent evt)
 	{
 		TSoURDt3rd_P_Pads_PauseDeviceRumble(NULL, P_AutoPause(), P_AutoPause());
 	}
+
+	if (get_window_pos)
+	{
+		SDL_GetWindowPosition(window, &window_x, &window_y);
+	}
+
+#ifdef HAVE_DISCORDSUPPORT
+	DISC_UpdatePresence();
+#endif
 }
 
 static void Impl_TSoURDt3rd_Pads_Added(void)
@@ -125,11 +144,11 @@ static void Impl_TSoURDt3rd_Pads_Added(void)
 		TSoURDt3rd_ControllerInfo *controller_data = &tsourdt3rd_controllers[user];
 		INT32 device_id = (tsourdt3rd_joystick_index[user]->value - 1);
 
-		SDL_GameController *controller = SDL_GameControllerOpen(device_id);
-		SDL_Joystick *joystick = SDL_GameControllerGetJoystick(controller);
-
 		boolean controller_rumble_supported, controller_trigger_rumble_supported;
 		boolean joystick_rumble_supported, joystick_trigger_rumble_supported;
+
+		SDL_GameController *controller = SDL_GameControllerOpen(device_id);
+		SDL_Joystick *joystick = SDL_GameControllerGetJoystick(controller);
 
 		if (controller == NULL)// || joystick == NULL)
 		{
@@ -167,7 +186,7 @@ static void Impl_TSoURDt3rd_Pads_Added(void)
 		TSoURDt3rd_P_Pads_ResetDeviceRumble(user);
 		TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor(user);
 
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "Gamepad device (%s) has been added for Player %d.\n",
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE, "Gamepad device (%s) has been added for Player %d.\n",
 			controller_data->name,
 			controller_data->real_id
 		);
@@ -189,7 +208,7 @@ static void Impl_TSoURDt3rd_Pads_Removed(void)
 			// The controller is still connected, dude!
 			continue;
 		}
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "Gamepad device (%s) has been removed for Player %d.\n",
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE, "Gamepad device (%s) has been removed for Player %d.\n",
 			controller_data->name,
 			controller_data->real_id
 		);
@@ -237,11 +256,21 @@ void TSoURDt3rd_I_GetEvent(SDL_Event *evt)
 //
 void TSoURDt3rd_I_FinishUpdate(void)
 {
+	TSoURDt3rd_SCR_CalculateTPS();
+
+	if (cv_tsourdt3rd_video_showtps.value)
+		TSoURDt3rd_SCR_DisplayTPS();
+
 #ifdef HAVE_DISCORDSUPPORT
 	if (discordRequestList != NULL)
 		TSoURDt3rd_ST_AskToJoinEnvelope();
 #endif
 
-	if (cv_tsourdt3rd_video_showtps.value)
-		TSoURDt3rd_SCR_DisplayTpsRate();
+	TSoURDt3rd_Jukebox_ST_drawJukebox();
+
+#if 0
+	// STAR STUFF: don't forget to draw menu messages! //
+	/// \todo either remove or keep idk
+	TSoURDt3rd_M_DrawMenuMessageOnTitle(1);
+#endif
 }
