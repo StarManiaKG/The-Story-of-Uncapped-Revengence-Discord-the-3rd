@@ -44,10 +44,9 @@
 #include "lua_hud.h"
 #include "lua_hook.h"
 
-
 // TSoURDt3rd
-#include "STAR/smkg-cvars.h" // cv_tsourdt3rd_game_startup_intro & cv_tsourdt3rd_savefiles_storesavesinfolders //
-#include "STAR/menus/smkg-m_sys.h"
+#include "STAR/smkg-cvars.h" // cv_tsourdt3rd_game_startup_intro //
+#include "STAR/menus/smkg-m_sys.h" // TSoURDt3rd_M_OverwriteResponder //
 #include "STAR/misc/smkg-m_intro.h"
 
 // Stage of animation:
@@ -346,10 +345,7 @@ void F_StartIntro(void)
 	S_StopMusic();
 	S_StopSounds();
 
-#if 1
-	// STAR STUFF: sets intro scene times for us //
-	STAR_F_StartIntro(introscenetime);
-#endif
+	STAR_F_StartIntro(introscenetime); // STAR STUFF: sets intro scene times for us //
 
 	if (introtoplay)
 	{
@@ -621,15 +617,12 @@ void F_IntroDrawer(void)
 
 	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 
-#if 1
-	// STAR STUFF: pure fat intro? do unique stuff for that instead! //
 	if (cv_tsourdt3rd_game_startup_intro.value)
 	{
-		boolean leave_func = STAR_F_PureFatDrawer(stjrintro, background, (patch = NULL), intro_scenenum, bgxoffs);
-		if (leave_func)
+		// STAR STUFF: pure fat intro? custom intro? do unique stuff for that instead! //
+		if (STAR_F_PureFatDrawer(stjrintro, background, (patch = NULL), intro_scenenum, bgxoffs))
 			return;
 	}
-#endif
 
 	if (background)
 	{
@@ -876,15 +869,12 @@ void F_IntroTicker(void)
 	if (keypressed)
 		keypressed = false;
 
-#if 1
-	// STAR STUFF: set our custom pure fat wipe for us //
 	if (cv_tsourdt3rd_game_startup_intro.value)
 	{
-		boolean leave_func = STAR_F_PureFatTicker(intro_scenenum, intro_curtime, animtimer, timetonext);
-		if (leave_func)
+		// STAR STUFF: set our custom pure fat wipe for us //
+		if (STAR_F_PureFatTicker(intro_scenenum, intro_curtime, animtimer, timetonext))
 			return;
 	}
-#endif
 
 	wipestyleflags = WSF_CROSSFADE;
 
@@ -1053,11 +1043,11 @@ boolean F_IntroResponder(event_t *event)
 			break;
 	}
 
-#if 1
-	// STAR STUFF: CHECK FOR ANY EVENTS WE SHOULD PRIORITIZE //
-	if (TSoURDt3rd_M_OverwriteIntroResponder(event))
+	if (TSoURDt3rd_M_OverwriteResponder(event))
+	{
+		// STAR STUFF: CHECK FOR ANY EVENTS WE SHOULD PRIORITIZE //
 		return false;
-#endif
+	}
 
 	if (event->type != ev_keydown && key != 301)
 		return false;
@@ -1725,11 +1715,13 @@ void F_GameEvaluationTicker(void)
 		G_SaveGameData(clientGamedata);
 	}
 
-#if 1
-	// STAR STUFF: play our cool finale music! //
 	if (finalecount == 4*TICRATE)
-		S_ChangeMusicInternal(TSoURDt3rd_DetermineLevelMusic(), false);
-#endif
+	{
+		// STAR STUFF: play our cool finale music! //
+		const char *music = TSoURDt3rd_DetermineLevelMusic();
+		if (music != NULL)
+			S_ChangeMusicInternal(music, false);
+	}
 }
 
 #undef SPARKLLOOPTIME
@@ -2288,11 +2280,7 @@ void F_StartGameEnd(void)
 void F_GameEndDrawer(void)
 {
 	// this function does nothing
-
-#if 1
-	// STAR STUFF: ....except this (WORLD 7 SUPER PAPER MARIO) //
-	TSoURDt3rd_GameEnd(&timetonext);
-#endif
+	TSoURDt3rd_GameEnd(&timetonext); // STAR STUFF: ....except this (WORLD 7 SUPER PAPER MARIO) //
 }
 
 //
@@ -2701,12 +2689,6 @@ void F_TitleScreenDrawer(void)
 	fixed_t sc = FRACUNIT / max(1, curttscale);
 	INT32 whitefade = 0;
 	UINT8 *whitecol[2] = {NULL, NULL};
-
-#if 1
-	// STAR STUFF: don't forget to draw menu messages! //
-	/// \todo either remove or keep idk
-	TSoURDt3rd_M_DrawMenuMessageOnTitle(finalecount);
-#endif
 
 	if (modeattacking)
 		return; // We likely came here from retrying. Don't do a damn thing.
@@ -3460,12 +3442,6 @@ void F_TitleScreenDrawer(void)
 			break;
 	}
 
-#if 0
-	// STAR STUFF: don't forget to draw menu messages! //
-	/// \todo either remove or keep idk
-	TSoURDt3rd_M_DrawMenuMessageOnTitle(finalecount);
-#endif
-
 luahook:
 	// The title drawer is sometimes called without first being started
 	// In order to avoid use-before-initialization crashes, let's check and
@@ -3495,12 +3471,6 @@ void F_MenuPresTicker(void)
 // (no longer) De-Demo'd Title Screen
 void F_TitleScreenTicker(boolean run)
 {
-#if 1
-	// STAR STUFF: DRRR: message menu routine //
-	/// \todo maybe move somewhere else?
-	TSoURDt3rd_M_MenuMessageShouldTick(run);
-#endif
-
 	if (run)
 		finalecount++;
 
