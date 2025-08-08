@@ -43,8 +43,6 @@ extern fixed_t rendertimefrac;
 // Same as rendertimefrac, but not suspended when the game is paused
 // Ported from Dr.Robotnik's Ring Racers!
 extern fixed_t rendertimefrac_unpaused;
-// Same as rendertimefrac, but IS suspended ONLY when the game is paused
-extern fixed_t rendertimefrac_onlypaused;
 // Evaluated delta tics for this frame (how many tics since the last frame)
 extern fixed_t renderdeltatics;
 // The current render is a new logical tic

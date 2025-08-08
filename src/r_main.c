@@ -43,7 +43,7 @@
 
 // TSoURDt3rd
 #ifdef HAVE_SDL
-#include "STAR/smkg-i_sys.h" // TSoURDt3rd_I_CursedWindowMovement() //
+#include "STAR/smkg-i_sys.h" // TSoURDt3rd_I_QuakeWindow() //
 #endif
 #include "STAR/lights/smkg-coronas.h" // TSoURDt3rd_R_Load_Corona() and other pieces of corona data //
 
@@ -79,7 +79,6 @@ boolean r_renderthings;
 fixed_t rendertimefrac;
 fixed_t renderdeltatics;
 fixed_t rendertimefrac_unpaused;
-fixed_t rendertimefrac_onlypaused;
 boolean renderisnewtic;
 
 //
@@ -1185,7 +1184,7 @@ void R_SetupFrame(player_t *player)
 		quake.y = M_RandomRange(-ir,ir);
 		quake.z = M_RandomRange(-ir,ir);
 #ifdef HAVE_SDL
-		TSoURDt3rd_I_CursedWindowMovement(FixedInt(quake.x), FixedInt(quake.y));
+		TSoURDt3rd_I_QuakeWindow(FixedInt(quake.x), FixedInt(quake.y));
 #endif
 	}
 	else if (!ispaused)

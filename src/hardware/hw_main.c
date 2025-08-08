@@ -46,6 +46,7 @@
 #include "../p_slopes.h"
 
 // TSoURDt3rd
+#include "../STAR/smkg-cvars.h"
 #include "../STAR/lights/smkg-coronas.h" // corona data //
 
 // ==========================================================================
@@ -630,8 +631,28 @@ static void HWR_RenderPlane(subsector_t *subsector, extrasubsector_t *xsub, bool
 					SETUP3DVERT((&horizonpts[4]), vx, vy);
 					horizonpts[4].y = gl_viewz;
 
+#if 0
+#ifdef ALAM_LIGHTING
+					// add here code for dynamic lighting on planes
+					HWR_PlaneLighting(horizonpts, 6, PolyFlags, shader);
+
+					// SRB2CBTODO: dynamic lighting on planes, polyobjects too
+					//HWR_RenderFloorSplat(horizonpts, 6);
+#endif
+#endif
+
 					// Draw
 					HWR_ProcessPolygon(&Surf, horizonpts, 6, PolyFlags, shader, true);
+
+#if 1
+#ifdef ALAM_LIGHTING
+					// add here code for dynamic lighting on planes
+					HWR_PlaneLighting(horizonpts, 6, PolyFlags, shader);
+
+					// SRB2CBTODO: dynamic lighting on planes, polyobjects too
+					//HWR_RenderFloorSplat(horizonpts, 6);
+#endif
+#endif
 				}
 			}
 		}
@@ -640,7 +661,6 @@ static void HWR_RenderPlane(subsector_t *subsector, extrasubsector_t *xsub, bool
 #if 1
 #ifdef ALAM_LIGHTING
 	// add here code for dynamic lighting on planes
-	//HWR_PlaneLighting(planeVerts, nrPlaneVerts);
 	HWR_PlaneLighting(planeVerts, nrPlaneVerts, PolyFlags, shader);
 
 	// SRB2CBTODO: dynamic lighting on planes, polyobjects too
@@ -744,9 +764,6 @@ static void HWR_ProjectWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, FBITFIEL
 		shader = SHADER_WALL;
 		blendmode |= PF_ColorMapped;
 	}
-
-	HWR_ProcessPolygon(pSurf, wallVerts, 4, blendmode|PF_Modulated|PF_Occlude, shader, false);
-
 #if 0
 #ifdef ALAM_LIGHTING
 	// STAR STUFF //
@@ -754,13 +771,33 @@ static void HWR_ProjectWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, FBITFIEL
 
 	// Hurdler: TODO: do static lighting using gr_curline->lm
 	// Setup dynamic lighting for walls too
+	//HWR_WallLighting(wallVerts, blendmode|PF_Modulated|PF_Occlude, shader);
 	HWR_WallLighting(wallVerts, blendmode, shader);
 	//HWR_WallShading(wallVerts);
 
 	// Hurdler: for better dynamic light in dark area, we should draw the light first and then the wall all that with the right blending func
 	// SRB2CBTODO: for 'real' dynamic light in dark area, we should draw the light first and then the wall with the right blending func
-	//HWD.pfnDrawPolygon(pSurf, wallVerts, 4, blendmode);
-	//HWR_ProcessPolygon(pSurf, wallVerts, 4, blendmode, shader, false);
+	//HWD.pfnDrawPolygon(pSurf, wallVerts, 4, blendmode|PF_Modulated|PF_Occlude);
+	//HWR_ProcessPolygon(pSurf, wallVerts, 4, blendmode|PF_Modulated|PF_Occlude, shader, false);
+#endif
+#endif
+	HWR_ProcessPolygon(pSurf, wallVerts, 4, blendmode|PF_Modulated|PF_Occlude, shader, false);
+
+#if 1
+#ifdef ALAM_LIGHTING
+	// STAR STUFF //
+	/// \todo: fix
+
+	// Hurdler: TODO: do static lighting using gr_curline->lm
+	// Setup dynamic lighting for walls too
+	//HWR_WallLighting(wallVerts, blendmode|PF_Modulated|PF_Occlude, shader);
+	HWR_WallLighting(wallVerts, blendmode, shader);
+	//HWR_WallShading(wallVerts);
+
+	// Hurdler: for better dynamic light in dark area, we should draw the light first and then the wall all that with the right blending func
+	// SRB2CBTODO: for 'real' dynamic light in dark area, we should draw the light first and then the wall with the right blending func
+	//HWD.pfnDrawPolygon(pSurf, wallVerts, 4, blendmode|PF_Modulated|PF_Occlude);
+	//HWR_ProcessPolygon(pSurf, wallVerts, 4, blendmode|PF_Modulated|PF_Occlude, shader, false);
 #endif
 #endif
 }
@@ -2868,15 +2905,10 @@ static fixed_t HWR_OpaqueFloorAtPos(fixed_t x, fixed_t y, fixed_t z, fixed_t hei
 }
 #endif
 
-#if 0
-static void HWR_DrawDropShadow(mobj_t *thing, fixed_t scale)
-#else
-/** STAR NOTE: i was here for realistic shadow stuff lol
- 	(I.E: cv_tsourdt3rd_game_shadows_realistic, cv_tsourdt3rd_game_shadows_forallobjects, etc. :p) **/
-static void HWR_DrawDropShadow(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale)
-#endif
+static void HWR_DrawDropShadow(gl_vissprite_t *spr, mobj_t *thing)
 {
 	patch_t *gpatch;
+	fixed_t scale = thing->shadowscale;
 	FOutVector shadowVerts[4];
 	FSurfaceInfo sSurf;
 	float fscale; float fx; float fy; float offset;
@@ -2898,6 +2930,16 @@ static void HWR_DrawDropShadow(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale
 	// uncapped/interpolation
 	interpmobjstate_t interp = {0};
 
+	// force shadowscale if needed
+	if (!scale)
+	{
+		if (cv_tsourdt3rd_game_shadows_forallobjects.value)
+			scale = 1*FRACUNIT;
+		else
+			return;
+	}
+
+	// do interpolation
 	if (R_UsingFrameInterpolation() && !paused)
 	{
 		R_InterpolateMobjState(thing, rendertimefrac, &interp);
@@ -2933,18 +2975,10 @@ static void HWR_DrawDropShadow(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale
 	if (alpha >= 255) return;
 	alpha = 255 - alpha;
 
-#if 0
-	if (cv_tsourdt3rd_game_shadows_realistic.value)
-		gpatch = spr->gpatch;
-	else
-		gpatch = (patch_t *)W_CachePatchName("DSHADOW", PU_SPRITE);
-
-	if (!(gpatch && ((GLPatch_t *)gpatch->hardware)->mipmap->format)) return;
-	HWR_GetPatch(gpatch);
-#else
 	if (cv_tsourdt3rd_game_shadows_realistic.value)
 	{
 		gpatch = spr->gpatch;
+		if (!(gpatch && ((GLPatch_t *)gpatch->hardware)->mipmap->format)) return;
 		HWR_GetMappedPatch(gpatch, spr->colormap);
 	}
 	else
@@ -2953,7 +2987,6 @@ static void HWR_DrawDropShadow(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale
 		if (!(gpatch && ((GLPatch_t *)gpatch->hardware)->mipmap->format)) return;
 		HWR_GetPatch(gpatch);
 	}
-#endif
 
 	scalemul = FixedMul(FRACUNIT - floordiff/640, scale);
 	scalemul = FixedMul(scalemul, (interp.radius*2) / gpatch->height);
@@ -2961,6 +2994,19 @@ static void HWR_DrawDropShadow(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale
 	fscale = FIXED_TO_FLOAT(scalemul);
 	fx = FIXED_TO_FLOAT(interp.x);
 	fy = FIXED_TO_FLOAT(interp.y);
+
+#if 1
+#if 0
+	float spritexscale = spr->spritexscale;
+	float spriteyscale = spr->spriteyscale;
+	fixed_t this_xscale; = spritexscale * this_scale;
+	fixed_t this_yscale = spriteyscale * this_scale;
+	this_scale = 
+#endif
+	if (thing->skin && ((skin_t *)thing->skin)->flags & SF_HIRES)
+		//this_scale *= FIXED_TO_FLOAT(((skin_t *)thing->skin)->highresscale);
+		scalemul /= FIXED_TO_FLOAT(((skin_t *)thing->skin)->highresscale);
+#endif
 
 	//  3--2
 	//  | /|
@@ -3017,6 +3063,12 @@ static void HWR_DrawDropShadow(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale
 	}
 	//else
 		//floorheight = FixedInt(thing->z - mobjfloor);
+#endif
+
+#if 1
+	// The shadow is falling ABOVE it's mobj? Don't draw it, then!
+	if (thing->z < groundz)
+		return;
 #endif
 
 	shadowVerts[2].x = shadowVerts[3].x = fx + offset;
@@ -3109,7 +3161,6 @@ static void HWR_DrawDropShadow(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale
 	{
 		float oldx = shadowVerts[i].x;
 		float oldy = shadowVerts[i].z;
-
 		// STAR NOTE: Modifying this allows for cool realistic shadow positions! //
 		if (!cv_tsourdt3rd_game_shadows_realistic.value || cv_tsourdt3rd_game_shadows_positioning.value)
 		{
@@ -3146,7 +3197,7 @@ static void HWR_DrawDropShadow(gl_vissprite_t *spr, mobj_t *thing, fixed_t scale
 	shadowVerts[3].t = shadowVerts[2].t = 0;
 	shadowVerts[0].t = shadowVerts[1].t = ((GLPatch_t *)gpatch->hardware)->max_t;
 
-	// Flip realistic shadows please
+	// STAR NOTE: Flip realistic shadows please //
 	if (cv_tsourdt3rd_game_shadows_realistic.value)
 	{
 		if (spr->flip)
@@ -4726,73 +4777,51 @@ static void HWR_DrawSprites(void)
 	for (i = 0; i < gl_visspritecount; i++)
 	{
 		gl_vissprite_t *spr = gl_vsprorder[i];
+#if 0
+#ifdef ALAM_LIGHTING
+		// dynamic lighting
+		HWR_DL_AddLightSprite(spr);
+#endif
+#endif
 		if (spr->bbox)
 			HWR_DrawBoundingBox(spr);
 		else if (spr->precip)
 			HWR_DrawPrecipitationSprite(spr);
 		else
 		{
-#if 0
-			if (spr->mobj && spr->mobj->shadowscale && cv_shadow.value && !skipshadow)
+			if (spr->mobj && cv_shadow.value)
 			{
-				HWR_DrawDropShadow(spr->mobj, spr->mobj->shadowscale);
-			}
-#else
-			/** STAR NOTE: i was here for realistic shadow stuff lol
- 				(I.E: cv_tsourdt3rd_game_shadows_realistic, cv_tsourdt3rd_game_shadows_forallobjects, etc. :p) **/
-
-			if (spr->mobj && (spr->mobj->shadowscale || cv_tsourdt3rd_game_shadows_forallobjects.value))
-			{
-				if (cv_shadow.value && (!skipshadow || cv_tsourdt3rd_game_shadows_realistic.value))
+				if (!skipshadow || cv_tsourdt3rd_game_shadows_realistic.value)
 				{
-					fixed_t shadow_val = (spr->mobj->shadowscale ? spr->mobj->shadowscale : 1*FRACUNIT);
-					HWR_DrawDropShadow(spr, spr->mobj, shadow_val);
+					HWR_DrawDropShadow(spr, spr->mobj);
 				}
-			}
-#endif
-
-			if ((spr->mobj->flags2 & MF2_LINKDRAW) && spr->mobj->tracer)
-			{
-				// If this linkdraw sprite is behind a sprite that has a shadow,
-				// then that shadow has to be drawn first, otherwise the shadow ends up on top of
-				// the linkdraw sprite because the linkdraw sprite does not modify the z-buffer.
-				// The !skipshadow check is there in case there are multiple linkdraw sprites connected
-				// to the same tracer, so the tracer's shadow only gets drawn once.
-#if 0
-				if (cv_shadow.value && !skipshadow && spr->dispoffset < 0 && spr->mobj->tracer->shadowscale)
+				if ((spr->mobj->flags2 & MF2_LINKDRAW) && spr->mobj->tracer)
 				{
-					HWR_DrawDropShadow(spr->mobj->tracer, spr->mobj->tracer->shadowscale);
-					skipshadow = true;
-					// The next sprite in this loop should be either another linkdraw sprite or the tracer.
-					// When the tracer is inevitably encountered, skipshadow will cause it's shadow
-					// to get skipped and skipshadow will get set to false by the 'else' clause below.
-				}
-#else
-				/** STAR NOTE: i was here for realistic shadow stuff lol
- 					(I.E: cv_tsourdt3rd_game_shadows_realistic, cv_tsourdt3rd_game_shadows_forallobjects, etc. :p) **/
-
-				if (spr->mobj->tracer->shadowscale || cv_tsourdt3rd_game_shadows_forallobjects.value)
-				{
-					if (cv_shadow.value && !skipshadow && spr->dispoffset < 0)
+					// If this linkdraw sprite is behind a sprite that has a shadow,
+					// then that shadow has to be drawn first, otherwise the shadow ends up on top of
+					// the linkdraw sprite because the linkdraw sprite does not modify the z-buffer.
+					// The !skipshadow check is there in case there are multiple linkdraw sprites connected
+					// to the same tracer, so the tracer's shadow only gets drawn once.
+					if (!skipshadow && spr->dispoffset < 0)
 					{
-						fixed_t shadow_val = (spr->mobj->tracer->shadowscale ? spr->mobj->tracer->shadowscale : 1*FRACUNIT);
-						HWR_DrawDropShadow(spr, spr->mobj->tracer, shadow_val);
+						HWR_DrawDropShadow(spr, spr->mobj->tracer);
 						skipshadow = true;
 						// The next sprite in this loop should be either another linkdraw sprite or the tracer.
 						// When the tracer is inevitably encountered, skipshadow will cause it's shadow
 						// to get skipped and skipshadow will get set to false by the 'else' clause below.
 					}
 				}
-#endif
-			}
-			else
-			{
-				skipshadow = false;
+				else
+				{
+					skipshadow = false;
+				}
 			}
 
+#if 1
 #ifdef ALAM_LIGHTING
 			// dynamic lighting
 			HWR_DL_AddLightSprite(spr);
+#endif
 #endif
 
 			if (spr->mobj && spr->mobj->skin && spr->mobj->sprite == SPR_PLAY)
@@ -4815,6 +4844,12 @@ static void HWR_DrawSprites(void)
 						HWR_DrawSprite(spr);
 				}
 			}
+#if 0
+#ifdef ALAM_LIGHTING
+			// dynamic lighting
+			HWR_DL_AddLightSprite(spr);
+#endif
+#endif
 		}
 	}
 	HWD.pfnSetSpecialState(HWD_SET_MODEL_LIGHTING, 0);
@@ -5887,7 +5922,7 @@ static void HWR_SetTransformAiming(FTransform *trans, player_t *player, boolean 
 //
 static void HWR_SetShaderState(void)
 {
-	HWD.pfnSetSpecialState(HWD_SET_SHADERS, (INT32)HWR_UseShader());
+	HWD.pfnSetSpecialState(HWD_SET_SHADERS, HWR_UseShader());
 }
 
 static void HWR_SetupView(player_t *player, INT32 viewnumber, float fpov, boolean skybox)
@@ -6048,9 +6083,9 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 	HWR_DrawSprites();
 
 #if 0
-#ifdef NEWCORONAS
-	//Hurdler: they must be drawn before translucent planes, what about gl fog?
-	HWR_DrawCoronas();
+#ifdef ALAM_LIGHTING
+	// Hurdler: they must be drawn before translucent planes, what about gl fog?
+	HWR_DL_Draw_Coronas();
 #endif
 #endif
 
@@ -6070,6 +6105,13 @@ void HWR_RenderSkyboxView(INT32 viewnumber, player_t *player)
 #if 0
 		// calculate translate position
 		HWR_set_view_transform();
+#endif
+#endif
+
+#if 0
+#ifdef ALAM_LIGHTING
+	// Hurdler: they must be drawn before translucent planes, what about gl fog?
+	HWR_DL_Draw_Coronas();
 #endif
 #endif
 
@@ -6197,12 +6239,6 @@ void HWR_RenderPlayerView(INT32 viewnumber, player_t *player)
 	PS_STOP_TIMING(ps_hw_spritedrawtime);
 
 #if 0
-#ifdef NEWCORONAS
-	//Hurdler: they must be drawn before translucent planes, what about gl fog?
-	HWR_DrawCoronas();
-#endif
-#endif
-#if 0
 #ifdef ALAM_LIGHTING
 	// Hurdler: they must be drawn before translucent planes, what about gl fog?
 	HWR_DL_Draw_Coronas();
@@ -6303,7 +6339,7 @@ void HWR_LoadLevel(void)
 #ifdef ALAM_LIGHTING
 	// BP: reset light between levels (we draw preview frame lights on current frame)
 	HWR_Reset_Lights();
-	HWR_Create_StaticLightmaps();
+	//HWR_DL_CreateStaticLightmaps();
 #endif
 
 	HWR_CreatePlanePolygons((INT32)numnodes - 1);
@@ -6471,7 +6507,9 @@ void HWR_Startup(void)
 		HWR_InitMapTextures();
 		HWR_InitModels();
 #ifdef ALAM_LIGHTING
-		HWR_Init_Light();
+		/// \todo - STAR TODO - custom light patches in the future ///
+		HWR_Init_Light("CORONA");
+		//HWR_Init_Light("CORONAD");
 #endif
 
 		gl_shadersavailable = HWR_InitShaders();
@@ -6599,9 +6637,25 @@ void HWR_RenderWall(FOutVector *wallVerts, FSurfaceInfo *pSurf, FBITFIELD blend,
 		blendmode |= PF_Fog;
 
 	blendmode |= PF_Modulated;	// No PF_Occlude means overlapping (incorrect) transparency
+#if 0
+#ifdef ALAM_LIGHTING
+	// STAR STUFF //
+	/// \todo: fix
+
+	// Hurdler: TODO: do static lighting using gr_curline->lm
+	// Setup dynamic lighting for walls too
+	HWR_WallLighting(wallVerts, blendmode, shader);
+	//HWR_WallShading(wallVerts);
+
+	// Hurdler: for better dynamic light in dark area, we should draw the light first and then the wall all that with the right blending func
+	// SRB2CBTODO: for 'real' dynamic light in dark area, we should draw the light first and then the wall with the right blending func
+	//HWD.pfnDrawPolygon(pSurf, wallVerts, 4, blendmode);
+	//HWR_ProcessPolygon(pSurf, wallVerts, 4, blendmode, shader, false);
+#endif
+#endif
 	HWR_ProcessPolygon(pSurf, wallVerts, 4, blendmode, shader, false);
 
-#if 0
+#if 1
 #ifdef ALAM_LIGHTING
 	// STAR STUFF //
 	/// \todo: fix

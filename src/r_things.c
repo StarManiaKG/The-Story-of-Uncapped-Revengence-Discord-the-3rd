@@ -1473,12 +1473,11 @@ static void R_SkewShadowSprite(
 	*shadowskew = xslope;
 }
 
-/** STAR NOTE: i was here for realistic shadow stuff lol
- 	(I.E: cv_tsourdt3rd_game_shadows_realistic, cv_tsourdt3rd_game_shadows_forallobjects, etc. :p) **/
-static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, fixed_t tx, fixed_t tz)
+static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t tx, fixed_t tz)
 {
 	vissprite_t *shadow;
 	patch_t *patch;
+	fixed_t scale = thing->shadowscale;
 	fixed_t xscale, yscale, shadowxscale, shadowyscale, shadowskew, x1, x2;
 	INT32 heightsec, phs;
 	fixed_t scalemul;
@@ -1487,12 +1486,23 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	fixed_t groundz;
 	pslope_t *groundslope;
 	boolean isflipped = thing->eflags & MFE_VERTICALFLIP;
-	interpmobjstate_t interp = {0};
+	float shadowyscalef;
+	fixed_t newshadowtexturemid;
+	interpmobjstate_t interp = {0}; // uncapped/interpolation
+
+	// force shadowscale if needed
+	if (!scale)
+	{
+		if (cv_tsourdt3rd_game_shadows_forallobjects.value)
+			scale = 1*FRACUNIT;
+		else
+			return;
+	}
 
 	groundz = R_GetShadowZ(thing, &groundslope);
-
 	if (abs(groundz-viewz)/tz > 4) return; // Prevent stretchy shadows and possible crashes
 
+	// do interpolation
 	if (R_UsingFrameInterpolation() && !paused)
 	{
 		R_InterpolateMobjState(thing, rendertimefrac, &interp);
@@ -1528,22 +1538,12 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 
 	scalemul = FixedMul(FRACUNIT - floordiff/640, scale);
 
-#if 0
-	patch = W_CachePatchName("DSHADOW", PU_SPRITE);
-#else
-	// STAR NOTE: needed for our unique shadows :) //
 	patch = (cv_tsourdt3rd_game_shadows_realistic.value ? vis->patch : W_CachePatchName("DSHADOW", PU_SPRITE));
-#endif
 	xscale = FixedDiv(projection, tz);
 	yscale = FixedDiv(projectiony, tz);
 	shadowxscale = FixedMul(interp.radius*2, scalemul);
 	shadowyscale = FixedMul(FixedMul(interp.radius*2, scalemul), FixedDiv(abs(groundz - viewz), tz));
-#if 0
-	shadowyscale = min(shadowyscale, shadowxscale) / patch->height;
-#else
-	// STAR NOTE: needed for our unique shadows :) //
 	shadowyscale = (cv_tsourdt3rd_game_shadows_realistic.value ? (min(shadowyscale, shadowxscale) / patch->height) : patch->height);
-#endif
 	shadowxscale /= patch->width;
 	shadowskew = 0;
 
@@ -1559,6 +1559,8 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	if (x2 < 0 || x2 <= x1) return;
 
 	if (shadowyscale < FRACUNIT/patch->height) return; // fix some crashes?
+	shadowyscalef = (FIXED_TO_FLOAT(shadowyscale) * (cv_tsourdt3rd_game_shadows_realistic.value ? 1.15f : 1.0f));
+	newshadowtexturemid = FLOAT_TO_FIXED(shadowyscalef);
 
 	shadow = R_NewVisSprite();
 	shadow->patch = patch;
@@ -1575,12 +1577,7 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t scale, 
 	shadow->gy = interp.y;
 	shadow->gzt = (isflipped ? shadow->pzt : shadow->pz) + patch->height * shadowyscale / 2;
 	shadow->gz = shadow->gzt - patch->height * shadowyscale;
-#if 0
-	shadow->texturemid = FixedMul(interp.scale, FixedDiv(shadow->gzt - viewz, shadowyscale));
-#else
-	// STAR NOTE: needed for our unique shadows :) //
-	shadow->texturemid = FixedMul(interp.scale, FixedDiv(shadow->gzt - viewz, shadowyscale * (cv_tsourdt3rd_game_shadows_realistic.value ? 1.15 : 1)));
-#endif
+	shadow->texturemid = FixedMul(interp.scale, FixedDiv(shadow->gzt - viewz, newshadowtexturemid));
 	if (thing->skin && ((skin_t *)thing->skin)->flags & SF_HIRES)
 		shadow->texturemid = FixedMul(shadow->texturemid, ((skin_t *)thing->skin)->highresscale);
 	shadow->scalestep = 0;
@@ -2504,19 +2501,8 @@ static void R_ProjectSprite(mobj_t *thing)
 	if (thing->subsector->sector->numlights && !(shadowdraw || splat))
 		R_SplitSprite(vis);
 
-#if 0
-	if (oldthing->shadowscale && cv_shadow.value)
-		R_ProjectDropShadow(oldthing, vis, oldthing->shadowscale, basetx, basetz);
-#else
-	if ((oldthing->shadowscale || cv_tsourdt3rd_game_shadows_forallobjects.value) && cv_shadow.value)
-		R_ProjectDropShadow(oldthing, vis,
-			(cv_tsourdt3rd_game_shadows_forallobjects.value ?
-				(oldthing->shadowscale ? oldthing->shadowscale : 1*FRACUNIT) :
-				oldthing->shadowscale),
-			basetx,
-			basetz
-		);
-#endif
+	if (cv_shadow.value)
+		R_ProjectDropShadow(oldthing, vis, basetx, basetz);
 
 	R_ProjectBoundingBox(oldthing, vis);
 

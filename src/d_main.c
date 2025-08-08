@@ -758,12 +758,7 @@ void D_SRB2Loop(void)
 	/* Smells like a hack... Don't fade Sonic's ass into the title screen. */
 	if (gamestate != GS_TITLESCREEN)
 	{
-#if 0
-		gstartuplumpnum = W_CheckNumForPatchName("STARTUP");
-#else
-		// STAR STUFF: hooray for graphic diversity! //
-		gstartuplumpnum = W_GetNumForPatchName(TSoURDt3rd_CON_DrawStartupScreen());
-#endif
+		gstartuplumpnum = W_GetNumForPatchName(TSoURDt3rd_CON_DrawStartupScreen()); // STAR STUFF: hooray for graphic diversity! //
 		if (gstartuplumpnum == LUMPERROR)
 			gstartuplumpnum = W_GetNumForPatchName("MISSING");
 		V_DrawScaledPatch(0, 0, 0, W_CachePatchNum(gstartuplumpnum, PU_PATCH));
@@ -878,15 +873,12 @@ void D_SRB2Loop(void)
 				rendertimefrac = FRACUNIT;
 			}
 
-			rendertimefrac_onlypaused = (paused ? FRACUNIT : g_time.timefrac);
 			rendertimefrac_unpaused = g_time.timefrac;
 		}
 		else
 		{
 			renderdeltatics = realtics * FRACUNIT;
-			rendertimefrac = FRACUNIT;
-			rendertimefrac_unpaused = FRACUNIT;
-			rendertimefrac_onlypaused = FRACUNIT;
+			rendertimefrac = rendertimefrac_unpaused = FRACUNIT;
 		}
 
 		if (interp || doDisplay)
