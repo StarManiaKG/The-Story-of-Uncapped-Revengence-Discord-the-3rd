@@ -63,7 +63,7 @@ static INT32 TSoURDt3rd_JUKEDEF_CreatePages(char *page_name)
 		}
 		else if (!strnicmp(juke_page->page_name, page_name, TSOURDT3RD_JUKEBOX_MAX_PAGE_NAME))
 		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "JUKEDEF: Page \x82\"%s\"\x80 already exists! I'm not creating a new page\nwith the same exact name as another!\n", page_name);
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "JUKEDEF: Page \x82\"%s\"\x80 already exists!\n", page_name);
 			goto end_function;
 		}
 		juke_page_prev = juke_page;
