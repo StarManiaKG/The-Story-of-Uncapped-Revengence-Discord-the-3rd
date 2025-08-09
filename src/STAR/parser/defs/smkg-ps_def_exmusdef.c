@@ -83,78 +83,31 @@ static const char *const exmusic_identifier_name[] = {
 	"Game Over",
 	NULL
 };
-static const char *const exmusic_identifier_type[TSOURDT3RD_EXMUSIC_NUM_TYPES][TSOURDT3RD_EXMUSIC_MAX_LUMPS] = {
-	[0] = {
-		"",
-		NULL
-	},
-	[1] = {
-		" (Normal)",
-		" (Pinch)",
-		" (Final Boss)",
-		" (Final Boss Pinch)",
-		" (True Final Boss)",
-		" (True Final Boss Pinch)",
-		" (Race) ",
-		NULL
-	},
-	[2] = {
-		" (Normal)",
-		" (Boss)",
-		" (Final Boss)",
-		" (True Final Boss)",
-		NULL
-	},
-	[3] = {
-		"",
-		NULL
-	}
-};
 
 // ------------------------ //
 //        Functions
 // ------------------------ //
 
-static void TSoURDt3rd_EXMUSDEF_CreateSeries(char *series_name, INT32 series_option)
+static void TSoURDt3rd_EXMUSDEF_CreateSeries(char *series_name, char *series_type)
 {
-	tsourdt3rd_exmusic_t **exmusic_def_all = NULL;
-	tsourdt3rd_exmusic_t *exmusic_def = NULL;
-	tsourdt3rd_exmusic_t *exmusic_def_prev = NULL;
-	size_t *exmusic_type_p = NULL;
+	tsourdt3rd_exmusic_t *extype = NULL;
+	tsourdt3rd_exmusic_t *exdef = NULL;
+	tsourdt3rd_exmusic_t *exdef_prev = NULL;
 
-#define EXMusic_CreateNewSeries(series) \
-	exmusic_def_all = tsourdt3rd_global_exmusic_##series; \
-	exmusic_type_p = &tsourdt3rd_num_exmusic_##series##_series;
-
-	switch (series_option)
+	TSoURDt3rd_EXMusic_ReturnType(series_type, extype)
+	if (extype == NULL)
 	{
-		case TSOURDT3RD_EXMUSIC_DEFAULTMAPTRACK:
-			EXMusic_CreateNewSeries(defaultmaptrack)
-			break;
-		case TSOURDT3RD_EXMUSIC_BOSSES:
-			EXMusic_CreateNewSeries(bosses)
-			break;
-		case TSOURDT3RD_EXMUSIC_INTERMISSION:
-			EXMusic_CreateNewSeries(intermission)
-			break;
-		case TSOURDT3RD_EXMUSIC_GAMEOVER:
-			EXMusic_CreateNewSeries(gameover)
-			break;
-		default:
-			goto end_function;
-	}
-	if (exmusic_def_all == NULL)
-	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "EXMUSDEF wasn't properly initialized at startup, so Series \x82\"%s\"\x80 can't be added!\n", series_name);
+		STAR_CONS_Printf(STAR_CONS_DEBUG, "EXMUSDEF wasn't properly initialized at startup, so Series \x82\"%s\"\x80 can't be added!\n", series_name);
 		goto end_function;
 	}
+#if 0
 	exmusic_def = exmusic_def_all[0];
 
 	while (exmusic_def)
 	{
 		if (!strnicmp(exmusic_def->series, series_name, TSOURDT3RD_EXMUSIC_MAX_SERIES_NAME))
 		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "EXMUSDEF: Series \x82\"%s\"\x80 already exists in identifer \x84\"%s\"\x80! I'm not creating a new series\nwith the same exact name as another!\n", exmusic_identifier_name[series_option], series_name);
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "EXMUSDEF: Series \x82\"%s\"\x80 already exists in identifer \x84\"%s\"\x80! I'm not creating a new series\nwith the same exact name as another!\n", exmusic_identifier_name[series_option], series_name);
 			goto end_function;
 		}
 		exmusic_def_prev = exmusic_def;
@@ -173,10 +126,11 @@ static void TSoURDt3rd_EXMUSDEF_CreateSeries(char *series_name, INT32 series_opt
 			exmusic_def_prev->next = exmusic_def;
 		}
 
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_NOTICE, "EXMUSDEF: Created \x84\"%s\"\x80 Series \x82\"%s\"\x80!\n", exmusic_identifier_name[series_option], series_name);
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE, "EXMUSDEF: Created \x84\"%s\"\x80 Series \x82\"%s\"\x80!\n", exmusic_identifier_name[series_option], series_name);
 	}
 
 	exmusic_def_all[(*exmusic_type_p)] = exmusic_def;
+#endif
 	goto end_function;
 
 end_function:
@@ -191,48 +145,33 @@ end_function:
 }
 #undef EXMusic_CreateNewSeries
 
-static void TSoURDt3rd_EXMUSDEF_AddLumpToSeries(char *series_name, const char *lump_name, INT32 lump_option, INT32 lump_type)
+static void TSoURDt3rd_EXMUSDEF_AddLumpToSeries(char *series_name, const char *lump_name, const char *lump_option_string, const char *lump_type_string)
 {
-	tsourdt3rd_exmusic_t **exmusic_def_all = NULL;
-	tsourdt3rd_exmusic_t *exmusic_def = NULL;
+	tsourdt3rd_exmusic_t *extype = NULL;
 	musicdef_t *def = musicdefstart;
 
-	switch (lump_option)
+	TSoURDt3rd_EXMusic_ReturnType(lump_option_string, extype)
+	if (extype == NULL)
 	{
-		case TSOURDT3RD_EXMUSIC_DEFAULTMAPTRACK:
-			exmusic_def_all = tsourdt3rd_global_exmusic_defaultmaptrack;
-			break;
-		case TSOURDT3RD_EXMUSIC_BOSSES:
-			exmusic_def_all = tsourdt3rd_global_exmusic_bosses;
-			break;
-		case TSOURDT3RD_EXMUSIC_INTERMISSION:
-			exmusic_def_all = tsourdt3rd_global_exmusic_intermission;
-			break;
-		case TSOURDT3RD_EXMUSIC_GAMEOVER:
-			exmusic_def_all = tsourdt3rd_global_exmusic_gameover;
-			break;
-		default:
-			goto end_function;
-	}
-	if (exmusic_def_all == NULL)
-	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "EXMUSDEF wasn't properly initialized at startup, so Lump \x82\"%s\"\x80 can't be added!\n", lump_name);
+		STAR_CONS_Printf(STAR_CONS_DEBUG, "EXMUSDEF wasn't properly initialized at startup, so Lump \x82\"%s\"\x80 can't be added!\n", lump_name);
 		goto end_function;
 	}
+
+#if 0
 	exmusic_def = exmusic_def_all[0];
 
 	while (exmusic_def)
 	{
 		if (!strnicmp(exmusic_def->series, series_name, TSOURDT3RD_EXMUSIC_MAX_SERIES_NAME))
 		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "EXMUSDEF: Found Series \x82\"%s\"\x80!\n", series_name);
+			STAR_CONS_Printf(STAR_CONS_DEBUG, "EXMUSDEF: Found Series \x82\"%s\"\x80!\n", series_name);
 			break;
 		}
 		exmusic_def = exmusic_def->next;
 	}
 	if (exmusic_def == NULL)
 	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "EXMUSDEF: Series \x82\"%s\"\x80 doesn't exist! Did you create it beforehand?\n", series_name);
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "EXMUSDEF: Series \x82\"%s\"\x80 doesn't exist! Did you create it beforehand?\n", series_name);
 		goto end_function;
 	}
 
@@ -240,7 +179,7 @@ static void TSoURDt3rd_EXMUSDEF_AddLumpToSeries(char *series_name, const char *l
 	{
 		if (!strnicmp(def->name, lump_name, 7))
 		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_DEBUG, "EXMUSDEF: Found pre-existing music definition for Lump \x82\"%s\"\x80!\n", lump_name);
+			STAR_CONS_Printf(STAR_CONS_DEBUG, "EXMUSDEF: Found pre-existing music definition for Lump \x82\"%s\"\x80!\n", lump_name);
 			break;
 		}
 		def = def->next;
@@ -248,10 +187,11 @@ static void TSoURDt3rd_EXMUSDEF_AddLumpToSeries(char *series_name, const char *l
 	if (def == NULL)
 	{
 		// We couldn't find the series, so let's just return...
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD_ALERT, "EXMUSDEF: Lump \x82\"%s\"\x80 wasn't found! Did you type the name of the lump correct, or create it beforehand?\n", lump_name);
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "EXMUSDEF: Lump \x82\"%s\"\x80 wasn't found! Did you type the name of the lump correct, or create it beforehand?\n", lump_name);
 		goto end_function;
 	}
 
+#if 0
 	switch (lump_option)
 	{
 		case TSOURDT3RD_EXMUSIC_DEFAULTMAPTRACK:
@@ -310,14 +250,16 @@ static void TSoURDt3rd_EXMUSDEF_AddLumpToSeries(char *series_name, const char *l
 		default:
 			goto end_function;
 	}
+#endif
 
 	STAR_CONS_Printf(
-		STAR_CONS_TSOURDT3RD_NOTICE,
+		STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE,
 		"EXMUSDEF: \x84\"%s%s\"\x80 lump \x82\"%s\"\x80 can now be found within series \x82\"%s\"\x80!\n",
-		exmusic_identifier_name[lump_option], exmusic_identifier_type[lump_option][lump_type],
+		lump_option_string, lump_type_string,
 		lump_name, series_name
 	);
 	goto end_function;
+#endif
 
 end_function:
 {
@@ -328,21 +270,18 @@ end_function:
 	}
 	return;
 }
+
 }
 
 boolean TSoURDt3rd_STARParser_EXMUSDEF(tsourdt3rd_starparser_t *script)
 {
-	char *series_name = NULL;
-	INT32 series_option = 0;
-	INT32 lump_option = 0, lump_type = 0;
-
 	switch (TSoURDt3rd_STARParser_ValidTableTerm(script, star_exmusic_term_opt, true))
 	{
 		case star_exmusic_series:
 		{
 			while (script->tkn != NULL)
 			{
-				series_name = malloc(TSOURDT3RD_EXMUSIC_MAX_SERIES_NAME);
+				char *series_name = malloc(TSOURDT3RD_EXMUSIC_MAX_SERIES_NAME);
 				TSoURDt3rd_STARParser_STRLCPY(series_name, script->tkn, TSOURDT3RD_EXMUSIC_MAX_SERIES_NAME);
 
 				if (strcmp(script->val, ":"))
@@ -355,9 +294,12 @@ boolean TSoURDt3rd_STARParser_EXMUSDEF(tsourdt3rd_starparser_t *script)
 					}
 					break;
 				}
+				script->tkn = script->tokenizer->get(script->tokenizer, 0);
 
-				series_option = TSoURDt3rd_STARParser_ValidTableTerm(script, star_exmusic_lump_option_term_opt, false);
-				TSoURDt3rd_EXMUSDEF_CreateSeries(series_name, series_option);
+				char *series_type = malloc(TSOURDT3RD_EXMUSIC_MAX_SERIES_NAME);
+				TSoURDt3rd_STARParser_STRLCPY(series_type, script->tkn, TSOURDT3RD_EXMUSIC_MAX_SERIES_NAME);
+
+				TSoURDt3rd_EXMUSDEF_CreateSeries(series_name, series_type);
 
 				if (!strcmp(script->val, ","))
 				{
@@ -377,8 +319,7 @@ boolean TSoURDt3rd_STARParser_EXMUSDEF(tsourdt3rd_starparser_t *script)
 		{
 			while (script->tkn != NULL)
 			{
-				lump_type = 0;
-				series_name = strdup(script->tkn);
+				char *series_name = strdup(script->tkn);
 				TSoURDt3rd_STARParser_STRLCPY(series_name, script->tkn, TSOURDT3RD_EXMUSIC_MAX_SERIES_NAME);
 
 				if (strcmp(script->val, ":"))
@@ -392,11 +333,11 @@ boolean TSoURDt3rd_STARParser_EXMUSDEF(tsourdt3rd_starparser_t *script)
 					break;
 				}
 
-				// Check for lump options and type...
-				lump_option = TSoURDt3rd_STARParser_ValidTableTerm(script, star_exmusic_lump_option_term_opt, false);
-				if (lump_option < 0)
+				// Check for lump options...
+				const char *lump_option_string = strdup(script->tkn);
+				if (lump_option_string == NULL)
 				{
-					TSoURDt3rd_STARParser_Error(va("EXMUSDEF: Invalid lump option \x82\"%s\"\x80.", script->tkn), script, TSOURDT3RD_STARPARSER_ERROR_FULL);
+					TSoURDt3rd_STARParser_Error(va("EXMUSDEF: Invalid lump option string \x82\"%s\"\x80.", script->tkn), script, TSOURDT3RD_STARPARSER_ERROR_FULL);
 					if (series_name != NULL)
 					{
 						free(series_name);
@@ -405,28 +346,20 @@ boolean TSoURDt3rd_STARParser_EXMUSDEF(tsourdt3rd_starparser_t *script)
 					break;
 				}
 
+				// Check for lump type...
+				const char *lump_type_string = NULL;
 				if (!strcmp(script->val, ":"))
 				{
-					boolean checked_lump_type = false;
-					switch (lump_option)
-					{
-						case TSOURDT3RD_EXMUSIC_BOSSES:
-							lump_type = TSoURDt3rd_STARParser_ValidTableTerm(script, star_exmusic_lump_type_boss_term_opt, false);
-							checked_lump_type = true;
-							break;
-						case TSOURDT3RD_EXMUSIC_INTERMISSION:
-							lump_type = TSoURDt3rd_STARParser_ValidTableTerm(script, star_exmusic_lump_type_intermission_term_opt, false);
-							checked_lump_type = true;
-							break;
-						default:
-							script->tkn = script->tokenizer->get(script->tokenizer, 0);
-							script->val = script->tokenizer->get(script->tokenizer, 1);
-							break;
-					}
-					if (checked_lump_type && lump_type < 0)
+					lump_type_string = strdup(script->tkn);
+					if ((!strcmp(lump_type_string, "bosses") || !strcmp(lump_type_string, "intermission")) && (lump_type_string == NULL))
 					{
 						TSoURDt3rd_STARParser_Error(va("EXMUSDEF: Invalid type option \x82\"%s\"\x80.", script->tkn), script, TSOURDT3RD_STARPARSER_ERROR_FULL);
 						break;
+					}
+					else
+					{
+						script->tkn = script->tokenizer->get(script->tokenizer, 0);
+						script->val = script->tokenizer->get(script->tokenizer, 1);
 					}
 				}
 				if (strcmp(script->val, "="))
@@ -442,7 +375,7 @@ boolean TSoURDt3rd_STARParser_EXMUSDEF(tsourdt3rd_starparser_t *script)
 				script->val = script->tokenizer->get(script->tokenizer, 1);
 
 				// Now add our lump to the series, and we can close this out!
-				TSoURDt3rd_EXMUSDEF_AddLumpToSeries(series_name, script->val, lump_option, lump_type);
+				TSoURDt3rd_EXMUSDEF_AddLumpToSeries(series_name, script->val, lump_option_string, lump_type_string);
 
 				script->val = script->tokenizer->get(script->tokenizer, 1);
 				if (!strcmp(script->val, ":"))
@@ -454,8 +387,7 @@ boolean TSoURDt3rd_STARParser_EXMUSDEF(tsourdt3rd_starparser_t *script)
 				{
 					script->tkn = script->tokenizer->get(script->tokenizer, 0);
 					script->val = script->tokenizer->get(script->tokenizer, 1);
-					if (TSoURDt3rd_STARParser_CheckForBrackets(script) == TSOURDT3RD_STARPARSER_BRAK_CLOSE)
-						break;
+					if (TSoURDt3rd_STARParser_CheckForBrackets(script) == TSOURDT3RD_STARPARSER_BRAK_CLOSE) break;
 				}
 				else
 				{
