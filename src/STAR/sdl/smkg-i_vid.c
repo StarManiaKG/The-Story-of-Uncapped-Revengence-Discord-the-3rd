@@ -267,10 +267,4 @@ void TSoURDt3rd_I_FinishUpdate(void)
 #endif
 
 	TSoURDt3rd_Jukebox_ST_drawJukebox();
-
-#if 0
-	// STAR STUFF: don't forget to draw menu messages! //
-	/// \todo either remove or keep idk
-	TSoURDt3rd_M_DrawMenuMessageOnTitle(1);
-#endif
 }
