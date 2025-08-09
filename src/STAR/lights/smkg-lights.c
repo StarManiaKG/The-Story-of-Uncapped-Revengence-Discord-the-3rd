@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Original Copyright (C) 1998-2000 by DooM Legacy Team.
-// Original Copyright (C) 1999-2023 by Sonic Team Junior.
+// Copyright (C) 1998-2000 by DooM Legacy Team.
+// Copyright (C) 1999-2023 by Sonic Team Junior.
 // Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
@@ -12,44 +12,54 @@
 /// \brief TSoURDt3rd's dynamic light data
 
 #include "smkg-lights.h"
-
-#ifdef ALAM_LIGHTING
-
 #include "smkg-coronas.h"
+
 #include "../../v_video.h"
 
 // ------------------------ //
 //        Functions
 // ------------------------ //
 
+// -----------------------
+// Rendering
+// -----------------------
+
 boolean LCR_SuperSonicLight(mobj_t *mobj)
 {
+	player_t *player = NULL;
+
 	if (mobj == NULL || mobj->sprite != SPR_PLAY)
 		return false;
 
-	if (mobj->player)
-	{
-		if (mobj->player->powers[pw_super])
-			return true;
-		else
-			return false;
-	}
+	if (mobj->target && mobj->target->player)
+		player = mobj->target->player;
+	else if (mobj->tracer && mobj->tracer->player)
+		player = mobj->tracer->player;
+	else
+		player = mobj->player;
+	if (player) return (player->powers[pw_super]);
 
-	return (mobj->type == MT_METALSONIC_RACE);
+	return (states[mobj->state - states].frame & SPR2F_SUPER);
 }
+
+// -----------------------
+// Coloring
+// -----------------------
 
 boolean LCR_ObjectColorToCoronaLight(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *alpha, boolean dynamic)
 {
 	RGBA_t new_color;
 
-	if (mobj == NULL)
-		return false;
+	if (mobj == NULL) return false;
 	new_color = V_GetColor(skincolors[mobj->color].ramp[8]);
 
 	if (rgba_table != NULL)
 	{
 		if (dynamic)
-			rgba_table->rgba = LONG(new_color.rgba);
+		{
+			INT32 rgba_value = (INT32)new_color.rgba;
+			rgba_table->rgba = LONG(rgba_value);
+		}
 		else
 			rgba_table->rgba = new_color.rgba;
 	}
@@ -64,34 +74,17 @@ boolean LCR_EmeraldLight(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *alpha, boolean
 {
 	light_t *light_to_use = NULL;
 
-	if (mobj == NULL)
-		return false;
-
+	if (mobj == NULL) return false;
 	switch (mobj->type)
 	{
-		case MT_EMERALD1:
-			light_to_use = &lspr[GREENSHINE_L];
-			break;
-		case MT_EMERALD2:
-			light_to_use = &lspr[PINKSHINE_L];
-			break;
-		case MT_EMERALD3:
-			light_to_use = &lspr[BLUESHINE_L];
-			break;
-		case MT_EMERALD4:
-			light_to_use = &lspr[LBLUESHINE_L];
-			break;
-		case MT_EMERALD5:
-			light_to_use = &lspr[ORANGESHINE_L];
-			break;
-		case MT_EMERALD6:
-			light_to_use = &lspr[REDSHINE_L];
-			break;
-		case MT_EMERALD7:
-			light_to_use = &lspr[GREYSHINE_L];
-			break;
-		default:
-			return false;
+		case MT_EMERALD1: light_to_use = &lspr[GREENSHINE_L]; break;
+		case MT_EMERALD2: light_to_use = &lspr[PINKSHINE_L]; break;
+		case MT_EMERALD3: light_to_use = &lspr[BLUESHINE_L]; break;
+		case MT_EMERALD4: light_to_use = &lspr[LBLUESHINE_L]; break;
+		case MT_EMERALD5: light_to_use = &lspr[ORANGESHINE_L]; break;
+		case MT_EMERALD6: light_to_use = &lspr[REDSHINE_L]; break;
+		case MT_EMERALD7: light_to_use = &lspr[GREYSHINE_L]; break;
+		default: return false;
 	}
 
 	if (rgba_table != NULL)
@@ -361,8 +354,6 @@ light_t lspr[NUMLIGHTS] =
 	{ DYNLIGHT_SPR|CORONA_SPR|SPLT_fire,   0,27, {RGBA(0xf0,0x60,0x60,0x60)},  60.0f, {RGBA(0xf7,0xa0,0x20,0x40)}, 100.0f },*/
 };
 
-#endif
-
 // sprite light indirection
 // Indexed according to lightspritenum_s
 light_t *t_lspr[NUMSPRITES] =
@@ -475,7 +466,7 @@ light_t *t_lspr[NUMSPRITES] =
 	&lspr[ORANGESHINE_L], 		// SPR_TOKE - Special Stage Token
 	&lspr[REDBALL_L], 			// SPR_RFLG - Red CTF Flag
 	&lspr[BLUEBALL_L],			// SPR_BFLG - Blue CTF Flag
-	&lspr[BLUEBALL_L],			// SPR_SPHR - Sphere
+	&lspr[NOLIGHT],				// SPR_SPHR - Sphere
 	&lspr[RINGLIGHT_L],			// SPR_NCHP - NiGHTS chip
 	&lspr[RINGLIGHT_L],			// SPR_NSTR - NiGHTS star
 	&lspr[EMERALD_L],			// SPR_EMBM - Emblem
@@ -486,7 +477,7 @@ light_t *t_lspr[NUMSPRITES] =
 	&lspr[BLUEBALL_L],			// SPR_BBLS - water bubble source
 	&lspr[NOLIGHT],				// SPR_SIGN - Level end sign
 	&lspr[NOLIGHT],				// SPR_SPIK - Spike Ball
-	&lspr[REDBALL_L],			// SPR_SFLM - Spin fire
+	&lspr[REDSHINE_L],			// SPR_SFLM - Spin fire
 	&lspr[GENERIC_MOBJLIGHT_L], // SPR_TFLM - Spin fire (team)
 	&lspr[NOLIGHT],				// SPR_USPK - Floor spike
 	&lspr[NOLIGHT],				// SPR_WSPK - Wall spike
@@ -587,6 +578,7 @@ light_t *t_lspr[NUMSPRITES] =
 	&lspr[NOLIGHT],				// SPR_BMCH - Big Mace Chain
 	&lspr[NOLIGHT],				// SPR_SMCE - Small Mace
 	&lspr[NOLIGHT],				// SPR_BMCE - Big Mace
+	&lspr[NOLIGHT],				// SPR_BSPB
 	&lspr[NOLIGHT],				// SPR_YSPB - Yellow spring on a ball
 	&lspr[NOLIGHT],				// SPR_RSPB - Red spring on a ball
 	&lspr[REDBALL_L],			// SPR_SFBR - Small Firebar
@@ -625,9 +617,9 @@ light_t *t_lspr[NUMSPRITES] =
 	// Red Volcano Scenery
 	&lspr[REDBALL_L],			// SPR_FLME - Flame jet
 	&lspr[REDBALL_L],			// SPR_DFLM - Blade's flame
-	&lspr[NOLIGHT],				// SPR_LFAL - Lavafall
+	&lspr[REDBALL_L],			// SPR_LFAL - Lavafall
 	&lspr[NOLIGHT],				// SPR_JPLA - Jungle palm
-	&lspr[NOLIGHT],				// SPR_TFLO - Torch flower
+	&lspr[REDBALL_L],			// SPR_TFLO - Torch flower
 	&lspr[NOLIGHT],				// SPR_WVIN - Wall vines
 
 	// Dark City Scenery
@@ -641,6 +633,8 @@ light_t *t_lspr[NUMSPRITES] =
 	&lspr[STREETLIGHT_L],		// SPR_XMS4 - Lamppost
 	&lspr[NOLIGHT],				// SPR_XMS5 - Hanging Star
 	&lspr[NOLIGHT],				// SPR_XMS6 - Mistletoe
+	&lspr[NOLIGHT],				// SPR_SNTT
+	&lspr[NOLIGHT],				// SPR_SSTT
 	&lspr[NOLIGHT],				// SPR_FHZI - FHZ Ice
 	&lspr[NOLIGHT],				// SPR_ROSY
 
@@ -674,6 +668,8 @@ light_t *t_lspr[NUMSPRITES] =
 	// Misc Scenery
 	&lspr[NOLIGHT],				// SPR_STLG - Stalagmites
 	&lspr[STREETLIGHT_L],		// SPR_DBAL - Disco
+	&lspr[NOLIGHT],				// SPR_GINE
+	&lspr[NOLIGHT],				// SPR_PPAL
 
 	// Powerup Indicators
 	&lspr[REDSHIELD_L],			// SPR_ARMA - Armageddon Shield Orb
@@ -681,10 +677,10 @@ light_t *t_lspr[NUMSPRITES] =
 	&lspr[BLACKSHIELD_L],		// SPR_ARMB - Armageddon Shield Ring, Back
 	&lspr[WHITESHIELD_L],		// SPR_WIND - Whirlwind Shield Orb
 	&lspr[YELLOWSHIELD_L],		// SPR_MAGN - Attract Shield Orb
-	&lspr[REDSHIELD_L],			// SPR_ELEM - Elemental Shield Orb
+	&lspr[ORANGESHINE_L], // ORANGESHIELD_L			// SPR_ELEM - Elemental Shield Orb
 	&lspr[BLUESHIELD_L],		// SPR_FORC - Force Shield Orb
 	&lspr[GREENSHIELD_L],		// SPR_PITY - Pity Shield Orb
-	&lspr[REDBALL_L],			// SPR_FIRS - Flame Shield Orb
+	&lspr[ORANGESHINE_L], // ORANGESHIELD_L			// SPR_FIRS - Flame Shield Orb
 	&lspr[LBLUESHINE_L],		// SPR_BUBS - Bubble Shield Orb
 	&lspr[BLUESHIELD_L],		// SPR_ZAPS - Thunder Shield Orb
 	&lspr[INVINCIBLE_L],		// SPR_IVSP - invincibility sparkles
@@ -743,7 +739,7 @@ light_t *t_lspr[NUMSPRITES] =
 	&lspr[NOLIGHT],				// SPR_FPRT - Spindash dust (flame)
 	&lspr[SUPERSPARK_L],		// SPR_TFOG - Teleport Fog
 	&lspr[NIGHTSLIGHT_L],		// SPR_SEED - Sonic CD flower seed
-	&lspr[GREYSHINE_L],			// SPR_PRTL - Particle (for fans, etc.)
+	&lspr[NOLIGHT],				// SPR_PRTL - Particle (for fans, etc.)
 
 	// Game Indicators
 	&lspr[NOLIGHT], 			// SPR_SCOR - Score logo
@@ -859,6 +855,9 @@ light_t *t_lspr[NUMSPRITES] =
 	// Gravity Well Objects
 	&lspr[NOLIGHT],				// SPR_GWLG
 	&lspr[NOLIGHT],				// SPR_GWLR
+
+	// LJ Knuckles
+	&lspr[NOLIGHT],				// SPR_OLDK,
 
 	// Free slots
 	&lspr[NOLIGHT],
@@ -988,7 +987,6 @@ light_t *t_lspr[NUMSPRITES] =
 	&lspr[NOLIGHT],
 	&lspr[NOLIGHT],
 
-	[SPR_EEGG] =
-		&lspr[GREENSHINE_L],	// SPR_EEGG - Easter Eggs
-	&lspr[SUPERSONIC_L],		// SPR_TF2D - Dispenser goin' up
+	[SPR_EEGG] = &lspr[GREENSHINE_L],	// SPR_EEGG - Easter Eggs
+	&lspr[SUPERSONIC_L],				// SPR_TF2D - Dispenser goin' up
 };

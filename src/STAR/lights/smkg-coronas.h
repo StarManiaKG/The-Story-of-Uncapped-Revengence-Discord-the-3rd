@@ -1,22 +1,20 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Original Copyright (C) 1998-2000 by DooM Legacy Team.
-// Original Copyright (C) 1999-2023 by Sonic Team Junior.
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 1998-2000 by DooM Legacy Team.
+// Copyright (C) 1999-2023 by Sonic Team Junior.
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  smkg-coronas.h
-/// \brief TSoURDt3rd remastered coronas extended data
+/// \brief TSoURDt3rd's remastered coronas
 
 #ifndef __SMKG_CORONAS__
 #define __SMKG_CORONAS__
 
-#include "../../doomdef.h"
-
-#ifdef ALAM_LIGHTING
+#include "../smkg-defs.h"
 
 #include "../../command.h"
 #include "../../p_mobj.h"
@@ -59,13 +57,14 @@ typedef enum
    	SLI_changed = 0x08,  		// the data was changed, probably by fragglescript
 } sprite_light_impl_flags_e;
 
+// Propotional fade of corona from Z1 to Z2
+#define CORONA_Z1 (250.0f)
+#define CORONA_Z2 ((255.0f*8) + 250.0f)
+
+#ifdef ALAM_LIGHTING
+
 extern float corona_size;
 extern UINT8 corona_alpha, corona_bright;
-
-boolean LCR_SuperSonicLight(mobj_t *mobj);
-
-boolean LCR_ObjectColorToCoronaLight(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *alpha, boolean dynamic);
-boolean LCR_EmeraldLight(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *alpha, boolean dynamic);
 
 light_t *Sprite_Corona_Light_lsp(int sprnum);
 UINT8 Sprite_Corona_Light_fade(light_t *lsp, float cz, mobj_t *mobj);
@@ -77,7 +76,18 @@ void TSoURDt3rd_R_Load_Corona(void);
 void TSoURDt3rd_R_Release_Coronas(void);
 
 #ifdef HWRENDER
+#if 1
+void HWR_DebugDrawPoint(float x, float y, float z, float r, float g, float b);
+void HWR_DebugDrawLine(float x1, float y1, float z1, float x2, float y2, float z2, float r, float g, float b);
+#endif
 void HWR_Transform(float *cx, float *cy, float *cz);
+
+#if 1
+void HWR_set_view_transform(void);
+void transform_world_to_gr(float wx, float wy, float wz, /*OUT*/ float *gx, float *gy, float *gz);
+#endif
+
+patch_t *HWR_GetPic(lumpnum_t lumpnum);
 #endif
 
 #endif // ALAM_LIGHTING

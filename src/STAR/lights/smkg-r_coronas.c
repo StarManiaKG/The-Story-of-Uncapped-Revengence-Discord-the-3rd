@@ -1,17 +1,17 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Original Copyright (C) 1998-2000 by DooM Legacy Team.
-// Original Copyright (C) 1999-2023 by Sonic Team Junior.
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 1998-2000 by DooM Legacy Team.
+// Copyright (C) 1999-2023 by Sonic Team Junior.
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  smkg-r_coronas.c
-/// \brief TSoURDt3rd remastered coronas, software edition
+/// \brief TSoURDt3rd's software corona rendering routines
 
-#include "../../doomdef.h"
+#include "../smkg-defs.h"
 
 #ifdef ALAM_LIGHTING
 
@@ -85,14 +85,13 @@ static void init_corona_data(void)
 #ifdef ENABLE_COLORED_PATCH
 static void setup_colored_corona(corona_image_t *ccp, RGBA_t corona_color)
 {
-	UINT8	colormap[256];
+	UINT8 colormap[256];
 	patch_t	*pp;
 
 	// when draw alpha is intense cannot have faint color in corona image
 	INT32 alpha = (255 + corona_color.s.alpha) >> 1;
 	INT32 za = (255 - alpha);
 	INT32 c;
-
 	INT32 r, g, b;
 
 	// A temporary colormap; make a colormap that is mostly of the corona color
@@ -114,7 +113,10 @@ static void setup_colored_corona(corona_image_t *ccp, RGBA_t corona_color)
 	ccp->colored_patch = pp;
 	memcpy(pp, corona_patch, corona_patch_size);
 
+#if 0
 	// Change the corona copy to the corona color.
+
+#if 1
 	for (c = 0; c < corona_patch->width; c++ )
 	{
 		column_t *cp = (column_t *)((UINT8 *)pp + pp->columnofs[c]);
@@ -132,6 +134,45 @@ static void setup_colored_corona(corona_image_t *ccp, RGBA_t corona_color)
 			cp = (column_t *)((UINT8 *)cp + cp->length + 4);
 		}
 	}
+#else
+	UINT8 *pdata;
+
+	softwarepatch_t *realpatch = (softwarepatch_t *)corona_patch;
+	UINT8 *colofs = (UINT8 *)realpatch->columnofs;
+
+	for (x = 0; x < texture->width; x++)
+	{
+		doompost_t *col = (doompost_t *)((UINT8 *)realpatch + LONG(*(UINT32 *)&colofs[x<<2]));
+		INT32 topdelta, prevdelta = -1, y = 0;
+		while (col->topdelta != 0xff)
+		{
+#if 0
+			topdelta = col->topdelta;
+			if (topdelta <= prevdelta)
+				topdelta += prevdelta;
+			prevdelta = topdelta;
+			if (topdelta > y)
+				break;
+			y = topdelta + col->length + 1;
+			col = (doompost_t *)((UINT8 *)col + col->length + 4);
+#else
+			UINT8 *s = (UINT8 *)cp + 3;
+			INT32 count = cp->length;
+			while (count--)
+			{
+				*s = colormap[*s];
+				s++;
+			}
+
+			// next source post, adv by (length + 2 byte header + 2 extra bytes)
+			cp = (column_t *)((UINT8 *)cp + cp->length + 4);
+			if (y < texture->height)
+				texture->transparency = true; // this texture is HOLEy! D:
+#endif
+		}
+	}
+#endif
+#endif
 }
 
 static patch_t *get_colored_corona(int sprite_light_num)
@@ -186,13 +227,16 @@ void TSoURDt3rd_R_Load_Corona(void)
 	if (!corona_patch)
 	{
 		// Find first valid patch in corona_name list
-		const char **namep = &corona_name[0];
-		while (*namep)
+		//const char **namep = &corona_name[0];
+		INT32 i = 0;
+		const char *namep = corona_name[i];
+		while (namep)
 		{
-			lumpid = W_CheckNumForName(*namep);
+			lumpid = W_CheckNumForName(namep);
 			if (lumpid != LUMPERROR)
 				goto setup_corona;
-			namep++;
+			//namep++;
+			namep = corona_name[++i];
 		}
 	}
 #endif
@@ -218,17 +262,12 @@ void TSoURDt3rd_R_Release_Coronas(void)
 #ifdef ENABLE_COLORED_PATCH
 	init_corona_data(); // does release too
 #endif
-
 	if (corona_patch)
 	{
 		Z_Free(corona_patch);
 		corona_patch = NULL;
 	}
 }
-
-// Propotional fade of corona from Z1 to Z2
-#define Z1 (250.0f)
-#define Z2 ((255.0f*8) + 250.0f)
 
 // --------------------------------------------------------------------------
 // coronas lighting with the sprite
@@ -306,8 +345,14 @@ UINT8 Sprite_Corona_Light_fade(light_t *p_lspr, float cz, mobj_t *mobj)
 	UINT8 fade;
 	UINT32 index, v;
 
+	if (!cv_tsourdt3rd_video_lighting_coronas.value)
+	{
+		// Lighting has been disabled.
+		goto no_corona;
+	}
+
 	// Objects which emit light.
-	type = p_lspr->impl_flags & TYPE_FIELD_SPR; // working type setting
+	type = (p_lspr->impl_flags & TYPE_FIELD_SPR); // working type setting
 	cflags = p_lspr->type;
 	if (p_lspr->corona_coloring_routine == NULL || !p_lspr->corona_coloring_routine(mobj, NULL, &corona_alpha, false))
 		corona_alpha = V_GetColor(p_lspr->corona_color).s.alpha;
@@ -405,13 +450,14 @@ UINT8 Sprite_Corona_Light_fade(light_t *p_lspr, float cz, mobj_t *mobj)
 			break;
 		case 5: // Bright
 			corona_bright = 20; // brighten the default cases
-			corona_alpha = (((UINT8)corona_alpha * 3) + 255) >> 2; // +25%
-			break;
-		case 4: // Dim
+			//corona_alpha = (((UINT8)corona_alpha * 3) + 255) >> 2; // +25%
 			corona_alpha = ((UINT8)corona_alpha * 3) >> 2; // -25%
 			break;
+		case 3: // Dim
+			//corona_alpha = ((UINT8)corona_alpha * 3) >> 2; // -25%
+			corona_alpha = (((UINT8)corona_alpha * 3) + 255) >> 2; // +25%
+			break;
 		default: // Special, Most
-		{
 			if (cv_tsourdt3rd_video_lighting_coronas.value <= 2)
 			{
 				INT32 spec = spec_dist[type>>4];
@@ -427,13 +473,13 @@ UINT8 Sprite_Corona_Light_fade(light_t *p_lspr, float cz, mobj_t *mobj)
 						goto no_corona;
 
 					// not close enough
-					if (corona_alpha + spec + Z1 < cz)
+					if (corona_alpha + spec + CORONA_Z1 < cz)
 						goto no_corona;
 				}
 				else
 				{
 					// not special enough
-					if ((spec < 33) && (cz > (Z1+Z2)/2))
+					if ((spec < 33) && (cz > (CORONA_Z1 + CORONA_Z2)/2))
 						goto no_corona;
 
 					// ignore the dim corona
@@ -442,7 +488,6 @@ UINT8 Sprite_Corona_Light_fade(light_t *p_lspr, float cz, mobj_t *mobj)
 				}
 			}
 			break;
-		}
 	}
 #endif
 
@@ -495,12 +540,12 @@ UINT8 Sprite_Corona_Light_fade(light_t *p_lspr, float cz, mobj_t *mobj)
 			break;
 		case SPLT_light: // no corona fade
 			// newmaps and phobiata firefly
-			relsize = ((cz+120.0f)/950.0f); // dimming with distance
+			relsize = ((cz + 120.0f) / 950.0f); // dimming with distance
 #if 0
-			if ((cz < Z1) & ((p_lspr->type & SPLGT_source) == 0))
+			if ((cz < CORONA_Z1) & ((p_lspr->type & SPLGT_source) == 0))
 			{
 				// Fade corona partial to 0 when get too close
-				corona_alpha = (UINT8)((atof(corona_alpha) * corona_alpha + (255 - corona_alpha) * (corona_alpha * cz / Z1)) / 255.0f);
+				corona_alpha = (UINT8)((atof(corona_alpha) * corona_alpha + (255 - corona_alpha) * (corona_alpha * cz / CORONA_Z1)) / 255.0f);
 			}
 #endif
 			// Version 1.42 had corona_alpha = 0xff
@@ -546,36 +591,36 @@ UINT8 Sprite_Corona_Light_fade(light_t *p_lspr, float cz, mobj_t *mobj)
 			goto no_corona;
 	}
 
-	if (cz > Z1 && (fade & FADE_FAR))
+	if (cz > CORONA_Z1 && (fade & FADE_FAR))
 	{
 		// Proportional fade from Z1 to Z2
-		corona_alpha = (int)(corona_alpha * (Z2 - cz) / (Z2 - Z1));
+		corona_alpha = (int)(corona_alpha * (CORONA_Z2 - cz) / (CORONA_Z2 - CORONA_Z1));
 	}
 	else if (fade & FADE_NEAR)
 	{
 		// Fade to 0 when get too close
-		corona_alpha = (int)(corona_alpha * cz / Z1);
+		corona_alpha = (int)(corona_alpha * cz / CORONA_Z1);
 	}
 
 	if (relsize > 1.0)
 		relsize = 1.0;
 
+	corona_size = (p_lspr->corona_radius * relsize);
 #ifndef STAR_LIGHTING
 #ifdef HWRENDER
-	corona_size = p_lspr->corona_radius * relsize * FIXED_TO_FLOAT(cv_glcoronasize.value);
-#else
-	corona_size = p_lspr->corona_radius * relsize;
+	corona_size *= FIXED_TO_FLOAT(cv_glcoronasize.value);
 #endif
 #else
-	corona_size = p_lspr->corona_radius * relsize * FIXED_TO_FLOAT(cv_tsourdt3rd_video_lighting_coronas_size.value);
+	corona_size *= FIXED_TO_FLOAT(cv_tsourdt3rd_video_lighting_coronas_size.value);
 #endif
 	return corona_alpha;
 
-	no_corona:
-	{
-		corona_alpha = 0;
-		return corona_alpha;
-	}
+no_corona:
+{
+	corona_alpha = 0;
+	return corona_alpha;
+}
+
 }
 
 static void Sprite_Corona_Light_setup(vissprite_t *vis)
@@ -596,7 +641,7 @@ static void Sprite_Corona_Light_setup(vissprite_t *vis)
 	cz = FIXED_TO_FLOAT(tz);
 
 	// more realistique corona !
-	if (cz >= Z2)
+	if (cz >= CORONA_Z2)
 		goto no_corona;
 
 	// mobj dependent id
@@ -737,11 +782,12 @@ static void Draw_Sprite_Corona_Light(vissprite_t * vis)
 		}
 #endif
 
-		column_t *col_data = (column_t *)(((UINT8 *)corona_cc_patch) + corona_cc_patch->columnofs[texturecolumn]);
-		R_DrawMaskedColumn(col_data);
+		column_t *col_data = &corona_cc_patch->columns[texturecolumn];
+		R_DrawMaskedColumn(col_data, corona_cc_patch->height);
 	}
 
 	colfunc = colfuncs[BASEDRAWFUNC];
+	colfunc();
 }
 
 void TSoURDt3rd_R_RenderSoftwareCoronas(vissprite_t *spr, INT32 x1, INT32 x2)

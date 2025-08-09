@@ -1,20 +1,23 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Original Copyright (C) 1998-2000 by DooM Legacy Team.
-// Original Copyright (C) 1999-2023 by Sonic Team Junior.
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 1998-2000 by DooM Legacy Team.
+// Copyright (C) 1999-2023 by Sonic Team Junior.
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  smkg-lights.h
-/// \brief TSoURDt3rd's remastered lighting system, global header
+/// \brief TSoURDt3rd's dynamic light data, global header
 
 #ifndef __SMKG_LIGHTS__
 #define __SMKG_LIGHTS__
 
+#include "../smkg-defs.h"
+
 #include "../../p_mobj.h"
+//#include "../../r_defs.h"
 
 // ------------------------ //
 //        Variables
@@ -92,5 +95,22 @@ typedef struct light_s
 
 extern light_t lspr[NUMLIGHTS];
 extern light_t *t_lspr[NUMSPRITES];
+
+// ------------------------ //
+//        Functions
+// ------------------------ //
+
+// -----------------------
+// Rendering
+// -----------------------
+
+boolean LCR_SuperSonicLight(mobj_t *mobj);
+
+// -----------------------
+// Coloring
+// -----------------------
+
+boolean LCR_ObjectColorToCoronaLight(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *alpha, boolean dynamic);
+boolean LCR_EmeraldLight(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *alpha, boolean dynamic);
 
 #endif // __SMKG_LIGHTS__

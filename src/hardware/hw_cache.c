@@ -1010,6 +1010,96 @@ void HWR_UnlockCachedPatch(GLPatch_t *gpatch)
 	Z_ChangeTag(gpatch->mipmap->data, PU_HWRCACHE_UNLOCKED);
 }
 
+// -----------------+
+// HWR_GetPic       : Download a Doom pic (raw row encoded with no 'holes')
+// Returns          :
+// -----------------+
+
+typedef enum
+{
+	PALETTE         = 0,  // 1 byte is the index in the doom palette (as usual)
+	INTENSITY       = 1,  // 1 byte intensity
+	INTENSITY_ALPHA = 2,  // 2 byte: alpha then intensity
+	RGB24           = 3,  // 24 bit rgb
+	RGBA32          = 4,  // 32 bit rgba
+} pic_mode_t;
+
+// a pic is an unmasked block of pixels, stored in horizontal way
+typedef struct
+{
+	INT16 width;
+	UINT8 zero;       // set to 0 allow autodetection of pic_t
+					 // mode instead of patch or raw
+	UINT8 mode;       // see pic_mode_t above
+	INT16 height;
+	INT16 reserved1; // set to 0
+	UINT8 data[0];
+} ATTRPACK pic_t;
+
+static const INT32 picmode2GR[] =
+{
+	GL_TEXFMT_P_8,                // PALETTE
+	0,                            // INTENSITY          (unsupported yet)
+	GL_TEXFMT_ALPHA_INTENSITY_88, // INTENSITY_ALPHA    (corona use this)
+	0,                            // RGB24              (unsupported yet)
+	GL_TEXFMT_RGBA,               // RGBA32             (opengl only)
+};
+
+GLPatch_t *HWR_GetPic(lumpnum_t lumpnum)
+{
+	GLPatch_t *grpatch = HWR_GetCachedGLPatch(lumpnum);
+	if (!grpatch->mipmap->downloaded && !grpatch->mipmap->data)
+	{
+		pic_t *pic;
+		UINT8 *block;
+		size_t len;
+
+		pic = W_CacheLumpNum(lumpnum, PU_CACHE);
+		grpatch->width = SHORT(pic->width);
+		grpatch->height = SHORT(pic->height);
+		len = W_LumpLength(lumpnum) - sizeof (pic_t);
+
+		grpatch->leftoffset = 0;
+		grpatch->topoffset = 0;
+
+		grpatch->mipmap->width = (UINT16)grpatch->width;
+		grpatch->mipmap->height = (UINT16)grpatch->height;
+
+		if (pic->mode == PALETTE)
+			grpatch->mipmap->format = textureformat; // can be set by driver
+		else
+			grpatch->mipmap->format = picmode2GR[pic->mode];
+
+		Z_Free(grpatch->mipmap->data);
+
+		// allocate block
+		block = MakeBlock(grpatch->mipmap);
+
+		if (grpatch->width  == SHORT(pic->width) &&
+			grpatch->height == SHORT(pic->height) &&
+			format2bpp(grpatch->mipmap->format) == format2bpp(picmode2GR[pic->mode]))
+		{
+			// no conversion needed
+			M_Memcpy(grpatch->mipmap->data, pic->data,len);
+		}
+		else
+			HWR_DrawPicInCache(block, SHORT(pic->width), SHORT(pic->height),
+			                   SHORT(pic->width)*format2bpp(grpatch->mipmap->format),
+			                   pic,
+			                   format2bpp(grpatch->mipmap->format));
+
+		Z_Unlock(pic);
+		Z_ChangeTag(block, PU_HWRCACHE_UNLOCKED);
+
+		grpatch->mipmap->flags = 0;
+		grpatch->max_s = grpatch->max_t = 1.0f;
+	}
+	HWD.pfnSetTexture(grpatch->mipmap);
+	//CONS_Debug(DBG_RENDER, "picloaded at %x as texture %d\n",grpatch->mipmap.data, grpatch->mipmap.downloaded);
+
+	return grpatch;
+}
+
 patch_t *HWR_GetCachedGLPatchPwad(UINT16 wadnum, UINT16 lumpnum)
 {
 	lumpcache_t *lumpcache = wadfiles[wadnum]->patchcache;
