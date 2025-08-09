@@ -99,7 +99,8 @@
  * Last updated 2024 / 11 / 24 - TSOURDT3RD V4 (2.2.13) - renamed some lumps to properly fit their structures and all
  * 
  * Last updated 2025 / 06 / 15 - TSOURDT3RD V5 (2.2.15) - slowly beginning to remove unnecessary lumps and put them within their own files
+ * Last updated 2025 / 08 / 08 - TSOURDT3RD V5 (2.2.15) - did something
 */
-#define ASSET_HASH_TSOURDT3RD_PK3 "ddeaa0f5d474cd2ed46d6ea56bc79392"
+#define ASSET_HASH_TSOURDT3RD_PK3 "292fd432acb5944a08705493166f5444"
 
 #endif
