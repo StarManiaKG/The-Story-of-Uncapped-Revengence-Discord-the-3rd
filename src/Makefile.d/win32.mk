@@ -124,12 +124,15 @@ $(eval $(call _set,MINIUPNPC))
 #$(eval $(call _set,BUGTRAP))
 #$(eval $(call Propogate_flags,BUGTRAP))
 
+LIBBACKTRACE_opts+=-I../libs/libbacktrace/include
+LIBBACKTRACE_libs+=-L../libs/libbacktrace/lib/$(i686)
+$(eval $(call _set,LIBBACKTRACE))
+
 ifdef HAVE_DISCORDRPC
   lib:=../libs/discord-rpc/win$(32)-dynamic
   DISCORD_RPC_opts:=-I$(lib)/include
   DISCORD_RPC_libs:=-L$(lib)/lib
   $(eval $(call _set,DISCORD_RPC))
-  $(eval $(call Propogate_flags,DISCORD_RPC))
 endif
 
 ifdef HAVE_DISCORDGAMESDK
@@ -137,7 +140,6 @@ ifdef HAVE_DISCORDGAMESDK
   DISCORD_GAME_SDK_opts:=-I$(lib)/include
   DISCORD_GAME_SDK_libs:=-L$(lib)/$(x86)
   $(eval $(call _set,DISCORD_GAME_SDK))
-  $(eval $(call Propogate_flags,DISCORD_GAME_SDK))
 endif
 
 ifdef HAVE_LIBAV
@@ -145,5 +147,4 @@ ifdef HAVE_LIBAV
   LIBAV_opts:=-I$(lib)/include
   LIBAV_libs:=-L$(lib)/lib
   $(eval $(call _set,LIBAV))
-  $(eval $(call Propogate_flags,LIBAV))
 endif

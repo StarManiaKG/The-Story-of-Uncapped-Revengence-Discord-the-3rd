@@ -20,7 +20,7 @@
 #include "../doomdef.h"
 #include "../m_argv.h"
 #include "../d_main.h"
-#include "../m_misc.h"/* path shit */
+#include "../m_misc.h" /* path shit */
 #include "../i_system.h"
 
 #if defined (__GNUC__) || defined (__unix__)
@@ -31,7 +31,7 @@
 #include <errno.h>
 #endif
 
-#include "time.h" // For log timestamps
+#include <time.h> // For log timestamps
 
 #ifdef HAVE_SDL
 
@@ -68,6 +68,12 @@ char logfilename[1024];
 #if defined (_WIN32)
 #include "../win32/win_dbg.h"
 typedef BOOL (WINAPI *p_IsDebuggerPresent)(VOID);
+static HMODULE g_hmod_drmingw;
+#endif
+
+#ifdef LIBBACKTRACE
+#include <backtrace.h>
+static struct backtrace_state *backtrace;
 #endif
 
 #ifdef LOGMESSAGES
@@ -157,6 +163,31 @@ static void InitLogging(void)
 }
 #endif
 
+#ifdef LIBBACKTRACE
+/* Callback for each stack frame */
+static int libbacktrace_full_callback(void *data, uintptr_t pc, const char *filename, int lineno, const char *function) {
+    (void)data; // unused
+
+    if (filename)
+        printf("  %s:%d: %s\n", filename, lineno, function ? function : "??");
+    else
+        printf("  [unknown] (PC=0x%lx)\n", (unsigned long)pc);
+
+    return 0; // continue stack walk
+}
+
+/* Callback if something goes wrong */
+static void libbacktrace_error_callback(void *data, const char *msg, int errnum) {
+    (void)data; (void)errnum;
+    fprintf(stderr, "Error: %s\n", msg);
+}
+
+/* Function to print the backtrace */
+static void libbacktrace_print_stacktrace(void) {
+    backtrace_full(backtrace, 0, libbacktrace_full_callback, libbacktrace_error_callback, NULL);
+}
+#endif
+
 
 /**	\brief	The main function
 
@@ -177,6 +208,8 @@ int main(int argc, char **argv)
 {
 	myargc = argc;
 	myargv = argv; /// \todo pull out path to exe from this string
+	typedef void (APIENTRY *EXCHNDLINIT)(void);
+	EXCHNDLINIT pfnExcHndlInit = NULL;
 
 #ifdef HAVE_TTF
 #ifdef _WIN32
@@ -193,23 +226,43 @@ int main(int argc, char **argv)
 
 	//I_OutputMsg("I_StartupSystem() ...\n");
 	I_StartupSystem();
+
 #if defined (_WIN32)
+#if 0
+#if 0
+	g_hmod_drmingw = LoadLibrary("exchndl.dll");
+	LoadLibrary("exchndl.dll");
+#else
+	g_hmod_drmingw = GetModuleHandleA("exchndl.dll");
+	GetModuleHandleA("exchndl.dll");
+#endif
+#else
+	g_hmod_drmingw = LoadLibraryA("exchndl.dll");
+	LoadLibraryA("exchndl.dll");
+#endif
+#if 1
+	pfnExcHndlInit = (EXCHNDLINIT)GetProcAddress(g_hmod_drmingw, "ExcHndlInit");
+	if (g_hmod_drmingw && pfnExcHndlInit)
 	{
-#if 0 // just load the DLL
-		p_IsDebuggerPresent pfnIsDebuggerPresent = (p_IsDebuggerPresent)GetProcAddress(GetModuleHandleA("kernel32.dll"), "IsDebuggerPresent");
-		if ((!pfnIsDebuggerPresent || !pfnIsDebuggerPresent())
-#ifdef BUGTRAP
-			&& !InitBugTrap()
-#endif
-			)
-#endif
-		{
-			LoadLibraryA("exchndl.dll");
-		}
+		CONS_Printf("Setting up debugger.\n");
+		pfnExcHndlInit();
 	}
+#else
+	(void)pfnExcHndlInit;
+	if (g_hmod_drmingw)
+		CONS_Printf("Debugger initialized.\n");
+#endif
+#endif
+
+#ifdef BUGTRAP
+	InitBugTrap();
 #ifndef __MINGW32__
 	prevExceptionFilter = SetUnhandledExceptionFilter(RecordExceptionInfo);
 #endif
+#endif
+
+#ifdef LIBBACKTRACE
+	backtrace = backtrace_create_state(argv[0], 1, libbacktrace_error_callback, NULL);
 #endif
 
 	// startup SRB2
@@ -222,6 +275,16 @@ int main(int argc, char **argv)
 	CONS_Printf("Entering main game loop...\n");
 	// never return
 	D_SRB2Loop();
+
+#ifdef LIBBACKTRACE
+	libbacktrace_print_stacktrace();
+#endif
+
+#if 1
+	// close debugger
+	if (g_hmod_drmingw)
+		FreeLibrary(g_hmod_drmingw);
+#endif
 
 #ifdef BUGTRAP
 	// This is safe even if BT didn't start.

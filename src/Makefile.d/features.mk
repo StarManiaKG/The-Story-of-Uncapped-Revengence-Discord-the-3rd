@@ -73,8 +73,14 @@ $(foreach p,$(default_packages),\
 
 opts+=-DUSE_STUN
 
+$(eval $(call Use_pkg_config,LIBBACKTRACE))
+libs+=-lbacktrace
+opts+=-DLIBBACKTRACE
+
 ifdef HAVE_DISCORDRPC
   ifndef HAVE_DISCORDGAMESDK
+    DISCORD_RPC_PKGCONFIG?=discord-rpc
+    $(eval $(call Use_pkg_config,DISCORD_RPC))
     opts+=-DHAVE_DISCORDRPC -DHAVE_DISCORDSUPPORT
     libs+=-ldiscord-rpc
     DISCORD_SUPPORTED:=1
@@ -87,9 +93,12 @@ endif
 
 ifdef HAVE_DISCORDGAMESDK
   ifndef HAVE_DISCORDRPC
+    DISCORD_RPC_PKGCONFIG?=discord_game_sdk
+    $(eval $(call Use_pkg_config,DISCORD_RPC))
     opts+=-DHAVE_DISCORDGAMESDK -DHAVE_DISCORDSUPPORT
     libs+=-ldiscord_game_sdk
     DISCORD_SUPPORTED:=1
+    $(eval $(call Use_pkg_config,DISCORD_GAME_SDK))
   else
     $(error \
       You can't have your cake and eat it too!\
@@ -117,4 +126,5 @@ ifdef HAVE_LIBAV
 
   #$(foreach libav_p,$(libav_default_packages),\
 	#  $(eval $(call Check_pkg_config,$(libav_p))))
+  $(eval $(call Propogate_flags,LIBAV))
 endif
