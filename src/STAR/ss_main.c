@@ -62,10 +62,9 @@ boolean SpawnTheDispenser = false;
 
 void TSoURDt3rd_Init(void)
 {
-	memset(&tsourdt3rd_local, 0, sizeof(struct tsourdt3rd_local_s));
+	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD, "\nTSoURDt3rd_Init(): Initalizing TSoURDt3rd...\n");
 
-	STAR_CONS_Printf(STAR_CONS_NONE, "\n");
-	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD, "TSoURDt3rd_Init(): Initalizing TSoURDt3rd...\n");
+	memset(&tsourdt3rd_local, 0, sizeof(struct tsourdt3rd_local_s));
 	TSoURDt3rd_FOL_CreateDirectory("TSoURDt3rd");
 
 	// Check our computer's time!
@@ -82,9 +81,11 @@ void TSoURDt3rd_Init(void)
 #if 0
 	// Initialize EXMusic data...
 	TSoURDt3rd_EXMusic_Init(tsourdt3rd_global_exmusic_defaultmaptrack, tsourdt3rd_default_typedata_defaultmaptrack);
+#if 0
 	TSoURDt3rd_EXMusic_Init(tsourdt3rd_global_exmusic_gameover, tsourdt3rd_default_typedata_gameover);
 	TSoURDt3rd_EXMusic_Init(tsourdt3rd_global_exmusic_bosses, tsourdt3rd_default_typedata_bosses);
 	TSoURDt3rd_EXMusic_Init(tsourdt3rd_global_exmusic_intermission, tsourdt3rd_default_typedata_intermission);
+#endif
 #endif
 
 	// Initialize the build's player structures!
@@ -104,10 +105,11 @@ void STAR_CONS_Printf(INT32 message_type, const char *fmt, ...)
 {
 	va_list argptr;
 	const char *coloring = NULL;
-	char header[8192];
+	char header[8192], bparams[8192];
 	static char *txt = NULL;
 
 	memset(header, 0, sizeof(header));
+	memset(bparams, 0, sizeof(bparams));
 	if (txt == NULL)
 		txt = malloc(8192);
 
@@ -167,9 +169,23 @@ void STAR_CONS_Printf(INT32 message_type, const char *fmt, ...)
 	else
 		strlcat(txt, "\x80", 8192);
 
-	// Now, just like STJr, I am lazy and I feel like just letting CONS_Printf take care of things.
+	// Make sure we check for string parameters first, just so we don't do anthing crazy...
+	for (INT32 i = 0; (txt[i] != '\0' && txt[i+1] != '\0'); i++)
+	{
+		switch (txt[i])
+		{
+			case '\n':
+				snprintf(bparams, 8192, "\n"); txt++;
+				continue;
+			default:
+				break;
+		}
+		break;
+	}
+
+	// Now, just like STJr, I am lazy and I feel like just letting CONS_Printf take care of everything else.
 	// That should be fine with you. (...Right?)
-	CONS_Printf("%s%s%s", coloring, header, txt);
+	CONS_Printf("%s%s%s%s", bparams, coloring, header, txt);
 }
 
 const char *TSoURDt3rd_CON_DrawStartupScreen(void)
@@ -186,10 +202,12 @@ const char *TSoURDt3rd_ReturnUsername(void)
 {
 	const char *username = NULL;
 #ifdef HAVE_DISCORDSUPPORT
-	if (discordInfo.connectionStatus == DISC_CONNECTED) return DISC_ReturnUsername();
+	if (discordInfo.connectionStatus == DISC_CONNECTED)
+		username = DISC_ReturnUsername();
+	else
 #endif
 	if (Playing()) username = player_names[consoleplayer];
-	if (!username) username = cv_playername.string;
+	if (username == NULL || *username == '\0') username = cv_playername.string;
 	return username;
 }
 
