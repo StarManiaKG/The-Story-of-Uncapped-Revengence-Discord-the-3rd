@@ -24,7 +24,7 @@
 // Music validation routines
 //
 #define MUSIC_EXISTS(music) \
-	if (*music == '\0') return false; \
+	if (music == NULL || *music == '\0') return false; \
 	return (S_MusicExists(music, !midi_disabled, !digital_disabled));
 
 boolean TSoURDt3rd_S_MusicDefExists(musicdef_t *def)
