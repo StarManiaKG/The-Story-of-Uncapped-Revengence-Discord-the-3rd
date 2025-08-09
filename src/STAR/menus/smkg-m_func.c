@@ -10,9 +10,9 @@
 /// \brief Unique TSoURDt3rd menu routines and structures
 
 #include "smkg-m_sys.h"
-#include "../smkg-jukebox.h"
 #include "../smkg_g_inputs.h"
 #include "../core/smkg-s_audio.h"
+#include "../core/smkg-s_jukebox.h"
 
 #include "../../console.h"
 #include "../../d_main.h"
@@ -173,6 +173,10 @@ tsourdt3rd_levellist_mode_t tsourdt3rd_levellistmode = TSOURDT3RD_LLM_CREATESERV
 menucmd_t menucmd[MAXSPLITSCREENPLAYERS];
 
 // Registered list of menu keys we can use
+typedef struct menukeylist_s {
+	INT32 key;
+	boolean global;
+} menukeylist_t;
 INT32 key_table[] = {
 	KEY_UPARROW,
 	KEY_DOWNARROW,
@@ -182,33 +186,35 @@ INT32 key_table[] = {
 	KEY_ESCAPE,
 	KEY_NULL
 };
-INT32 gc_table[] = {
-	// Overriders
-	GC_SCREENSHOT,
-	GC_RECORDGIF,
-	// Movement
-	GC_FORWARD,
-	GC_BACKWARD,
-	GC_STRAFELEFT, GC_TURNLEFT,
-	GC_STRAFERIGHT, GC_TURNRIGHT,
-	GC_JUMP,
-	GC_SPIN, GC_SYSTEMMENU,
-	// Misc
-	GC_FIRENORMAL,
-	GC_CUSTOM1, GC_CUSTOM2,
-	GC_LOOKUP,
-	GC_LOOKDOWN,
-	GC_TOSSFLAG,
+menukeylist_t menukey_list[] = {
+	// -- Overriders
+	// Recording
+	{ GC_SCREENSHOT, true },
+	{ GC_RECORDGIF, true },
+	//{ GC_RECORDLOSSLESS, true },
 	// Jukebox
-	JB_OPENJUKEBOX,
-	JB_INCREASEMUSICSPEED,
-	JB_DECREASEMUSICSPEED,
-	JB_INCREASEMUSICPITCH,
-	JB_DECREASEMUSICPITCH,
-	JB_PLAYMOSTRECENTTRACK,
-	JB_STOPJUKEBOX,
-	// end
-	GC_NULL
+	{ JB_OPENJUKEBOX, true },
+	{ JB_INCREASEMUSICSPEED, true },
+	{ JB_DECREASEMUSICSPEED, true },
+	{ JB_INCREASEMUSICPITCH, true },
+	{ JB_DECREASEMUSICPITCH, true },
+	{ JB_PLAYMOSTRECENTTRACK, true },
+	{ JB_STOPJUKEBOX, true },
+	// -- Movement
+	{ GC_FORWARD, false },
+	{ GC_BACKWARD, false },
+	{ GC_STRAFELEFT, false }, { GC_TURNLEFT, false },
+	{ GC_STRAFERIGHT, false }, { GC_TURNRIGHT, false },
+	{ GC_JUMP, false },
+	{ GC_SPIN, false }, { GC_SYSTEMMENU, false },
+	// -- Misc
+	{ GC_FIRENORMAL, false },
+	{ GC_CUSTOM1, false }, { GC_CUSTOM2, false },
+	{ GC_LOOKUP, false },
+	{ GC_LOOKDOWN, false },
+	{ GC_TOSSFLAG, false },
+	// -- end
+	{ GC_NULL, false }
 };
 
 // ------------------------ //
@@ -340,10 +346,10 @@ const char *TSoURDt3rd_M_GenerateQuitMessage(void)
 }
 
 //
-// boolean TSoURDt3rd_M_OverwriteIntroResponder(event_t *event)
-// If returned true, prevents the intro from eating inputs until after the current situation is handled.
+// boolean TSoURDt3rd_M_OverwriteResponder(event_t *event)
+// If returned true, prevents any given responder from eating inputs until after the current situation is handled.
 //
-boolean TSoURDt3rd_M_OverwriteIntroResponder(event_t *event)
+boolean TSoURDt3rd_M_OverwriteResponder(event_t *event)
 {
 	INT32 key = event->key;
 	boolean eat_inputs = false;
@@ -361,19 +367,6 @@ boolean TSoURDt3rd_M_OverwriteIntroResponder(event_t *event)
 	if (eat_inputs && menumessage.active)
 		TSoURDt3rd_M_HandleMenuMessage();
 	return eat_inputs;
-}
-
-//
-// void TSoURDt3rd_M_MenuMessageShouldTick(boolean run)
-// Handles menu message ticking in certain situations.
-//
-// Ported using some code from Dr.Robotnik's Ring Racers!
-//
-void TSoURDt3rd_M_MenuMessageShouldTick(boolean run)
-{
-	if (!run || !menumessage.active)
-		return;
-	TSoURDt3rd_M_MenuMessageTick();
 }
 
 //
@@ -641,7 +634,7 @@ void TSoURDt3rd_M_SetupNextMenu(tsourdt3rd_menu_t *tsourdt3rd_menudef, menu_t *m
 	}
 
 #ifdef HAVE_DISCORDSUPPORT
-	if (in_menu && !Playing())
+	if (in_menu)
 	{
 		// currentMenu changed during menuactive
 		DISC_UpdatePresence();
@@ -655,7 +648,9 @@ void TSoURDt3rd_M_SetupNextMenu(tsourdt3rd_menu_t *tsourdt3rd_menudef, menu_t *m
 //
 void TSoURDt3rd_M_UpdateMenuCMD(UINT8 i)
 {
-	INT32 thisGameKey = gameKey;
+	menukeylist_t thisMenuList = menukey_list[0];
+	INT32 gc = GC_NULL, thisGameKey = GC_NULL;
+	const INT32 currentGameKey = gameKey;
 
 	menucmd[i].prev_dpad_ud = menucmd[i].dpad_ud;
 	menucmd[i].prev_dpad_lr = menucmd[i].dpad_lr;
@@ -666,20 +661,45 @@ void TSoURDt3rd_M_UpdateMenuCMD(UINT8 i)
 	menucmd[i].buttonsHeld = menucmd[i].buttons;
 	menucmd[i].buttons = 0;
 
+#if 0
+	while (thisMenuList.key)
+	{
+		thisGameKey = thisMenuList.key;
+		if (currentGameKey == thisGameKey) break;
+		if (thisMenuList.global && STAR_G_KeyPressed(0, thisGameKey)) break;
+		thisMenuList = menukey_list[++gc];
+	}
+#else
+	(void)thisMenuList;
+	(void)gc;
+	thisGameKey = currentGameKey;
+#endif
+
+	// Check extra gamekeys first
 	if (thisGameKey == GC_SCREENSHOT) { menucmd[i].buttons |= MBT_SCREENSHOT; }
 	if (thisGameKey == GC_RECORDGIF) { menucmd[i].buttons |= MBT_STARTMOVIE; }
 	//if (thisGameKey == GC_RECORDLOSSLESS) { menucmd[i].buttons |= MBT_STARTLOSSLESS; }
 
+	if (thisGameKey == JB_OPENJUKEBOX) { menucmd[i].buttons |= MBT_JUKEBOX_OPEN; }
+	if (thisGameKey == JB_INCREASEMUSICSPEED) { menucmd[i].buttons |= MBT_JUKEBOX_INCREASESPEED; }
+	if (thisGameKey == JB_DECREASEMUSICSPEED) { menucmd[i].buttons |= MBT_JUKEBOX_DECREASESPEED; }
+	if (thisGameKey == JB_INCREASEMUSICPITCH) { menucmd[i].buttons |= MBT_JUKEBOX_INCREASEPITCH; }
+	if (thisGameKey == JB_DECREASEMUSICPITCH) { menucmd[i].buttons |= MBT_JUKEBOX_DECREASEPITCH; }
+	if (thisGameKey == JB_PLAYMOSTRECENTTRACK) { menucmd[i].buttons |= MBT_JUKEBOX_PLAYRECENT; }
+	if (thisGameKey == JB_STOPJUKEBOX) { menucmd[i].buttons |= MBT_JUKEBOX_CLOSE; }
+
+#if 0
+	/// \todo STAR TODO NOTE or something, rework this
 	if (tsourdt3rd_noFurtherInput == false)
 	{
-		if (TSoURDt3rd_M_DoesMenuHaveKeyHandler() == -1 && tsourdt3rd_global_jukebox)
+		if (TSoURDt3rd_M_DoesMenuHaveKeyHandler() == -1 && tsourdt3rd_global_jukebox != NULL)
 		{
-			if (thisGameKey == JB_OPENJUKEBOX || STAR_G_KeyPressed(0, JB_OPENJUKEBOX))
+			if (/*thisGameKey == JB_OPENJUKEBOX || */STAR_G_KeyPressed(0, JB_OPENJUKEBOX))
 			{
 				// A shortcut to open the Jukebox menu.
 				TSoURDt3rd_M_Jukebox_Init(op_extras_jukebox);
 			}
-			if (thisGameKey == JB_INCREASEMUSICSPEED || STAR_G_KeyPressed(0, JB_INCREASEMUSICSPEED))
+			if (/*thisGameKey == JB_INCREASEMUSICSPEED || */STAR_G_KeyPressed(0, JB_INCREASEMUSICSPEED))
 			{
 				// Increase the speed of the jukebox track
 				if (S_GetSpeedMusic() > 0.0f)
@@ -687,7 +707,7 @@ void TSoURDt3rd_M_UpdateMenuCMD(UINT8 i)
 				else
 					S_StartSound(NULL, sfx_lose);
 			}
-			if (thisGameKey == JB_DECREASEMUSICSPEED || STAR_G_KeyPressed(0, JB_DECREASEMUSICSPEED))
+			if (/*thisGameKey == JB_DECREASEMUSICSPEED || */STAR_G_KeyPressed(0, JB_DECREASEMUSICSPEED))
 			{
 				// Decrease the speed of the jukebox track
 				if (S_GetSpeedMusic() > 0.0f)
@@ -695,7 +715,7 @@ void TSoURDt3rd_M_UpdateMenuCMD(UINT8 i)
 				else
 					S_StartSound(NULL, sfx_lose);
 			}
-			if (thisGameKey == JB_INCREASEMUSICPITCH || STAR_G_KeyPressed(0, JB_INCREASEMUSICPITCH))
+			if (/*thisGameKey == JB_INCREASEMUSICPITCH || */STAR_G_KeyPressed(0, JB_INCREASEMUSICPITCH))
 			{
 				// Increase the pitch of the jukebox track
 				if (TSoURDt3rd_Jukebox_IsPlaying() && (S_GetPitchMusic() < 0.0f))
@@ -703,7 +723,7 @@ void TSoURDt3rd_M_UpdateMenuCMD(UINT8 i)
 				else
 					TSoURDt3rd_M_ChangeCvarDirect(-1, (1)*(1.0f/16.0f), &cv_tsourdt3rd_jukebox_pitch);
 			}
-			if (thisGameKey == JB_DECREASEMUSICPITCH || STAR_G_KeyPressed(0, JB_DECREASEMUSICPITCH))
+			if (/*thisGameKey == JB_DECREASEMUSICPITCH || */STAR_G_KeyPressed(0, JB_DECREASEMUSICPITCH))
 			{
 				// Decrease the pitch of the jukebox track
 				if (TSoURDt3rd_Jukebox_IsPlaying() && (S_GetPitchMusic() < 0.0f))
@@ -711,17 +731,17 @@ void TSoURDt3rd_M_UpdateMenuCMD(UINT8 i)
 				else
 					TSoURDt3rd_M_ChangeCvarDirect(-1, (-1)*(1.0f/16.0f), &cv_tsourdt3rd_jukebox_pitch);
 			}
-			if (thisGameKey == JB_PLAYMOSTRECENTTRACK || STAR_G_KeyPressed(0, JB_PLAYMOSTRECENTTRACK))
+			if (/*thisGameKey == JB_PLAYMOSTRECENTTRACK || */STAR_G_KeyPressed(0, JB_PLAYMOSTRECENTTRACK))
 			{
 				// Replay the most recent jukebox track
 				TSoURDt3rd_Jukebox_Play(NULL);
 			}
-			if (thisGameKey == JB_STOPJUKEBOX || STAR_G_KeyPressed(0, JB_STOPJUKEBOX))
+			if (/*thisGameKey == JB_STOPJUKEBOX || */STAR_G_KeyPressed(0, JB_STOPJUKEBOX))
 			{
 				// Stop and reset the jukebox
 				if (!TSoURDt3rd_Jukebox_IsPlaying())
 				{
-					STAR_CONS_Printf(STAR_CONS_JUKEBOX, "Nothing is currently playing in the jukebox!\n");
+					STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_JUKEBOX|STAR_CONS_WARNING, "Nothing is currently playing in the jukebox!\n");
 					S_StartSound(NULL, sfx_lose);
 				}
 				else
@@ -734,11 +754,13 @@ void TSoURDt3rd_M_UpdateMenuCMD(UINT8 i)
 			}
 		}
 	}
+#endif
 
 	// Screenshot et al take priority
 	if (menucmd[i].buttons != 0)
 		return;
 
+	// Check main gamekeys now
 	if (thisGameKey == GC_FORWARD) { menucmd[i].dpad_ud--; }
 	if (thisGameKey == GC_BACKWARD) { menucmd[i].dpad_ud++; }
 
@@ -758,9 +780,9 @@ void TSoURDt3rd_M_UpdateMenuCMD(UINT8 i)
 
 	if (thisGameKey == GC_TOSSFLAG) { menucmd[i].buttons |= MBT_START; }
 
+	// If applicable, reset delay count with no buttons.
 	if (menucmd[i].dpad_ud == 0 && menucmd[i].dpad_lr == 0 && menucmd[i].buttons == 0)
 	{
-		// Reset delay count with no buttons.
 		menucmd[i].delay = min(menucmd[i].delay, MENUMINDELAY);
 		menucmd[i].delayCount = 0;
 	}
@@ -839,12 +861,12 @@ boolean TSoURDt3rd_M_Responder(INT32 *ch, event_t *ev)
 					gameKey = GC_FIRENORMAL;
 					break;
 				default:
-					while (gc_table[gc])
+					while (menukey_list[gc].key)
 					{
-						if (PLAYERINPUTDOWN(pid+1, gc_table[gc])) break;
+						if (PLAYERINPUTDOWN(pid+1, menukey_list[gc].key)) break;
 						gc++;
 					}
-					gameKey = gc_table[gc];
+					gameKey = menukey_list[gc].key;
 					break;
 			}
 		}
@@ -877,7 +899,8 @@ boolean TSoURDt3rd_M_Responder(INT32 *ch, event_t *ev)
 		// Reset keys used, so the game doesn't freak out.
 		memset(gamekeydown, 0, sizeof(gamekeydown));
 	}
-	if (ev->type == ev_keyup || ((*ch) == -1))
+
+	if (ev->type == ev_keyup || ((*ch) == -1) || menuKey == -1)
 	{
 		gameKey = GC_NULL;
 	}
@@ -974,10 +997,8 @@ void TSoURDt3rd_M_PlayMenuJam(void)
 			S_StopMusic();
 			return;
 		}
-
 		if (strnicmp(refMenu->music, S_MusicName(), 7))
 			M_ChangeMenuMusic(refMenu->music, true);
-
 		return;
 	}
 
@@ -1019,7 +1040,7 @@ boolean TSoURDt3rd_M_StartControlPanel(void)
 	}
 
 #ifdef HAVE_DISCORDSUPPORT
-	if (!Playing())
+	if (menuactive)
 	{
 		// currentMenu changed during menuactive
 		DISC_UpdatePresence();
@@ -1051,20 +1072,6 @@ void TSoURDt3rd_M_ClearMenus(boolean callexitmenufunc)
 		return; // we can't quit this menu (also used to set parameter from the menu)
 	}
 
-	if (currentMenu != NULL)
-	{
-		if (currentMenu->prevMenu != NULL)
-		{
-			// If we entered the game search menu, but didn't enter a game,
-			// make sure the game doesn't still think we're in a netgame.
-			if (!Playing() && netgame && multiplayer)
-			{
-				netgame = false;
-				multiplayer = false;
-			}
-		}
-	}
-
 	vanilla_prevMenu = NULL;
 	tsourdt3rd_prevMenu = NULL;
 	tsourdt3rd_currentMenu = NULL;
@@ -1076,6 +1083,10 @@ void TSoURDt3rd_M_ClearMenus(boolean callexitmenufunc)
 	menumessage.active = false;
 
 	TSoURDt3rd_M_SetMenuDelay(pid);
+
+#ifdef HAVE_DISCORDSUPPORT
+	DISC_UpdatePresence();
+#endif
 }
 
 //
@@ -1277,6 +1288,28 @@ boolean TSoURDt3rd_M_PrevOpt(void)
 }
 
 //
+// static boolean M_HandleGlobalInput(UINT8 pid, INT32 choice)
+//
+//
+static boolean M_HandleGlobalInput(UINT8 pid, INT32 choice)
+{
+	if (TSoURDt3rd_M_DoesMenuHaveKeyHandler() != -1)
+		return false;
+
+	if (tsourdt3rd_global_jukebox != NULL)
+	{
+		if (choice == JB_OPENJUKEBOX || STAR_G_KeyPressed(pid, JB_OPENJUKEBOX) || TSoURDt3rd_M_MenuButtonPressed(pid, MBT_JUKEBOX_OPEN))
+		{
+			// A shortcut to open the Jukebox menu.
+			TSoURDt3rd_M_Jukebox_Init(op_extras_jukebox);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+//
 // static void M_HandleMenuInput(void)
 // Handles our TSoURDt3rd exclusive menu inputs.
 //
@@ -1291,22 +1324,28 @@ static void M_HandleMenuInput(void)
 
 	menuKey = -1;
 
-	if (menuactive == false)
-	{
-		// We're not in the menu.
-		return;
-	}
-
 	if (menumessage.active)
 	{
 		TSoURDt3rd_M_HandleMenuMessage();
 		return;
 	}
 
-	// Typing for CV_IT_STRING
 	if (menutyping.active)
 	{
+		// Typing for CV_IT_STRING
 		TSoURDt3rd_M_MenuTypingInput(-1);
+		return;
+	}
+
+	if (M_HandleGlobalInput(pid, thisMenuKey))
+	{
+		// Global keys take priority.
+		return;
+	}
+
+	if (menuactive == false)
+	{
+		// We're not in the menu.
 		return;
 	}
 
@@ -1517,48 +1556,45 @@ void TSoURDt3rd_M_Ticker(INT16 *item, boolean *input, INT16 skullAnimCounter, IN
 		}
 	}
 
-	if (!menuactive)
+	if (menuactive)
 	{
-		// We're not in our unique menu system, so what's the point?
-		tsourdt3rd_noFurtherInput = false;
-		if (menumessage.active)
+		if (menutransition.tics != 0 || menutransition.dest != 0)
 		{
-			TSoURDt3rd_M_MenuMessageShouldTick(gamestate == GS_INTRO);
-			TSoURDt3rd_M_HandleMenuMessage();
-		}
-		return;
-	}
+			tsourdt3rd_noFurtherInput = true;
 
-	if (menutransition.tics != 0 || menutransition.dest != 0)
-	{
-		tsourdt3rd_noFurtherInput = true;
+			if (menutransition.tics < menutransition.dest)
+				menutransition.tics++;
+			else if (menutransition.tics > menutransition.dest)
+				menutransition.tics--;
 
-		if (menutransition.tics < menutransition.dest)
-			menutransition.tics++;
-		else if (menutransition.tics > menutransition.dest)
-			menutransition.tics--;
-
-		// If dest is non-zero, we've started transition and want to switch menus
-		// If dest is zero, we're mid-transition and want to end it
-		if (menutransition.tics == menutransition.dest)
-		{
-			if (tsourdt3rd_currentMenu != menutransition.endmenu)
+			// If dest is non-zero, we've started transition and want to switch menus
+			// If dest is zero, we're mid-transition and want to end it
+			if (menutransition.tics == menutransition.dest)
 			{
-				M_Sys_DoTransition(false, NULL, NULL);
-				TSoURDt3rd_M_SetupNextMenu(menutransition.endmenu, menutransition.vanilla_endmenu, true);
+				if (tsourdt3rd_currentMenu != menutransition.endmenu)
+				{
+					M_Sys_DoTransition(false, NULL, NULL);
+					TSoURDt3rd_M_SetupNextMenu(menutransition.endmenu, menutransition.vanilla_endmenu, true);
+				}
 			}
 		}
-	}
-	else
-	{
-		// true - try not to let people input during the fadeout
-		// false - reset input trigger
-		tsourdt3rd_noFurtherInput = (menuwipe);
+		else
+		{
+			// true - try not to let people input during the fadeout
+			// false - reset input trigger
+			tsourdt3rd_noFurtherInput = (menuwipe);
+		}
 	}
 
 	if (tsourdt3rd_noFurtherInput == false)
 	{
 		M_HandleMenuInput();
+	}
+
+	if (!menuactive)
+	{
+		// Alright, I stretched it as far as possible, but this is as far as we go.
+		return;
 	}
 
 	if (tsourdt3rd_currentMenu == NULL)
@@ -1573,7 +1609,6 @@ void TSoURDt3rd_M_Ticker(INT16 *item, boolean *input, INT16 skullAnimCounter, IN
 				V_DrawScaledPatch(currentMenu->x, currentMenu->menuitems[4].alphaKey, 0, W_CachePatchName("ICODIS", PU_CACHE));
 		}
 #endif
-
 		tsourdt3rd_itemOn = vanilla_itemOn;
 		return;
 	}

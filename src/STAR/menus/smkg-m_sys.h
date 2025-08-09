@@ -237,6 +237,8 @@ fixed_t TSoURDt3rd_M_TimeFrac(tic_t tics, tic_t duration);
 fixed_t TSoURDt3rd_M_ReverseTimeFrac(tic_t tics, tic_t duration);
 fixed_t TSoURDt3rd_M_DueFrac(tic_t start, tic_t duration);
 
+boolean TSoURDt3rd_M_OverwriteResponder(event_t *event);
+
 boolean TSoURDt3rd_M_StartControlPanel(void);
 boolean TSoURDt3rd_M_Responder(INT32 *ch, event_t *ev);
 void TSoURDt3rd_M_Ticker(INT16 *item, boolean *input, INT16 skullAnimCounter, INT32 levellistmode);
@@ -257,12 +259,9 @@ void TSoURDt3rd_M_PlayMenuJam(void);
 
 void TSoURDt3rd_M_StartMessage(const char *header, const char *string, void (*routine)(INT32), menumessagetype_t itemtype, const char *confirmstr, const char *defaultstr);
 boolean TSoURDt3rd_M_MenuMessageTick(void);
-void TSoURDt3rd_M_MenuMessageShouldTick(boolean run);
 void TSoURDt3rd_M_HandleMenuMessage(void);
 void TSoURDt3rd_M_StopMessage(INT32 choice);
 void TSoURDt3rd_M_DrawMenuMessage(void);
-void TSoURDt3rd_M_DrawMenuMessageOnTitle(INT32 count);
-boolean TSoURDt3rd_M_OverwriteIntroResponder(event_t *event);
 
 void TSoURDt3rd_M_OpenVirtualKeyboard(size_t cachelen, vkb_query_fn_t queryfn, menu_t *dummymenu);
 boolean TSoURDt3rd_M_VirtualStringMeetsLength(void);
@@ -274,13 +273,12 @@ void TSoURDt3rd_M_SetMenuDelay(UINT8 i);
 
 boolean TSoURDt3rd_M_MenuButtonPressed(UINT8 pid, UINT32 bt);
 boolean TSoURDt3rd_M_MenuButtonHeld(UINT8 pid, UINT32 bt);
-
-boolean TSoURDt3rd_M_MenuConfirmPressed(UINT8 pid);
-boolean TSoURDt3rd_M_MenuConfirmHeld(UINT8 pid);
-boolean TSoURDt3rd_M_MenuBackPressed(UINT8 pid);
-boolean TSoURDt3rd_M_MenuBackHeld(UINT8 pid);
-boolean TSoURDt3rd_M_MenuExtraPressed(UINT8 pid);
-boolean TSoURDt3rd_M_MenuExtraHeld(UINT8 pid);
+	boolean TSoURDt3rd_M_MenuConfirmPressed(UINT8 pid);
+	boolean TSoURDt3rd_M_MenuConfirmHeld(UINT8 pid);
+	boolean TSoURDt3rd_M_MenuBackPressed(UINT8 pid);
+	boolean TSoURDt3rd_M_MenuBackHeld(UINT8 pid);
+	boolean TSoURDt3rd_M_MenuExtraPressed(UINT8 pid);
+	boolean TSoURDt3rd_M_MenuExtraHeld(UINT8 pid);
 
 void TSoURDt3rd_M_UpdateMenuCMD(UINT8 i);
 
@@ -299,10 +297,11 @@ extern menuitem_t MainMenu[];
 
 extern menuitem_t SP_MainMenu[];
 
-extern menuitem_t MPauseMenu[];
-extern menu_t MPauseDef;
 extern menuitem_t SPauseMenu[];
 extern menu_t SPauseDef;
+
+extern menuitem_t MPauseMenu[];
+extern menu_t MPauseDef;
 #endif
 
 #ifdef HAVE_DISCORDSUPPORT
@@ -612,12 +611,7 @@ void TSoURDt3rd_M_PostDrawer(void);
 void TSoURDt3rd_M_DrawGenericOptions(void);
 void TSoURDt3rd_M_DrawMediocreKeyboardKey(const char *text, INT32 *workx, INT32 worky, boolean push, boolean rightaligned);
 
-INT32 TSoURDt3rd_M_DrawCaretString(
-	INT32 x, INT32 y,
-	INT32 flags,
-	fixed_t pscale, fixed_t vscale,
-	const char *string, fontdef_t font
-);
+INT32 TSoURDt3rd_M_DrawCaretString(INT32 x, INT32 y, INT32 flags, fixed_t pscale, fixed_t vscale, const char *string, fontdef_t font);
 
 void TSoURDt3rd_M_DrawMenuTooltips(
 	fixed_t box_x, fixed_t box_y, INT32 box_flags, UINT8 *box_color, boolean box_patch,

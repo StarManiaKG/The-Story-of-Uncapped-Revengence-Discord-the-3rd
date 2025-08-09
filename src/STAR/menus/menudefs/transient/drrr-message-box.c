@@ -356,9 +356,3 @@ void TSoURDt3rd_M_DrawMenuMessage(void)
 		y += 8;
 	}
 }
-
-void TSoURDt3rd_M_DrawMenuMessageOnTitle(INT32 count)
-{
-	if (count > 0)
-		TSoURDt3rd_M_DrawMenuMessage();
-}
