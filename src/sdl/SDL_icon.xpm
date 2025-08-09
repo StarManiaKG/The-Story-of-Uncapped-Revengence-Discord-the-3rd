@@ -1,5 +1,5 @@
 /* XPM */
-static char *_2fd24528e984f04bd5694d426e05805[] = {
+static const char *SDL_icon_xpm[] = {
 /* columns rows colors chars-per-pixel */
 "64 64 256 2 ",
 "   c #47704C",

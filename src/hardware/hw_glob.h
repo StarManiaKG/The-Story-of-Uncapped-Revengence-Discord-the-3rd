@@ -138,6 +138,8 @@ void HWR_UpdateLightTable(UINT32 id, UINT8 *lighttable, RGBA_t *hw_lighttable);
 UINT32 HWR_GetLightTableID(extracolormap_t *colormap);
 void HWR_ClearLightTables(void);
 
+GLPatch_t *HWR_GetPic(lumpnum_t lumpnum);
+
 
 // --------
 // hw_draw.c

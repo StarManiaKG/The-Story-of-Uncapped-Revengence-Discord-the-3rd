@@ -70,9 +70,10 @@ typedef union
 #include "smkg-net.h"
 #include "../smkg-cvars.h"
 
-#include "../../d_net.h"
-#include "../../i_addrinfo.h"
 #include "../../i_time.h"
+
+#include "../../netcode/d_net.h"
+#include "../../netcode/i_addrinfo.h"
 
 #ifdef USE_STUN
 #include "../stun/stun.h" // STUN_got_response() //

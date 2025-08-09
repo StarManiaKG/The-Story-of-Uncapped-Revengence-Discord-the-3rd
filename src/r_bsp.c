@@ -1356,7 +1356,7 @@ void R_RenderBSPNode(INT32 bspnum)
 
 	tsourdt3rd_loadingscreen.bspCount = bspnum; // STAR STUFF: we're on the border, NOW! //
 #ifdef ALAM_LIGHTING
-	HWR_Create_StaticLightmaps(bspnum);
+	HWR_DL_CreateStaticLightmaps(bspnum);
 #endif
 
 	// PORTAL CULLING

@@ -86,8 +86,6 @@ void HWR_Transform(float *cx, float *cy, float *cz);
 void HWR_set_view_transform(void);
 void transform_world_to_gr(float wx, float wy, float wz, /*OUT*/ float *gx, float *gy, float *gz);
 #endif
-
-patch_t *HWR_GetPic(lumpnum_t lumpnum);
 #endif
 
 #endif // ALAM_LIGHTING

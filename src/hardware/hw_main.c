@@ -530,7 +530,7 @@ static void HWR_RenderPlane(subsector_t *subsector, extrasubsector_t *xsub, bool
 #if 0
 #ifdef ALAM_LIGHTING
 	// add here code for dynamic lighting on planes
-	HWR_PlaneLighting(planeVerts, nrPlaneVerts, PolyFlags, shader);
+	HWR_PlaneLighting(planeVerts, nrPlaneVerts, PolyFlags, shader, false);
 
 	// SRB2CBTODO: dynamic lighting on planes, polyobjects too
 	//HWR_RenderFloorSplat(planeVerts, numAllocedPlaneVerts);
@@ -542,7 +542,7 @@ static void HWR_RenderPlane(subsector_t *subsector, extrasubsector_t *xsub, bool
 #if 0
 #ifdef ALAM_LIGHTING
 	// add here code for dynamic lighting on planes
-	HWR_PlaneLighting(planeVerts, nrPlaneVerts, PolyFlags, shader);
+	HWR_PlaneLighting(planeVerts, nrPlaneVerts, PolyFlags, shader, false);
 
 	// SRB2CBTODO: dynamic lighting on planes, polyobjects too
 	//HWR_RenderFloorSplat(planeVerts, numAllocedPlaneVerts);
@@ -634,7 +634,7 @@ static void HWR_RenderPlane(subsector_t *subsector, extrasubsector_t *xsub, bool
 #if 0
 #ifdef ALAM_LIGHTING
 					// add here code for dynamic lighting on planes
-					HWR_PlaneLighting(horizonpts, 6, PolyFlags, shader);
+					HWR_PlaneLighting(horizonpts, 6, PolyFlags, shader, true);
 
 					// SRB2CBTODO: dynamic lighting on planes, polyobjects too
 					//HWR_RenderFloorSplat(horizonpts, 6);
@@ -647,7 +647,7 @@ static void HWR_RenderPlane(subsector_t *subsector, extrasubsector_t *xsub, bool
 #if 1
 #ifdef ALAM_LIGHTING
 					// add here code for dynamic lighting on planes
-					HWR_PlaneLighting(horizonpts, 6, PolyFlags, shader);
+					HWR_PlaneLighting(horizonpts, 6, PolyFlags, shader, true);
 
 					// SRB2CBTODO: dynamic lighting on planes, polyobjects too
 					//HWR_RenderFloorSplat(horizonpts, 6);
@@ -661,7 +661,7 @@ static void HWR_RenderPlane(subsector_t *subsector, extrasubsector_t *xsub, bool
 #if 1
 #ifdef ALAM_LIGHTING
 	// add here code for dynamic lighting on planes
-	HWR_PlaneLighting(planeVerts, nrPlaneVerts, PolyFlags, shader);
+	HWR_PlaneLighting(planeVerts, nrPlaneVerts, PolyFlags, shader, false);
 
 	// SRB2CBTODO: dynamic lighting on planes, polyobjects too
 	//HWR_RenderFloorSplat(planeVerts, numAllocedPlaneVerts);
@@ -6339,7 +6339,7 @@ void HWR_LoadLevel(void)
 #ifdef ALAM_LIGHTING
 	// BP: reset light between levels (we draw preview frame lights on current frame)
 	HWR_Reset_Lights();
-	//HWR_DL_CreateStaticLightmaps();
+	//HWR_DL_CreateStaticLightmaps(0);
 #endif
 
 	HWR_CreatePlanePolygons((INT32)numnodes - 1);

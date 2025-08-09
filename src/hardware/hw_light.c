@@ -16,6 +16,7 @@
 #ifdef HWRENDER
 #include "hw_light.h"
 #include "hw_drv.h"
+#include "hw_batching.h"
 #include "../i_video.h"
 #include "../z_zone.h"
 #include "../m_random.h"
@@ -80,11 +81,9 @@ static lumpnum_t corona_lumpnum = LUMPERROR;
 static void HWR_SetLight(void)
 {
 	int i, j;
-
 	if (!lightmap_gl_patch->mipmap->downloaded && !lightmap_gl_patch->mipmap->data)
 	{
 		UINT16 *data = Z_Malloc(129*128*sizeof(UINT16), PU_HWRCACHE, lightmap_gl_patch->mipmap->data);
-
 		for (i = 0; i < 128; i++)
 		{
 			for (j = 0; j < 128; j++)
@@ -97,14 +96,14 @@ static void HWR_SetLight(void)
 			}
 		}
 		lightmap_gl_patch->mipmap->format = GL_TEXFMT_ALPHA_INTENSITY_88;
-
 		lightmap_patch->width = 128;
 		lightmap_patch->height = 128;
 		lightmap_gl_patch->mipmap->width = 128;
 		lightmap_gl_patch->mipmap->height = 128;
 		lightmap_gl_patch->mipmap->flags = 0; //TF_WRAPXY; // DEBUG: view the overdraw !
+		HWD.pfnSetTexture(lightmap_gl_patch->mipmap);
 	}
-	HWD.pfnSetTexture(lightmap_gl_patch->mipmap);
+	HWR_SetCurrentTexture(lightmap_gl_patch->mipmap);
 	Z_ChangeTag(lightmap_gl_patch->mipmap->data, PU_HWRCACHE_UNLOCKED); // The system-memory data can be purged now.
 }
 
@@ -365,7 +364,7 @@ void HWR_WallShading(FOutVector *wlVerts)
 // calcul du dynamic lighting sur les murs
 // lVerts contient les coords du mur sans le mlook (up/down)
 // --------------------------------------------------------------------------
-void HWR_WallLighting(FOutVector *wlVerts)
+void HWR_WallLighting(FOutVector *wlVerts, FBITFIELD PolyFlags, int shader)
 {
 #ifdef DYN_LIGHT_VERTEX
 	FOutVector		   dlv[4];
@@ -470,9 +469,11 @@ void HWR_WallLighting(FOutVector *wlVerts)
 #endif
 
 #ifdef DYN_LIGHT_VERTEX
-		HWD.pfnDrawPolygon(&Surf, dlv, 4, LIGHTMAPFLAGS);
+		//HWD.pfnDrawPolygon(&Surf, dlv, 4, LIGHTMAPFLAGS);
+		HWR_ProcessPolygon(&Surf, dlv, 4, LIGHTMAPFLAGS, shader, false);
 #else
-		HWD.pfnDrawPolygon(&Surf, wlVerts, 4, LIGHTMAPFLAGS);
+		//HWD.pfnDrawPolygon(&Surf, wlVerts, 4, LIGHTMAPFLAGS);
+		HWR_ProcessPolygon(&Surf, wlVerts, 4, LIGHTMAPFLAGS, shader, false);
 #endif
 	} // end for (j = 0; j < dynlights->nb; j++)
 }
@@ -481,7 +482,7 @@ void HWR_WallLighting(FOutVector *wlVerts)
 // calcul du dynamic lighting sur le sol
 // clVerts contient les coords du sol avec le mlook (up/down)
 // --------------------------------------------------------------------------
-void HWR_PlaneLighting(FOutVector *clVerts, int nrClipVerts)
+void HWR_PlaneLighting(FOutVector *clVerts, FUINT nrClipVerts, FBITFIELD PolyFlags, int shader, boolean horizonSpecial)
 {
 	FSurfaceInfo	       Surf;
 	light_t     	    *p_lspr; // dynlights sprite light
@@ -489,7 +490,7 @@ void HWR_PlaneLighting(FOutVector *clVerts, int nrClipVerts)
 	mobj_t           *lspr_mobj;
 	float           dist_p2d, s;
 	FOutVector     	      p1,p2;
-	int                       i;
+	FUINT                     i;
 	unsigned int              j;
 
 	p1.z = FIXED_TO_FLOAT(hwbbox[BOXTOP   ]);
@@ -562,7 +563,8 @@ void HWR_PlaneLighting(FOutVector *clVerts, int nrClipVerts)
 		HWR_GetPic(corona_lumpnum); // TODO: use different coronas
 #endif
 
-		HWD.pfnDrawPolygon(&Surf, clVerts, nrClipVerts, LIGHTMAPFLAGS);
+		//HWD.pfnDrawPolygon(&Surf, clVerts, nrClipVerts, LIGHTMAPFLAGS);
+		HWR_ProcessPolygon(&Surf, clVerts, nrClipVerts, LIGHTMAPFLAGS, shader, horizonSpecial);
 	} // end for (j = 0; j < dynlights->nb; j++)
 }
 
@@ -722,10 +724,14 @@ void HWR_DL_Draw_Coronas(void)
 			continue;
 
 		// transform light positions
+#if 0
 		cx = light_pos->x;
 		cy = light_pos->y;
 		cz = light_pos->z; // gravity center
 		HWR_Transform(&cx, &cy, &cz);
+#else
+		transform_world_to_gr(/*IN*/ light_pos->x, light_pos->y, light_pos->z, /*OUT*/ &cx, &cy, &cz);
+#endif
 
 		// more realistique corona !
 		if (cz >= Z2)
@@ -909,12 +915,12 @@ void HWR_DL_AddLightSprite(gl_vissprite_t *spr)
 	dynlights->nb++;
 }
 
-void HWR_Init_Light(void)
+void HWR_Init_Light(const char *lightpatch)
 {
 	size_t i;
 
 	// Make sure the corona graphic exists
-	lightmap_patch = (patch_t *)W_CachePatchName("CORONA", PU_CACHE);
+	lightmap_patch = (patch_t *)W_CachePatchName(lightpatch, PU_CACHE);
 	lightmap_gl_patch = (GLPatch_t *)lightmap_patch->hardware;
 	if (!(lightmap_patch && lightmap_gl_patch->mipmap->format)) return;
 
@@ -1138,33 +1144,30 @@ static void HWR_SearchLightsInMobjs(void)
 }
 
 //
-// HWR_Create_StaticLightmaps()
+// HWR_DL_CreateStaticLightmaps(INT32 bspnum)
 // Called from P_SetupLevel
 //
-void HWR_Create_StaticLightmaps(void)
+// Hurdler: TODO!
+//
+void HWR_DL_CreateStaticLightmaps(INT32 bspnum)
 {
-	// Hurdler: TODO!
-	CONS_Printf("HWR_CreateStaticLightmaps\n");
-
-	HWR_Reset_Lights();
-
 	// First: Searching for lights
 	// BP: if i was you, I will make it in create mobj since mobj can be create
 	//     at runtime now with fragle scipt
 	HWR_SearchLightsInMobjs();
-	CONS_Printf("%d lights found\n", dynlights->nb);
+	CONS_Printf("HWR_DL_CreateStaticLightmaps(): %d lights found\n", dynlights->num_lights);
 
 	// Second: Build all lightmap for walls covered by lights
 	validcount++; // to be sure
-	HWR_ComputeLightMapsInBSPNode(numnodes-1, NULL);
+	//HWR_ComputeLightMapsInBSPNode(numnodes-1, NULL);
+	HWR_ComputeLightMapsInBSPNode(bspnum, NULL);
 
+#if 0
 	HWR_Reset_Lights();
+#endif
 }
 #else
-void HWR_Create_StaticLightmaps(void)
-{
-	return;
-}
+void HWR_DL_CreateStaticLightmaps(INT32 bspnum) { (void)bspnum; }
 #endif
 
 /**
