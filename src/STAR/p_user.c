@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -12,12 +12,12 @@
 #include "p_user.h"
 
 #include "smkg-cvars.h"
-#include "smkg-jukebox.h"
-#include "smkg-i_sys.h" // TSoURDt3rd_I_CursedWindowMovement() //
-#include "core/smkg-p_pads.h" // TSoURDt3rd_P_Pads_PadRumbleThink() //
-#include "smkg-misc.h" // TSoURDt3rd_FOL_CreateDirectory() //
+#include "smkg-i_sys.h" // TSoURDt3rd_I_QuakeWindow() //
 #include "ss_main.h" // STAR_CONS_Printf() //
 #include "star_vars.h" // TSoURDt3rd_DetermineLevelMusic() //
+#include "core/smkg-p_pads.h" // TSoURDt3rd_P_Pads_PadRumbleThink() //
+#include "core/smkg-s_jukebox.h"
+#include "misc/smkg-m_misc.h" // TSoURDt3rd_FOL_CreateDirectory() //
 
 #include "../g_game.h"
 #include "../p_local.h"
@@ -27,12 +27,8 @@
 //        Variables
 // ------------------------ //
 
-boolean watermuffling_alreadyineffect = false;
-static float watermuffling_music_speed, watermuffling_music_pitch;
-static INT32 watermuffling_music_volume, watermuffling_sfx_volume;
 #define TSOURDT3RD_MUFFLEINT (0.15f)
-
-#define TSOURDT3RD_TIMELIMIT (21004) // one tic off so the timer doesn't display 10:00.00
+#define TSOURDT3RD_TIMELIMIT (((60*TICRATE) * 10) - 1)
 
 const char gameoverMusic[9][7] = {
 	[0] = "_gover",
@@ -60,10 +56,8 @@ INT32 gameoverMusicTics[9] = {
 //
 boolean TSoURDt3rd_P_MovingPlayerSetup(INT32 playernum)
 {
-	if (!CanChangeSkin(playernum))
-		return false;
-	if ((gametyperules & GTR_RACE) && P_PlayerMoving(playernum))
-		return false;
+	if (!CanChangeSkin(playernum)) return false;
+	if ((gametyperules & GTR_RACE) && P_PlayerMoving(playernum)) return false;
 	return (cv_tsourdt3rd_players_setupwhilemoving.value || (!cv_tsourdt3rd_players_setupwhilemoving.value && !P_PlayerMoving(playernum)));
 }
 
@@ -84,7 +78,7 @@ boolean TSoURDt3rd_P_DeathThink(player_t *player)
 	}
 
 	if ((TSoURDt3rd_AprilFools_ModeEnabled() && ultimatemode && !netgame)
-		&& (player->lives <= 0 || tsourdt3rd_user->levels.time_over))
+		&& (player->lives <= 0 || tsourdt3rd_user->game.time_over))
 	{
 		// This is funny.
 		if (splitscreen || multiplayer)
@@ -108,19 +102,18 @@ boolean TSoURDt3rd_P_DeathThink(player_t *player)
 		return false;
 	}
 
-	if (no_netgame && player->lives <= 0 && player == &players[consoleplayer] && player->deadtimer >= gameovertics) // Extra players in SP can't be allowed to continue or end game
+	// Extra players in SP can't be allowed to continue or end game
+	if (no_netgame && player->lives <= 0 && player == &players[consoleplayer] && player->deadtimer >= gameovertics)
 	{
 		// Continue Logic - Even if we don't have one this handles ending the game
 		G_UseContinue();
 		return false;
 	}
 
-	if (tsourdt3rd_user->levels.time_over && !(no_netgame && G_IsSpecialStage(gamemap)))
+	if (tsourdt3rd_user->game.time_over && !(no_netgame && G_IsSpecialStage(gamemap)))
 	{
 		// Don't allow "click to respawn" in special stages!
-		if (G_GametypeUsesCoopStarposts() && (netgame || multiplayer) && cv_coopstarposts.value == 2)
-			;
-		else
+		if (!(G_GametypeUsesCoopStarposts() && (netgame || multiplayer) && cv_coopstarposts.value == 2))
 		{
 			if (player->deadtimer >= gameovertics)
 			{
@@ -146,50 +139,98 @@ boolean TSoURDt3rd_P_DeathThink(player_t *player)
 void TSoURDt3rd_P_PlayerThink(player_t *player)
 {
 	player_t *display_player = &players[displayplayer];
+	player_t *split_player = (splitscreen ? &players[1] : NULL);
+
 	(void)player;
 
-	if (display_player != NULL && display_player->mo != NULL)
+	if (display_player && display_player->mo)
 	{
 		// Water muffling
-		if (!TSoURDt3rd_Jukebox_IsPlaying() && cv_tsourdt3rd_audio_watermuffling.value)
+		tsourdt3rd_local.water_muffling.apply_effect = ((display_player->mo->eflags & MFE_UNDERWATER) && (display_player->mo->health > 0));
+		if (split_player && split_player->mo)
 		{
-			if ((display_player->mo->eflags & MFE_UNDERWATER) && !watermuffling_alreadyineffect)
+			tsourdt3rd_local.water_muffling.apply_effect = (split_player->mo->eflags & MFE_UNDERWATER);
+		}
+		tsourdt3rd_local.water_muffling.disable_effect = (!tsourdt3rd_local.water_muffling.apply_effect && tsourdt3rd_local.water_muffling.in_effect);
+	}
+
+	if (cv_tsourdt3rd_audio_watermuffling.value)
+	{
+		// Water muffling
+
+		if (tsourdt3rd_local.water_muffling.apply_effect)
+		{
+			if (!tsourdt3rd_local.water_muffling.in_effect)
 			{
-				watermuffling_music_speed = (S_GetSpeedMusic() - TSOURDT3RD_MUFFLEINT);
-				watermuffling_music_pitch = (S_GetPitchMusic() - TSOURDT3RD_MUFFLEINT);
+				tsourdt3rd_local.water_muffling.prev_music_volume = S_GetInternalMusicVolume();
+				tsourdt3rd_local.water_muffling.prev_music_speed = S_GetSpeedMusic();
+				tsourdt3rd_local.water_muffling.prev_music_pitch = S_GetPitchMusic();
 
-				if (S_GetInternalMusicVolume() > 0)
-					watermuffling_music_volume = (S_GetInternalMusicVolume() / 2);
-				if (S_GetInternalSfxVolume() > 0)
-				watermuffling_sfx_volume = (S_GetInternalSfxVolume() / 3);
+				if (tsourdt3rd_local.water_muffling.prev_music_volume > 0)
+				{
+					tsourdt3rd_local.water_muffling.music_volume = (tsourdt3rd_local.water_muffling.prev_music_volume / 2);
+					if (tsourdt3rd_local.water_muffling.music_volume < 1)
+						tsourdt3rd_local.water_muffling.music_volume = 1;
+				}
+				tsourdt3rd_local.water_muffling.music_speed = (tsourdt3rd_local.water_muffling.prev_music_speed - TSOURDT3RD_MUFFLEINT);
+				tsourdt3rd_local.water_muffling.music_pitch = (tsourdt3rd_local.water_muffling.prev_music_pitch - TSOURDT3RD_MUFFLEINT);
 
-				if (watermuffling_music_volume < 1)
-					watermuffling_music_volume = 1;
+				tsourdt3rd_local.water_muffling.prev_sfx_volume = S_GetInternalSfxVolume();
+				if (tsourdt3rd_local.water_muffling.prev_sfx_volume > 0)
+					tsourdt3rd_local.water_muffling.sfx_volume = (tsourdt3rd_local.water_muffling.prev_sfx_volume / 3);
 
-				S_SpeedMusic(watermuffling_music_speed);
-				S_PitchMusic(watermuffling_music_pitch);
-
-				S_SetInternalMusicVolume(watermuffling_music_volume);
-				S_SetInternalSfxVolume(watermuffling_sfx_volume);
+				// Enable water muffling!
+				tsourdt3rd_local.water_muffling.in_effect = true;
 			}
-			else if (!(display_player->mo->eflags & MFE_UNDERWATER) && watermuffling_alreadyineffect)
+
+			// Apply effects to music...
+			if (!TSoURDt3rd_Jukebox_IsPlaying())
 			{
-				watermuffling_music_speed += TSOURDT3RD_MUFFLEINT;
-				watermuffling_music_pitch += TSOURDT3RD_MUFFLEINT;
-
-				watermuffling_music_volume *= 2;
-				watermuffling_sfx_volume *= 3;
-
-				if (watermuffling_music_volume > 100)
-					watermuffling_music_volume = 100;
-
-				S_SpeedMusic(watermuffling_music_speed);
-				S_PitchMusic(watermuffling_music_pitch);
-
-				S_SetInternalMusicVolume(watermuffling_music_volume);
-				S_SetInternalSfxVolume(watermuffling_sfx_volume);
+				S_SetInternalMusicVolume(tsourdt3rd_local.water_muffling.music_volume);
+				S_SpeedMusic(tsourdt3rd_local.water_muffling.music_speed);
+				S_PitchMusic(tsourdt3rd_local.water_muffling.music_pitch);
 			}
-			watermuffling_alreadyineffect = (display_player->mo->eflags & MFE_UNDERWATER);
+
+			// Apply effects to sounds...
+			S_SetInternalSfxVolume(tsourdt3rd_local.water_muffling.sfx_volume);
+
+		}
+
+		if (tsourdt3rd_local.water_muffling.in_effect)
+		{
+			if (!tsourdt3rd_local.water_muffling.apply_effect/*tsourdt3rd_local.water_muffling.disable_effect*/)
+			{
+				// Remove effects to music...
+				if (!TSoURDt3rd_Jukebox_IsPlaying())
+				{
+					S_SetInternalMusicVolume(tsourdt3rd_local.water_muffling.prev_music_volume);
+					S_SpeedMusic(tsourdt3rd_local.water_muffling.prev_music_speed);
+					S_PitchMusic(tsourdt3rd_local.water_muffling.prev_music_pitch);
+				}
+
+				// Remove effects to sounds...
+				S_SetInternalSfxVolume(tsourdt3rd_local.water_muffling.prev_sfx_volume);
+
+				// Disable water muffling!
+				tsourdt3rd_local.water_muffling.in_effect = false;
+			}
+#if 0
+			/// \todo STAR NOTE: improve
+			else
+			{
+				if (S_GetInternalMusicVolume() != tsourdt3rd_local.water_muffling.music_volume)
+					S_SetInternalMusicVolume(tsourdt3rd_local.water_muffling.music_volume);
+
+				if ((S_GetSpeedMusic() <= tsourdt3rd_local.water_muffling.music_speed)
+					&& (S_GetSpeedMusic() >= tsourdt3rd_local.water_muffling.music_speed))
+					S_SpeedMusic(tsourdt3rd_local.water_muffling.music_speed);
+				if ((S_GetPitchMusic() <= tsourdt3rd_local.water_muffling.music_pitch)
+					&& (S_GetPitchMusic() >= tsourdt3rd_local.water_muffling.music_pitch))
+
+				if (S_GetInternalSfxVolume() != tsourdt3rd_local.water_muffling.sfx_volume)
+					S_SetInternalSfxVolume(tsourdt3rd_local.water_muffling.sfx_volume);
+			}
+#endif
 		}
 	}
 }
@@ -208,7 +249,6 @@ void TSoURDt3rd_P_Ticker(boolean run)
 		{
 			player_t *player = player = &players[i];
 			tsourdt3rd_t *tsourdt3rd_user = &tsourdt3rd[i];
-			INT32 skin;
 
 			if (!playeringame[i] || player == NULL || player->spectator)
 			{
@@ -220,14 +260,14 @@ void TSoURDt3rd_P_Ticker(boolean run)
 			{
 				// Time over...
 				if (leveltime < TSOURDT3RD_TIMELIMIT)
-					tsourdt3rd_user->levels.time_over = false;
+					tsourdt3rd_user->game.time_over = false;
 
 				if (cv_tsourdt3rd_game_allowtimeover.value && !(netgame || demoplayback) && countdowntimeup <= 0)
 				{
-					if ((!(netgame && multiplayer) && player->playerstate == PST_LIVE && leveltime >= TSOURDT3RD_TIMELIMIT)
-						|| (player->realtime >= TSOURDT3RD_TIMELIMIT))
+					tic_t levtime = ((!(netgame && multiplayer) && player->playerstate == PST_LIVE) ? leveltime : player->realtime);
+					if (levtime >= TSOURDT3RD_TIMELIMIT)
 					{
-						tsourdt3rd_user->levels.time_over = true;
+						tsourdt3rd_user->game.time_over = true;
 						if (player->mo)
 							P_DamageMobj(player->mo, NULL, NULL, 1, DMG_INSTAKILL);
 						if (splitscreen || multiplayer)
@@ -237,14 +277,19 @@ void TSoURDt3rd_P_Ticker(boolean run)
 			}
 
 			// Removed Sonic (real)
-			if (TSoURDt3rd_AprilFools_ModeEnabled() && P_IsLocalPlayer(player) && strstr(skins[player->skin].name, "sonic"))
+			if (TSoURDt3rd_AprilFools_ModeEnabled() && P_IsLocalPlayer(player) && strstr(skins[player->skin]->name, "sonic"))
 			{
-				for (skin = 0; skin < MAXSKINS; skin++)
+				skin_t *current_skin = skins[0];
+
+				for (INT32 skin = 0; skin < MAXSKINS; skin++)
 				{
-					if (skins[skin].name[0] == '\0')
+					current_skin = skins[skin];
+
+					if (current_skin->name[0] == '\0')
 						continue;
-					if (strstr(skins[skin].name, "sonic"))
+					if (strstr(current_skin->name, "sonic"))
 						continue;
+
 					if (R_SkinUsable(-1, skin))
 					{
 						SetPlayerSkinByNum(i, skin);
@@ -254,18 +299,18 @@ void TSoURDt3rd_P_Ticker(boolean run)
 
 				if (splitscreen && i == 1)
 				{
-					STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "Your friend can't play as Sonic either, he's gone.\n");
-					CV_StealthSet(&cv_skin2, skins[skin].name);
+					STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_APRILFOOLS|STAR_CONS_WARNING, "Your friend can't play as Sonic either, he's gone.\n");
+					CV_StealthSet(&cv_skin2, current_skin->name);
 				}
 				else
 				{
-					STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "You can't play as Sonic, he's dead.\n");
-					CV_StealthSet(&cv_skin, skins[skin].name);
+					STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_APRILFOOLS|STAR_CONS_WARNING, "You can't play as Sonic, he's dead.\n");
+					CV_StealthSet(&cv_skin, current_skin->name);
 				}
 
-				if (strstr(skins[skin].name, "sonic") || strstr(skins[skin].realname, "Sonic"))
+				if (strstr(current_skin->name, "sonic") || strstr(current_skin->realname, "Sonic"))
 				{
-					STAR_CONS_Printf(STAR_CONS_APRILFOOLS, "But no skin other than sonic found was found, so uh..............\n\tI guess you're now legally distinct Sonic then!\n");
+					STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_APRILFOOLS|STAR_CONS_WARNING, "But no skin other than sonic found was found, so uh..............\n\tI guess you're now legally distinct Sonic then!\n");
 					player->skincolor = SKINCOLOR_WHITE;
 				}
 			}
@@ -277,11 +322,13 @@ void TSoURDt3rd_P_Ticker(boolean run)
 			}
 		}
 
+#if 0
 		// Quaking
 		if (quake.time)
 		{
-			TSoURDt3rd_I_CursedWindowMovement(FixedInt(quake.x), FixedInt(quake.y));
+			TSoURDt3rd_I_QuakeWindow(FixedInt(quake.x), FixedInt(quake.y));
 		}
+#endif
 	}
 }
 
@@ -297,32 +344,23 @@ boolean TSoURDt3rd_P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *sourc
 
 	if (target)
 	{
-		INT32 phealth = (target->info->damage ? target->info->damage : 3);
-
 		if (inflictor)
 		{
 			// Apply controller rumble to local players
 			TSoURDt3rd_P_Pads_PadRumbleThink(inflictor, target);
 		}
 
-		if ((target->flags & MF_BOSS) && target->health <= phealth)
+		if (target->flags & MF_BOSS)
 		{
-			if (!cv_tsourdt3rd_audio_bosses_pinch.value)
-				return false;
-
 			strncpy(mapmusname, TSoURDt3rd_DetermineLevelMusic(), 7);
 			mapmusname[6] = 0;
-
 			if (TSoURDt3rd_Jukebox_IsPlaying())
 				return false;
-
-			S_ChangeMusicEx(mapmusname, mapmusflags, true, TSoURDt3rd_PinchMusicPosition(), 0, 0);
-			if (TSoURDt3rd_SetPinchMusicSpeed())
-				S_SpeedMusic(1.1f);
+			S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
 		}
 	}
 
-	return true;
+	return (target != NULL);
 }
 
 //
@@ -344,7 +382,7 @@ void TSoURDt3rd_P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UI
 		{
 			boolean gameovermus = false;
 
-			if ((tsourdt3rd[consoleplayer].levels.time_over || t_player->lives <= 0) && G_GametypeUsesLives())
+			if ((tsourdt3rd[consoleplayer].game.time_over || t_player->lives <= 0) && G_GametypeUsesLives())
 			{
 				if ((netgame || multiplayer) && G_GametypeUsesCoopLives() && (cv_cooplives.value != 1))
 				{
@@ -364,14 +402,6 @@ void TSoURDt3rd_P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UI
 
 				if (gameovermus) // Yousa dead now, Okieday? Tails 03-14-2000 - (With changes from StarManiaKG in 2024)
 					S_ChangeMusicEx(gameoverMusic[cv_tsourdt3rd_audio_gameover.value], 0, 0, 0, (2*MUSICRATE) - (MUSICRATE/25), 0);
-
-				// Kinda hacky but gets the job done
-				if ((tsourdt3rd[consoleplayer].levels.time_over && t_player->lives <= 0) && (!(netgame || multiplayer || demoplayback || demorecording || metalrecording || modeattacking) && numgameovers < maxgameovers))
-				{
-					numgameovers++;
-					if (!usedCheats && cursaveslot > 0)
-						G_SaveGameOver((UINT32)cursaveslot, (target->player->continues <= 0));
-				}
 			}
 		}
 
@@ -384,14 +414,71 @@ void TSoURDt3rd_P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UI
 }
 
 //
+// boolean TSoURDt3rd_P_ControlShieldOverlay(mobj_t *thing)
+// If the function returns false, it overrides the functionality of overlaying shields.
+//
+boolean TSoURDt3rd_P_ControlShieldOverlay(mobj_t *thing)
+{
+	player_t *player = thing->target->player;
+
+	if ((player->powers[pw_shield] & SH_NOSTACK) == SH_NONE)
+		return true;
+
+	if (player->powers[pw_super])
+	{
+		if (player->powers[pw_invulnerability] > 1)
+			return (cv_tsourdt3rd_players_alwaysoverlayinvulnsparks.value);
+		return true;
+	}
+
+	return false;
+}
+
+//
+// boolean TSoURDt3rd_P_PlayerShieldThink(player_t *player, ticcmd_t *cmd, mobj_t *lockonthok, mobj_t *visual)
+// If the function returns false, it overrides the functionality of using shield abilities.
+//
+boolean TSoURDt3rd_P_PlayerShieldThink(player_t *player, ticcmd_t *cmd, mobj_t *lockonthok, mobj_t *visual)
+{
+	(void)cmd;
+	(void)lockonthok;
+	(void)visual;
+
+	if (!(player->powers[pw_shield] & SH_NOSTACK))
+		return false;
+
+	if (player->pflags & PF_SPINDOWN)
+		return false;
+
+	if (!player->powers[pw_super])
+	{
+		return (TSoURDt3rd_P_SuperReady(player));
+	}
+	else
+	{
+		if (((player->powers[pw_shield] & SH_NOSTACK) == SH_ARMAGEDDON) && cv_tsourdt3rd_players_nukewhilesuper.value)
+		{
+			// Armageddon pow
+			player->pflags |= PF_THOKKED|PF_SHIELDABILITY;
+			player->pflags &= ~PF_SPINNING;
+			P_BlackOw(player);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+//
 // boolean TSoURDt3rd_P_SuperReady(player_t *player)
 // Checks if the player meets the unique TSoURDt3rd conditions in order to turn super.
 //
 boolean TSoURDt3rd_P_SuperReady(player_t *player)
 {
-	if (!netgame &&
-		(TSoURDt3rd_AprilFools_ModeEnabled()
-		|| (TSoURDt3rd_Easter_AllEggsCollected() && EnableEasterEggHuntBonuses && ALL7EMERALDS(emeralds))))
+	if (!(player->pflags & PF_JUMPED))
+		return false;
+
+	if (!netgame && (TSoURDt3rd_AprilFools_ModeEnabled() || (TSoURDt3rd_Easter_AllEggsCollected() && EnableEasterEggHuntBonuses && ALL7EMERALDS(emeralds))))
 	{
 		if (gametyperules & GTR_POWERSTONES)
 		{
@@ -410,16 +497,24 @@ boolean TSoURDt3rd_P_SuperReady(player_t *player)
 		return true;
 	}
 
-	if (!player->powers[pw_super]
-	&& ((cv_tsourdt3rd_players_shieldblockstransformation.value && !player->powers[pw_invulnerability]) || (!cv_tsourdt3rd_players_shieldblockstransformation.value))
-	&& !player->powers[pw_tailsfly]
-	&& (player->charflags & SF_SUPER)
-	&& (player->pflags & PF_JUMPED)
-	&& ((!(player->powers[pw_shield] & SH_NOSTACK) && cv_tsourdt3rd_players_shieldblockstransformation.value) || (!cv_tsourdt3rd_players_shieldblockstransformation.value))
-	&& !(maptol & TOL_NIGHTS)
-	&& ALL7EMERALDS(emeralds)
-	&& (player->rings >= 50))
-		return true;
+	if (player->powers[pw_super])
+		return false;
+	if (!(player->charflags & SF_SUPER))
+		return false;
+	if ((player->rings < 50) || !ALL7EMERALDS(emeralds))
+		return false;
 
-	return false;
+	if (player->powers[pw_tailsfly])
+		return false;
+	if (maptol & TOL_NIGHTS)
+		return false;
+
+	if (cv_tsourdt3rd_players_shieldblockstransformation.value)
+	{
+		// This command mimics vanilla behavior.
+		// If we have a shield, we can't transform. Sad, but necessary.
+		// (If only BT_SHIELD existed.... Oh well....)
+		return (!player->powers[pw_invulnerability] && !(player->powers[pw_shield] & SH_NOSTACK));
+	}
+	return true;
 }
