@@ -47,8 +47,8 @@ char tsourdt3rd_savefiles_folder[256];
 //
 char *TSoURDt3rd_M_RemoveStringChars(char *string, const char *c)
 {
-	INT32 i = 0;
 	char *tmp, *p;
+	INT32 i = 0;
 
 	if (!string || *string == '\0')
 		return NULL;
