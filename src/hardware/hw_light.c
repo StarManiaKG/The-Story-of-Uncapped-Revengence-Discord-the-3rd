@@ -80,13 +80,13 @@ static lumpnum_t corona_lumpnum = LUMPERROR;
 // -----------------+
 static void HWR_SetLight(void)
 {
-	int i, j;
+	if (lightmap_gl_patch == NULL || lightmap_gl_patch->mipmap == NULL) return;
 	if (!lightmap_gl_patch->mipmap->downloaded && !lightmap_gl_patch->mipmap->data)
 	{
 		UINT16 *data = Z_Malloc(129*128*sizeof(UINT16), PU_HWRCACHE, lightmap_gl_patch->mipmap->data);
-		for (i = 0; i < 128; i++)
+		for (int i = 0; i < 128; i++)
 		{
-			for (j = 0; j < 128; j++)
+			for (int j = 0; j < 128; j++)
 			{
 				int pos = ((i-64)*(i-64))+((j-64)*(j-64));
 				if (pos <= 63*63)
@@ -917,22 +917,16 @@ void HWR_DL_AddLightSprite(gl_vissprite_t *spr)
 
 void HWR_Init_Light(const char *lightpatch)
 {
-	size_t i;
-
 	// Make sure the corona graphic exists
-	lightmap_patch = (patch_t *)W_CachePatchName(lightpatch, PU_CACHE);
-	lightmap_gl_patch = (GLPatch_t *)lightmap_patch->hardware;
-	if (!(lightmap_patch && lightmap_gl_patch->mipmap->format)) return;
-
+	corona_lumpnum = W_GetNumForName(lightpatch);
+	lightmap_patch = HWR_GetCachedGLPatch(corona_lumpnum);
+	Z_ChangeTag(lightmap_patch, PU_CACHE);
+	lightmap_gl_patch = (GLPatch_t *)Patch_AllocateHardwarePatch(lightmap_patch);
+	Z_ChangeTag(lightmap_gl_patch, PU_CACHE);
+	lightmap_gl_patch->mipmap->downloaded = 0;
 	// precalculate sqr radius
-	for (i = 0; i < NUMLIGHTS; i++)
-	{
-		light_t *p_lspr = &lspr[i];
-		p_lspr->dynamic_sqrradius = p_lspr->dynamic_radius * p_lspr->dynamic_radius;
-	}
-
-	lightmap_gl_patch->mipmap->downloaded = false;
-	corona_lumpnum = W_GetNumForName("CORONA");
+	for (size_t i = 0; i < NUMLIGHTS; i++)
+		lspr[i].dynamic_sqrradius = (lspr[i].dynamic_radius * lspr[i].dynamic_radius);
 }
 
 void HWR_DynamicShadowing(FOutVector *clVerts, int nrClipVerts)

@@ -3622,6 +3622,15 @@ static void HWR_SplitSprite(gl_vissprite_t *spr)
 	//Hurdler: 25/04/2000: now support colormap in hardware mode
 	HWR_GetMappedPatch(gpatch, spr->colormap);
 
+/// STAR NOTE: what \todo what ///
+#ifdef ALAM_LIGHTING
+#if 0
+	if (!(spr->mobj->flags2 & MF2_DEBRIS) && (spr->mobj->sprite != SPR_PLAY ||
+	 (spr->mobj->player && spr->mobj->player->powers[pw_super])))
+#endif
+		HWR_DL_AddLightSprite(spr);
+#endif
+
 	baseWallVerts[0].x = baseWallVerts[3].x = spr->x1;
 	baseWallVerts[2].x = baseWallVerts[1].x = spr->x2;
 	baseWallVerts[0].z = baseWallVerts[3].z = spr->z1;
@@ -3968,15 +3977,6 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 
 	gpatch = spr->gpatch;
 
-	/// STAR NOTE: what \todo what ///
-#if 0
-#ifdef ALAM_LIGHTING
-	if (!(spr->mobj->flags2 & MF2_DEBRIS) && (spr->mobj->sprite != SPR_PLAY ||
-	 (spr->mobj->player && spr->mobj->player->powers[pw_super])))
-		HWR_DL_AddLight(spr, gpatch);
-#endif
-#endif
-
 	// create the sprite billboard
 	//
 	//  3--2
@@ -4106,6 +4106,15 @@ static void HWR_DrawSprite(gl_vissprite_t *spr)
 	//12/12/99: Hurdler: same comment as above (for md2)
 	//Hurdler: 25/04/2000: now support colormap in hardware mode
 	HWR_GetMappedPatch(gpatch, spr->colormap);
+
+/// STAR NOTE: what \todo what ///
+#ifdef ALAM_LIGHTING
+#if 0
+	if (!(spr->mobj->flags2 & MF2_DEBRIS) && (spr->mobj->sprite != SPR_PLAY ||
+	 (spr->mobj->player && spr->mobj->player->powers[pw_super])))
+#endif
+		HWR_DL_AddLightSprite(spr);
+#endif
 
 	if (spr->flip)
 	{
@@ -4791,7 +4800,7 @@ static void HWR_DrawSprites(void)
 		{
 			if (spr->mobj && cv_shadow.value)
 			{
-				if (!skipshadow || cv_tsourdt3rd_game_shadows_realistic.value)
+				if (!skipshadow)
 				{
 					HWR_DrawDropShadow(spr, spr->mobj);
 				}
@@ -4805,7 +4814,8 @@ static void HWR_DrawSprites(void)
 					if (!skipshadow && spr->dispoffset < 0)
 					{
 						HWR_DrawDropShadow(spr, spr->mobj->tracer);
-						skipshadow = true;
+						if (!cv_tsourdt3rd_game_shadows_realistic.value)
+							skipshadow = true;
 						// The next sprite in this loop should be either another linkdraw sprite or the tracer.
 						// When the tracer is inevitably encountered, skipshadow will cause it's shadow
 						// to get skipped and skipshadow will get set to false by the 'else' clause below.
@@ -4816,14 +4826,12 @@ static void HWR_DrawSprites(void)
 					skipshadow = false;
 				}
 			}
-
-#if 1
+#if 0
 #ifdef ALAM_LIGHTING
 			// dynamic lighting
 			HWR_DL_AddLightSprite(spr);
 #endif
 #endif
-
 			if (spr->mobj && spr->mobj->skin && spr->mobj->sprite == SPR_PLAY)
 			{
 				if (!cv_glmodels.value || !md2_playermodels[((skin_t*)spr->mobj->skin)->skinnum].found || md2_playermodels[((skin_t*)spr->mobj->skin)->skinnum].scale < 0.0f)
