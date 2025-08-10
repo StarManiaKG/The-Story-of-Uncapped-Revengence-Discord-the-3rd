@@ -457,10 +457,11 @@ void DISC_SetActivityStatus(
 	// Main - Set the level time...
 	if (gamestate == GS_LEVEL && Playing())
 	{
+		boolean tickingDown = ((countdowntimer && G_PlatformGametype()) || (gametyperules & GTR_TIMELIMIT));
 		const time_t currentTime = time(NULL);
 		const time_t mapTimeStart = (currentTime - (leveltime / TICRATE));
 		(*timestamp_start) = mapTimeStart;
-		if (timelimitintics > 0) //if (cv_timelimit.value && timelimitintics > 0 && (gametyperules & GTR_TIMELIMIT))
+		if (timelimitintics > 0 && tickingDown)
 		{
 			const time_t mapTimeEnd = (mapTimeStart + ((timelimitintics + 1) / TICRATE));
 			(*timestamp_end) = mapTimeEnd;
