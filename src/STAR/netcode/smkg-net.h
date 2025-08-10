@@ -52,6 +52,6 @@ void TSoURDt3rd_D_AskForHolepunch(INT32 node);
 void TSoURDt3rd_D_RenewHolePunch(void);
 
 boolean TSoURDt3rd_SOCK_Get(doomcom_t *doomcom_p, ssize_t c, void *addresstable, void *sockets);
-void TSoURDt3rd_SOCK_OpenSocket(void);
+void TSoURDt3rd_SOCK_OpenSockets(void);
 
 #endif // __SMKG_NET__

@@ -266,14 +266,12 @@ static boolean SOCK_GetHolepunchAddr(struct sockaddr_in *sin, const char *addres
 //
 static void rendezvous(int size)
 {
+	static mysockaddr_t rzv;
 	char *addrs = strdup(cv_tsourdt3rd_servers_holepunchrendezvous.string);
-
 	char *host = strtok(addrs, ":");
 	char *port = strtok(NULL,  ":");
 
-	static mysockaddr_t rzv;
 	static tic_t refreshtic = (tic_t)-1;
-
 	tic_t tic = I_GetTime();
 
 	if (tic != refreshtic)
@@ -306,8 +304,13 @@ static void rendezvous(int size)
 //
 boolean TSoURDt3rd_SOCK_Get(doomcom_t *doomcom_p, ssize_t c, void *addresstable, void *sockets)
 {
+	memcpy(clientaddress, (mysockaddr_t *)addresstable, sizeof(addresstable));
+	memcpy(mysockets, (SOCKET_TYPE *)sockets, sizeof(sockets));
+
+#if 0
 	if (c <= 0)
 		return false;
+#endif
 
 #ifdef USE_STUN
 	if (STUN_got_response(doomcom_p->data, c))
@@ -318,19 +321,18 @@ boolean TSoURDt3rd_SOCK_Get(doomcom_t *doomcom_p, ssize_t c, void *addresstable,
 	(void)doomcom_p;
 #endif
 
-	memcpy(mysockets, (SOCKET_TYPE *)sockets, sizeof(sockets));
-	memcpy(clientaddress, (mysockaddr_t *)addresstable, sizeof(addresstable));
-
+#if 0
 	if (hole_punch(c))
 	{
 		return true;
 	}
+#endif
 
 	return false;
 }
 
 //
-// void TSoURDt3rd_SOCK_OpenSocket(void)
+// void TSoURDt3rd_SOCK_OpenSockets(void)
 // Opens socket data, allowing for certain routines to be stored in the sockets.
 //
 static void SOCK_RequestHolePunch(INT32 node)
@@ -343,15 +345,15 @@ static void SOCK_RequestHolePunch(INT32 node)
 	CONS_Debug(DBG_NETPLAY,
 			"requesting hole punch to node %s\n", SOCK_AddrToStr(addr));
 
-	rendezvous(10);
+	//rendezvous(10);
 }
 
 static void SOCK_RegisterHolePunch(void)
 {
-	rendezvous(4);
+	//rendezvous(4);
 }
 
-void TSoURDt3rd_SOCK_OpenSocket(void)
+void TSoURDt3rd_SOCK_OpenSockets(void)
 {
 	I_NetRequestHolePunch = SOCK_RequestHolePunch;
 	I_NetRegisterHolePunch = SOCK_RegisterHolePunch;
