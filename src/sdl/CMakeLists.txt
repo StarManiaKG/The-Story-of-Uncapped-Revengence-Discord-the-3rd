@@ -189,11 +189,11 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES Darwin)
 endif()
 
 if("${CMAKE_SYSTEM_NAME}" MATCHES Windows)
-	set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME srb2win)
+	set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME srb2tsourdt3rd_win)
 elseif("${CMAKE_SYSTEM_NAME}" MATCHES Linux)
-	set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME lsdlsrb2)
+	set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME srb2tsourdt3rd_linux)
 else()
-	set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME srb2)
+	set_target_properties(SRB2SDL2 PROPERTIES OUTPUT_NAME srb2tsourdt3rd)
 endif()
 
 if("${CMAKE_SYSTEM_NAME}" MATCHES Darwin)
@@ -208,7 +208,7 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES Darwin)
 	target_sources(SRB2SDL2 PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/macosx/Srb2mac.icns")
 	set_target_properties(SRB2SDL2 PROPERTIES
 		MACOSX_BUNDLE_ICON_FILE "Srb2mac"
-		MACOSX_BUNDLE_BUNDLE_NAME "Sonic Robo Blast 2"
+		MACOSX_BUNDLE_BUNDLE_NAME "Sonic Robo Blast 2 - TSoURDt3rd"
 		MACOSX_BUNDLE_BUNDLE_VERSION ${SRB2_VERSION}
 
 		RESOURCE "${CMAKE_CURRENT_SOURCE_DIR}/macosx/Srb2mac.icns"

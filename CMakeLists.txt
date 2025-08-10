@@ -80,8 +80,12 @@ set(SRB2_CONFIG_ASSET_DIRECTORY "" CACHE PATH "Path to directory that contains a
 
 ## TSoURDt3rd ##
 # -- Discord integration support
+if(APPLE)
+	# DiscordRPC needs but does not properly specify ObjC
+    enable_language(OBJC)
+endif()
 option(TSOURDT3RD_CONFIG_ENABLE_DISCORDRPC "TSoURDt3rd: Enable Discord Rich Presence support." ON)
-option(TSOURDT3RD_CONFIG_ENABLE_DISCORDGAMESDK "TSoURDt3rd: Enable Discord Game SDK support." ON)
+option(TSOURDT3RD_CONFIG_ENABLE_DISCORDGAMESDK "TSoURDt3rd: Enable Discord Game SDK support." OFF)
 set(TSOURDT3RD_CONFIG_HAVE_DISCORDSUPPORT OFF)
 # -- LIBAV support
 option(TSOURDT3RD_CONFIG_HAVE_LIBAV "TSoURDt3rd: Enable MP4 support (beta, unsupported as of now)." OFF)
@@ -108,8 +112,6 @@ endif()
 find_package(miniupnpc QUIET)
 
 ## TSoURDt3rd ##
-find_package(DiscordRPC QUIET)
-find_package(DiscordGameSDK QUIET)
 find_package(LibAV QUIET)
 
 if(${PROJECT_SOURCE_DIR} MATCHES ${PROJECT_BINARY_DIR})
@@ -163,11 +165,11 @@ if("${SRB2_SDL2_EXE_NAME}" STREQUAL "")
 	endif()
 
 	if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
-		list(APPEND EXE_NAME_PARTS "srb2win")
+		list(APPEND EXE_NAME_PARTS "srb2tsourdt3rd_win")
 	elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
-		list(APPEND EXE_NAME_PARTS "lsdlsrb2")
+		list(APPEND EXE_NAME_PARTS "srb2tsourdt3rd_linux")
 	else()
-		list(APPEND EXE_NAME_PARTS "srb2")
+		list(APPEND EXE_NAME_PARTS "srb2tsourdt3rd")
 	endif()
 
 	if(NOT "${SRB2_GIT_REVISION}" STREQUAL "master")

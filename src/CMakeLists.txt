@@ -207,8 +207,6 @@ if("${SRB2_CONFIG_HWRENDER}")
 	endif()
 endif()
 
-target_compile_definitions(SRB2SDL2 PRIVATE -DUSE_STUN)
-
 # Targets
 
 # If using CCACHE, then force it.
@@ -477,28 +475,24 @@ else()
 endif()
 
 ##  TSoURDt3rd ##
+target_compile_definitions(SRB2SDL2 PRIVATE -DUSE_STUN)
 
 # -- Discord
-if(TARGET DiscordRPC)
-	set(TSOURDT3RD_CONFIG_HAVE_DISCORDSUPPORT ON)
-	target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_DISCORDSUPPORT -DHAVE_DISCORDRPC)
-	target_link_libraries(SRB2SDL2 PRIVATE discord-rpc)
-	message(STATUS "TSoURDt3rd: Using DiscordRPC as Discord layer")
-else()
-	set(TSOURDT3RD_CONFIG_ENABLE_DISCORDRPC OFF)
-	message(STATUS "TSoURDt3rd: No DiscordRPC found")
-endif()
-if(TARGET DiscordGameSDK)
-	set(TSOURDT3RD_CONFIG_HAVE_DISCORDSUPPORT ON)
-	target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_DISCORDSUPPORT -DHAVE_DISCORDGAMESDK)
-	target_link_libraries(SRB2SDL2 PRIVATE DiscordGameSDK::DiscordGameSDK)
-	message(STATUS "TSoURDt3rd: Using DiscordGameSDK as Discord layer")
-else()
-	set(TSOURDT3RD_CONFIG_ENABLE_DISCORDGAMESDK OFF)
-	message(STATUS "TSoURDt3rd: No DiscordGameSDK found")
-endif()
 if(${TSOURDT3RD_CONFIG_ENABLE_DISCORDGAMESDK} AND ${TSOURDT3RD_CONFIG_ENABLE_DISCORDRPC})
 	message(FATAL_ERROR "TSoURDt3rd: Can't compile with both Discord's Rich Presence and Discord's Game SDK!")
+else()
+	if(TSOURDT3RD_CONFIG_ENABLE_DISCORDRPC)
+		target_link_libraries(SRB2SDL2 PRIVATE DiscordRPC::DiscordRPC)
+		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_DISCORDSUPPORT -DHAVE_DISCORDRPC)
+		set(TSOURDT3RD_CONFIG_HAVE_DISCORDSUPPORT ON)
+		message(STATUS "TSoURDt3rd: Using DiscordRPC as Discord integration")
+	endif()
+	if(TSOURDT3RD_CONFIG_ENABLE_DISCORDGAMESDK)
+		target_link_libraries(SRB2SDL2 PRIVATE DiscordGameSDK::DiscordGameSDK)
+		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_DISCORDSUPPORT -DHAVE_DISCORDGAMESDK)
+		set(TSOURDT3RD_CONFIG_HAVE_DISCORDSUPPORT ON)
+		message(STATUS "TSoURDt3rd: Using DiscordGameSDK as Discord integration")
+	endif()
 endif()
 add_subdirectory(discord)
 
@@ -509,6 +503,7 @@ if(TARGET LibAV)
 	target_link_libraries(SRB2SDL2 PRIVATE LibAV::LibAV)
 endif()
 
+# -- Our directory
 add_subdirectory(STAR)
 
 # strip debug symbols into separate file when using gcc.
