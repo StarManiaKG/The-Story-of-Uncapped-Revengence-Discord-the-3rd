@@ -632,7 +632,7 @@ static boolean M_Sys_HandleJukebox(INT32 choice)
 		{
 			// S_StopMusic() -- is this necessary?
 			if (cv_soundtest.value)
-				S_StartSound(NULL, cv_soundtest.value);
+				S_StartSoundFromEverywhere(cv_soundtest.value);
 			tsourdt3rd_global_jukebox->track_tics = 0;
 		}
 		else if (TSoURDt3rd_M_MenuBackPressed(pid))
@@ -652,7 +652,7 @@ static boolean M_Sys_HandleJukebox(INT32 choice)
 		case KEY_PGDN:
 			M_Sys_FindNewJukeboxTrack(choice);
 			cv_closedcaptioning.value = jb_cc; // hack
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 			cv_closedcaptioning.value = 1; // hack
 			return true;
 		case KEY_TAB:
@@ -667,9 +667,9 @@ static boolean M_Sys_HandleJukebox(INT32 choice)
 		{
 			cv_closedcaptioning.value = jb_cc; // hack
 			if (M_Sys_FindNewJukeboxTrack(menucmd[pid].dpad_ud)) // up = -1; +1 otherwise
-				S_StartSound(NULL, sfx_menu1);
+				S_StartSoundFromEverywhere(sfx_menu1);
 			else
-				S_StartSound(NULL, sfx_adderr);
+				S_StartSoundFromEverywhere(sfx_adderr);
 			cv_closedcaptioning.value = 1; // hack
 		}
 		TSoURDt3rd_M_SetMenuDelay(pid);
@@ -681,9 +681,9 @@ static boolean M_Sys_HandleJukebox(INT32 choice)
 		{
 			cv_closedcaptioning.value = jb_cc; // hack
 			if (M_Sys_FindNewJukeboxPage(menucmd[pid].dpad_lr < 0)) // left = -1; +1 otherwise
-				S_StartSound(NULL, sfx_menu1);
+				S_StartSoundFromEverywhere(sfx_menu1);
 			else
-				S_StartSound(NULL, sfx_adderr);
+				S_StartSoundFromEverywhere(sfx_adderr);
 			cv_closedcaptioning.value = 1; // hack
 		}
 		TSoURDt3rd_M_SetMenuDelay(pid);
@@ -693,7 +693,7 @@ static boolean M_Sys_HandleJukebox(INT32 choice)
 	{
 		if (!TSoURDt3rd_Jukebox_IsPlaying())
 		{
-			S_StartSound(NULL, sfx_lose);
+			S_StartSoundFromEverywhere(sfx_lose);
 			return true;
 		}
 
@@ -701,7 +701,7 @@ static boolean M_Sys_HandleJukebox(INT32 choice)
 		S_StopMusic();
 
 		cv_closedcaptioning.value = jb_cc; // hack
-		S_StartSound(NULL, sfx_skid);
+		S_StartSoundFromEverywhere(sfx_skid);
 		cv_closedcaptioning.value = 1; // hack
 
 		TSoURDt3rd_M_SetMenuDelay(pid);
@@ -716,7 +716,7 @@ static boolean M_Sys_HandleJukebox(INT32 choice)
 
 		if (!cur_juke_def->linked_musicdef->allowed)
 		{
-			S_StartSound(NULL, sfx_lose);
+			S_StartSoundFromEverywhere(sfx_lose);
 			TSoURDt3rd_S_RefreshMusic();
 			return true;
 		}
@@ -756,7 +756,7 @@ void TSoURDt3rd_M_Jukebox_Init(INT32 choice)
 			NULL,
 			NULL
 		);
-		S_StartSound(NULL, sfx_lose);
+		S_StartSoundFromEverywhere(sfx_lose);
 		return;
 	}
 	else if (currentMenu == &TSoURDt3rd_OP_Extras_JukeboxDef)

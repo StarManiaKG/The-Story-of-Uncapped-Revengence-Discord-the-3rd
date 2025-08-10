@@ -83,12 +83,12 @@ boolean TSoURDt3rd_EXMusic_Init(tsourdt3rd_exmusic_t *extype, tsourdt3rd_exmusic
 	//series = Z_Malloc(sizeof(tsourdt3rd_exmusic_data_series_t *) * 100, PU_STATIC, &data->series);
 	if (series == NULL) goto failed;
 
-	CONS_Printf("heheow - data series is %lld\n", data->num_series);
+	CONS_Printf("heheow - data series is %d\n", data->num_series);
 	while (data->num_series < TSOURDT3RD_EXMUSIC_MAX_STARTING_TRACKS)
 	{
 		//tsourdt3rd_exmusic_data_series_t *new_series = Z_Calloc(sizeof(tsourdt3rd_exmusic_data_series_t), PU_STATIC, &series[data->num_series]);
 		tsourdt3rd_exmusic_data_series_t *new_series = Z_Calloc(sizeof(tsourdt3rd_exmusic_data_series_t), PU_STATIC, NULL);
-		//CONS_Printf("heheow - data series name %lld is %s\n", data->num_series, series[data->num_series]->name);
+		//CONS_Printf("heheow - data series name %d is %s\n", data->num_series, series[data->num_series]->name);
 		//new_series->tracks = Z_Calloc(data->init_size, PU_STATIC, &series[data->num_series]->tracks);
 		//new_series->tracks = Z_Calloc(data->init_size, PU_STATIC, NULL);
 		new_series->tracks = Z_Calloc(extype->init_size, PU_STATIC, NULL);
@@ -97,7 +97,7 @@ boolean TSoURDt3rd_EXMusic_Init(tsourdt3rd_exmusic_t *extype, tsourdt3rd_exmusic
 
 		//strlcpy(new_series->name, tsourdt3rd_exmusic_default_names[data->num_series], TSOURDT3RD_EXMUSIC_MAX_SERIES_NAME);
 		snprintf(new_series->name, TSOURDT3RD_EXMUSIC_MAX_SERIES_NAME, "%s", tsourdt3rd_exmusic_default_names[data->num_series]);
-		//CONS_Printf("heheow - new data series name %lld is %s\n", data->num_series, series[data->num_series]->name);
+		//CONS_Printf("heheow - new data series name %d is %s\n", data->num_series, series[data->num_series]->name);
 
 		if (prev_series != NULL)
 		{

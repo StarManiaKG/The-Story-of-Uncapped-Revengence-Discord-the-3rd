@@ -122,18 +122,6 @@ void STAR_CONS_Printf(INT32 message_type, const char *fmt, ...)
 		return;
 #endif
 
-	// Set the coloring...
-	if (message_type & STAR_CONS_NOTICE)
-		coloring = "\x83";
-	else if (message_type & STAR_CONS_ERROR)
-		coloring = "\x85";
-	else if (message_type & STAR_CONS_WARNING)
-		coloring = "\x82";
-	else if (message_type & STAR_CONS_DEBUG)
-		coloring = "\x8f";
-	else
-		coloring = "\x80";
-
 	// Set the header...
 	if (message_type & STAR_CONS_TSOURDT3RD)
 		snprintf(header, 8192, "TSoURDt3rd");
@@ -147,16 +135,38 @@ void STAR_CONS_Printf(INT32 message_type, const char *fmt, ...)
 	// Extend the header...
 	if (*header != '\0')
 	{
+		strlcat(header, " ", 8192);
 		if (message_type & STAR_CONS_APRILFOOLS)
-			strlcat(header, " April Fools", 8192);
+			strlcat(header, "April Fools", 8192);
 		else if (message_type & STAR_CONS_EASTER)
-			strlcat(header, " Easter", 8192);
+			strlcat(header, "Easter", 8192);
 		else if (message_type & STAR_CONS_JUKEBOX)
-			strlcat(header, " Jukebox", 8192);
+			strlcat(header, "Jukebox", 8192);
 		if (message_type & STAR_CONS_DEBUG)
-			strlcat(header, " Debugging", 8192);
-		strlcat(header, ": ", 8192);
+			strlcat(header, "Debugging", 8192);
+		strlcat(header, ":", 8192);
 	}
+
+	// Set the coloring...
+	if (message_type & STAR_CONS_NOTICE)
+	{
+		coloring = "\x83";
+	}
+	else if (message_type & STAR_CONS_ERROR)
+		coloring = "\x85";
+	else if (message_type & STAR_CONS_WARNING)
+		coloring = "\x82";
+	else if (message_type & STAR_CONS_DEBUG)
+		coloring = "\x8f";
+	else
+		coloring = "\x80";
+
+#if 0
+	if (coloring != '\x80')
+	{
+		if (*header != '\0')
+	}
+#endif
 
 	// Appropriately reset text coloring...
 	if ((message_type & STAR_CONS_COLORWHOLELINE) != STAR_CONS_COLORWHOLELINE)
@@ -168,6 +178,10 @@ void STAR_CONS_Printf(INT32 message_type, const char *fmt, ...)
 	}
 	else
 		strlcat(txt, "\x80", 8192);
+
+	// Add the correct spacing...
+	if (*header != '\0')
+		strlcat(header, " ", 8192);
 
 	// Make sure we check for string parameters first, just so we don't do anthing crazy...
 	for (INT32 i = 0; (txt[i] != '\0' && txt[i+1] != '\0'); i++)
@@ -281,7 +295,7 @@ mobj_t *TSoURDt3rd_BossInMap(void)
 	if (gamestate != GS_LEVEL && gamestate != GS_INTERMISSION) return NULL;
 	for (thinker_t *th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 	{
-		if (th->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
+		if (th->function == (actionf_p1)P_RemoveThinkerDelayed)
 			continue;
 
 		mobj_t *mobj = (mobj_t *)th;

@@ -96,7 +96,7 @@ void TSoURDt3rd_M_HandleColorResetOption(
 	{
 		// Player is probably moving, and since the option for that isn't allowed for them, well...
 		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE, "Your skin can't be reset right now!\n");
-		S_StartSound(NULL, sfx_skid);
+		S_StartSoundFromEverywhere(sfx_skid);
 		return;
 	}
 
@@ -128,5 +128,5 @@ void TSoURDt3rd_M_HandleColorResetOption(
 	// Run any extras, and we're done! //
 	if (after_routine)
 		after_routine();
-	S_StartSound(NULL, (full_success ? sfx_strpst : sfx_skid));
+	S_StartSoundFromEverywhere((full_success ? sfx_strpst : sfx_skid));
 }

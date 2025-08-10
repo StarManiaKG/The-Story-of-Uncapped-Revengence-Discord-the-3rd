@@ -297,12 +297,12 @@ static void M_Sys_FindNewEXMusicTrack(boolean decrease)
 			// This is valid, so we can leave now!
 			exmusic_def = exmusic_cur_def;
 			//COM_BufAddText(va("%s \"%s\"\n", excvar->name, exmusic_cur_def->series));
-			S_StartSound(NULL, sfx_s3k5b);
+			S_StartSoundFromEverywhere(sfx_s3k5b);
 			return;
 		}
 #endif
 	}
-	S_StartSound(NULL, sfx_lose);
+	S_StartSoundFromEverywhere(sfx_lose);
 }
 
 static boolean M_Sys_EXMusicInput(INT32 choice)
@@ -337,7 +337,7 @@ static boolean M_Sys_EXMusicInput(INT32 choice)
 			TSoURDt3rd_M_PrevOpt();
 		else
 			TSoURDt3rd_M_NextOpt();
-		S_StartSound(NULL, sfx_s3k5b);
+		S_StartSoundFromEverywhere(sfx_s3k5b);
 
 		excvar = (consvar_t *)currentMenu->menuitems[tsourdt3rd_itemOn].itemaction;
 		TSoURDt3rd_EXMusic_ReturnType(excvar, exmusic_def);
@@ -395,7 +395,7 @@ static boolean M_Sys_EXMusicInput(INT32 choice)
 #endif
 
 		// If we made it here, then we can't play this track.
-		S_StartSound(NULL, sfx_lose);
+		S_StartSoundFromEverywhere(sfx_lose);
 		return true;
 	}
 

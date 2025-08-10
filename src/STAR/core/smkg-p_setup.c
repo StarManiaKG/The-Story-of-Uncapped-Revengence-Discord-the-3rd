@@ -175,7 +175,7 @@ boolean TSoURDt3rd_P_LoadAddon(INT32 wadnum, INT32 numlumps)
 			NULL
 		);
 		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, va("%d of the lumps you've loaded have encountered errors! Check the logs for more information.\n", tsourdt3rd_starparser_num_errored_lumps));
-		S_StartSound(NULL, sfx_skid);
+		S_StartSoundFromEverywhere(sfx_skid);
 	}
 	else if (tsourdt3rd_starparser_num_errors)
 	{
@@ -188,7 +188,7 @@ boolean TSoURDt3rd_P_LoadAddon(INT32 wadnum, INT32 numlumps)
 			NULL
 		);
 		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, va("Stumbled upon %d parser error(s) within this lump!\n", tsourdt3rd_starparser_num_errors));
-		S_StartSound(NULL, sfx_skid);
+		S_StartSoundFromEverywhere(sfx_skid);
 	}
 	if (loaded_mod >= 1)
 		STAR_CONS_Printf(STAR_CONS_NONE, "\n");

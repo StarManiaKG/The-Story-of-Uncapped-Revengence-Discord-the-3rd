@@ -174,7 +174,7 @@ void TSoURDt3rd_MovePlayerStructure(INT32 node, INT32 newplayernode, INT32 prevn
 			else
 				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE, "Joining player doesn't seem to be using TSoURDt3rd!\nPlease be cautious of what you do!\n");
 		}
-		S_StartSound(NULL, STAR_JoinSFX);
+		S_StartSoundFromEverywhere(STAR_JoinSFX);
 	}
 }
 

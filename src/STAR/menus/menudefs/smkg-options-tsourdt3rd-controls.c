@@ -423,7 +423,7 @@ static boolean M_Sys_ProfileControlsInputs(INT32 ch)
 	if (TSoURDt3rd_M_MenuExtraPressed(pid))
 	{
 		if (M_Sys_ClearCurrentControl())
-			S_StartSound(NULL, sfx_adderr);
+			S_StartSoundFromEverywhere(sfx_adderr);
 		optionsmenu.bindben = 0;
 		optionsmenu.bindben_swallow = M_OPTIONS_BINDBEN_QUICK;
 		TSoURDt3rd_M_SetMenuDelay(pid);

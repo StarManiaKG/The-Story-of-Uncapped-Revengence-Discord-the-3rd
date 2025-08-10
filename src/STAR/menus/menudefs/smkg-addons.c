@@ -61,7 +61,7 @@ static void M_Sys_ConfigExec(INT32 choice)
 		// We refused to execute this file!
 		return;
 	}
-	S_StartSound(NULL, sfx_strpst);
+	S_StartSoundFromEverywhere(sfx_strpst);
 	COM_BufAddText(va("exec \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
 }
 
@@ -76,7 +76,7 @@ static void M_Sys_FolderExec(INT32 choice)
 		// We refused to load this folder!
 		return;
 	}
-	S_StartSound(NULL, sfx_strpst);
+	S_StartSoundFromEverywhere(sfx_strpst);
 	COM_BufAddText(va("addfolder \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
 }
 
@@ -93,7 +93,7 @@ static void M_Sys_LoadAddon(INT32 choice)
 	if (!dirmenu || !dirmenu[dir_on[menudepthleft]])
 	{
 		// Nothing. No point. Nil. Null. Nada.
-		S_StartSound(NULL, sfx_lose);
+		S_StartSoundFromEverywhere(sfx_lose);
 		refreshdirmenu |= REFRESHDIR_NORMAL;
 		return;
 	}
@@ -117,7 +117,7 @@ static void M_Sys_LoadAddon(INT32 choice)
 			COM_BufAddText(va("addfile \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
 			break;
 		default:
-			S_StartSound(NULL, sfx_lose);
+			S_StartSoundFromEverywhere(sfx_lose);
 			break;
 	}
 	if (refresh)
@@ -182,7 +182,7 @@ static void M_Sys_AutoLoadAddons(INT32 choice)
 	}
 
 	// We're done! :)
-	S_StartSound(NULL, sfx_spdpad);
+	S_StartSoundFromEverywhere(sfx_spdpad);
 	if (!(refreshdirmenu & REFRESHDIR_MAX))
 	{
 		TSoURDt3rd_M_StartMessage(
@@ -223,7 +223,7 @@ void TSoURDt3rd_M_HandleAddonsMenu(INT32 choice)
 	if (!dirmenu || !dirmenu[dir_on[menudepthleft]])
 	{
 		// Nothing. No point. Nil. Null. Nada.
-		S_StartSound(NULL, sfx_lose);
+		S_StartSoundFromEverywhere(sfx_lose);
 		refreshdirmenu |= REFRESHDIR_NORMAL;
 		return;
 	}
@@ -235,13 +235,13 @@ void TSoURDt3rd_M_HandleAddonsMenu(INT32 choice)
 			switch (dirmenu[dir_on[menudepthleft]][DIR_TYPE])
 			{
 				case EXT_UP:
-					S_StartSound(NULL, sfx_skid);
+					S_StartSoundFromEverywhere(sfx_skid);
 					message = M_GetText("Nice try.\n");
 					break;
 				case EXT_FOLDER:
 					if (!menudepthleft)
 					{
-						S_StartSound(NULL, sfx_skid);
+						S_StartSoundFromEverywhere(sfx_skid);
 						message = M_GetText("This folder is too deep to navigate to!\n\n(What kind of person needs folders\nthis deep anyways?)\n");
 						menupath[menupathindex[menudepthleft]] = 0;
 					}
@@ -249,7 +249,7 @@ void TSoURDt3rd_M_HandleAddonsMenu(INT32 choice)
 					{
 						if (!preparefilemenu(false))
 						{
-							S_StartSound(NULL, sfx_skid);
+							S_StartSoundFromEverywhere(sfx_skid);
 							message = M_GetText("This folder is empty.\n");
 							menupath[menupathindex[++menudepthleft]] = 0;
 						}
@@ -272,7 +272,7 @@ void TSoURDt3rd_M_HandleAddonsMenu(INT32 choice)
 				case EXT_CFG:
 					if (hardcoded_file)
 					{
-						S_StartSound(NULL, sfx_skid);
+						S_StartSoundFromEverywhere(sfx_skid);
 						message = M_GetText("You can't\x82 autoload the base configuration files\x80, silly!\nThey're already loaded on startup!\n");
 					}
 					else
@@ -308,7 +308,7 @@ void TSoURDt3rd_M_HandleAddonsMenu(INT32 choice)
 				{
 					if (hardcoded_file)
 					{
-						S_StartSound(NULL, sfx_skid);
+						S_StartSoundFromEverywhere(sfx_skid);
 						message = M_GetText("You can't\x82 autoload the base files\x80, silly!\nThey're already loaded on startup!\n");
 					}
 					else
@@ -348,7 +348,7 @@ void TSoURDt3rd_M_HandleAddonsMenu(INT32 choice)
 				case EXT_FOLDER:
 					if (!menudepthleft)
 					{
-						S_StartSound(NULL, sfx_skid);
+						S_StartSoundFromEverywhere(sfx_skid);
 						message = M_GetText("This folder is too deep to navigate to!\n\n(What kind of person needs folders\nthis deep anyways?)\n");
 						menupath[menupathindex[menudepthleft]] = 0;
 					}
@@ -356,7 +356,7 @@ void TSoURDt3rd_M_HandleAddonsMenu(INT32 choice)
 					{
 						if (!preparefilemenu(false))
 						{
-							S_StartSound(NULL, sfx_skid);
+							S_StartSoundFromEverywhere(sfx_skid);
 							message = M_GetText("This folder is empty.\n");
 							menupath[menupathindex[++menudepthleft]] = 0;
 						}
@@ -375,7 +375,7 @@ void TSoURDt3rd_M_HandleAddonsMenu(INT32 choice)
 					}
 					break;
 				default:
-					S_StartSound(NULL, sfx_skid);
+					S_StartSoundFromEverywhere(sfx_skid);
 					message = M_GetText("You can only use this key to load folders.\n");
 					break;
 			}

@@ -182,7 +182,7 @@ static boolean M_Sys_HandleReadME(INT32 choice)
 		if (cur_readme_y < min_readme_y)
 		{
 			cur_readme_y += 8<<FRACBITS;
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 		}
 		return true;
 	}
@@ -192,7 +192,7 @@ static boolean M_Sys_HandleReadME(INT32 choice)
 		if (cur_readme_y > max_readme_y)
 		{
 			cur_readme_y -= 8<<FRACBITS;
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 		}
 		return true;
 	}

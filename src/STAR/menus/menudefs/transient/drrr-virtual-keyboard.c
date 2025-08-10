@@ -153,7 +153,7 @@ static boolean M_ChangeStringCvar(INT32 choice)
 				{
 					strlcat(menutyping.cache, paste, menutyping.cachelen + 1);
 
-					S_StartSound(NULL, sfx_tmxbdn); // Tails
+					S_StartSoundFromEverywhere(sfx_tmxbdn); // Tails
 				}
 			}
 			else if (len > 0 /*&& (copypastemode == CVCPM_COPY
@@ -166,11 +166,11 @@ static boolean M_ChangeStringCvar(INT32 choice)
 				{
 					// A cut should wipe.
 					strcpy(menutyping.cache, "");
-					S_StartSound(NULL, sfx_tmxbup); // Tails
+					S_StartSoundFromEverywhere(sfx_tmxbup); // Tails
 				}
 				else
 				{
-					S_StartSound(NULL, sfx_tmxbdn); // Tails
+					S_StartSoundFromEverywhere(sfx_tmxbdn); // Tails
 				}
 			}
 
@@ -189,7 +189,7 @@ static boolean M_ChangeStringCvar(INT32 choice)
 				len = strlen(menutyping.cache);
 				menutyping.cache[len - 1] = 0;
 
-				S_StartSound(NULL, sfx_tmxbup); // Tails
+				S_StartSoundFromEverywhere(sfx_tmxbup); // Tails
 			}
 			return true;
 		case KEY_DEL:
@@ -197,7 +197,7 @@ static boolean M_ChangeStringCvar(INT32 choice)
 			{
 				strcpy(menutyping.cache, "");
 
-				S_StartSound(NULL, sfx_tmxbup); // Tails
+				S_StartSoundFromEverywhere(sfx_tmxbup); // Tails
 			}
 			return true;
 		default:
@@ -209,7 +209,7 @@ static boolean M_ChangeStringCvar(INT32 choice)
 					menutyping.cache[len++] = (char)choice;
 					menutyping.cache[len] = 0;
 
-					S_StartSound(NULL, sfx_tmxbdn); // Tails
+					S_StartSoundFromEverywhere(sfx_tmxbdn); // Tails
 				}
 				return true;
 			}
@@ -334,7 +334,7 @@ void TSoURDt3rd_M_MenuTypingInput(INT32 key)
 				M_CloseVirtualKeyboard();
 
 				TSoURDt3rd_M_SetMenuDelay(pid);
-				S_StartSound(NULL, sfx_s3k5b);
+				S_StartSoundFromEverywhere(sfx_s3k5b);
 
 				return;
 			}
@@ -362,7 +362,7 @@ void TSoURDt3rd_M_MenuTypingInput(INT32 key)
 				menutyping.keyboardy = 0;
 
 			TSoURDt3rd_M_SetMenuDelay(pid);
-			S_StartSound(NULL, sfx_s3k5b);
+			S_StartSoundFromEverywhere(sfx_s3k5b);
 		}
 		else if (menucmd[pid].dpad_ud < 0) // up
 		{
@@ -371,7 +371,7 @@ void TSoURDt3rd_M_MenuTypingInput(INT32 key)
 				menutyping.keyboardy = 4;
 
 			TSoURDt3rd_M_SetMenuDelay(pid);
-			S_StartSound(NULL, sfx_s3k5b);
+			S_StartSoundFromEverywhere(sfx_s3k5b);
 		}
 		else if (menucmd[pid].dpad_lr > 0)	// right
 		{
@@ -387,7 +387,7 @@ void TSoURDt3rd_M_MenuTypingInput(INT32 key)
 			while (virtualKeyboard[menutyping.keyboardy][menutyping.keyboardx] == 1);
 
 			TSoURDt3rd_M_SetMenuDelay(pid);
-			S_StartSound(NULL, sfx_s3k5b);
+			S_StartSoundFromEverywhere(sfx_s3k5b);
 		}
 		else if (menucmd[pid].dpad_lr < 0)	// left
 		{
@@ -408,7 +408,7 @@ void TSoURDt3rd_M_MenuTypingInput(INT32 key)
 			}
 
 			TSoURDt3rd_M_SetMenuDelay(pid);
-			S_StartSound(NULL, sfx_s3k5b);
+			S_StartSoundFromEverywhere(sfx_s3k5b);
 		}
 		else if (TSoURDt3rd_M_MenuButtonPressed(pid, MBT_START))
 		{
@@ -416,7 +416,7 @@ void TSoURDt3rd_M_MenuTypingInput(INT32 key)
 			M_CloseVirtualKeyboard();
 
 			TSoURDt3rd_M_SetMenuDelay(pid);
-			S_StartSound(NULL, sfx_s3k5b);
+			S_StartSoundFromEverywhere(sfx_s3k5b);
 		}
 		else if (TSoURDt3rd_M_MenuBackPressed(pid))
 		{
@@ -424,7 +424,7 @@ void TSoURDt3rd_M_MenuTypingInput(INT32 key)
 			M_ChangeStringCvar(KEY_BACKSPACE);
 
 			TSoURDt3rd_M_SetMenuDelay(pid);
-			S_StartSound(NULL, sfx_s3k5b);
+			S_StartSoundFromEverywhere(sfx_s3k5b);
 		}
 		else if (TSoURDt3rd_M_MenuExtraPressed(pid))
 		{
@@ -432,7 +432,7 @@ void TSoURDt3rd_M_MenuTypingInput(INT32 key)
 			M_ToggleVirtualShift();
 
 			TSoURDt3rd_M_SetMenuDelay(pid);
-			S_StartSound(NULL, sfx_s3k5b);
+			S_StartSoundFromEverywhere(sfx_s3k5b);
 		}
 		else if (TSoURDt3rd_M_MenuConfirmPressed(pid))
 		{
@@ -463,7 +463,7 @@ void TSoURDt3rd_M_MenuTypingInput(INT32 key)
 				}
 
 				TSoURDt3rd_M_SetMenuDelay(pid);
-				S_StartSound(NULL, sfx_s3k5b);
+				S_StartSoundFromEverywhere(sfx_s3k5b);
 			}
 		}
 	}

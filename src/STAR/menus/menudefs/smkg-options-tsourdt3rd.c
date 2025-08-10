@@ -307,7 +307,7 @@ boolean TSoURDt3rd_M_OptionsInputs(INT32 ch)
 		optionsmenu.offset.dist = 48;
 
 		TSoURDt3rd_M_NextOpt();
-		S_StartSound(NULL, sfx_s3k5b);
+		S_StartSoundFromEverywhere(sfx_s3k5b);
 
 		if (tsourdt3rd_itemOn == 0)
 			optionsmenu.offset.dist -= currentMenu->numitems*48;
@@ -321,7 +321,7 @@ boolean TSoURDt3rd_M_OptionsInputs(INT32 ch)
 		optionsmenu.offset.dist = -48;
 
 		TSoURDt3rd_M_PrevOpt();
-		S_StartSound(NULL, sfx_s3k5b);
+		S_StartSoundFromEverywhere(sfx_s3k5b);
 
 		if (tsourdt3rd_itemOn == currentMenu->numitems-1)
 			optionsmenu.offset.dist += currentMenu->numitems*48;

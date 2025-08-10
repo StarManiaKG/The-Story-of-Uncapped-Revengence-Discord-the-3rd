@@ -312,33 +312,33 @@ const char *TSoURDt3rd_M_GenerateQuitMessage(void)
 	switch (randomMessage)
 	{
 		case QUITMSG4:
-			S_StartSound(NULL, sfx_adderr);
+			S_StartSoundFromEverywhere(sfx_adderr);
 			break;
 		case QUITMSG5:
-			S_StartSound(NULL, sfx_cgot);
+			S_StartSoundFromEverywhere(sfx_cgot);
 			break;
 		case QUIT2MSG1: case QUIT2MSG2:
-			S_StartSound(NULL, sfx_pop);
+			S_StartSoundFromEverywhere(sfx_pop);
 			break;
 		case QUIT2MSG3:
-			S_StartSound(NULL, (M_RandomKey(1) ? sfx_supert : sfx_cgot));
+			S_StartSoundFromEverywhere((M_RandomKey(1) ? sfx_supert : sfx_cgot));
 			break;
 		case QUIT2MSG4:
-			S_StartSound(NULL, sfx_spin);
+			S_StartSoundFromEverywhere(sfx_spin);
 			break;
 		case QUIT2MSG5:
-			S_StartSound(NULL, sfx_cdpcm0+M_RandomKey(9));
+			S_StartSoundFromEverywhere(sfx_cdpcm0+M_RandomKey(9));
 			break;
 		case QUIT3MSG2:
-			S_StartSound(NULL, sfx_supert);
+			S_StartSoundFromEverywhere(sfx_supert);
 			break;
 		case QUIT3MSG3:
-			S_StartSound(NULL, sfx_s3k95);
+			S_StartSoundFromEverywhere(sfx_s3k95);
 			break;
 		default:
 			mrand = M_RandomKey(sizeof(tsourdt3rd_quitsounds) / sizeof(INT32));
 			if (tsourdt3rd_quitsounds[mrand])
-				S_StartSound(NULL, tsourdt3rd_quitsounds[mrand]);
+				S_StartSoundFromEverywhere(tsourdt3rd_quitsounds[mrand]);
 			break;
 	}
 
@@ -705,7 +705,7 @@ void TSoURDt3rd_M_UpdateMenuCMD(UINT8 i)
 				if (S_GetSpeedMusic() > 0.0f)
 					TSoURDt3rd_M_ChangeCvarDirect(-1, (1)*(1.0f/16.0f), &cv_tsourdt3rd_jukebox_speed);
 				else
-					S_StartSound(NULL, sfx_lose);
+					S_StartSoundFromEverywhere(sfx_lose);
 			}
 			if (/*thisGameKey == JB_DECREASEMUSICSPEED || */STAR_G_KeyPressed(0, JB_DECREASEMUSICSPEED))
 			{
@@ -713,13 +713,13 @@ void TSoURDt3rd_M_UpdateMenuCMD(UINT8 i)
 				if (S_GetSpeedMusic() > 0.0f)
 					TSoURDt3rd_M_ChangeCvarDirect(-1, (-1)*(1.0f/16.0f), &cv_tsourdt3rd_jukebox_speed);
 				else
-					S_StartSound(NULL, sfx_lose);
+					S_StartSoundFromEverywhere(sfx_lose);
 			}
 			if (/*thisGameKey == JB_INCREASEMUSICPITCH || */STAR_G_KeyPressed(0, JB_INCREASEMUSICPITCH))
 			{
 				// Increase the pitch of the jukebox track
 				if (TSoURDt3rd_Jukebox_IsPlaying() && (S_GetPitchMusic() < 0.0f))
-					S_StartSound(NULL, sfx_lose);
+					S_StartSoundFromEverywhere(sfx_lose);
 				else
 					TSoURDt3rd_M_ChangeCvarDirect(-1, (1)*(1.0f/16.0f), &cv_tsourdt3rd_jukebox_pitch);
 			}
@@ -727,7 +727,7 @@ void TSoURDt3rd_M_UpdateMenuCMD(UINT8 i)
 			{
 				// Decrease the pitch of the jukebox track
 				if (TSoURDt3rd_Jukebox_IsPlaying() && (S_GetPitchMusic() < 0.0f))
-					S_StartSound(NULL, sfx_lose);
+					S_StartSoundFromEverywhere(sfx_lose);
 				else
 					TSoURDt3rd_M_ChangeCvarDirect(-1, (-1)*(1.0f/16.0f), &cv_tsourdt3rd_jukebox_pitch);
 			}
@@ -742,13 +742,13 @@ void TSoURDt3rd_M_UpdateMenuCMD(UINT8 i)
 				if (!TSoURDt3rd_Jukebox_IsPlaying())
 				{
 					STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_JUKEBOX|STAR_CONS_WARNING, "Nothing is currently playing in the jukebox!\n");
-					S_StartSound(NULL, sfx_lose);
+					S_StartSoundFromEverywhere(sfx_lose);
 				}
 				else
 				{
 					S_StopSounds();
 					S_StopMusic();
-					S_StartSound(NULL, sfx_skid);
+					S_StartSoundFromEverywhere(sfx_skid);
 					TSoURDt3rd_S_RefreshMusic();
 				}
 			}
@@ -1129,7 +1129,7 @@ void TSoURDt3rd_M_GoBack(INT32 choice)
 	TSoURDt3rd_M_SetupNextMenu(next_tsourdt3rd_menu, next_menu, false);
 
 	if (!(behaviourflags & MBF_SOUNDLESS))
-		S_StartSound(NULL, sfx_s3k5b);
+		S_StartSoundFromEverywhere(sfx_s3k5b);
 }
 
 //
@@ -1404,7 +1404,7 @@ static void M_HandleMenuInput(void)
 			else if (TSoURDt3rd_M_MenuExtraPressed(pid))
 			{
 				if (!(tsourdt3rd_currentMenu->behaviourflags & MBF_SOUNDLESS))
-					S_StartSound(NULL, sfx_s3k5b);
+					S_StartSoundFromEverywhere(sfx_s3k5b);
 
 				M_ChangeCvar(-1);
 				TSoURDt3rd_M_SetMenuDelay(pid);
@@ -1433,14 +1433,14 @@ static void M_HandleMenuInput(void)
 	if (ud > 0)
 	{
 		if (TSoURDt3rd_M_NextOpt() && !(tsourdt3rd_currentMenu->behaviourflags & MBF_SOUNDLESS))
-			S_StartSound(NULL, sfx_s3k5b);
+			S_StartSoundFromEverywhere(sfx_s3k5b);
 		TSoURDt3rd_M_SetMenuDelay(pid);
 		return;
 	}
 	else if (ud < 0)
 	{
 		if (TSoURDt3rd_M_PrevOpt() && !(tsourdt3rd_currentMenu->behaviourflags & MBF_SOUNDLESS))
-			S_StartSound(NULL, sfx_s3k5b);
+			S_StartSoundFromEverywhere(sfx_s3k5b);
 		TSoURDt3rd_M_SetMenuDelay(pid);
 		return;
 	}
@@ -1450,7 +1450,7 @@ static void M_HandleMenuInput(void)
 			|| (currentMenu->menuitems[tsourdt3rd_itemOn].status & IT_TYPE) == IT_CVAR))
 		{
 			if (!(tsourdt3rd_currentMenu->behaviourflags & MBF_SOUNDLESS))
-				S_StartSound(NULL, sfx_s3k5b);
+				S_StartSoundFromEverywhere(sfx_s3k5b);
 			routine(0);
 			TSoURDt3rd_M_SetMenuDelay(pid);
 		}
@@ -1462,7 +1462,7 @@ static void M_HandleMenuInput(void)
 			|| (currentMenu->menuitems[tsourdt3rd_itemOn].status & IT_TYPE) == IT_CVAR))
 		{
 			if (!(tsourdt3rd_currentMenu->behaviourflags & MBF_SOUNDLESS))
-				S_StartSound(NULL, sfx_s3k5b);
+				S_StartSoundFromEverywhere(sfx_s3k5b);
 			routine(1);
 			TSoURDt3rd_M_SetMenuDelay(pid);
 		}
@@ -1476,7 +1476,7 @@ static void M_HandleMenuInput(void)
 		if (routine)
 		{
 			if (!(tsourdt3rd_currentMenu->behaviourflags & MBF_SOUNDLESS))
-				S_StartSound(NULL, sfx_s3k5b);
+				S_StartSoundFromEverywhere(sfx_s3k5b);
 
 			if (((currentMenu->menuitems[tsourdt3rd_itemOn].status & IT_TYPE) == IT_CALL
 				|| (currentMenu->menuitems[tsourdt3rd_itemOn].status & IT_TYPE) == IT_SUBMENU)
@@ -1524,7 +1524,7 @@ static void M_HandleMenuInput(void)
 			|| (currentMenu->menuitems[tsourdt3rd_itemOn].status & IT_TYPE) == IT_CVAR))
 		{
 			if (!(tsourdt3rd_currentMenu->behaviourflags & MBF_SOUNDLESS))
-				S_StartSound(NULL, sfx_s3k5b);
+				S_StartSoundFromEverywhere(sfx_s3k5b);
 
 			routine(-1);
 			TSoURDt3rd_M_SetMenuDelay(pid);

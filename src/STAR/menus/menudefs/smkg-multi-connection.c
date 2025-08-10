@@ -26,7 +26,7 @@ void TSoURDt3rd_M_HandleMasterServerResetChoice(INT32 choice)
 	if (choice == 'y' || choice == KEY_ENTER)
 	{
 		CV_Set(&cv_masterserver, cv_masterserver.defaultvalue);
-		S_StartSound(NULL, sfx_s221);
+		S_StartSoundFromEverywhere(sfx_s221);
 	}
 	tsourdt3rd_local.ms_address_changed = true;
 }

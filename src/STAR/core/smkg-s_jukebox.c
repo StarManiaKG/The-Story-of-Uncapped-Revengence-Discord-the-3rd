@@ -208,7 +208,7 @@ void TSoURDt3rd_Jukebox_Play(musicdef_t *play_def)
 			NULL,
 			NULL
 		);
-		S_StartSound(NULL, sfx_lose);
+		S_StartSoundFromEverywhere(sfx_lose);
 		return;
 	}
 	else if (!TSoURDt3rd_Jukebox_Unlocked())
@@ -222,14 +222,14 @@ void TSoURDt3rd_Jukebox_Play(musicdef_t *play_def)
 			NULL,
 			NULL
 		);
-		S_StartSound(NULL, sfx_lose);
+		S_StartSoundFromEverywhere(sfx_lose);
 		return;
 	}
 	else if (TSoURDt3rd_Jukebox_IsPlaying())
 	{
 		// We shouldn't interrupt ourself!
 		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_JUKEBOX|STAR_CONS_WARNING, "There's already a track playing!\n");
-		S_StartSound(NULL, sfx_lose);
+		S_StartSoundFromEverywhere(sfx_lose);
 		return;
 	}
 
@@ -240,7 +240,7 @@ void TSoURDt3rd_Jukebox_Play(musicdef_t *play_def)
 			if (!tsourdt3rd_global_jukebox->prevtrack)
 			{
 				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_JUKEBOX|STAR_CONS_WARNING, "You haven't recently played a track!\n");
-				S_StartSound(NULL, sfx_lose);
+				S_StartSoundFromEverywhere(sfx_lose);
 				return;
 			}
 			play_def = tsourdt3rd_global_jukebox->prevtrack;
