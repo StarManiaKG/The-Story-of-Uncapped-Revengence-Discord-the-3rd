@@ -21,12 +21,12 @@
 #include "../byteptr.h"
 #include "../d_main.h"
 #include "../g_game.h"
+#include "../m_menu.h"
 #include "../w_wad.h"
 #include "../z_zone.h"
 #include "../doomstat.h"
 #include "../doomdef.h"
 #include "../r_local.h"
-#include "../m_menu.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
