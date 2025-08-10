@@ -149,16 +149,7 @@ size_t strlcpy(char *dst, const char *src, size_t siz);
 #include <stdbool.h>
 #endif
 
-#ifndef __cplusplus
-#ifndef __bool_true_false_are_defined
-#ifndef _WIN32
-enum {false = 0, true = 1};
-#else
-#define false FALSE
-#define true TRUE
-#endif
-#endif
-#endif
+#define boolean bool
 
 /* 7.18.2.1  Limits of exact-width integer types */
 

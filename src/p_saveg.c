@@ -34,6 +34,7 @@
 #include "r_sky.h"
 #include "p_polyobj.h"
 #include "lua_script.h"
+#include "lua_archive.h"
 #include "p_slopes.h"
 #include "hu_stuff.h"
 
@@ -3978,7 +3979,7 @@ FUNCINLINE static ATTRINLINE thinker_t *LoadFadeThinker(save_t *save_p, actionf_
 	ht->destvalue = P_ReadINT16(save_p);
 	ht->destlightlevel = P_ReadINT16(save_p);
 	ht->speed = P_ReadINT16(save_p);
-	ht->ticbased = (boolean)P_ReadUINT8(save_p);
+	ht->ticbased = P_ReadUINT8(save_p);
 	ht->timer = P_ReadINT32(save_p);
 	ht->doexists = P_ReadUINT8(save_p);
 	ht->dotranslucent = P_ReadUINT8(save_p);
@@ -4014,7 +4015,7 @@ FUNCINLINE static ATTRINLINE thinker_t *LoadFadeColormapThinker(save_t *save_p, 
 	ht->sector = LoadSector(P_ReadUINT32(save_p));
 	ht->source_exc = GetNetColormapFromList(P_ReadUINT32(save_p));
 	ht->dest_exc = GetNetColormapFromList(P_ReadUINT32(save_p));
-	ht->ticbased = (boolean)P_ReadUINT8(save_p);
+	ht->ticbased = P_ReadUINT8(save_p);
 	ht->duration = P_ReadINT32(save_p);
 	ht->timer = P_ReadINT32(save_p);
 	if (ht->sector)
@@ -4168,9 +4169,9 @@ static thinker_t* LoadPolyfadeThinker(save_t *save_p, actionf_p1 thinker)
 	ht->polyObjNum = P_ReadINT32(save_p);
 	ht->sourcevalue = P_ReadINT32(save_p);
 	ht->destvalue = P_ReadINT32(save_p);
-	ht->docollision = (boolean)P_ReadUINT8(save_p);
-	ht->doghostfade = (boolean)P_ReadUINT8(save_p);
-	ht->ticbased = (boolean)P_ReadUINT8(save_p);
+	ht->docollision = P_ReadUINT8(save_p);
+	ht->doghostfade = P_ReadUINT8(save_p);
+	ht->ticbased = P_ReadUINT8(save_p);
 	ht->duration = P_ReadINT32(save_p);
 	ht->timer = P_ReadINT32(save_p);
 	return &ht->thinker;
@@ -4949,7 +4950,7 @@ FUNCINLINE static ATTRINLINE boolean P_NetUnArchiveMisc(save_t *save_p, boolean 
 	gravity = P_ReadFixed(save_p);
 
 	countdowntimer = (tic_t)P_ReadUINT32(save_p);
-	countdowntimeup = (boolean)P_ReadUINT8(save_p);
+	countdowntimeup = P_ReadUINT8(save_p);
 
 	hidetime = P_ReadUINT32(save_p);
 
@@ -5101,7 +5102,7 @@ FUNCINLINE static ATTRINLINE void P_NetUnArchiveEmblems(save_t *save_p)
 	if (P_ReadUINT32(save_p) != ARCHIVEBLOCK_EMBLEMS)
 		I_Error("Bad $$$.sav at archive block Emblems");
 
-	savemoddata = (boolean)P_ReadUINT8(save_p); // this one is actually necessary because savemoddata stays false otherwise for some reason.
+	savemoddata = P_ReadUINT8(save_p); // this one is actually necessary because savemoddata stays false otherwise for some reason.
 
 	if (numemblems != P_ReadINT32(save_p))
 		I_Error("Bad $$$.sav dearchiving Emblems (numemblems mismatch)");
