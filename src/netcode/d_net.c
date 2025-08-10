@@ -1079,10 +1079,8 @@ boolean D_CheckNetGame(void)
 
 	netbuffer = (doomdata_t *)(void *)&doomcom->data;
 
-#if 1
 	// STAR STUFF: run our cool netgame junk too! //
 	TSoURDt3rd_D_CheckNetgame(doomcom);
-#endif
 
 #ifdef DEBUGFILE
 	if (M_CheckParm("-debugfile"))

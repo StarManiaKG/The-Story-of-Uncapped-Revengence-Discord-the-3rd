@@ -150,13 +150,9 @@ typedef enum
 	XD_LUAVAR,      // 23
 	XD_LUAFILE,     // 24
 	XD_MUTEPLAYER,  // 25
-
-#if 1
 	// STAR STUFF: TSoURDt3rd NetXCMDs //
-	// Ring Racers
-	XD_DISCORD,     // 26
-#endif
-
+	XD_DISCORD,     // 26 (Ring Racers)
+	// DONE! //
 	MAXNETXCMD
 } netxcmd_t;
 

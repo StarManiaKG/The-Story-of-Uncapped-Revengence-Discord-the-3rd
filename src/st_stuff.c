@@ -705,7 +705,7 @@ static void ST_drawRaceNum(INT32 time)
 	{
 		height -= (2 - bounce);
 		if (!(P_AutoPause() || paused) && !bounce)
-				S_StartSound(0, ((racenum == racego) ? sfx_s3kad : sfx_s3ka7));
+				S_StartSoundFromEverywhere(((racenum == racego) ? sfx_s3kad : sfx_s3ka7));
 	}
 	V_DrawScaledPatch(((BASEVIDWIDTH - racenum->width)/2), height, V_PERPLAYER, racenum);
 }
@@ -2617,7 +2617,7 @@ static void ST_doHuntIconsAndSound(void)
 	}
 
 	if (!(P_AutoPause() || paused) && interval > 0 && leveltime && leveltime % interval == 0 && renderisnewtic)
-		S_StartSound(NULL, sfx_emfind);
+		S_StartSoundFromEverywhere(sfx_emfind);
 }
 
 static boolean ST_doItemFinderIconsAndSound(void)
@@ -2694,7 +2694,7 @@ static boolean ST_doItemFinderIconsAndSound(void)
 	}
 
 	if (!(P_AutoPause() || paused) && interval > 0 && leveltime && leveltime % interval == 0 && renderisnewtic)
-		S_StartSound(NULL, sfx_emfind);
+		S_StartSoundFromEverywhere(sfx_emfind);
 
 	return true;
 }
@@ -2757,7 +2757,7 @@ static void ST_overlayDrawer(void)
 			}
 		}
 
-		if (i == MAXPLAYERS && deadtimer >= 0)
+		if (i == MAXPLAYERS && deadtimer >= 0 && LUA_HudEnabled(hud_gameover))
 		{
 			INT32 lvlttlx = min(6*deadtimer, BASEVIDWIDTH/2);
 			UINT32 flags = V_PERPLAYER|(stplyr->spectator ? V_HUDTRANSHALF : V_HUDTRANS);
@@ -2808,7 +2808,7 @@ static void ST_overlayDrawer(void)
 			ST_drawRaceHUD();
 
 		// Emerald Hunt Indicators
-		if (!ST_doItemFinderIconsAndSound())
+		if (!ST_doItemFinderIconsAndSound() && LUA_HudEnabled(hud_itemhunt))
 			ST_doHuntIconsAndSound();
 
 		if(!P_IsLocalPlayer(stplyr))

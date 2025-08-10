@@ -26,8 +26,7 @@
 #include "../doomstat.h"
 
 // TSoURDt3rd
-#include "../discord/discord.h" // Needed for Netgame data either way :p //
-#include "../STAR/smkg-cvars.h" // TSoURDt3rd_D_Joinable_OnChange() //
+#include "../discord/discord.h" // cv_discordinvites && DISC_D_Joinable_OnChange //
 #include "../STAR/star_vars.h" // Version checking routines //
 
 // Minimum timeout for sending the savegame
@@ -44,20 +43,10 @@ char playeraddress[MAXPLAYERS][64];
 
 consvar_t cv_showjoinaddress = CVAR_INIT ("showjoinaddress", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL);
 
-#if 0
-consvar_t cv_allownewplayer = CVAR_INIT ("allowjoin", "On", CV_SAVE|CV_NETVAR|CV_ALLOWLUA, CV_OnOff, NULL);
-#else
-// STAR STUFF: we have unique stuff to do here! //
-consvar_t cv_allownewplayer = CVAR_INIT ("allowjoin", "On", CV_SAVE|CV_NETVAR|CV_CALL|CV_ALLOWLUA, CV_OnOff, TSoURDt3rd_D_Joinable_OnChange);
-#endif
+consvar_t cv_allownewplayer = CVAR_INIT ("allowjoin", "On", CV_SAVE|CV_NETVAR|CV_CALL|CV_ALLOWLUA, CV_OnOff, DISC_D_Joinable_OnChange);
 
 static CV_PossibleValue_t maxplayers_cons_t[] = {{2, "MIN"}, {32, "MAX"}, {0, NULL}};
-#if 0
-consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_SAVE|CV_NETVAR|CV_ALLOWLUA, maxplayers_cons_t, NULL);
-#else
-// STAR STUFF: we have unique stuff to do here! //
-consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_SAVE|CV_NETVAR|CV_CALL|CV_ALLOWLUA, maxplayers_cons_t, TSoURDt3rd_D_Joinable_OnChange);
-#endif
+consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_SAVE|CV_NETVAR|CV_CALL|CV_ALLOWLUA, maxplayers_cons_t, DISC_D_Joinable_OnChange);
 
 static CV_PossibleValue_t joindelay_cons_t[] = {{1, "MIN"}, {3600, "MAX"}, {0, "Off"}, {0, NULL}};
 consvar_t cv_joindelay = CVAR_INIT ("joindelay", "10", CV_SAVE|CV_NETVAR, joindelay_cons_t, NULL);

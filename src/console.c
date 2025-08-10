@@ -49,15 +49,10 @@
 
 #define MAXHUDLINES 20
 
-#ifdef HAVE_THREADS
 I_mutex con_mutex;
 
 #  define Lock_state()    I_lock_mutex(&con_mutex)
 #  define Unlock_state() I_unlock_mutex(con_mutex)
-#else/*HAVE_THREADS*/
-#  define Lock_state()
-#  define Unlock_state()
-#endif/*HAVE_THREADS*/
 
 static boolean con_started = false; // console has been initialised
        boolean con_startup = false; // true at game startup
@@ -1365,11 +1360,11 @@ static void CON_Print(char *msg)
 		return;
 
 	if (*msg == '\3') // chat text, makes ding sound
-		S_StartSound(NULL, sfx_radio);
+		S_StartSoundFromEverywhere(sfx_radio);
 	else if (*msg == '\4') // chat action, dings and is in yellow
 	{
 		*msg = '\x82'; // yellow
-		S_StartSound(NULL, sfx_radio);
+		S_StartSoundFromEverywhere(sfx_radio);
 	}
 
 	Lock_state();
@@ -1751,12 +1746,10 @@ static void CON_DrawBackpic(void)
 
 	// Get the lumpnum for CONSBACK, STARTUP (Only during game startup) or fallback into MISSING.
 	if (con_startup)
-#if 0
-		piclump = W_CheckNumForPatchName("STARTUP");
-#else
-		// STAR STUFF: set our custom console pictures instead please //
+	{
+		// STAR STUFF: set our own custom console pictures instead please //
 		piclump = W_CheckNumForPatchName(TSoURDt3rd_CON_DrawStartupScreen());
-#endif
+	}
 	else
 		piclump = W_CheckNumForPatchName("CONSBACK");
 
@@ -1765,6 +1758,8 @@ static void CON_DrawBackpic(void)
 
 	// Cache the patch.
 	con_backpic = W_CachePatchNum(piclump, PU_PATCH);
+	if (con_backpic == NULL)
+		return;
 
 	// Center the backpic, and draw a vertically cropped patch.
 	w = con_backpic->width * vid.dup;

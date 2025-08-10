@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2023 by Sonic Team Junior.
+// Copyright (C) 1999-2024 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -14,7 +14,7 @@
 #define __DEH_TABLES_H__
 
 #include "doomdef.h" // Constants
-#include "d_think.h" // actionf_t
+#include "d_think.h" // actionf_p1
 #include "info.h" // Mobj, state, sprite, etc constants
 #include "lua_script.h"
 
@@ -44,7 +44,7 @@ struct flickytypes_s {
   */
 typedef struct
 {
-	actionf_t action; ///< Function pointer corresponding to the actual action.
+	actionf_p1 action; ///< Function pointer corresponding to the actual action.
 	const char *name; ///< Name of the action in ALL CAPS.
 } actionpointer_t;
 

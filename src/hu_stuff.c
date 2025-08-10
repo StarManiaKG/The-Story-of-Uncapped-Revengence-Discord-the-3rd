@@ -378,7 +378,7 @@ static void HU_removeChatText_Log(void)
 void HU_AddChatText(const char *text, boolean playsound)
 {
 	if (playsound && cv_consolechat.value != 2) // Don't play the sound if we're using hidden chat.
-		S_StartSound(NULL, sfx_radio);
+		S_StartSoundFromEverywhere(sfx_radio);
 	// reguardless of our preferences, put all of this in the chat buffer in case we decide to change from oldchat mid-game.
 
 	if (chat_nummsg_log >= CHAT_BUFSIZE) // too many messages!
@@ -1752,24 +1752,27 @@ static void HU_DrawDemoInfo(void)
 //
 void HU_Drawer(void)
 {
-	// draw chat string plus cursor
-	if (chat_on)
+	if (LUA_HudEnabled(hud_chat))
 	{
-		if (!OLDCHAT)
-			HU_DrawChat();
+		// draw chat string plus cursor
+		if (chat_on)
+		{
+			if (!OLDCHAT)
+				HU_DrawChat();
+			else
+				HU_DrawChat_Old();
+		}
 		else
-			HU_DrawChat_Old();
-	}
-	else
-	{
-		typelines = 1;
-		chat_scrolltime = 0;
+		{
+			typelines = 1;
+			chat_scrolltime = 0;
 
-		if (!OLDCHAT && cv_consolechat.value < 2 && netgame) // Don't display minimized chat if you set the mode to Window (Hidden)
-			HU_drawMiniChat(); // draw messages in a cool fashion.
+			if (!OLDCHAT && cv_consolechat.value < 2 && netgame) // Don't display minimized chat if you set the mode to Window (Hidden)
+				HU_drawMiniChat(); // draw messages in a cool fashion.
+		}
 	}
 
-	if (cechotimer)
+	if (cechotimer && LUA_HudEnabled(hud_cecho))
 		HU_DrawCEcho();
 
 	if (demoplayback && hu_showscores)

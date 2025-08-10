@@ -188,10 +188,7 @@ void CL_ClearPlayer(INT32 playernum)
 		P_RemoveMobj(players[playernum].mo);
 	memset(&players[playernum], 0, sizeof (player_t));
 	memset(playeraddress[playernum], 0, sizeof(*playeraddress));
-#if 1
-	// STAR STUFF: Free this player from their prison. //
-	TSoURDt3rd_ClearPlayer(playernum);
-#endif
+	TSoURDt3rd_ClearPlayer(playernum); // STAR STUFF: Free this player from their prison. //
 }
 
 // Xcmd XD_ADDPLAYER
@@ -317,12 +314,6 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 		}
 
 		HU_AddChatText(joinmsg, false);
-
-#if 0
-		// STAR STUFF: move player structure data for me please //
-		/// \todo can i leave it like this
-		TSoURDt3rd_MovePlayerStructure(node, newplayernum, mynode);
-#endif
 	}
 
 	if (server && multiplayer && motd[0] != '\0')
@@ -331,10 +322,8 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 	if (!rejoined)
 		LUA_HookInt(newplayernum, HOOK(PlayerJoin));
 
-#if 1
 	// STAR STUFF: move player structure data for me please //
 	TSoURDt3rd_MovePlayerStructure(node, newplayernum, mynode);
-#endif
 
 #ifdef HAVE_SDL
 	STAR_SetWindowTitle();
@@ -580,7 +569,7 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 #endif
 
 	// STAR STUFF: I LIKE YOUR FUNNY SOUNDS, MAGIC FUNCTION //
-	S_StartSound(NULL, ((msg == KICK_MSG_PLAYER_QUIT) ? STAR_LeaveSFX : STAR_SynchFailureSFX));
+	S_StartSoundFromEverywhere(msg == KICK_MSG_PLAYER_QUIT ? STAR_LeaveSFX : STAR_SynchFailureSFX);
 }
 
 // If in a special stage, redistribute the player's
@@ -849,6 +838,8 @@ void SV_SpawnServer(void)
 		if (!dedicated)
 			CL_ConnectToServer();
 		else numslots = 1;
+
+		LUA_HookVoid(HOOK(GameStart));
 	}
 }
 
@@ -1574,10 +1565,7 @@ void NetKeepAlive(void)
 	MasterClient_Ticker();
 #endif
 
-#if 1
-	// STAR STUFF: renew the holepunch data please //
-	TSoURDt3rd_D_RenewHolePunch();
-#endif
+	TSoURDt3rd_D_RenewHolePunch(); // STAR STUFF: renew the holepunch data please //
 
 	if (client)
 	{
@@ -1642,10 +1630,7 @@ void NetUpdate(void)
 	MasterClient_Ticker(); // Acking the Master Server
 #endif
 
-#if 1
-	// STAR STUFF: renew the holepunch data please //
-	TSoURDt3rd_D_RenewHolePunch();
-#endif
+	TSoURDt3rd_D_RenewHolePunch(); // STAR STUFF: renew the holepunch data please //
 
 	if (client)
 	{
@@ -1698,13 +1683,9 @@ void NetUpdate(void)
 	if (nowtime != resptime)
 	{
 		resptime = nowtime;
-#ifdef HAVE_THREADS
 		I_lock_mutex(&m_menu_mutex);
-#endif
 		M_Ticker();
-#ifdef HAVE_THREADS
 		I_unlock_mutex(m_menu_mutex);
-#endif
 		CON_Ticker();
 	}
 

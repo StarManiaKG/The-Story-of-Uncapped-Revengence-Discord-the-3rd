@@ -369,10 +369,8 @@ boolean CL_SendJoin(void)
 	strncpy(netbuffer->u.clientcfg.names[0], cv_playername.zstring, sizeof(netbuffer->u.clientcfg.names[0])-1);
 	strncpy(netbuffer->u.clientcfg.names[1], player2name, MAXPLAYERNAME);
 
-#if 1
-	// STAR STUFF: set our variable right quick //
+	// STAR STUFF: set our netbuffer variable right quick //
 	netbuffer->u.clientcfg.tsourdt3rd = true;
-#endif
 
 	return HSendPacket(servernode, true, 0, sizeof (clientconfig_pak));
 }
@@ -384,10 +382,8 @@ static void SendAskInfo(INT32 node)
 	netbuffer->u.askinfo.version = VERSION;
 	netbuffer->u.askinfo.time = (tic_t)LONG(asktime);
 
-#if 1
 	// STAR STUFF: send any holepunching requests to our users, please :) //
 	TSoURDt3rd_D_AskForHolepunch(node);
-#endif
 
 	// Even if this never arrives due to the host being firewalled, we've
 	// now allowed traffic from the host to us in, so once the MS relays
@@ -461,7 +457,7 @@ static void SL_InsertServer(serverinfo_pak* info, SINT8 node)
 	M_SortServerList();
 }
 
-#if defined (MASTERSERVER) && defined (HAVE_THREADS)
+#if defined (MASTERSERVER)
 struct Fetch_servers_ctx
 {
 	int room;
@@ -506,7 +502,7 @@ Fetch_servers_thread (struct Fetch_servers_ctx *ctx)
 
 	free(ctx);
 }
-#endif // defined (MASTERSERVER) && defined (HAVE_THREADS)
+#endif // defined (MASTERSERVER)
 
 void CL_QueryServerList (msg_server_t *server_list)
 {
@@ -562,34 +558,41 @@ void CL_UpdateServerList(boolean internetsearch, INT32 room)
 #ifdef MASTERSERVER
 	if (internetsearch)
 	{
-#ifdef HAVE_THREADS
-		struct Fetch_servers_ctx *ctx;
-
-		ctx = malloc(sizeof *ctx);
-
-		// This called from M_Refresh so I don't use a mutex
-		m_waiting_mode = M_WAITING_SERVERS;
-
-		I_lock_mutex(&ms_QueryId_mutex);
+		if (I_can_thread())
 		{
-			ctx->id = ms_QueryId;
+			struct Fetch_servers_ctx *ctx;
+
+			ctx = malloc(sizeof *ctx);
+
+			// This called from M_Refresh so I don't use a mutex
+			m_waiting_mode = M_WAITING_SERVERS;
+
+			I_lock_mutex(&ms_QueryId_mutex);
+			{
+				ctx->id = ms_QueryId;
+			}
+			I_unlock_mutex(ms_QueryId_mutex);
+
+			ctx->room = room;
+
+			if (!I_spawn_thread("fetch-servers", (I_thread_fn)Fetch_servers_thread, ctx))
+			{
+				free(ctx);
+			}
 		}
-		I_unlock_mutex(ms_QueryId_mutex);
-
-		ctx->room = room;
-
-		I_spawn_thread("fetch-servers", (I_thread_fn)Fetch_servers_thread, ctx);
-#else
-		msg_server_t *server_list;
-
-		server_list = GetShortServersList(room, 0);
-
-		if (server_list)
+		else
 		{
-			CL_QueryServerList(server_list);
-			free(server_list);
+			msg_server_t *server_list;
+
+			server_list = GetShortServersList(room, 0);
+
+			if (server_list)
+			{
+				CL_QueryServerList(server_list);
+				free(server_list);
+			}
 		}
-#endif
+
 	}
 #endif // MASTERSERVER
 }
@@ -811,10 +814,9 @@ static boolean CL_FinishedFileList(void)
 	{
 		return true;
 	}
-#if 1
-	// STAR STUFF: you've autoloaded some game changing mods //
 	else if (i == 5)
 	{
+		// STAR STUFF: you've autoloaded some game changing mods //
 		AbortConnection();
 		M_StartMessage(M_GetText(
 			"You've autoloaded some game changing mods.\n\n"
@@ -826,7 +828,6 @@ static boolean CL_FinishedFileList(void)
 		), NULL, MM_NOTHING);
 		return false;
 	}
-#endif
 	else if (i == 3) // too many files
 	{
 		AbortConnection();
@@ -1273,13 +1274,9 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 				F_TitleScreenDrawer();
 			}
 			CL_DrawConnectionStatus();
-#ifdef HAVE_THREADS
 			I_lock_mutex(&m_menu_mutex);
-#endif
 			M_Drawer(); //Needed for drawing messageboxes on the connection screen
-#ifdef HAVE_THREADS
 			I_unlock_mutex(m_menu_mutex);
-#endif
 			I_UpdateNoVsync(); // page flip or blit buffer
 			if (moviemode)
 				M_SaveFrame();
@@ -1485,17 +1482,15 @@ void PT_ServerCFG(SINT8 node)
 		memcpy(server_context, netbuffer->u.servercfg.server_context, 8);
 	}
 
-#if 1
-	// STAR STUFF: handle our custom packet data please :) //
-	TSoURDt3rd_HandleCustomPackets(node);
-#endif
-
 	netnodes[(UINT8)servernode].ingame = true;
 	serverplayer = netbuffer->u.servercfg.serverplayer;
 	numslots = SHORT(netbuffer->u.servercfg.totalslotnum);
 	mynode = netbuffer->u.servercfg.clientnode;
 	if (serverplayer >= 0)
 		playernode[(UINT8)serverplayer] = servernode;
+
+	// STAR STUFF: handle our custom packet data please :) //
+	TSoURDt3rd_HandleCustomPackets(node);
 
 	if (netgame)
 		CONS_Printf(M_GetText("Join accepted, waiting for complete game state...\n"));

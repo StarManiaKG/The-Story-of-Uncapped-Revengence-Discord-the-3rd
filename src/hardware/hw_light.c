@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2015 by DooM Legacy Team.
-// Copyright (C) 1999-2023 by Sonic Team Junior.
+// Copyright (C) 1999-2024 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -1133,7 +1133,7 @@ static void HWR_SearchLightsInMobjs(void)
 {
 	// search in the list of thinkers
 	for (thinker_t *th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
-		if (th->function.acp1 != (actionf_p1)P_RemoveThinkerDelayed)
+		if (th->function != (actionf_p1)P_RemoveThinkerDelayed)
 			HWR_AddMobjLights((mobj_t *)th);
 }
 

@@ -63,7 +63,7 @@
 #ifdef HAVE_DISCORDSUPPORT
 #include "../discord/discord.h" // Discord Routines //
 #endif
-#include "../STAR/star_vars.h" // STAR_SetWindowTitle() //
+#include "../STAR/star_vars.h" // STAR_SetWindowTitle() && TSOURDT3RDVERSION //
 #include "../STAR/smkg-cvars.h" // cv_tsourdt3rd_game_sdl_windowtitle_type //
 #include "../STAR/p_user.h" // TSoURDt3rd_P_MovingPlayerSetup() //
 #include "../STAR/core/smkg-p_pads.h" // TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor() //
@@ -449,11 +449,8 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"LUACMD",
 	"LUAVAR",
 	"LUAFILE",
-#if 1
 	// STAR STUFF: TSoURDt3rd NetXCMDs //
-	// Ring Racers
-	"DISCORD"
-#endif
+	"DISCORD" // Ring Racers
 };
 
 // =========================================================================
@@ -659,10 +656,8 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_chatspamspeed);
 	CV_RegisterVar(&cv_chatspamburst);
 
-#if 1
 	// STAR STUFF: register our cool server commands please! //
 	TSoURDt3rd_D_RegisterServerCommands();
-#endif
 }
 
 // =========================================================================
@@ -979,10 +974,8 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("dumplua", Command_Dumplua_f, COM_LUA);
 #endif
 
-#if 1
 	// STAR STUFF: register our other cool commands please! //
 	TSoURDt3rd_D_RegisterClientCommands();
-#endif
 }
 
 /** Checks if a name (as received from another player) is okay.
@@ -1194,6 +1187,13 @@ static void SetPlayerName(INT32 playernum, char *newname)
 	{
 		if (strcasecmp(newname, player_names[playernum]) != 0)
 		{
+			if (!LUA_HookNameChange(&players[playernum], newname))
+			{
+				// Name change rejected by Lua
+				if (playernum == consoleplayer)
+					CV_StealthSet(&cv_playername, player_names[consoleplayer]);
+				return;
+			}
 			if (netgame)
 				HU_AddChatText(va("\x82*%s renamed to %s", player_names[playernum], newname), false);
 
@@ -1287,10 +1287,8 @@ static void SetColorLocal(INT32 playernum, UINT16 color)
 	if (players[playernum].mo && !players[playernum].powers[pw_dye])
 		players[playernum].mo->color = P_GetPlayerColor(&players[playernum]);
 
-#if 1
 	// STAR STUFF: fun controller light junk //
 	TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor(playernum);
-#endif
 }
 
 // name, color, or skin has changed
@@ -1952,12 +1950,10 @@ static void Command_Map_f(void)
 		return;
 	}
 
-#if 1
 	// STAR STUFF: clears the screen when loading into a level //
 	M_ClearMenus(true);
 	if (demoplayback && titledemo)
 		G_CheckDemoStatus();
-#endif
 
 	// new gametype value
 	// use current one by default
@@ -2232,10 +2228,7 @@ static void Got_Pause(UINT8 **cp, INT32 playernum)
 
 	I_UpdateMouseGrab();
 
-#if 1
-	// STAR STUFF: pause rumbling please //
-	TSoURDt3rd_P_Pads_PauseDeviceRumble(NULL, paused, paused);
-#endif
+	TSoURDt3rd_P_Pads_PauseDeviceRumble(NULL, paused, paused); // STAR STUFF: pause rumbling please //
 }
 
 // Command for stuck characters in netgames, griefing, etc.
@@ -3956,19 +3949,10 @@ static void Command_ListWADS_f(void)
   */
 static void Command_Version_f(void)
 {
-#if 0
 #ifdef DEVELOP
 	CONS_Printf("Sonic Robo Blast 2 %s %s %s (%s %s) ", compbranch, comprevision, compnote, compdate, comptime);
 #else
 	CONS_Printf("Sonic Robo Blast 2 %s (%s %s %s %s) ", VERSIONSTRING, compdate, comptime, comprevision, compbranch);
-#endif
-#else
-	// STAR NOTE: i was here :) //
-#ifdef DEVELOP
-	CONS_Printf("Sonic Robo Blast 2 %s; %s %s %s (%s %s) ", TSOURDT3RDVERSIONSTRING, compbranch, comprevision, compnote, compdate, comptime);
-#else
-	CONS_Printf("Sonic Robo Blast 2 %s; %s (%s %s %s %s) ", VERSIONSTRING, TSOURDT3RDVERSIONSTRING, compdate, comptime, comprevision, compbranch);
-#endif
 #endif
 
 	// Base library
@@ -4000,6 +3984,10 @@ static void Command_Version_f(void)
 #endif
 
 	CONS_Printf("\n");
+
+	// STAR STUFF: print the build's version string //
+	STAR_CONS_Printf(STAR_CONS_NOTICE, TSOURDT3RD_APP_FULL" v"TSOURDT3RDVERSION);
+	STAR_CONS_Printf(STAR_CONS_NONE, "\n\n");
 }
 
 #ifdef UPDATE_ALERT
@@ -4041,12 +4029,10 @@ static void Command_Playintro_f(void)
 	if (dirmenu)
 		closefilemenu(true);
 
-#if 1
 	// STAR STUFF: clears out the screen when looking at the intro //
 	M_ClearMenus(true);
 	if (demoplayback && titledemo)
 		G_CheckDemoStatus();
-#endif
 
 	F_StartIntro();
 }
@@ -4469,7 +4455,7 @@ static void SoundTest_OnChange(void)
 	}
 
 	S_StopSounds();
-	S_StartSound(NULL, cv_soundtest.value);
+	S_StartSoundFromEverywhere(cv_soundtest.value);
 }
 
 static void AutoBalance_OnChange(void)
@@ -4823,11 +4809,11 @@ static void Command_Isgamemodified_f(void)
 		CONS_Printf(M_GetText("modifiedgame is true, but you can save time data in this mod.\n"));
 	else if (modifiedgame)
 		CONS_Printf(M_GetText("modifiedgame is true, time data can't be saved\n"));
-#if 1
-	// STAR STUFF: autoloading mess //
 	else if (tsourdt3rd_local.autoloaded_mods)
+	{
+		// STAR STUFF: autoloading mess //
 		CONS_Printf(M_GetText("modifiedgame is false, and time data can still be saved,\n but keep in mind that you have autoloaded at least one game-changing mod.\n"));
-#endif
+	}
 	else
 		CONS_Printf(M_GetText("modifiedgame is false, you can save time data\n"));
 }
@@ -4886,7 +4872,7 @@ static void Command_Archivetest_f(void)
 	// assign mobjnum
 	i = 1;
 	for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
-		if (th->function.acp1 != (actionf_p1)P_RemoveThinkerDelayed)
+		if (th->function != (actionf_p1)P_RemoveThinkerDelayed)
 			((mobj_t *)th)->mobjnum = i++;
 
 	// allocate buffer
@@ -4993,11 +4979,11 @@ static boolean Skin_CanChange(const char *valstr)
 	if (!(multiplayer || netgame)) // In single player.
 		return true;
 
-#if 1
-	// STAR STUFF: let us move and change skins and junk //
 	if (TSoURDt3rd_P_MovingPlayerSetup(consoleplayer))
+	{
+		// STAR STUFF: let us move and change skins and junk //
 		return true;
-#endif
+	}
 
 	if (CanChangeSkin(consoleplayer) && !P_PlayerMoving(consoleplayer))
 		return true;
@@ -5017,11 +5003,11 @@ static boolean Skin2_CanChange(const char *valstr)
 	if (stricmp(skins[players[secondarydisplayplayer].skin]->name, valstr) == 0)
 		return false;
 
-#if 1
-	// STAR STUFF: let the other player move and change skins and junk too //
 	if (TSoURDt3rd_P_MovingPlayerSetup(secondarydisplayplayer))
+	{
+		// STAR STUFF: let the other player move and change skins and junk too //
 		return true;
-#endif
+	}
 
 	if (CanChangeSkin(secondarydisplayplayer) && !P_PlayerMoving(secondarydisplayplayer))
 		return true;
@@ -5099,12 +5085,7 @@ static void Color_OnChange(void)
 			return;
 		}
 
-#if 0
-		if (!P_PlayerMoving(consoleplayer) && skincolors[players[consoleplayer].skincolor].accessible == true)
-#else
-		// STAR STUFF: let me take over from here //
 		if (TSoURDt3rd_P_MovingPlayerSetup(consoleplayer) && skincolors[players[consoleplayer].skincolor].accessible == true)
-#endif
 		{
 			// Color change menu scrolling fix is no longer necessary
 			SendNameAndColor();
@@ -5116,11 +5097,7 @@ static void Color_OnChange(void)
 		}
 	}
 	lastgoodcolor = cv_playercolor.value;
-
-#if 1
-	// STAR STUFF: does fun controller light junk //
-	TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor(0);
-#endif
+	TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor(0); // STAR STUFF: does fun controller light junk //
 }
 
 /** Sends a color change for the secondary splitscreen player, unless that
@@ -5137,12 +5114,7 @@ static void Color2_OnChange(void)
 	}
 	else
 	{
-#if 0
-		if (!P_PlayerMoving(secondarydisplayplayer) && skincolors[players[secondarydisplayplayer].skincolor].accessible == true)
-#else
-		// STAR STUFF: let me take over from here too //
 		if (TSoURDt3rd_P_MovingPlayerSetup(secondarydisplayplayer) && skincolors[players[secondarydisplayplayer].skincolor].accessible == true)
-#endif
 		{
 			// Color change menu scrolling fix is no longer necessary
 			SendNameAndColor2();
@@ -5154,11 +5126,7 @@ static void Color2_OnChange(void)
 		}
 	}
 	lastgoodcolor2 = cv_playercolor2.value;
-
-#if 1
-	// STAR STUFF: our fun splitscreen controller junk //
-	TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor(1);
-#endif
+	TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor(1); // STAR STUFF: our fun splitscreen controller junk //
 }
 
 /** Displays the result of the chat being muted or unmuted.

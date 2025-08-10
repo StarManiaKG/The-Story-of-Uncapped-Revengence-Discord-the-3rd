@@ -136,9 +136,7 @@ typedef enum
 	NUM_QUITMESSAGES
 } text_enum;
 
-#ifdef HAVE_THREADS
 I_mutex m_menu_mutex;
-#endif
 
 M_waiting_mode_t m_waiting_mode = M_NOT_WAITING;
 
@@ -199,6 +197,7 @@ static tic_t keydown = 0;
 
 // Lua
 static huddrawlist_h luahuddrawlist_playersetup;
+static huddrawlist_h luahuddrawlist_infoscreen;
 
 //
 // PROTOTYPES
@@ -329,6 +328,7 @@ menu_t OP_P1ControlsDef, OP_P2ControlsDef, OP_MouseOptionsDef;
 menu_t OP_Mouse2OptionsDef, OP_Joystick1Def, OP_Joystick2Def;
 menu_t OP_CameraOptionsDef, OP_Camera2OptionsDef;
 menu_t OP_PlaystyleDef;
+menu_t OP_AddonCustomOptionsDef;
 static void M_VideoModeMenu(INT32 choice);
 static void M_Setup1PControlsMenu(INT32 choice);
 static void M_Setup2PControlsMenu(INT32 choice);
@@ -362,6 +362,7 @@ static void M_EraseData(INT32 choice);
 
 static void M_Addons(INT32 choice);
 static void M_AddonsOptions(INT32 choice);
+static void M_AddonsCvarOptions(INT32 choice);
 static patch_t *addonsp[NUM_EXT+5];
 
 #define addonmenusize 9 // number of items actually displayed in the addons menu view, formerly (2*numaddonsshown + 1)
@@ -406,6 +407,7 @@ static void M_DrawColorRamp(INT32 x, INT32 y, INT32 w, INT32 h, skincolor_t colo
 // Handling functions
 static boolean M_ExitPandorasBox(void);
 static boolean M_QuitMultiPlayerMenu(void);
+static boolean M_QuitPauseMenu(void);
 static void M_HandleAddons(INT32 choice);
 static void M_HandleLevelPlatter(INT32 choice);
 static void M_HandleSoundTest(INT32 choice);
@@ -1087,12 +1089,14 @@ static menuitem_t OP_MainMenu[] =
 
 	{IT_SUBMENU | IT_STRING, NULL, "Data Options...",      &OP_DataOptionsDef, 100},
 
+	{IT_CALL	| IT_STRING, NULL, "Custom Options...",	   M_AddonsCvarOptions,110},
+
 #ifdef HAVE_DISCORDSUPPORT
-	{IT_CALL 	| IT_STRING, NULL, "Discord Options...",   TSoURDt3rd_M_DiscordOptions_Init,   120},
+	{IT_CALL 	| IT_STRING, NULL, "Discord Options...",   TSoURDt3rd_M_DiscordOptions_Init,   130},
 #endif
 
 	// STAR STUFF: our menu! //
-	{IT_CALL    | IT_STRING, NULL, "TSoURDt3rd Options...",TSoURDt3rd_M_Main_InitOptions,      130},
+	{IT_CALL    | IT_STRING, NULL, "TSoURDt3rd Options...",TSoURDt3rd_M_Main_InitOptions,      140},
 };
 
 static menuitem_t OP_P1ControlsMenu[] =
@@ -1703,6 +1707,9 @@ static menuitem_t OP_MonitorToggleMenu[] =
 	{IT_STRING|IT_CVAR|IT_CV_INVISSLIDER, NULL, "Eggman Box",        &cv_eggmanbox,    140},
 };
 
+#define MAXADDONOPTIONS 999
+menuitem_t OP_AddonOptionsSlots[MAXADDONOPTIONS];
+
 // ==========================================================================
 // ALL MENU DEFINITIONS GO HERE
 // ==========================================================================
@@ -2278,6 +2285,23 @@ menu_t OP_ScreenshotOptionsDef =
 	0,
 	NULL
 };
+
+INT16 menu_cc_pos = 0;
+
+static void M_AddonsCvarOptions(INT32 choice)
+{
+	(void)choice;
+
+	if (menu_cc_pos)
+		M_SetupNextMenu(&OP_AddonCustomOptionsDef);
+	else
+		M_StartMessage(M_GetText("No Custom Option was found.\nTry to load any Addon!\n(Press a key)\n"), NULL, MM_NOTHING);
+}
+
+menu_t OP_AddonCustomOptionsDef = DEFAULTSCROLLMENUSTYLE(
+	MTREE3(MN_OP_MAIN, MN_OP_DATA, MN_OP_ADDONS),
+	"M_ADDONS", OP_AddonOptionsSlots, &OP_MainDef, 30, 30);
+
 
 menu_t OP_AddonsOptionsDef = DEFAULTMENUSTYLE(
 	MTREE3(MN_OP_MAIN, MN_OP_DATA, MN_OP_ADDONS),
@@ -3531,19 +3555,19 @@ boolean M_Responder(event_t *ev)
 	{
 		case KEY_DOWNARROW:
 			M_NextOpt();
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 			return true;
 
 		case KEY_UPARROW:
 			M_PrevOpt();
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 			return true;
 
 		case KEY_LEFTARROW:
 			if (routine && ((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
 				|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR))
 			{
-				S_StartSound(NULL, sfx_menu1);
+				S_StartSoundFromEverywhere(sfx_menu1);
 				routine(0);
 			}
 			return true;
@@ -3552,7 +3576,7 @@ boolean M_Responder(event_t *ev)
 			if (routine && ((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
 				|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR))
 			{
-				S_StartSound(NULL, sfx_menu1);
+				S_StartSoundFromEverywhere(sfx_menu1);
 				routine(1);
 			}
 			return true;
@@ -3571,13 +3595,13 @@ boolean M_Responder(event_t *ev)
 					// It'd be nice to get rid of this once and for all though!
 					if (((currentMenu->menuitems[itemOn].status & IT_CALLTYPE) & IT_CALL_NOTMODIFIED) && usedCheats)
 					{
-						S_StartSound(NULL, sfx_skid);
+						S_StartSoundFromEverywhere(sfx_skid);
 						M_StartMessage(M_GetText("This cannot be done in a cheated game.\n\n(Press a key)\n"), NULL, MM_NOTHING);
 						return true;
 					}
 #endif
 				}
-				S_StartSound(NULL, sfx_menu1);
+				S_StartSoundFromEverywhere(sfx_menu1);
 				switch (currentMenu->menuitems[itemOn].status & IT_TYPE)
 				{
 					case IT_CVAR:
@@ -3608,7 +3632,7 @@ boolean M_Responder(event_t *ev)
 			{
 				// detach any keys associated with the game control
 				G_ClearControlKeys(setupcontrols, currentMenu->menuitems[itemOn].alphaKey);
-				S_StartSound(NULL, sfx_shldls);
+				S_StartSoundFromEverywhere(sfx_shldls);
 				return true;
 			}
 
@@ -3623,7 +3647,7 @@ boolean M_Responder(event_t *ev)
 					return true;
 
 				if (currentMenu != &OP_SoundOptionsDef || itemOn > 3)
-					S_StartSound(NULL, sfx_menu1);
+					S_StartSoundFromEverywhere(sfx_menu1);
 				routine(-1);
 				return true;
 			}
@@ -3857,6 +3881,14 @@ void M_StartControlPanel(void)
 	CON_ToggleOff(); // move away console
 }
 
+static boolean M_QuitPauseMenu(void)
+{
+	LUA_HUD_DestroyDrawList(luahuddrawlist_infoscreen);
+	luahuddrawlist_infoscreen = NULL;
+
+	return true;
+}
+
 void M_EndModeAttackRun(void)
 {
 	G_ClearModeAttackRetryFlag();
@@ -3895,29 +3927,32 @@ void M_SetupNextMenu(menu_t *menudef)
 {
 	INT16 i;
 
-#if defined (MASTERSERVER) && defined (HAVE_THREADS)
-	if (currentMenu == &MP_RoomDef || currentMenu == &MP_ConnectDef)
+#if defined (MASTERSERVER)
+	if (I_can_thread())
 	{
-		I_lock_mutex(&ms_QueryId_mutex);
+		if (currentMenu == &MP_RoomDef || currentMenu == &MP_ConnectDef)
 		{
-			ms_QueryId++;
-		}
-		I_unlock_mutex(ms_QueryId_mutex);
-	}
-
-	if (currentMenu == &MP_ConnectDef)
-	{
-		I_lock_mutex(&ms_ServerList_mutex);
-		{
-			if (ms_ServerList)
+			I_lock_mutex(&ms_QueryId_mutex);
 			{
-				free(ms_ServerList);
-				ms_ServerList = NULL;
+				ms_QueryId++;
 			}
+			I_unlock_mutex(ms_QueryId_mutex);
 		}
-		I_unlock_mutex(ms_ServerList_mutex);
+
+		if (currentMenu == &MP_ConnectDef)
+		{
+			I_lock_mutex(&ms_ServerList_mutex);
+			{
+				if (ms_ServerList)
+				{
+					free(ms_ServerList);
+					ms_ServerList = NULL;
+				}
+			}
+			I_unlock_mutex(ms_ServerList_mutex);
+		}
 	}
-#endif/*HAVE_THREADS*/
+#endif/*MASTERSERVER*/
 
 	if (currentMenu->quitroutine)
 	{
@@ -3987,7 +4022,7 @@ void M_Ticker(void)
 	// STAR STUFF: send input availability to our other unique menu system :) //
 	TSoURDt3rd_M_Ticker(&itemOn, &noFurtherInput, skullAnimCounter, levellistmode);
 
-#if defined (MASTERSERVER) && defined (HAVE_THREADS)
+#if defined (MASTERSERVER)
 	if (!netgame)
 		return;
 
@@ -4070,10 +4105,8 @@ void M_Init(void)
 
 	CV_RegisterVar(&cv_serversort);
 
-#if 1
 	// STAR STUFF: the game crashed like 50 million times without this lol //
 	TSoURDt3rd_M_InitQuitMessages(quitmsg);
-#endif
 }
 
 static void M_InitCharacterDescription(INT32 i)
@@ -4820,8 +4853,32 @@ static void M_DrawPauseMenu(void)
 		emblem_t *emblem_detail[3] = {NULL, NULL, NULL};
 		char emblem_text[3][20];
 		INT32 i;
+		INT16 xbox = 27;
+		INT16 ybox = 16;
+		INT16 widthbox = 32;
+		INT16 heightbox = 6;
 
-		M_DrawTextBox(27, 16, 32, 6);
+		M_DrawTextBox(xbox, ybox, widthbox, heightbox);
+
+		if (!LUA_HUD_IsDrawListValid(luahuddrawlist_infoscreen))
+		{
+			LUA_HUD_DestroyDrawList(luahuddrawlist_infoscreen);
+			luahuddrawlist_infoscreen = LUA_HUD_CreateDrawList();
+		}
+		LUA_HUD_ClearDrawList(luahuddrawlist_infoscreen);
+		
+		boolean esc_override = LUA_HookEscapePanel(
+			HUD_HOOK(escpanel),
+			luahuddrawlist_infoscreen,
+			xbox+5, ybox+5, widthbox*8+6, heightbox*8+6);
+
+		LUA_HUD_DrawList(luahuddrawlist_infoscreen);
+
+		if (esc_override)
+		{
+			M_DrawGenericMenu();
+			return;
+		}
 
 		// Draw any and all emblems at the top.
 		M_DrawMapEmblems(gamemap, 272, 28, true);
@@ -5619,7 +5676,7 @@ static void M_HandleLevelPlatter(INT32 choice)
 					if (!lsoffs[0]) // prevent sound spam
 					{
 						lsoffs[0] = -8 * FRACUNIT;
-						S_StartSound(NULL,sfx_s3kb7);
+						S_StartSoundFromEverywhere(sfx_s3kb7);
 					}
 					return;
 				}
@@ -5633,7 +5690,7 @@ static void M_HandleLevelPlatter(INT32 choice)
 				lshli = lsrow;
 			// no else needed - headerless lines associate upwards, so moving down to a row without a header is identity
 
-			S_StartSound(NULL,sfx_s3kb7);
+			S_StartSoundFromEverywhere(sfx_s3kb7);
 
 			ifselectvalnextmap(lscol) else ifselectvalnextmap(0)
 			break;
@@ -5647,7 +5704,7 @@ static void M_HandleLevelPlatter(INT32 choice)
 					if (!lsoffs[0]) // prevent sound spam
 					{
 						lsoffs[0] = 8 * FRACUNIT;
-						S_StartSound(NULL,sfx_s3kb7);
+						S_StartSoundFromEverywhere(sfx_s3kb7);
 					}
 					return;
 				}
@@ -5668,7 +5725,7 @@ static void M_HandleLevelPlatter(INT32 choice)
 				lshli = iter;
 			}
 
-			S_StartSound(NULL,sfx_s3kb7);
+			S_StartSoundFromEverywhere(sfx_s3kb7);
 
 			ifselectvalnextmap(lscol) else ifselectvalnextmap(0)
 			break;
@@ -5678,7 +5735,7 @@ static void M_HandleLevelPlatter(INT32 choice)
 			{
 				ifselectvalnextmapnobrace(lscol)
 					lsoffs[0] = lsoffs[1] = 0;
-					S_StartSound(NULL,sfx_menu1);
+					S_StartSoundFromEverywhere(sfx_menu1);
 					if (gamestate == GS_TIMEATTACK)
 						M_SetupNextMenu(currentMenu->prevMenu);
 					else if (currentMenu == &MISC_ChangeLevelDef)
@@ -5697,7 +5754,7 @@ static void M_HandleLevelPlatter(INT32 choice)
 				else if (!lsoffs[0]) // prevent sound spam
 				{
 					lsoffs[0] = -8 * FRACUNIT;
-					S_StartSound(NULL,sfx_s3kb2);
+					S_StartSoundFromEverywhere(sfx_s3kb2);
 				}
 				break;
 			}
@@ -5709,7 +5766,7 @@ static void M_HandleLevelPlatter(INT32 choice)
 				do
 					CV_AddValue(&cv_newgametype, 1);
 				while (cv_newgametype.value != startinggametype && !M_GametypeHasLevels(cv_newgametype.value));
-				S_StartSound(NULL,sfx_menu1);
+				S_StartSoundFromEverywhere(sfx_menu1);
 				lscol = 0;
 
 				Z_Free(char_notes);
@@ -5723,14 +5780,14 @@ static void M_HandleLevelPlatter(INT32 choice)
 				lscol++;
 
 				lsoffs[1] = (lswide(lsrow) ? 8 : -lshseperation) * FRACUNIT;
-				S_StartSound(NULL,sfx_s3kb7);
+				S_StartSoundFromEverywhere(sfx_s3kb7);
 
 				ifselectvalnextmap(lscol) else ifselectvalnextmap(0)
 			}
 			else if (!lsoffs[1]) // prevent sound spam
 			{
 				lsoffs[1] = 8 * FRACUNIT;
-				S_StartSound(NULL,sfx_s3kb7);
+				S_StartSoundFromEverywhere(sfx_s3kb7);
 			}
 			break;
 
@@ -5741,7 +5798,7 @@ static void M_HandleLevelPlatter(INT32 choice)
 				do
 					CV_AddValue(&cv_newgametype, -1);
 				while (cv_newgametype.value != startinggametype && !M_GametypeHasLevels(cv_newgametype.value));
-				S_StartSound(NULL,sfx_menu1);
+				S_StartSoundFromEverywhere(sfx_menu1);
 				lscol = 0;
 
 				Z_Free(char_notes);
@@ -5755,14 +5812,14 @@ static void M_HandleLevelPlatter(INT32 choice)
 				lscol--;
 
 				lsoffs[1] = (lswide(lsrow) ? -8 : lshseperation) * FRACUNIT;
-				S_StartSound(NULL,sfx_s3kb7);
+				S_StartSoundFromEverywhere(sfx_s3kb7);
 
 				ifselectvalnextmap(lscol) else ifselectvalnextmap(0)
 			}
 			else if (!lsoffs[1]) // prevent sound spam
 			{
 				lsoffs[1] = -8 * FRACUNIT;
-				S_StartSound(NULL,sfx_s3kb7);
+				S_StartSoundFromEverywhere(sfx_s3kb7);
 			}
 			break;
 
@@ -6303,7 +6360,7 @@ static void M_HandleImageDef(INT32 choice)
 			if (currentMenu->numitems == 1)
 				break;
 
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 			if (itemOn >= (INT16)(currentMenu->numitems-1))
 				itemOn = 0;
             else itemOn++;
@@ -6314,7 +6371,7 @@ static void M_HandleImageDef(INT32 choice)
 			if (currentMenu->numitems == 1)
 				break;
 
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 			if (!itemOn)
 				itemOn = currentMenu->numitems - 1;
 			else itemOn--;
@@ -6481,7 +6538,7 @@ static char *M_AddonsHeaderPath(void)
 	return header+len;
 }
 
-#define UNEXIST S_StartSound(NULL, sfx_lose);\
+#define UNEXIST S_StartSoundFromEverywhere(sfx_lose);\
 		M_SetupNextMenu(MISC_AddonsDef.prevMenu);\
 		M_StartMessage(va("\x82%s\x80\nThis folder no longer exists!\nAborting to main menu.\n\n(Press a key)\n", M_AddonsHeaderPath()),NULL,MM_NOTHING)
 
@@ -6509,7 +6566,7 @@ static boolean M_AddonsRefresh(void)
 
 		if (refreshdirmenu & REFRESHDIR_NOTLOADED)
 		{
-			S_StartSound(NULL, sfx_lose);
+			S_StartSoundFromEverywhere(sfx_lose);
 			if (refreshdirmenu & REFRESHDIR_MAX)
 				message = va("%c%s\x80\nMaximum number of add-ons reached.\nA file could not be loaded.\nIf you wish to play with this add-on, restart the game to clear existing ones.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname);
 			else
@@ -6517,7 +6574,7 @@ static boolean M_AddonsRefresh(void)
 		}
 		else if (refreshdirmenu & (REFRESHDIR_WARNING|REFRESHDIR_ERROR))
 		{
-			S_StartSound(NULL, sfx_skid);
+			S_StartSoundFromEverywhere(sfx_skid);
 			message = va("%c%s\x80\nA file was loaded with %s.\nCheck the console log for more information.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname, ((refreshdirmenu & REFRESHDIR_ERROR) ? "errors" : "warnings"));
 		}
 
@@ -6527,7 +6584,7 @@ static boolean M_AddonsRefresh(void)
 			return true;
 		}
 
-		S_StartSound(NULL, sfx_strpst);
+		S_StartSoundFromEverywhere(sfx_strpst);
 		CLEARNAME;
 	}
 
@@ -6708,7 +6765,7 @@ static void M_AddonExec(INT32 ch)
 	if (ch != 'y' && ch != KEY_ENTER)
 		return;
 
-	S_StartSound(NULL, sfx_zoom);
+	S_StartSoundFromEverywhere(sfx_zoom);
 	COM_BufAddText(va("exec \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
 }
 
@@ -6782,14 +6839,14 @@ static void M_HandleAddons(INT32 choice)
 				dir_on[menudepthleft]++;
 			else if (dir_on[menudepthleft] == sizedirmenu-1)
 				dir_on[menudepthleft] = 0;
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 			break;
 		case KEY_UPARROW:
 			if (dir_on[menudepthleft])
 				dir_on[menudepthleft]--;
 			else if (!dir_on[menudepthleft])
 				dir_on[menudepthleft] = sizedirmenu-1;
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 			break;
 		case KEY_PGDN:
 			{
@@ -6797,7 +6854,7 @@ static void M_HandleAddons(INT32 choice)
 				for (i = numaddonsshown; i && (dir_on[menudepthleft] < sizedirmenu-1); i--)
 					dir_on[menudepthleft]++;
 			}
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 			break;
 		case KEY_PGUP:
 			{
@@ -6805,13 +6862,13 @@ static void M_HandleAddons(INT32 choice)
 				for (i = numaddonsshown; i && (dir_on[menudepthleft]); i--)
 					dir_on[menudepthleft]--;
 			}
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 			break;
 		case KEY_ENTER:
 			{
 				boolean refresh = true;
 				if (!dirmenu[dir_on[menudepthleft]])
-					S_StartSound(NULL, sfx_lose);
+					S_StartSoundFromEverywhere(sfx_lose);
 				else
 				{
 					switch (dirmenu[dir_on[menudepthleft]][DIR_TYPE])
@@ -6825,7 +6882,7 @@ static void M_HandleAddons(INT32 choice)
 
 								if (!preparefilemenu(false))
 								{
-									S_StartSound(NULL, sfx_skid);
+									S_StartSoundFromEverywhere(sfx_skid);
 									M_StartMessage(va("%c%s\x80\nThis folder is empty.\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
 									menupath[menupathindex[++menudepthleft]] = 0;
 
@@ -6837,20 +6894,20 @@ static void M_HandleAddons(INT32 choice)
 								}
 								else
 								{
-									S_StartSound(NULL, sfx_menu1);
+									S_StartSoundFromEverywhere(sfx_menu1);
 									dir_on[menudepthleft] = 1;
 								}
 								refresh = false;
 							}
 							else
 							{
-								S_StartSound(NULL, sfx_lose);
+								S_StartSoundFromEverywhere(sfx_lose);
 								M_StartMessage(va("%c%s\x80\nThis folder is too deep to navigate to!\n\n(Press a key)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
 								menupath[menupathindex[menudepthleft]] = 0;
 							}
 							break;
 						case EXT_UP:
-							S_StartSound(NULL, sfx_menu1);
+							S_StartSoundFromEverywhere(sfx_menu1);
 							menupath[menupathindex[++menudepthleft]] = 0;
 							if (!preparefilemenu(false))
 							{
@@ -6874,7 +6931,7 @@ static void M_HandleAddons(INT32 choice)
 							COM_BufAddText(va("addfile \"%s%s\"", menupath, dirmenu[dir_on[menudepthleft]]+DIR_STRING));
 							break;
 						default:
-							S_StartSound(NULL, sfx_lose);
+							S_StartSoundFromEverywhere(sfx_lose);
 					}
 				}
 				if (refresh)
@@ -7054,6 +7111,65 @@ static void M_SelectableClearMenus(INT32 choice)
 	M_ClearMenus(true);
 }
 
+#define CCVHEIGHT 5
+#define CCVHEIGHTHEADER 1
+#define CCVHEIGHTHEADERAFTER 6
+
+UINT16	menu_cc_lastoffset = 4;
+INT16	menu_cc_lastheader = 0;
+
+boolean CCSETUP = false;
+
+void M_RegisterCustomCVOption(consvar_t* cvar)
+{
+	if (menu_cc_pos == INT16_MAX)
+		return;
+
+	if (menu_cc_pos >= MAXADDONOPTIONS - 2)
+	{
+		CONS_Printf("Failed to register the console variable '%s' into the menu. Custom Options menu has reached its hard limit of %d.\n", cvar->displayname, MAXADDONOPTIONS);
+		menu_cc_pos = INT16_MAX;
+		return;
+	}
+
+	if (CCSETUP == false)
+	{
+		CONS_Printf("Custom Options menu initiation.\n");
+		
+		for (INT16 i = 0; i < MAXADDONOPTIONS; ++i)
+			OP_AddonOptionsSlots[i] = (menuitem_t){ IT_DISABLED, NULL, "", 0, INT16_MAX };
+
+		CCSETUP = true;
+	}
+
+	if (
+		cvar->category && ((menu_cc_pos == 0 && cvar->category[0] != '\0') 
+		|| !fasticmp(cvar->category, OP_AddonOptionsSlots[menu_cc_lastheader].text)))
+	{
+		menu_cc_lastheader = menu_cc_pos;
+		menu_cc_lastoffset += CCVHEIGHTHEADER;
+
+		OP_AddonOptionsSlots[menu_cc_pos] = (menuitem_t){ IT_HEADER, NULL, cvar->category, NULL, menu_cc_lastoffset };
+		menu_cc_lastoffset += CCVHEIGHTHEADERAFTER;
+
+
+		++menu_cc_pos;
+	}
+
+	UINT16 status = IT_STRING | IT_CVAR;
+
+	if (cvar->flags & CV_FLOAT)
+		status |= IT_CV_FLOATSLIDER;
+	else if (cvar->PossibleValue && cvar->PossibleValue[0].strvalue && fasticmp(cvar->PossibleValue[0].strvalue, "MIN"))
+		status |= IT_CV_SLIDER;
+		
+	OP_AddonOptionsSlots[menu_cc_pos] = (menuitem_t){ status, NULL, cvar->displayname, cvar, menu_cc_lastoffset };
+	menu_cc_lastoffset += CCVHEIGHT;
+
+	++menu_cc_pos;
+}
+
+
 // ======
 // CHEATS
 // ======
@@ -7173,7 +7289,7 @@ static void M_HandleChecklist(INT32 choice)
 	switch (choice)
 	{
 		case KEY_DOWNARROW:
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 			if ((check_on != MAXUNLOCKABLES) && checklist_cangodown)
 			{
 				for (j = check_on+1; j < MAXUNLOCKABLES; j++)
@@ -7198,7 +7314,7 @@ static void M_HandleChecklist(INT32 choice)
 			return;
 
 		case KEY_UPARROW:
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 			if (check_on)
 			{
 				for (j = check_on-1; j > -1; j--)
@@ -8007,7 +8123,7 @@ static void M_HandleSoundTest(INT32 choice)
 				st_sel = 0;
 			{
 				cv_closedcaptioning.value = st_cc; // hack
-				S_StartSound(NULL, sfx_menu1);
+				S_StartSoundFromEverywhere(sfx_menu1);
 				cv_closedcaptioning.value = 1; // hack
 			}
 			break;
@@ -8016,7 +8132,7 @@ static void M_HandleSoundTest(INT32 choice)
 				st_sel = numsoundtestdefs-1;
 			{
 				cv_closedcaptioning.value = st_cc; // hack
-				S_StartSound(NULL, sfx_menu1);
+				S_StartSoundFromEverywhere(sfx_menu1);
 				cv_closedcaptioning.value = 1; // hack
 			}
 			break;
@@ -8027,7 +8143,7 @@ static void M_HandleSoundTest(INT32 choice)
 				if (st_sel >= numsoundtestdefs-1)
 					st_sel = numsoundtestdefs-1;
 				cv_closedcaptioning.value = st_cc; // hack
-				S_StartSound(NULL, sfx_menu1);
+				S_StartSoundFromEverywhere(sfx_menu1);
 				cv_closedcaptioning.value = 1; // hack
 			}
 			break;
@@ -8038,7 +8154,7 @@ static void M_HandleSoundTest(INT32 choice)
 				if (st_sel < 0)
 					st_sel = 0;
 				cv_closedcaptioning.value = st_cc; // hack
-				S_StartSound(NULL, sfx_menu1);
+				S_StartSoundFromEverywhere(sfx_menu1);
 				cv_closedcaptioning.value = 1; // hack
 			}
 			break;
@@ -8050,7 +8166,7 @@ static void M_HandleSoundTest(INT32 choice)
 				curplaying = NULL;
 				st_time = 0;
 				cv_closedcaptioning.value = st_cc; // hack
-				S_StartSound(NULL, sfx_skid);
+				S_StartSoundFromEverywhere(sfx_skid);
 				cv_closedcaptioning.value = 1; // hack
 			}
 			break;
@@ -8089,7 +8205,7 @@ static void M_HandleSoundTest(INT32 choice)
 				{
 					// S_StopMusic() -- is this necessary?
 					if (cv_soundtest.value)
-						S_StartSound(NULL, cv_soundtest.value);
+						S_StartSoundFromEverywhere(cv_soundtest.value);
 				}
 				else
 					S_ChangeMusicInternal(curplaying->name, !curplaying->stoppingtics);
@@ -8097,7 +8213,7 @@ static void M_HandleSoundTest(INT32 choice)
 			else
 			{
 				curplaying = NULL;
-				S_StartSound(NULL, sfx_lose);
+				S_StartSoundFromEverywhere(sfx_lose);
 			}
 			break;
 
@@ -8348,10 +8464,10 @@ void M_TutorialSaveControlResponse(INT32 ch)
 		CV_Set(&cv_alwaysfreelook, cv_alwaysfreelook.defaultvalue);
 		CV_Set(&cv_mousemove, cv_mousemove.defaultvalue);
 		CV_Set(&cv_analog[0], cv_analog[0].defaultvalue);
-		S_StartSound(NULL, sfx_itemup);
+		S_StartSoundFromEverywhere(sfx_itemup);
 	}
 	else
-		S_StartSound(NULL, sfx_menu1);
+		S_StartSoundFromEverywhere(sfx_menu1);
 }
 
 static void M_TutorialControlResponse(INT32 ch)
@@ -8373,17 +8489,17 @@ static void M_TutorialControlResponse(INT32 ch)
 			CV_Set(&cv_mousemove, cv_mousemove.defaultvalue);
 			CV_Set(&cv_analog[0], cv_analog[0].defaultvalue);
 
-			//S_StartSound(NULL, sfx_itemup);
+			//S_StartSoundFromEverywhere(sfx_itemup);
 		}
 		else
 		{
 			tutorialgcs = gcs_custom;
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 		}
 		M_StartTutorial(INT32_MAX);
 	}
 	else
-		S_StartSound(NULL, sfx_menu1);
+		S_StartSoundFromEverywhere(sfx_menu1);
 
 	MessageDef.prevMenu = &SP_MainDef; // if FirstPrompt -> ControlsPrompt -> ESC, we would go to the main menu unless we force this
 }
@@ -9102,7 +9218,7 @@ static void M_SaveGameUltimateResponse(INT32 ch)
 	if (ch != 'y' && ch != KEY_ENTER)
 		return;
 
-	S_StartSound(NULL, sfx_menu1);
+	S_StartSoundFromEverywhere(sfx_menu1);
 	M_LoadSelect(saveSlotSelected);
 	SP_PlayerDef.prevMenu = MessageDef.prevMenu;
 	MessageDef.prevMenu = &SP_PlayerDef;
@@ -9115,7 +9231,7 @@ static void M_HandleLoadSave(INT32 choice)
 	switch (choice)
 	{
 		case KEY_RIGHTARROW:
-			S_StartSound(NULL, sfx_s3kb7);
+			S_StartSoundFromEverywhere(sfx_s3kb7);
 			++saveSlotSelected;
 			if (saveSlotSelected >= numsaves)
 				saveSlotSelected -= numsaves;
@@ -9123,7 +9239,7 @@ static void M_HandleLoadSave(INT32 choice)
 			break;
 
 		case KEY_LEFTARROW:
-			S_StartSound(NULL, sfx_s3kb7);
+			S_StartSoundFromEverywhere(sfx_s3kb7);
 			--saveSlotSelected;
 			if (saveSlotSelected < 0)
 				saveSlotSelected += numsaves;
@@ -9139,24 +9255,24 @@ static void M_HandleLoadSave(INT32 choice)
 			if (ultimate_selectable && saveSlotSelected == NOSAVESLOT && !savemoddata)
 			{
 				loadgamescroll = 0;
-				S_StartSound(NULL, sfx_skid);
+				S_StartSoundFromEverywhere(sfx_skid);
 				M_StartMessage("Are you sure you want to play\n\x85ultimate mode\x80? It isn't remotely fair,\nand you don't even get an emblem for it.\n\n(Press 'Y' to confirm)\n",M_SaveGameUltimateResponse,MM_YESNO);
 			}
 			else if (saveSlotSelected != NOSAVESLOT && savegameinfo[saveSlotSelected-1].lives == -42 && usedCheats)
 			{
 				loadgamescroll = 0;
-				S_StartSound(NULL, sfx_skid);
+				S_StartSoundFromEverywhere(sfx_skid);
 				M_StartMessage(M_GetText("This cannot be done in a cheated game.\n\n(Press a key)\n"), NULL, MM_NOTHING);
 			}
 			else if (saveSlotSelected == NOSAVESLOT || savegameinfo[saveSlotSelected-1].lives != -666) // don't allow loading of "bad saves"
 			{
 				loadgamescroll = 0;
-				S_StartSound(NULL, sfx_menu1);
+				S_StartSoundFromEverywhere(sfx_menu1);
 				M_LoadSelect(saveSlotSelected);
 			}
 			else if (!loadgameoffset)
 			{
-				S_StartSound(NULL, sfx_lose);
+				S_StartSoundFromEverywhere(sfx_lose);
 				loadgameoffset = 14 * FRACUNIT;
 			}
 			break;
@@ -9171,7 +9287,7 @@ static void M_HandleLoadSave(INT32 choice)
 			if (saveSlotSelected != NOSAVESLOT && savegameinfo[saveSlotSelected-1].lives != -42)
 			{
 				loadgamescroll = 0;
-				S_StartSound(NULL, sfx_skid);
+				S_StartSoundFromEverywhere(sfx_skid);
 				M_StartMessage(va("Are you sure you want to delete\nsave file %d?\n\n(Press 'Y' to confirm)\n", saveSlotSelected),M_SaveGameDeleteResponse,MM_YESNO);
 			}
 			else if (!loadgameoffset)
@@ -9179,10 +9295,10 @@ static void M_HandleLoadSave(INT32 choice)
 				if (saveSlotSelected == NOSAVESLOT && ultimate_selectable)
 				{
 					ultimate_selectable = false;
-					S_StartSound(NULL, sfx_strpst);
+					S_StartSoundFromEverywhere(sfx_strpst);
 				}
 				else
-					S_StartSound(NULL, sfx_lose);
+					S_StartSoundFromEverywhere(sfx_lose);
 				loadgameoffset = 14 * FRACUNIT;
 			}
 			break;
@@ -9202,7 +9318,7 @@ static void M_HandleLoadSave(INT32 choice)
 
 static void M_FirstTimeResponse(INT32 ch)
 {
-	S_StartSound(NULL, sfx_menu1);
+	S_StartSoundFromEverywhere(sfx_menu1);
 
 	if (ch == KEY_ESCAPE)
 		return;
@@ -9417,7 +9533,7 @@ static void M_HandleChoosePlayerMenu(INT32 choice)
 		case KEY_DOWNARROW:
 			if ((selectval = description[char_on].next) != char_on)
 			{
-				S_StartSound(NULL,sfx_s3kb7);
+				S_StartSoundFromEverywhere(sfx_s3kb7);
 				char_on = selectval;
 				char_scroll = -charscrollamt;
 				Z_Free(char_notes);
@@ -9425,7 +9541,7 @@ static void M_HandleChoosePlayerMenu(INT32 choice)
 			}
 			else if (!char_scroll)
 			{
-				S_StartSound(NULL,sfx_s3kb7);
+				S_StartSoundFromEverywhere(sfx_s3kb7);
 				char_scroll = 16*FRACUNIT;
 			}
 			break;
@@ -9433,7 +9549,7 @@ static void M_HandleChoosePlayerMenu(INT32 choice)
 		case KEY_UPARROW:
 			if ((selectval = description[char_on].prev) != char_on)
 			{
-				S_StartSound(NULL,sfx_s3kb7);
+				S_StartSoundFromEverywhere(sfx_s3kb7);
 				char_on = selectval;
 				char_scroll = charscrollamt;
 				Z_Free(char_notes);
@@ -9441,7 +9557,7 @@ static void M_HandleChoosePlayerMenu(INT32 choice)
 			}
 			else if (!char_scroll)
 			{
-				S_StartSound(NULL,sfx_s3kb7);
+				S_StartSoundFromEverywhere(sfx_s3kb7);
 				char_scroll = -16*FRACUNIT;
 			}
 			break;
@@ -9451,7 +9567,7 @@ static void M_HandleChoosePlayerMenu(INT32 choice)
 			// STAR STUFF: END THAT, NOW DO THE REST //
 			TSoURDt3rd_FIL_CreateSavefileProperly();
 #endif
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 			char_scroll = 0; // finish scrolling the menu
 			M_DrawSetupChoosePlayerMenu(); // draw the finally selected character one last time for the fadeout
 			// Is this a hack?
@@ -9954,24 +10070,24 @@ static void M_HandleLevelStats(INT32 choice)
 	switch (choice)
 	{
 		case KEY_DOWNARROW:
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 			if (statsLocation < statsMax)
 				++statsLocation;
 			break;
 
 		case KEY_UPARROW:
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 			if (statsLocation)
 				--statsLocation;
 			break;
 
 		case KEY_PGDN:
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 			statsLocation += (statsLocation+13 >= statsMax) ? statsMax-statsLocation : 13;
 			break;
 
 		case KEY_PGUP:
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 			statsLocation -= (statsLocation < 13) ? statsLocation : 13;
 			break;
 
@@ -10248,7 +10364,7 @@ static void M_HandleTimeAttackLevelSelect(INT32 choice)
 		default:
 			return;
 	}
-	S_StartSound(NULL, sfx_menu1);
+	S_StartSoundFromEverywhere(sfx_menu1);
 }
 
 static void M_TimeAttackLevelSelect(INT32 choice)
@@ -10668,7 +10784,7 @@ static void M_ReplayTimeAttack(INT32 choice)
 
 	if (error)
 	{
-		S_StartSound(NULL, sfx_skid);
+		S_StartSoundFromEverywhere(sfx_skid);
 
 		switch (error)
 		{
@@ -10967,7 +11083,7 @@ static void M_HandleMarathonChoosePlayer(INT32 choice)
 		default:
 			return;
 	}
-	S_StartSound(NULL, sfx_menu1);
+	S_StartSoundFromEverywhere(sfx_menu1);
 }
 
 static void M_StartMarathon(INT32 choice)
@@ -11260,11 +11376,11 @@ static void M_HandleServerPage(INT32 choice)
 	{
 		case KEY_DOWNARROW:
 			M_NextOpt();
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 			break;
 		case KEY_UPARROW:
 			M_PrevOpt();
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 			break;
 		case KEY_BACKSPACE:
 		case KEY_ESCAPE:
@@ -11273,12 +11389,12 @@ static void M_HandleServerPage(INT32 choice)
 
 		case KEY_ENTER:
 		case KEY_RIGHTARROW:
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 			if ((serverlistpage + 1) * SERVERS_PER_PAGE < serverlistcount)
 				serverlistpage++;
 			break;
 		case KEY_LEFTARROW:
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 			if (serverlistpage > 0)
 				serverlistpage--;
 			break;
@@ -11539,7 +11655,7 @@ static boolean M_CheckMODVersion(int id)
 }
 #endif/*UPDATE_ALERT*/
 
-#if defined (MASTERSERVER) && defined (HAVE_THREADS)
+#if defined (MASTERSERVER)
 static void
 Check_new_version_thread (int *id)
 {
@@ -11596,7 +11712,7 @@ Check_new_version_thread (int *id)
 
 	free(id);
 }
-#endif/*defined (MASTERSERVER) && defined (HAVE_THREADS)*/
+#endif/*defined (MASTERSERVER)*/
 
 static void M_ConnectMenu(INT32 choice)
 {
@@ -11640,7 +11756,7 @@ UINT32 roomIds[NUM_LIST_ROOMS];
 static void M_RoomMenu(INT32 choice)
 {
 	INT32 i;
-#if defined (MASTERSERVER) && defined (HAVE_THREADS)
+#if defined (MASTERSERVER)
 	int *id;
 #endif
 
@@ -11663,44 +11779,53 @@ static void M_RoomMenu(INT32 choice)
 	M_SetupNextMenu(&MP_RoomDef);
 
 #ifdef MASTERSERVER
-#ifdef HAVE_THREADS
+	if (I_can_thread())
+	{
 #ifdef UPDATE_ALERT
-	m_waiting_mode = M_WAITING_VERSION;
+		m_waiting_mode = M_WAITING_VERSION;
 #else/*UPDATE_ALERT*/
-	m_waiting_mode = M_WAITING_ROOMS;
+		m_waiting_mode = M_WAITING_ROOMS;
 #endif/*UPDATE_ALERT*/
 
-	MP_RoomMenu[0].text = "";
+		MP_RoomMenu[0].text = "";
 
-	id = malloc(sizeof *id);
+		id = malloc(sizeof *id);
 
-	I_lock_mutex(&ms_QueryId_mutex);
-	{
-		*id = ms_QueryId;
+		I_lock_mutex(&ms_QueryId_mutex);
+		{
+			*id = ms_QueryId;
+		}
+		I_unlock_mutex(ms_QueryId_mutex);
+
+		if(!I_spawn_thread("check-new-version",
+				(I_thread_fn)Check_new_version_thread, id))
+		{
+			free(id);
+		}
 	}
-	I_unlock_mutex(ms_QueryId_mutex);
-
-	I_spawn_thread("check-new-version",
-			(I_thread_fn)Check_new_version_thread, id);
-#else/*HAVE_THREADS*/
+	else
+	{
 #ifdef UPDATE_ALERT
-	if (M_CheckMODVersion(0))
+		if (M_CheckMODVersion(0))
 #endif/*UPDATE_ALERT*/
-	{
-		GetRoomsList(currentMenu->prevMenu == &MP_ServerDef, 0);
+		{
+			GetRoomsList(currentMenu->prevMenu == &MP_ServerDef, 0);
+		}
 	}
-#endif/*HAVE_THREADS*/
 #endif/*MASTERSERVER*/
 }
 
 static void M_ChooseRoom(INT32 choice)
 {
-#if defined (MASTERSERVER) && defined (HAVE_THREADS)
-	I_lock_mutex(&ms_QueryId_mutex);
+#if defined (MASTERSERVER)
+	if (I_can_thread())
 	{
-		ms_QueryId++;
+		I_lock_mutex(&ms_QueryId_mutex);
+		{
+			ms_QueryId++;
+		}
+		I_unlock_mutex(ms_QueryId_mutex);
 	}
-	I_unlock_mutex(ms_QueryId_mutex);
 #endif
 
 	if (choice == 0)
@@ -12005,16 +12130,16 @@ static void M_HandleConnectIP(INT32 choice)
 	{
 		case KEY_DOWNARROW:
 			M_NextOpt();
-			S_StartSound(NULL,sfx_menu1); // Tails
+			S_StartSoundFromEverywhere(sfx_menu1); // Tails
 			break;
 
 		case KEY_UPARROW:
 			M_PrevOpt();
-			S_StartSound(NULL,sfx_menu1); // Tails
+			S_StartSoundFromEverywhere(sfx_menu1); // Tails
 			break;
 
 		case KEY_ENTER:
-			S_StartSound(NULL,sfx_menu1); // Tails
+			S_StartSoundFromEverywhere(sfx_menu1); // Tails
 			M_ConnectIP(1);
 			break;
 
@@ -12025,7 +12150,7 @@ static void M_HandleConnectIP(INT32 choice)
 		case KEY_BACKSPACE:
 			if ((l = strlen(setupm_ip)) != 0)
 			{
-				S_StartSound(NULL,sfx_menu1); // Tails
+				S_StartSoundFromEverywhere(sfx_menu1); // Tails
 				setupm_ip[l-1] = 0;
 			}
 			break;
@@ -12033,7 +12158,7 @@ static void M_HandleConnectIP(INT32 choice)
 		case KEY_DEL:
 			if (setupm_ip[0] && !shiftdown) // Shift+Delete is used for something else.
 			{
-				S_StartSound(NULL,sfx_menu1); // Tails
+				S_StartSoundFromEverywhere(sfx_menu1); // Tails
 				setupm_ip[0] = 0;
 			}
 			if (!shiftdown) // Shift+Delete is used for something else.
@@ -12052,7 +12177,7 @@ static void M_HandleConnectIP(INT32 choice)
 						if (paste != NULL) {
 							strncat(setupm_ip, paste, CONNIP_LEN-1 - l); // Concat the ip field with clipboard
 							if (strlen(paste) != 0) // Don't play sound if nothing was pasted
-								S_StartSound(NULL,sfx_menu1); // Tails
+								S_StartSoundFromEverywhere(sfx_menu1); // Tails
 						}
 
 						break;
@@ -12062,7 +12187,7 @@ static void M_HandleConnectIP(INT32 choice)
 						if (l != 0) // Don't replace the clipboard without any text
 						{
 							I_ClipboardCopy(setupm_ip, l);
-							S_StartSound(NULL,sfx_menu1); // Tails
+							S_StartSoundFromEverywhere(sfx_menu1); // Tails
 						}
 						break;
 
@@ -12070,7 +12195,7 @@ static void M_HandleConnectIP(INT32 choice)
 						if (l != 0) // Don't replace the clipboard without any text
 						{
 							I_ClipboardCopy(setupm_ip, l);
-							S_StartSound(NULL,sfx_menu1); // Tails
+							S_StartSoundFromEverywhere(sfx_menu1); // Tails
 							setupm_ip[0] = 0;
 						}
 						break;
@@ -12090,7 +12215,7 @@ static void M_HandleConnectIP(INT32 choice)
 							if (paste != NULL) {
 								strncat(setupm_ip, paste, CONNIP_LEN-1 - l); // Concat the ip field with clipboard
 								if (strlen(paste) != 0) // Don't play sound if nothing was pasted
-									S_StartSound(NULL,sfx_menu1); // Tails
+									S_StartSoundFromEverywhere(sfx_menu1); // Tails
 							}
 
 							break;
@@ -12099,7 +12224,7 @@ static void M_HandleConnectIP(INT32 choice)
 						if (l != 0) // Don't replace the clipboard without any text
 						{
 							I_ClipboardCopy(setupm_ip, l);
-							S_StartSound(NULL,sfx_menu1); // Tails
+							S_StartSoundFromEverywhere(sfx_menu1); // Tails
 							setupm_ip[0] = 0;
 						}
 						break;
@@ -12118,7 +12243,7 @@ static void M_HandleConnectIP(INT32 choice)
 					(choice >= 'A' && choice <= 'Z') ||
 					(choice >= 'a' && choice <= 'z'))
 			{
-				S_StartSound(NULL,sfx_menu1); // Tails
+				S_StartSoundFromEverywhere(sfx_menu1); // Tails
 				setupm_ip[l] = (char)choice;
 				setupm_ip[l+1] = 0;
 			}
@@ -12746,14 +12871,14 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 				else
 					M_NextOpt();
 
-				S_StartSound(NULL,sfx_menu1);
+				S_StartSoundFromEverywhere(sfx_menu1);
 			}
 			break;
 
 		case KEY_LEFTARROW:
 			if (itemOn == 1)       //player skin
 			{
-				S_StartSound(NULL,sfx_menu1); // Tails
+				S_StartSoundFromEverywhere(sfx_menu1); // Tails
 				prev_setupm_fakeskin = setupm_fakeskin;
 				do
 				{
@@ -12768,7 +12893,7 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 			else if (itemOn == 2) // player color
 			{
 				setupm_fakecolor = setupm_fakecolor->prev;
-				S_StartSound(NULL,sfx_menu1); // Tails
+				S_StartSoundFromEverywhere(sfx_menu1); // Tails
 			}
 			break;
 
@@ -12777,7 +12902,7 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 			&& (R_SkinAvailable(setupm_cvdefaultskin->string) != setupm_fakeskin
 			|| setupm_cvdefaultcolor->value != setupm_fakecolor->color))
 			{
-				S_StartSound(NULL,sfx_strpst);
+				S_StartSoundFromEverywhere(sfx_strpst);
 				// you know what? always putting these in the buffer won't hurt anything.
 				COM_BufAddText (va("%s \"%s\"\n",setupm_cvdefaultskin->name,skins[setupm_fakeskin]->name));
 				COM_BufAddText (va("%s %d\n",setupm_cvdefaultcolor->name,setupm_fakecolor->color));
@@ -12786,7 +12911,7 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 			else if (itemOn == 2)
 			{
 				if (!colorgrid)
-					S_StartSound(NULL,sfx_menu1);
+					S_StartSoundFromEverywhere(sfx_menu1);
 				colorgrid = !colorgrid;
 				break;
 			}
@@ -12802,7 +12927,7 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 		case KEY_RIGHTARROW:
 			if (itemOn == 1)       //player skin
 			{
-				S_StartSound(NULL,sfx_menu1); // Tails
+				S_StartSoundFromEverywhere(sfx_menu1); // Tails
 				prev_setupm_fakeskin = setupm_fakeskin;
 				do
 				{
@@ -12817,7 +12942,7 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 			else if (itemOn == 2) // player color
 			{
 				setupm_fakecolor = setupm_fakecolor->next;
-				S_StartSound(NULL,sfx_menu1); // Tails
+				S_StartSoundFromEverywhere(sfx_menu1); // Tails
 			}
 			break;
 
@@ -12848,7 +12973,7 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 						}
 					}
 
-					S_StartSound(NULL, sfx_menu1); // Tails
+					S_StartSoundFromEverywhere(sfx_menu1); // Tails
 				}
 			}
 			break;
@@ -12863,7 +12988,7 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 		case KEY_BACKSPACE:
 			if (itemOn == 0 && (l = strlen(setupm_name))!=0)
 			{
-				S_StartSound(NULL,sfx_menu1); // Tails
+				S_StartSoundFromEverywhere(sfx_menu1); // Tails
 				setupm_name[l-1] = 0;
 			}
 			else if (itemOn == 2)
@@ -12871,7 +12996,7 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 				UINT16 col = skins[setupm_fakeskin]->prefcolor;
 				if ((setupm_fakecolor->color != col) && skincolors[col].accessible)
 				{
-					S_StartSound(NULL,sfx_menu1); // Tails
+					S_StartSoundFromEverywhere(sfx_menu1); // Tails
 					for (setupm_fakecolor=menucolorhead;;setupm_fakecolor=setupm_fakecolor->next)
 						if (setupm_fakecolor->color == col || setupm_fakecolor == menucolortail)
 							break;
@@ -12882,7 +13007,7 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 		case KEY_DEL:
 			if (itemOn == 0 && (l = strlen(setupm_name))!=0)
 			{
-				S_StartSound(NULL,sfx_menu1); // Tails
+				S_StartSoundFromEverywhere(sfx_menu1); // Tails
 				setupm_name[0] = 0;
 			}
 			break;
@@ -12898,7 +13023,7 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 		default:
 			if (itemOn != 0 || choice < 32 || choice > 127)
 				break;
-			S_StartSound(NULL,sfx_menu1); // Tails
+			S_StartSoundFromEverywhere(sfx_menu1); // Tails
 			l = strlen(setupm_name);
 			if (l < MAXPLAYERNAME)
 			{
@@ -13753,7 +13878,7 @@ static void M_ChangecontrolResponse(event_t *ev)
 			(void)G_CheckDoubleUsage(ch, true);
 			setupcontrols[control][found] = ch;
 		}
-		S_StartSound(NULL, sfx_strpst);
+		S_StartSoundFromEverywhere(sfx_strpst);
 	}
 	else if (ch == KEY_PAUSE)
 	{
@@ -13771,11 +13896,11 @@ static void M_ChangecontrolResponse(event_t *ev)
 		M_StartMessage(tmp, M_ChangecontrolResponse, MM_EVENTHANDLER);
 		currentMenu->prevMenu = prev;
 
-		S_StartSound(NULL, sfx_s3k42);
+		S_StartSoundFromEverywhere(sfx_s3k42);
 		return;
 	}
 	else
-		S_StartSound(NULL, sfx_skid);
+		S_StartSoundFromEverywhere(sfx_skid);
 
 	M_StopMessage(0);
 }
@@ -13843,7 +13968,7 @@ static void M_HandlePlaystyleMenu(INT32 choice)
 		break;
 
 	case KEY_ENTER:
-		S_StartSound(NULL, sfx_menu1);
+		S_StartSoundFromEverywhere(sfx_menu1);
 		CV_SetValue((playstyle_activeplayer ? &cv_directionchar[1] : &cv_directionchar[0]), playstyle_currentchoice ? 1 : 0);
 		CV_SetValue((playstyle_activeplayer ? &cv_useranalog[1] : &cv_useranalog[0]), playstyle_currentchoice/2);
 
@@ -13856,12 +13981,12 @@ static void M_HandlePlaystyleMenu(INT32 choice)
 		break;
 
 	case KEY_LEFTARROW:
-		S_StartSound(NULL, sfx_menu1);
+		S_StartSoundFromEverywhere(sfx_menu1);
 		playstyle_currentchoice = (playstyle_currentchoice+2)%3;
 		break;
 
 	case KEY_RIGHTARROW:
-		S_StartSound(NULL, sfx_menu1);
+		S_StartSoundFromEverywhere(sfx_menu1);
 		playstyle_currentchoice = (playstyle_currentchoice+1)%3;
 		break;
 	}
@@ -14193,26 +14318,26 @@ static void M_HandleVideoMode(INT32 ch)
 			break;
 
 		case KEY_ENTER:
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 			vidm_testingmode = 0; // stop testing
 	}
 
 	else switch (ch)
 	{
 		case KEY_DOWNARROW:
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 			if (++vidm_selected >= vidm_nummodes)
 				vidm_selected = 0;
 			break;
 
 		case KEY_UPARROW:
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 			if (--vidm_selected < 0)
 				vidm_selected = vidm_nummodes - 1;
 			break;
 
 		case KEY_LEFTARROW:
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 			vidm_selected -= vidm_column_size;
 			if (vidm_selected < 0)
 				vidm_selected = (vidm_column_size*3) + vidm_selected;
@@ -14221,7 +14346,7 @@ static void M_HandleVideoMode(INT32 ch)
 			break;
 
 		case KEY_RIGHTARROW:
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 			vidm_selected += vidm_column_size;
 			if (vidm_selected >= (vidm_column_size*3))
 				vidm_selected %= vidm_column_size;
@@ -14232,12 +14357,12 @@ static void M_HandleVideoMode(INT32 ch)
 		case KEY_ENTER:
 			if (vid.modenum == modedescs[vidm_selected].modenum)
 			{
-				S_StartSound(NULL, sfx_strpst);
+				S_StartSoundFromEverywhere(sfx_strpst);
 				SCR_SetDefaultMode();
 			}
 			else
 			{
-				S_StartSound(NULL, sfx_menu1);
+				S_StartSoundFromEverywhere(sfx_menu1);
 				vidm_testingmode = 15*TICRATE;
 				vidm_previousmode = vid.modenum;
 				if (!setmodeneeded) // in case the previous setmode was not finished
@@ -14253,7 +14378,7 @@ static void M_HandleVideoMode(INT32 ch)
 			break;
 
 		case KEY_BACKSPACE:
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 			CV_Set(&cv_scr_width, cv_scr_width.defaultvalue);
 			CV_Set(&cv_scr_height, cv_scr_height.defaultvalue);
 			CV_Set(&cv_scr_width_w, cv_scr_width_w.defaultvalue);
@@ -14269,7 +14394,7 @@ static void M_HandleVideoMode(INT32 ch)
 			break;
 
 		case KEY_F11:
-			S_StartSound(NULL, sfx_menu1);
+			S_StartSoundFromEverywhere(sfx_menu1);
 			CV_SetValue(&cv_fullscreen, !cv_fullscreen.value);
 			break;
 
@@ -14397,7 +14522,7 @@ void M_QuitResponse(INT32 ch)
 		marathonmode = 0;
 
 		mrand = M_RandomKey(sizeof(quitsounds)/sizeof(INT32));
-		if (quitsounds[mrand]) S_StartSound(NULL, quitsounds[mrand]);
+		if (quitsounds[mrand]) S_StartSoundFromEverywhere(quitsounds[mrand]);
 
 		//added : 12-02-98: do that instead of I_WaitVbl which does not work
 		ptime = I_GetTime() + NEWTICRATE*2; // Shortened the quit time, used to be 2 seconds Tails 03-26-2001

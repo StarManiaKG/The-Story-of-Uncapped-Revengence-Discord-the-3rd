@@ -277,9 +277,18 @@ static void init_upnpc_once(struct upnpdata *upnpdata);
 
 static void I_InitUPnP(void)
 {
+	if (!I_can_thread())
+	{
+		UPNP_support = false;
+		return;
+	}
 	upnpuser = malloc(sizeof *upnpuser);
 	upnpuser->upnpc_started = 0;
-	I_spawn_thread("init_upnpc_once", (I_thread_fn)init_upnpc_once, upnpuser);
+	if (!I_spawn_thread("init_upnpc_once", (I_thread_fn)init_upnpc_once, upnpuser))
+	{
+		UPNP_support = false;
+		free(upnpuser);
+	}
 }
 
 static void
@@ -592,11 +601,11 @@ static boolean SOCK_Get(void)
 			(void *)&fromaddress, &fromlen);
 		if (c != ERRSOCKET)
 		{
-#if 1
-			// STAR STUFF: check our sock packets please //
 			if (TSoURDt3rd_SOCK_Get(doomcom, c, clientaddress, mysockets))
+			{
+				// STAR STUFF: check our sock packets please //
 				break;
-#endif
+			}
 
 			// find remote node number
 			for (j = 1; j <= MAXNETNODES; j++) //include LAN
@@ -1122,6 +1131,12 @@ static boolean UDP_Socket(void)
 boolean I_InitTcpDriver(void)
 {
 	boolean tcp_was_up = init_tcp_driver;
+
+#ifdef __EMSCRIPTEN__
+	I_OutputMsg("Compiled without networking support\n");
+	return false;
+#endif
+
 	if (!init_tcp_driver)
 	{
 #ifdef USE_WINSOCK
@@ -1181,10 +1196,10 @@ boolean I_InitTcpDriver(void)
 	{
 		I_AddExitFunc(I_ShutdownTcpDriver);
 #ifdef HAVE_MINIUPNPC
-		if (M_CheckParm("-useUPnP"))
-			I_InitUPnP();
-		else
+		if (M_CheckParm("-noUPnP"))
 			UPNP_support = false;
+		else
+			I_InitUPnP();
 #endif
 	}
 	return init_tcp_driver;
@@ -1280,10 +1295,7 @@ static boolean SOCK_OpenSocket(void)
 	I_NetFreeNodenum = SOCK_FreeNodenum;
 	I_NetMakeNodewPort = SOCK_NetMakeNodewPort;
 
-#if 1
-	// STAR STUFF: now open our sockets too! //
-	TSoURDt3rd_SOCK_OpenSocket();
-#endif
+	TSoURDt3rd_SOCK_OpenSockets(); // STAR STUFF: now open our sockets too! //
 
 	// build the socket but close it first
 	SOCK_CloseSocket();

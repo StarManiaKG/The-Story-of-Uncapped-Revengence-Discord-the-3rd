@@ -20,6 +20,7 @@
 #include "r_state.h"
 #include "r_sky.h"
 #include "g_game.h"
+#include "g_demo.h"
 #include "g_input.h"
 #include "f_finale.h"
 #include "byteptr.h"
@@ -66,10 +67,7 @@ static lua_CFunction liblist[] = {
 	LUA_ColorLib, // general color functions
 	LUA_InputLib, // inputs
 	LUA_InterceptLib, // intercept_t
-#if 1
-	// STAR STUFF: TSoURDt3rd libraries
-	TSoURDt3rd_LUA_BaseLib,
-#endif
+	TSoURDt3rd_LUA_BaseLib, // STAR STUFF: TSoURDt3rd libraries
 	NULL
 };
 
@@ -282,6 +280,18 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 	} else if (fastcmp(word,"tutorialmode")) {
 		lua_pushboolean(L, tutorialmode);
 		return 1;
+	} else if (fastcmp(word,"keepcutscene")) {
+		lua_pushboolean(L, keepcutscene);
+		return 1;
+	} else if (fastcmp(word,"nextgametype")) {
+		lua_pushinteger(L, nextgametype);
+		return 1;
+	} else if (fastcmp(word,"skipstats")) {
+		lua_pushinteger(L, skipstats);
+		return 1;
+	} else if (fastcmp(word,"nextmapoverride")) {
+		lua_pushinteger(L, nextmapoverride);
+		return 1;
 	// end map vars
 	// begin CTF colors
 	} else if (fastcmp(word,"skincolor_redteam")) {
@@ -402,6 +412,22 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 			return 0;
 		LUA_PushUserdata(L, &players[serverplayer], META_PLAYER);
 		return 1;
+	// demos booleans
+	} else if (fastcmp(word, "demoplayback")) {
+		lua_pushboolean(L, demoplayback);
+		return 1;
+	} else if (fastcmp(word, "titledemo")) {
+		lua_pushboolean(L, titledemo);
+		return 1;
+	} else if (fastcmp(word, "demorecording")) {
+		lua_pushboolean(L, demorecording);
+		return 1;
+	} else if (fastcmp(word, "timingdemo")) {
+		lua_pushboolean(L, timingdemo);
+		return 1;
+	} else if (fastcmp(word, "demosynced")) {
+		lua_pushboolean(L, demosynced);
+		return 1;
 	} else if (fastcmp(word,"emeralds")) {
 		lua_pushinteger(L, emeralds);
 		return 1;
@@ -419,6 +445,18 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 		return 1;
 	} else if (fastcmp(word, "token")) {
 		lua_pushinteger(L, token);
+		return 1;
+	} else if (fastcmp(word, "emblems")) {
+		lua_pushinteger(L, M_CountEmblems(clientGamedata));
+		return 1;
+	} else if (fastcmp(word, "numemblems")) {
+		lua_pushinteger(L, numemblems);
+		return 1;
+	} else if (fastcmp(word, "numextraemblems")) {
+		lua_pushinteger(L, numextraemblems);
+		return 1;		
+	} else if (fastcmp(word, "nummaprings")) {
+		lua_pushinteger(L, nummaprings);
 		return 1;
 	} else if (fastcmp(word, "gamestate")) {
 		lua_pushinteger(L, gamestate);
@@ -445,13 +483,21 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 	} else if (fastcmp(word, "chatactive")) {
 		lua_pushboolean(L, chat_on);
 		return 1;
+	} else if (fastcmp(word, "currentsaveslot")) {
+		if (multiplayer)
+			return 0;
+		lua_pushinteger(L, cursaveslot);
+		return 1;
+	} else if (fastcmp(word, "gamedatafilename")) {
+		lua_pushstring(L, strcmp(timeattackfolder, "main") ? timeattackfolder : "gamedata");
+		return 1;
 	}
 
-#if 1
-	// STAR STUFF: DON'T FORGET TO CHECK FOR OUR GLOBAL VARIABLES! //
 	if (TSoURDt3rd_LUA_PushGlobalVariables(L, word))
+	{
+		// STAR STUFF: DON'T FORGET TO CHECK FOR OUR GLOBAL VARIABLES! //
 		return 1;
-#endif
+	}
 
 	return 0;
 }
@@ -481,6 +527,8 @@ int LUA_CheckGlobals(lua_State *L, const char *word)
 		emeralds = (UINT16)luaL_checkinteger(L, 2);
 	else if (fastcmp(word, "token"))
 		token = (UINT32)luaL_checkinteger(L, 2);
+	else if (fastcmp(word, "nummaprings"))
+		nummaprings = (INT32)luaL_checkinteger(L, 2);
 	else if (fastcmp(word, "gravity"))
 		gravity = (fixed_t)luaL_checkinteger(L, 2);
 	else if (fastcmp(word, "stoppedclock"))

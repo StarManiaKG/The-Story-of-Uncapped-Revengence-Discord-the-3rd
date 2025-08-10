@@ -149,19 +149,17 @@ typedef struct
 
 	char server_context[8]; // Unique context id, generated at server startup.
 
-#if 1
-	// Discord info (always defined for net compatibility)
+	// Discord info (always defined for net compatibility) //
 	UINT8 maxplayer;
 	boolean allownewplayer;
 	boolean discord_invites;
 
-	// TSoURDt3rd
+	// TSoURDt3rd //
 	UINT8 tsourdt3rd;
 	UINT8 tsourdt3rd_majorversion;
 	UINT8 tsourdt3rd_minorversion;
 	UINT8 tsourdt3rd_subversion;
 	UINT8 tsourdt3rd_fullversion;
-#endif
 } ATTRPACK serverconfig_pak;
 
 typedef struct
@@ -201,10 +199,7 @@ typedef struct
 	UINT8 localplayers;
 	UINT8 mode;
 	char names[MAXSPLITSCREENPLAYERS][MAXPLAYERNAME];
-#if 1
-	// TSoURDt3rd
-	UINT8 tsourdt3rd;
-#endif
+	UINT8 tsourdt3rd; // STAR NOTE: TSoURDt3rd //
 } ATTRPACK clientconfig_pak;
 
 #define SV_DEDICATED    0x40 // server is dedicated

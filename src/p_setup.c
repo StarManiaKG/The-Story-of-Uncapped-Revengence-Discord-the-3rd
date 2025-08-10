@@ -11,6 +11,9 @@
 /// \file  p_setup.c
 /// \brief Do all the WAD I/O, get map description, set up initial state and misc. LUTs
 
+
+#include <errno.h>
+
 #include "doomdef.h"
 #include "d_main.h"
 #include "byteptr.h"
@@ -111,7 +114,7 @@ vertex_t *vertexes;
 seg_t *segs;
 sector_t *sectors;
 subsector_t *subsectors;
-node_t *nodes;
+bspnode_t *nodes;
 line_t *lines;
 side_t *sides;
 mapthing_t *mapthings;
@@ -1080,6 +1083,7 @@ static void P_LoadSectors(UINT8 *data)
 		ss->triggerer = TO_PLAYER;
 
 		ss->friction = ORIG_FRICTION;
+		ss->customargs = NULL;
 
 		P_InitializeSector(ss);
 	}
@@ -1201,6 +1205,8 @@ static void P_LoadLinedefs(UINT8 *data)
 			ld->sidenum[0] = NO_SIDEDEF;
 		if (ld->sidenum[1] == 0xffff)
 			ld->sidenum[1] = NO_SIDEDEF;
+
+		ld->customargs = NULL;
 
 		P_InitializeLinedef(ld);
 	}
@@ -1372,6 +1378,8 @@ static void P_LoadSidedefs(UINT8 *data)
 
 		sd->light = sd->light_top = sd->light_mid = sd->light_bottom = 0;
 		sd->lightabsolute = sd->lightabsolute_top = sd->lightabsolute_mid = sd->lightabsolute_bottom = false;
+
+		sd->customargs = NULL;
 
 		P_SetSidedefSector(i, (UINT16)SHORT(msd->sector));
 
@@ -1556,6 +1564,7 @@ static void P_LoadThings(UINT8 *data)
 			mt->z = mt->options >> ZSHIFT;
 
 		mt->mobj = NULL;
+		mt->customargs = NULL;
 	}
 }
 
@@ -1660,6 +1669,89 @@ static boolean TextmapCount(size_t size)
 	return true;
 }
 
+static void ParseTextmapCustomFields(const char* param, const char* val, customargs_t** headptr)
+{
+	if (val[0] == '\0')
+		return;
+
+	//
+	// GET latest node
+	//
+
+	customargs_t* newnode = Z_Malloc(sizeof(customargs_t), PU_LEVEL, NULL);
+
+	if (!newnode)
+		return;
+
+	newnode->next = NULL;
+
+	if (*headptr == NULL) {
+		*headptr = newnode;
+	}
+	else {
+		customargs_t* curr = *headptr;
+
+		while (curr->next != NULL) {
+			curr = curr->next;
+		}
+
+		curr->next = newnode;
+
+	}
+
+	//
+	// Setup
+	//
+
+	newnode->name = Z_Malloc(strlen(param + 5) + 1, PU_LEVEL, NULL);
+	M_Memcpy(newnode->name, param + 5, strlen(param + 5) + 1);
+
+	if (fastcmp(val, "true"))
+	{
+		newnode->type = UDMF_TYPE_BOOLEAN;
+		newnode->value.vbool = true;
+	}
+	else if (fastcmp(val, "false"))
+	{
+		newnode->type = UDMF_TYPE_BOOLEAN;
+		newnode->value.vbool = false;
+	}
+	else
+	{
+		char* endptr;
+		long lval;
+		float fval;
+
+		// Eval integer
+
+		errno = 0;
+		lval = strtol(val, &endptr, 10);
+
+		if (*endptr == '\0' && endptr != val && errno == 0) {
+			newnode->type = UDMF_TYPE_NUMERIC;
+			newnode->value.vint = lval;
+			return;
+		}
+
+		// Eval float
+
+		errno = 0;
+		fval = strtof(val, &endptr);
+
+		if (*endptr == '\0' && endptr != val && errno == 0) {
+			newnode->type = UDMF_TYPE_FIXED;
+			newnode->value.vfloat = FLOAT_TO_FIXED(fval);
+			return;
+		}
+
+		// Just string
+
+		newnode->type = UDMF_TYPE_STRING;
+		newnode->value.vstring = Z_Malloc(strlen(val) + 1, PU_LEVEL, NULL);
+		M_Memcpy(newnode->value.vstring, val, strlen(val) + 1);
+	}
+}
+
 static void ParseTextmapVertexParameter(UINT32 i, const char *param, const char *val)
 {
 	if (fastcmp(param, "x"))
@@ -1759,6 +1851,8 @@ static void ParseTextmapSectorParameter(UINT32 i, const char *param, const char 
 		sectors[i].floorangle = FixedAngle(FLOAT_TO_FIXED(atof(val)));
 	else if (fastcmp(param, "rotationceiling"))
 		sectors[i].ceilingangle = FixedAngle(FLOAT_TO_FIXED(atof(val)));
+	else if (fastncmp(param, "user_", 5) && strlen(param) > 5)
+		ParseTextmapCustomFields(param, val, &sectors[i].customargs);
 	else if (fastcmp(param, "floorplane_a"))
 	{
 		textmap_planefloor.defined |= PD_A;
@@ -1999,6 +2093,8 @@ static void ParseTextmapSidedefParameter(UINT32 i, const char *param, const char
 		sides[i].lightabsolute_mid = true;
 	else if (fastcmp(param, "lightabsolute_bottom") && fastcmp("true", val))
 		sides[i].lightabsolute_bottom = true;
+	else if (fastncmp(param, "user_", 5) && strlen(param) > 5)
+		ParseTextmapCustomFields(param, val, &sides[i].customargs);
 }
 
 static void ParseTextmapLinedefParameter(UINT32 i, const char *param, const char *val)
@@ -2093,6 +2189,9 @@ static void ParseTextmapLinedefParameter(UINT32 i, const char *param, const char
 		lines[i].flags |= ML_BOUNCY;
 	else if (fastcmp(param, "transfer") && fastcmp("true", val))
 		lines[i].flags |= ML_TFERLINE;
+
+	else if (fastncmp(param, "user_", 5) && strlen(param) > 5)
+		ParseTextmapCustomFields(param, val, &lines[i].customargs);
 }
 
 static void ParseTextmapThingParameter(UINT32 i, const char *param, const char *val)
@@ -2152,6 +2251,8 @@ static void ParseTextmapThingParameter(UINT32 i, const char *param, const char *
 			return;
 		mapthings[i].args[argnum] = atol(val);
 	}
+	else if (fastncmp(param, "user_", 5) && strlen(param) > 5)
+		ParseTextmapCustomFields(param, val, &mapthings[i].customargs);
 }
 
 /** From a given position table, run a specified parser function through a {}-encapsuled text.
@@ -3056,6 +3157,7 @@ static void P_LoadTextmap(void)
 		sc->triggerer = TO_PLAYER;
 
 		sc->friction = ORIG_FRICTION;
+		sc->customargs = NULL;
 
 		textmap_colormap.used = false;
 		textmap_colormap.lightcolor = 0;
@@ -3117,6 +3219,7 @@ static void P_LoadTextmap(void)
 		ld->executordelay = 0;
 		ld->sidenum[0] = NO_SIDEDEF;
 		ld->sidenum[1] = NO_SIDEDEF;
+		ld->customargs = NULL;
 
 		TextmapParse(linedefBlocks.pos[i], i, ParseTextmapLinedefParameter);
 
@@ -3146,6 +3249,7 @@ static void P_LoadTextmap(void)
 		sd->repeatcnt = 0;
 		sd->light = sd->light_top = sd->light_mid = sd->light_bottom = 0;
 		sd->lightabsolute = sd->lightabsolute_top = sd->lightabsolute_mid = sd->lightabsolute_bottom = false;
+		sd->customargs = NULL;
 
 		TextmapParse(sidedefBlocks.pos[i], i, ParseTextmapSidedefParameter);
 
@@ -3170,6 +3274,7 @@ static void P_LoadTextmap(void)
 		memset(mt->args, 0, NUMMAPTHINGARGS*sizeof(*mt->args));
 		memset(mt->stringargs, 0x00, NUMMAPTHINGSTRINGARGS*sizeof(*mt->stringargs));
 		mt->mobj = NULL;
+		mt->customargs = NULL;
 
 		TextmapParse(mapthingBlocks.pos[i], i, ParseTextmapThingParameter);
 	}
@@ -3370,7 +3475,7 @@ static void P_LoadNodes(UINT8 *data)
 {
 	UINT8 j, k;
 	mapnode_t *mn = (mapnode_t*)data;
-	node_t *no = nodes;
+	bspnode_t *no = nodes;
 	size_t i;
 
 	for (i = 0; i < numnodes; i++, no++, mn++)
@@ -3746,7 +3851,7 @@ static UINT16 ShrinkNodeID(UINT32 x) {
 
 static void P_LoadExtendedNodes(UINT8 **data, nodetype_t nodetype)
 {
-	node_t *mn;
+	bspnode_t *mn;
 	size_t i, j, k;
 	boolean xgl3 = (nodetype == NT_XGL3);
 
@@ -7671,7 +7776,7 @@ static void P_RunSpecialStageWipe(void)
 	tic_t endtime = starttime + (3*TICRATE)/2;
 	tic_t nowtime;
 
-	S_StartSound(NULL, sfx_s3kaf);
+	S_StartSoundFromEverywhere(sfx_s3kaf);
 
 	// Fade music! Time it to S3KAF: 0.25 seconds is snappy.
 	if (RESETMUSIC ||
@@ -7964,7 +8069,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		if (ranspecialwipe == 2)
 		{
 			pausedelay = -3; // preticker plus one
-			S_StartSound(NULL, sfx_s3k73);
+			S_StartSoundFromEverywhere(sfx_s3k73);
 		}
 
 		// Print "SPEEDING OFF TO [ZONE] [ACT 1]..."
@@ -8062,7 +8167,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 		if (M_UpdateUnlockablesAndExtraEmblems(clientGamedata))
 		{
-			S_StartSound(NULL, sfx_s3k68);
+			S_StartSoundFromEverywhere(sfx_s3k68);
 			G_SaveGameData(clientGamedata);
 		}
 		else if (!reloadinggamestate)
@@ -8127,6 +8232,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		R_PrecacheLevel();
 
 	nextmapoverride = 0;
+	keepcutscene = false;
 	skipstats = 0;
 
 	levelloading = false;

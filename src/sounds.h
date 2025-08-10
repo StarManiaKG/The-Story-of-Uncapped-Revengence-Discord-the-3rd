@@ -893,15 +893,13 @@ typedef enum
 	sfx_skinsoundslot0,
 	sfx_lastskinsoundslot = sfx_skinsoundslot0 + NUMSKINSFXSLOTS-1,
 
-#if 1
 	// STAR STUFF //
 	// Generic menu SFX
 	sfx_tmxbup,
 	sfx_tmxbdn,
-
 	// Extras
 	sfx_tf2d,
-#endif
+	// DONE! //
 
 	NUMSFX
 } sfxenum_t;

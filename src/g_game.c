@@ -170,6 +170,8 @@ INT16 nextmapoverride;
 UINT8 skipstats;
 INT16 nextgametype = -1;
 
+boolean keepcutscene;
+
 // Pointers to each CTF flag
 mobj_t *redflag;
 mobj_t *blueflag;
@@ -1440,7 +1442,8 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	{
 		if (
 			P_MobjWasRemoved(ticcmd_ztargetfocus[forplayer]) ||
-			(leveltime < 5) ||
+			(cv_directionchar[forplayer].value != 2) ||
+			(R_PointToDist2(player->mo->x, player->mo->y, ticcmd_ztargetfocus[forplayer]->x, ticcmd_ztargetfocus[forplayer]->y) > 3000<<FRACBITS) || // Locks on to the wrong mobj if too far away, so just cancel it
 			(player->playerstate != PST_LIVE) ||
 			player->exiting ||
 			!ticcmd_ztargetfocus[forplayer]->health ||
@@ -1493,8 +1496,20 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		}
 	}
 
-	if (ticcmd_centerviewdown[forplayer] && controlstyle == CS_SIMPLE)
-		controlstyle = CS_LEGACY;
+	if (ticcmd_centerviewdown[forplayer] && chasecam)
+	{
+		if (controlstyle == CS_SIMPLE)
+			controlstyle = CS_LEGACY;
+	}
+	else if (cv_directionchar[forplayer].value == 2)
+	{
+		if (P_MobjWasRemoved(ticcmd_ztargetfocus[forplayer]) || !chasecam)
+		{
+			P_SetTarget(&ticcmd_ztargetfocus[forplayer], NULL);
+			CV_SetValue(&cv_directionchar[forplayer], 1);
+		}
+
+	}
 
 	if (PLAYERINPUTDOWN(ssplayer, GC_CAMRESET))
 	{
@@ -3186,6 +3201,7 @@ void G_DoReborn(INT32 playernum)
 					nextmapoverride = gamemap;
 					countdown2 = TICRATE;
 					skipstats = 2;
+					keepcutscene = 0;
 
 					for (i = 0; i < MAXPLAYERS; i++)
 					{
@@ -4246,7 +4262,7 @@ void G_AfterIntermission(void)
 
 	if ((gametyperules & GTR_CUTSCENES) && mapheaderinfo[gamemap-1]->cutscenenum
 		&& !modeattacking
-		&& skipstats <= 1
+		&& (skipstats <= 1 || keepcutscene == true)
 		&& (gamecomplete || !(marathonmode & MA_NOCUTSCENES))
 		&& stagefailed == false)
 	{
@@ -4377,6 +4393,8 @@ static void G_DoContinued(void)
 // when something new is added.
 void G_EndGame(void)
 {
+	LUA_HookVoid(HOOK(GameEnd));
+
 	// Only do evaluation and credits in coop games.
 	if (gametyperules & GTR_CUTSCENES)
 	{
@@ -4781,10 +4799,7 @@ void G_SaveGameData(gamedata_t *data)
 	FIL_WriteFile(va(pandf, srb2home, gamedatafilename), savebuffer.buf, savebuffer.pos);
 	free(savebuffer.buf);
 
-#if 1
-	// STAR STUFF: VIVA LA AUTOLOADING //
-	TSoURDt3rd_PSav_WriteExtraData();
-#endif
+	TSoURDt3rd_PSav_WriteExtraData(); // STAR STUFF: VIVA LA AUTOLOADING //
 }
 
 #define VERSIONSIZE 16

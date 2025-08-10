@@ -128,7 +128,7 @@ void Command_Numthinkers_f(void)
 	{
 		for (think = thlist[i].next; think != &thlist[i]; think = think->next)
 		{
-			if (think->function.acp1 != action)
+			if (think->function != action)
 				continue;
 
 			count++;
@@ -232,7 +232,7 @@ void P_AddThinker(const thinklistnum_t n, thinker_t *thinker)
 static const char *MobjTypeName(const mobj_t *mobj)
 {
 	mobjtype_t type;
-	actionf_p1 p1 = mobj->thinker.function.acp1;
+	actionf_p1 p1 = mobj->thinker.function;
 
 	if (p1 == (actionf_p1)P_MobjThinker)
 		type = mobj->type;
@@ -251,7 +251,7 @@ static const char *MobjTypeName(const mobj_t *mobj)
 
 static const char *MobjThinkerName(const mobj_t *mobj)
 {
-	actionf_p1 p1 = mobj->thinker.function.acp1;
+	actionf_p1 p1 = mobj->thinker.function;
 
 	if (p1 == (actionf_p1)P_MobjThinker)
 	{
@@ -353,7 +353,7 @@ void P_RemoveThinker(thinker_t *thinker)
 {
 	LUA_InvalidateUserdata(thinker);
 	thinker->removing = true;
-	thinker->function.acp1 = (actionf_p1)P_RemoveThinkerDelayed;
+	thinker->function = (actionf_p1)P_RemoveThinkerDelayed;
 }
 
 /*
@@ -441,9 +441,9 @@ static inline void P_RunThinkers(void)
 		for (currentthinker = thlist[i].next; currentthinker != &thlist[i]; currentthinker = currentthinker->next)
 		{
 #ifdef PARANOIA
-			I_Assert(currentthinker->function.acp1 != NULL);
+			I_Assert(currentthinker->function != NULL);
 #endif
-			currentthinker->function.acp1(currentthinker);
+			currentthinker->function(currentthinker);
 		}
 		PS_STOP_TIMING(ps_thlist_times[i]);
 	}
@@ -625,7 +625,7 @@ static inline void P_DoSpecialStageStuff(void)
 						if (mapheaderinfo[gamemap-1]->levelflags & LF_MIXNIGHTSCOUNTDOWN)
 						{
 							S_FadeMusic(0, 10*MUSICRATE);
-							S_StartSound(NULL, sfx_timeup); // that creepy "out of time" music from NiGHTS.
+							S_StartSoundFromEverywhere(sfx_timeup); // that creepy "out of time" music from NiGHTS.
 						}
 						else
 							S_ChangeMusicInternal("_drown", false);
@@ -638,7 +638,7 @@ static inline void P_DoSpecialStageStuff(void)
 					players[i].pflags &= ~(PF_GLIDING|PF_BOUNCING);
 					players[i].nightstime = 0;
 					if (P_IsLocalPlayer(&players[i]))
-						S_StartSound(NULL, sfx_s3k66);
+						S_StartSoundFromEverywhere(sfx_s3k66);
 				}
 			}
 
@@ -740,6 +740,7 @@ void P_Ticker(boolean run)
 		{
 			P_MapStart();
 			R_UpdateMobjInterpolators();
+			R_UpdateLevelInterpolators();
 			OP_ObjectplaceMovement(&players[0]);
 			P_MoveChaseCamera(&players[0], &camera, false);
 			R_UpdateViewInterpolation();

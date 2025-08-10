@@ -12,4 +12,4 @@
 #define MODVERSION 56
 
 // Define this as a prerelease version suffix (pre#, RC#)
-//#define BETAVERSION "nightly"
+#define BETAVERSION "nightly"

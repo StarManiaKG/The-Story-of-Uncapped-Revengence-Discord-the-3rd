@@ -174,6 +174,8 @@ static const struct {
 	{META_SKINCOLOR,    "skincolor_t"},
 	{META_COLORRAMP,    "skincolor_t.ramp"},
 	{META_SPRITEINFO,   "spriteinfo_t"},
+	{META_SPRITEINFOFRAMELIST,"spriteinfoframe_t[]"},
+	{META_SPRITEINFOFRAME,"spriteinfoframe_t"},
 	{META_PIVOTLIST,    "spriteframepivot_t[]"},
 	{META_FRAMEPIVOT,   "spriteframepivot_t"},
 
@@ -191,6 +193,8 @@ static const struct {
 	{META_SKINSPRITES,       "skin_t.skinsprites"},
 	{META_SKINSPRITESLIST,   "skin_t.skinsprites[]"},
 	{META_SKINSPRITESCOMPAT, "skin_t.sprites"}, // TODO: 2.3: Delete
+
+	{META_MUSICDEF,     "musicdef_t"},
 
 	{META_VERTEX,       "vertex_t"},
 	{META_LINE,         "line_t"},
@@ -3263,10 +3267,10 @@ static int GetValidSoundOrigin(lua_State *L, void **origin)
 			return LUA_ErrInvalid(L, "sector_t");
 
 		*origin = &((sector_t *)(*origin))->soundorg;
-		return 1;
+		return 2;
 	}
 
-	return LUA_ErrInvalid(L, "mobj_t/sector_t");
+	return 0;
 }
 
 static int lib_sStartSound(lua_State *L)
@@ -3285,15 +3289,23 @@ static int lib_sStartSound(lua_State *L)
 		if (!player)
 			return LUA_ErrInvalid(L, "player_t");
 	}
-	if (!lua_isnil(L, 1))
-		if (!GetValidSoundOrigin(L, &origin))
-			return 0;
-	if (!player || P_IsLocalPlayer(player))
+	if (player == NULL || P_IsLocalPlayer(player))
 	{
-		if (hud_running || hook_cmd_running)
-			origin = NULL;	// HUD rendering and CMD building startsound shouldn't have an origin, just remove it instead of having a retarded error.
-
-		S_StartSound(origin, sound_id);
+		if (lua_isnil(L, 1))
+			S_StartSoundFromEverywhere(sound_id);
+		else
+		{
+			int origintype = GetValidSoundOrigin(L, &origin);
+			if (origintype == 1)
+				S_StartSoundFromMobj(origin, sound_id);
+			else if (origintype == 2)
+			{
+				origin = *((sector_t**)luaL_checkudata(L, 1, META_SECTOR)); // Restore this (other functions still use soundorg outright)
+				S_StartSoundFromSector(origin, sound_id);
+			}
+			else
+				return LUA_ErrInvalid(L, "mobj_t/sector_t");
+		}
 	}
 	return 0;
 }
@@ -3314,12 +3326,25 @@ static int lib_sStartSoundAtVolume(lua_State *L)
 		if (!player)
 			return LUA_ErrInvalid(L, "player_t");
 	}
-	if (!lua_isnil(L, 1))
-		if (!GetValidSoundOrigin(L, &origin))
-			return LUA_ErrInvalid(L, "mobj_t/sector_t");
+	if (player == NULL || P_IsLocalPlayer(player))
+	{
+		if (lua_isnil(L, 1))
+			S_StartSoundFromEverywhereVol(sound_id, volume);
+		else
+		{
+			int origintype = GetValidSoundOrigin(L, &origin);
+			if (origintype == 1)
+				S_StartSoundFromMobjVol(origin, sound_id, volume);
+			else if (origintype == 2)
+			{
+				origin = *((sector_t**)luaL_checkudata(L, 1, META_SECTOR)); // Restore this (other functions still use soundorg outright)
+				S_StartSoundFromSectorVol(origin, sound_id, volume);
+			}
+			else
+				return LUA_ErrInvalid(L, "mobj_t/sector_t");
+		}
 
-	if (!player || P_IsLocalPlayer(player))
-		S_StartSoundAtVolume(origin, sound_id, volume);
+	}
 	return 0;
 }
 
@@ -3751,6 +3776,73 @@ static int lib_sResumeMusic(lua_State *L)
 	return 1;
 }
 
+enum musicdef_e
+{
+	musicdef_name,
+	musicdef_title,
+	musicdef_alttitle,
+	musicdef_authors
+};
+
+static const char *const musicdef_opt[] = {
+	"name",
+	"title",
+	"alttitle",
+	"authors",
+	NULL,
+};
+
+static int musicdef_fields_ref = LUA_NOREF;
+
+static int musicdef_get(lua_State *L)
+{
+	musicdef_t *musicdef = *((musicdef_t **)luaL_checkudata(L, 1, META_MUSICDEF));
+	enum musicdef_e field = Lua_optoption(L, 2, -1, musicdef_fields_ref);
+	lua_settop(L, 2);
+
+	if (!musicdef)
+		return LUA_ErrInvalid(L, "musicdef_t");
+
+	switch (field)
+	{
+	case musicdef_name:
+		lua_pushstring(L, musicdef->name);
+		break;
+	case musicdef_title:
+		lua_pushstring(L, musicdef->title);
+		break;
+	case musicdef_alttitle:
+		lua_pushstring(L, musicdef->alttitle);
+		break;
+	case musicdef_authors:
+		lua_pushstring(L, musicdef->authors);
+		break;
+	default:
+		lua_getfield(L, LUA_REGISTRYINDEX, LREG_EXTVARS);
+		I_Assert(lua_istable(L, -1));
+		lua_pushlightuserdata(L, musicdef);
+		lua_rawget(L, -2);
+		if (!lua_istable(L, -1)) { // no extra values table
+			CONS_Debug(DBG_LUA, M_GetText("'%s' has no extvars table or field named '%s'; returning nil.\n"), "musicdef_t", lua_tostring(L, 2));
+			return 0;
+		}
+		lua_pushvalue(L, 2); // field name
+		lua_gettable(L, -2);
+		if (lua_isnil(L, -1)) // no value for this field
+			CONS_Debug(DBG_LUA, M_GetText("'%s' has no field named '%s'; returning nil.\n"), "musicdef_t", lua_tostring(L, 2));
+		break;
+	}
+
+	return 1;
+}
+
+static int lib_sMusicInfo(lua_State *L)
+{
+	const char *music_name = lua_tolstring(L, 1, NULL);
+	LUA_PushUserdata(L, S_MusicInfo(music_name), META_MUSICDEF);
+	return 1;
+}
+
 // G_GAME
 ////////////
 
@@ -3890,6 +3982,34 @@ static int lib_gAddGametype(lua_State *L)
 
 	// done
 	CONS_Printf("Added gametype %s\n", Gametype_Names[newgtidx]);
+	return 0;
+}
+
+// Lua exclusive function to unlock Lua Conditions
+// Up to Lua scripter
+static int lib_gUnlockCondition(lua_State* L)
+{
+	int id = luaL_checkinteger(L, 1) - 1;
+	boolean global = luaL_checkboolean(L, 2);
+
+	if (id <= 0 || id > MAXLUACONDITIONS)
+	{
+		luaL_error(L, "Lua condition %d out of range (1 - %d)", id + 1, MAXLUACONDITIONS);
+		return 0;
+	}
+
+	if (global)
+	{
+		serverGamedata->lua[id] = true;
+		M_SilentUpdateUnlockablesAndEmblems(serverGamedata);
+	}
+
+	clientGamedata->lua[id] = true;
+	if (M_UpdateUnlockablesAndExtraEmblems(clientGamedata))
+	{
+		S_StartSoundFromEverywhere(sfx_s3k68);
+	}
+
 	return 0;
 }
 
@@ -4187,21 +4307,26 @@ static int lib_gSetCustomExitVars(lua_State *L)
 
 	// LUA EXTENSION: Custom exit like support
 	// Supported:
-	//	G_SetCustomExitVars();               [reset to defaults]
-	//	G_SetCustomExitVars(int)             [nextmap override only]
-	//	G_SetCustomExitVars(nil, int)        [skipstats only]
-	//	G_SetCustomExitVars(int, int)        [both of the above]
-	//	G_SetCustomExitVars(int, int, int)   [nextmapoverride, skipstats and nextgametype]
+	//	G_SetCustomExitVars();					[reset to defaults]
+	//	G_SetCustomExitVars(int)				[nextmap override only]
+	//	G_SetCustomExitVars(nil, int)			[skipstats only]
+	//	G_SetCustomExitVars(int, int)			[both of the above]
+	//	G_SetCustomExitVars(int, int, int)		[nextmapoverride, skipstats and nextgametype]
+	//	G_SetCustomExitVars(int, int, int, int) [nextmapoverride, skipstats, nextgametype and keepcutscenes]
 
 	nextmapoverride = 0;
 	skipstats = 0;
 	nextgametype = -1;
+	keepcutscene = false;
 
 	if (n >= 1)
 	{
 		nextmapoverride = (INT16)luaL_optinteger(L, 1, 0);
 		skipstats = (INT16)luaL_optinteger(L, 2, 0);
 		nextgametype = (INT16)luaL_optinteger(L, 3, -1);
+		
+		if (!lua_isnil(L, 4))
+			keepcutscene = luaL_checkboolean(L, 4);
 	}
 
 	return 0;
@@ -4636,11 +4761,13 @@ static luaL_Reg lib[] = {
 	{"S_GetMusicLoopPoint",lib_sGetMusicLoopPoint},
 	{"S_PauseMusic",lib_sPauseMusic},
 	{"S_ResumeMusic", lib_sResumeMusic},
+	{"S_MusicInfo", lib_sMusicInfo},
 
 	// g_game
 	{"G_AddGametype", lib_gAddGametype},
 	{"G_AddPlayer", lib_gAddPlayer},
 	{"G_RemovePlayer", lib_gRemovePlayer},
+	{"G_UnlockCondition", lib_gUnlockCondition},
 	{"G_SetUsedCheats", lib_gSetUsedCheats},
 	{"G_BuildMapName",lib_gBuildMapName},
 	{"G_BuildMapTitle",lib_gBuildMapTitle},
@@ -4674,6 +4801,11 @@ static luaL_Reg lib[] = {
 
 int LUA_BaseLib(lua_State *L)
 {
+	// musicdef_t
+	// Sound should have its whole own file for Lua, but this will do for now.
+	LUA_RegisterUserdataMetatable(L, META_MUSICDEF, musicdef_get, NULL, NULL);
+	musicdef_fields_ref = Lua_CreateFieldTable(L, musicdef_opt);
+
 	// Set metatable for string
 	lua_pushliteral(L, "");  // dummy string
 	lua_getmetatable(L, -1);  // get string metatable

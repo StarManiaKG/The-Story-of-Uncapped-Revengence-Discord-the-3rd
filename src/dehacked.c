@@ -200,15 +200,13 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 		initfreeslots();
 		deh_loaded = true;
 	}
-
 	deh_num_warning = 0;
 
-#if 1
-	// STAR STUFF: reset music, since we might not have the jukebox unlocked anymore //
 	if (TSoURDt3rd_Jukebox_IsPlaying() && savemoddata && (introchanged || titlechanged))
+	{
+		// STAR STUFF: reset music, since we might not have the jukebox unlocked anymore //
 		S_StopMusic();
-#endif
-
+	}
 	gamedataadded = titlechanged = introchanged = bootmapchanged = false;
 
 	// it doesn't test the version of SRB2 and version of dehacked file
