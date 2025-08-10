@@ -208,8 +208,6 @@ int main(int argc, char **argv)
 {
 	myargc = argc;
 	myargv = argv; /// \todo pull out path to exe from this string
-	typedef void (APIENTRY *EXCHNDLINIT)(void);
-	EXCHNDLINIT pfnExcHndlInit = NULL;
 
 #ifdef HAVE_TTF
 #ifdef _WIN32
@@ -228,6 +226,7 @@ int main(int argc, char **argv)
 	I_StartupSystem();
 
 #if defined (_WIN32)
+
 #if 0
 #if 0
 	g_hmod_drmingw = LoadLibrary("exchndl.dll");
@@ -240,6 +239,9 @@ int main(int argc, char **argv)
 	g_hmod_drmingw = LoadLibraryA("exchndl.dll");
 	LoadLibraryA("exchndl.dll");
 #endif
+
+	typedef void (APIENTRY *EXCHNDLINIT)(void);
+	EXCHNDLINIT pfnExcHndlInit = NULL;
 #if 1
 	pfnExcHndlInit = (EXCHNDLINIT)GetProcAddress(g_hmod_drmingw, "ExcHndlInit");
 	if (g_hmod_drmingw && pfnExcHndlInit)
@@ -252,11 +254,12 @@ int main(int argc, char **argv)
 	if (g_hmod_drmingw)
 		CONS_Printf("Debugger initialized.\n");
 #endif
-#endif
+
+#endif // defined (_WIN32)
 
 #ifdef BUGTRAP
 	InitBugTrap();
-#ifndef __MINGW32__
+#if defined (_WIN32) && !defined(__MINGW32__)
 	prevExceptionFilter = SetUnhandledExceptionFilter(RecordExceptionInfo);
 #endif
 #endif
@@ -280,10 +283,12 @@ int main(int argc, char **argv)
 	libbacktrace_print_stacktrace();
 #endif
 
+#if defined (_WIN32)
 #if 1
 	// close debugger
 	if (g_hmod_drmingw)
 		FreeLibrary(g_hmod_drmingw);
+#endif
 #endif
 
 #ifdef BUGTRAP
