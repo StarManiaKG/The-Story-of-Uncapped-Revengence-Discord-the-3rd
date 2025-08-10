@@ -583,7 +583,7 @@ static void M_Sys_DiscordRequestHandler(INT32 choice)
 	DISC_Respond(discordRequestList->userID, response);
 	discordrequestmenu.confirmAccept = (boolean)response;
 	discordrequestmenu.confirmDelay = discordrequestmenu.confirmLength;
-	S_StartSound(NULL, response_sound);
+	S_StartSoundFromEverywhere(response_sound);
 }
 
 #endif // HAVE_DISCORDSUPPORT

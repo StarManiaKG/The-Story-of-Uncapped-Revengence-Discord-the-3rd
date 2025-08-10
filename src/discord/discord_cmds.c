@@ -254,7 +254,7 @@ static boolean DISC_CustomString_CanUpdate(const char *valstr)
 	if (strlen(valstr) < DISC_STATUS_MIN_STRING_SIZE)
 	{
 		// too short
-		S_StartSound(NULL, sfx_skid);
+		S_StartSoundFromEverywhere(sfx_skid);
 		TSoURDt3rd_M_StartMessage(
 			"String too short!",
 			va("Sorry, Discord requires status strings to\nbe longer than %d characters.\n\nPlease type a longer string.", DISC_STATUS_MIN_STRING_SIZE),
@@ -268,7 +268,7 @@ static boolean DISC_CustomString_CanUpdate(const char *valstr)
 	else if (strlen(valstr) >= DISC_STATUS_MAX_STRING_SIZE)
 	{
 		// too long
-		S_StartSound(NULL, sfx_skid);
+		S_StartSoundFromEverywhere(sfx_skid);
 		TSoURDt3rd_M_StartMessage(
 			"String too long!",
 			va("Sorry, Discord requires status strings to\nbe shorter than %d characters.\n\nPlease type a shorter string.", DISC_STATUS_MAX_STRING_SIZE),

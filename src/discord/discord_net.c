@@ -26,18 +26,18 @@
 // ------------------------ //
 
 static CV_PossibleValue_t discordinvites_cons_t[] = {{0, "Admins Only"}, {1, "Everyone"}, {0, NULL}};
-consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Everyone", CV_SAVE|CV_CALL, discordinvites_cons_t, TSoURDt3rd_D_Joinable_OnChange);
+consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Everyone", CV_SAVE|CV_CALL, discordinvites_cons_t, DISC_D_Joinable_OnChange);
 
 // ------------------------ //
 //        Functions
 // ------------------------ //
 
 /*--------------------------------------------------
-	void TSoURDt3rd_D_Joinable_OnChange(void)
+	void DISC_D_Joinable_OnChange(void)
 
 		See header file for description.
 --------------------------------------------------*/
-void TSoURDt3rd_D_Joinable_OnChange(void)
+void DISC_D_Joinable_OnChange(void)
 {
 	UINT8 buf[3];
 	UINT8 *p = buf;
@@ -56,11 +56,11 @@ void TSoURDt3rd_D_Joinable_OnChange(void)
 }
 
 /*--------------------------------------------------
-	void TSoURDt3rd_D_Got_DiscordInfo(void)
+	void DISC_D_Got_NetInfo(void)
 
 		See header file for description.
 --------------------------------------------------*/
-void TSoURDt3rd_D_Got_DiscordInfo(UINT8 **cp, INT32 playernum)
+void DISC_D_Got_NetInfo(UINT8 **cp, INT32 playernum)
 {
 	if (playernum != serverplayer /*&& !IsPlayerAdmin(playernum)*/)
 	{

@@ -20,7 +20,7 @@
 #include "menus/smkg-m_sys.h" // menu definitions //
 #include "misc/smkg-m_misc.h" // TSoURDt3rd_M_FindWordInTermTable() //
 
-#include "../discord/discord.h" // TSoURDt3rd_D_Got_DiscordInfo() //
+#include "../discord/discord.h" // DISC_D_Got_NetInfo() //
 
 #include "../doomstat.h"
 #include "../console.h"
@@ -432,7 +432,7 @@ void TSoURDt3rd_D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_stunserver);
 #endif
 	CV_RegisterVar(&cv_discordinvites);
-	RegisterNetXCmd(XD_DISCORD, TSoURDt3rd_D_Got_DiscordInfo);
+	RegisterNetXCmd(XD_DISCORD, DISC_D_Got_NetInfo);
 
 	// Main //
 	CV_RegisterVar(&cv_tsourdt3rd_main_checkforupdatesonstartup);

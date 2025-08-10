@@ -490,22 +490,22 @@ extern consvar_t cv_discordinvites;
 
 
 /*--------------------------------------------------
-	void TSoURDt3rd_D_Joinable_OnChange(void)
+	void DISC_D_Joinable_OnChange(void)
 
 		Grabs Discord presence info and packets in netgames.
 --------------------------------------------------*/
 
-void TSoURDt3rd_D_Joinable_OnChange(void);
+void DISC_D_Joinable_OnChange(void);
 
 
 /*--------------------------------------------------
-	void TSoURDt3rd_D_Got_DiscordInfo(void)
+	void DISC_D_Got_NetInfo(void)
 
 		Updates Discord presence info based on packets
 		received from servers.
 --------------------------------------------------*/
 
-void TSoURDt3rd_D_Got_DiscordInfo(UINT8 **cp, INT32 playernum);
+void DISC_D_Got_NetInfo(UINT8 **cp, INT32 playernum);
 
 
 #ifdef __cplusplus
