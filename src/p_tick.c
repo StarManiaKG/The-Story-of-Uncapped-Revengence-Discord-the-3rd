@@ -589,17 +589,13 @@ static inline void P_DoSpecialStageStuff(void)
 		players[i].powers[pw_underwater] = players[i].powers[pw_spacetime] = 0;
 	}
 
-#if 0
-	//if (sstimer < 15*TICRATE+6 && sstimer > 7 && (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC))
-		//S_SpeedMusic(1.4f);
-#else
-	// STAR STUFF: do cool music speeding junk :) //
 	if (sstimer < 15*TICRATE+6 && sstimer > 7 && (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC))
 	{
-		if (!TSoURDt3rd_Jukebox_IsPlaying()) // you're interrupting my brooding >:| //
+		// STAR STUFF: do cool music speeding junk :) //
+		//	...but don't interrupt my brooding >:| //
+		if (!TSoURDt3rd_Jukebox_IsPlaying())
 			S_SpeedMusic(1.4f);
 	}
-#endif
 
 	if (sstimer && !objectplacing)
 	{
@@ -844,10 +840,8 @@ void P_Ticker(boolean run)
 	if (G_GametypeHasTeams())
 		P_DoCTFStuff();
 
-#if 1
 	// STAR STUFF: Don't forget to run our unique ticker too! //
 	TSoURDt3rd_P_Ticker(run);
-#endif
 
 	if (run)
 	{
