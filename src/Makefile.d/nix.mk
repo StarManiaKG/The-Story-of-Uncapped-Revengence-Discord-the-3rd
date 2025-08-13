@@ -46,3 +46,7 @@ endif
 #		-DSOLARIS -DINADDR_NONE=INADDR_ANY -DBSD_COMP
 #libs+=-L/opt/sfw/lib -lsocket -lnsl
 #endif
+
+ifndef HAVE_LIBBACKTRACE
+NO_LIBBACKTRACE:=1
+endif

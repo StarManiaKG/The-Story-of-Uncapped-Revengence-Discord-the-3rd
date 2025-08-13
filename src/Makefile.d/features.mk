@@ -57,6 +57,24 @@ ZDEBUG=1
 opts+=-DHAVE_VALGRIND
 endif
 
+# (drmingw was our old crash debugger)
+ifndef NO_DRMINGW
+$(eval $(call Use_pkg_config,DRMINGW))
+opts+=-DHAVE_DRMINGW
+endif
+
+# (libbacktrace is our new crash debugger)
+ifndef NO_LIBBACKTRACE
+$(eval $(call Use_pkg_config,LIBBACKTRACE))
+opts+=-DHAVE_LIBBACKTRACE
+endif
+
+# (BugTrap is another crash debugger)
+# Linked in-game, so we don't do anything else here
+ifdef HAVE_BUGTRAP
+opts+=-DHAVE_BUGTRAP
+endif
+
 default_packages:=\
 	GME/libgme/LIBGME\
 	OPENMPT/libopenmpt/LIBOPENMPT\
@@ -73,16 +91,11 @@ $(foreach p,$(default_packages),\
 
 opts+=-DUSE_STUN
 
-$(eval $(call Use_pkg_config,LIBBACKTRACE))
-libs+=-lbacktrace
-opts+=-DLIBBACKTRACE
-
 ifdef HAVE_DISCORDRPC
   ifndef HAVE_DISCORDGAMESDK
     DISCORD_RPC_PKGCONFIG?=discord-rpc
     $(eval $(call Use_pkg_config,DISCORD_RPC))
     opts+=-DHAVE_DISCORDRPC -DHAVE_DISCORDSUPPORT
-    libs+=-ldiscord-rpc
     DISCORD_SUPPORTED:=1
   else
     $(error \
@@ -96,7 +109,6 @@ ifdef HAVE_DISCORDGAMESDK
     DISCORD_RPC_PKGCONFIG?=discord_game_sdk
     $(eval $(call Use_pkg_config,DISCORD_RPC))
     opts+=-DHAVE_DISCORDGAMESDK -DHAVE_DISCORDSUPPORT
-    libs+=-ldiscord_game_sdk
     DISCORD_SUPPORTED:=1
     $(eval $(call Use_pkg_config,DISCORD_GAME_SDK))
   else

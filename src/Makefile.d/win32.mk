@@ -101,6 +101,29 @@ MINIUPNPC_opts:=-I$(lib)/include -DMINIUPNP_STATICLIB
 MINIUPNPC_libs:=-L$(lib)/mingw$(32) -lminiupnpc -lws2_32 -liphlpapi
 $(eval $(call _set,MINIUPNPC))
 
+ifdef MINGW64
+# Barely works on 64-bit despite what we do
+NO_DRMINGW:=1
+HAVE_LIBBACKTRACE:=1
+else
+# libbacktrace seems to only compile right for 32-bit on cmake
+# even then, it still seems somewhat broken
+HAVE_DRMINGW:=1
+NO_LIBBACKTRACE:=1
+endif
+
+ifndef NO_LIBBACKTRACE
+LIBBACKTRACE_opts+=-I../libs/libbacktrace/include
+LIBBACKTRACE_libs+=-L../libs/libbacktrace/lib/$(i686) -lbacktrace
+$(eval $(call _set,LIBBACKTRACE))
+endif
+
+ifndef NO_DRMINGW
+DRMINGW_opts+=-I../libs/drmingw/include
+DRMINGW_libs+=-L../libs/drmingw/lib/win$(32) -lmgwhelp -lexchndl
+$(eval $(call _set,DRMINGW))
+endif
+
 ##
 ## Mingw, if you still don't know, that's Win32/Win64
 ## Except now it also includes cool TSoURDt3rd stuff too :)
@@ -114,31 +137,17 @@ $(eval $(call _set,MINIUPNPC))
 ## DISCORD_GAME_SDK_CFLAGS=, DISCORD_GAME_SDK_LDFLAGS=
 ## LIBAV_CFLAGS=, LIBAV_LDFLAGS=
 
-#lib:=../libs/BugTrap
-#BUGTRAP_opts+=-I$(lib) -DBUGTRAP
-#ifndef MINGW64
-#BUGTRAP_libs+=-L$(lib) -lBugTrap
-#else
-#BUGTRAP_libs+=-L$(lib) -lBugTrap-x64
-#endif
-#$(eval $(call _set,BUGTRAP))
-#$(eval $(call Propogate_flags,BUGTRAP))
-
-LIBBACKTRACE_opts+=-I../libs/libbacktrace/include
-LIBBACKTRACE_libs+=-L../libs/libbacktrace/lib/$(i686)
-$(eval $(call _set,LIBBACKTRACE))
-
 ifdef HAVE_DISCORDRPC
   lib:=../libs/discord-rpc/win$(32)-dynamic
   DISCORD_RPC_opts:=-I$(lib)/include
-  DISCORD_RPC_libs:=-L$(lib)/lib
+  DISCORD_RPC_libs:=-L$(lib)/lib -ldiscord-rpc
   $(eval $(call _set,DISCORD_RPC))
 endif
 
 ifdef HAVE_DISCORDGAMESDK
   lib:=../libs/discord_game_sdk
   DISCORD_GAME_SDK_opts:=-I$(lib)/include
-  DISCORD_GAME_SDK_libs:=-L$(lib)/$(x86)
+  DISCORD_GAME_SDK_libs:=-L$(lib)/$(x86) -ldiscord_game_sdk
   $(eval $(call _set,DISCORD_GAME_SDK))
 endif
 
