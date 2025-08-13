@@ -71,7 +71,10 @@ option(SRB2_CONFIG_ERRORMODE "Compile C code with warnings treated as errors." O
 option(SRB2_CONFIG_DEBUGMODE "Compile with PARANOIA, ZDEBUG, RANGECHECK and PACKETDROP defined." OFF)
 option(SRB2_CONFIG_MOBJCONSISTANCY "Compile with MOBJCONSISTANCY defined." OFF)
 option(SRB2_CONFIG_PACKETDROP "Compile with PACKETDROP defined." OFF)
+# SRB2_CONFIG_EXECINFO and SRB2_CONFIG_EXECTYPE are for debugging and stack dumping.
 option(SRB2_CONFIG_EXECINFO "Enable stack trace dump support." ON)
+set(SRB2_CONFIG_EXECTYPE "libbacktrace" CACHE STRING "The type of stack trace dumper to use")
+set_property(CACHE SRB2_CONFIG_EXECTYPE PROPERTY STRINGS default libbacktrace drmingw bugtrap)
 option(SRB2_CONFIG_ZDEBUG "Compile with ZDEBUG defined." OFF)
 option(SRB2_CONFIG_FORCE_NO_MS_BITFIELDS "Compile without -mno-ms-bitfields compiler flag" OFF)
 # SRB2_CONFIG_PROFILEMODE is probably superceded by some CMake setting.
@@ -110,9 +113,9 @@ if("${SRB2_CONFIG_USE_GME}")
 	find_package(libgme QUIET)
 endif()
 find_package(miniupnpc QUIET)
-
 ## TSoURDt3rd ##
 find_package(LibAV QUIET)
+
 
 if(${PROJECT_SOURCE_DIR} MATCHES ${PROJECT_BINARY_DIR})
 	message(FATAL_ERROR "In-source builds will bring you a world of pain. Please make a separate directory to invoke CMake from.")
