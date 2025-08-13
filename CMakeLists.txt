@@ -75,6 +75,7 @@ option(SRB2_CONFIG_PACKETDROP "Compile with PACKETDROP defined." OFF)
 option(SRB2_CONFIG_EXECINFO "Enable stack trace dump support." ON)
 set(SRB2_CONFIG_EXECTYPE "libbacktrace" CACHE STRING "The type of stack trace dumper to use")
 set_property(CACHE SRB2_CONFIG_EXECTYPE PROPERTY STRINGS default libbacktrace drmingw bugtrap)
+option(SRB2_CONFIG_DEBUGSYMBOLS "Strips the main executable of debug symbols and allows a seperate executable to be linked with them instead." ON)
 option(SRB2_CONFIG_ZDEBUG "Compile with ZDEBUG defined." OFF)
 option(SRB2_CONFIG_FORCE_NO_MS_BITFIELDS "Compile without -mno-ms-bitfields compiler flag" OFF)
 # SRB2_CONFIG_PROFILEMODE is probably superceded by some CMake setting.

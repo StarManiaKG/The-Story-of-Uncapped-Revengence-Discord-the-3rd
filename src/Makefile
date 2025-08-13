@@ -243,6 +243,7 @@ build_done==== Build is done, look for \
            $(<F) at $(abspath $(<D)) ===
 
 all : $(exe)
+	$(call Echo, )
 	$(call Echo,$(build_done))
 
 ifndef VALGRIND
@@ -264,6 +265,14 @@ debug_opts=-D_DEBUG
 else # build a normal optimized version
 debug_opts=-DNDEBUG
 opts+=-O3
+endif
+
+# manage stack trace dump options
+ifdef NOEXECINFO
+NO_DEBUGSYMBOLS:=1
+endif
+ifdef NO_DEBUGSYMBOLS
+NO_DEBUGSYMBOLS:=1
 endif
 
 # debug_opts also get passed to windres
@@ -329,15 +338,25 @@ windres=$(WINDRES) $(WINDRESFLAGS)\
 
 # 'UPX' is also recognized in the environment by upx
 unexport UPX
+ifdef UPX
+upxcompress:=\
+	$(call Echo,Compressing final executable...)\
+	$(.)-$(upx) $@
+else
+upxcompress:=
+endif
 
+ifndef NO_DEBUGSYMBOLS
+# executable contains debugging symbols
+$(exe) : $(objects) | $$(@D)/
+	$(.)$(LD) -o $@ $^ $(libs)
+	$(upxcompress)
+else
 # executable stripped of debugging symbols
 $(exe) : $(dbg) | $$(@D)/
 	$(.)$(OBJCOPY) --strip-debug $< $@
 	$(.)-$(OBJCOPY) --add-gnu-debuglink=$< $@
-ifdef UPX
-	$(call Echo,Compressing final executable...)
-	$(.)-$(upx) $@
-endif
+	$(upxcompress)
 
 # original executable with debugging symbols
 $(dbg) : $(objects) | $$(@D)/
@@ -349,6 +368,7 @@ $(dbg).txt : $(dbg)
 	$(call Echo,Dumping debugging info...)
 	$(.)$(OBJDUMP) $(OBJDUMP_OPTS) $< > $@
 	$(.)$(GZIP) $(GZIP_OPTS) $@
+endif
 
 # '::' means run unconditionally
 # this really updates comptime.h
