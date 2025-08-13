@@ -1,6 +1,6 @@
 # SRB2 - Which DLLs do I need to bundle?
 
-Updated 11/12/2023 (v1.4)
+Updated 08/12/2025 (v1.5)
 
 Here are the required DLLs, per build. For each architecture, copy all the binaries from these folders:
 
@@ -8,8 +8,6 @@ Here are the required DLLs, per build. For each architecture, copy all the binar
 * libs\SDL2\[i686/x86_64]...\bin
 * libs\SDL2mixerX\[i686/x86_64]...\bin
 * libs\libopenmpt\[x86/x86_64]...\bin\mingw
-
-and don't forget to build r_opengl.dll for srb2dd.
 
 ## srb2win, 32-bit
 
@@ -19,11 +17,9 @@ and don't forget to build r_opengl.dll for srb2dd.
 * libs\SDL2\i686-w64-mingw32\bin\SDL2.dll
 * libs\SDL2mixerX\i686-w64-mingw32\bin\*.dll (get everything)
 * libs\libopenmpt\x86\bin\mingw\libopenmpt.dll
-## rpc
+    # tsourdt3rd
 * libs\dll-binaries\i686\discord-rpc.dll
-## gamesdk
 * libs\discord-rpc/x86/discord_game_sdk.dll
-* libs\discord-rpc/x86/discord_game_sdk.dll.lib
 
 ## srb2win, 64-bit
 
@@ -34,8 +30,6 @@ and don't forget to build r_opengl.dll for srb2dd.
 * libs\SDL2mixerX\x86_64-w64-mingw32\bin\*.dll (get everything)
 * libs\libopenmpt\x86_64\bin\mingw\libopenmpt.dll
 * libs\SDL2_mixer\x86_64-w64-mingw32\bin\*.dll (get everything)
-## rpc
+    # tsourdt3rd
 * libs\dll-binaries\x86_64\discord-rpc.dll
-## gamesdk
 * libs\discord-rpc/x86_64/discord_game_sdk.dll
-* libs\discord-rpc/x86_64/discord_game_sdk.dll.lib
