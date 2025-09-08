@@ -22,11 +22,12 @@ extern "C" {
 //        Variables
 // ------------------------ //
 
-#define TSOURDT3RD_APP				"TSoURDt3rd"
-#define TSOURDT3RD_APP_FULL         "The Story of Uncapped-Revengence Discord the 3rd"
+#define TSOURDT3RD_APP				        "TSoURDt3rd"
+#define TSOURDT3RD_APP_FULL                 "The Story of Uncapped-Revengence Discord the 3rd"
 
-#define TSOURDT3RD_SRB2_APP_SHORT	SRB2APPLICATION"-"TSOURDT3RD_APP
-#define TSOURDT3RD_SRB2_APP_FULL	SRB2APPLICATION_FULLNAME" - "TSOURDT3RD_APP
+#define TSOURDT3RD_SRB2_APP_SHORT	        SRB2APPLICATION" - "TSOURDT3RD_APP
+#define TSOURDT3RD_SRB2_APP_SHORT_COMBINED	SRB2APPLICATION""TSOURDT3RD_APP
+#define TSOURDT3RD_SRB2_APP_FULL	        SRB2APPLICATION_FULLNAME" - "TSOURDT3RD_APP
 
 #define AUTOLOADCONFIGFILENAME "autoload.cfg"
 

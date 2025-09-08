@@ -28,10 +28,10 @@
 
 // Use Mixer interface?
 #ifdef HAVE_MIXER
-    #define SOUND SOUND_MIXER
-    #ifdef HW3SOUND
-    #undef HW3SOUND
-    #endif
+	#define SOUND SOUND_MIXER
+	#ifdef HW3SOUND
+	#undef HW3SOUND
+	#endif
 #endif
 
 // Use generic SDL interface.
@@ -43,13 +43,13 @@
 
 // Use FMOD?
 #ifdef HAVE_FMOD
-    #define SOUND SOUND_FMOD
-    #ifdef HW3SOUND
-    #undef HW3SOUND
-    #endif
+	#define SOUND SOUND_FMOD
+	#ifdef HW3SOUND
+	#undef HW3SOUND
+	#endif
 #else
-    // No more interfaces. :(
-    #define SOUND SOUND_DUMMY
+	// No more interfaces. :(
+	#define SOUND SOUND_DUMMY
 #endif
 
 #endif
@@ -137,6 +137,18 @@ FILE *fopenfile(const char*, const char*);
 #ifdef LOGMESSAGES
 extern FILE *logstream;
 extern char logfilename[1024];
+#endif
+
+#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON) || defined (HAVE_LIBBACKTRACE)
+#define UNIX_BACKTRACE
+#endif
+
+#if defined (UNIX_BACKTRACE) || defined (HAVE_BUGTRAP)
+#define CRASH_LOGFILE_NAME "srb2-crash-log.txt"
+#elif defined (HAVE_DRMINGW)
+#define CRASH_LOGFILE_NAME "srb2-crash-log.RPT"
+#else
+#define CRASH_LOGFILE_NAME "(unknown crash log)"
 #endif
 
 /* A mod name to further distinguish versions. */

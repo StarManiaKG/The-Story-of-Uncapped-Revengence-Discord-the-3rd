@@ -77,16 +77,14 @@ tsourdt3rd_menu_t TSoURDt3rd_TM_OP_ExtrasDef = {
 static void M_Sys_OpenGitlabModsURL_Select(INT32 choice)
 {
 	if (choice != MA_YES) return;
-	TSoURDt3rd_I_OpenURL(gitlab_mods_url);
+	I_OpenURL(gitlab_mods_url);
 }
 
 static void M_Sys_OpenGitlabModsURL(INT32 choice)
 {
 	(void)choice;
-
 	sprintf(gitlab_mods_url, "https://git.do.srb2.org/StarManiaKG/tsourdt3rd-assets/-/tree/%s/extras?ref_type=heads", compbranch);
-
-	if (TSoURDt3rd_I_CanOpenURL())
+	if (I_CanOpenURL())
 	{
 		TSoURDt3rd_M_StartMessage("TSoURDt3rd-Provided Mods",
 			"This will open a page in your default browser.\nAre you ok with that?",

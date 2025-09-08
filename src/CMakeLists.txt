@@ -276,6 +276,7 @@ target_compile_options(SRB2SDL2 PRIVATE
 		-Wformat-y2k
 		-Wformat-security
 		-fwrapv
+		-g
 
 		$<$<VERSION_LESS:$<C_COMPILER_VERSION>,2.9.5>:
 			-Wno-div-by-zero
@@ -344,6 +345,7 @@ target_compile_options(SRB2SDL2 PRIVATE
 		-Wno-error=constant-conversion
 		-Wno-error=unused-but-set-variable
 		-fwrapv
+		-g
 	>
 
 	# C, MSVC
@@ -402,7 +404,6 @@ if(SRB2_CONFIG_PACKETDROP)
 endif()
 if(NOT SRB2_CONFIG_EXECINFO)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DNOEXECINFO)
-	set(SRB2_CONFIG_DEBUGSYMBOLS OFF)
 	message(STATUS "You have disabled stack trace dump support")
 else()
 	# Set the appropriate stack track dumper
@@ -580,18 +581,16 @@ add_subdirectory(STAR)
 
 # strip debug symbols into separate file when using gcc.
 # to be consistent with Makefile, don't generate for OS X.
-if((CMAKE_COMPILER_IS_GNUCC) AND NOT ("${CMAKE_SYSTEM_NAME}" MATCHES Darwin) AND NOT (SRB2_CONFIG_DEBUGSYMBOLS))
-	if((${CMAKE_BUILD_TYPE} MATCHES Debug) OR (${CMAKE_BUILD_TYPE} MATCHES RelWithDebInfo))
-		if(${CMAKE_BUILD_TYPE} MATCHES Debug)
-			set(OBJCOPY_ONLY_KEEP_DEBUG "--only-keep-debug")
-		endif()
-		message(STATUS "Will make separate debug symbols in *.debug")
-		add_custom_command(TARGET SRB2SDL2 POST_BUILD
-			COMMAND ${OBJCOPY} ${OBJCOPY_ONLY_KEEP_DEBUG} $<TARGET_FILE:SRB2SDL2> $<TARGET_FILE:SRB2SDL2>.debug
-			COMMAND ${OBJCOPY} --strip-debug $<TARGET_FILE:SRB2SDL2>
-			COMMAND ${OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE:SRB2SDL2>.debug $<TARGET_FILE:SRB2SDL2>
-		)
+if((CMAKE_COMPILER_IS_GNUCC) AND NOT ("${CMAKE_SYSTEM_NAME}" MATCHES Darwin) AND (${SRB2_CONFIG_DEBUGSYMBOLS_SEPARATE}))
+	if(${CMAKE_BUILD_TYPE} MATCHES Debug)
+		set(OBJCOPY_ONLY_KEEP_DEBUG "--only-keep-debug")
 	endif()
+	message(STATUS "Will make separate debug symbols in *.debug")
+	add_custom_command(TARGET SRB2SDL2 POST_BUILD
+		COMMAND ${OBJCOPY} ${OBJCOPY_ONLY_KEEP_DEBUG} $<TARGET_FILE:SRB2SDL2> $<TARGET_FILE:SRB2SDL2>.debug
+		COMMAND ${OBJCOPY} --strip-debug $<TARGET_FILE:SRB2SDL2>
+		COMMAND ${OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE:SRB2SDL2>.debug $<TARGET_FILE:SRB2SDL2>
+	)
 else()
 	message(STATUS "Debug symbols will be included in the main build")
 endif()

@@ -51,22 +51,26 @@
 
 I_mutex con_mutex;
 
-#  define Lock_state()    I_lock_mutex(&con_mutex)
-#  define Unlock_state() I_unlock_mutex(con_mutex)
+// g_in_exiting_signal_handler is an evil hack
+// to avoid infinite SIGABRT recursion in the signal handler
+// due to poisoned locks or mach-o kernel not supporting locks in signals
+// or something like that. idk
+#  define Lock_state()    if (!g_in_exiting_signal_handler) { I_lock_mutex(&con_mutex); }
+#  define Unlock_state()  if (!g_in_exiting_signal_handler) { I_unlock_mutex(con_mutex); }
 
 static boolean con_started = false; // console has been initialised
-       boolean con_startup = false; // true at game startup
-       boolean con_refresh = false; // screen needs refreshing
+	   boolean con_startup = false; // true at game startup
+	   boolean con_refresh = false; // screen needs refreshing
 static boolean con_forcepic = true; // at startup toggle console translucency when first off
-       boolean con_recalc;          // set true when screen size has changed
+	   boolean con_recalc;          // set true when screen size has changed
 
 static tic_t con_tick; // console ticker for blinking prompt cursor
-                        // con_scrollup should use time (currenttime - lasttime)..
+						// con_scrollup should use time (currenttime - lasttime)..
 
 static boolean consoletoggle; // true when console key pushed, ticker will handle
 static boolean consoleready;  // console prompt is ready
 
-       INT32 con_destlines; // vid lines used by console at final position
+	   INT32 con_destlines; // vid lines used by console at final position
 static INT32 con_curlines;  // vid lines currently used by console
 
 static UINT8  con_hudlines;             // number of console heads up message lines
@@ -76,8 +80,8 @@ static UINT32 con_hudtime[MAXHUDLINES]; // remaining time of display for hud msg
 static char *con_line;          // console text output current line
 static size_t con_cx;           // cursor position in current line
 static size_t con_cy;           // cursor line number in con_buffer, is always
-                                // increasing, and wrapped around in the text
-                                // buffer using modulo.
+								// increasing, and wrapped around in the text
+								// buffer using modulo.
 
 static size_t con_totallines;      // lines of console text into the console buffer
 static size_t con_width;           // columns of chars, depend on vid mode width
@@ -1314,9 +1318,9 @@ boolean CON_Responder(event_t *ev)
 	if (key >= KEY_KEYPAD7 && key <= KEY_KPADDEL)
 	{
 		char keypad_translation[] = {'7','8','9','-',
-		                             '4','5','6','+',
-		                             '1','2','3',
-		                             '0','.'};
+									 '4','5','6','+',
+									 '1','2','3',
+									 '0','.'};
 
 		key = keypad_translation[key - KEY_KEYPAD7];
 	}

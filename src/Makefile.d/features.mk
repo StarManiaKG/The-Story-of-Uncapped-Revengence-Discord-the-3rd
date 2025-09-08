@@ -57,19 +57,20 @@ ZDEBUG=1
 opts+=-DHAVE_VALGRIND
 endif
 
-# (drmingw was our old crash debugger)
+# (drmingw was our old crash debugger on windows)
 ifndef NO_DRMINGW
 $(eval $(call Use_pkg_config,DRMINGW))
 opts+=-DHAVE_DRMINGW
 endif
 
-# (libbacktrace is our new crash debugger)
+# (libbacktrace is our new multiplatform crash debugger)
 ifndef NO_LIBBACKTRACE
+LIBBACKTRACE_PKGCONFIG?=libbacktrace
 $(eval $(call Use_pkg_config,LIBBACKTRACE))
 opts+=-DHAVE_LIBBACKTRACE
 endif
 
-# (BugTrap is another crash debugger)
+# (BugTrap is another crash debugger for windows)
 # Linked in-game, so we don't do anything else here
 ifdef HAVE_BUGTRAP
 opts+=-DHAVE_BUGTRAP
@@ -94,8 +95,11 @@ opts+=-DUSE_STUN
 ifdef HAVE_DISCORDRPC
   ifndef HAVE_DISCORDGAMESDK
     DISCORD_RPC_PKGCONFIG?=discord-rpc
-    $(eval $(call Use_pkg_config,DISCORD_RPC))
+    #$(eval $(call Use_pkg_config,DISCORD_RPC))
+    #$(eval $(call Configure,DISCORD_RPC,$(DISCORD_RPC)))
+    $(eval $(call Propogate_flags,DISCORD_RPC))
     opts+=-DHAVE_DISCORDRPC -DHAVE_DISCORDSUPPORT
+    libs+=-ldiscord-rpc # linux won't work without this
     DISCORD_SUPPORTED:=1
   else
     $(error \
@@ -107,10 +111,12 @@ endif
 ifdef HAVE_DISCORDGAMESDK
   ifndef HAVE_DISCORDRPC
     DISCORD_RPC_PKGCONFIG?=discord_game_sdk
-    $(eval $(call Use_pkg_config,DISCORD_RPC))
+    #$(eval $(call Use_pkg_config,DISCORD_GAME_SDK))
+    #$(eval $(call Configure,DISCORD_RPC,$(DISCORD_GAME_SDK)))
+    $(eval $(call Propogate_flags,DISCORD_GAME_SDK))
     opts+=-DHAVE_DISCORDGAMESDK -DHAVE_DISCORDSUPPORT
+    libs+=-ldiscord_game_sdk # linux won't work without this
     DISCORD_SUPPORTED:=1
-    $(eval $(call Use_pkg_config,DISCORD_GAME_SDK))
   else
     $(error \
       You can't have your cake and eat it too!\

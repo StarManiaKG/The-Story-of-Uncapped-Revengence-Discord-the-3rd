@@ -43,10 +43,6 @@
 //        Variables
 // ------------------------ //
 
-#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
-#define UNIXBACKTRACE
-#endif
-
 static const char *gamecontrollerdb_paths[] = {
 	"",
 	(PATHSEP "data" PATHSEP),
@@ -284,14 +280,12 @@ void TSoURDt3rd_I_QuakeWindow(int xd, int yd)
 }
 
 //
-// static const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean coredumped)
+// const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean coredumped)
 // Generates a Funny Crash Message Everytime TSoURDt3rd Crashes
 //
-static const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean coredumped)
+const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean coredumped)
 {
-	static const char *jokemsg;
-	char underscoremsg[256];
-	size_t i, tabend, current;
+	const char *jokemsg;
 
 	// If we crashed too early, the P_Rand or M_Rand functions may not have been initialized yet.
 	// So, just in case, let's initialize them!
@@ -302,7 +296,7 @@ static const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean 
 		P_SetRandSeed(M_RandomizedSeed());
 	}
 
-	// Come up With a Random Funny Joke //
+	// Come up With a Random Funny Joke! //
 	switch (M_RandomRange(0, 10))
 	{
 		// Static //
@@ -458,138 +452,7 @@ static const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean 
 			break;
 		}
 	}
-
-	// Underscore our Funny Crash Message, Return it, and We're Done :) //
-	memset(underscoremsg, 0, sizeof(underscoremsg));
-	for (i = current = 0; jokemsg[current]; i++, current++)
-	{
-		// Run Special Operations //
-		if (jokemsg[current] == '\t') // Tabs
-			for (tabend = i+8; i < tabend; i++)
-				underscoremsg[i] = '_';
-		else if (jokemsg[current] == '\n') // New Lines
-			i = 0;
-
-		// Uppercase Letters
-#if 0
-		else if ((isupper(jokemsg[current]) && !isupper(jokemsg[current+1]))
-#else
-		else if ((isupper(jokemsg[current]))
-#endif
-			&& (jokemsg[current+1] != ' ')
-			&& (jokemsg[current+1] != '\t')
-			&& (jokemsg[current+1] != '\n'))
-		{
-			underscoremsg[i++] = '_';
-		}
-
-		underscoremsg[i] = '_';
-	}
-
-	return va("%s\n%s", jokemsg, underscoremsg);
-}
-
-//
-// void TSoURDt3rd_I_ShowErrorMessageBox(const char *messagefordevelopers, const SDL_MessageBoxData *messageboxdata, int *buttonid, int num, boolean coredumped)
-//
-// Displays an error box popup when the game crashes,
-//	telling the user to check logfiiles for the reason as to why.
-//
-// Inspired by I_ShowErrorMessageBox() from Dr.Robotnik's Ring Racers!
-//
-void TSoURDt3rd_I_ShowErrorMessageBox(const char *messagefordevelopers, const SDL_MessageBoxData *messageboxdata, int *buttonid, int num, boolean coredumped)
-{
-	static char crash_reason_header[20];
-	static char underscoremsg[24];
-	static char finalmessage[2048];
-	static size_t underscore_interval = 0;
-
-	memset(crash_reason_header, 0, sizeof(crash_reason_header));
-	if (messagefordevelopers)
-	{
-		snprintf(crash_reason_header, sizeof(crash_reason_header), "\n\nCRASH REASON:\n");
-		while (underscore_interval < strlen(crash_reason_header))
-			underscoremsg[underscore_interval++] = '_';
-		underscoremsg[underscore_interval++] = '\n';
-		underscoremsg[underscore_interval++] = '\n';
-	}
-
-	snprintf(
-		finalmessage,
-		sizeof(finalmessage),
-			"%s\n"
-			"\n"
-			"\"SRB2 %s; %s\" has encountered an unrecoverable error and needs to close.\n"
-			"This is (usually) not your fault, but we encourage you to report it to the creator, StarManiaKG!\n"
-			"This should be done alongside your %s log file (%s).\n"
-			"\n"
-			"The information in the log file is generally useful for developers, like this mod's creator, and maybe even STJr too.\n"
-			"Developers can screw up, and we literally work for free, and some of us aren't even adults, so try to be nice and considerate!\n"
-			"The information may also be useful for server hosts and add-on creators too.\n"
-			"\n"
-			"To share any info regarding this crash, there are several things you can do:\n"
-			" - Visit the SRB2 Discord, using the button below.\n"
-			" - Reach out to StarManiaKG on Discord, by sending them a message.\n"
-			" - Visit TSoURDt3rd's message board post, using the button below.\n"
-			"\n"
-			"See you next game!\n"
-			"%s"
-			"%s"
-			"%s",
-		TSoURDt3rd_GenerateFunnyCrashMessage(num, coredumped),
-		SRB2VERSION, TSOURDT3RDVERSIONSTRING,
-#if defined (UNIXBACKTRACE)
-		"crash-log.txt"
-#elif defined (_WIN32)
-		".rpt crash dump"
-#endif
-		" (very important!) and",
-#ifdef LOGMESSAGES
-		logfilename[0] ? logfilename :
-#endif
-		"uh oh, one wasn't made!?",
-		crash_reason_header,
-		underscoremsg,
-		(messagefordevelopers ? messagefordevelopers : "")
-	);
-
-	// Just in case SDL_MessageBoxData is NULL
-	const SDL_MessageBoxButtonData tsourdt3rd_buttons[] = {
-		{ SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 0,		      "OK" },
-		{ 										0, 1,        "Discord" },
-		{ 										0, 2,  "Message Board" },
-	};
-	const SDL_MessageBoxData tsourdt3rd_messageboxdata = {
-		(messageboxdata ? messageboxdata->flags : SDL_MESSAGEBOX_ERROR),
-		(messageboxdata ? messageboxdata->window : NULL),
-		(messageboxdata ? messageboxdata->title :
-			("SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING" Recursive Error")),
-		finalmessage,
-		SDL_arraysize(tsourdt3rd_buttons),
-		tsourdt3rd_buttons,
-		(messageboxdata ? messageboxdata->colorScheme : NULL),
-	};
-	int tsourdt3rd_buttonid = (buttonid != NULL ? (*buttonid) : 0);
-
-	// Implement message box with SDL_ShowMessageBox,
-	// which should fail gracefully if it can't put a message box up
-	// on the target system
-	SDL_ShowMessageBox(&tsourdt3rd_messageboxdata, &tsourdt3rd_buttonid);
-	switch (tsourdt3rd_buttonid)
-	{
-		case 1:
-			if (buttonid == NULL)
-			{
-				// We can't rely on the base error handler for this one!
-				TSoURDt3rd_I_OpenURL("https://www.srb2.org/discord");
-			}
-			break;
-		case 2:
-			TSoURDt3rd_I_OpenURL("https://mb.srb2.org/addons/the-story-of-uncapped-revengence-discord-the-3rd.4932/");
-			break;
-		default:
-			break;
-	}
+	return jokemsg;
 }
 
 //

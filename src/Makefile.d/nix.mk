@@ -7,6 +7,16 @@ opts+=-DUNIXCOMMON -DLUA_USE_POSIX
 # instead of addresses
 libs+=-lm -rdynamic
 
+ifndef LINUX64
+32=32
+x86=x86
+i686=i686
+else
+32=64
+x86=x86_64
+i686=x86_64
+endif
+
 ifndef NOHW
 opts+=-I/usr/X11R6/include
 libs+=-L/usr/X11R6/lib
@@ -20,11 +30,11 @@ endif
 endif
 
 ifeq (${SDL},1)
-EXENAME?=srb2tsourdt3rd_linux
+EXENAME?=srb2tsourdt3rd_linux$(32)
 endif
 
 ifeq (${DEDICATED},1)
-EXENAME?=srb2tsourdt3rd_linux_dedicated
+EXENAME?=srb2tsourdt3rd_linux$(32)_dedicated
 endif
 
 # In common usage.
@@ -50,3 +60,5 @@ endif
 ifndef HAVE_LIBBACKTRACE
 NO_LIBBACKTRACE:=1
 endif
+NO_DRMINGW:=1
+NO_BUGTRAP:=1

@@ -23,6 +23,10 @@
 #include "../m_misc.h" /* path shit */
 #include "../i_system.h"
 
+#if defined (_WIN32)
+#include "../win32/win_dbg.h"
+#endif
+
 #if defined (__GNUC__) || defined (__unix__)
 #include <unistd.h>
 #endif
@@ -50,6 +54,13 @@
 extern int SDL_main(int argc, char *argv[]);
 #endif
 
+char srb2executablepath[1024];
+
+#ifdef HAVE_LIBBACKTRACE
+// <backtrace.h> is included in i_system.h
+struct backtrace_state *srb2_backtrace_state = NULL;
+#endif
+
 #ifdef LOGMESSAGES
 FILE *logstream = NULL;
 char logfilename[1024];
@@ -63,17 +74,6 @@ char logfilename[1024];
 #ifndef O_SEQUENTIAL
 #define O_SEQUENTIAL 0
 #endif
-#endif
-
-#if defined (_WIN32)
-#include "../win32/win_dbg.h"
-typedef BOOL (WINAPI *p_IsDebuggerPresent)(VOID);
-static HMODULE g_hmod_drmingw;
-#endif
-
-#ifdef LIBBACKTRACE
-#include <backtrace.h>
-static struct backtrace_state *backtrace;
 #endif
 
 #ifdef LOGMESSAGES
@@ -163,28 +163,15 @@ static void InitLogging(void)
 }
 #endif
 
-#ifdef LIBBACKTRACE
-/* Callback for each stack frame */
-static int libbacktrace_full_callback(void *data, uintptr_t pc, const char *filename, int lineno, const char *function) {
-    (void)data; // unused
-
-    if (filename)
-        printf("  %s:%d: %s\n", filename, lineno, function ? function : "??");
-    else
-        printf("  [unknown] (PC=0x%lx)\n", (unsigned long)pc);
-
-    return 0; // continue stack walk
-}
-
-/* Callback if something goes wrong */
-static void libbacktrace_error_callback(void *data, const char *msg, int errnum) {
-    (void)data; (void)errnum;
-    fprintf(stderr, "Error: %s\n", msg);
-}
-
-/* Function to print the backtrace */
-static void libbacktrace_print_stacktrace(void) {
-    backtrace_full(backtrace, 0, libbacktrace_full_callback, libbacktrace_error_callback, NULL);
+#ifdef _WIN32
+static void ChDirToExe(void)
+{
+	CHAR path[MAX_PATH];
+	if (GetModuleFileNameA(NULL, path, MAX_PATH) > 0)
+	{
+		strrchr(path, '\\')[0] = '\0';
+		SetCurrentDirectoryA(path);
+	}
 }
 #endif
 
@@ -207,7 +194,9 @@ int main(int argc, char **argv)
 #endif
 {
 	myargc = argc;
-	myargv = argv; /// \todo pull out path to exe from this string
+	myargv = argv;
+
+	snprintf(srb2executablepath, sizeof(srb2executablepath), "%s", myargv[0]);
 
 #ifdef HAVE_TTF
 #ifdef _WIN32
@@ -217,55 +206,36 @@ int main(int argc, char **argv)
 #endif
 #endif
 
+#ifdef _WIN32
+	ChDirToExe();
+#endif
+
 #ifdef LOGMESSAGES
 	if (!M_CheckParm("-nolog"))
 		InitLogging();
-#endif/*LOGMESSAGES*/
+#endif /* LOGMESSAGES */
 
 	//I_OutputMsg("I_StartupSystem() ...\n");
 	I_StartupSystem();
 
-#if defined (_WIN32)
-
-#if 0
-#if 0
-	g_hmod_drmingw = LoadLibrary("exchndl.dll");
-	LoadLibrary("exchndl.dll");
-#else
-	g_hmod_drmingw = GetModuleHandleA("exchndl.dll");
-	GetModuleHandleA("exchndl.dll");
-#endif
-#else
-	g_hmod_drmingw = LoadLibraryA("exchndl.dll");
-	LoadLibraryA("exchndl.dll");
-#endif
-
-	typedef void (APIENTRY *EXCHNDLINIT)(void);
-	EXCHNDLINIT pfnExcHndlInit = NULL;
-#if 1
-	pfnExcHndlInit = (EXCHNDLINIT)GetProcAddress(g_hmod_drmingw, "ExcHndlInit");
-	if (g_hmod_drmingw && pfnExcHndlInit)
+#ifdef HAVE_LIBBACKTRACE
+	if (!M_CheckParm("-nolibbacktrace"))
 	{
-		CONS_Printf("Setting up debugger.\n");
-		pfnExcHndlInit();
+		CONS_Printf("Setting up libbacktrace debugger...\n");
+		srb2_backtrace_state = backtrace_create_state(srb2executablepath, 1, NULL, NULL);
 	}
-#else
-	(void)pfnExcHndlInit;
-	if (g_hmod_drmingw)
-		CONS_Printf("Debugger initialized.\n");
+#endif /* HAVE_LIBBACKTRACE */
+
+#if defined (_WIN32)
+#ifdef HAVE_DRMINGW
+	// Open drmingw debugger
+	InitDrMingw();
 #endif
 
-#endif // defined (_WIN32)
-
-#ifdef BUGTRAP
+#ifdef HAVE_BUGTRAP
+	// Set up BugTrap...
 	InitBugTrap();
-#if defined (_WIN32) && !defined(__MINGW32__)
-	prevExceptionFilter = SetUnhandledExceptionFilter(RecordExceptionInfo);
 #endif
-#endif
-
-#ifdef LIBBACKTRACE
-	backtrace = backtrace_create_state(argv[0], 1, libbacktrace_error_callback, NULL);
 #endif
 
 	// startup SRB2
@@ -279,19 +249,7 @@ int main(int argc, char **argv)
 	// never return
 	D_SRB2Loop();
 
-#ifdef LIBBACKTRACE
-	libbacktrace_print_stacktrace();
-#endif
-
-#if defined (_WIN32)
-#if 1
-	// close debugger
-	if (g_hmod_drmingw)
-		FreeLibrary(g_hmod_drmingw);
-#endif
-#endif
-
-#ifdef BUGTRAP
+#if defined (_WIN32) && defined (HAVE_BUGTRAP)
 	// This is safe even if BT didn't start.
 	ShutdownBugTrap();
 #endif

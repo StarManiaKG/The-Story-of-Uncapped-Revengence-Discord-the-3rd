@@ -1691,6 +1691,15 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 
 			HWD.pfnDrawModel(md2->model, frame, durs, tics, nextFrame, &p, md2->scale * xs, md2->scale * ys, flip, hflip, &Surf);
 		}
+
+/// STAR NOTE: what \todo what ///
+#ifdef ALAM_LIGHTING
+#if 0
+	if (!(spr->mobj->flags2 & MF2_DEBRIS) && (spr->mobj->sprite != SPR_PLAY ||
+	 (spr->mobj->player && spr->mobj->player->powers[pw_super])))
+#endif
+		//HWR_DL_AddLightSprite(spr);
+#endif
 	}
 	return true;
 }

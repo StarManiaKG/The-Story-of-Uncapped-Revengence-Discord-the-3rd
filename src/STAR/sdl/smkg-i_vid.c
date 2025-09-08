@@ -55,23 +55,6 @@ static const char *Impl_TSoURDt3rd_Pads_GetName(INT32 joyindex)
 	return I_GetJoyName(joyindex);
 }
 
-//
-// URL-Parsing Junk
-//
-boolean TSoURDt3rd_I_CanOpenURL(void)
-{
-#if (SDL_VERSION_ATLEAST(2, 0, 14))
-	return true;
-#else
-	return false;
-#endif
-}
-void TSoURDt3rd_I_OpenURL(const char *data)
-{
-	if (TSoURDt3rd_I_CanOpenURL())
-		SDL_OpenURL(data);
-}
-
 // ====================================
 // EVENTS
 // ====================================

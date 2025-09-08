@@ -269,10 +269,7 @@ endif
 
 # manage stack trace dump options
 ifdef NOEXECINFO
-NO_DEBUGSYMBOLS:=1
-endif
-ifdef NO_DEBUGSYMBOLS
-NO_DEBUGSYMBOLS:=1
+DEBUGSYMBOLS_SEPARATE:=1
 endif
 
 # debug_opts also get passed to windres
@@ -346,7 +343,7 @@ else
 upxcompress:=
 endif
 
-ifndef NO_DEBUGSYMBOLS
+ifndef DEBUGSYMBOLS_SEPARATE
 # executable contains debugging symbols
 $(exe) : $(objects) | $$(@D)/
 	$(.)$(LD) -o $@ $^ $(libs)

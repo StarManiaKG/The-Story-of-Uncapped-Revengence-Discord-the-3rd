@@ -300,4 +300,15 @@ size_t I_GetRandomBytes(char *destination, size_t count)
   return actual_bytes;
 }
 
+boolean I_CanOpenURL(void)
+{
+	return false;
+}
+
+boolean I_OpenURL(const char *data)
+{
+	(void)data;
+  return false;
+}
+
 #include "../sdl/dosstr.c"

@@ -21,6 +21,10 @@
 /// \file
 /// \brief SRB2 system stuff for dedicated servers
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #include <signal.h>
 
 #ifdef _WIN32
@@ -66,7 +70,7 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #endif
 
 #if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
-#if defined (__linux__) || defined (__HAIKU__)
+#if defined (__linux__) || defined (__HAIKU__) || defined (__EMSCRIPTEN__)
 #include <sys/statvfs.h>
 #else
 #include <sys/statvfs.h>
@@ -90,6 +94,10 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #endif
 #endif
 
+#ifdef __EMSCRIPTEN__
+#undef HAVE_TERMIOS // do not read on /dev/tty, JavaScript alert() are blocking
+#endif
+
 #if defined(UNIXCOMMON)
 #include <poll.h>
 #endif
@@ -98,7 +106,9 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #include <errno.h>
 #include <sys/wait.h>
 #ifndef __HAIKU__ // haiku's crash dialog is just objectively better
+#ifndef __EMSCRIPTEN__ // WASM does not have a rell fork()
 #define NEWSIGNALHANDLER
+#endif
 #endif
 #endif
 
@@ -129,14 +139,6 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 
 #ifndef errno
 #include <errno.h>
-#endif
-
-#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
-#ifndef NOEXECINFO
-#include <execinfo.h>
-#endif
-#include <time.h>
-#define UNIXBACKTRACE
 #endif
 
 // Locations to directly check for srb2.pk3 in
@@ -176,6 +178,14 @@ static char returnWadPath[256];
 //Alam_GBC: SDL
 
 #include "../doomdef.h"
+
+#ifdef UNIX_BACKTRACE
+#if (defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)) && !defined (__EMSCRIPTEN__) && !defined (NOEXECINFO)
+#include <execinfo.h>
+#endif
+#include <time.h>
+#endif
+
 #include "../m_misc.h"
 #include "../i_time.h"
 #include "../i_video.h"
@@ -200,11 +210,16 @@ static char returnWadPath[256];
 #endif
 
 #include "../d_main.h"
+#include "../z_zone.h"
 
 #if !defined(NOMUMBLE) && defined(HAVE_MUMBLE)
 // Mumble context string
 #include "../netcode/d_clisrv.h"
 #include "../byteptr.h"
+#endif
+
+#if defined (_WIN32)
+#include "../win32/win_dbg.h"
 #endif
 
 // TSoURDt3rd
@@ -232,6 +247,268 @@ static size_t num_exit_funcs;
 static void (*exit_funcs[MAX_EXIT_FUNCS])(void);
 
 static boolean is_quitting = false;
+boolean g_in_exiting_signal_handler = false;
+
+static void I_PrintSignal(INT32 signal_num, boolean core_dumped, char *signal_name, char *signal_msg)
+{
+	char ttl[128];
+
+#define PRINT_SIGNAL(name, msg) \
+	sprintf(signal_name, "%s", name); \
+	sprintf(signal_msg, "%s", msg);
+
+	switch (signal_num)
+	{
+		case SIGILL: // illegal instruction - invalid function image
+			PRINT_SIGNAL("SIGILL", "SRB2 has attempted to execute an illegal instruction and needs to close.")
+			break;
+		case SIGFPE: // mathematical exception
+			PRINT_SIGNAL("SIGFPE", "SRB2 has encountered a mathematical exception and needs to close.")
+			break;
+		case SIGSEGV: // segment violation
+			PRINT_SIGNAL("SIGSEGV", "SRB2 has attempted to access a memory location that it shouldn't and needs to close.")
+			break;
+		case SIGABRT: // abnormal termination triggered by abort call
+			PRINT_SIGNAL("SIGABRT", "SRB2 was terminated by an abort signal.")
+			break;
+		default:
+			sprintf(ttl, "Signal number %d", signal_num);
+			PRINT_SIGNAL((core_dumped ? "Unknown signal" : ttl), "SRB2 was terminated by an unknown signal.")
+			break;
+	}
+	if (core_dumped)
+	{
+		if (signal_name)
+			sprintf(ttl, "%s (core dumped)", signal_name);
+		else
+			strcat(ttl, " (core dumped)");
+		sprintf(signal_name, "%s", ttl);
+	}
+
+#undef PRINT_SIGNAL
+}
+
+#ifdef UNIX_BACKTRACE
+enum { BUF_SIZE = 8192, BT_SIZE = 1024, STR_SIZE = 32 };
+
+#define CRASHLOG_SET_STRINGS(str) \
+	va_list argptr; \
+	char str[BUF_SIZE]; \
+	va_start(argptr, string); \
+	vsprintf(str, string, argptr); \
+	va_end(argptr);
+
+#define CRASHLOG_FILEWRITE_STRINGS(file) \
+	va_list argptr; \
+	va_start(argptr, string); \
+	vfprintf(file, string, argptr); \
+	va_end(argptr);
+
+static void crashlog_write_file(FILE *out, const char *string, ...)
+{
+	if (!out || errno == EINTR) return;
+	CRASHLOG_FILEWRITE_STRINGS(out)
+}
+
+static void crashlog_write_stderr(const char *string, ...)
+{
+	CRASHLOG_SET_STRINGS(buf)
+	I_OutputMsg("%s", buf);
+}
+
+static void crashlog_write_all(FILE *out, const char *string, ...)
+{
+	CRASHLOG_SET_STRINGS(buf)
+	crashlog_write_file(out, buf);
+	I_OutputMsg("%s", buf);
+}
+
+#undef CRASHLOG_SET_STRINGS
+#undef CRASHLOG_FILEWRITE_STRINGS
+
+#if defined (HAVE_LIBBACKTRACE) && !defined (NOEXECINFO)
+#define LIBBACKTRACE_SKIP 1 // Skip write_backtrace and signal handler
+
+typedef struct bt_buffer_s {
+	FILE *file;
+	char *pos;
+	size_t size;
+	boolean error;
+} bt_buffer_t;
+
+static void bt_error_callback(void *data, const char *msg, int errnum)
+{
+	bt_buffer_t *buf = (bt_buffer_t *)data;
+	if (errnum == -1)
+	{
+		// No debug info
+		crashlog_write_all(buf->file, "libbacktrace error: %s\n", msg);
+		buf->error = true;
+	}
+}
+
+static void bt_syminfo_callback(void *data, uintptr_t pc, const char *symname, uintptr_t symval, uintptr_t symsize)
+{
+	bt_buffer_t *buf = (bt_buffer_t *)data;
+	const char *sym_name = (symname ? symname : "???");
+	int n = snprintf(buf->pos, buf->size, "%p %s\n", (void *)pc, sym_name);
+
+	(void)symval;
+	(void)symsize;
+
+	buf->error = (n <= 0);
+	if (buf->error)
+	{
+		crashlog_write_all(buf->file, "libbacktrace: can't write simple backtrace\n");
+		buf->size = 0;
+		buf->error = true;
+		return;
+	}
+
+	crashlog_write_all(buf->file, buf->pos);
+	buf->pos += n;
+	buf->size -= n;
+}
+
+static int bt_simple_callback(void *data, uintptr_t pc)
+{
+	bt_buffer_t *buf = (bt_buffer_t *)data;
+	backtrace_syminfo(srb2_backtrace_state, pc, bt_syminfo_callback, NULL, data);
+	return buf->error;
+}
+
+static int bt_full_callback(void *data, uintptr_t pc, const char *filename, int lineno, const char *function)
+{
+	bt_buffer_t *buf = (bt_buffer_t *)data;
+	const char *function_name = (function ? function : "???");
+	const char *file_name = (filename ? filename : "???");
+	int n = snprintf(buf->pos, buf->size, "%p %s\n\t%s:%d\n", (void *)pc, function_name, file_name, lineno);
+
+	buf->error = (n <= 0);
+	if (buf->error)
+	{
+		// Fall back to simple backtrace, only prints function names
+		backtrace_simple(srb2_backtrace_state, LIBBACKTRACE_SKIP, bt_simple_callback, bt_error_callback, (void *)buf);
+		if (buf->error)
+		{
+			// Still can't write a backtrace? Just print this then.
+			crashlog_write_all(buf->file, "libbacktrace: can't write backtrace\n");
+			return 1;
+		}
+	}
+
+	crashlog_write_all(buf->file, buf->pos);
+	buf->pos += n;
+	buf->size -= n;
+	buf->error = (!buf->size);
+	return buf->error;
+}
+#endif // defined (HAVE_LIBBACKTRACE) && !defined (NOEXECINFO)
+
+static void write_backtrace(INT32 signal)
+{
+	const char *error = "An error occurred within Sonic Robo Blast 2! Send this stack trace to someone who can help!\n";
+	const char *error_stderr = "(Or find "CRASH_LOGFILE_NAME" in your SRB2 directory.)"; // Shown only to stderr.
+
+	const char *filename = va("%s" PATHSEP CRASH_LOGFILE_NAME, srb2home);
+	FILE *out = fopen(filename, "a+");
+	time_t rawtime;
+	char timestr[STR_SIZE];
+	char sig_name[512], sig_msg[512];
+
+	if (!out) // File handle error
+		crashlog_write_stderr("\nWARNING: Couldn't open crash log for writing! Make sure your permissions are correct. Please save the below report!\n");
+
+	crashlog_write_file(out, "------------------------\n"); // Nice looking seperator
+
+	crashlog_write_all(out, "\n"); // Newline to look nice for both outputs.
+	crashlog_write_all(out, error); // "Oops, SRB2 crashed" message
+	crashlog_write_stderr(error_stderr); // If the crash log exists, tell the user where the crash log is.
+	crashlog_write_all(out, "\n"); // Newline to look nice for both outputs.
+
+	// Get the current platform that this crash occured on.
+	crashlog_write_file(out, "Dedicated build\n");
+	crashlog_write_file(out, "Platform: %s", I_GetSysName());
+	crashlog_write_file(out, "\n"); // newline
+
+	// Tell the log what SRB2's compdata is.
+	crashlog_write_file(out, "Compdata: %s %s, commit %s, branch %s", compdate, comptime, comprevision, compbranch);
+	crashlog_write_file(out, "\n"); // newline
+
+	// Get the current time as a string.
+	// This allows us to tell the log when we crashed.
+	time(&rawtime);
+#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
+	struct tm timeinfo;
+	localtime_r(&rawtime, &timeinfo);
+	strftime(timestr, STR_SIZE, "%a, %d %b %Y %T %z", &timeinfo);
+	crashlog_write_file(out, "Time of crash: %s", timestr);
+	crashlog_write_file(out, "\n");
+#else
+	struct tm *timeinfo = localtime(&rawtime);
+	asctime_s(timestr, STR_SIZE, timeinfo);
+	crashlog_write_file(out, "Time of crash: %s", timestr);
+#endif
+
+	// Tell the log what map we were on at the time.
+	if (gamestate == GS_LEVEL && gamemap)
+	{
+		char *map_title = G_BuildMapTitle(gamemap);
+		const char *map_name = G_BuildMapName(gamemap);
+		if (map_title && map_name)
+		{
+			crashlog_write_file(out, "Map: %s (%s)", map_title, map_name);
+			Z_Free(map_title);
+		}
+		else if (map_name)
+			crashlog_write_file(out, "Map: %s", map_name);
+		crashlog_write_file(out, "\n");
+	}
+
+	// Give the crash log the cause.
+	// The signal is given to the user when the parent process sees we crashed.
+	I_PrintSignal(signal, false, sig_name, sig_msg);
+	crashlog_write_file(out, "Cause: %s (%s)", sig_name, sig_msg);
+	crashlog_write_file(out, "\n"); // Newline for the signal name
+
+	// Give the crash log a nice 'Backtrace:' thing
+	// Try to get full backtrace, it will print files and line numbers
+#ifdef NOEXECINFO
+	crashlog_write_all(out, "\nNo Backtrace support\n");
+#else
+	crashlog_write_all(out, "\nBacktrace:\n");
+#ifdef HAVE_LIBBACKTRACE
+	char buf_pos_backtrace[BUF_SIZE];
+	bt_buffer_t buf = { .file = out, .pos = buf_pos_backtrace, .size = BUF_SIZE, .error = false };
+	if (srb2_backtrace_state)
+		backtrace_full(srb2_backtrace_state, LIBBACKTRACE_SKIP, bt_full_callback, bt_error_callback, (void *)&buf);
+	else
+		crashlog_write_all(out, "Can't write backtrace!\n");
+#else
+	// Flood the output and log with the backtrace
+	void *funcptrs[BT_SIZE];
+	size_t backtracesize = backtrace(funcptrs, BT_SIZE);
+	char **backtracesymbols = backtrace_symbols(funcptrs, backtracesize);
+	for (size_t symbol = 0; symbol < backtracesize; symbol++)
+	{
+		if (!backtracesymbols[symbol]) continue;
+		crashlog_write_all(out, "%s\n", backtracesymbols[symbol]);
+	}
+#endif // HAVE_LIBBACKTRACE
+#endif // NOEXECINFO
+
+	crashlog_write_all(out, "\n"); // Write another newline to the log so it looks nice :)
+	if (out)
+		fclose(out);
+}
+#endif // UNIX_BACKTRACE
+
+static void I_ReportSignal(int num, int coredumped)
+{
+	char signame[512], sigmsg[512];
+	I_PrintSignal(num, coredumped, signame, sigmsg);
+	I_OutputMsg("Process killed by signal: %s\n", signame);
+}
 
 #ifdef __linux__
 #define MEMINFO_FILE "/proc/meminfo"
@@ -1157,6 +1434,15 @@ void I_OsPolling(void)
 		I_GetConsoleEvents();
 }
 
+static ATTRNORETURN void signal_handler(INT32 num)
+{
+	g_in_exiting_signal_handler = true;
+	I_ReportSignal(num, 0);
+#ifdef UNIX_BACKTRACE
+	write_backtrace(num);
+#endif
+}
+
 FUNCNORETURN static ATTRNORETURN void quit_handler(int num)
 {
 	(void)num;
@@ -1176,10 +1462,22 @@ static void I_RegisterSignals (void)
 	sigaction(SIGINT, &sig, NULL);
 	sig.sa_handler = quit_handler;
 	sigaction(SIGTERM, &sig, NULL);
+	sig.sa_handler = signal_handler;
+	sigaction(SIGILL, &sig, NULL);
+	sig.sa_handler = signal_handler;
+	sigaction(SIGSEGV, &sig, NULL);
+	sig.sa_handler = signal_handler;
+	sigaction(SIGABRT, &sig, NULL);
+	sig.sa_handler = signal_handler;
+	sigaction(SIGFPE, &sig, NULL);
 #else
-	signal(SIGINT, quit_handler);
+	signal(SIGINT,   quit_handler);
 	signal(SIGBREAK, quit_handler);
-	signal(SIGTERM, quit_handler);
+	signal(SIGTERM,  quit_handler);
+	signal(SIGILL,   signal_handler);
+	signal(SIGSEGV,  signal_handler);
+	signal(SIGABRT,  signal_handler);
+	signal(SIGFPE,   signal_handler);
 #endif
 }
 
@@ -1571,6 +1869,17 @@ void I_SetTextInputMode(boolean active)
 
 boolean I_GetTextInputMode(void)
 {
+	return false;
+}
+
+boolean I_CanOpenURL(void)
+{
+	return false;
+}
+
+boolean I_OpenURL(const char *data)
+{
+	(void)data;
 	return false;
 }
 

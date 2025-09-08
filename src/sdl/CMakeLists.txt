@@ -321,14 +321,11 @@ else()
 	install(TARGETS SRB2SDL2 SRB2SDL2
 		RUNTIME DESTINATION .
 	)
-	if ((${CMAKE_BUILD_TYPE} MATCHES Debug) OR (${CMAKE_BUILD_TYPE} MATCHES RelWithDebInfo))
-		set(SRB2_DEBUG_INSTALL OFF CACHE BOOL "Insert *.debug file into the install directory or package.")
-		if (${SRB2_DEBUG_INSTALL})
-			install(FILES $<TARGET_FILE:SRB2SDL2>.debug
-				DESTINATION .
-				OPTIONAL
-			)
-		endif()
+	if (${SRB2_CONFIG_DEBUGSYMBOLS_SEPARATE})
+		install(FILES $<TARGET_FILE:SRB2SDL2>.debug
+			DESTINATION .
+			OPTIONAL
+		)
 	endif()
 endif()
 

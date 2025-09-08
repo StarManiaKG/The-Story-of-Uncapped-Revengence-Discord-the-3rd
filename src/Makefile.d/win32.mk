@@ -140,14 +140,14 @@ endif
 ifdef HAVE_DISCORDRPC
   lib:=../libs/discord-rpc/win$(32)-dynamic
   DISCORD_RPC_opts:=-I$(lib)/include
-  DISCORD_RPC_libs:=-L$(lib)/lib -ldiscord-rpc
+  DISCORD_RPC_libs:=-L$(lib)/lib
   $(eval $(call _set,DISCORD_RPC))
 endif
 
 ifdef HAVE_DISCORDGAMESDK
   lib:=../libs/discord_game_sdk
   DISCORD_GAME_SDK_opts:=-I$(lib)/include
-  DISCORD_GAME_SDK_libs:=-L$(lib)/$(x86) -ldiscord_game_sdk
+  DISCORD_GAME_SDK_libs:=-L$(lib)/$(x86)
   $(eval $(call _set,DISCORD_GAME_SDK))
 endif
 

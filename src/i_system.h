@@ -34,6 +34,16 @@ extern UINT8 graphics_started;
 */
 extern UINT8 keyboard_started;
 
+/** \brief Set to true when inside a signal handler that will exit the program. */
+extern boolean g_in_exiting_signal_handler;
+
+#ifdef HAVE_LIBBACKTRACE
+#include <backtrace.h>
+/**	\brief Our new debugging system
+*/
+extern struct backtrace_state *srb2_backtrace_state;
+#endif
+
 /**	\brief	The I_GetFreeMem function
 
 	\param	total	total memory in the system
@@ -43,7 +53,7 @@ extern UINT8 keyboard_started;
 size_t I_GetFreeMem(size_t *total);
 
 /**	\brief	Returns precise time value for performance measurement. The precise
-            time should be a monotonically increasing counter, and will wrap.
+			time should be a monotonically increasing counter, and will wrap.
 			precise_t is internally represented as an unsigned integer and
 			integer arithmetic may be used directly between values of precise_t.
   */
@@ -54,7 +64,7 @@ precise_t I_GetPreciseTime(void);
 size_t I_GetRandomBytes(char *destination, size_t count);
 
 /** \brief  Get the precision of precise_t in units per second. Invocations of
-            this function for the program's duration MUST return the same value.
+			this function for the program's duration MUST return the same value.
   */
 UINT64 I_GetPrecisePrecision(void);
 
@@ -63,7 +73,7 @@ UINT64 I_GetPrecisePrecision(void);
 double I_GetFrameTime(void);
 
 /**	\brief	Sleeps for the given duration in milliseconds. Depending on the
-            operating system's scheduler, the calling thread may give up its
+			operating system's scheduler, the calling thread may give up its
 			time slice for a longer duration. The implementation should give a
 			best effort to sleep for the given duration, without spin-locking.
 			Calling code should check the current precise time after sleeping
@@ -346,5 +356,13 @@ void I_SetTextInputMode(boolean active);
 /** \brief Retrieves current text input mode.
  */
 boolean I_GetTextInputMode(void);
+
+/** \brief Return if we can open a URL.
+ */
+boolean I_CanOpenURL(void);
+
+/** \brief Attempts to open a provided URL.
+ */
+boolean I_OpenURL(const char *data);
 
 #endif

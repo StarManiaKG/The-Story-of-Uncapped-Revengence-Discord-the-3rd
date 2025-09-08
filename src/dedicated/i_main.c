@@ -14,9 +14,13 @@
 #include "../doomdef.h"
 #include "../m_argv.h"
 #include "../d_main.h"
-#include "../m_misc.h"/* path shit */
+#include "../m_misc.h" /* path shit */
 #include "../i_system.h"
 #include "../netcode/d_clisrv.h"
+
+#if defined (_WIN32)
+#include "../win32/win_dbg.h"
+#endif
 
 #if defined (__GNUC__) || defined (__unix__)
 #include <unistd.h>
@@ -26,7 +30,14 @@
 #include <errno.h>
 #endif
 
-#include "time.h" // For log timestamps
+#include <time.h> // For log timestamps
+
+char srb2executablepath[1024];
+
+#ifdef HAVE_LIBBACKTRACE
+// <backtrace.h> is included in i_system.h
+struct backtrace_state *srb2_backtrace_state = NULL;
+#endif
 
 #ifdef LOGMESSAGES
 FILE *logstream = NULL;
@@ -41,11 +52,6 @@ char logfilename[1024];
 #ifndef O_SEQUENTIAL
 #define O_SEQUENTIAL 0
 #endif
-#endif
-
-#if defined (_WIN32)
-#include "../win32/win_dbg.h"
-typedef BOOL (WINAPI *p_IsDebuggerPresent)(VOID);
 #endif
 
 #ifdef LOGMESSAGES
@@ -135,6 +141,18 @@ static void InitLogging(void)
 }
 #endif
 
+#ifdef _WIN32
+static void ChDirToExe(void)
+{
+	CHAR path[MAX_PATH];
+	if (GetModuleFileNameA(NULL, path, MAX_PATH) > 0)
+	{
+		strrchr(path, '\\')[0] = '\0';
+		SetCurrentDirectoryA(path);
+	}
+}
+#endif
+
 
 /**	\brief	The main function
 
@@ -154,6 +172,12 @@ int main(int argc, char **argv)
 
 	dedicated = true;
 
+	snprintf(srb2executablepath, sizeof(srb2executablepath), "%s", myargv[0]);
+
+#ifdef _WIN32
+	ChDirToExe();
+#endif
+
 #ifdef LOGMESSAGES
 	if (!M_CheckParm("-nolog"))
 		InitLogging();
@@ -161,10 +185,24 @@ int main(int argc, char **argv)
 
 	//I_OutputMsg("I_StartupSystem() ...\n");
 	I_StartupSystem();
+
+#ifdef HAVE_LIBBACKTRACE
+	if (!M_CheckParm("-nolibbacktrace"))
+	{
+		CONS_Printf("Setting up libbacktrace debugger...\n");
+		srb2_backtrace_state = backtrace_create_state(srb2executablepath, 1, NULL, NULL);
+	}
+#endif /* HAVE_LIBBACKTRACE */
+
 #if defined (_WIN32)
-	LoadLibraryA("exchndl.dll");
-#ifndef __MINGW32__
-	prevExceptionFilter = SetUnhandledExceptionFilter(RecordExceptionInfo);
+#ifdef HAVE_DRMINGW
+	// Open drmingw debugger
+	InitDrMingw();
+#endif
+
+#ifdef HAVE_BUGTRAP
+	// Set up BugTrap...
+	InitBugTrap();
 #endif
 #endif
 
@@ -179,7 +217,7 @@ int main(int argc, char **argv)
 	// never return
 	D_SRB2Loop();
 
-#ifdef BUGTRAP
+#if defined (_WIN32) && defined (HAVE_BUGTRAP)
 	// This is safe even if BT didn't start.
 	ShutdownBugTrap();
 #endif

@@ -221,5 +221,16 @@ boolean I_GetTextInputMode(void)
 	return false;
 }
 
+boolean I_CanOpenURL(void)
+{
+	return false;
+}
+
+boolean I_OpenURL(const char *data)
+{
+	(void)data;
+	return false;
+}
+
 #include "../sdl/dosstr.c"
 

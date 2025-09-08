@@ -20,75 +20,141 @@
 
 
 #include <tchar.h>
+
 #ifndef HAVE_SDL
 #include "win_main.h"
 #endif
-#include "../doomdef.h" //just for VERSION
+
+#ifdef HAVE_DRMINGW
+#include "exchndl.h"
+#endif
+
+#ifdef HAVE_BUGTRAP
+#include "BugTrap.h"
+#endif
+
 #include "win_dbg.h"
-#include "../m_argv.h" //print the parameter in the log
+#include "../doomdef.h" // just for VERSION
+#include "../m_argv.h" // print the parameter in the log
 
 // TSoURDt3rd
 #include "../STAR/star_vars.h" // TSOURDT3RDVERSIONSTRING //
 
 LPTOP_LEVEL_EXCEPTION_FILTER prevExceptionFilter = NULL;
 
-#ifdef BUGTRAP
+#ifdef HAVE_DRMINGW
 
+// --------------------------------------------------------------------------
+// Initialises the DrMingw exception-handling library. Returns true if
+// successful.
+// --------------------------------------------------------------------------
+BOOL InitDrMingw(void)
+{
+	if (M_CheckParm("-nodrmingw"))
+		return FALSE;
 
-typedef void (APIENTRY *BT_SETSUPPORTURL)(LPCTSTR pszSupportURL);
-typedef void (APIENTRY *BT_SETFLAGS)(DWORD dwFlags);
-typedef void (APIENTRY *BT_SETAPPNAME)(LPCTSTR pszAppName);
-typedef void (APIENTRY *BT_SETAPPVERSION)(LPCTSTR pszAppVersion);
-typedef void (APIENTRY *BT_SETSUPPORTSERVER)(LPCTSTR pszSupportHost, SHORT nSupportPort);
+	CONS_Printf("Setting up DrMingw debugger...\n");
+	ExcHndlInit();
+	ExcHndlSetLogFileNameA(CRASH_LOGFILE_NAME);
+	return TRUE;
+}
+
+// --------------------------------------------------------------------------
+//   Simple test to check whether Mingw is loaded without exposing its
+//   handle.
+// --------------------------------------------------------------------------
+BOOL IsDrMingwLoaded(void)
+{
+	return !!(M_CheckParm("-nodrmingw"));
+}
+
+#endif // HAVE_DRMINGW
+
+#ifdef HAVE_BUGTRAP
 
 // BT constant definitions that we use, as given in the docs.
 #define BTF_DETAILEDMODE 0x01
 #define BTF_ATTACHREPORT 0x04
 
+typedef BOOL (WINAPI *p_IsDebuggerPresent)(VOID);
+static HMODULE g_hmodBugTrap = NULL;
 
-static HMODULE g_hmodBugTrap;
+typedef void (APIENTRY *API_BT_SetAppName)(LPCTSTR pszAppName);
+typedef void (APIENTRY *API_BT_SetAppVersion)(LPCTSTR pszAppVersion);
+typedef void (APIENTRY *API_BT_SetFlags)(DWORD dwFlags);
+typedef void (APIENTRY *API_BT_SetSupportURL)(LPCTSTR pszSupportURL);
+typedef void (APIENTRY *API_BT_SetSupportServer)(LPCTSTR pszSupportHost, SHORT nSupportPort);
+typedef void (APIENTRY *API_BT_InstallSehFilter)(void);
 
+#define BUGTRAP_INSTALL_MODULE(module, ...) \
+	if (module != NULL) \
+	{ \
+		lpfn##module = (API_##module)GetProcAddress(g_hmodBugTrap, #module); \
+		lpfn##module(__VA_ARGS__); \
+	} \
+	else \
+	{ \
+		ShutdownBugTrap(); \
+		return FALSE; \
+	}
+
+#ifdef UNICODE
+	#if defined (_X86_)
+		const char *bugtrap_dll = L"BugTrapU.dll";
+	#elif defined (_AMD64_)
+		const char *bugtrap_dll = L"BugTrapU-x64.dll";
+	#else
+		const char *bugtrap_dll = NULL;
+	#endif
+#else
+	#if defined (_X86_)
+		const char *bugtrap_dll = "BugTrap.dll";
+	#elif defined (_AMD64_)
+		const char *bugtrap_dll = "BugTrap-x64.dll";
+	#else
+		const char *bugtrap_dll = NULL;
+	#endif
+#endif
 
 // --------------------------------------------------------------------------
-// Initialises the Bug Trap exception-handling library. Returns true iff
+// Initialises the Bug Trap exception-handling library. Returns true if
 // successful.
 // --------------------------------------------------------------------------
 BOOL InitBugTrap(void)
 {
-	BT_SETFLAGS lpfnBT_SetFlags;
-	BT_SETSUPPORTURL lpfnBT_SetSupportURL;
-	BT_SETAPPNAME lpfnBT_SetAppName;
-	BT_SETAPPVERSION lpfnBT_SetAppVersion;
-	BT_SETSUPPORTSERVER lpfnBT_SetSupportServer;
+	API_BT_SetFlags lpfnBT_SetFlags;
+	API_BT_SetSupportURL lpfnBT_SetSupportURL;
+	API_BT_SetAppName lpfnBT_SetAppName;
+	API_BT_SetAppVersion lpfnBT_SetAppVersion;
+	API_BT_SetSupportServer lpfnBT_SetSupportServer;
 
-	// Loading the library installs the exception handler.
-#ifdef UNICODE
-	g_hmodBugTrap = LoadLibrary(L"BugTrapU.dll");
-#else
-	g_hmodBugTrap = LoadLibrary("BugTrap.dll");
+	// Setup DLL, to install the exception handler.
+	if (M_CheckParm("-nobugtrap"))
+		return FALSE;
+	if (bugtrap_dll)
+		g_hmodBugTrap = LoadLibraryA(bugtrap_dll);
+	if (g_hmodBugTrap == NULL)
+		return FALSE;
+	CONS_Printf("Setting up BugTrap debugger...\n");
+
+	// Setup exception handler
+	BUGTRAP_INSTALL_MODULE(BT_SetAppName, TEXT(TSOURDT3RD_SRB2_APP_FULL))
+	BUGTRAP_INSTALL_MODULE(BT_SetAppVersion, TEXT(VERSIONSTRING))
+	BUGTRAP_INSTALL_MODULE(BT_SetFlags, (BTF_DETAILEDMODE | BTF_ATTACHREPORT))
+	BUGTRAP_INSTALL_MODULE(BT_SetSupportURL, TEXT("http://www.srb2.org/"))
+	BUGTRAP_INSTALL_MODULE(BT_SetAppVersion, TEXT("srb2.org"), 9999)
+
+	// required for VS 2005 & 2008
+	BUGTRAP_INSTALL_MODULE(BT_InstallSehFilter)
+
+	// Debugger initialized!
+#if !defined (__MINGW32__)
+	prevExceptionFilter = SetUnhandledExceptionFilter(RecordExceptionInfo);
 #endif
-
-	// Get the functions.
-	lpfnBT_SetFlags = (BT_SETFLAGS)GetProcAddress(g_hmodBugTrap, "BT_SetFlags");
-	lpfnBT_SetSupportURL = (BT_SETSUPPORTURL)GetProcAddress(g_hmodBugTrap, "BT_SetSupportURL");
-	lpfnBT_SetAppName = (BT_SETAPPNAME)GetProcAddress(g_hmodBugTrap, "BT_SetAppName");
-	lpfnBT_SetAppVersion = (BT_SETAPPVERSION)GetProcAddress(g_hmodBugTrap, "BT_SetAppVersion");
-	lpfnBT_SetSupportServer = (BT_SETSUPPORTSERVER)GetProcAddress(g_hmodBugTrap, "BT_SetSupportServer");
-
-	if (g_hmodBugTrap)
-	{
-		lpfnBT_SetAppName(TEXT("Sonic Robo Blast 2; TSoURDt3rd"));
-		lpfnBT_SetAppVersion(TEXT(VERSIONSTRING));
-		lpfnBT_SetFlags(BTF_DETAILEDMODE | BTF_ATTACHREPORT);
-		lpfnBT_SetSupportURL(TEXT("http://www.srb2.org/"));
-		lpfnBT_SetSupportServer(TEXT("srb2.org"), 9999);
-
-		return TRUE;
-	}
-
-	return FALSE;
+	return TRUE;
 }
 
+#undef BUGTRAP_INSTALL_MODULE
 
 // --------------------------------------------------------------------------
 //   Removes the BugTrap exception handler. Safe to call even if BT was never
@@ -96,7 +162,12 @@ BOOL InitBugTrap(void)
 // --------------------------------------------------------------------------
 void ShutdownBugTrap(void)
 {
-	if (g_hmodBugTrap) FreeLibrary(g_hmodBugTrap);
+	if (g_hmodBugTrap)
+	{
+		FreeLibrary(g_hmodBugTrap);
+		g_hmodBugTrap = NULL;
+	}
+	prevExceptionFilter = NULL;
 }
 
 // --------------------------------------------------------------------------
@@ -105,21 +176,19 @@ void ShutdownBugTrap(void)
 // --------------------------------------------------------------------------
 BOOL IsBugTrapLoaded(void)
 {
-	return !!g_hmodBugTrap;
+	return !!(g_hmodBugTrap);
 }
 
-#endif		// (defined BUGTRAP)
+#endif // HAVE_BUGTRAP
 
-
-#define NumCodeBytes    16          // Number of code bytes to record.
+#define NumCodeBytes    16      // Number of code bytes to record.
 #define MaxStackDump    2048    // Maximum number of DWORDS in stack dumps.
-#define StackColumns    8               // Number of columns in stack dump.
+#define StackColumns    8       // Number of columns in stack dump.
 
 #define ONEK                    1024
 #define SIXTYFOURK              (64*ONEK)
 #define ONEM                    (ONEK*ONEK)
 #define ONEG                    (ONEK*ONEK*ONEK)
-
 
 // --------------------------------------------------------------------------
 // return a description for an ExceptionCode
@@ -197,13 +266,12 @@ static VOID FPrintf(HANDLE fileHandle, LPCSTR lpFmt, ...)
 static VOID PrintTime(LPSTR output, FILETIME TimeToPrint)
 {
 	WORD Date, Time;
-	if (FileTimeToLocalFileTime(&TimeToPrint, &TimeToPrint) &&
-		FileTimeToDosDateTime(&TimeToPrint, &Date, &Time))
+	if (FileTimeToLocalFileTime(&TimeToPrint, &TimeToPrint) && FileTimeToDosDateTime(&TimeToPrint, &Date, &Time))
 	{
 		// What a silly way to print out the file date/time.
 		wsprintfA(output, "%d/%d/%d %02d:%02d:%02d",
-		          (Date / 32) & 15, Date & 31, (Date / 512) + 1980,
-		          (Time / 2048), (Time / 32) & 63, (Time & 31) * 2);
+				  (Date / 32) & 15, Date & 31, (Date / 512) + 1980,
+				  (Time / 2048), (Time / 32) & 63, (Time & 31) * 2);
 	}
 	else
 		output[0] = 0;
@@ -246,10 +314,11 @@ static VOID ShowModuleInfo(HANDLE LogFile, HMODULE ModuleHandle)
 			DosHeader = (IMAGE_DOS_HEADER*)ModuleHandle;
 			if (IMAGE_DOS_SIGNATURE != DosHeader->e_magic)
 				return;
-			NTHeader = (IMAGE_NT_HEADERS*)((char *)DosHeader
-				+ DosHeader->e_lfanew);
+
+			NTHeader = (IMAGE_NT_HEADERS*)((char *)DosHeader + DosHeader->e_lfanew);
 			if (IMAGE_NT_SIGNATURE != NTHeader->Signature)
 				return;
+
 			// Open the code module file so that we can get its file date
 			// and size.
 			ModuleFile = CreateFileA(ModName, GENERIC_READ,
@@ -343,8 +412,6 @@ static VOID RecordSystemInformation(HANDLE fileHandle)
 	FILETIME     CurrentTime;
 	CHAR         TimeBuffer[100];
 	CHAR         ModuleName[MAX_PATH];
-	CHAR         UserName[200];
-	DWORD        UserNameSize;
 	SYSTEM_INFO  SystemInfo;
 	MEMORYSTATUS MemInfo;
 
@@ -354,26 +421,23 @@ static VOID RecordSystemInformation(HANDLE fileHandle)
 
 	if (GetModuleFileNameA(NULL, ModuleName, sizeof(ModuleName)) <= 0)
 		strcpy(ModuleName, "Unknown");
-	UserNameSize = sizeof(UserName);
-	if (!GetUserNameA(UserName, &UserNameSize))
-		strcpy(UserName, "Unknown");
-	FPrintf(fileHandle, "%s, run by %s.\r\n", ModuleName, UserName);
+	FPrintf(fileHandle, "%s.\r\n", ModuleName);
 
 	GetSystemInfo(&SystemInfo);
 	FPrintf(fileHandle, "%d processor(s), type %d %d.%d.\r\n"
-	        "Program Memory from 0x%p to 0x%p\r\n",
-	        SystemInfo.dwNumberOfProcessors,
-	        SystemInfo.dwProcessorType,
-	        SystemInfo.wProcessorLevel,
-	        SystemInfo.wProcessorRevision,
-	        SystemInfo.lpMinimumApplicationAddress,
-	        SystemInfo.lpMaximumApplicationAddress);
+			"Program Memory from 0x%p to 0x%p\r\n",
+			SystemInfo.dwNumberOfProcessors,
+			SystemInfo.dwProcessorType,
+			SystemInfo.wProcessorLevel,
+			SystemInfo.wProcessorRevision,
+			SystemInfo.lpMinimumApplicationAddress,
+			SystemInfo.lpMaximumApplicationAddress);
 
 	MemInfo.dwLength = sizeof(MemInfo);
 	GlobalMemoryStatus(&MemInfo);
+
 	// Print out the amount of physical memory, rounded up.
-	FPrintf(fileHandle, "%d MBytes physical memory.\r\n", (MemInfo.dwTotalPhys +
-	        ONEM - 1) / ONEM);
+	FPrintf(fileHandle, "%d MBytes physical memory.\r\n", (MemInfo.dwTotalPhys + ONEM - 1) / ONEM);
 }
 
 // --------------------------------------------------------------------------
@@ -409,8 +473,9 @@ LONG WINAPI RecordExceptionInfo(PEXCEPTION_POINTERS data/*, LPCSTR Message, LPST
 	else
 		return EXCEPTION_CONTINUE_SEARCH;
 
-	if (BeenHere)       // Going recursive! That must mean this routine crashed!
+	if (BeenHere)
 	{
+		// Going recursive! That must mean this routine crashed!
 		if (prevExceptionFilter)
 			return prevExceptionFilter(data);
 		return EXCEPTION_CONTINUE_SEARCH;
@@ -438,8 +503,9 @@ LONG WINAPI RecordExceptionInfo(PEXCEPTION_POINTERS data/*, LPCSTR Message, LPST
 	lastperiod = _tcsrchr(FileName, '.');
 	if (lastperiod)
 		lastperiod[0] = 0;
+
 	// Replace the executable filename with our error log file name.
-	lstrcpy(FilePart, TEXT("errorlog.txt"));
+	lstrcpy(FilePart, TEXT(CRASH_LOGFILE_NAME));
 	fileHandle = CreateFile(ModuleName, GENERIC_WRITE, 0, NULL, OPEN_ALWAYS,
 		FILE_ATTRIBUTE_NORMAL | FILE_FLAG_WRITE_THROUGH, NULL);
 	if (fileHandle == INVALID_HANDLE_VALUE)
@@ -456,16 +522,17 @@ LONG WINAPI RecordExceptionInfo(PEXCEPTION_POINTERS data/*, LPCSTR Message, LPST
 	// Print out some blank lines to separate this error log from any previous ones.
 	FPrintf(fileHandle, "Email Sonic Team Junior or StarManiaKG so we can fix the bugs\r\n"); // Tails
 	FPrintf(fileHandle, "Make sure you tell us what you were doing to cause the crash, and if possible, record a demo!\r\n"); // Tails
-	FPrintf(fileHandle, "\r\n\r\n\r\n\r\n");
+	FPrintf(fileHandle, "\r\n\n");
 	FPrintf(fileHandle, "SRB2 %s; %s -ERROR LOG-\r\n\r\n", VERSIONSTRING, TSOURDT3RDVERSIONSTRING);
-	FPrintf(fileHandle, "\r\n");
+	FPrintf(fileHandle, "\r\n\n");
+
 	// VirtualQuery can be used to get the allocation base associated with a
 	// code address, which is the same as the ModuleHandle. This can be used
 	// to get the filename of the module that the crash happened in.
 	if (code && VirtualQuery(code, &MemInfo, sizeof(MemInfo)) &&
 		GetModuleFileName((HMODULE)MemInfo.AllocationBase,
-		                   CrashModulePathName,
-		                   sizeof(CrashModulePathName)) > 0)
+						   CrashModulePathName,
+						   sizeof(CrashModulePathName)) > 0)
 		CrashModuleFileName = GetFilePart(CrashModulePathName);
 
 	// Print out the beginning of the error log in a Win95 error window
@@ -540,7 +607,7 @@ LONG WINAPI RecordExceptionInfo(PEXCEPTION_POINTERS data/*, LPCSTR Message, LPST
 
 	// moved down because it was causing the printout to stop
 	FPrintf(fileHandle, "Command Line parameters: ");
-	for(i = 1;i < myargc;i++)
+	for (i = 1; i < myargc; i++)
 		FPrintf(fileHandle, "%s ", myargv[i]);
 
 	FPrintf(fileHandle, "Bytes at CS : EIP:\r\n");
@@ -573,8 +640,7 @@ LONG WINAPI RecordExceptionInfo(PEXCEPTION_POINTERS data/*, LPCSTR Message, LPST
 
 	// Time to print part or all of the stack to the error log. This allows
 	// us to figure out the call stack, parameters, local variables, etc.
-	FPrintf(fileHandle, "\r\n"
-		"Stack dump:\r\n");
+	FPrintf(fileHandle, "\r\n" "Stack dump:\r\n");
 #ifdef NO_SEH_MINGW
 	__try1(EXCEPTION_EXECUTE_HANDLER)
 #else
@@ -664,8 +730,10 @@ LONG WINAPI RecordExceptionInfo(PEXCEPTION_POINTERS data/*, LPCSTR Message, LPST
 		FPrintf(fileHandle, "Exception encountered during stack dump.\r\n");
 	}
 
+	// Close the file
+	FPrintf(fileHandle, "===================================================\r\n");
+	FPrintf(fileHandle, "\r\n\r\n\r\n\r\n");
 	RecordModuleList(fileHandle);
-
 	CloseHandle(fileHandle);
 
 	// Return the magic value which tells Win32 that this handler didn't

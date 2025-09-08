@@ -7,9 +7,9 @@ set -e
 
 rm -rf "build/ninja-x64_osx_vcpkg-release"
 rm -rf "build/ninja-arm64_osx_vcpkg-release"
-cmake --preset ninja-x64_osx_vcpkg-release -DVCPKG_OVERLAY_TRIPLETS=scripts/ -DVCPKG_TARGET_TRIPLET=x64-osx-1015 -DCMAKE_OSX_ARCHITECTURES=x86_64 -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 "-DSRB2_SDL2_EXE_NAME=srb2"
+cmake --preset ninja-x64_osx_vcpkg-release -DVCPKG_OVERLAY_TRIPLETS=scripts/ -DVCPKG_TARGET_TRIPLET=x64-osx-1015 -DCMAKE_OSX_ARCHITECTURES=x86_64 -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 "-DSRB2_SDL2_EXE_NAME=srb2tsourdt3rd"
 cmake --build --preset ninja-x64_osx_vcpkg-release
-cmake --preset ninja-arm64_osx_vcpkg-release -DVCPKG_OVERLAY_TRIPLETS=scripts/ -DVCPKG_TARGET_TRIPLET=arm64-osx-1015 -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 "-DSRB2_SDL2_EXE_NAME=srb2"
+cmake --preset ninja-arm64_osx_vcpkg-release -DVCPKG_OVERLAY_TRIPLETS=scripts/ -DVCPKG_TARGET_TRIPLET=arm64-osx-1015 -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 "-DSRB2_SDL2_EXE_NAME=srb2tsourdt3rd"
 cmake --build --preset ninja-arm64_osx_vcpkg-release
 
 mkdir -p build/dist

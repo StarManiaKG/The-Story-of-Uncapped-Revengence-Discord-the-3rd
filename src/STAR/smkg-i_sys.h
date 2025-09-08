@@ -43,13 +43,10 @@ void TSoURDt3rd_I_Pads_SetIndicatorColor(INT32 device_id, UINT8 red, UINT8 green
 void TSoURDt3rd_I_Pads_Rumble(INT32 device_id, fixed_t low_strength, fixed_t high_strength, tic_t duration_tics);
 void TSoURDt3rd_I_Pads_RumbleTriggers(INT32 device_id, fixed_t left_strength, fixed_t right_strength, tic_t duration_tics);
 
+const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean coredumped);
+
 void TSoURDt3rd_I_CursedWindowMovement(int xd, int yd);
 void TSoURDt3rd_I_QuakeWindow(int xd, int yd);
-
-boolean TSoURDt3rd_I_CanOpenURL(void);
-void TSoURDt3rd_I_OpenURL(const char *data);
-
-void TSoURDt3rd_I_ShowErrorMessageBox(const char *messagefordevelopers, const SDL_MessageBoxData *messageboxdata, int *buttonid, int num, boolean coredumped);
 
 void TSoURDt3rd_I_GetEvent(SDL_Event *evt);
 void TSoURDt3rd_I_ShutdownSystem(void);
