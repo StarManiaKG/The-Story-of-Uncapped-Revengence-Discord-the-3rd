@@ -277,24 +277,24 @@ void R_SetViewContext(enum viewcontext_e _viewcontext)
 	}
 }
 
-fixed_t R_InterpolateFixed(fixed_t from, fixed_t to)
+fixed_t R_InterpolateFixed(fixed_t from, fixed_t to, boolean unpaused)
 {
 	if (!R_UsingFrameInterpolation())
 	{
 		return to;
 	}
 
-	return (R_LerpFixed(from, to, rendertimefrac));
+	return (R_LerpFixed(from, to, (unpaused ? rendertimefrac_unpaused : rendertimefrac)));
 }
 
-angle_t R_InterpolateAngle(angle_t from, angle_t to)
+angle_t R_InterpolateAngle(angle_t from, angle_t to, boolean unpaused)
 {
 	if (!R_UsingFrameInterpolation())
 	{
 		return to;
 	}
 
-	return (R_LerpAngle(from, to, rendertimefrac));
+	return (R_LerpAngle(from, to, (unpaused ? rendertimefrac_unpaused : rendertimefrac)));
 }
 
 void R_InterpolateMobjState(mobj_t *mobj, fixed_t frac, interpmobjstate_t *out)
