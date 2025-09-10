@@ -106,7 +106,7 @@
 #include "STAR/ss_main.h" // TSoURDt3rd_Init() & TSoURDt3rd_CON_DrawStartupScreen() //
 #include "STAR/smkg_g_inputs.h" // TSoURDt3rd_D_ProcessEvents() //
 #include "STAR/core/smkg-d_main.h" // TSoURDt3rd_D_AutoLoadAddons() //
-#include "STAR/core/smkg-s_audio.h" // TSoURDt3rd_S_CanModifyMusic() //
+#include "STAR/core/smkg-s_audio.h" // TSoURDt3rd_S_ManageAudio() //
 #include "STAR/menus/smkg-m_sys.h" // TSoURDt3rd_M_DrawPauseGraphic() //
 
 // Version numbers for netplay :upside_down_face:
@@ -908,7 +908,14 @@ static void D_RunFrame(void)
 				rendertimefrac = FRACUNIT;
 			}
 
-			rendertimefrac_unpaused = g_time.timefrac;
+			if ((deltatics < 1.0) && !hu_stopped)
+			{
+				rendertimefrac_unpaused = g_time.timefrac;
+			}
+			else
+			{
+				rendertimefrac_unpaused = FRACUNIT;
+			}
 		}
 		else
 		{
