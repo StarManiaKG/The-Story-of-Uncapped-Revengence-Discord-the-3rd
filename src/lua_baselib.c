@@ -3524,13 +3524,11 @@ static int lib_sSpeedMusic(lua_State *L)
 		if (!player)
 			return LUA_ErrInvalid(L, "player_t");
 	}
-
-#if 1
-	// STAR STUFF: DON'T INTERUPT OUR MUSIC PLEASE :) //
 	if (TSoURDt3rd_Jukebox_IsPlaying())
+	{
+		// STAR STUFF: DON'T INTERUPT OUR MUSIC PLEASE :) //
 		return 0;
-#endif
-
+	}
 	if (!player || P_IsLocalPlayer(player))
 		S_SpeedMusic(speed);
 	return 0;
@@ -3917,7 +3915,8 @@ static int musicdef_get(lua_State *L)
 	switch (field)
 	{
 	case musicdef_name:
-		lua_pushstring(L, musicdef->name);
+		UINT32 track = (UINT32)luaL_optinteger(L, 3, 0);
+		lua_pushstring(L, musicdef->name[track]);
 		break;
 	case musicdef_title:
 		lua_pushstring(L, musicdef->title);
@@ -4435,7 +4434,7 @@ static int lib_gSetCustomExitVars(lua_State *L)
 		nextmapoverride = (INT16)luaL_optinteger(L, 1, 0);
 		skipstats = (INT16)luaL_optinteger(L, 2, 0);
 		nextgametype = (INT16)luaL_optinteger(L, 3, -1);
-		
+
 		if (!lua_isnil(L, 4))
 			keepcutscene = luaL_checkboolean(L, 4);
 	}

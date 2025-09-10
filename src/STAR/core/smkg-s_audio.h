@@ -48,9 +48,9 @@ extern "C" {
 	} \
 }
 
-boolean TSoURDt3rd_S_MusicDefExists(musicdef_t *def);
-boolean TSoURDt3rd_S_MusicNameExists(const char *music);
-#define TSoURDt3rd_S_MusicExists(type, func, ...) { \
+boolean TSoURDt3rd_S_MusicDefExists(musicdef_t *def, INT32 track);
+boolean TSoURDt3rd_S_MusicNameExists(const char *music, INT32 track);
+#define TSoURDt3rd_S_MusicExists(type, track, func) { \
 	boolean valid_track = false; \
 	do { \
 		TSOURDT3RD_CHECK_FOR_MUSIC_TYPE(type); \
@@ -59,14 +59,15 @@ boolean TSoURDt3rd_S_MusicNameExists(const char *music);
 			const char       * : TSoURDt3rd_S_MusicNameExists, \
 			musicdef_t       * : TSoURDt3rd_S_MusicDefExists, \
 			const musicdef_t * : TSoURDt3rd_S_MusicDefExists \
-		)(type, ##__VA_ARGS__); \
+		)(type, track); \
 	} while(0); \
 	if (valid_track == true) { func } \
 }
 
-boolean TSoURDt3rd_S_CanModifyMusic(char *menu_mus_origin);
-void TSoURDt3rd_S_ControlMusicEffects(const size_t *argc, UINT32 *position);
+boolean TSoURDt3rd_S_CanManageMenuAudio(void);
+void TSoURDt3rd_S_ManageAudio(void (*audio_routine)(void));
 
+void TSoURDt3rd_S_ControlMusicEffects(const size_t *argc);
 void TSoURDt3rd_S_RefreshMusic(void);
 
 #ifdef __cplusplus

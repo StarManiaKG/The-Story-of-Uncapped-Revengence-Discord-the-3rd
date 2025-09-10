@@ -18,27 +18,23 @@
 menuitem_t TSoURDt3rd_OP_AudioMenu[] =
 {
 	{IT_HEADER, NULL, "General", NULL, 0},
-		{IT_STRING | IT_CVAR, NULL, "Water Muffling",
-			&cv_tsourdt3rd_audio_watermuffling, 0},
-		{IT_STRING | IT_CVAR, NULL, "Vape Mode",
-			&cv_tsourdt3rd_audio_vapemode, 0},
+		{IT_STRING | IT_CVAR, NULL, "Song Credits", &cv_songcredits, 0},
+		{IT_STRING | IT_CVAR, NULL, "Water Muffling", &cv_tsourdt3rd_audio_watermuffling, 0},
+		{IT_STRING | IT_CVAR, NULL, "Vape Mode", &cv_tsourdt3rd_audio_vapemode, 0},
 
-		{IT_SPACE, NULL, NULL,
-			NULL, 0},
+		{IT_SPACE, NULL, NULL, NULL, 0},
 
-		{IT_STRING | IT_CVAR, NULL, "Post Boss Music",
-			&cv_tsourdt3rd_audio_bosses_postboss, 0},
+		{IT_STRING | IT_CVAR, NULL, "Post Boss Music", &cv_tsourdt3rd_audio_bosses_postboss, 0},
 
-	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL,
-		NULL, 0},
+	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL, NULL, 0},
 
-	{IT_STRING | IT_CALL, NULL, "EXMusic...",
-		TSoURDt3rd_M_EXMusic_LoadMenu, 0},
+	{IT_STRING | IT_CALL, NULL, "EXMusic...", TSoURDt3rd_M_EXMusic_LoadMenu, 0},
 };
 
 tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_AudioMenu[] =
 {
 	{NULL, NULL, {NULL}, 0, 0},
+		{NULL, "Displays the info of the currently playing song on-screen.", {NULL}, 0, 0},
 		{NULL, "Should water deafen and muffle audio?", {NULL}, 0, 0},
 		{NULL, "If enabled, sets the speed and pitch at which music should play.", {NULL}, 0, 0},
 

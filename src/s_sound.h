@@ -202,26 +202,45 @@ void S_PitchMusic(float pitch);
 // Get Pitch of Music
 float S_GetPitchMusic(void);
 
-// Music definitions
-typedef struct musicdef_s
+//
+// Music definitions & credits
+//
+#define MAXDEFTRACKS 3
+#define DEFAULT_MUSICDEF_VOLUME 100
+
+typedef struct basicmusicdef_s // for soundtestsfx and others
 {
-	char name[7];
 	char title[32];
 	char alttitle[64];
 	char authors[256];
-	//char usage[256]; -- probably never going to be relevant to vanilla
-	/*
-	the trouble here is that kart combines what we call "title"
-	and "authors" into one string. we need to split it for sound
-	test reasons. they might split it later like we did, but...
-	*/
-	//char source[256];
+	char source[256];
+} basicmusicdef_t;
+
+typedef struct musicdef_s
+{
+	char name[MAXDEFTRACKS][7];
+	char *title;
+	char *alttitle;
+	char *authors;
+	char *source;
+
+	UINT32 hash[MAXDEFTRACKS];
+	boolean basenoloop[MAXDEFTRACKS];
+	UINT8 numtracks;
+	int volume;
+	int debug_volume;
+	boolean important;
+	boolean contentidunsafe;
+
 	UINT8 soundtestpage;
 	INT16 soundtestcond; // +ve for map, -ve for conditionset, 0 for already here
 	tic_t stoppingtics;
 	fixed_t bpm;
 	UINT32 loop_ms;/* override LOOPPOINT/LOOPMS */
 	boolean allowed; // question marks or listenable on sound test?
+
+	basicmusicdef_t *basicdef;
+
 	struct musicdef_s *next;
 } musicdef_t;
 
@@ -233,8 +252,30 @@ extern UINT8 soundtestpage;
 
 void S_LoadMusicDefs(UINT16 wadnum);
 void S_InitMusicDefs(void);
+musicdef_t *S_FindMusicDef(const char *name, UINT8 *pos_p, UINT8 *track_p, musicdef_t **prev_p);
 
 boolean S_PrepareSoundTest(void);
+
+// For HUD, doesn't always appear
+extern struct cursongcredit
+{
+	char *text;
+	UINT16 anim;
+	UINT8 trans;
+	fixed_t x;
+	fixed_t old_x;
+	fixed_t sprite_timer;
+	boolean musicnote_normal_chance;
+} cursongcredit;
+#define SONGCREDIT_ANIM_DURATION (3*TICRATE)
+
+// For menu, always appears
+extern char *g_realsongcredit;
+
+void S_LoadMusicCredit(void);
+void S_UnloadMusicCredit(void);
+void S_ShowMusicCredit(void);
+void S_StopMusicCredit(void);
 
 //
 // Music Seeking

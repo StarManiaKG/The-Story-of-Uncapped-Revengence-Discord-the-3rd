@@ -308,13 +308,11 @@ void P_DoMatchSuper(player_t *player)
 	player->powers[pw_sneakers] = emeraldspawndelay;
 	if (P_IsLocalPlayer(player) && !player->powers[pw_super])
 	{
-#if 0
-		S_StopMusic();
-#else
-		// STAR STUFF: don't interrupt my music please :) //
 		if (!TSoURDt3rd_Jukebox_IsPlaying())
+		{
+			// STAR STUFF: don't interrupt my music please :) //
 			S_StopMusic();
-#endif
+		}
 		if (mariomode)
 			G_GhostAddColor(GHC_INVINCIBLE);
 		strlcpy(S_sfx[sfx_None].caption, "Invincibility", 14);
@@ -337,13 +335,11 @@ void P_DoMatchSuper(player_t *player)
 				player->powers[pw_sneakers] = player->powers[pw_invulnerability];
 				if (P_IsLocalPlayer(player) && !player->powers[pw_super])
 				{
-#if 0
-					S_StopMusic();
-#else
-					// STAR STUFF: don't interrupt my music please :) //
 					if (!TSoURDt3rd_Jukebox_IsPlaying())
+					{
+						// STAR STUFF: don't interrupt my music please :) //
 						S_StopMusic();
-#endif
+					}
 					if (mariomode)
 						G_GhostAddColor(GHC_INVINCIBLE);
 					strlcpy(S_sfx[sfx_None].caption, "Invincibility", 14);

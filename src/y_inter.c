@@ -1626,6 +1626,8 @@ void Y_StartIntermission(void)
 			break;
 	}
 
+	S_ShowMusicCredit(); // Always call
+
 	LUA_HUD_DestroyDrawList(luahuddrawlist_intermission);
 	luahuddrawlist_intermission = LUA_HUD_CreateDrawList();
 }

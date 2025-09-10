@@ -27,41 +27,46 @@
 	if (music == NULL || *music == '\0') return false; \
 	return (S_MusicExists(music, !midi_disabled, !digital_disabled));
 
-boolean TSoURDt3rd_S_MusicDefExists(musicdef_t *def)
+boolean TSoURDt3rd_S_MusicDefExists(musicdef_t *def, INT32 track)
 {
 	if (def == NULL) return false;
-	MUSIC_EXISTS(def->name);
+	MUSIC_EXISTS(def->name[track]);
 }
-boolean TSoURDt3rd_S_MusicNameExists(const char *music)
+boolean TSoURDt3rd_S_MusicNameExists(const char *music, INT32 track)
 {
+	(void)track;
 	MUSIC_EXISTS(music);
 }
 
 //
-// boolean TSoURDt3rd_S_CanModifyMusic(char *menu_mus_origin)
-// Prevents TSoURDt3rd's music stuff, like Jukebox music, from being forcibly reset or modified. (YAY!)
+// boolean TSoURDt3rd_S_CanManageMenuAudio(void)
+// Prevents vanilla's menu music from modifying the music of our unique menus.
 //
-boolean TSoURDt3rd_S_CanModifyMusic(char *menu_mus_origin)
+boolean TSoURDt3rd_S_CanManageMenuAudio(void)
 {
-	if (menuactive && (menu_mus_origin != NULL && *menu_mus_origin != '\0') && tsourdt3rd_currentMenu != NULL)
-		return false;
-
-	if (!TSoURDt3rd_Jukebox_IsPlaying())
-		return true;
-
-	if (paused)
-		S_ResumeAudio();
-
-	return false;
+	if (TSoURDt3rd_Jukebox_IsPlaying()) return false;
+	return (menuactive && tsourdt3rd_currentMenu == NULL);
 }
 
 //
-// void TSoURDt3rd_ControlMusicEffects(const size_t *argc, UINT32 *position)
+// void TSoURDt3rd_S_ManageAudio(void (*audio_routine)(void))
+// Runs the audio routine given if we allow it to.
+//
+void TSoURDt3rd_S_ManageAudio(void (*audio_routine)(void))
+{
+	if (TSoURDt3rd_Jukebox_IsPlaying()) return;
+	audio_routine();
+}
+
+//
+// void TSoURDt3rd_ControlMusicEffects(const size_t *argc)
 // Controls the Effects of the Currently Playing Music, Based on Factors like Vape Mode
 //
-void TSoURDt3rd_S_ControlMusicEffects(const size_t *argc, UINT32 *position)
+void TSoURDt3rd_S_ControlMusicEffects(const size_t *argc)
 {
 	float new_music_speed = 0.0f, new_music_pitch = 0.0f;
+	fixed_t cur_music_speed = FloatToFixed(S_GetSpeedMusic());
+	fixed_t cur_music_pitch = FloatToFixed(S_GetPitchMusic());
 
 	if (TSoURDt3rd_Jukebox_IsPlaying())
 	{
@@ -89,18 +94,18 @@ void TSoURDt3rd_S_ControlMusicEffects(const size_t *argc, UINT32 *position)
 				new_music_speed = (float)atof(COM_Argv(3));
 			if ((*argc) > 4)
 				new_music_pitch = (float)atof(COM_Argv(4));
-			if ((*argc) > 5 && position)
-				(*position) = (UINT32)atoi(COM_Argv(5));
 		}
 	}
 
-	if (new_music_speed > 0.0f) S_SpeedMusic(new_music_speed);
-	if (new_music_pitch > 0.0f) S_PitchMusic(new_music_pitch);
+	if (cur_music_speed != FloatToFixed(new_music_speed)) S_SpeedMusic(new_music_speed);
+	if (cur_music_pitch != FloatToFixed(new_music_pitch)) S_PitchMusic(new_music_pitch);
 }
 
 //
 // void TSoURDt3rd_S_RefreshMusic(void)
 // Refreshes game music.
+//
+/// \todo fix looping, i don't think it's broken but still
 //
 void TSoURDt3rd_S_RefreshMusic(void)
 {

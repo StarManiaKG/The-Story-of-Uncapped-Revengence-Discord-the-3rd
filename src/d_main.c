@@ -989,12 +989,8 @@ void D_StartTitle(void)
 {
 	INT32 i;
 
-#if 0
-	S_StopMusic();
-#else
 	// STAR STUFF: why don't we properly check for jukebox music instead? //
-	TSoURDt3rd_S_CanModifyMusic(NULL);
-#endif
+	TSoURDt3rd_S_ManageAudio(S_StopMusic);
 
 	if (netgame)
 	{

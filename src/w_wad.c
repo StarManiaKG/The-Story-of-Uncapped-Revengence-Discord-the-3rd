@@ -2994,7 +2994,7 @@ int W_VerifyNMUSlumps(const char *filename, boolean exit_on_error)
 		{"SHADERS", 7}, // OpenGL shader definitions
 		{"SH_", 3}, // GLSL shader
 
-		// STAR NOTE: added some more client-safe lumps //
+		// TSoURDt3rd: added some more client-safe lumps //
 		{"SRB2BACK", 8}, // SRB2 Titlecard Background
 		
 		{"LTZIGZAG", 8}, // SRB2 Titlecard Zig-Zag
@@ -3008,10 +3008,12 @@ int W_VerifyNMUSlumps(const char *filename, boolean exit_on_error)
 		{"CHAR", 4}, // Character Select Screen Graphics
 
 		{"JUKEDEF", 7}, // Jukebox definitions
+		{"EXMUSDEF", 8}, // EXMusic definitions
 		{"WINDEF", 6}, // Window title definitions
-		{"EXMUSDEF", 8}, // Extended music definitions
 
 		{"CORONA", 6}, // Dynamic light graphic
+
+		{"K_SONGCR", 8}, // Music/song credits graphic
 
 		{NULL, 0},
 	};

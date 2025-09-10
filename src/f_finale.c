@@ -1712,12 +1712,10 @@ void F_GameEvaluationTicker(void)
 		G_SaveGameData(clientGamedata);
 	}
 
+	// STAR STUFF: play our cool finale music! //
 	if (finalecount == 4*TICRATE)
 	{
-		// STAR STUFF: play our cool finale music! //
-		const char *music = TSoURDt3rd_DetermineLevelMusic();
-		if (music != NULL)
-			S_ChangeMusicInternal(music, false);
+		S_ChangeMusicInternal(TSoURDt3rd_DetermineLevelMusic(), false);
 	}
 }
 

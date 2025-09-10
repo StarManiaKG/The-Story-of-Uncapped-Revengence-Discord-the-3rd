@@ -1310,6 +1310,9 @@ void I_FinishUpdate(void)
 	if (marathonmode)
 		SCR_DisplayMarathonInfo();
 
+	if (cv_songcredits.value)
+		HU_DrawSongCredits();
+
 	// draw captions if enabled
 	if (cv_closedcaptioning.value)
 		SCR_ClosedCaptions();

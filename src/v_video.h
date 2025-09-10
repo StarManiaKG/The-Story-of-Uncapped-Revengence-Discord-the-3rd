@@ -28,15 +28,14 @@
 
 extern UINT8 *screens[5];
 
-extern consvar_t cv_ticrate, cv_constextsize,
-cv_globalgamma, cv_globalsaturation,
-cv_rhue, cv_yhue, cv_ghue, cv_chue, cv_bhue, cv_mhue,
-cv_rgamma, cv_ygamma, cv_ggamma, cv_cgamma, cv_bgamma, cv_mgamma,
-cv_rsaturation, cv_ysaturation, cv_gsaturation, cv_csaturation, cv_bsaturation, cv_msaturation;
+extern consvar_t cv_ticrate, cv_constextsize;
+extern consvar_t cv_globalgamma, cv_globalsaturation;
+extern consvar_t cv_rhue, cv_yhue, cv_ghue, cv_chue, cv_bhue, cv_mhue;
+extern consvar_t cv_rgamma, cv_ygamma, cv_ggamma, cv_cgamma, cv_bgamma, cv_mgamma;
+extern consvar_t cv_rsaturation, cv_ysaturation, cv_gsaturation, cv_csaturation, cv_bsaturation, cv_msaturation;
 
-extern consvar_t cv_tsourdt3rd_video_coloring_menus,
-	cv_tsourdt3rd_video_coloring_fpsrate,
-	cv_tsourdt3rd_video_coloring_tpsrate;
+extern consvar_t cv_songcredits, cv_songcredits_debug;
+extern consvar_t cv_tsourdt3rd_video_coloring_menus, cv_tsourdt3rd_video_coloring_fpsrate, cv_tsourdt3rd_video_coloring_tpsrate;
 
 // Allocates buffer screens, call before R_Init.
 void V_Init(void);
@@ -114,18 +113,6 @@ void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue);
 #define V_ROSYMAP            0x0000E000
 #define V_INVERTMAP          0x0000F000
 
-// ===================================================================
-// DYNAMIC VIDEO COLORS
-//
-// 	Remember this from some previous TSoURDt3rd commits of st_stuff.c?
-// 		Yeah, I reworked it! Just like I said I would!
-//		But this time, I've reworked it even more!
-// ===================================================================
-
-#define V_MENUCOLORMAP (cv_tsourdt3rd_video_coloring_menus.value)
-#define V_FPSCOLORMAP  (cv_tsourdt3rd_video_coloring_fpsrate.value)
-#define V_TPSCOLORMAP  (cv_tsourdt3rd_video_coloring_tpsrate.value)
-
 // use bits 17-20 for alpha transparency
 #define V_ALPHASHIFT         16
 #define V_ALPHAMASK          0x000F0000
@@ -146,6 +133,18 @@ void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue);
 #define V_USERHUDTRANSHALF   ((10-(cv_translucenthud.value/2))<<V_ALPHASHIFT)
 #define V_USERHUDTRANS       ((10-cv_translucenthud.value)<<V_ALPHASHIFT)
 #define V_USERHUDTRANSDOUBLE ((10-min(cv_translucenthud.value*2, 10))<<V_ALPHASHIFT)
+
+// ===================================================================
+// DYNAMIC VIDEO COLORS
+//
+// 	Remember this from some previous TSoURDt3rd commits of st_stuff.c?
+// 		Yeah, I reworked it! Just like I said I would!
+//		But this time, I've reworked it even more!
+// ===================================================================
+
+#define V_MENUCOLORMAP (cv_tsourdt3rd_video_coloring_menus.value)
+#define V_FPSCOLORMAP  (cv_tsourdt3rd_video_coloring_fpsrate.value)
+#define V_TPSCOLORMAP  (cv_tsourdt3rd_video_coloring_tpsrate.value)
 
 // use bits 21-23 for blendmodes
 #define V_BLENDSHIFT         20

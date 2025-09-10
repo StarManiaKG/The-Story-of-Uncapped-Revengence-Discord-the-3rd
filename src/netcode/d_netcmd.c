@@ -931,6 +931,8 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_scr_height_w);
 
 	CV_RegisterVar(&cv_soundtest);
+	CV_RegisterVar(&cv_songcredits);
+	CV_RegisterVar(&cv_songcredits_debug);
 
 	CV_RegisterVar(&cv_perfstats);
 	CV_RegisterVar(&cv_ps_samplesize);

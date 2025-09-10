@@ -1678,13 +1678,14 @@ void P_PlayJingleMusic(player_t *player, const char *musname, UINT16 musflags, b
 	if (gamestate == GS_LEVEL && player && !P_IsLocalPlayer(player))
 		return;
 
-#if 1
-	// STAR STUFF: don't play jingles if we got jukebox or april fools music //
-	if (TSoURDt3rd_Jukebox_IsPlaying() || TSoURDt3rd_AprilFools_ModeEnabled())
-		return;
-#endif
-
 	S_RetainMusic(musname, musflags, looping, 0, status);
+
+	if (TSoURDt3rd_Jukebox_IsPlaying() || TSoURDt3rd_AprilFools_ModeEnabled())
+	{
+		// STAR STUFF: don't play jingles if we got jukebox or april fools music //
+		return;
+	}
+
 	S_StopMusic();
 	S_ChangeMusicInternal(musname, looping);
 }
@@ -1809,13 +1810,11 @@ void P_RestoreMusic(player_t *player)
 		S_StartCaption(sfx_None, -1, player->powers[pw_sneakers]);
 		if (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC)
 		{
-#if 0
-			S_SpeedMusic(1.4f);
-#else
-			// STAR STUFF: maybe don't speed music while jukeboxing please... //
 			if (!TSoURDt3rd_Jukebox_IsPlaying())
+			{
+				// STAR STUFF: Maybe don't speed music while jukeboxing? Please? //
 				S_SpeedMusic(1.4f);
-#endif
+			}
 			if (!S_RecallMusic(JT_MASTER, true))
 				S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
 		}

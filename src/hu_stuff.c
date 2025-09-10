@@ -54,6 +54,10 @@
 #include "lua_hook.h"
 #include "lua_libs.h"
 
+// TSoURDt3rd
+#include "STAR/core/smkg-p_setup.h" // TSoURDt3rd_WORLD_MapIsDangerous() //
+#include "i_time.h"
+
 // coords are scaled
 #define HU_INPUTX 0
 #define HU_INPUTY 0
@@ -93,6 +97,8 @@ patch_t *bflagico;
 patch_t *rmatcico;
 patch_t *bmatcico;
 patch_t *tagico;
+
+static patch_t *songcreditbg; // music/song credits
 
 //-------------------------------------------
 //              coop hud
@@ -263,6 +269,9 @@ void HU_LoadGraphics(void)
 	emeraldpics[2][5] = W_CachePatchName("EMBOX6", PU_HUDGFX);
 	emeraldpics[2][6] = W_CachePatchName("EMBOX7", PU_HUDGFX);
 	//emeraldpics[2][7] = W_CachePatchName("EMBOX8", PU_HUDGFX); -- unused
+
+	// TSoURDt3rd //
+	songcreditbg = W_CachePatchName("K_SONGCR", PU_HUDGFX);
 }
 
 void HU_LoadFontCharacters(fontdef_t *font, const char *prefix)
@@ -844,6 +853,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 }
 
 //
+// HU_Ticker
 //
 void HU_Ticker(void)
 {
@@ -1746,6 +1756,262 @@ static void HU_DrawDemoInfo(void)
 			V_DrawRightAlignedString(120, h, V_MONOSPACE, va("%d", hu_demorings));
 		}
 	}
+}
+
+//
+// Music credits
+//
+void HU_TickSongCredits(void)
+{
+	if (cursongcredit.text == NULL) // No def
+	{
+		cursongcredit.x = cursongcredit.old_x = 0;
+		cursongcredit.anim = 0;
+		cursongcredit.trans = NUMTRANSMAPS;
+		cursongcredit.sprite_timer = 0;
+		return;
+	}
+	else if (cv_songcredits_debug.value) // Always on
+	{
+		cursongcredit.anim = SONGCREDIT_ANIM_DURATION;
+	}
+
+	cursongcredit.old_x = cursongcredit.x;
+
+	if (cursongcredit.anim > 0)
+	{
+		INT32 len = V_ThinStringWidth(cursongcredit.text, 0);
+		fixed_t destx = (len+7) * FRACUNIT;
+
+		if (cursongcredit.trans > 0)
+		{
+			cursongcredit.trans--;
+		}
+
+		if (cursongcredit.x < destx)
+		{
+			cursongcredit.x += (destx - cursongcredit.x) / 2;
+		}
+
+		if (cursongcredit.x > destx)
+		{
+			cursongcredit.x = destx;
+		}
+
+		cursongcredit.anim--;
+	}
+	else
+	{
+		if (cursongcredit.trans < NUMTRANSMAPS)
+		{
+			cursongcredit.trans++;
+		}
+
+		if (cursongcredit.x > 0)
+		{
+			cursongcredit.x /= 2;
+		}
+
+		if (cursongcredit.x < 0)
+		{
+			cursongcredit.x = 0;
+		}
+	}
+}
+
+static void DrawSongCreditsCharacters(fixed_t x, fixed_t y)
+{
+	UINT32 total_characters_found = 0;
+	fixed_t character_y_offset[MAXPLAYERS];
+	fixed_t character_scale[MAXPLAYERS];
+	INT32 character_flipflags[MAXPLAYERS]; // Makes sure our sprites gets flipped, if need-be.
+	patch_t *character_patches[MAXPLAYERS]; // The sprite patch for our characters, always drawn in the right-facing angle.
+	UINT8 *character_colormaps[MAXPLAYERS];
+	INT32 i;
+
+	// Get our characters!
+	for (i = consoleplayer; i < MAXPLAYERS; i++)
+	{
+		player_t *player = &players[i];
+
+		character_patches[i] = NULL;
+		if (!playeringame[i] || !player)
+			continue;
+		else if ((gametyperules & GTR_TEAMS) && (players[i].ctfteam != players[displayplayer].ctfteam))
+			continue;
+
+		skin_t *skin = skins[player->skin];
+		UINT16 color = (player->mo ? player->mo->color : player->skincolor);
+		if (!color) color = skin->prefcolor;
+
+		boolean nights_mode = ((players[i].powers[pw_carry] == CR_NIGHTSMODE) || (maptol & TOL_NIGHTS) || (mapheaderinfo[gamemap-1]->bonustype == 3));
+		angle_t fa = ((FixedAngle(((FixedInt(cursongcredit.sprite_timer * 4)) % 360)<<FRACBITS)>>ANGLETOFINESHIFT) & FINEMASK);
+
+		spritedef_t *sprdef = NULL;				// Gets the definiton for our selected sprite.
+		INT32 spritetimer = 0;					// Make sure the sprite timer cycles though all the sprite frames, 2 tics per frame.
+		spriteframe_t *sprframe_table = NULL;	// The animation frame table.
+		spriteframe_t *sprframe = NULL;			// The animation frame, equal to the number on the timer.
+
+		// Floating for NiGHTS!
+		character_y_offset[i] = (nights_mode ? ((3 * FRACUNIT) + (2 * FINESINE(fa))) : 0);
+
+#define GET_CHARACTER_SPRITE2(spr2) \
+		sprdef = P_GetSkinSpritedef(skin, spr2); \
+		if (sprdef != NULL && sprdef->numframes) { \
+			spritetimer = (FixedInt(cursongcredit.sprite_timer/2) % sprdef->numframes); \
+			sprframe_table = sprdef->spriteframes; \
+			if (sprframe_table != NULL) { \
+				UINT32 character = total_characters_found; \
+				fixed_t scale = skin->highresscale; \
+				if (skin->shieldscale) \
+					scale = FixedDiv(scale, skin->shieldscale); \
+				scale = FixedDiv(scale, 5*FRACUNIT); \
+				sprframe = &sprframe_table[spritetimer]; \
+				character_scale[character] = scale; \
+				character_flipflags[character] = ((sprframe->flip & 1<<6) ? V_FLIP : 0); \
+				character_patches[character] = (patch_t *)W_CachePatchNum(sprframe->lumppat[6], PU_PATCH); \
+				character_colormaps[character] = R_GetTranslationColormap(TC_BLINK, color, GTC_CACHE); \
+				total_characters_found++; \
+				continue; \
+			} \
+		}
+		if (player->powers[pw_super] || nights_mode)
+		{
+			// Character is super or in NiGHTS mode
+			GET_CHARACTER_SPRITE2(SPR2_RUN|SPR2F_SUPER)
+			GET_CHARACTER_SPRITE2(SPR2_NFLY)
+			GET_CHARACTER_SPRITE2(SPR2_WALK|SPR2F_SUPER)
+			GET_CHARACTER_SPRITE2(SPR2_STND|SPR2F_SUPER)
+		}
+		// Default
+		GET_CHARACTER_SPRITE2(SPR2_RUN)
+		GET_CHARACTER_SPRITE2(SPR2_WALK)
+		GET_CHARACTER_SPRITE2(SPR2_STND)
+#undef GET_CHARACTER_SPRITE2
+
+		continue; // There's nothing...
+	}
+
+	if (total_characters_found < 1)
+	{
+		// No character found? Oh well...
+		return;
+	}
+
+#define CHAR_SPACING (12*FRACUNIT)
+	INT32 allocated_character_space = total_characters_found-1;
+	fixed_t offset_x = (allocated_character_space * CHAR_SPACING);
+
+	// Make sure we don't draw too many characters!
+	// If we do, cut the limit down!
+	while (x + offset_x >= cursongcredit.x)
+	{
+		allocated_character_space--;
+		offset_x = (allocated_character_space * CHAR_SPACING);
+	}
+
+	// Draw the allocated amount of characters!
+	// We go in reverse in order to draw them properly.
+	for (i = allocated_character_space; i >= 0; i--)
+	{
+		if (character_patches[i] == NULL)
+		{
+			// Decrease spacing
+			offset_x -= CHAR_SPACING;
+			continue;
+		}
+		V_DrawFixedPatch(x - (i * CHAR_SPACING) + offset_x,
+			y - character_y_offset[i],
+			character_scale[i],
+			V_SNAPTOLEFT|character_flipflags[i]|(cursongcredit.trans<<V_ALPHASHIFT),
+			character_patches[i],
+			character_colormaps[i]
+		);
+	}
+#undef CHAR_SPACING
+}
+
+void HU_DrawSongCredits(void)
+{
+	if (!cursongcredit.text || cursongcredit.trans >= NUMTRANSMAPS) // No def
+	{
+		return;
+	}
+
+	cursongcredit.sprite_timer += renderdeltatics;
+	if (cursongcredit.sprite_timer < 0)
+	{
+		cursongcredit.sprite_timer = 0;
+	}
+
+	fixed_t x = R_InterpolateFixed(cursongcredit.old_x, cursongcredit.x, true);
+	fixed_t y;
+	INT32 bgt = (NUMTRANSMAPS/2) + (cursongcredit.trans / 2);
+
+	INT16 str_len = V_ThinStringWidth(cursongcredit.text, V_SNAPTOLEFT|V_ALLOWLOWERCASE);
+	patch_t *music_note = hu_font.chars['\x19'-FONTSTART];
+
+	if (gamestate == GS_INTERMISSION)
+	{
+		y = (BASEVIDHEIGHT - 13) * FRACUNIT;
+	}
+	else if (menuactive && gamestate == GS_TITLESCREEN)
+	{
+		y = 30 * FRACUNIT;
+	}
+	else
+	{
+		y = (splitscreen ? (BASEVIDHEIGHT/2)-4 : 40) * FRACUNIT;
+	}
+
+	if (bgt < NUMTRANSMAPS)
+	{
+		fixed_t bar_offset_width = FRACUNIT;
+		UINT8 *bar_colormap = NULL;
+
+		if (cv_songcredits.value == 2)
+		{
+			// Dynamic song credits!
+			DrawSongCreditsCharacters((x - (str_len * FRACUNIT)), (y - (3 * FRACUNIT)));
+
+			// Get the color for our music bar's colormap!
+			if (playeringame[consoleplayer])
+			{
+				player_t *player = &players[consoleplayer];
+				UINT16 bar_color = (player->mo ? player->mo->color : player->skincolor);
+
+				if (!bar_color) bar_color = skins[player->skin]->prefcolor;
+				if (TSoURDt3rd_WORLD_MapIsDangerous(mapheaderinfo[gamemap-1]))
+				{
+					if (bar_color+(I_GetTime() & 12))
+						bar_color += (I_GetTime() & 12);
+				}
+
+				bar_colormap = R_GetTranslationColormap(TC_BLINK, bar_color, GTC_CACHE);
+			}
+		}
+
+		if (str_len >= songcreditbg->width-16)
+		{
+			// Hey, I heard this string looks pretty long!
+			// Why don't we fix that?
+			bar_offset_width = ((str_len - (songcreditbg->width - 16)) * FRACUNIT);
+		}
+
+		V_DrawStretchyFixedPatch(x - bar_offset_width, y - (2 * FRACUNIT), bar_offset_width, FRACUNIT, V_SNAPTOLEFT|(bgt<<V_ALPHASHIFT), songcreditbg, bar_colormap);
+	}
+
+	if (!cursongcredit.musicnote_normal_chance)
+	{
+		// Music note slides in from side of screen
+		V_DrawFixedPatch((0 - x)<<FRACBITS, y, FRACUNIT, V_SNAPTOLEFT, music_note, V_GetStringColormap(V_MENUCOLORMAP));
+	}
+	else
+	{
+		// Music note slides along with bar
+		V_DrawFixedPatch(x - (str_len * FRACUNIT) - ((music_note->width - 2) * FRACUNIT), y, FRACUNIT, V_SNAPTOLEFT, music_note, V_GetStringColormap(V_MENUCOLORMAP));
+	}
+	V_DrawRightAlignedThinStringAtFixed(x + (3 * FRACUNIT), y + (1 * FRACUNIT), V_SNAPTOLEFT|V_ALLOWLOWERCASE|(cursongcredit.trans<<V_ALPHASHIFT), cursongcredit.text);
 }
 
 // Heads up displays drawer, call each frame

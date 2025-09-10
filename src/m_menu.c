@@ -89,7 +89,7 @@
 #include "STAR/star_vars.h"
 #include "STAR/smkg-cvars.h" // various vast TSoURDt3rd commands and command functions //
 #include "STAR/ss_main.h" // AUTOLOADCONFIGFILENAME & STAR_CONS_Printf() //
-#include "STAR/core/smkg-s_audio.h" // TSoURDt3rd_S_CanModifyMusic() //
+#include "STAR/core/smkg-s_audio.h" // TSoURDt3rd_S_CanManageMenuAudio //
 #include "STAR/lights/smkg-coronas.h"
 #include "STAR/menus/smkg-m_sys.h" // various chunks of menu data //
 #include "STAR/misc/smkg-m_misc.h" // TSoURDt3rd_FIL_CreateSavefileProperly() //
@@ -632,7 +632,7 @@ menuitem_t SPauseMenu[] =
 #endif
 {
 	// STAR STUFF: let me load addons without pandora's box please //
-	{IT_STRING | IT_CALL,    NULL, "Add-ons",  			   M_Addons,           	   8},
+	{IT_STRING | IT_CALL,    NULL, "Addons",  			   M_Addons,           	   8},
 
 	// Pandora's Box will be shifted up if both options are available
 	{IT_CALL | IT_STRING,    NULL, "Pandora's Box...",     M_PandorasBox,         24},
@@ -1172,7 +1172,7 @@ static menuitem_t OP_ChangeControlsMenu[] =
 	{IT_CALL | IT_STRING2, NULL, "Grenade",          M_ChangeControl, GC_WEPSLOT5    },
 	{IT_CALL | IT_STRING2, NULL, "Explosion",        M_ChangeControl, GC_WEPSLOT6    },
 	{IT_CALL | IT_STRING2, NULL, "Rail",             M_ChangeControl, GC_WEPSLOT7    },
-	{IT_HEADER, NULL, "Add-ons", NULL, 0},
+	{IT_HEADER, NULL, "Addons", NULL, 0},
 	{IT_SPACE, NULL, NULL, NULL, 0}, // padding
 	{IT_CALL | IT_STRING2, NULL, "Custom Action 1",  M_ChangeControl, GC_CUSTOM1     },
 	{IT_CALL | IT_STRING2, NULL, "Custom Action 2",  M_ChangeControl, GC_CUSTOM2     },
@@ -2728,9 +2728,9 @@ static boolean MIT_ChangeMusic(UINT32 menutype, INT32 level, INT32 *retval, void
 	if (!menutype) // if there's nothing in this level, do nothing
 		return false;
 
-	if (!TSoURDt3rd_S_CanModifyMusic(defaultmusic->musname))
+	if (!TSoURDt3rd_S_CanManageMenuAudio())
 	{
-		// STAR STUFF: keep playing jukebox music please //
+		// STAR STUFF: we can handle our own menu music, thank you very much! //
 		return false;
 	}
 
@@ -3399,9 +3399,11 @@ boolean M_Responder(event_t *ev)
 	else if (ev->type == ev_keydown) // Preserve event for other responders
 		ch = ev->key;
 
-	// STAR STUFF: process unique menu events //
 	if (TSoURDt3rd_M_Responder(&ch, ev))
+	{
+		// STAR STUFF: process unique menu events //
 		return true;
+	}
 
 	if (ch == -1)
 		return false;
@@ -3834,11 +3836,8 @@ void M_StartControlPanel(void)
 		MPauseMenu[mpause_switchmap].status = IT_DISABLED;
 		MPauseMenu[mpause_addons].status = IT_DISABLED;
 		MPauseMenu[mpause_scramble].status = IT_DISABLED;
-#if 1
-		// STAR NOTE: dang remove idk //
 #ifdef HAVE_DISCORDSUPPORT
 		MPauseMenu[mpause_discordrequests].status = IT_DISABLED;
-#endif
 #endif
 		MPauseMenu[mpause_psetupsplit].status = IT_DISABLED;
 		MPauseMenu[mpause_psetupsplit2].status = IT_DISABLED;
@@ -4007,6 +4006,8 @@ void M_Ticker(void)
 
 	if (--skullAnimCounter <= 0)
 		skullAnimCounter = 8;
+
+	HU_TickSongCredits();
 
 	//added : 30-01-98 : test mode for five seconds
 	if (vidm_testingmode > 0)
@@ -7980,17 +7981,41 @@ static void M_DrawSoundTest(void)
 	{
 		static fixed_t st_scroll = -FRACUNIT;
 		const char* titl;
+		char *title, *alttitle, *authors;
+
 		x = 16;
 		V_DrawString(x, 10, 0, "NOW PLAYING:");
+
 		if (curplaying)
 		{
-			if (curplaying->alttitle[0])
-				titl = va("%s - %s - ", curplaying->title, curplaying->alttitle);
+			if (curplaying->basicdef)
+			{
+				title = curplaying->basicdef->title;
+				alttitle = curplaying->basicdef->alttitle;
+				authors = curplaying->basicdef->authors;
+			}
 			else
-				titl = va("%s - ", curplaying->title);
+			{
+				title = curplaying->title;
+				alttitle = curplaying->alttitle;
+				authors = curplaying->authors;
+			}
+
+			if (title && title[0])
+			{
+				if (alttitle && alttitle[0])
+					titl = va("%s - %s - ", title, alttitle);
+				else
+					titl = va("%s - ", title);
+			}
+			else
+				titl = va("%s - ", curplaying->name[0]);
 		}
 		else
+		{
 			titl = "None - ";
+			authors = NULL;
+		}
 
 		i = V_LevelNameWidth(titl);
 
@@ -8009,8 +8034,8 @@ static void M_DrawSoundTest(void)
 			V_DrawLevelTitle(x, 22, 0, titl);
 		}
 
-		if (curplaying)
-			V_DrawRightAlignedThinString(BASEVIDWIDTH-16, 46, V_ALLOWLOWERCASE, curplaying->authors);
+		if (authors && authors[0])
+			V_DrawRightAlignedThinString(BASEVIDWIDTH-16, 46, V_ALLOWLOWERCASE, authors);
 	}
 
 	V_DrawFill(165, 60, 140, 112, 159);
@@ -8061,6 +8086,7 @@ static void M_DrawSoundTest(void)
 
 		while (t <= b)
 		{
+			basicmusicdef_t *basicdef = soundtestdefs[t]->basicdef;
 			if (t == st_sel)
 				V_DrawFill(165, y-4, 140-1, 16, 155);
 			if (!soundtestdefs[t]->allowed)
@@ -8087,18 +8113,32 @@ static void M_DrawSoundTest(void)
 					V_DrawRightAlignedString(165+140-5, y, V_MENUCOLORMAP, sfxstr);
 				}
 			}
+			else if (basicdef != NULL)
+			{
+				if (strlen(basicdef->title) < 17)
+					V_DrawString(x, y, (t == st_sel ? V_MENUCOLORMAP : 0)|V_ALLOWLOWERCASE, basicdef->title);
+				else
+					V_DrawThinString(x-1, y, (t == st_sel ? V_MENUCOLORMAP : 0)|V_ALLOWLOWERCASE, basicdef->title);
+
+				if (curplaying == soundtestdefs[t])
+				{
+					V_DrawFill(165+140-9, y-4, 8, 16, 150);
+					//V_DrawCharacter(165+140-8, y, '\x19' | V_YELLOWMAP, false);
+					V_DrawFixedPatch((165+140-9)<<FRACBITS, (y<<FRACBITS)-(bounce*4), FRACUNIT, 0, hu_font.chars['\x19'-FONTSTART], V_GetStringColormap(V_MENUCOLORMAP));
+				}
+			}
 			else
 			{
-#if 0
-				V_DrawString(x, y, (t == st_sel ? V_MENUCOLORMAP : 0)|V_ALLOWLOWERCASE, soundtestdefs[t]->title);
-#else
-				// STAR NOTE: technically a bug, if song is too long, it doesn't shrink and stuff //
-				// 					this fixes that though. //
-				if (strlen(soundtestdefs[t]->title) < 17)
-					V_DrawString(x, y, (t == st_sel ? V_MENUCOLORMAP : 0)|V_ALLOWLOWERCASE, soundtestdefs[t]->title);
+				if (soundtestdefs[t]->title)
+				{
+					if (strlen(soundtestdefs[t]->title) < 17)
+						V_DrawString(x, y, (t == st_sel ? V_MENUCOLORMAP : 0)|V_ALLOWLOWERCASE, soundtestdefs[t]->title);
+					else
+						V_DrawThinString(x-1, y, (t == st_sel ? V_MENUCOLORMAP : 0)|V_ALLOWLOWERCASE, soundtestdefs[t]->title);
+				}
 				else
-					V_DrawThinString(x-1, y, (t == st_sel ? V_MENUCOLORMAP : 0)|V_ALLOWLOWERCASE, soundtestdefs[t]->title);
-#endif
+					V_DrawString(x-1, y, (t == st_sel ? V_MENUCOLORMAP : 0)|V_ALLOWLOWERCASE, soundtestdefs[t]->name[0]);
+
 				if (curplaying == soundtestdefs[t])
 				{
 					V_DrawFill(165+140-9, y-4, 8, 16, 150);
@@ -8208,7 +8248,9 @@ static void M_HandleSoundTest(INT32 choice)
 						S_StartSoundFromEverywhere(cv_soundtest.value);
 				}
 				else
-					S_ChangeMusicInternal(curplaying->name, !curplaying->stoppingtics);
+					S_ChangeMusicInternal(curplaying->name[0], !curplaying->stoppingtics);
+				S_StopMusicCredit();
+				S_UnloadMusicCredit();
 			}
 			else
 			{
@@ -11872,6 +11914,8 @@ static void M_StartServer(INT32 choice)
 		G_StopDemo();
 	if (metalrecording)
 		G_StopMetalDemo();
+
+	S_StopMusicCredit();
 
 	if (!StartSplitScreenGame)
 	{

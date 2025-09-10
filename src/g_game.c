@@ -2811,11 +2811,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	{
 		if (mapmusflags & MUSIC_RELOADRESET)
 		{
-			strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname, 7);
-#if 1
-			// STAR STUFF: my cool music's turn now! //
 			strncpy(mapmusname, TSoURDt3rd_DetermineLevelMusic(), 7);
-#endif
 			mapmusname[6] = 0;
 			mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
 			mapmusposition = mapheaderinfo[gamemap-1]->muspos;
@@ -5081,6 +5077,8 @@ void G_DeferedInitNew(boolean pultmode, const char *mapname, INT32 character, bo
 		COM_BufAddText("stopdemo\n");
 	G_FreeGhosts(); // TODO: do we actually need to do this?
 
+	S_StopMusicCredit();
+
 	// this leave the actual game if needed
 	SV_StartSinglePlayerServer();
 
@@ -5122,6 +5120,8 @@ void G_InitNew(UINT8 pultmode, const char *mapname, boolean resetplayer, boolean
 
 	if (!demoplayback && !netgame) // Netgame sets random seed elsewhere, demo playback sets seed just before us!
 		P_SetRandSeed(M_RandomizedSeed()); // Use a more "Random" random seed
+
+	S_StopMusicCredit();
 
 	if (resetplayer)
 	{

@@ -23,17 +23,37 @@
 //        Variables
 // ------------------------ //
 
-musicdef_t tsourdt3rd_aprilfools_def = {
-	"_hehe", // prevents exactly one valid track name from being used on the sound test
+basicmusicdef_t tsourdt3rd_aprilfools_basicdef = {
 	"Get Rickrolled LOL",
 	"",
 	"Who do you think?",
+	""
+};
+
+musicdef_t tsourdt3rd_aprilfools_def = {
+	{ "_hehe" }, // prevents exactly one valid track name from being used on the sound test
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+
+	{ 0 },
+	{ false },
+	1,
+	DEFAULT_MUSICDEF_VOLUME,
+	DEFAULT_MUSICDEF_VOLUME,
+	true,
+	false,
+
 	1, // show on soundtest page 1
 	0, // with no conditions
 	0,
 	0,
 	0,
 	false,
+
+	&tsourdt3rd_aprilfools_basicdef,
+
 	NULL
 };
 
