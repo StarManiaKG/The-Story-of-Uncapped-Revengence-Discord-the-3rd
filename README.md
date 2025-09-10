@@ -198,11 +198,11 @@ The build and its executable files can be found in the provided ZIP file, with f
 ## Dependencies
 **NECESSARY DEPENDENCIES**
   - NASM (x86 builds only)
-  - SDL2 (Linux/OS X only)
+  - SDL2 (Linux/macOS only)
   - SDL2-Mixer (Linux/OS X only)
-  - libupnp (Linux/OS X only)
-  - libgme (Linux/OS X only)
-  - libopenmpt (Linux/OS X only)
+  - libupnp (Linux/macOS only)
+  - libgme (Linux/macOS only)
+  - libopenmpt (Linux/macOS only)
 
 **OPTIONAL DEPENDENCIES**
   - Discord-RPC (Discord RPC Support; Windows Included, Mac/Linux users can find/compile them [here](https://github.com/discord/discord-rpc))
