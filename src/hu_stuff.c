@@ -1830,14 +1830,14 @@ static void DrawSongCreditsCharacters(fixed_t x, fixed_t y)
 	INT32 i;
 
 	// Get our characters!
-	for (i = consoleplayer; i < MAXPLAYERS; i++)
+	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		player_t *player = &players[i];
 
 		character_patches[i] = NULL;
 		if (!playeringame[i] || !player)
 			continue;
-		else if ((gametyperules & GTR_TEAMS) && (players[i].ctfteam != players[displayplayer].ctfteam))
+		else if ((gametyperules & GTR_TEAMS) && (players[i].ctfteam != players[consoleplayer].ctfteam))
 			continue;
 
 		skin_t *skin = skins[player->skin];
