@@ -83,15 +83,11 @@
 #endif
 
 // TSoURDt3rd
-#ifdef HAVE_DISCORDSUPPORT
-#include "discord/discord.h"
-#endif
 #include "STAR/star_vars.h"
 #include "STAR/smkg-cvars.h" // various vast TSoURDt3rd commands and command functions //
-#include "STAR/ss_main.h" // AUTOLOADCONFIGFILENAME & STAR_CONS_Printf() //
 #include "STAR/core/smkg-s_audio.h" // TSoURDt3rd_S_CanManageMenuAudio //
 #include "STAR/lights/smkg-coronas.h"
-#include "STAR/menus/smkg-m_sys.h" // various chunks of menu data //
+#include "STAR/menus/smkg-m_sys.h" // various chunks of menu data + TSoURDt3rd_M_SetMenuHasWritable(); //
 #include "STAR/misc/smkg-m_misc.h" // TSoURDt3rd_FIL_CreateSavefileProperly() //
 
 #if defined (__GNUC__) && (__GNUC__ >= 4)
@@ -141,6 +137,7 @@ I_mutex m_menu_mutex;
 M_waiting_mode_t m_waiting_mode = M_NOT_WAITING;
 
 const char *quitmsg[NUM_QUITMESSAGES];
+static boolean attempting_esc_srb2 = false; // STAR NOTE: hack until we can revamp menu system
 
 // Stuff for customizing the player select screen Tails 09-22-2003
 description_t *description = NULL;
@@ -194,6 +191,7 @@ static fixed_t char_scroll = 0;
 #define charscrollamt 128*FRACUNIT
 
 static tic_t keydown = 0;
+#define CHARSELECT_KEYDOWN_MODULAR 6
 
 // Lua
 static huddrawlist_h luahuddrawlist_playersetup;
@@ -214,11 +212,6 @@ static void M_RoomMenu(INT32 choice);
 // ==========================================================================
 // NEEDED FUNCTION PROTOTYPES GO HERE
 // ==========================================================================
-
-// the haxor message menu
-menu_t MessageDef;
-
-menu_t SPauseDef;
 
 // Level Select
 static levelselect_t levelselect = {0, NULL};
@@ -257,12 +250,12 @@ static void M_HandleEmblemHints(INT32 choice);
 UINT32 hintpage = 1;
 static void M_HandleChecklist(INT32 choice);
 static void M_PauseLevelSelect(INT32 choice);
-menu_t SR_MainDef, SR_UnlockChecklistDef;
 
 static UINT8 check_on;
 
 // Misc. Main Menu
 static void M_SinglePlayerMenu(INT32 choice);
+static void M_LoadMultiplayerMainMenu(INT32 choice);
 static void M_Options(INT32 choice);
 static void M_SelectableClearMenus(INT32 choice);
 static void M_Retry(INT32 choice);
@@ -277,8 +270,6 @@ static void M_SecretsMenu(INT32 choice);
 static void M_SetupChoosePlayer(INT32 choice);
 static INT32 M_SetupChoosePlayerDirect(INT32 choice);
 static void M_QuitSRB2(INT32 choice);
-menu_t SP_MainDef, OP_MainDef;
-menu_t MISC_ScrambleTeamDef, MISC_ChangeTeamDef;
 
 // Single Player
 static void M_StartTutorial(INT32 choice);
@@ -300,10 +291,6 @@ static void M_MarathonLiveEventBackup(INT32 choice);
 static void M_Marathon(INT32 choice);
 static void M_HandleMarathonChoosePlayer(INT32 choice);
 static void M_StartMarathon(INT32 choice);
-menu_t SP_LevelStatsDef;
-static menu_t SP_TimeAttackDef, SP_ReplayDef, SP_GuestReplayDef, SP_GhostDef;
-static menu_t SP_NightsAttackDef, SP_NightsReplayDef, SP_NightsGuestReplayDef, SP_NightsGhostDef;
-static menu_t SP_MarathonDef;
 
 // Multiplayer
 static void M_SetupMultiPlayer(INT32 choice);
@@ -317,18 +304,9 @@ static void M_ConnectMenuModChecks(INT32 choice);
 static void M_Refresh(INT32 choice);
 static void M_Connect(INT32 choice);
 static void M_ChooseRoom(INT32 choice);
-menu_t MP_MainDef;
 
 // Options
 // Split into multiple parts due to size
-// Controls
-menu_t OP_ChangeControlsDef;
-menu_t OP_MPControlsDef, OP_MiscControlsDef;
-menu_t OP_P1ControlsDef, OP_P2ControlsDef, OP_MouseOptionsDef;
-menu_t OP_Mouse2OptionsDef, OP_Joystick1Def, OP_Joystick2Def;
-menu_t OP_CameraOptionsDef, OP_Camera2OptionsDef;
-menu_t OP_PlaystyleDef;
-menu_t OP_AddonCustomOptionsDef;
 static void M_VideoModeMenu(INT32 choice);
 static void M_Setup1PControlsMenu(INT32 choice);
 static void M_Setup2PControlsMenu(INT32 choice);
@@ -341,21 +319,11 @@ static void M_ChangeControl(INT32 choice);
 
 // Video & Sound
 static void M_VideoOptions(INT32 choice);
-menu_t OP_VideoOptionsDef, OP_VideoModeDef, OP_ColorOptionsDef;
 #ifdef HWRENDER
 static void M_OpenGLOptionsMenu(void);
-menu_t OP_OpenGLOptionsDef;
-#ifdef ALAM_LIGHTING
-menu_t OP_OpenGLLightingDef;
-#endif // ALAM_LIGHTING
 #endif // HWRENDER
-menu_t OP_SoundOptionsDef;
-menu_t OP_SoundAdvancedDef;
 
 //Misc
-menu_t OP_DataOptionsDef, OP_ScreenshotOptionsDef, OP_EraseDataDef;
-menu_t OP_ServerOptionsDef;
-menu_t OP_MonitorToggleDef;
 static void M_ScreenshotOptions(INT32 choice);
 static void M_SetupScreenshotMenu(void);
 static void M_EraseData(INT32 choice);
@@ -512,19 +480,15 @@ consvar_t cv_dummyloadless = CVAR_INIT ("dummyloadless", "In-game", CV_HIDEN, lo
 // ---------
 // Main Menu
 // ---------
-#if 0
-static menuitem_t MainMenu[] =
-#else
-/* STAR NOTE: now externed in STAR/smkg-m_sys.h */
+
 menuitem_t MainMenu[] =
-#endif
 {
-	{IT_STRING|IT_CALL,    NULL, "1  Player",   M_SinglePlayerMenu,      76},
-	{IT_STRING|IT_SUBMENU, NULL, "Multiplayer", &MP_MainDef,             84},
-	{IT_STRING|IT_CALL,    NULL, "Extras",      M_SecretsMenu,           92},
-	{IT_CALL   |IT_STRING, NULL, "Addons",      M_Addons,               100},
-	{IT_STRING|IT_CALL,    NULL, "Options",     M_Options,              108},
-	{IT_STRING|IT_CALL,    NULL, "Quit  Game",  M_QuitSRB2,             116},
+	{IT_STRING|IT_CALL,    NULL, "1  Player",   M_SinglePlayerMenu,        76},
+	{IT_STRING|IT_CALL,    NULL, "Multiplayer", M_LoadMultiplayerMainMenu, 84},
+	{IT_STRING|IT_CALL,    NULL, "Extras",      M_SecretsMenu,             92},
+	{IT_STRING|IT_CALL,    NULL, "Addons",      M_Addons,                 100},
+	{IT_STRING|IT_CALL,    NULL, "Options",     M_Options,                108},
+	{IT_STRING|IT_CALL,    NULL, "Quit  Game",  M_QuitSRB2,               116}
 };
 
 typedef enum
@@ -565,12 +529,8 @@ typedef enum
 // ---------------------
 // Pause Menu MP Edition
 // ---------------------
-#if 0
-static menuitem_t MPauseMenu[] =
-#else
-/* STAR NOTE: now externed in STAR/smkg-m_sys.h */
+
 menuitem_t MPauseMenu[] =
-#endif
 {
 	{IT_STRING | IT_CALL,    NULL, "Add-ons...",                M_Addons,               8},
 	{IT_STRING | IT_SUBMENU, NULL, "Scramble Teams...",         &MISC_ScrambleTeamDef, 16},
@@ -578,7 +538,7 @@ menuitem_t MPauseMenu[] =
 	{IT_STRING | IT_CALL,    NULL, "Switch Gametype/Level...",  M_MapChange,           32},
 
 #ifdef HAVE_DISCORDSUPPORT
-	{IT_STRING | IT_CALL,	 NULL/*"M_ICODIS"*/, "Discord Requests...", TSoURDt3rd_M_DiscordRequests_Init,	   48},
+	{IT_STRING | IT_CALL,	 NULL, "Discord Requests...",       TSoURDt3rd_M_DiscordRequests_Init,48},
 #endif
 
 	{IT_STRING | IT_CALL,    NULL, "Continue",                  M_SelectableClearMenus,64},
@@ -597,39 +557,11 @@ menuitem_t MPauseMenu[] =
 	{IT_STRING | IT_CALL,    NULL, "Quit Game",                 M_QuitSRB2,           112},
 };
 
-typedef enum
-{
-	mpause_addons = 0,
-	mpause_scramble,
-	mpause_hints,
-	mpause_switchmap,
-
-#ifdef HAVE_DISCORDSUPPORT
-	mpause_discordrequests,
-#endif
-
-	mpause_continue,
-	mpause_psetupsplit,
-	mpause_psetupsplit2,
-	mpause_spectate,
-	mpause_entergame,
-	mpause_switchteam,
-	mpause_psetup,
-	mpause_options,
-
-	mpause_title,
-	mpause_quit
-} mpause_e;
-
 // ---------------------
 // Pause Menu SP Edition
 // ---------------------
-#if 0
-static menuitem_t SPauseMenu[] =
-#else
-/* STAR NOTE: now externed in STAR/smkg-m_sys.h */
+
 menuitem_t SPauseMenu[] =
-#endif
 {
 	// STAR STUFF: let me load addons without pandora's box please //
 	{IT_STRING | IT_CALL,    NULL, "Addons",  			   M_Addons,           	   8},
@@ -646,21 +578,6 @@ menuitem_t SPauseMenu[] =
 	{IT_CALL | IT_STRING,    NULL, "Return to Title",      M_EndGame,             88},
 	{IT_CALL | IT_STRING,    NULL, "Quit Game",            M_QuitSRB2,            96},
 };
-
-typedef enum
-{
-	spause_addons = 0, // STAR STUFF: YOU SHOULD BE ABLE TO LOAD ADDONS WHENEVER YOU WANT (:p) //
-	spause_pandora,
-	spause_hints,
-	spause_levelselect,
-
-	spause_continue,
-	spause_retry,
-	spause_options,
-
-	spause_title,
-	spause_quit
-} spause_e;
 
 // -----------------
 // Misc menu options
@@ -763,12 +680,7 @@ static menuitem_t SR_EmblemHintMenu[] =
 // Prefix: SP_
 
 // Single Player Main
-#if 0
-static menuitem_t SP_MainMenu[] =
-#else
-/* STAR NOTE: now externed in STAR/smkg-m_sys.h */
 menuitem_t SP_MainMenu[] =
-#endif
 {
 	// Note: If changing the positions here, also change them in M_SinglePlayerMenu()
 	{IT_CALL | IT_STRING,	NULL, "Start Game",    M_LoadGame,                 76},
@@ -1066,10 +978,7 @@ static menuitem_t MP_PlayerSetupMenu[] =
 	{IT_KEYHANDLER, NULL, "", M_HandleSetupMultiPlayer, 0}, // skin
 	{IT_KEYHANDLER, NULL, "", M_HandleSetupMultiPlayer, 0}, // colour
 	{IT_KEYHANDLER, NULL, "", M_HandleSetupMultiPlayer, 0}, // default
-#if 1
-	// STAR STUFF: reset to defaults //
-	{IT_KEYHANDLER, NULL, "", M_HandleSetupMultiPlayer, 0},
-#endif
+	{IT_KEYHANDLER, NULL, "", M_HandleSetupMultiPlayer, 0}, // STAR STUFF: reset to defaults //
 };
 
 // ------------------------------------
@@ -1219,32 +1128,26 @@ static menuitem_t OP_JoystickSetMenu[1+MAX_JOYSTICKS];
 
 static menuitem_t OP_MouseOptionsMenu[] =
 {
-	{IT_STRING | IT_CVAR, NULL, "Use Mouse",        &cv_usemouse,         10},
+	{IT_STRING | IT_CVAR,                NULL, "Use Mouse",               &cv_usemouse,          10},
 
-
-	{IT_STRING | IT_CVAR, NULL, "First-Person MouseLook", &cv_alwaysfreelook,   30},
-	{IT_STRING | IT_CVAR, NULL, "Third-Person MouseLook", &cv_chasefreelook,   40},
-	{IT_STRING | IT_CVAR, NULL, "Mouse Move",       &cv_mousemove,        50},
-	{IT_STRING | IT_CVAR, NULL, "Invert Y Axis",     &cv_invertmouse,      60},
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-	                      NULL, "Mouse X Sensitivity",    &cv_mousesens,        70},
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-	                      NULL, "Mouse Y Sensitivity",    &cv_mouseysens,        80},
+	{IT_STRING | IT_CVAR,                NULL, "First-Person MouseLook",  &cv_alwaysfreelook,    30},
+	{IT_STRING | IT_CVAR,                NULL, "Third-Person MouseLook",  &cv_chasefreelook,     40},
+	{IT_STRING | IT_CVAR,                NULL, "Mouse Move",              &cv_mousemove,         50},
+	{IT_STRING | IT_CVAR,                NULL, "Invert Y Axis",           &cv_invertmouse,       60},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Mouse X Sensitivity",     &cv_mousesens,      70},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Mouse Y Sensitivity",     &cv_mouseysens,     80},
 };
 
 static menuitem_t OP_Mouse2OptionsMenu[] =
 {
-	{IT_STRING | IT_CVAR, NULL, "Use Mouse 2",      &cv_usemouse2,        10},
-	{IT_STRING | IT_CVAR, NULL, "Second Mouse Serial Port",
-	                                                &cv_mouse2port,       20},
-	{IT_STRING | IT_CVAR, NULL, "First-Person MouseLook", &cv_alwaysfreelook2,  30},
-	{IT_STRING | IT_CVAR, NULL, "Third-Person MouseLook", &cv_chasefreelook2,  40},
-	{IT_STRING | IT_CVAR, NULL, "Mouse Move",       &cv_mousemove2,       50},
-	{IT_STRING | IT_CVAR, NULL, "Invert Y Axis",     &cv_invertmouse2,     60},
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-	                      NULL, "Mouse X Sensitivity",    &cv_mousesens2,       70},
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-	                      NULL, "Mouse Y Sensitivity",    &cv_mouseysens2,      80},
+	{IT_STRING | IT_CVAR,                NULL, "Use Mouse 2",              &cv_usemouse2,        10},
+	{IT_STRING | IT_CVAR,                NULL, "Second Mouse Serial Port", &cv_mouse2port,       20},
+	{IT_STRING | IT_CVAR,                NULL, "First-Person MouseLook",   &cv_alwaysfreelook2,  30},
+	{IT_STRING | IT_CVAR,                NULL, "Third-Person MouseLook",   &cv_chasefreelook2,   40},
+	{IT_STRING | IT_CVAR,                NULL, "Mouse Move",               &cv_mousemove2,       50},
+	{IT_STRING | IT_CVAR,                NULL, "Invert Y Axis",            &cv_invertmouse2,     60},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Mouse X Sensitivity",      &cv_mousesens2,       70},
+	{IT_STRING | IT_CVAR | IT_CV_SLIDER, NULL, "Mouse Y Sensitivity",      &cv_mouseysens2,      80},
 };
 
 static menuitem_t OP_CameraOptionsMenu[] =
@@ -1868,7 +1771,7 @@ menu_t SP_TimeAttackLevelSelectDef = MAPPLATTERMENUSTYLE(
 	MTREE3(MN_SP_MAIN, MN_SP_TIMEATTACK, MN_SP_TIMEATTACK_LEVELSELECT),
 	"M_ATTACK", SP_TimeAttackLevelSelectMenu);
 
-static menu_t SP_TimeAttackDef =
+menu_t SP_TimeAttackDef =
 {
 	MTREE2(MN_SP_MAIN, MN_SP_TIMEATTACK),
 	"M_ATTACK",
@@ -1880,7 +1783,7 @@ static menu_t SP_TimeAttackDef =
 	0,
 	NULL
 };
-static menu_t SP_ReplayDef =
+menu_t SP_ReplayDef =
 {
 	MTREE3(MN_SP_MAIN, MN_SP_TIMEATTACK, MN_SP_REPLAY),
 	"M_ATTACK",
@@ -1892,7 +1795,7 @@ static menu_t SP_ReplayDef =
 	0,
 	NULL
 };
-static menu_t SP_GuestReplayDef =
+menu_t SP_GuestReplayDef =
 {
 	MTREE3(MN_SP_MAIN, MN_SP_TIMEATTACK, MN_SP_GUESTREPLAY),
 	"M_ATTACK",
@@ -1904,7 +1807,7 @@ static menu_t SP_GuestReplayDef =
 	0,
 	NULL
 };
-static menu_t SP_GhostDef =
+menu_t SP_GhostDef =
 {
 	MTREE3(MN_SP_MAIN, MN_SP_TIMEATTACK, MN_SP_GHOST),
 	"M_ATTACK",
@@ -1921,7 +1824,7 @@ menu_t SP_NightsAttackLevelSelectDef = MAPPLATTERMENUSTYLE(
 	MTREE3(MN_SP_MAIN, MN_SP_NIGHTSATTACK, MN_SP_NIGHTS_LEVELSELECT),
 	 "M_NIGHTS", SP_NightsAttackLevelSelectMenu);
 
-static menu_t SP_NightsAttackDef =
+menu_t SP_NightsAttackDef =
 {
 	MTREE2(MN_SP_MAIN, MN_SP_NIGHTSATTACK),
 	"M_NIGHTS",
@@ -1933,7 +1836,7 @@ static menu_t SP_NightsAttackDef =
 	0,
 	NULL
 };
-static menu_t SP_NightsReplayDef =
+menu_t SP_NightsReplayDef =
 {
 	MTREE3(MN_SP_MAIN, MN_SP_NIGHTSATTACK, MN_SP_NIGHTS_REPLAY),
 	"M_NIGHTS",
@@ -1945,7 +1848,7 @@ static menu_t SP_NightsReplayDef =
 	0,
 	NULL
 };
-static menu_t SP_NightsGuestReplayDef =
+menu_t SP_NightsGuestReplayDef =
 {
 	MTREE3(MN_SP_MAIN, MN_SP_NIGHTSATTACK, MN_SP_NIGHTS_GUESTREPLAY),
 	"M_NIGHTS",
@@ -1957,7 +1860,7 @@ static menu_t SP_NightsGuestReplayDef =
 	0,
 	NULL
 };
-static menu_t SP_NightsGhostDef =
+menu_t SP_NightsGhostDef =
 {
 	MTREE3(MN_SP_MAIN, MN_SP_NIGHTSATTACK, MN_SP_NIGHTS_GHOST),
 	"M_NIGHTS",
@@ -1970,7 +1873,7 @@ static menu_t SP_NightsGhostDef =
 	NULL
 };
 
-static menu_t SP_MarathonDef =
+menu_t SP_MarathonDef =
 {
 	MTREE2(MN_SP_MAIN, MN_SP_MARATHON),
 	"M_RATHON",
@@ -2292,10 +2195,14 @@ static void M_AddonsCvarOptions(INT32 choice)
 {
 	(void)choice;
 
-	if (menu_cc_pos)
-		M_SetupNextMenu(&OP_AddonCustomOptionsDef);
-	else
+	if (!menu_cc_pos)
+	{
 		M_StartMessage(M_GetText("No Custom Option was found.\nTry to load any Addon!\n(Press a key)\n"), NULL, MM_NOTHING);
+		return;
+	}
+
+	M_SetupNextMenu(&OP_AddonCustomOptionsDef);
+	TSoURDt3rd_M_SetMenuHasWritable(true);
 }
 
 menu_t OP_AddonCustomOptionsDef = DEFAULTSCROLLMENUSTYLE(
@@ -3091,6 +2998,8 @@ static void M_GoBack(INT32 choice)
 {
 	(void)choice;
 
+	attempting_esc_srb2 = false;
+
 	if (currentMenu->prevMenu)
 	{
 		//If we entered the game search menu, but didn't enter a game,
@@ -3119,7 +3028,7 @@ static void M_GoBack(INT32 choice)
 			M_SetupNextMenu(currentMenu->prevMenu);
 	}
 	else
-		M_ClearMenus(true);
+		M_ClearMenus();
 }
 
 static void M_ChangeCvar(INT32 choice)
@@ -3256,17 +3165,37 @@ static void Command_Manual_f(void)
 boolean M_Responder(event_t *ev)
 {
 	INT32 ch = -1;
-//	INT32 i;
 	static tic_t joywait = 0, mousewait = 0;
 	static INT32 pjoyx = 0, pjoyy = 0;
 	static INT32 pmousex = 0, pmousey = 0;
 	static INT32 lastx = 0, lasty = 0;
 	void (*routine)(INT32 choice); // for some casting problem
 
-	if (dedicated || (demoplayback && titledemo)
-	|| gamestate == GS_INTRO || gamestate == GS_ENDING || gamestate == GS_CUTSCENE
-	|| gamestate == GS_CREDITS || gamestate == GS_EVALUATION || gamestate == GS_GAMEEND)
+	if (dedicated)
 		return false;
+
+	if (ev->type == ev_keydown && ev->repeated == false)
+	{
+		switch (ev->key)
+		{
+			case KEY_F3: // Toggle HUD
+				CV_SetValue(&cv_showhud, !cv_showhud.value);
+				return true;
+
+			case KEY_F10: // Toggle Renderer
+				CV_AddValue(&cv_renderer, 1);
+				return true;
+
+			case KEY_F11: // Toggle Fullscreen
+				// F11 can always be used to toggle
+				// fullscreen, it's a safe key.
+				CV_AddValue(&cv_fullscreen, 1);
+				return true;
+
+			default:
+				break;
+		}
+	}
 
 	if (gamestate == GS_TITLESCREEN && finalecount < (cv_tutorialprompt.value ? TICRATE : 0))
 		return false;
@@ -3340,7 +3269,9 @@ boolean M_Responder(event_t *ev)
 					pjoyy = ev->y;
 				}
 				else
+				{
 					pjoyy = 0;
+				}
 			}
 
 			if (ev->x != INT32_MAX)
@@ -3360,7 +3291,9 @@ boolean M_Responder(event_t *ev)
 					pjoyx = ev->x;
 				}
 				else
+				{
 					pjoyx = 0;
+				}
 			}
 		}
 		else if (ev->type == ev_mouse && mousewait < I_GetTime())
@@ -3405,10 +3338,43 @@ boolean M_Responder(event_t *ev)
 		return true;
 	}
 
-	if (ch == -1)
+	if (ch <= KEY_NULL)
 		return false;
-	else if (ev->type != ev_text && (ch == gamecontrol[GC_SYSTEMMENU][0] || ch == gamecontrol[GC_SYSTEMMENU][1])) // allow remappable ESC key
+	else if (ev->type != ev_text && G_ControlKeyCompare(gamecontrol[0], GC_SYSTEMMENU, ch)) // allow remappable ESC key
 		ch = KEY_ESCAPE;
+
+	if (demoplayback && titledemo)
+		return false;
+
+	if (chat_on)
+	{
+		if (ch == KEY_ESCAPE)
+			HU_clearChatChars();
+		return false;
+	}
+
+	// Gamestates
+	switch (gamestate)
+	{
+		case GS_INTRO:
+		case GS_ENDING:
+		case GS_CUTSCENE:
+		case GS_CREDITS:
+		case GS_EVALUATION:
+		case GS_GAMEEND:
+			return false; // blacklisted gamestates
+		case GS_TITLESCREEN:
+			if (ch == KEY_ESCAPE && !menuactive)
+			{
+				// Pulling a Ring Racers
+				attempting_esc_srb2 = true;
+				M_QuitSRB2(-1);
+				return false;
+			}
+			/* FALLTHRU */
+		default:
+			break;
+	}
 
 	// F-Keys
 	if (!menuactive)
@@ -3418,13 +3384,6 @@ boolean M_Responder(event_t *ev)
 		{
 			case KEY_F1: // Help key
 				Command_Manual_f();
-				return true;
-
-			case KEY_F2: // Empty
-				return true;
-
-			case KEY_F3: // Toggle HUD
-				CV_SetValue(&cv_showhud, !cv_showhud.value);
 				return true;
 
 			case KEY_F4: // Sound Volume
@@ -3445,9 +3404,6 @@ boolean M_Responder(event_t *ev)
 				M_VideoModeMenu(0);
 				return true;
 
-			case KEY_F6: // Empty
-				return true;
-
 			case KEY_F7: // Options
 				if (modeattacking)
 					return true;
@@ -3459,21 +3415,10 @@ boolean M_Responder(event_t *ev)
 			// Screenshots on F8 now handled elsewhere
 			// Same with Moviemode on F9
 
-			case KEY_F10: // Renderer toggle, also processed inside menus
-				CV_AddValue(&cv_renderer, 1);
-				return true;
-
-			case KEY_F11: // Fullscreen toggle, also processed inside menus
-				CV_SetValue(&cv_fullscreen, !cv_fullscreen.value);
-				return true;
-
 			// Spymode on F12 handled in game logic
 
-			case KEY_ESCAPE: // Pop up menu
-				if (chat_on)
-					HU_clearChatChars();
-				else
-					M_StartControlPanel();
+			case KEY_ESCAPE: // Initialize the menu system
+				M_StartControlPanel();
 				return true;
 		}
 		noFurtherInput = false; // turns out we didn't care
@@ -3669,7 +3614,6 @@ boolean M_Responder(event_t *ev)
 			return true;
 
 		default:
-			CON_Responder(ev);
 			break;
 	}
 
@@ -3688,10 +3632,7 @@ void M_Drawer(void)
 	if (currentMenu == &MessageDef)
 		menuactive = true;
 
-#if 1
-	// STAR STUFF: render our pre-wipe and jukebox menu //
-	TSoURDt3rd_M_PreDrawer(&wipe);
-#endif
+	TSoURDt3rd_M_PreDrawer(&wipe); // STAR STUFF: render our pre-wipe and jukebox menu //
 
 	if (menuactive)
 	{
@@ -3723,10 +3664,7 @@ void M_Drawer(void)
 		}
 	}
 
-#if 1
-	// STAR STUFF: render version, message box, and more //
-	TSoURDt3rd_M_PostDrawer();
-#endif
+	TSoURDt3rd_M_PostDrawer(); // STAR STUFF: render version, message box, and more //
 
 	// focus lost notification goes on top of everything, even the former everything
 	if (window_notinfocus && cv_showfocuslost.value)
@@ -3754,6 +3692,8 @@ void M_StartControlPanel(void)
 	// STAR STUFF: run our junk too i guess :p //
 	if (TSoURDt3rd_M_StartControlPanel())
 		return;
+
+	memset(gamekeydown, 0, sizeof(gamekeydown));
 
 	// intro might call this repeatedly
 	if (menuactive)
@@ -3897,12 +3837,12 @@ void M_EndModeAttackRun(void)
 //
 // M_ClearMenus
 //
-void M_ClearMenus(boolean callexitmenufunc)
+void M_ClearMenus(void)
 {
 	if (!menuactive)
 		return;
 
-	if (currentMenu->quitroutine && callexitmenufunc && !currentMenu->quitroutine())
+	if (currentMenu->quitroutine && !currentMenu->quitroutine())
 		return; // we can't quit this menu (also used to set parameter from the menu)
 
 	// Save the config file. I'm sick of crashing the game later and losing all my changes!
@@ -3910,11 +3850,14 @@ void M_ClearMenus(boolean callexitmenufunc)
 
 	if (currentMenu == &MessageDef) // Oh sod off!
 		currentMenu = &MainDef; // Not like it matters
+
+	TSoURDt3rd_M_ClearMenus(); // STAR STUFF: clear the screen of weird stuff please //
+
+	attempting_esc_srb2 = false;
 	menuactive = false;
 	hidetitlemap = false;
 
-	TSoURDt3rd_M_ClearMenus(callexitmenufunc); // STAR STUFF: clear the screen of weird stuff please //
-
+	memset(gamekeydown, 0, sizeof(gamekeydown));
 	I_UpdateMouseGrab();
 	I_SetTextInputMode(textinputmodeenabledbylua);
 }
@@ -3985,6 +3928,8 @@ void M_SetupNextMenu(menu_t *menudef)
 	M_UpdateItemOn();
 
 	hidetitlemap = false;
+
+	TSoURDt3rd_M_SetMenuHasWritable(false);
 }
 
 // Guess I'll put this here, idk
@@ -4009,6 +3954,9 @@ void M_Ticker(void)
 
 	HU_TickSongCredits();
 
+	// STAR STUFF: tick for our unique menu system too :) //
+	TSoURDt3rd_M_Ticker(&itemOn, &noFurtherInput, skullAnimCounter, levellistmode);
+
 	//added : 30-01-98 : test mode for five seconds
 	if (vidm_testingmode > 0)
 	{
@@ -4019,9 +3967,6 @@ void M_Ticker(void)
 
 	if (currentMenu == &OP_ScreenshotOptionsDef)
 		M_SetupScreenshotMenu();
-
-	// STAR STUFF: send input availability to our other unique menu system :) //
-	TSoURDt3rd_M_Ticker(&itemOn, &noFurtherInput, skullAnimCounter, levellistmode);
 
 #if defined (MASTERSERVER)
 	if (!netgame)
@@ -5846,7 +5791,7 @@ static void M_HandleLevelPlatter(INT32 choice)
 			Nextmap_OnChange();
 		}
 		else
-			M_ClearMenus(true);
+			M_ClearMenus();
 
 		Z_Free(char_notes);
 		char_notes = NULL;
@@ -6329,7 +6274,12 @@ static void M_StopMessage(INT32 choice)
 {
 	(void)choice;
 	if (menuactive)
-		M_SetupNextMenu(MessageDef.prevMenu);
+	{
+		if (attempting_esc_srb2)
+			M_ClearMenus();
+		else
+			M_SetupNextMenu(MessageDef.prevMenu);
+	}
 }
 
 // =========
@@ -6381,7 +6331,7 @@ static void M_HandleImageDef(INT32 choice)
 
 		case KEY_ESCAPE:
 		case KEY_ENTER:
-			M_ClearMenus(true);
+			M_ClearMenus();
 			break;
 	}
 }
@@ -6396,6 +6346,7 @@ static void M_AddonsOptions(INT32 choice)
 	Addons_option_Onchange();
 
 	M_SetupNextMenu(&OP_AddonsOptionsDef);
+	TSoURDt3rd_M_SetMenuHasWritable(true);
 }
 
 #define LOCATIONSTRING1 "Visit \x83SRB2.ORG/ADDONS\x80 to get & make addons!"
@@ -6469,6 +6420,7 @@ static void M_Addons(INT32 choice)
 
 	MISC_AddonsDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&MISC_AddonsDef);
+	TSoURDt3rd_M_SetMenuHasWritable(true);
 }
 
 #ifdef ENFORCE_WAD_LIMIT
@@ -6607,19 +6559,10 @@ static void M_DrawAddons(void)
 		return;
 	}
 
-#if 0
-	if (Playing())
-		V_DrawCenteredString(BASEVIDWIDTH/2, 5, warningflags, "Adding files mid-game may cause problems.");
-	else
-		V_DrawCenteredString(BASEVIDWIDTH/2, 5, 0, LOCATIONSTRING1);
-			// (recommendedflags == V_SKYMAP ? LOCATIONSTRING2 : LOCATIONSTRING1)
-#else
-	// STAR NOTE: consistancy reasons //
 	if (Playing())
 		V_DrawCenteredString(BASEVIDWIDTH/2, -5, warningflags, "Adding files mid-game may cause problems.");
 	V_DrawCenteredString(BASEVIDWIDTH/2, 5, 0, LOCATIONSTRING1);
 	V_DrawCenteredString(BASEVIDWIDTH/2, 200, 0, AUTOLOADSTRING);
-#endif
 
 #ifdef ENFORCE_WAD_LIMIT
 	if (numwadfiles <= mainwads+1)
@@ -6828,10 +6771,8 @@ static void M_HandleAddons(INT32 choice)
 #endif
 	}
 
-#if 1
 	// STAR STUFF: cool addon stuff //
 	TSoURDt3rd_M_HandleAddonsMenu(choice);
-#endif
 
 	switch (choice)
 	{
@@ -6957,7 +6898,7 @@ static void M_HandleAddons(INT32 choice)
 		if (currentMenu->prevMenu)
 			M_SetupNextMenu(currentMenu->prevMenu);
 		else
-			M_ClearMenus(true);
+			M_ClearMenus();
 	}
 }
 
@@ -7004,7 +6945,7 @@ static void M_ChangeLevel(INT32 choice)
 	strlwr(mapname);
 	mapname[5] = '\0';
 
-	M_ClearMenus(true);
+	M_ClearMenus();
 	COM_BufAddText(va("map %s -gametype \"%s\"\n", mapname, cv_newgametype.string));
 }
 
@@ -7012,7 +6953,7 @@ static void M_ConfirmSpectate(INT32 choice)
 {
 	(void)choice;
 	// We allow switching to spectator even if team changing is not allowed
-	M_ClearMenus(true);
+	M_ClearMenus();
 	COM_ImmedExecute("changeteam spectator");
 }
 
@@ -7024,14 +6965,14 @@ static void M_ConfirmEnterGame(INT32 choice)
 		M_StartMessage(M_GetText("The server is not allowing\nteam changes at this time.\nPress a key.\n"), NULL, MM_NOTHING);
 		return;
 	}
-	M_ClearMenus(true);
+	M_ClearMenus();
 	COM_ImmedExecute("changeteam playing");
 }
 
 static void M_ConfirmTeamScramble(INT32 choice)
 {
 	(void)choice;
-	M_ClearMenus(true);
+	M_ClearMenus();
 
 	switch (cv_dummyscramble.value)
 	{
@@ -7053,7 +6994,7 @@ static void M_ConfirmTeamChange(INT32 choice)
 		return;
 	}
 
-	M_ClearMenus(true);
+	M_ClearMenus();
 
 	switch (cv_dummyteam.value)
 	{
@@ -7091,7 +7032,7 @@ static void M_RetryResponse(INT32 ch)
 	if (netgame || multiplayer) // Should never happen!
 		return;
 
-	M_ClearMenus(true);
+	M_ClearMenus();
 	G_SetRetryFlag();
 }
 
@@ -7109,7 +7050,7 @@ static void M_Retry(INT32 choice)
 static void M_SelectableClearMenus(INT32 choice)
 {
 	(void)choice;
-	M_ClearMenus(true);
+	M_ClearMenus();
 }
 
 #define CCVHEIGHT 5
@@ -7241,23 +7182,10 @@ static void M_LevelSelectWarp(INT32 choice)
 		{
 			CV_StealthSet(&cv_skin, DEFAULTSKIN); // already handled by loadgame so we don't want this
 			G_LoadGame((UINT32)cursaveslot, startmap); // reload from SP save data: this is needed to keep score/lives/continues from reverting to defaults
-
-#if 1
-			// STAR STUFF: if we're in April Fools' ultimate mode, allow us to retain our data, but not save it //
-			// STAR NOTE/MAJOR STAR TODO NOTE: uh move somewhere else, maybe into G_LoadGame() //
-			/// \todo see the above
-			if (TSoURDt3rd_AprilFools_ModeEnabled())
-			{
-				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_APRILFOOLS|STAR_CONS_WARNING, "You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nthis savefile will not save until you turn this mode off.\n");
-				M_StartMessage(va("%c%s\x80\nYou have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nthis savefile will not save until you turn this mode off.\n(Press any key to continue.)\n", ('\x80' + (V_MENUCOLORMAP|V_CHARCOLORSHIFT)), "TSoURDt3rd Notice"),NULL,MM_NOTHING);
-
-				cursaveslot = NOSAVESLOT;
-			}
-#endif
 		}
 		else // no save slot, start new game but keep the current skin
 		{
-			M_ClearMenus(true);
+			M_ClearMenus();
 
 			G_DeferedInitNew(false, G_BuildMapName(startmap), cv_skin.value, false, fromlevelselect); // Not sure about using cv_skin here, but it seems fine in testing.
 			COM_BufAddText("dummyconsvar 1\n"); // G_DeferedInitNew doesn't do this
@@ -7343,7 +7271,7 @@ static void M_HandleChecklist(INT32 choice)
 			if (currentMenu->prevMenu)
 				M_SetupNextMenu(currentMenu->prevMenu);
 			else
-				M_ClearMenus(true);
+				M_ClearMenus();
 			return;
 		default:
 			break;
@@ -8272,7 +8200,7 @@ static void M_HandleSoundTest(INT32 choice)
 		if (currentMenu->prevMenu)
 			M_SetupNextMenu(currentMenu->prevMenu);
 		else
-			M_ClearMenus(true);
+			M_ClearMenus();
 	}
 }
 
@@ -8386,7 +8314,7 @@ static void M_Credits(INT32 choice)
 {
 	(void)choice;
 	cursaveslot = -1;
-	M_ClearMenus(true);
+	M_ClearMenus();
 	F_StartCredits();
 }
 
@@ -8480,6 +8408,13 @@ static void M_SinglePlayerMenu(INT32 choice)
 	M_SetupNextMenu(&SP_MainDef);
 }
 
+static void M_LoadMultiplayerMainMenu(INT32 choice)
+{
+	(void)choice;
+	M_SetupNextMenu(&MP_MainDef);
+	TSoURDt3rd_M_SetMenuHasWritable(true);
+}
+
 static void M_LoadGameLevelSelect(INT32 choice)
 {
 	(void)choice;
@@ -8501,7 +8436,7 @@ void M_TutorialSaveControlResponse(INT32 ch)
 {
 	if (ch == 'y' || ch == KEY_ENTER)
 	{
-		G_CopyControls(gamecontrol, gamecontroldefault[tutorialgcs], gcl_tutorial_full, num_gcl_tutorial_full);
+		G_CopyControls(gamecontrol[0], gamecontroldefault[0][tutorialgcs], gcl_tutorial_full, num_gcl_tutorial_full);
 		CV_Set(&cv_usemouse, cv_usemouse.defaultvalue);
 		CV_Set(&cv_alwaysfreelook, cv_alwaysfreelook.defaultvalue);
 		CV_Set(&cv_mousemove, cv_mousemove.defaultvalue);
@@ -8516,7 +8451,7 @@ static void M_TutorialControlResponse(INT32 ch)
 {
 	if (ch != KEY_ESCAPE)
 	{
-		G_CopyControls(gamecontroldefault[gcs_custom], gamecontrol, NULL, 0); // using gcs_custom as temp storage for old controls
+		G_CopyControls(gamecontroldefault[0][gcs_custom], gamecontrol[0], NULL, 0); // using gcs_custom as temp storage for old controls
 		if (ch == 'y' || ch == KEY_ENTER)
 		{
 			tutorialgcs = gcs_fps;
@@ -8525,7 +8460,7 @@ static void M_TutorialControlResponse(INT32 ch)
 			tutorialmousemove = cv_mousemove.value;
 			tutorialanalog = cv_analog[0].value;
 
-			G_CopyControls(gamecontrol, gamecontroldefault[tutorialgcs], gcl_tutorial_full, num_gcl_tutorial_full);
+			G_CopyControls(gamecontrol[0], gamecontroldefault[0][tutorialgcs], gcl_tutorial_full, num_gcl_tutorial_full);
 			CV_Set(&cv_usemouse, cv_usemouse.defaultvalue);
 			CV_Set(&cv_alwaysfreelook, cv_alwaysfreelook.defaultvalue);
 			CV_Set(&cv_mousemove, cv_mousemove.defaultvalue);
@@ -8552,7 +8487,7 @@ static void M_StartTutorial(INT32 choice)
 	if (!tutorialmap)
 		return; // no map to go to, don't bother
 
-	if (choice != INT32_MAX && G_GetControlScheme(gamecontrol, gcl_tutorial_check, num_gcl_tutorial_check) != gcs_fps)
+	if (choice != INT32_MAX && G_GetControlScheme(0, gcl_tutorial_check, num_gcl_tutorial_check) != gcs_fps)
 	{
 		M_StartMessage("Do you want to try the \202recommended \202movement controls\x80?\n\nWe will set them just for this tutorial.\n\nPress 'Y' or 'Enter' to confirm\nPress 'N' or any key to keep \nyour current controls.\n",M_TutorialControlResponse,MM_YESNO);
 		return;
@@ -8566,7 +8501,7 @@ static void M_StartTutorial(INT32 choice)
 
 	emeralds = 0;
 	memset(&luabanks, 0, sizeof(luabanks));
-	M_ClearMenus(true);
+	M_ClearMenus();
 	gamecomplete = 0;
 	cursaveslot = 0;
 	maplistoption = 0;
@@ -8653,19 +8588,12 @@ static void M_DrawLoadGameData(void)
 			{
 				V_DrawSmallScaledPatch(x+2, y+64, 0, savselp[5]);
 			}
-#ifdef PERFECTSAVE // disabled on request
-			else if ((savegameinfo[savetodraw].skinnum == 1)
-			&& (savegameinfo[savetodraw].lives == 99)
-			&& (savegameinfo[savetodraw].gamemap & 8192)
-			&& (savegameinfo[savetodraw].numgameovers == 0)
-			&& (savegameinfo[savetodraw].numemeralds == ((1<<7) - 1))) // perfect save
-			{
-				V_DrawFill(x+6, y+64, 72, 50, 134);
-				V_DrawFill(x+6, y+74, 72, 30, 201);
-				V_DrawFill(x+6, y+84, 72, 10, 1);
-			}
-#else
-			// STAR NOTE: "PERFECT SAVES" HAVE BEEN RE-ADDED! //
+			//
+			// STAR NOTE:
+			// "PERFECT SAVES" HAVE BEEN RE-ADDED!
+			// Who cares if it was disabled 'on request'?
+			// I certainly don't!
+			//
 			else if (cv_tsourdt3rd_savefiles_perfectsave.value
 				&& (savegameinfo[savetodraw].lives == 99)
 				&& (savegameinfo[savetodraw].gamemap & 8192)
@@ -8675,8 +8603,6 @@ static void M_DrawLoadGameData(void)
 				V_DrawFill(x+6, y+74, 72, 30, cv_tsourdt3rd_savefiles_perfectsave_stripe2.value);
 				V_DrawFill(x+6, y+84, 72, 10, cv_tsourdt3rd_savefiles_perfectsave_stripe3.value);
 			}
-			// THAT'S OVER! //
-#endif
 			else
 			{
 				if (savegameinfo[savetodraw].lives == -42)
@@ -8753,9 +8679,12 @@ static void M_DrawLoadGameData(void)
 					V_DrawRightAlignedThinString(x + 79, y, V_REDMAP, "CAN'T LOAD!");
 				}
 			}
-
-#if 1
-			// STAR NOTE: THIS IS PERFECT SAVE RELATED! //
+			//
+			// STAR NOTE:
+			// "PERFECT SAVES" HAVE BEEN RE-ADDED!
+			// Who cares if it was disabled 'on request'?
+			// I certainly don't!
+			//
 			else if (cv_tsourdt3rd_savefiles_perfectsave.value
 				&& (savegameinfo[savetodraw].lives == 99)
 				&& (savegameinfo[savetodraw].gamemap & 8192)
@@ -8765,9 +8694,6 @@ static void M_DrawLoadGameData(void)
 					V_DrawRightAlignedThinString(x + 79, y-8, V_MAGENTAMAP, "EXTREMELY");
 				V_DrawRightAlignedThinString(x + 79, y, V_AQUAMAP, "PERFECT!");
 			}
-			// EXTREMELY PERFECT! //
-#endif
-
 			else if (savegameinfo[savetodraw].gamemap & 8192)
 				V_DrawRightAlignedThinString(x + 79, y, V_GREENMAP, "CLEAR!");
 			else
@@ -8996,20 +8922,7 @@ static void M_LoadSelect(INT32 choice)
 		G_LoadGame((UINT32)saveSlotSelected, 0);
 	}
 
-#if 1
-	// STAR STUFF: if in April Fools mode, and not loading a complete file, let's not save to this file please //
-	// STAR NOTE/MAJOR STAR TODO NOTE: uh move somewhere else, maybe into G_LoadGame() //
-	/// \todo see above
-	if ((TSoURDt3rd_AprilFools_ModeEnabled() && saveSlotSelected > NOSAVESLOT) && !(savegameinfo[saveSlotSelected-1].gamemap & 8192))
-	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_APRILFOOLS|STAR_CONS_WARNING, "You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nthis savefile will not save until you turn this mode off.\n");
-		M_StartMessage(va("%c%s\x80\nYou have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nthis savefile will not save until you turn this mode off.\n(Press any key to continue.)\n", ('\x80' + (V_MENUCOLORMAP|V_CHARCOLORSHIFT)), "TSoURDt3rd Notice"),NULL,MM_NOTHING);
-
-		cursaveslot = NOSAVESLOT;
-		return;
-	}
-	// PROGRESS SAVED (from ourselves) //
-#endif
+	TSoURDt3rd_AprilFools_ManageSaveData(); // STAR STUFF: fix savefiles for april fools //
 
 	cursaveslot = saveSlotSelected;
 }
@@ -9289,11 +9202,7 @@ static void M_HandleLoadSave(INT32 choice)
 			break;
 
 		case KEY_ENTER:
-#if 1
-			// STAR STUFF: END THAT, NOW DO THE NEXT THING //
-			TSoURDt3rd_FIL_CreateSavefileProperly();
-#endif
-
+			TSoURDt3rd_FIL_CreateSavefileProperly(); // STAR STUFF: refresh save location //
 			if (ultimate_selectable && saveSlotSelected == NOSAVESLOT && !savemoddata)
 			{
 				loadgamescroll = 0;
@@ -9352,7 +9261,7 @@ static void M_HandleLoadSave(INT32 choice)
 		if (currentMenu->prevMenu)
 			M_SetupNextMenu(currentMenu->prevMenu);
 		else
-			M_ClearMenus(true);
+			M_ClearMenus();
 		Z_Free(savegameinfo);
 		savegameinfo = NULL;
 	}
@@ -9567,8 +9476,18 @@ static void M_HandleChoosePlayerMenu(INT32 choice)
 	boolean exitmenu = false;  // exit to previous menu
 	INT32 selectval;
 
-	if (keydown > 1)
+	if (keydown > 1 && (keydown % CHARSELECT_KEYDOWN_MODULAR))
+	{
+		// StarManiaKG:
+		// Why or when this was added, I don't *exactly* know.
+		// If I had to guess though, this menu can have flashing colors if you go too fast.
+		// So, I assume it was made to combat seizures and all.
+		//
+		// However, users should still be able to hold down on this menu.
+		// So, I've added a little modualar time check above.
+		// This allows the menu to have 'hold-down' behavior, just at a slowed-down amount.
 		return;
+	}
 
 	switch (choice)
 	{
@@ -9605,10 +9524,7 @@ static void M_HandleChoosePlayerMenu(INT32 choice)
 			break;
 
 		case KEY_ENTER:
-#if 1
-			// STAR STUFF: END THAT, NOW DO THE REST //
-			TSoURDt3rd_FIL_CreateSavefileProperly();
-#endif
+			TSoURDt3rd_FIL_CreateSavefileProperly(); // STAR STUFF: refresh save location //
 			S_StartSoundFromEverywhere(sfx_menu1);
 			char_scroll = 0; // finish scrolling the menu
 			M_DrawSetupChoosePlayerMenu(); // draw the finally selected character one last time for the fadeout
@@ -9632,7 +9548,7 @@ static void M_HandleChoosePlayerMenu(INT32 choice)
 		if (currentMenu->prevMenu)
 			M_SetupNextMenu(currentMenu->prevMenu);
 		else
-			M_ClearMenus(true);
+			M_ClearMenus();
 	}
 }
 
@@ -9872,7 +9788,7 @@ static void M_ChoosePlayer(INT32 choice)
 			botskin = botcolor = 0;
 	}
 
-	M_ClearMenus(true);
+	M_ClearMenus();
 
 	if (!marathonmode && startmap != spstage_start)
 		cursaveslot = 0;
@@ -10142,7 +10058,7 @@ static void M_HandleLevelStats(INT32 choice)
 		if (currentMenu->prevMenu)
 			M_SetupNextMenu(currentMenu->prevMenu);
 		else
-			M_ClearMenus(true);
+			M_ClearMenus();
 	}
 }
 
@@ -10695,7 +10611,7 @@ static void M_ChooseNightsAttack(INT32 choice)
 	(void)choice;
 	emeralds = 0;
 	memset(&luabanks, 0, sizeof(luabanks));
-	M_ClearMenus(true);
+	M_ClearMenus();
 	modeattacking = ATTACKING_NIGHTS;
 
 	I_mkdir(va("%s"PATHSEP"replay", srb2home), 0755);
@@ -10724,7 +10640,7 @@ static void M_ChooseTimeAttack(INT32 choice)
 	(void)choice;
 	emeralds = 0;
 	memset(&luabanks, 0, sizeof(luabanks));
-	M_ClearMenus(true);
+	M_ClearMenus();
 	modeattacking = ATTACKING_RECORD;
 
 	I_mkdir(va("%s"PATHSEP"replay", srb2home), 0755);
@@ -10750,7 +10666,7 @@ static void M_StartTimeAttackReplay(INT32 choice)
 {
 	if (choice == 'y' || choice == KEY_ENTER)
 	{
-		M_ClearMenus(true);
+		M_ClearMenus();
 		modeattacking = ATTACKING_RECORD; // set modeattacking before G_DoPlayDemo so the map loader knows
 		G_DoPlayDemo(ra_demoname);
 	}
@@ -11094,8 +11010,18 @@ static void M_HandleMarathonChoosePlayer(INT32 choice)
 {
 	INT32 selectval;
 
-	if (keydown > 1)
+	if (keydown > 1 && (keydown % CHARSELECT_KEYDOWN_MODULAR))
+	{
+		// StarManiaKG:
+		// Why or when this was added, I don't *exactly* know.
+		// If I had to guess though, this menu can have flashing colors if you go too fast.
+		// So, I assume it was made to combat seizures and all.
+		//
+		// However, users should still be able to hold down on this menu.
+		// So, I've added a little modualar time check above.
+		// This allows the menu to have 'hold-down' behavior, just at a slowed-down amount.
 		return;
+	}
 
 	switch (choice)
 	{
@@ -11384,7 +11310,7 @@ static void M_ExitGameResponse(INT32 ch)
 
 	//Command_ExitGame_f();
 	G_SetExitGameFlag();
-	M_ClearMenus(true);
+	M_ClearMenus();
 }
 
 static void M_EndGame(INT32 choice)
@@ -11449,15 +11375,13 @@ static void M_HandleServerPage(INT32 choice)
 		if (currentMenu->prevMenu)
 			M_SetupNextMenu(currentMenu->prevMenu);
 		else
-			M_ClearMenus(true);
+			M_ClearMenus();
 	}
 }
 
 static void M_Connect(INT32 choice)
 {
-	// do not call menuexitfunc
-	M_ClearMenus(false);
-
+	M_ClearMenus();
 	COM_BufAddText(va("connect node %d\n", serverlist[choice-FIRSTSERVERLINE + serverlistpage * SERVERS_PER_PAGE].node));
 }
 
@@ -11602,7 +11526,14 @@ static void M_DrawConnectMenu(void)
 
 static boolean M_CancelConnect(void)
 {
-	D_CloseConnection();
+	// StarManiaKG:
+	// Fixes a century long hack for M_ClearMenus.
+	// This function was the only reason why it existed.
+	// Thank the lord, 'callexitmenufunc' is gone.
+	if (server == false && netgame && multiplayer)
+	{
+		D_CloseConnection();
+	}
 	return true;
 }
 
@@ -11934,7 +11865,7 @@ static void M_StartServer(INT32 choice)
 		D_MapChange(cv_nextmap.value, cv_newgametype.value, false, 1, 1, false, false);
 	}
 
-	M_ClearMenus(true);
+	M_ClearMenus();
 }
 
 static void M_DrawServerMenu(void)
@@ -12036,6 +11967,7 @@ static void M_ServerOptions(INT32 choice)
 
 	OP_ServerOptionsDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&OP_ServerOptionsDef);
+	TSoURDt3rd_M_SetMenuHasWritable(true);
 }
 
 static void M_StartServerMenu(INT32 choice)
@@ -12048,6 +11980,7 @@ static void M_StartServerMenu(INT32 choice)
 	M_SetupNextMenu(&MP_ServerDef);
 	itemOn = 1;
 	M_UpdateItemOn();
+	TSoURDt3rd_M_SetMenuHasWritable(true);
 }
 
 // ==============
@@ -12151,7 +12084,7 @@ static void M_ConnectIP(INT32 choice)
 		return;
 	}
 
-	M_ClearMenus(true);
+	M_ClearMenus();
 
 	COM_BufAddText(va("connect \"%s\"\n", setupm_ip));
 
@@ -12300,7 +12233,7 @@ static void M_HandleConnectIP(INT32 choice)
 		if (currentMenu->prevMenu)
 			M_SetupNextMenu (currentMenu->prevMenu);
 		else
-			M_ClearMenus(true);
+			M_ClearMenus();
 	}
 }
 
@@ -13092,7 +13025,7 @@ static void M_HandleSetupMultiPlayer(INT32 choice)
 		if (currentMenu->prevMenu)
 			M_SetupNextMenu (currentMenu->prevMenu);
 		else
-			M_ClearMenus(true);
+			M_ClearMenus();
 	}
 }
 
@@ -13139,6 +13072,7 @@ static void M_SetupMultiPlayer(INT32 choice)
 
 	MP_PlayerSetupDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&MP_PlayerSetupDef);
+	TSoURDt3rd_M_SetMenuHasWritable(true);
 }
 
 // start the multiplayer setup menu, for secondary player (splitscreen mode)
@@ -13184,6 +13118,7 @@ static void M_SetupMultiPlayer2(INT32 choice)
 
 	MP_PlayerSetupDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&MP_PlayerSetupDef);
+	TSoURDt3rd_M_SetMenuHasWritable(true);
 }
 
 static boolean M_QuitMultiPlayerMenu(void)
@@ -13436,7 +13371,7 @@ static void M_EraseDataResponse(INT32 ch)
 		F_StartIntro();
 	}
 	BwehHehHe();
-	M_ClearMenus(true);
+	M_ClearMenus();
 }
 
 static void M_EraseData(INT32 choice)
@@ -13463,6 +13398,7 @@ static void M_ScreenshotOptions(INT32 choice)
 
 	M_SetupScreenshotMenu();
 	M_SetupNextMenu(&OP_ScreenshotOptionsDef);
+	TSoURDt3rd_M_SetMenuHasWritable(true);
 }
 
 static void M_SetupScreenshotMenu(void)
@@ -13672,7 +13608,7 @@ static void M_Setup1PControlsMenu(INT32 choice)
 {
 	(void)choice;
 	setupcontrols_secondaryplayer = false;
-	setupcontrols = gamecontrol;        // was called from main Options (for console player, then)
+	setupcontrols = gamecontrol[0];        // was called from main Options (for console player, then)
 	currentMenu->lastOn = itemOn;
 
 	// Unhide the nine non-P2 controls and their headers
@@ -13704,7 +13640,7 @@ static void M_Setup2PControlsMenu(INT32 choice)
 {
 	(void)choice;
 	setupcontrols_secondaryplayer = true;
-	setupcontrols = gamecontrolbis;
+	setupcontrols = gamecontrol[1];
 	currentMenu->lastOn = itemOn;
 
 	// Hide the nine non-P2 controls and their headers
@@ -13861,6 +13797,7 @@ static void M_ChangecontrolResponse(event_t *ev)
 	INT32        control;
 	INT32        found;
 	INT32        ch = ev->key;
+	INT32        player = (setupcontrols_secondaryplayer ? 1 : 0);
 
 	// ESCAPE cancels; dummy out PAUSE
 	if (ch != KEY_ESCAPE && ch != KEY_PAUSE)
@@ -13919,7 +13856,7 @@ static void M_ChangecontrolResponse(event_t *ev)
 				found = 0;
 				setupcontrols[control][1] = KEY_NULL;  //replace key 1,clear key2
 			}
-			(void)G_CheckDoubleUsage(ch, true);
+			(void)G_CheckDoubleUsage(ch, player, true);
 			setupcontrols[control][found] = ch;
 		}
 		S_StartSoundFromEverywhere(sfx_strpst);
@@ -14418,7 +14355,7 @@ static void M_HandleVideoMode(INT32 ch)
 			if (currentMenu->prevMenu)
 				M_SetupNextMenu(currentMenu->prevMenu);
 			else
-				M_ClearMenus(true);
+				M_ClearMenus();
 			break;
 
 		case KEY_BACKSPACE:
@@ -14505,6 +14442,7 @@ static void M_DrawMonitorToggles(void)
 // =========
 // Quit Game
 // =========
+
 static INT32 quitsounds[] =
 {
 	// holy shit we're changing things up!
@@ -14589,6 +14527,5 @@ static void M_QuitSRB2(INT32 choice)
 	// We pick index 0 which is language sensitive, or one at random,
 	// between 1 and maximum number.
 	(void)choice;
-	// STAR NOTE: our unique quit messages reign supreme! //
 	M_StartMessage(TSoURDt3rd_M_GenerateQuitMessage(), M_QuitResponse, MM_YESNO);
 }

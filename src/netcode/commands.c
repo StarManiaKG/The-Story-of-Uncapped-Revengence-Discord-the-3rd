@@ -403,7 +403,7 @@ void Command_connect(void)
 	// StarManiaKG: allow us to join servers from anywhere at any time //
 	if (Playing() || titledemo)
 	{
-		M_ClearMenus(true);
+		M_ClearMenus();
 		if (demoplayback && titledemo)
 			G_CheckDemoStatus();
 

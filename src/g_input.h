@@ -2,6 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 1999-2023 by Sonic Team Junior.
+// Copyright (C) 2025 by StarManiaKG
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -23,9 +24,11 @@
 #define NUMKEYS 256
 
 #define MOUSEBUTTONS 8
-#define JOYBUTTONS   32 // 32 buttons
+#define JOYBUTTONS   32 // 32 buttons, to match SDL_JoystickButton
 #define JOYHATS      4  // 4 hats
 #define JOYAXISSET   4  // 4 Sets of 2 axises
+
+#define MAXINPUTMAPPING 2
 
 //
 // mouse and joystick buttons are handled as 'virtual' keys
@@ -101,9 +104,9 @@ typedef enum
 	GC_CUSTOM1, // Lua scriptable
 	GC_CUSTOM2, // Lua scriptable
 	GC_CUSTOM3, // Lua scriptable
-#if 1
-	// STAR STUFF //
-	// Jukebox Controls
+
+	// TSoURDt3rd //
+	// -- Jukebox Controls
 	JB_OPENJUKEBOX,
 	JB_INCREASEMUSICSPEED,
 	JB_DECREASEMUSICSPEED,
@@ -111,7 +114,7 @@ typedef enum
 	JB_STOPJUKEBOX,
 	JB_INCREASEMUSICPITCH,
 	JB_DECREASEMUSICPITCH,
-#endif
+
 	NUM_GAMECONTROLS
 } gamecontrols_e;
 
@@ -155,15 +158,16 @@ extern mouse_t mouse2;
 extern INT32 joyxmove[JOYAXISSET], joyymove[JOYAXISSET], joy2xmove[JOYAXISSET], joy2ymove[JOYAXISSET];
 
 // current state of the keys: true if pushed
-extern UINT8 gamekeydown[NUMINPUTS];
+extern INT32 gamekeydown[NUMINPUTS];
 
 // two key codes (or virtual key) per game control
-extern INT32 gamecontrol[NUM_GAMECONTROLS][2];
-extern INT32 gamecontrolbis[NUM_GAMECONTROLS][2]; // secondary splitscreen player
-extern INT32 gamecontroldefault[num_gamecontrolschemes][NUM_GAMECONTROLS][2]; // default control storage, use 0 (gcs_custom) for memory retention
-extern INT32 gamecontrolbisdefault[num_gamecontrolschemes][NUM_GAMECONTROLS][2];
-#define PLAYER1INPUTDOWN(gc) (gamekeydown[gamecontrol[gc][0]] || gamekeydown[gamecontrol[gc][1]])
-#define PLAYER2INPUTDOWN(gc) (gamekeydown[gamecontrolbis[gc][0]] || gamekeydown[gamecontrolbis[gc][1]])
+extern INT32 gamecontrol[MAXSPLITSCREENPLAYERS][NUM_GAMECONTROLS][2];
+
+// default control storage, use 0 (gcs_custom) for memory retention
+extern INT32 gamecontroldefault[MAXSPLITSCREENPLAYERS][num_gamecontrolschemes][NUM_GAMECONTROLS][2];
+
+#define PLAYER1INPUTDOWN(gc) (gamekeydown[gamecontrol[0][gc][0]] || gamekeydown[gamecontrol[0][gc][1]])
+#define PLAYER2INPUTDOWN(gc) (gamekeydown[gamecontrol[1][gc][0]] || gamekeydown[gamecontrol[1][gc][1]])
 #define PLAYERINPUTDOWN(p, gc) ((p) == 2 ? PLAYER2INPUTDOWN(gc) : PLAYER1INPUTDOWN(gc))
 
 #define num_gcl_tutorial_check 6
@@ -196,16 +200,20 @@ void G_MapEventsToControls(event_t *ev);
 const char *G_KeyNumToName(INT32 keynum);
 INT32 G_KeyNameToNum(const char *keystr);
 
+// check game control keys
+boolean G_ControlKeyCompare(INT32 (*setupcontrols)[2], INT32 control, INT32 cmp_key);
+
 // detach any keys associated to the given game control
 void G_ClearControlKeys(INT32 (*setupcontrols)[2], INT32 control);
 void G_ClearAllControlKeys(void);
+
 void Command_Setcontrol_f(void);
 void Command_Setcontrol2_f(void);
 void G_DefineDefaultControls(void);
-INT32 G_GetControlScheme(INT32 (*fromcontrols)[2], const INT32 *gclist, INT32 gclen);
+INT32 G_GetControlScheme(UINT8 player, const INT32 *gclist, INT32 gclen);
 void G_CopyControls(INT32 (*setupcontrols)[2], INT32 (*fromcontrols)[2], const INT32 *gclist, INT32 gclen);
-void G_SaveKeySetting(FILE *f, INT32 (*fromcontrols)[2], INT32 (*fromcontrolsbis)[2]);
-INT32 G_CheckDoubleUsage(INT32 keynum, boolean modify);
+void G_SaveKeySetting(FILE *f, INT32 (*fromcontrols_a)[2], INT32 (*fromcontrols_b)[2]);
+INT32 G_CheckDoubleUsage(INT32 keynum, INT32 playernum, boolean modify);
 
 // sets the members of a mouse_t given position deltas
 void G_SetMouseDeltas(INT32 dx, INT32 dy, UINT8 ssplayer);

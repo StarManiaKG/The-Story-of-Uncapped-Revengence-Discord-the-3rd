@@ -11,6 +11,9 @@
 
 #include "smkg-m_sys.h"
 
+#include "../smkg-st_hud.h"
+#include "../misc/smkg-m_misc.h"
+
 #include "../../am_map.h"
 #include "../../console.h"
 #include "../../g_game.h"
@@ -33,11 +36,7 @@
 #define SLIDER_RANGE 10
 #define SLIDER_WIDTH (8*SLIDER_RANGE+6)
 
-UINT8 tsourdt3rd_wipedefs[TSOURDT3RD_NUMWIPEDEFS] = {
-	99, // tsourdt3rd_wipe_init_tsourdt3rd_menu_toblack
-	1,  // tsourdt3rd_wipe_menu_toblack
-	1,  // tsourdt3rd_wipe_menu_final
-};
+static fixed_t tsourdt3rd_songcredit_ease;
 
 // ------------------------ //
 //        Functions
@@ -81,12 +80,7 @@ UINT16 TSoURDt3rd_M_GetCvPlayerColor(UINT8 pnum)
 	return skins[skin]->prefcolor;
 }
 
-INT32 TSoURDt3rd_M_DrawCaretString(
-	INT32 x, INT32 y,
-	INT32 flags,
-	fixed_t pscale, fixed_t vscale,
-	const char *string, fontdef_t font
-)
+INT32 TSoURDt3rd_M_DrawCaretString(INT32 x, INT32 y, INT32 flags, fixed_t pscale, fixed_t vscale, const char *string, fontdef_t font)
 {
 	V_DrawFontString(x, y, flags, pscale, vscale, string, font);
 	return V_FontStringWidth(string, flags, font);
@@ -144,15 +138,28 @@ static void M_DrawUnderline(INT32 left, INT32 right, INT32 y)
 }
 
 //
-// void TSoURDt3rd_M_PreDrawer(boolean *wipe)
+// void TSoURDt3rd_M_ShowMusicCredits(void)
+// Sets the easing variable needed in order to display music credits for specific cases.
+//
+void TSoURDt3rd_M_ShowMusicCredits(void)
+{
+	tsourdt3rd_songcredit_ease = TSoURDt3rd_M_DueFrac(I_GetTime(), 6);
+}
+
+//
+// void TSoURDt3rd_M_PreDrawer(boolean *wipe_in_action)
 // Draws graphics in the back, before all the main M_Drawer() graphics are rendered.
 //
-void TSoURDt3rd_M_PreDrawer(boolean *wipe)
+void TSoURDt3rd_M_PreDrawer(boolean *wipe_in_action)
 {
-	(void)wipe;
-
+#ifndef NO_MENU_WIPE
+	// Reset vanilla's wipe!
+	(*wipe_in_action) = (tsourdt3rd_currentMenu != NULL ? menuwipe : WipeInAction);
 	if (menuwipe)
 		F_WipeStartScreen();
+#else
+	(void)wipe_in_action;
+#endif
 
 	TSoURDt3rd_M_Jukebox_Ticker();
 }
@@ -174,7 +181,7 @@ void TSoURDt3rd_M_PostDrawer(void)
 		if (currentMenu == &MainDef)
 		{
 			V_DrawThinString(vid.dup, vid.height - 41*vid.dup, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, TSOURDT3RDVERSIONSTRING);
-			V_DrawThinString(vid.dup, vid.height - 33*vid.dup, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, "(By StarManiaKG!)");
+			V_DrawThinString(vid.dup, vid.height - 33*vid.dup, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, "By StarManiaKG!");
 		}
 
 		// Draw typing overlay when needed, above all other menu elements.
@@ -185,53 +192,155 @@ void TSoURDt3rd_M_PostDrawer(void)
 	// Draw message overlay when needed
 	TSoURDt3rd_M_DrawMenuMessage();
 
+#ifndef NO_MENU_WIPE
 	// Wipe the screen!
 	if (menuwipe)
 	{
 		F_WipeEndScreen();
-		F_RunWipe(tsourdt3rd_wipedefs[tsourdt3rd_wipe_menu_final], false);
-		menuwipe = false;
+		F_RunWipe(wipedefs[tsourdt3rd_wipe_menu_final], false);
 	}
+#endif
+	menuwipe = false;
 }
 
 //
-// void TSoURDt3rd_M_DrawMenuTooltips(
-//	 fixed_t box_x, fixed_t box_y, INT32 box_flags, UINT8 *box_color, boolean box_vflip,
-//	 fixed_t string_x, fixed_t string_y, INT32 string_flags, boolean string_centered
-// )
+// void TSoURDt3rd_M_DrawMenuTooltips(const tsourdt3rd_menu_t *menu, menutooltip_t menutooltip)
+// Draws a banner across the top of the screen, with a description of the current option displayed.
 //
-// Draw a banner across the top of the screen, with a description of the current option displayed.
+// SOURCES:
+//	M_DrawMenuTooltips() - from Dr.Robotnik's Ring Racers!
+//	M_DrawSplitText() - from SRB2 Classic!
 //
-// Inspired by M_DrawMenuTooltips() from Dr.Robotnik's Ring Racers!
-//
-void TSoURDt3rd_M_DrawMenuTooltips(
-	fixed_t box_x, fixed_t box_y, INT32 box_flags, UINT8 *box_color, boolean box_vflip,
-	fixed_t string_x, fixed_t string_y, INT32 string_flags, boolean string_centered
-)
+
+static char **M_SplitText(const char *txt, INT16 *lines_p)
 {
-	const tsourdt3rd_menuitem_t *item = NULL;
-	patch_t *box_patch = W_CachePatchName("MENUHINT", PU_CACHE);
+	INT16 num_lines = 0;
+	char **strings = NULL;
+	char *icopy = strdup(txt);
 
-	if (tsourdt3rd_currentMenu == NULL || tsourdt3rd_currentMenu->menuitems == NULL)
-		return;
-	item = &tsourdt3rd_currentMenu->menuitems[tsourdt3rd_itemOn];
+	if (icopy == NULL) return NULL;
 
-	if (item != NULL && item->tooltip != NULL)
+	char* tok = strtok(icopy, "\n");
+	while (tok != NULL)
 	{
-		if (box_flags <= 0)
-			box_flags |= V_SNAPTOTOP;
-		if (box_vflip)
-			box_patch = W_CachePatchName("VMNUHINT", PU_CACHE);
+		char *line = strdup(tok);
+		if (line == NULL) return NULL;
 
-		if (string_flags <= 0)
-			string_flags |= V_SNAPTOTOP|V_ALLOWLOWERCASE|V_MENUCOLORMAP;
+		strings = realloc(strings, (num_lines + 1) * sizeof(char*));
+		strings[num_lines] = line;
+		num_lines++;
 
-		V_DrawMappedPatch(box_x, box_y, box_flags, box_patch, box_color);
-		if (string_centered)
-			V_DrawCenteredThinString(string_x, string_y, string_flags, item->tooltip);
-		else
-			V_DrawThinString(string_x, string_y, string_flags, item->tooltip);
+		tok = strtok(NULL, "\n");
 	}
+
+	free(icopy);
+	if (lines_p) (*lines_p) = num_lines;
+	return strings;
+}
+
+void TSoURDt3rd_M_DrawMenuTooltips(const tsourdt3rd_menu_t *menu, menutooltip_t menutooltip)
+{
+	static INT32 tooltip_alpha_timer = 9;
+	INT32 tooltip_alpha_flag = ((cv_tsourdt3rd_video_coloring_menus.value == V_YELLOWMAP) ? V_GREENMAP : V_YELLOWMAP);
+
+	if (menu == NULL || menu->menuitems == NULL || (tsourdt3rd_itemOn < 0 || tsourdt3rd_itemOn >= currentMenu->numitems))
+	{
+		tooltip_alpha_timer = 9;
+		return;
+	}
+
+	static const tsourdt3rd_menuitem_t *last_item = NULL;
+	const tsourdt3rd_menuitem_t *item = &menu->menuitems[tsourdt3rd_itemOn];
+	const char *string = NULL;
+	INT16 num_lines = 0;
+
+	if (item && item->tooltip != NULL)
+	{
+		// Use the menu tooltip!
+		string = item->tooltip;
+	}
+	else
+	{
+		/// \todo Do what classic does and add cvar tooltips, they're cool
+		return;
+	}
+	if (string == NULL || !string[0])
+	{
+		// No valid string found!
+		tooltip_alpha_timer = 9;
+		return;
+	}
+
+	char **tooltip_strings = M_SplitText(string, &num_lines);
+	if (tooltip_strings == NULL || num_lines == 0)
+	{
+		// Failed to split the string.
+		tooltip_alpha_timer = 9;
+		return;
+	}
+
+	// Draw the tooltip box and string
+	const char *box_lump_name = (menutooltip.box.vflip ? "VMNUHINT" : "MENUHINT");
+	patch_t *box_patch = W_CachePatchName(box_lump_name, PU_CACHE);
+
+	V_DrawStretchyFixedPatch(menutooltip.box.x, menutooltip.box.y,
+		menutooltip.box.pscale, menutooltip.box.vscale + (num_lines * FRACUNIT/6),
+		menutooltip.box.flags,
+		box_patch,
+		menutooltip.box.colormap
+	);
+
+	if (last_item != item)
+	{
+		tooltip_alpha_timer = 9;
+	}
+	last_item = item;
+
+	//INT16 yoffset = (((5*10 - num_lines*10)));
+	INT16 yoffset = 0;
+	for (int i = 0; i < num_lines; i++)
+	{
+		if (menutooltip.string.align != -1)
+		{
+			//V_DrawFontStringAtFixed
+			//V_DrawAlignedFontString
+			V_DrawCenteredThinString(menutooltip.string.x, menutooltip.string.y - yoffset,
+				menutooltip.string.flags|V_MENUCOLORMAP,
+				//FRACUNIT, FRACUNIT,
+				tooltip_strings[i]
+				//tny_font,
+				//menutooltip.string.align
+			);
+			V_DrawCenteredThinString(menutooltip.string.x, menutooltip.string.y - yoffset,
+				menutooltip.string.flags|tooltip_alpha_flag|((9 - tooltip_alpha_timer) << V_ALPHASHIFT),
+				//FRACUNIT, FRACUNIT,
+				tooltip_strings[i]
+				//tny_font,
+				//menutooltip.string.align
+			);
+		}
+		else
+		{
+			//V_DrawFontString
+			V_DrawThinString(menutooltip.string.x, menutooltip.string.y - yoffset,
+				menutooltip.string.flags|V_MENUCOLORMAP,
+				tooltip_strings[i]
+			);
+			V_DrawThinString(menutooltip.string.x, menutooltip.string.y - yoffset,
+				menutooltip.string.flags|tooltip_alpha_flag|((9 - tooltip_alpha_timer) << V_ALPHASHIFT),
+				tooltip_strings[i]
+			);
+		}
+		yoffset += 10;
+		free(tooltip_strings[i]); // Remember to free the memory for each line when you're done with it.
+	}
+
+	// very cool alpha timer
+	if (tooltip_alpha_timer > 0)
+	{
+		tooltip_alpha_timer--;
+	}
+	free(tooltip_strings);
 }
 
 void TSoURDt3rd_M_DrawMediocreKeyboardKey(const char *text, INT32 *workx, INT32 worky, boolean push, boolean rightaligned)
@@ -307,11 +416,8 @@ void TSoURDt3rd_M_DrawQuitGraphic(void)
 			break;
 		default: // Demo 3 Quit Screen Tails 06-16-2001
 			V_DrawScaledPatch(0, 0, 0, W_CachePatchName("GAMEQUIT", PU_PATCH));
-			return;
+			break;
 	}
-
-	// psst, disclaimer; this game should not be sold :p
-	V_DrawScaledPatch(0, 0, 0, W_CachePatchName("SS_QDISC", PU_PATCH));
 }
 
 // ==========================================================================
@@ -322,7 +428,8 @@ void TSoURDt3rd_M_DrawQuitGraphic(void)
 // void TSoURDt3rd_MK_DrawButton(fixed_t x, fixed_t y, INT32 flags, patch_t *button[2], boolean pressed)
 // Draws a button graphic on the screen. Changes upon being pressed.
 //
-// Ported from Dr. Robotnik's Ring Racers!
+// SOURCES:
+// 	- Dr. Robotnik's Ring Racers!
 //
 void TSoURDt3rd_MK_DrawButton(fixed_t x, fixed_t y, INT32 flags, patch_t *button[2], boolean pressed)
 {
@@ -333,7 +440,8 @@ void TSoURDt3rd_MK_DrawButton(fixed_t x, fixed_t y, INT32 flags, patch_t *button
 // void TSoURDt3rd_MK_DrawButtonAnim(INT32 x, INT32 y, INT32 flags, patch_t *button[2], tic_t animtic)
 // Draws a button graphic on the screen, and animates it. Changes upon being pressed.
 //
-// Ported from Dr. Robotnik's Ring Racers!
+// SOURCES:
+// 	- Dr. Robotnik's Ring Racers!
 //
 void TSoURDt3rd_MK_DrawButtonAnim(INT32 x, INT32 y, INT32 flags, patch_t *button[2], tic_t animtic)
 {
@@ -346,7 +454,8 @@ void TSoURDt3rd_MK_DrawButtonAnim(INT32 x, INT32 y, INT32 flags, patch_t *button
 // void TSoURDt3rd_MK_DrawSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isSmall)
 // Draws a sticker graphic on the HUD.
 //
-// Ported from Dr. Robotnik's Ring Racers!
+// SOURCES:
+// 	- Dr. Robotnik's Ring Racers!
 //
 void TSoURDt3rd_MK_DrawSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isSmall)
 {
@@ -379,7 +488,8 @@ void TSoURDt3rd_MK_DrawSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boole
 // Text-based list menu, seperating various options by using boxes.
 // Used for TSoURDt3rd's various unique options.
 //
-// Ported from DRRR!
+// SOURCES:
+// 	- Dr. Robotnik's Ring Racers!
 //
 static void M_DrawOptionsBoxTerm(INT32 x, INT32 top, INT32 bottom)
 {
@@ -420,22 +530,10 @@ void TSoURDt3rd_M_DrawOptionsMovingButton(void)
 
 	V_DrawFixedPatch(tx, ty, FRACUNIT, 0, butt, c);
 
-	if (currentMenu)
-	{
-#ifdef HAVE_DISCORDSUPPORT
-		if (currentMenu == &DISCORD_OP_MainDef)
-			s = "Discord Options";
-		else
-#endif
-		if (currentMenu == &TSoURDt3rd_OP_Extras_JukeboxDef)
-			s = TSoURDt3rd_OP_ExtrasDef.menuitems[op_extras_jukebox].text;
-#ifdef STAR_LIGHTING
-		else if (currentMenu == &TSoURDt3rd_OP_Video_LightingDef)
-			s = "Lighting Options";
-#endif
-		else
-			s = TSoURDt3rd_OP_MainMenuDef.menuitems[TSoURDt3rd_OP_MainMenuDef.lastOn].text;
-	}
+	if (tsourdt3rd_currentMenu == &TSoURDt3rd_TM_OP_MainMenuDef || tsourdt3rd_currentMenu->prev_menu == &TSoURDt3rd_TM_OP_MainMenuDef)
+		s = TSoURDt3rd_OP_MainMenuDef.menuitems[TSoURDt3rd_OP_MainMenuDef.lastOn].text;
+	else if (currentMenu->prevMenu)
+		s = currentMenu->prevMenu->menuitems[currentMenu->prevMenu->lastOn].text;
 
 	fixed_t w = V_FontStringWidth(
 		s,
@@ -462,10 +560,25 @@ void TSoURDt3rd_M_DrawGenericOptions(void)
 	boolean opening = false;
 	fixed_t boxt = 0;
 
-	TSoURDt3rd_M_DrawMenuTooltips(
-		0, 0, 0, NULL, false,
-		BASEVIDWIDTH/2, 13, 0, true
-	);
+	// Tooltip
+	// Draw it at the top of the screen
+	{
+		menutooltip_t menutooltip = {
+			{
+				0, 0,
+				vid.width*FRACUNIT, FRACUNIT,
+				V_SNAPTOLEFT|V_SNAPTOTOP,
+				NULL,
+				false
+			},
+			{
+				BASEVIDWIDTH/2, 13,
+				V_SNAPTOTOP|V_ALLOWLOWERCASE,
+				aligncenter
+			}
+		};
+		TSoURDt3rd_M_DrawMenuTooltips(tsourdt3rd_currentMenu, menutooltip);
+	}
 	TSoURDt3rd_M_DrawOptionsMovingButton();
 
 	for (i = tsourdt3rd_itemOn; i >= 0; --i)

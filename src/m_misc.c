@@ -499,8 +499,8 @@ void Command_LoadConfig_f(void)
 
 	// load default control
 	G_ClearAllControlKeys();
-	G_CopyControls(gamecontrol, gamecontroldefault[gcs_fps], NULL, 0);
-	G_CopyControls(gamecontrolbis, gamecontrolbisdefault[gcs_fps], NULL, 0);
+	for (INT32 p = 0; p < MAXSPLITSCREENPLAYERS; p++)
+		G_CopyControls(gamecontrol[p], gamecontroldefault[p][gcs_fps], NULL, 0);
 
 	// temporarily reset execversion to default
 	CV_ToggleExecVersion(true);
@@ -548,8 +548,8 @@ void M_FirstLoadConfig(void)
 
 	// load default control
 	G_DefineDefaultControls();
-	G_CopyControls(gamecontrol, gamecontroldefault[gcs_fps], NULL, 0);
-	G_CopyControls(gamecontrolbis, gamecontrolbisdefault[gcs_fps], NULL, 0);
+	for (INT32 p = 0; p < MAXSPLITSCREENPLAYERS; p++)
+		G_CopyControls(gamecontrol[p], gamecontroldefault[p][gcs_fps], NULL, 0);
 
 	// register execversion here before we load any configs
 	CV_RegisterVar(&cv_execversion);
@@ -664,9 +664,9 @@ void M_SaveConfig(const char *filename)
 	if (!dedicated)
 	{
 		if (tutorialmode && tutorialgcs)
-			G_SaveKeySetting(f, gamecontroldefault[gcs_custom], gamecontrolbis); // using gcs_custom as temp storage
+			G_SaveKeySetting(f, gamecontroldefault[0][gcs_custom], gamecontrol[1]); // using gcs_custom as temp storage
 		else
-			G_SaveKeySetting(f, gamecontrol, gamecontrolbis);
+			G_SaveKeySetting(f, gamecontrol[0], gamecontrol[1]);
 	}
 
 	fclose(f);
@@ -1646,9 +1646,9 @@ boolean M_ScreenshotResponder(event_t *ev)
 	if (ch >= KEY_MOUSE1 && menuactive) // If it's not a keyboard key, then don't allow it in the menus!
 		return false;
 
-	if (ch == KEY_F8 || ch == gamecontrol[GC_SCREENSHOT][0] || ch == gamecontrol[GC_SCREENSHOT][1]) // remappable F8
+	if (ch == KEY_F8 || G_ControlKeyCompare(gamecontrol[0], GC_SCREENSHOT, ch)) // remappable F8
 		M_ScreenShot();
-	else if (ch == KEY_F9 || ch == gamecontrol[GC_RECORDGIF][0] || ch == gamecontrol[GC_RECORDGIF][1]) // remappable F9
+	else if (ch == KEY_F9 || G_ControlKeyCompare(gamecontrol[0], GC_RECORDGIF, ch)) // remappable F9
 		((moviemode) ? M_StopMovie : M_StartMovie)();
 	else
 		return false;

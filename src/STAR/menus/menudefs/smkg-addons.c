@@ -22,7 +22,7 @@
 // ------------------------ //
 
 static const char *hardcoded_files[] = {
-	CONFIGFILENAME, AUTOLOADCONFIGFILENAME,
+	CONFIGFILENAME, "d"CONFIGFILENAME,
 	"adedserv.cfg", "autoexec.cfg",
 	"srb2.pk3",
 	"zones.pk3",

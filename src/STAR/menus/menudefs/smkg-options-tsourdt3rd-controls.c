@@ -22,34 +22,25 @@ static void M_Sys_HandleProfileControls(void);
 static boolean M_Sys_ProfileControlsInputs(INT32 ch);
 static void M_Sys_SetControl(INT32 ch);
 static void M_Sys_ProfileControlsConfirm(INT32 choice);
+static boolean M_Sys_MapProfileControl(event_t *ev);
 
 menuitem_t TSoURDt3rd_OP_ControlsMenu[] =
 {
 	{IT_HEADER, NULL, "Jukebox Menu", NULL, 0},
-		{IT_CONTROL, NULL, "Open the Jukebox",
-			M_Sys_SetControl, 0},
-		{IT_CONTROL, NULL, "Stop the Jukebox",
-			M_Sys_SetControl, 0},
-		{IT_CONTROL, NULL, "Music Speed - Increase",
-			M_Sys_SetControl, 0},
-		{IT_CONTROL, NULL, "Music Speed - Decrease",
-			M_Sys_SetControl, 0},
-		{IT_CONTROL, NULL, "Music Pitch - Increase",
-			M_Sys_SetControl, 0},
-		{IT_CONTROL, NULL, "Music Pitch - Decrease",
-			M_Sys_SetControl, 0},
-		{IT_CONTROL, NULL, "Replay Recent Track",
-			M_Sys_SetControl, 0},
+		{IT_CONTROL, NULL, "Open the Jukebox",			M_Sys_SetControl, 0},
+		{IT_CONTROL, NULL, "Stop the Jukebox",			M_Sys_SetControl, 0},
+		{IT_CONTROL, NULL, "Music Speed - Increase",	M_Sys_SetControl, 0},
+		{IT_CONTROL, NULL, "Music Speed - Decrease",	M_Sys_SetControl, 0},
+		{IT_CONTROL, NULL, "Music Pitch - Increase",	M_Sys_SetControl, 0},
+		{IT_CONTROL, NULL, "Music Pitch - Decrease",	M_Sys_SetControl, 0},
+		{IT_CONTROL, NULL, "Replay Recent Track",		M_Sys_SetControl, 0},
 
 	{IT_HEADER, NULL, "Settings", NULL, 0},
-		{IT_STRING2 | IT_CVAR, NULL, "Player 1 Controller Rumble",
-			&cv_tsourdt3rd_drrr_controls_rumble[0], 0},
-		{IT_STRING2 | IT_CVAR, NULL, "Player 2 Controller Rumble",
-			&cv_tsourdt3rd_drrr_controls_rumble[1], 0},
+		{IT_STRING2 | IT_CVAR, NULL, "Player 1 Controller Rumble", &cv_tsourdt3rd_drrr_controls_rumble[0], 0},
+		{IT_STRING2 | IT_CVAR, NULL, "Player 2 Controller Rumble", &cv_tsourdt3rd_drrr_controls_rumble[1], 0},
 
 	{IT_HEADER, NULL, "Confirmation", NULL, 0},
-		{IT_STRING | IT_CALL, NULL, "Confirm Controls",
-			M_Sys_ProfileControlsConfirm, 0},
+		{IT_STRING | IT_CALL, NULL, "Confirm Controls", M_Sys_ProfileControlsConfirm, 0},
 };
 
 tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_ControlsMenu[] =
@@ -73,7 +64,7 @@ tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_ControlsMenu[] =
 
 menu_t TSoURDt3rd_OP_ControlsDef =
 {
-	MTREE3(MN_OP_MAIN, MN_OP_TSOURDT3RD, MN_OP_TSOURDT3RD),
+	MTREE3(MN_OP_MAIN, MN_OP_TSOURDT3RD, MN_OP_TSOURDT3RD_CONTROLS),
 	NULL,
 	sizeof (TSoURDt3rd_OP_ControlsMenu)/sizeof (menuitem_t),
 	&TSoURDt3rd_OP_MainMenuDef,
@@ -95,6 +86,7 @@ tsourdt3rd_menu_t TSoURDt3rd_TM_OP_ControlsDef = {
 	NULL,
 	NULL,
 	M_Sys_ProfileControlsInputs,
+	M_Sys_MapProfileControl,
 	&TSoURDt3rd_TM_OP_MainMenuDef
 };
 
@@ -106,15 +98,7 @@ static void M_Sys_DrawBindMediumString(INT32 y, INT32 flags, const char *string)
 {
 	fixed_t w = V_FontStringWidth(string, flags, tny_font);
 	fixed_t x = BASEVIDWIDTH/2 * FRACUNIT - w/2;
-	V_DrawFontStringAtFixed(
-		x,
-		y * FRACUNIT,
-		flags,
-		FRACUNIT,
-		FRACUNIT,
-		string,
-		tny_font
-	);
+	V_DrawFontStringAtFixed(x, y * FRACUNIT, flags, FRACUNIT, FRACUNIT, string, tny_font);
 }
 
 static INT32 M_Sys_DrawProfileLegend(INT32 x, INT32 y, const char *legend, const char *mediocre_key)
@@ -130,7 +114,7 @@ static INT32 M_Sys_DrawProfileLegend(INT32 x, INT32 y, const char *legend, const
 	return x;
 }
 
-// the control stuff.
+// The control stuff.
 // Dear god.
 static void M_Sys_DrawControls(void)
 {
@@ -140,7 +124,7 @@ static void M_Sys_DrawControls(void)
 	INT32 i, j, k;
 	INT32 hintofs = 3;
 
-	V_DrawFill(0, -vid.height, 138, vid.height*2, 31); // Black border
+	V_DrawFill(0, -vid.height, 138, vid.height*3, 31); // Black border
 
 	// Draw the menu options...
 	for (i = 0; i < currentMenu->numitems; i++)
@@ -294,18 +278,28 @@ static void M_Sys_DrawControls(void)
 		static UINT8 blue[256];
 		INT32 xpos = BASEVIDWIDTH - 12;
 		INT32 ypos = BASEVIDHEIGHT + hintofs - 9 - 12;
+		const char *legend = (cv_usejoystick.value ? "BKSP/Fire/Y/Joy3" : "BKSP/Fire");
 
 		blue[31] = 253;
 
-		TSoURDt3rd_M_DrawMenuTooltips(
-			0, BASEVIDHEIGHT/2+hintofs+72, V_SNAPTOBOTTOM, blue, true,
-			12, ypos, V_ALLOWLOWERCASE|V_SNAPTOBOTTOM|V_MENUCOLORMAP, false
-		);
+		menutooltip_t tooltip = {
+			{
+				0, (vid.height - (30 * vid.dup)) *FRACUNIT,
+				vid.width*FRACUNIT, FRACUNIT,
+				V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_NOSCALESTART,
+				blue,
+				true
+			},
+			{
+				12, ypos-4,
+				V_SNAPTOBOTTOM|V_ALLOWLOWERCASE,
+				-1
+			}
+		};
+		TSoURDt3rd_M_DrawMenuTooltips(tsourdt3rd_currentMenu, tooltip);
 
 		ypos -= (vid.dup+4)*4;
-		xpos = (cv_usejoystick.value ?
-			M_Sys_DrawProfileLegend(xpos, ypos, "Clear", "BKSP/Fire/Y/Joy3") :
-			M_Sys_DrawProfileLegend(xpos, ypos, "Clear", "BKSP/Fire"));
+		xpos = M_Sys_DrawProfileLegend(xpos, ypos, "Clear", legend);
 	}
 
 	// Overlay for control binding
@@ -371,21 +365,23 @@ static void M_ProfileControlSaveResponse(INT32 choice)
 	if (choice == MA_YES)
 	{
 		// Save the profile
-		memcpy(gamecontrol, optionsmenu.tempcontrols, sizeof(optionsmenu.tempcontrols));
+		memcpy(gamecontrol[0], optionsmenu.tempcontrols, sizeof(optionsmenu.tempcontrols));
 	}
 	else
 	{
 		// Revert changes
-		memcpy(optionsmenu.tempcontrols, gamecontrol, sizeof(gamecontrol));
+		memcpy(optionsmenu.tempcontrols, gamecontrol[0], sizeof(gamecontrol[0]));
 	}
+	optionsmenu.bindmenuactive = false;
 	TSoURDt3rd_M_GoBack(0);
 }
 
 static void M_Sys_ProfileControlsConfirm(INT32 choice)
 {
-	if (!memcmp(gamecontrol, optionsmenu.tempcontrols, sizeof(optionsmenu.tempcontrols)))
+	if (!memcmp(gamecontrol[0], optionsmenu.tempcontrols, sizeof(optionsmenu.tempcontrols)))
 	{
 		// no change
+		optionsmenu.bindmenuactive = false;
 		TSoURDt3rd_M_GoBack(0);
 		return;
 	}
@@ -416,7 +412,8 @@ static boolean M_Sys_ProfileControlsInputs(INT32 ch)
 
 	if (optionsmenu.bindtimer)
 	{
-		// Eat all inputs there. We'll use a stupid hack in M_Responder instead.
+		// Eat all inputs.
+		// We have a event responder that'll handle it from here.
 		return true;
 	}
 
@@ -512,23 +509,31 @@ static void M_Sys_SetControl(INT32 ch)
 }
 
 #define KEYHOLDFOR 1
+#define KEY_GRACEPERIOD (TICRATE*5 - 9)
+
 // Map the event to the profile.
-void TSoURDt3rd_M_Controls_MapProfileControl(event_t *ev)
+static boolean M_Sys_MapProfileControl(event_t *ev)
 {
 	const UINT8 pid = 0;
 	boolean noinput = true;
 	INT32 controln = 0;
 
+	if (!optionsmenu.bindtimer)
+	{
+		// We're not binding anything right now, no need to restrict anything.
+		return false;
+	}
+
 	if (ev->type == ev_keydown && ev->repeated)
 	{
 		// ignore repeating keys
-		return;
+		return true;
 	}
 
-	if (optionsmenu.bindtimer > TICRATE*5 - 9)
+	if (optionsmenu.bindtimer > KEY_GRACEPERIOD)
 	{
 		// grace period after entering the bind dialog
-		return;
+		return true;
 	}
 
 	// Find every held button.
@@ -562,7 +567,7 @@ void TSoURDt3rd_M_Controls_MapProfileControl(event_t *ev)
 			// binds, just ignore it.
 			const UINT8 zero[sizeof optionsmenu.bindinputs] = {0};
 			if (!memcmp(zero, optionsmenu.bindinputs, sizeof zero))
-				return;
+				return true;
 		}
 
 		controln = tsourdt3rd_currentMenu->menuitems[tsourdt3rd_itemOn].mvar1;
@@ -574,5 +579,7 @@ void TSoURDt3rd_M_Controls_MapProfileControl(event_t *ev)
 	}
 	else
 		optionsmenu.bindtimer = -1; // prevent skip countdown
+
+	return true;
 }
 #undef KEYHOLDFOR

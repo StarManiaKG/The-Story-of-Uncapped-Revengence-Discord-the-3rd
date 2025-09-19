@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2020-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2020-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -40,7 +40,7 @@ tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_DebugMenu[] =
 };
 
 menu_t TSoURDt3rd_OP_DebugDef = {
-	MTREE3(MN_OP_MAIN, MN_OP_TSOURDT3RD, MN_OP_TSOURDT3RD),
+	MTREE3(MN_OP_MAIN, MN_OP_TSOURDT3RD, MN_OP_TSOURDT3RD_DEBUGGING),
 	NULL,
 	sizeof (TSoURDt3rd_OP_DebugMenu)/sizeof (menuitem_t),
 	&TSoURDt3rd_OP_MainMenuDef,
@@ -59,6 +59,7 @@ tsourdt3rd_menu_t TSoURDt3rd_TM_OP_DebugDef = {
 	2, 5,
 	NULL,
 	TSoURDt3rd_M_OptionsTick,
+	NULL,
 	NULL,
 	NULL,
 	NULL,

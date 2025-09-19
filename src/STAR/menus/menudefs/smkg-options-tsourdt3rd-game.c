@@ -26,89 +26,60 @@ static void G_CheckForTSoURDt3rdUpdates(INT32 choice);
 
 menuitem_t TSoURDt3rd_OP_GameMenu[] =
 {
-	{IT_STRING | IT_CALL, NULL, "Check for Updates...",
-		G_CheckForTSoURDt3rdUpdates, 0},
-	{IT_STRING | IT_CVAR, NULL,	"Check for Updates on Startup",
-		&cv_tsourdt3rd_main_checkforupdatesonstartup, 0},
+	{IT_STRING | IT_CALL, NULL, "Check for Updates...", G_CheckForTSoURDt3rdUpdates, 0},
+	{IT_STRING | IT_CVAR, NULL,	"Check for Updates on Startup", &cv_tsourdt3rd_main_checkforupdatesonstartup, 0},
 
-	{IT_SPACE, NULL, NULL,
-		NULL, 0},
+	{IT_SPACE, NULL, NULL, NULL, 0},
 
 	{IT_HEADER, NULL, "SDL", NULL, 0},
-		{IT_STRING | IT_CVAR, NULL, "Window Title Type",
-			&cv_tsourdt3rd_game_sdl_windowtitle_type, 0},
+		{IT_STRING | IT_CVAR, NULL, "Window Title Type", &cv_tsourdt3rd_game_sdl_windowtitle_type, 0},
 
-		{IT_SPACE, NULL, NULL,
-			NULL, 0},
+		{IT_SPACE, NULL, NULL, NULL, 0},
 
-		{IT_STRING | IT_CVAR | IT_CV_STRING, NULL, "Custom Window Title",
-			&cv_tsourdt3rd_game_sdl_windowtitle_custom, 0},
-		{IT_STRING | IT_CVAR, NULL, "Memes on Window Title",
-			&cv_tsourdt3rd_game_sdl_windowtitle_memes, 0},
+		{IT_STRING | IT_CVAR | IT_CV_STRING, NULL, "Custom Window Title", &cv_tsourdt3rd_game_sdl_windowtitle_custom, 0},
+		{IT_STRING | IT_CVAR, NULL, "Memes on Window Title", &cv_tsourdt3rd_game_sdl_windowtitle_memes, 0},
 
-	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL,
-		NULL, 0},
+	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL, NULL, 0},
 
 	{IT_HEADER, NULL, "Scenes", NULL, 0},
-		{IT_STRING | IT_CVAR, NULL, "Startup Image",
-			&cv_tsourdt3rd_game_startup_image, 0},
-		{IT_STRING | IT_CVAR, NULL, "Startup Intro",
-			&cv_tsourdt3rd_game_startup_intro, 0},
+		{IT_STRING | IT_CVAR, NULL, "Startup Image", &cv_tsourdt3rd_game_startup_image, 0},
+		{IT_STRING | IT_CVAR, NULL, "Startup Intro", &cv_tsourdt3rd_game_startup_intro, 0},
 
-		{IT_SPACE, NULL, NULL,
-			NULL, 0},
+		{IT_SPACE, NULL, NULL, NULL, 0},
 
-		{IT_STRING | IT_CVAR, NULL, "Loading Screen",
-			&cv_tsourdt3rd_game_loadingscreen, 0},
-		{IT_STRING | IT_CVAR, NULL, "Loading Screen Image",
-			&cv_tsourdt3rd_game_loadingscreen_image, 0},
+		{IT_STRING | IT_CVAR, NULL, "Loading Screen", &cv_tsourdt3rd_game_loadingscreen, 0},
+		{IT_STRING | IT_CVAR, NULL, "Loading Screen Image", &cv_tsourdt3rd_game_loadingscreen_image, 0},
 
-		{IT_SPACE, NULL, NULL,
-			NULL, 0},
+		{IT_SPACE, NULL, NULL, NULL, 0},
 
-		{IT_STRING | IT_CVAR, NULL, "Pause Screen",
-			&cv_tsourdt3rd_game_pausescreen, 0},
+		{IT_STRING | IT_CVAR, NULL, "Pause Screen", &cv_tsourdt3rd_game_pausescreen, 0},
 
-		{IT_SPACE, NULL, NULL,
-			NULL, 0},
+		{IT_SPACE, NULL, NULL, NULL, 0},
 
-		{IT_STRING | IT_CVAR, NULL, "Quit Screen",
-			&cv_tsourdt3rd_game_quitscreen, 0},
+		{IT_STRING | IT_CVAR, NULL, "Quit Screen", &cv_tsourdt3rd_game_quitscreen, 0},
 
-	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL,
-		NULL, 0},
+	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL, NULL, 0},
 
 	{IT_HEADER, NULL, "Levels", NULL, 0},
-		{IT_STRING | IT_CVAR, NULL, "Automap Outside Devmode",
-			&cv_tsourdt3rd_debug_automapanywhere, 0},
-		{IT_STRING | IT_CVAR, NULL, "Allow Time Overs",
-			&cv_tsourdt3rd_game_allowtimeover, 0},
+		{IT_STRING | IT_CVAR, NULL, "Allow Time Overs", &cv_tsourdt3rd_game_allowtimeover, 0},
 
-	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL,
-		NULL, 0},
+	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL, NULL, 0},
 
 	{IT_HEADER, NULL, "Objects", NULL, 0},
-		{IT_STRING | IT_CVAR, NULL, "Shadows",
-			&cv_shadow, 0},
-		{IT_STRING | IT_CVAR, NULL, "Realistic Shadows",
-			&cv_tsourdt3rd_game_shadows_realistic, 0},
-		{IT_STRING | IT_CVAR, NULL, "All Objects Have Shadows",
-			&cv_tsourdt3rd_game_shadows_forallobjects, 0},
-		{IT_STRING | IT_CVAR, NULL, "Shadow Position",
-			&cv_tsourdt3rd_game_shadows_positioning, 0},
+		{IT_STRING | IT_CVAR, NULL, "Shadows", &cv_shadow, 0},
+		{IT_STRING | IT_CVAR, NULL, "Realistic Shadows", &cv_tsourdt3rd_game_shadows_realistic, 0},
+		{IT_STRING | IT_CVAR, NULL, "All Objects Have Shadows", &cv_tsourdt3rd_game_shadows_forallobjects, 0},
+		{IT_STRING | IT_CVAR, NULL, "Shadow Position", &cv_tsourdt3rd_game_shadows_positioning, 0},
+		{IT_STRING | IT_CVAR, NULL, "Offset Shadows", &cv_tsourdt3rd_game_shadows_offset, 0},
 
-		{IT_SPACE, NULL, NULL,
-			NULL, 0},
+		{IT_SPACE, NULL, NULL, NULL, 0},
 
-		{IT_STRING | IT_CVAR, NULL,	"Sonic CD Mode",
-			&cv_tsourdt3rd_game_soniccd, 0},
+		{IT_STRING | IT_CVAR, NULL,	"Sonic CD Mode", &cv_tsourdt3rd_game_soniccd, 0},
 
-	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL,
-		NULL, 0},
+	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL, NULL, 0},
 
 	{IT_HEADER, NULL, "Menus", NULL, 0},
-		{IT_STRING | IT_CVAR, NULL, "Is it Called 'Single Player'?",
-			&cv_tsourdt3rd_game_isitcalledsingleplayer,	0},
+		{IT_STRING | IT_CVAR, NULL, "Is it Called 'Single Player'?", &cv_tsourdt3rd_game_isitcalledsingleplayer, 0},
 };
 
 tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_GameMenu[] =
@@ -148,7 +119,6 @@ tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_GameMenu[] =
 	{NULL, NULL, {NULL}, 0, 0},
 
 	{NULL, NULL, {NULL}, 0, 0},
-		{NULL, "Should you be allowed to view the automap outside of devmode?", {NULL}, 0, 0},
 		{NULL, "Are time-overs allowed?", {NULL}, 0, 0},
 
 	{NULL, NULL, {NULL}, 0, 0},
@@ -158,6 +128,7 @@ tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_GameMenu[] =
 		{NULL, "Should the shadows be 'realistic'?", {NULL}, 0, 0},
 		{NULL, "Should all objects have a shadow?", {NULL}, 0, 0},
 		{NULL, "How should each shadow be positioned?", {NULL}, 0, 0},
+		{NULL, "Should shadows move and offset based on the object?", {NULL}, 0, 0},
 
 		{NULL, NULL, {NULL}, 0, 0},
 
@@ -193,6 +164,7 @@ tsourdt3rd_menu_t TSoURDt3rd_TM_OP_GameDef = {
 	NULL,
 	NULL,
 	NULL,
+	NULL,
 	&TSoURDt3rd_TM_OP_MainMenuDef
 };
 
@@ -222,9 +194,8 @@ static void M_Sys_GameTicker(void)
 	TSoURDt3rd_OP_GameMenu[op_levels_timeover].status =
 		(!netgame ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
 
-	for (i = op_objects_shadows_realistic; i <= op_objects_shadows_positioning; i++)
-		TSoURDt3rd_OP_GameMenu[i].status =
-			(cv_shadow.value ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+	for (i = op_objects_shadows_realistic; i <= op_objects_shadows_end; i++)
+		TSoURDt3rd_OP_GameMenu[i].status = (cv_shadow.value ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
 
 	TSoURDt3rd_OP_GameMenu[op_general_isitcalledsingleplayer].status =
 		(!cv_tsourdt3rd_aprilfools_ultimatemode.value ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
@@ -233,6 +204,7 @@ static void M_Sys_GameTicker(void)
 static void G_CheckForTSoURDt3rdUpdates(INT32 choice)
 {
 	(void)choice;
+
 #ifdef HAVE_CURL
 	tsourdt3rd_local.curl.checked_version = false;
 	TSoURDt3rd_CurlRoutine_FindUpdates();

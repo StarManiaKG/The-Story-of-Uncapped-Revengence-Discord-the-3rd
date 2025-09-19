@@ -22,46 +22,32 @@ static void M_Sys_VideoTicker(void);
 menuitem_t TSoURDt3rd_OP_VideoMenu[] =
 {
 	{IT_HEADER, NULL, "SDL", NULL, 0},
-		{IT_STRING | IT_CVAR, NULL, "Window Shaking",
-			&cv_tsourdt3rd_video_sdl_window_shaking, 0},
+		{IT_STRING | IT_CVAR, NULL, "Window Shaking", &cv_tsourdt3rd_video_sdl_window_shaking, 0},
 
-	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL,
-		NULL, 0},
+	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL, NULL, 0},
 
 	{IT_HEADER, NULL, "Diagnostic", NULL, 0},
-		{IT_STRING | IT_CVAR, NULL, "Show TPS",
-			&cv_tsourdt3rd_video_showtps, 0},
+		{IT_STRING | IT_CVAR, NULL, "Show TPS", &cv_tsourdt3rd_video_showtps, 0},
 
-	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL,
-		NULL, 0},
+	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL, NULL, 0},
 
 	{IT_HEADER, NULL, "Flair", NULL, 0},
-		{IT_STRING | IT_CVAR, NULL, "Menu Color",
-			&cv_tsourdt3rd_video_coloring_menus, 81},
+		{IT_STRING | IT_CVAR, NULL, "Menu Color", &cv_tsourdt3rd_video_coloring_menus, 81},
 
-		{IT_SPACE, NULL, NULL,
-			NULL, 0},
+		{IT_SPACE, NULL, NULL, NULL, 0},
 
-		{IT_STRING | IT_CVAR, NULL, "FPS Counter Color",
-			&cv_tsourdt3rd_video_coloring_fpsrate, 0},
-		{IT_STRING | IT_CVAR, NULL, "FPS Counter Font",
-			&cv_tsourdt3rd_video_font_fps, 0},
+		{IT_STRING | IT_CVAR, NULL, "FPS Counter Color", &cv_tsourdt3rd_video_coloring_fpsrate, 0},
+		{IT_STRING | IT_CVAR, NULL, "FPS Counter Font", &cv_tsourdt3rd_video_font_fps, 0},
 
-		{IT_SPACE, NULL, NULL,
-			NULL, 0},
+		{IT_SPACE, NULL, NULL, NULL, 0},
 
-		{IT_STRING | IT_CVAR, NULL, "TPS Counter Color",
-			&cv_tsourdt3rd_video_coloring_tpsrate, 0},
-		{IT_STRING | IT_CVAR, NULL, "TPS Counter Font",
-			&cv_tsourdt3rd_video_font_tps, 0},
+		{IT_STRING | IT_CVAR, NULL, "TPS Counter Color", &cv_tsourdt3rd_video_coloring_tpsrate, 0},
+		{IT_STRING | IT_CVAR, NULL, "TPS Counter Font", &cv_tsourdt3rd_video_font_tps, 0},
 
-	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL,
-		NULL, 0},
+	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL, NULL, 0},
 
 #ifdef STAR_LIGHTING
-	{IT_HEADER, NULL, "Advanced", NULL, 0},
-		{IT_STRING | IT_CALL, NULL, "Lighting...",
-			TSoURDt3rd_M_CoronaLighting_Init, 0},
+	{IT_STRING | IT_CALL, NULL, "Lighting...", TSoURDt3rd_M_CoronaLighting_Init, 0},
 #endif
 };
 
@@ -93,14 +79,13 @@ tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_VideoMenu[] =
 	{NULL, NULL, {NULL}, 0, 0},
 
 #ifdef STAR_LIGHTING
-	{NULL, NULL, {NULL}, 0, 0},
-		{NULL, "Browse TSoURDt3rd's lighting effects.", { NULL }, 0, 0},
+	{NULL, "Browse TSoURDt3rd's lighting effects.", { NULL }, 0, 0},
 #endif
 };
 
 menu_t TSoURDt3rd_OP_VideoDef =
 {
-	MTREE3(MN_OP_MAIN, MN_OP_TSOURDT3RD, MN_OP_TSOURDT3RD),
+	MTREE3(MN_OP_MAIN, MN_OP_TSOURDT3RD, MN_OP_TSOURDT3RD_VIDEO),
 	NULL,
 	sizeof (TSoURDt3rd_OP_VideoMenu)/sizeof (menuitem_t),
 	&TSoURDt3rd_OP_MainMenuDef,
@@ -119,6 +104,7 @@ tsourdt3rd_menu_t TSoURDt3rd_TM_OP_VideoDef = {
 	2, 5,
 	NULL,
 	M_Sys_VideoTicker,
+	NULL,
 	NULL,
 	NULL,
 	NULL,

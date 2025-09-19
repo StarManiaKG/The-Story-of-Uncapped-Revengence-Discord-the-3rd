@@ -56,6 +56,7 @@
 
 // TSoURDt3rd
 #include "STAR/core/smkg-p_setup.h" // TSoURDt3rd_WORLD_MapIsDangerous() //
+#include "STAR/smkg-st_hud.h" // songcreditbg //
 #include "i_time.h"
 
 // coords are scaled
@@ -97,8 +98,6 @@ patch_t *bflagico;
 patch_t *rmatcico;
 patch_t *bmatcico;
 patch_t *tagico;
-
-static patch_t *songcreditbg; // music/song credits
 
 //-------------------------------------------
 //              coop hud
@@ -1058,7 +1057,7 @@ boolean HU_Responder(event_t *ev)
 		INT32 i;
 		for (i = 0; i < NUM_GAMECONTROLS; i++)
 		{
-			if (gamecontrol[i][0] == ev->key || gamecontrol[i][1] == ev->key)
+			if (G_ControlKeyCompare(gamecontrol[0], i, ev->key))
 				break;
 		}
 
@@ -1074,8 +1073,8 @@ boolean HU_Responder(event_t *ev)
 			return false;
 
 		// enter chat mode
-		if ((ev->key == gamecontrol[GC_TALKKEY][0] || ev->key == gamecontrol[GC_TALKKEY][1])
-			&& netgame && !OLD_MUTE) // check for old chat mute, still let the players open the chat incase they want to scroll otherwise.
+		// check for old chat mute, still let the players open the chat incase they want to scroll otherwise.
+		if (G_ControlKeyCompare(gamecontrol[0], GC_TALKKEY, ev->key) && netgame && !OLD_MUTE)
 		{
 			I_SetTextInputMode(true);
 			chat_on = true;
@@ -1086,8 +1085,7 @@ boolean HU_Responder(event_t *ev)
 			typelines = 1;
 			return true;
 		}
-		if ((ev->key == gamecontrol[GC_TEAMKEY][0] || ev->key == gamecontrol[GC_TEAMKEY][1])
-			&& netgame && !OLD_MUTE)
+		if (G_ControlKeyCompare(gamecontrol[0], GC_TEAMKEY, ev->key) && netgame && !OLD_MUTE)
 		{
 			I_SetTextInputMode(true);
 			chat_on = true;
@@ -1170,10 +1168,9 @@ boolean HU_Responder(event_t *ev)
 			chat_scrollmedown = true; // you hit enter, so you might wanna autoscroll to see what you just sent. :)
 			I_UpdateMouseGrab();
 		}
-		else if (c == KEY_ESCAPE
-			|| ((c == gamecontrol[GC_TALKKEY][0] || c == gamecontrol[GC_TALKKEY][1]
-			|| c == gamecontrol[GC_TEAMKEY][0] || c == gamecontrol[GC_TEAMKEY][1])
-			&& c >= KEY_MOUSE1)) // If it's not a keyboard key, then the chat button is used as a toggle.
+		else if ((c == KEY_ESCAPE
+			|| (G_ControlKeyCompare(gamecontrol[0], GC_TALKKEY, c) || G_ControlKeyCompare(gamecontrol[0], GC_TEAMKEY, c)))
+			&& c >= KEY_MOUSE1) // If it's not a keyboard key, then the chat button is used as a toggle.
 		{
 			I_SetTextInputMode(textinputmodeenabledbylua);
 			chat_on = false;

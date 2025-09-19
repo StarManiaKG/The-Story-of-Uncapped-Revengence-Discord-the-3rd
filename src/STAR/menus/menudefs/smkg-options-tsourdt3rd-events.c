@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2020-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2020-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -20,17 +20,13 @@ static void M_Sys_EventTicker(void);
 menuitem_t TSoURDt3rd_OP_EventsMenu[] =
 {
 	{IT_HEADER, NULL, "Easter", NULL, 0},
-		{IT_STRING | IT_CVAR, NULL, "Egg Hunt",
-			&cv_tsourdt3rd_easter_egghunt_allowed, 0},
-		{IT_STRING | IT_CVAR, NULL, "Egg Hunt Bonuses",
-			&cv_tsourdt3rd_easter_egghunt_bonuses, 0},
+		{IT_STRING | IT_CVAR, NULL, "Egg Hunt", &cv_tsourdt3rd_easter_egghunt_allowed, 0},
+		{IT_STRING | IT_CVAR, NULL, "Egg Hunt Bonuses", &cv_tsourdt3rd_easter_egghunt_bonuses, 0},
 
-	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL,
-		NULL, 0},
+	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL, NULL, 0},
 
 	{IT_HEADER, NULL, "Foolishness", NULL, 0},
-		{IT_STRING | IT_CVAR, NULL, "Ultimate Mode!",
-			&cv_tsourdt3rd_aprilfools_ultimatemode, 21},
+		{IT_STRING | IT_CVAR, NULL, "Ultimate Mode!", &cv_tsourdt3rd_aprilfools_ultimatemode, 21},
 };
 
 tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_EventsMenu[] =
@@ -47,7 +43,7 @@ tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_EventsMenu[] =
 
 menu_t TSoURDt3rd_OP_EventsDef =
 {
-	MTREE3(MN_OP_MAIN, MN_OP_TSOURDT3RD, MN_OP_TSOURDT3RD),
+	MTREE3(MN_OP_MAIN, MN_OP_TSOURDT3RD, MN_OP_TSOURDT3RD_EVENTS),
 	NULL,
 	sizeof (TSoURDt3rd_OP_EventsMenu)/sizeof (menuitem_t),
 	&TSoURDt3rd_OP_MainMenuDef,
@@ -67,6 +63,7 @@ tsourdt3rd_menu_t TSoURDt3rd_TM_OP_EventsDef = {
 	NULL,
 	M_Sys_EventTicker,
 	M_Sys_EventTicker,
+	NULL,
 	NULL,
 	NULL,
 	&TSoURDt3rd_TM_OP_MainMenuDef

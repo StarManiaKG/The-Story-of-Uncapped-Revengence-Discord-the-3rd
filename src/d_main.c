@@ -100,14 +100,10 @@
 #include "lua_hud.h"
 
 // TSoURDt3rd
-#ifdef HAVE_DISCORDSUPPORT
-#include "discord/discord.h"
-#endif
 #include "STAR/ss_main.h" // TSoURDt3rd_Init() & TSoURDt3rd_CON_DrawStartupScreen() //
-#include "STAR/smkg_g_inputs.h" // TSoURDt3rd_D_ProcessEvents() //
 #include "STAR/core/smkg-d_main.h" // TSoURDt3rd_D_AutoLoadAddons() //
 #include "STAR/core/smkg-s_audio.h" // TSoURDt3rd_S_ManageAudio() //
-#include "STAR/menus/smkg-m_sys.h" // TSoURDt3rd_M_DrawPauseGraphic() //
+#include "STAR/menus/smkg-m_sys.h" // TSoURDt3rd_M_DrawPauseGraphic() & TSoURDt3rd_M_UpdateMenuCMD() //
 
 // Version numbers for netplay :upside_down_face:
 int    VERSION;
@@ -189,11 +185,16 @@ boolean capslock = 0;	// gee i wonder what this does.
 // D_ProcessEvents
 // Send all the events of the given timestamp down the responder chain
 //
-void D_ProcessEvents(void)
+void D_ProcessEvents(boolean callresponders)
 {
 	event_t *ev;
-
 	boolean eaten;
+	int i;
+
+	// We need to save these in local variables!
+	// Otherwise, eventtail & eventhead may get weird/invalid inputs!
+	INT32 tail = eventtail;
+	INT32 head = eventhead;
 
 	// Reset possibly stale mouse info
 	G_SetMouseDeltas(0, 0, 1);
@@ -201,11 +202,12 @@ void D_ProcessEvents(void)
 	mouse.buttons &= ~(MB_SCROLLUP|MB_SCROLLDOWN);
 	mouse2.buttons &= ~(MB_SCROLLUP|MB_SCROLLDOWN);
 
-	for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
+	eventtail = eventhead;
+	for (; tail != head; tail = (tail+1) & (MAXEVENTS-1))
 	{
 		boolean hooked = false;
 
-		ev = &events[eventtail];
+		ev = &events[tail];
 
 		// Set mouse buttons early in case event is eaten later
 		if (ev->type == ev_keydown || ev->type == ev_keyup || ev->type == ev_text)
@@ -242,63 +244,124 @@ void D_ProcessEvents(void)
 			}
 		}
 
-		if (CON_PreResponder(ev))
-			continue;
-
-		// Screenshots over everything so that they can be taken anywhere.
+		//
+		// Screenshot input
+		// Ran over everything so that they can be taken anywhere.
+		//
 		if (M_ScreenshotResponder(ev))
-			continue; // ate the event
+		{
+			// ate the event
+			continue;
+		}
 
+		//
+		// Console input
+		//
+		// STAR NOTE:
+		// The console should take priority over everything else, as per Ring Racers.
+		// (Asides from screenshots at least)
+		//
+		// So, we moved it from the bottom to up here.
+		//
+		if (CON_PreResponder(ev))
+		{
+			// ate the pre-console event
+			continue;
+		}
+		{
+			I_lock_mutex(&con_mutex);
+			{
+				eaten = CON_Responder(ev);
+			}
+			I_unlock_mutex(con_mutex);
+			{
+				if (eaten)
+					continue; // ate the event
+			}
+		}
+
+		//
+		// Cheat input
+		//
 		if (gameaction == ga_nothing && gamestate == GS_TITLESCREEN)
 		{
 			if (cht_Responder(ev))
 				continue;
 		}
 
+		//
+		// Lua input
+		//
 		if (!CON_Ready() && !menuactive) {
 			if (G_LuaResponder(ev))
 				continue;
 			hooked = true;
 		}
 
+		//
+		// Update keys current state
+		//
+		// STAR NOTE:
+		// For our menu system, we want to map our game inputs.
+		// So, we need to call this function, and remove it from g_game.c.
+		//
+		G_MapEventsToControls(ev);
+
+		//
+		// Are we allowed to call the other responders?
+		// If not, this is as far as we go, so eat the event.
+		//
+		if (!callresponders)
+			continue;
+
+		//
 		// Menu input
+		//
 		I_lock_mutex(&m_menu_mutex);
 		{
 			eaten = M_Responder(ev);
 		}
 		I_unlock_mutex(m_menu_mutex);
+		{
+			if (eaten)
+				continue; // menu ate the event
+		}
 
-		if (eaten)
-			continue; // menu ate the event
-
+		//
+		// Lua input
+		//
 		if (!hooked && !CON_Ready()) {
 			if (G_LuaResponder(ev))
 				continue;
 			hooked = true;
 		}
-
-		// console input
-		I_lock_mutex(&con_mutex);
 		{
-			eaten = CON_Responder(ev);
+			if (!hooked && !CON_Ready() && G_LuaResponder(ev))
+				continue; // lua ate the event
 		}
-		I_unlock_mutex(con_mutex);
 
-		if (eaten)
-			continue; // ate the event
-
-		if (!hooked && !CON_Ready() && G_LuaResponder(ev))
-			continue;
-
+		//
+		// Game input
+		//
 		G_Responder(ev);
 	}
 
+	//
+	// Refresh mouse data
+	//
 	if (mouse.rdx || mouse.rdy)
 		G_SetMouseDeltas(mouse.rdx, mouse.rdy, 1);
 	if (mouse2.rdx || mouse2.rdy)
 		G_SetMouseDeltas(mouse2.rdx, mouse2.rdy, 2);
 
-	TSoURDt3rd_D_ProcessEvents(); // STAR STUFF: PLEASE process [the 7] events //
+	//
+	// STAR STUFF:
+	// PLEASE process [the 7] menu events
+	//
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		TSoURDt3rd_M_UpdateMenuCMD(i);
+	}
 }
 
 //
@@ -1049,6 +1112,7 @@ void D_StartTitle(void)
 	F_InitMenuPresValues();
 	F_StartTitleScreen();
 
+	M_ClearMenus();
 	currentMenu = &MainDef; // reset the current menu ID
 
 	// Reset the palette
@@ -1058,7 +1122,7 @@ void D_StartTitle(void)
 	// The title screen is obviously not a tutorial! (Unless I'm mistaken)
 	if (tutorialmode && tutorialgcs)
 	{
-		G_CopyControls(gamecontrol, gamecontroldefault[gcs_custom], gcl_tutorial_full, num_gcl_tutorial_full); // using gcs_custom as temp storage
+		G_CopyControls(gamecontrol[0], gamecontroldefault[0][gcs_custom], gcl_tutorial_full, num_gcl_tutorial_full); // using gcs_custom as temp storage
 		CV_SetValue(&cv_usemouse, tutorialusemouse);
 		CV_SetValue(&cv_alwaysfreelook, tutorialfreelook);
 		CV_SetValue(&cv_mousemove, tutorialmousemove);

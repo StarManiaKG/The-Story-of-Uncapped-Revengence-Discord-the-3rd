@@ -84,7 +84,12 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 	99, // wipe_cutscene_final (hardcoded)
 
 	0,  // wipe_specinter_final
-	0   // wipe_multinter_final
+	0,  // wipe_multinter_final
+
+	// TSoURDt3rd //
+	// -- Menus
+	1,  // tsourdt3rd_wipe_menu_toblack
+	1,  // tsourdt3rd_wipe_menu_final
 };
 
 //--------------------------------------------------------------------------
@@ -524,6 +529,39 @@ boolean F_TryColormapFade(UINT8 wipecolor)
 	}
 }
 
+static void F_ManageWipe(UINT8 wipetype, UINT8 wipeframe, fademask_t *fmask)
+{
+#ifndef NOWIPE
+#ifdef HWRENDER
+	if (rendermode == render_opengl)
+	{
+		// send in the wipe type and wipe frame because we need to cache the graphic
+		HWR_DoWipe(wipetype, wipeframe-1);
+	}
+	else
+#endif
+	{
+		// Wipe styles
+		if (wipestyle == WIPESTYLE_COLORMAP)
+		{
+			UINT8 *colormap = fadecolormap;
+			if (wipestyleflags & WSF_TOWHITE)
+				colormap += (FADECOLORMAPROWS * 256);
+			F_DoColormapWipe(fmask, colormap);
+		}
+		else
+		{
+			F_DoWipe(fmask);
+		}
+	}
+	if (wipestyle == WIPESTYLE_COLORMAP)
+	{
+		// Draw the title card above the wipe
+		F_WipeStageTitle();
+	}
+#endif
+}
+
 /** After setting up the screens you want to wipe,
   * calling this will do a 'typical' wipe.
   */
@@ -562,47 +600,25 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu)
 		}
 		lastwipetic = nowtime;
 
-		// Wipe styles
-		if (wipestyle == WIPESTYLE_COLORMAP)
-		{
-#ifdef HWRENDER
-			if (rendermode == render_opengl)
-			{
-				// send in the wipe type and wipe frame because we need to cache the graphic
-				HWR_DoWipe(wipetype, wipeframe-1);
-			}
-			else
-#endif
-			{
-				UINT8 *colormap = fadecolormap;
-				if (wipestyleflags & WSF_TOWHITE)
-					colormap += (FADECOLORMAPROWS * 256);
-				F_DoColormapWipe(fmask, colormap);
-			}
-
-			// Draw the title card above the wipe
-			F_WipeStageTitle();
-		}
-		else
-		{
-#ifdef HWRENDER
-			if (rendermode == render_opengl)
-			{
-				// send in the wipe type and wipe frame because we need to cache the graphic
-				HWR_DoWipe(wipetype, wipeframe-1);
-			}
-			else
-#endif
-				F_DoWipe(fmask);
-		}
+		F_ManageWipe(wipetype, wipeframe, fmask);
 
 		I_OsPolling();
+
+		// The event buffer is rather small so we need to
+		// process these events immediately, to make sure
+		// inputs don't get stuck (would happen a lot with
+		// some controllers that send a lot of analog
+		// events).
+		D_ProcessEvents(false);
+
 		I_UpdateNoBlit();
 
-		if (drawMenu)
+		if (drawMenu && rendermode != render_none)
 		{
 			I_lock_mutex(&m_menu_mutex);
-			M_Drawer(); // menu is drawn even on top of wipes
+			{
+				M_Drawer(); // menu is drawn even on top of wipes
+			}
 			I_unlock_mutex(m_menu_mutex);
 		}
 

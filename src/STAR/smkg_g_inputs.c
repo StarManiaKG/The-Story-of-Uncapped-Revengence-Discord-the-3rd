@@ -38,15 +38,16 @@ star_gamekey_t STAR_GameKey[1][NUM_GAMECONTROLS];
 void STAR_G_KeyResponder(UINT8 player, UINT8 key)
 {
 	star_gamekey_t *game_key = &STAR_GameKey[player][key];
-	INT32 (*urGameControl)[2] = (player == 0 ? gamecontrol : gamecontrolbis);
+	INT32 (*urGameControl)[2] = (player == 0 ? gamecontrol[0] : gamecontrol[1]);
+	boolean key_pressed = false;
 
 	// Check game inputs.
 	for (INT32 i = 0; i < 2; i++)
 	{
-		game_key->pressed = gamekeydown[urGameControl[key][i]];
-		if (game_key->pressed) break;
+		key_pressed = gamekeydown[urGameControl[key][i]];
+		if (key_pressed) break;
 	}
-	if (!game_key->pressed)
+	if (!key_pressed)
 	{
 		// -- Reset everything if not tapping.
 		game_key->keyDown = 0;
@@ -76,7 +77,7 @@ void STAR_G_KeyResponder(UINT8 player, UINT8 key)
 boolean STAR_G_KeyPressed(UINT8 player, UINT8 key)
 {
 	STAR_G_KeyResponder(player, key);
-	const star_gamekey_t *game_key = &STAR_GameKey[player][key];
+	star_gamekey_t *game_key = &STAR_GameKey[player][key];
 	return (game_key->pressed && !game_key->held);
 }
 
@@ -87,20 +88,8 @@ boolean STAR_G_KeyPressed(UINT8 player, UINT8 key)
 boolean STAR_G_KeyHeld(UINT8 player, UINT8 key)
 {
 	STAR_G_KeyResponder(player, key);
-	const star_gamekey_t *game_key = &STAR_GameKey[player][key];
+	star_gamekey_t *game_key = &STAR_GameKey[player][key];
 	return (game_key->pressed || game_key->held);
-}
-
-//
-// void TSoURDt3rd_D_ProcessEvents(void)
-// Processes our unique key and pad events too!
-//
-void TSoURDt3rd_D_ProcessEvents(void)
-{
-	for (INT32 i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		TSoURDt3rd_M_UpdateMenuCMD(i);
-	}
 }
 
 //
@@ -119,9 +108,6 @@ static void update_vkb_axis(INT32 axis)
 boolean TSoURDt3rd_G_MapEventsToControls(event_t *ev)
 {
 	INT32 i;
-
-	if (Snake_JoyGrabber(tsourdt3rd_snake, ev))
-		return true;
 
 	switch (ev->type)
 	{
@@ -168,22 +154,17 @@ boolean TSoURDt3rd_G_MapEventsToControls(event_t *ev)
 //
 void TSoURDt3rd_G_DefineDefaultControls(void)
 {
-	for (INT32 i = 1; i < num_gamecontrolschemes; i++) // skip gcs_custom (0)
+	for (INT32 j = 0; j < MAXSPLITSCREENPLAYERS; j++)
 	{
-		gamecontroldefault   [i][JB_OPENJUKEBOX        ][0] = 'j';
-		gamecontroldefault   [i][JB_INCREASEMUSICSPEED ][0] = '=';
-		gamecontroldefault   [i][JB_DECREASEMUSICSPEED ][0] = '-';
-		gamecontroldefault   [i][JB_INCREASEMUSICPITCH ][0] = ']';
-		gamecontroldefault   [i][JB_DECREASEMUSICPITCH ][0] = '[';
-		gamecontroldefault   [i][JB_PLAYMOSTRECENTTRACK][0] = 'l';
-		gamecontroldefault   [i][JB_STOPJUKEBOX        ][0] = 'k';
-
-		gamecontrolbisdefault[i][JB_OPENJUKEBOX        ][0] = 'j';
-		gamecontrolbisdefault[i][JB_INCREASEMUSICSPEED ][0] = '=';
-		gamecontrolbisdefault[i][JB_DECREASEMUSICSPEED ][0] = '-';
-		gamecontrolbisdefault[i][JB_INCREASEMUSICPITCH ][0] = ']';
-		gamecontrolbisdefault[i][JB_DECREASEMUSICPITCH ][0] = '[';
-		gamecontrolbisdefault[i][JB_PLAYMOSTRECENTTRACK][0] = 'l';
-		gamecontrolbisdefault[i][JB_STOPJUKEBOX        ][0] = 'k';
+		for (INT32 i = 1; i < num_gamecontrolschemes; i++) // skip gcs_custom (0)
+		{
+			gamecontroldefault[j][i][JB_OPENJUKEBOX        ][0] = 'j';
+			gamecontroldefault[j][i][JB_INCREASEMUSICSPEED ][0] = '=';
+			gamecontroldefault[j][i][JB_DECREASEMUSICSPEED ][0] = '-';
+			gamecontroldefault[j][i][JB_INCREASEMUSICPITCH ][0] = ']';
+			gamecontroldefault[j][i][JB_DECREASEMUSICPITCH ][0] = '[';
+			gamecontroldefault[j][i][JB_PLAYMOSTRECENTTRACK][0] = 'l';
+			gamecontroldefault[j][i][JB_STOPJUKEBOX        ][0] = 'k';
+		}
 	}
 }

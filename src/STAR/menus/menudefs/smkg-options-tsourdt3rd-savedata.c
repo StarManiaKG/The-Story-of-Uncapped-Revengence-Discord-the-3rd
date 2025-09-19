@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2020-2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2020-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -20,27 +20,19 @@ static void M_Sys_SavefileTicker(void);
 menuitem_t TSoURDt3rd_OP_SavedataMenu[] =
 {
 	{IT_HEADER, NULL, "General", NULL, 0},
-		{IT_STRING | IT_CVAR, NULL, "Limited Continues",
-			&cv_tsourdt3rd_savefiles_limitedcontinues, 0},
-		{IT_STRING | IT_CVAR, NULL, "Store Saves in Folders",
-			&cv_tsourdt3rd_savefiles_storesavesinfolders, 0},
+		{IT_STRING | IT_CVAR, NULL, "Limited Continues", &cv_tsourdt3rd_savefiles_limitedcontinues, 0},
+		{IT_STRING | IT_CVAR, NULL, "Store Saves in Folders", &cv_tsourdt3rd_savefiles_storesavesinfolders, 0},
 
-	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL,
-		NULL, 0},
+	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL, NULL, 0},
 
 	{IT_HEADER, NULL, "Cosmetic", NULL, 0},
-		{IT_STRING | IT_CVAR, NULL, "Perfect Saves",
-			&cv_tsourdt3rd_savefiles_perfectsave, 0},
+		{IT_STRING | IT_CVAR, NULL, "Perfect Saves", &cv_tsourdt3rd_savefiles_perfectsave, 0},
 
-		{IT_SPACE, NULL, NULL,
-			NULL, 0},
+		{IT_SPACE, NULL, NULL, NULL, 0},
 
-		{IT_STRING | IT_CVAR, NULL, "Perfect Save Stripe 1",
-			&cv_tsourdt3rd_savefiles_perfectsave_stripe1, 0},
-		{IT_STRING | IT_CVAR, NULL, "Perfect Save Stripe 2",
-			&cv_tsourdt3rd_savefiles_perfectsave_stripe2, 0},
-		{IT_STRING | IT_CVAR, NULL, "Perfect Save Stripe 3",
-			&cv_tsourdt3rd_savefiles_perfectsave_stripe3, 0},
+		{IT_STRING | IT_CVAR, NULL, "Perfect Save Stripe 1", &cv_tsourdt3rd_savefiles_perfectsave_stripe1, 0},
+		{IT_STRING | IT_CVAR, NULL, "Perfect Save Stripe 2", &cv_tsourdt3rd_savefiles_perfectsave_stripe2, 0},
+		{IT_STRING | IT_CVAR, NULL, "Perfect Save Stripe 3", &cv_tsourdt3rd_savefiles_perfectsave_stripe3, 0},
 };
 
 tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_SavedataMenu[] =
@@ -63,7 +55,7 @@ tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_SavedataMenu[] =
 
 menu_t TSoURDt3rd_OP_SavedataDef =
 {
-	MTREE3(MN_OP_MAIN, MN_OP_TSOURDT3RD, MN_OP_TSOURDT3RD),
+	MTREE3(MN_OP_MAIN, MN_OP_TSOURDT3RD, MN_OP_TSOURDT3RD_SAVEDATA),
 	NULL,
 	sizeof (TSoURDt3rd_OP_SavedataMenu)/sizeof (menuitem_t),
 	&TSoURDt3rd_OP_MainMenuDef,
@@ -82,6 +74,7 @@ tsourdt3rd_menu_t TSoURDt3rd_TM_OP_SavedataDef = {
 	2, 5,
 	NULL,
 	M_Sys_SavefileTicker,
+	NULL,
 	NULL,
 	NULL,
 	NULL,

@@ -45,8 +45,8 @@
 #include "lua_hook.h"
 
 // TSoURDt3rd
+#include "STAR/star_vars.h"
 #include "STAR/smkg-cvars.h" // cv_tsourdt3rd_game_startup_intro //
-#include "STAR/menus/smkg-m_sys.h" // TSoURDt3rd_M_OverwriteResponder //
 #include "STAR/misc/smkg-m_intro.h"
 
 // Stage of animation:
@@ -941,7 +941,9 @@ void F_IntroTicker(void)
 					I_OsPolling();
 					I_UpdateNoBlit();
 					I_lock_mutex(&m_menu_mutex);
-					M_Drawer(); // menu is drawn even on top of wipes
+					{
+						M_Drawer(); // menu is drawn even on top of wipes
+					}
 					I_unlock_mutex(m_menu_mutex);
 					I_FinishUpdate(); // Update the screen with the image Tails 06-19-2001
 
@@ -1037,12 +1039,6 @@ boolean F_IntroResponder(event_t *event)
 		case KEY_HAT1 + 3:
 			key = KEY_RIGHTARROW;
 			break;
-	}
-
-	if (TSoURDt3rd_M_OverwriteResponder(event))
-	{
-		// STAR STUFF: CHECK FOR ANY EVENTS WE SHOULD PRIORITIZE //
-		return false;
 	}
 
 	if (event->type != ev_keydown && key != 301)
@@ -1288,7 +1284,7 @@ void F_StartCredits(void)
 	G_SetGamestate(GS_CREDITS);
 
 	// Just in case they're open ... somehow
-	M_ClearMenus(true);
+	M_ClearMenus();
 
 	if (creditscutscene)
 	{
@@ -1495,7 +1491,7 @@ void F_StartGameEvaluation(void)
 	G_SetGamestate(GS_EVALUATION);
 
 	// Just in case they're open ... somehow
-	M_ClearMenus(true);
+	M_ClearMenus();
 
 	goodending = (ALL7EMERALDS(emeralds));
 
@@ -1812,7 +1808,7 @@ void F_StartEnding(void)
 	wipetypepost = INT16_MAX;
 
 	// Just in case they're open ... somehow
-	M_ClearMenus(true);
+	M_ClearMenus();
 
 	gameaction = ga_nothing;
 	paused = false;
@@ -2264,7 +2260,7 @@ void F_StartGameEnd(void)
 	S_StopSounds();
 
 	// In case menus are still up?!!
-	M_ClearMenus(true);
+	M_ClearMenus();
 
 	timetonext = TICRATE;
 }
@@ -3608,7 +3604,7 @@ void F_StartContinue(void)
 	CON_ToggleOff();
 
 	// In case menus are still up?!!
-	M_ClearMenus(true);
+	M_ClearMenus();
 
 	S_ChangeMusicInternal("_conti", false);
 	S_StopSounds();
@@ -4438,28 +4434,28 @@ static boolean F_GetTextPromptTutorialTag(char *tag, INT32 length)
 		return false;
 
 	if (!strncmp(tag, "TAM", 3)) // Movement
-		gcs = G_GetControlScheme(gamecontrol, gcl_movement, num_gcl_movement);
+		gcs = G_GetControlScheme(0, gcl_movement, num_gcl_movement);
 	else if (!strncmp(tag, "TAC", 3)) // Camera
 	{
 		// Check for gcl_movement so we can differentiate between FPS and Platform schemes.
-		gcs = G_GetControlScheme(gamecontrol, gcl_movement, num_gcl_movement);
+		gcs = G_GetControlScheme(0, gcl_movement, num_gcl_movement);
 		if (gcs == gcs_custom) // try again, maybe we'll get a match
-			gcs = G_GetControlScheme(gamecontrol, gcl_camera, num_gcl_camera);
+			gcs = G_GetControlScheme(0, gcl_camera, num_gcl_camera);
 		if (gcs == gcs_fps && !cv_usemouse.value)
 			gcs = gcs_platform; // Platform (arrow) scheme is stand-in for no mouse
 	}
 	else if (!strncmp(tag, "TAD", 3)) // Movement and Camera
-		gcs = G_GetControlScheme(gamecontrol, gcl_movement_camera, num_gcl_movement_camera);
+		gcs = G_GetControlScheme(0, gcl_movement_camera, num_gcl_movement_camera);
 	else if (!strncmp(tag, "TAJ", 3)) // Jump
-		gcs = G_GetControlScheme(gamecontrol, gcl_jump, num_gcl_jump);
+		gcs = G_GetControlScheme(0, gcl_jump, num_gcl_jump);
 	else if (!strncmp(tag, "TAS", 3)) // Spin
-		gcs = G_GetControlScheme(gamecontrol, gcl_spin, num_gcl_spin);
+		gcs = G_GetControlScheme(0, gcl_spin, num_gcl_spin);
 	else if (!strncmp(tag, "TAA", 3)) // Char ability
-		gcs = G_GetControlScheme(gamecontrol, gcl_jump, num_gcl_jump);
+		gcs = G_GetControlScheme(0, gcl_jump, num_gcl_jump);
 	else if (!strncmp(tag, "TAW", 3)) // Shield ability
-		gcs = G_GetControlScheme(gamecontrol, gcl_jump_spin, num_gcl_jump_spin);
+		gcs = G_GetControlScheme(0, gcl_jump_spin, num_gcl_jump_spin);
 	else
-		gcs = G_GetControlScheme(gamecontrol, gcl_tutorial_used, num_gcl_tutorial_used);
+		gcs = G_GetControlScheme(0, gcl_tutorial_used, num_gcl_tutorial_used);
 
 	switch (gcs)
 	{

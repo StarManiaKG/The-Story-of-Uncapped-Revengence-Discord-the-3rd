@@ -22,30 +22,27 @@
 static char gitlab_mods_url[256];
 
 static void M_Sys_OpenGitlabModsURL(INT32 choice);
+static void M_Sys_LoadSnakeMenu(INT32 choice);
 static void M_Sys_SpawnTF2Dispenser(INT32 choice);
 
 menuitem_t TSoURDt3rd_OP_ExtrasMenu[] =
 {
-	{IT_STRING | IT_CALL, NULL, "Mods",
-		M_Sys_OpenGitlabModsURL, 0},
-	{IT_STRING | IT_CALL, NULL, "Jukebox",
-		TSoURDt3rd_M_Jukebox_Init, 0},
-	{IT_STRING | IT_SUBMENU, NULL, "Play Snake",
-		&TSoURDt3rd_OP_Extras_SnakeDef, 0},
-	{IT_STRING | IT_CALL, NULL, "Dispenser Goin' Up",
-		M_Sys_SpawnTF2Dispenser, 0},
+	{IT_STRING | IT_CALL, NULL, "Mods", M_Sys_OpenGitlabModsURL, 0},
+	{IT_STRING | IT_CALL, NULL, "Jukebox", TSoURDt3rd_M_Jukebox_Init, 0},
+	{IT_STRING | IT_CALL, NULL, "Play Snake", M_Sys_LoadSnakeMenu, 0},
+	{IT_STRING | IT_CALL, NULL, "Dispenser Goin' Up", M_Sys_SpawnTF2Dispenser, 0},
 };
 
 tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_ExtrasMenu[] =
 {
 	{NULL, "Visit TSoURDt3rd's repository to find some mods to load!", {NULL}, 0, 0},
 	{NULL, "Enter the Jukebox to broaden up your gameplay experience!", {NULL}, 0, 0},
-	{NULL, "Play a quick match of snake, why don'cha?", { .submenu = &TSoURDt3rd_TM_OP_Extras_SnakeDef }, 0, 0},
+	{NULL, "Play a quick match of snake, why don'cha?", { NULL }, 0, 0},
 	{NULL, "Spawn a TF2 dispenser.", {NULL}, 0, 0},
 };
 
 menu_t TSoURDt3rd_OP_ExtrasDef = {
-	MTREE3(MN_OP_MAIN, MN_OP_TSOURDT3RD, MN_OP_TSOURDT3RD),
+	MTREE3(MN_OP_MAIN, MN_OP_TSOURDT3RD, MN_OP_TSOURDT3RD_EXTRAS),
 	NULL,
 	sizeof (TSoURDt3rd_OP_ExtrasMenu)/sizeof (menuitem_t),
 	&TSoURDt3rd_OP_MainMenuDef,
@@ -67,6 +64,7 @@ tsourdt3rd_menu_t TSoURDt3rd_TM_OP_ExtrasDef = {
 	NULL,
 	NULL,
 	TSoURDt3rd_M_OptionsInputs,
+	NULL,
 	&TSoURDt3rd_TM_OP_MainMenuDef
 };
 
@@ -105,6 +103,13 @@ static void M_Sys_OpenGitlabModsURL(INT32 choice)
 			NULL
 		);
 	}
+}
+
+static void M_Sys_LoadSnakeMenu(INT32 choice)
+{
+	if (TSoURDt3rd_M_Snake_Init(choice) == false) // Then don't load it, dummy!
+		return;
+	TSoURDt3rd_M_SetupNextMenu(&TSoURDt3rd_TM_OP_Extras_SnakeDef, &TSoURDt3rd_OP_Extras_SnakeDef, true);
 }
 
 static void M_Sys_SpawnTF2Dispenser(INT32 choice)

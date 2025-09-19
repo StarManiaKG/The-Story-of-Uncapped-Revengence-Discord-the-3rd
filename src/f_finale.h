@@ -228,6 +228,18 @@ enum
 	wipe_specinter_final,
 	wipe_multinter_final,
 
+	// all vanilla wipedefs
+	VANILLA_NUMWIPEDEFS = wipe_multinter_final,
+
+	// TSoURDt3rd //
+	// -- Menus
+	tsourdt3rd_wipe_menu_toblack,
+	tsourdt3rd_wipe_menu_final,
+
+	// all tsourdt3rd wipedefs
+	TSOURDT3RD_NUMWIPEDEFS = tsourdt3rd_wipe_menu_final,
+
+	// wipedef flags
 	NUMWIPEDEFS,
 	WIPEFINALSHIFT = (wipe_level_final-wipe_level_toblack)
 };

@@ -1,8 +1,8 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 // PORTED FROM DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Vivian "toastergrl" Grannell.
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2024-2025 by Vivian "toastergrl" Grannell.
+// Copyright (C) 2024-2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -282,6 +282,7 @@ void TSoURDt3rd_M_AbortVirtualKeyboard(void)
 	menutyping.menutypingfade = 0;
 	Z_Free(menutyping.cache);
 
+	TSoURDt3rd_M_UpdateItemOn();
 	if (currentMenu == menutyping.dummymenu)
 		TSoURDt3rd_M_GoBack(0);
 }
@@ -316,6 +317,7 @@ void TSoURDt3rd_M_MenuTypingInput(INT32 key)
 	else
 	{
 		// Opening
+
 		const UINT8 destination = (menutyping.keyboardtyping ? 9 : 18);
 
 		if (menutyping.menutypingfade > destination)
@@ -352,6 +354,8 @@ void TSoURDt3rd_M_MenuTypingInput(INT32 key)
 			return;
 		}
 	}
+
+	// Handle
 
 	if (menucmd[pid].delay == 0 && !menutyping.keyboardtyping)	// We must check for this here because we bypass the normal delay check to allow for normal keyboard inputs
 	{
@@ -492,6 +496,8 @@ void TSoURDt3rd_M_OpenVirtualKeyboard(size_t cachelen, vkb_query_fn_t queryfn, m
 
 		M_SetupNextMenu(dummymenu);
 	}
+	else
+		TSoURDt3rd_M_UpdateItemOn();
 }
 
 void TSoURDt3rd_M_SwitchVirtualKeyboard(boolean gamepad)
@@ -527,10 +533,25 @@ void TSoURDt3rd_M_DrawMenuTyping(void)
 		V_DrawThinString(x + 5, y - 2, tsourdt3rd_highlightflags|V_ALLOWLOWERCASE, currentMenu->menuitems[tsourdt3rd_itemOn].text);
 	}
 
-	TSoURDt3rd_M_DrawMenuTooltips(
-		0, 0, 0, NULL, false,
-		BASEVIDWIDTH/2, 13, 0, true
-	);
+	// Tooltip
+	// Draw it at the top of the screen
+	{
+		menutooltip_t tooltip = {
+			{
+				0, 0,
+				vid.width*FRACUNIT, FRACUNIT,
+				V_SNAPTOLEFT|V_SNAPTOTOP,
+				NULL,
+				false
+			},
+			{
+				BASEVIDWIDTH/2, 13,
+				V_SNAPTOTOP|V_ALLOWLOWERCASE,
+				aligncenter
+			}
+		};
+		TSoURDt3rd_M_DrawMenuTooltips(tsourdt3rd_currentMenu, tooltip);
+	}
 
 	//M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
 	V_DrawFill(x + 5, y + 4 + 5, boxwidth - 8, 8+6, 159);

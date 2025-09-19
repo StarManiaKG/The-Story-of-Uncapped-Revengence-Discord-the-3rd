@@ -1,8 +1,8 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 // PORTED FROM DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Vivian "toastergrl" Grannell.
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2024-2025 by Vivian "toastergrl" Grannell.
+// Copyright (C) 2024-2025 by Kart Krew.
 // Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
@@ -12,7 +12,7 @@
 // \file menus/menudefs/transient/drrr-message-box.c
 // \brief MESSAGE BOX (aka: a hacked, cobbled together menu) (but one way better than Vanilla SRB2s')
 
-#include "../../smkg-m_sys.h" // menuwipe & menumessage //
+#include "../../smkg-m_sys.h"
 
 #include "../../../smkg-st_hud.h" // kp_buttons //
 

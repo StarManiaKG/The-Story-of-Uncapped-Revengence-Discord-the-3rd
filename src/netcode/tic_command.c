@@ -420,11 +420,13 @@ void SV_SendTics(void)
 void Local_Maketic(INT32 realtics)
 {
 	I_OsPolling(); // I_Getevent
-	D_ProcessEvents(); // menu responder, cons responder,
-	                   // game responder calls HU_Responder, AM_Responder,
-	                   // and G_MapEventsToControls
+	D_ProcessEvents(true); // screenshot responder, cons responder, cheat responder,
+							// G_MapEventsToControl, menu responder, lua responders,
+							// game responder calls HU_Responder & AM_Responder
+
 	if (!dedicated)
 		rendergametic = gametic;
+
 	// translate inputs (keyboard/mouse/joystick) into game controls
 	G_BuildTiccmd(&localcmds, realtics, 1);
 	if (splitscreen || botingame)

@@ -32,7 +32,7 @@
 
 // If menu hierarchies go deeper, change this up to 5.
 // Zero-based, inclusive.
-#define NUMMENULEVELS 3
+#define NUMMENULEVELS 4
 #define MENUBITS 6
 
 // Menu IDs sectioned by numeric places to signify hierarchy
@@ -136,24 +136,29 @@ typedef enum
 
 	MN_SPECIAL,
 
-	// STAR STUFF //
 #ifdef HAVE_DISCORDSUPPORT
-	MN_OP_DISCORD_RQ,
-	MN_OP_DISCORD_OPT,
+	// Discord //
+	MN_DISCORD_RQ,
+	MN_OP_DISCORD,
 #endif
 
-	MN_TSOURDT3RD_README,
-	
-	MN_MP_EXTENDEDSERVERPROPERTIES,
-	
+	// TSoURDt3rd //
+	MN_MP_EXTENDEDSERVERPROPERTIES, /// \todo eventually
 	MN_OP_TSOURDT3RD,
-	MN_OP_TSOURDT3RD_JUKEBOX,
-	MN_OP_TSOURDT3RD_JUKEBOXCONTROLS,
-	MN_OP_TSOURDT3RD_SNAKE,
-	// END OF THAT //
+	MN_OP_TSOURDT3RD_README,
+	MN_OP_TSOURDT3RD_EVENTS,
+	MN_OP_TSOURDT3RD_GAME,
+	MN_OP_TSOURDT3RD_CONTROLS,
+	MN_OP_TSOURDT3RD_VIDEO, MN_OP_TSOURDT3RD_VIDEO_LIGHTING,
+	MN_OP_TSOURDT3RD_AUDIO, MN_OP_TSOURDT3RD_AUDIO_EXMUSIC,
+	MN_OP_TSOURDT3RD_PLAYER,
+	MN_OP_TSOURDT3RD_SAVEDATA,
+	MN_OP_TSOURDT3RD_SERVER,
+	MN_OP_TSOURDT3RD_EXTRAS, MN_OP_TSOURDT3RD_EXTRAS_JUKEBOX, MN_OP_TSOURDT3RD_EXTRAS_SNAKE,
+	MN_OP_TSOURDT3RD_DEBUGGING,
 
 	NUMMENUTYPES,
-} menutype_t; // up to 63; MN_SPECIAL = 53
+} menutype_t; // up to 75; MN_SPECIAL = 53, MN_OP_TSOURDT3RD_DEBUGGING = 74
 #define MTREE2(a,b) (a | (b<<MENUBITS))
 #define MTREE3(a,b,c) MTREE2(a, MTREE2(b,c))
 #define MTREE4(a,b,c,d) MTREE2(a, MTREE3(b,c,d))
@@ -241,7 +246,7 @@ typedef enum
 	MM_NOTHING = 0, // is just displayed until the user do someting
 	MM_YESNO,       // routine is called with only 'y' or 'n' in param
 	MM_EVENTHANDLER // the same of above but without 'y' or 'n' restriction
-	                // and routine is void routine(event_t *) (ex: set control)
+					// and routine is void routine(event_t *) (ex: set control)
 } menumessagetype_t;
 void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtype);
 
@@ -364,7 +369,7 @@ typedef struct menu_s
 } menu_t;
 
 void M_SetupNextMenu(menu_t *menudef);
-void M_ClearMenus(boolean callexitmenufunc);
+void M_ClearMenus(void);
 
 // Maybe this goes here????? Who knows.
 boolean M_MouseNeeded(void);
@@ -372,13 +377,6 @@ boolean M_MouseNeeded(void);
 extern I_mutex m_menu_mutex;
 
 extern menu_t *currentMenu;
-
-extern menu_t MainDef;
-extern menu_t SP_LoadDef;
-
-// Call upon joystick hotplug
-void M_SetupJoystickMenu(INT32 choice);
-extern menu_t OP_JoystickSetDef;
 
 // Stuff for customizing the player select screen
 typedef struct
@@ -594,5 +592,11 @@ void M_RegisterCustomCVOption(consvar_t* cvar);
 	0,\
 	NULL\
 }
+
+//
+// StarManiaKG:
+// TSoURDt3rd says hi
+//
+#include "m_menudefs.h"
 
 #endif //__X_MENU__

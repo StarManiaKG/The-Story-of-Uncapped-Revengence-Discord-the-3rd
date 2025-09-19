@@ -1187,8 +1187,10 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	// why build a ticcmd if we're paused?
 	// Or, for that matter, if we're being reborn.
 	// ...OR if we're blindfolded. No looking into the floor.
+	// ......OR if we're in the menu, console, or chat.
 	if (ignoregameinputs || paused || P_AutoPause() || (gamestate == GS_LEVEL && (player->playerstate == PST_REBORN || ((gametyperules & GTR_TAG)
-	&& (leveltime < hidetime * TICRATE) && (player->pflags & PF_TAGIT)))))
+	&& (leveltime < hidetime * TICRATE) && (player->pflags & PF_TAGIT))))
+	|| menuactive || CON_Ready() || chat_on)
 	{//@TODO splitscreen player
 		cmd->angleturn = ticcmd_oldangleturn[forplayer];
 		cmd->aiming = G_ClipAimingPitch(myaiming);
@@ -2044,9 +2046,9 @@ static boolean ViewpointSwitchResponder(event_t *ev)
 	UINT8 canSwitchView = 0;
 
 	INT32 direction = 0;
-	if (ev->key == KEY_F12 || ev->key == gamecontrol[GC_VIEWPOINTNEXT][0] || ev->key == gamecontrol[GC_VIEWPOINTNEXT][1])
+	if (ev->key == KEY_F12 || G_ControlKeyCompare(gamecontrol[0], GC_VIEWPOINTNEXT, ev->key))
 		direction = 1;
-	if (ev->key == gamecontrol[GC_VIEWPOINTPREV][0] || ev->key == gamecontrol[GC_VIEWPOINTPREV][1])
+	if (G_ControlKeyCompare(gamecontrol[0], GC_VIEWPOINTPREV, ev->key))
 		direction = -1;
 	// This enabled reverse-iterating with shift+F12, sadly I had to
 	// disable this in case your shift key is bound to a control =((
@@ -2204,15 +2206,10 @@ boolean G_Responder(event_t *ev)
 	if (ViewpointSwitchResponder(ev))
 		return true;
 
-	// update keys current state
-	G_MapEventsToControls(ev);
-
 	switch (ev->type)
 	{
 		case ev_keydown:
-			if (ev->key == gamecontrol[GC_PAUSE][0]
-				|| ev->key == gamecontrol[GC_PAUSE][1]
-				|| ev->key == KEY_PAUSE)
+			if (G_ControlKeyCompare(gamecontrol[0], GC_PAUSE, ev->key) || ev->key == KEY_PAUSE)
 			{
 				if (modeattacking && !demoplayback && (gamestate == GS_LEVEL))
 				{
@@ -2241,8 +2238,7 @@ boolean G_Responder(event_t *ev)
 					}
 				}
 			}
-			if (ev->key == gamecontrol[GC_CAMTOGGLE][0]
-				|| ev->key == gamecontrol[GC_CAMTOGGLE][1])
+			if (G_ControlKeyCompare(gamecontrol[0], GC_CAMTOGGLE, ev->key))
 			{
 				if (!camtoggledelay)
 				{
@@ -2250,8 +2246,7 @@ boolean G_Responder(event_t *ev)
 					CV_SetValue(&cv_chasecam, cv_chasecam.value ? 0 : 1);
 				}
 			}
-			if (ev->key == gamecontrolbis[GC_CAMTOGGLE][0]
-				|| ev->key == gamecontrolbis[GC_CAMTOGGLE][1])
+			if (G_ControlKeyCompare(gamecontrol[1], GC_CAMTOGGLE, ev->key))
 			{
 				if (!camtoggledelay2)
 				{
@@ -2272,7 +2267,6 @@ boolean G_Responder(event_t *ev)
 
 		case ev_joystick2:
 			return true; // eat events
-
 
 		default:
 			break;
@@ -4841,7 +4835,7 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 		               M_ForceLoadGameResponse, MM_YESNO);
 		//Freeing done by the callback function of the above message
 #else
-		M_ClearMenus(true); // so ESC backs out to title
+		M_ClearMenus(); // so ESC backs out to title
 		M_StartMessage(M_GetText("Save game from different version\n\nPress ESC\n"), NULL, MM_NOTHING);
 		Command_ExitGame_f();
 		Z_Free(savebuffer.buf);
@@ -4862,7 +4856,7 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 	// dearchive all the modifications
 	if (!P_LoadGame(&savebuffer, mapoverride))
 	{
-		M_ClearMenus(true); // so ESC backs out to title
+		M_ClearMenus(); // so ESC backs out to title
 		M_StartMessage(M_GetText("Savegame file corrupted\n\nPress ESC\n"), NULL, MM_NOTHING);
 		Command_ExitGame_f();
 		Z_Free(savebuffer.buf);
@@ -4886,7 +4880,7 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 	if (setsizeneeded)
 		R_ExecuteSetViewSize();
 
-	M_ClearMenus(true);
+	M_ClearMenus();
 	CON_ToggleOff();
 }
 
@@ -4901,10 +4895,8 @@ void G_SaveGame(UINT32 slot, INT16 mapnum)
 	char savename[256] = "";
 	const char *backup;
 
-#if 1
 	// STAR STUFF: Update the save directory before we do any of this... //
 	TSoURDt3rd_FOL_UpdateSavefileDirectory();
-#endif
 
 	if (marathonmode)
 		strcpy(savename, liveeventbackup);
@@ -4960,10 +4952,8 @@ void G_SaveGameOver(UINT32 slot, boolean modifylives)
 	char savename[255];
 	const char *backup;
 
-#if 1
 	// STAR STUFF: Update the save directory before we do any of this... //
 	TSoURDt3rd_FOL_UpdateSavefileDirectory();
-#endif
 
 	if (marathonmode)
 		strcpy(savename, liveeventbackup);

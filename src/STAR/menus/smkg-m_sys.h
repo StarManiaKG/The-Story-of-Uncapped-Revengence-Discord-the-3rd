@@ -21,10 +21,6 @@
 #include "../../m_cond.h"
 #include "../../v_video.h"
 
-#ifdef HAVE_DISCORDSUPPORT
-#include "../../discord/discord.h"
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -52,15 +48,6 @@ extern "C" {
 extern INT16 tsourdt3rd_itemOn;
 extern INT16 tsourdt3rd_skullAnimCounter;
 extern boolean tsourdt3rd_noFurtherInput;
-
-enum
-{
-	tsourdt3rd_wipe_init_tsourdt3rd_menu_toblack,
-	tsourdt3rd_wipe_menu_toblack,
-	tsourdt3rd_wipe_menu_final,
-	TSOURDT3RD_NUMWIPEDEFS
-};
-extern UINT8 tsourdt3rd_wipedefs[TSOURDT3RD_NUMWIPEDEFS];
 
 typedef union
 {
@@ -101,10 +88,16 @@ typedef struct tsourdt3rd_menu_s
 	INT16          			  transitionTics;     // tics for transitions out
 
 	void                    (*drawroutine)(void); // draw routine
+#if 0
+	// Doesn't exist because we can just use vanilla's menu_t drawroutine function for rendering backgrounds.
+	// At least, until we merge this with that and all.
+	void          			(*bgroutine)(void); // draw routine, but, like, for the background
+#endif
 	void                    (*tickroutine)(void); // ticker routine
 	void                    (*initroutine)(void); // called when starting a new menu
 	boolean                 (*quitroutine)(void); // called before quit a menu return true if we can
 	boolean		            (*inputroutine)(INT32); // if set, called every frame in the input handler. Returning true overwrites normal input handling.
+	boolean                 (*eventroutine)(event_t *); // if set, called every frame in the responder handler. Returning true overwrites the menu responder.
 
 	struct tsourdt3rd_menu_s *prev_menu; // pointer to the last accessed tsourdt3rd menu
 } tsourdt3rd_menu_t;
@@ -220,11 +213,27 @@ extern menucmd_t menucmd[MAXSPLITSCREENPLAYERS];
 typedef enum
 {
 	TSOURDT3RD_LLM_CREATESERVER,
-	TSOURDT3D_LLM_LEVELSELECT,
+	TSOURDT3RD_LLM_LEVELSELECT,
 	TSOURDT3RD_LLM_RECORDATTACK,
 	TSOURDT3RD_LLM_NIGHTSATTACK
 } tsourdt3rd_levellist_mode_t;
 extern tsourdt3rd_levellist_mode_t tsourdt3rd_levellistmode;
+
+enum
+{
+	T3RDM_HANDLER_NONE = 0,
+	T3RDM_HANDLER_WRITABLE = 1<<1,
+
+	T3RDM_HANDLER_VANILLA = 1<<3,
+	T3RDM_KEYHANDLER_CVARSTRING = 1<<4,
+	T3RDM_KEYHANDLER_MSGHANDLER = 1<<5,
+	T3RDM_KEYHANDLER_KEYHANDLER = 1<<6,
+
+	T3RDM_HANDLER_UNIQUE = 1<<7,
+	T3RDM_KEYHANDLER_MENUTYPING = 1<<8,
+	T3RDM_KEYHANDLER_MENUMESSAGE = 1<<9,
+	T3RDM_KEYHANDLER_OPTBIND = 1<<10,
+};
 
 // ------------------------ //
 //        Functions
@@ -237,20 +246,20 @@ fixed_t TSoURDt3rd_M_TimeFrac(tic_t tics, tic_t duration);
 fixed_t TSoURDt3rd_M_ReverseTimeFrac(tic_t tics, tic_t duration);
 fixed_t TSoURDt3rd_M_DueFrac(tic_t start, tic_t duration);
 
-boolean TSoURDt3rd_M_OverwriteResponder(event_t *event);
-
 boolean TSoURDt3rd_M_StartControlPanel(void);
-boolean TSoURDt3rd_M_Responder(INT32 *ch, event_t *ev);
+boolean TSoURDt3rd_M_Responder(INT32 *ch_p, event_t *ev);
 void TSoURDt3rd_M_Ticker(INT16 *item, boolean *input, INT16 skullAnimCounter, INT32 levellistmode);
 
 void TSoURDt3rd_M_SetupNextMenu(tsourdt3rd_menu_t *tsourdt3rd_menudef, menu_t *menudef, boolean notransition);
-void TSoURDt3rd_M_ClearMenus(boolean callexitmenufunc);
+void TSoURDt3rd_M_ClearMenus(void);
+
+INT32 TSoURDt3rd_M_KeyHandlerType(void);
+void TSoURDt3rd_M_SetMenuHasWritable(boolean set);
 
 void TSoURDt3rd_M_GoBack(INT32 choice);
 boolean TSoURDt3rd_M_NextOpt(void);
 boolean TSoURDt3rd_M_PrevOpt(void);
 void TSoURDt3rd_M_UpdateItemOn(void);
-INT32 TSoURDt3rd_M_DoesMenuHaveKeyHandler(void);
 
 void TSoURDt3rd_M_ChangeCvar(INT32 choice, consvar_t *cv);
 void TSoURDt3rd_M_ChangeCvarDirect(INT32 amount, float amount_f, consvar_t *cv);
@@ -290,19 +299,6 @@ extern tsourdt3rd_menu_t *tsourdt3rd_currentMenu;
 
 extern menu_t *vanilla_prevMenu;
 extern tsourdt3rd_menu_t *tsourdt3rd_prevMenu;
-
-#if 1
-extern menu_t OP_MainDef;
-extern menuitem_t MainMenu[];
-
-extern menuitem_t SP_MainMenu[];
-
-extern menuitem_t SPauseMenu[];
-extern menu_t SPauseDef;
-
-extern menuitem_t MPauseMenu[];
-extern menu_t MPauseDef;
-#endif
 
 #ifdef HAVE_DISCORDSUPPORT
 extern menu_t DISCORD_OP_MainDef;
@@ -391,11 +387,13 @@ enum
 
 	op_scenes_loadingscreen_image = 14,
 
-	op_levels_timeover = 22,
+	op_levels_timeover = 21,
 
-	op_objects_shadows_realistic = 26,
+	op_objects_shadows_realistic = 25,
 	op_objects_shadows_forallobjects,
 	op_objects_shadows_positioning,
+	op_objects_shadows_offset,
+	op_objects_shadows_end = op_objects_shadows_offset,
 
 	op_general_isitcalledsingleplayer = 33
 };
@@ -517,6 +515,13 @@ extern tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_DebugMenu[];
 
 extern boolean menuwipe;
 
+//
+// So uh, for reasons that I kinda know, menu fades are wonky.
+// I assume it's because our menu tickers are like split apart and all.
+// Eventually everything will be merged together but in the meantime we should just restrict this.
+//
+#define NO_MENU_WIPE
+
 #ifdef HAVE_DISCORDSUPPORT
 extern struct discordrequestmenu_s {
 	tic_t ticker;
@@ -565,6 +570,7 @@ extern struct optionsmenu_s {
 	// Temporary buffer where we're gonna store game controls.
 	// This is only applied to the profile when you exit out of the controls menu.
 
+	boolean bindmenuactive;		// If true, we're in the control binding menu.
 	INT16 controlscroll;		// scrolling for the control menu....
 	INT16 bindtimer;			// Timer until binding is cancelled (5s)
 	UINT16 bindben;				// Hold right timer
@@ -582,8 +588,8 @@ extern struct optionsmenu_s {
 	INT32 vidm_nummodes;
 	INT32 vidm_column_size;
 
+	// Erase data menu
 	UINT8 erasecontext;
-
 	UINT8 eraseprofilen;
 
 	// background:
@@ -591,6 +597,22 @@ extern struct optionsmenu_s {
 	INT16 lastcolour;
 	tic_t fade;
 } optionsmenu;
+
+typedef struct menutooltip_s
+{
+	struct {
+		fixed_t x, y;
+		fixed_t pscale, vscale;
+		INT32 flags;
+		UINT8 *colormap;
+		boolean vflip;
+	} box;
+	struct {
+		fixed_t x, y;
+		INT32 flags;
+		INT32 align;
+	} string;
+} menutooltip_t;
 
 // ------------------------ //
 //        Functions
@@ -605,7 +627,9 @@ void TSoURDt3rd_M_DrawMenuTyping(void);
 void TSoURDt3rd_M_DrawPauseGraphic(void);
 void TSoURDt3rd_M_DrawQuitGraphic(void);
 
-void TSoURDt3rd_M_PreDrawer(boolean *wipe);
+void TSoURDt3rd_M_ShowMusicCredits(void);
+
+void TSoURDt3rd_M_PreDrawer(boolean *wipe_in_action);
 void TSoURDt3rd_M_PostDrawer(void);
 
 void TSoURDt3rd_M_DrawGenericOptions(void);
@@ -613,10 +637,7 @@ void TSoURDt3rd_M_DrawMediocreKeyboardKey(const char *text, INT32 *workx, INT32 
 
 INT32 TSoURDt3rd_M_DrawCaretString(INT32 x, INT32 y, INT32 flags, fixed_t pscale, fixed_t vscale, const char *string, fontdef_t font);
 
-void TSoURDt3rd_M_DrawMenuTooltips(
-	fixed_t box_x, fixed_t box_y, INT32 box_flags, UINT8 *box_color, boolean box_patch,
-	fixed_t string_x, fixed_t string_y, INT32 string_flags, boolean string_centered
-);
+void TSoURDt3rd_M_DrawMenuTooltips(const tsourdt3rd_menu_t *menu, menutooltip_t menutooltip);
 
 void TSoURDt3rd_M_DrawOptions(void);
 void TSoURDt3rd_M_DrawOptionsMovingButton(void);
@@ -640,8 +661,6 @@ UINT16 TSoURDt3rd_M_GetCvPlayerColor(UINT8 pnum);
 // ------------------------ //
 
 #define AUTOLOADSTRING "Press \x83Left-Arrow\x80 to mark addons to Autoload!"
-
-extern void *tsourdt3rd_snake;
 
 // ------------------------ //
 //        Functions
@@ -686,6 +705,7 @@ void TSoURDt3rd_M_HandleMasterServerResetChoice(INT32 choice);
 void TSoURDt3rd_M_HandleAddonsMenu(INT32 choice);
 
 #ifdef HAVE_DISCORDSUPPORT
+void DISC_M_UpdateRequestsMenu(void);
 void TSoURDt3rd_M_DiscordOptions_Init(INT32 choice);
 void TSoURDt3rd_M_DiscordRequests_Init(INT32 choice);
 #endif
@@ -696,8 +716,6 @@ boolean TSoURDt3rd_M_OptionsInputs(INT32 ch);
 boolean TSoURDt3rd_M_OptionsQuit(void);
 void TSoURDt3rd_M_ResetOptions(void);
 
-void TSoURDt3rd_M_Controls_MapProfileControl(event_t *ev);
-
 #ifdef STAR_LIGHTING
 void TSoURDt3rd_M_CoronaLighting_Init(void);
 #endif
@@ -707,6 +725,9 @@ void TSoURDt3rd_M_EXMusic_LoadMenu(INT32 choice);
 void TSoURDt3rd_M_Jukebox_Init(INT32 choice);
 void TSoURDt3rd_M_Jukebox_Ticker(void);
 boolean TSoURDt3rd_M_Jukebox_Quit(void);
+
+void TSoURDt3rd_M_Snake_Free(void);
+boolean TSoURDt3rd_M_Snake_Init(INT32 choice);
 
 void TSoURDt3rd_M_HandleColorResetOption(
 	player_t *setupm_player,

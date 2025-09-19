@@ -1954,7 +1954,7 @@ static void Command_Map_f(void)
 	}
 
 	// STAR STUFF: clears the screen when loading into a level //
-	M_ClearMenus(true);
+	M_ClearMenus();
 	if (demoplayback && titledemo)
 		G_CheckDemoStatus();
 
@@ -2050,7 +2050,7 @@ static void Command_Map_f(void)
 
 	if (tutorialmode && tutorialgcs)
 	{
-		G_CopyControls(gamecontrol, gamecontroldefault[gcs_custom], gcl_tutorial_full, num_gcl_tutorial_full); // using gcs_custom as temp storage
+		G_CopyControls(gamecontrol[0], gamecontroldefault[0][gcs_custom], gcl_tutorial_full, num_gcl_tutorial_full); // using gcs_custom as temp storage
 		CV_SetValue(&cv_usemouse, tutorialusemouse);
 		CV_SetValue(&cv_alwaysfreelook, tutorialfreelook);
 		CV_SetValue(&cv_mousemove, tutorialmousemove);
@@ -4033,7 +4033,7 @@ static void Command_Playintro_f(void)
 		closefilemenu(true);
 
 	// STAR STUFF: clears out the screen when looking at the intro //
-	M_ClearMenus(true);
+	M_ClearMenus();
 	if (demoplayback && titledemo)
 		G_CheckDemoStatus();
 
@@ -4778,7 +4778,7 @@ void Command_Retry_f(void)
 		CONS_Printf(M_GetText("You can't retry special stages!\n"));
 	else
 	{
-		M_ClearMenus(true);
+		M_ClearMenus();
 		G_SetRetryFlag();
 	}
 }

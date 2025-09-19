@@ -25,14 +25,10 @@ static boolean M_Sys_HandleLighting(INT32 choice);
 
 menuitem_t TSoURDt3rd_OP_Video_LightingMenu[] =
 {
-	{IT_STRING | IT_CVAR, NULL, "Coronas",
-		&cv_tsourdt3rd_video_lighting_coronas, 0},
-	{IT_STRING | IT_CVAR, NULL, "Corona Size",
-		&cv_tsourdt3rd_video_lighting_coronas_size, 0},
-	{IT_STRING | IT_CVAR, NULL, "Corona Lighting Type",
-		&cv_tsourdt3rd_video_lighting_coronas_lightingtype, 0},
-	{IT_STRING | IT_CVAR, NULL, "Corona Drawing Mode",
-		&cv_tsourdt3rd_video_lighting_coronas_drawingmode, 0},
+	{IT_STRING | IT_CVAR, NULL, "Coronas", &cv_tsourdt3rd_video_lighting_coronas, 0},
+	{IT_STRING | IT_CVAR, NULL, "Corona Size", &cv_tsourdt3rd_video_lighting_coronas_size, 0},
+	{IT_STRING | IT_CVAR, NULL, "Corona Lighting Type", &cv_tsourdt3rd_video_lighting_coronas_lightingtype, 0},
+	{IT_STRING | IT_CVAR, NULL, "Corona Drawing Mode", &cv_tsourdt3rd_video_lighting_coronas_drawingmode, 0},
 };
 
 tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_Video_LightingMenu[] =
@@ -45,7 +41,7 @@ tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_Video_LightingMenu[] =
 
 menu_t TSoURDt3rd_OP_Video_LightingDef =
 {
-	MTREE3(MN_OP_MAIN, MN_OP_TSOURDT3RD, MN_OP_TSOURDT3RD),
+	MTREE4(MN_OP_MAIN, MN_OP_TSOURDT3RD, MN_OP_TSOURDT3RD_VIDEO, MN_OP_TSOURDT3RD_VIDEO_LIGHTING),
 	NULL,
 	sizeof (TSoURDt3rd_OP_Video_LightingMenu)/sizeof (menuitem_t),
 	&TSoURDt3rd_OP_Video_LightingDef,
@@ -67,6 +63,7 @@ tsourdt3rd_menu_t TSoURDt3rd_TM_OP_Video_LightingDef = {
 	NULL,
 	NULL,
 	M_Sys_HandleLighting,
+	NULL,
 	&TSoURDt3rd_TM_OP_VideoDef
 };
 

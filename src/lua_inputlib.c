@@ -21,6 +21,9 @@
 #include "lua_script.h"
 #include "lua_libs.h"
 
+// TSoURDt3rd //
+#include "i_joy.h" // JOYAXISRANGE
+
 boolean mousegrabbedbylua = true;
 boolean textinputmodeenabledbylua = false;
 boolean ignoregameinputs = false;
@@ -52,8 +55,8 @@ static int lib_gameControlToKeyNum(lua_State *L)
 	int i = luaL_checkinteger(L, 1);
 	if (i < 0 || i >= NUM_GAMECONTROLS)
 		return luaL_error(L, "GC_* constant %d out of range (0 - %d)", i, NUM_GAMECONTROLS-1);
-	lua_pushinteger(L, gamecontrol[i][0]);
-	lua_pushinteger(L, gamecontrol[i][1]);
+	lua_pushinteger(L, gamecontrol[0][i][0]);
+	lua_pushinteger(L, gamecontrol[0][i][1]);
 	return 2;
 }
 
@@ -62,8 +65,8 @@ static int lib_gameControl2ToKeyNum(lua_State *L)
 	int i = luaL_checkinteger(L, 1);
 	if (i < 0 || i >= NUM_GAMECONTROLS)
 		return luaL_error(L, "GC_* constant %d out of range (0 - %d)", i, NUM_GAMECONTROLS-1);
-	lua_pushinteger(L, gamecontrolbis[i][0]);
-	lua_pushinteger(L, gamecontrolbis[i][1]);
+	lua_pushinteger(L, gamecontrol[1][i][0]);
+	lua_pushinteger(L, gamecontrol[1][i][1]);
 	return 2;
 }
 
@@ -229,7 +232,7 @@ static int lib_setGameKeyDown(lua_State *L)
 	boolean j = luaL_checkboolean(L, 3);
 	if (i < 0 || i >= NUMINPUTS)
 		return luaL_error(L, "gamekeydown[] index %d out of range (0 - %d)", i, NUMINPUTS-1);
-	gamekeydown[i] = j;
+	gamekeydown[i] = (j == true ? JOYAXISRANGE : 0);
 	return 0;
 }
 

@@ -258,6 +258,8 @@ extern char logfilename[1024];
 #define MAXPLAYERNAME 21
 #define PLAYERSMASK (MAXPLAYERS-1)
 
+#define MAXSPLITSCREENPLAYERS 2 // Max number of players on a single computer
+
 // Don't make MAXSKINS higher than 255, since skin numbers are used with an UINT8 in
 // various parts of the codebase, and one number is reserved. If you do anyway,
 // the data type of those variables will have to be changed into at least an UINT16.

@@ -84,7 +84,7 @@ static UINT8 cheatf_warp(void)
 	clientGamedata->unlocked[28] = true; // level select
 
 	// Refresh secrets menu existing.
-	M_ClearMenus(true);
+	M_ClearMenus();
 	M_StartControlPanel();
 	return 1;
 }
@@ -107,7 +107,7 @@ static UINT8 cheatf_devmode(void)
 	cv_debug |= 0x8000;
 
 	// Refresh secrets menu existing.
-	M_ClearMenus(true);
+	M_ClearMenus();
 	M_StartControlPanel();
 	return 1;
 }

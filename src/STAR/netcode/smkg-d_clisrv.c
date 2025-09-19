@@ -232,12 +232,9 @@ void TSoURDt3rd_D_RenewHolePunch(void)
 	static time_t past;
 	const time_t now = time(NULL);
 
-	if (netgame && serverrunning)
+	if ((now - past) > 20)
 	{
-		if ((now - past) > 20)
-		{
-			I_NetRegisterHolePunch();
-			past = now;
-		}
+		I_NetRegisterHolePunch();
+		past = now;
 	}
 }

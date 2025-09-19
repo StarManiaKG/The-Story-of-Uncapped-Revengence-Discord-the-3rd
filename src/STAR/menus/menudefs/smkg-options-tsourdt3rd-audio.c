@@ -49,7 +49,7 @@ tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_AudioMenu[] =
 
 menu_t TSoURDt3rd_OP_AudioDef =
 {
-	MTREE3(MN_OP_MAIN, MN_OP_TSOURDT3RD, MN_OP_TSOURDT3RD),
+	MTREE3(MN_OP_MAIN, MN_OP_TSOURDT3RD, MN_OP_TSOURDT3RD_AUDIO),
 	NULL,
 	sizeof (TSoURDt3rd_OP_AudioMenu)/sizeof (menuitem_t),
 	&TSoURDt3rd_OP_MainMenuDef,
@@ -68,6 +68,7 @@ tsourdt3rd_menu_t TSoURDt3rd_TM_OP_AudioDef = {
 	2, 5,
 	NULL,
 	TSoURDt3rd_M_OptionsTick,
+	NULL,
 	NULL,
 	NULL,
 	NULL,

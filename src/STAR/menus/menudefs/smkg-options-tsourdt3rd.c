@@ -99,6 +99,7 @@ tsourdt3rd_menu_t TSoURDt3rd_TM_OP_MainMenuDef = {
 	NULL,
 	NULL,
 	TSoURDt3rd_M_OptionsInputs,
+	NULL,
 	NULL
 };
 
@@ -180,10 +181,25 @@ void TSoURDt3rd_M_DrawOptions(void)
 		x += 48*FRACUNIT;
 	}
 
-	TSoURDt3rd_M_DrawMenuTooltips(
-		0, 0, 0, NULL, false,
-		BASEVIDWIDTH/2, 13, 0, true
-	);
+	// Tooltip
+	// Draw it at the top of the screen
+	{
+		menutooltip_t tooltip = {
+			{
+				0, 0,
+				vid.width*FRACUNIT, FRACUNIT,
+				V_SNAPTOLEFT|V_SNAPTOTOP,
+				NULL,
+				false
+			},
+			{
+				BASEVIDWIDTH/2, 13,
+				V_SNAPTOTOP|V_ALLOWLOWERCASE,
+				aligncenter
+			}
+		};
+		TSoURDt3rd_M_DrawMenuTooltips(tsourdt3rd_currentMenu, tooltip);
+	}
 
 	if (menutransition.tics != menutransition.dest)
 		TSoURDt3rd_M_DrawOptionsMovingButton();
@@ -213,6 +229,9 @@ void TSoURDt3rd_M_ResetOptions(void)
 	memset(setup_player, 0, sizeof(setup_player));
 #endif
 	optionsmenu.profile = NULL;
+
+	// Binding
+	optionsmenu.bindmenuactive = false;
 }
 
 //
@@ -358,6 +377,8 @@ boolean TSoURDt3rd_M_OptionsQuit(void)
 		optionsmenu.resetprofilemenu = false;
 	}
 
+	optionsmenu.bindmenuactive = false;
+
 	return true;	// Always allow quitting, duh.
 }
 
@@ -409,9 +430,10 @@ static void M_Sys_LoadControlsMenu(INT32 choice)
 	(void)choice;
 	TSoURDt3rd_TM_OP_ControlsDef.music = tsourdt3rd_currentMenu->music;
 
-	memcpy(&optionsmenu.tempcontrols, gamecontrol, sizeof(optionsmenu.tempcontrols));
+	memcpy(&optionsmenu.tempcontrols, gamecontrol[0], sizeof(optionsmenu.tempcontrols));
 	M_Sys_OptionsMenuGoto(&TSoURDt3rd_TM_OP_ControlsDef, &TSoURDt3rd_OP_ControlsDef);
 	TSoURDt3rd_OP_MainMenuDef.lastOn = op_main_controlsmenu;
+	optionsmenu.bindmenuactive = true;
 }
 
 static void M_Sys_LoadAudioMenu(INT32 choice)

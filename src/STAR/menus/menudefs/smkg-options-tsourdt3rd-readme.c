@@ -61,6 +61,7 @@ static const char *TSoURDt3rd_credits[] = {
 		"\t\t- Voluntary tester, ideas",
 	NULL
 };
+
 static fixed_t cur_readme_y = 12<<FRACBITS;
 static fixed_t min_readme_y = 12<<FRACBITS;
 static fixed_t max_readme_y = -(24<<FRACBITS); // base value; modified when the menu first loads
@@ -81,7 +82,7 @@ tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_ReadMEMenu[] =
 
 menu_t TSoURDt3rd_OP_ReadMEDef =
 {
-	MTREE3(MN_OP_MAIN, MN_OP_TSOURDT3RD, MN_TSOURDT3RD_README),
+	MTREE3(MN_OP_MAIN, MN_OP_TSOURDT3RD, MN_OP_TSOURDT3RD_README),
 	NULL,
 	sizeof (TSoURDt3rd_OP_ReadMEMenu)/sizeof (menuitem_t),
 	&TSoURDt3rd_OP_MainMenuDef,
@@ -103,6 +104,7 @@ tsourdt3rd_menu_t TSoURDt3rd_TM_OP_ReadMEDef = {
 	M_Sys_InitReadME,
 	NULL,
 	M_Sys_HandleReadME,
+	NULL,
 	&TSoURDt3rd_TM_OP_MainMenuDef
 };
 
@@ -144,11 +146,29 @@ static void M_Sys_DrawReadME(void)
 {
 	fixed_t y = cur_readme_y;
 	INT32 up_flags = 0, down_flags = 0;
+	INT32 up_offset = 0, down_offset = 0;
 
 	V_DrawFadeScreen(0xFF00, 16); // I wanted a cool fade effect here!
 
-	up_flags |= ((cur_readme_y < min_readme_y) ? V_MENUCOLORMAP : V_80TRANS);
-	down_flags |= ((cur_readme_y > min_readme_y) ? V_MENUCOLORMAP : V_80TRANS);
+	if (cur_readme_y < min_readme_y)
+	{
+		up_offset -= (tsourdt3rd_skullAnimCounter/5);
+		up_flags |= V_MENUCOLORMAP;
+	}
+	else
+	{
+		up_flags |= V_80TRANS;
+	}
+
+	if (cur_readme_y > max_readme_y)
+	{
+		down_offset += (tsourdt3rd_skullAnimCounter/5);
+		down_flags |= V_MENUCOLORMAP;
+	}
+	else
+	{
+		down_flags |= V_80TRANS;
+	}
 
 	for (UINT16 i = 0; TSoURDt3rd_credits[i]; i++)
 	{
@@ -167,8 +187,8 @@ static void M_Sys_DrawReadME(void)
 			break;
 	}
 
-	V_DrawCharacter(2, y+15, '\x1A' | V_SNAPTOLEFT | up_flags, false); // Up arrow
-	V_DrawCharacter(2, y+180, '\x1B' | V_SNAPTOLEFT | down_flags, false); // Down arrow
+	V_DrawCharacter(2, y + 15 - up_offset, '\x1A' | V_SNAPTOLEFT | up_flags, false); // Up arrow
+	V_DrawCharacter(2, y + 180 + down_offset, '\x1B' | V_SNAPTOLEFT | down_flags, false); // Down arrow
 }
 
 static boolean M_Sys_HandleReadME(INT32 choice)
@@ -184,6 +204,7 @@ static boolean M_Sys_HandleReadME(INT32 choice)
 			cur_readme_y += 8<<FRACBITS;
 			S_StartSoundFromEverywhere(sfx_menu1);
 		}
+		TSoURDt3rd_M_SetMenuDelay(pid);
 		return true;
 	}
 	else if (menucmd[pid].dpad_ud > 0)
@@ -194,6 +215,7 @@ static boolean M_Sys_HandleReadME(INT32 choice)
 			cur_readme_y -= 8<<FRACBITS;
 			S_StartSoundFromEverywhere(sfx_menu1);
 		}
+		TSoURDt3rd_M_SetMenuDelay(pid);
 		return true;
 	}
 	else if (TSoURDt3rd_M_MenuBackPressed(pid))

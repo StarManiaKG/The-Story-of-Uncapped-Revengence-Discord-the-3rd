@@ -1565,7 +1565,11 @@ void NetKeepAlive(void)
 	MasterClient_Ticker();
 #endif
 
-	TSoURDt3rd_D_RenewHolePunch(); // STAR STUFF: renew the holepunch data please //
+	if (netgame && serverrunning)
+	{
+		// STAR STUFF: renew the holepunch data please //
+		TSoURDt3rd_D_RenewHolePunch();
+	}
 
 	if (client)
 	{
@@ -1589,6 +1593,7 @@ void NetUpdate(void)
 {
 	static tic_t resptime = 0;
 	tic_t nowtime;
+	INT32 i;
 	INT32 realtics;
 
 	nowtime = I_GetTime();
@@ -1614,7 +1619,7 @@ void NetUpdate(void)
 	if (client)
 		maketic = neededtic;
 
-	Local_Maketic(realtics);
+	Local_Maketic(realtics); // make local tic, and call menu?
 
 	if (server)
 		CL_SendClientCmd(); // send it
@@ -1630,7 +1635,11 @@ void NetUpdate(void)
 	MasterClient_Ticker(); // Acking the Master Server
 #endif
 
-	TSoURDt3rd_D_RenewHolePunch(); // STAR STUFF: renew the holepunch data please //
+	if (netgame && serverrunning)
+	{
+		// STAR STUFF: renew the holepunch data please //
+		TSoURDt3rd_D_RenewHolePunch();
+	}
 
 	if (client)
 	{
@@ -1648,7 +1657,7 @@ void NetUpdate(void)
 			hu_redownloadinggamestate = false;
 
 			firstticstosend = gametic;
-			for (INT32 i = 0; i < MAXNETNODES; i++)
+			for (i = 0; i < MAXNETNODES; i++)
 				if (netnodes[i].ingame)
 				{
 					if (netnodes[i].tic < firstticstosend)
@@ -1680,11 +1689,13 @@ void NetUpdate(void)
 
 	nowtime /= NEWTICRATERATIO;
 
-	if (nowtime != resptime)
+	if (nowtime > resptime)
 	{
 		resptime = nowtime;
 		I_lock_mutex(&m_menu_mutex);
-		M_Ticker();
+		{
+			M_Ticker();
+		}
 		I_unlock_mutex(m_menu_mutex);
 		CON_Ticker();
 	}

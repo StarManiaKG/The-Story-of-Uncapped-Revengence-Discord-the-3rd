@@ -19,7 +19,8 @@
 // void TSoURDt3rd_M_HandleMasterServerResetChoice(INT32 choice)
 // Handles resetting the master server address.
 //
-// Ported from SRB2Kart!
+// SOURCES:
+//	- SRB2Kart!
 //
 void TSoURDt3rd_M_HandleMasterServerResetChoice(INT32 choice)
 {

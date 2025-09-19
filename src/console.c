@@ -972,7 +972,7 @@ boolean CON_Responder(event_t *ev)
 		if (modeattacking || metalrecording || marathonmode)
 			return false;
 
-		if ((key == gamecontrol[GC_CONSOLE][0] || key == gamecontrol[GC_CONSOLE][1]) && !shiftdown)
+		if (G_ControlKeyCompare(gamecontrol[0], GC_CONSOLE, key) && !shiftdown)
 		{
 			if (con_destlines == 0 && I_GetTextInputMode())
 				return false; // some other component is holding keyboard input, don't hijack it!
@@ -1006,7 +1006,7 @@ boolean CON_Responder(event_t *ev)
 	{
 		if (!consoletoggle && consoleready)
 			CON_InputAddChar(key);
-		return true;
+		return consoleready; // only if console is active do we take inputs
 	}
 
 	// Always eat ctrl/shift/alt if console open, so the menu doesn't get ideas

@@ -19,15 +19,11 @@
 
 menuitem_t TSoURDt3rd_OP_ServerMenu[] =
 {
-	{IT_STRING | IT_CVAR, NULL, "Show Connecting Players",
-		&cv_noticedownload, 0},
-	{IT_STRING | IT_CVAR, NULL, "Max File Transfer",
-		&cv_maxsend, 0},
-	{IT_STRING | IT_CVAR, NULL, "File Transfer Packet Rate",
-		&cv_downloadspeed, 0},
+	{IT_STRING | IT_CVAR, NULL, "Show Connecting Players", &cv_noticedownload, 0},
+	{IT_STRING | IT_CVAR, NULL, "Max File Transfer", &cv_maxsend, 0},
+	{IT_STRING | IT_CVAR, NULL, "File Transfer Packet Rate", &cv_downloadspeed, 0},
 
-	{IT_SPACE, NULL, NULL,
-		NULL, 0},
+	{IT_SPACE, NULL, NULL, NULL, 0},
 
 	{IT_HEADER, NULL, "Advanced", NULL, 0},
 		{IT_STRING | IT_CVAR | IT_CV_STRING, NULL,
@@ -48,7 +44,7 @@ tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_ServerMenu[] =
 
 menu_t TSoURDt3rd_OP_ServerDef =
 {
-	MTREE3(MN_OP_MAIN, MN_OP_TSOURDT3RD, MN_OP_TSOURDT3RD),
+	MTREE3(MN_OP_MAIN, MN_OP_TSOURDT3RD, MN_OP_TSOURDT3RD_SERVER),
 	NULL,
 	sizeof (TSoURDt3rd_OP_ServerMenu)/sizeof (menuitem_t),
 	&TSoURDt3rd_OP_MainMenuDef,
@@ -67,6 +63,7 @@ tsourdt3rd_menu_t TSoURDt3rd_TM_OP_ServerDef = {
 	2, 5,
 	NULL,
 	TSoURDt3rd_M_OptionsTick,
+	NULL,
 	NULL,
 	NULL,
 	NULL,

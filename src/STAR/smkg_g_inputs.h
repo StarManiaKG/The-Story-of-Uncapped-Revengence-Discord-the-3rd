@@ -37,8 +37,6 @@ void STAR_G_KeyResponder(UINT8 player, UINT8 key);
 boolean STAR_G_KeyPressed(UINT8 player, UINT8 key);
 boolean STAR_G_KeyHeld(UINT8 player, UINT8 key);
 
-void TSoURDt3rd_D_ProcessEvents(void);
-
 boolean TSoURDt3rd_G_MapEventsToControls(event_t *ev);
 void TSoURDt3rd_G_DefineDefaultControls(void);
 
