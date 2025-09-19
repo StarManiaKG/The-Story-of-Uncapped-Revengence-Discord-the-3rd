@@ -197,10 +197,11 @@ void D_ProcessEvents(boolean callresponders)
 	INT32 head = eventhead;
 
 	// Reset possibly stale mouse info
-	G_SetMouseDeltas(0, 0, 1);
-	G_SetMouseDeltas(0, 0, 2);
-	mouse.buttons &= ~(MB_SCROLLUP|MB_SCROLLDOWN);
-	mouse2.buttons &= ~(MB_SCROLLUP|MB_SCROLLDOWN);
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		G_SetMouseDeltas(0, 0, i);
+		mouse[i].buttons &= ~(MB_SCROLLUP|MB_SCROLLDOWN);
+	}
 
 	eventtail = eventhead;
 	for (; tail != head; tail = (tail+1) & (MAXEVENTS-1))
@@ -216,30 +217,30 @@ void D_ProcessEvents(boolean callresponders)
 			if ((UINT32)(ev->key - KEY_MOUSE1) < MOUSEBUTTONS)
 			{
 				if (ev->type == ev_keydown || ev->type == ev_text)
-					mouse.buttons |= 1 << (ev->key - KEY_MOUSE1);
+					mouse[0].buttons |= 1 << (ev->key - KEY_MOUSE1);
 				else
-					mouse.buttons &= ~(1 << (ev->key - KEY_MOUSE1));
+					mouse[0].buttons &= ~(1 << (ev->key - KEY_MOUSE1));
 			}
 			else if ((UINT32)(ev->key - KEY_2MOUSE1) < MOUSEBUTTONS)
 			{
 				if (ev->type == ev_keydown || ev->type == ev_text)
-					mouse2.buttons |= 1 << (ev->key - KEY_2MOUSE1);
+					mouse[1].buttons |= 1 << (ev->key - KEY_2MOUSE1);
 				else
-					mouse2.buttons &= ~(1 << (ev->key - KEY_2MOUSE1));
+					mouse[1].buttons &= ~(1 << (ev->key - KEY_2MOUSE1));
 			}
 			// Scroll (has no keyup event)
 			else switch (ev->key) {
 				case KEY_MOUSEWHEELUP:
-					mouse.buttons |= MB_SCROLLUP;
+					mouse[0].buttons |= MB_SCROLLUP;
 					break;
 				case KEY_MOUSEWHEELDOWN:
-					mouse.buttons |= MB_SCROLLDOWN;
+					mouse[0].buttons |= MB_SCROLLDOWN;
 					break;
 				case KEY_2MOUSEWHEELUP:
-					mouse2.buttons |= MB_SCROLLUP;
+					mouse[1].buttons |= MB_SCROLLUP;
 					break;
 				case KEY_2MOUSEWHEELDOWN:
-					mouse2.buttons |= MB_SCROLLDOWN;
+					mouse[1].buttons |= MB_SCROLLDOWN;
 					break;
 			}
 		}
@@ -349,10 +350,11 @@ void D_ProcessEvents(boolean callresponders)
 	//
 	// Refresh mouse data
 	//
-	if (mouse.rdx || mouse.rdy)
-		G_SetMouseDeltas(mouse.rdx, mouse.rdy, 1);
-	if (mouse2.rdx || mouse2.rdy)
-		G_SetMouseDeltas(mouse2.rdx, mouse2.rdy, 2);
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		if (mouse[i].rdx || mouse[i].rdy)
+			G_SetMouseDeltas(mouse[i].rdx, mouse[i].rdy, i);
+	}
 
 	//
 	// STAR STUFF:

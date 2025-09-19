@@ -929,13 +929,13 @@ INT32 JoyAxis(joyaxis_e axissel)
 	if (axisval%2)
 	{
 		axisval /= 2;
-		retaxis = joyxmove[axisval];
+		retaxis = joyxmove[0][axisval];
 	}
 	else
 	{
 		axisval--;
 		axisval /= 2;
-		retaxis = joyymove[axisval];
+		retaxis = joyymove[0][axisval];
 	}
 
 	if (retaxis < (-JOYAXISRANGE))
@@ -1004,13 +1004,13 @@ INT32 Joy2Axis(joyaxis_e axissel)
 	if (axisval%2)
 	{
 		axisval /= 2;
-		retaxis = joy2xmove[axisval];
+		retaxis = joyxmove[1][axisval];
 	}
 	else
 	{
 		axisval--;
 		axisval /= 2;
-		retaxis = joy2ymove[axisval];
+		retaxis = joyymove[1][axisval];
 	}
 
 	if (retaxis < (-JOYAXISRANGE))
@@ -1148,6 +1148,9 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	UINT8 forplayer = ssplayer-1;
 
+	mdx = mouse[forplayer].dx;
+	mdy = -mouse[forplayer].dy;
+	mldy = -mouse[forplayer].mlookdy;
 	if (ssplayer == 1)
 	{
 		chasecam = cv_chasecam.value;
@@ -1157,9 +1160,6 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		invertmouse = cv_invertmouse.value;
 		turnmultiplier = cv_cam_turnmultiplier.value;
 		mousemove = cv_mousemove.value;
-		mdx = mouse.dx;
-		mdy = -mouse.dy;
-		mldy = -mouse.mlookdy;
 		G_CopyTiccmd(cmd, I_BaseTiccmd(), 1); // empty, or external driver
 	}
 	else
@@ -1171,9 +1171,6 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		invertmouse = cv_invertmouse2.value;
 		turnmultiplier = cv_cam2_turnmultiplier.value;
 		mousemove = cv_mousemove2.value;
-		mdx = mouse2.dx;
-		mdy = -mouse2.dy;
-		mldy = -mouse2.mlookdy;
 		G_CopyTiccmd(cmd, I_BaseTiccmd2(), 1); // empty, or external driver
 	}
 
@@ -1870,7 +1867,7 @@ static void AutoBrake2_OnChange(void)
 //
 void G_DoLoadLevel(boolean resetplayer)
 {
-	INT32 i;
+	INT32 i, j;
 
 	// Make sure objectplace is OFF when you first start the level!
 	OP_ResetObjectplace();
@@ -1934,13 +1931,14 @@ void G_DoLoadLevel(boolean resetplayer)
 
 	// clear cmd building stuff
 	memset(gamekeydown, 0, sizeof (gamekeydown));
-	for (i = 0;i < JOYAXISSET; i++)
+	for (j = 0; j < MAXSPLITSCREENPLAYERS; j++)
 	{
-		joyxmove[i] = joyymove[i] = 0;
-		joy2xmove[i] = joy2ymove[i] = 0;
+		for (i = 0; i < JOYAXISSET; i++)
+		{
+			joyxmove[j][i] = joyymove[j][i] = 0;
+			G_SetMouseDeltas(0, 0, j);
+		}
 	}
-	G_SetMouseDeltas(0, 0, 1);
-	G_SetMouseDeltas(0, 0, 2);
 
 	// clear hud messages remains (usually from game startup)
 	CON_ClearHUD();
@@ -3112,7 +3110,7 @@ void G_DoReborn(INT32 playernum)
 {
 	player_t *player = &players[playernum];
 	boolean resetlevel = false;
-	INT32 i;
+	INT32 i, j;
 
 	if (modeattacking)
 	{
@@ -3267,13 +3265,14 @@ void G_DoReborn(INT32 playernum)
 
 			// clear cmd building stuff
 			memset(gamekeydown, 0, sizeof (gamekeydown));
-			for (i = 0; i < JOYAXISSET; i++)
+			for (j = 0; j < MAXSPLITSCREENPLAYERS; j++)
 			{
-				joyxmove[i] = joyymove[i] = 0;
-				joy2xmove[i] = joy2ymove[i] = 0;
+				for (i = 0; i < JOYAXISSET; i++)
+				{
+					joyxmove[j][i] = joyymove[j][i] = 0;
+					G_SetMouseDeltas(0, 0, j);
+				}
 			}
-			G_SetMouseDeltas(0, 0, 1);
-			G_SetMouseDeltas(0, 0, 2);
 
 			// clear hud messages remains (usually from game startup)
 			CON_ClearHUD();

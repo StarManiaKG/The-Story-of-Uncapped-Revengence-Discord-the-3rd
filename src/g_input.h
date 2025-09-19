@@ -152,10 +152,12 @@ typedef struct
 #define MB_SCROLLUP   0x0100
 #define MB_SCROLLDOWN 0x0200
 
-extern mouse_t mouse;
-extern mouse_t mouse2;
+// mouse data
+extern mouse_t mouse[MAXSPLITSCREENPLAYERS];
 
-extern INT32 joyxmove[JOYAXISSET], joyymove[JOYAXISSET], joy2xmove[JOYAXISSET], joy2ymove[JOYAXISSET];
+// joystick data
+// values are repeated
+extern INT32 joyxmove[MAXSPLITSCREENPLAYERS][JOYAXISSET], joyymove[MAXSPLITSCREENPLAYERS][JOYAXISSET];
 
 // current state of the keys: true if pushed
 extern INT32 gamekeydown[NUMINPUTS];
@@ -216,6 +218,6 @@ void G_SaveKeySetting(FILE *f, INT32 (*fromcontrols_a)[2], INT32 (*fromcontrols_
 INT32 G_CheckDoubleUsage(INT32 keynum, INT32 playernum, boolean modify);
 
 // sets the members of a mouse_t given position deltas
-void G_SetMouseDeltas(INT32 dx, INT32 dy, UINT8 ssplayer);
+void G_SetMouseDeltas(INT32 dx, INT32 dy, UINT8 player);
 
 #endif

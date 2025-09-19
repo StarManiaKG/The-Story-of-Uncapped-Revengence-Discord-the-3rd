@@ -427,7 +427,7 @@ static UINT8 ArchiveValue(save_t *save_p, int TABLESINDEX, int USERDATAINDEX, in
 		{
 			mouse_t *m = *((mouse_t **)lua_touserdata(gL, myindex));
 			P_WriteUINT8(save_p, ARCH_MOUSE);
-			P_WriteUINT8(save_p, m == &mouse ? 1 : 2);
+			P_WriteUINT8(save_p, m == &mouse[0] ? 1 : 2);
 			break;
 		}
 		case ARCH_SKIN:
@@ -752,8 +752,11 @@ static UINT8 UnArchiveValue(save_t *save_p, int TABLESINDEX, int USERDATAINDEX)
 		LUA_PushUserdata(gL, &skincolors[P_ReadUINT16(save_p)], META_SKINCOLOR);
 		break;
 	case ARCH_MOUSE:
-		LUA_PushUserdata(gL, P_ReadUINT16(save_p) == 1 ? &mouse : &mouse2, META_MOUSE);
+	{
+		INT32 player = (P_ReadUINT16(save_p) == 1 ? 0 : 1);
+		LUA_PushUserdata(gL, &mouse[player], META_MOUSE);
 		break;
+	}
 	case ARCH_SKIN:
 		LUA_PushUserdata(gL, skins[P_ReadUINT8(save_p)], META_SKIN);
 		break;

@@ -469,11 +469,11 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 		return 1;
 	// TODO: 2.3: Deprecated (moved to the input library)
 	} else if (fastcmp(word, "mouse")) {
-		LUA_PushUserdata(L, &mouse, META_MOUSE);
+		LUA_PushUserdata(L, &mouse[0], META_MOUSE);
 		return 1;
 	// TODO: 2.3: Deprecated (moved to the input library)
 	} else if (fastcmp(word, "mouse2")) {
-		LUA_PushUserdata(L, &mouse2, META_MOUSE);
+		LUA_PushUserdata(L, &mouse[1], META_MOUSE);
 		return 1;
 	} else if (fastcmp(word, "camera")) {
 		LUA_PushUserdata(L, &camera, META_CAMERA);

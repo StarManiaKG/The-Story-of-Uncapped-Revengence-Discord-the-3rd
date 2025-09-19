@@ -1,7 +1,6 @@
 target_sources(SRB2SDL2 PRIVATE
 	ss_main.c
 	smkg-cvars.c
-	smkg_g_inputs.c
 	smkg-p_saveg.c
 	smkg-st_hud.c
 	star_functions.c

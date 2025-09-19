@@ -178,12 +178,12 @@ static int lib_get(lua_State *L)
 
 	if (fastcmp(field, "mouse"))
 	{
-		LUA_PushUserdata(L, &mouse, META_MOUSE);
+		LUA_PushUserdata(L, &mouse[0], META_MOUSE);
 		return 1;
 	}
 	else if (fastcmp(field, "mouse2"))
 	{
-		LUA_PushUserdata(L, &mouse2, META_MOUSE);
+		LUA_PushUserdata(L, &mouse[1], META_MOUSE);
 		return 1;
 	}
 	else if (fastcmp(field, "ignoregameinputs"))
@@ -323,7 +323,7 @@ static int mouse_num(lua_State *L)
 
 	I_Assert(m != NULL);
 
-	lua_pushinteger(L, m == &mouse ? 1 : 2);
+	lua_pushinteger(L, m == &mouse[0] ? 1 : 2);
 	return 1;
 }
 

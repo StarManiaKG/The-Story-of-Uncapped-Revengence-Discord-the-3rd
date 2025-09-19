@@ -690,12 +690,12 @@ static void M_ConfirmConnect(event_t *ev)
 		if (ev->key == ' ' || ev->key == 'y' || ev->key == KEY_ENTER || ev->key == KEY_JOY1)
 		{
 			BeginDownload(UseDirectDownloader());
-			M_ClearMenus(true);
+			M_ClearMenus();
 		}
 		else if (ev->key == 'n' || ev->key == KEY_ESCAPE || ev->key == KEY_JOY1 + 3)
 		{
 			cl_mode = CL_ABORTED;
-			M_ClearMenus(true);
+			M_ClearMenus();
 		}
 	}
 }
@@ -1235,17 +1235,23 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 	{
 		I_OsPolling();
 
-		if (cl_mode == CL_CONFIRMCONNECT)
-			D_ProcessEvents(); //needed for menu system to receive inputs
-		else
+		// my hand has been forced and I am dearly sorry for this awful hack :vomit:
+		// StarManiaKG: made *very slightly* less hacky by me
+		if (snake)
 		{
-			// my hand has been forced and I am dearly sorry for this awful hack :vomit:
-			for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
-			{
-				if (!Snake_JoyGrabber(snake, &events[eventtail]))
-					G_MapEventsToControls(&events[eventtail]);
-			}
+			// copy eventtail and eventhead into local variables
+			// that way, our real events don't get erased
+			INT32 tail = eventtail;
+			INT32 head = eventhead;
+
+			// iterate through local variables to get each event
+			// if it's a joystick event, it'll prioritze that
+			for (; tail != head; tail = (tail+1) & (MAXEVENTS-1))
+				Snake_JoyGrabber(snake, &events[tail]);
 		}
+
+		// needed for menu system and snake to receive inputs
+		D_ProcessEvents((cl_mode == CL_CONFIRMCONNECT));
 
 		if (gamekeydown[KEY_ESCAPE] || gamekeydown[KEY_JOY1+1] || cl_mode == CL_ABORTED)
 		{
@@ -1275,7 +1281,9 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 			}
 			CL_DrawConnectionStatus();
 			I_lock_mutex(&m_menu_mutex);
-			M_Drawer(); //Needed for drawing messageboxes on the connection screen
+			{
+				M_Drawer(); //Needed for drawing messageboxes on the connection screen
+			}
 			I_unlock_mutex(m_menu_mutex);
 			I_UpdateNoVsync(); // page flip or blit buffer
 			if (moviemode)

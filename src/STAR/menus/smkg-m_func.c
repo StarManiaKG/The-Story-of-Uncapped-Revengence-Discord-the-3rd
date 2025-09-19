@@ -10,7 +10,6 @@
 /// \brief Unique TSoURDt3rd menu routines and structures
 
 #include "smkg-m_sys.h"
-#include "../smkg_g_inputs.h"
 #include "../core/smkg-s_audio.h"
 #include "../core/smkg-s_jukebox.h"
 
@@ -599,8 +598,6 @@ void TSoURDt3rd_M_SetupNextMenu(tsourdt3rd_menu_t *tsourdt3rd_menudef, menu_t *m
 		return;
 	}
 
-	TSoURDt3rd_M_SetMenuHasWritable(false);
-
 	if (!menuactive)
 	{
 		// We should probably make sure that the menu is opened too...
@@ -897,9 +894,9 @@ boolean TSoURDt3rd_M_Responder(INT32 *ch_p, event_t *ev)
 			// -- Manage SRB2's text input.
 			//
 
-			boolean keyboard_event = (vanillaKey >= 32 && vanillaKey <= 127);
-			boolean numpad_event = (vanillaKey >= KEY_KEYPAD7 && vanillaKey <= KEY_KPADDEL);
-			boolean misc_device_event = (vanillaKey >= KEY_MOUSE1);
+			boolean keyboard_event = (ev->key >= 32 && ev->key <= 127);
+			boolean numpad_event = (ev->key >= KEY_KEYPAD7 && ev->key <= KEY_KPADDEL);
+			boolean misc_device_event = (ev->key >= KEY_MOUSE1);
 
 			if (ev->type == ev_keydown)
 			{
@@ -918,7 +915,7 @@ boolean TSoURDt3rd_M_Responder(INT32 *ch_p, event_t *ev)
 				// This menu has writable options.
 				// And until I port it over, it's not a virtual keyboard.
 				// Before we write though, let's make sure our event isn't mapped to a character.
-				if (!misc_device_event)
+				if (keyboard_event || numpad_event || !misc_device_event)
 				{
 					return false;
 				}
@@ -1070,8 +1067,6 @@ void TSoURDt3rd_M_ClearMenus(void)
 {
 	const UINT8 pid = 0;
 
-	TSoURDt3rd_M_SetMenuHasWritable(false);
-
 	if (tsourdt3rd_currentMenu != NULL && tsourdt3rd_currentMenu->quitroutine && !tsourdt3rd_currentMenu->quitroutine())
 	{
 		// we can't quit this menu (also used to set parameter from the menu)
@@ -1090,6 +1085,7 @@ void TSoURDt3rd_M_ClearMenus(void)
 	menumessage.active = false;
 
 	TSoURDt3rd_M_ShowMusicCredits();
+	TSoURDt3rd_M_SetMenuHasWritable(false);
 	TSoURDt3rd_M_SetMenuDelay(pid);
 
 #ifdef HAVE_DISCORDSUPPORT

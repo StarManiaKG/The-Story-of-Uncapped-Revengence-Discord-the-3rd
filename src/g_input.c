@@ -23,7 +23,7 @@
 #include "lua_libs.h"
 
 // TSoURDt3rd
-#include "STAR/smkg_g_inputs.h" // TSoURDt3rd_G_DefineDefaultControls() & TSoURDt3rd_G_MapEventsToControls() //
+#include "STAR/menus/smkg-m_sys.h" // TSoURDt3rd_M_MenuTypingInput() & TSoURDt3rd_M_SwitchVirtualKeyboard() //
 #include "i_joy.h" // JOYAXISRANGE //
 
 #define MAXMOUSESENSITIVITY 100 // sensitivity steps
@@ -38,11 +38,12 @@ consvar_t cv_mouseysens = CVAR_INIT ("mouseysens", "20", CV_SAVE, mousesens_cons
 consvar_t cv_mouseysens2 = CVAR_INIT ("mouseysens2", "20", CV_SAVE, mousesens_cons_t, NULL);
 consvar_t cv_controlperkey = CVAR_INIT ("controlperkey", "One", CV_SAVE, onecontrolperkey_cons_t, NULL);
 
-mouse_t mouse;
-mouse_t mouse2;
+// mouse data
+mouse_t mouse[MAXSPLITSCREENPLAYERS];
 
-// joystick values are repeated
-INT32 joyxmove[JOYAXISSET], joyymove[JOYAXISSET], joy2xmove[JOYAXISSET], joy2ymove[JOYAXISSET];
+// joystick data
+// values are repeated
+INT32 joyxmove[MAXSPLITSCREENPLAYERS][JOYAXISSET], joyymove[MAXSPLITSCREENPLAYERS][JOYAXISSET];
 
 // current state of the keys: true if pushed
 INT32 gamekeydown[NUMINPUTS];
@@ -134,6 +135,12 @@ static INT32 G_CheckDoubleClick(INT32 state, dclick_t *dt)
 	return false;
 }
 
+static void update_vkb_axis(INT32 axis)
+{
+	if (axis > JOYAXISRANGE/2)
+		TSoURDt3rd_M_SwitchVirtualKeyboard(true);
+}
+
 //
 // Remaps the inputs to game controls.
 //
@@ -145,23 +152,22 @@ void G_MapEventsToControls(event_t *ev)
 {
 	INT32 i;
 	INT32 flag;
-
-	if (TSoURDt3rd_G_MapEventsToControls(ev))
-	{
-		// STAR STUFF: DRRR Menus: our cool event mapper exists too! //
-		return;
-	}
+	INT32 player;
 
 	switch (ev->type)
 	{
 		case ev_keydown:
 			if (ev->key < NUMINPUTS)
 			{
+				// STAR STUFF: send inputs to the virtual keyboard.
+				TSoURDt3rd_M_MenuTypingInput(ev->key);
+
 				if (ev->repeated)
 				{
 					// OS repeat? We handle that ourselves
 					break;
 				}
+
 				if (!ignoregameinputs)
 					gamekeydown[ev->key] = JOYAXISRANGE;
 			}
@@ -187,32 +193,56 @@ void G_MapEventsToControls(event_t *ev)
 #endif
 			break;
 
-		case ev_mouse: // buttons are virtual keys
-			mouse.rdx = ev->x;
-			mouse.rdy = ev->y;
-			break;
-
-		case ev_joystick: // buttons are virtual keys
-			i = ev->key;
-			if (i >= JOYAXISSET || menuactive || CON_Ready() || chat_on || ignoregameinputs)
-				break;
-			if (ev->x != INT32_MAX) joyxmove[i] = ev->x;
-			if (ev->y != INT32_MAX) joyymove[i] = ev->y;
-			break;
-
-		case ev_joystick2: // buttons are virtual keys
-			i = ev->key;
-			if (i >= JOYAXISSET || menuactive || CON_Ready() || chat_on || ignoregameinputs)
-				break;
-			if (ev->x != INT32_MAX) joy2xmove[i] = ev->x;
-			if (ev->y != INT32_MAX) joy2ymove[i] = ev->y;
-			break;
-
+		case ev_mouse:
 		case ev_mouse2: // buttons are virtual keys
-			if (menuactive || CON_Ready() || chat_on)
+			player = (ev->type == ev_joystick ? 0 : 1);
+			if (player && (menuactive || CON_Ready() || chat_on))
+			{
 				break;
-			mouse2.rdx = ev->x;
-			mouse2.rdy = ev->y;
+			}
+			mouse[player].rdx = ev->x;
+			mouse[player].rdy = ev->y;
+			break;
+
+		case ev_joystick:
+		case ev_joystick2: // buttons are virtual keys
+			player = (ev->type == ev_joystick ? 0 : 1);
+			i = ev->key;
+			if (i >= JOYAXISSET)
+			{
+				break;
+			}
+			if (i >= 2) // 2 sets of analog stick axes, with positive and negative each
+			{
+				// Virtual analog sticsk
+				if (ev->x != INT32_MAX)
+					update_vkb_axis(max(0, ev->x));
+				if (ev->y != INT32_MAX)
+					update_vkb_axis(max(0, ev->y));
+			}
+			else
+			{
+				// Actual analog sticks
+				if (ev->x != INT32_MAX)
+					update_vkb_axis(abs(ev->x));
+				if (ev->y != INT32_MAX)
+					update_vkb_axis(abs(ev->y));
+			}
+			if (menuactive || CON_Ready() || chat_on || ignoregameinputs)
+			{
+				break;
+			}
+			else
+			{
+				if (ev->x != INT32_MAX)
+				{
+					joyxmove[player][i] = ev->x;
+				}
+				if (ev->y != INT32_MAX)
+				{
+					joyymove[player][i] = ev->y;
+				}
+			}
 			break;
 
 		default:
@@ -724,7 +754,7 @@ INT32 G_KeyNameToNum(const char *keystr)
 
 void G_DefineDefaultControls(void)
 {
-	INT32 i;
+	INT32 i, j;
 
 	// FPS game controls (WASD)
 	gamecontroldefault[0][gcs_fps][GC_FORWARD    ][0] = 'w';
@@ -821,8 +851,23 @@ void G_DefineDefaultControls(void)
 		//gamecontroldefault[1][i][GC_SCORES       ][1] = KEY_2HAT1+1; // D-Pad Down
 	}
 
-	// STAR STUFF: assign our default controls too! //
-	TSoURDt3rd_G_DefineDefaultControls();
+	//
+	// STAR STUFF:
+	// Assign our default controls!
+	//
+	for (j = 0; j < MAXSPLITSCREENPLAYERS; j++)
+	{
+		for (i = 1; i < num_gamecontrolschemes; i++) // skip gcs_custom (0)
+		{
+			gamecontroldefault[j][i][JB_OPENJUKEBOX        ][0] = 'j';
+			gamecontroldefault[j][i][JB_INCREASEMUSICSPEED ][0] = '=';
+			gamecontroldefault[j][i][JB_DECREASEMUSICSPEED ][0] = '-';
+			gamecontroldefault[j][i][JB_INCREASEMUSICPITCH ][0] = ']';
+			gamecontroldefault[j][i][JB_DECREASEMUSICPITCH ][0] = '[';
+			gamecontroldefault[j][i][JB_PLAYMOSTRECENTTRACK][0] = 'l';
+			gamecontroldefault[j][i][JB_STOPJUKEBOX        ][0] = 'k';
+		}
+	}
 }
 
 INT32 G_GetControlScheme(UINT8 player, const INT32 *gclist, INT32 gclen)
@@ -1121,13 +1166,13 @@ void Command_Setcontrol2_f(void)
 	setcontrol(1);
 }
 
-void G_SetMouseDeltas(INT32 dx, INT32 dy, UINT8 ssplayer)
+void G_SetMouseDeltas(INT32 dx, INT32 dy, UINT8 player)
 {
-	mouse_t *m = ssplayer == 1 ? &mouse : &mouse2;
+	mouse_t *m = &mouse[player];
 	consvar_t *cvsens, *cvysens;
 
-	cvsens = ssplayer == 1 ? &cv_mousesens : &cv_mousesens2;
-	cvysens = ssplayer == 1 ? &cv_mouseysens : &cv_mouseysens2;
+	cvsens = player+1 == 1 ? &cv_mousesens : &cv_mousesens2;
+	cvysens = player+1 == 1 ? &cv_mouseysens : &cv_mouseysens2;
 	m->rdx = dx;
 	m->rdy = dy;
 	m->dx = (INT32)(m->rdx*((cvsens->value*cvsens->value)/110.0f + 0.1f));
