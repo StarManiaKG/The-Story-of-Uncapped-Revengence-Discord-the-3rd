@@ -195,7 +195,7 @@ void G_MapEventsToControls(event_t *ev)
 
 		case ev_mouse:
 		case ev_mouse2: // buttons are virtual keys
-			player = (ev->type == ev_joystick ? 0 : 1);
+			player = (ev->type == ev_mouse ? 0 : 1);
 			if (player && (menuactive || CON_Ready() || chat_on))
 			{
 				break;
