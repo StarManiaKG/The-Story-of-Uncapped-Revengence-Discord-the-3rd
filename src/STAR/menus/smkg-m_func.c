@@ -369,7 +369,7 @@ const char *TSoURDt3rd_M_GenerateQuitMessage(void)
 INT32 TSoURDt3rd_M_KeyHandlerType(void)
 {
 	{
-		const INT32 flags = T3RDM_HANDLER_UNIQUE;
+		INT32 flags = T3RDM_HANDLER_UNIQUE;
 
 		if (menutyping.active)
 			return flags|T3RDM_KEYHANDLER_MENUTYPING;
@@ -382,6 +382,13 @@ INT32 TSoURDt3rd_M_KeyHandlerType(void)
 	{
 		INT32 flags = T3RDM_HANDLER_VANILLA;
 		menuitem_t *curmenuitem = &currentMenu->menuitems[tsourdt3rd_itemOn];
+
+		// hack(s), i'm too lazy to do it some other way for the time being
+		if (currentMenu == &MP_PlayerSetupDef && tsourdt3rd_itemOn != 0)
+		{
+			return flags;
+		}
+		// disgusting hack(s), get out of my sight
 
 		if (menu_has_writable)
 		{
@@ -399,12 +406,30 @@ INT32 TSoURDt3rd_M_KeyHandlerType(void)
 }
 
 //
-// void TSoURDt3rd_M_SetMenuHasWritable(boolean set)
+// void TSoURDt3rd_M_SetWritable(boolean set)
 // If a menu has a writable text field, set this to true.
 //
-void TSoURDt3rd_M_SetMenuHasWritable(boolean set)
+void TSoURDt3rd_M_SetWritable(boolean set)
 {
 	menu_has_writable = set;
+}
+
+//
+// boolean TSoURDt3rd_M_HasImportantHandler(void)
+// Returns whether or not a menu has an important menu handler.
+//
+boolean TSoURDt3rd_M_HasImportantHandler(void)
+{
+	INT32 key_handler_type = TSoURDt3rd_M_KeyHandlerType();
+	if (key_handler_type & T3RDM_HANDLER_VANILLA)
+	{
+		return (key_handler_type & T3RDM_HANDLER_WRITABLE);
+	}
+	else if (key_handler_type & T3RDM_HANDLER_UNIQUE)
+	{
+		return true;
+	}
+	return false;
 }
 
 //
@@ -725,7 +750,7 @@ void TSoURDt3rd_M_UpdateMenuCMD(UINT8 i)
 boolean TSoURDt3rd_M_Responder(INT32 *ch_p, event_t *ev)
 {
 	const UINT8 pid = 0;
-	const INT32 key_handler_type = TSoURDt3rd_M_KeyHandlerType();
+	INT32 key_handler_type = TSoURDt3rd_M_KeyHandlerType();
 	INT32 vanillaKey = (*ch_p);
 
 	memset(menu_events, 0, sizeof(menu_events));
@@ -1085,7 +1110,7 @@ void TSoURDt3rd_M_ClearMenus(void)
 	menumessage.active = false;
 
 	TSoURDt3rd_M_ShowMusicCredits();
-	TSoURDt3rd_M_SetMenuHasWritable(false);
+	TSoURDt3rd_M_SetWritable(false);
 	TSoURDt3rd_M_SetMenuDelay(pid);
 
 #ifdef HAVE_DISCORDSUPPORT
@@ -1220,7 +1245,7 @@ static const char *M_QueryCvarAction(const char *replace)
 void TSoURDt3rd_M_UpdateItemOn(void)
 {
 	I_SetTextInputMode(menutyping.active);
-	if (menuactive && !tsourdt3rd_currentMenu && !I_GetTextInputMode())
+	if (menuactive && tsourdt3rd_currentMenu == NULL && !I_GetTextInputMode())
 	{
 		I_SetTextInputMode((currentMenu->menuitems[tsourdt3rd_itemOn].status & IT_CVARTYPE) == IT_CV_STRING ||
 			(currentMenu->menuitems[tsourdt3rd_itemOn].status & IT_TYPE) == IT_KEYHANDLER);
@@ -1302,9 +1327,9 @@ boolean TSoURDt3rd_M_PrevOpt(void)
 
 static inline boolean M_HandleGlobalInput(UINT8 pid)
 {
-	if (TSoURDt3rd_M_KeyHandlerType())
+	if (TSoURDt3rd_M_HasImportantHandler())
 	{
-		// TSoURDt3rd exclusive menu features? Any key handler event at all?
+		// TSoURDt3rd exclusive menu features? Any important key handler event at all?
 		// No thanks, don't wanna break something.
 		return false;
 	}

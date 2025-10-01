@@ -13,8 +13,9 @@
 #define __SMKG_M_SYS__
 
 #include "../smkg-defs.h"
-#include "../star_vars.h"
+#include "../star_vars.h" // events //
 #include "../smkg-cvars.h"
+#include "../core/smkg-g_game.h" // tsourdt3rd_local //
 
 #include "../../g_input.h"
 #include "../../m_menu.h"
@@ -222,7 +223,6 @@ extern tsourdt3rd_levellist_mode_t tsourdt3rd_levellistmode;
 enum
 {
 	T3RDM_HANDLER_NONE = 0,
-	T3RDM_HANDLER_WRITABLE = 1<<1,
 
 	T3RDM_HANDLER_VANILLA = 1<<3,
 	T3RDM_KEYHANDLER_CVARSTRING = 1<<4,
@@ -233,6 +233,8 @@ enum
 	T3RDM_KEYHANDLER_MENUTYPING = 1<<8,
 	T3RDM_KEYHANDLER_MENUMESSAGE = 1<<9,
 	T3RDM_KEYHANDLER_OPTBIND = 1<<10,
+
+	T3RDM_HANDLER_WRITABLE = 1<<15
 };
 
 // ------------------------ //
@@ -254,7 +256,8 @@ void TSoURDt3rd_M_SetupNextMenu(tsourdt3rd_menu_t *tsourdt3rd_menudef, menu_t *m
 void TSoURDt3rd_M_ClearMenus(void);
 
 INT32 TSoURDt3rd_M_KeyHandlerType(void);
-void TSoURDt3rd_M_SetMenuHasWritable(boolean set);
+void TSoURDt3rd_M_SetWritable(boolean set);
+boolean TSoURDt3rd_M_HasImportantHandler(void);
 
 void TSoURDt3rd_M_GoBack(INT32 choice);
 boolean TSoURDt3rd_M_NextOpt(void);
@@ -668,8 +671,7 @@ UINT16 TSoURDt3rd_M_GetCvPlayerColor(UINT8 pnum);
 
 void TSoURDt3rd_M_HandleMasterServerResetChoice(INT32 choice);
 #define TSoURDt3rd_M_NetgameChecks(strict) \
-	if (tsourdt3rd_local.autoloaded_mods && strict) \
-	{ \
+	if (tsourdt3rd_local.autoloaded_mods && strict) { \
 		TSoURDt3rd_M_StartMessage( \
 			"Multiplayer Menu Check Failed!", \
 			M_GetText( \
@@ -685,9 +687,7 @@ void TSoURDt3rd_M_HandleMasterServerResetChoice(INT32 choice);
 		); \
 		return; \
 	} \
-	\
-	if (!CV_IsSetToDefault(&cv_masterserver) && !tsourdt3rd_local.ms_address_changed) \
-	{ \
+	if (!CV_IsSetToDefault(&cv_masterserver) && !tsourdt3rd_local.ms_address_changed) { \
 		TSoURDt3rd_M_StartMessage( \
 			"Server Search Alert", \
 			M_GetText( \

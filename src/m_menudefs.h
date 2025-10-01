@@ -64,6 +64,10 @@ typedef enum
 	spause_quit
 } spause_e;
 
+
+extern menu_t MP_PlayerSetupDef;
+
+
 extern menuitem_t MPauseMenu[];
 extern menu_t MPauseDef;
 typedef enum

@@ -87,7 +87,7 @@
 #include "STAR/smkg-cvars.h" // various vast TSoURDt3rd commands and command functions //
 #include "STAR/core/smkg-s_audio.h" // TSoURDt3rd_S_CanManageMenuAudio //
 #include "STAR/lights/smkg-coronas.h"
-#include "STAR/menus/smkg-m_sys.h" // various chunks of menu data + TSoURDt3rd_M_SetMenuHasWritable(); //
+#include "STAR/menus/smkg-m_sys.h" // various chunks of menu data + TSoURDt3rd_M_SetWritable(); //
 #include "STAR/misc/smkg-m_misc.h" // TSoURDt3rd_FIL_CreateSavefileProperly() //
 
 #if defined (__GNUC__) && (__GNUC__ >= 4)
@@ -322,6 +322,7 @@ static void M_VideoOptions(INT32 choice);
 #ifdef HWRENDER
 static void M_OpenGLOptionsMenu(void);
 #endif // HWRENDER
+static void M_SoundAdvancedSettings(INT32 choice);
 
 //Misc
 static void M_ScreenshotOptions(INT32 choice);
@@ -1422,7 +1423,7 @@ static menuitem_t OP_SoundOptionsMenu[] =
 	{IT_STRING | IT_CVAR, NULL, "Reset Music Upon Dying", &cv_resetmusic, 72},
 	{IT_STRING | IT_CVAR, NULL, "Default 1-Up sound", &cv_1upsound, 77},
 
-	{IT_STRING | IT_SUBMENU, NULL, "Advanced Settings...", &OP_SoundAdvancedDef, 87},
+	{IT_STRING | IT_CALL, NULL, "Advanced Settings...", M_SoundAdvancedSettings, 87},
 };
 
 #ifdef HAVE_OPENMPT
@@ -2129,6 +2130,14 @@ menu_t OP_ColorOptionsDef =
 	0,
 	NULL
 };
+
+static void M_SoundAdvancedSettings(INT32 choice)
+{
+	(void)choice;
+	M_SetupNextMenu(&OP_SoundAdvancedDef);
+	TSoURDt3rd_M_SetWritable(true);
+}
+
 menu_t OP_SoundOptionsDef = DEFAULTSCROLLMENUSTYLE(
 	MTREE2(MN_OP_MAIN, MN_OP_SOUND),
 	"M_SOUND", OP_SoundOptionsMenu, &OP_MainDef, 30, 30);
@@ -2202,7 +2211,7 @@ static void M_AddonsCvarOptions(INT32 choice)
 	}
 
 	M_SetupNextMenu(&OP_AddonCustomOptionsDef);
-	TSoURDt3rd_M_SetMenuHasWritable(true);
+	TSoURDt3rd_M_SetWritable(true);
 }
 
 menu_t OP_AddonCustomOptionsDef = DEFAULTSCROLLMENUSTYLE(
@@ -3904,6 +3913,7 @@ void M_SetupNextMenu(menu_t *menudef)
 	}
 
 	M_HandleMenuPresState(menudef);
+	TSoURDt3rd_M_SetWritable(false);
 
 	currentMenu = menudef;
 	itemOn = currentMenu->lastOn;
@@ -3928,8 +3938,6 @@ void M_SetupNextMenu(menu_t *menudef)
 	M_UpdateItemOn();
 
 	hidetitlemap = false;
-
-	TSoURDt3rd_M_SetMenuHasWritable(false);
 }
 
 // Guess I'll put this here, idk
@@ -6346,7 +6354,7 @@ static void M_AddonsOptions(INT32 choice)
 	Addons_option_Onchange();
 
 	M_SetupNextMenu(&OP_AddonsOptionsDef);
-	TSoURDt3rd_M_SetMenuHasWritable(true);
+	TSoURDt3rd_M_SetWritable(true);
 }
 
 #define LOCATIONSTRING1 "Visit \x83SRB2.ORG/ADDONS\x80 to get & make addons!"
@@ -6420,7 +6428,7 @@ static void M_Addons(INT32 choice)
 
 	MISC_AddonsDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&MISC_AddonsDef);
-	TSoURDt3rd_M_SetMenuHasWritable(true);
+	TSoURDt3rd_M_SetWritable(true);
 }
 
 #ifdef ENFORCE_WAD_LIMIT
@@ -8412,7 +8420,7 @@ static void M_LoadMultiplayerMainMenu(INT32 choice)
 {
 	(void)choice;
 	M_SetupNextMenu(&MP_MainDef);
-	TSoURDt3rd_M_SetMenuHasWritable(true);
+	TSoURDt3rd_M_SetWritable(true);
 }
 
 static void M_LoadGameLevelSelect(INT32 choice)
@@ -11967,7 +11975,7 @@ static void M_ServerOptions(INT32 choice)
 
 	OP_ServerOptionsDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&OP_ServerOptionsDef);
-	TSoURDt3rd_M_SetMenuHasWritable(true);
+	TSoURDt3rd_M_SetWritable(true);
 }
 
 static void M_StartServerMenu(INT32 choice)
@@ -11980,7 +11988,7 @@ static void M_StartServerMenu(INT32 choice)
 	M_SetupNextMenu(&MP_ServerDef);
 	itemOn = 1;
 	M_UpdateItemOn();
-	TSoURDt3rd_M_SetMenuHasWritable(true);
+	TSoURDt3rd_M_SetWritable(true);
 }
 
 // ==============
@@ -13072,7 +13080,7 @@ static void M_SetupMultiPlayer(INT32 choice)
 
 	MP_PlayerSetupDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&MP_PlayerSetupDef);
-	TSoURDt3rd_M_SetMenuHasWritable(true);
+	TSoURDt3rd_M_SetWritable(true);
 }
 
 // start the multiplayer setup menu, for secondary player (splitscreen mode)
@@ -13118,7 +13126,7 @@ static void M_SetupMultiPlayer2(INT32 choice)
 
 	MP_PlayerSetupDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&MP_PlayerSetupDef);
-	TSoURDt3rd_M_SetMenuHasWritable(true);
+	TSoURDt3rd_M_SetWritable(true);
 }
 
 static boolean M_QuitMultiPlayerMenu(void)
@@ -13398,7 +13406,7 @@ static void M_ScreenshotOptions(INT32 choice)
 
 	M_SetupScreenshotMenu();
 	M_SetupNextMenu(&OP_ScreenshotOptionsDef);
-	TSoURDt3rd_M_SetMenuHasWritable(true);
+	TSoURDt3rd_M_SetWritable(true);
 }
 
 static void M_SetupScreenshotMenu(void)

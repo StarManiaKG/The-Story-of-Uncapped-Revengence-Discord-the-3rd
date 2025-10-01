@@ -15,6 +15,7 @@
 //        Variables
 // ------------------------ //
 
+static void M_Sys_EventInit(void);
 static void M_Sys_EventTicker(void);
 
 menuitem_t TSoURDt3rd_OP_EventsMenu[] =
@@ -25,7 +26,7 @@ menuitem_t TSoURDt3rd_OP_EventsMenu[] =
 
 	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL, NULL, 0},
 
-	{IT_HEADER, NULL, "Foolishness", NULL, 0},
+	{IT_HEADER, NULL, "Absolutely nothing", NULL, 0},
 		{IT_STRING | IT_CVAR, NULL, "Ultimate Mode!", &cv_tsourdt3rd_aprilfools_ultimatemode, 21},
 };
 
@@ -61,7 +62,7 @@ tsourdt3rd_menu_t TSoURDt3rd_TM_OP_EventsDef = {
 	NULL,
 	2, 5,
 	NULL,
-	M_Sys_EventTicker,
+	M_Sys_EventInit,
 	M_Sys_EventTicker,
 	NULL,
 	NULL,
@@ -73,47 +74,45 @@ tsourdt3rd_menu_t TSoURDt3rd_TM_OP_EventsDef = {
 //        Functions
 // ------------------------ //
 
+static void M_Sys_EventInit(void)
+{
+	INT32 i;
+	static boolean not_initialized = true;
+
+	if (not_initialized == true)
+	{
+		for (i = op_easter_egghunt; i <= op_easter_bonuses; i++)
+			TSoURDt3rd_OP_EventsMenu[i].status = IT_DISABLED;
+		for (i = op_aprilfools; i <= op_aprilfools_ultimatemode; i++)
+			TSoURDt3rd_OP_EventsMenu[i].status = IT_DISABLED;
+		not_initialized = false;
+	}
+}
+
 static void M_Sys_EventTicker(void)
 {
 	INT32 i;
 
-	TSoURDt3rd_M_OptionsTick();
-
-	if (netgame || ((modifiedgame || usedCheats) && savemoddata) || tsourdt3rd_local.autoloaded_mods)
+	if (tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_EASTER)
 	{
-		if (currenteggs != TOTALEGGS)
+		if (!(netgame && ((modifiedgame || usedCheats) && savemoddata)) && !tsourdt3rd_local.autoloaded_mods)
 		{
 			TSoURDt3rd_OP_EventsMenu[op_easter_egghunt].status = IT_CVAR|IT_STRING;
-			TSoURDt3rd_OP_EventsMenu[op_easter_bonuses].status = IT_GRAYEDOUT;
+			TSoURDt3rd_OP_EventsMenu[op_easter_bonuses].status =
+				((currenteggs != TOTALEGGS) ? IT_GRAYEDOUT : IT_CVAR|IT_STRING);
 		}
 		else
-			TSoURDt3rd_OP_EventsMenu[op_easter_bonuses].status = IT_CVAR|IT_STRING;
-	}
-	else
-	{
-		TSoURDt3rd_OP_EventsMenu[op_easter_egghunt].status = IT_GRAYEDOUT;
-		TSoURDt3rd_OP_EventsMenu[op_easter_bonuses].status = IT_GRAYEDOUT;
+		{
+			for (i = op_easter_egghunt; i <= op_easter_bonuses; i++)
+				TSoURDt3rd_OP_EventsMenu[i].status = IT_GRAYEDOUT;
+		}
 	}
 
-	if (!(tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_EASTER))
-	{
-		for (i = op_easter_egghunt; i <= op_easter_bonuses; i++)
-			TSoURDt3rd_OP_EventsMenu[i].status = IT_GRAYEDOUT;
-	}
-	else
-	{
-		for (i = op_easter_egghunt; i <= op_easter_bonuses; i++)
-			TSoURDt3rd_OP_EventsMenu[i].status = IT_CVAR|IT_STRING;
-	}
-
-	if (!(tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_APRILFOOLS))
-	{
-		for (i = op_aprilfools; i <= op_aprilfools_ultimatemode; i++)
-			TSoURDt3rd_OP_EventsMenu[i].status = IT_DISABLED;
-	}
-	else
+	if (tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_APRILFOOLS)
 	{
 		TSoURDt3rd_OP_EventsMenu[op_aprilfools].status = IT_HEADER;
-		TSoURDt3rd_OP_EventsMenu[op_aprilfools_ultimatemode].status = IT_CVAR|IT_STRING;
+		TSoURDt3rd_OP_EventsMenu[op_aprilfools_ultimatemode].status = (netgame ? IT_GRAYEDOUT : IT_CVAR|IT_STRING);
 	}
+
+	TSoURDt3rd_M_OptionsTick();
 }
