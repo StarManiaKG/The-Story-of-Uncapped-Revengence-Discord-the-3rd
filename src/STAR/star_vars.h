@@ -31,7 +31,7 @@ typedef struct TSoURDt3rd_s {
 	// TSoURDt3rd authentication
 	uint8_t public_key[PUBKEYLENGTH];
 	uint8_t secret_key[PRIVKEYLENGTH];
-	char    user_hash[18];
+	char *user_hash;
 	// Everything else
 	boolean usingTSoURDt3rd;
 	boolean server_usingTSoURDt3rd;
@@ -43,14 +43,6 @@ typedef struct TSoURDt3rd_s {
 extern TSoURDt3rd_t TSoURDt3rdPlayers[MAXPLAYERS];
 
 //// VARIABLES ////
-// Events //
-// Easter
-extern INT32 TOTALEGGS;
-extern INT32 foundeggs;
-extern INT32 collectedmapeggs;
-extern INT32 currenteggs;
-extern INT32 numMapEggs;
-
 // Audio //
 #if 1
 // MARKED FOR REMOVAL
@@ -96,11 +88,5 @@ const char *TSoURDt3rd_DetermineLevelMusic(void);
 // Miscellanious //
 // -- Version
 UINT32 TSoURDt3rd_CurrentVersion(void);
-UINT8 TSoURDt3rd_CurrentMajorVersion(void);
-UINT8 TSoURDt3rd_CurrentMinorVersion(void);
-UINT8 TSoURDt3rd_CurrentSubversion(void);
-// -- Numbers
-INT32 STAR_ConvertStringToCompressedNumber(char *STRING, INT32 startIFrom, INT32 startJFrom, boolean turnIntoVersionNumber);
-INT32 STAR_CombineNumbers(INT32 ARGS, INT32 FIRSTNUM, ...);
 
 #endif // __STAR_VARS__

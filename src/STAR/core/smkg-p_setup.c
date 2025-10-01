@@ -13,9 +13,11 @@
 
 #include "smkg-s_exmusic.h"
 #include "smkg-s_jukebox.h"
+
 #include "../smkg-cvars.h" // cv_tsourdt3rd_game_loadingscreen vars //
 #include "../ss_main.h" // tsourdt3rd_loadingscreen //
 #include "../star_vars.h" // STAR_LoadingScreen() //
+
 #include "../menus/smkg-m_sys.h"
 #include "../misc/smkg-m_misc.h" // TSoURDt3rd_M_FindWordInTermTable() //
 #include "../parser/smkg-ps_main.h"
@@ -225,8 +227,6 @@ void TSoURDt3rd_WORLD_UpdateScenarios(void)
 
 	mapheader_t *map = mapheaderinfo[gamemap-1];
 
-	memset(&tsourdt3rd_local.world, 0, sizeof(tsourdt3rd_local.world));
-
 	// Fighting the big bad guy!
 	if (map)
 	{
@@ -291,6 +291,7 @@ void TSoURDt3rd_WORLD_UpdateScenarios(void)
 	}
 
 	// Set our new world scenario!
+	memset(&tsourdt3rd_local.world, 0, sizeof(tsourdt3rd_local.world));
 	tsourdt3rd_local.world.scenario = scenario;
 	tsourdt3rd_local.world.scenario_types = scenario_type;
 }

@@ -100,8 +100,8 @@
 #include "lua_hud.h"
 
 // TSoURDt3rd
-#include "STAR/ss_main.h" // TSoURDt3rd_Init() & TSoURDt3rd_CON_DrawStartupScreen() //
-#include "STAR/core/smkg-d_main.h" // TSoURDt3rd_D_AutoLoadAddons() //
+#include "STAR/ss_main.h" // TSoURDt3rd_CON_DrawStartupScreen() //
+#include "STAR/core/smkg-d_main.h" // TSoURDt3rd_D_Init() & TSoURDt3rd_D_AutoLoadAddons() //
 #include "STAR/core/smkg-s_audio.h" // TSoURDt3rd_S_ManageAudio() //
 #include "STAR/menus/smkg-m_sys.h" // TSoURDt3rd_M_DrawPauseGraphic() & TSoURDt3rd_M_UpdateMenuCMD() //
 
@@ -1010,7 +1010,13 @@ static void D_RunFrame(void)
 
 		LUA_Step();
 
-		TSoURDt3rd_D_Loop(); // STAR STUFF: run our extra game loop routines now :p //
+#ifdef HAVE_DISCORDSUPPORT
+		// Run any Discord activity callbacks for us, please.
+		DISC_RunCallbacks();
+#endif
+
+		// STAR STUFF: run our extra game loop routines now :p //
+		TSoURDt3rd_D_Loop();
 
 		// Fully completed frame made.
 		finishprecise = I_GetPreciseTime();
@@ -1499,7 +1505,7 @@ void D_SRB2Main(void)
 	Z_Init();
 
 	// STAR STUFF: Initialize our data! //
-	TSoURDt3rd_Init();
+	TSoURDt3rd_D_Init();
 
 	if (M_CheckParm("-password") && M_IsNextParm())
 		D_SetPassword(M_GetNextParm());
@@ -1562,11 +1568,7 @@ void D_SRB2Main(void)
 #ifdef USE_PATCH_DTA
 	mainwads++;
 #endif
-
-#if 1
-	// STAR NOTE: TSoURDt3rd also doesn't include jukebox.pk3 //
-	mainwads++;
-#endif
+	mainwads++; // STAR NOTE: TSoURDt3rd also doesn't include jukebox.pk3 //
 
 	// load wad, including the main wad file
 	CONS_Printf("W_InitMultipleFiles(): Adding IWAD and main PWADs.\n");
@@ -1592,10 +1594,8 @@ void D_SRB2Main(void)
 	// ...except it does if they slip maps in there, and that's what W_VerifyNMUSlumps is for.
 #endif //ifndef DEVELOP
 
-#if 1
 	// STAR STUFF: autoload our addons please //
 	TSoURDt3rd_D_AutoLoadAddons();
-#endif
 
 	cht_Init();
 

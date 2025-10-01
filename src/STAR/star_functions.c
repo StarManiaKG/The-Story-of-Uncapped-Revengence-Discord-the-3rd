@@ -14,7 +14,6 @@
 #include "star_vars.h" 				// star variables
 #include "ss_main.h"				// star variables 2
 #include "core/smkg-s_jukebox.h"	// star variables 3
-#include "smkg_g_inputs.h"			// star variables 4
 #include "smkg-p_saveg.h"			// star variables 6
 #include "smkg-defs.h"				// star variables 8
 #include "menus/smkg-m_sys.h"		// star variables 5
@@ -98,9 +97,6 @@ void STAR_LoadingScreen(void)
 	};
 
 	// Set Parameters and Run Some Functions //
-	I_OsPolling();
-	//CON_Drawer(); // console shouldn't appear while in a loading screen, honestly
-
 	sprintf(s, "%d%%", (++tsourdt3rd_loadingscreen.loadPercentage)<<1);
 	x = BASEVIDWIDTH/2;
 	y = BASEVIDHEIGHT/2;
@@ -256,7 +252,16 @@ void STAR_LoadingScreen(void)
 	V_DrawString(x-50, y, V_MENUCOLORMAP, "Loading...");
 	V_DrawRightAlignedString(x+50, y, V_MENUCOLORMAP, s);
 
+	I_OsPolling();
+
+	//CON_Drawer(); // let the user know what we are doing
+	I_FinishUpdate(); // page flip or blit buffer
 	I_UpdateNoVsync();
+
+	if (moviemode)
+		M_SaveFrame();
+
+	NetKeepAlive(); // Update the network so we don't cause timeouts
 }
 
 #ifdef HAVE_SDL
@@ -515,7 +520,9 @@ const char *STAR_SetWindowTitle(void)
 				{
 					if (gamestate == GS_NULL || (gamestate == GS_TITLESCREEN || titlemapinaction))
 					{
+#ifdef HAVE_SDL
 						STAR_RenameWindow("SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING);
+#endif
 						return ("SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING);
 					}
 
@@ -536,7 +543,9 @@ const char *STAR_SetWindowTitle(void)
 	}
 
 	// Set the Window Title, Return it, and We're Done :) //
+#ifdef HAVE_SDL
 	STAR_RenameWindow(windowtitle);
+#endif
 	return windowtitle;
 
 generalgametitles:
@@ -560,7 +569,9 @@ generalgametitles:
 	// Now That We've Set Our Things, Let's Return our Window Title, and We're Done :)
 	windowtitle = va("%s SRB2 "VERSIONSTRING"; "TSOURDT3RDVERSIONSTRING, dynamictitle);
 
+#ifdef HAVE_SDL
 	STAR_RenameWindow(windowtitle);
+#endif
 	return windowtitle;
 }
 
@@ -571,161 +582,9 @@ generalgametitles:
 //
 UINT32 TSoURDt3rd_CurrentVersion(void)
 {
-	char versionString[256] = ""; strcpy(versionString, TSOURDT3RDVERSION);
-	return STAR_ConvertStringToCompressedNumber(versionString, 0, 0, true);
-}
-
-//
-// UINT8 TSoURDt3rd_CurrentMajorVersion(void)
-// Only Returns the Current Major Version of TSoURDt3rd, in a Converted, Compressed Number Format
-//
-UINT8 TSoURDt3rd_CurrentMajorVersion(void)
-{
-	INT32 i;
-
-	char majorVersionString[256] = ""; strcpy(majorVersionString, TSOURDT3RDVERSION);
-	char iterateString[256] = "";
-
-	// Iterate Through Our Two Strings //
-	for (i = 0; majorVersionString[i] != '\0'; i++)
-	{
-		iterateString[i] = majorVersionString[i];
-
-		// Found a Dot? Return the Major Version, and We're Done!
-		if (majorVersionString[i+1] == '.')
-			return atoi(iterateString);
-	}
-
-	// How Did We Not Find Anything? //
-	return 0;
-}
-
-//
-// UINT8 TSoURDt3rd_CurrentMinorVersion(void)
-// Only Returns the Current Minor Version of TSoURDt3rd, in a Converted, Compressed Number Format
-//
-UINT8 TSoURDt3rd_CurrentMinorVersion(void)
-{
-	INT32 i, j;
-
-	char minorVersionString[256] = ""; strcpy(minorVersionString, TSOURDT3RDVERSION);
-	char iterateString[256] = "";
-
-	// Iterate Through Our Two Strings //
-	for (i = 0; minorVersionString[i] != '\0'; i++)
-	{
-		// We Found One Dot, So Let's Iterate Through it, Stop at Another Dot, and We're Done :)
-		if (minorVersionString[i] == '.')
-		{
-			i++;
-			for (j = 0; (minorVersionString[i] != '.' && minorVersionString[i] != '\0'); j++, i++)
-				iterateString[j] = minorVersionString[i];
-
-			return atoi(iterateString);
-		}
-	}
-
-	// How Did We Still Not Find Anything? //
-	return 0;
-}
-
-//
-// UINT8 TSoURDt3rd_CurrentSubversion(void)
-// Only Returns the Current Subversion of TSoURDt3rd, in a Converted, Compressed Number Format
-//
-UINT8 TSoURDt3rd_CurrentSubversion(void)
-{
-	INT32 i, j;
-	boolean oneDotFound = false;
-
-	char subVersionString[256] = ""; strcpy(subVersionString, TSOURDT3RDVERSION);
-	char iterateString[256] = "";
-
-	// Iterate Through Our Two Strings //
-	for (i = 0; subVersionString[i] != '\0'; i++)
-	{
-		// We Found A Dot!
-		if (subVersionString[i] == '.')
-		{
-			// One Dot Found, So Let's Skip It.
-			if (!oneDotFound)
-			{
-				oneDotFound = true;
-				continue;
-			}
-
-			// A Different Dot Has Been Found, so Iterate Through it and We're Done :)
-			else
-			{
-				i++;
-				for (j = 0; subVersionString[i] != '\0'; j++, i++)
-					iterateString[j] = subVersionString[i];
-
-				return atoi(iterateString);
-			}
-		}
-	}
-
-	// This Outcome is More Reasonable, Honestly //
-	return 0;
-}
-
-//
-// INT32 STAR_ConvertStringToCompressedNumber(char *STRING, INT32 startIFrom, INT32 startJFrom, boolean turnIntoVersionNumber)
-// Converts Strings to Compressed Numbers
-//
-// Example of a Possible Return:
-//	STRING == '2.8', turnIntoVersionNumber = true		=	Returned Number = 280
-//	STRING == '2.7.1', turnIntoVersionNumber = false	=	Returned Number = 271
-//
-INT32 STAR_ConvertStringToCompressedNumber(char *STRING, INT32 startIFrom, INT32 startJFrom, boolean turnIntoVersionNumber)
-{
-	// Make Variables //
-	INT32 i = startIFrom, j = startJFrom;
-	INT32 finalNumber;
-
-	char convertedString[256] = "";
-
-	// Initialize the Main String, and Iterate Through Our Two Strings //
-	while (STRING[j] != '\0')
-	{
-		if (STRING[j] == '.' || STRING[j] == '"' || STRING[j] == ' ')
-		{
-			j++;
-			continue;
-		}
-
-		convertedString[i] = STRING[j];
-		i++, j++;
-	}
-
-	// Add an Extra Digit or Two if Our String Has Less Than 2 Digits, Else Return Our Compressed Number, and We're Done! //
-	finalNumber = ((turnIntoVersionNumber && strlen(convertedString) <= 2) ?
-					(strlen(convertedString) == 2 ?
-						(STAR_CombineNumbers(2, atoi(convertedString), 0)) :
-						(STAR_CombineNumbers(3, atoi(convertedString), 0, 0))) :
-					(atoi(convertedString)));
-	return finalNumber;
-}
-
-//
-// INT32 STAR_CombineNumbers(INT32 ARGS, INT32 FIRSTNUM, ...)
-// Combines Numbers Together, Like You Would Do a String, But Doesn't Perform Math on the Numbers
-//
-INT32 STAR_CombineNumbers(INT32 ARGS, INT32 FIRSTNUM, ...)
-{
-	// Make Variables //
-	va_list argptr;
-
-	INT32 i;
-	char numberString[256] = ""; sprintf(numberString, "%d", FIRSTNUM);
-
-	// Initialize and Iterate Through the Variable List of Arguments, Combine our Number Strings Together, and Then End it //
-	va_start(argptr, FIRSTNUM);
-	for (i = 0; i < ARGS-1; i++)
-		strlcat(numberString, va("%d", va_arg(argptr, int)), sizeof(numberString));
-	va_end(argptr);
-
-	// Convert the String Made Earlier Into a Number, Return The Number, and We're Done :) //
-	return STAR_ConvertStringToCompressedNumber(numberString, 0, 0, false);
+	char *version_string = strdup(TSOURDT3RDVERSION);
+	char *compressed_version_string = TSoURDt3rd_M_RemoveStringChars(version_string, ".");
+	const UINT32 current_version = (UINT32)atoi(compressed_version_string);
+	free(version_string);
+	return current_version;
 }

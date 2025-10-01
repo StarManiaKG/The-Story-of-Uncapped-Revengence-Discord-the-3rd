@@ -50,7 +50,7 @@
 
 // TSoURDt3rd
 #include "STAR/misc/smkg-m_misc.h" // TSoURDt3rd_FIL_CreateSavefileProperly() //
-#include "STAR/lights/smkg-coronas.h" // corona data //
+#include "STAR/lights/smkg-coronas.h" // me when my name is an obvious giveaway //
 
 // Loops through every constant and operation in word and performs its calculations, returning the final value.
 fixed_t get_number(const char *word)
@@ -808,12 +808,7 @@ void readlight(MYFILE *f, INT32 num)
 	char *tmp;
 	INT32 value;
 	float fvalue;
-
-#if 1
-	// STAR STUFF: it's cool to let them know! //
-	CONS_Printf("readlight: Editing light number %d...\n", num);
-	// and now, we have! //
-#endif
+	const light_t *light = &lspr[num];
 
 	do
 	{
@@ -864,18 +859,14 @@ void readlight(MYFILE *f, INT32 num)
 			else if (fastcmp(word, "DYNAMICRADIUS"))
 			{
 				lspr[num].dynamic_radius = fvalue;
-
-				/// \note Update the sqrradius! unnecessary?
 				lspr[num].dynamic_sqrradius = fvalue * fvalue;
 			}
-#if 1
-			// STAR STUFF: ultimate coronas //
 			else if (fastcmp(word, "CORONAROUTINE") || fastcmp(word, "CORONARENDERINGROUTINE"))
 			{
 				switch (value)
 				{
 					case 1:
-						lspr[num].corona_rendering_routine = LCR_SuperSonicLight;
+						lspr[num].corona_rendering_routine = L_RenderPlayerLight;
 						break;
 					default:
 						lspr[num].corona_rendering_routine = NULL;
@@ -889,7 +880,7 @@ void readlight(MYFILE *f, INT32 num)
 				switch (value)
 				{
 					case 1:
-						lspr[num].corona_coloring_routine = LCR_ObjectColorToCoronaLight;
+						lspr[num].corona_coloring_routine = L_UseObjectColor;
 						break;
 					default:
 						lspr[num].corona_coloring_routine = NULL;
@@ -898,12 +889,15 @@ void readlight(MYFILE *f, INT32 num)
 						break;
 				}
 			}
-			// OK //
-#endif
 			else
 				deh_warning("Light %d: unknown word '%s'", num, word);
 		}
 	} while (!myfeof(f)); // finish when the line is empty
+
+	if (light == NULL)
+		CONS_Printf("Edited light '%d'\n", num);
+	else
+		CONS_Printf("Created light '%d'\n", num);
 
 	Z_Free(s);
 }
@@ -4017,18 +4011,10 @@ void readmaincfg(MYFILE *f)
 				strncpy(timeattackfolder, gamedatafilename, filenamelen);
 				timeattackfolder[min(filenamelen, sizeof (timeattackfolder) - 1)] = '\0';
 
-				strcpy(savegamename, timeattackfolder);
-				strlcat(savegamename, "%u.ssg", sizeof(savegamename));
-				// can't use sprintf since there is %u in savegamename
-				strcatbf(savegamename, srb2home, PATHSEP);
-
-				strcpy(liveeventbackup, va("live%s.bkp", timeattackfolder));
-				strcatbf(liveeventbackup, srb2home, PATHSEP);
-
-#if 1
-				// STAR STUFF: update savefile folders //
+				// StarManiaKG:
+				// This function now creates the savefile names for us.
+				// This allows them to be easily stored in folders if need-be.
 				TSoURDt3rd_FIL_CreateSavefileProperly();
-#endif
 
 				gamedataadded = true;
 				titlechanged = true;

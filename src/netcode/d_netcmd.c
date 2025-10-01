@@ -67,6 +67,7 @@
 #include "../STAR/star_vars.h" // STAR_SetWindowTitle() && TSOURDT3RDVERSION //
 #include "../STAR/smkg-cvars.h" // cv_tsourdt3rd_game_sdl_windowtitle_type //
 #include "../STAR/p_user.h" // TSoURDt3rd_P_MovingPlayerSetup() //
+#include "../STAR/core/smkg-g_game.h" // tsourdt3rd_local //
 #include "../STAR/core/smkg-p_pads.h" // TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor() //
 
 // ------
@@ -3988,8 +3989,10 @@ static void Command_Version_f(void)
 
 	CONS_Printf("\n");
 
-	// STAR STUFF: print the build's version string //
-	STAR_CONS_Printf(STAR_CONS_NOTICE, TSOURDT3RD_APP_FULL" v"TSOURDT3RDVERSION);
+	// STAR STUFF //
+	// Print the build's version string
+	STAR_CONS_Printf(STAR_CONS_NOTICE, TSOURDT3RD_APP_FULL);
+	STAR_CONS_Printf(STAR_CONS_NONE, " v%d.%d.%d", tsourdt3rd_local.major_version, tsourdt3rd_local.minor_version, tsourdt3rd_local.sub_version);
 	STAR_CONS_Printf(STAR_CONS_NONE, "\n\n");
 }
 

@@ -12,11 +12,28 @@
 #ifndef __SMKG_D_MAIN__
 #define __SMKG_D_MAIN__
 
-#include "../smkg-defs.h"
+#include "../../w_wad.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+// ------------------------ //
+//        Variables
+// ------------------------ //
+
+#define TSOURDT3RD_AUTOLOAD_CONFIG_FILENAME "autoload.cfg"
+#define TSOURDT3RD_DEFAULT_SAVEGAMEFOLDER   "saves"
+
+#define TSOURDT3RD_MAX_DIRPATH              MAX_WADPATH*2
+
+extern char tsourdt3rd_home_dir[TSOURDT3RD_MAX_DIRPATH];
+
+extern char tsourdt3rd_gamedata_file[MAX_WADPATH];
+extern char tsourdt3rd_savedata_prefix[MAX_WADPATH];
+
+extern char tsourdt3rd_save_dir[MAX_WADPATH];
+extern char tsourdt3rd_savefile_dir[TSOURDT3RD_MAX_DIRPATH];
 
 // ------------------------ //
 //        Functions
@@ -24,6 +41,7 @@ extern "C" {
 
 void TSoURDt3rd_D_AutoLoadAddons(void);
 
+void TSoURDt3rd_D_Init(void);
 void TSoURDt3rd_D_Loop(void);
 
 #ifdef __cplusplus

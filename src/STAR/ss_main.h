@@ -12,54 +12,12 @@
 #ifndef __SS_MAIN__
 #define __SS_MAIN__
 
-#include "core/smkg-p_setup.h"
-
 #include "../p_mobj.h"
 #include "../s_sound.h"
 
 // ------------------------ //
 //        Variables
 // ------------------------ //
-
-typedef struct tsourdt3rd_s
-{
-	struct
-	{
-		boolean time_over;
-	} game;
-} tsourdt3rd_t;
-extern tsourdt3rd_t tsourdt3rd[MAXPLAYERS];
-
-extern struct tsourdt3rd_local_s
-{
-	boolean ms_address_changed;
-	boolean autoloading_mods;
-	boolean autoloaded_mods;
-
-#ifdef HAVE_CURL
-	struct
-	{
-		boolean checked_version;
-	} curl;
-#endif
-
-	struct
-	{
-		tsourdt3rd_world_scenarios_t scenario;
-		tsourdt3rd_world_scenarios_types_t scenario_types;
-	} world;
-
-	struct
-	{
-		boolean apply_effect;
-		boolean disable_effect;
-		boolean in_effect;
-		float   prev_music_speed, prev_music_pitch;
-		INT32   prev_music_volume, prev_sfx_volume;
-		float   music_speed, music_pitch;
-		INT32   music_volume, sfx_volume;
-	} water_muffling;
-} tsourdt3rd_local;
 
 typedef enum
 {
@@ -85,8 +43,6 @@ extern struct tsourdt3rd_loadingscreen_s
 // ------------------------ //
 //        Functions
 // ------------------------ //
-
-void TSoURDt3rd_Init(void);
 
 #define STAR_CONS_NONE              0x0001
 #define STAR_CONS_TSOURDT3RD        0x0002
@@ -116,6 +72,7 @@ const char *TSoURDt3rd_ReturnUsername(void);
 boolean TSoURDt3rd_Easter_AllEggsCollected(void);
 
 boolean TSoURDt3rd_AprilFools_ModeEnabled(void);
+void TSoURDt3rd_AprilFools_ManageSaveData(void);
 void TSoURD3rd_AprilFools_OnChange(void);
 void TSoURDt3rd_AprilFools_StoreDefaultMenuStrings(void);
 

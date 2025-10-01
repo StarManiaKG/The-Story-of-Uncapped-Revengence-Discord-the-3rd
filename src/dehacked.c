@@ -16,7 +16,7 @@
 #include "deh_tables.h"
 
 // TSoURDt3rd
-#include "STAR/core/smkg-s_jukebox.h" // TSoURDt3rd_Jukebox_IsPlaying() //
+#include "STAR/core/smkg-s_jukebox.h"
 
 boolean deh_loaded = false;
 
@@ -202,11 +202,6 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 	}
 	deh_num_warning = 0;
 
-	if (TSoURDt3rd_Jukebox_IsPlaying() && savemoddata && (introchanged || titlechanged))
-	{
-		// STAR STUFF: reset music, since we might not have the jukebox unlocked anymore //
-		S_StopMusic();
-	}
 	gamedataadded = titlechanged = introchanged = bootmapchanged = false;
 
 	// it doesn't test the version of SRB2 and version of dehacked file
@@ -595,6 +590,13 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 
 	if (gamedataadded)
 		G_LoadGameData(clientGamedata);
+
+	if (savemoddata && (introchanged || titlechanged))
+	{
+		// STAR STUFF: reset music, since we might not have the jukebox unlocked anymore //
+		if (tsourdt3rd_global_jukebox != NULL && !TSoURDt3rd_Jukebox_Unlocked())
+			S_StopMusic();
+	}
 
 	if (gamestate == GS_TITLESCREEN)
 	{

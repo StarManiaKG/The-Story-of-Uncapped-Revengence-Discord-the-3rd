@@ -65,15 +65,14 @@ void TSoURDt3rd_CurlRoutine_FindUpdates(void)
 		V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2, V_MENUCOLORMAP, "Checking for updates...");
 		I_FinishUpdate(); // page flip or blit buffer
 	}
-	else
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD, "Checking for updates...\n");
+	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD, "Checking for updates...\n");
 
 	sprintf(version_url,
 		"https://raw.githubusercontent.com/StarManiaKG/The-Story-of-Uncapped-Revengence-Discord-the-3rd/%s/src/STAR/star_webinfo.h",
 		compbranch
 	);
 	TSoURDt3rd_Curl_FindStringWithinURL(
-		TSoURDt3rd_FIL_AccessFile("TSoURDt3rd", "tsourdt3rd_data.txt", "w+"),
+		TSoURDt3rd_FIL_AccessFile(TSOURDT3RD_APP, "tsourdt3rd_data.txt", "w+"),
 		"#define TSOURDT3RDVERSION",
 		version_url,
 		&return_info,

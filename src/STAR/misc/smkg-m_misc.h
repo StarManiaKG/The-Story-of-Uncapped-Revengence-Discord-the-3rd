@@ -12,7 +12,7 @@
 #ifndef __SMKG_M_MISC__
 #define __SMKG_M_MISC__
 
-#include "../../doomstat.h"
+#include "../smkg-defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,8 +29,6 @@ typedef enum
 	TSOURDT3RD_TERMTABLESEARCH_STRSTR = 1<<3
 } tsourdt3rd_termtablesearch_t;
 
-extern char tsourdt3rd_savefiles_folder[256];
-
 // ------------------------ //
 //        Functions
 // ------------------------ //
@@ -39,14 +37,28 @@ char *TSoURDt3rd_M_RemoveStringChars(char *string, const char *c);
 INT32 TSoURDt3rd_M_FindWordInTermTable(const char *const *term_table, const char *word, INT32 search_types);
 char *TSoURDt3rd_M_WriteVariedLengthString(char *string, UINT32 decate_len, boolean decate);
 
-const char *TSoURDt3rd_FOL_ReturnHomepath(void);
+//
+// Folders
+//
+
+const char *TSoURDt3rd_FOL_ReturnHomepath_SRB2(void);
+const char *TSoURDt3rd_FOL_ReturnHomepath_Build(void);
+
 boolean TSoURDt3rd_FOL_DirectoryExists(const char *directory);
-boolean TSoURDt3rd_FOL_CreateDirectory(const char *cpath);
-void TSoURDt3rd_FOL_UpdateSavefileDirectory(void);
+boolean TSoURDt3rd_FOL_CreateDirectory(const char *directory);
+
+//
+// Files
+//
 
 FILE *TSoURDt3rd_FIL_AccessFile(const char *directory, const char *filename, const char *mode);
+FILE *TSoURDt3rd_FIL_AccessFile_Build(const char *directory, const char *filename, const char *mode);
+
+size_t TSoURDt3rd_FIL_ReadFileContents(FILE *file_handle, UINT8 **buffer, INT32 tag);
+
 boolean TSoURDt3rd_FIL_RenameFile(const char *old_name, const char *new_name);
 boolean TSoURDt3rd_FIL_RemoveFile(const char *directory, const char *filename);
+
 void TSoURDt3rd_FIL_CreateSavefileProperly(void);
 
 #ifdef __cplusplus

@@ -11,6 +11,7 @@
 
 #include "../smkg-m_sys.h"
 
+#include "../../core/smkg-d_main.h"
 #include "../../misc/smkg-m_misc.h"
 
 #include "../../../d_main.h"
@@ -24,6 +25,7 @@
 static const char *hardcoded_files[] = {
 	CONFIGFILENAME, "d"CONFIGFILENAME,
 	"adedserv.cfg", "autoexec.cfg",
+	TSOURDT3RD_AUTOLOAD_CONFIG_FILENAME,
 	"srb2.pk3",
 	"zones.pk3",
 	"characters.pk3",
@@ -130,29 +132,23 @@ static void M_Sys_LoadAddon(INT32 choice)
 //
 static void M_Sys_AutoLoadAddons(INT32 choice)
 {
-	FILE *autoload_config = NULL;
+	FILE *autoload_config = TSoURDt3rd_FIL_AccessFile_Build(TSoURDt3rd_FOL_ReturnHomepath_Build(), TSOURDT3RD_AUTOLOAD_CONFIG_FILENAME, "a");
 	const char *addon_name = dirmenu[dir_on[menudepthleft]]+DIR_STRING;
-	char *addon_path = va("%s%s", menupath, addon_name);
+	char addon_path[1024];
 
-	// Grab our autoload config!
-	autoload_config = TSoURDt3rd_FIL_AccessFile(NULL, AUTOLOADCONFIGFILENAME, "r");
-	if (autoload_config != NULL)
-	{
-		// Let's move this old file to a new directory!
-		fclose(autoload_config);
-		TSoURDt3rd_FIL_RenameFile(AUTOLOADCONFIGFILENAME, "TSoURDt3rd" PATHSEP AUTOLOADCONFIGFILENAME);
-	}
-	autoload_config = TSoURDt3rd_FIL_AccessFile("TSoURDt3rd", AUTOLOADCONFIGFILENAME, "a");
+	snprintf(addon_path, sizeof(addon_path), "%s%s", menupath, addon_name);
 
 	if (autoload_config == NULL)
 	{
-		// -- Uh-oh! We couldn't find the actual autoload config!
+		// -- Uh-oh! Somehow, we couldn't create the autoload config file!
+		TSoURDt3rd_M_StartMessage(addon_path, "Couldn't create autoload config file!", NULL, MM_NOTHING, NULL, NULL);
+		S_StartSoundFromEverywhere(sfx_lose);
 		return;
 	}
-
-	if (choice != MA_YES)
+	else if (choice != MA_YES)
 	{
 		// -- We refused to autoload this addon!
+		fclose(autoload_config);
 		return;
 	}
 
@@ -180,6 +176,7 @@ static void M_Sys_AutoLoadAddons(INT32 choice)
 			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE, "Added addon \x82\"%s\"\x80 to the autoload configuration list.\n", addon_name);
 			break;
 	}
+	fclose(autoload_config);
 
 	// We're done! :)
 	S_StartSoundFromEverywhere(sfx_spdpad);
@@ -198,7 +195,6 @@ static void M_Sys_AutoLoadAddons(INT32 choice)
 			"No, thanks."
 		);
 	}
-	fclose(autoload_config);
 }
 
 //
@@ -209,10 +205,11 @@ void TSoURDt3rd_M_HandleAddonsMenu(INT32 choice)
 {
 	const char *addon_name = dirmenu[dir_on[menudepthleft]]+DIR_STRING;
 	char *addon_path = va("%s%s", menupath, addon_name);
+	char *path = TSoURDt3rd_M_WriteVariedLengthString(addon_path, MENUMESSAGEHEADERLEN, true);
+
 	boolean hardcoded_file = M_Sys_StringIsHardcodedFile(addon_name);
 	boolean refresh = true;
 
-	char *path = TSoURDt3rd_M_WriteVariedLengthString(addon_path, MENUMESSAGEHEADERLEN, true);
 	const char *message = NULL;
 	void (*routine)(INT32 choice) = NULL;
 	menumessagetype_t itemtype = MM_NOTHING;

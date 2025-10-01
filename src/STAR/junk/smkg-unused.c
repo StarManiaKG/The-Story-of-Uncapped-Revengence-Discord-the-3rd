@@ -8,9 +8,20 @@
 //-----------------------------------------------------------------------------
 /// \file  smkg-unused.c
 /// \brief Data portraying to, at least currently, TSoURDt3rd's unused Stuff
+/// \brief NOT MEANT TO BE COMPILED!
+
+#error "Don't compile this file."
 
 #include "../../doomdef.h"
+
 #include "../../w_wad.h"
+#include "../../r_main.h"
+#include "../../st_stuff.h" // st_borderpatchnum
+#include "../../v_video.h"
+#include "../../m_menu.h"
+#include "../../z_zone.h"
+
+#include "../star_vars.h"
 
 // ------------------------ //
 //        Functions
@@ -67,6 +78,66 @@ INT32 STAR_ConvertNumberToStringAndBack(INT32 NUMBER, INT32 startI1From, INT32 s
 	// Return The Number, and We're Done :) //
 	char numberString[256] = ""; strcpy(numberString, STAR_ConvertNumberToString(NUMBER, startI1From, startJ1From, turnIntoVersionString));
 	return STAR_ConvertStringToCompressedNumber(numberString, startI2From, startJ2From, turnIntoVersionNumber);
+}
+
+//
+// INT32 STAR_ConvertStringToCompressedNumber(char *STRING, INT32 startIFrom, INT32 startJFrom, boolean turnIntoVersionNumber)
+// Converts Strings to Compressed Numbers
+//
+// Example of a Possible Return:
+//	STRING == '2.8', turnIntoVersionNumber = true		=	Returned Number = 280
+//	STRING == '2.7.1', turnIntoVersionNumber = false	=	Returned Number = 271
+//
+INT32 STAR_ConvertStringToCompressedNumber(char *STRING, INT32 startIFrom, INT32 startJFrom, boolean turnIntoVersionNumber)
+{
+	// Make Variables //
+	INT32 i = startIFrom, j = startJFrom;
+	INT32 finalNumber;
+
+	char convertedString[256] = "";
+
+	// Initialize the Main String, and Iterate Through Our Two Strings //
+	while (STRING[j] != '\0')
+	{
+		if (STRING[j] == '.' || STRING[j] == '"' || STRING[j] == ' ')
+		{
+			j++;
+			continue;
+		}
+
+		convertedString[i] = STRING[j];
+		i++, j++;
+	}
+
+	// Add an Extra Digit or Two if Our String Has Less Than 2 Digits, Else Return Our Compressed Number, and We're Done! //
+	finalNumber = ((turnIntoVersionNumber && strlen(convertedString) <= 2) ?
+					(strlen(convertedString) == 2 ?
+						(STAR_CombineNumbers(2, atoi(convertedString), 0)) :
+						(STAR_CombineNumbers(3, atoi(convertedString), 0, 0))) :
+					(atoi(convertedString)));
+	return finalNumber;
+}
+
+//
+// INT32 STAR_CombineNumbers(INT32 ARGS, INT32 FIRSTNUM, ...)
+// Combines Numbers Together, Like You Would Do a String, But Doesn't Perform Math on the Numbers
+//
+INT32 STAR_CombineNumbers(INT32 ARGS, INT32 FIRSTNUM, ...)
+{
+	// Make Variables //
+	va_list argptr;
+
+	INT32 i;
+	char numberString[256] = ""; sprintf(numberString, "%d", FIRSTNUM);
+
+	// Initialize and Iterate Through the Variable List of Arguments, Combine our Number Strings Together, and Then End it //
+	va_start(argptr, FIRSTNUM);
+	for (i = 0; i < ARGS-1; i++)
+		strlcat(numberString, va("%d", va_arg(argptr, int)), sizeof(numberString));
+	va_end(argptr);
+
+	// Convert the String Made Earlier Into a Number, Return The Number, and We're Done :) //
+	return STAR_ConvertStringToCompressedNumber(numberString, 0, 0, false);
 }
 
 //
@@ -234,8 +305,15 @@ void CON_DrawLoadBar(void)
 // MISC.
 // =====
 
-// Easy Texture Finder
-if (textures[i]->hash == hash && !strncasecmp(textures[i]->name, name, 8))
+#if 0
+
+texture_t FindTexture(void)
+{
+	// Easy Texture Finder
+	if (textures[i]->hash == hash && !strncasecmp(textures[i]->name, name, 8))
+}
+
+#endif
 
 // =====
 // MENUS
@@ -322,13 +400,34 @@ static void STAR_HandleExtendedServerPropertyMenu(INT32 choice)
 		if (currentMenu->prevMenu == &MP_ConnectDef)
 			M_SetupNextMenu(currentMenu->prevMenu);
 		else
-			M_ClearMenus(false);	
+			M_ClearMenus();	
 	}
 }
 
 // =============
 // SCREEN BORDER
 // =============
+
+// SRB2 border patch
+	// st_borderpatchnum = W_GetNumForName("GFZFLR01");
+	// scr_borderpatch = W_CacheLumpNum(st_borderpatchnum, PU_HUDGFX);
+
+/// \brief Top border
+#define BRDR_T 0
+/// \brief Bottom border
+#define BRDR_B 1
+/// \brief Left border
+#define BRDR_L 2
+/// \brief Right border
+#define BRDR_R 3
+/// \brief Topleft border
+#define BRDR_TL 4
+/// \brief Topright border
+#define BRDR_TR 5
+/// \brief Bottomleft border
+#define BRDR_BL 6
+/// \brief Bottomright border
+#define BRDR_BR 7
 
 UINT8 *scr_borderpatch; // flat used to fill the reduced view borders set at ST_Init()
 
@@ -561,27 +660,6 @@ void R_Init(void)
 	R_InitViewBorder();
 }
 
-// SRB2 border patch
-	// st_borderpatchnum = W_GetNumForName("GFZFLR01");
-	// scr_borderpatch = W_CacheLumpNum(st_borderpatchnum, PU_HUDGFX);
-
-/// \brief Top border
-#define BRDR_T 0
-/// \brief Bottom border
-#define BRDR_B 1
-/// \brief Left border
-#define BRDR_L 2
-/// \brief Right border
-#define BRDR_R 3
-/// \brief Topleft border
-#define BRDR_TL 4
-/// \brief Topright border
-#define BRDR_TR 5
-/// \brief Bottomleft border
-#define BRDR_BL 6
-/// \brief Bottomright border
-#define BRDR_BR 7
-
 extern lumpnum_t viewborderlump[8];
 
 #if 0
@@ -646,6 +724,8 @@ void ST_LoadGraphics(void)
 // HARDWARE
 // ========
 
+#ifdef HWRENDER
+
 static const INT32 picmode2GR[] =
 {
 	GL_TEXFMT_P_8,                // PALETTE
@@ -655,9 +735,66 @@ static const INT32 picmode2GR[] =
 	GL_TEXFMT_RGBA,               // RGBA32             (opengl only)
 };
 
-// =====
-// SKINS
-// =====
+#endif // HWRENDER
 
-skins = Z_Realloc(skins, sizeof(skin_t*) * (numskins + 1), PU_STATIC, NULL);
-skin = skins[numskins] = Z_Calloc(sizeof(skin_t), PU_STATIC, NULL);
+// ===============
+// VERSION DRAWING
+// ===============
+
+void F_VersionDrawer(void)
+{
+	// An adapted thing from old menus - most games have version info on the title screen now...
+
+	INT32 texty = vid.height - 10*vid.dup;
+	INT32 trans = 5;
+
+	if (gamestate == GS_TITLESCREEN)
+	{
+		trans = 10 - (finalecount - (3*TICRATE)/2)/3;
+		if (trans >= 10)
+			return;
+		if (trans < 5)
+			trans = 5;
+	}
+
+	trans = (trans<<V_ALPHASHIFT)|V_NOSCALESTART;
+
+#define addtext(f, str) {\
+	V_DrawThinString(vid.dup, texty, trans|f, str);\
+	texty -= 10*vid.dup;\
+}
+	if (customversionstring[0] != '\0')
+	{
+		addtext(0, customversionstring);
+		addtext(0, "Mod version:");
+	}
+	else
+	{
+// Development -- show revision / branch info
+#if defined(TESTERS)
+		addtext(V_SKYMAP, "Tester client");
+		addtext(0, va("%s", compdate));
+#elif defined(DEVELOP)
+		addtext(0, va("%s %s", comprevision, compnote));
+		addtext(0, D_GetFancyBranchName());
+
+		if (compoptimized)
+		{
+			addtext(0, va("%s build", comptype));
+		}
+		else
+		{
+			addtext(V_ORANGEMAP, va("%s build (no optimizations)", comptype));
+		}
+
+#else // Regular build
+		addtext(trans, va("%s", VERSIONSTRING));
+#endif
+
+		if (compuncommitted)
+		{
+			addtext(V_REDMAP|V_STRINGDANCE, "! UNCOMMITTED CHANGES !");
+		}
+	}
+#undef addtext
+}

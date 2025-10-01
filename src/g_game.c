@@ -54,12 +54,8 @@
 #include "lua_libs.h"
 
 // TSoURDt3rd
-#ifdef HAVE_DISCORDSUPPORT
-#include "discord/discord.h"
-#endif
-#include "STAR/star_vars.h" // TSoURDt3rd Struct, STAR_SetWindowTitle(), & TSoURDt3rd_DetermineLevelMusic() //
-#include "STAR/smkg-p_saveg.h" // Savedata Handling //
-#include "STAR/misc/smkg-m_misc.h" // TSoURDt3rd_FOL_UpdateSavefileDirectory() //
+#include "STAR/star_vars.h" // STAR_SetWindowTitle(), & TSoURDt3rd_DetermineLevelMusic() //
+#include "STAR/menus/smkg-m_sys.h" // Includes Savedata Handling, tsourdt3rd_local, & TSoURDt3rd_M_HasImportantHandler() //
 
 gameaction_t gameaction;
 gamestate_t gamestate = GS_NULL;
@@ -781,11 +777,11 @@ void G_SetGameModified(boolean silent)
 	if (modifiedgame && !savemoddata)
 		return;
 
-#if 1
-	// STAR STUFF: currently autoloading, it's fine (...probably :P) //
 	if (tsourdt3rd_local.autoloading_mods)
+	{
+		// STAR STUFF: currently autoloading, it's fine (...probably :P) //
 		return;
-#endif
+	}
 
 	modifiedgame = true;
 	savemoddata = false;
@@ -1187,7 +1183,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	// ......OR if we're in the menu, console, or chat.
 	if (ignoregameinputs || paused || P_AutoPause() || (gamestate == GS_LEVEL && (player->playerstate == PST_REBORN || ((gametyperules & GTR_TAG)
 	&& (leveltime < hidetime * TICRATE) && (player->pflags & PF_TAGIT))))
-	|| menuactive || CON_Ready() || chat_on)
+	|| menuactive || CON_Ready() || chat_on || TSoURDt3rd_M_HasImportantHandler())
 	{//@TODO splitscreen player
 		cmd->angleturn = ticcmd_oldangleturn[forplayer];
 		cmd->aiming = G_ClipAimingPitch(myaiming);
@@ -4447,6 +4443,9 @@ void G_LoadGameData(gamedata_t *data)
 	UINT8 recmares;
 	INT32 curmare;
 
+	// STAR STUFF: STEAL SAVEFILE DATA //
+	TSoURDt3rd_G_LoadGameData();
+
 	// Stop saving, until we successfully load it again.
 	data->loaded = false;
 
@@ -4647,11 +4646,6 @@ void G_LoadGameData(gamedata_t *data)
 	M_SilentUpdateUnlockablesAndEmblems(data);
 	M_SilentUpdateSkinAvailabilites();
 
-#if 1
-	// STAR STUFF: STEAL SAVEFILE DATA //
-	TSoURDt3rd_PSav_ReadExtraData();
-#endif
-
 	return;
 
 	// Landing point for corrupt gamedata
@@ -4677,6 +4671,9 @@ void G_SaveGameData(gamedata_t *data)
 	UINT8 btemp;
 
 	INT32 curmare;
+
+	// STAR STUFF: VIVA LA AUTOLOADING //
+	TSoURDt3rd_G_SaveGamedata();
 
 	if (!data)
 		return; // data struct not valid
@@ -4787,8 +4784,6 @@ void G_SaveGameData(gamedata_t *data)
 
 	FIL_WriteFile(va(pandf, srb2home, gamedatafilename), savebuffer.buf, savebuffer.pos);
 	free(savebuffer.buf);
-
-	TSoURDt3rd_PSav_WriteExtraData(); // STAR STUFF: VIVA LA AUTOLOADING //
 }
 
 #define VERSIONSIZE 16
@@ -4895,7 +4890,7 @@ void G_SaveGame(UINT32 slot, INT16 mapnum)
 	const char *backup;
 
 	// STAR STUFF: Update the save directory before we do any of this... //
-	TSoURDt3rd_FOL_UpdateSavefileDirectory();
+	TSoURDt3rd_G_UpdateSaveDirectory();
 
 	if (marathonmode)
 		strcpy(savename, liveeventbackup);
@@ -4952,7 +4947,7 @@ void G_SaveGameOver(UINT32 slot, boolean modifylives)
 	const char *backup;
 
 	// STAR STUFF: Update the save directory before we do any of this... //
-	TSoURDt3rd_FOL_UpdateSavefileDirectory();
+	TSoURDt3rd_G_UpdateSaveDirectory();
 
 	if (marathonmode)
 		strcpy(savename, liveeventbackup);

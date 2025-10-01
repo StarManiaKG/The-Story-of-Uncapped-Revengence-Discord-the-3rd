@@ -5,7 +5,9 @@ target_sources(SRB2SDL2 PRIVATE
 	smkg-st_hud.c
 	star_functions.c
 	p_user.c
+
 	core/smkg-d_main.c
+	core/smkg-g_game.c
 	core/smkg-p_pads.c
 	core/smkg-p_setup.c
 	core/smkg-s_audio.c
@@ -15,13 +17,17 @@ target_sources(SRB2SDL2 PRIVATE
 	core/exmusic_types/smkg-gameover.c
 	core/exmusic_types/smkg-bosses.c
 	core/exmusic_types/smkg-intermission.c
+
 	events/smkg-easter.c
 	events/smkg-aprilfools.c
+
 	lights/smkg-lights.c
 	lights/smkg-r_coronas.c
 	lights/smkg-hw_coronas.c
+
 	lua/smkg-lu_base.c
 	lua/smkg-lu_script.c
+
 	menus/smkg-m_func.c
 	menus/smkg-m_draw.c
 	menus/menudefs/smkg-addons.c
@@ -46,17 +52,22 @@ target_sources(SRB2SDL2 PRIVATE
 	menus/menudefs/transient/drrr-virtual-keyboard.c
 	menus/menudefs/transient/smkg-options-tsourdt3rd-extras-jukebox.c
 	menus/menudefs/transient/smkg-options-tsourdt3rd-extras-snake.c
+
 	misc/smkg-m_misc.c
 	misc/smkg-m_intro.c
 	misc/introdefs/smkg-intros-purefat.c
+
 	netcode/smkg-d_clisrv.c
 	netcode/smkg-i_protocol.c
+
 	parser/smkg-ps_main.c
 	parser/smkg-ps_tools.c
 	parser/defs/smkg-ps_def_jukedef.c
 	parser/defs/smkg-ps_def_exmusdef.c
+
 	sdl/smkg-i_vid.c
 	sdl/smkg-i_sys.c
+
 	stun/stun.c
 )
 

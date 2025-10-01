@@ -798,8 +798,8 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 	"Location", "Interface", "Render Mode", "Revision", "Build Date", "Build Time"};
 	char titletxt[] = SRB2APPLICATION_FULLNAME " " VERSIONSTRING " - " TSOURDT3RDVERSIONSTRING;
 	png_charp playertxt =  cv_playername.zstring;
-	char desctxt[] = TSOURDT3RD_SRB2_APP_SHORT" Screenshot";
-	char Movietxt[] = TSOURDT3RD_SRB2_APP_SHORT" Movie";
+	char desctxt[] = TSOURDT3RD_SRB2_APP_SHORT_COMBINED " Screenshot";
+	char Movietxt[] = TSOURDT3RD_SRB2_APP_SHORT_COMBINED " Movie";
 	size_t i;
 	char interfacetxt[] =
 #ifdef HAVE_SDL

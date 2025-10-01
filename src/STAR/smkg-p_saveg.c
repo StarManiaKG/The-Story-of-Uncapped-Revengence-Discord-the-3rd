@@ -10,6 +10,7 @@
 /// \brief TSoURDt3rd's custom savegame code
 
 #include "smkg-p_saveg.h"
+#include "core/smkg-g_game.h" // tsourdt3rd_local //
 #include "misc/smkg-m_misc.h"
 
 #include "../byteptr.h"
@@ -25,8 +26,11 @@
 //        Functions
 // ------------------------ //
 
-//#define WRITETOFILE
+#ifdef TSOURDT3RD_DEBUGGING
+	#define WRITETOFILE
+#endif
 
+//#define SAVE_BLOCK
 #define TSOURDT3RD_ARCHIVEBLOCK_USERS 0x7FA5C508
 
 // ------------------------ //
@@ -38,21 +42,17 @@
 // -------------------------------
 
 #ifdef WRITETOFILE
-#include "../g_game.h" // player_names //
-
 static void Write(INT32 playernum, boolean archive)
 {
 	FILE *f;
 	const char *path;
+	const char *filename = (archive ? "STAR_bye.txt" : "STAR_hi.txt");
 	TSoURDt3rd_t *TSoURDt3rd = &TSoURDt3rdPlayers[playernum];
 
-	if (!TSoURDt3rd)
+	if (!playeringame[playernum])
 		return;
 
-	if (archive)
-		path = va("%s"PATHSEP"%s", srb2home, "STAR_bye.txt");
-	else
-		path = va("%s"PATHSEP"%s", srb2home, "STAR_hi.txt");
+	path = va(pandf, TSoURDt3rd_FOL_ReturnHomepath_Build(), filename);
 	f = fopen(path, (playernum == 0 ? "w+" : "a+"));
 
 	fputs(va("CURRENT TIC: %d\n", gametic), f);
@@ -71,18 +71,27 @@ static void Write(INT32 playernum, boolean archive)
 }
 #endif
 
-UINT8 TSOURDT3RD_READUINT8(save_t *save_p, TSoURDt3rd_t *tsourdt3rd_user, UINT8 fallback)
-{
-	if (!tsourdt3rd_user || !tsourdt3rd_user->usingTSoURDt3rd || !netbuffer->u.servercfg.tsourdt3rd)
+#define CHECK_FOR_TSOURDT3RD \
+	if (!tsourdt3rd_user || !tsourdt3rd_user->usingTSoURDt3rd) \
 		return fallback;
+
+UINT8 TSoURDt3rd_P_ReadUINT8(save_t *save_p, TSoURDt3rd_t *tsourdt3rd_user, UINT8 fallback)
+{
+	CHECK_FOR_TSOURDT3RD
 	return P_ReadUINT8(save_p);
 }
 
-UINT32 TSOURDT3RD_READUINT32(save_t *save_p, TSoURDt3rd_t *tsourdt3rd_user, UINT32 fallback)
+UINT32 TSoURDt3rd_P_ReadUINT32(save_t *save_p, TSoURDt3rd_t *tsourdt3rd_user, UINT32 fallback)
 {
-	if (!tsourdt3rd_user || !tsourdt3rd_user->usingTSoURDt3rd || !netbuffer->u.servercfg.tsourdt3rd)
-		return fallback;
+	CHECK_FOR_TSOURDT3RD
 	return P_ReadUINT32(save_p);
+}
+
+const char *TSoURDt3rd_P_ReadString(save_t *save_p, TSoURDt3rd_t *tsourdt3rd_user, char *string, const char *fallback)
+{
+	CHECK_FOR_TSOURDT3RD
+	P_ReadString(save_p, string);
+	return string;
 }
 
 // -------------------------------
@@ -93,7 +102,9 @@ void TSoURDt3rd_P_NetArchiveUsers(save_t *save_p)
 {
 	UINT32 i;
 
+#ifdef SAVE_BLOCK
 	P_WriteUINT32(save_p, TSOURDT3RD_ARCHIVEBLOCK_USERS);
+#endif
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i])
@@ -108,27 +119,22 @@ void TSoURDt3rd_P_NetArchiveUsers(save_t *save_p)
 		P_WriteUINT8(save_p, TSoURDt3rdPlayers[i].server_TSoURDt3rdVersion);
 
 #ifdef WRITETOFILE
-		Write(playernum, true);
+		Write(i, true);
 #endif
 	}
 }
-
-// -------------------------------
-// Unarchival Routines
-// -------------------------------
 
 void TSoURDt3rd_P_NetUnArchiveUsers(save_t *save_p)
 {
 	UINT32 i;
 
+#ifdef SAVE_BLOCK
 	if (P_ReadUINT32(save_p) != TSOURDT3RD_ARCHIVEBLOCK_USERS)
 	{
 		// No TSoURDt3rd data exists...
-		// Eh. That's fine.
-#if 0
 		I_Error("Bad $$$.sav at archive block TSoURDt3rd");
-#endif
 	}
+#endif
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -137,100 +143,17 @@ void TSoURDt3rd_P_NetUnArchiveUsers(save_t *save_p)
 		if (!playeringame[i])
 			continue;
 
-		if (!TSoURDt3rdPlayers[i].usingTSoURDt3rd || !netbuffer->u.servercfg.tsourdt3rd)
-			TSoURDt3rdPlayers[i].user_hash[0] = '\0';
-		else
-			P_ReadString(save_p, TSoURDt3rdPlayers[i].user_hash);
+		TSoURDt3rd_P_ReadString(save_p, TSoURDt3rd, TSoURDt3rdPlayers[i].user_hash, "\0");
 
-		TSoURDt3rdPlayers[i].usingTSoURDt3rd = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, false);
-		TSoURDt3rdPlayers[i].server_usingTSoURDt3rd = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, false);
-		TSoURDt3rdPlayers[i].server_majorVersion = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, TSoURDt3rd_CurrentMajorVersion());
-		TSoURDt3rdPlayers[i].server_minorVersion = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, TSoURDt3rd_CurrentMinorVersion());
-		TSoURDt3rdPlayers[i].server_subVersion = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, TSoURDt3rd_CurrentSubversion());
-		TSoURDt3rdPlayers[i].server_TSoURDt3rdVersion = TSOURDT3RD_READUINT8(save_p, TSoURDt3rd, TSoURDt3rd_CurrentVersion());
+		TSoURDt3rdPlayers[i].usingTSoURDt3rd = TSoURDt3rd_P_ReadUINT8(save_p, TSoURDt3rd, false);
+		TSoURDt3rdPlayers[i].server_usingTSoURDt3rd = TSoURDt3rd_P_ReadUINT8(save_p, TSoURDt3rd, false);
+		TSoURDt3rdPlayers[i].server_majorVersion = TSoURDt3rd_P_ReadUINT8(save_p, TSoURDt3rd, tsourdt3rd_local.major_version);
+		TSoURDt3rdPlayers[i].server_minorVersion = TSoURDt3rd_P_ReadUINT8(save_p, TSoURDt3rd, tsourdt3rd_local.minor_version);
+		TSoURDt3rdPlayers[i].server_subVersion = TSoURDt3rd_P_ReadUINT8(save_p, TSoURDt3rd, tsourdt3rd_local.sub_version);
+		TSoURDt3rdPlayers[i].server_TSoURDt3rdVersion = TSoURDt3rd_P_ReadUINT8(save_p, TSoURDt3rd, TSoURDt3rd_CurrentVersion());
 
 #ifdef WRITETOFILE
-		Write(playernum, false);
+		Write(i, false);
 #endif
 	}
-}
-
-// -------------------------------
-// Savedata Routines
-// -------------------------------
-
-//
-// void TSoURDt3rd_PSav_WriteExtraData(void)
-// Writes unique TSoURDt3rd data to the custom savefile.
-//
-void TSoURDt3rd_PSav_WriteExtraData(void)
-{
-	FILE *tsourdt3rd_gamedata = NULL;
-
-	tsourdt3rd_gamedata = TSoURDt3rd_FIL_AccessFile(NULL, "tsourdt3rd.dat", "r");
-	if (tsourdt3rd_gamedata != NULL)
-	{
-		// Let's move this old file to a new directory!
-		fclose(tsourdt3rd_gamedata);
-		TSoURDt3rd_FIL_RenameFile("tsourdt3rd.dat", "TSoURDt3rd" PATHSEP "tsourdt3rd.dat");
-	}
-	tsourdt3rd_gamedata = TSoURDt3rd_FIL_AccessFile("TSoURDt3rd", "tsourdt3rd.dat", "w+");
-
-	TSoURDt3rd_FOL_UpdateSavefileDirectory();
-
-	if (tsourdt3rd_gamedata == NULL)
-	{
-		// Uh-oh! We couldn't find the actual gamedata file!
-		return;
-	}
-
-	if ((!(tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_EASTER)|| !AllowEasterEggHunt)
-		|| (netgame || tsourdt3rd_local.autoloaded_mods))
-		return;
-
-	// Write To The File //
-	// Easter Eggs
-	putw(currenteggs, tsourdt3rd_gamedata);
-	putw(foundeggs, tsourdt3rd_gamedata);
-
-	// Close The File //
-	fclose(tsourdt3rd_gamedata);
-}
-
-//
-// void TSoURDt3rd_PSav_ReadExtraData(void)
-// Reads the info in TSoURDt3rd's custom savefile.
-//
-void TSoURDt3rd_PSav_ReadExtraData(void)
-{
-	FILE *tsourdt3rd_gamedata = NULL;
-
-	tsourdt3rd_gamedata = TSoURDt3rd_FIL_AccessFile(NULL, "tsourdt3rd.dat", "r");
-	if (tsourdt3rd_gamedata != NULL)
-	{
-		// Let's move this old file to a new directory!
-		fclose(tsourdt3rd_gamedata);
-		TSoURDt3rd_FIL_RenameFile("tsourdt3rd.dat", "TSoURDt3rd" PATHSEP "tsourdt3rd.dat");
-	}
-	tsourdt3rd_gamedata = TSoURDt3rd_FIL_AccessFile("TSoURDt3rd", "tsourdt3rd.dat", "w+");
-
-	TSoURDt3rd_FOL_UpdateSavefileDirectory();
-
-	if (tsourdt3rd_gamedata == NULL)
-	{
-		// Uh-oh! We couldn't find the actual gamedata file!
-		return;
-	}
-
-	if ((!(tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_EASTER)|| !AllowEasterEggHunt)
-		|| (netgame || tsourdt3rd_local.autoloaded_mods))
-		return;
-
-	// Read Things Within The File //
-	// Easter Eggs
-	currenteggs = getw(tsourdt3rd_gamedata);
-	foundeggs = getw(tsourdt3rd_gamedata);
-
-	// Close the File //
-	fclose(tsourdt3rd_gamedata);
 }

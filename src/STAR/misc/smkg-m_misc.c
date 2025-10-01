@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -9,33 +9,18 @@
 /// \file  smkg-m_misc.c
 /// \brief Commonly used manipulation routines
 
-#include <stdio.h>
-#ifdef _WIN32
-#define RPC_NO_WINDOWS_H
-#include <windows.h>
-#endif
-#include <sys/stat.h>
-
-#if defined (_WIN32) && defined (_MSC_VER)
-#include <io.h>
-#define	S_ISDIR(m)	(((m) & S_IFMT) == S_IFDIR)
-#endif
-
 #include "smkg-m_misc.h"
-#include "../smkg-cvars.h"
+
 #include "../ss_main.h"
+#include "../core/smkg-d_main.h"
+#include "../core/smkg-g_game.h" // savedata handling //
 
 #include "../../d_main.h"
 #include "../../g_game.h"
+#include "../../filesrch.h"
 #include "../../i_system.h"
 #include "../../m_misc.h"
-
-// ------------------------ //
-//        Variables
-// ------------------------ //
-
-#define SAVEGAMEFOLDER "saves"
-char tsourdt3rd_savefiles_folder[256];
+#include "../../z_zone.h"
 
 // ------------------------ //
 //        Functions
@@ -86,29 +71,24 @@ char *TSoURDt3rd_M_RemoveStringChars(char *string, const char *c)
 //
 INT32 TSoURDt3rd_M_FindWordInTermTable(const char *const *term_table, const char *word, INT32 search_types)
 {
-	INT32 word_to_table_val = 0;
-	size_t size = sizeof(word)-1;
-
 	if (term_table == NULL)
 		return -1;
 
-	while (term_table[word_to_table_val])
+	for (INT32 val = 0; term_table[val]; val++)
 	{
-		if ((search_types & TSOURDT3RD_TERMTABLESEARCH_MEMCMP) && memcmp(word, term_table[word_to_table_val], size) == 0)
-			return word_to_table_val;
-		if ((search_types & TSOURDT3RD_TERMTABLESEARCH_NORM) && !stricmp(word, term_table[word_to_table_val]))
-			return word_to_table_val;
-		if ((search_types & TSOURDT3RD_TERMTABLESEARCH_STRSTR) && strstr(word, term_table[word_to_table_val]))
-			return word_to_table_val;
-		word_to_table_val++;
+		const char *term = term_table[val];
+		if ((search_types & TSOURDT3RD_TERMTABLESEARCH_MEMCMP) && memcmp(word, term, sizeof(word)-1) == 0)
+			return val;
+		if ((search_types & TSOURDT3RD_TERMTABLESEARCH_NORM) && !stricmp(word, term))
+			return val;
+		if ((search_types & TSOURDT3RD_TERMTABLESEARCH_STRSTR) && strstr(word, term))
+			return val;
 	}
-
-	word_to_table_val = -1;
-	return word_to_table_val;
+	return -1;
 }
 
 //
-// char *TSoURDt3rd_M_WriteVariedLengthString(char *string, boolean decate)
+// char *TSoURDt3rd_M_WriteVariedLengthString(char *string, UINT32 decate_len, boolean decate)
 // Returns a string with a varied length.
 //
 char *TSoURDt3rd_M_WriteVariedLengthString(char *string, UINT32 decate_len, boolean decate)
@@ -137,10 +117,10 @@ char *TSoURDt3rd_M_WriteVariedLengthString(char *string, UINT32 decate_len, bool
 }
 
 //
-// const char *TSoURDt3rd_FOL_ReturnHomepath(void)
+// const char *TSoURDt3rd_FOL_ReturnHomepath_SRB2(void)
 // Returns the home path of the user's SRB2 folder.
 //
-const char *TSoURDt3rd_FOL_ReturnHomepath(void)
+const char *TSoURDt3rd_FOL_ReturnHomepath_SRB2(void)
 {
 #ifdef DEFAULTDIR
 	return srb2home;
@@ -150,153 +130,184 @@ const char *TSoURDt3rd_FOL_ReturnHomepath(void)
 }
 
 //
+// const char *TSoURDt3rd_FOL_ReturnHomepath_Build(void)
+// Returns the path of the SRB2 home path's TSoURDt3rd folder.
+//
+const char *TSoURDt3rd_FOL_ReturnHomepath_Build(void)
+{
+	return tsourdt3rd_home_dir;
+}
+
+//
 // boolean TSoURDt3rd_FOL_DirectoryExists(const char *directory)
-// Returns whether the given directory exists or not.
+// Returns true if it is a directory, false if not. Simple as that.
 //
 boolean TSoURDt3rd_FOL_DirectoryExists(const char *directory)
 {
-	struct stat given_directory;
-
-#if defined(__linux__) || defined(__FreeBSD__)
-	if (lstat(directory, &given_directory) < 0)
-#else
-	if (stat(directory, &given_directory) < 0)
-#endif
-		return false;
-	return (S_ISDIR(given_directory.st_mode));
+	INT32 stat = pathisdirectory(directory);
+	return (stat == 1);
 }
 
 //
-// boolean TSoURDt3rd_FOL_CreateDirectory(const char *cpath)
+// boolean TSoURDt3rd_FOL_CreateDirectory(const char *directory)
+// Creates the directory given. Strings behind a 'PATHSEP' will also be created along the way.
 //
-// Creates a directory in the path specified.
-// If a 'PATHSEP' is found in the given path, the function will
-//	continuously create directories until the string becomes NULL.
-//
-boolean TSoURDt3rd_FOL_CreateDirectory(const char *cpath)
+boolean TSoURDt3rd_FOL_CreateDirectory(const char *directory)
 {
-	const char *home_path = TSoURDt3rd_FOL_ReturnHomepath();
-	char *cur_path = NULL;
-	INT32 i = 0, j;
+	char cur_path[MAX_WADPATH];
+	INT32 word = 0;
 
-	if (!cpath || *cpath == '\0')
-		return false;
-
-	if (strstr(cpath, home_path))
+	if (directory == NULL || *directory == '\0')
 	{
-		// Cuts out the home directory, just in case you manually specified it...
-		cpath += strlen(home_path)+1;
+		// No directory was even given!
+		return false;
+	}
+	else if (TSoURDt3rd_FOL_DirectoryExists(directory))
+	{
+		// The exact directory already exists, no need to create it!
+		return true;
 	}
 
-	cur_path = malloc(8192);
-	if (cur_path == NULL)
-		return false;
-	strcpy(cur_path, home_path);
-	j = strlen(cur_path);
-
-	cur_path[j++] = PATHSEP[0];
-	if (PATHSEP[1])
-		cur_path[j++] = PATHSEP[1];
-
-	while (cpath[i])
+	do
 	{
-		if (cpath[i] != PATHSEP[0])
+		cur_path[word++] = *directory;
+		cur_path[word] = '\0'; // -- Null-terminate, to avoid corrupted data
+
+		// We need to make sure the next character isn't a null-terminator.
+		// So, you know, we can keep getting data.
+		// And so the loop can quit if we need it to.
+		if (directory[1] != '\0')
 		{
-			cur_path[j++] = cpath[i];
-			if (cpath[i+1] != '\0')
+			// If directory hasn't stumbled onto pathsep yet,
+			// or the next character is a pathsep,
+			// then we keep eating the string data.
+			if (*directory != PATHSEP[0] || directory[1] == PATHSEP[0])
 			{
-				i++;
+				++directory;
 				continue;
 			}
 		}
-		cur_path[j] = '\0'; // Null-terminate at the end
+		++directory;
 
-		if (!TSoURDt3rd_FOL_DirectoryExists(cur_path))
+		if (TSoURDt3rd_FOL_DirectoryExists(cur_path) == false)
 		{
-			STAR_CONS_Printf(STAR_CONS_DEBUG, "Directory '%s' doesn't exist, creating it...\n", cur_path);
+			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_DEBUG, "Directory '%s' doesn't exist, creating it...\n", cur_path);
 			I_mkdir(cur_path, 0755);
 		}
-
-		if (cpath[++i] == '\0')
-			break;
-
-		cur_path[j++] = PATHSEP[0];
-		if (PATHSEP[1])
-			cur_path[j++] = PATHSEP[1];
-	}
-
-	if (cur_path) free(cur_path);
-	return true;
-}
-
-//
-// void TSoURDt3rd_FOL_UpdateSavefileDirectory(void)
-//
-// Ensures that TSoURDt3rd's savefile directory still exists.
-// Re-creates the directory if it doesn't, does nothing otherwise.
-//
-void TSoURDt3rd_FOL_UpdateSavefileDirectory(void)
-{
-	char savefile_directory[256] = "";
-
-	if (!cv_tsourdt3rd_savefiles_storesavesinfolders.value)
-		return;
-
-	if (tsourdt3rd_local.autoloading_mods || tsourdt3rd_local.autoloaded_mods)
-		sprintf(savefile_directory, SAVEGAMEFOLDER PATHSEP "%s" PATHSEP "%s", "TSoURDt3rd", timeattackfolder);
-	else
-		sprintf(savefile_directory, SAVEGAMEFOLDER PATHSEP "%s", timeattackfolder);
-	TSoURDt3rd_FOL_CreateDirectory(savefile_directory);
+	} while (*directory != '\0');
+	return TSoURDt3rd_FOL_DirectoryExists(cur_path);
 }
 
 //
 // FILE *TSoURDt3rd_FIL_AccessFile(const char *directory, const char *filename, const char *mode)
-//
 // Access a file in the path specified.
-// If the file doesn't exist, it's created beforehand.
 //
-// However, if the directory given isn't found, the function will create those directories first,
-//	then the file.
+// If the directory given doesn't exist, it will be created.
+// If the file doesn't exist, it will also be created.
 //
 FILE *TSoURDt3rd_FIL_AccessFile(const char *directory, const char *filename, const char *mode)
 {
 	FILE *handle;
-	char full_path[256];
+	char full_path[MAX_WADPATH];
 
-	if (directory != NULL && *directory != '\0')
+	if (directory == NULL || filename == NULL)
 	{
-		sprintf(full_path, "%s" PATHSEP "%s" PATHSEP "%s", TSoURDt3rd_FOL_ReturnHomepath(), directory, filename);
-		TSoURDt3rd_FOL_CreateDirectory(directory);
+		return NULL;
 	}
-	else
-		sprintf(full_path, "%s" PATHSEP "%s", TSoURDt3rd_FOL_ReturnHomepath(), filename);
 
-	handle = fopen(full_path, mode);
+	// Get the directory and make sure that it exists first.
+	// Afterwards, concat the filename...
+	snprintf(full_path, MAX_WADPATH, "%s" PATHSEP, directory);
+	if (TSoURDt3rd_FOL_CreateDirectory(full_path) == false)
+	{
+		return NULL;
+	}
+	strlcat(full_path, filename, MAX_WADPATH);
+
+	// ...Then, get the file!
+	handle = fopenfile(full_path, mode);
 	if (handle == NULL)
 	{
-		handle = fopen(full_path, "rw+");
+		handle = fopenfile(full_path, "rw+");
 		if (handle != NULL)
 		{
 			fclose(handle);
-			handle = fopen(full_path, mode);
+			handle = fopenfile(full_path, mode);
 		}
 	}
 	return handle;
 }
 
 //
+// FILE *TSoURDt3rd_FIL_AccessFile_Build(const char *directory, const char *filename, const char *mode)
+//
+// Accesses a file, but is meant for TSoURDt3rd's older files.
+// If they're not found in the TSoURDt3rd (TSOURDT3RD_APP) folder, it moves them to that folder.
+//
+FILE *TSoURDt3rd_FIL_AccessFile_Build(const char *directory, const char *filename, const char *mode)
+{
+	if (FIL_FileExists(filename))
+	{
+		// -- Move the file from where-ever it was before to the TSoURDt3rd folder.
+		// -- Modern and cleaner locations for the win!
+		char new_filename[MAX_WADPATH];
+		snprintf(new_filename, MAX_WADPATH, pandf, TSoURDt3rd_FOL_ReturnHomepath_Build(), filename);
+		TSoURDt3rd_FIL_RenameFile(filename, new_filename);
+	}
+	return TSoURDt3rd_FIL_AccessFile(directory, filename, mode);
+}
+
+//
+// size_t TSoURDt3rd_FIL_ReadFileContents(FILE *file_handle, UINT8 **buffer, INT32 tag)
+//
+// Reads content within a file and inputs it into a buffer.
+// Returns the bytes read, or an error if one occured.
+//
+// SOURCES:
+//	- FIL_ReadFile() in 'm_misc.c'
+//
+size_t TSoURDt3rd_FIL_ReadFileContents(FILE *file_handle, UINT8 **buffer, INT32 tag)
+{
+	size_t count, length;
+	UINT8 *buf;
+
+	if (file_handle == NULL)
+	{
+		return 0;
+	}
+
+	fseek(file_handle, 0, SEEK_END);
+	length = ftell(file_handle);
+	fseek(file_handle, 0, SEEK_SET);
+
+	buf = Z_Malloc(length + 1, tag, NULL);
+	count = fread(buf, 1, length, file_handle);
+
+	if (count < length)
+	{
+		Z_Free(buf);
+		return 0;
+	}
+
+	// append 0 byte for script text files
+	buf[length] = 0;
+
+	*buffer = buf;
+	return length;
+}
+
+//
 // boolean TSoURDt3rd_FIL_RenameFile(const char *old_name, const char *new_name)
 //
-// Renames the file specified. Can also be used to move files to new directories.
-// Returns true if it renamed the file, false otherwise.
+// Renames the file specified.
+// This can also be used to move files to new directories.
+//
+// Returns true if it renamed/moved the file, false otherwise.
 //
 boolean TSoURDt3rd_FIL_RenameFile(const char *old_name, const char *new_name)
 {
-	char old_path[256], new_path[256];
-
-	sprintf(old_path, "%s" PATHSEP "%s", TSoURDt3rd_FOL_ReturnHomepath(), old_name);
-	sprintf(new_path, "%s" PATHSEP "%s", TSoURDt3rd_FOL_ReturnHomepath(), new_name);
-	return (!rename(old_name, new_name));
+	int result = rename(old_name, new_name);
+	return (result == 0);
 }
 
 //
@@ -307,10 +318,9 @@ boolean TSoURDt3rd_FIL_RenameFile(const char *old_name, const char *new_name)
 //
 boolean TSoURDt3rd_FIL_RemoveFile(const char *directory, const char *filename)
 {
-	char full_path[256];
-
-	sprintf(full_path, "%s" PATHSEP "%s" PATHSEP "%s", TSoURDt3rd_FOL_ReturnHomepath(), directory, filename);
-	return (!remove(full_path));
+	const char *full_path = va("%s" PATHSEP "%s", directory, filename);
+	int result = remove(full_path);
+	return (result == 0);
 }
 
 //
@@ -319,52 +329,33 @@ boolean TSoURDt3rd_FIL_RemoveFile(const char *directory, const char *filename)
 //
 void TSoURDt3rd_FIL_CreateSavefileProperly(void)
 {
-	if (netgame)
-		return;
+	// get the appropriate directory
+	TSoURDt3rd_G_UpdateSaveDirectory();
 
-	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "CREATING SAVEFILE\n");
-#if 0
-	memset(savegamename, 0, sizeof(savegamename));
-	memset(liveeventbackup, 0, sizeof(liveeventbackup));
-#endif
-	if (*tsourdt3rd_savefiles_folder == '\0')
-		memset(tsourdt3rd_savefiles_folder, 0, sizeof(tsourdt3rd_savefiles_folder));
-
-	TSoURDt3rd_FOL_UpdateSavefileDirectory();
-
-	strcpy(tsourdt3rd_savefiles_folder, va(SAVEGAMEFOLDER PATHSEP "%s%s",
-		((tsourdt3rd_local.autoloading_mods || tsourdt3rd_local.autoloaded_mods) ? ("TSoURDt3rd"PATHSEP) : ("")), timeattackfolder));
-
-	if (!cv_tsourdt3rd_savefiles_storesavesinfolders.value)
-	{
-		strcpy(liveeventbackup, va("live%s.bkp", timeattackfolder));
-
-		// can't use sprintf since there is %u in savegamename
-		strcatbf(savegamename, srb2home, PATHSEP);
-		strcatbf(liveeventbackup, srb2home, PATHSEP);
-	}
-
+	// create the savefiles
 	if (!savemoddata)
 	{
-		strcpy(savegamename, ((tsourdt3rd_local.autoloading_mods || tsourdt3rd_local.autoloaded_mods) ? ("tsourdt3rd_"SAVEGAMENAME"%u.ssg") : (SAVEGAMENAME"%u.ssg")));
-		strcpy(liveeventbackup, va("%slive"SAVEGAMENAME".bkp", ((tsourdt3rd_local.autoloading_mods || tsourdt3rd_local.autoloaded_mods) ? ("tsourdt3rd_") : ("")))); // intentionally not ending with .ssg
+		strlcpy(savegamename, SAVEGAMENAME "%u.ssg", sizeof(savegamename));
+		sprintf(liveeventbackup, "live" SAVEGAMENAME ".bkp"); // intentionally not ending with .ssg
 	}
 	else
 	{
-		strcpy(savegamename,  va("%s%s", ((tsourdt3rd_local.autoloading_mods || tsourdt3rd_local.autoloaded_mods) ? ("tsourdt3rd_") : ("")), timeattackfolder));
+		strcpy(savegamename, timeattackfolder);
 		strlcat(savegamename, "%u.ssg", sizeof(savegamename));
-		strcpy(liveeventbackup, va("%slive%s.bkp", ((tsourdt3rd_local.autoloading_mods || tsourdt3rd_local.autoloaded_mods) ? ("tsourdt3rd_") : ("")), timeattackfolder));
+		sprintf(liveeventbackup, "live%s.bkp", timeattackfolder); // intentionally not ending with .ssg
 	}
 
 	// NOTE: can't use sprintf since there is %u in savegamename
-	if (!cv_tsourdt3rd_savefiles_storesavesinfolders.value)
-	{
-		strcatbf(savegamename, TSoURDt3rd_FOL_ReturnHomepath(), PATHSEP);
-		strcatbf(liveeventbackup, TSoURDt3rd_FOL_ReturnHomepath(), PATHSEP);
-	}
-	else
-	{
-		strcatbf(savegamename, TSoURDt3rd_FOL_ReturnHomepath(), va(PATHSEP"%s"PATHSEP, tsourdt3rd_savefiles_folder));
-		strcatbf(liveeventbackup, TSoURDt3rd_FOL_ReturnHomepath(), va(PATHSEP"%s"PATHSEP, tsourdt3rd_savefiles_folder));
-	}
+	strcatbf(savegamename, tsourdt3rd_savefile_dir, tsourdt3rd_savedata_prefix);
+	strcatbf(liveeventbackup, tsourdt3rd_savefile_dir, tsourdt3rd_savedata_prefix);
+
+#ifdef TSOURDT3RD_DEBUGGING
+	// print debugging stuff
+	STAR_CONS_Printf(STAR_CONS_DEBUG, "\nTSOURDT3RD SAVEFILENAME & SAVEFOLDER\n");
+	STAR_CONS_Printf(STAR_CONS_DEBUG, "\t - savegamename: %s\n",            savegamename);
+	STAR_CONS_Printf(STAR_CONS_DEBUG, "\t - liveeventbackup: %s\n",         liveeventbackup);
+	STAR_CONS_Printf(STAR_CONS_DEBUG, "\t - tsourdt3rd_savefile_dir: %s\n", tsourdt3rd_savefile_dir);
+	STAR_CONS_Printf(STAR_CONS_DEBUG, "\t - tsourdt3rd_save_dir: %s\n",     tsourdt3rd_save_dir);
+	STAR_CONS_Printf(STAR_CONS_NONE,  "\n");
+#endif
 }

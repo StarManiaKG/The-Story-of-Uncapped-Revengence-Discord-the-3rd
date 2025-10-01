@@ -58,7 +58,7 @@
 #include <errno.h>
 
 // TSoURDt3rd
-#include "../STAR/ss_main.h" // tsourdt3rd_local //
+#include "../STAR/core/smkg-g_game.h" // tsourdt3rd_local //
 
 // Prototypes
 static boolean AddFileToSendQueue(INT32 node, UINT8 fileid);
@@ -476,10 +476,13 @@ INT32 CL_CheckFiles(void)
 
 	if (tsourdt3rd_local.autoloaded_mods)
 	{
-		/* STAR STUFF:
-			\return 5: you've autoloaded mods
-				This helps prevent cheating, desyncing, and other dumbness in netgames :p
-		*/
+		//
+		// StarManiaKG
+		//
+		// Return Value 5:
+		// This value means you have autoloaded a mod.
+		// This helps prevent cheating, desyncing, and other dumbness in netgames :p
+		//
 		return 5;
 	}
 

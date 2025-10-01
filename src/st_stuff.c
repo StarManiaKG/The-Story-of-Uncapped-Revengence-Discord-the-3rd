@@ -49,8 +49,8 @@
 #include "r_fps.h"
 
 // TSoURDt3rd
-#include "STAR/star_vars.h" // tsourdt3rd[consoleplayer] //
 #include "STAR/smkg-st_hud.h"
+#include "STAR/core/smkg-g_game.h" // tsourdt3rd[consoleplayer] //
 
 UINT16 objectsdrawn = 0;
 

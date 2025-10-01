@@ -13,20 +13,17 @@
 #define __SMKG_P_SAVEG__
 
 #include "star_vars.h"
-
 #include "../p_saveg.h"
 
 // ------------------------ //
 //        Functions
 // ------------------------ //
 
-UINT8 TSOURDT3RD_READUINT8(save_t *save_p, TSoURDt3rd_t *tsourdt3rd_user, UINT8 fallback);
-UINT32 TSOURDT3RD_READUINT32(save_t *save_p, TSoURDt3rd_t *tsourdt3rd_user, UINT32 fallback);
+UINT8 TSoURDt3rd_P_ReadUINT8(save_t *save_p, TSoURDt3rd_t *tsourdt3rd_user, UINT8 fallback);
+UINT32 TSoURDt3rd_P_ReadUINT32(save_t *save_p, TSoURDt3rd_t *tsourdt3rd_user, UINT32 fallback);
+const char *TSoURDt3rd_P_ReadString(save_t *save_p, TSoURDt3rd_t *tsourdt3rd_user, char *string, const char *fallback);
 
 void TSoURDt3rd_P_NetArchiveUsers(save_t *save_p);
 void TSoURDt3rd_P_NetUnArchiveUsers(save_t *save_p);
-
-void TSoURDt3rd_PSav_WriteExtraData(void);
-void TSoURDt3rd_PSav_ReadExtraData(void);
 
 #endif // __SMKG_P_SAVEG__

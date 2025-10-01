@@ -1183,12 +1183,12 @@ UINT16 W_InitFolder(const char *path, boolean mainfile, boolean startup)
 	wadfiles[numwadfiles] = wadfile;
 	numwadfiles++;
 
-	// STAR STUFF: Don't forget to load our cool stuff too! //
-	TSoURDt3rd_P_LoadAddon(numwadfiles - 1, wadfile->numlumps);
-
 	W_ReadFileShaders(wadfile);
 	W_LoadTrnslateLumps(numwadfiles - 1);
 	W_LoadDehackedLumpsPK3(numwadfiles - 1, mainfile);
+
+	// STAR STUFF: Don't forget to load our cool stuff too! //
+	TSoURDt3rd_P_LoadAddon(numwadfiles - 1, wadfile->numlumps);
 
 	lua_lumploading++;
 	LUA_HookVoid(HOOK(AddonLoaded));
