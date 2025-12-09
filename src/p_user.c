@@ -1774,14 +1774,6 @@ void P_RestoreMusic(player_t *player)
 	if (!P_IsLocalPlayer(player)) // Only applies to a local player
 		return;
 
-#if 0
-	S_SpeedMusic(1.0f);
-#else
-	// STAR STUFF: slight change of plans here... //
-	if (!TSoURDt3rd_Jukebox_IsPlaying())
-		S_SpeedMusic(1.0f);
-#endif
-
 	// Jingles have a priority in this order, so follow it
 	// and as a default case, go down the music stack.
 
@@ -1808,13 +1800,10 @@ void P_RestoreMusic(player_t *player)
 	{
 		strlcpy(S_sfx[sfx_None].caption, "Speed shoes", 12);
 		S_StartCaption(sfx_None, -1, player->powers[pw_sneakers]);
-		if (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC)
+		if ((mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC) && S_SpeedMusicAllowed())
 		{
-			if (!TSoURDt3rd_Jukebox_IsPlaying())
-			{
-				// STAR STUFF: Maybe don't speed music while jukeboxing? Please? //
+			if (!TSoURDt3rd_Jukebox_IsPlaying()) // STAR STUFF: Maybe don't speed music while jukeboxing? Please? //
 				S_SpeedMusic(1.4f);
-			}
 			if (!S_RecallMusic(JT_MASTER, true))
 				S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
 		}

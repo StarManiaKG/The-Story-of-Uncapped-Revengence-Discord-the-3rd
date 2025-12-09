@@ -65,7 +65,7 @@ option(
 	ON
 )
 option(SRB2_CONFIG_HWRENDER "Enable hardware render (OpenGL) support" ON)
-option(SRB2_CONFIG_USE_GME "Enable GME playback support" OFF)
+option(SRB2_CONFIG_USE_GME "Enable GME playback support" ON)
 option(SRB2_CONFIG_STATIC_OPENGL "Enable static linking GL (do not do this)" OFF)
 option(SRB2_CONFIG_ERRORMODE "Compile C code with warnings treated as errors." OFF)
 option(SRB2_CONFIG_DEBUGMODE "Compile with PARANOIA, ZDEBUG, RANGECHECK and PACKETDROP defined." OFF)
@@ -111,9 +111,10 @@ find_package(PNG REQUIRED)
 find_package(CURL REQUIRED)
 find_package(libopenmpt QUIET)
 if("${SRB2_CONFIG_USE_GME}")
-	find_package(libgme QUIET)
+	find_package(GME QUIET)
 endif()
 find_package(miniupnpc QUIET)
+
 ## TSoURDt3rd ##
 find_package(LibAV QUIET)
 

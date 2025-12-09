@@ -46,6 +46,7 @@ FILE* logstream = NULL;
 
 #define  _CREATE_DLL_
 #include "../../doomdef.h"
+#include "../../i_sound.h"
 #include "../hw3dsdrv.h"
 
 //#undef DEBUG_TO_FILE
@@ -338,7 +339,7 @@ EXPORT INT32 HWRAPI( Startup ) (I_Error_t FatalErrorFunction, snddev_t *snd_dev)
 	I_ErrorOpenAl = FatalErrorFunction;
 
 	AlSetup[1] = snd_dev->sample_rate; //ALC_FREQUENCY
-	AlSetup[1] = 44100;
+	AlSetup[1] = cv_samplerate.value;  //ALC_SAMPLERATE
 	AlSetup[3] = 35;                   //ALC_REFRESH
 
 	//Alam: The Environment?

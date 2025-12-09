@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2023 by Sonic Team Junior.
+// Copyright (C) 1999-2025 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -18,7 +18,7 @@
 #include "sounds.h"
 #include "command.h"
 
-// copied from SDL mixer, plus GME
+// mostly copied from SDL mixer, plus GME and wavpack
 typedef enum {
 	MU_NONE,
 	MU_WAV,
@@ -27,19 +27,29 @@ typedef enum {
 	MU_OGG,
 	MU_MP3,
 	MU_FLAC,
+	MU_OPUS,
+	MU_WAVPACK,
 	MU_GME,
 	MU_MOD_EX, // libopenmpt
-	MU_MID_EX // Non-native MIDI
+	MU_MID_EX, // Non-native MIDI
+	MU_UNKNOWN
 } musictype_t;
 
-/**	\brief Sound subsystem runing and waiting
+/**	\brief Sound subsystem running and waiting
 */
-extern UINT8 sound_started;
+extern boolean sound_started;
+
+/**	\brief random sound pitching
+*/
+//extern consvar_t cv_rndsoundpitch;
 
 /**	\brief info of samplerate
 */
 extern consvar_t cv_samplerate;
-//extern consvar_t cv_rndsoundpitch;
+
+/**	\brief info of buffer size
+*/
+extern consvar_t cv_buffersize;
 
 /**	\brief	The I_GetSfx function
 
@@ -73,12 +83,13 @@ void I_ShutdownSound(void);
 	\param	id	sfxid
 	\param	vol	volume for sound
 	\param	sep	left-right balancle
+	\param  speed playback speed for sound
 	\param	pitch	not used
 	\param	priority	not used
 
 	\return	sfx handle
 */
-INT32 I_StartSound(sfxenum_t id, UINT8 vol, UINT8 sep, UINT8 pitch, UINT8 priority, INT32 channel);
+INT32 I_StartSound(sfxenum_t id, UINT8 vol, UINT8 sep, float speed, UINT8 pitch, UINT8 priority, INT32 channel);
 
 /**	\brief	Stops a sound channel.
 
@@ -105,11 +116,12 @@ boolean I_SoundIsPlaying(INT32 handle);
 	\param	handle	sfx handle
 	\param	vol	volume
 	\param	sep	separation
-	\param	pitch	ptich
+	\param  speed playback speed
+	\param	pitch playback pitch
 
 	\return	void
 */
-void I_UpdateSoundParams(INT32 handle, UINT8 vol, UINT8 sep, UINT8 pitch);
+void I_UpdateSoundParams(INT32 handle, UINT8 vol, UINT8 sep, float speed, UINT8 pitch);
 
 /**	\brief	The I_SetSfxVolume function
 
@@ -118,6 +130,23 @@ void I_UpdateSoundParams(INT32 handle, UINT8 vol, UINT8 sep, UINT8 pitch);
 	\return	void
 */
 void I_SetSfxVolume(UINT8 volume);
+
+/**	\brief	The I_SetInternalSfxVolume function
+
+	\param	volume	internal volume to play sounds
+
+	\return	void
+*/
+void I_SetInternalSfxVolume(UINT8 volume);
+
+/**	\brief	The I_SetSoundSpeed function
+
+	\param	channel	sfx handle to use
+	\param	speed	playback speed to set at
+
+	\return	void
+*/
+boolean I_SetSoundSpeed(INT32 handle, float speed);
 
 /// ------------------------
 //  MUSIC SYSTEM
@@ -136,6 +165,7 @@ void I_ShutdownMusic(void);
 /// ------------------------
 
 musictype_t I_SongType(void);
+boolean I_SongLoaded(void);
 boolean I_SongPlaying(void);
 boolean I_SongPaused(void);
 
@@ -143,10 +173,10 @@ boolean I_SongPaused(void);
 //  MUSIC EFFECTS
 /// ------------------------
 
-void I_SetSongSpeed(float speed); // StarManiaKG: was originally boolean, no longer needs to be //
+boolean I_SetSongSpeed(float speed);
 float I_GetSongSpeed(void);
 
-void I_SetSongPitch(float pitch);
+boolean I_SetSongPitch(float pitch);
 float I_GetSongPitch(void);
 
 /// ------------------------
@@ -178,50 +208,31 @@ boolean I_LoadSong(char *data, size_t len);
 
 /**	\brief	See ::I_LoadSong, then think backwards
 
-	\param	handle	song handle
-
 	\sa I_LoadSong
-	\todo remove midi handle
 */
 void I_UnloadSong(void);
 
 /**	\brief	Called by anything that wishes to start music
 
-	\param	handle	Song handle
-	\param	looping	looping it if true
+	\param	looping	loop the song if true
 
 	\return	if true, it's playing the song
-
-	\todo pass music name, not handle
 */
 boolean I_PlaySong(boolean looping);
 
 /**	\brief	Stops a song over 3 seconds
-
-	\param	handle	Song handle
-	\return	void
-
-	/todo drop handle
 */
 void I_StopSong(void);
 
 /**	\brief	PAUSE game handling.
-
-	\param	handle	song handle
-
-	\return	void
 */
 void I_PauseSong(void);
 
 /**	\brief	RESUME game handling
-
-	\param	handle	song handle
-
-	\return	void
 */
 void I_ResumeSong(void);
 
-/**	\brief	The I_SetMusicVolume function
+/**	\brief	Set music volume.
 
 	\param	volume	volume to set at
 
@@ -229,6 +240,12 @@ void I_ResumeSong(void);
 */
 void I_SetMusicVolume(UINT8 volume);
 
+/**	\brief	Set music track.
+
+	\param	track	music track to play
+
+	\return	void
+*/
 boolean I_SetSongTrack(INT32 track);
 
 /// ------------------------

@@ -58,9 +58,10 @@ void S_StartScreamSound(const void *origin, sfxenum_t sfx_id);
 // channel     -
 // sfx_id      - sfx id
 // vol         - sound volume
+// speed       - sound playback speed
 // pitch       - sound pitching value
 // Returns:    - sound id
-INT32 HW3S_I_StartSound(const void *origin, source3D_data_t *source_parm, channel_type_t channel, sfxenum_t sfx_id, INT32 vol, INT32 pitch, INT32 sep);
+INT32 HW3S_I_StartSound(const void *origin, source3D_data_t *source_parm, channel_type_t channel, sfxenum_t sfx_id, INT32 vol, float speed, INT32 pitch, INT32 sep);
 void HW3S_StopSoundByID(void *origin, sfxenum_t sfx_id);
 void HW3S_StopSoundByNum(sfxenum_t sfxnum);
 void HW3S_StopSound(void *origin);
@@ -72,6 +73,7 @@ void HW3S_EndFrameUpdate(void);
 void HW3S_UpdateSources(void);
 
 void HW3S_SetSfxVolume(INT32 volume);
+void HW3S_SetInternalSfxVolume(INT32 volume);
 
 // Utility functions
 INT32  HW3S_SoundIsPlaying(INT32 handle);

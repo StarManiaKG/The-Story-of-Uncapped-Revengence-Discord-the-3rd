@@ -34,9 +34,9 @@
 #endif
 
 // TSoURDt3rd
-#include "STAR/star_vars.h" // TSoURDt3rd_DetermineLevelMusic() //
 #include "STAR/smkg-cvars.h" // cv_tsourdt3rd_game_soniccd //
-#include "STAR/core/smkg-s_jukebox.h" // TSoURDt3rd_Jukebox_IsPlaying() //
+#include "STAR/core/smkg-s_exmusic.h"
+#include "STAR/core/smkg-s_jukebox.h"
 
 boolean LUA_CallAction(enum actionnum actionnum, mobj_t *actor);
 
@@ -4337,21 +4337,11 @@ void A_SuperSneakers(void *data)
 
 	if (P_IsLocalPlayer(player) && !player->powers[pw_super])
 	{
-#if 0
-		if (S_SpeedMusic(0.0f) && (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC))
-			S_SpeedMusic(1.4f);
-#else
-		// STAR STUFF: restored speed music //
-		if (mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC)
+		if ((mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC) && S_SpeedMusicAllowed())
 		{
-			if (!TSoURDt3rd_Jukebox_IsPlaying())
-			{
-				// STAR STUFF: stop interrupting the jukebox session please //
+			if (!TSoURDt3rd_Jukebox_IsPlaying()) // STAR STUFF: don't speed up my music though, thanks love you :) //
 				S_SpeedMusic(1.4f);
-			}
 		}
-		// THANKS, LOVE YOU :) //
-#endif
 		else
 			P_PlayJingle(player, JT_SHOES);
 		strlcpy(S_sfx[sfx_None].caption, "Speed shoes", 12);

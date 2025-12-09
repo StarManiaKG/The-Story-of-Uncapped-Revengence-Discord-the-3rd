@@ -1,6 +1,6 @@
 #include "../i_sound.h"
 
-UINT8 sound_started = 0;
+boolean sound_started = false;
 
 void *I_GetSfx(sfxinfo_t *sfx)
 {
@@ -21,11 +21,12 @@ void I_ShutdownSound(void){}
 //  SFX I/O
 //
 
-INT32 I_StartSound(sfxenum_t id, INT32 vol, INT32 sep, INT32 pitch, INT32 priority, INT32 channel)
+INT32 I_StartSound(sfxenum_t id, INT32 vol, INT32 sep, float speed, INT32 pitch, INT32 priority, INT32 channel)
 {
         (void)id;
         (void)vol;
         (void)sep;
+        (void)speed;
         (void)pitch;
         (void)priority;
         (void)channel;
@@ -43,17 +44,25 @@ INT32 I_SoundIsPlaying(INT32 handle)
         return false;
 }
 
-void I_UpdateSoundParams(INT32 handle, INT32 vol, INT32 sep, INT32 pitch)
+void I_UpdateSoundParams(INT32 handle, INT32 vol, INT32 sep, float speed, UINT8 pitch)
 {
         (void)handle;
         (void)vol;
         (void)sep;
+        (void)speed;
         (void)pitch;
 }
 
 void I_SetSfxVolume(INT32 volume)
 {
         (void)volume;
+}
+
+boolean I_SetSoundSpeed(INT32 handle, float speed)
+{
+        (void)handle;
+        (void)speed;
+        return false;
 }
 
 /// ------------------------
@@ -76,6 +85,11 @@ musictype_t I_SongType(void)
 	return MU_NONE;
 }
 
+boolean I_SongLoaded(void)
+{
+        return false;
+}
+
 boolean I_SongPlaying(void)
 {
 	return false;
@@ -90,26 +104,26 @@ boolean I_SongPaused(void)
 //  MUSIC EFFECTS
 /// ------------------------
 
-void I_SetSongSpeed(float speed) // StarManiaKG: was originally boolean, no longer needs to be //
+boolean I_SetSongSpeed(float speed)
 {
 	(void)speed;
-	return;
+	return false;
 }
 
 float I_GetSongSpeed(void)
 {
-        return 0.0f;
+        return 1.0f;
 }
 
-void I_SetSongPitch(float pitch)
+boolean I_SetSongPitch(float pitch)
 {
         (void)pitch;
-	return;
+	return false;
 }
 
 float I_GetSongPitch(void)
 {
-        return 0.0f;
+        return 1.0f;
 }
 
 /// ------------------------
@@ -163,24 +177,23 @@ void I_UnloadSong()
 
 boolean I_PlaySong(boolean looping)
 {
-        (void)handle;
         (void)looping;
         return false;
 }
 
 void I_StopSong(void)
 {
-        (void)handle;
+        
 }
 
 void I_PauseSong(void)
 {
-        (void)handle;
+
 }
 
 void I_ResumeSong(void)
 {
-        (void)handle;
+
 }
 
 void I_SetMusicVolume(INT32 volume)
@@ -201,7 +214,7 @@ void I_StopFadingSong(void)
 {
 }
 
-boolean I_FadeSongFromVolume(UINT8 target_volume, UINT8 source_volume, UINT32 ms, void (*callback)(void));
+boolean I_FadeSongFromVolume(UINT8 target_volume, UINT8 source_volume, UINT32 ms, void (*callback)(void))
 {
 	(void)target_volume;
 	(void)source_volume;
@@ -209,7 +222,7 @@ boolean I_FadeSongFromVolume(UINT8 target_volume, UINT8 source_volume, UINT32 ms
         return false;
 }
 
-boolean I_FadeSong(UINT8 target_volume, UINT32 ms, void (*callback)(void));
+boolean I_FadeSong(UINT8 target_volume, UINT32 ms, void (*callback)(void))
 {
 	(void)target_volume;
 	(void)ms;

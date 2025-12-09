@@ -3514,9 +3514,10 @@ static int lib_sChangeMusic(lua_State *L)
 
 static int lib_sSpeedMusic(lua_State *L)
 {
-	fixed_t fixedspeed = luaL_checkfixed(L, 1);
-	float speed = FIXED_TO_FLOAT(fixedspeed);
+	fixed_t fixed_speed = luaL_checkfixed(L, 1);
+	float speed = FIXED_TO_FLOAT(fixed_speed);
 	player_t *player = NULL;
+	boolean sped_the_music = false;
 	//NOHUD
 	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
 	{
@@ -3524,14 +3525,13 @@ static int lib_sSpeedMusic(lua_State *L)
 		if (!player)
 			return LUA_ErrInvalid(L, "player_t");
 	}
-	if (TSoURDt3rd_Jukebox_IsPlaying())
+	if (!TSoURDt3rd_Jukebox_IsPlaying()) // STAR STUFF: DON'T INTERUPT OUR MUSIC PLEASE :) //
 	{
-		// STAR STUFF: DON'T INTERUPT OUR MUSIC PLEASE :) //
-		return 0;
+		if (!player || P_IsLocalPlayer(player))
+			sped_the_music = S_SpeedMusic(speed);
 	}
-	if (!player || P_IsLocalPlayer(player))
-		S_SpeedMusic(speed);
-	return 0;
+	lua_pushboolean(L, sped_the_music);
+	return 1;
 }
 
 static int lib_sStopMusic(lua_State *L)

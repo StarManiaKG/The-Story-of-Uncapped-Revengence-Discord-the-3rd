@@ -101,6 +101,7 @@ typedef enum
 	MN_OP_OPENGL_LIGHTING,
 
 	MN_OP_SOUND,
+	MN_OP_SOUNDADVANCED,
 
 	MN_OP_SERVER,
 	MN_OP_MONITORTOGGLE,
@@ -158,7 +159,7 @@ typedef enum
 	MN_OP_TSOURDT3RD_DEBUGGING,
 
 	NUMMENUTYPES,
-} menutype_t; // up to 75; MN_SPECIAL = 53, MN_OP_TSOURDT3RD_DEBUGGING = 74
+} menutype_t; // up to 76; MN_SPECIAL = 54, MN_OP_TSOURDT3RD_DEBUGGING = 75
 #define MTREE2(a,b) (a | (b<<MENUBITS))
 #define MTREE3(a,b,c) MTREE2(a, MTREE2(b,c))
 #define MTREE4(a,b,c,d) MTREE2(a, MTREE3(b,c,d))

@@ -35,19 +35,6 @@ extern "C" {
 	), \
 #type": incorrect type.")
 
-#define TSoURDt3rd_S_TunesAreCancelled() { \
-	if (TSoURDt3rd_AprilFools_ModeEnabled()) \
-	{ \
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_APRILFOOLS|STAR_CONS_WARNING, "Nice try. Perhaps there's a command you need to turn off first?\n"); \
-		return; \
-	} \
-	else if (TSoURDt3rd_Jukebox_IsPlaying()) \
-	{ \
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_JUKEBOX|STAR_CONS_WARNING, "Sorry, you can't use this command while playing music.\n"); \
-		return; \
-	} \
-}
-
 boolean TSoURDt3rd_S_MusicDefExists(musicdef_t *def, INT32 track);
 boolean TSoURDt3rd_S_MusicNameExists(const char *music, INT32 track);
 #define TSoURDt3rd_S_MusicExists(type, track, func) { \
@@ -64,10 +51,6 @@ boolean TSoURDt3rd_S_MusicNameExists(const char *music, INT32 track);
 	if (valid_track == true) { func } \
 }
 
-boolean TSoURDt3rd_S_CanManageMenuAudio(void);
-void TSoURDt3rd_S_ManageAudio(void (*audio_routine)(void));
-
-void TSoURDt3rd_S_ControlMusicEffects(const size_t *argc);
 void TSoURDt3rd_S_RefreshMusic(void);
 
 #ifdef __cplusplus

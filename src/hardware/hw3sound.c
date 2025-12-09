@@ -340,9 +340,9 @@ static void make_outphase_sfx(void *dest, void *src, INT32 size)
 }
 */
 
-//INT32 HW3S_Start3DSound(const void *origin, source3D_data_t *source_parm, cone_def_t *cone_parm, channel_type_t channel, INT32 sfx_id, INT32 vol, INT32 pitch);
+//INT32 HW3S_Start3DSound(const void *origin, source3D_data_t *source_parm, cone_def_t *cone_parm, channel_type_t channel, INT32 sfx_id, INT32 vol, float speed, INT32 pitch);
 //=============================================================================
-INT32 HW3S_I_StartSound(const void *origin_p, source3D_data_t *source_parm, channel_type_t c_type, sfxenum_t sfx_id, INT32 volume, INT32 pitch, INT32 sep)
+INT32 HW3S_I_StartSound(const void *origin_p, source3D_data_t *source_parm, channel_type_t c_type, sfxenum_t sfx_id, INT32 volume, float speed, INT32 pitch, INT32 sep)
 {
 	sfxinfo_t       *sfx;
 	const mobj_t    *origin = (const mobj_t *)origin_p;
@@ -385,6 +385,8 @@ INT32 HW3S_I_StartSound(const void *origin_p, source3D_data_t *source_parm, chan
 			pitch = 128 + (M_RandomByte() & 7) - (M_RandomByte() & 7);
 	}
 #endif
+
+	(void)speed;
 
 	if (pitch < 0)
 		pitch = NORMAL_PITCH;
@@ -594,7 +596,7 @@ INT32 HW3S_I_StartSound(const void *origin_p, source3D_data_t *source_parm, chan
 //=============================================================================
 void HW3S_StartSound(const void *origin, sfxenum_t sfx_id)
 {
-	HW3S_I_StartSound(origin, NULL, CT_NORMAL, sfx_id, 255, NORMAL_PITCH, NORMAL_SEP);
+	HW3S_I_StartSound(origin, NULL, CT_NORMAL, sfx_id, 255, 1.0f, NORMAL_PITCH, NORMAL_SEP);
 }
 
 
@@ -602,7 +604,7 @@ void HW3S_StartSound(const void *origin, sfxenum_t sfx_id)
 void S_StartAttackSound(const void *origin, sfxenum_t sfx_id)
 {
 	if (hws_mode != HWS_DEFAULT_MODE)
-		HW3S_I_StartSound(origin, NULL, CT_ATTACK, sfx_id, 255, NORMAL_PITCH, NORMAL_SEP);
+		HW3S_I_StartSound(origin, NULL, CT_ATTACK, sfx_id, 255, 1.0f, NORMAL_PITCH, NORMAL_SEP);
 	else
 		S_StartSound(origin, sfx_id);
 }
@@ -610,7 +612,7 @@ void S_StartAttackSound(const void *origin, sfxenum_t sfx_id)
 void S_StartScreamSound(const void *origin, sfxenum_t sfx_id)
 {
 	if (hws_mode != HWS_DEFAULT_MODE)
-		HW3S_I_StartSound(origin, NULL, CT_SCREAM, sfx_id, 255, NORMAL_PITCH, NORMAL_SEP);
+		HW3S_I_StartSound(origin, NULL, CT_SCREAM, sfx_id, 255, 1.0f, NORMAL_PITCH, NORMAL_SEP);
 	else
 		S_StartSound(origin, sfx_id);
 }
@@ -624,7 +626,7 @@ void S_StartAmbientSound(sfxenum_t sfx_id, INT32 volume)
 		if (volume > 255)
 			volume = 255;
 
-		HW3S_I_StartSound(NULL, NULL, CT_AMBIENT, sfx_id, volume, NORMAL_PITCH, NORMAL_SEP);
+		HW3S_I_StartSound(NULL, NULL, CT_AMBIENT, sfx_id, volume, 1.0f, NORMAL_PITCH, NORMAL_SEP);
 	}
 	else
 		S_StartSoundAtVolume(NULL, sfx_id, volume);
@@ -855,6 +857,11 @@ static void HW3S_UpdateListener2(mobj_t *listener)
 void HW3S_SetSfxVolume(INT32 volume)
 {
 	HW3DS.pfnSetGlobalSfxVolume(volume);
+}
+
+void HW3S_SetInternalSfxVolume(INT32 volume)
+{
+	(void)volume;
 }
 
 
