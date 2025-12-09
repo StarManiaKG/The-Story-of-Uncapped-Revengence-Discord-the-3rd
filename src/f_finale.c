@@ -45,8 +45,8 @@
 #include "lua_hook.h"
 
 // TSoURDt3rd
-#include "STAR/star_vars.h"
 #include "STAR/smkg-cvars.h" // cv_tsourdt3rd_game_startup_intro //
+#include "STAR/core/smkg-s_exmusic.h"
 #include "STAR/misc/smkg-m_intro.h"
 
 // Stage of animation:

@@ -55,7 +55,9 @@
 #elif defined (__GNUC__)
 #include <unistd.h>
 #endif
-#include "../z_zone.h"
+
+#include "../doomdef.h"
+#include "../doomstat.h"
 
 #include "../m_swap.h"
 #include "../i_system.h"
@@ -64,10 +66,9 @@
 #include "../m_misc.h"
 #include "../w_wad.h"
 #include "../screen.h" //vid.WndParent
-#include "../doomdef.h"
-#include "../doomstat.h"
 #include "../s_sound.h"
 
+#include "../z_zone.h"
 #include "../d_main.h"
 
 #ifdef HW3SOUND
@@ -80,7 +81,7 @@
 #include "gme/gme.h"
 #endif
 
-// The number of internal mixing channels,
+// The number of internal mixing snd_channels,
 //  the samples calculated for each mixing step,
 //  the size of the 16bit, 2 hardware channel (stereo)
 //  mixing buffer, and the samplerate of the raw data.
@@ -90,12 +91,10 @@
 
 #define INDEXOFSFX(x) ((sfxinfo_t *)x - S_sfx)
 
-static Uint16 samplecount = 1024; //Alam: 1KB samplecount at 22050hz is 46.439909297052154195011337868481ms of buffer
-
 typedef struct chan_struct
 {
 	// The channel data pointers, start and end.
-	Uint8 *data; //static unsigned char *channels[NUM_CHANNELS];
+	Uint8 *data; //static unsigned char *snd_channels[NUM_CHANNELS];
 	Uint8 *end; //static unsigned char *channelsend[NUM_CHANNELS];
 
 	// pitch
@@ -124,7 +123,7 @@ typedef struct chan_struct
 	Sint16* rightvol_lookup; //static INT32 *channelrightvol_lookup[NUM_CHANNELS];
 } chan_t;
 
-static chan_t channels[NUM_CHANNELS];
+static chan_t snd_channels[NUM_CHANNELS];
 
 // Pitch to stepping lookup
 static INT32 steptable[256];
@@ -132,7 +131,7 @@ static INT32 steptable[256];
 // Volume lookups.
 static Sint16 vol_lookup[128 * 256];
 
-UINT8 sound_started = false;
+boolean sound_started = false;
 static SDL_mutex *Snd_Mutex = NULL;
 
 //SDL's Audio
@@ -364,7 +363,7 @@ static INT32 FindChannel(INT32 handle)
 	INT32 i;
 
 	for (i = 0; i < NUM_CHANNELS; i++)
-		if (channels[i].handle == handle)
+		if (snd_channels[i].handle == handle)
 			return i;
 
 	// not found
@@ -375,7 +374,7 @@ static INT32 FindChannel(INT32 handle)
 // This function adds a sound to the
 //  list of currently active sounds,
 //  which is maintained as a given number
-//  (eight, usually) of internal channels.
+//  (eight, usually) of internal snd_channels.
 // Returns a handle.
 //
 static INT32 addsfx(sfxenum_t sfxid, INT32 volume, INT32 step, INT32 seperation)
@@ -396,14 +395,14 @@ static INT32 addsfx(sfxenum_t sfxid, INT32 volume, INT32 step, INT32 seperation)
 #endif
 	   )
 	{
-		// Loop all channels, check.
+		// Loop all snd_channels, check.
 		for (i = 0; i < NUM_CHANNELS; i++)
 		{
 			// Active, and using the same SFX?
-			if ((channels[i].end) && (channels[i].sfxid == sfxid))
+			if ((snd_channels[i].end) && (snd_channels[i].sfxid == sfxid))
 			{
 				// Reset.
-				channels[i].end = NULL;
+				snd_channels[i].end = NULL;
 				// We are sure that iff,
 				//  there will only be one.
 				break;
@@ -412,13 +411,13 @@ static INT32 addsfx(sfxenum_t sfxid, INT32 volume, INT32 step, INT32 seperation)
 	}
 #endif
 
-	// Loop all channels to find oldest SFX.
-	for (i = 0; (i < NUM_CHANNELS) && (channels[i].end); i++)
+	// Loop all snd_channels to find oldest SFX.
+	for (i = 0; (i < NUM_CHANNELS) && (snd_channels[i].end); i++)
 	{
-		if (channels[i].starttic < oldest)
+		if (snd_channels[i].starttic < oldest)
 		{
 			oldestnum = i;
-			oldest = channels[i].starttic;
+			oldest = snd_channels[i].starttic;
 		}
 	}
 
@@ -431,13 +430,13 @@ static INT32 addsfx(sfxenum_t sfxid, INT32 volume, INT32 step, INT32 seperation)
 	else
 		slot = i;
 
-	channels[slot].end = NULL;
+	snd_channels[slot].end = NULL;
 	// Okay, in the less recent channel,
 	//  we will handle the new SFX.
 	// Set pointer to raw data.
-	channels[slot].data = (Uint8 *)S_sfx[sfxid].data;
-	channels[slot].samplerate = (channels[slot].data[3]<<8)+channels[slot].data[2];
-	channels[slot].data += 8; //Alam: offset of the sound header
+	snd_channels[slot].data = (Uint8 *)S_sfx[sfxid].data;
+	snd_channels[slot].samplerate = (snd_channels[slot].data[3]<<8)+snd_channels[slot].data[2];
+	snd_channels[slot].data += 8; //Alam: offset of the sound header
 
 	while (FindChannel(handlenums)!=-1)
 	{
@@ -449,23 +448,23 @@ static INT32 addsfx(sfxenum_t sfxid, INT32 volume, INT32 step, INT32 seperation)
 
 	// Assign current handle number.
 	// Preserved so sounds could be stopped.
-	channels[slot].handle = handlenums;
+	snd_channels[slot].handle = handlenums;
 
 	// Restart steper
-	channels[slot].stepremainder = 0;
+	snd_channels[slot].stepremainder = 0;
 	// Should be gametic, I presume.
-	channels[slot].starttic = gametic;
+	snd_channels[slot].starttic = gametic;
 
-	I_SetChannelParams(&channels[slot], volume, seperation, step);
+	I_SetChannelParams(&snd_channels[slot], volume, seperation, step);
 
 	// Preserve sound SFX id,
 	//  e.g. for avoiding duplicates of chainsaw.
-	channels[slot].id = S_sfx[sfxid].data;
+	snd_channels[slot].id = S_sfx[sfxid].data;
 
-	channels[slot].sfxid = sfxid;
+	snd_channels[slot].sfxid = sfxid;
 
 	// Set pointer to end of raw data.
-	channels[slot].end = channels[slot].data + S_sfx[sfxid].length;
+	snd_channels[slot].end = snd_channels[slot].data + S_sfx[sfxid].length;
 
 
 	// You tell me.
@@ -486,7 +485,7 @@ static INT32 addsfx(sfxenum_t sfxid, INT32 volume, INT32 step, INT32 seperation)
 
 static inline void I_SetChannels(void)
 {
-	// Init internal lookups (raw data, mixing buffer, channels).
+	// Init internal lookups (raw data, mixing buffer, snd_channels).
 	// This function sets up internal lookups used during
 	//  the mixing process.
 	INT32 i;
@@ -525,7 +524,20 @@ void I_SetSfxVolume(UINT8 volume)
 	//Snd_LockAudio();
 
 	for (i = 0; i < NUM_CHANNELS; i++)
-		if (channels[i].end) I_SetChannelParams(&channels[i], channels[i].vol, channels[i].sep, channels[i].realstep);
+		if (snd_channels[i].end) I_SetChannelParams(&snd_channels[i], snd_channels[i].vol, snd_channels[i].sep, snd_channels[i].realstep);
+
+	//Snd_UnlockAudio();
+}
+
+void I_SetInternalSfxVolume(UINT8 volume)
+{
+	INT32 i;
+
+	(void)volume;
+	//Snd_LockAudio();
+
+	for (i = 0; i < NUM_CHANNELS; i++)
+		if (snd_channels[i].end) I_SetChannelParams(&snd_channels[i], snd_channels[i].vol, snd_channels[i].sep, snd_channels[i].realstep);
 
 	//Snd_UnlockAudio();
 }
@@ -577,13 +589,13 @@ void I_FreeSfx(sfxinfo_t * sfx)
 			}
 		}
 		//Snd_LockAudio(); //Alam: too much?
-		// Loop all channels, check.
+		// Loop all snd_channels, check.
 		for (i = 0; i < NUM_CHANNELS; i++)
 		{
 			// Active, and using the same SFX?
-			if (channels[i].end && channels[i].id == sfx->data)
+			if (snd_channels[i].end && snd_channels[i].id == sfx->data)
 			{
-				channels[i].end = NULL; // Reset.
+				snd_channels[i].end = NULL; // Reset.
 			}
 		}
 		//Snd_UnlockAudio(); //Alam: too much?
@@ -596,18 +608,21 @@ void I_FreeSfx(sfxinfo_t * sfx)
 //
 // Starting a sound means adding it
 //  to the current list of active sounds
-//  in the internal channels.
+//  in the internal snd_channels.
 // As the SFX info struct contains
 //  e.g. a pointer to the raw data,
 //  it is ignored.
 // As our sound handling does not handle
 //  priority, it is ignored.
-// Pitching (that is, increased speed of playback)
+// Speeding (that is, the tempo and pitch of playback combined)
+//  is set, but currently not used by mixing.
+// Pitching (that is, the amount of tone in the playback)
 //  is set, but currently not used by mixing.
 //
-INT32 I_StartSound(sfxenum_t id, UINT8 vol, UINT8 sep, UINT8 pitch, UINT8 priority, INT32 channel)
+INT32 I_StartSound(sfxenum_t id, UINT8 vol, UINT8 sep, float speed, UINT8 pitch, UINT8 priority, INT32 channel)
 {
 	(void)priority;
+	(void)speed;
 	(void)pitch;
 	(void)channel;
 
@@ -626,7 +641,7 @@ INT32 I_StartSound(sfxenum_t id, UINT8 vol, UINT8 sep, UINT8 pitch, UINT8 priori
 void I_StopSound(INT32 handle)
 {
 	// You need the handle returned by StartSound.
-	// Would be looping all channels,
+	// Would be looping all snd_channels,
 	//  tracking down the handle,
 	//  an setting the channel to zero.
 	INT32 i;
@@ -636,12 +651,11 @@ void I_StopSound(INT32 handle)
 	if (i != -1)
 	{
 		//Snd_LockAudio(); //Alam: too much?
-		channels[i].end = NULL;
+		snd_channels[i].end = NULL;
 		//Snd_UnlockAudio(); //Alam: too much?
-		channels[i].handle = -1;
-		channels[i].starttic = 0;
+		snd_channels[i].handle = -1;
+		snd_channels[i].starttic = 0;
 	}
-
 }
 
 boolean I_SoundIsPlaying(INT32 handle)
@@ -649,7 +663,7 @@ boolean I_SoundIsPlaying(INT32 handle)
 	boolean isplaying = false;
 	int chan = FindChannel(handle);
 	if (chan != -1)
-		isplaying = (channels[chan].end != NULL);
+		isplaying = (snd_channels[chan].end != NULL);
 	return isplaying;
 }
 
@@ -682,38 +696,38 @@ FUNCINLINE static ATTRINLINE void I_UpdateStream8S(Uint8 *stream, int len)
 		dr = *rightout;
 
 		// Love thy L2 cache - made this a loop.
-		// Now more channels could be set at compile time
-		//  as well. Thus loop those channels.
+		// Now more snd_channels could be set at compile time
+		//  as well. Thus loop those snd_channels.
 		for (chan = 0; chan < NUM_CHANNELS; chan++)
 		{
 			// Check channel, if active.
-			if (channels[chan].end)
+			if (snd_channels[chan].end)
 			{
 #if 1
 				// Get the raw data from the channel.
-				sample = channels[chan].data[0];
+				sample = snd_channels[chan].data[0];
 #else
 				// linear filtering from PrDoom
-				sample = (((Uint32)channels[chan].data[0] *(0x10000 - channels[chan].stepremainder))
-					+ ((Uint32)channels[chan].data[1]) * (channels[chan].stepremainder))) >> 16;
+				sample = (((Uint32)snd_channels[chan].data[0] *(0x10000 - snd_channels[chan].stepremainder))
+					+ ((Uint32)snd_channels[chan].data[1]) * (snd_channels[chan].stepremainder))) >> 16;
 #endif
 				// Add left and right part
 				//  for this channel (sound)
 				//  to the current data.
 				// Adjust volume accordingly.
-				dl = (Sint16)(dl+(channels[chan].leftvol_lookup[sample]>>8));
-				dr = (Sint16)(dr+(channels[chan].rightvol_lookup[sample]>>8));
+				dl = (Sint16)(dl+(snd_channels[chan].leftvol_lookup[sample]>>8));
+				dr = (Sint16)(dr+(snd_channels[chan].rightvol_lookup[sample]>>8));
 				// Increment stepage
-				channels[chan].stepremainder += channels[chan].step;
+				snd_channels[chan].stepremainder += snd_channels[chan].step;
 				// Check whether we are done.
-				if (channels[chan].data + (channels[chan].stepremainder >> 16) >= channels[chan].end)
-					channels[chan].end = NULL;
+				if (snd_channels[chan].data + (snd_channels[chan].stepremainder >> 16) >= snd_channels[chan].end)
+					snd_channels[chan].end = NULL;
 				else
 				{
 					// step to next sample
-					channels[chan].data += (channels[chan].stepremainder >> 16);
+					snd_channels[chan].data += (snd_channels[chan].stepremainder >> 16);
 					// Limit to LSB???
-					channels[chan].stepremainder &= 0xffff;
+					snd_channels[chan].stepremainder &= 0xffff;
 				}
 			}
 		}
@@ -770,37 +784,37 @@ FUNCINLINE static ATTRINLINE void I_UpdateStream8M(Uint8 *stream, int len)
 		d = *monoout;
 
 		// Love thy L2 cache - made this a loop.
-		// Now more channels could be set at compile time
-		//  as well. Thus loop those channels.
+		// Now more snd_channels could be set at compile time
+		//  as well. Thus loop those snd_channels.
 		for (chan = 0; chan < NUM_CHANNELS; chan++)
 		{
 			// Check channel, if active.
-			if (channels[chan].end)
+			if (snd_channels[chan].end)
 			{
 #if 1
 				// Get the raw data from the channel.
-				sample = channels[chan].data[0];
+				sample = snd_channels[chan].data[0];
 #else
 				// linear filtering from PrDoom
-				sample = (((Uint32)channels[chan].data[0] *(0x10000 - channels[chan].stepremainder))
-					+ ((Uint32)channels[chan].data[1]) * (channels[chan].stepremainder))) >> 16;
+				sample = (((Uint32)snd_channels[chan].data[0] *(0x10000 - snd_channels[chan].stepremainder))
+					+ ((Uint32)snd_channels[chan].data[1]) * (snd_channels[chan].stepremainder))) >> 16;
 #endif
 				// Add left and right part
 				//  for this channel (sound)
 				//  to the current data.
 				// Adjust volume accordingly.
-				d = (Sint16)(d+((channels[chan].leftvol_lookup[sample] + channels[chan].rightvol_lookup[sample])>>9));
+				d = (Sint16)(d+((snd_channels[chan].leftvol_lookup[sample] + snd_channels[chan].rightvol_lookup[sample])>>9));
 				// Increment stepage
-				channels[chan].stepremainder += channels[chan].step;
+				snd_channels[chan].stepremainder += snd_channels[chan].step;
 				// Check whether we are done.
-				if (channels[chan].data + (channels[chan].stepremainder >> 16) >= channels[chan].end)
-					channels[chan].end = NULL;
+				if (snd_channels[chan].data + (snd_channels[chan].stepremainder >> 16) >= snd_channels[chan].end)
+					snd_channels[chan].end = NULL;
 				else
 				{
 					// step to next sample
-					channels[chan].data += (channels[chan].stepremainder >> 16);
+					snd_channels[chan].data += (snd_channels[chan].stepremainder >> 16);
 					// Limit to LSB???
-					channels[chan].stepremainder &= 0xffff;
+					snd_channels[chan].stepremainder &= 0xffff;
 				}
 			}
 		}
@@ -851,38 +865,38 @@ FUNCINLINE static ATTRINLINE void I_UpdateStream16S(Uint8 *stream, int len)
 		dr = *rightout;
 
 		// Love thy L2 cache - made this a loop.
-		// Now more channels could be set at compile time
-		//  as well. Thus loop those channels.
+		// Now more snd_channels could be set at compile time
+		//  as well. Thus loop those snd_channels.
 		for (chan = 0; chan < NUM_CHANNELS; chan++)
 		{
 			// Check channel, if active.
-			if (channels[chan].end)
+			if (snd_channels[chan].end)
 			{
 #if 1
 				// Get the raw data from the channel.
-				sample = channels[chan].data[0];
+				sample = snd_channels[chan].data[0];
 #else
 				// linear filtering from PrDoom
-				sample = (((Uint32)channels[chan].data[0] *(0x10000 - channels[chan].stepremainder))
-					+ ((Uint32)channels[chan].data[1]) * (channels[chan].stepremainder))) >> 16;
+				sample = (((Uint32)snd_channels[chan].data[0] *(0x10000 - snd_channels[chan].stepremainder))
+					+ ((Uint32)snd_channels[chan].data[1]) * (snd_channels[chan].stepremainder))) >> 16;
 #endif
 				// Add left and right part
 				//  for this channel (sound)
 				//  to the current data.
 				// Adjust volume accordingly.
-				dl += channels[chan].leftvol_lookup[sample];
-				dr += channels[chan].rightvol_lookup[sample];
+				dl += snd_channels[chan].leftvol_lookup[sample];
+				dr += snd_channels[chan].rightvol_lookup[sample];
 				// Increment stepage
-				channels[chan].stepremainder += channels[chan].step;
+				snd_channels[chan].stepremainder += snd_channels[chan].step;
 				// Check whether we are done.
-				if (channels[chan].data + (channels[chan].stepremainder >> 16) >= channels[chan].end)
-					channels[chan].end = NULL;
+				if (snd_channels[chan].data + (snd_channels[chan].stepremainder >> 16) >= snd_channels[chan].end)
+					snd_channels[chan].end = NULL;
 				else
 				{
 					// step to next sample
-					channels[chan].data += (channels[chan].stepremainder >> 16);
+					snd_channels[chan].data += (snd_channels[chan].stepremainder >> 16);
 					// Limit to LSB???
-					channels[chan].stepremainder &= 0xffff;
+					snd_channels[chan].stepremainder &= 0xffff;
 				}
 			}
 		}
@@ -940,37 +954,37 @@ FUNCINLINE static ATTRINLINE void I_UpdateStream16M(Uint8 *stream, int len)
 		d = *monoout;
 
 		// Love thy L2 cache - made this a loop.
-		// Now more channels could be set at compile time
-		//  as well. Thus loop those channels.
+		// Now more snd_channels could be set at compile time
+		//  as well. Thus loop those snd_channels.
 		for (chan = 0; chan < NUM_CHANNELS; chan++)
 		{
 			// Check channel, if active.
-			if (channels[chan].end)
+			if (snd_channels[chan].end)
 			{
 #if 1
 				// Get the raw data from the channel.
-				sample = channels[chan].data[0];
+				sample = snd_channels[chan].data[0];
 #else
 				// linear filtering from PrDoom
-				sample = (((Uint32)channels[chan].data[0] *(0x10000 - channels[chan].stepremainder))
-					+ ((Uint32)channels[chan].data[1]) * (channels[chan].stepremainder))) >> 16;
+				sample = (((Uint32)snd_channels[chan].data[0] *(0x10000 - snd_channels[chan].stepremainder))
+					+ ((Uint32)snd_channels[chan].data[1]) * (snd_channels[chan].stepremainder))) >> 16;
 #endif
 				// Add left and right part
 				//  for this channel (sound)
 				//  to the current data.
 				// Adjust volume accordingly.
-				d += (channels[chan].leftvol_lookup[sample] + channels[chan].rightvol_lookup[sample])>>1;
+				d += (snd_channels[chan].leftvol_lookup[sample] + snd_channels[chan].rightvol_lookup[sample])>>1;
 				// Increment stepage
-				channels[chan].stepremainder += channels[chan].step;
+				snd_channels[chan].stepremainder += snd_channels[chan].step;
 				// Check whether we are done.
-				if (channels[chan].data + (channels[chan].stepremainder >> 16) >= channels[chan].end)
-					channels[chan].end = NULL;
+				if (snd_channels[chan].data + (snd_channels[chan].stepremainder >> 16) >= snd_channels[chan].end)
+					snd_channels[chan].end = NULL;
 				else
 				{
 					// step to next sample
-					channels[chan].data += (channels[chan].stepremainder >> 16);
+					snd_channels[chan].data += (snd_channels[chan].stepremainder >> 16);
 					// Limit to LSB???
-					channels[chan].stepremainder &= 0xffff;
+					snd_channels[chan].stepremainder &= 0xffff;
 				}
 			}
 		}
@@ -1039,16 +1053,16 @@ static void SDLCALL I_UpdateStream(void *userdata, Uint8 *stream, int len)
 
 	memset(stream, 0x00, len); // only work in !AUDIO_U8, that needs 0x80
 
-	if ((audio.channels != 1 && audio.channels != 2) ||
+	if ((audio.snd_channels != 1 && audio.snd_channels != 2) ||
 	    (audio.format != AUDIO_S8 && audio.format != AUDIO_S16SYS))
 		; // no function to encode this type of stream
-	else if (audio.channels == 1 && audio.format == AUDIO_S8)
+	else if (audio.snd_channels == 1 && audio.format == AUDIO_S8)
 		I_UpdateStream8M(stream, len);
-	else if (audio.channels == 2 && audio.format == AUDIO_S8)
+	else if (audio.snd_channels == 2 && audio.format == AUDIO_S8)
 		I_UpdateStream8S(stream, len);
-	else if (audio.channels == 1 && audio.format == AUDIO_S16SYS)
+	else if (audio.snd_channels == 1 && audio.format == AUDIO_S16SYS)
 		I_UpdateStream16M(stream, len);
-	else if (audio.channels == 2 && audio.format == AUDIO_S16SYS)
+	else if (audio.snd_channels == 2 && audio.format == AUDIO_S16SYS)
 	{
 		I_UpdateStream16S(stream, len);
 
@@ -1065,7 +1079,7 @@ static void SDLCALL I_UpdateStream(void *userdata, Uint8 *stream, int len)
 	}
 }
 
-void I_UpdateSoundParams(INT32 handle, UINT8 vol, UINT8 sep, UINT8 pitch)
+void I_UpdateSoundParams(INT32 handle, UINT8 vol, UINT8 sep, float speed, UINT8 pitch)
 {
 	// Would be using the handle to identify
 	//  on which channel the sound might be active,
@@ -1073,13 +1087,21 @@ void I_UpdateSoundParams(INT32 handle, UINT8 vol, UINT8 sep, UINT8 pitch)
 
 	INT32 i = FindChannel(handle);
 
-	if (i != -1 && channels[i].end)
+	if (i != -1 && snd_channels[i].end)
 	{
 		//Snd_LockAudio(); //Alam: too much?
-		I_SetChannelParams(&channels[i], vol, sep, steptable[pitch]);
+		I_SetChannelParams(&snd_channels[i], vol, sep, steptable[pitch]);
 		//Snd_UnlockAudio(); //Alam: too much?
 	}
 
+	(void)speed;
+}
+
+boolean I_SetSoundSpeed(INT32 handle, float speed)
+{
+	(void)handle;
+	(void)speed;
+	return false;
 }
 
 #ifdef HW3SOUND
@@ -1177,10 +1199,10 @@ void I_StartupSound(void)
 	midi_disabled = digital_disabled = true;
 #endif
 
-	memset(channels, 0, sizeof (channels)); //Alam: Clean it
+	memset(snd_channels, 0, sizeof (snd_channels)); //Alam: Clean it
 
 	audio.format = AUDIO_S16SYS;
-	audio.channels = 2;
+	audio.snd_channels = 2;
 	audio.callback = I_UpdateStream;
 	audio.userdata = &localdata;
 
@@ -1208,18 +1230,18 @@ void I_StartupSound(void)
 	{
 		audio.freq = atoi(M_GetNextParm());
 		if (!audio.freq) audio.freq = cv_samplerate.value;
-		audio.samples = (Uint16)((samplecount/2)*(INT32)(audio.freq/11025)); //Alam: to keep it around the same XX ms
+		audio.samples = (Uint16)((cv_buffersize.value/2)*(INT32)(audio.freq/11025)); //Alam: to keep it around the same XX ms
 		CONS_Printf (M_GetText(" requested frequency of %d hz\n"), audio.freq);
 	}
 	else
 	{
-		audio.samples = samplecount;
+		audio.samples = cv_buffersize.value;
 		audio.freq = cv_samplerate.value;
 	}
 
 	if (M_CheckParm ("-mono"))
 	{
-		audio.channels = 1;
+		audio.snd_channels = 1;
 		audio.samples /= 2;
 	}
 
@@ -1306,9 +1328,9 @@ void I_StartupSound(void)
 		//char ad[100];
 		//CONS_Printf(M_GetText(" Starting up with audio driver : %s\n"), SDL_AudioDriverName(ad, (int)sizeof ad));
 	}
-	samplecount = audio.samples;
 	CV_SetValue(&cv_samplerate, audio.freq);
-	CONS_Printf(M_GetText(" configured audio device with %d samples/slice at %ikhz(%dms buffer)\n"), samplecount, audio.freq/1000, (INT32) (((float)audio.samples * 1000.0f) / audio.freq));
+	CV_SetValue(&cv_buffersize, audio.samples);
+	CONS_Printf(M_GetText(" configured audio device with %d samples/slice at %ikhz(%dms buffer)\n"), audio.samples, audio.freq/1000, (INT32) (((float)audio.samples * 1000.0f) / audio.freq));
 	// Finished initialization.
 	CONS_Printf("%s", M_GetText(" Sound module ready\n"));
 	//[segabor]
@@ -1356,6 +1378,11 @@ musictype_t I_SongType(void)
 	return MU_NONE;
 }
 
+boolean I_SongLoaded(void)
+{
+	return false;
+}
+
 boolean I_SongPlaying(void)
 {
 	return false;
@@ -1370,26 +1397,26 @@ boolean I_SongPaused(void)
 //  MUSIC EFFECTS
 /// ------------------------
 
-void I_SetSongSpeed(float speed) // StarManiaKG: was originally boolean, no longer needs to be //
+boolean I_SetSongSpeed(float speed)
 {
-        (void)speed;
-        return;
+	(void)speed;
+	return false;
 }
 
 float I_GetSongSpeed(void)
 {
-        return 0.0f;
+	return 1.0f;
 }
 
-void I_SetSongPitch(float pitch)
+boolean I_SetSongPitch(float pitch)
 {
-		(void)pitch;
-		return;
+	(void)pitch;
+	return false;
 }
 
 float I_GetSongPitch(void)
 {
-		return 0.0f;
+	return 1.0f;
 }
 
 /// ------------------------

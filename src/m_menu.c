@@ -5,6 +5,8 @@
 // Copyright (C) 2011-2016 by Matthew "Kaito Sinclaire" Walsh.
 // Copyright (C) 1999-2025 by Sonic Team Junior.
 //
+// Additions (C) 2025 by StarManiaKG.
+//
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
@@ -85,7 +87,7 @@
 // TSoURDt3rd
 #include "STAR/star_vars.h"
 #include "STAR/smkg-cvars.h" // various vast TSoURDt3rd commands and command functions //
-#include "STAR/core/smkg-s_audio.h" // TSoURDt3rd_S_CanManageMenuAudio //
+#include "STAR/core/smkg-s_jukebox.h"
 #include "STAR/lights/smkg-coronas.h"
 #include "STAR/menus/smkg-m_sys.h" // various chunks of menu data + TSoURDt3rd_M_SetWritable(); //
 #include "STAR/misc/smkg-m_misc.h" // TSoURDt3rd_FIL_CreateSavefileProperly() //
@@ -131,13 +133,11 @@ typedef enum
 	QUIT3MSG6,
 	NUM_QUITMESSAGES
 } text_enum;
+const char *quitmsg[NUM_QUITMESSAGES];
 
 I_mutex m_menu_mutex;
 
 M_waiting_mode_t m_waiting_mode = M_NOT_WAITING;
-
-const char *quitmsg[NUM_QUITMESSAGES];
-static boolean attempting_esc_srb2 = false; // STAR NOTE: hack until we can revamp menu system
 
 // Stuff for customizing the player select screen Tails 09-22-2003
 description_t *description = NULL;
@@ -1056,7 +1056,7 @@ static menuitem_t OP_ChangeControlsMenu[] =
 	{IT_HEADER, NULL, "Meta", NULL, 0},
 	{IT_SPACE, NULL, NULL, NULL, 0}, // padding
 	{IT_CALL | IT_STRING2, NULL, "Game Status",
-    M_ChangeControl, GC_SCORES      },
+	M_ChangeControl, GC_SCORES      },
 	{IT_CALL | IT_STRING2, NULL, "Pause / Run Retry", M_ChangeControl, GC_PAUSE      },
 	{IT_CALL | IT_STRING2, NULL, "Screenshot",            M_ChangeControl, GC_SCREENSHOT    },
 	{IT_CALL | IT_STRING2, NULL, "Toggle GIF Recording",  M_ChangeControl, GC_RECORDGIF     },
@@ -1280,7 +1280,7 @@ static menuitem_t OP_VideoOptionsMenu[] =
 	{IT_HEADER, NULL, "Heads-Up Display", NULL, 55},
 	{IT_STRING | IT_CVAR, NULL, "Show HUD",                  &cv_showhud,          61},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-	                      NULL, "HUD Transparency",          &cv_translucenthud,   66},
+						  NULL, "HUD Transparency",          &cv_translucenthud,   66},
 	{IT_STRING | IT_CVAR, NULL, "Score/Time/Rings",          &cv_timetic,          71},
 	{IT_STRING | IT_CVAR, NULL, "Show Powerups",             &cv_powerupdisplay,   76},
 	{IT_STRING | IT_CVAR, NULL, "Local ping display",		&cv_showping,			81}, // shows ping next to framerate if we want to.
@@ -1427,35 +1427,41 @@ static menuitem_t OP_SoundOptionsMenu[] =
 };
 
 #ifdef HAVE_OPENMPT
-#define OPENMPT_MENUOFFSET 32
+#define OPENMPT_MENUOFFSET 16
 #else
 #define OPENMPT_MENUOFFSET 0
 #endif
 
 #ifdef HAVE_MIXERX
-#define MIXERX_MENUOFFSET 81
+#define MIXERX_MENUOFFSET 41
 #else
 #define MIXERX_MENUOFFSET 0
 #endif
+
+#define MIXING_MENUOFFSET 16
 
 static menuitem_t OP_SoundAdvancedMenu[] =
 {
 #ifdef HAVE_OPENMPT
 	{IT_HEADER, NULL, "OpenMPT Settings", NULL, 0},
-	{IT_STRING | IT_CVAR, NULL, "Instrument Filter", &cv_modfilter, 12},
+	{IT_STRING | IT_CVAR, NULL, "Instrument Filter", &cv_modfilter, 6},
 #endif
 
 #ifdef HAVE_MIXERX
 	{IT_HEADER, NULL, "MIDI Settings", NULL, OPENMPT_MENUOFFSET},
-	{IT_STRING | IT_CVAR, NULL, "MIDI Player", &cv_midiplayer, OPENMPT_MENUOFFSET+12},
-	{IT_STRING | IT_CVAR | IT_CV_STRING, NULL, "FluidSynth Sound Font File", &cv_midisoundfontpath, OPENMPT_MENUOFFSET+24},
-	{IT_STRING | IT_CVAR | IT_CV_STRING, NULL, "TiMidity++ Config Folder", &cv_miditimiditypath, OPENMPT_MENUOFFSET+51},
+	{IT_STRING | IT_CVAR, NULL, "MIDI Player", &cv_midiplayer, OPENMPT_MENUOFFSET+6},
+	{IT_STRING | IT_CVAR | IT_CV_STRING, NULL, "FluidSynth Sound Font File", &cv_midisoundfontpath, OPENMPT_MENUOFFSET+12},
+	{IT_STRING | IT_CVAR | IT_CV_STRING, NULL, "TiMidity++ Config Folder", &cv_miditimiditypath, OPENMPT_MENUOFFSET+26},
 #endif
 
 	{IT_HEADER, NULL, "Miscellaneous", NULL, OPENMPT_MENUOFFSET+MIXERX_MENUOFFSET},
-	{IT_STRING | IT_CVAR, NULL, "Play Sound Effects if Unfocused", &cv_playsoundsifunfocused, OPENMPT_MENUOFFSET+MIXERX_MENUOFFSET+12},
-	{IT_STRING | IT_CVAR, NULL, "Play Music if Unfocused", &cv_playmusicifunfocused, OPENMPT_MENUOFFSET+MIXERX_MENUOFFSET+22},
-	{IT_STRING | IT_CVAR, NULL, "Let Levels Force Reset Music", &cv_resetmusicbyheader, OPENMPT_MENUOFFSET+MIXERX_MENUOFFSET+32},
+	{IT_STRING | IT_CVAR, NULL, "Sound Effects While Unfocused", &cv_playsoundsifunfocused, OPENMPT_MENUOFFSET+MIXERX_MENUOFFSET+6},
+	{IT_STRING | IT_CVAR, NULL, "Music While Unfocused", &cv_playmusicifunfocused, OPENMPT_MENUOFFSET+MIXERX_MENUOFFSET+11},
+	{IT_STRING | IT_CVAR, NULL, "Let Levels Force Reset Music", &cv_resetmusicbyheader, OPENMPT_MENUOFFSET+MIXERX_MENUOFFSET+16},
+
+	{IT_HEADER, NULL, "Mixing", NULL, OPENMPT_MENUOFFSET+MIXERX_MENUOFFSET+MIXING_MENUOFFSET+10},
+	{IT_STRING | IT_CVAR, NULL, "Sample Rate", &cv_samplerate, OPENMPT_MENUOFFSET+MIXERX_MENUOFFSET+MIXING_MENUOFFSET+16},
+	{IT_STRING | IT_CVAR, NULL, "Buffer Size", &cv_buffersize, OPENMPT_MENUOFFSET+MIXERX_MENUOFFSET+MIXING_MENUOFFSET+21},
 };
 
 #undef OPENMPT_MENUOFFSET
@@ -1541,7 +1547,7 @@ static menuitem_t OP_ServerOptionsMenu[] =
 {
 	{IT_HEADER, NULL, "General", NULL, 0},
 	{IT_STRING | IT_CVAR | IT_CV_STRING,
-	                         NULL, "Server name",                      &cv_servername,           7},
+							 NULL, "Server name",                      &cv_servername,           7},
 	{IT_STRING | IT_CVAR,    NULL, "Max Players",                      &cv_maxplayers,          21},
 	{IT_STRING | IT_CVAR,    NULL, "Allow Add-on Downloading",         &cv_downloading,         26},
 	{IT_STRING | IT_CVAR,    NULL, "Allow players to join",            &cv_allownewplayer,      31},
@@ -2141,8 +2147,8 @@ static void M_SoundAdvancedSettings(INT32 choice)
 menu_t OP_SoundOptionsDef = DEFAULTSCROLLMENUSTYLE(
 	MTREE2(MN_OP_MAIN, MN_OP_SOUND),
 	"M_SOUND", OP_SoundOptionsMenu, &OP_MainDef, 30, 30);
-menu_t OP_SoundAdvancedDef = DEFAULTMENUSTYLE(
-	MTREE2(MN_OP_MAIN, MN_OP_SOUND),
+menu_t OP_SoundAdvancedDef = DEFAULTSCROLLMENUSTYLE(
+	MTREE3(MN_OP_MAIN, MN_OP_SOUND, MN_OP_SOUNDADVANCED),
 	"M_SOUND", OP_SoundAdvancedMenu, &OP_SoundOptionsDef, 30, 30);
 
 menu_t OP_ServerOptionsDef = DEFAULTSCROLLMENUSTYLE(
@@ -2151,7 +2157,7 @@ menu_t OP_ServerOptionsDef = DEFAULTSCROLLMENUSTYLE(
 
 menu_t OP_MonitorToggleDef =
 {
-	MTREE3(MN_OP_MAIN, MN_OP_SOUND, MN_OP_MONITORTOGGLE),
+	MTREE3(MN_OP_MAIN, MN_OP_SERVER, MN_OP_MONITORTOGGLE),
 	"M_SERVER",
 	sizeof (OP_MonitorToggleMenu)/sizeof (menuitem_t),
 	&OP_ServerOptionsDef,
@@ -2644,7 +2650,7 @@ static boolean MIT_ChangeMusic(UINT32 menutype, INT32 level, INT32 *retval, void
 	if (!menutype) // if there's nothing in this level, do nothing
 		return false;
 
-	if (!TSoURDt3rd_S_CanManageMenuAudio())
+	if (TSoURDt3rd_Jukebox_IsPlaying() || tsourdt3rd_currentMenu != NULL)
 	{
 		// STAR STUFF: we can handle our own menu music, thank you very much! //
 		return false;
@@ -3006,8 +3012,6 @@ static void M_HandleMenuPresState(menu_t *newMenu)
 static void M_GoBack(INT32 choice)
 {
 	(void)choice;
-
-	attempting_esc_srb2 = false;
 
 	if (currentMenu->prevMenu)
 	{
@@ -3372,15 +3376,6 @@ boolean M_Responder(event_t *ev)
 		case GS_EVALUATION:
 		case GS_GAMEEND:
 			return false; // blacklisted gamestates
-		case GS_TITLESCREEN:
-			if (ch == KEY_ESCAPE && !menuactive)
-			{
-				// Pulling a Ring Racers
-				attempting_esc_srb2 = true;
-				M_QuitSRB2(-1);
-				return false;
-			}
-			/* FALLTHRU */
 		default:
 			break;
 	}
@@ -3862,7 +3857,6 @@ void M_ClearMenus(void)
 
 	TSoURDt3rd_M_ClearMenus(); // STAR STUFF: clear the screen of weird stuff please //
 
-	attempting_esc_srb2 = false;
 	menuactive = false;
 	hidetitlemap = false;
 
@@ -4369,7 +4363,7 @@ static void M_DrawMapEmblems(INT32 mapnum, INT32 x, INT32 y, boolean norecordatt
 
 		if (clientGamedata->collected[emblem - emblemlocations])
 			V_DrawSmallMappedPatch(x, y, 0, W_CachePatchName(M_GetEmblemPatch(emblem, false), PU_PATCH),
-			                       R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(emblem), GTC_CACHE));
+								   R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(emblem), GTC_CACHE));
 		else
 			V_DrawSmallScaledPatch(x, y, 0, W_CachePatchName("NEEDIT", PU_PATCH));
 
@@ -4820,7 +4814,7 @@ static void M_DrawPauseMenu(void)
 			luahuddrawlist_infoscreen = LUA_HUD_CreateDrawList();
 		}
 		LUA_HUD_ClearDrawList(luahuddrawlist_infoscreen);
-		
+
 		boolean esc_override = LUA_HookEscapePanel(
 			HUD_HOOK(escpanel),
 			luahuddrawlist_infoscreen,
@@ -4943,7 +4937,7 @@ static void M_DrawPauseMenu(void)
 
 			if (data->collected[emblem - emblemlocations])
 				V_DrawSmallMappedPatch(40, 44 + (i*8), 0, W_CachePatchName(M_GetEmblemPatch(emblem, false), PU_PATCH),
-				                       R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(emblem), GTC_CACHE));
+									   R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(emblem), GTC_CACHE));
 			else
 				V_DrawSmallScaledPatch(40, 44 + (i*8), 0, W_CachePatchName("NEEDIT", PU_PATCH));
 
@@ -6283,10 +6277,7 @@ static void M_StopMessage(INT32 choice)
 	(void)choice;
 	if (menuactive)
 	{
-		if (attempting_esc_srb2)
-			M_ClearMenus();
-		else
-			M_SetupNextMenu(MessageDef.prevMenu);
+		M_SetupNextMenu(MessageDef.prevMenu);
 	}
 }
 
@@ -6322,7 +6313,7 @@ static void M_HandleImageDef(INT32 choice)
 			S_StartSoundFromEverywhere(sfx_menu1);
 			if (itemOn >= (INT16)(currentMenu->numitems-1))
 				itemOn = 0;
-            else itemOn++;
+			else itemOn++;
 			M_UpdateItemOn();
 			break;
 
@@ -7085,15 +7076,14 @@ void M_RegisterCustomCVOption(consvar_t* cvar)
 	if (CCSETUP == false)
 	{
 		CONS_Printf("Custom Options menu initiation.\n");
-		
+
 		for (INT16 i = 0; i < MAXADDONOPTIONS; ++i)
 			OP_AddonOptionsSlots[i] = (menuitem_t){ IT_DISABLED, NULL, "", 0, INT16_MAX };
 
 		CCSETUP = true;
 	}
 
-	if (
-		cvar->category && ((menu_cc_pos == 0 && cvar->category[0] != '\0') 
+	if (cvar->category && ((menu_cc_pos == 0 && cvar->category[0] != '\0')
 		|| !fasticmp(cvar->category, OP_AddonOptionsSlots[menu_cc_lastheader].text)))
 	{
 		menu_cc_lastheader = menu_cc_pos;
@@ -7112,7 +7102,7 @@ void M_RegisterCustomCVOption(consvar_t* cvar)
 		status |= IT_CV_FLOATSLIDER;
 	else if (cvar->PossibleValue && cvar->PossibleValue[0].strvalue && fasticmp(cvar->PossibleValue[0].strvalue, "MIN"))
 		status |= IT_CV_SLIDER;
-		
+
 	OP_AddonOptionsSlots[menu_cc_pos] = (menuitem_t){ status, NULL, cvar->displayname, cvar, menu_cc_lastoffset };
 	menu_cc_lastoffset += CCVHEIGHT;
 
@@ -9929,7 +9919,7 @@ static void M_DrawStatsMaps(int location)
 
 			if (data->extraCollected[i])
 				V_DrawSmallMappedPatch(292, y, 0, W_CachePatchName(M_GetExtraEmblemPatch(exemblem, false), PU_PATCH),
-				                       R_GetTranslationColormap(TC_DEFAULT, M_GetExtraEmblemColor(exemblem), GTC_CACHE));
+									   R_GetTranslationColormap(TC_DEFAULT, M_GetExtraEmblemColor(exemblem), GTC_CACHE));
 			else
 				V_DrawSmallScaledPatch(292, y, 0, W_CachePatchName("NEEDIT", PU_PATCH));
 
@@ -9966,9 +9956,9 @@ static void M_DrawLevelStats(void)
 
 	V_DrawString(20, 24, V_MENUCOLORMAP, "Total Play Time:");
 	V_DrawCenteredString(BASEVIDWIDTH/2, 32, 0, va("%i hours, %i minutes, %i seconds",
-	                         G_TicsToHours(data->totalplaytime),
-	                         G_TicsToMinutes(data->totalplaytime, false),
-	                         G_TicsToSeconds(data->totalplaytime)));
+							 G_TicsToHours(data->totalplaytime),
+							 G_TicsToMinutes(data->totalplaytime, false),
+							 G_TicsToSeconds(data->totalplaytime)));
 
 	for (i = 0; i < NUMMAPS; i++)
 	{
@@ -10238,7 +10228,7 @@ void M_DrawTimeAttackMenu(void)
 
 			if (data->collected[em - emblemlocations])
 				V_DrawSmallMappedPatch(104+76+empatx, yHeight+lsheadingheight/2+empaty, 0, empatch,
-				                       R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(em), GTC_CACHE));
+									   R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(em), GTC_CACHE));
 			else
 				V_DrawSmallScaledPatch(104+76, yHeight+lsheadingheight/2, 0, W_CachePatchName("NEEDITL", PU_PATCH));
 
@@ -10262,8 +10252,8 @@ void M_DrawTimeAttackMenu(void)
 			sprintf(beststr, "(none)");
 		else
 			sprintf(beststr, "%i:%02i.%02i", G_TicsToMinutes(data->mainrecords[cv_nextmap.value-1]->time, true),
-			                                 G_TicsToSeconds(data->mainrecords[cv_nextmap.value-1]->time),
-			                                 G_TicsToCentiseconds(data->mainrecords[cv_nextmap.value-1]->time));
+											 G_TicsToSeconds(data->mainrecords[cv_nextmap.value-1]->time),
+											 G_TicsToCentiseconds(data->mainrecords[cv_nextmap.value-1]->time));
 
 		V_DrawString(104-72, 53+lsheadingheight/2, V_MENUCOLORMAP, "TIME:");
 		V_DrawRightAlignedString(104+64, 53+lsheadingheight/2, V_ALLOWLOWERCASE, beststr);
@@ -11470,14 +11460,14 @@ static void M_DrawConnectMenu(void)
 	// Room name
 	if (cv_masterserver_room_id.value < 0)
 		V_DrawRightAlignedString(BASEVIDWIDTH - currentMenu->x, currentMenu->y + MP_ConnectMenu[mp_connect_room].alphaKey,
-		                         V_MENUCOLORMAP, (itemOn == mp_connect_room) ? "<Select to change>" : "<Unlisted Mode>");
+								 V_MENUCOLORMAP, (itemOn == mp_connect_room) ? "<Select to change>" : "<Unlisted Mode>");
 	else
 		V_DrawRightAlignedString(BASEVIDWIDTH - currentMenu->x, currentMenu->y + MP_ConnectMenu[mp_connect_room].alphaKey,
-		                         V_MENUCOLORMAP, room_list[menuRoomIndex].name);
+								 V_MENUCOLORMAP, room_list[menuRoomIndex].name);
 
 	// Page num
 	V_DrawRightAlignedString(BASEVIDWIDTH - currentMenu->x, currentMenu->y + MP_ConnectMenu[mp_connect_page].alphaKey,
-	                         V_MENUCOLORMAP, va("%u of %d", serverlistpage+1, numPages));
+							 V_MENUCOLORMAP, va("%u of %d", serverlistpage+1, numPages));
 
 	// Horizontal line!
 	V_DrawFill(1, currentMenu->y+40, 318, 1, 0);
@@ -11502,12 +11492,12 @@ static void M_DrawConnectMenu(void)
 			V_DrawSmallString(currentMenu->x+252, S_LINEY(i)+8, globalflags, "\x84" "IPv6");
 
 		V_DrawSmallString(currentMenu->x, S_LINEY(i)+8, globalflags,
-		                     va("Ping: %u", (UINT32)LONG(serverlist[slindex].info.time)));
+							 va("Ping: %u", (UINT32)LONG(serverlist[slindex].info.time)));
 
 		gt = serverlist[slindex].info.gametypename;
 
 		V_DrawSmallString(currentMenu->x+46,S_LINEY(i)+8, globalflags,
-		                         va("Players: %02d/%02d", serverlist[slindex].info.numberofplayer, serverlist[slindex].info.maxplayer));
+								 va("Players: %02d/%02d", serverlist[slindex].info.numberofplayer, serverlist[slindex].info.maxplayer));
 
 		if (strlen(gt) > 11)
 			gt = va("Gametype: %.11s...", gt);
@@ -11886,10 +11876,10 @@ static void M_DrawServerMenu(void)
 		M_DrawLevelPlatterHeader(currentMenu->y - lsheadingheight/2, "Server settings", true, false);
 		if (cv_masterserver_room_id.value < 0)
 			V_DrawRightAlignedString(BASEVIDWIDTH - currentMenu->x, currentMenu->y + MP_ServerMenu[mp_server_room].alphaKey,
-			                         V_MENUCOLORMAP, (itemOn == mp_server_room) ? "<Select to change>" : "<Unlisted Mode>");
+									 V_MENUCOLORMAP, (itemOn == mp_server_room) ? "<Select to change>" : "<Unlisted Mode>");
 		else
 			V_DrawRightAlignedString(BASEVIDWIDTH - currentMenu->x, currentMenu->y + MP_ServerMenu[mp_server_room].alphaKey,
-			                         V_MENUCOLORMAP, room_list[menuRoomIndex].name);
+									 V_MENUCOLORMAP, room_list[menuRoomIndex].name);
 	}
 
 	if (cv_nextmap.value)
@@ -12532,8 +12522,8 @@ static void M_DrawSetupMultiPlayerMenu(void)
 
 	// draw skin string
 	V_DrawRightAlignedString(BASEVIDWIDTH - x, y,
-	             ((MP_PlayerSetupMenu[1].status & IT_TYPE) == IT_SPACE ? V_TRANSLUCENT : 0)|(itemOn == 1 ? V_MENUCOLORMAP : 0)|V_ALLOWLOWERCASE,
-	             skins[setupm_fakeskin]->realname);
+				 ((MP_PlayerSetupMenu[1].status & IT_TYPE) == IT_SPACE ? V_TRANSLUCENT : 0)|(itemOn == 1 ? V_MENUCOLORMAP : 0)|V_ALLOWLOWERCASE,
+				 skins[setupm_fakeskin]->realname);
 
 	if (itemOn == 1 && (MP_PlayerSetupMenu[1].status & IT_TYPE) != IT_SPACE)
 	{
@@ -13137,7 +13127,7 @@ static boolean M_QuitMultiPlayerMenu(void)
 	{
 		// remove trailing whitespaces
 		for (l= strlen(setupm_name)-1;
-		    (signed)l >= 0 && setupm_name[l] ==' '; l--)
+			(signed)l >= 0 && setupm_name[l] ==' '; l--)
 			setupm_name[l] =0;
 		COM_BufAddText (va("%s \"%s\"\n",setupm_cvname->name,setupm_name));
 	}
@@ -13564,9 +13554,9 @@ static void M_AssignJoystick(INT32 choice)
 				if (oldstringchoice ==
 					(atoi(cv_usejoystick2.string) > numjoys ? atoi(cv_usejoystick2.string) : cv_usejoystick2.value))
 					M_StartMessage("This gamepad is used by another\n"
-					               "player. Reset the gamepad\n"
-					               "for that player first.\n\n"
-					               "(Press a key)\n", NULL, MM_NOTHING);
+								   "player. Reset the gamepad\n"
+								   "for that player first.\n\n"
+								   "(Press a key)\n", NULL, MM_NOTHING);
 			}
 		}
 	}
@@ -13594,9 +13584,9 @@ static void M_AssignJoystick(INT32 choice)
 				if (oldstringchoice ==
 					(atoi(cv_usejoystick.string) > numjoys ? atoi(cv_usejoystick.string) : cv_usejoystick.value))
 					M_StartMessage("This gamepad is used by another\n"
-					               "player. Reset the gamepad\n"
-					               "for that player first.\n\n"
-					               "(Press a key)\n", NULL, MM_NOTHING);
+								   "player. Reset the gamepad\n"
+								   "for that player first.\n\n"
+								   "(Press a key)\n", NULL, MM_NOTHING);
 			}
 		}
 	}
@@ -13741,8 +13731,8 @@ static void M_DrawControl(void)
 	}
 	else
 		V_DrawCenteredString(BASEVIDWIDTH/2, 30, 0,
-		    (setupcontrols_secondaryplayer ? "SET CONTROLS FOR SECONDARY PLAYER" :
-		                                     "PRESS ENTER TO CHANGE, BACKSPACE TO CLEAR"));
+			(setupcontrols_secondaryplayer ? "SET CONTROLS FOR SECONDARY PLAYER" :
+											 "PRESS ENTER TO CHANGE, BACKSPACE TO CLEAR"));
 
 	if (i)
 		V_DrawString(currentMenu->x - 16, y-(skullAnimCounter/5), V_MENUCOLORMAP, "\x1A"); // up arrow

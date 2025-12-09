@@ -5766,9 +5766,12 @@ struct int_const_s const INT_CONST[] = {
 	{"MU_OGG", MU_OGG},
 	{"MU_MP3", MU_MP3},
 	{"MU_FLAC", MU_FLAC},
+	{"MU_OPUS", MU_OPUS},
+	{"MU_WAVPACK", MU_WAVPACK},
 	{"MU_GME", MU_GME},
 	{"MU_MOD_EX", MU_MOD_EX},
 	{"MU_MID_EX", MU_MID_EX},
+	{"MU_UNKNOWN", MU_UNKNOWN},
 
 	// gamestates
 	{"GS_NULL",GS_NULL},

@@ -45,7 +45,7 @@
 #endif
 
 // TSoURDt3rd
-#include "STAR/star_vars.h" // TSoURDt3rd_DetermineLevelMusic() //
+#include "STAR/core/smkg-s_exmusic.h"
 #include "STAR/core/smkg-s_jukebox.h"
 
 typedef struct
@@ -1047,23 +1047,10 @@ void Y_Ticker(void)
 
 		if (!intertic) // first time only
 		{
-			if (mapheaderinfo[gamemap-1]->musinterfadeout
-#ifdef _WIN32
-				// can't fade midi due to win32 volume hack
-				&& S_MusicType() != MU_MID
-#endif
-			)
+			if (mapheaderinfo[gamemap-1]->musinterfadeout)
 				S_FadeOutStopMusic(mapheaderinfo[gamemap-1]->musinterfadeout);
-#if 0
-			else if (mapheaderinfo[gamemap-1]->musintername[0] && S_MusicExists(mapheaderinfo[gamemap-1]->musintername, !midi_disabled, !digital_disabled))
-				S_ChangeMusicInternal(mapheaderinfo[gamemap-1]->musintername, false); // don't loop it
-			else
-				S_ChangeMusicInternal("_clear", false); // don't loop it
-#else
-			// STAR STUFF: my music now //
 			else
 				S_ChangeMusicInternal(TSoURDt3rd_DetermineLevelMusic(), false); // don't loop it
-#endif
 			tallydonetic = -1;
 		}
 
@@ -1130,23 +1117,10 @@ void Y_Ticker(void)
 
 		if (!intertic) // first time only
 		{
-			if (mapheaderinfo[gamemap-1]->musinterfadeout
-#ifdef _WIN32
-				// can't fade midi due to win32 volume hack
-				&& S_MusicType() != MU_MID
-#endif
-			)
+			if (mapheaderinfo[gamemap-1]->musinterfadeout)
 				S_FadeOutStopMusic(mapheaderinfo[gamemap-1]->musinterfadeout);
-#if 0
-			else if (mapheaderinfo[gamemap-1]->musintername[0] && S_MusicExists(mapheaderinfo[gamemap-1]->musintername, !midi_disabled, !digital_disabled))
-				S_ChangeMusicInternal(mapheaderinfo[gamemap-1]->musintername, false); // don't loop it
-			else
-				S_ChangeMusicInternal(stagefailed ? "CHFAIL" : "CHPASS", false); // don't loop it
-#else
-			// STAR STUFF: my music now //
 			else
 				S_ChangeMusicInternal(TSoURDt3rd_DetermineLevelMusic(), false); // don't loop it
-#endif
 			tallydonetic = -1;
 		}
 

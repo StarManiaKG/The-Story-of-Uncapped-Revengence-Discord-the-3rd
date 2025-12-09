@@ -1,6 +1,6 @@
 #include "../i_sound.h"
 
-UINT8 sound_started = 0;
+boolean sound_started = false;
 
 void *I_GetSfx(sfxinfo_t *sfx)
 {
@@ -23,11 +23,12 @@ void I_UpdateSound(void){};
 //  SFX I/O
 //
 
-INT32 I_StartSound(sfxenum_t id, UINT8 vol, UINT8 sep, UINT8 pitch, UINT8 priority, INT32 channel)
+INT32 I_StartSound(sfxenum_t id, UINT8 vol, UINT8 sep, float speed, UINT8 pitch, UINT8 priority, INT32 channel)
 {
 	(void)id;
 	(void)vol;
 	(void)sep;
+	(void)speed;
 	(void)pitch;
 	(void)priority;
 	(void)channel;
@@ -45,17 +46,25 @@ boolean I_SoundIsPlaying(INT32 handle)
 	return false;
 }
 
-void I_UpdateSoundParams(INT32 handle, UINT8 vol, UINT8 sep, UINT8 pitch)
+void I_UpdateSoundParams(INT32 handle, UINT8 vol, UINT8 sep, float speed, UINT8 pitch)
 {
 	(void)handle;
 	(void)vol;
 	(void)sep;
+	(void)speed;
 	(void)pitch;
 }
 
 void I_SetSfxVolume(UINT8 volume)
 {
 	(void)volume;
+}
+
+boolean I_SetSoundSpeed(INT32 handle, float speed)
+{
+	(void)handle;
+	(void)speed;
+	return false;
 }
 
 /// ------------------------
@@ -73,6 +82,11 @@ void I_ShutdownMusic(void){}
 musictype_t I_SongType(void)
 {
 	return MU_NONE;
+}
+
+boolean I_SongLoaded(void)
+{
+	return false;
 }
 
 boolean I_SongPlaying(void)
@@ -93,6 +107,22 @@ boolean I_SetSongSpeed(float speed)
 {
 	(void)speed;
 	return false;
+}
+
+float I_GetSongSpeed(void)
+{
+    return 1.0f;
+}
+
+boolean I_SetSongPitch(float pitch)
+{
+    (void)pitch;
+	return false;
+}
+
+float I_GetSongPitch(void)
+{
+    return 1.0f;
 }
 
 /// ------------------------

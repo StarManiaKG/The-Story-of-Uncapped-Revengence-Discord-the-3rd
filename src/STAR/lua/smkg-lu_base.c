@@ -11,6 +11,7 @@
 
 #include "smkg-lu_main.h"
 #include "../core/smkg-p_pads.h"
+#include "../core/smkg-s_jukebox.h"
 
 #include "../../lua_libs.h"
 #include "../../d_player.h"
@@ -115,9 +116,10 @@ static int lib_sGetSpeedMusic(lua_State *L)
 
 static int lib_sPitchMusic(lua_State *L)
 {
-	fixed_t fixedpitch = luaL_checkfixed(L, 1);
-	float pitch = FIXED_TO_FLOAT(fixedpitch);
+	fixed_t fixed_pitch = luaL_checkfixed(L, 1);
+	float pitch = FIXED_TO_FLOAT(fixed_pitch);
 	player_t *player = NULL;
+	boolean pitched_the_music = false;
 
 	//NOHUD
 
@@ -127,10 +129,14 @@ static int lib_sPitchMusic(lua_State *L)
 		if (!player)
 			return LUA_ErrInvalid(L, "player_t");
 	}
-	if (!player || P_IsLocalPlayer(player))
-		S_PitchMusic(pitch);
+	if (!TSoURDt3rd_Jukebox_IsPlaying())
+	{
+		if (!player || P_IsLocalPlayer(player))
+			pitched_the_music = S_PitchMusic(pitch);
+	}
 
-	return 0;
+	lua_pushboolean(L, pitched_the_music);
+	return 1;
 }
 
 static int lib_sGetPitchMusic(lua_State *L)

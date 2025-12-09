@@ -54,7 +54,8 @@
 #include "lua_libs.h"
 
 // TSoURDt3rd
-#include "STAR/star_vars.h" // STAR_SetWindowTitle(), & TSoURDt3rd_DetermineLevelMusic() //
+#include "STAR/star_vars.h" // STAR_SetWindowTitle() //
+#include "STAR/core/smkg-s_exmusic.h"
 #include "STAR/menus/smkg-m_sys.h" // Includes Savedata Handling, tsourdt3rd_local, & TSoURDt3rd_M_HasImportantHandler() //
 
 gameaction_t gameaction;
@@ -2805,7 +2806,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 			mapmusposition = mapheaderinfo[gamemap-1]->muspos;
 		}
 
-		// This is in S_Start, but this was not here previously.
+		// This is in S_StartEx, but this was not here previously.
 		// if (RESETMUSIC)
 		// 	S_StopMusic();
 		S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
@@ -5096,7 +5097,7 @@ void G_InitNew(UINT8 pultmode, const char *mapname, boolean resetplayer, boolean
 	if (paused)
 	{
 		paused = false;
-		S_ResumeAudio();
+		S_ResumeMusic();
 	}
 
 	if (netgame || multiplayer) // Nice try, haxor.

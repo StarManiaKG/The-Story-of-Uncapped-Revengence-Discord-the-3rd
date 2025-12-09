@@ -2224,10 +2224,10 @@ static void Got_Pause(UINT8 **cp, INT32 playernum)
 		if (paused)
 		{
 			if (!menuactive || netgame)
-				S_PauseAudio();
+				S_PauseMusic();
 		}
 		else
-			S_ResumeAudio();
+			S_ResumeMusic();
 	}
 
 	I_UpdateMouseGrab();

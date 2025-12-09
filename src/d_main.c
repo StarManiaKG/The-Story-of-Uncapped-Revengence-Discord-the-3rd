@@ -102,7 +102,7 @@
 // TSoURDt3rd
 #include "STAR/ss_main.h" // TSoURDt3rd_CON_DrawStartupScreen() //
 #include "STAR/core/smkg-d_main.h" // TSoURDt3rd_D_Init() & TSoURDt3rd_D_AutoLoadAddons() //
-#include "STAR/core/smkg-s_audio.h" // TSoURDt3rd_S_ManageAudio() //
+#include "STAR/core/smkg-s_jukebox.h"
 #include "STAR/menus/smkg-m_sys.h" // TSoURDt3rd_M_DrawPauseGraphic() & TSoURDt3rd_M_UpdateMenuCMD() //
 
 // Version numbers for netplay :upside_down_face:
@@ -1060,8 +1060,11 @@ void D_StartTitle(void)
 {
 	INT32 i;
 
-	// STAR STUFF: why don't we properly check for jukebox music instead? //
-	TSoURDt3rd_S_ManageAudio(S_StopMusic);
+	if (!TSoURDt3rd_Jukebox_IsPlaying())
+	{
+		// STAR STUFF: If we're playing jukebox music, don't interrupt it! //
+		S_StopMusic();
+	}
 
 	if (netgame)
 	{

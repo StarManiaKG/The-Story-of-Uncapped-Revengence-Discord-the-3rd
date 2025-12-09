@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2024 by Sonic Team Junior.
+// Copyright (C) 1999-2025 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -26,9 +26,6 @@
 #include "libopenmpt/libopenmpt.h"
 extern openmpt_module *openmpt_mhandle;
 #endif
-
-// mask used to indicate sound origin is player item pickup
-#define PICKUP_SOUND 0x8000
 
 extern consvar_t stereoreverse;
 extern consvar_t cv_soundvolume, cv_closedcaptioning, cv_digmusicvolume, cv_midimusicvolume;
@@ -67,21 +64,20 @@ extern CV_PossibleValue_t soundvolume_cons_t[];
 
 typedef enum
 {
-	SF_TOTALLYSINGLE =  1, // Only play one of these sounds at a time...GLOBALLY
+	SF_TOTALLYSINGLE   =  1, // Only play one of these sounds at a time...GLOBALLY
 	SF_NOMULTIPLESOUND =  2, // Like SF_NOINTERRUPT, but doesnt care what the origin is
-	SF_OUTSIDESOUND  =  4, // Volume is adjusted depending on how far away you are from 'outside'
-	SF_X4AWAYSOUND   =  8, // Hear it from 4x the distance away
-	SF_X8AWAYSOUND   = 16, // Hear it from 8x the distance away
-	SF_NOINTERRUPT   = 32, // Only play this sound if it isn't already playing on the origin
-	SF_X2AWAYSOUND   = 64, // Hear it from 2x the distance away
+	SF_OUTSIDESOUND    =  4, // Volume is adjusted depending on how far away you are from 'outside'
+	SF_X4AWAYSOUND     =  8, // Hear it from 4x the distance away
+	SF_X8AWAYSOUND     = 16, // Hear it from 8x the distance away
+	SF_NOINTERRUPT     = 32, // Only play this sound if it isn't already playing on the origin
+	SF_X2AWAYSOUND     = 64, // Hear it from 2x the distance away
 } soundflags_t;
 
 typedef enum
 {
-    SOUNDORIGIN_EVERYWHERE    =  -1, //Null
-    SOUNDORIGIN_MOBJ        =  0, //Mobj
-    SOUNDORIGIN_SECTOR        =  1, //Sector
-
+	SOUNDORIGIN_EVERYWHERE = -1, //Null
+	SOUNDORIGIN_MOBJ       =  0, //Mobj
+	SOUNDORIGIN_SECTOR     =  1, //Sector
 } soundorigin_t;
 
 typedef struct {
@@ -103,7 +99,16 @@ typedef struct
 	// handle of the sound being played
 	INT32 handle;
 
+	// playback position of the sound
+	float position;
+
+	// playback speed of the sound
+	float speed;
 } channel_t;
+
+// the set of channels available
+extern channel_t *channels;
+extern INT32 numofchannels;
 
 typedef struct {
 	channel_t *c;
@@ -131,12 +136,14 @@ void S_InitSfxChannels(INT32 sfxVolume);
 
 //
 // Per level startup code.
-// Kills playing sounds at start of level, determines music if any, changes music.
 //
+
+// Kills playing sounds at start of level.
 void S_StopSounds(void);
 void S_ClearSfx(void);
+
+// Determines music if any, changes music.
 void S_StartEx(boolean reset);
-#define S_Start() S_StartEx(false)
 
 //
 // Basically a W_GetNumForName that adds "ds" at the beginning of the string. Returns a lumpnum.
@@ -163,6 +170,20 @@ void S_StartSoundFromEverywhereVol(sfxenum_t sfx_id, INT32 volume);
 void S_StartSoundFromMobjVol(mobj_t* origin, sfxenum_t sfx_id, INT32 volume);
 void S_StartSoundFromSectorVol(sector_t* origin, sfxenum_t sfx_id, INT32 volume);
 
+//
+// Start sound for thing at <origin> using a sound name from sounds.h
+//
+void S_StartSoundName(void *origin, const char *soundname, soundorigin_t soundorigin);
+void S_StartSoundNameFromEverywhere(const char *soundname);
+void S_StartSoundNameFromMobj(mobj_t* origin, const char *soundname);
+void S_StartSoundNameFromSector(sector_t *origin, const char *soundname);
+
+// Will start a sound name at a given volume.
+void S_StartSoundNameAtVolume(void *origin, const char *soundname, INT32 volume, soundorigin_t soundorigin);
+void S_StartSoundNameFromEverywhereVol(const char *soundname, INT32 volume);
+void S_StartSoundNameFromMobjVol(mobj_t* origin, const char *soundname, INT32 volume);
+void S_StartSoundNameFromSectorVol(sector_t* origin, const char *soundname, INT32 volume);
+
 // Stop sound for thing at <origin>
 void S_StopSound(void *origin);
 
@@ -173,6 +194,7 @@ void S_StopSound(void *origin);
 boolean S_DigMusicDisabled(void);
 boolean S_MIDIMusicDisabled(void);
 boolean S_MusicDisabled(void);
+boolean S_MusicLoaded(void);
 boolean S_MusicPlaying(void);
 boolean S_MusicPaused(void);
 boolean S_MusicNotInFocus(void);
@@ -192,15 +214,15 @@ boolean S_MusicExists(const char *mname, boolean checkMIDI, boolean checkDigi);
 // Music Effects
 //
 
-// Set Speed of Music
-void S_SpeedMusic(float speed); // StarManiaKG: was originally boolean, no longer needs to be //
-// Get Speed of Music
+boolean S_SpeedMusicAllowed(void);
+boolean S_SpeedMusic(float speed);
 float S_GetSpeedMusic(void);
 
-// Set Pitch of Music
-void S_PitchMusic(float pitch);
-// Get Pitch of Music
+boolean S_PitchMusicAllowed(void);
+boolean S_PitchMusic(float pitch);
 float S_GetPitchMusic(void);
+
+void S_ControlMusicEffects(void);
 
 //
 // Music definitions & credits
@@ -309,13 +331,15 @@ typedef struct musicstack_s
 	UINT16 musflags;
 	boolean looping;
 	UINT32 position;
+	float speed;
+	float pitch;
 	tic_t tic;
 	UINT16 status;
 	lumpnum_t mlumpnum;
 	boolean noposition; // force music stack resuming from zero (like music_stack_noposition)
 
-    struct musicstack_s *prev;
-    struct musicstack_s *next;
+	struct musicstack_s *prev;
+	struct musicstack_s *next;
 } musicstack_t;
 
 extern char music_stack_nextmusname[7];
@@ -354,8 +378,8 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 void S_StopMusic(void);
 
 // Stop and resume music, during game PAUSE.
-void S_PauseAudio(void);
-void S_ResumeAudio(void);
+void S_PauseMusic(void);
+void S_ResumeMusic(void);
 
 //
 // Music Fading
@@ -374,6 +398,8 @@ boolean S_FadeOutStopMusic(UINT32 ms);
 //
 // Updates music & sounds
 //
+void S_RestartAudio(void);
+
 void S_UpdateSounds(void);
 void S_UpdateClosedCaptions(void);
 
@@ -389,8 +415,6 @@ INT32 S_OriginPlaying(void *origin);
 INT32 S_IdPlaying(sfxenum_t id);
 INT32 S_SoundPlaying(void *origin, sfxenum_t id);
 
-void S_StartSoundName(void *mo, const  char *soundname);
-
 void S_StopSoundByID(void *origin, sfxenum_t sfx_id);
 void S_StopSoundByNum(sfxenum_t sfxnum);
 
@@ -398,5 +422,12 @@ void S_StopSoundByNum(sfxenum_t sfxnum);
 #define S_StartAttackSound S_StartSoundFromMobj
 #define S_StartScreamSound S_StartSoundFromMobj
 #endif
+
+//
+// SFX effects
+//
+boolean S_SpeedSound(void *origin, float speed);
+boolean S_SpeedSoundByID(void *origin, sfxenum_t sfx_id, float speed);
+boolean S_SpeedSoundByNum(sfxenum_t sfx_num, float speed);
 
 #endif

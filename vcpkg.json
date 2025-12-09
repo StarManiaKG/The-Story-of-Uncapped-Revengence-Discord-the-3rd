@@ -11,9 +11,7 @@
     {
       "name": "curl",
       "default-features": false,
-      "features": [
-        "mbedtls"
-      ],
+      "features": [ "mbedtls" ],
       "platform": "wasm32",
       "version>=": "7.74.0#5"
     },
@@ -28,39 +26,32 @@
     {
       "name": "sdl2",
       "default-features": false,
-      "features": [
-        "wayland",
-        "x11"
-      ],
+      "features": [ "wayland", "x11" ],
       "platform": "linux",
       "version>=": "2.30.6#2"
     },
     {
       "name": "sdl2-mixer-ext",
       "features": [
-        {
-          "name": "fluidsynth",
-          "platform": "!static"
-        },
+        "fluidlite",
+        "libadlmidi",
         {
           "name": "libflac",
           "platform": "!emscripten"
         },
         "libgme",
         "libmodplug",
+        "libopnmidi",
         "libvorbis",
         "libxmp",
         "mpg123",
+        "nativemidi",
         "opusfile",
         "pxtone",
+        "stbvorbis",
         "timidity"
-      ],
-      "version>=": "2.6.0#0"
+      ]
     },
-    "zlib",
-    {
-      "name": "discord-game-sdk",
-      "platform": "(((x64 & (windows | osx | linux)) | (x86 & windows) | (arm64 & osx)) & !uwp & !static)"
-    }
+    "zlib"
   ]
 }

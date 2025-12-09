@@ -826,7 +826,6 @@ sfxinfo_t S_sfx[NUMSFX] =
   // skin sounds free slots to add sounds at run time (Boris HACK!!!)
   // initialized to NULL
 
-#if 1
   // STAR STUFF //
   // Generic menu SFX
   [sfx_tmxbup] = {"tmxbup", false,  64, 0,                  -1, NULL, 0, -1, -1, LUMPERROR, "Deleting"},
@@ -834,7 +833,6 @@ sfxinfo_t S_sfx[NUMSFX] =
 
   // Extras
   {"tf2d",   false,  64, 0,                  -1, NULL, 0, -1, -1, LUMPERROR, "Dispenser Goin' Up."},
-#endif
 };
 
 char freeslotnames[sfx_freeslot0 + NUMSFXFREESLOTS + NUMSKINSFXSLOTS][7];
