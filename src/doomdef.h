@@ -731,6 +731,12 @@ extern int
 /// OpenGL shaders
 #define GL_SHADERS
 
+/// Dynamic Lighting
+#define ALAM_LIGHTING
+#ifdef ALAM_LIGHTING
+#define STAR_LIGHTING /* EXTREME BETA: Fix up ALAM_LIGHTING thanks to touch-ups by Star */
+#endif
+
 /// Handle touching sector specials in P_PlayerAfterThink instead of P_PlayerThink.
 /// \note   Required for proper collision with moving sloped surfaces that have sector specials on them.
 #define SECTORSPECIALSAFTERTHINK
@@ -755,5 +761,6 @@ extern int
 #endif
 
 //#define _DEBUG /* Debugging */
+//#define _TSOURDT3RD_DEBUGGING /* Debugging */
 
 #endif // __DOOMDEF__

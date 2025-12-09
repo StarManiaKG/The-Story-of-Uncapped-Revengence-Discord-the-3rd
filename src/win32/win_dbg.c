@@ -18,7 +18,6 @@
 ///	this source file contains the exception handler for recording error
 ///	information after crashes.
 
-
 #include <tchar.h>
 
 #ifndef HAVE_SDL
@@ -55,7 +54,7 @@ BOOL InitDrMingw(void)
 
 	CONS_Printf("Setting up DrMingw debugger...\n");
 	ExcHndlInit();
-	ExcHndlSetLogFileNameA(CRASH_LOGFILE_NAME);
+	//ExcHndlSetLogFileNameA(CRASH_LOGFILE_NAME);
 	return TRUE;
 }
 
@@ -69,6 +68,58 @@ BOOL IsDrMingwLoaded(void)
 }
 
 #endif // HAVE_DRMINGW
+
+#if 0
+#ifndef _M_ARM64
+LONG WINAPI CatchAllExceptions (LPEXCEPTION_POINTERS info)
+{
+#ifdef _DEBUG
+	if (info->ExceptionRecord->ExceptionCode == EXCEPTION_BREAKPOINT)
+	{
+		return EXCEPTION_CONTINUE_SEARCH;
+	}
+#endif
+
+	static bool caughtsomething = false;
+
+	if (caughtsomething) return EXCEPTION_EXECUTE_HANDLER;
+	caughtsomething = true;
+
+	char *custominfo = (char *)HeapAlloc (GetProcessHeap(), 0, 16384);
+
+	CrashPointers = *info;
+	if (sysCallbacks.CrashInfo && custominfo) sysCallbacks.CrashInfo(custominfo, 16384, "\r\n");
+	CreateCrashLog (custominfo, (DWORD)strlen(custominfo));
+
+	// If the main thread crashed, then make it clean up after itself.
+	// Otherwise, put the crashing thread to sleep and signal the main thread to clean up.
+	if (GetCurrentThreadId() == MainThreadID)
+	{
+#ifdef _M_X64
+		*info->ContextRecord = MainThreadContext;
+#else
+		info->ContextRecord->Eip = (DWORD_PTR)ExitFatally;
+#endif // _M_X64
+	}
+	else
+	{
+#ifndef _M_X64
+		info->ContextRecord->Eip = (DWORD_PTR)SleepForever;
+#else
+		info->ContextRecord->Rip = (DWORD_PTR)SleepForever;
+#endif
+		QueueUserAPC (ExitFatally, MainThread, 0);
+	}
+	return EXCEPTION_CONTINUE_EXECUTION;
+}
+#else // !_M_ARM64
+// stub this function for ARM64
+LONG WINAPI CatchAllExceptions (LPEXCEPTION_POINTERS info)
+{
+	return EXCEPTION_CONTINUE_EXECUTION;
+}
+#endif // !_M_ARM64
+#endif
 
 #ifdef HAVE_BUGTRAP
 
