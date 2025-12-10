@@ -4197,8 +4197,20 @@ static int musicdef_get(lua_State *L)
 
 static int lib_sMusicInfo(lua_State *L)
 {
-	const char *music_name = lua_tolstring(L, 1, NULL);
-	LUA_PushUserdata(L, S_MusicInfo(music_name), META_MUSICDEF);
+	const char *name = lua_tolstring(L, 1, NULL);
+	if (!name)
+		name = S_MusicName();
+	LUA_Deprecated(L, "S_MusicInfo", "S_FindMusicDef")
+	LUA_PushUserdata(L, S_FindMusicDef(name, NULL, NULL, NULL), META_MUSICDEF);
+	return 1;
+}
+
+static int lib_sFindMusicDef(lua_State *L)
+{
+	const char *name = lua_tolstring(L, 1, NULL);
+	if (!name)
+		name = S_MusicName();
+	LUA_PushUserdata(L, S_FindMusicDef(name, NULL, NULL, NULL), META_MUSICDEF);
 	return 1;
 }
 
@@ -5131,6 +5143,7 @@ static luaL_Reg lib[] = {
 	{"S_PauseMusic",lib_sPauseMusic},
 	{"S_ResumeMusic", lib_sResumeMusic},
 	{"S_MusicInfo", lib_sMusicInfo},
+	{"S_FindMusicDef", lib_sFindMusicDef},
 
 	// g_game
 	{"G_AddGametype", lib_gAddGametype},
@@ -5195,7 +5208,5 @@ int LUA_BaseLib(lua_State *L)
 	luaL_register(L, NULL, lib);
 	luaL_register(L, NULL, tsourdt3rd_lib);
 	luaL_register(L, "tsourdt3rd", tsourdt3rd_lib);
-
-	// conclude
 	return 0;
 }
