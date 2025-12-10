@@ -269,19 +269,18 @@ static void Midiplayer_Onchange(void)
 	// at least on later MixerX versions.
 	I_lock_mutex(&i_music_midiplayerload);
 	{
-		midi_loadplayer();
 		if (prev_midi_player != new_midi_player && Mix_SetMidiPlayer(new_midi_player) != 0)
 		{
 			CONS_Alert(CONS_ERROR, "Midi player error (for MIDI type '%s'): %s\n", cv_midiplayer.string, Mix_GetError());
 		}
-	}
-	if (prev_midi_player != Mix_GetMidiPlayer() && midi_loadplayer())
-	{
-		S_StopMusic();
-		if (Playing())
-			P_RestoreMusic(&players[consoleplayer]);
-		else
-			S_ChangeMusicInternal("_title", false);
+		if (prev_midi_player != Mix_GetMidiPlayer() && midi_loadplayer())
+		{
+			S_StopMusic();
+			if (Playing())
+				P_RestoreMusic(&players[consoleplayer]);
+			else
+				S_ChangeMusicInternal("_title", false);
+		}
 	}
 	I_unlock_mutex(i_music_midiplayerload);
 }
@@ -398,7 +397,7 @@ static inline void music_cleanup(void)
 	}
 	if (music_memory != NULL)
 	{
-		Z_ChangeTag(music_memory, PU_CACHE);
+		Z_Free(music_memory);
 		music_memory = NULL;
 	}
 }
