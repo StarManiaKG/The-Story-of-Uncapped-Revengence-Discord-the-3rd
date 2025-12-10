@@ -3384,15 +3384,55 @@ static int GetValidSoundOrigin(lua_State *L, void **origin)
 	return 0;
 }
 
+static boolean GetValidSound(lua_State *L, INT32 sfxid_lua_state, sfxenum_t *sfxid)
+{
+	int sound_id = sfx_None-1;
+	const char *sound_name;
+
+	if (lua_isnil(L, sfxid_lua_state))
+	{
+		luaL_error(L, "No sfx given!");
+		return false;
+	}
+	else if (lua_isnumber(L, sfxid_lua_state))
+	{
+		sound_id = lua_tointeger(L, sfxid_lua_state);
+	}
+	else if (lua_isstring(L, sfxid_lua_state))
+	{
+		sound_name = lua_tostring(L, sfxid_lua_state);
+		sound_id = S_SearchForSoundName(sound_name);
+		if (sound_id <= sfx_None-1)
+		{
+			luaL_error(L, "Sfx '%s' invalid", sound_name);
+			return false;
+		}
+	}
+	else
+	{
+		luaL_error(L, "Sfx can only be a number or string!");
+		return false;
+	}
+
+	if (sound_id <= sfx_None-1 || sound_id >= NUMSFX)
+	{
+		luaL_error(L, "sfx '%d' out of range (0 - %d)", sound_id, NUMSFX-1);
+		return false;
+	}
+
+	(*sfxid) = (sfxenum_t)sound_id;
+	return true;
+}
+
 static int lib_sStartSound(lua_State *L)
 {
 	void *origin = NULL;
-	sfxenum_t sound_id = luaL_checkinteger(L, 2);
+	sfxenum_t sound_id;
 	player_t *player = NULL;
 	//NOHUD
 
-	if (sound_id >= NUMSFX)
-		return luaL_error(L, "sfx %d out of range (0 - %d)", sound_id, NUMSFX-1);
+	if (GetValidSound(L, 2, &sound_id) == false)
+		return 0;
 
 	if (!lua_isnone(L, 3) && lua_isuserdata(L, 3))
 	{
@@ -3424,13 +3464,14 @@ static int lib_sStartSound(lua_State *L)
 static int lib_sStartSoundAtVolume(lua_State *L)
 {
 	void *origin = NULL;
-	sfxenum_t sound_id = luaL_checkinteger(L, 2);
+	sfxenum_t sound_id;
 	INT32 volume = (INT32)luaL_checkinteger(L, 3);
 	player_t *player = NULL;
 	//NOHUD
 
-	if (sound_id >= NUMSFX)
-		return luaL_error(L, "sfx %d out of range (0 - %d)", sound_id, NUMSFX-1);
+	if (GetValidSound(L, 2, &sound_id) == false)
+		return 0;
+
 	if (!lua_isnone(L, 4) && lua_isuserdata(L, 4))
 	{
 		player = *((player_t **)luaL_checkudata(L, 4, META_PLAYER));
@@ -3463,6 +3504,7 @@ static int lib_sStopSound(lua_State *L)
 {
 	void *origin = NULL;
 	//NOHUD
+
 	if (!GetValidSoundOrigin(L, &origin))
 		return LUA_ErrInvalid(L, "mobj_t/sector_t");
 
@@ -3473,11 +3515,11 @@ static int lib_sStopSound(lua_State *L)
 static int lib_sStopSoundByID(lua_State *L)
 {
 	void *origin = NULL;
-	sfxenum_t sound_id = luaL_checkinteger(L, 2);
+	sfxenum_t sound_id;
 	//NOHUD
 
-	if (sound_id >= NUMSFX)
-		return luaL_error(L, "sfx %d out of range (0 - %d)", sound_id, NUMSFX-1);
+	if (GetValidSound(L, 2, &sound_id) == false)
+		return 0;
 	if (!lua_isnil(L, 1))
 		if (!GetValidSoundOrigin(L, &origin))
 			return LUA_ErrInvalid(L, "mobj_t/sector_t");
@@ -3488,12 +3530,12 @@ static int lib_sStopSoundByID(lua_State *L)
 
 static int lib_sStopSoundByNum(lua_State *L)
 {
-	sfxenum_t sound_id = luaL_checkinteger(L, 1);
+	sfxenum_t sound_id;
 
 	//NOHUD
 
-	if (sound_id >= NUMSFX)
-		return luaL_error(L, "sfx %d out of range (0 - %d)", sound_id, NUMSFX-1);
+	if (GetValidSound(L, 1, &sound_id) == false)
+		return 0;
 
 	S_StopSoundByNum(sound_id);
 	return 0;
@@ -3527,15 +3569,18 @@ static int lib_sSpeedSound(lua_State *L)
 static int lib_sSpeedSoundByID(lua_State *L)
 {
 	void *origin = NULL;
-	sfxenum_t sound_id = luaL_checkinteger(L, 2);
+	sfxenum_t sound_id;
 	fixed_t fixed_speed = luaL_checkfixed(L, 3);
 	float speed = FIXED_TO_FLOAT(fixed_speed);
 	player_t *player = NULL;
 
 	//NOHUD
 
-	if (sound_id >= NUMSFX)
-		return luaL_error(L, "sfx %d out of range (0 - %d)", sound_id, NUMSFX-1);
+	if (GetValidSound(L, 2, &sound_id) == false)
+	{
+		lua_pushnil(L);
+		return 1;
+	}
 	if (!lua_isnil(L, 1))
 		if (!GetValidSoundOrigin(L, &origin))
 			return LUA_ErrInvalid(L, "mobj_t/sector_t");
@@ -3555,15 +3600,18 @@ static int lib_sSpeedSoundByID(lua_State *L)
 
 static int lib_sSpeedSoundByNum(lua_State *L)
 {
-	sfxenum_t sound_id = luaL_checkinteger(L, 1);
+	sfxenum_t sound_id;
 	fixed_t fixed_speed = luaL_checkfixed(L, 2);
 	float speed = FIXED_TO_FLOAT(fixed_speed);
 	player_t *player = NULL;
 
 	//NOHUD
 
-	if (sound_id >= NUMSFX)
-		return luaL_error(L, "sfx %d out of range (0 - %d)", sound_id, NUMSFX-1);
+	if (GetValidSound(L, 1, &sound_id) == false)
+	{
+		lua_pushnil(L);
+		return 1;
+	}
 	if (!lua_isnone(L, 3) && lua_isuserdata(L, 3))
 	{
 		player = *((player_t **)luaL_checkudata(L, 3, META_PLAYER));
@@ -3604,13 +3652,16 @@ static int lib_sGetSpeedSound(lua_State *L)
 static int lib_sGetSpeedSoundByID(lua_State *L)
 {
 	void *origin = NULL;
-	sfxenum_t sound_id = luaL_checkinteger(L, 2);
+	sfxenum_t sound_id;
 	player_t *player = NULL;
 
 	//NOHUD
 
-	if (sound_id >= NUMSFX)
-		return luaL_error(L, "sfx %d out of range (0 - %d)", sound_id, NUMSFX-1);
+	if (GetValidSound(L, 2, &sound_id) == false)
+	{
+		lua_pushnil(L);
+		return 1;
+	}
 	if (!lua_isnil(L, 1))
 		if (!GetValidSoundOrigin(L, &origin))
 			return LUA_ErrInvalid(L, "mobj_t/sector_t");
@@ -3630,13 +3681,16 @@ static int lib_sGetSpeedSoundByID(lua_State *L)
 
 static int lib_sGetSpeedSoundByNum(lua_State *L)
 {
-	sfxenum_t sound_id = luaL_checkinteger(L, 1);
+	sfxenum_t sound_id;
 	player_t *player = NULL;
 
 	//NOHUD
 
-	if (sound_id >= NUMSFX)
-		return luaL_error(L, "sfx %d out of range (0 - %d)", sound_id, NUMSFX-1);
+	if (GetValidSound(L, 1, &sound_id) == false)
+	{
+		lua_pushnil(L);
+		return 1;
+	}
 	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
 	{
 		player = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
@@ -3854,22 +3908,27 @@ static int lib_sOriginPlaying(lua_State *L)
 
 static int lib_sIdPlaying(lua_State *L)
 {
-	sfxenum_t id = luaL_checkinteger(L, 1);
+	sfxenum_t id;
 	//NOHUD
-	if (id >= NUMSFX)
-		return luaL_error(L, "sfx %d out of range (0 - %d)", id, NUMSFX-1);
-	lua_pushboolean(L, S_IdPlaying(id));
+	if (GetValidSound(L, 1, &id) == false)
+		lua_pushnil(L);
+	else
+		lua_pushboolean(L, S_IdPlaying(id));
 	return 1;
 }
 
 static int lib_sSoundPlaying(lua_State *L)
 {
 	void *origin = NULL;
-	sfxenum_t id = luaL_checkinteger(L, 2);
+	sfxenum_t id;
 	//NOHUD
 	INLEVEL
-	if (id >= NUMSFX)
-		return luaL_error(L, "sfx %d out of range (0 - %d)", id, NUMSFX-1);
+
+	if (GetValidSound(L, 2, &id) == false)
+	{
+		lua_pushnil(L);
+		return 1;
+	}
 	if (!GetValidSoundOrigin(L, &origin))
 		return LUA_ErrInvalid(L, "mobj_t/sector_t");
 
