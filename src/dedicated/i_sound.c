@@ -17,7 +17,7 @@ void I_StartupSound(void){}
 
 void I_ShutdownSound(void){}
 
-void I_UpdateSound(void){};
+void I_UpdateSound(void){}
 
 //
 //  SFX I/O
@@ -56,6 +56,11 @@ void I_UpdateSoundParams(INT32 handle, UINT8 vol, UINT8 sep, float speed, UINT8 
 }
 
 void I_SetSfxVolume(UINT8 volume)
+{
+	(void)volume;
+}
+
+void I_SetInternalSfxVolume(UINT8 volume)
 {
 	(void)volume;
 }

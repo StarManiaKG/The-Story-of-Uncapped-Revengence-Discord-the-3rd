@@ -173,6 +173,8 @@ void S_StartSoundFromSectorVol(sector_t* origin, sfxenum_t sfx_id, INT32 volume)
 //
 // Start sound for thing at <origin> using a sound name from sounds.h
 //
+sfxenum_t S_SearchForSoundName(const char *soundname);
+
 void S_StartSoundName(void *origin, const char *soundname, soundorigin_t soundorigin);
 void S_StartSoundNameFromEverywhere(const char *soundname);
 void S_StartSoundNameFromMobj(mobj_t* origin, const char *soundname);
@@ -429,5 +431,9 @@ void S_StopSoundByNum(sfxenum_t sfxnum);
 boolean S_SpeedSound(void *origin, float speed);
 boolean S_SpeedSoundByID(void *origin, sfxenum_t sfx_id, float speed);
 boolean S_SpeedSoundByNum(sfxenum_t sfx_num, float speed);
+
+float S_GetSpeedSound(void *origin);
+float S_GetSpeedSoundByID(void *origin, sfxenum_t sfx_id);
+float S_GetSpeedSoundByNum(sfxenum_t sfx_num);
 
 #endif

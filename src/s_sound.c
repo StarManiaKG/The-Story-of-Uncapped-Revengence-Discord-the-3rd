@@ -865,10 +865,31 @@ void S_StartSoundFromSector(sector_t* origin, sfxenum_t sfx_id)
 }
 
 //
-// S_SearchForSounds
+// S_SearchForSoundName
 // Finds a sound using the given name.
 //
-static void S_SearchForSounds(void *origin, const char *soundname, INT32 volume, soundorigin_t soundorigin)
+sfxenum_t S_SearchForSoundName(const char *soundname)
+{
+	sfxenum_t soundnum;
+
+	if (soundname == NULL)
+		return sfx_None;
+
+	for (soundnum = sfx_None+1; soundnum < NUMSFX; soundnum++)
+	{
+		if (S_sfx[soundnum].name != NULL && !stricmp(S_sfx[soundnum].name, soundname))
+			return soundnum;
+	}
+	return sfx_None-1;
+}
+
+//
+// S_SearchAndPlaySounds
+//
+// Search for sound name
+// Play at max volume
+//
+static void S_SearchAndPlaySounds(void *origin, const char *soundname, INT32 volume, soundorigin_t soundorigin)
 {
 	sfxenum_t soundnum;
 
@@ -889,13 +910,10 @@ static void S_SearchForSounds(void *origin, const char *soundname, INT32 volume,
 	CONS_Alert(CONS_ERROR, "S_StartSoundName(): Sound '%s' couldn't be found!\n", soundname);
 }
 
-//
-// Search for sound name
-// Play at max volume
-//
+
 void S_StartSoundName(void *origin, const char *soundname, soundorigin_t soundorigin)
 {
-	S_SearchForSounds(origin, soundname, 255, soundorigin);
+	S_SearchAndPlaySounds(origin, soundname, 255, soundorigin);
 }
 
 void S_StartSoundNameFromEverywhere(const char *soundname)
@@ -919,7 +937,7 @@ void S_StartSoundNameFromSector(sector_t *origin, const char *soundname)
 //
 void S_StartSoundNameAtVolume(void *origin, const char *soundname, INT32 volume, soundorigin_t soundorigin)
 {
-	S_SearchForSounds(origin, soundname, volume, soundorigin);
+	S_SearchAndPlaySounds(origin, soundname, volume, soundorigin);
 }
 
 void S_StartSoundNameFromEverywhereVol(const char *soundname, INT32 volume)
@@ -1298,6 +1316,48 @@ boolean S_SpeedSoundByNum(sfxenum_t sfx_num, float speed)
 		}
 	}
 	return sped_sounds;
+}
+
+float S_GetSpeedSound(void *origin)
+{
+	INT32 cnum;
+
+	if (!origin)
+		return -1.0;
+
+	for (cnum = 0; cnum < numofchannels; cnum++)
+	{
+		if (channels[cnum].sfxinfo && channels[cnum].origin == origin)
+			return channels[cnum].speed;
+	}
+	return -1.0;
+}
+
+float S_GetSpeedSoundByID(void *origin, sfxenum_t sfx_id)
+{
+	INT32 cnum;
+
+	if (!origin)
+		return -1.0;
+
+	for (cnum = 0; cnum < numofchannels; cnum++)
+	{
+		if (channels[cnum].sfxinfo == &S_sfx[sfx_id] && channels[cnum].origin == origin)
+			return channels[cnum].speed;
+	}
+	return -1.0;
+}
+
+float S_GetSpeedSoundByNum(sfxenum_t sfx_num)
+{
+	INT32 cnum;
+
+	for (cnum = 0; cnum < numofchannels; cnum++)
+	{
+		if (channels[cnum].sfxinfo == &S_sfx[sfx_num])
+			return channels[cnum].speed;
+	}
+	return -1.0;
 }
 
 void S_ClearSfx(void)
