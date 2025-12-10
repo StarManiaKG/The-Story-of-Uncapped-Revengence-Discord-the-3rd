@@ -58,6 +58,11 @@ void I_SetSfxVolume(INT32 volume)
         (void)volume;
 }
 
+void I_SetInternalSfxVolume(INT32 volume)
+{
+        (void)volume;
+}
+
 boolean I_SetSoundSpeed(INT32 handle, float speed)
 {
         (void)handle;

@@ -123,7 +123,6 @@ static boolean codec_allows_pitching;
 static float codec_max_speed;
 static float codec_max_pitch;
 
-static I_mutex i_music_midiplayerload = NULL;
 static I_mutex i_mixer_fade = NULL;
 
 // fading
@@ -151,6 +150,8 @@ static int result;
 #endif
 
 #ifdef HAVE_MIXERX
+
+static I_mutex i_music_midiplayerload = NULL;
 
 // MIDI_EDMIDI didn't always exist, so we need to compensate for that!
 #if !SDL_MIXER_VERSION_ATLEAST(2,5,1)
