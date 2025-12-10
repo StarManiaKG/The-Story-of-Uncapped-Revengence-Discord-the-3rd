@@ -199,7 +199,7 @@ The build and its executable files can be found in the provided ZIP file, with f
 **NECESSARY DEPENDENCIES**
   - NASM (x86 builds only)
   - SDL2 (Linux/macOS only)
-  - SDL2-Mixer (Linux/OS X only)
+  - SDL2-Mixer (Linux/macOS only)
   - libupnp (Linux/macOS only)
   - libgme (Linux/macOS only)
   - libopenmpt (Linux/macOS only)

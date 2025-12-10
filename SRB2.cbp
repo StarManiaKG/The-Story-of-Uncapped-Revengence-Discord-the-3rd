@@ -224,7 +224,7 @@ HW3SOUND for 3D hardware sound  support
 				</Linker>
 			</Target>
 			<Target title="Debug Mingw/DirectX">
-				<Option output="bin/Mingw/Debug/srb2win.exe" prefix_auto="1" extension_auto="0" />
+				<Option output="bin/Mingw/Debug/srb2tsourdt3rd.exe" prefix_auto="1" extension_auto="0" />
 				<Option working_dir="bin/Resources" />
 				<Option object_output="objs/Mingw/Debug" />
 				<Option type="0" />
@@ -273,7 +273,7 @@ HW3SOUND for 3D hardware sound  support
 				</Linker>
 			</Target>
 			<Target title="Release Mingw/DirectX">
-				<Option output="bin/Mingw/Release/srb2win.exe" prefix_auto="1" extension_auto="0" />
+				<Option output="bin/Mingw/Release/srb2tsourdt3rd.exe" prefix_auto="1" extension_auto="0" />
 				<Option working_dir="bin/Resources" />
 				<Option object_output="objs/Mingw/Release" />
 				<Option type="0" />
@@ -627,7 +627,7 @@ HW3SOUND for 3D hardware sound  support
 				</Linker>
 			</Target>
 			<Target title="Debug Mingw64/DirectX">
-				<Option output="bin/Mingw/Debug/srb2win64.exe" prefix_auto="1" extension_auto="0" />
+				<Option output="bin/Mingw/Debug/srb2tsourdt3rd64.exe" prefix_auto="1" extension_auto="0" />
 				<Option working_dir="bin/Resources" />
 				<Option object_output="objs/Mingw64/Debug" />
 				<Option type="0" />
@@ -671,7 +671,7 @@ HW3SOUND for 3D hardware sound  support
 				</Linker>
 			</Target>
 			<Target title="Release Mingw64/DirectX">
-				<Option output="bin/Mingw/Release/srb2win64.exe" prefix_auto="1" extension_auto="0" />
+				<Option output="bin/Mingw/Release/srb2tsourdt3rd64.exe" prefix_auto="1" extension_auto="0" />
 				<Option working_dir="bin/Resources" />
 				<Option object_output="objs/Mingw64/Release" />
 				<Option type="0" />
@@ -1626,6 +1626,7 @@ HW3SOUND for 3D hardware sound  support
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/m_menu.h" />
+		<Unit filename="src/m_menudefs.h" />
 		<Unit filename="src/m_misc.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -2005,7 +2006,7 @@ HW3SOUND for 3D hardware sound  support
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/libav/LIBAV_coders.h">
-		<Unit filename="src/win32/Srb2win.rc">
+		<Unit filename="src/win32/srb2tsourdt3rd.rc">
 			<Option compilerVar="WINDRES" />
 			<Option target="Debug Mingw/DirectX" />
 			<Option target="Release Mingw/DirectX" />

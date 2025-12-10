@@ -2056,6 +2056,7 @@ msgstr ""
 #: i_tcp.c:326
 #, c-format
 msgid ""
+"\n"
 "Found UPnP device :\n"
 " desc: %s\n"
 " st: %s\n"
@@ -2063,7 +2064,7 @@ msgstr ""
 
 #: i_tcp.c:330
 #, c-format
-msgid "Local LAN ip address : %s\n"
+msgid "Local LAN ip address : %s\n\n"
 msgstr ""
 
 #: i_tcp.c:346

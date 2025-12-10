@@ -250,6 +250,7 @@
 		1E44AEFF0B67CDE900BAD059 /* m_fixed.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = m_fixed.h; path = ../../m_fixed.h; sourceTree = SOURCE_ROOT; };
 		1E44AF000B67CDE900BAD059 /* m_menu.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = m_menu.c; path = ../../m_menu.c; sourceTree = SOURCE_ROOT; };
 		1E44AF010B67CDE900BAD059 /* m_menu.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = m_menu.h; path = ../../m_menu.h; sourceTree = SOURCE_ROOT; };
+		1E44AF010B67CDE900BAD059 /* m_menudefs.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = m_menudefs.h; path = ../../m_menudefs.h; sourceTree = SOURCE_ROOT; };
 		1E44AF020B67CDE900BAD059 /* m_misc.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = m_misc.c; path = ../../m_misc.c; sourceTree = SOURCE_ROOT; };
 		1E44AF020B67CDE900BAD059 /* apng.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = apng.c; path = ../../m_misc.c; sourceTree = SOURCE_ROOT; };
 		1E44AF030B67CDE900BAD059 /* m_misc.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = m_misc.h; path = ../../m_misc.h; sourceTree = SOURCE_ROOT; };
@@ -626,6 +627,7 @@
 				1E44AECF0B67CCEE00BAD059 /* hu_stuff.h */,
 				1E44AF000B67CDE900BAD059 /* m_menu.c */,
 				1E44AF010B67CDE900BAD059 /* m_menu.h */,
+				1E44AF110B67CDE900BAD059 /* m_menudefs.h */,
 				1E44AF910B67CEFF00BAD059 /* st_stuff.c */,
 				1E44AF920B67CEFF00BAD059 /* st_stuff.h */,
 			);

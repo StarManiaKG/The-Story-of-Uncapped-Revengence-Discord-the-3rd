@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
 // Microsoft Developer Studio generated include file.
-// Used by Srb2win.rc
+// Used by srb2tsourdt3rd.rc
 //
 #define IDI_DLICON1                     101
 #define IDC_DLCURSOR1                   103

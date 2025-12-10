@@ -1,6 +1,9 @@
              Bird's Hole Punching Protocol
           Ported to Base SRB2 By StarManiaKG
 
+               Source can be found under:
+      https://github.com/jameds/holepunch/tree/master
+
 
 Hole punch - a mechanism to bypass a firewall
 Server     - a third party which is not behind a firewall

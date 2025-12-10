@@ -1337,6 +1337,13 @@
 			path = ../../m_menu.h;
 			refType = 2;
 		};
+		84177770085A10EB000C01D8 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			name = m_menudefs.h;
+			path = ../../m_menudefs.h;
+			refType = 2;
+		};
 		84177764085A10EB000C01D8 = {
 			fileEncoding = 30;
 			isa = PBXFileReference;

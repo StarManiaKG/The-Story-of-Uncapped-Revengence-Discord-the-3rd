@@ -31,7 +31,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #define CREATEPROCESS_MANIFEST_RESOURCE_ID 1
 #endif
 
-/* CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST srb2win.exe.manifest */
+/* CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST srb2tsourdt3rd.exe.manifest */
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -40,7 +40,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_ICON1               ICON    DISCARDABLE     "Srb2win.ico"
+IDI_ICON1               ICON    DISCARDABLE     "srb2tsourdt3rd.ico"
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////

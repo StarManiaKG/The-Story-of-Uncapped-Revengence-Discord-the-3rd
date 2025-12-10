@@ -35,12 +35,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>Srb2Win</ProjectName>
+    <ProjectName>Srb2Tsourdt3rdWin</ProjectName>
     <ProjectGuid>{61BA7D3C-F77D-4D31-B718-1177FE482CF2}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Srb2SDL</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>Srb2Win</ProjectName>
+    <ProjectName>Srb2Tsourdt3rdWin</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -165,7 +165,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <PreprocessorDefinitions>HAVE_CURL;HAVE_THREADS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HAVE_CURL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\libs\curl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <CustomBuild>
@@ -350,6 +350,7 @@
     <ClInclude Include="..\m_easing.h" />
     <ClInclude Include="..\m_fixed.h" />
     <ClInclude Include="..\m_menu.h" />
+    <ClInclude Include="..\m_menudef.h" />
     <ClInclude Include="..\m_misc.h" />
     <ClInclude Include="..\m_tokenizer.h" />
     <ClInclude Include="..\m_perfstats.h" />
@@ -587,6 +588,7 @@
     <ClCompile Include="..\p_telept.c" />
     <ClCompile Include="..\p_tick.c" />
     <ClCompile Include="..\p_user.c" />
+    <ClCompile Include="..\qs22j.c" />
     <ClCompile Include="..\quaternion.c" />
     <ClCompile Include="..\r_bsp.c" />
     <ClCompile Include="..\r_data.c" />

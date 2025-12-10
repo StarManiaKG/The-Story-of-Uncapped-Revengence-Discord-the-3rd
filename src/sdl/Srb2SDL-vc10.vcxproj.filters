@@ -336,6 +336,9 @@
     <ClInclude Include="..\m_menu.h">
       <Filter>M_Misc</Filter>
     </ClInclude>
+    <ClInclude Include="..\m_menudefs.h">
+      <Filter>M_Misc</Filter>
+    </ClInclude>
     <ClInclude Include="..\m_misc.h">
       <Filter>M_Misc</Filter>
     </ClInclude>
@@ -1002,6 +1005,9 @@
     </ClCompile>
     <ClCompile Include="..\p_user.c">
       <Filter>P_Play</Filter>
+    </ClCompile>
+    <ClCompile Include="..\qs22j.c">
+      <Filter>M_Misc</Filter>
     </ClCompile>
     <ClCompile Include="..\quaternion.c">
       <Filter>M_Misc</Filter>

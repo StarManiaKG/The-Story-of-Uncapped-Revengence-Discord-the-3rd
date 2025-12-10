@@ -423,6 +423,16 @@ Priority=1000
 OverrideBuildCmd=0
 BuildCmd=
 
+[Unit43]
+FileName=src\m_menudefs.h
+Folder=M_Misc
+Compile=1
+CompileCpp=0
+Link=1
+Priority=1000
+OverrideBuildCmd=0
+BuildCmd=
+
 [Unit44]
 FileName=src\m_misc.h
 Folder=M_Misc
@@ -1927,7 +1937,7 @@ OverrideBuildCmd=0
 BuildCmd=
 
 [Unit193]
-FileName=src\win32\Srb2win.rc
+FileName=src\win32\srb2tsourdt3rd.rc
 CompileCpp=0
 Folder=I_Interface/Win32
 Compile=1
@@ -1983,7 +1993,7 @@ Icon=
 ExeOutput=bin\Mingw\Release
 ObjectOutput=objs\Mingw\Release
 OverrideOutput=1
-OverrideOutputName=srb2win.exe
+OverrideOutputName=srb2tsourdt3rd_windows32.exe
 HostApplication=
 CommandLine=
 UseCustomMakefile=0
@@ -2010,7 +2020,7 @@ Icon=
 ExeOutput=bin\Mingw\Debug
 ObjectOutput=objs\Mingw\Debug
 OverrideOutput=1
-OverrideOutputName=srb2win.exe
+OverrideOutputName=srb2tsourdt3rd_windows32.exe
 HostApplication=
 CommandLine=
 UseCustomMakefile=0
@@ -2291,7 +2301,7 @@ Icon=
 ExeOutput=bin\Mingw64\Release
 ObjectOutput=objs\Mingw64\Release
 OverrideOutput=1
-OverrideOutputName=srb2win.exe
+OverrideOutputName=srb2tsourdt3rd_windows64.exe
 HostApplication=
 CommandLine=
 UseCustomMakefile=0
@@ -2318,7 +2328,7 @@ Icon=
 ExeOutput=bin\Mingw64\Debug
 ObjectOutput=objs\Mingw64\Debug
 OverrideOutput=1
-OverrideOutputName=srb2win.exe
+OverrideOutputName=srb2tsourdt3rd_windows64.exe
 HostApplication=
 CommandLine=
 UseCustomMakefile=0

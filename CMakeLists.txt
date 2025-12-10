@@ -86,7 +86,7 @@ set(SRB2_CONFIG_ASSET_DIRECTORY "" CACHE PATH "Path to directory that contains a
 # -- Discord integration support
 if(APPLE)
 	# DiscordRPC needs but does not properly specify ObjC
-    enable_language(OBJC)
+	enable_language(OBJC)
 endif()
 option(TSOURDT3RD_CONFIG_ENABLE_DISCORDRPC "TSoURDt3rd: Enable Discord Rich Presence support." ON)
 option(TSOURDT3RD_CONFIG_ENABLE_DISCORDGAMESDK "TSoURDt3rd: Enable Discord Game SDK support." OFF)
@@ -169,12 +169,11 @@ if("${SRB2_SDL2_EXE_NAME}" STREQUAL "")
 		git_latest_commit(SRB2_GIT_REVISION)
 	endif()
 
-	if("${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
-		list(APPEND EXE_NAME_PARTS "srb2tsourdt3rd_win")
-	elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
-		list(APPEND EXE_NAME_PARTS "srb2tsourdt3rd_linux")
+	string(TOLOWER "${CMAKE_SYSTEM_NAME}" SRB2_HOST_PLATFORM)
+	if(NOT ${SRB2_SYSTEM_BITS} EQUAL 0)
+		list(APPEND EXE_NAME_PARTS "srb2tsourdt3rd_${SRB2_HOST_PLATFORM}${SRB2_SYSTEM_BITS}")
 	else()
-		list(APPEND EXE_NAME_PARTS "srb2tsourdt3rd")
+		list(APPEND EXE_NAME_PARTS "srb2tsourdt3rd_${SRB2_HOST_PLATFORM}")
 	endif()
 
 	if(NOT "${SRB2_GIT_REVISION}" STREQUAL "master")

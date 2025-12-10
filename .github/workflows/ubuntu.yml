@@ -1,0 +1,53 @@
+# SRB2 Legacy
+
+name: Ubuntu
+
+on:
+  push:
+    branches: [ "next", "master", "ci" ]
+  pull_request:
+    branches: [ "next", "master" ]
+
+env:
+  CC: gcc
+
+jobs:
+  build:
+    continue-on-error: true
+    strategy:
+      matrix:
+        arch:
+          - runner: ubuntu-latest
+            name: x86_64
+          - runner: ubuntu-24.04-arm
+            name: aarch64
+
+    name: ${{ matrix.arch.name }}
+    runs-on: ${{ matrix.arch.runner }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: sudo apt-get update && sudo apt install -y libsdl2-mixer-dev libpng-dev libcurl4-openssl-dev libgme-dev libminiupnpc-dev libopenmpt-dev
+
+    - name: Build TSoURDt3rd
+      run: make -C src/ --keep-going -j$(nproc) LINUX64=1
+
+    - name: Package TSoURDt3rd AppImage
+      run: chmod +x srb2tsourdt3rd_appimage.sh && ./srb2tsourdt3rd_appimage.sh --noassets --skipbuild
+
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: srb2tsourdt3rd_linux${{ matrix.arch.name }}-${{ github.sha }}
+        path: |
+          bin/
+          src/comptime.h
+
+    - name: Upload Appimage artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: srb2tsourdt3rd_linux${{ matrix.arch.name }}_appimage-${{ github.sha }}
+        path: |
+          Sonic_Robo_Blast_2_-_TSoURDt3rd_${{ matrix.arch.name }}.AppImage
