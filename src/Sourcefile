@@ -51,6 +51,7 @@ p_telept.c
 p_tick.c
 p_user.c
 p_slopes.c
+qs22j.c
 quaternion.c
 tables.c
 r_bsp.c
