@@ -539,6 +539,9 @@ static void F_ManageWipe(UINT8 wipetype, UINT8 wipeframe, fademask_t *fmask)
 		HWR_DoWipe(wipetype, wipeframe-1);
 	}
 	else
+#else
+	(void)wipetype;
+	(void)wipeframe;
 #endif
 	{
 		// Wipe styles
