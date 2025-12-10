@@ -60,7 +60,7 @@ add_library(SDL2_mixer_ext::SDL2_mixer_ext_Static STATIC IMPORTED)
 
 set_target_properties(SDL2_mixer_ext::SDL2_mixer_ext_Static PROPERTIES
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include/SDL2"
-  INTERFACE_LINK_LIBRARIES "C:/msys64/home/Drayt/Github/codecbuild32/lib/libopusfile.a;C:/msys64/home/Drayt/Github/codecbuild32/lib/libopus.a;C:/msys64/home/Drayt/Github/codecbuild32/lib/libopusfile.a;C:/msys64/home/Drayt/Github/codecbuild32/lib/libwavpack.a;C:/msys64/home/Drayt/Github/codecbuild32/lib/libmodplug.a;C:/msys64/home/Drayt/Github/BittenTSoURDt3rd/libs/gme/win32/libgme.dll.a;C:/msys64/mingw32/lib/libz.dll.a;C:/msys64/home/Drayt/Github/codecbuild32/lib/libOPNMIDI.a;C:/msys64/home/Drayt/Github/codecbuild32/bin/libfluidlite.dll;C:/msys64/home/Drayt/Github/codecbuild32/lib/libvorbisfile.a;C:/msys64/home/Drayt/Github/codecbuild32/lib/libvorbis.a;C:/msys64/home/Drayt/Github/codecbuild32/lib/libvorbisfile.a;winmm;C:/msys64/home/Drayt/Github/codecbuild32/lib/libogg.a;SDL2::SDL2;SDL2::SDL2main;stdc++"
+  INTERFACE_LINK_LIBRARIES "/opt/local/i686-w64-mingw32/lib/libopusfile.a;/opt/local/i686-w64-mingw32/lib/libopus.a;/opt/local/i686-w64-mingw32/lib/libopusfile.a;/opt/local/i686-w64-mingw32/lib/libwavpack.a;/opt/local/i686-w64-mingw32/lib/libmodplug.a;/opt/local/x86_64-w64-mingw32/libs/gme/win32/libgme.dll.a;C:/msys64/mingw32/lib/libz.dll.a;/opt/local/i686-w64-mingw32/lib/libOPNMIDI.a;/opt/local/i686-w64-mingw32/bin/libfluidlite.dll;/opt/local/i686-w64-mingw32/lib/libvorbisfile.a;/opt/local/i686-w64-mingw32/lib/libvorbis.a;/opt/local/i686-w64-mingw32/lib/libvorbisfile.a;winmm;/opt/local/i686-w64-mingw32/lib/libogg.a;SDL2::SDL2;SDL2::SDL2main;stdc++"
 )
 
 if(CMAKE_VERSION VERSION_LESS 2.8.12)

@@ -1,4 +1,4 @@
-prefix=C:/msys64/home/Drayt/Github/i686-w64-mingw
+prefix=/opt/local/i686-w64-mingw32
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include
