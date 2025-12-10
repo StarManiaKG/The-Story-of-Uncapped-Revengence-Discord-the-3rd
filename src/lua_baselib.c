@@ -76,18 +76,18 @@ static int lib_concat(lua_State *L)
   size_t rl = 0,sl;
   lua_getglobal(L, "tostring");
   for (i=1; i<=n; i++) {
-    const char *s;
-    lua_pushvalue(L, -1);  /* function to be called */
-    lua_pushvalue(L, i);   /* value to print */
-    lua_call(L, 1, 1);
-    s = lua_tolstring(L, -1, &sl);  /* get result */
-    if (s == NULL)
-      return luaL_error(L, LUA_QL("tostring") " must return a string to "
+	const char *s;
+	lua_pushvalue(L, -1);  /* function to be called */
+	lua_pushvalue(L, i);   /* value to print */
+	lua_call(L, 1, 1);
+	s = lua_tolstring(L, -1, &sl);  /* get result */
+	if (s == NULL)
+	  return luaL_error(L, LUA_QL("tostring") " must return a string to "
 													 LUA_QL("__add"));
 		r = Z_Realloc(r, rl+sl, PU_STATIC, NULL);
 		M_Memcpy(r+rl, s, sl);
 		rl += sl;
-    lua_pop(L, 1);  /* pop result */
+	lua_pop(L, 1);  /* pop result */
   }
   lua_pushlstring(L, r, rl);
   Z_Free(r);
@@ -103,17 +103,17 @@ static int lib_print(lua_State *L)
   //HUDSAFE
   lua_getglobal(L, "tostring");
   for (i=1; i<=n; i++) {
-    const char *s;
-    lua_pushvalue(L, -1);  /* function to be called */
-    lua_pushvalue(L, i);   /* value to print */
-    lua_call(L, 1, 1);
-    s = lua_tostring(L, -1);  /* get result */
-    if (s == NULL)
-      return luaL_error(L, LUA_QL("tostring") " must return a string to "
+	const char *s;
+	lua_pushvalue(L, -1);  /* function to be called */
+	lua_pushvalue(L, i);   /* value to print */
+	lua_call(L, 1, 1);
+	s = lua_tostring(L, -1);  /* get result */
+	if (s == NULL)
+	  return luaL_error(L, LUA_QL("tostring") " must return a string to "
 													 LUA_QL("print"));
-    if (i>1) CONS_Printf("\n");
-    CONS_Printf("%s", s);
-    lua_pop(L, 1);  /* pop result */
+	if (i>1) CONS_Printf("\n");
+	CONS_Printf("%s", s);
+	lua_pop(L, 1);  /* pop result */
   }
 	CONS_Printf("\n");
 	return 0;
@@ -2472,16 +2472,16 @@ static int lib_pThrustEvenIn2D(lua_State *L)
 
 static int lib_pVectorInstaThrust(lua_State *L)
 {
-    fixed_t xa = luaL_checkfixed(L, 1);
-    fixed_t xb = luaL_checkfixed(L, 2);
-    fixed_t xc = luaL_checkfixed(L, 3);
-    fixed_t ya = luaL_checkfixed(L, 4);
-    fixed_t yb = luaL_checkfixed(L, 5);
-    fixed_t yc = luaL_checkfixed(L, 6);
-    fixed_t za = luaL_checkfixed(L, 7);
-    fixed_t zb = luaL_checkfixed(L, 8);
-    fixed_t zc = luaL_checkfixed(L, 9);
-    fixed_t momentum = luaL_checkfixed(L, 10);
+	fixed_t xa = luaL_checkfixed(L, 1);
+	fixed_t xb = luaL_checkfixed(L, 2);
+	fixed_t xc = luaL_checkfixed(L, 3);
+	fixed_t ya = luaL_checkfixed(L, 4);
+	fixed_t yb = luaL_checkfixed(L, 5);
+	fixed_t yc = luaL_checkfixed(L, 6);
+	fixed_t za = luaL_checkfixed(L, 7);
+	fixed_t zb = luaL_checkfixed(L, 8);
+	fixed_t zc = luaL_checkfixed(L, 9);
+	fixed_t momentum = luaL_checkfixed(L, 10);
 	mobj_t *mo = *((mobj_t **)luaL_checkudata(L, 11, META_MOBJ));
 	NOHUD
 	INLEVEL
@@ -3486,6 +3486,171 @@ static int lib_sStopSoundByID(lua_State *L)
 	return 0;
 }
 
+static int lib_sStopSoundByNum(lua_State *L)
+{
+	sfxenum_t sound_id = luaL_checkinteger(L, 1);
+
+	//NOHUD
+
+	if (sound_id >= NUMSFX)
+		return luaL_error(L, "sfx %d out of range (0 - %d)", sound_id, NUMSFX-1);
+
+	S_StopSoundByNum(sound_id);
+	return 0;
+}
+
+static int lib_sSpeedSound(lua_State *L)
+{
+	void *origin = NULL;
+	fixed_t fixed_speed = luaL_checkfixed(L, 2);
+	float speed = FIXED_TO_FLOAT(fixed_speed);
+	player_t *player = NULL;
+
+	//NOHUD
+
+	if (!GetValidSoundOrigin(L, &origin))
+		return LUA_ErrInvalid(L, "mobj_t/sector_t");
+	if (!lua_isnone(L, 3) && lua_isuserdata(L, 3))
+	{
+		player = *((player_t **)luaL_checkudata(L, 3, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+	if (player == NULL || P_IsLocalPlayer(player))
+		lua_pushboolean(L, S_SpeedSound(origin, speed));
+	else
+		lua_pushnil(L);
+
+	return 1;
+}
+
+static int lib_sSpeedSoundByID(lua_State *L)
+{
+	void *origin = NULL;
+	sfxenum_t sound_id = luaL_checkinteger(L, 2);
+	fixed_t fixed_speed = luaL_checkfixed(L, 3);
+	float speed = FIXED_TO_FLOAT(fixed_speed);
+	player_t *player = NULL;
+
+	//NOHUD
+
+	if (sound_id >= NUMSFX)
+		return luaL_error(L, "sfx %d out of range (0 - %d)", sound_id, NUMSFX-1);
+	if (!lua_isnil(L, 1))
+		if (!GetValidSoundOrigin(L, &origin))
+			return LUA_ErrInvalid(L, "mobj_t/sector_t");
+	if (!lua_isnone(L, 4) && lua_isuserdata(L, 4))
+	{
+		player = *((player_t **)luaL_checkudata(L, 4, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+	if (player == NULL || P_IsLocalPlayer(player))
+		lua_pushboolean(L, S_SpeedSoundByID(origin, sound_id, speed));
+	else
+		lua_pushnil(L);
+
+	return 1;
+}
+
+static int lib_sSpeedSoundByNum(lua_State *L)
+{
+	sfxenum_t sound_id = luaL_checkinteger(L, 1);
+	fixed_t fixed_speed = luaL_checkfixed(L, 2);
+	float speed = FIXED_TO_FLOAT(fixed_speed);
+	player_t *player = NULL;
+
+	//NOHUD
+
+	if (sound_id >= NUMSFX)
+		return luaL_error(L, "sfx %d out of range (0 - %d)", sound_id, NUMSFX-1);
+	if (!lua_isnone(L, 3) && lua_isuserdata(L, 3))
+	{
+		player = *((player_t **)luaL_checkudata(L, 3, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+	if (player == NULL || P_IsLocalPlayer(player))
+		lua_pushboolean(L, S_SpeedSoundByNum(sound_id, speed));
+	else
+		lua_pushnil(L);
+
+	return 1;
+}
+
+static int lib_sGetSpeedSound(lua_State *L)
+{
+	void *origin = NULL;
+	player_t *player = NULL;
+
+	//NOHUD
+
+	if (!GetValidSoundOrigin(L, &origin))
+		return LUA_ErrInvalid(L, "mobj_t/sector_t");
+	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
+	{
+		player = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+	if (player == NULL || P_IsLocalPlayer(player))
+		lua_pushfixed(L, FloatToFixed(S_GetSpeedSound(origin)));
+	else
+		lua_pushnil(L);
+
+	return 1;
+}
+
+static int lib_sGetSpeedSoundByID(lua_State *L)
+{
+	void *origin = NULL;
+	sfxenum_t sound_id = luaL_checkinteger(L, 2);
+	player_t *player = NULL;
+
+	//NOHUD
+
+	if (sound_id >= NUMSFX)
+		return luaL_error(L, "sfx %d out of range (0 - %d)", sound_id, NUMSFX-1);
+	if (!lua_isnil(L, 1))
+		if (!GetValidSoundOrigin(L, &origin))
+			return LUA_ErrInvalid(L, "mobj_t/sector_t");
+	if (!lua_isnone(L, 3) && lua_isuserdata(L, 3))
+	{
+		player = *((player_t **)luaL_checkudata(L, 3, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+	if (player == NULL || P_IsLocalPlayer(player))
+		lua_pushfixed(L, FloatToFixed(S_GetSpeedSoundByID(origin, sound_id)));
+	else
+		lua_pushnil(L);
+
+	return 1;
+}
+
+static int lib_sGetSpeedSoundByNum(lua_State *L)
+{
+	sfxenum_t sound_id = luaL_checkinteger(L, 1);
+	player_t *player = NULL;
+
+	//NOHUD
+
+	if (sound_id >= NUMSFX)
+		return luaL_error(L, "sfx %d out of range (0 - %d)", sound_id, NUMSFX-1);
+	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
+	{
+		player = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+	if (player == NULL || P_IsLocalPlayer(player))
+		lua_pushfixed(L, FloatToFixed(S_GetSpeedSoundByNum(sound_id)));
+	else
+		lua_pushnil(L);
+
+	return 1;
+}
+
 static int lib_sChangeMusic(lua_State *L)
 {
 	UINT32 position, prefadems, fadeinms;
@@ -3517,20 +3682,25 @@ static int lib_sSpeedMusic(lua_State *L)
 	fixed_t fixed_speed = luaL_checkfixed(L, 1);
 	float speed = FIXED_TO_FLOAT(fixed_speed);
 	player_t *player = NULL;
-	boolean sped_the_music = false;
+
 	//NOHUD
+
 	if (!lua_isnone(L, 2) && lua_isuserdata(L, 2))
 	{
 		player = *((player_t **)luaL_checkudata(L, 2, META_PLAYER));
 		if (!player)
 			return LUA_ErrInvalid(L, "player_t");
 	}
-	if (!TSoURDt3rd_Jukebox_IsPlaying()) // STAR STUFF: DON'T INTERUPT OUR MUSIC PLEASE :) //
+	if (S_SpeedMusicAllowed() && !TSoURDt3rd_Jukebox_IsPlaying()) // STAR STUFF: DON'T INTERUPT OUR MUSIC PLEASE :) //
 	{
 		if (!player || P_IsLocalPlayer(player))
-			sped_the_music = S_SpeedMusic(speed);
+		{
+			lua_pushboolean(L, S_SpeedMusic(speed));
+			return 1;
+		}
 	}
-	lua_pushboolean(L, sped_the_music);
+
+	lua_pushnil(L);
 	return 1;
 }
 
@@ -3749,6 +3919,26 @@ static int lib_sMusicType(lua_State *L)
 	return 1;
 }
 
+static int lib_sMusicLoaded(lua_State *L)
+{
+	player_t *player = NULL;
+
+	NOHUD
+
+	if (!lua_isnone(L, 1) && lua_isuserdata(L, 1))
+	{
+		player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+		if (!player)
+			return LUA_ErrInvalid(L, "player_t");
+	}
+	if (!player || P_IsLocalPlayer(player))
+		lua_pushboolean(L, S_MusicLoaded());
+	else
+		lua_pushnil(L);
+
+	return 1;
+}
+
 static int lib_sMusicPlaying(lua_State *L)
 {
 	player_t *player = NULL;
@@ -3857,7 +4047,7 @@ static int lib_sPauseMusic(lua_State *L)
 	}
 	if (!player || P_IsLocalPlayer(player))
 	{
-		S_PauseAudio();
+		S_PauseMusic();
 		lua_pushboolean(L, true);
 	}
 	else
@@ -3877,7 +4067,7 @@ static int lib_sResumeMusic(lua_State *L)
 	}
 	if (!player || P_IsLocalPlayer(player))
 	{
-		S_ResumeAudio();
+		S_ResumeMusic();
 		lua_pushboolean(L, true);
 	}
 	else
@@ -4434,9 +4624,7 @@ static int lib_gSetCustomExitVars(lua_State *L)
 		nextmapoverride = (INT16)luaL_optinteger(L, 1, 0);
 		skipstats = (INT16)luaL_optinteger(L, 2, 0);
 		nextgametype = (INT16)luaL_optinteger(L, 3, -1);
-
-		if (!lua_isnil(L, 4))
-			keepcutscene = luaL_checkboolean(L, 4);
+		keepcutscene = lua_optboolean(L, 4);
 	}
 
 	return 0;
@@ -4852,6 +5040,13 @@ static luaL_Reg lib[] = {
 	{"S_StartSoundAtVolume",lib_sStartSoundAtVolume},
 	{"S_StopSound",lib_sStopSound},
 	{"S_StopSoundByID",lib_sStopSoundByID},
+	{"S_StopSoundByNum", lib_sStopSoundByNum},
+	{"S_SpeedSound",lib_sSpeedSound},
+	{"S_SpeedSoundByID",lib_sSpeedSoundByID},
+	{"S_SpeedSoundByNum", lib_sSpeedSoundByNum},
+	{"S_GetSpeedSound",lib_sGetSpeedSound},
+	{"S_GetSpeedSoundByID",lib_sGetSpeedSoundByID},
+	{"S_GetSpeedSoundByNum", lib_sGetSpeedSoundByNum},
 	{"S_ChangeMusic",lib_sChangeMusic},
 	{"S_SpeedMusic",lib_sSpeedMusic},
 	{"S_StopMusic",lib_sStopMusic},
@@ -4867,6 +5062,7 @@ static luaL_Reg lib[] = {
 	{"S_SoundPlaying",lib_sSoundPlaying},
 	{"S_StartMusicCaption", lib_sStartMusicCaption},
 	{"S_MusicType",lib_sMusicType},
+	{"S_MusicLoaded",lib_sMusicLoaded},
 	{"S_MusicPlaying",lib_sMusicPlaying},
 	{"S_MusicPaused",lib_sMusicPaused},
 	{"S_MusicName",lib_sMusicName},
@@ -4913,6 +5109,12 @@ static luaL_Reg lib[] = {
 	{NULL, NULL}
 };
 
+static luaL_Reg tsourdt3rd_lib[] =
+{
+	// FINISHED!
+	{NULL, NULL}
+};
+
 int LUA_BaseLib(lua_State *L)
 {
 	// musicdef_t
@@ -4932,5 +5134,9 @@ int LUA_BaseLib(lua_State *L)
 	// Set global functions
 	lua_pushvalue(L, LUA_GLOBALSINDEX);
 	luaL_register(L, NULL, lib);
+	luaL_register(L, NULL, tsourdt3rd_lib);
+	luaL_register(L, "tsourdt3rd", tsourdt3rd_lib);
+
+	// conclude
 	return 0;
 }
