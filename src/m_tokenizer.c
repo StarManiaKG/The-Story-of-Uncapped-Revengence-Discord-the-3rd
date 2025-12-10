@@ -30,6 +30,7 @@ tokenizer_t *Tokenizer_Open(const char *inputString, size_t len, unsigned numTok
 	tokenizer->inComment = 0;
 	tokenizer->stringNeedsEscaping = false;
 	tokenizer->inString = 0;
+	tokenizer->line = 0;
 	tokenizer->get = Tokenizer_Read;
 
 	if (numTokens < 1)
