@@ -69,7 +69,8 @@ void TSoURDt3rd_G_UpdateSaveDirectory(void)
 	if (has_autoloaded)
 	{
 		char *save_prefix = strdup(TSOURDT3RD_APP "_");
-		snprintf(tsourdt3rd_savedata_prefix, MAX_WADPATH, "%s", strlwr(save_prefix));
+		strlwr(save_prefix);
+		strlcpy(tsourdt3rd_savedata_prefix, save_prefix, MAX_WADPATH);
 		free(save_prefix);
 	}
 
