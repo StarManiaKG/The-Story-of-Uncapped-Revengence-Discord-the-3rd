@@ -92,7 +92,6 @@ UINT32 ASTBlendPixel(RGBA_t background, RGBA_t foreground, int style, UINT8 alph
 		}
 		return output.rgba;
 	}
-#define clamp(c) max(min(c, 0xFF), 0x00);
 	else
 	{
 		float falpha = ((float)alpha / 256.0f);
@@ -101,30 +100,30 @@ UINT32 ASTBlendPixel(RGBA_t background, RGBA_t foreground, int style, UINT8 alph
 		float fb = ((float)foreground.s.blue * falpha);
 		if (style == AST_ADD)
 		{
-			output.s.red = clamp((int)(background.s.red + fr));
-			output.s.green = clamp((int)(background.s.green + fg));
-			output.s.blue = clamp((int)(background.s.blue + fb));
+			output.s.red = clamp((int)(background.s.red + fr), 0x00, 0xFF);
+			output.s.green = clamp((int)(background.s.green + fg), 0x00, 0xFF);
+			output.s.blue = clamp((int)(background.s.blue + fb), 0x00, 0xFF);
 		}
 		else if (style == AST_SUBTRACT)
 		{
-			output.s.red = clamp((int)(background.s.red - fr));
-			output.s.green = clamp((int)(background.s.green - fg));
-			output.s.blue = clamp((int)(background.s.blue - fb));
+			output.s.red = clamp((int)(background.s.red - fr), 0x00, 0xFF);
+			output.s.green = clamp((int)(background.s.green - fg), 0x00, 0xFF);
+			output.s.blue = clamp((int)(background.s.blue - fb), 0x00, 0xFF);
 		}
 		else if (style == AST_REVERSESUBTRACT)
 		{
-			output.s.red = clamp((int)((-background.s.red) + fr));
-			output.s.green = clamp((int)((-background.s.green) + fg));
-			output.s.blue = clamp((int)((-background.s.blue) + fb));
+			output.s.red = clamp((int)((-background.s.red) + fr), 0x00, 0xFF);
+			output.s.green = clamp((int)((-background.s.green) + fg), 0x00, 0xFF);
+			output.s.blue = clamp((int)((-background.s.blue) + fb), 0x00, 0xFF);
 		}
 		else if (style == AST_MODULATE)
 		{
 			fr = ((float)foreground.s.red / 256.0f);
 			fg = ((float)foreground.s.green / 256.0f);
 			fb = ((float)foreground.s.blue / 256.0f);
-			output.s.red = clamp((int)(background.s.red * fr));
-			output.s.green = clamp((int)(background.s.green * fg));
-			output.s.blue = clamp((int)(background.s.blue * fb));
+			output.s.red = clamp((int)(background.s.red * fr), 0x00, 0xFF);
+			output.s.green = clamp((int)(background.s.green * fg), 0x00, 0xFF);
+			output.s.blue = clamp((int)(background.s.blue * fb), 0x00, 0xFF);
 		}
 		// just copy the pixel
 		else if (style == AST_COPY)
@@ -133,7 +132,6 @@ UINT32 ASTBlendPixel(RGBA_t background, RGBA_t foreground, int style, UINT8 alph
 		output.s.alpha = 0xFF;
 		return output.rgba;
 	}
-#undef clamp
 	return 0;
 }
 

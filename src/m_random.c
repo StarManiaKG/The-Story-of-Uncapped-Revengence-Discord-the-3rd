@@ -206,6 +206,17 @@ INT32 M_RandomRange(INT32 a, INT32 b)
 	return (INT32)((INT64)RandomState_GetKey32(&m_randomstate, spread) + a);
 }
 
+/** Provides a random boolean in a given range.
+  * Distribution is uniform.
+  * As with all M_Random functions, not synched in netgames.
+  *
+  * \return A randomized true or false.
+  */
+boolean M_RandomBool(void)
+{
+	return (M_RandomRange(0, 1) == 1);
+}
+
 /** Attempts to seed the unsynched RNG from a good random number source
   * provided by the operating system.
   * \return true on success, false on failure.

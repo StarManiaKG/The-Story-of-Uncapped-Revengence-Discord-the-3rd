@@ -30,9 +30,6 @@ extern fixed_t centerxfrac, centeryfrac;
 extern fixed_t projection, projectiony;
 extern fixed_t fovtan;
 
-// WARNING: a should be unsigned but to add with 2048, it isn't!
-#define AIMINGTODY(a) FixedDiv((FINETANGENT((2048+(((INT32)a)>>ANGLETOFINESHIFT)) & FINEMASK)*160), fovtan)
-
 #define MINFOV 60
 #define MAXFOV 179
 

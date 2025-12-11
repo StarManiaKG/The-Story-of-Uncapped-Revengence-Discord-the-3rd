@@ -167,8 +167,6 @@ static void R_SetupFreelook(player_t *player, boolean skybox)
 		yslope = &yslopetab[viewheight*8 - centery];
 }
 
-#undef AIMINGTODY
-
 void R_InterpolateView(fixed_t frac)
 {
 	viewvars_t* prevview = oldview;

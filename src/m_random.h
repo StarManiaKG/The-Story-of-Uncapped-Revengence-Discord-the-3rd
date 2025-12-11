@@ -29,6 +29,7 @@
 fixed_t M_RandomFixed(void);
 UINT8   M_RandomByte(void);
 INT32   M_RandomKey(INT32 a);
+boolean M_RandomBool(void);
 INT32   M_RandomRange(INT32 a, INT32 b);
 boolean M_RandomSeedFromOS(void);
 void    M_RandomSeed(UINT32 a);

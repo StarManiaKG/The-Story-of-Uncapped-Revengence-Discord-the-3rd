@@ -321,19 +321,17 @@ static boolean PaletteRemap_DoColorRange(UINT8 *remap, int start, int end, int r
 	return true;
 }
 
-#define CLAMP(val, minval, maxval) max(min(val, maxval), minval)
-
 static boolean PaletteRemap_DoDesaturation(UINT8 *remap, int start, int end, double r1, double g1, double b1, double r2, double g2, double b2)
 {
 	if (IndicesOutOfRange(start, end))
 		return false;
 
-	r1 = CLAMP(r1, 0.0, 2.0);
-	g1 = CLAMP(g1, 0.0, 2.0);
-	b1 = CLAMP(b1, 0.0, 2.0);
-	r2 = CLAMP(r2, 0.0, 2.0);
-	g2 = CLAMP(g2, 0.0, 2.0);
-	b2 = CLAMP(b2, 0.0, 2.0);
+	r1 = clamp(r1, 0.0, 2.0);
+	g1 = clamp(g1, 0.0, 2.0);
+	b1 = clamp(b1, 0.0, 2.0);
+	r2 = clamp(r2, 0.0, 2.0);
+	g2 = clamp(g2, 0.0, 2.0);
+	b2 = clamp(b2, 0.0, 2.0);
 
 	if (start > end)
 	{
@@ -365,8 +363,6 @@ static boolean PaletteRemap_DoDesaturation(UINT8 *remap, int start, int end, dou
 
 	return true;
 }
-
-#undef CLAMP
 
 #undef SWAP
 

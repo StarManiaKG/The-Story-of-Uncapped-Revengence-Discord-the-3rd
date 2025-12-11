@@ -9,14 +9,14 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  m_bbox.h
-/// \brief bounding boxes
+/// \brief Bounding boxes
 
 #ifndef __M_BBOX__
 #define __M_BBOX__
 
 #include "m_fixed.h"
 
-/**	\brief	Bounding box coordinate storage
+/**	\brief	BBox coordinate storage
 */
 
 enum
@@ -27,10 +27,11 @@ enum
 	BOXRIGHT /// right side of bbox
 }; /// bbox coordinates
 
-// Bounding box functions.
+// BBox manipulation functions.
 void M_ClearBox(fixed_t *box);
-
 void M_AddToBox(fixed_t *box, fixed_t x, fixed_t y);
+
+// BBox functions.
 boolean M_PointInBox(fixed_t *box, fixed_t x, fixed_t y);
 boolean M_CircleTouchBox(fixed_t *box, fixed_t circlex, fixed_t circley, fixed_t circleradius);
 
