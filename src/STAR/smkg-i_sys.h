@@ -29,6 +29,10 @@ extern "C" {
 
 #define TSOURDT3RD_GAMEPAD_INIT_FLAGS (SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER)
 
+#ifdef HAVE_SDL
+#define TSOURDT3RD_PADS_ENABLED
+#endif
+
 extern INT32 window_x;
 extern INT32 window_y;
 

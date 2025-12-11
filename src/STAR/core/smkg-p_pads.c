@@ -45,6 +45,9 @@ consvar_t *tsourdt3rd_joystick_index[TSOURDT3RD_NUM_GAMEPADS] = {
 //
 INT16 TSoURDt3rd_P_Pads_GetPadIndex(player_t *player)
 {
+#ifndef TSOURDT3RD_PADS_ENABLED
+	(void)player;
+#else
 	player_t *cmp_player = NULL;
 
 	if (player == NULL || !Playing())
@@ -70,10 +73,14 @@ INT16 TSoURDt3rd_P_Pads_GetPadIndex(player_t *player)
 			return i;
 	}
 	return -1;
+#endif
 }
 
 void TSoURDt3rd_P_Pads_SetIndicatorColor(INT32 player, UINT8 red, UINT8 green, UINT8 blue)
 {
+#ifndef TSOURDT3RD_PADS_ENABLED
+	(void)player;
+#else
 	INT32 device_id = TSoURDt3rd_P_Pads_GetPadIndex(&players[player]);
 
 	if (player == -1)
@@ -87,10 +94,14 @@ void TSoURDt3rd_P_Pads_SetIndicatorColor(INT32 player, UINT8 red, UINT8 green, U
 		// Change the lights of one controller
 		TSoURDt3rd_I_Pads_SetIndicatorColor(device_id, red, green, blue);
 	}
+#endif
 }
 
 void TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor(INT32 player)
 {
+#ifndef TSOURDT3RD_PADS_ENABLED
+	(void)player;
+#else
 	INT32 device_id = TSoURDt3rd_P_Pads_GetPadIndex(&players[player]);
 	UINT16 skincolor = TSoURDt3rd_M_GetCvPlayerColor(player);
 	byteColor_t byte_color = V_GetColor(skincolors[skincolor].ramp[8]).s;
@@ -106,10 +117,14 @@ void TSoURDt3rd_P_Pads_SetIndicatorToPlayerColor(INT32 player)
 		// Change the lights of one controller
 		TSoURDt3rd_I_Pads_SetIndicatorColor(device_id, byte_color.red, byte_color.green, byte_color.blue);
 	}
+#endif
 }
 
 void TSoURDt3rd_P_Pads_PlayerDeviceRumble(player_t *player, fixed_t low_strength, fixed_t high_strength, tic_t duration_tics)
 {
+#ifndef TSOURDT3RD_PADS_ENABLED
+	(void)player;
+#else
 	INT32 device_id = TSoURDt3rd_P_Pads_GetPadIndex(player);
 
 	if (low_strength == 0 || high_strength == 0)
@@ -126,10 +141,14 @@ void TSoURDt3rd_P_Pads_PlayerDeviceRumble(player_t *player, fixed_t low_strength
 		// Rumble a specific gamepad
 		TSoURDt3rd_I_Pads_Rumble(device_id, low_strength, high_strength, duration_tics);
 	}
+#endif
 }
 
 void TSoURDt3rd_P_Pads_PlayerDeviceRumbleTriggers(player_t *player, fixed_t left_strength, fixed_t right_strength, tic_t duration_tics)
 {
+#ifndef TSOURDT3RD_PADS_ENABLED
+	(void)player;
+#else
 	INT32 device_id = TSoURDt3rd_P_Pads_GetPadIndex(player);
 
 	if (left_strength == 0 || right_strength == 0)
@@ -146,10 +165,14 @@ void TSoURDt3rd_P_Pads_PlayerDeviceRumbleTriggers(player_t *player, fixed_t left
 		// Rumble a specific gamepad's trigger
 		TSoURDt3rd_I_Pads_RumbleTriggers(device_id, left_strength, right_strength, duration_tics);
 	}
+#endif
 }
 
 void TSoURDt3rd_P_Pads_PauseDeviceRumble(player_t *player, boolean rumbling_paused, boolean trigger_rumbling_paused)
 {
+#ifndef TSOURDT3RD_PADS_ENABLED
+	(void)player;
+#else
 	INT32 device_id = TSoURDt3rd_P_Pads_GetPadIndex(player);
 
 	if (player == NULL)
@@ -173,10 +196,14 @@ void TSoURDt3rd_P_Pads_PauseDeviceRumble(player_t *player, boolean rumbling_paus
 		TSoURDt3rd_I_Pads_Rumble(device_id, 0, 0, 0);
 		TSoURDt3rd_I_Pads_RumbleTriggers(device_id, 0, 0, 0);
 	}
+#endif
 }
 
 void TSoURDt3rd_P_Pads_ResetDeviceRumble(INT32 player)
 {
+#ifndef TSOURDT3RD_PADS_ENABLED
+	(void)player;
+#else
 	INT32 device_id = TSoURDt3rd_P_Pads_GetPadIndex(&players[player]);
 
 	if (player == -1)
@@ -200,10 +227,15 @@ void TSoURDt3rd_P_Pads_ResetDeviceRumble(INT32 player)
 		TSoURDt3rd_I_Pads_Rumble(device_id, 0, 0, 0);
 		TSoURDt3rd_I_Pads_RumbleTriggers(device_id, 0, 0, 0);
 	}
+#endif
 }
 
 void TSoURDt3rd_P_Pads_PadRumbleThink(mobj_t *origin, mobj_t *target)
 {
+#ifndef TSOURDT3RD_PADS_ENABLED
+	(void)origin;
+	(void)target;
+#else
 	player_t *player;
 
 	fixed_t low = 0;
@@ -321,4 +353,5 @@ void TSoURDt3rd_P_Pads_PadRumbleThink(mobj_t *origin, mobj_t *target)
 
 	// Rumble the pad! //
 	TSoURDt3rd_P_Pads_PlayerDeviceRumble(player, low, high, duration_tics);
+#endif
 }
