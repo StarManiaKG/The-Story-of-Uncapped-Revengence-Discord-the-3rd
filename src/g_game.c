@@ -4444,8 +4444,7 @@ void G_LoadGameData(gamedata_t *data)
 	UINT8 recmares;
 	INT32 curmare;
 
-	// STAR STUFF: STEAL SAVEFILE DATA //
-	TSoURDt3rd_G_LoadGameData();
+	TSoURDt3rd_G_LoadGameData(); // STAR STUFF: STEAL SAVEFILE DATA //
 
 	// Stop saving, until we successfully load it again.
 	data->loaded = false;
@@ -4673,8 +4672,7 @@ void G_SaveGameData(gamedata_t *data)
 
 	INT32 curmare;
 
-	// STAR STUFF: VIVA LA AUTOLOADING //
-	TSoURDt3rd_G_SaveGamedata();
+	TSoURDt3rd_G_SaveGamedata(); // STAR STUFF: VIVA LA AUTOLOADING //
 
 	if (!data)
 		return; // data struct not valid
