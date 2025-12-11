@@ -9,6 +9,9 @@
 /// \file  smkg-d_main.c
 /// \brief TSoURDt3rd's main program data
 
+#include <string.h>
+#include <stdlib.h>
+
 #include "smkg-d_main.h"
 #include "smkg-g_game.h"
 
@@ -198,10 +201,11 @@ void TSoURDt3rd_D_Init(void)
 
 	// -- Manage directory and files
 	char *app_name = strdup(TSOURDT3RD_APP);
-	char *app_name_lowercase = strlwr(strdup(TSOURDT3RD_APP));
+	char *app_name_lowercase = strdup(app_name);
 	const char *home_path = TSoURDt3rd_FOL_ReturnHomepath_SRB2();
 	char new_savedir[TSOURDT3RD_MAX_DIRPATH];
 	{
+		strlwr(app_name_lowercase);
 		snprintf(tsourdt3rd_home_dir, sizeof(tsourdt3rd_home_dir), pandf, home_path, app_name);
 		snprintf(tsourdt3rd_gamedata_file, sizeof(tsourdt3rd_gamedata_file), "%s.dat", app_name_lowercase);
 		snprintf(new_savedir, sizeof(new_savedir), "%s" PATHSEP TSOURDT3RD_DEFAULT_SAVEGAMEFOLDER, home_path);
@@ -271,14 +275,7 @@ void TSoURDt3rd_D_Loop(void)
 
 	if (!menumessage.active && !sent_event_message && tsourdt3rd_currentEvent)
 	{
-		TSoURDt3rd_M_StartMessage(
-			"A TSoURDt3rd Event is Occuring",
-			"We're having a seasonal event! Have fun!",
-			NULL,
-			MM_NOTHING,
-			NULL,
-			NULL
-		);
+		TSoURDt3rd_M_StartPlainMessage("A TSoURDt3rd Event is Occuring", "We're having a seasonal event! Have fun!");
 		sent_event_message = true;
 	}
 }
