@@ -11998,7 +11998,6 @@ static void M_ServerOptions(INT32 choice)
 static void M_StartServerMenu(INT32 choice)
 {
 	(void)choice;
-
 	if (!CV_IsSetToDefault(&cv_masterserver) && !tsourdt3rd_local.ms_address_changed)
 	{
 		TSoURDt3rd_M_StartMessage("Server Search Alert",
@@ -12013,7 +12012,6 @@ static void M_StartServerMenu(INT32 choice)
 			"Continue anyway."
 		);
 	}
-
 	CV_SetValue(&cv_masterserver_room_id, -1);
 	levellistmode = LLM_CREATESERVER;
 	Newgametype_OnChange();
