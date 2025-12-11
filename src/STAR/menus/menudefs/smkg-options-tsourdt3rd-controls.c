@@ -10,7 +10,6 @@
 /// \brief TSoURDt3rd's control menu options
 
 #include "../smkg-m_sys.h"
-
 #include "../../../z_zone.h"
 
 // ------------------------ //
@@ -389,14 +388,12 @@ static void M_Sys_ProfileControlsConfirm(INT32 choice)
 	if (choice == 0)
 	{
 		// Unsaved changes
-		TSoURDt3rd_M_StartMessage(
-			"Profiles",
+		TSoURDt3rd_M_StartMessage("TSoURDt3rd Controls", // "Profiles"
 			"You have unsaved changes to your controls.\n"
-			"Please confirm if you wish to save them.\n",
+			"Please confirm if you wish to save them.",
 			&M_ProfileControlSaveResponse,
 			MM_YESNO,
-			NULL,
-			NULL
+			NULL, NULL
 		);
 		return;
 	}

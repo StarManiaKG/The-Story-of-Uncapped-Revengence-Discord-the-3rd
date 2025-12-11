@@ -10,7 +10,6 @@
 /// \brief TSoURDt3rd's video menu options
 
 #include "../smkg-m_sys.h"
-
 #include "../../../v_video.h"
 
 // ------------------------ //

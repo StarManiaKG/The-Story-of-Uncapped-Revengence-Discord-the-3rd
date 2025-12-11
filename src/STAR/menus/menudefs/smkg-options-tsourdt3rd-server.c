@@ -10,7 +10,6 @@
 /// \brief TSoURDt3rd's player menu options
 
 #include "../smkg-m_sys.h"
-
 #include "../../../netcode/d_netfil.h"
 
 // ------------------------ //

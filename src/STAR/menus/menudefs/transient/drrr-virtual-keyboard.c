@@ -12,7 +12,6 @@
 /// \brief Keyboard input
 
 #include "../../smkg-m_sys.h"
-
 #include "../../../smkg-cvars.h"
 
 #include "../../../../s_sound.h"

@@ -410,14 +410,7 @@ static void M_Sys_LoadEventsMenu(INT32 choice)
 
 	if (!tsourdt3rd_currentEvent)
 	{
-		TSoURDt3rd_M_StartMessage(
-			"TSoURDt3rd Events",
-			M_GetText("There's no event happening right now!\n"),
-			NULL,
-			MM_NOTHING,
-			NULL,
-			NULL
-		);
+		TSoURDt3rd_M_StartPlainMessage("TSoURDt3rd Events", M_GetText("There's no event happening right now!\n"));
 		return;
 	}
 

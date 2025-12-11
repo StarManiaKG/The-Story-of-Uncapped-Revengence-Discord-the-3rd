@@ -12,10 +12,9 @@
 /// \brief TSoURDt3rd's lighting options
 
 #include "../smkg-m_sys.h"
+#include "../../../hardware/hw_main.h" // HWRENDER
 
 #ifdef STAR_LIGHTING
-
-#include "../../../hardware/hw_main.h"
 
 // ------------------------ //
 //        Variables

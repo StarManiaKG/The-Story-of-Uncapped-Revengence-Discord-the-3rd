@@ -24,7 +24,7 @@
 //
 void TSoURDt3rd_M_HandleMasterServerResetChoice(INT32 choice)
 {
-	if (choice == 'y' || choice == KEY_ENTER)
+	if (choice == 'y' || choice == KEY_ENTER || choice == MA_YES)
 	{
 		CV_Set(&cv_masterserver, cv_masterserver.defaultvalue);
 		S_StartSoundFromEverywhere(sfx_s221);

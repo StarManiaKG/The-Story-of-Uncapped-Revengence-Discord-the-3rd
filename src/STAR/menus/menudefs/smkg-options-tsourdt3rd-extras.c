@@ -10,10 +10,9 @@
 /// \brief TSoURDt3rd's unique extra menu options and routines
 
 #include "../smkg-m_sys.h"
-
 #include "../../smkg-i_sys.h"
 
-#include "../../../i_system.h" // I_ClipboardCopy()
+#include "../../../i_system.h" // I_ClipboardCopy
 
 // ------------------------ //
 //        Variables
@@ -81,6 +80,7 @@ static void M_Sys_OpenGitlabModsURL_Select(INT32 choice)
 static void M_Sys_OpenGitlabModsURL(INT32 choice)
 {
 	(void)choice;
+
 	sprintf(gitlab_mods_url, "https://git.do.srb2.org/StarManiaKG/tsourdt3rd-assets/-/tree/%s/extras?ref_type=heads", compbranch);
 	if (I_CanOpenURL())
 	{
@@ -95,20 +95,17 @@ static void M_Sys_OpenGitlabModsURL(INT32 choice)
 	else
 	{
 		I_ClipboardCopy(gitlab_mods_url, strlen(gitlab_mods_url));
-		TSoURDt3rd_M_StartMessage("TSoURDt3rd-Provided Mods",
-			"A URL to the repository hosting some TSoURDt3rd-Provided Mods has been copied to your clipboard.",
-			NULL,
-			MM_NOTHING,
-			NULL,
-			NULL
-		);
+		TSoURDt3rd_M_StartPlainMessage("TSoURDt3rd-Provided Mods", "A URL to the repository hosting some TSoURDt3rd-Provided Mods has been copied to your clipboard.");
 	}
 }
 
 static void M_Sys_LoadSnakeMenu(INT32 choice)
 {
-	if (TSoURDt3rd_M_Snake_Init(choice) == false) // Then don't load it, dummy!
+	if (TSoURDt3rd_M_Snake_Init(choice) == false)
+	{
+		// Then don't load it, dummy!
 		return;
+	}
 	TSoURDt3rd_M_SetupNextMenu(&TSoURDt3rd_TM_OP_Extras_SnakeDef, &TSoURDt3rd_OP_Extras_SnakeDef, true);
 }
 

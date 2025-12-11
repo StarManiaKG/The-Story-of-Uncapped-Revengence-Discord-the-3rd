@@ -141,7 +141,7 @@ static void M_Sys_AutoLoadAddons(INT32 choice)
 	if (autoload_config == NULL)
 	{
 		// -- Uh-oh! Somehow, we couldn't create the autoload config file!
-		TSoURDt3rd_M_StartMessage(addon_path, "Couldn't create autoload config file!", NULL, MM_NOTHING, NULL, NULL);
+		TSoURDt3rd_M_StartPlainMessage(addon_path, "Couldn't create autoload config file!");
 		S_StartSoundFromEverywhere(sfx_lose);
 		return;
 	}

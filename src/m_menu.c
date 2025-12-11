@@ -11716,8 +11716,35 @@ static void M_ConnectMenuModChecks(INT32 choice)
 		M_StartMessage(M_GetText("You have add-ons loaded.\nYou won't be able to join netgames!\n\nTo play online, restart the game\nand don't load any addons.\nSRB2 will automatically add\neverything you need when you join.\n\n(Press a key)\n"),M_ConnectMenu,MM_EVENTHANDLER);
 		return;
 	}
-
-	TSoURDt3rd_M_NetgameChecks(true)
+	else if (tsourdt3rd_local.autoloaded_mods)
+	{
+		TSoURDt3rd_M_StartMessage("Multiplayer Menu Check Failed!",
+			M_GetText(
+				"You have autoloaded game-changing add-ons.\n"
+				"You won't be able to join netgames!\n\n"
+				"To play online, restart the game\nand don't load any add-ons.\n"
+				"SRB2 will automatically add\neverything you need when you join.\n"
+			),
+			M_ConnectMenu, MM_EVENTHANDLER,
+			NULL, NULL
+		);
+		return;
+	}
+	else if (!CV_IsSetToDefault(&cv_masterserver) && !tsourdt3rd_local.ms_address_changed)
+	{
+		TSoURDt3rd_M_StartMessage("Server Search Alert",
+			M_GetText(
+				"Hey! Just a heads up that you've changed the default Server Browser address.\n\n"
+				"You won't be able to see games from the official Server Browser.\n\n"
+				"If you don't know what you're doing, this probably isn't what you want.\n"
+			),
+			TSoURDt3rd_M_HandleMasterServerResetChoice,
+			MM_YESNO,
+			"Fix this and continue.",
+			"Continue anyway."
+		);
+		return;
+	}
 
 	M_ConnectMenu(-1);
 }
@@ -11971,7 +11998,22 @@ static void M_ServerOptions(INT32 choice)
 static void M_StartServerMenu(INT32 choice)
 {
 	(void)choice;
-	TSoURDt3rd_M_NetgameChecks(false)
+
+	if (!CV_IsSetToDefault(&cv_masterserver) && !tsourdt3rd_local.ms_address_changed)
+	{
+		TSoURDt3rd_M_StartMessage("Server Search Alert",
+			M_GetText(
+				"Hey! Just a heads up that you've changed the default Server Browser address.\n\n"
+				"You won't be able to see games from the official Server Browser.\n\n"
+				"If you don't know what you're doing, this probably isn't what you want.\n"
+			),
+			TSoURDt3rd_M_HandleMasterServerResetChoice,
+			MM_YESNO,
+			"Fix this and continue.",
+			"Continue anyway."
+		);
+	}
+
 	CV_SetValue(&cv_masterserver_room_id, -1);
 	levellistmode = LLM_CREATESERVER;
 	Newgametype_OnChange();

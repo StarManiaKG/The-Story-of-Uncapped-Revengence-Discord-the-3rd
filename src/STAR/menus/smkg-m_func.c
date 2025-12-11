@@ -1347,9 +1347,7 @@ static inline boolean M_HandleGlobalInput(UINT8 pid)
 			// -- Stop and reset the jukebox
 			if (!TSoURDt3rd_Jukebox_IsPlaying())
 			{
-				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_JUKEBOX|STAR_CONS_WARNING,
-					"Nothing is currently playing in the jukebox!\n"
-				);
+				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_JUKEBOX|STAR_CONS_WARNING, "Nothing is currently playing in the jukebox!\n");
 				S_StartSoundFromEverywhere(sfx_lose);
 			}
 			else
@@ -1372,26 +1370,26 @@ static inline boolean M_HandleGlobalInput(UINT8 pid)
 			if (MENU_BUTTON_CHECK(Held, MBT_JUKEBOX_INCREASESPEED))
 			{
 				// -- Increase the speed of the current jukebox track
-				SET_GLOBAL_CVAR((S_GetSpeedMusic() < 20.0f), true, &cv_tsourdt3rd_jukebox_speed)
+				SET_GLOBAL_CVAR((S_SpeedMusicAllowed() && (S_GetSpeedMusic() < 20.0f)), true, &cv_tsourdt3rd_jukebox_speed)
 				return true;
 			}
 			else if (MENU_BUTTON_CHECK(Held, MBT_JUKEBOX_DECREASESPEED))
 			{
 				// -- Decrease the speed of the current jukebox track
-				SET_GLOBAL_CVAR((S_GetSpeedMusic() > 0.0f), false, &cv_tsourdt3rd_jukebox_speed)
+				SET_GLOBAL_CVAR((S_SpeedMusicAllowed() && (S_GetSpeedMusic() > 0.0f)), false, &cv_tsourdt3rd_jukebox_speed)
 				return true;
 			}
 
 			if (MENU_BUTTON_CHECK(Held, MBT_JUKEBOX_INCREASEPITCH))
 			{
 				// -- Increase the pitch of the current jukebox track
-				SET_GLOBAL_CVAR((S_GetPitchMusic() < 20.0f), true, &cv_tsourdt3rd_jukebox_pitch)
+				SET_GLOBAL_CVAR((S_PitchMusicAllowed() && (S_GetPitchMusic() < 20.0f)), true, &cv_tsourdt3rd_jukebox_pitch)
 				return true;
 			}
 			else if (MENU_BUTTON_CHECK(Held, MBT_JUKEBOX_DECREASEPITCH))
 			{
 				// -- Decrease the pitch of the current jukebox track
-				SET_GLOBAL_CVAR((S_GetPitchMusic() > 0.0f), false, &cv_tsourdt3rd_jukebox_pitch)
+				SET_GLOBAL_CVAR((S_PitchMusicAllowed() && (S_GetPitchMusic() > 0.0f)), false, &cv_tsourdt3rd_jukebox_pitch)
 				return true;
 			}
 		}
@@ -1582,7 +1580,7 @@ static inline void M_HandleMenuInput(void)
 			{
 				if (((currentMenu->menuitems[tsourdt3rd_itemOn].status & IT_CALLTYPE) & IT_CALL_NOTMODIFIED) && usedCheats)
 				{
-					TSoURDt3rd_M_StartMessage("TSoURDt3rd; Modified Game", M_GetText("This cannot be done with complex addons\nor in a cheated game."), NULL, MM_NOTHING, NULL, NULL);
+					TSoURDt3rd_M_StartPlainMessage("TSoURDt3rd - Modified Game", M_GetText("This cannot be done with complex addons\nor in a cheated game."));
 					return;
 				}
 			}

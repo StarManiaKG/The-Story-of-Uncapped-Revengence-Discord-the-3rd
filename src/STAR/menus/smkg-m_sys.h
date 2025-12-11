@@ -270,6 +270,8 @@ void TSoURDt3rd_M_ChangeCvarDirect(INT32 amount, float amount_f, consvar_t *cv);
 void TSoURDt3rd_M_PlayMenuJam(void);
 
 void TSoURDt3rd_M_StartMessage(const char *header, const char *string, void (*routine)(INT32), menumessagetype_t itemtype, const char *confirmstr, const char *defaultstr);
+#define TSoURDt3rd_M_StartBasicMessage(header, string, confirmstr, defaultstr) TSoURDt3rd_M_StartMessage(header, string, NULL, MM_NOTHING, confirmstr, defaultstr)
+#define TSoURDt3rd_M_StartPlainMessage(header, string) TSoURDt3rd_M_StartBasicMessage(header, string, NULL, NULL)
 boolean TSoURDt3rd_M_MenuMessageTick(void);
 void TSoURDt3rd_M_HandleMenuMessage(void);
 void TSoURDt3rd_M_StopMessage(INT32 choice);
@@ -670,37 +672,6 @@ UINT16 TSoURDt3rd_M_GetCvPlayerColor(UINT8 pnum);
 // ------------------------ //
 
 void TSoURDt3rd_M_HandleMasterServerResetChoice(INT32 choice);
-#define TSoURDt3rd_M_NetgameChecks(strict) \
-	if (tsourdt3rd_local.autoloaded_mods && strict) { \
-		TSoURDt3rd_M_StartMessage( \
-			"Multiplayer Menu Check Failed!", \
-			M_GetText( \
-				"You have autoloaded game-changing add-ons.\n \
-				You won't be able to join netgames!\n\n \
-				To play online, restart the game\nand don't load any add-ons.\n \
-				SRB2 will automatically add\neverything you need when you join.\n" \
-			), \
-			M_ConnectMenu, \
-			MM_EVENTHANDLER, \
-			NULL, \
-			NULL \
-		); \
-		return; \
-	} \
-	if (!CV_IsSetToDefault(&cv_masterserver) && !tsourdt3rd_local.ms_address_changed) { \
-		TSoURDt3rd_M_StartMessage( \
-			"Server Search Alert", \
-			M_GetText( \
-				"Hey! Just a heads up that uou've changed the default Server Browser address.\n\n \
-				You won't be able to see games from the official Server Browser.\n \
-				If you don't know what you're doing, this probably isn't what you want.\n" \
-			), \
-			TSoURDt3rd_M_HandleMasterServerResetChoice, \
-			MM_YESNO, \
-			"Fix this and continue.", \
-			"Continue anyway." \
-		); \
-	}
 
 void TSoURDt3rd_M_HandleAddonsMenu(INT32 choice);
 

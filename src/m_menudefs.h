@@ -137,4 +137,6 @@ extern menu_t OP_AddonCustomOptionsDef;
 // Called on joystick hotplug
 void M_SetupJoystickMenu(INT32 choice);
 
+// Called on server search
+
 #endif // __X_MENU_DEFS__

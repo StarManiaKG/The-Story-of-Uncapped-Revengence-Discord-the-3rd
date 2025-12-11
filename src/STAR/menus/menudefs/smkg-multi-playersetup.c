@@ -10,7 +10,6 @@
 /// \brief Extended data for the player setup menu.
 
 #include "../smkg-m_sys.h"
-
 #include "../../p_user.h"
 
 #include "../../../g_game.h"
