@@ -11,6 +11,7 @@
 
 #include "smkg-lu_main.h"
 #include "../star_vars.h" // tsourdt3rd struct //
+#include "../core/smkg-g_game.h" // tsourdt3rd_local //
 #include "../misc/smkg-m_misc.h" // TSoURDt3rd_M_FindWordInTermTable() //
 
 #include "../../lua_libs.h"

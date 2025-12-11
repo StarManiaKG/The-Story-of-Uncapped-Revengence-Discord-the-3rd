@@ -107,7 +107,7 @@ static int lib_sGetSpeedMusic(lua_State *L)
 			return LUA_ErrInvalid(L, "player_t");
 	}
 	if (!player || P_IsLocalPlayer(player))
-		lua_pushinteger(L, S_GetSpeedMusic());
+		lua_pushfixed(L, FloatToFixed(S_GetSpeedMusic()));
 	else
 		lua_pushnil(L);
 
@@ -119,7 +119,6 @@ static int lib_sPitchMusic(lua_State *L)
 	fixed_t fixed_pitch = luaL_checkfixed(L, 1);
 	float pitch = FIXED_TO_FLOAT(fixed_pitch);
 	player_t *player = NULL;
-	boolean pitched_the_music = false;
 
 	//NOHUD
 
@@ -129,13 +128,16 @@ static int lib_sPitchMusic(lua_State *L)
 		if (!player)
 			return LUA_ErrInvalid(L, "player_t");
 	}
-	if (!TSoURDt3rd_Jukebox_IsPlaying())
+	if (S_PitchMusicAllowed() && !TSoURDt3rd_Jukebox_IsPlaying()) // STAR STUFF: DON'T INTERUPT OUR MUSIC PLEASE :) //
 	{
 		if (!player || P_IsLocalPlayer(player))
-			pitched_the_music = S_PitchMusic(pitch);
+		{
+			lua_pushboolean(L, S_PitchMusic(pitch));
+			return 1;
+		}
 	}
 
-	lua_pushboolean(L, pitched_the_music);
+	lua_pushnil(L);
 	return 1;
 }
 
@@ -152,7 +154,7 @@ static int lib_sGetPitchMusic(lua_State *L)
 			return LUA_ErrInvalid(L, "player_t");
 	}
 	if (!player || P_IsLocalPlayer(player))
-		lua_pushinteger(L, S_GetPitchMusic());
+		lua_pushfixed(L, FloatToFixed(S_GetPitchMusic()));
 	else
 		lua_pushnil(L);
 
@@ -223,7 +225,8 @@ static int lib_sGetInternalSfxVolume(lua_State *L)
 	return 1;
 }
 
-static luaL_Reg tsourdt3d_base_lib[] = {
+static luaL_Reg tsourdt3d_base_lib[] =
+{
 	{"P_LEDController",lib_pLEDController},
 	{"P_RumbleController",lib_pRumbleController},
 	{"P_RumbleControllerTriggers",lib_pRumbleControllerTriggers},
@@ -233,6 +236,7 @@ static luaL_Reg tsourdt3d_base_lib[] = {
 	{"S_GetSpeedMusic",lib_sGetSpeedMusic},
 	{"S_PitchMusic",lib_sPitchMusic},
 	{"S_GetPitchMusic",lib_sGetPitchMusic},
+
 	{"S_GetInternalMusicVolume", lib_sGetInternalMusicVolume},
 	{"S_SetInternalSfxVolume", lib_sSetInternalSfxVolume},
 	{"S_GetInternalSfxVolume", lib_sGetInternalSfxVolume},
@@ -244,6 +248,7 @@ int TSoURDt3rd_LUA_BaseLib(lua_State *L)
 {
 	// Set global functions
 	lua_pushvalue(L, LUA_GLOBALSINDEX);
+	luaL_register(L, NULL, tsourdt3d_base_lib);
 	luaL_register(L, "tsourdt3rd", tsourdt3d_base_lib);
 	return 0;
 }
