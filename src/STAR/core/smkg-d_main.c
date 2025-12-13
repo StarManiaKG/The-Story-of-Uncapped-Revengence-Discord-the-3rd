@@ -28,6 +28,7 @@
 
 #include "../../d_main.h"
 #include "../../console.h"
+#include "../../m_argv.h"
 #include "../../i_time.h"
 #include "../../z_zone.h"
 
@@ -118,6 +119,7 @@ void TSoURDt3rd_D_AutoLoadAddons(void)
 {
 	FILE *autoload_config = TSoURDt3rd_FIL_AccessFile_Build(TSoURDt3rd_FOL_ReturnHomepath_Build(), TSOURDT3RD_AUTOLOAD_CONFIG_FILENAME, "r");
 	char *wad_tkn;
+	size_t i, files_important = 0;
 
 	if (autoload_config == NULL)
 	{
@@ -156,12 +158,9 @@ void TSoURDt3rd_D_AutoLoadAddons(void)
 	if (autoload_startupwadfiles.numfiles)
 	{
 		// -- Check if the files actually modify the game...
-		size_t i, files_important = 0;
-
 		for (i = 0; i < autoload_startupwadfiles.numfiles; i++)
 		{
-			const char *wad = autoload_startupwadfiles.files[i];
-			if (W_VerifyNMUSlumps(wad, false) == 0)
+			if (W_VerifyNMUSlumps(autoload_startupwadfiles.files[i], false) == 0)
 				files_important++; // wad can modify game!
 		}
 
@@ -191,7 +190,6 @@ void TSoURDt3rd_D_Init(void)
 	// Start!
 	//
 	STAR_CONS_Printf(STAR_CONS_NONE, "\nTSoURDt3rd_D_Init(): Initalizing TSoURDt3rd...\n");
-
 
 	// -- Reset our local structures
 	memset(&tsourdt3rd_local, 0, sizeof(struct tsourdt3rd_local_s));
@@ -225,10 +223,16 @@ void TSoURDt3rd_D_Init(void)
 	TSoURDt3rd_I_Pads_InitControllers();
 
 	// -- Initialize Jukebox data...
-	TSoURDt3rd_Jukebox_Init();
+	if (!M_CheckParm("-no_jukebox") && !M_CheckParm("-tsourdt3rd_nojukebox"))
+	{
+		TSoURDt3rd_Jukebox_Init();
+	}
 
 	// -- Initialize EXMusic data...
-	TSoURDt3rd_EXMusic_Init();
+	if (!M_CheckParm("-no_exmusic") && !M_CheckParm("-tsourdt3rd_noexmusic"))
+	{
+		TSoURDt3rd_EXMusic_Init();
+	}
 
 	// -- Reset our player structures
 	TSoURDt3rd_InitializePlayer(consoleplayer);
