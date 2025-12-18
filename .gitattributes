@@ -9,10 +9,10 @@
 /tools/Makefile text=auto
 /src/Make*.cfg text=auto
 /src/CMakeLists.txt text=auto
-*.mk -whitespace text=auto
 /comptime.sh text eol=lf
 # Windows EOL
 *.cs -crlf -whitespace
+*.mk -crlf -whitespace
 *.bat -crlf -whitespace
 *.dev -crlf -whitespace
 *.dsp -crlf -whitespace
@@ -23,6 +23,9 @@
 *.csproj* -crlf -whitespace
 *.vcxproj* -crlf -whitespace
 *.manifest -crlf -whitespace
+# vcpkg
+/vcpkg.json text=auto
+/vcpkg-configuration.json text=auto
 # Patches
 /tools/SDL-1.2.14-gc/SDL-1.2.14-gc.patch -whitespace
 #Appveyor
