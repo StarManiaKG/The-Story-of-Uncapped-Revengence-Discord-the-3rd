@@ -13,6 +13,7 @@
 #include "doomstat.h"
 #include "fastcmp.h"
 #include "g_input.h"
+#include "i_joy.h" // JOYAXISRANGE
 #include "g_game.h"
 #include "hu_stuff.h"
 #include "i_system.h"
@@ -20,9 +21,6 @@
 
 #include "lua_script.h"
 #include "lua_libs.h"
-
-// TSoURDt3rd //
-#include "i_joy.h" // JOYAXISRANGE
 
 boolean mousegrabbedbylua = true;
 boolean textinputmodeenabledbylua = false;
