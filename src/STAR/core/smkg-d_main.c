@@ -63,7 +63,6 @@ static void D_AddAddonsToAutoLoad(addfilelist_t *list, const char *file)
 	char *newfile, *newfile_cpy;
 	size_t index = 0;
 
-	// REALLOC_FILE_LIST
 	if (list->files == NULL)
 	{
 		list->files = calloc(2, sizeof(list->files));
@@ -186,18 +185,11 @@ void TSoURDt3rd_D_AutoLoadAddons(void)
 
 void TSoURDt3rd_D_Init(void)
 {
-	//
-	// Start!
-	//
 	STAR_CONS_Printf(STAR_CONS_NONE, "\nTSoURDt3rd_D_Init(): Initalizing TSoURDt3rd...\n");
 
-	// -- Reset our local structures
 	memset(&tsourdt3rd_local, 0, sizeof(struct tsourdt3rd_local_s));
-
-	// -- Set version
 	sscanf(TSOURDT3RDVERSION, "%hhd.%hhd.%hhd", &tsourdt3rd_local.major_version, &tsourdt3rd_local.minor_version, &tsourdt3rd_local.sub_version);
 
-	// -- Manage directory and files
 	char *app_name = strdup(TSOURDT3RD_APP);
 	char *app_name_lowercase = strdup(app_name);
 	const char *home_path = TSoURDt3rd_FOL_ReturnHomepath_SRB2();
@@ -213,33 +205,30 @@ void TSoURDt3rd_D_Init(void)
 	free(app_name);
 	free(app_name_lowercase);
 
-	// -- Create the gamedata
 	tsourdt3rd_client_gamedata = Z_Malloc(sizeof (*tsourdt3rd_client_gamedata), PU_STATIC, NULL);
 
-	// -- Check our computer's time!
 	TSoURDt3rd_CheckTime();
 
-	// -- Initialize our cool controller system!
 	TSoURDt3rd_I_Pads_InitControllers();
 
-	// -- Initialize Jukebox data...
-	if (!M_CheckParm("-no_jukebox") && !M_CheckParm("-tsourdt3rd_nojukebox"))
+	if (dedicated)
 	{
-		TSoURDt3rd_Jukebox_Init();
+		STAR_CONS_Printf(STAR_CONS_ERROR, "Dedicated mode active, not intializing Jukebox or EXMusic.\n");
+	}
+	else
+	{
+		if (!M_CheckParm("-no_jukebox") && !M_CheckParm("-tsourdt3rd_nojukebox"))
+		{
+			TSoURDt3rd_Jukebox_Init();
+		}
+		if (!M_CheckParm("-no_exmusic") && !M_CheckParm("-tsourdt3rd_noexmusic"))
+		{
+			TSoURDt3rd_EXMusic_Init();
+		}
 	}
 
-	// -- Initialize EXMusic data...
-	if (!M_CheckParm("-no_exmusic") && !M_CheckParm("-tsourdt3rd_noexmusic"))
-	{
-		TSoURDt3rd_EXMusic_Init();
-	}
-
-	// -- Reset our player structures
 	TSoURDt3rd_InitializePlayer(consoleplayer);
 
-	//
-	// Done!
-	//
 	STAR_CONS_Printf(STAR_CONS_NONE, "\n");
 }
 
