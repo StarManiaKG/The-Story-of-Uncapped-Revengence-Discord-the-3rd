@@ -24,11 +24,6 @@
 #include "lua_hud.h" // hud_running errors
 #include "lua_hook.h" // hook_cmd_running errors
 
-// TSoURDt3rd
-#ifdef HAVE_DISCORDSUPPORT
-#include "discord/discord.h"
-#endif
-
 enum mobj_e {
 	mobj_valid = 0,
 	mobj_x,
@@ -709,9 +704,6 @@ static int mobj_set(lua_State *L)
 			{
 				if (!mo->player || R_SkinUsable(mo->player-players, i))
 					mo->skin = skins[i];
-#ifdef HAVE_DISCORDSUPPORT
-				DISC_UpdatePresence();
-#endif
 				return 0;
 			}
 		return luaL_error(L, "mobj.skin '%s' not found!", skin);
