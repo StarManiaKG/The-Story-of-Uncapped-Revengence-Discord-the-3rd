@@ -168,6 +168,33 @@ angle_t FixedAngle(fixed_t fa)
 	return AngleAdj(cfa, cwf, ra);
 }
 
+angle_t AngleDelta(angle_t a1, angle_t a2)
+{
+	angle_t delta = a1 - a2;
+
+	if (delta > ANGLE_180)
+	{
+		delta = InvAngle(delta);
+	}
+
+	return delta;
+}
+
+INT32 AngleDeltaSigned(angle_t a1, angle_t a2)
+{
+	// Silly but easy way to do it through integer conversion.
+	return (INT32)(a1) - (INT32)(a2);
+}
+
+float AngleToFloat(angle_t x)
+{
+	return x / (float)ANG1;
+}
+
+angle_t FloatToAngle(float f)
+{
+	return (angle_t)(f * ANG1);
+}
 
 #include "t_ftan.c"
 

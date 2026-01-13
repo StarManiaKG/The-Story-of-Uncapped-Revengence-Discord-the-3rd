@@ -95,6 +95,12 @@ FUNCMATH fixed_t AngleFixed(angle_t af);
 FUNCMATH angle_t FixedAngle(fixed_t fa);
 // and with a factor, with +factor for (fa/factor) and -factor for (fa*factor)
 FUNCMATH angle_t FixedAngleC(fixed_t fa, fixed_t factor);
+// difference between two angle_t
+FUNCMATH angle_t AngleDelta(angle_t a1, angle_t a2);
+FUNCMATH INT32 AngleDeltaSigned(angle_t a1, angle_t a2);
+// angle conversion
+FUNCMATH float AngleToFloat(angle_t x);
+FUNCMATH angle_t FloatToAngle(float f);
 
 /// The FixedAcos function
 FUNCMATH angle_t FixedAcos(fixed_t x);
