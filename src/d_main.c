@@ -1507,14 +1507,15 @@ void D_SRB2Main(void)
 	CONS_Printf("Z_Init(): Init zone memory allocation daemon. \n");
 	Z_Init();
 
-	// STAR STUFF: Initialize our data! //
-	TSoURDt3rd_D_Init();
-
 	if (M_CheckParm("-password") && M_IsNextParm())
 		D_SetPassword(M_GetNextParm());
 
-	clientGamedata = M_NewGameDataStruct();
-	serverGamedata = M_NewGameDataStruct();
+	clientGamedata = G_NewGameDataStruct();
+	serverGamedata = G_NewGameDataStruct();
+	allClientGamedata = G_NewGameDataList();
+
+	// STAR STUFF: Initialize our data! //
+	TSoURDt3rd_D_Init();
 
 	// Do this up here so that WADs loaded through the command line can use ExecCfg
 	COM_Init();
@@ -1657,7 +1658,8 @@ void D_SRB2Main(void)
 	}
 
 	G_LoadGameData(clientGamedata);
-	M_CopyGameData(serverGamedata, clientGamedata);
+	G_AddGameDataToList(allClientGamedata, clientGamedata);
+	G_CopyGameData(serverGamedata, clientGamedata);
 
 	VID_PrepareModeList(); // Regenerate Modelist according to cv_fullscreen
 

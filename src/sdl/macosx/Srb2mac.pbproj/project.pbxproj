@@ -973,6 +973,13 @@
 			path = ../../g_game.c;
 			refType = 2;
 		};
+		8417772I085A1029000C01D8 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			name = g_gamedata.c;
+			path = ../../g_gamedata.c;
+			refType = 2;
+		};
 		8417772E085A1029000C01D8 = {
 			fileEncoding = 30;
 			isa = PBXFileReference;

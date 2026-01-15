@@ -3,6 +3,7 @@
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 1999-2024 by Sonic Team Junior.
+// Copyright (C) 2026 by StarManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -2889,12 +2890,14 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 					unlocktriggers |= 1 << trigid;
 
 					// Unlocked something?
+					// We'll only save if we have.
 					M_SilentUpdateUnlockablesAndEmblems(serverGamedata);
 
 					if (M_UpdateUnlockablesAndExtraEmblems(clientGamedata))
 					{
 						S_StartSoundFromEverywhere(sfx_s3k68);
-						G_SaveGameData(clientGamedata); // only save if unlocked something
+						G_SaveGameData(clientGamedata);
+						G_StoreGameData(allClientGamedata, clientGamedata);
 					}
 				}
 			}

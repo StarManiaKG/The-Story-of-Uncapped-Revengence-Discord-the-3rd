@@ -9,6 +9,7 @@ f_finale.c
 f_wipe.c
 g_demo.c
 g_game.c
+g_gamedata.c
 g_input.c
 am_map.c
 command.c

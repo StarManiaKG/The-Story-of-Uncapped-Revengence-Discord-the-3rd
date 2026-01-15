@@ -14,6 +14,7 @@ LOCAL_SRC_FILES :=      am_map.c \
                         f_wipe.c \
                         filesrch.c \
                         g_game.c \
+                        g_gamedata.c \
                         g_input.c \
                         hu_stuff.c \
                         info.c \

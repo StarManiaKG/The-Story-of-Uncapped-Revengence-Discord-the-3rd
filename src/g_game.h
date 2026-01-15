@@ -3,6 +3,7 @@
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 1999-2024 by Sonic Team Junior.
+// Copyright (C) 2026 by StarManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -184,11 +185,8 @@ boolean G_IsTitleCardAvailable(void);
 
 // Can be called by the startup code or M_Responder, calls P_SetupLevel.
 void G_LoadGame(UINT32 slot, INT16 mapoverride);
-
-void G_SaveGameData(gamedata_t *data);
-
+void G_LoadGameSettings(void);
 void G_SaveGame(UINT32 slot, INT16 mapnum);
-
 void G_SaveGameOver(UINT32 slot, boolean modifylives);
 
 extern UINT32 gametypedefaultrules[NUMGAMETYPES];
@@ -241,9 +239,6 @@ boolean G_GetRetryFlag(void);
 void G_SetModeAttackRetryFlag(void);
 void G_ClearModeAttackRetryFlag(void);
 boolean G_GetModeAttackRetryFlag(void);
-
-void G_LoadGameData(gamedata_t *data);
-void G_LoadGameSettings(void);
 
 void G_SetGameModified(boolean silent);
 void G_SetUsedCheats(boolean silent);

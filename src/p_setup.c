@@ -3,6 +3,7 @@
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 1999-2024 by Sonic Team Junior.
+// Copyright (C) 2023-2026 by StarManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -10,7 +11,6 @@
 //-----------------------------------------------------------------------------
 /// \file  p_setup.c
 /// \brief Do all the WAD I/O, get map description, set up initial state and misc. LUTs
-
 
 #include <errno.h>
 
@@ -3200,7 +3200,7 @@ static void P_LoadTextmap(void)
 			sc->hasslope = true;
 			if (sc->specialflags & SSF_NOPHYSICSCEILING)
 				sc->c_slope->flags |= SL_NOPHYSICS;
-        }
+		}
 
 		TextmapFixFlatOffsets(sc);
 	}
@@ -5133,7 +5133,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 				lines[i].args[3] |= TMFA_SPLAT;
 
 			lines[i].special = 220;
-            break;
+			break;
 		case 250: //FOF: Mario block
 			lines[i].args[0] = tag;
 			if (lines[i].flags & ML_NOCLIMB)
@@ -8050,7 +8050,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	S_ClearSfx();
 
 	// Fade out music here. Deduct 2 tics so the fade volume actually reaches 0.
-	// But don't halt the music! S_Start will take care of that. This dodges a MIDI crash bug.
+	// But don't halt the music! S_StartEx will take care of that. This dodges a MIDI crash bug.
 	if (!(reloadinggamestate || titlemapinaction) && (RESETMUSIC ||
 		strnicmp(S_MusicName(),
 			(mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname, 7)))
@@ -8087,12 +8087,12 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		}
 
 #if 0
-		// STAR STUFF: moved S_Start() into TSoURDt3rd_P_LoadLevel(), so we can work magic :) //
+		// STAR STUFF: moved S_StartEx() into TSoURDt3rd_P_LoadLevel(), so we can work magic :) //
 
 		// As oddly named as this is, this handles music only.
 		// We should be fine starting it here.
 		// Don't do this during titlemap, because the menu code handles music by itself.
-		S_Start();
+		S_StartEx(false);
 #endif
 	}
 
@@ -8169,10 +8169,12 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		{
 			S_StartSoundFromEverywhere(sfx_s3k68);
 			G_SaveGameData(clientGamedata);
+			G_StoreGameData(allClientGamedata, clientGamedata);
 		}
 		else if (!reloadinggamestate)
 		{
 			G_SaveGameData(clientGamedata);
+			G_StoreGameData(allClientGamedata, clientGamedata);
 		}
 	}
 

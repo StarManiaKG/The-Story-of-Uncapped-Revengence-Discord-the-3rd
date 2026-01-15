@@ -45,8 +45,7 @@
 #include "dehacked.h"
 #include "deh_soc.h"
 #include "deh_lua.h" // included due to some LUA_SetLuaAction hack smh
-// also used for LUA_UpdateSprName
-#include "deh_tables.h"
+#include "deh_tables.h" // also used for LUA_UpdateSprName
 
 // TSoURDt3rd
 #include "STAR/misc/smkg-m_misc.h" // TSoURDt3rd_FIL_CreateSavefileProperly() //
@@ -3998,6 +3997,7 @@ void readmaincfg(MYFILE *f)
 					I_Error("Maincfg: bad data file name '%s'\n", word2);
 
 				G_SaveGameData(clientGamedata);
+				G_StoreGameData(allClientGamedata, clientGamedata);
 				strlcpy(gamedatafilename, word2, sizeof (gamedatafilename));
 				strlwr(gamedatafilename);
 				savemoddata = true;
@@ -4011,8 +4011,7 @@ void readmaincfg(MYFILE *f)
 				strncpy(timeattackfolder, gamedatafilename, filenamelen);
 				timeattackfolder[min(filenamelen, sizeof (timeattackfolder) - 1)] = '\0';
 
-				// StarManiaKG:
-				// This function now creates the savefile names for us.
+				// StarManiaKG: This function now creates the savefile names for us.
 				// This allows them to be easily stored in folders if need-be.
 				TSoURDt3rd_FIL_CreateSavefileProperly();
 

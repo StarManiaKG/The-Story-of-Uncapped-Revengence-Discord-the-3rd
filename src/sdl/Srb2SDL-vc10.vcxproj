@@ -494,6 +494,7 @@
     <ClCompile Include="..\f_wipe.c" />
     <ClCompile Include="..\g_demo.c" />
     <ClCompile Include="..\g_game.c" />
+    <ClCompile Include="..\g_gamedata.c" />
     <ClCompile Include="..\g_input.c" />
     <ClCompile Include="..\hardware\hw3sound.c" />
     <ClCompile Include="..\hardware\hw_batching.c" />

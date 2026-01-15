@@ -1,6 +1,7 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 2004-2024 by Sonic Team Junior.
+// Copyright (C) 2026 by StarManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -1097,6 +1098,7 @@ void Y_Ticker(void)
 					S_StartSoundFromEverywhere(sfx_s3k68);
 
 				G_SaveGameData(clientGamedata);
+				G_StoreGameData(allClientGamedata, clientGamedata);
 			}
 		}
 		else if (!(intertic & 1))
@@ -1228,6 +1230,7 @@ void Y_Ticker(void)
 					S_StartSoundFromEverywhere(sfx_s3k68);
 
 				G_SaveGameData(clientGamedata);
+				G_StoreGameData(allClientGamedata, clientGamedata);
 			}
 		}
 		else if (!(intertic & 1))

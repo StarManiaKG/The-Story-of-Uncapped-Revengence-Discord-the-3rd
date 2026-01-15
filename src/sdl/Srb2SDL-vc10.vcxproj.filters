@@ -730,6 +730,9 @@
     <ClCompile Include="..\g_game.c">
       <Filter>G_Game</Filter>
     </ClCompile>
+    <ClCompile Include="..\g_gamedata.c">
+      <Filter>G_Game</Filter>
+    </ClCompile>
     <ClCompile Include="..\g_input.c">
       <Filter>G_Game</Filter>
     </ClCompile>

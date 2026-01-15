@@ -2,6 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 2012-2016 by Matthew "Kaito Sinclaire" Walsh.
 // Copyright (C) 2012-2023 by Sonic Team Junior.
+// Copyright (C) 2026 by StarManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -54,9 +55,9 @@ typedef enum
 typedef struct
 {
 	UINT32 id;           /// <- The ID of this condition.
-	                     ///    In an unlock condition, all conditions with the same ID
-	                     ///    must be true to fulfill the unlockable requirements.
-	                     ///    Only one ID set needs to be true, however.
+						 ///    In an unlock condition, all conditions with the same ID
+						 ///    must be true to fulfill the unlockable requirements.
+						 ///    Only one ID set needs to be true, however.
 	conditiontype_t type;/// <- The type of condition
 	INT32 requirement;   /// <- The requirement for this variable.
 	INT16 extrainfo1;    /// <- Extra information for the condition when needed.
@@ -182,15 +183,16 @@ typedef struct
 #define MV_PERFECTRA   32
 #define MV_MAX         63 // used in gamedata check, update whenever MV's are added
 
-// Temporary holding place for nights data for the current map
-extern nightsdata_t ntemprecords[MAXPLAYERS];
-
 // GAMEDATA STRUCTURE
-// Everything that would get saved in gamedata.dat
+// Everything that would get saved in gamedata.dat (gamedatafilename)
+/// \todo Find a way to move this to g_gamedata.h
 typedef struct
 {
 	// WHENEVER OR NOT WE'RE READY TO SAVE
 	boolean loaded;
+
+	// GAMEDATA NAME
+	char *filename;
 
 	// CONDITION SETS ACHIEVED
 	boolean achieved[MAXCONDITIONSETS];
@@ -221,8 +223,11 @@ typedef struct
 	UINT32 totalplaytime;
 } gamedata_t;
 
-extern gamedata_t *clientGamedata;
-extern gamedata_t *serverGamedata;
+// OTHER GAMEDATA STRUCTURES AND FUNCTIONS
+#include "g_gamedata.h"
+
+// Temporary holding place for nights data for the current map
+extern nightsdata_t ntemprecords[MAXPLAYERS];
 
 extern conditionset_t conditionSets[MAXCONDITIONSETS];
 extern emblem_t emblemlocations[MAXEMBLEMS];
@@ -233,9 +238,6 @@ extern INT32 numemblems;
 extern INT32 numextraemblems;
 
 extern UINT32 unlocktriggers;
-
-gamedata_t *M_NewGameDataStruct(void);
-void M_CopyGameData(gamedata_t *dest, gamedata_t *src);
 
 // Condition set setup
 void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2);

@@ -28,6 +28,7 @@
 		1E44AEBF0B67CCA900BAD059 /* f_wipe.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E44AEBC0B67CCA900BAD059 /* f_wipe.c */; };
 		1E44AEC00B67CCA900BAD059 /* f_finale.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E44AEBD0B67CCA900BAD059 /* f_finale.c */; };
 		1E44AEC80B67CCC600BAD059 /* g_game.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E44AEC30B67CCC600BAD059 /* g_game.c */; };
+		1E44AEC80B67CCI600BAD059 /* g_gamedata.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E44AEC30B67CCC600BAD059 /* g_gamedata.c */; };
 		1E44AECC0B67CCC600BAD059 /* g_input.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E44AEC70B67CCC600BAD059 /* g_input.c */; };
 		1E44AED00B67CCEE00BAD059 /* hu_stuff.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E44AECE0B67CCEE00BAD059 /* hu_stuff.c */; };
 		1E44AEDC0B67CD1300BAD059 /* i_tcp.c in Sources */ = {isa = PBXBuildFile; fileRef = 1E44AED50B67CD1200BAD059 /* i_tcp.c */; };
@@ -217,6 +218,8 @@
 		1E44AEBE0B67CCA900BAD059 /* f_finale.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = f_finale.h; path = ../../f_finale.h; sourceTree = SOURCE_ROOT; };
 		1E44AEC30B67CCC600BAD059 /* g_game.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = g_game.c; path = ../../g_game.c; sourceTree = SOURCE_ROOT; };
 		1E44AEC40B67CCC600BAD059 /* g_game.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = g_game.h; path = ../../g_game.h; sourceTree = SOURCE_ROOT; };
+		1E44AEC30B67CCI600BAD059 /* g_gamedata.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = g_gamedata.c; path = ../../g_gamedata.c; sourceTree = SOURCE_ROOT; };
+		1E44AEC30B67CCJ600BAD059 /* g_gamedata.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = g_gamedata.h; path = ../../g_gamedata.h; sourceTree = SOURCE_ROOT; };
 		1E44AEC50B67CCC600BAD059 /* g_input.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = g_input.h; path = ../../g_input.h; sourceTree = SOURCE_ROOT; };
 		1E44AEC60B67CCC600BAD059 /* g_state.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = g_state.h; path = ../../g_state.h; sourceTree = SOURCE_ROOT; };
 		1E44AEC70B67CCC600BAD059 /* g_input.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = g_input.c; path = ../../g_input.c; sourceTree = SOURCE_ROOT; };
@@ -607,6 +610,8 @@
 			children = (
 				1E44AEC30B67CCC600BAD059 /* g_game.c */,
 				1E44AEC40B67CCC600BAD059 /* g_game.h */,
+				1E44AEC30B67CCI600BAD059 /* g_gamedata.c */,
+				1E44AEC30B67CCJ600BAD059 /* g_gamedata.h */,
 				1E44AEC50B67CCC600BAD059 /* g_input.h */,
 				1E44AEC60B67CCC600BAD059 /* g_state.h */,
 				1E44AEC70B67CCC600BAD059 /* g_input.c */,
@@ -1086,6 +1091,7 @@
 				1E44AEBF0B67CCA900BAD059 /* f_wipe.c in Sources */,
 				1E44AEC00B67CCA900BAD059 /* f_finale.c in Sources */,
 				1E44AEC80B67CCC600BAD059 /* g_game.c in Sources */,
+				1E44AEC80B67CCI600BAD059 /* g_gamedata.c in Sources */,
 				1E44AECC0B67CCC600BAD059 /* g_input.c in Sources */,
 				1E44AED00B67CCEE00BAD059 /* hu_stuff.c in Sources */,
 				1E44AEDC0B67CD1300BAD059 /* i_tcp.c in Sources */,

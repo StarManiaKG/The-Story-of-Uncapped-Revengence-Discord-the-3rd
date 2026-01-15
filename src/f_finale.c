@@ -1706,6 +1706,7 @@ void F_GameEvaluationTicker(void)
 			S_StartSoundFromEverywhere(sfx_s3k68);
 
 		G_SaveGameData(clientGamedata);
+		G_StoreGameData(allClientGamedata, clientGamedata);
 	}
 
 	// STAR STUFF: play our cool finale music! //

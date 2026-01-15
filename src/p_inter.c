@@ -854,7 +854,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 					clientGamedata->collected[special->health-1] = true;
 					M_UpdateUnlockablesAndExtraEmblems(clientGamedata);
 					if (!prevCollected) // don't thrash the disk and wreak performance.
+					{
 						G_SaveGameData(clientGamedata);
+						G_StoreGameData(allClientGamedata, clientGamedata);
+					}
 				}
 
 				if (netgame)

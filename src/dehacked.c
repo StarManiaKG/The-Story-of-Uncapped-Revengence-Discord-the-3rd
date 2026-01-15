@@ -589,8 +589,10 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 	} // end while
 
 	if (gamedataadded)
+	{
 		G_LoadGameData(clientGamedata);
-
+		G_AddGameDataToList(allClientGamedata, clientGamedata);
+	}
 	if (savemoddata && (introchanged || titlechanged))
 	{
 		// STAR STUFF: reset music, since we might not have the jukebox unlocked anymore //

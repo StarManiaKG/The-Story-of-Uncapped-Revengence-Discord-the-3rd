@@ -15,6 +15,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	f_wipe.c
 	g_demo.c
 	g_game.c
+	g_gamedata.c
 	g_input.c
 	am_map.c
 	command.c
@@ -57,6 +58,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	p_tick.c
 	p_user.c
 	p_slopes.c
+	qs22j.c
 	quaternion.c
 	tables.c
 	r_bsp.c

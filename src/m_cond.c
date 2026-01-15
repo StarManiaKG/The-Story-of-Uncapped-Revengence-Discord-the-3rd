@@ -2,6 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 2012-2016 by Matthew "Kaito Sinclaire" Walsh.
 // Copyright (C) 2012-2024 by Sonic Team Junior.
+// Copyright (C) 2026 by StarManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -20,9 +21,6 @@
 #include "g_game.h" // record info
 #include "r_skins.h" // numskins
 #include "r_draw.h" // R_GetColorByName
-
-gamedata_t *clientGamedata; // Our gamedata
-gamedata_t *serverGamedata; // Server's gamedata
 
 // Map triggers for linedef executors
 // 32 triggers, one bit each
@@ -46,71 +44,6 @@ INT32 numextraemblems = 0;
 
 // Temporary holding place for nights data for the current map
 nightsdata_t ntemprecords[MAXPLAYERS];
-
-// Create a new gamedata_t, for start-up
-gamedata_t *M_NewGameDataStruct(void)
-{
-	gamedata_t *data = Z_Calloc(sizeof (*data), PU_STATIC, NULL);
-	M_ClearSecrets(data);
-	G_ClearRecords(data);
-	return data;
-}
-
-boolean AllowWriteToExtra = true;
-
-void M_CopyGameData(gamedata_t *dest, gamedata_t *src)
-{
-	INT32 i, j;
-
-	AllowWriteToExtra = false;
-	M_ClearSecrets(dest);
-	G_ClearRecords(dest);
-	AllowWriteToExtra = true;
-
-	dest->loaded = src->loaded;
-	dest->totalplaytime = src->totalplaytime;
-
-	dest->timesBeaten = src->timesBeaten;
-	dest->timesBeatenWithEmeralds = src->timesBeatenWithEmeralds;
-	dest->timesBeatenUltimate = src->timesBeatenUltimate;
-
-	memcpy(dest->achieved, src->achieved, sizeof(dest->achieved));
-	memcpy(dest->collected, src->collected, sizeof(dest->collected));
-	memcpy(dest->extraCollected, src->extraCollected, sizeof(dest->extraCollected));
-	memcpy(dest->unlocked, src->unlocked, sizeof(dest->unlocked));
-
-	memcpy(dest->mapvisited, src->mapvisited, sizeof(dest->mapvisited));
-
-	// Main records
-	for (i = 0; i < NUMMAPS; ++i)
-	{
-		if (!src->mainrecords[i])
-			continue;
-
-		G_AllocMainRecordData((INT16)i, dest);
-		dest->mainrecords[i]->score = src->mainrecords[i]->score;
-		dest->mainrecords[i]->time = src->mainrecords[i]->time;
-		dest->mainrecords[i]->rings = src->mainrecords[i]->rings;
-	}
-
-	// Nights records
-	for (i = 0; i < NUMMAPS; ++i)
-	{
-		if (!src->nightsrecords[i] || !src->nightsrecords[i]->nummares)
-			continue;
-
-		G_AllocNightsRecordData((INT16)i, dest);
-
-		for (j = 0; j < (src->nightsrecords[i]->nummares + 1); j++)
-		{
-			dest->nightsrecords[i]->score[j] = src->nightsrecords[i]->score[j];
-			dest->nightsrecords[i]->grade[j] = src->nightsrecords[i]->grade[j];
-			dest->nightsrecords[i]->time[j] = src->nightsrecords[i]->time[j];
-		}
-
-		dest->nightsrecords[i]->nummares = src->nightsrecords[i]->nummares;
-	}
-}
 
 void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2)
 {

@@ -328,7 +328,6 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 #ifdef HAVE_SDL
 	STAR_SetWindowTitle();
 #endif
-
 #ifdef HAVE_DISCORDSUPPORT
 	DISC_UpdatePresence();
 #endif
@@ -563,7 +562,6 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 #ifdef HAVE_DISCORDSUPPORT
 	DISC_UpdatePresence();
 #endif
-
 #ifdef HAVE_SDL
 	STAR_SetWindowTitle();
 #endif
@@ -793,7 +791,7 @@ void SV_ResetServer(void)
 	CV_RevertNetVars();
 
 	// Ensure synched when creating a new server
-	M_CopyGameData(serverGamedata, clientGamedata);
+	G_CopyGameData(serverGamedata, clientGamedata);
 
 	DEBFILE("\n-=-=-=-=-=-=-= Server Reset =-=-=-=-=-=-=-\n\n");
 }
@@ -1672,7 +1670,7 @@ void NetUpdate(void)
 			if (maketic + counts >= firstticstosend + BACKUPTICS)
 				counts = firstticstosend+BACKUPTICS-maketic-1;
 
-			for (INT32 i = 0; i < counts; i++)
+			for (i = 0; i < counts; i++)
 				SV_Maketic(); // Create missed tics and increment maketic
 
 			for (; tictoclear < firstticstosend; tictoclear++) // Clear only when acknowledged

@@ -3,6 +3,7 @@
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 1999-2024 by Sonic Team Junior.
+// Copyright (C) 2025-2026 by StarManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -5113,6 +5114,7 @@ FUNCINLINE static ATTRINLINE void P_NetUnArchiveEmblems(save_t *save_p)
 	// the SERVER player's gamedata over your own CLIENT gamedata,
 	// then this prevents it from being saved over yours.
 	data->loaded = false;
+	data->filename = Z_StrDup(gamedatafilename);
 
 	M_ClearSecrets(data);
 	G_ClearRecords(data);
