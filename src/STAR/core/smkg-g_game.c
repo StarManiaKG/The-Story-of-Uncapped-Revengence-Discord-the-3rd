@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2026 by StarManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -102,7 +102,7 @@ void TSoURDt3rd_G_UpdateSaveDirectory(void)
 void TSoURDt3rd_G_SaveGamedata(void)
 {
 	const char *build_homepath = TSoURDt3rd_FOL_ReturnHomepath_Build();
-	FILE *gamedata;
+	FILE *gamedata, *gamedata_bak;
 	save_t savebuffer;
 
 	if (tsourdt3rd_local.autoloaded_mods)
@@ -126,7 +126,6 @@ void TSoURDt3rd_G_SaveGamedata(void)
 		return;
 	}
 
-	// Create saving buffer
 	savebuffer.size = GAMEDATASIZE;
 	savebuffer.buf = (UINT8 *)malloc(savebuffer.size);
 	if (!savebuffer.buf)
@@ -162,7 +161,7 @@ void TSoURDt3rd_G_SaveGamedata(void)
 		strcpy(currentfile_name, tsourdt3rd_gamedata_file);
 		STRBUFCPY(backupfile_name, strcat(currentfile_name, backupfile_extension));
 
-		FILE *gamedata_bak = TSoURDt3rd_FIL_AccessFile(build_homepath, backupfile_name, "w+b");
+		gamedata_bak = TSoURDt3rd_FIL_AccessFile(build_homepath, backupfile_name, "w+b");
 		if (gamedata_bak)
 		{
 			fwrite(savebuffer.buf, 1, savebuffer.pos, gamedata_bak);
@@ -173,7 +172,7 @@ void TSoURDt3rd_G_SaveGamedata(void)
 	fclose(gamedata);
 	free(savebuffer.buf);
 
-	STAR_CONS_Printf(STAR_CONS_DEBUG, M_GetText("Build gamedata saved!\n"));
+	STAR_CONS_Printf(STAR_CONS_DEBUG, M_GetText("TSoURDt3rd Build gamedata saved!\n"));
 }
 
 //
