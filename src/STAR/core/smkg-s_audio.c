@@ -47,7 +47,7 @@ void TSoURDt3rd_S_RefreshMusic(void)
 {
 	player_t *player = &players[displayplayer];
 
-	if (TSoURDt3rd_Jukebox_IsPlaying() || S_MusicPlaying())
+	if (TSoURDt3rd_Jukebox_SongPlaying() || S_MusicPlaying())
 		return;
 
 	if (Playing())

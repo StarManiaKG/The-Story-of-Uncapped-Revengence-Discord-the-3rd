@@ -286,10 +286,10 @@ void TSoURDt3rd_M_InitQuitMessages(const char **msg_table)
 
 		tsourdt3rd_quitmsgs[TSOURDT3RD_DYN_QUITSMSG2] = va(M_GetText("Wait, \x82%s\x80!\nCome back! I need you!\n\n(Press 'Y' to quit)"), TSoURDt3rd_ReturnUsername());
 
-		if (TSoURDt3rd_Jukebox_IsPlaying())
+		if (TSoURDt3rd_Jukebox_SongPlaying())
 		{
-			INT32 track = tsourdt3rd_global_jukebox->prev_track_num;
-			char *name = (tsourdt3rd_global_jukebox->curtrack->title ? tsourdt3rd_global_jukebox->curtrack->title : tsourdt3rd_global_jukebox->curtrack->name[track]);
+			INT32 track = tsourdt3rd_global_jukebox.prev_track_num;
+			char *name = (tsourdt3rd_global_jukebox.curtrack->title ? tsourdt3rd_global_jukebox.curtrack->title : tsourdt3rd_global_jukebox.curtrack->name[track]);
 			tsourdt3rd_quitmsgs[TSOURDT3RD_DYN_QUITSMSG3] = va(M_GetText("Come back!\nFinish listening to\n\x82%s\x80!\n\n(Press 'Y' to quit)"), name);
 		}
 		else
@@ -1001,7 +1001,7 @@ void TSoURDt3rd_M_PlayMenuJam(void)
 	tsourdt3rd_menu_t *refMenu = tsourdt3rd_currentMenu;
 	const boolean profilemode = (optionsmenu.profilemenu && !optionsmenu.resetprofilemenu);
 
-	if (!menuactive || tsourdt3rd_currentMenu == NULL || TSoURDt3rd_Jukebox_IsPlaying())
+	if (!menuactive || tsourdt3rd_currentMenu == NULL || TSoURDt3rd_Jukebox_SongPlaying())
 		return;
 
 	if (!profilemode && Playing())
@@ -1334,18 +1334,17 @@ static inline boolean M_HandleGlobalInput(UINT8 pid)
 		return false;
 	}
 
-	if (tsourdt3rd_global_jukebox != NULL)
+	// -- Jukebox shortcuts
+	if (TSoURDt3rd_Jukebox_Initialized())
 	{
 		if (MENU_BUTTON_CHECK(Pressed, MBT_JUKEBOX_OPEN))
 		{
-			// -- A shortcut to open the Jukebox menu
 			TSoURDt3rd_M_Jukebox_Init(op_extras_jukebox);
 			return true;
 		}
 		else if (MENU_BUTTON_CHECK(Pressed, MBT_JUKEBOX_CLOSE))
 		{
-			// -- Stop and reset the jukebox
-			if (!TSoURDt3rd_Jukebox_IsPlaying())
+			if (!TSoURDt3rd_Jukebox_SongPlaying())
 			{
 				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_JUKEBOX|STAR_CONS_WARNING, "Nothing is currently playing in the jukebox!\n");
 				S_StartSoundFromEverywhere(sfx_lose);
@@ -1361,34 +1360,29 @@ static inline boolean M_HandleGlobalInput(UINT8 pid)
 		}
 		else if (MENU_BUTTON_CHECK(Pressed, MBT_JUKEBOX_PLAYRECENT))
 		{
-			// -- Replay the most recent jukebox track
-			TSoURDt3rd_Jukebox_Play(tsourdt3rd_global_jukebox->prevtrack, tsourdt3rd_global_jukebox->prev_track_num);
+			TSoURDt3rd_Jukebox_Play(tsourdt3rd_global_jukebox.prevtrack, tsourdt3rd_global_jukebox.prev_track_num);
 			return true;
 		}
-		else if (TSoURDt3rd_Jukebox_IsPlaying())
+		else if (TSoURDt3rd_Jukebox_SongPlaying())
 		{
 			if (MENU_BUTTON_CHECK(Held, MBT_JUKEBOX_INCREASESPEED))
 			{
-				// -- Increase the speed of the current jukebox track
 				SET_GLOBAL_CVAR((S_SpeedMusicAllowed() && (S_GetSpeedMusic() < 20.0f)), true, &cv_tsourdt3rd_jukebox_speed)
 				return true;
 			}
 			else if (MENU_BUTTON_CHECK(Held, MBT_JUKEBOX_DECREASESPEED))
 			{
-				// -- Decrease the speed of the current jukebox track
 				SET_GLOBAL_CVAR((S_SpeedMusicAllowed() && (S_GetSpeedMusic() > 0.0f)), false, &cv_tsourdt3rd_jukebox_speed)
 				return true;
 			}
 
 			if (MENU_BUTTON_CHECK(Held, MBT_JUKEBOX_INCREASEPITCH))
 			{
-				// -- Increase the pitch of the current jukebox track
 				SET_GLOBAL_CVAR((S_PitchMusicAllowed() && (S_GetPitchMusic() < 20.0f)), true, &cv_tsourdt3rd_jukebox_pitch)
 				return true;
 			}
 			else if (MENU_BUTTON_CHECK(Held, MBT_JUKEBOX_DECREASEPITCH))
 			{
-				// -- Decrease the pitch of the current jukebox track
 				SET_GLOBAL_CVAR((S_PitchMusicAllowed() && (S_GetPitchMusic() > 0.0f)), false, &cv_tsourdt3rd_jukebox_pitch)
 				return true;
 			}

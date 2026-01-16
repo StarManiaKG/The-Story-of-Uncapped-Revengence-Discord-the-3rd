@@ -32,7 +32,7 @@
 
 // TSoURDt3rd
 #include "STAR/p_user.h" // TSoURDt3rd_P_DamageMobj() & TSoURDt3rd_P_KillMobj() //
-#include "STAR/core/smkg-s_jukebox.h" // TSoURDt3rd_Jukebox_IsPlaying() //
+#include "STAR/core/smkg-s_jukebox.h" // TSoURDt3rd_Jukebox_SongPlaying() //
 
 // CTF player names
 #define CTFTEAMCODE(pl) pl->ctfteam ? (pl->ctfteam == 1 ? "\x85" : "\x84") : ""
@@ -308,7 +308,7 @@ void P_DoMatchSuper(player_t *player)
 	player->powers[pw_sneakers] = emeraldspawndelay;
 	if (P_IsLocalPlayer(player) && !player->powers[pw_super])
 	{
-		if (!TSoURDt3rd_Jukebox_IsPlaying())
+		if (!TSoURDt3rd_Jukebox_SongPlaying())
 		{
 			// STAR STUFF: don't interrupt my music please :) //
 			S_StopMusic();
@@ -335,7 +335,7 @@ void P_DoMatchSuper(player_t *player)
 				player->powers[pw_sneakers] = player->powers[pw_invulnerability];
 				if (P_IsLocalPlayer(player) && !player->powers[pw_super])
 				{
-					if (!TSoURDt3rd_Jukebox_IsPlaying())
+					if (!TSoURDt3rd_Jukebox_SongPlaying())
 					{
 						// STAR STUFF: don't interrupt my music please :) //
 						S_StopMusic();

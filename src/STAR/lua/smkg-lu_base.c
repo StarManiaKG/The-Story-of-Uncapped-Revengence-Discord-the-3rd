@@ -128,7 +128,7 @@ static int lib_sPitchMusic(lua_State *L)
 		if (!player)
 			return LUA_ErrInvalid(L, "player_t");
 	}
-	if (S_PitchMusicAllowed() && !TSoURDt3rd_Jukebox_IsPlaying()) // STAR STUFF: DON'T INTERUPT OUR MUSIC PLEASE :) //
+	if (S_PitchMusicAllowed() && !TSoURDt3rd_Jukebox_SongPlaying()) // STAR STUFF: DON'T INTERUPT OUR MUSIC PLEASE :) //
 	{
 		if (!player || P_IsLocalPlayer(player))
 		{

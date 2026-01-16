@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2020-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2020-2026 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -13,9 +13,8 @@
 #include "ss_main.h"
 #include "star_vars.h" // STAR_SetWindowTitle() //
 #include "core/smkg-p_pads.h" // TSoURDt3rd_P_Pads_ResetDeviceRumble() //
-#include "core/smkg-s_audio.h" // TSoURDt3rd_S_ControlMusicEffects() //
 #include "core/smkg-s_exmusic.h"
-#include "core/smkg-s_jukebox.h" // TSoURDt3rd_Jukebox_IsPlaying() //
+#include "core/smkg-s_jukebox.h" // TSoURDt3rd_Jukebox_SongPlaying() //
 #include "lights/smkg-coronas.h"
 #include "menus/smkg-m_sys.h" // menu definitions //
 #include "misc/smkg-m_misc.h" // TSoURDt3rd_M_FindWordInTermTable() //
@@ -26,7 +25,6 @@
 #include "../console.h"
 #include "../fastcmp.h"
 #include "../g_game.h"
-#include "../m_menu.h"
 #include "../r_main.h"
 #include "../v_video.h"
 
@@ -79,7 +77,7 @@ static CV_PossibleValue_t tsourdt3rd_game_shadowposition_cons_t[] ={
 	{2, "Static"},
 	{0, NULL}};
 
-static CV_PossibleValue_t tsourdt3rd_video_tpsrate_cons_t[] = {{0, "No"}, {1, "Full"}, {2, "Compact"}, {0, NULL}};
+static CV_PossibleValue_t tsourdt3rd_video_tpsrate_cons_t[] = {{0, "No"}, {1, "Full"}, {2, "Compact"}, {3, "Kart-Style"}, {0, NULL}};
 static CV_PossibleValue_t tsourdt3rd_video_coloring_cons_t[] = {
 	{V_MAGENTAMAP, "Magenta"},
 	{V_YELLOWMAP, "Yellow"},
@@ -139,8 +137,6 @@ static void C_PadRumble_OnChange(void);
 static void V_Coronas_OnChange(void);
 #endif
 
-static void A_VapeMode_OnChange(void);
-
 static boolean P_SuperWithShield_OnChange(const char *valstr);
 
 static void SV_UseContinues_OnChange(void);
@@ -190,7 +186,7 @@ consvar_t cv_tsourdt3rd_video_lighting_coronas_drawingmode = CVAR_INIT ("tsourdt
 #endif
 
 consvar_t cv_tsourdt3rd_audio_watermuffling = CVAR_INIT ("tsourdt3rd_audio_watermuffling", "Off", CV_SAVE|CV_ALLOWLUA, CV_OnOff, NULL);
-consvar_t cv_tsourdt3rd_audio_vapemode = CVAR_INIT ("tsourdt3rd_audio_vapemode", "Off", CV_SAVE|CV_CALL, tsourdt3rd_audio_vapemode_cons_t, A_VapeMode_OnChange);
+consvar_t cv_tsourdt3rd_audio_vapemode = CVAR_INIT ("tsourdt3rd_audio_vapemode", "Off", CV_SAVE|CV_CALL, tsourdt3rd_audio_vapemode_cons_t, S_ControlMusicEffects);
 consvar_t cv_tsourdt3rd_audio_bosses_postboss = CVAR_INIT ("tsourdt3rd_audio_bosses_postboss", "On", CV_SAVE, CV_OnOff, NULL);
 #if 1
 // MARKED FOR REMOVAL
@@ -207,6 +203,7 @@ static CV_PossibleValue_t tsourdt3rd_audio_gameover_cons_t[] = {{0, "Game's Defa
 	{0, NULL}};
 consvar_t cv_tsourdt3rd_audio_gameover = CVAR_INIT ("tsourdt3rd_audio_gameover", "Game's Default", CV_SAVE, tsourdt3rd_audio_gameover_cons_t, NULL);
 #endif
+
 consvar_t cv_tsourdt3rd_audio_exmusic_defaultmaptrack = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_audio_exmusic_defaultmaptrack", "Default", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate);
 consvar_t cv_tsourdt3rd_audio_exmusic_bosses = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_audio_exmusic_bosses", "Default", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate);
 consvar_t cv_tsourdt3rd_audio_exmusic_bosspinch = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_audio_exmusic_bosspinch", "Default", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate);
@@ -566,9 +563,6 @@ boolean TSoURDt3rd_CV_CheckForOldCommands(void)
 		return false;
 
 	// Check if the command matches a version of an old TSoURDt3rd command...
-	if (con_destlines || dedicated)
-		STAR_CONS_Printf(STAR_CONS_DEBUG, M_GetText("Checking if command '%s' matches old TSoURDt3rd commands...\n"), command);
-
 	word_to_table_val = TSoURDt3rd_M_FindWordInTermTable(tsourdt3rd_old_cvars_opt, command, TSOURDT3RD_TERMTABLESEARCH_NORM);
 	if (word_to_table_val < 0)
 	{
@@ -576,20 +570,18 @@ boolean TSoURDt3rd_CV_CheckForOldCommands(void)
 			STAR_CONS_Printf(STAR_CONS_DEBUG, M_GetText("Command '%s' doesn't match old TSoURDt3rd command! Skipping...\n"), command);
 		return false;
 	}
+	if (con_destlines || dedicated)
+		STAR_CONS_Printf(STAR_CONS_DEBUG, M_GetText("Command '%s' matches old TSoURDt3rd command! Proceeding to work our magic...\n"), command);
 
 	// Port the command values over, and we're golden!
 	cvar = old_to_new_vars[word_to_table_val];
 	cv_value = COM_Argv(1);
-
-	if (con_destlines || dedicated)
-		STAR_CONS_Printf(STAR_CONS_DEBUG, M_GetText("Command '%s' matches old TSoURDt3rd command! Proceeding to work our magic...\n"), command);
 	if (cv_value == NULL || *cv_value == '\0')
 	{
 		// perform a variable print or set
 		CONS_Printf(M_GetText("\"%s\" is \"%s\" default is \"%s\"\n"), cvar->name, cvar->string, cvar->defaultvalue);
 		return true;
 	}
-
 	switch (word_to_table_val)
 	{
 #ifdef HAVE_DISCORDSUPPORT
@@ -767,8 +759,6 @@ static void V_Coronas_OnChange(void)
 }
 #endif
 
-static void A_VapeMode_OnChange(void) { TSoURDt3rd_S_ControlMusicEffects(NULL, NULL); }
-
 static boolean P_SuperWithShield_OnChange(const char *valstr)
 {
 	(void)valstr;
@@ -781,16 +771,19 @@ static boolean P_SuperWithShield_OnChange(const char *valstr)
 	return true;
 }
 
-static void SV_UseContinues_OnChange(void) { useContinues = cv_tsourdt3rd_savefiles_limitedcontinues.value; }
+static void SV_UseContinues_OnChange(void)
+{
+	useContinues = cv_tsourdt3rd_savefiles_limitedcontinues.value;
+}
 
 static void JB_Speed_OnChange(void)
 {
-	if (!TSoURDt3rd_Jukebox_IsPlaying()) return;
+	if (!TSoURDt3rd_Jukebox_SongPlaying()) return;
 	S_SpeedMusic(atof(cv_tsourdt3rd_jukebox_speed.string));
 }
 
 static void JB_Pitch_OnChange(void)
 {
-	if (!TSoURDt3rd_Jukebox_IsPlaying()) return;
+	if (!TSoURDt3rd_Jukebox_SongPlaying()) return;
 	S_PitchMusic(atof(cv_tsourdt3rd_jukebox_pitch.string));
 }

@@ -20,7 +20,7 @@
 #include "../z_zone.h"
 
 #include "../STAR/star_vars.h" // TSoURDt3rd struct //
-#include "../STAR/core/smkg-s_jukebox.h" // TSoURDt3rd_Jukebox_IsPlaying() //
+#include "../STAR/core/smkg-s_jukebox.h" // TSoURDt3rd_Jukebox_SongPlaying() //
 #include "../STAR/menus/smkg-m_sys.h" // queries about level list modes //
 #include "../STAR/misc/smkg-m_misc.h" // TSoURDt3rd_M_RemoveStringChars() //
 
@@ -316,7 +316,7 @@ void DISC_BasicStatus(char *string, char *image, char *imagestr)
 			break;
 	}
 
-	if (TSoURDt3rd_Jukebox_IsPlaying())
+	if (TSoURDt3rd_Jukebox_SongPlaying())
 		DISC_StatusPrintf(false, string, " | ", "Jukebox: '%s'", tsourdt3rd_global_jukebox->curtrack->title);
 
 	if (*image == '\0') DISC_StatusPrintf(true, image, "misc", "title");

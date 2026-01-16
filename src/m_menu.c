@@ -4,8 +4,7 @@
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 2011-2016 by Matthew "Kaito Sinclaire" Walsh.
 // Copyright (C) 1999-2025 by Sonic Team Junior.
-//
-// Additions (C) 2025 by StarManiaKG.
+// Copyright (C) 2025-2026 by StarManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -2650,7 +2649,7 @@ static boolean MIT_ChangeMusic(UINT32 menutype, INT32 level, INT32 *retval, void
 	if (!menutype) // if there's nothing in this level, do nothing
 		return false;
 
-	if (TSoURDt3rd_Jukebox_IsPlaying() || tsourdt3rd_currentMenu != NULL)
+	if (TSoURDt3rd_Jukebox_SongPlaying() || tsourdt3rd_currentMenu != NULL)
 	{
 		// STAR STUFF: we can handle our own menu music, thank you very much! //
 		return false;

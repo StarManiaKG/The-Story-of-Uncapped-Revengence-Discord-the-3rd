@@ -596,8 +596,10 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 	if (savemoddata && (introchanged || titlechanged))
 	{
 		// STAR STUFF: reset music, since we might not have the jukebox unlocked anymore //
-		if (tsourdt3rd_global_jukebox != NULL && !TSoURDt3rd_Jukebox_Unlocked())
+		if (!TSoURDt3rd_Jukebox_Initialized() || !TSoURDt3rd_Jukebox_Unlocked() || (TSoURDt3rd_Jukebox_SongPlaying() && !TSoURDt3rd_Jukebox_SongUnlocked(tsourdt3rd_global_jukebox.curtrack)))
+		{
 			S_StopMusic();
+		}
 	}
 
 	if (gamestate == GS_TITLESCREEN)

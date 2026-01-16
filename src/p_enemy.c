@@ -4339,7 +4339,7 @@ void A_SuperSneakers(void *data)
 	{
 		if ((mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC) && S_SpeedMusicAllowed())
 		{
-			if (!TSoURDt3rd_Jukebox_IsPlaying()) // STAR STUFF: don't speed up my music though, thanks love you :) //
+			if (!TSoURDt3rd_Jukebox_SongPlaying()) // STAR STUFF: don't speed up my music though, thanks love you :) //
 				S_SpeedMusic(1.4f);
 		}
 		else

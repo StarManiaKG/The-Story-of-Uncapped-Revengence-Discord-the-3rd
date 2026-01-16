@@ -38,7 +38,7 @@
 
 // TSoURDt3rd
 #include "STAR/p_user.h" // TSoURDt3rd_P_Ticker() //
-#include "STAR/core/smkg-s_jukebox.h" // TSoURDt3rd_Jukebox_IsPlaying() //
+#include "STAR/core/smkg-s_jukebox.h" // TSoURDt3rd_Jukebox_SongPlaying() //
 
 tic_t leveltime;
 
@@ -593,7 +593,7 @@ static inline void P_DoSpecialStageStuff(void)
 	{
 		// STAR STUFF: do cool music speeding junk :) //
 		//	...but don't interrupt my brooding >:| //
-		if (!TSoURDt3rd_Jukebox_IsPlaying())
+		if (!TSoURDt3rd_Jukebox_SongPlaying())
 			S_SpeedMusic(1.4f);
 	}
 

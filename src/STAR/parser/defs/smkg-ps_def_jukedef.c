@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2026 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -12,8 +12,6 @@
 #include "../smkg-ps_main.h"
 #include "../../core/smkg-s_jukebox.h"
 #include "../../star_vars.h"
-
-#include "../../../z_zone.h"
 
 // ------------------------ //
 //        Variables
@@ -41,30 +39,17 @@ enum star_jukebox_lump_term_e
 //        Functions
 // ------------------------ //
 
-static INT32 TSoURDt3rd_JUKEDEF_CreatePages(char *page_name)
+static void TSoURDt3rd_JUKEDEF_CreatePages(char *page_name)
 {
 	tsourdt3rd_jukebox_pages_t *juke_page_prev = NULL;
 	tsourdt3rd_jukebox_pages_t *juke_page = tsourdt3rd_jukeboxpages_start;
-	INT32 return_with = 0;
 
-	if (tsourdt3rd_jukebox_available_pages == NULL)
+	while (juke_page && (juke_page->num <= tsourdt3rd_jukebox_numpages))
 	{
-		STAR_CONS_Printf(STAR_CONS_DEBUG, "JUKEDEF: Jukebox page system wasn't initialized, not creating page!\n");
-		return_with = -1;
-		goto end_function;
-	}
-
-	while (juke_page)
-	{
-		if (juke_page->id >= TSOURDT3RD_JUKEBOX_MAX_PAGES)
+		if (!strnicmp(juke_page->page_name, page_name, TSOURDT3RD_JUKEBOX_MAX_PAGE_NAME))
 		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "JUKEDEF: Max pages exceeded, not adding page \x82\"%s\"\x80!\n", page_name);
-			goto end_function;
-		}
-		else if (!strnicmp(juke_page->page_name, page_name, TSOURDT3RD_JUKEBOX_MAX_PAGE_NAME))
-		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "JUKEDEF: Page \x82\"%s\"\x80 already exists!\n", page_name);
-			goto end_function;
+			STAR_CONS_Printf(STAR_CONS_DEBUG, "JUKEDEF: Page \x82\"%s\"\x80 already exists!\n", page_name);
+			return;
 		}
 		juke_page_prev = juke_page;
 		juke_page = juke_page->next;
@@ -72,8 +57,11 @@ static INT32 TSoURDt3rd_JUKEDEF_CreatePages(char *page_name)
 
 	if (juke_page == NULL)
 	{
+		++tsourdt3rd_jukebox_numpages;
+		tsourdt3rd_jukebox_available_pages = Z_Realloc(tsourdt3rd_jukebox_available_pages, tsourdt3rd_jukebox_numpages * sizeof(tsourdt3rd_jukebox_pages_t *), PU_STATIC, NULL);
+
 		juke_page = Z_Calloc(sizeof(tsourdt3rd_jukebox_pages_t), PU_STATIC, NULL);
-		juke_page->id = ++tsourdt3rd_jukebox_numpages;
+		juke_page->num = tsourdt3rd_jukebox_numpages;
 
 		strlcpy(juke_page->page_name, page_name, TSOURDT3RD_JUKEBOX_MAX_PAGE_NAME);
 
@@ -83,39 +71,17 @@ static INT32 TSoURDt3rd_JUKEDEF_CreatePages(char *page_name)
 			juke_page_prev->next = juke_page;
 		}
 
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE, "JUKEDEF: Created page \x82\"%s\"\x80!\n", juke_page->page_name);
+		STAR_CONS_Printf(STAR_CONS_NOTICE, "JUKEDEF: Created page \x82\"%s\"\x80!\n", juke_page->page_name);
 	}
-
 	(*tsourdt3rd_jukebox_available_pages) = juke_page;
-	return_with = 1;
-	goto end_function;
-
-end_function:
-{
-	if (page_name)
-	{
-		free(page_name);
-		page_name = NULL;
-	}
-	return return_with;
 }
 
-}
-
-static INT32 TSoURDt3rd_JUKEDEF_SetSupportedPages(tsourdt3rd_jukebox_pages_t **supported_page_p, char *supported_lump, char *page_name)
+static void TSoURDt3rd_JUKEDEF_SetSupportedPages(tsourdt3rd_jukebox_pages_t **supported_page_p, char *supported_lump, char *page_name)
 {
 	tsourdt3rd_jukebox_pages_t *all_jukebox_pages = tsourdt3rd_jukeboxpages_start;
 	tsourdt3rd_jukebox_pages_t *new_page_prev = NULL;
 	tsourdt3rd_jukebox_pages_t *new_page = (*supported_page_p);
 	INT32 new_page_pos = 0;
-	INT32 return_with = 0;
-
-	if (tsourdt3rd_jukebox_available_pages == NULL)
-	{
-		STAR_CONS_Printf(STAR_CONS_DEBUG, "JUKEDEF: Jukebox page system wasn't initialized, not setting track to page!\n");
-		return_with = -1;
-		goto end_function;
-	}
 
 	while (all_jukebox_pages)
 	{
@@ -124,16 +90,16 @@ static INT32 TSoURDt3rd_JUKEDEF_SetSupportedPages(tsourdt3rd_jukebox_pages_t **s
 	}
 	if (all_jukebox_pages == NULL)
 	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "JUKEDEF: Page \x82\"%s\"\x80 doesn't exist! Did you create it beforehand?\n", page_name);
-		goto end_function;
+		STAR_CONS_Printf(STAR_CONS_ERROR, "JUKEDEF: Page \x82\"%s\"\x80 doesn't exist! Did you create it beforehand?\n", page_name);
+		return;
 	}
 
 	while (new_page)
 	{
 		if (!strnicmp(new_page->page_name, page_name, TSOURDT3RD_JUKEBOX_MAX_PAGE_NAME))
 		{
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "JUKEDEF: Lump \x82\"%s\"\x80 could already be found on page \x82\"%s\"\x80!\n", supported_lump, page_name);
-			goto end_function;
+			STAR_CONS_Printf(STAR_CONS_ERROR, "JUKEDEF: Lump \x82\"%s\"\x80 could already be found on page \x82\"%s\"\x80!\n", supported_lump, page_name);
+			return;
 		}
 		new_page_prev = new_page;
 		new_page = new_page->next;
@@ -143,7 +109,7 @@ static INT32 TSoURDt3rd_JUKEDEF_SetSupportedPages(tsourdt3rd_jukebox_pages_t **s
 	if (new_page == NULL)
 	{
 		new_page = Z_Calloc(sizeof(tsourdt3rd_jukebox_pages_t), PU_STATIC, NULL);
-		new_page->id = new_page_pos;
+		new_page->num = new_page_pos;
 
 		strlcpy(new_page->page_name, page_name, TSOURDT3RD_JUKEBOX_MAX_PAGE_NAME);
 
@@ -153,23 +119,9 @@ static INT32 TSoURDt3rd_JUKEDEF_SetSupportedPages(tsourdt3rd_jukebox_pages_t **s
 			new_page_prev->next = new_page;
 		}
 
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE, "JUKEDEF: Lump \x82\"%s\"\x80 can now be found on page \x82\"%s\"\x80!\n", supported_lump, page_name);
+		STAR_CONS_Printf(STAR_CONS_NOTICE, "JUKEDEF: Lump \x82\"%s\"\x80 can now be found on page \x82\"%s\"\x80!\n", supported_lump, page_name);
 	}
-
 	(*supported_page_p) = new_page;
-	return_with = 1;
-	goto end_function;
-
-end_function:
-{
-	if (page_name)
-	{
-		free(page_name);
-		page_name = NULL;
-	}
-	return return_with;
-}
-
 }
 
 boolean TSoURDt3rd_STARParser_JUKEDEF(tsourdt3rd_starparser_t *script)
@@ -183,13 +135,9 @@ boolean TSoURDt3rd_STARParser_JUKEDEF(tsourdt3rd_starparser_t *script)
 				char *page_name = malloc(TSOURDT3RD_JUKEBOX_MAX_PAGE_NAME);
 
 				TSoURDt3rd_STARParser_STRLCPY(page_name, script->tkn, TSOURDT3RD_JUKEBOX_MAX_PAGE_NAME);
-				INT32 page_created = TSoURDt3rd_JUKEDEF_CreatePages(page_name);
-
-				if (page_created == -1)
-				{
-					TSoURDt3rd_STARParser_Error("JUKEDEF: Quitting.", script, TSOURDT3RD_STARPARSER_ERROR_LUMP);
-					return true;
-				}
+				TSoURDt3rd_JUKEDEF_CreatePages(page_name);
+				free(page_name);
+				page_name = NULL;
 
 				if (!strcmp(script->val, ","))
 				{
@@ -216,11 +164,23 @@ boolean TSoURDt3rd_STARParser_JUKEDEF(tsourdt3rd_starparser_t *script)
 				// Check if this new lump has a pre-existing definition...
 				while (jukedef)
 				{
-					if (!strnicmp(jukedef->linked_musicdef->name, lump_name, 7))
+					musicdef_t *def = jukedef->linked_musicdef;
+					INT32 track = 0;
+
+					while (track < def->numtracks)
 					{
-						STAR_CONS_Printf(STAR_CONS_DEBUG, "JUKEDEF: Found pre-existing music definition for Lump \x82\"%s\"\x80!\n", lump_name);
+						if (!strnicmp(def->name[track], lump_name, 7))
+						{
+							STAR_CONS_Printf(STAR_CONS_DEBUG, "JUKEDEF: Found pre-existing music definition for Lump \x82\"%s\"\x80!\n", lump_name);
+							break;
+						}
+						track++;
+					}
+					if (track < def->numtracks)
+					{
 						break;
 					}
+
 					jukedef = jukedef->next;
 				}
 				if (jukedef == NULL)
@@ -253,13 +213,9 @@ boolean TSoURDt3rd_STARParser_JUKEDEF(tsourdt3rd_starparser_t *script)
 							char *page_name = malloc(TSOURDT3RD_JUKEBOX_MAX_PAGE_NAME);
 
 							TSoURDt3rd_STARParser_STRLCPY(page_name, script->val, TSOURDT3RD_JUKEBOX_MAX_PAGE_NAME);
-							INT32 set_supported_page = TSoURDt3rd_JUKEDEF_SetSupportedPages(&new_supported_page, lump_name, page_name);
-
-							if (set_supported_page == -1)
-							{
-								TSoURDt3rd_STARParser_Error("JUKEDEF: Quitting.", script, TSOURDT3RD_STARPARSER_ERROR_LUMP);
-								break;
-							}
+							TSoURDt3rd_JUKEDEF_SetSupportedPages(&new_supported_page, lump_name, page_name);
+							free(page_name);
+							page_name = NULL;
 
 							script->val = script->tokenizer->get(script->tokenizer, 1);
 							if (!strcmp(script->val, ":"))

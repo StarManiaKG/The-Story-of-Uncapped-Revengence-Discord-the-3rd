@@ -3,6 +3,7 @@
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 1999-2025 by Sonic Team Junior.
+// Copyright (C) 2025-2026 by StarManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -2209,7 +2210,7 @@ void S_LoadMusicCredit(void)
 		// No definitions
 		return;
 	}
-	else if (TSoURDt3rd_Jukebox_IsPlaying() && !cv_songcredits_debug.value)
+	else if (TSoURDt3rd_Jukebox_SongPlaying() && !cv_songcredits_debug.value)
 	{
 		// Jukebox credits display overrides music credits
 		return;
@@ -2293,7 +2294,7 @@ void S_ShowMusicCredit(void)
 		return;
 	}
 
-	if (TSoURDt3rd_Jukebox_IsPlaying() && !cv_songcredits_debug.value)
+	if (TSoURDt3rd_Jukebox_SongPlaying() && !cv_songcredits_debug.value)
 	{
 		// Jukebox credits display overrides music credits
 		return;
@@ -2420,7 +2421,7 @@ void S_ControlMusicEffects(void)
 	fixed_t cur_music_speed = FloatToFixed(S_GetSpeedMusic());
 	fixed_t cur_music_pitch = FloatToFixed(S_GetPitchMusic());
 
-	if (TSoURDt3rd_Jukebox_IsPlaying())
+	if (TSoURDt3rd_Jukebox_SongPlaying())
 	{
 		new_music_speed = atof(cv_tsourdt3rd_jukebox_speed.string);
 		new_music_pitch = atof(cv_tsourdt3rd_jukebox_pitch.string);
@@ -2747,7 +2748,7 @@ boolean S_RecallMusic(UINT16 status, boolean fromfirst)
 		return false;
 	}
 
-	if (TSoURDt3rd_Jukebox_IsPlaying())
+	if (TSoURDt3rd_Jukebox_SongPlaying())
 	{
 		// STAR STUFF: currently jukeboxing, so just clear memory and move on :p //
 		Z_Free(entry);
@@ -2810,8 +2811,8 @@ static lumpnum_t S_GetMusicLumpNum(const char *mname)
 		return W_GetNumForName(va(midipref ? "d_%s":"o_%s", mname));
 	else if (S_PrefAvailable(!midipref, mname))
 		return W_GetNumForName(va(midipref ? "o_%s":"d_%s", mname));
-
-	return TSoURDt3rd_EXMusic_DefaultMapTrack_Play(&mname); // STAR STUFF: play some fallback music... //
+	else
+		return TSoURDt3rd_EXMusic_DefaultMapTrack_Play(&mname); // STAR STUFF: play some fallback music... //
 }
 
 static inline void S_UnloadMusic(void)
@@ -2932,7 +2933,7 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 	if (S_MusicDisabled())
 		return;
 
-	if (TSoURDt3rd_Jukebox_IsPlaying())
+	if (TSoURDt3rd_Jukebox_SongPlaying())
 	{
 		// STAR STUFF: jukebox has priority //
 		return;
@@ -3098,7 +3099,7 @@ void S_StopFadingMusic(void)
 
 boolean S_FadeMusicFromVolume(UINT8 target_volume, INT16 source_volume, UINT32 ms)
 {
-	if (TSoURDt3rd_Jukebox_IsPlaying())
+	if (TSoURDt3rd_Jukebox_SongPlaying())
 	{
 		// STAR STUFF: don't fade if jukeboxing please //
 		return false;
@@ -3112,7 +3113,7 @@ boolean S_FadeMusicFromVolume(UINT8 target_volume, INT16 source_volume, UINT32 m
 
 boolean S_FadeOutStopMusic(UINT32 ms)
 {
-	if (TSoURDt3rd_Jukebox_IsPlaying())
+	if (TSoURDt3rd_Jukebox_SongPlaying())
 	{
 		// STAR STUFF: don't fade if jukeboxing please //
 		return false;
@@ -3139,7 +3140,7 @@ void S_StartEx(boolean reset)
 		mapmusposition = mapheaderinfo[gamemap-1]->muspos;
 	}
 
-	if (!TSoURDt3rd_Jukebox_IsPlaying()) // STAR NOTE: only if we're not jukebox do we do this //
+	if (!TSoURDt3rd_Jukebox_SongPlaying()) // STAR NOTE: only if we're not jukebox do we do this //
 	{
 		if (RESETMUSIC || reset)
 			S_StopMusic();
@@ -3210,7 +3211,7 @@ static void Command_Tunes_f(void)
 		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_APRILFOOLS|STAR_CONS_WARNING, "Nice try. Perhaps there's a command you need to turn off first?\n");
 		return;
 	}
-	else if (TSoURDt3rd_Jukebox_IsPlaying())
+	else if (TSoURDt3rd_Jukebox_SongPlaying())
 	{
 		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_JUKEBOX|STAR_CONS_WARNING, "Sorry, you can't use this command while playing music.\n");
 		return;

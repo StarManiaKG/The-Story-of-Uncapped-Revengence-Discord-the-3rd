@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2026 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -15,9 +15,9 @@
 #include "smkg-i_sys.h" // TSoURDt3rd_I_QuakeWindow() //
 #include "ss_main.h" // STAR_CONS_Printf() //
 #include "star_vars.h" // TSoURDt3rd_DetermineLevelMusic() //
+#include "core/smkg-g_game.h" // tsourdt3rd_local //
 #include "core/smkg-p_pads.h" // TSoURDt3rd_P_Pads_PadRumbleThink() //
 #include "core/smkg-s_jukebox.h"
-#include "misc/smkg-m_misc.h" // TSoURDt3rd_FOL_CreateDirectory() //
 
 #include "../g_game.h"
 #include "../p_local.h"
@@ -145,7 +145,6 @@ void TSoURDt3rd_P_PlayerThink(player_t *player)
 
 	if (display_player && display_player->mo)
 	{
-		// Water muffling
 		tsourdt3rd_local.water_muffling.apply_effect = ((display_player->mo->eflags & MFE_UNDERWATER) && (display_player->mo->health > 0));
 		if (split_player && split_player->mo)
 		{
@@ -154,10 +153,9 @@ void TSoURDt3rd_P_PlayerThink(player_t *player)
 		tsourdt3rd_local.water_muffling.disable_effect = (!tsourdt3rd_local.water_muffling.apply_effect && tsourdt3rd_local.water_muffling.in_effect);
 	}
 
+	// Water muffling
 	if (cv_tsourdt3rd_audio_watermuffling.value)
 	{
-		// Water muffling
-
 		if (tsourdt3rd_local.water_muffling.apply_effect)
 		{
 			if (!tsourdt3rd_local.water_muffling.in_effect)
@@ -165,6 +163,7 @@ void TSoURDt3rd_P_PlayerThink(player_t *player)
 				tsourdt3rd_local.water_muffling.prev_music_volume = S_GetInternalMusicVolume();
 				tsourdt3rd_local.water_muffling.prev_music_speed = S_GetSpeedMusic();
 				tsourdt3rd_local.water_muffling.prev_music_pitch = S_GetPitchMusic();
+				tsourdt3rd_local.water_muffling.prev_sfx_volume = S_GetInternalSfxVolume();
 
 				if (tsourdt3rd_local.water_muffling.prev_music_volume > 0)
 				{
@@ -175,7 +174,6 @@ void TSoURDt3rd_P_PlayerThink(player_t *player)
 				tsourdt3rd_local.water_muffling.music_speed = (tsourdt3rd_local.water_muffling.prev_music_speed - TSOURDT3RD_MUFFLEINT);
 				tsourdt3rd_local.water_muffling.music_pitch = (tsourdt3rd_local.water_muffling.prev_music_pitch - TSOURDT3RD_MUFFLEINT);
 
-				tsourdt3rd_local.water_muffling.prev_sfx_volume = S_GetInternalSfxVolume();
 				if (tsourdt3rd_local.water_muffling.prev_sfx_volume > 0)
 					tsourdt3rd_local.water_muffling.sfx_volume = (tsourdt3rd_local.water_muffling.prev_sfx_volume / 3);
 
@@ -184,7 +182,7 @@ void TSoURDt3rd_P_PlayerThink(player_t *player)
 			}
 
 			// Apply effects to music...
-			if (!TSoURDt3rd_Jukebox_IsPlaying())
+			if (!TSoURDt3rd_Jukebox_SongPlaying())
 			{
 				S_SetInternalMusicVolume(tsourdt3rd_local.water_muffling.music_volume);
 				S_SpeedMusic(tsourdt3rd_local.water_muffling.music_speed);
@@ -193,7 +191,6 @@ void TSoURDt3rd_P_PlayerThink(player_t *player)
 
 			// Apply effects to sounds...
 			S_SetInternalSfxVolume(tsourdt3rd_local.water_muffling.sfx_volume);
-
 		}
 
 		if (tsourdt3rd_local.water_muffling.in_effect)
@@ -201,7 +198,7 @@ void TSoURDt3rd_P_PlayerThink(player_t *player)
 			if (!tsourdt3rd_local.water_muffling.apply_effect/*tsourdt3rd_local.water_muffling.disable_effect*/)
 			{
 				// Remove effects to music...
-				if (!TSoURDt3rd_Jukebox_IsPlaying())
+				if (!TSoURDt3rd_Jukebox_SongPlaying())
 				{
 					S_SetInternalMusicVolume(tsourdt3rd_local.water_muffling.prev_music_volume);
 					S_SpeedMusic(tsourdt3rd_local.water_muffling.prev_music_speed);

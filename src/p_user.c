@@ -65,7 +65,7 @@
 #include "STAR/smkg-cvars.h" // cv_tsourdt3rd_sdl_windowtitle stuff & cv_tsourdt3rd_audio_gameover //
 #include "STAR/star_vars.h" // STAR_SetWindowTitle() //
 #include "STAR/p_user.h" // TSoURDt3rd_P_SuperReady() //
-#include "STAR/core/smkg-s_jukebox.h" // TSoURDt3rd_Jukebox_IsPlaying() //
+#include "STAR/core/smkg-s_jukebox.h" // TSoURDt3rd_Jukebox_SongPlaying() //
 
 #if 0
 static void P_NukeAllPlayers(player_t *player);
@@ -1623,18 +1623,14 @@ void P_StealPlayerScore(player_t *player, UINT32 amount)
 //
 void P_PlayLivesJingle(player_t *player)
 {
+	boolean tempUse1upSound = TSoURDt3rd_Jukebox_SongPlaying(); // STAR STUFF: play a sound for lives when jukeboxing //
+
 	if (player && !P_IsLocalPlayer(player))
 		return;
 
-#if 1
-	// STAR STUFF: play a sound for lives when jukeboxing //
-	if (TSoURDt3rd_Jukebox_IsPlaying())
-		use1upSound = true;
-#endif
-
 	if (mariomode)
 		S_StartSoundFromEverywhere(sfx_marioa);
-	else if (use1upSound || cv_1upsound.value)
+	else if (tempUse1upSound || use1upSound || cv_1upsound.value)
 		S_StartSoundFromEverywhere(sfx_oneup);
 	else
 	{
@@ -1680,7 +1676,7 @@ void P_PlayJingleMusic(player_t *player, const char *musname, UINT16 musflags, b
 
 	S_RetainMusic(musname, musflags, looping, 0, status);
 
-	if (TSoURDt3rd_Jukebox_IsPlaying() || TSoURDt3rd_AprilFools_ModeEnabled())
+	if (TSoURDt3rd_Jukebox_SongPlaying() || TSoURDt3rd_AprilFools_ModeEnabled())
 	{
 		// STAR STUFF: don't play jingles if we got jukebox or april fools music //
 		return;
@@ -1802,7 +1798,7 @@ void P_RestoreMusic(player_t *player)
 		S_StartCaption(sfx_None, -1, player->powers[pw_sneakers]);
 		if ((mapheaderinfo[gamemap-1]->levelflags & LF_SPEEDMUSIC) && S_SpeedMusicAllowed())
 		{
-			if (!TSoURDt3rd_Jukebox_IsPlaying()) // STAR STUFF: Maybe don't speed music while jukeboxing? Please? //
+			if (!TSoURDt3rd_Jukebox_SongPlaying()) // STAR STUFF: Maybe don't speed music while jukeboxing? Please? //
 				S_SpeedMusic(1.4f);
 			if (!S_RecallMusic(JT_MASTER, true))
 				S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);

@@ -40,7 +40,7 @@
 #include "lua_hook.h" // hook_cmd_running errors
 
 // TSoURDt3rd
-#include "STAR/core/smkg-s_jukebox.h" // TSoURDt3rd_Jukebox_IsPlaying() //
+#include "STAR/core/smkg-s_jukebox.h" // TSoURDt3rd_Jukebox_SongPlaying() //
 
 #define NOHUD if (hud_running)\
 return luaL_error(L, "HUD rendering code should not call this function!");\
@@ -3745,7 +3745,7 @@ static int lib_sSpeedMusic(lua_State *L)
 		if (!player)
 			return LUA_ErrInvalid(L, "player_t");
 	}
-	if (S_SpeedMusicAllowed() && !TSoURDt3rd_Jukebox_IsPlaying()) // STAR STUFF: DON'T INTERUPT OUR MUSIC PLEASE :) //
+	if (S_SpeedMusicAllowed() && !TSoURDt3rd_Jukebox_SongPlaying()) // STAR STUFF: DON'T INTERUPT OUR MUSIC PLEASE :) //
 	{
 		if (!player || P_IsLocalPlayer(player))
 		{
