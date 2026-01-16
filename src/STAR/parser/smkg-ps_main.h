@@ -16,6 +16,7 @@
 
 #include "../../m_tokenizer.h"
 #include "../../w_wad.h"
+#include "../../z_zone.h"
 
 #ifdef __cplusplus
 extern "C" {

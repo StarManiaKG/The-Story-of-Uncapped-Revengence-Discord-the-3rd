@@ -88,7 +88,6 @@
 #define O_BINARY 0
 #endif
 
-
 typedef struct
 {
 	const char *name;
@@ -111,6 +110,7 @@ static UINT16 lumpnumcacheindex = 0;
 //===========================================================================
 //                                                                    GLOBALS
 //===========================================================================
+
 UINT16 numwadfiles; // number of active wadfiles
 wadfile_t **wadfiles; // 0 to numwadfiles-1 are valid
 

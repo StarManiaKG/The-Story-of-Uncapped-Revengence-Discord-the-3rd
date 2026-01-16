@@ -60,7 +60,6 @@ static void STAR_Easter_EggHunt_OnChange(void)
 			CONS_Printf("You already have all of the eggs!\n");
 		else if (Playing() && netgame)
 			CONS_Printf("Sorry, you can't change this while in a game or netgame.\n");
-
 		CV_StealthSetValue(&cv_tsourdt3rd_easter_egghunt_allowed, !cv_tsourdt3rd_easter_egghunt_allowed.value);
 		return;
 	}
@@ -110,8 +109,7 @@ void TSoURDt3rd_Easter_ST_drawEggs(void)
 		return;
 
 	//// NOW WE RENDER, AND WE'RE DONE! :) ////
-	// Draw the Patches and Strings //
-	if (numMapEggs && (collectedmapeggs != numMapEggs))
+	if (numMapEggs && (collectedmapeggs != numMapEggs)) // Draw the Patches and Strings //
 	{	
 		// Map Eggs
 		V_DrawScaledPatch(16, 64, V_SNAPTOLEFT|V_SNAPTOTOP|V_PERPLAYER|((stplyr->spectator) ? V_HUDTRANSHALF : V_HUDTRANS), tsourdt3rd_easter_leveleggs);
@@ -127,10 +125,10 @@ void TSoURDt3rd_Easter_ST_drawEggs(void)
 		V_DrawString(115, 80, V_SNAPTOLEFT|V_SNAPTOTOP|V_PERPLAYER|((stplyr->spectator) ? V_HUDTRANSHALF : V_HUDTRANS), "/");
 		V_DrawTallNum(140, 80, V_SNAPTOLEFT|V_SNAPTOTOP|V_PERPLAYER|((stplyr->spectator) ? V_HUDTRANSHALF : V_HUDTRANS), TOTALEGGS);
 	}
-
-	// Draw the Egg Notifier //
-	else
-		V_DrawCenteredThinString(16, 64,
-			((((currenteggs == TOTALEGGS) || (numMapEggs && (collectedmapeggs == numMapEggs))) ? (V_GREENMAP) : (V_REDMAP))|((stplyr->spectator) ? V_HUDTRANSHALF : V_HUDTRANS)),
+	else // Draw the Egg Notifier //
+	{
+		V_DrawCenteredThinString(88, 64,
+			V_SNAPTOLEFT|((((currenteggs == TOTALEGGS) || (numMapEggs && (collectedmapeggs == numMapEggs))) ? (V_GREENMAP) : (V_REDMAP))|((stplyr->spectator) ? V_HUDTRANSHALF : V_HUDTRANS)),
 			((currenteggs == TOTALEGGS) ? ("All Eggs Have Been Found!") : ((numMapEggs && (collectedmapeggs == numMapEggs)) ? ("All Eggs in this Map Have Been Found!") : ("There Are No Eggs in This Map!"))));
+	}
 }

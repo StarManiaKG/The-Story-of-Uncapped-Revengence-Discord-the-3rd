@@ -115,13 +115,13 @@ void TSoURDt3rd_STARParser_Error(const char *err, tsourdt3rd_starparser_t *scrip
 	switch (verboseness)
 	{
 		case TSOURDT3RD_STARPARSER_ERROR_FULL:
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "%s (in lump %s, line %d)\n", err, script->wad->filename, script->tokenizer->line);
+			STAR_CONS_Printf(STAR_CONS_ERROR, "%s (in lump %s, line %d)\n", err, script->wad->filename, script->tokenizer->line);
 			break;
 		case TSOURDT3RD_STARPARSER_ERROR_LUMP:
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "%s (in lump %s)\n", err, script->wad->filename);
+			STAR_CONS_Printf(STAR_CONS_ERROR, "%s (in lump %s)\n", err, script->wad->filename);
 			break;
 		default:
-			STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "%s (near terms (%s,%s))\n", err, script->tkn, script->val);
+			STAR_CONS_Printf(STAR_CONS_ERROR, "%s (near terms (%s,%s))\n", err, script->tkn, script->val);
 			break;
 	}
 }

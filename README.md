@@ -12,6 +12,8 @@
 ## What Even is This?
 For starters, [Sonic Robo Blast 2](https://srb2.org/) is a 3D Sonic the Hedgehog fangame based on a modified version of [Doom Legacy](http://doomlegacy.sourceforge.net/), and this custom build of SRB2 is based on both of those.
 
+### I lazily forgot how to fork this build under a
+
 The Story of Uncapped Revengence Discord the 3rd, or TSoURDt3rd for short, was originally a compilation of both the Uncapped-Revengence branch, by Eidolon, and Discord Rich Presence Support, orignally made by Kart Krew for SRB2 Kart and ported to Vanilla SRB2 by Fafabis.
 However, as time went on, I added my own custom features to SRB2's code, and eventually ported some features over from other repositories, ultimately forming my own unique and custom build of SRB2.
 
@@ -51,7 +53,7 @@ The build and its executable files can be found in the provided ZIP file, with f
 ***
   - **Discord Rich Presence** ***(cont.)***
     - _Currently Supported Characters:_
-      - Sonic, Super Sonic, Sonic & Tails
+      - Sonic, Super Sonic, Sonic & Tails, Super Sonic & Tails
       - Tails
       - Knuckles
       - Amy
@@ -73,7 +75,7 @@ The build and its executable files can be found in the provided ZIP file, with f
       - Metal Knuckles
       - Smiles
       - Whisper
-	  - Hexhog
+	    - Hexhog
       - Speccy
 ***
   - **Discord Rich Presence** ***(cont.)***
@@ -214,13 +216,14 @@ All of the following assets can be found in the current zip file of TSoURDt3rd, 
 
 **REQUIRED ASSETS**
   - srb2.pk3
-  - player.dta
+  - characters.pk3
   - zones.pk3
-  - patch.dta (if required for the current version)
+  - patch.pk3 (if required for the current version)
   - tsourdt3rd.pk3
 
 **OPTIONAL ASSETS**
-  - music.dta
+  - music.pk3
+  - tsourdt3rd_music.pk3
   - jukebox.pk3
 
 ## Compiling
