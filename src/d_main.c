@@ -568,7 +568,7 @@ static void D_Display(void)
 
 			if (!automapactive && !dedicated && cv_renderview.value)
 			{
-				R_ApplyLevelInterpolators(rendertimefrac_unpaused);
+				R_InterpolateView(R_UsingFrameInterpolation() ? rendertimefrac : FRACUNIT);
 				PS_START_TIMING(ps_rendercalltime);
 				if (players[displayplayer].mo || players[displayplayer].playerstate == PST_DEAD)
 				{
@@ -973,7 +973,7 @@ static void D_RunFrame(void)
 				rendertimefrac = FRACUNIT;
 			}
 
-			if ((deltatics < 1.0) && !hu_stopped)
+			if (deltatics < 1.0 && !hu_stopped)
 			{
 				rendertimefrac_unpaused = g_time.timefrac;
 			}
@@ -985,7 +985,8 @@ static void D_RunFrame(void)
 		else
 		{
 			renderdeltatics = realtics * FRACUNIT;
-			rendertimefrac = rendertimefrac_unpaused = FRACUNIT;
+			rendertimefrac = FRACUNIT;
+			rendertimefrac_unpaused = FRACUNIT;
 		}
 
 		if (interp || doDisplay)
@@ -1003,6 +1004,7 @@ static void D_RunFrame(void)
 		S_UpdateSounds(); // move positional sounds
 		if (realtics > 0 || singletics)
 			S_UpdateClosedCaptions();
+		TSoURDt3rd_Jukebox_Tick();
 
 #ifdef HW3SOUND
 		HW3S_EndFrameUpdate();
@@ -1011,8 +1013,11 @@ static void D_RunFrame(void)
 		LUA_Step();
 
 #ifdef HAVE_DISCORDSUPPORT
-		// Run any Discord activity callbacks for us, please.
-		DISC_RunCallbacks();
+		if (!dedicated)
+		{
+			// Run any Discord activity callbacks for us, please.
+			DISC_RunCallbacks();
+		}
 #endif
 
 		// STAR STUFF: run our extra game loop routines now :p //
@@ -1060,7 +1065,7 @@ void D_StartTitle(void)
 {
 	INT32 i;
 
-	if (!TSoURDt3rd_Jukebox_IsPlaying())
+	if (!TSoURDt3rd_Jukebox_SongPlaying())
 	{
 		// STAR STUFF: If we're playing jukebox music, don't interrupt it! //
 		S_StopMusic();
@@ -1310,10 +1315,8 @@ static void IdentifyVersion(void)
 	D_AddFile(&startupwadfiles, va(pandf,srb2waddir, "patch.pk3"));
 #endif
 
-#if 1
 	// STAR STUFF: Add this custom build's fun stuff! //
 	D_AddFile(&startupwadfiles, va(pandf,srb2waddir, "tsourdt3rd.pk3"));
-#endif
 
 #if !defined (HAVE_SDL) || defined (HAVE_MIXER)
 	{
@@ -1330,10 +1333,9 @@ static void IdentifyVersion(void)
 		MUSICTEST("music.pk3")
 		//MUSICTEST("patch_music.pk3")
 
-#if 1
 		// STAR STUFF: CUSTOM MUSIC ENJOYMENT SYSTEM LOADED! //
+		MUSICTEST("tsourdt3rd_music.pk3")
 		MUSICTEST("jukebox.pk3")
-#endif
 	}
 #endif
 }
@@ -1911,9 +1913,9 @@ void D_SRB2Main(void)
 	CON_ToggleOff();
 
 #ifdef HAVE_DISCORDSUPPORT
-	if (! dedicated)
+	if (!dedicated)
 	{
-		DISC_Init();
+		DISC_Initialize();
 	}
 #endif
 
