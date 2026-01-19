@@ -1,8 +1,8 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
+// Copyright (C) 2018-2025 by Sally "TehRealSalt" Cochenour.
 // Copyright (C) 2018-2025 by Kart Krew.
-// Copyright (C) 2020-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2020-2026 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -14,8 +14,9 @@
 #ifdef HAVE_DISCORDSUPPORT
 
 #include "../smkg-m_sys.h"
-
 #include "../../smkg-st_hud.h"
+
+#include "../../../discord/discord.h"
 
 #include "../../../r_draw.h"
 #include "../../../z_zone.h"
@@ -98,12 +99,12 @@ static void M_Sys_DiscordRequestHandler(INT32 choice);
 
 menuitem_t DISCORD_OP_MainMenu[] =
 {
-	{IT_STRING | IT_CVAR, NULL, "Rich Presence", &cv_discordrp, 0},
+	{IT_STRING | IT_CVAR, NULL, "Integration", &cv_discordintegration, 0},
 	{IT_STRING | IT_CVAR, NULL, "Streamer Mode", &cv_discordstreamer, 0},
 
 	{IT_SPACE, NULL, NULL, NULL, 0},
 
-	{IT_HEADER, NULL, "Rich Presence Settings...", NULL, 0},
+	{IT_HEADER, NULL, "Integration Settings...", NULL, 0},
 		{IT_STRING | IT_CVAR, NULL, "Allow Ask to Join", &cv_discordasks, 0},
 		{IT_STRING | IT_CVAR, NULL, "Allow Invites", &cv_discordinvites, 0},
 
@@ -118,13 +119,13 @@ menuitem_t DISCORD_OP_MainMenu[] =
 
 	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL, NULL, 0},
 
-	{IT_HEADER, NULL, "Custom Presence String...", NULL, 0},
+	{IT_HEADER, NULL, "Custom Activity String...", NULL, 0},
 		{IT_STRING | IT_CVAR | IT_CV_STRING, NULL, "Edit Details...", &cv_discordcustom_details, 0},
 		{IT_STRING | IT_CVAR | IT_CV_STRING, NULL, "Edit State...", &cv_discordcustom_state, 0},
 
 	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL, NULL, 0},
 
-	{IT_HEADER, NULL, "Custom Presence Large Image...", NULL, 0},
+	{IT_HEADER, NULL, "Custom Activity Large Image...", NULL, 0},
 		{IT_STRING | IT_CVAR | IT_CV_STRING, NULL, "Edit Image Text...", &cv_discordcustom_imagetext_large, 0},
 
 		{IT_SPACE, NULL, NULL, NULL, 0},
@@ -134,7 +135,7 @@ menuitem_t DISCORD_OP_MainMenu[] =
 
 	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL, NULL, 0},
 
-	{IT_HEADER, NULL, "Custom Presence Small Image...", NULL, 0},
+	{IT_HEADER, NULL, "Custom Activity Small Image...", NULL, 0},
 		{IT_STRING | IT_CVAR | IT_CV_STRING, NULL, "Edit Image Text...", &cv_discordcustom_imagetext_small, 0},
 
 		{IT_SPACE, NULL, NULL, NULL, 0},
@@ -260,13 +261,18 @@ tsourdt3rd_menu_t DISCORD_TM_MISC_RequestsDef = {
 
 void DISC_M_UpdateRequestsMenu(void)
 {
-	if (discordRequestList == NULL)
-		return;
-
-	// Show discord requests menu option if any requests are pending
-	MPauseMenu[mpause_discordrequests].status = IT_STRING | IT_CALL;
-	if (currentMenu == &MPauseDef && (tsourdt3rd_skullAnimCounter % 4))
-		V_DrawScaledPatch(currentMenu->x, currentMenu->menuitems[mpause_discordrequests].alphaKey, 0, W_CachePatchName("ICODIS", PU_CACHE));
+	if (discordRequestList != NULL)
+	{
+		// Show discord requests menu option if any requests are pending
+		MPauseMenu[mpause_discordrequests].status = IT_STRING | IT_CALL;
+		if (currentMenu == &MPauseDef && (tsourdt3rd_skullAnimCounter % 4))
+			V_DrawScaledPatch(currentMenu->x, currentMenu->menuitems[mpause_discordrequests].alphaKey, 0, W_CachePatchName("ICODIS", PU_CACHE));
+	}
+	else
+	{
+		// No other requests
+		MPauseMenu[mpause_discordrequests].status = IT_GRAYEDOUT;
+	}
 }
 
 void TSoURDt3rd_M_DiscordOptions_Init(INT32 choice)
@@ -284,17 +290,16 @@ static void M_Sys_DrawDiscordMenu(void)
 	const char *string = NULL;
 	const char *username = DISC_ReturnUsername();
 
-	if (discordInfo.connectionStatus == DISC_CONNECTED && (username != NULL))
+	if (discordInfo.connected && (username != NULL))
 	{
 		// Discord's open, so let's print our username!
-		flags |= V_MENUCOLORMAP;
 		string = va("Connected to: %s", username);
-		V_DrawCenteredThinString(x, y, flags, string);
+		V_DrawCenteredThinString(x, y, flags|V_MENUCOLORMAP, string);
 	}
 	else
 	{
 		// Dang, Discord isn't open!
-		string = ((discordInfo.connectionStatus == DISC_DISCONNECTED) ? "Disconnected!" : "Not Connected!");
+		string = ((discordInfo.initialized && !discordInfo.connected) ? "Disconnected!" : "Not Connected!");
 		V_DrawCenteredThinString(x, y-8, flags|V_REDMAP, string);
 		V_DrawCenteredThinString(x, y, flags|V_REDMAP, "Make sure Discord is open!");
 	}
@@ -326,19 +331,19 @@ static void M_Sys_DiscordOptionsTicker(void)
 		switch (i)
 		{
 			default:
-				menuflags = (cv_discordrp.value ? IT_HEADER : IT_DISABLED);
+				menuflags = (cv_discordintegration.value ? IT_HEADER : IT_DISABLED);
 				break;
 			case 1:
-				menuflags = (cv_discordrp.value ? IT_CVAR|IT_STRING : IT_DISABLED);
+				menuflags = (cv_discordintegration.value ? IT_CVAR|IT_STRING : IT_DISABLED);
 				break;
 			case 2:
-				menuflags = ((cv_discordrp.value && cv_discordshowonstatus.value == 9) ? IT_HEADER : IT_DISABLED);
+				menuflags = ((cv_discordintegration.value == 2 && cv_discordshowonstatus.value == 9) ? IT_HEADER : IT_DISABLED);
 				break;
 			case 3:
-				menuflags = ((cv_discordrp.value && cv_discordshowonstatus.value == 9) ? IT_CVAR|IT_STRING : IT_DISABLED);
+				menuflags = ((cv_discordintegration.value == 2 && cv_discordshowonstatus.value == 9) ? IT_CVAR|IT_STRING : IT_DISABLED);
 				break;
 			case 4:
-				menuflags = ((cv_discordrp.value && cv_discordshowonstatus.value == 9) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
+				menuflags = ((cv_discordintegration.value == 2 && cv_discordshowonstatus.value == 9) ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
 				if (custom_cvartype_index[j] == NULL || menuflags == IT_GRAYEDOUT)
 				{
 					// Dang it! Oh well, failsafe time!
@@ -373,7 +378,7 @@ static void M_Sys_DiscordOptionsTicker(void)
 				DISCORD_OP_MainMenu[discord_menuitems[i][j]].itemaction = discord_itemactions;
 				break;
 			case 5:
-				menuflags = ((cv_discordrp.value && cv_discordshowonstatus.value == 9) ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
+				menuflags = ((cv_discordintegration.value && cv_discordshowonstatus.value == 9) ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
 				break;
 		}
 		discord_itemactions = NULL;
@@ -395,8 +400,13 @@ static void M_Sys_DiscordOptionsTicker(void)
 
 static const char *M_Sys_GetDiscordName(DISC_Request_t *r)
 {
-	if (r == NULL) return "";
-	return DISC_ReturnUsername();
+	if (r == NULL || r->username == NULL)
+		return "Unknown User";
+#ifdef DISCORD_DISCRIMINATORS
+	if (r->discriminator != NULL)
+		return (va("%s#%s", r->username, r->discriminator));
+#endif
+	return r->username;
 }
 
 void TSoURDt3rd_M_DiscordRequests_Init(INT32 choice)
@@ -416,6 +426,7 @@ static void M_Sys_DrawDiscordRequests(void)
 	UINT8 *colormap;
 	patch_t *hand = NULL;
 
+	const char *usernameText = M_Sys_GetDiscordName(curRequest);
 	const char *wantText = "...would like to join!";
 	const char *acceptText = "Accept" ;
 	const char *declineText = "Decline";
@@ -454,8 +465,8 @@ static void M_Sys_DrawDiscordRequests(void)
 		V_DrawFixedPatch(56*FRACUNIT, 150*FRACUNIT + handoffset, FRACUNIT, 0, hand, NULL);
 	}
 
-	TSoURDt3rd_MK_DrawSticker(x + (slide * 32), y - 2, V_ThinStringWidth(M_Sys_GetDiscordName(curRequest), V_ALLOWLOWERCASE), 0, false);
-	V_DrawThinString(x + (slide * 32), y - 1, V_YELLOWMAP|V_ALLOWLOWERCASE, M_Sys_GetDiscordName(curRequest));
+	TSoURDt3rd_MK_DrawSticker(x + (slide * 32), y - 2, V_ThinStringWidth(usernameText, V_ALLOWLOWERCASE), 0, false);
+	V_DrawThinString(x + (slide * 32), y - 1, V_YELLOWMAP|V_ALLOWLOWERCASE, usernameText);
 
 	TSoURDt3rd_MK_DrawSticker(x, y + 12, V_ThinStringWidth(wantText, V_ALLOWLOWERCASE), 0, true);
 	V_DrawThinString(x, y + 10, V_ALLOWLOWERCASE, wantText);
@@ -487,14 +498,13 @@ static void M_Sys_DrawDiscordRequests(void)
 
 	while (curRequest->next != NULL)
 	{
-		INT32 ySlide = min(slide * 4, maxYSlide);
-
 		curRequest = curRequest->next;
 
-		const char *discordname = M_Sys_GetDiscordName(curRequest);
+		INT32 ySlide = min(slide * 4, maxYSlide);
+		const char *new_username = M_Sys_GetDiscordName(curRequest);
 
-		TSoURDt3rd_MK_DrawSticker(x, y - 1 + ySlide, V_ThinStringWidth(discordname, V_ALLOWLOWERCASE), 0, false);
-		V_DrawThinString(x, y + ySlide, V_ALLOWLOWERCASE, discordname);
+		TSoURDt3rd_MK_DrawSticker(x, y - 1 + ySlide, V_ThinStringWidth(new_username, V_ALLOWLOWERCASE), 0, false);
+		V_DrawThinString(x, y + ySlide, V_ALLOWLOWERCASE, new_username);
 
 		y -= 12;
 		maxYSlide = 12;
@@ -518,12 +528,10 @@ static void M_Sys_DiscordRequestTick(void)
 	if (discordrequestmenu.removeRequest == true)
 	{
 		DISC_RemoveRequest(discordRequestList);
+		DISC_M_UpdateRequestsMenu();
 
 		if (discordRequestList == NULL)
 		{
-			// No other requests
-			MPauseMenu[mpause_discordrequests].status = IT_DISABLED;
-
 			if (currentMenu->prevMenu)
 			{
 				TSoURDt3rd_M_SetupNextMenu(tsourdt3rd_currentMenu->prev_menu, currentMenu->prevMenu, true);

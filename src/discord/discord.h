@@ -1,8 +1,8 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
-// Copyright (C) 2018-2024 by Kart Krew.
-// Copyright (C) 2020-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2020-2026 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2018-2025 by Sally "TehRealSalt" Cochenour.
+// Copyright (C) 2018-2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -15,28 +15,38 @@
 #define __DISCORD__
 
 #include <time.h>
-
 #include "../command.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+
+extern consvar_t cv_discordinvites;
+extern INT32 DISCORD_RequestSFX;
+
+
 #ifdef HAVE_DISCORDSUPPORT
-
-
-// ------------------------ //
-//        Variables
-// ------------------------ //
-
 
 #ifdef DEVELOP
 #define DISCORD_SECRETIVE
 #endif
 
 // Please feel free to provide your own Discord app if you're making a new custom build :)
-#define DISCORD_APPID			1013126566236135516
-#define DISCORD_APPID_STRING	"1013126566236135516" // direct copy of the above in a string format
+#define DISCORD_APPID 1013126566236135516
+
+//
+// Ring Racers:
+// An undocumented feature of Discord RPC is the ability to host images on your own URL.
+// So, I'll use this to avoid the asset count restrictions on Discord apps.
+//
+// StarManiaKG:
+// Thanks Ring Racers for the repo stuff! (most likely TehRealSalt in particular)
+// However, it *is* actually documented.
+// https://discord.com/developers/docs/rich-presence/overview#assets
+//
+#define DISCORD_IMAGE_REPO	"https://git.do.srb2.org/StarManiaKG/tsourdt3rd-assets/assets/discord-rich-presence/"
+#define DISCORD_IMAGE_EXT	".png"
 
 // Allows for SRB2 to use the discriminators of Discord usernames! (even though they removed them :p)
 #define DISCORD_DISCRIMINATORS
@@ -51,14 +61,11 @@ extern "C" {
 
 
 // Discord client info
-typedef enum {
-	DISC_NOTCONNECTED	= 0,
-	DISC_DISCONNECTED	= 1>>0,
-	DISC_CONNECTED		= 1>>1,
-} DISC_ConnectionStatus_t;
-
 extern struct discordInfo_s {
-	DISC_ConnectionStatus_t connectionStatus;
+	boolean initialized;
+	boolean connected;
+	char *username;
+
 	struct {
 		UINT8 maxPlayers;
 		boolean joinsAllowed;
@@ -76,7 +83,9 @@ typedef enum {
 
 typedef struct discordRequest_s {
 	char *username; // Discord user name.
+#ifdef DISCORD_DISCRIMINATORS
 	char *discriminator; // Discord discriminator (The little hashtag thing after the username). Separated for a "hide discriminators" cvar.
+#endif
 	char *userID; // The ID of the Discord user, gets used with DISC_Respond()
 
 	// HAHAHA, no.
@@ -92,8 +101,8 @@ typedef struct discordRequest_s {
 extern DISC_Request_t *discordRequestList;
 
 
-// COMMANDS
-extern consvar_t cv_discordrp;
+// Commands
+extern consvar_t cv_discordintegration;
 extern consvar_t cv_discordstreamer;
 extern consvar_t cv_discordasks;
 extern consvar_t cv_discordshowonstatus;
@@ -116,17 +125,12 @@ extern consvar_t cv_discordcustom_imagetext_large;
 extern consvar_t cv_discordcustom_imagetext_small;
 
 
-// MISC
-extern char discord_integration_type[DISC_STATUS_MAX_STRING_SIZE];
-extern char discord_fullusername[DISC_STATUS_MAX_STRING_SIZE];
+// Misc
+extern const char *discord_integration_type;
 
-
-// ------------------------ //
-//        Functions
-// ------------------------ //
 
 // =====
-// TOOLS
+// Tools
 // =====
 
 
@@ -229,17 +233,8 @@ void DISC_CustomStatus(char *detailstr, char *statestr, char *image, char *image
 
 
 // ========
-// HANDLERS
+// Handlers
 // ========
-
-
-/*--------------------------------------------------
-	void DISC_SetConnectionStatus(DISC_ConnectionStatus_t status)
-
-		Sets the connection status for our currently connected user.
---------------------------------------------------*/
-
-void DISC_SetConnectionStatus(DISC_ConnectionStatus_t status);
 
 
 /*--------------------------------------------------
@@ -281,18 +276,18 @@ char *DISC_XORIPString(const char *input);
 
 
 /*--------------------------------------------------
-	const char *DRPC_GetServerIP(void)
+	const char *DISC_GetServerIP(void)
 
 		Retrieves the IP address of the server that you're
 		connected to. Will attempt to use stun for getting your
 		own IP address, if it's not yours.
 --------------------------------------------------*/
 
-const char *DRPC_GetServerIP(void);
+const char *DISC_GetServerIP(void);
 
 
 /*--------------------------------------------------
-	void DRPC_GotServerIP(UINT32 address)
+	void DISC_GotServerIP(UINT32 address)
 
 		Callback triggered by successful STUN response.
 
@@ -303,17 +298,21 @@ const char *DRPC_GetServerIP(void);
 		None
 --------------------------------------------------*/
 
-void DRPC_GotServerIP(UINT32 address);
+void DISC_GotServerIP(UINT32 address);
+
+
+// ========
+// Main
+// ========
 
 
 /*--------------------------------------------------
-	void DISC_HandleInitializing(const char *integration_type)
+	void DISC_Initialize(void)
 
-		Handles various Discord data intended for when our current integration
-		is initializing.
+		Initializes the Discord integration's API and data.
 --------------------------------------------------*/
 
-void DISC_HandleInitializing(const char *integration_type);
+void DISC_Initialize(void);
 
 
 /*--------------------------------------------------
@@ -327,43 +326,51 @@ void DISC_HandleConnected(const char *username, const char *discriminator, const
 
 
 /*--------------------------------------------------
-	void DISC_HandleDisconnected(INT32 err, const char *msg)
+	void DISC_HandleDisconnected(int err, const char *msg)
+
+		Callback function.
 
 		Handles various Discord data intended for when a user
 		disconnects to our current integration.
+
+	Input Arguments:-
+		err - Error type
+		msg - Error message
+
+	Return:-
+		None
 --------------------------------------------------*/
 
-void DISC_HandleDisconnected(INT32 err, const char *msg);
+void DISC_HandleDisconnected(int err, const char *msg);
 
 
 /*--------------------------------------------------
-	void DISC_HandleError(INT32 err, const char *msg)
+	void DISC_HandleError(int err, const char *msg)
 
-		Handles various Discord data intended for when a user
-		disconnects to our current integration.
+		Callback function.
+
+		Handles various Discord data intended for when the current
+		Discord integration outputs an error.
+
+	Input Arguments:-
+		err - Error type
+		msg - Error message
+
+	Return:-
+		None
 --------------------------------------------------*/
 
-void DISC_HandleError(INT32 err, const char *msg);
+void DISC_HandleError(int err, const char *msg);
 
 
 /*--------------------------------------------------
-	void DISC_HandleJoining(const char *join_secret)
+	void DISC_HandleJoin(const char *join_secret)
 
 		Handles various Discord data intended for when the user
 		joins a server using the 'Ask to Join' feature.
 --------------------------------------------------*/
 
-void DISC_HandleJoining(const char *join_secret);
-
-
-/*--------------------------------------------------
-	void DISC_HandleQuitting(void)
-
-		Handles various Discord data intended for when the game
-		is closed.
---------------------------------------------------*/
-
-void DISC_HandleQuitting(void);
+void DISC_HandleJoin(const char *join_secret);
 
 
 /*--------------------------------------------------
@@ -376,63 +383,28 @@ void DISC_HandleQuitting(void);
 void DISC_EmptyRequests(void);
 
 
-// ===============
-// ACTIVITY STATUS
-// ===============
-
-
 /*--------------------------------------------------
-	boolean DISC_InvitesAllowed(void)
+	void DISC_Quit(void)
 
-		Determines whenever or not invites or
-		ask to join requests are allowed.
-
-	Input Arguments:-
-		None
-
-	Return:-
-		true if invites are allowed, false otherwise.
+		Closes the Discord integration's API and data.
 --------------------------------------------------*/
 
-boolean DISC_InvitesAllowed(void);
-
-
-/*--------------------------------------------------
-	void DISC_SetActivityStatus(
-		char *details, char *state,
-		char *image, char *imagetxt,
-		char *s_image, char *s_imagetxt,
-		time_t *timestamp_start, time_t *timestamp_end,
-		char **clientJoinSecret,
-		char **partyID, int *partySize, int *partyMax
-	)
-
-		Sets the activity status info for our currently connected user.
---------------------------------------------------*/
-
-void DISC_SetActivityStatus(
-	char *details, char *state,
-	char *image, char *imagetxt,
-	char *s_image, char *s_imagetxt,
-	time_t *timestamp_start, time_t *timestamp_end,
-	char **clientJoinSecret,
-	char **partyID, int *partySize, int *partyMax
-);
+void DISC_Quit(void);
 
 
 // =========
-// CALLBACKS
+// API
 // =========
 
 
 /*--------------------------------------------------
-	void DISC_Init(void)
+	boolean DISC_HandleInit(void)
 
-		Initalizes Discord support by linking the Application ID
-		and setting the callback functions.
+		Initalizes the Discord integration by linking the
+		Application ID and setting the callback functions.
 --------------------------------------------------*/
 
-void DISC_Init(void);
+boolean DISC_HandleInit(void);
 
 
 /*--------------------------------------------------
@@ -475,37 +447,78 @@ void DISC_RemoveRequest(DISC_Request_t *removeRequest);
 
 
 /*--------------------------------------------------
-	void DISC_Quit(void)
+	void DISC_HandleQuit(void)
 
-		Handles freeing Discord whenever the game exits.
+		Handles freeing the Discord integration.
 --------------------------------------------------*/
 
-void DISC_Quit(void);
+void DISC_HandleQuit(void);
+
+
+// ===============
+// Activity Status
+// ===============
+
+
+/*--------------------------------------------------
+	boolean DISC_InvitesAllowed(void)
+
+		Determines whenever or not invites or
+		ask to join requests are allowed.
+
+	Input Arguments:-
+		None
+
+	Return:-
+		true if invites are allowed, false otherwise.
+--------------------------------------------------*/
+
+boolean DISC_InvitesAllowed(void);
+
+
+/*--------------------------------------------------
+	void DISC_SetActivityStatus(
+		char *details, char *state,
+		char *image, char *imagetxt,
+		char *s_image, char *s_imagetxt,
+		time_t *timestamp_start, time_t *timestamp_end,
+		char **clientJoinSecret,
+		char **partyID, int *partySize, int *partyMax
+	)
+
+		Sets the activity status info for our currently connected user.
+--------------------------------------------------*/
+
+void DISC_SetActivityStatus(
+	char *details, char *state,
+	char *image, char *imagetxt,
+	char *s_image, char *s_imagetxt,
+	time_t *timestamp_start, time_t *timestamp_end,
+	char **clientJoinSecret,
+	char **partyID, int *partySize, int *partyMax
+);
 
 
 #endif // HAVE_DISCORDSUPPORT
 
 
-extern consvar_t cv_discordinvites;
-
-
 /*--------------------------------------------------
-	void DISC_D_Joinable_OnChange(void)
+	void DISC_Joinable_OnChange(void)
 
 		Grabs Discord presence info and packets in netgames.
 --------------------------------------------------*/
 
-void DISC_D_Joinable_OnChange(void);
+void DISC_Joinable_OnChange(void);
 
 
 /*--------------------------------------------------
-	void DISC_D_Got_NetInfo(void)
+	void DISC_GotNetInfo(void)
 
 		Updates Discord presence info based on packets
 		received from servers.
 --------------------------------------------------*/
 
-void DISC_D_Got_NetInfo(UINT8 **cp, INT32 playernum);
+void DISC_GotNetInfo(UINT8 **cp, INT32 playernum);
 
 
 #ifdef __cplusplus

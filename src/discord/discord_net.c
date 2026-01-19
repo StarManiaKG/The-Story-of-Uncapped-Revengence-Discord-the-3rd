@@ -1,8 +1,8 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
-// Copyright (C) 2018-2024 by Kart Krew.
-// Copyright (C) 2020-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2020-2026 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2018-2025 by Sally "TehRealSalt" Cochenour.
+// Copyright (C) 2018-2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -21,32 +21,24 @@
 
 #include "../STAR/star_vars.h" // TSoURDt3rd structure //
 
-// ------------------------ //
-//        Variables
-// ------------------------ //
-
 static CV_PossibleValue_t discordinvites_cons_t[] = {{0, "Admins Only"}, {1, "Everyone"}, {0, NULL}};
-consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Everyone", CV_SAVE|CV_CALL, discordinvites_cons_t, DISC_D_Joinable_OnChange);
-
-// ------------------------ //
-//        Functions
-// ------------------------ //
+consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Everyone", CV_SAVE|CV_CALL, discordinvites_cons_t, DISC_Joinable_OnChange);
 
 /*--------------------------------------------------
-	void DISC_D_Joinable_OnChange(void)
+	void DISC_Joinable_OnChange(void)
 
 		See header file for description.
 --------------------------------------------------*/
-void DISC_D_Joinable_OnChange(void)
+void DISC_Joinable_OnChange(void)
 {
 	UINT8 buf[3];
 	UINT8 *p = buf;
-	UINT8 maxplayer;
+	const UINT8 maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
 
 	if (!server)
+	{
 		return;
-
-	maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
+	}
 
 	WRITEUINT8(p, maxplayer);
 	WRITEUINT8(p, cv_allownewplayer.value);
@@ -56,11 +48,11 @@ void DISC_D_Joinable_OnChange(void)
 }
 
 /*--------------------------------------------------
-	void DISC_D_Got_NetInfo(void)
+	void DISC_GotNetInfo(void)
 
 		See header file for description.
 --------------------------------------------------*/
-void DISC_D_Got_NetInfo(UINT8 **cp, INT32 playernum)
+void DISC_GotNetInfo(UINT8 **cp, INT32 playernum)
 {
 	if (playernum != serverplayer /*&& !IsPlayerAdmin(playernum)*/)
 	{
@@ -74,7 +66,7 @@ void DISC_D_Got_NetInfo(UINT8 **cp, INT32 playernum)
 #ifdef HAVE_DISCORDSUPPORT
 	// Implement our data if the server uses TSoURDt3rd.
 	// Otherwise, just discard it.
-	if (TSoURDt3rdPlayers[serverplayer].server_usingTSoURDt3rd)
+	if (TSoURDt3rdPlayers[serverplayer].server_usingTSoURDt3rd == true)
 	{
 		discordInfo.net.maxPlayers = READUINT8(*cp);
 		discordInfo.net.joinsAllowed = (boolean)READUINT8(*cp);
@@ -83,7 +75,7 @@ void DISC_D_Got_NetInfo(UINT8 **cp, INT32 playernum)
 	else
 	{
 		discordInfo.net.maxPlayers = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
-		discordInfo.net.joinsAllowed = cv_allownewplayer.value;
+		discordInfo.net.joinsAllowed = (boolean)cv_allownewplayer.value;
 		discordInfo.net.everyoneCanInvite = (boolean)cv_discordinvites.value;
 		(*cp) += 3;
 	}

@@ -54,8 +54,6 @@ extern INT32 gameoverMusicTics[9];
 extern INT32 STAR_JoinSFX;
 extern INT32 STAR_LeaveSFX;
 extern INT32 STAR_SynchFailureSFX;
-// Discord SFX
-extern INT32 DISCORD_RequestSFX;
 
 // Servers //
 extern INT32 STAR_ServerToExtend;

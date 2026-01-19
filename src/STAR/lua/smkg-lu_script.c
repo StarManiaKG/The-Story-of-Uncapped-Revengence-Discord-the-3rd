@@ -15,6 +15,7 @@
 #include "../misc/smkg-m_misc.h" // TSoURDt3rd_M_FindWordInTermTable() //
 
 #include "../../lua_libs.h"
+#include "../../discord/discord.h"
 
 // ------------------------ //
 //        Variables

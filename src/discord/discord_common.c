@@ -1,8 +1,8 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
-// Copyright (C) 2018-2024 by Kart Krew.
-// Copyright (C) 2020-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2020-2026 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2018-2025 by Sally "TehRealSalt" Cochenour.
+// Copyright (C) 2018-2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -10,8 +10,6 @@
 //-----------------------------------------------------------------------------
 /// \file  discord_common.c
 /// \brief Discord integration - Shared structures and routines between RPC and Game SDK
-
-#ifdef HAVE_DISCORDSUPPORT
 
 #include "discord.h"
 
@@ -28,38 +26,28 @@
 #include "../netcode/i_tcp.h" // current_port
 #include "../netcode/mserv.h" // ms_RoomId
 
-#include "../STAR/smkg-defs.h" // TSOURDT3RD_APP_FULL_NAME //
+#include "../STAR/smkg-defs.h"
 #include "../STAR/ss_main.h" // STAR_CONS_Printf() //
 #include "../STAR/stun/stun.h"
 
-// ------------------------ //
-//        Variables
-// ------------------------ //
+INT32 DISCORD_RequestSFX = sfx_kc5d;
+
+#ifdef HAVE_DISCORDSUPPORT
 
 struct discordInfo_s discordInfo;
 DISC_Request_t *discordRequestList = NULL;
 
-char discord_integration_type[DISC_STATUS_MAX_STRING_SIZE];
-char discord_fullusername[DISC_STATUS_MAX_STRING_SIZE];
+#ifdef HAVE_DISCORDRPC
+const char *discord_integration_type = "Discord Rich Presence";
+#else
+const char *discord_integration_type = "Discord Game SDK";
+#endif
+
 static char discord_self_ip[DISCORD_IP_SIZE];
 
-// ------------------------ //
-//        Functions
-// ------------------------ //
-
 // -----------------------------------
-// HANDLERS
+// Handlers
 // -----------------------------------
-
-/*--------------------------------------------------
-	void DISC_SetConnectionStatus(DISC_ConnectionStatus_t status)
-
-		See header file for description.
---------------------------------------------------*/
-void DISC_SetConnectionStatus(DISC_ConnectionStatus_t status)
-{
-	discordInfo.connectionStatus = status;
-}
 
 /*--------------------------------------------------
 	char *DISC_HideUsername(char *input)
@@ -89,7 +77,11 @@ char *DISC_HideUsername(char *input)
 --------------------------------------------------*/
 char *DISC_ReturnUsername(void)
 {
-	return (cv_discordstreamer.value ? DISC_HideUsername(discord_fullusername) : discord_fullusername);
+	if (discordInfo.username == NULL)
+	{
+		return NULL;
+	}
+	return (cv_discordstreamer.value ? DISC_HideUsername(discordInfo.username) : discordInfo.username);
 }
 
 /*--------------------------------------------------
@@ -103,13 +95,14 @@ char *DISC_XORIPString(const char *input)
 	char *output = malloc(sizeof(char) * (DISCORD_IP_SIZE+1));
 	UINT8 i;
 
-	if (input == NULL) return NULL;
 	for (i = 0; i < DISCORD_IP_SIZE; i++)
 	{
 		char xorinput;
 
 		if (!input[i])
+		{
 			break;
+		}
 
 		xorinput = input[i] ^ xor[i];
 
@@ -127,16 +120,18 @@ char *DISC_XORIPString(const char *input)
 }
 
 /*--------------------------------------------------
-	const char *DRPC_GetServerIP(void)
+	const char *DISC_GetServerIP(void)
 
 		See header file for description.
 --------------------------------------------------*/
-const char *DRPC_GetServerIP(void)
+const char *DISC_GetServerIP(void)
 {
+	const char *address;
+
 	// If you're connected
 	if (I_GetNodeAddress)
 	{
-		const char *address = I_GetNodeAddress(servernode);
+		address = I_GetNodeAddress(servernode);
 		if (address != NULL && strcmp(address, "self"))
 		{
 			// We're not the server, so we could successfully get the IP!
@@ -152,17 +147,17 @@ const char *DRPC_GetServerIP(void)
 	else
 	{
 		// There happens to be a good way to get it after all! :D
-		STUN_bind(DRPC_GotServerIP);
+		STUN_bind(DISC_GotServerIP);
 		return NULL;
 	}
 }
 
 /*--------------------------------------------------
-	void DRPC_GotServerIP(UINT32 address)
+	void DISC_GotServerIP(UINT32 address)
 
 		See header file for description.
 --------------------------------------------------*/
-void DRPC_GotServerIP(UINT32 address)
+void DISC_GotServerIP(UINT32 address)
 {
 	const unsigned char *p = (const unsigned char *)&address;
 	sprintf(discord_self_ip, "%u.%u.%u.%u:%u", p[0], p[1], p[2], p[3], current_port);
@@ -170,17 +165,45 @@ void DRPC_GotServerIP(UINT32 address)
 }
 
 /*--------------------------------------------------
-	void DISC_HandleInitializing(const char *integration_type)
+	void DISC_Initialize(void)
 
 		See header file for description.
 --------------------------------------------------*/
-void DISC_HandleInitializing(const char *integration_type)
+void DISC_Initialize(void)
 {
-	memset(&discordInfo, 0, sizeof(discordInfo));
-	snprintf(discord_integration_type, DISC_STATUS_MAX_STRING_SIZE, "%s", integration_type);
-	STAR_CONS_Printf(STAR_CONS_NONE, "DISC_Init(): Initialized %s!\n", discord_integration_type);
-	I_AddExitFunc(DISC_Quit);
-	DISC_UpdatePresence();
+	if (discordInfo.connected == true)
+	{
+		DISC_UpdatePresence();
+		return;
+	}
+	else
+	{
+		static boolean set_exit_func = false;
+
+		memset(&discordInfo, 0, sizeof(discordInfo));
+		discordInfo.username = NULL;
+
+		if (cv_discordintegration.value == 0)
+		{
+			return;
+		}
+
+		discordInfo.initialized = DISC_HandleInit();
+		if (discordInfo.initialized == false)
+		{
+			STAR_CONS_Printf(STAR_CONS_ERROR, "DISC_Initialize(): Failed to initialized %s!\n", discord_integration_type);
+		}
+		else
+		{
+			if (set_exit_func == false)
+			{
+				I_AddExitFunc(DISC_Quit);
+				set_exit_func = true;
+			}
+			DISC_UpdatePresence();
+			STAR_CONS_Printf(STAR_CONS_NOTICE, "DISC_Initialize(): Initialized %s!\n", discord_integration_type);
+		}
+	}
 }
 
 /*--------------------------------------------------
@@ -190,70 +213,75 @@ void DISC_HandleInitializing(const char *integration_type)
 --------------------------------------------------*/
 void DISC_HandleConnected(const char *username, const char *discriminator, const char *userId)
 {
-	memset(&discordInfo, 0, sizeof(discordInfo));
-	DISC_SetConnectionStatus(DISC_CONNECTED);
-	snprintf(discord_fullusername, DISC_STATUS_MAX_STRING_SIZE, "%s#%s (%s)", username, discriminator, userId);
-	STAR_CONS_Printf(STAR_CONS_DISCORD|STAR_CONS_NOTICE|STAR_CONS_COLORWHOLELINE, "Connected to %s\n", discord_fullusername);
+	discordInfo.connected = true;
+	discordInfo.username = malloc(314);
+	snprintf(discordInfo.username, 314, "%s#%s (%s)", username, discriminator, userId);
+	DISC_UpdatePresence();
+	STAR_CONS_Printf(STAR_CONS_DISCORD|STAR_CONS_NOTICE|STAR_CONS_COLORWHOLELINE, "Connected to %s\n", DISC_ReturnUsername());
 }
 
 /*--------------------------------------------------
-	void DISC_HandleDisconnected(INT32 err, const char *msg)
+	void DISC_HandleDisconnected(int err, const char *msg)
 
 		See header file for description.
 --------------------------------------------------*/
-void DISC_HandleDisconnected(INT32 err, const char *msg)
+void DISC_HandleDisconnected(int err, const char *msg)
 {
-	STAR_CONS_Printf(STAR_CONS_DISCORD|STAR_CONS_WARNING|STAR_CONS_COLORWHOLELINE, "Disconnected user %s (%d: %s)\n", discord_fullusername, err, msg);
-	memset(&discordInfo, 0, sizeof(discordInfo));
-	memset(discord_fullusername, 0, sizeof(char));
-	DISC_SetConnectionStatus(DISC_DISCONNECTED);
+	STAR_CONS_Printf(STAR_CONS_DISCORD|STAR_CONS_WARNING|STAR_CONS_COLORWHOLELINE, "Disconnected user %s (%d: %s)\n", DISC_ReturnUsername(), err, msg);
+	DISC_UpdatePresence();
+	free(discordInfo.username);
+	discordInfo.username = NULL;
+	discordInfo.connected = false;
 }
 
 /*--------------------------------------------------
-	void DISC_HandleError(INT32 err, const char *msg)
+	void DISC_HandleError(int err, const char *msg)
 
 		See header file for description.
 --------------------------------------------------*/
-void DISC_HandleError(INT32 err, const char *msg)
+void DISC_HandleError(int err, const char *msg)
 {
 	STAR_CONS_Printf(STAR_CONS_DISCORD|STAR_CONS_ERROR|STAR_CONS_COLORWHOLELINE, "Discord: Encountered error (%d: %s)\n", err, msg);
 }
 
 /*--------------------------------------------------
-	void DISC_HandleJoining(const char *join_secret)
+	void DISC_HandleJoin(const char *join_secret)
 
 		See header file for description.
 --------------------------------------------------*/
-void DISC_HandleJoining(const char *join_secret)
+void DISC_HandleJoin(const char *join_secret)
 {
 	char *ip = DISC_XORIPString(join_secret);
-
-	if (ip == NULL)
-		return;
-
 	STAR_CONS_Printf(STAR_CONS_DISCORD|STAR_CONS_NOTICE, "Joining server with IP %s...\n", ip);
-	M_ClearMenus(true); // Don't have menus open during connection screen
+	M_ClearMenus(); // Don't have menus open during connection screen
 	if (demoplayback && titledemo)
 	{
 		// Stop the title demo, so that the connect command doesn't error if a demo is playing
 		G_CheckDemoStatus();
 	}
-
 	COM_BufAddText(va("connect \"%s\"\n", ip));
 	free(ip);
 }
 
 /*--------------------------------------------------
-	void DISC_HandleQuitting(void)
+	void DISC_Quit(void)
 
 		See header file for description.
 --------------------------------------------------*/
-void DISC_HandleQuitting(void)
+void DISC_Quit(void)
 {
-	I_OutputMsg("DISC_HandleQuitting(): Closing %s...\n", discord_integration_type);
-	memset(&discordInfo, 0, sizeof(discordInfo));
-	memset(discord_integration_type, 0, sizeof(char));
-	memset(discord_fullusername, 0, sizeof(char));
+	if (discordInfo.initialized == false)
+	{
+		CONS_Printf("DISC_Quit(): %s was never initialized!\n", discord_integration_type);
+	}
+	else
+	{
+		CONS_Printf("DISC_Quit(): Closing %s...\n", discord_integration_type);
+		DISC_HandleQuit();
+		free(discordInfo.username);
+		memset(&discordInfo, 0, sizeof(discordInfo));
+		discordInfo.username = NULL;
+	}
 }
 
 /*--------------------------------------------------
@@ -271,7 +299,7 @@ void DISC_EmptyRequests(void)
 }
 
 // -----------------------------------
-// ACTIVITY STATUS
+// Activity Status
 // -----------------------------------
 
 /*--------------------------------------------------
@@ -281,6 +309,12 @@ void DISC_EmptyRequests(void)
 --------------------------------------------------*/
 boolean DISC_InvitesAllowed(void)
 {
+	if (discordInfo.initialized == false || discordInfo.connected == false)
+	{
+		// Discord was never initialized/connected!
+		return false;
+	}
+
 	if (Playing() == false)
 	{
 		// We're not playing, so we should not be getting invites.
@@ -307,7 +341,7 @@ boolean DISC_InvitesAllowed(void)
 		}
 	}
 
-	// Did not pass any of the checks
+	// Did not pass any of the checks...
 	return false;
 }
 
@@ -341,7 +375,7 @@ void DISC_SetActivityStatus(
 #ifdef DISCORD_SECRETIVE
 	// Main - Set a bare minimum status...
 	// This way, we can use the invite feature in-dev, but not have snoopers seeing any potential secrets! :P
-	DISC_StatusPrintf(false, details, " | ", TSOURDT3RD_APP_FULL_NAME" - Development EXE");
+	DISC_StatusPrintf(false, details, " | ", TSOURDT3RD_SRB2_APP_FULL " - Development EXE");
 	DISC_StatusPrintf(false, state, " | ", "Developing a Masterpiece!");
 	DISC_StatusPrintf(true, image, "misc", "develop");
 		DISC_StatusPrintf(false, imagetxt, NULL, "Keep your eyes peeled!");
@@ -378,7 +412,7 @@ void DISC_SetActivityStatus(
 			if (DISC_InvitesAllowed() == true)
 			{
 				// Grab the host's IP for joining.
-				const char *join = DRPC_GetServerIP();
+				const char *join = DISC_GetServerIP();
 				if (join != NULL)
 				{
 					// Allow users to join!
@@ -453,21 +487,23 @@ void DISC_SetActivityStatus(
 			DISC_BasicStatus(state, image, imagetxt);
 			break;
 	}
+#endif // DISCORD_SECRETIVE
 
 	// Main - Set the level time...
 	if (gamestate == GS_LEVEL && Playing())
 	{
-		boolean tickingDown = ((countdowntimer && G_PlatformGametype()) || (gametyperules & GTR_TIMELIMIT));
+		const boolean tickingDown = ((countdowntimer && G_PlatformGametype()) || (gametyperules & GTR_TIMELIMIT));
 		const time_t currentTime = time(NULL);
 		const time_t mapTimeStart = (currentTime - (leveltime / TICRATE));
+
 		(*timestamp_start) = mapTimeStart;
+
 		if (timelimitintics > 0 && tickingDown)
 		{
 			const time_t mapTimeEnd = (mapTimeStart + ((timelimitintics + 1) / TICRATE));
 			(*timestamp_end) = mapTimeEnd;
 		}
 	}
-#endif // DISCORD_SECRETIVE
 }
 
 #endif // HAVE_DISCORDSUPPORT

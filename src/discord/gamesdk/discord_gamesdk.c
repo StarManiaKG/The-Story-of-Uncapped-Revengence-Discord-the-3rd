@@ -11,24 +11,20 @@
 
 #ifdef HAVE_DISCORDGAMESDK
 
-#include <discord_game_sdk.h>
-
 #include <stdint.h>
 #include <stdio.h>
 #include <assert.h>
 #ifdef _WIN32
-	#include <Windows.h>
-#else
-	#include <unistd.h>
-	#include <string.h>
+#include <Windows.h>
 #endif
+#include <unistd.h>
+#include <string.h>
 
+#include <discord_game_sdk.h>
 #include "../discord.h"
 
 #include "../../m_menu.h"
 #include "../../z_zone.h"
-
-#include "../../STAR/star_vars.h" // DISCORD_RequestSFX //
 
 // ------------------------ //
 //        Variables
@@ -43,9 +39,13 @@ typedef struct discordGameSDK_s {
 	struct IDiscordRelationshipManager *relationships;
 	struct IDiscordApplicationManager *application;
 	struct IDiscordLobbyManager *lobbies;
+
 	DiscordUserId user_id;
+	boolean initialized;
 } discordGameSDK_t;
 static discordGameSDK_t DGSDK;
+
+//#define _Bool boolean
 
 // ------------------------ //
 //        Functions
@@ -95,7 +95,7 @@ static void DISCORD_CALLBACK OnRelationshipsRefresh(void *data)
 
 	memset(&relationship, 0, sizeof(relationship));
 	memset(&activity, 0, sizeof(activity));
-	if (SDK_AppData == NULL || SDK_AppData->activities == NULL || SDK_AppData->relationships == NULL)
+	if (SDK_AppData == NULL || SDK_AppData->initialized == false)
 		return;
 
 	module = SDK_AppData->relationships;
@@ -124,7 +124,7 @@ static void DISCORD_CALLBACK UpdateActivity(void *callback_data, enum EDiscordRe
 	(void)result;
 
 	memset(&activity, 0, sizeof(activity));
-	if (SDK_AppData == NULL || SDK_AppData->activities == NULL || SDK_AppData->relationships == NULL)
+	if (SDK_AppData == NULL || SDK_AppData->initialized == false)
 		return;
 
 	module = SDK_AppData->activities;
@@ -146,7 +146,7 @@ static void DISCORD_CALLBACK OnUserUpdated(void *data)
 	struct DiscordUser user;
 
 	memset(&user, 0, sizeof(user));
-	if (SDK_AppData == NULL || SDK_AppData->users == NULL)
+	if (SDK_AppData == NULL || SDK_AppData->initialized == false)
 		return;
 
 	SDK_AppData->users->get_current_user(SDK_AppData->users, &user);
@@ -197,40 +197,46 @@ static void DGSDK_HandleReady(void *data)
 // ====
 
 /*--------------------------------------------------
-	void DISC_Init(void)
+	boolean DISC_HandleInit(void)
 
 		See header file for description.
 --------------------------------------------------*/
-void DISC_Init(void)
+boolean DISC_HandleInit(void)
 {
 	struct IDiscordUserEvents users_events;
+	{
+		memset(&users_events, 0, sizeof(users_events));
+		users_events.on_current_user_update = OnUserUpdated;
+	}
 	struct IDiscordActivityEvents activities_events;
+	{
+		memset(&activities_events, 0, sizeof(activities_events));
+	}
 	struct IDiscordRelationshipEvents relationships_events;
+	{
+		memset(&relationships_events, 0, sizeof(relationships_events));
+		relationships_events.on_refresh = OnRelationshipsRefresh;
+	}
 	struct DiscordCreateParams params;
-	INT32 result;
-
-	memset(&DGSDK, 0, sizeof(DGSDK));
-
-	memset(&users_events, 0, sizeof(users_events));
-	users_events.on_current_user_update = OnUserUpdated;
-
-	memset(&activities_events, 0, sizeof(activities_events));
-
-	memset(&relationships_events, 0, sizeof(relationships_events));
-	relationships_events.on_refresh = OnRelationshipsRefresh;
+	{
+		memset(&params, 0, sizeof(params));
+	}
+	{
+		memset(&DGSDK, 0, sizeof(DGSDK));
+	}
 
 	DiscordCreateParamsSetDefault(&params);
-	params.client_id = DISCORD_APPID;
+	//params.client_id = DISCORD_APPID;
+	//params.flags = DiscordCreateFlags_Default;
 	params.flags = DiscordCreateFlags_NoRequireDiscord;
-	params.event_data = &DGSDK;
+	//params.event_data = &DGSDK;
 	params.user_events = &users_events;
 	params.activity_events = &activities_events;
 	params.relationship_events = &relationships_events;
 
-	result = DiscordCreate(DISCORD_VERSION, &params, &DGSDK.core);
+	enum EDiscordResult result = DiscordCreate(DISCORD_VERSION, &params, &DGSDK.core);
 	if (result != DiscordResult_Ok || DGSDK.core == NULL)
 	{
-		CONS_Printf("DISC_Init(): Failed to initialized Discord's Game SDK!\n");
 		memset(&DGSDK, 0, sizeof(DGSDK));
 		return;
 	}
@@ -248,8 +254,8 @@ void DISC_Init(void)
 		DGSDK.lobbies->connect_lobby_with_activity_secret(DGSDK.lobbies, DISC_XORIPString("invalid_secret"), &DGSDK, OnLobbyConnect);
 	DGSDK.relationships = DGSDK.core->get_relationship_manager(DGSDK.core);
 	DGSDK.user_id = -1;
+	DGSDK.initialized = true;
 
-	DISC_HandleInitializing("Discord Game SDK");
 	DISC_HandleConnected("deez", "nuts", "inyourmouth");
 }
 
@@ -261,37 +267,44 @@ void DISC_Init(void)
 void DISC_UpdatePresence(void)
 {
 	struct DiscordActivity activity;
+	memset(&activity, 0, sizeof(activity));
+
 	char *client_joinSecret = NULL;
 	char *server_partyID = NULL;
 
-	memset(&activity, 0, sizeof(activity));
 	activity.instance = true;
 	activity.type = DiscordActivityType_Playing;
 	activity.application_id = DISCORD_APPID;
 
-	if (DGSDK.activities == NULL || discordInfo.connectionStatus != DISC_CONNECTED || !cv_discordrp.value)
+	if (DGSDK.initialized == false)
 	{
-		/* (Slightly modified 'TehRealSalt' comment) */
-		// User either doesn't want to show their game information, or can't show presence.
-		// So, update with empty presence.
-		// This just shows that they're playing TSoURDt3rd. (If that's too much, then they should disable game activity :V)
-		DISC_EmptyRequests();
-		if (DGSDK.activities != NULL)
-			//DGSDK.activities->update_activity(DGSDK.activities, &activity, DGSDK, UpdateActivity);
-			DGSDK.activities->update_activity(DGSDK.activities, &activity, &DGSDK, UpdateActivityCallback);
+		// Integration isn't enabled!
+		// Technically, an alternate way of disabling game activity. <comment below gives context to this>
 		return;
 	}
 
-	DISC_SetActivityStatus(
-		activity.details, activity.state,
-		activity.assets.large_image, activity.assets.large_text,
-		activity.assets.small_image, activity.assets.small_text,
-		(time_t *)&activity.timestamps.start, (time_t *)&activity.timestamps.end,
-		&client_joinSecret,
-		&server_partyID, &activity.party.size.current_size, &activity.party.size.max_size
-	);
-	snprintf(activity.secrets.join, DISC_STATUS_MAX_STRING_SIZE, "%s", client_joinSecret);
-	snprintf(activity.party.id, DISC_STATUS_MAX_STRING_SIZE, "%s", server_partyID);
+	if (discordInfo.connected == false || cv_discordintegration.value == 1)
+	{
+		// TehRealSalt:
+		// User either doesn't want to show their game information, or can't show presence.
+		// So, update with empty presence.
+		// This just shows that they're playing. (If that's too much, then they should disable game activity :V)
+		DISC_EmptyRequests();
+	}
+	else
+	{
+		DISC_SetActivityStatus(
+			activity.details, activity.state,
+			activity.assets.large_image, activity.assets.large_text,
+			activity.assets.small_image, activity.assets.small_text,
+			(time_t *)&activity.timestamps.start, (time_t *)&activity.timestamps.end,
+			&client_joinSecret,
+			&server_partyID, &activity.party.size.current_size, &activity.party.size.max_size
+		);
+		snprintf(activity.secrets.join, DISC_STATUS_MAX_STRING_SIZE, "%s", client_joinSecret);
+		snprintf(activity.party.id, DISC_STATUS_MAX_STRING_SIZE, "%s", server_partyID);
+	}
+
 	//DGSDK.activities->update_activity(DGSDK.activities, &activity, &DGSDK, UpdateActivity);
 	DGSDK.activities->update_activity(DGSDK.activities, &activity, &DGSDK, UpdateActivityCallback);
 }
@@ -331,7 +344,10 @@ else
 --------------------------------------------------*/
 void DISC_RunCallbacks(void)
 {
-	if (DGSDK.core == NULL) return;
+	if (DGSDK.initialized == false)
+	{
+		return;
+	}
 	DGSDK.core->run_callbacks(DGSDK.core);
 }
 
@@ -369,15 +385,14 @@ void DISC_RemoveRequest(DISC_Request_t *removeRequest)
 }
 
 /*--------------------------------------------------
-	void DISC_Quit(void)
+	void DISC_HandleQuit(void)
 
 		See header file for description.
 --------------------------------------------------*/
-void DISC_Quit(void)
+void DISC_HandleQuit(void)
 {
-	DGSDK.core->destroy(DGSDK.core);
+	//DGSDK.core->destroy(DGSDK.core);
 	memset(&DGSDK, 0, sizeof(DGSDK));
-	DISC_HandleQuitting();
 }
 
 #endif //HAVE_DISCORDGAMESDK

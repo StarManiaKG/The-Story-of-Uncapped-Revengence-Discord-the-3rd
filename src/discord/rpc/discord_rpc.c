@@ -1,8 +1,8 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
-// Copyright (C) 2018-2024 by Kart Krew.
-// Copyright (C) 2020-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2020-2026 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2018-2025 by Sally "TehRealSalt" Cochenour.
+// Copyright (C) 2018-2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -14,17 +14,11 @@
 #ifdef HAVE_DISCORDRPC
 
 #include <discord_rpc.h>
-
 #include "../discord.h"
 
-#include "../../m_menu.h"
 #include "../../z_zone.h"
 
-#include "../../STAR/star_vars.h" // DISCORD_RequestSFX //
-
-// ------------------------ //
-//        Functions
-// ------------------------ //
+#include "../../STAR/menus/smkg-m_sys.h"
 
 /*--------------------------------------------------
 	static void DRPC_HandleReady(const DiscordUser *user)
@@ -91,7 +85,7 @@ static void DRPC_HandleError(int err, const char *msg)
 --------------------------------------------------*/
 static void DRPC_HandleJoin(const char *secret)
 {
-	DISC_HandleJoining(secret);
+	DISC_HandleJoin(secret);
 }
 
 /*--------------------------------------------------
@@ -156,7 +150,7 @@ static void DRPC_HandleJoinRequest(const DiscordUser *requestUser)
 	else
 	{
 		discordRequestList = newRequest;
-		//M_RefreshPauseMenu();
+		DISC_M_UpdateRequestsMenu();
 	}
 
 	// Made it to the end, request was valid, so play the request sound :)
@@ -164,14 +158,18 @@ static void DRPC_HandleJoinRequest(const DiscordUser *requestUser)
 }
 
 /*--------------------------------------------------
-	void DISC_Init(void)
+	boolean DISC_HandleInit(void)
 
 		See header file for description.
 --------------------------------------------------*/
-void DISC_Init(void)
+boolean DISC_HandleInit(void)
 {
 	DiscordEventHandlers handlers;
 	memset(&handlers, 0, sizeof(handlers));
+
+	static char discord_appid_string[256];
+	snprintf(discord_appid_string, sizeof(discord_appid_string), "%lld", DISCORD_APPID);
+	STAR_CONS_Printf(STAR_CONS_DISCORD, "App ID set to '%s'.\n", discord_appid_string);
 
 	handlers.ready = DRPC_HandleReady;
 	handlers.disconnected = DRPC_HandleDisconnect;
@@ -179,8 +177,8 @@ void DISC_Init(void)
 	handlers.joinGame = DRPC_HandleJoin;
 	handlers.joinRequest = DRPC_HandleJoinRequest;
 
-	Discord_Initialize(DISCORD_APPID_STRING, &handlers, 1, NULL);
-	DISC_HandleInitializing("Discord Rich Presence");
+	Discord_Initialize(discord_appid_string, &handlers, 1, NULL);
+	return true;
 }
 
 /*--------------------------------------------------
@@ -191,6 +189,8 @@ void DISC_Init(void)
 void DISC_UpdatePresence(void)
 {
 	DiscordRichPresence discordPresence;
+	memset(&discordPresence, 0, sizeof(discordPresence));
+
 	char detailstr[DISC_STATUS_MAX_STRING_SIZE];
 	char statestr[DISC_STATUS_MAX_STRING_SIZE];
 	char imagestr[DISC_STATUS_MAX_IMAGE_STRING_SIZE], imagetxtstr[DISC_STATUS_MAX_STRING_SIZE];
@@ -198,34 +198,40 @@ void DISC_UpdatePresence(void)
 	char *client_joinSecret = NULL;
 	char *server_partyID = NULL;
 
-	memset(&discordPresence, 0, sizeof(discordPresence));
-	discordPresence.instance = 1;
-
-	if (discordInfo.connectionStatus != DISC_CONNECTED || !cv_discordrp.value)
+	if (discordInfo.initialized == false)
 	{
-		/* (Slightly modified 'TehRealSalt' comment) */
-		// User either doesn't want to show their game information, or can't show presence.
-		// So, update with empty presence.
-		// This just shows that they're playing TSoURDt3rd. (If that's too much, then they should disable game activity :V)
-		DISC_EmptyRequests();
-		Discord_UpdatePresence(&discordPresence);
+		// Integration isn't enabled!
+		// Technically, an alternate way of disabling game activity. <comment below gives context to this>
 		return;
 	}
 
-	DISC_SetActivityStatus(
-		detailstr, statestr,
-		imagestr, imagetxtstr,
-		s_imagestr, s_imagetxtstr,
-		(time_t *)&discordPresence.startTimestamp, (time_t *)&discordPresence.endTimestamp,
-		&client_joinSecret,
-		&server_partyID, &discordPresence.partySize, &discordPresence.partyMax
-	);
-	discordPresence.details = detailstr;
-	discordPresence.state = statestr;
-	discordPresence.largeImageKey = imagestr; discordPresence.largeImageText = imagetxtstr;
-	discordPresence.smallImageKey = s_imagestr; discordPresence.smallImageText = s_imagetxtstr;
-	discordPresence.joinSecret = client_joinSecret;
-	discordPresence.partyId = server_partyID;
+	if (discordInfo.connected == false || cv_discordintegration.value == 1)
+	{
+		// TehRealSalt:
+		// User either doesn't want to show their game information, or can't show presence.
+		// So, update with empty presence.
+		// This just shows that they're playing. (If that's too much, then they should disable game activity :V)
+		DISC_EmptyRequests();
+	}
+	else
+	{
+		DISC_SetActivityStatus(
+			detailstr, statestr,
+			imagestr, imagetxtstr,
+			s_imagestr, s_imagetxtstr,
+			(time_t *)&discordPresence.startTimestamp, (time_t *)&discordPresence.endTimestamp,
+			&client_joinSecret,
+			&server_partyID, &discordPresence.partySize, &discordPresence.partyMax
+		);
+		discordPresence.details = detailstr;
+		discordPresence.state = statestr;
+		discordPresence.largeImageKey = imagestr; discordPresence.largeImageText = imagetxtstr;
+		discordPresence.smallImageKey = s_imagestr; discordPresence.smallImageText = s_imagetxtstr;
+		discordPresence.joinSecret = client_joinSecret;
+		discordPresence.partyId = server_partyID;
+		discordPresence.instance = 1;
+	}
+
 	Discord_UpdatePresence(&discordPresence);
 }
 
@@ -242,6 +248,12 @@ void DISC_UpdatePresence(void)
 --------------------------------------------------*/
 void DISC_RunCallbacks(void)
 {
+	if (discordInfo.initialized == false)
+	{
+		// Integration isn't enabled!
+		return;
+	}
+
 	Discord_RunCallbacks();
 #ifdef DISCORD_DISABLE_IO_THREAD
 	Discord_UpdateConnection();
@@ -308,15 +320,14 @@ void DISC_RemoveRequest(DISC_Request_t *removeRequest)
 }
 
 /*--------------------------------------------------
-	void DISC_Quit(void)
+	void DISC_HandleQuit(void)
 
 		See header file for description.
 --------------------------------------------------*/
-void DISC_Quit(void)
+void DISC_HandleQuit(void)
 {
 	Discord_ClearPresence();
 	Discord_Shutdown();
-	DISC_HandleQuitting();
 }
 
 #endif // HAVE_DISCORDRPC

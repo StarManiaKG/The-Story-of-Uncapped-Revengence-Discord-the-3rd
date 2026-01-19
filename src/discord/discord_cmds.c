@@ -1,8 +1,8 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
-// Copyright (C) 2018-2024 by Kart Krew.
-// Copyright (C) 2020-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2020-2026 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2018-2025 by Sally "TehRealSalt" Cochenour.
+// Copyright (C) 2018-2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -17,13 +17,16 @@
 
 #include "../STAR/menus/smkg-m_sys.h"
 
-// ------------------------ //
-//        Variables
-// ------------------------ //
+// ===============
+// Possible Values
+// ===============
 
-// ===============
-// POSSIBLE VALUES
-// ===============
+static CV_PossibleValue_t presence_cons_t[] = {
+	{0, "Off"},
+	{1, "Basic"},
+	{2, "On"},
+	{0, NULL}
+};
 
 static CV_PossibleValue_t statustype_cons_t[] = {
 	// General
@@ -201,82 +204,105 @@ static CV_PossibleValue_t custom_miscimage_cons_t[] = {
 };
 
 // ========
-// COMMANDS
+// Commands
 // ========
 
-static boolean DISC_CustomString_CanUpdate(const char *valstr);
+static void DiscordIntegration_OnChange(void);
+static boolean DiscordCustomString_CanUpdate(const char *valstr);
 
-#define DISCORD_CVAR_INIT(name, defaultstring, possiblevalue) CVAR_INIT (name, defaultstring, CV_SAVE|CV_CALL|CV_NOINIT, possiblevalue, DISC_UpdatePresence)
+#define DISCORD_CVAR_INIT_UPDATE_PRESENCE(name, defaultstring, possiblevalue) CVAR_INIT (name, defaultstring, CV_SAVE|CV_CALL|CV_NOINIT, possiblevalue, DISC_UpdatePresence)
 #define DISCORD_CVAR_INIT_WITH_CALLBACKS(name, defaultstring, possiblevalue, can_change) CVAR_INIT_WITH_CALLBACKS (name, defaultstring, CV_SAVE|CV_CALL|CV_NOINIT, possiblevalue, DISC_UpdatePresence, can_change)
 
-consvar_t cv_discordrp = DISCORD_CVAR_INIT ("discordrp", "On", CV_OnOff);
+consvar_t cv_discordintegration = CVAR_INIT ("discordintegration", "On", CV_SAVE|CV_CALL|CV_NOINIT, presence_cons_t, DiscordIntegration_OnChange);
 consvar_t cv_discordstreamer = CVAR_INIT ("discordstreamer", "Off", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_discordasks = CVAR_INIT ("discordasks", "Yes", CV_SAVE, CV_YesNo, NULL);
-consvar_t cv_discordstatusmemes = DISCORD_CVAR_INIT ("discordstatusmemes", "Yes", CV_YesNo);
-consvar_t cv_discordshowonstatus = DISCORD_CVAR_INIT ("discordshowonstatus", "Default", statustype_cons_t);
-consvar_t cv_discordcharacterimagetype = DISCORD_CVAR_INIT ("discordcharacterimagetype", "C.S.S Portraits", characterimagetype_cons_t);
+consvar_t cv_discordstatusmemes = DISCORD_CVAR_INIT_UPDATE_PRESENCE ("discordstatusmemes", "Yes", CV_YesNo);
+consvar_t cv_discordshowonstatus = DISCORD_CVAR_INIT_UPDATE_PRESENCE ("discordshowonstatus", "Default", statustype_cons_t);
+consvar_t cv_discordcharacterimagetype = DISCORD_CVAR_INIT_UPDATE_PRESENCE ("discordcharacterimagetype", "C.S.S Portraits", characterimagetype_cons_t);
 
-consvar_t cv_discordcustom_details = DISCORD_CVAR_INIT_WITH_CALLBACKS ("discordcustom_details", TSOURDT3RD_SRB2_APP_FULL, NULL, DISC_CustomString_CanUpdate);
-consvar_t cv_discordcustom_state = DISCORD_CVAR_INIT_WITH_CALLBACKS ("discordcustom_state", "Blasting these robots!", NULL, DISC_CustomString_CanUpdate);
+consvar_t cv_discordcustom_details = DISCORD_CVAR_INIT_WITH_CALLBACKS ("discordcustom_details", TSOURDT3RD_SRB2_APP_FULL, NULL, DiscordCustomString_CanUpdate);
+consvar_t cv_discordcustom_state = DISCORD_CVAR_INIT_WITH_CALLBACKS ("discordcustom_state", "Blasting these robots!", NULL, DiscordCustomString_CanUpdate);
 
-consvar_t cv_discordcustom_imagetype_large = DISCORD_CVAR_INIT ("discordcustom_imagetype_large", "C.S.S Portraits", custom_imagetype_cons_t);
-consvar_t cv_discordcustom_imagetype_small = DISCORD_CVAR_INIT ("discordcustom_imagetype_small", "Continue Sprites", custom_imagetype_cons_t);
+consvar_t cv_discordcustom_imagetype_large = DISCORD_CVAR_INIT_UPDATE_PRESENCE ("discordcustom_imagetype_large", "C.S.S Portraits", custom_imagetype_cons_t);
+consvar_t cv_discordcustom_imagetype_small = DISCORD_CVAR_INIT_UPDATE_PRESENCE ("discordcustom_imagetype_small", "Continue Sprites", custom_imagetype_cons_t);
 
-consvar_t cv_discordcustom_characterimage_large = DISCORD_CVAR_INIT ("discordcustom_characterimage_large", "Sonic", custom_characterimage_cons_t);
-consvar_t cv_discordcustom_characterimage_small = DISCORD_CVAR_INIT ("discordcustom_characterimage_small", "Tails", custom_characterimage_cons_t);
+consvar_t cv_discordcustom_characterimage_large = DISCORD_CVAR_INIT_UPDATE_PRESENCE ("discordcustom_characterimage_large", "Sonic", custom_characterimage_cons_t);
+consvar_t cv_discordcustom_characterimage_small = DISCORD_CVAR_INIT_UPDATE_PRESENCE ("discordcustom_characterimage_small", "Tails", custom_characterimage_cons_t);
 
-consvar_t cv_discordcustom_supercharacterimage_large = DISCORD_CVAR_INIT ("discordcustom_supercharacterimage_large", "Sonic", custom_supercharacterimage_cons_t);
-consvar_t cv_discordcustom_supercharacterimage_small = DISCORD_CVAR_INIT ("discordcustom_supercharacterimage_small", "Sonic", custom_supercharacterimage_cons_t);
+consvar_t cv_discordcustom_supercharacterimage_large = DISCORD_CVAR_INIT_UPDATE_PRESENCE ("discordcustom_supercharacterimage_large", "Sonic", custom_supercharacterimage_cons_t);
+consvar_t cv_discordcustom_supercharacterimage_small = DISCORD_CVAR_INIT_UPDATE_PRESENCE ("discordcustom_supercharacterimage_small", "Sonic", custom_supercharacterimage_cons_t);
 
-consvar_t cv_discordcustom_mapimage_large = DISCORD_CVAR_INIT ("discordcustom_mapimage_large", "GFZ1", custom_mapimage_cons_t);
-consvar_t cv_discordcustom_mapimage_small = DISCORD_CVAR_INIT ("discordcustom_mapimage_small", "Custom Zone", custom_mapimage_cons_t);
+consvar_t cv_discordcustom_mapimage_large = DISCORD_CVAR_INIT_UPDATE_PRESENCE ("discordcustom_mapimage_large", "GFZ1", custom_mapimage_cons_t);
+consvar_t cv_discordcustom_mapimage_small = DISCORD_CVAR_INIT_UPDATE_PRESENCE ("discordcustom_mapimage_small", "Custom Zone", custom_mapimage_cons_t);
 
-consvar_t cv_discordcustom_miscimage_large = DISCORD_CVAR_INIT ("discordcustom_miscimage_large", "Title Screen", custom_miscimage_cons_t);
-consvar_t cv_discordcustom_miscimage_small = DISCORD_CVAR_INIT ("discordcustom_miscimage_small", "Intro - 1", custom_miscimage_cons_t);
+consvar_t cv_discordcustom_miscimage_large = DISCORD_CVAR_INIT_UPDATE_PRESENCE ("discordcustom_miscimage_large", "Title Screen", custom_miscimage_cons_t);
+consvar_t cv_discordcustom_miscimage_small = DISCORD_CVAR_INIT_UPDATE_PRESENCE ("discordcustom_miscimage_small", "Intro - 1", custom_miscimage_cons_t);
 
-consvar_t cv_discordcustom_imagetext_large = DISCORD_CVAR_INIT_WITH_CALLBACKS ("discordcustom_imagetext_large", "My favorite character!", NULL, DISC_CustomString_CanUpdate);
-consvar_t cv_discordcustom_imagetext_small = DISCORD_CVAR_INIT_WITH_CALLBACKS ("discordcustom_imagetext_small", "My other favorite character!", NULL, DISC_CustomString_CanUpdate);
-
-// ------------------------ //
-//        Functions
-// ------------------------ //
+consvar_t cv_discordcustom_imagetext_large = DISCORD_CVAR_INIT_WITH_CALLBACKS ("discordcustom_imagetext_large", "My favorite character!", NULL, DiscordCustomString_CanUpdate);
+consvar_t cv_discordcustom_imagetext_small = DISCORD_CVAR_INIT_WITH_CALLBACKS ("discordcustom_imagetext_small", "My other favorite character!", NULL, DiscordCustomString_CanUpdate);
 
 /*--------------------------------------------------
-	static boolean DISC_CheckStringLen(const char *valstr)
+	static boolean DiscordIntegration_OnChange(void)
+
+		Ran whenever the console variable for
+		Discord Integration is updated.
+
+		Credit to SRB2Kart Saturn for the idea!
+--------------------------------------------------*/
+static void DiscordIntegration_OnChange(void)
+{
+	if (dedicated)
+	{
+		return;
+	}
+	else if (discordInfo.initialized == false)
+	{
+		return;
+	}
+
+	if (cv_discordintegration.value)
+	{
+		DISC_Initialize();
+		DISC_UpdatePresence();
+		DISC_RunCallbacks();
+	}
+	else
+	{
+		DISC_Quit();
+	}
+}
+
+/*--------------------------------------------------
+	static boolean DiscordCustomString_CanUpdate(const char *valstr)
 
 		Checks the given discord custom text string, to
 		ensure that the strings meet Discord's string
 		length requirements.
 --------------------------------------------------*/
-static boolean DISC_CustomString_CanUpdate(const char *valstr)
+static boolean DiscordCustomString_CanUpdate(const char *valstr)
 {
-	if (!valstr || *valstr == '\0') return false; // null string
-	if (strlen(valstr) < DISC_STATUS_MIN_STRING_SIZE)
+	const char *basic_string = "Sorry, Discord requires status strings to\nbe %s than %d characters.\n\nPlease type a %s string.";
+	const char *full_string;
+
+	if (valstr == NULL)
 	{
-		// too short
-		S_StartSoundFromEverywhere(sfx_skid);
-		TSoURDt3rd_M_StartMessage(
-			"String too short!",
-			va("Sorry, Discord requires status strings to\nbe longer than %d characters.\n\nPlease type a longer string.", DISC_STATUS_MIN_STRING_SIZE),
-			NULL,
-			MM_NOTHING,
-			NULL,
-			NULL
-		);
 		return false;
 	}
-	else if (strlen(valstr) >= DISC_STATUS_MAX_STRING_SIZE)
+
+	const size_t len = strlen(valstr);
+
+	if (len < DISC_STATUS_MIN_STRING_SIZE) // YOU'RE TYPING TOO SHORT
 	{
-		// too long
+		full_string = va(basic_string, "longer", DISC_STATUS_MIN_STRING_SIZE, "longer");
 		S_StartSoundFromEverywhere(sfx_skid);
-		TSoURDt3rd_M_StartMessage(
-			"String too long!",
-			va("Sorry, Discord requires status strings to\nbe shorter than %d characters.\n\nPlease type a shorter string.", DISC_STATUS_MAX_STRING_SIZE),
-			NULL,
-			MM_NOTHING,
-			NULL,
-			NULL
-		);
+		TSoURDt3rd_M_StartPlainMessage("String too short!", full_string);
+		return false;
+	}
+	else if (len >= DISC_STATUS_MAX_STRING_SIZE) // YOU'RE TYPING TOO LONG
+	{
+		full_string = va(basic_string, "shorter", DISC_STATUS_MAX_STRING_SIZE, "shorter");
+		S_StartSoundFromEverywhere(sfx_skid);
+		TSoURDt3rd_M_StartPlainMessage("String too long!", full_string);
 		return false;
 	}
 	return true;

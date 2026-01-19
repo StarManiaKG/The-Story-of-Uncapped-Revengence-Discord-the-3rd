@@ -1,8 +1,8 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour.
-// Copyright (C) 2018-2024 by Kart Krew.
-// Copyright (C) 2020-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2020-2026 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2018-2025 by Sally "TehRealSalt" Cochenour.
+// Copyright (C) 2018-2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -24,12 +24,15 @@
 #include "../STAR/menus/smkg-m_sys.h" // queries about level list modes //
 #include "../STAR/misc/smkg-m_misc.h" // TSoURDt3rd_M_RemoveStringChars() //
 
-// ------------------------ //
-//        Variables
-// ------------------------ //
-
 #define DISC_MAX_SKINS_PER_STATUS_TYPE 2
 #define DISC_MAX_STATUS_SKINS 4
+
+static const char *DISC_imageType[] = {
+	"char", "cont", "life", // Character sprites
+	"charsuper", "contsuper", "lifesuper", // Super character sprites
+	"map", "misc", // Various world data
+	NULL
+};
 
 typedef struct
 {
@@ -38,21 +41,6 @@ typedef struct
 	boolean super;
 	boolean superduo;
 } DISC_Chars_t;
-
-static const char *DISC_imageType[] = {
-	// Character sprites
-	"char",
-	"cont",
-	"life",
-	// Super character sprites
-	"charsuper",
-	"contsuper",
-	"lifesuper",
-	// Various world data
-	"map",
-	"misc",
-	NULL
-};
 
 static DISC_Chars_t DISC_supportedSkins[] = {
 	// Vanilla skins
@@ -98,15 +86,18 @@ static const char *DISC_supportedMaps[] = {
 	"16",
 	[22] = "22", "23",
 	[25] = "25", "26", "27",
+
 	// Unlockable Extra Stages
 	[30] = "30",
 	"31",
 	"32",
 	"33",
+
 	// Unlockable Advanced Stages
 	[40] = "40",
 	"41",
 	"42",
+
 	// NiGHTS Special Stages
 	[50] = "50",
 	"51",
@@ -116,6 +107,7 @@ static const char *DISC_supportedMaps[] = {
 	"55",
 	"56",
 	"57",
+
 	// Co-op Special Stages
 	[60] = "60",
 	"61",
@@ -124,11 +116,13 @@ static const char *DISC_supportedMaps[] = {
 	"64",
 	"65",
 	"66",
+
 	// Unlockable NiGHTS Stages
 	[70] = "70",
 	"71",
 	"72",
 	"73",
+
 	// CTF Stages
 	[280] = "f0",
 	"f1",
@@ -139,6 +133,7 @@ static const char *DISC_supportedMaps[] = {
 	"f6",
 	"f7",
 	"f8",
+
 	// Match, Team Match, H&S, & Tag Stages
 	[532] = "m0",
 	"m1",
@@ -152,13 +147,25 @@ static const char *DISC_supportedMaps[] = {
 	"m9",
 	"ma",
 	"mb",
+
 	// Tutorial Zone
 	[1000] = "z0",
+
 	// NULL Zone
 	[10000] = "custom",
+
+	// Done
 	NULL
 };
 
+typedef struct
+{
+	const char *name;
+	size_t num_images;
+	boolean singular;
+} DISC_SupportedMiscs_t;
+
+//static DISC_SupportedMiscs_t DISC_supportedMiscs[] = {
 static const char *DISC_supportedMiscs[] = {
 	"title",
 	// Intro scenes
@@ -202,10 +209,6 @@ static consvar_t *custom_cvar_index[2][8] = {
 	},
 };
 
-// ------------------------ //
-//        Functions
-// ------------------------ //
-
 // =====
 // TOOLS
 // =====
@@ -218,13 +221,19 @@ static consvar_t *custom_cvar_index[2][8] = {
 void DISC_StatusPrintf(boolean is_image, char *string, const char *sep, const char *fmt, ...)
 {
 	va_list argptr;
-	char *status_txt = malloc(8192);
 	size_t size = (is_image ? DISC_STATUS_MAX_IMAGE_STRING_SIZE : DISC_STATUS_MAX_STRING_SIZE);
+	static char *status_txt = NULL;
+
+	if (string == NULL)
+	{
+		return;
+	}
 
 	if (status_txt == NULL)
-		return;
+	{
+		status_txt = malloc(size);
+	}
 
-	if (string == NULL) goto conclude;
 	if (is_image == false)
 	{
 		if (sep != NULL && *string != '\0')
@@ -235,24 +244,28 @@ void DISC_StatusPrintf(boolean is_image, char *string, const char *sep, const ch
 	}
 	else
 	{
-		if (sep == NULL || *sep == '\0') goto conclude;
+		if (sep == NULL || *sep == '\0')
+		{
+			return;
+		}
 	}
-	if (fmt == NULL || *fmt == '\0') goto conclude;
+	if (fmt == NULL || *fmt == '\0')
+	{
+		return;
+	}
 
 	va_start(argptr, fmt);
 	vsnprintf(status_txt, size, fmt, argptr);
 	va_end(argptr);
 
 	if (is_image)
-		snprintf(string, size, "%s%s", sep, status_txt);
-	else
-		strlcat(string, status_txt, size);
-	goto conclude;
-
-	conclude:
 	{
-		free(status_txt);
-		return;
+		//snprintf(string, size, DISCORD_IMAGE_REPO "%s/%s" DISCORD_IMAGE_EXT, sep, status_txt);
+		snprintf(string, size, "%s%s", sep, status_txt);
+	}
+	else
+	{
+		strlcat(string, status_txt, size);
 	}
 }
 
@@ -268,7 +281,9 @@ void DISC_StatusPrintf(boolean is_image, char *string, const char *sep, const ch
 void DISC_BasicStatus(char *string, char *image, char *imagestr)
 {
 	if (demoplayback || titledemo)
+	{
 		DISC_StatusPrintf(false, string, " | ", (titledemo ? "Watching a Demo" : "Watching Replays"));
+	}
 	else if (Playing())
 	{
 		if (gamecomplete && !netgame)
@@ -276,12 +291,18 @@ void DISC_BasicStatus(char *string, char *image, char *imagestr)
 		DISC_StatusPrintf(false, string, " | ", "Active");
 	}
 	else
+	{
 		DISC_StatusPrintf(false, string, " | ", "Inactive");
+	}
 
 	if (paused)
+	{
 		DISC_StatusPrintf(false, string, " | ", "Paused");
+	}
 	if (menuactive)
+	{
 		DISC_StatusPrintf(false, string, " | ", "Menu");
+	}
 
 	switch (gamestate)
 	{
@@ -317,10 +338,18 @@ void DISC_BasicStatus(char *string, char *image, char *imagestr)
 	}
 
 	if (TSoURDt3rd_Jukebox_SongPlaying())
-		DISC_StatusPrintf(false, string, " | ", "Jukebox: '%s'", tsourdt3rd_global_jukebox->curtrack->title);
+	{
+		DISC_StatusPrintf(false, string, " | ", "Jukebox: '%s'", tsourdt3rd_global_jukebox.curtrack->title);
+	}
 
-	if (*image == '\0') DISC_StatusPrintf(true, image, "misc", "title");
-	if (*imagestr == '\0') DISC_StatusPrintf(false, imagestr, NULL, TSOURDT3RD_SRB2_APP_FULL);
+	if (*image == '\0')
+	{
+		DISC_StatusPrintf(true, image, "misc", "title");
+	}
+	if (*imagestr == '\0')
+	{
+		DISC_StatusPrintf(false, imagestr, NULL, TSOURDT3RD_SRB2_APP_FULL);
+	}
 }
 
 /*--------------------------------------------------
@@ -333,14 +362,20 @@ void DISC_PlayerStatus(char *string)
 	player_t *player = &players[consoleplayer];
 
 	if (!(Playing() && playeringame[consoleplayer] && player))
+	{
 		return;
+	}
 
 	DISC_StatusPrintf(false, string, " |", NULL);
 
 	if (ultimatemode)
+	{
 		DISC_StatusPrintf(false, string, " ", "Ultimate");
+	}
 	else if (splitscreen)
+	{
 		DISC_StatusPrintf(false, string, " ", "Splitscreen");
+	}
 
 	if (modeattacking)
 	{
@@ -390,7 +425,10 @@ void DISC_PlayerStatus(char *string)
 --------------------------------------------------*/
 void DISC_ScoreStatus(char *string)
 {
-	if (!(Playing() && playeringame[consoleplayer]) || demoplayback) return;
+	if (!(Playing() && playeringame[consoleplayer]) || demoplayback)
+	{
+		return;
+	}
 	DISC_StatusPrintf(false, string, " | ", "Score: %d", players[consoleplayer].score);
 }
 
@@ -403,12 +441,19 @@ void DISC_EmblemStatus(char *string)
 {
 	INT32 user_emblems = M_CountEmblems(clientGamedata);
 	INT32 total_emblems = (numemblems + numextraemblems);
+
 	if (total_emblems <= 0)
+	{
 		DISC_StatusPrintf(false, string, " | ", "No Emblems Available...");
+	}
 	else
+	{
 		DISC_StatusPrintf(false, string, " | ", "%d/%d Emblems", user_emblems, total_emblems);
+	}
 	if (cv_discordstatusmemes.value && (user_emblems <= 0))
+	{
 		DISC_StatusPrintf(false, string, " ", "(Ha, NO EMBLEMS?)");
+	}
 }
 
 /*--------------------------------------------------
@@ -422,7 +467,9 @@ void DISC_EmeraldStatus(char *string)
 	UINT8 i;
 
 	if (!(Playing() && playeringame[consoleplayer]) || modeattacking)
+	{
 		return;
+	}
 
 	// Get the current amount of emerald bits we have... //
 	if (gametyperules & GTR_POWERSTONES)
@@ -453,7 +500,9 @@ void DISC_EmeraldStatus(char *string)
 		}
 	}
 	else
+	{
 		emerald_bitflags = emeralds;
+	}
 
 	// Calculate how many individual emeralds we have! //
 	// -- Math provided by Monster Iestyn and the creator of Uncapped Plus, Fafabis :)
@@ -510,6 +559,9 @@ void DISC_GamestateStatus(char *string, char *image, char *imagestr)
 		case GS_TITLESCREEN:
 		case GS_LEVEL:
 		case GS_INTERMISSION:
+		{
+			const char *mapimage;
+			char *maptitle;
 			if (gamestate == GS_TITLESCREEN || gamemap == titlemap)
 			{
 				if (Playing() && playeringame[consoleplayer])
@@ -526,15 +578,18 @@ void DISC_GamestateStatus(char *string, char *image, char *imagestr)
 				{
 					DISC_StatusPrintf(true, image, "misc", "missing");
 					DISC_StatusPrintf(false, imagestr, " | ", "???");
-					break;
 				}
-				const char *mapimage = (DISC_supportedMaps[gamemap] ? DISC_supportedMaps[gamemap] : "custom");
-				char *maptitle = G_BuildMapTitle(gamemap);
-				DISC_StatusPrintf(true, image, "map", mapimage);
-				DISC_StatusPrintf(false, imagestr, " | ", maptitle);
-				Z_Free(maptitle);
+				else
+				{
+					mapimage = (DISC_supportedMaps[gamemap] ? DISC_supportedMaps[gamemap] : "custom");
+					maptitle = G_BuildMapTitle(gamemap);
+					DISC_StatusPrintf(true, image, "map", mapimage);
+					DISC_StatusPrintf(false, imagestr, " | ", maptitle);
+					Z_Free(maptitle);
+				}
 			}
 			break;
+		}
 		case GS_ENDING:
 			DISC_StatusPrintf(true, image, "misc", "title");
 			DISC_StatusPrintf(false, imagestr, NULL, "Sonic Robo Blast 2; TSoURDt3rd");
@@ -608,40 +663,46 @@ void DISC_CharacterStatus(char *image, char *imagestr, char *s_image, char *s_im
 	const char *playString = (demoplayback ? "Demo:" : "Playing as:");
 	const char *fill_image_skin = NULL;
 
+	player_t *player = NULL;
+
 	if (!Playing())
+	{
 		return;
+	}
 	memset(player_skin, 0, sizeof(player_skin));
 	memset(player_skin_realname, 0, sizeof(player_skin_realname));
 
 	// Find character names and supported character images //
 	for (; player_skin[g_discord_player_slot] == NULL; g_discord_players++, g_discord_player_slot++)
 	{
-		player_t *player = &players[g_discord_players];
+		player = &players[g_discord_players];
 
 		if (netgame && g_discord_player_slot)
 		{
 			g_discord_mainChar = NULL;
 			break;
 		}
-		if (!playeringame[g_discord_players] || player == NULL || player->spectator)
+		if (!playeringame[g_discord_players] || player == NULL || player->spectator) // Invalid player!
 		{
-			// Invalid player!
 			if (g_discord_players == consoleplayer)
 				break;
 			else
 				continue;
 		}
 
-		// Initialize this skin slot!
 		skin_name = strdup(skins[player->skin]->name);
-		if (skin_name == NULL)
-			continue;
 		skin_name_isSuper = strstr(skin_name, "super");
 		player_skin[g_discord_player_slot] = "custom";
 		if (!splitscreen)
-			player_skin_realname[g_discord_player_slot] = skins[player->skin]->realname; // Use the skin's real name!
+		{
+			// Use the skin's real name!
+			player_skin_realname[g_discord_player_slot] = skins[player->skin]->realname;
+		}
 		else
-			player_skin_realname[g_discord_player_slot] = player_names[g_discord_player_slot]; // Use the player's real name!
+		{
+			// Use the player's real name!
+			player_skin_realname[g_discord_player_slot] = player_names[g_discord_player_slot];
+		}
 		if (skin_name_isSuper)
 		{
 			// removes super from the name :)
@@ -693,7 +754,9 @@ void DISC_CharacterStatus(char *image, char *imagestr, char *s_image, char *s_im
 		g_discord_mainChar = NULL; // -- No duo found...
 	}
 	if (player_skin[0] == NULL || player_skin_realname[0] == NULL)
+	{
 		goto free;
+	}
 
 	// Get our proper skin duo, if we can... //
 	apply_duo = (g_discord_mainChar && !splitscreen);
@@ -732,24 +795,20 @@ void DISC_CharacterStatus(char *image, char *imagestr, char *s_image, char *s_im
 		DISC_StatusPrintf(false, g_discord_fill_string, " ", "%s", player_skin_realname[status_chars]);
 	}
 
-	// Apply additional status strings... //
+	// Apply additional status strings! //
 	if (!apply_duo && player_skin_realname[1])
 		DISC_StatusPrintf(false, (demoplayback ? g_discord_fill_string : s_imagestr), NULL, " & %s", player_skin_realname[1]);
 	if (player_skin_realname[2])
 		DISC_StatusPrintf(false, (demoplayback ? g_discord_fill_string : s_imagestr), NULL, " & %s", player_skin_realname[2]);
 	if ((g_discord_player_slot >= 3) && player_skin_realname[g_discord_player_slot])
 		DISC_StatusPrintf(false, (demoplayback ? g_discord_fill_string : s_imagestr), NULL, " + Others");
-	goto free;
 
-	free:
-	{
-		// Free any misc. data, and we're done! //
-		free(skin_name);
-		free(skin_name_isSuper);
-		free(duo_skin);
-		free(super_duo_skin);
-		return;
-	}
+free:
+	free(skin_name);
+	free(skin_name_isSuper);
+	free(duo_skin);
+	free(super_duo_skin);
+	return;
 }
 
 /*--------------------------------------------------
@@ -762,6 +821,7 @@ void DISC_PlaytimeStatus(char *string)
 	INT32 hours = G_TicsToHours(clientGamedata->totalplaytime);
 	INT32 minutes = G_TicsToMinutes(clientGamedata->totalplaytime, false);
 	INT32 seconds = G_TicsToSeconds(clientGamedata->totalplaytime);
+
 	DISC_StatusPrintf(false, string, " | ", "Total Playtime:");
 	if (hours)
 		DISC_StatusPrintf(false, string, " ", "%d Hours,", hours);
