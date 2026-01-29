@@ -1085,6 +1085,9 @@ HW3SOUND for 3D hardware sound  support
 		<Unit filename="src/g_game.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="src/g_gamedata.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="src/g_game.h" />
 		<Unit filename="src/g_input.c">
 			<Option compilerVar="CC" />

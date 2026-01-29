@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2026 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -8,6 +8,7 @@
 //-----------------------------------------------------------------------------
 /// \file  smkg-i_sys.h
 /// \brief TSoURDt3rd system specific interface stuff.
+/// \todo merge with main system file
 
 #ifndef __SMKG_I_SYS__
 #define __SMKG_I_SYS__
@@ -53,8 +54,13 @@ void TSoURDt3rd_I_CursedWindowMovement(int xd, int yd);
 void TSoURDt3rd_I_QuakeWindow(int xd, int yd);
 
 void TSoURDt3rd_I_GetEvent(SDL_Event *evt);
-void TSoURDt3rd_I_ShutdownSystem(void);
-#endif
+#else
+void TSoURDt3rd_I_QuakeWindow(int xd, int yd)
+{
+    (void)xd;
+    (void)yd;
+}
+#endif // HAVE_SDL
 
 void TSoURDt3rd_I_FinishUpdate(void);
 

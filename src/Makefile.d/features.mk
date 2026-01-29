@@ -3,9 +3,10 @@
 #
 
 passthru_opts+=\
-	NO_IPV6 NOHW NOMD5 NOPOSTPROCESSING\
-	MOBJCONSISTANCY PACKETDROP ZDEBUG\
-	NOUPNP NOEXECINFO\
+  NO_IPV6 NOHW NOMD5 NOPOSTPROCESSING\
+  MOBJCONSISTANCY PACKETDROP ZDEBUG\
+  NOUPNP NOEXECINFO\
+  HAVE_DISCORDRPC\
 
 # build with debugging information
 ifdef DEBUGMODE
@@ -64,9 +65,9 @@ opts+=-DHAVE_DRMINGW
 endif
 
 # (libbacktrace is our new multiplatform crash debugger)
-ifndef NO_LIBBACKTRACE
-LIBBACKTRACE_PKGCONFIG?=libbacktrace
-$(eval $(call Use_pkg_config,LIBBACKTRACE))
+ifndef NOLIBBACKTRACE
+$(eval $(call Propogate_flags,LIBBACKTRACE))
+libs+=-lbacktrace
 opts+=-DHAVE_LIBBACKTRACE
 endif
 
@@ -92,42 +93,43 @@ $(foreach p,$(default_packages),\
 
 opts+=-DUSE_STUN
 
+ifndef NOCURL
+  sources+=$(call List,STAR/curl/Sourcefile)
+endif
+ifdef HAVE_LIBAV
+  sources+=$(call List,STAR/libav/Sourcefile)
+endif
+
 ifdef HAVE_DISCORDRPC
-  ifndef HAVE_DISCORDGAMESDK
-    DISCORD_RPC_PKGCONFIG?=discord-rpc
-    #$(eval $(call Use_pkg_config,DISCORD_RPC))
-    #$(eval $(call Configure,DISCORD_RPC,$(DISCORD_RPC)))
-    $(eval $(call Propogate_flags,DISCORD_RPC))
-    opts+=-DHAVE_DISCORDRPC -DHAVE_DISCORDSUPPORT
-    libs+=-ldiscord-rpc # linux won't work without this
-    DISCORD_SUPPORTED:=1
-  else
-    $(error \
-      You can't have your cake and eat it too!\
-      Choose either Discord RPC or Discord Game SDK!)
-  endif
+  DISCORD_RPC_PKGCONFIG?=discord-rpc
+  $(eval $(call Propogate_flags,DISCORD_RPC))
+  libs+=-ldiscord-rpc
+  opts+=-DHAVE_DISCORDRPC -DHAVE_DISCORDSUPPORT
+  DISCORD_SUPPORTED:=1
 endif
 
 ifdef HAVE_DISCORDGAMESDK
-  ifndef HAVE_DISCORDRPC
-    DISCORD_RPC_PKGCONFIG?=discord_game_sdk
-    #$(eval $(call Use_pkg_config,DISCORD_GAME_SDK))
-    #$(eval $(call Configure,DISCORD_RPC,$(DISCORD_GAME_SDK)))
-    $(eval $(call Propogate_flags,DISCORD_GAME_SDK))
-    opts+=-DHAVE_DISCORDGAMESDK -DHAVE_DISCORDSUPPORT
-    libs+=-ldiscord_game_sdk # linux won't work without this
-    DISCORD_SUPPORTED:=1
-  else
-    $(error \
-      You can't have your cake and eat it too!\
-      Choose either Discord Game SDK or Discord RPC!)
+  DISCORD_RPC_PKGCONFIG?=discord_game_sdk
+  $(eval $(call Propogate_flags,DISCORD_GAME_SDK))
+  opts+=-DHAVE_DISCORDGAMESDK -DHAVE_DISCORDSUPPORT
+  libs+=-ldiscord_game_sdk
+  DISCORD_SUPPORTED:=1
+endif
+
+sources+=discord/discord_net.c
+ifdef DISCORD_SUPPORTED
+  sources+=$(call List,discord/Sourcefile)
+  ifdef HAVE_DISCORDRPC
+    sources+=discord/rpc/discord_rpc.c
+  else ifdef HAVE_DISCORDGAMESDK
+    sources+=discord/gamesdk/discord_gamesdk.c
   endif
 endif
 
 ifdef HAVE_LIBAV
   #libav_default_packages:=\
-	#  LIBAVCODEC\
-	#  LIBAVDEVICE\
+  #  LIBAVCODEC\
+  #  LIBAVDEVICE\
   #  LIBAVFILTER\
   #  LIBAVFORMAT\
   #  LIBAVRESAMPLE\
@@ -143,6 +145,6 @@ ifdef HAVE_LIBAV
   #libs+=-lm -lavcodec -lavdevice -lavfilter -lavformat -lavresample -lavutil -lswscale
 
   #$(foreach libav_p,$(libav_default_packages),\
-	#  $(eval $(call Check_pkg_config,$(libav_p))))
+  #  $(eval $(call Check_pkg_config,$(libav_p))))
   $(eval $(call Propogate_flags,LIBAV))
 endif

@@ -32,8 +32,8 @@
 #include "BugTrap.h"
 #endif
 
-#include "win_dbg.h"
 #include "../doomdef.h" // just for VERSION
+#include "win_dbg.h"
 #include "../m_argv.h" // print the parameter in the log
 
 // TSoURDt3rd
@@ -50,7 +50,9 @@ LPTOP_LEVEL_EXCEPTION_FILTER prevExceptionFilter = NULL;
 BOOL InitDrMingw(void)
 {
 	if (M_CheckParm("-nodrmingw"))
+	{
 		return FALSE;
+	}
 
 	CONS_Printf("Setting up DrMingw debugger...\n");
 	ExcHndlInit();
@@ -202,6 +204,7 @@ BOOL InitBugTrap(void)
 #if !defined (__MINGW32__)
 	prevExceptionFilter = SetUnhandledExceptionFilter(RecordExceptionInfo);
 #endif
+	I_AddExitFunc(ShutdownBugTrap);
 	return TRUE;
 }
 
@@ -304,7 +307,7 @@ static VOID FPrintf(HANDLE fileHandle, LPCSTR lpFmt, ...)
 	DWORD   bytesWritten;
 
 	va_start(arglist, lpFmt);
-	vsprintf(str, lpFmt, arglist);
+	vsnprintf(str, 1999, lpFmt, arglist);
 	va_end(arglist);
 
 	WriteFile(fileHandle, str, (DWORD)strlen(str), &bytesWritten, NULL);
@@ -321,11 +324,13 @@ static VOID PrintTime(LPSTR output, FILETIME TimeToPrint)
 	{
 		// What a silly way to print out the file date/time.
 		wsprintfA(output, "%d/%d/%d %02d:%02d:%02d",
-				  (Date / 32) & 15, Date & 31, (Date / 512) + 1980,
-				  (Time / 2048), (Time / 32) & 63, (Time & 31) * 2);
+		          (Date / 32) & 15, Date & 31, (Date / 512) + 1980,
+		          (Time / 2048), (Time / 32) & 63, (Time & 31) * 2);
 	}
 	else
+	{
 		output[0] = 0;
+	}
 }
 
 
@@ -365,11 +370,9 @@ static VOID ShowModuleInfo(HANDLE LogFile, HMODULE ModuleHandle)
 			DosHeader = (IMAGE_DOS_HEADER*)ModuleHandle;
 			if (IMAGE_DOS_SIGNATURE != DosHeader->e_magic)
 				return;
-
 			NTHeader = (IMAGE_NT_HEADERS*)((char *)DosHeader + DosHeader->e_lfanew);
 			if (IMAGE_NT_SIGNATURE != NTHeader->Signature)
 				return;
-
 			// Open the code module file so that we can get its file date
 			// and size.
 			ModuleFile = CreateFileA(ModName, GENERIC_READ,
@@ -476,17 +479,16 @@ static VOID RecordSystemInformation(HANDLE fileHandle)
 
 	GetSystemInfo(&SystemInfo);
 	FPrintf(fileHandle, "%d processor(s), type %d %d.%d.\r\n"
-			"Program Memory from 0x%p to 0x%p\r\n",
-			SystemInfo.dwNumberOfProcessors,
-			SystemInfo.dwProcessorType,
-			SystemInfo.wProcessorLevel,
-			SystemInfo.wProcessorRevision,
-			SystemInfo.lpMinimumApplicationAddress,
-			SystemInfo.lpMaximumApplicationAddress);
+	        "Program Memory from 0x%p to 0x%p\r\n",
+	        SystemInfo.dwNumberOfProcessors,
+	        SystemInfo.dwProcessorType,
+	        SystemInfo.wProcessorLevel,
+	        SystemInfo.wProcessorRevision,
+	        SystemInfo.lpMinimumApplicationAddress,
+	        SystemInfo.lpMaximumApplicationAddress);
 
 	MemInfo.dwLength = sizeof(MemInfo);
 	GlobalMemoryStatus(&MemInfo);
-
 	// Print out the amount of physical memory, rounded up.
 	FPrintf(fileHandle, "%d MBytes physical memory.\r\n", (MemInfo.dwTotalPhys + ONEM - 1) / ONEM);
 }
@@ -571,7 +573,7 @@ LONG WINAPI RecordExceptionInfo(PEXCEPTION_POINTERS data/*, LPCSTR Message, LPST
 	SetFilePointer(fileHandle, 0, 0, FILE_END);
 
 	// Print out some blank lines to separate this error log from any previous ones.
-	FPrintf(fileHandle, "Email Sonic Team Junior or StarManiaKG so we can fix the bugs\r\n"); // Tails
+	FPrintf(fileHandle, "Email Sonic Team Junior or StarManiaKG so we can fix the bugs!\r\n"); // Tails
 	FPrintf(fileHandle, "Make sure you tell us what you were doing to cause the crash, and if possible, record a demo!\r\n"); // Tails
 	FPrintf(fileHandle, "\r\n\n");
 	FPrintf(fileHandle, "SRB2 %s; %s -ERROR LOG-\r\n\r\n", VERSIONSTRING, TSOURDT3RDVERSIONSTRING);
@@ -582,8 +584,8 @@ LONG WINAPI RecordExceptionInfo(PEXCEPTION_POINTERS data/*, LPCSTR Message, LPST
 	// to get the filename of the module that the crash happened in.
 	if (code && VirtualQuery(code, &MemInfo, sizeof(MemInfo)) &&
 		GetModuleFileName((HMODULE)MemInfo.AllocationBase,
-						   CrashModulePathName,
-						   sizeof(CrashModulePathName)) > 0)
+		                   CrashModulePathName,
+		                   sizeof(CrashModulePathName)) > 0)
 		CrashModuleFileName = GetFilePart(CrashModulePathName);
 
 	// Print out the beginning of the error log in a Win95 error window
@@ -658,7 +660,7 @@ LONG WINAPI RecordExceptionInfo(PEXCEPTION_POINTERS data/*, LPCSTR Message, LPST
 
 	// moved down because it was causing the printout to stop
 	FPrintf(fileHandle, "Command Line parameters: ");
-	for (i = 1; i < myargc; i++)
+	for(i = 1;i < myargc;i++)
 		FPrintf(fileHandle, "%s ", myargv[i]);
 
 	FPrintf(fileHandle, "Bytes at CS : EIP:\r\n");
@@ -691,7 +693,8 @@ LONG WINAPI RecordExceptionInfo(PEXCEPTION_POINTERS data/*, LPCSTR Message, LPST
 
 	// Time to print part or all of the stack to the error log. This allows
 	// us to figure out the call stack, parameters, local variables, etc.
-	FPrintf(fileHandle, "\r\n" "Stack dump:\r\n");
+	FPrintf(fileHandle, "\r\n"
+		"Stack dump:\r\n");
 #ifdef NO_SEH_MINGW
 	__try1(EXCEPTION_EXECUTE_HANDLER)
 #else

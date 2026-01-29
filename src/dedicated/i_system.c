@@ -273,7 +273,7 @@ static void I_PrintSignal(INT32 signal_num, boolean core_dumped, char *signal_na
 			break;
 		default:
 			sprintf(ttl, "Signal number %d", signal_num);
-			PRINT_SIGNAL((core_dumped ? "Unknown signal" : ttl), "SRB2 was terminated by an unknown signal.")
+			PRINT_SIGNAL((core_dumped ? "Unknown signal" : ttl), "SRB2 was terminated by an unknown signal (Probably an exit signal).")
 			break;
 	}
 	if (core_dumped)
@@ -288,7 +288,19 @@ static void I_PrintSignal(INT32 signal_num, boolean core_dumped, char *signal_na
 #undef PRINT_SIGNAL
 }
 
+static void I_ReportSignal(int num, int coredumped)
+{
+	char signame[512], sigmsg[512];
+	I_PrintSignal(num, coredumped, signame, sigmsg);
+	I_OutputMsg("\nProcess killed by signal: %s\n", signame);
+}
+
 #ifdef UNIX_BACKTRACE
+
+// StarManiaKG's enhanced unix crash debugger
+// With help from Bitten2Up and code from SRB2Kart-Saturn
+// Original UNIX code by GoldenTails
+
 enum { BUF_SIZE = 8192, BT_SIZE = 1024, STR_SIZE = 32 };
 
 #define CRASHLOG_SET_STRINGS(str) \
@@ -326,42 +338,34 @@ static void crashlog_write_all(FILE *out, const char *string, ...)
 #undef CRASHLOG_SET_STRINGS
 #undef CRASHLOG_FILEWRITE_STRINGS
 
-#if defined (HAVE_LIBBACKTRACE) && !defined (NOEXECINFO)
-#define LIBBACKTRACE_SKIP 1 // Skip write_backtrace and signal handler
+#if !defined (NOEXECINFO)
 
-typedef struct bt_buffer_s {
-	FILE *file;
-	char *pos;
-	size_t size;
-	boolean error;
-} bt_buffer_t;
-
+#if defined (HAVE_LIBBACKTRACE)
 static void bt_error_callback(void *data, const char *msg, int errnum)
 {
-	bt_buffer_t *buf = (bt_buffer_t *)data;
+	bt_outbuffer_t *buf = (bt_outbuffer_t *)data;
 	if (errnum == -1)
 	{
 		// No debug info
 		crashlog_write_all(buf->file, "libbacktrace error: %s\n", msg);
-		buf->error = true;
+		buf->error = 1;
 	}
 }
 
 static void bt_syminfo_callback(void *data, uintptr_t pc, const char *symname, uintptr_t symval, uintptr_t symsize)
 {
-	bt_buffer_t *buf = (bt_buffer_t *)data;
+	bt_outbuffer_t *buf = (bt_outbuffer_t *)data;
 	const char *sym_name = (symname ? symname : "???");
 	int n = snprintf(buf->pos, buf->size, "%p %s\n", (void *)pc, sym_name);
 
 	(void)symval;
 	(void)symsize;
 
-	buf->error = (n <= 0);
+	buf->error = (INT32)(n <= 0);
+
 	if (buf->error)
 	{
-		crashlog_write_all(buf->file, "libbacktrace: can't write simple backtrace\n");
 		buf->size = 0;
-		buf->error = true;
 		return;
 	}
 
@@ -372,22 +376,21 @@ static void bt_syminfo_callback(void *data, uintptr_t pc, const char *symname, u
 
 static int bt_simple_callback(void *data, uintptr_t pc)
 {
-	bt_buffer_t *buf = (bt_buffer_t *)data;
+	bt_outbuffer_t *buf = (bt_outbuffer_t*)data;
 	backtrace_syminfo(srb2_backtrace_state, pc, bt_syminfo_callback, NULL, data);
 	return buf->error;
 }
 
 static int bt_full_callback(void *data, uintptr_t pc, const char *filename, int lineno, const char *function)
 {
-	bt_buffer_t *buf = (bt_buffer_t *)data;
+	bt_outbuffer_t *buf = (bt_outbuffer_t *)data;
 	const char *function_name = (function ? function : "???");
 	const char *file_name = (filename ? filename : "???");
 	int n = snprintf(buf->pos, buf->size, "%p %s\n\t%s:%d\n", (void *)pc, function_name, file_name, lineno);
 
-	buf->error = (n <= 0);
+	buf->error = (INT32)(n <= 0);
 	if (buf->error)
 	{
-		// Fall back to simple backtrace, only prints function names
 		backtrace_simple(srb2_backtrace_state, LIBBACKTRACE_SKIP, bt_simple_callback, bt_error_callback, (void *)buf);
 		if (buf->error)
 		{
@@ -400,20 +403,72 @@ static int bt_full_callback(void *data, uintptr_t pc, const char *filename, int 
 	crashlog_write_all(buf->file, buf->pos);
 	buf->pos += n;
 	buf->size -= n;
-	buf->error = (!buf->size);
+	buf->error = (INT32)(!buf->size);
 	return buf->error;
 }
-#endif // defined (HAVE_LIBBACKTRACE) && !defined (NOEXECINFO)
+
+static void get_backtrace(FILE *out)
+{
+	char buf_pos_backtrace[BUF_SIZE];
+	bt_outbuffer_t buf;
+
+	crashlog_write_all(out, "\nBacktrace:\n");
+	if (srb2_backtrace_state == NULL)
+	{
+		crashlog_write_all(out, "Can't write backtrace!\n");
+		return;
+	}
+
+	buf.file = out;
+	buf.pos = buf_pos_backtrace;
+	buf.size = BUF_SIZE;
+	buf.error = 0;
+
+	// Try to get full backtrace, it will print files and line numbers.
+	// Otherwise, fall back to simple backtrace, and only print function names.
+	backtrace_full(srb2_backtrace_state, LIBBACKTRACE_SKIP, bt_full_callback, bt_error_callback, (void*)&buf);
+	fputs(buf_pos_backtrace, out);
+}
+
+#else
+
+static void get_backtrace(FILE *out)
+{
+	void *funcptrs[BT_SIZE];
+	size_t backtracesize = backtrace(funcptrs, BT_SIZE);
+	char **backtracesymbols = backtrace_symbols(funcptrs, backtracesize);
+	size_t symbol;
+
+	crashlog_write_all(out, "\nBacktrace:\n");
+	for (symbol = 0; symbol < backtracesize; symbol++)
+	{
+		if (!backtracesymbols[symbol]) continue;
+		crashlog_write_all(out, "%s\n", backtracesymbols[symbol]);
+	}
+}
+
+#endif
+#else // !NOEXECINFO
+
+static void get_backtrace(FILE *out)
+{
+	crashlog_write_all(out, "\nNo Backtrace support!\n");
+}
+
+#endif // !defined (NOEXECINFO)
 
 static void write_backtrace(INT32 signal)
 {
-	const char *error = "An error occurred within Sonic Robo Blast 2! Send this stack trace to someone who can help!\n";
-	const char *error_stderr = "(Or find "CRASH_LOGFILE_NAME" in your SRB2 directory.)"; // Shown only to stderr.
+	const char *error = "An error occurred within " TSOURDT3RD_SRB2_APP_FULL "! Send this stack trace to someone who can help!\n";
+	const char *error_stderr = "Or find " CRASH_LOGFILE_NAME " in your SRB2 directory."; // Shown only to stderr.
 
-	const char *filename = va("%s" PATHSEP CRASH_LOGFILE_NAME, srb2home);
+	const char *filename = va(pandf, srb2home, CRASH_LOGFILE_NAME);
 	FILE *out = fopen(filename, "a+");
+
 	time_t rawtime;
+	struct tm *timeinfo;
 	char timestr[STR_SIZE];
+	char timezonestr[STR_SIZE];
 	char sig_name[512], sig_msg[512];
 
 	if (!out) // File handle error
@@ -422,7 +477,7 @@ static void write_backtrace(INT32 signal)
 	crashlog_write_file(out, "------------------------\n"); // Nice looking seperator
 
 	crashlog_write_all(out, "\n"); // Newline to look nice for both outputs.
-	crashlog_write_all(out, error); // "Oops, SRB2 crashed" message
+	crashlog_write_all(out, error); // "Oops, game crashed" message
 	crashlog_write_stderr(error_stderr); // If the crash log exists, tell the user where the crash log is.
 	crashlog_write_all(out, "\n"); // Newline to look nice for both outputs.
 
@@ -431,24 +486,18 @@ static void write_backtrace(INT32 signal)
 	crashlog_write_file(out, "Platform: %s", I_GetSysName());
 	crashlog_write_file(out, "\n"); // newline
 
-	// Tell the log what SRB2's compdata is.
+	// Tell the log what our compdata is.
 	crashlog_write_file(out, "Compdata: %s %s, commit %s, branch %s", compdate, comptime, comprevision, compbranch);
 	crashlog_write_file(out, "\n"); // newline
 
 	// Get the current time as a string.
 	// This allows us to tell the log when we crashed.
-	time(&rawtime);
-#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
-	struct tm timeinfo;
-	localtime_r(&rawtime, &timeinfo);
-	strftime(timestr, STR_SIZE, "%a, %d %b %Y %T %z", &timeinfo);
-	crashlog_write_file(out, "Time of crash: %s", timestr);
+	rawtime = time(NULL);
+	timeinfo = localtime(&rawtime);
+	strftime(timestr, STR_SIZE, "%a, %d %b %Y, %H:%M:%S", timeinfo);
+	strftime(timezonestr, STR_SIZE, " %z", timeinfo);
+	crashlog_write_file(out, "Time of crash: %s%s", timestr, timezonestr);
 	crashlog_write_file(out, "\n");
-#else
-	struct tm *timeinfo = localtime(&rawtime);
-	asctime_s(timestr, STR_SIZE, timeinfo);
-	crashlog_write_file(out, "Time of crash: %s", timestr);
-#endif
 
 	// Tell the log what map we were on at the time.
 	if (gamestate == GS_LEVEL && gamemap)
@@ -461,7 +510,9 @@ static void write_backtrace(INT32 signal)
 			Z_Free(map_title);
 		}
 		else if (map_name)
+		{
 			crashlog_write_file(out, "Map: %s", map_name);
+		}
 		crashlog_write_file(out, "\n");
 	}
 
@@ -472,43 +523,18 @@ static void write_backtrace(INT32 signal)
 	crashlog_write_file(out, "\n"); // Newline for the signal name
 
 	// Give the crash log a nice 'Backtrace:' thing
-	// Try to get full backtrace, it will print files and line numbers
-#ifdef NOEXECINFO
-	crashlog_write_all(out, "\nNo Backtrace support\n");
-#else
-	crashlog_write_all(out, "\nBacktrace:\n");
-#ifdef HAVE_LIBBACKTRACE
-	char buf_pos_backtrace[BUF_SIZE];
-	bt_buffer_t buf = { .file = out, .pos = buf_pos_backtrace, .size = BUF_SIZE, .error = false };
-	if (srb2_backtrace_state)
-		backtrace_full(srb2_backtrace_state, LIBBACKTRACE_SKIP, bt_full_callback, bt_error_callback, (void *)&buf);
-	else
-		crashlog_write_all(out, "Can't write backtrace!\n");
-#else
-	// Flood the output and log with the backtrace
-	void *funcptrs[BT_SIZE];
-	size_t backtracesize = backtrace(funcptrs, BT_SIZE);
-	char **backtracesymbols = backtrace_symbols(funcptrs, backtracesize);
-	for (size_t symbol = 0; symbol < backtracesize; symbol++)
-	{
-		if (!backtracesymbols[symbol]) continue;
-		crashlog_write_all(out, "%s\n", backtracesymbols[symbol]);
-	}
-#endif // HAVE_LIBBACKTRACE
-#endif // NOEXECINFO
+	// Then, flood the output and log with the full backtrace
+	// It will print files, functions, and line numbers
+	get_backtrace(out);
 
 	crashlog_write_all(out, "\n"); // Write another newline to the log so it looks nice :)
 	if (out)
+	{
 		fclose(out);
+		out = NULL;
+	}
 }
 #endif // UNIX_BACKTRACE
-
-static void I_ReportSignal(int num, int coredumped)
-{
-	char signame[512], sigmsg[512];
-	I_PrintSignal(num, coredumped, signame, sigmsg);
-	I_OutputMsg("Process killed by signal: %s\n", signame);
-}
 
 #ifdef __linux__
 #define MEMINFO_FILE "/proc/meminfo"
@@ -802,7 +828,7 @@ void I_Error(const char *error, ...)
 	va_start(argptr, error);
 	vsprintf(buffer, error, argptr);
 	va_end(argptr);
-	I_OutputMsg("\nI_Error(): %s\n", buffer);
+	I_OutputMsg("\nI_Error(): %s\n\n", buffer);
 	free(buffer);
 	// ---
 

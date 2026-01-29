@@ -22,12 +22,19 @@ all_systems:=\
 ifeq (,$(filter $(all_systems),$(.VARIABLES)))
 ifeq ($(OS),Windows_NT) # all windows are Windows_NT...
 
-_m=Detected a Windows system,\
+ifeq ($(shell uname -s | grep -o MINGW64),MINGW64) # 64-bit MinGW
+  _m=Detected a Windows system,\
+	compiling for 64-bit MinGW SDL...)
+  $(call Print,$(_m))
+  MINGW64=1
+else # 32-bit MinGW
+  _m=Detected a Windows system,\
 	compiling for 32-bit MinGW SDL...)
-$(call Print,$(_m))
+  $(call Print,$(_m))
+  MINGW=1
+endif
 
-# go for a 32-bit sdl mingw exe by default
-MINGW:=1
+NOOBJDUMP=1
 
 else # if you on the *nix
 
@@ -58,10 +65,12 @@ endif
 
 # This must have high to low order.
 gcc_versions:=\
-	132 131 130\
-	123 122 121 120\
-	114 113 112 111 110\
-	105 104 103 102 101 100\
+	152 151 150 15\
+	142 141 140 14\
+	133 132 131 130 13\
+	123 122 121 120 12\
+	114 113 112 111 110 11\
+	105 104 103 102 101 100 10\
 	95 94 93 92 91 90\
 	85 84 83 82 81 80\
 	75 74 73 72 71 70\
@@ -69,7 +78,7 @@ gcc_versions:=\
 	55 54 53 52 51 50\
 	49 48 47 46 45 44 43 42 41 40
 
-latest_gcc_version:=13.2
+latest_gcc_version:=15.2
 
 # Automatically set version flag, but not if one was
 # manually set. And don't bother if this is a clean only

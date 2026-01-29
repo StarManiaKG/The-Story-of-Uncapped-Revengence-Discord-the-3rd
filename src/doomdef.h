@@ -79,6 +79,10 @@
 // warning C4213: nonstandard extension used : cast on l-value
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "version.h"
 #include "doomtype.h"
 
@@ -89,7 +93,11 @@
 #include <string.h>
 
 #define _USE_MATH_DEFINES // fixes M_PI errors in r_plane.c for Visual Studio
+#ifdef __cplusplus
+#include <cmath>
+#else
 #include <math.h>
+#endif
 
 #ifdef GETTEXT
 #include <libintl.h>
@@ -99,6 +107,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <ctype.h>
+
+#include "fastcmp.h"
 
 #ifdef _WIN32
 #include <io.h>
@@ -171,6 +181,7 @@ extern char logfilename[1024];
 #define VERSIONSTRING_RC SRB2VERSION "\0"
 #endif
 // Hey! If you change this, add 1 to the MODVERSION below!
+// And change CMakeLists.txt (not src/, but in root), for CMake users!
 // Otherwise we can't force updates!
 #endif
 
@@ -519,10 +530,8 @@ enum {
 	\param	error	the error message
 
 	\return	void
-
-
 */
-void I_Error(const char *error, ...) FUNCIERROR;
+FUNCIERROR void ATTRNORETURN I_Error(const char *error, ...);
 
 /**	\brief	write a message to stderr (use before I_Quit) for when you need to quit with a msg, but need
  the return code 0 of I_Quit();
@@ -581,8 +590,8 @@ char *sizeu4(size_t num);
 char *sizeu5(size_t num);
 
 // d_main.c
-extern int    VERSION;
-extern int SUBVERSION;
+extern int    VERSION; // Game version
+extern int SUBVERSION; // more precise version number
 extern boolean devparm; // development mode (-debug)
 // d_netcmd.c
 extern INT32 cv_debug;
@@ -606,11 +615,14 @@ extern INT32 cv_debug;
 // Misc stuff for later...
 // =======================
 
-#define ANG2RAD(angle) ((float)((angle)*M_PI)/ANGLE_180)
+#define ANG2RAD(angle) ((float)((angle)*M_PIf) / (float)ANGLE_180)
 
 // Modifier key variables, accessible anywhere
 extern UINT8 shiftdown, ctrldown, altdown;
 extern boolean capslock;
+
+// WARNING: a should be unsigned but to add with 2048, it isn't!
+#define AIMINGTODY(a) FixedDiv((FINETANGENT((2048+(((INT32)a)>>ANGLETOFINESHIFT)) & FINEMASK)*160), fovtan)
 
 // if we ever make our alloc stuff...
 #define ZZ_Alloc(x) Z_Malloc(x, PU_STATIC, NULL)
@@ -635,18 +647,27 @@ UINT32 quickncasehash (const char *p, size_t n)
 	return x;
 }
 
+// Max gamepad/joysticks that can be detected/used.
+#define MAX_JOYSTICKS 4
+
+#ifndef __cplusplus
 #ifndef min // Double-Check with WATTCP-32's cdefs.h
 #define min(x, y) (((x) < (y)) ? (x) : (y))
 #endif
 #ifndef max // Double-Check with WATTCP-32's cdefs.h
 #define max(x, y) (((x) > (y)) ? (x) : (y))
 #endif
-
-// Max gamepad/joysticks that can be detected/used.
-#define MAX_JOYSTICKS 4
+#ifndef clamp
+#define clamp(x, y, z) (((x) < (y)) ? (y) : (((x) > (z)) ? (z) : (x)))
+#endif
+#endif
 
 #ifndef M_PIl
 #define M_PIl 3.1415926535897932384626433832795029L
+#endif
+
+#ifndef M_PIf
+#define M_PIf 3.14159265f
 #endif
 
 // Floating point comparison epsilons from float.h
@@ -657,6 +678,33 @@ UINT32 quickncasehash (const char *p, size_t n)
 #ifndef DBL_EPSILON
 #define DBL_EPSILON 2.2204460492503131e-16l
 #endif
+
+#if defined(__GNUC__) || defined(__clang__)
+#ifndef LIKELY
+#define LIKELY(x)   __builtin_expect(!!(x), 1)
+#endif
+
+#ifndef UNLIKELY
+#define UNLIKELY(x) __builtin_expect(!!(x), 0)
+#endif
+#else
+#define LIKELY(x)       (x)
+#define UNLIKELY(x)     (x)
+#endif
+
+#ifdef __cplusplus
+#if defined(__GNUC__) || defined(__clang__)
+	#define restrict __restrict
+#else
+	#define restrict
+#endif
+#endif
+
+// the GNU cleanup attribute: plugging memory leaks since 2003!
+// on scope exit, the cleanup function is called with a pointer to the declared variable,
+// essentially behaving like a C++ destructor
+// NOTE: you WILL have nasal troubles if the variable is not initialized
+#define CLEANUP(f) __attribute__((__cleanup__(f)))
 
 // An assert-type mechanism.
 #ifdef PARANOIA
@@ -762,5 +810,9 @@ extern int
 
 //#define _DEBUG /* Debugging */
 //#define _TSOURDT3RD_DEBUGGING /* Debugging */
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif // __DOOMDEF__

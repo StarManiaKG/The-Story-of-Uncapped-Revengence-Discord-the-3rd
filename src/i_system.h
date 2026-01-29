@@ -38,9 +38,18 @@ extern UINT8 keyboard_started;
 extern boolean g_in_exiting_signal_handler;
 
 #ifdef HAVE_LIBBACKTRACE
-#include <backtrace.h>
 /**	\brief Our new debugging system
 */
+#include <backtrace.h>
+#define LIBBACKTRACE_SKIP 2 // Skip backtrace writer and signal handler
+
+typedef struct bt_buffer_s {
+	FILE *file;
+	char *pos;
+	size_t size;
+	INT32 error;
+} bt_outbuffer_t;
+
 extern struct backtrace_state *srb2_backtrace_state;
 #endif
 

@@ -16,6 +16,9 @@ $(foreach v,$(join $(wordlist 2,$(_n),- $(gcc_versions)),\
 	$(and $(findstring =,$(v)),\
 	$(eval $(call _predecessor,$(subst =, ,$(v))))))
 
+# aggregate returns seem to happen alot in c++ so just supress em lel
+CXXFLAGS+= -Wno-aggregate-return
+
 # -W -Wno-unused
 WFLAGS:=-Wall -Wno-trigraphs
 ifndef GCC295
@@ -38,7 +41,8 @@ ifdef GCC41
  WFLAGS+=-Wshadow
 endif
 #WFLAGS+=-Wlarger-than-%len%
- WFLAGS+=-Wpointer-arith -Wbad-function-cast
+ WFLAGS+=-Wpointer-arith
+ CWFLAGS+=-Wbad-function-cast
 ifdef GCC45
 #WFLAGS+=-Wc++-compat
 endif
@@ -68,9 +72,10 @@ endif
 endif
 #WFLAGS+=-Wstrict-prototypes
 ifdef GCC40
- WFLAGS+=-Wold-style-definition
+ CWFLAGS+=-Wold-style-definition
 endif
- WFLAGS+=-Wmissing-prototypes -Wmissing-declarations
+ WFLAGS+=-Wmissing-declarations
+ CWFLAGS+=-Wmissing-prototypes
 ifdef GCC40
  WFLAGS+=-Wmissing-field-initializers
 endif
@@ -81,7 +86,7 @@ endif
 #WFLAGS+=-Wpacked
 #WFLAGS+=-Wpadded
 #WFLAGS+=-Wredundant-decls
- WFLAGS+=-Wnested-externs
+ CWFLAGS+=-Wnested-externs
 #WFLAGS+=-Wunreachable-code
  WFLAGS+=-Winline
 ifdef DEBUGMODE
@@ -139,9 +144,15 @@ ifdef GCC81
  WFLAGS+=-Wno-error=multistatement-macros
 endif
 
+ifneq (,$(filter $(CC) $(CXX),clang clang++))
+ WFLAGS+= -Wno-unknown-pragmas
+ WFLAGS+= -Wno-cast-align
+ WFLAGS+= -Wno-cast-qual # not a fan, but clang really hates our read macros
+endif
+
 ifdef NONX86
   ifdef X86_64 # yeah that SEEMS contradictory
-  opts+=-march=nocona
+  opts+=-march=x86-64-v2
   endif
 else
   ifndef GCC29

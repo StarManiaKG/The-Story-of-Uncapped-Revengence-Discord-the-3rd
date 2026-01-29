@@ -45,7 +45,7 @@ typedef struct TSoURDt3rd_ControllerInfo_s
 	boolean active;
 	INT16 id;
 	INT16 real_id;
-	const char *name;
+	char *name;
 	// Rumbling
 	struct
 	{

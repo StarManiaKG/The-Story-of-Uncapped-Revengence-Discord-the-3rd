@@ -28,17 +28,16 @@ sources+=sdl/ogl_sdl.c
 endif
 
 ifdef NOMIXER
-sources+=sdl/sdl_sound.c
+  sources+=sdl/sdl_sound.c
 else
-opts+=-DHAVE_MIXER
-sources+=sdl/mixer_sound.c
-
+  opts+=-DHAVE_MIXER
+  sources+=sdl/mixer_sound.c
   ifndef HAIKU # Haiku has a special import path
     ifdef HAVE_MIXERX
-    opts+=-DHAVE_MIXERX
-    libs+=-lSDL2_mixer_ext
+      opts+=-DHAVE_MIXERX
+      libs+=-lSDL2_mixer_ext
     else
-    libs+=-lSDL2_mixer
+      libs+=-lSDL2_mixer
     endif
   endif
 endif

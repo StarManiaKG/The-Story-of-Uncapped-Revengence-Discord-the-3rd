@@ -32,8 +32,6 @@
 
 #include <time.h> // For log timestamps
 
-char srb2executablepath[1024];
-
 #ifdef HAVE_LIBBACKTRACE
 // <backtrace.h> is included in i_system.h
 struct backtrace_state *srb2_backtrace_state = NULL;
@@ -153,6 +151,17 @@ static void ChDirToExe(void)
 }
 #endif
 
+#ifdef HAVE_LIBBACKTRACE
+static void libbacktrace_error_callback(void *data, const char *msg, int errnum)
+{
+	(void)data;
+	if (errnum == -1)
+		I_OutputMsg("libbacktrace error (no debug or other PE problem): %s\n", msg);
+	else
+		I_OutputMsg("libbacktrace error: %s (errno %d)\n", msg, errnum);
+}
+#endif
+
 
 /**	\brief	The main function
 
@@ -172,8 +181,6 @@ int main(int argc, char **argv)
 
 	dedicated = true;
 
-	snprintf(srb2executablepath, sizeof(srb2executablepath), "%s", myargv[0]);
-
 #ifdef _WIN32
 	ChDirToExe();
 #endif
@@ -181,7 +188,7 @@ int main(int argc, char **argv)
 #ifdef LOGMESSAGES
 	if (!M_CheckParm("-nolog"))
 		InitLogging();
-#endif/*LOGMESSAGES*/
+#endif
 
 	//I_OutputMsg("I_StartupSystem() ...\n");
 	I_StartupSystem();
@@ -189,21 +196,28 @@ int main(int argc, char **argv)
 #ifdef HAVE_LIBBACKTRACE
 	if (!M_CheckParm("-nolibbacktrace"))
 	{
-		CONS_Printf("Setting up libbacktrace debugger...\n");
-		srb2_backtrace_state = backtrace_create_state(srb2executablepath, 1, NULL, NULL);
-	}
-#endif /* HAVE_LIBBACKTRACE */
+		I_OutputMsg("Setting up libbacktrace debugger...\n");
+		srb2_backtrace_state = backtrace_create_state(myargv[0], 1, libbacktrace_error_callback, NULL);
 
-#if defined (_WIN32)
-#ifdef HAVE_DRMINGW
+		if (srb2_backtrace_state == NULL)
+		{
+			I_OutputMsg("libbacktrace: backtrace_create_state returned NULL\n");
+		}
+		else
+		{
+			I_OutputMsg("libbacktrace debugger initialized!\n");
+		}
+	}
+#endif
+
+#if defined (_WIN32) && defined (HAVE_DRMINGW)
 	// Open drmingw debugger
 	InitDrMingw();
 #endif
 
-#ifdef HAVE_BUGTRAP
-	// Set up BugTrap...
+#if defined (_WIN32) && defined (HAVE_BUGTRAP)
+	// Set up BugTrap
 	InitBugTrap();
-#endif
 #endif
 
 	// startup SRB2
@@ -216,11 +230,6 @@ int main(int argc, char **argv)
 	CONS_Printf("Entering main game loop...\n");
 	// never return
 	D_SRB2Loop();
-
-#if defined (_WIN32) && defined (HAVE_BUGTRAP)
-	// This is safe even if BT didn't start.
-	ShutdownBugTrap();
-#endif
 
 	// return to OS
 	return 0;

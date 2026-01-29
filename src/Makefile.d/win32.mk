@@ -7,9 +7,10 @@ ifdef MSYSTEM
 libs+=-Wl,--disable-dynamicbase
 endif
 
-sources+=win32/Srb2win.rc
+sources+=win32/srb2tsourdt3rd.rc
 sources+=win32/win_dbg.c
 opts+=-DSTDC_HEADERS
+libs+=-Wl,-Bstatic -lstdc++ -lpthread -lgcc -Wl,-Bdynamic
 libs+=-ladvapi32 -lkernel32 -lmsvcrt -luser32
 
 ifndef DEDICATED
@@ -42,7 +43,23 @@ x86=x86_64
 i686=x86_64
 endif
 
-EXENAME?=srb2tsourdt3rd_win$(32).exe
+ifdef MINGW64 # DrMingw Barely works on 64-bit despite what we do
+NO_DRMINGW:=1
+HAVE_LIBBACKTRACE:=1
+else # libbacktrace seems to only compile right for 64-bit.
+libs+=-Wl,--large-address-aware
+HAVE_DRMINGW:=1
+NOLIBBACKTRACE:=1
+endif
+
+ifeq (${SDL},1)
+EXENAME?=srb2tsourdt3rd_windows$(32).exe
+endif
+
+ifeq (${DEDICATED},1)
+EXENAME?=srb2tsourdt3rd_windows$(32)_dedicated.exe
+endif
+
 mingw:=$(i686)-w64-mingw32
 
 define _set =
@@ -101,26 +118,17 @@ MINIUPNPC_opts:=-I$(lib)/include -DMINIUPNP_STATICLIB
 MINIUPNPC_libs:=-L$(lib)/mingw$(32) -lminiupnpc -lws2_32 -liphlpapi
 $(eval $(call _set,MINIUPNPC))
 
-ifdef MINGW64
-# Barely works on 64-bit despite what we do
-NO_DRMINGW:=1
-HAVE_LIBBACKTRACE:=1
-else
-# libbacktrace seems to only compile right for 32-bit on cmake
-# even then, it still seems somewhat broken
-HAVE_DRMINGW:=1
-NO_LIBBACKTRACE:=1
-endif
-
-ifndef NO_LIBBACKTRACE
-LIBBACKTRACE_opts+=-I../libs/libbacktrace/include
-LIBBACKTRACE_libs+=-L../libs/libbacktrace/lib/$(i686) -lbacktrace
+ifndef NOLIBBACKTRACE
+lib:=../libs/libbacktrace
+LIBBACKTRACE_opts:=-I$(lib)/include -DHAVE_LIBBACKTRACE
+LIBBACKTRACE_libs:=-L$(lib)/lib/$(i686) -lbacktrace
 $(eval $(call _set,LIBBACKTRACE))
 endif
 
 ifndef NO_DRMINGW
-DRMINGW_opts+=-I../libs/drmingw/include
-DRMINGW_libs+=-L../libs/drmingw/lib/win$(32) -lmgwhelp -lexchndl
+lib:=../libs/drmingw
+DRMINGW_opts+=-I$(lib)/include -DHAVE_DRMINGW
+DRMINGW_libs+=-L$(lib)/lib/win$(32) -lmgwhelp -lexchndl
 $(eval $(call _set,DRMINGW))
 endif
 
@@ -136,6 +144,7 @@ endif
 ## DISCORD_RPC_CFLAGS=, DISCORD_RPC_LDFLAGS=
 ## DISCORD_GAME_SDK_CFLAGS=, DISCORD_GAME_SDK_LDFLAGS=
 ## LIBAV_CFLAGS=, LIBAV_LDFLAGS=
+##
 
 ifdef HAVE_DISCORDRPC
   lib:=../libs/discord-rpc/win$(32)-dynamic

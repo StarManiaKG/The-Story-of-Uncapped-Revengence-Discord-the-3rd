@@ -72,6 +72,10 @@
 #
 # VALGRIND=1 - Enable Valgrind memory debugging support.
 # PROFILEMODE=1 - Enable performance profiling (gprof).
+# USEASAN=1 - Enable building with Address Sanitizer.
+# USEUBSAN=1 - Enable building with Undefined Behavior Sanitizer.
+# NOLIBBACKTRACE=1 - Disable using Libbacktrace for crashlog traces.
+# USELTO=1 - Enable building with LTO (Link-Time Optimization).
 #
 # General flags for building:
 #
@@ -132,7 +136,18 @@ endif
 include Makefile.d/util.mk
 
 ifdef PREFIX
+ifdef USECLANG
+CC:=$(PREFIX)-clang
+CXX:=$(PREFIX)-clang++
+else
 CC:=$(PREFIX)-gcc
+CXX:=$(PREFIX)-g++
+endif
+endif
+
+ifdef USECLANG
+CC=clang
+CXX=clang++
 endif
 
 OBJDUMP_OPTS?=--wide --source --line-numbers
@@ -184,31 +199,10 @@ sources+=\
 	$(call List,Sourcefile)\
 	$(call List,blua/Sourcefile)\
 	$(call List,netcode/Sourcefile)\
-
-sources+=discord/discord_net.c
-ifdef DISCORD_SUPPORTED
-  sources+=$(call List,discord/Sourcefile)
-  ifdef HAVE_DISCORDRPC
-    sources+=$(call List,discord/rpc/Sourcefile)
-  endif
-  ifdef HAVE_DISCORDGAMESDK
-    sources+=$(call List,discord/gamesdk/Sourcefile)
-  endif
-endif
-
-sources+=\
     $(call List,STAR/Sourcefile)\
-	$(call List,STAR/monocypher/Sourcefile)\
 
-ifndef NOCURL
-sources+=$(call List,STAR/curl/Sourcefile)
-endif
-ifdef HAVE_LIBAV
-sources+=$(call List,STAR/libav/Sourcefile)
-endif
-
-depends:=$(basename $(filter %.c %.s,$(sources)))
-objects:=$(basename $(filter %.c %.s %.nas,$(sources)))
+depends:=$(basename $(filter %.c %.cpp %.s,$(sources)))
+objects:=$(basename $(filter %.c %.cpp %.s %.nas,$(sources)))
 
 depends:=$(depends:%=$(depdir)/%.d)
 
@@ -254,6 +248,10 @@ ifdef STATIC
 libs+=-static
 endif
 
+ifneq (,$(filter $(CC) $(CXX),gcc g++))
+opts+=-mno-ms-bitfields
+endif
+
 # build with profiling information
 ifdef PROFILEMODE
 opts+=-pg
@@ -265,30 +263,58 @@ debug_opts=-D_DEBUG
 else # build a normal optimized version
 debug_opts=-DNDEBUG
 opts+=-O3
+ifdef USELTO
+# compile with LTO
+opts+=-flto=auto
+libs+=-flto=auto
+endif
 endif
 
-# manage stack trace dump options
-ifdef NOEXECINFO
-DEBUGSYMBOLS_SEPARATE:=1
+ifdef USEASAN
+# compile with asan
+opts+=-fsanitize=address
+libs+=-fsanitize=address
 endif
 
-# debug_opts also get passed to windres
-opts+=$(debug_opts)
+ifdef USEUBSAN
+# compile with asan
+opts+=-fsanitize=undefined
+libs+=-fsanitize=undefined
+endif
 
+ifneq (,$(filter $(CC) $(CXX),clang clang++))
+libs+=-fuse-ld=lld
+endif
+
+ifdef MINGW
+# mingw needs this passed AFTER lto and the likes were passed
+# otherwise libbacktrace may break
+opts+=-g
+libs+=-g
+endif
+
+opts+=$(debug_opts) # debug_opts also get passed to windres
 opts+=$(foreach v,$(passthru_opts),$(if $($(v)),-D$(v)))
 
-opts+=$(WFLAGS) $(CPPFLAGS) $(CFLAGS)
-libs+=$(LDFLAGS)
+CXXFLAGS+=-std=c++17 # force c17 for c++ since most vpss run older ubuntu versions with old compilers
+
+opts+=$(WFLAGS) $(CFLAGS)
+cxxopts:=$(opts) $(CXXFLAGS)
+opts+=$(CWFLAGS) # warning flags that shouldnt be passed to c++ compiler
+libs+=$(LDFLAGS) -lstdc++ -lpthread
 asflags:=$(ASFLAGS) -x assembler-with-cpp
 
 cc=$(CC)
+cxx=$(CXX)
 
 ifdef DISTCC
 cc=distcc $(CC)
+cxx=distcc $(CXX)
 endif
 
 ifdef CCACHE
 cc=ccache $(CC)
+cxx=ccache $(CXX)
 endif
 
 ifndef SILENT
@@ -297,13 +323,18 @@ ifndef SILENT
 ifndef MAKE_RESTARTS
 ifndef destructive
 $(shell $(CC) -v)
+#$(shell $(CXX) -v)
 define flags =
 
 SHELL ..... $(SHELL)
 
 CC ........ $(cc)
 
+CXX ....... $(cxx)
+
 CFLAGS .... $(opts)
+
+CXXFLAGS .. $(cxxopts)
 
 LDFLAGS ... $(libs)
 
@@ -320,6 +351,7 @@ endif
 
 LD:=$(CC)
 cc:=$(cc) $(opts)
+cxx:=$(cxx) $(cxxopts)
 ifdef UPX
 upx=$(UPX) $(UPX_OPTS)
 endif
@@ -335,25 +367,15 @@ windres=$(WINDRES) $(WINDRESFLAGS)\
 
 # 'UPX' is also recognized in the environment by upx
 unexport UPX
-ifdef UPX
-upxcompress:=\
-	$(call Echo,Compressing final executable...)\
-	$(.)-$(upx) $@
-else
-upxcompress:=
-endif
 
-ifndef DEBUGSYMBOLS_SEPARATE
-# executable contains debugging symbols
-$(exe) : $(objects) | $$(@D)/
-	$(.)$(LD) -o $@ $^ $(libs)
-	$(upxcompress)
-else
 # executable stripped of debugging symbols
 $(exe) : $(dbg) | $$(@D)/
 	$(.)$(OBJCOPY) --strip-debug $< $@
 	$(.)-$(OBJCOPY) --add-gnu-debuglink=$< $@
-	$(upxcompress)
+ifdef UPX
+	$(call Echo,Compressing final executable...)
+	$(.)-$(upx) $@
+endif
 
 # original executable with debugging symbols
 $(dbg) : $(objects) | $$(@D)/
@@ -365,7 +387,6 @@ $(dbg).txt : $(dbg)
 	$(call Echo,Dumping debugging info...)
 	$(.)$(OBJDUMP) $(OBJDUMP_OPTS) $< > $@
 	$(.)$(GZIP) $(GZIP_OPTS) $@
-endif
 
 # '::' means run unconditionally
 # this really updates comptime.h
@@ -390,11 +411,12 @@ ifdef Echo_name
 	@printf '%-20.20s\r' $$<
 endif
 endif
-	$(.)$(cc) -MM -MF $$@ -MT $(objdir)/$$*.o $(2) $$<
+	$(.)$(2) -MM -MF $$@ -MT $(objdir)/$$*.o $(3) $$<
 endef
 
-$(eval $(call _recipe,c))
-$(eval $(call _recipe,s,$(asflags)))
+$(eval $(call _recipe,c,$(cc)))
+$(eval $(call _recipe,cpp,$(cxx)))
+$(eval $(call _recipe,s,$(cc),$(asflags)))
 
 # compiling recipe template
 # 1: target file suffix
@@ -407,6 +429,7 @@ $(objdir)/%.$(1) : %.$(2) | $$$$(@D)/
 endef
 
 $(eval $(call _recipe,o,c,$(cc) -c -o $$@ $$<))
+$(eval $(call _recipe,o,cpp,$(cxx) -c -o $$@ $$<))
 $(eval $(call _recipe,o,s,$(cc) $(asflags) -c -o $$@ $$<))
 $(eval $(call _recipe,res,rc,$(windres) -i $$< -o $$@))
 

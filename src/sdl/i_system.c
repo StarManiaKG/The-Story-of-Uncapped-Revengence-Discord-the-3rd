@@ -241,7 +241,8 @@ static char returnWadPath[256];
 // TSoURDt3rd
 #include "../STAR/smkg-defs.h" // TSOURDT3RD_SRB2_APP_FULL //
 #include "../STAR/star_vars.h" // TSOURDT3RDVERSIONSTRING //
-#include "../STAR/smkg-i_sys.h" // TSoURDt3rd_GenerateFunnyCrashMessage() & TSoURDt3rd_I_ShutdownSystem() //
+#include "../STAR/smkg-i_sys.h" // TSoURDt3rd_GenerateFunnyCrashMessage() //
+#include "../STAR/core/smkg-p_pads.h"
 
 // A little more than the minimum sleep duration on Windows.
 // May be incorrect for other platforms, but we don't currently have a way to
@@ -295,6 +296,165 @@ SDL_bool framebuffer = SDL_FALSE;
 UINT8 keyboard_started = false;
 boolean g_in_exiting_signal_handler = false;
 
+static void I_ShowErrorMessageBox(const char *messagefordevelopers, int signum, boolean dumpmade, boolean coredumped, boolean forcesimplebox)
+{
+	static const char *window_title = SRB2APPLICATION_FULLNAME " " VERSIONSTRING " - " TSOURDT3RD_APP " " TSOURDT3RDVERSION " Error";
+	const char *crashdumpfile = "";
+	static const char *logfile = "uh oh, one wasn't made!?";
+
+	static char crashjoke[1024];
+	static char crashmessage[2048];
+	static size_t firstimpressionsline = 1; // "\"" TSOURDT3RD_SRB2_APP_FULL "\" has encountered...
+	static char finalmessage[3074];
+
+	if (M_CheckParm("-dedicated"))
+		return;
+
+	if (dumpmade)
+#if defined (UNIX_BACKTRACE)
+		crashdumpfile = CRASH_LOGFILE_NAME" (very important!) and ";
+#elif defined (HAVE_DRMINGW)
+		crashdumpfile = CRASH_LOGFILE_NAME" crash dump (very important!) and ";
+#elif defined (HAVE_BUGTRAP)
+		crashdumpfile = CRASH_LOGFILE_NAME" BugTrap crash dump (very important!) and ";
+#else
+		crashdumpfile = CRASH_LOGFILE_NAME" and ";
+#endif
+
+#ifdef LOGMESSAGES
+	if (logfilename[0])
+		logfile = logfilename;
+#endif
+
+	strlcpy(
+		crashjoke,
+		TSoURDt3rd_GenerateFunnyCrashMessage(signum, coredumped),
+		sizeof(crashjoke)
+	);
+	snprintf(
+		crashmessage,
+		sizeof(crashmessage),
+			"\"" TSOURDT3RD_SRB2_APP_FULL "\" has encountered an unrecoverable error and needs to close.\n"
+			"This is (usually) not your fault, but we encourage you to report it!\n"
+			"This should be done alongside your %s" "log file (%s).\n"
+			"\n"
+			"The information in the log file should be useful for developers.\n"
+			"Server hosts and add-on creators may also find this information useful.\n"
+			"Developers can screw up, so please be nice and considerate when reporting issues!\n"
+			"\n"
+			"To share any info regarding this crash, you can:\n"
+			" - Reach out to StarManiaKG on Discord about this error.\n"
+			" - Visit the SRB2 Discord, where you can learn how to submit a crash report.\n"
+			" - Visit TSoURDt3rd's Gitlab and make an issue report.\n"
+			" - Visit TSoURDt3rd's message board post and make a report.\n"
+			"These channels have been linked below.\n"
+			"\n"
+			"Crash reason:\n"
+			"%s",
+		crashdumpfile, logfile,
+		messagefordevelopers
+	);
+
+	// Rudementary word wrapping.
+	// Simple and effective. Does not handle nonuniform letter sizes, etc. but who cares.
+	// We can't use V_WordWrap, which this shares DNA with, because no guarantee
+	// string character graphics exist as reference in the error handler...
+	{
+		size_t max = 0, maxatstart = 0, start = 0, width = 0, i;
+
+		for (i = 0; crashmessage[i]; i++)
+		{
+			if (crashmessage[i] == ' ')
+			{
+				start = i;
+				max += 2;
+				maxatstart = max;
+			}
+			else if (crashmessage[i] == '\n')
+			{
+				if (firstimpressionsline > 0)
+				{
+					firstimpressionsline--;
+					if (firstimpressionsline == 0)
+					{
+						width = max;
+					}
+				}
+				start = 0;
+				max = 0;
+				maxatstart = 0;
+				continue;
+			}
+			else
+				max += 8;
+
+			// Start trying to wrap if presumed length exceeds the space we want.
+			if (width > 0 && max >= width && start > 0)
+			{
+				crashmessage[start] = '\n';
+				max -= maxatstart;
+				start = 0;
+			}
+		}
+	}
+
+	snprintf(
+		finalmessage,
+		sizeof(finalmessage),
+		"%s\n\n%s",
+		crashjoke, crashmessage
+	);
+
+	// Set the message box data
+	const SDL_MessageBoxButtonData messagebox_buttons[] = {
+		{ SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 0,		         "OK" },
+		{ 										0, 1,     "TSoURD Gitlab" },
+		{ 										0, 2,      "SRB2 Discord" },
+	};
+	const SDL_MessageBoxData messagebox_data = {
+		SDL_MESSAGEBOX_ERROR, /* .flags */
+		NULL, /* .window */
+		window_title, /* .title */
+		finalmessage, /* .message */
+		SDL_arraysize(messagebox_buttons), /* .numbuttons */
+		messagebox_buttons, /* .buttons */
+		NULL /* .colorScheme */
+	};
+	int messagebox_buttonid;
+
+	if (!forcesimplebox && (!SDL_ShowMessageBox(&messagebox_data, &messagebox_buttonid)))
+	{
+		// Implement the message box with SDL_ShowMessageBox.
+		switch (messagebox_buttonid)
+		{
+			case 1:
+				I_OpenURL("https://git.do.srb2.org/StarManiaKG/The-Story-of-Uncapped-Revengence-Discord-the-3rd/-/issues");
+				break;
+			case 2:
+				I_OpenURL("https://www.srb2.org/discord");
+				break;
+			case 3:
+				I_OpenURL("https://git.do.srb2.org/STJr/SRB2/-/issues");
+				break;
+			default:
+				break;
+		}
+	}
+	else
+	{
+		// Implement message box with SDL_ShowSimpleMessageBox,
+		// which should fail gracefully if it can't put a message box up
+		// on the target system
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, window_title, finalmessage, NULL);
+
+		// Note that SDL_ShowSimpleMessageBox does *not* require SDL to be
+		// initialized at the time, so calling it after SDL_Quit() is
+		// perfectly okay! In addition, we do this on purpose so the
+		// fullscreen window is closed before displaying the error message
+		// in case the fullscreen window blocks it for some absurd reason.
+	}
+}
+
 static void I_PrintSignal(INT32 signal_num, boolean core_dumped, char *signal_name, char *signal_msg)
 {
 	char ttl[128];
@@ -334,26 +494,47 @@ static void I_PrintSignal(INT32 signal_num, boolean core_dumped, char *signal_na
 			break;
 		default:
 			sprintf(ttl, "Signal number %d", signal_num);
-			PRINT_SIGNAL((core_dumped ? "Unknown signal" : ttl), "SRB2 was terminated by an unknown signal.")
+			PRINT_SIGNAL((core_dumped ? "Unknown signal" : ttl), "SRB2 was terminated by an unknown signal (probably an exit signal).")
 			break;
-	}
-	if (core_dumped)
-	{
-		if (signal_name)
-			sprintf(ttl, "%s (core dumped)", signal_name);
-		else
-			strcat(ttl, " (core dumped)");
-		sprintf(signal_name, "%s", ttl);
 	}
 
 #undef PRINT_SIGNAL
+
+	if (core_dumped)
+	{
+		if (signal_name)
+			sprintf(ttl, "%s", signal_name);
+		strcat(ttl, " (core dumped)");
+		sprintf(signal_name, "%s", ttl);
+	}
+}
+
+static void I_ReportSignal(int num, int coredumped)
+{
+	char signame[128], sigmsg[128];
+
+	I_PrintSignal(num, coredumped, signame, sigmsg);
+	I_OutputMsg("\nProcess killed by signal: %s\n", signame);
+
+	BwehHehHe(); // Eggman's ultimate evil plan (cheat) to crash our game worked...
+	I_ShowErrorMessageBox(sigmsg, num,
+#if defined (UNIX_BACKTRACE)
+		true,
+#elif defined (_WIN32) && defined (HAVE_DRMINGW)
+		IsDrMingwLoaded(),
+#elif defined (_WIN32) && defined (HAVE_BUGTRAP)
+		IsBugTrapLoaded(),
+#else
+		false,
+#endif
+		coredumped, false
+	);
 }
 
 #ifdef UNIX_BACKTRACE
 
 // StarManiaKG's enhanced unix crash debugger
 // With help from Bitten2Up and code from SRB2Kart-Saturn
-
 // Original UNIX code by GoldenTails
 
 enum { BUF_SIZE = 8192, BT_SIZE = 1024, STR_SIZE = 32 };
@@ -393,42 +574,33 @@ static void crashlog_write_all(FILE *out, const char *string, ...)
 #undef CRASHLOG_SET_STRINGS
 #undef CRASHLOG_FILEWRITE_STRINGS
 
-#if defined (HAVE_LIBBACKTRACE) && !defined (NOEXECINFO)
-#define LIBBACKTRACE_SKIP 1 // Skip write_backtrace and signal handler
+#if !defined (NOEXECINFO)
 
-typedef struct bt_buffer_s {
-	FILE *file;
-	char *pos;
-	size_t size;
-	boolean error;
-} bt_buffer_t;
-
+#if defined (HAVE_LIBBACKTRACE)
 static void bt_error_callback(void *data, const char *msg, int errnum)
 {
-	bt_buffer_t *buf = (bt_buffer_t *)data;
+	bt_outbuffer_t *buf = (bt_outbuffer_t *)data;
 	if (errnum == -1)
 	{
 		// No debug info
 		crashlog_write_all(buf->file, "libbacktrace error: %s\n", msg);
-		buf->error = true;
+		buf->error = 1;
 	}
 }
 
 static void bt_syminfo_callback(void *data, uintptr_t pc, const char *symname, uintptr_t symval, uintptr_t symsize)
 {
-	bt_buffer_t *buf = (bt_buffer_t *)data;
+	bt_outbuffer_t *buf = (bt_outbuffer_t *)data;
 	const char *sym_name = (symname ? symname : "???");
 	int n = snprintf(buf->pos, buf->size, "%p %s\n", (void *)pc, sym_name);
 
 	(void)symval;
 	(void)symsize;
 
-	buf->error = (n <= 0);
+	buf->error = (INT32)(n <= 0);
 	if (buf->error)
 	{
-		crashlog_write_all(buf->file, "libbacktrace: can't write simple backtrace\n");
 		buf->size = 0;
-		buf->error = true;
 		return;
 	}
 
@@ -439,22 +611,21 @@ static void bt_syminfo_callback(void *data, uintptr_t pc, const char *symname, u
 
 static int bt_simple_callback(void *data, uintptr_t pc)
 {
-	bt_buffer_t *buf = (bt_buffer_t *)data;
+	bt_outbuffer_t *buf = (bt_outbuffer_t *)data;
 	backtrace_syminfo(srb2_backtrace_state, pc, bt_syminfo_callback, NULL, data);
 	return buf->error;
 }
 
 static int bt_full_callback(void *data, uintptr_t pc, const char *filename, int lineno, const char *function)
 {
-	bt_buffer_t *buf = (bt_buffer_t *)data;
-	const char *function_name = (function ? function : "???");
+	bt_outbuffer_t *buf = (bt_outbuffer_t *)data;
 	const char *file_name = (filename ? filename : "???");
+	const char *function_name = (function ? function : "???");
 	int n = snprintf(buf->pos, buf->size, "%p %s\n\t%s:%d\n", (void *)pc, function_name, file_name, lineno);
 
-	buf->error = (n <= 0);
+	buf->error = (INT32)(n <= 0);
 	if (buf->error)
 	{
-		// Fall back to simple backtrace, only prints function names
 		backtrace_simple(srb2_backtrace_state, LIBBACKTRACE_SKIP, bt_simple_callback, bt_error_callback, (void *)buf);
 		if (buf->error)
 		{
@@ -465,33 +636,84 @@ static int bt_full_callback(void *data, uintptr_t pc, const char *filename, int 
 	}
 
 	crashlog_write_all(buf->file, buf->pos);
+
 	buf->pos += n;
 	buf->size -= n;
-	buf->error = (!buf->size);
+	buf->error = (INT32)!buf->size;
 	return buf->error;
 }
 
+static void get_backtrace(FILE *out)
+{
+	char buf_pos_backtrace[BUF_SIZE];
+	bt_outbuffer_t buf;
 
-#endif // defined (HAVE_LIBBACKTRACE) && !defined (NOEXECINFO)
+	crashlog_write_all(out, "\nBacktrace:\n");
+	if (srb2_backtrace_state == NULL)
+	{
+		crashlog_write_all(out, "Can't write backtrace!\n");
+		return;
+	}
+
+	buf.file = out;
+	buf.pos = buf_pos_backtrace;
+	buf.size = BUF_SIZE;
+	buf.error = 0;
+
+	// Try to get full backtrace, it will print files and line numbers.
+	// Otherwise, fall back to simple backtrace, and only print function names.
+	backtrace_full(srb2_backtrace_state, LIBBACKTRACE_SKIP, bt_full_callback, bt_error_callback, (void*)&buf);
+	fputs(buf_pos_backtrace, out);
+}
+
+#else
+
+static void get_backtrace(FILE *out)
+{
+	void *funcptrs[BT_SIZE];
+	size_t backtracesize = backtrace(funcptrs, BT_SIZE);
+	char **backtracesymbols = backtrace_symbols(funcptrs, backtracesize);
+	size_t symbol;
+
+	crashlog_write_all(out, "\nBacktrace:\n");
+	for (symbol = 0; symbol < backtracesize; symbol++)
+	{
+		if (!backtracesymbols[symbol]) continue;
+		crashlog_write_all(out, "%s\n", backtracesymbols[symbol]);
+	}
+}
+
+#endif
+#else // !NOEXECINFO
+
+static void get_backtrace(FILE *out)
+{
+	crashlog_write_all(out, "\nNo Backtrace support!\n");
+}
+
+#endif // !defined (NOEXECINFO)
 
 static void write_backtrace(INT32 signal)
 {
-	const char *error = "An error occurred within Sonic Robo Blast 2! Send this stack trace to someone who can help!\n";
-	const char *error_stderr = "(Or find "CRASH_LOGFILE_NAME" in your SRB2 directory.)"; // Shown only to stderr.
+	const char *error = "An error occurred within " TSOURDT3RD_SRB2_APP_FULL "! Send this stack trace to someone who can help!\n";
+	const char *error_stderr = "Or find " CRASH_LOGFILE_NAME " in your SRB2 directory."; // Shown only to stderr.
 
-	const char *filename = va("%s" PATHSEP CRASH_LOGFILE_NAME, srb2home);
+	const char *filename = va(pandf, srb2home, CRASH_LOGFILE_NAME);
 	FILE *out = fopen(filename, "a+");
+
 	time_t rawtime;
+	struct tm *timeinfo;
 	char timestr[STR_SIZE];
+	char timezonestr[STR_SIZE];
 	char sig_name[512], sig_msg[512];
 
 	if (!out) // File handle error
-		crashlog_write_stderr("\nWARNING: Couldn't open crash log for writing! Make sure your permissions are correct. Please save the below report!\n");
+		crashlog_write_stderr("\nWARNING: Couldn't open " CRASH_LOGFILE_NAME " for writing! Make sure your permissions are correct. Please save the below report!\n");
 
 	crashlog_write_file(out, "------------------------\n"); // Nice looking seperator
 
 	crashlog_write_all(out, "\n"); // Newline to look nice for both outputs.
-	crashlog_write_all(out, error); // "Oops, SRB2 crashed" message
+	crashlog_write_all(out, error); // "Oops, game crashed" message
 	crashlog_write_stderr(error_stderr); // If the crash log exists, tell the user where the crash log is.
 	crashlog_write_all(out, "\n"); // Newline to look nice for both outputs.
 
@@ -499,24 +721,18 @@ static void write_backtrace(INT32 signal)
 	crashlog_write_file(out, "Platform: %s", I_GetSysName());
 	crashlog_write_file(out, "\n"); // newline
 
-	// Tell the log what SRB2's compdata is.
+	// Tell the log what our compdata is.
 	crashlog_write_file(out, "Compdata: %s %s, commit %s, branch %s", compdate, comptime, comprevision, compbranch);
 	crashlog_write_file(out, "\n"); // newline
 
 	// Get the current time as a string.
 	// This allows us to tell the log when we crashed.
-	time(&rawtime);
-#if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
-	struct tm timeinfo;
-	localtime_r(&rawtime, &timeinfo);
-	strftime(timestr, STR_SIZE, "%a, %d %b %Y %T %z", &timeinfo);
-	crashlog_write_file(out, "Time of crash: %s", timestr);
+	rawtime = time(NULL);
+	timeinfo = localtime(&rawtime);
+	strftime(timestr, STR_SIZE, "%a, %d %b %Y, %H:%M:%S", timeinfo);
+	strftime(timezonestr, STR_SIZE, " %z", timeinfo);
+	crashlog_write_file(out, "Time of crash: %s%s", timestr, timezonestr);
 	crashlog_write_file(out, "\n");
-#else
-	struct tm *timeinfo = localtime(&rawtime);
-	asctime_s(timestr, STR_SIZE, timeinfo);
-	crashlog_write_file(out, "Time of crash: %s", timestr);
-#endif
 
 	// Tell the log what map we were on at the time.
 	if (gamestate == GS_LEVEL && gamemap)
@@ -529,7 +745,9 @@ static void write_backtrace(INT32 signal)
 			Z_Free(map_title);
 		}
 		else if (map_name)
+		{
 			crashlog_write_file(out, "Map: %s", map_name);
+		}
 		crashlog_write_file(out, "\n");
 	}
 
@@ -540,208 +758,18 @@ static void write_backtrace(INT32 signal)
 	crashlog_write_file(out, "\n"); // Newline for the signal name
 
 	// Give the crash log a nice 'Backtrace:' thing
-	// Try to get full backtrace, it will print files and line numbers
-#ifdef NOEXECINFO
-	crashlog_write_all(out, "\nNo Backtrace support\n");
-#else
-	crashlog_write_all(out, "\nBacktrace:\n");
-#ifdef HAVE_LIBBACKTRACE
-	char buf_pos_backtrace[BUF_SIZE];
-	bt_buffer_t buf = { .file = out, .pos = buf_pos_backtrace, .size = BUF_SIZE, .error = false };
-	if (srb2_backtrace_state)
-		backtrace_full(srb2_backtrace_state, LIBBACKTRACE_SKIP, bt_full_callback, bt_error_callback, (void *)&buf);
-	else
-		crashlog_write_all(out, "Can't write backtrace!\n");
-#else
-	// Flood the output and log with the backtrace
-	void *funcptrs[BT_SIZE];
-	size_t backtracesize = backtrace(funcptrs, BT_SIZE);
-	char **backtracesymbols = backtrace_symbols(funcptrs, backtracesize);
-	for (size_t symbol = 0; symbol < backtracesize; symbol++)
-	{
-		if (!backtracesymbols[symbol]) continue;
-		crashlog_write_all(out, "%s\n", backtracesymbols[symbol]);
-	}
-#endif // HAVE_LIBBACKTRACE
-#endif // NOEXECINFO
+	// Then, flood the output and log with the full backtrace
+	// It will print files, functions, and line numbers
+	get_backtrace(out);
 
 	crashlog_write_all(out, "\n"); // Write another newline to the log so it looks nice :)
 	if (out)
+	{
 		fclose(out);
+		out = NULL;
+	}
 }
 #endif // UNIX_BACKTRACE
-
-static void I_ShowErrorMessageBox(const char *messagefordevelopers, int signum, boolean dumpmade, boolean coredumped, boolean forcesimplebox)
-{
-	size_t firstimpressionsline = 3; // "\"" TSOURDT3RD_SRB2_APP_FULL "\" has encountered...
-	const char *window_title = SRB2APPLICATION_FULLNAME " " VERSIONSTRING " - " TSOURDT3RD_APP " " TSOURDT3RDVERSION " Error";
-	const char *crashdumpfile = "";
-	const char *logfile = "uh oh, one wasn't made!?";
-	static char finalmessage[2048];
-
-	if (M_CheckParm("-dedicated"))
-		return;
-
-	if (dumpmade)
-#if defined (UNIX_BACKTRACE)
-		crashdumpfile = CRASH_LOGFILE_NAME" (very important!) and ";
-#elif defined (HAVE_DRMINGW)
-		crashdumpfile = CRASH_LOGFILE_NAME" crash dump (very important!) and ";
-#elif defined (HAVE_BUGTRAP)
-		crashdumpfile = CRASH_LOGFILE_NAME" BugTrap crash dump (very important!) and ";
-#else
-		crashdumpfile = CRASH_LOGFILE_NAME" and ";
-#endif
-
-#ifdef LOGMESSAGES
-	if (logfilename[0])
-		logfile = logfilename;
-#endif
-
-	snprintf(
-		finalmessage,
-		sizeof(finalmessage),
-			"%s\n"
-			"\n"
-			"\"" TSOURDT3RD_SRB2_APP_FULL "\" has encountered an unrecoverable error and needs to close.\n"
-			"This is (usually) not your fault, but we encourage you to report it!\n"
-			"This should be done alongside your %s" "log file (%s).\n"
-			"\n"
-			"The information in the log file should be useful for developers.\n"
-			"Server hosts and add-on creators may also find this information useful.\n"
-			"Developers can screw up, so please be nice and considerate when reporting issues!\n"
-			"\n"
-			"To share any info regarding this crash, you can:\n"
-			" - Visit TSoURDt3rd's Gitlab and make an issue report.\n"
-			" - Visit TSoURDt3rd's message board post and make a report.\n"
-			" - Reach out to StarManiaKG on Discord about this error.\n"
-			" - Visit the SRB2 Discord, where you can learn how to submit a crash report.\n"
-			" - Visit the SRB2 Gitlab and make an issue report.\n"
-			"These channels have been linked below.\n"
-			"\n"
-			"Crash reason:\n"
-			"%s",
-		TSoURDt3rd_GenerateFunnyCrashMessage(signum, coredumped),
-		crashdumpfile, logfile,
-		messagefordevelopers
-	);
-
-	// Rudementary word wrapping.
-	// Simple and effective. Does not handle nonuniform letter sizes, etc. but who cares.
-	// We can't use V_WordWrap, which this shares DNA with, because no guarantee
-	// string character graphics exist as reference in the error handler...
-	{
-		size_t max = 0, maxatstart = 0, start = 0, width = 0, i;
-
-		for (i = 0; finalmessage[i]; i++)
-		{
-			if (finalmessage[i] == ' ')
-			{
-				start = i;
-				max += 2;
-				maxatstart = max;
-			}
-			else if (finalmessage[i] == '\n')
-			{
-				if (firstimpressionsline > 0)
-				{
-					firstimpressionsline--;
-					if (firstimpressionsline == 0)
-					{
-						width = max;
-					}
-				}
-				start = 0;
-				max = 0;
-				maxatstart = 0;
-				continue;
-			}
-			else
-				max += 8;
-
-			// Start trying to wrap if presumed length exceeds the space we want.
-			if (width > 0 && max >= width && start > 0)
-			{
-				finalmessage[start] = '\n';
-				max -= maxatstart;
-				start = 0;
-			}
-		}
-	}
-
-	// Set the message box data
-	const SDL_MessageBoxButtonData messagebox_buttons[] = {
-		{ SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 0,		         "OK" },
-		{ 										0, 1,     "TSoURD Gitlab" },
-		{ 										0, 2,     "Message Board" },
-		{ 										0, 3,      "SRB2 Discord" },
-		{ 										0, 4,       "SRB2 Gitlab" },
-	};
-	const SDL_MessageBoxData messagebox_data = {
-		SDL_MESSAGEBOX_ERROR, /* .flags */
-		NULL, /* .window */
-		window_title, /* .title */
-		finalmessage, /* .message */
-		SDL_arraysize(messagebox_buttons), /* .numbuttons */
-		messagebox_buttons, /* .buttons */
-		NULL /* .colorScheme */
-	};
-	int messagebox_buttonid;
-
-	if (!forcesimplebox && (!SDL_ShowMessageBox(&messagebox_data, &messagebox_buttonid))) // Try to implement the message box with SDL_ShowMessageBox.
-	{
-		switch (messagebox_buttonid)
-		{
-			case 1:
-				I_OpenURL("https://git.do.srb2.org/StarManiaKG/The-Story-of-Uncapped-Revengence-Discord-the-3rd/-/issues");
-				break;
-			case 2:
-				I_OpenURL("https://mb.srb2.org/addons/the-story-of-uncapped-revengence-discord-the-3rd.4932/");
-				break;
-			case 3:
-				I_OpenURL("https://www.srb2.org/discord");
-				break;
-			case 4:
-				I_OpenURL("https://git.do.srb2.org/STJr/SRB2/-/issues");
-				break;
-			default:
-				break;
-		}
-	}
-	else
-	{
-		// Implement message box with SDL_ShowSimpleMessageBox,
-		// which should fail gracefully if it can't put a message box up
-		// on the target system
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, window_title, finalmessage, NULL);
-
-		// Note that SDL_ShowSimpleMessageBox does *not* require SDL to be
-		// initialized at the time, so calling it after SDL_Quit() is
-		// perfectly okay! In addition, we do this on purpose so the
-		// fullscreen window is closed before displaying the error message
-		// in case the fullscreen window blocks it for some absurd reason.
-	}
-}
-
-static void I_ReportSignal(int num, int coredumped)
-{
-	char signame[512], sigmsg[512];
-#if defined (UNIX_BACKTRACE)
-	boolean dumpmade = true;
-#elif defined (_WIN32) && defined (HAVE_DRMINGW)
-	boolean dumpmade = IsDrMingwLoaded();
-#elif defined (_WIN32) && defined (HAVE_BUGTRAP)
-	boolean dumpmade = IsBugTrapLoaded();
-#else
-	boolean dumpmade = false;
-#endif
-
-	I_PrintSignal(num, coredumped, signame, sigmsg);
-	I_OutputMsg("Process killed by signal: %s\n", signame);
-
-	BwehHehHe(); // Eggman's ultimate evil plan (cheat) to crash our game worked...
-	I_ShowErrorMessageBox(sigmsg, num, dumpmade, coredumped, false);
-}
 
 #ifndef NEWSIGNALHANDLER
 static ATTRNORETURN void signal_handler(INT32 num)
@@ -749,10 +777,10 @@ static ATTRNORETURN void signal_handler(INT32 num)
 	g_in_exiting_signal_handler = true;
 	D_QuitNetGame(); // Fix server freezes
 	CL_AbortDownloadResume();
-	I_ReportSignal(num, 0);
 #ifdef UNIX_BACKTRACE
 	write_backtrace(num);
 #endif
+	I_ReportSignal(num, 0);
 	signal(num, SIG_DFL); // default signal action
 	raise(num);
 }
@@ -766,6 +794,7 @@ FUNCNORETURN static ATTRNORETURN void quit_handler(int num)
 }
 
 #ifdef HAVE_TERMIOS
+
 // TERMIOS console code from Quake3: thank you!
 SDL_bool stdin_active = SDL_TRUE;
 
@@ -960,6 +989,7 @@ void I_GetConsoleEvents(void)
 }
 
 #elif defined (_WIN32)
+
 static BOOL I_ReadyConsole(HANDLE ci)
 {
 	DWORD gotinput;
@@ -1059,12 +1089,7 @@ static void I_StartupConsole(void)
 
 	if (gotConsole)
 	{
-#if 0
-		SetConsoleTitleA("SRB2 - Console");
-#else
-		// STAR STUFF: tsourdt3rd takeover //
-		SetConsoleTitleA("SRB2 - "TSOURDT3RDVERSIONSTRING" - Console");
-#endif
+		SetConsoleTitleA(TSOURDT3RD_SRB2_APP_SHORT " - Console");
 		consolevent = SDL_TRUE;
 	}
 
@@ -1085,7 +1110,9 @@ static void I_StartupConsole(void)
 	}
 }
 static inline void I_ShutdownConsole(void){}
+
 #else
+
 void I_GetConsoleEvents(void){}
 static inline void I_StartupConsole(void)
 {
@@ -1101,6 +1128,7 @@ static inline void I_StartupConsole(void)
 		consolevent = SDL_FALSE;
 }
 static inline void I_ShutdownConsole(void){}
+
 #endif
 
 //
@@ -1286,8 +1314,8 @@ void I_OutputMsg(const char *fmt, ...)
 	// 2004-03-03 AJR Since not all messages end in newline, some were getting displayed late.
 	if (!framebuffer)
 		fflush(stderr);
-
 #endif
+
 	free(txt);
 }
 
@@ -1991,6 +2019,12 @@ void I_InitJoystick2(void)
 
 static void I_ShutdownInput(void)
 {
+	// StarManiaKG:
+	// Sad to see you go... let's shut down our gamepads now.
+	for (UINT8 i = 0; i < TSOURDT3RD_NUM_GAMEPADS; i++)
+		TSoURDt3rd_I_Pads_SetIndicatorColor(i, 0, 0, 255);
+	TSoURDt3rd_P_Pads_ResetDeviceRumble(-1);
+
 	// Yes, the name is misleading: these send neutral events to
 	// clean up the unplugged joystick's input
 	// Note these methods are internal to this file, not called elsewhere.
@@ -2677,11 +2711,7 @@ ATTRNORETURN static FUNCNORETURN void newsignalhandler_Warn(const char *pr)
 	);
 
 	I_OutputMsg("%s\n", text);
-
-	if (!M_CheckParm("-dedicated"))
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-			"Startup error",
-			text, NULL);
+	I_ShowErrorMessageBox(text, -1, false, false, true);
 
 	I_ShutdownConsole();
 	exit(-1);
@@ -2766,6 +2796,9 @@ INT32 I_StartupSystem(void)
 	 SDLcompiled.major, SDLcompiled.minor, SDLcompiled.patch);
 	I_OutputMsg("Linked with SDL version: %d.%d.%d\n",
 	 SDLlinked.major, SDLlinked.minor, SDLlinked.patch);
+#if SDL_VERSION_ATLEAST(2,0,22)
+	SDL_SetHint(SDL_HINT_APP_NAME, TSOURDT3RD_SRB2_APP_FULL);
+#endif
 	if (SDL_Init(0) < 0)
 		I_Error("SRB2: SDL System Error: %s", SDL_GetError()); //Alam: Oh no....
 #ifndef NOMUMBLE
@@ -2788,6 +2821,7 @@ void I_Quit(void)
 	M_SaveConfig(NULL); //save game config, cvars..
 	D_SaveBan(); // save the ban list
 	G_SaveGameData(clientGamedata); // Tails 12-08-2002
+	G_FreeGameDataList(allClientGamedata); // Star 01-06-2026
 	//added:16-02-98: when recording a demo, should exit using 'q' key,
 	//        but sometimes we forget and use 'F10'.. so save here too.
 
@@ -2795,9 +2829,6 @@ void I_Quit(void)
 		G_CheckDemoStatus();
 	if (metalrecording)
 		G_StopMetalRecording(false);
-
-	// STAR STUFF: sad to see you go... let's shut down our stuff now. //
-	TSoURDt3rd_I_ShutdownSystem();
 
 	D_QuitNetGame();
 	CL_AbortDownloadResume();
@@ -2856,10 +2887,19 @@ static boolean shutdowning = false;
 void I_Error(const char *error, ...)
 {
 	va_list argptr;
-	char buffer[8192];
+	char *buffer;
 	const char *error_string = "\nI_Error(): %s\n\n";
+	size_t buflen;
 
-	// Grab the error we're crashing with
+	// Get the total size of our error message
+	va_start(argptr, error);
+	buflen = vsnprintf(NULL, 0, error, argptr);
+	va_end(argptr);
+
+	// Get the error message, so we can explain why we're crashing
+	// But, do it properly by using the malloc function!
+	// (stop abusing the stackbuffer ffs ヽ(。_°)ノ)
+	buffer = malloc(buflen+1);
 	va_start(argptr, error);
 	vsprintf(buffer, error, argptr);
 	va_end(argptr);
@@ -2896,11 +2936,16 @@ void I_Error(const char *error, ...)
 		{
 			M_SaveConfig(NULL);
 			G_SaveGameData(clientGamedata);
+			G_FreeGameDataList(allClientGamedata);
 		}
 		if (errorcount > 20)
 		{
 			I_OutputMsg(error_string, buffer);
+#ifdef UNIX_BACKTRACE
+			write_backtrace(-1);
+#endif
 			I_ShowErrorMessageBox(buffer, -1, false, false, true);
+			free(buffer);
 			W_Shutdown();
 			exit(-1); // recursive errors detected
 		}
@@ -2914,6 +2959,7 @@ void I_Error(const char *error, ...)
 	M_SaveConfig(NULL); // save game config, cvars..
 	D_SaveBan(); // save the ban list
 	G_SaveGameData(clientGamedata); // Tails 12-08-2002
+	G_FreeGameDataList(allClientGamedata); // Star 01-05-2026
 
 	// Shutdown. Here might be other errors.
 	if (demorecording)
@@ -2925,19 +2971,19 @@ void I_Error(const char *error, ...)
 	CL_AbortDownloadResume();
 	M_FreePlayerSetupColors();
 
-	// STAR STUFF: sad to see you go... let's shut down our stuff now. //
-	TSoURDt3rd_I_ShutdownSystem();
-
 	S_StopMusic();
 	I_ShutdownMusic();
 	I_ShutdownGraphics();
 	I_ShutdownInput();
 
-	I_ShowErrorMessageBox(buffer, -1, false, false, false);
-
 #ifdef UNIX_BACKTRACE
 	write_backtrace(-1);
 #endif
+
+	// Display error message on-screen to conclude the shutting down process
+	I_ShowErrorMessageBox(buffer, -1, false, false, false);
+	free(buffer);
+	// ---
 
 	// We wait until now to do this so the funny sound can be heard
 	S_StopSounds();
@@ -3167,20 +3213,17 @@ INT32 I_mkdir(const char *dirname, INT32 unixright)
 
 char *I_GetEnv(const char *name)
 {
-#ifdef NEED_SDL_GETENV
-	return SDL_getenv(name);
-#else
-	return getenv(name);
-#endif
+	char *env = SDL_getenv(name);
+	if (env == NULL)
+	{
+		env = getenv(name);
+	}
+	return env;
 }
 
 INT32 I_PutEnv(char *variable)
 {
-#ifdef NEED_SDL_GETENV
-	return SDL_putenv(variable);
-#else
 	return putenv(variable);
-#endif
 }
 
 size_t I_GetRandomBytes(char *destination, size_t count)
@@ -3344,10 +3387,17 @@ static const char *locateWad(void)
 	const char *WadPath;
 	int i;
 
-	I_OutputMsg("SRB2WADDIR");
 	// does SRB2WADDIR exist?
+	I_OutputMsg("$SRB2WADDIR: ");
 	if (((envstr = I_GetEnv("SRB2WADDIR")) != NULL) && isWadPathOk(envstr))
+	{
+		I_OutputMsg("%s", envstr);
 		return envstr;
+	}
+	else
+	{
+		I_OutputMsg("(not defined)");
+	}
 
 #ifndef NOCWD
 	// examine current dir
@@ -3371,7 +3421,7 @@ static const char *locateWad(void)
 
 #ifndef NOHOME
 	// find in $HOME
-	I_OutputMsg(",HOME/" DEFAULTDIR);
+	I_OutputMsg(",$HOME/" DEFAULTDIR);
 	if ((envstr = I_GetEnv("HOME")) != NULL)
 	{
 		char *tmp = malloc(strlen(envstr) + 1 + sizeof(DEFAULTDIR));

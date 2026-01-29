@@ -8,3 +8,8 @@ endif()
 if(TSOURDT3RD_CONFIG_ENABLE_DISCORDRPC)
 	add_subdirectory(discord-rpc)
 endif()
+if(TSOURDT3RD_CONFIG_ENABLE_DISCORDGAMESDK)
+	add_subdirectory(discord_game_sdk)
+endif()
+
+add_subdirectory(stb)

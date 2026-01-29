@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
 //
-// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2026 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -34,6 +34,7 @@
 #include "../smkg-cvars.h"
 #include "../star_vars.h"
 
+#include "../../i_system.h"
 #include "../../d_event.h"
 #include "../../d_main.h" // srb2path & srb2home
 #include "../../m_argv.h"
@@ -79,9 +80,9 @@ void TSoURDt3rd_I_Pads_InitControllers(void)
 		controller_data->real_id = 0;
 		controller_data->name = NULL;
 	}
-	if (M_CheckParm("-nojoy") || M_CheckParm("-tsourdt3rd_nogamepadrefactor"))
+	if (M_CheckParm("-nojoy") || M_CheckParm("-nogamepadrefactor") || M_CheckParm("-tsourdt3rd_nogamepadrefactor"))
 		return;
-	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD, "TSoURDt3rd_I_Pads_InitControllers()...\n");
+	STAR_CONS_Printf(STAR_CONS_NONE, "TSoURDt3rd_I_Pads_InitControllers()...\n");
 
 	for (i = 0; gamecontrollerdb_paths[i] != NULL; i++)
 	{
@@ -119,10 +120,7 @@ void TSoURDt3rd_I_Pads_InitControllers(void)
 
 	if (SDL_InitSubSystem(TSOURDT3RD_GAMEPAD_INIT_FLAGS) == -1)
 	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD,
-			M_GetText("TSoURDt3rd_I_Pads_InitControllers() - Couldn't initialize game controllers: %s\n"),
-			SDL_GetError()
-		);
+		STAR_CONS_Printf(STAR_CONS_NONE, M_GetText("TSoURDt3rd_I_Pads_InitControllers() - Couldn't initialize game controllers: %s\n"), SDL_GetError());
 		return;
 	}
 
@@ -190,15 +188,16 @@ void TSoURDt3rd_I_Pads_Rumble(INT32 device_id, fixed_t low_strength, fixed_t hig
 	controller_data->rumble.large_magnitude = large_magnitude;
 	controller_data->rumble.duration = duration;
 
-#if 0
-	STAR_CONS_Printf(STAR_CONS_DEBUG, "Starting rumble effect for controller %d:\n", controller_data->id);
-	STAR_CONS_Printf(STAR_CONS_DEBUG, "* - Small motor magnitude: %f\n", controller_data->rumble.small_magnitude / 65535.0f);
-	STAR_CONS_Printf(STAR_CONS_DEBUG, "* - Large motor magnitude: %f\n", controller_data->rumble.large_magnitude / 65535.0f);
-	if (!duration)
-		STAR_CONS_Printf(STAR_CONS_DEBUG, "Duration: forever\n");
-	else
-		STAR_CONS_Printf(STAR_CONS_DEBUG, "Duration: %dms\n", controller_data->rumble.duration);
-#endif
+	if (cv_debug & DBG_PLAYER)
+	{
+		STAR_CONS_Printf(STAR_CONS_DEBUG, "Starting rumble effect for controller %d:\n", controller_data->id);
+		STAR_CONS_Printf(STAR_CONS_DEBUG, "* - Small motor magnitude: %f\n", controller_data->rumble.small_magnitude / 65535.0f);
+		STAR_CONS_Printf(STAR_CONS_DEBUG, "* - Large motor magnitude: %f\n", controller_data->rumble.large_magnitude / 65535.0f);
+		if (!duration)
+			STAR_CONS_Printf(STAR_CONS_DEBUG, "Duration: forever\n");
+		else
+			STAR_CONS_Printf(STAR_CONS_DEBUG, "Duration: %dms\n", controller_data->rumble.duration);
+	}
 
 	if (controller_data->game_device)
 		SDL_GameControllerRumble(controller_data->game_device, controller_data->rumble.small_magnitude, controller_data->rumble.large_magnitude, controller_data->rumble.duration);
@@ -237,15 +236,16 @@ void TSoURDt3rd_I_Pads_RumbleTriggers(INT32 device_id, fixed_t left_strength, fi
 	controller_data->trigger_rumble.left_magnitude = right_magnitude;
 	controller_data->trigger_rumble.duration = duration;
 
-#if 0
-	STAR_CONS_Printf(STAR_CONS_DEBUG, "Starting rumble effect for controller %d:\n", controller_data->id);
-	STAR_CONS_Printf(STAR_CONS_DEBUG, "* - Left trigger motor magnitude: %f\n", controller_data->trigger_rumble.left_magnitude / 65535.0f);
-	STAR_CONS_Printf(STAR_CONS_DEBUG, "* - Right trigger motor magnitude: %f\n", controller_data->trigger_rumble.right_magnitude / 65535.0f);
-	if (!controller_data->trigger_rumble.duration)
-		STAR_CONS_Printf(STAR_CONS_DEBUG, "Duration: forever\n");
-	else
-		STAR_CONS_Printf(STAR_CONS_DEBUG, "Duration: %dms\n", controller_data->trigger_rumble.duration);
-#endif
+	if (cv_debug & DBG_PLAYER)
+	{
+		STAR_CONS_Printf(STAR_CONS_DEBUG, "Starting rumble effect for controller %d:\n", controller_data->id);
+		STAR_CONS_Printf(STAR_CONS_DEBUG, "* - Left trigger motor magnitude: %f\n", controller_data->trigger_rumble.left_magnitude / 65535.0f);
+		STAR_CONS_Printf(STAR_CONS_DEBUG, "* - Right trigger motor magnitude: %f\n", controller_data->trigger_rumble.right_magnitude / 65535.0f);
+		if (!controller_data->trigger_rumble.duration)
+			STAR_CONS_Printf(STAR_CONS_DEBUG, "Duration: forever\n");
+		else
+			STAR_CONS_Printf(STAR_CONS_DEBUG, "Duration: %dms\n", controller_data->trigger_rumble.duration);
+	}
 
 	if (controller_data->game_device)
 		SDL_GameControllerRumbleTriggers(controller_data->game_device, controller_data->trigger_rumble.left_magnitude, controller_data->trigger_rumble.right_magnitude, controller_data->trigger_rumble.duration);
@@ -261,19 +261,17 @@ void TSoURDt3rd_I_Pads_RumbleTriggers(INT32 device_id, fixed_t left_strength, fi
 void TSoURDt3rd_I_CursedWindowMovement(int xd, int yd)
 {
 	SDL_SetWindowPosition(window, window_x + xd, window_y + yd);
+	I_UpdateMouseGrab();
 }
 
 void TSoURDt3rd_I_QuakeWindow(int xd, int yd)
 {
-	if (!cv_tsourdt3rd_video_sdl_window_shaking.value || cv_fullscreen.value || (window_x == -1 || window_y == -1))
+	if (quake.time <= 1)
 	{
-#if 0
-		SDL_SetWindowPosition(window,
-			SDL_WINDOWPOS_CENTERED_DISPLAY(SDL_GetWindowDisplayIndex(window)),
-			SDL_WINDOWPOS_CENTERED_DISPLAY(SDL_GetWindowDisplayIndex(window))
-		);
-#endif
 		SDL_GetWindowPosition(window, &window_x, &window_y);
+	}
+	if (!cv_tsourdt3rd_video_sdl_window_shaking.value || cv_fullscreen.value)
+	{
 		return;
 	}
 	TSoURDt3rd_I_CursedWindowMovement(xd, yd);
@@ -364,7 +362,7 @@ const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean coredum
 						case 5: jokemsg = "Oops!"; break;
 						case 6: jokemsg = "Uh oh!"; break;
 
-						default: jokemsg = "\t\t\tTRY AGAIN!!\n\n\t\t(X) YES\t\t      (O) NO\t\t\t\t"; break;
+						default: jokemsg = "TRY AGAIN!!\n(X) YES\t(O) NO"; break;
 					}
 					break;
 				}
@@ -387,7 +385,7 @@ const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean coredum
 						case 9: jokemsg = "Nuh uh, nuh uh, no way!"; break;
 
 						case 10: jokemsg = "Whatcha gonna do, when they come?"; break;
-						case 11: jokemsg = "I gotta redeem!\nI gotta relieve!\nI gotta receive!\nI GOTTA BELIEVE!"; break;
+						case 11: jokemsg = "I gotta redeem! I gotta relieve! I gotta receive!\nBut most important:\nI GOTTA BELIEVE!"; break;
 						case 12: jokemsg = "Breakin' out was the name of the game for me, you, you, You, and YOU!"; break;
 						default: jokemsg = "Somebody say ho! Say ho ho! Say ho ho ho! Now scream!\nEverybody say ho! Say ho ho! Say ho ho ho! Now scream!"; break;
 					}
@@ -455,17 +453,6 @@ const char *TSoURDt3rd_GenerateFunnyCrashMessage(INT32 crashnum, boolean coredum
 	return jokemsg;
 }
 
-//
-// void TSoURDt3rd_I_ShutdownSystem(void)
-// Some exclusive TSoURDt3rd things to run when shutting down SRB2.
-//
-void TSoURDt3rd_I_ShutdownSystem(void)
-{
-	I_OutputMsg("TSoURDt3rd_I_ShutdownSystem() - Shutting down TSoURDt3rd...\n");
-
-	for (UINT8 i = 0; i < TSOURDT3RD_NUM_GAMEPADS; i++)
-		TSoURDt3rd_I_Pads_SetIndicatorColor(i, 0, 0, 255);
-	TSoURDt3rd_P_Pads_ResetDeviceRumble(-1);
-}
+#else // HAVE_SDL
 
 #endif // HAVE_SDL
