@@ -1,6 +1,9 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
-// Copyright (C) 2020-2023 by Lactozilla.
+// Copyright (C) 2025-2026 by StarManiaKG.
+// Copyright (C) 2025 by Kart Krew.
+// Copyright (C) 2020-2023 by Jaime "Lactozilla" Passos.
+// Copyright (C) 2020-2023 by Sonic Team Junior.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -19,25 +22,25 @@
 fixed_t rollcosang[ROTANGLES];
 fixed_t rollsinang[ROTANGLES];
 
-angle_t R_ModelRotationAngle(interpmobjstate_t *interp)
+angle_t R_GetPitchRollAngle(mobj_t *mobj, player_t *viewPlayer)
 {
-	return interp->spriteroll;
-}
-
-angle_t R_SpriteRotationAngle(interpmobjstate_t *interp)
-{
-#if 0
-	angle_t viewingAngle = R_PointToAngle(interp->x, interp->y);
-
+	angle_t viewingAngle = R_PointToAnglePlayer(viewPlayer, mobj->x, mobj->y);
 	fixed_t pitchMul = -FINESINE(viewingAngle >> ANGLETOFINESHIFT);
 	fixed_t rollMul = FINECOSINE(viewingAngle >> ANGLETOFINESHIFT);
+	angle_t rollOrPitch = FixedMul(mobj->pitch, pitchMul) + FixedMul(mobj->roll, rollMul);
+	return rollOrPitch;
+}
 
-	angle_t rollOrPitch = FixedMul(interp->pitch, pitchMul) + FixedMul(interp->roll, rollMul);
+angle_t R_ModelRotationAngle(mobj_t *mobj, player_t *viewPlayer)
+{
+	(void)viewPlayer;
+	return mobj->spriteroll;
+}
 
-	return (rollOrPitch + R_ModelRotationAngle(interp));
-#else
-	return R_ModelRotationAngle(interp);
-#endif
+angle_t R_SpriteRotationAngle(mobj_t *mobj, player_t *viewPlayer)
+{
+	angle_t rollOrPitch = R_GetPitchRollAngle(mobj, viewPlayer);
+	return (rollOrPitch + R_ModelRotationAngle(mobj, viewPlayer));
 }
 
 INT32 R_GetRollAngle(angle_t rollangle)
@@ -314,4 +317,4 @@ void RotatedPatch_DoRotation(rotsprite_t *rotsprite, patch_t *patch, INT32 angle
 	rotated->leftoffset = ox;
 	rotated->topoffset = oy;
 }
-#endif
+#endif // ROTSPRITE
