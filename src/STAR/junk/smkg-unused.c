@@ -27,47 +27,225 @@
 //        Functions
 // ------------------------ //
 
+// ======================
+// LIGHTING
+// ======================
+
+#include "../w_wad.h"
+void HWR_Init_Light(const char *light_patch)
+{
+	CONS_Printf("HWR_Init_Light()...\n");
+
+	// Ensure the patch exists
+	//corona_lumpnum = W_CheckNumForPatchName(light_patch); // DEFAULT: OFF (crashes game)
+	//corona_lumpnum = W_CheckNumForName(light_patch);
+	corona_lumpnum = W_GetNumForName(light_patch);
+	if (corona_lumpnum == LUMPERROR)
+	{
+		CONS_Alert(CONS_WARNING, "HWR_Init_Light() - Specified corona lump '%s' not found!\n", light_patch);
+		return;
+	}
+
+	// Load the corona patch, change its zone tag, and ensure it's valid
+
+//#define OH_MY_GOODNESS
+//#define TEST_PATCH
+
+#ifndef TEST_PATCH
+	corona_patch = HWR_GetCachedGLPatch(corona_lumpnum);
+	//corona_patch = (patch_t *)W_CachePatchNum(W_GetNumForName(light_patch), PU_CACHE);
+	//corona_patch = (patch_t *)W_CachePatchName(light_patch, PU_CACHE); // PU_CACHE // PU_SPRITE // PU_PATCH
+
+#if 0
+	//CONS_Printf("isdoompatch is %d\n", Picture_CheckIfDoomPatch(corona_patch));
+
+#if 1
+	#if 0
+		#define WIDTH SHORT(corona_patch->width)
+		#define HEIGHT SHORT(corona_patch->height)
+	#else
+		#define WIDTH corona_patch->width
+		#define HEIGHT corona_patch->height
+	#endif
+	#define TOPOFFSET corona_patch->topoffset
+	#define LEFTOFFSET corona_patch->leftoffset
+#else
+	#define WIDTH 0
+	#define HEIGHT 0
+	#define TOPOFFSET 0
+	#define LEFTOFFSET 0
+#endif
+	INT32 inflags = PICFMT_FLAT32; // PICFMT_DOOMPATCH // PICFMT_FLAT32
+	INT32 outflags = PICFMT_PATCH; // PICFMT_PATCH // PICFMT_FLAT32 // PICFMT_DOOMPATCH
+	INT32 flags = PICFLAGS_USE_TRANSPARENTPIXEL; // PICFLAGS_USE_TRANSPARENTPIXEL
+
+	void *realpatch = Picture_PatchConvert(inflags, 0, corona_patch, outflags, NULL, WIDTH, HEIGHT, TOPOFFSET, LEFTOFFSET, flags);
+	if (realpatch)
+	{
+		CONS_Printf("patch exists\n");
+#if 1
+		Z_SetUser(realpatch, (void **)&corona_patch);
+#else
+		corona_patch = realpatch;
+#endif
+		//Z_ChangeTag(realpatch, PU_HWRCACHE_UNLOCKED);
+		//Z_Free(realpatch);
+	}
+	else
+		CONS_Printf("patch no exists\n");
+#endif
+
+#else
+	//patch_t *test_patch = HWR_GetCachedGLPatch(corona_lumpnum);
+	patch_t *test_patch = (patch_t *)W_CachePatchName(CORONA_PATCH, PU_CACHE); // PU_CACHE // PU_SPRITE // PU_PATCH
+#endif
+#ifdef OH_MY_GOODNESS
+	UINT32 lumpnum = (UINT32)corona_lumpnum;
+	lumpcache_t *lumpcache = wadfiles[WADFILENUM(lumpnum)]->patchcache[LUMPNUM(lumpnum)];
+#endif
+	if (
+#ifdef OH_MY_GOODNESS
+		!lumpcache ||
+#endif
+#ifndef TEST_PATCH
+		!corona_patch ||
+		!corona_patch->hardware
+#else
+		!test_patch ||
+		!test_patch->hardware
+#endif
+	)
+	{
+		CONS_Alert(CONS_ERROR, "HWR_Init_Light() - Failed to load corona patch '%s'!\n", light_patch);
+#ifndef TEST_PATCH
+		Z_Free(corona_patch);
+		corona_patch = NULL;
+#else
+		Z_Free(test_patch);
+		test_patch = NULL;
+#endif
+		return;
+	}
+
+	const size_t tag = PU_CACHE; // PU_CACHE // PU_SPRITE // PU_PATCH // PU_HWRCACHE // PU_STATIC
+
+#ifdef OH_MY_GOODNESS
+	Z_ChangeTag(lumpcache[lumpnum], tag);
+	Z_SetUser(ptr, &lumpcache[lump]);
+#endif
+
+#ifdef TEST_PATCH
+	size_t len = W_LumpLengthPwad(WADFILENUM(lumpnum), LUMPNUM(lumpnum));
+	void *test_void = Z_Malloc(len, PU_STATIC, NULL);
+
+	Z_ChangeTag(test_patch, tag);
+	//Z_SetUser((void *)test_patch, &test_void);
+	//Z_SetUser((void *)test_patch, (void **)&corona_patch);
+	//Z_Free(test_patch);
+	//Z_ChangeTag(test_patch, tag);
+
+	//Z_ChangeTag(test_void, tag);
+	//corona_patch = (patch_t *)test_void;
+
+	corona_patch = (patch_t *)test_patch;
+	//Z_SetUser(test_void, (void **)&corona_patch);
+	//Z_ChangeTag(corona_patch, tag);
+	//Z_ChangeTag(corona_gl_patch, tag);
+
+	//Z_ChangeTag(test_void, tag);
+
+	if (test_void) { Z_Free(test_void); test_void = NULL; }
+	//if (test_patch) { Z_Free(test_patch); test_patch = NULL; }
+
+	if (!corona_patch || !corona_patch->hardware)
+	{
+		CONS_Alert(CONS_ERROR, "HWR_Init_Light() - Failed to load corona patch '%s'!\n", light_patch);
+		Z_Free(corona_patch);
+		corona_patch = NULL;
+		corona_lumpnum = LUMPERROR;
+		return;
+	}
+#else
+#if 1
+	Z_ChangeTag(corona_patch, tag);
+	Z_ChangeTag(corona_patch->hardware, tag);
+	//corona_gl_patch->mipmap = Z_Calloc(sizeof(GLMipmap_t), PU_HWRPATCHINFO, NULL);
+
+	//Z_ChangeTag(ptr, tag);
+	//Z_SetUser(ptr, &lumpcache[lump]);
+	//Z_Free(lumpdata);
+#endif
+#endif
+
+	//HWR_GetPatch(corona_patch);
+	//corona_gl_patch = (GLPatch_t *)corona_patch->hardware;
+	corona_gl_patch = (GLPatch_t *)Patch_AllocateHardwarePatch(corona_patch);
+
+#if 0
+	Z_Free(corona_gl_patch->mipmap);
+	//corona_gl_patch->mipmap = Z_Calloc(sizeof(GLMipmap_t), PU_HWRPATCHINFO, NULL);
+	corona_gl_patch->mipmap = Z_Calloc(sizeof(GLMipmap_t), PU_HWRPATCHINFO, &corona_gl_patch->mipmap);
+#endif
+	CONS_Printf("HWR_Init_Light() - 1.5\n");
+
+	// Ensure mipmap exists and is valid
+	if (!corona_gl_patch->mipmap)
+	{
+		CONS_Alert(CONS_ERROR, "HWR_Init_Light() - Mipmap not initialized for corona patch '%s'!\n", light_patch);
+		Z_Free(corona_gl_patch); Z_Free(corona_patch);
+		corona_gl_patch = NULL; corona_patch = NULL;
+		corona_lumpnum = LUMPERROR;
+		return;
+	}
+
+	corona_gl_patch->mipmap->downloaded = 0;
+
+#if 0
+	const INT16 texSize = 128;
+	corona_patch->width = corona_patch->height = (INT16)texSize;
+	corona_gl_patch->mipmap->width = corona_gl_patch->mipmap->height = (UINT16)texSize;
+#endif
+
+#if 0
+	if (corona_gl_patch->mipmap->data)
+	{
+		Z_Free(corona_gl_patch->mipmap->data);
+		corona_gl_patch->mipmap->data = NULL;
+	}
+#endif
+
+#if 0
+	CONS_Printf("width is %d, downloaded is %d\n", corona_gl_patch->mipmap->width, corona_gl_patch->mipmap->downloaded);
+#if 0
+	HWR_MakePatch(corona_patch, corona_gl_patch, corona_gl_patch->mipmap, true);
+	Z_ChangeTag(corona_patch, tag);
+	Z_ChangeTag(corona_patch->hardware, tag);
+	Z_ChangeTag(corona_gl_patch->mipmap, tag); // PU_HWRPATCHINFO // tag
+#endif
+#endif
+
+	//HWR_SetLight();
+
+	// Precompute squared radius for all dynamic lights
+#if 1
+	for (size_t i = 0; i < NUMLIGHTS; i++)
+	{
+		lspr[i].dynamic_sqrradius = (lspr[i].dynamic_radius * lspr[i].dynamic_radius);
+	}
+#else
+	int i;
+	for (i = 0; i < NUMLIGHTS; i++)
+	{
+		light_t *p_lspr = &lspr[i];
+		p_lspr->dynamic_sqrradius = (p_lspr->dynamic_radius * p_lspr->dynamic_radius);
+	}
+#endif
+	CONS_Printf("HWR_Init_Light()...\n");
+}
+
 // ===================
 // NUMBERS AND STRINGS
 // ===================
-
-//
-// char *STAR_ConvertNumberToString(INT32 NUMBER, INT32 startIFrom, INT32 startJFrom, boolean turnIntoVersionString)
-// Converts Strings to Compressed Numbers
-//
-// Example of a Possible Return:
-//	NUMBER == 280, turnIntoVersionString = true		=	Returned String = '2.8.0'
-//	NUMBER == 271, turnIntoVersionString = false	=	Returned String = '271'
-//
-char finalNumberString[256] = "";
-
-char *STAR_ConvertNumberToString(INT32 NUMBER, INT32 startIFrom, INT32 startJFrom, boolean turnIntoVersionString)
-{
-	// Make Variables //
-	INT32 i = startIFrom, j = startJFrom;
-	char convertedNumberString[256] = ""; sprintf(convertedNumberString, "%d", NUMBER);
-
-	// Initialize the Main String, and Iterate Through Our Two Strings //
-	if (turnIntoVersionString)
-	{
-		while (convertedNumberString[j] != '\0')
-		{
-			finalNumberString[i] = convertedNumberString[j];
-			i++; j++;
-
-			if (convertedNumberString[j] != '\0') // Prevents an Extra Dot From Being Added at the End
-			{
-				finalNumberString[i] = '.';
-				i++;
-			}
-		}
-	}
-	else
-		strcpy(finalNumberString, convertedNumberString);
-
-	// Return Our Converted String and We're Done! //
-	return finalNumberString;
-}
 
 //
 // INT32 STAR_ConvertNumberToStringAndBack(INT32 NUMBER, INT32 startI1From, INT32 startJ1From, INT32 startI2From, INT32 startJ2From, boolean turnIntoVersionString, boolean turnIntoVersionNumber)
@@ -339,7 +517,7 @@ static menuitem_t MP_ExtendedServerPropertyMenu[] = {
 // Servers //
 static void STAR_InitializeExtendedServerPropertyMenu(INT32 choice)
 {
-	STAR_ServerToExtend = choice-FIRSTSERVERLINE + serverlistpage * SERVERS_PER_PAGE;	
+	STAR_ServerToExtend = choice-FIRSTSERVERLINE + serverlistpage * SERVERS_PER_PAGE;
 
 	M_Connect(choice);
 	//M_SetupNextMenu(&MP_ExtendedServerPropertyDef);
@@ -362,12 +540,12 @@ static void STAR_DrawExtendedServerPropertyMenu(void)
 		V_DrawSmallString(currentMenu->x+222, 8, globalflags, "\x83" "Cheats");
 
 	V_DrawSmallString(currentMenu->x, 8, globalflags,
-		                   va("Ping: %u", (UINT32)LONG(serverlist[STAR_ServerToExtend].info.time)));
+						   va("Ping: %u", (UINT32)LONG(serverlist[STAR_ServerToExtend].info.time)));
 
 	gt = serverlist[STAR_ServerToExtend].info.gametypename;
 
 	V_DrawSmallString(currentMenu->x+46, 24, globalflags,
-	                         va("Players: %02d/%02d", serverlist[STAR_ServerToExtend].info.numberofplayer, serverlist[STAR_ServerToExtend].info.maxplayer));
+							 va("Players: %02d/%02d", serverlist[STAR_ServerToExtend].info.numberofplayer, serverlist[STAR_ServerToExtend].info.maxplayer));
 
 	if (strlen(gt) > 11)
 		gt = va("Gametype: %.11s...", gt);
@@ -394,13 +572,13 @@ static void STAR_HandleExtendedServerPropertyMenu(INT32 choice)
 		default:
 			break;
 	}
-	
+
 	if (exitmenu)
 	{
 		if (currentMenu->prevMenu == &MP_ConnectDef)
 			M_SetupNextMenu(currentMenu->prevMenu);
 		else
-			M_ClearMenus();	
+			M_ClearMenus();
 	}
 }
 
@@ -705,7 +883,7 @@ void R_DrawViewBorder(void)
 	ofs = top*vid.width + vid.width-side;
 	side <<= 1;
 
-    // simpler using our VID_Blit routine
+	// simpler using our VID_Blit routine
 	VID_BlitLinearScreen(screens[1] + ofs, screens[0] + ofs, side, viewheight - 1,
 		vid.width, vid.width);
 }
