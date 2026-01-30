@@ -11,6 +11,7 @@
 
 #include "../smkg-cvars.h"
 #include "../ss_main.h"
+#include "../core/smkg-s_exmusic.h"
 #include "../core/smkg-s_jukebox.h"
 #include "../menus/smkg-m_sys.h" // menumessage //
 
@@ -221,9 +222,9 @@ OP_MouseOptionsMenu
 	{IT_STRING | IT_CVAR, NULL, "Rat Move",       &cv_mousemove,        50},
 	{IT_STRING | IT_CVAR, NULL, "Invert Y Axis",     &cv_invertmouse,      60},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-						  NULL, "Rat X Sensitivity",    &cv_mousesens,        70},
+						  NULL, "Rat X Sensitivity",    &cv_mousesens[0],        70},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-						  NULL, "Rat Y Sensitivity",    &cv_mouseysens,        80},
+						  NULL, "Rat Y Sensitivity",    &cv_mouseysens[0],        80},
 
 OP_Mouse2OptionsMenu
 	{IT_STRING | IT_CVAR, NULL, "Use Rat 2",      &cv_usemouse2,        10},
@@ -234,9 +235,9 @@ OP_Mouse2OptionsMenu
 	{IT_STRING | IT_CVAR, NULL, "Rat Move",       &cv_mousemove2,       50},
 	{IT_STRING | IT_CVAR, NULL, "Invert Y Axis",     &cv_invertmouse2,     60},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-						  NULL, "Mouse X Sensitivity",    &cv_mousesens2,       70},
+						  NULL, "Mouse X Sensitivity",    &cv_mousesens[1],       70},
 	{IT_STRING | IT_CVAR | IT_CV_SLIDER,
-						  NULL, "Mouse Y Sensitivity",    &cv_mouseysens2,      80},
+						  NULL, "Mouse Y Sensitivity",    &cv_mouseysens[1],      80},
 
 OP_CameraOptionsMenu
 	{IT_HEADER,            NULL, "General Toggles", NULL, 0},
@@ -495,6 +496,27 @@ boolean TSoURDt3rd_AprilFools_ModeEnabled(void)
 }
 
 //
+// void TSoURDt3rd_AprilFools_ManageSaveData(void)
+//
+// If we're in April Fools' "Ultimate Mode", this allow us to use savefiles, but not save *onto* them.
+// Effectively saves the user's data from themselves.
+//
+void TSoURDt3rd_AprilFools_ManageSaveData(void)
+{
+	if (!TSoURDt3rd_AprilFools_ModeEnabled())
+		return;
+
+	cursaveslot = NOSAVESLOT;
+
+	const char *text1 = "You have the April Fools features enabled.";
+	const char *text2 = "Therefore, to prevent errors, this savefile will not save until you turn this mode off.";
+	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_APRILFOOLS|STAR_CONS_WARNING, text1, " ", text2);
+
+	const char *combined_text = va("%s\n%s", text1, text2);
+	TSoURDt3rd_M_StartPlainMessage("Important TSoURDt3rd Notice", combined_text);
+}
+
+//
 // void TSoURDt3rd_AprilFools_StoreDefaultMenuStrings(void)
 // Stores the default menu title strings in the 'defaultMenuTitles' table.
 //
@@ -526,7 +548,7 @@ static void AprilFools_ChangeMenus(void)
 
 	if (menuactive)
 	{
-		M_ClearMenus(true);
+		M_ClearMenus();
 		if (!Playing())
 			D_StartTitle();
 	}
@@ -563,6 +585,7 @@ static void AprilFools_ChangeMenus(void)
 	MainMenu[4].text						= "Settings";
 	MainMenu[5].text						= "EXIT TO DOS";
 	MainMenu[6].text 						= "DOOM EASTER EGG THING!";
+
 	// SP Main Menu
 	SP_MainMenu[0].text						= "GO!!";
 	SP_MainMenu[1].text 					= "sonic runners";
@@ -570,6 +593,7 @@ static void AprilFools_ChangeMenus(void)
 	SP_MainMenu[3].text						= "super mario run";
 	SP_MainMenu[4].text						= "how do i jump";
 	SP_MainMenu[5].text						= "are we there yet";
+
 	// MP Pause
 	MPauseMenu[0].text						= "Plugins...";
 	MPauseMenu[1].text						= "Scramble Groups...";
@@ -588,6 +612,7 @@ static void AprilFools_ChangeMenus(void)
 	MPauseMenu[12].text						= MainMenu[4].text;
 	MPauseMenu[13].text						= "Leave Group";
 	MPauseMenu[14].text						= MainMenu[5].text;
+
 	// SP Pause
 	SPauseMenu[0].text 						= "Mods";
 	SPauseMenu[1].text						= "Enable Hacks";
@@ -613,16 +638,8 @@ void TSoURD3rd_AprilFools_OnChange(void)
 
 	if (TSoURDt3rd_AprilFools_ModeEnabled() && cursaveslot > NOSAVESLOT && !netgame)
 	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_APRILFOOLS|STAR_CONS_WARNING, "You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nthis savefile will not save until you turn this mode off.\n");
-		TSoURDt3rd_M_StartMessage(
-			"Important TSoURDt3rd Notice",
-			"You have the April Fools features enabled.\nTherefore, to prevent dumb things from happening,\nthis savefile will not save until you turn this mode off.",
-			NULL,
-			MM_NOTHING,
-			NULL,
-			NULL
-		);
-		cursaveslot = NOSAVESLOT;
+		// Fix save data...
+		TSoURDt3rd_AprilFools_ManageSaveData();
 	}
 
 	S_StopMusic();

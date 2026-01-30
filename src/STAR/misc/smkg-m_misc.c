@@ -349,7 +349,7 @@ void TSoURDt3rd_FIL_CreateSavefileProperly(void)
 	strcatbf(savegamename, tsourdt3rd_savefile_dir, tsourdt3rd_savedata_prefix);
 	strcatbf(liveeventbackup, tsourdt3rd_savefile_dir, tsourdt3rd_savedata_prefix);
 
-#ifdef TSOURDT3RD_DEBUGGING
+#ifdef _TSOURDT3RD_DEBUGGING
 	// print debugging stuff
 	STAR_CONS_Printf(STAR_CONS_DEBUG, "\nTSOURDT3RD SAVEFILENAME & SAVEFOLDER\n");
 	STAR_CONS_Printf(STAR_CONS_DEBUG, "\t - savegamename: %s\n",            savegamename);

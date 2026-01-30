@@ -34,6 +34,7 @@ static const char *hardcoded_files[] = {
 	"patch.pk3",
 #endif
 	"tsourdt3rd.pk3",
+	"tsourdt3rd_music.pk3"
 	"jukebox.pk3",
 };
 
