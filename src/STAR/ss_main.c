@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2026 by StarManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -36,16 +36,9 @@
 #include "../discord/discord.h"
 #endif
 
-#ifdef HAVE_SDL
-#include "smkg-i_sys.h" // TSoURDt3rd_I_Pads_InitControllers() //
-#endif
-
 // ------------------------ //
 //        Variables
 // ------------------------ //
-
-tsourdt3rd_t tsourdt3rd[MAXPLAYERS];
-struct tsourdt3rd_local_s tsourdt3rd_local;
 
 tsourdt3rd_timedEvent_t tsourdt3rd_currentEvent = TSOURDT3RD_EVENT_NONE;
 struct tsourdt3rd_loadingscreen_s tsourdt3rd_loadingscreen;
@@ -53,47 +46,11 @@ struct tsourdt3rd_loadingscreen_s tsourdt3rd_loadingscreen;
 static saveinfo_t* cursave = NULL;
 
 INT32 STAR_ServerToExtend = 0;
-INT32 DefaultMapTrack = 0;
 boolean SpawnTheDispenser = false;
 
 // ------------------------ //
 //        Functions
 // ------------------------ //
-
-void TSoURDt3rd_Init(void)
-{
-	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD, "\nTSoURDt3rd_Init(): Initalizing TSoURDt3rd...\n");
-
-	memset(&tsourdt3rd_local, 0, sizeof(struct tsourdt3rd_local_s));
-	TSoURDt3rd_FOL_CreateDirectory("TSoURDt3rd");
-
-	// Check our computer's time!
-	TSoURDt3rd_CheckTime();
-
-#ifdef HAVE_SDL
-	// Initialize our cool controller system!
-	TSoURDt3rd_I_Pads_InitControllers();
-#endif
-
-	// Initialize Jukebox data...
-	TSoURDt3rd_Jukebox_Init();
-
-#if 0
-	// Initialize EXMusic data...
-	TSoURDt3rd_EXMusic_Init(tsourdt3rd_global_exmusic_defaultmaptrack, tsourdt3rd_default_typedata_defaultmaptrack);
-#if 0
-	TSoURDt3rd_EXMusic_Init(tsourdt3rd_global_exmusic_gameover, tsourdt3rd_default_typedata_gameover);
-	TSoURDt3rd_EXMusic_Init(tsourdt3rd_global_exmusic_bosses, tsourdt3rd_default_typedata_bosses);
-	TSoURDt3rd_EXMusic_Init(tsourdt3rd_global_exmusic_intermission, tsourdt3rd_default_typedata_intermission);
-#endif
-#endif
-
-	// Initialize the build's player structures!
-	TSoURDt3rd_InitializePlayer(consoleplayer);
-
-	// Done!
-	STAR_CONS_Printf(STAR_CONS_NONE, "\n");
-}
 
 //
 // void STAR_CONS_Printf(INT32 message_type, const char *fmt, ...)
@@ -105,8 +62,10 @@ void STAR_CONS_Printf(INT32 message_type, const char *fmt, ...)
 {
 	va_list argptr;
 	const char *coloring = NULL;
-	char header[8192], bparams[8192];
 	static char *txt = NULL;
+	static char header[8192];
+	static char bparams[8192];
+	boolean header_set = false;
 
 	memset(header, 0, sizeof(header));
 	memset(bparams, 0, sizeof(bparams));
@@ -114,44 +73,50 @@ void STAR_CONS_Printf(INT32 message_type, const char *fmt, ...)
 		txt = malloc(8192);
 
 	va_start(argptr, fmt);
-	vsprintf(txt, fmt, argptr);
+	vsnprintf(txt, 8192, fmt, argptr);
 	va_end(argptr);
 
-#ifndef TSOURDT3RD_DEBUGGING
+#ifndef _TSOURDT3RD_DEBUGGING
 	if ((message_type & STAR_CONS_DEBUG) == STAR_CONS_DEBUG)
 		return;
 #endif
 
 	// Set the header...
-	if (message_type & STAR_CONS_TSOURDT3RD)
-		snprintf(header, 8192, "TSoURDt3rd");
-	else if (message_type & STAR_CONS_DISCORD)
+	if (message_type)
+	{
+		if (message_type & STAR_CONS_TSOURDT3RD)
+		{
+			strcpy(header, "TSoURDt3rd");
+			header_set = true;
+		}
+		else if (message_type & STAR_CONS_DISCORD)
+		{
 #ifdef HAVE_DISCORDSUPPORT
-		snprintf(header, 8192, "%s", ((*discord_integration_type != '\0') ? discord_integration_type : "Discord"));
+			strcpy(header, discord_integration_type);
+			header_set = true;
 #else
-		return;
+			return;
 #endif
+		}
+	}
 
 	// Extend the header...
-	if (*header != '\0')
+	if (header_set)
 	{
-		strlcat(header, " ", 8192);
 		if (message_type & STAR_CONS_APRILFOOLS)
-			strlcat(header, "April Fools", 8192);
+			strlcat(header, " April Fools", 8192);
 		else if (message_type & STAR_CONS_EASTER)
-			strlcat(header, "Easter", 8192);
+			strlcat(header, " Easter", 8192);
 		else if (message_type & STAR_CONS_JUKEBOX)
-			strlcat(header, "Jukebox", 8192);
+			strlcat(header, " Jukebox", 8192);
 		if (message_type & STAR_CONS_DEBUG)
-			strlcat(header, "Debugging", 8192);
+			strlcat(header, " Debugging", 8192);
 		strlcat(header, ":", 8192);
 	}
 
 	// Set the coloring...
 	if (message_type & STAR_CONS_NOTICE)
-	{
 		coloring = "\x83";
-	}
 	else if (message_type & STAR_CONS_ERROR)
 		coloring = "\x85";
 	else if (message_type & STAR_CONS_WARNING)
@@ -161,26 +126,14 @@ void STAR_CONS_Printf(INT32 message_type, const char *fmt, ...)
 	else
 		coloring = "\x80";
 
-#if 0
-	if (coloring != '\x80')
-	{
-		if (*header != '\0')
-	}
-#endif
-
 	// Appropriately reset text coloring...
 	if ((message_type & STAR_CONS_COLORWHOLELINE) != STAR_CONS_COLORWHOLELINE)
-	{
-		if (*header != '\0')
-			strlcat(header, "\x80", 8192);
-		else
-			snprintf(header, 8192, "\x80");
-	}
+		strlcat(header, "\x80", 8192);
 	else
 		strlcat(txt, "\x80", 8192);
 
 	// Add the correct spacing...
-	if (*header != '\0')
+	if (header_set)
 		strlcat(header, " ", 8192);
 
 	// Make sure we check for string parameters first, just so we don't do anthing crazy...
@@ -214,15 +167,14 @@ const char *TSoURDt3rd_CON_DrawStartupScreen(void)
 
 const char *TSoURDt3rd_ReturnUsername(void)
 {
-	const char *username = NULL;
+#define RETURN_USERNAME(name) if (name != NULL) return name;
 #ifdef HAVE_DISCORDSUPPORT
-	if (discordInfo.connectionStatus == DISC_CONNECTED)
-		username = DISC_ReturnUsername();
-	else
+	if (discordInfo.connected) { RETURN_USERNAME(DISC_ReturnUsername()) }
 #endif
-	if (Playing()) username = player_names[consoleplayer];
-	if (username == NULL || *username == '\0') username = cv_playername.string;
-	return username;
+	RETURN_USERNAME(player_names[consoleplayer])
+	RETURN_USERNAME(cv_playername.string)
+	return NULL;
+#undef RETURN_USERNAME
 }
 
 // ======
@@ -264,19 +216,19 @@ void TSoURDt3rd_CheckTime(void)
 
 	if (tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_EASTER)
 	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE, "TSoURDt3rd_CheckTime(): Easter Mode Enabled!\n");
+		STAR_CONS_Printf(STAR_CONS_NOTICE, "TSoURDt3rd_CheckTime(): Easter Mode Enabled!\n");
 		CV_RegisterVar(&cv_tsourdt3rd_easter_egghunt_allowed);
 		CV_RegisterVar(&cv_tsourdt3rd_easter_egghunt_bonuses);
 	}
 	if (tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_APRILFOOLS)
 	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE, "TSoURDt3rd_CheckTime(): April Fools Mode Enabled!\n");
+		STAR_CONS_Printf(STAR_CONS_NOTICE, "TSoURDt3rd_CheckTime(): April Fools Mode Enabled!\n");
 		CV_RegisterVar(&cv_tsourdt3rd_aprilfools_ultimatemode);
 		TSoURDt3rd_AprilFools_StoreDefaultMenuStrings();
 	}
 	if (tsourdt3rd_currentEvent & TSOURDT3RD_EVENT_CHRISTMAS)
 	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE, "TSoURDt3rd_CheckTime(): Christmas Mode Enabled!\n");
+		STAR_CONS_Printf(STAR_CONS_NOTICE, "TSoURDt3rd_CheckTime(): Christmas Mode Enabled!\n");
 	}
 
 	modifiedgame = false;
@@ -292,19 +244,27 @@ void TSoURDt3rd_CheckTime(void)
 //
 mobj_t *TSoURDt3rd_BossInMap(void)
 {
-	if (gamestate != GS_LEVEL && gamestate != GS_INTERMISSION) return NULL;
-	for (thinker_t *th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
+	mobj_t *mobj = NULL;
+	thinker_t *think = &thlist[THINK_MOBJ];
+
+	if (think == NULL || think->next == NULL)
+		return NULL;
+
+	if (Playing() && gamestate == GS_LEVEL) // Obviously a world must exist!
 	{
-		if (th->function == (actionf_p1)P_RemoveThinkerDelayed)
-			continue;
+		for (think = think->next; think != &thlist[THINK_MOBJ]; think = think->next)
+		{
+			if (think == NULL || think->removing || think->function == (actionf_p1)P_RemoveThinkerDelayed)
+				continue;
 
-		mobj_t *mobj = (mobj_t *)th;
-		if (mobj == NULL || P_MobjWasRemoved(mobj))
-			continue;
-		if (!(mobj->flags & MF_BOSS) && (mobj->type != MT_METALSONIC_RACE))
-			continue;
+			mobj = (mobj_t *)think;
+			if (P_MobjWasRemoved(mobj))
+				continue;
+			if (!(mobj->flags & MF_BOSS) && (mobj->type != MT_METALSONIC_RACE))
+				continue;
 
-		return mobj;
+			return mobj;
+		}
 	}
 	return NULL;
 }
@@ -337,7 +297,6 @@ void TSoURDt3rd_GameEnd(INT32 *timetonext)
 	(void)cursave;
 	return;
 #else
-	static boolean init = false;
 	static INT32 headerScroll = BASEVIDWIDTH;
 
 	// draw a background so we don't have weird mirroring errors
@@ -346,7 +305,7 @@ void TSoURDt3rd_GameEnd(INT32 *timetonext)
 	if (netgame)
 		return;
 
-	if (!init)
+	if (cursave && timetonext < 0)
 	{
 		cursave = Z_Realloc(cursave, sizeof(saveinfo_t), PU_STATIC, NULL);
 		if (!cursave && cursaveslot)
@@ -354,7 +313,10 @@ void TSoURDt3rd_GameEnd(INT32 *timetonext)
 
 		(*timetonext) = 10*TICRATE;
 		headerScroll = BASEVIDWIDTH;
-		init = true;
+	}
+	else
+	{
+		cursave = Z_Malloc(sizeof(saveinfo_t), PU_STATIC, NULL);
 	}
 
 	if (--*timetonext <= 0)
@@ -364,13 +326,14 @@ void TSoURDt3rd_GameEnd(INT32 *timetonext)
 			Z_Free(cursave);
 			cursave = NULL;
 		}
-		init = false;
 		headerScroll = BASEVIDWIDTH;
 		return;
 	}
 
 	if (*timetonext <= 3*TICRATE/2)
+	{
 		headerScroll--;
+	}
 
 	V_DrawCenteredString(((BASEVIDWIDTH/2)-headerScroll), 65, V_SNAPTOBOTTOM|V_MENUCOLORMAP, "Great Job!");
 	V_DrawCenteredString(BASEVIDWIDTH/2, 65, V_MENUCOLORMAP, cv_playername.string);
