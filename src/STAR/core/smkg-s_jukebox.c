@@ -311,7 +311,7 @@ void TSoURDt3rd_Jukebox_Play(musicdef_t *def, INT32 track)
 
 	S_ControlMusicEffects();
 
-	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_JUKEBOX|STAR_CONS_NOTICE, M_GetText("Loaded track \x82%s\x80.\n"), name);
+	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_JUKEBOX|STAR_CONS_NOTICE, M_GetText("Loaded track \"\x82%s\x80\".\n"), name);
 }
 
 //
