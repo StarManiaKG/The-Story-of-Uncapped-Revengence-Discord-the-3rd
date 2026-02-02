@@ -584,7 +584,9 @@ UINT32 TSoURDt3rd_CurrentVersion(void)
 {
 	char *version_string = strdup(TSOURDT3RDVERSION);
 	char *compressed_version_string = TSoURDt3rd_M_RemoveStringChars(version_string, ".");
-	const UINT32 current_version = (UINT32)atoi(compressed_version_string);
+	UINT32 current_version = (UINT32)atoi(compressed_version_string);
+	if (current_version < 100)
+		current_version *= 10; // add another decimal for subversions
 	free(version_string);
 	return current_version;
 }

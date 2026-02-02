@@ -51,9 +51,9 @@ void TSoURDt3rd_CurlRoutine_FindUpdates(void)
 	static char message_string[256];
 	INT32 message_type = 0;
 
-	if (tsourdt3rd_local.curl.checked_version)
+	if (tsourdt3rd_local.curl.checked_version == true)
 	{
-		if (!dedicated && !menumessage.active && send_event_message)
+		if (!dedicated && menumessage.active == false && send_event_message)
 		{
 			// We use some checks to screen the message up here, as it could get skipped out by another message otherwise
 			TSoURDt3rd_M_StartPlainMessage(header_string, message_string);
@@ -74,9 +74,6 @@ void TSoURDt3rd_CurlRoutine_FindUpdates(void)
 		"https://raw.githubusercontent.com/StarManiaKG/The-Story-of-Uncapped-Revengence-Discord-the-3rd/%s/src/STAR/star_webinfo.h",
 		compbranch
 	);
-#if 0
-	return;
-#endif
 	TSoURDt3rd_Curl_FindStringWithinURL(
 		TSoURDt3rd_FIL_AccessFile(build_path, internet_data_filename, "w+"),
 		"#define TSOURDT3RDVERSION",
@@ -95,8 +92,7 @@ void TSoURDt3rd_CurlRoutine_FindUpdates(void)
 			return_version = Z_StrDup(return_info);
 			return_info = TSoURDt3rd_M_RemoveStringChars(return_info, ".");
 
-			//version_number = strtol(return_info, NULL, 10);
-			version_number = (UINT32)atoi(return_info);
+			version_number = strtol(return_info, NULL, 10);
 			if (version_number < 100)
 				version_number *= 10; // add another decimal for subversions
 

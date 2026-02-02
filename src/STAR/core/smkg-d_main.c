@@ -240,15 +240,14 @@ void TSoURDt3rd_D_Loop(void)
 	static boolean sent_event_message = false;
 
 #ifdef HAVE_CURL
-	static boolean check_for_updates = false;
-
 	// Check for any updates to TSoURDt3rd (on startup).
-	if (check_for_updates == false && cv_tsourdt3rd_main_checkforupdatesonstartup.value)
+	static boolean check_for_updates = false;
+	//if (check_for_updates == false && cv_tsourdt3rd_main_checkforupdatesonstartup.value)
 	{
 		TSoURDt3rd_CurlRoutine_FindUpdates();
 	}
-
 	check_for_updates = true;
+	(void)check_for_updates;
 #endif
 
 	switch (gamestate)
