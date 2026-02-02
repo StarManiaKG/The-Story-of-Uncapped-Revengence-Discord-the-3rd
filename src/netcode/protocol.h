@@ -37,6 +37,9 @@ therein, increment this number.
 #define BACKUPTICS 1024
 #define MAXTEXTCMD 256
 
+// TSoURDt3rd stuff.
+#define IS_TSOURDT3RD 0x21
+
 //
 // Packet structure
 //
@@ -94,7 +97,10 @@ typedef enum
 	PT_MOREFILESNEEDED, // Server, to client: "you need these (+ more on top of those)"
 
 	PT_PING,          // Packet sent to tell clients the other client's latency to server.
+	PT_TSOURDT3RD,
 	NUMPACKETTYPE
+
+	//PT_TSOURDT3RD
 } packettype_t;
 
 #if defined(_MSC_VER)
@@ -133,9 +139,9 @@ typedef struct
 	ticcmd_t cmds[45];
 } ATTRPACK servertics_pak;
 
+// Server launch stuffs
 typedef struct
 {
-	// Server launch stuffs
 	UINT8 serverplayer;
 	UINT8 totalslotnum; // "Slots": highest player number in use plus one.
 
@@ -149,6 +155,7 @@ typedef struct
 
 	char server_context[8]; // Unique context id, generated at server startup.
 
+#if 1
 	// Discord info (always defined for net compatibility) //
 	UINT8 maxplayer;
 	boolean allownewplayer;
@@ -159,7 +166,7 @@ typedef struct
 	UINT8 tsourdt3rd_majorversion;
 	UINT8 tsourdt3rd_minorversion;
 	UINT8 tsourdt3rd_subversion;
-	UINT8 tsourdt3rd_fullversion;
+#endif
 } ATTRPACK serverconfig_pak;
 
 typedef struct
@@ -199,7 +206,10 @@ typedef struct
 	UINT8 localplayers;
 	UINT8 mode;
 	char names[MAXSPLITSCREENPLAYERS][MAXPLAYERNAME];
-	UINT8 tsourdt3rd; // STAR NOTE: TSoURDt3rd //
+	union
+	{
+		UINT8 build;
+	} tsourdt3rd;
 } ATTRPACK clientconfig_pak;
 
 #define SV_DEDICATED    0x40 // server is dedicated

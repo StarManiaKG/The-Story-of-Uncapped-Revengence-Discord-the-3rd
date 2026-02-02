@@ -49,6 +49,8 @@ typedef struct viddef_s
 	size_t rowbytes; // bytes per scanline of the VIDEO mode
 	INT32 width; // PIXELS per scanline
 	INT32 height;
+	UINT32 realwidth; // real pixel width of window/screen
+	UINT32 realheight; // real pixel height of window/screen
 	union { // don't need numpages for OpenGL, so we can use it for fullscreen/windowed mode
 		INT32 numpages; // always 1, page flipping todo
 		INT32 windowed; // windowed or fullscren mode?
@@ -181,12 +183,14 @@ void SCR_CheckDefaultMode(void);
 // Set the mode number which is saved in the config
 void SCR_SetDefaultMode(void);
 
+// Diagnostics
 void SCR_CalculateFPS(void);
+void SCR_CalculateTPS(void);
 
 FUNCMATH boolean SCR_IsAspectCorrect(INT32 width, INT32 height);
 
 // move out to main code for consistency
-void SCR_DisplayTicRate(void);
+void SCR_DisplayFrameDiagnostics(void);
 void SCR_ClosedCaptions(void);
 void SCR_DisplayLocalPing(void);
 void SCR_DisplayMarathonInfo(void);

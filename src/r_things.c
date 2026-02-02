@@ -1328,6 +1328,39 @@ static void R_SplitSprite(vissprite_t *sprite)
 	}
 }
 
+// Also defined in smkg-st_hud.c
+// FSIN(ANGLE_90) = FRACUNIT
+
+#define FINEANGLES 8192
+#define FINEMASK (FINEANGLES - 1)
+#define ANGLETOFINESHIFT 19 // 0x100000000 to 0x2000
+#define FINEANGLE_C(x) ((FixedAngle((x)*FRACUNIT)>>ANGLETOFINESHIFT) & FINEMASK) // ((x*(ANGLE_45/45))>>ANGLETOFINESHIFT) & FINEMASK
+#define ANGLETOFINE(x) (((x)>>ANGLETOFINESHIFT) & FINEMASK)
+
+#define FSIN(n) FINESINE(ANGLETOFINE(n))
+#define FCOS(n) FINECOSINE(ANGLETOFINE(n))
+
+fixed_t R_GetSpriteDirectionalLighting(angle_t angle)
+{
+	// Copied from P_UpdateSegLightOffset
+	const UINT8 contrast = (UINT8)min(max(0, (UINT8)(maplighting.contrast - maplighting.backlight)), UINT8_MAX);
+	//const UINT8 contrast = min(max(0, maplighting.contrast - maplighting.backlight), UINT8_MAX);
+	const fixed_t contrastFixed = ((fixed_t)contrast) * FRACUNIT;
+
+	fixed_t light = FRACUNIT;
+	fixed_t extralight = 0;
+
+	light = FixedMul(FINECOSINE(angle >> ANGLETOFINESHIFT), FINECOSINE(maplighting.angle >> ANGLETOFINESHIFT))
+		+ FixedMul(FINESINE(angle >> ANGLETOFINESHIFT), FINESINE(maplighting.angle >> ANGLETOFINESHIFT));
+	light = (light + FRACUNIT) / 2;
+
+	light = FixedMul(light, FRACUNIT - FSIN(abs(AngleDeltaSigned(angle, maplighting.angle)) / 2));
+
+	extralight = -contrastFixed + FixedMul(light, contrastFixed * 2);
+
+	return extralight;
+}
+
 //
 // R_GetShadowZ(thing, shadowslope)
 // Get the first visible floor below the object for shadows
@@ -1477,7 +1510,7 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t tx, fix
 {
 	vissprite_t *shadow;
 	patch_t *patch;
-	fixed_t scale = thing->shadowscale;
+	fixed_t shadowscale = thing->shadowscale;
 	fixed_t xscale, yscale, shadowxscale, shadowyscale, shadowskew, x1, x2;
 	INT32 heightsec, phs;
 	fixed_t scalemul;
@@ -1491,12 +1524,15 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t tx, fix
 	interpmobjstate_t interp = {0}; // uncapped/interpolation
 
 	// force shadowscale if needed
-	if (!scale)
+	if (!thing->shadowscale)
 	{
-		if (cv_tsourdt3rd_game_shadows_forallobjects.value)
-			scale = 1*FRACUNIT;
-		else
+		if (!cv_tsourdt3rd_game_shadows_forallobjects.value)
 			return;
+		shadowscale = 1*FRACUNIT;
+	}
+	else
+	{
+		shadowscale = thing->shadowscale;
 	}
 
 	groundz = R_GetShadowZ(thing, &groundslope);
@@ -1536,7 +1572,7 @@ static void R_ProjectDropShadow(mobj_t *thing, vissprite_t *vis, fixed_t tx, fix
 	trans = R_GetThingTransTable(thing->alpha, trans);
 	if (trans >= 9) return;
 
-	scalemul = FixedMul(FRACUNIT - floordiff/640, scale);
+	scalemul = FixedMul(FRACUNIT - floordiff/640, shadowscale);
 
 	patch = (cv_tsourdt3rd_game_shadows_realistic.value ? vis->patch : W_CachePatchName("DSHADOW", PU_SPRITE));
 	xscale = FixedDiv(projection, tz);
@@ -1779,6 +1815,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	fixed_t gz = 0, gzt = 0;
 	INT32 heightsec, phs;
 	INT32 light = 0;
+	lighttable_t **lights_array = spritelights;
 	fixed_t this_scale;
 	fixed_t spritexscale, spriteyscale;
 
@@ -1949,7 +1986,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	patch = W_CachePatchNum(sprframe->lumppat[rot], PU_SPRITE);
 
 #ifdef ROTSPRITE
-	spriterotangle = R_SpriteRotationAngle(&interp);
+	spriterotangle = R_SpriteRotationAngle(thing, NULL);
 
 	if (spriterotangle != 0
 	&& !(splat && !(thing->renderflags & RF_NOSPLATROLLANGLE)))
@@ -2325,17 +2362,92 @@ static void R_ProjectSprite(mobj_t *thing)
 			return;
 	}
 
-	if (thing->subsector->sector->numlights)
+	if (thing->frame & FF_ABSOLUTELIGHTLEVEL)
 	{
-		light = P_GetSectorLightNumAt(thing->subsector->sector, interp.x, interp.y, splat ? gz : gzt);
+		//const UINT8 n = R_ThingLightLevel(thing);
+		// n = uint8 aka 0 - 255, so the shift will always be 0 - LIGHTLEVELS - 1
+		//lights_array = scalelight[n >> LIGHTSEGSHIFT];
+		//lights_array = scalelight[thing->lightlevel >> LIGHTSEGSHIFT];
+	}
+	else
+	{
+		INT32 lightnum;
 
-		INT32 lightnum = (*thing->subsector->sector->lightlist[light].lightlevel >> LIGHTSEGSHIFT);
-		if (lightnum < 0)
-			spritelights = scalelight[0];
-		else if (lightnum >= LIGHTLEVELS)
-			spritelights = scalelight[LIGHTLEVELS-1];
+		if (thing->subsector->sector->numlights)
+		{
+			light = thing->subsector->sector->numlights - 1;
+
+			// R_GetPlaneLight won't work on sloped lights!
+			for (lightnum = 1; lightnum < thing->subsector->sector->numlights; lightnum++)
+			{
+				fixed_t h = P_GetLightZAt(&thing->subsector->sector->lightlist[lightnum], interp.x, interp.y);
+
+				if (h <= gzt)
+				{
+					light = lightnum - 1;
+					break;
+				}
+			}
+
+			lightnum = *thing->subsector->sector->lightlist[light].lightlevel;
+		}
 		else
-			spritelights = scalelight[lightnum];
+		{
+			lightnum = thing->subsector->sector->lightlevel;
+		}
+
+#if 0
+		FUNCINLINE static ATTRINLINE INT32 R_GetSoftLightlevel(INT32 llevel)
+		{
+			return clamp(llevel, cv_secbright.value, 255) >> LIGHTSEGSHIFT;
+		}
+#endif
+		//lightnum = R_GetSoftLightlevel(lightnum + R_ThingLightLevel(thing));
+		//lightnum = clamp(lightnum + 255, 0, 255) >> LIGHTSEGSHIFT;
+		lightnum = clamp(lightnum, 0, 255) >> LIGHTSEGSHIFT;
+
+		//if (maplighting.directional && P_SectorUsesDirectionalLighting(thing->subsector->sector, &lightnum))
+		if (maplighting.directional && P_MobjUsesDirectionalLighting(thing))
+		{
+			fixed_t extralight = R_GetSpriteDirectionalLighting(papersprite
+					? interp.angle + (ang >= ANGLE_180 ? -ANGLE_90 : ANGLE_90)
+					: R_PointToAngle(interp.x, interp.y));
+
+			// Krangle contrast in 3P/4P because scalelight
+			// scales differently depending on the screen
+			// width (which is halved in 3P/4P).
+			//if (splitscreen > 1)
+			if (splitscreen)
+			{
+				extralight *= 2;
+			}
+
+			// Less change in contrast in dark sectors
+			extralight = FixedMul(extralight, min(max(0, lightnum), LIGHTLEVELS - 1) * FRACUNIT / (LIGHTLEVELS - 1));
+
+			if (papersprite)
+			{
+				// Papersprite contrast should match walls
+				lightnum += FixedFloor((extralight / 8) + (FRACUNIT / 2)) / FRACUNIT;
+			}
+			else
+			{
+				fixed_t n = FixedDiv(FixedMul(xscale, LIGHTRESOLUTIONFIX), ((MAXLIGHTSCALE-1) << LIGHTSCALESHIFT));
+
+				// Less change in contrast at further distances, to counteract DOOM diminished light
+				extralight = FixedMul(extralight, min(n, FRACUNIT));
+
+				// Contrast is stronger for normal sprites, stronger than wall lighting is at the same distance
+				lightnum += FixedFloor((extralight / 4) + (FRACUNIT / 2)) / FRACUNIT;
+			}
+		}
+
+		if (lightnum < 0)
+			lights_array = scalelight[0];
+		else if (lightnum >= LIGHTLEVELS)
+			lights_array = scalelight[LIGHTLEVELS-1];
+		else
+			lights_array = scalelight[lightnum];
 	}
 
 	heightsec = thing->subsector->sector->heightsec;
@@ -2488,7 +2600,7 @@ static void R_ProjectSprite(mobj_t *thing)
 		if (vis->cut & SC_SEMIBRIGHT)
 			lindex = (MAXLIGHTSCALE/2) + (lindex >> 1);
 
-		vis->colormap = spritelights[lindex];
+		vis->colormap = lights_array[lindex];
 	}
 
 	if (vflip)
@@ -3299,6 +3411,11 @@ static void R_DrawSprite(vissprite_t *spr)
 	mfloorclip = spr->clipbot;
 	mceilingclip = spr->cliptop;
 
+#ifdef ALAM_LIGHTING
+	// STAR NOTE: Draw corona sprite
+	TSoURDt3rd_R_DrawSoftwareCoronas(spr);
+#endif
+
 	if (spr->cut & SC_BBOX)
 		R_DrawThingBoundingBox(spr);
 	else if (spr->cut & SC_SPLAT)
@@ -3307,8 +3424,8 @@ static void R_DrawSprite(vissprite_t *spr)
 		R_DrawVisSprite(spr);
 
 #ifdef ALAM_LIGHTING
-		// STAR NOTE: Draw corona sprite
-		TSoURDt3rd_R_DrawSoftwareCoronas(spr);
+	// STAR NOTE: Draw corona sprite
+	TSoURDt3rd_R_DrawSoftwareCoronas(spr);
 #endif
 }
 

@@ -95,10 +95,11 @@ static CV_PossibleValue_t custom_characterimage_cons_t[] = {
 	{20, "Metal Knuckles"},
 	{21, "Smiles"},
 	{22, "Whisper"},
+	{23, "S3 Sonic"},
 	// Skins I've made
-	{23, "Hexhog"},
+	{24, "Hexhog"},
 	// Skins my friends have made
-	{24, "Speccy"},
+	{25, "Speccy"},
 	{0, NULL}
 };
 

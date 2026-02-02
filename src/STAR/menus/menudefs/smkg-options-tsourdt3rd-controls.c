@@ -292,6 +292,7 @@ static void M_Sys_DrawControls(void)
 			{
 				12, ypos-4,
 				V_SNAPTOBOTTOM|V_ALLOWLOWERCASE,
+				//V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_ALLOWLOWERCASE,
 				-1
 			}
 		};

@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
-// Copyright (C) 2024 by Kart Krew.
+// Copyright (C) 2024-2026 by StarManiaKG.
+// Copyright (C) 2024-2025 by Kart Krew.
 // Copyright (C) 2020 by Sonic Team Junior.
 // Copyright (C) 2000 by DooM Legacy Team.
 // Copyright (C) 1996 by id Software, Inc.
@@ -18,23 +18,21 @@
 
 #include "../../netcode/i_net.h"
 
-// ------------------------ //
-//        Variables
-// ------------------------ //
+#ifdef _WIN32
+	#define USE_WINSOCK
+	#if defined (_WIN64) || defined (HAVE_IPV6)
+		#define USE_WINSOCK2
+	#else //_WIN64/HAVE_IPV6
+		#define USE_WINSOCK1
+	#endif
+#endif //WIN32 OS
 
-// HOLEPUNCHING PORTED FROM DR. ROBOTNIK'S RING RACERS
-typedef struct
-{
-	INT32 magic;
-	INT32 addr;
-	INT16 port;
-} ATTRPACK holepunch_t;
-
-extern holepunch_t *holepunchpacket;
-
-// ------------------------ //
-//        Functions
-// ------------------------ //
+#ifndef USE_WINSOCK1
+	#ifndef USE_WINSOCK
+		#include <netdb.h>
+		#include <sys/socket.h>
+	#endif
+#endif //normal BSD API
 
 /**	\brief send a hole punching request
 */
@@ -44,14 +42,16 @@ extern void (*I_NetRequestHolePunch)(INT32 node);
 */
 extern void (*I_NetRegisterHolePunch)(void);
 
+//#define PTRPACKET ptrdiff_t
+#define PTRPACKET ssize_t
+boolean hole_punch(PTRPACKET c);
+
 void TSoURDt3rd_MovePlayerStructure(INT32 node, INT32 newplayernode, INT32 prevnode);
 void TSoURDt3rd_HandleCustomPackets(INT32 node);
 
-void TSoURDt3rd_D_CheckNetgame(doomcom_t *doomcom_p);
 void TSoURDt3rd_D_AskForHolepunch(INT32 node);
 void TSoURDt3rd_D_RenewHolePunch(void);
 
-boolean TSoURDt3rd_SOCK_Get(doomcom_t *doomcom_p, ssize_t c, void *addresstable, void *sockets);
 void TSoURDt3rd_SOCK_OpenSockets(void);
 
 #endif // __SMKG_NET__

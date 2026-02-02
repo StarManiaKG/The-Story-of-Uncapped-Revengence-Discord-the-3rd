@@ -90,6 +90,9 @@ extern patch_t *bmatcico;
 extern patch_t *tagico;
 extern patch_t *tokenicon;
 
+// music/song credits
+extern patch_t *songcreditbg;
+
 // set true whenever the tab rankings are being shown for any reason
 extern boolean hu_showscores;
 

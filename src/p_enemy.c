@@ -3857,9 +3857,9 @@ static void P_DoBossVictory(mobj_t *mo)
 				mapmusposition = mapheaderinfo[gamemap-1]->muspostbosspos;
 			}
 #else
-			// ** STAR STUFF: chosen music after boss rocking is now done with TSoURDt3rd_DetermineLevelMusic() :) ** //
+			// ** STAR STUFF: chosen music after boss rocking is now done with TSoURDt3rd_EXMusic_DetermineLevelMusic() :) ** //
 
-			const char *determinedMusic = TSoURDt3rd_DetermineLevelMusic();
+			const char *determinedMusic = TSoURDt3rd_EXMusic_DetermineLevelMusic();
 			boolean changed = (!(strnicmp(determinedMusic, S_MusicName(), 7)));
 			if (!strnicmp(mapheaderinfo[gamemap-1]->musname, mapmusname, 7) || !changed)
 			{

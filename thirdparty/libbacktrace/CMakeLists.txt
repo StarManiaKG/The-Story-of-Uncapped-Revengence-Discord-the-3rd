@@ -71,7 +71,7 @@ elseif (CMAKE_EXECUTABLE_FORMAT STREQUAL "MACHO")
 elseif (CMAKE_EXECUTABLE_FORMAT STREQUAL "XCOFF")
     set (BACKTRACE_SUPPORTS_DATA 0)
     set (FORMAT_FILE src/xcoff.c src/dwarf.c)
-    math (EXPR BACKTRACE_XCOFF_SIZE 8*${CMAKE_C_SIZEOF_DATA_PTR})
+    math (EXPR BACKTRACE_XCOFF_SIZE "8 * ${CMAKE_C_SIZEOF_DATA_PTR}")
 else ()
     set (FORMAT_FILE src/unknown.c)
     set (BACKTRACE_SUPPORTED 0)
@@ -86,9 +86,9 @@ if (HAVE_MMAP)
     check_symbol_exists (MAP_ANONYMOUS sys/mman.h HAVE_MMAP_ANONYMOUS)
     check_symbol_exists (MAP_ANON sys/mman.h HAVE_MMAP_ANON)
     if (HAVE_MMAP_ANONYMOUS AND HAVE_MMAP_ANON)
-	set (ALLOC_FILE src/mmap.c)
+	    set (ALLOC_FILE src/mmap.c)
     else ()
-	set (ALLOC_FILE src/alloc.c)
+	    set (ALLOC_FILE src/alloc.c)
     endif ()
 else ()
     set (VIEW_FILE src/read.c)
@@ -124,7 +124,6 @@ add_library(libbacktrace STATIC
     src/sort.c
     src/state.c
 )
-add_library(libbacktrace::libbacktrace ALIAS libbacktrace)
 
 target_include_directories(libbacktrace PUBLIC BEFORE ${CMAKE_CURRENT_BINARY_DIR}/gen)
 target_include_directories(libbacktrace PUBLIC src)
@@ -132,3 +131,5 @@ target_compile_definitions(libbacktrace PUBLIC
     BACKTRACE_ELF_SIZE=${BACKTRACE_ELF_SIZE}
     BACKTRACE_XCOFF_SIZE=${BACKTRACE_XCOFF_SIZE}
 )
+
+add_library(libbacktrace::libbacktrace ALIAS libbacktrace)

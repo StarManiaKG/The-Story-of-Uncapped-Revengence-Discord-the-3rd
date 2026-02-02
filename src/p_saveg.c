@@ -40,7 +40,7 @@
 #include "hu_stuff.h"
 
 // TSoURDt3rd
-#include "STAR/smkg-p_saveg.h" // Savedata archival and retrival routines //
+#include "STAR/smkg-p_saveg.h"
 
 savedata_t savedata;
 
@@ -458,6 +458,9 @@ static void P_NetArchivePlayers(save_t *save_p)
 		// Bots //
 		//////////
 		P_WriteUINT8(save_p, players[i].bot);
+#if MODVERSION==57
+		P_WriteUINT32(save_p, SavePlayer(players[i].botleader));
+#endif
 		P_WriteUINT8(save_p, players[i].botmem.lastForward);
 		P_WriteUINT8(save_p, players[i].botmem.lastBlocked);
 		P_WriteUINT8(save_p, players[i].botmem.catchup_tics);
@@ -689,6 +692,9 @@ static void P_NetUnArchivePlayers(save_t *save_p)
 		// Bots //
 		//////////
 		players[i].bot = P_ReadUINT8(save_p);
+#if MODVERSION==57
+		players[i].botleader = LoadPlayer(P_ReadUINT32(save_p));
+#endif
 
 		players[i].botmem.lastForward = P_ReadUINT8(save_p);
 		players[i].botmem.lastBlocked = P_ReadUINT8(save_p);
@@ -3772,7 +3778,14 @@ static thinker_t* LoadLightflashThinker(save_t *save_p, actionf_p1 thinker)
 {
 	lightflash_t *ht = Z_Malloc(sizeof (*ht), PU_LEVSPEC, NULL);
 	ht->thinker.function = thinker;
+#if MODVERSION==57
+	ht->sector = LoadSector(P_ReadUINT32(save_p));
+	ht->maxlight = P_ReadINT32(save_p);
+#endif
 	ht->minlight = P_ReadINT32(save_p);
+#if MODVERSION==57
+	if (ht->sector)
+#endif
 		ht->sector->lightingdata = ht;
 	return &ht->thinker;
 }
@@ -4827,6 +4840,10 @@ static void P_NetArchiveMisc(save_t *save_p, boolean resending)
 	P_WriteUINT16(save_p, skincolor_redring);
 	P_WriteUINT16(save_p, skincolor_bluering);
 
+#if MODVERSION==57
+	P_WriteINT32(save_p, nummaprings);
+#endif
+
 	P_WriteINT32(save_p, modulothing);
 
 	P_WriteINT16(save_p, autobalance);
@@ -4930,6 +4947,10 @@ FUNCINLINE static ATTRINLINE boolean P_NetUnArchiveMisc(save_t *save_p, boolean 
 	skincolor_blueteam = P_ReadUINT16(save_p);
 	skincolor_redring = P_ReadUINT16(save_p);
 	skincolor_bluering = P_ReadUINT16(save_p);
+
+#if MODVERSION==57
+	nummaprings = P_ReadINT32(save_p);
+#endif
 
 	modulothing = P_ReadINT32(save_p);
 
@@ -5401,9 +5422,6 @@ void P_SaveNetGame(save_t *save_p, boolean resending)
 	LUA_Archive(save_p);
 
 	P_ArchiveLuabanksAndConsistency(save_p);
-
-	// STAR STUFF: archive our unique players now please //
-	TSoURDt3rd_P_NetArchiveUsers(save_p);
 }
 
 boolean P_LoadGame(save_t *save_p, INT16 mapoverride)
@@ -5455,8 +5473,30 @@ boolean P_LoadNetGame(save_t *save_p, boolean reloading)
 	// precipitation when loading a netgame save. Instead, precip has to be spawned here.
 	// This is done in P_NetUnArchiveSpecials now.
 
-	// STAR STUFF: archive our unique players now please //
-	boolean load_success = P_UnArchiveLuabanksAndConsistency(save_p);
+	return P_UnArchiveLuabanksAndConsistency(save_p);
+}
+
+//
+// void P_TSoURDt3rd_SaveNetGame(save_t *save_p, boolean resending)
+//
+// Saves TSoURDt3rd's netgame data.
+// Intended to run alongside P_SaveNetGame, otherwise desyncs may occur (more frequently then often).
+//
+void P_TSoURDt3rd_SaveNetGame(save_t *save_p, boolean resending)
+{
+	(void)resending;
+	TSoURDt3rd_P_NetArchiveUsers(save_p);
+}
+
+//
+// void P_TSoURDt3rd_LoadNetGame(save_t *save_p, boolean resending)
+//
+// Loads TSoURDt3rd's netgame data.
+// Intended to run alongside P_LoadNetGame, otherwise desyncs may occur (more frequently then often).
+//
+boolean P_TSoURDt3rd_LoadNetGame(save_t *save_p, boolean reloading)
+{
+	(void)reloading;
 	TSoURDt3rd_P_NetUnArchiveUsers(save_p);
-	return load_success;
+	return true;
 }

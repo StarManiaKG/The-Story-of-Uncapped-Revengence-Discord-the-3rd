@@ -97,6 +97,7 @@ extern PFNWGLEXTGETSWAPINTERVALPROC wglGetSwapIntervalEXT;
 
 #ifdef STATIC_OPENGL
 #define pglClear glClear
+#define pglGetFloatv glGetFloatv
 #define pglGetIntegerv glGetIntegerv
 #define pglGetString glGetString
 #else
@@ -105,6 +106,8 @@ typedef void (APIENTRY * PFNglClear) (GLbitfield mask);
 extern PFNglClear pglClear;
 typedef void (APIENTRY * PFNglGetIntegerv) (GLenum pname, GLint *params);
 extern PFNglGetIntegerv pglGetIntegerv;
+typedef void (APIENTRY * PFNglGetFloatv) (GLenum pname, GLfloat *params);
+extern PFNglGetFloatv pglGetFloatv;
 typedef const GLubyte* (APIENTRY  * PFNglGetString) (GLenum name);
 extern PFNglGetString pglGetString;
 #if 0
@@ -138,5 +141,11 @@ typedef enum
 	GLF_NOZBUFREAD = 0x01,
 	GLF_NOTEXENV   = 0x02,
 } oglflags_t;
+
+//Hurdler: 04/10/2000: added for the kick ass coronas as Boris wanted;-)
+extern GLfloat modelMatrix[16];
+extern GLfloat projMatrix[16];
+extern GLfloat viewMatrix[16];
+extern GLint   viewport[4];
 
 #endif

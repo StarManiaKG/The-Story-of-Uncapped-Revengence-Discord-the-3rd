@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2026 by StarManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -21,18 +21,20 @@
 #include "../r_main.h"
 #include "../v_video.h"
 #include "../z_zone.h"
-
-// ------------------------ //
-//        Variables
-// ------------------------ //
+#include "../r_patch.h" // Patch_Free
 
 #define LUA_TAN(x) FINETANGENT(((x + ANGLE_90) >> ANGLETOFINESHIFT) & 4095) // tan function used by Lua
 #define LUA_COS(x) FINECOSINE((x >> ANGLETOFINESHIFT) & FINEMASK)
 
+//
 //{ 	Patch Definitions
 patch_t *kp_button_a[2][2];
 patch_t *kp_button_b[2][2];
 patch_t *kp_button_x[2][2];
+
+patch_t *gen_button_keyleft[2];
+patch_t *gen_button_keyright[2];
+patch_t *gen_button_keycenter[2];
 
 patch_t *tsourdt3rd_easter_leveleggs;
 patch_t *tsourdt3rd_easter_totaleggs;
@@ -42,13 +44,9 @@ patch_t *tsourdt3rd_easter_totaleggs;
 static patch_t *envelope;
 #endif
 
-static tic_t tps_lasttic;
-static boolean tps_ticgraph[TICRATE];
-tic_t tps_totaltics;
-
-// ------------------------ //
-//        Functions
-// ------------------------ //
+//
+// }
+//
 
 //
 // static void HUD_LoadGraphics(const char *name, patch_t *patch, int patches, int letter, int type)
@@ -62,12 +60,54 @@ static void HUD_LoadGraphics(const char *name, patch_t **patch, int patches, int
 	for (i = 0; i < patches; i++)
 	{
 		cur_patch_num = ((i+'A' == 'A') ? '\0' : i+'A');
-		curpatch_name = va("%s%c%c", name, letter, cur_patch_num);
+		curpatch_name = va("%s%c%c", name, cur_patch_num, letter);
 		if (W_CheckNumForName(curpatch_name) == LUMPERROR)
 			patch[i] = (patch_t *)W_CachePatchName("MISSING", PU_HUDGFX);
 		else
 			patch[i] = (patch_t *)W_CachePatchName(curpatch_name, type);
 	}
+}
+#define HUD_LoadGraphicsSingular(name, kp, tag) HUD_LoadGraphics(name, kp, 1, '\0', tag)
+
+patch_t *HU_UpdateOrBlankPatch(patch_t **user, boolean required, const char *format, ...)
+{
+	va_list ap;
+	char buffer[256 + 1];
+
+	lumpnum_t lump = INT16_MAX;
+	patch_t *patch = NULL;
+
+	va_start (ap, format);
+	vsnprintf(buffer, sizeof buffer, format, ap);
+	va_end   (ap);
+	buffer[sizeof buffer - 1] = '\0';
+
+	lump = W_CheckNumForLongName(buffer);
+
+	if (lump == LUMPERROR)
+	{
+		if (required == true)
+			*user = W_CachePatchName("MISSING", PU_HUDGFX);
+		return *user;
+	}
+
+	patch = W_CachePatchNum(lump, PU_HUDGFX);
+
+	if (user)
+	{
+		*user = patch;
+	}
+
+	return patch;
+}
+#define HU_UpdatePatch(user, ...) HU_UpdateOrBlankPatch(user, true, __VA_ARGS__)
+
+static void HUD_LoadButtonGraphics(patch_t *kp[2][2], const char *code)
+{
+	HU_UpdatePatch(&kp[0][0], "TLB_%s", code);
+	HU_UpdatePatch(&kp[0][1], "TLB_%sB", code);
+	HU_UpdatePatch(&kp[1][0], "TLBS%s", code);
+	HU_UpdatePatch(&kp[1][1], "TLBS%sB", code);
 }
 
 //
@@ -76,20 +116,25 @@ static void HUD_LoadGraphics(const char *name, patch_t **patch, int patches, int
 //
 void TSoURDt3rd_ST_LoadGraphics(void)
 {
-	HUD_LoadGraphics("SS_LVEGG", &tsourdt3rd_easter_leveleggs, 1, '\0', PU_HUDGFX);
-	HUD_LoadGraphics("SS_TLEGG", &tsourdt3rd_easter_totaleggs, 1, '\0', PU_HUDGFX);
+	HUD_LoadGraphicsSingular("SS_LVEGG", &tsourdt3rd_easter_leveleggs, PU_HUDGFX);
+	HUD_LoadGraphicsSingular("SS_TLEGG", &tsourdt3rd_easter_totaleggs, PU_HUDGFX);
 
 #ifdef HAVE_DISCORDSUPPORT
 	// Discord Rich Presence
-	HUD_LoadGraphics("K_REQUES", &envelope, 1, '\0', PU_HUDGFX);
+	HUD_LoadGraphicsSingular("K_REQUES", &envelope, PU_HUDGFX);
 #endif
 
-	HUD_LoadGraphics("TLB_", kp_button_a[0], 2, 'A', PU_HUDGFX);
-	HUD_LoadGraphics("TLB_", kp_button_a[1], 2, 'N', PU_HUDGFX);
-	HUD_LoadGraphics("TLB_", kp_button_b[0], 2, 'B', PU_HUDGFX);
-	HUD_LoadGraphics("TLB_", kp_button_b[1], 2, 'O', PU_HUDGFX);
-	HUD_LoadGraphics("TLB_", kp_button_x[0], 2, 'D', PU_HUDGFX);
-	HUD_LoadGraphics("TLB_", kp_button_x[1], 2, 'Q', PU_HUDGFX);
+	// HU (hu_stuff.c)
+	HUD_LoadButtonGraphics(kp_button_a, "A");
+	HUD_LoadButtonGraphics(kp_button_b, "B");
+	HUD_LoadButtonGraphics(kp_button_x, "X");
+
+	HUD_LoadGraphicsSingular("TLK_L", &gen_button_keyleft[0], PU_HUDGFX);
+	HUD_LoadGraphicsSingular("TLK_LB", &gen_button_keyleft[1], PU_HUDGFX);
+	HUD_LoadGraphicsSingular("TLK_R", &gen_button_keyright[0], PU_HUDGFX);
+	HUD_LoadGraphicsSingular("TLK_RB", &gen_button_keyright[1], PU_HUDGFX);
+	HUD_LoadGraphicsSingular("TLK_M", &gen_button_keycenter[0], PU_HUDGFX);
+	HUD_LoadGraphicsSingular("TLK_MB", &gen_button_keycenter[1], PU_HUDGFX);
 }
 
 #ifdef HAVE_DISCORDSUPPORT
@@ -108,123 +153,6 @@ void TSoURDt3rd_ST_AskToJoinEnvelope(void)
 }
 #endif
 
-void TSoURDt3rd_SCR_CalculateTPS(void)
-{
-	tic_t i;
-	tic_t ontic = 0;
-
-	if (netgame && client)
-	{
-		// This line of code is from LuigiBudd's SRB2Edit client, it looked cool
-		ontic = (gametic + (neededtic - gametic));
-	}
-	else
-		ontic = I_GetTime();
-	tps_totaltics = 0;
-
-	for (i = tps_lasttic + 1; (i < (TICRATE+tps_lasttic) && i < ontic); i++)
-		tps_ticgraph[i % TICRATE] = false;
-	tps_ticgraph[ontic % TICRATE] = true;
-
-	for (i = 0; i < TICRATE; ++i)
-		if (tps_ticgraph[i]) ++tps_totaltics;
-
-	tps_lasttic = ontic;
-}
-
-typedef struct drawingData_s {
-	INT32 x; INT32 y;
-	INT32 option;
-	const char *string;
-	fontdef_t *font;
-} drawingData_t;
-
-void TSoURDt3rd_SCR_DisplayTPS(void)
-{
-	/// \todo custom font support
-
-#if 1
-	INT32 tpscntcolor = 0;
-	INT32 tpswidth = 0;
-	const char *drawntpsStr = NULL;
-#endif
-
-	INT32 x, y = (vid.height-(8*vid.dup));
-	INT32 option;
-	fixed_t pscale = (FRACUNIT/2), vscale = (FRACUNIT/2);
-	const char *string = NULL;
-	fontdef_t *font = NULL;
-
-#if 0
-	#define V_DrawSmallThinString(x,y,o,str) V_DrawFontString(x,y,o,FRACUNIT/2,FRACUNIT/2,str,tny_font)
-	#define V_DrawCenteredSmallThinString(x,y,o,str) V_DrawAlignedFontString(x,y,o,FRACUNIT/2,FRACUNIT/2,str,tny_font,aligncenter)
-	#define V_DrawRightAlignedSmallThinString(x,y,o,str) V_DrawAlignedFontString(x,y,o,FRACUNIT/2,FRACUNIT/2,str,tny_font,alignright)
-#endif
-
-	if (gamestate == GS_NULL)
-	{
-		// We're not supposed to see anything, so what's the point?
-		return;
-	}
-
-	if (tps_totaltics <= TICRATE/2) tpscntcolor = V_REDMAP;
-	else if (tps_totaltics <= TICRATE-8) tpscntcolor = V_YELLOWMAP;
-	else tpscntcolor = V_TPSCOLORMAP;
-
-	drawntpsStr = va("%02d/%02u", tps_totaltics, TICRATE);
-	//string
-
-	// Calculate the right HUD size for our strings
-	switch (cv_tsourdt3rd_video_font_tps.value)
-	{
-		case 1: // thin
-			option = (tpscntcolor|V_NOSCALESTART|V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_USERHUDTRANS);
-			font = &hu_font;
-			break;
-		default: // normal
-			option = (tpscntcolor|V_NOSCALESTART|V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_USERHUDTRANS);
-			font = &tny_font;
-			break;
-	}
-
-	switch (cv_tsourdt3rd_video_showtps.value)
-	{
-		case 1: // full counter
-			tpswidth = V_StringWidth(drawntpsStr, V_NOSCALESTART);
-			V_DrawString(vid.width - ((7 * 8 * vid.dup) + V_StringWidth("TPS:", V_NOSCALESTART)), y-(8*vid.dup),
-				V_MENUCOLORMAP|V_NOSCALESTART|V_USERHUDTRANS, "TPS:");
-			V_DrawString(vid.width - tpswidth, y-(8*vid.dup),
-				tpscntcolor|V_NOSCALESTART|V_USERHUDTRANS, drawntpsStr);
-			break;
-		case 3: // kart-style counter
-			tpswidth = V_ThinStringWidth(drawntpsStr, V_NOSCALESTART);
-			V_DrawThinString(vid.width - V_ThinStringWidth("TPS:", V_NOSCALESTART), y-(18*vid.dup),
-				V_MENUCOLORMAP|V_NOSCALESTART|V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_USERHUDTRANS, "TPS:");
-			V_DrawThinString(vid.width - tpswidth, y-(10*vid.dup),
-				tpscntcolor|V_NOSCALESTART|V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_USERHUDTRANS, drawntpsStr);
-			break;
-		default: // compact counter
-			V_DrawRightAlignedString(vid.width, y-(8*vid.dup),
-				tpscntcolor|V_NOSCALESTART|V_USERHUDTRANS, va("%02d", tps_totaltics));
-			break;
-	}
-
-#if 0
-	V_DrawFontString();
-#endif
-}
-
-INT32 TSoURDt3rd_SCR_SetPingHeight(INT32 *y)
-{
-	if ((cv_ticrate.value && cv_tsourdt3rd_video_showtps.value) || cv_tsourdt3rd_video_showtps.value)
-		(*y) = 171;
-	else if (!cv_ticrate.value)
-		(*y) = 189;
-	else
-		(*y) = 180;
-	return (*y);
-}
-
 //
 // void TSoURDt3rd_ST_ObjectTracking(player_t *player, tsourdt3rd_trackingResult_t *result, const vector3_t *point, boolean object_reverse)
 // Projects world objects to the screen.
@@ -234,12 +162,6 @@ INT32 TSoURDt3rd_SCR_SetPingHeight(INT32 *y)
 //
 // Based on K_ObjectTracking() from Dr.Robotnik's Ring Racers!
 //
-static INT32 AngleDeltaSigned(angle_t a1, angle_t a2)
-{
-	// Silly but easy way to do it through integer conversion.
-	return (INT32)(a1) - (INT32)(a2);
-}
-
 void TSoURDt3rd_ST_ObjectTracking(player_t *player, tsourdt3rd_trackingResult_t *result, const vector3_t *point, boolean object_reverse)
 {
 	angle_t viewpointAngle, viewpointAiming, viewpointRoll;

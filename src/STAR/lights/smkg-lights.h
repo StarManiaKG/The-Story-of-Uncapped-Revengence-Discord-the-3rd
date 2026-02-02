@@ -29,7 +29,7 @@ typedef enum lightspritenum_s
 {
 	NOLIGHT = 0,
 	RINGSPARK_L,
-	SUPERSONIC_L, // Cool. =)
+	PLAYER_L, // Cool. =)
 	SUPERSPARK_L,
 	INVINCIBLE_L,
 	GREENSHIELD_L,
@@ -104,13 +104,13 @@ extern light_t *t_lspr[NUMSPRITES];
 // Rendering
 // -----------------------
 
-boolean LCR_SuperSonicLight(mobj_t *mobj);
+boolean L_RenderPlayerLight(mobj_t *mobj);
 
 // -----------------------
 // Coloring
 // -----------------------
 
-boolean LCR_ObjectColorToCoronaLight(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *alpha, boolean dynamic);
-boolean LCR_EmeraldLight(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *alpha, boolean dynamic);
+boolean L_UseObjectColor(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *alpha, boolean dynamic);
+boolean L_UseEmeraldLight(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *alpha, boolean dynamic);
 
 #endif // __SMKG_LIGHTS__

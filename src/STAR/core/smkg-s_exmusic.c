@@ -1,281 +1,537 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2026 by StarManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 /// \file  smkg-s_exmusic.c
-/// \brief TSoURDt3rd's cool and groovy music setup, definition, and replacement routines
+/// \brief TSoURDt3rd's cool and groovy EXtended Music setup, definition, and replacement routines
 
 #include "smkg-s_exmusic.h"
 
 #include "smkg-s_audio.h"
 #include "smkg-s_jukebox.h"
+#include "../smkg-cvars.h"
 #include "../ss_main.h"
+#include "../core/smkg-g_game.h" // tsourdt3rd_local //
 
+#include "../../m_misc.h"
 #include "../../y_inter.h"
 #include "../../z_zone.h"
 
-// ------------------------ //
-//        Variables
-// ------------------------ //
+//
+// Needed for console command stuffs.
+//
+static tsourdt3rd_exmusic_findTrackResult_t exm_last_find_track_result;
+static consvar_t *prev_exm_cvar = NULL;
+static INT32 prev_exm_pos = 0;
+static char *prev_exm_string = NULL;
 
-tsourdt3rd_exmusic_t **tsourdt3rd_exmusic_container = NULL;
-
-// Sets the default names of our global EXMusic tables.
-// The amount here should be corresponded to the value of 'TSOURDT3RD_EXMUSIC_MAX_STARTING_TRACKS'.
-const char *tsourdt3rd_exmusic_default_names[] = {
+//
+// Sets the default names for our EXMusic starting series.
+// The amount here should be corresponded to the value of 'tsourdt3rd_exmusic_starting_series_max'.
+//
+const char *tsourdt3rd_exmusic_default_series_names[tsourdt3rd_exmusic_starting_series_max] = {
 	"Default",
-	"Random",
-	NULL
+	//"Random",
 };
 
-// Needed for console command stuffs.
-static INT32 last_exmusic_pos = 0;
-static consvar_t *last_excvar = NULL;
-static tsourdt3rd_exmusic_t *last_extype = NULL;
-
-// ------------------------ //
-//        Functions
-// ------------------------ //
+//
+// The basic identifiers for all our EXMusic types.
+//
+tsourdt3rd_exmusic_data_identifiers_t tsourdt3rd_exmusic_data_identifier_types[tsourdt3rd_exmusic_max_types] = {
+	{ "Default Map Tracks", "defaultmaptrack" },
+	{ "Game Over", "gameover" },
+	{ "Bosses", "boss_theme" },
+		{ "Boss Pinch", "boss_pinch_theme" },
+		{ "Final Boss", "final_boss_theme" },
+		{ "Final Boss Pinch", "final_boss_pinch_theme" },
+		{ "True Final Boss", "true_final_boss_theme" },
+		{ "True Final Boss Pinch", "true_final_boss_pinch_theme" },
+		{ "Race", "race_theme" }, // race
+	{ "Intermission", "intermission" },
+		{ "Boss Intermission", "boss" }, // intermission_boss
+		{ "Final Boss Intermission", "final_boss" }, // intermission_final_boss
+		{ "True Final Boss Intermission", "true_final_boss" } // intermission_true_final_boss
+};
 
 //
-// boolean TSoURDt3rd_EXMusic_Init(tsourdt3rd_exmusic_t *extype, tsourdt3rd_exmusic_t extype_defaults)
-// Initializes the given EXMusic type and stores it in our EXMusic container array.
+// Our global EXMusic structs.
+// Aren't they so cool?
 //
-boolean TSoURDt3rd_EXMusic_Init(tsourdt3rd_exmusic_t *extype, tsourdt3rd_exmusic_t extype_defaults)
+tsourdt3rd_exmusic_data_series_t **tsourdt3rd_exmusic_available_series = NULL;
+INT32 tsourdt3rd_exmusic_num_series = 0;
+boolean tsourdt3rd_exmusic_initialized = false;
+
+// ===============================================================
+//
+// ===============================================================
+
+tsourdt3rd_exmusic_data_series_t *TSoURDt3rd_EXMusic_AddNewSeries(const char *name, boolean verbose)
 {
-	static boolean container_initialized = false;
-	INT32 container_pos = 0;
-	tsourdt3rd_exmusic_t *container_extype = NULL, *prev_container_extype = NULL;
-	tsourdt3rd_exmusic_data_t *data = NULL;
-	tsourdt3rd_exmusic_data_series_t **series = NULL, *prev_series = NULL;
+	tsourdt3rd_exmusic_data_series_t *exm_new_series = NULL;
+	tsourdt3rd_exmusic_data_series_t *exm_prev_series = NULL;
+	INT32 series_num = 0;
 
-	if (container_initialized == false)
+	if (name == NULL)
 	{
-		tsourdt3rd_exmusic_container = Z_Malloc((TSOURDT3RD_EXMUSIC_TYPES * sizeof(tsourdt3rd_exmusic_t *)), PU_STATIC, NULL);
-		container_initialized = true;
-	}
-	if (tsourdt3rd_exmusic_container == NULL)
-	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "TSoURDt3rd_EXMusic_Init() - EXMusic container wasn't initialized, not adding new type!\n");
-		return false;
+		STAR_CONS_Printf(STAR_CONS_ERROR, "TSoURDt3rd_EXMusic_AddNewSeries(): No series name given!\n");
+		return NULL;
 	}
 
-	extype = &extype_defaults;
-	//extype = Z_Calloc(sizeof(tsourdt3rd_exmusic_t), PU_STATIC, &extype_defaults);
-	//extype = Z_Calloc(sizeof(tsourdt3rd_exmusic_t), PU_STATIC, NULL);
-	if (extype == NULL) goto failed;
-
-	data = extype->data;
-	if (data == NULL)
+	if (tsourdt3rd_exmusic_num_series)
 	{
-		data = Z_Calloc(sizeof(tsourdt3rd_exmusic_data_t), PU_STATIC, NULL);
-		//data = Z_Calloc(sizeof(tsourdt3rd_exmusic_data_t), PU_STATIC, &extype->data);
-		if (data == NULL) goto failed;
-	}
-
-	series = data->series;
-	series = Z_Malloc(sizeof(tsourdt3rd_exmusic_data_series_t *) * 100, PU_STATIC, NULL);
-	//series = Z_Malloc(TSOURDT3RD_EXMUSIC_MAX_BOSSES_LUMPS * sizeof(boss_data_t *), PU_STATIC, NULL);
-	//series = Z_Malloc(sizeof(tsourdt3rd_exmusic_data_series_t *) * 100, PU_STATIC, &data->series);
-	if (series == NULL) goto failed;
-
-	CONS_Printf("heheow - data series is %d\n", data->num_series);
-	while (data->num_series < TSOURDT3RD_EXMUSIC_MAX_STARTING_TRACKS)
-	{
-		//tsourdt3rd_exmusic_data_series_t *new_series = Z_Calloc(sizeof(tsourdt3rd_exmusic_data_series_t), PU_STATIC, &series[data->num_series]);
-		tsourdt3rd_exmusic_data_series_t *new_series = Z_Calloc(sizeof(tsourdt3rd_exmusic_data_series_t), PU_STATIC, NULL);
-		//CONS_Printf("heheow - data series name %d is %s\n", data->num_series, series[data->num_series]->name);
-		//new_series->tracks = Z_Calloc(data->init_size, PU_STATIC, &series[data->num_series]->tracks);
-		//new_series->tracks = Z_Calloc(data->init_size, PU_STATIC, NULL);
-		new_series->tracks = Z_Calloc(extype->init_size, PU_STATIC, NULL);
-		//new_series->tracks = data->default_series_data;
-		memcpy(new_series->tracks, data->default_series_data, sizeof(&data->default_series_data));
-
-		//strlcpy(new_series->name, tsourdt3rd_exmusic_default_names[data->num_series], TSOURDT3RD_EXMUSIC_MAX_SERIES_NAME);
-		snprintf(new_series->name, TSOURDT3RD_EXMUSIC_MAX_SERIES_NAME, "%s", tsourdt3rd_exmusic_default_names[data->num_series]);
-		//CONS_Printf("heheow - new data series name %d is %s\n", data->num_series, series[data->num_series]->name);
-
-		if (prev_series != NULL)
+		exm_new_series = TSoURDt3rd_EXMusic_FindSeries(name, &series_num);
+		if (series_num > 0)
 		{
-			new_series->prev = prev_series;
-			prev_series->next = new_series;
+			exm_prev_series = tsourdt3rd_exmusic_available_series[series_num-1];
 		}
-		prev_series = new_series;
-#if 1
-		series[data->num_series] = new_series;
-		CONS_Printf("heheow - new data series name %lld is %s\n", data->num_series, series[data->num_series]->name);
-#endif
-		data->num_series++;
 	}
-	if (extype->init_routine && !extype->init_routine(extype)) goto failed;
-	extype->active = true;
-#if 1
-	extype->data = data;
-	extype->data->series = series;
-#endif
-	CONS_Printf("heheow - exited iterator\n");
 
-	container_extype = tsourdt3rd_exmusic_container[0];
-	while (container_extype && container_extype->active)
+	if (exm_new_series == NULL)
 	{
-		prev_container_extype = container_extype;
-		container_extype = container_extype->next;
-		container_pos++;
-	}
-	if (container_extype != NULL)
-	{
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "TSoURDt3rd_EXMusic_Init() - Max EXMusic types reached!\n");
-		goto failed;
-	}
-#define LINK_TO_CONTAINER
-#ifdef LINK_TO_CONTAINER
-	container_extype = Z_Calloc(sizeof(tsourdt3rd_exmusic_t), PU_STATIC, &tsourdt3rd_exmusic_container[container_pos]);
-#else
-	container_extype = Z_Calloc(sizeof(tsourdt3rd_exmusic_t), PU_STATIC, NULL);
-#endif
-	container_extype = extype;
+		tsourdt3rd_exmusic_available_series = (tsourdt3rd_exmusic_data_series_t **)Z_Realloc(tsourdt3rd_exmusic_available_series, ((tsourdt3rd_exmusic_num_series+1) * sizeof(*tsourdt3rd_exmusic_available_series)), PU_STATIC, NULL);
 
-	if (prev_container_extype != NULL)
-	{
-		container_extype->prev = prev_container_extype;
-		prev_container_extype->next = container_extype;
-	}
-#ifndef LINK_TO_CONTAINER
-#if 0
-	(*tsourdt3rd_exmusic_container) = container_extype;
-	(void)container_pos;
-#else
-	tsourdt3rd_exmusic_container[container_pos] = container_extype;
-#endif
-#endif
+		exm_new_series = Z_Calloc(sizeof(*exm_new_series), PU_STATIC, NULL);
+		exm_new_series->hardcoded = (series_num < tsourdt3rd_exmusic_starting_series_max);
+		strlcpy(exm_new_series->series_name, name, TSOURDT3RD_EXMUSIC_MAX_SERIES_NAME);
 
-	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE, "TSoURDt3rd_EXMusic_Init(): Type '\x82%s\x80' created!\n", container_extype->identifier);
-	return true;
-
-	failed:
-	{
-		if (extype)
+		for (INT32 i = 0; i < tsourdt3rd_exmusic_max_types; i++)
 		{
-			if (series) { Z_Free(series); series = NULL; }
-			if (data == NULL) { Z_Free(data); data = NULL; }
-			Z_Free(extype); extype = NULL;
+			exm_new_series->track_sets[i] = Z_Calloc(sizeof(tsourdt3rd_exmusic_musicset_t), PU_STATIC, NULL);
+			exm_new_series->track_sets[i]->music = Z_Calloc(sizeof(*exm_new_series->track_sets[i]->music), PU_STATIC, NULL);
+			if (exm_new_series->hardcoded)
+			{
+				exm_new_series->track_sets[i]->num_music_lumps = 1;
+				exm_new_series->track_sets[i]->music[0] = &soundtestsfx;
+			}
+			else
+			{
+				exm_new_series->track_sets[i]->num_music_lumps = 0;
+			}
 		}
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "TSoURDt3rd_EXMusic_Init(): Could not allocate memory for new type '\x82%s\x80'.\n", extype_defaults.identifier);
-		return false;
+
+		if (exm_prev_series != NULL)
+		{
+			exm_new_series->prev = exm_prev_series;
+			exm_prev_series->next = exm_new_series;
+		}
+
+		if (verbose)
+		{
+			STAR_CONS_Printf(STAR_CONS_NOTICE, "TSoURDt3rd EXMusic: Created series \x82\"%s\"\x80!\n", exm_new_series->series_name);
+		}
+
+		tsourdt3rd_exmusic_num_series++;
 	}
+	else
+	{
+		STAR_CONS_Printf(STAR_CONS_ERROR, "TSoURDt3rd EXMusic: Series \x82\"%s\"\x80 already exists!\n", name);
+	}
+
+	tsourdt3rd_exmusic_available_series[series_num] = exm_new_series;
+	return exm_new_series;
 }
 
-tsourdt3rd_exmusic_t *TSoURDt3rd_EXMusic_ReturnTypeFromIdentifier(const char *identifier)
+//
+// void TSoURDt3rd_EXMusic_Init(void)
+// Initializes our cool EXMusic system!
+//
+void TSoURDt3rd_EXMusic_Init(void)
 {
-	tsourdt3rd_exmusic_t *cur_extype = NULL;
+	INT32 i;
 
-	// Make sure the user isn't messing around with us...
-	if (identifier == NULL)
+	tsourdt3rd_exmusic_initialized = false;
+	tsourdt3rd_exmusic_available_series = NULL;
+	tsourdt3rd_exmusic_num_series = 0;
+
+	for (i = 0; i < tsourdt3rd_exmusic_starting_series_max; i++)
+	{
+		if (TSoURDt3rd_EXMusic_AddNewSeries(tsourdt3rd_exmusic_default_series_names[i], false) == NULL)
+		{
+			STAR_CONS_Printf(STAR_CONS_ERROR, "TSoURDt3rd_EXMusic_Init() - EXMusic wasn't properly initialized!\n");
+			if (tsourdt3rd_exmusic_available_series)
+				Z_Free(tsourdt3rd_exmusic_available_series);
+			tsourdt3rd_exmusic_available_series = NULL;
+			return;
+		}
+	}
+
+	tsourdt3rd_exmusic_initialized = true;
+	STAR_CONS_Printf(STAR_CONS_NOTICE, "TSoURDt3rd_EXMusic_Init()...\n");
+}
+
+tsourdt3rd_exmusic_data_identifiers_t *TSoURDt3rd_EXMusic_ReturnTypeFromIdentifier(const char *identifier, INT32 *identifier_p)
+{
+	tsourdt3rd_exmusic_data_identifiers_t *cur_extype;
+	INT32 identifier_num;
+
+	if (tsourdt3rd_exmusic_initialized == false)
+	{
+		STAR_CONS_Printf(STAR_CONS_DEBUG, "TSoURDt3rd_EXMusic_ReturnTypeFromIdentifier() - EXMusic wasn't initialized!\n");
+		return NULL;
+	}
+	else if (identifier == NULL)
 	{
 		STAR_CONS_Printf(STAR_CONS_DEBUG, "TSoURDt3rd_EXMusic_ReturnTypeFromIdentifier() - No valid identifier was given!\n");
 		return NULL;
 	}
-	else if (tsourdt3rd_exmusic_container == NULL)
-	{
-		STAR_CONS_Printf(STAR_CONS_DEBUG, "TSoURDt3rd_EXMusic_ReturnTypeFromIdentifier() - EXMusic container wasn't initialized at startup, so this function can't be run!\n");
-		return NULL;
-	}
 
-	// Do what we came here to do.
-	cur_extype = tsourdt3rd_exmusic_container[0];
-	while (cur_extype)
+	for (identifier_num = 0; identifier_num < tsourdt3rd_exmusic_max_types; identifier_num++)
 	{
-		if (!cur_extype->active || strcmp(cur_extype->identifier, identifier))
-		{
-			cur_extype = cur_extype->next;
+		cur_extype = &tsourdt3rd_exmusic_data_identifier_types[identifier_num];
+		if (cur_extype == NULL)
 			continue;
+		if (!stricmp(cur_extype->type_name, identifier) || !stricmp(cur_extype->parser_name, identifier))
+		{
+			if (identifier_p) (*identifier_p) = identifier_num;
+			return cur_extype;
 		}
-		break;
 	}
-	return ((cur_extype && cur_extype->return_routine != NULL) ? cur_extype->return_routine(NULL) : cur_extype);
+	return NULL;
 }
 
-tsourdt3rd_exmusic_t *TSoURDt3rd_EXMusic_ReturnTypeFromCVar(consvar_t *cvar)
+tsourdt3rd_exmusic_data_identifiers_t *TSoURDt3rd_EXMusic_ReturnTypeFromCVar(consvar_t *cvar, INT32 *identifier_p)
 {
-	tsourdt3rd_exmusic_t *extype = NULL;
+	consvar_t *exm_cvar;
+	INT32 identifier_num;
 
-	// Make sure the user isn't messing around with us...
-	if (cvar == NULL)
+	if (tsourdt3rd_exmusic_initialized == false)
 	{
-		STAR_CONS_Printf(STAR_CONS_DEBUG, "TSoURDt3rd_EXMusic_ReturnTypeFromCVar() - No CVar with that name was found!\n");
+		STAR_CONS_Printf(STAR_CONS_DEBUG, "TSoURDt3rd_EXMusic_ReturnTypeFromCVar() - EXMusic wasn't initialized!\n");
 		return NULL;
 	}
-	else if (tsourdt3rd_exmusic_container == NULL)
+	else if (cvar == NULL)
 	{
-		STAR_CONS_Printf(STAR_CONS_DEBUG, "TSoURDt3rd_EXMusic_ReturnTypeFromCVar() - EXMusic container wasn't initialized at startup, so this function can't be run!\n");
+		STAR_CONS_Printf(STAR_CONS_DEBUG, "TSoURDt3rd_EXMusic_ReturnTypeFromCVar() - No CVar found!\n");
 		return NULL;
 	}
 
-	// Do what we came here to do.
-	extype = tsourdt3rd_exmusic_container[0];
-	STAR_CONS_Printf(STAR_CONS_DEBUG, "ffing eye of rah or something\n");
-	while (extype != NULL)
+	for (identifier_num = 0; identifier_num < tsourdt3rd_exmusic_max_types; identifier_num++)
 	{
-		tsourdt3rd_exmusic_data_t *exdata = extype->data;
-		const char *exmusic_identifer_to_use = NULL;
-
-		if (exdata != NULL && exdata->identifiers != NULL)
+		exm_cvar = &cv_tsourdt3rd_audio_exmusic[identifier_num];
+		if (!stricmp(exm_cvar->name, cvar->name) || exm_cvar == cvar)
 		{
-			tsourdt3rd_exmusic_data_identifiers_t *current_exdata_identifier = &exdata->identifiers[0];
-			consvar_t *current_cvar = (current_exdata_identifier ? current_exdata_identifier->cvar : NULL);
-			INT32 data_identifier_pos = 0;
-#if 0
-			while (current_exdata_identifier && current_cvar)
+			if (identifier_p) (*identifier_p) = identifier_num;
+			return &tsourdt3rd_exmusic_data_identifier_types[identifier_num];
+		}
+	}
+	return NULL;
+}
+
+tsourdt3rd_exmusic_data_series_t *TSoURDt3rd_EXMusic_FindSeries(const char *series, INT32 *series_p)
+{
+	INT32 series_num = 0;
+	tsourdt3rd_exmusic_data_series_t *exm_series = NULL;
+
+	if (tsourdt3rd_exmusic_initialized == false)
+	{
+		STAR_CONS_Printf(STAR_CONS_DEBUG, "TSoURDt3rd_EXMusic_FindSeries() - EXMusic wasn't initialized at startup!\n");
+	}
+	else if (tsourdt3rd_exmusic_num_series)
+	{
+		if (M_StringToNumber(series, &series_num))
+		{
+			exm_series = tsourdt3rd_exmusic_available_series[series_num];
+		}
+		else
+		{
+			exm_series = tsourdt3rd_exmusic_available_series[0];
+			while (exm_series != NULL && series_num < tsourdt3rd_exmusic_num_series)
 			{
-				if (current_cvar == cvar)
+				if (!strnicmp(exm_series->series_name, series, TSOURDT3RD_EXMUSIC_MAX_SERIES_NAME))
 				{
-					exmusic_identifer_to_use = extype->identifier;
 					break;
 				}
-				current_exdata_identifier = &exdata->identifiers[++data_identifier_pos];
-				current_cvar = (current_exdata_identifier ? current_exdata_identifier->cvar : NULL);
+				else
+				{
+					series_num++;
+					exm_series = exm_series->next;
+				}
 			}
-#else
-			break;
-#endif
 		}
-
-		if (exmusic_identifer_to_use != NULL)
-		{
-			// We found the identifer!
-			break;
-		}
-
-		extype = extype->next;
 	}
-	STAR_CONS_Printf(STAR_CONS_DEBUG, "ffing eye of rah or something\n");
-	return extype;
+
+	if (series_p != NULL)
+	{
+		(*series_p) = series_num;
+	}
+	return exm_series;
 }
 
-boolean TSoURDt3rd_EXMusic_DoesDefHaveValidLump(tsourdt3rd_exmusic_t *exdef, consvar_t *cvar, boolean soundtest_valid)
+tsourdt3rd_exmusic_musicset_t *TSoURDt3rd_EXMusic_GetSeriesTrackSet(INT32 series, INT32 musicset_type, INT32 *series_p)
 {
-	musicdef_t *def = NULL;
+	const char *series_string = va("%d", series);
+	tsourdt3rd_exmusic_data_series_t *exm_series_trackset = TSoURDt3rd_EXMusic_FindSeries(series_string, series_p);
 
-	if (exdef == NULL || cvar == NULL)
+	if (exm_series_trackset == NULL)
 	{
-		// ...Why?
-		return false;
-	}
-	else if (exdef->lump_validity_routine == NULL)
-	{
-		// We... kinda need a routine for this...
-		return false;
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "TSoURDt3rd_EXMusic_GetSeriesTrackSet() - Series given wasn't found!\n");
+		return NULL;
 	}
 
-	def = exdef->lump_validity_routine(cvar);
-	if (def == NULL) return false;
+	return exm_series_trackset->track_sets[musicset_type];
+}
 
-	TSoURDt3rd_S_MusicExists(def, { return true; })
-	return (soundtest_valid && (def == &soundtestsfx));
+musicdef_t *TSoURDt3rd_EXMusic_GetTrackData(INT32 series, INT32 musicset_type, INT32 music_track, INT32 *series_p)
+{
+	tsourdt3rd_exmusic_musicset_t *exm_trackset = TSoURDt3rd_EXMusic_GetSeriesTrackSet(series, musicset_type, series_p);
+
+	if (exm_trackset == NULL)
+	{
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "TSoURDt3rd_EXMusic_GetTrackData() - Series given wasn't found!\n");
+		return NULL;
+	}
+	else if (exm_trackset->music == NULL)
+	{
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "TSoURDt3rd_EXMusic_GetTrackData() - Series given has no music!\n");
+		return NULL;
+	}
+
+	return exm_trackset->music[music_track];
+}
+
+musicdef_t *TSoURDt3rd_EXMusic_GetSeriesMusic(musicdef_t *new_track, INT32 series, INT32 identifier, INT32 track)
+{
+	tsourdt3rd_exmusic_musicset_t *exm_series_musicset = TSoURDt3rd_EXMusic_GetSeriesTrackSet(series, identifier, NULL);
+	musicdef_t **lump = NULL;
+
+	if (exm_series_musicset != NULL)
+	{
+		lump = &exm_series_musicset->music[track];
+		if (lump && new_track)
+			(*lump) = new_track;
+		return (*lump);
+	}
+	return NULL;
+}
+
+//
+// boolean TSoURDt3rd_EXMusic_FindTrack(const char *valstr, INT32 track_set, tsourdt3rd_exmusic_findTrackResult_t *track_result)
+// Finds an EXMusic track that we can use, using the value string given.
+//
+boolean TSoURDt3rd_EXMusic_FindTrack(const char *valstr, INT32 track_set, tsourdt3rd_exmusic_findTrackResult_t *track_result)
+{
+	char series[TSOURDT3RD_EXMUSIC_MAX_SERIES_NAME], track[32];
+	INT32 series_num = 0, music_track = 0;
+	INT32 lump_track_num = 0;
+	boolean series_found = false;
+
+	tsourdt3rd_exmusic_data_series_t *exm_series = NULL;
+	tsourdt3rd_exmusic_musicset_t *exm_series_musicset = NULL;
+	musicdef_t *exm_series_trackset_music = NULL;
+
+	INT32 scan = sscanf(valstr, "%29[^:]:%s:%d", series, track, &lump_track_num); // Parse "Series:Index:Track"
+
+	if (scan < 2)
+	{
+		return false;
+	}
+
+#define EXMUSIC_CHECK_VALIDITY(var) if ((var) == NULL) return false;
+	if (M_StringToNumber(series, &series_num))
+	{
+		// -- Find our EXMusic track based on the number.
+		M_StringToNumber(track, &music_track);
+		EXMUSIC_CHECK_VALIDITY(exm_series = tsourdt3rd_exmusic_available_series[series_num])
+		EXMUSIC_CHECK_VALIDITY(exm_series_musicset = exm_series->track_sets[track_set])
+		EXMUSIC_CHECK_VALIDITY(exm_series_trackset_music = exm_series_musicset->music[music_track])
+	}
+	else
+	{
+		// -- Find our EXMusic track based on the string.
+		exm_series = tsourdt3rd_exmusic_available_series[0];
+
+		while (exm_series)
+		{
+			music_track = 0;
+			exm_series_musicset = exm_series->track_sets[track_set];
+			exm_series_trackset_music = NULL;
+
+			if (!strnicmp(exm_series->series_name, series, TSOURDT3RD_EXMUSIC_MAX_SERIES_NAME))
+			{
+				// We have a string matching a series? We can use that instead!
+				// Hey, maybe we can also use the track number to find the track we want!
+				if (M_StringToNumber(track, &music_track))
+				{
+					if (exm_series_musicset->num_music_lumps && (music_track >= 0 && music_track < exm_series_musicset->num_music_lumps))
+					{
+						// Found it!
+						exm_series_trackset_music = exm_series_musicset->music[music_track];
+					}
+					else
+					{
+						exm_series_musicset = NULL;
+						exm_series_trackset_music = NULL;
+					}
+					break;
+				}
+
+				// Well, that wasn't a valid number.
+				// So, just mark that we found the series we wanted.
+				// It's for just-in-case scenarios where the track can't be found, regardless of what we do.
+				series_found = true;
+			}
+			else
+			{
+				lump_track_num = 0;
+			}
+
+			// Search through all our tracks to find the track we want, using the track's name!
+			while (music_track < exm_series_musicset->num_music_lumps)
+			{
+				musicdef_t *def = exm_series_musicset->music[music_track];
+				const char *lump_search_names[3] = { track, series, valstr };
+				const char *music_name;
+				INT32 search_index, track_list;
+
+				for (search_index = 0; search_index < 3; search_index++)
+				{
+					music_name = lump_search_names[search_index];
+					if (music_name == NULL)
+					{
+						continue;
+					}
+
+					for (track_list = 0; track_list < def->numtracks; track_list++)
+					{
+						if (!stricmp(def->name[track_list], music_name) || (def->title && !stricmp(def->title, music_name)))
+						{
+							lump_track_num = track_list;
+							exm_series_trackset_music = def;
+							break;
+						}
+					}
+					if (exm_series_trackset_music != NULL)
+					{
+						break;
+					}
+				}
+				if (exm_series_trackset_music != NULL)
+				{
+					break;
+				}
+
+				music_track++;
+			}
+
+			if (exm_series_trackset_music != NULL) // -- We found everything we needed!
+			{
+				break;
+			}
+			else if (series_found) // -- Well, this IS the series we wanted, but nothing could be found...
+			{
+				music_track = 0;
+				if (exm_series_musicset->num_music_lumps)
+				{
+					exm_series_trackset_music = exm_series_musicset->music[0];
+				}
+				break;
+			}
+
+			exm_series = exm_series->next;
+			series_num++;
+		}
+
+		EXMUSIC_CHECK_VALIDITY(exm_series)
+		EXMUSIC_CHECK_VALIDITY(exm_series_musicset)
+		EXMUSIC_CHECK_VALIDITY(exm_series_trackset_music)
+	}
+#undef EXMUSIC_CHECK_VALIDITY
+
+	if (track_result != NULL)
+	{
+		track_result->identifier_pos	= track_set;
+		track_result->series_pos		= series_num;
+		track_result->track_pos			= music_track;
+		track_result->cvar				= &cv_tsourdt3rd_audio_exmusic[track_set];
+		track_result->identifier		= &tsourdt3rd_exmusic_data_identifier_types[track_set];
+		track_result->series			= exm_series;
+		track_result->track_set			= exm_series_musicset;
+		track_result->lump				= exm_series_trackset_music;
+		track_result->lump_track        = lump_track_num;
+		track_result->all_series		= tsourdt3rd_exmusic_available_series;
+		track_result->all_music_lumps	= exm_series_musicset->music;
+	}
+	return true;
+}
+
+boolean TSoURDt3rd_EXMusic_FindCVar(const char *cvar_name, const char *valstr)
+{
+	consvar_t *exm_cvar = CV_FindVar(cvar_name);
+	INT32 track_set_num = -1;
+
+	if (tsourdt3rd_exmusic_initialized == false)
+	{
+		return false;
+	}
+
+	memset(&exm_last_find_track_result, 0, sizeof(exm_last_find_track_result));
+	TSoURDt3rd_EXMusic_ReturnTypeFromCVar(exm_cvar, &track_set_num);
+	if (TSoURDt3rd_EXMusic_FindTrack(valstr, track_set_num, &exm_last_find_track_result) == false)
+	{
+		STAR_CONS_Printf(STAR_CONS_ERROR, "%s - Couldn't find track \x82\"%s\"\x80.\n", exm_cvar->name, valstr);
+		return false;
+	}
+
+	prev_exm_cvar = exm_cvar;
+	prev_exm_pos = exm_last_find_track_result.track_pos;
+	if (prev_exm_string == NULL)
+		prev_exm_string = malloc(8192);
+	snprintf(prev_exm_string, 256, "%s:%d", exm_last_find_track_result.series->series_name, prev_exm_pos);
+
+	return true; // -- We can update now!
+}
+
+// ===========================
+// COMMANDS
+// ===========================
+
+void Command_EXMusic_f(void)
+{
+	consvar_t *exm_cvar;
+	const char *valstr;
+	INT32 track_set_num = -1;
+
+	if (tsourdt3rd_exmusic_initialized == false)
+	{
+		return;
+	}
+	else if (COM_Argc() < 1)
+	{
+		STAR_CONS_Printf(STAR_CONS_NONE, "tsourdt3rd_exmusic_set <type/cvar_name> <series> [track] - Sets the EXMusic command to be the given track.\n");
+		return;
+	}
+
+	exm_cvar = CV_FindVar(COM_Argv(0));
+	valstr = COM_Argv(1);
+
+	if (exm_cvar == NULL)
+	{
+		STAR_CONS_Printf(STAR_CONS_NONE, "Invalid EXMusic CVar given!\n");
+		return;
+	}
+	else if (!stricmp(exm_cvar->string, valstr))
+	{
+		// -- We're basically setting it to the same exact thing. Don't do that.
+		return;
+	}
+
+	memset(&exm_last_find_track_result, 0, sizeof(exm_last_find_track_result));
+	TSoURDt3rd_EXMusic_ReturnTypeFromCVar(exm_cvar, &track_set_num);
+	if (TSoURDt3rd_EXMusic_FindTrack(valstr, track_set_num, &exm_last_find_track_result) == false)
+	{
+		STAR_CONS_Printf(STAR_CONS_ERROR, "%s - Couldn't find track \x82\"%s\"\x80.\n", exm_cvar->name, valstr);
+		return;
+	}
+
+	prev_exm_cvar = exm_cvar;
+	prev_exm_pos = exm_last_find_track_result.track_pos;
+	if (prev_exm_string == NULL)
+		prev_exm_string = malloc(8192);
+	snprintf(prev_exm_string, 256, "%s:%d", exm_last_find_track_result.series->series_name, prev_exm_pos);
 }
 
 //
@@ -284,84 +540,48 @@ boolean TSoURDt3rd_EXMusic_DoesDefHaveValidLump(tsourdt3rd_exmusic_t *exdef, con
 //
 boolean TSoURDt3rd_S_EXMusic_CanUpdate(const char *valstr)
 {
-	tsourdt3rd_exmusic_t *extype = NULL;
-	consvar_t *excvar = CV_FindVar(COM_Argv(0));
-	INT32 valstr_num = atoi(valstr);
-	INT32 exmusic_pos = 0;
+	consvar_t *exm_cvar = CV_FindVar(COM_Argv(0));
+	INT32 track_set_num = -1;
 
-	if (excvar == NULL)
+	if (tsourdt3rd_exmusic_initialized == false || exm_cvar == NULL)
 	{
-		// ...How did we even get here then?
 		return false;
 	}
 
-	// Check each series for our cvar!
-	TSoURDt3rd_EXMusic_ReturnType(excvar, extype);
-	if (extype == NULL) return false;
-#if 1
-	if (extype->data == NULL) return false;
-	if (extype->data->series == NULL) return false;
-#endif
-
-#if 0
-	extype = exmusic_data[0];
-
-	if (valstr_num > 0 || !strcmp(valstr, "0"))
+	memset(&exm_last_find_track_result, 0, sizeof(exm_last_find_track_result));
+	TSoURDt3rd_EXMusic_ReturnTypeFromCVar(exm_cvar, &track_set_num);
+	if (TSoURDt3rd_EXMusic_FindTrack(valstr, track_set_num, &exm_last_find_track_result) == false)
 	{
-		// Set our EXMusic command based on the number.
-		exmusic_pos = valstr_num;
-		extype = exmusic_data[exmusic_pos];
+		STAR_CONS_Printf(STAR_CONS_ERROR, "%s - Couldn't find track \x82\"%s\"\x80.\n", exm_cvar->name, valstr);
+		return false;
+	}
+
+	prev_exm_cvar = exm_cvar;
+	prev_exm_pos = exm_last_find_track_result.track_pos;
+	if (prev_exm_string == NULL)
+		prev_exm_string = malloc(8192);
+#if 1
+	snprintf(prev_exm_string, 256, "%s:%d", exm_last_find_track_result.series->series_name, prev_exm_pos);
+#else
+	if (exm_last_find_track_result.lump)
+	{
+#if 0
+		if (*exm_last_find_track_result.lump->title != '\0')
+			snprintf(prev_exm_string, 256, "%s : %s", exm_last_find_track_result.series->series_name, exm_last_find_track_result.lump->title);
+		else
+			snprintf(prev_exm_string, 256, "%s : %s", exm_last_find_track_result.series->series_name, exm_last_find_track_result.lump->name);
+#else
+		if (*exm_last_find_track_result.lump->title != '\0')
+			snprintf(prev_exm_string, 256, "%s", exm_last_find_track_result.lump->title);
+		else
+			snprintf(prev_exm_string, 256, "%s", exm_last_find_track_result.lump->name);
+#endif
 	}
 	else
-	{
-		// Set our EXMusic command based on the string.
-		extype = exmusic_data[0];
-		while (extype)
-		{
-			if (!stricmp(extype->series, valstr)) break;
-			extype = extype->next;
-			exmusic_pos++;
-		}
-	}
-#else
-	(void)valstr_num;
+		snprintf(prev_exm_string, 256, "%s", exm_last_find_track_result.series->series_name);
 #endif
 
-	// Now just input our values, and we're done!
-	if (excvar->value == exmusic_pos)
-	{
-		// -- We're basically setting it to the same exact thing. Don't do that.
-		return false;
-	}
-	else if (exmusic_pos > (INT32)extype->data->num_series)
-	{
-		// -- It doesn't even exist!
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR,
-			"EXMusic - \x82\"%s\"\x80 couldn't find Series \x82\"%s\"\x80, not changing.\n",
-			excvar->name, valstr
-		);
-		return false;
-	}
-	CONS_Printf("Done 2!\n");
-#if 0
-	else if (!TSoURDt3rd_EXMusic_DoesDefHaveValidLump(extype, exmusic_option))
-	{
-		// -- We can't update now...
-		STAR_CONS_Printf(
-			STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR,
-			"EXMusic - \x82\"%s\"\x80 doesn't have an existing lump, not changing.\n",
-			exmusic_cvar_identifier_name[exmusic_option],
-			excvar->name
-		);
-		return false;
-	}
-#endif
-
-	// We can update now!
-	last_extype = extype;
-	last_exmusic_pos = exmusic_pos;
-	last_excvar = excvar;
-	return true;
+	return true; // -- We can update now!
 }
 
 //
@@ -372,262 +592,494 @@ boolean TSoURDt3rd_S_EXMusic_CanUpdate(const char *valstr)
 //
 void TSoURDt3rd_S_EXMusic_Update(void)
 {
-#if 0
-	last_excvar->string = last_extype->series;
-#endif
-	last_excvar->value = last_exmusic_pos;
-	last_extype = NULL;
-	last_excvar = NULL;
-	last_exmusic_pos = 0;
+	prev_exm_cvar->string = prev_exm_string;
+	prev_exm_cvar->value = prev_exm_pos;
+
+	//free(prev_exm_string);
+	prev_exm_cvar = NULL;
+	prev_exm_pos = 0;
+	prev_exm_string = NULL;
+
+	if (sound_started && Playing() && !TSoURDt3rd_Jukebox_SongPlaying())
+	{
+		S_ChangeMusicEx(TSoURDt3rd_EXMusic_DetermineLevelMusic(), mapmusflags, true, mapmusposition, 0, 0);
+	}
 }
 
-#if 1
 //
-// const char *TSoURDt3rd_DetermineLevelMusic(void)
-// Determines and Returns What Music Should be Played on the Current Stage
+// EXMusic – Determining and Playing Stage Music
 //
-#include "../smkg-cvars.h"
-#include "../star_vars.h"
-#include "../../doomstat.h"
 
-#define RANDOM_STATICNESS
-//#define TEST_THING
-//#define MATH_TEST_THING
+#include "../../i_time.h" // I_GetTime
+#include "../../p_setup.h" // levelloading
 
-#ifdef RANDOM_STATICNESS
-static const char *prev_selected_music = NULL;
-static musicdef_t *prev_def = NULL;
-static tsourdt3rd_exmusic_t *prev_exdef = NULL;
+// ------------------------ //
+//   Small string helpers
+// ------------------------ //
+
+typedef struct { char track[8]; } mus7_t; // 7 chars + NUL
+
+static inline void copy7(mus7_t *dst, const char *src)
+{
+	if (dst == NULL) return;
+	if (src == NULL) { dst->track[0] = 0; return; }
+	//strncpy(dst->track, src, 8-1);
+	STRBUFCPY(dst->track, src);
+}
+
+static inline boolean same7(const char *track_a, const char *track_b)
+{
+	if (track_a == NULL || track_b == NULL) return false;
+	return (!strnicmp(track_a, track_b, 8-1));
+}
+
+// ------------------------ //
+//   Global EXMusic state
+// ------------------------ //
+
+typedef struct exm_state_s
+{
+	mapheader_t *map;          // last map we evaluated
+	mus7_t last_played;		// last track played by the determiner
+	mus7_t vanilla_last;       // last vanilla track
+	mus7_t exm_last;           // last EXMusic track chosen
+	mus7_t returned_last;      // last returned to engine
+	UINT32 set_serial;         // global counter for EXMusic sets
+	UINT32 last_exm_serial;    // serial of last EXMusic set
+	tic_t exm_grace_until;     // until this tic, ignore mismatches
+} exm_state_t;
+static exm_state_t gexm = {0};
+
+#define EXMUSIC_GRACE_TICS 5
+//#define EXMUSIC_GRACE_TICS 0
+
+#ifdef _TSOURDT3RD_DEBUGGING
+	#define DEBUG_PRINT(...) CONS_Printf(__VA_ARGS__);
+#else
+	#define DEBUG_PRINT(...) ;
 #endif
 
-#define EXMUSIC_MUSIC_EXISTS(music) \
-	CONS_Printf("music %s is valid\n", music); \
-	strlcpy(selected_music, music, 7); \
+// ------------------------ //
+//   Music existence checks
+// ------------------------ //
+
+static void EXM_SetEXMusic(const char *name)
+{
+	copy7(&gexm.exm_last, name);
+	gexm.last_exm_serial = ++gexm.set_serial;
+	gexm.exm_grace_until = (I_GetTime() + EXMUSIC_GRACE_TICS);
+}
+
+static inline void EXM_SetVanilla(const char *name)
+{
+	copy7(&gexm.vanilla_last, name);
+}
+
+static inline const char* EXM_Return(const char *name)
+{
+	copy7(&gexm.last_played, name);
+	copy7(&gexm.returned_last, name);
+	DEBUG_PRINT("EXM_Return() - Returning %s\n", gexm.returned_last.track);
+	return gexm.returned_last.track;
+}
+
+// ------------------------ //
+//   Safe macros
+// ------------------------ //
+
+#define SET_EXMUSIC_MUSIC_BYDEF(defptr) \
+	DEBUG_PRINT("exm def '%s' (%s), is valid\n", defptr->name[track], #defptr); \
+	EXM_SetEXMusic(defptr->name[track]); \
+	return true;
+
+#define SET_EXMUSIC_MUSIC_BYNAME(name) \
+	DEBUG_PRINT("exm name '%s' (%s) is valid\n", name, #name); \
+	EXM_SetEXMusic(name); \
+	return true;
+
+
+#define MUSIC_EXISTS(name, BODY) \
+	TSoURDt3rd_S_MusicExists(name, track, { BODY })
+
+#define SET_VANILLA_MUSIC(name) \
+	DEBUG_PRINT("music %s is valid (vanilla, %s)\n", name, #name); \
+	EXM_SetVanilla(name);
+
+#define VANILLA_MUSIC_EXISTS(name) \
+	SET_VANILLA_MUSIC(name); \
 	break;
 
-#define EXMUSIC_EXISTS(slot) \
-	TSoURDt3rd_S_MusicExists(slot, { \
-		CONS_Printf("def %s is valid\n", slot->name); \
-		strlcpy(selected_music, slot->name, 7); \
-		prev_def = slot; \
-		prev_exdef = exdef; \
-		return; \
-	})
+#define VANILLA_MUSIC_EXISTS_BY_NAME(name) \
+	MUSIC_EXISTS(name, VANILLA_MUSIC_EXISTS(name))
 
-#define EXMUSIC_EXISTS_BY_NAME(music) \
-	TSoURDt3rd_S_MusicExists(music, EXMUSIC_MUSIC_EXISTS(music))
 
-#define MUSIC_MATCHES \
-	strnicmp(S_MusicName(), ((mapmusflags & MUSIC_RELOADRESET) ? map->musname : mapmusname), 7)
+// ------------------------ //
+//   Override detection
+// ------------------------ //
 
-#define MUSICEXISTS(music) (music && S_MusicExists(music, !midi_disabled, !digital_disabled))
-
-static void EXMusic_DetermineMusic(const char *type, char *selected_music)
+static boolean EXM_UserOverrideActive(void)
 {
-	tsourdt3rd_exmusic_t *exdef = NULL;
-	musicdef_t *def = NULL;
+	const char *cur = S_MusicName();
+	tic_t now = I_GetTime();
+
+	if (now < gexm.exm_grace_until)
+		return false;
 
 #if 1
-	STAR_CONS_Printf(STAR_CONS_DEBUG, "currently selected_music is %s\n", selected_music);
+	// DEFAULT
+	if (gexm.exm_last.track[0] && !same7(cur, gexm.exm_last.track))
+		return true;
 #endif
-
-	// This function assumes you gave your EXMusic type a play_routine.
-	// If you didn't, you'll probably get a crash.
-
-	if (type == NULL)
-	{
-		// Search through all EXMusic types, maybe we'll get something...
-		exdef = tsourdt3rd_exmusic_container[0];
-		while (exdef != NULL)
-		{
-			def = exdef->play_routine(NULL);
-			if (def != NULL)
-				break;
-			exdef = exdef->next;
-		}
-	}
-	else
-	{
-		// Search for a specific EXMusic type...
-		TSoURDt3rd_EXMusic_ReturnType(type, exdef);
-		if (exdef == NULL)
-		{
-			// Invalid EXMusic type, move on.
-			return;
-		}
-		def = exdef->play_routine(NULL);
-	}
-
-	if (def != NULL)
-	{
-		// Set our new music track!
-		EXMUSIC_EXISTS(def)
-	}
 
 #if 0
-#if !defined (TEST_THING) && !defined (MATH_TEST_THING)
-	exmusic_selected_series = exmusic_def_p[cvar->value];
-	if (exmusic_selected_series == NULL)
+	if (gexm.exm_last.track[0])
+		return !same7(cur, gexm.exm_last.track);
+#endif
+
+#if 1
+	if (gexm.last_played.track[0] && (!same7(cur, gexm.vanilla_last.track) || !same7(cur, gexm.last_played.track)))
 	{
-		// Invalid EXMusic def, move on.
-		continue;
+		EXM_SetVanilla(cur);
+		return true;
 	}
 #endif
-#endif
+
+	return false;
 }
 
-const char *TSoURDt3rd_DetermineLevelMusic(void)
+// ------------------------ //
+//   EXMusic logic
+// ------------------------ //
+
+static boolean EXMusic_DetermineMusic(void)
 {
-#if 1
-	static char selected_music[7] = "";
-	//static char selected_music[7];
-#else
-	char selected_music[7];
+	tsourdt3rd_exmusic_findTrackResult_t exm_find_track_result;
+	tsourdt3rd_world_scenarios_t scenario = tsourdt3rd_local.world.scenario;
+	tsourdt3rd_world_scenarios_types_t scenario_types = tsourdt3rd_local.world.scenario_types;
+	INT32 track = 0;
+
+#define EXMUSIC_GET_TYPE(scenario_type, exm_track_set) \
+	memset(&exm_find_track_result, 0, sizeof(exm_find_track_result)); \
+	if ((scenario_type) == -1 || (scenario_types & (scenario_type))) { \
+		if (TSoURDt3rd_EXMusic_FindTrack(cv_tsourdt3rd_audio_exmusic[(exm_track_set)].string, (exm_track_set), &exm_find_track_result)) { \
+			track = exm_find_track_result.lump_track; \
+			if (exm_find_track_result.series_pos >= tsourdt3rd_exmusic_starting_series_max) { \
+				MUSIC_EXISTS(exm_find_track_result.lump->name[track], { \
+					SET_EXMUSIC_MUSIC_BYDEF(exm_find_track_result.lump); \
+				}); \
+			} \
+		} \
+	}
+
+	if (scenario & TSOURDT3RD_WORLD_SCENARIO_GAMEOVER)
+	{
+		EXMUSIC_GET_TYPE(-1, tsourdt3rd_exmusic_gameover);
+		return false;
+	}
+
+	if (scenario & TSOURDT3RD_WORLD_SCENARIO_INTERMISSION)
+	{
+		if (scenario & TSOURDT3RD_WORLD_SCENARIO_BOSS)
+		{
+			EXMUSIC_GET_TYPE(TSOURDT3RD_WORLD_SCENARIO_TYPES_TRUEFINALBOSS, tsourdt3rd_exmusic_intermission_truefinalboss);
+			EXMUSIC_GET_TYPE(TSOURDT3RD_WORLD_SCENARIO_TYPES_FINALBOSS, tsourdt3rd_exmusic_intermission_finalboss);
+			if ((scenario_types & TSOURDT3RD_WORLD_SCENARIO_TYPES_FINALBOSS) && gamestate == GS_EVALUATION)
+			{
+				return false;
+			}
+			EXMUSIC_GET_TYPE(-1, tsourdt3rd_exmusic_intermission_boss);
+		}
+		EXMUSIC_GET_TYPE(-1, tsourdt3rd_exmusic_intermission);
+		return false;
+	}
+
+	if (scenario_types & TSOURDT3RD_WORLD_SCENARIO_TYPES_POSTBOSS)
+	{
+		if (gexm.map && cv_tsourdt3rd_audio_bosses_postboss.value)
+			MUSIC_EXISTS(gexm.map->muspostbossname, { SET_EXMUSIC_MUSIC_BYNAME(gexm.map->muspostbossname); });
+	}
+	if (scenario & TSOURDT3RD_WORLD_SCENARIO_BOSS)
+	{
+		if (scenario_types & TSOURDT3RD_WORLD_SCENARIO_TYPES_TRUEFINALBOSS)
+		{
+			EXMUSIC_GET_TYPE(TSOURDT3RD_WORLD_SCENARIO_TYPES_BOSSPINCH, tsourdt3rd_exmusic_bosses_truefinalboss_pinch);
+			EXMUSIC_GET_TYPE(-1, tsourdt3rd_exmusic_bosses_truefinalboss);
+		}
+		if (scenario_types & TSOURDT3RD_WORLD_SCENARIO_TYPES_FINALBOSS)
+		{
+			EXMUSIC_GET_TYPE(TSOURDT3RD_WORLD_SCENARIO_TYPES_BOSSPINCH, tsourdt3rd_exmusic_bosses_finalboss_pinch);
+			EXMUSIC_GET_TYPE(-1, tsourdt3rd_exmusic_bosses_finalboss);
+		}
+		EXMUSIC_GET_TYPE(TSOURDT3RD_WORLD_SCENARIO_TYPES_RACE, tsourdt3rd_exmusic_bosses_race);
+		EXMUSIC_GET_TYPE(TSOURDT3RD_WORLD_SCENARIO_TYPES_BOSSPINCH, tsourdt3rd_exmusic_bosses_pinch);
+		EXMUSIC_GET_TYPE(-1, tsourdt3rd_exmusic_bosses);
+	}
+
+#undef EXMUSIC_GET_TYPE
+
+	return false;
+}
+
+// ------------------------ //
+//   Public API
+// ------------------------ //
+
+//
+// lumpnum_t TSoURDt3rd_EXMusic_DefaultMapTrack_Play(const char **mname)
+// Plays default music if the game can't find a specified track to play.
+//
+lumpnum_t TSoURDt3rd_EXMusic_DefaultMapTrack_Play(const char **mname)
+{
+	const boolean midipref = cv_musicpref.value;
+	const char *track_string = cv_tsourdt3rd_audio_exmusic[tsourdt3rd_exmusic_defaultmaptrack].string;
+	tsourdt3rd_exmusic_findTrackResult_t exm_find_track_result;
+
+	if (tsourdt3rd_exmusic_initialized == false)
+	{
+		return LUMPERROR;
+	}
+
+	if (TSoURDt3rd_EXMusic_FindTrack(track_string, tsourdt3rd_exmusic_defaultmaptrack, &exm_find_track_result) == false)
+	{
+		COM_BufInsertText(va("%s \"Default:0\"\n", cv_tsourdt3rd_audio_exmusic[tsourdt3rd_exmusic_defaultmaptrack].name));
+		//STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "EXMUSIC (Default Map Track) - Couldn't find music to use!\n", (*mname));
+		return LUMPERROR;
+	}
+	else if (exm_find_track_result.series_pos >= tsourdt3rd_exmusic_starting_series_max)
+	{
+		const char *new_name = exm_find_track_result.lump->name[exm_find_track_result.lump_track];
+		lumpnum_t lumpnum = LUMPERROR;
+
+		if (S_PrefAvailable(midipref, new_name))
+			lumpnum = W_GetNumForName(va(midipref ? "d_%s":"o_%s", new_name));
+		else if (S_PrefAvailable(!midipref, new_name))
+			lumpnum = W_GetNumForName(va(midipref ? "o_%s":"d_%s", new_name));
+
+		if (lumpnum != LUMPERROR)
+		{
+			//STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE, "EXMUSIC (Default Map Track) - Using '%.6s' instead!\n", new_name);
+			return lumpnum;
+		}
+	}
+
+	(void)mname;
+	return LUMPERROR;
+}
+
+//
+// const char *TSoURDt3rd_EXMusic_DetermineLevelMusic(void)
+// Determines what music should play in the level based on the current EXMusic scenario.
+//
+const char *TSoURDt3rd_EXMusic_DetermineLevelMusic(void)
+{
+	INT32 track = 0;
+	const char *current_music = S_MusicName();
+
+	gexm.returned_last.track[0] = 0;
+	TSoURDt3rd_WORLD_UpdateScenarios();
+
+	// Update map / reset if changed
+	if (!gexm.map || gexm.map != mapheaderinfo[gamemap-1] || levelloading)
+	{
+		gexm.map = mapheaderinfo[gamemap-1];
+		gexm.vanilla_last.track[0] = 0;
+		gexm.exm_last.track[0] = 0;
+		gexm.returned_last.track[0] = 0;
+		gexm.last_played.track[0] = 0;
+		gexm.exm_grace_until = 0;
+		if (gexm.map && *gexm.map->musname != '\0')
+			copy7(&gexm.vanilla_last, gexm.map->musname);
+		if (*gexm.vanilla_last.track == '\0')
+			copy7(&gexm.vanilla_last, mapmusname);
+	}
+	else
+	{
+		if (!TSoURDt3rd_Jukebox_SongPlaying() && *current_music != '\0')
+		{
+			if (!same7(current_music, gexm.vanilla_last.track) && !same7(gexm.exm_last.track, current_music))
+			{
+				DEBUG_PRINT("updating map music to current music (%s)\n", current_music);
+				copy7(&gexm.vanilla_last, current_music);
+			}
+#if 0 // DEFAULT: OFF
+			else if (!same7(gexm.vanilla_last.track, mapmusname))
+			{
+				DEBUG_PRINT("updating map music to mapmusname (%s)\n", mapmusname);
+				copy7(&gexm.vanilla_last, mapmusname);
+			}
 #endif
-	mapheader_t *map = mapheaderinfo[gamemap-1];
+		}
+	}
 
-	memset(selected_music, 0, sizeof(selected_music));
-
+	// Hard overrides
 	if (TSoURDt3rd_AprilFools_ModeEnabled())
 	{
-		// April Fools Mode overrides literally everything.
-		return "_hehe";
+		// Not to be confused with 'BwehHehHe'
+		return EXM_Return("_hehe");
 	}
-	else if (TSoURDt3rd_Jukebox_IsPlaying())
+	else if (TSoURDt3rd_Jukebox_SongPlaying())
 	{
-		// No, don't override my music.
-		return tsourdt3rd_global_jukebox->curtrack->name;
+		// LEAVE MY JUKEBOX ALONE!
+		return "";
 	}
-#if 0
-	else if (gamestate == GS_TITLESCREEN || titlemapinaction)
+	else if (gamestate == GS_TITLESCREEN || titlemapinaction || !gexm.map)
 	{
-		//TSoURDt3rd_S_MusicExists(map->musname, { return map->musname; })
-		TSoURDt3rd_S_MusicExists(mapmusname, { return mapmusname; })
-		return "_title";
+		// Made it here? Play the map's default track, and we're done :)
+		DEBUG_PRINT("DetermineLevelMusic() - Title screen or no map, using map default music\n");
+		if (gexm.map) MUSIC_EXISTS(gexm.map->musname, { return EXM_Return(gexm.map->musname); });
+		MUSIC_EXISTS(mapmusname, { return EXM_Return(mapmusname); });
+		return EXM_Return("_title");
 	}
-#endif
-	else if (map == NULL)
-	{
-		// ...How?
-		return mapmusname;
-	}
+
 #if 1
-	else if (gamestate == GS_TITLESCREEN || titlemapinaction)
-	{
-		TSoURDt3rd_S_MusicExists(map->musname, { return map->musname; })
-		TSoURDt3rd_S_MusicExists(mapmusname, { return mapmusname; })
-		return "_title";
+	// extremely hacky hack to get intermission music to always work with EXMusic
+	/// \todo: check for scenario, not scenario_type, before this, if scenario doesn't match last one, then last exmusic gets reset
+	tsourdt3rd_exmusic_findTrackResult_t exm_find_track_result;
+	tsourdt3rd_world_scenarios_t scenario = tsourdt3rd_local.world.scenario;
+	tsourdt3rd_world_scenarios_types_t scenario_types = tsourdt3rd_local.world.scenario_types;
+#define EXMUSIC_GET_TYPE_HERE(scenario_type, exm_track_set) \
+	memset(&exm_find_track_result, 0, sizeof(exm_find_track_result)); \
+	if ((scenario_type) == -1 || (scenario_types & (scenario_type))) { \
+		if (TSoURDt3rd_EXMusic_FindTrack(cv_tsourdt3rd_audio_exmusic[(exm_track_set)].string, (exm_track_set), &exm_find_track_result)) { \
+			track = exm_find_track_result.lump_track; \
+			if (exm_find_track_result.series_pos >= tsourdt3rd_exmusic_starting_series_max) { \
+				MUSIC_EXISTS(exm_find_track_result.lump->name[track], { \
+					DEBUG_PRINT("exm def '%s' is valid\n", exm_find_track_result.lump->name[track]); \
+					EXM_SetEXMusic(exm_find_track_result.lump->name[track]); \
+					return exm_find_track_result.lump->name[track]; \
+				}); \
+			} \
+		} \
 	}
-#endif
-
-#if 0
-	static char old_mapmusname[6];
-	if (memcmp(old_mapmusname, mapmusname))
-		snprintf(old_mapmusname, 6, "%s", mapmusname);
-#endif
-
-#if 0
-	// Now, determine our music!
-	EXMusic_DetermineMusic(NULL, selected_music);
-#endif
-
-#if 0
-
-	// Made it here? Play the map's default track, and we're done :) //
-	if (gamestate == GS_TITLESCREEN || titlemapinaction)
+	if (scenario & TSOURDT3RD_WORLD_SCENARIO_GAMEOVER)
 	{
-		if (MUSICEXISTS(mapheaderinfo[gamemap-1]->musname))
-			return mapheaderinfo[gamemap-1]->musname;
-		if (MUSICEXISTS("_title"))
-			return "_title";
+		EXMUSIC_GET_TYPE_HERE(-1, tsourdt3rd_exmusic_gameover);
+	}
+	if (scenario & TSOURDT3RD_WORLD_SCENARIO_INTERMISSION)
+	{
+		if (scenario & TSOURDT3RD_WORLD_SCENARIO_BOSS)
+		{
+			EXMUSIC_GET_TYPE_HERE(TSOURDT3RD_WORLD_SCENARIO_TYPES_TRUEFINALBOSS, tsourdt3rd_exmusic_intermission_truefinalboss);
+			EXMUSIC_GET_TYPE_HERE(TSOURDT3RD_WORLD_SCENARIO_TYPES_FINALBOSS, tsourdt3rd_exmusic_intermission_finalboss);
+			if ((scenario_types & TSOURDT3RD_WORLD_SCENARIO_TYPES_FINALBOSS) && gamestate == GS_EVALUATION)
+			{
+				gexm.exm_last.track[0] = 0;
+				gexm.last_played.track[0] = 0;
+				return "";
+			}
+			EXMUSIC_GET_TYPE_HERE(-1, tsourdt3rd_exmusic_intermission_boss);
+		}
+		EXMUSIC_GET_TYPE_HERE(-1, tsourdt3rd_exmusic_intermission);
+		DEBUG_PRINT("Intermission - No EXMusic found, clearing last EXMusic\n");
+		gexm.exm_last.track[0] = 0;
+		gexm.last_played.track[0] = 0;
+	}
+#undef EXMUSIC_GET_TYPE_HERE
+#endif
+
+	// Respect user/Lua override
+	if (EXM_UserOverrideActive())
+	{
+		DEBUG_PRINT("DetermineLevelMusic() - Using USER-DEFINED EXMusic!\n");
+
+		if (!same7(S_MusicName(), mapmusname))
+		{
+			EXM_SetVanilla(S_MusicName());
+			return S_MusicName();
+		}
+
+		EXM_SetVanilla(mapmusname);
 		return mapmusname;
 	}
 
-	if (RESETMUSIC || strnicmp(S_MusicName(),
-		((mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname), 7))
-		return ((mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname);
-	else
-		return mapheaderinfo[gamemap-1]->musname;
-
-#if 0
-	if (strnicmp(TSoURDt3rd_DetermineLevelMusic(), S_MusicName(), 7))
-		return mapmusname;
-#endif
-	return ((!mapmusname[0] || !strnicmp(mapmusname, S_MusicName(), 7)) ? mapheaderinfo[gamemap-1]->musname : mapmusname);
-
-#else
-
-#if 0
-	if (selected_def == NULL)
+	// Let EXMusic try!
+	if (EXMusic_DetermineMusic() == false)
 	{
-		if (mapmusflags & MUSIC_RELOADRESET)
-			return map->musname;
-		return mapmusname;
-	}
-#else
-	goto finished;
-
-finished:
-{
-	if (*selected_music != '\0')
-	{
-		// We found a different piece of music, so let's leave!
-#ifdef RANDOM_STATICNESS
-		prev_selected_music = selected_music;
-#endif
-		return selected_music;
+		gexm.exm_last.track[0] = 0;
+		gexm.last_played.track[0] = 0;
 	}
 
-#if 0
-	return NULL;
-#endif
+	// If EXMusic set something new, prefer it and return it!
+	if (gexm.exm_last.track[0]) // DEFAULT
+	//if (gexm.returned_last.track[0])
+	{
+		if (!same7(S_MusicName(), gexm.exm_last.track))
+		{
+			DEBUG_PRINT("EXMusic - Using the current EXMusic track\n");
+			return EXM_Return(gexm.exm_last.track);
+		}
+		DEBUG_PRINT("EXMusic - Using the currently playing track instead\n");
+		return S_MusicName();
+	}
 
+	// ...Otherwise, fallback to vanilla's tracks!
 	switch (gamestate)
 	{
 		case GS_EVALUATION:
 		case GS_GAMEEND:
-			// We don't *HAVE* to play anything here, it's just cool if we *CAN*.
-			EXMUSIC_EXISTS_BY_NAME(mapmusname);
+			//VANILLA_MUSIC_EXISTS_BY_NAME(mapmusname);
+			return "";
 			/* FALLTHRU */
-
 		case GS_INTERMISSION:
-			//EXMUSIC_EXISTS_BY_NAME(mapmusname);
-			EXMUSIC_EXISTS_BY_NAME(map->musintername);
 			switch (intertype)
 			{
 				case int_coop:
-					EXMUSIC_EXISTS_BY_NAME("_clear");
+					VANILLA_MUSIC_EXISTS_BY_NAME(gexm.map->musintername);
+					VANILLA_MUSIC_EXISTS_BY_NAME("_clear");
 					break;
 				case int_spec:
-					EXMUSIC_EXISTS_BY_NAME(stagefailed ? "CHFAIL" : "CHPASS");
+					VANILLA_MUSIC_EXISTS_BY_NAME(gexm.map->musintername);
+					VANILLA_MUSIC_EXISTS_BY_NAME(stagefailed ? "CHFAIL" : "CHPASS");
 					break;
 				default:
+					VANILLA_MUSIC_EXISTS_BY_NAME("_inter");
 					break;
 			}
-			/* FALLTHRU */
 
+			// hacky hack, fix later
+			if (gexm.vanilla_last.track[0]) break;
+
+			/* FALLTHRU */
 		default:
-			if (*selected_music != '\0') break;
-			if (RESETMUSIC || MUSIC_MATCHES)
-			{
-				if (mapmusflags & MUSIC_RELOADRESET)
-					EXMUSIC_EXISTS_BY_NAME(map->musname)
-				else
-					EXMUSIC_EXISTS_BY_NAME(mapmusname)
-			}
-			else
-			{
-				EXMUSIC_EXISTS_BY_NAME(map->musname);
-				EXMUSIC_EXISTS_BY_NAME(mapmusname);
-			}
+#if 0
+			if (!same7(S_MusicName(), mapmusname) && !same7(gexm.exm_last.track, S_MusicName()))
+				VANILLA_MUSIC_EXISTS_BY_NAME(S_MusicName());
+#endif
+
+#if 1
+			// DEFAULT
+			if (!same7(S_MusicName(), gexm.map->musname))
+				VANILLA_MUSIC_EXISTS_BY_NAME(gexm.map->musname);
+			if (!same7(S_MusicName(), mapmusname))
+				VANILLA_MUSIC_EXISTS_BY_NAME(mapmusname);
+#endif
+#if 0
+			if (gexm.vanilla_last.track[0] && !same7(S_MusicName(), gexm.vanilla_last.track))
+				VANILLA_MUSIC_EXISTS_BY_NAME(gexm.vanilla_last.track);
+			if (!same7(S_MusicName(), mapmusname))
+				VANILLA_MUSIC_EXISTS_BY_NAME(mapmusname);
+			if (!same7(S_MusicName(), gexm.map->musname))
+				VANILLA_MUSIC_EXISTS_BY_NAME(gexm.map->musname);
+#endif
+#if 0
+			if (!same7(S_MusicName(), mapmusname) && !same7(gexm.exm_last.track, S_MusicName()))
+				VANILLA_MUSIC_EXISTS_BY_NAME(S_MusicName());
+			if (!same7(gexm.map->musname, mapmusname) && !same7(gexm.exm_last.track, mapmusname))
+				VANILLA_MUSIC_EXISTS_BY_NAME(mapmusname);
+			if (!same7(S_MusicName(), gexm.map->musname))
+				VANILLA_MUSIC_EXISTS_BY_NAME(gexm.map->musname);
+#endif
+			if (gexm.vanilla_last.track[0] && !same7(S_MusicName(), gexm.vanilla_last.track))
+				VANILLA_MUSIC_EXISTS_BY_NAME(gexm.vanilla_last.track);
 			break;
 	}
-#ifdef RANDOM_STATICNESS
-	prev_selected_music = selected_music;
-#endif
-	return selected_music;
+
+	if (gexm.vanilla_last.track[0])
+	{
+		return EXM_Return(gexm.vanilla_last.track);
+	}
+
+	// If somehow, SOMEHOW, we made it here, let's *not* return anything NULL, please.
+	// That can cause crashes. Crashes are bad, you know.
+	return "";
 }
-#endif
-#endif
-}
-#endif

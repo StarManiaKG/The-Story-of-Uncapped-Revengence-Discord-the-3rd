@@ -6041,6 +6041,9 @@ void P_InitSpecials(void)
 			break;
 	}
 
+	// Set lighting
+	P_SetupMapLighting(cv_map_randomdirlight.value == 2);
+
 	// Set globalweather
 	globalweather = mapheaderinfo[gamemap-1]->weather;
 }

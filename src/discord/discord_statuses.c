@@ -66,6 +66,7 @@ static DISC_Chars_t DISC_supportedSkins[] = {
 	{"tailsdoll",      NULL,          false,   false},
 	{"metalknuckles",  NULL,          false,   false},
 	{"whisper",        NULL,          false,   false},
+	{"s3sonic",        NULL,          false,   false},
 	// Skins I've made
 	{"hexhog",         NULL,          false,   false},
 	// Skins my friends have made

@@ -12,4 +12,5 @@ target_sources(SRB2SDL2 PRIVATE
 	http-mserv.c
 	i_tcp.c
 	mserv.c
+	stun.c
 )

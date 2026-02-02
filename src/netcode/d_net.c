@@ -3,6 +3,8 @@
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 1999-2024 by Sonic Team Junior.
+// Copyright (C) 2025 by Kart Krew.
+// Copyright (C) 2024-2026 by StarManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -32,9 +34,6 @@
 #include "i_tcp.h"
 #include "../d_main.h" // srb2home
 
-// TSoURDt3rd
-#include "../STAR/netcode/smkg-net.h" // TSoURDt3rd_D_CheckNetgame() //
-
 //
 // NETWORKING
 //
@@ -59,6 +58,9 @@ INT16 extratics;
 doomcom_t *doomcom = NULL;
 /// \brief network packet data, points inside doomcom
 doomdata_t *netbuffer = NULL;
+/// \brief hole punching packet, also points inside doomcom
+/* See ../doc/Holepunch-Protocol.txt */
+holepunch_t *holepunchpacket = NULL;
 
 #ifdef DEBUGFILE
 FILE *debugfile = NULL; // put some net info in a file during the game
@@ -569,6 +571,7 @@ static void fprintfstringnewline(char *s, size_t len)
 }
 
 /// \warning Keep this up-to-date if you add/remove/rename packet types
+/// \note Don't forget TSoURDt3rd packet types here too!
 static const char *packettypename[NUMPACKETTYPE] =
 {
 	"NOTHING",
@@ -610,7 +613,9 @@ static const char *packettypename[NUMPACKETTYPE] =
 	"LOGIN",
 	"TELLFILESNEEDED",
 	"MOREFILESNEEDED",
-	"PING"
+	"PING",
+
+	"TSOURDT3RD",
 };
 
 static void DebugPrintpacket(const char *header)
@@ -1083,9 +1088,7 @@ boolean D_CheckNetGame(void)
 		I_Error("Too many nodes (%d), max:%d", numnetnodes, MAXNETNODES);
 
 	netbuffer = (doomdata_t *)(void *)&doomcom->data;
-
-	// STAR STUFF: run our cool netgame junk too! //
-	TSoURDt3rd_D_CheckNetgame(doomcom);
+	holepunchpacket = (holepunch_t *)(void *)&doomcom->data;
 
 #ifdef DEBUGFILE
 	if (M_CheckParm("-debugfile"))

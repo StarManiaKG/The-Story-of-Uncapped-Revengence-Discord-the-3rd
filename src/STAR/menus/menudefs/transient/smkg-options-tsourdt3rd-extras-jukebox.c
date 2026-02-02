@@ -26,7 +26,7 @@
 static INT32 skyRoomMenu_ul = 0;
 static UINT8 tsourdt3rd_skyRoomMenuTranslations[MAXUNLOCKABLES];
 
-static boolean jb_draw_options = false;
+static boolean jb_handle_options = false;
 static boolean jb_handle_sfx = false;
 
 static UINT8 jb_selected_track = 0;
@@ -116,6 +116,10 @@ static void M_Sys_StopAudio(void)
 	if (S_MusicPlaying())
 	{
 		S_StopMusic();
+	}
+	if (Playing())
+	{
+		TSoURDt3rd_S_RefreshMusic();
 	}
 }
 
@@ -335,7 +339,7 @@ static void M_Sys_DrawJukebox(void)
 {
 	INT32 x, y, i;
 
-	if (jb_draw_options)
+	if (jb_handle_options)
 	{
 		V_DrawThinString(120, 164, V_YELLOWMAP,                     "Menu Controls");
 		V_DrawThinString(4,   176, V_MENUCOLORMAP|V_ALLOWLOWERCASE, "Page Up/Up: Scroll Up");
@@ -662,18 +666,17 @@ static boolean M_Sys_HandleJukebox(INT32 choice)
 	const UINT8 pid = 0;
 	tsourdt3rd_jukeboxdef_t *cur_juke_def = tsourdt3rd_cur_page_jukebox_defs[jb_sel];
 
-	if (jb_draw_options)
+	if (jb_handle_options)
 	{
 		if (TSoURDt3rd_M_MenuBackPressed(pid))
 		{
-			jb_draw_options = false;
+			jb_handle_options = false;
 			TSoURDt3rd_M_SetMenuDelay(pid);
 			return true;
 		}
 		return false;
 	}
-
-	if (jb_handle_sfx)
+	else if (jb_handle_sfx)
 	{
 		if (menucmd[pid].dpad_lr < 0 || menucmd[pid].dpad_lr > 0) // left & right
 		{
@@ -715,6 +718,7 @@ static boolean M_Sys_HandleJukebox(INT32 choice)
 		}
 		else if (TSoURDt3rd_M_MenuBackPressed(pid))
 		{
+			S_StartSoundFromEverywhere(sfx_adderr);
 			jb_multiple_tracks_select = false;
 			jb_selected_track = 0;
 			TSoURDt3rd_M_SetMenuDelay(pid);
@@ -732,7 +736,7 @@ static boolean M_Sys_HandleJukebox(INT32 choice)
 			cv_closedcaptioning.value = 1; // hack
 			return true;
 		case KEY_TAB:
-			jb_draw_options = true;
+			jb_handle_options = true;
 			return true;
 		default:
 			break;
@@ -788,9 +792,14 @@ static boolean M_Sys_HandleJukebox(INT32 choice)
 	else if (TSoURDt3rd_M_MenuConfirmPressed(pid))
 	{
 		if (cur_juke_def->linked_musicdef->numtracks > 1)
+		{
+			S_StartSoundFromEverywhere(sfx_zoom);
 			jb_multiple_tracks_select = true;
+		}
 		else
+		{
 			M_JukeboxPlay(cur_juke_def);
+		}
 		TSoURDt3rd_M_SetMenuDelay(pid);
 		return true;
 	}

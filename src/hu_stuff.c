@@ -3,6 +3,7 @@
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 1999-2024 by Sonic Team Junior.
+// Copyright (C) 2025 by StarManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -98,6 +99,9 @@ patch_t *bflagico;
 patch_t *rmatcico;
 patch_t *bmatcico;
 patch_t *tagico;
+
+// music/song credits
+patch_t *songcreditbg;
 
 //-------------------------------------------
 //              coop hud
@@ -404,7 +408,7 @@ void HU_AddChatText(const char *text, boolean playsound)
 
 	if (OLDCHAT) // if we're using oldchat, print directly in console
 		CONS_Printf("%s\n", text);
-	else			// if we aren't, still save the message to log.txt	
+	else			// if we aren't, still save the message to log.txt
 	{
 		CON_LogMessage(text);
 		CON_LogMessage("\n"); // Add newline. Don't use va for that, since `text` might be refering to va's buffer itself
@@ -752,7 +756,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 		char *tempchar = NULL;
 
 		// player is a spectator?
-        if (players[playernum].spectator)
+		if (players[playernum].spectator)
 		{
 			cstart = "\x86";    // grey name
 			textcolor = "\x86";
@@ -769,7 +773,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 			}
 		}
 		else
-        {
+		{
 			cstart = GetChatColorFromSkinColor(players[playernum].skincolor);
 			if (G_GametypeHasTeams())
 			{
@@ -782,7 +786,7 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 					cstart = GetChatColorFromSkinColor(skincolor_blueteam);
 				}
 			}
-        }
+		}
 		prefix = cstart;
 
 		// Give admins and remote admins their symbols.
@@ -1777,8 +1781,14 @@ void HU_TickSongCredits(void)
 
 	if (cursongcredit.anim > 0)
 	{
-		INT32 len = V_ThinStringWidth(cursongcredit.text, 0);
+		INT32 len = V_ThinStringWidth(cursongcredit.text, V_SNAPTOLEFT|V_ALLOWLOWERCASE);
 		fixed_t destx = (len+7) * FRACUNIT;
+
+		if (len >= vid.width)
+		{
+			// shorten length if it's too long
+			destx /= (vid.width/15)*FRACUNIT;
+		}
 
 		if (cursongcredit.trans > 0)
 		{
@@ -1816,38 +1826,45 @@ void HU_TickSongCredits(void)
 	}
 }
 
-static void DrawSongCreditsCharacters(fixed_t x, fixed_t y)
+static void DrawSongCreditsCharacters(const fixed_t x, const fixed_t y)
 {
-	UINT32 total_characters_found = 0;
 	fixed_t character_y_offset[MAXPLAYERS];
 	fixed_t character_scale[MAXPLAYERS];
 	INT32 character_flipflags[MAXPLAYERS]; // Makes sure our sprites gets flipped, if need-be.
 	patch_t *character_patches[MAXPLAYERS]; // The sprite patch for our characters, always drawn in the right-facing angle.
 	UINT8 *character_colormaps[MAXPLAYERS];
+	UINT32 total_characters_found = 0;
+
 	INT32 i;
 
 	// Get our characters!
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		player_t *player = &players[i];
-
-		character_patches[i] = NULL;
-		if (!playeringame[i] || !player)
-			continue;
-		else if ((gametyperules & GTR_TEAMS) && (players[i].ctfteam != players[consoleplayer].ctfteam))
-			continue;
-
-		skin_t *skin = skins[player->skin];
-		UINT16 color = (player->mo ? player->mo->color : player->skincolor);
-		if (!color) color = skin->prefcolor;
-
-		boolean nights_mode = ((players[i].powers[pw_carry] == CR_NIGHTSMODE) || (maptol & TOL_NIGHTS) || (mapheaderinfo[gamemap-1]->bonustype == 3));
-		angle_t fa = ((FixedAngle(((FixedInt(cursongcredit.sprite_timer * 4)) % 360)<<FRACBITS)>>ANGLETOFINESHIFT) & FINEMASK);
+		skin_t *skin;
+		UINT16 color;
+		boolean nights_mode;
+		angle_t fa;
+		fixed_t scale;
 
 		spritedef_t *sprdef = NULL;				// Gets the definiton for our selected sprite.
 		INT32 spritetimer = 0;					// Make sure the sprite timer cycles though all the sprite frames, 2 tics per frame.
 		spriteframe_t *sprframe_table = NULL;	// The animation frame table.
 		spriteframe_t *sprframe = NULL;			// The animation frame, equal to the number on the timer.
+
+		character_patches[i] = NULL;
+		if (!playeringame[i] || !player)
+			continue;
+		else if ((gametyperules & GTR_TEAMS) && (player->ctfteam != players[consoleplayer].ctfteam))
+			continue;
+
+		skin = skins[player->skin];
+		color = (player->mo ? player->mo->color : player->skincolor);
+		if (!color)
+			color = skin->prefcolor;
+
+		nights_mode = ((player->powers[pw_carry] == CR_NIGHTSMODE) || (maptol & TOL_NIGHTS) || (mapheaderinfo[gamemap-1]->bonustype == 3));
+		fa = ((FixedAngle(((FixedInt(cursongcredit.sprite_timer * 4)) % 360)<<FRACBITS)>>ANGLETOFINESHIFT) & FINEMASK);
 
 		// Floating for NiGHTS!
 		character_y_offset[i] = (nights_mode ? ((3 * FRACUNIT) + (2 * FINESINE(fa))) : 0);
@@ -1858,21 +1875,20 @@ static void DrawSongCreditsCharacters(fixed_t x, fixed_t y)
 			spritetimer = (FixedInt(cursongcredit.sprite_timer/2) % sprdef->numframes); \
 			sprframe_table = sprdef->spriteframes; \
 			if (sprframe_table != NULL) { \
-				UINT32 character = total_characters_found; \
-				fixed_t scale = skin->highresscale; \
+				scale = skin->highresscale; \
 				if (skin->shieldscale) \
 					scale = FixedDiv(scale, skin->shieldscale); \
 				scale = FixedDiv(scale, 5*FRACUNIT); \
 				sprframe = &sprframe_table[spritetimer]; \
-				character_scale[character] = scale; \
-				character_flipflags[character] = ((sprframe->flip & 1<<6) ? V_FLIP : 0); \
-				character_patches[character] = (patch_t *)W_CachePatchNum(sprframe->lumppat[6], PU_PATCH); \
-				character_colormaps[character] = R_GetTranslationColormap(TC_BLINK, color, GTC_CACHE); \
+				character_scale[total_characters_found] = scale; \
+				character_flipflags[total_characters_found] = ((sprframe->flip & 1<<6) ? V_FLIP : 0); \
+				character_patches[total_characters_found] = (patch_t *)W_CachePatchNum(sprframe->lumppat[6], PU_PATCH); \
+				character_colormaps[total_characters_found] = R_GetTranslationColormap(TC_BLINK, color, GTC_CACHE); \
 				total_characters_found++; \
 				continue; \
 			} \
 		}
-		if (player->powers[pw_super] || nights_mode)
+		if ((player->powers[pw_super] || nights_mode) && !P_IsPlayerInSuperTransformationState(player) && !P_IsPlayerInNightsTransformationState(player))
 		{
 			// Character is super or in NiGHTS mode
 			GET_CHARACTER_SPRITE2(SPR2_RUN|SPR2F_SUPER)
@@ -1888,7 +1904,6 @@ static void DrawSongCreditsCharacters(fixed_t x, fixed_t y)
 
 		continue; // There's nothing...
 	}
-
 	if (total_characters_found < 1)
 	{
 		// No character found? Oh well...
@@ -1945,8 +1960,12 @@ void HU_DrawSongCredits(void)
 	fixed_t y;
 	INT32 bgt = (NUMTRANSMAPS/2) + (cursongcredit.trans / 2);
 
-	INT16 str_len = V_ThinStringWidth(cursongcredit.text, V_SNAPTOLEFT|V_ALLOWLOWERCASE);
+	INT32 len = V_ThinStringWidth(cursongcredit.text, V_SNAPTOLEFT|V_ALLOWLOWERCASE);
+	INT32 cred_max_length = (vid.width/15);
 	patch_t *music_note = hu_font.chars['\x19'-FONTSTART];
+
+	INT32 i;
+	char credits[1024] = "";
 
 	if (gamestate == GS_INTERMISSION)
 	{
@@ -1961,6 +1980,16 @@ void HU_DrawSongCredits(void)
 		y = (splitscreen ? (BASEVIDHEIGHT/2)-4 : 40) * FRACUNIT;
 	}
 
+	strlcpy(credits, cursongcredit.text, strlen(cursongcredit.text)+1);
+	//snprintf(credits, strlen(cursongcredit.text)+1, "%s", cursongcredit.text);
+	if (len >= vid.width)
+	{
+		// shorten length if it's too long
+		for (i = cred_max_length - 4; i < cred_max_length - 1; i++)
+			credits[i] = '.';
+		credits[i] = '\0';
+	}
+
 	if (bgt < NUMTRANSMAPS)
 	{
 		fixed_t bar_offset_width = FRACUNIT;
@@ -1969,30 +1998,33 @@ void HU_DrawSongCredits(void)
 		if (cv_songcredits.value == 2)
 		{
 			// Dynamic song credits!
-			DrawSongCreditsCharacters((x - (str_len * FRACUNIT)), (y - (3 * FRACUNIT)));
+			DrawSongCreditsCharacters((x - (len * FRACUNIT)), (y - (3 * FRACUNIT)));
 
 			// Get the color for our music bar's colormap!
 			if (playeringame[consoleplayer])
 			{
 				player_t *player = &players[consoleplayer];
 				UINT16 bar_color = (player->mo ? player->mo->color : player->skincolor);
+				INT32 bar_timer_mask = (I_GetTime() & 12);
 
-				if (!bar_color) bar_color = skins[player->skin]->prefcolor;
+				if (!bar_color)
+					bar_color = skins[player->skin]->prefcolor;
+
 				if (TSoURDt3rd_WORLD_MapIsDangerous(mapheaderinfo[gamemap-1]))
 				{
-					if (bar_color+(I_GetTime() & 12))
-						bar_color += (I_GetTime() & 12);
+					if (bar_color + bar_timer_mask)
+						bar_color += bar_timer_mask;
 				}
 
 				bar_colormap = R_GetTranslationColormap(TC_BLINK, bar_color, GTC_CACHE);
 			}
 		}
 
-		if (str_len >= songcreditbg->width-16)
+		if (len >= songcreditbg->width-16)
 		{
 			// Hey, I heard this string looks pretty long!
 			// Why don't we fix that?
-			bar_offset_width = ((str_len - (songcreditbg->width - 16)) * FRACUNIT);
+			bar_offset_width = ((len - (songcreditbg->width - 16)) * FRACUNIT/4);
 		}
 
 		V_DrawStretchyFixedPatch(x - bar_offset_width, y - (2 * FRACUNIT), bar_offset_width, FRACUNIT, V_SNAPTOLEFT|(bgt<<V_ALPHASHIFT), songcreditbg, bar_colormap);
@@ -2006,9 +2038,9 @@ void HU_DrawSongCredits(void)
 	else
 	{
 		// Music note slides along with bar
-		V_DrawFixedPatch(x - (str_len * FRACUNIT) - ((music_note->width - 2) * FRACUNIT), y, FRACUNIT, V_SNAPTOLEFT, music_note, V_GetStringColormap(V_MENUCOLORMAP));
+		V_DrawFixedPatch(x - (len * FRACUNIT) - ((music_note->width - 2) * FRACUNIT), y, FRACUNIT, V_SNAPTOLEFT, music_note, V_GetStringColormap(V_MENUCOLORMAP));
 	}
-	V_DrawRightAlignedThinStringAtFixed(x + (3 * FRACUNIT), y + (1 * FRACUNIT), V_SNAPTOLEFT|V_ALLOWLOWERCASE|(cursongcredit.trans<<V_ALPHASHIFT), cursongcredit.text);
+	V_DrawRightAlignedThinStringAtFixed(x + (3 * FRACUNIT), y + (1 * FRACUNIT), V_SNAPTOLEFT|V_ALLOWLOWERCASE|(cursongcredit.trans<<V_ALPHASHIFT), credits);
 }
 
 // Heads up displays drawer, call each frame
@@ -2197,9 +2229,9 @@ void HU_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, I
 
 		if (!players[tab[i].num].quittime || (leveltime / (TICRATE/2) & 1))
 			V_DrawString(x + 20, y,
-		                 ((tab[i].num == whiteplayer) ? V_YELLOWMAP : 0)
-		                 | (greycheck ? V_60TRANS : 0)
-		                 | V_ALLOWLOWERCASE, tab[i].name);
+						 ((tab[i].num == whiteplayer) ? V_YELLOWMAP : 0)
+						 | (greycheck ? V_60TRANS : 0)
+						 | V_ALLOWLOWERCASE, tab[i].name);
 
 		// Draw emeralds
 		if (players[tab[i].num].powers[pw_invulnerability] && (players[tab[i].num].powers[pw_invulnerability] == players[tab[i].num].powers[pw_sneakers]) && ((leveltime/7) & 1))
@@ -2349,9 +2381,9 @@ static void HU_Draw32TeamTabRankings(playersort_t *tab, INT32 whiteplayer)
 		strlcpy(name, tab[i].name, 8);
 		if (!players[tab[i].num].quittime || (leveltime / (TICRATE/2) & 1))
 			V_DrawString(x + 10, y,
-			             ((tab[i].num == whiteplayer) ? V_YELLOWMAP : 0)
-			             | (greycheck ? V_TRANSLUCENT : 0)
-			             | V_ALLOWLOWERCASE, name);
+						 ((tab[i].num == whiteplayer) ? V_YELLOWMAP : 0)
+						 | (greycheck ? V_TRANSLUCENT : 0)
+						 | V_ALLOWLOWERCASE, name);
 
 		if (gametyperules & GTR_TEAMFLAGS)
 		{
@@ -2478,9 +2510,9 @@ void HU_DrawTeamTabRankings(playersort_t *tab, INT32 whiteplayer)
 		strlcpy(name, tab[i].name, 7);
 		if (!players[tab[i].num].quittime || (leveltime / (TICRATE/2) & 1))
 			V_DrawString(x + 20, y,
-			             ((tab[i].num == whiteplayer) ? V_YELLOWMAP : 0)
-			             | (greycheck ? V_TRANSLUCENT : 0)
-			             | V_ALLOWLOWERCASE, name);
+						 ((tab[i].num == whiteplayer) ? V_YELLOWMAP : 0)
+						 | (greycheck ? V_TRANSLUCENT : 0)
+						 | V_ALLOWLOWERCASE, name);
 
 		if (gametyperules & GTR_TEAMFLAGS)
 		{
@@ -2553,9 +2585,9 @@ void HU_DrawDualTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scoreline
 
 		if (!players[tab[i].num].quittime || (leveltime / (TICRATE/2) & 1))
 			V_DrawString(x + 20, y,
-			             ((tab[i].num == whiteplayer) ? V_YELLOWMAP : 0)
-			             | (greycheck ? V_TRANSLUCENT : 0)
-			             | V_ALLOWLOWERCASE, name);
+						 ((tab[i].num == whiteplayer) ? V_YELLOWMAP : 0)
+						 | (greycheck ? V_TRANSLUCENT : 0)
+						 | V_ALLOWLOWERCASE, name);
 
 		if (G_GametypeUsesLives() && !(G_GametypeUsesCoopLives() && (cv_cooplives.value == 0 || cv_cooplives.value == 3)) && (players[tab[i].num].lives != INFLIVES)) //show lives
 			V_DrawRightAlignedString(x, y+4, V_ALLOWLOWERCASE, va("%dx", players[tab[i].num].lives));
@@ -2663,9 +2695,9 @@ static void HU_Draw32TabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scor
 
 		if (!players[tab[i].num].quittime || (leveltime / (TICRATE/2) & 1))
 			V_DrawString(x + 10, y,
-			             ((tab[i].num == whiteplayer) ? V_YELLOWMAP : 0)
-			             | (greycheck ? V_TRANSLUCENT : 0)
-			             | V_ALLOWLOWERCASE, name);
+						 ((tab[i].num == whiteplayer) ? V_YELLOWMAP : 0)
+						 | (greycheck ? V_TRANSLUCENT : 0)
+						 | V_ALLOWLOWERCASE, name);
 
 		if (G_GametypeUsesLives()) //show lives
 			V_DrawRightAlignedThinString(x-1, y, V_ALLOWLOWERCASE, va("%d", players[tab[i].num].lives));

@@ -23,6 +23,7 @@
 #include "hardware/hw_main.h"
 #endif
 
+#if 0
 struct perfstatrow;
 
 typedef struct perfstatrow perfstatrow_t;
@@ -42,6 +43,7 @@ struct perfstatrow {
 #define PS_HW        8  // metric is valid only in opengl mode
 #define PS_BATCHING  16 // metric is valid only when opengl batching is active
 #define PS_HIDE_ZERO 32 // hide metric if its value is zero
+#endif
 
 static ps_metric_t ps_frametime = {0};
 
@@ -393,7 +395,8 @@ static INT32 PS_GetMetricSD(ps_metric_t *metric, boolean time_metric)
 }
 
 // Returns the value to show on screen for metric.
-static INT32 PS_GetMetricScreenValue(ps_metric_t *metric, boolean time_metric)
+//static INT32 PS_GetMetricScreenValue(ps_metric_t *metric, boolean time_metric)
+INT32 PS_GetMetricScreenValue(ps_metric_t *metric, boolean time_metric)
 {
 	if (cv_ps_samplesize.value > 1 && metric->history)
 	{
@@ -496,7 +499,8 @@ static void PS_UpdateRowHistories(perfstatrow_t *rows, boolean frame_metric)
 }
 
 // Update all metrics that are calculated on every frame.
-static void PS_UpdateFrameStats(void)
+//static void PS_UpdateFrameStats(void)
+void PS_UpdateFrameStats(void)
 {
 	// update frame time
 	precise_t currenttime = I_GetPreciseTime();

@@ -10,37 +10,114 @@
 /// \file hw_light.h
 /// \brief Dynamic lighting & coronas add on by Hurdler
 
-#ifndef _HW_LIGHTS_
-#define _HW_LIGHTS_
+#ifndef __HW_LIGHTS__
+#define __HW_LIGHTS__
 
 #include "hw_glob.h"
 #include "hw_defs.h"
 
+#include "../vector3d.h" // Real vectors! No more fake ones!
+
 #ifdef ALAM_LIGHTING
-#define DL_MAX_LIGHT UINT16_MAX //255 // maximum number of lights (extra lights are ignored)
 
-void HWR_Init_Light(const char *lightpatch);
-void HWR_DynamicShadowing(FOutVector *clVerts, int nrClipVerts);
-void HWR_SpriteLighting(FOutVector *wlVerts); // SRB2CBTODO: Support sprites to be lit too
-void HWR_PlaneLighting(FOutVector *clVerts, FUINT nrClipVerts, FBITFIELD PolyFlags, int shader, boolean horizonSpecial);
-void HWR_WallLighting(FOutVector *wlVerts, FBITFIELD PolyFlags, int shader);
-void HWR_Reset_Lights(void);
-void HWR_Set_Lights(UINT8 viewnumber);
+// hw_main.c
+#define RENDER_CORONAS_BEFORE_TRANS
 
-void HWR_DL_Draw_Coronas(void);
-void HWR_DL_AddLightSprite(gl_vissprite_t *spr);
+// ^^^
+// HWR Plane and WALL rendering might work
+// better with this off
 
-void HWR_DoCoronasLighting(FOutVector *outVerts, gl_vissprite_t *spr);
-
-void HWR_DL_CreateStaticLightmaps(INT32 bspnum);
+typedef enum
+{
+	DYNLIGHT_ORIGIN_NONE       = -1,
+	DYNLIGHT_ORIGIN_VISSPRITE,
+	DYNLIGHT_ORIGIN_MOBJ,
+} dynlight_origin_t;
 
 typedef struct
 {
-	UINT16 nb; // number of dynamic lights
-	light_t *p_lspr[DL_MAX_LIGHT];
-	FVector position[DL_MAX_LIGHT]; // actually maximum DL_MAX_LIGHT lights
-	mobj_t *mo[DL_MAX_LIGHT];
-} dynlights_t;
+	light_t *type;
+	int flags;
+	floatvector3_t pos;
+	floatvector3_t offset;
+	RGBA_t color;
+	UINT32 radius;
+} dynlight_basic_t;
+
+#pragma once
+
+// (C) GZDoom & UZDoom Contributors/Developers
+// Ashi: The node system for lights is brilliant and I'm borrowing it
+//typedef struct FDynamicLight FDynamicLight;
+typedef struct FDynamicLight_s FDynamicLight;
+typedef struct FDynamicLightTouchLists FDynamicLightTouchLists;
+typedef struct FLightNode FLightNode;
+struct FLightNode
+{
+	FLightNode **prevTarget;
+	FLightNode *nextTarget;
+	FLightNode **prevLight;
+	FLightNode *nextLight;
+	FDynamicLight *lightsource;
+	union
+	{
+		side_t *targLine;
+		subsector_t *targSubsector;
+		void *targ;
+	};
+};
+
+struct FDynamicLightTouchLists
+{
+	//TArray<FSection*> flat_tlist;
+	//TArray<side_t*> wall_tlist;
+	sector_t *flat_tlist;
+	side_t *wall_tlist;
+};
+
+//struct FDynamicLight
+typedef struct FDynamicLight_s
+{
+	FDynamicLight *next, *prev;
+	FDynamicLightTouchLists touchlists;
+	sector_t *sector;
+	//FLevelLocals *Level;
+	void *actor;
+
+	light_t *light_data;
+	dynlight_origin_t actor_type;
+
+	boolean visible;
+	bool owned;
+
+	floatvector3_t pos;
+	floatvector3_t offset;
+
+	float max_radius; // The maximum size the light can be with its current settings.
+	float radius;     // The current light size.
+	RGBA_t color;
+	UINT8 *colormap;
+	INT32 poly_flags;
+} FDynamicLight;
+
+extern INT32 num_dynamic_lights;
+
+void HWR_DynamicShadowing(FOutVector *clVerts, size_t nrClipVerts);
+void HWR_SpriteLighting(FOutVector *wlVerts); // SRB2CBTODO: Support sprites to be lit too
+void HWR_WallLighting(FSurfaceInfo *pSurf, FOutVector *wlVerts, FBITFIELD PolyFlags, FBITFIELD ExtraPolyFlags, int shader);
+void HWR_PlaneLighting(FSurfaceInfo *pSurf, FOutVector *clVerts, size_t nrClipVerts, FBITFIELD PolyFlags, boolean horizonSpecial);
+
+void HWR_DoCoronasLighting(FOutVector *outVerts, gl_vissprite_t *spr);
+void HWR_DL_Draw_Coronas(void);
+
+boolean HWR_DL_AddBasicLight(INT32 type, double x, double y, double z, long color, long radius, INT32 flags);
+boolean HWR_DL_AddLight(void *origin, dynlight_origin_t origin_type);
+void HWR_Update_Lights(void);
+void HWR_DL_RemoveLight(void *origin);
+void HWR_DL_ClearLights(void);
+void HWR_Init_Light(const char *light_patch);
+
+void HWR_DL_CreateStaticLightmaps(INT32 bspnum);
 
 #endif // ALAM_LIGHTING
-#endif
+#endif // __HW_LIGHTS__

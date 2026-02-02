@@ -31,7 +31,6 @@
 // LIGHTING
 // ======================
 
-#include "../w_wad.h"
 void HWR_Init_Light(const char *light_patch)
 {
 	CONS_Printf("HWR_Init_Light()...\n");
@@ -976,3 +975,422 @@ void F_VersionDrawer(void)
 	}
 #undef addtext
 }
+
+// ==================
+// EXMUSIC
+// ==================
+
+static mapheader_t *determined_map = NULL;
+static const char *determined_vanilla_music = NULL;
+static const char *determined_exm_music = NULL;
+
+static char *determined_music = NULL;
+static char *new_determined_music = NULL;
+
+
+#define SET_EXMUSIC_MUSIC(music) \
+	CONS_Printf("def %s is valid\n", music); \
+	determined_exm_music = music; \
+	new_determined_music = malloc(7); \
+	new_determined_music = music; \
+
+#define EXMUSIC_CHECK_EXISTANCE(slot) \
+	TSoURDt3rd_S_MusicExists(slot, { SET_EXMUSIC_MUSIC(slot->name) return; });
+
+
+#define SET_VANILLA_MUSIC(music) \
+	CONS_Printf("music %s is valid - for var %s\n", music, #music); \
+	determined_vanilla_music = music; \
+	new_determined_music = malloc(7); \
+	strlcpy(new_determined_music, music, 7); \
+
+#define VANILLA_MUSIC_EXISTS(music) \
+	SET_VANILLA_MUSIC(music) \
+	break;
+
+#define VANILLA_MUSIC_EXISTS_BY_NAME(music) \
+	TSoURDt3rd_S_MusicExists(music, VANILLA_MUSIC_EXISTS(music))
+
+
+#if 1
+#define MUSIC_MATCHES \
+	strnicmp(S_MusicName(), ((mapmusflags & MUSIC_RELOADRESET) ? determined_map->musname : mapmusname), 7)
+#endif
+
+#if 0
+#define MUSIC_MATCHES \
+	strnicmp(S_MusicName(), ((mapmusflags & MUSIC_RELOADRESET) ? determined_map->musname : determined_vanilla_music), 7)
+#endif
+
+#if 0
+#define MUSIC_MATCHES false
+#endif
+
+
+static void EXMusic_DetermineMusic(void)
+{
+	tsourdt3rd_exmusic_findTrackResult_t exm_find_track_result;
+	tsourdt3rd_world_scenarios_t scenario = tsourdt3rd_local.world.scenario;
+	tsourdt3rd_world_scenarios_types_t scenario_types = tsourdt3rd_local.world.scenario_types;
+
+#define EXMUSIC_GET_TYPE(scenario_type, exm_track_set) { \
+		memset(&exm_find_track_result, 0, sizeof(exm_find_track_result)); \
+		if (scenario_type == -1 || (scenario_types & scenario_type)) \
+		{ \
+			if (TSoURDt3rd_EXMusic_FindTrack(cv_tsourdt3rd_audio_exmusic[exm_track_set].string, exm_track_set, &exm_find_track_result) == true) \
+			{ \
+				if (exm_find_track_result.series_pos >= tsourdt3rd_exmusic_starting_series_max) \
+					EXMUSIC_CHECK_EXISTANCE(exm_find_track_result.lump) \
+			} \
+			memset(&exm_find_track_result, 0, sizeof(exm_find_track_result)); \
+		} \
+	}
+
+	if (scenario & TSOURDT3RD_WORLD_SCENARIO_INTERMISSION)
+	{
+		if (scenario & TSOURDT3RD_WORLD_SCENARIO_BOSS)
+		{
+			EXMUSIC_GET_TYPE(TSOURDT3RD_WORLD_SCENARIO_TYPES_TRUEFINALBOSS, tsourdt3rd_exmusic_intermission_truefinalboss)
+			EXMUSIC_GET_TYPE(TSOURDT3RD_WORLD_SCENARIO_TYPES_FINALBOSS, tsourdt3rd_exmusic_intermission_finalboss)
+			EXMUSIC_GET_TYPE(-1, tsourdt3rd_exmusic_intermission_boss)
+		}
+		EXMUSIC_GET_TYPE(-1, tsourdt3rd_exmusic_intermission)
+		return;
+	}
+
+	if (determined_map && cv_tsourdt3rd_audio_bosses_postboss.value)
+	{
+		if (scenario_types & TSOURDT3RD_WORLD_SCENARIO_TYPES_POSTBOSS)
+			TSoURDt3rd_S_MusicExists(determined_map->muspostbossname, { SET_EXMUSIC_MUSIC(determined_map->muspostbossname) return; });
+	}
+
+	if (scenario & TSOURDT3RD_WORLD_SCENARIO_BOSS)
+	{
+		if (scenario_types & TSOURDT3RD_WORLD_SCENARIO_TYPES_TRUEFINALBOSS)
+		{
+			EXMUSIC_GET_TYPE(TSOURDT3RD_WORLD_SCENARIO_TYPES_BOSSPINCH, tsourdt3rd_exmusic_bosses_truefinalboss_pinch)
+			EXMUSIC_GET_TYPE(-1, tsourdt3rd_exmusic_bosses_truefinalboss)
+		}
+		if (scenario_types & TSOURDT3RD_WORLD_SCENARIO_TYPES_FINALBOSS)
+		{
+			EXMUSIC_GET_TYPE(TSOURDT3RD_WORLD_SCENARIO_TYPES_BOSSPINCH, tsourdt3rd_exmusic_bosses_finalboss_pinch)
+			EXMUSIC_GET_TYPE(-1, tsourdt3rd_exmusic_bosses_finalboss)
+		}
+		EXMUSIC_GET_TYPE(TSOURDT3RD_WORLD_SCENARIO_TYPES_RACE, tsourdt3rd_exmusic_bosses_race)
+		EXMUSIC_GET_TYPE(TSOURDT3RD_WORLD_SCENARIO_TYPES_BOSSPINCH, tsourdt3rd_exmusic_bosses_pinch)
+		EXMUSIC_GET_TYPE(-1, tsourdt3rd_exmusic_bosses)
+
+		//TSoURDt3rd_S_MusicExists(determined_map->musname, { SET_EXMUSIC_MUSIC(determined_map->musname) return; });
+	}
+
+#undef EXMUSIC_GET_TYPE
+}
+
+#include "../../p_setup.h" // levelloading
+
+//
+// const char *TSoURDt3rd_EXMusic_DetermineLevelMusic(void)
+// Sets level music. Should always return *something*, no matter what.
+//
+const char *TSoURDt3rd_EXMusic_DetermineLevelMusic(void)
+{
+	static char *last_exm_music = NULL;
+	static boolean use_user_defined_music = false;
+
+	if (new_determined_music) free(new_determined_music);
+	new_determined_music = NULL;
+
+#if 1
+	static tsourdt3rd_world_scenarios_t last_scenario = 0;
+	static tsourdt3rd_world_scenarios_types_t last_scenario_types = 0;
+	tsourdt3rd_world_scenarios_t scenario;
+	tsourdt3rd_world_scenarios_types_t scenario_types;
+
+	TSoURDt3rd_WORLD_UpdateScenarios();
+	scenario = tsourdt3rd_local.world.scenario;
+	scenario_types = tsourdt3rd_local.world.scenario_types;
+
+	if (last_scenario != scenario || last_scenario_types != scenario_types)
+	{
+		// New scneario, new music!
+		use_user_defined_music = false;
+	}
+
+	last_scenario = scenario;
+	last_scenario_types = scenario_types;
+#endif
+
+	//lastmaploaded
+	//levelloading
+	if (determined_map == NULL || determined_map != mapheaderinfo[gamemap-1] || levelloading)
+	{
+		// New map, reloaded map, whatever - Update map junk
+		determined_map = mapheaderinfo[gamemap-1];
+		determined_vanilla_music = (determined_map ? determined_map->musname : mapmusname);
+		determined_exm_music = NULL;
+		determined_music = NULL;
+
+		last_exm_music = NULL;
+		use_user_defined_music = false;
+	}
+#if 1
+	else if (use_user_defined_music || strnicmp(determined_music, S_MusicName(), 7))
+	{
+		// User/Lua might've defined this music, so uh...
+		CONS_Printf("using USER DEFINED music\n");
+		use_user_defined_music = true;
+		determined_music = NULL;
+		determined_music = malloc(7);
+		strncpy(determined_music, S_MusicName(), 7);
+		return determined_music;
+	}
+#endif
+#if 1
+	else if (strnicmp(determined_vanilla_music, mapmusname, 7))
+	{
+		// Uh oh, map strings differ, might wanna grab the new one!
+		CONS_Printf("updating determined_vanilla_music\n");
+		determined_vanilla_music = mapmusname;
+	}
+#endif
+
+	// Now, determine our music!
+	if (TSoURDt3rd_AprilFools_ModeEnabled())
+	{
+		// April Fools Mode overrides literally everything.
+		TSoURDt3rd_S_MusicExists("_hehe", { return "_hehe"; })
+		return "";
+	}
+	else if (TSoURDt3rd_Jukebox_SongPlaying())
+	{
+		// No, don't override my music.
+		return "";
+	}
+	else if (gamestate == GS_TITLESCREEN || titlemapinaction)
+	{
+		// Made it here? Play the map's default track, and we're done :)
+		if (determined_map) TSoURDt3rd_S_MusicExists(determined_map->musname, { return determined_map->musname; })
+		TSoURDt3rd_S_MusicExists(mapmusname, { return mapmusname; })
+		TSoURDt3rd_S_MusicExists("_title", { return "_title"; })
+		return "";
+	}
+	else if (determined_map == NULL)
+	{
+		// ...How?
+		TSoURDt3rd_S_MusicExists(mapmusname, { return mapmusname; })
+		return "";
+	}
+
+#if 0
+	if (determined_exm_music == NULL || (determined_music && !strnicmp(determined_exm_music, determined_music, 7)))
+	{
+		// We want to make sure that the tracks are still the same.
+		// If the track is different from the last exmusic track we just played,
+		// then it was most likely map/user-modified, so we don't really want to change that.
+		EXMusic_DetermineMusic();
+	}
+#else
+	EXMusic_DetermineMusic();
+#endif
+
+#if 0
+	if (RESETMUSIC || strnicmp(S_MusicName(),
+		((mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname), 7))
+		return ((mapmusflags & MUSIC_RELOADRESET) ? mapheaderinfo[gamemap-1]->musname : mapmusname);
+	else
+		return mapheaderinfo[gamemap-1]->musname;
+
+#if 0
+	if (strnicmp(TSoURDt3rd_EXMusic_DetermineLevelMusic(), S_MusicName(), 7))
+		return mapmusname;
+#endif
+	return ((!mapmusname[0] || !strnicmp(mapmusname, S_MusicName(), 7)) ? mapheaderinfo[gamemap-1]->musname : mapmusname);
+
+#else
+
+#if 0
+	if (selected_def == NULL)
+	{
+		if (mapmusflags & MUSIC_RELOADRESET)
+			return map->musname;
+		return mapmusname;
+	}
+#else
+	goto finished;
+
+finished:
+{
+
+#if 1
+	if (new_determined_music != NULL && (determined_music == NULL || (last_exm_music && !strnicmp(determined_music, last_exm_music, 7))))
+	{
+		// We found a different piece of music, so let's leave!
+		CONS_Printf("playing selected music!\n");
+		determined_music = new_determined_music;
+		last_exm_music = determined_music;
+		return new_determined_music;
+	}
+#else
+	if (new_determined_music != NULL)
+	{
+		// We found a different piece of music, so let's leave!
+		CONS_Printf("playing selected music!\n");
+		determined_music = new_determined_music;
+		return new_determined_music;
+	}
+#endif
+
+#if 0
+	if (strnicmp(determined_vanilla_music, mapmusname, 7))
+	{
+		// Uh oh, map strings differ, might wanna grab the new one!
+		CONS_Printf("updating determined_vanilla_music\n");
+		determined_vanilla_music = mapmusname;
+	}
+#endif
+
+	switch (gamestate)
+	{
+		case GS_EVALUATION:
+		case GS_GAMEEND:
+			// We don't *HAVE* to play anything here, it's just cool if we *CAN*.
+			VANILLA_MUSIC_EXISTS_BY_NAME(mapmusname);
+			/* FALLTHRU */
+
+		case GS_INTERMISSION:
+			//VANILLA_MUSIC_EXISTS_BY_NAME(mapmusname);
+			VANILLA_MUSIC_EXISTS_BY_NAME(determined_map->musintername);
+			switch (intertype)
+			{
+				case int_coop:
+					VANILLA_MUSIC_EXISTS_BY_NAME("_clear");
+					break;
+				case int_spec:
+					VANILLA_MUSIC_EXISTS_BY_NAME(stagefailed ? "CHFAIL" : "CHPASS");
+					break;
+				default:
+					break;
+			}
+			/* FALLTHRU */
+
+		default:
+			if (new_determined_music != NULL) break;
+#if 0
+#if 1
+			if ((
+				RESETMUSIC ||
+				MUSIC_MATCHES
+			//if (RESETMUSIC
+				)
+				//&& levelloading
+			)
+			{
+				if (mapmusflags & MUSIC_RELOADRESET)
+					VANILLA_MUSIC_EXISTS_BY_NAME(determined_map->musname)
+				else
+					VANILLA_MUSIC_EXISTS_BY_NAME(mapmusname)
+			}
+			else
+#endif
+			{
+				if (strnicmp(mapmusname, determined_map->musname, 7)
+					&& !levelloading
+				)
+				{
+					// Tracks are different, so let's try this one first.
+					// Could've been set by 'tunes' or anything.
+					// In any case, it's most likely user-defined.
+					VANILLA_MUSIC_EXISTS_BY_NAME(mapmusname);
+				}
+				VANILLA_MUSIC_EXISTS_BY_NAME(determined_map->musname);
+			}
+#else
+			if (RESETMUSIC || MUSIC_MATCHES)
+			//if (RESETMUSIC)
+			{
+				if (mapmusflags & MUSIC_RELOADRESET)
+					VANILLA_MUSIC_EXISTS_BY_NAME(determined_map->musname)
+				else
+				{
+#if 0
+					if (determined_music && strnicmp(determined_vanilla_music, determined_music, 7))
+					{
+						// If track is different from the last track we just played,
+						// then we want this one.
+						if (strnicmp(determined_vanilla_music, determined_exm_music, 7)) // NO EXMUSIC
+							VANILLA_MUSIC_EXISTS_BY_NAME(determined_vanilla_music);
+					}
+#else
+					VANILLA_MUSIC_EXISTS_BY_NAME(determined_vanilla_music);
+#endif
+
+#if 0
+					// DEFAULT
+					VANILLA_MUSIC_EXISTS_BY_NAME(mapmusname)
+					//VANILLA_MUSIC_EXISTS_BY_NAME(determined_map->musname);
+#else
+					VANILLA_MUSIC_EXISTS_BY_NAME(determined_map->musname);
+					VANILLA_MUSIC_EXISTS_BY_NAME(mapmusname)
+#endif
+				}
+			}
+			else
+			{
+#if 1
+				// DEFAULT
+				if (determined_music && strnicmp(determined_vanilla_music, determined_music, 7))
+				{
+					// If track is different from the last track we just played,
+					// then we want this one.
+					if (strnicmp(determined_vanilla_music, determined_exm_music, 7)) // NO EXMUSIC
+						VANILLA_MUSIC_EXISTS_BY_NAME(determined_vanilla_music);
+				}
+#else
+				VANILLA_MUSIC_EXISTS_BY_NAME(determined_vanilla_music);
+#endif
+
+#if 1
+				// DEFAULT
+				VANILLA_MUSIC_EXISTS_BY_NAME(determined_map->musname);
+				VANILLA_MUSIC_EXISTS_BY_NAME(mapmusname);
+#else
+				VANILLA_MUSIC_EXISTS_BY_NAME(mapmusname);
+				VANILLA_MUSIC_EXISTS_BY_NAME(determined_map->musname);
+#endif
+			}
+#endif
+			break;
+	}
+
+#if 0
+	if (new_determined_music == NULL)
+	{
+		return NULL;
+	}
+	else
+	{
+#if 0
+		if (strnicmp(determined_vanilla_music, new_determined_music, 7))
+		{
+			// If track is different from the last track we just played,
+			// then we want this one.
+			if (strnicmp(determined_vanilla_music, determined_exm_music, 7)) // NO EXMUSIC
+			{
+				strlcpy(new_determined_music, determined_vanilla_music, 7);
+				return new_determined_music;
+			}
+		}
+#endif
+		determined_music = new_determined_music;
+	}
+#else
+	// DEFAULT
+	determined_music = new_determined_music;
+#endif
+
+	return (new_determined_music ? new_determined_music : "");
+}
+#endif
+#endif
+}
+

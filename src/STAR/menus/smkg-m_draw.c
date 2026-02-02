@@ -9,6 +9,8 @@
 /// \file  smkg-m_draw.c
 /// \brief Unique TSoURDt3rd menu drawing routines
 
+// Me when nobody looks at this file while I go ahead and revamp it
+
 #include "smkg-m_sys.h"
 
 #include "../smkg-st_hud.h"
@@ -41,6 +43,15 @@ static fixed_t tsourdt3rd_songcredit_ease;
 // ------------------------ //
 //        Functions
 // ------------------------ //
+
+enum
+{
+	Stretch_kNone,
+	Stretch_kWidth,
+	Stretch_kHeight,
+	Stretch_kBoth,
+};
+void TSoURDt3rd_MK_DrawKeyboardString(fixed_t x, fixed_t y, int flags, const char *string, fontdef_t *font, const UINT8 *colormap);
 
 fixed_t TSoURDt3rd_M_TimeFrac(tic_t tics, tic_t duration)
 {
@@ -192,6 +203,40 @@ void TSoURDt3rd_M_PostDrawer(void)
 	// Draw message overlay when needed
 	TSoURDt3rd_M_DrawMenuMessage();
 
+#if 0
+	// Draw song credits!
+	if (Playing() && ((menuactive && !(menumessage.active && menutyping.active)) || paused))
+	{
+		fixed_t x = Easing_OutQuad(tsourdt3rd_songcredit_ease, -vid.width, 0);
+		fixed_t y = (vid.height-(8*vid.dup)) * FRACUNIT;
+		INT32 flags = V_SNAPTOLEFT; // V_SNAPTOBOTTOM
+		INT32 string_flags = V_ALLOWLOWERCASE;
+
+		//flags |= V_NOSCALESTART;
+		string_flags |= V_NOSCALESTART;
+
+		if (g_realsongcredit && !S_MusicDisabled())
+		{
+			char *credits = TSoURDt3rd_M_WriteVariedLengthString(g_realsongcredit, (vid.width/15), true);
+			INT32 cred_length = V_ThinStringWidth(credits, flags|string_flags);
+
+			INT32 bgt = (NUMTRANSMAPS/2);
+			fixed_t bar_destx = (cred_length+7) * FRACUNIT;
+			fixed_t bar_offset_width = FRACUNIT;
+
+			if (cred_length >= songcreditbg->width-16)
+			{
+				// Hey, I heard this string looks pretty long!
+				// Why don't we fix that?
+				bar_offset_width = ((cred_length - (songcreditbg->width - 16)) * FRACUNIT/4);
+			}
+
+			V_DrawStretchyFixedPatch(bar_destx - bar_offset_width, y - (2 * FRACUNIT), bar_offset_width, FRACUNIT, flags|(bgt<<V_ALPHASHIFT), songcreditbg, NULL);
+			V_DrawAlignedFontStringAtFixed(x + (2 * FRACUNIT), y, flags|string_flags, FRACUNIT, FRACUNIT, credits, tny_font, alignleft);
+		}
+	}
+#endif
+
 #ifndef NO_MENU_WIPE
 	// Wipe the screen!
 	if (menuwipe)
@@ -241,7 +286,7 @@ static char **M_SplitText(const char *txt, INT16 *lines_p)
 void TSoURDt3rd_M_DrawMenuTooltips(const tsourdt3rd_menu_t *menu, menutooltip_t menutooltip)
 {
 	static INT32 tooltip_alpha_timer = 9;
-	INT32 tooltip_alpha_flag = ((cv_tsourdt3rd_video_coloring_menus.value == V_YELLOWMAP) ? V_GREENMAP : V_YELLOWMAP);
+	INT32 tooltip_alpha_flag = 0;
 
 	if (menu == NULL || menu->menuitems == NULL || (tsourdt3rd_itemOn < 0 || tsourdt3rd_itemOn >= currentMenu->numitems))
 	{
@@ -252,16 +297,18 @@ void TSoURDt3rd_M_DrawMenuTooltips(const tsourdt3rd_menu_t *menu, menutooltip_t 
 	static const tsourdt3rd_menuitem_t *last_item = NULL;
 	const tsourdt3rd_menuitem_t *item = &menu->menuitems[tsourdt3rd_itemOn];
 	const char *string = NULL;
+	char **tooltip_strings = NULL;
 	INT16 num_lines = 0;
 
 	if (item && item->tooltip != NULL)
 	{
 		// Use the menu tooltip!
 		string = item->tooltip;
+		//string = V_FontWordWrap(0, BASEVIDWIDTH, V_ALLOWLOWERCASE, FRACUNIT, item->tooltip, tny_font);
 	}
 	else
 	{
-		/// \todo Do what classic does and add cvar tooltips, they're cool
+		/// \todo: STAR NOTE: Do what classic does and add cvar tooltips, they're cool
 		return;
 	}
 	if (string == NULL || !string[0])
@@ -271,10 +318,9 @@ void TSoURDt3rd_M_DrawMenuTooltips(const tsourdt3rd_menu_t *menu, menutooltip_t 
 		return;
 	}
 
-	char **tooltip_strings = M_SplitText(string, &num_lines);
-	if (tooltip_strings == NULL || num_lines == 0)
+	tooltip_strings = M_SplitText(string, &num_lines);
+	if (tooltip_strings == NULL || num_lines == 0) // Failed to split the string.
 	{
-		// Failed to split the string.
 		tooltip_alpha_timer = 9;
 		return;
 	}
@@ -283,8 +329,12 @@ void TSoURDt3rd_M_DrawMenuTooltips(const tsourdt3rd_menu_t *menu, menutooltip_t 
 	const char *box_lump_name = (menutooltip.box.vflip ? "VMNUHINT" : "MENUHINT");
 	patch_t *box_patch = W_CachePatchName(box_lump_name, PU_CACHE);
 
+#if 1
+	num_lines = 1;
+#endif
 	V_DrawStretchyFixedPatch(menutooltip.box.x, menutooltip.box.y,
-		menutooltip.box.pscale, menutooltip.box.vscale + (num_lines * FRACUNIT/6),
+		//menutooltip.box.pscale, menutooltip.box.vscale + (num_lines * FRACUNIT/6),
+		menutooltip.box.pscale, menutooltip.box.vscale + ((num_lines-1) * FRACUNIT/6),
 		menutooltip.box.flags,
 		box_patch,
 		menutooltip.box.colormap
@@ -296,8 +346,13 @@ void TSoURDt3rd_M_DrawMenuTooltips(const tsourdt3rd_menu_t *menu, menutooltip_t 
 	}
 	last_item = item;
 
-	//INT16 yoffset = (((5*10 - num_lines*10)));
-	INT16 yoffset = 0;
+#if 0
+	INT16 yoffset;
+	yoffset = (((5*10 - num_lines*10)));
+	//INT16 yoffset = (((5*10 - (num_lines-1)*10)));
+	//INT16 yoffset = (((5*10 - ((num_lines-1)*10))));
+	//INT16 yoffset = 0;
+	//INT16 yoffset = 8;
 	for (int i = 0; i < num_lines; i++)
 	{
 		if (menutooltip.string.align != -1)
@@ -334,28 +389,70 @@ void TSoURDt3rd_M_DrawMenuTooltips(const tsourdt3rd_menu_t *menu, menutooltip_t 
 		yoffset += 10;
 		free(tooltip_strings[i]); // Remember to free the memory for each line when you're done with it.
 	}
+	free(tooltip_strings);
+#else
+	if (menutooltip.string.align != -1)
+	{
+		V_DrawCenteredThinString(menutooltip.string.x, menutooltip.string.y,
+			menutooltip.string.flags|V_MENUCOLORMAP,
+			//FRACUNIT, FRACUNIT,
+			string
+			//tny_font,
+			//menutooltip.string.align
+		);
+	}
+	else
+	{
+		V_DrawThinString(menutooltip.string.x, menutooltip.string.y,
+			menutooltip.string.flags|V_MENUCOLORMAP,
+			//FRACUNIT, FRACUNIT,
+			string
+			//tny_font,
+			//menutooltip.string.align
+		);
+	}
+	(void)tooltip_strings;
+	(void)tooltip_alpha_flag;
+#endif
 
 	// very cool alpha timer
 	if (tooltip_alpha_timer > 0)
 	{
 		tooltip_alpha_timer--;
 	}
-	free(tooltip_strings);
+}
+
+INT32 K_DrawGameControl(fixed_t x, fixed_t y, UINT8 player, const char *str, UINT8 alignment, fontdef_t font, UINT32 flags)
+{
+	INT32 width = V_ThinStringWidth(str, flags);
+	(void)alignment;
+	if (player && !P_IsLocalPlayer(&players[player]))
+	{
+		return -1;
+	}
+	TSoURDt3rd_MK_DrawKeyboardString(x, y, flags, str, &font, NULL);
+	return width;
 }
 
 void TSoURDt3rd_M_DrawMediocreKeyboardKey(const char *text, INT32 *workx, INT32 worky, boolean push, boolean rightaligned)
 {
 	INT32 buttonwidth = V_StringWidth(text, V_ALLOWLOWERCASE) + 2;
 
+#if 1
 	if (rightaligned)
 	{
 		(*workx) -= buttonwidth;
 	}
 
+#if 0
 	if (push)
 	{
 		worky += 2;
 	}
+#else
+	(void)push;
+#endif
+#if 0
 	else
 	{
 		V_DrawFill((*workx)-1, worky+10, buttonwidth, 2, 24);
@@ -363,6 +460,11 @@ void TSoURDt3rd_M_DrawMediocreKeyboardKey(const char *text, INT32 *workx, INT32 
 
 	V_DrawFill((*workx)-1, worky, buttonwidth, 10, 16);
 	V_DrawString((*workx), worky + 1, V_ALLOWLOWERCASE, text);
+	return;
+#endif
+#endif
+
+	K_DrawGameControl((*workx)<<FRACBITS, worky<<FRACBITS, 0, va("\xED %s \xED", text), 0, tny_font, V_ALLOWLOWERCASE);
 }
 
 //
@@ -423,6 +525,409 @@ void TSoURDt3rd_M_DrawQuitGraphic(void)
 // ==========================================================================
 // GENERIC GRAPHICS
 // ==========================================================================
+
+//
+//
+//
+//
+
+static void chain_patch(float x, float y, float width, float height, int stretch_flags, int flags, patch_t *patch, const UINT8 *colormap)
+{
+	width = (width <= 0.f ? 0.f : width);
+	height = (height <= 0.f ? 0.f : height);
+	stretch_flags = (stretch_flags == -1 ? Stretch_kNone : stretch_flags);
+
+	float scale_ = 1.f;
+
+	const bool stretchH = (stretch_flags == Stretch_kWidth || stretch_flags == Stretch_kBoth);
+	const bool stretchV = (stretch_flags == Stretch_kHeight || stretch_flags == Stretch_kBoth);
+
+	const fixed_t h = (stretchH ? FloatToFixed(width / patch->width) : FRACUNIT);
+	const fixed_t v = (stretchV ? FloatToFixed(height / patch->height) : FRACUNIT);
+
+	V_DrawStretchyFixedPatch(FloatToFixed(x), FloatToFixed(y), h * scale_, v * scale_, flags, patch, colormap);
+}
+
+static inline fixed_t CenteredCharacterDim(
+		fixed_t  scale,
+		fixed_t   chw,
+		INT32    hchw,
+		INT32    dupx,
+		fixed_t *  cwp)
+{
+	INT32 cxoff;
+	/*
+	For example, center a 4 wide patch to 8 width:
+	4/2   = 2
+	8/2   = 4
+	4 - 2 = 2 (our offset)
+	2 + 4 = 6 = 8 - 2 (equal space on either side)
+	*/
+	cxoff  = hchw -((*cwp) >> 1 );
+	(*cwp) = chw;
+	return FixedMul (( cxoff * dupx )<< FRACBITS, scale);
+}
+
+static inline fixed_t BunchedCharacterDim(
+		fixed_t  scale,
+		fixed_t   chw,
+		INT32    hchw,
+		INT32    dupx,
+		fixed_t *  cwp)
+{
+	(void)chw;
+	(void)hchw;
+	(void)dupx;
+	(*cwp) = FixedMul(max(1, (*cwp) - 1) << FRACBITS, scale);
+	return 0;
+}
+
+static boolean V_CharacterValid(fontdef_t *font, int c)
+{
+	return (c >= 0 && c < FONTSIZE && font->chars[c] != NULL);
+}
+
+void TSoURDt3rd_MK_DrawKeyboardString(fixed_t x, fixed_t y, int flags, const char *string, fontdef_t *font, const UINT8 *colormap)
+{
+#define THING
+	int c = 0;
+	const char *ssave;
+
+	INT32 boxedflags = ((flags) & (~V_HUDTRANS)) | (V_40TRANS);
+	UINT8 boxed = 0;
+	INT32 lowercase;
+
+	INT32 hchw; /* half-width for centering */
+	INT32 dup;
+
+#ifndef THING
+	fixed_t left;
+	fixed_t right;
+#else
+	INT32 left = 0;
+	INT32 right = 0;
+#endif
+	fixed_t bot;
+
+	fixed_t cx, cy;
+	fixed_t cxoff, cyoff;
+	fixed_t cxsave;
+
+	fixed_t scale = FRACUNIT;
+
+	fixed_t cw;
+	fixed_t f_chw = 0;
+
+#ifdef THING
+	INT32 w, new_dupx, dupy, scrwidth, center = 0;
+	fixed_t pscale = FRACUNIT, vscale = FRACUNIT;
+
+	INT32 charflags = (flags & V_CHARCOLORMASK);
+	INT32 spacewidth = font->spacewidth, charwidth = 0;
+
+	if (flags & V_NOSCALESTART)
+	{
+		new_dupx = vid.dup<<FRACBITS;
+		dupy = vid.dup<<FRACBITS;
+		scrwidth = vid.width;
+	}
+	else
+	{
+		new_dupx = pscale;
+		dupy = vscale;
+		scrwidth = FixedDiv(vid.width<<FRACBITS, vid.dup);
+		left = (scrwidth - (BASEVIDWIDTH << FRACBITS))/2;
+		scrwidth -= left;
+	}
+#endif
+
+	lowercase = (flags & V_ALLOWLOWERCASE);
+	flags &= ~(V_FLIP); /* These two (V_ALLOWLOWERCASE) share a bit. */
+
+	/* Some of these flags get overloaded in this function so
+	   don't pass them on. */
+	flags &= ~(V_PARAMMASK);
+
+#if 0
+	hchw = fontspec.chw >> 1;
+	fontspec.lfh    <<= FRACBITS;
+#endif
+	hchw = f_chw >> 1;
+
+	hchw    <<= FRACBITS;
+	fixed_t lfh = 12;
+	lfh    <<= FRACBITS;
+
+#define Mul( id, scale ) ( id = FixedMul (scale, id) )
+	Mul (hchw, scale);
+	Mul (lfh, scale);
+#undef  Mul
+
+	cx = cxsave = x;
+	cy = y;
+	cyoff = 0;
+	ssave = string;
+
+	if (( flags & V_NOSCALESTART ))
+	{
+		dup   = vid.dup;
+		hchw *= dup;
+
+		right = vid.width;
+		lfh  *= dupy;
+	}
+	else
+	{
+		dup       = 1;
+
+		right     = ( vid.width / vid.dup );
+		if (!( flags & V_SNAPTOLEFT ))
+		{
+			left   = ( right - BASEVIDWIDTH )/ 2; /* left edge of drawable area */
+			right -= left;
+		}
+	}
+
+	right <<= FRACBITS;
+	bot     = vid.height << FRACBITS;
+
+	if (colormap == NULL)
+	{
+		colormap = V_GetStringColormap(( flags & V_CHARCOLORMASK ));
+	}
+
+	for (; ( c = *string ); ++string)
+	{
+		switch (c) // unused character parsing whateverness
+		{
+			case '\n':
+			{
+				if (boxed)
+					continue;
+				cy += lfh; // fontspec.lfh
+				if (cy >= bot)
+					return;
+				cx  =   x;
+				break;
+			}
+			case '\xEE': // Not lifted
+			case '\xED': // animated
+			case '\xEC': // pressed
+			{
+				UINT8 anim_duration = 16;
+				UINT8 anim = 0;
+
+				if (c == '\xEC')
+					anim = 1;
+				else if (c != '\xEE')
+					anim = (((I_GetTime() % (anim_duration * 2)) < anim_duration) ? 1 : 0);
+
+				// For bullshit text outlining reasons, we cannot draw this background character-by-character.
+				// Thinking about doing string manipulation and calling out to V_StringWidth made me drink water.
+				// So instead, we just draw this section of the string twice—invisibly the first time, to measure the width.
+
+				if (boxed == 0) // Save our position and start no-op drawing
+				{
+					cy -= 2*FRACUNIT;
+
+					//Draw(FixedToFloat(cx), FixedToFloat(cy)-3).flags(flags).patch(gen_button_keyleft[anim]);
+					//V_DrawFixedPatch(cx, cy - 3*FRACUNIT, FRACUNIT, flags, gen_button_keyleft[anim], NULL);
+					chain_patch(FixedToFloat(cx), FixedToFloat(cy)-3, -1.f, -1.f, -1, flags, gen_button_keyleft[anim], NULL);
+
+					cx += 3*FRACUNIT;
+					ssave = string;
+					cxsave = cx;
+
+					boxed = 1;
+				}
+				else if (boxed == 1) // Draw box from saved pos to current pos and roll back
+				{
+					//cx += (fontspec.right_outline)*FRACUNIT;
+
+					cx += (2)*FRACUNIT;
+					//cx += (1)*FRACUNIT;
+					//cx += 0;
+
+					fixed_t working = cxsave - 1*FRACUNIT;
+
+#if 0
+					Draw(FixedToFloat(working)+1, FixedToFloat(cy)-3)
+						.width(FixedToFloat(cx - working)-1)
+						.flags(flags)
+						.stretch(Draw::Stretch::kWidth).patch(gen_button_keycenter[anim]);
+					Draw(FixedToFloat(cx), FixedToFloat(cy)-3).flags(flags).patch(gen_button_keyright[anim]);
+#endif
+#if 0
+					V_DrawStretchyFixedPatch(working + 1*FRACUNIT, cy - 3*FRACUNIT, (cx - working) - 1*FRACUNIT, FRACUNIT, flags, gen_button_keycenter[anim], NULL);
+					V_DrawFixedPatch(cx, cy - 3*FRACUNIT, FRACUNIT, flags, gen_button_keyright[anim], NULL);
+#endif
+#if 1
+					chain_patch(FixedToFloat(working)+1, FixedToFloat(cy)-3, FixedToFloat(cx - working)-1, -1, Stretch_kWidth, flags, gen_button_keycenter[anim], NULL);
+					chain_patch(FixedToFloat(cx), FixedToFloat(cy)-3, -1.f, -1.f, -1, flags, gen_button_keyright[anim], NULL);
+#endif
+
+					string = ssave;
+					cx = cxsave;
+
+					// This is a little gross, but this is our way of smuggling text offset to
+					// the standard character drawing case. boxed=3 means we're drawing a pressed button.
+					boxed = 2 + anim;
+				}
+				else // Meeting the ending tag the second time, space away and resume standard parsing
+				{
+					boxed = 0;
+
+					cx += (3)*FRACUNIT;
+					cy += 2*FRACUNIT;
+				}
+
+				break;
+			}
+			default:
+			{
+#ifndef THING
+				if (cx < right)
+				{
+					if (!lowercase)
+					{
+						c = toupper(c);
+					}
+					else if (V_CharacterValid(font, c - FONTSTART) == false)
+					{
+						// Try the other case if it doesn't exist
+						if (c >= 'A' && c <= 'Z')
+						{
+							c = tolower(c);
+						}
+						else if (c >= 'a' && c <= 'z')
+						{
+							c = toupper(c);
+						}
+					}
+
+					c -= FONTSTART;
+					if (V_CharacterValid(font, c) == true)
+					{
+						// Remove offsets from patch
+						fixed_t patchxofs = SHORT (font->chars[c]->leftoffset) * dup * scale;
+						cw = SHORT (font->chars[c]->width) * dup;
+
+						//cxoff = (*font.dim_fn)(scale, fontspec.chw, hchw, dup, &cw);
+						//cxoff = CenteredCharacterDim(scale, f_chw, hchw, dup, &cw);
+						cxoff = BunchedCharacterDim(scale, f_chw, hchw, dup, &cw);
+
+						if (boxed != 1)
+						{
+							V_DrawFixedPatch(cx + cxoff + patchxofs, cy + cyoff + (boxed == 3 ? 2*FRACUNIT : 0), scale,
+								boxed ? boxedflags : flags, font->chars[c], boxed ? 0 : colormap);
+						}
+
+						cx += cw;
+					}
+					else
+						cx += font->spacewidth;
+				}
+#else
+				if (cx < right)
+				{
+					//if (boxed != 1)
+					{
+						//if (V_CharacterValid(font, c) == false)
+						(void)V_CharacterValid;
+						if (!c)
+							break;
+						if (c & 0x80) // color parsing -x 2.16.09
+						{
+							// manually set flags override color codes
+							if (!(flags & V_CHARCOLORMASK))
+								charflags = ((c & 0x7f) << V_CHARCOLORSHIFT) & V_CHARCOLORMASK;
+							continue;
+						}
+#if 0
+						if (c == '\n')
+						{
+							cx = x;
+							cy += FixedMul(((flags & V_RETURN8) ? 8 : font->linespacing)<<FRACBITS, dupy);
+							continue;
+						}#
+#endif
+
+						c = (lowercase ? c : toupper(c)) - FONTSTART;
+						if (c < 0 || c >= FONTSIZE || !font->chars[c])
+						{
+							cx += FixedMul((spacewidth<<FRACBITS), dup);
+							continue;
+						}
+
+						if (charwidth)
+						{
+							w = FixedMul((charwidth<<FRACBITS), new_dupx);
+							center = w/2 - FixedMul(font->chars[c]->width<<FRACBITS, (new_dupx/2));
+						}
+						else
+							w = FixedMul(font->chars[c]->width<<FRACBITS, new_dupx);
+
+						if ((cx>>FRACBITS) > scrwidth)
+							continue;
+						if (cx+left + w < 0) // left boundary check
+						{
+							cx += w;
+							continue;
+						}
+
+						if (boxed != 1)
+						{
+							//INT32 new_flags = boxed ? boxedflags : flags;
+							INT32 new_flags = flags;
+
+							//UINT8 *new_colormap = boxed ? 0 : V_GetStringColormap(charflags);
+							UINT8 *new_colormap = V_GetStringColormap(charflags);
+
+							fixed_t boxed_offset = (boxed == 3 ? 2*FRACUNIT : 0);
+
+							boxed_offset += FRACUNIT;
+
+							chain_patch(FixedToFloat(cx + center), FixedToFloat(cy + cyoff + boxed_offset), FixedToFloat(pscale), FixedToFloat(vscale), -1.f, new_flags, font->chars[c], new_colormap);
+							//V_DrawStretchyFixedPatch(cx + center, cy + cyoff + boxed_offset, pscale, vscale, new_flags, font->chars[c], new_colormap);
+
+#if 0
+							cw = SHORT (font->chars[c]->width) * new_dupx;
+							cxoff = BunchedCharacterDim(scale, f_chw, hchw, new_dupx, &cw);
+							//cxoff = CenteredCharacterDim(scale, f_chw, hchw, new_dupx, &cw);
+							fixed_t patchxofs = SHORT (font->chars[c]->leftoffset) * new_dupx * scale;
+							fixed_t new_x = cx + cxoff + patchxofs;
+							fixed_t new_y =  cy + cyoff + boxed_offset;
+							V_DrawFixedPatch(new_x, new_y, scale, new_flags, font->chars[c], new_colormap);
+#endif
+
+#if 0
+							//Draw bt = Draw(
+								//	FixedToFloat(cx + cxoff) - (bt_inst->x * dupx),
+								//	FixedToFloat(cy + cyoff) - ((bt_inst->y + fontspec.button_yofs) * dupy))
+								//	.flags(flags);
+							chain_patch(FixedToFloat(cx + cxoff) - (2 * new_dupx), // bt_inst->x replaces 2 eventually
+								FixedToFloat(cy + cyoff) - ((4 + 2) * dupy),
+								-1.f, -1.f,
+							Stretch_kNone,
+							flags,
+							) // bt_inst->y replaces 4 eventually; fontspec.button_yofs replaces 2
+#endif
+						}
+
+						cx += w + (font->kerning<<FRACBITS);
+					}
+				}
+#endif
+				break;
+			}
+		}
+	}
+
+	(void)boxedflags;
+	(void)cw;
+	(void)cxoff;
+	(void)cyoff;
+}
 
 //
 // void TSoURDt3rd_MK_DrawButton(fixed_t x, fixed_t y, INT32 flags, patch_t *button[2], boolean pressed)

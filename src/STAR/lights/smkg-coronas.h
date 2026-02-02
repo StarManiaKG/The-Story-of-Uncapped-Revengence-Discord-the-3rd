@@ -40,6 +40,7 @@ typedef enum
 	//MONSTER_SPR  = 0x40,
 	//AMMO_SPR     = 0x50,
 	//BONUS_SPR    = 0x60,
+
   	SPLT_light    = 0xC0, // no fade
   	SPLT_firefly  = 0xD0, // firefly flicker, un-synch
   	SPLT_random   = 0xE0, // random LED, un-synch
@@ -57,17 +58,22 @@ typedef enum
    	SLI_changed = 0x08,  		// the data was changed, probably by fragglescript
 } sprite_light_impl_flags_e;
 
+typedef struct sprite_light_data_s
+{
+	float size;
+	UINT8 alpha;
+	UINT8 bright; // used by software draw to brighten active light sources
+} sprite_light_data_t;
+
 // Propotional fade of corona from Z1 to Z2
+// Hurdler: more realistique corona !
 #define CORONA_Z1 (250.0f)
-#define CORONA_Z2 ((255.0f*8) + 250.0f)
+#define CORONA_Z2 ((255.0f*8) + CORONA_Z1)
 
 #ifdef ALAM_LIGHTING
 
-extern float corona_size;
-extern UINT8 corona_alpha, corona_bright;
-
 light_t *Sprite_Corona_Light_lsp(int sprnum);
-UINT8 Sprite_Corona_Light_fade(light_t *lsp, float cz, mobj_t *mobj);
+boolean Sprite_Corona_Light_fade(light_t *lsp, float cz, mobj_t *mobj, sprite_light_data_t *light_data);
 
 void TSoURDt3rd_R_RenderSoftwareCoronas(vissprite_t *spr, INT32 x1, INT32 x2);
 void TSoURDt3rd_R_DrawSoftwareCoronas(vissprite_t *spr);
@@ -80,12 +86,25 @@ void TSoURDt3rd_R_Release_Coronas(void);
 void HWR_DebugDrawPoint(float x, float y, float z, float r, float g, float b);
 void HWR_DebugDrawLine(float x1, float y1, float z1, float x2, float y2, float z2, float r, float g, float b);
 #endif
+
 void HWR_Transform(float *cx, float *cy, float *cz);
+void HWR_OG_Transform(float *cx, float *cy, float *cz);
+void HWR_Transform_CB(float *cx, float *cy, float *cz, boolean sprite);
 
 #if 1
-void HWR_set_view_transform(void);
+#include "../../hardware/hw_main.h"
+void HWR_set_view_transform(FTransform *stransform);
 void transform_world_to_gr(float wx, float wy, float wz, /*OUT*/ float *gx, float *gy, float *gz);
 #endif
+
+// The only terms needed, the other terms are 0.
+// Don't try to make this a matrix, this is much easier to understand and maintain.
+extern float world_trans_x_to_x, world_trans_y_to_x,
+  world_trans_x_to_y, world_trans_y_to_y, world_trans_z_to_y,
+  world_trans_x_to_z, world_trans_y_to_z, world_trans_z_to_z;
+extern float sprite_trans_x_to_x, sprite_trans_y_to_y, sprite_trans_z_to_y,
+  sprite_trans_z_to_z, sprite_trans_y_to_z;
+
 #endif
 
 #endif // ALAM_LIGHTING

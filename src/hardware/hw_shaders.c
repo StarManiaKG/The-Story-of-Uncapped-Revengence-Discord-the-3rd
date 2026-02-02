@@ -13,17 +13,252 @@
 
 #include "hw_glob.h"
 #include "hw_drv.h"
-#include "hw_shaders.h"
+
+//#include "hw_shaders.h"
+//#include "hw_shaders_saturn.h"
+//#include "hw_shaders_ringracers.h"
+#include "hw_shaders_srb2classic.h"
+//#include "hw_shaders_vanilla.h"
+
+#include "hw_main.h"
+#include "../fastcmp.h"
 #include "../z_zone.h"
 
 // ================
 //  Shader sources
 // ================
 
+#if 1
+
+#undef GLSL_MODEL_LIGHTING_VERTEX_SHADER
+
+// reinterpretation of sprite lighting for models
+// it's a combination of how it works for normal sprites & papersprites
+#define GLSL_MODEL_LIGHTING_VERTEX_SHADER \
+	"uniform float lighting;\n" \
+	"uniform vec3 light_dir;\n" \
+	"uniform float light_contrast;\n" \
+	"uniform float light_backlight;\n" \
+	"void main()\n" \
+	"{\n" \
+		"gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;\n" \
+		"float light = lighting;\n" \
+		"if (length(light_dir) > 0.000001) {\n" \
+			"mat4 m4 = gl_ProjectionMatrix * gl_ModelViewMatrix;\n" \
+			"mat3 m3 = mat3( m4[0].xyz, m4[1].xyz, m4[2].xyz );\n" \
+			"float extralight = -dot(normalize(gl_Normal * m3), normalize(light_dir));\n" \
+			"extralight *= light_contrast - light_backlight;\n" \
+			"extralight *= lighting / 255.0;\n" \
+			"light += extralight * 2.5;\n" \
+		"}\n" \
+		"light = clamp(light / 255.0, 0.0, 1.0);\n" \
+		"gl_FrontColor = vec4(light, light, light, 1.0);\n" \
+		"gl_TexCoord[0].xy = gl_MultiTexCoord0.xy;\n" \
+		"gl_ClipVertex = gl_ModelViewMatrix * gl_Vertex;\n" \
+	"}\0"
+
+#undef GLSL_SOFTWARE_MODEL_LIGHTING_FRAGMENT_SHADER
+// NOTE: we need 'STARTMAP_FUDGE', 'SCALE_FUDGE', and 'lighting'.
+
+#if 1
+// Ring Racers model lighting
+
+#if 1
+// same as above but multiplies results with the lighting value from the
+// accompanying vertex shader (stored in gl_Color)
+#define GLSL_SOFTWARE_MODEL_LIGHTING_FRAGMENT_SHADER \
+	GLSL_WALL_FUDGES \
+	"uniform float lighting;\n" \
+	"uniform sampler2D tex;\n" \
+	"uniform sampler2D brightmap;\n" \
+	"uniform vec4 poly_color;\n" \
+	"uniform vec4 tint_color;\n" \
+	"uniform vec4 fade_color;\n" \
+	"uniform float fade_start;\n" \
+	"uniform float fade_end;\n" \
+	GLSL_DOOM_COLORMAP \
+	GLSL_DOOM_LIGHT_EQUATION \
+	"void main(void) {\n" \
+		"vec4 texel = texture2D(tex, gl_TexCoord[0].st);\n" \
+		"vec4 base_color = texel * poly_color;\n" \
+		"vec4 final_color = base_color;\n" \
+		"float final_lighting = gl_Color.r * 255.0;\n" \
+		"float brightmap_mix = floor(texture2D(brightmap, gl_TexCoord[0].st).r);\n" \
+		"float light_gain = (255.0 - final_lighting) * brightmap_mix;\n" \
+		"final_lighting += light_gain;\n" \
+		GLSL_SOFTWARE_TINT_EQUATION \
+		GLSL_SOFTWARE_FADE_EQUATION \
+		"final_color.a = texel.a * poly_color.a;\n" \
+		"gl_FragColor = final_color;\n" \
+	"}\0"
+#else
+// same as above but multiplies results with the lighting value from the
+// accompanying vertex shader (stored in gl_Color)
+#define GLSL_SOFTWARE_MODEL_LIGHTING_FRAGMENT_SHADER \
+	"uniform float lighting;\n" \
+	"uniform sampler2D tex;\n" \
+	"uniform sampler2D brightmap;\n" \
+	"uniform vec4 poly_color;\n" \
+	"uniform vec4 tint_color;\n" \
+	"uniform vec4 fade_color;\n" \
+	"uniform float fade_start;\n" \
+	"uniform float fade_end;\n" \
+	GLSL_DOOM_COLORMAP \
+	GLSL_DOOM_LIGHT_EQUATION \
+	"void main(void) {\n" \
+		"vec4 texel = texture2D(tex, gl_TexCoord[0].st);\n" \
+		"vec4 base_color = texel * poly_color;\n" \
+		"vec4 final_color = base_color;\n" \
+		"float final_lighting = gl_Color.r * 255.0;\n" \
+		"float brightmap_mix = floor(texture2D(brightmap, gl_TexCoord[0].st).r);\n" \
+		"float light_gain = (255.0 - final_lighting) * brightmap_mix;\n" \
+		"final_lighting += light_gain;\n" \
+		GLSL_SOFTWARE_TINT_EQUATION \
+		GLSL_SOFTWARE_FADE_EQUATION \
+		"final_color.a = texel.a * poly_color.a;\n" \
+		"gl_FragColor = final_color;\n" \
+	"}\0"
+#endif
+
+#else
+// SRB2Classic model lighting
+
+// same as above but multiplies results with the lighting value from the
+// accompanying vertex shader (stored in gl_Color)
+#define GLSL_SOFTWARE_MODEL_LIGHTING_FRAGMENT_SHADER \
+	"uniform sampler2D tex;\n" \
+	"uniform vec4 poly_color;\n" \
+	"uniform vec4 tint_color;\n" \
+	"uniform vec4 fade_color;\n" \
+	"uniform float lighting;\n" \
+	"uniform float fade_start;\n" \
+	"uniform float fade_end;\n" \
+	GLSL_DOOM_COLORMAP \
+	GLSL_DOOM_LIGHT_EQUATION \
+	"void main(void) {\n" \
+		"vec4 texel = texture2D(tex, gl_TexCoord[0].st);\n" \
+		"vec4 base_color = texel * poly_color;\n" \
+		"vec4 final_color = base_color;\n" \
+		GLSL_SOFTWARE_TINT_EQUATION \
+		GLSL_SOFTWARE_FADE_EQUATION \
+		"final_color *= gl_Color;\n" \
+		"final_color.a = texel.a * poly_color.a;\n" \
+		"gl_FragColor = final_color;\n" \
+	"}\0"
+
+#endif
+#endif
+
+#ifndef GLSL_PALETTE_POSTPROCESS_FRAGMENT_SHADER
+
+// Shader for the palette rendering postprocess step
+#define GLSL_PALETTE_POSTPROCESS_FRAGMENT_SHADER \
+	"uniform sampler2D tex;\n" \
+	"uniform sampler3D palette_lookup_tex;\n" \
+	"uniform sampler1D palette_tex;\n" \
+	"void main(void) {\n" \
+		"vec4 texel = texture2D(tex, gl_TexCoord[0].st);\n" \
+		"float tex_pal_idx = texture3D(palette_lookup_tex, vec3((texel * 63.0 + 0.5) / 64.0))[0] * 255.0;\n" \
+		"float palette_coord = (tex_pal_idx + 0.5) / 256.0;\n" \
+		"vec4 final_color = texture1D(palette_tex, palette_coord);\n" \
+		"gl_FragColor = final_color;\n" \
+	"}\0"
+
+#endif
+
+#ifndef GLSL_UI_COLORMAP_FADE_FRAGMENT_SHADER
+
+// Applies a palettized colormap fade to tex
+#define GLSL_UI_COLORMAP_FADE_FRAGMENT_SHADER \
+	"uniform sampler2D tex;\n" \
+	"uniform float lighting;\n" \
+	"uniform sampler3D palette_lookup_tex;\n" \
+	"uniform sampler2D lighttable_tex;\n" \
+	"void main(void) {\n" \
+		"vec4 texel = texture2D(tex, gl_TexCoord[0].st);\n" \
+		"float tex_pal_idx = texture3D(palette_lookup_tex, vec3((texel * 63.0 + 0.5) / 64.0))[0] * 255.0;\n" \
+		"vec2 lighttable_coord = vec2((tex_pal_idx + 0.5) / 256.0, (lighting + 0.5) / 32.0);\n" \
+		"gl_FragColor = texture2D(lighttable_tex, lighttable_coord);\n" \
+	"}\0"
+
+#endif
+
+#ifndef GLSL_UI_TINTED_WIPE_FRAGMENT_SHADER
+
+// For wipes that use additive and subtractive blending.
+// alpha_factor = 31 * 8 / 10 = 24.8
+// Calculated based on the use of the "fade" variable from the GETCOLOR macro
+// in r_data.c:R_CreateFadeColormaps.
+// However this value created some ugliness in fades to white (special stage entry)
+// while palette rendering is enabled, so I raised the value just a bit.
+#define GLSL_UI_TINTED_WIPE_FRAGMENT_SHADER \
+	"uniform sampler2D tex;\n" \
+	"uniform vec4 poly_color;\n" \
+	"const float alpha_factor = 24.875;\n" \
+	"void main(void) {\n" \
+		"vec4 texel = texture2D(tex, gl_TexCoord[0].st);\n" \
+		"vec4 final_color = poly_color;\n" \
+		"float alpha = texel.a;\n" \
+		"if (final_color.a >= 0.5)\n" \
+			"alpha = 1.0 - alpha;\n" \
+		"alpha *= alpha_factor;\n" \
+		"final_color *= alpha;\n" \
+		"final_color.a = 1.0;\n" \
+		"gl_FragColor = final_color;\n" \
+	"}\0"
+
+#endif
+
+#if 1
+// same as above but multiplies results with the lighting value from the
+// accompanying vertex shader (stored in gl_Color) if model lighting is enabled
+#define GLSL_MODEL_FRAGMENT_SHADER \
+	GLSL_WALL_FUDGES \
+	"#ifdef SRB2_PALETTE_RENDERING\n" \
+	"uniform sampler2D tex;\n" \
+	"uniform sampler3D palette_lookup_tex;\n" \
+	"uniform sampler2D lighttable_tex;\n" \
+	"uniform vec4 poly_color;\n" \
+	"uniform float lighting;\n" \
+	GLSL_DOOM_COLORMAP \
+	"void main(void) {\n" \
+		"vec4 texel = texture2D(tex, gl_TexCoord[0].st);\n" \
+		"#ifdef SRB2_MODEL_LIGHTING\n" \
+		"texel *= gl_Color;\n" \
+		"#endif\n" \
+		GLSL_PALETTE_RENDERING \
+	"}\n" \
+	"#else\n" \
+	"uniform sampler2D tex;\n" \
+	"uniform vec4 poly_color;\n" \
+	"uniform vec4 tint_color;\n" \
+	"uniform vec4 fade_color;\n" \
+	"uniform float lighting;\n" \
+	"uniform float fade_start;\n" \
+	"uniform float fade_end;\n" \
+	GLSL_DOOM_COLORMAP \
+	GLSL_DOOM_LIGHT_EQUATION \
+	"void main(void) {\n" \
+		"vec4 texel = texture2D(tex, gl_TexCoord[0].st);\n" \
+		"vec4 base_color = texel * poly_color;\n" \
+		"vec4 final_color = base_color;\n" \
+		GLSL_SOFTWARE_TINT_EQUATION \
+		GLSL_SOFTWARE_FADE_EQUATION \
+		"#ifdef SRB2_MODEL_LIGHTING\n" \
+		"final_color *= gl_Color;\n" \
+		"#endif\n" \
+		"final_color.a = texel.a * poly_color.a;\n" \
+		"gl_FragColor = final_color;\n" \
+	"}\n" \
+	"#endif\0"
+#endif
+
+#if 1
 static struct {
 	const char *vertex;
 	const char *fragment;
 } const gl_shadersources[] = {
+
 	// Floor shader
 	{GLSL_DEFAULT_VERTEX_SHADER, GLSL_FLOOR_FRAGMENT_SHADER},
 
@@ -33,8 +268,11 @@ static struct {
 	// Sprite shader
 	{GLSL_DEFAULT_VERTEX_SHADER, GLSL_WALL_FRAGMENT_SHADER},
 
-	// Model shader
-	{GLSL_MODEL_VERTEX_SHADER, GLSL_MODEL_FRAGMENT_SHADER},
+	// Model shader + diffuse lighting from above
+	//{GLSL_MODEL_LIGHTING_VERTEX_SHADER, GLSL_WALL_FRAGMENT_SHADER},
+	//{GLSL_MODEL_LIGHTING_VERTEX_SHADER, GLSL_SOFTWARE_MODEL_LIGHTING_FRAGMENT_SHADER},
+	//{GLSL_MODEL_VERTEX_SHADER, GLSL_MODEL_FRAGMENT_SHADER},
+	{GLSL_MODEL_LIGHTING_VERTEX_SHADER, GLSL_MODEL_FRAGMENT_SHADER},
 
 	// Water shader
 	{GLSL_DEFAULT_VERTEX_SHADER, GLSL_WATER_FRAGMENT_SHADER},
@@ -56,6 +294,85 @@ static struct {
 
 	{NULL, NULL},
 };
+#endif
+
+#if 0
+static struct {
+	const char *vertex;
+	const char *fragment;
+} const gl_shadersources[] = {
+	// Floor shader
+	{GLSL_DEFAULT_VERTEX_SHADER, GLSL_SOFTWARE_FRAGMENT_SHADER},
+
+	// Wall shader
+	{GLSL_DEFAULT_VERTEX_SHADER, GLSL_SOFTWARE_FRAGMENT_SHADER},
+
+	// Sprite shader
+	{GLSL_DEFAULT_VERTEX_SHADER, GLSL_SOFTWARE_FRAGMENT_SHADER},
+
+	// Model shader + diffuse lighting from above
+	{GLSL_MODEL_LIGHTING_VERTEX_SHADER, GLSL_SOFTWARE_MODEL_LIGHTING_FRAGMENT_SHADER},
+
+	// Water shader
+	{GLSL_DEFAULT_VERTEX_SHADER, GLSL_WATER_FRAGMENT_SHADER},
+
+	// Fog shader
+	{GLSL_DEFAULT_VERTEX_SHADER, GLSL_FOG_FRAGMENT_SHADER},
+
+	// Sky shader
+	{GLSL_DEFAULT_VERTEX_SHADER, GLSL_SKY_FRAGMENT_SHADER},
+
+	// Palette postprocess shader
+	{GLSL_DEFAULT_VERTEX_SHADER, GLSL_PALETTE_POSTPROCESS_FRAGMENT_SHADER},
+
+	// UI colormap fade shader
+	{GLSL_DEFAULT_VERTEX_SHADER, GLSL_UI_COLORMAP_FADE_FRAGMENT_SHADER},
+
+	// UI tinted wipe shader
+	{GLSL_DEFAULT_VERTEX_SHADER, GLSL_UI_TINTED_WIPE_FRAGMENT_SHADER},
+
+	{NULL, NULL},
+};
+#endif
+
+#if 0
+static struct {
+	const char *vertex;
+	const char *fragment;
+} const gl_shadersources[] = {
+	// Floor shader
+	{GLSL_DEFAULT_VERTEX_SHADER, GLSL_SOFTWARE_FRAGMENT_SHADER},
+
+	// Wall shader
+	{GLSL_DEFAULT_VERTEX_SHADER, GLSL_SOFTWARE_FRAGMENT_SHADER},
+
+	// Sprite shader
+	{GLSL_DEFAULT_VERTEX_SHADER, GLSL_SOFTWARE_FRAGMENT_SHADER},
+
+	// Model shader + diffuse lighting from above
+	{GLSL_MODEL_LIGHTING_VERTEX_SHADER, GLSL_SOFTWARE_MODEL_LIGHTING_FRAGMENT_SHADER},
+
+	// Water shader
+	{GLSL_DEFAULT_VERTEX_SHADER, GLSL_WATER_FRAGMENT_SHADER},
+
+	// Fog shader
+	{GLSL_DEFAULT_VERTEX_SHADER, GLSL_FOG_FRAGMENT_SHADER},
+
+	// Sky shader
+	{GLSL_DEFAULT_VERTEX_SHADER, GLSL_SKY_FRAGMENT_SHADER},
+
+	// Palette postprocess shader
+	{GLSL_DEFAULT_VERTEX_SHADER, GLSL_PALETTE_POSTPROCESS_FRAGMENT_SHADER},
+
+	// UI colormap fade shader
+	{GLSL_DEFAULT_VERTEX_SHADER, GLSL_UI_COLORMAP_FADE_FRAGMENT_SHADER},
+
+	// UI tinted wipe shader
+	{GLSL_DEFAULT_VERTEX_SHADER, GLSL_UI_TINTED_WIPE_FRAGMENT_SHADER},
+
+	{NULL, NULL},
+};
+#endif
 
 typedef struct
 {
@@ -81,6 +398,7 @@ static shadertarget_t gl_shadertargets[NUMSHADERTARGETS];
 
 #define MODEL_LIGHTING_DEFINE "#define SRB2_MODEL_LIGHTING"
 #define PALETTE_RENDERING_DEFINE "#define SRB2_PALETTE_RENDERING"
+#define LIGHT_DITHERING_DEFINE "#define SRB2_LIGHT_DITHER"
 
 // Initialize shader variables and the backend's shader system. Load the base shaders.
 // Returns false if shaders cannot be used.
@@ -281,6 +599,8 @@ static char *HWR_PreprocessShader(char *original)
 		ADD_TO_LEN(MODEL_LIGHTING_DEFINE)
 	if (cv_glpaletterendering.value)
 		ADD_TO_LEN(PALETTE_RENDERING_DEFINE)
+	//if (cv_gllightdither.value)
+		//ADD_TO_LEN(LIGHT_DITHERING_DEFINE)
 
 #undef ADD_TO_LEN
 
@@ -324,6 +644,8 @@ static char *HWR_PreprocessShader(char *original)
 		WRITE_DEFINE(MODEL_LIGHTING_DEFINE)
 	if (cv_glpaletterendering.value)
 		WRITE_DEFINE(PALETTE_RENDERING_DEFINE)
+	//if (cv_gllightdither.value)
+		//WRITE_DEFINE(LIGHT_DITHERING_DEFINE)
 
 #undef WRITE_DEFINE
 
@@ -398,17 +720,18 @@ void HWR_CompileShaders(void)
 
 int HWR_GetShaderFromTarget(int shader_target)
 {
-	int custom_shader = gl_shadertargets[shader_target].custom_shader;
-	// use custom shader if following are true
-	// - custom shader exists
-	// - custom shader has been compiled successfully
-	// - custom shaders are enabled
-	// - custom shaders are allowed by the server
-	if (custom_shader != -1 && gl_shaders[custom_shader].compiled &&
-		cv_glshaders.value == 1 && cv_glallowshaders.value)
-		return custom_shader;
-	else
-		return gl_shadertargets[shader_target].base_shader;
+	if (cv_glshaders.value == 1)
+	{
+		int custom_shader = gl_shadertargets[shader_target].custom_shader;
+		// use custom shader if following are true
+		// - custom shader exists
+		// - custom shader has been compiled successfully
+		// - custom shaders are enabled
+		if (custom_shader != -1 && gl_shaders[custom_shader].compiled)
+			return custom_shader;
+	}
+
+	return gl_shadertargets[shader_target].base_shader;
 }
 
 static inline UINT16 HWR_FindShaderDefs(UINT16 wadnum)
@@ -459,7 +782,7 @@ static const char version_directives[][14] = {
 
 static boolean HWR_VersionDirectiveExists(const char* source)
 {
-    return strncmp(source, "#version", 8) == 0;
+	return strncmp(source, "#version", 8) == 0;
 }
 
 static char* HWR_PrependVersionDirective(const char* source, UINT32 version_index)
@@ -494,47 +817,52 @@ static void HWR_TryToCompileShaderWithImplicitVersion(INT32 shader_index, INT32 
 	boolean vert_shader_version_exists = HWR_VersionDirectiveExists(vert_shader);
 	boolean frag_shader_version_exists = HWR_VersionDirectiveExists(frag_shader);
 
-	if(!vert_shader_version_exists) {
+	if (!vert_shader_version_exists)
 		CONS_Alert(CONS_WARNING, "HWR_LoadCustomShadersFromFile: vertex shader '%s' is missing a #version directive\n", HWR_GetShaderName(shaderxlat_id));
-	}
 
-	if(!frag_shader_version_exists) {
+	if (!frag_shader_version_exists)
 		CONS_Alert(CONS_WARNING, "HWR_LoadCustomShadersFromFile: fragment shader '%s' is missing a #version directive\n", HWR_GetShaderName(shaderxlat_id));
-	}
 
 	// try to compile as is
 	HWR_CompileShader(shader_index);
+
 	if (gl_shaders[shader_index].compiled)
 		return;
 
 	// try each version directive
-	for(UINT32 i = 0; i < sizeof(version_directives) / sizeof(version_directives[0]); ++i) {
+	for (UINT32 i = 0; i < sizeof(version_directives) / sizeof(version_directives[0]); ++i)
+	{
 		CONS_Alert(CONS_NOTICE, "HWR_TryToCompileShaderWithImplicitVersion: Trying %s\n", version_directives[i]);
 
-		if(!vert_shader_version_exists) {
+		if (!vert_shader_version_exists)
+		{
 			// first time reallocation would have to be made
 
-			if(i == 0) {
+			if (i == 0)
+			{
 				void* old = (void*)gl_shaders[shader_index].vertex;
 				vert_shader = gl_shaders[shader_index].vertex = HWR_PrependVersionDirective(vert_shader, i);
 				Z_Free(old);
-			} else {
-				HWR_ReplaceVersionInplace(vert_shader, i);
 			}
+			else
+				HWR_ReplaceVersionInplace(vert_shader, i);
 		}
 
-		if(!frag_shader_version_exists) {
-			if(i == 0) {
+		if (!frag_shader_version_exists)
+		{
+			if (i == 0)
+			{
 				void* old = (void*)gl_shaders[shader_index].fragment;
 				frag_shader = gl_shaders[shader_index].fragment = HWR_PrependVersionDirective(frag_shader, i);
 				Z_Free(old);
-			} else {
-				HWR_ReplaceVersionInplace(frag_shader, i);
 			}
+			else
+				HWR_ReplaceVersionInplace(frag_shader, i);
 		}
 
 		HWR_CompileShader(shader_index);
-		if (gl_shaders[shader_index].compiled) {
+		if (gl_shaders[shader_index].compiled)
+		{
 			CONS_Alert(CONS_NOTICE, "HWR_TryToCompileShaderWithImplicitVersion: Compiled with %s\n",
 					   version_directives[i]);
 			CONS_Alert(CONS_WARNING, "Implicit GLSL version is used. Correct behavior is not guaranteed\n");
@@ -579,7 +907,7 @@ void HWR_LoadCustomShadersFromFile(UINT16 wadnum, boolean PK3)
 			goto skip_field;
 		}
 
-		if (!stricmp(stoken, "GLSL"))
+		if (fasticmp(stoken, "GLSL"))
 		{
 			value = strtok(NULL, "\r\n ");
 			if (!value)
@@ -589,9 +917,9 @@ void HWR_LoadCustomShadersFromFile(UINT16 wadnum, boolean PK3)
 				goto skip_lump;
 			}
 
-			if (!stricmp(value, "VERTEX"))
+			if (fasticmp(value, "VERTEX"))
 				shadertype = 1;
-			else if (!stricmp(value, "FRAGMENT"))
+			else if (fasticmp(value, "FRAGMENT"))
 				shadertype = 2;
 
 skip_lump:
@@ -617,7 +945,7 @@ skip_lump:
 
 			for (i = 0; shaderxlat[i].type; i++)
 			{
-				if (!stricmp(shaderxlat[i].type, stoken))
+				if (fasticmp(shaderxlat[i].type, stoken))
 				{
 					size_t shader_string_length;
 					char *shader_source;
@@ -699,18 +1027,19 @@ skip_field:
 		{
 			int shader_index = i + NUMSHADERTARGETS; // index to gl_shaders
 			gl_shadertargets[i].custom_shader = shader_index;
+
 			// if only one stage (vertex/fragment) is defined, the other one
 			// is copied from the base shaders.
 			if (!gl_shaders[shader_index].fragment)
 				gl_shaders[shader_index].fragment = Z_StrDup(gl_shadersources[i].fragment);
+
 			if (!gl_shaders[shader_index].vertex)
 				gl_shaders[shader_index].vertex = Z_StrDup(gl_shadersources[i].vertex);
 
-			if(!HWR_CheckVersionDirectives(gl_shaders[shader_index].vertex, gl_shaders[shader_index].fragment)) {
+			if (!HWR_CheckVersionDirectives(gl_shaders[shader_index].vertex, gl_shaders[shader_index].fragment))
 				HWR_TryToCompileShaderWithImplicitVersion(shader_index, i);
-			} else {
+			else
 				HWR_CompileShader(shader_index);
-			}
 
 			if (!gl_shaders[shader_index].compiled)
 				CONS_Alert(CONS_ERROR, "HWR_LoadCustomShadersFromFile: A compilation error occured for the %s shader in file %s. See the console messages above for more information.\n", shaderxlat[i].type, wadfiles[wadnum]->filename);

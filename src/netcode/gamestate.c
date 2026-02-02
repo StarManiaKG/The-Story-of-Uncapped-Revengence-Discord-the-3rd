@@ -71,6 +71,7 @@ void SV_SendSaveGame(INT32 node, boolean resending)
 	savebuffer.pos = sizeof(UINT32);
 
 	P_SaveNetGame(&savebuffer, resending);
+	//P_TSoURDt3rd_SaveNetGame(&savebuffer, resending);
 
 	length = savebuffer.pos;
 
@@ -140,6 +141,7 @@ void SV_SavedGame(void)
 	savebuffer.pos = 0;
 
 	P_SaveNetGame(&savebuffer, false);
+	P_TSoURDt3rd_SaveNetGame(&savebuffer, false);
 
 	// then save it!
 	if (!FIL_WriteFile(tmpsave, savebuffer.buf, savebuffer.pos))
@@ -194,18 +196,21 @@ void CL_LoadReceivedSavegame(boolean reloading)
 	// load a base level
 	if (P_LoadNetGame(&savebuffer, reloading))
 	{
-		const UINT8 actnum = mapheaderinfo[gamemap-1]->actnum;
-		CONS_Printf(M_GetText("Map is now \"%s"), G_BuildMapName(gamemap));
-		if (strcmp(mapheaderinfo[gamemap-1]->lvlttl, ""))
+		if (!reloading)
 		{
-			CONS_Printf(": %s", mapheaderinfo[gamemap-1]->lvlttl);
-			if (!(mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE))
-				CONS_Printf(M_GetText(" Zone"));
-			if (actnum > 0)
-				CONS_Printf(" %2d", actnum);
+			CONS_Printf(M_GetText("Map is now \"%s"), G_BuildMapName(gamemap));
+			if (strcmp(mapheaderinfo[gamemap-1]->lvlttl, ""))
+			{
+				CONS_Printf(": %s", mapheaderinfo[gamemap-1]->lvlttl);
+				if (!(mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE))
+					CONS_Printf(M_GetText(" Zone"));
+				if (mapheaderinfo[gamemap-1]->actnum > 0)
+					CONS_Printf(" %2d", mapheaderinfo[gamemap-1]->actnum);
+			}
+			CONS_Printf("\"\n");
 		}
-		CONS_Printf("\"\n");
 	}
+	P_TSoURDt3rd_LoadNetGame(&savebuffer, reloading);
 
 	// done
 	Z_Free(savebuffer.buf);

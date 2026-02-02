@@ -3,6 +3,7 @@
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 1999-2024 by Sonic Team Junior.
+// Copyright (C) 2025 by Kart Krew.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -31,6 +32,10 @@
 ///  For use on the internet
 #define INETPACKETLENGTH 1024
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern INT16 hardware_MAXPACKETLENGTH;
 
 #if defined(_MSC_VER)
@@ -47,6 +52,36 @@ typedef struct
 	/// The packet data to be sent.
 	char data[MAXPACKETLENGTH];
 } ATTRPACK doomcom_t;
+extern doomcom_t *doomcom;
+
+#if 0
+typedef struct
+{
+	INT32 magic;
+	INT32 addr;
+	INT16 port;
+} ATTRPACK holepunch_t;
+#define HOLEPUNCH_DATA(d) (holepunch_t *)&(d)->data
+extern holepunch_t *holepunchpacket;
+#endif
+
+#if 1
+typedef struct
+{
+	u_short family;
+	INT32 type;
+	struct sockaddr_in  ip4;
+#ifdef HAVE_IPV6
+	struct sockaddr_in6 ip6;
+#endif
+
+	INT32 magic;
+	INT32 addr;
+	INT16 port;
+} ATTRPACK holepunch_t;
+#define HOLEPUNCH_DATA(d) (holepunch_t *)&(d)->data
+extern holepunch_t *holepunchpacket;
+#endif
 
 #if defined(_MSC_VER)
 #pragma pack()
@@ -64,8 +99,6 @@ extern INT16 numslots;
 */
 extern INT16 extratics;
 
-extern doomcom_t *doomcom;
-
 /**	\brief return packet in doomcom struct
 */
 extern boolean (*I_NetGet)(void);
@@ -79,8 +112,6 @@ extern void (*I_NetSend)(void);
 	\param	nodenum	node to be closed
 
 	\return	void
-
-
 */
 extern void (*I_NetFreeNodenum)(INT32 nodenum);
 
@@ -100,8 +131,6 @@ extern char *I_NetSplitAddress(char *address, char **port);
 	\param	address	address to connect to
 
 	\return	number of node
-
-
 */
 extern SINT8 I_NetMakeNode(const char *address);
 
@@ -112,8 +141,6 @@ extern SINT8 I_NetMakeNode(const char *address);
 	\param	port	port to connect to
 
 	\return	number of node
-
-
 */
 extern SINT8 (*I_NetMakeNodewPort)(const char *address, const char *port);
 
@@ -136,5 +163,9 @@ extern boolean *bannednode;
 
 /// \brief Called by D_SRB2Main to be defined by extern network driver
 boolean I_InitNetwork(void);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

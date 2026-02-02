@@ -2,6 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 1999-2024 by Sonic Team Junior.
+// Copyright (C) 2024-2026 by StarManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -150,10 +151,14 @@ typedef enum
 	XD_LUAVAR,      // 23
 	XD_LUAFILE,     // 24
 	XD_MUTEPLAYER,  // 25
-	// STAR STUFF: TSoURDt3rd NetXCMDs //
-	XD_DISCORD,     // 26 (Ring Racers)
-	// DONE! //
-	MAXNETXCMD
+
+	// TSoURDt3rd NetXCMDs //
+	XD_DISCORD,     // 26
+
+	MAXNETXCMD,
+	VANILLA_MAXNETXCMD = XD_MUTEPLAYER,
+	TSOURDT3RD_NETXCMDS_START = XD_DISCORD,
+	TSOURDT3RD_MAXNETXCMDS = TSOURDT3RD_NETXCMDS_START - VANILLA_MAXNETXCMD
 } netxcmd_t;
 
 extern const char *netxcmdnames[MAXNETXCMD - 1];

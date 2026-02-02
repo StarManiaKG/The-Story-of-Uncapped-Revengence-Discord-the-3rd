@@ -22,7 +22,9 @@
 // ------------------------ //
 
 static void M_Sys_GameTicker(void);
+
 static void G_CheckForTSoURDt3rdUpdates(INT32 choice);
+static void M_RefreshMapLighting(INT32 choice);
 
 menuitem_t TSoURDt3rd_OP_GameMenu[] =
 {
@@ -62,6 +64,11 @@ menuitem_t TSoURDt3rd_OP_GameMenu[] =
 
 	{IT_HEADER, NULL, "Levels", NULL, 0},
 		{IT_STRING | IT_CVAR, NULL, "Allow Time Overs", &cv_tsourdt3rd_game_allowtimeover, 0},
+
+		{IT_SPACE, NULL, NULL, NULL, 0},
+
+		{IT_STRING | IT_CVAR, NULL, "Randomize Map Lighting", &cv_map_randomdirlight, 0},
+		{IT_STRING | IT_CALL, NULL, "Refresh Map Lighting...", M_RefreshMapLighting, 0},
 
 	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL, NULL, 0},
 
@@ -121,6 +128,11 @@ tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_GameMenu[] =
 	{NULL, NULL, {NULL}, 0, 0},
 		{NULL, "Are time-overs allowed?", {NULL}, 0, 0},
 
+		{NULL, NULL, {NULL}, 0, 0},
+
+		{NULL, "Should maps randomize their lighting?", {NULL}, 0, 0},
+		{NULL, "Run the map lighting setup function again.", {NULL}, 0, 0},
+
 	{NULL, NULL, {NULL}, 0, 0},
 
 	{NULL, NULL, {NULL}, 0, 0},
@@ -174,6 +186,8 @@ tsourdt3rd_menu_t TSoURDt3rd_TM_OP_GameDef = {
 
 static void M_Sys_GameTicker(void)
 {
+	mapheader_lighting_t *lighting = &mapheaderinfo[gamemap-1]->lighting;
+	const boolean use_random = (lighting->use_custom_light == false || cv_map_randomdirlight.value == 2);
 	INT32 i;
 
 	TSoURDt3rd_M_OptionsTick();
@@ -197,6 +211,9 @@ static void M_Sys_GameTicker(void)
 	for (i = op_objects_shadows_realistic; i <= op_objects_shadows_end; i++)
 		TSoURDt3rd_OP_GameMenu[i].status = (cv_shadow.value ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
 
+	TSoURDt3rd_OP_GameMenu[op_levels_refreshmaplighting].status =
+		((cv_map_randomdirlight.value && use_random) ? IT_CALL|IT_STRING : IT_GRAYEDOUT);
+
 	TSoURDt3rd_OP_GameMenu[op_general_isitcalledsingleplayer].status =
 		(!cv_tsourdt3rd_aprilfools_ultimatemode.value ? IT_CVAR|IT_STRING : IT_GRAYEDOUT);
 }
@@ -208,5 +225,23 @@ static void G_CheckForTSoURDt3rdUpdates(INT32 choice)
 #ifdef HAVE_CURL
 	tsourdt3rd_local.curl.checked_version = false;
 	TSoURDt3rd_CurlRoutine_FindUpdates();
+	S_StartSoundFromEverywhere(sfx_zoom);
+#else
+	S_StartSoundFromEverywhere(sfx_lose);
 #endif
+}
+
+static void M_RefreshMapLighting(INT32 choice)
+{
+	(void)choice;
+
+	if (gamestate == GS_LEVEL)
+	{
+		const mapheader_lighting_t *lighting = &mapheaderinfo[gamemap-1]->lighting;
+		if (lighting->use_custom_light == false || cv_map_randomdirlight.value == 2)
+		{
+			P_UpdateMapLighting(true);
+			S_StartSoundFromEverywhere(sfx_zoom);
+		}
+	}
 }

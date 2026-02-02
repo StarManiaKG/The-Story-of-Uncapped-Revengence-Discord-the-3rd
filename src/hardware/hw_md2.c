@@ -110,9 +110,9 @@ static inline void md2_printModelInfo (model_t *model)
 	INT32 i;
 
 	CONS_Debug(DBG_RENDER, "magic:\t\t\t%c%c%c%c\n", model->header.magic>>24,
-	            (model->header.magic>>16)&0xff,
-	            (model->header.magic>>8)&0xff,
-	             model->header.magic&0xff);
+				(model->header.magic>>16)&0xff,
+				(model->header.magic>>8)&0xff,
+				 model->header.magic&0xff);
 	CONS_Debug(DBG_RENDER, "version:\t\t%d\n", model->header.version);
 	CONS_Debug(DBG_RENDER, "skinWidth:\t\t%d\n", model->header.skinWidth);
 	CONS_Debug(DBG_RENDER, "skinHeight:\t\t%d\n", model->header.skinHeight);
@@ -420,7 +420,7 @@ static void md2_loadTexture(md2_t *model)
 			size = w*h;
 			while (size--)
 			{
-				V_CubeApply(&image->s.red, &image->s.green, &image->s.blue);
+				V_CubeApply(image);
 				image++;
 			}
 		}
@@ -1305,21 +1305,20 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 	if (spr->mobj->subsector)
 	{
 		sector_t *sector = spr->mobj->subsector->sector;
-		UINT8 lightlevel = 255;
+		INT32 lightlevel = 255;
+		boolean lightset = HWR_OverrideObjectLightLevel(spr->mobj, &lightlevel);
 		extracolormap_t *colormap = NULL;
 
 		if (sector->numlights)
 		{
-			INT32 light;
-
-			light = R_GetPlaneLight(sector, spr->mobj->z + spr->mobj->height, false); // Always use the light at the top instead of whatever I was doing before
+			INT32 light = R_GetPlaneLight(sector, spr->mobj->z + spr->mobj->height, false); // Always use the light at the top instead of whatever I was doing before
 
 			if (R_ThingIsFullDark(spr->mobj))
 				lightlevel = 0;
 			else if (R_ThingIsSemiBright(spr->mobj))
 				lightlevel = 128 + (*sector->lightlist[light].lightlevel>>1);
 			else if (!R_ThingIsFullBright(spr->mobj))
-				lightlevel = max(min(255, *sector->lightlist[light].lightlevel), 0);
+				lightlevel = clamp(*sector->lightlist[light].lightlevel, 0, 255);
 
 			if (*sector->lightlist[light].extra_colormap)
 				colormap = *sector->lightlist[light].extra_colormap;
@@ -1331,13 +1330,19 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 			else if (R_ThingIsSemiBright(spr->mobj))
 				lightlevel = 128 + (sector->lightlevel>>1);
 			else if (!R_ThingIsFullBright(spr->mobj))
-				lightlevel = max(min(255, sector->lightlevel), 0);
+				lightlevel = clamp(sector->lightlevel, 0, 255);
 
 			if (sector->extra_colormap)
 				colormap = sector->extra_colormap;
 		}
 
-		HWR_Lighting(&Surf, lightlevel, colormap);
+		if (!lightset)
+		{
+			HWR_ObjectLightLevelPost(spr, sector, &lightlevel, true);
+		}
+
+		//HWR_Lighting(&Surf, lightlevel, colormap, P_SectorUsesDirectionalLighting(sector) && !R_ThingIsFullBright(spr->mobj));
+		HWR_Lighting(&Surf, lightlevel, colormap, P_MobjUsesDirectionalLighting(spr->mobj) && !R_ThingIsFullBright(spr->mobj));
 	}
 	else
 		Surf.PolyColor.rgba = 0xFFFFFFFF;
@@ -1388,7 +1393,7 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 			Surf.PolyColor.s.alpha = (spr->mobj->flags2 & MF2_SHADOW) ? 0x40 : 0xff;
 			Surf.PolyFlags = HWR_GetBlendModeFlag(blendmode);
 		}
-		
+
 		if (newalpha < FRACUNIT)
 		{
 			// TODO: The ternary operator is a hack to make alpha values roughly match what their FF_TRANSMASK equivalent would be
@@ -1468,6 +1473,11 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 				return false;
 			}
 		}
+
+#ifdef ALAM_LIGHTING
+		// dynamic lighting
+		//HWR_DL_AddLight(spr, DYNLIGHT_ORIGIN_VISSPRITE);
+#endif
 
 		//HWD.pfnSetBlend(blend); // This seems to actually break translucency?
 		//Hurdler: arf, I don't like that implementation at all... too much crappy
@@ -1641,7 +1651,7 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		}
 
 		{
-			fixed_t anglef = AngleFixed(R_ModelRotationAngle(&interp));
+			fixed_t anglef = AngleFixed(R_ModelRotationAngle(spr->mobj, NULL));
 
 			p.rollangle = 0.0f;
 
@@ -1673,6 +1683,11 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 		p.flip = atransform.flip;
 		p.mirror = atransform.mirror;
 
+#ifdef ALAM_LIGHTING
+		// dynamic lighting
+		HWR_DL_AddLight(spr, DYNLIGHT_ORIGIN_VISSPRITE);
+#endif
+
 		if (HWR_UseShader())
 			HWD.pfnSetShader(HWR_GetShaderFromTarget(SHADER_MODEL));
 		{
@@ -1690,16 +1705,12 @@ boolean HWR_DrawModel(gl_vissprite_t *spr)
 			p.z += oy;
 
 			HWD.pfnDrawModel(md2->model, frame, durs, tics, nextFrame, &p, md2->scale * xs, md2->scale * ys, flip, hflip, &Surf);
-		}
 
-/// STAR NOTE: what \todo what ///
 #ifdef ALAM_LIGHTING
-#if 0
-	if (!(spr->mobj->flags2 & MF2_DEBRIS) && (spr->mobj->sprite != SPR_PLAY ||
-	 (spr->mobj->player && spr->mobj->player->powers[pw_super])))
+			// dynamic lighting
+			//HWR_DL_AddLight(spr, DYNLIGHT_ORIGIN_VISSPRITE);
 #endif
-		//HWR_DL_AddLightSprite(spr);
-#endif
+		}
 	}
 	return true;
 }

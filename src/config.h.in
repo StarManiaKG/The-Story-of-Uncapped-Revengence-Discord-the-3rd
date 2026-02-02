@@ -100,7 +100,9 @@
  * 
  * Last updated 2025 / 06 / 15 - TSOURDT3RD V5 (2.2.15) - slowly beginning to remove unnecessary lumps and put them within their own files
  * Last updated 2025 / 08 / 08 - TSOURDT3RD V5 (2.2.15) - did something
+ * Last updated 2025 / 09 / 14 - TSOURDT3RD V5 (2.2.15) - Added the new Ring Racers 'modern button' graphics and the song credits bar
+ * Last updated 2025 / 12 / 08 - TSOURDT3RD V5 (2.2.15) - Moved all TSoURDt3rd music into their own file, 'tsourdt3rd_music.pk3'.
 */
-#define ASSET_HASH_TSOURDT3RD_PK3 "292fd432acb5944a08705493166f5444"
+#define ASSET_HASH_TSOURDT3RD_PK3 "d990011f24871b20361b9daa21946c76"
 
 #endif

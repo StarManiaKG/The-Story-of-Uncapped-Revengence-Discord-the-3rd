@@ -2,7 +2,8 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
-// Copyright (C) 1999-2024 by Sonic Team Junior.
+// Copyright (C) 1999-2025 by Sonic Team Junior.
+// Copyright (C) 2025 by StarManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -36,6 +37,9 @@ void P_SaveGame(save_t *save_p, INT16 mapnum);
 void P_SaveNetGame(save_t *save_p, boolean resending);
 boolean P_LoadGame(save_t *save_p, INT16 mapoverride);
 boolean P_LoadNetGame(save_t *save_p, boolean reloading);
+
+void P_TSoURDt3rd_SaveNetGame(save_t *save_p, boolean resending);
+boolean P_TSoURDt3rd_LoadNetGame(save_t *save_p, boolean reloading);
 
 typedef struct
 {

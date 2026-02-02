@@ -56,7 +56,6 @@
 #              builds.
 # HAVE_MIXERX=1 - Enable SDL Mixer X. Outside of Windows
 #                 builds, SDL Mixer X is not the default.
-# NOTHREADS=1 - Disable multithreading.
 #
 # Netplay incompatible
 # --------------------

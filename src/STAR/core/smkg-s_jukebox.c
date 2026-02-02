@@ -338,8 +338,8 @@ void TSoURDt3rd_Jukebox_Stop(void)
 	tsourdt3rd_global_jukebox.track_tics = 0;
 	tsourdt3rd_global_jukebox.curtrack = NULL;
 
-	S_ControlMusicEffects();
 	TSoURDt3rd_S_RefreshMusic();
+	S_ControlMusicEffects();
 
 	if (tsourdt3rd_global_jukebox.in_menu == false)
 	{

@@ -206,6 +206,10 @@ if("${SRB2_CONFIG_HWRENDER}")
 	target_compile_definitions(SRB2SDL2 PRIVATE -DHWRENDER)
 	add_subdirectory(hardware)
 
+	# TEST
+	find_package(OpenGL)
+	target_link_libraries(SRB2SDL2 PRIVATE OpenGL::GL)
+
 	if("${SRB2_CONFIG_STATIC_OPENGL}")
 		find_package(OpenGL)
 		if(${OPENGL_FOUND})
@@ -277,6 +281,7 @@ target_compile_options(SRB2SDL2 PRIVATE
 		-Winline
 		-Wformat-y2k
 		-Wformat-security
+
 		-fwrapv
 		-g
 
@@ -346,6 +351,7 @@ target_compile_options(SRB2SDL2 PRIVATE
 		-Wno-error=non-literal-null-conversion
 		-Wno-error=constant-conversion
 		-Wno-error=unused-but-set-variable
+
 		-fwrapv
 		-g
 	>
@@ -425,8 +431,8 @@ else()
 
 	if("${SRB2_CONFIG_EXECTYPE}" MATCHES libbacktrace)
 		if(("${CMAKE_SYSTEM_NAME}" MATCHES "Windows") AND (${SRB2_SYSTEM_BITS} EQUAL 32))
-			set(SRB2_CONFIG_EXECTYPE "default")
-			message(STATUS "libbacktrace isn't supported on Windows 32-Bit!")
+			#set(SRB2_CONFIG_EXECTYPE "default")
+			#message(STATUS "libbacktrace isn't supported on Windows 32-Bit!")
 		endif()
 	endif()
 
@@ -503,21 +509,25 @@ else()
 endif()
 
 if(TARGET PNG::PNG AND TARGET ZLIB::ZLIB)
-#libpng links zlib too?
-target_link_libraries(SRB2SDL2 PRIVATE PNG::PNG)
+	#libpng links zlib too?
+	target_link_libraries(SRB2SDL2 PRIVATE PNG::PNG)
 endif()
 
 if(NOT TARGET PNG::PNG AND TARGET ZLIB::ZLIB)
-#got no libpng? we need zlib
-target_link_libraries(SRB2SDL2 PRIVATE ZLIB::ZLIB)
+	#got no libpng? we need zlib
+	target_link_libraries(SRB2SDL2 PRIVATE ZLIB::ZLIB)
 endif()
 
-if(TARGET gme::gme)
-	target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_GME)
-	target_link_libraries(SRB2SDL2 PRIVATE gme::gme)
-	message(STATUS "libgme Found")
+if("${SRB2_CONFIG_USE_GME}")
+	if(TARGET gme::gme)
+		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_GME)
+		target_link_libraries(SRB2SDL2 PRIVATE gme::gme)
+		message(STATUS "GME Found")
+	else()
+		message(STATUS "No GME Found")
+	endif()
 else()
-	message(STATUS "No libgme Found")
+	message(STATUS "GME Disabled")
 endif()
 
 if(TARGET libopenmpt::libopenmpt)
@@ -552,6 +562,9 @@ endif()
 ##  TSoURDt3rd ##
 target_compile_definitions(SRB2SDL2 PRIVATE -DUSE_STUN)
 
+target_link_libraries(SRB2SDL2 PRIVATE imgui::imgui)
+target_compile_definitions(SRB2SDL2 PRIVATE -DIMGUI_DEFINED)
+
 # -- Discord
 if(${TSOURDT3RD_CONFIG_ENABLE_DISCORDGAMESDK} AND ${TSOURDT3RD_CONFIG_ENABLE_DISCORDRPC})
 	message(FATAL_ERROR "TSoURDt3rd: Can't compile with both Discord's Rich Presence and Discord's Game SDK!")
@@ -583,6 +596,7 @@ add_subdirectory(STAR)
 
 # strip debug symbols into separate file when using gcc.
 # to be consistent with Makefile, don't generate for OS X.
+#if((${CMAKE_BUILD_TYPE} MATCHES Debug) OR (${CMAKE_BUILD_TYPE} MATCHES RelWithDebInfo))
 if((CMAKE_COMPILER_IS_GNUCC) AND NOT ("${CMAKE_SYSTEM_NAME}" MATCHES Darwin) AND (${SRB2_CONFIG_DEBUGSYMBOLS_SEPARATE}))
 	if(${CMAKE_BUILD_TYPE} MATCHES Debug)
 		set(OBJCOPY_ONLY_KEEP_DEBUG "--only-keep-debug")

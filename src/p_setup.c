@@ -342,6 +342,20 @@ void P_DeleteFlickies(INT16 i)
 	mapheaderinfo[i]->numFlickies = 0;
 }
 
+/** Clears a header's lighting parameters.
+  *
+  * \param lighting The pointer to a header's light parameters
+  */
+static void P_ClearMapHeaderLighting(mapheader_lighting_t *lighting)
+{
+	lighting->light_contrast = 0;
+	lighting->light_contrast = 8;
+	lighting->sprite_backlight = 0;
+	lighting->use_light_angle = false;
+	lighting->light_angle = 0;
+	lighting->use_custom_light = false;
+}
+
 #define NUMLAPS_DEFAULT 4
 
 /** Clears the data from a single map header.
@@ -408,6 +422,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 i)
 	P_DeleteGrades(num);
 	mapheaderinfo[num]->customopts = NULL;
 	mapheaderinfo[num]->numCustomOptions = 0;
+	P_ClearMapHeaderLighting(&mapheaderinfo[num]->lighting);
 }
 
 /** Allocates a new map-header structure.
@@ -3524,6 +3539,267 @@ static inline float P_SegLengthFloat(seg_t *seg)
 }
 #endif
 
+/** Updates the light offset
+  *
+  * \param li Seg to update the light offsets of
+  */
+void P_UpdateSegLightOffset(seg_t *li)
+{
+	const UINT8 contrast = maplighting.contrast;
+	const fixed_t contrastFixed = ((fixed_t)contrast) * FRACUNIT;
+	fixed_t light = FRACUNIT;
+	fixed_t extralight = 0;
+
+	if (maplighting.directional == true)
+	{
+		angle_t liAngle = R_PointToAngle2(0, 0, (li->v1->x - li->v2->x), (li->v1->y - li->v2->y)) - ANGLE_90;
+
+		light = FixedMul(FINECOSINE(liAngle >> ANGLETOFINESHIFT), FINECOSINE(maplighting.angle >> ANGLETOFINESHIFT))
+			+ FixedMul(FINESINE(liAngle >> ANGLETOFINESHIFT), FINESINE(maplighting.angle >> ANGLETOFINESHIFT));
+		light = (light + FRACUNIT) / 2;
+	}
+	else
+	{
+		light = FixedDiv(R_PointToAngle2(0, 0, abs(li->v1->x - li->v2->x), abs(li->v1->y - li->v2->y)), ANGLE_90);
+		return;
+	}
+
+	extralight = -contrastFixed + FixedMul(light, contrastFixed * 2);
+
+	// Between -1 and 1 for software, -8 and 8 for hardware
+	li->lightOffset = FixedFloor((extralight / 8) + (FRACUNIT / 2)) / FRACUNIT;
+	li->hwLightOffset = FixedFloor(extralight + (FRACUNIT / 2)) / FRACUNIT;
+}
+
+void P_UpdateAllSegLights(void)
+{
+	seg_t *seg = segs;
+	size_t i;
+
+	for (i = 0; i < numsegs; i++, seg++)
+	{
+		if (seg != NULL)
+			P_UpdateSegLightOffset(seg);
+	}
+}
+
+boolean P_MobjUsesDirectionalLighting(const mobj_t *mobj)
+{
+	sector_t *sector;
+	fixed_t objz;
+	const boolean isflipped = mobj->eflags & MFE_VERTICALFLIP;
+
+	if (mobj->subsector == NULL || mobj->subsector->sector == NULL)
+	{
+		// No valid sector to check for lighting with!
+		return false;
+	}
+
+	objz = mobj->z + mobj->height;
+	sector = mobj->subsector->sector;
+
+	if (sector->ceilingpic != skyflatnum && sector->floorpic != skyflatnum)
+	{
+		// No sky is showing, so no lighting!
+		return false;
+	}
+
+	if (mobj->touching_sectorlist)
+	{
+		// Check if the object's touching sectors have an FOF with the Sky/Skybox visible.
+		msecnode_t *node;
+		ffloor_t *rover;
+		boolean rover_blocking_sky = false;
+		boolean rover_under_object = false;
+
+		for (node = mobj->touching_sectorlist; node; node = node->m_sectorlist_next)
+		{
+			if (!node->m_sector->ffloors)
+				continue;
+
+			for (rover = node->m_sector->ffloors; rover; rover = rover->next)
+			{
+				boolean rover_above_object = (!isflipped ? (*rover->bottomheight >= objz) : (*rover->topheight <= objz));
+				boolean rover_below_object = (!isflipped ? (*rover->topheight <= objz) : (*rover->bottomheight >= objz));
+
+				if (rover_blocking_sky && rover_under_object)
+					break;
+				if (!rover_above_object && !rover_below_object)
+					continue;
+
+				if (!(rover->fofflags & FOF_EXISTS))
+					continue;
+				if (rover->fofflags & FOF_TRANSLUCENT)
+					continue;
+
+				if (!rover_blocking_sky && rover_above_object)
+				{
+					// The FOF is above the object.
+					// If it isn't showing the sky, then this is our blocking FOF.
+					rover_blocking_sky = (!isflipped ? (*rover->bottompic != skyflatnum) : (*rover->toppic != skyflatnum));
+				}
+				else if (!rover_under_object && rover_below_object)
+				{
+					// This FOF is below the object.
+					// If the sky isn't showing on this plane, then this is our floor FOF.
+					rover_under_object = (!isflipped ? (*rover->toppic != skyflatnum) : (*rover->bottompic != skyflatnum));
+				}
+			}
+		}
+
+		if (rover_blocking_sky && rover_under_object)
+		{
+			// FOFs are blocking the sky, no lighting can be done!
+			return false;
+		}
+		else if (rover_blocking_sky)
+		{
+			// Check if the floor plane allows lighting.
+			return (!isflipped ? (sector->floorpic == skyflatnum) : (sector->ceilingpic == skyflatnum));
+		}
+		else if (rover_under_object)
+		{
+			// Check if the ceiling plane allows lighting.
+			return (!isflipped ? (sector->ceilingpic == skyflatnum) : (sector->floorpic == skyflatnum));
+		}
+	}
+
+	// The sky is showing to the object, so do lighting!
+	return true;
+}
+
+boolean P_SectorUsesDirectionalLighting(const sector_t *sector, INT32 *lightlevel)
+{
+	if (sector == NULL)
+	{
+		// No valid sector to check for lighting with!
+		return false;
+	}
+
+#if 0
+	if (sector->flags & MSF_DIRECTIONLIGHTING)
+	{
+		// explicitly turned on
+		return true;
+	}
+	else if (sector->flags & MSF_FLATLIGHTING)
+	{
+		// explicitly turned off
+		return false;
+	}
+#endif
+
+#if 1
+	if (sector->ffloors)
+	{
+		// Check if the sector has any FOFs with a visible sky.
+		ffloor_t *rover;
+
+		for (rover = sector->ffloors; rover; rover = rover->next)
+		{
+			if ((*rover->bottomheight >= sector->ceilingheight && *rover->topheight >= sector->ceilingheight)
+				|| (*rover->bottomheight <= sector->floorheight && *rover->topheight <= sector->floorheight))
+			{
+				// The FOF isn't visible!
+				continue;
+			}
+
+			if (!(rover->fofflags & FOF_EXISTS))
+				continue;
+			if (rover->fofflags & FOF_TRANSLUCENT)
+				continue;
+
+#if 1
+			if (*rover->bottomheight <= sector->floorheight && *rover->topheight >= sector->ceilingheight)
+			{
+				// Our main sector isn't visible, can't do lighting!
+				return false;
+			}
+#endif
+#if 1
+			if (*rover->bottomheight > sector->floorheight)
+			{
+				// The FOF is above our sector, blocking the sky.
+				// Unless the FOF's bottompic shows the sky, we can't do lighting!
+#if 1
+				if (*rover->bottompic == skyflatnum)
+				{
+					return true;
+				}
+				//else
+				else if (maplighting.directional == true)
+				{
+					if (sector->ceilingpic == skyflatnum || sector->floorpic == skyflatnum)
+					{
+						if (lightlevel != NULL)
+							*lightlevel = clamp(*lightlevel-35, 0, 255);
+						return true;
+					}
+				}
+#endif
+				break;
+				//return (*rover->bottompic == skyflatnum);
+			}
+#endif
+		}
+	}
+#endif
+
+	// If the sky is visible, do lighting
+	//return (sector->ceilingpic == skyflatnum);
+	return (sector->ceilingpic == skyflatnum || sector->floorpic == skyflatnum);
+}
+
+boolean P_ApplyLightOffset(UINT8 baselightnum, const sector_t *sector)
+{
+	if (!P_SectorUsesDirectionalLighting(sector, NULL))
+	{
+		return false;
+	}
+
+	// Don't apply light offsets at full bright or full dark.
+	// It's in steps of light num.
+	return (baselightnum < LIGHTLEVELS-1 && baselightnum > 0);
+}
+
+boolean P_ApplyLightOffsetFine(UINT8 baselightlevel, const sector_t *sector)
+{
+	if (!P_SectorUsesDirectionalLighting(sector, NULL))
+	{
+		return false;
+	}
+
+	// Don't apply light offsets at full bright or full dark.
+	// Uses exact light levels for more smoothness.
+	return (baselightlevel < 255 && baselightlevel > 0);
+}
+
+void P_SetupMapLighting(boolean force)
+{
+	const mapheader_lighting_t *lighting = &mapheaderinfo[gamemap-1]->lighting;
+
+	if (force)
+	{
+		maplighting.contrast = M_RandomRange(0, 80);
+		maplighting.backlight = 0;
+		maplighting.directional = M_RandomBool();
+		maplighting.angle = M_RandomRange(-382, 382);
+	}
+	else
+	{
+		maplighting.contrast = lighting->light_contrast;
+		maplighting.backlight = lighting->sprite_backlight;
+		maplighting.directional = lighting->use_light_angle;
+		maplighting.angle = lighting->light_angle;
+	}
+}
+
+void P_UpdateMapLighting(boolean force)
+{
+	P_SetupMapLighting(force);
+	P_UpdateAllSegLights();
+}
+
 static void P_InitializeSeg(seg_t *seg)
 {
 	if (seg->linedef)
@@ -3548,6 +3824,8 @@ static void P_InitializeSeg(seg_t *seg)
 
 	seg->polyseg = NULL;
 	seg->dontrenderme = false;
+
+	P_UpdateSegLightOffset(seg);
 }
 
 static void P_LoadSegs(UINT8 *data)
@@ -8119,6 +8397,12 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	if (rendermode == render_opengl && (vid.glstate == VID_GL_LIBRARY_LOADED))
 		HWR_ClearAllTextures();
 
+#ifdef ALAM_LIGHTING
+	// BP: reset light between levels (we draw preview frame lights on current frame)
+	HWR_DL_ClearLights();
+	HWR_DL_CreateStaticLightmaps(0);
+#endif
+
 	// Delete light table textures
 	HWR_ClearLightTables();
 #endif
@@ -8153,6 +8437,9 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	P_MapStart(); // tmthing can be used starting from this point
 
+	// init anything that P_SpawnSlopes/P_LoadThings needs to know
+	P_InitSpecials();
+
 	P_InitSlopes();
 
 	if (!P_LoadMapFromFile())
@@ -8177,9 +8464,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			G_StoreGameData(allClientGamedata, clientGamedata);
 		}
 	}
-
-	// init anything that P_SpawnSlopes/P_LoadThings needs to know
-	P_InitSpecials();
 
 	P_SpawnSlopes(fromnetsave);
 
@@ -8237,16 +8521,14 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	keepcutscene = false;
 	skipstats = 0;
 
+	// StarManiaKG: Loads music and other necessary TSoURDt3rd data.
+	TSoURDt3rd_P_LoadLevel(reloadinggamestate);
+
 	levelloading = false;
 
 	P_RunCachedActions();
 
 	P_MapEnd(); // tmthing is no longer needed from this point onwards
-
-#if 1
-	// STAR STUFF: loads cool level data //
-	TSoURDt3rd_P_LoadLevel(reloadinggamestate);
-#endif
 
 	// Took me 3 hours to figure out why my progression kept on getting overwritten with the titlemap...
 	if (!titlemapinaction)

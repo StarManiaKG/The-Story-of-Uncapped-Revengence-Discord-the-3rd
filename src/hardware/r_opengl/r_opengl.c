@@ -1,6 +1,8 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2023 by Sonic Team Junior.
+// Copyright (C) 2025 by Kart Krew.
+// Copyright (C) 2025-2026 by StarManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -10,7 +12,8 @@
 /// \brief OpenGL API for Sonic Robo Blast 2
 
 #if defined (_WIN32)
-//#define WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+// ring racers has this on :P
 #define RPC_NO_WINDOWS_H
 #include <windows.h>
 #endif
@@ -103,9 +106,10 @@ const GLubyte *gl_renderer = NULL;
 const GLubyte *gl_extensions = NULL;
 
 //Hurdler: 04/10/2000: added for the kick ass coronas as Boris wanted;-)
-static GLfloat modelMatrix[16];
-static GLfloat projMatrix[16];
-static GLint   viewport[4];
+GLfloat modelMatrix[16];
+GLfloat projMatrix[16];
+GLfloat viewMatrix[16];
+GLint   viewport[4];
 
 // Sryder:	NextTexAvail is broken for these because palette changes or changes to the texture filter or antialiasing
 //			flush all of the stored textures, leaving them unavailable at times such as between levels
@@ -149,6 +153,8 @@ static const GLfloat byte2float[256] = {
 	0.972549f, 0.976471f, 0.980392f, 0.984314f, 0.988235f, 0.992157f, 0.996078f, 1.000000f
 };
 
+#define DECAL_CORONA
+
 // -----------------+
 // GL_DBG_Printf    : Output debug messages to debug log if DEBUG_TO_FILE is defined,
 //                  : else do nothing
@@ -165,8 +171,8 @@ FUNCPRINTF void GL_DBG_Printf(const char *format, ...)
 	char str[4096] = "";
 	va_list arglist;
 
-	if (gllogstream) 
-	{	
+	if (gllogstream)
+	{
 		va_start(arglist, format);
 		vsnprintf(str, 4096, format, arglist);
 		va_end(arglist);
@@ -236,7 +242,6 @@ FUNCPRINTF static void GL_MSG_Error(const char *format, ...)
 #define pglScissor glScissor
 #define pglEnable glEnable
 #define pglDisable glDisable
-#define pglGetFloatv glGetFloatv
 #define pglPolygonMode glPolygonMode
 
 /* Depth Buffer */
@@ -317,7 +322,7 @@ static PFNglEnable pglEnable;
 typedef void (APIENTRY * PFNglDisable) (GLenum cap);
 static PFNglDisable pglDisable;
 typedef void (APIENTRY * PFNglGetFloatv) (GLenum pname, GLfloat *params);
-static PFNglGetFloatv pglGetFloatv;
+PFNglGetFloatv pglGetFloatv;
 typedef void (APIENTRY * PFNglPolygonMode) (GLenum, GLenum);
 static PFNglPolygonMode pglPolygonMode;
 
@@ -610,6 +615,11 @@ static PFNglGetUniformLocation pglGetUniformLocation;
 // 13062019
 typedef enum
 {
+	// textures
+	gluniform_tex,
+	gluniform_brightmap,
+	gluniform_corona,
+
 	// lighting
 	gluniform_poly_color,
 	gluniform_tint_color,
@@ -617,6 +627,9 @@ typedef enum
 	gluniform_lighting,
 	gluniform_fade_start,
 	gluniform_fade_end,
+	gluniform_light_dir,
+	gluniform_light_contrast,
+	gluniform_light_backlight,
 
 	// palette rendering
 	gluniform_palette_tex, // 1d texture containing a palette
@@ -625,6 +638,7 @@ typedef enum
 
 	// misc.
 	gluniform_leveltime,
+	gluniform_scr_resolution,
 
 	gluniform_max,
 } gluniform_t;
@@ -653,6 +667,11 @@ static gl_shaderstate_t gl_shaderstate;
 
 // Shader info
 static float shader_leveltime = 0;
+static float shader_light_x = 0.0f;
+static float shader_light_y = 0.0f;
+static float shader_light_z = 0.0f;
+static INT32 shader_light_contrast = 0;
+static INT32 shader_light_backlight = 0;
 
 // Lactozilla: Shader functions
 static boolean Shader_CompileProgram(gl_shader_t *shader, GLint i);
@@ -794,6 +813,21 @@ EXPORT void HWRAPI(SetShaderInfo) (hwdshaderinfo_t info, INT32 value)
 		case HWD_SHADERINFO_LEVELTIME:
 			shader_leveltime = (((float)(value-1)) + FIXED_TO_FLOAT(rendertimefrac)) / TICRATE;
 			break;
+		case HWD_SHADERINFO_LIGHT_X:
+			shader_light_x = FixedToFloat(value);
+			break;
+		case HWD_SHADERINFO_LIGHT_Y:
+			shader_light_y = FixedToFloat(value);
+			break;
+		case HWD_SHADERINFO_LIGHT_Z:
+			shader_light_z = FixedToFloat(value);
+			break;
+		case HWD_SHADERINFO_LIGHT_CONTRAST:
+			shader_light_contrast = value;
+			break;
+		case HWD_SHADERINFO_LIGHT_BACKLIGHT:
+			shader_light_backlight = value;
+			break;
 		default:
 			break;
 	}
@@ -855,17 +889,23 @@ EXPORT void HWRAPI(UnSetShader) (void)
 }
 
 // -----------------+
-// SetNoTexture     : Disable texture
+// SetNoTexture     : Disable texture.
 // -----------------+
-static void SetNoTexture(void)
+static void SetNoTexture(GLenum texture)
 {
-	// Disable texture.
 	if (tex_downloaded != NOTEXTURE_NUM)
 	{
 		if (NOTEXTURE_NUM == 0)
 			pglGenTextures(1, &NOTEXTURE_NUM);
+#ifdef DECAL_CORONA
+		pglActiveTexture(texture);
+		pglBindTexture(GL_TEXTURE_2D, NOTEXTURE_NUM);
+		pglActiveTexture(GL_TEXTURE0);
+		tex_downloaded = NOTEXTURE_NUM;
+#else
 		pglBindTexture(GL_TEXTURE_2D, NOTEXTURE_NUM);
 		tex_downloaded = NOTEXTURE_NUM;
+#endif
 	}
 }
 
@@ -900,7 +940,7 @@ static void GLPerspective(GLfloat fovy, GLfloat aspect)
 }
 
 static void GLProject(GLfloat objX, GLfloat objY, GLfloat objZ,
-                      GLfloat* winX, GLfloat* winY, GLfloat* winZ)
+					  GLfloat* winX, GLfloat* winY, GLfloat* winZ)
 {
 	GLfloat in[4], out[4];
 	int i;
@@ -998,7 +1038,7 @@ void SetStates(void)
 	pglColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
 	//pglDisable(GL_DITHER);         // faB: ??? (undocumented in OpenGL 1.1)
-	                              // Hurdler: yes, it is!
+								  // Hurdler: yes, it is!
 	pglEnable(GL_DEPTH_TEST);    // check the depth buffer
 	pglDepthMask(GL_TRUE);             // enable writing to depth buffer
 	pglClearDepth(1.0f);
@@ -1010,7 +1050,7 @@ void SetStates(void)
 	SetBlend(0);
 
 	tex_downloaded = 0;
-	SetNoTexture();
+	SetNoTexture(GL_TEXTURE0);
 
 	pglPolygonOffset(-1.0f, -1.0f);
 
@@ -1210,8 +1250,8 @@ EXPORT void HWRAPI(GClipRect) (INT32 minx, INT32 miny, INT32 maxx, INT32 maxy, f
 // ClearBuffer      : Clear the color/alpha/depth buffer(s)
 // -----------------+
 EXPORT void HWRAPI(ClearBuffer) (FBOOLEAN ColorMask,
-                                    FBOOLEAN DepthMask,
-                                    FRGBAFloat * ClearColor)
+									FBOOLEAN DepthMask,
+									FRGBAFloat * ClearColor)
 {
 	// GL_DBG_Printf ("ClearBuffer(%d)\n", alpha);
 	GLbitfield ClearMask = 0;
@@ -1220,9 +1260,9 @@ EXPORT void HWRAPI(ClearBuffer) (FBOOLEAN ColorMask,
 	{
 		if (ClearColor)
 			pglClearColor(ClearColor->red,
-			              ClearColor->green,
-			              ClearColor->blue,
-			              ClearColor->alpha);
+						  ClearColor->green,
+						  ClearColor->blue,
+						  ClearColor->alpha);
 		ClearMask |= GL_COLOR_BUFFER_BIT;
 	}
 	if (DepthMask)
@@ -1245,8 +1285,8 @@ EXPORT void HWRAPI(ClearBuffer) (FBOOLEAN ColorMask,
 // HWRAPI Draw2DLine: Render a 2D line
 // -----------------+
 EXPORT void HWRAPI(Draw2DLine) (F2DCoord * v1,
-                                   F2DCoord * v2,
-                                   RGBA_t Color)
+								   F2DCoord * v2,
+								   RGBA_t Color)
 {
 	// GL_DBG_Printf ("DrawLine() (%f %f %f) %d\n", v1->x, -v1->y, -v1->z, v1->argb);
 	GLfloat p[12];
@@ -1468,7 +1508,7 @@ EXPORT void HWRAPI(SetBlend) (FBITFIELD PolyFlags)
 		}
 		if (PolyFlags & PF_NoTexture)
 		{
-			SetNoTexture();
+			SetNoTexture(GL_TEXTURE0);
 		}
 	}
 	CurrentPolyFlags = PolyFlags;
@@ -1592,6 +1632,18 @@ EXPORT void HWRAPI(UpdateTexture) (GLMipmap_t *pTexInfo)
 	else
 		GL_MSG_Warning("UpdateTexture: bad format %d\n", pTexInfo->format);
 
+#ifdef DECAL_CORONA
+	//if (!(pTexInfo->flags & TF_BRIGHTMAP))
+	if (!(pTexInfo->flags & TF_CORONA))
+	{
+		tex_downloaded = 0; // force update
+		SetNoTexture(GL_TEXTURE1); // will be assigned later, if needed
+	}
+
+	pglActiveTexture(pTexInfo->flags & TF_CORONA ? GL_TEXTURE1 : GL_TEXTURE0);
+	//pglActiveTexture(pTexInfo->flags & TF_BRIGHTMAP ? GL_TEXTURE1 : GL_TEXTURE0);
+	//pglActiveTexture(GL_TEXTURE0);
+#endif
 	pglBindTexture(GL_TEXTURE_2D, num);
 	tex_downloaded = num;
 
@@ -1685,6 +1737,8 @@ EXPORT void HWRAPI(UpdateTexture) (GLMipmap_t *pTexInfo)
 
 	if (maximumAnisotropy)
 		pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisotropic_filter);
+
+	pglActiveTexture(GL_TEXTURE0);
 }
 
 // -----------------+
@@ -1694,15 +1748,31 @@ EXPORT void HWRAPI(SetTexture) (GLMipmap_t *pTexInfo)
 {
 	if (!pTexInfo)
 	{
-		SetNoTexture();
+		SetNoTexture(GL_TEXTURE0);
 		return;
 	}
 	else if (pTexInfo->downloaded)
 	{
 		if (pTexInfo->downloaded != tex_downloaded)
 		{
+#ifdef DECAL_CORONA
+			//if (!(pTexInfo->flags & TF_BRIGHTMAP))
+			if (!(pTexInfo->flags & TF_CORONA))
+			{
+				tex_downloaded = 0; // force update
+				SetNoTexture(GL_TEXTURE1); // will be assigned later, if needed
+			}
+
+			pglActiveTexture(pTexInfo->flags & TF_CORONA ? GL_TEXTURE1 : GL_TEXTURE0);
+			//pglActiveTexture(pTexInfo->flags & TF_BRIGHTMAP ? GL_TEXTURE1 : GL_TEXTURE0);
+			//pglActiveTexture(GL_TEXTURE0);
+			pglBindTexture(GL_TEXTURE_2D, pTexInfo->downloaded);
+			pglActiveTexture(GL_TEXTURE0);
+			tex_downloaded = pTexInfo->downloaded;
+#else
 			pglBindTexture(GL_TEXTURE_2D, pTexInfo->downloaded);
 			tex_downloaded = pTexInfo->downloaded;
+#endif
 		}
 	}
 	else
@@ -1772,19 +1842,45 @@ static void Shader_SetUniforms(FSurfaceInfo *Surface, GLRGBAFloat *poly, GLRGBAF
 			if (uniform != -1) \
 				function (uniform, a, b, c, d);
 
+		boolean directional = false;
+
 		// polygon
+		UNIFORM_1(shader->uniforms[gluniform_tex], 0, pglUniform1i);
+		UNIFORM_1(shader->uniforms[gluniform_brightmap], 1, pglUniform1i);
+		UNIFORM_1(shader->uniforms[gluniform_corona], 2, pglUniform1i);
 		UNIFORM_4(shader->uniforms[gluniform_poly_color], poly->red, poly->green, poly->blue, poly->alpha, pglUniform4f);
 		UNIFORM_4(shader->uniforms[gluniform_tint_color], tint->red, tint->green, tint->blue, tint->alpha, pglUniform4f);
 		UNIFORM_4(shader->uniforms[gluniform_fade_color], fade->red, fade->green, fade->blue, fade->alpha, pglUniform4f);
 
 		if (Surface != NULL)
 		{
-			UNIFORM_1(shader->uniforms[gluniform_lighting], (GLfloat)Surface->LightInfo.light_level, pglUniform1f);
-			UNIFORM_1(shader->uniforms[gluniform_fade_start], (GLfloat)Surface->LightInfo.fade_start, pglUniform1f);
-			UNIFORM_1(shader->uniforms[gluniform_fade_end], (GLfloat)Surface->LightInfo.fade_end, pglUniform1f);
+			UNIFORM_1(shader->uniforms[gluniform_lighting], Surface->LightInfo.light_level, pglUniform1f);
+			UNIFORM_1(shader->uniforms[gluniform_fade_start], Surface->LightInfo.fade_start, pglUniform1f);
+			UNIFORM_1(shader->uniforms[gluniform_fade_end], Surface->LightInfo.fade_end, pglUniform1f);
+			directional = Surface->LightInfo.directional;
+		}
+		else
+		{
+			UNIFORM_1(shader->uniforms[gluniform_lighting], 255, pglUniform1f);
+			UNIFORM_1(shader->uniforms[gluniform_fade_start], 0, pglUniform1f);
+			UNIFORM_1(shader->uniforms[gluniform_fade_end], 31, pglUniform1f);
+		}
+
+		if (directional)
+		{
+			UNIFORM_3(shader->uniforms[gluniform_light_dir], shader_light_x, shader_light_y, shader_light_z, pglUniform3f);
+			UNIFORM_1(shader->uniforms[gluniform_light_contrast], shader_light_contrast, pglUniform1f);
+			UNIFORM_1(shader->uniforms[gluniform_light_backlight], shader_light_backlight, pglUniform1f);
+		}
+		else
+		{
+			UNIFORM_3(shader->uniforms[gluniform_light_dir], 0, 0, 0, pglUniform3f);
+			UNIFORM_1(shader->uniforms[gluniform_light_contrast], 0, pglUniform1f);
+			UNIFORM_1(shader->uniforms[gluniform_light_backlight], 0, pglUniform1f);
 		}
 
 		UNIFORM_1(shader->uniforms[gluniform_leveltime], shader_leveltime, pglUniform1f);
+		UNIFORM_2(shader->uniforms[gluniform_scr_resolution], (GLfloat)vid.width, (GLfloat)vid.height, pglUniform2f);
 
 		#undef UNIFORM_1
 		#undef UNIFORM_2
@@ -1896,6 +1992,11 @@ static boolean Shader_CompileProgram(gl_shader_t *shader, GLint i)
 	// 13062019
 #define GETUNI(uniform) pglGetUniformLocation(shader->program, uniform);
 
+	// textures
+	shader->uniforms[gluniform_tex] = GETUNI("tex");
+	shader->uniforms[gluniform_brightmap] = GETUNI("brightmap");
+	shader->uniforms[gluniform_corona] = GETUNI("corona");
+
 	// lighting
 	shader->uniforms[gluniform_poly_color] = GETUNI("poly_color");
 	shader->uniforms[gluniform_tint_color] = GETUNI("tint_color");
@@ -1903,6 +2004,9 @@ static boolean Shader_CompileProgram(gl_shader_t *shader, GLint i)
 	shader->uniforms[gluniform_lighting] = GETUNI("lighting");
 	shader->uniforms[gluniform_fade_start] = GETUNI("fade_start");
 	shader->uniforms[gluniform_fade_end] = GETUNI("fade_end");
+	shader->uniforms[gluniform_light_dir] = GETUNI("light_dir");
+	shader->uniforms[gluniform_light_contrast] = GETUNI("light_contrast");
+	shader->uniforms[gluniform_light_backlight] = GETUNI("light_backlight");
 
 	// palette rendering
 	shader->uniforms[gluniform_palette_tex] = GETUNI("palette_tex");
@@ -1911,6 +2015,8 @@ static boolean Shader_CompileProgram(gl_shader_t *shader, GLint i)
 
 	// misc.
 	shader->uniforms[gluniform_leveltime] = GETUNI("leveltime");
+	shader->uniforms[gluniform_scr_resolution] = GETUNI("scr_resolution");
+
 #undef GETUNI
 
 	// set permanent uniform values
@@ -1961,7 +2067,16 @@ static void PreparePolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FBITFIELD
 	static GLRGBAFloat fade = {0,0,0,0};
 
 	if ((PolyFlags & PF_Corona) && (oglflags & GLF_NOZBUFREAD))
+	{
 		PolyFlags &= ~(PF_NoDepthTest|PF_Corona);
+		//return;
+	}
+#if 0
+	if (pSurf && pSurf->SurfFlags & SF_DYNLIGHT)
+	{
+		return;
+	}
+#endif
 
 	SetBlend(PolyFlags);    //TODO: inline (#pragma..)
 
@@ -2005,6 +2120,7 @@ static void PreparePolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FBITFIELD
 
 	// this test is added for new coronas' code (without depth buffer)
 	// I think I should do a separate function for drawing coronas, so it will be a little faster
+#if 0
 	if (PolyFlags & PF_Corona) // check to see if we need to draw the corona
 	{
 		FUINT i;
@@ -2065,6 +2181,54 @@ static void PreparePolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FBITFIELD
 		c[3] = (unsigned char)(alpha * 255);
 		pglColor4ubv(c);
 	}
+#else
+	if (PolyFlags & PF_Corona)
+	{
+		// Calculate corona center
+		GLfloat cx = (pOutVerts[0].x + pOutVerts[2].x) * 0.5f;
+		GLfloat cy = (pOutVerts[0].y + pOutVerts[2].y) * 0.5f;
+		GLfloat cz = pOutVerts[0].z;
+
+		GLfloat px = 0.0f, py = 0.0f, pz = 0.0f;
+		GLProject(cx, cy, cz, &px, &py, &pz);
+
+		// quick visibility bounds check
+		if (px < -8.0f || px > viewport[2] + 8.0f ||
+			py < viewport[1] - 8.0f || py > viewport[1] + viewport[3] + 8.0f ||
+			pz < 0.0f)
+			return;
+
+		// approximate occlusion: fade with depth
+		// tune the constants to match your game scale
+		const float maxViewDist = 4000.0f; // how far coronas fade out
+		const float nearFade    = 32.0f;   // near distance for stronger glow
+		float distFactor = 1.0f - (pz - nearFade) / (maxViewDist - nearFade);
+		distFactor = clamp(distFactor, 0.0f, 1.0f);
+
+		// also fade near screen borders (to match your old behavior)
+		float edgeFade = 1.0f;
+		if (px < 4) edgeFade -= (4.0f - px) / 4.0f;
+		if (py < viewport[1] + 4) edgeFade -= (viewport[1] + 4 - py) / 4.0f;
+		if (px > viewport[2] - 4) edgeFade -= (4.0f - (viewport[2] - px)) / 4.0f;
+		if (py > viewport[1] + viewport[3] - 4)
+			edgeFade -= (4.0f - (viewport[1] + viewport[3] - py)) / 4.0f;
+		edgeFade = clamp(edgeFade, 0.0f, 1.0f);
+
+		float scalef = distFactor * edgeFade;
+		if (scalef < 0.05f)
+			return;
+
+		// final color
+		GLubyte c[4];
+		c[0] = pSurf->PolyColor.s.red;
+		c[1] = pSurf->PolyColor.s.green;
+		c[2] = pSurf->PolyColor.s.blue;
+
+		float alpha = byte2float[pSurf->PolyColor.s.alpha] * scalef;
+		c[3] = (unsigned char)(alpha * 255);
+		pglColor4ubv(c);
+	}
+#endif
 
 	Shader_SetUniforms(pSurf, &poly, &tint, &fade);
 }

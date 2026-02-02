@@ -26,6 +26,8 @@ UINT8 localtextcmd[MAXTEXTCMD];
 UINT8 localtextcmd2[MAXTEXTCMD]; // splitscreen
 static void (*listnetxcmd[MAXNETXCMD])(UINT8 **p, INT32 playernum);
 
+//#define LEAVEBUG_HACK
+
 void RegisterNetXCmd(netxcmd_t id, void (*cmd_f)(UINT8 **p, INT32 playernum))
 {
 #ifdef PARANOIA
@@ -99,7 +101,7 @@ void D_FreeTextcmd(tic_t tic)
 		{
 			textcmdplayer_t *textcmdplayer = textcmdtic->playercmds[i];
 
-#if 1
+#ifndef LEAVEBUG_HACK
 			while (textcmdplayer)
 #else
 			// STAR NOTE: LEAVEBUG HACK //
@@ -124,7 +126,7 @@ UINT8* D_GetExistingTextcmd(tic_t tic, INT32 playernum)
 	while (textcmdtic && textcmdtic->tic != tic) textcmdtic = textcmdtic->next;
 
 	// Do we have an entry for the tic? If so, look for player.
-#if 1
+#ifndef LEAVEBUG_HACK
 	if (textcmdtic)
 	{
 		textcmdplayer_t *textcmdplayer = textcmdtic->playercmds[playernum & (TEXTCMD_HASH_SIZE - 1)];

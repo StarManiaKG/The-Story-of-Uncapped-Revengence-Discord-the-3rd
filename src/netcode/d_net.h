@@ -53,6 +53,8 @@ typedef struct netnode_s
 	boolean sendingsavegame; // Are we sending the savegame?
 	boolean resendingsavegame; // Are we resending the savegame?
 	tic_t savegameresendcooldown; // How long before we can resend again?
+
+	boolean is_client_tsourdt3rd; // StarManiaKG: Is the client from TSoURDt3rd?
 } netnode_t;
 
 extern netnode_t netnodes[MAXNETNODES];

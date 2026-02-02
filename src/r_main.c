@@ -3,6 +3,7 @@
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 1999-2024 by Sonic Team Junior.
+// Copyright (C) 2025-2026 by StarManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -10,7 +11,7 @@
 //-----------------------------------------------------------------------------
 /// \file  r_main.c
 /// \brief Rendering main loop and setup functions,
-///        utility functions (BSP, geometry, trigonometry).
+///        utility functions (BSP, geometry, trigonometry, map lighting).
 ///        See tables.c, too.
 
 #include "doomdef.h"
@@ -42,9 +43,8 @@
 #endif
 
 // TSoURDt3rd
-#ifdef HAVE_SDL
 #include "STAR/smkg-i_sys.h" // TSoURDt3rd_I_QuakeWindow() //
-#endif
+#include "STAR/smkg-cvars.h" // cv_tsourdt3rd_video_sdl_window_shaking //
 #include "STAR/lights/smkg-coronas.h" // TSoURDt3rd_R_Load_Corona() and other pieces of corona data //
 
 // Fineangles in the SCREENWIDTH wide window.
@@ -77,8 +77,8 @@ boolean r_renderfloors;
 boolean r_renderthings;
 
 fixed_t rendertimefrac;
-fixed_t renderdeltatics;
 fixed_t rendertimefrac_unpaused;
+fixed_t renderdeltatics;
 boolean renderisnewtic;
 
 //
@@ -141,10 +141,12 @@ static CV_PossibleValue_t fov_cons_t[] = {{MINFOV*FRACUNIT, "MIN"}, {MAXFOV*FRAC
 static CV_PossibleValue_t translucenthud_cons_t[] = {{0, "MIN"}, {10, "MAX"}, {0, NULL}};
 static CV_PossibleValue_t maxportals_cons_t[] = {{0, "MIN"}, {12, "MAX"}, {0, NULL}}; // lmao rendering 32 portals, you're a card
 static CV_PossibleValue_t homremoval_cons_t[] = {{0, "No"}, {1, "Yes"}, {2, "Flash"}, {0, NULL}};
+static CV_PossibleValue_t map_randdirlight_cons_t[] = {{0, "Off"}, {1, "On"}, {2, "Force"}, {0, NULL}};
 
 static void R_SetFov(fixed_t playerfov);
 
 static void Fov_OnChange(void);
+static void RandMapLighting_OnChange(void);
 static void ChaseCam_OnChange(void);
 static void ChaseCam2_OnChange(void);
 static void FlipCam_OnChange(void);
@@ -172,6 +174,9 @@ consvar_t cv_fov = CVAR_INIT ("fov", "100", CV_SAVE|CV_FLOAT|CV_CALL, fov_cons_t
 consvar_t cv_fovchange = CVAR_INIT ("fovchange", "Off", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_maxportals = CVAR_INIT ("maxportals", "2", CV_SAVE, maxportals_cons_t, NULL);
 
+// Credit to SRB2Kart Saturn!
+consvar_t cv_map_randomdirlight = CVAR_INIT ("randomdirectionallight", "Off", CV_SAVE|CV_CALL|CV_NOINIT, map_randdirlight_cons_t, RandMapLighting_OnChange);
+
 consvar_t cv_renderview = CVAR_INIT ("renderview", "On", 0, CV_OnOff, NULL);
 consvar_t cv_renderwalls = CVAR_INIT ("r_renderwalls", "On", 0, CV_OnOff, NULL);
 consvar_t cv_renderfloors = CVAR_INIT ("r_renderfloors", "On", 0, CV_OnOff, NULL);
@@ -182,76 +187,6 @@ consvar_t cv_spriteclip = CVAR_INIT ("r_spriteclip", "On", 0, CV_OnOff, NULL);
 consvar_t cv_homremoval = CVAR_INIT ("homremoval", "No", CV_SAVE, homremoval_cons_t, NULL);
 
 consvar_t cv_renderstats = CVAR_INIT ("renderstats", "Off", 0, CV_OnOff, NULL);
-
-void SplitScreen_OnChange(void)
-{
-	if (!cv_debug && netgame)
-	{
-		if (splitscreen)
-		{
-			CONS_Alert(CONS_NOTICE, M_GetText("Splitscreen not supported in netplay, sorry!\n"));
-			splitscreen = false;
-		}
-		return;
-	}
-
-	// recompute screen size
-	R_ExecuteSetViewSize();
-
-	if (!demoplayback && !botingame)
-	{
-		if (splitscreen)
-			CL_AddSplitscreenPlayer();
-		else
-			CL_RemoveSplitscreenPlayer();
-
-		if (server && !netgame)
-			multiplayer = splitscreen;
-	}
-	else
-	{
-		INT32 i;
-		secondarydisplayplayer = consoleplayer;
-		for (i = 0; i < MAXPLAYERS; i++)
-			if (playeringame[i] && i != consoleplayer)
-			{
-				secondarydisplayplayer = i;
-				break;
-			}
-	}
-}
-static void Fov_OnChange(void)
-{
-	R_SetViewSize();
-}
-
-static void ChaseCam_OnChange(void)
-{
-	if (!cv_chasecam.value || !cv_useranalog[0].value)
-		CV_SetValue(&cv_analog[0], 0);
-	else
-		CV_SetValue(&cv_analog[0], 1);
-}
-
-static void ChaseCam2_OnChange(void)
-{
-	if (botingame)
-		return;
-	if (!cv_chasecam2.value || !cv_useranalog[1].value)
-		CV_SetValue(&cv_analog[1], 0);
-	else
-		CV_SetValue(&cv_analog[1], 1);
-}
-
-static void FlipCam_OnChange(void)
-{
-	SendWeaponPref();
-}
-
-static void FlipCam2_OnChange(void)
-{
-	SendWeaponPref2();
-}
 
 //
 // R_PointOnSide
@@ -329,6 +264,39 @@ angle_t R_PointToAngle(fixed_t x, fixed_t y)
 		(x = -x) > (y = -y) ? ANGLE_180+tantoangle[SlopeDiv(y,x)] :    // octant 4
 		ANGLE_270-tantoangle[SlopeDiv(x,y)] :                          // octant 5
 		0;
+}
+
+// Similar to R_PointToAngle, but requires an additional player_t argument.
+// If this player is a local displayplayer, this will base off the calculations off of their camera instead, otherwise use viewx/viewy as usual.
+// Yes this is kinda ghetto.
+angle_t R_PointToAnglePlayer(player_t *player, fixed_t x, fixed_t y)
+{
+	fixed_t refx = viewx, refy = viewy;
+	camera_t *cam = NULL;
+
+	if (splitscreen && player == &players[secondarydisplayplayer])
+		cam = &camera2;
+	else if (player == &players[displayplayer])
+		cam = &camera;
+
+	// use whatever cam we found's coordinates.
+	if (cam != NULL)
+	{
+		refx = cam->x;
+		refy = cam->y;
+
+		// Bandaid for two very specific bugs that arise with chasecam off.
+		// 1: Camera tilt from slopes wouldn't apply correctly in first person.
+		// 2: Trick pies would appear strangely in first person.
+		if (player->mo)
+		{
+			if ((!cam->chase) && player->mo->x == x && player->mo->y == y)
+			{
+				return player->mo->angle;
+			}
+		}
+	}
+	return R_PointToAngle2(refx, refy, x, y);
 }
 
 // This version uses 64-bit variables to avoid overflows with large values.
@@ -1183,9 +1151,8 @@ void R_SetupFrame(player_t *player)
 		quake.x = M_RandomRange(-ir,ir);
 		quake.y = M_RandomRange(-ir,ir);
 		quake.z = M_RandomRange(-ir,ir);
-#ifdef HAVE_SDL
+
 		TSoURDt3rd_I_QuakeWindow(FixedInt(quake.x), FixedInt(quake.y));
-#endif
 	}
 	else if (!ispaused)
 		quake.x = quake.y = quake.z = 0;
@@ -1222,7 +1189,7 @@ void R_SetupFrame(player_t *player)
 	// newview->sin = FINESINE(viewangle>>ANGLETOFINESHIFT);
 	// newview->cos = FINECOSINE(viewangle>>ANGLETOFINESHIFT);
 
-	R_InterpolateView(rendertimefrac_unpaused);
+	R_InterpolateView(R_UsingFrameInterpolation() ? rendertimefrac : FRACUNIT);
 }
 
 void R_SkyboxFrame(player_t *player)
@@ -1366,7 +1333,7 @@ void R_SkyboxFrame(player_t *player)
 	// newview->sin = FINESINE(viewangle>>ANGLETOFINESHIFT);
 	// newview->cos = FINECOSINE(viewangle>>ANGLETOFINESHIFT);
 
-	R_InterpolateView(rendertimefrac_unpaused);
+	R_InterpolateView(R_UsingFrameInterpolation() ? rendertimefrac : FRACUNIT);
 }
 
 boolean R_ViewpointHasChasecam(player_t *player)
@@ -1642,6 +1609,120 @@ void R_RenderPlayerView(player_t *player)
 //                    ENGINE COMMANDS & VARS
 // =========================================================================
 
+static void COM_UpdateMapLighting_f(void)
+{
+	mapheader_lighting_t *lighting;
+	size_t reset_lighting = COM_CheckPartialParm("-r");
+	size_t force_random = COM_CheckPartialParm("-f");
+
+	if (gamestate != GS_LEVEL)
+	{
+		CONS_Alert(CONS_ERROR, M_GetText("This command can only be used in a level.\n"));
+		return;
+	}
+
+	lighting = &mapheaderinfo[gamemap-1]->lighting;
+
+	if (reset_lighting)
+	{
+		CONS_Alert(CONS_NOTICE, M_GetText("Maplighting reset!\n"));
+		P_UpdateMapLighting(false);
+		return;
+	}
+	else if (lighting->use_custom_light == true && !force_random)
+	{
+		CONS_Alert(CONS_WARNING, M_GetText("Maplighting already defined by SOC! (Use '-force' to override.)\n"));
+		return;
+	}
+	P_UpdateMapLighting(true);
+}
+
+void SplitScreen_OnChange(void)
+{
+	INT32 i;
+
+	if (!cv_debug && netgame)
+	{
+		if (splitscreen)
+		{
+			CONS_Alert(CONS_NOTICE, M_GetText("Splitscreen not supported in netplay, sorry!\n"));
+			splitscreen = false;
+		}
+		return;
+	}
+
+	// recompute screen size
+	R_ExecuteSetViewSize();
+
+	if (!demoplayback && !botingame)
+	{
+		if (splitscreen)
+			CL_AddSplitscreenPlayer();
+		else
+			CL_RemoveSplitscreenPlayer();
+
+		if (server && !netgame)
+			multiplayer = splitscreen;
+	}
+	else
+	{
+		secondarydisplayplayer = consoleplayer;
+		for (i = 0; i < MAXPLAYERS; i++)
+			if (playeringame[i] && i != consoleplayer)
+			{
+				secondarydisplayplayer = i;
+				break;
+			}
+	}
+}
+
+static void Fov_OnChange(void)
+{
+	R_SetViewSize();
+}
+
+static void RandMapLighting_OnChange(void)
+{
+	if (gamestate == GS_LEVEL)
+	{
+		const mapheader_lighting_t *lighting = &mapheaderinfo[gamemap-1]->lighting;
+		if (!cv_map_randomdirlight.value)
+		{
+			P_UpdateMapLighting(false);
+		}
+		else if (lighting->use_custom_light == false || cv_map_randomdirlight.value == 2)
+		{
+			P_UpdateMapLighting(true);
+		}
+	}
+}
+
+static void ChaseCam_OnChange(void)
+{
+	if (!cv_chasecam.value || !cv_useranalog[0].value)
+		CV_SetValue(&cv_analog[0], 0);
+	else
+		CV_SetValue(&cv_analog[0], 1);
+}
+static void ChaseCam2_OnChange(void)
+{
+	if (botingame)
+		return;
+	if (!cv_chasecam2.value || !cv_useranalog[1].value)
+		CV_SetValue(&cv_analog[1], 0);
+	else
+		CV_SetValue(&cv_analog[1], 1);
+}
+
+static void FlipCam_OnChange(void)
+{
+	SendWeaponPref();
+}
+static void FlipCam2_OnChange(void)
+{
+	SendWeaponPref2();
+}
+
 void R_RegisterEngineStuff(void)
 {
 	// Do nothing for dedicated server
@@ -1705,6 +1786,9 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_translucenthud);
 
 	CV_RegisterVar(&cv_maxportals);
+
+	CV_RegisterVar(&cv_map_randomdirlight);
+	COM_AddCommand("updatemaplighting", COM_UpdateMapLighting_f, 0);
 
 	// Frame interpolation/uncapped
 	CV_RegisterVar(&cv_fpscap);

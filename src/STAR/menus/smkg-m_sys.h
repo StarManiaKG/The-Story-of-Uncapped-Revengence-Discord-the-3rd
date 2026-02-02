@@ -13,7 +13,7 @@
 #define __SMKG_M_SYS__
 
 #include "../smkg-defs.h"
-#include "../star_vars.h" // events //
+#include "../star_vars.h"
 #include "../smkg-cvars.h"
 #include "../core/smkg-g_game.h" // tsourdt3rd_local //
 
@@ -393,14 +393,15 @@ enum
 	op_scenes_loadingscreen_image = 14,
 
 	op_levels_timeover = 21,
+	op_levels_refreshmaplighting = 24,
 
-	op_objects_shadows_realistic = 25,
+	op_objects_shadows_realistic = 28,
 	op_objects_shadows_forallobjects,
 	op_objects_shadows_positioning,
 	op_objects_shadows_offset,
 	op_objects_shadows_end = op_objects_shadows_offset,
 
-	op_general_isitcalledsingleplayer = 33
+	op_general_isitcalledsingleplayer = 36
 };
 
 extern menu_t TSoURDt3rd_OP_ControlsDef;
@@ -623,6 +624,7 @@ typedef struct menutooltip_s
 //        Functions
 // ------------------------ //
 
+INT32 K_DrawGameControl(fixed_t x, fixed_t y, UINT8 player, const char *str, UINT8 alignment, fontdef_t font, UINT32 flags);
 void TSoURDt3rd_MK_DrawButton(fixed_t x, fixed_t y, INT32 flags, patch_t *button[2], boolean pressed);
 void TSoURDt3rd_MK_DrawButtonAnim(INT32 x, INT32 y, INT32 flags, patch_t *button[2], tic_t animtic);
 void TSoURDt3rd_MK_DrawSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isSmall);

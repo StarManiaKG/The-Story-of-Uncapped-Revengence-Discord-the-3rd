@@ -451,8 +451,9 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"LUACMD",
 	"LUAVAR",
 	"LUAFILE",
-	// STAR STUFF: TSoURDt3rd NetXCMDs //
-	"DISCORD" // Ring Racers
+
+	// TSoURDt3rd NetXCMDs //
+	"DISCORD"
 };
 
 // =========================================================================

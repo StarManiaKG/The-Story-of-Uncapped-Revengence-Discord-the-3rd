@@ -61,6 +61,7 @@ void R_DrawFlippedPost(UINT8 *source, unsigned length, void (*drawcolfunc)(void)
 extern INT16 negonearray[MAXVIDWIDTH];
 extern INT16 screenheightarray[MAXVIDWIDTH];
 
+fixed_t R_GetSpriteDirectionalLighting(angle_t angle);
 fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope);
 
 //SoM: 6/5/2000: Light sprites correctly!

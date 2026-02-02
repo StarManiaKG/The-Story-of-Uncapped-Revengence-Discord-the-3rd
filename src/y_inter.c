@@ -1051,7 +1051,7 @@ void Y_Ticker(void)
 			if (mapheaderinfo[gamemap-1]->musinterfadeout)
 				S_FadeOutStopMusic(mapheaderinfo[gamemap-1]->musinterfadeout);
 			else
-				S_ChangeMusicInternal(TSoURDt3rd_DetermineLevelMusic(), false); // don't loop it
+				S_ChangeMusicInternal(TSoURDt3rd_EXMusic_DetermineLevelMusic(), false); // don't loop it
 			tallydonetic = -1;
 		}
 
@@ -1122,7 +1122,7 @@ void Y_Ticker(void)
 			if (mapheaderinfo[gamemap-1]->musinterfadeout)
 				S_FadeOutStopMusic(mapheaderinfo[gamemap-1]->musinterfadeout);
 			else
-				S_ChangeMusicInternal(TSoURDt3rd_DetermineLevelMusic(), false); // don't loop it
+				S_ChangeMusicInternal(TSoURDt3rd_EXMusic_DetermineLevelMusic(), false); // don't loop it
 			tallydonetic = -1;
 		}
 

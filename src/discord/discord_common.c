@@ -25,10 +25,10 @@
 #include "../netcode/i_net.h"
 #include "../netcode/i_tcp.h" // current_port
 #include "../netcode/mserv.h" // ms_RoomId
+#include "../netcode/stun.h"
 
 #include "../STAR/smkg-defs.h"
 #include "../STAR/ss_main.h" // STAR_CONS_Printf() //
-#include "../STAR/stun/stun.h"
 
 INT32 DISCORD_RequestSFX = sfx_kc5d;
 

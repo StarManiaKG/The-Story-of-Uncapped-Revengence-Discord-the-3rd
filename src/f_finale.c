@@ -1712,7 +1712,7 @@ void F_GameEvaluationTicker(void)
 	// STAR STUFF: play our cool finale music! //
 	if (finalecount == 4*TICRATE)
 	{
-		S_ChangeMusicInternal(TSoURDt3rd_DetermineLevelMusic(), false);
+		S_ChangeMusicInternal(TSoURDt3rd_EXMusic_DetermineLevelMusic(), false);
 	}
 }
 

@@ -22,6 +22,7 @@
 #define ORIGINAL_ASPECT (320.0f/200.0f)
 
 // Uncomment this to enable the OpenGL loading screen
+// StarManiaKG: However, we already use our own loading screen system, soo....
 //#define HWR_LOADING_SCREEN
 
 // -----------
@@ -138,14 +139,19 @@ void HWR_UpdateLightTable(UINT32 id, UINT8 *lighttable, RGBA_t *hw_lighttable);
 UINT32 HWR_GetLightTableID(extracolormap_t *colormap);
 void HWR_ClearLightTables(void);
 
-GLPatch_t *HWR_GetPic(lumpnum_t lumpnum);
-
+GLPatch_t *HWR_GetPic(lumpnum_t lumpnum, const UINT8 *colormap);
 
 // --------
 // hw_draw.c
 // --------
 extern INT32 patchformat;
 extern INT32 textureformat;
+
+// --------
+// hw_main.c
+// --------
+boolean HWR_OverrideObjectLightLevel(mobj_t *thing, INT32 *lightlevel);
+void HWR_ObjectLightLevelPost(gl_vissprite_t *spr, const sector_t *sector, INT32 *lightlevel, boolean model);
 
 // --------
 // hw_shaders.c

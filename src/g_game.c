@@ -242,6 +242,8 @@ UINT32 countdown, countdown2; // for racing
 
 fixed_t gravity;
 
+struct maplighting maplighting;
+
 INT16 autobalance; //for CTF team balance
 INT16 teamscramble; //for CTF team scramble
 INT16 scrambleplayers[MAXPLAYERS]; //for CTF team scramble
@@ -2800,7 +2802,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	{
 		if (mapmusflags & MUSIC_RELOADRESET)
 		{
-			strncpy(mapmusname, TSoURDt3rd_DetermineLevelMusic(), 7);
+			strncpy(mapmusname, TSoURDt3rd_EXMusic_DetermineLevelMusic(), 7);
 			mapmusname[6] = 0;
 			mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
 			mapmusposition = mapheaderinfo[gamemap-1]->muspos;

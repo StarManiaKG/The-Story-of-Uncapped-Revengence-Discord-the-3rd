@@ -12,6 +12,7 @@
 
 #ifndef _HWR_DEFS_
 #define _HWR_DEFS_
+
 #include "../doomtype.h"
 #include "../r_defs.h"
 
@@ -80,11 +81,12 @@ typedef struct
 	FLOAT x,y;
 } F2DCoord, v2d_t;
 
-// Simple 3D vector
-typedef struct FVector
-{
-	FLOAT x,y,z;
-} FVector;
+// ======================
+//       FVector
+//   Simple 3D vector
+// ----------------------
+// :crab: IS GONE! :crab:
+// ======================
 
 // ======================
 //      wallVert3D
@@ -235,10 +237,9 @@ enum EPolyFlags
 	PF_WireFrame        = 0x00200000,   // Draws vertices as lines instead of triangles
 };
 
-
 enum ESurfFlags
 {
-	SF_DYNLIGHT         = 0x00000001,
+	SF_DYNLIGHT         = 0x00000001,   // Dynamic corona light, placed on planes and walls
 };
 
 enum ETextureFlags
@@ -248,6 +249,7 @@ enum ETextureFlags
 	TF_WRAPXY      = TF_WRAPY|TF_WRAPX, // very common so use alias is more easy
 	TF_CHROMAKEYED = 0x00000010,        // Used only for flats with pixels that have palette index 255
 	TF_TRANSPARENT = 0x00000040,        // texture with some alpha == 0
+	TF_CORONA      = 0x00000120,        // corona texture
 };
 
 struct FTextureInfo
@@ -266,12 +268,14 @@ struct FLightInfo
 	FUINT			light_level;
 	FUINT			fade_start;
 	FUINT			fade_end;
+	boolean			directional;
 };
 typedef struct FLightInfo FLightInfo;
 
 // Description of a renderable surface
 struct FSurfaceInfo
 {
+	FUINT           SurfFlags;
 	FUINT			PolyFlags;
 	RGBA_t			PolyColor;
 	RGBA_t			TintColor;
@@ -310,6 +314,11 @@ typedef enum hwdshaderstage hwdshaderstage_t;
 enum hwdshaderinfo
 {
 	HWD_SHADERINFO_LEVELTIME = 1,
+	HWD_SHADERINFO_LIGHT_X,
+	HWD_SHADERINFO_LIGHT_Y,
+	HWD_SHADERINFO_LIGHT_Z,
+	HWD_SHADERINFO_LIGHT_CONTRAST,
+	HWD_SHADERINFO_LIGHT_BACKLIGHT,
 };
 
 typedef enum hwdshaderinfo hwdshaderinfo_t;
@@ -336,6 +345,5 @@ enum hwdscreentexture
 };
 
 typedef enum hwdscreentexture hwdscreentexture_t;
-
 
 #endif //_HWR_DEFS_

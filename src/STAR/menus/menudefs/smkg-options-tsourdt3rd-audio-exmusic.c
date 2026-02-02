@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2026 by Star "Guy Who Names Scripts After Him" ManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -12,75 +12,54 @@
 #include "../smkg-m_sys.h"
 #include "../../core/smkg-s_exmusic.h"
 
-// ------------------------ //
-//        Variables
-// ------------------------ //
-
-static tsourdt3rd_exmusic_t **exmusic_data = NULL;
-static tsourdt3rd_exmusic_t *exmusic_def = NULL;
-
-static consvar_t *excvar = NULL;
-static INT32 exmusic_option = 0;
-
-static boolean exmusic_listening_track = false;
+tsourdt3rd_exmusic_findTrackResult_t exm_found_track_result;
+static boolean menu_access_granted = false;
+static boolean menu_music_listening = false;
 
 static void M_Sys_EXMusicDrawer(void);
 static void M_Sys_EXMusicTicker(void);
 static void M_Sys_EXMusicInit(void);
+static boolean M_Sys_EXMusicQuit(void);
 static boolean M_Sys_EXMusicInput(INT32 choice);
+
+#define EXMUSIC_MENU_CVAR(name, val) {IT_STRING | IT_CVAR, NULL, name, &cv_tsourdt3rd_audio_exmusic[val], 0}
 
 menuitem_t TSoURDt3rd_OP_Audio_EXMusicMenu[] =
 {
 	{IT_HEADER, NULL, "Levels", NULL, 0},
-		{IT_STRING | IT_CVAR, NULL, "Default Map Track",
-			&cv_tsourdt3rd_audio_exmusic_defaultmaptrack, 0},
-		{IT_STRING | IT_CVAR, NULL, "Game Over Music",
-			&cv_tsourdt3rd_audio_exmusic_gameover, 0},
+		EXMUSIC_MENU_CVAR("Default Map Track", tsourdt3rd_exmusic_defaultmaptrack),
+		EXMUSIC_MENU_CVAR("Game Over", tsourdt3rd_exmusic_gameover),
 
-	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL,
-		NULL, 0},
+	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL, NULL, 0},
 
 	{IT_HEADER, NULL, "Bosses", NULL, 0},
-		{IT_STRING | IT_CVAR, NULL, "Normal Bosses",
-			&cv_tsourdt3rd_audio_exmusic_bosses, 0},
-		{IT_STRING | IT_CVAR, NULL, "Pinch Music",
-			&cv_tsourdt3rd_audio_exmusic_bosspinch, 0},
+		EXMUSIC_MENU_CVAR("Normal Bosses", tsourdt3rd_exmusic_bosses),
+		EXMUSIC_MENU_CVAR("Pinch Phase", tsourdt3rd_exmusic_bosses_pinch),
 
-		{IT_SPACE, NULL, NULL,
-			NULL, 0},
+		{IT_SPACE, NULL, NULL, NULL, 0},
 
-		{IT_STRING | IT_CVAR, NULL, "Final Bosses",
-			&cv_tsourdt3rd_audio_exmusic_finalbosses, 0},
-		{IT_STRING | IT_CVAR, NULL, "Pinch Music",
-			&cv_tsourdt3rd_audio_exmusic_finalbosspinch, 0},
+		EXMUSIC_MENU_CVAR("Final Bosses", tsourdt3rd_exmusic_bosses_finalboss),
+		EXMUSIC_MENU_CVAR("Pinch Phase", tsourdt3rd_exmusic_bosses_finalboss_pinch),
 
-		{IT_SPACE, NULL, NULL,
-			NULL, 0},
+		{IT_SPACE, NULL, NULL, NULL, 0},
 
-		{IT_STRING | IT_CVAR, NULL, "True Final Bosses",
-			&cv_tsourdt3rd_audio_exmusic_truefinalbosses, 0},
-		{IT_STRING | IT_CVAR, NULL, "Pinch Music",
-			&cv_tsourdt3rd_audio_exmusic_truefinalbosspinch, 0},
+		EXMUSIC_MENU_CVAR("True Final Bosses", tsourdt3rd_exmusic_bosses_truefinalboss),
+		EXMUSIC_MENU_CVAR("Pinch Phase", tsourdt3rd_exmusic_bosses_truefinalboss_pinch),
 
-		{IT_SPACE, NULL, NULL,
-			NULL, 0},
+		{IT_SPACE, NULL, NULL, NULL, 0},
 
-		{IT_STRING | IT_CVAR, NULL, "Race Bosses",
-			&cv_tsourdt3rd_audio_exmusic_racebosses, 0},
+		EXMUSIC_MENU_CVAR("Race", tsourdt3rd_exmusic_bosses_race),
 
-	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL,
-		NULL, 0},
+	{IT_SPACE | IT_DYBIGSPACE, NULL, NULL, NULL, 0},
 
 	{IT_HEADER, NULL, "Intermission", NULL, 0},
-		{IT_STRING | IT_CVAR, NULL, "Normal",
-			&cv_tsourdt3rd_audio_exmusic_intermission, 0},
-		{IT_STRING | IT_CVAR, NULL, "Bosses",
-			&cv_tsourdt3rd_audio_exmusic_intermission_bosses, 0},
-		{IT_STRING | IT_CVAR, NULL, "Final Bosses",
-			&cv_tsourdt3rd_audio_exmusic_intermission_finalbosses, 0},
-		{IT_STRING | IT_CVAR, NULL, "True Final Bosses",
-			&cv_tsourdt3rd_audio_exmusic_intermission_truefinalbosses, 0}
+		EXMUSIC_MENU_CVAR("Normal", tsourdt3rd_exmusic_intermission),
+		EXMUSIC_MENU_CVAR("Bosses", tsourdt3rd_exmusic_intermission_boss),
+		EXMUSIC_MENU_CVAR("Final Bosses", tsourdt3rd_exmusic_intermission_finalboss),
+		EXMUSIC_MENU_CVAR("True Final Bosses", tsourdt3rd_exmusic_intermission_truefinalboss)
 };
+
+#undef EXMUSIC_MENU_CVAR
 
 tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_Audio_EXMusicMenu[] =
 {
@@ -119,13 +98,13 @@ tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_Audio_EXMusicMenu[] =
 
 menu_t TSoURDt3rd_OP_Audio_EXMusicDef =
 {
-	MTREE4(MN_OP_MAIN, MN_OP_TSOURDT3RD, MN_OP_TSOURDT3RD, MN_OP_TSOURDT3RD),
+	MTREE4(MN_OP_MAIN, MN_OP_TSOURDT3RD, MN_OP_TSOURDT3RD_AUDIO, MN_OP_TSOURDT3RD_AUDIO_EXMUSIC),
 	NULL,
 	sizeof (TSoURDt3rd_OP_Audio_EXMusicMenu)/sizeof (menuitem_t),
 	&TSoURDt3rd_OP_AudioDef,
 	TSoURDt3rd_OP_Audio_EXMusicMenu,
 	TSoURDt3rd_M_DrawGenericOptions,
-	24, 64,
+	24, 76,
 	0,
 	NULL
 };
@@ -139,61 +118,130 @@ tsourdt3rd_menu_t TSoURDt3rd_TM_OP_Audio_EXMusicDef = {
 	M_Sys_EXMusicDrawer,
 	M_Sys_EXMusicTicker,
 	M_Sys_EXMusicInit,
-	NULL,
+	M_Sys_EXMusicQuit,
 	M_Sys_EXMusicInput,
+	NULL,
 	&TSoURDt3rd_TM_OP_AudioDef
 };
 
-// ------------------------ //
-//        Functions
-// ------------------------ //
+static boolean EXMusic_FindNextTrack(tsourdt3rd_exmusic_findTrackResult_t *result, INT32 musicset_type, boolean decrease)
+{
+	tsourdt3rd_exmusic_data_series_t *series = result->series;
+	tsourdt3rd_exmusic_musicset_t *set = result->track_set;
+	musicdef_t *music_track = result->lump;
+	INT32 series_index = result->series_pos, track_index = result->track_pos;
+
+	do
+	{
+		track_index = (decrease ? track_index-1 : track_index+1);
+		if (set != NULL && set->num_music_lumps && (track_index >= 0 && track_index < set->num_music_lumps))
+		{
+			music_track = set->music[track_index];
+			break;
+		}
+		else
+		{
+			if (decrease)
+			{
+				series_index = (series->prev != NULL ? series_index-1 : tsourdt3rd_exmusic_num_series-1);
+			}
+			else
+			{
+				series_index = (series->next != NULL ? series_index+1 : 0);
+			}
+			series = result->all_series[series_index];
+			set = series->track_sets[musicset_type];
+
+			if (set->num_music_lumps > 0)
+			{
+				track_index = (decrease ? (set->num_music_lumps-1) : 0);
+				music_track = set->music[track_index];
+				break;
+			}
+
+			track_index = 0;
+		}
+	} while (series != NULL && !(series == result->series && track_index == result->track_pos));
+	if (series == NULL || (series == result->series && track_index == result->track_pos))
+	{
+		return false;
+	}
+
+	result->series_pos	    = series_index;
+	result->track_pos	    = track_index;
+	result->series		    = series;
+	result->track_set	    = set;
+	result->lump		    = music_track;
+	result->all_music_lumps	= set->music;
+	return (result->lump != NULL);
+}
+
+static void M_Sys_FindNewEXMusicTrack(boolean decrease)
+{
+	tsourdt3rd_exmusic_findTrackResult_t cur_exm_found_track_result = exm_found_track_result;
+	consvar_t *exm_cvar = exm_found_track_result.cvar;
+	INT32 exm_identifier_pos = exm_found_track_result.identifier_pos;
+	char string[256];
+
+	if (EXMusic_FindNextTrack(&cur_exm_found_track_result, exm_identifier_pos, decrease) == false)
+	{
+		S_StartSoundFromEverywhere(sfx_lose); // Play the accurately named sound effect for this scenario :p
+		return;
+	}
+
+	snprintf(string, 256, "%s:%d", cur_exm_found_track_result.series->series_name, cur_exm_found_track_result.track_pos);
+	exm_found_track_result = cur_exm_found_track_result;
+
+	/// \todo: STAR NOTE: Should be CV_Set or something immediate
+	COM_BufInsertText(va("%s \"%s\"\n", exm_cvar->name, string));
+
+	menu_music_listening = false;
+	TSoURDt3rd_S_RefreshMusic();
+	S_StartSoundFromEverywhere(sfx_s3k5b);
+}
 
 void TSoURDt3rd_M_EXMusic_LoadMenu(INT32 choice)
 {
 	const UINT8 pid = 0;
-
-	tsourdt3rd_exmusic_t *exdef = NULL;
-	consvar_t *cvar = (consvar_t *)TSoURDt3rd_TM_OP_Audio_EXMusicMenu[TSoURDt3rd_OP_Audio_EXMusicDef.lastOn].itemaction.cvar;
+	static boolean already_checked = false;
+	INT32 menuopt;
 
 	(void)choice;
+	memset(&exm_found_track_result, 0, sizeof(exm_found_track_result));
 
-	if (cvar == NULL)
+	if (already_checked == false && tsourdt3rd_exmusic_initialized)
 	{
-		// Uh sorry, can't do that.
-		goto no_entry;
+		for (menuopt = 0; menuopt < TSoURDt3rd_OP_Audio_EXMusicDef.numitems; menuopt++)
+		{
+			consvar_t *cvar = (consvar_t *)TSoURDt3rd_OP_Audio_EXMusicMenu[menuopt].itemaction;
+			if (TSoURDt3rd_EXMusic_ReturnTypeFromCVar(cvar, NULL) != NULL)
+			{
+				menu_access_granted = true;
+				break;
+			}
+		}
 	}
+	already_checked = true;
 
-	TSoURDt3rd_EXMusic_ReturnType(cvar, exdef);
-	if (exdef == NULL)
+	if (menu_access_granted == false)
 	{
-		// Still can't do that, sorry.
-		goto no_entry;
+		// Can't let you do that, Star Fox.
+		TSoURDt3rd_M_StartPlainMessage("TSoURDt3rd EXMusic", M_GetText("The data needed for EXMusic wasn't initialized.\n"));
+		return;
 	}
 
 	TSoURDt3rd_TM_OP_Audio_EXMusicDef.music = tsourdt3rd_currentMenu->music;
 	TSoURDt3rd_M_SetupNextMenu(&TSoURDt3rd_TM_OP_Audio_EXMusicDef, &TSoURDt3rd_OP_Audio_EXMusicDef, false);
 	TSoURDt3rd_M_SetMenuDelay(pid);
 	TSoURDt3rd_OP_AudioDef.lastOn = tsourdt3rd_itemOn;
-
-no_entry:
-{
-	// Aw man, nothing's valid...
-	TSoURDt3rd_M_StartMessage(
-		"TSoURDt3rd EXMusic",
-		M_GetText("The data needed for EXMusic wasn't initialized.\n"),
-		NULL,
-		MM_NOTHING,
-		NULL,
-		NULL
-	);
-	return;
-}
-
 }
 
 static void M_Sys_EXMusicDrawer(void)
 {
 	fixed_t x = BASEVIDWIDTH/2, y = currentMenu->y;
+
+	if (exm_found_track_result.lump == NULL)
+		return;
 
 	if (tsourdt3rd_itemOn >= op_levels_start && tsourdt3rd_itemOn <= op_levels_end)
 		y += ((2*op_levels_end)/4);
@@ -202,41 +250,39 @@ static void M_Sys_EXMusicDrawer(void)
 	else if (tsourdt3rd_itemOn >= op_intermission_start && tsourdt3rd_itemOn <= op_intermission_end)
 		y += ((4*op_intermission_end)/3);
 
-	if (!exmusic_listening_track)
+	if (!menu_music_listening)
 	{
 		V_DrawCenteredThinString(x, y, V_ALLOWLOWERCASE|V_YELLOWMAP, "Press 'Jump', 'Enter', or 'A' to take a listen!");
 		V_DrawCharacter(x+64, y, V_GREENMAP, '\x1D');
 	}
 	else
+	{
 		V_DrawCenteredThinString(x, y, V_ALLOWLOWERCASE|V_YELLOWMAP, "Press 'Spin', 'Escape', or 'B' to stop listening!");
+	}
 }
 
 static void M_Sys_EXMusicTicker(void)
 {
 	for (INT32 exmusic_menuitems = 0; exmusic_menuitems < currentMenu->numitems; exmusic_menuitems++)
 	{
-		tsourdt3rd_exmusic_t *cur_extype = NULL;
-		consvar_t *cur_excvar = (consvar_t *)currentMenu->menuitems[exmusic_menuitems].itemaction;
-		INT32 menustatus = IT_GRAYEDOUT;
+		INT32 identifier_pos = -1;
+		consvar_t *cvar = (consvar_t *)currentMenu->menuitems[exmusic_menuitems].itemaction;
 
-		if (cur_excvar == NULL)
-		{
-			// We skip these in this household.
+		if (cvar == NULL)
 			continue;
-		}
 
-		TSoURDt3rd_EXMusic_ReturnType(cur_excvar, cur_extype);
-		if (cur_extype == NULL || (cur_excvar->value > (INT32)cur_extype->data->num_series))
+		if (TSoURDt3rd_EXMusic_ReturnTypeFromCVar(cvar, &identifier_pos) == NULL)
 		{
-			COM_BufAddText(va("%s \"0\"\n", excvar->name));
 			currentMenu->menuitems[exmusic_menuitems].status = IT_GRAYEDOUT;
 			continue;
 		}
 
-		//cur_extype = exmusic_cur_data[cur_excvar->value];
-		if (TSoURDt3rd_EXMusic_DoesDefHaveValidLump(cur_extype, cur_excvar, true))
-			menustatus = (IT_CVAR|IT_STRING);
-		currentMenu->menuitems[exmusic_menuitems].status = menustatus;
+		if (TSoURDt3rd_EXMusic_FindTrack(cvar->string, identifier_pos, NULL) == false)
+		{
+			/// \todo: STAR NOTE: Should be CV_Set or something immediate
+			COM_BufInsertText(va("%s \"Default:0\"\n", cvar->name));
+		}
+		currentMenu->menuitems[exmusic_menuitems].status = IT_CVAR|IT_STRING;
 	}
 	TSoURDt3rd_M_OptionsTick();
 }
@@ -246,63 +292,35 @@ static void M_Sys_EXMusicInit(void)
 	INT32 starting_pos = TSoURDt3rd_OP_Audio_EXMusicDef.lastOn;
 	INT16 iteration_amount = 0;
 
-	exmusic_listening_track = false;
-
-	// Put us right where we left off!
-	if (starting_pos >= TSoURDt3rd_OP_Audio_EXMusicDef.numitems)
-		starting_pos = 0;
 	for (; iteration_amount < TSoURDt3rd_OP_Audio_EXMusicDef.numitems; iteration_amount++, starting_pos++)
 	{
-		excvar = (consvar_t *)TSoURDt3rd_OP_Audio_EXMusicMenu[starting_pos].itemaction;
-		if (excvar == NULL)
+		INT32 identifier_pos = -1;
+		consvar_t *exm_cvar = (consvar_t *)TSoURDt3rd_OP_Audio_EXMusicMenu[iteration_amount].itemaction;
+
+		if (starting_pos >= TSoURDt3rd_OP_Audio_EXMusicDef.numitems)
+			starting_pos = 0;
+
+		if (TSoURDt3rd_EXMusic_ReturnTypeFromCVar(exm_cvar, &identifier_pos) == NULL)
 		{
-			// Invalid.
 			continue;
 		}
 
-		TSoURDt3rd_EXMusic_ReturnType(excvar, exmusic_def);
-#if 0
-		exmusic_def = exmusic_data[excvar->value];
-		if (exmusic_def != NULL)
+		if (TSoURDt3rd_EXMusic_FindTrack(exm_cvar->string, identifier_pos, &exm_found_track_result))
 		{
 			// It's valid! I can finally leave!
 			break;
 		}
-#endif
 	}
 
-	TSoURDt3rd_OP_Audio_EXMusicDef.lastOn = starting_pos; // Gets reset later, so just in case...
+	menu_music_listening = false;
+	TSoURDt3rd_OP_Audio_EXMusicDef.lastOn = starting_pos; // Put us right where we left off!
 }
 
-static void M_Sys_FindNewEXMusicTrack(boolean decrease)
+static boolean M_Sys_EXMusicQuit(void)
 {
-	tsourdt3rd_exmusic_t *exmusic_cur_def = exmusic_def;
-
-	while (exmusic_cur_def)
-	{
-		if (decrease)
-			exmusic_cur_def = ((exmusic_cur_def->prev == NULL) ? exmusic_data[exmusic_def->data->num_series] : exmusic_cur_def->prev);
-		else
-			exmusic_cur_def = ((exmusic_cur_def->next == NULL) ? exmusic_data[0] : exmusic_cur_def->next);
-
-		if (exmusic_cur_def == NULL || exmusic_cur_def == exmusic_def)
-		{
-			// Oh no..... What just happened? What did we do?
-			break;
-		}
-
-#if 0
-		if (TSoURDt3rd_EXMusic_DoesDefHaveValidLump(exmusic_cur_def, exmusic_option))
-		{
-			// This is valid, so we can leave now!
-			exmusic_def = exmusic_cur_def;
-			//COM_BufAddText(va("%s \"%s\"\n", excvar->name, exmusic_cur_def->series));
-			S_StartSoundFromEverywhere(sfx_s3k5b);
-			return;
-		}
-#endif
-	}
-	S_StartSoundFromEverywhere(sfx_lose);
+	memset(&exm_found_track_result, 0, sizeof(exm_found_track_result));
+	tsourdt3rd_noFurtherInput = menu_music_listening = false;
+	return true;
 }
 
 static boolean M_Sys_EXMusicInput(INT32 choice)
@@ -311,94 +329,78 @@ static boolean M_Sys_EXMusicInput(INT32 choice)
 
 	(void)choice;
 
-#define SET_EXMUSIC_TO_PLAY(def) \
-	TSoURDt3rd_S_MusicExists(def, { \
-		S_ChangeMusicInternal(def->name, !def->stoppingtics); \
-		tsourdt3rd_noFurtherInput = exmusic_listening_track = true; \
-		return exmusic_listening_track; \
-	})
-
-	if (exmusic_listening_track)
+	if (menu_music_listening)
 	{
 		if (TSoURDt3rd_M_MenuBackPressed(pid))
 		{
 			// We're no longer listening to our track!
+			tsourdt3rd_noFurtherInput = menu_music_listening = false;
+			S_StartSoundFromEverywhere(sfx_kc52);
 			S_StopMusic();
 			TSoURDt3rd_S_RefreshMusic();
 			TSoURDt3rd_M_SetMenuDelay(pid);
-			tsourdt3rd_noFurtherInput = exmusic_listening_track = false;
 		}
 		return true;
 	}
 
 	if (menucmd[pid].dpad_ud < 0 || menucmd[pid].dpad_ud > 0) // up & down
 	{
+		boolean found_menu_opt = false;
+		INT32 identifier_pos = -1;
+		consvar_t *exm_cvar;
+
 		if (menucmd[pid].dpad_ud < 0)
-			TSoURDt3rd_M_PrevOpt();
+			found_menu_opt = TSoURDt3rd_M_PrevOpt();
 		else
-			TSoURDt3rd_M_NextOpt();
-		S_StartSoundFromEverywhere(sfx_s3k5b);
+			found_menu_opt = TSoURDt3rd_M_NextOpt();
+		S_StartSoundFromEverywhere(found_menu_opt ? sfx_s3k5b : sfx_lose);
 
-		excvar = (consvar_t *)currentMenu->menuitems[tsourdt3rd_itemOn].itemaction;
-		TSoURDt3rd_EXMusic_ReturnType(excvar, exmusic_def);
-#if 0
-		if (exmusic_data != NULL)
-		{
-			// -- We can set this definition!
-			exmusic_def = exmusic_data[excvar->value];
-		}
-#endif
+		exm_cvar = (consvar_t *)currentMenu->menuitems[tsourdt3rd_itemOn].itemaction;
+		if (exm_cvar && TSoURDt3rd_EXMusic_ReturnTypeFromCVar(exm_cvar, &identifier_pos))
+			TSoURDt3rd_EXMusic_FindTrack(exm_cvar->string, identifier_pos, &exm_found_track_result);
 
+		menu_music_listening = false;
 		TSoURDt3rd_M_SetMenuDelay(pid);
 		return true;
 	}
 	else if (menucmd[pid].dpad_lr < 0 || menucmd[pid].dpad_lr > 0) // left & right
 	{
-		// Let's set ourselves to a different new track then!
 		M_Sys_FindNewEXMusicTrack(menucmd[pid].dpad_lr < 0); // left = -1; +1 otherwise
 		TSoURDt3rd_M_SetMenuDelay(pid);
 		return true;
 	}
-	else if (TSoURDt3rd_M_MenuConfirmPressed(pid))
+	else if (TSoURDt3rd_M_MenuConfirmPressed(pid)) // Try to play our track!
 	{
-		// Try to play our track!
-		if (exmusic_def->play_routine == NULL) return false;
-		exmusic_def->play_routine(NULL);
-#if 0
-		switch (exmusic_option)
-		{
-			case TSOURDT3RD_EXMUSIC_CVAR_BOSSPINCH:
-			case TSOURDT3RD_EXMUSIC_CVAR_INTERMISSION_BOSSES:
-				SET_EXMUSIC_TO_PLAY(exmusic_def->lump_slot_1[1]);
-				break;
-			case TSOURDT3RD_EXMUSIC_CVAR_FINALBOSSES:
-			case TSOURDT3RD_EXMUSIC_CVAR_INTERMISSION_FINALBOSSES:
-				SET_EXMUSIC_TO_PLAY(exmusic_def->lump_slot_2[0]);
-				break;
-			case TSOURDT3RD_EXMUSIC_CVAR_FINALBOSSPINCH:
-				SET_EXMUSIC_TO_PLAY(exmusic_def->lump_slot_2[1]);
-				break;
-			case TSOURDT3RD_EXMUSIC_CVAR_TRUEFINALBOSSES:
-			case TSOURDT3RD_EXMUSIC_CVAR_INTERMISSION_TRUEFINALBOSSES:
-				SET_EXMUSIC_TO_PLAY(exmusic_def->lump_slot_3[0]);
-				break;
-			case TSOURDT3RD_EXMUSIC_CVAR_TRUEFINALBOSSPINCH:
-				SET_EXMUSIC_TO_PLAY(exmusic_def->lump_slot_3[1]);
-				break;
-			case TSOURDT3RD_EXMUSIC_CVAR_RACEBOSSES:
-				SET_EXMUSIC_TO_PLAY(exmusic_def->lump_slot_4[0]);
-				break;
-			default:
-				SET_EXMUSIC_TO_PLAY(exmusic_def->lump_slot_1[0]);
-				break;
-		}
-#endif
+		INT32 lump_track_num = exm_found_track_result.lump_track;
+		musicdef_t *def = exm_found_track_result.lump;
 
-		// If we made it here, then we can't play this track.
+		TSoURDt3rd_S_MusicExists(def, lump_track_num, {
+			tsourdt3rd_noFurtherInput = menu_music_listening = true;
+			S_StartSoundFromEverywhere(sfx_s3k5b);
+			S_ChangeMusicInternal(def->name[lump_track_num], !def->stoppingtics);
+			S_ControlMusicEffects();
+			return true;
+		})
+
 		S_StartSoundFromEverywhere(sfx_lose);
+		return true;
+	}
+	else if (TSoURDt3rd_M_MenuExtraPressed(pid))
+	{
+		INT32 identifier_pos = -1;
+		consvar_t *exm_cvar = (consvar_t *)currentMenu->menuitems[tsourdt3rd_itemOn].itemaction;
+		if (exm_cvar)
+		{
+			menu_music_listening = false;
+			/// \todo: STAR NOTE: Should be CV_Set or something immediate
+			COM_BufInsertText(va("%s \"Default:0\"\n", exm_cvar->name));
+			TSoURDt3rd_EXMusic_ReturnTypeFromCVar(exm_cvar, &identifier_pos);
+			TSoURDt3rd_EXMusic_FindTrack(exm_cvar->string, identifier_pos, &exm_found_track_result);
+			S_StartSoundFromEverywhere(sfx_s3k5b);
+		}
+		TSoURDt3rd_M_SetMenuDelay(pid);
 		return true;
 	}
 
 	return false;
 }
-#undef SET_EXMUSIC_TO_PLAY

@@ -1013,11 +1013,17 @@ void HWR_UnlockCachedPatch(GLPatch_t *gpatch)
 	Z_ChangeTag(gpatch->mipmap->data, PU_HWRCACHE_UNLOCKED);
 }
 
-// -----------------+
-// HWR_GetPic       : Download a Doom pic (raw row encoded with no 'holes')
-// Returns          :
-// -----------------+
+#if 1
+// STAR NOTE: i respect the hustle!
+// However, I kinda need this for my coronas!
+// So....... it's staying for now :p
 
+#include "hw_light.h"
+#include "../STAR/lights/smkg-coronas.h"
+
+#define PIC_DEFINED
+
+#ifdef PIC_DEFINED
 typedef enum
 {
 	PALETTE         = 0,  // 1 byte is the index in the doom palette (as usual)
@@ -1048,8 +1054,12 @@ static const INT32 picmode2GR[] =
 	GL_TEXFMT_RGBA,               // RGBA32             (opengl only)
 };
 
-static void HWR_DrawPicInCache(UINT8 *block, INT32 pblockwidth, INT32 pblockheight,
-	INT32 blockmodulo, pic_t *pic, INT32 bpp)
+#define PIC_TYPE pic_t
+#else
+#define PIC_TYPE patch_t
+#endif
+
+static void HWR_DrawPicInCache(UINT8 *block, INT32 pblockwidth, INT32 pblockheight, INT32 blockmodulo, PIC_TYPE *pic, INT32 bpp)
 {
 	INT32 i,j;
 	fixed_t posx, posy, stepx, stepy;
@@ -1057,18 +1067,34 @@ static void HWR_DrawPicInCache(UINT8 *block, INT32 pblockwidth, INT32 pblockheig
 	UINT16 texelu16;
 	INT32 picbpp;
 	RGBA_t col;
+	RGBA_t *palette = HWR_GetTexturePalette();
 
 	stepy = ((INT32)SHORT(pic->height)<<FRACBITS)/pblockheight;
 	stepx = ((INT32)SHORT(pic->width)<<FRACBITS)/pblockwidth;
+#ifdef PIC_DEFINED
 	picbpp = format2bpp(picmode2GR[pic->mode]);
+#else
+	GLPatch_t *glPic = pic->hardware;
+	if (glPic == NULL || glPic->mipmap == NULL)
+		return;
+	picbpp = format2bpp(glPic->mipmap->format);
+#endif
 	posy = 0;
 	for (j = 0; j < pblockheight; j++)
 	{
 		posx = 0;
+#ifdef PIC_DEFINED
 		dest = &block[j*blockmodulo];
 		src = &pic->data[(posy>>FRACBITS)*SHORT(pic->width)*picbpp];
+#else
+		dest = block + (j*blockmodulo);
+		UINT8 *data = glPic->mipmap->data;
+		//src = &data[(posy>>FRACBITS)*pic->width*picbpp];
+		src = &data[(posy>>FRACBITS)*SHORT(pic->width)*picbpp];
+#endif
 		for (i = 0; i < pblockwidth;i++)
 		{
+#ifdef PIC_DEFINED
 			switch (pic->mode)
 			{ // source bpp
 				case PALETTE :
@@ -1083,12 +1109,12 @@ static void HWR_DrawPicInCache(UINT8 *block, INT32 pblockwidth, INT32 pblockheig
 							dest += sizeof(UINT16);
 							break;
 						case 3 :
-							col = V_GetColor(texel);
+							col = palette[texel];
 							memcpy(dest, &col, sizeof(RGBA_t)-sizeof(UINT8));
 							dest += sizeof(RGBA_t)-sizeof(UINT8);
 							break;
 						case 4 :
-							memcpy(dest, &V_GetColor(texel), sizeof(RGBA_t));
+							memcpy(dest, &palette[texel], sizeof(RGBA_t));
 							dest += sizeof(RGBA_t);
 							break;
 					}
@@ -1107,13 +1133,405 @@ static void HWR_DrawPicInCache(UINT8 *block, INT32 pblockwidth, INT32 pblockheig
 					memcpy(dest, src + ((posx+FRACUNIT/2)>>FRACBITS)*sizeof(UINT32), sizeof(UINT32));
 					break;
 			}
+#else
+			switch (glPic->mipmap->format)
+			{ // source bpp
+				case GL_TEXFMT_P_8 :
+					texel = src[(posx+FRACUNIT/2)>>FRACBITS];
+					switch (bpp)
+					{ // destination bpp
+						case 1 :
+							*dest++ = texel; break;
+						case 2 :
+							texelu16 = (UINT16)(texel | 0xff00);
+							memcpy(dest, &texelu16, sizeof(UINT16));
+							dest += sizeof(UINT16);
+							break;
+						case 3 :
+							col = palette[texel];
+							memcpy(dest, &col, sizeof(RGBA_t)-sizeof(UINT8));
+							dest += sizeof(RGBA_t)-sizeof(UINT8);
+							break;
+						case 4 :
+							memcpy(dest, &palette[texel], sizeof(RGBA_t));
+							dest += sizeof(RGBA_t);
+							break;
+					}
+					break;
+#if 0
+				case INTENSITY :
+					*dest++ = src[(posx+FRACUNIT/2)>>FRACBITS];
+					break;
+#endif
+				case GL_TEXFMT_ALPHA_INTENSITY_88 : // assume dest bpp = 2
+					memcpy(dest, src + ((posx+FRACUNIT/2)>>FRACBITS)*sizeof(UINT16), sizeof(UINT16));
+					dest += sizeof(UINT16);
+					break;
+#if 0
+				case RGB24 :
+					break;  // not supported yet
+#endif
+				case GL_TEXFMT_RGBA : // assume dest bpp = 4
+					dest += sizeof(UINT32);
+					memcpy(dest, src + ((posx+FRACUNIT/2)>>FRACBITS)*sizeof(UINT32), sizeof(UINT32));
+					break;
+				default:
+					break;
+			}
+#endif
 			posx += stepx;
 		}
 		posy += stepy;
 	}
 }
 
-GLPatch_t *HWR_GetPic(lumpnum_t lumpnum)
+// -----------------+
+// HWR_GetPic       : Download a Doom pic (raw row encoded with no 'holes')
+// Returns          :
+// -----------------+
+
+#ifndef PIC_DEFINED
+#define NEW_GETPIC
+#endif
+
+#ifndef NEW_GETPIC
+
+#define VANILLA_GETPIC
+#ifndef VANILLA_GETPIC // ^ depeonds on
+
+#define HWR_RESIZEBLOCK
+#ifdef HWR_RESIZEBLOCK // ^ depeonds on
+
+// resize the patch to be 3dfx complient
+// set : blocksize = blockwidth * blockheight  (no bpp used)
+//       blockwidth
+//       blockheight
+//note :  8bit (1 byte per pixel) palettized format
+INT32 blockwidth, blockheight, blocksize;
+static void HWR_ResizeBlock(int orig_width, int orig_height, GLMipmap_t *mipmap)
+{
+#if 1
+	// GL prefers power-of-two textures.
+	{
+		// width: size up to nearest power of 2
+		blockwidth = 1;
+		while(blockwidth < orig_width)
+			blockwidth <<= 1;
+		if(blockwidth>2048)
+		{
+			// scale down the original graphics to fit
+			blockwidth = 2048;
+		}
+
+		//height: size up to nearest power of 2
+		blockheight = 1;
+		while(blockheight < orig_height)
+			blockheight <<= 1;
+		if(blockheight>2048)
+		{
+			// scale down the original graphics to fit
+			blockheight = 2048;
+		}
+	}
+#else
+	blockwidth = orig_width;
+	blockheight = orig_height;
+#endif
+	blocksize = blockwidth * blockheight;
+}
+
+#endif // HWR_RESIZEBLOCK
+
+void HWR_GetPic(lumpnum_t lumpnum, const UINT8 *colormap)
+{
+	patch_t *patch;
+	GLPatch_t *grPatch;
+
+	(void)colormap;
+
+	if (lumpnum == LUMPERROR)
+		return;
+
+	patch = HWR_GetCachedGLPatch(lumpnum);
+	grPatch = (GLPatch_t *)Patch_AllocateHardwarePatch(patch);
+
+	if (!grPatch->mipmap->downloaded && !grPatch->mipmap->data)
+	{
+		UINT8 *block;
+		const size_t lumpsize = W_LumpLength(lumpnum);
+#ifdef PIC_DEFINED
+#define SIZES_ARE_SHORT
+		size_t len = (lumpsize - sizeof(pic_t));
+		pic_t *pic = W_CacheLumpNum(lumpnum, PU_CACHE);
+#else
+//#define SIZES_ARE_SHORT
+		size_t len = (lumpsize - sizeof(patch_t));
+		patch_t *pic = HWR_GetCachedGLPatch(lumpnum);
+		//patch_t *pic = W_CacheLumpNum(lumpnum, PU_CACHE);
+		GLPatch_t *glPic = (GLPatch_t *)Patch_AllocateHardwarePatch(pic);
+#endif
+
+		INT32 width = SHORT(pic->width);
+		INT32 height = SHORT(pic->height);
+		CONS_Printf("width is %d-%d, height is %d-%d\n", pic->width, width, pic->height, height);
+#ifdef PIC_DEFINED
+		patch->width = SHORT(pic->width);
+		patch->height = SHORT(pic->height);
+#else
+#ifndef SIZES_ARE_SHORT
+		patch->width = pic->width;
+		patch->height = pic->height;
+#else
+		patch->width = SHORT(pic->width);
+		patch->height = SHORT(pic->height);
+#endif
+#endif
+		patch->leftoffset = 0;
+		patch->topoffset = 0;
+
+#ifdef PIC_DEFINED
+		grPatch->mipmap->format = ((pic->mode == PALETTE) ? textureformat : picmode2GR[pic->mode]); // 'textureformat' can be set by driver
+		CONS_Printf("picformat is %d\n", pic->mode);
+#else
+		//grPatch->mipmap->format = patchformat;
+		grPatch->mipmap->format = textureformat;
+		//grPatch->mipmap->format = GL_TEXFMT_ALPHA_8;
+		//grPatch->mipmap->format = 0;
+#endif
+		CONS_Printf("format is %d\n", grPatch->mipmap->format);
+		grPatch->mipmap->width = (UINT16)patch->width;
+		grPatch->mipmap->height = (UINT16)patch->height;
+#if 1
+		grPatch->mipmap->flags = 0;
+		grPatch->max_s = grPatch->max_t = 1.0f;
+#endif
+
+#if 0
+		Z_Free(grPatch->mipmap->data);
+#endif
+
+#ifdef HWR_RESIZEBLOCK
+		// find the good 3dfx size (boring spec)
+		HWR_ResizeBlock(patch->width, patch->height, grPatch->mipmap);
+#endif
+
+#if 0
+		// allocate block
+#if 1
+		(void)len;
+		W_ReadLump(lumpnum, Z_Malloc(lumpsize, PU_HWRCACHE, &grPatch->mipmap->data));
+#else
+		W_ReadLump(lumpnum, Z_Malloc(len, PU_HWRCACHE, &grPatch->mipmap->data));
+#endif
+#endif
+
+#define USE_BLOCK
+//#define USE_GLPIC
+
+#ifdef USE_BLOCK
+		block = MakeBlock(grPatch->mipmap);
+#else
+		(void)block;
+#endif
+
+#ifdef PIC_DEFINED
+
+		if (
+#ifndef HWR_RESIZEBLOCK
+			patch->width  == SHORT(pic->width) &&
+			patch->height == SHORT(pic->height) &&
+#else
+			patch->width  == blockwidth &&
+			patch->height == blockheight &&
+#endif
+			format2bpp(grPatch->mipmap->format) == format2bpp(picmode2GR[pic->mode]))
+
+#else
+#ifndef USE_GLPIC
+		if (grPatch && grPatch->mipmap)
+#else
+		if (glPic && glPic->mipmap)
+#endif
+		{
+			if (
+#ifndef SIZES_ARE_SHORT
+				patch->width  == pic->width &&
+				patch->height == pic->height
+#else
+				patch->width  == SHORT(pic->width) &&
+				patch->height == SHORT(pic->height)
+#endif
+				//&& format2bpp(grPatch->mipmap->format) == format2bpp(glPic->mipmap->format)
+			)
+#endif
+			{
+				// no conversion needed
+				CONS_Debug(DBG_RENDER, "no HWR_GetPic conversion needed\n");
+#ifdef PIC_DEFINED
+				M_Memcpy(grPatch->mipmap->data, pic->data, len);
+#else
+				//M_Memcpy(grPatch->mipmap->data, glPic->mipmap->data, len);
+				grPatch->mipmap->data = glPic->mipmap->data;
+#endif
+			}
+			else
+			{
+				CONS_Debug(DBG_RENDER, "HWR_GetPic conversion needed\n");
+#ifdef USE_BLOCK
+
+				HWR_DrawPicInCache(block,
+#ifndef HWR_RESIZEBLOCK
+					SHORT(pic->width), SHORT(pic->height),
+					SHORT(pic->width)*format2bpp(grPatch->mipmap->format),
+#else
+					min(pic->width,blockwidth), min(pic->height,blockheight),
+					blockwidth*format2bpp(grPatch->mipmap->format),
+#endif
+					pic,
+					format2bpp(grPatch->mipmap->format));
+
+#else
+#ifndef USE_GLPIC
+				HWR_DrawPatchInCache(grPatch->mipmap,
+					grPatch->mipmap->width, grPatch->mipmap->height,
+					patch->width, patch->height,
+					patch);
+#else
+				HWR_DrawPatchInCache(glPic->mipmap,
+					glPic->mipmap->width, glPic->mipmap->height,
+					pic->width, pic->height,
+					pic);
+				//HWR_MakePatch(pic, glPic, glPic->mipmap, true);
+				//patch = pic;
+#endif
+#endif
+			}
+#ifndef PIC_DEFINED
+		}
+#endif
+
+#if 1
+		Z_Unlock(pic);
+#else
+		Z_ChangeTag(pic, PU_CACHE);
+#endif
+#ifdef USE_BLOCK
+		Z_ChangeTag(block, PU_HWRCACHE); // PU_HWRCACHE_UNLOCKED // PU_HWRCACHE
+#endif
+
+		grPatch->mipmap->flags = 0;
+#ifndef HWR_RESIZEBLOCK
+#if 0
+		grPatch->max_s = grPatch->max_t = 1.0f;
+#else
+		grPatch->max_s = (float)grPatch->mipmap->width  / (float)patch->width;
+		grPatch->max_t = (float)grPatch->mipmap->height / (float)patch->height;
+#endif
+#else
+		grPatch->max_s = (float)grPatch->mipmap->width  / (float)blockwidth;
+		grPatch->max_t = (float)grPatch->mipmap->height / (float)blockheight;
+#endif
+	}
+
+	//if (!grPatch->mipmap->downloaded)
+		HWD.pfnSetTexture(grPatch->mipmap);
+	//HWR_SetCurrentTexture(grPatch->mipmap);
+
+	Z_ChangeTag(grPatch->mipmap->data, PU_HWRCACHE_UNLOCKED);
+
+	//CONS_Debug(DBG_RENDER, "picloaded at %x as texture %d\n", grPatch->mipmap->data, grPatch->mipmap->downloaded);
+}
+
+#else
+
+static void HWR_MakePic(const size_t len, pic_t *pic, const patch_t *patch, GLPatch_t *grpatch, GLMipmap_t *grMipmap, boolean makebitmap)
+{
+	//if (!grMipmap->downloaded && !grMipmap->data)
+	{
+		//pic_t *pic = W_CacheLumpNum(lumpnum, PU_CACHE);
+		UINT8 *block;
+		//size_t len = W_LumpLength(lumpnum) - sizeof (pic_t);
+
+		grMipmap->width = (UINT16)patch->width; // grpatch
+		grMipmap->height = (UINT16)patch->height; // grpatch
+
+		if (pic->mode == PALETTE)
+			grMipmap->format = textureformat; // can be set by driver
+		else
+			grMipmap->format = picmode2GR[pic->mode];
+
+		Z_Free(grMipmap->data);
+		//grMipmap->data = NULL;
+
+#if 1
+		grMipmap->flags = 0;
+		grpatch->max_s = (float)patch->width / (float)grMipmap->width;
+		grpatch->max_t = (float)patch->height / (float)grMipmap->height;
+#endif
+
+		if (makebitmap == false)
+		{
+			return;
+		}
+
+		// allocate block
+		block = MakeBlock(grMipmap);
+
+		if (patch->width == SHORT(pic->width) && patch->height == SHORT(pic->height) &&
+			format2bpp(grMipmap->format) == format2bpp(picmode2GR[pic->mode]))
+		{
+			// no conversion needed
+			//grMipmap->data = pic->data;
+			M_Memcpy(grMipmap->data, pic->data, len);
+		}
+		else
+		{
+			HWR_DrawPicInCache(block, SHORT(pic->width), SHORT(pic->height),
+			//HWR_DrawPicInCache(grMipmap->data, SHORT(pic->width), SHORT(pic->height),
+			                   SHORT(pic->width)*format2bpp(grMipmap->format),
+			                   pic,
+			                   format2bpp(grMipmap->format));
+		}
+
+#if 0
+#if 0
+		Z_ChangeTag(pic, PU_CACHE);
+		Z_Unlock(pic);
+#endif
+#if 1
+		Z_Unlock(pic);
+		Z_ChangeTag(pic, PU_HWRCACHE_UNLOCKED);
+		Z_ChangeTag(block, PU_HWRCACHE_UNLOCKED);
+#endif
+#if 0
+		Z_ChangeTag(pic, PU_CACHE);
+        Z_ChangeTag(block, PU_HWRCACHE);
+#endif
+#if 0
+		Z_Free(pic);
+        Z_Free(block);
+#endif
+#else
+		Z_Unlock(pic);
+		Z_ChangeTag(block, PU_HWRCACHE_UNLOCKED);
+#endif
+
+		//Z_ChangeTag(grMipmap->data, PU_HWRCACHE_UNLOCKED);
+
+#if 0
+		grMipmap->flags = 0;
+		grpatch->max_s = (float)patch->width / (float)grMipmap->width;
+		grpatch->max_t = (float)patch->height / (float)grMipmap->height;
+#endif
+	}
+
+#if 0
+	// The system-memory data can be purged now.
+	Z_ChangeTag(grMipmap->data, PU_HWRCACHE_UNLOCKED);
+#endif
+}
+
+GLPatch_t *HWR_GetPic(lumpnum_t lumpnum, const UINT8 *colormap)
 {
 	if (lumpnum == LUMPERROR)
 		return NULL;
@@ -1121,57 +1539,372 @@ GLPatch_t *HWR_GetPic(lumpnum_t lumpnum)
 	patch_t *patch = HWR_GetCachedGLPatch(lumpnum);
 	GLPatch_t *grpatch = (GLPatch_t *)Patch_AllocateHardwarePatch(patch);
 
-	if (!grpatch->mipmap->downloaded && !grpatch->mipmap->data)
+	pic_t *pic = W_CacheLumpNum(lumpnum, PU_CACHE);
+	size_t len = (W_LumpLength(lumpnum) - sizeof(pic_t));
+
+	patch->width = SHORT(pic->width); // grpatch
+	patch->height = SHORT(pic->height); // grpatch
+	patch->leftoffset = 0; // grpatch
+	patch->topoffset = 0; // grpatch
+
+#if 1
+	// search for the mipmap
+	// skip the first (no colormap translated)
+	if (!(colormap == colormaps || colormap == NULL))
 	{
-		pic_t *pic;
-		UINT8 *block;
+		GLMipmap_t *grMipmap, *newMipmap;
+
+		for (grMipmap = grpatch->mipmap; grMipmap->nextcolormap; )
+		{
+			grMipmap = grMipmap->nextcolormap;
+			if (grMipmap->colormap && grMipmap->colormap->source == colormap)
+			{
+				if (memcmp(grMipmap->colormap->data, colormap, 256 * sizeof(UINT8)))
+				{
+					M_Memcpy(grMipmap->colormap->data, colormap, 256 * sizeof(UINT8));
+
+					// If hardware does not have the texture, then call pfnSetTexture to upload it
+					// If it does have the texture, then call pfnUpdateTexture to update it
+					GLPatch_t *gr_Patch = patch->hardware;
+					HWR_MakePic(len, pic, patch, gr_Patch, grMipmap, true);
+					if (!grMipmap->downloaded)
+						HWD.pfnSetTexture(grMipmap);
+					else
+						HWD.pfnUpdateTexture(grMipmap);
+					HWR_SetCurrentTexture(grMipmap);
+
+					// The system-memory data can be purged now.
+					Z_ChangeTag(grMipmap->data, PU_HWRCACHE_UNLOCKED);
+					//Z_Free(grMipmap->data);
+				}
+				else
+				{
+					GLPatch_t *gr_Patch = patch->hardware;
+					if (!grMipmap->downloaded && !grMipmap->data)
+						HWR_MakePic(len, pic, patch, gr_Patch, grMipmap, true);
+					if (!grMipmap->downloaded)
+						HWD.pfnSetTexture(grMipmap);
+					HWR_SetCurrentTexture(grMipmap);
+
+					// The system-memory data can be purged now.
+					Z_ChangeTag(grMipmap->data, PU_HWRCACHE_UNLOCKED);
+					//Z_Free(grMipmap->data);
+				}
+			}
+		}
+
+		newMipmap = calloc(1, sizeof (*newMipmap));
+		if (newMipmap == NULL)
+			I_Error("%s: Out of memory", "HWR_GetPic");
+		grMipmap->nextcolormap = newMipmap;
+
+		newMipmap->colormap = Z_Calloc(sizeof(*newMipmap->colormap), PU_HWRPATCHCOLMIPMAP, NULL);
+		newMipmap->colormap->source = colormap;
+		M_Memcpy(newMipmap->colormap->data, colormap, 256 * sizeof(UINT8));
+
+		GLPatch_t *gr_Patch = patch->hardware;
+		if (!newMipmap->downloaded && !newMipmap->data)
+			HWR_MakePic(len, pic, patch, gr_Patch, newMipmap, true);
+		if (!newMipmap->downloaded)
+			HWD.pfnSetTexture(newMipmap);
+		HWR_SetCurrentTexture(newMipmap);
+
+		//CONS_Alert(CONS_NOTICE, "picloaded at %p as texture %d\n", newMipmap->data, newMipmap->downloaded);
+		CONS_Debug(DBG_RENDER, "COLORMAP: picloaded at %p as texture %d\n", newMipmap->data, newMipmap->downloaded);
+
+		// The system-memory data can be purged now.
+		Z_ChangeTag(newMipmap->data, PU_HWRCACHE_UNLOCKED);
+		//Z_Free(newMipmap->data);
+
+		//Z_ChangeTag(grpatch->mipmap->data, PU_HWRCACHE_UNLOCKED);
+		//Z_Free(grpatch->mipmap->data);
+		return grpatch;
+	}
+#else
+	(void)colormap;
+#endif
+
+#if 1
+	GLPatch_t *gr_Patch = patch->hardware;
+	if (!grpatch->mipmap->downloaded && !grpatch->mipmap->data)
+		HWR_MakePic(len, pic, patch, gr_Patch, grpatch->mipmap, true);
+	if (!grpatch->mipmap->downloaded)
+		HWD.pfnSetTexture(grpatch->mipmap);
+	HWR_SetCurrentTexture(grpatch->mipmap); // DEFAULT: OFF
+#endif
+
+	//CONS_Alert(CONS_NOTICE, "picloaded at %p as texture %d\n", grpatch->mipmap->data, grpatch->mipmap->downloaded);
+	CONS_Debug(DBG_RENDER, "picloaded at %p as texture %d\n", grpatch->mipmap->data, grpatch->mipmap->downloaded);
+
+	// DEFAULT: ON
+	Z_ChangeTag(grpatch->mipmap->data, PU_HWRCACHE_UNLOCKED);
+	//Z_Free(grpatch->mipmap->data);
+	return gr_Patch;
+}
+#endif
+
+#else
+
+#define NEW_DRAWPATCH
+
+#ifdef NEW_DRAWPATCH
+static void HWR_NEW_DrawPatchInCache(UINT8 *block, INT32 pblockwidth, INT32 pblockheight, INT32 blockmodulo, patch_t *patch, INT32 bpp)
+{
+	INT32 i, j;
+	fixed_t posx, posy, stepx, stepy;
+	UINT8 *dest, *src, texel;
+	UINT16 texelu16;
+	RGBA_t col;
+	RGBA_t *palette = HWR_GetTexturePalette();
+	GLPatch_t *glPatch = patch->hardware;
+
+	if (!glPatch || !glPatch->mipmap)
+		return;
+
+	stepy = ((INT32)patch->height << FRACBITS) / pblockheight;
+	stepx = ((INT32)patch->width << FRACBITS) / pblockwidth;
+
+	const INT32 srcbpp = format2bpp(glPatch->mipmap->format);
+	posy = 0;
+
+	for (j = 0; j < pblockheight; j++)
+	{
+		posx = 0;
+		dest = block + (j * blockmodulo);
+#if 0
+		//UINT8 *data = glPatch->mipmap->data;
+		UINT8 *data = W_CacheLumpNum(lumpnum, PU_CACHE);
+		if (data == NULL)
+			return;
+		src = &data[(posy >> FRACBITS) * patch->width * srcbpp];
+#else
+		src = &block[(posy >> FRACBITS) * patch->width * srcbpp];
+#endif
+
+		for (i = 0; i < pblockwidth; i++)
+		{
+			switch (glPatch->mipmap->format)
+			{
+			case GL_TEXFMT_P_8:
+				texel = src[(posx + FRACUNIT / 2) >> FRACBITS];
+				switch (bpp)
+				{
+				case 1: *dest++ = texel; break;
+				case 2: texelu16 = (UINT16)(texel | 0xff00); memcpy(dest, &texelu16, 2); dest += 2; break;
+				case 3: col = palette[texel]; memcpy(dest, &col, 3); dest += 3; break;
+				case 4: memcpy(dest, &palette[texel], 4); dest += 4; break;
+				}
+				break;
+
+			case GL_TEXFMT_ALPHA_INTENSITY_88:
+				memcpy(dest, src + ((posx + FRACUNIT / 2) >> FRACBITS) * 2, 2);
+				dest += 2;
+				break;
+
+			case GL_TEXFMT_RGBA:
+				memcpy(dest, src + ((posx + FRACUNIT / 2) >> FRACBITS) * 4, 4);
+				dest += 4;
+				break;
+
+			default:
+				break;
+			}
+			posx += stepx;
+		}
+		posy += stepy;
+	}
+}
+#endif
+
+void HWR_GetPic(lumpnum_t lumpnum, const UINT8 *colormap)
+{
+	patch_t *patch = NULL;
+	GLPatch_t *grPatch = NULL;
+
+	(void)colormap;
+
+	if (lumpnum == LUMPERROR)
+		return;
+
+	patch = HWR_GetCachedGLPatch(lumpnum);
+	if (patch == NULL)
+		return;
+
+#if 1
+	//CONS_Printf("isdoompatch is %d\n", Picture_CheckIfDoomPatch(patch));
+
+#if 1
+	#if 0
+		#define WIDTH SHORT(patch->width)
+		#define HEIGHT SHORT(patch->height)
+	#else
+		#define WIDTH patch->width
+		#define HEIGHT patch->height
+	#endif
+	#define TOPOFFSET patch->topoffset
+	#define LEFTOFFSET patch->leftoffset
+#else
+	#define WIDTH 0
+	#define HEIGHT 0
+	#define TOPOFFSET 0
+	#define LEFTOFFSET 0
+#endif
+	INT32 inflags = PICFMT_FLAT32; // PICFMT_DOOMPATCH // PICFMT_FLAT32 // PICFMT_DOOMPATCH32
+	INT32 outflags = PICFMT_PATCH; // PICFMT_PATCH // PICFMT_FLAT32
+	INT32 flags = PICFLAGS_USE_TRANSPARENTPIXEL; // PICFLAGS_USE_TRANSPARENTPIXEL
+
+	void *realpatch = Picture_PatchConvert(inflags, 0, patch, outflags, NULL, WIDTH, HEIGHT, TOPOFFSET, LEFTOFFSET, flags);
+	if (realpatch)
+	{
+		CONS_Printf("patch exists\n");
+#if 0
+		Z_SetUser(realpatch, (void **)&patch);
+#else
+		patch = realpatch;
+#endif
+		Z_ChangeTag(realpatch, PU_HWRCACHE_UNLOCKED);
+		//Z_Free(realpatch);
+	}
+	else
+		CONS_Printf("patch no exists\n");
+#endif
+	grPatch = (GLPatch_t *)Patch_AllocateHardwarePatch(patch);
+	//HWR_MakePatch(patch, grPatch, grPatch->mipmap, true);
+
+	if (!grPatch->mipmap->downloaded && !grPatch->mipmap->data)
+	{
+		UINT8 *block = NULL;
+		size_t lumpsize = W_LumpLength(lumpnum);
 		size_t len;
 
-		pic = W_CacheLumpNum(lumpnum, PU_CACHE);
-		patch->width = SHORT(pic->width); // grpatch
-		patch->height = SHORT(pic->height); // grpatch
-		len = W_LumpLength(lumpnum) - sizeof (pic_t);
+//#define COPY_INTO_NEW_PATCH
+#ifdef COPY_INTO_NEW_PATCH
+		len = (lumpsize - sizeof(patch_t));
+		patch_t *pic = HWR_GetCachedGLPatch(lumpnum);
+		//patch_t *pic = W_CacheLumpNum(lumpnum, PU_CACHE);
+		GLPatch_t *glPic = (GLPatch_t *)Patch_AllocateHardwarePatch(pic);
+		//HWR_MakePatch(pic, glPic, glPic->mipmap, true);
+#endif
 
-		patch->leftoffset = 0; // grpatch
-		patch->topoffset = 0; // grpatch
+#if 1
+		len = (lumpsize - sizeof(W_CacheLumpNum(lumpnum, PU_CACHE)));
+#endif
 
-		grpatch->mipmap->width = (UINT16)patch->width; // grpatch
-		grpatch->mipmap->height = (UINT16)patch->height; // grpatch
-
-		if (pic->mode == PALETTE)
-			grpatch->mipmap->format = textureformat; // can be set by driver
-		else
-			grpatch->mipmap->format = picmode2GR[pic->mode];
-
-		Z_Free(grpatch->mipmap->data);
-
+#if 0
 		// allocate block
-		block = MakeBlock(grpatch->mipmap);
+#if 0
+		W_ReadLump(lumpnum, Z_Malloc(lumpsize, PU_HWRCACHE, &grPatch->mipmap->data));
+#else
+		W_ReadLump(lumpnum, Z_Malloc(len, PU_HWRCACHE, &grPatch->mipmap->data));
+#endif
+#endif
 
-		if (patch->width  == SHORT(pic->width) &&
-			patch->height == SHORT(pic->height) &&
-			format2bpp(grpatch->mipmap->format) == format2bpp(picmode2GR[pic->mode]))
+#ifdef COPY_INTO_NEW_PATCH
+#if 1
+		patch->width = pic->width;
+		patch->height = pic->height;
+#else
+		patch->width = SHORT(pic->width);
+		patch->height = SHORT(pic->height);
+#endif
+
+#else
+
+#if 1
+		patch->width = SHORT(patch->width);
+		patch->height = SHORT(patch->height);
+#endif
+
+#endif
+		patch->leftoffset = 0;
+		patch->topoffset = 0;
+
+#if 0
+		Z_Free(grPatch->mipmap->data);
+#endif
+
+#if 0
+		// allocate block
+#if 0
+		W_ReadLump(lumpnum, Z_Malloc(lumpsize, PU_HWRCACHE, &grPatch->mipmap->data));
+#else
+		W_ReadLump(lumpnum, Z_Malloc(len, PU_HWRCACHE, &grPatch->mipmap->data));
+#endif
+#endif
+
+		grPatch->mipmap->width = patch->width;
+		grPatch->mipmap->height = patch->height;
+
+#if 1
+		//grPatch->mipmap->format = patchformat;
+		//grPatch->mipmap->format = textureformat;
+		grPatch->mipmap->format = GL_TEXFMT_ALPHA_INTENSITY_88;
+		//grPatch->mipmap->format = GL_TEXFMT_ALPHA_8;
+		//grPatch->mipmap->format = GL_TEXFMT_P_8
+#endif
+
+		grPatch->mipmap->flags = 0;
+		grPatch->max_s = grPatch->max_t = 1.0f;
+		CONS_Printf("format is %d\n", grPatch->mipmap->format);
+
+		// Optionally convert patch data
+//#define ALLOW_FORMAT_CHECKING
+
+#ifndef COPY_INTO_NEW_PATCH
+#ifdef ALLOW_FORMAT_CHECKING
+		if (grPatch->mipmap->format != (GLTextureFormat_t)patchformat)
+#endif
+#else
+#ifdef ALLOW_FORMAT_CHECKING
+		if (grPatch->mipmap->format != glPic->mipmap->format)
+#endif
+#endif
 		{
-			// no conversion needed
-			M_Memcpy(grpatch->mipmap->data, pic->data,len);
+			block = MakeBlock(grPatch->mipmap);
+#ifdef NEW_DRAWPATCH
+			HWR_NEW_DrawPatchInCache(block,
+				grPatch->mipmap->width,
+				grPatch->mipmap->height,
+				grPatch->mipmap->width * format2bpp(grPatch->mipmap->format),
+				patch,
+				format2bpp(grPatch->mipmap->format));
+#else
+			HWR_DrawPatchInCache(grPatch->mipmap,
+				grPatch->mipmap->width, grPatch->mipmap->height,
+				patch->width, patch->height,
+				patch);
+#endif
+			Z_ChangeTag(block, PU_HWRCACHE_UNLOCKED);
 		}
+#if defined(COPY_INTO_NEW_PATCH) && defined(ALLOW_FORMAT_CHECKING)
 		else
-			HWR_DrawPicInCache(block, SHORT(pic->width), SHORT(pic->height),
-			                   SHORT(pic->width)*format2bpp(grpatch->mipmap->format),
-			                   pic,
-			                   format2bpp(grpatch->mipmap->format));
+			grPatch->mipmap->data = glPic->mipmap->data;
+#endif
 
+
+#if 1
+		grPatch->mipmap->flags = 0;
+		grPatch->max_s = grPatch->max_t = 1.0f;
+#endif
+
+#ifdef COPY_INTO_NEW_PATCH
 		Z_Unlock(pic);
-		Z_ChangeTag(block, PU_HWRCACHE_UNLOCKED);
-
-		grpatch->mipmap->flags = 0;
-		grpatch->max_s = grpatch->max_t = 1.0f;
+		Z_Unlock(glPic);
+#endif
 	}
-	HWD.pfnSetTexture(grpatch->mipmap);
-	//CONS_Debug(DBG_RENDER, "picloaded at %x as texture %d\n",grpatch->mipmap.data, grpatch->mipmap.downloaded);
 
-	return grpatch;
+#if 1
+	if (!grPatch->mipmap->downloaded)
+		HWD.pfnSetTexture(grPatch->mipmap);
+	HWR_SetCurrentTexture(grPatch->mipmap);
+#else
+	HWD.pfnSetTexture(grPatch->mipmap);
+	//HWR_SetCurrentTexture(grPatch->mipmap);
+#endif
+	Z_ChangeTag(grPatch->mipmap->data, PU_HWRCACHE_UNLOCKED);
 }
+#endif
+#endif
 
 patch_t *HWR_GetCachedGLPatchPwad(UINT16 wadnum, UINT16 lumpnum)
 {

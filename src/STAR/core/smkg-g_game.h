@@ -52,6 +52,7 @@ extern struct tsourdt3rd_local_s
 	struct {
 		tsourdt3rd_world_scenarios_t scenario;
 		tsourdt3rd_world_scenarios_types_t scenario_types;
+		boolean gameover;
 	} world;
 
 	struct  {

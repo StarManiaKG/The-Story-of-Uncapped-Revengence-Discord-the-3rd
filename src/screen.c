@@ -2,6 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 1999-2024 by Sonic Team Junior.
+// Copyright (C) 2025 by StarManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -47,7 +48,7 @@
 #include "lua_hud.h" // LUA_HudEnabled
 
 // TSoURDt3rd
-#include "STAR/smkg-st_hud.h" // TSoURDt3rd_SCR_SetPingHeight() //
+#include "STAR/smkg-cvars.h"
 #include "STAR/lights/smkg-coronas.h" // TSoURDt3rd_R_Load_Corona() //
 
 // --------------------------------------------
@@ -407,10 +408,15 @@ static int frame_index;
 static boolean fps_init = false;
 static precise_t fps_enter = 0;
 
+static tic_t tps_lasttic;
+static boolean tps_ticgraph[TICRATE];
+tic_t tps_totaltics;
+
+static INT32 diagnostics_offset = 0;
+
 void SCR_CalculateFPS(void)
 {
 	precise_t fps_finish = 0;
-
 	double frameElapsed = 0.0;
 
 	if (fps_init == false)
@@ -437,66 +443,166 @@ void SCR_CalculateFPS(void)
 #endif
 }
 
-void SCR_DisplayTicRate(void)
+void SCR_CalculateTPS(void)
 {
-	INT32 ticcntcolor = 0;
-	const INT32 h = vid.height-(8*vid.dup);
+	tic_t i;
+	tic_t ontic = 0;
+
+	if (netgame && client) // This line of code is from LuigiBudd's SRB2Edit client, it looked cool
+		ontic = (gametic + (neededtic - gametic));
+	else
+		ontic = I_GetTime();
+	tps_totaltics = 0;
+
+	for (i = tps_lasttic + 1; (i < (TICRATE+tps_lasttic) && i < ontic); i++)
+		tps_ticgraph[i % TICRATE] = false;
+	tps_ticgraph[ontic % TICRATE] = true;
+
+	for (i = 0; i < TICRATE; ++i)
+		if (tps_ticgraph[i]) ++tps_totaltics;
+
+	tps_lasttic = ontic;
+}
+
+static void DrawFrameDiagnostics(const INT32 x, INT32 offset, INT32 option, consvar_t *diagtype, INT32 valfont, INT32 valcolor, const char *valstr)
+{
+	const INT32 y = (vid.height - ((8 * diagnostics_offset) * vid.dup) - offset);
+	const char *typestring;
+	INT32 strwidth, valwidth;
+	INT32 typestring_offset, kartstyle_offset;
+	fontdef_t font;
+
+	{
+		if (diagtype == &cv_tsourdt3rd_video_showtps) typestring = "TPS:";
+		else typestring = "FPS:";
+	}
+	switch (valfont) // see 'videofont_cons_t' for reference
+	{
+		case 1: // thin
+			typestring_offset = (7 * 8 * vid.dup);
+			font = tny_font;
+			break;
+		default: // normal
+			typestring_offset = (7 * 8 * vid.dup);
+			font = hu_font;
+			break;
+	}
+	strwidth = V_FontStringWidth(typestring, option, font);
+	valwidth = V_FontStringWidth(valstr, option, font);
+
+	switch (diagtype->value) // see 'framediag_cons_t' for reference
+	{
+		case 1:
+			V_DrawFontString(x - (typestring_offset + strwidth), y, V_MENUCOLORMAP|option, FRACUNIT, FRACUNIT, typestring, font);
+			V_DrawFontString(x - valwidth, y, valcolor|option, FRACUNIT, FRACUNIT, valstr, font);
+			break;
+		case 2:
+			V_DrawAlignedFontString(x, y, valcolor|option, FRACUNIT, FRACUNIT, valstr, font, alignright);
+			break;
+		case 3:
+			kartstyle_offset = (8 * (diagnostics_offset-1));
+			option |= V_SNAPTOBOTTOM|V_SNAPTORIGHT;
+			V_DrawFontString(x - strwidth, y - ((8 * diagnostics_offset) * vid.dup) - kartstyle_offset, V_MENUCOLORMAP|option, FRACUNIT, FRACUNIT, typestring, font);
+			V_DrawFontString(x - valwidth, y - (kartstyle_offset * vid.dup) - kartstyle_offset, valcolor|option, FRACUNIT, FRACUNIT, valstr, font);
+			break;
+	}
+
+	diagnostics_offset++;
+}
+
+static void SCR_DrawFPS(void)
+{
 	UINT32 cap = R_GetFramerateCap();
 	double fps = round(averageFPS);
+	const char *fps_val;
+	INT32 fps_color = 0;
+	INT32 option = V_NOSCALESTART|V_USERHUDTRANS;
+
+	if (cap > 0)
+	{
+		if (fps <= cap / 2.0) fps_color = V_REDMAP;
+		else if (fps <= cap * 0.90) fps_color = V_YELLOWMAP;
+		else fps_color = V_FPSCOLORMAP;
+		fps_val = va("%3.0f/%3u", fps, cap); // The highest assignable cap is < 1000, so 3 characters is fine.
+	}
+	else
+	{
+		fps_color = V_FPSCOLORMAP;
+		if (cv_ticrate.value == 1)
+			fps_val = va("%4.2f", averageFPS);
+		else
+			fps_val = va("%04.2f", averageFPS);
+	}
+
+	DrawFrameDiagnostics(vid.width, 0, option, &cv_ticrate, cv_tsourdt3rd_video_font_fps.value, fps_color, fps_val);
+}
+
+static void SCR_DrawTPS(void)
+{
+	INT32 tps_color = 0;
+	const char *tps_val = NULL;
+	INT32 option = V_NOSCALESTART|V_USERHUDTRANS;
+	INT32 offset = 0;
+
+	{
+		if (cv_tsourdt3rd_video_showtps.value == 2) tps_val = va("%02d", tps_totaltics);
+		else tps_val = va("%02d/%02u", tps_totaltics, TICRATE);
+	}
+	{
+		if (tps_totaltics <= TICRATE/2) tps_color = V_REDMAP;
+		else if (tps_totaltics <= TICRATE-8) tps_color = V_YELLOWMAP;
+		else tps_color = V_TPSCOLORMAP;
+	}
+	if (cv_ticrate.value == 3 && cv_tsourdt3rd_video_showtps.value != 3)
+	{
+		offset += (10 * vid.dup);
+	}
+
+	DrawFrameDiagnostics(vid.width, offset, option, &cv_tsourdt3rd_video_showtps, cv_tsourdt3rd_video_font_tps.value, tps_color, tps_val);
+}
+
+void SCR_DisplayFrameDiagnostics(void)
+{
+	diagnostics_offset = 1;
 
 	if (gamestate == GS_NULL)
 		return;
 
-	if (cap > 0)
+	if (cv_ticrate.value)
 	{
-		if (fps <= cap / 2.0) ticcntcolor = V_REDMAP;
-		else if (fps <= cap * 0.90) ticcntcolor = V_YELLOWMAP;
-		else ticcntcolor = V_FPSCOLORMAP;
+		SCR_DrawFPS();
 	}
-	else
+	if (cv_tsourdt3rd_video_showtps.value)
 	{
-		ticcntcolor = V_FPSCOLORMAP;
-	}
-
-	if (cv_ticrate.value == 2) // compact counter
-	{
-		V_DrawRightAlignedString(vid.width, h,
-			ticcntcolor|V_NOSCALESTART|V_USERHUDTRANS, va("%04.2f", averageFPS)); // use averageFPS directly
-	}
-	else if (cv_ticrate.value == 1) // full counter
-	{
-		const char *drawnstr;
-		INT32 width;
-
-		// The highest assignable cap is < 1000, so 3 characters is fine.
-		if (cap > 0)
-			drawnstr = va("%3.0f/%3u", fps, cap);
-		else
-			drawnstr = va("%4.2f", averageFPS);
-
-		width = V_StringWidth(drawnstr, V_NOSCALESTART);
-
-		V_DrawString(vid.width - ((7 * 8 * vid.dup) + V_StringWidth("FPS: ", V_NOSCALESTART)), h,
-			V_MENUCOLORMAP|V_NOSCALESTART|V_USERHUDTRANS, "FPS:");
-		V_DrawString(vid.width - width, h,
-			ticcntcolor|V_NOSCALESTART|V_USERHUDTRANS, drawnstr);
+		SCR_DrawTPS();
 	}
 }
 
 void SCR_DisplayLocalPing(void)
 {
-	UINT32 ping = playerpingtable[consoleplayer];	// consoleplayer's ping is everyone's ping in a splitnetgame :P
-	if (cv_showping.value == 1 || (cv_showping.value == 2 && servermaxping && ping > servermaxping))	// only show 2 (warning) if our ping is at a bad level
+	UINT32 ping = playerpingtable[consoleplayer]; // consoleplayer's ping is everyone's ping in a splitnetgame :P
+	INT32 dispx, dispy;
+
+	if (cv_showping.value == 1 || (cv_showping.value == 2 && servermaxping && ping > servermaxping)) // only show 2 (warning) if our ping is at a bad level
 	{
-		INT32 dispy = cv_ticrate.value ? 180 : 189;
-#if 1
-		// STAR NOTE: my code reigns supreme! //
-		TSoURDt3rd_SCR_SetPingHeight(&dispy);
-#endif
-		HU_drawPing(307, dispy, ping, true, V_SNAPTORIGHT | V_SNAPTOBOTTOM);
+		dispx = 307;
+		dispy = 189;
+		if (cv_ticrate.value == 3 || cv_tsourdt3rd_video_showtps.value == 3)
+		{
+			dispx -= 30;
+			dispy += 3;
+		}
+		else if ((cv_ticrate.value && cv_tsourdt3rd_video_showtps.value) || cv_tsourdt3rd_video_showtps.value)
+		{
+			dispy = 171;
+		}
+		else if (cv_ticrate.value)
+		{
+			dispy = 180;
+		}
+		HU_drawPing(dispx, dispy, ping, true, V_SNAPTORIGHT | V_SNAPTOBOTTOM);
 	}
 }
-
 
 void SCR_ClosedCaptions(void)
 {

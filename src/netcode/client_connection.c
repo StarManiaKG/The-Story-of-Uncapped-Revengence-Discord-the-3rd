@@ -370,7 +370,7 @@ boolean CL_SendJoin(void)
 	strncpy(netbuffer->u.clientcfg.names[1], player2name, MAXPLAYERNAME);
 
 	// STAR STUFF: set our netbuffer variable right quick //
-	netbuffer->u.clientcfg.tsourdt3rd = true;
+	netbuffer->u.clientcfg.tsourdt3rd.build = IS_TSOURDT3RD;
 
 	return HSendPacket(servernode, true, 0, sizeof (clientconfig_pak));
 }
@@ -1359,7 +1359,10 @@ void CL_ConnectToServer(void)
 	{
 		// If the connection was aborted for some reason, leave
 		if (!CL_ServerConnectionTicker(tmpsave, &oldtic, &asksent))
+		{
+			DEBFILE(va("CL_ConnectToServer() - Connection failed!\n"));
 			return;
+		}
 
 		if (server)
 		{
@@ -1497,12 +1500,20 @@ void PT_ServerCFG(SINT8 node)
 	if (serverplayer >= 0)
 		playernode[(UINT8)serverplayer] = servernode;
 
-	// STAR STUFF: handle our custom packet data please :) //
-	TSoURDt3rd_HandleCustomPackets(node);
-
 	if (netgame)
 		CONS_Printf(M_GetText("Join accepted, waiting for complete game state...\n"));
 	DEBFILE(va("Server accept join gametic=%u mynode=%d\n", gametic, mynode));
+
+#if 1
+	// STAR STUFF: handle our custom packet data please :) //
+	TSoURDt3rd_HandleCustomPackets(node);
+#endif
+#if 1
+	#define DOOMCOM_DATA(d) (doomdata_t *)&(d)->data
+	//doomdata_t *netbuffer = DOOMCOM_DATA(doomcom);
+	netbuffer->packettype = PT_TSOURDT3RD;
+	HSendPacket(node, true, 0, 0);
+#endif
 
 	/// \note Wait. What if a Lua script uses some global custom variables synched with the NetVars hook?
 	///       Shouldn't they be downloaded even at intermission time?

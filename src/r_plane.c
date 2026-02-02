@@ -371,7 +371,8 @@ static visplane_t *new_visplane(unsigned hash)
 visplane_t *R_FindPlane(sector_t *sector, fixed_t height, INT32 picnum, INT32 lightlevel,
 	fixed_t xoff, fixed_t yoff, fixed_t xscale, fixed_t yscale,
 	angle_t plangle, extracolormap_t *planecolormap,
-	ffloor_t *pfloor, polyobj_t *polyobj, pslope_t *slope, sectorportal_t *portalsector)
+	ffloor_t *pfloor, polyobj_t *polyobj, pslope_t *slope, sectorportal_t *portalsector,
+	boolean reverseLight, const sector_t *lighting_sector)
 {
 	visplane_t *check;
 	unsigned hash;
@@ -427,6 +428,18 @@ visplane_t *R_FindPlane(sector_t *sector, fixed_t height, INT32 picnum, INT32 li
 
 	if (!pfloor)
 	{
+		if (slope != NULL && P_ApplyLightOffset(lightlevel >> LIGHTSEGSHIFT, lighting_sector))
+		{
+			if (reverseLight)
+			{
+				lightlevel -= slope->lightOffset * 8;
+			}
+			else
+			{
+				lightlevel += slope->lightOffset * 8;
+			}
+		}
+
 		hash = visplane_hash(picnum, lightlevel, height);
 		for (check = visplanes[hash]; check; check = check->next)
 		{

@@ -68,7 +68,7 @@ const char *GetPalette(void);
 extern RGBA_t *pLocalPalette;
 extern RGBA_t *pMasterPalette;
 
-void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue);
+void V_CubeApply(RGBA_t *input);
 
 // Retrieve the ARGB value from a palette color index
 #define V_GetColor(color) (pLocalPalette[color&0xFF])
@@ -133,15 +133,15 @@ void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue);
 #define V_USERHUDTRANSHALF   ((10-(cv_translucenthud.value/2))<<V_ALPHASHIFT)
 #define V_USERHUDTRANS       ((10-cv_translucenthud.value)<<V_ALPHASHIFT)
 #define V_USERHUDTRANSDOUBLE ((10-min(cv_translucenthud.value*2, 10))<<V_ALPHASHIFT)
-
+//
 // ===================================================================
 // DYNAMIC VIDEO COLORS
 //
 // 	Remember this from some previous TSoURDt3rd commits of st_stuff.c?
-// 		Yeah, I reworked it! Just like I said I would!
-//		But this time, I've reworked it even more!
+// 	Yeah, I reworked it! Just like I said I would!
+//	But this time, I've reworked it even more!
 // ===================================================================
-
+//
 #define V_MENUCOLORMAP (cv_tsourdt3rd_video_coloring_menus.value)
 #define V_FPSCOLORMAP  (cv_tsourdt3rd_video_coloring_fpsrate.value)
 #define V_TPSCOLORMAP  (cv_tsourdt3rd_video_coloring_tpsrate.value)

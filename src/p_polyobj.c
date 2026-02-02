@@ -1231,7 +1231,10 @@ boolean Polyobj_rotate(polyobj_t *po, angle_t delta, boolean turnplayers, boolea
 	{
 		// update seg angles (used only by renderer)
 		for (i = 0; i < po->segCount; ++i)
+		{
 			po->segs[i]->angle += delta;
+			P_UpdateSegLightOffset(po->segs[i]);
+		}
 
 		// update polyobject's angle
 		po->angle += delta;

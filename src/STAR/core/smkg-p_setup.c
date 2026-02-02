@@ -62,6 +62,9 @@ boolean TSoURDt3rd_P_LoadAddon(INT32 wadnum, INT32 numlumps)
 	size_t lumpLength = 0;
 	char *text = NULL;
 
+	const char *wadname;
+	const char *error;
+
 	tsourdt3rd_starparser_lump_loading = 0;
 	tsourdt3rd_starparser_num_errored_lumps = 0;
 
@@ -78,13 +81,16 @@ boolean TSoURDt3rd_P_LoadAddon(INT32 wadnum, INT32 numlumps)
 	script->wad = wad;
 	script->tokenizer = NULL;
 	script->tkn = script->val = NULL;
+	wadname = TSoURDt3rd_M_WriteVariedLengthString(wad->filename, MENUMESSAGEHEADERLEN, true);
 
 	for (UINT16 lump = 0; lump < numlumps; lump++, lump_p++)
 	{
 		INT32 lump_found = TSoURDt3rd_M_FindWordInTermTable(tsourdt3rd_lump_term_opt, lump_p->name, TSOURDT3RD_TERMTABLESEARCH_MEMCMP);
 
 		if (lump_found < 0)
+		{
 			continue;
+		}
 		tsourdt3rd_starparser_lump_loading++; // turn on loading flag
 		tsourdt3rd_starparser_num_brackets = 0;
 		tsourdt3rd_starparser_num_errors = 0;
@@ -100,34 +106,40 @@ boolean TSoURDt3rd_P_LoadAddon(INT32 wadnum, INT32 numlumps)
 		switch (lump_found)
 		{
 			case tsourdt3rd_lump_jukedef:
-				if (tsourdt3rd_global_jukebox == NULL || !TSoURDt3rd_Jukebox_PrepareDefs())
+				if (dedicated)
 				{
-					STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "Failed to prepare Jukebox, not reading \x82\"%s\"\x80!\n", lump_p->name);
 					break;
 				}
+				else if (!TSoURDt3rd_Jukebox_Initialized() || !TSoURDt3rd_Jukebox_PrepareDefs())
+				{
+					STAR_CONS_Printf(STAR_CONS_ERROR, "ERROR: Jukebox wasn't initialized, not reading lump!\n");
+				}
+				else
 				{
 					TSoURDt3rd_STARParser_Read(script, text, lumpLength, TSoURDt3rd_STARParser_JUKEDEF);
-					if (tsourdt3rd_global_jukebox->in_menu == false)
+					if (tsourdt3rd_global_jukebox.in_menu == false)
 					{
 						Z_Free(tsourdt3rd_jukebox_defs);
 						tsourdt3rd_jukebox_defs = NULL;
 					}
 				}
 				break;
-
 			case tsourdt3rd_lump_exmusdef:
-				if (tsourdt3rd_global_exmusic == NULL)
+				if (dedicated)
 				{
-					STAR_CONS_Printf(STAR_CONS_DEBUG, "EXMusic wasn't properly initialized at startup!\n");
 					break;
 				}
+				else if (tsourdt3rd_exmusic_initialized == false)
+				{
+					STAR_CONS_Printf(STAR_CONS_ERROR, "ERROR: EXMusic wasn't initialized, not reading lump!\n");
+				}
+				else
 				{
 					S_InitMusicDefs(); // Just in case we're doing this while the game's initializing...
 					TSoURDt3rd_STARParser_Read(script, text, lumpLength, TSoURDt3rd_STARParser_EXMUSDEF);
 					numsoundtestdefs = 0;
 				}
 				break;
-
 			default:
 				STAR_CONS_Printf(STAR_CONS_DEBUG, "Parser for lump '%s' doesn't exist yet!\n", tsourdt3rd_lump_term_opt[lump_found]);
 				break;
@@ -159,29 +171,18 @@ boolean TSoURDt3rd_P_LoadAddon(INT32 wadnum, INT32 numlumps)
 	}
 
 	// Have we run into any errors?
-	const char *wadname = TSoURDt3rd_M_WriteVariedLengthString(wad->filename, MENUMESSAGEHEADERLEN, true);
 	if (tsourdt3rd_starparser_num_errored_lumps > 1)
 	{
-		TSoURDt3rd_M_StartMessage(wadname,
-			va("%d of the lumps you've loaded\nhave encountered errors!\nCheck the logs for more information.\n", tsourdt3rd_starparser_num_errored_lumps),
-			NULL,
-			MM_NOTHING,
-			NULL,
-			NULL
-		);
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, va("%d of the lumps you've loaded have encountered errors! Check the logs for more information.\n", tsourdt3rd_starparser_num_errored_lumps));
+		error = va("%d of the lumps you've loaded\nhave encountered errors!\nCheck the logs for more information.\n", tsourdt3rd_starparser_num_errors);
+		TSoURDt3rd_M_StartPlainMessage(wadname, error);
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, error);
 		S_StartSoundFromEverywhere(sfx_skid);
 	}
 	else if (tsourdt3rd_starparser_num_errors)
 	{
-		TSoURDt3rd_M_StartMessage(wadname,
-			va("Stumbled upon\n%d parser error(s)\nwithin this lump!\n", tsourdt3rd_starparser_num_errors),
-			NULL,
-			MM_NOTHING,
-			NULL,
-			NULL
-		);
-		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, va("Stumbled upon %d parser error(s) within this lump!\n", tsourdt3rd_starparser_num_errors));
+		error = va("Stumbled upon\n%d parser error(s)\nwithin this lump!\n", tsourdt3rd_starparser_num_errors);
+		TSoURDt3rd_M_StartPlainMessage(wadname, error);
+		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, error);
 		S_StartSoundFromEverywhere(sfx_skid);
 	}
 	if (loaded_mod >= 1)
@@ -192,7 +193,8 @@ boolean TSoURDt3rd_P_LoadAddon(INT32 wadnum, INT32 numlumps)
 	tsourdt3rd_starparser_num_brackets = 0;
 	tsourdt3rd_starparser_num_errors = 0;
 	tsourdt3rd_starparser_num_errored_lumps = 0;
-	Z_Free(script); script = NULL;
+	Z_Free(script);
+	script = NULL;
 	return true;
 }
 
@@ -226,6 +228,12 @@ void TSoURDt3rd_WORLD_UpdateScenarios(void)
 	tsourdt3rd_world_scenarios_types_t scenario_type = TSOURDT3RD_WORLD_SCENARIO_TYPES_NONE;
 
 	mapheader_t *map = mapheaderinfo[gamemap-1];
+
+	// Game-over
+	if (tsourdt3rd_local.world.gameover)
+	{
+		scenario |= TSOURDT3RD_WORLD_SCENARIO_GAMEOVER;
+	}
 
 	// Fighting the big bad guy!
 	if (map)
@@ -333,7 +341,7 @@ void TSoURDt3rd_P_LoadLevel(boolean reloadinggamestate)
 		}
 
 		// Do music...
-		const char *determinedMusic = TSoURDt3rd_DetermineLevelMusic();
+		const char *determinedMusic = TSoURDt3rd_EXMusic_DetermineLevelMusic();
 		if (determinedMusic && strnicmp(S_MusicName(), ((mapmusflags & MUSIC_RELOADRESET) ? map->musname : determinedMusic), 7))
 		{
 			strncpy(mapmusname, determinedMusic, 7);
@@ -347,14 +355,16 @@ void TSoURDt3rd_P_LoadLevel(boolean reloadinggamestate)
 			}
 		}
 
+#if 1
 		// Also fade the music, by the way...
 		if (RESETMUSIC || strnicmp(S_MusicName(), (mapmusflags & MUSIC_RELOADRESET) ? map->musname : mapmusname, 7))
 		{
 			S_FadeMusic(0, FixedMul(
 				FixedDiv((F_GetWipeLength(wipedefs[wipe_level_toblack])-2)*NEWTICRATERATIO, NEWTICRATE), MUSICRATE));
 		}
+#endif
 
 		// Finally, set the music...
-		S_Start();
+		S_StartEx(false);
 	}
 }

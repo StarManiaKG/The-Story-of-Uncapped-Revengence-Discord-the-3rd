@@ -62,7 +62,7 @@
 #ifdef HAVE_DISCORDSUPPORT
 #include "discord/discord.h"
 #endif
-#include "STAR/smkg-cvars.h" // cv_tsourdt3rd_sdl_windowtitle stuff & cv_tsourdt3rd_audio_gameover //
+#include "STAR/smkg-cvars.h" // cv_tsourdt3rd_sdl_windowtitle stuff //
 #include "STAR/star_vars.h" // STAR_SetWindowTitle() //
 #include "STAR/p_user.h" // TSoURDt3rd_P_SuperReady() //
 #include "STAR/core/smkg-s_jukebox.h" // TSoURDt3rd_Jukebox_SongPlaying() //
@@ -1644,12 +1644,6 @@ void P_PlayLivesJingle(player_t *player)
 
 void P_PlayJingle(player_t *player, jingletype_t jingletype)
 {
-#if 1
-	// STAR STUFF: play our game over music! //
-	/// \todo get rid of this and put it in exmusic
-	strcpy(jingleinfo[JT_GOVER].musname, gameoverMusic[cv_tsourdt3rd_audio_gameover.value]);
-#endif
-
 	const char *musname = jingleinfo[jingletype].musname;
 	UINT16 musflags = 0;
 	boolean looping = jingleinfo[jingletype].looping;

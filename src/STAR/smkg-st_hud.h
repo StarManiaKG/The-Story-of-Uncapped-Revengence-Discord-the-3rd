@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
-// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2026 by StarManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -18,10 +18,6 @@
 extern "C" {
 #endif
 
-// ------------------------ //
-//        Variables
-// ------------------------ //
-
 typedef struct tsourdt3rd_trackingResult_s
 {
 	fixed_t x, y;
@@ -31,18 +27,33 @@ typedef struct tsourdt3rd_trackingResult_s
 	fixed_t fov;
 } tsourdt3rd_trackingResult_t;
 
+// ========
+// Patches
+// ========
+
 extern patch_t *tsourdt3rd_easter_leveleggs;
 extern patch_t *tsourdt3rd_easter_totaleggs;
 
+//
+// Buttons
+//
+// -- Saturn
 extern patch_t *kp_button_a[2][2];
 extern patch_t *kp_button_b[2][2];
 extern patch_t *kp_button_x[2][2];
+// -- Modern
 
-// ------------------------ //
-//        Functions
-// ------------------------ //
+// -- Keyboard
+extern patch_t *gen_button_keyleft[2];
+extern patch_t *gen_button_keyright[2];
+extern patch_t *gen_button_keycenter[2];
+
+// ===================
+// Graphic displaying
+// ===================
 
 void TSoURDt3rd_ST_LoadGraphics(void);
+patch_t *HU_UpdateOrBlankPatch(patch_t **user, boolean required, const char *format, ...);
 
 void TSoURDt3rd_Easter_ST_drawEggs(void);
 
@@ -50,11 +61,6 @@ void TSoURDt3rd_Easter_ST_drawEggs(void);
 // Called when you have Discord asks
 void TSoURDt3rd_ST_AskToJoinEnvelope(void);
 #endif
-
-void TSoURDt3rd_SCR_CalculateTPS(void);
-void TSoURDt3rd_SCR_DisplayTPS(void);
-
-INT32 TSoURDt3rd_SCR_SetPingHeight(INT32 *y);
 
 void TSoURDt3rd_ST_ObjectTracking(player_t *player, tsourdt3rd_trackingResult_t *result, const vector3_t *point, boolean object_reverse);
 

@@ -881,6 +881,9 @@ void readlight(MYFILE *f, INT32 num)
 					case 1:
 						lspr[num].corona_coloring_routine = L_UseObjectColor;
 						break;
+					case 2:
+						lspr[num].corona_coloring_routine = L_UseEmeraldLight;
+						break;
 					default:
 						lspr[num].corona_coloring_routine = NULL;
 						if (value < 0)
@@ -1054,37 +1057,29 @@ void readspriteinfo(MYFILE *f, INT32 num, boolean sprite2)
 
 			if (fastcmp(word, "LIGHTTYPE"))
 			{
-#if 0
-				if (sprite2)
-					deh_warning("Sprite2 %s: invalid word '%s'", spr2names[num], word);
-				else
-				{
-					INT32 oldvar;
-					for (oldvar = 0; t_lspr[num] != &lspr[oldvar]; oldvar++)
-						;
-					t_lspr[num] = &lspr[value];
-				}
-#else
-				// STAR STUFF: ultimate coronas 2 //
+				INT32 oldvar = 0;
+
 				if (sprite2)
 				{
 					deh_warning("Sprite2 %s: property '%s' is only available for sprites!", spr2names[num], word);
 					continue;
 				}
 
-				INT32 oldvar = 0;
-				while (t_lspr[num] != &lspr[oldvar])
+				if (oldvar > NUMLIGHTS)
 				{
-					if (oldvar > NUMSPRITES)
-					{
-						deh_warning("Sprite2 %s: invalid lighttype '%s'", spr2names[num], word2);
-						continue;
-					}
+					deh_warning("Sprite2 %s: invalid lighttype '%s'", spr2names[num], word2);
+					continue;
+				}
+
+				while (t_lspr[num] != &lspr[oldvar])
 					oldvar++;
+
+				if (oldvar >= NUMLIGHTS)
+				{
+					deh_warning("Sprite2 %s: invalid lighttype '%s'", spr2names[num], word2);
+					continue;
 				}
 				t_lspr[num] = &lspr[value];
-				// DONE! //
-#endif
 			}
 			else
 #endif
@@ -1833,6 +1828,31 @@ void readlevelheader(MYFILE *f, INT32 num)
 				mapheaderinfo[num-1]->levelflags = (UINT16)i;
 			else if (fastcmp(word, "MENUFLAGS"))
 				mapheaderinfo[num-1]->menuflags = (UINT8)i;
+
+			else if (fastcmp(word, "LIGHTCONTRAST"))
+			{
+				mapheaderinfo[num-1]->lighting.light_contrast = (UINT8)i;
+				mapheaderinfo[num-1]->lighting.use_custom_light = true;
+			}
+			else if (fastcmp(word, "SPRITEBACKLIGHT"))
+			{
+				mapheaderinfo[num-1]->lighting.sprite_backlight = (SINT8)i;
+				mapheaderinfo[num-1]->lighting.use_custom_light = true;
+			}
+			else if (fastcmp(word, "LIGHTANGLE"))
+			{
+				if (fastcmp(word2, "EVEN"))
+				{
+					mapheaderinfo[num-1]->lighting.use_light_angle = false;
+					mapheaderinfo[num-1]->lighting.light_angle = 0;
+				}
+				else
+				{
+					mapheaderinfo[num-1]->lighting.use_light_angle = true;
+					mapheaderinfo[num-1]->lighting.light_angle = FixedAngle(FloatToFixed(atof(word2)));
+				}
+				mapheaderinfo[num-1]->lighting.use_custom_light = true;
+			}
 
 			// Individual triggers for level flags, for ease of use (and 2.0 compatibility)
 			else if (fastcmp(word, "SCRIPTISFILE"))

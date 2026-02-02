@@ -70,14 +70,11 @@ void G_FreeGameDataList(gamedatalist_t *data_list)
 		{
 			for (i = (INT32)data_list->num_data-1; i >= 0; --i)
 			{
-				if (data_list->data[i] != NULL)
-				{
-					M_ClearSecrets(data_list->data[i]);
-					G_ClearRecords(data_list->data[i]);
-					Z_Free(data_list->data[i]->filename);
-					Z_Free(data_list->data[i]);
-					data_list->data[i] = NULL;
-				}
+				M_ClearSecrets(data_list->data[i]);
+				G_ClearRecords(data_list->data[i]);
+				Z_Free(data_list->data[i]->filename);
+				Z_Free(data_list->data[i]);
+				data_list->data[i] = NULL;
 			}
 		}
 		Z_Free(data_list->data);

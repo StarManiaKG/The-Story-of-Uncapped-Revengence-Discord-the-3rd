@@ -266,7 +266,7 @@ void TSoURDt3rd_I_CursedWindowMovement(int xd, int yd)
 
 void TSoURDt3rd_I_QuakeWindow(int xd, int yd)
 {
-	if (quake.time <= 1)
+	if (!quake.time)
 	{
 		SDL_GetWindowPosition(window, &window_x, &window_y);
 	}

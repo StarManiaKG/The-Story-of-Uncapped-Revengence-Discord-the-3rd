@@ -97,6 +97,9 @@
 /// \brief Frame flags - Animate: Start at a random place in the animation (mutually exclusive with above)
 #define FF_RANDOMANIM 0x40000000
 
+/// \brief mobj_t.lightlevel is absolute instead of relative
+#define FF_ABSOLUTELIGHTLEVEL 0x80000000
+
 /// \brief Animation flags: Bits used for the animation ID
 #define SPR2F_MASK 0x3FF
 /// \brief Animation flags: "Super" flag

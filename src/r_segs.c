@@ -320,6 +320,7 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 	if (frontsector->numlights)
 	{
 		dc_numlights = frontsector->numlights;
+
 		if (dc_numlights > dc_maxlights)
 		{
 			dc_maxlights = dc_numlights;
@@ -351,15 +352,16 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 				|| (rlight->flags & FOF_FOG)
 				|| (rlight->extra_colormap && (rlight->extra_colormap->flags & CMF_FOG)))
 				lightnum = R_SideLightLevel(curline->sidedef, rlight->lightlevel) >> LIGHTSEGSHIFT;
+				//lightnum = R_GetSoftLightlevel(rlight->lightlevel);
+			//else if (R_CheckColumnFunc(COLDRAWFUNC_FUZZY))
 			else
 				lightnum = LIGHTLEVELS - 1;
+				//lightnum = R_GetSoftLightlevel(rlight->lightlevel);
 
 			if (rlight->extra_colormap && (rlight->extra_colormap->flags & CMF_FOG))
 				;
-			else if (curline->v1->y == curline->v2->y)
-				lightnum--;
-			else if (curline->v1->x == curline->v2->x)
-				lightnum++;
+			else if (P_ApplyLightOffset(lightnum, frontsector))
+				lightnum += curline->lightOffset;
 
 			rlight->lightnum = lightnum;
 		}
@@ -375,10 +377,8 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 		if (colfunc == colfuncs[COLDRAWFUNC_FOG]
 			|| (frontsector->extra_colormap && (frontsector->extra_colormap->flags & CMF_FOG)))
 			;
-		else if (curline->v1->y == curline->v2->y)
-			lightnum--;
-		else if (curline->v1->x == curline->v2->x)
-			lightnum++;
+		else if (P_ApplyLightOffset(lightnum, frontsector))
+			lightnum += curline->lightOffset;
 
 		if (lightnum < 0)
 			walllights = scalelight[0];
@@ -830,10 +830,8 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 
 			if (pfloor->fofflags & FOF_FOG || rlight->flags & FOF_FOG || (rlight->extra_colormap && (rlight->extra_colormap->flags & CMF_FOG)))
 				;
-			else if (curline->v1->y == curline->v2->y)
-				rlight->lightnum--;
-			else if (curline->v1->x == curline->v2->x)
-				rlight->lightnum++;
+			else if (P_ApplyLightOffset(rlight->lightnum, frontsector))
+				rlight->lightnum += curline->lightOffset;
 
 			p++;
 		}
@@ -852,11 +850,10 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 		else
 			lightnum = R_SideLightLevel(curline->sidedef, R_FakeFlat(frontsector, &tempsec, &templight, &templight, false)->lightlevel) >> LIGHTSEGSHIFT;
 
-		if (pfloor->fofflags & FOF_FOG || (frontsector->extra_colormap && (frontsector->extra_colormap->flags & CMF_FOG)));
-			else if (curline->v1->y == curline->v2->y)
-			lightnum--;
-		else if (curline->v1->x == curline->v2->x)
-			lightnum++;
+		if (pfloor->fofflags & FOF_FOG || (frontsector->extra_colormap && (frontsector->extra_colormap->flags & CMF_FOG)))
+			;
+		else if (P_ApplyLightOffset(lightnum, frontsector))
+			lightnum += curline->lightOffset;
 
 		if (lightnum < 0)
 			walllights = scalelight[0];
@@ -1492,10 +1489,8 @@ static void R_RenderSegLoop (void)
 
 				if (dc_lightlist[i].extra_colormap)
 					;
-				else if (curline->v1->y == curline->v2->y)
-					lightnum--;
-				else if (curline->v1->x == curline->v2->x)
-					lightnum++;
+				else if (P_ApplyLightOffset(lightnum, curline->frontsector))
+					lightnum += curline->lightOffset;
 
 				if (lightnum < 0)
 					xwalllights = scalelight[0];
@@ -2741,10 +2736,8 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 		// OPTIMIZE: get rid of LIGHTSEGSHIFT globally
 		lightnum = R_SideLightLevel(curline->sidedef, frontsector->lightlevel) >> LIGHTSEGSHIFT;
 
-		if (curline->v1->y == curline->v2->y)
-			lightnum--;
-		else if (curline->v1->x == curline->v2->x)
-			lightnum++;
+		if (P_ApplyLightOffset(lightnum, frontsector))
+			lightnum += curline->lightOffset;
 
 		if (lightnum < 0)
 			walllights = scalelight[0];

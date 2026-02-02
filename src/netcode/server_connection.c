@@ -26,8 +26,9 @@
 #include "../doomstat.h"
 
 // TSoURDt3rd
-#include "../discord/discord.h" // cv_discordinvites && DISC_D_Joinable_OnChange //
+#include "../discord/discord.h"
 #include "../STAR/star_vars.h" // Version checking routines //
+#include "../STAR/core/smkg-g_game.h" // tsourdt3rd_local //
 
 // Minimum timeout for sending the savegame
 // The actual timeout will be longer depending on the savegame length
@@ -43,10 +44,10 @@ char playeraddress[MAXPLAYERS][64];
 
 consvar_t cv_showjoinaddress = CVAR_INIT ("showjoinaddress", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL);
 
-consvar_t cv_allownewplayer = CVAR_INIT ("allowjoin", "On", CV_SAVE|CV_NETVAR|CV_CALL|CV_ALLOWLUA, CV_OnOff, DISC_D_Joinable_OnChange);
+consvar_t cv_allownewplayer = CVAR_INIT ("allowjoin", "On", CV_SAVE|CV_NETVAR|CV_CALL|CV_ALLOWLUA, CV_OnOff, DISC_Joinable_OnChange);
 
 static CV_PossibleValue_t maxplayers_cons_t[] = {{2, "MIN"}, {32, "MAX"}, {0, NULL}};
-consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_SAVE|CV_NETVAR|CV_CALL|CV_ALLOWLUA, maxplayers_cons_t, DISC_D_Joinable_OnChange);
+consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_SAVE|CV_NETVAR|CV_CALL|CV_ALLOWLUA, maxplayers_cons_t, DISC_Joinable_OnChange);
 
 static CV_PossibleValue_t joindelay_cons_t[] = {{1, "MIN"}, {3600, "MAX"}, {0, "Off"}, {0, NULL}};
 consvar_t cv_joindelay = CVAR_INIT ("joindelay", "10", CV_SAVE|CV_NETVAR, joindelay_cons_t, NULL);
@@ -259,15 +260,16 @@ static boolean SV_SendServerConfig(INT32 node)
 
 	memcpy(netbuffer->u.servercfg.server_context, server_context, 8);
 
+#if 1
 	// STAR STUFF: send our cool net stuff too! //
 	netbuffer->u.servercfg.maxplayer = (UINT8)(min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxplayers.value));
-	netbuffer->u.servercfg.allownewplayer = cv_allownewplayer.value;
+	netbuffer->u.servercfg.allownewplayer = (boolean)cv_allownewplayer.value;
 	netbuffer->u.servercfg.discord_invites = (boolean)cv_discordinvites.value;
-	netbuffer->u.servercfg.tsourdt3rd = true;
-	netbuffer->u.servercfg.tsourdt3rd_majorversion = (UINT8)TSoURDt3rd_CurrentMajorVersion();
-	netbuffer->u.servercfg.tsourdt3rd_minorversion = (UINT8)TSoURDt3rd_CurrentMinorVersion();
-	netbuffer->u.servercfg.tsourdt3rd_subversion = (UINT8)TSoURDt3rd_CurrentSubversion();
-	netbuffer->u.servercfg.tsourdt3rd_fullversion = (UINT8)TSoURDt3rd_CurrentVersion();
+	netbuffer->u.servercfg.tsourdt3rd = 1;
+	netbuffer->u.servercfg.tsourdt3rd_majorversion = tsourdt3rd_local.major_version;
+	netbuffer->u.servercfg.tsourdt3rd_minorversion = tsourdt3rd_local.minor_version;
+	netbuffer->u.servercfg.tsourdt3rd_subversion = tsourdt3rd_local.sub_version;
+#endif
 
 	{
 		const size_t len = sizeof (serverconfig_pak);
@@ -452,6 +454,7 @@ void PT_ClientJoin(SINT8 node)
 	char names[MAXSPLITSCREENPLAYERS][MAXPLAYERNAME + 1];
 	INT32 numplayers = netbuffer->u.clientcfg.localplayers;
 	INT32 rejoinernum;
+	const boolean is_tsourdt3rd = (((doomcom->datalength) == sizeof(clientconfig_pak)) && netbuffer->u.clientcfg.tsourdt3rd.build == IS_TSOURDT3RD); // Check the packet lenght to skip potential garbo data!
 
 	// Ignore duplicate packets
 	if (client || netnodes[node].ingame)
@@ -487,6 +490,7 @@ void PT_ClientJoin(SINT8 node)
 		return;
 	}
 	DEBFILE("new node joined\n");
+	(void)is_tsourdt3rd; /// \todo: STAR NOTE: what is this bro
 
 	if (gamestate == GS_LEVEL || gamestate == GS_INTERMISSION)
 	{

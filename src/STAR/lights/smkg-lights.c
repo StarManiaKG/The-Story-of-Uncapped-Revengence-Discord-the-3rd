@@ -14,21 +14,32 @@
 #include "smkg-lights.h"
 #include "smkg-coronas.h"
 
+#include "../../i_video.h"
 #include "../../v_video.h"
+
+#ifdef HWRENDER
+#include "../../hardware/hw_glob.h"
+#endif
+
+// ------------------------ //
+//        Variables
+// ------------------------ //
+
+#define ALPHA_ENABLED
 
 // ------------------------ //
 //        Functions
 // ------------------------ //
 
 // -----------------------
-// Rendering
+//              Rendering
 // -----------------------
 
-boolean LCR_SuperSonicLight(mobj_t *mobj)
+boolean L_RenderPlayerLight(mobj_t *mobj)
 {
 	player_t *player = NULL;
 
-	if (mobj == NULL || mobj->sprite != SPR_PLAY)
+	if (mobj->sprite != SPR_PLAY)
 		return false;
 
 	if (mobj->target && mobj->target->player)
@@ -37,23 +48,34 @@ boolean LCR_SuperSonicLight(mobj_t *mobj)
 		player = mobj->tracer->player;
 	else
 		player = mobj->player;
-	if (player) return (player->powers[pw_super]);
 
-	return (states[mobj->state - states].frame & SPR2F_SUPER);
+	if (player != NULL)
+		return (player->powers[pw_super]);
+	return (mobj->frame & SPR2F_SUPER);
 }
 
 // -----------------------
-// Coloring
+//               Coloring
 // -----------------------
 
-boolean LCR_ObjectColorToCoronaLight(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *alpha, boolean dynamic)
+boolean L_UseObjectColor(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *alpha, boolean dynamic)
 {
-	RGBA_t new_color;
+	RGBA_t new_color = V_GetColor(skincolors[mobj->color].ramp[8]);
 
-	if (mobj == NULL) return false;
-	new_color = V_GetColor(skincolors[mobj->color].ramp[8]);
+	if (mobj->color == SKINCOLOR_NONE)
+	{
+		return false;
+	}
 
-	if (rgba_table != NULL)
+#ifdef HWRENDER
+	if (rendermode == render_opengl)
+	{
+		RGBA_t *palette = HWR_GetTexturePalette();
+		new_color = palette[skincolors[mobj->color].ramp[8]];
+	}
+#endif
+
+	if (rgba_table != NULL && new_color.rgba)
 	{
 		if (dynamic)
 		{
@@ -64,17 +86,18 @@ boolean LCR_ObjectColorToCoronaLight(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *al
 			rgba_table->rgba = new_color.rgba;
 	}
 
+#ifdef ALPHA_ENABLED
 	if (alpha != NULL)
 		(*alpha) = new_color.s.alpha;
+#endif
 
 	return true;
 }
 
-boolean LCR_EmeraldLight(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *alpha, boolean dynamic)
+boolean L_UseEmeraldLight(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *alpha, boolean dynamic)
 {
 	light_t *light_to_use = NULL;
 
-	if (mobj == NULL) return false;
 	switch (mobj->type)
 	{
 		case MT_EMERALD1: light_to_use = &lspr[GREENSHINE_L]; break;
@@ -84,7 +107,22 @@ boolean LCR_EmeraldLight(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *alpha, boolean
 		case MT_EMERALD5: light_to_use = &lspr[ORANGESHINE_L]; break;
 		case MT_EMERALD6: light_to_use = &lspr[REDSHINE_L]; break;
 		case MT_EMERALD7: light_to_use = &lspr[GREYSHINE_L]; break;
-		default: return false;
+		default:
+		{
+			switch (mobj->state-states)
+			{
+				case S_CEMG1: case S_ORBITEM1: light_to_use = &lspr[GREENSHINE_L]; break;
+				case S_CEMG2: case S_ORBITEM2: light_to_use = &lspr[PINKSHINE_L]; break;
+				case S_CEMG3: case S_ORBITEM3: light_to_use = &lspr[BLUESHINE_L]; break;
+				case S_CEMG4: case S_ORBITEM4: light_to_use = &lspr[LBLUESHINE_L]; break;
+				case S_CEMG5: case S_ORBITEM5: light_to_use = &lspr[ORANGESHINE_L]; break;
+				case S_CEMG6: case S_ORBITEM6: light_to_use = &lspr[REDSHINE_L]; break;
+				case S_CEMG7: case S_ORBITEM7: light_to_use = &lspr[GREYSHINE_L]; break;
+				case S_ORBITEM8: light_to_use = &lspr[BLACKSHIELD_L]; break;
+				default: return false;
+			}
+			break;
+		}
 	}
 
 	if (rgba_table != NULL)
@@ -95,8 +133,26 @@ boolean LCR_EmeraldLight(mobj_t *mobj, RGBA_t *rgba_table, UINT8 *alpha, boolean
 			rgba_table->rgba = light_to_use->corona_color;
 	}
 
+#ifdef ALPHA_ENABLED
 	if (alpha != NULL)
+	{
+#if 0
 		(*alpha) = V_GetColor(skincolors[mobj->color].ramp[8]).s.alpha;
+#else
+		if (rendermode == render_soft)
+		{
+			(*alpha) = V_GetColor(skincolors[mobj->color].ramp[8]).s.alpha;
+		}
+#ifdef HWRENDER
+		else if (rendermode == render_opengl)
+		{
+			RGBA_t *palette = HWR_GetTexturePalette();
+			(*alpha) = palette[skincolors[mobj->color].ramp[8]].s.alpha;
+		}
+#endif
+#endif
+	}
+#endif
 
 	return true;
 }
@@ -112,8 +168,9 @@ light_t lspr[NUMLIGHTS] =
 	// weapons
 	// RINGSPARK_L
 	{LIGHT_SPR,      	0.0f,   	0.0f, 	0x0000e0ff,  	16.0f, 		0x0000e0ff,  	 32.0f, 	0.0f, 0,					NULL, NULL}, // Tails 09-08-2002
-	// SUPERSONIC_L
-	{/*DYNLIGHT_SPR*/LIGHT_SPR,   	0.0f,   	0.0f, 	0xff00e0ff,  	32.0f, 		0xff00e0ff, 	128.0f, 	0.0f, 0,			LCR_SuperSonicLight, LCR_ObjectColorToCoronaLight}, // Tails 09-08-2002
+	// PLAYER_L
+	// DYNLIGHT_SPR // LIGHT_SPR
+	{LIGHT_SPR,   	0.0f,   	0.0f, 	0xff00e0ff,  	32.0f, 		0xff00e0ff, 	128.0f, 	0.0f, 0,			L_RenderPlayerLight, L_UseObjectColor}, // Tails 09-08-2002
 	// SUPERSPARK_L
 	{LIGHT_SPR,      	0.0f,   	0.0f, 	0xe0ffffff,   	 8.0f, 		0xe0ffffff,  	 64.0f, 	0.0f, 0,					NULL, NULL},
 	// INVINCIBLE_L
@@ -143,10 +200,12 @@ light_t lspr[NUMLIGHTS] =
 	// RINGLIGHT_L
 	//{DYNLIGHT_SPR,   0.0f,   0.0f, 0x60b0f0f0,   0.0f, 0x30b0f0f0, 100.0f, 0.0f, 0,				NULL, NULL},
 	{
-		DYNLIGHT_SPR,
-		0.0f, 0.0f, 0x0000e0ff,
-		25.0f, 0x0000e0ff, 25.0f,
-		0.0f, 0,
+		//DYNLIGHT_SPR,
+		LIGHT_SPR,
+		0.0f, 0.0f,
+		0x0000e0ff, 25.0f,
+		0x0000e0ff, 25.0f, 0.0f,
+		0,
 		NULL, NULL
 	},
 
@@ -194,48 +253,33 @@ light_t lspr[NUMLIGHTS] =
 
 	{	// ROCKET_L
 		ROCKET_SPR,
-		0.0f,
-		0.0f,
-		0x606060f0,
-		20.0f,
-		0x4020f7f7,
-		120.0f,
-		0.0f,
+		0.0f, 0.0f,
+		0x606060f0, 20.0f,
+		0x4020f7f7, 120.0f, 0.0f,
 		0,
-		NULL,
-		NULL
+		NULL, NULL
 	},
 	{	// ROCKETEXP_L
-		DYNLIGHT_SPR,
-		0.0f,
-		0.0f,
-		0x606060f0,
-		20.0f,
-		0x4020f7f7,
-		200.0f,
-		0.0f,
+		//DYNLIGHT_SPR,
+		LIGHT_SPR,
+		0.0f, 0.0f,
+		0x606060f0, 20.0f,
+		0x4020f7f7, 200.0f, 0.0f,
 		0,
-		NULL,
-		NULL
+		NULL, NULL
 	},
 
-	// EMERALD_L
-	{
+	{	// EMERALD_L
 		LIGHT_SPR,
-		0.0f,
-		14.0f,
-		0x6070ff70,
-		60.0f,
-		0x4070ff70,
-		100.0f,
-		0.0f,
+		0.0f, 14.0f,
+		0x6070ff70, 60.0f,
+		0x4070ff70, 100.0f, 0.0f,
 		0,
-		NULL,
-		LCR_EmeraldLight
+		NULL, L_UseEmeraldLight
 	},
 
 	// GENERIC_MOBJLIGHT_L
-	{LIGHT_SPR,      0.0f,   0.0f, 0xe0ffffff,  64.0f, 0xe0ffffff, 384.0f, 0.0f, 0,						NULL, LCR_ObjectColorToCoronaLight},
+	{LIGHT_SPR,      0.0f,   0.0f, 0xe0ffffff,  64.0f, 0xe0ffffff, 384.0f, 0.0f, 0,						NULL, L_UseObjectColor},
 
 	// weapons
 	// LT_PLASMA
@@ -362,7 +406,7 @@ light_t *t_lspr[NUMSPRITES] =
 	&lspr[NOLIGHT],				// SPR_UNKN
 
 	&lspr[GENERIC_MOBJLIGHT_L],	// SPR_THOK - Thok! mobj
-	&lspr[SUPERSONIC_L],		// SPR_PLAY
+	&lspr[PLAYER_L],			// SPR_PLAY
 
 	// Enemies
 	&lspr[NOLIGHT],				// SPR_POSS - Crawla (Blue)
@@ -404,7 +448,7 @@ light_t *t_lspr[NUMSPRITES] =
 	&lspr[REDBALL_L],			// SPR_DRAB - Dragonbomber
 
 	// Generic Boss Items
-	&lspr[JETLIGHT_L],			// SPR_JETF - Boss jet fumes
+	&lspr[GENERIC_MOBJLIGHT_L],	// GENERIC_MOBJLIGHT_L	// JETLIGHT_L 	// SPR_JETF - Boss jet fumes
 
 	// Boss 1 (Greenflower)
 	&lspr[NOLIGHT],				// SPR_EGGM - Boss 1
@@ -427,12 +471,12 @@ light_t *t_lspr[NUMSPRITES] =
 	&lspr[NOLIGHT],				// SPR_EGR1 - Boss 4 Spectator Eggrobo
 
 	// Boss 5 (Arid Canyon)
-	&lspr[NOLIGHT],				// SPR_FANG - replaces EGGQ
+	&lspr[PLAYER_L],			// SPR_FANG - replaces EGGQ
 	&lspr[NOLIGHT],				// SPR_BRKN
 	&lspr[NOLIGHT],				// SPR_WHAT
 	&lspr[INVINCIBLE_L],		// SPR_VWRE
 	&lspr[INVINCIBLE_L],		// SPR_PROJ - projector light
-	&lspr[NOLIGHT],				// SPR_FBOM
+	&lspr[REDBALL_L],			// SPR_FBOM
 	&lspr[NOLIGHT],				// SPR_FSGN
 	&lspr[REDSHINE_L],			// SPR_BARX - bomb explosion (also used by barrel)
 	&lspr[NOLIGHT],				// SPR_BARD - bomb dust (also used by barrel)
@@ -456,7 +500,7 @@ light_t *t_lspr[NUMSPRITES] =
 	&lspr[ROCKET_L],			// SPR_MNPL - Mini napalm bombs!
 
 	// Metal Sonic
-	&lspr[GENERIC_MOBJLIGHT_L],	// SPR_METL
+	&lspr[PLAYER_L],			// SPR_METL
 	&lspr[PINKSHINE_L],			// SPR_MSCF
 	&lspr[PINKSHINE_L],			// SPR_MSCB
 
@@ -466,10 +510,10 @@ light_t *t_lspr[NUMSPRITES] =
 	&lspr[ORANGESHINE_L], 		// SPR_TOKE - Special Stage Token
 	&lspr[REDBALL_L], 			// SPR_RFLG - Red CTF Flag
 	&lspr[BLUEBALL_L],			// SPR_BFLG - Blue CTF Flag
-	&lspr[NOLIGHT],				// SPR_SPHR - Sphere
+	&lspr[NOLIGHT],	// BLUEBALL_L // NOLIGHT			// SPR_SPHR - Sphere
 	&lspr[RINGLIGHT_L],			// SPR_NCHP - NiGHTS chip
 	&lspr[RINGLIGHT_L],			// SPR_NSTR - NiGHTS star
-	&lspr[EMERALD_L],			// SPR_EMBM - Emblem
+	&lspr[GENERIC_MOBJLIGHT_L],	// SPR_EMBM - Emblem
 	&lspr[EMERALD_L],			// SPR_CEMG - Chaos Emeralds
 	&lspr[GREENSHINE_L],		// SPR_SHRD - Emerald Hunt
 
@@ -517,8 +561,13 @@ light_t *t_lspr[NUMSPRITES] =
 
 	// Projectiles
 	&lspr[NOLIGHT],				// SPR_MISL
+#if 0
 	&lspr[SMALLREDBALL_L],		// SPR_LASR - GFZ3 laser
 	&lspr[REDSHINE_L],			// SPR_LASF - GFZ3 laser flames
+#else
+	&lspr[NOLIGHT],				// SPR_LASR - GFZ3 laser
+	&lspr[SMALLREDBALL_L],		// SPR_LASF - GFZ3 laser flames
+#endif
 	&lspr[NOLIGHT],				// SPR_TORP - Torpedo
 	&lspr[BLUESHINE_L],			// SPR_ENRG - Energy ball
 	&lspr[NOLIGHT],				// SPR_MINE - Skim mine
@@ -586,7 +635,7 @@ light_t *t_lspr[NUMSPRITES] =
 	&lspr[NOLIGHT],				// SPR_BANR - Banner/pole
 	&lspr[NOLIGHT],				// SPR_PINE - Pine Tree
 	&lspr[NOLIGHT],				// SPR_CEZB - Bush
-	&lspr[NOLIGHT],				// SPR_CNDL - Candle/pricket
+	&lspr[REDBALL_L],			// SPR_CNDL - Candle/pricket
 	&lspr[NOLIGHT],				// SPR_FLMH - Flame holder
 	&lspr[REDBALL_L],			// SPR_CTRC - Fire torch
 	&lspr[NOLIGHT],				// SPR_CFLG - Waving flag/segment
@@ -608,7 +657,7 @@ light_t *t_lspr[NUMSPRITES] =
 	&lspr[NOLIGHT],				// SPR_TAZD - Dust devil
 	&lspr[NOLIGHT],				// SPR_ADST - Arid dust
 	&lspr[NOLIGHT],				// SPR_MCRT - Minecart
-	&lspr[REDSHINE_L],			// SPR_MCSP - Minecart spark
+	&lspr[REDBALL_L],			// SPR_MCSP - Minecart spark
 	&lspr[NOLIGHT],				// SPR_SALD - Saloon door
 	&lspr[NOLIGHT],				// SPR_TRAE - Train cameo locomotive
 	&lspr[NOLIGHT],				// SPR_TRAI - Train cameo wagon
@@ -639,14 +688,14 @@ light_t *t_lspr[NUMSPRITES] =
 	&lspr[NOLIGHT],				// SPR_ROSY
 
 	// Halloween Scenery
-	&lspr[RINGLIGHT_L],			// SPR_PUMK - Pumpkins
+	&lspr[NOLIGHT],				// SPR_PUMK - Pumpkins
 	&lspr[NOLIGHT],				// SPR_HHPL - Dr Seuss Trees
 	&lspr[NOLIGHT],				// SPR_SHRM - Mushroom
 	&lspr[NOLIGHT],				// SPR_HHZM - Misc
 
 	// Azure Temple Scenery
 	&lspr[NOLIGHT],				// SPR_BGAR - ATZ Gargoyles
-	&lspr[NOLIGHT],				// SPR_RCRY - ATZ Red Crystal (Target)
+	&lspr[REDBALL_L],			// SPR_RCRY - ATZ Red Crystal (Target)
 	&lspr[GREENBALL_L],			// SPR_CFLM - Green torch flame
 
 	// Botanic Serenity Scenery
@@ -677,10 +726,10 @@ light_t *t_lspr[NUMSPRITES] =
 	&lspr[BLACKSHIELD_L],		// SPR_ARMB - Armageddon Shield Ring, Back
 	&lspr[WHITESHIELD_L],		// SPR_WIND - Whirlwind Shield Orb
 	&lspr[YELLOWSHIELD_L],		// SPR_MAGN - Attract Shield Orb
-	&lspr[ORANGESHINE_L], // ORANGESHIELD_L			// SPR_ELEM - Elemental Shield Orb
+	&lspr[ORANGESHINE_L], // ORANGESHIELD_L // ORANGESHINE_L			// SPR_ELEM - Elemental Shield Orb
 	&lspr[BLUESHIELD_L],		// SPR_FORC - Force Shield Orb
 	&lspr[GREENSHIELD_L],		// SPR_PITY - Pity Shield Orb
-	&lspr[ORANGESHINE_L], // ORANGESHIELD_L			// SPR_FIRS - Flame Shield Orb
+	&lspr[ORANGESHINE_L], // ORANGESHIELD_L	// ORANGESHINE_L		// SPR_FIRS - Flame Shield Orb
 	&lspr[LBLUESHINE_L],		// SPR_BUBS - Bubble Shield Orb
 	&lspr[BLUESHIELD_L],		// SPR_ZAPS - Thunder Shield Orb
 	&lspr[INVINCIBLE_L],		// SPR_IVSP - invincibility sparkles
@@ -754,7 +803,7 @@ light_t *t_lspr[NUMSPRITES] =
 	&lspr[NOLIGHT],				// SPR_LHRT
 
 	// Ring Weapons
-	&lspr[RINGLIGHT_L], 		// SPR_RRNG - Red Ring
+	&lspr[REDSHINE_L], 			// SPR_RRNG - Red Ring
 	&lspr[RINGLIGHT_L], 		// SPR_RNGB - Bounce Ring
 	&lspr[RINGLIGHT_L], 		// SPR_RNGR - Rail Ring
 	&lspr[RINGLIGHT_L], 		// SPR_RNGI - Infinity Ring
@@ -792,8 +841,8 @@ light_t *t_lspr[NUMSPRITES] =
 	&lspr[NOLIGHT],				// SPR_TOAD
 
 	// NiGHTS Stuff
-	&lspr[SUPERSONIC_L],		// SPR_NDRN - NiGHTS drone
-	&lspr[NIGHTSLIGHT_L],		// SPR_NSPK - NiGHTS sparkle
+	&lspr[NIGHTSLIGHT_L],		// SPR_NDRN - NiGHTS drone
+	&lspr[NOLIGHT],	//NIGHTSLIGHT_L	// SPR_NSPK - NiGHTS sparkle
 	&lspr[NOLIGHT],				// SPR_NBMP - NiGHTS Bumper
 	&lspr[NOLIGHT],				// SPR_HOOP - NiGHTS hoop sprite
 	&lspr[NOLIGHT],				// SPR_HSCR - NiGHTS score sprite
@@ -988,5 +1037,5 @@ light_t *t_lspr[NUMSPRITES] =
 	&lspr[NOLIGHT],
 
 	[SPR_EEGG] = &lspr[GREENSHINE_L],	// SPR_EEGG - Easter Eggs
-	&lspr[SUPERSONIC_L],				// SPR_TF2D - Dispenser goin' up
+	&lspr[REDSHINE_L],					// SPR_TF2D - Dispenser goin' up
 };

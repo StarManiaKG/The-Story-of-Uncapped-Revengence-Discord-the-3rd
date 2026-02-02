@@ -26,9 +26,9 @@
 //        Functions
 // ------------------------ //
 
-#ifdef TSOURDT3RD_DEBUGGING
+//#ifdef _TSOURDT3RD_DEBUGGING
 	#define WRITETOFILE
-#endif
+//#endif
 
 //#define SAVE_BLOCK
 #define TSOURDT3RD_ARCHIVEBLOCK_USERS 0x7FA5C508

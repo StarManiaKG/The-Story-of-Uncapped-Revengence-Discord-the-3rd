@@ -64,6 +64,10 @@ void P_CopySectorSlope(line_t *line);
 
 pslope_t *P_SlopeById(UINT16 id);
 
+//
+// P_GetZAt
+//
+
 // Returns the height of the sloped plane at (x, y) as a fixed_t
 fixed_t P_GetSlopeZAt(const pslope_t *slope, fixed_t x, fixed_t y);
 
@@ -122,4 +126,5 @@ typedef struct
 
 void T_DynamicSlopeLine (dynlineplanethink_t* th);
 void T_DynamicSlopeVert (dynvertexplanethink_t* th);
+
 #endif // #ifndef P_SLOPES_H__

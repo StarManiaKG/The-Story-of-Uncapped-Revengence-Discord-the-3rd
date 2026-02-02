@@ -1,8 +1,8 @@
 // SONIC ROBO BLAST 2; TSOURDT3RD
-// PORTED FROM DR.ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2020-2024 by James Robert Roman
-// Copyright (C) 2024 by Kart Krew
+// Copyright (C) 2020-2025 by James Robert Roman
+// Copyright (C) 2024-2025 by Kart Krew
+// Copyright (C) 2024-2026 by StarManiaKG
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -23,12 +23,11 @@
 #error "Need CSPRNG."
 #endif
 
-#include "../netcode/drrr-m_swap.h" // MSBF_SHORT & MSBF_LONG //
-
-#include "../../doomdef.h"
-#include "../../command.h"
-#include "../../netcode/d_clisrv.h"
-#include "../../netcode/i_net.h"
+#include "../doomdef.h"
+#include "../command.h"
+#include "../m_swap.h" // MSBF_SHORT & MSBF_LONG //
+#include "d_clisrv.h"
+#include "i_net.h"
 #include "stun.h"
 
 /* https://gist.github.com/zziuni/3741933 */

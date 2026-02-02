@@ -50,7 +50,6 @@ UINT8 *HWR_GetScreenshot(void);
 boolean HWR_Screenshot(const char *pathname);
 
 void HWR_AddCommands(void);
-void transform(float *cx, float *cy, float *cz);
 INT32 HWR_GetTextureUsed(void);
 void HWR_DoPostProcessor(player_t *player);
 void HWR_StartScreenWipe(void);
@@ -60,9 +59,12 @@ void HWR_DoWipe(UINT8 wipenum, UINT8 scrnnum);
 void HWR_MakeScreenFinalTexture(void);
 void HWR_DrawScreenFinalTexture(int width, int height);
 
+void transform(float *cx, float *cy, float *cz);
+boolean HWR_CheckBBox(fixed_t *bspcoord);
+
 // This stuff is put here so models can use them
 boolean HWR_UseShader(void);
-void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *colormap);
+void HWR_Lighting(FSurfaceInfo *Surface, INT32 light_level, extracolormap_t *colormap, const boolean directional); // hw_main.c: Lighting and fog
 UINT8 HWR_FogBlockAlpha(INT32 light, extracolormap_t *colormap); // Let's see if this can work
 
 UINT8 HWR_GetTranstableAlpha(INT32 transtablenum);
@@ -82,9 +84,7 @@ extern consvar_t cv_glcoronasize;
 #endif
 
 extern consvar_t cv_glshaders, cv_glallowshaders;
-extern consvar_t cv_glmodels;
-extern consvar_t cv_glmodelinterpolation;
-extern consvar_t cv_glmodellighting;
+extern consvar_t cv_glmodels, cv_glmodelinterpolation, cv_glmodellighting;
 extern consvar_t cv_glfiltermode;
 extern consvar_t cv_glanisotropicmode;
 extern consvar_t cv_glsolvetjoin;

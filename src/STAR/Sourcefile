@@ -11,10 +11,6 @@ core/smkg-p_setup.c
 core/smkg-s_audio.c
 core/smkg-s_jukebox.c
 core/smkg-s_exmusic.c
-core/exmusic_types/smkg-defaultmaptracks.c
-core/exmusic_types/smkg-gameover.c
-core/exmusic_types/smkg-bosses.c
-core/exmusic_types/smkg-intermission.c
 events/smkg-easter.c
 events/smkg-aprilfools.c
 lights/smkg-lights.c
@@ -46,6 +42,8 @@ menus/menudefs/transient/drrr-message-box.c
 menus/menudefs/transient/drrr-virtual-keyboard.c
 menus/menudefs/transient/smkg-options-tsourdt3rd-extras-jukebox.c
 menus/menudefs/transient/smkg-options-tsourdt3rd-extras-snake.c
+monocypher/monocypher.c
+monocypher/smkg-m_hash.c
 misc/smkg-m_misc.c
 misc/smkg-m_intro.c
 misc/introdefs/smkg-intros-purefat.c
@@ -57,4 +55,3 @@ parser/defs/smkg-ps_def_jukedef.c
 parser/defs/smkg-ps_def_exmusdef.c
 sdl/smkg-i_vid.c
 sdl/smkg-i_sys.c
-stun/stun.c

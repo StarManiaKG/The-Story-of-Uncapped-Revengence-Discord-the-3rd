@@ -30,12 +30,75 @@ UINT16 slopecount = 0;
 
 static void P_UpdateMidtextureSlopesForSector(sector_t *sector);
 
+// Calculate slope light
+static void P_UpdateSlopeLightOffset(pslope_t *slope)
+{
+	const UINT8 contrast = maplighting.contrast;
+
+	fixed_t contrastFixed = ((fixed_t)contrast) * FRACUNIT;
+	fixed_t zMul = FRACUNIT;
+	fixed_t light = FRACUNIT;
+	fixed_t extralight = 0;
+
+	if (slope->normal.z == 0)
+	{
+		slope->lightOffset = slope->hwLightOffset = 0;
+		return;
+	}
+
+	if (maplighting.directional == true)
+	{
+		fixed_t nX = -slope->normal.x;
+		fixed_t nY = -slope->normal.y;
+		fixed_t nLen = FixedHypot(nX, nY);
+
+		if (nLen == 0)
+		{
+			slope->lightOffset = slope->hwLightOffset = 0;
+			return;
+		}
+
+		nX = FixedDiv(nX, nLen);
+		nY = FixedDiv(nY, nLen);
+
+		/*
+		 * if (slope is ceiling)
+		 * {
+		 *	// There is no good way to calculate this condition here.
+		 *	// We reverse it in R_FindPlane now.
+		 *	nX = -nX;
+		 *	nY = -nY;
+		 *	}
+		 */
+
+		light = FixedMul(nX, FINECOSINE(maplighting.angle >> ANGLETOFINESHIFT))
+		+ FixedMul(nY, FINESINE(maplighting.angle >> ANGLETOFINESHIFT));
+		light = (light + FRACUNIT) / 2;
+	}
+	else
+	{
+		light = FixedDiv(R_PointToAngle2(0, 0, abs(slope->d.x), abs(slope->d.y)), ANGLE_90);
+	}
+
+	const int delta = abs(slope->zdelta)*3/2; // *3/2, to make 60 degree slopes match walls.
+	zMul = min(FRACUNIT, delta);
+	contrastFixed = FixedMul(contrastFixed, zMul);
+
+	extralight = -contrastFixed + FixedMul(light, contrastFixed * 2);
+
+	// Between -2 and 2 for software, -8 and 8 for hardware
+	slope->lightOffset = FixedFloor((extralight / 8) + (FRACUNIT / 2)) / FRACUNIT;
+	slope->hwLightOffset = FixedFloor(extralight + (FRACUNIT / 2)) / FRACUNIT;
+}
+
 // Calculate line normal
 void P_CalculateSlopeNormal(pslope_t *slope)
 {
 	slope->normal.z = FINECOSINE(slope->zangle>>ANGLETOFINESHIFT);
 	slope->normal.x = FixedMul(FINESINE(slope->zangle>>ANGLETOFINESHIFT), slope->d.x);
 	slope->normal.y = FixedMul(FINESINE(slope->zangle>>ANGLETOFINESHIFT), slope->d.y);
+
+	P_UpdateSlopeLightOffset(slope);
 }
 
 static void CalculateNormalDir(pslope_t *slope, dvector3_t *dnormal)
@@ -122,6 +185,7 @@ static void ReconfigureViaVertexes (pslope_t *slope, const vector3_t v1, const v
 	}
 
 	P_CalculateSlopeVectors(slope);
+	P_UpdateSlopeLightOffset(slope);
 }
 
 /// Setup slope via constants.
@@ -174,6 +238,7 @@ static void ReconfigureViaConstants (pslope_t *slope, const double pa, const dou
 	DVector3_Load(&slope->dorigin, 0, 0, d_o);
 
 	CalculateNormalDir(slope, &dnormal);
+	P_UpdateSlopeLightOffset(slope);
 }
 
 /// Recalculate dynamic slopes.

@@ -61,4 +61,32 @@ void M_DrawPerfStats(void);
 void PS_PerfStats_OnChange(void);
 void PS_SampleSize_OnChange(void);
 
+#if 1
+struct perfstatrow;
+
+typedef struct perfstatrow perfstatrow_t;
+
+struct perfstatrow {
+	const char  * lores_label;
+	const char  * hires_label;
+	ps_metric_t * metric;
+	UINT8         flags;
+};
+
+#define PS_TIME      1  // metric measures time (uses precise_t instead of INT32)
+#define PS_LEVEL     2  // metric is valid only when a level is active
+#define PS_SW        4  // metric is valid only in software mode
+#define PS_HW        8  // metric is valid only in opengl mode
+#define PS_BATCHING  16 // metric is valid only when opengl batching is active
+#define PS_HIDE_ZERO 32 // hide metric if its value is zero
+
+extern perfstatrow_t rendertime_rows[];
+extern perfstatrow_t interpolation_rows[];
+extern perfstatrow_t batchcount_rows[];
+extern perfstatrow_t batchcalls_rows[];
+
+void PS_UpdateFrameStats(void);
+INT32 PS_GetMetricScreenValue(ps_metric_t *metric, boolean time_metric);
+#endif
+
 #endif

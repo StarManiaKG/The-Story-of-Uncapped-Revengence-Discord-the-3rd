@@ -2,7 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 1999-2023 by Sonic Team Junior.
-// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2026 by StarManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -16,10 +16,6 @@
 
 #ifdef STAR_LIGHTING
 
-// ------------------------ //
-//        Variables
-// ------------------------ //
-
 static boolean M_Sys_HandleLighting(INT32 choice);
 
 menuitem_t TSoURDt3rd_OP_Video_LightingMenu[] =
@@ -28,6 +24,11 @@ menuitem_t TSoURDt3rd_OP_Video_LightingMenu[] =
 	{IT_STRING | IT_CVAR, NULL, "Corona Size", &cv_tsourdt3rd_video_lighting_coronas_size, 0},
 	{IT_STRING | IT_CVAR, NULL, "Corona Lighting Type", &cv_tsourdt3rd_video_lighting_coronas_lightingtype, 0},
 	{IT_STRING | IT_CVAR, NULL, "Corona Drawing Mode", &cv_tsourdt3rd_video_lighting_coronas_drawingmode, 0},
+
+	{IT_SPACE, NULL, NULL, NULL, 0},
+
+	{IT_STRING | IT_CVAR, NULL, "Corona Wall Lighting", &cv_tsourdt3rd_video_lighting_coronas_walllighting, 0},
+	{IT_STRING | IT_CVAR, NULL, "Corona Max Lights", &cv_tsourdt3rd_video_lighting_coronas_maxlights, 0},
 };
 
 tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_Video_LightingMenu[] =
@@ -36,6 +37,11 @@ tsourdt3rd_menuitem_t TSoURDt3rd_TM_OP_Video_LightingMenu[] =
 	{NULL, "Change the size of the coronas that appear.", {NULL}, 0, 0},
 	{NULL, "Do you want static, sprite based coronas, or dynamic coronas?", {NULL}, 0, 0},
 	{NULL, "The drawing mode of the coronas.", {NULL}, 0, 0},
+
+	{NULL, NULL, {NULL}, 0, 0},
+
+	{NULL, "BETA: Can coronas render on walls?", {NULL}, 0, 0},
+	{NULL, "How many coronas can we render at a time?", {NULL}, 0, 0},
 };
 
 menu_t TSoURDt3rd_OP_Video_LightingDef =
@@ -65,10 +71,6 @@ tsourdt3rd_menu_t TSoURDt3rd_TM_OP_Video_LightingDef = {
 	NULL,
 	&TSoURDt3rd_TM_OP_VideoDef
 };
-
-// ------------------------ //
-//        Functions
-// ------------------------ //
 
 static boolean M_Sys_HandleLighting(INT32 choice)
 {

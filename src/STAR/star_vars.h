@@ -44,12 +44,6 @@ extern TSoURDt3rd_t TSoURDt3rdPlayers[MAXPLAYERS];
 
 //// VARIABLES ////
 // Audio //
-#if 1
-// MARKED FOR REMOVAL
-// Game Over Music
-extern const char gameoverMusic[9][7];
-extern INT32 gameoverMusicTics[9];
-#endif
 // Star SFX
 extern INT32 STAR_JoinSFX;
 extern INT32 STAR_LeaveSFX;
@@ -80,7 +74,7 @@ const char *STAR_SetWindowTitle(void);
 #if 1
 // MARKED FOR REMOVAL
 // Audio //
-const char *TSoURDt3rd_DetermineLevelMusic(void);
+const char *TSoURDt3rd_EXMusic_DetermineLevelMusic(void);
 #endif
 
 // Miscellanious //

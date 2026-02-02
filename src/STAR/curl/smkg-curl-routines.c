@@ -10,12 +10,12 @@
 /// \brief Easy curl routines for TSoURDt3rd
 
 #ifdef HAVE_CURL
-#include <curl/curl.h>
 
+#include <curl/curl.h>
 #include "smkg-curl.h"
 
 #include "../smkg-cvars.h"
-#include "../star_vars.h"
+#include "../core/smkg-g_game.h"
 #include "../menus/smkg-m_sys.h" // menumessage //
 #include "../misc/smkg-m_misc.h"
 
@@ -36,6 +36,9 @@
 //
 void TSoURDt3rd_CurlRoutine_FindUpdates(void)
 {
+	const char *internet_data_filename = "tsourdt3rd_findupdate_data.txt";
+	const char *build_path = TSoURDt3rd_FOL_ReturnHomepath_Build();
+
 	char *return_info = NULL;
 	char *return_version = NULL;
 	INT32 return_code = 0;
@@ -53,7 +56,7 @@ void TSoURDt3rd_CurlRoutine_FindUpdates(void)
 		if (!dedicated && !menumessage.active && send_event_message)
 		{
 			// We use some checks to screen the message up here, as it could get skipped out by another message otherwise
-			TSoURDt3rd_M_StartMessage(header_string, message_string, NULL, MM_NOTHING, NULL, NULL);
+			TSoURDt3rd_M_StartPlainMessage(header_string, message_string);
 			send_event_message = false;
 		}
 		return;
@@ -71,8 +74,11 @@ void TSoURDt3rd_CurlRoutine_FindUpdates(void)
 		"https://raw.githubusercontent.com/StarManiaKG/The-Story-of-Uncapped-Revengence-Discord-the-3rd/%s/src/STAR/star_webinfo.h",
 		compbranch
 	);
+#if 0
+	return;
+#endif
 	TSoURDt3rd_Curl_FindStringWithinURL(
-		TSoURDt3rd_FIL_AccessFile(TSOURDT3RD_APP, "tsourdt3rd_data.txt", "w+"),
+		TSoURDt3rd_FIL_AccessFile(build_path, internet_data_filename, "w+"),
 		"#define TSOURDT3RDVERSION",
 		version_url,
 		&return_info,
@@ -89,6 +95,7 @@ void TSoURDt3rd_CurlRoutine_FindUpdates(void)
 			return_version = Z_StrDup(return_info);
 			return_info = TSoURDt3rd_M_RemoveStringChars(return_info, ".");
 
+			//version_number = strtol(return_info, NULL, 10);
 			version_number = (UINT32)atoi(return_info);
 			if (version_number < 100)
 				version_number *= 10; // add another decimal for subversions
@@ -97,10 +104,10 @@ void TSoURDt3rd_CurlRoutine_FindUpdates(void)
 			{
 				header_string = "Update TSoURDt3rd, please";
 				sprintf(message_string,
-					"You're using an outdated version of TSoURDt3rd.\n\n"
+					"You're using an outdated version of TSoURDt3rd.\n"
 					"The most recent version is: \x82%s\x80\n"
-					"You're using version: \x82%s\x80\n\n"
-					"Check the SRB2 Message Board for the latest version!",
+					"You're using version: \x82%s\x80\n"
+					"Check the SRB2 Message Board for the latest version!\n",
 				return_version, TSOURDT3RDVERSION);
 				message_type = STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR;
 				send_event_message = true;
@@ -109,10 +116,8 @@ void TSoURDt3rd_CurlRoutine_FindUpdates(void)
 			{
 				header_string = "Hello TSoURDt3rd beta user!";
 				sprintf(message_string,
-					"You're using a version of TSoURDt3rd\n"
-					"that hasn't even released yet.\n\n"
-					"You're probably a tester or coder,"
-					"\nand in that case, hello!\n\n"
+					"You're using a version of TSoURDt3rd that hasn't even released yet.\n"
+					"You're probably a tester or coder, and in that case, hello!\n"
 					"Enjoy messing around with the build!"
 				);
 				message_type = STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR;
@@ -140,12 +145,10 @@ void TSoURDt3rd_CurlRoutine_FindUpdates(void)
 			message_type = STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR;
 			break;
 	}
-
-	TSoURDt3rd_FIL_RemoveFile("TSoURDt3rd", "tsourdt3rd_data.txt");
-
-	STAR_CONS_Printf(message_type, "%s\n", message_string);
+	TSoURDt3rd_FIL_RemoveFile(build_path, internet_data_filename);
 	Z_Free(return_version);
 
+	STAR_CONS_Printf(message_type, "%s\n", message_string);
 	tsourdt3rd_local.curl.checked_version = true;
 }
 

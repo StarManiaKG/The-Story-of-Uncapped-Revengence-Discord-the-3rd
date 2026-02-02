@@ -2,6 +2,7 @@
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 1999-2025 by Sonic Team Junior.
+// Copyright (C) 2024-2026 by StarManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -12,172 +13,54 @@
 ///        This is not really OS-dependent because all OSes have the same socket API.
 ///        Just use ifdef for OS-dependent parts.
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#ifdef __GNUC__
-#include <unistd.h>
-#endif
+#include "i_tcp_detail.h"
 
-#ifndef NO_IPV6
-	#define HAVE_IPV6
-#endif
-
-#ifdef _WIN32
-	#define USE_WINSOCK
-	#if defined (_WIN64) || defined (HAVE_IPV6)
-		#define USE_WINSOCK2
-	#else //_WIN64/HAVE_IPV6
-		#define USE_WINSOCK1
-	#endif
-#endif //WIN32 OS
-
-#ifdef USE_WINSOCK2
-	#include <ws2tcpip.h>
-#endif
-
-#include "../doomdef.h"
-#include "../z_zone.h"
-
-#ifdef USE_WINSOCK1
-	#include <winsock.h>
-#else
-	#ifndef USE_WINSOCK
-		#include <arpa/inet.h>
-		#ifdef __APPLE_CC__
-			#ifndef _BSD_SOCKLEN_T_
-				#define _BSD_SOCKLEN_T_
-			#endif //_BSD_SOCKLEN_T_
-		#endif //__APPLE_CC__
-		#include <sys/socket.h>
-		#include <netinet/in.h>
-		#include <netdb.h>
-		#include <sys/ioctl.h>
-	#endif //normal BSD API
-
-	#include <errno.h>
-	#include <time.h>
-
-	#if defined (__unix__) || defined (__APPLE__) || defined (UNIXCOMMON)
-		#include <sys/time.h>
-	#endif // UNIXCOMMON
-#endif
-
-#ifdef USE_WINSOCK
-	// some undefined under win32
-	#undef errno
-	//#define errno WSAGetLastError() //Alam_GBC: this is the correct way, right?
-	#define errno h_errno // some very strange things happen when not using h_error?!?
-	#ifdef EWOULDBLOCK
-	#undef EWOULDBLOCK
-	#endif
-	#define EWOULDBLOCK WSAEWOULDBLOCK
-	#ifdef EMSGSIZE
-	#undef EMSGSIZE
-	#endif
-	#define EMSGSIZE WSAEMSGSIZE
-	#ifdef ECONNREFUSED
-	#undef ECONNREFUSED
-	#endif
-	#define ECONNREFUSED WSAECONNREFUSED
-	#ifdef ETIMEDOUT
-	#undef ETIMEDOUT
-	#endif
-	#define ETIMEDOUT WSAETIMEDOUT
-	#ifdef EHOSTUNREACH
-	#undef EHOSTUNREACH
-	#endif
-	#define EHOSTUNREACH WSAEHOSTUNREACH
-	#ifdef ENETUNREACH
-	#undef ENETUNREACH
-	#endif
-	#define ENETUNREACH WSAENETUNREACH
-	#ifndef IOC_VENDOR
-	#define IOC_VENDOR 0x18000000
-	#endif
-	#ifndef _WSAIOW
-	#define _WSAIOW(x,y) (IOC_IN|(x)|(y))
-	#endif
-	#ifndef SIO_UDP_CONNRESET
-	#define SIO_UDP_CONNRESET _WSAIOW(IOC_VENDOR,12)
-	#endif
-	#ifndef AI_ADDRCONFIG
-	#define AI_ADDRCONFIG 0x00000400
-	#endif
-	#ifndef STATUS_INVALID_PARAMETER
-	#define STATUS_INVALID_PARAMETER 0xC000000D
-	#endif
-#endif // USE_WINSOCK
-
-typedef union
-{
-	struct sockaddr     any;
-	struct sockaddr_in  ip4;
-#ifdef HAVE_IPV6
-	struct sockaddr_in6 ip6;
-#endif
-} mysockaddr_t;
-
-	#ifdef HAVE_MINIUPNPC
-	#include "miniupnpc/miniwget.h"
-	#include "miniupnpc/miniupnpc.h"
-	#include "miniupnpc/upnpcommands.h"
-	static boolean UPNP_support = true;
-	#endif // HAVE_MINIUPNC
-
-#include "../i_system.h"
 #include "i_net.h"
 #include "d_net.h"
 #include "d_netfil.h"
-#include "i_tcp.h"
-#include "../m_argv.h"
-#include "../i_threads.h"
 
+#ifdef USE_STUN
+#include "stun.h" // STUN_got_response() //
+#endif
+
+#include "../i_system.h"
 #include "../doomstat.h"
+#include "../m_argv.h"
+#include "../z_zone.h"
 
 // TSoURDt3rd
 #include "../STAR/netcode/smkg-net.h" // various bits of netcode data //
 
-// win32
-#ifdef USE_WINSOCK
-	// winsock stuff (in winsock a socket is not a file)
-	#define ioctl ioctlsocket
-	#define close closesocket
-#endif
+#define SELECTTEST
 
-#include "i_addrinfo.h"
-#define DEFAULTPORT "5029"
+#ifdef HAVE_MINIUPNPC
+static boolean UPNP_support = true;
+#endif // HAVE_MINIUPNC
 
-#ifdef USE_WINSOCK
-	typedef SOCKET SOCKET_TYPE;
-	#define ERRSOCKET (SOCKET_ERROR)
-#else
-	#if defined (__unix__) || defined (__APPLE__) || defined (__HAIKU__)
-		typedef int SOCKET_TYPE;
-	#else
-		typedef unsigned long SOCKET_TYPE;
-	#endif
-	#define ERRSOCKET (-1)
-#endif
+typedef struct
+{
+	mysockaddr_t address;
+	UINT8 mask;
+	char *username;
+	char *reason;
+	time_t timestamp;
+} banned_t;
 
-#define IPV6_MULTICAST_ADDRESS "ff15::57e1:1a12"
-
-// define socklen_t in DOS/Windows if it is not already defined
-#ifdef USE_WINSOCK1
-	typedef int socklen_t;
-#endif
-static SOCKET_TYPE mysockets[MAXNETNODES+1] = {ERRSOCKET};
+SOCKET_TYPE mysockets[MAXNETNODES+1] = {ERRSOCKET};
 static size_t mysocketses = 0;
 static int myfamily[MAXNETNODES+1] = {0};
 static SOCKET_TYPE nodesocket[MAXNETNODES+1] = {ERRSOCKET};
-static mysockaddr_t clientaddress[MAXNETNODES+1];
+mysockaddr_t clientaddress[MAXNETNODES+1];
 static mysockaddr_t broadcastaddress[MAXNETNODES+1];
 static size_t broadcastaddresses = 0;
 static boolean nodeconnected[MAXNETNODES+1];
+
+/// \todo STAR NOTE: remove probably, ring racers does it different
 static mysockaddr_t *banned;
 static UINT8 *bannedmask;
-
 static size_t numbans = 0;
+
+/// \todo STAR NOTE: make this 'bannednode_t'
 static boolean SOCK_bannednode[MAXNETNODES+1]; /// \note do we really need the +1?
 static boolean init_tcp_driver = false;
 
@@ -312,13 +195,13 @@ init_upnpc_once(struct upnpdata *upnpuserdata)
 	memset(&urls, 0, sizeof(struct UPNPUrls));
 	memset(&data, 0, sizeof(struct IGDdatas));
 
-	I_OutputMsg(M_GetText("Looking for UPnP Internet Gateway Device\n"));
+	I_OutputMsg(M_GetText("Looking for UPnP Internet Gateway Device...\n"));
 	devlist = upnpDiscoverDevices(deviceTypes, 500, NULL, NULL, 0, false, 2, &upnp_error, 0);
 	if (devlist)
 	{
 		struct UPNPDev *dev = devlist;
-		char * descXML;
 		int descXMLsize = 0;
+
 		while (dev)
 		{
 			if (strstr (dev->st, "InternetGatewayDevice"))
@@ -328,25 +211,27 @@ init_upnpc_once(struct upnpdata *upnpuserdata)
 		if (!dev)
 			dev = devlist; /* defaulting to first device */
 
-		I_OutputMsg(M_GetText("Found UPnP device:\n desc: %s\n st: %s\n"),
-		           dev->descURL, dev->st);
-
 #if (MINIUPNPC_API_VERSION >= 18)
 		UPNP_GetValidIGD(devlist, &urls, &data, lanaddr, sizeof(lanaddr), NULL, 0);
 #else
 		UPNP_GetValidIGD(devlist, &urls, &data, lanaddr, sizeof(lanaddr));
 #endif
+
+		I_OutputMsg(M_GetText("\n"));
+		I_OutputMsg(M_GetText("Found UPnP device:\n desc: %s\n st: %s\n"), dev->descURL, dev->st);
 		I_OutputMsg(M_GetText("Local LAN IP address: %s\n"), lanaddr);
-		descXML = miniwget(dev->descURL, &descXMLsize, scope_id, &status_code);
+
+		const char * descXML = miniwget(dev->descURL, &descXMLsize, scope_id, &status_code);
 		if (descXML)
 		{
 			parserootdesc(descXML, descXMLsize, &data);
-			free(descXML);
 			descXML = NULL;
 			GetUPNPUrls(&urls, &data, dev->descURL, status_code);
 			I_AddExitFunc(I_ShutdownUPnP);
 		}
 		freeUPNPDevlist(devlist);
+
+		I_OutputMsg(M_GetText("\n"));
 	}
 	else if (upnp_error == UPNPDISCOVER_SOCKET_ERROR)
 	{
@@ -387,7 +272,7 @@ static void I_ShutdownUPnP(void)
 }
 #endif
 
-static const char *SOCK_AddrToStr(mysockaddr_t *sk)
+const char *SOCK_AddrToStr(mysockaddr_t *sk)
 {
 	static char s[64]; // 255.255.255.255:65535 or
 	// [ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff]:65535
@@ -483,7 +368,7 @@ static boolean SOCK_cmpipv6(mysockaddr_t *a, mysockaddr_t *b, UINT8 mask)
 }
 #endif
 
-static boolean SOCK_cmpaddr(mysockaddr_t *a, mysockaddr_t *b, UINT8 mask)
+boolean SOCK_cmpaddr(mysockaddr_t *a, mysockaddr_t *b, UINT8 mask)
 {
 	UINT32 bitmask = INADDR_NONE;
 
@@ -588,22 +473,31 @@ void Command_Numnodes(void)
 // Returns true if a packet was received from a new node, false in all other cases
 static boolean SOCK_Get(void)
 {
+	size_t n;
 	size_t i;
 	int j;
-	ssize_t c;
+	PTRPACKET c;
 	mysockaddr_t fromaddress;
 	socklen_t fromlen;
 
-	for (size_t n = 0; n < mysocketses; n++)
+	for (n = 0; n < mysocketses; n++)
 	{
 		fromlen = (socklen_t)sizeof(fromaddress);
 		c = recvfrom(mysockets[n], (char *)&doomcom->data, MAXPACKETLENGTH, 0,
 			(void *)&fromaddress, &fromlen);
 		if (c != ERRSOCKET)
 		{
-			if (TSoURDt3rd_SOCK_Get(doomcom, c, clientaddress, mysockets))
+#ifdef USE_STUN
+			if (STUN_got_response(doomcom->data, c))
 			{
-				// STAR STUFF: check our sock packets please //
+				// STUN response valid, let's override you right quick...
+				break;
+			}
+#endif
+
+			if (hole_punch(c))
+			{
+				// Holepunch response valid, let's override you right quick...
 				break;
 			}
 
@@ -654,7 +548,7 @@ static boolean SOCK_Get(void)
 	return false;
 }
 
-static inline ssize_t SOCK_SendToAddr(SOCKET_TYPE socket, mysockaddr_t *sockaddr)
+static inline PTRPACKET SOCK_SendToAddr(SOCKET_TYPE socket, mysockaddr_t* sockaddr)
 {
 	socklen_t d4 = (socklen_t)sizeof(struct sockaddr_in);
 #ifdef HAVE_IPV6
@@ -678,7 +572,9 @@ static inline ssize_t SOCK_SendToAddr(SOCKET_TYPE socket, mysockaddr_t *sockaddr
 
 static void SOCK_Send(void)
 {
-	ssize_t c = ERRSOCKET;
+	PTRPACKET c = ERRSOCKET;
+	//PTRPACKET i, j;
+	size_t i, j;
 	int e = 0; // save error code so it can't be modified later code and avoid calling WSAGetLastError() more then once
 
 	if (!nodeconnected[doomcom->remotenode])
@@ -686,9 +582,9 @@ static void SOCK_Send(void)
 
 	if (doomcom->remotenode == BROADCASTADDR)
 	{
-		for (size_t i = 0; i < mysocketses; i++)
+		for (i = 0; i < mysocketses; i++)
 		{
-			for (size_t j = 0; j < broadcastaddresses; j++)
+			for (j = 0; j < broadcastaddresses; j++)
 			{
 				if (myfamily[i] == broadcastaddress[j].any.sa_family)
 				{
@@ -705,7 +601,7 @@ static void SOCK_Send(void)
 	}
 	else if (nodesocket[doomcom->remotenode] == (SOCKET_TYPE)ERRSOCKET)
 	{
-		for (size_t i = 0; i < mysocketses; i++)
+		for (i = 0; i < mysocketses; i++)
 		{
 			if (myfamily[i] == clientaddress[doomcom->remotenode].any.sa_family)
 			{
@@ -731,7 +627,7 @@ static void SOCK_Send(void)
 	if (c == ERRSOCKET && e != 0) // 0 means no socket for the address family was found
 	{
 		if (!ALLOWEDERROR(e))
-			I_Error("SOCK_Send, error sending to node %d (%s) #%u, %s", doomcom->remotenode,
+			I_Error("SOCK_Send, error sending to node %d (%s) #%u: %s", doomcom->remotenode,
 				SOCK_GetNodeAddress(doomcom->remotenode), e, strerror(e));
 	}
 }

@@ -935,7 +935,8 @@ static void R_Subsector(size_t num)
 		floorplane = R_FindPlane(frontsector, frontsector->floorheight, frontsector->floorpic, floorlightlevel,
 			frontsector->floorxoffset, frontsector->flooryoffset,
 			frontsector->floorxscale, frontsector->flooryscale, frontsector->floorangle,
-			floorcolormap, NULL, NULL, frontsector->f_slope, P_SectorGetFloorPortal(frontsector));
+			floorcolormap, NULL, NULL, frontsector->f_slope, P_SectorGetFloorPortal(frontsector),
+			false, frontsector);
 	}
 	else
 		floorplane = NULL;
@@ -948,7 +949,8 @@ static void R_Subsector(size_t num)
 		ceilingplane = R_FindPlane(frontsector, frontsector->ceilingheight, frontsector->ceilingpic, ceilinglightlevel,
 			frontsector->ceilingxoffset, frontsector->ceilingyoffset,
 			frontsector->ceilingxscale, frontsector->ceilingyscale, frontsector->ceilingangle,
-			ceilingcolormap, NULL, NULL, frontsector->c_slope, P_SectorGetCeilingPortal(frontsector));
+			ceilingcolormap, NULL, NULL, frontsector->c_slope, P_SectorGetCeilingPortal(frontsector),
+			true, frontsector);
 	}
 	else
 		ceilingplane = NULL;
@@ -991,7 +993,8 @@ static void R_Subsector(size_t num)
 				ffloor[numffloors].plane = R_FindPlane(rover->master->frontsector, *rover->bottomheight, *rover->bottompic,
 					R_FloorLightLevel(rover->master->frontsector, *frontsector->lightlist[light].lightlevel), *rover->bottomxoffs, *rover->bottomyoffs,
 					*rover->bottomxscale, *rover->bottomyscale, *rover->bottomangle,
-					*frontsector->lightlist[light].extra_colormap, rover, NULL, *rover->b_slope, NULL);
+					*frontsector->lightlist[light].extra_colormap, rover, NULL, *rover->b_slope, NULL,
+					true, frontsector);
 
 				ffloor[numffloors].slope = *rover->b_slope;
 
@@ -1021,7 +1024,8 @@ static void R_Subsector(size_t num)
 				ffloor[numffloors].plane = R_FindPlane(rover->master->frontsector, *rover->topheight, *rover->toppic,
 					R_CeilingLightLevel(rover->master->frontsector, *frontsector->lightlist[light].lightlevel), *rover->topxoffs, *rover->topyoffs,
 					*rover->topxscale, *rover->topyscale, *rover->topangle,
-					*frontsector->lightlist[light].extra_colormap, rover, NULL, *rover->t_slope, NULL);
+					*frontsector->lightlist[light].extra_colormap, rover, NULL, *rover->t_slope, NULL,
+					false, frontsector);
 
 				ffloor[numffloors].slope = *rover->t_slope;
 
@@ -1067,7 +1071,8 @@ static void R_Subsector(size_t num)
 					polysec->floorxscale, polysec->flooryscale,
 					polysec->floorangle-po->angle,
 					(light == -1 ? frontsector->extra_colormap : *frontsector->lightlist[light].extra_colormap), NULL, po,
-					NULL, NULL);
+					NULL, NULL,
+					true, frontsector);
 
 				ffloor[numffloors].height = polysec->floorheight;
 				ffloor[numffloors].polyobj = po;
@@ -1092,7 +1097,8 @@ static void R_Subsector(size_t num)
 					polysec->ceilingxscale, polysec->ceilingyscale,
 					polysec->ceilingangle-po->angle,
 					(light == -1 ? frontsector->extra_colormap : *frontsector->lightlist[light].extra_colormap), NULL, po,
-					NULL, NULL);
+					NULL, NULL,
+					false, frontsector);
 
 				ffloor[numffloors].polyobj = po;
 				ffloor[numffloors].height = polysec->ceilingheight;
@@ -1343,11 +1349,11 @@ void R_RenderBSPNode(INT32 bspnum)
 
 		// Decide which side the view point is on.
 		side = R_PointOnSide(viewx, viewy, bsp);
+
 		// Recursively divide front space.
 		R_RenderBSPNode(bsp->children[side]);
 
 		// Possibly divide back space.
-
 		if (!R_CheckBBox(bsp->bbox[side^1]))
 			return;
 
@@ -1355,7 +1361,7 @@ void R_RenderBSPNode(INT32 bspnum)
 	}
 
 	tsourdt3rd_loadingscreen.bspCount = bspnum; // STAR STUFF: we're on the border, NOW! //
-#ifdef ALAM_LIGHTING
+#if defined (HWRENDER) && defined (ALAM_LIGHTING)
 	HWR_DL_CreateStaticLightmaps(bspnum);
 #endif
 
@@ -1395,7 +1401,7 @@ void R_RenderPortalHorizonLine(sector_t *sector)
 	{
 		floorplane = R_FindPlane(frontsector, frontsector->floorheight, frontsector->floorpic, floorlightlevel,
 			frontsector->floorxoffset, frontsector->flooryoffset, frontsector->floorxscale, frontsector->flooryscale,
-			frontsector->floorangle, floorcolormap, NULL, NULL, NULL, NULL);
+			frontsector->floorangle, floorcolormap, NULL, NULL, NULL, NULL, false, frontsector);
 	}
 	else
 		floorplane = NULL;
@@ -1406,7 +1412,7 @@ void R_RenderPortalHorizonLine(sector_t *sector)
 	{
 		ceilingplane = R_FindPlane(frontsector, frontsector->ceilingheight, frontsector->ceilingpic, ceilinglightlevel,
 			frontsector->ceilingxoffset, frontsector->ceilingyoffset, frontsector->ceilingxscale, frontsector->ceilingyscale,
-			frontsector->ceilingangle, ceilingcolormap, NULL, NULL, NULL, NULL);
+			frontsector->ceilingangle, ceilingcolormap, NULL, NULL, NULL, NULL, false, frontsector);
 	}
 	else
 		ceilingplane = NULL;

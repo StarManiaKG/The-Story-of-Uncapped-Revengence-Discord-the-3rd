@@ -41,7 +41,6 @@
 // ------------------------ //
 
 tsourdt3rd_timedEvent_t tsourdt3rd_currentEvent = TSOURDT3RD_EVENT_NONE;
-struct tsourdt3rd_loadingscreen_s tsourdt3rd_loadingscreen;
 
 static saveinfo_t* cursave = NULL;
 

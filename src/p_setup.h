@@ -78,6 +78,16 @@ void P_AllocMapHeader(INT16 i);
 void P_SetDemoFlickies(INT16 i);
 void P_DeleteFlickies(INT16 i);
 
+// Needed for map lighting and (fake) contrast
+void P_SetupMapLighting(boolean force);
+void P_UpdateMapLighting(boolean force);
+void P_UpdateAllSegLights(void);
+void P_UpdateSegLightOffset(seg_t *li);
+boolean P_ApplyLightOffset(UINT8 baselightnum, const sector_t *sector);
+boolean P_ApplyLightOffsetFine(UINT8 baselightlevel, const sector_t *sector);
+boolean P_SectorUsesDirectionalLighting(const sector_t *sector, INT32 *lightlevel);
+boolean P_MobjUsesDirectionalLighting(const mobj_t *mobj);
+
 // Needed for NiGHTS
 void P_ReloadRings(void);
 void P_SwitchSpheresBonusMode(boolean bonustime);

@@ -92,7 +92,10 @@
 
 // TSoURDt3rd
 #include "../STAR/star_vars.h" // STAR_SetWindowTitle() //
+#include "../STAR/smkg-cvars.h"
 #include "../STAR/smkg-i_sys.h" // TSoURDt3rd_I_GetEvent() //
+#include "../STAR/core/smkg-p_pads.h" // TSoURDt3rd_P_Pads_PauseDeviceRumble() //
+#include "../hardware/hw_debug.h"
 
 // maximum number of windowed modes (see windowedModes[][])
 #define MAXWINMODES (21)
@@ -245,6 +248,10 @@ static void SDLSetMode(INT32 width, INT32 height, SDL_bool fullscreen, SDL_bool 
 		OglSdlSurface(vid.width, vid.height);
 	}
 #endif
+
+	SDL_GetWindowSize(window, &width, &height);
+	vid.realwidth = (uint32_t)width;
+	vid.realheight = (uint32_t)height;
 
 	if (rendermode == render_soft)
 	{
@@ -654,11 +661,13 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 	static SDL_bool firsttimeonmouse = SDL_TRUE;
 	static SDL_bool mousefocus = SDL_TRUE;
 	static SDL_bool kbfocus = SDL_TRUE;
+	static SDL_bool get_window_pos = SDL_FALSE;
 
 	switch (evt.event)
 	{
 		case SDL_WINDOWEVENT_ENTER:
 			mousefocus = SDL_TRUE;
+			get_window_pos = SDL_TRUE;
 			break;
 		case SDL_WINDOWEVENT_LEAVE:
 			mousefocus = SDL_FALSE;
@@ -666,39 +675,73 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 		case SDL_WINDOWEVENT_FOCUS_GAINED:
 			kbfocus = SDL_TRUE;
 			mousefocus = SDL_TRUE;
+			get_window_pos = SDL_TRUE;
 			break;
 		case SDL_WINDOWEVENT_FOCUS_LOST:
 			kbfocus = SDL_FALSE;
 			mousefocus = SDL_FALSE;
 			break;
+		case SDL_WINDOWEVENT_MOVED:
 		case SDL_WINDOWEVENT_MAXIMIZED:
+			if (!quake.time)
+			{
+				window_x = evt.data1;
+				window_y = evt.data2;
+				get_window_pos = SDL_TRUE;
+			}
+			else
+			{
+				get_window_pos = SDL_FALSE;
+			}
+			break;
+		case SDL_WINDOWEVENT_RESIZED:
+		case SDL_WINDOWEVENT_RESTORED:
+			get_window_pos = SDL_TRUE;
+			break;
+		case SDL_WINDOWEVENT_SIZE_CHANGED:
+			vid.realwidth = evt.data1;
+			vid.realheight = evt.data2;
+			get_window_pos = SDL_TRUE;
+			break;
+		default:
+			get_window_pos = SDL_FALSE;
 			break;
 	}
 
-	if (mousefocus && kbfocus)
+	if (mousefocus && kbfocus) // Tell game we got focus back, resume music and gamepad rumble if necessary
 	{
-		// Tell game we got focus back, resume music if necessary
 		window_notinfocus = false;
+
 		if (!paused)
-			S_ResumeMusic(); //resume it
+		{
+			S_ResumeMusic();
+		}
 
 		if (!firsttimeonmouse)
 		{
-			if (cv_usemouse.value) I_StartupMouse();
+			if (cv_usemouse.value)
+				I_StartupMouse();
 		}
 		//else firsttimeonmouse = SDL_FALSE;
 
 		if (USE_MOUSEINPUT && ShouldGrabMouse())
+		{
 			SDLdoGrabMouse();
+		}
+		TSoURDt3rd_P_Pads_PauseDeviceRumble(NULL, false, false);
 	}
-	else if (!mousefocus && !kbfocus)
+	else if (!mousefocus && !kbfocus) // Tell game we lost focus, pause music, pause gamepad rumble
 	{
-		// Tell game we lost focus, pause music
 		window_notinfocus = true;
-		if (! cv_playmusicifunfocused.value)
+
+		if (!cv_playmusicifunfocused.value)
+		{
 			S_PauseMusic();
-		if (! cv_playsoundsifunfocused.value)
+		}
+		if (!cv_playsoundsifunfocused.value)
+		{
 			S_StopSounds();
+		}
 
 		if (!disable_mouse)
 		{
@@ -710,8 +753,14 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 		{
 			SDLdoUngrabMouse();
 		}
+		TSoURDt3rd_P_Pads_PauseDeviceRumble(NULL, P_AutoPause(), P_AutoPause());
 	}
 
+	if (get_window_pos) // Update window positioning
+	{
+		SDL_GetWindowPosition(window, &window_x, &window_y);
+		I_UpdateMouseGrab();
+	}
 }
 
 static void Impl_HandleKeyboardEvent(SDL_KeyboardEvent evt, Uint32 type)
@@ -744,6 +793,7 @@ static void Impl_HandleTextEvent(SDL_TextInputEvent evt)
 		return;
 	}
 	event.key = evt.text[0];
+	event.repeated = false;
 	D_PostEvent(&event);
 }
 
@@ -812,6 +862,7 @@ static void Impl_HandleMouseButtonEvent(SDL_MouseButtonEvent evt, Uint32 type)
 	/// \todo inputEvent.button.which
 	if (USE_MOUSEINPUT)
 	{
+		event.repeated = false;
 		if (type == SDL_MOUSEBUTTONUP)
 		{
 			event.type = ev_keyup;
@@ -844,6 +895,7 @@ static void Impl_HandleMouseWheelEvent(SDL_MouseWheelEvent evt)
 
 	SDL_memset(&event, 0, sizeof(event_t));
 
+	event.repeated = false;
 	if (evt.y > 0)
 	{
 		event.key = KEY_MOUSEWHEELUP;
@@ -876,6 +928,7 @@ static void Impl_HandleJoystickAxisEvent(SDL_JoyAxisEvent evt)
 
 	evt.axis++;
 	event.key = event.x = event.y = INT32_MAX;
+	event.repeated = false;
 
 	if (evt.which == joyid[0])
 	{
@@ -940,6 +993,7 @@ static void Impl_HandleJoystickButtonEvent(SDL_JoyButtonEvent evt, Uint32 type)
 	joyid[0] = SDL_JoystickInstanceID(JoyInfo.dev);
 	joyid[1] = SDL_JoystickInstanceID(JoyInfo2.dev);
 
+	event.repeated = false;
 	if (evt.which == joyid[0])
 	{
 		event.key = KEY_JOY1;
@@ -986,6 +1040,13 @@ void I_GetEvent(void)
 
 	while (SDL_PollEvent(&evt))
 	{
+#if defined (IMGUI_DEFINED) && defined (IMGUI_PROCEED)
+		// send input to imgui and block the game from receiving if it requests input
+		if (HWRD_ImGuiInput(&evt))
+		{
+			continue;
+		}
+#endif
 		switch (evt.type)
 		{
 			case SDL_WINDOWEVENT:
@@ -1071,13 +1132,13 @@ void I_GetEvent(void)
 					if (!strcmp(cv_usejoystick.string, "0") || !cv_usejoystick.value)
 						cv_usejoystick.value = 0;
 					else if (atoi(cv_usejoystick.string) <= I_NumJoys() // don't mess if we intentionally set higher than NumJoys
-						     && cv_usejoystick.value) // update the cvar ONLY if a device exists
+							 && cv_usejoystick.value) // update the cvar ONLY if a device exists
 						CV_SetValue(&cv_usejoystick, cv_usejoystick.value);
 
 					if (!strcmp(cv_usejoystick2.string, "0") || !cv_usejoystick2.value)
 						cv_usejoystick2.value = 0;
 					else if (atoi(cv_usejoystick2.string) <= I_NumJoys() // don't mess if we intentionally set higher than NumJoys
-					         && cv_usejoystick2.value) // update the cvar ONLY if a device exists
+							 && cv_usejoystick2.value) // update the cvar ONLY if a device exists
 						CV_SetValue(&cv_usejoystick2, cv_usejoystick2.value);
 
 					// Update all joysticks' init states
@@ -1158,10 +1219,8 @@ void I_GetEvent(void)
 				break;
 		}
 
-#if 1
 		// STAR STUFF: get our unique events too please :) //
 		TSoURDt3rd_I_GetEvent(&evt);
-#endif
 	}
 
 	// Send all relative mouse movement as one single mouse event.
@@ -1303,6 +1362,7 @@ void I_FinishUpdate(void)
 		return; //Alam: No software or OpenGl surface
 
 	SCR_CalculateFPS();
+	SCR_CalculateTPS();
 
 	if (I_SkipFrame())
 		return;
@@ -1317,16 +1377,14 @@ void I_FinishUpdate(void)
 	if (cv_closedcaptioning.value)
 		SCR_ClosedCaptions();
 
-	if (cv_ticrate.value)
-		SCR_DisplayTicRate();
+	// draw frame diags
+	SCR_DisplayFrameDiagnostics();
 
 	if (cv_showping.value && netgame && consoleplayer != serverplayer)
 		SCR_DisplayLocalPing();
 
-#if 1
 	// STAR STUFF: update screen please :p //
 	TSoURDt3rd_I_FinishUpdate();
-#endif
 
 	if (rendermode == render_soft && screens[0])
 	{
@@ -1359,6 +1417,10 @@ void I_FinishUpdate(void)
 			HWD.pfnDrawScreenTexture(HWD_SCREENTEXTURE_GENERIC2, NULL, 0);
 			HWD.pfnUnSetShader();
 		}
+#if defined (IMGUI_DEFINED) && defined (IMGUI_PROCEED)
+		// draw ImGui
+		HWRD_ImGuiRender();
+#endif
 		OglSdlFinishUpdate(cv_vidwait.value);
 	}
 #endif
@@ -1652,8 +1714,8 @@ INT32 VID_SetMode(INT32 modeNum)
 	if (modeNum >= MAXWINMODES)
 		modeNum = MAXWINMODES-1;
 
-	vid.width = windowedModes[modeNum][0];
-	vid.height = windowedModes[modeNum][1];
+	vid.realwidth = vid.width = windowedModes[modeNum][0];
+	vid.realheight = vid.height = windowedModes[modeNum][1];
 	vid.modenum = modeNum;
 
 	//Impl_SetWindowName("SRB2 "VERSIONSTRING);
@@ -1693,16 +1755,7 @@ static SDL_bool Impl_CreateWindow(SDL_bool fullscreen)
 #endif
 
 	// Create a window
-#if 0
-	window = SDL_CreateWindow("SRB2 "VERSIONSTRING, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-			realwidth, realheight, flags);
-#else
-	// STAR STUFF: i like my window title better! //
-	window = SDL_CreateWindow(STAR_SetWindowTitle(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-			realwidth, realheight, flags);
-#endif
-
-
+	window = SDL_CreateWindow(STAR_SetWindowTitle(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, realwidth, realheight, flags);
 	if (window == NULL)
 	{
 		CONS_Printf(M_GetText("Couldn't create window: %s\n"), SDL_GetError());
@@ -1902,8 +1955,8 @@ void I_StartupGraphics(void)
 	{
 		char videodriver[4] = {'S','D','L',0};
 		if (!M_CheckParm("-mousegrab") &&
-		    *strncpy(videodriver, SDL_GetCurrentVideoDriver(), 4) != '\0' &&
-		    strncasecmp("x11",videodriver,4) == 0)
+			*strncpy(videodriver, SDL_GetCurrentVideoDriver(), 4) != '\0' &&
+			strncasecmp("x11",videodriver,4) == 0)
 			mousegrabok = SDL_FALSE; //X11's XGrabPointer not good
 	}
 #endif
@@ -2000,6 +2053,10 @@ void I_ShutdownGraphics(void)
 		if (bufSurface) SDL_FreeSurface(bufSurface);
 		bufSurface = NULL;
 	}
+
+#if defined (IMGUI_DEFINED) && defined (IMGUI_PROCEED)
+	HWRD_StopImgui();
+#endif
 
 	I_OutputMsg("I_ShutdownGraphics(): ");
 

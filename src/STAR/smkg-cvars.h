@@ -47,6 +47,7 @@ extern consvar_t cv_tsourdt3rd_game_allowtimeover;
 extern consvar_t cv_tsourdt3rd_game_shadows_realistic;
 extern consvar_t cv_tsourdt3rd_game_shadows_forallobjects;
 extern consvar_t cv_tsourdt3rd_game_shadows_positioning;
+extern consvar_t cv_tsourdt3rd_game_shadows_offset;
 extern consvar_t cv_tsourdt3rd_game_soniccd;
 extern consvar_t cv_tsourdt3rd_game_isitcalledsingleplayer;
 
@@ -62,16 +63,14 @@ extern consvar_t cv_tsourdt3rd_video_lighting_coronas;
 extern consvar_t cv_tsourdt3rd_video_lighting_coronas_size;
 extern consvar_t cv_tsourdt3rd_video_lighting_coronas_lightingtype;
 extern consvar_t cv_tsourdt3rd_video_lighting_coronas_drawingmode;
+extern consvar_t cv_tsourdt3rd_video_lighting_coronas_walllighting;
+extern consvar_t cv_tsourdt3rd_video_lighting_coronas_maxlights;
 #endif
 
 // Audio //
 extern consvar_t cv_tsourdt3rd_audio_watermuffling;
 extern consvar_t cv_tsourdt3rd_audio_vapemode;
 extern consvar_t cv_tsourdt3rd_audio_bosses_postboss;
-#if 1
-// MARKED FOR REMOVAL
-extern consvar_t cv_tsourdt3rd_audio_gameover;
-#endif
 
 // Players //
 extern consvar_t cv_tsourdt3rd_players_shieldblockstransformation;

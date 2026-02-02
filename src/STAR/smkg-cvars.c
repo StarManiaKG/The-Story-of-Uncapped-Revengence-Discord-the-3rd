@@ -19,7 +19,7 @@
 #include "menus/smkg-m_sys.h" // menu definitions //
 #include "misc/smkg-m_misc.h" // TSoURDt3rd_M_FindWordInTermTable() //
 
-#include "../discord/discord.h" // DISC_D_Got_NetInfo() //
+#include "../discord/discord.h" // DISC_GotNetInfo() //
 
 #include "../doomstat.h"
 #include "../console.h"
@@ -31,7 +31,7 @@
 #include "../netcode/net_command.h" // RegisterNetXCmd
 
 #ifdef USE_STUN
-#include "stun/stun.h"
+#include "../netcode/stun.h"
 #endif
 
 // ------------------------ //
@@ -95,8 +95,10 @@ static CV_PossibleValue_t tsourdt3rd_video_coloring_cons_t[] = {
 	{V_ROSYMAP, "Rosy"},
 	{V_INVERTMAP, "Inverted"},
 	{0, NULL}};
-/// \todo add and make it work
-static CV_PossibleValue_t tsourdt3rd_video_font_cons_t[] = {{0, "Normal"}, {1, "Thin"}, {0, NULL}};
+static CV_PossibleValue_t videofont_cons_t[] = {
+	{0, "Normal"},
+	{1, "Thin"},
+	{0, NULL}};
 #ifdef STAR_LIGHTING
 static CV_PossibleValue_t tsourdt3rd_video_lighting_coronas_cons_t[] = {
 	{0, "Off"},
@@ -118,6 +120,11 @@ static CV_PossibleValue_t tsourdt3rd_video_lighting_coronas_drawingmode_cons_t[]
 	{3, "Additive_BG"},
 	{4, "Add_Limit"},
 	{0, NULL}};
+static CV_PossibleValue_t tsourdt3rd_video_lighting_coronas_maxlights_cons_t[] = {
+	{UINT8_MAX, "256"},	{512, "512"},	{768, "768"},
+	{1024, "1024"},	{1536, "1536"},	{2048, "2048"},
+	{3072, "3072"},	{4096, "4096"},	{6144, "6144"},
+	{8192, "8192"},	{UINT16_MAX, "Infinite"}, {0, NULL}};
 #endif
 
 static CV_PossibleValue_t tsourdt3rd_audio_vapemode_cons_t[] = {{0, "Off"}, {1, "TSoURDt3rd"}, {2, "Sonic Mania Plus"}, {0, NULL}};
@@ -128,7 +135,6 @@ static CV_PossibleValue_t tsourdt3rd_jukebox_hud_cons_t[] = {{0, "Off"}, {1, "Mi
 static CV_PossibleValue_t tsourdt3rd_jukebox_modifier_cons_t[] = {{0.1*FRACUNIT, "MIN"}, {20*FRACUNIT, "MAX"}, {0, NULL}};
 
 static boolean G_TimeOver_OnChange(const char *valstr);
-static boolean G_RealisticShadows_OnChange(const char *valstr);
 static void G_IsItCalledSinglePlayer_OnChange(void);
 
 static void C_PadRumble_OnChange(void);
@@ -158,9 +164,10 @@ consvar_t cv_tsourdt3rd_game_loadingscreen_image = CVAR_INIT ("tsourdt3rd_game_l
 consvar_t cv_tsourdt3rd_game_pausescreen = CVAR_INIT ("tsourdt3rd_game_pausescreen", "Default", CV_SAVE, tsourdt3rd_game_pausescreen_cons_t, NULL);
 consvar_t cv_tsourdt3rd_game_quitscreen = CVAR_INIT ("tsourdt3rd_game_quitscreen", "Default", CV_SAVE, tsourdt3rd_game_quitscreen_cons_t, NULL);
 consvar_t cv_tsourdt3rd_game_allowtimeover = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_game_allowtimeover", "No", CV_SAVE|CV_CALL, CV_YesNo, NULL, G_TimeOver_OnChange);
-consvar_t cv_tsourdt3rd_game_shadows_realistic = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_game_shadows_realistic", "Off", CV_SAVE|CV_CALL, CV_OnOff, NULL, G_RealisticShadows_OnChange);
+consvar_t cv_tsourdt3rd_game_shadows_realistic = CVAR_INIT ("tsourdt3rd_game_shadows_realistic", "Off", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_tsourdt3rd_game_shadows_forallobjects = CVAR_INIT ("tsourdt3rd_game_shadows_forallobjects", "No", CV_SAVE, CV_YesNo, NULL);
 consvar_t cv_tsourdt3rd_game_shadows_positioning = CVAR_INIT ("tsourdt3rd_game_shadows_positioning", "Object's Front", CV_SAVE, tsourdt3rd_game_shadowposition_cons_t, NULL);
+consvar_t cv_tsourdt3rd_game_shadows_offset = CVAR_INIT ("tsourdt3rd_game_shadows_offset", "No", CV_SAVE, CV_YesNo, NULL);
 consvar_t cv_tsourdt3rd_game_soniccd = CVAR_INIT ("soniccd", "Off", CV_SAVE|CV_ALLOWLUA, CV_OnOff, NULL);
 consvar_t cv_tsourdt3rd_game_isitcalledsingleplayer = CVAR_INIT ("tsourdt3rd_game_isitcalledsingleplayer", "Yes", CV_SAVE|CV_CALL, CV_YesNo, G_IsItCalledSinglePlayer_OnChange);
 
@@ -173,50 +180,39 @@ consvar_t cv_tsourdt3rd_video_sdl_window_shaking = CVAR_INIT ("tsourdt3rd_video_
 consvar_t cv_tsourdt3rd_video_showtps = CVAR_INIT ("tsourdt3rd_video_showtps", "No", CV_SAVE, tsourdt3rd_video_tpsrate_cons_t, NULL); // Ported from Uncapped Plus, TPS is back (for some reason)!
 consvar_t cv_tsourdt3rd_video_coloring_menus = CVAR_INIT ("tsourdt3rd_video_coloring_menus", "Yellow", CV_SAVE, tsourdt3rd_video_coloring_cons_t, NULL);
 consvar_t cv_tsourdt3rd_video_coloring_fpsrate = CVAR_INIT ("tsourdt3rd_video_coloring_fpsrate", "Green", CV_SAVE, tsourdt3rd_video_coloring_cons_t, NULL);
-/// \todo add and make it work
-consvar_t cv_tsourdt3rd_video_font_fps = CVAR_INIT ("tsourdt3rd_video_font_fps", "Normal", CV_SAVE, tsourdt3rd_video_font_cons_t, NULL); // Credit to SRB2Classic, Jisk, LuigiBuddd, etc. for the idea
+consvar_t cv_tsourdt3rd_video_font_fps = CVAR_INIT ("tsourdt3rd_video_font_fps", "Normal", CV_SAVE, videofont_cons_t, NULL); // Credit to SRB2Classic, Jisk, LuigiBuddd, etc. for the idea
 consvar_t cv_tsourdt3rd_video_coloring_tpsrate = CVAR_INIT ("tsourdt3rd_video_coloring_tpsrate", "Green", CV_SAVE, tsourdt3rd_video_coloring_cons_t, NULL);
-/// \todo add and make it work
-consvar_t cv_tsourdt3rd_video_font_tps = CVAR_INIT ("tsourdt3rd_video_font_tps", "Normal", CV_SAVE, tsourdt3rd_video_font_cons_t, NULL); // Credit to SRB2Classic, Jisk, LuigiBuddd, etc. for the idea
+consvar_t cv_tsourdt3rd_video_font_tps = CVAR_INIT ("tsourdt3rd_video_font_tps", "Normal", CV_SAVE, videofont_cons_t, NULL); // Credit to SRB2Classic, Jisk, LuigiBuddd, etc. for the idea
+
 #ifdef STAR_LIGHTING
 consvar_t cv_tsourdt3rd_video_lighting_coronas = CVAR_INIT ("tsourdt3rd_video_lighting_coronas", "Off", CV_SAVE|CV_CALL, tsourdt3rd_video_lighting_coronas_cons_t, V_Coronas_OnChange);
 consvar_t cv_tsourdt3rd_video_lighting_coronas_size = CVAR_INIT ("tsourdt3rd_video_lighting_coronas_size", "1", CV_SAVE|CV_FLOAT, 0, NULL);
 consvar_t cv_tsourdt3rd_video_lighting_coronas_lightingtype = CVAR_INIT ("tsourdt3rd_video_lighting_coronas_lightingtype", "Dynamic", CV_SAVE, tsourdt3rd_video_lighting_coronas_lightingtype_cons_t, NULL);
 consvar_t cv_tsourdt3rd_video_lighting_coronas_drawingmode = CVAR_INIT ("tsourdt3rd_video_lighting_coronas_drawingmode", "Additive", CV_SAVE, tsourdt3rd_video_lighting_coronas_drawingmode_cons_t, NULL);
+consvar_t cv_tsourdt3rd_video_lighting_coronas_walllighting = CVAR_INIT ("tsourdt3rd_video_lighting_coronas_walllighting", "Off", CV_SAVE, CV_OnOff, NULL);
+consvar_t cv_tsourdt3rd_video_lighting_coronas_maxlights = CVAR_INIT ("tsourdt3rd_video_lighting_coronas_maxlights", "4096", CV_SAVE, tsourdt3rd_video_lighting_coronas_maxlights_cons_t, NULL);
 #endif
 
 consvar_t cv_tsourdt3rd_audio_watermuffling = CVAR_INIT ("tsourdt3rd_audio_watermuffling", "Off", CV_SAVE|CV_ALLOWLUA, CV_OnOff, NULL);
 consvar_t cv_tsourdt3rd_audio_vapemode = CVAR_INIT ("tsourdt3rd_audio_vapemode", "Off", CV_SAVE|CV_CALL, tsourdt3rd_audio_vapemode_cons_t, S_ControlMusicEffects);
 consvar_t cv_tsourdt3rd_audio_bosses_postboss = CVAR_INIT ("tsourdt3rd_audio_bosses_postboss", "On", CV_SAVE, CV_OnOff, NULL);
-#if 1
-// MARKED FOR REMOVAL
-/// \todo so remove it
-static CV_PossibleValue_t tsourdt3rd_audio_gameover_cons_t[] = {{0, "Game's Default"},
-	{1, "Sonic 1&2"},
-	{2, "Sonic CD"},
-	{3, "Sonic 3&K"},
-	{4, "Sonic Rush"},
-	{5, "Sonic Mania"},
-	{6, "Sammy"},
-	{7, "Child"},
-	{8, "Yeah!"},
-	{0, NULL}};
-consvar_t cv_tsourdt3rd_audio_gameover = CVAR_INIT ("tsourdt3rd_audio_gameover", "Game's Default", CV_SAVE, tsourdt3rd_audio_gameover_cons_t, NULL);
-#endif
 
-consvar_t cv_tsourdt3rd_audio_exmusic_defaultmaptrack = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_audio_exmusic_defaultmaptrack", "Default", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate);
-consvar_t cv_tsourdt3rd_audio_exmusic_bosses = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_audio_exmusic_bosses", "Default", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate);
-consvar_t cv_tsourdt3rd_audio_exmusic_bosspinch = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_audio_exmusic_bosspinch", "Default", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate);
-consvar_t cv_tsourdt3rd_audio_exmusic_finalbosses = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_audio_exmusic_finalbosses", "Default", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate);
-consvar_t cv_tsourdt3rd_audio_exmusic_finalbosspinch = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_audio_exmusic_finalbosspinch", "Default", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate);
-consvar_t cv_tsourdt3rd_audio_exmusic_truefinalbosses = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_audio_exmusic_truefinalbosses", "Default", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate);
-consvar_t cv_tsourdt3rd_audio_exmusic_truefinalbosspinch = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_audio_exmusic_truefinalbosspinch", "Default", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate);
-consvar_t cv_tsourdt3rd_audio_exmusic_racebosses = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_audio_exmusic_racebosses", "Default", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate);
-consvar_t cv_tsourdt3rd_audio_exmusic_intermission = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_audio_exmusic_intermission", "Default", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate);
-consvar_t cv_tsourdt3rd_audio_exmusic_intermission_bosses = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_audio_exmusic_intermission_bosses", "Default", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate);
-consvar_t cv_tsourdt3rd_audio_exmusic_intermission_finalbosses = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_audio_exmusic_intermission_finalbosses", "Default", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate);
-consvar_t cv_tsourdt3rd_audio_exmusic_intermission_truefinalbosses = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_audio_exmusic_intermission_truefinalbosses", "Default", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate);
-consvar_t cv_tsourdt3rd_audio_exmusic_gameover = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_audio_exmusic_gameover", "Default", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate);
+#define EXMUSIC_CVAR(name) CVAR_INIT_WITH_CALLBACKS (#name, "Default:0", CV_SAVE|CV_NOINIT|CV_CALL, NULL, TSoURDt3rd_S_EXMusic_Update, TSoURDt3rd_S_EXMusic_CanUpdate)
+consvar_t cv_tsourdt3rd_audio_exmusic[tsourdt3rd_exmusic_max_types] = {
+	EXMUSIC_CVAR(tsourdt3rd_audio_exmusic_defaultmaptrack),
+	EXMUSIC_CVAR(tsourdt3rd_audio_exmusic_gameover),
+	EXMUSIC_CVAR(tsourdt3rd_audio_exmusic_bosses),
+		EXMUSIC_CVAR(tsourdt3rd_audio_exmusic_bosses_pinch),
+		EXMUSIC_CVAR(tsourdt3rd_audio_exmusic_bosses_finalboss),
+		EXMUSIC_CVAR(tsourdt3rd_audio_exmusic_bosses_finalboss_pinch),
+		EXMUSIC_CVAR(tsourdt3rd_audio_exmusic_bosses_truefinalboss),
+		EXMUSIC_CVAR(tsourdt3rd_audio_exmusic_bosses_truefinalboss_pinch),
+		EXMUSIC_CVAR(tsourdt3rd_audio_exmusic_bosses_race),
+	EXMUSIC_CVAR(tsourdt3rd_audio_exmusic_intermission),
+		EXMUSIC_CVAR(tsourdt3rd_audio_exmusic_intermission_boss),
+		EXMUSIC_CVAR(tsourdt3rd_audio_exmusic_intermission_finalboss),
+		EXMUSIC_CVAR(tsourdt3rd_audio_exmusic_intermission_truefinalboss),
+};
 
 consvar_t cv_tsourdt3rd_players_shieldblockstransformation = CVAR_INIT_WITH_CALLBACKS ("tsourdt3rd_players_shieldblockstransformation", "Off", CV_SAVE|CV_CALL, CV_OnOff, NULL, P_SuperWithShield_OnChange);
 consvar_t cv_tsourdt3rd_players_nukewhilesuper = CVAR_INIT ("tsourdt3rd_players_nukewhilesuper", "Off", CV_SAVE, CV_OnOff, NULL);
@@ -225,6 +221,7 @@ consvar_t cv_tsourdt3rd_players_alwaysoverlayinvulnsparks = CVAR_INIT ("tsourdt3
 
 consvar_t cv_tsourdt3rd_savefiles_limitedcontinues = CVAR_INIT ("tsourdt3rd_savefiles_limitedcontinues", "Off", CV_SAVE|CV_CALL, CV_OnOff, SV_UseContinues_OnChange);
 consvar_t cv_tsourdt3rd_savefiles_storesavesinfolders = CVAR_INIT ("tsourdt3rd_savefiles_storesavesinfolders", "Off", CV_SAVE|CV_CALL, CV_OnOff, TSoURDt3rd_FIL_CreateSavefileProperly);
+//consvar_t cv_tsourdt3rd_savefiles_savefolderdir = CVAR_INIT ("tsourdt3rd_savefiles_savefolderdir", "./saves", CV_SAVE|CV_CALL, NULL, SV_SaveFolderDir_OnChange); // TSoURDt3rd_FIL_CreateSavefileProperly
 consvar_t cv_tsourdt3rd_savefiles_perfectsave = CVAR_INIT ("tsourdt3rd_savefiles_perfectsave", "On", CV_SAVE, CV_OnOff, NULL);
 consvar_t cv_tsourdt3rd_savefiles_perfectsave_stripe1 = CVAR_INIT ("tsourdt3rd_savefiles_perfectsave_stripe1", "134", CV_SAVE, tsourdt3rd_savefiles_perfectsavestripe_cons_t, NULL);
 consvar_t cv_tsourdt3rd_savefiles_perfectsave_stripe2 = CVAR_INIT ("tsourdt3rd_savefiles_perfectsave_stripe2", "201", CV_SAVE, tsourdt3rd_savefiles_perfectsavestripe_cons_t, NULL);
@@ -243,6 +240,7 @@ enum tsourdt3rd_old_cvars_e
 {
 #ifdef HAVE_DISCORDSUPPORT
 	// Discord
+	discordintegration,
 	discordcustom_details,
 	discordcustom_state,
 	discordcustom_imagetype_large,
@@ -303,6 +301,7 @@ enum tsourdt3rd_old_cvars_e
 }; static const char *const tsourdt3rd_old_cvars_opt[] = {
 #ifdef HAVE_DISCORDSUPPORT
 	// Discord
+	"discordrp",
 	"customdiscorddetails",
 	"customdiscordstate",
 	"customdiscordlargeimagetype",
@@ -339,8 +338,6 @@ enum tsourdt3rd_old_cvars_e
 	"menucolor",
 	"fpscountercolor",
 	"tpscountercolor",
-	// Audio
-	"gameovermusic",
 	// Players
 	"shieldblockstransformation",
 	"armageddonnukesuper",
@@ -363,6 +360,7 @@ enum tsourdt3rd_old_cvars_e
 	NULL
 }; static consvar_t *old_to_new_vars[] = {
 #ifdef HAVE_DISCORDSUPPORT
+	&cv_discordintegration,
 	&cv_discordcustom_details,
 	&cv_discordcustom_state,
 	&cv_discordcustom_imagetype_large,
@@ -396,7 +394,6 @@ enum tsourdt3rd_old_cvars_e
 	&cv_tsourdt3rd_video_coloring_menus,
 	&cv_tsourdt3rd_video_coloring_fpsrate,
 	&cv_tsourdt3rd_video_coloring_tpsrate,
-	&cv_tsourdt3rd_audio_gameover,
 	&cv_tsourdt3rd_players_shieldblockstransformation,
 	&cv_tsourdt3rd_players_nukewhilesuper,
 	&cv_tsourdt3rd_players_setupwhilemoving,
@@ -429,7 +426,7 @@ void TSoURDt3rd_D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_stunserver);
 #endif
 	CV_RegisterVar(&cv_discordinvites);
-	RegisterNetXCmd(XD_DISCORD, DISC_D_Got_NetInfo);
+	RegisterNetXCmd(XD_DISCORD, DISC_GotNetInfo);
 
 	// Main //
 	CV_RegisterVar(&cv_tsourdt3rd_main_checkforupdatesonstartup);
@@ -448,7 +445,7 @@ void TSoURDt3rd_D_RegisterClientCommands(void)
 
 #ifdef HAVE_DISCORDSUPPORT
 	// Discord //
-	CV_RegisterVar(&cv_discordrp);
+	CV_RegisterVar(&cv_discordintegration);
 	CV_RegisterVar(&cv_discordstreamer);
 	CV_RegisterVar(&cv_discordasks);
 	CV_RegisterVar(&cv_discordshowonstatus);
@@ -484,6 +481,7 @@ void TSoURDt3rd_D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_tsourdt3rd_game_shadows_realistic);
 	CV_RegisterVar(&cv_tsourdt3rd_game_shadows_forallobjects);
 	CV_RegisterVar(&cv_tsourdt3rd_game_shadows_positioning);
+	CV_RegisterVar(&cv_tsourdt3rd_game_shadows_offset);
 	CV_RegisterVar(&cv_tsourdt3rd_game_soniccd);
 	CV_RegisterVar(&cv_tsourdt3rd_game_isitcalledsingleplayer);
 
@@ -505,6 +503,8 @@ void TSoURDt3rd_D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_tsourdt3rd_video_lighting_coronas_size);
 	CV_RegisterVar(&cv_tsourdt3rd_video_lighting_coronas_lightingtype);
 	CV_RegisterVar(&cv_tsourdt3rd_video_lighting_coronas_drawingmode);
+	CV_RegisterVar(&cv_tsourdt3rd_video_lighting_coronas_walllighting);
+	CV_RegisterVar(&cv_tsourdt3rd_video_lighting_coronas_maxlights);
 #endif
 
 	// Audio //
@@ -512,19 +512,9 @@ void TSoURDt3rd_D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_tsourdt3rd_audio_vapemode);
 	CV_RegisterVar(&cv_tsourdt3rd_audio_bosses_postboss);
 	// -- EXMusic
-	CV_RegisterVar(&cv_tsourdt3rd_audio_exmusic_defaultmaptrack);
-	CV_RegisterVar(&cv_tsourdt3rd_audio_exmusic_bosses);
-	CV_RegisterVar(&cv_tsourdt3rd_audio_exmusic_bosspinch);
-	CV_RegisterVar(&cv_tsourdt3rd_audio_exmusic_finalbosses);
-	CV_RegisterVar(&cv_tsourdt3rd_audio_exmusic_finalbosspinch);
-	CV_RegisterVar(&cv_tsourdt3rd_audio_exmusic_truefinalbosses);
-	CV_RegisterVar(&cv_tsourdt3rd_audio_exmusic_truefinalbosspinch);
-	CV_RegisterVar(&cv_tsourdt3rd_audio_exmusic_racebosses);
-	CV_RegisterVar(&cv_tsourdt3rd_audio_exmusic_intermission);
-	CV_RegisterVar(&cv_tsourdt3rd_audio_exmusic_intermission_bosses);
-	CV_RegisterVar(&cv_tsourdt3rd_audio_exmusic_intermission_finalbosses);
-	CV_RegisterVar(&cv_tsourdt3rd_audio_exmusic_intermission_truefinalbosses);
-	CV_RegisterVar(&cv_tsourdt3rd_audio_exmusic_gameover);
+	for (i = 0; i < tsourdt3rd_exmusic_max_types; i++)
+		CV_RegisterVar(&cv_tsourdt3rd_audio_exmusic[i]);
+	COM_AddCommand("tsourdt3rd_exmusic_set", Command_EXMusic_f, 0);
 
 	// Players //
 	CV_RegisterVar(&cv_tsourdt3rd_players_shieldblockstransformation);
@@ -585,6 +575,12 @@ boolean TSoURDt3rd_CV_CheckForOldCommands(void)
 	switch (word_to_table_val)
 	{
 #ifdef HAVE_DISCORDSUPPORT
+		case discordintegration:
+			if (!stricmp(cv_value, "On"))
+				cv_value = "On";
+			else if (!stricmp(cv_value, "Off"))
+				cv_value = "Off";
+			break;
 		case discordcustom_imagetype_large:
 		case discordcustom_imagetype_small:
 			if (fastcmp(cv_value, "CS Portrait") || fastcmp(cv_value, "CS Portraits"))
@@ -724,23 +720,13 @@ static boolean G_TimeOver_OnChange(const char *valstr)
 	return true;
 }
 
-static boolean G_RealisticShadows_OnChange(const char *valstr)
-{
-	(void)valstr;
-	if (!cv_shadow.value)
-	{
-		//STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_ERROR, "You can't change command 'cv_tsourdt3rd_game_shadows_realistic' without enabling command 'cv_shadow'.\n");
-		//CV_StealthSetValue(&cv_tsourdt3rd_game_shadows_realistic, !cv_tsourdt3rd_game_shadows_realistic.value);
-		return false;
-	}
-	return true;
-}
-
 static void G_IsItCalledSinglePlayer_OnChange(void)
 {
-	if (TSoURDt3rd_AprilFools_ModeEnabled()) return;
-	MainMenu[0].text = (cv_tsourdt3rd_game_isitcalledsingleplayer.value ? "Single  Player" : "1  Player");
-	TSoURDt3rd_AprilFools_StoreDefaultMenuStrings(); // Stores All the Default Menu Strings Again
+	if (!TSoURDt3rd_AprilFools_ModeEnabled())
+		MainMenu[0].text = (cv_tsourdt3rd_game_isitcalledsingleplayer.value ? "Single  Player" : "1  Player");
+	else
+		MainMenu[0].text = (cv_tsourdt3rd_game_isitcalledsingleplayer.value ? "A Player Mode" : "No Friends Mode");
+	TSoURDt3rd_AprilFools_StoreDefaultMenuStrings();
 }
 
 static void C_PadRumble_OnChange(void)

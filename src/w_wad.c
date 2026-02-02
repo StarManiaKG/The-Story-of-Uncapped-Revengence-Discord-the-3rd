@@ -246,6 +246,71 @@ static void W_LoadDehackedLumpsPK3(UINT16 wadnum, boolean mainfile)
 			free(name);
 		}
 	}
+
+#if 0
+	posStart = W_CheckNumForFolderStartPK3("Sounds/", wadnum, 0);
+	if (posStart != INT16_MAX)
+	{
+		posEnd = W_CheckNumForFolderEndPK3("Sounds/", wadnum, posStart);
+
+		for(; posStart < posEnd; posStart++)
+		{
+			INT32 i;
+			lumpinfo_t *lump_p = &wadfiles[wadnum]->lumpinfo[posStart];
+#if 1
+			//char *lump_name = strdup(lump_p->name);
+			const char *lump_name = lump_p->name;
+			lump_name += 2; // skip 'ds'
+			for (i = 0; i < NUMSFX; i++)
+			{
+				//size_t length = strlen(lump_p->fullname); // length of lump name
+				//char *name = strdup(lump_p->fullname);
+				//name[length] = '\0';
+				//if (fasticmp(lump_p->name, lump_name)) && S_sfx[i].lumpnum == LUMPNUM(wadnum))
+				if (fasticmp(S_sfx[i].name, lump_name))
+				{
+#if 1
+					char *full_name = Z_StrDup(lump_p->fullname);
+					// Remove path delim until non-existant
+					char *real_lump_name = strtok(full_name, "/");
+					char *test_real_lump_name = NULL;
+					while (real_lump_name)
+					{
+						test_real_lump_name = strtok(NULL, "/");
+						if (test_real_lump_name)
+							real_lump_name = test_real_lump_name;
+						else
+							break;
+						//CONS_Printf(M_GetText("real_lump_name is '%s', fullnanme is %s\n"), real_lump_name, full_name);
+					}
+					S_sfx[i].lumpname = Z_StrDup(real_lump_name);
+					Z_Free(full_name);
+#else
+					S_sfx[i].lumpname = lump_p->longname;
+#endif
+					CONS_Printf(M_GetText("Loading sfx '%s' (%s - into sound %d, %s (%s))...\n"), S_sfx[i].lumpname, lump_p->fullname, i, S_sfx[i].name, lump_name);
+					break;
+				}
+			}
+			//free(lump_name);
+#else
+			char lump_name[128];
+			snprintf(lump_name, 128, "DS%s", lump_p->name);
+			lumpnum_t sfxlump = W_CheckNumForName(lump_name);
+			if (sfxlump != LUMPERROR)
+			{
+				for (INT32 i = 0; i < NUMSFX; i++)
+				{
+					if (S_sfx[i].lumpnum == sfxlump && fasticmp(lump_p->name, S_sfx[i].name))
+					{
+						CONS_Printf(M_GetText("Loading sfx '%s'...\n"), lump_p->fullname);
+					}
+				}
+			}
+#endif
+		}
+	}
+#endif
 }
 
 // search for all DEHACKED lump in all wads and load it

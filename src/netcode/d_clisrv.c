@@ -893,6 +893,19 @@ static void PT_ServerShutdown(SINT8 node)
 	M_StartMessage(M_GetText("Server has shutdown\n\nPress Esc\n"), NULL, MM_NOTHING);
 }
 
+/** Called when a player tries to connect to a server that uses this build.
+  * TSoURDt3rd Exclusive
+  *
+  * \param node The packet sender (should be the server)
+  *
+*/
+static void PT_Build_UpdateNode(SINT8 node)
+{
+	DEBFILE(va("Node %d is connected from a TSoURDt3rd client!\n", node));
+	netnodes[node].is_client_tsourdt3rd = true;
+	return;
+}
+
 static void PT_Login(SINT8 node, INT32 netconsole)
 {
 	(void)node;
@@ -1254,6 +1267,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 		case PT_SERVERSHUTDOWN     : PT_ServerShutdown     (node            ); break;
 		case PT_SERVERCFG          :                                           break;
 		case PT_CLIENTJOIN         :                                           break;
+		case PT_TSOURDT3RD         : PT_Build_UpdateNode   (node            ); break;
 
 		default:
 			DEBFILE(va("UNKNOWN PACKET TYPE RECEIVED %d from host %d\n",

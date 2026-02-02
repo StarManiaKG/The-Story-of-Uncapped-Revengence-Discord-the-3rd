@@ -78,16 +78,14 @@
 #include "r_opengl/r_opengl.h"
 
 #ifdef HAVE_SPHEREFRUSTRUM
-static GLdouble viewMatrix[16];
-static GLdouble projMatrix[16];
 float frustum[6][4];
 #endif
 
 typedef struct clipnode_s
-	{
-		struct clipnode_s *prev, *next;
-		angle_t start, end;
-	} clipnode_t;
+{
+	struct clipnode_s *prev, *next;
+	angle_t start, end;
+} clipnode_t;
 
 clipnode_t *freelist;
 clipnode_t *clipnodes;
@@ -125,7 +123,7 @@ static clipnode_t * gld_clipnode_NewRange(angle_t start, angle_t end)
 
 boolean gld_clipper_SafeCheckRange(angle_t startAngle, angle_t endAngle)
 {
-	if(startAngle > endAngle)
+	if (startAngle > endAngle)
 	{
 		return (gld_clipper_IsRangeVisible(startAngle, ANGLE_MAX) || gld_clipper_IsRangeVisible(0, endAngle));
 	}

@@ -2208,6 +2208,8 @@ void S_LoadMusicCredit(void)
 	if (!def)
 	{
 		// No definitions
+		if (cv_songcredits_debug.value)
+			CONS_Printf("S_LoadMusicCredit() - '%s' has no music definition!", S_MusicName());
 		return;
 	}
 	else if (TSoURDt3rd_Jukebox_SongPlaying() && !cv_songcredits_debug.value)
@@ -2234,7 +2236,7 @@ void S_LoadMusicCredit(void)
 			}
 		}
 
-		widthused -= V_ThinStringWidth(credittext, 0);
+		widthused -= V_ThinStringWidth(credittext, V_ALLOWLOWERCASE);
 
 #define MUSICCREDITAPPEND(field, force)\
 		if (field)\
@@ -2243,7 +2245,7 @@ void S_LoadMusicCredit(void)
 			worklen = strlen(work);\
 			if (worklen <= len)\
 			{\
-				workwidth = V_ThinStringWidth(work, 0);\
+				workwidth = V_ThinStringWidth(work, V_ALLOWLOWERCASE);\
 				if (force || widthused >= workwidth)\
 				{\
 					strncat(credittext, work, len-1);\
@@ -3134,7 +3136,7 @@ void S_StartEx(boolean reset)
 {
 	if (mapmusflags & MUSIC_RELOADRESET)
 	{
-		strncpy(mapmusname, TSoURDt3rd_DetermineLevelMusic(), 7);
+		strncpy(mapmusname, TSoURDt3rd_EXMusic_DetermineLevelMusic(), 7);
 		mapmusname[6] = 0;
 		mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
 		mapmusposition = mapheaderinfo[gamemap-1]->muspos;

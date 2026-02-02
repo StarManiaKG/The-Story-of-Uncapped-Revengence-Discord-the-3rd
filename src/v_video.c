@@ -42,8 +42,8 @@ UINT8 *screens[5];
 // screens[3] = fade screen start
 // screens[4] = fade screen end, postimage tempoarary buffer
 
-static CV_PossibleValue_t ticrate_cons_t[] = {{0, "No"}, {1, "Full"}, {2, "Compact"}, {0, NULL}};
-consvar_t cv_ticrate = CVAR_INIT ("showfps", "No", CV_SAVE, ticrate_cons_t, NULL);
+static CV_PossibleValue_t framediag_cons_t[] = {{0, "No"}, {1, "Full"}, {2, "Compact"}, {3, "Kart-Style"}, {0, NULL}};
+consvar_t cv_ticrate = CVAR_INIT ("showfps", "No", CV_SAVE, framediag_cons_t, NULL);
 
 static void CV_palette_OnChange(void);
 
@@ -338,11 +338,11 @@ static void LoadPalette(const char *lumpname)
 
 		// lerp of colour cubing! if you want, make it smoother yourself
 		if (Cubeapply)
-			V_CubeApply(&pLocalPalette[i].s.red, &pLocalPalette[i].s.green, &pLocalPalette[i].s.blue);
+			V_CubeApply(&pLocalPalette[i]);
 	}
 }
 
-void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue)
+void V_CubeApply(RGBA_t *input)
 {
 	float working[4][3];
 	float linear;
@@ -351,7 +351,7 @@ void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue)
 	if (!Cubeapply)
 		return;
 
-	linear = (*red/255.0);
+	linear = ((*input).s.red/255.0);
 #define dolerp(e1, e2) ((1 - linear)*e1 + linear*e2)
 	for (q = 0; q < 3; q++)
 	{
@@ -360,13 +360,13 @@ void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue)
 		working[2][q] = dolerp(Cubepal[0][0][1][q], Cubepal[1][0][1][q]);
 		working[3][q] = dolerp(Cubepal[0][1][1][q], Cubepal[1][1][1][q]);
 	}
-	linear = (*green/255.0);
+	linear = ((*input).s.green/255.0);
 	for (q = 0; q < 3; q++)
 	{
 		working[0][q] = dolerp(working[0][q], working[1][q]);
 		working[1][q] = dolerp(working[2][q], working[3][q]);
 	}
-	linear = (*blue/255.0);
+	linear = ((*input).s.blue/255.0);
 	for (q = 0; q < 3; q++)
 	{
 		working[0][q] = 255*dolerp(working[0][q], working[1][q]);
@@ -377,9 +377,9 @@ void V_CubeApply(UINT8 *red, UINT8 *green, UINT8 *blue)
 	}
 #undef dolerp
 
-	*red = (UINT8)(working[0][0]);
-	*green = (UINT8)(working[0][1]);
-	*blue = (UINT8)(working[0][2]);
+	(*input).s.red = (UINT8)(working[0][0]);
+	(*input).s.green = (UINT8)(working[0][1]);
+	(*input).s.blue = (UINT8)(working[0][2]);
 }
 
 const char *R_GetPalname(UINT16 num)
@@ -1499,6 +1499,7 @@ void V_DrawFixedFill(fixed_t x, fixed_t y, fixed_t w, fixed_t h, INT32 c)
 static UINT32 V_GetHWConsBackColor(void)
 {
 	UINT8 r, g, b;
+	RGBA_t backcolor;
 	switch (cons_backcolor.value)
 	{
 		case 0:		r = 0xff; g = 0xff; b = 0xff;	break; 	// White
@@ -1524,7 +1525,10 @@ static UINT32 V_GetHWConsBackColor(void)
 		// Default green
 		default:	r = 0x00; g = 0x80; b = 0x00;	break;
 	}
-	V_CubeApply(&r, &g, &b);
+	backcolor.s.red = r;
+	backcolor.s.green = g;
+	backcolor.s.blue = b;
+	V_CubeApply(&backcolor);
 	return (r << 24) | (g << 16) | (b << 8);
 }
 #endif

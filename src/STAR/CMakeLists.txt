@@ -13,10 +13,6 @@ target_sources(SRB2SDL2 PRIVATE
 	core/smkg-s_audio.c
 	core/smkg-s_jukebox.c
 	core/smkg-s_exmusic.c
-	core/exmusic_types/smkg-defaultmaptracks.c
-	core/exmusic_types/smkg-gameover.c
-	core/exmusic_types/smkg-bosses.c
-	core/exmusic_types/smkg-intermission.c
 
 	events/smkg-easter.c
 	events/smkg-aprilfools.c
@@ -67,8 +63,6 @@ target_sources(SRB2SDL2 PRIVATE
 
 	sdl/smkg-i_vid.c
 	sdl/smkg-i_sys.c
-
-	stun/stun.c
 )
 
 add_subdirectory(monocypher)

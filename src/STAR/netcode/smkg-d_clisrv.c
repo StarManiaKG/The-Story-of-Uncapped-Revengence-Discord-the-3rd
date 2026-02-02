@@ -22,17 +22,15 @@
 #include "smkg-net.h"
 
 #include "../smkg-cvars.h"
-#include "../star_vars.h"
+#include "../star_vars.h" // TSoURDt3rdPlayers[] //
+#include "../core/smkg-g_game.h" // tsourdt3rd[] //
 #include "../core/smkg-s_jukebox.h"
 #include "../monocypher/smkg-m_hash.h"
-
-#include "../../g_game.h"
-#include "../../z_zone.h"
 
 #include "../../netcode/server_connection.h"
 
 #ifdef USE_STUN
-#include "../stun/stun.h"
+#include "../../netcode/stun.h"
 #endif
 
 #ifdef HAVE_DISCORDSUPPORT
@@ -43,27 +41,15 @@
 //        Variables
 // ------------------------ //
 
-/// \brief hole punching packet, also points inside doomcom
-/* See ../doc/Holepunch-Protocol.txt */
-holepunch_t *holepunchpacket = NULL;
+struct tsourdt3rd_loadingscreen_s tsourdt3rd_loadingscreen;
 
 INT32 STAR_JoinSFX = sfx_kc48;
 INT32 STAR_LeaveSFX = sfx_kc52;
 INT32 STAR_SynchFailureSFX = sfx_kc46;
-INT32 DISCORD_RequestSFX = sfx_kc5d;
 
 // ------------------------ //
 //        Functions
 // ------------------------ //
-
-//
-// void TSoURDt3rd_D_CheckNetgame(doomcom_t *doomcom_p)
-// Runs an extended amount of net participant data for D_CheckNetgame in d_net.c.
-//
-void TSoURDt3rd_D_CheckNetgame(doomcom_t *doomcom_p)
-{
-	holepunchpacket = (holepunch_t *)(void *)&doomcom_p->data;
-}
 
 //
 // void TSoURDt3rd_InitializePlayer(INT32 playernum)
@@ -91,37 +77,27 @@ static void D_Hash_Seed(UINT8 *seed)
 void TSoURDt3rd_InitializePlayer(INT32 playernum)
 {
 	TSoURDt3rd_t *tsourdt3rd_user = &TSoURDt3rdPlayers[playernum];
-	tsourdt3rd_t *tsourdt3rd_struct_user = &tsourdt3rd[playernum];
 	static UINT8 seed[32];
+
 	D_Hash_Seed(seed);
-	{
-		memset(tsourdt3rd_user->secret_key, 0, sizeof(tsourdt3rd_user->secret_key));
-		memset(tsourdt3rd_user->public_key, 0, sizeof(tsourdt3rd_user->public_key));
-		crypto_eddsa_key_pair(tsourdt3rd_user->secret_key, tsourdt3rd_user->public_key, seed);
-		strcpy(tsourdt3rd_user->user_hash, TSoURDt3rd_Hash_GenerateFromID(tsourdt3rd_user->secret_key, true));
-		tsourdt3rd_user->usingTSoURDt3rd			= true;
-		tsourdt3rd_user->server_usingTSoURDt3rd		= true;
-		tsourdt3rd_user->server_majorVersion		= TSoURDt3rd_CurrentMajorVersion();
-		tsourdt3rd_user->server_minorVersion		= TSoURDt3rd_CurrentMinorVersion();
-		tsourdt3rd_user->server_subVersion			= TSoURDt3rd_CurrentSubversion();
-		tsourdt3rd_user->server_TSoURDt3rdVersion	= TSoURDt3rd_CurrentVersion();
-	}
-	{
-		tsourdt3rd_struct_user->game.time_over = false;
-	}
-	{
-		tsourdt3rd_loadingscreen.loadCount      = 0;
-		tsourdt3rd_loadingscreen.loadPercentage = 0;
-		tsourdt3rd_loadingscreen.bspCount       = 0;
-		tsourdt3rd_loadingscreen.screenToUse    = 0;
-		tsourdt3rd_loadingscreen.loadComplete   = false;
-	}
+
+	memset(&TSoURDt3rdPlayers[playernum], 0, sizeof(TSoURDt3rd_t));
+	memset(tsourdt3rd_user->secret_key, 0, sizeof(tsourdt3rd_user->secret_key));
+	memset(tsourdt3rd_user->public_key, 0, sizeof(tsourdt3rd_user->public_key));
+	crypto_eddsa_key_pair(tsourdt3rd_user->secret_key, tsourdt3rd_user->public_key, seed);
+	tsourdt3rd_user->user_hash                = TSoURDt3rd_Hash_GenerateFromID(tsourdt3rd_user->secret_key, true);
+	tsourdt3rd_user->usingTSoURDt3rd          = true;
+	tsourdt3rd_user->server_usingTSoURDt3rd   = false;
+	tsourdt3rd_user->server_majorVersion      = 0;
+	tsourdt3rd_user->server_minorVersion      = 0;
+	tsourdt3rd_user->server_subVersion        = 0;
+	tsourdt3rd_user->server_TSoURDt3rdVersion = 0;
+
+	memset(&tsourdt3rd[playernum], 0, sizeof(tsourdt3rd_t));
+
+	memset(&tsourdt3rd_loadingscreen, 0, sizeof(struct tsourdt3rd_loadingscreen_s));
 }
 
-//
-// void TSoURDt3rd_ClearPlayer(INT32 playernum)
-// Fully Resets the TSoURDt3rd Player Table for Both Servers and the Local Client
-//
 void TSoURDt3rd_ClearPlayer(INT32 playernum)
 {
 	TSoURDt3rd_t *tsourdt3rd_user = &TSoURDt3rdPlayers[consoleplayer];
@@ -132,20 +108,19 @@ void TSoURDt3rd_ClearPlayer(INT32 playernum)
 
 	if (!playernum && !consoleplayer)
 		return;
-	if (!tsourdt3rd_prevuser || *tsourdt3rd_prevuser->user_hash == '\0')
+	if (!tsourdt3rd_prevuser || tsourdt3rd_prevuser->user_hash == NULL || *tsourdt3rd_prevuser->user_hash == '\0')
 		return;
 
 	if (playernum == consoleplayer)
 	{
-		memcpy(tsourdt3rd_user, tsourdt3rd_prevuser, sizeof(&tsourdt3rd_prevuser));
-		memcpy(tsourdt3rd_struct_user, tsourdt3rd_struct_prevuser, sizeof(&tsourdt3rd_struct_prevuser));
+		M_Memcpy(tsourdt3rd_user, tsourdt3rd_prevuser, sizeof(tsourdt3rd_prevuser));
+		M_Memcpy(tsourdt3rd_struct_user, tsourdt3rd_struct_prevuser, sizeof(tsourdt3rd_struct_prevuser));
 		return;
 	}
-
-	if (!playeringame[playernum])
+	else if (!playeringame[playernum])
 	{
-		memset(tsourdt3rd_prevuser, 0, sizeof(&tsourdt3rd_prevuser));
-		memset(tsourdt3rd_struct_prevuser, 0, sizeof(&tsourdt3rd_struct_prevuser));
+		memset(tsourdt3rd_prevuser, 0, sizeof(*tsourdt3rd_prevuser));
+		memset(tsourdt3rd_struct_prevuser, 0, sizeof(*tsourdt3rd_struct_prevuser));
 	}
 }
 
@@ -161,15 +136,15 @@ void TSoURDt3rd_MovePlayerStructure(INT32 node, INT32 newplayernode, INT32 prevn
 		STAR_CONS_Printf(STAR_CONS_DEBUG, "moving player structure %d to %d\n", prevnode, consoleplayer);
 		tsourdt3rd_user = &TSoURDt3rdPlayers[0];
 		tsourdt3rd_struct_user = &tsourdt3rd_struct_user[0];
-		memcpy(tsourdt3rd_user, &TSoURDt3rdPlayers[0], sizeof(TSoURDt3rd_t));
-		memcpy(tsourdt3rd_struct_user, &tsourdt3rd[0], sizeof(tsourdt3rd_t));
+		M_Memcpy(tsourdt3rd_user, &TSoURDt3rdPlayers[0], sizeof(TSoURDt3rdPlayers[0]));
+		M_Memcpy(tsourdt3rd_struct_user, &tsourdt3rd[0], sizeof(tsourdt3rd[0]));
 	}
 
 	if (node != prevnode)
 	{
 		if (server)
 		{
-			if (netbuffer->u.clientcfg.tsourdt3rd)
+			if (netbuffer->u.clientcfg.tsourdt3rd.build == IS_TSOURDT3RD)
 				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE, "Joining player is using TSoURDt3rd!\n");
 			else
 				STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE, "Joining player doesn't seem to be using TSoURDt3rd!\nPlease be cautious of what you do!\n");
@@ -178,10 +153,25 @@ void TSoURDt3rd_MovePlayerStructure(INT32 node, INT32 newplayernode, INT32 prevn
 	}
 }
 
+#define SATURNPAK
+#define DOOMCOM_DATA(d) (doomdata_t *)&(d)->data
+
 void TSoURDt3rd_HandleCustomPackets(INT32 node)
 {
+#if 0
+#ifdef SATURNPAK
+	//static inline void SendSaturnInfo(INT32 node)
+	{
+		//doomdata_t *netbuffer = DOOMCOM_DATA(doomcom);
+		doomdata_t *netbuffer_test = DOOMCOM_DATA(doomcom);
+		netbuffer_test->packettype = PT_TSOURDT3RD;
+		HSendPacket(node, true, 0, 0);
+	}
+#endif
+#endif
+#if 1
 	TSoURDt3rd_t *tsourdt3rd_user = &TSoURDt3rdPlayers[node];
-	const char *server_text = NULL;
+	tsourdt3rd_user->server_usingTSoURDt3rd = (netbuffer->u.servercfg.tsourdt3rd == 1 ? true : false);
 
 #ifdef HAVE_DISCORDSUPPORT
 	if (tsourdt3rd_user->server_usingTSoURDt3rd)
@@ -198,20 +188,24 @@ void TSoURDt3rd_HandleCustomPackets(INT32 node)
 	}
 #endif
 
-	tsourdt3rd_user->server_usingTSoURDt3rd = (netbuffer->u.servercfg.tsourdt3rd != 1 ? 0 : 1);
+	const char *server_text = NULL;
 	if (tsourdt3rd_user->server_usingTSoURDt3rd)
 	{
 		server_text = "Server uses TSoURDt3rd, running features!\n";
 		tsourdt3rd_user->server_majorVersion = netbuffer->u.servercfg.tsourdt3rd_majorversion;
 		tsourdt3rd_user->server_minorVersion = netbuffer->u.servercfg.tsourdt3rd_minorversion;
 		tsourdt3rd_user->server_subVersion = netbuffer->u.servercfg.tsourdt3rd_subversion;
-		tsourdt3rd_user->server_TSoURDt3rdVersion = netbuffer->u.servercfg.tsourdt3rd_fullversion;
 	}
 	else
+	{
 		server_text = "Can't find working serverside TSoURDt3rd! Proceeding to work around this...\n";
+	}
 
 	if (client)
 		STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE, server_text);
+#else
+	STAR_CONS_Printf(STAR_CONS_TSOURDT3RD|STAR_CONS_NOTICE, "Not checking for TSoURDt3rd structures in this server!\n");
+#endif
 }
 
 void TSoURDt3rd_D_AskForHolepunch(INT32 node)

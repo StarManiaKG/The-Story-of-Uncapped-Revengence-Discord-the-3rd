@@ -1014,7 +1014,12 @@ static boolean music_validate_codec(boolean looping)
 	if (music)
 	{
 		Mix_VolumeMusic(get_real_volume(music_volume));
+#if SDL_MIXER_VERSION_ATLEAST(2,6,0) || defined (HAVE_MIXERX)
 		codec_allows_position = codec_allows_looppoints = (Mix_GetMusicPosition(music) > -1.0f);
+#else
+		codec_allows_position = (Mix_SetMusicPosition(0.0) > -1.0f);
+		codec_allows_looppoints = false;
+#endif
 		codec_allows_songvolume = ((UINT32)Mix_VolumeMusic(-1) == get_real_volume(music_volume));
 #ifdef HAVE_MIXERX
 		codec_allows_speeding = (Mix_SetMusicTempo(music, 1.0) > -1.0
@@ -1122,7 +1127,9 @@ static void music_loop(void)
 		if (codec_allows_looppoints)
 		{
 			Mix_SetMusicPosition(loop_point);
+#if SDL_MIXER_VERSION_ATLEAST(2,6,0) || defined (HAVE_MIXERX)
 			if (Mix_GetMusicPosition(music) >= loop_point)
+#endif
 			{
 				music_bytes = (UINT32)(loop_point*AUDIO_INTERNAL_SAMPLERATE*4); //assume internal audio samplerate, 4-byte length (see I_GetSongPosition)
 				return;

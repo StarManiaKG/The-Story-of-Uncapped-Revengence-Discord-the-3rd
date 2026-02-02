@@ -643,7 +643,7 @@ void TSoURD3rd_AprilFools_OnChange(void)
 	}
 
 	S_StopMusic();
-	strncpy(mapmusname, TSoURDt3rd_DetermineLevelMusic(), 7);
+	strncpy(mapmusname, TSoURDt3rd_EXMusic_DetermineLevelMusic(), 7);
 
 	mapmusname[6] = 0;
 	mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
