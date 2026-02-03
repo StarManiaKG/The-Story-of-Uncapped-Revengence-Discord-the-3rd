@@ -149,7 +149,7 @@ static void R_SetupFreelook(player_t *player, boolean skybox)
 #ifdef HWRENDER
 		|| (rendermode == render_opengl
 			&& (cv_glshearing.value == 1
-			|| (cv_glshearing.value == 2 && R_IsViewpointThirdPerson(player, skybox))))
+			|| (cv_glshearing.value == 2 && player != NULL && R_IsViewpointThirdPerson(player, skybox))))
 #endif
 		)
 	{

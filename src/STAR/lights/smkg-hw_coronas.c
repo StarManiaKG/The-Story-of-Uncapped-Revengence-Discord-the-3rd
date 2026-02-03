@@ -1,14 +1,14 @@
-// SONIC ROBO BLAST 2
+// SONIC ROBO BLAST 2; TSOURDT3RD
 //-----------------------------------------------------------------------------
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 1999-2023 by Sonic Team Junior.
-// Copyright (C) 2024-2025 by Star "Guy Who Names Scripts After Him" ManiaKG.
+// Copyright (C) 2024-2026 by StarManiaKG.
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file smkg-hw_coronas.c
+/// \file  smkg-hw_coronas.c
 /// \brief TSoURDt3rd's hardware corona rendering routines
 
 #include "../smkg-defs.h"
@@ -20,6 +20,7 @@
 #include "../smkg-st_hud.h"
 
 #include "../../hardware/hw_glob.h"
+#include "../../hardware/r_opengl/r_opengl.h"
 
 #include <SDL_opengl.h>
 
@@ -31,14 +32,6 @@
 	#include "../../z_zone.h"
 #endif
 
-// Prefer using the matrices cached by the renderer (modelMatrix/projMatrix/viewport)
-// declared in r_opengl.c. If those aren't visible here, query GL directly.
-#include "../../hardware/r_opengl/r_opengl.h"
-
-// ------------------------ //
-//        Functions
-// ------------------------ //
-
 // The only terms needed, the other terms are 0.
 // Don't try to make this a matrix, this is much easier to understand and maintain.
 float world_trans_x_to_x, world_trans_y_to_x,
@@ -49,12 +42,16 @@ float sprite_trans_x_to_x, sprite_trans_y_to_y, sprite_trans_z_to_y,
 
 void HWR_set_view_transform(FTransform *stransform)
 {
-	player_t *player = &players[displayplayer];
-	const float fpov = FIXED_TO_FLOAT(cv_fov.value + player->fovadd);
+	FTransform *trans = stransform;
+
 	float tr_viewsin, tr_viewcos;
 	float gl_viewludsin = 0, gl_viewludcos = 0;
-	float gl_fovlud = (float)(1.0l/tan((double)(fpov*M_PIl/360l)));
+	float gl_fovlud;
+	float fpov;
+
+	player_t *player = &players[displayplayer];
 	angle_t gl_aimingangle = 0;
+	boolean shearing = false;
 
 	// Combined transforms for position, direction, look up/down, and scaling
 	// translation is separate and done first
@@ -64,13 +61,18 @@ void HWR_set_view_transform(FTransform *stransform)
 	//   scale y before frustum so that frustum can be scaled to screen height
 
 #define SHEARING
-#ifdef SHEARING
-	boolean shearing = (cv_glshearing.value == 1 || (cv_glshearing.value == 2 && R_IsViewpointThirdPerson(player, false)));
-#else
-	boolean shearing = false;
-#endif
 
-	FTransform *trans = stransform;
+	if (player != NULL)
+	{
+		shearing = (cv_glshearing.value == 1 || (cv_glshearing.value == 2 && R_IsViewpointThirdPerson(player, false)));
+		fpov = FIXED_TO_FLOAT(cv_fov.value + player->fovadd);
+	}
+	else
+	{
+		fpov = FIXED_TO_FLOAT(cv_fov.value);
+	}
+	gl_fovlud = (float)(1.0l/tan((double)(fpov*M_PIl/360l)));
+
 	if (trans == NULL)
 	{
 		trans = &atransform;
@@ -279,6 +281,13 @@ void transform_world_to_gr(float wx, float wy, float wz, /*OUT*/ float *gx, floa
 	const float gl_viewz = FIXED_TO_FLOAT(atransform.y);
 #endif
 	const float gl_viewflip = (atransform.flip ? -1.0f : 1.0f); // Apply screen flip
+	boolean shearing = false;
+	player_t *player = &players[displayplayer];
+
+	if (player != NULL)
+	{
+		shearing = (cv_glshearing.value == 1 || (cv_glshearing.value == 2 && R_IsViewpointThirdPerson(player, false)));
+	}
 
 	// calculate translate position
 	//HWR_set_view_transform();
@@ -294,11 +303,6 @@ void transform_world_to_gr(float wx, float wy, float wz, /*OUT*/ float *gx, floa
 		//*gy *= gl_viewflip;
 #if 1
 #define SHEARING
-#ifdef SHEARING
-	boolean shearing = (cv_glshearing.value == 1 || (cv_glshearing.value == 2 && R_IsViewpointThirdPerson(&players[displayplayer], false)));
-#else
-	boolean shearing = false;
-#endif
 		// Apply y-shearing
 		//if (atransform.shearing)
 		if (shearing)
@@ -311,10 +315,10 @@ void transform_world_to_gr(float wx, float wy, float wz, /*OUT*/ float *gx, floa
 #else
 			float shear_offset = atransform.viewaiming * ((float)vid.height / (float)BASEVIDHEIGHT);
   			if (atransform.flip)
-      			shear_offset = -shear_offset;
+	  			shear_offset = -shear_offset;
 
    			// This adjusts vertical placement to match software look
-    		*gy -= shear_offset;
+			*gy -= shear_offset;
 #endif
 		}
 #endif
@@ -329,54 +333,54 @@ void transform_world_to_gr(float wx, float wy, float wz, /*OUT*/ float *gx, floa
 // or custom projection is correctly respected.
 void transform_world_to_gr(float wx, float wy, float wz, /*OUT*/ float *gx, float *gy, float *gz)
 {
-    // modelMatrix, projMatrix and viewport are provided by r_opengl.c (cached).
-    // They must be valid and up-to-date at the time this is called.
-    GLfloat out[4], clip[4];
-    int i;
+	// modelMatrix, projMatrix and viewport are provided by r_opengl.c (cached).
+	// They must be valid and up-to-date at the time this is called.
+	GLfloat out[4], clip[4];
+	int i;
 
-    // Transform by modelview matrix (object -> eye)
-    for (i = 0; i < 4; ++i)
-    {
-        out[i] =
-            wx * modelMatrix[0*4 + i] +
-            wy * modelMatrix[1*4 + i] +
-            wz * modelMatrix[2*4 + i] +
-            modelMatrix[3*4 + i];
-    }
+	// Transform by modelview matrix (object -> eye)
+	for (i = 0; i < 4; ++i)
+	{
+		out[i] =
+			wx * modelMatrix[0*4 + i] +
+			wy * modelMatrix[1*4 + i] +
+			wz * modelMatrix[2*4 + i] +
+			modelMatrix[3*4 + i];
+	}
 
-    // Transform by projection matrix (eye -> clip)
-    for (i = 0; i < 4; ++i)
-    {
-        clip[i] =
-            out[0] * projMatrix[0*4 + i] +
-            out[1] * projMatrix[1*4 + i] +
-            out[2] * projMatrix[2*4 + i] +
-            out[3] * projMatrix[3*4 + i];
-    }
+	// Transform by projection matrix (eye -> clip)
+	for (i = 0; i < 4; ++i)
+	{
+		clip[i] =
+			out[0] * projMatrix[0*4 + i] +
+			out[1] * projMatrix[1*4 + i] +
+			out[2] * projMatrix[2*4 + i] +
+			out[3] * projMatrix[3*4 + i];
+	}
 
-    // If behind the camera or w nearly zero, mark off-screen
-    if (fpclassify(clip[3]) == FP_ZERO || clip[3] <= 1e-6f)
-    {
-        *gx = *gy = -1.0f;
-        *gz = -1.0f;
-        return;
-    }
+	// If behind the camera or w nearly zero, mark off-screen
+	if (fpclassify(clip[3]) == FP_ZERO || clip[3] <= 1e-6f)
+	{
+		*gx = *gy = -1.0f;
+		*gz = -1.0f;
+		return;
+	}
 
-    // Perspective divide to NDC (-1..1)
-    clip[0] /= clip[3];
-    clip[1] /= clip[3];
-    clip[2] /= clip[3];
+	// Perspective divide to NDC (-1..1)
+	clip[0] /= clip[3];
+	clip[1] /= clip[3];
+	clip[2] /= clip[3];
 
-    // Map NDC (-1..1) to 0..1
-    clip[0] = clip[0] * 0.5f + 0.5f;
-    clip[1] = clip[1] * 0.5f + 0.5f;
-    clip[2] = clip[2] * 0.5f + 0.5f;
+	// Map NDC (-1..1) to 0..1
+	clip[0] = clip[0] * 0.5f + 0.5f;
+	clip[1] = clip[1] * 0.5f + 0.5f;
+	clip[2] = clip[2] * 0.5f + 0.5f;
 
-    // Map to viewport pixels
-    // viewport[0]=x, [1]=y, [2]=width, [3]=height
-    *gx = clip[0] * (float)viewport[2] + (float)viewport[0];
-    *gy = clip[1] * (float)viewport[3] + (float)viewport[1];
-    *gz = clip[2];
+	// Map to viewport pixels
+	// viewport[0]=x, [1]=y, [2]=width, [3]=height
+	*gx = clip[0] * (float)viewport[2] + (float)viewport[0];
+	*gy = clip[1] * (float)viewport[3] + (float)viewport[1];
+	*gz = clip[2];
 }
 #else
 //void transform_world_to_gr(float wx, float wy, float wz, /*OUT*/ float *gx, float *gy, float *gz)
@@ -530,10 +534,11 @@ void HWR_Transform(float *cx, float *cy, float *cz)
 		secondarydisplayplayer,
 		-1
 	};
+	player_t *player = NULL;
 
 	for (INT32 i = 0; player_num[i] > -1; i++)
 	{
-		player_t *player = &players[player_num[i]];
+		player = &players[player_num[i]];
 
 		// ...Is the player ok?
 		if (player == NULL || !P_IsLocalPlayer(player))
@@ -640,11 +645,14 @@ void HWR_Transform(float *cx, float *cy, float *cz)
 		secondarydisplayplayer,
 		-1
 	};
+	player_t *player = NULL;
 
 	for (INT32 i = 0; player_num[i] > -1; i++)
 	{
-		player_t *player = &players[player_num[i]];
-		if (!player || !P_IsLocalPlayer(player)) continue;
+		player = &players[player_num[i]];
+
+		if (!player || !P_IsLocalPlayer(player))
+			continue;
 
 		const float fov = FIXED_TO_FLOAT(cv_fov.value + player->fovadd);
 		boolean shearing = (cv_glshearing.value == 1 || (cv_glshearing.value == 2 && R_IsViewpointThirdPerson(player, false)));
